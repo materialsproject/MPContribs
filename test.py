@@ -20,7 +20,7 @@ options = [
 # Series: split, records, index
 # DataFrame: Series + columns, values
 # http://pandas.pydata.org/pandas-docs/dev/io.html#writing-json
-orients = [ 'index', 'records', 'index', 'values' ]
+orients = [ 'index', 'records', 'columns', 'values' ]
 
 # plot options
 # http://pandas.pydata.org/pandas-docs/stable/visualization.html
