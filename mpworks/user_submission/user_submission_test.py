@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 pd.options.display.mpl_style = 'default'
 
 # read data
-chunks = map(StringIO, open('test.csv','r').read().split('\n#>>>\n'))
+chunks = map(StringIO, open('input.csv','r').read().split('\n#>>>\n'))
 nSets = len(chunks)
 
 # options on how to read the table
