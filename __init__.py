@@ -1,0 +1,6 @@
+__author__ = 'Patrick Huck'
+__copyright__ = 'Copyright 2014, The Materials Project'
+__version__ = '0.1'
+__maintainer__ = 'Patrick Huck'
+__email__ = 'phuck@lbl.gov'
+__date__ = 'Aug 22, 2014'
