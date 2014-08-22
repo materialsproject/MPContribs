@@ -4,15 +4,18 @@ from StringIO import StringIO
 import json
 chunks = map(StringIO, open('test.csv','r').read().split('\n#>>>\n'))
 nSets = len(chunks)
+# options on how to read the table
 options = [
     { 'index_col': 0, 'header': None },
     {},
-] + [ {} ] * (nSets-2)
-orients = [
-    'index', 'records',
-] + [ '' ] * (nSets-2)
+    {'index_col': 0},
+    {}
+]
+# orientation for translation into JSON:
+# Series: split, records, index
+# DataFrame: Series + columns, values
+orients = [ 'index', 'records', 'index', 'values' ]
 for i,chunk in enumerate(chunks):
-    if i > 1: break
     df = pd.read_csv(
         chunk, skiprows=1, comment='#', skipinitialspace=True,
         squeeze=True, **options[i]
