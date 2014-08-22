@@ -48,4 +48,4 @@ for i,chunk in enumerate(chunks):
         fig, ax = plt.subplots(1, 1)
         if i == 2: ax.get_xaxis().set_visible(False)
         df.plot(ax=ax, **plotopts[i])
-        plt.savefig('fig%d' % i, dpi=300, bbox_inches='tight')
+        plt.savefig('png/fig%d' % i, dpi=300, bbox_inches='tight')
