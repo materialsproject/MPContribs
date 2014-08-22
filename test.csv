@@ -9,7 +9,7 @@ authors,slany1 slany2 # usernames
 references,slany14 slany12 # bibtex-keys
 
 #>>>
-# List of Annotated Numbers (only require name/value/unit)
+# List of Annotated Numbers
 name,type,functional,method,value,unit
 band gap,indirect,GLLB-SC,Kohn-Sham,6.887038,eV
 band gap,direct,GLLB-SC,Kohn-Sham,6.886986,eV
@@ -19,9 +19,16 @@ deriv. discont.,,GLLB-SC,,2.42833,eV
 
 #>>>
 # Elastic Tensor
-type,unit,c11,c22,c33,c44,c55,c66,c23,c12,c13,reference
-Experimental,GPa,287.0,302.1,266.1,117.2,80.2,85.6,122.0,128.7,116.3,PestkaScottLePage11
-Theoretical,GPa,284.7,299.5,248.1,100.9,81.5,83.7,122.7,133.3,115.4,PestkaScottLePage11
+Matrix Element,Experimental,Theoretical,unit,reference
+c11,287.0,284.7,GPa,PestkaScottLePage11
+c22,302.1,299.5,GPa
+c33,266.1,248.1,GPa,PestkaScottLePage11
+c44,117.2,100.9,GPa
+c55,80.2,81.5,GPa
+c66,85.6,83.7,GPa
+c23,122.0,122.7,GPa,PestkaScottLePage11
+c12,128.7,133.3,GPa
+c13,116.3,115.4,GPa
 
 #>>>
 # Dielectric Constant
