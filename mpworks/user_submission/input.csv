@@ -1,4 +1,11 @@
-# General Properties, Settings, Defaults (1-1-mappings/Series, require certain unique row names)
+# Layout/Sections
+General
+Band Gaps
+Elastic Tensor
+Dielectric Constant
+
+#>>>
+# General
 mp-id,1143
 xtal-name,Al2O3
 project,nrel/dtu
@@ -9,7 +16,7 @@ authors,slany1 slany2 # usernames
 references,slany14 slany12 # bibtex-keys
 
 #>>>
-# List of Annotated Numbers
+# Band Gaps (line skipped, can be any user comment)
 name,type,functional,method,value,unit
 band gap,indirect,GLLB-SC,Kohn-Sham,6.887038,eV
 band gap,direct,GLLB-SC,Kohn-Sham,6.886986,eV
