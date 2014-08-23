@@ -12,6 +12,7 @@ nSets = len(chunks)
 # options on how to read the table
 # http://pandas.pydata.org/pandas-docs/dev/io.html#csv-text-files
 options = [
+    { 'header': None },
     { 'index_col': 0, 'header': None },
     {}, {'index_col': 0}, {}
 ]
@@ -20,32 +21,41 @@ options = [
 # Series: split, records, index
 # DataFrame: Series + columns, values
 # http://pandas.pydata.org/pandas-docs/dev/io.html#writing-json
-orients = [ 'index', 'records', 'columns', 'values' ]
+orients = [ 'values', 'index', 'records', 'columns', 'values' ]
 
 # plot options
 # http://pandas.pydata.org/pandas-docs/stable/visualization.html
 # table=True
 plotopts = [
-    {},
+    {}, {},
     { 'x': 'name', 'kind': 'bar' },
     { 'table': True },
     { 'x': 'freq' }
 ]
 
 # iterate data chunks
+sections = None
+doc = {}
 for i,chunk in enumerate(chunks):
     # import data table
     df = pd.read_csv(
         chunk, skiprows=1, comment='#', skipinitialspace=True,
         squeeze=True, **options[i]
     )
-    print df
-    # parse json
-    parsed = json.loads(df.to_json(orient=orients[i]))
-    print json.dumps(parsed, indent=2, sort_keys=True)
-    # plot (possibly replace with plot.ly)
-    if i > 0:
+    if i < 1:
+        sections = df.values.tolist()
+    else:
+        print df
+        df_json = df.to_json(orient=orients[i])
+        sec_json = '{"'+sections[i-1]+'":'+df_json+'}'
+        doc.update(json.loads(sec_json))
+        continue
+        # plot (possibly replace with plot.ly)
         fig, ax = plt.subplots(1, 1)
         if i == 2: ax.get_xaxis().set_visible(False)
         df.plot(ax=ax, **plotopts[i])
         plt.savefig('png/fig%d' % i, dpi=300, bbox_inches='tight')
+
+json.dump(
+    doc, open('output.json','wb'), indent=2, sort_keys=True
+)
