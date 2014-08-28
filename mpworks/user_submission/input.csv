@@ -1,49 +1,35 @@
-# Layout/Sections/TOC (could also serve as keywords for search)
-General # Global General Meta-Data (required)
-Crystal
-Band Gaps
-Elastic Tensor
-Dielectric Constant
-#Enthalpy
-#ICSD
-#Absorption Spectrum
-#Lattice
+>>>> GENERAL # required, anything after section delimiter [4 or more '>'s] is parsed as section name, excl. comments
+  snl-group-id: 12345
+  mp-id: 1143
+  xtal-name: Al2O3
+  project: nrel/dtu
+  nrel-id: 73579
+  fsg number: 167
+  fsg name: R-3c
+  submitters: slany, pgraf # usernames -> email addresses
+  references: slany14, slany12 # bibtex-keys
 
-#>>>
-# Global General Meta-Data (always parsed as colon-separated key-value pairs)
-mp-id: 1143
-xtal-name: Al2O3
-project: nrel/dtu
-nrel-id: 73579
-fsg number: 167
-fsg name: R-3c
-authors: slany, pgraf # usernames
-references: slany14, slany12 # bibtex-keys
+>>>> CRYSTAL
+>> general
+  publications: ja295760, ja295765 # bibtex-keys
+  standards: fere, gwvd
+  authors: nrel_authors # bibtex-key
+  comment: This dataset is the result of DOE grant 12345, NSF grant 12345, and the contributed efforts of many researchers.
+>> plot
+  x: alpha
+  y: beta
+>> plot
+  x: 0
+  y: 2
+>> data
+  alpha [KJ],beta [nm],gamma
+  10,11,12
+  20,21,22
+  30,31,32  # this is a comment
+  40,41,42
+  50,51,52
 
-#>>>
-# Crystal (with optional name-restricted subsections)
->>>general   #  general properties
-publications: ja295760, ja295765 # bibtex-keys
-standards: fere, gwvd
-authors: slany, vstevanovich, pgraf
-comment: This dataset is the result of DOE grant 12345, NSF grant 12345, and
-the contributed efforts of many researchers.
->>>plot      # specify a plot and its options (only columns to plot for now, only support keyword arguments allowed by df.plot())
-x: alpha           # x axis: specify either column number or header tag
-y: beta            # y axis: specify either column number or header tag
->>>plot
-x: 0
-y: 2
->>>data
-alpha [KJ],beta [nm],gamma
-10,11,12
-20,21,22
-30,31,32  # this is a comment
-40,41,42
-50,51,52
-
-#>>>
-# Band Gaps (line skipped, can be any user comment)
+>>>> BAND GAPS
 name,type,functional,method,value,unit
 band gap,indirect,GLLB-SC,Kohn-Sham,6.887038,eV
 band gap,direct,GLLB-SC,Kohn-Sham,6.886986,eV
@@ -51,21 +37,19 @@ band gap,indirect,GLLB-SC,quasi-particle,9.315470,eV
 band gap,direct,GLLB-SC,quasi-particle,9.315419,eV
 deriv. discont.,,GLLB-SC,,2.42833,eV
 
-#>>>
-# Elastic Tensor
-Matrix Element,Experimental,Theoretical,unit,reference
-c11,287.0,284.7,GPa,PestkaScottLePage11
-c22,302.1,299.5,GPa
-c33,266.1,248.1,GPa,PestkaScottLePage11
-c44,117.2,100.9,GPa
-c55,80.2,81.5,GPa
-c66,85.6,83.7,GPa
-c23,122.0,122.7,GPa,PestkaScottLePage11
-c12,128.7,133.3,GPa
-c13,116.3,115.4,GPa
+>>>> ELASTIC TENSOR
+Matrix Element,Experimental,Theoretical,reference
+c11,287.0,284.7,PestkaScottLePage11
+c22,302.1,299.5
+c33,266.1,248.1,PestkaScottLePage11
+c44,117.2,100.9
+c55,80.2,81.5
+c66,85.6,83.7
+c23,122.0,122.7,PestkaScottLePage11
+c12,128.7,133.3
+c13,116.3,115.4
 
-#>>>
-# Dielectric Constant
+>>>> DIELECTRIC CONSTANT
 freq,real,imag
 0,2.0065,0
 0.5,2.0073,0
