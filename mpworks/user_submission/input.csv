@@ -34,6 +34,9 @@ alpha [KJ],beta [nm],gamma
 >>>>>> BAND GAPS
 >> general
 orient: records
+>> plot
+x: name
+kind: bar
 >> data
 name,type,functional,method,value,unit
 band gap,indirect,GLLB-SC,Kohn-Sham,6.887038,eV
@@ -57,6 +60,8 @@ c13,116.3,115.4
 >>>> DIELECTRIC CONSTANT
 >> general
 orient: values
+>> plot
+x: freq
 >> data
 freq,real,imag
 0,2.0065,0
