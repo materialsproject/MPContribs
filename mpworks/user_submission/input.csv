@@ -12,6 +12,7 @@ references: slany14, slany12 # bibtex-keys
 
 >>>>>> CRYSTAL # test section separatar regex
 >> general
+orient: values
 publications: ja295760, ja295765 # bibtex-keys
 standards: fere, gwvd
 authors: nrel_authors # bibtex-key
@@ -31,6 +32,9 @@ alpha [KJ],beta [nm],gamma
 50,51,52
 
 >>>>>> BAND GAPS
+>> general
+orient: records
+>> data
 name,type,functional,method,value,unit
 band gap,indirect,GLLB-SC,Kohn-Sham,6.887038,eV
 band gap,direct,GLLB-SC,Kohn-Sham,6.886986,eV
@@ -51,6 +55,9 @@ c12,128.7,133.3
 c13,116.3,115.4
 
 >>>> DIELECTRIC CONSTANT
+>> general
+orient: values
+>> data
 freq,real,imag
 0,2.0065,0
 0.5,2.0073,0
