@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import pandas as pd
 from StringIO import StringIO
-import json, sys, re, string
+import json, sys, re, string, logging
 import matplotlib.pyplot as plt
 pd.options.display.mpl_style = 'default'
 
@@ -11,6 +11,7 @@ class RecursiveSectionParser:
         self.min_level = 3 # minimum level to avoid collision w/ '>>'
         self.max_level = 6 # maximum section-nesting supported
         self.level = self.max_level # level counter
+        self.found_max_user_level = False
 
     def separator_regex(self):
         """get separator regex for section depth/level"""
@@ -25,9 +26,11 @@ class RecursiveSectionParser:
         # return if below minimum section level
         if self.level < self.min_level:
             # TODO read_csv
-            print 'below level', self.min_level, '-> csv_read!', repr(file_string)
             self.level = self.max_level
-            print 'reset level to', self.max_level
+            logging.info(
+                'below level %d\n  -> csv_read: %s\n  reset level to %d',
+                self.min_level, repr(file_string), self.max_level
+            )
             return
         # split into section title line (even) and section body (odd entries)
         sections = re.split(self.separator_regex(), file_string)
@@ -37,13 +40,13 @@ class RecursiveSectionParser:
             sections = sections[1:]
             for section_index,section_body in enumerate(sections[1::2]):
                 section_title = self.clean_title(sections[2*section_index])
-                print self.level, section_title
+                logging.info('level: %d, %s', self.level, section_title)
                 self.level -= 1
                 self.recursive_parse(section_body)
         else:
             # separator not found -> section level too high
             # file_string = sections[0]
-            print 'no sep at level', self.level
+            logging.info('no sep at level %d', self.level)
             self.level -= 1
             self.recursive_parse(file_string)
 
@@ -111,8 +114,17 @@ class RecursiveSectionParser:
 #    #plt.savefig('png/fig%d' % i, dpi=300, bbox_inches='tight')
 
 if __name__ == '__main__':
-    filestr = open('input.csv','r').read()
-    parser = RecursiveSectionParser()
-    parser.recursive_parse(filestr)
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("infile", help="mp-formatted csv file")
+    parser.add_argument("--log", help="show log output", action="store_true")
+    args = parser.parse_args()
+    loglevel = 'DEBUG' if args.log else 'WARNING'
+    logging.basicConfig(
+        format='%(message)s', level=getattr(logging, loglevel)
+    )
+    filestr = open(args.infile,'r').read()
+    csv_parser = RecursiveSectionParser()
+    csv_parser.recursive_parse(filestr)
     #import_csv(filestr)
     #plot('output.json')
