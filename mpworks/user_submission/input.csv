@@ -1,4 +1,6 @@
->>>> GENERAL # required, anything after section delimiter [4 or more '>'s] is parsed as section name, excl. comments
+>>>> GENERAL # required
+# anything after section delimiter is parsed as section name, excl. comments
+# number of '>'s denotes section level (depth), min. 3, max. 6
 snl-group-id: 12345
 mp-id: 1143
 # comment lines in (sub)section body are ignored
@@ -10,20 +12,19 @@ fsg name: R-3c
 submitters: slany, pgraf # usernames -> email addresses
 references: slany14, slany12 # bibtex-keys
 
->>>>>> CRYSTAL # test section separatar regex
->> general
-orient: values
+>>>> CRYSTAL
+>>> general
 publications: ja295760, ja295765 # bibtex-keys
 standards: fere, gwvd
 authors: nrel_authors # bibtex-key
 comment: This dataset is the result of DOE grant 12345, NSF grant 12345, and the contributed efforts of many researchers.
->>> plot # test subsection separator regex (2 or 3 '>'s)
+>>> plot
 x: alpha
 y: beta
->> plot
+>>> plot
 x: 0
 y: 2
->> data
+>>> data
 alpha [KJ],beta [nm],gamma
 10,11,12
 20,21,22
@@ -31,13 +32,11 @@ alpha [KJ],beta [nm],gamma
 40,41,42
 50,51,52
 
->>>>>> BAND GAPS
->> general
-orient: records
->> plot
+>>>> BAND GAPS
+>>> plot
 x: name
 kind: bar
->> data
+>>> data
 name,type,functional,method,value,unit
 band gap,indirect,GLLB-SC,Kohn-Sham,6.887038,eV
 band gap,direct,GLLB-SC,Kohn-Sham,6.886986,eV
@@ -58,11 +57,9 @@ c12,128.7,133.3
 c13,116.3,115.4
 
 >>>> DIELECTRIC CONSTANT
->> general
-orient: values
->> plot
+>>> plot
 x: freq
->> data
+>>> data
 freq,real,imag
 0,2.0065,0
 0.5,2.0073,0
