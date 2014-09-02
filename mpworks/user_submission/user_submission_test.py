@@ -5,13 +5,21 @@ import json, sys, re, string, logging
 import matplotlib.pyplot as plt
 pd.options.display.mpl_style = 'default'
 
-class RecursiveSectionParser:
+class RecursiveParser:
     def __init__(self):
         self.symbol = '>'
         self.min_level = 3 # minimum level to avoid collision w/ '>>'
         self.max_level = 6 # maximum section-nesting supported
         self.level = self.max_level # level counter
-        self.found_max_user_level = False
+        self.max_level_found = False
+        self.section_title = None
+        # TODO better organize read_csv options
+        self.default_options = { 'sep': ',', 'header': 0 } # csv data
+        self.colon_key_value_list = { 'sep': ':', 'header': None, 'index_col': 0 }
+        self.special_options = {
+            'general': self.colon_key_value_list,
+            'plot': self.colon_key_value_list
+        }
 
     def separator_regex(self):
         """get separator regex for section depth/level"""
@@ -21,15 +29,22 @@ class RecursiveSectionParser:
         """strip in-line comments & spaces, make lower-case"""
         return re.split(r'#*', title)[0].strip().lower()
 
+    def read_csv(self, body):
+        """run pandas.read_csv on (sub)section body"""
+        return pd.read_csv(
+            StringIO(body), comment='#', skipinitialspace=True, squeeze=True,
+            **self.special_options.get(self.section_title, self.default_options)
+        )
+
     def recursive_parse(self, file_string):
         """recursively parse sections according to number of separators"""
         # return if below minimum section level
         if self.level < self.min_level:
-            # TODO read_csv
+            pd_obj = self.read_csv(file_string)
             self.level = self.max_level
             logging.info(
-                'below level %d\n  -> csv_read: %s\n  reset level to %d',
-                self.min_level, repr(file_string), self.max_level
+                'below level %d\n%r\n-> reset level to %d',
+                self.min_level, pd_obj, self.max_level
             )
             return
         # split into section title line (even) and section body (odd entries)
@@ -37,10 +52,14 @@ class RecursiveSectionParser:
         if len(sections) > 1:
             # separator found. leading empty string, see
             # https://docs.python.org/2/library/re.html#re.split
+            if not self.max_level_found: # TODO smarter?
+                self.max_level_found = True
+                self.max_level = self.level
+                logging.info('reset max_level to %d', self.max_level)
             sections = sections[1:]
             for section_index,section_body in enumerate(sections[1::2]):
-                section_title = self.clean_title(sections[2*section_index])
-                logging.info('level: %d, %s', self.level, section_title)
+                self.section_title = self.clean_title(sections[2*section_index])
+                logging.info('level: %d, %s', self.level, self.section_title)
                 self.level -= 1
                 self.recursive_parse(section_body)
         else:
@@ -50,22 +69,6 @@ class RecursiveSectionParser:
             self.level -= 1
             self.recursive_parse(file_string)
 
-
-
-#read_csv_default_options = { 'sep': ',', 'header': 0 } # csv data
-#read_csv_colon_key_value_list = { 'sep': ':', 'header': None, 'index_col': 0 }
-#read_csv_special_options = {
-#    'general': read_csv_colon_key_value_list,
-#    'plot': read_csv_colon_key_value_list
-#}
-#
-#def read_csv(title, body):
-#    """run pandas.read_csv on (sub)section body"""
-#    return pd.read_csv(
-#        StringIO(body), comment='#', skipinitialspace=True, squeeze=True,
-#        **read_csv_special_options.get(title, read_csv_default_options)
-#    )
-#
 #def to_dict(pandas_object):
 #    """convert pandas object to python dictionary w/ correct outtype options"""
 #    if isinstance(pandas_object, pd.Series):
@@ -124,7 +127,7 @@ if __name__ == '__main__':
         format='%(message)s', level=getattr(logging, loglevel)
     )
     filestr = open(args.infile,'r').read()
-    csv_parser = RecursiveSectionParser()
+    csv_parser = RecursiveParser()
     csv_parser.recursive_parse(filestr)
     #import_csv(filestr)
     #plot('output.json')
