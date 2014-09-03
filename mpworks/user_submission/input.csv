@@ -20,12 +20,8 @@ authors: nrel_authors # bibtex-key
 comment: This dataset is the result of DOE grant 12345, NSF grant 12345, and the contributed efforts of many researchers.
 >>> plot
 x: alpha
-y: beta
->>> plot
-x: 0
-y: 2
 >>> data
-alpha [KJ],beta [nm],gamma
+alpha,beta,gamma
 10,11,12
 20,21,22
 30,31,32  # this is a comment
