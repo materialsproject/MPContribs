@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import numpy as np
 import pandas as pd
 from StringIO import StringIO
 import json, sys, re, string, logging
@@ -49,6 +50,20 @@ class RecursiveParser:
             **self.special_options.get(title, self.default_options)
         )
 
+    def to_dict(self, pandas_object):
+        """convert pandas object to dict"""
+        if isinstance(pandas_object, pd.Series):
+            return pandas_object.to_dict()
+        all_columns_numeric = True
+        for col in pandas_object.columns:
+            if ( pandas_object[col].dtype != np.float64 and \
+                pandas_object[col].dtype != np.int64 ):
+                all_columns_numeric = False
+                break
+        return pandas_object.to_dict(
+            outtype = 'list' if all_columns_numeric else 'records'
+        )
+
     def recursive_parse(self, file_string):
         """recursively parse sections according to number of separators"""
         logging.info('-> new level: %d', self.level)
@@ -57,9 +72,7 @@ class RecursiveParser:
             section_titles = filter(None, self.section_titles)
             pd_obj = self.read_csv(section_titles[-1], file_string)
             logging.info(pd_obj)
-            nested_dict = pd_obj.to_dict() \
-                    if isinstance(pd_obj, pd.Series) \
-                    else pd_obj.to_dict('records')
+            nested_dict = self.to_dict(pd_obj)
             for key in reversed(section_titles):
                 nested_dict = {key: nested_dict}
             self.document.rec_update(nested_dict)
