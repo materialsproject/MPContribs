@@ -98,16 +98,18 @@ class RecursiveParser:
             self.recursive_parse(file_string)
             self.level += 1
 
-#def plot(filename):
-#    """plot all data based on output.json (-> plot.ly in future?)"""
-#    doc = json.load(open(filename,'r'))
-#    for section_name,section_body in doc.iteritems():
-#        if section_name != 'general':
-#            print section_name, section_body.keys()
-#    #fig, ax = plt.subplots(1, 1)
-#    #if Table: ax.get_xaxis().set_visible(False)
-#    #df.plot(ax=ax, **plotopts[i])
-#    #plt.savefig('png/fig%d' % i, dpi=300, bbox_inches='tight')
+def plot(filename):
+    """plot all data based on output.json (-> plot.ly in future?)"""
+    doc = json.load(open(filename,'r'))
+    for key,value in doc.iteritems():
+        if key == 'general': continue
+        value_is_dict = isinstance(value, dict)
+        data = value.get('data') if value_is_dict else value
+        fig, ax = plt.subplots(1, 1)
+        plotopts = value.get('plot', {}) if value_is_dict else {}
+        #if plotopts.get('table'): ax.get_xaxis().set_visible(False)
+        pd.DataFrame.from_dict(data).plot(ax=ax, **plotopts)
+        plt.savefig('png/%s' % key.replace(' ','_'), dpi=300, bbox_inches='tight')
 
 if __name__ == '__main__':
     import argparse
@@ -126,4 +128,4 @@ if __name__ == '__main__':
         csv_parser.document, open('output.json','wb'),
         indent=2, sort_keys=True
     )
-    #plot('output.json')
+    plot('output.json')
