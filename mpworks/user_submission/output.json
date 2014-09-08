@@ -73,7 +73,7 @@
     }, 
     "general": {
       "authors": "nrel_authors ", 
-      "comment": "This dataset is the result of DOE grant 12345, NSF grant 12345, and the contributed efforts of many researchers.", 
+      "comment": "This dataset is the result of DOE grant 12345, NSF grant 12345, and the contributed efforts of many researchers. ", 
       "publications": "ja295760, ja295765 ", 
       "standards": "fere, gwvd"
     }, 
@@ -399,58 +399,58 @@
   }, 
   "elastic tensor": [
     {
-      "Experimental": 287.0, 
-      "Matrix Element": "c11", 
-      "Theoretical": 284.7, 
-      "reference": "PestkaScottLePage11"
+      "Exp.": 287.0, 
+      "Matrix": "c11", 
+      "Ref.": "PSP11 ", 
+      "Theo.": 284.7
     }, 
     {
-      "Experimental": 302.1, 
-      "Matrix Element": "c22", 
-      "Theoretical": 299.5, 
-      "reference": NaN
+      "Exp.": 302.1, 
+      "Matrix": "c22", 
+      "Ref.": NaN, 
+      "Theo.": 299.5
     }, 
     {
-      "Experimental": 266.1, 
-      "Matrix Element": "c33", 
-      "Theoretical": 248.1, 
-      "reference": "PestkaScottLePage11"
+      "Exp.": 266.1, 
+      "Matrix": "c33", 
+      "Ref.": "PSP11", 
+      "Theo.": 248.1
     }, 
     {
-      "Experimental": 117.2, 
-      "Matrix Element": "c44", 
-      "Theoretical": 100.9, 
-      "reference": NaN
+      "Exp.": 117.2, 
+      "Matrix": "c44", 
+      "Ref.": NaN, 
+      "Theo.": 100.9
     }, 
     {
-      "Experimental": 80.2, 
-      "Matrix Element": "c55", 
-      "Theoretical": 81.5, 
-      "reference": NaN
+      "Exp.": 80.2, 
+      "Matrix": "c55", 
+      "Ref.": NaN, 
+      "Theo.": 81.5
     }, 
     {
-      "Experimental": 85.6, 
-      "Matrix Element": "c66", 
-      "Theoretical": 83.7, 
-      "reference": NaN
+      "Exp.": 85.6, 
+      "Matrix": "c66", 
+      "Ref.": NaN, 
+      "Theo.": 83.7
     }, 
     {
-      "Experimental": 122.0, 
-      "Matrix Element": "c23", 
-      "Theoretical": 122.7, 
-      "reference": "PestkaScottLePage11"
+      "Exp.": 122.0, 
+      "Matrix": "c23", 
+      "Ref.": "PSP11", 
+      "Theo.": 122.7
     }, 
     {
-      "Experimental": 128.7, 
-      "Matrix Element": "c12", 
-      "Theoretical": 133.3, 
-      "reference": NaN
+      "Exp.": 128.7, 
+      "Matrix": "c12", 
+      "Ref.": NaN, 
+      "Theo.": 133.3
     }, 
     {
-      "Experimental": 116.3, 
-      "Matrix Element": "c13", 
-      "Theoretical": 115.4, 
-      "reference": NaN
+      "Exp.": 116.3, 
+      "Matrix": "c13", 
+      "Ref.": NaN, 
+      "Theo.": 115.4
     }
   ], 
   "general": {
