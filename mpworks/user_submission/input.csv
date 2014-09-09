@@ -11,7 +11,7 @@ project: nrel/dtu
 nrel-id: 73579
 fsg number: 167
 fsg name: R-3c
-submitters: slany, pgraf # usernames -> email addresses
+submitters: slany@nrel.gov, pgraf@nrel.gov # usernames = email addresses
 references: slany14, slany12 # bibtex-keys
 
 >>>> CRYSTAL
