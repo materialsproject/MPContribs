@@ -20,7 +20,7 @@ class RecursiveDict(dict):
                 self[key] = value
 
 class RecursiveParser:
-    def __init__(self):
+    def __init__(self, fileExt='csv'):
         self.symbol = '>'
         self.min_level = 3 # minimum level to avoid collision w/ '>>'
         self.max_level = 6 # maximum section-nesting supported
@@ -28,7 +28,9 @@ class RecursiveParser:
         self.section_titles = [None] * (self.max_level-self.min_level+1)
         self.document = RecursiveDict({})
         # TODO better organize read_csv options -> config file?
-        self.default_options = { 'sep': ',', 'header': 0 } # csv data
+        self.default_options = {
+            'sep': '\t' if fileExt == 'tsv' else ',', 'header': 0 # data
+        }
         self.colon_key_value_list = { 'sep': ':', 'header': None, 'index_col': 0 }
         self.special_options = {
             'general': self.colon_key_value_list,
@@ -112,9 +114,9 @@ def plot(filename):
         plt.savefig('png/%s' % key.replace(' ','_'), dpi=300, bbox_inches='tight')
 
 if __name__ == '__main__':
-    import argparse
+    import argparse, os
     parser = argparse.ArgumentParser()
-    parser.add_argument("infile", help="mp-formatted csv file")
+    parser.add_argument("infile", help="mp-formatted csv/tsv file")
     parser.add_argument("--log", help="show log output", action="store_true")
     args = parser.parse_args()
     loglevel = 'DEBUG' if args.log else 'WARNING'
@@ -122,7 +124,8 @@ if __name__ == '__main__':
         format='%(message)s', level=getattr(logging, loglevel)
     )
     filestr = open(args.infile,'r').read()
-    csv_parser = RecursiveParser()
+    # init RecursiveParser with file extension to identify data column separator
+    csv_parser = RecursiveParser(os.path.splitext(args.infile)[1][1:])
     csv_parser.recursive_parse(filestr)
     json.dump(
         csv_parser.document, open('output.json','wb'),
