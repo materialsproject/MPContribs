@@ -8,8 +8,11 @@ import collections
 pd.options.display.mpl_style = 'default'
 
 def xmcd_post_process(pandas_object):
-    print 'hello world'
-    return pandas_object
+    # following check is enough if only 'data' section of type 'DataFrame'
+    if isinstance(pandas_object, pd.Series): return pandas_object
+    return pandas_object.filter(
+        items=['Energy', 'Mag Field', 'Counter 0', 'Counter 1']
+    )
 
 class RecursiveDict(dict):
     """https://gist.github.com/Xjs/114831"""
@@ -79,13 +82,11 @@ class RecursiveParser:
             # read csv / convert section body to pandas object
             section_titles = filter(None, self.section_titles)
             pd_obj = self.read_csv(section_titles[-1], file_string)
-            logging.info(pd_obj)
             # example to post-process raw xmcd data before committing to DB
             # TODO: needs to be discussed and generalized
-            if self.post_process and section_titles[0] == 'xmcd' \
-               and section_titles[-1] == 'data':
+            if self.post_process and section_titles[0] == 'xmcd':
                 pd_obj = xmcd_post_process(pd_obj)
-                logging.info(pd_obj)
+            logging.info(pd_obj)
             # update nested dict/document based on section level
             nested_dict = self.to_dict(pd_obj)
             for key in reversed(section_titles):
