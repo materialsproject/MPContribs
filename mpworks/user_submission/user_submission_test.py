@@ -17,12 +17,13 @@ def xmcd_post_process(pdobj):
     pos_field = pdobj[pdobj['Mag Field'] > 0.].copy()
     pos_field['Counter 1'] /= pos_field[pos_field.Energy < 773.]['Counter 1'].sum()
     pos_field.set_index(neg_field.index, inplace=True)
+    xas = (neg_field['Counter 1'] + pos_field['Counter 1']) / 2.
     xmcd = neg_field['Counter 1'] - pos_field['Counter 1']
     xmcd_df = pd.DataFrame(data={
         'Energy': neg_field['Energy'],
         'Intensity B<0': neg_field['Counter 1'],
         'Intensity B>0': pos_field['Counter 1'],
-        'XMCD': xmcd
+        'XMCD': xmcd, 'XAS': xas
     })
     xmcd_df.to_csv(path_or_buf=open('xmcd_post_process.csv','w'), index=False)
     return xmcd_df
