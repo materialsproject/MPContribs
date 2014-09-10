@@ -7,12 +7,26 @@ import matplotlib.pyplot as plt
 import collections
 pd.options.display.mpl_style = 'default'
 
-def xmcd_post_process(pandas_object):
+def xmcd_post_process(pdobj):
     # following check is enough if only 'data' section of type 'DataFrame'
-    if isinstance(pandas_object, pd.Series): return pandas_object
-    return pandas_object.filter(
-        items=['Energy', 'Mag Field', 'Counter 0', 'Counter 1']
-    )
+    if isinstance(pdobj, pd.Series): return pdobj
+    pdobj['Counter 1'] -= pdobj['Counter 0']
+    pdobj = pdobj.filter(items=['Energy', 'Mag Field', 'Counter 1'])
+    neg_field = pdobj[pdobj['Mag Field'] < 0.].copy()
+    neg_field['Counter 1'] /= neg_field[neg_field.Energy < 773.]['Counter 1'].sum()
+    pos_field = pdobj[pdobj['Mag Field'] > 0.].copy()
+    pos_field['Counter 1'] /= pos_field[pos_field.Energy < 773.]['Counter 1'].sum()
+    pos_field.set_index(neg_field.index, inplace=True)
+    xmcd = neg_field['Counter 1'] - pos_field['Counter 1']
+    xmcd_df = pd.DataFrame(data={
+        'Energy': neg_field['Energy'],
+        'Intensity B<0': neg_field['Counter 1'],
+        'Intensity B>0': pos_field['Counter 1'],
+        'XMCD': xmcd
+    })
+    xmcd_df.to_csv(path_or_buf=open('xmcd_post_process.csv','w'), index=False)
+    return xmcd_df
+
 
 class RecursiveDict(dict):
     """https://gist.github.com/Xjs/114831"""
@@ -84,6 +98,8 @@ class RecursiveParser:
             pd_obj = self.read_csv(section_titles[-1], file_string)
             # example to post-process raw xmcd data before committing to DB
             # TODO: needs to be discussed and generalized
+            # TODO: maybe implement for general case via df.apply()?
+            #  http://pandas.pydata.org/pandas-docs/stable/basics.html#function-application
             if self.post_process and section_titles[0] == 'xmcd':
                 pd_obj = xmcd_post_process(pd_obj)
             logging.info(pd_obj)
@@ -132,7 +148,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("infile", help="mp-formatted csv/tsv file")
     parser.add_argument("--log", help="show log output", action="store_true")
-    parser.add_argument("--post-process", help="post-process xmcd raw data", action="store_true")
     args = parser.parse_args()
     loglevel = 'DEBUG' if args.log else 'WARNING'
     logging.basicConfig(
@@ -143,7 +158,7 @@ if __name__ == '__main__':
     # and flag for post processing
     csv_parser = RecursiveParser(
         fileExt=os.path.splitext(args.infile)[1][1:],
-        post_process=args.post_process
+        post_process=(args.infile=='input_xmcd.tsv')
     )
     csv_parser.recursive_parse(filestr)
     #json.dump(
