@@ -187,6 +187,8 @@ Count Time (s): 3.50000000
 Scan Number: 1
 Stay at End: 1
 Description Length: 0
+>>> plot
+x: Energy
 >>> data
 Energy,Intensity B<0,Intensity B>0,XMCD
 755.73651123,0.08770159571747617,0.08229754835057994,0.005404047366896231
