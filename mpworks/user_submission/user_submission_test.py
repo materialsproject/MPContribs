@@ -7,6 +7,10 @@ import matplotlib.pyplot as plt
 import collections
 pd.options.display.mpl_style = 'default'
 
+def xmcd_post_process(pandas_object):
+    print 'hello world'
+    return pandas_object
+
 class RecursiveDict(dict):
     """https://gist.github.com/Xjs/114831"""
     def rec_update(self, other):
@@ -20,7 +24,8 @@ class RecursiveDict(dict):
                 self[key] = value
 
 class RecursiveParser:
-    def __init__(self, fileExt='csv'):
+    def __init__(self, fileExt='csv', post_process=False):
+        self.post_process = post_process
         self.symbol = '>'
         self.min_level = 3 # minimum level to avoid collision w/ '>>'
         self.max_level = 6 # maximum section-nesting supported
@@ -71,9 +76,17 @@ class RecursiveParser:
         logging.info('-> new level: %d', self.level)
         # return if below minimum section level
         if self.level < self.min_level:
+            # read csv / convert section body to pandas object
             section_titles = filter(None, self.section_titles)
             pd_obj = self.read_csv(section_titles[-1], file_string)
             logging.info(pd_obj)
+            # example to post-process raw xmcd data before committing to DB
+            # TODO: needs to be discussed and generalized
+            if self.post_process and section_titles[0] == 'xmcd' \
+               and section_titles[-1] == 'data':
+                pd_obj = xmcd_post_process(pd_obj)
+                logging.info(pd_obj)
+            # update nested dict/document based on section level
             nested_dict = self.to_dict(pd_obj)
             for key in reversed(section_titles):
                 nested_dict = {key: nested_dict}
@@ -118,6 +131,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("infile", help="mp-formatted csv/tsv file")
     parser.add_argument("--log", help="show log output", action="store_true")
+    parser.add_argument("--post-process", help="post-process xmcd raw data", action="store_true")
     args = parser.parse_args()
     loglevel = 'DEBUG' if args.log else 'WARNING'
     logging.basicConfig(
@@ -125,10 +139,14 @@ if __name__ == '__main__':
     )
     filestr = open(args.infile,'r').read()
     # init RecursiveParser with file extension to identify data column separator
-    csv_parser = RecursiveParser(os.path.splitext(args.infile)[1][1:])
-    csv_parser.recursive_parse(filestr)
-    json.dump(
-        csv_parser.document, open('output.json','wb'),
-        indent=2, sort_keys=True
+    # and flag for post processing
+    csv_parser = RecursiveParser(
+        fileExt=os.path.splitext(args.infile)[1][1:],
+        post_process=args.post_process
     )
-    plot('output.json')
+    csv_parser.recursive_parse(filestr)
+    #json.dump(
+    #    csv_parser.document, open('output.json','wb'),
+    #    indent=2, sort_keys=True
+    #)
+    #plot('output.json')
