@@ -161,8 +161,8 @@ if __name__ == '__main__':
         post_process=(args.infile=='input_xmcd.tsv')
     )
     csv_parser.recursive_parse(filestr)
-    #json.dump(
-    #    csv_parser.document, open('output.json','wb'),
-    #    indent=2, sort_keys=True
-    #)
-    #plot('output.json')
+    json.dump(
+        csv_parser.document, open('output.json','wb'),
+        indent=2, sort_keys=True
+    )
+    plot('output.json')
