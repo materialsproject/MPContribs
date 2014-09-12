@@ -46,9 +46,8 @@ class RecursiveParser:
         self.post_process = post_process
         self.symbol = '>'
         self.min_level = 3 # minimum level to avoid collision w/ '>>'
-        self.max_level = 6 # maximum section-nesting supported
         self.level = self.min_level # level counter
-        self.section_titles = [None] * (self.max_level-self.min_level+1)
+        self.section_titles = []
         self.document = RecursiveDict({})
         # TODO better organize read_csv options -> config file?
         self.default_options = {
@@ -95,47 +94,44 @@ class RecursiveParser:
             outtype = 'list' if all_columns_numeric else 'records'
         )
 
+    def increase_level(self, next_title):
+        """increase and prepare for next section level"""
+        self.section_titles.append(next_title)
+        logging.info(self.section_titles)
+        self.level += 1
+
+    def reduce_level(self):
+        """reduce section level"""
+        self.section_titles.pop()
+        self.level -= 1
+
     def recursive_parse(self, file_string):
         """recursively parse sections according to number of separators"""
-        logging.info('-> new level: %d', self.level)
-        # return if below minimum section level
-        if self.level < self.min_level:
+        # split into section title line (even) and section body (odd entries)
+        sections = re.split(self.separator_regex(), file_string)
+        if len(sections) > 1:
+            sections = sections[1:] # https://docs.python.org/2/library/re.html#re.split
+            for section_index,section_body in enumerate(sections[1::2]):
+                clean_title = self.clean_title(sections[2*section_index])
+                self.increase_level(clean_title)
+                self.recursive_parse(section_body)
+                self.reduce_level()
+        else:
+            # separator level too high
             # read csv / convert section body to pandas object
-            section_titles = filter(None, self.section_titles)
-            pd_obj = self.read_csv(section_titles[-1], file_string)
+            pd_obj = self.read_csv(self.section_titles[-1], file_string)
             # example to post-process raw xmcd data before committing to DB
             # TODO: needs to be discussed and generalized
             # TODO: maybe implement for general case via df.apply()?
             #  http://pandas.pydata.org/pandas-docs/stable/basics.html#function-application
-            if self.post_process and section_titles[0] == 'xmcd':
+            if self.post_process and self.section_titles[0] == 'xmcd':
                 pd_obj = xmcd_post_process(pd_obj)
             logging.info(pd_obj)
             # update nested dict/document based on section level
             nested_dict = self.to_dict(pd_obj)
-            for key in reversed(section_titles):
+            for key in reversed(self.section_titles):
                 nested_dict = {key: nested_dict}
             self.document.rec_update(nested_dict)
-            logging.info('=========')
-            return
-        # split into section title line (even) and section body (odd entries)
-        sections = re.split(self.separator_regex(), file_string)
-        if len(sections) > 1:
-            logging.info('separator %s found', self.symbol*self.level)
-            sections = sections[1:] # https://docs.python.org/2/library/re.html#re.split
-            for section_index,section_body in enumerate(sections[1::2]):
-                clean_title = self.clean_title(sections[2*section_index])
-                level_index = self.max_level - self.level
-                self.section_titles[level_index] = clean_title
-                logging.info(self.section_titles)
-                self.level -= 1
-                self.recursive_parse(section_body)
-                self.level += 1
-                self.section_titles[level_index] = None
-        else:
-            # separator not found -> file_string = sections[0]
-            self.level -= 1
-            self.recursive_parse(file_string)
-            self.level += 1
 
 def plot(filename):
     """plot all data based on output.json (-> plot.ly in future?)"""
