@@ -1,8 +1,9 @@
 >>> GENERAL
 # - anything after section delimiter is parsed as section name, excl. comments
-# - number of '>'s denotes section level (depth), min. 3, max. 6
+# - number of '>'s denotes section level (depth), min. 3 to avoid collision with '>>' sign
 # - a general section with properties, settings and defaults. The MP might
 #   require certain unique row names in this section (snl-id, mp-id, xtal-name..)
+#   alternatively the mp-id can be repeated in each main section and a global GENERAL section be omitted
 snl-group-id: 12345
 mp-id: 1143
 # comment lines in (sub)section body are ignored
@@ -17,7 +18,7 @@ references: slany14, slany12 # bibtex-keys
 >>> CRYSTAL
 >>>> general
 # - use colon as separator for 'general' and 'plot' (sub-)sections
-# - simple list of key-value pairs
+# - simple list of key-value pairs (all section but 'data' currently interpreted this way)
 # - key serves as index -> needs to be unique
 # - separate header entry in general section is not necessary. Pandas already
 #   provides that since it is part of the data (user just "labels" the data)
@@ -35,7 +36,7 @@ thanks: my wife, Donald Duck, and Tom & Jerry
 # - key-value pairs in this section are passed through to df.plot() (not tested)
 x: alpha
 >>>> data
-# - 'data' sections are parsed with comma as delimiter
+# - 'data' sections are parsed with comma or tab as delimiter (dep. on file ending)
 # - always require header row in data section
 # - define column header like desired for axis labels (for now)
 alpha,beta,gamma
