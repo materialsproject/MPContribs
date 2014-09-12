@@ -8,6 +8,9 @@ import collections
 pd.options.display.mpl_style = 'default'
 
 def xmcd_post_process(pdobj):
+    # TODO: needs to be discussed and generalized
+    # TODO: maybe implement for general case via df.apply()?
+    #  http://pandas.pydata.org/pandas-docs/stable/basics.html#function-application
     # following check is enough if only 'data' section of type 'DataFrame'
     if isinstance(pdobj, pd.Series): return pdobj
     pdobj['Counter 1'] -= pdobj['Counter 0']
@@ -118,9 +121,6 @@ class RecursiveParser:
             # read csv / convert section body to pandas object
             pd_obj = self.read_csv(self.section_titles[-1], file_string)
             # example to post-process raw xmcd data before committing to DB
-            # TODO: needs to be discussed and generalized
-            # TODO: maybe implement for general case via df.apply()?
-            #  http://pandas.pydata.org/pandas-docs/stable/basics.html#function-application
             if self.post_process and self.section_titles[0] == 'xmcd':
                 pd_obj = xmcd_post_process(pd_obj)
             logging.info(pd_obj)
