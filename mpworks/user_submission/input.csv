@@ -27,7 +27,7 @@ publications: ja295760, ja295765 # bibtex-keys
 authors: nrel_authors # bibtex-key
 >>>>> comments
 acknowledgment: This dataset is the result of DOE grant 12345, NSF grant 12345, and the contributed efforts of many researchers. # line-wrapping?
-thanks: my wife, Donald Duck, and Tom & Jerry :)
+thanks: my wife, Donald Duck, and Tom & Jerry
 >>>> plot
 # 'plot' subsection:
 # - specify a plot and its options
