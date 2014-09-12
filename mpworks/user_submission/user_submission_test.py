@@ -47,7 +47,7 @@ class RecursiveParser:
         self.symbol = '>'
         self.min_level = 3 # minimum level to avoid collision w/ '>>'
         self.max_level = 6 # maximum section-nesting supported
-        self.level = self.max_level # level counter
+        self.level = self.min_level # level counter
         self.section_titles = [None] * (self.max_level-self.min_level+1)
         self.document = RecursiveDict({})
         # TODO better organize read_csv options -> config file?
@@ -62,7 +62,13 @@ class RecursiveParser:
 
     def separator_regex(self):
         """get separator regex for section depth/level"""
-        return r'\n*%s{%d}(.+)\n*' % (self.symbol, self.level)
+        # (?:  ) => non-capturing group
+        # (?:^|\n+) => match beginning of string OR one or more newlines
+        # >{3}\s+ => match '>' repeated 3 times followed by on or more spaces
+        #    require minimum one space after section level identifier
+        # (.+) => capturing group of one or more arbitrary characters
+        # \n+ => end by one or more newlines
+        return r'(?:^|\n+)%s{%d}\s+(.+)\n+' % (self.symbol, self.level)
 
     def clean_title(self, title):
         """strip in-line comments & spaces, make lower-case"""
