@@ -25,7 +25,7 @@ standards: fere, gwvd
 >>>>> bibtex # example for tree-like section nesting
 publications: ja295760, ja295765 # bibtex-keys
 authors: nrel_authors # bibtex-key
->>>>> comments:
+>>>>> comments
 acknowledgment: This dataset is the result of DOE grant 12345, NSF grant 12345, and the contributed efforts of many researchers. # line-wrapping?
 thanks: my wife, Donald Duck, and Tom & Jerry :)
 >>>> plot
