@@ -72,10 +72,14 @@
       ]
     }, 
     "general": {
-      "authors": "nrel_authors ", 
-      "comment": "This dataset is the result of DOE grant 12345, NSF grant 12345, and the contributed efforts of many researchers. ", 
-      "publications": "ja295760, ja295765 ", 
-      "standards": "fere, gwvd"
+      "bibtex": {
+        "authors": "nrel_authors ", 
+        "publications": "ja295760, ja295765 "
+      }, 
+      "comments": {
+        "acknowledgment": "This dataset is the result of DOE grant 12345, NSF grant 12345, and the contributed efforts of many researchers. ", 
+        "thanks": "my wife, Donald Duck, and Tom & Jerry"
+      }
     }, 
     "plot": {
       "x": "alpha"

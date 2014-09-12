@@ -50,14 +50,9 @@ class RecursiveParser:
         self.section_titles = []
         self.document = RecursiveDict({})
         # TODO better organize read_csv options -> config file?
-        self.default_options = {
-            'sep': '\t' if fileExt == 'tsv' else ',', 'header': 0 # data
-        }
+        data_separator = '\t' if fileExt == 'tsv' else ','
+        self.data_options = { 'sep': data_separator, 'header': 0 }
         self.colon_key_value_list = { 'sep': ':', 'header': None, 'index_col': 0 }
-        self.special_options = {
-            'general': self.colon_key_value_list,
-            'plot': self.colon_key_value_list
-        }
 
     def separator_regex(self):
         """get separator regex for section depth/level"""
@@ -75,9 +70,11 @@ class RecursiveParser:
 
     def read_csv(self, title, body):
         """run pandas.read_csv on (sub)section body"""
+        options = self.data_options if title == 'data' or (
+            title != 'general' and self.level-1 == self.min_level
+        ) else self.colon_key_value_list
         return pd.read_csv(
-            StringIO(body), comment='#', skipinitialspace=True, squeeze=True,
-            **self.special_options.get(title, self.default_options)
+            StringIO(body), comment='#', skipinitialspace=True, squeeze=True, **options
         )
 
     def to_dict(self, pandas_object):
@@ -117,7 +114,7 @@ class RecursiveParser:
                 self.recursive_parse(section_body)
                 self.reduce_level()
         else:
-            # separator level too high
+            # separator level not found b/c too high
             # read csv / convert section body to pandas object
             pd_obj = self.read_csv(self.section_titles[-1], file_string)
             # example to post-process raw xmcd data before committing to DB
