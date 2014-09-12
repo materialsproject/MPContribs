@@ -1,4 +1,4 @@
->>>> GENERAL
+>>> GENERAL
 # - anything after section delimiter is parsed as section name, excl. comments
 # - number of '>'s denotes section level (depth), min. 3, max. 6
 # - a general section with properties, settings and defaults. The MP might
@@ -14,24 +14,27 @@ fsg name: R-3c
 submitters: slany@nrel.gov, pgraf@nrel.gov # usernames = email addresses
 references: slany14, slany12 # bibtex-keys
 
->>>> CRYSTAL
->>> general
+>>> CRYSTAL
+>>>> general
 # - use colon as separator for 'general' and 'plot' (sub-)sections
 # - simple list of key-value pairs
 # - key serves as index -> needs to be unique
 # - separate header entry in general section is not necessary. Pandas already
 #   provides that since it is part of the data (user just "labels" the data)
-publications: ja295760, ja295765 # bibtex-keys
 standards: fere, gwvd
+>>>>> bibtex # example for tree-like section nesting
+publications: ja295760, ja295765 # bibtex-keys
 authors: nrel_authors # bibtex-key
-comment: This dataset is the result of DOE grant 12345, NSF grant 12345, and the contributed efforts of many researchers. # line-wrapping?
->>> plot
+>>>>> comments:
+acknowledgment: This dataset is the result of DOE grant 12345, NSF grant 12345, and the contributed efforts of many researchers. # line-wrapping?
+thanks: my wife, Donald Duck, and Tom & Jerry :)
+>>>> plot
 # 'plot' subsection:
 # - specify a plot and its options
 # - supports columns to be plotted referred to by header name
 # - key-value pairs in this section are passed through to df.plot() (not tested)
 x: alpha
->>> data
+>>>> data
 # - 'data' sections are parsed with comma as delimiter
 # - always require header row in data section
 # - define column header like desired for axis labels (for now)
@@ -42,14 +45,14 @@ alpha,beta,gamma
 40,41,42
 50,51,52
 
->>>> BAND GAPS
+>>> BAND GAPS
 # a section with a simple list of annotated numbers including units. The number
 # can have multiple columns to provide info on the respective conditions under
 # which the number was generated, for instance.
->>> plot
+>>>> plot
 x: name
 kind: bar
->>> data
+>>>> data
 name,type,functional,method,value,unit
 band gap,indirect,GLLB-SC,Kohn-Sham,6.887038,eV
 band gap,direct,GLLB-SC,Kohn-Sham,6.886986,eV
@@ -57,7 +60,7 @@ band gap,indirect,GLLB-SC,quasi-particle,9.315470,eV
 band gap,direct,GLLB-SC,quasi-particle,9.315419,eV
 deriv. discont.,,GLLB-SC,,2.42833,eV
 
->>>> ELASTIC TENSOR
+>>> ELASTIC TENSOR
 # no subsections -> parsed as 'data'
 Matrix,Exp.,Theo.,Ref.
 c11,287.0,284.7,PSP11 # bibtex-key
@@ -70,10 +73,10 @@ c23,122.0,122.7,PSP11
 c12,128.7,133.3
 c13,116.3,115.4
 
->>>> DIELECTRIC CONSTANT
->>> plot #  no y-axis headers -> overlay all y_i vs x in plot
+>>> DIELECTRIC CONSTANT
+>>>> plot #  no y-axis headers -> overlay all y_i vs x in plot
 x: freq
->>> data
+>>>> data
 freq,real,imag
 0,2.0065,0
 0.5,2.0073,0
@@ -177,8 +180,8 @@ freq,real,imag
 49.5,0.6447,0.1628
 50,0.4838,0.1625
 
->>>> XMCD
->>> general
+>>> XMCD
+>>>> general
 mp-id: mp-54 # multiple mp-id's per csv yet to be decided
 Date: 8/11/2014
 #From File C:\experiments\Alpha\Googledrive\Beamline\Scanfiles\aperture_scan_long_xmcd_part2.scn
@@ -187,9 +190,9 @@ Count Time (s): 3.50000000
 Scan Number: 1
 Stay at End: 1
 Description Length: 0
->>> plot
+>>>> plot
 x: Energy
->>> data
+>>>> data
 Energy,Intensity B<0,Intensity B>0,XAS,XMCD
 755.73651123,0.08770159571747617,0.08229754835057994,0.08499957203402805,0.005404047366896231
 760.99865723,0.08111457285575464,0.08104228193740101,0.08107842739657783,7.229091835363188e-05
