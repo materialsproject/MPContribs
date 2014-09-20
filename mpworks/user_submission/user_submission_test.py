@@ -143,6 +143,24 @@ def plot(filename):
         pd.DataFrame.from_dict(data).plot(ax=ax, **plotopts)
         plt.savefig('png/%s' % key.replace(' ','_'), dpi=300, bbox_inches='tight')
 
+def submit_snl_from_cif(metadata_file):
+        """
+        method to submit StructureNL object generated from CIF file via separate
+        MetaData in RecursiveParser format. Developed to be used for the
+        submission of new structures during RSC publishing process (pilot
+        project).
+
+        Args:
+            metadata_file: name of file parsed via RecursiveParser
+        """
+        from mpworks.submission.submission_mongo import SubmissionMongoAdapter
+        from pymatgen.matproj.snl import StructureNL
+        sma = SubmissionMongoAdapter.auto_load()
+        # doc = recursive_parse(...)
+        structure = Structure.from_file(cif_file)
+        snl = StructureNL(s, authors) # from_dict using rec_parser.document?
+        sma.submit_snl(snl, submitter_email)
+
 if __name__ == '__main__':
     import argparse, os
     parser = argparse.ArgumentParser()

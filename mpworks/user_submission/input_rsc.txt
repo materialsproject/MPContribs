@@ -1,0 +1,9 @@
+>>> GENERAL
+cif_file: ./test_files/Fe3O4.cif # underscores in keys necessary?
+submitter_email: Patrick Huck <phuck@lbl.gov>
+authors: John Doe <johndoe@gmail.com>, Test User <test@materialsproject.org>
+references: rsc.bib # interpret as bibtex-string if starts w/ @ else as bibfile name
+#remarks: ['Remark A', 'Remark B']
+#projects: ['Project A', 'Project B']
+#history: [{'name':'', 'url':'', 'description':{}}]
+#data: {"_materialsproject": <custom data>}
