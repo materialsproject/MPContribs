@@ -143,44 +143,53 @@ def plot(filename):
         pd.DataFrame.from_dict(data).plot(ax=ax, **plotopts)
         plt.savefig('png/%s' % key.replace(' ','_'), dpi=300, bbox_inches='tight')
 
-def submit_snl_from_cif(metadata_file):
+def submit_snl_from_cif(submitter_email, cif_file, metadata_file):
         """
         method to submit StructureNL object generated from CIF file via separate
-        MetaData in RecursiveParser format. Developed to be used for the
+        file containing MetaData in YAML format. Developed to be used for the
         submission of new structures during RSC publishing process (pilot
         project).
 
         Args:
-            metadata_file: name of file parsed via RecursiveParser
+            metadata_file: name of file parsed via monty's loadfn
         """
-        from mpworks.submission.submission_mongo import SubmissionMongoAdapter
+        from monty.serialization import loadfn
+        from pymatgen.core import Structure
         from pymatgen.matproj.snl import StructureNL
-        sma = SubmissionMongoAdapter.auto_load()
-        # doc = recursive_parse(...)
+        #from mpworks.submission.submission_mongo import SubmissionMongoAdapter
         structure = Structure.from_file(cif_file)
-        snl = StructureNL(s, authors) # from_dict using rec_parser.document?
-        sma.submit_snl(snl, submitter_email)
+        config = loadfn(metadata_file)
+        if not config['references'].startswith('@'):
+            config['references'] = open(config['references'],'r').read()
+        snl = StructureNL(structure, **config)
+        #sma = SubmissionMongoAdapter.auto_load()
+        #sma.submit_snl(snl, submitter_email)
 
 if __name__ == '__main__':
     import argparse, os
     parser = argparse.ArgumentParser()
-    parser.add_argument("infile", help="mp-formatted csv/tsv file")
+    parser.add_argument("--infile", help="mp-formatted csv/tsv file")
     parser.add_argument("--log", help="show log output", action="store_true")
     args = parser.parse_args()
     loglevel = 'DEBUG' if args.log else 'WARNING'
     logging.basicConfig(
         format='%(message)s', level=getattr(logging, loglevel)
     )
-    filestr = open(args.infile,'r').read()
-    # init RecursiveParser with file extension to identify data column separator
-    # and flag for post processing
-    csv_parser = RecursiveParser(
-        fileExt=os.path.splitext(args.infile)[1][1:],
-        post_process=(args.infile=='input_xmcd.tsv')
-    )
-    csv_parser.recursive_parse(filestr)
-    json.dump(
-        csv_parser.document, open('output.json','wb'),
-        indent=2, sort_keys=True
-    )
-    plot('output.json')
+    if args.infile is None:
+        submit_snl_from_cif(
+            'Patrick Huck <phuck@lbl.gov>', 'Fe3O4.cif', 'input_rsc.yaml'
+        )
+    else:
+        filestr = open(args.infile,'r').read()
+        # init RecursiveParser with file extension to identify data column separator
+        # and flag for post processing
+        csv_parser = RecursiveParser(
+            fileExt=os.path.splitext(args.infile)[1][1:],
+            post_process=(args.infile=='input_xmcd.tsv')
+        )
+        csv_parser.recursive_parse(filestr)
+        json.dump(
+            csv_parser.document, open('output.json','wb'),
+            indent=2, sort_keys=True
+        )
+        plot('output.json')
