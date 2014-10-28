@@ -140,8 +140,9 @@ def plot(filename):
         fig, ax = plt.subplots(1, 1)
         plotopts = value.get('plot', {}) if value_is_dict else {}
         #if plotopts.get('table'): ax.get_xaxis().set_visible(False)
-        pd.DataFrame.from_dict(data).plot(ax=ax, **plotopts)
-        plt.savefig('png/%s' % key.replace(' ','_'), dpi=300, bbox_inches='tight')
+        if data is not None:
+            pd.DataFrame.from_dict(data).plot(ax=ax, **plotopts)
+            plt.savefig('png/%s' % key.replace(' ','_'), dpi=300, bbox_inches='tight')
 
 def submit_snl_from_cif(submitter_email, cif_file, metadata_file):
         """
@@ -172,6 +173,7 @@ if __name__ == '__main__':
     import argparse, os
     parser = argparse.ArgumentParser()
     parser.add_argument("--infile", help="mp-formatted csv/tsv file")
+    parser.add_argument("--outfile", help="json output file", default='output.json')
     parser.add_argument("--log", help="show log output", action="store_true")
     args = parser.parse_args()
     loglevel = 'DEBUG' if args.log else 'WARNING'
@@ -192,7 +194,7 @@ if __name__ == '__main__':
         )
         csv_parser.recursive_parse(filestr)
         json.dump(
-            csv_parser.document, open('output.json','wb'),
+            csv_parser.document, open(args.outfile, 'wb'),
             indent=2, sort_keys=True
         )
-        plot('output.json')
+        plot(args.outfile)
