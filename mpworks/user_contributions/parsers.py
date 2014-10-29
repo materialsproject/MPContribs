@@ -2,6 +2,7 @@ import re, logging
 import numpy as np
 import pandas as pd
 from StringIO import StringIO
+import config
 
 class RecursiveDict(dict):
     """https://gist.github.com/Xjs/114831"""
@@ -17,15 +18,10 @@ class RecursiveDict(dict):
 
 class RecursiveParser:
     def __init__(self):
-        self.symbol = '>'
-        self.min_level = 3 # minimum level to avoid collision w/ '>>'
-        self.level = self.min_level # level counter
+        self.level = config.min_indent_level # level counter
         self.section_titles = []
         self.document = RecursiveDict({})
         self.mp_nested_keys = []
-        self.mp_category_keys = [ # TODO: not final
-            'mp_id', 'composition', 'chemical_system'
-        ]
 
     def set_options(self, fileExt):
         """set read_csv options"""
@@ -44,19 +40,24 @@ class RecursiveParser:
         #    require minimum one space after section level identifier
         # (.+) => capturing group of one or more arbitrary characters
         # \n+ => end by one or more newlines
-        return r'(?:^|\n+)%s{%d}\s+(.+)\n+' % (self.symbol, self.level)
+        return r'(?:^|\n+)%s{%d}\s+(.+)\n+' % (config.indent_symbol, self.level)
 
     def clean_title(self, title):
         """strip in-line comments & spaces, make lower-case"""
-        return re.split(r'#*', title)[0].strip().lower()
+        return re.split(
+            r'%s*' % config.csv_comment_char, title
+        )[0].strip().lower()
 
     def read_csv(self, title, body):
         """run pandas.read_csv on (sub)section body"""
-        options = self.data_options if title == 'data' or (
-            title != 'general' and self.level-1 == self.min_level
+        options = self.data_options
+        if title == config.mp_level01_titles[1] or ( # 'data'
+            title != config.mp_level01_titles[0] and # 'general'
+            self.level-1 == config.min_indent_level
         ) else self.colon_key_value_list
         return pd.read_csv(
-            StringIO(body), comment='#', skipinitialspace=True, squeeze=True, **options
+            StringIO(body), comment=config.csv_comment_char,
+            skipinitialspace=True, squeeze=True, **options
         )
 
     def to_dict(self, pandas_object):
@@ -104,7 +105,7 @@ class RecursiveParser:
             # TODO: include validation
             # append/save nested location of special MP category keys
             if pd_obj.index.dtype != np.int64:
-                for cat_key in self.mp_category_keys:
+                for cat_key in config.mp_category_keys:
                     if cat_key in pd_obj.index.values:
                         self.mp_nested_keys.append(
                             '.'.join(self.section_titles+[cat_key])
