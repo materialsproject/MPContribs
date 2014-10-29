@@ -18,7 +18,7 @@ def plot(filename):
 
 if __name__ == '__main__':
     import argparse, os, logging, json
-    from rest import submit_contribution#,submit_snl_from_cif
+    from rest import ContributionMongoAdapter#,submit_snl_from_cif
     from parsers import RecursiveParser
     parser = argparse.ArgumentParser()
     parser.add_argument("--infile", help="mp-formatted csv/tsv file",
@@ -31,7 +31,10 @@ if __name__ == '__main__':
     logging.basicConfig(
         format='%(message)s', level=getattr(logging, loglevel)
     )
-    parser = submit_contribution(open(args.infile,'r'))
+    cma = ContributionMongoAdapter()
+    parser = cma.submit_contribution(
+        open(args.infile,'r'), 'Patrick Huck <phuck@lbl.gov>'
+    )
     json.dump(
         parser.document, open(args.outfile, 'wb'),
         indent=2, sort_keys=True
