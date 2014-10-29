@@ -10,13 +10,16 @@ class CsvInputFile(object):
         """get an arbitrary level-n section line
 
         - format: ">*n TITLE/title # comment"
-        - also use 'general' for level-0/level-1 titles
-        - also user 'plot'/'data' for level-1 titles
+        - use one of config.mp_level01_titles a few times
+        - only config.mp_level01_titles[0] is allowed to be level-0 title
         - append comment using config.csv_comment_char
         - make level-0 titles all-caps
         """
         indentor = config.indent_symbol * (config.min_indent_level + n)
-        title = self.fake.word()
+        allowed_level_titles = config.mp_level01_titles[:1 if n == 0 else None]
+        title = self.fake.random_element(elements=allowed_level_titles) \
+                if self.fake.boolean(chance_of_getting_true=25) and n < 2 \
+                else self.fake.word()
         comment = self.fake.text(max_nb_chars=50)
         return ' '.join([
             indentor, title.upper() if n == 0 else title,
