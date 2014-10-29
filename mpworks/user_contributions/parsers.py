@@ -16,13 +16,18 @@ class RecursiveDict(dict):
                 self[key] = value
 
 class RecursiveParser:
-    def __init__(self, fileExt='csv'):
+    def __init__(self):
         self.symbol = '>'
         self.min_level = 3 # minimum level to avoid collision w/ '>>'
         self.level = self.min_level # level counter
         self.section_titles = []
         self.document = RecursiveDict({})
+
+    def set_options(self, fileExt):
+        """set read_csv options"""
         # TODO better organize read_csv options -> config file?
+        if fileExt != 'csv' and fileExt != 'tsv':
+            raise ValueError('%s format not supported!' % fileExt)
         data_separator = '\t' if fileExt == 'tsv' else ','
         self.data_options = { 'sep': data_separator, 'header': 0 }
         self.colon_key_value_list = { 'sep': ':', 'header': None, 'index_col': 0 }
@@ -75,8 +80,9 @@ class RecursiveParser:
         self.section_titles.pop()
         self.level -= 1
 
-    def recursive_parse(self, file_string):
+    def parse(self, file_string, fileExt='csv'):
         """recursively parse sections according to number of separators"""
+        self.set_options(fileExt)
         # split into section title line (even) and section body (odd entries)
         sections = re.split(self.separator_regex(), file_string)
         if len(sections) > 1:
@@ -84,7 +90,7 @@ class RecursiveParser:
             for section_index,section_body in enumerate(sections[1::2]):
                 clean_title = self.clean_title(sections[2*section_index])
                 self.increase_level(clean_title)
-                self.recursive_parse(section_body)
+                self.parse(section_body)
                 self.reduce_level()
         else:
             # separator level not found b/c too high
