@@ -76,10 +76,12 @@ class ContributionMongoAdapter(object):
         fileExt = os.path.splitext(input_handle.name)[1][1:]
         parser.parse(input_handle.read(), fileExt=fileExt)
         # TODO: implement update/replace based on contribution_id=None
+        # TODO: catch no mp_nested_keys found
         doc = {
             'contributor_email': contributor_email,
             'contribution_id': self._get_next_contribution_id(),
             'contributed_at': datetime.datetime.utcnow().isoformat(),
+            'mp_nested_keys': parser.mp_nested_keys,
             'contribution_data': parser.document
         }
         self.contributions.insert(doc)
