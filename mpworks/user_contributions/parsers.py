@@ -22,6 +22,10 @@ class RecursiveParser:
         self.level = self.min_level # level counter
         self.section_titles = []
         self.document = RecursiveDict({})
+        self.mp_nested_keys = []
+        self.mp_category_keys = [ # TODO: not final
+            'mp_id', 'composition', 'chemical_system'
+        ]
 
     def set_options(self, fileExt):
         """set read_csv options"""
@@ -96,8 +100,16 @@ class RecursiveParser:
             # separator level not found b/c too high
             # read csv / convert section body to pandas object
             pd_obj = self.read_csv(self.section_titles[-1], file_string)
-            # TODO: include validation
             logging.info(pd_obj)
+            # TODO: include validation
+            # append/save nested location of special MP category keys
+            if pd_obj.index.dtype != np.int64:
+                for cat_key in self.mp_category_keys:
+                    if cat_key in pd_obj.index.values:
+                        self.mp_nested_keys.append(
+                            '.'.join(self.section_titles+[cat_key])
+                        )
+                        break # cat_keys mutually exclusive per (sub)section
             # update nested dict/document based on section level
             nested_dict = self.to_dict(pd_obj)
             for key in reversed(self.section_titles):
