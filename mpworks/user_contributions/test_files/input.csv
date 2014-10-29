@@ -63,7 +63,7 @@ deriv. discont.,,GLLB-SC,,2.42833,eV
 
 >>> ELASTIC TENSOR
 # no subsections -> parsed as 'data'
-Matrix,Exp.,Theo.,Ref.
+Matrix,Experiment,Theory,Reference
 c11,287.0,284.7,PSP11 # bibtex-key
 c22,302.1,299.5
 c33,266.1,248.1,PSP11

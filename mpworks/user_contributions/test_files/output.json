@@ -403,58 +403,58 @@
   }, 
   "elastic tensor": [
     {
-      "Exp.": 287.0, 
+      "Experiment": 287.0, 
       "Matrix": "c11", 
-      "Ref.": "PSP11 ", 
-      "Theo.": 284.7
+      "Reference": "PSP11 ", 
+      "Theory": 284.7
     }, 
     {
-      "Exp.": 302.1, 
+      "Experiment": 302.1, 
       "Matrix": "c22", 
-      "Ref.": NaN, 
-      "Theo.": 299.5
+      "Reference": NaN, 
+      "Theory": 299.5
     }, 
     {
-      "Exp.": 266.1, 
+      "Experiment": 266.1, 
       "Matrix": "c33", 
-      "Ref.": "PSP11", 
-      "Theo.": 248.1
+      "Reference": "PSP11", 
+      "Theory": 248.1
     }, 
     {
-      "Exp.": 117.2, 
+      "Experiment": 117.2, 
       "Matrix": "c44", 
-      "Ref.": NaN, 
-      "Theo.": 100.9
+      "Reference": NaN, 
+      "Theory": 100.9
     }, 
     {
-      "Exp.": 80.2, 
+      "Experiment": 80.2, 
       "Matrix": "c55", 
-      "Ref.": NaN, 
-      "Theo.": 81.5
+      "Reference": NaN, 
+      "Theory": 81.5
     }, 
     {
-      "Exp.": 85.6, 
+      "Experiment": 85.6, 
       "Matrix": "c66", 
-      "Ref.": NaN, 
-      "Theo.": 83.7
+      "Reference": NaN, 
+      "Theory": 83.7
     }, 
     {
-      "Exp.": 122.0, 
+      "Experiment": 122.0, 
       "Matrix": "c23", 
-      "Ref.": "PSP11", 
-      "Theo.": 122.7
+      "Reference": "PSP11", 
+      "Theory": 122.7
     }, 
     {
-      "Exp.": 128.7, 
+      "Experiment": 128.7, 
       "Matrix": "c12", 
-      "Ref.": NaN, 
-      "Theo.": 133.3
+      "Reference": NaN, 
+      "Theory": 133.3
     }, 
     {
-      "Exp.": 116.3, 
+      "Experiment": 116.3, 
       "Matrix": "c13", 
-      "Ref.": NaN, 
-      "Theo.": 115.4
+      "Reference": NaN, 
+      "Theory": 115.4
     }
   ], 
   "general": {

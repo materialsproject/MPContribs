@@ -1,4 +1,4 @@
-import os
+import os, datetime
 from monty.serialization import loadfn
 from pymatgen.core import Structure
 from pymatgen.matproj.snl import StructureNL
@@ -59,7 +59,8 @@ class ContributionMongoAdapter(object):
         )['next_contribution_id']
 
     def submit_contribution(
-        input_handle, contribution_id=None, parser=RecursiveParser()
+        self, input_handle, contributor_email, contribution_id=None,
+        parser=RecursiveParser()
     ):
         """submit user data to `user_contributions` database
 
@@ -74,4 +75,12 @@ class ContributionMongoAdapter(object):
             )
         fileExt = os.path.splitext(input_handle.name)[1][1:]
         parser.parse(input_handle.read(), fileExt=fileExt)
+        # TODO: implement update/replace based on contribution_id=None
+        doc = {
+            'contributor_email': contributor_email,
+            'contribution_id': self._get_next_contribution_id(),
+            'contributed_at': datetime.datetime.utcnow().isoformat(),
+            'contribution_data': parser.document
+        }
+        self.contributions.insert(doc)
         return parser # TODO: return contribution id
