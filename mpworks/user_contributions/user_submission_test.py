@@ -173,7 +173,7 @@ if __name__ == '__main__':
     import argparse, os
     parser = argparse.ArgumentParser()
     parser.add_argument("--infile", help="mp-formatted csv/tsv file")
-    parser.add_argument("--outfile", help="json output file", default='output.json')
+    parser.add_argument("--outfile", help="json output file", default='test_files/output.json')
     parser.add_argument("--log", help="show log output", action="store_true")
     args = parser.parse_args()
     loglevel = 'DEBUG' if args.log else 'WARNING'
@@ -182,7 +182,8 @@ if __name__ == '__main__':
     )
     if args.infile is None:
         submit_snl_from_cif(
-            'Patrick Huck <phuck@lbl.gov>', 'Fe3O4.cif', 'input_rsc.yaml'
+            'Patrick Huck <phuck@lbl.gov>', 'test_filesFe3O4.cif',
+            'test_files/input_rsc.yaml'
         )
     else:
         filestr = open(args.infile,'r').read()
@@ -190,7 +191,7 @@ if __name__ == '__main__':
         # and flag for post processing
         csv_parser = RecursiveParser(
             fileExt=os.path.splitext(args.infile)[1][1:],
-            post_process=(args.infile=='input_xmcd.tsv')
+            post_process=(args.infile=='test_files/input_xmcd.tsv')
         )
         csv_parser.recursive_parse(filestr)
         json.dump(
