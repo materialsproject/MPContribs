@@ -4,6 +4,7 @@ from pymatgen.core import Structure
 from pymatgen.matproj.snl import StructureNL
 from mpworks.submission.submission_mongo import SubmissionMongoAdapter
 from parsers import RecursiveParser
+from pymongo import MongoClient
 
 def submit_snl_from_cif(submitter_email, cif_file, metadata_file):
     """submit StructureNL via CIF and YAML MetaData files
@@ -27,21 +28,50 @@ def submit_snl_from_cif(submitter_email, cif_file, metadata_file):
     snl = StructureNL(structure, **config)
     sma.submit_snl(snl, submitter_email)
 
+def create_db(host='localhost', port=27017, db_name='user_contributions'):
+    """create database and add user for testing"""
+    client = MongoClient(host, port, j=True)
+    client.drop_database(db_name)
+    client[db_name].add_user('test', 'test', read_only=False)
 
-def submit_contribution(
-    input_handle, contribution_id=None, parser=RecursiveParser()
-):
-    """submit user data to `user_contributions` database
 
-    Args:
-    input_handle: object to "connect" to input, i.e. file handle
-    contribution_id: None if new contribution else update/replace
-    parser: parser class to use on input handle
-    """
-    if not isinstance(input_handle, file):
-        raise TypeError(
-            'type %r not supported as input handle!' % type(input_handle)
-        )
-    fileExt = os.path.splitext(input_handle.name)[1][1:]
-    parser.parse(input_handle.read(), fileExt=fileExt)
-    return parser
+class ContributionMongoAdapter(object):
+    """adapter/interface for user contributions"""
+    def __init__(
+        self, host='localhost', port=27017, db_name='user_contributions',
+        username='test', password='test'
+    ):
+        client = MongoClient(host, port, j=False)
+        client[db_name].authenticate(username, password)
+        self.id_assigner = client[db_name].id_assigner
+        self.contributions = client[db_name].contributions
+
+    def _reset(self):
+        """reset all collections"""
+        self.contributions.remove()
+        self.id_assigner.remove()
+        self.id_assigner.insert({'next_contribution_id': 1})
+
+    def _get_next_contribution_id(self):
+        """get the next contribution id"""
+        return self.id_assigner.find_and_modify(
+            update={'$inc': {'next_contribution_id': 1}}
+        )['next_contribution_id']
+
+    def submit_contribution(
+        input_handle, contribution_id=None, parser=RecursiveParser()
+    ):
+        """submit user data to `user_contributions` database
+
+        Args:
+        input_handle: object to "connect" to input, i.e. file handle
+        contribution_id: None if new contribution else update/replace
+        parser: parser class to use on input handle
+        """
+        if not isinstance(input_handle, file):
+            raise TypeError(
+                'type %r not supported as input handle!' % type(input_handle)
+            )
+        fileExt = os.path.splitext(input_handle.name)[1][1:]
+        parser.parse(input_handle.read(), fileExt=fileExt)
+        return parser # TODO: return contribution id
