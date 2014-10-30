@@ -29,11 +29,17 @@ class CsvInputFile(object):
         - format: ">*n TITLE/title # comment"
         - use one of config.mp_level01_titles a few times
         - only config.mp_level01_titles[0] is allowed to be level-0 title
+        - config.mp_level01_titles[0] cannot contain itself
         - append comment using config.csv_comment_char now and then
         - make level-0 titles all-caps
         """
         indentor = config.indent_symbol * (config.min_indent_level + n)
-        allowed_level_titles = config.mp_level01_titles[:1 if n == 0 else None]
+        if n == 0:
+            allowed_level_titles = [config.mp_level01_titles[0]]
+        elif self.section_titles[-1] == config.mp_level01_titles[0]:
+            allowed_level_titles = config.mp_level01_titles[1:]
+        else:
+            allowed_level_titles = config.mp_level01_titles
         title = self.fake.random_element(elements=allowed_level_titles) \
                 if self.fake.boolean(
                     chance_of_getting_true=mp_title_prob
@@ -47,7 +53,7 @@ class CsvInputFile(object):
         """print key-value pair
         
         - type(key) = str, type(value) = anything
-        - mix in mp_category_keys according to rules
+        - mix in mp_category_keys (according to rules?)
         - append comment now and then
         """
         while 1:
@@ -74,7 +80,7 @@ class CsvInputFile(object):
         print repr(': '.join([key, value]) + self._get_comment())
 
     def _make_level_n_section(
-        self, n, max_level, max_num_subsec, max_data_rows=5
+        self, n, max_level, max_num_subsec=2, max_data_rows=5
     ):
         """recursively generate nested level-n section
         
@@ -91,6 +97,7 @@ class CsvInputFile(object):
                 else 0
         for i in range(num_subsec):
             self._make_level_n_section(n+1, max_level, max_num_subsec)
+            self.section_titles.pop()
         # all subsections processed
         if num_subsec == 0:
             if self.section_titles[-1] == config.mp_level01_titles[1]:
@@ -98,11 +105,9 @@ class CsvInputFile(object):
             else:
                 for r in range(max_data_rows):
                     self._print_key_value()
-            if self.section_titles:
-                self.section_titles.pop()
 
     def make_file(self, num_level0_sections=2, max_level=3):
         """produce a fake file structure"""
-        pass
-
+        for i in range(num_level0_sections):
+            self._make_level_n_section(0, max_level)
 
