@@ -44,10 +44,11 @@ class CsvInputFile(object):
         ])
 
     def _print_key_value(self):
-        """print key-value pair incl. comment
+        """print key-value pair
         
         - type(key) = str, type(value) = anything
         - mix in mp_category_keys according to rules
+        - append comment now and then
         """
         while 1:
             provider_name = self.fake.random_element(elements=DEFAULT_PROVIDERS)
@@ -70,7 +71,7 @@ class CsvInputFile(object):
                 break
         key = '_'.join([provider_name, method_name])
         value = str(method()) # NOTE: allows dicts, lists to be saved as value
-        print repr(': '.join([key, value]))
+        print repr(': '.join([key, value]) + self._get_comment())
 
     def _make_level_n_section(
         self, n, max_level, max_num_subsec, max_data_rows=5
