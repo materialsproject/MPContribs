@@ -1,4 +1,5 @@
-from faker import Faker
+import inspect
+from faker import Faker, DEFAULT_PROVIDERS
 import config
 
 class CsvInputFile(object):
@@ -42,7 +43,38 @@ class CsvInputFile(object):
             indentor, title.upper() if n == 0 else title, self._get_comment()
         ])
 
-    def _make_level_n_section(self, n, max_level, max_num_subsec):
+    def _print_key_value(self):
+        """print key-value pair incl. comment
+        
+        - type(key) = str, type(value) = anything
+        - mix in mp_category_keys according to rules
+        """
+        while 1:
+            provider_name = self.fake.random_element(elements=DEFAULT_PROVIDERS)
+            if provider_name != 'python': break
+        provider = self.fake.provider(provider_name)
+        methods = [
+            k for k,v in inspect.getmembers(
+                provider, predicate=inspect.ismethod
+            ) if k != '__init__'
+        ]
+        while 1:
+            method_name = self.fake.random_element(elements=methods)
+            method = getattr(provider, method_name)
+            argspec = inspect.getargspec(method)
+            nargs = len(argspec.args)
+            if ( argspec.defaults is None and nargs == 1 ) or (
+                argspec.defaults is not None and
+                nargs-1 == len(argspec.defaults)
+            ):
+                break
+        key = '_'.join([provider_name, method_name])
+        value = str(method()) # NOTE: allows dicts, lists to be saved as value
+        print repr(': '.join([key, value]))
+
+    def _make_level_n_section(
+        self, n, max_level, max_num_subsec, max_data_rows=5
+    ):
         """recursively generate nested level-n section
         
         - config.mp_level01_titles[1:] don't have subsections, all others can
@@ -63,7 +95,8 @@ class CsvInputFile(object):
             if self.section_titles[-1] == config.mp_level01_titles[1]:
                 print '  ==> insert csv'
             else:
-                print '  ==> insert key:value'
+                for r in range(max_data_rows):
+                    self._print_key_value()
             if self.section_titles:
                 self.section_titles.pop()
 
