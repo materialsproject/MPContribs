@@ -1,4 +1,5 @@
 import inspect
+from fnmatch import fnmatch
 from faker import Faker, DEFAULT_PROVIDERS
 import config
 
@@ -7,6 +8,7 @@ class CsvInputFile(object):
     def __init__(self):
         self.fake = Faker()
         self.section_titles = []
+        self.section_structure = []
 
     def _get_comment(self, comment_prob=20, max_comment_length=20):
         """return a comment"""
@@ -94,7 +96,7 @@ class CsvInputFile(object):
         print repr(': '.join([key, str(value)]) + self._get_comment())
 
     def _make_level_n_section(
-        self, level0_sec_num, n, max_level, max_num_subsec=2, max_data_rows=3
+        self, level0_sec_num, n, max_level, max_num_subsec=3, max_data_rows=3
     ):
         """recursively generate nested level-n section
         
@@ -113,6 +115,7 @@ class CsvInputFile(object):
             self._make_level_n_section(
                 level0_sec_num, n+1, max_level, max_num_subsec
             )
+            self.section_structure.append('.'.join(self.section_titles))
             self.section_titles.pop()
         # all subsections processed
         if num_subsec == 0:
@@ -128,10 +131,25 @@ class CsvInputFile(object):
                     ) # first entry in level-0 'general' section
                     self._print_key_value(use_mp_cat_key)
 
+    def level0_section_ok(self):
+        """check level0 section structure"""
+        reduced_structure = []
+        for title in config.mp_level01_titles:
+            reduced_structure.append([
+                el for el in self.section_structure
+                if fnmatch(el, '*.%s' % title)
+            ])
+        ok = (len(reduced_structure[2]) > 0 and len(reduced_structure[1]) < 1)
+        self.section_structure = []
+        return ok
+
     def make_file(self, num_level0_sections=2, max_level=3):
         """produce a fake file structure"""
         for i in range(num_level0_sections):
-            self._make_level_n_section(i, 0, max_level)
-            self.section_titles.pop()
+            while 1:
+                self._make_level_n_section(i, 0, max_level)
+                self.section_titles.pop()
+                if self.level0_section_ok():
+                    break
             print ''
 
