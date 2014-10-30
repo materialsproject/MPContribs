@@ -7,9 +7,22 @@ class CsvInputFile(object):
         self.fake = Faker()
         self.section_titles = []
 
-    def _get_level_n_section_line(
-        self, n, mp_title_prob=25, comment_prob=50, max_comment_length=20
-    ):
+    def _get_comment(self, comment_prob=20, max_comment_length=20):
+        """return a comment"""
+        return ' '.join([
+            config.csv_comment_char,
+            self.fake.text(max_nb_chars=max_comment_length)
+        ]) if self.fake.boolean(chance_of_getting_true=comment_prob) \
+        else ''
+
+    def _print_comments(self, max_lines=3):
+        """get multiple lines of comments"""
+        for i in range(self.fake.random_int(max=max_lines)):
+            comment = self._get_comment()
+            if comment != '':
+                print comment
+
+    def _get_level_n_section_line(self, n, mp_title_prob=80):
         """get an arbitrary level-n section line
 
         - format: ">*n TITLE/title # comment"
@@ -25,26 +38,24 @@ class CsvInputFile(object):
                     chance_of_getting_true=mp_title_prob
                 ) and n < 2 else self.fake.word()
         self.section_titles.append(title)
-        comment = self.fake.text(max_nb_chars=max_comment_length) \
-                if self.fake.boolean(chance_of_getting_true=comment_prob) \
-                else ''
         return ' '.join([
-            indentor, title.upper() if n == 0 else title,
-            config.csv_comment_char if comment != '' else '',
-            comment
+            indentor, title.upper() if n == 0 else title, self._get_comment()
         ])
 
     def _make_level_n_section(self, n, max_level, max_num_subsec):
         """recursively generate nested level-n section
         
-        - config.mp_level01_titles[1:] don't have subsections, all else can
+        - config.mp_level01_titles[1:] don't have subsections, all others can
+        - config.mp_level01_titles[1] has csv format, all others key:value
+        - randomly throw in comment lines
         """
+        self._print_comments()
         print self._get_level_n_section_line(n)
+        self._print_comments()
         num_subsec = self.fake.random_int(max=max_num_subsec) \
                 if n != max_level and \
                 self.section_titles[-1] not in config.mp_level01_titles[1:] \
                 else 0
-        print "  --> num_subsec = ", num_subsec
         for i in range(num_subsec):
             self._make_level_n_section(n+1, max_level, max_num_subsec)
         # all subsections processed
@@ -58,7 +69,6 @@ class CsvInputFile(object):
 
     def make_file(self, num_level0_sections=2, max_level=3):
         """produce a fake file structure"""
-        # TODO: throw in comments at random places
         pass
 
 
