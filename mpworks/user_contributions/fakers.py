@@ -61,14 +61,14 @@ class CsvInputFile(object):
             indentor, title.upper() if n == 0 else title, self._get_comment()
         ])
 
-    def _print_key_value(self, use_mp_cat_key):
+    def _print_key_value(self, level0_sec_num, key_val_num):
         """print key-value pair
         
         - type(key) = str, type(value) = anything
         - mix in mp_categories according to rules
         - append comment now and then
         """
-        if use_mp_cat_key:
+        if 'general' in self.section_titles[:2] and key_val_num == 0:
             key = self.fake.random_element(elements=config.mp_categories.keys())
             method = getattr(self.fake, config.mp_categories[key][0])
             value = method(text=config.mp_categories[key][1])
@@ -132,11 +132,7 @@ class CsvInputFile(object):
                 print >>self.section, '  ==> special key-value pairs for plot'
             else:
                 for r in range(max_data_rows):
-                    use_mp_cat_key = (
-                        r == 0 and level0_sec_num == 0 and
-                        self.section_titles[-1] == config.mp_level01_titles[0]
-                    ) # first entry in level-0 'general' section
-                    self._print_key_value(use_mp_cat_key)
+                    self._print_key_value(level0_sec_num, r)
 
     def level0_section_ok(self):
         """check level0 section structure"""
@@ -148,9 +144,9 @@ class CsvInputFile(object):
             ])
         nplots = len(reduced_structure[2])
         ndata = len(reduced_structure[1])
-        if nplots > 0 and ndata < 1: return False
-        if ndata > 1: return False
-        self.section_structure = []
+        if (nplots > 0 and ndata < 1) or ndata > 1:
+            self.section_structure = []
+            return False
         return True
 
     def make_file(self, num_level0_sections=3, max_level=3):
