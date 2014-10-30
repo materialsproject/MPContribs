@@ -1,5 +1,6 @@
 import inspect
 from fnmatch import fnmatch
+from StringIO import StringIO
 from faker import Faker, DEFAULT_PROVIDERS
 import config
 
@@ -9,6 +10,9 @@ class CsvInputFile(object):
         self.fake = Faker()
         self.section_titles = []
         self.section_structure = []
+        self.outfile = StringIO()
+        self.section = None
+        self.file_has_main_general = False
 
     def _get_comment(self, comment_prob=20, max_comment_length=20):
         """return a comment"""
@@ -23,7 +27,7 @@ class CsvInputFile(object):
         for i in range(self.fake.random_int(max=max_lines)):
             comment = self._get_comment()
             if comment != '':
-                print comment
+                print >>self.section, comment
 
     def _get_level_n_section_line(self, level0_sec_num, n, mp_title_prob=50):
         """get an arbitrary level-n section line
@@ -45,6 +49,7 @@ class CsvInputFile(object):
         use_mp_title = self.fake.boolean(chance_of_getting_true=mp_title_prob)  
         if n == 0 and level0_sec_num == 0 and use_mp_title:
             title = config.mp_level01_titles[0]
+            self.file_has_main_general = True
         elif n == 1 and use_mp_title:
             title = self.fake.random_element(
                 elements=config.mp_level01_titles
@@ -93,7 +98,7 @@ class CsvInputFile(object):
                     if not isinstance(value, list) and \
                        not isinstance(value, dict):
                         break
-        print repr(': '.join([key, str(value)]) + self._get_comment())
+        print >>self.section, ': '.join([key, repr(value)]) + self._get_comment()
 
     def _make_level_n_section(
         self, level0_sec_num, n, max_level, max_num_subsec=3, max_data_rows=3
@@ -105,7 +110,7 @@ class CsvInputFile(object):
         - randomly throw in comment lines
         """
         self._print_comments()
-        print self._get_level_n_section_line(level0_sec_num, n)
+        print >>self.section, self._get_level_n_section_line(level0_sec_num, n)
         self._print_comments()
         num_subsec = self.fake.random_int(max=max_num_subsec) \
                 if n != max_level and \
@@ -119,10 +124,12 @@ class CsvInputFile(object):
             self.section_titles.pop()
         # all subsections processed
         if num_subsec == 0:
-            if self.section_titles[-1] == config.mp_level01_titles[1]:
-                print '  ==> insert csv'
+            if self.section_titles[-1] == config.mp_level01_titles[1] or (
+                n == 0 and self.section_titles[-1] != config.mp_level01_titles[0]
+            ):
+                print >>self.section, '  ==> insert csv'
             elif self.section_titles[-1] == config.mp_level01_titles[2]:
-                print '  ==> special key-value pairs for plot'
+                print >>self.section, '  ==> special key-value pairs for plot'
             else:
                 for r in range(max_data_rows):
                     use_mp_cat_key = (
@@ -139,17 +146,24 @@ class CsvInputFile(object):
                 el for el in self.section_structure
                 if fnmatch(el, '*.%s' % title)
             ])
-        ok = (len(reduced_structure[2]) > 0 and len(reduced_structure[1]) < 1)
+        nplots = len(reduced_structure[2])
+        ndata = len(reduced_structure[1])
+        if nplots > 0 and ndata < 1: return False
+        if ndata > 1: return False
         self.section_structure = []
-        return ok
+        return True
 
-    def make_file(self, num_level0_sections=2, max_level=3):
+    def make_file(self, num_level0_sections=3, max_level=3):
         """produce a fake file structure"""
         for i in range(num_level0_sections):
             while 1:
+                self.section = StringIO()
                 self._make_level_n_section(i, 0, max_level)
                 self.section_titles.pop()
                 if self.level0_section_ok():
+                    print >>self.outfile, self.section.getvalue()
+                    self.section.close()
                     break
-            print ''
+        print self.outfile.getvalue()
+        self.outfile.close()
 
