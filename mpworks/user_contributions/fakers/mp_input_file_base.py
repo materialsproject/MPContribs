@@ -38,7 +38,8 @@ class MPInputFileBase(object):
         while 1:
             provider_name = self.fake.random_element(elements=DEFAULT_PROVIDERS)
             if provider_name != 'python' and \
-               provider_name != 'profile':
+               provider_name != 'profile' and \
+               provider_name != 'credit_card':
                 break
         provider = self.fake.provider(provider_name)
         methods = [
@@ -60,4 +61,6 @@ class MPInputFileBase(object):
                 if not isinstance(value, list) and \
                    not isinstance(value, dict):
                     break
-        return key, value
+        if isinstance(value, str) and '\n' in value:
+            value = repr(value) 
+        return key, str(value)
