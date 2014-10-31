@@ -1,3 +1,4 @@
+from StringIO import StringIO
 from ..config import indent_symbol, min_indent_level
 from ..config import mp_categories, mp_level01_titles
 from mp_input_file_base import MPInputFileBase
@@ -30,7 +31,7 @@ class MPInputFile(MPInputFileBase):
         indentor = indent_symbol * (min_indent_level + n)
         if n == 0:
             title = mp_level01_titles[0].upper() \
-                    if self.main_general else \
+                    if sec == 0 and self.main_general else \
                     self._get_mp_cat_id().upper()
         elif n == 1 and self.fake.boolean(chance_of_getting_true=mp_title_prob):
             title = self.fake.random_element(elements=mp_level01_titles)
@@ -38,3 +39,68 @@ class MPInputFile(MPInputFileBase):
             title = self.fake.word()
         self.section_titles.append(title)
         return ' '.join([indentor, title, self.get_comment()])
+
+    def _print_key_value(self, key_val_num):
+        """print key-value pair
+        
+        - type(key) = str, type(value) = anything
+        - append comment now and then
+        """
+        key, value = self.get_key_value()
+        print >>self.section, ': '.join([key, repr(value)]) + self.get_comment()
+
+    def _make_level_n_section(
+        self, sec, n, max_level=3, max_num_subsec=3, max_data_rows=3
+    ):
+        """recursively generate nested level-n section
+        
+        - level-1 mp_level01_titles allowed once per level-0 section
+        - mp_level01_titles[0] can be arbitrarily deep nested ('general')
+        - mp_level01_titles[1:] has no subsections ('data')
+        - mp_level01_titles[2] only has level-2 subsections ('plots')
+        - mp_level01_titles[1] has csv format, all others key:value
+        - randomly throw in comment lines
+        """
+        comments = self.get_comments()
+        if comments != '': print >>self.section, comments
+        print >>self.section, self._get_level_n_section_line(sec, n)
+        comment = self.get_comment()
+        if comment != '': print >>self.section, comment
+        num_subsec = 0 if n == max_level or \
+                self.section_titles[-1] == mp_level01_titles[1] or \
+                ( n == 2 and self.section_titles[-2] == mp_level01_titles[2] ) \
+                else self.fake.random_int(max=max_num_subsec)
+        for i in range(num_subsec):
+            self._make_level_n_section(sec, n+1, max_level, max_num_subsec,
+                                       max_data_rows)
+            self.section_structure.append('.'.join(self.section_titles))
+            self.section_titles.pop()
+        # all subsections processed
+        if num_subsec == 0:
+            if self.section_titles[-1] == mp_level01_titles[1] or (
+                n == 0 and self.section_titles[-1] != mp_level01_titles[0]
+            ):
+                print >>self.section, '  ==> insert csv'
+            elif self.section_titles[-2] == mp_level01_titles[2]:
+                print >>self.section, '  ==> special key-value pairs for plot'
+            else:
+                for r in range(max_data_rows):
+                    self._print_key_value(r)
+
+    def level0_section_ok(self):
+        """check level0 section structure"""
+        return True
+
+    def make_file(self, num_level0_sections=3):
+        """produce a fake file structure"""
+        for i in range(num_level0_sections):
+            while 1:
+                self.section = StringIO()
+                self._make_level_n_section(i, 0)
+                self.section_titles.pop()
+                if self.level0_section_ok():
+                    print >>self.outfile, self.section.getvalue()
+                    self.section.close()
+                    break
+        print self.outfile.getvalue()
+        self.outfile.close()
