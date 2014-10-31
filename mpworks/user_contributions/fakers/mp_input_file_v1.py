@@ -47,7 +47,7 @@ class MPInputFile(MPInputFileBase):
         - append comment now and then
         """
         key, value = self.get_key_value()
-        print >>self.section, ': '.join([key, repr(value)]) + self.get_comment()
+        print >>self.section, ': '.join([key, value]) + self.get_comment()
 
     def _make_level_n_section(
         self, sec, n, max_level=3, max_num_subsec=3, max_data_rows=3
