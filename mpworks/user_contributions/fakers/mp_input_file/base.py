@@ -1,7 +1,7 @@
 import inspect
 from StringIO import StringIO
 from faker import Faker, DEFAULT_PROVIDERS
-from ..config import csv_comment_char
+from ...config import csv_comment_char
 
 class MPInputFileBase(object):
     """base class for MPInputFile"""

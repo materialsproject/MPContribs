@@ -1,9 +1,9 @@
 from fnmatch import fnmatch
 from StringIO import StringIO
 from faker import Faker, DEFAULT_PROVIDERS
-from mp_input_file_base import MPInputFileBase
-from ..config import indent_symbol, min_indent_level
-from ..config import mp_level01_titles, mp_categories
+from base import MPInputFileBase
+from ...config import indent_symbol, min_indent_level
+from ...config import mp_level01_titles, mp_categories
 
 class MPInputFile(MPInputFileBase):
     """generate a fake mp-formatted csv input file for RecursiveParser"""
