@@ -5,7 +5,7 @@ mp_categories = {
         'numerify', 'mp-####'
     ], # mp-id, e.g. mp-1234
     'composition': [
-        'bothify', '?#?#'
+        'numerify', 'A#B#'
     ], # composition, e.g. A2B3
     'chemical_system': [
         'lexify', '??'

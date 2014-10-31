@@ -1,4 +1,3 @@
-import inspect
 from fnmatch import fnmatch
 from StringIO import StringIO
 from faker import Faker, DEFAULT_PROVIDERS
@@ -10,9 +9,6 @@ class MPInputFile(MPInputFileBase):
     """generate a fake mp-formatted csv input file for RecursiveParser"""
     def __init__(self):
         MPInputFileBase.__init__(self)
-        self.section_structure = []
-        self.outfile = StringIO()
-        self.section = None
         self.main_general = False
 
     def _get_level_n_section_line(self, level0_sec_num, n, mp_title_prob=50):
@@ -45,7 +41,7 @@ class MPInputFile(MPInputFileBase):
             indentor, title.upper() if n == 0 else title, self.get_comment()
         ])
 
-    def _print_key_value(self, level0_sec_num, key_val_num):
+    def _print_key_value(self, key_val_num):
         """print key-value pair
         
         - type(key) = str, type(value) = anything
@@ -57,31 +53,7 @@ class MPInputFile(MPInputFileBase):
             method = getattr(self.fake, mp_categories[key][0])
             value = method(text=mp_categories[key][1])
         else:
-            while 1:
-                provider_name = self.fake.random_element(elements=DEFAULT_PROVIDERS)
-                if provider_name != 'python' and \
-                   provider_name != 'profile':
-                    break
-            provider = self.fake.provider(provider_name)
-            methods = [
-                k for k,v in inspect.getmembers(
-                    provider, predicate=inspect.ismethod
-                ) if k != '__init__'
-            ]
-            while 1:
-                method_name = self.fake.random_element(elements=methods)
-                method = getattr(provider, method_name)
-                argspec = inspect.getargspec(method)
-                nargs = len(argspec.args)
-                key = '_'.join([provider_name, method_name])
-                if ( argspec.defaults is None and nargs == 1 ) or (
-                    argspec.defaults is not None and
-                    nargs-1 == len(argspec.defaults)
-                ):
-                    value = method()
-                    if not isinstance(value, list) and \
-                       not isinstance(value, dict):
-                        break
+            key, value = self.get_key_value()
         print >>self.section, ': '.join([key, repr(value)]) + self.get_comment()
 
     def _make_level_n_section(
@@ -120,7 +92,7 @@ class MPInputFile(MPInputFileBase):
                 print >>self.section, '  ==> special key-value pairs for plot'
             else:
                 for r in range(max_data_rows):
-                    self._print_key_value(level0_sec_num, r)
+                    self._print_key_value(r)
 
     def level0_section_ok(self):
         """check level0 section structure"""
