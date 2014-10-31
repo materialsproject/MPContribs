@@ -163,3 +163,7 @@ class CsvInputFile(object):
         print self.outfile.getvalue()
         self.outfile.close()
 
+
+if __name__ == '__main__':
+    f = CsvInputFile()
+    f.make_file()
