@@ -1,12 +1,12 @@
 from StringIO import StringIO
 from ...config import indent_symbol, min_indent_level
 from ...config import mp_categories, mp_level01_titles
-from base import MPInputFileBase
+from base import MPCsvFileBase
 
-class MPInputFile(MPInputFileBase):
+class MPCsvFile(MPCsvFileBase):
     """fake a input file for a user contribution"""
     def __init__(self, main_general=False):
-        MPInputFileBase.__init__(self)
+        MPCsvFileBase.__init__(self)
         self.main_general = main_general
 
     def _get_mp_cat_id(self):
