@@ -5,11 +5,11 @@ mp_categories = {
         'numerify', 'mp-####'
     ], # mp-id, e.g. mp-1234
     'composition': [
-        'bothify', '??#?#'
-    ], # composition, e.g. Fe2O3
+        'bothify', '?#?#'
+    ], # composition, e.g. A2B3
     'chemical_system': [
-        'bothify', '??[#-#,#]?#'
-    ], # chem. system, e.g. Fe[2-3,5]O4
+        'lexify', '??'
+    ], # chem. system, e.g. AB
 }
-mp_level01_titles = [ 'general', 'data', 'plot' ]
+mp_level01_titles = [ 'general', 'data', 'plots' ]
 csv_comment_char = '#'
