@@ -3,8 +3,8 @@ from StringIO import StringIO
 from faker import Faker, DEFAULT_PROVIDERS
 from ...config import csv_comment_char
 
-class MPInputFileBase(object):
-    """base class for MPInputFile"""
+class MPCsvFileBase(object):
+    """base class for MPCsvFile"""
     def __init__(self):
         self.fake = Faker()
         self.outfile = StringIO()

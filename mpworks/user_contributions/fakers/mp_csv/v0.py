@@ -1,14 +1,14 @@
 from fnmatch import fnmatch
 from StringIO import StringIO
 from faker import Faker, DEFAULT_PROVIDERS
-from base import MPInputFileBase
+from base import MPCsvFileBase
 from ...config import indent_symbol, min_indent_level
 from ...config import mp_level01_titles, mp_categories
 
-class MPInputFile(MPInputFileBase):
+class MPCsvFile(MPCsvFileBase):
     """generate a fake mp-formatted csv input file for RecursiveParser"""
     def __init__(self):
-        MPInputFileBase.__init__(self)
+        MPCsvFileBase.__init__(self)
         self.main_general = False
 
     def _get_level_n_section_line(self, level0_sec_num, n, mp_title_prob=50):
