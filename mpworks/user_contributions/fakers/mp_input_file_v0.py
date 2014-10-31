@@ -2,32 +2,18 @@ import inspect
 from fnmatch import fnmatch
 from StringIO import StringIO
 from faker import Faker, DEFAULT_PROVIDERS
-import config
+from mp_input_file_base import MPInputFileBase
+from ..config import indent_symbol, min_indent_level
+from ..config import mp_level01_titles, mp_categories
 
-class CsvInputFile(object):
+class MPInputFile(MPInputFileBase):
     """generate a fake mp-formatted csv input file for RecursiveParser"""
     def __init__(self):
-        self.fake = Faker()
-        self.section_titles = []
+        MPInputFileBase.__init__(self)
         self.section_structure = []
         self.outfile = StringIO()
         self.section = None
-        self.file_has_main_general = False
-
-    def _get_comment(self, comment_prob=20, max_comment_length=20):
-        """return a comment"""
-        return ' '.join([
-            config.csv_comment_char,
-            self.fake.text(max_nb_chars=max_comment_length)
-        ]) if self.fake.boolean(chance_of_getting_true=comment_prob) \
-        else ''
-
-    def _print_comments(self, max_lines=3):
-        """get multiple lines of comments"""
-        for i in range(self.fake.random_int(max=max_lines)):
-            comment = self._get_comment()
-            if comment != '':
-                print >>self.section, comment
+        self.main_general = False
 
     def _get_level_n_section_line(self, level0_sec_num, n, mp_title_prob=50):
         """get an arbitrary level-n section line
@@ -45,20 +31,18 @@ class CsvInputFile(object):
         - append comment using config.csv_comment_char now and then
         - make level-0 titles all-caps
         """
-        indentor = config.indent_symbol * (config.min_indent_level + n)
+        indentor = indent_symbol * (min_indent_level + n)
         use_mp_title = self.fake.boolean(chance_of_getting_true=mp_title_prob)  
         if n == 0 and level0_sec_num == 0 and use_mp_title:
-            title = config.mp_level01_titles[0]
-            self.file_has_main_general = True
+            title = mp_level01_titles[0]
+            self.main_general = True
         elif n == 1 and use_mp_title:
-            title = self.fake.random_element(
-                elements=config.mp_level01_titles
-            )
+            title = self.fake.random_element(elements=mp_level01_titles)
         else:
             title = self.fake.word()
         self.section_titles.append(title)
         return ' '.join([
-            indentor, title.upper() if n == 0 else title, self._get_comment()
+            indentor, title.upper() if n == 0 else title, self.get_comment()
         ])
 
     def _print_key_value(self, level0_sec_num, key_val_num):
@@ -69,9 +53,9 @@ class CsvInputFile(object):
         - append comment now and then
         """
         if 'general' in self.section_titles[:2] and key_val_num == 0:
-            key = self.fake.random_element(elements=config.mp_categories.keys())
-            method = getattr(self.fake, config.mp_categories[key][0])
-            value = method(text=config.mp_categories[key][1])
+            key = self.fake.random_element(elements=mp_categories.keys())
+            method = getattr(self.fake, mp_categories[key][0])
+            value = method(text=mp_categories[key][1])
         else:
             while 1:
                 provider_name = self.fake.random_element(elements=DEFAULT_PROVIDERS)
@@ -98,7 +82,7 @@ class CsvInputFile(object):
                     if not isinstance(value, list) and \
                        not isinstance(value, dict):
                         break
-        print >>self.section, ': '.join([key, repr(value)]) + self._get_comment()
+        print >>self.section, ': '.join([key, repr(value)]) + self.get_comment()
 
     def _make_level_n_section(
         self, level0_sec_num, n, max_level, max_num_subsec=3, max_data_rows=3
@@ -109,12 +93,16 @@ class CsvInputFile(object):
         - config.mp_level01_titles[1] has csv format, all others key:value
         - randomly throw in comment lines
         """
-        self._print_comments()
+        comments = self.get_comments()
+        if comments != '':
+            print >>self.section, comments
         print >>self.section, self._get_level_n_section_line(level0_sec_num, n)
-        self._print_comments()
+        comment = self.get_comment()
+        if comment != '':
+            print >>self.section, comment
         num_subsec = self.fake.random_int(max=max_num_subsec) \
                 if n != max_level and \
-                self.section_titles[-1] not in config.mp_level01_titles \
+                self.section_titles[-1] not in mp_level01_titles \
                 else 0
         for i in range(num_subsec):
             self._make_level_n_section(
@@ -124,11 +112,11 @@ class CsvInputFile(object):
             self.section_titles.pop()
         # all subsections processed
         if num_subsec == 0:
-            if self.section_titles[-1] == config.mp_level01_titles[1] or (
-                n == 0 and self.section_titles[-1] != config.mp_level01_titles[0]
+            if self.section_titles[-1] == mp_level01_titles[1] or (
+                n == 0 and self.section_titles[-1] != mp_level01_titles[0]
             ):
                 print >>self.section, '  ==> insert csv'
-            elif self.section_titles[-1] == config.mp_level01_titles[2]:
+            elif self.section_titles[-1] == mp_level01_titles[2]:
                 print >>self.section, '  ==> special key-value pairs for plot'
             else:
                 for r in range(max_data_rows):
@@ -137,7 +125,7 @@ class CsvInputFile(object):
     def level0_section_ok(self):
         """check level0 section structure"""
         reduced_structure = []
-        for title in config.mp_level01_titles:
+        for title in mp_level01_titles:
             reduced_structure.append([
                 el for el in self.section_structure
                 if fnmatch(el, '*.%s' % title)
@@ -162,8 +150,3 @@ class CsvInputFile(object):
                     break
         print self.outfile.getvalue()
         self.outfile.close()
-
-
-if __name__ == '__main__':
-    f = CsvInputFile()
-    f.make_file()
