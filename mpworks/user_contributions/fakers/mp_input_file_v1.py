@@ -41,7 +41,7 @@ class MPInputFile(MPInputFileBase):
         self.section_titles.append(title)
         return ' '.join([indentor, title, self.get_comment()])
 
-    def _print_key_value(self, key_val_num):
+    def _print_key_value(self):
         """print key-value pair
         
         - type(key) = str, type(value) = anything
@@ -85,8 +85,7 @@ class MPInputFile(MPInputFileBase):
             elif self.section_titles[-2] == mp_level01_titles[2]:
                 print >>self.section, '  ==> special key-value pairs for plot'
             else:
-                for r in range(max_data_rows):
-                    self._print_key_value(r)
+                for r in range(max_data_rows): self._print_key_value()
 
     def level0_section_ok(self):
         """check level0 section structure"""
