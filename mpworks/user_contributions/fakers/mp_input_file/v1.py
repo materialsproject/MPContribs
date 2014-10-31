@@ -1,7 +1,7 @@
 from StringIO import StringIO
-from ..config import indent_symbol, min_indent_level
-from ..config import mp_categories, mp_level01_titles
-from mp_input_file_base import MPInputFileBase
+from ...config import indent_symbol, min_indent_level
+from ...config import mp_categories, mp_level01_titles
+from base import MPInputFileBase
 
 class MPInputFile(MPInputFileBase):
     """fake a input file for a user contribution"""

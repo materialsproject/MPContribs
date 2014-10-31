@@ -1,5 +1,5 @@
 import argparse
-from mp_input_file.mp_input_file_v1 import MPInputFile
+from mp_input_file.v1 import MPInputFile
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--main", help="contribution mode (main general or not)",
