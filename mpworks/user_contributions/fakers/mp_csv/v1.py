@@ -88,7 +88,12 @@ class MPCsvFile(MPCsvFileBase):
                 n == 0 and \
                 self.section_titles[-1] != mp_level01_titles[0].upper()
             ):
-                print >>self.section, '  ==> insert csv'
+                # TODO: match player_id with player in general section
+                dataset = None
+                while dataset is None:
+                    player = self.data_gen.get_player()
+                    dataset = self.data_gen.find_dataset_for_player(player.name)
+                dataset.to_csv(self.section, index=False)
             elif n == 2 and self.section_titles[-2] == mp_level01_titles[2]:
                 print >>self.section, '  ==> special key-value pairs for plot'
             elif not self.main_general and \
