@@ -94,21 +94,6 @@ class MPCsvFile(MPCsvFileBase):
                 for r in range(max_data_rows):
                     self._print_key_value(r)
 
-    def level0_section_ok(self):
-        """check level0 section structure"""
-        reduced_structure = []
-        for title in mp_level01_titles:
-            reduced_structure.append([
-                el for el in self.section_structure
-                if fnmatch(el, '*.%s' % title)
-            ])
-        nplots = len(reduced_structure[2])
-        ndata = len(reduced_structure[1])
-        if (nplots > 0 and ndata < 1) or ndata > 1:
-            self.section_structure = []
-            return False
-        return True
-
     def make_file(self, num_level0_sections=3, max_level=3):
         """produce a fake file structure"""
         for i in range(num_level0_sections):
