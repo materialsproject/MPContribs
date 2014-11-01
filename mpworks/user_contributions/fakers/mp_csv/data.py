@@ -34,6 +34,6 @@ class DataGenerator(object):
             keys = self._split_string_at_caps(k)
             nested = {keys[0]: {keys[1]: v}} if (
                 keys and keys[0] in subsecs
-            ) else {k: v}
+            ) else {'other': {k: v}}
             info.rec_update(nested)
         return info

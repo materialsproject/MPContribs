@@ -1,5 +1,4 @@
 from StringIO import StringIO
-from ...config import indent_symbol, min_indent_level
 from ...config import mp_categories, mp_level01_titles
 from base import MPCsvFileBase
 
@@ -28,7 +27,7 @@ class MPCsvFile(MPCsvFileBase):
         - append comment using config.csv_comment_char now and then
         - make level-0 titles all-caps
         """
-        indentor = indent_symbol * (min_indent_level + n)
+        indentor = self.get_indentor(n)
         if n == 0:
             title = mp_level01_titles[0].upper() \
                     if sec == 0 and self.main_general else \
@@ -47,8 +46,7 @@ class MPCsvFile(MPCsvFileBase):
         - type(key) = str, type(value) = anything
         - append comment now and then
         """
-        key, value = self.get_key_value()
-        print >>self.section, ': '.join([key, value]) + self.get_comment()
+        print >>self.section, self.get_key_value() + self.get_comment()
 
     def _make_level_n_section(
         self, sec, n, max_level=3, max_num_subsec=3, max_data_rows=3
@@ -84,6 +82,9 @@ class MPCsvFile(MPCsvFileBase):
                 print >>self.section, '  ==> insert csv'
             elif self.section_titles[-2] == mp_level01_titles[2]:
                 print >>self.section, '  ==> special key-value pairs for plot'
+            elif self.section_titles[-1] == mp_level01_titles[0]:
+                info = self.data_gen.organize_player_info()
+                self.get_nested_key_values_from_dict(info, n)
             else:
                 for r in range(max_data_rows): self._print_key_value()
 
