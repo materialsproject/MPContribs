@@ -10,6 +10,4 @@ from mp_csv.data import DataGenerator
 #f.make_file(3)
 
 dg = DataGenerator()
-player = dg.get_player()
-print player
-print 'id: ', player.name
+print dg.organize_player_info()
