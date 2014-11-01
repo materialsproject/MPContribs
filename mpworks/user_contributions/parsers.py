@@ -50,10 +50,9 @@ class RecursiveParser:
 
     def read_csv(self, title, body):
         """run pandas.read_csv on (sub)section body"""
-        options = self.data_options
-        if title == config.mp_level01_titles[1] or ( # 'data'
-            title != config.mp_level01_titles[0] and # 'general'
-            self.level-1 == config.min_indent_level
+        options = self.data_options if title == config.mp_level01_titles[1] or (
+          title != config.mp_level01_titles[0] and 
+          self.level-1 == config.min_indent_level
         ) else self.colon_key_value_list
         return pd.read_csv(
             StringIO(body), comment=config.csv_comment_char,
