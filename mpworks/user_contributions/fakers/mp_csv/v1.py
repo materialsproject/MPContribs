@@ -63,6 +63,8 @@ class MPCsvFile(MPCsvFileBase):
         comments = self.get_comments()
         if comments != '': print >>self.section, comments
         print >>self.section, self._get_level_n_section_line(sec, n)
+        if self.main_general and sec == 0 and n == 0:
+            self.get_player_general_section(n)
         comment = self.get_comment()
         if comment != '': print >>self.section, comment
         num_subsec = 0 if n == max_level or \
@@ -77,15 +79,19 @@ class MPCsvFile(MPCsvFileBase):
         # all subsections processed
         if num_subsec == 0:
             if self.section_titles[-1] == mp_level01_titles[1] or (
-                n == 0 and self.section_titles[-1] != mp_level01_titles[0]
+                n == 0 and \
+                self.section_titles[-1] != mp_level01_titles[0].upper()
             ):
                 print >>self.section, '  ==> insert csv'
-            elif self.section_titles[-2] == mp_level01_titles[2]:
+            elif n == 2 and self.section_titles[-2] == mp_level01_titles[2]:
                 print >>self.section, '  ==> special key-value pairs for plot'
-            elif self.section_titles[-1] == mp_level01_titles[0]:
-                info = self.data_gen.organize_player_info()
-                self.get_nested_key_values_from_dict(info, n)
-            else:
+            elif not self.main_general and \
+                    self.section_titles[-1] == mp_level01_titles[0]:
+                self.get_player_general_section(n)
+            elif n != 0 or (
+                n == 0 and \
+                self.section_titles[-1] != mp_level01_titles[0].upper()
+            ):
                 for r in range(max_data_rows): self._print_key_value()
 
     def level0_section_ok(self):
