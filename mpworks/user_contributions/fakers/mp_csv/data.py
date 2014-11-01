@@ -37,3 +37,22 @@ class DataGenerator(object):
             ) else {'other': {k: v}}
             info.rec_update(nested)
         return info
+
+    def find_dataset_for_player(self, player_id):
+        """generate a dataset for a player"""
+        for file_name in os.listdir(csv_database):
+            if file_name == 'Master.csv': continue
+            try:
+                df = read_csv(os.path.join(csv_database, file_name))
+            except:
+                continue
+            if 'playerID' not in df.columns: continue
+            dataset = df[df['playerID']==player_id].dropna()
+            if dataset.empty or dataset.shape[0] < 2: continue
+            cols = [
+                col for col in dataset.columns
+                if not dataset[col].sum()
+            ]
+            ds = dataset.drop(cols+['playerID'], axis=1)
+            if ds is None: continue
+            return ds
