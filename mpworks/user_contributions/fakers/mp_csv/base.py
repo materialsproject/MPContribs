@@ -85,3 +85,7 @@ class MPCsvFileBase(object):
             for k1,v1 in v0.iteritems():
                 print >>self.section, self.make_pair(k1, v1)
 
+    def get_player_general_section(self, n):
+        """get a general section for a sample player from database"""
+        info = self.data_gen.organize_player_info()
+        self.get_nested_key_values_from_dict(info, n)
