@@ -94,10 +94,6 @@ class MPCsvFile(MPCsvFileBase):
             ):
                 for r in range(max_data_rows): self._print_key_value()
 
-    def level0_section_ok(self):
-        """check level0 section structure"""
-        return True
-
     def make_file(self, num_level0_sections=3):
         """produce a fake file structure"""
         for i in range(num_level0_sections):

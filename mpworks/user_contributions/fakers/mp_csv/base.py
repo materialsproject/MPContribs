@@ -1,8 +1,9 @@
 import inspect
+from fnmatch import fnmatch
 from StringIO import StringIO
 from faker import Faker, DEFAULT_PROVIDERS
 from data import DataGenerator
-from ...config import csv_comment_char
+from ...config import csv_comment_char, mp_level01_titles
 from ...config import indent_symbol, min_indent_level
 
 class MPCsvFileBase(object):
@@ -89,3 +90,18 @@ class MPCsvFileBase(object):
         """get a general section for a sample player from database"""
         info = self.data_gen.organize_player_info()
         self.get_nested_key_values_from_dict(info, n)
+
+    def level0_section_ok(self):
+        """check level0 section structure"""
+        reduced_structure = []
+        for title in mp_level01_titles:
+            reduced_structure.append([
+                el for el in self.section_structure
+                if fnmatch(el, '*.%s' % title)
+            ])
+        nplots = len(reduced_structure[2])
+        ndata = len(reduced_structure[1])
+        if (nplots > 0 and ndata < 1) or ndata > 1:
+            self.section_structure = []
+            return False
+        return True
