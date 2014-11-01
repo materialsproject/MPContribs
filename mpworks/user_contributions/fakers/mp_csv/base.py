@@ -1,7 +1,9 @@
 import inspect
 from StringIO import StringIO
 from faker import Faker, DEFAULT_PROVIDERS
+from data import DataGenerator
 from ...config import csv_comment_char
+from ...config import indent_symbol, min_indent_level
 
 class MPCsvFileBase(object):
     """base class for MPCsvFile"""
@@ -11,6 +13,7 @@ class MPCsvFileBase(object):
         self.section = None
         self.section_titles = []
         self.section_structure = []
+        self.data_gen = DataGenerator()
 
     def get_comment(self, comment_prob=20, max_comment_length=20):
         """return a comment"""
@@ -28,6 +31,14 @@ class MPCsvFileBase(object):
             if comment != '':
                 comments.append(comment)
         return '\n'.join(comments) if comments else ''
+
+    def make_pair(self, key, value):
+        """make a mp-specific key-value pair"""
+        return ': '.join([key, str(value)]) 
+
+    def get_indentor(self, n=0):
+        """get level-n indentor"""
+        return indent_symbol * (min_indent_level + n)
 
     def get_key_value(self):
         """print random key-value pair
@@ -63,4 +74,14 @@ class MPCsvFileBase(object):
                     break
         if isinstance(value, str) and '\n' in value:
             value = repr(value) 
-        return key, str(value)
+        return self.make_pair(key, value)
+
+    def get_nested_key_values_from_dict(self, d, n=1):
+        """convert a dict into nested level-n mp-csv representation"""
+        for k0,v0 in d.iteritems():
+            print >>self.section, ' '.join([
+                self.get_indentor(n+1), k0, self.get_comment()
+            ])
+            for k1,v1 in v0.iteritems():
+                print >>self.section, self.make_pair(k1, v1)
+

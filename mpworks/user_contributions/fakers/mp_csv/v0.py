@@ -2,7 +2,6 @@ from fnmatch import fnmatch
 from StringIO import StringIO
 from faker import Faker, DEFAULT_PROVIDERS
 from base import MPCsvFileBase
-from ...config import indent_symbol, min_indent_level
 from ...config import mp_level01_titles, mp_categories
 
 class MPCsvFile(MPCsvFileBase):
@@ -27,7 +26,7 @@ class MPCsvFile(MPCsvFileBase):
         - append comment using config.csv_comment_char now and then
         - make level-0 titles all-caps
         """
-        indentor = indent_symbol * (min_indent_level + n)
+        indentor = self.get_indentor(n)
         use_mp_title = self.fake.boolean(chance_of_getting_true=mp_title_prob)  
         if n == 0 and level0_sec_num == 0 and use_mp_title:
             title = mp_level01_titles[0]
@@ -52,9 +51,10 @@ class MPCsvFile(MPCsvFileBase):
             key = self.fake.random_element(elements=mp_categories.keys())
             method = getattr(self.fake, mp_categories[key][0])
             value = method(text=mp_categories[key][1])
+            key_value = self.make_pair(key, value)
         else:
-            key, value = self.get_key_value()
-        print >>self.section, ': '.join([key, value]) + self.get_comment()
+            key_value = self.get_key_value()
+        print >>self.section, key_value + self.get_comment()
 
     def _make_level_n_section(
         self, level0_sec_num, n, max_level, max_num_subsec=3, max_data_rows=3
