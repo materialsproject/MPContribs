@@ -20,7 +20,7 @@ class MPCsvFile(MPCsvFileBase):
     def _get_mp_cat_id(self):
         """get an arbitrary MP category id"""
         if self.usable:
-            self.data_gen.init()
+            self.data_gen.init(keep_dataset=self.keep_dataset)
             return self.data_gen.player_id
         else:
             mp_category = self.fake.random_element(elements=mp_categories.keys())
@@ -42,9 +42,10 @@ class MPCsvFile(MPCsvFileBase):
         """
         indentor = self.get_indentor(n)
         if n == 0:
+            self.keep_dataset = self.main_general and sec != 0
+            mp_cat_id = self._get_mp_cat_id().upper()
             title = mp_level01_titles[0].upper() \
-                    if sec == 0 and self.main_general else \
-                    self._get_mp_cat_id().upper()
+                    if sec == 0 and self.main_general else mp_cat_id
         elif n == 1 and self.fake.boolean(
             chance_of_getting_true=self.mp_title_prob
         ) and self.section_titles[-1] != mp_level01_titles[0].upper():
