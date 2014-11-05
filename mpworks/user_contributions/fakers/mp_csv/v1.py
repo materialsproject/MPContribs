@@ -6,7 +6,7 @@ class MPCsvFile(MPCsvFileBase):
     """fake a input file for a user contribution"""
     def __init__(
         self, main_general=False, num_level0_sections=3, max_level=3,
-        max_num_subsec=3, max_data_rows=3, mp_title_prob=50
+        max_num_subsec=3, max_data_rows=3, mp_title_prob=50, usable=False
     ):
         MPCsvFileBase.__init__(self)
         self.main_general = main_general
@@ -15,13 +15,18 @@ class MPCsvFile(MPCsvFileBase):
         self.max_num_subsec = max_num_subsec
         self.max_data_rows = max_data_rows
         self.mp_title_prob = mp_title_prob
+        self.usable = usable
 
     def _get_mp_cat_id(self):
         """get an arbitrary MP category id"""
-        mp_category = self.fake.random_element(elements=mp_categories.keys())
-        method_name, text = mp_categories[mp_category]
-        method = getattr(self.fake, method_name)
-        return method(text=text)
+        if self.usable:
+            self.data_gen.init()
+            return self.data_gen.player_id
+        else:
+            mp_category = self.fake.random_element(elements=mp_categories.keys())
+            method_name, text = mp_categories[mp_category]
+            method = getattr(self.fake, method_name)
+            return method(text=text)
 
     def _get_level_n_section_line(self, sec, n):
         """get an arbitrary level-n section line
@@ -70,7 +75,7 @@ class MPCsvFile(MPCsvFileBase):
         comments = self.get_comments()
         if comments != '': print >>self.section, comments
         print >>self.section, self._get_level_n_section_line(sec, n)
-        if self.main_general and sec == 0 and n == 0:
+        if self.usable and self.main_general and sec == 0 and n == 0:
             self.get_player_general_section(n)
         comment = self.get_comment()
         if comment != '': print >>self.section, comment
@@ -88,15 +93,13 @@ class MPCsvFile(MPCsvFileBase):
                 n == 0 and \
                 self.section_titles[-1] != mp_level01_titles[0].upper()
             ):
-                # TODO: match player_id with player in general section
-                dataset = None
-                while dataset is None:
-                    player = self.data_gen.get_player()
-                    dataset = self.data_gen.find_dataset_for_player(player.name)
-                dataset.to_csv(self.section, index=False)
+                if self.usable:
+                    self.data_gen.player_data.to_csv(self.section, index=False)
+                else:
+                    print >>self.section, '  ==> data insert here if --usable'
             elif n == 2 and self.section_titles[-2] == mp_level01_titles[2]:
                 print >>self.section, '  ==> special key-value pairs for plot'
-            elif not self.main_general and \
+            elif self.usable and not self.main_general and \
                     self.section_titles[-1] == mp_level01_titles[0]:
                 self.get_player_general_section(n)
             elif n != 0 or (

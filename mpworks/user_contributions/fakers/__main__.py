@@ -22,6 +22,9 @@ parser.add_argument("--max-data-rows", type=int, default=3, help="""
 parser.add_argument("--mp-title-prob", type=int, default=50, help="""
                     probability (in int-percent) of MP level-1 titles.
                     """)
+parser.add_argument("--usable", action="store_true", help="""
+                    use baseball DB to generate usable MP input file
+                    """)
 args = vars(parser.parse_args())
 f = MPCsvFile(**args)
 f.make_file()
