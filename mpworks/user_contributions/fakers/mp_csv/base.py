@@ -88,8 +88,7 @@ class MPCsvFileBase(object):
 
     def get_player_general_section(self, n):
         """get a general section for a sample player from database"""
-        info = self.data_gen.organize_player_info()
-        self.get_nested_key_values_from_dict(info, n)
+        self.get_nested_key_values_from_dict(self.data_gen.player_info, n)
 
     def level0_section_ok(self):
         """check level0 section structure"""
