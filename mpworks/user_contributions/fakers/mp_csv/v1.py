@@ -98,7 +98,10 @@ class MPCsvFile(MPCsvFileBase):
                 else:
                     print >>self.section, '  ==> data insert here if --usable'
             elif n == 2 and self.section_titles[-2] == mp_level01_titles[2]:
-                print >>self.section, '  ==> special key-value pairs for plot'
+                column = self.fake.random_element(
+                    elements=self.data_gen.player_data.columns
+                )
+                print >>self.section, self.make_pair('x', column)
             elif self.usable and not self.main_general and \
                     self.section_titles[-1] == mp_level01_titles[0]:
                 self.get_player_general_section(n)
