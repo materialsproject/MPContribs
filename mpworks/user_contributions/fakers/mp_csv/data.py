@@ -56,10 +56,15 @@ class DataGenerator(object):
                 if not dataset[col].sum()
             ]
             self.player_data = dataset.drop(cols+['playerID'], axis=1)
-            if self.player_data is None: continue
+            if self.player_data is not None:
+              break
 
-    def init(self):
+    def init(self, keep_dataset=False):
         """call all setters for a player"""
-        self.set_player()
-        self.organize_player_info()
+        if not keep_dataset:
+            self.set_player()
+            self.organize_player_info()
         self.generate_dataset_for_player()
+        if self.player_data is None:
+          # try different player if no dataset found
+          self.init(keep_dataset=keep_dataset)
