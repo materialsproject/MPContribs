@@ -71,7 +71,8 @@ class MPCsvFileBase(object):
             ):
                 value = method()
                 if not isinstance(value, list) and \
-                   not isinstance(value, dict):
+                   not isinstance(value, dict) and \
+                   not ':' in str(value):
                     break
         if isinstance(value, str) and '\n' in value:
             value = repr(value) 

@@ -114,6 +114,7 @@ class MPCsvFile(MPCsvFileBase):
 
     def make_file(self):
         """produce a fake file structure"""
+        self.outfile.truncate(0)
         for i in range(self.num_level0_sections):
             while 1:
                 self.section = StringIO()
@@ -124,4 +125,4 @@ class MPCsvFile(MPCsvFileBase):
                     self.section.close()
                     break
         print self.outfile.getvalue()
-        self.outfile.close()
+        return self.outfile

@@ -19,15 +19,16 @@ class RecursiveDict(dict):
 class RecursiveParser:
     def __init__(self):
         self.level = config.min_indent_level # level counter
-        self.section_titles = []
-        self.document = RecursiveDict({})
-        self.mp_nested_keys = []
+        self.section_titles = None
+        self.document = None
 
-    def set_options(self, fileExt):
-        """set read_csv options"""
+    def init(self, fileExt='csv'):
+        """init and set read_csv options"""
         # TODO better organize read_csv options -> config file?
         if fileExt != 'csv' and fileExt != 'tsv':
             raise ValueError('%s format not supported!' % fileExt)
+        self.section_titles = []
+        self.document = RecursiveDict({})
         data_separator = '\t' if fileExt == 'tsv' else ','
         self.data_options = { 'sep': data_separator, 'header': 0 }
         self.colon_key_value_list = { 'sep': ':', 'header': None, 'index_col': 0 }
@@ -57,7 +58,7 @@ class RecursiveParser:
         return pd.read_csv(
             StringIO(body), comment=config.csv_comment_char,
             skipinitialspace=True, squeeze=True, **options
-        )
+        ).dropna()
 
     def to_dict(self, pandas_object):
         """convert pandas object to dict"""
@@ -84,9 +85,8 @@ class RecursiveParser:
         self.section_titles.pop()
         self.level -= 1
 
-    def parse(self, file_string, fileExt='csv'):
+    def parse(self, file_string):
         """recursively parse sections according to number of separators"""
-        self.set_options(fileExt)
         # split into section title line (even) and section body (odd entries)
         sections = re.split(self.separator_regex(), file_string)
         if len(sections) > 1:
@@ -102,14 +102,6 @@ class RecursiveParser:
             pd_obj = self.read_csv(self.section_titles[-1], file_string)
             logging.info(pd_obj)
             # TODO: include validation
-            # append/save nested location of special MP category keys
-            if pd_obj.index.dtype != np.int64:
-                for cat_key in config.mp_category_keys:
-                    if cat_key in pd_obj.index.values:
-                        self.mp_nested_keys.append(
-                            '.'.join(self.section_titles+[cat_key])
-                        )
-                        break # cat_keys mutually exclusive per (sub)section
             # update nested dict/document based on section level
             nested_dict = self.to_dict(pd_obj)
             for key in reversed(self.section_titles):
