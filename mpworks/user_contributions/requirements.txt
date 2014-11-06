@@ -1,0 +1,8 @@
+fake-factory==0.4.2
+numpy==1.9.1
+pandas==0.15.0
+pymongo==2.7.2
+python-dateutil==2.2
+pytz==2014.9
+six==1.8.0
+wsgiref==0.1.2
