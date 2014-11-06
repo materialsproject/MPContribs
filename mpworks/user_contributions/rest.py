@@ -99,12 +99,13 @@ class ContributionMongoAdapter(object):
         # treat every mp_cat_id as separate database insert
         contribution_ids = []
         for k,v in parser.document.iteritems():
-            new_key = k.split('--')[0]
+            mp_cat_id = k.split('--')[0]
             doc = {
                 'contributor_email': contributor_email,
                 'contribution_id': self._get_next_contribution_id(),
                 'contributed_at': datetime.datetime.utcnow().isoformat(),
-                new_key: v
+                'mp_cat_id': mp_cat_id,
+                'data': v
             }
             self.contributions.insert(doc)
             contribution_ids.append(doc['contribution_id'])
