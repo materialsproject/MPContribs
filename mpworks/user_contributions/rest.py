@@ -48,7 +48,11 @@ def init_materials_collection(
     wclient[db_name].authenticate(username, password)
     rmaterials = rclient[config['db']].materials
     wmaterials = wclient[db_name].materials
-    for doc in rmaterials.find({'external_data':{'$exists':'dtu'}}):
+    wmaterials.remove()
+    for doc in rmaterials.find(
+      {'external_data':{'$exists':'dtu'}},
+      {'external_data.dtu': 0}
+    ):
         wmaterials.insert(doc)
     print wmaterials.count(), ' materials inserted'
 
