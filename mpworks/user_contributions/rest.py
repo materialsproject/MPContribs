@@ -56,6 +56,7 @@ from parsers import RecursiveParser
 import datetime
 from StringIO import StringIO
 from config import mp_level01_titles
+from faker import Faker
 
 class ContributionMongoAdapter(object):
     """adapter/interface for user contributions"""
@@ -67,6 +68,13 @@ class ContributionMongoAdapter(object):
         client[db_name].authenticate(username, password)
         self.id_assigner = client[db_name].id_assigner
         self.contributions = client[db_name].contributions
+        self.materials = client[db_name].materials
+        self.fake = Faker()
+        self.available_mp_ids = []
+        for doc in self.materials.aggregate([
+            { '$project': { 'task_id': 1, '_id': 0 }, }
+        ], cursor={}):
+            self.available_mp_ids.append(doc['task_id'])
 
     def _reset(self):
         """reset all collections"""
@@ -112,7 +120,8 @@ class ContributionMongoAdapter(object):
         # treat every mp_cat_id as separate database insert
         contribution_ids = []
         for k,v in parser.document.iteritems():
-            mp_cat_id = k.split('--')[0]
+            #mp_cat_id = k.split('--')[0]
+            mp_cat_id = self.fake.random_element(elements=self.available_mp_ids)
             doc = {
                 'contributor_email': contributor_email,
                 'contribution_id': self._get_next_contribution_id(),
@@ -125,11 +134,9 @@ class ContributionMongoAdapter(object):
 
     def fake_multiple_contributions(self, num_contributions=20):
         """fake the submission of many contributions"""
-        from faker import Faker
         from fakers.mp_csv.v1 import MPCsvFile
-        fake = Faker()
         for n in range(num_contributions):
-            f = MPCsvFile(usable=True, main_general=fake.pybool())
+            f = MPCsvFile(usable=True, main_general=self.fake.pybool())
             csv = f.make_file()
-            contributor = '%s <%s>' % (fake.name(), fake.email())
+            contributor = '%s <%s>' % (self.fake.name(), self.fake.email())
             print self.submit_contribution(csv, contributor)
