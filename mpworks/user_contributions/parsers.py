@@ -21,12 +21,15 @@ class RecursiveParser:
         self.level = config.min_indent_level # level counter
         self.section_titles = None
         self.document = None
+        self.main_general = False
+        self.level0_counter = None
 
     def init(self, fileExt='csv'):
         """init and set read_csv options"""
         # TODO better organize read_csv options -> config file?
         if fileExt != 'csv' and fileExt != 'tsv':
             raise ValueError('%s format not supported!' % fileExt)
+        self.level0_counter = 0
         self.section_titles = []
         self.document = RecursiveDict({})
         data_separator = '\t' if fileExt == 'tsv' else ','
@@ -71,7 +74,7 @@ class RecursiveParser:
                 all_columns_numeric = False
                 break
         return pandas_object.to_dict(
-            outtype = 'list' if all_columns_numeric else 'records'
+            orient = 'list' if all_columns_numeric else 'records'
         )
 
     def increase_level(self, next_title):
@@ -93,6 +96,14 @@ class RecursiveParser:
             sections = sections[1:] # https://docs.python.org/2/library/re.html#re.split
             for section_index,section_body in enumerate(sections[1::2]):
                 clean_title = self.clean_title(sections[2*section_index])
+                if self.level == config.min_indent_level: # level-0
+                    if section_index == 0: # check for main-general mode
+                        self.main_general = (
+                            clean_title == config.mp_level01_titles[0]
+                        )
+                    elif self.main_general: # uniquify level-0 titles
+                        clean_title += '--%d' % self.level0_counter
+                        self.level0_counter += 1
                 self.increase_level(clean_title)
                 self.parse(section_body)
                 self.reduce_level()

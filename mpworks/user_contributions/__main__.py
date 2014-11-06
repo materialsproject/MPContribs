@@ -35,13 +35,13 @@ if __name__ == '__main__':
     )
     cma = ContributionMongoAdapter()
     cma._reset()
-    cid, doc = cma.submit_contribution(
-        open(args.infile,'r'), 'Patrick Huck <phuck@lbl.gov>'
-    )
-    json.dump(
-        doc, open(args.outfile, 'wb'),
-        indent=2, sort_keys=True
-    )
+    #cid, doc = cma.submit_contribution(
+    #    open(args.infile,'r'), 'Patrick Huck <phuck@lbl.gov>'
+    #)
+    #json.dump(
+    #    doc, open(args.outfile, 'wb'),
+    #    indent=2, sort_keys=True
+    #)
     cma.fake_multiple_contributions(num_contributions=args.num_contributions)
     #plot(args.outfile)
     #submit_snl_from_cif(
