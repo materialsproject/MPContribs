@@ -30,12 +30,13 @@ for doc in contrib_coll.aggregate(pipeline, cursor={}):
             }
         )
         author = Author.parse_author(contrib['contributor_email'])
+        project = str(author.name).translate(None, '.')
         tabular_data = flatten_dict(contrib)
         mat_coll.update( # TODO: overwriting previous nested keys?
             {'task_id': doc['_id']},
             { '$set': {
                 'external_data': {
-                    author.name: { 'tabular_data': tabular_data }
+                    project: { 'tabular_data': tabular_data }
                 }
             }}
         )
