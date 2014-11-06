@@ -6,7 +6,7 @@ class MPCsvFile(MPCsvFileBase):
     """fake a input file for a user contribution"""
     def __init__(
         self, main_general=False, num_level0_sections=3, max_level=3,
-        max_num_subsec=3, max_data_rows=3, mp_title_prob=50, usable=False
+        max_num_subsec=3, max_data_rows=3, mp_title_prob=70, usable=False
     ):
         MPCsvFileBase.__init__(self)
         self.main_general = main_general
@@ -83,7 +83,11 @@ class MPCsvFile(MPCsvFileBase):
         num_subsec = 0 if n == self.max_level or \
                 self.section_titles[-1] == mp_level01_titles[1] or \
                 ( n == 2 and self.section_titles[-2] == mp_level01_titles[2] ) \
-                else self.fake.random_int(max=self.max_num_subsec)
+                else self.fake.random_int(
+                  min=int(n == 1 and \
+                          self.section_titles[-1] == mp_level01_titles[2]),
+                  max=self.max_num_subsec
+                )
         for i in range(num_subsec):
             self._make_level_n_section(sec, n+1)
             self.section_structure.append('.'.join(self.section_titles))
