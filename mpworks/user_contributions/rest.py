@@ -38,6 +38,7 @@ def create_db(host='localhost', port=27017, db_name='user_contributions'):
 from parsers import RecursiveParser
 import datetime
 from StringIO import StringIO
+from config import mp_level01_titles
 
 class ContributionMongoAdapter(object):
     """adapter/interface for user contributions"""
@@ -85,14 +86,29 @@ class ContributionMongoAdapter(object):
                 'type %r not supported as input handle!' % type(input_handle)
             )
         # TODO: implement update/replace based on contribution_id=None
-        doc = {
-            'contributor_email': contributor_email,
-            'contribution_id': self._get_next_contribution_id(),
-            'contributed_at': datetime.datetime.utcnow().isoformat(),
-            'contribution_data': parser.document
-        }
-        self.contributions.insert(doc)
-        return doc['contribution_id'], doc['contribution_data']
+        # apply general level-0 section on all other level-0 sections if existent
+        general_title, data_title = mp_level01_titles[:2]
+        if general_title in parser.document:
+            general_data = parser.document.pop(general_title)
+            for k in parser.document:
+                if isinstance(parser.document[k], list):
+                    # move data in 'data' section
+                    data = parser.document.pop(k, None)
+                    parser.document[k] = {data_title: data}
+                parser.document[k][general_title] = general_data
+        # treat every mp_cat_id as separate database insert
+        contribution_ids = []
+        for k,v in parser.document.iteritems():
+            new_key = k.split('--')[0]
+            doc = {
+                'contributor_email': contributor_email,
+                'contribution_id': self._get_next_contribution_id(),
+                'contributed_at': datetime.datetime.utcnow().isoformat(),
+                new_key: v
+            }
+            self.contributions.insert(doc)
+            contribution_ids.append(doc['contribution_id'])
+        return contribution_ids
 
     def fake_multiple_contributions(self, num_contributions=20):
         """fake the submission of many contributions"""
@@ -103,4 +119,4 @@ class ContributionMongoAdapter(object):
             f = MPCsvFile(usable=True, main_general=fake.pybool())
             csv = f.make_file()
             contributor = '%s <%s>' % (fake.name(), fake.email())
-            self.submit_contribution(csv, contributor)
+            print self.submit_contribution(csv, contributor)

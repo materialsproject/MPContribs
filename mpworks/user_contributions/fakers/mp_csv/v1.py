@@ -117,6 +117,7 @@ class MPCsvFile(MPCsvFileBase):
         self.outfile.truncate(0)
         for i in range(self.num_level0_sections):
             while 1:
+                self.section_structure = []
                 self.section = StringIO()
                 self._make_level_n_section(i, 0)
                 self.section_titles.pop()
@@ -124,5 +125,4 @@ class MPCsvFile(MPCsvFileBase):
                     print >>self.outfile, self.section.getvalue()
                     self.section.close()
                     break
-        print self.outfile.getvalue()
         return self.outfile
