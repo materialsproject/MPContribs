@@ -1,10 +1,4 @@
-import os, datetime
-from monty.serialization import loadfn
-from pymatgen.core import Structure
-from pymatgen.matproj.snl import StructureNL
-from mpworks.submission.submission_mongo import SubmissionMongoAdapter
-from parsers import RecursiveParser
-from pymongo import MongoClient
+import os
 
 def submit_snl_from_cif(submitter_email, cif_file, metadata_file):
     """submit StructureNL via CIF and YAML MetaData files
@@ -17,6 +11,10 @@ def submit_snl_from_cif(submitter_email, cif_file, metadata_file):
     Args:
     metadata_file: name of file parsed via monty's loadfn
     """
+    from mpworks.submission.submission_mongo import SubmissionMongoAdapter
+    from monty.serialization import loadfn
+    from pymatgen.core import Structure
+    from pymatgen.matproj.snl import StructureNL
     sma = SubmissionMongoAdapter.auto_load()
     pth = os.path.dirname(os.path.realpath(__file__))
     structure = Structure.from_file(os.path.join(pth, cif_file))
@@ -28,12 +26,18 @@ def submit_snl_from_cif(submitter_email, cif_file, metadata_file):
     snl = StructureNL(structure, **config)
     sma.submit_snl(snl, submitter_email)
 
+
+from pymongo import MongoClient
+
 def create_db(host='localhost', port=27017, db_name='user_contributions'):
     """create database and add user for testing"""
     client = MongoClient(host, port, j=True)
     client.drop_database(db_name)
     client[db_name].add_user('test', 'test', read_only=False)
 
+from parsers import RecursiveParser
+import datetime
+from StringIO import StringIO
 
 class ContributionMongoAdapter(object):
     """adapter/interface for user contributions"""
@@ -69,20 +73,34 @@ class ContributionMongoAdapter(object):
         contribution_id: None if new contribution else update/replace
         parser: parser class to use on input handle
         """
-        if not isinstance(input_handle, file):
+        if isinstance(input_handle, file):
+            fileExt = os.path.splitext(input_handle.name)[1][1:]
+            parser.init(fileExt=fileExt)
+            parser.parse(input_handle.read())
+        elif isinstance(input_handle, StringIO):
+            parser.init()
+            parser.parse(input_handle.getvalue())
+        else:
             raise TypeError(
                 'type %r not supported as input handle!' % type(input_handle)
             )
-        fileExt = os.path.splitext(input_handle.name)[1][1:]
-        parser.parse(input_handle.read(), fileExt=fileExt)
         # TODO: implement update/replace based on contribution_id=None
-        # TODO: catch no mp_nested_keys found
         doc = {
             'contributor_email': contributor_email,
             'contribution_id': self._get_next_contribution_id(),
             'contributed_at': datetime.datetime.utcnow().isoformat(),
-            'mp_nested_keys': parser.mp_nested_keys,
             'contribution_data': parser.document
         }
         self.contributions.insert(doc)
-        return parser # TODO: return contribution id
+        return doc['contribution_id'], doc['contribution_data']
+
+    def fake_multiple_contributions(self, num_contributions=20):
+        """fake the submission of many contributions"""
+        from faker import Faker
+        from fakers.mp_csv.v1 import MPCsvFile
+        fake = Faker()
+        for n in range(num_contributions):
+            f = MPCsvFile(usable=True, main_general=fake.pybool())
+            csv = f.make_file()
+            contributor = '%s <%s>' % (fake.name(), fake.email())
+            self.submit_contribution(csv, contributor)

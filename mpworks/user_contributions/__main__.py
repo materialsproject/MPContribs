@@ -32,13 +32,15 @@ if __name__ == '__main__':
         format='%(message)s', level=getattr(logging, loglevel)
     )
     cma = ContributionMongoAdapter()
-    parser = cma.submit_contribution(
+    cma._reset()
+    cid, doc = cma.submit_contribution(
         open(args.infile,'r'), 'Patrick Huck <phuck@lbl.gov>'
     )
     json.dump(
-        parser.document, open(args.outfile, 'wb'),
+        doc, open(args.outfile, 'wb'),
         indent=2, sort_keys=True
     )
+    cma.fake_multiple_contributions(num_contributions=5)
     #plot(args.outfile)
     #submit_snl_from_cif(
     #    'Patrick Huck <phuck@lbl.gov>', 'test_filesFe3O4.cif',
