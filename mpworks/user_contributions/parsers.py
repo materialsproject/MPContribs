@@ -52,12 +52,25 @@ class RecursiveParser:
             r'%s*' % config.csv_comment_char, title
         )[0].strip().lower()
 
+    def is_bare_data_section(self, title):
+        """determine whether currently in bare data section"""
+        return (
+            title != config.mp_level01_titles[0] and 
+            self.level-1 == config.min_indent_level
+        )
+
+    def is_data_section(self, title):
+        """determine whether currently in data section"""
+        return (
+            title == config.mp_level01_titles[1] or
+            self.is_bare_data_section(title)
+        )
+
     def read_csv(self, title, body):
         """run pandas.read_csv on (sub)section body"""
-        options = self.data_options if title == config.mp_level01_titles[1] or (
-          title != config.mp_level01_titles[0] and 
-          self.level-1 == config.min_indent_level
-        ) else self.colon_key_value_list
+        options = self.data_options \
+                if self.is_data_section(title) \
+                else self.colon_key_value_list
         return pd.read_csv(
             StringIO(body), comment=config.csv_comment_char,
             skipinitialspace=True, squeeze=True, **options
@@ -88,6 +101,13 @@ class RecursiveParser:
         self.section_titles.pop()
         self.level -= 1
 
+    def nest_dict(self, dct, keys):
+        """nest dict under list of keys"""
+        nested_dict = dct
+        for key in reversed(keys):
+            nested_dict = {key: nested_dict}
+        return nested_dict
+
     def parse(self, file_string):
         """recursively parse sections according to number of separators"""
         # split into section title line (even) and section body (odd entries)
@@ -110,11 +130,27 @@ class RecursiveParser:
         else:
             # separator level not found b/c too high
             # read csv / convert section body to pandas object
-            pd_obj = self.read_csv(self.section_titles[-1], file_string)
+            section_title = self.section_titles[-1]
+            pd_obj = self.read_csv(section_title, file_string)
             logging.info(pd_obj)
             # TODO: include validation
+            # add first column as x-column for default plot
+            if self.is_data_section(section_title):
+                nested_keys = [
+                    self.section_titles[0],
+                    config.mp_level01_titles[2], 'default'
+                ]
+                self.document.rec_update(self.nest_dict(
+                    {'x': pd_obj.columns[0]}, nested_keys
+                ))
+            # add data section title to nest 'bare' data under data section
+            # => artificially increase and decrease level (see below)
+            is_bare_data = False
+            if self.is_bare_data_section(section_title):
+                is_bare_data = True
+                self.increase_level(config.mp_level01_titles[1])
             # update nested dict/document based on section level
-            nested_dict = self.to_dict(pd_obj)
-            for key in reversed(self.section_titles):
-                nested_dict = {key: nested_dict}
-            self.document.rec_update(nested_dict)
+            self.document.rec_update(self.nest_dict(
+                self.to_dict(pd_obj), self.section_titles
+            ))
+            if is_bare_data: self.reduce_level()

@@ -27,4 +27,4 @@ parser.add_argument("--usable", action="store_true", help="""
                     """)
 args = vars(parser.parse_args())
 f = MPCsvFile(**args)
-f.make_file()
+print f.make_file().getvalue()
