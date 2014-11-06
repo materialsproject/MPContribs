@@ -30,14 +30,14 @@ def submit_snl_from_cif(submitter_email, cif_file, metadata_file):
 from pymongo import MongoClient
 from monty.serialization import loadfn
 
-def create_db(host='localhost', port=27017, db_name='user_contributions'):
+def create_db(host='localhost', port=27019, db_name='user_contributions'):
     """create database and add user for testing"""
     client = MongoClient(host, port, j=True)
     client.drop_database(db_name)
     client[db_name].add_user('test', 'test', read_only=False)
 
 def init_materials_collection(
-    host='localhost', port=27017, db_name='user_contributions',
+    host='localhost', port=27019, db_name='user_contributions',
     username='test', password='test'
 ):
     """init a test materials collection from official 'dtu' materials"""
@@ -60,7 +60,7 @@ from config import mp_level01_titles
 class ContributionMongoAdapter(object):
     """adapter/interface for user contributions"""
     def __init__(
-        self, host='localhost', port=27017, db_name='user_contributions',
+        self, host='localhost', port=27019, db_name='user_contributions',
         username='test', password='test'
     ):
         client = MongoClient(host, port, j=False)
