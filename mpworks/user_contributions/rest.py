@@ -64,19 +64,20 @@ from faker import Faker
 
 class ContributionMongoAdapter(object):
     """adapter/interface for user contributions"""
-    def __init__(
-        self, host='localhost', port=27019, db_name='user_contributions',
-        username='test', password='test'
-    ):
-        client = MongoClient(host, port, j=False)
-        client[db_name].authenticate(username, password)
-        self.id_assigner = client[db_name].id_assigner
-        self.contributions = client[db_name].contributions
-        self.materials = client[db_name].materials
+    def __init__(self, db_yaml='materials_db_dev.yaml'):
+        config = loadfn(os.path.join(os.environ['DB_LOC'], db_yaml))
+        client = MongoClient(config['host'], config['port'], j=False)
+        client[config['db']].authenticate(
+            config['username'], config['password']
+        )
+        self.id_assigner = client[config['db']].contribution_id_assigner
+        self.contributions = client[config['db']].contributions
+        self.materials = client[config['db']].materials
         self.fake = Faker()
         self.available_mp_ids = []
         for doc in self.materials.aggregate([
-            { '$project': { 'task_id': 1, '_id': 0 }, }
+            { '$project': { 'task_id': 1, '_id': 0 } },
+            { '$match':  { 'task_id': { '$regex': '^mp-[0-9]{1}$' } } },
         ], cursor={}):
             self.available_mp_ids.append(doc['task_id'])
 
@@ -96,7 +97,7 @@ class ContributionMongoAdapter(object):
         self, input_handle, contributor_email, contribution_id=None,
         parser=RecursiveParser()
     ):
-        """submit user data to `user_contributions` database
+        """submit user data to `materials.contributions` collection
 
         Args:
         input_handle: object to "connect" to input, i.e. file handle
