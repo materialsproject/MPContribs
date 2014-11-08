@@ -1,4 +1,4 @@
-import os
+import os, logging
 
 def submit_snl_from_cif(submitter_email, cif_file, metadata_file):
     """submit StructureNL via CIF and YAML MetaData files
@@ -29,33 +29,6 @@ def submit_snl_from_cif(submitter_email, cif_file, metadata_file):
 
 from pymongo import MongoClient
 from monty.serialization import loadfn
-
-def create_db(host='localhost', port=27019, db_name='user_contributions'):
-    """create database and add user for testing"""
-    client = MongoClient(host, port, j=True)
-    client.drop_database(db_name)
-    client[db_name].add_user('test', 'test', read_only=False)
-
-def init_materials_collection(
-    host='localhost', port=27019, db_name='user_contributions',
-    username='test', password='test'
-):
-    """init a test materials collection from official 'dtu' materials"""
-    config = loadfn(os.path.join(os.environ['DB_LOC'], 'materials_db.yaml'))
-    rclient = MongoClient(config['host'], config['port'], j=True)
-    rclient[config['db']].authenticate(config['username'], config['password'])
-    wclient = MongoClient(host, port, j=True)
-    wclient[db_name].authenticate(username, password)
-    rmaterials = rclient[config['db']].materials
-    wmaterials = wclient[db_name].materials
-    wmaterials.remove()
-    for doc in rmaterials.find(
-      {'external_data':{'$exists':'dtu'}},
-      {'external_data.dtu': 0}
-    ):
-        wmaterials.insert(doc)
-    print wmaterials.count(), ' materials inserted'
-
 from parsers import RecursiveParser
 import datetime
 from StringIO import StringIO
@@ -144,4 +117,4 @@ class ContributionMongoAdapter(object):
             f = MPCsvFile(usable=True, main_general=self.fake.pybool())
             csv = f.make_file()
             contributor = '%s <%s>' % (self.fake.name(), self.fake.email())
-            print self.submit_contribution(csv, contributor)
+            logging.info(self.submit_contribution(csv, contributor))
