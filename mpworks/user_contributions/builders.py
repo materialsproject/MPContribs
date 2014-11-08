@@ -25,7 +25,7 @@ class MPContributionsBuilder():
             }}
         ]
 
-    def flatten_dict(self, dd, separator='_', prefix=''):
+    def flatten_dict(self, dd, separator='.', prefix=''):
         """http://stackoverflow.com/a/19647596"""
         return { prefix + separator + k if prefix else k : v
                 for kk, vv in dd.items()
@@ -68,18 +68,19 @@ class MPContributionsBuilder():
                 # only make plots for one mp-id due to plotly restrictions
                 plot_cids = doc['contrib_ids']
             for cid in doc['contrib_ids']:
-                tab_contrib = self.contrib_coll.find_one(
+                tree_contrib = self.contrib_coll.find_one(
                     {'contribution_id': cid}, {
                         'content.data': 0, 'content.plots': 0, '_id': 0
                     }
                 )
-                author = Author.parse_author(tab_contrib['contributor_email'])
+                author = Author.parse_author(tree_contrib['contributor_email'])
                 project = str(author.name).translate(None, '.')
-                tabular_data = self.flatten_dict(tab_contrib)
+                tree_keys = self.flatten_dict(tree_contrib['content']).keys()
                 logging.info(doc['_id'])
                 logging.info(self.mat_coll.update(
                     {'task_id': doc['_id']}, { '$set': {
-                        'contributed_data.%s.tabular_data' % project: tabular_data
+                        'contributed_data.%s.tree_keys' % project: tree_keys,
+                        'contributed_data.%s.tree_data' % project: tree_contrib['content']
                     }}
                 ))
                 if plot_cids is not None and cid in plot_cids:
