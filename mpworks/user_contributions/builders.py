@@ -74,12 +74,12 @@ class MPContributionsBuilder():
                     }
                 )
                 author = Author.parse_author(tree_contrib['contributor_email'])
-                project = str(author.name).translate(None, '.')
-                tree_keys = self.flatten_dict(tree_contrib['content']).keys()
+                project = str(author.name).translate(None, '.').replace(' ','_')
+                #tree_keys = self.flatten_dict(tree_contrib['content']).keys()
                 logging.info(doc['_id'])
                 logging.info(self.mat_coll.update(
                     {'task_id': doc['_id']}, { '$set': {
-                        'contributed_data.%s.tree_keys' % project: tree_keys,
+                        #'contributed_data.%s.tree_keys' % project: tree_keys,
                         'contributed_data.%s.tree_data' % project: tree_contrib['content']
                     }}
                 ))
