@@ -73,15 +73,23 @@ class MPContributionsBuilder():
                         'content.data': 0, 'content.plots': 0, '_id': 0
                     }
                 )
+                table_contrib = self.contrib_coll.find_one(
+                    {'contribution_id': cid}, { 'content.data': 1, '_id': 0 }
+                )
                 author = Author.parse_author(tree_contrib['contributor_email'])
                 project = str(author.name).translate(None, '.').replace(' ','_')
                 #tree_keys = self.flatten_dict(tree_contrib['content']).keys()
                 logging.info(doc['_id'])
+                all_data = {
+                    #'contributed_data.%s.tree_keys' % project: tree_keys,
+                    'contributed_data.%s.tree_data' % project: tree_contrib['content'],
+                }
+                if 'data' in table_contrib['content']:
+                    all_data.update({
+                        'contributed_data.%s.table_data' % project: table_contrib['content']['data']
+                    })
                 logging.info(self.mat_coll.update(
-                    {'task_id': doc['_id']}, { '$set': {
-                        #'contributed_data.%s.tree_keys' % project: tree_keys,
-                        'contributed_data.%s.tree_data' % project: tree_contrib['content']
-                    }}
+                    {'task_id': doc['_id']}, { '$set': all_data }
                 ))
                 if plot_cids is not None and cid in plot_cids:
                     plotly_url = self.plot(cid)
