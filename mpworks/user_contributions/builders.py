@@ -78,16 +78,32 @@ class MPContributionsBuilder():
                 )
                 author = Author.parse_author(tree_contrib['contributor_email'])
                 project = str(author.name).translate(None, '.').replace(' ','_')
-                #tree_keys = self.flatten_dict(tree_contrib['content']).keys()
                 logging.info(doc['_id'])
                 all_data = {
-                    #'contributed_data.%s.tree_keys' % project: tree_keys,
                     'contributed_data.%s.tree_data' % project: tree_contrib['content'],
                 }
                 if 'data' in table_contrib['content']:
-                    all_data.update({
-                        'contributed_data.%s.table_data' % project: table_contrib['content']['data']
-                    })
+                    table_columns, table_rows = None, None
+                    raw_data = table_contrib['content']['data']
+                    if isinstance(raw_data, dict):
+                        table_columns = [ { 'title': k } for k in raw_data ]
+                        table_rows = [
+                            [ str(raw_data[d['title']][row_index]) for d in table_columns ]
+                            for row_index in xrange(len(
+                                raw_data[table_columns[0]['title']]
+                            ))
+                        ]
+                    elif isinstance(raw_data, list):
+                        table_columns = [ { 'title': k } for k in raw_data[0] ]
+                        table_rows = [
+                            [ str(row[d['title']]) for d in table_columns ]
+                            for row in raw_data
+                        ]
+                    if table_columns is not None:
+                        all_data.update({
+                            'contributed_data.%s.table.columns' % project: table_columns,
+                            'contributed_data.%s.table.rows' % project: table_rows,
+                        })
                 logging.info(self.mat_coll.update(
                     {'task_id': doc['_id']}, { '$set': all_data }
                 ))
