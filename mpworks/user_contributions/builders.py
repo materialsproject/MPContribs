@@ -79,9 +79,11 @@ class MPContributionsBuilder():
                 author = Author.parse_author(tree_contrib['contributor_email'])
                 project = str(author.name).translate(None, '.').replace(' ','_')
                 logging.info(doc['_id'])
-                all_data = {
-                    'contributed_data.%s.tree_data' % project: tree_contrib['content'],
-                }
+                all_data = {}
+                if tree_contrib['content']:
+                    all_data.update({
+                        'contributed_data.%s.tree_data.%d' % (project, cid): tree_contrib['content'],
+                    })
                 if 'data' in table_contrib['content']:
                     table_columns, table_rows = None, None
                     raw_data = table_contrib['content']['data']
@@ -101,8 +103,8 @@ class MPContributionsBuilder():
                         ]
                     if table_columns is not None:
                         all_data.update({
-                            'contributed_data.%s.table.columns' % project: table_columns,
-                            'contributed_data.%s.table.rows' % project: table_rows,
+                            'contributed_data.%s.tables.%d.columns' % (project,cid): table_columns,
+                            'contributed_data.%s.tables.%d.rows' % (project,cid): table_rows,
                         })
                 logging.info(self.mat_coll.update(
                     {'task_id': doc['_id']}, { '$set': all_data }
