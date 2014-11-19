@@ -94,7 +94,7 @@ class ContributionMongoAdapter(object):
         if general_title in parser.document:
             general_data = parser.document.pop(general_title)
             for k in parser.document:
-                parser.document[k][general_title] = general_data
+                parser.document[k].rec_update({general_title: general_data})
         # treat every mp_cat_id as separate database insert
         contribution_ids = []
         for k,v in parser.document.iteritems():

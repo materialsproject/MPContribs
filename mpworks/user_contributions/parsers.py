@@ -13,7 +13,7 @@ class RecursiveDict(dict):
                isinstance(value, dict):
                 self[key] = RecursiveDict(self[key])
                 self[key].rec_update(value)
-            else:
+            elif key not in self: # don't overwrite existing unnested key
                 self[key] = value
 
 class RecursiveParser:
