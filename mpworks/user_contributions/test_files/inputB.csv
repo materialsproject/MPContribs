@@ -1,0 +1,42 @@
+>>> GENERAL
+# - anything after section delimiter is parsed as section name, excl. comments
+# - number of '>'s denotes section level (depth), min. 3 to avoid collision with '>>' sign
+# - a general section with properties, settings and defaults.
+#   main general is applied to all following sections (recursive update)
+# - alternative to band gap data in inputA.csv
+#   if not to be plotted but shown as tree-like
+project: nrel/dtu
+nrel-id: 73579
+# comment lines in (sub)section body are ignored
+fsg number: 167
+fsg name: R-3c
+submitters: slany@nrel.gov, pgraf@nrel.gov # usernames = email addresses
+references: slany14, slany12 # bibtex-keys
+property: band gap
+functional: GLLB-SC
+unit: eV
+
+>>> MP-5
+>>>> result 1
+type: indirect
+method: Kohn-Sham
+value: 6.887038
+>>>> result 2
+type: indirect
+method: quasi-particle
+value: 9.315470
+>>>> result 3
+type: direct
+method: Kohn-Sham
+value: 6.886986
+>>>> result 4
+type: direct
+method: quasi-particle
+value: 9.315419
+
+# local general keys have priority (overwrite main general settings)
+>>> MP-5
+>>>> general
+property: deriv. discont.
+>>>> result
+value: 2.42833

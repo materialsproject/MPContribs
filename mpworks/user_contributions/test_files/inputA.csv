@@ -37,6 +37,21 @@ type: indirect
 method: Kohn-Sham
 value: 6.887038
 
+>>> MP-4
+# a section with a simple list of annotated numbers including units. The number
+# can have multiple columns to provide info on the respective conditions under
+# which the number was generated, for instance.
+>>>> plots
+x: name
+kind: bar
+>>>> data
+name,type,functional,method,value,unit
+band gap,indirect,GLLB-SC,Kohn-Sham,6.887038,eV
+band gap,direct,GLLB-SC,Kohn-Sham,6.886986,eV
+band gap,indirect,GLLB-SC,quasi-particle,9.315470,eV
+band gap,direct,GLLB-SC,quasi-particle,9.315419,eV
+deriv. discont.,,GLLB-SC,,2.42833,eV
+
 >>> MP-2
 # no subsections -> parsed as 'data'
 Elastic Tensor Entry,Experiment,Theory,Reference
