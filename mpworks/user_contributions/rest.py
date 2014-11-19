@@ -68,7 +68,7 @@ class ContributionMongoAdapter(object):
 
     def submit_contribution(
         self, input_handle, contributor_email, contribution_id=None,
-        parser=RecursiveParser()
+        parser=RecursiveParser(), fake=False
     ):
         """submit user data to `materials.contributions` collection
 
@@ -98,8 +98,8 @@ class ContributionMongoAdapter(object):
         # treat every mp_cat_id as separate database insert
         contribution_ids = []
         for k,v in parser.document.iteritems():
-            #mp_cat_id = k.split('--')[0]
-            mp_cat_id = self.fake.random_element(elements=self.available_mp_ids)
+            mp_cat_id = k.split('--')[0] if not fake else \
+                    self.fake.random_element(elements=self.available_mp_ids)
             doc = {
                 'contributor_email': contributor_email,
                 'contribution_id': self._get_next_contribution_id(),
@@ -117,4 +117,4 @@ class ContributionMongoAdapter(object):
             f = MPCsvFile(usable=True, main_general=self.fake.pybool())
             csv = f.make_file()
             contributor = '%s <%s>' % (self.fake.name(), self.fake.email())
-            logging.info(self.submit_contribution(csv, contributor))
+            logging.info(self.submit_contribution(csv, contributor, fake=True))
