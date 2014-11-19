@@ -28,8 +28,6 @@ alpha,beta,gamma
 30,31,32  # this is a comment
 40,41,42
 50,51,52
-
->>> MP-1
 >>>> band gap
 functional: GLLB-SC
 unit: eV
@@ -42,7 +40,7 @@ value: 6.887038
 # can have multiple columns to provide info on the respective conditions under
 # which the number was generated, for instance.
 >>>> plots
-x: name
+>>>>> default # add options to automatically generated default plot
 kind: bar
 >>>> data
 name,type,functional,method,value,unit

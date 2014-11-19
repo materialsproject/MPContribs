@@ -16,7 +16,7 @@ property: band gap
 functional: GLLB-SC
 unit: eV
 
->>> MP-5
+>>> MP-4
 >>>> result 1
 type: indirect
 method: Kohn-Sham
@@ -35,7 +35,7 @@ method: quasi-particle
 value: 9.315419
 
 # local general keys have priority (overwrite main general settings)
->>> MP-5
+>>> MP-4
 >>>> general
 property: deriv. discont.
 >>>> result
