@@ -66,15 +66,39 @@ class RecursiveParser:
             self.is_bare_data_section(title)
         )
 
+    def strip(self, text):
+        """http://stackoverflow.com/questions/13385860"""
+        if not text:
+            return np.nan
+        try:
+            return float(text)
+        except ValueError:
+            try:
+                return text.strip()
+            except AttributeError:
+                return text
+
     def read_csv(self, title, body):
         """run pandas.read_csv on (sub)section body"""
-        options = self.data_options \
-                if self.is_data_section(title) \
-                else self.colon_key_value_list
+        if self.is_data_section(title):
+            options = self.data_options
+            cur_line = 1
+            while 1:
+                first_line = body.split('\n', cur_line)[cur_line-1]
+                cur_line += 1
+                if not first_line.strip().startswith(config.csv_comment_char):
+                    break
+            ncols = len(first_line.split(options['sep']))
+        else:
+            options = self.colon_key_value_list
+            ncols = 2
+        converters = dict((col,self.strip) for col in range(ncols))
         return pd.read_csv(
             StringIO(body), comment=config.csv_comment_char,
-            skipinitialspace=True, squeeze=True, **options
-        ).dropna()
+            skipinitialspace=True, squeeze=True,
+            converters = converters,
+            **options
+        ).dropna(how='all')
 
     def to_dict(self, pandas_object):
         """convert pandas object to dict"""
