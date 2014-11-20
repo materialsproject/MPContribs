@@ -64,9 +64,9 @@ class MPContributionsBuilder():
         # TODO: in general, distinguish mp cat's by format of mp_cat_id
         plot_cids = None
         for doc in self.contrib_coll.aggregate(self.pipeline, cursor={}):
-            if plot_cids is None and doc['num_contribs'] > 2:
-                # only make plots for one mp-id due to plotly restrictions
-                plot_cids = doc['contrib_ids']
+            #if plot_cids is None and doc['num_contribs'] > 2:
+            # only make plots for one mp-id due to plotly restrictions
+            plot_cids = doc['contrib_ids']
             for cid in doc['contrib_ids']:
                 tree_contrib = self.contrib_coll.find_one(
                     {'contribution_id': cid}, {
