@@ -36,7 +36,7 @@ class MPContributionsBuilder():
         """make default plot for contribution_id"""
         plot_contrib = self.contrib_coll.find_one(
             {'contribution_id': cid}, {
-                'content.data': 1, 'content.plots.default': 1,
+                'content.data': 1, 'content.plots': 1,
                 '_id': 0, 'contributor_email': 1
             }
         )
@@ -44,11 +44,18 @@ class MPContributionsBuilder():
             return None
         author = Author.parse_author(plot_contrib['contributor_email'])
         #project = str(author.name).translate(None, '.').replace(' ','_')
-        fig, ax = plt.subplots(1, 1)
-        plotopts = plot_contrib['content']['plots']['default']
         data = plot_contrib['content']['data']
-        pd.DataFrame.from_dict(data).plot(ax=ax, **plotopts)
-        return py.plot_mpl(fig, filename='test%d' % cid, auto_open=False)
+        df = pd.DataFrame.from_dict(data)
+        urls = []
+        for nplot,plotopts in enumerate(
+            plot_contrib['content']['plots'].itervalues()
+        ):
+            fig, ax = plt.subplots(1, 1)
+            df.plot(ax=ax, **plotopts)
+            urls.append(
+                py.plot_mpl(fig, filename='test%d_%d' % (cid,nplot), auto_open=False)
+            )
+        return urls
 
     def _reset(self):
         """remove `contributed_data` keys from all documents"""
@@ -110,10 +117,11 @@ class MPContributionsBuilder():
                     {'task_id': doc['_id']}, { '$set': all_data }
                 ))
                 if plot_cids is not None and cid in plot_cids:
-                    plotly_url = self.plot(cid)
-                    if plotly_url is not None:
-                        logging.info(self.mat_coll.update(
-                            {'task_id': doc['_id']}, { '$push': {
-                                'contributed_data.%s.plotly_urls' % project: plotly_url
-                            }}
-                        ))
+                    plotly_urls = self.plot(cid)
+                    if plotly_urls is not None:
+                        for plotly_url in plotly_urls:
+                            logging.info(self.mat_coll.update(
+                                {'task_id': doc['_id']}, { '$push': {
+                                    'contributed_data.%s.plotly_urls' % project: plotly_url
+                                }}
+                            ))
