@@ -10,12 +10,13 @@ parser.add_argument("--infile", help="submit specific input file (ignored if --b
 parser.add_argument("--reset", help="reset contributions collection (ignored if --build)", action="store_true")
 parser.add_argument("--build", help="build ", action="store_true")
 parser.add_argument("--log", help="show log output", action="store_true")
+parser.add_argument("--contributor", help="contributor name and email",
+                    default="Patrick Huck <phuck@lbl.gov>")
 args = parser.parse_args()
 loglevel = 'DEBUG' if args.log else 'WARNING'
 logging.basicConfig(
     format='%(message)s', level=getattr(logging, loglevel)
 )
-contributor = 'Patrick Huck <phuck@lbl.gov>'
 
 if not args.build:
     cma = ContributionMongoAdapter()
@@ -24,7 +25,7 @@ if not args.build:
         cma.fake_multiple_contributions(num_contributions=args.num_contributions)
     else:
         logging.info(cma.submit_contribution(
-            open(args.infile, 'rb'), contributor
+            open(args.infile, 'rb'), args.contributor
         ))
 else: # TODO: make incremental
     mcb = MPContributionsBuilder()
@@ -32,6 +33,6 @@ else: # TODO: make incremental
     mcb.build()
 
 #submit_snl_from_cif(
-#    contributor, 'test_filesFe3O4.cif',
+#    args.contributor, 'test_filesFe3O4.cif',
 #    'test_files/input_rsc.yaml'
 #)
