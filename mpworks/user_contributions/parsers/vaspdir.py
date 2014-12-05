@@ -1,4 +1,4 @@
-import os
+import os, json
 from pymatgen.io.vaspio import Vasprun
 from base import BaseParser
 from pymongo import MongoClient
@@ -6,6 +6,7 @@ from monty.serialization import loadfn
 from collections import Counter
 from pandas import DataFrame
 import numpy as np
+from ..config import mp_level01_titles
 
 class VaspDirParser(BaseParser):
     # case identical to RecursiveParse as list of (independent) vasp runs
@@ -50,7 +51,9 @@ class VaspDirParser(BaseParser):
             mp_id = '--'.join([mp_id, str(self.mp_id_counter[mp_id]-1)])
             # add extra key for vasprun.xml file location to document
             vasprun_dirname = os.path.dirname(vasprun_file)
-            self.document.update({mp_id: {'vasprun_dirname': vasprun_dirname}})
+            self.document.update({
+                mp_id: {mp_level01_titles[0]: {'vasprun_dirname': vasprun_dirname}}
+            })
             # extract list of e_wo_entrp for each ionic step
             ycols = [ [
                 v for es_dict in ionic_step['electronic_steps'][1:]
@@ -69,7 +72,7 @@ class VaspDirParser(BaseParser):
                 ('ewe_is%d' % n, col) for n,col in enumerate(ycols)
             ))
             # add special data section for default graph to document
-            self.document[mp_id].update({'data': df.to_dict()})
+            self.document[mp_id].update({mp_level01_titles[1]: json.loads(df.to_json())})
             # add full vasprun data to document
-            self.document[mp_id].update({'vasprun': vasprun.as_dict()})
+            #self.document[mp_id].update({'vasprun': vasprun.as_dict()})
             break # TODO: remove to extend to all files
