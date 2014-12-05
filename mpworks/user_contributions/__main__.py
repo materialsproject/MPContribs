@@ -1,6 +1,6 @@
 import argparse, logging
 from rest import ContributionMongoAdapter#,submit_snl_from_cif
-from parsers import RecursiveParser
+from parsers.mpfile import RecursiveParser
 from builders import MPContributionsBuilder
 
 parser = argparse.ArgumentParser()
