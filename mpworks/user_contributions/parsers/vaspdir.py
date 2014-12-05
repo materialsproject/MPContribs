@@ -52,9 +52,9 @@ class VaspDirParser(BaseParser):
             mp_id = '--'.join([mp_id, str(self.mp_id_counter[mp_id]-1)])
             # add extra key for vasprun.xml file location to document
             vasprun_dirname = os.path.dirname(vasprun_file)
-            self.document.update({
-                mp_id: {mp_level01_titles[0]: {'vasprun_dirname': vasprun_dirname}}
-            })
+            self.document.rec_update(nest_dict(
+                {'vasprun_dirname': vasprun_dirname}, [mp_id, mp_level01_titles[0]]
+            ))
             # extract list of e_wo_entrp for each ionic step
             ycols = [ [
                 v for es_dict in ionic_step['electronic_steps'][1:]
@@ -72,13 +72,16 @@ class VaspDirParser(BaseParser):
             ycols_dict = dict(('ewe_is%d' % n, col) for n,col in enumerate(ycols))
             ycols_dict.update({'esN': range(max_el_steps)})
             df = DataFrame.from_dict(ycols_dict)
-            # add special data section for default graph and full vasprun to document
-            self.document[mp_id].update({
-                mp_level01_titles[1]: json.loads(df.to_json()),
-                'vasprun': vasprun.as_dict()
-            })
+            # add special data section for default graph to document
+            self.document.rec_update(nest_dict(
+                df.to_dict(orient='list'), [mp_id, mp_level01_titles[1]]
+            ))
             # add plots section for default plot (x: index column)
-            self.document[mp_id].update(
-                nest_dict({'x': 'esN'}, [mp_level01_titles[2], 'default']),
-            )
+            self.document.rec_update(nest_dict(
+                {'x': 'esN'}, [mp_id, mp_level01_titles[2], 'default']
+            ))
+            # add full vasprun to document
+            self.document.rec_update(nest_dict(
+                {'vasprun': vasprun.as_dict()}, [mp_id]
+            ))
             break # TODO: remove to extend to all files
