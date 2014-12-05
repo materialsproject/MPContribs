@@ -2,7 +2,7 @@ import re, logging
 import numpy as np
 import pandas as pd
 from StringIO import StringIO
-import config
+from ..config import min_indent_level, indent_symbol, csv_comment_char, mp_level01_titles
 
 class RecursiveDict(dict):
     """https://gist.github.com/Xjs/114831"""
@@ -18,7 +18,7 @@ class RecursiveDict(dict):
 
 class RecursiveParser:
     def __init__(self):
-        self.level = config.min_indent_level # level counter
+        self.level = min_indent_level # level counter
         self.section_titles = None
         self.document = None
         self.main_general = False
@@ -44,25 +44,25 @@ class RecursiveParser:
         #    require minimum one space after section level identifier
         # (.+) => capturing group of one or more arbitrary characters
         # \n+ => end by one or more newlines
-        return r'(?:^|\n+)%s{%d}\s+(.+)\n+' % (config.indent_symbol, self.level)
+        return r'(?:^|\n+)%s{%d}\s+(.+)\n+' % (indent_symbol, self.level)
 
     def clean_title(self, title):
         """strip in-line comments & spaces, make lower-case"""
         return re.split(
-            r'%s*' % config.csv_comment_char, title
+            r'%s*' % csv_comment_char, title
         )[0].strip().lower()
 
     def is_bare_data_section(self, title):
         """determine whether currently in bare data section"""
         return (
-            title != config.mp_level01_titles[0] and 
-            self.level-1 == config.min_indent_level
+            title != mp_level01_titles[0] and 
+            self.level-1 == min_indent_level
         )
 
     def is_data_section(self, title):
         """determine whether currently in data section"""
         return (
-            title == config.mp_level01_titles[1] or
+            title == mp_level01_titles[1] or
             self.is_bare_data_section(title)
         )
 
@@ -86,7 +86,7 @@ class RecursiveParser:
             while 1:
                 first_line = body.split('\n', cur_line)[cur_line-1]
                 cur_line += 1
-                if not first_line.strip().startswith(config.csv_comment_char):
+                if not first_line.strip().startswith(csv_comment_char):
                     break
             ncols = len(first_line.split(options['sep']))
         else:
@@ -94,7 +94,7 @@ class RecursiveParser:
             ncols = 2
         converters = dict((col,self.strip) for col in range(ncols))
         return pd.read_csv(
-            StringIO(body), comment=config.csv_comment_char,
+            StringIO(body), comment=csv_comment_char,
             skipinitialspace=True, squeeze=True,
             converters = converters,
             **options
@@ -140,10 +140,10 @@ class RecursiveParser:
             sections = sections[1:] # https://docs.python.org/2/library/re.html#re.split
             for section_index,section_body in enumerate(sections[1::2]):
                 clean_title = self.clean_title(sections[2*section_index])
-                if self.level == config.min_indent_level: # level-0
+                if self.level == min_indent_level: # level-0
                     if section_index == 0: # check for main-general mode
                         self.main_general = (
-                            clean_title == config.mp_level01_titles[0]
+                            clean_title == mp_level01_titles[0]
                         )
                     elif self.main_general: # uniquify level-0 titles
                         clean_title += '--%d' % self.level0_counter
@@ -162,7 +162,7 @@ class RecursiveParser:
             if self.is_data_section(section_title):
                 nested_keys = [
                     self.section_titles[0],
-                    config.mp_level01_titles[2], 'default'
+                    mp_level01_titles[2], 'default'
                 ]
                 self.document.rec_update(self.nest_dict(
                     {'x': pd_obj.columns[0]}, nested_keys
@@ -172,7 +172,7 @@ class RecursiveParser:
             is_bare_data = False
             if self.is_bare_data_section(section_title):
                 is_bare_data = True
-                self.increase_level(config.mp_level01_titles[1])
+                self.increase_level(mp_level01_titles[1])
             # update nested dict/document based on section level
             self.document.rec_update(self.nest_dict(
                 self.to_dict(pd_obj), self.section_titles
