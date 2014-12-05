@@ -4,6 +4,7 @@ import pandas as pd
 from StringIO import StringIO
 from ..config import min_indent_level, indent_symbol, csv_comment_char, mp_level01_titles
 from base import BaseParser
+from utils import nest_dict
 
 class RecursiveParser(BaseParser):
     def __init__(self, fileExt='csv'):
@@ -106,13 +107,6 @@ class RecursiveParser(BaseParser):
         self.section_titles.pop()
         self.level -= 1
 
-    def nest_dict(self, dct, keys):
-        """nest dict under list of keys"""
-        nested_dict = dct
-        for key in reversed(keys):
-            nested_dict = {key: nested_dict}
-        return nested_dict
-
     def parse(self, file_string):
         """recursively parse sections according to number of separators"""
         # split into section title line (even) and section body (odd entries)
@@ -145,7 +139,7 @@ class RecursiveParser(BaseParser):
                     self.section_titles[0],
                     mp_level01_titles[2], 'default'
                 ]
-                self.document.rec_update(self.nest_dict(
+                self.document.rec_update(nest_dict(
                     {'x': pd_obj.columns[0]}, nested_keys
                 ))
             # add data section title to nest 'bare' data under data section
@@ -155,7 +149,7 @@ class RecursiveParser(BaseParser):
                 is_bare_data = True
                 self.increase_level(mp_level01_titles[1])
             # update nested dict/document based on section level
-            self.document.rec_update(self.nest_dict(
+            self.document.rec_update(nest_dict(
                 self.to_dict(pd_obj), self.section_titles
             ))
             if is_bare_data: self.reduce_level()
