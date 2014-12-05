@@ -29,7 +29,7 @@ def submit_snl_from_cif(submitter_email, cif_file, metadata_file):
 
 from pymongo import MongoClient
 from monty.serialization import loadfn
-from parsers import RecursiveParser
+from parsers.mpfile import RecursiveParser
 import datetime
 from StringIO import StringIO
 from config import mp_level01_titles

@@ -3,7 +3,7 @@ from faker import Faker
 from pandas.io.parsers import read_csv
 from collections import Counter
 from ...config import csv_database
-from ...parsers import RecursiveDict
+from ...parsers.mpfile import RecursiveDict
 
 class DataGenerator(object):
     """generate MP-like data from baseball database
