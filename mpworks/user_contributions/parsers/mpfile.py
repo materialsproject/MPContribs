@@ -3,35 +3,16 @@ import numpy as np
 import pandas as pd
 from StringIO import StringIO
 from ..config import min_indent_level, indent_symbol, csv_comment_char, mp_level01_titles
+from base import BaseParser
 
-class RecursiveDict(dict):
-    """https://gist.github.com/Xjs/114831"""
-    def rec_update(self, other):
-        for key,value in other.iteritems():
-            if key in self and \
-               isinstance(self[key], dict) and \
-               isinstance(value, dict):
-                self[key] = RecursiveDict(self[key])
-                self[key].rec_update(value)
-            elif key not in self: # don't overwrite existing unnested key
-                self[key] = value
-
-class RecursiveParser:
-    def __init__(self):
-        self.level = min_indent_level # level counter
-        self.section_titles = None
-        self.document = None
-        self.main_general = False
-        self.level0_counter = None
-
-    def init(self, fileExt='csv'):
+class RecursiveParser(BaseParser):
+    def __init__(self, fileExt='csv'):
         """init and set read_csv options"""
+        BaseParser.__init__(self)
+        self.level = min_indent_level # level counter
         # TODO better organize read_csv options -> config file?
         if fileExt != 'csv' and fileExt != 'tsv':
             raise ValueError('%s format not supported!' % fileExt)
-        self.level0_counter = 0
-        self.section_titles = []
-        self.document = RecursiveDict({})
         data_separator = '\t' if fileExt == 'tsv' else ','
         self.data_options = { 'sep': data_separator, 'header': 0 }
         self.colon_key_value_list = { 'sep': ':', 'header': None, 'index_col': 0 }
