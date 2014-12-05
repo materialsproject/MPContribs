@@ -30,6 +30,7 @@ def submit_snl_from_cif(submitter_email, cif_file, metadata_file):
 from pymongo import MongoClient
 from monty.serialization import loadfn
 from parsers.mpfile import RecursiveParser
+from parsers.vaspdir import VaspDirParser
 import datetime
 from StringIO import StringIO
 from config import mp_level01_titles
@@ -67,26 +68,28 @@ class ContributionMongoAdapter(object):
         )['next_contribution_id']
 
     def submit_contribution(
-        self, input_handle, contributor_email, contribution_id=None,
-        parser=RecursiveParser(), fake=False
+        self, input_instance, contributor_email, contribution_id=None, fake=False
     ):
         """submit user data to `materials.contributions` collection
 
         Args:
-        input_handle: object to "connect" to input, i.e. file handle
-        contribution_id: None if new contribution else update/replace
-        parser: parser class to use on input handle
+        input_instance: input instance, i.e. file, StringIO, str
+        contribution_id: None if new contribution else update/replace # TODO
         """
-        if isinstance(input_handle, file):
-            fileExt = os.path.splitext(input_handle.name)[1][1:]
-            parser.init(fileExt=fileExt)
-            parser.parse(input_handle.read())
-        elif isinstance(input_handle, StringIO):
-            parser.init()
-            parser.parse(input_handle.getvalue())
+        parser = None
+        if isinstance(input_instance, file):
+            fileExt = os.path.splitext(input_instance.name)[1][1:]
+            parser = RecursiveParser(fileExt=fileExt)
+            parser.parse(input_instance.read())
+        elif isinstance(input_instance, StringIO):
+            parser = RecursiveParser()
+            parser.parse(input_instance.getvalue())
+        elif isinstance(input_instance, str):
+            parser = VaspDirParser(input_instance)
+            parser.parse()
         else:
             raise TypeError(
-                'type %r not supported as input handle!' % type(input_handle)
+                'type %r not supported as input instance!' % type(input_instance)
             )
         # TODO: implement update/replace based on contribution_id=None
         # apply general level-0 section on all other level-0 sections if existent
