@@ -11,3 +11,9 @@ class RecursiveDict(dict):
             elif key not in self: # don't overwrite existing unnested key
                 self[key] = value
 
+def nest_dict(dct, keys):
+    """nest dict under list of keys"""
+    nested_dict = dct
+    for key in reversed(keys):
+        nested_dict = {key: nested_dict}
+    return nested_dict

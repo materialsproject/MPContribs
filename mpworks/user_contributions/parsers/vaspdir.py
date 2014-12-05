@@ -7,6 +7,7 @@ from collections import Counter
 from pandas import DataFrame
 import numpy as np
 from ..config import mp_level01_titles
+from utils import nest_dict
 
 class VaspDirParser(BaseParser):
     # case identical to RecursiveParse as list of (independent) vasp runs
@@ -65,14 +66,19 @@ class VaspDirParser(BaseParser):
                 col + [np.nan] * (max_el_steps-len(col))
                 for col in ycols
             ]
-            # init a dataframe with
+            # prepare ycols dict for document
             # x: electronic step number (esN), y: e_wo_entrp (ewe) for each ionic step (is)
             # format: esN ewe_is0 ewe_is1 ... ewe_isN
-            df = DataFrame.from_dict(dict(
-                ('ewe_is%d' % n, col) for n,col in enumerate(ycols)
-            ))
-            # add special data section for default graph to document
-            self.document[mp_id].update({mp_level01_titles[1]: json.loads(df.to_json())})
-            # add full vasprun data to document
-            #self.document[mp_id].update({'vasprun': vasprun.as_dict()})
+            ycols_dict = dict(('ewe_is%d' % n, col) for n,col in enumerate(ycols))
+            ycols_dict.update({'esN': range(max_el_steps)})
+            df = DataFrame.from_dict(ycols_dict)
+            # add special data section for default graph and full vasprun to document
+            self.document[mp_id].update({
+                mp_level01_titles[1]: json.loads(df.to_json()),
+                'vasprun': vasprun.as_dict()
+            })
+            # add plots section for default plot (x: index column)
+            self.document[mp_id].update(
+                nest_dict({'x': 'esN'}, [mp_level01_titles[2], 'default']),
+            )
             break # TODO: remove to extend to all files
