@@ -4,8 +4,6 @@ from base import BaseParser
 from pymongo import MongoClient
 from monty.serialization import loadfn
 from collections import Counter
-from pandas import DataFrame
-import numpy as np
 from ..config import mp_level01_titles
 from utils import nest_dict
 
@@ -60,10 +58,10 @@ class VaspDirParser(BaseParser):
                 v for es_dict in ionic_step['electronic_steps'][1:]
                 for k,v in es_dict.iteritems() if k == 'e_wo_entrp'
             ] for ionic_step in vasprun.ionic_steps ]
-            # afterburn: make all ycols of same length (fill with np.nan)
+            # afterburn: make all ycols of same length (fill with None)
             max_el_steps = len(max(ycols, key=len))
             ycols = [
-                col + [np.nan] * (max_el_steps-len(col))
+                col + [None] * (max_el_steps-len(col))
                 for col in ycols
             ]
             # prepare ycols dict for document
@@ -71,14 +69,14 @@ class VaspDirParser(BaseParser):
             # format: esN ewe_is0 ewe_is1 ... ewe_isN
             ycols_dict = dict(('ewe_is%d' % n, col) for n,col in enumerate(ycols))
             ycols_dict.update({'esN': range(max_el_steps)})
-            df = DataFrame.from_dict(ycols_dict)
             # add special data section for default graph to document
             self.document.rec_update(nest_dict(
-                df.to_dict(orient='list'), [mp_id, mp_level01_titles[1]]
+                ycols_dict, [mp_id, mp_level01_titles[1]]
             ))
             # add plots section for default plot (x: index column)
             self.document.rec_update(nest_dict(
-                {'x': 'esN'}, [mp_id, mp_level01_titles[2], 'default']
+                {'x': 'esN', 'marker': 'o'},
+                [mp_id, mp_level01_titles[2], 'default']
             ))
             # add full vasprun to document
             self.document.rec_update(nest_dict(
