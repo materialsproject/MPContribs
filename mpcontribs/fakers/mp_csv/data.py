@@ -1,9 +1,8 @@
 import os, re
-from faker import Faker
 from pandas.io.parsers import read_csv
 from collections import Counter
 from ...config import csv_database
-from ...parsers.mpfile import RecursiveDict
+from ...parsers.utils import RecursiveDict
 
 class DataGenerator(object):
     """generate MP-like data from baseball database
@@ -11,7 +10,11 @@ class DataGenerator(object):
     database: http://seanlahman.com/files/database/lahman-csv_2014-02-14.zip
     """
     def __init__(self):
-        self.fake = Faker()
+        try:
+            from faker import Faker
+            self.fake = Faker()
+        except:
+            self.fake = None
         self.master = os.path.join(csv_database, 'Master.csv')
         self.player = None
         self.player_id = None

@@ -1,7 +1,6 @@
 import inspect
 from fnmatch import fnmatch
 from StringIO import StringIO
-from faker import Faker, DEFAULT_PROVIDERS
 from data import DataGenerator
 from ...config import csv_comment_char, mp_level01_titles
 from ...config import indent_symbol, min_indent_level
@@ -9,7 +8,13 @@ from ...config import indent_symbol, min_indent_level
 class MPCsvFileBase(object):
     """base class for MPCsvFile"""
     def __init__(self):
-        self.fake = Faker()
+        try:
+            from faker import Faker, DEFAULT_PROVIDERS
+            self.fake = Faker()
+            self.providers = DEFAULT_PROVIDERS
+        except:
+            self.fake = None
+            self.providers = None
         self.outfile = StringIO()
         self.section = None
         self.section_titles = []
@@ -48,7 +53,7 @@ class MPCsvFileBase(object):
         - append comment now and then
         """
         while 1:
-            provider_name = self.fake.random_element(elements=DEFAULT_PROVIDERS)
+            provider_name = self.fake.random_element(elements=self.providers)
             if provider_name != 'python' and \
                provider_name != 'profile' and \
                provider_name != 'credit_card':

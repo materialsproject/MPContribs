@@ -34,7 +34,6 @@ from parsers.vaspdir import VaspDirParser
 import datetime
 from StringIO import StringIO
 from config import mp_level01_titles
-from faker import Faker
 
 class ContributionMongoAdapter(object):
     """adapter/interface for user contributions"""
@@ -47,7 +46,11 @@ class ContributionMongoAdapter(object):
         self.id_assigner = client[config['db']].contribution_id_assigner
         self.contributions = client[config['db']].contributions
         self.materials = client[config['db']].materials
-        self.fake = Faker()
+        try:
+            from faker import Faker
+            self.fake = Faker()
+        except:
+            self.fake = None
         self.available_mp_ids = []
         for doc in self.materials.aggregate([
             { '$project': { 'task_id': 1, '_id': 0 } },
@@ -101,7 +104,7 @@ class ContributionMongoAdapter(object):
         # treat every mp_cat_id as separate database insert
         contribution_ids = []
         for k,v in parser.document.iteritems():
-            mp_cat_id = k.split('--')[0] if not fake else \
+            mp_cat_id = k.split('--')[0] if not fake or self.fake is None else \
                     self.fake.random_element(elements=self.available_mp_ids)
             doc = {
                 'contributor_email': contributor_email,
@@ -115,6 +118,9 @@ class ContributionMongoAdapter(object):
 
     def fake_multiple_contributions(self, num_contributions=20):
         """fake the submission of many contributions"""
+        if self.fake is None:
+            logging.info("Install fake-factory to fake submissions")
+            return
         from fakers.mp_csv.v1 import MPCsvFile
         for n in range(num_contributions):
             f = MPCsvFile(usable=True, main_general=self.fake.pybool())
