@@ -1,6 +1,5 @@
 from fnmatch import fnmatch
 from StringIO import StringIO
-from faker import Faker, DEFAULT_PROVIDERS
 from base import MPCsvFileBase
 from ...config import mp_level01_titles, mp_categories
 
@@ -96,6 +95,9 @@ class MPCsvFile(MPCsvFileBase):
 
     def make_file(self, num_level0_sections=3, max_level=3):
         """produce a fake file structure"""
+        if self.fake is None:
+            print "Install fake-factory to fake submissions"
+            return
         for i in range(num_level0_sections):
             while 1:
                 self.section = StringIO()

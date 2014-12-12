@@ -118,6 +118,9 @@ class MPCsvFile(MPCsvFileBase):
 
     def make_file(self):
         """produce a fake file structure"""
+        if self.fake is None:
+            print "Install fake-factory to fake submissions"
+            return
         self.outfile.truncate(0)
         for i in range(self.num_level0_sections):
             while 1:
