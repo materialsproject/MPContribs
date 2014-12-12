@@ -30,7 +30,6 @@ def submit_snl_from_cif(submitter_email, cif_file, metadata_file):
 from pymongo import MongoClient
 from monty.serialization import loadfn
 from parsers.mpfile import RecursiveParser
-from parsers.vaspdir import VaspDirParser
 import datetime
 from StringIO import StringIO
 from config import mp_level01_titles
@@ -87,9 +86,6 @@ class ContributionMongoAdapter(object):
         elif isinstance(input_instance, StringIO):
             parser = RecursiveParser()
             parser.parse(input_instance.getvalue())
-        elif isinstance(input_instance, str):
-            parser = VaspDirParser(input_instance)
-            parser.parse()
         else:
             raise TypeError(
                 'type %r not supported as input instance!' % type(input_instance)
