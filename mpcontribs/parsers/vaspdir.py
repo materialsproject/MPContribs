@@ -1,4 +1,4 @@
-import os, json, math
+import os, json, math, glob, fnmatch
 from pymatgen.apps.borg.hive import SimpleVaspToComputedEntryDrone
 from pymatgen.apps.borg.queen import BorgQueen
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
@@ -8,35 +8,45 @@ from utils import nest_dict
 class VaspDirParser():
     def __init__(self, rootdir):
         """read vasp output via drone (main general section?)"""
+        self.rootdir = rootdir
         self.drone = SimpleVaspToComputedEntryDrone(inc_structure=True)
         self.queen = BorgQueen(self.drone, rootdir, 2)
         self.data = self.queen.get_data()
 
-    def find_entry_for_directory(self, dirname, oszicar=True):
+    def find_entry_for_directory(self, regex, oszicar=True):
         for entry in reversed(self.data):
-            if dirname in entry.data['filename']:
+            if fnmatch.fnmatch(entry.data['filename'], regex):
                 if oszicar and not entry.energy < 1e10: continue
                 return entry
 
+    def get_barrier(self, dirname, i):
+        saddle_dir = 'neb_vac1-vac%d_opt*' % (i+1 if i < 4 else 4)
+        saddle_entry = self.find_entry_for_directory(os.path.join(dirname, saddle_dir))
+        if saddle_entry is None: return None
+        min_dir = 'defect_vac%d_opt*' % (1 if i < 4 else 4)
+        min_entry = self.find_entry_for_directory(os.path.join(dirname, min_dir))
+        if min_entry is None: return None
+        return saddle_entry.energy - min_entry.energy
+
     def reduce(self):
         """extraction/reduce phase"""
-        struct = self.find_entry_for_directory('perfect_stat', oszicar=False).structure
-        values, numatom = {}, len(struct)
-        reduced = SpacegroupAnalyzer(struct, symprec=1e-2).get_primitive_standard_structure()
-        values['a'] = reduced.lattice.abc[0] * math.sqrt(2) * 10**(-8)
-        values['enebarr'] = []
-        for i in range(5): # TODO what's E0?
-            saddle_dir = 'neb_vac1-vac%d_opt' % (i+1 if i < 4 else 4)
-            saddle_entry = self.find_entry_for_directory(saddle_dir)
-            if saddle_entry is None: continue
-            min_dir = 'defect_vac%d_opt' % (1 if i < 4 else 4)
-            min_entry = self.find_entry_for_directory(min_dir)
-            if min_entry is None: continue
-            print saddle_entry.energy, min_entry.energy
-            values['enebarr'].append(saddle_entry.energy - min_entry.energy)
-
-        #values['v'] = self.get_v(vdir,vdir_num,vdir_denom)
-        #values['HVf'] = self.get_HB_and_HVf(Hdir,numatom,'HVf')
+        values, E0 = {}, None
+        indirs = glob.glob(os.path.join(self.rootdir, "*CuCu*")) + [
+            fn for fn in glob.glob(os.path.join(self.rootdir, "*Cu*"))
+            if not fnmatch.fnmatch(fn, "*CuCu*")
+        ]
+        for idx,indir in enumerate(indirs):
+            struct = self.find_entry_for_directory(
+                os.path.join(indir, 'perfect_stat*'), oszicar=False
+            ).structure
+            values[indir], numatom = {}, len(struct)
+            reduced = SpacegroupAnalyzer(struct, symprec=1e-2).get_primitive_standard_structure()
+            values[indir]['a'] = reduced.lattice.abc[0] * math.sqrt(2) * 10**(-8)
+            values[indir]['enebarr'] = [ self.get_barrier(indir, i) for i in range(5) ]
+            if idx == 0: E0 = min(filter(None, values[indir]['enebarr']))
+            else: values[indir]['enebarr'][0] = E0
+            #values[indir]['v'] = self.get_v(vdir,vdir_num,vdir_denom)
+            #values[indir]['HVf'] = self.get_HB_and_HVf(Hdir,numatom,'HVf')
         print values
 
     def compile(self):
@@ -57,5 +67,5 @@ class VaspDirParser():
         #))
 
 if __name__ == '__main__':
-    v = VaspDirParser('test_files/uw_diffusion/FCC_solute_CuAu_20140611T201229')
-    v.reduce()
+        v = VaspDirParser('test_files/uw_diffusion')
+        v.reduce()
