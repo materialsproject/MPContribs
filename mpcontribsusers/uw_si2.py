@@ -8,7 +8,7 @@ from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 class VaspDirCollParser(AbstractVaspDirCollParser):
     """An example VASP-Dirs Collection Parser based on UW/SI2 use case
 
-    rootdir
+    rootdir [see mpcontribs.parsers.vaspdir.AbstractVaspDirCollParser]
         |_ VaspDirColl1/     [CuCu]
               |_ VaspDir1/   [perfect_stat]
               |_ VaspDir2/   [neb_vac1-vac2_opt]
