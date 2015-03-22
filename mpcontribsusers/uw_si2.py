@@ -32,6 +32,16 @@ class VaspDirCollParser(AbstractVaspDirCollParser):
         if min_entry is None: return None
         return saddle_entry.energy - min_entry.energy
 
+    def get_attempt_frequency(self, dirname, i):
+        """get attempt frequency for VaspDirColl (dirname) and combination of VaspDir's (i)"""
+        num_dir = 'phonon_vac%d_w%d*' % (i+1 if i < 4 else 1, i)
+        num_entry = self.find_entry_for_directory(os.path.join(dirname, num_dir))
+        if num_entry is None: return None
+        denom_dir = 'phonon_vac1-vac%d_%s*' % (i+1 if i < 4 else 4, ('w%d' % i) if i < 3 else 'w3w4')
+        denom_entry = self.find_entry_for_directory(os.path.join(dirname, denom_dir))
+        if denom_entry is None: return None
+        return num_entry.data['phonon_frequencies'][0] / denom_entry.data['phonon_frequencies'][0] # TODO index 0?
+
     def compile(self):
         """compile phase"""
         values, E0 = OrderedDict(), None
@@ -39,6 +49,7 @@ class VaspDirCollParser(AbstractVaspDirCollParser):
             fn for fn in glob.glob(os.path.join(self.rootdir, "*Cu*"))
             if not fnmatch.fnmatch(fn, "*CuCu*")
         ]
+        nw = 5
         for idx,indir in enumerate(indirs):
             struct = self.find_entry_for_directory(
                 os.path.join(indir, 'perfect_stat*'), oszicar=False
@@ -46,10 +57,11 @@ class VaspDirCollParser(AbstractVaspDirCollParser):
             values[indir], numatom = {}, len(struct)
             reduced = SpacegroupAnalyzer(struct, symprec=1e-2).get_primitive_standard_structure()
             values[indir]['a'] = reduced.lattice.abc[0] * math.sqrt(2) * 10**(-8)
-            values[indir]['enebarr'] = [ self.get_barrier(indir, i) for i in range(5) ]
+            values[indir]['enebarr'] = [ self.get_barrier(indir, i) for i in range(nw) ]
             if idx == 0: E0 = min(filter(None, values[indir]['enebarr']))
             else: values[indir]['enebarr'][0] = E0 # TODO: is this correct?
-            #values[indir]['v'] = self.get_v(vdir,vdir_num,vdir_denom)
+            values[indir]['v'] = [ self.get_attempt_frequency(indir, i) for i in range(nw) ]
+            values[indir]['v'][0] = 1.0 # TODO set to 1.0?
             #values[indir]['HVf'] = self.get_HB_and_HVf(Hdir,numatom,'HVf')
         print values
         #  (main general section?)
