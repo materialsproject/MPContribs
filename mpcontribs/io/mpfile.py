@@ -78,7 +78,7 @@ class MPFile(PMGSONable):
         return self.document.rec_update({
             "@module": self.__class__.__module__,
             "@class": self.__class__.__name__
-        }
+        })
 
     @classmethod
     def from_dict(cls, d):

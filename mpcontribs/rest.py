@@ -55,6 +55,8 @@ class ContributionMongoAdapter(object):
             { '$match':  { 'task_id': { '$regex': '^mp-[0-9]{1}$' } } },
         ], cursor={}):
             self.available_mp_ids.append(doc['task_id'])
+        if len(self.available_mp_ids) == 0:
+            raise ValueError('No mp_ids available! Check DB connection!')
 
     def _reset(self):
         """reset all collections"""
@@ -68,9 +70,8 @@ class ContributionMongoAdapter(object):
             update={'$inc': {'next_contribution_id': 1}}
         )['next_contribution_id']
 
-    def submit_contribution(
-        self, mpfile, contributor_email, contribution_id=None, fake=False
-    ):
+    def submit_contribution(self, mpfile, contributor_email,
+        contribution_id=None, fake_it=False, insert=False):
         """submit user data to `materials.contributions` collection
 
         Args:
@@ -87,7 +88,7 @@ class ContributionMongoAdapter(object):
         # treat every mp_cat_id as separate database insert
         contribution_ids = []
         for k,v in mpfile.document.iteritems():
-            mp_cat_id = k.split('--')[0] if not fake or self.fake is None else \
+            mp_cat_id = k.split('--')[0] if not fake_it or self.fake is None else \
                     self.fake.random_element(elements=self.available_mp_ids)
             doc = {
                 'contributor_email': contributor_email,
@@ -95,18 +96,22 @@ class ContributionMongoAdapter(object):
                 'contributed_at': datetime.datetime.utcnow().isoformat(),
                 'mp_cat_id': mp_cat_id, 'content': v
             }
-            self.contributions.insert(doc)
+            if insert:
+                logging.info('inserting {} ...'.format(doc['contribution_id']))
+                self.contributions.insert(doc)
             contribution_ids.append(doc['contribution_id'])
         return contribution_ids
 
-    def fake_multiple_contributions(self, num_contributions=20):
+    def fake_multiple_contributions(self, num_contributions=20, insert=False):
         """fake the submission of many contributions"""
         if self.fake is None:
             logging.info("Install fake-factory to fake submissions")
-            return
-        from faker.v1 import MPFakeFile
+            return 'Nothing done.'
+        from fake.v1 import MPFakeFile
         for n in range(num_contributions):
             f = MPFakeFile(usable=True, main_general=self.fake.pybool())
             mpfile = f.make_file()
             contributor = '%s <%s>' % (self.fake.name(), self.fake.email())
-            logging.info(self.submit_contribution(mpfile, contributor, fake=True))
+            logging.info(self.submit_contribution(
+                mpfile, contributor, fake_it=True, insert=insert
+            ))

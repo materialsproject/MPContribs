@@ -8,6 +8,7 @@ if __name__ == '__main__':
     parser.add_argument("--num-contributions", default=5, type=int,
                         help="number of contributions to fake (ignored if --input)")
     parser.add_argument("--input", help="submit specific input file (ignored if --build)")
+    parser.add_argument("--insert", help="insert contribution into DB", action="store_true")
     parser.add_argument("--reset", help="reset contributions collection (ignored if --build)", action="store_true")
     parser.add_argument("--build", help="build contributed_data key in materials collection", action="store_true")
     parser.add_argument("--log", help="show log output", action="store_true")
@@ -23,10 +24,12 @@ if __name__ == '__main__':
         cma = ContributionMongoAdapter()
         if args.reset: cma._reset()
         if args.input is None:
-            cma.fake_multiple_contributions(num_contributions=args.num_contributions)
+            cma.fake_multiple_contributions(
+                num_contributions=args.num_contributions, insert=args.insert
+            )
         elif os.path.isfile(args.input):
             logging.info(cma.submit_contribution(
-                MPFile.from_file(args.input), args.contributor
+                MPFile.from_file(args.input), args.contributor, insert=args.insert
             ))
         else: print 'no valid input file'
     else: # TODO: make incremental
