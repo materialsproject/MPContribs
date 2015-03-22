@@ -29,7 +29,7 @@ def submit_snl_from_cif(submitter_email, cif_file, metadata_file):
 
 from pymongo import MongoClient
 from monty.serialization import loadfn
-from io.mpfile import RecursiveParser
+from io.recparse import RecursiveParser
 import datetime
 from StringIO import StringIO
 from config import mp_level01_titles
@@ -79,6 +79,7 @@ class ContributionMongoAdapter(object):
         contribution_id: None if new contribution else update/replace # TODO
         """
         parser = None
+        # TODO: replace RecursiveParser with methods from MPFile
         if isinstance(input_instance, file):
             fileExt = os.path.splitext(input_instance.name)[1][1:]
             parser = RecursiveParser(fileExt=fileExt)

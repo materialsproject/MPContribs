@@ -1,6 +1,5 @@
 import argparse, logging, os
 from rest import ContributionMongoAdapter#,submit_snl_from_cif
-from io.mpfile import RecursiveParser
 from builders import MPContributionsBuilder
 
 if __name__ == '__main__':
