@@ -1,4 +1,5 @@
 import os, json, math, glob, fnmatch
+import numpy as np
 from collections import OrderedDict
 from mpcontribs.parsers.vaspdir import AbstractVaspDirCollParser
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
@@ -43,27 +44,38 @@ class VaspDirCollParser(AbstractVaspDirCollParser):
         return num_entry.data['phonon_frequencies'][0] / denom_entry.data['phonon_frequencies'][0] # TODO index 0?
 
     def compile(self):
-        """compile phase"""
-        values, E0 = OrderedDict(), None
+        """compile phase (calculation from MAST DiffusionCoefficient.py)"""
         indirs = glob.glob(os.path.join(self.rootdir, "*CuCu*")) + [
             fn for fn in glob.glob(os.path.join(self.rootdir, "*Cu*"))
             if not fnmatch.fnmatch(fn, "*CuCu*")
         ]
-        nw = 5
+        E0, nw = None, 5 # five-frequency model
         for idx,indir in enumerate(indirs):
+            print "indir = ", indir
             struct = self.find_entry_for_directory(
                 os.path.join(indir, 'perfect_stat*'), oszicar=False
             ).structure
-            values[indir], numatom = {}, len(struct)
             reduced = SpacegroupAnalyzer(struct, symprec=1e-2).get_primitive_standard_structure()
-            values[indir]['a'] = reduced.lattice.abc[0] * math.sqrt(2) * 10**(-8)
-            values[indir]['enebarr'] = [ self.get_barrier(indir, i) for i in range(nw) ]
-            if idx == 0: E0 = min(filter(None, values[indir]['enebarr']))
-            else: values[indir]['enebarr'][0] = E0 # TODO: is this correct?
-            values[indir]['v'] = [ self.get_attempt_frequency(indir, i) for i in range(nw) ]
-            values[indir]['v'][0] = 1.0 # TODO set to 1.0?
-            #values[indir]['HVf'] = self.get_HB_and_HVf(Hdir,numatom,'HVf')
-        print values
+            a = reduced.lattice.abc[0] * math.sqrt(2) * 10**(-8)
+            enebarr = np.array([ self.get_barrier(indir, i) for i in range(nw) ], dtype=float)
+            if idx == 0: E0 = min(enebarr[~np.isnan(enebarr)])
+            else: enebarr[0] = E0 # TODO: is this correct?
+            v = np.array([ self.get_attempt_frequency(indir, i) for i in range(nw) ])
+            v[0], HVf, kB, f0 = 1.0, 0.4847, 8.6173324e-5, 0.7815 # TODO set v[0] to 1.0? HVf dynamic how?
+            t, tempstep, tempend = 0.0, 0.1, 2.0 # default temperature range
+            if idx < 1: continue
+            while t < tempend + tempstep:
+                v *= np.exp(-enebarr/kB/1e3*t)
+                alpha = v[4]/v[0]
+                F_num = 10*np.power(alpha,4) + 180.5*np.power(alpha,3) + 927*np.power(alpha,2) + 1341*alpha
+                F_denom = 2*np.power(alpha,4) + 40.2*np.power(alpha,3) + 254*np.power(alpha,2) + 597*alpha + 435
+                FX = 1-(1.0/7.0)*(F_num/F_denom)
+                f2 = 1+3.5*FX*(v[3]/v[1])
+                f2 /= 1+(v[2]/v[1]) + 3.5*FX*(v[3]/v[1])
+                cV = np.exp(-HVf/kB/1e3*t) if t > 0. else 1.
+                D = f0*cV*a**2*v[0] * f2/f0 * v[4]/v[0] * v[2]/v[3]
+                print "t = ", t, ", D = ", D
+                t += tempstep
         #  (main general section?)
         ## prepare ycols dict for document
         ## x: electronic step number (esN), y: e_wo_entrp (ewe) for each ionic step (is)
