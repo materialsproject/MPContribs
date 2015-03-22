@@ -2,7 +2,7 @@ import os, re
 from pandas.io.parsers import read_csv
 from collections import Counter
 from ...config import csv_database
-from ...parsers.utils import RecursiveDict
+from ...io.utils import RecursiveDict
 
 class DataGenerator(object):
     """generate MP-like data from baseball database
