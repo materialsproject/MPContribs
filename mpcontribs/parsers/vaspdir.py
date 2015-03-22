@@ -17,7 +17,7 @@ class AbstractVaspDirCollParser(six.with_metaclass(abc.ABCMeta, object)):
         """
         self.rootdir = rootdir
         self.drone = SimpleVaspToComputedEntryDrone(inc_structure=True)
-        self.queen = BorgQueen(self.drone, rootdir, 2)
+        self.queen = BorgQueen(self.drone, rootdir, 1) # TODO: make sure uw2_si2 also works in parallel
         self.data = self.queen.get_data()
 
     def find_entry_for_directory(self, regex, oszicar=True):
