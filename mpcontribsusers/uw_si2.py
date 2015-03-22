@@ -3,8 +3,6 @@ import numpy as np
 from collections import OrderedDict
 from mpcontribs.parsers.vaspdir import AbstractVaspDirCollParser
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
-#from ..config import mp_level01_titles
-#from utils import nest_dict
 
 class VaspDirCollParser(AbstractVaspDirCollParser):
     """An example VASP-Dirs Collection Parser based on UW/SI2 use case
@@ -77,20 +75,7 @@ class VaspDirCollParser(AbstractVaspDirCollParser):
                 print "t = ", t, ", D = ", D
                 t += tempstep
         #  (main general section?)
-        ## prepare ycols dict for document
-        ## x: electronic step number (esN), y: e_wo_entrp (ewe) for each ionic step (is)
-        ## format: esN ewe_is0 ewe_is1 ... ewe_isN
-        #ycols_dict = dict(('ewe_is%d' % n, col) for n,col in enumerate(ycols))
-        #ycols_dict.update({'esN': range(max_el_steps)})
-        ## add special data section for default graph to document
-        #self.document.rec_update(nest_dict(
-        #    ycols_dict, [mp_id, mp_level01_titles[1]]
-        #))
-        ## add plots section for default plot (x: index column)
-        #self.document.rec_update(nest_dict(
-        #    {'x': 'esN', 'marker': 'o'},
-        #    [mp_id, mp_level01_titles[2], 'default']
-        #))
+        #  TODO: use MPRester here
 
 if __name__ == '__main__':
         v = VaspDirCollParser('test_files/uw_diffusion')
