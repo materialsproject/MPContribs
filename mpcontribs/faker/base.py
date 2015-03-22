@@ -2,11 +2,11 @@ import inspect
 from fnmatch import fnmatch
 from StringIO import StringIO
 from data import DataGenerator
-from ...config import csv_comment_char, mp_level01_titles
-from ...config import indent_symbol, min_indent_level
+from ..config import csv_comment_char, mp_level01_titles
+from ..config import indent_symbol, min_indent_level
 
-class MPCsvFileBase(object):
-    """base class for MPCsvFile"""
+class MPFakeFileBase(object):
+    """base class for MPFakeFile"""
     def __init__(self):
         try:
             from faker import Faker, DEFAULT_PROVIDERS

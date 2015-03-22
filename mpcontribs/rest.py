@@ -104,9 +104,9 @@ class ContributionMongoAdapter(object):
         if self.fake is None:
             logging.info("Install fake-factory to fake submissions")
             return
-        from fakers.mp_csv.v1 import MPCsvFile
+        from faker.v1 import MPFakeFile
         for n in range(num_contributions):
-            f = MPCsvFile(usable=True, main_general=self.fake.pybool())
+            f = MPFakeFile(usable=True, main_general=self.fake.pybool())
             mpfile = f.make_file()
             contributor = '%s <%s>' % (self.fake.name(), self.fake.email())
             logging.info(self.submit_contribution(mpfile, contributor, fake=True))
