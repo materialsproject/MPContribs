@@ -1,15 +1,15 @@
 from StringIO import StringIO
-from ...config import mp_categories, mp_level01_titles
-from base import MPCsvFileBase
-from ...io.mpfile import MPFile
+from ..config import mp_categories, mp_level01_titles
+from base import MPFakeFileBase
+from ..io.mpfile import MPFile
 
-class MPCsvFile(MPCsvFileBase):
+class MPFakeFile(MPFakeFileBase):
     """fake a input file for a user contribution"""
     def __init__(
         self, main_general=False, num_level0_sections=3, max_level=3,
         max_num_subsec=3, max_data_rows=3, mp_title_prob=70, usable=False
     ):
-        MPCsvFileBase.__init__(self)
+        MPFakeFileBase.__init__(self)
         self.main_general = main_general
         self.num_level0_sections = num_level0_sections
         self.max_level = max_level

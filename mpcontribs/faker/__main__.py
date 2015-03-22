@@ -1,5 +1,5 @@
 import argparse
-from mp_csv.v1 import MPCsvFile
+from v1 import MPFakeFile
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--main-general", action="store_true", help="""
@@ -26,7 +26,7 @@ parser.add_argument("--usable", action="store_true", help="""
                     use baseball DB to generate usable MP input file
                     """)
 args = vars(parser.parse_args())
-f = MPCsvFile(**args)
+f = MPFakeFile(**args)
 mkf = f.make_file()
 if mkf is not None:
     print mkf.getvalue()
