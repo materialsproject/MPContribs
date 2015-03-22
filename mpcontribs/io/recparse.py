@@ -6,7 +6,7 @@ from ..config import min_indent_level, indent_symbol, csv_comment_char, mp_level
 from utils import nest_dict, RecursiveDict
 
 class RecursiveParser():
-    def __init__(self, fileExt='csv'):
+    def __init__(self, fileExt):
         """init and set read_csv options"""
         self.level0_counter = 0
         self.section_titles = []

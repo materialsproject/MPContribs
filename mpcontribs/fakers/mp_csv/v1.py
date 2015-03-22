@@ -1,6 +1,7 @@
 from StringIO import StringIO
 from ...config import mp_categories, mp_level01_titles
 from base import MPCsvFileBase
+from ...io.mpfile import MPFile
 
 class MPCsvFile(MPCsvFileBase):
     """fake a input file for a user contribution"""
@@ -132,4 +133,4 @@ class MPCsvFile(MPCsvFileBase):
                     print >>self.outfile, self.section.getvalue()
                     self.section.close()
                     break
-        return self.outfile
+        return MPFile.from_string(self.outfile.getvalue())

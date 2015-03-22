@@ -29,7 +29,6 @@ def submit_snl_from_cif(submitter_email, cif_file, metadata_file):
 
 from pymongo import MongoClient
 from monty.serialization import loadfn
-from io.recparse import RecursiveParser
 import datetime
 from StringIO import StringIO
 from config import mp_level01_titles
@@ -70,37 +69,24 @@ class ContributionMongoAdapter(object):
         )['next_contribution_id']
 
     def submit_contribution(
-        self, input_instance, contributor_email, contribution_id=None, fake=False
+        self, mpfile, contributor_email, contribution_id=None, fake=False
     ):
         """submit user data to `materials.contributions` collection
 
         Args:
-        input_instance: input instance, i.e. file, StringIO, str
+        mpfile: MPFile object containing contribution data
         contribution_id: None if new contribution else update/replace # TODO
         """
-        parser = None
-        # TODO: replace RecursiveParser with methods from MPFile
-        if isinstance(input_instance, file):
-            fileExt = os.path.splitext(input_instance.name)[1][1:]
-            parser = RecursiveParser(fileExt=fileExt)
-            parser.parse(input_instance.read())
-        elif isinstance(input_instance, StringIO):
-            parser = RecursiveParser()
-            parser.parse(input_instance.getvalue())
-        else:
-            raise TypeError(
-                'type %r not supported as input instance!' % type(input_instance)
-            )
         # TODO: implement update/replace based on contribution_id=None
         # apply general level-0 section on all other level-0 sections if existent
         general_title = mp_level01_titles[0]
-        if general_title in parser.document:
-            general_data = parser.document.pop(general_title)
-            for k in parser.document:
-                parser.document[k].rec_update({general_title: general_data})
+        if general_title in mpfile.document:
+            general_data = mpfile.document.pop(general_title)
+            for k in mpfile.document:
+                mpfile.document[k].rec_update({general_title: general_data})
         # treat every mp_cat_id as separate database insert
         contribution_ids = []
-        for k,v in parser.document.iteritems():
+        for k,v in mpfile.document.iteritems():
             mp_cat_id = k.split('--')[0] if not fake or self.fake is None else \
                     self.fake.random_element(elements=self.available_mp_ids)
             doc = {
@@ -121,6 +107,6 @@ class ContributionMongoAdapter(object):
         from fakers.mp_csv.v1 import MPCsvFile
         for n in range(num_contributions):
             f = MPCsvFile(usable=True, main_general=self.fake.pybool())
-            csv = f.make_file()
+            mpfile = f.make_file()
             contributor = '%s <%s>' % (self.fake.name(), self.fake.email())
-            logging.info(self.submit_contribution(csv, contributor, fake=True))
+            logging.info(self.submit_contribution(mpfile, contributor, fake=True))
