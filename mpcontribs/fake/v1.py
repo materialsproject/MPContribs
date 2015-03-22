@@ -133,4 +133,4 @@ class MPFakeFile(MPFakeFileBase):
                     print >>self.outfile, self.section.getvalue()
                     self.section.close()
                     break
-        return MPFile.from_string(self.outfile.getvalue())
+        return MPFile.from_string(self.outfile.getvalue(), 'csv')

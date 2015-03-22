@@ -9,7 +9,8 @@ class MPFakeFileBase(object):
     """base class for MPFakeFile"""
     def __init__(self):
         try:
-            from faker import Faker, DEFAULT_PROVIDERS
+            from faker import Faker
+            from faker.config import DEFAULT_PROVIDERS
             self.fake = Faker()
             self.providers = DEFAULT_PROVIDERS
         except:
