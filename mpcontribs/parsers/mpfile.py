@@ -3,20 +3,15 @@ import numpy as np
 import pandas as pd
 from StringIO import StringIO
 from ..config import min_indent_level, indent_symbol, csv_comment_char, mp_level01_titles
-from base import BaseParser
 from utils import nest_dict, RecursiveDict
 
-class BaseParser(object):
-    def __init__(self):
+class RecursiveParser():
+    def __init__(self, fileExt='csv'):
+        """init and set read_csv options"""
         self.level0_counter = 0
         self.section_titles = []
         self.document = RecursiveDict({})
         self.main_general = False
-
-class RecursiveParser(BaseParser):
-    def __init__(self, fileExt='csv'):
-        """init and set read_csv options"""
-        BaseParser.__init__(self)
         self.level = min_indent_level # level counter
         # TODO better organize read_csv options -> config file?
         if fileExt != 'csv' and fileExt != 'tsv':
