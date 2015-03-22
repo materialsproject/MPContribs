@@ -3,6 +3,8 @@ import numpy as np
 from collections import OrderedDict
 from mpcontribs.parsers.vaspdir import AbstractVaspDirCollParser
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
+from pymatgen.matproj.rest import MPRester
+ENDPOINT = "https://www.materialsproject.org/rest"
 
 class VaspDirCollParser(AbstractVaspDirCollParser):
     """An example VASP-Dirs Collection Parser based on UW/SI2 use case
@@ -25,10 +27,10 @@ class VaspDirCollParser(AbstractVaspDirCollParser):
         """
         saddle_dir = 'neb_vac1-vac%d_opt*' % (i+1 if i < 4 else 4)
         saddle_entry = self.find_entry_for_directory(os.path.join(dirname, saddle_dir))
-        if saddle_entry is None: return None
+        if saddle_entry is None: return 0.
         min_dir = 'defect_vac%d_opt*' % (1 if i < 4 else 4)
         min_entry = self.find_entry_for_directory(os.path.join(dirname, min_dir))
-        if min_entry is None: return None
+        if min_entry is None: return 0.
         return saddle_entry.energy - min_entry.energy
 
     def get_attempt_frequency(self, dirname, i):
@@ -47,13 +49,20 @@ class VaspDirCollParser(AbstractVaspDirCollParser):
             fn for fn in glob.glob(os.path.join(self.rootdir, "*Cu*"))
             if not fnmatch.fnmatch(fn, "*CuCu*")
         ]
-        E0, nw = None, 5 # five-frequency model
+        mp_id, E0, nw = None, None, 5 # five-frequency model
         for idx,indir in enumerate(indirs):
-            print "indir = ", indir
             struct = self.find_entry_for_directory(
                 os.path.join(indir, 'perfect_stat*'), oszicar=False
             ).structure
             reduced = SpacegroupAnalyzer(struct, symprec=1e-2).get_primitive_standard_structure()
+            if idx == 0:
+                with MPRester(endpoint=ENDPOINT) as m:
+                    matches = m.find_structure(reduced)
+                    if len(matches) == 1: mp_id = matches[0]
+                    else: raise ValueError(
+                        "found {} matching structure(s) in MP and hence cannot "
+                        "assign structure in {}.".format(len(matches), indir)
+                    )
             a = reduced.lattice.abc[0] * math.sqrt(2) * 10**(-8)
             enebarr = np.array([ self.get_barrier(indir, i) for i in range(nw) ], dtype=float)
             if idx == 0: E0 = min(enebarr[~np.isnan(enebarr)])
@@ -61,12 +70,13 @@ class VaspDirCollParser(AbstractVaspDirCollParser):
             v = np.array([ self.get_attempt_frequency(indir, i) for i in range(nw) ])
             v[0], HVf, kB, f0 = 1.0, 0.4847, 8.6173324e-5, 0.7815 # TODO set v[0] to 1.0? HVf dynamic how?
             t, tempstep, tempend = 0.0, 0.1, 2.0 # default temperature range
-            if idx < 1: continue
             while t < tempend + tempstep:
                 v *= np.exp(-enebarr/kB/1e3*t)
                 alpha = v[4]/v[0]
-                F_num = 10*np.power(alpha,4) + 180.5*np.power(alpha,3) + 927*np.power(alpha,2) + 1341*alpha
-                F_denom = 2*np.power(alpha,4) + 40.2*np.power(alpha,3) + 254*np.power(alpha,2) + 597*alpha + 435
+                F_num = 10*np.power(alpha,4) + 180.5*np.power(alpha,3)
+                F_num += 927*np.power(alpha,2) + 1341*alpha
+                F_denom = 2*np.power(alpha,4) + 40.2*np.power(alpha,3)
+                F_denom += 254*np.power(alpha,2) + 597*alpha + 435
                 FX = 1-(1.0/7.0)*(F_num/F_denom)
                 f2 = 1+3.5*FX*(v[3]/v[1])
                 f2 /= 1+(v[2]/v[1]) + 3.5*FX*(v[3]/v[1])
@@ -74,8 +84,12 @@ class VaspDirCollParser(AbstractVaspDirCollParser):
                 D = f0*cV*a**2*v[0] * f2/f0 * v[4]/v[0] * v[2]/v[3]
                 print "t = ", t, ", D = ", D
                 t += tempstep
-        #  (main general section?)
-        #  TODO: use MPRester here
+        #  TODO: generate physical mpcontribs.io.mpfile.MPFile (main general section?)
+        #for d in self.data:
+        #    for k,v in d.as_dict().iteritems():
+        #        print k, v
+        #    break
+        #  TODO: use MPRester to submit MPInputFile if in write mode
 
 if __name__ == '__main__':
         v = VaspDirCollParser('test_files/uw_diffusion')
