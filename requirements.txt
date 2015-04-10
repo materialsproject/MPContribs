@@ -1,4 +1,3 @@
-PyYAML==3.11
 atomicfile==1.0
 fake-factory==0.4.2
 matplotlib==1.4.2
@@ -7,7 +6,7 @@ monty==0.6.2
 nose==1.3.4
 numpy==1.9.1
 pandas==0.15.2
-plotly==1.4.9
+plotly==1.6.15
 prettytable==0.7.2
 pybtex==0.18
 pyhull==1.5.3
@@ -15,8 +14,8 @@ pymatgen==3.0.8
 pymongo==2.7.2
 pyparsing==2.0.3
 python-dateutil==2.3
-pytz==2014.10
-requests==2.5.0
+pytz==2015.2
+PyYAML==3.11
+requests==2.6.0
 scipy==0.14.0
-six==1.8.0
-wsgiref==0.1.2
+six==1.9.0
