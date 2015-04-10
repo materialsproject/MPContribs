@@ -1,0 +1,29 @@
+#!/usr/bin/env python
+
+import argparse
+
+def submit():
+    pass
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="""mgc is a convenience script using the Materials Project's
+        contribution framework MPContribs to submit user-contributed data to the
+        MP for dissemination to MP users. For help on sub-commands: `mgc
+        sub-command -h`.""",
+        epilog='Author: Patrick Huck (LBNL)'
+    )
+
+    subparsers = parser.add_subparsers()
+    parser_submit = subparsers.add_parser(
+        'submit', help="""submit a physical MPFile containing the contribution
+        data in MPContribs-specific format."""
+    )
+    parser_submit.add_argument('mpfile', type=str, help='MPFile to submit')
+    parser_submit.set_defaults(func=submit)
+
+    args = parser.parse_args()
+    args.func(args)
+
+if __name__ == "__main__":
+    main()
