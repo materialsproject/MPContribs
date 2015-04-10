@@ -122,6 +122,6 @@ class MPContributionsBuilder():
                         for plotly_url in plotly_urls:
                             logging.info(self.mat_coll.update(
                                 {'task_id': doc['_id']}, { '$push': {
-                                    'contributed_data.%s.plotly_urls' % project: plotly_url
+                                    'contributed_data.%s.plotly_urls.%d' % (project,cid): plotly_url
                                 }}
                             ))
