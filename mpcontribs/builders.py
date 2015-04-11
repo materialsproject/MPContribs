@@ -65,7 +65,7 @@ class MPContributionsBuilder():
             multi=True
         ))
 
-    def build(self):
+    def build(self, cids=None):
         """update materials collection with contributed data"""
         # NOTE: this build is only for contributions tagged with mp-id
         # TODO: in general, distinguish mp cat's by format of mp_cat_id
@@ -75,6 +75,7 @@ class MPContributionsBuilder():
             # only make plots for one mp-id due to plotly restrictions
             plot_cids = doc['contrib_ids']
             for cid in doc['contrib_ids']:
+                if cids is not None and cid not in cids: continue
                 tree_contrib = self.contrib_coll.find_one(
                     {'contribution_id': cid}, {
                         'content.data': 0, 'content.plots': 0, '_id': 0
