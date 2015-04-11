@@ -3,11 +3,14 @@
 import os
 import argparse
 import logging
+from pymatgen.matproj.rest import MPRester
 
-logger = logging.getLogger('mgc')
+#ENDPOINT, API_KEY = "https://www.materialsproject.org/rest", os.environ.get('MAPI_KEY')
+ENDPOINT, API_KEY = "http://localhost:8000/rest", os.environ.get('MAPI_KEY_LOC')
 
 def submit(args):
-    raise NotImplementedError('submit sub-command not implemented yet.')
+    with MPRester(API_KEY, endpoint=ENDPOINT) as m:
+        print m.submit_mpfile(args.mpfile)
 
 def main():
     parser = argparse.ArgumentParser(
