@@ -11,6 +11,7 @@ from utils import connector, get_api_key, get_sandbox
 from utils.connector import DBSandbox
 from materials_django.settings import PYMATGEN_VERSION, DB_VERSION
 from utils.encoders import MongoJSONEncoder
+from mpcontribs.io.mpfile import MPFile
 
 logger = logging.getLogger('mg.' + __name__)
 
@@ -87,11 +88,13 @@ def submit_mpfile(request, mdb=None):
     contributor = '{} {} <{}>'.format(
         request.user.first_name, request.user.last_name, request.user.email
     )
-    #try:
-    #    mpfile = MPFile.from_string(request.POST['mpfile'])
-    #    cma = ContributionMongoAdapter()
-    #    cids = cma.submit_contribution(mpfile, contributor) # TODO add insert=True
-    #    # TODO run builder incrementally to incorporate contribution into frontend
-    #except Exception as ex:
-    #    raise ValueError("REST error {}".format(str(ex)))
-    return {"valid_response": True}#, 'contribution_ids': cids}
+    try:
+        #filename = request.POST['mpfile']
+        #fileExt = os.path.splitext(filename)[1][1:]
+        #mpfile = MPFile.from_string(filename, fileExt)
+        mpfile = MPFile.from_file('../MPContribs/test_files/inputA.csv')
+        cids = mdb.contrib_ad.submit_contribution(mpfile, contributor, insert=True)
+        # TODO run builder incrementally to incorporate contribution into frontend
+    except Exception as ex:
+        raise ValueError('"REST Error: "{}"'.format(str(ex)))
+    return {"valid_response": True, 'contribution_ids': cids}
