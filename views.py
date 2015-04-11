@@ -92,9 +92,9 @@ def submit_mpfile(request, mdb=None):
         #filename = request.POST['mpfile']
         #fileExt = os.path.splitext(filename)[1][1:]
         #mpfile = MPFile.from_string(filename, fileExt)
-        mpfile = MPFile.from_file('../MPContribs/test_files/inputA.csv')
+        mpfile = MPFile.from_file('../MPContribs/test_files/inputB.csv')
         cids = mdb.contrib_ad.submit_contribution(mpfile, contributor, insert=True)
-        # TODO run builder incrementally to incorporate contribution into frontend
+        mdb.contrib_build_ad.build(cids=cids)
     except Exception as ex:
         raise ValueError('"REST Error: "{}"'.format(str(ex)))
     return {"valid_response": True, 'contribution_ids': cids}
