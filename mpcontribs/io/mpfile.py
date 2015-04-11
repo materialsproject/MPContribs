@@ -1,6 +1,7 @@
-import os
+import os, json
 from pymatgen.serializers.json_coders import PMGSONable
 from recparse import RecursiveParser
+from monty.io import zopen
 
 class MPFile(PMGSONable):
     """Object for representing a MP Contribution File.
@@ -21,7 +22,7 @@ class MPFile(PMGSONable):
         Returns:
             MPFile object.
         """
-        fileExt = os.path.splitext(filename.name)[1][1:]
+        fileExt = os.path.splitext(filename)[1][1:]
         with zopen(filename, "rt") as f:
             return MPFile.from_string(f.read(), fileExt)
 
@@ -40,26 +41,13 @@ class MPFile(PMGSONable):
         parser.parse(data)
         return MPFile(parser)
 
-    def get_string(self, significant_figures=6):
+    def get_string(self):
         """Returns a string to be written as a MPFile file.
-
-        Args:
-            significant_figures (int): No. of significant figures to
-                output all quantities. Defaults to 6.
 
         Returns:
             String representation of MPFile.
         """
-        raise NotImplementedError("get_string is TODO")
-        #latt = self.structure.lattice
-        #lines = [self.comment, "1.0", str(latt)]
-        #lines.append(" ".join([str(x) for x in self.natoms]))
-        #format_str = "{{:.{0}f}}".format(significant_figures)
-        #line = " ".join([format_str.format(c) for c in coords])
-        #line += " %s %s %s" % (sd[0], sd[1], sd[2])
-        #line += " " + site.species_string
-        #lines.append(line)
-        #return "\n".join(lines) + "\n"
+        return json.dumps(self.document)
 
     def __repr__(self):
         return self.get_string()

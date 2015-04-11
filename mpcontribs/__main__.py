@@ -21,7 +21,7 @@ if __name__ == '__main__':
     )
 
     if not args.build:
-        cma = ContributionMongoAdapter()
+        cma = ContributionMongoAdapter.from_config()
         if args.reset: cma._reset()
         if args.input is None:
             cma.fake_multiple_contributions(

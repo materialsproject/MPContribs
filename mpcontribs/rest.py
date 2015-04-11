@@ -35,15 +35,10 @@ from config import mp_level01_titles
 
 class ContributionMongoAdapter(object):
     """adapter/interface for user contributions"""
-    def __init__(self, db_yaml='materials_db_dev.yaml'):
-        config = loadfn(os.path.join(os.environ['DB_LOC'], db_yaml))
-        client = MongoClient(config['host'], config['port'], j=False)
-        client[config['db']].authenticate(
-            config['username'], config['password']
-        )
-        self.id_assigner = client[config['db']].contribution_id_assigner
-        self.contributions = client[config['db']].contributions
-        self.materials = client[config['db']].materials
+    def __init__(self, db):
+        self.id_assigner = db.contribution_id_assigner
+        self.contributions = db.contributions
+        self.materials = db.materials
         try:
             from faker import Faker
             self.fake = Faker()
@@ -57,6 +52,14 @@ class ContributionMongoAdapter(object):
             self.available_mp_ids.append(doc['task_id'])
         if len(self.available_mp_ids) == 0:
             raise ValueError('No mp_ids available! Check DB connection!')
+
+    @classmethod
+    def from_config(cls, db_yaml='materials_db_dev.yaml'):
+        config = loadfn(os.path.join(os.environ['DB_LOC'], db_yaml))
+        client = MongoClient(config['host'], config['port'], j=False)
+        db = client[config['db']]
+        db.authenticate(config['username'], config['password'])
+        return ContributionMongoAdapter(db)
 
     def _reset(self):
         """reset all collections"""
