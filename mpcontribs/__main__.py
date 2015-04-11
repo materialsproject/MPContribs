@@ -31,7 +31,7 @@ if __name__ == '__main__':
             MPFile.from_file(args.input), args.contributor, insert=args.insert
         )
     if cids is not None:
-        mcb = MPContributionsBuilder()
+        mcb = MPContributionsBuilder.from_config()
         if args.reset: mcb._reset()
         mcb.build(cids=cids) # `cids=None` to build all contributions
     else:

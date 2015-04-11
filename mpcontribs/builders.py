@@ -9,14 +9,9 @@ import plotly.plotly as py
 
 class MPContributionsBuilder():
     """build user contributions from `mg_core_*.contributions`"""
-    def __init__(self, db_yaml='materials_db_dev.yaml'):
-        config = loadfn(os.path.join(os.environ['DB_LOC'], db_yaml))
-        client = MongoClient(config['host'], config['port'], j=False)
-        client[config['db']].authenticate(
-            config['username'], config['password']
-        )
-        self.contrib_coll = client[config['db']].contributions
-        self.mat_coll = client[config['db']].materials
+    def __init__(self, db):
+        self.contrib_coll = db.contributions
+        self.mat_coll = db.materials
         self.pipeline = [
             { '$group': {
                 '_id': '$mp_cat_id',
@@ -24,6 +19,14 @@ class MPContributionsBuilder():
                 'contrib_ids': { '$addToSet': '$contribution_id' }
             }}
         ]
+
+    @classmethod
+    def from_config(cls, db_yaml='materials_db_dev.yaml'):
+        config = loadfn(os.path.join(os.environ['DB_LOC'], db_yaml))
+        client = MongoClient(config['host'], config['port'], j=False)
+        db = client[config['db']]
+        db.authenticate(config['username'], config['password'])
+        return MPContributionsBuilder(db)
 
     def flatten_dict(self, dd, separator='.', prefix=''):
         """http://stackoverflow.com/a/19647596"""
