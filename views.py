@@ -89,10 +89,8 @@ def submit_mpfile(request, mdb=None):
         request.user.first_name, request.user.last_name, request.user.email
     )
     try:
-        #filename = request.POST['mpfile']
-        #fileExt = os.path.splitext(filename)[1][1:]
-        #mpfile = MPFile.from_string(filename, fileExt)
-        mpfile = MPFile.from_file('../MPContribs/test_files/inputB.csv')
+        mpfile = MPFile.from_string(request.POST['mpfile'], 'csv') # TODO: tsv?
+        #mpfile = MPFile.from_file('../MPContribs/test_files/inputB.csv')
         cids = mdb.contrib_ad.submit_contribution(mpfile, contributor, insert=True)
         mdb.contrib_build_ad.build(cids=cids)
     except Exception as ex:
