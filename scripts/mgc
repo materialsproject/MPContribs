@@ -7,13 +7,9 @@ import logging
 logger = logging.getLogger('mgc')
 
 def submit(args):
-    if args.contributor is None:
-        logger.error('Use either --contributor option or $MPUSER.')
-        raise ValueError('contributor not available.')
     raise NotImplementedError('submit sub-command not implemented yet.')
 
 def main():
-    user = os.environ.get('MPUSER', None)
     parser = argparse.ArgumentParser(
         description="""mgc is a convenience script using the Materials Project's
         contribution framework MPContribs to submit user-contributed data to the
@@ -28,11 +24,6 @@ def main():
         data in MPContribs-specific format."""
     )
     parser_submit.add_argument('mpfile', type=str, help='MPFile to submit')
-    parser_submit.add_argument(
-        '--contributor', type=str, default=user, help="""contributor name and
-        email in the format `First Last <EMail>`. Defaults to environment
-        variable $MPUSER"""
-    )
     parser_submit.set_defaults(func=submit)
 
     args = parser.parse_args()
