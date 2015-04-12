@@ -85,6 +85,8 @@ def mapi_func(supported_methods=("GET", ), requires_api_key=False):
 @mapi_func(supported_methods=["POST", "GET"], requires_api_key=True)
 def submit_mpfile(request, mdb=None):
     """Submits a MPFile."""
+    if not request.user.is_staff:
+        raise PermissionDenied("MPFile submission open only to staff right now.")
     contributor = '{} {} <{}>'.format(
         request.user.first_name, request.user.last_name, request.user.email
     )
@@ -96,3 +98,17 @@ def submit_mpfile(request, mdb=None):
     except Exception as ex:
         raise ValueError('"REST Error: "{}"'.format(str(ex)))
     return {"valid_response": True, 'contribution_ids': cids}
+
+@mapi_func(supported_methods=["POST", "GET"], requires_api_key=True)
+def query_contribs(request, mdb=None):
+    """Query the contributions collection"""
+    if not request.user.is_staff:
+        raise PermissionDenied("contributions query open only to staff right now.")
+    criteria = json.loads(request.POST.get('criteria', '{}'))
+    contributor = '{} {} <{}>'.format(
+        request.user.first_name, request.user.last_name, request.user.email
+    )
+    if json.loads(request.POST.get('contributor_only', 'true')):
+        criteria['contributor_email'] = contributor
+    results = mdb.contrib_ad.query_contributions(criteria)
+    return {"valid_response": True, "response": results}
