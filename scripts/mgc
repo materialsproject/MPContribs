@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import sys
 import os
 import argparse
 import logging
@@ -7,6 +8,18 @@ from pymatgen.matproj.rest import MPRester
 
 #ENDPOINT, API_KEY = "https://www.materialsproject.org/rest", os.environ.get('MAPI_KEY')
 ENDPOINT, API_KEY = "http://localhost:8000/rest", os.environ.get('MAPI_KEY_LOC')
+
+def info(args):
+    with MPRester(API_KEY, endpoint=ENDPOINT) as m:
+        infos = {}
+        for contrib in m.query_contribs():
+            mid, cid = contrib['mp_cat_id'], str(contrib['contribution_id'])
+            if mid not in infos: infos[mid] = [cid]
+            else: infos[mid].append(cid)
+        for k,v in infos.iteritems():
+            if args.mp_cat_ids is None or \
+               (args.mp_cat_ids is not None and k in args.mp_cat_ids):
+                print '{}: {}'.format(k, ' '.join(v))
 
 def submit(args):
     with MPRester(API_KEY, endpoint=ENDPOINT) as m:
@@ -16,12 +29,22 @@ def main():
     parser = argparse.ArgumentParser(
         description="""mgc is a convenience script using the Materials Project's
         contribution framework MPContribs to submit user-contributed data to the
-        MP for dissemination to MP users. For help on sub-commands: `mgc
-        sub-command -h`.""",
+        MP for dissemination to MP users. Without a sub-command it lists all
+        contributions pertaining to the contributor (identical to `mgc info`).
+        For help on sub-commands: `mgc sub-command -h`.""",
         epilog='Author: Patrick Huck <phuck@lbl.gov> (LBNL)'
     )
-
     subparsers = parser.add_subparsers()
+
+    parser_info = subparsers.add_parser(
+        'info', help="""list contribution IDs of a contributor."""
+    ) # TODO: include descriptions in contribution list?
+    parser_info.add_argument(
+        '-m', '--mp_cat_ids', type=str, nargs='+',
+        help="""reduce output to specific MP category IDs"""
+    )
+    parser_info.set_defaults(func=info)
+
     parser_submit = subparsers.add_parser(
         'submit', help="""submit a physical MPFile containing the contribution
         data in MPContribs-specific format."""
@@ -29,7 +52,7 @@ def main():
     parser_submit.add_argument('mpfile', type=str, help='MPFile to submit')
     parser_submit.set_defaults(func=submit)
 
-    args = parser.parse_args()
+    args = parser.parse_args(None if len(sys.argv) > 1 else ['info'])
     args.func(args)
 
 if __name__ == "__main__":

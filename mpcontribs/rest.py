@@ -73,6 +73,11 @@ class ContributionMongoAdapter(object):
             update={'$inc': {'next_contribution_id': 1}}
         )['next_contribution_id']
 
+    def query_contributions(self, crit):
+        props = [ '_id', 'contributor_email', 'mp_cat_id', 'contribution_id' ]
+        proj = dict((p, int(p!='_id')) for p in props)
+        return list(self.contributions.find(crit, proj))
+
     def submit_contribution(self, mpfile, contributor_email,
         contribution_id=None, fake_it=False, insert=False):
         """submit user data to `materials.contributions` collection
