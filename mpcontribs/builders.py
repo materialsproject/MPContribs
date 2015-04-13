@@ -68,6 +68,20 @@ class MPContributionsBuilder():
             multi=True
         ))
 
+    def delete(self, cids, contributor):
+        """remove contributions for requesting contributor"""
+        author = Author.parse_author(contributor)
+        project = str(author.name).translate(None, '.').replace(' ','_')
+        unset_dict = dict(
+            ('contributed_data.%s.%s.%d' % (project, fld, cid), 1)
+            for fld in ['tables', 'tree_data', 'plotly_urls']
+            for cid in cids
+        )
+        self.mat_coll.update(
+            {'contributed_data.%s' % project: {'$exists': 1}},
+            {'$unset': unset_dict}, multi=True
+        )
+
     def build(self, cids=None):
         """update materials collection with contributed data"""
         # NOTE: this build is only for contributions tagged with mp-id
