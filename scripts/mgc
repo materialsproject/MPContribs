@@ -25,19 +25,25 @@ def submit(args):
     with MPRester(API_KEY, endpoint=ENDPOINT) as m:
         print m.submit_mpfile(args.mpfile)
 
+def delete(args):
+    with MPRester(API_KEY, endpoint=ENDPOINT) as m:
+        print '{} contributions deleted.'.format(
+            m.delete_contribs(args.cids)
+        )
+
 def main():
     parser = argparse.ArgumentParser(
         description="""mgc is a convenience script using the Materials Project's
         contribution framework MPContribs to submit user-contributed data to the
         MP for dissemination to MP users. Without a sub-command it lists all
-        contributions pertaining to the contributor (identical to `mgc info`).
-        For help on sub-commands: `mgc sub-command -h`.""",
+        contributions pertaining to the requesting contributor (identical to
+        `mgc info`).  For help on sub-commands, type `mgc sub-command -h`.""",
         epilog='Author: Patrick Huck <phuck@lbl.gov> (LBNL)'
     )
     subparsers = parser.add_subparsers()
 
     parser_info = subparsers.add_parser(
-        'info', help="""list contribution IDs of a contributor."""
+        'info', help="""list contribution IDs for the requesting contributor."""
     ) # TODO: include descriptions in contribution list?
     parser_info.add_argument(
         '-m', '--mp_cat_ids', type=str, nargs='+',
@@ -51,6 +57,16 @@ def main():
     )
     parser_submit.add_argument('mpfile', type=str, help='MPFile to submit')
     parser_submit.set_defaults(func=submit)
+
+    parser_delete = subparsers.add_parser(
+        'delete', help="""delete a list of contribution IDs belonging to the
+        requesting contributor."""
+    )
+    parser_delete.add_argument(
+        'cids', type=int, nargs='+',
+        help="""list of contribution ids to be deleted"""
+    )
+    parser_delete.set_defaults(func=delete)
 
     args = parser.parse_args(None if len(sys.argv) > 1 else ['info'])
     args.func(args)
