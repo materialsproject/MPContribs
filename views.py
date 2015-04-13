@@ -93,7 +93,8 @@ def submit_mpfile(request, mdb=None):
     try:
         mpfile = MPFile.from_string(request.POST['mpfile'], 'csv') # TODO: tsv?
         #mpfile = MPFile.from_file('../MPContribs/test_files/inputB.csv')
-        cids = mdb.contrib_ad.submit_contribution(mpfile, contributor, insert=True)
+        cids = json.loads(request.POST['cids']) if 'cids' in request.POST else None
+        cids = mdb.contrib_ad.submit_contribution(mpfile, contributor, insert=True, cids=cids)
         mdb.contrib_build_ad.build(cids=cids)
     except Exception as ex:
         raise ValueError('"REST Error: "{}"'.format(str(ex)))
