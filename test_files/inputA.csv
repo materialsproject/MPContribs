@@ -41,7 +41,7 @@ value: 6.887038
 # which the number was generated, for instance.
 >>>> plots
 >>>>> default # add options to automatically generated default plot
-kind: bar
+kind: area
 >>>> data
 name,type,functional,method,value,unit
 band gap,indirect,GLLB-SC,Kohn-Sham,6.887038,eV
