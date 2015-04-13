@@ -81,35 +81,40 @@ class ContributionMongoAdapter(object):
     def delete_contributions(self, crit):
         return self.contributions.remove(crit)
 
-    def submit_contribution(self, mpfile, contributor_email,
-        contribution_id=None, fake_it=False, insert=False):
+    def submit_contribution(self, mpfile, contributor_email, cids=None,
+        fake_it=False, insert=False):
         """submit user data to `materials.contributions` collection
 
         Args:
         mpfile: MPFile object containing contribution data
-        contribution_id: None if new contribution else update/replace # TODO
+        cids: contribution IDs, None if new contribution else update/replace
         """
-        # TODO: implement update/replace based on contribution_id=None
         # apply general level-0 section on all other level-0 sections if existent
         general_title = mp_level01_titles[0]
         if general_title in mpfile.document:
             general_data = mpfile.document.pop(general_title)
             for k in mpfile.document:
                 mpfile.document[k].rec_update({general_title: general_data})
+        # check whether length of cids and mpfile.document match
+        if cids is not None and len(cids) != len(mpfile.document):
+            raise ValueError("number of contribution IDs provided does not "
+                             "match number of mp_cat_id's in MPFile!")
         # treat every mp_cat_id as separate database insert
         contribution_ids = []
-        for k,v in mpfile.document.iteritems():
+        for idx,(k,v) in enumerate(mpfile.document.iteritems()):
             mp_cat_id = k.split('--')[0] if not fake_it or self.fake is None else \
                     self.fake.random_element(elements=self.available_mp_ids)
+            cid = self._get_next_contribution_id() if cids is None else cids[idx]
             doc = {
                 'contributor_email': contributor_email,
-                'contribution_id': self._get_next_contribution_id(),
+                'contribution_id': cid,
                 'contributed_at': datetime.datetime.utcnow().isoformat(),
                 'mp_cat_id': mp_cat_id, 'content': v
             }
             if insert:
                 logging.info('inserting {} ...'.format(doc['contribution_id']))
-                self.contributions.insert(doc)
+                #self.contributions.replace_one({'contribution_id': cid}, doc, upsert=True)
+                self.contributions.find_and_modify({'contribution_id': cid}, doc, upsert=True)
             contribution_ids.append(doc['contribution_id'])
         return contribution_ids
 
