@@ -76,7 +76,10 @@ class ContributionMongoAdapter(object):
     def query_contributions(self, crit):
         props = [ '_id', 'contributor_email', 'mp_cat_id', 'contribution_id' ]
         proj = dict((p, int(p!='_id')) for p in props)
-        return list(self.contributions.find(crit, proj))
+        return self.contributions.find(crit, proj)
+
+    def delete_contributions(self, crit):
+        return self.contributions.remove(crit)
 
     def submit_contribution(self, mpfile, contributor_email,
         contribution_id=None, fake_it=False, insert=False):
