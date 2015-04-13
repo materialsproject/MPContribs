@@ -127,4 +127,5 @@ def delete_contribs(request, mdb=None):
         'contribution_id': {'$in': cids}
     }
     results = mdb.contrib_ad.delete_contributions(criteria)
+    mdb.contrib_build_ad.delete(cids, contributor)
     return {"valid_response": True, "response": results}
