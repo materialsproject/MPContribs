@@ -23,7 +23,7 @@ def info(args):
 
 def submit(args):
     with MPRester(API_KEY, endpoint=ENDPOINT) as m:
-        print m.submit_mpfile(args.mpfile)
+        print m.submit_mpfile(args.mpfile, args.cids)
 
 def delete(args):
     with MPRester(API_KEY, endpoint=ENDPOINT) as m:
@@ -56,6 +56,10 @@ def main():
         data in MPContribs-specific format."""
     )
     parser_submit.add_argument('mpfile', type=str, help='MPFile to submit')
+    parser_submit.add_argument(
+        '--cids', type=int, nargs='+',
+        help="""list of contribution IDs to be updated w/ this MPFile"""
+    )
     parser_submit.set_defaults(func=submit)
 
     parser_delete = subparsers.add_parser(
@@ -64,7 +68,7 @@ def main():
     )
     parser_delete.add_argument(
         'cids', type=int, nargs='+',
-        help="""list of contribution ids to be deleted"""
+        help="""list of contribution IDs to be deleted"""
     )
     parser_delete.set_defaults(func=delete)
 
