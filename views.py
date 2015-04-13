@@ -111,4 +111,20 @@ def query_contribs(request, mdb=None):
     if json.loads(request.POST.get('contributor_only', 'true')):
         criteria['contributor_email'] = contributor
     results = mdb.contrib_ad.query_contributions(criteria)
+    return {"valid_response": True, "response": list(results)}
+
+@mapi_func(supported_methods=["POST", "GET"], requires_api_key=True)
+def delete_contribs(request, mdb=None):
+    """Delete a list of contributions"""
+    if not request.user.is_staff:
+        raise PermissionDenied("contributions deletion open only to staff right now.")
+    cids = json.loads(request.POST['cids'])
+    contributor = '{} {} <{}>'.format(
+        request.user.first_name, request.user.last_name, request.user.email
+    )
+    criteria = {
+        'contributor_email': contributor,
+        'contribution_id': {'$in': cids}
+    }
+    results = mdb.contrib_ad.delete_contributions(criteria)
     return {"valid_response": True, "response": results}
