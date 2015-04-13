@@ -6,6 +6,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 pd.options.display.mpl_style = 'default'
 import plotly.plotly as py
+from plotly.graph_objs import *
 
 class MPContributionsBuilder():
     """build user contributions from `mg_core_*.contributions`"""
@@ -36,7 +37,7 @@ class MPContributionsBuilder():
                } if isinstance(dd, dict) else { prefix : dd }
 
     def plot(self, cid):
-        """make default plot for contribution_id"""
+        """make all plots for contribution_id"""
         plot_contrib = self.contrib_coll.find_one(
             {'contribution_id': cid}, {
                 'content.data': 1, 'content.plots': 1,
@@ -46,19 +47,42 @@ class MPContributionsBuilder():
         if 'data' not in plot_contrib['content']:
             return None
         author = Author.parse_author(plot_contrib['contributor_email'])
-        #project = str(author.name).translate(None, '.').replace(' ','_')
+        project = str(author.name).translate(None, '.').replace(' ','_')
+        subfld = 'contributed_data.%s.plotly_urls.%d' % (project, cid)
         data = plot_contrib['content']['data']
         df = pd.DataFrame.from_dict(data)
+        url_list = list(self.mat_coll.find(
+            {subfld: {'$exists': True}},
+            {'_id': 0, subfld: 1}
+        ))
         urls = []
+        if len(url_list) > 0:
+            urls = url_list[0]['contributed_data'][project]['plotly_urls'][str(cid)]
         for nplot,plotopts in enumerate(
             plot_contrib['content']['plots'].itervalues()
         ):
+            filename = 'test%d_%d' % (cid,nplot)
             fig, ax = plt.subplots(1, 1)
             df.plot(ax=ax, **plotopts)
-            urls.append(
-                py.plot_mpl(fig, filename='test%d_%d' % (cid,nplot), auto_open=False)
-            )
-        return urls
+            if len(urls) == len(plot_contrib['content']['plots']):
+                pyfig = py.get_figure(urls[nplot])
+                for ti,line in enumerate(ax.get_lines()):
+                    pyfig['data'][ti]['x'] = list(line.get_xdata())
+                    pyfig['data'][ti]['y'] = list(line.get_ydata())
+                py.plot(pyfig, filename=filename, auto_open=False)
+            else:
+                update = dict(
+                    layout=dict(
+                        annotations=[dict(text=' ')],
+                        showlegend=True,
+                        legend=Legend(x=1.05, y=1)
+                    ),
+                )
+                urls.append(py.plot_mpl(
+                    fig, filename=filename, auto_open=False,
+                    strip_style=True, update=update, resize=True
+                ))
+        return None if len(url_list) > 0 else urls
 
     def _reset(self):
         """remove `contributed_data` keys from all documents"""
