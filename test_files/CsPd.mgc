@@ -1,0 +1,39 @@
+>>> MP-1 # caesium
+>>>> physical properties
+phase: solid
+melting point: 301.7 K
+boiling point: 944 K
+room temperature density: 1.93 g/cm3
+melting point density: 1.843 g/cm3
+critical point temperature: 1938 K
+critical point pressure: 9.4 MPa
+heat of fusion: 2.09 kJ/mol
+heat of vaporization: 63.9 kJ/mol
+molar heat capacity: 32.210 J/K/mol
+>>>> references # list of url, bibtex, or doi
+url: "https://en.wikipedia.org/wiki/Caesium" # quotes?
+>>>> plots
+>>>>> default
+y: vapor pressure (Pa)
+>>>>> ionization energies
+x: electron number
+y: ionization energy (kJ/mol)
+kind: bar
+>>>> data
+temperature (K), vapor pressure (Pa), electron number, ionization energy (kJ/mol)
+418,1,1,375.7
+469,10,2,2234.3
+534,100,3,3400
+623,1000,,
+750,10000,,
+940,100000,,
+
+>>> MP-2 # palladium
+# data section only, automatic default plot
+temperature (K), vapor pressure (Pa)
+1721,1
+1897,10
+2117,100
+2395,1000
+2753,10000
+3234,100000
