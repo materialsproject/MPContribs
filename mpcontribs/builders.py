@@ -117,25 +117,19 @@ class MPContributionsBuilder():
             plot_cids = doc['contrib_ids']
             for cid in doc['contrib_ids']:
                 if cids is not None and cid not in cids: continue
-                tree_contrib = self.contrib_coll.find_one(
-                    {'contribution_id': cid}, {
-                        'content.data': 0, 'content.plots': 0, '_id': 0
-                    }
-                )
-                table_contrib = self.contrib_coll.find_one(
-                    {'contribution_id': cid}, { 'content.data': 1, '_id': 0 }
-                )
-                author = Author.parse_author(tree_contrib['contributor_email'])
-                project = str(author.name).translate(None, '.').replace(' ','_')
+                contrib = self.contrib_coll.find_one({'contribution_id': cid})
+                author = Author.parse_author(contrib['contributor_email'])
+                project = str(author.name).translate(None, '.').replace(' ','_') \
+                        if 'project' not in contrib else contrib['project']
                 logging.info(doc['_id'])
                 all_data = {}
-                if tree_contrib['content']:
+                if contrib['content']:
                     all_data.update({
-                        'contributed_data.%s.tree_data.%d' % (project, cid): tree_contrib['content'],
+                        'contributed_data.%s.tree_data.%d' % (project, cid): contrib['content'],
                     })
-                if 'data' in table_contrib['content']:
+                if 'data' in contrib['content']:
                     table_columns, table_rows = None, None
-                    raw_data = table_contrib['content']['data']
+                    raw_data = contrib['content']['data']
                     if isinstance(raw_data, dict):
                         table_columns = [ { 'title': k } for k in raw_data ]
                         table_rows = [

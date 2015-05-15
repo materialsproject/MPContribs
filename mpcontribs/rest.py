@@ -82,7 +82,7 @@ class ContributionMongoAdapter(object):
         return self.contributions.remove(crit)
 
     def submit_contribution(self, mpfile, contributor_email, cids=None,
-        fake_it=False, insert=False):
+        fake_it=False, insert=False, project=None):
         """submit user data to `materials.contributions` collection
 
         Args:
@@ -111,6 +111,7 @@ class ContributionMongoAdapter(object):
                 'contributed_at': datetime.datetime.utcnow().isoformat(),
                 'mp_cat_id': mp_cat_id, 'content': v
             }
+            if project is not None: doc['project'] = project
             if insert:
                 logging.info('inserting {} ...'.format(doc['contribution_id']))
                 #self.contributions.replace_one({'contribution_id': cid}, doc, upsert=True)
