@@ -87,6 +87,7 @@ def submit_mpfile(request, mdb=None):
     """Submits a MPFile."""
     if not request.user.is_staff:
         raise PermissionDenied("MPFile submission open only to staff right now.")
+    project = request.user.institution # institution is required field in User
     contributor = '{} {} <{}>'.format(
         request.user.first_name, request.user.last_name, request.user.email
     )
@@ -94,7 +95,9 @@ def submit_mpfile(request, mdb=None):
         mpfile = MPFile.from_string(request.POST['mpfile'], 'csv') # TODO: tsv?
         #mpfile = MPFile.from_file('../MPContribs/test_files/inputB.csv')
         cids = json.loads(request.POST['cids']) if 'cids' in request.POST else None
-        cids = mdb.contrib_ad.submit_contribution(mpfile, contributor, insert=True, cids=cids)
+        cids = mdb.contrib_ad.submit_contribution(
+            mpfile, contributor, project=project, insert=True, cids=cids
+        )
         mdb.contrib_build_ad.build(cids=cids)
     except Exception as ex:
         raise ValueError('"REST Error: "{}"'.format(str(ex)))
@@ -106,6 +109,8 @@ def query_contribs(request, mdb=None):
     if not request.user.is_staff:
         raise PermissionDenied("contributions query open only to staff right now.")
     criteria = json.loads(request.POST.get('criteria', '{}'))
+    # contribution query only depends on contributor_email (not project)
+    # query checks whether contributor_email is in list of collaborators of contribution
     contributor = '{} {} <{}>'.format(
         request.user.first_name, request.user.last_name, request.user.email
     )
@@ -120,6 +125,8 @@ def delete_contribs(request, mdb=None):
     if not request.user.is_staff:
         raise PermissionDenied("contributions deletion open only to staff right now.")
     cids = json.loads(request.POST['cids'])
+    # contribution query only depends on contributor_email (not project)
+    # query checks whether contributor_email is in list of collaborators of contribution
     contributor = '{} {} <{}>'.format(
         request.user.first_name, request.user.last_name, request.user.email
     )
