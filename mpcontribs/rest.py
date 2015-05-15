@@ -104,7 +104,20 @@ class ContributionMongoAdapter(object):
         for idx,(k,v) in enumerate(mpfile.document.iteritems()):
             mp_cat_id = k.split('--')[0] if not fake_it or self.fake is None else \
                     self.fake.random_element(elements=self.available_mp_ids)
+            # new submission vs update
             cid = self._get_next_contribution_id() if cids is None else cids[idx]
+            # check contributor permissions if update mode
+            if cids is not None:
+                doc = self.contributions.find_one(
+                    {'contribution_id': cid}, {'_id': 0, 'contributor_email': 1}
+                )
+                if doc['contributor_email'] != contributor_email:
+                    raise ValueError(
+                        "Submission stopped: update of contribution {} not"
+                        " allowed due to insufficient permissions of {}!"
+                        " Consider making {} a collaborator on contribution"
+                        " {}.".format(cid, contributor_email, contributor_email, cid))
+            # prepare document
             doc = {
                 'contributor_email': contributor_email,
                 'contribution_id': cid,
