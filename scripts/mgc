@@ -32,13 +32,28 @@ def delete(args):
         )
 
 def collab_add(args):
-    pass
+    with MPRester(API_KEY, endpoint=ENDPOINT) as m:
+        cids = [] if args.to is None else args.to
+        if args.to is None:
+            for contrib in m.query_contribs():
+                cids.append(contrib['contribution_id'])
+        print m.update_collaborators(args.collaborators, cids, 'add')
 
 def collab_remove(args):
-    pass
+    with MPRester(API_KEY, endpoint=ENDPOINT) as m:
+        cids = [] if args.from is None else args.from
+        if args.from is None:
+            for contrib in m.query_contribs():
+                cids.append(contrib['contribution_id'])
+        print m.update_collaborators(args.collaborators, cids, 'remove')
 
 def collab_primary(args):
-    pass
+    with MPRester(API_KEY, endpoint=ENDPOINT) as m:
+        cids = [] if args.for is None else args.for
+        if args.for is None:
+            for contrib in m.query_contribs():
+                cids.append(contrib['contribution_id'])
+        print m.update_collaborators([args.collaborator], cids, 'primary')
 
 def main():
     parser = argparse.ArgumentParser(
