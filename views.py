@@ -148,3 +148,38 @@ def delete_contribs(request, mdb=None):
     results = mdb.contrib_ad.delete_contributions(criteria)
     mdb.contrib_build_ad.delete(cids)
     return {"valid_response": True, "response": results}
+
+@mapi_func(supported_methods=["POST", "GET"], requires_api_key=True)
+def update_collaborators(request, mdb=None):
+    """Update the list of collaborators"""
+    if not request.user.is_staff:
+        raise PermissionDenied("collaborators update open only to staff right now.")
+    collaborators = json.loads(request.POST['collaborators'])
+    cids = json.loads(request.POST['cids'])
+    mode = request.POST['mode']
+    contributor = '{} {} <{}>'.format(
+        request.user.first_name, request.user.last_name, request.user.email
+    )
+    for doc in mdb.contrib_ad.contributions.find(
+        {'contribution_id': {'$in': cids}},
+        {'_id': 0, 'contribution_id': 1, 'collaborators': 1}
+    ):
+        if contributor not in doc['collaborators']:
+            cid = doc['contribution_id']
+            raise PermissionDenied(
+                "Collaborator Update stopped: updating collaborators for"
+                " contribution {} not allowed due to insufficient permissions"
+                " of {}! Ask someone of {} to make you a collaborator on"
+                " contribution {}.".format(
+                    cid, contributor, doc['collaborators'], cid
+                ))
+    # 1. process collaborators shortcuts into "authors"
+    # 2. update collaborators in contributions collection based on mode
+    # 3. build update into materials collection
+    #criteria = {
+    #    'collaborators': {'$in': [contributor]},
+    #    'contribution_id': {'$in': cids}
+    #}
+    #results = mdb.contrib_ad.delete_contributions(criteria)
+    #mdb.contrib_build_ad.delete(cids)
+    return {"valid_response": True, "response": results}
