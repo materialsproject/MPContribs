@@ -31,6 +31,15 @@ def delete(args):
             m.delete_contribs(args.cids)
         )
 
+def collab_add(args):
+    pass
+
+def collab_remove(args):
+    pass
+
+def collab_primary(args):
+    pass
+
 def main():
     parser = argparse.ArgumentParser(
         description="""mgc is a convenience script using the Materials Project's
@@ -42,7 +51,7 @@ def main():
     subparsers = parser.add_subparsers()
 
     parser_info = subparsers.add_parser(
-        'info', help="""list contribution IDs pertaining to the requesting contributor."""
+        'info', help="""list contributions pertaining to the contributor"""
     ) # TODO: include descriptions in contribution list?
     parser_info.add_argument(
         '-m', '--mp_cat_ids', type=str, nargs='+',
@@ -51,8 +60,7 @@ def main():
     parser_info.set_defaults(func=info)
 
     parser_submit = subparsers.add_parser(
-        'submit', help="""submit a physical MPFile containing the contribution
-        data in MPContribs-specific format."""
+        'submit', help="""submit a MPFile containing the contribution data"""
     )
     parser_submit.add_argument('mpfile', type=str, help='MPFile to submit')
     parser_submit.add_argument(
@@ -62,14 +70,62 @@ def main():
     parser_submit.set_defaults(func=submit)
 
     parser_delete = subparsers.add_parser(
-        'delete', help="""delete a list of contribution IDs belonging to the
-        requesting contributor."""
+        'delete', help="""delete contributions belonging to the contributor"""
     )
     parser_delete.add_argument(
         'cids', type=int, nargs='+',
         help="""list of contribution IDs to be deleted"""
     )
     parser_delete.set_defaults(func=delete)
+
+    parser_collab = subparsers.add_parser(
+        'collab', help="""maintain list of collaborators for contributions"""
+    )
+    collab_subparsers = parser_collab.add_subparsers()
+    collab_subparsers_add = collab_subparsers.add_parser(
+        'add', help="""add collaborators to contributions""",
+        description="Example: `mgc collab add p.huck a.jain --to 24 55 67`"
+    )
+    collab_subparsers_add.add_argument(
+        'collaborators', type=str, nargs='+',
+        help="""list of collaborators in the format `FirstNameInitial.LastName`
+        (case insensitive)"""
+    )
+    collab_subparsers_add.add_argument(
+        '--to', type=int, nargs='+',
+        help="""list of contribution IDs to which to add collaborators.
+        Collaborators will be added to ALL contributions if `--to` is omitted!"""
+    )
+    collab_subparsers_add.set_defaults(func=collab_add)
+    collab_subparsers_remove = collab_subparsers.add_parser(
+        'remove', help="""remove collaborators from contributions""",
+        description="Example: `mgc collab remove p.huck a.jain --from 24 55 67`"
+    )
+    collab_subparsers_remove.add_argument(
+        'collaborators', type=str, nargs='+',
+        help="""list of collaborators in the format `FirstNameInitial.LastName`
+        (case insensitive)"""
+    )
+    collab_subparsers_remove.add_argument(
+        '--from', type=int, nargs='+',
+        help="""list of contribution IDs from which to remove collaborators.
+        Collaborators will be removed from ALL contributions if `--from` is omitted!"""
+    )
+    collab_subparsers_remove.set_defaults(func=collab_remove)
+    collab_subparsers_primary = collab_subparsers.add_parser(
+        'primary', help="""set primary contact for contributions""",
+        description="Example: `mgc collab primary p.huck --for 24 55 67`"
+    )
+    collab_subparsers_primary.add_argument(
+        'collaborator', type=str, help="""collaborator in the format
+        `FirstNameInitial.LastName` (case insensitive)"""
+    )
+    collab_subparsers_primary.add_argument(
+        '--for', type=int, nargs='+',
+        help="""list of contribution IDs for which to set the primary collaborators.
+        The primary collaborator will be set for ALL contributions if `--for` is omitted!"""
+    )
+    collab_subparsers_primary.set_defaults(func=collab_primary)
 
     args = parser.parse_args(None if len(sys.argv) > 1 else ['--help'])
     args.func(args)
