@@ -74,7 +74,7 @@ class ContributionMongoAdapter(object):
         )['next_contribution_id']
 
     def query_contributions(self, crit):
-        props = [ '_id', 'contributor_email', 'mp_cat_id', 'contribution_id' ]
+        props = [ '_id', 'collaborators', 'mp_cat_id', 'contribution_id' ]
         proj = dict((p, int(p!='_id')) for p in props)
         return self.contributions.find(crit, proj)
 
@@ -107,19 +107,22 @@ class ContributionMongoAdapter(object):
             # new submission vs update
             cid = self._get_next_contribution_id() if cids is None else cids[idx]
             # check contributor permissions if update mode
+            collaborators = [contributor_email]
             if cids is not None:
-                doc = self.contributions.find_one(
-                    {'contribution_id': cid}, {'_id': 0, 'contributor_email': 1}
-                )
-                if doc['contributor_email'] != contributor_email:
+                collaborators = self.contributions.find_one(
+                    {'contribution_id': cid}, {'_id': 0, 'collaborators': 1}
+                )['collaborators']
+                if contributor_email not in collaborators:
                     raise ValueError(
                         "Submission stopped: update of contribution {} not"
                         " allowed due to insufficient permissions of {}!"
-                        " Consider making {} a collaborator on contribution"
-                        " {}.".format(cid, contributor_email, contributor_email, cid))
+                        " Ask someone of {} to make you a collaborator on"
+                        " contribution {}.".format(
+                            cid, contributor_email, collaborators, cid
+                        ))
             # prepare document
             doc = {
-                'contributor_email': contributor_email,
+                'collaborators': collaborators,
                 'contribution_id': cid,
                 'contributed_at': datetime.datetime.utcnow().isoformat(),
                 'mp_cat_id': mp_cat_id, 'content': v
