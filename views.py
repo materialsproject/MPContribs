@@ -98,7 +98,7 @@ def submit_mpfile(request, mdb=None):
         cids = mdb.contrib_ad.submit_contribution(
             mpfile, contributor, project=project, insert=True, cids=cids
         )
-        mdb.contrib_build_ad.build(cids=cids)
+        mdb.contrib_build_ad.build(contributor, cids=cids)
     except Exception as ex:
         raise ValueError('"REST Error: "{}"'.format(str(ex)))
     return {"valid_response": True, 'contribution_ids': cids}
@@ -110,12 +110,12 @@ def query_contribs(request, mdb=None):
         raise PermissionDenied("contributions query open only to staff right now.")
     criteria = json.loads(request.POST.get('criteria', '{}'))
     # contribution query only depends on contributor_email (not project)
-    # query checks whether contributor_email is in list of collaborators of contribution
+    # query checks whether contributor_email is in collaborators list of contribution
     contributor = '{} {} <{}>'.format(
         request.user.first_name, request.user.last_name, request.user.email
     )
     if json.loads(request.POST.get('contributor_only', 'true')):
-        criteria['contributor_email'] = contributor
+        criteria['collaborators'] = {'$in': [contributor]}
     results = mdb.contrib_ad.query_contributions(criteria)
     return {"valid_response": True, "response": list(results)}
 
@@ -125,15 +125,26 @@ def delete_contribs(request, mdb=None):
     if not request.user.is_staff:
         raise PermissionDenied("contributions deletion open only to staff right now.")
     cids = json.loads(request.POST['cids'])
-    # contribution query only depends on contributor_email (not project)
-    # query checks whether contributor_email is in list of collaborators of contribution
     contributor = '{} {} <{}>'.format(
         request.user.first_name, request.user.last_name, request.user.email
     )
+    for doc in mdb.contrib_ad.contributions.find(
+        {'contribution_id': {'$in': cids}},
+        {'_id': 0, 'contribution_id': 1, 'collaborators': 1}
+    ):
+        if contributor not in doc['collaborators']:
+            cid = doc['contribution_id']
+            raise PermissionDenied(
+                "Deletion stopped: deleting contribution {} not"
+                " allowed due to insufficient permissions of {}!"
+                " Ask someone of {} to make you a collaborator on"
+                " contribution {}.".format(
+                    cid, contributor, doc['collaborators'], cid
+                ))
     criteria = {
-        'contributor_email': contributor,
+        'collaborators': {'$in': [contributor]},
         'contribution_id': {'$in': cids}
     }
     results = mdb.contrib_ad.delete_contributions(criteria)
-    mdb.contrib_build_ad.delete(cids, contributor)
+    mdb.contrib_build_ad.delete(cids)
     return {"valid_response": True, "response": results}
