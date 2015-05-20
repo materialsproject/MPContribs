@@ -173,7 +173,19 @@ def update_collaborators(request, mdb=None):
                 " contribution {}.".format(
                     cid, contributor, doc['collaborators'], cid
                 ))
-    # 1. process collaborators shortcuts into "authors"
+    # process collaborators shortcuts into author strings
+    collaborator_emails = []
+    for collaborator in collaborators:
+        # TODO input check for collaborators
+        # TODO test with different users
+        first_name_initial, last_name = collaborator.split('.')
+        user = RegisteredUser.objects.get(
+            last_name__iexact=last_name,
+            first_name__istartswith=first_name_initial
+        )
+        collaborator_emails.append('{} {} <{}>'.format(
+            user.first_name, user.last_name, user.email
+        ))
     # 2. update collaborators in contributions collection based on mode
     # 3. build update into materials collection
     #criteria = {
@@ -182,4 +194,4 @@ def update_collaborators(request, mdb=None):
     #}
     #results = mdb.contrib_ad.delete_contributions(criteria)
     #mdb.contrib_build_ad.delete(cids)
-    return {"valid_response": True, "response": results}
+    return {"valid_response": True, "response": collaborator_emails}
