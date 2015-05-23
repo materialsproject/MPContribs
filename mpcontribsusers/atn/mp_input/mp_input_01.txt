@@ -1,0 +1,83 @@
+>>> General
+
+>>>>Experiment
+
+>>>>>Preparation
+Description:Magentron Co-sputtering
+Temperature: RT
+Treatment: In vacuuo annealinging: 800°C for 1h, 200°C for 10h
+
+>>>>>Sample
+Material Name: Alnico
+Form: Thin Film on LSAT (110)
+Thickness: ca. 150nm
+Sample Name:Alnico_2015_290413c
+Grower: Tieren Gao
+
+>>>>>Measurement
+Detection: total electron yield
+Temperature: RT
+Orienintation: 30° grazing incident
+Date: 2015-05-11
+Measured by: Alpha N'Diaye 
+>>>>>>Beamline
+Beamline:ALS-6.3.1
+Method: Soft x-ray XAS and XMCD
+Polarization: circular, positive (ca. 60%)
+Magnet Field: 0.5T switching point by point, parallel to x-ray beam
+Count Time: 1s
+Delay Time: 0.5s
+
+>>>>>>>Monochromator
+Exit Slit: 20µm
+Grating: 600l/mm
+
+>>> AlNiCoCu
+>>>>Edge
+localdirname: 	~/ALS/Beamline/RawData_2T-Computer/
+scanfilenames: 	TrajScan31042-2_0001.txt
+edge:		Co L3,2
+preedge:	760,774
+postedge:	808,820
+
+##############################
+# The values below get inserted by the script.
+#
+>>>>>processing
+>>>>>>process
+name: scaling bg to 1
+factor: 
+>>>>>>process
+name:	constant background removal preedge
+background value: 
+>>>>>>process
+name:	normalization to L3
+factor: 0.86202
+>>>>>data
+Energy, XAS, XMCD 
+761.0, 0.008445, -0.001452
+762.0, 0.007812, -0.000682
+#
+##############################
+
+
+>>>>Edge
+localdirname: 	~/ALS/Beamline/RawData_2T-Computer/
+scanfilenames: 	TrajScan31042-2_0001.txt
+edge:		Ni L3,2
+preedge:	820,847
+postedge:	875,880
+
+##############################
+# The values below get inserted by the script.
+background type:linear # (None | constant | linear | ???)
+background value: 
+scaling factor:
+>>>>>data
+Energy, XAS, XMCD 
+>>>>>data
+Energy, XAS, XMCD 
+820.0, 0.008445, -0.001452
+821.0, 0.007812, -0.000682
+#
+##############################
