@@ -4,6 +4,7 @@ import pandas as pd
 from StringIO import StringIO
 from ..config import min_indent_level, indent_symbol, csv_comment_char, mp_level01_titles
 from utils import nest_dict, RecursiveDict
+from collections import OrderedDict
 
 class RecursiveParser():
     def __init__(self, fileExt):
@@ -86,7 +87,7 @@ class RecursiveParser():
     def to_dict(self, pandas_object):
         """convert pandas object to dict"""
         if isinstance(pandas_object, pd.Series):
-            return pandas_object.to_dict()
+            return OrderedDict((k,v) for k,v in pandas_object.iteritems())
         all_columns_numeric = True
         for col in pandas_object.columns:
             if ( pandas_object[col].dtype != np.float64 and \

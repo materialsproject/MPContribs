@@ -1,5 +1,6 @@
+from collections import OrderedDict
 
-class RecursiveDict(dict):
+class RecursiveDict(OrderedDict):
     """https://gist.github.com/Xjs/114831"""
     def rec_update(self, other):
         for key,value in other.iteritems():
