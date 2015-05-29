@@ -14,8 +14,7 @@ class RecursiveParser():
         self.main_general = False
         self.level = min_indent_level # level counter
         # TODO better organize read_csv options -> config file?
-        if fileExt != 'csv' and fileExt != 'tsv':
-            raise ValueError('%s format not supported!' % fileExt)
+        # TODO probably don't support csv since data section auto-detected via comma at some point
         data_separator = '\t' if fileExt == 'tsv' else ','
         self.data_options = { 'sep': data_separator, 'header': 0 }
         self.colon_key_value_list = { 'sep': ':', 'header': None, 'index_col': 0 }
