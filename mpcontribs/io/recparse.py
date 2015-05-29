@@ -113,6 +113,9 @@ class RecursiveParser():
         # split into section title line (even) and section body (odd entries)
         sections = re.split(self.separator_regex(), file_string)
         if len(sections) > 1:
+            # check for preceding section_body without section_index, and parse
+            if sections[0] != '': self.parse(sections[0])
+            # drop preceding bare section_body
             sections = sections[1:] # https://docs.python.org/2/library/re.html#re.split
             for section_index,section_body in enumerate(sections[1::2]):
                 clean_title = self.clean_title(sections[2*section_index])
