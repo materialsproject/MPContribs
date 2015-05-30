@@ -37,6 +37,10 @@ class MPFile(PMGSONable):
         Returns:
             MPFile object.
         """
+        data = '\n'.join([ # remove all comment lines first
+            line for line in data.splitlines()
+            if not line.lstrip().startswith("#")
+        ])
         parser = RecursiveParser(fileExt)
         parser.parse(data)
         return MPFile(parser)
