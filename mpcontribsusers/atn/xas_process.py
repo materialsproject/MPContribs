@@ -1,11 +1,12 @@
 #
+import pandas as pd
 #
 #
 #
 
 #
 #  All processes should be called like this:
-#  process(xmcd_data, scanparams, process_parameters)
+#  process(xmcd_data, scanparams, process_parameters, process_number)
 #  where
 # 	xmcd_data is the xmcd_data in its current state after the previous processes 
 #	scanparams are the parameters for the scans (inlcuding process parameters)
@@ -22,10 +23,10 @@
 #
 
 
-def normalize_preedge(xmcd_data,  scanparams, process_parameters=None):
+def normalize_preedge(xmcd_data,  scanparams, process_parameters=None, process_number =-1):
 	"""Normalizes preedge to one"""
 	# Preedge to 1 
-	preedge = scaparams.preedge
+	preedge = scanparams.preedge
 	preedge_spectrum  = xmcd_data[ (xmcd_data["Energy"]>preedge[0]) & (xmcd_data["Energy"]<preedge[1]) ]
 
 	xasplus_bg	  = preedge_spectrum["XAS+"].mean()
@@ -42,10 +43,10 @@ def normalize_preedge(xmcd_data,  scanparams, process_parameters=None):
 
 
 
-def remove_const_BG_preedge(xmcd_data,  scanparams, process_parameters=None):
+def remove_const_BG_preedge(xmcd_data,  scanparams, process_parameters=None, process_number =-1):
 	"""Should remove a constant bg based on the preedge average (might be one, if the data is normalized to preedge)"""
 	
-	preedge = scaparams.preedge
+	preedge = scanparams.preedge
 	preedge_spectrum = xmcd_data[ (xmcd_data["Energy"]>preedge[0]) & (xmcd_data["Energy"]<preedge[1]) ]
 
 	xasplus_bg     	 = preedge_spectrum["XAS+"].mean()
@@ -60,7 +61,7 @@ def remove_const_BG_preedge(xmcd_data,  scanparams, process_parameters=None):
 
 	return(xmcd_data, {"xas+ background": xasplus_bg, "xas- background": xasminus_bg})
 
-def normalize_minmax(xmcd_data,  scanparams=None, process_parameters=None):
+def normalize_XAS_minmax(xmcd_data,  scanparams=None, process_parameters=None, process_number =-1):
 
 	# Normalize
 	offset		   =  xmcd_data["XAS"].min()
@@ -72,6 +73,37 @@ def normalize_minmax(xmcd_data,  scanparams=None, process_parameters=None):
 	xmcd_data["Factor"]= factor
 
 	return (xmcd_data, {"normalization factor": factor, "Offset":offset} )
+
+def get_xmcd(xmcd_data,  scanparams=None, process_parameters={}, process_number =-1):
+	if process_parameters.setdefault("Energy range", None) is None: 
+		scandata 	= xmcd_data
+	else:
+		scandata 	= xmcd_data[(xmcd_data["Energy"]>process_parameters["Energy range"][0]) & (xmcd_data["Energy"]<process_parameters["Energy range"][1])]
+	scan_plus	= scandata[scandata["Magnet Field"]<=0] 
+	scan_minus 	= scandata[scandata["Magnet Field"]>0]
+	xas_plus	= scan_plus ["I_Norm0"].values 
+	xas_minus	= scan_minus["I_Norm0"].values
+	
+	if xas_plus.shape != xas_minus.shape:
+		print ("No xas_plus and xas_minus not equal. Using xas_plus. Shapes : {0}, {1}".format(xas_plus.shape, xas_minus.shape) )
+		xas_minus = xas_plus
+
+	
+
+	xas 		=  (xas_plus + xas_minus)/2
+	xmcd		=  -(xas_plus - xas_minus)
+	energy		= scan_plus["Energy"].values
+
+	result_data_f	= pd.DataFrame( {	"Energy":	energy,
+						"XAS":		xas,
+						"XAS+":		xas_plus,
+						"XAS-":		xas_minus,
+						"XMCD":		xmcd	}
+					)
+
+	result_data_f["Index"]= result_data_f.index.values 
+	return result_data_f , {}
+
 
 
 #### Legacy or to do...
@@ -122,4 +154,32 @@ def remove_linear_BG_preedge(xmcd_data, pre_edge = (760,772), post_edge= (797,84
 #	print factor
 		
 	return (xmcd_data)
+
+###########################################################
+# Could also follow the samle logic as the processes
+###########################################################
+def get_xmcd_legacy(scandata):
+	scan_plus	= scandata[scandata["Magnet Field"]<=0] 
+	scan_minus 	= scandata[scandata["Magnet Field"]>0]
+	xas_plus	= scan_plus ["I_Norm0"].values 
+	xas_minus	= scan_minus["I_Norm0"].values
+	
+	if xas_plus.shape != xas_minus.shape:
+		print ("No xas_plus and xas_minus not equal. Using xas_plus. Shapes : {0}, {1}".format(xas_plus.shape, xas_minus.shape) )
+		xas_minus = xas_plus
+
+	
+
+	xas 		=  (xas_plus + xas_minus)/2
+	xmcd		=  -(xas_plus - xas_minus)
+	energy		= scan_plus["Energy"].values
+
+	result_data_f	= pd.DataFrame( {	"Energy":	energy,
+						"XAS":		xas,
+						"XAS+":		xas_plus,
+						"XAS-":		xas_minus,
+						"XMCD":		xmcd	}
+					)
+	return result_data_f
+
 
