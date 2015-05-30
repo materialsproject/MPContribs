@@ -12,12 +12,8 @@ class RecursiveParser():
         self.level0_counter = 0
         self.section_titles = []
         self.document = RecursiveDict({})
-        self.main_general = False
         self.level = min_indent_level # level counter
-        # TODO better organize read_csv options -> config file?
-        # TODO probably don't support csv since data section auto-detected via comma at some point
-        data_separator = '\t' if fileExt == 'tsv' else ','
-        self.data_options = { 'sep': data_separator, 'header': 0 }
+        self.data_options = { 'sep': ',', 'header': 0 }
         self.colon_key_value_list = { 'sep': ':', 'header': None, 'index_col': 0 }
 
     def separator_regex(self):
@@ -36,19 +32,16 @@ class RecursiveParser():
             r'%s*' % csv_comment_char, title
         )[0].strip().lower()
 
-    def is_bare_data_section(self, title):
-        """determine whether currently in bare data section"""
+    def is_bare_section(self, title):
+        """determine whether currently in bare section"""
         return (
             title != mp_level01_titles[0] and 
             self.level-1 == min_indent_level
         )
 
-    def is_data_section(self, title):
+    def is_data_section(self, body):
         """determine whether currently in data section"""
-        return (
-            title == mp_level01_titles[1] or
-            self.is_bare_data_section(title)
-        )
+        return (':' not in body)
 
     def strip(self, text):
         """http://stackoverflow.com/questions/13385860"""
@@ -64,7 +57,8 @@ class RecursiveParser():
 
     def read_csv(self, title, body):
         """run pandas.read_csv on (sub)section body"""
-        if self.is_data_section(title):
+        is_data_section = self.is_data_section(body)
+        if is_data_section:
             options = self.data_options
             cur_line = 1
             while 1:
@@ -77,7 +71,7 @@ class RecursiveParser():
             options = self.colon_key_value_list
             ncols = 2
         converters = dict((col,self.strip) for col in range(ncols))
-        return pd.read_csv(
+        return is_data_section, pd.read_csv(
             StringIO(body), comment=csv_comment_char,
             skipinitialspace=True, squeeze=True,
             converters = converters,
@@ -114,45 +108,36 @@ class RecursiveParser():
         # split into section title line (even) and section body (odd entries)
         sections = re.split(self.separator_regex(), file_string)
         if len(sections) > 1:
-            # check for preceding section_body without section_index, and parse
+            # check for preceding bare section_body (without section title), and parse
             if sections[0] != '': self.parse(sections[0])
             # drop preceding bare section_body
             sections = sections[1:] # https://docs.python.org/2/library/re.html#re.split
             for section_index,section_body in enumerate(sections[1::2]):
                 clean_title = self.clean_title(sections[2*section_index])
-                if self.level == min_indent_level: # level-0
-                    if section_index == 0: # check for main-general mode
-                        self.main_general = (
-                            clean_title == mp_level01_titles[0]
-                        )
-                    elif self.main_general: # uniquify level-0 titles
-                        clean_title += '--%d' % self.level0_counter
-                        self.level0_counter += 1
+                # uniquify level-0 titles if necessary
+                if self.level == min_indent_level and clean_title in self.document:
+                    clean_title += '--%d' % self.level0_counter
+                    self.level0_counter += 1
                 self.increase_level(clean_title)
                 self.parse(section_body)
                 self.reduce_level()
         else:
-            # separator level not found b/c too high
-            # read csv / convert section body to pandas object
+            # separator level not found, convert section body to pandas object,
             section_title = self.section_titles[-1]
-            pd_obj = self.read_csv(section_title, file_string)
+            is_data_section, pd_obj = self.read_csv(section_title, file_string)
             logging.info(pd_obj)
             # TODO: include validation
-            # add first column as x-column for default plot
-            if self.is_data_section(section_title):
-                nested_keys = [
-                    self.section_titles[0],
-                    mp_level01_titles[2], 'default'
-                ]
+            # use first csv table for default plot, first column as x-column
+            if is_data_section and mp_level01_titles[2] not in \
+               self.document[self.section_titles[0]]:
                 self.document.rec_update(nest_dict(
-                    {'x': pd_obj.columns[0]}, nested_keys
+                    {'x': pd_obj.columns[0], 'table': section_title},
+                    [self.section_titles[0], mp_level01_titles[2], 'default']
                 ))
             # add data section title to nest 'bare' data under data section
             # => artificially increase and decrease level (see below)
-            is_bare_data = False
-            if self.is_bare_data_section(section_title):
-                is_bare_data = True
-                self.increase_level(mp_level01_titles[1])
+            is_bare_data = (is_data_section and self.is_bare_section(section_title))
+            if is_bare_data: self.increase_level(mp_level01_titles[1])
             # update nested dict/document based on section level
             self.document.rec_update(nest_dict(
                 self.to_dict(pd_obj), self.section_titles
