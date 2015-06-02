@@ -1,9 +1,10 @@
-import os, json
-from pymatgen.serializers.json_coders import PMGSONable
+import os, json, six
+from abc import ABCMeta
 from recparse import RecursiveParser
 from monty.io import zopen
+from monty.json import MSONable
 
-class MPFile(PMGSONable):
+class MPFile(six.with_metaclass(ABCMeta, MSONable)):
     """Object for representing a MP Contribution File.
 
     Args:
