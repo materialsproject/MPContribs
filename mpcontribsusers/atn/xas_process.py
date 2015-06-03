@@ -1,8 +1,11 @@
-#
 import pandas as pd
 #
 #
 #
+# All usable processes should be listed in the end for reference in the MPFile 
+#
+#
+# 
 
 #
 #  All processes should be called like this:
@@ -26,7 +29,13 @@ import pandas as pd
 def normalize_preedge(xmcd_data,  scanparams, process_parameters=None, process_number =-1):
 	"""Normalizes preedge to one"""
 	# Preedge to 1 
-	preedge = scanparams.preedge
+
+	preedge = (float(process_parameters['preedge_min']), float(process_parameters['preedge_max']) )
+	print type(preedge)
+	print preedge
+	print preedge[0]
+	
+
 	preedge_spectrum  = xmcd_data[ (xmcd_data["Energy"]>preedge[0]) & (xmcd_data["Energy"]<preedge[1]) ]
 
 	xasplus_bg	  = preedge_spectrum["XAS+"].mean()
@@ -46,7 +55,7 @@ def normalize_preedge(xmcd_data,  scanparams, process_parameters=None, process_n
 def remove_const_BG_preedge(xmcd_data,  scanparams, process_parameters=None, process_number =-1):
 	"""Should remove a constant bg based on the preedge average (might be one, if the data is normalized to preedge)"""
 	
-	preedge = scanparams.preedge
+	preedge = (float(process_parameters.get('preedge_min',0)), float(process_parameters.get('preedge_max',10000)) )
 	preedge_spectrum = xmcd_data[ (xmcd_data["Energy"]>preedge[0]) & (xmcd_data["Energy"]<preedge[1]) ]
 
 	xasplus_bg     	 = preedge_spectrum["XAS+"].mean()
@@ -75,10 +84,11 @@ def normalize_XAS_minmax(xmcd_data,  scanparams=None, process_parameters=None, p
 	return (xmcd_data, {"normalization factor": factor, "Offset":offset} )
 
 def get_xmcd(xmcd_data,  scanparams=None, process_parameters={}, process_number =-1):
-	if process_parameters.setdefault("Energy range", None) is None: 
-		scandata 	= xmcd_data
-	else:
-		scandata 	= xmcd_data[(xmcd_data["Energy"]>process_parameters["Energy range"][0]) & (xmcd_data["Energy"]<process_parameters["Energy range"][1])]
+	Emin = float(process_parameters.get("energy range min", 0    ) )
+	Emax = float(process_parameters.get("energy range max", 10000) )
+	
+	scandata 	= xmcd_data[(xmcd_data["Energy"] >= Emin) & (xmcd_data["Energy"]<= Emax)]
+
 	scan_plus	= scandata[scandata["Magnet Field"]<=0] 
 	scan_minus 	= scandata[scandata["Magnet Field"]>0]
 	xas_plus	= scan_plus ["I_Norm0"].values 
@@ -155,31 +165,23 @@ def remove_linear_BG_preedge(xmcd_data, pre_edge = (760,772), post_edge= (797,84
 		
 	return (xmcd_data)
 
-###########################################################
-# Could also follow the samle logic as the processes
-###########################################################
-def get_xmcd_legacy(scandata):
-	scan_plus	= scandata[scandata["Magnet Field"]<=0] 
-	scan_minus 	= scandata[scandata["Magnet Field"]>0]
-	xas_plus	= scan_plus ["I_Norm0"].values 
-	xas_minus	= scan_minus["I_Norm0"].values
-	
-	if xas_plus.shape != xas_minus.shape:
-		print ("No xas_plus and xas_minus not equal. Using xas_plus. Shapes : {0}, {1}".format(xas_plus.shape, xas_minus.shape) )
-		xas_minus = xas_plus
 
-	
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+#
+#
+#
+#    All usable processes should be listed here for reference in the MPFile 
+#
+#
+#
+#
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+process_dict = { 	
+			'get xmcd'				: get_xmcd , 
+			'constant background removal preedge' 	: remove_const_BG_preedge  ,
+			'linear background removal preedge'	: remove_linear_BG_preedge ,
+			'xas normalization to min and max'	: normalize_XAS_minmax	,
+			'scaling preedge to 1'			: normalize_preedge
+		}
 
-	xas 		=  (xas_plus + xas_minus)/2
-	xmcd		=  -(xas_plus - xas_minus)
-	energy		= scan_plus["Energy"].values
-
-	result_data_f	= pd.DataFrame( {	"Energy":	energy,
-						"XAS":		xas,
-						"XAS+":		xas_plus,
-						"XAS-":		xas_minus,
-						"XMCD":		xmcd	}
-					)
-	return result_data_f
-
-
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #

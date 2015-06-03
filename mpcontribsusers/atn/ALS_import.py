@@ -5,9 +5,14 @@ import os
 import matplotlib.pylab as plt
 import pandas as pd
 import mspScan as msp
-import process_dict as process
+import xas_process as xas_process
 import itertools
 from collections import OrderedDict
+
+# There must be a better way!
+sys.path.append('/home/q/ALS/programme/bl631_combispectra/materialsproject/MPContribs')
+from mpcontribs.io.mpfile import MPFile
+
 
 def treat_xmcd(scan_groups, scan_params, process_dict):
 		keys = scan_groups.groups.keys()
@@ -34,132 +39,81 @@ def treat_xmcd(scan_groups, scan_params, process_dict):
 def process_xmcd(xmcd_data, scan_params, process_dict):
 	_DEBUG_ = True
 #	_DEBUG_ = False
-				
-	for process_no, process_call in enumerate(scan_params.processes):
-		process = process_dict[process_call[0]] ### That very probable error of a process not found should be handeled.
-		process_parameters = process_call[1]
+	
+	for process_no, process_call in enumerate(scan_params['processing']):
+		
+		print process_dict
+		process = process_dict.get(str(process_call), None)
+
+
+
+		if process is None:
+			# That very probable error of a process not found should be handeled.
+			print "Process not found!"
+			print "Looking for  :'"+  process_call+'\''
+			print "Available are: '"+ "' '".join(process_dict.keys())+'\''
+			print
+			sys.exit()
+
+		process_parameters = scan_params['processing'][process_call]
 		if _DEBUG_:
-			print process_no, process_call[0], process_parameters	
+			print process_no, process_call, process_parameters	
 	
 		xmcd_data, return_values = process(xmcd_data, scan_params, process_parameters, process_no)
 		scan_params = save_return_values(scan_params, process_no,  return_values)
 	
-	scanparams.data = xmcd_data # Is this the right way? Think more if that should be done or filtered elswhere.
-	return(xmcd_data, scanparams)
+	scan_params['data'] = xmcd_data # Is this the right way? Think more if that should be done or filtered elswhere.
+	return(xmcd_data, scan_params)
 
 
 
 def save_return_values(scanparams, process_no, return_values):
 	i = process_no
-	if len(scanparams.processes[i]) ==0:
-		scanparams.processes[i].append(dict())
-	scanparams.processes[i][1].update(return_values)
+
+	print "saving "
+	# Todo: I use the number, because I want to be ready for the day, when we can have apply one process several times
+	key = scanparams['processing'].keys()[i] 
+	print scanparams['processing'][key]
+
+	if len(scanparams['processing'][key]) == 0:
+		scanparams['processing'][key] = OrderedDict()
+	scanparams['processing'][key].update(return_values)
 	return scanparams
 
 
 
 class record:
-	def __init__(self, content = None):
-		self.__dict__ = OrderedDict(content)
-#		if type(content)==dict:
-#			self.__dict__ = content
+	def __init__(self, content = {}):
+		self.__dict__ =content
+
 	def __getitem__(self, key):
-		return(self.__dict__.setdefault(key, None))
+		return(self.__dict__.get(key, None))
 	def __str__(self):
 		return(str(self.__dict__))
-
-	def print_txt(self, d=None, depth = 0):
-		if d is None:
-			d = self.__dict__
-		head, tail = None, None
-
-		if isinstance(d, dict):
-			for k in d.keys():
-				head, tail = k, d[k]
-				if isinstance(tail, (list, dict, tuple) ):
-					print 'D'+"".join([i for i in itertools.repeat('>',3+depth)]), head
-					self.print_txt(tail, depth = depth+1)
-
-				if isinstance(tail, (basestring, str)):
-					print( "".join([i for i in itertools.repeat('\t',depth)]) ),
-					print( ': '.join((head,tail)) )
-
-		elif isinstance(d, (tuple, list,)):
-			for line in d:
-#				print ';;;;;;;;;;;;;;;',line
-				if len(line) == 1:
-					head, tail = line[0], ''
-				elif len(line) == 2:
-					head, tail = line[0], line[1]
-				else:
-					print "ERROR", line
-				if isinstance(tail,  (list, dict, tuple)): # Doppelter Code! 
-					print 'L'+"".join([i for i in itertools.repeat('>',3+depth)]), head
-					self.print_txt(tail, depth = depth+1)
-
-				if isinstance(tail, (basestring, str)):
-					print( "".join([i for i in itertools.repeat('\t',depth)]) ),
-					print( ': '.join((head,tail)) )
-
-
-
-# These should come from the input file.
-# Problematic: Dictionary is not ordered. Maybe I should take use an OrderedDict. Either way: Can be easily changed.
-
-scanparams = record(
-		[('Alnico',
-		(
-			['general',
-				[
-					("Grown by","Tieren Gao"),
-				]
-			],
-			['Sample A',
-				[				
-					('localdirname',  '/home/q/ALS/Beamline/RawData_2T-Computer/150512/'),
-					('scanfilenames', 'TrajScan31042-2_0001.txt'), 
-					('edge',	  'Co L3,2'),
-					('preedge',	  '(760,774)'),
-					('postedge',	  '(808,820)'),
-					('processes' , 
-						[ 	
-							["get xmcd", 
-								[
-									["Energy range" , '(770, 790)'],
-								]
-							],
-							["scaling preedge to 1",],
-							["constant background removal preedge",],
-							["xas normalization to min and max",],
-						]
-					)
-				]
-			]
-		)
-		)]
-		)
-
-
 
 
 #####################################################################################################################
 
-scanparams.print_txt()
+mpinput_template = sys.argv[1]
 
-filenames	= [scanparams['localdirname'] +  filename for filename in scanparams['scanfilenames'] ]
+all_scanparams = MPFile.from_file(mpinput_template).document
+	
 
-if os.path.isfile(filenames[0]):
+for key in all_scanparams:
+	print "Found: ", key
+	if key != 'general': 
+		# No multifile support yet. Is important for avearaging spectra.
+		filenames = [all_scanparams[key]['localdirname'] + all_scanparams[key]['scanfilenames']  , ]
+	
+		scandata_f = msp.read_scans(filenames, datacounter = "Counter 1")
+		group_columns = ["filename",]
+		sg = scandata_f.groupby(group_columns)
 
-	scandata_f = msp.read_scans(filenames, datacounter = "Counter 1")
-	group_columns = ["filename",]
-	sg = scandata_f.groupby(group_columns)
+		xmcd_frame, scanparams = treat_xmcd(sg, all_scanparams[key], xas_process.process_dict)
 
-	xmcd_frame, scanparams = treat_xmcd(sg, scanparams, process.process_dict)
-
-	print scanparams
+		print scanparams
 else:
-	print "Not found: ",filenames[0]
-
+	print "Not found: ", key
 
 #xmcd_frame.plot(x='Energy', y= 'XMCD')
 #xmcd_frame.plot(x='Energy', y= 'XAS')
