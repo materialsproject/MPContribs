@@ -40,37 +40,43 @@ def treat_xmcd(scan_groups, scan_params, process_dict):
 
 
 def process_xmcd(xmcd_data, scan_params, process_dict):
-	_DEBUG_ = True
-#	_DEBUG_ = False
-	
+#	_DEBUG_ = True
+	_DEBUG_ = False
+	# all the processing routines which are specified in the MPFile which serves as an input are being looked up and executed one by one. The parameters are taken from the scan_params datastructure and passed to the processing routines. They also get the full set of parameters, but that is redundant.
+
 	for process_no, process_call in enumerate(scan_params['processing']):
-		
-		print process_dict
+		if _DEBUG:
+			print process_dict
+
 		process = process_dict.get(str(process_call), None)
-
-
-
+		# That very probable user error of a process not found should be handeled more gently?.
 		if process is None:
-			# That very probable error of a process not found should be handeled.
 			print "Process not found!"
 			print "Looking for  :'"+  process_call+'\''
 			print "Available are: '"+ "' '".join(process_dict.keys())+'\''
 			print
 			sys.exit()
 
+		#get the paremeters from the file. Maybe that should be done by function which recognizes and parses numbers?
 		process_parameters = scan_params['processing'][process_call]
 		if _DEBUG_:
 			print process_no, process_call, process_parameters	
 	
+		# The return values and the xmcd_data for each step. The XMCD Data is the input for the next step, but the return values are saved into the process results.
 		xmcd_data, return_values = process(xmcd_data, scan_params, process_parameters, process_no)
 		scan_params = save_return_values(scan_params, process_no,  return_values)
 	
-	scan_params['data'] = xmcd_data # Is this the right way? Think more if that should be done or filtered elswhere.
+	# Now after all the processing is done, the XMCD data gets saved into the scan_params. 
+	# I want to keep it a dataframe, because this way it can be used in a different context as well.
+	# Before saving it gets converted into lists of values.
+	scan_params['data'] = xmcd_data 
 	return(xmcd_data, scan_params)
 
 
 
 def save_return_values(scanparams, process_no, return_values):
+	"""Saves return values in the scanparams so that they can be saved into the output file"""
+	# Potenial problem: Multiple processes with the same name are not handeled properly yet.
 	i = process_no
 
 	print "saving "
