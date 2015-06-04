@@ -1,5 +1,6 @@
 #!/usr/bin/python
 
+
 import sys
 import os
 import matplotlib.pylab as plt
@@ -8,6 +9,8 @@ import mspScan as msp
 import xas_process as xas_process
 import itertools
 from collections import OrderedDict
+
+from RecursiveDictDepanda import  RecursiveDictDepanda
 
 # There must be a better way!
 sys.path.append('/home/q/ALS/programme/bl631_combispectra/materialsproject/MPContribs')
@@ -94,10 +97,12 @@ class record:
 
 #####################################################################################################################
 
-mpinput_template = sys.argv[1]
 
-all_scanparams = MPFile.from_file(mpinput_template).document
-	
+
+mpinput_template = sys.argv[1]
+mpf = MPFile.from_file(mpinput_template)
+all_scanparams = mpf.document
+
 
 for key in all_scanparams:
 	print "Found: ", key
@@ -111,12 +116,24 @@ for key in all_scanparams:
 
 		xmcd_frame, scanparams = treat_xmcd(sg, all_scanparams[key], xas_process.process_dict)
 
-		print scanparams
-else:
-	print "Not found: ", key
+		d =  RecursiveDictDepanda()
+		d.rec_update(scanparams)
+		mpf.document = d
+		# Does not work: needs unicode instead of string...
+		# mpf.write_file(u'mpfile_output_'+key+'.txt')
+		print
+		print mpf.get_string()
+		print
+	else:
+		print "Not found: ", key
 
 #xmcd_frame.plot(x='Energy', y= 'XMCD')
 #xmcd_frame.plot(x='Energy', y= 'XAS')
 xmcd_frame['XAS'].plot()
 xmcd_frame['XMCD'].plot()
+
+
+
+
+
 plt.show()
