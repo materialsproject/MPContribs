@@ -85,16 +85,6 @@ def save_return_values(scanparams, process_no, return_values):
 
 
 
-class record:
-	def __init__(self, content = {}):
-		self.__dict__ =content
-
-	def __getitem__(self, key):
-		return(self.__dict__.get(key, None))
-	def __str__(self):
-		return(str(self.__dict__))
-
-
 #####################################################################################################################
 
 
