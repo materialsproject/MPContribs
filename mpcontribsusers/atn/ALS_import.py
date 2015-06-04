@@ -117,7 +117,7 @@ for key in all_scanparams:
 		xmcd_frame, scanparams = treat_xmcd(sg, all_scanparams[key], xas_process.process_dict)
 
 		d =  RecursiveDictDepanda()
-		d.rec_update(scanparams)
+		d.rec_update(scanparams, pandas_cols = ['Energy', 'XAS', 'XMCD'])
 		mpf.document = d
 		# Does not work: needs unicode instead of string...
 		# mpf.write_file(u'mpfile_output_'+key+'.txt')
