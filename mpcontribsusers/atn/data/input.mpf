@@ -1,5 +1,5 @@
 >>> GENERAL
->>>> Experiment # line needed?
+>>>> Experiment
 >>>>> Preparation
 Description: Magentron Co-sputtering
 Temperature: RT
@@ -28,24 +28,28 @@ Exit Slit: 20µm
 Grating: 600l/mm
 
 >>> AlNiCoCu 
-localdirname: 	data/
-scanfilenames: 	TrajScan31042-2_0001.txt
-edge:		Co L3,2
-preedge:	760,774
-postedge:	808,820
->>>> processing # values in this section auto-inserted
+directory: data/subdirA
+edge: Co L3,2
+preedge: 760 774
+postedge: 808 820
+>>>> processing
 >>>>> get xmcd
-energy range min: 760
-energy range max: 900
+energy range: 760 900
 >>>>> scaling preedge to 1 
-preedge_min: 760
-preedge_max: 795
+preedge range: 760 795
 >>>>> constant background removal preedge
-preedge_min: 760
-preedge_max: 770
+preedge range: 760 770
 >>>>> xas normalization to min and max
->>>> datatable # or whatever, purpose auto-determined by section content
-Energy, XAS, XMCD 
-761.0, 0.008445, -0.001452
-762.0, 0.007812, -0.000682
 
+>>> Al3NiCo2Cu # could also be same composition
+directory: data/subdirB
+edge: Ni L3,2
+preedge: 820 847
+postedge: 875 880
+energy range: 820 880
+>>>> processing
+>>>>> get xmcd
+energy range: 770 790
+>>>>> scaling preedge to 1
+>>>>> constant background removal preedge
+>>>>> normalization to min and max
