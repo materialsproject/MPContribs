@@ -41,7 +41,7 @@ class RecursiveParser():
 
     def is_data_section(self, body):
         """determine whether currently in data section"""
-        return (':' not in body)
+        return (indent_symbol*min_indent_level not in body and ':' not in body)
 
     def strip(self, text):
         """http://stackoverflow.com/questions/13385860"""
