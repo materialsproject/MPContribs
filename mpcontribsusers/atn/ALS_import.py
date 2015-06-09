@@ -1,21 +1,12 @@
-#!/usr/bin/python
 
-
-import sys
-import os
-import matplotlib.pylab as plt
+import sys, os, itertools
 import pandas as pd
 import mspScan as msp
 import xas_process as xas_process
-import itertools
 from collections import OrderedDict
+from mpcontribs.io.mpfile import MPFile # add the mpcontribs dir to PYTHONPATH
 
 from RecursiveDictDepanda import  RecursiveDictDepanda
-
-# There must be a better way!
-sys.path.append('/home/q/ALS/programme/bl631_combispectra/materialsproject/MPContribs')
-from mpcontribs.io.mpfile import MPFile
-
 
 def treat_xmcd(scan_groups, scan_params, process_dict):
 		keys = scan_groups.groups.keys()
@@ -37,7 +28,6 @@ def treat_xmcd(scan_groups, scan_params, process_dict):
 			xmcd_frame = pd.concat([xmcd_frame,xmcd_data])
 
 		return(xmcd_frame, scan_params)
-
 
 def process_xmcd(xmcd_data, scan_params, process_dict):
 #	_DEBUG_ = True
@@ -72,8 +62,6 @@ def process_xmcd(xmcd_data, scan_params, process_dict):
 	scan_params['data'] = xmcd_data 
 	return(xmcd_data, scan_params)
 
-
-
 def save_return_values(scanparams, process_no, return_values):
 	"""Saves return values in the scanparams so that they can be saved into the output file"""
 	# Potenial problem: Multiple processes with the same name are not handeled properly yet.
@@ -90,46 +78,3 @@ def save_return_values(scanparams, process_no, return_values):
 	return scanparams
 
 
-
-#####################################################################################################################
-
-
-
-mpinput_template = sys.argv[1]
-mpf = MPFile.from_file(mpinput_template)
-all_scanparams = mpf.document
-
-
-for key in all_scanparams:
-	print "Found: ", key
-	if key != 'general': 
-		# No multifile support yet. Is important for avearaging spectra.
-		filenames = [all_scanparams[key]['localdirname'] + all_scanparams[key]['scanfilenames']  , ]
-	
-		scandata_f = msp.read_scans(filenames, datacounter = "Counter 1")
-		group_columns = ["filename",]
-		sg = scandata_f.groupby(group_columns)
-
-		xmcd_frame, scanparams = treat_xmcd(sg, all_scanparams[key], xas_process.process_dict)
-
-		d =  RecursiveDictDepanda()
-		d.rec_update(scanparams, pandas_cols = ['Energy', 'XAS', 'XMCD'])
-		mpf.document = d
-		# Does not work: needs unicode instead of string...
-		# mpf.write_file(u'mpfile_output_'+key+'.txt')
-		print
-		print mpf.get_string()
-		print
-	else:
-		print "Not found: ", key
-
-#xmcd_frame.plot(x='Energy', y= 'XMCD')
-#xmcd_frame.plot(x='Energy', y= 'XAS')
-xmcd_frame['XAS'].plot()
-xmcd_frame['XMCD'].plot()
-
-
-
-
-
-plt.show()
