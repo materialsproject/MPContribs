@@ -127,17 +127,19 @@ class RecursiveParser():
             is_data_section, pd_obj = self.read_csv(section_title, file_string)
             logging.info(pd_obj)
             # TODO: include validation
-            # use first csv table for default plot, first column as x-column
-            if is_data_section and mp_level01_titles[2] not in \
-               self.document[self.section_titles[0]]:
-                self.document.rec_update(nest_dict(
-                    {'x': pd_obj.columns[0], 'table': section_title},
-                    [self.section_titles[0], mp_level01_titles[2], 'default']
-                ))
             # add data section title to nest 'bare' data under data section
             # => artificially increase and decrease level (see below)
             is_bare_data = (is_data_section and self.is_bare_section(section_title))
             if is_bare_data: self.increase_level(mp_level01_titles[1])
+            # use first csv table for default plot, first column as x-column
+            if is_data_section and (
+                self.section_titles[0] not in self.document or
+                mp_level01_titles[2] not in self.document[self.section_titles[0]]
+            ):
+                self.document.rec_update(nest_dict(
+                    {'x': pd_obj.columns[0], 'table': self.section_titles[-1]},
+                    [self.section_titles[0], mp_level01_titles[2], 'default']
+                ))
             # update nested dict/document based on section level
             self.document.rec_update(nest_dict(
                 self.to_dict(pd_obj), self.section_titles
