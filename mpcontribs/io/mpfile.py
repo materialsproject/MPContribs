@@ -1,10 +1,11 @@
 import os, json, six
 from abc import ABCMeta
+from utils import make_pair, get_indentor
 from recparse import RecursiveParser
 from monty.io import zopen
-from monty.json import MSONable
+from StringIO import StringIO
 
-class MPFile(six.with_metaclass(ABCMeta, MSONable)):
+class MPFile(six.with_metaclass(ABCMeta)):
     """Object for representing a MP Contribution File.
 
     Args:
@@ -47,12 +48,14 @@ class MPFile(six.with_metaclass(ABCMeta, MSONable)):
         return MPFile(parser)
 
     def get_string(self):
-        """Returns a string to be written as a MPFile file.
-
-        Returns:
-            String representation of MPFile.
-        """
-        return json.dumps(self.document, indent=4)
+        """Returns a string to be written as a file"""
+        lines = StringIO()
+        min_indentor = get_indentor()
+        for key,value in self.document.iterate():
+            sep = '' if min_indentor in key else ':'
+            if key == min_indentor: print >>lines, ''
+            print >>lines, make_pair(key, value, sep=sep)
+        return lines.getvalue()
 
     def __repr__(self):
         return self.get_string()
@@ -66,17 +69,3 @@ class MPFile(six.with_metaclass(ABCMeta, MSONable)):
         for the MPFile.get_string method and are passed through directly."""
         with zopen(filename, "wt") as f:
             f.write(self.get_string(**kwargs))
-
-    def as_dict(self):
-        return self.document.rec_update({
-            "@module": self.__class__.__module__,
-            "@class": self.__class__.__name__
-        })
-
-    @classmethod
-    def from_dict(cls, d):
-        raise NotImplementedError(
-            "Do not use from_dict method to init a MPFile object! All input "
-            "needs to go through get_string/from_file to enforce consistent "
-            "parsing!"
-        )
