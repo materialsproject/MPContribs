@@ -18,3 +18,11 @@ def nest_dict(dct, keys):
     for key in reversed(keys):
         nested_dict = {key: nested_dict}
     return nested_dict
+
+def make_pair(key, value, sep=':'):
+    """make a mp-specific key-value pair"""
+    return '{} '.format(sep).join([key, str(value)])
+
+def get_indentor(n=0):
+    """get level-n indentor"""
+    return indent_symbol * (min_indent_level + n)

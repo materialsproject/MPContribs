@@ -3,7 +3,7 @@ from fnmatch import fnmatch
 from StringIO import StringIO
 from data import DataGenerator
 from ..config import csv_comment_char, mp_level01_titles
-from ..config import indent_symbol, min_indent_level
+from ..io.utils import get_indentor, make_pair
 
 class MPFakeFileBase(object):
     """base class for MPFakeFile"""
@@ -38,14 +38,6 @@ class MPFakeFileBase(object):
             if comment != '':
                 comments.append(comment)
         return '\n'.join(comments) if comments else ''
-
-    def make_pair(self, key, value):
-        """make a mp-specific key-value pair"""
-        return ': '.join([key, str(value)]) 
-
-    def get_indentor(self, n=0):
-        """get level-n indentor"""
-        return indent_symbol * (min_indent_level + n)
 
     def get_key_value(self):
         """print random key-value pair
@@ -82,16 +74,16 @@ class MPFakeFileBase(object):
                     break
         if isinstance(value, str) and '\n' in value:
             value = repr(value) 
-        return self.make_pair(key, value)
+        return make_pair(key, value)
 
     def get_nested_key_values_from_dict(self, d, n=1):
         """convert a dict into nested level-n mp-csv representation"""
         for k0,v0 in d.iteritems():
             print >>self.section, ' '.join([
-                self.get_indentor(n+1), k0, self.get_comment()
+                get_indentor(n+1), k0, self.get_comment()
             ])
             for k1,v1 in v0.iteritems():
-                print >>self.section, self.make_pair(k1, v1)
+                print >>self.section, make_pair(k1, v1)
 
     def get_player_general_section(self, n):
         """get a general section for a sample player from database"""

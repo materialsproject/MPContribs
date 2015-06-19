@@ -2,6 +2,7 @@ from StringIO import StringIO
 from ..config import mp_categories, mp_level01_titles
 from base import MPFakeFileBase
 from ..io.mpfile import MPFile
+from ..io.utils import get_indentor, make_pair
 
 class MPFakeFile(MPFakeFileBase):
     """fake a input file for a user contribution"""
@@ -41,7 +42,7 @@ class MPFakeFile(MPFakeFileBase):
         - append comment using config.csv_comment_char now and then
         - make level-0 titles all-caps
         """
-        indentor = self.get_indentor(n)
+        indentor = get_indentor(n)
         if n == 0:
             self.keep_dataset = self.main_general and sec != 0
             mp_cat_id = self._get_mp_cat_id().upper()
@@ -107,7 +108,7 @@ class MPFakeFile(MPFakeFileBase):
                 column = self.fake.random_element(
                     elements=self.data_gen.player_data.columns
                 )
-                print >>self.section, self.make_pair('x', column)
+                print >>self.section, make_pair('x', column)
             elif self.usable and not self.main_general and \
                     self.section_titles[-1] == mp_level01_titles[0]:
                 self.get_player_general_section(n)
