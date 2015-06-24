@@ -15,6 +15,7 @@ class RecursiveParser():
         self.level = min_indent_level # level counter
         self.data_options = { 'sep': ',', 'header': 0 }
         self.colon_key_value_list = { 'sep': ':', 'header': None, 'index_col': 0 }
+        self.mp_id_pattern = re.compile('mp-\d+', re.IGNORECASE)
 
     def separator_regex(self):
         """get separator regex for section depth/level"""
@@ -27,10 +28,15 @@ class RecursiveParser():
         return r'(?:^|\n+)%s{%d}\s+(.+)\n+' % (indent_symbol, self.level)
 
     def clean_title(self, title):
-        """strip in-line comments & spaces, make lower-case"""
-        return re.split(
+        """strip in-line comments & spaces, make lower-case if mp-id"""
+        title = re.split(
             r'%s*' % csv_comment_char, title
-        )[0].strip().lower()
+        )[0].strip()
+        is_mp_id = (
+          self.level == min_indent_level and
+          self.mp_id_pattern.match(title)
+        )
+        return title.lower() if is_mp_id else title
 
     def is_bare_section(self, title):
         """determine whether currently in bare section"""
