@@ -3,7 +3,7 @@ from abc import ABCMeta
 from utils import make_pair, get_indentor
 from recparse import RecursiveParser
 from monty.io import zopen
-from StringIO import StringIO
+from pandas import DataFrame
 
 class MPFile(six.with_metaclass(ABCMeta)):
     """Object for representing a MP Contribution File.
@@ -49,13 +49,16 @@ class MPFile(six.with_metaclass(ABCMeta)):
 
     def get_string(self):
         """Returns a string to be written as a file"""
-        lines = StringIO()
+        lines = []
         min_indentor = get_indentor()
         for key,value in self.document.iterate():
-            sep = '' if min_indentor in key else ':'
-            if key == min_indentor: print >>lines, ''
-            print >>lines, make_pair(key, value, sep=sep)
-        return lines.getvalue()
+            if key is None and isinstance(value, DataFrame):
+                lines.append(value.to_csv(index=False, float_format='%g')[:-1])
+            else:
+                sep = '' if min_indentor in key else ':'
+                if key == min_indentor: lines.append('')
+                lines.append(make_pair(key, value, sep=sep))
+        return '\n'.join(lines)
 
     def __repr__(self):
         return self.get_string()
