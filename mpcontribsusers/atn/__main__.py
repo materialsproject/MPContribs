@@ -1,5 +1,8 @@
-import argparse, os, sys
+import argparse, os, sys, json
 from mpcontribs.io.mpfile import MPFile # add the mpcontribs dir to PYTHONPATH
+import mspScan as msp
+from ALS_import import treat_xmcd
+import xas_process as xas_process
 
 parser = argparse.ArgumentParser(
     description="""generate MPFile(s) from a directory of related XAS measurements."""
@@ -12,32 +15,26 @@ parser.add_argument(
 )
 args = parser.parse_args()
 
-input_mpfile_path = os.path.join(args.work_dir, 'input.mpf')
-if not os.path.exists(input_mpfile_path):
+mpfile_path = os.path.join(args.work_dir, 'input.mpf')
+if not os.path.exists(mpfile_path):
     print 'Make sure to provide the config file `input.mpf` in {}'.format(work_dir)
     sys.exit(0)
-input_mpfile = MPFile.from_file(input_mpfile_path)
-print input_mpfile
+mpfile = MPFile.from_file(mpfile_path)
+#print mpfile
+#print json.dumps(mpfile.document, indent=4)
 
-for work_dir, subdir, datafile in os.walk(args.work_dir):
-    print work_dir, subdir, datafile
+for composition in mpfile.get_identifiers():
+    subdir = os.path.abspath(os.path.join(
+        args.work_dir, mpfile.document[composition]['directory']
+    ))
+    scandata_f = msp.read_scans(subdir, datacounter="Counter 1")
+    sg = scandata_f.groupby(['filename'])
+    xmcd_frame = treat_xmcd(
+        sg, mpfile.document[composition], xas_process.process_dict
+    )
+    mpfile.add_data_table(
+        composition, xmcd_frame[['Energy', 'XAS', 'XMCD']], 'data'
+    )
 
-
-        ## No multifile support yet. Is important for averaging spectra.
-        #filenames = [all_scanparams[key]['localdirname'] + all_scanparams[key]['scanfilenames']  , ]
-
-        #scandata_f = msp.read_scans(filenames, datacounter = "Counter 1")
-        #group_columns = ["filename",]
-        #sg = scandata_f.groupby(group_columns)
-
-        #xmcd_frame, scanparams = treat_xmcd(sg, all_scanparams[key], xas_process.process_dict)
-
-        #d =  RecursiveDictDepanda()
-        #d.rec_update(scanparams, pandas_cols = ['Energy', 'XAS', 'XMCD'])
-        #mpf.document = d
-        ## Does not work: needs unicode instead of string...
-        ## mpf.write_file(u'mpfile_output_'+key+'.txt')
-        #print
-        #print mpf.get_string()
-        #print
-
+#print mpfile
+mpfile.write_file(os.path.join(args.work_dir, 'output.mpf'))
