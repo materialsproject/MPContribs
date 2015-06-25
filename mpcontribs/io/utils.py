@@ -1,5 +1,6 @@
 from collections import OrderedDict, Mapping
 from ..config import indent_symbol, min_indent_level
+from pandas import DataFrame
 
 class RecursiveDict(OrderedDict):
     """extension of dict for internal representation of MPFile"""
@@ -19,13 +20,23 @@ class RecursiveDict(OrderedDict):
         """http://stackoverflow.com/questions/10756427/loop-through-all-nested-dictionary-values"""
         d = self if nested_dict is None else nested_dict
         if nested_dict is None: self.level = 0
+        self.items = []
         for key,value in d.iteritems():
             if isinstance(value, Mapping):
                 yield get_indentor(n=self.level), key
                 self.level += 1
-                for inner_key,inner_value in self.iterate(nested_dict=value):
+                iterator = self.iterate(nested_dict=value)
+                while True:
+                    try:
+                        inner_key, inner_value = iterator.next()
+                    except StopIteration:
+                        if self.level > 1 and len(self.items) > 0:
+                            yield None, DataFrame.from_items(self.items)
+                        break
                     yield inner_key, inner_value
                 self.level -= 1
+            elif isinstance(value, list):
+                self.items.append((key, value))
             else:
                 yield key, value
 
