@@ -1,9 +1,11 @@
 import os, json, math, glob, fnmatch
 import numpy as np
 from collections import OrderedDict
-from mpcontribs.parsers.vaspdir import AbstractVaspDirCollParser
+from mpcontribs.io.vaspdir import AbstractVaspDirCollParser
+from mpcontribs.io.mpfile import MPFile
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 from pymatgen.matproj.rest import MPRester
+from pandas import DataFrame, Series
 ENDPOINT = "https://www.materialsproject.org/rest"
 
 class VaspDirCollParser(AbstractVaspDirCollParser):
@@ -50,7 +52,9 @@ class VaspDirCollParser(AbstractVaspDirCollParser):
             if not fnmatch.fnmatch(fn, "*CuCu*")
         ]
         mp_id, E0, nw = None, None, 5 # five-frequency model
+        df = None
         for idx,indir in enumerate(indirs):
+            element = os.path.basename(indir).split('_')[2][2:]
             struct = self.find_entry_for_directory(
                 os.path.join(indir, 'perfect_stat*'), oszicar=False
             ).structure
@@ -70,6 +74,7 @@ class VaspDirCollParser(AbstractVaspDirCollParser):
             v = np.array([ self.get_attempt_frequency(indir, i) for i in range(nw) ])
             v[0], HVf, kB, f0 = 1.0, 0.4847, 8.6173324e-5, 0.7815 # TODO set v[0] to 1.0? HVf dynamic how?
             t, tempstep, tempend = 0.0, 0.1, 2.0 # default temperature range
+            x, y = [], []
             while t < tempend + tempstep:
                 v *= np.exp(-enebarr/kB/1e3*t)
                 alpha = v[4]/v[0]
@@ -82,14 +87,16 @@ class VaspDirCollParser(AbstractVaspDirCollParser):
                 f2 /= 1+(v[2]/v[1]) + 3.5*FX*(v[3]/v[1])
                 cV = np.exp(-HVf/kB/1e3*t) if t > 0. else 1.
                 D = f0*cV*a**2*v[0] * f2/f0 * v[4]/v[0] * v[2]/v[3]
-                print "t = ", t, ", D = ", D
+                x.append(t)
+                y.append(D)
                 t += tempstep
-        #  TODO: generate physical mpcontribs.io.mpfile.MPFile (main general section?)
-        #for d in self.data:
-        #    for k,v in d.as_dict().iteritems():
-        #        print k, v
-        #    break
-        #  TODO: use MPRester to submit MPInputFile if in write mode
+            if df is None: df = DataFrame(np.array(x), columns=['1/T'])
+            df.loc[:,element] = Series(np.array(y), index=df.index)
+        #  generate (physical) MPFile
+        mpfile = MPFile()
+        mpfile.add_data_table(mp_id, df, 'data')
+        print mpfile
+        #  TODO: use MPRester to submit MPFile if in write mode
 
 if __name__ == '__main__':
         v = VaspDirCollParser('test_files/uw_diffusion')
