@@ -1,6 +1,7 @@
 from collections import OrderedDict, Mapping
 from ..config import indent_symbol, min_indent_level
-from pandas import DataFrame
+import pandas as pd
+import numpy as np
 
 class RecursiveDict(OrderedDict):
     """extension of dict for internal representation of MPFile"""
@@ -31,7 +32,7 @@ class RecursiveDict(OrderedDict):
                         inner_key, inner_value = iterator.next()
                     except StopIteration:
                         if self.level > 1 and len(self.items) > 0:
-                            yield None, DataFrame.from_items(self.items)
+                            yield None, pd.DataFrame.from_items(self.items)
                         break
                     yield inner_key, inner_value
                 self.level -= 1
@@ -54,3 +55,18 @@ def make_pair(key, value, sep=':'):
 def get_indentor(n=0):
     """get level-n indentor"""
     return indent_symbol * (min_indent_level + n)
+
+def pandas_to_dict(pandas_object):
+    """convert pandas object to dict"""
+    if pandas_object is None: return {}
+    if isinstance(pandas_object, pd.Series):
+        return OrderedDict((k,v) for k,v in pandas_object.iteritems())
+    all_columns_numeric = True
+    for col in pandas_object.columns:
+        if ( pandas_object[col].dtype != np.float64 and \
+            pandas_object[col].dtype != np.int64 ):
+            all_columns_numeric = False
+            break
+    return pandas_object.to_dict(
+        orient = 'list' if all_columns_numeric else 'records'
+    )
