@@ -1,6 +1,7 @@
 import os, json, six
 from abc import ABCMeta
 from utils import make_pair, get_indentor, RecursiveDict, nest_dict, pandas_to_dict
+from ..config import mp_level01_titles
 from recparse import RecursiveParser
 from monty.io import zopen
 from pandas import DataFrame
@@ -58,7 +59,7 @@ class MPFile(six.with_metaclass(ABCMeta)):
                 sep = '' if min_indentor in key else ':'
                 if key == min_indentor: lines.append('')
                 lines.append(make_pair(key, value, sep=sep))
-        return '\n'.join(lines)
+        return '\n'.join(lines).decode('utf-8')
 
     def __repr__(self):
         return self.get_string()
@@ -79,3 +80,7 @@ class MPFile(six.with_metaclass(ABCMeta)):
         self.document.rec_update(nest_dict(
             pandas_to_dict(dataframe), [identifier, name]
         ))
+
+    def get_identifiers(self):
+        """list of identifiers (i.e. all root-level headers excl. GENERAL"""
+        return [ k for k in self.document if k.lower() != mp_level01_titles[0] ]

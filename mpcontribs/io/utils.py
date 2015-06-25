@@ -58,9 +58,9 @@ def get_indentor(n=0):
 
 def pandas_to_dict(pandas_object):
     """convert pandas object to dict"""
-    if pandas_object is None: return {}
+    if pandas_object is None: return RecursiveDict()
     if isinstance(pandas_object, pd.Series):
-        return OrderedDict((k,v) for k,v in pandas_object.iteritems())
+        return RecursiveDict((k,v) for k,v in pandas_object.iteritems())
     all_columns_numeric = True
     for col in pandas_object.columns:
         if ( pandas_object[col].dtype != np.float64 and \
