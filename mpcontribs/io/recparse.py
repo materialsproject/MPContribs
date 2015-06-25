@@ -21,11 +21,12 @@ class RecursiveParser():
         """get separator regex for section depth/level"""
         # (?:  ) => non-capturing group
         # (?:^|\n+) => match beginning of string OR one or more newlines
-        # >{3}\s+ => match '>' repeated 3 times followed by on or more spaces
+        # %s{%d}\s+ => match indent_symbol*level followed by one or more spaces
         #    require minimum one space after section level identifier
         # (.+) => capturing group of one or more arbitrary characters
-        # \n+ => end by one or more newlines
-        return r'(?:^|\n+)%s{%d}\s+(.+)\n+' % (indent_symbol, self.level)
+        # (?:$|\n*?) => match end-of-string OR zero or more newlines
+        #    be non-greedy with newlines at end of string
+        return r'(?:^|\n+)%s{%d}\s+(.+)(?:$|\n*?)' % (indent_symbol, self.level)
 
     def clean_title(self, title):
         """strip in-line comments & spaces, make lower-case if mp-id"""
@@ -63,6 +64,7 @@ class RecursiveParser():
 
     def read_csv(self, title, body):
         """run pandas.read_csv on (sub)section body"""
+        if not body: return False, None
         is_data_section = self.is_data_section(body)
         if is_data_section:
             options = self.data_options
@@ -86,6 +88,7 @@ class RecursiveParser():
 
     def to_dict(self, pandas_object):
         """convert pandas object to dict"""
+        if pandas_object is None: return {}
         if isinstance(pandas_object, pd.Series):
             return OrderedDict((k,v) for k,v in pandas_object.iteritems())
         all_columns_numeric = True
@@ -115,7 +118,7 @@ class RecursiveParser():
         sections = re.split(self.separator_regex(), file_string)
         if len(sections) > 1:
             # check for preceding bare section_body (without section title), and parse
-            if sections[0] != '': self.parse(sections[0])
+            if sections[0]: self.parse(sections[0])
             # drop preceding bare section_body
             sections = sections[1:] # https://docs.python.org/2/library/re.html#re.split
             for section_index,section_body in enumerate(sections[1::2]):
