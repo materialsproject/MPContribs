@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 from StringIO import StringIO
 from ..config import min_indent_level, indent_symbol, csv_comment_char, mp_level01_titles
-from utils import nest_dict, RecursiveDict
+from utils import nest_dict, RecursiveDict, pandas_to_dict
 from collections import OrderedDict
 
 class RecursiveParser():
@@ -86,21 +86,6 @@ class RecursiveParser():
             **options
         ).dropna(how='all')
 
-    def to_dict(self, pandas_object):
-        """convert pandas object to dict"""
-        if pandas_object is None: return {}
-        if isinstance(pandas_object, pd.Series):
-            return OrderedDict((k,v) for k,v in pandas_object.iteritems())
-        all_columns_numeric = True
-        for col in pandas_object.columns:
-            if ( pandas_object[col].dtype != np.float64 and \
-                pandas_object[col].dtype != np.int64 ):
-                all_columns_numeric = False
-                break
-        return pandas_object.to_dict(
-            orient = 'list' if all_columns_numeric else 'records'
-        )
-
     def increase_level(self, next_title):
         """increase and prepare for next section level"""
         self.section_titles.append(next_title)
@@ -151,6 +136,6 @@ class RecursiveParser():
                 ))
             # update nested dict/document based on section level
             self.document.rec_update(nest_dict(
-                self.to_dict(pd_obj), self.section_titles
+                pandas_to_dict(pd_obj), self.section_titles
             ))
             if is_bare_data: self.reduce_level()

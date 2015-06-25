@@ -1,6 +1,6 @@
 import os, json, six
 from abc import ABCMeta
-from utils import make_pair, get_indentor
+from utils import make_pair, get_indentor, RecursiveDict, nest_dict, pandas_to_dict
 from recparse import RecursiveParser
 from monty.io import zopen
 from pandas import DataFrame
@@ -9,10 +9,10 @@ class MPFile(six.with_metaclass(ABCMeta)):
     """Object for representing a MP Contribution File.
 
     Args:
-        parser (RecursiveParser): recursive parser object
+        parser (RecursiveParser): recursive parser object, init empty RecursiveDict() if None
     """
-    def __init__(self, parser):
-        self.document = parser.document
+    def __init__(self, parser=None):
+        self.document = RecursiveDict() if parser is None else parser.document
 
     @staticmethod
     def from_file(filename):
@@ -72,3 +72,10 @@ class MPFile(six.with_metaclass(ABCMeta)):
         for the MPFile.get_string method and are passed through directly."""
         with zopen(filename, "wt") as f:
             f.write(self.get_string(**kwargs))
+
+    def add_data_table(self, identifier, dataframe, name):
+        """add a data table/frame to the root-level section for identifier"""
+        # TODO: optional table name, required if multiple tables per root-level section
+        self.document.rec_update(nest_dict(
+            pandas_to_dict(dataframe), [identifier, name]
+        ))
