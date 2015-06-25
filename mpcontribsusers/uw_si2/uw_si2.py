@@ -95,7 +95,8 @@ class VaspDirCollParser(AbstractVaspDirCollParser):
         #  generate (physical) MPFile
         mpfile = MPFile()
         mpfile.add_data_table(mp_id, df, 'data')
-        print mpfile
+        #print mpfile
+        mpfile.write_file(os.path.join(self.rootdir, 'output.mpf'))
         #  TODO: use MPRester to submit MPFile if in write mode
 
 if __name__ == '__main__':
