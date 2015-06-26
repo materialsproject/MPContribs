@@ -68,8 +68,7 @@ def mapi_func(supported_methods=("GET", ), requires_api_key=False):
                 points = len(d.get("response", []))
                 log_ok = log_response(
                     request,
-                    {"func": func.__name__, "args": args[1:],
-                     "response": json.dumps(d, cls=MongoJSONEncoder)},
+                    {"func": func.__name__, "args": args[1:]},
                     d, points, mdb=kwargs['mdb'])
                 if not log_ok:
                     d = {"valid_response": False, "error": d["error"]}
@@ -80,7 +79,6 @@ def mapi_func(supported_methods=("GET", ), requires_api_key=False):
                                 mimetype="application/json")
         return wrapped
     return wrap
-
 
 @mapi_func(supported_methods=["POST", "GET"], requires_api_key=True)
 def submit_mpfile(request, mdb=None):
