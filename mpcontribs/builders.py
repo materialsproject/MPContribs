@@ -95,11 +95,8 @@ class MPContributionsBuilder():
 
     def delete(self, cids):
         """remove contributions"""
+        # TODO: also fld and cid will be switching places when DBs are migrated
         unset_dict = {}
-        # TODO: FIX THIS
-        # using find during switch from contributor to project, project is known usually
-        # also fld and cid will be switching places when DBs are migrated
-        # TODO: remove `project` field when no contributions remaining
         for doc in self.mat_coll.find(
             {'contributed_data': {'$exists': 1}},
             {'_id': 0, 'contributed_data': 1}
@@ -110,10 +107,35 @@ class MPContributionsBuilder():
                         if int(cid) not in cids: continue
                         key = 'contributed_data.%s.%s.%s' % (project, fld, cid)
                         unset_dict[key] = 1
-        self.mat_coll.update(
+        if len(unset_dict) > 0:
+            self.mat_coll.update(
+                {'contributed_data': {'$exists': 1}},
+                {'$unset': unset_dict}, multi=True
+            )
+        # remove `project` field when no contributions remaining
+        for doc in self.mat_coll.find(
             {'contributed_data': {'$exists': 1}},
-            {'$unset': unset_dict}, multi=True
-        )
+            {'_id': 0, 'contributed_data': 1, 'task_id': 1}
+        ):
+            for project,d in doc['contributed_data'].iteritems():
+                unset_dict = {}
+                all_flds_empty = True
+                for fld,dd in d.iteritems():
+                    if not dd:
+                        key = 'contributed_data.%s.%s' % (project, fld)
+                        unset_dict[key] = 1
+                    else:
+                        all_flds_empty = False
+                if len(unset_dict) > 0:
+                    self.mat_coll.update(
+                        {'task_id': doc['task_id']}, {'$unset': unset_dict}
+                    )
+                if all_flds_empty:
+                    self.mat_coll.update(
+                        {'task_id': doc['task_id']}, {'$unset': {
+                            'contributed_data.%s' % project: 1
+                        }}
+                    )
 
     def build(self, contributor_email, cids=None):
         """update materials collection with contributed data"""
@@ -122,8 +144,6 @@ class MPContributionsBuilder():
         # TODO check all DB calls, consolidate in aggregation call?
         plot_cids = None
         for doc in self.contrib_coll.aggregate(self.pipeline, cursor={}):
-            #if plot_cids is None and doc['num_contribs'] > 2:
-            # only make plots for one mp-id due to plotly restrictions
             plot_cids = doc['contrib_ids']
             for cid in doc['contrib_ids']:
                 if cids is not None and cid not in cids: continue
