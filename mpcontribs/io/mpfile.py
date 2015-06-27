@@ -25,17 +25,15 @@ class MPFile(six.with_metaclass(ABCMeta)):
         Returns:
             MPFile object.
         """
-        fileExt = os.path.splitext(filename)[1][1:]
         with zopen(filename, "rt") as f:
-            return MPFile.from_string(f.read(), fileExt)
+            return MPFile.from_string(f.read())
 
     @staticmethod
-    def from_string(data, fileExt):
+    def from_string(data):
         """Reads a MPFile from a string.
 
         Args:
             data (str): String containing contribution data.
-            fileExt (str): file extension (csv or tsv) to define tabular data format
 
         Returns:
             MPFile object.
@@ -44,7 +42,7 @@ class MPFile(six.with_metaclass(ABCMeta)):
             line for line in data.splitlines()
             if not line.lstrip().startswith("#")
         ])
-        parser = RecursiveParser(fileExt)
+        parser = RecursiveParser()
         parser.parse(data)
         return MPFile(parser)
 
