@@ -7,7 +7,7 @@ from utils import nest_dict, RecursiveDict, pandas_to_dict
 from collections import OrderedDict
 
 class RecursiveParser():
-    def __init__(self, fileExt):
+    def __init__(self):
         """init and set read_csv options"""
         self.level0_counter = 0
         self.section_titles = []
