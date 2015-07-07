@@ -33,11 +33,14 @@ class RecursiveParser():
         title = re.split(
             r'%s*' % csv_comment_char, title
         )[0].strip()
-        is_mp_id = (
-          self.level == min_indent_level and
-          self.mp_id_pattern.match(title)
+        title_lower = title.lower()
+        lower = (
+            self.level == min_indent_level and (
+                self.mp_id_pattern.match(title) or
+                title_lower == mp_level01_titles[0]
+            )
         )
-        return title.lower() if is_mp_id else title
+        return title_lower if lower else title
 
     def is_bare_section(self, title):
         """determine whether currently in bare section"""
