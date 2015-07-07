@@ -8,11 +8,14 @@ pd.options.display.mpl_style = 'default'
 import plotly.plotly as py
 from plotly.graph_objs import *
 from itertools import groupby
+from io.utils import nest_dict, RecursiveDict
 
 class MPContributionsBuilder():
     """build user contributions from `mg_core_*.contributions`"""
     def __init__(self, db):
-        if isinstance(db, list):
+        self.db = db
+        if isinstance(self.db, list):
+            self.mat_coll = RecursiveDict()
             self.contribution_groups = []
             for key,group in groupby(db, lambda item: item['mp_cat_id']):
                 grp = list(group)
@@ -46,21 +49,15 @@ class MPContributionsBuilder():
                 for k, v in self.flatten_dict(vv, separator, kk).items()
                } if isinstance(dd, dict) else { prefix : dd }
 
-    def plot(self, contributor_email, cid):
+    def plot(self, contributor_email, contrib):
         """make all plots for contribution_id"""
-        plot_contrib = self.contrib_coll.find_one(
-            {'contribution_id': cid}, {
-                'content.data': 1, 'content.plots': 1,
-                '_id': 0, 'collaborators': 1, 'project': 1
-            }
-        )
-        if 'data' not in plot_contrib['content']:
+        if 'data' not in contrib['content']:
             return None
         author = Author.parse_author(contributor_email)
         project = str(author.name).translate(None, '.').replace(' ','_') \
-                if 'project' not in plot_contrib else plot_contrib['project']
+                if 'project' not in contrib else contrib['project']
         subfld = 'contributed_data.%s.plotly_urls.%d' % (project, cid)
-        data = plot_contrib['content']['data']
+        data = contrib['content']['data']
         df = pd.DataFrame.from_dict(data)
         url_list = list(self.mat_coll.find(
             {subfld: {'$exists': True}},
@@ -70,12 +67,12 @@ class MPContributionsBuilder():
         if len(url_list) > 0:
             urls = url_list[0]['contributed_data'][project]['plotly_urls'][str(cid)]
         for nplot,plotopts in enumerate(
-            plot_contrib['content']['plots'].itervalues()
+            contrib['content']['plots'].itervalues()
         ):
             filename = 'test%d_%d' % (cid,nplot)
             fig, ax = plt.subplots(1, 1)
             df.plot(ax=ax, **plotopts)
-            if len(urls) == len(plot_contrib['content']['plots']):
+            if len(urls) == len(contrib['content']['plots']):
                 pyfig = py.get_figure(urls[nplot])
                 for ti,line in enumerate(ax.get_lines()):
                     pyfig['data'][ti]['x'] = list(line.get_xdata())
@@ -147,9 +144,17 @@ class MPContributionsBuilder():
                         }}
                     )
 
+    def find_contribution(self, cid):
+        if isinstance(self.db, list):
+            for doc in self.db:
+                if doc['contribution_id'] == cid:
+                    return doc
+        else:
+            return self.contrib_coll.find_one({'contribution_id': cid})
+
     def build(self, contributor_email, cids=None):
         """update materials collection with contributed data"""
-        # NOTE: this build is only for contributions tagged with mp-id
+        # NOTE: this build is only for contributions tagged with mp-id (a.k.a task_id)
         # TODO: in general, distinguish mp cat's by format of mp_cat_id
         # TODO check all DB calls, consolidate in aggregation call?
         plot_cids = None
@@ -157,7 +162,7 @@ class MPContributionsBuilder():
             plot_cids = doc['contrib_ids']
             for cid in doc['contrib_ids']:
                 if cids is not None and cid not in cids: continue
-                contrib = self.contrib_coll.find_one({'contribution_id': cid})
+                contrib = self.find_contribution(cid)
                 if contributor_email not in contrib['collaborators']:
                     raise ValueError(
                         "Build stopped: building contribution {} not"
@@ -197,11 +202,14 @@ class MPContributionsBuilder():
                             'contributed_data.%s.tables.%d.columns' % (project,cid): table_columns,
                             'contributed_data.%s.tables.%d.rows' % (project,cid): table_rows,
                         })
-                logging.info(self.mat_coll.update(
-                    {'task_id': doc['_id']}, { '$set': all_data }
-                ))
-                if plot_cids is not None and cid in plot_cids:
-                    plotly_urls = self.plot(contributor_email, cid)
+                if isinstance(self.db, list):
+                    self.mat_coll.rec_update(nest_dict(all_data, [doc['_id']]))
+                else:
+                    logging.info(self.mat_coll.update(
+                        {'task_id': doc['_id']}, { '$set': all_data }
+                    ))
+                if not isinstance(self.db, list) and plot_cids is not None and cid in plot_cids:
+                    plotly_urls = self.plot(contributor_email, contrib)
                     if plotly_urls is not None:
                         for plotly_url in plotly_urls:
                             logging.info(self.mat_coll.update(
