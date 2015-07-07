@@ -7,19 +7,29 @@ import matplotlib.pyplot as plt
 pd.options.display.mpl_style = 'default'
 import plotly.plotly as py
 from plotly.graph_objs import *
+from itertools import groupby
 
 class MPContributionsBuilder():
     """build user contributions from `mg_core_*.contributions`"""
     def __init__(self, db):
-        self.contrib_coll = db.contributions
-        self.mat_coll = db.materials
-        self.pipeline = [
-            { '$group': {
-                '_id': '$mp_cat_id',
-                'num_contribs': { '$sum': 1 },
-                'contrib_ids': { '$addToSet': '$contribution_id' }
-            }}
-        ]
+        if isinstance(db, list):
+            self.contribution_groups = []
+            for key,group in groupby(db, lambda item: item['mp_cat_id']):
+                grp = list(group)
+                self.contribution_groups.append({
+                    '_id': key, 'num_contribs': len(grp),
+                    'contrib_ids': [ el['contribution_id'] for el in grp ]
+                })
+        else:
+            self.contrib_coll = db.contributions
+            self.mat_coll = db.materials
+            self.contribution_groups = self.contrib_coll.aggregate([
+                { '$group': {
+                    '_id': '$mp_cat_id',
+                    'num_contribs': { '$sum': 1 },
+                    'contrib_ids': { '$addToSet': '$contribution_id' }
+                }}
+            ], cursor={})
 
     @classmethod
     def from_config(cls, db_yaml='materials_db_dev.yaml'):
@@ -143,7 +153,7 @@ class MPContributionsBuilder():
         # TODO: in general, distinguish mp cat's by format of mp_cat_id
         # TODO check all DB calls, consolidate in aggregation call?
         plot_cids = None
-        for doc in self.contrib_coll.aggregate(self.pipeline, cursor={}):
+        for doc in self.contribution_groups:
             plot_cids = doc['contrib_ids']
             for cid in doc['contrib_ids']:
                 if cids is not None and cid not in cids: continue
