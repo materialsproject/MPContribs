@@ -12,7 +12,8 @@ def index():
     cma = ContributionMongoAdapter()
     docs = cma.submit_contribution(mpfile, contributor)
     mcb = MPContributionsBuilder(docs)
-    return '<html><body><pre><code>'+json.dumps(mcb.contribution_groups, indent=4)+'</code></pre></body></html>'
+    mcb.build(contributor)
+    return '<html><body><pre><code>'+json.dumps(mcb.mat_coll, indent=4)+'</code></pre></body></html>'
 
 if __name__ == '__main__':
     app.debug = True
