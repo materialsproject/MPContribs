@@ -35,23 +35,27 @@ from config import mp_level01_titles
 
 class ContributionMongoAdapter(object):
     """adapter/interface for user contributions"""
-    def __init__(self, db):
-        self.id_assigner = db.contribution_id_assigner
-        self.contributions = db.contributions
-        self.materials = db.materials
+    def __init__(self, db=None):
+        self.db = db
+        if self.db is not None:
+            self.id_assigner = db.contribution_id_assigner
+            self.contributions = db.contributions
+            self.materials = db.materials
+            self.available_mp_ids = []
+            for doc in self.materials.aggregate([
+                { '$project': { 'task_id': 1, '_id': 0 } },
+                { '$match':  { 'task_id': { '$regex': '^mp-[0-9]{1}$' } } },
+            ], cursor={}):
+                self.available_mp_ids.append(doc['task_id'])
+            if len(self.available_mp_ids) == 0:
+                raise ValueError('No mp_ids available! Check DB connection!')
+        else:
+            self.current_contribution_id = 0
         try:
             from faker import Faker
             self.fake = Faker()
         except:
             self.fake = None
-        self.available_mp_ids = []
-        for doc in self.materials.aggregate([
-            { '$project': { 'task_id': 1, '_id': 0 } },
-            { '$match':  { 'task_id': { '$regex': '^mp-[0-9]{1}$' } } },
-        ], cursor={}):
-            self.available_mp_ids.append(doc['task_id'])
-        if len(self.available_mp_ids) == 0:
-            raise ValueError('No mp_ids available! Check DB connection!')
 
     @classmethod
     def from_config(cls, db_yaml='materials_db_dev.yaml'):
@@ -69,9 +73,13 @@ class ContributionMongoAdapter(object):
 
     def _get_next_contribution_id(self):
         """get the next contribution id"""
-        return self.id_assigner.find_and_modify(
-            update={'$inc': {'next_contribution_id': 1}}
-        )['next_contribution_id']
+        if self.db is None:
+            self.current_contribution_id += 1
+            return self.current_contribution_id
+        else:
+            return self.id_assigner.find_and_modify(
+                update={'$inc': {'next_contribution_id': 1}}
+            )['next_contribution_id']
 
     def query_contributions(self, crit):
         props = [ '_id', 'collaborators', 'mp_cat_id', 'contribution_id' ]
@@ -100,7 +108,7 @@ class ContributionMongoAdapter(object):
             raise ValueError("number of contribution IDs provided does not "
                              "match number of mp_cat_id's in MPFile!")
         # treat every mp_cat_id as separate database insert
-        contribution_ids = []
+        contributions = []
         for idx,(k,v) in enumerate(mpfile.document.iteritems()):
             mp_cat_id = k.split('--')[0] if not fake_it or self.fake is None else \
                     self.fake.random_element(elements=self.available_mp_ids)
@@ -132,8 +140,10 @@ class ContributionMongoAdapter(object):
                 logging.info('inserting {} ...'.format(doc['contribution_id']))
                 #self.contributions.replace_one({'contribution_id': cid}, doc, upsert=True)
                 self.contributions.find_and_modify({'contribution_id': cid}, doc, upsert=True)
-            contribution_ids.append(doc['contribution_id'])
-        return contribution_ids
+                contributions.append(doc['contribution_id'])
+            else:
+                contributions.append(doc)
+        return contributions
 
     def fake_multiple_contributions(self, num_contributions=20, insert=False):
         """fake the submission of many contributions"""
