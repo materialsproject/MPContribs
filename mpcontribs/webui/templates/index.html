@@ -1,15 +1,32 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head><title>MPFile Viewer</title></head>
+  <head>
+    <title>MPFile Viewer</title>
+    <script src="https://fb.me/react-0.11.0.js"></script>
+    <script src="https://fb.me/JSXTransformer-0.11.0.js"></script>
+    <script src="{{ url_for('static', filename='jsonViewer.min.js') }}"></script>
+  </head>
   <body>
     {% for key,value in content.iteritems() %}
     <h1>{{ key }}</h1>
     {% for project,project_data in value.contributed_data.iteritems() %}
     <h2>{{ project }}</h2>
     {% for cid,cid_data in project_data.iteritems() %}
-    <h3>{{ cid }}</h3>
+    <h3>#{{ cid }}</h3>
     {% for data_type,data in cid_data.iteritems() %}
+    {% if data_type == 'tree_data' %}
+    <h4>Hierarchical Data</h4>
+    <div id="{{ cid }}_{{ data_type }}"></div>
+    <script type="text/jsx">
+    /** @jsx React.DOM */
+    var lol = {"one": "thing", "after": "another"};
+    React.renderComponent(
+      <JSONTree data={lol} />, document.getElementById('{{ cid }}_{{ data_type }}')
+    );
+    </script>
+    {% else %}
     <h4>{{ data_type }}</h4>
+    {% endif %}
     {% endfor %}
     {% endfor %}
     {% endfor %}
