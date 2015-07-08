@@ -175,14 +175,17 @@ class MPContributionsBuilder():
                 project = str(author.name).translate(None, '.').replace(' ','_') \
                         if 'project' not in contrib else contrib['project']
                 logging.info(doc['_id'])
-                all_data = {}
-                if contrib['content']:
-                    all_data.update({
-                        'contributed_data.%s.tree_data.%d' % (project, cid): contrib['content'],
-                    })
-                if 'data' in contrib['content']:
+                all_data = {
+                    'contributed_data.%s.tree_data.%d' % (project, cid): RecursiveDict(
+                        (key, value) for key,value in contrib['content'].iteritems()
+                        if key != 'plots' and not key.startswith('data_')
+                    )
+                }
+                if 'plots' in contrib['content']:
+                    # TODO also include non-default tables (multiple tables support)
                     table_columns, table_rows = None, None
-                    raw_data = contrib['content']['data']
+                    table_name = contrib['content']['plots']['default']['table']
+                    raw_data = contrib['content'][table_name]
                     if isinstance(raw_data, dict):
                         table_columns = [ { 'title': k } for k in raw_data ]
                         table_rows = [
