@@ -1,5 +1,5 @@
 import json
-from flask import Flask
+from flask import Flask, render_template
 from mpcontribs.io.mpfile import MPFile
 from mpcontribs.rest import ContributionMongoAdapter
 from mpcontribs.builders import MPContributionsBuilder
@@ -13,7 +13,8 @@ def index():
     docs = cma.submit_contribution(mpfile, contributor)
     mcb = MPContributionsBuilder(docs)
     mcb.build(contributor)
-    return '<html><body><pre><code>'+json.dumps(mcb.mat_coll, indent=4)+'</code></pre></body></html>'
+    content = json.dumps(mcb.mat_coll, indent=4)
+    return render_template('index.html', content=content)
 
 if __name__ == '__main__':
     app.debug = True
