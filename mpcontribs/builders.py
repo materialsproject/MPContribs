@@ -175,12 +175,12 @@ class MPContributionsBuilder():
                 project = str(author.name).translate(None, '.').replace(' ','_') \
                         if 'project' not in contrib else contrib['project']
                 logging.info(doc['_id'])
-                all_data = {
-                    'contributed_data.%s.tree_data.%d' % (project, cid): RecursiveDict(
-                        (key, value) for key,value in contrib['content'].iteritems()
-                        if key != 'plots' and not key.startswith('data_')
-                    )
-                }
+                all_data = RecursiveDict()
+                for key,value in contrib['content'].iteritems():
+                    if key == 'plots' or key.startswith('data_'): continue
+                    all_data.rec_update(nest_dict(
+                        value, ['contributed_data.{}.tree_data.{}'.format(project, cid), key]
+                    ))
                 if 'plots' in contrib['content']:
                     # TODO also include non-default tables (multiple tables support)
                     table_columns, table_rows = None, None
@@ -201,11 +201,15 @@ class MPContributionsBuilder():
                             for row in raw_data
                         ]
                     if table_columns is not None:
-                        all_data.update({
+                        all_data.rec_update({
                             'contributed_data.%s.tables.%d.columns' % (project,cid): table_columns,
                             'contributed_data.%s.tables.%d.rows' % (project,cid): table_rows,
                         })
                 if isinstance(self.db, list):
+                    for key in all_data:
+                        value = all_data.pop(key)
+                        keys = key.split('.')
+                        all_data.rec_update(nest_dict({keys[-1]: value}, keys[:-1]))
                     self.mat_coll.rec_update(nest_dict(all_data, [doc['_id']]))
                 else:
                     logging.info(self.mat_coll.update(
