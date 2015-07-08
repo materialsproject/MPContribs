@@ -13,7 +13,6 @@ def index():
     docs = cma.submit_contribution(mpfile, contributor)
     mcb = MPContributionsBuilder(docs)
     mcb.build(contributor)
-    #content = json.dumps(mcb.mat_coll, indent=4)
     return render_template('index.html', content=mcb.mat_coll)
 
 if __name__ == '__main__':
