@@ -2,10 +2,13 @@
 <html lang="en">
   <head>
     <title>MPFile Viewer</title>
-    <script src="{{ url_for('static', filename='react-0.11.0.js') }}"></script>
-    <script src="{{ url_for('static', filename='JSXTransformer-0.11.0.js') }}"></script>
-    <script src="{{ url_for('static', filename='jsonViewer.min.js') }}"></script>
-    <link href="{{ url_for('static', filename='screen.css') }}" media="screen, projection" rel="stylesheet" type="text/css" />
+    <script src="{{ url_for('static', filename='js/react-0.11.0.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/JSXTransformer-0.11.0.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/jsonViewer.min.js') }}"></script>
+    <link href="{{ url_for('static', filename='css/screen.css') }}" media="screen, projection" rel="stylesheet" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/jquery.dataTables.css') }}">
+    <script type="text/javascript" charset="utf8" src="{{ url_for('static', filename='js/jquery.js') }}"></script>
+    <script type="text/javascript" charset="utf8" src="{{ url_for('static', filename='js/jquery.dataTables.js') }}"></script>
   </head>
   <body>
     {% for key,value in content.iteritems() %}
@@ -15,13 +18,22 @@
     {% for data_type,data in cid_data.iteritems() %}
     {% if data_type == "tree_data" %}
     <h2>Hierarchical Data</h2>
-    <div id="{{ cid }}_{{ data_type }}"></div>
+    <div id="{{ cid }}_tree"></div>
     <script type="text/jsx">
     /** @jsx React.DOM */
     var lol = {{ data|tojson|safe }};
     React.renderComponent(
-      <JSONTree data={lol} />, document.getElementById('{{ cid }}_{{ data_type }}')
+      <JSONTree data={lol} />, document.getElementById('{{ cid }}_tree')
     );
+    </script>
+    {% elif data_type == "tables" %}
+    <h2>Default Table</h2>
+    <table id="{{ cid }}_table" class="display"></table>
+    <script>
+    var table = {{ data|tojson|safe }};
+    $('#{{ cid }}_table').DataTable({
+      "data": table['rows'], "columns": table['columns'],
+    });
     </script>
     {% else %}
     <h2>{{ data_type }}</h2>
