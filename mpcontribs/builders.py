@@ -56,7 +56,7 @@ class MPContributionsBuilder():
         author = Author.parse_author(contributor_email)
         project = str(author.name).translate(None, '.').replace(' ','_') \
                 if 'project' not in contrib else contrib['project']
-        subfld = 'contributed_data.%s.plotly_urls.%d' % (project, cid)
+        subfld = 'contributed_data.%s.%d.plotly_urls' % (project, cid)
         data = contrib['content']['data']
         df = pd.DataFrame.from_dict(data)
         url_list = list(self.mat_coll.find(
@@ -65,7 +65,7 @@ class MPContributionsBuilder():
         ))
         urls = []
         if len(url_list) > 0:
-            urls = url_list[0]['contributed_data'][project]['plotly_urls'][str(cid)]
+            urls = url_list[0]['contributed_data'][project][str(cid)]['plotly_urls']
         for nplot,plotopts in enumerate(
             contrib['content']['plots'].itervalues()
         ):
@@ -102,17 +102,16 @@ class MPContributionsBuilder():
 
     def delete(self, cids):
         """remove contributions"""
-        # TODO: also fld and cid will be switching places when DBs are migrated
         unset_dict = {}
         for doc in self.mat_coll.find(
             {'contributed_data': {'$exists': 1}},
             {'_id': 0, 'contributed_data': 1}
         ):
             for project,d in doc['contributed_data'].iteritems():
-                for fld,dd in d.iteritems():
-                    for cid in dd:
-                        if int(cid) not in cids: continue
-                        key = 'contributed_data.%s.%s.%s' % (project, fld, cid)
+                for cid in d:
+                    if int(cid) not in cids: continue
+                    for fld,dd in d.iteritems():
+                        key = 'contributed_data.%s.%s.%s' % (project, cid, fld)
                         unset_dict[key] = 1
         if len(unset_dict) > 0:
             self.mat_coll.update(
@@ -179,7 +178,7 @@ class MPContributionsBuilder():
                 for key,value in contrib['content'].iteritems():
                     if key == 'plots' or key.startswith('data_'): continue
                     all_data.rec_update(nest_dict(
-                        value, ['contributed_data.{}.tree_data.{}'.format(project, cid), key]
+                        value, ['contributed_data.{}.{}.tree_data'.format(project, cid), key]
                     ))
                 if 'plots' in contrib['content']:
                     # TODO also include non-default tables (multiple tables support)
@@ -202,8 +201,8 @@ class MPContributionsBuilder():
                         ]
                     if table_columns is not None:
                         all_data.rec_update({
-                            'contributed_data.%s.tables.%d.columns' % (project,cid): table_columns,
-                            'contributed_data.%s.tables.%d.rows' % (project,cid): table_rows,
+                            'contributed_data.%s.%d.tables.columns' % (project,cid): table_columns,
+                            'contributed_data.%s.%d.tables.rows' % (project,cid): table_rows,
                         })
                 if isinstance(self.db, list):
                     for key in all_data:
@@ -221,6 +220,6 @@ class MPContributionsBuilder():
                         for plotly_url in plotly_urls:
                             logging.info(self.mat_coll.update(
                                 {'task_id': doc['_id']}, { '$push': {
-                                    'contributed_data.%s.plotly_urls.%d' % (project,cid): plotly_url
+                                    'contributed_data.%s.%d.plotly_urls' % (project,cid): plotly_url
                                 }}
                             ))
