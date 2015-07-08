@@ -2,8 +2,17 @@
 <html lang="en">
   <head><title>MPFile Viewer</title></head>
   <body>
-    <pre><code>
-    {{ content }}
-    </code></pre>
+    {% for key,value in content.iteritems() %}
+    <h1>{{ key }}</h1>
+    {% for project,project_data in value.contributed_data.iteritems() %}
+    <h2>{{ project }}</h2>
+    {% for cid,cid_data in project_data.iteritems() %}
+    <h3>{{ cid }}</h3>
+    {% for data_type,data in cid_data.iteritems() %}
+    <h4>{{ data_type }}</h4>
+    {% endfor %}
+    {% endfor %}
+    {% endfor %}
+    {% endfor %}
   </body>
 </html>
