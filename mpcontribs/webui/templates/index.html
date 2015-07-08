@@ -5,17 +5,16 @@
     <script src="{{ url_for('static', filename='react-0.11.0.js') }}"></script>
     <script src="{{ url_for('static', filename='JSXTransformer-0.11.0.js') }}"></script>
     <script src="{{ url_for('static', filename='jsonViewer.min.js') }}"></script>
+    <link href="{{ url_for('static', filename='screen.css') }}" media="screen, projection" rel="stylesheet" type="text/css" />
   </head>
   <body>
     {% for key,value in content.iteritems() %}
-    <h1>{{ key }}</h1>
     {% for project,project_data in value.contributed_data.iteritems() %}
-    <h2>{{ project }}</h2>
     {% for cid,cid_data in project_data.iteritems() %}
-    <h3>#{{ cid }}</h3>
+    <h1>{{ key }} &raquo; {{ project }} &raquo; #{{ cid }}</h1>
     {% for data_type,data in cid_data.iteritems() %}
     {% if data_type == "tree_data" %}
-    <h4>Hierarchical Data</h4>
+    <h2>Hierarchical Data</h2>
     <div id="{{ cid }}_{{ data_type }}"></div>
     <script type="text/jsx">
     /** @jsx React.DOM */
@@ -25,7 +24,7 @@
     );
     </script>
     {% else %}
-    <h4>{{ data_type }}</h4>
+    <h2>{{ data_type }}</h2>
     {% endif %}
     {% endfor %}
     {% endfor %}
