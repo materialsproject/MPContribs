@@ -1,5 +1,5 @@
 from collections import OrderedDict, Mapping
-from ..config import indent_symbol, min_indent_level
+from ..config import indent_symbol, min_separator_length
 import pandas as pd
 import numpy as np
 
@@ -54,7 +54,7 @@ def make_pair(key, value, sep=':'):
 
 def get_indentor(n=0):
     """get level-n indentor"""
-    return indent_symbol * (min_indent_level + n)
+    return indent_symbol * (min_separator_length + n)
 
 def pandas_to_dict(pandas_object):
     """convert pandas object to dict"""

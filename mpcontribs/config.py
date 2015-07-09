@@ -1,7 +1,7 @@
 import os
 
 indent_symbol = '>'
-min_indent_level = 3 # minimum level to avoid collision w/ '>>'
+min_separator_length = 3 # minimum separator length to avoid collision w/ '>>'
 mp_categories = {
     'mp_id': [
         'numerify', 'mp-####'

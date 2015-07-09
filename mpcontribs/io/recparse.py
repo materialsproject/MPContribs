@@ -2,8 +2,8 @@ import re, logging
 import numpy as np
 import pandas as pd
 from StringIO import StringIO
-from ..config import min_indent_level, indent_symbol, csv_comment_char, mp_level01_titles
-from utils import nest_dict, RecursiveDict, pandas_to_dict
+from ..config import indent_symbol, csv_comment_char, mp_level01_titles
+from utils import nest_dict, RecursiveDict, pandas_to_dict, get_indentor
 from collections import OrderedDict
 
 class RecursiveParser():
@@ -12,7 +12,7 @@ class RecursiveParser():
         self.level0_counter = 0
         self.section_titles = []
         self.document = RecursiveDict({})
-        self.level = min_indent_level # level counter
+        self.level = -1 # level counter
         self.data_options = { 'sep': ',', 'header': 0 }
         self.colon_key_value_list = { 'sep': ':', 'header': None, 'index_col': 0 }
         self.mp_id_pattern = re.compile('mp-\d+', re.IGNORECASE)
@@ -21,12 +21,12 @@ class RecursiveParser():
         """get separator regex for section depth/level"""
         # (?:  ) => non-capturing group
         # (?:^|\n+) => match beginning of string OR one or more newlines
-        # %s{%d}\s+ => match indent_symbol*level followed by one or more spaces
+        # %s\s+ => match next-level separator followed by one or more spaces
         #    require minimum one space after section level identifier
         # (.+) => capturing group of one or more arbitrary characters
         # (?:$|\n*?) => match end-of-string OR zero or more newlines
         #    be non-greedy with newlines at end of string
-        return r'(?:^|\n+)%s{%d}\s+(.+)(?:$|\n*?)' % (indent_symbol, self.level)
+        return r'(?:^|\n+)%s\s+(.+)(?:$|\n*?)' % get_indentor(self.level+1)
 
     def clean_title(self, title):
         """strip in-line comments & spaces, make lower-case if mp-id"""
@@ -35,7 +35,7 @@ class RecursiveParser():
         )[0].strip()
         title_lower = title.lower()
         lower = (
-            self.level == min_indent_level and (
+            self.level+1 == 0 and (
                 self.mp_id_pattern.match(title) or
                 title_lower == mp_level01_titles[0]
             )
@@ -44,14 +44,11 @@ class RecursiveParser():
 
     def is_bare_section(self, title):
         """determine whether currently in bare section"""
-        return (
-            title != mp_level01_titles[0] and 
-            self.level-1 == min_indent_level
-        )
+        return (title != mp_level01_titles[0] and self.level == 0)
 
     def is_data_section(self, body):
         """determine whether currently in data section"""
-        return (indent_symbol*min_indent_level not in body and ':' not in body)
+        return (get_indentor() not in body and ':' not in body)
 
     def strip(self, text):
         """http://stackoverflow.com/questions/13385860"""
@@ -112,7 +109,7 @@ class RecursiveParser():
             for section_index,section_body in enumerate(sections[1::2]):
                 clean_title = self.clean_title(sections[2*section_index])
                 # uniquify level-0 titles if necessary
-                if self.level == min_indent_level and clean_title in self.document:
+                if self.level+1 == 0 and clean_title in self.document:
                     clean_title += '--%d' % self.level0_counter
                     self.level0_counter += 1
                 self.increase_level(clean_title)
