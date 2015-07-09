@@ -16,17 +16,18 @@ class MPFile(six.with_metaclass(ABCMeta)):
         self.document = RecursiveDict() if parser is None else parser.document
 
     @staticmethod
-    def from_file(filename):
+    def from_file(filename_or_file):
         """Reads a MPFile from a file.
 
         Args:
-            filename (str): name of file containing contribution data.
+            filename_or_file (str or file): name of file or file containing contribution data.
 
         Returns:
             MPFile object.
         """
-        with zopen(filename, "rt") as f:
-            return MPFile.from_string(f.read())
+        if isinstance(filename_or_file, str):
+            filename_or_file = zopen(filename_or_file, "rt")
+        return MPFile.from_string(filename_or_file.read())
 
     @staticmethod
     def from_string(data):
