@@ -4,7 +4,9 @@ import sys
 import os
 import argparse
 import logging
+import random, threading, webbrowser
 from pymatgen.matproj.rest import MPRester
+from mpcontribs.webui.webui import app
 
 #ENDPOINT, API_KEY = "https://www.materialsproject.org/rest", os.environ.get('MAPI_KEY')
 ENDPOINT, API_KEY = "http://localhost:8000/rest", os.environ.get('MAPI_KEY_LOC')
@@ -54,6 +56,13 @@ def collab_primary(args):
             for contrib in m.query_contribs():
                 cids.append(contrib['contribution_id'])
         print m.update_collaborators([args.collaborator], cids, 'primary')
+
+def viewer(args):
+    port = 5000 + random.randint(0, 999)
+    url = "http://127.0.0.1:{0}/".format(port)
+    if args.mpfile is not None: url += args.mpfile
+    threading.Timer(1.25, lambda: webbrowser.open(url)).start()
+    app.run(port=port, debug=False)
 
 def main():
     parser = argparse.ArgumentParser(
@@ -141,6 +150,13 @@ def main():
         The primary collaborator will be set for ALL contributions if `--for` is omitted!"""
     )
     collab_subparsers_primary.set_defaults(func=collab_primary)
+
+    parser_viewer = subparsers.add_parser(
+        'viewer', help="""bring up a local webapp to preview MPFiles"""
+    )
+    parser_viewer.add_argument('-f', '--mpfile', type=str, help="""path to
+                               MPFile with which to start the viewer""")
+    parser_viewer.set_defaults(func=viewer)
 
     args = parser.parse_args(None if len(sys.argv) > 1 else ['--help'])
     args.func(args)
