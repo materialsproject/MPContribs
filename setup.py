@@ -1,10 +1,11 @@
-import io, re
+import io, re, glob, os
 from setuptools import setup
 
 package_name = 'mpcontribs'
 init_py = io.open('{}/__init__.py'.format(package_name)).read()
 metadata = dict(re.findall("__([a-z]+)__ = '([^']+)'", init_py))
 metadata['doc'] = re.findall('"""(.+)"""', init_py)[0]
+SETUP_PTH = os.path.dirname(os.path.abspath(__file__))
 
 setup(
     name = package_name,
@@ -25,4 +26,5 @@ setup(
     ],
     license = 'MIT',
     keywords = ['materials', 'contribution', 'framework', 'data', 'interactive'],
+    scripts = glob.glob(os.path.join(SETUP_PTH, "scripts", "*")),
 )
