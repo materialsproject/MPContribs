@@ -11,10 +11,19 @@
     <script type="text/javascript" charset="utf8" src="{{ url_for('static', filename='js/jquery.dataTables.js') }}"></script>
   </head>
   <body>
+    <a name="top">
+    Jump to contribution
+    {% for value in content.itervalues() %}
+    {% for project_data in value.contributed_data.itervalues() %}
+    {% for cid in project_data %}
+     &raquo; <a href="#cid{{ cid }}">#{{ cid }}</a>
+    {% endfor %}
+    {% endfor %}
+    {% endfor %}
     {% for key,value in content.iteritems() %}
     {% for project,project_data in value.contributed_data.iteritems() %}
     {% for cid,cid_data in project_data.iteritems() %}
-    <h1>{{ key }} &raquo; {{ project }} &raquo; #{{ cid }}</h1>
+    <a name="cid{{ cid }}"><h1>{{ key }} &raquo; {{ project }} &raquo; #{{ cid }}</h1> <a href="#top">back to top</a>
     {% for data_type,data in cid_data.iteritems() %}
     {% if data_type == "tree_data" %}
     <h2>Hierarchical Data</h2>
