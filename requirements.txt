@@ -1,8 +1,15 @@
 atomicfile==1.0
+chardet==2.3.0
 fake-factory==0.4.2
+Flask==0.10.1
+gnureadline==6.3.3
+ipython==3.1.0
+itsdangerous==0.24
+Jinja2==2.7.3
+MarkupSafe==0.23
 matplotlib==1.4.2
 mock==1.0.1
-monty==0.6.2
+monty==0.6.4
 nose==1.3.4
 numpy==1.9.1
 pandas==0.15.2
@@ -10,8 +17,8 @@ plotly==1.6.15
 prettytable==0.7.2
 pybtex==0.18
 pyhull==1.5.3
-pymatgen==3.0.8
-pymongo==2.7.2
+-e git+git@github.com:tschaume/pymatgen.git@84514995c24b3c4df2f8780d069bdd0af20f7f0a#egg=pymatgen-origin_submit_mpfile
+pymongo==3.0
 pyparsing==2.0.3
 python-dateutil==2.3
 pytz==2015.2
@@ -19,3 +26,4 @@ PyYAML==3.11
 requests==2.6.0
 scipy==0.14.0
 six==1.9.0
+Werkzeug==0.10.4
