@@ -11,14 +11,8 @@ app = Flask('webui', template_folder=tmpl_dir, static_folder=stat_dir)
 @app.route('/<path:path>', methods=['GET', 'POST'])
 def index(path):
     print path, request.method
-    if not path and request.method == 'GET': return '''
-    <!doctype html>
-    <title>MPFile Viewer</title>
-    <form action="" method=post enctype=multipart/form-data>
-    <p><input type=file name=file>
-    <input type=submit value=View>
-    </form>
-    '''
+    if not path and request.method == 'GET':
+        return render_template('choose.html')
     full_name = pwd.getpwuid(os.getuid())[4]
     contributor = '{} <phuck@lbl.gov>'.format(full_name)
     mpfile = MPFile.from_file(path if path else request.files['file'])
