@@ -15,11 +15,13 @@ url: "https://en.wikipedia.org/wiki/Caesium" # quotes?
 >>>> plots
 >>>>> default
 y: vapor pressure (Pa)
+table: main_table
 >>>>> ionization energies
 x: electron number
 y: ionization energy (kJ/mol)
 kind: bar
->>>> data
+table: main_table
+>>>> main_table
 temperature (K), vapor pressure (Pa), electron number, ionization energy (kJ/mol)
 418,1,1,375.7
 469,10,2,2234.3
