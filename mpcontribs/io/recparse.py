@@ -130,7 +130,9 @@ class RecursiveParser():
                 self.section_titles[-1] = '_'.join([
                     mp_level01_titles[1], self.section_titles[-1]
                 ])
-                # TODO also update the table name(s) in `plots` (see CsPd.mgc test file)
+            # also prepend 'data_' to the table name(s) in `plots`
+            if self.level == 2 and self.section_titles[1] == mp_level01_titles[2]:
+                pd_obj['table'] = '_'.join([mp_level01_titles[1], pd_obj['table']])
             # use first csv table for default plot, first column as x-column
             if is_data_section and (
                 self.section_titles[0] not in self.document or
