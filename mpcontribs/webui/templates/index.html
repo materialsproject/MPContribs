@@ -35,8 +35,13 @@
       "data": table['rows'], "columns": table['columns'],
     });
     </script>
-    {% else %}
-    <h2>{{ data_type }}</h2>
+    {% elif data_type == "plotly_urls" %}
+    <h2>Graphs</h2>
+    <ul>
+    {% for url in data %}
+    <li><a href="{{ url }}">{{ url }}</a></li>
+    {% endfor %}
+    </ul>
     {% endif %}
     {% endfor %}
     {% endfor %}

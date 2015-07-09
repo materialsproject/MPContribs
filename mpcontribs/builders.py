@@ -51,26 +51,29 @@ class MPContributionsBuilder():
 
     def plot(self, contributor_email, contrib):
         """make all plots for contribution_id"""
-        if 'data' not in contrib['content']:
-            return None
+        if not any([key.startswith('data_') for key in contrib['content']]): return None
         author = Author.parse_author(contributor_email)
         project = str(author.name).translate(None, '.').replace(' ','_') \
                 if 'project' not in contrib else contrib['project']
+        cid = contrib['contribution_id']
         subfld = 'contributed_data.%s.%d.plotly_urls' % (project, cid)
-        data = contrib['content']['data']
-        df = pd.DataFrame.from_dict(data)
-        url_list = list(self.mat_coll.find(
+        url_list = [] if isinstance(self.db, list) else list(self.mat_coll.find(
             {subfld: {'$exists': True}},
             {'_id': 0, subfld: 1}
         ))
-        urls = []
-        if len(url_list) > 0:
-            urls = url_list[0]['contributed_data'][project][str(cid)]['plotly_urls']
+        urls = url_list[0]['contributed_data'][project][str(cid)]['plotly_urls'] \
+                if len(url_list) > 0 else []
         for nplot,plotopts in enumerate(
             contrib['content']['plots'].itervalues()
         ):
-            filename = 'test%d_%d' % (cid,nplot)
+            filename = '{}_{}_{}'.format(
+                ('viewer' if isinstance(self.db, list) else 'mp'),
+                cid, nplot
+            )
             fig, ax = plt.subplots(1, 1)
+            table_name = plotopts.pop('table')
+            data = contrib['content'][table_name]
+            df = pd.DataFrame.from_dict(data)
             df.plot(ax=ax, **plotopts)
             if len(urls) == len(contrib['content']['plots']):
                 pyfig = py.get_figure(urls[nplot])
@@ -214,12 +217,20 @@ class MPContributionsBuilder():
                     logging.info(self.mat_coll.update(
                         {'task_id': doc['_id']}, { '$set': all_data }
                     ))
-                if not isinstance(self.db, list) and plot_cids is not None and cid in plot_cids:
+                if plot_cids is not None and cid in plot_cids:
                     plotly_urls = self.plot(contributor_email, contrib)
                     if plotly_urls is not None:
-                        for plotly_url in plotly_urls:
+                        plotly_urls_entry = RecursiveDict()
+                        plotly_urls_entry.rec_update({
+                            'contributed_data.%s.%d.plotly_urls' % (project,cid): plotly_urls
+                        })
+                        if isinstance(self.db, list):
+                            for key in plotly_urls_entry:
+                                value = plotly_urls_entry.pop(key)
+                                keys = key.split('.')
+                                plotly_urls_entry.rec_update(nest_dict({keys[-1]: value}, keys[:-1]))
+                            self.mat_coll.rec_update(nest_dict(plotly_urls_entry, [doc['_id']]))
+                        else:
                             logging.info(self.mat_coll.update(
-                                {'task_id': doc['_id']}, { '$push': {
-                                    'contributed_data.%s.%d.plotly_urls' % (project,cid): plotly_url
-                                }}
+                                {'task_id': doc['_id']}, { '$set': plotly_urls_entry }
                             ))
