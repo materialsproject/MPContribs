@@ -9,6 +9,7 @@ import plotly.plotly as py
 from plotly.graph_objs import *
 from itertools import groupby
 from io.utils import nest_dict, RecursiveDict
+from config import mp_level01_titles
 
 class MPContributionsBuilder():
     """build user contributions from `mg_core_*.contributions`"""
@@ -51,7 +52,8 @@ class MPContributionsBuilder():
 
     def plot(self, contributor_email, contrib):
         """make all plots for contribution_id"""
-        if not any([key.startswith('data_') for key in contrib['content']]): return None
+        if not any([key.startswith(mp_level01_titles[1]+'_') for key in contrib['content']]):
+            return None
         author = Author.parse_author(contributor_email)
         project = str(author.name).translate(None, '.').replace(' ','_') \
                 if 'project' not in contrib else contrib['project']
@@ -179,7 +181,7 @@ class MPContributionsBuilder():
                 logging.info(doc['_id'])
                 all_data = RecursiveDict()
                 for key,value in contrib['content'].iteritems():
-                    if key == 'plots' or key.startswith('data_'): continue
+                    if key == 'plots' or key.startswith(mp_level01_titles[1]+'_'): continue
                     all_data.rec_update(nest_dict(
                         value, ['contributed_data.{}.{}.tree_data'.format(project, cid), key]
                     ))
