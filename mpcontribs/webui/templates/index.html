@@ -37,11 +37,13 @@
     </script>
     {% elif data_type == "plotly_urls" %}
     <h2>Graphs</h2>
-    <ul>
+    <ol>
     {% for url in data %}
-    <li><a href="{{ url }}">{{ url }}</a></li>
+    <li><a href="{{ url }}">{{ url }}</a>:<br>
+    <iframe width="450" height="420" frameborder="0" seamless="seamless"
+       scrolling="no" src="{{url}}.embed?width=450&height=420"></iframe></li>
     {% endfor %}
-    </ul>
+    </ol>
     {% endif %}
     {% endfor %}
     {% endfor %}
