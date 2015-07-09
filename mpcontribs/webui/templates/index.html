@@ -12,6 +12,7 @@
   </head>
   <body>
     <a name="top">
+    {% include 'choose.html' %}
     Jump to contribution
     {% for value in content.itervalues() %}
     {% for project_data in value.contributed_data.itervalues() %}
@@ -41,7 +42,8 @@
     <script>
     var table = {{ data|tojson|safe }};
     $('#{{ cid }}_table').DataTable({
-      "data": table['rows'], "columns": table['columns'],
+      "data": table['rows'], "columns": table['columns'], "scrollX": true,
+      "scrollY": "300px", "scrollCollapse": true, "paging": false,
     });
     </script>
     {% elif data_type == "plotly_urls" %}
