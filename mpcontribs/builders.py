@@ -1,6 +1,8 @@
 from monty.serialization import loadfn
 import json, os, logging, re
 import pandas as pd
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 pd.options.display.mpl_style = 'default'
 import plotly.plotly as py
