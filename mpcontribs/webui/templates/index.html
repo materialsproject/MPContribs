@@ -14,20 +14,21 @@
     <script src="https://cdn.datatables.net/plug-ins/1.10.7/integration/bootstrap/3/dataTables.bootstrap.js"></script>
   </head>
   <body>
-    <a name="top">
-    {% include 'choose.html' %}
-    Jump to contribution
+    <p><a name="top"></a>
+    <p><a href="/">Load New MPFile</a></p>
+    <p>Jump to contribution
     {% for value in content.itervalues() %}
     {% for project_data in value.contributed_data.itervalues() %}
     {% for cid in project_data %}
      &raquo; <a href="#cid{{ cid }}">#{{ cid }}</a>
     {% endfor %}
     {% endfor %}
-    {% endfor %}
+    {% endfor %}</p>
     {% for key,value in content.iteritems() %}
     {% for project,project_data in value.contributed_data.iteritems() %}
     {% for cid,cid_data in project_data.iteritems() %}
-    <a name="cid{{ cid }}"><h1>{{ key }} &raquo; {{ project }} &raquo; #{{ cid }}</h1> <a href="#top">back to top</a>
+    <a name="cid{{ cid }}"></a><h1>{{ key }} &raquo; {{ project }} &raquo; #{{ cid }}</h1>
+    <a href="#top">back to top</a>
     {% for data_type,data in cid_data.iteritems() %}
     {% if data_type == "tree_data" %}
     <h2>Hierarchical Data</h2>
@@ -41,14 +42,20 @@
     </script>
     {% elif data_type == "tables" %}
     <h2>Default Table</h2>
-    <table id="{{ cid }}_table" class="display"></table>
-    <script>
-    var table = {{ data|tojson|safe }};
-    $('#{{ cid }}_table').DataTable({
-      "data": table['rows'], "columns": table['columns'], "scrollX": true,
-      "scrollY": "300px", "scrollCollapse": true, "paging": false,
-    });
-    </script>
+    <button class="btn btn-primary" type="button" data-toggle="collapse"
+        data-target="#{{ cid }}_collapse" aria-expanded="false" aria-controls="{{ cid }}_collapse">
+      Collapse/Expand
+    </button>
+    <div class="collapse" id="{{ cid }}_collapse">
+      <table id="{{ cid }}_table" class="table"></table>
+      <script>
+      var table = {{ data|tojson|safe }};
+      $('#{{ cid }}_table').DataTable({
+        "data": table['rows'], "columns": table['columns'], "scrollX": true,
+        "scrollY": "300px", "scrollCollapse": true, "paging": false
+      });
+      </script>
+    </div>
     {% elif data_type == "plotly_urls" %}
     <h2>Graphs</h2>
     <ol>
