@@ -5,6 +5,7 @@ from ..config import mp_level01_titles
 from recparse import RecursiveParser
 from monty.io import zopen
 from pandas import DataFrame
+from six import string_types
 
 class MPFile(six.with_metaclass(ABCMeta)):
     """Object for representing a MP Contribution File.
@@ -25,7 +26,7 @@ class MPFile(six.with_metaclass(ABCMeta)):
         Returns:
             MPFile object.
         """
-        if isinstance(filename_or_file, str):
+        if isinstance(filename_or_file, string_types):
             filename_or_file = zopen(filename_or_file, "rt")
         return MPFile.from_string(filename_or_file.read())
 

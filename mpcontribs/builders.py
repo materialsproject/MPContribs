@@ -9,6 +9,7 @@ from itertools import groupby
 from io.utils import nest_dict, RecursiveDict
 from config import mp_level01_titles
 from collections import namedtuple
+from six import string_types
 
 # from pymatgen.matproj.snl
 class Author(namedtuple('Author', ['name', 'email'])):
