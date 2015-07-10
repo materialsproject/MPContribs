@@ -22,7 +22,7 @@ setup(
     include_package_data=True,
     install_requires = [
         'numpy==1.9.1', 'Flask==0.10.1', 'pandas==0.15.2', 'plotly==1.6.15',
-        'six==1.9.0', 'monty==0.6.4', #'pymatgen-0.0'
+        'six==1.9.0', 'monty==0.6.4', 'matplotlib==1.4.2', #'pymatgen-0.0'
     ],
     #setup_requires = [ 'numpy==1.9.1', 'pymatgen-0.0' ],
     #dependency_links = [
