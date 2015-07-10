@@ -27,7 +27,6 @@ def submit_snl_from_cif(submitter_email, cif_file, metadata_file):
     sma.submit_snl(snl, submitter_email)
 
 
-from pymongo import MongoClient
 from monty.serialization import loadfn
 import datetime
 from StringIO import StringIO
@@ -59,6 +58,7 @@ class ContributionMongoAdapter(object):
 
     @classmethod
     def from_config(cls, db_yaml='materials_db_dev.yaml'):
+        from pymongo import MongoClient
         config = loadfn(os.path.join(os.environ['DB_LOC'], db_yaml))
         client = MongoClient(config['host'], config['port'], j=False)
         db = client[config['db']]
