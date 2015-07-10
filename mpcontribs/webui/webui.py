@@ -6,6 +6,7 @@ from mpcontribs.builders import MPContributionsBuilder
 tmpl_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates')
 stat_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static')
 app = Flask('webui', template_folder=tmpl_dir, static_folder=stat_dir)
+app.config['JSON_SORT_KEYS'] = False
 
 @app.route('/', defaults={'path': ''}, methods=['GET', 'POST'])
 @app.route('/<path:path>', methods=['GET', 'POST'])
