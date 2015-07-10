@@ -1,61 +1,67 @@
 #!/usr/bin/env python
 
-import sys
-import os
-import argparse
-import logging
+import sys, os, argparse, logging
 import random, threading, webbrowser
-from pymatgen.matproj.rest import MPRester
 from mpcontribs.webui.webui import app
 
-#ENDPOINT, API_KEY = "https://www.materialsproject.org/rest", os.environ.get('MAPI_KEY')
-ENDPOINT, API_KEY = "http://localhost:8000/rest", os.environ.get('MAPI_KEY_LOC')
+try:
+    from pymatgen.matproj.rest import MPRester
+    #ENDPOINT, API_KEY = "https://www.materialsproject.org/rest", os.environ.get('MAPI_KEY')
+    ENDPOINT, API_KEY = "http://localhost:8000/rest", os.environ.get('MAPI_KEY_LOC')
+    mpr = MPRester(API_KEY, endpoint=ENDPOINT)
+except ImportError:
+    mpr = None
+
+def check_pymatgen():
+    if mpr is None:
+        print 'pymatgen not found'
+        sys.exit(0)
 
 def info(args):
-    with MPRester(API_KEY, endpoint=ENDPOINT) as m:
-        infos = {}
-        for contrib in m.query_contribs():
-            mid, cid = contrib['mp_cat_id'], str(contrib['contribution_id'])
-            if mid not in infos: infos[mid] = [cid]
-            else: infos[mid].append(cid)
-        for k,v in infos.iteritems():
-            if args.mp_cat_ids is None or \
-               (args.mp_cat_ids is not None and k in args.mp_cat_ids):
-                print '{}: {}'.format(k, ' '.join(v))
+    check_pymatgen()
+    infos = {}
+    for contrib in mpr.query_contribs():
+        mid, cid = contrib['mp_cat_id'], str(contrib['contribution_id'])
+        if mid not in infos: infos[mid] = [cid]
+        else: infos[mid].append(cid)
+    for k,v in infos.iteritems():
+        if args.mp_cat_ids is None or \
+           (args.mp_cat_ids is not None and k in args.mp_cat_ids):
+            print '{}: {}'.format(k, ' '.join(v))
 
 def submit(args):
-    with MPRester(API_KEY, endpoint=ENDPOINT) as m:
-        print m.submit_mpfile(args.mpfile, args.cids)
+    check_pymatgen()
+    print mpr.submit_mpfile(args.mpfile, args.cids)
 
 def delete(args):
-    with MPRester(API_KEY, endpoint=ENDPOINT) as m:
-        print '{} contributions deleted.'.format(
-            m.delete_contribs(args.cids)
-        )
+    check_pymatgen()
+    print '{} contributions deleted.'.format(
+        mpr.delete_contribs(args.cids)
+    )
 
 def collab_add(args):
-    with MPRester(API_KEY, endpoint=ENDPOINT) as m:
-        cids = [] if args.to is None else args.to
-        if args.to is None:
-            for contrib in m.query_contribs():
-                cids.append(contrib['contribution_id'])
-        print m.update_collaborators(args.collaborators, cids, 'add')
+    check_pymatgen()
+    cids = [] if args.to is None else args.to
+    if args.to is None:
+        for contrib in mpr.query_contribs():
+            cids.append(contrib['contribution_id'])
+    print mpr.update_collaborators(args.collaborators, cids, 'add')
 
 def collab_remove(args):
-    with MPRester(API_KEY, endpoint=ENDPOINT) as m:
-        cids = [] if args['from'] is None else args['from']
-        if args['from'] is None:
-            for contrib in m.query_contribs():
-                cids.append(contrib['contribution_id'])
-        print m.update_collaborators(args.collaborators, cids, 'remove')
+    check_pymatgen()
+    cids = [] if args['from'] is None else args['from']
+    if args['from'] is None:
+        for contrib in mpr.query_contribs():
+            cids.append(contrib['contribution_id'])
+    print mpr.update_collaborators(args.collaborators, cids, 'remove')
 
 def collab_primary(args):
-    with MPRester(API_KEY, endpoint=ENDPOINT) as m:
-        cids = [] if args['for'] is None else args['for']
-        if args['for'] is None:
-            for contrib in m.query_contribs():
-                cids.append(contrib['contribution_id'])
-        print m.update_collaborators([args.collaborator], cids, 'primary')
+    check_pymatgen()
+    cids = [] if args['for'] is None else args['for']
+    if args['for'] is None:
+        for contrib in mpr.query_contribs():
+            cids.append(contrib['contribution_id'])
+    print mpr.update_collaborators([args.collaborator], cids, 'primary')
 
 def viewer(args):
     port = 5000 + random.randint(0, 999)
