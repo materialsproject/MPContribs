@@ -10,7 +10,6 @@ app = Flask('webui', template_folder=tmpl_dir, static_folder=stat_dir)
 @app.route('/', defaults={'path': ''}, methods=['GET', 'POST'])
 @app.route('/<path:path>', methods=['GET', 'POST'])
 def index(path):
-    print path, request.method
     if not path and request.method == 'GET':
         return render_template('choose.html')
     full_name = pwd.getpwuid(os.getuid())[4]
