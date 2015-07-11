@@ -92,9 +92,8 @@ def submit_mpfile(request, mdb=None):
     try:
         mpfile = MPFile.from_string(request.POST['mpfile'])
         cids = json.loads(request.POST['cids']) if 'cids' in request.POST else None
-        cids = mdb.contrib_ad.submit_contribution(
-            mpfile, contributor, project=project, insert=True, cids=cids
-        )
+        cids = mdb.contrib_ad.submit_contribution(mpfile, contributor,
+                                                  project=project, cids=cids)
         mdb.contrib_build_ad.build(contributor, cids=cids)
     except Exception as ex:
         raise ValueError('"REST Error: "{}"'.format(str(ex)))
