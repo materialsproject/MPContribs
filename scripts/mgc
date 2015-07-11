@@ -3,6 +3,7 @@
 import sys, os, argparse, logging
 import random, threading, webbrowser
 from mpcontribs.webui.webui import app
+from mpcontribs.utils import get_short_object_id
 
 try:
     from pymatgen.matproj.rest import MPRester
@@ -21,7 +22,7 @@ def info(args):
     check_pymatgen()
     infos = {}
     for contrib in mpr.query_contribs():
-        mid, cid = contrib['mp_cat_id'], str(contrib['contribution_id'])
+        mid, cid = contrib['mp_cat_id'], get_short_object_id(contrib['_id'])
         if mid not in infos: infos[mid] = [cid]
         else: infos[mid].append(cid)
     for k,v in infos.iteritems():
