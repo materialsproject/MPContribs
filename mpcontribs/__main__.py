@@ -1,6 +1,6 @@
 import argparse, logging, os
 from io.mpfile import MPFile
-from rest import ContributionMongoAdapter#,submit_snl_from_cif
+from rest import ContributionMongoAdapter
 from builders import MPContributionsBuilder
 
 if __name__ == '__main__':
@@ -36,8 +36,3 @@ if __name__ == '__main__':
         mcb.build(cids=cids) # `cids=None` to build all contributions
     else:
         print 'no contributions to build'
-
-#submit_snl_from_cif( # TODO: reactivate
-#    args.contributor, 'test_filesFe3O4.cif',
-#    'test_files/input_rsc.yaml'
-#)
