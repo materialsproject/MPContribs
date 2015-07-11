@@ -3,36 +3,46 @@ from io.mpfile import MPFile
 from rest import ContributionMongoAdapter
 from builders import MPContributionsBuilder
 
+cma = ContributionMongoAdapter.from_config()
+
+def fake(args):
+    cids = cma.fake_multiple_contributions(num_contributions=args.num)
+    if cids is not None:
+        mcb = MPContributionsBuilder(cma.db)
+        mcb.build(args.contributor, cids=cids)
+
+def submit(args):
+    if os.path.isfile(args.mpfile):
+        mpfile = MPFile.from_file(args.mpfile)
+        cids = cma.submit_contribution(mpfile, args.contributor)
+        if cids is not None:
+            mcb = MPContributionsBuilder(cma.db)
+            mcb.build(args.contributor, cids=cids)
+
+def reset(args): cma._reset()
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--num-contributions", default=5, type=int,
-                        help="number of contributions to fake (ignored if --input)")
-    parser.add_argument("--input", help="submit specific input file")
-    parser.add_argument("--insert", help="insert contribution into DB", action="store_true")
-    parser.add_argument("--reset", help="reset contributions, rm `contributed_data`", action="store_true")
     parser.add_argument("--log", help="show log output", action="store_true")
-    parser.add_argument("--contributor", help="contributor name and email", default="Patrick Huck <phuck@lbl.gov>")
-    args = parser.parse_args()
+    parser.add_argument("--contributor", help="contributor name and email",
+                        default="Patrick Huck <phuck@lbl.gov>")
 
+    subparsers = parser.add_subparsers()
+
+    parser_fake = subparsers.add_parser('fake', help="""submit fake contributions""")
+    parser_fake.add_argument('num', type=int, help="""number of contributions""")
+    parser_fake.set_defaults(func=fake)
+
+    parser_submit = subparsers.add_parser('submit', help="""submit MPFile""")
+    parser_submit.add_argument('mpfile', help="""MPFile path""")
+    parser_submit.set_defaults(func=submit)
+
+    parser_reset = subparsers.add_parser('reset', help="""reset DB""")
+    parser_reset.set_defaults(func=reset)
+
+    args = parser.parse_args()
     loglevel = 'DEBUG' if args.log else 'WARNING'
     logging.basicConfig(
         format='%(message)s', level=getattr(logging, loglevel)
     )
-
-    cids = None
-    cma = ContributionMongoAdapter.from_config()
-    if args.reset: cma._reset()
-    if args.input is None:
-        cids = cma.fake_multiple_contributions(
-            num_contributions=args.num_contributions, insert=args.insert
-        )
-    elif os.path.isfile(args.input):
-        cids = cma.submit_contribution(
-            MPFile.from_file(args.input), args.contributor, insert=args.insert
-        )
-    if cids is not None:
-        mcb = MPContributionsBuilder.from_config()
-        if args.reset: mcb._reset()
-        mcb.build(args.contributor, cids=cids) # `cids=None` to build all contributions
-    else:
-        print 'no contributions to build'
+    args.func(args)

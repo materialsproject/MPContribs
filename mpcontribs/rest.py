@@ -23,7 +23,10 @@ class ContributionMongoAdapter(object):
         db.authenticate(config['username'], config['password'])
         return ContributionMongoAdapter(db)
 
-    def _reset(self): self.db.contributions.remove()
+    def _reset(self):
+        self.db.contributions.remove()
+        self.db.materials.remove()
+        self.db.compositions.remove()
 
     def _get_mp_category_id(self, key, fake_it):
         not_fake = (not fake_it or self.fake is None)
@@ -41,7 +44,7 @@ class ContributionMongoAdapter(object):
         return self.db.contributions.remove(crit)
 
     def submit_contribution(self, mpfile, contributor_email, cids=None,
-        fake_it=False, insert=False, project=None):
+        fake_it=False, project=None):
         """submit user data to `mpcontribs.contributions` collection
 
         Args:
@@ -82,7 +85,7 @@ class ContributionMongoAdapter(object):
             doc = {'collaborators': collaborators,
                    'mp_cat_id': mp_cat_id, 'content': v}
             if project is not None: doc['project'] = project
-            if insert:
+            if self.db is not None:
                 print 'submitting contribution #{} ...'.format(cid_short)
                 self.db.contributions.find_and_modify({'_id': cid}, doc, upsert=True)
                 contributions.append(cid)
@@ -90,7 +93,7 @@ class ContributionMongoAdapter(object):
                 contributions.append(doc)
         return contributions
 
-    def fake_multiple_contributions(self, num_contributions=20, insert=False):
+    def fake_multiple_contributions(self, num_contributions=20):
         """fake the submission of many contributions"""
         if self.fake is None:
             print 'Install fake-factory to fake submissions'
@@ -100,6 +103,4 @@ class ContributionMongoAdapter(object):
             f = MPFakeFile(usable=True, main_general=self.fake.pybool())
             mpfile = f.make_file()
             contributor = '%s <%s>' % (self.fake.name(), self.fake.email())
-            self.submit_contribution(
-                mpfile, contributor, fake_it=True, insert=insert
-            )
+            self.submit_contribution(mpfile, contributor, fake_it=True)
