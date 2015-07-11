@@ -19,23 +19,9 @@ class MPContributionsBuilder():
         if isinstance(self.db, list):
             self.mat_coll = RecursiveDict()
             self.comp_coll = RecursiveDict()
-            self.contribution_groups = []
-            for key,group in groupby(db, lambda item: item['mp_cat_id']):
-                grp = list(group)
-                self.contribution_groups.append({
-                    '_id': key, 'num_contribs': len(grp),
-                    'contrib_ids': [ el['_id'] for el in grp ]
-                })
         else:
             self.mat_coll = db.materials
             self.comp_coll = db.compositions
-            self.contribution_groups = self.db.contributions.aggregate([
-                { '$group': {
-                    '_id': '$mp_cat_id',
-                    'num_contribs': { '$sum': 1 },
-                    'contrib_ids': { '$addToSet': '$_id' }
-                }}
-            ], cursor={})
 
     @classmethod
     def from_config(cls, db_yaml='mpcontribs_db.yaml'):
@@ -111,10 +97,29 @@ class MPContributionsBuilder():
         else:
             return self.db.contributions.find_one({'_id': cid})
 
+    def get_contribution_groups(self):
+        if isinstance(self.db, list):
+            contribution_groups = []
+            for key,group in groupby(db, lambda item: item['mp_cat_id']):
+                grp = list(group)
+                contribution_groups.append({
+                    '_id': key, 'num_contribs': len(grp),
+                    'contrib_ids': [ el['_id'] for el in grp ]
+                })
+        else:
+            contribution_groups = self.db.contributions.aggregate([
+                { '$group': {
+                    '_id': '$mp_cat_id',
+                    'num_contribs': { '$sum': 1 },
+                    'contrib_ids': { '$addToSet': '$_id' }
+                }}
+            ], cursor={})
+        return contribution_groups
+
     def build(self, contributor_email, cids=None):
         """update materials/compositions collections with contributed data"""
         # TODO check all DB calls, consolidate in aggregation call?
-        for doc in self.contribution_groups:
+        for doc in self.get_contribution_groups():
             for cid in doc['contrib_ids']:
                 if cids is not None and cid not in cids: continue
                 # identifiers, contributor check, project
