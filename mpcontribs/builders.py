@@ -88,10 +88,6 @@ class MPContributionsBuilder():
         plotly_urls = RecursiveDict({subfld: urls})
         return None if len(url_list) else plotly_urls
 
-    def _reset(self):
-        self.mat_coll.remove()
-        self.comp_coll.remove()
-
     def delete(self, cids):
         for coll in [self.mat_coll, self.comp_coll]:
             unset_dict = {}
@@ -119,7 +115,6 @@ class MPContributionsBuilder():
         """update materials/compositions collections with contributed data"""
         # TODO check all DB calls, consolidate in aggregation call?
         for doc in self.contribution_groups:
-            print 'building {} ...'.format(doc['_id'])
             for cid in doc['contrib_ids']:
                 if cids is not None and cid not in cids: continue
                 # identifiers, contributor check, project
@@ -130,6 +125,7 @@ class MPContributionsBuilder():
                     "allowed due to insufficient permissions of {}! Ask "
                     "someone of {} to make you a collaborator on {}.".format(
                         cid_short, contributor_email, contrib['collaborators'], cid_short))
+                print 'building #{} into {} ...'.format(cid_short, doc['_id'])
                 author = Author.parse_author(contributor_email)
                 project = str(author.name).translate(None, '.').replace(' ','_') \
                         if 'project' not in contrib else contrib['project']
