@@ -36,19 +36,7 @@ class ContributionMongoAdapter(object):
     """adapter/interface for user contributions"""
     def __init__(self, db=None):
         self.db = db
-        if self.db is not None:
-            self.id_assigner = db.contribution_id_assigner
-            self.contributions = db.contributions
-            self.materials = db.materials
-            self.available_mp_ids = []
-            for doc in self.materials.aggregate([
-                { '$project': { 'task_id': 1, '_id': 0 } },
-                { '$match':  { 'task_id': { '$regex': '^mp-[0-9]{1}$' } } },
-            ], cursor={}):
-                self.available_mp_ids.append(doc['task_id'])
-            if len(self.available_mp_ids) == 0:
-                raise ValueError('No mp_ids available! Check DB connection!')
-        else:
+        if self.db is None:
             self.current_contribution_id = 0
         try:
             from faker import Faker
@@ -57,7 +45,7 @@ class ContributionMongoAdapter(object):
             self.fake = None
 
     @classmethod
-    def from_config(cls, db_yaml='materials_db_dev.yaml'):
+    def from_config(cls, db_yaml='mpcontribs_db.yaml'):
         from pymongo import MongoClient
         config = loadfn(os.path.join(os.environ['DB_LOC'], db_yaml))
         client = MongoClient(config['host'], config['port'], j=False)
@@ -67,9 +55,10 @@ class ContributionMongoAdapter(object):
 
     def _reset(self):
         """reset all collections"""
-        self.contributions.remove()
-        self.id_assigner.remove()
-        self.id_assigner.insert({'next_contribution_id': 1})
+        self.db.id_assigner.remove()
+        self.db.contributions.remove()
+        self.db.materials.remove()
+        self.db.id_assigner.insert({'next_contribution_id': 1})
 
     def _get_next_contribution_id(self):
         """get the next contribution id"""
@@ -77,17 +66,28 @@ class ContributionMongoAdapter(object):
             self.current_contribution_id += 1
             return self.current_contribution_id
         else:
-            return self.id_assigner.find_and_modify(
+            return self.db.id_assigner.find_and_modify(
                 update={'$inc': {'next_contribution_id': 1}}
             )['next_contribution_id']
+
+    def _get_available_mp_ids(self):
+        available_mp_ids = []
+        for doc in self.db.materials.aggregate([
+            { '$project': { 'task_id': 1, '_id': 0 } },
+            { '$match':  { 'task_id': { '$regex': '^mp-[0-9]{1}$' } } },
+        ], cursor={}):
+            available_mp_ids.append(doc['task_id'])
+        if len(available_mp_ids) == 0:
+            raise ValueError('No mp_ids available! Check DB connection!')
+        return available_mp_ids
 
     def query_contributions(self, crit):
         props = [ '_id', 'collaborators', 'mp_cat_id', 'contribution_id' ]
         proj = dict((p, int(p!='_id')) for p in props)
-        return self.contributions.find(crit, proj)
+        return self.db.contributions.find(crit, proj)
 
     def delete_contributions(self, crit):
-        return self.contributions.remove(crit)
+        return self.db.contributions.remove(crit)
 
     def submit_contribution(self, mpfile, contributor_email, cids=None,
         fake_it=False, insert=False, project=None):
@@ -111,13 +111,13 @@ class ContributionMongoAdapter(object):
         contributions = []
         for idx,(k,v) in enumerate(mpfile.document.iteritems()):
             mp_cat_id = k.split('--')[0] if not fake_it or self.fake is None else \
-                    self.fake.random_element(elements=self.available_mp_ids)
+                    self.fake.random_element(elements=self._get_available_mp_ids())
             # new submission vs update
             cid = self._get_next_contribution_id() if cids is None else cids[idx]
             # check contributor permissions if update mode
             collaborators = [contributor_email]
             if cids is not None:
-                collaborators = self.contributions.find_one(
+                collaborators = self.db.contributions.find_one(
                     {'contribution_id': cid}, {'_id': 0, 'collaborators': 1}
                 )['collaborators']
                 if contributor_email not in collaborators:
@@ -138,8 +138,8 @@ class ContributionMongoAdapter(object):
             if project is not None: doc['project'] = project
             if insert:
                 logging.info('inserting {} ...'.format(doc['contribution_id']))
-                #self.contributions.replace_one({'contribution_id': cid}, doc, upsert=True)
-                self.contributions.find_and_modify({'contribution_id': cid}, doc, upsert=True)
+                #self.db.contributions.replace_one({'contribution_id': cid}, doc, upsert=True)
+                self.db.contributions.find_and_modify({'contribution_id': cid}, doc, upsert=True)
                 contributions.append(doc['contribution_id'])
             else:
                 contributions.append(doc)
