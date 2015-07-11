@@ -94,7 +94,7 @@ def main():
     )
     parser_submit.add_argument('mpfile', type=str, help='MPFile to submit')
     parser_submit.add_argument(
-        '--cids', type=int, nargs='+',
+        '--cids', type=int, nargs='+', # TODO int->str for ObjectId (shortened?)
         help="""list of contribution IDs to be updated w/ this MPFile"""
     )
     parser_submit.set_defaults(func=submit)

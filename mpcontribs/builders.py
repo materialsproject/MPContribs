@@ -13,7 +13,7 @@ from config import mp_level01_titles
 from utils import Author
 
 class MPContributionsBuilder():
-    """build user contributions from `mg_core_*.contributions`"""
+    """build user contributions from `mpcontribs.contributions`"""
     def __init__(self, db):
         self.db = db
         if isinstance(self.db, list):
