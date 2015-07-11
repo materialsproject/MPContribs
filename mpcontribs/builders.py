@@ -1,4 +1,4 @@
-import os
+import os, re
 import pandas as pd
 import matplotlib
 matplotlib.use('Agg')
@@ -14,9 +14,11 @@ from utils import Author, get_short_object_id, unflatten_dict
 class MPContributionsBuilder():
     """build user contributions from `mpcontribs.contributions`"""
     def __init__(self, db):
+        self.mp_id_pattern = re.compile('mp-\d+', re.IGNORECASE)
         self.db = db
         if isinstance(self.db, list):
             self.mat_coll = RecursiveDict()
+            self.comp_coll = RecursiveDict()
             self.contribution_groups = []
             for key,group in groupby(db, lambda item: item['mp_cat_id']):
                 grp = list(group)
@@ -26,6 +28,7 @@ class MPContributionsBuilder():
                 })
         else:
             self.mat_coll = db.materials
+            self.comp_coll = db.compositions
             self.contribution_groups = self.db.contributions.aggregate([
                 { '$group': {
                     '_id': '$mp_cat_id',
@@ -54,7 +57,7 @@ class MPContributionsBuilder():
                 if 'project' not in contrib else contrib['project']
         cid = str(contrib['_id'])
         subfld = '{}.{}.plotly_urls'.format(project, cid)
-        url_list = [] if isinstance(self.db, list) else list(self.mat_coll.find(
+        url_list = [] if isinstance(self.db, list) else list(self.curr_coll.find(
             {subfld: {'$exists': True}}, {subfld: 1}
         ))
         urls = url_list[0][project][cid]['plotly_urls'] if len(url_list) else []
@@ -85,22 +88,25 @@ class MPContributionsBuilder():
         plotly_urls = RecursiveDict({subfld: urls})
         return None if len(url_list) else plotly_urls
 
-    def _reset(self): self.mat_coll.remove()
+    def _reset(self):
+        self.mat_coll.remove()
+        self.comp_coll.remove()
 
     def delete(self, cids):
-        unset_dict = {}
-        for doc in self.mat_coll.find():
-            for project,d in doc.iteritems():
-                for cid in d:
-                    if cid not in cids: continue
-                    unset_dict['.'.join([project, cid])] = 1
-        if len(unset_dict):
-            self.mat_coll.update({}, {'$unset': unset_dict}, multi=True)
-        # remove `project` field when no contributions remaining
-        for doc in self.mat_coll.find():
-            for project,d in doc.iteritems():
-                if not d: self.mat_coll.update(
-                    {'_id': doc['_id']}, {'$unset': {project: 1}})
+        for coll in [self.mat_coll, self.comp_coll]:
+            unset_dict = {}
+            for doc in coll.find():
+                for project,d in doc.iteritems():
+                    for cid in d:
+                        if cid not in cids: continue
+                        unset_dict['.'.join([project, cid])] = 1
+            if len(unset_dict):
+                coll.update({}, {'$unset': unset_dict}, multi=True)
+            # remove `project` field when no contributions remaining
+            for doc in coll.find():
+                for project,d in doc.iteritems():
+                    if not d:
+                        coll.update({'_id': doc['_id']}, {'$unset': {project: 1}})
 
     def find_contribution(self, cid):
         if isinstance(self.db, list):
@@ -111,8 +117,6 @@ class MPContributionsBuilder():
 
     def build(self, contributor_email, cids=None):
         """update materials/compositions collections with contributed data"""
-        # NOTE: this build is only for contributions tagged with mp-id (a.k.a task_id)
-        # TODO: in general, distinguish mp cat's by format of mp_cat_id
         # TODO check all DB calls, consolidate in aggregation call?
         for doc in self.contribution_groups:
             print 'building {} ...'.format(doc['_id'])
@@ -161,16 +165,18 @@ class MPContributionsBuilder():
                             '{}.{}.tables.rows'.format(project, cid_str): table_rows,
                         })
                 # update collection with tree and table data
+                is_mp_id = self.mp_id_pattern.match(doc['_id'])
+                self.curr_coll = self.mat_coll if is_mp_id else self.comp_coll
                 if isinstance(self.db, list):
                     unflatten_dict(all_data)
-                    self.mat_coll.rec_update(nest_dict(all_data, [doc['_id']]))
+                    self.curr_coll.rec_update(nest_dict(all_data, [doc['_id']]))
                 else:
-                    self.mat_coll.update({'_id': doc['_id']}, {'$set': all_data}, upsert=True)
+                    self.curr_coll.update({'_id': doc['_id']}, {'$set': all_data}, upsert=True)
                 # interactive graphs
                 plotly_urls = self.plot(contributor_email, contrib)
                 if plotly_urls is not None:
                     if isinstance(self.db, list):
                         unflatten_dict(plotly_urls)
-                        self.mat_coll.rec_update(nest_dict(plotly_urls, [doc['_id']]))
+                        self.curr_coll.rec_update(nest_dict(plotly_urls, [doc['_id']]))
                     else:
-                        self.mat_coll.update({'_id': doc['_id']}, {'$set': plotly_urls})
+                        self.curr_coll.update({'_id': doc['_id']}, {'$set': plotly_urls})
