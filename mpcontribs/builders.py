@@ -91,7 +91,7 @@ class MPContributionsBuilder():
             ], cursor={})
 
     @classmethod
-    def from_config(cls, db_yaml='materials_db_dev.yaml'):
+    def from_config(cls, db_yaml='mpcontribs_db.yaml'):
         from pymongo import MongoClient
         config = loadfn(os.path.join(os.environ['DB_LOC'], db_yaml))
         client = MongoClient(config['host'], config['port'], j=False)
