@@ -4,20 +4,17 @@ from rest import ContributionMongoAdapter
 from builders import MPContributionsBuilder
 
 cma = ContributionMongoAdapter.from_config()
+mcb = MPContributionsBuilder(cma.db)
 
 def fake(args):
     cids = cma.fake_multiple_contributions(num_contributions=args.num)
-    if cids is not None:
-        mcb = MPContributionsBuilder(cma.db)
-        mcb.build(args.contributor, cids=cids)
+    if cids is not None: mcb.build(args.contributor, cids=cids)
 
 def submit(args):
     if os.path.isfile(args.mpfile):
         mpfile = MPFile.from_file(args.mpfile)
         cids = cma.submit_contribution(mpfile, args.contributor)
-        if cids is not None:
-            mcb = MPContributionsBuilder(cma.db)
-            mcb.build(args.contributor, cids=cids)
+        if cids is not None: mcb.build(args.contributor, cids=cids)
 
 def reset(args): cma._reset()
 
