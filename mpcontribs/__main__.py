@@ -33,6 +33,6 @@ if __name__ == '__main__':
     if cids is not None:
         mcb = MPContributionsBuilder.from_config()
         if args.reset: mcb._reset()
-        mcb.build(cids=cids) # `cids=None` to build all contributions
+        mcb.build(args.contributor, cids=cids) # `cids=None` to build all contributions
     else:
         print 'no contributions to build'

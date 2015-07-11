@@ -1,6 +1,21 @@
-import os
+import os, re
 from collections import namedtuple
 from six import string_types
+from io.utils import nest_dict
+
+def get_short_object_id(cid): return str(cid)[-6:]
+
+def flatten_dict(dd, separator='.', prefix=''):
+    """http://stackoverflow.com/a/19647596"""
+    return { prefix + separator + k if prefix else k : v
+            for kk, vv in dd.items()
+            for k, v in flatten_dict(vv, separator, kk).items()
+           } if isinstance(dd, dict) else { prefix : dd }
+
+def unflatten_dict(d):
+    for k in d:
+        value, keys = d.pop(k), k.split('.')
+        d.rec_update(nest_dict({keys[-1]: value}, keys[:-1]))
 
 # from pymatgen.matproj.snl
 class Author(namedtuple('Author', ['name', 'email'])):

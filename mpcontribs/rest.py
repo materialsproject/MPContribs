@@ -1,5 +1,6 @@
 from config import mp_level01_titles
 from bson.objectid import ObjectId
+from utils import get_short_object_id
 
 class ContributionMongoAdapter(object):
     """adapter/interface for user contributions"""
@@ -22,18 +23,13 @@ class ContributionMongoAdapter(object):
         db.authenticate(config['username'], config['password'])
         return ContributionMongoAdapter(db)
 
-    def _reset(self):
-        """reset all collections"""
-        self.db.contributions.remove()
+    def _reset(self): self.db.contributions.remove()
 
     def _get_mp_category_id(self, key, fake_it):
         not_fake = (not fake_it or self.fake is None)
         return key.split('--')[0] if not_fake else self.fake.random_element(
             elements=['mp-{}'.format(i) for i in range(1, 5)]
         )
-
-    def _get_short_object_id(self, cid):
-        return str(cid)[-6:]
 
     def query_contributions(self, crit):
         # TODO open `content` for arbitrary query
@@ -70,7 +66,7 @@ class ContributionMongoAdapter(object):
             # identifiers
             mp_cat_id = self._get_mp_category_id(k, fake_it)
             cid = ObjectId() if cids is None else cids[idx] # new vs update
-            cid_short = self._get_short_object_id(cid)
+            cid_short = get_short_object_id(cid)
             # check contributor permissions if update mode
             collaborators = [contributor_email]
             if cids is not None:
