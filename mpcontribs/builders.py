@@ -97,87 +97,67 @@ class MPContributionsBuilder():
         else:
             return self.db.contributions.find_one({'_id': cid})
 
-    def get_contribution_groups(self):
-        if isinstance(self.db, list):
-            contribution_groups = []
-            for key,group in groupby(db, lambda item: item['mp_cat_id']):
-                grp = list(group)
-                contribution_groups.append({
-                    '_id': key, 'num_contribs': len(grp),
-                    'contrib_ids': [ el['_id'] for el in grp ]
-                })
-        else:
-            contribution_groups = self.db.contributions.aggregate([
-                { '$group': {
-                    '_id': '$mp_cat_id',
-                    'num_contribs': { '$sum': 1 },
-                    'contrib_ids': { '$addToSet': '$_id' }
-                }}
-            ], cursor={})
-        return contribution_groups
-
-    def build(self, contributor_email, cids=None):
+    def build(self, contributor_email, cid):
         """update materials/compositions collections with contributed data"""
-        # TODO check all DB calls, consolidate in aggregation call?
-        for doc in self.get_contribution_groups():
-            for cid in doc['contrib_ids']:
-                if cids is not None and cid not in cids: continue
-                # identifiers, contributor check, project
-                cid_short, cid_str = get_short_object_id(cid), str(cid)
-                contrib = self.find_contribution(cid)
-                if contributor_email not in contrib['collaborators']: raise ValueError(
-                    "Build stopped: building contribution {} not "
-                    "allowed due to insufficient permissions of {}! Ask "
-                    "someone of {} to make you a collaborator on {}.".format(
-                        cid_short, contributor_email, contrib['collaborators'], cid_short))
-                print 'building #{} into {} ...'.format(cid_short, doc['_id'])
-                author = Author.parse_author(contributor_email)
-                project = str(author.name).translate(None, '.').replace(' ','_') \
-                        if 'project' not in contrib else contrib['project']
-                # prepare tree and table data
-                all_data = RecursiveDict()
-                for key,value in contrib['content'].iteritems():
-                    if key == 'plots' or key.startswith(mp_level01_titles[1]+'_'): continue
-                    all_data.rec_update(nest_dict(
-                        value, ['{}.{}.tree_data'.format(project, cid_str), key]
+        cid_short, cid_str = get_short_object_id(cid), str(cid)
+        contrib = self.find_contribution(cid)
+        mp_cat_id = contrib['mp_cat_id']
+        is_mp_id = self.mp_id_pattern.match(mp_cat_id)
+        self.curr_coll = self.mat_coll if is_mp_id else self.comp_coll
+        if contributor_email not in contrib['collaborators']: raise ValueError(
+            "Build stopped: building contribution {} not "
+            "allowed due to insufficient permissions of {}! Ask "
+            "someone of {} to make you a collaborator on {}.".format(
+                cid_short, contributor_email, contrib['collaborators'], cid_short))
+        author = Author.parse_author(contributor_email)
+        project = str(author.name).translate(None, '.').replace(' ','_') \
+                if 'project' not in contrib else contrib['project']
+        # prepare tree and table data
+        all_data = RecursiveDict()
+        for key,value in contrib['content'].iteritems():
+            if key == 'plots' or key.startswith(mp_level01_titles[1]+'_'): continue
+            all_data.rec_update(nest_dict(
+                value, ['{}.{}.tree_data'.format(project, cid_str), key]
+            ))
+        if 'plots' in contrib['content']:
+            # TODO also include non-default tables (multiple tables support)
+            table_columns, table_rows = None, None
+            table_name = contrib['content']['plots']['default']['table']
+            raw_data = contrib['content'][table_name]
+            if isinstance(raw_data, dict):
+                table_columns = [ { 'title': k } for k in raw_data ]
+                table_rows = [
+                    [ str(raw_data[d['title']][row_index]) for d in table_columns ]
+                    for row_index in xrange(len(
+                        raw_data[table_columns[0]['title']]
                     ))
-                if 'plots' in contrib['content']:
-                    # TODO also include non-default tables (multiple tables support)
-                    table_columns, table_rows = None, None
-                    table_name = contrib['content']['plots']['default']['table']
-                    raw_data = contrib['content'][table_name]
-                    if isinstance(raw_data, dict):
-                        table_columns = [ { 'title': k } for k in raw_data ]
-                        table_rows = [
-                            [ str(raw_data[d['title']][row_index]) for d in table_columns ]
-                            for row_index in xrange(len(
-                                raw_data[table_columns[0]['title']]
-                            ))
-                        ]
-                    elif isinstance(raw_data, list):
-                        table_columns = [ { 'title': k } for k in raw_data[0] ]
-                        table_rows = [
-                            [ str(row[d['title']]) for d in table_columns ]
-                            for row in raw_data
-                        ]
-                    if table_columns is not None:
-                        all_data.rec_update({
-                            '{}.{}.tables.columns'.format(project, cid_str): table_columns,
-                            '{}.{}.tables.rows'.format(project, cid_str): table_rows,
-                        })
-                # update collection with tree and table data
-                is_mp_id = self.mp_id_pattern.match(doc['_id'])
-                self.curr_coll = self.mat_coll if is_mp_id else self.comp_coll
-                if isinstance(self.db, list):
-                    unflatten_dict(all_data)
-                    self.curr_coll.rec_update(nest_dict(all_data, [doc['_id']]))
-                else:
-                    self.curr_coll.update({'_id': doc['_id']}, {'$set': all_data}, upsert=True)
-                # interactive graphs
-                plotly_urls = self.plot(contributor_email, contrib)
-                if plotly_urls is not None:
-                    if isinstance(self.db, list):
-                        unflatten_dict(plotly_urls)
-                        self.curr_coll.rec_update(nest_dict(plotly_urls, [doc['_id']]))
-                    else:
-                        self.curr_coll.update({'_id': doc['_id']}, {'$set': plotly_urls})
+                ]
+            elif isinstance(raw_data, list):
+                table_columns = [ { 'title': k } for k in raw_data[0] ]
+                table_rows = [
+                    [ str(row[d['title']]) for d in table_columns ]
+                    for row in raw_data
+                ]
+            if table_columns is not None:
+                all_data.rec_update({
+                    '{}.{}.tables.columns'.format(project, cid_str): table_columns,
+                    '{}.{}.tables.rows'.format(project, cid_str): table_rows,
+                })
+        # update collection with tree and table data
+        if isinstance(self.db, list):
+            unflatten_dict(all_data)
+            self.curr_coll.rec_update(nest_dict(all_data, [mp_cat_id]))
+        else:
+            self.curr_coll.update({'_id': mp_cat_id}, {'$set': all_data}, upsert=True)
+        # interactive graphs
+        plotly_urls = self.plot(contributor_email, contrib)
+        if plotly_urls is not None:
+            if isinstance(self.db, list):
+                unflatten_dict(plotly_urls)
+                self.curr_coll.rec_update(nest_dict(plotly_urls, [mp_cat_id]))
+            else:
+                self.curr_coll.update({'_id': mp_cat_id}, {'$set': plotly_urls})
+        # return URL for the contribution page
+        return '{}/{}/contributions/{}'.format(
+            ('materials' if is_mp_id else 'compositions'),
+            mp_cat_id, cid_short) # TODO: implement on frontend, short cid sufficient?
