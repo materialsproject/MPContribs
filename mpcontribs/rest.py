@@ -28,11 +28,11 @@ class ContributionMongoAdapter(object):
         self.db.materials.remove()
         self.db.compositions.remove()
 
-    def _get_mp_category_id(self, key, fake_it):
-        not_fake = (not fake_it or self.fake is None)
-        return key.split('--')[0] if not_fake else self.fake.random_element(
-            elements=['mp-{}'.format(i) for i in range(1, 5)]
-        )
+    #def _get_mp_category_id(self, key, fake_it):
+    #    not_fake = (not fake_it or self.fake is None)
+    #    return key.split('--')[0] if not_fake else self.fake.random_element(
+    #        elements=['mp-{}'.format(i) for i in range(1, 5)]
+    #    )
 
     def query_contributions(self, crit):
         # TODO open `content` for arbitrary query
@@ -43,64 +43,36 @@ class ContributionMongoAdapter(object):
     def delete_contributions(self, crit):
         return self.db.contributions.remove(crit)
 
-    def submit_contribution(self, mpfile, contributor_email, cids=None,
-        fake_it=False, project=None):
-        """submit user data to `mpcontribs.contributions` collection
+    def submit_contribution(self, mpfile, contributor_email, project=None):
+        """submit a single contribution to `mpcontribs.contributions` collection"""
+        mp_cat_id, data = mpfile.document.popitem(last=False)
+        update, cid = False, ObjectId() # TODO: new vs update
+        cid_short = get_short_object_id(cid)
+        collaborators = [contributor_email]
+        if update: # check contributor permissions if update mode
+            collaborators = self.db.contributions.find_one(
+                {'_id': cid}, {'collaborators': 1}
+            )['collaborators']
+            if contributor_email not in collaborators: raise ValueError(
+                "Submission stopped: update of contribution #{} not "
+                "allowed due to insufficient permissions of {}! Ask "
+                "someone of {} to make you a collaborator on #{}.".format(
+                    cid_short, contributor_email, collaborators, cid_short))
+        # prepare document
+        doc = { 'collaborators': collaborators, 'mp_cat_id': mp_cat_id, 'content': data }
+        if project is not None: doc['project'] = project
+        if self.db is None: return doc
+        self.db.contributions.find_and_modify({'_id': cid}, doc, upsert=True)
+        return cid
 
-        Args:
-        mpfile: MPFile object containing contribution data
-        cids: contribution IDs, None if new contribution else update/replace
-        """
-        # apply general level-0 section on all other level-0 sections if existent
-        # TODO prepend not append to contribution
-        general_title = mp_level01_titles[0]
-        if general_title in mpfile.document:
-            general_data = mpfile.document.pop(general_title)
-            for k in mpfile.document:
-                mpfile.document[k].rec_update({general_title: general_data})
-        # check whether length of cids and mpfile.document match
-        # TODO shouldn't be necessary once update is based on embedded `cid`
-        if cids is not None and len(cids) != len(mpfile.document):
-            raise ValueError("number of contribution IDs provided does not "
-                             "match number of mp_cat_id's in MPFile!")
-        # treat every mp_cat_id as separate database insert
-        contributions = []
-        for idx,(k,v) in enumerate(mpfile.document.iteritems()):
-            # identifiers
-            mp_cat_id = self._get_mp_category_id(k, fake_it)
-            cid = ObjectId() if cids is None else cids[idx] # new vs update
-            cid_short = get_short_object_id(cid)
-            # check contributor permissions if update mode
-            collaborators = [contributor_email]
-            if cids is not None:
-                collaborators = self.db.contributions.find_one(
-                    {'_id': cid}, {'collaborators': 1}
-                )['collaborators']
-                if contributor_email not in collaborators: raise ValueError(
-                    "Submission stopped: update of contribution {} not "
-                    "allowed due to insufficient permissions of {}! Ask "
-                    "someone of {} to make you a collaborator on {}.".format(
-                        cid_short, contributor_email, collaborators, cid_short))
-            # prepare document
-            doc = {'collaborators': collaborators,
-                   'mp_cat_id': mp_cat_id, 'content': v}
-            if project is not None: doc['project'] = project
-            if self.db is not None:
-                print 'submitting contribution #{} ...'.format(cid_short)
-                self.db.contributions.find_and_modify({'_id': cid}, doc, upsert=True)
-                contributions.append(cid)
-            else:
-                contributions.append(doc)
-        return contributions
-
-    def fake_multiple_contributions(self, num_contributions=20):
-        """fake the submission of many contributions"""
-        if self.fake is None:
-            print 'Install fake-factory to fake submissions'
-            return 'Nothing done.'
-        from fake.v1 import MPFakeFile
-        for n in range(num_contributions):
-            f = MPFakeFile(usable=True, main_general=self.fake.pybool())
-            mpfile = f.make_file()
-            contributor = '%s <%s>' % (self.fake.name(), self.fake.email())
-            self.submit_contribution(mpfile, contributor, fake_it=True)
+    #def fake_multiple_contributions(self, num_contributions=20):
+    #    """fake the submission of many contributions"""
+    #    if self.fake is None:
+    #        print 'Install fake-factory to fake submissions'
+    #        return 'Nothing done.'
+    #    from fake.v1 import MPFakeFile
+    #    for n in range(num_contributions):
+    #        f = MPFakeFile(usable=True, main_general=self.fake.pybool())
+    #        mpfile = f.make_file()
+    #        contributor = '%s <%s>' % (self.fake.name(), self.fake.email())
+    #        self.submit_mpfile(mpfile, contributor, fake_it=True)
