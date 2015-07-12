@@ -12,6 +12,7 @@ from utils.connector import DBSandbox
 from materials_django.settings import PYMATGEN_VERSION, DB_VERSION
 from utils.encoders import MongoJSONEncoder
 from mpcontribs.io.mpfile import MPFile
+from bson.objectid import ObjectId
 
 logger = logging.getLogger('mg.' + __name__)
 
@@ -87,17 +88,30 @@ def submit_contribution(request, mdb=None):
         raise PermissionDenied("MPFile submission open only to staff right now.")
     project = request.user.institution # institution is required field in User
     contributor = '{} {} <{}>'.format(
-        request.user.first_name, request.user.last_name, request.user.email
-    )
+        request.user.first_name, request.user.last_name, request.user.email)
     try:
         mpfile = MPFile.from_string(request.POST['mpfile'])
         if len(mpfile.document) > 1:
             raise ValueError('Invalid MPFile: Only single contributions allowed')
         cid = mdb.contrib_ad.submit_contribution(mpfile, contributor, project=project)
-        #mdb.contrib_build_ad.build(contributor)
     except Exception as ex:
         raise ValueError('"REST Error: "{}"'.format(str(ex)))
     return {"valid_response": True, 'cid': cid}
+
+@mapi_func(supported_methods=["POST", "GET"], requires_api_key=True)
+def build_contribution(request, mdb=None):
+    """Builds a single contribution into according material/composition"""
+    if not request.user.is_staff:
+        raise PermissionDenied("MPFile submission open only to staff right now.")
+    project = request.user.institution # institution is required field in User
+    contributor = '{} {} <{}>'.format(
+        request.user.first_name, request.user.last_name, request.user.email)
+    try:
+        cid = ObjectId(request.POST['cid'])
+        url = mdb.contrib_build_ad.build(contributor, cid)
+    except Exception as ex:
+        raise ValueError('"REST Error: "{}"'.format(str(ex)))
+    return {"valid_response": True, 'url': url}
 
 @mapi_func(supported_methods=["POST", "GET"], requires_api_key=True)
 def query_contribs(request, mdb=None):
