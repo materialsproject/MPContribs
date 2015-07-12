@@ -81,8 +81,8 @@ def mapi_func(supported_methods=("GET", ), requires_api_key=False):
     return wrap
 
 @mapi_func(supported_methods=["POST", "GET"], requires_api_key=True)
-def submit_mpfile(request, mdb=None):
-    """Submits a MPFile."""
+def submit_contribution(request, mdb=None):
+    """Submits a MPFile with a single contribution."""
     if not request.user.is_staff:
         raise PermissionDenied("MPFile submission open only to staff right now.")
     project = request.user.institution # institution is required field in User
@@ -91,13 +91,13 @@ def submit_mpfile(request, mdb=None):
     )
     try:
         mpfile = MPFile.from_string(request.POST['mpfile'])
-        cids = json.loads(request.POST['cids']) if 'cids' in request.POST else None
-        cids = mdb.contrib_ad.submit_contribution(mpfile, contributor,
-                                                  project=project, cids=cids)
-        mdb.contrib_build_ad.build(contributor, cids=cids)
+        if len(mpfile.document) > 1:
+            raise ValueError('Invalid MPFile: Only single contributions allowed')
+        cid = mdb.contrib_ad.submit_contribution(mpfile, contributor, project=project)
+        #mdb.contrib_build_ad.build(contributor)
     except Exception as ex:
         raise ValueError('"REST Error: "{}"'.format(str(ex)))
-    return {"valid_response": True, 'contribution_ids': cids}
+    return {"valid_response": True, 'cid': cid}
 
 @mapi_func(supported_methods=["POST", "GET"], requires_api_key=True)
 def query_contribs(request, mdb=None):
