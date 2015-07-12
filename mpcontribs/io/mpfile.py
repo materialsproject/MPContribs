@@ -48,6 +48,21 @@ class MPFile(six.with_metaclass(ABCMeta)):
         parser.parse(data)
         return MPFile(parser)
 
+    @staticmethod
+    def from_dict(mp_cat_id, data):
+        mpfile = MPFile()
+        mpfile.document.rec_update(nest_dict(data, [mp_cat_id]))
+        return mpfile
+
+    def apply_general_section(self):
+        """apply general level-0 section on all other level-0 sections"""
+        # TODO prepend not append to contribution
+        general_title = mp_level01_titles[0]
+        if general_title in self.document:
+            general_data = self.document.pop(general_title)
+            for k in self.document:
+                self.document[k].rec_update({general_title: general_data})
+
     def get_string(self):
         """Returns a string to be written as a file"""
         lines = []
