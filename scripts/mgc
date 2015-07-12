@@ -1,10 +1,14 @@
 #!/usr/bin/env python
 
-import sys, os, argparse, logging
+import sys, os, argparse
 import random, threading, webbrowser
 from mpcontribs.webui.webui import app
 from mpcontribs.utils import get_short_object_id
+from mpcontribs.io.mpfile import MPFile
+from mpcontribs.rest import ContributionMongoAdapter
+from mpcontribs.builders import MPContributionsBuilder
 
+cma = None
 try:
     from pymatgen.matproj.rest import MPRester
     #ENDPOINT, API_KEY = "https://www.materialsproject.org/rest", os.environ.get('MAPI_KEY')
@@ -15,8 +19,7 @@ except ImportError:
 
 def check_pymatgen():
     if mpr is None:
-        print 'pymatgen not found'
-        sys.exit(0)
+        raise ValueError('pymatgen not found')
 
 def info(args):
     check_pymatgen()
@@ -32,13 +35,27 @@ def info(args):
 
 def submit(args):
     check_pymatgen()
-    print mpr.submit_mpfile(args.mpfile, args.cids)
+    if os.path.isfile(args.mpfile):
+        mpfile = MPFile.from_file(args.mpfile)
+        mpfile.apply_general_section()
+        # split into contributions: treat every mp_cat_id as separate DB insert
+        while len(mpfile.document):
+            key, value = mpfile.document.popitem(last=False)
+            mp_cat_id = key.split('--')[0]
+            MPFile.from_dict(key, value).write_file('tmp')
+            print 'submit contribution for {} ...'.format(mp_cat_id),
+            cid = mpr.submit_contribution('tmp')
+            os.remove('tmp')
+            cid_short = get_short_object_id(cid)
+            print 'done (#{}).'.format(cid_short)
+            #print 'build contribution #{} ...'.format(cid_short),
+            #mpr.build_contribution(cid)
+            #print 'done.'
 
 def delete(args):
     check_pymatgen()
-    print '{} contributions deleted.'.format(
-        mpr.delete_contribs(args.cids)
-    )
+    ndel = mpr.delete_contribs(args.cids)
+    print '{} contributions deleted.'.format(ndel)
 
 def collab_add(args):
     check_pymatgen()
@@ -71,6 +88,25 @@ def viewer(args):
     threading.Timer(1.25, lambda: webbrowser.open(url)).start()
     app.run(port=port, debug=False)
 
+def load_cma():
+    global cma
+    try:
+      cma = ContributionMongoAdapter.from_config()
+    except:
+      raise ValueError("Could't load ContributionMongoAdapter from config")
+
+#def fake(args):
+#    load_cma()
+#    mcb = MPContributionsBuilder(cma.db)
+#    cids = cma.fake_multiple_contributions(num_contributions=args.num)
+#    if cids is not None:
+#      mcb.build(args.contributor, cids=cids)
+
+def reset(args):
+    load_cma()
+    cma._reset()
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="""mgc is a convenience script using the Materials Project's
@@ -94,10 +130,6 @@ def main():
         'submit', help="""submit a MPFile containing the contribution data"""
     )
     parser_submit.add_argument('mpfile', type=str, help='MPFile to submit')
-    parser_submit.add_argument(
-        '--cids', type=int, nargs='+', # TODO int->str for ObjectId (shortened?)
-        help="""list of contribution IDs to be updated w/ this MPFile"""
-    )
     parser_submit.set_defaults(func=submit)
 
     parser_delete = subparsers.add_parser(
@@ -164,6 +196,13 @@ def main():
     parser_viewer.add_argument('-f', '--mpfile', type=str, help="""path to
                                MPFile with which to start the viewer""")
     parser_viewer.set_defaults(func=viewer)
+
+    #parser_fake = subparsers.add_parser('fake', help="""submit fake contributions""")
+    #parser_fake.add_argument('num', type=int, help="""number of contributions""")
+    #parser_fake.set_defaults(func=fake)
+
+    parser_reset = subparsers.add_parser('reset', help="""reset DB""")
+    parser_reset.set_defaults(func=reset)
 
     args = parser.parse_args(None if len(sys.argv) > 1 else ['--help'])
     args.func(args)
