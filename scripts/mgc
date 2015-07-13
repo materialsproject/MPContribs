@@ -57,7 +57,7 @@ def submit(args):
 
 def delete(args):
     check_pymatgen()
-    ndel = mpr.delete_contribs(args.cids)
+    ndel = mpr.delete_contributions(args.cids)
     print '{} contributions deleted.'.format(ndel)
 
 def collab_add(args):
@@ -138,10 +138,8 @@ def main():
     parser_delete = subparsers.add_parser(
         'delete', help="""delete contributions belonging to the contributor"""
     )
-    parser_delete.add_argument(
-        'cids', type=int, nargs='+',
-        help="""list of contribution IDs to be deleted"""
-    )
+    parser_delete.add_argument('cids', nargs='+',
+                               help="""contribution IDs to be deleted.""")
     parser_delete.set_defaults(func=delete)
 
     parser_collab = subparsers.add_parser(
