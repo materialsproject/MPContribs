@@ -74,19 +74,17 @@ class MPContributionsBuilder():
         plotly_urls = RecursiveDict({subfld: urls})
         return None if len(url_list) else plotly_urls
 
-    def delete(self, cids):
+    def delete(self, project, cids):
+        for contrib in self.db.contributions.find({'_id': {'$in': cids}}):
+            mp_cat_id, cid = contrib['mp_cat_id'], contrib['_id']
+            is_mp_id = self.mp_id_pattern.match(mp_cat_id)
+            coll = self.mat_coll if is_mp_id else self.comp_coll
+            key = '.'.join([project, str(cid)])
+            coll.update({}, {'$unset': {key: 1}}, multi=True)
+        # remove `project` field when no contributions remaining
         for coll in [self.mat_coll, self.comp_coll]:
-            unset_dict = {}
-            for doc in coll.find():
-                for project,d in doc.iteritems():
-                    for cid in d:
-                        if cid not in cids: continue
-                        unset_dict['.'.join([project, cid])] = 1
-            if len(unset_dict):
-                coll.update({}, {'$unset': unset_dict}, multi=True)
-            # remove `project` field when no contributions remaining
-            for doc in coll.find():
-                for project,d in doc.iteritems():
+            for doc in coll.find({project: {'$exists': 1}}):
+                for d in doc.itervalues():
                     if not d:
                         coll.update({'_id': doc['_id']}, {'$unset': {project: 1}})
 
