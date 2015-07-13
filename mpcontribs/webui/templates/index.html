@@ -19,14 +19,14 @@
     <p><a href="/">Load New MPFile</a></p>
     <p>Jump to contribution
     {% for value in content.itervalues() %}
-    {% for project_data in value.contributed_data.itervalues() %}
+    {% for project_data in value.itervalues() %}
     {% for cid in project_data %}
      &raquo; <a href="#cid{{ cid }}">#{{ cid }}</a>
     {% endfor %}
     {% endfor %}
     {% endfor %}</p>
     {% for key,value in content.iteritems() %}
-    {% for project,project_data in value.contributed_data.iteritems() %}
+    {% for project,project_data in value.iteritems() %}
     {% for cid,cid_data in project_data.iteritems() %}
     <a name="cid{{ cid }}"></a><h1>{{ key }} &raquo; {{ project }} &raquo; #{{ cid }}</h1>
     <a href="#top">back to top</a>

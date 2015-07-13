@@ -16,7 +16,7 @@ class MPContributionsBuilder():
     def __init__(self, db):
         self.mp_id_pattern = re.compile('mp-\d+', re.IGNORECASE)
         self.db = db
-        if isinstance(self.db, list):
+        if isinstance(self.db, dict):
             self.mat_coll = RecursiveDict()
             self.comp_coll = RecursiveDict()
         else:
@@ -43,13 +43,13 @@ class MPContributionsBuilder():
                 if 'project' not in contrib else contrib['project']
         cid = str(contrib['_id'])
         subfld = '{}.{}.plotly_urls'.format(project, cid)
-        url_list = [] if isinstance(self.db, list) else list(self.curr_coll.find(
+        url_list = [] if isinstance(self.db, dict) else list(self.curr_coll.find(
             {subfld: {'$exists': True}}, {subfld: 1}
         ))
         urls = url_list[0][project][cid]['plotly_urls'] if len(url_list) else []
         for nplot,plotopts in enumerate(contrib['content']['plots'].itervalues()):
             filename = '{}_{}_{}'.format(
-                ('viewer' if isinstance(self.db, list) else 'mp'), cid, nplot)
+                ('viewer' if isinstance(self.db, dict) else 'mp'), cid, nplot)
             fig, ax = plt.subplots(1, 1)
             table_name = plotopts.pop('table')
             data = contrib['content'][table_name]
@@ -89,11 +89,8 @@ class MPContributionsBuilder():
                         coll.update({'_id': doc['_id']}, {'$unset': {project: 1}})
 
     def find_contribution(self, cid):
-        if isinstance(self.db, list):
-            for doc in self.db:
-                if doc['_id'] == cid: return doc
-        else:
-            return self.db.contributions.find_one({'_id': cid})
+        if isinstance(self.db, dict): return self.db
+        else: return self.db.contributions.find_one({'_id': cid})
 
     def build(self, contributor_email, cid):
         """update materials/compositions collections with contributed data"""
@@ -142,7 +139,7 @@ class MPContributionsBuilder():
                     '{}.{}.tables.rows'.format(project, cid_str): table_rows,
                 })
         # update collection with tree and table data
-        if isinstance(self.db, list):
+        if isinstance(self.db, dict):
             unflatten_dict(all_data)
             self.curr_coll.rec_update(nest_dict(all_data, [mp_cat_id]))
         else:
@@ -150,12 +147,14 @@ class MPContributionsBuilder():
         # interactive graphs
         plotly_urls = self.plot(contributor_email, contrib)
         if plotly_urls is not None:
-            if isinstance(self.db, list):
+            if isinstance(self.db, dict):
                 unflatten_dict(plotly_urls)
                 self.curr_coll.rec_update(nest_dict(plotly_urls, [mp_cat_id]))
             else:
                 self.curr_coll.update({'_id': mp_cat_id}, {'$set': plotly_urls})
-        # return URL for the contribution page
-        return '{}/{}/contributions/{}'.format(
-            ('materials' if is_mp_id else 'compositions'),
-            mp_cat_id, cid_short) # TODO: implement on frontend, short cid sufficient?
+        if isinstance(self.db, dict):
+            return self.curr_coll
+        else:
+            return '{}/{}/contributions/{}'.format( # return URL for contribution page
+                ('materials' if is_mp_id else 'compositions'),
+                mp_cat_id, cid_short) # TODO: implement on frontend, short cid sufficient?
