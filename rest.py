@@ -177,7 +177,7 @@ class MPRester(object):
         except Exception as ex:
             raise MPRestError(str(ex))
 
-    def delete_contribs(self, cids):
+    def delete_contributions(self, cids):
         """
         Delete a list of contributions from the Materials Project site.
 
