@@ -19,3 +19,5 @@ csv_database = os.path.join(
   os.path.dirname(os.path.realpath(__file__)),
   '../test_files/lahman-csv_2014-02-14'
 )
+#SITE = 'https://www.materialsproject.org'
+SITE = 'http://localhost:8000'

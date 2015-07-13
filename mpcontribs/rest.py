@@ -61,7 +61,9 @@ class ContributionMongoAdapter(object):
         # prepare document
         doc = { 'collaborators': collaborators, 'mp_cat_id': mp_cat_id, 'content': data }
         if project is not None: doc['project'] = project
-        if self.db is None: return doc
+        if self.db is None:
+            doc['_id'] = cid
+            return doc
         self.db.contributions.find_and_modify({'_id': cid}, doc, upsert=True)
         return cid
 

@@ -1,8 +1,6 @@
-import json, os, pwd
+import json, os
 from flask import Flask, render_template, request
-from mpcontribs.io.mpfile import MPFile
-from mpcontribs.rest import ContributionMongoAdapter
-from mpcontribs.builders import MPContributionsBuilder
+from mpcontribs.utils import submit_mpfile, get_short_object_id
 tmpl_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates')
 stat_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static')
 app = Flask('webui', template_folder=tmpl_dir, static_folder=stat_dir)
@@ -13,11 +11,12 @@ app.config['JSON_SORT_KEYS'] = False
 def index(path):
     if not path and request.method == 'GET':
         return render_template('choose.html')
-    full_name = pwd.getpwuid(os.getuid())[4]
-    contributor = '{} <phuck@lbl.gov>'.format(full_name)
-    mpfile = MPFile.from_file(path if path else request.files['file'])
-    cma = ContributionMongoAdapter()
-    docs = cma.submit_contribution(mpfile, contributor)
-    mcb = MPContributionsBuilder(docs)
-    mcb.build(contributor)
-    return render_template('index.html', content=mcb.mat_coll)
+    mpfile = path if path else request.files['file']
+    content = submit_mpfile(mpfile)
+    for value in content.itervalues():
+        for project_data in value.itervalues():
+            for cid in project_data:
+                cid_short = get_short_object_id(cid)
+                d = project_data.pop(cid)
+                project_data[cid_short] = d
+    return render_template('index.html', content=content)

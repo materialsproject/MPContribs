@@ -1,9 +1,52 @@
-import os, re
+import os, re, pwd
 from collections import namedtuple
 from six import string_types
-from io.utils import nest_dict
+from io.utils import nest_dict, RecursiveDict
+from mpcontribs.config import SITE
 
 def get_short_object_id(cid): return str(cid)[-6:]
+
+def submit_mpfile(mpfile, target=None):
+    # TODO re-compile MPFile with embedded contribution IDs
+    if isinstance(mpfile, string_types) and not os.path.isfile(mpfile):
+        print '{} not found'.format(mpfile)
+        return
+    from mpcontribs.io.mpfile import MPFile
+    if target is None:
+        from mpcontribs.rest import ContributionMongoAdapter
+        from mpcontribs.builders import MPContributionsBuilder
+        full_name = pwd.getpwuid(os.getuid())[4]
+        contributor = '{} <phuck@lbl.gov>'.format(full_name)
+        cma = ContributionMongoAdapter()
+        build_doc = RecursiveDict()
+    mpfile = MPFile.from_file(mpfile)
+    mpfile.apply_general_section()
+    # split into contributions: treat every mp_cat_id as separate DB insert
+    while len(mpfile.document):
+        key, value = mpfile.document.popitem(last=False)
+        mp_cat_id = key.split('--')[0]
+        mpfile_single = MPFile.from_dict(mp_cat_id, value)
+        print 'submit contribution for {} ...'.format(mp_cat_id)
+        if target is not None:
+            mpfile_single.write_file('tmp')
+            cid = target.submit_contribution('tmp')
+            os.remove('tmp')
+            cid_short = get_short_object_id(cid)
+        else:
+            doc = cma.submit_contribution(mpfile_single, contributor)
+            cid_short = get_short_object_id(doc['_id'])
+        print '> submitted as #{}'.format(cid_short)
+        print '> build contribution #{} into {} ...'.format(cid_short, mp_cat_id)
+        if target is not None:
+            url = target.build_contribution(cid)
+            print '> built #{}, see {}/{}'.format(cid_short, SITE, url)
+        else:
+            mcb = MPContributionsBuilder(doc)
+            single_build_doc = mcb.build(contributor, doc['_id'])
+            build_doc.rec_update(single_build_doc)
+            print '> built #{}'.format(cid_short)
+    if target is None:
+        return build_doc
 
 def flatten_dict(dd, separator='.', prefix=''):
     """http://stackoverflow.com/a/19647596"""
