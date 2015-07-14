@@ -1,5 +1,5 @@
 from collections import OrderedDict, Mapping
-from ..config import indent_symbol, min_separator_length
+from ..config import indent_symbol, min_separator_length, mp_level01_titles
 import pandas as pd
 import numpy as np
 
@@ -24,6 +24,8 @@ class RecursiveDict(OrderedDict):
         self.items = []
         for key,value in d.iteritems():
             if isinstance(value, Mapping):
+                # FIXME: currently skipping all plots sections in output
+                if self.level == 1 and key == mp_level01_titles[2]: continue
                 yield get_indentor(n=self.level), key
                 self.level += 1
                 iterator = self.iterate(nested_dict=value)
