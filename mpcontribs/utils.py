@@ -36,6 +36,7 @@ def submit_mpfile(path_or_mpfile, target=None):
             doc = cma.submit_contribution(mpfile_single, contributor)
             cid_short = get_short_object_id(doc['_id'])
         print '> submitted as #{}'.format(cid_short)
+        # TODO embed cid into mpfile
         print '> build contribution #{} into {} ...'.format(cid_short, mp_cat_id)
         if target is not None:
             url = target.build_contribution(cid)
@@ -45,7 +46,13 @@ def submit_mpfile(path_or_mpfile, target=None):
             single_build_doc = mcb.build(contributor, doc['_id'])
             build_doc.rec_update(single_build_doc)
             print '> built #{}'.format(cid_short)
-    if target is None:
+    if target is not None and \
+       isinstance(path_or_mpfile, string_types) and \
+       os.path.isfile(path_or_mpfile):
+        # re-compile and write MPFile with embedded contribution IDs
+        mpfile.make_general_section()
+        mpfile.write_file(path_or_mpfile, with_comments=True)
+    else:
         return build_doc
 
 def flatten_dict(dd, separator='.', prefix=''):
