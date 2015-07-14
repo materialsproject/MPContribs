@@ -96,7 +96,9 @@ class MPFile(six.with_metaclass(ABCMeta)):
             for idx, mp_cat_id in enumerate(self.document.keys()):
                 general_section = self.document[mp_cat_id].pop(mp_level01_titles[0])
                 if not idx:
-                    self.document[mp_level01_titles[0]] = general_section
+                    self.document.insert_before(
+                        mp_cat_id, (mp_level01_titles[0], general_section)
+                    )
 
     def get_string(self, with_comments=False):
         """Returns a string to be written as a file"""

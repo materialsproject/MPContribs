@@ -1,9 +1,10 @@
-from collections import OrderedDict, Mapping
+from collections import OrderedDict as _OrderedDict
+from collections import Mapping as _Mapping
 from ..config import indent_symbol, min_separator_length, mp_level01_titles
 import pandas as pd
 import numpy as np
 
-class RecursiveDict(OrderedDict):
+class RecursiveDict(_OrderedDict):
     """extension of dict for internal representation of MPFile"""
 
     def rec_update(self, other):
@@ -23,7 +24,7 @@ class RecursiveDict(OrderedDict):
         if nested_dict is None: self.level = 0
         self.items = []
         for key,value in d.iteritems():
-            if isinstance(value, Mapping):
+            if isinstance(value, _Mapping):
                 # FIXME: currently skipping all plots sections in output
                 if self.level == 1 and key == mp_level01_titles[2]: continue
                 yield get_indentor(n=self.level), key
@@ -42,6 +43,23 @@ class RecursiveDict(OrderedDict):
                 self.items.append((key, value))
             else:
                 yield key, value
+
+    # insertion mechanism from https://gist.github.com/jaredks/6276032
+    def __insertion(self, link_prev, key_value):
+        key, value = key_value
+        if link_prev[2] != key:
+            if key in self:
+                del self[key]
+            link_next = link_prev[1]
+            self._OrderedDict__map[key] = link_prev[1] = link_next[0] = [link_prev, link_next, key]
+        dict.__setitem__(self, key, value)
+
+    def insert_after(self, existing_key, key_value):
+        self.__insertion(self._OrderedDict__map[existing_key], key_value)
+
+    def insert_before(self, existing_key, key_value):
+        self.__insertion(self._OrderedDict__map[existing_key][0], key_value)
+
 
 def nest_dict(dct, keys):
     """nest dict under list of keys"""
