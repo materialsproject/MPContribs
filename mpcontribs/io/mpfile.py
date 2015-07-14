@@ -84,7 +84,21 @@ class MPFile(six.with_metaclass(ABCMeta)):
             for k in self.document:
                 self.document[k].rec_update({general_title: general_data})
 
-    def get_string(self):
+    def make_general_section(self):
+        """if possible, make general level-0 section from general subsections of
+        all other level-1 sections"""
+        # FIXME: how about general sections overridden locally?
+        if mp_level01_titles[0] in self.document: return # don't overwrite if exists
+        if all([
+            bool(mp_level01_titles[0] in self.document[mp_cat_id].keys())
+            for mp_cat_id in self.document
+        ]):
+            for idx, mp_cat_id in enumerate(self.document.keys()):
+                general_section = self.document[mp_cat_id].pop(mp_level01_titles[0])
+                if not idx:
+                    self.document[mp_level01_titles[0]] = general_section
+
+    def get_string(self, with_comments=False):
         """Returns a string to be written as a file"""
         lines = []
         min_indentor = get_indentor()
@@ -97,17 +111,18 @@ class MPFile(six.with_metaclass(ABCMeta)):
                 if lines and key == min_indentor:
                     lines.append('')
                 lines.append(make_pair(key, value, sep=sep))
-        for idx_str, comment in self.comments.iteritems():
-            if idx_str[-1] == '*':
-                lines.insert(int(idx_str[:-1]), '#'+comment)
-            else:
-                idx = int(idx_str)
-                line = lines[idx]
-                table_start = ' '.join([get_indentor(1), 'data_'])
-                if table_start in line:
-                    table_name = line[len(table_start):]
-                    line = ' '.join([get_indentor(1), table_name])
-                lines[idx] = ' #'.join([line, comment])
+        if with_comments:
+            for idx_str, comment in self.comments.iteritems():
+                if idx_str[-1] == '*':
+                    lines.insert(int(idx_str[:-1]), '#'+comment)
+                else:
+                    idx = int(idx_str)
+                    line = lines[idx]
+                    table_start = ' '.join([get_indentor(1), 'data_'])
+                    if table_start in line:
+                        table_name = line[len(table_start):]
+                        line = ' '.join([get_indentor(1), table_name])
+                    lines[idx] = ' #'.join([line, comment])
         return '\n'.join(lines).decode('utf-8')
 
     def __repr__(self):
