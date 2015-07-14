@@ -97,6 +97,17 @@ class MPFile(six.with_metaclass(ABCMeta)):
                 if lines and key == min_indentor:
                     lines.append('')
                 lines.append(make_pair(key, value, sep=sep))
+        for idx_str, comment in self.comments.iteritems():
+            if idx_str[-1] == '*':
+                lines.insert(int(idx_str[:-1]), '#'+comment)
+            else:
+                idx = int(idx_str)
+                line = lines[idx]
+                table_start = ' '.join([get_indentor(1), 'data_'])
+                if table_start in line:
+                    table_name = line[len(table_start):]
+                    line = ' '.join([get_indentor(1), table_name])
+                lines[idx] = ' #'.join([line, comment])
         return '\n'.join(lines).decode('utf-8')
 
     def __repr__(self):
