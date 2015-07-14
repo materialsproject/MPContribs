@@ -6,6 +6,7 @@ from recparse import RecursiveParser
 from monty.io import zopen
 from pandas import DataFrame
 from six import string_types
+from collections import OrderedDict
 
 class MPFile(six.with_metaclass(ABCMeta)):
     """Object for representing a MP Contribution File.
@@ -14,6 +15,7 @@ class MPFile(six.with_metaclass(ABCMeta)):
         parser (RecursiveParser): recursive parser object, init empty RecursiveDict() if None
     """
     def __init__(self, parser=None):
+        self.comments = OrderedDict()
         self.document = RecursiveDict() if parser is None else parser.document
 
     @staticmethod
@@ -40,19 +42,38 @@ class MPFile(six.with_metaclass(ABCMeta)):
         Returns:
             MPFile object.
         """
-        data = '\n'.join([ # remove all comment lines first
-            line for line in data.splitlines()
-            if not line.lstrip().startswith("#")
-        ])
+        # strip comments from data string
+        lines, comments = [], OrderedDict()
+        for idx,line in enumerate(data.splitlines()):
+            idx_str, line = str(idx), line.encode('utf-8')
+            line_split = line.lstrip().split('#', 1)
+            lines.append(line_split[0])
+            if len(line_split) > 1:
+                if not line_split[0]: idx_str += '*'
+                comments[idx_str] = line_split[1]
+        data = '\n'.join(lines)
+        # parse remaining data string
         parser = RecursiveParser()
         parser.parse(data)
-        return MPFile(parser)
+        # init MPFile
+        mpfile = MPFile(parser)
+        mpfile.set_comments(comments)
+        return mpfile
 
     @staticmethod
     def from_dict(mp_cat_id, data):
         mpfile = MPFile()
         mpfile.document.rec_update(nest_dict(data, [mp_cat_id]))
         return mpfile
+
+    def set_comments(self, comments):
+        """comments = {linenumber: comment}, see `add_comment`"""
+        self.comments = comments
+
+    def add_comment(self, linenumber, comment):
+        """add comment to line <linenumber>. An asterisk appended to
+        <linenumber> denotes a comment on its own line"""
+        self.comments[linenumber] = comment
 
     def apply_general_section(self):
         """apply general level-0 section on all other level-0 sections"""
@@ -69,10 +90,12 @@ class MPFile(six.with_metaclass(ABCMeta)):
         min_indentor = get_indentor()
         for key,value in self.document.iterate():
             if key is None and isinstance(value, DataFrame):
-                lines.append(value.to_csv(index=False, float_format='%g')[:-1])
+                csv_string = value.to_csv(index=False, float_format='%g')[:-1]
+                lines += csv_string.split('\n')
             else:
                 sep = '' if min_indentor in key else ':'
-                if key == min_indentor: lines.append('')
+                if lines and key == min_indentor:
+                    lines.append('')
                 lines.append(make_pair(key, value, sep=sep))
         return '\n'.join(lines).decode('utf-8')
 

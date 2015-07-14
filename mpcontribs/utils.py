@@ -6,10 +6,10 @@ from mpcontribs.config import SITE
 
 def get_short_object_id(cid): return str(cid)[-6:]
 
-def submit_mpfile(mpfile, target=None):
-    # TODO re-compile MPFile with embedded contribution IDs
-    if isinstance(mpfile, string_types) and not os.path.isfile(mpfile):
-        print '{} not found'.format(mpfile)
+def submit_mpfile(path_or_mpfile, target=None):
+    if isinstance(path_or_mpfile, string_types) and \
+       not os.path.isfile(path_or_mpfile):
+        print '{} not found'.format(path_or_mpfile)
         return
     from mpcontribs.io.mpfile import MPFile
     if target is None:
@@ -19,11 +19,11 @@ def submit_mpfile(mpfile, target=None):
         contributor = '{} <phuck@lbl.gov>'.format(full_name)
         cma = ContributionMongoAdapter()
         build_doc = RecursiveDict()
-    mpfile = MPFile.from_file(mpfile)
+    # init MPFile
+    mpfile = MPFile.from_file(path_or_mpfile)
     mpfile.apply_general_section()
     # split into contributions: treat every mp_cat_id as separate DB insert
-    while len(mpfile.document):
-        key, value = mpfile.document.popitem(last=False)
+    for key, value in mpfile.document.iteritems():
         mp_cat_id = key.split('--')[0]
         mpfile_single = MPFile.from_dict(mp_cat_id, value)
         print 'submit contribution for {} ...'.format(mp_cat_id)
