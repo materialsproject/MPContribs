@@ -45,7 +45,8 @@ class ContributionMongoAdapter(object):
 
     def submit_contribution(self, mpfile, contributor_email, project=None):
         """submit a single contribution to `mpcontribs.contributions` collection"""
-        mp_cat_id, data = mpfile.document.popitem(last=False)
+        mp_cat_id = mpfile.document.keys()[0]
+        data = mpfile.document[mp_cat_id]
         update, cid = False, ObjectId() # TODO: new vs update
         cid_short = get_short_object_id(cid)
         collaborators = [contributor_email]

@@ -34,16 +34,17 @@ def submit_mpfile(path_or_mpfile, target=None):
             cid_short = get_short_object_id(cid)
         else:
             doc = cma.submit_contribution(mpfile_single, contributor)
-            cid_short = get_short_object_id(doc['_id'])
+            cid = doc['_id']
+            cid_short = get_short_object_id(cid)
         print '> submitted as #{}'.format(cid_short)
-        # TODO embed cid into mpfile
+        mpfile_single.insert_id(cid, mp_cat_id)
         print '> build contribution #{} into {} ...'.format(cid_short, mp_cat_id)
         if target is not None:
             url = target.build_contribution(cid)
             print '> built #{}, see {}/{}'.format(cid_short, SITE, url)
         else:
             mcb = MPContributionsBuilder(doc)
-            single_build_doc = mcb.build(contributor, doc['_id'])
+            single_build_doc = mcb.build(contributor, cid)
             build_doc.rec_update(single_build_doc)
             print '> built #{}'.format(cid_short)
     if target is not None and \
