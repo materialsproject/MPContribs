@@ -35,8 +35,11 @@ def info(args):
             print '{}: {}'.format(k, ' '.join(v))
 
 def submit(args):
-    check_pymatgen()
-    submit_mpfile(args.mpfile, target=mpr)
+    if args.dry:
+        viewer(args)
+    else:
+        check_pymatgen()
+        submit_mpfile(args.mpfile, target=mpr)
 
 def delete(args):
     check_pymatgen()
@@ -116,6 +119,8 @@ def main():
         'submit', help="""submit a MPFile containing the contribution data"""
     )
     parser_submit.add_argument('mpfile', type=str, help='MPFile to submit')
+    parser_submit.add_argument('--dry', help='dry-run: use viewer instead of MP',
+                               action='store_true')
     parser_submit.set_defaults(func=submit)
 
     parser_delete = subparsers.add_parser(
