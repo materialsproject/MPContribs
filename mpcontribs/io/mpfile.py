@@ -45,7 +45,7 @@ class MPFile(six.with_metaclass(ABCMeta)):
         # strip comments from data string
         lines, comments = [], OrderedDict()
         for idx,line in enumerate(data.splitlines()):
-            idx_str, line = str(idx), line.encode('utf-8')
+            idx_str, line = str(idx), line#.encode('utf-8')
             line_split = line.lstrip().split('#', 1)
             lines.append(line_split[0])
             if len(line_split) > 1:
@@ -99,6 +99,19 @@ class MPFile(six.with_metaclass(ABCMeta)):
                     self.document.insert_before(
                         mp_cat_id, (mp_level01_titles[0], general_section)
                     )
+
+    def insert_id(self, cid, mp_cat_id):
+        """insert entry containing contribution ID for `mp_cat_id`"""
+        # only works for single section files like in `utils.submit_mpfile`
+        first_sub_key = self.document[mp_cat_id].keys()[0]
+        self.document[mp_cat_id].insert_before(first_sub_key, ('cid', str(cid)))
+        for idx_str in self.comments.keys():
+            comment = self.comments.pop(idx_str)
+            idx_str_split = idx_str.split('*')
+            idx = int(idx_str_split[0])+1
+            idx_str = str(idx)
+            if len(idx_str_split) > 1: idx_str += '*'
+            self.comments[idx_str] = comment
 
     def get_string(self, with_comments=False):
         """Returns a string to be written as a file"""
