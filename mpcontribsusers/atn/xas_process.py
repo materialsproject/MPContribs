@@ -19,6 +19,7 @@ All usable processes should be listed in the end for reference in the MPFile
 """
 
 import pandas as pd
+import numpy as np
 import operator
 
 def get_preedge_spectrum(process_parameters, xmcd_data):
@@ -40,6 +41,9 @@ def calculate_xas_xmcd(process_parameters, xmcd_data, op):
         "xas+ factor": xas_bg['XAS+'], "xas- factor": xas_bg['XAS-']
     })
 
+
+# -----
+
 def normalize_preedge(xmcd_data, scanparams, process_parameters=None, process_number=-1):
     """Normalizes preedge to one"""
     return calculate_xas_xmcd(process_parameters, xmcd_data, operator.idiv)
@@ -48,6 +52,31 @@ def remove_const_BG_preedge(xmcd_data, scanparams, process_parameters=None, proc
     """Should remove a constant bg based on the preedge average (might be one,
     if the data is normalized to preedge)"""
     return calculate_xas_xmcd(process_parameters, xmcd_data, operator.isub)
+
+
+
+def remove_linear_BG_XAS_preedge(xmcd_data, scanparams, process_parameters=None, process_number=-1):
+    """Should remove a linear bg based on the preedge average"""
+    preedge_spectrum = get_preedge_spectrum(process_parameters, xmcd_data)
+
+
+    preedge_poly = np.poly1d(np.polyfit(
+      preedge_spectrum["Energy"], 
+      preedge_spectrum["XAS"],
+      1))
+
+    xas_bg = preedge_poly(xmcd_data["Energy"])
+
+    for xas in ['XAS+', 'XAS-', 'XAS']:
+        xmcd_data[xas] -= xas_bg
+ 
+    return (xmcd_data, {"xas bg poly coeffs":  preedge_poly.coeffs})
+
+
+
+
+
+
 
 def normalize_XAS_minmax(xmcd_data, scanparams=None, process_parameters=None, process_number=-1):
     offset = xmcd_data["XAS"].min()
@@ -85,7 +114,7 @@ def get_xmcd(xmcd_data, scanparams=None, process_parameters={}, process_number=-
 process_dict = {
     'get xmcd': get_xmcd , 
     'constant background removal preedge': remove_const_BG_preedge  ,
-    #'linear background removal preedge': remove_linear_BG_preedge ,
+    'linear background removal preedge XAS': remove_linear_BG_XAS_preedge ,
     'xas normalization to min and max': normalize_XAS_minmax	,
     'scaling preedge to 1': normalize_preedge
 }

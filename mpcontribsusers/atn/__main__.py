@@ -15,47 +15,51 @@ parser.add_argument(
 )
 args = parser.parse_args()
 
-mpfile_path = os.path.join(args.work_dir, 'input.mpf')
+mpfile_path = os.path.join(args.work_dir, 'input_mult.mpf')
 if not os.path.exists(mpfile_path):
     print 'Make sure to provide the config file `input.mpf` in {}'.format(args.work_dir)
     sys.exit(0)
     
-print "HHHHHHHHHHHHHHHHHHHHHHHHHHHHH"
 mpfile = MPFile.from_file(mpfile_path)
-print "HHHHHHHHHHHHHHHHHHHHHHHHHHHHH"
-#print mpfile
-print "- - -  - - -  - - - - -  -- - "
-print json.dumps(mpfile.document, indent=4)
+#print "- - -  - - -  - - - - -  -- - "
+#print json.dumps(mpfile.document, indent=4)
 
 
 subdir = os.path.abspath(os.path.join(
-    args.work_dir, mpfile.document["GENERAL"]['Datasource']['directory']
+    args.work_dir, mpfile.document["general"]['Datasource']['directory']
 ))
+
+
 scandata_f = msp.read_scans(subdir, datacounter="Counter 1")
-scan_groups = scandata_f.groupby(mpfile.document["GENERAL"]['Datasource']['group by'].keys())
+# TODO Potenially we have to insert a preprocessing step, probably in msp (alpha)
 
+scan_groups = scandata_f.groupby(mpfile.document["general"]['Datasource']['group by'].keys())
+process_templates = mpfile.get_identifiers()
 
-for composition in mpfile.get_identifiers():
-
-    keys = scan_groups.groups.keys()
-    keys.sort()
-    scan_params_copy = mpfile.document[composition].copy()
-    for g in keys:
+keys = scan_groups.groups.keys()
+keys.sort()
+	
+for g in keys:
+    for composition in process_templates:
+	scan_params_copy = mpfile.document[composition].copy()
         # TODO: Group information is saved into the output. 
-        # Should we rethink how we do this?
+        # Should we rethink how we do this? (alpha)
 
-        # TODO: No concept for the mapping of keys to compositions yet.
-        mpfile.document[composition+str(g)] = scan_params_copy
+        # TODO: No concept for the mapping of keys to compositions yet. (alpha)
+
+	composition_name = composition+str(g) # could be mapped at some point
+        mpfile.document[composition_name] = scan_params_copy
+
         sg = scan_groups.get_group(g)
-        xmcd_frame = treat_xmcd(
-            sg, mpfile.document[composition+str(g)], xas_process.process_dict
-        )
+	for process_chain_name in mpfile.document[composition_name].keys():
+            xmcd_frame = treat_xmcd( 
+                sg, 
+                mpfile.document[composition_name][process_chain_name], 
+                xas_process.process_dict
+            )
 
-        mpfile.add_data_table(
-         composition+str(g), xmcd_frame[['Energy', 'XAS', 'XMCD']], 'data'
-	  )
+            mpfile.add_data_table(
+                composition_name, xmcd_frame[['Energy', 'XAS', 'XMCD']], "data"+process_chain_name
+	    )
 
-
-
-#print mpfile
 mpfile.write_file(os.path.join(args.work_dir, 'output.mpf'))

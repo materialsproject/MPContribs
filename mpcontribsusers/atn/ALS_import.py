@@ -14,7 +14,7 @@ def process_xmcd(xmcd_data, scan_params, process_dict):
     # as an input are being looked up and executed one by one. The parameters
     # are taken from the scan_params datastructure and passed to the processing
     # routines. They also get the full set of parameters, but that is redundant.
-    for process_no, process_call in enumerate(scan_params['processing']):
+    for process_no, process_call in enumerate(scan_params):
         try:
             process = process_dict[str(process_call)]
         except KeyError:
@@ -23,7 +23,7 @@ def process_xmcd(xmcd_data, scan_params, process_dict):
             ))
         # get the paremeters from the file. Maybe that should be done by
         # function which recognizes and parses numbers?
-        process_parameters = scan_params['processing'][process_call]
+        process_parameters = scan_params[process_call]
         # The return values and the xmcd_data for each step. The XMCD Data is
         # the input for the next step, but the return values are saved into the
         # process results.
@@ -41,5 +41,5 @@ def save_return_values(scanparams, process_no, return_values):
     # They would have to be specified multiple times in the process chain: 
     # Let's say A, B, C are processes, then the chain could look like ABCA 
     # (Alpha)
-    key = scanparams['processing'].keys()[i] 
-    scanparams['processing'][key].rec_update(return_values)
+    key = scanparams.keys()[i] 
+    scanparams[key].rec_update(return_values)
