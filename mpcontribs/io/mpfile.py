@@ -1,9 +1,10 @@
-import os, json, six
+from __future__ import unicode_literals, print_function
+import os, json, six, codecs, locale
 from abc import ABCMeta
-from utils import make_pair, get_indentor, RecursiveDict, nest_dict, pandas_to_dict
+from utils import make_pair, get_indentor, RecursiveDict, nest_dict, \
+        pandas_to_dict, force_encoded_string_output
 from ..config import mp_level01_titles
 from recparse import RecursiveParser
-from monty.io import zopen
 from pandas import DataFrame
 from six import string_types
 from collections import OrderedDict
@@ -29,8 +30,13 @@ class MPFile(six.with_metaclass(ABCMeta)):
             MPFile object.
         """
         if isinstance(filename_or_file, string_types):
-            filename_or_file = zopen(filename_or_file, "rt")
-        return MPFile.from_string(filename_or_file.read())
+            lang, encoding = locale.getdefaultlocale()
+            file_string = codecs.open(filename_or_file, encoding=encoding).read()
+        elif not isinstance(filename_or_file, file):
+            file_string = filename_or_file.read().decode('utf-8')
+        else:
+            file_string = filename_or_file.read()
+        return MPFile.from_string(file_string)
 
     @staticmethod
     def from_string(data):
@@ -45,7 +51,7 @@ class MPFile(six.with_metaclass(ABCMeta)):
         # strip comments from data string
         lines, comments = [], OrderedDict()
         for idx,line in enumerate(data.splitlines()):
-            idx_str, line = str(idx), line#.encode('utf-8')
+            idx_str, line = str(idx), line
             line_split = line.lstrip().split('#', 1)
             lines.append(line_split[0])
             if len(line_split) > 1:
@@ -113,6 +119,7 @@ class MPFile(six.with_metaclass(ABCMeta)):
             if len(idx_str_split) > 1: idx_str += '*'
             self.comments[idx_str] = comment
 
+    @force_encoded_string_output
     def get_string(self, with_comments=False):
         """Returns a string to be written as a file"""
         lines = []
@@ -150,7 +157,7 @@ class MPFile(six.with_metaclass(ABCMeta)):
     def write_file(self, filename, **kwargs):
         """Writes MPFile to a file. The supported kwargs are the same as those
         for the MPFile.get_string method and are passed through directly."""
-        with zopen(filename, "wt") as f:
+        with codecs.open(filename, encoding='utf-8', mode='w') as f:
             f.write(self.get_string(**kwargs))
 
     def add_data_table(self, identifier, dataframe, name):

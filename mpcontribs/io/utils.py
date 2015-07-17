@@ -1,3 +1,6 @@
+from __future__ import unicode_literals, print_function
+import sys
+from six import string_types
 from collections import OrderedDict as _OrderedDict
 from collections import Mapping as _Mapping
 from ..config import indent_symbol, min_separator_length, mp_level01_titles
@@ -68,9 +71,19 @@ def nest_dict(dct, keys):
         nested_dict = {key: nested_dict}
     return nested_dict
 
+def force_encoded_string_output(func):
+    """http://stackoverflow.com/questions/3627793"""
+    if sys.version_info.major < 3:
+        def _func(*args, **kwargs):
+            return func(*args, **kwargs).encode(sys.stdout.encoding or 'utf-8')
+        return _func
+    else:
+        return func
+
 def make_pair(key, value, sep=':'):
     """make a mp-specific key-value pair"""
-    return '{} '.format(sep).join([key, str(value)])
+    if not isinstance(value, string_types): value = str(value)
+    return '{} '.format(sep).join([key, value.decode('utf-8')])
 
 def get_indentor(n=0):
     """get level-n indentor"""
