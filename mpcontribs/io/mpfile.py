@@ -124,6 +124,7 @@ class MPFile(six.with_metaclass(ABCMeta)):
         """Returns a string to be written as a file"""
         lines = []
         min_indentor = get_indentor()
+        table_start = mp_level01_titles[1]+'_'
         for key,value in self.document.iterate():
             if key is None and isinstance(value, DataFrame):
                 csv_string = value.to_csv(index=False, float_format='%g')[:-1]
@@ -132,6 +133,8 @@ class MPFile(six.with_metaclass(ABCMeta)):
                 sep = '' if min_indentor in key else ':'
                 if lines and key == min_indentor:
                     lines.append('')
+                if table_start in value:
+                    value = value[len(table_start):]
                 lines.append(make_pair(key, value, sep=sep))
         if with_comments:
             for idx_str, comment in self.comments.iteritems():
@@ -139,13 +142,8 @@ class MPFile(six.with_metaclass(ABCMeta)):
                     lines.insert(int(idx_str[:-1]), '#'+comment)
                 else:
                     idx = int(idx_str)
-                    line = lines[idx]
-                    table_start = ' '.join([get_indentor(1), 'data_'])
-                    if table_start in line:
-                        table_name = line[len(table_start):]
-                        line = ' '.join([get_indentor(1), table_name])
-                    lines[idx] = ' #'.join([line, comment])
-        return '\n'.join(lines).decode('utf-8')
+                    lines[idx] = ' #'.join([lines[idx], comment])
+        return '\n'.join(lines)
 
     def __repr__(self):
         return self.get_string()
