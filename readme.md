@@ -1,3 +1,4 @@
+[![Stories in Ready](https://badge.waffle.io/materialsproject/MPContribs.png?label=ready&title=Ready)](https://waffle.io/materialsproject/MPContribs)
 MPContribs - The Materials Project's Community Contribution Framework
 ---------------------------------------------------------------------
 
