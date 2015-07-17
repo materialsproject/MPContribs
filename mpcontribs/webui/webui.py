@@ -1,3 +1,4 @@
+from __future__ import unicode_literals, print_function
 import json, os
 from flask import Flask, render_template, request
 from mpcontribs.utils import submit_mpfile, get_short_object_id

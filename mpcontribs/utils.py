@@ -1,3 +1,4 @@
+from __future__ import unicode_literals, print_function
 import os, re, pwd
 from collections import namedtuple
 from six import string_types
@@ -9,7 +10,7 @@ def get_short_object_id(cid): return str(cid)[-6:]
 def submit_mpfile(path_or_mpfile, target=None):
     if isinstance(path_or_mpfile, string_types) and \
        not os.path.isfile(path_or_mpfile):
-        print '{} not found'.format(path_or_mpfile)
+        print('{} not found'.format(path_or_mpfile))
         return
     from mpcontribs.io.mpfile import MPFile
     if target is None:
@@ -26,7 +27,7 @@ def submit_mpfile(path_or_mpfile, target=None):
     for key, value in mpfile.document.iteritems():
         mp_cat_id = key.split('--')[0]
         mpfile_single = MPFile.from_dict(mp_cat_id, value)
-        print 'submit contribution for {} ...'.format(mp_cat_id)
+        print('submit contribution for {} ...'.format(mp_cat_id))
         if target is not None:
             mpfile_single.write_file('tmp')
             cid = target.submit_contribution('tmp')
@@ -36,17 +37,17 @@ def submit_mpfile(path_or_mpfile, target=None):
             doc = cma.submit_contribution(mpfile_single, contributor)
             cid = doc['_id']
             cid_short = get_short_object_id(cid)
-        print '> submitted as #{}'.format(cid_short)
+        print('> submitted as #{}'.format(cid_short))
         mpfile_single.insert_id(cid, mp_cat_id)
-        print '> build contribution #{} into {} ...'.format(cid_short, mp_cat_id)
+        print('> build contribution #{} into {} ...'.format(cid_short, mp_cat_id))
         if target is not None:
             url = target.build_contribution(cid)
-            print '> built #{}, see {}/{}'.format(cid_short, SITE, url)
+            print('> built #{}, see {}/{}'.format(cid_short, SITE, url))
         else:
             mcb = MPContributionsBuilder(doc)
             single_build_doc = mcb.build(contributor, cid)
             build_doc.rec_update(single_build_doc)
-            print '> built #{}'.format(cid_short)
+            print('> built #{}'.format(cid_short))
     if target is not None and \
        isinstance(path_or_mpfile, string_types) and \
        os.path.isfile(path_or_mpfile):
