@@ -5,9 +5,14 @@ from six import string_types
 from io.utils import nest_dict, RecursiveDict
 from mpcontribs.config import SITE
 
-def get_short_object_id(cid): return str(cid)[-6:]
+def get_short_object_id(cid):
+    length = 7
+    cid_short = str(cid)[-length:]
+    if cid_short == '0'*length:
+        cid_short = str(cid)[:length]
+    return cid_short
 
-def submit_mpfile(path_or_mpfile, target=None):
+def submit_mpfile(path_or_mpfile, target=None, test=False):
     if isinstance(path_or_mpfile, string_types) and \
        not os.path.isfile(path_or_mpfile):
         print('{} not found'.format(path_or_mpfile))
@@ -24,9 +29,10 @@ def submit_mpfile(path_or_mpfile, target=None):
     mpfile = MPFile.from_file(path_or_mpfile)
     mpfile.apply_general_section()
     # split into contributions: treat every mp_cat_id as separate DB insert
-    for key, value in mpfile.document.iteritems():
+    for idx, (key, value) in enumerate(mpfile.document.iteritems()):
         mp_cat_id = key.split('--')[0]
         mpfile_single = MPFile.from_dict(mp_cat_id, value)
+        if test: mpfile_single.set_test_mode(mp_cat_id, idx)
         print('submit contribution for {} ...'.format(mp_cat_id))
         if target is not None:
             mpfile_single.write_file('tmp')

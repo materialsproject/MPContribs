@@ -111,6 +111,8 @@ class MPFile(six.with_metaclass(ABCMeta)):
         # only works for single section files like in `utils.submit_mpfile`
         first_sub_key = self.document[mp_cat_id].keys()[0]
         self.document[mp_cat_id].insert_before(first_sub_key, ('cid', str(cid)))
+        for key in ['test_index']:
+            self.document[mp_cat_id].pop(key)
         for idx_str in self.comments.keys():
             comment = self.comments.pop(idx_str)
             idx_str_split = idx_str.split('*')
@@ -118,6 +120,13 @@ class MPFile(six.with_metaclass(ABCMeta)):
             idx_str = str(idx)
             if len(idx_str_split) > 1: idx_str += '*'
             self.comments[idx_str] = comment
+
+    def set_test_mode(self, mp_cat_id, idx=0):
+        """insert a key-value entry indicating test submission"""
+        # only works for single section files like in `utils.submit_mpfile`
+        first_sub_key = self.document[mp_cat_id].keys()[0]
+        self.document[mp_cat_id].insert_before(
+            first_sub_key, ('test_index', idx+733773))
 
     @force_encoded_string_output
     def get_string(self, with_comments=False):
@@ -133,7 +142,7 @@ class MPFile(six.with_metaclass(ABCMeta)):
                 sep = '' if min_indentor in key else ':'
                 if lines and key == min_indentor:
                     lines.append('')
-                if table_start in value:
+                if isinstance(value, string_types) and table_start in value:
                     value = value[len(table_start):]
                 lines.append(make_pair(key, value, sep=sep))
         if with_comments:
