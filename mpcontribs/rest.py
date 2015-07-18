@@ -1,6 +1,7 @@
 from config import mp_level01_titles
 from bson.objectid import ObjectId
 from utils import get_short_object_id
+from datetime import datetime
 
 class ContributionMongoAdapter(object):
     """adapter/interface for user contributions"""
@@ -48,6 +49,9 @@ class ContributionMongoAdapter(object):
         mp_cat_id = mpfile.document.keys()[0]
         data = mpfile.document[mp_cat_id]
         update, cid = False, ObjectId() # TODO: new vs update
+        if 'test_index' in data:
+            test_index = int(data['test_index'])
+            cid = ObjectId.from_datetime(datetime.fromordinal(test_index))
         cid_short = get_short_object_id(cid)
         collaborators = [contributor_email]
         if update: # check contributor permissions if update mode

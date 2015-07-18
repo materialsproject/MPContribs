@@ -13,7 +13,7 @@ def index(path):
     if not path and request.method == 'GET':
         return render_template('choose.html')
     mpfile = path if path else request.files['file']
-    content = submit_mpfile(mpfile)
+    content = submit_mpfile(mpfile, test=True)
     for value in content.itervalues():
         for project_data in value.itervalues():
             for cid in project_data:

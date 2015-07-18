@@ -39,7 +39,7 @@ def submit(args):
         viewer(args)
     else:
         check_pymatgen()
-        submit_mpfile(args.mpfile, target=mpr)
+        submit_mpfile(args.mpfile, target=mpr, test=args.test)
 
 def delete(args):
     check_pymatgen()
@@ -120,6 +120,8 @@ def main():
     )
     parser_submit.add_argument('mpfile', type=str, help='MPFile to submit')
     parser_submit.add_argument('--dry', help='dry-run: use viewer instead of MP',
+                               action='store_true')
+    parser_submit.add_argument('--test', help='reuse ID to avoid spam in Plotly',
                                action='store_true')
     parser_submit.set_defaults(func=submit)
 
