@@ -44,7 +44,7 @@ def submit_mpfile(path_or_mpfile, target=None, test=False):
             cid = doc['_id']
             cid_short = get_short_object_id(cid)
         print('> submitted as #{}'.format(cid_short))
-        mpfile_single.insert_id(cid, mp_cat_id)
+        mpfile_single.insert_id(cid, mp_cat_id, test=test)
         print('> build contribution #{} into {} ...'.format(cid_short, mp_cat_id))
         if target is not None:
             url = target.build_contribution(cid)
