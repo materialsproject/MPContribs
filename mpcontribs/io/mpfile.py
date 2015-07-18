@@ -1,8 +1,7 @@
 from __future__ import unicode_literals, print_function
 import os, json, six, codecs, locale
 from abc import ABCMeta
-from utils import make_pair, get_indentor, RecursiveDict, nest_dict, \
-        pandas_to_dict, force_encoded_string_output
+from utils import make_pair, get_indentor, RecursiveDict, nest_dict, pandas_to_dict
 from ..config import mp_level01_titles
 from recparse import RecursiveParser
 from pandas import DataFrame
@@ -128,7 +127,6 @@ class MPFile(six.with_metaclass(ABCMeta)):
         self.document[mp_cat_id].insert_before(
             first_sub_key, ('test_index', idx+733773))
 
-    @force_encoded_string_output
     def get_string(self, with_comments=False):
         """Returns a string to be written as a file"""
         lines = []

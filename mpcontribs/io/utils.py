@@ -83,7 +83,7 @@ def force_encoded_string_output(func):
 def make_pair(key, value, sep=':'):
     """make a mp-specific key-value pair"""
     if not isinstance(value, string_types): value = str(value)
-    return '{} '.format(sep).join([key, value.decode('utf-8')])
+    return '{} '.format(sep).join([key, value])
 
 def get_indentor(n=0):
     """get level-n indentor"""

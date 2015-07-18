@@ -83,7 +83,7 @@ class RecursiveParser():
         return is_data_section, pd.read_csv(
             StringIO(body), comment=csv_comment_char,
             skipinitialspace=True, squeeze=True,
-            converters = converters,
+            converters=converters, encoding='utf8',
             **options
         ).dropna(how='all')
 
