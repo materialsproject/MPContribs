@@ -105,13 +105,15 @@ class MPFile(six.with_metaclass(ABCMeta)):
                         mp_cat_id, (mp_level01_titles[0], general_section)
                     )
 
-    def insert_id(self, cid, mp_cat_id):
+    def insert_id(self, cid, mp_cat_id, test=False):
         """insert entry containing contribution ID for `mp_cat_id`"""
         # only works for single section files like in `utils.submit_mpfile`
+        if test:
+            for key in ['test_index']:
+                self.document[mp_cat_id].pop(key)
+            return
         first_sub_key = self.document[mp_cat_id].keys()[0]
         self.document[mp_cat_id].insert_before(first_sub_key, ('cid', str(cid)))
-        for key in ['test_index']:
-            self.document[mp_cat_id].pop(key)
         for idx_str in self.comments.keys():
             comment = self.comments.pop(idx_str)
             idx_str_split = idx_str.split('*')
