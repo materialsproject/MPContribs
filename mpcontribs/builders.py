@@ -155,6 +155,6 @@ class MPContributionsBuilder():
         if isinstance(self.db, dict):
             return self.curr_coll
         else:
-            return '{}/{}/contributions/{}'.format( # return URL for contribution page
+            return '{}/{}/contributions#{}#{}'.format( # return URL for contribution page
                 ('materials' if is_mp_id else 'compositions'),
-                mp_cat_id, cid_short) # TODO: implement on frontend, short cid sufficient?
+                mp_cat_id, project, cid_short)
