@@ -9,12 +9,11 @@ def composition_contributions(request, composition, mdb=None):
         material = {}
         material['contributed_data'] = mdb.contribs_db.compositions.find_one(
             {'_id': composition}, {'_id': 0})
-        material['task_id'] = composition
         material['pretty_formula'] = composition
     else:
-        material = {k: composition for k in ['task_id', 'pretty_formula']}
+        material = {k: composition for k in ['pretty_formula']}
 
-    t = loader.get_template('materials/templates/material_contributions.html')
+    t = loader.get_template('compositions/templates/composition_contributions.html')
     c = RequestContext(request, {'material': jsanitize(material)})
     return HttpResponse(t.render(c))
 
