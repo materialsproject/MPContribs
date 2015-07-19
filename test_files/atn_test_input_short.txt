@@ -1,0 +1,22 @@
+>>> general
+>>>> Experiment # line needed?
+>>>>> Preparation
+Description: Magentron Co-sputtering
+Temperature: RT
+Treatment: In vacuuo annealing at 800°C for 1h and 200°C for 10h
+
+>>> AlNiCoCu # use composition as section title for root-level sections
+localdirname: ~/ALS/Beamline/RawData_2T-Computer/
+scanfilenames: TrajScan31042-2_0001.txt
+>>>> processing # values in this section auto-inserted
+>>>>> scaling background to 1
+factor: 123.0
+>>>>> constant background removal preedge
+background value: 456.0
+>>>>> normalization to L3
+factor: 0.86202
+>>>> datatable # or whatever, purpose auto-determined by section content
+Energy,XAS,XMCD
+761,0.008445,-0.001452
+762,0.007812,-0.000682
+
