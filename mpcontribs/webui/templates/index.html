@@ -30,16 +30,12 @@
     {% for project,project_data in value.iteritems() %}
     {% for cid,cid_data in project_data.iteritems() %}
     <a name="cid{{ cid }}"></a><h1>{{ key }} &raquo; {{ project }} &raquo; #{{ cid }}</h1>
-    <div class="btn-toolbar" role="toolbar">
-      <a href="#top" class="btn btn-default btn-group" role="group" role="button">back to top</a>
-      <a href="#{{ cid }}_jump_tree" class="btn btn-default btn-group" role="group" role="button">Hierarchical Data</a>
-      <a href="#{{ cid }}_jump_tables" class="btn btn-default btn-group" role="group" role="button">Tables</a>
-      <a href="#{{ cid }}_jump_graphs" class="btn btn-default btn-group" role="group" role="button">Graphs</a>
-    </div>
+    <a href="#top" class="btn btn-default btn-xs" role="button">back to top</a>
     {% for data_type,data in cid_data.iteritems() %}
     {% if data_type == "tree_data" %}
+    <div class="row">
+    <div class="col-md-8">
     <a name="{{ cid }}_jump_tree"></a><h2>Hierarchical Data</h2>
-    <a href="#top" class="btn btn-default btn-xs" role="button">back to top</a>
     <div id="{{ cid }}_tree"></div>
     <script type="text/jsx">
     /** @jsx React.DOM */
@@ -48,9 +44,10 @@
       <JSONTree data={lol} />, document.getElementById('{{ cid }}_tree')
     );
     </script>
+    </div>
     {% elif data_type == "tables" %}
+    <div class="col-md-4">
     <a name="{{ cid }}_jump_tables"></a><h2>Tables</h2>
-    <a href="#top" class="btn btn-default btn-xs" role="button">back to top</a>
     {% for table_name,table_data in data.iteritems() %}
     <p>
       <b>{{ table_name }}</b>
@@ -71,9 +68,10 @@
       </div>
     </p>
     {% endfor %}
+    </div>
+    </div>
     {% elif data_type == "plotly_urls" %}
     <a name="{{ cid }}_jump_graphs"></a><h2>Graphs</h2>
-    <div><a href="#top" class="btn btn-default btn-xs" role="button">back to top</a></div>
     {% for url in data %}
     <iframe width="580" height="580" frameborder="0" seamless="seamless"
        scrolling="no" src="{{url}}.embed?width=580&height=580"></iframe>
