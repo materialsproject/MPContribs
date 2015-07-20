@@ -53,6 +53,7 @@ class ContributionMongoAdapter(object):
         if 'test_index' in data:
             test_index = int(data['test_index'])
             cid = ObjectId.from_datetime(datetime.fromordinal(test_index))
+            data.pop('test_index')
         cid_short = get_short_object_id(cid)
         collaborators = [contributor_email]
         if update: # check contributor permissions if update mode

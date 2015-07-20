@@ -110,7 +110,7 @@ class MPContributionsBuilder():
         # prepare tree and table data
         all_data = RecursiveDict()
         for key,value in contrib['content'].iteritems():
-            if key == 'plots' or key.startswith(mp_level01_titles[1]): continue
+            if key == 'cid' or key == 'plots' or key.startswith(mp_level01_titles[1]): continue
             all_data.rec_update(nest_dict(
                 value, ['{}.{}.tree_data'.format(project, cid_str), key]
             ))
