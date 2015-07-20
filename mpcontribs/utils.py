@@ -25,13 +25,10 @@ def submit_mpfile(path_or_mpfile, target=None, test=False):
         contributor = '{} <phuck@lbl.gov>'.format(full_name)
         cma = ContributionMongoAdapter()
         build_doc = RecursiveDict()
-    # init MPFile
-    mpfile = MPFile.from_file(path_or_mpfile)
-    mpfile.apply_general_section()
-    # split into contributions: treat every mp_cat_id as separate DB insert
-    for idx, (key, value) in enumerate(mpfile.document.iteritems()):
-        mp_cat_id = key.split('--')[0]
-        mpfile_single = MPFile.from_dict(mp_cat_id, value)
+    # split input MPFile into contributions: treat every mp_cat_id as separate DB insert
+    mpfile, cids = MPFile(), cid_shorts # output
+    for idx, mpfile_single in enumerate(MPFile.from_file(path_or_mpfile).split()):
+        mp_cat_id = mpfile_single.document.keys()[0]
         if test: mpfile_single.set_test_mode(mp_cat_id, idx)
         print('submit contribution for {} ...'.format(mp_cat_id))
         if target is not None:
@@ -44,7 +41,9 @@ def submit_mpfile(path_or_mpfile, target=None, test=False):
             cid = doc['_id']
             cid_short = get_short_object_id(cid)
         print('> submitted as #{}'.format(cid_short))
-        mpfile_single.insert_id(cid, mp_cat_id, test=test)
+        mpfile_single.insert_id(mp_cat_id, cid)
+        cid_shorts.append(cid_short)
+        #mpfile.concat(mpfile_single)
         print('> build contribution #{} into {} ...'.format(cid_short, mp_cat_id))
         if target is not None:
             url = target.build_contribution(cid)
@@ -57,9 +56,8 @@ def submit_mpfile(path_or_mpfile, target=None, test=False):
     if target is not None and \
        isinstance(path_or_mpfile, string_types) and \
        os.path.isfile(path_or_mpfile):
-        # re-compile and write MPFile with embedded contribution IDs
-        mpfile.make_general_section()
-        mpfile.write_file(path_or_mpfile, with_comments=True)
+        print('> embed #{} in MPFile ...'.format('/'.join(cid_shorts)))
+        #mpfile.write_file(path_or_mpfile, with_comments=True)
     else:
         return build_doc
 
