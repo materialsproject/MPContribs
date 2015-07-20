@@ -48,7 +48,8 @@ class ContributionMongoAdapter(object):
         """submit a single contribution to `mpcontribs.contributions` collection"""
         mp_cat_id = mpfile.document.keys()[0]
         data = mpfile.document[mp_cat_id]
-        update, cid = False, ObjectId() # TODO: new vs update
+        update = ('cid' in data) # new vs update
+        cid = data['cid'] if update else ObjectId()
         if 'test_index' in data:
             test_index = int(data['test_index'])
             cid = ObjectId.from_datetime(datetime.fromordinal(test_index))
