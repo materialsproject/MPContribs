@@ -16,23 +16,30 @@
   </head>
   <body>
     <p><a name="top"></a>
-    <p><a href="/">Load New MPFile</a></p>
-    <p>Jump to contribution
+    <p><a class="btn btn-primary" role="button" href="/">Load New MPFile</a></p>
+    <div class="btn-toolbar" role="toolbar">
     {% for value in content.itervalues() %}
     {% for project_data in value.itervalues() %}
     {% for cid in project_data %}
-     &raquo; <a href="#cid{{ cid }}">#{{ cid }}</a>
+    <a href="#cid{{ cid }}" class="btn btn-default btn-group" role="group" role="button">#{{ cid }}</a>
     {% endfor %}
     {% endfor %}
-    {% endfor %}</p>
+    {% endfor %}
+    </div>
     {% for key,value in content.iteritems() %}
     {% for project,project_data in value.iteritems() %}
     {% for cid,cid_data in project_data.iteritems() %}
     <a name="cid{{ cid }}"></a><h1>{{ key }} &raquo; {{ project }} &raquo; #{{ cid }}</h1>
-    <a href="#top">back to top</a>
+    <div class="btn-toolbar" role="toolbar">
+      <a href="#top" class="btn btn-default btn-group" role="group" role="button">back to top</a>
+      <a href="#{{ cid }}_jump_tree" class="btn btn-default btn-group" role="group" role="button">Hierarchical Data</a>
+      <a href="#{{ cid }}_jump_tables" class="btn btn-default btn-group" role="group" role="button">Tables</a>
+      <a href="#{{ cid }}_jump_graphs" class="btn btn-default btn-group" role="group" role="button">Graphs</a>
+    </div>
     {% for data_type,data in cid_data.iteritems() %}
     {% if data_type == "tree_data" %}
-    <h2>Hierarchical Data</h2>
+    <a name="{{ cid }}_jump_tree"></a><h2>Hierarchical Data</h2>
+    <a href="#top" class="btn btn-default btn-xs" role="button">back to top</a>
     <div id="{{ cid }}_tree"></div>
     <script type="text/jsx">
     /** @jsx React.DOM */
@@ -42,7 +49,8 @@
     );
     </script>
     {% elif data_type == "tables" %}
-    <h2>Tables</h2>
+    <a name="{{ cid }}_jump_tables"></a><h2>Tables</h2>
+    <a href="#top" class="btn btn-default btn-xs" role="button">back to top</a>
     {% for table_name,table_data in data.iteritems() %}
     <p>
       <b>{{ table_name }}</b>
@@ -64,14 +72,12 @@
     </p>
     {% endfor %}
     {% elif data_type == "plotly_urls" %}
-    <h2>Graphs</h2>
-    <ol>
+    <a name="{{ cid }}_jump_graphs"></a><h2>Graphs</h2>
+    <div><a href="#top" class="btn btn-default btn-xs" role="button">back to top</a></div>
     {% for url in data %}
-    <li><a href="{{ url }}">{{ url }}</a>:<br>
-    <iframe width="700" height="700" frameborder="0" seamless="seamless"
-       scrolling="no" src="{{url}}.embed?width=700&height=700"></iframe></li>
+    <iframe width="580" height="580" frameborder="0" seamless="seamless"
+       scrolling="no" src="{{url}}.embed?width=580&height=580"></iframe>
     {% endfor %}
-    </ol>
     {% endif %}
     {% endfor %}
     {% endfor %}
