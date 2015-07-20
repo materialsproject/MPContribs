@@ -14,8 +14,8 @@ class MPFile(six.with_metaclass(ABCMeta)):
     Args:
         parser (RecursiveParser): recursive parser object, init empty RecursiveDict() if None
     """
-    def __init__(self, parser=None):
-        self.comments = OrderedDict()
+    def __init__(self, parser=None, comments=None):
+        self.comments = OrderedDict() if comments is None else comments
         self.document = RecursiveDict() if parser is None else parser.document
 
     @staticmethod
@@ -61,8 +61,7 @@ class MPFile(six.with_metaclass(ABCMeta)):
         parser = RecursiveParser()
         parser.parse(data)
         # init MPFile
-        mpfile = MPFile(parser)
-        mpfile.set_comments(comments)
+        mpfile = MPFile(parser=parser, comments=comments)
         return mpfile
 
     @staticmethod
@@ -70,10 +69,6 @@ class MPFile(six.with_metaclass(ABCMeta)):
         mpfile = MPFile()
         mpfile.document.rec_update(nest_dict(data, [mp_cat_id]))
         return mpfile
-
-    def set_comments(self, comments):
-        """comments = {linenumber: comment}, see `add_comment`"""
-        self.comments = comments
 
     def add_comment(self, linenumber, comment):
         """add comment to line <linenumber>. An asterisk appended to
@@ -124,7 +119,8 @@ class MPFile(six.with_metaclass(ABCMeta)):
 
     def set_test_mode(self, mp_cat_id, idx=0):
         """insert a key-value entry indicating test submission"""
-        # only works for single section files like in `utils.submit_mpfile`
+        if len(self.document) > 1:
+            raise ValueError('can set test mode only on single section files')
         first_sub_key = self.document[mp_cat_id].keys()[0]
         self.document[mp_cat_id].insert_before(
             first_sub_key, ('test_index', idx+733773))
@@ -165,7 +161,8 @@ class MPFile(six.with_metaclass(ABCMeta)):
         """Writes MPFile to a file. The supported kwargs are the same as those
         for the MPFile.get_string method and are passed through directly."""
         with codecs.open(filename, encoding='utf-8', mode='w') as f:
-            f.write(self.get_string(**kwargs))
+            file_str = self.get_string(**kwargs) + '\n'
+            f.write(file_str)
 
     def add_data_table(self, identifier, dataframe, name):
         """add a data table/frame to the root-level section for identifier"""
