@@ -42,21 +42,27 @@
     );
     </script>
     {% elif data_type == "tables" %}
-    <h2>Default Table</h2>
-    <button class="btn btn-primary" type="button" data-toggle="collapse"
-        data-target="#{{ cid }}_collapse" aria-expanded="false" aria-controls="{{ cid }}_collapse">
-      Collapse/Expand
-    </button>
-    <div class="collapse" id="{{ cid }}_collapse">
-      <table id="{{ cid }}_table" class="table"></table>
-      <script>
-      var table = {{ data|tojson|safe }};
-      $('#{{ cid }}_table').DataTable({
-        "data": table['rows'], "columns": table['columns'], "scrollX": true,
-        "scrollY": "300px", "scrollCollapse": true, "paging": false
-      });
-      </script>
-    </div>
+    <h2>Tables</h2>
+    {% for table_name,table_data in data.iteritems() %}
+    <p>
+      <b>{{ table_name }}</b>
+      <button class="btn btn-primary btn-xs" type="button" data-toggle="collapse"
+              data-target="#{{ cid }}_{{ loop.index }}_collapse" aria-expanded="false"
+              aria-controls="{{ cid }}_{{ loop.index }}_collapse">
+        Collapse/Expand
+      </button>
+      <div class="collapse" id="{{ cid }}_{{ loop.index }}_collapse">
+        <table id="{{ cid }}_{{ loop.index }}_table" class="table"></table>
+        <script>
+        var table = {{ table_data|tojson|safe }};
+        $('#{{ cid }}_{{ loop.index }}_table').DataTable({
+          "data": table['rows'], "columns": table['columns'], "scrollX": true,
+          "scrollY": "300px", "scrollCollapse": true, "paging": false
+        });
+        </script>
+      </div>
+    </p>
+    {% endfor %}
     {% elif data_type == "plotly_urls" %}
     <h2>Graphs</h2>
     <ol>
