@@ -126,22 +126,21 @@ class RecursiveParser():
             # => artificially increase and decrease level (see below)
             is_bare_data = (is_data_section and self.is_bare_section(section_title))
             if is_bare_data: self.increase_level(mp_level01_titles[1])
-            # mark data section with special 'data_' prefix
-            if is_data_section:
-                self.section_titles[-1] = '_'.join([
+            # mark data section with special 'data ' prefix
+            if is_data_section and not \
+               self.section_titles[-1].startswith(mp_level01_titles[1]):
+                self.section_titles[-1] = ' '.join([
                     mp_level01_titles[1], self.section_titles[-1]
                 ])
-            # also prepend 'data_' to the table name(s) in `plots`
+            # also prepend 'data ' to the table name(s) in `plots`
             if self.level == 2 and self.section_titles[1] == mp_level01_titles[2]:
-                pd_obj['table'] = '_'.join([mp_level01_titles[1], pd_obj['table']])
-            # use first csv table for default plot, first column as x-column
-            if is_data_section and (
-                self.section_titles[0] not in self.document or
-                mp_level01_titles[2] not in self.document[self.section_titles[0]]
-            ):
+                pd_obj['table'] = ' '.join([mp_level01_titles[1], pd_obj['table']])
+            # make default plot for each table, first column as x-column
+            if is_data_section:
                 self.document.rec_update(nest_dict(
                     {'x': pd_obj.columns[0], 'table': self.section_titles[-1]},
-                    [self.section_titles[0], mp_level01_titles[2], 'default']
+                    [self.section_titles[0], mp_level01_titles[2],
+                     'default {}'.format(self.section_titles[-1])]
                 ))
             # update nested dict/document based on section level
             self.document.rec_update(nest_dict(
