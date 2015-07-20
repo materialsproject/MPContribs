@@ -1,54 +1,54 @@
->>> GENERAL
+>>> general
 >>>> Experiment
 >>>>> Preparation
-Description: Magentron Co-sputtering
-Temperature: RT
-Treatment: In vacuuo annealing at 800°C for 1h and 200°C for 10h
+Description: Sputter deposition
 >>>>> Sample
-Material Name: Alnico
-Form: Thin Film on LSAT (110)
-Thickness: ca. 150nm
-Sample Name: Alnico_2015_290413c
-Grower: T. Gao
+Material Name: Platinim doped Permalloy
+Form: ~20nm film on Si wafer
+Thickness: ca. 20nm with 2-3 nm Au-capping (nominally)
+Grower: Ales Hrabec
+Authors: Ales Hrabec, Alpha T. N'Diaye, Elke Arenholz, Christopher Marrows
 >>>>> Measurement
 Detection: total electron yield
 Temperature: RT
-Orientation: 30° grazing incident
-Date: 2015-05-11
-Measured by: Alpha N'Diaye 
+Orientation: 30° grazing incidence
+Date: 2015-06-24
+Measured by: Alpha T. N'Diaye 
 >>>>>> Beamline
 Beamline: ALS-6.3.1
 Method: Soft x-ray XAS and XMCD
 Polarization: circular, positive (ca. 60%)
-Magnet Field: 0.5T switching point by point, parallel to x-ray beam
+Magnet Field: 0.8T switching point by point, parallel to x-ray beam
 Count Time: 1s
 Delay Time: 0.5s
 >>>>>>> Monochromator
 Exit Slit: 20µm
 Grating: 600l/mm
-
->>> AlNiCoCu 
-directory: subdirA # can also be a path
-edge: Co L3,2
-preedge: 760 774
-postedge: 808 820
->>>> processing
+>>>> Datasource
+directory: 2015-DD-Permalloy/02_data_XMCD_1200l_conv/
+>>>>> group by
+Z: A
+Y: B
+>>> Ni20Fe80
+>>>> Ni XMCD
 >>>>> get xmcd
-energy range: 760 900
->>>>> scaling preedge to 1 
-preedge range: 760 795
->>>>> constant background removal preedge
-preedge range: 760 770
+energy range: 800 1000
+#>>>>> scaling preedge to 1
+#preedge range: 690 700
+#>>>>> linear background removal preedge XAS
+#preedge range: 680 700
 >>>>> xas normalization to min and max
-
->>> Al3NiCo2Cu # could also be same composition
-directory: subdirB
-edge: Ni L3,2
-preedge: 820 847
-postedge: 875 880
->>>> processing
+energy range: 800 1000
+>>>> Fe XMCD
 >>>>> get xmcd
-energy range: 820 880
+energy range: 600 800
 >>>>> scaling preedge to 1
->>>>> constant background removal preedge
+preedge range: 690 700
+#>>>>> linear background removal preedge XAS
+#preedge range: 680 700
 >>>>> xas normalization to min and max
+energy range: 600 800
+
+
+
+
