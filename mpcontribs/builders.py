@@ -36,7 +36,7 @@ class MPContributionsBuilder():
     def plot(self, contributor_email, contrib):
         """make all plots for contribution"""
         if not any([
-          key.startswith(mp_level01_titles[1]+'_') for key in contrib['content']
+          key.startswith(mp_level01_titles[1]) for key in contrib['content']
         ]): return None
         author = Author.parse_author(contributor_email)
         project = str(author.name).translate(None, '.').replace(' ','_') \
@@ -110,14 +110,15 @@ class MPContributionsBuilder():
         # prepare tree and table data
         all_data = RecursiveDict()
         for key,value in contrib['content'].iteritems():
-            if key == 'plots' or key.startswith(mp_level01_titles[1]+'_'): continue
+            if key == 'plots' or key.startswith(mp_level01_titles[1]): continue
             all_data.rec_update(nest_dict(
                 value, ['{}.{}.tree_data'.format(project, cid_str), key]
             ))
         if 'plots' in contrib['content']:
-            # TODO also include non-default tables (multiple tables support)
+            # TODO include all tables (multiple tables support)
             table_columns, table_rows = None, None
-            table_name = contrib['content']['plots']['default']['table']
+            first_plots_key = contrib['content']['plots'].keys()[0]
+            table_name = contrib['content']['plots'][first_plots_key]['table']
             raw_data = contrib['content'][table_name]
             if isinstance(raw_data, dict):
                 table_columns = [ { 'title': k } for k in raw_data ]
