@@ -114,12 +114,9 @@ class MPContributionsBuilder():
             all_data.rec_update(nest_dict(
                 value, ['{}.{}.tree_data'.format(project, cid_str), key]
             ))
-        if 'plots' in contrib['content']:
-            # TODO include all tables (multiple tables support)
+        for table_name, raw_data in contrib['content'].iteritems():
+            if not table_name.startswith(mp_level01_titles[1]): continue
             table_columns, table_rows = None, None
-            first_plots_key = contrib['content']['plots'].keys()[0]
-            table_name = contrib['content']['plots'][first_plots_key]['table']
-            raw_data = contrib['content'][table_name]
             if isinstance(raw_data, dict):
                 table_columns = [ { 'title': k } for k in raw_data ]
                 table_rows = [
@@ -136,8 +133,8 @@ class MPContributionsBuilder():
                 ]
             if table_columns is not None:
                 all_data.rec_update({
-                    '{}.{}.tables.columns'.format(project, cid_str): table_columns,
-                    '{}.{}.tables.rows'.format(project, cid_str): table_rows,
+                    '{}.{}.tables.{}.columns'.format(project, cid_str, table_name): table_columns,
+                    '{}.{}.tables.{}.rows'.format(project, cid_str, table_name): table_rows,
                 })
         # update collection with tree and table data
         if isinstance(self.db, dict):
