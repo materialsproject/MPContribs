@@ -14,7 +14,7 @@ from utils import Author, get_short_object_id, unflatten_dict
 class MPContributionsBuilder():
     """build user contributions from `mpcontribs.contributions`"""
     def __init__(self, db):
-        self.mp_id_pattern = re.compile('mp-\d+', re.IGNORECASE)
+        self.mp_id_pattern = re.compile('^(mp|por)-\d+$', re.IGNORECASE)
         self.db = db
         if isinstance(self.db, dict):
             self.mat_coll = RecursiveDict()
