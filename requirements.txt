@@ -17,7 +17,7 @@ plotly==1.6.15
 prettytable==0.7.2
 pybtex==0.18
 pyhull==1.5.3
--e git+git@github.com:tschaume/pymatgen.git@84514995c24b3c4df2f8780d069bdd0af20f7f0a#egg=pymatgen-origin_submit_mpfile
+-e git+git@github.com:tschaume/pymatgen.git@4ab4a1351c34f51215b9a498b3b069ae4b3742db#egg=pymatgen-origin_submit_mpfile
 pymongo==3.0
 pyparsing==2.0.3
 python-dateutil==2.3
