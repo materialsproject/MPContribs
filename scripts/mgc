@@ -9,9 +9,10 @@ from mpcontribs.rest import ContributionMongoAdapter
 from mpcontribs.builders import MPContributionsBuilder
 from mpcontribs.config import SITE
 
-cma = None
+cma, mpr = None, None
 
 def load_mprester():
+    global mpr
     try:
         from pymatgen.matproj.rest import MPRester
     except:
