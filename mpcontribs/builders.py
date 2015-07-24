@@ -53,6 +53,7 @@ class MPContributionsBuilder():
             table_name = plotopts.pop('table')
             data = contrib['content'][table_name]
             df = pd.DataFrame.from_dict(data)
+            # TODO: set xTitle an yTitle according to column header
             urls.append(df.iplot(filename=filename, asUrl=True, **plotopts))
             #if len(urls) == len(contrib['content']['plots']): # TODO update
             #    pyfig = py.get_figure(urls[nplot])
