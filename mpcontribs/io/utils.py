@@ -43,7 +43,6 @@ class RecursiveDict(_OrderedDict):
                     yield inner_key, inner_value
                 self.level -= 1
             elif isinstance(value, list):
-                # FIXME: also support 'records' mode from pandas_to_dict
                 self.items.append((key, value))
             else:
                 yield key, value
@@ -95,27 +94,12 @@ def pandas_to_dict(pandas_object):
     if pandas_object is None: return RecursiveDict()
     if isinstance(pandas_object, pd.Series):
         return RecursiveDict((k,v) for k,v in pandas_object.iteritems())
-    all_columns_numeric = True
-    for col in pandas_object.columns:
-        if ( pandas_object[col].dtype != np.float64 and \
-            pandas_object[col].dtype != np.int64 ):
-            all_columns_numeric = False
-            break
     # the remainder of this function is adapted from Pandas' source to
-    # preserve the columns order
+    # preserve the columns order ('list' mode)
     if not pandas_object.columns.is_unique:
         warnings.warn("DataFrame columns are not unique, some "
                       "columns will be omitted.", UserWarning)
-    if all_columns_numeric: # pandas 'list' mode
-        list_dict = RecursiveDict()
-        for k, v in pd.compat.iteritems(pandas_object):
-            list_dict[k] = v.tolist()
-        return list_dict
-    else: # pandas 'records' mode
-        records = []
-        for row in pandas_object.values:
-            d = RecursiveDict()
-            for k, v in zip(pandas_object.columns, row):
-                d[k] = v
-            records.append(d)
-        return records
+    list_dict = RecursiveDict()
+    for k, v in pd.compat.iteritems(pandas_object):
+        list_dict[k] = v.tolist()
+    return list_dict
