@@ -195,7 +195,7 @@ class MPFile(six.with_metaclass(ABCMeta)):
         """Returns a string to be written as a file"""
         lines = []
         min_indentor = get_indentor()
-        table_start = mp_level01_titles[1]+'_'
+        table_start = mp_level01_titles[1]+' '
         for key,value in self.document.iterate():
             if key is None and isinstance(value, DataFrame):
                 csv_string = value.to_csv(index=False, float_format='%g')[:-1]
@@ -205,7 +205,7 @@ class MPFile(six.with_metaclass(ABCMeta)):
                 if lines and key == min_indentor:
                     lines.append('')
                 if isinstance(value, string_types):
-                    if table_start in value:
+                    if value.startswith(table_start):
                         value = value[len(table_start):]
                     if ':' in value: # quote to ignore delimiter
                         value = '"{}"'.format(value)
