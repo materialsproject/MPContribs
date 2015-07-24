@@ -1,9 +1,7 @@
 import os, re, bson
 import pandas as pd
-import matplotlib
-matplotlib.use('Agg')
-import matplotlib.pyplot as plt
-pd.options.display.mpl_style = 'default'
+import cufflinks as cf
+cf.set_config_file(world_readable=True, theme='pearl')
 import plotly.plotly as py
 from plotly.graph_objs import *
 from itertools import groupby
@@ -52,27 +50,16 @@ class MPContributionsBuilder():
         for nplot,plotopts in enumerate(contrib['content']['plots'].itervalues()):
             filename = '{}_{}_{}'.format(
                 ('viewer' if isinstance(self.db, dict) else 'mp'), cid, nplot)
-            fig, ax = plt.subplots(1, 1)
             table_name = plotopts.pop('table')
             data = contrib['content'][table_name]
             df = pd.DataFrame.from_dict(data)
-            df.plot(ax=ax, **plotopts)
-            if len(urls) == len(contrib['content']['plots']):
-                pyfig = py.get_figure(urls[nplot])
-                for ti,line in enumerate(ax.get_lines()):
-                    pyfig['data'][ti]['x'] = list(line.get_xdata())
-                    pyfig['data'][ti]['y'] = list(line.get_ydata())
-                py.plot(pyfig, filename=filename, auto_open=False)
-            else:
-                update = dict(layout=dict(
-                    annotations=[dict(text=' ')],
-                    showlegend=True,
-                    legend=Legend(x=1.05, y=1)
-                ))
-                urls.append(py.plot_mpl(
-                    fig, filename=filename, auto_open=False,
-                    strip_style=True, update=update, resize=True
-                ))
+            urls.append(df.iplot(filename=filename, asUrl=True, **plotopts))
+            #if len(urls) == len(contrib['content']['plots']): # TODO update
+            #    pyfig = py.get_figure(urls[nplot])
+            #    for ti,line in enumerate(ax.get_lines()):
+            #        pyfig['data'][ti]['x'] = list(line.get_xdata())
+            #        pyfig['data'][ti]['y'] = list(line.get_ydata())
+            #    py.plot(pyfig, filename=filename, auto_open=False)
         plotly_urls = RecursiveDict({subfld: urls})
         return None if len(url_list) else plotly_urls
 

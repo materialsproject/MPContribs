@@ -1,5 +1,5 @@
 from __future__ import unicode_literals, print_function
-import sys
+import sys, warnings
 from six import string_types
 from collections import OrderedDict as _OrderedDict
 from collections import Mapping as _Mapping
@@ -43,6 +43,7 @@ class RecursiveDict(_OrderedDict):
                     yield inner_key, inner_value
                 self.level -= 1
             elif isinstance(value, list):
+                # FIXME: also support 'records' mode from pandas_to_dict
                 self.items.append((key, value))
             else:
                 yield key, value
@@ -117,3 +118,4 @@ def pandas_to_dict(pandas_object):
             for k, v in zip(pandas_object.columns, row):
                 d[k] = v
             records.append(d)
+        return records
