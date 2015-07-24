@@ -1,5 +1,5 @@
+import bson
 from config import mp_level01_titles
-from bson.objectid import ObjectId
 from utils import get_short_object_id
 from datetime import datetime
 
@@ -12,6 +12,11 @@ class ContributionMongoAdapter(object):
             self.fake = Faker()
         except:
             self.fake = None
+        if not self.db is None:
+            opts = bson.CodecOptions(document_class=bson.SON)
+            self.contributions = self.db.contributions.with_options(codec_options=opts)
+            self.materials = self.db.materials.with_options(codec_options=opts)
+            self.compositions = self.db.compositions.with_options(codec_options=opts)
 
     @classmethod
     def from_config(cls, db_yaml='mpcontribs_db.yaml'):
@@ -37,27 +42,28 @@ class ContributionMongoAdapter(object):
 
     def query_contributions(self, crit):
         # TODO open `content` for arbitrary query
+        # TODO be careful with SON for order in crit
         props = [ 'collaborators', 'mp_cat_id' ]
         proj = dict((p, 1) for p in props)
-        return self.db.contributions.find(crit, proj)
+        return self.contributions.find(crit, proj)
 
     def delete_contributions(self, crit):
-        return self.db.contributions.remove(crit)
+        return self.contributions.remove(crit)
 
     def submit_contribution(self, mpfile, contributor_email, project=None):
         """submit a single contribution to `mpcontribs.contributions` collection"""
         mp_cat_id = mpfile.document.keys()[0]
         data = mpfile.document[mp_cat_id]
         update = ('cid' in data) # new vs update
-        cid = data['cid'] if update else ObjectId()
+        cid = data['cid'] if update else bson.ObjectId()
         if 'test_index' in data:
             test_index = int(data['test_index'])
-            cid = ObjectId.from_datetime(datetime.fromordinal(test_index))
+            cid = bson.ObjectId.from_datetime(datetime.fromordinal(test_index))
             data.pop('test_index')
         cid_short = get_short_object_id(cid)
         collaborators = [contributor_email]
         if update: # check contributor permissions if update mode
-            collaborators = self.db.contributions.find_one(
+            collaborators = self.contributions.find_one(
                 {'_id': cid}, {'collaborators': 1}
             )['collaborators']
             if contributor_email not in collaborators: raise ValueError(
@@ -71,7 +77,7 @@ class ContributionMongoAdapter(object):
         if self.db is None:
             doc['_id'] = cid
             return doc
-        self.db.contributions.find_and_modify({'_id': cid}, doc, upsert=True)
+        self.contributions.find_and_modify({'_id': cid}, doc, upsert=True)
         return cid
 
     #def fake_multiple_contributions(self, num_contributions=20):
