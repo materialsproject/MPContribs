@@ -1,4 +1,4 @@
-import os, re
+import os, re, bson
 import pandas as pd
 import matplotlib
 matplotlib.use('Agg')
@@ -17,11 +17,13 @@ class MPContributionsBuilder():
         self.mp_id_pattern = re.compile('^(mp|por)-\d+$', re.IGNORECASE)
         self.db = db
         if isinstance(self.db, dict):
-            self.mat_coll = RecursiveDict()
-            self.comp_coll = RecursiveDict()
+            self.materials = RecursiveDict()
+            self.compositions = RecursiveDict()
         else:
-            self.mat_coll = db.materials
-            self.comp_coll = db.compositions
+            opts = bson.CodecOptions(document_class=bson.SON)
+            self.contributions = self.db.contributions.with_options(codec_options=opts)
+            self.materials = self.db.materials.with_options(codec_options=opts)
+            self.compositions = self.db.compositions.with_options(codec_options=opts)
 
     @classmethod
     def from_config(cls, db_yaml='mpcontribs_db.yaml'):
@@ -75,14 +77,14 @@ class MPContributionsBuilder():
         return None if len(url_list) else plotly_urls
 
     def delete(self, project, cids):
-        for contrib in self.db.contributions.find({'_id': {'$in': cids}}):
+        for contrib in self.contributions.find({'_id': {'$in': cids}}):
             mp_cat_id, cid = contrib['mp_cat_id'], contrib['_id']
             is_mp_id = self.mp_id_pattern.match(mp_cat_id)
-            coll = self.mat_coll if is_mp_id else self.comp_coll
+            coll = self.materials if is_mp_id else self.compositions
             key = '.'.join([project, str(cid)])
             coll.update({}, {'$unset': {key: 1}}, multi=True)
         # remove `project` field when no contributions remaining
-        for coll in [self.mat_coll, self.comp_coll]:
+        for coll in [self.materials, self.compositions]:
             for doc in coll.find({project: {'$exists': 1}}):
                 for d in doc.itervalues():
                     if not d:
@@ -90,7 +92,7 @@ class MPContributionsBuilder():
 
     def find_contribution(self, cid):
         if isinstance(self.db, dict): return self.db
-        else: return self.db.contributions.find_one({'_id': cid})
+        else: return self.contributions.find_one({'_id': cid})
 
     def build(self, contributor_email, cid):
         """update materials/compositions collections with contributed data"""
@@ -98,7 +100,7 @@ class MPContributionsBuilder():
         contrib = self.find_contribution(cid)
         mp_cat_id = contrib['mp_cat_id']
         is_mp_id = self.mp_id_pattern.match(mp_cat_id)
-        self.curr_coll = self.mat_coll if is_mp_id else self.comp_coll
+        self.curr_coll = self.materials if is_mp_id else self.compositions
         if contributor_email not in contrib['collaborators']: raise ValueError(
             "Build stopped: building contribution {} not "
             "allowed due to insufficient permissions of {}! Ask "
