@@ -204,8 +204,11 @@ class MPFile(six.with_metaclass(ABCMeta)):
                 sep = '' if min_indentor in key else ':'
                 if lines and key == min_indentor:
                     lines.append('')
-                if isinstance(value, string_types) and table_start in value:
-                    value = value[len(table_start):]
+                if isinstance(value, string_types):
+                    if table_start in value:
+                        value = value[len(table_start):]
+                    if ':' in value: # quote to ignore delimiter
+                        value = '"{}"'.format(value)
                 lines.append(make_pair(key, value, sep=sep))
         if with_comments:
             for idx_str, comment in self.comments.iteritems():
