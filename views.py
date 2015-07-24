@@ -1,5 +1,6 @@
 from django.http import HttpResponse, Http404, HttpResponseNotFound
 from django.template import RequestContext, loader
+from bson import SON
 
 from utils import connector
 
@@ -7,7 +8,7 @@ from utils import connector
 def composition_contributions(request, composition, mdb=None):
     if request.user.is_staff:
         material = {}
-        material['contributed_data'] = mdb.contribs_db.compositions.find_one(
+        material['contributed_data'] = mdb.contrib_ad.compositions.find_one(
             {'_id': composition}, {'_id': 0})
         material['pretty_formula'] = composition
     else:
@@ -25,8 +26,10 @@ def jsanitize(obj):
     if isinstance(obj, (list, tuple)):
         return [jsanitize(i) for i in obj]
     elif isinstance(obj, dict):
-        return {unicode(k).encode('utf-8'): jsanitize(v)
-                for k, v in obj.items()}
+        return SON([
+            (unicode(k).encode('utf-8'), jsanitize(v))
+            for k, v in obj.items()
+        ])
     elif isinstance(obj, (int, float)):
         return obj
     elif obj is None:
