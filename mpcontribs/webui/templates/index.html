@@ -5,7 +5,6 @@
     <script src="{{ url_for('static', filename='js/react-0.11.0.js') }}"></script>
     <script src="{{ url_for('static', filename='js/JSXTransformer-0.11.0.js') }}"></script>
     <script src="{{ url_for('static', filename='js/jsonViewer.min.js') }}"></script>
-    <link href="{{ url_for('static', filename='css/screen.css') }}" media="screen, projection" rel="stylesheet" type="text/css" />
     <script type="text/javascript" charset="utf8" src="{{ url_for('static', filename='js/jquery.js') }}"></script>
     <script type="text/javascript" charset="utf8" src="{{ url_for('static', filename='js/jquery.dataTables.js') }}"></script>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css"/>
@@ -15,71 +14,89 @@
     <link rel="icon" href="data:;base64,=">
   </head>
   <body>
-    <p><a name="top"></a>
-    <p><a class="btn btn-primary" role="button" href="/">Load New MPFile</a></p>
-    <div class="btn-toolbar" role="toolbar">
-    {% for value in content.itervalues() %}
-    {% for project_data in value.itervalues() %}
-    {% for cid in project_data %}
-    <a href="#cid{{ cid }}" class="btn btn-default btn-group" role="group" role="button">#{{ cid }}</a>
-    {% endfor %}
-    {% endfor %}
-    {% endfor %}
-    </div>
-    {% for key,value in content.iteritems() %}
-    {% for project,project_data in value.iteritems() %}
-    {% for cid,cid_data in project_data.iteritems() %}
-    <a name="cid{{ cid }}"></a><h1>{{ key }} &raquo; {{ project }} &raquo; #{{ cid }}</h1>
-    <a href="#top" class="btn btn-default btn-xs" role="button">back to top</a>
-    {% for data_type,data in cid_data.iteritems() %}
-    {% if data_type == "tree_data" %}
-    <div class="row">
-    <div class="col-md-8">
-    <a name="{{ cid }}_jump_tree"></a><h2>Hierarchical Data</h2>
-    <div id="{{ cid }}_tree"></div>
-    <script type="text/jsx">
-    /** @jsx React.DOM */
-    var lol = {{ data|tojson|safe }};
-    React.renderComponent(
-      <JSONTree data={lol} />, document.getElementById('{{ cid }}_tree')
-    );
-    </script>
-    </div>
-    {% elif data_type == "tables" %}
-    <div class="col-md-4">
-    <a name="{{ cid }}_jump_tables"></a><h2>Tables</h2>
-    {% for table_name,table_data in data.iteritems() %}
-    <p>
-      <b>{{ table_name }}</b>
-      <button class="btn btn-primary btn-xs" type="button" data-toggle="collapse"
-              data-target="#{{ cid }}_{{ loop.index }}_collapse" aria-expanded="false"
-              aria-controls="{{ cid }}_{{ loop.index }}_collapse">
-        Collapse/Expand
-      </button>
-      <div class="collapse" id="{{ cid }}_{{ loop.index }}_collapse">
-        <table id="{{ cid }}_{{ loop.index }}_table" class="table"></table>
-        <script>
-        var table = {{ table_data|tojson|safe }};
-        $('#{{ cid }}_{{ loop.index }}_table').DataTable({
-          "data": table['rows'], "columns": table['columns'], "scrollX": true,
-          "scrollY": "300px", "scrollCollapse": true, "paging": false
-        });
-        </script>
+    <div class="container">
+      <div class="row">
+        <div class="col-md-12">
+          <p><a name="top"></a>
+          <p><a class="btn btn-primary" role="button" href="/">Load New MPFile</a></p>
+          <div class="btn-toolbar" role="toolbar">
+            {% for value in content.itervalues() %}
+            {% for project_data in value.itervalues() %}
+            {% for cid in project_data %}
+            <a href="#cid{{ cid }}" class="btn btn-default btn-group" role="group" role="button">#{{ cid }}</a>
+            {% endfor %}
+            {% endfor %}
+            {% endfor %}
+          </div>
+        </div>
       </div>
-    </p>
-    {% endfor %}
+      {% for key,value in content.iteritems() %}
+      {% for project,project_data in value.iteritems() %}
+      {% for cid,cid_data in project_data.iteritems() %}
+      <div class="row">
+        <div class="col-md-12">
+          <a name="cid{{ cid }}"></a><h1>{{ key }} &raquo; {{ project }} &raquo; #{{ cid }}</h1>
+          <a href="#top" class="btn btn-default btn-xs" role="button">back to top</a>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-8">
+          <a name="{{ cid }}_jump_tree"></a><h2>Hierarchical Data</h2>
+          {% if "tree_data" in cid_data %}
+          <div id="{{ cid }}_tree"></div>
+          <script type="text/jsx">
+          /** @jsx React.DOM */
+          var lol = {{ cid_data['tree_data']|tojson|safe }};
+          React.renderComponent(
+              <JSONTree data={lol} />, document.getElementById('{{ cid }}_tree')
+          );
+          </script>
+          {% endif %}
+        </div>
+        <div class="col-md-4">
+          <a name="{{ cid }}_jump_tables"></a><h2>Tables</h2>
+          {% if 'tables' in cid_data %}
+          {% for table_name,table_data in cid_data['tables'].iteritems() %}
+          <p>
+            <b>{{ table_name }}</b>
+            <button class="btn btn-primary btn-xs" type="button" data-toggle="collapse"
+                data-target="#{{ cid }}_{{ loop.index }}_collapse" aria-expanded="false"
+                aria-controls="{{ cid }}_{{ loop.index }}_collapse">
+              Collapse/Expand
+            </button>
+            <div class="collapse" id="{{ cid }}_{{ loop.index }}_collapse">
+              <table id="{{ cid }}_{{ loop.index }}_table" class="table"></table>
+              <script>
+              var table = {{ table_data|tojson|safe }};
+              $('#{{ cid }}_{{ loop.index }}_table').DataTable({
+                "data": table['rows'], "columns": table['columns'], "scrollX": true,
+                "scrollY": "300px", "scrollCollapse": true, "paging": false
+              });
+              </script>
+            </div>
+          </p>
+          {% endfor %}
+          {% endif %}
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-12">
+          <a name="{{ cid }}_jump_graphs"></a><h2>Graphs</h2>
+        </div>
+      </div>
+      <div class="row">
+        {% if 'plotly_urls' in cid_data %}
+        {% for url in cid_data['plotly_urls'] %}
+        <div class="col-md-6">
+          <iframe width="580" height="580" frameborder="0" seamless="seamless"
+             scrolling="no" src="{{url}}.embed?width=580&height=580"></iframe>
+        </div>
+        {% endfor %}
+        {% endif %}
+      </div>
+      {% endfor %}
+      {% endfor %}
+      {% endfor %}
     </div>
-    </div>
-    {% elif data_type == "plotly_urls" %}
-    <a name="{{ cid }}_jump_graphs"></a><h2>Graphs</h2>
-    {% for url in data %}
-    <iframe width="580" height="580" frameborder="0" seamless="seamless"
-       scrolling="no" src="{{url}}.embed?width=580&height=580"></iframe>
-    {% endfor %}
-    {% endif %}
-    {% endfor %}
-    {% endfor %}
-    {% endfor %}
-    {% endfor %}
   </body>
 </html>
