@@ -100,6 +100,20 @@ def pandas_to_dict(pandas_object):
             pandas_object[col].dtype != np.int64 ):
             all_columns_numeric = False
             break
-    return pandas_object.to_dict(
-        orient = 'list' if all_columns_numeric else 'records'
-    )
+    # the remainder of this function is adapted from Pandas' source to
+    # preserve the columns order
+    if not pandas_object.columns.is_unique:
+        warnings.warn("DataFrame columns are not unique, some "
+                      "columns will be omitted.", UserWarning)
+    if all_columns_numeric: # pandas 'list' mode
+        list_dict = RecursiveDict()
+        for k, v in pd.compat.iteritems(pandas_object):
+            list_dict[k] = v.tolist()
+        return list_dict
+    else: # pandas 'records' mode
+        records = []
+        for row in pandas_object.values:
+            d = RecursiveDict()
+            for k, v in zip(pandas_object.columns, row):
+                d[k] = v
+            records.append(d)
