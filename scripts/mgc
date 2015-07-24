@@ -81,7 +81,7 @@ def load_cma():
     try:
       cma = ContributionMongoAdapter.from_config()
     except:
-      raise ValueError("Could't load ContributionMongoAdapter from config")
+      raise ValueError("Couldn't load ContributionMongoAdapter from config")
 
 #def fake(args):
 #    load_cma()
