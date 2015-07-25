@@ -160,24 +160,26 @@ class MPFile(six.with_metaclass(ABCMeta)):
             first_sub_key, ('test_index', idx+733773))
 
     def concat(self, mpfile):
-        raise NotImplementedError('TODO')
         if not isinstance(mpfile, MPFile):
             raise ValueError('Provide a MPFile to concatenate')
         if len(mpfile.document) > 1:
             raise ValueError('concatenation only possible with single section files')
-        #mp_cat_id = mpfile.document.keys()[0]
-        #general_title = mp_level01_titles[0]
-        #if general_title in mpfile.document[mp_cat_id]:
-        #    general_data = mpfile.document[mp_cat_id].pop(general_title)
-        #    if general_title not in self.document:
-        #        self.document.rec_update(nest_dict(general_data, [general_title]))
-        #mp_cat_id_idx, mp_cat_id_uniq = 0, mp_cat_id
-        #    while mp_cat_id_uniq in self.document.keys():
-        #        mp_cat_id_uniq = mp_cat_id + '--{}'.format(mp_cat_id_idx)
-        #        mp_cat_id_idx += 1
-        #    self.document.rec_update(nest_dict(
-        #        mpfile.document[mp_cat_id], [mp_cat_id_uniq]
-        #    ))
+        mp_cat_id = mpfile.document.keys()[0]
+        general_title = mp_level01_titles[0]
+        if general_title in mpfile.document[mp_cat_id]:
+            general_data = mpfile.document[mp_cat_id].pop(general_title)
+            if general_title not in self.document:
+                self.document.rec_update(nest_dict(general_data, [general_title]))
+        mp_cat_id_idx, mp_cat_id_uniq = 0, mp_cat_id
+        while mp_cat_id_uniq in self.document.keys():
+            mp_cat_id_uniq = mp_cat_id + '--{}'.format(mp_cat_id_idx)
+            mp_cat_id_idx += 1
+        self.document.rec_update(nest_dict(
+            mpfile.document.pop(mp_cat_id), [mp_cat_id_uniq]
+        ))
+        # TODO: account for comments
+        if mpfile.comments:
+            raise NotImplementedError('TODO')
         #shift = mpfile.get_number_of_lines(with_comments=True)
         #for idx_str in mpfile.comments.keys():
         #    idx_str_shift = mpfile.get_shifted_comment_index(idx_str, shift)
