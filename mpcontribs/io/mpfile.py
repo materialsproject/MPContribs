@@ -241,5 +241,9 @@ class MPFile(six.with_metaclass(ABCMeta)):
         ))
 
     def get_identifiers(self):
-        """list of identifiers (i.e. all root-level headers excl. GENERAL"""
-        return [ k for k in self.document if k.lower() != mp_level01_titles[0] ]
+        """list of materials/composition identifiers as tuples w/ contribution IDs"""
+        return [
+          (k, self.document[k].get('cid', None))
+          for k in self.document
+          if k.lower() != mp_level01_titles[0]
+        ]
