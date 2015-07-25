@@ -29,17 +29,21 @@ def submit_mpfile(path_or_mpfile, target=None, test=False):
     mpfile, cid_shorts = MPFile(), [] # output
     for idx, mpfile_single in enumerate(MPFile.from_file(path_or_mpfile).split()):
         mp_cat_id = mpfile_single.document.keys()[0]
-        if test: mpfile_single.set_test_mode(mp_cat_id, idx)
-        print('submit contribution for {} ...'.format(mp_cat_id))
+        cid = mpfile_single.document[mp_cat_id].get('cid', None)
+        if test and cid is None: mpfile_single.set_test_mode(mp_cat_id, idx)
+        if cid is None:
+            print('submit contribution for {} ...'.format(mp_cat_id))
+        else:
+            cid_short = get_short_object_id(cid)
+            print('update contribution #{} for {} ...'.format(cid_short, mp_cat_id))
         if target is not None:
             mpfile_single.write_file('tmp')
             cid = target.submit_contribution('tmp')
             os.remove('tmp')
-            cid_short = get_short_object_id(cid)
         else:
             doc = cma.submit_contribution(mpfile_single, contributor)
             cid = doc['_id']
-            cid_short = get_short_object_id(cid)
+        cid_short = get_short_object_id(cid)
         print('> submitted as #{}'.format(cid_short))
         mpfile_single.insert_id(mp_cat_id, cid)
         cid_shorts.append(cid_short)
