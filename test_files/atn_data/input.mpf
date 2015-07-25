@@ -29,6 +29,7 @@ directory: 2015-DD-Permalloy/02_data_XMCD_1200l_conv/
 >>>>> group by
 Z: A
 Y: B
+
 >>> Ni20Fe80
 >>>> Ni XMCD
 >>>>> get xmcd
