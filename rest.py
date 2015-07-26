@@ -144,7 +144,8 @@ class MPRester(object):
         except Exception as ex:
             raise MPRestError(str(ex))
 
-    def query_contribs(self, criteria=dict(), contributor_only=True):
+    def query_contributions(self, criteria=dict(), contributor_only=True,
+                       projection=None, collection='contributions'):
         """
         Query the contributions collection of the Materials Project site.
 
@@ -161,7 +162,9 @@ class MPRester(object):
         try:
             payload = {
                 "criteria": json.dumps(criteria),
-                "contributor_only": json.dumps(contributor_only)
+                "contributor_only": json.dumps(contributor_only),
+                "projection": json.dumps(projection),
+                "collection": json.dumps(collection)
             }
             response = self.session.post(
                 "{}/contribs/query".format(self.preamble), data=payload
