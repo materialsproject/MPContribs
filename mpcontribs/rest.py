@@ -40,12 +40,14 @@ class ContributionMongoAdapter(object):
     #        elements=['mp-{}'.format(i) for i in range(1, 5)]
     #    )
 
-    def query_contributions(self, crit):
+    def query_contributions(self, crit, projection=None, collection='contributions'):
         # TODO open `content` for arbitrary query
         # TODO be careful with SON for order in crit
-        props = [ 'collaborators', 'mp_cat_id' ]
-        proj = dict((p, 1) for p in props)
-        return self.contributions.find(crit, proj)
+        coll = getattr(self, collection)
+        if projection is None:
+          props = [ 'collaborators', 'mp_cat_id' ]
+          projection = dict((p, 1) for p in props)
+        return coll.find(crit, projection)
 
     def delete_contributions(self, crit):
         return self.contributions.remove(crit)
