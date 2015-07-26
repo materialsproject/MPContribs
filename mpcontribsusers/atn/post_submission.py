@@ -1,5 +1,7 @@
 import argparse, os, requests
 from pymatgen.matproj.rest import MPRester
+from pymatgen.phasediagram.pdmaker import PhaseDiagram
+from pymatgen.phasediagram.plotter import PDPlotter
 from StringIO import StringIO
 from PyPDF2 import PdfFileMerger
 
@@ -33,6 +35,8 @@ if __name__ == '__main__':
 
     # TODO: in Plotly, set figure titles to composition
     merger = PdfFileMerger()
+
+    # get spectra from MP and append to PDF
     for cid in cids:
         prefix = 'LBNL.{}'.format(cid)
         criteria = {prefix: {'$exists': 1}}
@@ -46,5 +50,13 @@ if __name__ == '__main__':
         image_bytes = requests.get('{}.pdf'.format(plotly_url)).content
         merger.append(StringIO(image_bytes))
         break
-    merger.write('test.pdf')
 
+    # get phase diagram from MP and append to PDF
+    entries = mpr.get_entries_in_chemsys(["Ni", "Fe", "Pt"])
+    pd = PhaseDiagram(entries)
+    plotter = PDPlotter(pd)
+    stream = StringIO()
+    plotter.write_image(stream, image_format='pdf')
+    merger.append(stream)
+
+    merger.write('test.pdf')
