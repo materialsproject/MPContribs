@@ -49,6 +49,19 @@ xas+ factor: 0.349333591384
 energy range: 600 800
 normalization factor: 1.00964185927
 offset: 0.984095999176
+>>>> plots
+>>>>> default data table Ni XMCD
+x: Energy
+title: Ni20Fe80Pt1
+xTitle: Energy
+yTitle: Signal
+table: table Ni XMCD
+>>>>> default data table Fe XMCD
+x: Energy
+title: Ni20Fe80Pt1
+xTitle: Energy
+yTitle: Signal
+table: table Fe XMCD
 >>>> table Ni XMCD
 Energy,XAS,XMCD
 820,0.0104944,-0.00140602
@@ -882,6 +895,19 @@ xas+ factor: 0.349333591384
 energy range: 600 800
 normalization factor: 1.00964185927
 offset: 0.984095999176
+>>>> plots
+>>>>> default data table Ni XMCD
+x: Energy
+title: Ni20Fe80Pt2
+xTitle: Energy
+yTitle: Signal
+table: table Ni XMCD
+>>>>> default data table Fe XMCD
+x: Energy
+title: Ni20Fe80Pt2
+xTitle: Energy
+yTitle: Signal
+table: table Fe XMCD
 >>>> table Ni XMCD
 Energy,XAS,XMCD
 820,0.002756,-0.00104656
@@ -1715,6 +1741,19 @@ xas+ factor: 0.349333591384
 energy range: 600 800
 normalization factor: 1.00964185927
 offset: 0.984095999176
+>>>> plots
+>>>>> default data table Ni XMCD
+x: Energy
+title: Ni20Fe80Pt3
+xTitle: Energy
+yTitle: Signal
+table: table Ni XMCD
+>>>>> default data table Fe XMCD
+x: Energy
+title: Ni20Fe80Pt3
+xTitle: Energy
+yTitle: Signal
+table: table Fe XMCD
 >>>> table Ni XMCD
 Energy,XAS,XMCD
 820,0.00339507,-0.0016751
@@ -2548,6 +2587,19 @@ xas+ factor: 0.349333591384
 energy range: 600 800
 normalization factor: 1.00964185927
 offset: 0.984095999176
+>>>> plots
+>>>>> default data table Ni XMCD
+x: Energy
+title: Ni20Fe80Pt4
+xTitle: Energy
+yTitle: Signal
+table: table Ni XMCD
+>>>>> default data table Fe XMCD
+x: Energy
+title: Ni20Fe80Pt4
+xTitle: Energy
+yTitle: Signal
+table: table Fe XMCD
 >>>> table Ni XMCD
 Energy,XAS,XMCD
 820,0.00858188,-0.00126902
@@ -3381,6 +3433,19 @@ xas+ factor: 0.349333591384
 energy range: 600 800
 normalization factor: 1.00964185927
 offset: 0.984095999176
+>>>> plots
+>>>>> default data table Ni XMCD
+x: Energy
+title: Ni20Fe80Pt5
+xTitle: Energy
+yTitle: Signal
+table: table Ni XMCD
+>>>>> default data table Fe XMCD
+x: Energy
+title: Ni20Fe80Pt5
+xTitle: Energy
+yTitle: Signal
+table: table Fe XMCD
 >>>> table Ni XMCD
 Energy,XAS,XMCD
 820,0.0288171,0.00105001
