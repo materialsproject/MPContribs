@@ -120,6 +120,8 @@ def query_contributions(request, mdb=None):
     if not request.user.is_staff:
         raise PermissionDenied("contributions query open only to staff right now.")
     criteria = json.loads(request.POST.get('criteria', '{}'))
+    collection = json.loads(request.POST.get('collection', 'contributions'))
+    projection = json.loads(request.POST.get('projection', None))
     # contribution query only depends on contributor_email (not project)
     # query checks whether contributor_email is in collaborators list of contribution
     contributor = '{} {} <{}>'.format(
@@ -127,7 +129,9 @@ def query_contributions(request, mdb=None):
     )
     if json.loads(request.POST.get('contributor_only', 'true')):
         criteria['collaborators'] = {'$in': [contributor]}
-    results = mdb.contrib_ad.query_contributions(criteria)
+    results = mdb.contrib_ad.query_contributions(
+        criteria, projection=projection, collection=collection
+    )
     return {"valid_response": True, "response": list(results)}
 
 @mapi_func(supported_methods=["POST", "GET"], requires_api_key=True)
