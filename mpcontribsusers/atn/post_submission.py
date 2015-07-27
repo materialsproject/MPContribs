@@ -1,7 +1,8 @@
-import argparse, os, requests
+import argparse, os, requests, math
 from pymatgen.matproj.rest import MPRester
 from pymatgen.phasediagram.pdmaker import PhaseDiagram
 from pymatgen.phasediagram.plotter import PDPlotter
+from pymatgen.core import Composition
 from StringIO import StringIO
 from PyPDF2 import PdfFileMerger
 
@@ -32,12 +33,19 @@ if __name__ == '__main__':
     SITE = 'http://localhost:8000'
     ENDPOINT, API_KEY = "{}/rest".format(SITE), os.environ.get('MAPI_KEY_LOC')
     mpr = MPRester(API_KEY, endpoint=ENDPOINT)
-
-    # TODO: in Plotly, set figure titles to composition
     merger = PdfFileMerger()
+
+    # get phase diagram from MP and append to PDF
+    chemsys = ["Ni", "Fe", "Pt"]
+    entries = mpr.get_entries_in_chemsys(chemsys)
+    pd = PhaseDiagram(entries)
+    plotter = PDPlotter(pd)
+    plt = plotter.get_plot()
 
     # get spectra from MP and append to PDF
     for cid in cids:
+        print cid
+        # get data from compositions collection
         prefix = 'LBNL.{}'.format(cid)
         criteria = {prefix: {'$exists': 1}}
         projection = {'{}.plotly_urls'.format(prefix): 1}
@@ -45,18 +53,22 @@ if __name__ == '__main__':
             criteria=criteria, projection=projection,
             collection='compositions', contributor_only=False
         )[0]
+        # append spectra to output PDF
         plotly_url = doc['LBNL'][str(cid)]['plotly_urls'][0] # TODO Ni or Fe
-        print cid, plotly_url
         image_bytes = requests.get('{}.pdf'.format(plotly_url)).content
         merger.append(StringIO(image_bytes))
-        break
+        # add points to MP phase diagram for contributed compositions
+        # TODO make it heatmap with magnetic moments
+        composition = Composition(doc['_id'])
+        x0, x1, x2 = [composition.get_atomic_fraction(el) for el in chemsys]
+        x, y = x1+x2/2., x2*math.sqrt(3.)/2.
+        plt.plot(x, y,  "ko", linewidth=4, markeredgecolor="k",
+                 markerfacecolor="r", markersize=8)
 
-    # get phase diagram from MP and append to PDF
-    entries = mpr.get_entries_in_chemsys(["Ni", "Fe", "Pt"])
-    pd = PhaseDiagram(entries)
-    plotter = PDPlotter(pd)
+    # append phase diagram to output PDF & save
     stream = StringIO()
-    plotter.write_image(stream, image_format='pdf')
+    f = plt.gcf()
+    f.set_size_inches((14, 10))
+    plt.savefig(stream, format='pdf')
     merger.append(stream)
-
     merger.write('test.pdf')
