@@ -53,8 +53,19 @@ class MPContributionsBuilder():
             table_name = plotopts.pop('table')
             data = contrib['content'][table_name]
             df = pd.DataFrame.from_dict(data)
-            # TODO: set xTitle an yTitle according to column header
-            urls.append(df.iplot(filename=filename, asUrl=True, **plotopts))
+            # TODO: set xTitle and yTitle according to column header
+            if isinstance(self.db, dict):
+                # use Plotly Javascript Library -> list of x/y dicts
+                xaxis, yaxis = plotopts['x'], plotopts.get('y', None)
+                yaxes = [yaxis] if yaxis is not None else \
+                        [col for col in df.columns if col != xaxis]
+                xvals = df[xaxis].tolist()
+                urls.append([
+                    {'x': xvals, 'y': df[axis].tolist()} for axis in yaxes
+                ])
+            else:
+                # use Plotly Cloud
+                urls.append(df.iplot(filename=filename, asUrl=True, **plotopts))
             #if len(urls) == len(contrib['content']['plots']): # TODO update
             #    pyfig = py.get_figure(urls[nplot])
             #    for ti,line in enumerate(ax.get_lines()):
