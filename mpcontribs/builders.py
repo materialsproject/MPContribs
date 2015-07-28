@@ -1,7 +1,7 @@
 import os, re, bson
 import pandas as pd
 import cufflinks as cf
-cf.set_config_file(world_readable=True, theme='pearl')
+cf.set_config_file(world_readable=False, theme='pearl')
 import plotly.plotly as py
 from plotly.graph_objs import *
 from itertools import groupby
