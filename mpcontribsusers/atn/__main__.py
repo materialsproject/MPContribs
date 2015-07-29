@@ -3,6 +3,11 @@ from mpcontribs.io.mpfile import MPFile # add the mpcontribs dir to PYTHONPATH
 import mspScan as msp
 from ALS_import import treat_xmcd
 import xas_process as xas_process
+import translate_vicalloy as tl_vicalloy
+import translate_PyPt as tl_pypt
+
+def default_translate(composition, keys=""):
+	return(str(composition)+str(keys))
 
 parser = argparse.ArgumentParser(
     description="""generate MPFile(s) from a directory of related XAS measurements."""
@@ -13,11 +18,25 @@ parser.add_argument(
     composition, and (ii) a subdirectory for each composition with the
     according instrumental output files."""
 )
+
+parser.add_argument(
+    'input_mp', type=str, help="""an input MPFile with shared MetaData and 
+    processing instructions for each composition""", default="input.mpf"
+)
+
+parser.add_argument(
+    'output_mp', type=str, help="""an output MPFile with shared MetaData and 
+    processing results for each composition""", default="output.mpf"
+)
+
 args = parser.parse_args()
 
-mpfile_path = os.path.join(args.work_dir, 'input_mult.mpf')
+input_mp = args.input_mp
+output_mp = args.output_mp
+
+mpfile_path = os.path.join(args.work_dir, input_mp)
 if not os.path.exists(mpfile_path):
-    print 'Make sure to provide the config file `input.mpf` in {}'.format(args.work_dir)
+    print 'Make sure to provide the config file {} in {}'.format(args.input_mp, args.work_dir)
     sys.exit(0)
     
 mpfile = MPFile.from_file(mpfile_path)
@@ -38,6 +57,11 @@ process_templates = mpfile.get_identifiers()
 
 keys = scan_groups.groups.keys()
 keys.sort()
+
+
+translate = default_translate
+# translate = tl_vicalloy.get_translate(args.work_dir)
+translate = tl_pypt.get_translate(args.work_dir)
 	
 for g in keys:
     for composition in process_templates:
@@ -47,7 +71,8 @@ for g in keys:
 
         # TODO: No concept for the mapping of keys to compositions yet. (alpha)
 
-	composition_name = composition+str(g) # could be mapped at some point
+	composition_name = translate(composition,g) # could be mapped at some point
+
         mpfile.document[composition_name] = scan_params_copy
 
         sg = scan_groups.get_group(g)
@@ -62,4 +87,4 @@ for g in keys:
                 composition_name, xmcd_frame[['Energy', 'XAS', 'XMCD']], "data"+process_chain_name
 	    )
 
-mpfile.write_file(os.path.join(args.work_dir, 'output.mpf'))
+mpfile.write_file(os.path.join(args.work_dir, output_mp))
