@@ -2,7 +2,6 @@ import bson
 from config import mp_level01_titles, mp_id_pattern
 from utils import get_short_object_id
 from datetime import datetime
-from pymatgen.core import Composition
 
 class ContributionMongoAdapter(object):
     """adapter/interface for user contributions"""
@@ -57,10 +56,8 @@ class ContributionMongoAdapter(object):
         """submit a single contribution to `mpcontribs.contributions` collection"""
         if len(mpfile.document) > 1:
             raise ValueError('submission only possible for single section MPFiles')
-        first_root_key = mpfile.document.keys()[0]
-        mp_cat_id = first_root_key if mp_id_pattern.match(first_root_key) else \
-                Composition(first_root_key).get_integer_formula_and_factor()[0]
-        data = mpfile.document[first_root_key]
+        mp_cat_id = mpfile.document.keys()[0]
+        data = mpfile.document[mp_cat_id]
         update = ('cid' in data) # new vs update
         cid = bson.ObjectId(data['cid']) if update else bson.ObjectId()
         if 'test_index' in data:
