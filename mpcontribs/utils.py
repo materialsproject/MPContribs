@@ -47,7 +47,6 @@ def submit_mpfile(path_or_mpfile, target=None, test=False):
         print('> submitted as #{}'.format(cid_short))
         mpfile_single.insert_id(mp_cat_id, cid)
         cid_shorts.append(cid_short)
-        mpfile.concat(mpfile_single)
         print('> build contribution #{} into {} ...'.format(cid_short, mp_cat_id))
         if target is not None:
             url = target.build_contribution(cid)
@@ -57,6 +56,7 @@ def submit_mpfile(path_or_mpfile, target=None, test=False):
             single_build_doc = mcb.build(contributor, cid)
             build_doc.rec_update(single_build_doc)
             print('> built #{}'.format(cid_short))
+        mpfile.concat(mpfile_single)
     if target is not None and \
        isinstance(path_or_mpfile, string_types) and \
        os.path.isfile(path_or_mpfile):
