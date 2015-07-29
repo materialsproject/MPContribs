@@ -76,8 +76,9 @@
     <div class="col-md-6">
       <div id="{{ cid }}_{{ loop.index }}_graph" style="width:580px;height:580px;"></div>
       <script>
+          var data = {{ url|tojson|safe }};
           var elem = document.getElementById("{{ cid }}_{{ loop.index }}_graph");
-          Plotly.plot(elem, {{ url|tojson|safe }}, {margin: {t: 0}});
+          Plotly.plot(elem, data[0], data[1]);
       </script>
     </div>
     {% endfor %}

@@ -50,6 +50,9 @@ class MPContributionsBuilder():
             filename = '{}_{}_{}'.format(
                 ('viewer' if isinstance(self.db, dict) else 'mp'), cid, nplot)
             table_name = plotopts.pop('table')
+            plot_title = ' - '.join([
+                contrib['mp_cat_id'], table_name[len(mp_level01_titles[1]+' '):]
+            ])
             data = contrib['content'][table_name]
             df = pd.DataFrame.from_dict(data)
             # TODO: set xTitle and yTitle according to column header
@@ -59,9 +62,13 @@ class MPContributionsBuilder():
                 yaxes = [yaxis] if yaxis is not None else \
                         [col for col in df.columns if col != xaxis]
                 xvals = df[xaxis].tolist()
-                urls.append([
-                    {'x': xvals, 'y': df[axis].tolist()} for axis in yaxes
-                ])
+                urls.append([[
+                    {'x': xvals, 'y': df[axis].tolist(), 'name': axis}
+                    for axis in yaxes
+                ], {
+                    'title': plot_title, 'xaxis': {'title': xaxis},
+                    'legend': {'x': 0.7, 'y': 1}, 'margin': {'r': 0, 't': 40},
+                }])
             else:
                 # use Plotly Cloud
                 urls.append(df.iplot(filename=filename, asUrl=True, **plotopts))

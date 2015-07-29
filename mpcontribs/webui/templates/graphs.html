@@ -10,8 +10,9 @@
     <div class="col-md-4">
       <div id="{{ cid }}_{{ loop.index }}_graph" style="width:385px;height:385px;"></div>
       <script>
+          var data = {{ url|tojson|safe }};
           var elem = document.getElementById("{{ cid }}_{{ loop.index }}_graph");
-          Plotly.plot(elem, {{ url|tojson|safe }}, {margin: {t: 0}});
+          Plotly.plot(elem, data[0], data[1]);
       </script>
     </div>
     {% endfor %}
