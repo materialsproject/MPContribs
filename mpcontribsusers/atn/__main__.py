@@ -4,6 +4,7 @@ import mspScan as msp
 from ALS_import import treat_xmcd
 import xas_process as xas_process
 import translate_vicalloy as tl_vicalloy
+import translate_PyPt as tl_pypt
 
 def default_translate(composition, keys=""):
 	return(str(composition)+str(keys))
@@ -59,7 +60,8 @@ keys.sort()
 
 
 translate = default_translate
-translate = tl_vicalloy.get_translate(args.work_dir)
+# translate = tl_vicalloy.get_translate(args.work_dir)
+translate = tl_pypt.get_translate(args.work_dir)
 	
 for g in keys:
     for composition in process_templates:
