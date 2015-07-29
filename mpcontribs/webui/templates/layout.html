@@ -15,6 +15,18 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/dataTables.bootstrap.css') }}" />
     <script src="{{ url_for('static', filename='js/dataTables.bootstrap.js') }}"></script>
     <link rel="icon" href="data:;base64,=">
+    <div class="container">
+      <div class="row">
+        <div class="col-md-12">
+          <div class="btn-toolbar" role="toolbar">
+            <a name="top">
+              <a class="btn btn-primary" role="button" href="/">Home</a>
+              <a class="btn btn-primary" role="button" href="/shutdown">Quit</a>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p></p>
   </head>
   {% block body %}{% endblock %}
 </html>
