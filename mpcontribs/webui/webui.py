@@ -29,3 +29,11 @@ def index():
 @app.route('/')
 def choose():
   return render_template('choose.html')
+
+@app.route('/shutdown', methods=['GET', 'POST'])
+def shutdown():
+    func = request.environ.get('werkzeug.server.shutdown')
+    if func is None:
+        raise RuntimeError('Not running with the Werkzeug Server')
+    func()
+    return 'Server shutting down...'
