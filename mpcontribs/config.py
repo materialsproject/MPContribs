@@ -1,5 +1,5 @@
 from __future__ import unicode_literals, print_function
-import os
+import os, re
 
 indent_symbol = '>'
 min_separator_length = 3 # minimum separator length to avoid collision w/ '>>'
@@ -22,3 +22,4 @@ csv_database = os.path.join(
 )
 #SITE = 'https://www.materialsproject.org'
 SITE = 'http://localhost:8000'
+mp_id_pattern = re.compile('^(mp|por)-\d+$', re.IGNORECASE)

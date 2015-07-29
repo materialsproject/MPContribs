@@ -3,7 +3,7 @@ import re, logging
 import numpy as np
 import pandas as pd
 from StringIO import StringIO
-from ..config import indent_symbol, csv_comment_char, mp_level01_titles
+from ..config import indent_symbol, csv_comment_char, mp_level01_titles, mp_id_pattern
 from utils import nest_dict, RecursiveDict, pandas_to_dict, get_indentor
 from collections import OrderedDict
 
@@ -16,7 +16,6 @@ class RecursiveParser():
         self.level = -1 # level counter
         self.data_options = { 'sep': ',', 'header': 0 }
         self.colon_key_value_list = { 'sep': ':', 'header': None, 'index_col': 0 }
-        self.mp_id_pattern = re.compile('mp-\d+', re.IGNORECASE)
 
     def separator_regex(self):
         """get separator regex for section depth/level"""
@@ -37,7 +36,7 @@ class RecursiveParser():
         title_lower = title.lower()
         lower = (
             self.level+1 == 0 and (
-                self.mp_id_pattern.match(title) or
+                mp_id_pattern.match(title) or
                 title_lower == mp_level01_titles[0]
             )
         )

@@ -6,13 +6,12 @@ import plotly.plotly as py
 from plotly.graph_objs import *
 from itertools import groupby
 from io.utils import nest_dict, RecursiveDict
-from config import mp_level01_titles
+from config import mp_level01_titles, mp_id_pattern
 from utils import Author, get_short_object_id, unflatten_dict
 
 class MPContributionsBuilder():
     """build user contributions from `mpcontribs.contributions`"""
     def __init__(self, db):
-        self.mp_id_pattern = re.compile('^(mp|por)-\d+$', re.IGNORECASE)
         self.db = db
         if isinstance(self.db, dict):
             self.materials = RecursiveDict()
@@ -78,7 +77,7 @@ class MPContributionsBuilder():
     def delete(self, project, cids):
         for contrib in self.contributions.find({'_id': {'$in': cids}}):
             mp_cat_id, cid = contrib['mp_cat_id'], contrib['_id']
-            is_mp_id = self.mp_id_pattern.match(mp_cat_id)
+            is_mp_id = mp_id_pattern.match(mp_cat_id)
             coll = self.materials if is_mp_id else self.compositions
             key = '.'.join([project, str(cid)])
             coll.update({}, {'$unset': {key: 1}}, multi=True)
@@ -98,7 +97,7 @@ class MPContributionsBuilder():
         cid_short, cid_str = get_short_object_id(cid), str(cid)
         contrib = self.find_contribution(cid)
         mp_cat_id = contrib['mp_cat_id']
-        is_mp_id = self.mp_id_pattern.match(mp_cat_id)
+        is_mp_id = mp_id_pattern.match(mp_cat_id)
         self.curr_coll = self.materials if is_mp_id else self.compositions
         if contributor_email not in contrib['collaborators']: raise ValueError(
             "Build stopped: building contribution {} not "
