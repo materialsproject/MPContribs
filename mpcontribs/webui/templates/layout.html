@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>MPFile Viewer</title>
+    <script src="{{ url_for('static', filename='js/react-0.11.0.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/JSXTransformer-0.11.0.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/jsonViewer.min.js') }}"></script>
+    <link href="{{ url_for('static', filename='css/screen.css') }}" media="screen, projection" rel="stylesheet" type="text/css" />
+    <script type="text/javascript" charset="utf8" src="{{ url_for('static', filename='js/jquery.js') }}"></script>
+    <script type="text/javascript" charset="utf8" src="{{ url_for('static', filename='js/jquery.dataTables.js') }}"></script>
+    <script type="text/javascript" charset="utf8" src="{{ url_for('static', filename='js/d3.min.js') }}"></script>
+    <script type="text/javascript" charset="utf8" src="{{ url_for('static', filename='js/plotly-basic.js') }}"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}"/>
+    <script src="{{ url_for('static', filename='js/bootstrap.min.js') }}"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dataTables.bootstrap.css') }}" />
+    <script src="{{ url_for('static', filename='js/dataTables.bootstrap.js') }}"></script>
+    <link rel="icon" href="data:;base64,=">
+  </head>
+  {% block body %}{% endblock %}
+</html>

@@ -9,6 +9,7 @@ app.config['JSON_SORT_KEYS'] = False
 
 @app.route('/', defaults={'path': ''}, methods=['GET', 'POST'])
 @app.route('/<path:path>', methods=['GET', 'POST'])
+@app.route('/graphs/<path:path>', methods=['GET', 'POST'])
 def index(path):
     if not path and request.method == 'GET':
         return render_template('choose.html')
@@ -20,4 +21,5 @@ def index(path):
                 cid_short = get_short_object_id(cid)
                 d = project_data.pop(cid)
                 project_data[cid_short] = d
-    return render_template('index.html', content=content)
+    template = 'graphs.html' if 'graphs' in request.path else 'index.html'
+    return render_template(template, content=content)

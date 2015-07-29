@@ -1,0 +1,24 @@
+{% extends "layout.html" %}
+{% block body %}
+<div class="container">
+  {% for key,value in content.iteritems() %}
+  {% for project,project_data in value.iteritems() %}
+  {% for cid,cid_data in project_data.iteritems() %}
+  {% if loop.index is divisibleby 3 %}<div class="row">{% endif %}
+    {% if 'plotly_urls' in cid_data %}
+    {% for url in cid_data['plotly_urls'] %}
+    <div class="col-md-4">
+      <div id="{{ cid }}_{{ loop.index }}_graph" style="width:385px;height:385px;"></div>
+      <script>
+          var elem = document.getElementById("{{ cid }}_{{ loop.index }}_graph");
+          Plotly.plot(elem, {{ url|tojson|safe }}, {margin: {t: 0}});
+      </script>
+    </div>
+    {% endfor %}
+    {% endif %}
+  {% if loop.index is divisibleby 3 %}</div>{% endif %}
+  {% endfor %}
+  {% endfor %}
+  {% endfor %}
+</div>
+{% endblock %}
