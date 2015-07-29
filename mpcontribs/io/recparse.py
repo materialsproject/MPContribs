@@ -6,6 +6,7 @@ from StringIO import StringIO
 from ..config import indent_symbol, csv_comment_char, mp_level01_titles, mp_id_pattern
 from utils import nest_dict, RecursiveDict, pandas_to_dict, get_indentor
 from collections import OrderedDict
+from pymatgen.core import Composition
 
 class RecursiveParser():
     def __init__(self):
@@ -33,14 +34,14 @@ class RecursiveParser():
         title = re.split(
             r'%s*' % csv_comment_char, title
         )[0].strip()
-        title_lower = title.lower()
-        lower = (
-            self.level+1 == 0 and (
-                mp_id_pattern.match(title) or
-                title_lower == mp_level01_titles[0]
-            )
-        )
-        return title_lower if lower else title
+        if self.level+1 == 0:
+          is_mp_id = mp_id_pattern.match(title)
+          title_lower = title.lower()
+          if is_mp_id or title_lower == mp_level01_titles[0]:
+            return title_lower
+          else:
+            return Composition(title).get_integer_formula_and_factor()[0]
+        return title
 
     def is_bare_section(self, title):
         """determine whether currently in bare section"""
