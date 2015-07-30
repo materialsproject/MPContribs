@@ -1,5 +1,9 @@
 # [Changelog](https://github.com/materialsproject/MPContribs/releases)
 
+## [0.0.2](https://github.com/materialsproject/MPContribs/compare/0.0.1...0.0.2)
+
+* [7a4867d](https://github.com/materialsproject/MPContribs/commit/7a4867d) minor doc improvements
+
 ## [0.0.1](https://github.com/materialsproject/MPContribs/compare/0.0.0...0.0.1)
 
 * [6b4c44e](https://github.com/materialsproject/MPContribs/commit/6b4c44e) setup: remove include_package_data
