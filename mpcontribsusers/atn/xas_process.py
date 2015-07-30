@@ -74,10 +74,6 @@ def remove_linear_BG_XAS_preedge(xmcd_data, scanparams, process_parameters=None,
 
 
 
-
-
-
-
 def normalize_XAS_minmax(xmcd_data, scanparams=None, process_parameters=None, process_number=-1):
     offset = xmcd_data["XAS"].min()
     factor = xmcd_data["XAS"].max() - offset
@@ -85,6 +81,21 @@ def normalize_XAS_minmax(xmcd_data, scanparams=None, process_parameters=None, pr
     xmcd_data["XMCD"] /= factor
     xmcd_data["Factor"] = factor # throw away?
     return (xmcd_data, {"normalization factor": factor, "offset": offset})
+
+def xas_xmcd_minmax(xmcd_data, scanparams=None, process_parameters=None, process_number=-1):
+
+    energy_range = map(float, process_parameters['energy range'].split()) \
+            if 'energy range' in process_parameters else [0, 10000]
+    energy = xmcd_data["Energy"]
+    mask = (energy > energy_range[0]) & (energy < energy_range[1])
+
+    xas_min = xmcd_data[mask][XAS].min()
+    xas_max = xmcd_data[mask][XAS].max()
+    xmcd_min = xmcd_data[mask][XMCD].min()
+    xmcd_max = xmcd_data[mask][XMCD].max()
+
+    return(xmcd_data, {"xas min": xas_min, "xas max": xas_max, "xmcd_min": xmcd_min, "xmcd max": xmcd_max})
+
 
 def get_xmcd(xmcd_data, scanparams=None, process_parameters={}, process_number=-1):
     Emin, Emax = map(float, process_parameters['energy range'].split()) \
@@ -116,5 +127,6 @@ process_dict = {
     'constant background removal preedge': remove_const_BG_preedge  ,
     'linear background removal preedge XAS': remove_linear_BG_XAS_preedge ,
     'xas normalization to min and max': normalize_XAS_minmax	,
+    'xas xmcd minmax': xas_xmcd_minmax,
     'scaling preedge to 1': normalize_preedge
 }
