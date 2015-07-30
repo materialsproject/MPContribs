@@ -13,8 +13,6 @@ Contents:
 
    tutorial
    develop
-   authors
-
 
 
 Indices and tables
