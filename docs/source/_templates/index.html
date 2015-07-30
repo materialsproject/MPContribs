@@ -1,0 +1,42 @@
+{% extends "layout.html" %}
+{% set title = _('Overview') %}
+{% block body %}
+  <h1>{{ _('Welcome') }}</h1>
+
+  <h2 style="margin-bottom: 0">{%trans%}Documentation{%endtrans%}</h2>
+
+  <table class="contentstable" align="center" style="margin-left: 30px"><tr>
+    <td width="50%">
+      <p class="biglink"><a class="biglink" href="{{ pathto("tutorial") }}">{%trans%}First steps with MPContribs{%endtrans%}</a><br/>
+         <span class="linkdescr">{%trans%}overview of basic tasks{%endtrans%}</span></p>
+      <p class="biglink"><a class="biglink" href="{{ pathto("contents") }}">{%trans%}Contents{%endtrans%}</a><br/>
+         <span class="linkdescr">{%trans%}for a complete overview{%endtrans%}</span></p>
+    </td><td width="50%">
+      <p class="biglink"><a class="biglink" href="{{ pathto("search") }}">{%trans%}Search page{%endtrans%}</a><br/>
+         <span class="linkdescr">{%trans%}search the documentation{%endtrans%}</span></p>
+      <p class="biglink"><a class="biglink" href="{{ pathto("genindex") }}">{%trans%}General Index{%endtrans%}</a><br/>
+         <span class="linkdescr">{%trans%}all functions, classes, terms{%endtrans%}</span></p>
+    </td></tr>
+  </table>
+
+  <h2>{%trans%}Contributor Guide{%endtrans%}</h2>
+
+  <p>{%trans%}If you want to contribute to the project,
+    this part of the documentation is for you.{%endtrans%}</p>
+
+    <ul>
+      <li>{%trans path=pathto("devguide")%}<a href="{{ path }}">MPContribs Developer’s Guide</a></li>{%endtrans%}
+      <li>{%trans path=pathto("authors")%}<a href="{{ path }}">MPContribs Authors</a></li>{%endtrans%}
+    </ul>
+
+  <h2>{%trans%}Citations{%endtrans%}</h2>
+
+  <p>{%trans%}Huck, P.; Jain, A.; Gunter, D.; Winston, D.; Persson K.;<br>
+  “A Community Contribution Framework for Sharing Materials Data with Materials Project”<br>
+  IEEE Computer Society Press, accepted{%endtrans%}</p>
+
+  <p>{%trans%}Huck, P.; Cholia, S.; Gunter, D.; Winston, D.; N'Diaye, A. T.; Persson K.;<br>
+  “User Applications Driven by the Community Contribution Framework MPContribs in the Materials Project”<br>
+  Concurrency Computat.: Pract. Exper. (submitted), 10th GCE Workshop, 2015.{%endtrans%}</p>
+
+{% endblock %}
