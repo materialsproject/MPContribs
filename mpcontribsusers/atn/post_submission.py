@@ -111,6 +111,8 @@ if __name__ == '__main__':
             idx
             #mpfile.document[comp_str]['Co XMCD processing']['xas normalization to min and max']['normalization factor']
         )
+    #x0, x1, x2 = 1/2., 1/3., 1/6.
+    #plt.plot(x0+x2/2., x2*math.sqrt(3.)/2., "ko", linewidth=4, markeredgecolor="k", markerfacecolor="r", markersize=8)
 
     # heatmap
     triang = tri.Triangulation(x, y)
