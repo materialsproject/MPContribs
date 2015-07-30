@@ -40,7 +40,8 @@ class RecursiveParser():
           if is_mp_id or title_lower == mp_level01_titles[0]:
             return title_lower
           else:
-            return Composition(title).get_integer_formula_and_factor()[0]
+            comp = Composition(title).get_integer_formula_and_factor()[0]
+            return Composition(comp).alphabetical_formula.replace(" ", "")
         return title
 
     def is_bare_section(self, title):
