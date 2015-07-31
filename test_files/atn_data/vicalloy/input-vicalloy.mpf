@@ -1,0 +1,55 @@
+>>> general
+>>>> Experiment
+>>>>> Preparation
+Description: Sputter deposition
+>>>>> Sample
+Material Name: Vicalloy
+Form: ~100nm film on Si wafer
+Thickness: ca. 20nm with 5 nm Pt-capping (nominally)
+Authors: Please Contact Alpha T. N'Diaye (atndiaye@lbl.gov) 
+>>>>> Measurement
+Detection: total electron yield
+Temperature: RT
+Orientation: 30° grazing incidence
+Date: 2015-03-06
+Measured by: Alpha T. N'Diaye 
+>>>>>> Beamline
+Beamline: ALS-6.3.1
+Method: Soft x-ray XAS and XMCD
+Polarization: circular, positive (ca. 60%)
+Magnet Field: 1T parallel to x-ray beam
+Fast Scanning parameters: 1,1,1,1
+>>>>>>> Monochromator
+Exit Slit: 20µm
+Grating: 600l/mm
+>>>> Datasource
+directory: Vicalloy/rawdata
+>>>>> group by
+Z: A
+Y: B
+
+>>> FeCoV
+>>>> Fe XMCD
+>>>>> get xmcd
+energy range: 690 740
+>>>>> scaling preedge to 1
+preedge range: 690 700
+>>>>> linear background removal preedge XAS
+preedge range: 690 700
+>>>>> xas normalization to min and max
+energy range: 690 740
+>>>>> xas xmcd minmax
+A: B
+>>>> Co XMCD
+>>>>> get xmcd
+energy range: 765 815
+>>>>> scaling preedge to 1
+preedge range: 765 772
+>>>>> linear background removal preedge XAS
+preedge range: 765 772
+>>>>> xas normalization to min and max
+energy range: 765 815
+>>>>> xas xmcd minmax
+A: B
+
+

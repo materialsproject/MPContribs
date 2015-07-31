@@ -6,8 +6,7 @@ Description: Sputter deposition
 Material Name: Vicalloy
 Form: ~100nm film on Si wafer
 Thickness: ca. 20nm with 5 nm Pt-capping (nominally)
-Grower: Sean Feckler
-Authors: Sean Feckler, Alpha T. N'Diaye, Elke Arenholz, Ichiro Takeuchi
+Authors: Please Contact Alpha T. N'Diaye (atndiaye@lbl.gov)
 >>>>> Measurement
 Detection: total electron yield
 Temperature: RT
@@ -44,6 +43,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -58,6 +63,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 
 >>> Fe0.26Co0.43V0.31
 >>>> Fe XMCD
@@ -74,6 +85,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -88,6 +105,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.447876,-0.00450211
@@ -608,6 +631,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -622,6 +651,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.519505,-0.0066838
@@ -1142,6 +1177,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -1156,6 +1197,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.360256,-0.00202244
@@ -1676,6 +1723,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -1690,6 +1743,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.364671,-0.00451639
@@ -2210,6 +2269,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -2224,6 +2289,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.23992,-0.00332444
@@ -2744,6 +2815,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -2758,6 +2835,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.219748,-0.00280036
@@ -3278,6 +3361,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -3292,6 +3381,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.18606,-0.00614258
@@ -3812,6 +3907,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -3826,6 +3927,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.184665,-0.00811049
@@ -4346,6 +4453,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -4360,6 +4473,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.128579,-0.00411355
@@ -4880,6 +4999,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -4894,6 +5019,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.413942,-0.00884865
@@ -5414,6 +5545,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -5428,6 +5565,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.500638,0.00113761
@@ -5948,6 +6091,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -5962,6 +6111,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.307508,-0.00579665
@@ -6482,6 +6637,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -6496,6 +6657,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.302776,-0.00511494
@@ -7016,6 +7183,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -7030,6 +7203,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.225026,0.00235644
@@ -7550,6 +7729,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -7564,6 +7749,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.187788,-0.000173939
@@ -8084,6 +8275,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -8098,6 +8295,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.171185,-0.00411794
@@ -8618,6 +8821,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -8632,6 +8841,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.119883,-0.0038453
@@ -9152,6 +9367,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -9166,6 +9387,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.133805,-0.00402401
@@ -9686,6 +9913,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -9700,6 +9933,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.314138,-0.00554357
@@ -10220,6 +10459,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -10234,6 +10479,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.380641,-0.00502512
@@ -10754,6 +11005,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -10768,6 +11025,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.280955,-0.0035857
@@ -11288,6 +11551,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -11302,6 +11571,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.251311,0.00854261
@@ -11822,6 +12097,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -11836,6 +12117,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.267268,-0.0154639
@@ -12356,6 +12643,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -12370,6 +12663,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.173865,-0.00219258
@@ -12890,6 +13189,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -12904,6 +13209,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.163313,-0.00763128
@@ -13424,6 +13735,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -13438,6 +13755,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.107561,0.000604968
@@ -13958,6 +14281,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -13972,6 +14301,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.0977326,-0.00323317
@@ -14492,6 +14827,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -14506,6 +14847,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.441285,2.86714e-05
@@ -15026,6 +15373,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -15040,6 +15393,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.47252,-0.00110593
@@ -15560,6 +15919,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -15574,6 +15939,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.261897,-0.00794851
@@ -16094,6 +16465,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -16108,6 +16485,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.387465,-0.014794
@@ -16628,6 +17011,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -16642,6 +17031,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.192375,-0.0050027
@@ -17162,6 +17557,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -17176,6 +17577,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.185206,-0.00672075
@@ -17696,6 +18103,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -17710,6 +18123,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.100419,0.000451651
@@ -18230,6 +18649,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -18244,6 +18669,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.0843028,-0.00549071
@@ -18764,6 +19195,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -18778,6 +19215,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.0943715,-0.000920112
@@ -19298,6 +19741,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -19312,6 +19761,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.4691,0.000651737
@@ -19832,6 +20287,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -19846,6 +20307,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.470568,-0.00153056
@@ -20366,6 +20833,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -20380,6 +20853,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.241991,-0.00160084
@@ -20900,6 +21379,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -20914,6 +21399,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.243095,-0.00207296
@@ -21434,6 +21925,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -21448,6 +21945,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.191285,-0.00991382
@@ -21968,6 +22471,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -21982,6 +22491,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.1603,-0.00161195
@@ -22502,6 +23017,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -22516,6 +23037,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.094743,-0.00627815
@@ -23036,6 +23563,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -23050,6 +23583,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.0953098,-0.00210946
@@ -23570,6 +24109,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -23584,6 +24129,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.0728012,-0.00331012
@@ -24104,6 +24655,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -24118,6 +24675,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.535544,-0.00194361
@@ -24638,6 +25201,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -24652,6 +25221,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.532562,-0.00123218
@@ -25172,6 +25747,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -25186,6 +25767,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.314312,-0.00381269
@@ -25706,6 +26293,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -25720,6 +26313,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.25195,-0.000685865
@@ -26240,6 +26839,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -26254,6 +26859,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.162928,-0.00135142
@@ -26774,6 +27385,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -26788,6 +27405,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.192153,-0.00890167
@@ -27308,6 +27931,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -27322,6 +27951,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.120218,-0.00419768
@@ -27842,6 +28477,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -27856,6 +28497,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.0965909,-0.00421525
@@ -28376,6 +29023,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -28390,6 +29043,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.0728039,0.0022094
@@ -28910,6 +29569,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -28924,6 +29589,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.593399,-0.0161752
@@ -29444,6 +30115,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -29458,6 +30135,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.723654,0.0133286
@@ -29978,6 +30661,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -29992,6 +30681,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.585654,-0.0489925
@@ -30512,6 +31207,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -30526,6 +31227,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.260565,-0.0106335
@@ -31046,6 +31753,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -31060,6 +31773,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.197433,-0.012128
@@ -31580,6 +32299,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -31594,6 +32319,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.192599,0.00266095
@@ -32114,6 +32845,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -32128,6 +32865,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.150799,-0.00462837
@@ -32648,6 +33391,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -32662,6 +33411,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.0919096,-0.000720553
@@ -33182,6 +33937,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -33196,6 +33957,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.0777396,-0.00580399
@@ -33716,6 +34483,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -33730,6 +34503,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.579156,-0.00162251
@@ -34250,6 +35029,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -34264,6 +35049,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.561071,-0.00591754
@@ -34784,6 +35575,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -34798,6 +35595,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.407205,-0.00769031
@@ -35318,6 +36121,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -35332,6 +36141,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.308203,0.00262684
@@ -35852,6 +36667,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -35866,6 +36687,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.213733,0.000175552
@@ -36386,6 +37213,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -36400,6 +37233,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.202709,-0.00272592
@@ -36920,6 +37759,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -36934,6 +37779,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.141141,-0.00231023
@@ -37454,6 +38305,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -37468,6 +38325,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.118355,-0.005242
@@ -37988,6 +38851,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -38002,6 +38871,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.0953044,-0.00345165
@@ -38522,6 +39397,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -38536,6 +39417,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.531509,-0.0386808
@@ -39056,6 +39943,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -39070,6 +39963,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.565287,-0.000954568
@@ -39590,6 +40489,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -39604,6 +40509,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.425237,0.000462762
@@ -40124,6 +41035,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -40138,6 +41055,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.351388,-0.00115519
@@ -40658,6 +41581,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -40672,6 +41601,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.27209,-0.00120338
@@ -41192,6 +42127,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -41206,6 +42147,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.208583,-0.00597289
@@ -41726,6 +42673,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -41740,6 +42693,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.147197,-0.00290821
@@ -42260,6 +43219,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -42274,6 +43239,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.113493,-0.00283957
@@ -42794,6 +43765,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -42808,6 +43785,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.0953128,-0.00271148
@@ -43328,6 +44311,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -43342,6 +44331,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.601252,-0.00273823
@@ -43862,6 +44857,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -43876,6 +44877,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.567985,0.00368363
@@ -44396,6 +45403,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -44410,6 +45423,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.43864,-0.0065844
@@ -44930,6 +45949,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -44944,6 +45969,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.290748,-0.00504608
@@ -45464,6 +46495,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -45478,6 +46515,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.28179,-0.00635565
@@ -45998,6 +47041,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -46012,6 +47061,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.223858,0.00212923
@@ -46532,6 +47587,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -46546,6 +47607,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.165944,-0.00420664
@@ -47066,6 +48133,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -47080,6 +48153,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.116518,0.00295251
@@ -47600,6 +48679,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -47614,6 +48699,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.110878,-0.00352951
@@ -48134,6 +49225,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -48148,6 +49245,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.62612,-0.00783408
@@ -48668,6 +49771,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -48682,6 +49791,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.594162,-0.00647832
@@ -49202,6 +50317,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -49216,6 +50337,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.459552,-0.00477758
@@ -49736,6 +50863,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -49750,6 +50883,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.399332,-0.00224111
@@ -50270,6 +51409,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -50284,6 +51429,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.346358,-0.0045876
@@ -50804,6 +51955,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -50818,6 +51975,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.261904,0.0035102
@@ -51338,6 +52501,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -51352,6 +52521,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.189517,-0.00357028
@@ -51872,6 +53047,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -51886,6 +53067,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.14359,0.00289156
@@ -52406,6 +53593,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -52420,6 +53613,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.118759,-0.00219821
@@ -52940,6 +54139,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -52954,6 +54159,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.637079,-0.000578333
@@ -53474,6 +54685,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -53488,6 +54705,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.589313,-0.00278197
@@ -54008,6 +55231,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -54022,6 +55251,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.473652,0.00190548
@@ -54542,6 +55777,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -54556,6 +55797,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.411218,-0.00321479
@@ -55076,6 +56323,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -55090,6 +56343,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.273355,-0.00627623
@@ -55610,6 +56869,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -55624,6 +56889,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.148427,-0.00187637
@@ -56144,6 +57415,12 @@ xas bg poly coeffs: [ 0.00162318 -0.12811078]
 energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0121821619534
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.0211528844459
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -56158,6 +57435,12 @@ xas bg poly coeffs: [ -5.38158653e-04   1.41357493e+00]
 energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
+>>>>> xas xmcd minmax
+A: B
+xmcd max: 0.0632883112828
+xas min: 0.0
+xas max: 1.0
+xmcd_min: -0.97825718554
 >>>> dataFe XMCD
 Energy,XAS,XMCD
 690.2,0.129209,-0.00459185
