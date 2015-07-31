@@ -85,14 +85,11 @@ if __name__ == '__main__':
     # grid
     gx, gy = [], []
     n = 20
-    for i in range(1, n, 1):
-        for k in range(n-i, 0, -1):
+    fn = float(n)
+    for i in range(0, n, 1):
+        for k in range(n-i+1, 0, -1):
             j = n+1-i-k
-            comp_str = '{}{}{}{}{}{}'.format(
-                chemsys[0], i, chemsys[1], k, chemsys[2], j
-            )
-            composition = Composition(comp_str)
-            x0, x1, x2 = [composition.get_atomic_fraction(el) for el in chemsys]
+            x0, x1, x2 = i/fn, k/fn, j/fn
             gx.append(x0+x2/2.) # NOTE x0 might need to be replace with x1
             gy.append(x2*math.sqrt(3.)/2.)
     grid_triang = tri.Triangulation(gx, gy)
@@ -112,7 +109,7 @@ if __name__ == '__main__':
             title = elem+': '+fields_str
             if fldidx == 3 and elidx == 1: title = fields_str
             plt.suptitle(title, fontsize=24)
-            plt.triplot(grid_triang, 'k--')
+            plt.triplot(grid_triang, 'k:')
 
             # heatmap
             x, y, z = [], [], []
