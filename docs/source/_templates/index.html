@@ -3,7 +3,19 @@
 {% block body %}
   <h1>{{ _('Welcome') }}</h1>
 
-  <h2 style="margin-bottom: 0">{%trans%}Documentation{%endtrans%}</h2>
+  <a href="https://materialsproject.org">Materials Project</a> (MP) aims to
+  establish itself as a hub for datasets that are contributed from several
+  different researchers, and directly integrated under a common platform. To
+  this end, the MPContribs Framework enables users to add their own data to MP,
+  and use the underlying tools to interact with and reference that data.<br>
+
+  MPContribsUsers is a collaborative extension to the MPContribs core. It
+  contains reusable routines for pre-submission processing (raw data
+  organization and MPFile generation) and post-submission processing (analyses
+  integrated with MP core data and Web UIs). It allows for the collaborative
+  involvement of the framework developer while simultaneously establishing an
+  archive of example files and scripts to support future contributors and to
+  reduce duplication of work.
 
   <table class="contentstable" align="center" style="margin-left: 30px"><tr>
     <td width="50%">
@@ -19,7 +31,7 @@
     </td></tr>
   </table>
 
-  <h2>{%trans%}Citations{%endtrans%}</h2>
+  <h2 style="margin-bottom: 0">{%trans%}Citations{%endtrans%}</h2>
 
   <p>{%trans%}Huck, P.; Jain, A.; Gunter, D.; Winston, D.; Persson K.;<br>
   “A Community Contribution Framework for Sharing Materials Data with Materials Project”<br>
