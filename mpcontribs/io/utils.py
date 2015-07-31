@@ -10,15 +10,16 @@ import numpy as np
 class RecursiveDict(_OrderedDict):
     """extension of dict for internal representation of MPFile"""
 
-    def rec_update(self, other):
+    def rec_update(self, other, overwrite=False):
         """https://gist.github.com/Xjs/114831"""
+        # overwrite=False: don't overwrite existing unnested key
         for key,value in other.iteritems():
             if key in self and \
                isinstance(self[key], dict) and \
                isinstance(value, dict):
                 self[key] = RecursiveDict(self[key])
                 self[key].rec_update(value)
-            elif key not in self: # don't overwrite existing unnested key
+            elif (key in self and overwrite) or key not in self:
                 self[key] = value
 
     def iterate(self, nested_dict=None):
