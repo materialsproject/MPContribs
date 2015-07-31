@@ -1,5 +1,10 @@
 # [Changelog](https://github.com/materialsproject/MPContribs/releases)
 
+## [0.0.3](https://github.com/materialsproject/MPContribs/compare/0.0.2...0.0.3)
+
+* [03ac7a6](https://github.com/materialsproject/MPContribs/commit/03ac7a6) rec_update overwrite option
+* [1253c5a](https://github.com/materialsproject/MPContribs/commit/1253c5a) update docs a bit
+
 ## [0.0.2](https://github.com/materialsproject/MPContribs/compare/0.0.1...0.0.2)
 
 * [7a4867d](https://github.com/materialsproject/MPContribs/commit/7a4867d) minor doc improvements
