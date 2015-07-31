@@ -1,6 +1,6 @@
 """The Materials Project's Community Contribution Framework"""
 
-__version__ = '0.0.2'
+__version__ = '0.0.3'
 __url__ = 'https://github.com/materialsproject/MPContribs'
 __author__ = 'Patrick Huck'
 __email__ = 'phuck@lbl.gov'
