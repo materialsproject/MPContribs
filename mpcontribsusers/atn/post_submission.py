@@ -77,13 +77,13 @@ if __name__ == '__main__':
 
     # get phase diagram from MP and append to PDF
     chemsys = ["Co", "Fe", "V"]#["Ni", "Fe", "Pt"] # alphabetic
+    cmap = ['Reds', 'Blues', 'Greens']
     entries = mpr.get_entries_in_chemsys(chemsys)
     pd = PhaseDiagram(entries)
     plotter = PDPlotter(pd)
-    plt = plotter.get_plot()
 
-    # add points to MP phase diagram for contributed compositions
-    x, y, z = [], [], []
+    # grid
+    gx, gy = [], []
     n = 20
     for i in range(1, n, 1):
         for k in range(n-i, 0, -1):
@@ -93,35 +93,58 @@ if __name__ == '__main__':
             )
             composition = Composition(comp_str)
             x0, x1, x2 = [composition.get_atomic_fraction(el) for el in chemsys]
-            x.append(x0+x2/2.) # NOTE x0 might need to be replace with x1
-            y.append(x2*math.sqrt(3.)/2.)
+            gx.append(x0+x2/2.) # NOTE x0 might need to be replace with x1
+            gy.append(x2*math.sqrt(3.)/2.)
+    grid_triang = tri.Triangulation(gx, gy)
 
-    # grid
-    triang = tri.Triangulation(x, y)
-    plt.triplot(triang, 'k-')
+    fields_strings = [
+        'xas normalization to min and max -> normalization factor',
+        'xas xmcd minmax -> xmcd max', 'xas xmcd minmax -> xmcd_min',
+        'sum([xmcd max - xmcd min]*f*N) ~ "total magnetic moment"'
+    ]
+    norms, xmcd_diffs, mag = {}, {}, 0.
+    factors = {'Co': 1.7/3.2/0.6, 'Fe': 2.1/3.9/0.6}
+    for fldidx,fields_str in enumerate(fields_strings):
+        fields = fields_str.split(' -> ')
+        for elidx,elem in enumerate(chemsys[:-1]):
+            print fields_str, elem
+            plt = plotter.get_plot()
+            title = elem+': '+fields_str
+            if fldidx == 3 and elidx == 1: title = fields_str
+            plt.suptitle(title, fontsize=24)
+            plt.triplot(grid_triang, 'k--')
 
-    x, y, z = [], [], []
-    for idx,(comp,cid) in enumerate(comps_cids):
-        comp_str = comp if args.dev else doc[cid]['_id']
-        composition = Composition(comp_str)
-        x0, x1, x2 = [composition.get_atomic_fraction(el) for el in chemsys]
-        x.append(x0+x2/2.) # NOTE x0 might need to be replace with x1
-        y.append(x2*math.sqrt(3.)/2.)
-        z.append(
-            mpfile.document[comp_str]['Fe XMCD']['xas normalization to min and max']['normalization factor']
-        )
-    #x0, x1, x2 = 1/2., 1/3., 1/6.
-    #plt.plot(x0+x2/2., x2*math.sqrt(3.)/2., "ko", linewidth=4, markeredgecolor="k", markerfacecolor="r", markersize=8)
+            # heatmap
+            x, y, z = [], [], []
+            for idx,(comp,cid) in enumerate(comps_cids):
+                comp_str = comp if args.dev else doc[cid]['_id']
+                composition = Composition(comp_str)
+                x0, x1, x2 = [composition.get_atomic_fraction(el) for el in chemsys]
+                x.append(x0+x2/2.) # NOTE x0 might need to be replace with x1
+                y.append(x2*math.sqrt(3.)/2.)
+                if fldidx < 3:
+                    zval = mpfile.document[comp_str]['{} XMCD'.format(elem)][fields[0]][fields[1]]
+                    if fldidx == 0: norms[elem] = zval
+                    elif fldidx == 1: xmcd_diffs[elem] = zval
+                    else: xmcd_diffs[elem] -= zval
+                    z.append(zval)
+                else:
+                    mag += xmcd_diffs[elem] * factors[elem] * norms[elem]
+                    if elidx == 1: z.append(mag)
 
-    # heatmap
-    triang = tri.Triangulation(x, y)
-    plt.tripcolor(triang, z, vmin=min(z), vmax=max(z), cmap=plt.cm.get_cmap('Reds'))
-    plt.colorbar()
+            if fldidx == 3 and elidx == 0: continue
+            #x0, x1, x2 = 1/2., 1/3., 1/6.
+            #plt.plot(x0+x2/2., x2*math.sqrt(3.)/2., "ko", linewidth=4, markeredgecolor="k", markerfacecolor="r", markersize=8)
+            triang = tri.Triangulation(x, y)
+            plt.tripcolor(triang, z, vmin=min(z), vmax=max(z),
+                          cmap=plt.cm.get_cmap(cmap[2 if fldidx == 3 else elidx]))
+            plt.colorbar()
 
-    # append phase diagram to output PDF & save
-    stream = StringIO()
-    f = plt.gcf()
-    f.set_size_inches((14, 10))
-    plt.savefig(stream, format='pdf')
-    merger.append(stream)
+            # append phase diagram to output PDF & save
+            stream = StringIO()
+            f = plt.gcf()
+            f.set_size_inches((14, 10))
+            plt.savefig(stream, format='pdf')
+            merger.append(stream)
+
     merger.write('test.pdf')
