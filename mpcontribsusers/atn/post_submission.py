@@ -108,8 +108,7 @@ if __name__ == '__main__':
         x.append(x0+x2/2.) # NOTE x0 might need to be replace with x1
         y.append(x2*math.sqrt(3.)/2.)
         z.append(
-            idx
-            #mpfile.document[comp_str]['Co XMCD processing']['xas normalization to min and max']['normalization factor']
+            mpfile.document[comp_str]['Fe XMCD']['xas normalization to min and max']['normalization factor']
         )
     #x0, x1, x2 = 1/2., 1/3., 1/6.
     #plt.plot(x0+x2/2., x2*math.sqrt(3.)/2., "ko", linewidth=4, markeredgecolor="k", markerfacecolor="r", markersize=8)

@@ -70,7 +70,7 @@ def remove_linear_BG_XAS_preedge(xmcd_data, scanparams, process_parameters=None,
     for xas in ['XAS+', 'XAS-', 'XAS']:
         xmcd_data[xas] -= xas_bg
  
-    return (xmcd_data, {"xas bg poly coeffs":  preedge_poly.coeffs})
+    return (xmcd_data, {"xas bg poly coeffs": ' '.join(map(str, preedge_poly.coeffs))})
 
 
 
