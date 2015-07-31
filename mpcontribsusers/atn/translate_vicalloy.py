@@ -29,7 +29,7 @@ def get_translate(workdir):
 
 	def translate(composition,key):
 		manip_z, manip_y = key
-		sample_y = manip_z - 59.
+		sample_y = manip_z - 69.5
 		sample_x = (manip_y +8) *2
 		Co = Co_concI(sample_x,sample_y)[0]/100.
 		Fe = Fe_concI(sample_x,sample_y)[0]/100.

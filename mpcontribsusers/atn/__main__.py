@@ -60,11 +60,12 @@ keys.sort()
 
 
 translate = default_translate
-# translate = tl_vicalloy.get_translate(args.work_dir)
-translate = tl_pypt.get_translate(args.work_dir)
+translate = tl_vicalloy.get_translate(args.work_dir)
+#translate = tl_pypt.get_translate(args.work_dir) # TODO mechanism to choose correct translate
+
 	
 for g in keys:
-    for composition in process_templates:
+    for composition, cid in process_templates:
 	scan_params_copy = mpfile.document[composition].copy()
         # TODO: Group information is saved into the output. 
         # Should we rethink how we do this? (alpha)

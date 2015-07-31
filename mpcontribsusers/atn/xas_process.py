@@ -89,10 +89,10 @@ def xas_xmcd_minmax(xmcd_data, scanparams=None, process_parameters=None, process
     energy = xmcd_data["Energy"]
     mask = (energy > energy_range[0]) & (energy < energy_range[1])
 
-    xas_min = xmcd_data[mask][XAS].min()
-    xas_max = xmcd_data[mask][XAS].max()
-    xmcd_min = xmcd_data[mask][XMCD].min()
-    xmcd_max = xmcd_data[mask][XMCD].max()
+    xas_min = xmcd_data[mask]['XAS'].min()
+    xas_max = xmcd_data[mask]['XAS'].max()
+    xmcd_min = xmcd_data[mask]['XMCD'].min()
+    xmcd_max = xmcd_data[mask]['XMCD'].max()
 
     return(xmcd_data, {"xas min": xas_min, "xas max": xas_max, "xmcd_min": xmcd_min, "xmcd max": xmcd_max})
 

@@ -28,7 +28,7 @@ directory: Vicalloy/rawdata
 Z: A
 Y: B
 
->>> FeCoV
+>>> Co1Fe1V1
 >>>> Fe XMCD
 >>>>> get xmcd
 energy range: 690 740
@@ -57945,3 +57945,4 @@ Energy,XAS,XMCD
 814.6,0.373942,0.00287786
 814.8,0.372691,0.00443774
 815,0.374119,0.00283269
+
