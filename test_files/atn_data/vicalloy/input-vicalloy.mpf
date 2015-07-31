@@ -39,7 +39,6 @@ preedge range: 690 700
 >>>>> xas normalization to min and max
 energy range: 690 740
 >>>>> xas xmcd minmax
-A: B
 >>>> Co XMCD
 >>>>> get xmcd
 energy range: 765 815
@@ -50,6 +49,3 @@ preedge range: 765 772
 >>>>> xas normalization to min and max
 energy range: 765 815
 >>>>> xas xmcd minmax
-A: B
-
-

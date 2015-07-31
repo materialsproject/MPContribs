@@ -44,7 +44,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -64,7 +63,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -86,7 +84,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -106,7 +103,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -632,7 +628,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -652,7 +647,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -1178,7 +1172,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -1198,7 +1191,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -1724,7 +1716,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -1744,7 +1735,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -2270,7 +2260,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -2290,7 +2279,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -2816,7 +2804,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -2836,7 +2823,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -3362,7 +3348,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -3382,7 +3367,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -3908,7 +3892,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -3928,7 +3911,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -4454,7 +4436,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -4474,7 +4455,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -5000,7 +4980,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -5020,7 +4999,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -5546,7 +5524,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -5566,7 +5543,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -6092,7 +6068,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -6112,7 +6087,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -6638,7 +6612,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -6658,7 +6631,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -7184,7 +7156,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -7204,7 +7175,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -7730,7 +7700,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -7750,7 +7719,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -8276,7 +8244,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -8296,7 +8263,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -8822,7 +8788,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -8842,7 +8807,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -9368,7 +9332,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -9388,7 +9351,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -9914,7 +9876,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -9934,7 +9895,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -10460,7 +10420,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -10480,7 +10439,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -11006,7 +10964,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -11026,7 +10983,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -11552,7 +11508,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -11572,7 +11527,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -12098,7 +12052,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -12118,7 +12071,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -12644,7 +12596,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -12664,7 +12615,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -13190,7 +13140,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -13210,7 +13159,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -13736,7 +13684,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -13756,7 +13703,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -14282,7 +14228,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -14302,7 +14247,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -14828,7 +14772,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -14848,7 +14791,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -15374,7 +15316,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -15394,7 +15335,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -15920,7 +15860,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -15940,7 +15879,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -16466,7 +16404,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -16486,7 +16423,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -17012,7 +16948,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -17032,7 +16967,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -17558,7 +17492,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -17578,7 +17511,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -18104,7 +18036,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -18124,7 +18055,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -18650,7 +18580,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -18670,7 +18599,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -19196,7 +19124,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -19216,7 +19143,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -19742,7 +19668,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -19762,7 +19687,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -20288,7 +20212,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -20308,7 +20231,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -20834,7 +20756,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -20854,7 +20775,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -21380,7 +21300,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -21400,7 +21319,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -21926,7 +21844,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -21946,7 +21863,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -22472,7 +22388,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -22492,7 +22407,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -23018,7 +22932,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -23038,7 +22951,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -23564,7 +23476,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -23584,7 +23495,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -24110,7 +24020,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -24130,7 +24039,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -24656,7 +24564,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -24676,7 +24583,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -25202,7 +25108,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -25222,7 +25127,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -25748,7 +25652,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -25768,7 +25671,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -26294,7 +26196,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -26314,7 +26215,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -26840,7 +26740,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -26860,7 +26759,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -27386,7 +27284,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -27406,7 +27303,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -27932,7 +27828,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -27952,7 +27847,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -28478,7 +28372,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -28498,7 +28391,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -29024,7 +28916,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -29044,7 +28935,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -29570,7 +29460,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -29590,7 +29479,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -30116,7 +30004,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -30136,7 +30023,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -30662,7 +30548,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -30682,7 +30567,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -31208,7 +31092,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -31228,7 +31111,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -31754,7 +31636,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -31774,7 +31655,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -32300,7 +32180,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -32320,7 +32199,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -32846,7 +32724,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -32866,7 +32743,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -33392,7 +33268,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -33412,7 +33287,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -33938,7 +33812,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -33958,7 +33831,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -34484,7 +34356,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -34504,7 +34375,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -35030,7 +34900,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -35050,7 +34919,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -35576,7 +35444,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -35596,7 +35463,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -36122,7 +35988,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -36142,7 +36007,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -36668,7 +36532,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -36688,7 +36551,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -37214,7 +37076,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -37234,7 +37095,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -37760,7 +37620,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -37780,7 +37639,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -38306,7 +38164,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -38326,7 +38183,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -38852,7 +38708,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -38872,7 +38727,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -39398,7 +39252,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -39418,7 +39271,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -39944,7 +39796,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -39964,7 +39815,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -40490,7 +40340,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -40510,7 +40359,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -41036,7 +40884,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -41056,7 +40903,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -41582,7 +41428,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -41602,7 +41447,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -42128,7 +41972,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -42148,7 +41991,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -42674,7 +42516,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -42694,7 +42535,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -43220,7 +43060,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -43240,7 +43079,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -43766,7 +43604,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -43786,7 +43623,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -44312,7 +44148,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -44332,7 +44167,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -44858,7 +44692,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -44878,7 +44711,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -45404,7 +45236,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -45424,7 +45255,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -45950,7 +45780,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -45970,7 +45799,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -46496,7 +46324,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -46516,7 +46343,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -47042,7 +46868,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -47062,7 +46887,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -47588,7 +47412,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -47608,7 +47431,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -48134,7 +47956,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -48154,7 +47975,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -48680,7 +48500,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -48700,7 +48519,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -49226,7 +49044,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -49246,7 +49063,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -49772,7 +49588,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -49792,7 +49607,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -50318,7 +50132,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -50338,7 +50151,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -50864,7 +50676,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -50884,7 +50695,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -51410,7 +51220,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -51430,7 +51239,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -51956,7 +51764,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -51976,7 +51783,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -52502,7 +52308,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -52522,7 +52327,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -53048,7 +52852,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -53068,7 +52871,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -53594,7 +53396,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -53614,7 +53415,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -54140,7 +53940,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -54160,7 +53959,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -54686,7 +54484,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -54706,7 +54503,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -55232,7 +55028,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -55252,7 +55047,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -55778,7 +55572,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -55798,7 +55591,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -56324,7 +56116,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -56344,7 +56135,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -56870,7 +56660,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -56890,7 +56679,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
@@ -57416,7 +57204,6 @@ energy range: 690 740
 normalization factor: 0.117669574757
 offset: -0.0708258960061
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0121821619534
 xas min: 0.0
 xas max: 1.0
@@ -57436,7 +57223,6 @@ energy range: 765 815
 normalization factor: 0.120380410062
 offset: -0.0109403664225
 >>>>> xas xmcd minmax
-A: B
 xmcd max: 0.0632883112828
 xas min: 0.0
 xas max: 1.0
