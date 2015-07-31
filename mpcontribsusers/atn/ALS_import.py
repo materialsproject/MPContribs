@@ -42,4 +42,5 @@ def save_return_values(scanparams, process_no, return_values):
     # Let's say A, B, C are processes, then the chain could look like ABCA 
     # (Alpha)
     key = scanparams.keys()[i] 
-    scanparams[key].rec_update(return_values)
+    for k in return_values.keys():
+        scanparams[key][k] = return_values[k]
