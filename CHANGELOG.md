@@ -1,5 +1,10 @@
 # [Changelog](https://github.com/materialsproject/MPContribs/releases)
 
+## [0.0.4](https://github.com/materialsproject/MPContribs/compare/0.0.3...0.0.4)
+
+* [97c8943](https://github.com/materialsproject/MPContribs/commit/97c8943) docs: setup slack community
+* [819beb8](https://github.com/materialsproject/MPContribs/commit/819beb8) docs: include mailing list in sidebar
+
 ## [0.0.3](https://github.com/materialsproject/MPContribs/compare/0.0.2...0.0.3)
 
 * [03ac7a6](https://github.com/materialsproject/MPContribs/commit/03ac7a6) rec_update overwrite option
