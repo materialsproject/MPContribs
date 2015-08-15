@@ -3,6 +3,7 @@
 <link href="{{ url_for('static', filename='css/archieml.css') }}" media="screen, projection" rel="stylesheet" type="text/css" />
 <script src="{{ url_for('static', filename='js/archieml.js') }}"></script>
 <script src="{{ url_for('static', filename='js/bootstrap-filestyle.min.js') }}"> </script>
+<script src="{{ url_for('static', filename='js/FileSaver.min.js') }}"> </script>
 <div class="container">
   <div class="row">
     <form action="/action" method=post enctype=multipart/form-data>
@@ -17,14 +18,30 @@
       </div>
     </form>
   </div>
+  <p></p>
+  <div class="row">
+    <form role="form">
+      <div class="col-md-6">
+        <div class="row">
+          <div class="col-md-8">
+            <input type="text" class="form-control" id="input-fileName" placeholder="Enter file name">
+          </div>
+          <div class="col-md-4">
+            &nbsp;&nbsp;&nbsp;<input id="btn-save" type="submit" class="btn btn-info" value="Download MPFile">
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6">
+      </div>
+    </form>
+  </div>
 </div>
 <div class="sandbox">
   <div class="container"><br>
 {% if "aml" in content %}
-<aml>{{ content.aml|tojson|safe }}</aml>
+<aml>{{content.aml|safe}}</aml>
 {% else %}
-<aml>
-This is an example MPFile in the ArchieML format.
+<aml>This is an example MPFile in the ArchieML format.
 
 Experiment.Preparation: Sputter deposition
 
@@ -83,6 +100,12 @@ qs.split('&').forEach(function(term) {
     var aml = document.getElementsByTagName('aml')[0];
     aml.innerHTML = source;
   }
+});
+var aml = document.getElementsByTagName('aml')[0];
+$("#btn-save").click( function() {
+  var filename = $("#input-fileName").val();
+  var blob = new Blob([aml.innerHTML], {type: "text/plain;charset=utf-8"});
+  saveAs(blob, filename+".txt");
 });
 </script>
 <script src="{{ url_for('static', filename='js/sandbox.js') }}"></script>

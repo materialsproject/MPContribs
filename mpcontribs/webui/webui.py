@@ -38,7 +38,7 @@ def home():
             return render_template('home.html')
     else:
         mpfile = open(mpfile, 'r').read()
-    return render_template('home.html', content={'aml': mpfile})
+    return render_template('home.html', content={'aml': mpfile.decode('utf-8-sig')})
 
 @app.route('/action', methods=['POST'])
 def action():
