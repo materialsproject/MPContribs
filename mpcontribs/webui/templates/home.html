@@ -15,59 +15,66 @@
       </form>
     </div>
     <div class="col-md-4">
+      <form action="/load" method=post enctype=multipart/form-data>
+        <input type=file name=file><input type=submit class="btn btn-default btn-xs" value="Load File">
+      </form>
     </div>
   </div>
 </div>
 <div class="sandbox">
   <div class="container"><br>
-    <aml>
-    This is an example MPFile in the ArchieML format.
+{% if "aml" in content %}
+<aml>{{ content.aml }}</aml>
+{% else %}
+<aml>
+This is an example MPFile in the ArchieML format.
 
-    Experiment.Preparation: Sputter deposition
+Experiment.Preparation: Sputter deposition
 
-    {Experiment.Sample}
-    Material: Vicalloy
-    Authors: Contact Alpha T. N'Diaye (atndiaye@lbl.gov) 
+{Experiment.Sample}
+Material: Vicalloy
+Authors: Contact Alpha T. N'Diaye (atndiaye@lbl.gov) 
 
-    {Experiment.Measurement}
-    Detection: total electron yield
-    Temperature: RT
-    Orientation: 30° grazing incidence
+{Experiment.Measurement}
+Detection: total electron yield
+Temperature: RT
+Orientation: 30° grazing incidence
 
-    {Experiment.Measurement.Beamline}
-    Beamline: ALS-6.3.1
-    Method: Soft x-ray XAS and XMCD
-    Monochromator.Exit_Slit: 20µm
-    Monochromator.Grating: 600l/mm
+{Experiment.Measurement.Beamline}
+Beamline: ALS-6.3.1
+Method: Soft x-ray XAS and XMCD
+Monochromator.Exit_Slit: 20µm
+Monochromator.Grating: 600l/mm
 
-    {Datasource}
-    directory: Vicalloy/rawdata
-    group_by: Z Y
+{Datasource}
+directory: Vicalloy/rawdata
+group_by: Z Y
 
-    {Fe_XMCD}
-    get_xmcd.energy_range: 690 740
-    scaling_preedge_to_1.preedge_range: 690 700
-    linear_background_removal_preedge_XAS.preedge_range: 690 700
-    xas_normalization_to_min_and_max.energy_range: 690 740
-    xas_xmcd_minmax:
+{Fe_XMCD}
+get_xmcd.energy_range: 690 740
+scaling_preedge_to_1.preedge_range: 690 700
+linear_background_removal_preedge_XAS.preedge_range: 690 700
+xas_normalization_to_min_and_max.energy_range: 690 740
+xas_xmcd_minmax:
 
-    :ignore
+:ignore
 
-    [.processing]
-    * scaling background to 1
-    * constant background removal preedge
-    * normalization to L3
+[.processing]
+* scaling background to 1
+* constant background removal preedge
+* normalization to L3
 
-    [+AlNiCoCu.datatable]
-    Energy,XAS,XMCD
-    761,0.008445,-0.001452
-    762,0.007812,-0.000682
+[+AlNiCoCu.datatable]
+Energy,XAS,XMCD
+761,0.008445,-0.001452
+762,0.007812,-0.000682
 
-    [+AlNiCoCu.table2]
-    Energy,XAS,XMCD
-    761,0.008445,-0.001452
-    762,0.007812,-0.000682
-    </aml>
+[+AlNiCoCu.table2]
+Energy,XAS,XMCD
+761,0.008445,-0.001452
+762,0.007812,-0.000682
+</aml>
+{% endif %}
   </div>
 </div>
 <script type="text/javascript">
