@@ -15,7 +15,7 @@ def index():
         if 'file' in request.files:
             mpfile = request.files['file']
         else:
-            return render_template('choose.html')
+            return render_template('home.html')
     content = submit_mpfile(mpfile, test=True)
     for value in content.itervalues():
         for project_data in value.itervalues():
@@ -27,8 +27,8 @@ def index():
     return render_template(template, content=content)
 
 @app.route('/')
-def choose():
-  return render_template('choose.html')
+def home():
+  return render_template('home.html')
 
 @app.route('/shutdown', methods=['GET', 'POST'])
 def shutdown():
