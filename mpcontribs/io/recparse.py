@@ -6,7 +6,7 @@ from StringIO import StringIO
 from ..config import indent_symbol, csv_comment_char, mp_level01_titles, mp_id_pattern
 from utils import nest_dict, RecursiveDict, pandas_to_dict, get_indentor
 from collections import OrderedDict
-from pymatgen.core import Composition
+from ..pymatgen_utils.composition import Composition
 
 class RecursiveParser():
     def __init__(self):
@@ -40,8 +40,7 @@ class RecursiveParser():
           if is_mp_id or title_lower == mp_level01_titles[0]:
             return title_lower
           else:
-            comp = Composition(title).get_integer_formula_and_factor()[0]
-            return Composition(comp).alphabetical_formula.replace(" ", "")
+            return Composition(title).get_integer_formula_and_factor()[0]
         return title
 
     def is_bare_section(self, title):

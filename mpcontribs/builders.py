@@ -7,7 +7,8 @@ from plotly.graph_objs import *
 from itertools import groupby
 from io.utils import nest_dict, RecursiveDict
 from config import mp_level01_titles, mp_id_pattern
-from utils import Author, get_short_object_id, unflatten_dict
+from utils import get_short_object_id, unflatten_dict
+from pymatgen_utils.author import Author
 
 class MPContributionsBuilder():
     """build user contributions from `mpcontribs.contributions`"""
