@@ -1,0 +1,62 @@
+div.example {
+  margin-bottom: 15px;
+}
+.clearfix:after, .example:after {
+  content: " ";
+  visibility: hidden;
+  display: block;
+  height: 0;
+  clear: both;
+}
+div.example > div:first-child {
+  float: left;
+  clear: left;
+  width: 49%;
+}
+div.example > div:last-child {
+  display: inline-block;
+  box-sizing: border-box;
+  float: right;
+  clear: right;
+  width: 49%;
+}
+div.example > div > textarea {
+  padding: 14px;
+  border: none;
+  min-height: 78px;
+  border: 1px solid #eee;
+}
+div.example > div > textarea:hover {
+  outline: none;
+  border: 1px solid coral;
+  transition:         border-color 0.2s linear;
+  -webkit-transition: border-color 0.2s linear;
+}
+div.example > div > textarea:focus {
+  outline: none;
+  border: 1px solid #444;
+  transition:         border-color 0.2s linear;
+  -webkit-transition: border-color 0.2s linear;
+}
+div.example > div > pre {
+  padding: 15px;
+  width: 100%;
+  margin: 0;
+  min-height: 78px;
+}
+div.example div pre, div div textarea {
+  font-family: Consolas, Monaco, 'Andale Mono', monospace;
+  font-size: 14px;
+  color: #333;
+  background: #eee;
+  width: 100%;
+  box-sizing: border-box;
+}
+aml { display: none; }
+
+.sandbox .container {
+  max-width: inherit;
+}
+.sandbox textarea {
+  min-height: 80%;
+}
