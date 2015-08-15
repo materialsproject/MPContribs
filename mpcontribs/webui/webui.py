@@ -43,7 +43,7 @@ def home():
 @app.route('/action', methods=['POST'])
 def action():
     session['mpfile'] = request.files.get('file').read()
-    if request.form['submit'] == 'Load File':
+    if request.form['submit'] == 'Load MPFile':
         return redirect('/load')
     elif request.form['submit'] == 'View MPFile':
         return redirect('/default')

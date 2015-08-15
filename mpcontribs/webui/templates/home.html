@@ -2,16 +2,18 @@
 {% block body %}
 <link href="{{ url_for('static', filename='css/archieml.css') }}" media="screen, projection" rel="stylesheet" type="text/css" />
 <script src="{{ url_for('static', filename='js/archieml.js') }}"></script>
+<script src="{{ url_for('static', filename='js/bootstrap-filestyle.min.js') }}"> </script>
 <div class="container">
   <div class="row">
     <form action="/action" method=post enctype=multipart/form-data>
-      <input type=file name=file><br>
       <div class="col-md-6">
-        <input type=submit name="submit" class="btn btn-info" value="Load File">
+        <input type=file name=file class="filestyle" data-iconName="glyphicon glyphicon-file"
+                         data-buttonName="btn-info"  data-buttonText="Choose MPFile">
       </div>
       <div class="col-md-6">
-        <input type=submit name="submit" class="btn btn-info pull-right" value="View MPFile">
-        <input type=submit name="submit" class="btn btn-info pull-right" value="View Graphs">
+        <input type=submit name="submit" class="btn btn-info" value="Load MPFile">
+        <input type=submit name="submit" class="btn btn-info" value="View MPFile">
+        <input type=submit name="submit" class="btn btn-info" value="View Graphs">
       </div>
     </form>
   </div>
