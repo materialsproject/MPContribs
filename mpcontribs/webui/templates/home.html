@@ -21,7 +21,7 @@
 <div class="sandbox">
   <div class="container"><br>
 {% if "aml" in content %}
-<aml>{{ content.aml }}</aml>
+<aml>{{ content.aml|tojson|safe }}</aml>
 {% else %}
 <aml>
 This is an example MPFile in the ArchieML format.
