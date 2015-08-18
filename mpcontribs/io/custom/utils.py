@@ -3,7 +3,7 @@ import sys, warnings
 from six import string_types
 from collections import OrderedDict as _OrderedDict
 from collections import Mapping as _Mapping
-from ..config import indent_symbol, min_separator_length, mp_level01_titles
+from mpcontribs.config import indent_symbol, min_separator_length, mp_level01_titles
 import pandas as pd
 import numpy as np
 

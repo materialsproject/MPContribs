@@ -16,7 +16,7 @@ def submit_mpfile(path_or_mpfile, target=None, test=False):
        not os.path.isfile(path_or_mpfile):
         print('{} not found'.format(path_or_mpfile))
         return
-    from mpcontribs.io.mpfile import MPFile
+    from mpcontribs.io.custom.mpfile import MPFile
     if target is None:
         from mpcontribs.rest import ContributionMongoAdapter
         from mpcontribs.builders import MPContributionsBuilder
