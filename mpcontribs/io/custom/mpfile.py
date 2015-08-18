@@ -1,52 +1,24 @@
 from __future__ import unicode_literals, print_function
-import os, json, six, codecs, locale
-from abc import ABCMeta
+import six
+from ..base import MPFileBase
+from collections import OrderedDict
+from recparse import RecursiveParser
 from utils import make_pair, get_indentor, RecursiveDict, nest_dict, pandas_to_dict
 from mpcontribs.config import mp_level01_titles
-from recparse import RecursiveParser
 from pandas import DataFrame
-from six import string_types
-from collections import OrderedDict
 
-class MPFile(six.with_metaclass(ABCMeta)):
-    """Object for representing a MP Contribution File.
-
-    Args:
-        parser (RecursiveParser): recursive parser object, init empty RecursiveDict() if None
-    """
+class MPFile(MPFileBase):
+    """Object for representing a MP Contribution File in a custom format."""
     def __init__(self, parser=None, comments=None):
+        self._document = RecursiveDict() if parser is None else parser.document
         self.comments = OrderedDict() if comments is None else comments
-        self.document = RecursiveDict() if parser is None else parser.document
 
-    @staticmethod
-    def from_file(filename_or_file):
-        """Reads a MPFile from a file.
-
-        Args:
-            filename_or_file (str or file): name of file or file containing contribution data.
-
-        Returns:
-            MPFile object.
-        """
-        if isinstance(filename_or_file, string_types):
-            lang, encoding = locale.getdefaultlocale()
-            file_string = codecs.open(filename_or_file, encoding=encoding).read()
-        elif not isinstance(filename_or_file, file):
-            file_string = filename_or_file.read().decode('utf-8')
-        else:
-            file_string = filename_or_file.read()
-        return MPFile.from_string(file_string)
+    @property
+    def document(self):
+        return self._document
 
     @staticmethod
     def from_string(data):
-        """Reads a MPFile from a string.
-
-        Args:
-            data (str): String containing contribution data.
-
-        Returns:
-            MPFile object.
-        """
         # strip comments from data string
         lines, comments = [], OrderedDict()
         for idx,line in enumerate(data.splitlines()):
@@ -92,23 +64,7 @@ class MPFile(six.with_metaclass(ABCMeta)):
         idx += shift
         return str(idx) + ('*' if ast else '')
 
-    def get_number_of_lines(self, **kwargs):
-        return len(self.get_string(**kwargs).split('\n'))
-
-    def split(self):
-        general_mpfile = self.pop_first_section() \
-                if mp_level01_titles[0] in self.document.keys() else None
-        while True:
-            try:
-                mpfile_single = self.pop_first_section()
-                if general_mpfile is not None:
-                    mpfile_single.insert_general_section(general_mpfile)
-                yield mpfile_single
-            except KeyError:
-                break
-
-    def pop_first_section(self, n=0):
-        """remove first root-level section and return as MPFile"""
+    def pop_first_section(self):
         title, data = self.document.popitem(last=False)
         mpfile = MPFile()
         mpfile.document.rec_update(nest_dict(data, [title]))
@@ -123,7 +79,6 @@ class MPFile(six.with_metaclass(ABCMeta)):
         return mpfile
 
     def insert_general_section(self, general_mpfile):
-        """insert general section into MPFile with single section"""
         if general_mpfile is None: return
         general_title = mp_level01_titles[0]
         general_data = general_mpfile.document[general_title]
@@ -186,7 +141,6 @@ class MPFile(six.with_metaclass(ABCMeta)):
         #    self.add_comment(idx_str_shift, mpfile.comments[idx_str])
 
     def insert_id(self, mp_cat_id, cid):
-        """insert entry containing contribution ID for `mp_cat_id`"""
         if len(self.document) > 1:
             raise ValueError('ID insertion only possible for single section files')
         first_sub_key = self.document[mp_cat_id].keys()[0]
@@ -194,7 +148,6 @@ class MPFile(six.with_metaclass(ABCMeta)):
         self.shift_comments(1)
 
     def get_string(self, with_comments=False):
-        """Returns a string to be written as a file"""
         lines = []
         min_indentor = get_indentor()
         table_start = mp_level01_titles[1]+' '
@@ -206,7 +159,7 @@ class MPFile(six.with_metaclass(ABCMeta)):
                 sep = '' if min_indentor in key else ':'
                 if lines and key == min_indentor:
                     lines.append('')
-                if isinstance(value, string_types):
+                if isinstance(value, six.string_types):
                     if value.startswith(table_start):
                         value = value[len(table_start):]
                     if ':' in value: # quote to ignore delimiter
@@ -219,31 +172,10 @@ class MPFile(six.with_metaclass(ABCMeta)):
                 else: lines[idx] = ' #'.join([lines[idx], comment])
         return '\n'.join(lines) + '\n'
 
-    def __repr__(self):
-        return self.get_string()
-
-    def __str__(self):
-        """String representation of MPFile file."""
-        return self.get_string()
-
-    def write_file(self, filename, **kwargs):
-        """Writes MPFile to a file. The supported kwargs are the same as those
-        for the MPFile.get_string method and are passed through directly."""
-        with codecs.open(filename, encoding='utf-8', mode='w') as f:
-            file_str = self.get_string(**kwargs) + '\n'
-            f.write(file_str)
-
     def add_data_table(self, identifier, dataframe, name):
-        """add a data table/frame to the root-level section for identifier"""
         # TODO: optional table name, required if multiple tables per root-level section
         self.document.rec_update(nest_dict(
             pandas_to_dict(dataframe), [identifier, name]
         ))
 
-    def get_identifiers(self):
-        """list of materials/composition identifiers as tuples w/ contribution IDs"""
-        return [
-          (k, self.document[k].get('cid', None))
-          for k in self.document
-          if k.lower() != mp_level01_titles[0]
-        ]
+MPFileBase.register(MPFile)

@@ -1,5 +1,7 @@
 """from pymatgen.matproj.snl"""
 
+import re
+from six import string_types
 from collections import namedtuple
 
 class Author(namedtuple('Author', ['name', 'email'])):

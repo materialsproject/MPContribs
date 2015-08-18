@@ -1,7 +1,6 @@
 from __future__ import unicode_literals, print_function
-import os, re, pwd
-from six import string_types
-from io.utils import nest_dict, RecursiveDict
+import os, re, pwd, six
+from io.custom.utils import nest_dict, RecursiveDict
 from mpcontribs.config import SITE
 
 def get_short_object_id(cid):
@@ -12,7 +11,7 @@ def get_short_object_id(cid):
     return cid_short
 
 def submit_mpfile(path_or_mpfile, target=None, test=False):
-    if isinstance(path_or_mpfile, string_types) and \
+    if isinstance(path_or_mpfile, six.string_types) and \
        not os.path.isfile(path_or_mpfile):
         print('{} not found'.format(path_or_mpfile))
         return
@@ -57,7 +56,7 @@ def submit_mpfile(path_or_mpfile, target=None, test=False):
             print('> built #{}'.format(cid_short))
         mpfile.concat(mpfile_single)
     if target is not None and \
-       isinstance(path_or_mpfile, string_types) and \
+       isinstance(path_or_mpfile, six.string_types) and \
        os.path.isfile(path_or_mpfile):
         print('> embed #{} in MPFile ...'.format('/'.join(cid_shorts)))
         mpfile.write_file(path_or_mpfile, with_comments=True)
