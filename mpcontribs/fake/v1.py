@@ -1,7 +1,7 @@
 from StringIO import StringIO
 from ..config import mp_categories, mp_level01_titles
 from base import MPFakeFileBase
-from ..io.mpfile import MPFile
+from ..io.custom.mpfile import MPFile
 from ..io.utils import get_indentor, make_pair
 
 class MPFakeFile(MPFakeFileBase):

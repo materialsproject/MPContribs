@@ -3,10 +3,10 @@ import re, logging
 import numpy as np
 import pandas as pd
 from StringIO import StringIO
-from ..config import indent_symbol, csv_comment_char, mp_level01_titles, mp_id_pattern
+from mpcontribs.config import indent_symbol, csv_comment_char, mp_level01_titles, mp_id_pattern
 from utils import nest_dict, RecursiveDict, pandas_to_dict, get_indentor
 from collections import OrderedDict
-from ..pymatgen_utils.composition import Composition
+from mpcontribs.pymatgen_utils.composition import Composition
 
 class RecursiveParser():
     def __init__(self):

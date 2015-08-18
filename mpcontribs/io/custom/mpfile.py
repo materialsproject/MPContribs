@@ -2,7 +2,7 @@ from __future__ import unicode_literals, print_function
 import os, json, six, codecs, locale
 from abc import ABCMeta
 from utils import make_pair, get_indentor, RecursiveDict, nest_dict, pandas_to_dict
-from ..config import mp_level01_titles
+from mpcontribs.config import mp_level01_titles
 from recparse import RecursiveParser
 from pandas import DataFrame
 from six import string_types
