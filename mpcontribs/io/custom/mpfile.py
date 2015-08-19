@@ -1,9 +1,10 @@
 from __future__ import unicode_literals, print_function
 import six
 from ..core.mpfile import MPFileCore
+from ..core.recdict import RecursiveDict, nest_dict, pandas_to_dict
 from collections import OrderedDict
 from recparse import RecursiveParser
-from utils import make_pair, get_indentor, RecursiveDict, nest_dict, pandas_to_dict
+from utils import make_pair, get_indentor
 from mpcontribs.config import mp_level01_titles
 from pandas import DataFrame
 
