@@ -4,8 +4,8 @@ from StringIO import StringIO
 from mpcontribs.config import indent_symbol, csv_comment_char, \
         mp_level01_titles, mp_id_pattern
 from utils import get_indentor
-from ..core.recdict import nest_dict, RecursiveDict
-from ..core.utils import pandas_to_dict
+from ..core.recdict import RecursiveDict
+from ..core.utils import pandas_to_dict, nest_dict
 from collections import OrderedDict
 from mpcontribs.pymatgen_utils.composition import Composition
 

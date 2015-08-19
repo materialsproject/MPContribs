@@ -1,11 +1,11 @@
-import os, re, bson
-import pandas as pd
-import cufflinks as cf
-cf.set_config_file(world_readable=False, theme='pearl')
+import os, re, bson, pandas, cufflinks
+cufflinks.set_config_file(world_readable=False, theme='pearl')
 import plotly.plotly as py
 from plotly.graph_objs import *
 from itertools import groupby
-from io.core.recdict import nest_dict, RecursiveDict
+
+from io.core.recdict import RecursiveDict
+from io.core.utils import nest_dict
 from config import mp_level01_titles, mp_id_pattern
 from utils import get_short_object_id, unflatten_dict
 from pymatgen_utils.author import Author
@@ -55,7 +55,7 @@ class MPContributionsBuilder():
                 contrib['mp_cat_id'], table_name[len(mp_level01_titles[1]+' '):]
             ])
             data = contrib['content'][table_name]
-            df = pd.DataFrame.from_dict(data)
+            df = pandas.DataFrame.from_dict(data)
             # TODO: set xTitle and yTitle according to column header
             if isinstance(self.db, dict):
                 # use Plotly Javascript Library -> list of x/y dicts
