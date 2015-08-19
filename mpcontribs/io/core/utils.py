@@ -1,4 +1,5 @@
 import warnings, pandas
+from recdict import RecursiveDict
 
 def pandas_to_dict(pandas_object):
     """convert pandas object to dict"""

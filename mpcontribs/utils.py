@@ -25,7 +25,7 @@ def submit_mpfile(path_or_mpfile, target=None, test=False):
         cma = ContributionMongoAdapter()
         build_doc = RecursiveDict()
     # split input MPFile into contributions: treat every mp_cat_id as separate DB insert
-    mpfile, cid_shorts = MPFile(), [] # output
+    mpfile, cid_shorts = MPFile.from_dict(), [] # output
     for idx, mpfile_single in enumerate(MPFile.from_file(path_or_mpfile).split()):
         mp_cat_id = mpfile_single.document.keys()[0]
         cid = mpfile_single.document[mp_cat_id].get('cid', None)
