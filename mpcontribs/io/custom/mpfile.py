@@ -1,13 +1,13 @@
 from __future__ import unicode_literals, print_function
 import six
-from ..base import MPFileBase
+from ..core.mpfile import MPFileCore
 from collections import OrderedDict
 from recparse import RecursiveParser
 from utils import make_pair, get_indentor, RecursiveDict, nest_dict, pandas_to_dict
 from mpcontribs.config import mp_level01_titles
 from pandas import DataFrame
 
-class MPFile(MPFileBase):
+class MPFile(MPFileCore):
     """Object for representing a MP Contribution File in a custom format."""
     def __init__(self, parser=None, comments=None):
         self._document = RecursiveDict() if parser is None else parser.document
@@ -178,4 +178,4 @@ class MPFile(MPFileBase):
             pandas_to_dict(dataframe), [identifier, name]
         ))
 
-MPFileBase.register(MPFile)
+MPFileCore.register(MPFile)

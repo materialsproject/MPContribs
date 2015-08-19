@@ -3,7 +3,7 @@ import six, codecs, locale
 from abc import ABCMeta, abstractmethod, abstractproperty
 from mpcontribs.config import mp_level01_titles
 
-class MPFileBase(six.with_metaclass(ABCMeta, object)):
+class MPFileCore(six.with_metaclass(ABCMeta, object)):
     """Abstract Base Class for representing a MP Contribution File"""
 
     @classmethod
@@ -70,12 +70,12 @@ class MPFileBase(six.with_metaclass(ABCMeta, object)):
     @abstractmethod
     def from_string(data):
         """Reads a MPFile from a string containing contribution data."""
-        return MPFileBase()
+        return MPFileCore()
 
     @abstractmethod
     def pop_first_section(self):
         """remove first root-level section and return as MPFile"""
-        return MPFileBase()
+        return MPFileCore()
 
     @abstractmethod
     def insert_general_section(self, general_mpfile):
