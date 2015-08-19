@@ -1,12 +1,12 @@
 from __future__ import unicode_literals, print_function
-import six
+import six, pandas
+from mpcontribs.config import mp_level01_titles
 from ..core.mpfile import MPFileCore
-from ..core.recdict import RecursiveDict, nest_dict, pandas_to_dict
+from ..core.recdict import RecursiveDict, nest_dict
+from ..core.utils import pandas_to_dict
 from collections import OrderedDict
 from recparse import RecursiveParser
 from utils import make_pair, get_indentor
-from mpcontribs.config import mp_level01_titles
-from pandas import DataFrame
 
 class MPFile(MPFileCore):
     """Object for representing a MP Contribution File in a custom format."""
@@ -153,7 +153,7 @@ class MPFile(MPFileCore):
         min_indentor = get_indentor()
         table_start = mp_level01_titles[1]+' '
         for key,value in self.document.iterate():
-            if key is None and isinstance(value, DataFrame):
+            if key is None and isinstance(value, pandas.DataFrame):
                 csv_string = value.to_csv(index=False, float_format='%g')[:-1]
                 lines += csv_string.split('\n')
             else:
