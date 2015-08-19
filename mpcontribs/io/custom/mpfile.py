@@ -89,14 +89,6 @@ class MPFile(MPFileCore):
             idx_str_shift = self.get_shifted_comment_index(idx_str, nlines_top)
             self.add_comment(idx_str_shift, general_mpfile.comments[idx_str])
 
-    def set_test_mode(self, mp_cat_id, idx=0):
-        """insert a key-value entry indicating test submission"""
-        if len(self.document) > 1:
-            raise ValueError('can set test mode only on single section files')
-        first_sub_key = self.document[mp_cat_id].keys()[0]
-        self.document[mp_cat_id].insert_before(
-            first_sub_key, ('test_index', idx+733773))
-
     def concat(self, mpfile):
         super(MPFile, self).concat(mpfile) 
         # TODO: account for comments

@@ -29,7 +29,6 @@ def submit_mpfile(path_or_mpfile, target=None, test=False):
     for idx, mpfile_single in enumerate(MPFile.from_file(path_or_mpfile).split()):
         mp_cat_id = mpfile_single.document.keys()[0]
         cid = mpfile_single.document[mp_cat_id].get('cid', None)
-        if test and cid is None: mpfile_single.set_test_mode(mp_cat_id, idx)
         if cid is None:
             print('submit contribution for {} ...'.format(mp_cat_id))
         else:
