@@ -17,6 +17,8 @@
     <link rel="icon" href="data:;base64,=">
     <script src="{{ url_for('static', filename='js/bootstrap-filestyle.min.js') }}"> </script>
     <script src="{{ url_for('static', filename='js/FileSaver.min.js') }}"> </script>
+    <script src="{{ url_for('static', filename='js/bootstrap-select.min.js') }}"> </script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-select.css') }}" />
     <div class="container">
       <a name="top"></a>
       <div class="row">
@@ -24,14 +26,10 @@
           <a class="btn btn-primary" role="button" href="/">Home</a>
         </div>
         <div class="col-md-1">
-          <button type="button" class="btn btn-info dropdown-toggle"
-                                data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-            ArchieML <span class="caret"></span>
-          </button>
-          <ul class="dropdown-menu">
-            <li><a href="#">ArchieML</a></li>
-            <li><a href="#">Custom</a></li>
-          </ul>
+          <select class="selectpicker" style="display: none;" data-style="btn-info" data-width="150%">
+            <option>ArchieML</option>
+            <option>Custom</option>
+          </select>
         </div>
         <div class="col-md-8">
           <form action="/action" method=post enctype=multipart/form-data>
