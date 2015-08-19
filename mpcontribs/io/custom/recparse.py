@@ -1,11 +1,11 @@
 from __future__ import unicode_literals, print_function
-import re, logging
-import numpy as np
-import pandas as pd
+import re, logging, pandas, numpy
 from StringIO import StringIO
-from mpcontribs.config import indent_symbol, csv_comment_char, mp_level01_titles, mp_id_pattern
+from mpcontribs.config import indent_symbol, csv_comment_char, \
+        mp_level01_titles, mp_id_pattern
 from utils import get_indentor
-from ..core.recdict import nest_dict, RecursiveDict, pandas_to_dict
+from ..core.recdict import nest_dict, RecursiveDict
+from ..core.utils import pandas_to_dict
 from collections import OrderedDict
 from mpcontribs.pymatgen_utils.composition import Composition
 
@@ -55,7 +55,7 @@ class RecursiveParser():
     def strip(self, text):
         """http://stackoverflow.com/questions/13385860"""
         if not text:
-            return np.nan
+            return numpy.nan
         try:
             return float(text)
         except ValueError:
@@ -81,7 +81,7 @@ class RecursiveParser():
             options = self.colon_key_value_list
             ncols = 2
         converters = dict((col,self.strip) for col in range(ncols))
-        return is_data_section, pd.read_csv(
+        return is_data_section, pandas.read_csv(
             StringIO(body), comment=csv_comment_char,
             skipinitialspace=True, squeeze=True,
             converters=converters, encoding='utf8',
