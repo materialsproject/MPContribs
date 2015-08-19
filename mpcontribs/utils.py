@@ -1,6 +1,6 @@
 from __future__ import unicode_literals, print_function
 import os, re, pwd, six
-from io.custom.utils import nest_dict, RecursiveDict
+from io.core.recdict import nest_dict, RecursiveDict
 from mpcontribs.config import SITE
 
 def get_short_object_id(cid):

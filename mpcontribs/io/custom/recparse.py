@@ -4,7 +4,8 @@ import numpy as np
 import pandas as pd
 from StringIO import StringIO
 from mpcontribs.config import indent_symbol, csv_comment_char, mp_level01_titles, mp_id_pattern
-from utils import nest_dict, RecursiveDict, pandas_to_dict, get_indentor
+from utils import get_indentor
+from ..core.recdict import nest_dict, RecursiveDict, pandas_to_dict
 from collections import OrderedDict
 from mpcontribs.pymatgen_utils.composition import Composition
 

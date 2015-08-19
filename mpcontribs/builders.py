@@ -5,7 +5,7 @@ cf.set_config_file(world_readable=False, theme='pearl')
 import plotly.plotly as py
 from plotly.graph_objs import *
 from itertools import groupby
-from io.custom.utils import nest_dict, RecursiveDict
+from io.core.recdict import nest_dict, RecursiveDict
 from config import mp_level01_titles, mp_id_pattern
 from utils import get_short_object_id, unflatten_dict
 from pymatgen_utils.author import Author
