@@ -15,14 +15,50 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/dataTables.bootstrap.css') }}" />
     <script src="{{ url_for('static', filename='js/dataTables.bootstrap.js') }}"></script>
     <link rel="icon" href="data:;base64,=">
+    <script src="{{ url_for('static', filename='js/bootstrap-filestyle.min.js') }}"> </script>
+    <script src="{{ url_for('static', filename='js/FileSaver.min.js') }}"> </script>
     <div class="container">
+      <a name="top"></a>
       <div class="row">
-        <div class="col-md-12">
-          <div class="btn-toolbar" role="toolbar">
-            <a name="top">
-              <a class="btn btn-primary" role="button" href="/">Home</a>
-              <a class="btn btn-primary pull-right" role="button" href="/shutdown">Quit</a>
-          </div>
+        <div class="col-md-1">
+          <a class="btn btn-primary" role="button" href="/">Home</a>
+        </div>
+        <div class="col-md-1">
+          <button type="button" class="btn btn-info dropdown-toggle"
+                                data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            ArchieML <span class="caret"></span>
+          </button>
+          <ul class="dropdown-menu">
+            <li><a href="#">ArchieML</a></li>
+            <li><a href="#">Custom</a></li>
+          </ul>
+        </div>
+        <div class="col-md-8">
+          <form action="/action" method=post enctype=multipart/form-data>
+            <div class="col-md-6">
+            <input type=file id=fileUpload name=file class="filestyle" data-iconName="glyphicon glyphicon-file"
+                   data-input="false" data-badge="false" data-buttonName="btn-info" data-buttonText="Choose MPFile ...">
+            <script type="text/javascript">
+                $(document.getElementById('fileUpload')).change(function () {
+                  var filename=$(this).val().replace(/^.*[\\\/]/, ''); 
+                  $(":file").filestyle('buttonText', filename);
+                });
+            </script>
+            </div>
+            <div class="col-md-6">
+              <input type=submit name="submit" class="btn btn-info" value="Load MPFile">
+              <input type=submit name="submit" class="btn btn-info" value="View MPFile">
+              <input type=submit name="submit" class="btn btn-info" value="View Graphs">
+            </div>
+          </form>
+        </div>
+        <div class="col-md-1">
+          <form role="form">
+            <input id="btn-save" type="submit" class="btn btn-info" value="Save MPFile">
+          </form>
+        </div>
+        <div class="col-md-1">
+          <a class="btn btn-primary pull-right" role="button" href="/shutdown">Quit</a>
         </div>
       </div>
     </div>
