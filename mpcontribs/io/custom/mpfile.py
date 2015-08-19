@@ -1,5 +1,5 @@
 from __future__ import unicode_literals, print_function
-import six, pandas
+import six, pandas, warnings
 from mpcontribs.config import mp_level01_titles
 from ..core.mpfile import MPFileCore
 from ..core.recdict import RecursiveDict
@@ -10,13 +10,6 @@ from utils import make_pair, get_indentor
 
 class MPFile(MPFileCore):
     """Object for representing a MP Contribution File in a custom format."""
-    def __init__(self, parser=None, comments=None):
-        self._document = RecursiveDict() if parser is None else parser.document
-        self.comments = OrderedDict() if comments is None else comments
-
-    @property
-    def document(self):
-        return self._document
 
     @staticmethod
     def from_string(data):
@@ -34,7 +27,14 @@ class MPFile(MPFileCore):
         parser = RecursiveParser()
         parser.parse(data)
         # init MPFile
-        mpfile = MPFile(parser=parser, comments=comments)
+        mpfile = MPFile.from_dict(parser.document)
+        mpfile.comments = comments
+        return mpfile
+
+    @classmethod
+    def from_dict(cls, data=RecursiveDict()):
+        mpfile = super(MPFile, cls).from_dict(data)
+        mpfile.comments = OrderedDict()
         return mpfile
 
     def add_comment(self, linenumber, comment):
@@ -66,9 +66,7 @@ class MPFile(MPFileCore):
         return str(idx) + ('*' if ast else '')
 
     def pop_first_section(self):
-        title, data = self.document.popitem(last=False)
-        mpfile = MPFile()
-        mpfile.document.rec_update(nest_dict(data, [title]))
+        mpfile = super(MPFile, self).pop_first_section()
         nlines = mpfile.get_number_of_lines(with_comments=True)
         for idx_str in self.comments.keys():
             idx = self.get_comment_index(idx_str)[0]
@@ -80,25 +78,9 @@ class MPFile(MPFileCore):
         return mpfile
 
     def insert_general_section(self, general_mpfile):
-        if general_mpfile is None: return
-        general_title = mp_level01_titles[0]
-        general_data = general_mpfile.document[general_title]
+        # FIXME rec_update will probably not play nice with comments
+        nlines_top = super(MPFile, self).insert_general_section(general_mpfile)
         general_nlines = general_mpfile.get_number_of_lines(with_comments=True)
-        root_key = self.document.keys()[0]
-        nlines_top = 1
-        for key, value in self.document[root_key].iteritems():
-            if isinstance(value, dict):
-                first_sub_key = key
-                break
-            else:
-                nlines_top += 1
-        if general_title in self.document[root_key]:
-            # FIXME rec_update will probably not play nice with comments
-            self.document.rec_update(nest_dict(
-                general_data, [root_key, general_title]))
-        else:
-            self.document[root_key].insert_before(
-                first_sub_key, (general_title, general_data))
         for idx_str in reversed(self.comments.keys()):
             idx = self.get_comment_index(idx_str)[0]
             if idx < 1: continue
@@ -116,36 +98,17 @@ class MPFile(MPFileCore):
             first_sub_key, ('test_index', idx+733773))
 
     def concat(self, mpfile):
-        if not isinstance(mpfile, MPFile):
-            raise ValueError('Provide a MPFile to concatenate')
-        if len(mpfile.document) > 1:
-            raise ValueError('concatenation only possible with single section files')
-        mp_cat_id = mpfile.document.keys()[0]
-        general_title = mp_level01_titles[0]
-        if general_title in mpfile.document[mp_cat_id]:
-            general_data = mpfile.document[mp_cat_id].pop(general_title)
-            if general_title not in self.document:
-                self.document.rec_update(nest_dict(general_data, [general_title]))
-        mp_cat_id_idx, mp_cat_id_uniq = 0, mp_cat_id
-        while mp_cat_id_uniq in self.document.keys():
-            mp_cat_id_uniq = mp_cat_id + '--{}'.format(mp_cat_id_idx)
-            mp_cat_id_idx += 1
-        self.document.rec_update(nest_dict(
-            mpfile.document.pop(mp_cat_id), [mp_cat_id_uniq]
-        ))
+        super(MPFile, self).concat(mpfile) 
         # TODO: account for comments
         if mpfile.comments:
-            raise NotImplementedError('TODO')
+            warnings.warn('NotImplementedError: comments ignored in concatenation!')
         #shift = mpfile.get_number_of_lines(with_comments=True)
         #for idx_str in mpfile.comments.keys():
         #    idx_str_shift = mpfile.get_shifted_comment_index(idx_str, shift)
         #    self.add_comment(idx_str_shift, mpfile.comments[idx_str])
 
     def insert_id(self, mp_cat_id, cid):
-        if len(self.document) > 1:
-            raise ValueError('ID insertion only possible for single section files')
-        first_sub_key = self.document[mp_cat_id].keys()[0]
-        self.document[mp_cat_id].insert_before(first_sub_key, ('cid', str(cid)))
+        super(MPFile, self).insert_id(mp_cat_id, cid)
         self.shift_comments(1)
 
     def get_string(self, with_comments=False):
@@ -157,6 +120,7 @@ class MPFile(MPFileCore):
                 csv_string = value.to_csv(index=False, float_format='%g')[:-1]
                 lines += csv_string.split('\n')
             else:
+                key = get_indentor(n=key) if isinstance(key, int) else key
                 sep = '' if min_indentor in key else ':'
                 if lines and key == min_indentor:
                     lines.append('')
@@ -172,11 +136,5 @@ class MPFile(MPFileCore):
                 if ast: lines.insert(idx, '#'+comment)
                 else: lines[idx] = ' #'.join([lines[idx], comment])
         return '\n'.join(lines) + '\n'
-
-    def add_data_table(self, identifier, dataframe, name):
-        # TODO: optional table name, required if multiple tables per root-level section
-        self.document.rec_update(nest_dict(
-            pandas_to_dict(dataframe), [identifier, name]
-        ))
 
 MPFileCore.register(MPFile)

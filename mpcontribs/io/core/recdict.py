@@ -6,10 +6,11 @@ from collections import Mapping as _Mapping
 class RecursiveDict(_OrderedDict):
     """extension of dict for internal representation of MPFile"""
 
-    def rec_update(self, other, overwrite=False):
+    def rec_update(self, other=None, overwrite=False):
         """https://gist.github.com/Xjs/114831"""
         # overwrite=False: don't overwrite existing unnested key
-        for key,value in other.iteritems():
+        if other is None: other = self # mode to force RecursiveDicts to be used
+        for key,value in other.items():
             if key in self and \
                isinstance(self[key], dict) and \
                isinstance(value, dict):
@@ -27,7 +28,7 @@ class RecursiveDict(_OrderedDict):
             if isinstance(value, _Mapping):
                 # FIXME: currently skipping all plots sections in output
                 #if self.level == 1 and key == mp_level01_titles[2]: continue
-                yield get_indentor(n=self.level), key
+                yield self.level, key
                 self.level += 1
                 iterator = self.iterate(nested_dict=value)
                 while True:
