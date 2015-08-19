@@ -60,11 +60,6 @@ class ContributionMongoAdapter(object):
         data = mpfile.document[mp_cat_id]
         update = ('cid' in data) # new vs update
         cid = bson.ObjectId(data['cid']) if update else bson.ObjectId()
-        if 'test_index' in data:
-            if not update:
-                test_index = int(data['test_index'])
-                cid = bson.ObjectId.from_datetime(datetime.fromordinal(test_index))
-            data.pop('test_index')
         cid_short = get_short_object_id(cid)
         collaborators = [contributor_email]
         if update: # check contributor permissions if update mode
