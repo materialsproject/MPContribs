@@ -59,11 +59,3 @@ class RecursiveDict(_OrderedDict):
 
     def insert_before(self, existing_key, key_value):
         self.__insertion(self._OrderedDict__map[existing_key][0], key_value)
-
-
-def nest_dict(dct, keys):
-    """nest dict under list of keys"""
-    nested_dict = dct
-    for key in reversed(keys):
-        nested_dict = {key: nested_dict}
-    return nested_dict

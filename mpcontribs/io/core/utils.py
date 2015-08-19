@@ -14,3 +14,10 @@ def pandas_to_dict(pandas_object):
     for k, v in pandas.compat.iteritems(pandas_object):
         list_dict[k] = v.tolist()
     return list_dict
+
+def nest_dict(dct, keys):
+    """nest dict under list of keys"""
+    nested_dict = dct
+    for key in reversed(keys):
+        nested_dict = {key: nested_dict}
+    return nested_dict
