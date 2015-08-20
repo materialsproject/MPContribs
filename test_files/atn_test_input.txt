@@ -40,7 +40,7 @@ factor: 123.0
 background value: 456.0
 >>>>> normalization to L3
 factor: 0.86202
->>>> datatable # or whatever, purpose auto-determined by section content
+>>>> data table # or whatever, purpose auto-determined by section content
 Energy,XAS,XMCD
 761,0.008445,-0.001452
 762,0.007812,-0.000682
