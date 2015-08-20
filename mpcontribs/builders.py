@@ -17,7 +17,6 @@ class MPContributionsBuilder():
             import cufflinks
             cufflinks.set_config_file(world_readable=False, theme='pearl')
             import plotly.plotly as py
-            from plotly.graph_objs import *
             opts = bson.CodecOptions(document_class=bson.SON)
             self.contributions = self.db.contributions.with_options(codec_options=opts)
             self.materials = self.db.materials.with_options(codec_options=opts)
