@@ -3,14 +3,20 @@
 <div class="container">
   <div class="row">
     <div class="col-md-12">
-      <div class="btn-toolbar" role="toolbar">
-        {% for value in content.itervalues() %}
-        {% for project_data in value.itervalues() %}
-        {% for cid in project_data %}
-        <a href="#cid{{ cid }}" class="btn btn-default btn-group" role="group" role="button">#{{ cid }}</a>
-        {% endfor %}
-        {% endfor %}
-        {% endfor %}
+      <div class="dropdown">
+        <button class="btn btn-success dropdown-toggle" type="button" id="dropdownMenu1"
+                data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+          Go to contribution ... <span class="caret"></span>
+        </button>
+        <ul class="dropdown-menu" aria-labelledby="dropdownMenu1">
+          {% for key,value in content.iteritems() %}
+          {% for project_data in value.itervalues() %}
+          {% for cid in project_data %}
+          <li><a href="#cid{{ cid }}">{{ key }} (#{{ cid }})</a></li>
+          {% endfor %}
+          {% endfor %}
+          {% endfor %}
+        </ul>
       </div>
     </div>
   </div>
