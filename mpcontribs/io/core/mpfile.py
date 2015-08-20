@@ -21,8 +21,6 @@ class MPFileCore(six.with_metaclass(ABCMeta, object)):
         if isinstance(filename_or_file, six.string_types):
             lang, encoding = locale.getdefaultlocale()
             file_string = codecs.open(filename_or_file, encoding=encoding).read()
-        elif not isinstance(filename_or_file, file):
-            file_string = filename_or_file.read().decode('utf-8')
         else:
             file_string = filename_or_file.read()
         return cls.from_string(file_string)

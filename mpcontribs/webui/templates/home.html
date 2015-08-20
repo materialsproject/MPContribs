@@ -71,12 +71,6 @@ qs.split('&').forEach(function(term) {
     aml.innerHTML = source;
   }
 });
-var aml = document.getElementsByTagName('aml')[0];
-$("#btn-save").click( function() {
-  var filename = $("#input-fileName").val();
-  var blob = new Blob([aml.innerHTML], {type: "text/plain;charset=utf-8"});
-  saveAs(blob, filename+".txt");
-});
 </script>
 <script src="{{ url_for('static', filename='js/sandbox.js') }}"></script>
 {% endblock %}
