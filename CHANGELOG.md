@@ -1,5 +1,36 @@
 # [Changelog](https://github.com/materialsproject/MPContribs/releases)
 
+## [0.1.0](https://github.com/materialsproject/MPContribs/compare/0.0.4...0.1.0)
+
+* [73fc244](https://github.com/materialsproject/MPContribs/commit/73fc244) update docs
+* [69f1a03](https://github.com/materialsproject/MPContribs/commit/69f1a03) builders: remove plotly.graph_objs import
+* [9819d89](https://github.com/materialsproject/MPContribs/commit/9819d89) docs: update status of GCE15 paper
+* [0f206c6](https://github.com/materialsproject/MPContribs/commit/0f206c6) webui: encoding, save file w/o FileSaver.js
+* [0fcb62c](https://github.com/materialsproject/MPContribs/commit/0fcb62c) webui: load/view/graph also from aml DOM to preserve edits
+* [06765b9](https://github.com/materialsproject/MPContribs/commit/06765b9) webui: add labels for ArchieML sandbox
+* [85a9d50](https://github.com/materialsproject/MPContribs/commit/85a9d50) webui: enable load/view/graph in memory, alert message
+* [e7621ea](https://github.com/materialsproject/MPContribs/commit/e7621ea) webui: dropdown for contribution navigation
+* [81d25cc](https://github.com/materialsproject/MPContribs/commit/81d25cc) webui: enable MPFile format selection
+* [9a89f56](https://github.com/materialsproject/MPContribs/commit/9a89f56) minor test files update
+* [faee92a](https://github.com/materialsproject/MPContribs/commit/faee92a) builders: don't import plotly when offline
+* [499db4a](https://github.com/materialsproject/MPContribs/commit/499db4a) retire test ObjectId generation
+* [85e2206](https://github.com/materialsproject/MPContribs/commit/85e2206) webui: add selectpicker for MPFile format
+* [8fa1f28](https://github.com/materialsproject/MPContribs/commit/8fa1f28) webui: restyle header button bar
+* [b9bf385](https://github.com/materialsproject/MPContribs/commit/b9bf385) another big refactor: use RecursiveDict in MPFileCore
+* [738d446](https://github.com/materialsproject/MPContribs/commit/738d446) move nest_dict to core.utils
+* [8c030ee](https://github.com/materialsproject/MPContribs/commit/8c030ee) move pandas_to_dict to core.utils
+* [0b83576](https://github.com/materialsproject/MPContribs/commit/0b83576) move RecursiveDict into core.recdict
+* [97b78ce](https://github.com/materialsproject/MPContribs/commit/97b78ce) MPFileBase -> MPFileCore
+* [f171f4c](https://github.com/materialsproject/MPContribs/commit/f171f4c) refactor MPFile in base and derived custom.mpfile
+* [383e083](https://github.com/materialsproject/MPContribs/commit/383e083) mpfile -> custom.mpfile
+* [d085a57](https://github.com/materialsproject/MPContribs/commit/d085a57) webui: download MPFile, cycle tested
+* [7ddf503](https://github.com/materialsproject/MPContribs/commit/7ddf503) webui: atn archieml test file
+* [2ac67d7](https://github.com/materialsproject/MPContribs/commit/2ac67d7) webui: bootstrap filestyle for file input
+* [44e49ff](https://github.com/materialsproject/MPContribs/commit/44e49ff) webui: single form, multiple submit buttons
+* [4fe7067](https://github.com/materialsproject/MPContribs/commit/4fe7067) webui: load local MPFile into ArchieML sandbox
+* [3cbde56](https://github.com/materialsproject/MPContribs/commit/3cbde56) archieml sandbox on home page
+* [269aecc](https://github.com/materialsproject/MPContribs/commit/269aecc) pymatgen_utils module to avoid pymatgen dependency
+
 ## [0.0.4](https://github.com/materialsproject/MPContribs/compare/0.0.3...0.0.4)
 
 * [97c8943](https://github.com/materialsproject/MPContribs/commit/97c8943) docs: setup slack community
