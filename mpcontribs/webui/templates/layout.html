@@ -21,6 +21,12 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-select.css') }}" />
     <div class="container">
       <a name="top"></a>
+      {% if alert %}
+      <div class="alert alert-warning alert-dismissible" role="alert">
+          <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+          {{ alert }}
+      </div>
+      {% endif %}
       <div class="row">
         <div class="col-md-1">
           <a class="btn btn-primary" role="button" href="/">Home</a>
