@@ -33,7 +33,12 @@ def home():
 
 @app.route('/action', methods=['POST'])
 def action():
-    session['mpfile'] = request.files.get('file').read()
+    mpfile = request.files.get('file').read()
+    if not mpfile:
+        mpfile = session.get('mpfile')
+        if not mpfile:
+            return render_template('home.html', alert='Choose an MPFile!')
+    session['mpfile'] = mpfile
     session['fmt'] = request.form.get('fmt')
     if request.form['submit'] == 'Load MPFile':
         return redirect('/load', code=307)
