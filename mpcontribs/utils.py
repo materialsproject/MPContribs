@@ -3,6 +3,7 @@ import os, re, pwd, six
 from io.core.recdict import RecursiveDict
 from io.core.utils import nest_dict
 from mpcontribs.config import SITE
+from importlib import import_module
 
 def get_short_object_id(cid):
     length = 7
@@ -11,12 +12,13 @@ def get_short_object_id(cid):
         cid_short = str(cid)[:length]
     return cid_short
 
-def submit_mpfile(path_or_mpfile, target=None, test=False):
+def submit_mpfile(path_or_mpfile, target=None, fmt='custom'):
     if isinstance(path_or_mpfile, six.string_types) and \
        not os.path.isfile(path_or_mpfile):
         print('{} not found'.format(path_or_mpfile))
         return
-    from mpcontribs.io.custom.mpfile import MPFile
+    mod = import_module('mpcontribs.io.{}.mpfile'.format(fmt))
+    MPFile = getattr(mod, 'MPFile')
     if target is None:
         from mpcontribs.rest import ContributionMongoAdapter
         from mpcontribs.builders import MPContributionsBuilder
