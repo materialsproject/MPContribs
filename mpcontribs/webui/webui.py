@@ -35,10 +35,12 @@ def home():
 def action():
     mpfile = request.files.get('file').read()
     if not mpfile:
-        mpfile = session.get('mpfile')
+        mpfile = request.form.get('mpfile')
         if not mpfile:
-            return render_template('home.html', alert='Choose an MPFile!')
-    session['mpfile'] = mpfile
+            mpfile = session.get('mpfile')
+            if not mpfile:
+                return render_template('home.html', alert='Choose an MPFile!')
+    session['mpfile'] = mpfile#.decode('utf-8-sig')
     session['fmt'] = request.form.get('fmt')
     if request.form['submit'] == 'Load MPFile':
         return redirect('/load', code=307)

@@ -8,6 +8,7 @@
     document.head.appendChild(my_awesome_script);
   }
 
+  var mpfile_elem = document.getElementById('inputmpfile');
   var amls = Array.prototype.slice.call(document.getElementsByTagName('aml'));
   amls.forEach(function(aml) {
     var div = document.createElement('div');
@@ -28,6 +29,7 @@
     source.style['min-height'] = (source.scrollHeight + 2) + 'px';
     source.addEventListener('keyup', function(e) {
       destination.innerHTML = JSON.stringify(archieml.load(source.value), null, 2);
+      mpfile_elem.value = source.value;
     });
     source.dispatchEvent(new Event('keyup'));
   });
