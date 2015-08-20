@@ -8,6 +8,7 @@ Subpackages
 
     mpcontribs.fake
     mpcontribs.io
+    mpcontribs.pymatgen_utils
     mpcontribs.webui
 
 Submodules

@@ -15,9 +15,9 @@ MPContribs Development
 
 * Release::
 
+     python setup.py build_sphinx
      changes -p mpcontribs changelog
      changes -p mpcontribs build
      changes -p mpcontribs install
      changes -p mpcontribs release --skip-changelog
-     python setup.py build_sphinx
      python setup.py upload_sphinx

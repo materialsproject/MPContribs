@@ -1,32 +1,17 @@
 mpcontribs.io package
 =====================
 
+Subpackages
+-----------
+
+.. toctree::
+
+    mpcontribs.io.archieml
+    mpcontribs.io.core
+    mpcontribs.io.custom
+
 Submodules
 ----------
-
-mpcontribs.io.mpfile module
----------------------------
-
-.. automodule:: mpcontribs.io.mpfile
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-mpcontribs.io.recparse module
------------------------------
-
-.. automodule:: mpcontribs.io.recparse
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-mpcontribs.io.utils module
---------------------------
-
-.. automodule:: mpcontribs.io.utils
-    :members:
-    :undoc-members:
-    :show-inheritance:
 
 mpcontribs.io.vaspdir module
 ----------------------------
