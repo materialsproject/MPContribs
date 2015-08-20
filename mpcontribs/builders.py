@@ -1,9 +1,5 @@
-import os, re, bson, pandas, cufflinks
-cufflinks.set_config_file(world_readable=False, theme='pearl')
-import plotly.plotly as py
-from plotly.graph_objs import *
+import os, re, bson, pandas
 from itertools import groupby
-
 from io.core.recdict import RecursiveDict
 from io.core.utils import nest_dict
 from config import mp_level01_titles, mp_id_pattern
@@ -18,6 +14,10 @@ class MPContributionsBuilder():
             self.materials = RecursiveDict()
             self.compositions = RecursiveDict()
         else:
+            import cufflinks
+            cufflinks.set_config_file(world_readable=False, theme='pearl')
+            import plotly.plotly as py
+            from plotly.graph_objs import *
             opts = bson.CodecOptions(document_class=bson.SON)
             self.contributions = self.db.contributions.with_options(codec_options=opts)
             self.materials = self.db.materials.with_options(codec_options=opts)
