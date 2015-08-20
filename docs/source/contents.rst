@@ -13,6 +13,7 @@ Contents:
 
    tutorial
    develop
+   modules
 
 
 Indices and tables
