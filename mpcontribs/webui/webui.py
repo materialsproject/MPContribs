@@ -1,6 +1,7 @@
 from __future__ import unicode_literals, print_function
 import json, os
-from flask import Flask, render_template, request, url_for, redirect, session
+from flask import Flask, render_template, request
+from flask import url_for, redirect, session, make_response
 from mpcontribs.utils import submit_mpfile, get_short_object_id
 from six import string_types
 from StringIO import StringIO
@@ -27,20 +28,19 @@ def index():
 @app.route('/')
 @app.route('/load', methods=['POST'])
 def home():
-    mpfile = session.get('mpfile') if request.path != '/' else None
-    if mpfile is None: return render_template('home.html')
-    return render_template('home.html', content={'aml': mpfile.decode('utf-8-sig')})
+    if request.path == '/': return render_template('home.html')
+    return render_template('home.html', content={'aml': session.get('mpfile')})
 
 @app.route('/action', methods=['POST'])
 def action():
-    mpfile = request.files.get('file').read()
+    mpfile = request.files.get('file').read().decode('utf-8-sig')
     if not mpfile:
         mpfile = request.form.get('mpfile')
         if not mpfile:
             mpfile = session.get('mpfile')
             if not mpfile:
                 return render_template('home.html', alert='Choose an MPFile!')
-    session['mpfile'] = mpfile#.decode('utf-8-sig')
+    session['mpfile'] = mpfile
     session['fmt'] = request.form.get('fmt')
     if request.form['submit'] == 'Load MPFile':
         return redirect('/load', code=307)
@@ -48,6 +48,10 @@ def action():
         return redirect('/default', code=307)
     elif request.form['submit'] == 'View Graphs':
         return redirect('/graphs', code=307)
+    elif request.form['submit'] == 'Save MPFile':
+        response = make_response(session['mpfile'])
+        response.headers["Content-Disposition"] = "attachment; filename=mpfile.txt"
+        return response
 
 @app.route('/shutdown', methods=['GET', 'POST'])
 def shutdown():

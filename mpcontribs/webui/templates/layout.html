@@ -16,7 +16,6 @@
     <script src="{{ url_for('static', filename='js/dataTables.bootstrap.js') }}"></script>
     <link rel="icon" href="data:;base64,=">
     <script src="{{ url_for('static', filename='js/bootstrap-filestyle.min.js') }}"> </script>
-    <script src="{{ url_for('static', filename='js/FileSaver.min.js') }}"> </script>
     <script src="{{ url_for('static', filename='js/bootstrap-select.min.js') }}"> </script>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-select.css') }}" />
     <div class="container">
@@ -37,34 +36,30 @@
             <option value="archieml" disabled="disabled">ArchieML</option>
           </select>
         </div>
-        <div class="col-md-8">
+        <div class="col-md-9">
           <form action="/action" method=post enctype=multipart/form-data>
-            <div class="col-md-6">
-            <input type=file id=fileUpload name=file class="filestyle" data-iconName="glyphicon glyphicon-file"
-                   data-input="false" data-badge="false" data-buttonName="btn-info" data-buttonText="Choose MPFile ...">
-            <input type=hidden name=mpfile id=inputmpfile value=''>
-            <input type=hidden name=fmt id=inputfmt value=custom>
-            <script type="text/javascript">
-                $(document.getElementById('fileUpload')).change(function () {
-                  var filename=$(this).val().replace(/^.*[\\\/]/, ''); 
-                  $(":file").filestyle('buttonText', filename);
-                });
-                var fmt_elem = document.getElementById('inputfmt');
-                $(document.getElementById('selectpicker')).change(function () {
-                  fmt_elem.value = this.options[this.selectedIndex].value;
-                });
-            </script>
+            <div class="col-md-5">
+              <input type=file id=fileUpload name=file class="filestyle" data-iconName="glyphicon glyphicon-file"
+                     data-input="false" data-badge="false" data-buttonName="btn-info" data-buttonText="Choose MPFile ...">
+              <input type=hidden name=mpfile id=inputmpfile value=''>
+              <input type=hidden name=fmt id=inputfmt value=custom>
+              <script type="text/javascript">
+                  $(document.getElementById('fileUpload')).change(function () {
+                    var filename=$(this).val().replace(/^.*[\\\/]/, ''); 
+                    $(":file").filestyle('buttonText', filename);
+                  });
+                  var fmt_elem = document.getElementById('inputfmt');
+                  $(document.getElementById('selectpicker')).change(function () {
+                    fmt_elem.value = this.options[this.selectedIndex].value;
+                  });
+              </script>
             </div>
-            <div class="col-md-6">
+            <div class="col-md-7">
               <input type=submit name="submit" class="btn btn-info" value="Load MPFile">
               <input type=submit name="submit" class="btn btn-info" value="View MPFile">
               <input type=submit name="submit" class="btn btn-info" value="View Graphs">
+              <input type=submit name="submit" class="btn btn-info" value="Save MPFile">
             </div>
-          </form>
-        </div>
-        <div class="col-md-1">
-          <form role="form">
-            <input id="btn-save" type="submit" class="btn btn-info" value="Save MPFile">
           </form>
         </div>
         <div class="col-md-1">
