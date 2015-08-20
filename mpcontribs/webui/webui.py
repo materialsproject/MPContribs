@@ -10,15 +10,11 @@ app = Flask('webui', template_folder=tmpl_dir, static_folder=stat_dir)
 app.config['JSON_SORT_KEYS'] = False
 app.secret_key = 'xxxrrr'
 
-@app.route('/default', methods=['GET', 'POST'])
-@app.route('/graphs', methods=['GET', 'POST'])
+@app.route('/default', methods=['POST'])
+@app.route('/graphs', methods=['POST'])
 def index():
-    mpfile = request.args.get('mpfile')
-    if mpfile is None:
-        mpfile = StringIO(session.get('mpfile'))
-        if mpfile is None:
-            return render_template('home.html')
-    content = submit_mpfile(mpfile, test=True)
+    mpfile = StringIO(session.get('mpfile'))
+    content = submit_mpfile(mpfile, fmt=session.get('fmt'))
     for value in content.itervalues():
         for project_data in value.itervalues():
             for cid in project_data:
@@ -29,28 +25,22 @@ def index():
     return render_template(template, content=content)
 
 @app.route('/')
-@app.route('/load', methods=['GET', 'POST'])
+@app.route('/load', methods=['POST'])
 def home():
-    mpfile = request.args.get('mpfile')
-    if mpfile is None:
-        mpfile = session.get('mpfile') if request.path != '/' else None
-        if mpfile is None:
-            return render_template('home.html')
-    else:
-        mpfile = open(mpfile, 'r').read()
+    mpfile = session.get('mpfile') if request.path != '/' else None
+    if mpfile is None: return render_template('home.html')
     return render_template('home.html', content={'aml': mpfile.decode('utf-8-sig')})
 
 @app.route('/action', methods=['POST'])
 def action():
     session['mpfile'] = request.files.get('file').read()
+    session['fmt'] = request.form.get('fmt')
     if request.form['submit'] == 'Load MPFile':
-        return redirect('/load')
+        return redirect('/load', code=307)
     elif request.form['submit'] == 'View MPFile':
-        return redirect('/default')
+        return redirect('/default', code=307)
     elif request.form['submit'] == 'View Graphs':
-        return redirect('/graphs')
-    else:
-        return redirect('/')
+        return redirect('/graphs', code=307)
 
 @app.route('/shutdown', methods=['GET', 'POST'])
 def shutdown():

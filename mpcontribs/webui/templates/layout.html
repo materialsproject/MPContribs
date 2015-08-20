@@ -26,9 +26,9 @@
           <a class="btn btn-primary" role="button" href="/">Home</a>
         </div>
         <div class="col-md-1">
-          <select class="selectpicker" style="display: none;" data-style="btn-info" data-width="150%">
-            <option>ArchieML</option>
-            <option>Custom</option>
+          <select class="selectpicker" id="selectpicker" style="display: none;" data-style="btn-info" data-width="150%">
+            <option value="custom">Custom</option>
+            <option value="archieml" disabled="disabled">ArchieML</option>
           </select>
         </div>
         <div class="col-md-8">
@@ -36,10 +36,15 @@
             <div class="col-md-6">
             <input type=file id=fileUpload name=file class="filestyle" data-iconName="glyphicon glyphicon-file"
                    data-input="false" data-badge="false" data-buttonName="btn-info" data-buttonText="Choose MPFile ...">
+            <input type=hidden name=fmt id=inputfmt value=custom>
             <script type="text/javascript">
                 $(document.getElementById('fileUpload')).change(function () {
                   var filename=$(this).val().replace(/^.*[\\\/]/, ''); 
                   $(":file").filestyle('buttonText', filename);
+                });
+                var fmt_elem = document.getElementById('inputfmt');
+                $(document.getElementById('selectpicker')).change(function () {
+                  fmt_elem.value = this.options[this.selectedIndex].value;
                 });
             </script>
             </div>
