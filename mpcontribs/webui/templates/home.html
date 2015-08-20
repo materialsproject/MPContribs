@@ -4,6 +4,10 @@
 <script src="{{ url_for('static', filename='js/archieml.js') }}"></script>
 <div class="sandbox">
   <div class="container"><br>
+    <div class="row">
+      <div class="col-md-6"><strong>edit MPFile contents:</strong></div>
+      <div class="col-md-6"><strong>live-preview of JSON representation after ArchieML parsing:</strong></div>
+    </div>
 {% if "aml" in content %}
 <aml>{{content.aml|safe}}</aml>
 {% else %}
