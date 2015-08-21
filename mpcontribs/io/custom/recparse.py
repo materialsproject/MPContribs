@@ -1,13 +1,11 @@
 from __future__ import unicode_literals, print_function
 import re, logging, pandas, numpy
 from StringIO import StringIO
-from mpcontribs.config import indent_symbol, csv_comment_char, \
-        mp_level01_titles, mp_id_pattern
+from mpcontribs.config import indent_symbol, csv_comment_char, mp_level01_titles
 from utils import get_indentor
 from ..core.recdict import RecursiveDict
-from ..core.utils import pandas_to_dict, nest_dict
+from ..core.utils import pandas_to_dict, nest_dict, normalize_identifier
 from collections import OrderedDict
-from mpcontribs.pymatgen_utils.composition import Composition
 
 class RecursiveParser():
     def __init__(self):
@@ -36,12 +34,7 @@ class RecursiveParser():
             r'%s*' % csv_comment_char, title
         )[0].strip()
         if self.level+1 == 0:
-          is_mp_id = mp_id_pattern.match(title)
-          title_lower = title.lower()
-          if is_mp_id or title_lower == mp_level01_titles[0]:
-            return title_lower
-          else:
-            return Composition(title).get_integer_formula_and_factor()[0]
+            return normalize_identifier(title)
         return title
 
     def is_bare_section(self, title):
