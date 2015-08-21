@@ -1,4 +1,6 @@
 import warnings, pandas
+from mpcontribs.pymatgen_utils.composition import Composition
+from mpcontribs.config import mp_level01_titles, mp_id_pattern
 from recdict import RecursiveDict
 
 def pandas_to_dict(pandas_object):
@@ -22,3 +24,12 @@ def nest_dict(dct, keys):
     for key in reversed(keys):
         nested_dict = {key: nested_dict}
     return nested_dict
+
+def normalize_identifier(title):
+    """convert root-level title into conventional identifier format"""
+    is_mp_id = mp_id_pattern.match(title)
+    title_lower = title.lower()
+    if is_mp_id or title_lower == mp_level01_titles[0]:
+        return title_lower
+    else:
+        return Composition(title).get_integer_formula_and_factor()[0]
