@@ -77,17 +77,22 @@ class MPFile(MPFileCore):
                 self.shift_comment(idx_str, -nlines)
         return mpfile
 
-    def insert_general_section(self, general_mpfile):
-        # FIXME rec_update will probably not play nice with comments
-        nlines_top = super(MPFile, self).insert_general_section(general_mpfile)
-        general_nlines = general_mpfile.get_number_of_lines(with_comments=True)
-        for idx_str in reversed(self.comments.keys()):
-            idx = self.get_comment_index(idx_str)[0]
-            if idx < 1: continue
-            self.shift_comment(idx_str, general_nlines-1)
-        for idx_str in reversed(general_mpfile.comments.keys()):
-            idx_str_shift = self.get_shifted_comment_index(idx_str, nlines_top)
-            self.add_comment(idx_str_shift, general_mpfile.comments[idx_str])
+    # 2015-08-21: insert_general_section is deprecated. Comments needed to be
+    # switched off due to the missing +1 shift if "shared" or "data" keys are
+    # inserted during parsing. Also, nlines_top is no longer correct /
+    # calculated after the switch to treating all non-identifier root level keys
+    # as "shared (meta-)data".
+    #def insert_general_section(self, general_mpfile):
+    #    # FIXME rec_update will probably not play nice with comments
+    #    nlines_top = super(MPFile, self).insert_general_section(general_mpfile)
+    #    general_nlines = general_mpfile.get_number_of_lines(with_comments=False)
+    #    for idx_str in reversed(self.comments.keys()):
+    #        idx = self.get_comment_index(idx_str)[0]
+    #        if idx < 1: continue
+    #        self.shift_comment(idx_str, general_nlines-1)
+    #    for idx_str in reversed(general_mpfile.comments.keys()):
+    #        idx_str_shift = self.get_shifted_comment_index(idx_str, nlines_top)
+    #        self.add_comment(idx_str_shift, general_mpfile.comments[idx_str])
 
     def concat(self, mpfile):
         super(MPFile, self).concat(mpfile) 
