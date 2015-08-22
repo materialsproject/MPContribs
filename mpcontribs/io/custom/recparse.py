@@ -14,8 +14,6 @@ class RecursiveParser():
         self.section_titles = []
         self.document = RecursiveDict({})
         self.level = -1 # level counter
-        self.data_options = { 'sep': ',', 'header': 0 }
-        self.colon_key_value_list = { 'sep': ':', 'header': None, 'index_col': 0 }
 
     def separator_regex(self):
         """get separator regex for section depth/level"""
@@ -62,7 +60,7 @@ class RecursiveParser():
         if not body: return False, None
         is_data_section = self.is_data_section(body)
         if is_data_section:
-            options = self.data_options
+            options = { 'sep': ',', 'header': 0 }
             cur_line = 1
             while 1:
                 first_line = body.split('\n', cur_line)[cur_line-1]
@@ -71,7 +69,7 @@ class RecursiveParser():
                     break
             ncols = len(first_line.split(options['sep']))
         else:
-            options = self.colon_key_value_list
+            options = { 'sep': ':', 'header': None, 'index_col': 0 }
             ncols = 2
         converters = dict((col,self.strip) for col in range(ncols))
         return is_data_section, pandas.read_csv(
