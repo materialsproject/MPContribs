@@ -10,7 +10,6 @@ from collections import OrderedDict
 class RecursiveParser():
     def __init__(self):
         """init and set read_csv options"""
-        self.level0_counter = 0
         self.section_titles = []
         self.document = RecursiveDict({})
         self.level = -1 # level counter
@@ -89,10 +88,6 @@ class RecursiveParser():
             sections = sections[1:] # https://docs.python.org/2/library/re.html#re.split
             for section_index,section_body in enumerate(sections[1::2]):
                 clean_title = self.clean_title(sections[2*section_index])
-                # uniquify level-0 titles if necessary
-                if self.level+1 == 0 and clean_title in self.document:
-                    clean_title += '--%d' % self.level0_counter
-                    self.level0_counter += 1
                 self.increase_level(clean_title)
                 self.parse(section_body)
                 self.reduce_level()
