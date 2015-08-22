@@ -1,15 +1,14 @@
 from __future__ import unicode_literals, print_function
-import re, logging, pandas
+import re, pandas
 from StringIO import StringIO
 from mpcontribs.config import indent_symbol, csv_comment_char, mp_level01_titles
 from utils import get_indentor
 from ..core.recdict import RecursiveDict
-from ..core.utils import pandas_to_dict, nest_dict, normalize_identifier, strip_converter
+from ..core.utils import pandas_to_dict, nest_dict, normalize_root_level, strip_converter
 from collections import OrderedDict
 
 class RecursiveParser():
     def __init__(self):
-        """init and set read_csv options"""
         self.section_titles = []
         self.document = RecursiveDict({})
         self.level = -1 # level counter
@@ -31,8 +30,8 @@ class RecursiveParser():
             r'%s*' % csv_comment_char, title
         )[0].strip()
         if self.level+1 == 0:
-            return normalize_identifier(title)
-        return title
+            return normalize_root_level(title)
+        return False, title
 
     def is_bare_section(self, title):
         """determine whether currently in bare section"""
@@ -66,16 +65,17 @@ class RecursiveParser():
             **options
         ).dropna(how='all')
 
-    def increase_level(self, next_title):
+    def increase_level(self, next_title, is_general=False):
         """increase and prepare for next section level"""
+        if is_general: self.section_titles.append(mp_level01_titles[0])
         self.section_titles.append(next_title)
-        logging.info(self.section_titles)
         self.level += 1
 
-    def reduce_level(self):
+    def reduce_level(self, is_general=False):
         """reduce section level"""
-        self.section_titles.pop()
         self.level -= 1
+        self.section_titles.pop()
+        if is_general: self.section_titles.pop()
 
     def parse(self, file_string):
         """recursively parse sections according to number of separators"""
@@ -87,10 +87,10 @@ class RecursiveParser():
             # drop preceding bare section_body
             sections = sections[1:] # https://docs.python.org/2/library/re.html#re.split
             for section_index,section_body in enumerate(sections[1::2]):
-                clean_title = self.clean_title(sections[2*section_index])
-                self.increase_level(clean_title)
+                is_general, clean_title = self.clean_title(sections[2*section_index])
+                self.increase_level(clean_title, is_general)
                 self.parse(section_body)
-                self.reduce_level()
+                self.reduce_level(is_general)
         else:
             # separator level not found, convert section body to pandas object,
             section_title = self.section_titles[-1]
