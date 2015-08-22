@@ -71,23 +71,22 @@ class MPFileCore(six.with_metaclass(ABCMeta, object)):
 
     def insert_general_section(self, general_mpfile):
         """insert general section from `general_mpfile` into this MPFile"""
-        nlines_top = 1
-        if general_mpfile is None: return nlines_top
+        if general_mpfile is None: return
         general_title = mp_level01_titles[0]
         general_data = general_mpfile.document[general_title]
         root_key = self.document.keys()[0]
-        if general_title in self.document[root_key]:
-            self.document.rec_update(nest_dict(
-                general_data, [root_key, general_title]))
-        else:
-            for key, value in self.document[root_key].iteritems():
-                if isinstance(value, dict):
-                    self.document[root_key].insert_before(
-                        key, (general_title, general_data))
-                    break
-                else:
-                    nlines_top += 1
-        return nlines_top
+        # need to reverse-loop to keep the order of the general_mpfile
+        for key, value in reversed(general_data.items()):
+            if key in self.document[root_key]:
+                self.document.rec_update(nest_dict(value, [root_key, key]))
+            else:
+                # this approach is due to the order sensitivity of key-value pairs
+                # before or after a `>>>..` row in the custom format (legacy)
+                # => ignoring it here would generate the wrong MPFile in get_string
+                for k,v in self.document[root_key].iteritems():
+                    if isinstance(v, dict):
+                        self.document[root_key].insert_before(k, (key, value))
+                        break
 
     def concat(self, mpfile):
         """concatenate single-section MPFile with this MPFile"""
