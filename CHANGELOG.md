@@ -1,5 +1,17 @@
 # [Changelog](https://github.com/materialsproject/MPContribs/releases)
 
+## [0.1.1](https://github.com/materialsproject/MPContribs/compare/0.1.0...0.1.1)
+
+* [2a37445](https://github.com/materialsproject/MPContribs/commit/2a37445) fix strip_converter definition
+* [9a82734](https://github.com/materialsproject/MPContribs/commit/9a82734) fix insert_general_section to work with new shared (meta-)data
+* [e5ccbdb](https://github.com/materialsproject/MPContribs/commit/e5ccbdb) consider all non-identifiers as shared (meta-)data
+* [6b7413b](https://github.com/materialsproject/MPContribs/commit/6b7413b) io.archieml.mpfile: minor reformatting
+* [b92b878](https://github.com/materialsproject/MPContribs/commit/b92b878) io.custom.recparse: drop root-level uniquification to be consistent with ArchieML parser
+* [8de3a86](https://github.com/materialsproject/MPContribs/commit/8de3a86) start io.archieml.mpfile
+* [6296658](https://github.com/materialsproject/MPContribs/commit/6296658) io: strip_converter in core.utils
+* [2772331](https://github.com/materialsproject/MPContribs/commit/2772331) io.custom.recparse: keep read_csv options in function
+* [130d8fc](https://github.com/materialsproject/MPContribs/commit/130d8fc) io: normalize_identifier as core util
+
 ## [0.1.0](https://github.com/materialsproject/MPContribs/compare/0.0.4...0.1.0)
 
 * [73fc244](https://github.com/materialsproject/MPContribs/commit/73fc244) update docs
