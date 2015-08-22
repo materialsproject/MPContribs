@@ -1,4 +1,4 @@
-import warnings, pandas
+import warnings, pandas, numpy
 from mpcontribs.pymatgen_utils.composition import Composition
 from mpcontribs.config import mp_level01_titles, mp_id_pattern
 from recdict import RecursiveDict
@@ -33,3 +33,15 @@ def normalize_identifier(title):
         return title_lower
     else:
         return Composition(title).get_integer_formula_and_factor()[0]
+
+def strip_converter(self, text):
+    """http://stackoverflow.com/questions/13385860"""
+    if not text:
+        return numpy.nan
+    try:
+        return float(text)
+    except ValueError:
+        try:
+            return text.strip()
+        except AttributeError:
+            return text
