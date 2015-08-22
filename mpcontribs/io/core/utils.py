@@ -37,7 +37,7 @@ def normalize_root_level(title):
         else:
             return True, title
 
-def strip_converter(self, text):
+def strip_converter(text):
     """http://stackoverflow.com/questions/13385860"""
     if not text:
         return numpy.nan
