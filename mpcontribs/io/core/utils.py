@@ -25,14 +25,17 @@ def nest_dict(dct, keys):
         nested_dict = {key: nested_dict}
     return nested_dict
 
-def normalize_identifier(title):
-    """convert root-level title into conventional identifier format"""
-    is_mp_id = mp_id_pattern.match(title)
-    title_lower = title.lower()
-    if is_mp_id or title_lower == mp_level01_titles[0]:
-        return title_lower
-    else:
-        return Composition(title).get_integer_formula_and_factor()[0]
+def normalize_root_level(title):
+    """convert root-level title into conventional identifier format; all
+    non-identifiers become part of shared (meta-)data"""
+    try:
+        composition = Composition(title).get_integer_formula_and_factor()[0]
+        return False, composition
+    except:
+        if mp_id_pattern.match(title.lower()):
+            return False, title.lower()
+        else:
+            return True, title
 
 def strip_converter(self, text):
     """http://stackoverflow.com/questions/13385860"""
