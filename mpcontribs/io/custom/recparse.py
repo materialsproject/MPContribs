@@ -1,10 +1,10 @@
 from __future__ import unicode_literals, print_function
-import re, logging, pandas, numpy
+import re, logging, pandas
 from StringIO import StringIO
 from mpcontribs.config import indent_symbol, csv_comment_char, mp_level01_titles
 from utils import get_indentor
 from ..core.recdict import RecursiveDict
-from ..core.utils import pandas_to_dict, nest_dict, normalize_identifier
+from ..core.utils import pandas_to_dict, nest_dict, normalize_identifier, strip_converter
 from collections import OrderedDict
 
 class RecursiveParser():
@@ -43,18 +43,6 @@ class RecursiveParser():
         """determine whether currently in data section"""
         return (get_indentor() not in body and ':' not in body)
 
-    def strip(self, text):
-        """http://stackoverflow.com/questions/13385860"""
-        if not text:
-            return numpy.nan
-        try:
-            return float(text)
-        except ValueError:
-            try:
-                return text.strip()
-            except AttributeError:
-                return text
-
     def read_csv(self, title, body):
         """run pandas.read_csv on (sub)section body"""
         if not body: return False, None
@@ -71,7 +59,7 @@ class RecursiveParser():
         else:
             options = { 'sep': ':', 'header': None, 'index_col': 0 }
             ncols = 2
-        converters = dict((col,self.strip) for col in range(ncols))
+        converters = dict((col,strip_converter) for col in range(ncols))
         return is_data_section, pandas.read_csv(
             StringIO(body), comment=csv_comment_char,
             skipinitialspace=True, squeeze=True,
