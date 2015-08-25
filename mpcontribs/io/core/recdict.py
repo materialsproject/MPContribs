@@ -23,11 +23,9 @@ class RecursiveDict(_OrderedDict):
         """http://stackoverflow.com/questions/10756427/loop-through-all-nested-dictionary-values"""
         d = self if nested_dict is None else nested_dict
         if nested_dict is None: self.level = 0
-        self.items = []
+        self.table = None
         for key,value in d.iteritems():
             if isinstance(value, _Mapping):
-                # FIXME: currently skipping all plots sections in output
-                #if self.level == 1 and key == mp_level01_titles[2]: continue
                 yield self.level, key
                 self.level += 1
                 iterator = self.iterate(nested_dict=value)
@@ -35,13 +33,26 @@ class RecursiveDict(_OrderedDict):
                     try:
                         inner_key, inner_value = iterator.next()
                     except StopIteration:
-                        if self.level > 1 and len(self.items) > 0:
-                            yield None, pandas.DataFrame.from_items(self.items)
+                        if self.level > 0 and self.table:
+                            yield None, self.table # TODO return None?
+                            self.table = None
                         break
                     yield inner_key, inner_value
                 self.level -= 1
             elif isinstance(value, list):
-                self.items.append((key, value))
+                if isinstance(value[0], dict):
+                    # index (from archieml parser)
+                    if self.table is None: self.table = ''
+                    for row_dct in value:
+                        self.table = '\n'.join([
+                            self.table, row_dct['value']
+                        ])
+                    yield '--'.join(['csv', key]), self.table
+                    self.table = None
+                else:
+                    if self.table is None:
+                        self.table = RecursiveDict()
+                    self.table[key] = value # columns
             else:
                 yield key, value
 
