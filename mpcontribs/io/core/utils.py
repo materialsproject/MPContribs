@@ -1,6 +1,7 @@
 import warnings, pandas, numpy
+from StringIO import StringIO
 from mpcontribs.pymatgen_utils.composition import Composition
-from mpcontribs.config import mp_level01_titles, mp_id_pattern
+from mpcontribs.config import mp_level01_titles, mp_id_pattern, csv_comment_char
 from recdict import RecursiveDict
 
 def pandas_to_dict(pandas_object):
@@ -48,3 +49,26 @@ def strip_converter(text):
             return text.strip()
         except AttributeError:
             return text
+
+def read_csv(body, is_data_section=True):
+    """run pandas.read_csv on (sub)section body"""
+    if not body: return None
+    if is_data_section:
+        options = { 'sep': ',', 'header': 0 }
+        cur_line = 1
+        while 1:
+            first_line = body.split('\n', cur_line)[cur_line-1]
+            cur_line += 1
+            if not first_line.strip().startswith(csv_comment_char):
+                break
+        ncols = len(first_line.split(options['sep']))
+    else:
+        options = { 'sep': ':', 'header': None, 'index_col': 0 }
+        ncols = 2
+    converters = dict((col,strip_converter) for col in range(ncols))
+    return pandas.read_csv(
+        StringIO(body), comment=csv_comment_char,
+        skipinitialspace=True, squeeze=True,
+        converters=converters, encoding='utf8',
+        **options
+    ).dropna(how='all')

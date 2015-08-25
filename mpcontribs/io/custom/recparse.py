@@ -1,10 +1,10 @@
 from __future__ import unicode_literals, print_function
-import re, pandas
-from StringIO import StringIO
+import re
 from mpcontribs.config import indent_symbol, csv_comment_char, mp_level01_titles
 from utils import get_indentor
 from ..core.recdict import RecursiveDict
-from ..core.utils import pandas_to_dict, nest_dict, normalize_root_level, strip_converter
+from ..core.utils import pandas_to_dict, nest_dict, normalize_root_level
+from ..core.utils import strip_converter, read_csv
 from collections import OrderedDict
 
 class RecursiveParser():
@@ -41,30 +41,6 @@ class RecursiveParser():
         """determine whether currently in data section"""
         return (get_indentor() not in body and ':' not in body)
 
-    def read_csv(self, title, body):
-        """run pandas.read_csv on (sub)section body"""
-        if not body: return False, None
-        is_data_section = self.is_data_section(body)
-        if is_data_section:
-            options = { 'sep': ',', 'header': 0 }
-            cur_line = 1
-            while 1:
-                first_line = body.split('\n', cur_line)[cur_line-1]
-                cur_line += 1
-                if not first_line.strip().startswith(csv_comment_char):
-                    break
-            ncols = len(first_line.split(options['sep']))
-        else:
-            options = { 'sep': ':', 'header': None, 'index_col': 0 }
-            ncols = 2
-        converters = dict((col,strip_converter) for col in range(ncols))
-        return is_data_section, pandas.read_csv(
-            StringIO(body), comment=csv_comment_char,
-            skipinitialspace=True, squeeze=True,
-            converters=converters, encoding='utf8',
-            **options
-        ).dropna(how='all')
-
     def increase_level(self, next_title, is_general=False):
         """increase and prepare for next section level"""
         if is_general: self.section_titles.append(mp_level01_titles[0])
@@ -94,7 +70,8 @@ class RecursiveParser():
         else:
             # separator level not found, convert section body to pandas object,
             section_title = self.section_titles[-1]
-            is_data_section, pd_obj = self.read_csv(section_title, file_string)
+            is_data_section = self.is_data_section(file_string)
+            pd_obj = read_csv(file_string)
             # TODO: include validation
             # add data section title to nest 'bare' data under data section
             # => artificially increase and decrease level (see below)
