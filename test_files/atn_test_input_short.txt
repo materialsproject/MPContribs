@@ -1,6 +1,5 @@
->>> general
->>>> Experiment # line needed?
->>>>> Preparation
+>>> Experiment # line needed?
+>>>> Preparation
 Description: Magentron Co-sputtering
 Temperature: RT
 Treatment: In vacuuo annealing at 800°C for 1h and 200°C for 10h
