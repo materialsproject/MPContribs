@@ -113,8 +113,9 @@ class MPFile(MPFileCore):
         min_indentor = get_indentor()
         table_start = mp_level01_titles[1]+' '
         for key,value in self.document.iterate():
-            if key is None and isinstance(value, pandas.DataFrame):
-                csv_string = value.to_csv(index=False, float_format='%g')[:-1]
+            if key is None and isinstance(value, dict):
+                pd_obj = pandas.DataFrame.from_dict(value)
+                csv_string = pd_obj.to_csv(index=False, float_format='%g')[:-1]
                 lines += csv_string.split('\n')
             else:
                 key = get_indentor(n=key) if isinstance(key, int) else key
