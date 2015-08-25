@@ -1,20 +1,20 @@
-general.Experiment.Preparation.Description: Sputter deposition
+Experiment.Preparation.Description: Sputter deposition
 
-{general.Experiment.Sample}
+{Experiment.Sample}
 Material_Name: Platinum doped Permalloy
 Form: ~20nm film on Si wafer
 Thickness: ca. 20nm with 2-3 nm Au-capping (nominally)
 Grower: Ales Hrabec
 Authors: Ales Hrabec, Alpha T. N'Diaye, Elke Arenholz, Christopher Marrows
 
-{general.Experiment.Measurement}
+{Experiment.Measurement}
 Detection: total electron yield
 Temperature: RT
 Orientation: 30° grazing incidence
 Date: 2015-06-24
 Measured_by: Alpha T. N'Diaye
 
-{general.Experiment.Beamline}
+{Experiment.Beamline}
 Beamline: ALS-6.3.1
 Method: Soft x-ray XAS and XMCD
 Polarization: circular, positive (ca. 60%)
@@ -24,20 +24,24 @@ Delay_Time: 0.5s
 Monochromator.Exit_Slit: 20µm
 Monochromator.Grating: 600l/mm
 
-{Ni20Fe80Pt10.Ni_XMCD}
-get_xmcd.energy_range: 800 1000
-xas_normalization_to_min_and_max.energy_range: 800 1000
-xas_normalization_to_min_and_max.normalization_factor: 0.952002315041
-xas_normalization_to_min_and_max.offset: 0.358620768783
+{Ni20Fe80Pt10}
+Ni_XMCD.get_xmcd.energy_range: 800 1000
+Fe_XMCD.get_xmcd.energy_range: 600 800
 
-{Ni20Fe80Pt10.Fe_XMCD}
-get_xmcd.energy_range: 600 800
-scaling_preedge_to_1.preedge_range: 690 700
-scaling_preedge_to_1.xas_minus_factor: 0.348231766387
-scaling_preedge_to_1.xas_plus_factor: 0.349333591384
-xas_normalization_to_min_and_max.energy_range: 600 800
-xas_normalization_to_min_and_max.normalization_factor: 1.00964185927
-xas_normalization_to_min_and_max.offset: 0.984095999176
+{Ni20Fe80Pt10.Ni_XMCD.xas_normalization_to_min_and_max}
+energy_range: 800 1000
+normalization_factor: 0.952002315041
+offset: 0.358620768783
+
+{Ni20Fe80Pt10.Fe_XMCD.scaling_preedge_to_1}
+preedge_range: 690 700
+xas_minus_factor: 0.348231766387
+xas_plus_factor: 0.349333591384
+
+{Ni20Fe80Pt10.Fe_XMCD.xas_normalization_to_min_and_max}
+energy_range: 600 800
+normalization_factor: 1.00964185927
+offset: 0.984095999176
 
 [+Ni20Fe80Pt10.Ni_XMCD_Spectra]
 Energy,XAS,XMCD
