@@ -27,8 +27,8 @@ def nest_dict(dct, keys):
     return nested_dict
 
 def normalize_root_level(title):
-    """convert root-level title into conventional identifier format; all
-    non-identifiers become part of shared (meta-)data"""
+    """convert root-level title into conventional identifier; non-identifiers
+    become part of shared (meta-)data. Returns: (is_general, title)"""
     try:
         composition = Composition(title).get_integer_formula_and_factor()[0]
         return False, composition
