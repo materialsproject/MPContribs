@@ -71,7 +71,7 @@ class RecursiveParser():
             # separator level not found, convert section body to pandas object,
             section_title = self.section_titles[-1]
             is_data_section = self.is_data_section(file_string)
-            pd_obj = read_csv(file_string)
+            pd_obj = read_csv(file_string, is_data_section=is_data_section)
             # TODO: include validation
             # add data section title to nest 'bare' data under data section
             # => artificially increase and decrease level (see below)
