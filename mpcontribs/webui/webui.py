@@ -1,7 +1,7 @@
 from __future__ import unicode_literals, print_function
 import json, os
 from flask import Flask, render_template, request
-from flask import url_for, redirect, session, make_response
+from flask import url_for, redirect, make_response
 from mpcontribs.utils import submit_mpfile, get_short_object_id
 from six import string_types
 from StringIO import StringIO
@@ -11,25 +11,37 @@ app = Flask('webui', template_folder=tmpl_dir, static_folder=stat_dir)
 app.config['JSON_SORT_KEYS'] = False
 app.secret_key = 'xxxrrr'
 
-@app.route('/default', methods=['POST'])
-@app.route('/graphs', methods=['POST'])
-def index():
-    mpfile = StringIO(session.get('mpfile'))
-    content = submit_mpfile(mpfile, fmt=session.get('fmt'))
+session = {}
+
+@app.route('/view/<template>')
+def view(template):
+    if template not in ['graphs', 'index']:
+        return render_template(
+            'home.html', alert='view endpoint {} not accepted!'.format(template)
+        )
+    mpfile = session.get('mpfile')
+    if mpfile is None:
+        return render_template('home.html', alert='Choose an MPFile!')
+    content = submit_mpfile(StringIO(mpfile), fmt=session.get('fmt'))
     for value in content.itervalues():
         for project_data in value.itervalues():
             for cid in project_data:
                 cid_short = get_short_object_id(cid)
                 d = project_data.pop(cid)
                 project_data[cid_short] = d
-    template = 'graphs.html' if 'graphs' in request.path else 'index.html'
-    return render_template(template, content=content)
+    return render_template('{}.html'.format(template), content=content)
 
 @app.route('/')
-@app.route('/load', methods=['POST'])
 def home():
-    if request.path == '/': return render_template('home.html')
-    return render_template('home.html', content={'aml': session.get('mpfile')})
+    session.clear()
+    return render_template('home.html')
+
+@app.route('/load')
+def load():
+    mpfile = session.get('mpfile')
+    if mpfile is None:
+        return render_template('home.html', alert='Choose an MPFile!')
+    return render_template('home.html', content={'aml': mpfile})
 
 @app.route('/action', methods=['POST'])
 def action():
@@ -43,11 +55,11 @@ def action():
     session['mpfile'] = mpfile
     session['fmt'] = request.form.get('fmt')
     if request.form['submit'] == 'Load MPFile':
-        return redirect('/load', code=307)
+        return redirect(url_for('load'))
     elif request.form['submit'] == 'View MPFile':
-        return redirect('/default', code=307)
+        return redirect(url_for('view', template='index'))
     elif request.form['submit'] == 'View Graphs':
-        return redirect('/graphs', code=307)
+        return redirect(url_for('view', template='graphs'))
     elif request.form['submit'] == 'Save MPFile':
         response = make_response(session['mpfile'])
         response.headers["Content-Disposition"] = "attachment; filename=mpfile.txt"
