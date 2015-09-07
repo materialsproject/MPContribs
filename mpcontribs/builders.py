@@ -67,7 +67,10 @@ class MPContributionsBuilder():
                     for axis in yaxes
                 ], {
                     'title': plot_title, 'xaxis': {'title': xaxis},
-                    'legend': {'x': 0.7, 'y': 1}, 'margin': {'r': 0, 't': 40},
+                    'yaxis': {
+                        'title': plotopts.get('yaxis.title'),
+                        'type': plotopts.get('yaxis.type')
+                    }, 'legend': {'x': 0.7, 'y': 1}, 'margin': {'r': 0, 't': 40},
                 }])
             else:
                 # use Plotly Cloud
