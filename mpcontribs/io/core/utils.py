@@ -23,7 +23,7 @@ def nest_dict(dct, keys):
     """nest dict under list of keys"""
     nested_dict = dct
     for key in reversed(keys):
-        nested_dict = {key: nested_dict}
+        nested_dict = RecursiveDict({key: nested_dict})
     return nested_dict
 
 def normalize_root_level(title):

@@ -33,9 +33,12 @@ class MPFile(MPFileCore):
             else:
                 # normalize identifier key (pop & insert)
                 # using rec_update since we're looping over all entries
-                mpfile.document.rec_update(nest_dict(
-                    mpfile.document.pop(key), [ root_key ]
-                ))
+                # also: support data in bare tables (marked-up only by
+                #       root-level identifier) by nesting under 'data'
+                value = mpfile.document.pop(key)
+                keys = [ root_key ]
+                if isinstance(value, list): keys.append(mp_level01_titles[1])
+                mpfile.document.rec_update(nest_dict(value, keys))
                 for k,v in mpfile.document[root_key].iterate():
                     if isinstance(k, six.string_types) and k.startswith('csv--'):
                         # v = csv string from ArchieML free-from arrays
@@ -44,7 +47,6 @@ class MPFile(MPFileCore):
                         mpfile.document[root_key].rec_update(nest_dict(
                             pandas_to_dict(read_csv(v)), [table_name]
                         ))
-        # - support bare (marked-up only by root-level identifier) data tables by nesting under 'data'
         # - mark data section with 'data ' prefix in level-1 key, also for table name in root-level 'plots'
         # - make default plot (add entry in 'plots') for each table, first column as x-column
         # - update data (free-form arrays) section of original dict/document parsed by ArchieML
