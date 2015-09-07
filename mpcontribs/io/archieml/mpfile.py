@@ -37,17 +37,19 @@ class MPFile(MPFileCore):
                 #       root-level identifier) by nesting under 'data'
                 value = mpfile.document.pop(key)
                 keys = [ root_key ]
-                if isinstance(value, list): keys.append(mp_level01_titles[1])
+                if isinstance(value, list): keys.append('table')
                 mpfile.document.rec_update(nest_dict(value, keys))
+                # Note: CSV section is marked with 'data ' prefix during iterate()
                 for k,v in mpfile.document[root_key].iterate():
-                    if isinstance(k, six.string_types) and k.startswith('csv--'):
-                        # v = csv string from ArchieML free-from arrays
-                        table_name = k.split('--')[1]
+                    if isinstance(k, six.string_types) and \
+                       k.startswith(mp_level01_titles[1]):
+                        # k = table name (incl. data prefix)
+                        # v = csv string from ArchieML free-form arrays
+                        table_name = k[len(mp_level01_titles[1]+' '):]
                         mpfile.document[root_key].pop(table_name)
                         mpfile.document[root_key].rec_update(nest_dict(
-                            pandas_to_dict(read_csv(v)), [table_name]
+                            pandas_to_dict(read_csv(v)), [k]
                         ))
-        # - mark data section with 'data ' prefix in level-1 key, also for table name in root-level 'plots'
         # - make default plot (add entry in 'plots') for each table, first column as x-column
         # - update data (free-form arrays) section of original dict/document parsed by ArchieML
         return mpfile

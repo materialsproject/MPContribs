@@ -2,6 +2,7 @@ from __future__ import unicode_literals, print_function
 import pandas
 from collections import OrderedDict as _OrderedDict
 from collections import Mapping as _Mapping
+from mpcontribs.config import mp_level01_titles
 
 class RecursiveDict(_OrderedDict):
     """extension of dict for internal representation of MPFile"""
@@ -47,7 +48,7 @@ class RecursiveDict(_OrderedDict):
                         self.table = '\n'.join([
                             self.table, row_dct['value']
                         ])
-                    yield '--'.join(['csv', key]), self.table
+                    yield ' '.join([mp_level01_titles[1], key]), self.table
                     self.table = None
                 else:
                     if self.table is None:
