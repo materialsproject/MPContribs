@@ -50,10 +50,8 @@ class MPContributionsBuilder():
             filename = '{}_{}_{}'.format(
                 ('viewer' if isinstance(self.db, dict) else 'mp'), cid, nplot)
             table_name = plotopts.pop('table')
-            plot_title = ' - '.join([
-                contrib['mp_cat_id'], table_name[len(mp_level01_titles[1]+' '):]
-            ])
-            data = contrib['content'][table_name]
+            plot_title = ' - '.join([contrib['mp_cat_id'], table_name])
+            data = contrib['content'][' '.join([mp_level01_titles[1], table_name])]
             df = pandas.DataFrame.from_dict(data)
             # TODO: set xTitle and yTitle according to column header
             if isinstance(self.db, dict):

@@ -83,9 +83,6 @@ class RecursiveParser():
                 self.section_titles[-1] = ' '.join([
                     mp_level01_titles[1], self.section_titles[-1]
                 ])
-            # also prepend 'data ' to the table name(s) in `plots`
-            if self.level == 2 and self.section_titles[1] == mp_level01_titles[2]:
-                pd_obj['table'] = ' '.join([mp_level01_titles[1], pd_obj['table']])
             # make default plot for each table, first column as x-column
             if is_data_section:
                 self.document.rec_update(nest_dict(
