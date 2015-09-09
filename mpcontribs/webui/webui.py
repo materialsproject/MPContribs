@@ -19,17 +19,17 @@ def view(template):
         return render_template(
             'home.html', alert='view endpoint {} not accepted!'.format(template)
         )
-    mpfile = session.get('mpfile')
+    mpfile, fmt = session.get('mpfile'), session.get('fmt')
     if mpfile is None:
-        return render_template('home.html', alert='Choose an MPFile!')
-    content = submit_mpfile(StringIO(mpfile), fmt=session.get('fmt'))
+        return render_template('home.html', alert='Choose an MPFile!', fmt=fmt)
+    content = submit_mpfile(StringIO(mpfile), fmt=fmt)
     for value in content.itervalues():
         for project_data in value.itervalues():
             for cid in project_data:
                 cid_short = get_short_object_id(cid)
                 d = project_data.pop(cid)
                 project_data[cid_short] = d
-    return render_template('{}.html'.format(template), content=content)
+    return render_template('{}.html'.format(template), content=content, fmt=fmt)
 
 @app.route('/')
 def home():
@@ -38,22 +38,23 @@ def home():
 
 @app.route('/load')
 def load():
-    mpfile = session.get('mpfile')
+    mpfile, fmt = session.get('mpfile'), session.get('fmt')
     if mpfile is None:
-        return render_template('home.html', alert='Choose an MPFile!')
-    return render_template('home.html', content={'aml': mpfile})
+        return render_template('home.html', alert='Choose an MPFile!', fmt=fmt)
+    return render_template('home.html', content={'aml': mpfile}, fmt=fmt)
 
 @app.route('/action', methods=['POST'])
 def action():
+    fmt = request.form.get('fmt')
     mpfile = request.files.get('file').read().decode('utf-8-sig')
     if not mpfile:
         mpfile = request.form.get('mpfile')
         if not mpfile:
             mpfile = session.get('mpfile')
             if not mpfile:
-                return render_template('home.html', alert='Choose an MPFile!')
+                return render_template('home.html', alert='Choose an MPFile!', fmt=fmt)
     session['mpfile'] = mpfile
-    session['fmt'] = request.form.get('fmt')
+    session['fmt'] = fmt
     if request.form['submit'] == 'Load MPFile':
         return redirect(url_for('load'))
     elif request.form['submit'] == 'View MPFile':
