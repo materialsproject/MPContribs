@@ -46,12 +46,17 @@ class MPFile(MPFileCore):
                         # k = table name (incl. data prefix)
                         # v = csv string from ArchieML free-form arrays
                         table_name = k[len(mp_level01_titles[1]+' '):]
+                        pd_obj = read_csv(v)
                         mpfile.document[root_key].pop(table_name)
                         mpfile.document[root_key].rec_update(nest_dict(
-                            pandas_to_dict(read_csv(v)), [k]
+                            pandas_to_dict(pd_obj), [k]
                         ))
-        # - make default plot (add entry in 'plots') for each table, first column as x-column
-        # - update data (free-form arrays) section of original dict/document parsed by ArchieML
+                        # make default plot (add entry in 'plots') for each
+                        # table, first column as x-column
+                        mpfile.document[root_key].rec_update(nest_dict(
+                            {'x': pd_obj.columns[0], 'table': table_name},
+                            [mp_level01_titles[2], 'default {}'.format(k)]
+                        ))
         return mpfile
 
     def get_string(self):
