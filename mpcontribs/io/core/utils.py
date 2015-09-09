@@ -28,7 +28,8 @@ def nest_dict(dct, keys):
 
 def normalize_root_level(title):
     """convert root-level title into conventional identifier; non-identifiers
-    become part of shared (meta-)data. Returns: (is_general, title)"""
+    become part of shared (meta-)data [with underscores replaced by spaces].
+    Returns: (is_general, title)"""
     try:
         composition = Composition(title).get_integer_formula_and_factor()[0]
         return False, composition
@@ -36,7 +37,7 @@ def normalize_root_level(title):
         if mp_id_pattern.match(title.lower()):
             return False, title.lower()
         else:
-            return True, title
+            return True, title.replace('_', ' ')
 
 def strip_converter(text):
     """http://stackoverflow.com/questions/13385860"""

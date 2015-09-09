@@ -10,15 +10,21 @@ class RecursiveDict(_OrderedDict):
     def rec_update(self, other=None, overwrite=False):
         """https://gist.github.com/Xjs/114831"""
         # overwrite=False: don't overwrite existing unnested key
+        # TODO make sure to keep original insertion order when updating
         if other is None: other = self # mode to force RecursiveDicts to be used
         for key,value in other.items():
-            if key in self and \
-               isinstance(self[key], dict) and \
+            new_key = key.replace('_', ' ')
+            self_value = self.pop(key, None)
+            if self_value is not None and \
+               isinstance(self_value, dict) and \
                isinstance(value, dict):
-                self[key] = RecursiveDict(self[key])
-                self[key].rec_update(value)
-            elif (key in self and overwrite) or key not in self:
-                self[key] = value
+                # ensure RecursiveDict and update key (w/o underscores)
+                self[new_key] = RecursiveDict(self_value)
+                self[new_key].rec_update(other=value, overwrite=overwrite)
+            elif self_value is None:
+                self[new_key] = value
+            elif self_value is not None:
+                self[new_key] = value if overwrite else self_value
 
     def iterate(self, nested_dict=None):
         """http://stackoverflow.com/questions/10756427/loop-through-all-nested-dictionary-values"""
