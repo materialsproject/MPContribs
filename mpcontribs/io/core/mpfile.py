@@ -47,6 +47,10 @@ class MPFileCore(six.with_metaclass(ABCMeta, object)):
     def split(self):
         general_mpfile = self.pop_first_section() \
                 if mp_level01_titles[0] in self.document.keys() else None
+        if not self.document:
+            raise ValueError('No contributions in MPFile! Either the file is'
+                             ' empty or only contains shared (meta-)data not'
+                             ' correlated to core identifier.')
         while True:
             try:
                 mpfile_single = self.pop_first_section()
