@@ -32,11 +32,11 @@
   <div class="row">
     <div class="col-md-8">
       <a name="{{ cid }}_jump_tree"></a><h2>Hierarchical Data</h2>
-      {% if "tree_data" in cid_data %}
+      {% if "tree data" in cid_data %}
       <div id="{{ cid }}_tree"></div>
       <script type="text/jsx">
       /** @jsx React.DOM */
-      var lol = {{ cid_data['tree_data']|tojson|safe }};
+      var lol = {{ cid_data['tree data']|tojson|safe }};
       React.renderComponent(
           <JSONTree data={lol} />, document.getElementById('{{ cid }}_tree')
       );
@@ -75,8 +75,8 @@
     </div>
   </div>
   <div class="row">
-    {% if 'plotly_urls' in cid_data %}
-    {% for url in cid_data['plotly_urls'] %}
+    {% if 'plotly urls' in cid_data %}
+    {% for url in cid_data['plotly urls'] %}
     <div class="col-md-6">
       <div id="{{ cid }}_{{ loop.index }}_graph" style="width:580px;height:580px;"></div>
       <script>
