@@ -94,10 +94,11 @@ class MPFileCore(six.with_metaclass(ABCMeta, object)):
 
     def concat(self, mpfile):
         """concatenate single-section MPFile with this MPFile"""
-        if not isinstance(mpfile, MPFileCore):
+        try:
+            if len(mpfile.document) > 1:
+                raise ValueError('concatenation only possible with single section files')
+        except AttributeError:
             raise ValueError('Provide a MPFile to concatenate')
-        if len(mpfile.document) > 1:
-            raise ValueError('concatenation only possible with single section files')
         mp_cat_id = mpfile.document.keys()[0]
         general_title = mp_level01_titles[0]
         if general_title in mpfile.document[mp_cat_id]:
