@@ -57,9 +57,8 @@ Energy,XAS,XMCD
 682,0.0631599,-8.87504e-05
 683,0.0591931,-0.00278828
 
-below a bare data section, i.e. identifier and CSV table
-
 [+Ni20Fe80Pt20]
+# bare data section, i.e. identifier and CSV table
 Energy,XAS,XMCD
 680,0.0670848,0.000905727
 681,0.0659347,-0.00085033
