@@ -32,8 +32,8 @@
         </div>
         <div class="col-md-1">
           <select class="selectpicker" id="selectpicker" style="display: none;" data-style="btn-info" data-width="150%">
+            <option value="archieml">ArchieML</option>
             <option value="custom">Custom</option>
-            <option value="archieml" disabled="disabled">ArchieML</option>
           </select>
         </div>
         <div class="col-md-9">
@@ -45,7 +45,7 @@
               {% if fmt %}
               <input type=hidden name=fmt id=inputfmt value={{fmt|safe}}>
               {% else %}
-              <input type=hidden name=fmt id=inputfmt value=custom>
+              <input type=hidden name=fmt id=inputfmt value=archieml>
               {% endif %}
               <script type="text/javascript">
                   $(document.getElementById('fileUpload')).change(function () {
