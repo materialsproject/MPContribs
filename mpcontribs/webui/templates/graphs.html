@@ -1,25 +1,59 @@
 {% extends "layout.html" %}
 {% block body %}
 <div class="container">
-  {% for key,value in content.iteritems() %}
-  {% for project,project_data in value.iteritems() %}
-  {% for cid,cid_data in project_data.iteritems() %}
-  {% if loop.index is divisibleby 3 %}<div class="row">{% endif %}
-    {% if 'plotly urls' in cid_data %}
-    {% for url in cid_data['plotly urls'] %}
-    <div class="col-md-4">
-      <div id="{{ cid }}_{{ loop.index }}_graph" style="width:385px;height:385px;"></div>
-      <script>
-          var data = {{ url|tojson|safe }};
-          var elem = document.getElementById("{{ cid }}_{{ loop.index }}_graph");
-          Plotly.plot(elem, data[0], data[1]);
-      </script>
+  <div class="row">
+    <div class="col-md-12">
+      <div id='output' class="alert alert-warning alert-dismissible" role="alert">
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+      </div>
     </div>
-    {% endfor %}
+  </div>
+  <div class="row">
+    <div class="col-md-12">
+      <div class="dropdown">
+        <button class="btn btn-success dropdown-toggle" type="button" id="dropdownMenu1"
+                data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+          Go to contribution ... <span class="caret"></span>
+        </button>
+        <ul id="gotolist" class="dropdown-menu" aria-labelledby="dropdownMenu1"></ul>
+      </div>
+    </div>
+  </div>
+  {% for c in content: %}
+  {% if c is string %}
+  <script>$("#output").append("{{ c|safe }}");</script>
+  {% else %}
+    {% if 'plotly urls' in c[3] %}
+    <div class="row" style="background-color: #F7F7F7; border: 1px solid #DDD;">
+      <script>
+        var list = document.getElementById('gotolist');
+        var entry = document.createElement('li');
+        var a = document.createElement('a');
+        var entry_text = "{{ c[0] }} (#{{ c[2] }})";
+        a.appendChild(document.createTextNode(entry_text));
+        a.href = "#cid{{ c[2] }}";
+        entry.appendChild(a);
+        list.appendChild(entry);
+      </script>
+      <div>
+        <a name="cid{{ c[2] }}"></a><strong>#{{ c[2] }}</strong>
+        <a href="#top" class="btn btn-default btn-xs" role="button">back to top</a>
+      </div>
+      {% for plotly_url in c[3]['plotly urls'] %}
+        {% if loop.index is divisibleby 3 %}<div class="row">{% endif %}
+          <div class="col-md-4">
+            <div id="{{ c[2] }}_{{ loop.index }}_graph" style="width:385px;height:385px;"></div>
+          </div>
+        {% if loop.index is divisibleby 3 %}</div>{% endif %}
+        <script>
+          var data = {{ plotly_url|tojson|safe }};
+          var elem = document.getElementById("{{ c[2] }}_{{ loop.index }}_graph");
+          Plotly.plot(elem, data[0], data[1]);
+        </script>
+      {% endfor %}
+    </div>
     {% endif %}
-  {% if loop.index is divisibleby 3 %}</div>{% endif %}
-  {% endfor %}
-  {% endfor %}
+  {% endif %}
   {% endfor %}
 </div>
 {% endblock %}

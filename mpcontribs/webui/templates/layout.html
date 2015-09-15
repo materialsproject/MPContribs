@@ -71,18 +71,6 @@
           <a class="btn btn-primary pull-right" role="button" href="/shutdown">Quit</a>
         </div>
       </div>
-      {% if log %}
-      <div class="row">
-        <div class="col-md-12">
-          <div id='output' class="alert alert-warning alert-dismissible" role="alert">
-            <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-          </div>
-          {% for msg in log: %}
-          <script>$("#output").append("{{ msg|safe }}");</script>
-          {% endfor %}
-        </div>
-      </div>
-      {% endif %}
     </div>
     <p></p>
   </head>

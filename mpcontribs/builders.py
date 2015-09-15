@@ -41,6 +41,7 @@ class MPContributionsBuilder():
         project = str(author.name).translate(None, '.').replace(' ','_') \
                 if 'project' not in contrib else contrib['project']
         cid = str(contrib['_id'])
+        if isinstance(self.db, dict): cid = get_short_object_id(cid)
         subfld = '{}.{}.plotly_urls'.format(project, cid)
         url_list = [] if isinstance(self.db, dict) else list(self.curr_coll.find(
             {subfld: {'$exists': True}}, {subfld: 1}
@@ -103,6 +104,7 @@ class MPContributionsBuilder():
     def build(self, contributor_email, cid):
         """update materials/compositions collections with contributed data"""
         cid_short, cid_str = get_short_object_id(cid), str(cid)
+        if isinstance(self.db, dict): cid_str = cid_short
         contrib = self.find_contribution(cid)
         mp_cat_id = contrib['mp_cat_id']
         is_mp_id = mp_id_pattern.match(mp_cat_id)
@@ -159,7 +161,11 @@ class MPContributionsBuilder():
             else:
                 self.curr_coll.update({'_id': mp_cat_id}, {'$set': plotly_urls})
         if isinstance(self.db, dict):
-            return self.curr_coll
+            project = project.replace('_', ' ')
+            return [
+              mp_cat_id, project, cid_str,
+              self.curr_coll[mp_cat_id][project][cid_str]
+            ]
         else:
             return '{}/{}/contributions#{}#{}'.format( # return URL for contribution page
                 ('materials' if is_mp_id else 'compositions'),

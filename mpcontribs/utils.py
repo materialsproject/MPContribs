@@ -25,7 +25,6 @@ def submit_mpfile(path_or_mpfile, target=None, fmt='custom'):
         full_name = pwd.getpwuid(os.getuid())[4]
         contributor = '{} <phuck@lbl.gov>'.format(full_name)
         cma = ContributionMongoAdapter()
-        build_doc = RecursiveDict()
     # split input MPFile into contributions: treat every mp_cat_id as separate DB insert
     mpfile, cid_shorts = MPFile.from_dict(), [] # output
     for idx, mpfile_single in enumerate(MPFile.from_file(path_or_mpfile).split()):
@@ -54,17 +53,18 @@ def submit_mpfile(path_or_mpfile, target=None, fmt='custom'):
             yield 'done, see {}/{}.</br>'.format(SITE, url)
         else:
             mcb = MPContributionsBuilder(doc)
-            single_build_doc = mcb.build(contributor, cid)
-            build_doc.rec_update(single_build_doc)
+            yield mcb.build(contributor, cid)
             yield 'done.</br>'.format(idx, cid_short)
         mpfile.concat(mpfile_single)
+    ncontribs = len(cid_shorts)
     if target is not None and \
        isinstance(path_or_mpfile, six.string_types) and \
        os.path.isfile(path_or_mpfile):
-        print('> embed #{} in MPFile ...'.format('/'.join(cid_shorts)))
+        yield 'embed #{} in MPFile ...'.format('/'.join(cid_shorts))
         mpfile.write_file(path_or_mpfile, with_comments=True)
+        yield '<strong>{} contributions successfully submitted.</strong>'.format(ncontribs)
     else:
-        return build_doc
+        yield '<strong>{} contributions successfully processed.</strong>'.format(ncontribs)
 
 def flatten_dict(dd, separator='.', prefix=''):
     """http://stackoverflow.com/a/19647596"""
