@@ -15,7 +15,7 @@ def get_short_object_id(cid):
 def submit_mpfile(path_or_mpfile, target=None, fmt='custom'):
     if isinstance(path_or_mpfile, six.string_types) and \
        not os.path.isfile(path_or_mpfile):
-        print('{} not found'.format(path_or_mpfile))
+        yield '{} not found'.format(path_or_mpfile)
         return
     mod = import_module('mpcontribs.io.{}.mpfile'.format(fmt))
     MPFile = getattr(mod, 'MPFile')
@@ -31,11 +31,12 @@ def submit_mpfile(path_or_mpfile, target=None, fmt='custom'):
     for idx, mpfile_single in enumerate(MPFile.from_file(path_or_mpfile).split()):
         mp_cat_id = mpfile_single.document.keys()[0]
         cid = mpfile_single.document[mp_cat_id].get('cid', None)
-        if cid is None:
-            print('submit contribution for {} ...'.format(mp_cat_id))
-        else:
+        update = bool(cid is not None)
+        if update:
             cid_short = get_short_object_id(cid)
-            print('update contribution #{} for {} ...'.format(cid_short, mp_cat_id))
+            yield 'use contribution #{} to update ID #{} ... '.format(idx, cid_short)
+        else:
+            yield 'submit contribution #{} ... '.format(idx, mp_cat_id)
         if target is not None:
             mpfile_single.write_file('tmp')
             cid = target.submit_contribution('tmp')
@@ -44,18 +45,18 @@ def submit_mpfile(path_or_mpfile, target=None, fmt='custom'):
             doc = cma.submit_contribution(mpfile_single, contributor)
             cid = doc['_id']
         cid_short = get_short_object_id(cid)
-        print('> submitted as #{}'.format(cid_short))
+        yield 'done.</br>' if update else 'done (ID #{}).</br>'.format(cid_short)
         mpfile_single.insert_id(mp_cat_id, cid)
         cid_shorts.append(cid_short)
-        print('> build contribution #{} into {} ...'.format(cid_short, mp_cat_id))
+        yield 'build contribution #{} into {} ... '.format(idx, mp_cat_id)
         if target is not None:
             url = target.build_contribution(cid)
-            print('> built #{}, see {}/{}'.format(cid_short, SITE, url))
+            yield 'done, see {}/{}.</br>'.format(SITE, url)
         else:
             mcb = MPContributionsBuilder(doc)
             single_build_doc = mcb.build(contributor, cid)
             build_doc.rec_update(single_build_doc)
-            print('> built #{}'.format(cid_short))
+            yield 'done.</br>'.format(idx, cid_short)
         mpfile.concat(mpfile_single)
     if target is not None and \
        isinstance(path_or_mpfile, six.string_types) and \

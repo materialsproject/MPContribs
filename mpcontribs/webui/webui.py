@@ -1,7 +1,7 @@
 from __future__ import unicode_literals, print_function
 import json, os
-from flask import Flask, render_template, request
-from flask import url_for, redirect, make_response
+from flask import Flask, render_template, request, Response
+from flask import url_for, redirect, make_response, stream_with_context
 from mpcontribs.utils import submit_mpfile, get_short_object_id
 from six import string_types
 from StringIO import StringIO
@@ -12,6 +12,14 @@ app.config['JSON_SORT_KEYS'] = False
 app.secret_key = 'xxxrrr'
 
 session = {}
+
+def stream_template(template_name, **context):
+    # http://stackoverflow.com/questions/13386681/streaming-data-with-python-and-flask
+    # http://flask.pocoo.org/docs/patterns/streaming/#streaming-from-templates
+    app.update_template_context(context)
+    t = app.jinja_env.get_template(template_name)
+    rv = t.stream(context)
+    return rv
 
 @app.route('/view/<template>')
 def view(template):
@@ -65,6 +73,12 @@ def action():
         response = make_response(session['mpfile'])
         response.headers["Content-Disposition"] = "attachment; filename=mpfile.txt"
         return response
+    elif request.form['submit'] == 'Contribute':
+        return Response(stream_with_context(stream_template(
+            'layout.html', log=submit_mpfile(StringIO(mpfile), fmt=fmt)
+        )))
+        #with MPContribsRester(API_KEY, endpoint=ENDPOINT) as mpr:
+        #    submit_mpfile(StringIO(mpfile), fmt=fmt, target=mpr)
 
 @app.route('/shutdown', methods=['GET', 'POST'])
 def shutdown():
