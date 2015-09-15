@@ -148,6 +148,35 @@ class MPRester(object):
         except Exception as ex:
             raise MPRestError(str(ex))
 
+    def delete_contribs(self, cids):
+        """
+        Delete a list of contributions from the Materials Project site.
+
+        Args:
+            cids (list): list of contribution IDs
+
+        Returns:
+            number of contributions deleted
+
+        Raises:
+            MPRestError
+        """
+        try:
+            payload = {"cids": json.dumps(cids)}
+            response = self.session.post(
+                "{}/contribs/delete".format(self.preamble), data=payload
+            )
+            if response.status_code in [200, 400]:
+                resp = json.loads(response.text, cls=MPDecoder)
+                if resp['valid_response']:
+                    return resp['response']['n']
+                else:
+                    raise MPRestError(resp["error"])
+            raise MPRestError("REST error with status code {} and error {}"
+                              .format(response.status_code, response.text))
+        except Exception as ex:
+            raise MPRestError(str(ex))
+
 class MPRestError(Exception):
     """
     Exception class for MPRestAdaptor.
