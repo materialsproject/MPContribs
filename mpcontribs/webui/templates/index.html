@@ -3,62 +3,75 @@
 <div class="container">
   <div class="row">
     <div class="col-md-12">
+      <div id='output' class="alert alert-warning alert-dismissible" role="alert">
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+      </div>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-12">
       <div class="dropdown">
         <button class="btn btn-success dropdown-toggle" type="button" id="dropdownMenu1"
                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
           Go to contribution ... <span class="caret"></span>
         </button>
-        <ul class="dropdown-menu" aria-labelledby="dropdownMenu1">
-          {% for key,value in content.iteritems() %}
-          {% for project_data in value.itervalues() %}
-          {% for cid in project_data %}
-          <li><a href="#cid{{ cid }}">{{ key }} (#{{ cid }})</a></li>
-          {% endfor %}
-          {% endfor %}
-          {% endfor %}
-        </ul>
+        <ul id="gotolist" class="dropdown-menu" aria-labelledby="dropdownMenu1"></ul>
       </div>
     </div>
   </div>
-  {% for key,value in content.iteritems() %}
-  {% for project,project_data in value.iteritems() %}
-  {% for cid,cid_data in project_data.iteritems() %}
+  {% for c in content: %}
+  {% if c is string %}
+  <script>$("#output").append("{{ c|safe }}");</script>
+  {% else %}
+  <script>
+    var list = document.getElementById('gotolist');
+    var entry = document.createElement('li');
+    var a = document.createElement('a');
+    var entry_text = "{{ c[0] }} (#{{ c[2] }})";
+    a.appendChild(document.createTextNode(entry_text));
+    a.href = "#cid{{ c[2] }}";
+    entry.appendChild(a);
+    list.appendChild(entry);
+  </script>
   <div class="row">
     <div class="col-md-12">
-      <a name="cid{{ cid }}"></a><h1>{{ key }} &raquo; {{ project }} &raquo; #{{ cid }}</h1>
-      <a href="#top" class="btn btn-default btn-xs" role="button">back to top</a>
+      <hr><a name="cid{{ c[2] }}"></a>
+      <h1>
+        {{ c[0] }} &raquo; {{ c[1] }} &raquo; #{{ c[2] }}
+        <a href="#top" class="btn btn-default btn-xs pull-right" role="button">back to top</a>
+      </h1>
     </div>
   </div>
   <div class="row">
     <div class="col-md-8">
-      <a name="{{ cid }}_jump_tree"></a><h2>Hierarchical Data</h2>
-      {% if "tree data" in cid_data %}
-      <div id="{{ cid }}_tree"></div>
+      <a name="{{ c[2] }}_jump_tree"></a><h2>Hierarchical Data</h2>
+      {% if "tree data" in c[3] %}
+      <div id="{{ c[2] }}_tree"></div>
       <script type="text/jsx">
       /** @jsx React.DOM */
-      var lol = {{ cid_data['tree data']|tojson|safe }};
+      var lol = {{ c[3]['tree data']|tojson|safe }};
       React.renderComponent(
-          <JSONTree data={lol} />, document.getElementById('{{ cid }}_tree')
+          <JSONTree data={lol} />, document.getElementById('{{ c[2] }}_tree')
       );
       </script>
       {% endif %}
     </div>
     <div class="col-md-4">
-      <a name="{{ cid }}_jump_tables"></a><h2>Tables</h2>
-      {% if 'tables' in cid_data %}
-      {% for table_name,table_data in cid_data['tables'].iteritems() %}
+      <a name="{{ c[2] }}_jump_tables"></a><h2>Tables</h2>
+      {% if 'tables' in c[3] %}
+      {% for table_name,table_data in c[3]['tables'].iteritems() %}
       <p>
         <b>{{ table_name }}</b>
         <button class="btn btn-primary btn-xs" type="button" data-toggle="collapse"
-            data-target="#{{ cid }}_{{ loop.index }}_collapse" aria-expanded="false"
-            aria-controls="{{ cid }}_{{ loop.index }}_collapse">
+            data-target="#{{ c[2] }}_{{ loop.index }}_collapse" aria-expanded="false"
+            aria-controls="{{ c[2] }}_{{ loop.index }}_collapse">
           Collapse/Expand
         </button>
-        <div class="collapse" id="{{ cid }}_{{ loop.index }}_collapse">
-          <table id="{{ cid }}_{{ loop.index }}_table" class="table"></table>
+        <div class="collapse" id="{{ c[2] }}_{{ loop.index }}_collapse">
+          <table id="{{ c[2] }}_{{ loop.index }}_table" class="table"></table>
           <script>
           var table = {{ table_data|tojson|safe }};
-          $('#{{ cid }}_{{ loop.index }}_table').DataTable({
+          $('#{{ c[2] }}_{{ loop.index }}_table').DataTable({
             "data": table['rows'], "columns": table['columns'], "scrollX": true,
             "scrollY": "300px", "scrollCollapse": true, "paging": false
           });
@@ -71,25 +84,24 @@
   </div>
   <div class="row">
     <div class="col-md-12">
-      <a name="{{ cid }}_jump_graphs"></a><h2>Graphs</h2>
+      <a name="{{ c[2] }}_jump_graphs"></a><h2>Graphs</h2>
     </div>
   </div>
   <div class="row">
-    {% if 'plotly urls' in cid_data %}
-    {% for url in cid_data['plotly urls'] %}
+    {% if 'plotly urls' in c[3] %}
+    {% for url in c[3]['plotly urls'] %}
     <div class="col-md-6">
-      <div id="{{ cid }}_{{ loop.index }}_graph" style="width:580px;height:580px;"></div>
+      <div id="{{ c[2] }}_{{ loop.index }}_graph" style="width:580px;height:580px;"></div>
       <script>
           var data = {{ url|tojson|safe }};
-          var elem = document.getElementById("{{ cid }}_{{ loop.index }}_graph");
+          var elem = document.getElementById("{{ c[2] }}_{{ loop.index }}_graph");
           Plotly.plot(elem, data[0], data[1]);
       </script>
     </div>
     {% endfor %}
     {% endif %}
   </div>
-  {% endfor %}
-  {% endfor %}
+  {% endif %}
   {% endfor %}
 </div>
 {% endblock %}
