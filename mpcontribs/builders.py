@@ -4,7 +4,7 @@ from io.core.recdict import RecursiveDict
 from io.core.utils import nest_dict
 from config import mp_level01_titles, mp_id_pattern
 from utils import get_short_object_id, unflatten_dict
-from pymatgen_utils.author import Author
+from pmg_utils.author import Author
 
 class MPContributionsBuilder():
     """build user contributions from `mpcontribs.contributions`"""
