@@ -41,13 +41,6 @@ linear_background_removal_preedge_XAS.preedge_range: 690 700
 xas_normalization_to_min_and_max.energy_range: 690 740
 xas_xmcd_minmax:
 
-:ignore
-
-[.processing]
-* scaling background to 1
-* constant background removal preedge
-* normalization to L3
-
 [+AlNiCoCu.datatable]
 Energy,XAS,XMCD
 761,0.008445,-0.001452
@@ -57,6 +50,14 @@ Energy,XAS,XMCD
 Energy,XAS,XMCD
 761,0.008445,-0.001452
 762,0.007812,-0.000682
+
+:ignore
+
+[.processing]
+* scaling background to 1
+* constant background removal preedge
+* normalization to L3
+
 </aml>
 {% endif %}
   </div>
