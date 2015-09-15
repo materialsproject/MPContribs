@@ -115,6 +115,39 @@ class MPRester(object):
         except Exception as ex:
             raise MPRestError(str(ex))
 
+    def query_contribs(self, criteria=dict(), contributor_only=True):
+        """
+        Query the contributions collection of the Materials Project site.
+
+        Args:
+            criteria (dict): Query criteria.
+            contributor_only (bool): only show contributions for requesting contributor
+
+        Returns:
+            A dict, with a list of contributions in the "response" key.
+
+        Raises:
+            MPRestError
+        """
+        try:
+            payload = {
+                "criteria": json.dumps(criteria),
+                "contributor_only": json.dumps(contributor_only)
+            }
+            response = self.session.post(
+                "{}/contribs/query".format(self.preamble), data=payload
+            )
+            if response.status_code in [200, 400]:
+                resp = json.loads(response.text, cls=MPDecoder)
+                if resp['valid_response']:
+                    return resp['response']
+                else:
+                    raise MPRestError(resp["error"])
+            raise MPRestError("REST error with status code {} and error {}"
+                              .format(response.status_code, response.text))
+        except Exception as ex:
+            raise MPRestError(str(ex))
+
 class MPRestError(Exception):
     """
     Exception class for MPRestAdaptor.
