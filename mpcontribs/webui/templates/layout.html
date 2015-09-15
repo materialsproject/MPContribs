@@ -38,7 +38,7 @@
         </div>
         <div class="col-md-9">
           <form action="/action" method=post enctype=multipart/form-data>
-            <div class="col-md-5">
+            <div class="col-md-4">
               <input type=file id=fileUpload name=file class="filestyle" data-iconName="glyphicon glyphicon-file"
                      data-input="false" data-badge="false" data-buttonName="btn-info" data-buttonText="Choose MPFile ...">
               <input type=hidden name=mpfile id=inputmpfile value=''>
@@ -58,11 +58,12 @@
                   });
               </script>
             </div>
-            <div class="col-md-7">
+            <div class="col-md-8">
               <input type=submit name="submit" class="btn btn-info" value="Load MPFile">
               <input type=submit name="submit" class="btn btn-info" value="View MPFile">
               <input type=submit name="submit" class="btn btn-info" value="View Graphs">
               <input type=submit name="submit" class="btn btn-info" value="Save MPFile">
+              <input type=submit name="submit" class="btn btn-danger" value="Contribute">
             </div>
           </form>
         </div>
@@ -70,6 +71,18 @@
           <a class="btn btn-primary pull-right" role="button" href="/shutdown">Quit</a>
         </div>
       </div>
+      {% if log %}
+      <div class="row">
+        <div class="col-md-12">
+          <div id='output' class="alert alert-warning alert-dismissible" role="alert">
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+          </div>
+          {% for msg in log: %}
+          <script>$("#output").append("{{ msg|safe }}");</script>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
     </div>
     <p></p>
   </head>
