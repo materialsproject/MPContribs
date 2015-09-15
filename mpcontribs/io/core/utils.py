@@ -1,6 +1,6 @@
 import warnings, pandas, numpy
 from StringIO import StringIO
-from mpcontribs.pymatgen_utils.composition import Composition
+from mpcontribs.pmg_utils.composition import Composition
 from mpcontribs.config import mp_level01_titles, mp_id_pattern, csv_comment_char
 from recdict import RecursiveDict
 
