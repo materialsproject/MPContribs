@@ -83,12 +83,13 @@ class MPRester(object):
                 if hasattr(response, "content") else str(ex)
             raise MPRestError(msg)
 
-    def submit_mpfile(self, filename):
+    def submit_mpfile(self, filename, cids=None):
         """
         Submit a MPFile containing contribution data to the Materials Project site.
 
         Args:
             filename: name of MPFile
+            cids: list of contribution IDs to be updated using this MPFile
 
         Returns:
             unique contribution IDs for this submission
@@ -101,6 +102,7 @@ class MPRester(object):
                 raise MPRestError("Provide name of MPFile.")
             with open(filename, 'r') as f:
                 payload = {'mpfile': f.read()}
+                if cids is not None: payload['cids'] = json.dumps(cids)
                 response = self.session.post(
                     '{}/mpfile/submit'.format(self.preamble), data=payload
                 )
