@@ -47,24 +47,31 @@
               {% else %}
               <input type=hidden name=fmt id=inputfmt value=archieml>
               {% endif %}
-              <script type="text/javascript">
-                  $(document.getElementById('fileUpload')).change(function () {
-                    var filename=$(this).val().replace(/^.*[\\\/]/, ''); 
-                    $(":file").filestyle('buttonText', filename);
-                  });
-                  var fmt_elem = document.getElementById('inputfmt');
-                  $(document.getElementById('selectpicker')).change(function () {
-                    fmt_elem.value = this.options[this.selectedIndex].value;
-                  });
-              </script>
             </div>
             <div class="col-md-8">
-              <input type=submit name="submit" class="btn btn-info" value="Load MPFile">
+              <input id="loadbutton" type=submit name="submit" class="btn btn-info" value="Load MPFile">
               <input type=submit name="submit" class="btn btn-info" value="View MPFile">
               <input type=submit name="submit" class="btn btn-info" value="View Graphs">
               <input type=submit name="submit" class="btn btn-info" value="Save MPFile">
               <input type=submit name="submit" class="btn btn-danger" value="Contribute">
             </div>
+            <script type="text/javascript">
+                $(document.getElementById('fileUpload')).change(function () {
+                  var filename=$(this).val().replace(/^.*[\\\/]/, ''); 
+                  $(":file").filestyle('buttonText', filename);
+                });
+                var fmt_elem = document.getElementById('inputfmt');
+                $(document.getElementById('selectpicker')).change(function () {
+                  fmt_elem.value = this.options[this.selectedIndex].value;
+                  if (fmt_elem.value != 'archieml') {
+                    $("#loadbutton").addClass('disabled');
+                    $(".sandbox").hide();
+                  } else {
+                    $("#loadbutton").removeClass('disabled');
+                    $(".sandbox").show();
+                  }
+                });
+            </script>
           </form>
         </div>
         <div class="col-md-1">

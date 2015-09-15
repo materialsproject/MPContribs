@@ -1,5 +1,6 @@
 {% extends "layout.html" %}
 {% block body %}
+{% if fmt == "archieml" %}
 <link href="{{ url_for('static', filename='css/archieml.css') }}" media="screen, projection" rel="stylesheet" type="text/css" />
 <script src="{{ url_for('static', filename='js/archieml.js') }}"></script>
 <div class="sandbox">
@@ -74,4 +75,5 @@ qs.split('&').forEach(function(term) {
 });
 </script>
 <script src="{{ url_for('static', filename='js/sandbox.js') }}"></script>
+{% endif %}
 {% endblock %}
