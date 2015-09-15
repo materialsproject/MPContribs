@@ -20,7 +20,7 @@ def submit_mpfile(path_or_mpfile, target=None, fmt='custom'):
     mod = import_module('mpcontribs.io.{}.mpfile'.format(fmt))
     MPFile = getattr(mod, 'MPFile')
     if target is None:
-        from mpcontribs.rest import ContributionMongoAdapter
+        from mpcontribs.rest.adapter import ContributionMongoAdapter
         from mpcontribs.builders import MPContributionsBuilder
         full_name = pwd.getpwuid(os.getuid())[4]
         contributor = '{} <phuck@lbl.gov>'.format(full_name)

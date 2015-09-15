@@ -1,6 +1,6 @@
 import bson
-from config import mp_level01_titles, mp_id_pattern
-from utils import get_short_object_id
+from mpcontribs.config import mp_level01_titles, mp_id_pattern
+from mpcontribs.utils import get_short_object_id
 from datetime import datetime
 
 class ContributionMongoAdapter(object):
@@ -86,7 +86,7 @@ class ContributionMongoAdapter(object):
     #    if self.fake is None:
     #        print 'Install fake-factory to fake submissions'
     #        return 'Nothing done.'
-    #    from fake.v1 import MPFakeFile
+    #    from mpcontribs.fake.v1 import MPFakeFile
     #    for n in range(num_contributions):
     #        f = MPFakeFile(usable=True, main_general=self.fake.pybool())
     #        mpfile = f.make_file()
