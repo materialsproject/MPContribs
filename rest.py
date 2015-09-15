@@ -83,16 +83,18 @@ class MPRester(object):
                 if hasattr(response, "content") else str(ex)
             raise MPRestError(msg)
 
-    def submit_mpfile(self, filename, cids=None):
+    def submit_contribution(self, filename):
         """
-        Submit a MPFile containing contribution data to the Materials Project site.
+        Submit a MPFile containing contribution data to the Materials Project
+        site. Only MPFiles with a single root-level section are allowed
+        ("single contribution"). Don't use this function directly but rather go
+        through the dedicated command line program `mgc`.
 
         Args:
             filename: name of MPFile
-            cids: list of contribution IDs to be updated using this MPFile
 
         Returns:
-            unique contribution IDs for this submission
+            unique contribution ID for this submission
 
         Raises:
             MPRestError
@@ -102,16 +104,13 @@ class MPRester(object):
                 raise MPRestError("Provide name of MPFile.")
             with open(filename, 'r') as f:
                 payload = {'mpfile': f.read()}
-                if cids is not None: payload['cids'] = json.dumps(cids)
                 response = self.session.post(
-                    '{}/mpfile/submit'.format(self.preamble), data=payload
+                    '{}/contribs/submit'.format(self.preamble), data=payload
                 )
                 if response.status_code in [200, 400]:
                     resp = json.loads(response.text, cls=MPDecoder)
-                    if resp['valid_response']:
-                        return resp['contribution_ids']
-                    else:
-                        raise MPRestError(resp["error"])
+                    if resp['valid_response']: return resp['cid']
+                    else: raise MPRestError(resp["error"])
                 raise MPRestError("REST error with status code {} and error {}"
                                   .format(response.status_code, response.text))
         except Exception as ex:
