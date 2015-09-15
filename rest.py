@@ -179,6 +179,40 @@ class MPRester(object):
         except Exception as ex:
             raise MPRestError(str(ex))
 
+    def update_collaborators(self, collaborators, cids, mode):
+        """
+        Update collaborator for contributions to the Materials Project site.
+
+        Args:
+            collaborators (list): list of `FullNameInitial.LastName`
+            cids (list): list of contribution IDs
+            mode (str): add/remove/primary
+
+        Returns:
+            the updated list of collaborators for affected contributions
+
+        Raises:
+            MPRestError
+        """
+        try:
+            payload = {
+                'collaborators': json.dumps(collaborators),
+                'cids': json.dumps(cids), 'mode': mode
+            }
+            response = self.session.post(
+                "{}/contribs/collab".format(self.preamble), data=payload
+            )
+            if response.status_code in [200, 400]:
+                resp = json.loads(response.text, cls=MPDecoder)
+                if resp['valid_response']:
+                    return resp['response']['collaborators']
+                else:
+                    raise MPRestError(resp["error"])
+            raise MPRestError("REST error with status code {} and error {}"
+                              .format(response.status_code, response.text))
+        except Exception as ex:
+            raise MPRestError(str(ex))
+
 class MPRestError(Exception):
     """
     Exception class for MPRestAdaptor.
