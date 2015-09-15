@@ -23,11 +23,12 @@ def stream_template(template_name, **context):
 
 @app.route('/view/<template>')
 def view(template):
+    mpfile, fmt = session.get('mpfile'), session.get('fmt')
     if template not in ['graphs', 'index']:
         return render_template(
-            'home.html', alert='view endpoint {} not accepted!'.format(template)
+            'home.html', fmt=fmt,
+            alert='view endpoint {} not accepted!'.format(template)
         )
-    mpfile, fmt = session.get('mpfile'), session.get('fmt')
     if mpfile is None:
         return render_template('home.html', alert='Choose an MPFile!', fmt=fmt)
     return Response(stream_with_context(stream_template(
@@ -38,7 +39,7 @@ def view(template):
 @app.route('/')
 def home():
     session.clear()
-    return render_template('home.html')
+    return render_template('home.html', fmt='archieml')
 
 @app.route('/load')
 def load():
