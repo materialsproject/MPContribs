@@ -2,6 +2,7 @@
 # https://github.com/materialsproject/pymatgen/blob/1eb2f2f/pymatgen/matproj/rest.py
 from __future__ import division, unicode_literals
 import os, requests, json, warnings
+from bson.objectid import ObjectId
 
 class MPRester(object):
     """
@@ -113,6 +114,33 @@ class MPRester(object):
                     else: raise MPRestError(resp["error"])
                 raise MPRestError("REST error with status code {} and error {}"
                                   .format(response.status_code, response.text))
+        except Exception as ex:
+            raise MPRestError(str(ex))
+
+    def build_contribution(self, cid):
+        """
+        Build a contribution into the according material/composition on the
+        Materials Project site.  Don't use this function directly but rather go
+        through the dedicated command line program `mgc`.
+
+        Args:
+            cid: ObjectId of contribution
+
+        Raises:
+            MPRestError
+        """
+        try:
+            try: cid = ObjectId(cid)
+            except: raise MPRestError("Provide a contribution ID (type: ObjectId).")
+            response = self.session.post(
+                '{}/contribs/build'.format(self.preamble), data={'cid': cid}
+            )
+            if response.status_code in [200, 400]:
+                resp = json.loads(response.text, cls=MPDecoder)
+                if resp['valid_response']: return resp['url']
+                else: raise MPRestError(resp["error"])
+            raise MPRestError("REST error with status code {} and error {}"
+                              .format(response.status_code, response.text))
         except Exception as ex:
             raise MPRestError(str(ex))
 
