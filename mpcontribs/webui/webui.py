@@ -30,14 +30,10 @@ def view(template):
     mpfile, fmt = session.get('mpfile'), session.get('fmt')
     if mpfile is None:
         return render_template('home.html', alert='Choose an MPFile!', fmt=fmt)
-    content = submit_mpfile(StringIO(mpfile), fmt=fmt)
-    for value in content.itervalues():
-        for project_data in value.itervalues():
-            for cid in project_data:
-                cid_short = get_short_object_id(cid)
-                d = project_data.pop(cid)
-                project_data[cid_short] = d
-    return render_template('{}.html'.format(template), content=content, fmt=fmt)
+    return Response(stream_with_context(stream_template(
+        '{}.html'.format(template), fmt=fmt,
+        content=submit_mpfile(StringIO(mpfile), fmt=fmt)
+    )))
 
 @app.route('/')
 def home():
