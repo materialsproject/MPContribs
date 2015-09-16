@@ -71,7 +71,7 @@ class MPContribsRester(object):
                     if hasattr(response, "content") else str(ex)
             raise MPContribsRestError(msg)
 
-    def submit_contribution(self, filename):
+    def submit_contribution(self, filename_or_mpfile):
         """
         Submit a MPFile containing contribution data to the Materials Project
         site. Only MPFiles with a single root-level section are allowed
@@ -80,30 +80,23 @@ class MPContribsRester(object):
         web UI `MPFileViewer`.
 
         Args:
-            filename: name of MPFile
+            filename_or_mpfile: MPFile name, or MPFile object
 
         Returns:
-            unique contribution ID for this submission
+            unique contribution ID (ObjectID) for this submission
 
         Raises:
             MPContribsRestError
         """
         try:
-            if not isinstance(filename, string_types):
-                raise MPRestError("Provide name of MPFile.")
-            with open(filename, 'r') as f:
-                payload = {'mpfile': f.read()}
-                response = self.session.post(
-                    '{}/contribs/submit'.format(self.preamble), data=payload
-                )
-                if response.status_code in [200, 400]:
-                    resp = json.loads(response.text, cls=MPDecoder)
-                    if resp['valid_response']: return resp['cid']
-                    else: raise MPRestError(resp["error"])
-                raise MPRestError("REST error with status code {} and error {}"
-                                  .format(response.status_code, response.text))
+            if isinstance(filename_or_mpfile, six.string_types):
+                with open(filename_or_mpfile, 'r') as f:
+                    payload = {'mpfile': f.read()}
+            else:
+                payload = {'mpfile': filename_or_mpfile.get_string()}
         except Exception as ex:
-            raise MPRestError(str(ex))
+            raise MPContribsRestError(str(ex))
+        return self._make_request('/contribs/submit', payload=payload, method='POST')
 
     def build_contribution(self, cid):
         """
@@ -119,19 +112,10 @@ class MPContribsRester(object):
             MPContribsRestError
         """
         try:
-            try: cid = ObjectId(cid)
-            except: raise MPRestError("Provide a contribution ID (type: ObjectId).")
-            response = self.session.post(
-                '{}/contribs/build'.format(self.preamble), data={'cid': cid}
-            )
-            if response.status_code in [200, 400]:
-                resp = json.loads(response.text, cls=MPDecoder)
-                if resp['valid_response']: return resp['url']
-                else: raise MPRestError(resp["error"])
-            raise MPRestError("REST error with status code {} and error {}"
-                              .format(response.status_code, response.text))
+            cid = bson.ObjectId(cid)
         except Exception as ex:
-            raise MPRestError(str(ex))
+            raise MPContribsRestError(str(ex))
+        self._make_request('/contribs/build', payload={'cid': cid}, method='POST')
 
     def query_contributions(self, criteria=dict(), contributor_only=True,
                        projection=None, collection='contributions'):
