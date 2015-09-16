@@ -11,9 +11,8 @@ from utils import connector, get_api_key, get_sandbox
 from utils.connector import DBSandbox
 from materials_django.settings import PYMATGEN_VERSION, DB_VERSION
 from utils.encoders import MongoJSONEncoder
-from mpcontribs.io.mpfile import MPFile
+from home.models import RegisteredUser
 from bson.objectid import ObjectId
-from mpcontribs.utils import get_short_object_id
 
 logger = logging.getLogger('mg.' + __name__)
 
@@ -91,6 +90,10 @@ def submit_contribution(request, mdb=None):
     contributor = '{} {} <{}>'.format(
         request.user.first_name, request.user.last_name, request.user.email)
     try:
+        from importlib import import_module
+        mod = import_module('mpcontribs.io.{}.mpfile'.format(request.POST['fmt']))
+        MPFile = getattr(mod, 'MPFile')
+        from mpcontribs.io.mpfile import MPFile
         mpfile = MPFile.from_string(request.POST['mpfile'])
         if len(mpfile.document) > 1:
             raise ValueError('Invalid MPFile: Only single contributions allowed')
@@ -139,6 +142,7 @@ def delete_contributions(request, mdb=None):
     """Delete a list of contributions"""
     if not request.user.is_staff:
         raise PermissionDenied("contributions deletion open only to staff right now.")
+    from mpcontribs.utils import get_short_object_id
     cids = [ ObjectId(cid) for cid in json.loads(request.POST['cids'])]
     contributor = '{} {} <{}>'.format(
         request.user.first_name, request.user.last_name, request.user.email
