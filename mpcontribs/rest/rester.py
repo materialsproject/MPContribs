@@ -71,6 +71,13 @@ class MPContribsRester(object):
                     if hasattr(response, "content") else str(ex)
             raise MPContribsRestError(msg)
 
+    def get_number_of_contributions(self):
+        try:
+            ncontribs = sum(1 for contrib in self.query_contributions())
+            return ncontribs
+        except:
+            return None
+
     def submit_contribution(self, filename_or_mpfile):
         """
         Submit a MPFile containing contribution data to the Materials Project
@@ -118,13 +125,14 @@ class MPContribsRester(object):
         self._make_request('/contribs/build', payload={'cid': cid}, method='POST')
 
     def query_contributions(self, criteria=dict(), contributor_only=True,
-                       projection=None, collection='contributions'):
-        """
-        Query the contributions collection of the Materials Project site.
+                            projection=None, collection='contributions'):
+        """Query the contributions collection of the Materials Project site.
 
         Args:
             criteria (dict): Query criteria.
             contributor_only (bool): only show contributions for requesting contributor
+            projection (dict): projection dict to reduce output
+            collection (str): collection to query (contributions | materials | compositions)
 
         Returns:
             A dict, with a list of contributions in the "response" key.
@@ -132,26 +140,13 @@ class MPContribsRester(object):
         Raises:
             MPContribsRestError
         """
-        try:
-            payload = {
-                "criteria": json.dumps(criteria),
-                "contributor_only": json.dumps(contributor_only),
-                "projection": json.dumps(projection),
-                "collection": json.dumps(collection)
-            }
-            response = self.session.post(
-                "{}/contribs/query".format(self.preamble), data=payload
-            )
-            if response.status_code in [200, 400]:
-                resp = json.loads(response.text, cls=MPDecoder)
-                if resp['valid_response']:
-                    return resp['response']
-                else:
-                    raise MPContribsRestError(resp["error"])
-            raise MPContribsRestError("REST error with status code {} and error {}"
-                              .format(response.status_code, response.text))
-        except Exception as ex:
-            raise MPContribsRestError(str(ex))
+        payload = {
+            "criteria": json.dumps(criteria),
+            "contributor_only": json.dumps(contributor_only),
+            "projection": json.dumps(projection),
+            "collection": json.dumps(collection)
+        }
+        return self._make_request('/contribs/query', payload=payload, method='POST')
 
     def delete_contributions(self, cids):
         """
