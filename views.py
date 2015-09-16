@@ -97,7 +97,7 @@ def submit_contribution(request, mdb=None):
         cid = mdb.contrib_ad.submit_contribution(mpfile, contributor, project=project)
     except Exception as ex:
         raise ValueError('"REST Error: "{}"'.format(str(ex)))
-    return {"valid_response": True, 'cid': cid}
+    return {"valid_response": True, 'response': cid}
 
 @mapi_func(supported_methods=["POST", "GET"], requires_api_key=True)
 def build_contribution(request, mdb=None):
@@ -112,7 +112,7 @@ def build_contribution(request, mdb=None):
         url = mdb.contrib_build_ad.build(contributor, cid)
     except Exception as ex:
         raise ValueError('"REST Error: "{}"'.format(str(ex)))
-    return {"valid_response": True, 'url': url}
+    return {"valid_response": True, 'response': url}
 
 @mapi_func(supported_methods=["POST", "GET"], requires_api_key=True)
 def query_contributions(request, mdb=None):
