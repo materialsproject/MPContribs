@@ -1,9 +1,12 @@
 from __future__ import unicode_literals, print_function
 import os, re, pwd, six
-from io.core.recdict import RecursiveDict
-from io.core.utils import nest_dict
+from mpcontribs.io.core.recdict import RecursiveDict
+from mpcontribs.io.core.utils import nest_dict
 from mpcontribs.config import SITE
+from mpcontribs.rest.rester import MPContribsRester
 from importlib import import_module
+
+ENDPOINT, API_KEY = "{}/rest".format(SITE), os.environ.get('MAPI_KEY_LOC')
 
 def get_short_object_id(cid):
     length = 7
@@ -12,7 +15,16 @@ def get_short_object_id(cid):
         cid_short = str(cid)[:length]
     return cid_short
 
-def submit_mpfile(path_or_mpfile, target=None, fmt='custom'):
+def submit_mpfile(path_or_mpfile, fmt='archieml'):
+    yield 'hello world'
+    # popup dialog:
+    # check (internet and) DB connection, then
+    # check whether user in group of contributors, then
+    # submit to MP by <user> (<project/institute>) via
+    # calling process_mpfile with target=mpr (abort option?)
+    #with MPContribsRester(API_KEY, endpoint=ENDPOINT) as mpr:
+
+def process_mpfile(path_or_mpfile, target=None, fmt='archieml'):
     if isinstance(path_or_mpfile, six.string_types) and \
        not os.path.isfile(path_or_mpfile):
         yield '{} not found'.format(path_or_mpfile)

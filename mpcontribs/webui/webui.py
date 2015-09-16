@@ -2,7 +2,7 @@ from __future__ import unicode_literals, print_function
 import json, os
 from flask import Flask, render_template, request, Response
 from flask import url_for, redirect, make_response, stream_with_context
-from mpcontribs.utils import submit_mpfile, get_short_object_id
+from mpcontribs.utils import process_mpfile, submit_mpfile, get_short_object_id
 from six import string_types
 from StringIO import StringIO
 tmpl_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates')
@@ -33,7 +33,7 @@ def view(template):
         return render_template('home.html', alert='Choose an MPFile!', fmt=fmt)
     return Response(stream_with_context(stream_template(
         '{}.html'.format(template), fmt=fmt,
-        content=submit_mpfile(StringIO(mpfile), fmt=fmt)
+        content=process_mpfile(StringIO(mpfile), fmt=fmt)
     )))
 
 @app.route('/')
@@ -72,10 +72,9 @@ def action():
         return response
     elif request.form['submit'] == 'Contribute':
         return Response(stream_with_context(stream_template(
-            'layout.html', log=submit_mpfile(StringIO(mpfile), fmt=fmt)
+            'contribute.html', fmt=fmt,
+            content=submit_mpfile(StringIO(mpfile), fmt=fmt)
         )))
-        #with MPContribsRester(API_KEY, endpoint=ENDPOINT) as mpr:
-        #    submit_mpfile(StringIO(mpfile), fmt=fmt, target=mpr)
 
 @app.route('/shutdown', methods=['GET', 'POST'])
 def shutdown():

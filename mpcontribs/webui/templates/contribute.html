@@ -1,0 +1,13 @@
+{% extends "layout.html" %}
+{% block body %}
+<div class="container">
+  <div class="row">
+    <div class="col-md-12">
+      <div id='output' class="alert alert-warning alert-dismissible" role="alert"></div>
+    </div>
+  </div>
+  {% for c in content: %}
+  <script>$("#output").append("{{ c|safe }}");</script>
+  {% endfor %}
+</div>
+{% endblock %}
