@@ -6,7 +6,7 @@ from mpcontribs.webui.webui import app
 from mpcontribs.utils import get_short_object_id, submit_mpfile
 from mpcontribs.io.custom.mpfile import MPFile
 from mpcontribs.rest.adapter import ContributionMongoAdapter
-from mpcontribs.rest.rester import MPRester
+from mpcontribs.rest.rester import MPContribsRester
 from mpcontribs.builders import MPContributionsBuilder
 from mpcontribs.config import SITE
 
@@ -16,7 +16,8 @@ def load_mprester():
     global mpr
     #ENDPOINT, API_KEY = "{}/rest".format(SITE), os.environ.get('MAPI_KEY')
     ENDPOINT, API_KEY = "{}/rest".format(SITE), os.environ.get('MAPI_KEY_LOC')
-    mpr = MPRester(API_KEY, endpoint=ENDPOINT)
+    mpr = MPContribsRester(API_KEY, endpoint=ENDPOINT)
+    # TODO close session if not using with context
 
 def info(args):
     load_mprester()
@@ -35,6 +36,7 @@ def submit(args):
         viewer(args)
     else:
         load_mprester()
+        # TODO: for msg in submit_mpfile(...): print(msg)
         submit_mpfile(args.mpfile, target=mpr, test=args.test)
 
 def delete(args):

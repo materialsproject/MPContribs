@@ -1,36 +1,30 @@
 # coding: utf-8
 # https://github.com/materialsproject/pymatgen/blob/1eb2f2f/pymatgen/matproj/rest.py
 from __future__ import division, unicode_literals
-import os, requests, json, warnings
-from bson.objectid import ObjectId
+import os, requests, json, warnings, six, bson
 
-class MPRester(object):
+class MPContribsRester(object):
     """
-    A class to conveniently interface with the Materials Project REST
-    interface. The recommended way to use MPRester is with the "with" context
-    manager to ensure that sessions are properly closed after usage::
+    A class to conveniently interface with the Materials Project REST interface
+    when dealing with contributed data. The recommended way to use
+    MPContribsRester is with the "with" context manager to ensure that sessions
+    are properly closed after usage::
 
-        with MPRester("API_KEY") as m:
+        with MPContribsRester("API_KEY") as m:
             do_something
 
-    MPRester uses the "requests" package, which provides for HTTP connection
-    pooling. All connections are made via https for security.
-
-    .. note::
-
-        The Materials Project recently switched to using string ids with a
-        "mp-" prefix for greater flexibility going forward. The MPRester
-        should still work as intended if you provide the proper string ids.
+    MPContribsRester uses the "requests" package, which provides for HTTP
+    connection pooling. All connections are made via https for security.
 
     Args:
-        api_key (str): A String API key for accessing the MaterialsProject
+        api_key (str): A String API key for accessing the Materials Project
             REST interface. Please obtain your API key at
             https://www.materialsproject.org/dashboard. If this is None,
             the code will check if there is a "MAPI_KEY" environment variable
-            set. If so, it will use that environment variable. This makes
+            set. If so, it will use that environment variable. This makes it
             easier for heavy users to simply add this environment variable to
-            their setups and MPRester can then be called without any arguments.
-        endpoint (str): Url of endpoint to access the MaterialsProject REST
+            their setups and MPContribsRester can then be called without any arguments.
+        endpoint (str): Url of endpoint to access the Materials Project REST
             interface. Defaults to the standard Materials Project REST
             address, but can be changed to other urls implementing a similar
             interface.
@@ -47,26 +41,19 @@ class MPRester(object):
         self.session.headers = {"x-api-key": self.api_key}
 
     def __enter__(self):
-        """
-        Support for "with" context.
-        """
+        """Support for "with" context."""
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        """
-        Support for "with" context.
-        """
+        """Support for "with" context."""
         self.session.close()
 
-    def _make_request(self, sub_url, payload=None, method="GET",
-                      mp_decode=True):
+    def _make_request(self, sub_url, payload=None, method="GET"):
         response = None
         url = self.preamble + sub_url
         try:
-            if method == "POST":
-                response = self.session.post(url, data=payload)
-            else:
-                response = self.session.get(url, params=payload)
+            response = self.session.post(url, data=payload) if method == "POST" \
+                        else self.session.get(url, params=payload)
             if response.status_code in [200, 400]:
                 data = json.loads(response.text)
                 if data["valid_response"]:
@@ -74,22 +61,23 @@ class MPRester(object):
                         warnings.warn(data["warning"])
                     return data["response"]
                 else:
-                    raise MPRestError(data["error"])
-
-            raise MPRestError("REST query returned with error status code {}"
-                              .format(response.status_code))
-
+                    raise MPContribsRestError(data["error"])
+            raise MPContribsRestError(
+                "REST query returned with error status code {}"
+                .format(response.status_code)
+            )
         except Exception as ex:
-            msg = "{}. Content: {}".format(str(ex), response.content)\
-                if hasattr(response, "content") else str(ex)
-            raise MPRestError(msg)
+            msg = "{}. Content: {}".format(str(ex), response.content) \
+                    if hasattr(response, "content") else str(ex)
+            raise MPContribsRestError(msg)
 
     def submit_contribution(self, filename):
         """
         Submit a MPFile containing contribution data to the Materials Project
         site. Only MPFiles with a single root-level section are allowed
         ("single contribution"). Don't use this function directly but rather go
-        through the dedicated command line program `mgc`.
+        through the dedicated command line program `mgc` or through the
+        web UI `MPFileViewer`.
 
         Args:
             filename: name of MPFile
@@ -98,7 +86,7 @@ class MPRester(object):
             unique contribution ID for this submission
 
         Raises:
-            MPRestError
+            MPContribsRestError
         """
         try:
             if not isinstance(filename, string_types):
@@ -121,13 +109,14 @@ class MPRester(object):
         """
         Build a contribution into the according material/composition on the
         Materials Project site.  Don't use this function directly but rather go
-        through the dedicated command line program `mgc`.
+        through the dedicated command line program `mgc` or through the web UI
+        `MPFileViewer`.
 
         Args:
             cid: ObjectId of contribution
 
         Raises:
-            MPRestError
+            MPContribsRestError
         """
         try:
             try: cid = ObjectId(cid)
@@ -157,7 +146,7 @@ class MPRester(object):
             A dict, with a list of contributions in the "response" key.
 
         Raises:
-            MPRestError
+            MPContribsRestError
         """
         try:
             payload = {
@@ -174,11 +163,11 @@ class MPRester(object):
                 if resp['valid_response']:
                     return resp['response']
                 else:
-                    raise MPRestError(resp["error"])
-            raise MPRestError("REST error with status code {} and error {}"
+                    raise MPContribsRestError(resp["error"])
+            raise MPContribsRestError("REST error with status code {} and error {}"
                               .format(response.status_code, response.text))
         except Exception as ex:
-            raise MPRestError(str(ex))
+            raise MPContribsRestError(str(ex))
 
     def delete_contributions(self, cids):
         """
@@ -191,7 +180,7 @@ class MPRester(object):
             number of contributions deleted
 
         Raises:
-            MPRestError
+            MPContribsRestError
         """
         try:
             payload = {"cids": json.dumps(cids)}
@@ -203,11 +192,11 @@ class MPRester(object):
                 if resp['valid_response']:
                     return resp['response']['n']
                 else:
-                    raise MPRestError(resp["error"])
-            raise MPRestError("REST error with status code {} and error {}"
+                    raise MPContribsRestError(resp["error"])
+            raise MPContribsRestError("REST error with status code {} and error {}"
                               .format(response.status_code, response.text))
         except Exception as ex:
-            raise MPRestError(str(ex))
+            raise MPContribsRestError(str(ex))
 
     def update_collaborators(self, collaborators, cids, mode):
         """
@@ -222,7 +211,7 @@ class MPRester(object):
             the updated list of collaborators for affected contributions
 
         Raises:
-            MPRestError
+            MPContribsRestError
         """
         try:
             payload = {
@@ -237,13 +226,13 @@ class MPRester(object):
                 if resp['valid_response']:
                     return resp['response']['collaborators']
                 else:
-                    raise MPRestError(resp["error"])
-            raise MPRestError("REST error with status code {} and error {}"
+                    raise MPContribsRestError(resp["error"])
+            raise MPContribsRestError("REST error with status code {} and error {}"
                               .format(response.status_code, response.text))
         except Exception as ex:
-            raise MPRestError(str(ex))
+            raise MPContribsRestError(str(ex))
 
-class MPRestError(Exception):
+class MPContribsRestError(Exception):
     """
     Exception class for MPRestAdaptor.
     Raised when the query has problems, e.g., bad query format.
