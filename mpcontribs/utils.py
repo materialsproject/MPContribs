@@ -16,13 +16,16 @@ def get_short_object_id(cid):
     return cid_short
 
 def submit_mpfile(path_or_mpfile, fmt='archieml'):
-    yield 'hello world'
-    # popup dialog:
-    # check (internet and) DB connection, then
+    with MPContribsRester(API_KEY, endpoint=ENDPOINT) as mpr:
+        yield 'DB connection ... '
+        ncontribs = mpr.get_number_of_contributions()
+        if ncontribs is None:
+            yield  'FAILED.</br>'
+            return
+        yield 'OK ({} contributions).</br>'.format(ncontribs)
     # check whether user in group of contributors, then
     # submit to MP by <user> (<project/institute>) via
     # calling process_mpfile with target=mpr (abort option?)
-    #with MPContribsRester(API_KEY, endpoint=ENDPOINT) as mpr:
 
 def process_mpfile(path_or_mpfile, target=None, fmt='archieml'):
     if isinstance(path_or_mpfile, six.string_types) and \
