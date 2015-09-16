@@ -49,9 +49,7 @@ def process_mpfile(path_or_mpfile, target=None, fmt='archieml'):
         else:
             yield 'submit contribution #{} ... '.format(idx, mp_cat_id)
         if target is not None:
-            mpfile_single.write_file('tmp')
-            cid = target.submit_contribution('tmp')
-            os.remove('tmp')
+            cid = target.submit_contribution(mpfile_single)
         else:
             doc = cma.submit_contribution(mpfile_single, contributor)
             cid = doc['_id']
