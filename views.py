@@ -81,11 +81,17 @@ def mapi_func(supported_methods=("GET", ), requires_api_key=False):
         return wrapped
     return wrap
 
+@mapi_func(supported_methods=["GET"], requires_api_key=True)
+def is_contributor(request, mdb=None):
+    """check whether user is in contrib(utor) group."""
+    is_contrib = request.user.groups.filter(name='contrib').exists()
+    return {"valid_response": True, 'response': [is_contrib]}
+
 @mapi_func(supported_methods=["POST", "GET"], requires_api_key=True)
 def submit_contribution(request, mdb=None):
     """Submits a MPFile with a single contribution."""
-    if not request.user.is_staff:
-        raise PermissionDenied("MPFile submission open only to staff right now.")
+    if not request.user.groups.filter(name='contrib').exists():
+        raise PermissionDenied("MPFile submission open only to contributors.")
     project = request.user.institution # institution is required field in User
     contributor = '{} {} <{}>'.format(
         request.user.first_name, request.user.last_name, request.user.email)
@@ -105,8 +111,8 @@ def submit_contribution(request, mdb=None):
 @mapi_func(supported_methods=["POST", "GET"], requires_api_key=True)
 def build_contribution(request, mdb=None):
     """Builds a single contribution into according material/composition"""
-    if not request.user.is_staff:
-        raise PermissionDenied("MPFile submission open only to staff right now.")
+    if not request.user.groups.filter(name='contrib').exists():
+        raise PermissionDenied("MPFile submission open only to contributors.")
     project = request.user.institution # institution is required field in User
     contributor = '{} {} <{}>'.format(
         request.user.first_name, request.user.last_name, request.user.email)
@@ -120,13 +126,9 @@ def build_contribution(request, mdb=None):
 @mapi_func(supported_methods=["POST", "GET"], requires_api_key=True)
 def query_contributions(request, mdb=None):
     """Query the contributions collection"""
-    if not request.user.is_staff:
-        raise PermissionDenied("contributions query open only to staff right now.")
     criteria = json.loads(request.POST.get('criteria', '{}'))
     collection = json.loads(request.POST.get('collection', 'contributions'))
     projection = json.loads(request.POST.get('projection', None))
-    # contribution query only depends on contributor_email (not project)
-    # query checks whether contributor_email is in collaborators list of contribution
     contributor = '{} {} <{}>'.format(
         request.user.first_name, request.user.last_name, request.user.email
     )
