@@ -18,12 +18,22 @@ def get_short_object_id(cid):
 def submit_mpfile(path_or_mpfile, fmt='archieml'):
     with MPContribsRester(API_KEY, endpoint=ENDPOINT) as mpr:
         yield 'DB connection ... '
-        ncontribs = mpr.get_number_of_contributions()
-        if ncontribs is None:
-            yield  'FAILED.</br>'
+        try:
+            ncontribs = sum(1 for contrib in mpr.query_contributions())
+            yield 'OK ({} contributions).</br>'.format(ncontribs)
+        except Exception as ex:
+            yield 'FAILED.</br>'
+            yield str(ex)
             return
-        yield 'OK ({} contributions).</br>'.format(ncontribs)
-    # check whether user in group of contributors, then
+        yield 'Registered contributor ... '
+        try:
+            if not mpr.is_contributor():
+                raise Exception('Please register as contributor!')
+            yield 'OK.</br>'
+        except Exception as ex:
+            yield 'FAILED.</br>'
+            yield str(ex)
+            return
     # submit to MP by <user> (<project/institute>) via
     # calling process_mpfile with target=mpr (abort option?)
 

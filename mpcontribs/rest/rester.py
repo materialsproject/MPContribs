@@ -71,12 +71,8 @@ class MPContribsRester(object):
                     if hasattr(response, "content") else str(ex)
             raise MPContribsRestError(msg)
 
-    def get_number_of_contributions(self):
-        try:
-            ncontribs = sum(1 for contrib in self.query_contributions())
-            return ncontribs
-        except:
-            return None
+    def is_contributor(self):
+        return self._make_request('/contribs/is_contributor')[0]
 
     def submit_contribution(self, filename_or_mpfile):
         """
