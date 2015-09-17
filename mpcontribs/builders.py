@@ -1,10 +1,21 @@
 import os, re, bson, pandas
 from itertools import groupby
 from io.core.recdict import RecursiveDict
-from io.core.utils import nest_dict
+from io.core.utils import get_short_object_id, nest_dict
 from config import mp_level01_titles, mp_id_pattern
-from utils import get_short_object_id, unflatten_dict
 from pmg_utils.author import Author
+
+def flatten_dict(dd, separator='.', prefix=''):
+    """http://stackoverflow.com/a/19647596"""
+    return { prefix + separator + k if prefix else k : v
+            for kk, vv in dd.items()
+            for k, v in flatten_dict(vv, separator, kk).items()
+           } if isinstance(dd, dict) else { prefix : dd }
+
+def unflatten_dict(d):
+    for k in d:
+        value, keys = d.pop(k), k.split('.')
+        d.rec_update(nest_dict({keys[-1]: value}, keys[:-1]))
 
 class MPContributionsBuilder():
     """build user contributions from `mpcontribs.contributions`"""

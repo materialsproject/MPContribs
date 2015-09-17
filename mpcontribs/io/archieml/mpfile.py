@@ -1,10 +1,10 @@
 from __future__ import unicode_literals, print_function
-import six, archieml
+import six, archieml, warnings, pandas
 from mpcontribs.config import mp_level01_titles
 from ..core.mpfile import MPFileCore
 from ..core.recdict import RecursiveDict
 from ..core.utils import nest_dict, normalize_root_level
-from ..core.utils import read_csv, pandas_to_dict
+from ..core.utils import read_csv, pandas_to_dict, make_pair
 
 class MPFile(MPFileCore):
     """Object for representing a MP Contribution File in ArchieML format."""

@@ -1,8 +1,9 @@
 from StringIO import StringIO
 from ..config import mp_categories, mp_level01_titles
 from base import MPFakeFileBase
-from ..io.custom.mpfile import MPFile
-from ..io.utils import get_indentor, make_pair
+from mpcontribs.io.custom.mpfile import MPFile
+from mpcontribs.io.custom.utils import get_indentor
+from mpcontribs.io.core.utils import make_pair
 
 class MPFakeFile(MPFakeFileBase):
     """fake a input file for a user contribution"""

@@ -1,19 +1,14 @@
 from __future__ import unicode_literals, print_function
-import os, re, pwd, six, time
+import os, re, pwd, six, time, json
 from mpcontribs.io.core.recdict import RecursiveDict
-from mpcontribs.io.core.utils import nest_dict
+from mpcontribs.io.core.utils import nest_dict, get_short_object_id
 from mpcontribs.config import SITE
 from mpcontribs.rest.rester import MPContribsRester
+from mpcontribs.rest.adapter import ContributionMongoAdapter
+from mpcontribs.builders import MPContributionsBuilder
 from importlib import import_module
 
 ENDPOINT, API_KEY = "{}/rest".format(SITE), os.environ.get('MAPI_KEY_LOC')
-
-def get_short_object_id(cid):
-    length = 7
-    cid_short = str(cid)[-length:]
-    if cid_short == '0'*length:
-        cid_short = str(cid)[:length]
-    return cid_short
 
 def submit_mpfile(path_or_mpfile, fmt='archieml'):
     with MPContribsRester(API_KEY, endpoint=ENDPOINT) as mpr:
@@ -94,15 +89,3 @@ def process_mpfile(path_or_mpfile, target=None, fmt='archieml'):
         yield '<strong>{} contributions successfully submitted.</strong>'.format(ncontribs)
     else:
         yield '<strong>{} contributions successfully processed.</strong>'.format(ncontribs)
-
-def flatten_dict(dd, separator='.', prefix=''):
-    """http://stackoverflow.com/a/19647596"""
-    return { prefix + separator + k if prefix else k : v
-            for kk, vv in dd.items()
-            for k, v in flatten_dict(vv, separator, kk).items()
-           } if isinstance(dd, dict) else { prefix : dd }
-
-def unflatten_dict(d):
-    for k in d:
-        value, keys = d.pop(k), k.split('.')
-        d.rec_update(nest_dict({keys[-1]: value}, keys[:-1]))

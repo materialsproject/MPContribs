@@ -6,7 +6,8 @@ from ..core.recdict import RecursiveDict
 from ..core.utils import pandas_to_dict, nest_dict
 from collections import OrderedDict
 from recparse import RecursiveParser
-from utils import make_pair, get_indentor
+from mpcontribs.io.custom.utils import get_indentor
+from mpcontribs.io.core.utils import make_pair
 
 class MPFile(MPFileCore):
     """Object for representing a MP Contribution File in a custom format."""
