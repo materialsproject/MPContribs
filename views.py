@@ -103,14 +103,13 @@ def submit_contribution(request, mdb=None):
         from importlib import import_module
         mod = import_module('mpcontribs.io.{}.mpfile'.format(request.POST['fmt']))
         MPFile = getattr(mod, 'MPFile')
-        from mpcontribs.io.mpfile import MPFile
         mpfile = MPFile.from_string(request.POST['mpfile'])
         if len(mpfile.document) > 1:
             raise ValueError('Invalid MPFile: Only single contributions allowed')
         cid = mdb.contrib_ad.submit_contribution(mpfile, contributor, project=project)
     except Exception as ex:
         raise ValueError('"REST Error: "{}"'.format(str(ex)))
-    return {"valid_response": True, 'response': cid}
+    return {"valid_response": True, 'response': str(cid)}
 
 @mapi_func(supported_methods=["POST", "GET"], requires_api_key=True)
 def build_contribution(request, mdb=None):
