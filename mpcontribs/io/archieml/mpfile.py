@@ -13,8 +13,6 @@ class MPFile(MPFileCore):
     def from_string(data):
         # use archieml-python parse to import data
         mpfile = MPFile.from_dict(RecursiveDict(archieml.loads(data)))
-        # save original file to be extended for get_string
-        mpfile.string = data
         # post-process internal representation of file contents
         for key in mpfile.document.keys():
             is_general, root_key = normalize_root_level(key)
@@ -60,6 +58,39 @@ class MPFile(MPFileCore):
         return mpfile
 
     def get_string(self):
-        raise NotImplementedError('TODO')
+        lines, scope = [], []
+        table_start = mp_level01_titles[1]+' '
+        for key,value in self.document.iterate():
+            if key is None and isinstance(value, dict):
+                pd_obj = pandas.DataFrame.from_dict(value)
+                csv_string = pd_obj.to_csv(index=False, float_format='%g')[:-1]
+                lines += csv_string.split('\n')
+            else:
+                level, key = key
+                # truncate scope 
+                level_reduction = bool(level < len(scope))
+                if level_reduction: del scope[level:]
+                # append scope and set delimiters
+                if value is None:
+                    is_table = key.startswith(table_start)
+                    if is_table:
+                        # account for 'data ' prefix
+                        key = key[len(table_start):]
+                        start, end = '\n[+', ']'
+                    else:
+                        start, end = '\n{', '}'
+                    scope.append(key.replace(' ', '_'))
+                # correct scope to omit internal 'general' section
+                scope_corr = scope
+                if scope[0] == mp_level01_titles[0]:
+                    scope_corr = scope[1:]
+                # insert scope line
+                if (value is None and scope_corr)or \
+                   (value is not None and level_reduction):
+                    lines.append(start+'.'.join(scope_corr)+end)
+                # insert key-value line
+                if value is not None:
+                    lines.append(make_pair(key.replace(' ', '_'), value))
+        return '\n'.join(lines) + '\n'
 
 MPFileCore.register(MPFile)
