@@ -1,5 +1,5 @@
 from __future__ import unicode_literals, print_function
-import os, re, pwd, six
+import os, re, pwd, six, time
 from mpcontribs.io.core.recdict import RecursiveDict
 from mpcontribs.io.core.utils import nest_dict
 from mpcontribs.config import SITE
@@ -17,25 +17,31 @@ def get_short_object_id(cid):
 
 def submit_mpfile(path_or_mpfile, fmt='archieml'):
     with MPContribsRester(API_KEY, endpoint=ENDPOINT) as mpr:
-        yield 'DB connection ... '
         try:
+            yield 'DB connection? ' # also checks internet connection
             ncontribs = sum(1 for contrib in mpr.query_contributions())
-            yield 'OK ({} contributions).</br>'.format(ncontribs)
-        except Exception as ex:
-            yield 'FAILED.</br>'
-            yield str(ex)
-            return
-        yield 'Registered contributor ... '
-        try:
-            if not mpr.is_contributor():
+            yield 'OK ({} contributions).</br> '.format(ncontribs)
+            time.sleep(1)
+            yield 'Contributor? '
+            check = mpr.check_contributor()
+            yield '{} ({}).</br>'.format(check['contributor'], check['institution'])
+            time.sleep(1)
+            yield 'Registered? '
+            if not check['is_contrib']:
                 raise Exception('Please register as contributor!')
-            yield 'OK.</br>'
+            time.sleep(1)
+            yield 'YES.</br>'
+            time.sleep(1)
+            yield 'Cancel data transmission? '
+            for i in range(5):
+                yield '#'
+                time.sleep(1)
+            yield ' NO.</br>'
+            # call process_mpfile with target=mpr
         except Exception as ex:
             yield 'FAILED.</br>'
             yield str(ex)
             return
-    # submit to MP by <user> (<project/institute>) via
-    # calling process_mpfile with target=mpr (abort option?)
 
 def process_mpfile(path_or_mpfile, target=None, fmt='archieml'):
     if isinstance(path_or_mpfile, six.string_types) and \
