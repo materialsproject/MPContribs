@@ -1,8 +1,20 @@
-import warnings, pandas, numpy
+import warnings, pandas, numpy, six
 from StringIO import StringIO
 from mpcontribs.pmg_utils.composition import Composition
 from mpcontribs.config import mp_level01_titles, mp_id_pattern, csv_comment_char
 from recdict import RecursiveDict
+
+def get_short_object_id(cid):
+    length = 7
+    cid_short = str(cid)[-length:]
+    if cid_short == '0'*length:
+        cid_short = str(cid)[:length]
+    return cid_short
+
+def make_pair(key, value, sep=':'):
+    """make a key-value pair"""
+    if not isinstance(value, six.string_types): value = str(value)
+    return '{} '.format(sep).join([key, value])
 
 def pandas_to_dict(pandas_object):
     """convert pandas object to dict"""

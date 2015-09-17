@@ -1,6 +1,6 @@
 import bson
 from mpcontribs.config import mp_level01_titles, mp_id_pattern
-from mpcontribs.utils import get_short_object_id
+from mpcontribs.io.core.utils import get_short_object_id
 from datetime import datetime
 
 class ContributionMongoAdapter(object):

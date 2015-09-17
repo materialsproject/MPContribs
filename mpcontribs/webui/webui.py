@@ -2,7 +2,7 @@ from __future__ import unicode_literals, print_function
 import json, os, socket, SocketServer
 from flask import Flask, render_template, request, Response
 from flask import url_for, redirect, make_response, stream_with_context
-from mpcontribs.utils import process_mpfile, submit_mpfile, get_short_object_id
+from mpcontribs.utils import process_mpfile, submit_mpfile
 from six import string_types
 from StringIO import StringIO
 tmpl_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates')

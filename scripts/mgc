@@ -3,7 +3,8 @@
 import sys, os, argparse
 import random, threading, webbrowser
 from mpcontribs.webui.webui import app
-from mpcontribs.utils import get_short_object_id, submit_mpfile
+from mpcontribs.utils import submit_mpfile
+from mpcontribs.io.core.utils import get_short_object_id 
 from mpcontribs.io.custom.mpfile import MPFile
 from mpcontribs.rest.adapter import ContributionMongoAdapter
 from mpcontribs.rest.rester import MPContribsRester
