@@ -3,6 +3,19 @@
 <div class="container">
   <div class="row">
     <div class="col-md-12">
+      <input type="button" value="Cancel" class="btn btn-warning" onclick="stopLoad()" />
+      <script>
+        function stopLoad() {
+          if (navigator.appName == 'Microsoft Internet Explorer') {
+            document.execCommand('Stop');
+          } else { window.stop(); }
+          alert('submission process aborted!');
+        }
+      </script>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-12">
       <div id='output' class="alert alert-warning alert-dismissible" role="alert"></div>
     </div>
   </div>

@@ -1,5 +1,5 @@
 from __future__ import unicode_literals, print_function
-import json, os
+import json, os, socket, SocketServer
 from flask import Flask, render_template, request, Response
 from flask import url_for, redirect, make_response, stream_with_context
 from mpcontribs.utils import process_mpfile, submit_mpfile, get_short_object_id
@@ -12,6 +12,17 @@ app.config['JSON_SORT_KEYS'] = False
 app.secret_key = 'xxxrrr'
 
 session = {}
+
+def patched_finish(self):
+    try:
+        if not self.wfile.closed:
+            self.wfile.flush()
+            self.wfile.close()
+    except socket.error:
+        pass
+    self.rfile.close()
+
+SocketServer.StreamRequestHandler.finish = patched_finish
 
 def stream_template(template_name, **context):
     # http://stackoverflow.com/questions/13386681/streaming-data-with-python-and-flask
@@ -71,10 +82,13 @@ def action():
         response.headers["Content-Disposition"] = "attachment; filename=mpfile.txt"
         return response
     elif request.form['submit'] == 'Contribute':
-        return Response(stream_with_context(stream_template(
-            'contribute.html', fmt=fmt,
-            content=submit_mpfile(StringIO(mpfile), fmt=fmt)
-        )))
+        try:
+            return Response(stream_with_context(stream_template(
+                'contribute.html', fmt=fmt,
+                content=submit_mpfile(StringIO(mpfile), fmt=fmt)
+            )))
+        except:
+            pass
 
 @app.route('/shutdown', methods=['GET', 'POST'])
 def shutdown():
