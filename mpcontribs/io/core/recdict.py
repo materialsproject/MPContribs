@@ -33,7 +33,7 @@ class RecursiveDict(_OrderedDict):
         self.table = None
         for key,value in d.iteritems():
             if isinstance(value, _Mapping):
-                yield self.level, key
+                yield (self.level, key), None
                 self.level += 1
                 iterator = self.iterate(nested_dict=value)
                 while True:
@@ -41,7 +41,7 @@ class RecursiveDict(_OrderedDict):
                         inner_key, inner_value = iterator.next()
                     except StopIteration:
                         if self.level > 0 and self.table:
-                            yield None, self.table # TODO return None?
+                            yield None, self.table
                             self.table = None
                         break
                     yield inner_key, inner_value
@@ -61,7 +61,7 @@ class RecursiveDict(_OrderedDict):
                         self.table = RecursiveDict()
                     self.table[key] = value # columns
             else:
-                yield key, value
+                yield (self.level, key), value
 
     # insertion mechanism from https://gist.github.com/jaredks/6276032
     def __insertion(self, link_prev, key_value):

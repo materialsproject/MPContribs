@@ -119,7 +119,8 @@ class MPFile(MPFileCore):
                 csv_string = pd_obj.to_csv(index=False, float_format='%g')[:-1]
                 lines += csv_string.split('\n')
             else:
-                key = get_indentor(n=key) if isinstance(key, int) else key
+                level, key = key
+                key = get_indentor(n=key) if value is None else key
                 sep = '' if min_indentor in key else ':'
                 if lines and key == min_indentor:
                     lines.append('')
