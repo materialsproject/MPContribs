@@ -74,7 +74,7 @@ class MPContribsRester(object):
     def check_contributor(self):
         return self._make_request('/contribs/check_contributor')
 
-    def submit_contribution(self, filename_or_mpfile):
+    def submit_contribution(self, filename_or_mpfile, fmt):
         """
         Submit a MPFile containing contribution data to the Materials Project
         site. Only MPFiles with a single root-level section are allowed
@@ -84,6 +84,7 @@ class MPContribsRester(object):
 
         Args:
             filename_or_mpfile: MPFile name, or MPFile object
+            fmt: archieml or custom
 
         Returns:
             unique contribution ID (ObjectID) for this submission
@@ -97,6 +98,7 @@ class MPContribsRester(object):
                     payload = {'mpfile': f.read()}
             else:
                 payload = {'mpfile': filename_or_mpfile.get_string()}
+            payload['fmt'] = fmt
         except Exception as ex:
             raise MPContribsRestError(str(ex))
         return self._make_request('/contribs/submit', payload=payload, method='POST')
