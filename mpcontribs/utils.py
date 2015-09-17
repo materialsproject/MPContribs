@@ -32,10 +32,12 @@ def submit_mpfile(path_or_mpfile, fmt='archieml'):
                 yield '#'
                 time.sleep(1)
             yield ' NO.</br>'
-            # call process_mpfile with target=mpr
+            for msg in process_mpfile(path_or_mpfile, target=mpr, fmt=fmt):
+                yield msg
+            yield 'ALL DONE.'
         except Exception as ex:
             yield 'FAILED.</br>'
-            yield str(ex)
+            yield str(ex).replace('"',"'")
             return
 
 def process_mpfile(path_or_mpfile, target=None, fmt='archieml'):
@@ -45,30 +47,43 @@ def process_mpfile(path_or_mpfile, target=None, fmt='archieml'):
         return
     mod = import_module('mpcontribs.io.{}.mpfile'.format(fmt))
     MPFile = getattr(mod, 'MPFile')
-    if target is None:
-        from mpcontribs.rest.adapter import ContributionMongoAdapter
-        from mpcontribs.builders import MPContributionsBuilder
-        full_name = pwd.getpwuid(os.getuid())[4]
-        contributor = '{} <phuck@lbl.gov>'.format(full_name)
-        cma = ContributionMongoAdapter()
+    full_name = pwd.getpwuid(os.getuid())[4]
+    contributor = '{} <phuck@lbl.gov>'.format(full_name) # fake
+    cma = ContributionMongoAdapter()
     # split input MPFile into contributions: treat every mp_cat_id as separate DB insert
     mpfile, cid_shorts = MPFile.from_dict(), [] # output
     for idx, mpfile_single in enumerate(MPFile.from_file(path_or_mpfile).split()):
         mp_cat_id = mpfile_single.document.keys()[0]
+        # TODO test update mode
         cid = mpfile_single.document[mp_cat_id].get('cid', None)
         update = bool(cid is not None)
         if update:
             cid_short = get_short_object_id(cid)
             yield 'use contribution #{} to update ID #{} ... '.format(idx, cid_short)
-        else:
-            yield 'submit contribution #{} ... '.format(idx, mp_cat_id)
+        # always run local "submission" to catch failure before interacting with DB
+        yield 'locally process contribution #{} ... '.format(idx)
+        doc = cma.submit_contribution(mpfile_single, contributor) # does not use get_string
+        cid = doc['_id']
+        yield 'OK.</br>'
+        time.sleep(1)
+        yield 'check consistency of contribution #{} ... '.format(idx)
+        mpfile_single_cmp = MPFile.from_string(mpfile_single.get_string())
+        if mpfile_single.document != mpfile_single_cmp.document:
+            # compare json strings to find first inconsistency
+            for a, b in zip(
+                json.dumps(mpfile_single.document, indent=4).split('\n'),
+                json.dumps(mpfile_single_cmp.document, indent=4).split('\n')
+            ):
+                if a != b:
+                    raise Exception('{} <====> {}'.format(a.strip(), b.strip()))
+        yield 'OK.</br>'
+        time.sleep(1)
         if target is not None:
-            cid = target.submit_contribution(mpfile_single)
-        else:
-            doc = cma.submit_contribution(mpfile_single, contributor)
-            cid = doc['_id']
+            yield 'submit to MP ... '
+            cid = target.submit_contribution(mpfile_single, fmt) # uses get_string
         cid_short = get_short_object_id(cid)
-        yield 'done.</br>' if update else 'done (ID #{}).</br>'.format(cid_short)
+        yield 'OK (ID #{}).</br>'.format(cid_short)
+        break # TODO remove
         mpfile_single.insert_id(mp_cat_id, cid)
         cid_shorts.append(cid_short)
         yield 'build contribution #{} into {} ... '.format(idx, mp_cat_id)
@@ -80,6 +95,7 @@ def process_mpfile(path_or_mpfile, target=None, fmt='archieml'):
             yield mcb.build(contributor, cid)
             yield 'done.</br>'.format(idx, cid_short)
         mpfile.concat(mpfile_single)
+    return # TODO remove
     ncontribs = len(cid_shorts)
     if target is not None and \
        isinstance(path_or_mpfile, six.string_types) and \
