@@ -82,10 +82,14 @@ def mapi_func(supported_methods=("GET", ), requires_api_key=False):
     return wrap
 
 @mapi_func(supported_methods=["GET"], requires_api_key=True)
-def is_contributor(request, mdb=None):
-    """check whether user is in contrib(utor) group."""
+def check_contributor(request, mdb=None):
+    """check whether user is in contrib(utor) group and return info."""
     is_contrib = request.user.groups.filter(name='contrib').exists()
-    return {"valid_response": True, 'response': [is_contrib]}
+    contributor = '{} {}'.format(request.user.first_name, request.user.last_name)
+    return {"valid_response": True, 'response': {
+        'is_contrib': is_contrib, 'contributor': contributor,
+        'institution': request.user.institution
+    }}
 
 @mapi_func(supported_methods=["POST", "GET"], requires_api_key=True)
 def submit_contribution(request, mdb=None):

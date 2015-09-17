@@ -2,7 +2,7 @@ from django.conf.urls import *
 
 urlpatterns = patterns(
     'rest.views',
-    (r'^contribs/is_contributor$', 'is_contributor'),
+    (r'^contribs/check_contributor$', 'check_contributor'),
     (r'^contribs/submit$', 'submit_contribution'),
     (r'^contribs/build$', 'build_contribution'),
     (r'^contribs/query$', 'query_contributions'),
