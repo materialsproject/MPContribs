@@ -34,7 +34,6 @@ def submit_mpfile(path_or_mpfile, fmt='archieml'):
             yield ' NO.</br>'
             for msg in process_mpfile(path_or_mpfile, target=mpr, fmt=fmt):
                 yield msg
-            yield 'ALL DONE.'
         except Exception as ex:
             yield 'FAILED.</br>'
             yield str(ex).replace('"',"'")
@@ -81,27 +80,27 @@ def process_mpfile(path_or_mpfile, target=None, fmt='archieml'):
         if target is not None:
             yield 'submit to MP ... '
             cid = target.submit_contribution(mpfile_single, fmt) # uses get_string
+            yield 'OK.</br>'
         cid_short = get_short_object_id(cid)
-        yield 'OK (ID #{}).</br>'.format(cid_short)
-        break # TODO remove
         mpfile_single.insert_id(mp_cat_id, cid)
         cid_shorts.append(cid_short)
-        yield 'build contribution #{} into {} ... '.format(idx, mp_cat_id)
+        yield 'build contribution #{} into {} ... '.format(cid_short, mp_cat_id)
         if target is not None:
             url = target.build_contribution(cid)
-            yield 'done, see {}/{}.</br>'.format(SITE, url)
+            yield ("OK. <a href='{}/{}' class='btn btn-default btn-xs' " +
+                   "role='button' target='_blank'>View</a></br>").format(SITE, url)
         else:
             mcb = MPContributionsBuilder(doc)
             yield mcb.build(contributor, cid)
-            yield 'done.</br>'.format(idx, cid_short)
+            yield 'OK.</br>'.format(idx, cid_short)
         mpfile.concat(mpfile_single)
-    return # TODO remove
     ncontribs = len(cid_shorts)
-    if target is not None and \
-       isinstance(path_or_mpfile, six.string_types) and \
-       os.path.isfile(path_or_mpfile):
-        yield 'embed #{} in MPFile ...'.format('/'.join(cid_shorts))
-        mpfile.write_file(path_or_mpfile, with_comments=True)
+    #if target is not None and \
+    #   isinstance(path_or_mpfile, six.string_types) and \
+    #   os.path.isfile(path_or_mpfile):
+    #    yield 'embed #{} in MPFile ...'.format('/'.join(cid_shorts))
+    #    mpfile.write_file(path_or_mpfile, with_comments=True)
+    if target is not None:
         yield '<strong>{} contributions successfully submitted.</strong>'.format(ncontribs)
     else:
         yield '<strong>{} contributions successfully processed.</strong>'.format(ncontribs)
