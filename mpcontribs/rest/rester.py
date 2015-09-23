@@ -120,7 +120,7 @@ class MPContribsRester(object):
             cid = bson.ObjectId(cid)
         except Exception as ex:
             raise MPContribsRestError(str(ex))
-        self._make_request('/contribs/build', payload={'cid': cid}, method='POST')
+        return self._make_request('/contribs/build', payload={'cid': cid}, method='POST')
 
     def query_contributions(self, criteria=dict(), contributor_only=True,
                             projection=None, collection='contributions'):
