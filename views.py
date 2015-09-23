@@ -6,7 +6,7 @@ from utils import connector
 
 @connector.mdb
 def composition_contributions(request, composition, mdb=None):
-    if request.user.is_staff:
+    if request.user.is_authenticated():
         material = {}
         material['contributed_data'] = mdb.contrib_ad.compositions.find_one(
             {'_id': composition}, {'_id': 0})
