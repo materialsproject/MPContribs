@@ -43,7 +43,7 @@ class MPFile(MPFileCore):
                        k.startswith(mp_level01_titles[1]):
                         # k = table name (incl. data prefix)
                         # v = csv string from ArchieML free-form arrays
-                        table_name = k[len(mp_level01_titles[1]+' '):]
+                        table_name = k[len(mp_level01_titles[1]+'_'):]
                         pd_obj = read_csv(v)
                         mpfile.document[root_key].pop(table_name)
                         mpfile.document[root_key].rec_update(nest_dict(
@@ -51,15 +51,23 @@ class MPFile(MPFileCore):
                         ))
                         # make default plot (add entry in 'plots') for each
                         # table, first column as x-column
-                        mpfile.document[root_key].rec_update(nest_dict(
+                        plots_dict = nest_dict(
                             {'x': pd_obj.columns[0], 'table': table_name},
-                            [mp_level01_titles[2], 'default {}'.format(k)]
-                        ))
+                            [mp_level01_titles[2], 'default_{}'.format(k)]
+                        )
+                        if mp_level01_titles[2] in mpfile.document[root_key]:
+                            mpfile.document[root_key].rec_update(plots_dict)
+                        else:
+                          kv = (
+                            mp_level01_titles[2],
+                            plots_dict[mp_level01_titles[2]]
+                          )
+                          mpfile.document[root_key].insert_before(k, kv)
         return mpfile
 
     def get_string(self):
         lines, scope = [], []
-        table_start = mp_level01_titles[1]+' '
+        table_start = mp_level01_titles[1]+'_'
         for key,value in self.document.iterate():
             if key is None and isinstance(value, dict):
                 pd_obj = pandas.DataFrame.from_dict(value)
@@ -74,7 +82,7 @@ class MPFile(MPFileCore):
                 if value is None:
                     is_table = key.startswith(table_start)
                     if is_table:
-                        # account for 'data ' prefix
+                        # account for 'data_' prefix
                         key = key[len(table_start):]
                         start, end = '\n[+', ']'
                     else:
