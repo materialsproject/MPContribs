@@ -43,7 +43,7 @@
     </div>
   </div>
   <div class="row">
-    <div class="col-md-8">
+    <div class="col-md-12">
       <a name="{{ c[2] }}_jump_tree"></a><h2>Hierarchical Data</h2>
       {% if "tree_data" in c[3] %}
       <div id="{{ c[2] }}_tree"></div>
@@ -56,7 +56,9 @@
       </script>
       {% endif %}
     </div>
-    <div class="col-md-4">
+  </div>
+  <div class="row">
+    <div class="col-md-12">
       <a name="{{ c[2] }}_jump_tables"></a><h2>Tables</h2>
       {% if 'tables' in c[3] %}
       {% for table_name,table_data in c[3]['tables'].iteritems() %}
