@@ -116,7 +116,6 @@ def build_contribution(request, mdb=None):
     """Builds a single contribution into according material/composition"""
     if not request.user.groups.filter(name='contrib').exists():
         raise PermissionDenied("MPFile submission open only to contributors.")
-    project = request.user.institution # institution is required field in User
     contributor = '{} {} <{}>'.format(
         request.user.first_name, request.user.last_name, request.user.email)
     try:
