@@ -49,7 +49,7 @@ class MPContributionsBuilder():
           key.startswith(mp_level01_titles[1]) for key in contrib['content']
         ]): return None
         author = Author.parse_author(contributor_email)
-        project = str(author.name).translate(None, '.').replace(' ','_') \
+        project = str(author.name).translate(None, '.') \
                 if 'project' not in contrib else contrib['project']
         cid = str(contrib['_id'])
         if isinstance(self.db, dict): cid = get_short_object_id(cid)
@@ -63,7 +63,7 @@ class MPContributionsBuilder():
                 ('viewer' if isinstance(self.db, dict) else 'mp'), cid, nplot)
             table_name = plotopts.pop('table')
             plot_title = ' - '.join([contrib['mp_cat_id'], table_name])
-            data = contrib['content'][' '.join([mp_level01_titles[1], table_name])]
+            data = contrib['content']['_'.join([mp_level01_titles[1], table_name])]
             df = pandas.DataFrame.from_dict(data)
             # TODO: set xTitle and yTitle according to column header
             if isinstance(self.db, dict):
@@ -126,7 +126,7 @@ class MPContributionsBuilder():
             "someone of {} to make you a collaborator on {}.".format(
                 cid_short, contributor_email, contrib['collaborators'], cid_short))
         author = Author.parse_author(contributor_email)
-        project = str(author.name).translate(None, '.').replace(' ','_') \
+        project = str(author.name).translate(None, '.') \
                 if 'project' not in contrib else contrib['project']
         # prepare tree and table data
         all_data = RecursiveDict()
@@ -172,7 +172,6 @@ class MPContributionsBuilder():
             else:
                 self.curr_coll.update({'_id': mp_cat_id}, {'$set': plotly_urls})
         if isinstance(self.db, dict):
-            project = project.replace('_', ' ')
             return [
               mp_cat_id, project, cid_str,
               self.curr_coll[mp_cat_id][project][cid_str]

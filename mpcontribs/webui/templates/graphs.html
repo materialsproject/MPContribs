@@ -23,7 +23,7 @@
   {% if c is string %}
   <script>$("#output").append("{{ c|safe }}");</script>
   {% else %}
-    {% if 'plotly urls' in c[3] %}
+    {% if 'plotly_urls' in c[3] %}
     <script>
       var list = document.getElementById('gotolist');
       var entry = document.createElement('li');
@@ -42,7 +42,7 @@
     </div>
     <div class="row">
       <div class="col-md-12">
-        {% for plotly_url in c[3]['plotly urls'] %}
+        {% for plotly_url in c[3]['plotly_urls'] %}
           {% if loop.index is divisibleby 3 %}<div class="row">{% endif %}
             <div class="col-md-4">
               <div id="{{ c[2] }}_{{ loop.index }}_graph" style="width:385px;height:385px;"></div>
