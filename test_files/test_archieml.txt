@@ -1,0 +1,41 @@
+{Experiment.Sample}
+Material_Name: Platinum doped Permalloy
+Form: ~20nm film on Si wafer
+
+{Experiment.Measurement}
+Detection: total electron yield
+Temperature: RT
+Orientation: 30° grazing incidence
+Date: 2015-06-24
+Measured_by: Alpha T. N'Diaye
+
+{Ni20Fe80Pt10}
+Ni_XMCD.get_xmcd.energy_range: 800 1000
+Fe_XMCD.get_xmcd.energy_range: 600 800
+
+{Ni20Fe80Pt10.Ni_XMCD.xas_normalization_to_min_and_max}
+energy_range: 800 1000
+normalization_factor: 0.952002315041
+offset: 0.358620768783
+
+[+Ni20Fe80Pt10.Ni_XMCD_Spectra]
+Energy,XAS,XMCD
+820,0.0104944,-0.00140602
+821,0.0104183,-0.000451802
+822,0.00931404,-0.000974055
+823,0.00821621,-0.00083305
+
+[+Ni20Fe80Pt10.Fe_XMCD_Spectra]
+Energy,XAS,XMCD
+680,0.0670848,0.000905727
+681,0.0659347,-0.00085033
+682,0.0631599,-8.87504e-05
+683,0.0591931,-0.00278828
+
+[+Ni20Fe80Pt20]
+# bare data section, i.e. identifier and CSV table
+Energy,XAS,XMCD
+680,0.0670848,0.000905727
+681,0.0659347,-0.00085033
+682,0.0631599,-8.87504e-05
+683,0.0591931,-0.00278828
