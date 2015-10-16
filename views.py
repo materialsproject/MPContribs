@@ -79,3 +79,19 @@ def mapi_func(supported_methods=("GET", ), requires_api_key=False):
                                 mimetype="application/json")
         return wrapped
     return wrap
+
+
+@mapi_func(supported_methods=["POST", "GET"], requires_api_key=True)
+def submit_mpfile(request, mdb=None):
+    """Submits a MPFile."""
+    contributor = '{} {} <{}>'.format(
+        request.user.first_name, request.user.last_name, request.user.email
+    )
+    #try:
+    #    mpfile = MPFile.from_string(request.POST['mpfile'])
+    #    cma = ContributionMongoAdapter()
+    #    cids = cma.submit_contribution(mpfile, contributor) # TODO add insert=True
+    #    # TODO run builder incrementally to incorporate contribution into frontend
+    #except Exception as ex:
+    #    raise ValueError("REST error {}".format(str(ex)))
+    return {"valid_response": True}#, 'contribution_ids': cids}
