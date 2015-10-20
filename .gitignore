@@ -4,3 +4,4 @@ lahman-csv_2014-02-14*
 mpcontribs.egg-info
 docs/build
 .ipynb_checkpoints/
+db.sqlite3
