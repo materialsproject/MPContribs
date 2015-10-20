@@ -2,13 +2,18 @@
 
 import json
 from django.core.exceptions import PermissionDenied
+from django.shortcuts import render_to_response
+from django.template import RequestContext
 from mapi_basic.models import RegisteredUser
 from bson.objectid import ObjectId
 from mapi_basic import mapi_func
 
-@mapi_func(supported_methods=["GET"], requires_api_key=True)
-def index(request, mdb=None):
-    return {"valid_response": True, 'response': 'Hello World'}
+def index(request):
+    from django.core.urlresolvers import reverse
+    from .urls import urlpatterns
+    urls = [ reverse(url.name) for url in urlpatterns[1:] ]
+    ctx = RequestContext(request)
+    return render_to_response("home.html", locals(), ctx)
 
 @mapi_func(supported_methods=["GET"], requires_api_key=True)
 def check_contributor(request, mdb=None):
