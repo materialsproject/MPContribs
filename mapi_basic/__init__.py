@@ -1,18 +1,25 @@
-import datetime, json,logging
+import datetime, json, bson
+from django.core.serializers.json import DjangoJSONEncoder
+from django.utils.encoding import force_unicode
 from django.core.exceptions import PermissionDenied
 from django.http import HttpResponse, HttpResponseBadRequest,\
     HttpResponseForbidden
-from utils import connector, get_api_key, get_sandbox
-from utils.connector import DBSandbox
-from materials_django.settings import PYMATGEN_VERSION, DB_VERSION
-from utils.encoders import MongoJSONEncoder
+from connector import DBSandbox
 
-logger = logging.getLogger('mg.' + __name__)
+class MongoJSONEncoder(DjangoJSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, bson.objectid.ObjectId):
+            return force_unicode(obj)
+        return super(MongoJSONEncoder, self).default(obj)
+
+def get_api_key(request):
+    """Utility function to extract API KEY from an HTTP request object."""
+    return (request.META.get('HTTP_X_API_KEY', None) or
+            request.GET.get('API_KEY', None) or
+            request.POST.get('API_KEY', None))
 
 def mapi_func(supported_methods=("GET", ), requires_api_key=False):
-
-    """
-    Decorator to standardize api checks and handle responses.
+    """Decorator to standardize api checks and handle responses.
 
     Args:
         requires_api_key:
@@ -33,44 +40,20 @@ def mapi_func(supported_methods=("GET", ), requires_api_key=False):
                     if not hasattr(request.user, "api_key") \
                             or api_key != request.user.api_key:
                         raise PermissionDenied("API_KEY is not a valid key.")
-                # Get sandbox
-                view_name = func.__name__
-                sandbox = get_sandbox(request)
-                try:
-                    kwargs['mdb'] = DBSandbox(request.user, name=view_name,
-                                              sandbox=sandbox)
-                except connector.SandboxAuthzError as err:
-                    raise PermissionDenied(str(err))
-                logger.debug("@views.mapi_func db-sandbox={} view={}"
-                             .format(kwargs['mdb'], view_name))
+                # set mdb
+                kwargs['mdb'] = DBSandbox(request.user)
                 # Call underlying function
                 d = func(*args, **kwargs)
             except PermissionDenied as ex:
                 d = {"valid_response": False, "error": str(ex)}
                 return HttpResponseForbidden(
-                    json.dumps(d), mimetype="application/json")
+                    json.dumps(d), content_type="application/json")
             except Exception as ex:
                 d = {"valid_response": False, "error": str(ex)}
                 return HttpResponseBadRequest(
-                    json.dumps(d), mimetype="application/json")
+                    json.dumps(d), content_type="application/json")
             d["created_at"] = datetime.datetime.now().isoformat()
-            d["version"] = {"db": DB_VERSION, "pymatgen": PYMATGEN_VERSION,
-                            "rest": "1.0"}
-            d["copyright"] = __copyright__
-            #logging
-            if check_api:
-                points = len(d.get("response", []))
-                log_ok = log_response(
-                    request,
-                    {"func": func.__name__, "args": args[1:],
-                     "response": json.dumps(d, cls=MongoJSONEncoder)},
-                    d, points, mdb=kwargs['mdb'])
-                if not log_ok:
-                    d = {"valid_response": False, "error": d["error"]}
-                    return HttpResponseBadRequest(
-                        json.dumps(d, cls=MongoJSONEncoder),
-                        mimetype="application/json")
             return HttpResponse(json.dumps(d, cls=MongoJSONEncoder),
-                                mimetype="application/json")
+                                content_type="application/json")
         return wrapped
     return wrap
