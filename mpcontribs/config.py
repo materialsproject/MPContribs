@@ -21,5 +21,5 @@ csv_database = os.path.join(
   '../test_files/lahman-csv_2014-02-14'
 )
 #SITE = 'https://www.materialsproject.org'
-SITE = 'http://localhost:8000'
+SITE = 'http://127.0.0.1:8000'
 mp_id_pattern = re.compile('^(mp|por)-\d+$', re.IGNORECASE)

@@ -8,7 +8,7 @@ from mpcontribs.rest.adapter import ContributionMongoAdapter
 from mpcontribs.builders import MPContributionsBuilder
 from importlib import import_module
 
-ENDPOINT, API_KEY = "{}/rest".format(SITE), os.environ.get('MAPI_KEY_LOC')
+ENDPOINT, API_KEY = SITE, os.environ.get('MAPI_KEY_LOC')
 
 def submit_mpfile(path_or_mpfile, fmt='archieml'):
     with MPContribsRester(API_KEY, endpoint=ENDPOINT) as mpr:
