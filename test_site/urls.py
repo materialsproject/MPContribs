@@ -18,7 +18,7 @@ from django.contrib import admin
 
 urlpatterns = [
     url(r'', include('django_browserid.urls')),
-    url(r'^contribs/', include('mpcontribs.rest.urls')),
+    url(r'^mpcontribs/rest/', include('mpcontribs.rest.urls')),
     url(r'^admin/', include(admin.site.urls)),
     url(r'', include('mapi_basic.urls')),
 ]

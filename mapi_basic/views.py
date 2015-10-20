@@ -20,6 +20,11 @@ def index(request):
             u.save()
         except Exception, e:
             return HttpResponseServerError(str(e))
+    from test_site.settings import INSTALLED_APPS
+    apps = [
+        app.replace('.', '/') for app in INSTALLED_APPS
+        if 'django' not in app and 'mapi_basic' not in app
+    ]
     ctx = RequestContext(request)
     return render_to_response("index.html", locals(), ctx)
 
