@@ -2,9 +2,13 @@
 
 import json
 from django.core.exceptions import PermissionDenied
-from home.models import RegisteredUser
+from mapi_basic.models import RegisteredUser
 from bson.objectid import ObjectId
 from mapi_basic import mapi_func
+
+@mapi_func(supported_methods=["GET"], requires_api_key=True)
+def index(request, mdb=None):
+    return {"valid_response": True, 'response': 'Hello World'}
 
 @mapi_func(supported_methods=["GET"], requires_api_key=True)
 def check_contributor(request, mdb=None):
