@@ -12,7 +12,11 @@
     <button id="keygen">Generate API Key</button>
     <code id='key'>{{ user.api_key }}</code>
     </p>
-    <p><a href="contribs?API_KEY={{ user.api_key }}">mpcontribs.rest</a></p>
+    <p><ul>
+      {% for app_url in apps %}
+      <li><a href="{{ app_url }}">{{ app_url }}</a></li>
+      {% endfor %}
+    </ul></p>
     {% browserid_logout text='Logout' %}
     {% else %}
     {% browserid_login text='Login' color='dark' %}
