@@ -1,11 +1,12 @@
-from django.conf.urls import *
+from django.conf.urls import url
+from . import views
 
-urlpatterns = patterns(
-    'rest.views',
-    (r'^contribs/check_contributor$', 'check_contributor'),
-    (r'^contribs/submit$', 'submit_contribution'),
-    (r'^contribs/build$', 'build_contribution'),
-    (r'^contribs/query$', 'query_contributions'),
-    (r'^contribs/delete$', 'delete_contributions'),
-    (r'^contribs/collab$', 'update_collaborators'),
-)
+urlpatterns = [
+    url(r'^$', views.index, name='index'),
+    url(r'^check_contributor$', views.check_contributor, name='check_contributor'),
+    url(r'^submit$', views.submit_contribution, name='submit_contribution'),
+    url(r'^build$', views.build_contribution, name='build_contribution'),
+    url(r'^query$', views.query_contributions, name='query_contributions'),
+    url(r'^delete$', views.delete_contributions, name='delete_contributions'),
+    url(r'^collab$', views.update_collaborators, name='update_collaborators'),
+]
