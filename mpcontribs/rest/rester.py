@@ -67,12 +67,12 @@ class MPContribsRester(object):
                 .format(response.status_code)
             )
         except Exception as ex:
-            msg = "{}. Content: {}".format(str(ex), response.content) \
+            msg = "{}. Content: {}".format(str(ex), repr(response.content)) \
                     if hasattr(response, "content") else str(ex)
             raise MPContribsRestError(msg)
 
     def check_contributor(self):
-        return self._make_request('/contribs/check_contributor')
+        return self._make_request('/mpcontribs/rest/check_contributor')
 
     def submit_contribution(self, filename_or_mpfile, fmt):
         """
@@ -101,7 +101,7 @@ class MPContribsRester(object):
             payload['fmt'] = fmt
         except Exception as ex:
             raise MPContribsRestError(str(ex))
-        return self._make_request('/contribs/submit', payload=payload, method='POST')
+        return self._make_request('/mpcontribs/rest/submit', payload=payload, method='POST')
 
     def build_contribution(self, cid):
         """
@@ -120,10 +120,9 @@ class MPContribsRester(object):
             cid = bson.ObjectId(cid)
         except Exception as ex:
             raise MPContribsRestError(str(ex))
-        return self._make_request('/contribs/build', payload={'cid': cid}, method='POST')
+        return self._make_request('/mpcontribs/rest/build', payload={'cid': cid}, method='POST')
 
-    def query_contributions(self, criteria=dict(), contributor_only=True,
-                            projection=None, collection='contributions'):
+    def query_contributions(self, **kwargs):
         """Query the contributions collection of the Materials Project site.
 
         Args:
@@ -138,13 +137,16 @@ class MPContribsRester(object):
         Raises:
             MPContribsRestError
         """
-        payload = {
-            "criteria": json.dumps(criteria),
-            "contributor_only": json.dumps(contributor_only),
-            "projection": json.dumps(projection),
-            "collection": json.dumps(collection)
-        }
-        return self._make_request('/contribs/query', payload=payload, method='POST')
+        if kwargs:
+            payload = {
+                "criteria": json.dumps(kwargs.get('criteria', {})),
+                "contributor_only": json.dumps(kwargs.get('contributor_only', True)),
+                "projection": json.dumps(kwargs.get('projection')),
+                "collection": kwargs.get('collection', 'contributions')
+            }
+            return self._make_request('/mpcontribs/rest/query', payload=payload, method='POST')
+        else:
+            return self._make_request('/mpcontribs/rest/query')
 
     def delete_contributions(self, cids):
         """
