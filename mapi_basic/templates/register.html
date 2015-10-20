@@ -1,12 +1,11 @@
 <h3>You are almost done! Please complete the remaining fields</h3>
-<dl>
-  <dt>Name:</dt>
-  <dd>{{name}}</dd>
-  <dt>Email:</dt>
-  <dd>{{email}}</dd>
-</dl>
-<form class="form-horizontal" action="/register" method="post">{% csrf_token %}
+<p>email: {{email}}</p>
+<form action="/register" method="post">{% csrf_token %}
   <div>
+    <label for="id_first_name">First Name:</label>
+    <div>{{ form.first_name }}</div>
+    <label for="id_last_name">Last Name:</label>
+    <div>{{ form.last_name }}</div>
     <label for="id_institution">Institution:</label>
     <div>{{ form.institution }}</div>
   </div>

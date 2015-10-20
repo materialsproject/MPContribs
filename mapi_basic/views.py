@@ -35,7 +35,6 @@ def register(request):
     email = request.user.email
     username = request.user.username
     u = RegisteredUser.objects.get(username=username)
-    name = "%s %s" % (request.user.first_name, request.user.last_name)
     next = unquote(request.GET.get('next', '/'))
     if next == '/register':
         next = '/'
@@ -48,6 +47,8 @@ def register(request):
         if form.is_valid():
             u.is_registered = True
             u.institution = form.cleaned_data['institution']
+            u.first_name = form.cleaned_data['first_name']
+            u.last_name = form.cleaned_data['last_name']
             u.save()
             return redirect(next)
     return render_to_response('register.html', locals(),

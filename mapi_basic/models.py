@@ -11,7 +11,9 @@ class RegisteredUser(User):
 class RegisteredUserForm(ModelForm):
     class Meta:
         model = RegisteredUser
-        fields = ('institution',)
+        fields = ('first_name', 'last_name', 'institution',)
+    first_name = forms.CharField(widget=forms.TextInput(attrs={'size': '40'}))
+    last_name = forms.CharField(widget=forms.TextInput(attrs={'size': '40'}))
     institution = forms.CharField(widget=forms.TextInput(attrs={'size': '40'}))
 
 class DBConfig(models.Model):
