@@ -54,6 +54,7 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    'mapi_basic.middleware.APIKeyMiddleware',
 )
 
 ROOT_URLCONF = 'test_site.urls'
