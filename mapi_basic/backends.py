@@ -14,6 +14,7 @@ except ImportError:
 
 from .models import RegisteredUser
 from django_browserid.auth import BrowserIDBackend
+from django.contrib.auth.backends import ModelBackend
 
 def default_username_algo(email):
     # store the username as a base64 encoded sha1 of the email address
@@ -41,3 +42,31 @@ class CustomBrowserIDBackend(BrowserIDBackend):
             except self.User.DoesNotExist:
                 # Whatevs, let's re-raise the error.
                 raise err
+
+class CustomModelBackend(ModelBackend):
+    """
+    Authenticate against the default model backend but return
+    a RegisteredUser instead of User
+    """
+    def authenticate(self, *args, **kwargs):
+        """
+        Authenticate using default model backend and convert to RegisteredUser
+        Return django.contrib.auth.models.User object if there is no RegisteredUser
+        """
+        u = super(CustomModelBackend, self).authenticate(*args, **kwargs)
+        if u is not None:
+            try:
+                r = RegisteredUser.objects.get(email=u.email)
+                return r
+            except RegisteredUser.DoesNotExist:
+                return u
+        return u
+
+    def get_user(self, user_id):
+        """
+        Try the registered user, then fall back to regular user
+        """
+        try:
+            return RegisteredUser.objects.get(pk=user_id)
+        except RegisteredUser.DoesNotExist:
+            return super(CustomModelBackend, self).get_user(user_id)

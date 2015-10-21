@@ -28,6 +28,7 @@ DEBUG = True
 ALLOWED_HOSTS = []
 
 AUTHENTICATION_BACKENDS = (
+    'mapi_basic.backends.CustomModelBackend',
     'mapi_basic.backends.CustomBrowserIDBackend',
 )
 
