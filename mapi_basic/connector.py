@@ -1,7 +1,5 @@
-import yaml, pymongo, os
-
-class DBTypes(object):
-    contribs = 'contribs'
+import yaml, pymongo, os, six
+from abc import ABCMeta, abstractmethod
 
 class Connections(object):
     """Cache of all DB connections."""
@@ -69,8 +67,8 @@ class Connections(object):
 
 g_connections = Connections()
 
-class DBSandbox(object):
-    """database access"""
+class ConnectorBase(six.with_metaclass(ABCMeta, object)):
+    """database access (overwrite self.connect)"""
     def __init__(self, user=None):
         """
         :param user: Django User object
@@ -105,15 +103,6 @@ class DBSandbox(object):
             )
         return ru
 
-    def connect(self, **extra_dbs):
-        """Connect to standard set of databases."""
-        config = self._get_config(DBTypes.contribs)
-        self.contribs_db = g_connections.from_config(config)
-        from mpcontribs.rest.adapter import ContributionMongoAdapter
-        self.contrib_ad = ContributionMongoAdapter(self.contribs_db)
-        from mpcontribs.builders import MPContributionsBuilder
-        self.contrib_build_ad = MPContributionsBuilder(self.contribs_db)
-
     def _get_config(self, db_type):
         """Fetch database configuration.
 
@@ -125,3 +114,16 @@ class DBSandbox(object):
         return DBConfig.objects.get(
             release=self.release, db_type=db_type
         ).config
+
+    def get_database(self, name):
+        config = self._get_config(name)
+        return g_connections.from_config(config)
+
+    # ----------------------------
+    # Override these in subclasses
+    # ----------------------------
+
+    @abstractmethod
+    def connect(self):
+        """Connect to standard set of databases."""
+        return
