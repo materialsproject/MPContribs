@@ -1,5 +1,5 @@
 from __future__ import unicode_literals, print_function
-import os, re, pwd, six, time, json
+import os, re, pwd, six, time, json, sys
 from mpcontribs.io.core.recdict import RecursiveDict
 from mpcontribs.io.core.utils import nest_dict, get_short_object_id
 from mpcontribs.config import SITE
@@ -34,7 +34,8 @@ def submit_mpfile(path_or_mpfile, fmt='archieml'):
             yield ' NO.</br>'
             for msg in process_mpfile(path_or_mpfile, target=mpr, fmt=fmt):
                 yield msg
-        except Exception as ex:
+        except:
+            ex = sys.exc_info()[1]
             yield 'FAILED.</br>'
             yield str(ex).replace('"',"'")
             return
