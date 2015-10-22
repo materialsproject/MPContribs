@@ -1,81 +1,12 @@
-# coding: utf-8
-# https://github.com/materialsproject/pymatgen/blob/1eb2f2f/pymatgen/matproj/rest.py
 from __future__ import division, unicode_literals
-import os, requests, json, warnings, six, bson
+import json, six, bson
+from mapi_basic.rester import MPResterBase, MPResterError
 
-class MPContribsRester(object):
-    """
-    A class to conveniently interface with the Materials Project REST interface
-    when dealing with contributed data. The recommended way to use
-    MPContribsRester is with the "with" context manager to ensure that sessions
-    are properly closed after usage::
-
-        with MPContribsRester("API_KEY") as m:
-            do_something
-
-    MPContribsRester uses the "requests" package, which provides for HTTP
-    connection pooling. All connections are made via https for security.
-
-    Args:
-        api_key (str): A String API key for accessing the Materials Project
-            REST interface. Please obtain your API key at
-            https://www.materialsproject.org/dashboard. If this is None,
-            the code will check if there is a "MAPI_KEY" environment variable
-            set. If so, it will use that environment variable. This makes it
-            easier for heavy users to simply add this environment variable to
-            their setups and MPContribsRester can then be called without any arguments.
-        endpoint (str): Url of endpoint to access the Materials Project REST
-            interface. Defaults to the standard Materials Project REST
-            address, but can be changed to other urls implementing a similar
-            interface.
-    """
-
-    def __init__(self, api_key=None,
-                 endpoint="https://www.materialsproject.org/rest/v2"):
-        if api_key is not None:
-            self.api_key = api_key
-        else:
-            self.api_key = os.environ.get("MAPI_KEY", "")
-        self.preamble = endpoint
-        self.session = requests.Session()
-        self.session.headers = {"x-api-key": self.api_key}
-
-    def __enter__(self):
-        """Support for "with" context."""
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        """Support for "with" context."""
-        self.session.close()
-
-    def _make_request(self, sub_url, payload=None, method="GET"):
-        response = None
-        url = self.preamble + sub_url
-        try:
-            if self.session.cookies.get('csrftoken') is None:
-                self.session.get(self.preamble)
-            headers = {"X-CSRFToken": self.session.cookies.get('csrftoken')}
-            response = self.session.post(url, data=payload, headers=headers) \
-                if method == "POST" else self.session.get(url, params=payload)
-            if response.status_code in [200, 400]:
-                data = json.loads(response.text)
-                if data["valid_response"]:
-                    if data.get("warning"):
-                        warnings.warn(data["warning"])
-                    return data["response"]
-                else:
-                    raise MPContribsRestError(data["error"])
-            raise MPContribsRestError(
-                "REST query returned with error status code {}"
-                .format(response.status_code)
-            )
-        except Exception as ex:
-            msg = "{}. Content: {}".format(str(ex), repr(response.content)) \
-                    if hasattr(response, "content") else str(ex)
-            raise MPContribsRestError(msg)
+class MPContribsRester(MPResterBase):
+    """convenience functions to interact with MPContribs REST interface"""
 
     def check_contributor(self):
-        return self._make_request('/mpcontribs/rest/check_contributor')
+        return self._make_request('/check_contributor')
 
     def submit_contribution(self, filename_or_mpfile, fmt):
         """
@@ -104,7 +35,7 @@ class MPContribsRester(object):
             payload['fmt'] = fmt
         except Exception as ex:
             raise MPContribsRestError(str(ex))
-        return self._make_request('/mpcontribs/rest/submit', payload=payload, method='POST')
+        return self._make_request('/submit', payload=payload, method='POST')
 
     def build_contribution(self, cid):
         """
@@ -123,7 +54,7 @@ class MPContribsRester(object):
             cid = bson.ObjectId(cid)
         except Exception as ex:
             raise MPContribsRestError(str(ex))
-        return self._make_request('/mpcontribs/rest/build', payload={'cid': cid}, method='POST')
+        return self._make_request('/build', payload={'cid': cid}, method='POST')
 
     def query_contributions(self, **kwargs):
         """Query the contributions collection of the Materials Project site.
@@ -147,9 +78,9 @@ class MPContribsRester(object):
                 "projection": json.dumps(kwargs.get('projection')),
                 "collection": kwargs.get('collection', 'contributions')
             }
-            return self._make_request('/mpcontribs/rest/query', payload=payload, method='POST')
+            return self._make_request('/query', payload=payload, method='POST')
         else:
-            return self._make_request('/mpcontribs/rest/query')
+            return self._make_request('/query')
 
     def delete_contributions(self, cids):
         """
@@ -213,10 +144,3 @@ class MPContribsRester(object):
                               .format(response.status_code, response.text))
         except Exception as ex:
             raise MPContribsRestError(str(ex))
-
-class MPContribsRestError(Exception):
-    """
-    Exception class for MPContribsRester.
-    Raised when the query has problems, e.g., bad query format.
-    """
-    pass
