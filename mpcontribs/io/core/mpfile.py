@@ -1,6 +1,6 @@
 from __future__ import unicode_literals, print_function
 import six, codecs, locale
-from abc import ABCMeta, abstractmethod, abstractproperty
+from abc import ABCMeta
 from mpcontribs.config import mp_level01_titles
 from recdict import RecursiveDict
 from utils import pandas_to_dict, nest_dict
