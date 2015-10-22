@@ -52,8 +52,11 @@ class MPContribsRester(object):
         response = None
         url = self.preamble + sub_url
         try:
-            response = self.session.post(url, data=payload) if method == "POST" \
-                        else self.session.get(url, params=payload)
+            if self.session.cookies.get('csrftoken') is None:
+                self.session.get(self.preamble)
+            headers = {"X-CSRFToken": self.session.cookies.get('csrftoken')}
+            response = self.session.post(url, data=payload, headers=headers) \
+                if method == "POST" else self.session.get(url, params=payload)
             if response.status_code in [200, 400]:
                 data = json.loads(response.text)
                 if data["valid_response"]:
