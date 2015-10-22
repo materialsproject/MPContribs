@@ -8,6 +8,8 @@ from mapi_basic.models import RegisteredUser
 from bson.objectid import ObjectId
 from mapi_basic import mapi_func
 
+connector_path = 'mpcontribs.connector.Connector'
+
 def index(request):
     from django.core.urlresolvers import reverse
     from .urls import urlpatterns
@@ -15,7 +17,7 @@ def index(request):
     ctx = RequestContext(request)
     return render_to_response("home.html", locals(), ctx)
 
-@mapi_func(supported_methods=["GET"], requires_api_key=True)
+@mapi_func(connector_path, supported_methods=["GET"], requires_api_key=True)
 def check_contributor(request, mdb=None):
     """check whether user is in contrib(utor) group and return info."""
     is_contrib = request.user.groups.filter(name='contrib').exists()
@@ -25,7 +27,7 @@ def check_contributor(request, mdb=None):
         'institution': request.user.institution
     }}
 
-@mapi_func(supported_methods=["POST", "GET"], requires_api_key=True)
+@mapi_func(connector_path, supported_methods=["POST", "GET"], requires_api_key=True)
 def submit_contribution(request, mdb=None):
     """Submits a MPFile with a single contribution."""
     if not request.user.groups.filter(name='contrib').exists():
@@ -45,7 +47,7 @@ def submit_contribution(request, mdb=None):
         raise ValueError('"REST Error: "{}"'.format(str(ex)))
     return {"valid_response": True, 'response': str(cid)}
 
-@mapi_func(supported_methods=["POST", "GET"], requires_api_key=True)
+@mapi_func(connector_path, supported_methods=["POST", "GET"], requires_api_key=True)
 def build_contribution(request, mdb=None):
     """Builds a single contribution into according material/composition"""
     if not request.user.groups.filter(name='contrib').exists():
@@ -59,7 +61,7 @@ def build_contribution(request, mdb=None):
         raise ValueError('"REST Error: "{}"'.format(str(ex)))
     return {"valid_response": True, 'response': url}
 
-@mapi_func(supported_methods=["POST", "GET"], requires_api_key=True)
+@mapi_func(connector_path, supported_methods=["POST", "GET"], requires_api_key=True)
 def query_contributions(request, mdb=None):
     """Query the contributions collection"""
     criteria = json.loads(request.POST.get('criteria', '{}'))
@@ -75,7 +77,7 @@ def query_contributions(request, mdb=None):
     )
     return {"valid_response": True, "response": list(results)}
 
-@mapi_func(supported_methods=["POST", "GET"], requires_api_key=True)
+@mapi_func(connector_path, supported_methods=["POST", "GET"], requires_api_key=True)
 def delete_contributions(request, mdb=None):
     """Delete a list of contributions"""
     if not request.user.is_staff:
@@ -102,7 +104,7 @@ def delete_contributions(request, mdb=None):
     results = mdb.contrib_ad.delete_contributions(criteria)
     return {"valid_response": True, "response": results}
 
-@mapi_func(supported_methods=["POST", "GET"], requires_api_key=True)
+@mapi_func(connector_path, supported_methods=["POST", "GET"], requires_api_key=True)
 def update_collaborators(request, mdb=None):
     """Update the list of collaborators"""
     if not request.user.is_staff:
