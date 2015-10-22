@@ -1,0 +1,8 @@
+.navbar .brand img {
+  height: 40px;
+  width: 57px;
+}
+
+.navbar .nav > li {
+  float: left;
+}
