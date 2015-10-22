@@ -1,5 +1,11 @@
 import json
 from urllib import unquote
+from test_site.settings import INSTALLED_APPS
+apps = [
+    app.replace('.', '/') for app in INSTALLED_APPS
+    if 'django' not in app and 'mapi_basic' not in app
+]
+
 from django.shortcuts import render_to_response, redirect
 from django.http import HttpResponseServerError
 from django.template import RequestContext
@@ -8,8 +14,13 @@ from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import ensure_csrf_cookie
 @ensure_csrf_cookie
 
-@require_http_methods(["GET", "POST"])
 def index(request):
+    ctx = RequestContext(request)
+    ctx.update({'apps': apps})
+    return render_to_response("index.html", locals(), ctx)
+
+@require_http_methods(["GET", "POST"])
+def dashboard(request):
     if request.method == 'POST':
         api_key = request.POST.get('apikey')
         if api_key == 'None': api_key = None
@@ -20,13 +31,9 @@ def index(request):
             u.save()
         except Exception, e:
             return HttpResponseServerError(str(e))
-    from test_site.settings import INSTALLED_APPS
-    apps = [
-        app.replace('.', '/') for app in INSTALLED_APPS
-        if 'django' not in app and 'mapi_basic' not in app
-    ]
     ctx = RequestContext(request)
-    return render_to_response("index.html", locals(), ctx)
+    ctx.update({'apps': apps})
+    return render_to_response("dashboard.html", locals(), ctx)
 
 @login_required
 def register(request):
@@ -51,5 +58,6 @@ def register(request):
             u.last_name = form.cleaned_data['last_name']
             u.save()
             return redirect(next)
-    return render_to_response('register.html', locals(),
-                              RequestContext(request))
+    ctx = RequestContext(request)
+    ctx.update({'apps': apps})
+    return render_to_response('register.html', locals(), ctx)

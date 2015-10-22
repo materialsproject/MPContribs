@@ -1,0 +1,34 @@
+{% load staticfiles %}
+{% load browserid %}
+{% if show_warning_banner %}
+<nav class="navbar navbar-warning">
+  <center class="alert alert-warning">
+    <button type="button" class="close" data-dismiss="alert">&times;</button>
+    We are currently experiencing issues with the web site and are working to fix the situation.
+  </center>
+</nav>
+{% endif %}
+<nav class="navbar navbar-inverse">
+  <div class="navbar-inner">
+     <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+      <span class="icon-bar"></span>
+      <span class="icon-bar"></span>
+      <span class="icon-bar"></span>
+    </a>
+    <div class="nav-collapse">
+      <a class="brand" href="/"><img src="{% static 'logo.png' %}"></a>
+      <ul class="nav pull-right" role="navigation">
+        <li>
+          <a href="/">Home</a>
+        </li>
+        {% include 'navbar.html' %}
+        {% if user.is_authenticated %}
+        <li><a href="/dashboard" data-icon="&gt;" class="icon"> Dashboard</a></li>
+        <li>{% browserid_logout text='Logout' %}</li>
+        {% else %}
+        <li>{% browserid_login text='Login' %}</li>
+        {% endif %}
+      </ul>
+    </div>
+  </div>
+</nav>
