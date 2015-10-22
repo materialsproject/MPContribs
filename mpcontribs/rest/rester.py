@@ -216,7 +216,7 @@ class MPContribsRester(object):
 
 class MPContribsRestError(Exception):
     """
-    Exception class for MPRestAdaptor.
+    Exception class for MPContribsRester.
     Raised when the query has problems, e.g., bad query format.
     """
     pass
