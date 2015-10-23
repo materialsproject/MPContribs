@@ -44,7 +44,7 @@ class ContributionMongoAdapter(object):
         # TODO open `content` for arbitrary query
         # TODO be careful with SON for order in crit
         coll = getattr(self, collection)
-        if projection is None:
+        if projection is None and collection == 'contributions':
           props = [ 'collaborators', 'mp_cat_id' ]
           projection = dict((p, 1) for p in props)
         return coll.find(crit, projection)
