@@ -18,21 +18,31 @@ def index(request):
                 projection={'_id': 1}
             )
         ]
-    ctx = RequestContext(request)
-    ctx.update({'apps': APPS})
+    ctx = RequestContext(request, {'apps': APPS})
     return render_to_response("mpcontribs_explorer_index.html", locals(), ctx)
 
-#from django.http import HttpResponse, Http404, HttpResponseNotFound
-#from django.template import RequestContext, loader
-
 def composition(request, composition):
+    with MPContribsRester(API_KEY, endpoint=ENDPOINT) as mpr:
+        urls = [
+            '/'.join([request.path, project, cid])
+            for project, contribs in mpr.query_contributions(
+                criteria={'_id': composition}, contributor_only=False,
+                collection='compositions'
+            )[0].iteritems() if project != '_id'
+            for cid in contribs
+        ]
+    ctx = RequestContext(request, {'apps': APPS})
+    return render_to_response("mpcontribs_explorer_index.html", locals(), ctx)
+
+def contribution(request, composition, project, cid):
     if request.user.is_authenticated():
         material = {}
         with MPContribsRester(API_KEY, endpoint=ENDPOINT) as mpr:
             material['contributed_data'] = mpr.query_contributions(
                 criteria={'_id': composition}, contributor_only=False,
-                collection='compositions', projection={'_id': 0}
-            )
+                collection='compositions',
+                projection={'_id': 0, '.'.join([project, cid]): 1}
+            )[0][project][cid]
         material['pretty_formula'] = composition
     else:
         material = {k: composition for k in ['pretty_formula']}
