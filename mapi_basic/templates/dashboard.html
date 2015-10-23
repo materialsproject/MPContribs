@@ -25,7 +25,7 @@ $("#keygen").click(function(){
   key = _.sample(chars, 16).join("");
   var saveData = $.ajax({
     type: 'POST',
-    url: "/",
+    url: "/dashboard",
     data: {'apikey': key},
     dataType: "text",
     success: function(data, textStatus, jqXHR) { $("#key").text(key); },
