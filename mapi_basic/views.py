@@ -1,11 +1,6 @@
 import json
 from urllib import unquote
-from test_site.settings import INSTALLED_APPS
-apps = [
-    app.replace('.', '/') for app in INSTALLED_APPS
-    if 'django' not in app and 'mapi_basic' not in app
-]
-
+from test_site.settings import APPS
 from django.shortcuts import render_to_response, redirect
 from django.http import HttpResponseServerError
 from django.template import RequestContext
@@ -16,7 +11,7 @@ from django.views.decorators.csrf import ensure_csrf_cookie
 
 def index(request):
     ctx = RequestContext(request)
-    ctx.update({'apps': apps})
+    ctx.update({'apps': APPS})
     return render_to_response("index.html", locals(), ctx)
 
 @require_http_methods(["GET", "POST"])
@@ -32,7 +27,7 @@ def dashboard(request):
         except Exception, e:
             return HttpResponseServerError(str(e))
     ctx = RequestContext(request)
-    ctx.update({'apps': apps})
+    ctx.update({'apps': APPS})
     return render_to_response("dashboard.html", locals(), ctx)
 
 @login_required
@@ -59,5 +54,5 @@ def register(request):
             u.save()
             return redirect(next)
     ctx = RequestContext(request)
-    ctx.update({'apps': apps})
+    ctx.update({'apps': APPS})
     return render_to_response('register.html', locals(), ctx)
