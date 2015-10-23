@@ -1,15 +1,14 @@
 """This module provides the views for the explorer interface."""
 
-import os
 from test_site.settings import APPS
 from django.shortcuts import render_to_response
 from django.template import RequestContext
 from mpcontribs.rest.rester import MPContribsRester
 from mpcontribs.config import SITE
-API_KEY = os.environ.get('MAPI_KEY_LOC')
 ENDPOINT = '/'.join([SITE, 'mpcontribs', 'rest'])
 
 def index(request):
+    API_KEY = request.user.api_key
     with MPContribsRester(API_KEY, endpoint=ENDPOINT) as mpr:
         urls = [
             request.path + doc['_id']
@@ -22,6 +21,7 @@ def index(request):
     return render_to_response("mpcontribs_explorer_index.html", locals(), ctx)
 
 def composition(request, composition):
+    API_KEY = request.user.api_key
     with MPContribsRester(API_KEY, endpoint=ENDPOINT) as mpr:
         urls = [
             '/'.join([request.path, project, cid])
@@ -37,6 +37,7 @@ def composition(request, composition):
 def contribution(request, composition, project, cid):
     if request.user.is_authenticated():
         material = {}
+        API_KEY = request.user.api_key
         with MPContribsRester(API_KEY, endpoint=ENDPOINT) as mpr:
             material['contributed_data'] = mpr.query_contributions(
                 criteria={'_id': composition}, contributor_only=False,
