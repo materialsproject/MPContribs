@@ -17,7 +17,7 @@ def index(request):
     urls = [ reverse(url.name) for url in urlpatterns[1:] ]
     ctx = RequestContext(request)
     ctx.update({'apps': APPS})
-    return render_to_response("home.html", locals(), ctx)
+    return render_to_response("mpcontribs_rest_index.html", locals(), ctx)
 
 @mapi_func(connector_path, supported_methods=["GET"], requires_api_key=True)
 def check_contributor(request, mdb=None):
