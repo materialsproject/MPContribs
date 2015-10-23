@@ -1,9 +1,4 @@
-{% extends "home/templates/base/header_footer.html" %}
-{% comment %}
-This template is actually more general than home/templates/app/detail.html
-because ID can be included as an additional header. Consider having the
-material detail template extend this one.
-{% endcomment %}
+{% extends "../../mapi_basic/templates/base/header_footer.html" %}
 {% block content %}
 <div class="container">
 	<div class="detail" id="{% block detail_id %}{% endblock %}">
