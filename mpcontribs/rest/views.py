@@ -7,6 +7,7 @@ from django.template import RequestContext
 from mapi_basic.models import RegisteredUser
 from bson.objectid import ObjectId
 from mapi_basic import mapi_func
+from test_site.settings import APPS
 
 connector_path = 'mpcontribs.connector.Connector'
 
@@ -15,6 +16,7 @@ def index(request):
     from .urls import urlpatterns
     urls = [ reverse(url.name) for url in urlpatterns[1:] ]
     ctx = RequestContext(request)
+    ctx.update({'apps': APPS})
     return render_to_response("home.html", locals(), ctx)
 
 @mapi_func(connector_path, supported_methods=["GET"], requires_api_key=True)

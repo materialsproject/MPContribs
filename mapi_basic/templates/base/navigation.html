@@ -21,7 +21,9 @@
         <li>
           <a href="/">Home</a>
         </li>
-        {% include 'navbar.html' %}
+        {% for app_url in apps %}
+        <li><a href="{{ app_url }}">{{ app_url }} </a></li>
+        {% endfor %}
         {% if user.is_authenticated %}
         <li><a href="/dashboard" data-icon="&gt;" class="icon"> Dashboard</a></li>
         <li>{% browserid_logout text='Logout' %}</li>
