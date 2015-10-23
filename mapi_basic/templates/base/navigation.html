@@ -22,7 +22,7 @@
           <a href="/">Home</a>
         </li>
         {% for app_url in apps %}
-        <li><a href="{{ app_url }}">{{ app_url }} </a></li>
+        <li><a href="/{{ app_url }}">{{ app_url }} </a></li>
         {% endfor %}
         {% if user.is_authenticated %}
         <li><a href="/dashboard" data-icon="&gt;" class="icon"> Dashboard</a></li>
