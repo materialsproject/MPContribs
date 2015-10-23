@@ -1,5 +1,7 @@
-from django.conf.urls import *
+from django.conf.urls import url
+from . import views
 
-urlpatterns = patterns('compositions.views',
-     (r'^(?P<composition>[\w\d]+)/contributions$', 'composition_contributions')
-)
+urlpatterns = [
+    url(r'^$', views.index, name='index'),
+    url(r'^(?P<composition>[\w\d]+)$', views.composition, name='composition'),
+]
