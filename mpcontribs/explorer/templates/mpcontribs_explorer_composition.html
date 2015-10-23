@@ -1,15 +1,9 @@
 {% extends "mpcontribs_explorer_detail.html" %}
 {% load staticfiles %}
-{% load matproj_tags %}
-{% block page_script %}
-  require (["MaterialContributions"], function (MContribs) {
-    window.mcontribs = new MContribs({{ material|jsonify }});
-  });
-{% endblock page_script %}
-{% block title %} Composition {{ material.pretty_formula}} {% endblock %}
+{% block title %} Composition {{ material.pretty_formula }} {% endblock %}
 {% block detail_id %}composition{% endblock %}
 {% block detail_type %}composition{% endblock %}
-{% block formula %}{{ material.pretty_formula|formulize}}{% endblock %}
+{% block formula %}{{ material.pretty_formula }}{% endblock %}
 {% block additional_headers %}
   <span class="detail-section pull-right">
     <button class="btn btn-primary" id="contribute-for-material">
@@ -19,5 +13,5 @@
   </span>
 {% endblock additional_headers %}
 {% block detail_content %}
-  <div id="contributions">Loading...</div>
+<div>{{ material }}</div>
 {% endblock detail_content %}

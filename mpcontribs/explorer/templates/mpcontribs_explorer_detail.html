@@ -1,16 +1,16 @@
 {% extends "../../mapi_basic/templates/base/header_footer.html" %}
 {% block content %}
 <div class="container">
-	<div class="detail" id="{% block detail_id %}{% endblock %}">
-		<div class="row detail-header">
-			<span class="detail-section">
-				<h5><small>{% block detail_type %}{% endblock %}</small></h5>
-				<h4>{% block formula %}{% endblock %}</h4>
-			</span>
-			<span class="vertical-line"></span>
-			{% block additional_headers %}{% endblock%}
-		</div>
-		{% block detail_content %}{% endblock %}
-	</div>
+  <div class="detail" id="{% block detail_id %}{% endblock %}">
+    <div class="row detail-header">
+      <span class="detail-section">
+        <h5><small>{% block detail_type %}{% endblock %}</small></h5>
+        <h4>{% block formula %}{% endblock %}</h4>
+      </span>
+      <span class="vertical-line"></span>
+      {% block additional_headers %}{% endblock%}
+    </div>
+    {% block detail_content %}{% endblock %}
+  </div>
 </div>
 {% endblock content %}

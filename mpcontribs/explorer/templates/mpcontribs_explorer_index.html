@@ -1,0 +1,10 @@
+{% extends "../../mapi_basic/templates/base/header_footer.html" %}
+{% block content %}
+<ul>
+  {% for link in urls %}
+  <li style="list-style-type:none">
+    <a href="{{ link }}">{{ link }}</a>
+  </li>
+  {% endfor %}
+</ul>
+{% endblock %}

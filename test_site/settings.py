@@ -43,7 +43,8 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'mapi_basic',
-    'mpcontribs.rest'
+    'mpcontribs.rest',
+    'mpcontribs.explorer',
 )
 
 APPS = [
