@@ -2,7 +2,9 @@
 {% block content %}
 <ul>
   {% for link in urls %}
-  <li><a href="{{ link }}?API_KEY={{ user.api_key }}">{{ link }}</a></li>
+  <li style="list-style-type:none">
+    <a href="{{ link }}?API_KEY={{ user.api_key }}">{{ link }}</a>
+  </li>
   {% endfor %}
 </ul>
 {% endblock %}
