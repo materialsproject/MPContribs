@@ -1,4 +1,5 @@
 import json
+import logging
 from urllib import unquote
 from test_site.settings import APPS
 from django.shortcuts import render_to_response, redirect
@@ -7,6 +8,9 @@ from django.template import RequestContext
 from django.views.decorators.http import require_http_methods
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import ensure_csrf_cookie
+
+logger = logging.getLogger('mapi_basic.' + __name__)
+
 @ensure_csrf_cookie
 
 def index(request):
