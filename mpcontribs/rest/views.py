@@ -68,7 +68,7 @@ def query_contributions(request, mdb=None):
     """Query the contributions collection"""
     criteria = json.loads(request.POST.get('criteria', '{}'))
     collection = request.POST.get('collection', 'contributions')
-    projection = request.POST.get('projection', None)
+    projection = json.loads(request.POST.get('projection', 'null'))
     contributor = '{} {} <{}>'.format(
         request.user.first_name, request.user.last_name, request.user.email
     )
