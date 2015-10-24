@@ -1,0 +1,35 @@
+{% load staticfiles %}
+{% load browserid %}
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>{% block title %} Materials Project {% endblock title %}</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <link rel="shortcut icon" href='{% static "images/favicon.png" %}' />
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css">
+    <link rel="stylesheet" href='/static/nucleus.css' charset="utf-8">
+    {% browserid_css %}
+    {% block extra_css %}
+    {% endblock extra_css %}
+    <script src="https://code.jquery.com/jquery-1.9.1.min.js"></script>
+    {% browserid_js %}
+    <script src="//use.typekit.net/oxj8ozj.js"></script>
+    <script>try{Typekit.load();}catch(e){}</script>
+  </head>
+  <body>
+    {% browserid_info %}
+    {% block header %}
+    <header>
+      {% include "base/navigation.html" %}
+    </header>
+    {% endblock header %}
+    {% block content %}
+    <!-- Page Content-->
+    {% endblock content %}
+    <footer>
+      {% block footer %}
+      {% endblock footer %}
+      {% include "base/footer.html" %}
+    </footer>
+  </body>
+</html>
