@@ -4,10 +4,10 @@ import json
 from django.core.exceptions import PermissionDenied
 from django.shortcuts import render_to_response
 from django.template import RequestContext
-from mapi_basic.models import RegisteredUser
-from mapi_basic.connector import ConnectorBase
+from mpweb_core.models import RegisteredUser
+from mpweb_core.connector import ConnectorBase
 from bson.objectid import ObjectId
-from mapi_basic import mapi_func
+from mpweb_core import mapi_func
 from test_site.settings import APPS
 
 class Connector(ConnectorBase):

@@ -28,8 +28,8 @@ DEBUG = True
 ALLOWED_HOSTS = []
 
 AUTHENTICATION_BACKENDS = (
-    'mapi_basic.backends.CustomModelBackend',
-    'mapi_basic.backends.CustomBrowserIDBackend',
+    'mpweb_core.backends.CustomModelBackend',
+    'mpweb_core.backends.CustomBrowserIDBackend',
 )
 
 # Application definition
@@ -42,14 +42,14 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'mapi_basic',
+    'mpweb_core',
     'mpcontribs.rest',
     'mpcontribs.explorer',
 )
 
 APPS = [
     app.replace('.', '/') for app in INSTALLED_APPS
-    if 'django' not in app and 'mapi_basic' not in app
+    if 'django' not in app and 'mpweb_core' not in app
 ]
 
 MIDDLEWARE_CLASSES = (
@@ -61,7 +61,7 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.middleware.security.SecurityMiddleware',
-    'mapi_basic.middleware.APIKeyMiddleware',
+    'mpweb_core.middleware.APIKeyMiddleware',
 )
 
 ROOT_URLCONF = 'test_site.urls'
@@ -131,7 +131,7 @@ LOGGING = {
             'level': 'DEBUG',
             'propagate': True,
         },
-        'mapi_basic': {
+        'mpweb_core': {
             'handlers': ['file'],
             'level': 'DEBUG',
             'propagate': True,

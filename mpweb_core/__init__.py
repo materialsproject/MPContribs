@@ -46,7 +46,7 @@ def mapi_func(supported_methods=("GET",), requires_api_key=False):
                     Connector = getattr(func_module, 'Connector')
                     kwargs['mdb'] = Connector(request.user)
                 except:
-                    from mapi_basic.connector import ConnectorBase
+                    from mpweb_core.connector import ConnectorBase
                     kwargs['mdb'] = ConnectorBase(request.user)
                 # Call underlying function
                 d = func(*args, **kwargs)
