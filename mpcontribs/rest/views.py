@@ -5,21 +5,30 @@ from django.core.exceptions import PermissionDenied
 from django.shortcuts import render_to_response
 from django.template import RequestContext
 from mapi_basic.models import RegisteredUser
+from mapi_basic.connector import ConnectorBase
 from bson.objectid import ObjectId
 from mapi_basic import mapi_func
 from test_site.settings import APPS
 
-connector_path = 'mpcontribs.connector.Connector'
+class Connector(ConnectorBase):
+    def connect(self):
+        super(Connector, self).connect()
+        self.contribs_db = self.get_database('contribs')
+        from mpcontribs.rest.adapter import ContributionMongoAdapter
+        self.contrib_ad = ContributionMongoAdapter(self.contribs_db)
+        from mpcontribs.builders import MPContributionsBuilder
+        self.contrib_build_ad = MPContributionsBuilder(self.contribs_db)
+
+ConnectorBase.register(Connector)
 
 def index(request):
     from django.core.urlresolvers import reverse
     from .urls import urlpatterns
     urls = [ reverse(url.name) for url in urlpatterns[1:] ]
-    ctx = RequestContext(request)
-    ctx.update({'apps': APPS})
+    ctx = RequestContext(request, {'apps': APPS})
     return render_to_response("mpcontribs_rest_index.html", locals(), ctx)
 
-@mapi_func(connector_path, supported_methods=["GET"], requires_api_key=True)
+@mapi_func(supported_methods=["GET"], requires_api_key=True)
 def check_contributor(request, mdb=None):
     """check whether user is in contrib(utor) group and return info."""
     is_contrib = request.user.groups.filter(name='contrib').exists()
@@ -29,7 +38,7 @@ def check_contributor(request, mdb=None):
         'institution': request.user.institution
     }}
 
-@mapi_func(connector_path, supported_methods=["POST", "GET"], requires_api_key=True)
+@mapi_func(supported_methods=["POST", "GET"], requires_api_key=True)
 def submit_contribution(request, mdb=None):
     """Submits a MPFile with a single contribution."""
     if not request.user.groups.filter(name='contrib').exists():
@@ -49,7 +58,7 @@ def submit_contribution(request, mdb=None):
         raise ValueError('"REST Error: "{}"'.format(str(ex)))
     return {"valid_response": True, 'response': str(cid)}
 
-@mapi_func(connector_path, supported_methods=["POST", "GET"], requires_api_key=True)
+@mapi_func(supported_methods=["POST", "GET"], requires_api_key=True)
 def build_contribution(request, mdb=None):
     """Builds a single contribution into according material/composition"""
     if not request.user.groups.filter(name='contrib').exists():
@@ -63,7 +72,7 @@ def build_contribution(request, mdb=None):
         raise ValueError('"REST Error: "{}"'.format(str(ex)))
     return {"valid_response": True, 'response': url}
 
-@mapi_func(connector_path, supported_methods=["POST", "GET"], requires_api_key=True)
+@mapi_func(supported_methods=["POST", "GET"], requires_api_key=True)
 def query_contributions(request, mdb=None):
     """Query the contributions collection"""
     criteria = json.loads(request.POST.get('criteria', '{}'))
@@ -79,7 +88,7 @@ def query_contributions(request, mdb=None):
     )
     return {"valid_response": True, "response": list(results)}
 
-@mapi_func(connector_path, supported_methods=["POST", "GET"], requires_api_key=True)
+@mapi_func(supported_methods=["POST", "GET"], requires_api_key=True)
 def delete_contributions(request, mdb=None):
     """Delete a list of contributions"""
     if not request.user.is_staff:
@@ -106,7 +115,7 @@ def delete_contributions(request, mdb=None):
     results = mdb.contrib_ad.delete_contributions(criteria)
     return {"valid_response": True, "response": results}
 
-@mapi_func(connector_path, supported_methods=["POST", "GET"], requires_api_key=True)
+@mapi_func(supported_methods=["POST", "GET"], requires_api_key=True)
 def update_collaborators(request, mdb=None):
     """Update the list of collaborators"""
     if not request.user.is_staff:
