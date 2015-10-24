@@ -1,6 +1,6 @@
 from __future__ import division, unicode_literals
 import json, six, bson
-from mapi_basic.rester import MPResterBase, MPResterError
+from mpweb_core.rester import MPResterBase, MPResterError
 
 class MPContribsRester(MPResterBase):
     """convenience functions to interact with MPContribs REST interface"""

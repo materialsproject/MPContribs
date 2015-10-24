@@ -9,7 +9,7 @@ from django.views.decorators.http import require_http_methods
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import ensure_csrf_cookie
 
-logger = logging.getLogger('mapi_basic.' + __name__)
+logger = logging.getLogger('mpweb_core.' + __name__)
 
 @ensure_csrf_cookie
 
