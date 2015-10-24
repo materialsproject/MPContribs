@@ -1,5 +1,5 @@
 import yaml, pymongo, os, six
-from abc import ABCMeta, abstractmethod
+from abc import ABCMeta
 
 class Connections(object):
     """Cache of all DB connections."""
@@ -119,11 +119,12 @@ class ConnectorBase(six.with_metaclass(ABCMeta, object)):
         config = self._get_config(name)
         return g_connections.from_config(config)
 
-    # ----------------------------
-    # Override these in subclasses
-    # ----------------------------
-
-    @abstractmethod
     def connect(self):
-        """Connect to standard set of databases."""
-        return
+        """Connect to standard set of databases. Optionally override in
+        derived class named "Connector" to connect to own databases (mostly
+        useful for custom REST interfaces). Define or import "Connector" class
+        in app's `views.py` (where @mapi_func is used)."""
+        try:
+            self.default_db = self.get_database('default')
+        except:
+            self.default_db = None

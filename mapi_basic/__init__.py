@@ -18,13 +18,10 @@ def get_api_key(request):
             request.GET.get('API_KEY', None) or
             request.POST.get('API_KEY', None))
 
-def mapi_func(connector_path, supported_methods=("GET",), requires_api_key=False):
+def mapi_func(supported_methods=("GET",), requires_api_key=False):
     """Decorator to standardize api checks and handle responses.
 
     Args:
-        connector_path:
-            full path in "dot-notation" to connector class overriding
-            `mapi_basic.connector.ConnectorBase.connect()`
         requires_api_key:
             Whether an API key is required.
     """
@@ -44,9 +41,13 @@ def mapi_func(connector_path, supported_methods=("GET",), requires_api_key=False
                             or api_key != request.user.api_key:
                         raise PermissionDenied("API_KEY is not a valid key.")
                 # set mdb
-                mod, cls = connector_path.rsplit('.', 1)
-                Connector = getattr(import_module(mod), cls)
-                kwargs['mdb'] = Connector(request.user)
+                try:
+                    func_module = import_module(func.__module__)
+                    Connector = getattr(func_module, 'Connector')
+                    kwargs['mdb'] = Connector(request.user)
+                except:
+                    from mapi_basic.connector import ConnectorBase
+                    kwargs['mdb'] = ConnectorBase(request.user)
                 # Call underlying function
                 d = func(*args, **kwargs)
             except PermissionDenied as ex:
