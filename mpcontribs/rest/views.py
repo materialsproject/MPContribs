@@ -81,7 +81,7 @@ def query_contributions(request, mdb=None):
     contributor = '{} {} <{}>'.format(
         request.user.first_name, request.user.last_name, request.user.email
     )
-    if json.loads(request.POST.get('contributor_only', 'true')):
+    if json.loads(request.POST.get('contributor_only', 'false')):
         criteria['collaborators'] = {'$in': [contributor]}
     results = mdb.contrib_ad.query_contributions(
         criteria, projection=projection, collection=collection
