@@ -15,7 +15,7 @@ def submit_mpfile(path_or_mpfile, fmt='archieml'):
     with MPContribsRester(API_KEY, endpoint=ENDPOINT) as mpr:
         try:
             yield 'DB connection? ' # also checks internet connection
-            ncontribs = sum(1 for contrib in mpr.query_contributions())
+            ncontribs = sum(1 for contrib in mpr.query_contributions(contributor_only=True))
             yield 'OK ({} contributions).</br> '.format(ncontribs)
             time.sleep(1)
             yield 'Contributor? '

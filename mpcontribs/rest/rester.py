@@ -74,7 +74,7 @@ class MPContribsRester(MPResterBase):
         if kwargs:
             payload = {
                 "criteria": json.dumps(kwargs.get('criteria', {})),
-                "contributor_only": json.dumps(kwargs.get('contributor_only', True)),
+                "contributor_only": json.dumps(kwargs.get('contributor_only', False)),
                 "projection": json.dumps(kwargs.get('projection')),
                 "collection": kwargs.get('collection', 'contributions')
             }

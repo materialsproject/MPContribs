@@ -13,8 +13,7 @@ def index(request):
         urls = [
             request.path + doc['_id']
             for doc in mpr.query_contributions(
-                contributor_only=False, collection='compositions',
-                projection={'_id': 1}
+                collection='compositions', projection={'_id': 1}
             )
         ]
     ctx = RequestContext(request, {'apps': APPS})
@@ -26,8 +25,7 @@ def composition(request, composition):
         urls = [
             '/'.join([request.path, project, cid])
             for project, contribs in mpr.query_contributions(
-                criteria={'_id': composition}, contributor_only=False,
-                collection='compositions'
+                criteria={'_id': composition}, collection='compositions'
             )[0].iteritems() if project != '_id'
             for cid in contribs
         ]
@@ -40,8 +38,7 @@ def contribution(request, composition, project, cid):
         API_KEY = request.user.api_key
         with MPContribsRester(API_KEY, endpoint=ENDPOINT) as mpr:
             material['contributed_data'] = mpr.query_contributions(
-                criteria={'_id': composition}, contributor_only=False,
-                collection='compositions',
+                criteria={'_id': composition}, collection='compositions',
                 projection={'_id': 0, '.'.join([project, cid]): 1}
             )[0][project][cid]
         material['pretty_formula'] = composition

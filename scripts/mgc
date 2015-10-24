@@ -4,7 +4,7 @@ import sys, os, argparse
 import random, threading, webbrowser
 from mpcontribs.webui.webui import app
 from mpcontribs.utils import submit_mpfile
-from mpcontribs.io.core.utils import get_short_object_id 
+from mpcontribs.io.core.utils import get_short_object_id
 from mpcontribs.io.custom.mpfile import MPFile
 from mpcontribs.rest.adapter import ContributionMongoAdapter
 from mpcontribs.rest.rester import MPContribsRester
@@ -23,7 +23,7 @@ def load_mprester():
 def info(args):
     load_mprester()
     infos = {}
-    for contrib in mpr.query_contributions():
+    for contrib in mpr.query_contributions(contributor_only=True):
         mid, cid = contrib['mp_cat_id'], get_short_object_id(contrib['_id'])
         if mid not in infos: infos[mid] = [cid]
         else: infos[mid].append(cid)
@@ -49,7 +49,7 @@ def collab_add(args):
     load_mprester()
     cids = [] if args.to is None else args.to
     if args.to is None:
-        for contrib in mpr.query_contributions():
+        for contrib in mpr.query_contributions(contributor_only=True):
             cids.append(contrib['contribution_id'])
     print mpr.update_collaborators(args.collaborators, cids, 'add')
 
@@ -57,7 +57,7 @@ def collab_remove(args):
     load_mprester()
     cids = [] if args['from'] is None else args['from']
     if args['from'] is None:
-        for contrib in mpr.query_contributions():
+        for contrib in mpr.query_contributions(contributor_only=True):
             cids.append(contrib['contribution_id'])
     print mpr.update_collaborators(args.collaborators, cids, 'remove')
 
@@ -65,7 +65,7 @@ def collab_primary(args):
     load_mprester()
     cids = [] if args['for'] is None else args['for']
     if args['for'] is None:
-        for contrib in mpr.query_contributions():
+        for contrib in mpr.query_contributions(contributor_only=True):
             cids.append(contrib['contribution_id'])
     print mpr.update_collaborators([args.collaborator], cids, 'primary')
 
