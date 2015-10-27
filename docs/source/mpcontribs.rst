@@ -6,9 +6,11 @@ Subpackages
 
 .. toctree::
 
+    mpcontribs.explorer
     mpcontribs.fake
     mpcontribs.io
-    mpcontribs.pymatgen_utils
+    mpcontribs.pmg_utils
+    mpcontribs.rest
     mpcontribs.webui
 
 Submodules
@@ -26,14 +28,6 @@ mpcontribs.config module
 ------------------------
 
 .. automodule:: mpcontribs.config
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-mpcontribs.rest module
-----------------------
-
-.. automodule:: mpcontribs.rest
     :members:
     :undoc-members:
     :show-inheritance:

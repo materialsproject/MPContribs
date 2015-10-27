@@ -1,6 +1,13 @@
 mpcontribs.io.archieml package
 ==============================
 
+Subpackages
+-----------
+
+.. toctree::
+
+    mpcontribs.io.archieml.tests
+
 Submodules
 ----------
 
