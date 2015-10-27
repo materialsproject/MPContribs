@@ -1,12 +1,12 @@
 import os, re
 from pandas.io.parsers import read_csv
 from collections import Counter
-from ..config import csv_database
-from ..io.utils import RecursiveDict
+from mpcontribs.config import csv_database
+from mpcontribs.io.core.recdict import RecursiveDict
 
 class DataGenerator(object):
     """generate MP-like data from baseball database
-    
+
     database: http://seanlahman.com/files/database/lahman-csv_2014-02-14.zip
     """
     def __init__(self):
