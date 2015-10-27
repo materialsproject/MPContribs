@@ -5,3 +5,4 @@ mpcontribs.egg-info
 docs/build
 .ipynb_checkpoints/
 db.sqlite3
+.coverage
