@@ -1,3 +1,6 @@
+from django.conf import settings
+settings.configure()
+
 from django.contrib import admin
 
 from .models import DBConfig, RegisteredUser
