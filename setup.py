@@ -21,10 +21,8 @@ setup(
         '{}.rest'.format(package_name),
     ],
     install_requires = [
-        'numpy==1.9.2', 'Flask==0.10.1', 'pandas==0.16.2', 'plotly==1.7.7',
-        'six==1.9.0', 'monty==0.6.5', 'matplotlib==1.4.3', 'pymongo==3.0.3',
-        'pyyaml==3.11', 'ipython==3.2.1', 'cufflinks==0.4', 'Django==1.8.5',
-        'archieml==0.3.0'
+        'numpy', 'Flask', 'pandas', 'plotly', 'six', 'monty', 'matplotlib',
+        'pymongo', 'pyyaml', 'ipython', 'cufflinks', 'Django==1.8.5', 'archieml'
     ],
     license = 'MIT',
     keywords = ['materials', 'contribution', 'framework', 'data', 'interactive'],
