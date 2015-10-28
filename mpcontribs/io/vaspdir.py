@@ -1,20 +1,20 @@
 import fnmatch, six, abc
-from pymatgen.apps.borg.hive import SimpleVaspToComputedEntryDrone
-from pymatgen.apps.borg.queen import BorgQueen
 
 class AbstractVaspDirCollParser(six.with_metaclass(abc.ABCMeta, object)):
     """Abstract base class for parsers of a collection of VASP directories
-    
+
     To implement a new parser, inherit from this class and
     define the :meth:`compile` method.
     """
 
     def __init__(self, rootdir):
         """read vasp output via drone and extract all data
-        
+
         :param rootdir: root directory containing collection of VASP dirs
         :type rootdir: str
         """
+        from pymatgen.apps.borg.hive import SimpleVaspToComputedEntryDrone
+        from pymatgen.apps.borg.queen import BorgQueen
         self.rootdir = rootdir
         self.drone = SimpleVaspToComputedEntryDrone(inc_structure=True)
         self.queen = BorgQueen(self.drone, rootdir, 1) # TODO: make sure uw2_si2 also works in parallel
