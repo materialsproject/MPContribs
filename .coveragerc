@@ -1,6 +1,5 @@
 [run]
 branch = True
-erase = True
 source = mpcontribs, mpweb_core
 [report]
 exclude_lines =
