@@ -1,8 +1,7 @@
 language: python
-install: 
-  - pip install numpy==1.9.2
-  - pip install scipy==0.16.0
-  - pip install -r requirements.txt
+install:
+  - pip install --upgrade pip
+  - python setup.py install
 script: nosetests --nocapture --with-coverage
 sudo: false
 after_success:
