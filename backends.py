@@ -12,7 +12,6 @@ try:
 except ImportError:
     from django.utils.encoding import smart_str as smart_bytes
 
-from .models import RegisteredUser
 from django_browserid.auth import BrowserIDBackend
 from django.contrib.auth.backends import ModelBackend
 
@@ -26,6 +25,7 @@ def default_username_algo(email):
 
 class CustomBrowserIDBackend(BrowserIDBackend):
     def __init__(self):
+        from .models import RegisteredUser
         self.User = RegisteredUser
 
     def create_user(self, email):
@@ -55,6 +55,7 @@ class CustomModelBackend(ModelBackend):
         """
         u = super(CustomModelBackend, self).authenticate(*args, **kwargs)
         if u is not None:
+            from .models import RegisteredUser
             try:
                 r = RegisteredUser.objects.get(email=u.email)
                 return r
@@ -66,6 +67,7 @@ class CustomModelBackend(ModelBackend):
         """
         Try the registered user, then fall back to regular user
         """
+        from .models import RegisteredUser
         try:
             return RegisteredUser.objects.get(pk=user_id)
         except RegisteredUser.DoesNotExist:
