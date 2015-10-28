@@ -4,7 +4,6 @@ import json
 from django.core.exceptions import PermissionDenied
 from django.shortcuts import render_to_response
 from django.template import RequestContext
-from mpweb_core.models import RegisteredUser
 from mpweb_core.connector import ConnectorBase
 from bson.objectid import ObjectId
 from mpweb_core import mapi_func
@@ -118,6 +117,7 @@ def delete_contributions(request, mdb=None):
 @mapi_func(supported_methods=["POST", "GET"], requires_api_key=True)
 def update_collaborators(request, mdb=None):
     """Update the list of collaborators"""
+    from mpweb_core.models import RegisteredUser
     if not request.user.is_staff:
         raise PermissionDenied("collaborators update open only to staff right now.")
     collaborators = json.loads(request.POST['collaborators'])
