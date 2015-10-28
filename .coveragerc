@@ -8,6 +8,8 @@ exclude_lines =
   if __name__ == .__main__.:
 omit =
   */python?.?/*
+  */lib-python/?.?/*.py
+  */lib_pypy/_*.py
   */site-packages/*
   *tests/*
   */versioneer.py
