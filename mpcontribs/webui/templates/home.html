@@ -3,6 +3,23 @@
 {% if fmt == "archieml" %}
 <link href="{{ url_for('static', filename='css/archieml.css') }}" media="screen, projection" rel="stylesheet" type="text/css" />
 <script src="{{ url_for('static', filename='js/archieml.js') }}"></script>
+<link rel="stylesheet" href="https://rawgit.com/oreillymedia/thebe/master/static/thebe/site.css" type="text/css"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.6.0/codemirror.min.css" type="text/css"/>
+<script src="https://rawgit.com/oreillymedia/thebe/master/static/main-built.js" type="text/javascript" charset="utf-8"></script>
+<script>
+$(function(){
+  var thebe = new Thebe({
+    tmpnb_mode: false,
+    url: 'http://localhost:8888/'
+  });
+});
+</script>
+<div class="container">
+  <pre data-executable='true'>
+z = "hello", 4+4
+print(z)
+  </pre>
+</div>
 <div class="sandbox">
   <div class="container"><br>
     <div class="row">
@@ -18,7 +35,7 @@ Experiment.Preparation: Sputter deposition
 
 {Experiment.Sample}
 Material: Vicalloy
-Authors: Contact Alpha T. N'Diaye (atndiaye@lbl.gov) 
+Authors: Contact Alpha T. N'Diaye (atndiaye@lbl.gov)
 
 {Experiment.Measurement}
 Detection: total electron yield
