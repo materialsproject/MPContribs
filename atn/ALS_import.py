@@ -3,7 +3,7 @@ import pandas as pd
 def treat_xmcd(scan_groups, scan_params, process_dict):
     # Handels only a single scan now. Splitting into groups is done before (alpha)
     xmcd_frame = pd.DataFrame()
-    xmcd_data = process_xmcd(                                    
+    xmcd_data = process_xmcd(
         scan_groups, scan_params, process_dict
     )
     xmcd_frame = pd.concat([xmcd_frame, xmcd_data])
@@ -36,11 +36,10 @@ def save_return_values(scanparams, process_no, return_values):
     # Potenial problem: Multiple processes with the same name are not handled properly yet.
     i = process_no
     # TODO: I use the number b/c I want to be ready for the day, when we can
-    # apply one process several times 
-    
-    # They would have to be specified multiple times in the process chain: 
-    # Let's say A, B, C are processes, then the chain could look like ABCA 
+    # apply one process several times
+
+    # They would have to be specified multiple times in the process chain:
+    # Let's say A, B, C are processes, then the chain could look like ABCA
     # (Alpha)
-    key = scanparams.keys()[i] 
-    for k in return_values.keys():
-        scanparams[key][k] = return_values[k]
+    key = scanparams.keys()[i]
+    scanparams[key].rec_update(return_values)

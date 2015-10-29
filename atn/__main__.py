@@ -1,85 +1,60 @@
 import argparse, os, sys, json, copy
-from mpcontribs.io.mpfile import MPFile # add the mpcontribs dir to PYTHONPATH
-from mpcontribs.io.utils import nest_dict
+from mpcontribs.io.archieml.mpfile import MPFile
+from mpcontribs.io.core.utils import nest_dict, normalize_root_level
 import mspScan as msp
 from ALS_import import treat_xmcd
 import xas_process as xas_process
-import translate_vicalloy as tl_vicalloy
-import translate_PyPt as tl_pypt
 
-def default_translate(composition, keys=""):
-	return(str(composition)+str(keys))
+# TODO mechanism to choose correct translate
+# TODO: improve concept for the mapping of keys to compositions.
+from translate_vicalloy import get_translate
+#from translate_PyPt import get_translate
 
 parser = argparse.ArgumentParser(
-    description="""generate MPFile(s) from a directory of related XAS measurements."""
+    description="""generate MPFile from directory of related XAS measurements"""
 )
 parser.add_argument(
-    'work_dir', type=str, help="""working directory containing (i) an input
+    '-i', '--input_mpfile', type=str, metavar="PATH", help="""path to input
     MPFile with shared MetaData and processing instructions for each
-    composition, and (ii) a subdirectory for each composition with the
-    according instrumental output files."""
+    composition""", default="input.txt"
 )
-
 parser.add_argument(
-    'input_mp', type=str, help="""an input MPFile with shared MetaData and 
-    processing instructions for each composition""", default="input.mpf"
+    '-o', '--output_mpfile', type=str, metavar="FILENAME", help="""name of
+    output MPFile with shared MetaData and processing results for each
+    composition (will be created in same directory as `input_mpfile`)""",
+    default="output.txt"
 )
-
-parser.add_argument(
-    'output_mp', type=str, help="""an output MPFile with shared MetaData and 
-    processing results for each composition""", default="output.mpf"
-)
-
 args = parser.parse_args()
 
-input_mp = args.input_mp
-output_mp = args.output_mp
-
-mpfile_path = os.path.join(args.work_dir, input_mp)
-if not os.path.exists(mpfile_path):
-    print 'Make sure to provide the config file {} in {}'.format(args.input_mp, args.work_dir)
-    sys.exit(0)
-    
-mpfile = MPFile.from_file(mpfile_path)
-#print "- - -  - - -  - - - - -  -- - "
+work_dir = os.path.dirname(os.path.realpath(args.input_mpfile))
+output_mpfile = os.path.join(work_dir, args.output_mpfile)
+mpfile = MPFile.from_file(args.input_mpfile)
 #print json.dumps(mpfile.document, indent=4)
+datasource = mpfile.document['general'].pop('Datasource')
+subdir = os.path.abspath(os.path.join(work_dir, datasource['directory']))
 
-subdir = os.path.abspath(os.path.join(
-    args.work_dir, mpfile.document["general"]['Datasource']['directory']
-))
-
+# TODO Potentially we have to insert a preprocessing step, probably in msp
 scandata_f = msp.read_scans(subdir, datacounter="Counter 1")
-# TODO Potenially we have to insert a preprocessing step, probably in msp (alpha)
-
-scan_groups = scandata_f.groupby(mpfile.document["general"]['Datasource']['group by'].keys())
-template_compositions = [x[0] for x in mpfile.get_identifiers()]
-
+scan_groups = scandata_f.groupby(datasource['group_by'].split())
+process_template = mpfile.document['general'].pop('process_template')
+translate = get_translate(work_dir)
 keys = scan_groups.groups.keys()
 keys.sort()
 
-translate = default_translate
-translate = tl_vicalloy.get_translate(args.work_dir)
-#translate = tl_pypt.get_translate(args.work_dir) # TODO mechanism to choose correct translate
+for g in keys:
+    # TODO: Group information is saved into the output. Rethink?
+    composition = normalize_root_level(translate(g))[1]
+    mpfile.document.rec_update(nest_dict(
+        copy.deepcopy(process_template), [composition]
+    ))
+    sg = scan_groups.get_group(g)
+    for process_chain_name in process_template.keys():
+        scan_params = mpfile.document[composition][process_chain_name]
+        xmcd_frame = treat_xmcd(sg, scan_params, xas_process.process_dict)
+        mpfile.add_data_table(
+            composition, xmcd_frame[['Energy', 'XAS', 'XMCD']],
+            '_'.join(['data', process_chain_name])
+        )
+    print '{} done'.format(composition)
 
-for template_composition in template_compositions:
-    process_template = mpfile.document.pop(template_composition)
-    for g in keys:
-        # TODO: Group information is saved into the output. 
-        # Should we rethink how we do this? (alpha)
-        # TODO: improve concept for the mapping of keys to compositions.
-        composition = translate(template_composition, g)
-        mpfile.document.rec_update(nest_dict(
-            copy.deepcopy(process_template), [composition]
-        ))
-
-        sg = scan_groups.get_group(g)
-	for process_chain_name in process_template.keys():
-            scan_params = mpfile.document[composition][process_chain_name]
-            xmcd_frame = treat_xmcd(sg, scan_params, xas_process.process_dict)
-            mpfile.add_data_table(
-                composition, xmcd_frame[['Energy', 'XAS', 'XMCD']],
-                ' '.join(['data', process_chain_name])
-	    )
-
-mpfile.document['general'].pop('Datasource')
-mpfile.write_file(os.path.join(args.work_dir, output_mp))
+mpfile.write_file(output_mpfile)

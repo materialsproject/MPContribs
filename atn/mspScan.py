@@ -1,13 +1,13 @@
 """
 Plots MH loops and XAS. XMCD spectra from BL 6.3.1 This is not even an alpha
-Version (no pun intended...) atndiaye@lbl.gov 
+Version (no pun intended...) atndiaye@lbl.gov
 """
 
 import pandas as pd
 import matplotlib.pylab as plt
 import scipy
 import sys
-import os.path 
+import os.path
 import numpy as np
 
 def read_scans(subdir, datacounter="Counter 1"):
@@ -31,7 +31,7 @@ def read_scan(filename):
     filedissection = dissect_filename(filename)
     for file_attr in filedissection.keys():
         scandata_f[file_attr] = filedissection[file_attr]
-    return scandata_f 
+    return scandata_f
 
 def dissect_filename(scanfile):
     """dict with rump, number, runnumber, scannumber: TrajScanXXXXXX-Y_ZZZZ.txt"""
@@ -53,7 +53,7 @@ def dissect_filename(scanfile):
         pass
     return {
         "filename": filename, "dirname": dirname,
-        "rump": rump, "number": number, 
+        "rump": rump, "number": number,
         "runnumber": runnumber, "scannumber": scannumber
     }
 
@@ -68,9 +68,9 @@ def prepare_scan(scandata_f, datacounter="Counter 1"):
     #    scandata_f['Magnet Field'] = scandata_f['Magnet Field.1']
     #    print("Overwriting 'Magnet Field' with 'Magnet Field.1'")
     scandata_f["I_Norm0"] = scandata_f[datacounter].astype(float)
-    scandata_f["I_Norm0"] /= scandata_f["Counter 0"].astype(float) 
+    scandata_f["I_Norm0"] /= scandata_f["Counter 0"].astype(float)
     scandata_f["I_Normt"] = scandata_f[datacounter].astype(float)
-    scandata_f["I_Normt"] /= scandata_f[clockname].astype(float) 
+    scandata_f["I_Normt"] /= scandata_f[clockname].astype(float)
     scandata_f["Energy"] = scandata_f["Energy"].round(1)
     scandata_f["Y"] = scandata_f["Y"].round(2)
     scandata_f["Z"] = scandata_f["Z"].round(2)
