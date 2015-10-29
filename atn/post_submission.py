@@ -1,15 +1,16 @@
 import argparse, os, requests, math, threading, webbrowser, random, sys#, pdfkit
-from pymatgen.matproj.rest import MPRester
-from pymatgen.phasediagram.pdmaker import PhaseDiagram
-from pymatgen.phasediagram.plotter import PDPlotter
-from pymatgen.core import Composition
 from StringIO import StringIO
-from PyPDF2 import PdfFileMerger
 from bson.errors import InvalidId
 from mpcontribs.webui.webui import app
 import matplotlib.tri as tri
 
 if __name__ == '__main__':
+    from pymatgen.matproj.rest import MPRester
+    from pymatgen.phasediagram.pdmaker import PhaseDiagram
+    from pymatgen.phasediagram.plotter import PDPlotter
+    from pymatgen.core import Composition
+    from PyPDF2 import PdfFileMerger
+
     parser = argparse.ArgumentParser(description="""post submission analyses""")
     parser.add_argument(
         'cids_file', type=str, help="""Path to file containing contribution IDs

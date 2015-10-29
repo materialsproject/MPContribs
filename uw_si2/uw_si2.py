@@ -3,8 +3,6 @@ import numpy as np
 from collections import OrderedDict
 from mpcontribs.io.vaspdir import AbstractVaspDirCollParser
 from mpcontribs.io.archieml.mpfile import MPFile
-from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
-from pymatgen.matproj.rest import MPRester
 from pandas import DataFrame, Series
 ENDPOINT = "https://www.materialsproject.org/rest"
 
@@ -47,6 +45,8 @@ class VaspDirCollParser(AbstractVaspDirCollParser):
 
     def compile(self):
         """compile phase (calculation from MAST DiffusionCoefficient.py)"""
+        from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
+        from pymatgen.matproj.rest import MPRester
         indirs = glob.glob(os.path.join(self.rootdir, "*CuCu*")) + [
             fn for fn in glob.glob(os.path.join(self.rootdir, "*Cu*"))
             if not fnmatch.fnmatch(fn, "*CuCu*")
