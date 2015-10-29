@@ -24,3 +24,5 @@ notifications:
   email:
     on_success: change
     on_failure: always
+notifications:
+  slack: mpcontribs:8BEeanYMtnJ2hnRyCM6eOYPD
