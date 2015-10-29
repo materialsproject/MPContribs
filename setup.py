@@ -23,7 +23,7 @@ setup(
     install_requires = [
         'numpy', 'scipy', 'Flask', 'pandas', 'plotly', 'six', 'monty',
         'matplotlib', 'pymongo', 'pyyaml', 'ipython', 'cufflinks',
-        'Django==1.8.5', 'archieml', 'django-browserid'
+        'Django==1.8.5', 'archieml', 'django-browserid', 'sphinx'
     ],
     license = 'MIT',
     keywords = ['materials', 'contribution', 'framework', 'data', 'interactive'],
