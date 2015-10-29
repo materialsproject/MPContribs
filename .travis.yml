@@ -20,3 +20,7 @@ script:
   - nosetests --with-coverage -c .coveragerc --logging-level=INFO --cover-package=mpcontribs --cover-package=mpweb_core --cover-inclusive
 after_success:
   - coveralls --config_file .coveragerc
+notifications:
+  email:
+    on_success: change
+    on_failure: always
