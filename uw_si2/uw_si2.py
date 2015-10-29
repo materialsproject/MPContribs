@@ -2,7 +2,7 @@ import os, json, math, glob, fnmatch
 import numpy as np
 from collections import OrderedDict
 from mpcontribs.io.vaspdir import AbstractVaspDirCollParser
-from mpcontribs.io.mpfile import MPFile
+from mpcontribs.io.archieml.mpfile import MPFile
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 from pymatgen.matproj.rest import MPRester
 from pandas import DataFrame, Series
