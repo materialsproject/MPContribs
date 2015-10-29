@@ -1,13 +1,14 @@
 """
 All usable processes should be listed in the end for reference in the MPFile
 
- All processes should be called like this:
- process(xmcd_data, scanparams, process_parameters, process_number)
- where
-      xmcd_data is the xmcd_data in its current state after the previous processes
-      scanparams are the parameters for the scans (inlcuding process parameters)
-      process_parameters is the list of parameters for the current process.
-      This is redundant information, because it also exists in scanparams
+All processes should be called like this:
+
+     process(xmcd_data, scanparams, process_parameters, process_number)
+
+where xmcd_data is the xmcd_data in its current state after the previous
+processes scanparams are the parameters for the scans (inlcuding process
+parameters) process_parameters is the list of parameters for the current
+process.  This is redundant information, because it also exists in scanparams.
 
  Returns:
       xmcd_data, return_values
