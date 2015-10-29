@@ -11,6 +11,7 @@ Subpackages
     mpcontribs.io
     mpcontribs.pmg_utils
     mpcontribs.rest
+    mpcontribs.users
     mpcontribs.webui
 
 Submodules
