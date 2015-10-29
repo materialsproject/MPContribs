@@ -1,5 +1,7 @@
+from django.utils.functional import empty
 from django.conf import settings
-settings.configure()
+if settings._wrapped is empty:
+    settings.configure()
 
 from django.contrib import admin
 
