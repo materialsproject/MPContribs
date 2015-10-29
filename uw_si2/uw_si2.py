@@ -7,18 +7,20 @@ from pandas import DataFrame, Series
 ENDPOINT = "https://www.materialsproject.org/rest"
 
 class VaspDirCollParser(AbstractVaspDirCollParser):
-    """An example VASP-Dirs Collection Parser based on UW/SI2 use case
+    """
+    An example VASP-Dirs Collection Parser based on UW/SI2 use case::
 
-    rootdir [see mpcontribs.parsers.vaspdir.AbstractVaspDirCollParser]
-        |_ VaspDirColl1/     [CuCu]
-              |_ VaspDir1/   [perfect_stat]
-              |_ VaspDir2/   [neb_vac1-vac2_opt]
-                  |_ 00/
-                  |_ 01/
+        rootdir [see mpcontribs.parsers.vaspdir.AbstractVaspDirCollParser]
+            |_ VaspDirColl1/     [CuCu]
+                  |_ VaspDir1/   [perfect_stat]
+                  |_ VaspDir2/   [neb_vac1-vac2_opt]
+                      |_ 00/
+                      |_ 01/
+                      |_ ...
                   |_ ...
-              |_ ...
-        |_ VaspDirColl2/     [CuAu]
-        |_ ...
+            |_ VaspDirColl2/     [CuAu]
+            |_ ...
+
     """
 
     def get_barrier(self, dirname, i):
