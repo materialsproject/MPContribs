@@ -1,0 +1,3 @@
+[submodule "mpcontribs/users"]
+	path = mpcontribs/users
+	url = https://github.com/materialsproject/MPContribsUsers.git
