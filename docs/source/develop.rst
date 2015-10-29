@@ -9,6 +9,7 @@ MPContribs Development
   <https://github.com/materialsproject/MPContribs/issues>`_.
 * Develop::
 
+     pip install sphinx sphinx-pypi-upload
      git clone git://github.com/materialsproject/MPContribs
      mkvirtualenv env_mp_contribs
      pip install -e .
