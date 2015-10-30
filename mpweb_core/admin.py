@@ -1,10 +1,5 @@
-from django.utils.functional import empty
-from django.conf import settings
-if settings._wrapped is empty:
-    settings.configure()
-
+import mpweb_core.configure_settings
 from django.contrib import admin
-
 from .models import DBConfig, RegisteredUser
 
 admin.site.register(DBConfig)
