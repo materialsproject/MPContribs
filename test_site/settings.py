@@ -47,6 +47,7 @@ INSTALLED_APPS = (
     'mpweb_core',
     'mpcontribs.rest',
     'mpcontribs.explorer',
+    'kombu.transport.django',
 )
 
 APPS = [
@@ -90,6 +91,7 @@ WSGI_APPLICATION = 'test_site.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/1.8/ref/settings/#databases
 
+DATABASE_ENGINE = 'django.db.backends.sqlite3',
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
