@@ -10,6 +10,8 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/1.8/ref/settings/
 """
 
+from django.conf.global_settings import *
+
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 import os
 
@@ -23,7 +25,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = '^^bm-^5r^06@k8*k&!7e9m^b74=$n4b!p#-^2$w-!t52z0!aan'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = []
 
