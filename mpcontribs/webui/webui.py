@@ -5,15 +5,35 @@ import sys, warnings, multiprocessing
 from IPython.terminal.ipapp import launch_new_instance
 from flask import Flask, render_template, request, Response
 from flask import url_for, redirect, make_response, stream_with_context
+from celery import Celery
 from mpcontribs.utils import process_mpfile, submit_mpfile
 from StringIO import StringIO
+from mpweb_core import configure_settings
+
 tmpl_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates')
 stat_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static')
 app = Flask('mpcontribs.webui', template_folder=tmpl_dir, static_folder=stat_dir)
 app.config['JSON_SORT_KEYS'] = False
+app.config['CELERY_BROKER_URL'] = 'django://'
 app.secret_key = 'xxxrrr'
 
 session = {}
+
+import django
+django.setup()
+celery = Celery(
+    app.name, broker=app.config['CELERY_BROKER_URL'],
+    include=['mpweb_core.configure_settings']
+)
+celery.conf.update(app.config)
+celery.conf.update(
+    CELERY_TASK_RESULT_EXPIRES=3600,
+    CELERY_ACCEPT_CONTENT=['pickle', 'json', 'msgpack', 'yaml'],
+)
+
+@celery.task(ignore_result=True)
+def add(x, y):
+    return x + y
 
 def patched_finish(self):
     try:
@@ -78,6 +98,7 @@ def view(template):
 
 @app.route('/')
 def home():
+    #print(add.delay(4, 4))
     session.clear()
     stop_notebook()
     start_notebook()
