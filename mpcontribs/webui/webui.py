@@ -96,10 +96,14 @@ def view(template):
         )
     if mpfile is None:
         return render_template('home.html', alert='Choose an MPFile!', fmt=fmt)
-    return Response(stream_with_context(stream_template(
-        '{}.html'.format(template), fmt=fmt,
-        content=process_mpfile(StringIO(mpfile), fmt=fmt)
-    )))
+    try:
+        return Response(stream_with_context(stream_template(
+            '{}.html'.format(template), fmt=fmt,
+            content=process_mpfile(StringIO(mpfile), fmt=fmt)
+        )))
+    except:
+        pass
+
 
 @app.route('/')
 def home():
