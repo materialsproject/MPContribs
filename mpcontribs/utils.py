@@ -43,7 +43,6 @@ def submit_mpfile(path_or_mpfile, fmt='archieml'):
 
 def process_mpfile(path_or_mpfile, target=None, fmt='archieml'):
     try:
-        yield 'start processing MPFile ...<br>'
         if isinstance(path_or_mpfile, six.string_types) and \
            not os.path.isfile(path_or_mpfile):
             raise Exception('{} not found'.format(path_or_mpfile))
