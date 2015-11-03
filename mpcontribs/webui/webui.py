@@ -113,6 +113,8 @@ def home():
     session.clear()
     stop_notebook()
     start_notebook()
+    if os.path.exists(default_mpfile_path):
+        os.remove(default_mpfile_path)
     return render_template('home.html', session={'fmt': 'archieml'})
 
 @app.route('/load')
