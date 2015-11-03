@@ -23,6 +23,7 @@ Monochromator.Exit_Slit: 20µm
 Monochromator.Grating: 600l/mm
 
 {Datasource}
+work_dir: /Users/patrick/gitrepos/mp/MPContribs/mpcontribs/users/atn/test_files/vicalloy
 directory: Vicalloy/rawdata
 group_by: Z Y
 

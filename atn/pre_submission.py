@@ -8,16 +8,18 @@ import xas_process as xas_process
 from translate_vicalloy import get_translate
 #from translate_PyPt import get_translate
 
-def run(mpfile, work_dir):
+def run(mpfile):
     #print json.dumps(mpfile.document, indent=4)
     datasource = mpfile.document['general'].pop('Datasource')
-    subdir = os.path.abspath(os.path.join(work_dir, datasource['directory']))
+    subdir = os.path.abspath(os.path.join(
+        datasource['work_dir'], datasource['directory']
+    ))
 
     # TODO Potentially we have to insert a preprocessing step, probably in msp
     scandata_f = msp.read_scans(subdir, datacounter="Counter 1")
     scan_groups = scandata_f.groupby(datasource['group_by'].split())
     process_template = mpfile.document['general'].pop('process_template')
-    translate = get_translate(work_dir)
+    translate = get_translate(datasource['work_dir'])
     keys = scan_groups.groups.keys()
     keys.sort()
 
@@ -35,4 +37,4 @@ def run(mpfile, work_dir):
                 composition, xmcd_frame[['Energy', 'XAS', 'XMCD']],
                 '_'.join(['data', process_chain_name])
             )
-        print '{} done'.format(composition)
+        print '.',

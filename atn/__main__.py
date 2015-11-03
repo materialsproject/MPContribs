@@ -1,6 +1,6 @@
 import argparse, os
 from mpcontribs.io.archieml.mpfile import MPFile
-from pre_submission import run
+from pre_submission import *
 
 parser = argparse.ArgumentParser(
     description="""generate MPFile from directory of related XAS measurements"""
@@ -19,7 +19,7 @@ parser.add_argument(
 args = parser.parse_args()
 
 mpfile = MPFile.from_file(args.input_mpfile)
+run(mpfile)
 work_dir = os.path.dirname(os.path.realpath(args.input_mpfile))
-run(mpfile, work_dir)
 output_mpfile = os.path.join(work_dir, args.output_mpfile)
 mpfile.write_file(output_mpfile)
