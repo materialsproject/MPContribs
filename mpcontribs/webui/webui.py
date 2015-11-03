@@ -85,22 +85,23 @@ notebook_process = None
 
 @app.route('/view/<template>')
 def view(template):
-    fmt = session.get('fmt')
-    if os.path.exists(default_mpfile_path):
-      mpfile = codecs.open(default_mpfile_path, encoding='utf-8').read()
-    else:
-      mpfile = session.get('mpfile')
     if template not in ['graphs', 'index']:
         return render_template(
-            'home.html', fmt=fmt,
+            'home.html', session=session,
             alert='view endpoint {} not accepted!'.format(template)
         )
-    if mpfile is None:
-        return render_template('home.html', alert='Choose an MPFile!', fmt=fmt)
+    if os.path.exists(default_mpfile_path):
+        mpfile = codecs.open(default_mpfile_path, encoding='utf-8').read()
+    else:
+        mpfile = session.get('mpfile')
+        if mpfile is None:
+            return render_template(
+                'home.html', alert='Choose an MPFile!', session=session
+            )
     try:
         return Response(stream_with_context(stream_template(
-            '{}.html'.format(template), fmt=fmt,
-            content=process_mpfile(StringIO(mpfile), fmt=fmt)
+            '{}.html'.format(template), session=session,
+            content=process_mpfile(StringIO(mpfile), fmt=session['fmt'])
         )))
     except:
         pass
@@ -112,29 +113,32 @@ def home():
     session.clear()
     stop_notebook()
     start_notebook()
-    return render_template('home.html', fmt='archieml')
+    return render_template('home.html', session={'fmt': 'archieml'})
 
 @app.route('/load')
 def load():
-    mpfile, fmt = session.get('mpfile'), session.get('fmt')
+    mpfile = session.get('mpfile')
     if mpfile is None:
-        return render_template('home.html', alert='Choose an MPFile!', fmt=fmt)
+        return render_template(
+            'home.html', alert='Choose an MPFile!', session=session
+        )
     with codecs.open(default_mpfile_path, encoding='utf-8', mode='w') as f:
         f.write(mpfile)
-    return render_template('home.html', content={'aml': mpfile}, fmt=fmt)
+    return render_template('home.html', session=session)
 
 @app.route('/action', methods=['POST'])
 def action():
-    fmt = request.form.get('fmt')
+    session['fmt'] = request.form.get('fmt')
     mpfile = request.files.get('file').read().decode('utf-8-sig')
     if not mpfile:
         mpfile = request.form.get('mpfile')
         if not mpfile:
             mpfile = session.get('mpfile')
             if not mpfile:
-                return render_template('home.html', alert='Choose an MPFile!', fmt=fmt)
+                return render_template(
+                    'home.html', alert='Choose an MPFile!', session=session
+                )
     session['mpfile'] = mpfile
-    session['fmt'] = fmt
     if request.form['submit'] == 'Load MPFile':
         return redirect(url_for('load'))
     elif request.form['submit'] == 'View MPFile':
@@ -148,8 +152,8 @@ def action():
     elif request.form['submit'] == 'Contribute':
         try:
             return Response(stream_with_context(stream_template(
-                'contribute.html', fmt=fmt,
-                content=submit_mpfile(StringIO(mpfile), fmt=fmt)
+                'contribute.html', session=session,
+                content=submit_mpfile(StringIO(mpfile), fmt=session['fmt'])
             )))
         except:
             pass
