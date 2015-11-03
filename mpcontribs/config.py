@@ -23,3 +23,4 @@ csv_database = os.path.join(
 #SITE = 'https://www.materialsproject.org'
 SITE = 'http://127.0.0.1:8000'
 mp_id_pattern = re.compile('^(mp|por)-\d+$', re.IGNORECASE)
+default_mpfile_path = '/tmp/mpfile.txt'
