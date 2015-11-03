@@ -65,9 +65,7 @@ def process_mpfile(path_or_mpfile, target=None, fmt='archieml'):
         yield 'locally process contribution #{} ... '.format(idx)
         doc = cma.submit_contribution(mpfile_single, contributor) # does not use get_string
         cid = doc['_id']
-        yield 'OK.</br>'
-        time.sleep(1)
-        yield 'check consistency of contribution #{} ... '.format(idx)
+        yield 'check consistency ... '
         mpfile_single_cmp = MPFile.from_string(mpfile_single.get_string())
         if mpfile_single.document != mpfile_single_cmp.document:
             # compare json strings to find first inconsistency
@@ -77,16 +75,13 @@ def process_mpfile(path_or_mpfile, target=None, fmt='archieml'):
             ):
                 if a != b:
                     raise Exception('{} <====> {}'.format(a.strip(), b.strip()))
-        yield 'OK.</br>'
-        time.sleep(1)
         if target is not None:
             yield 'submit to MP ... '
             cid = target.submit_contribution(mpfile_single, fmt) # uses get_string
-            yield 'OK.</br>'
         cid_short = get_short_object_id(cid)
         mpfile_single.insert_id(mp_cat_id, cid)
         cid_shorts.append(cid_short)
-        yield 'build contribution #{} into {} ... '.format(cid_short, mp_cat_id)
+        yield 'build into {} ... '.format(mp_cat_id)
         if target is not None:
             url = target.build_contribution(cid)
             yield ("OK. <a href='{}/{}' class='btn btn-default btn-xs' " +
@@ -96,6 +91,7 @@ def process_mpfile(path_or_mpfile, target=None, fmt='archieml'):
             yield mcb.build(contributor, cid)
             yield 'OK.</br>'.format(idx, cid_short)
         mpfile.concat(mpfile_single)
+        time.sleep(.1)
     ncontribs = len(cid_shorts)
     #if target is not None and \
     #   isinstance(path_or_mpfile, six.string_types) and \
