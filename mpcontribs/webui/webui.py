@@ -1,6 +1,6 @@
 from __future__ import unicode_literals, print_function, absolute_import
 
-import json, os, socket, SocketServer, codecs
+import json, os, socket, SocketServer, codecs, time
 import sys, warnings, multiprocessing
 from IPython.terminal.ipapp import launch_new_instance
 from flask import Flask, render_template, request, Response
@@ -71,6 +71,7 @@ def stop_notebook():
     if notebook_process:
         notebook_process.terminate()
         notebook_process = None
+        time.sleep(1)
 
 def stream_template(template_name, **context):
     # http://stackoverflow.com/questions/13386681/streaming-data-with-python-and-flask
