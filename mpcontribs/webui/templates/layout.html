@@ -42,10 +42,10 @@
           <form action="/action" method=post enctype=multipart/form-data>
             <div class="col-md-4">
               <input type=file id=fileUpload name=file class="filestyle" data-iconName="glyphicon glyphicon-file"
-                     data-input="false" data-badge="false" data-buttonName="btn-info" data-buttonText="Choose MPFile ...">
+                     data-input="false" data-badge="false" data-buttonName="btn-info" data-buttonText="MPFile ...">
               <input type=hidden name=mpfile id=inputmpfile value=''>
-              {% if fmt %}
-              <input type=hidden name=fmt id=inputfmt value={{fmt|safe}}>
+              {% if "fmt" in session %}
+              <input type=hidden name=fmt id=inputfmt value={{session.fmt|safe}}>
               {% else %}
               <input type=hidden name=fmt id=inputfmt value=archieml>
               {% endif %}
@@ -59,7 +59,7 @@
             </div>
             <script type="text/javascript">
                 $(document.getElementById('fileUpload')).change(function () {
-                  var filename=$(this).val().replace(/^.*[\\\/]/, ''); 
+                  var filename=$(this).val().replace(/^.*[\\\/]/, '');
                   $(":file").filestyle('buttonText', filename);
                 });
                 var fmt_elem = document.getElementById('inputfmt');
