@@ -1,12 +1,13 @@
 from __future__ import unicode_literals, print_function, absolute_import
 
-import json, os, socket, SocketServer
+import json, os, socket, SocketServer, codecs
 import sys, warnings, multiprocessing
 from IPython.terminal.ipapp import launch_new_instance
 from flask import Flask, render_template, request, Response
 from flask import url_for, redirect, make_response, stream_with_context
 from celery import Celery
 from mpcontribs.utils import process_mpfile, submit_mpfile
+from mpcontribs.config import default_mpfile_path
 from StringIO import StringIO
 from mpweb_core import configure_settings
 
@@ -83,7 +84,11 @@ notebook_process = None
 
 @app.route('/view/<template>')
 def view(template):
-    mpfile, fmt = session.get('mpfile'), session.get('fmt')
+    fmt = session.get('fmt')
+    if os.path.exists(default_mpfile_path):
+      mpfile = codecs.open(default_mpfile_path, encoding='utf-8').read()
+    else:
+      mpfile = session.get('mpfile')
     if template not in ['graphs', 'index']:
         return render_template(
             'home.html', fmt=fmt,
@@ -109,6 +114,8 @@ def load():
     mpfile, fmt = session.get('mpfile'), session.get('fmt')
     if mpfile is None:
         return render_template('home.html', alert='Choose an MPFile!', fmt=fmt)
+    with codecs.open(default_mpfile_path, encoding='utf-8', mode='w') as f:
+        f.write(mpfile)
     return render_template('home.html', content={'aml': mpfile}, fmt=fmt)
 
 @app.route('/action', methods=['POST'])
