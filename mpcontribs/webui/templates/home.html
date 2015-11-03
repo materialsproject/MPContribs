@@ -3,6 +3,7 @@
 {% if fmt == "archieml" %}
 <link href="{{ url_for('static', filename='css/archieml.css') }}" media="screen, projection" rel="stylesheet" type="text/css" />
 <script src="{{ url_for('static', filename='js/archieml.js') }}"></script>
+{% if "aml" in content %}
 <link rel="stylesheet" href="https://rawgit.com/oreillymedia/thebe/master/static/thebe/site.css" type="text/css"/>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.6.0/codemirror.min.css" type="text/css"/>
 <script src="https://rawgit.com/oreillymedia/thebe/master/static/main-built.js" type="text/javascript" charset="utf-8"></script>
@@ -16,10 +17,18 @@ $(function(){
 </script>
 <div class="container">
   <pre data-executable='true'>
-z = "hello", 4+4
-print(z)
+%load_ext autoreload
+%autoreload 2
+from mpcontribs.io.{{ fmt }}.mpfile import MPFile
+from mpcontribs.users.atn.pre_submission import *
+mpfile = MPFile.from_file()
+  </pre>
+  <pre data-executable='true'>
+run(mpfile)
+mpfile.write_file()
   </pre>
 </div>
+{% endif %}
 <div class="sandbox">
   <div class="container"><br>
     <div class="row">
