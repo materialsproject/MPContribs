@@ -1,12 +1,12 @@
 {% extends "layout.html" %}
 {% block body %}
-{% if "fmt" in session and session.fmt == "archieml" %}
+{% if "archieml" in session.options %}
 <link href="{{ url_for('static', filename='css/archieml.css') }}" media="screen, projection" rel="stylesheet" type="text/css" />
 <script src="{{ url_for('static', filename='js/archieml.js') }}"></script>
-{% if "mpfile" in session %}
-<link rel="stylesheet" href="https://rawgit.com/oreillymedia/thebe/master/static/thebe/site.css" type="text/css"/>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.6.0/codemirror.min.css" type="text/css"/>
-<script src="https://rawgit.com/oreillymedia/thebe/master/static/main-built.js" type="text/javascript" charset="utf-8"></script>
+{% if "mpfile" in session and session.options|length == 2 %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/site.css') }}" type="text/css"/>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/codemirror.min.css') }}" type="text/css"/>
+<script src="{{ url_for('static', filename='js/main-built.js') }}" type="text/javascript" charset="utf-8"></script>
 <script>
 $(function(){
   var thebe = new Thebe({
@@ -17,9 +17,10 @@ $(function(){
 </script>
 <div class="container">
   <pre data-executable='true'>
+# pre-submission processing loaded below for project "{{ session.options[1] }}"
 # click "Load MPFile" to reload MPFile from ArchieML Sandbox
-from mpcontribs.io.{{ session.fmt }}.mpfile import MPFile
-from mpcontribs.users.atn.pre_submission import run
+from mpcontribs.io.{{ session.options[0] }}.mpfile import MPFile
+from mpcontribs.users.{{ session.options[1] }}.pre_submission import run
 mpfile = MPFile.from_file()
 run(mpfile)
 mpfile.write_file()

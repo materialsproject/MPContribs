@@ -1,6 +1,6 @@
 from __future__ import unicode_literals, print_function, absolute_import
 
-import json, os, socket, SocketServer, codecs, time
+import json, os, socket, SocketServer, codecs, time, pkgutil
 import sys, warnings, multiprocessing
 from IPython.terminal.ipapp import launch_new_instance
 from flask import Flask, render_template, request, Response
@@ -8,6 +8,7 @@ from flask import url_for, redirect, make_response, stream_with_context
 from celery import Celery
 from mpcontribs.utils import process_mpfile, submit_mpfile
 from mpcontribs.config import default_mpfile_path
+from mpcontribs import users as mpcontribs_users
 from StringIO import StringIO
 from mpweb_core import configure_settings
 
@@ -19,6 +20,8 @@ app.config['CELERY_BROKER_URL'] = 'django://'
 app.secret_key = 'xxxrrr'
 
 session = {}
+mod_iter = pkgutil.iter_modules(mpcontribs_users.__path__)
+projects = [ mod for imp, mod, ispkg in mod_iter if ispkg ]
 
 import django
 django.setup()
@@ -83,6 +86,16 @@ def stream_template(template_name, **context):
 
 notebook_process = None
 
+def reset_session():
+    global session
+    session.clear()
+    session['projects'] = projects
+    session['options'] = ["archieml"]
+    stop_notebook()
+    start_notebook()
+    if os.path.exists(default_mpfile_path):
+        os.remove(default_mpfile_path)
+
 @app.route('/view/<template>')
 def view(template):
     if template not in ['graphs', 'index']:
@@ -98,24 +111,20 @@ def view(template):
             return render_template(
                 'home.html', alert='Choose an MPFile!', session=session
             )
+    fmt = session['options'][0]
     try:
         return Response(stream_with_context(stream_template(
             '{}.html'.format(template), session=session,
-            content=process_mpfile(StringIO(mpfile), fmt=session['fmt'])
+            content=process_mpfile(StringIO(mpfile), fmt=fmt)
         )))
     except:
         pass
 
-
 @app.route('/')
 def home():
     #print(add.delay(4, 4))
-    session.clear()
-    stop_notebook()
-    start_notebook()
-    if os.path.exists(default_mpfile_path):
-        os.remove(default_mpfile_path)
-    return render_template('home.html', session={'fmt': 'archieml'})
+    reset_session()
+    return render_template('home.html', session=session)
 
 @app.route('/load')
 def load():
@@ -130,7 +139,8 @@ def load():
 
 @app.route('/action', methods=['POST'])
 def action():
-    session['fmt'] = request.form.get('fmt')
+    session['options'] = json.loads(request.form.get('options'))
+    fmt = session['options'][0]
     mpfile = request.files.get('file').read().decode('utf-8-sig')
     if not mpfile:
         mpfile = request.form.get('mpfile')
@@ -155,7 +165,7 @@ def action():
         try:
             return Response(stream_with_context(stream_template(
                 'contribute.html', session=session,
-                content=submit_mpfile(StringIO(mpfile), fmt=session['fmt'])
+                content=submit_mpfile(StringIO(mpfile), fmt=fmt)
             )))
         except:
             pass
