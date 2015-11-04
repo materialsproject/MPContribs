@@ -9,7 +9,7 @@ class MPFileCore(six.with_metaclass(ABCMeta, object)):
     """Abstract Base Class for representing a MP Contribution File"""
 
     @classmethod
-    def from_file(cls, filename_or_file=default_mpfile_path):
+    def from_file(cls, filename_or_file=default_mpfile_path.replace('.txt', '_in.txt')):
         """Reads a MPFile from a file.
 
         Args:
@@ -34,7 +34,7 @@ class MPFileCore(six.with_metaclass(ABCMeta, object)):
         mpfile.document.rec_update() # convert (most) OrderedDict's to RecursiveDict's
         return mpfile
 
-    def write_file(self, filename=default_mpfile_path, **kwargs):
+    def write_file(self, filename=default_mpfile_path.replace('.txt', '_out.txt'), **kwargs):
         """Writes MPFile to a file. The supported kwargs are the same as those
         for the MPFile.get_string method and are passed through directly."""
         with codecs.open(filename, encoding='utf-8', mode='w') as f:

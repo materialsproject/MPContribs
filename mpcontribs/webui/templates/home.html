@@ -17,10 +17,17 @@ $(function(){
 </script>
 <div class="container">
   <pre data-executable='true'>
-# pre-submission processing loaded below for project "{{ session.options[1] }}"
-# click "Load MPFile" to reload MPFile from ArchieML Sandbox
+# Pre-submission processing loaded below for project "{{ session.options[1] }}".
+# Click "Load MPFile" to reload MPFile from ArchieML Sandbox.
+%load_ext autoreload
+%autoreload 2
 from mpcontribs.io.{{ session.options[0] }}.mpfile import MPFile
 from mpcontribs.users.{{ session.options[1] }}.pre_submission import run
+  </pre>
+  <pre data-executable='true'>
+# Click "Run"/"Run Again"; file reading and writing is handled automatically.
+# The resulting output MPFile is used for "View MPFile/Graphs".
+# Start from scratch by clicking "Home".
 mpfile = MPFile.from_file()
 run(mpfile)
 mpfile.write_file()

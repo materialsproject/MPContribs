@@ -103,8 +103,9 @@ def view(template):
             'home.html', session=session,
             alert='view endpoint {} not accepted!'.format(template)
         )
-    if os.path.exists(default_mpfile_path):
-        mpfile = codecs.open(default_mpfile_path, encoding='utf-8').read()
+    output_mpfile_path = default_mpfile_path.replace('.txt', '_out.txt')
+    if os.path.exists(output_mpfile_path):
+        mpfile = codecs.open(output_mpfile_path, encoding='utf-8').read()
     else:
         mpfile = session.get('mpfile')
         if mpfile is None:
@@ -133,7 +134,8 @@ def load():
         return render_template(
             'home.html', alert='Choose an MPFile!', session=session
         )
-    with codecs.open(default_mpfile_path, encoding='utf-8', mode='w') as f:
+    input_mpfile_path = default_mpfile_path.replace('.txt', '_in.txt')
+    with codecs.open(input_mpfile_path, encoding='utf-8', mode='w') as f:
         f.write(mpfile)
     return render_template('home.html', session=session)
 
