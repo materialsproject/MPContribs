@@ -1,4 +1,5 @@
 import os, json, copy
+from tqdm import *
 from mpcontribs.io.core.utils import nest_dict, normalize_root_level
 import mspScan as msp
 from ALS_import import treat_xmcd
@@ -23,7 +24,7 @@ def run(mpfile):
     keys = scan_groups.groups.keys()
     keys.sort()
 
-    for g in keys:
+    for g in tqdm(keys, leave=True):
         # TODO: Group information is saved into the output. Rethink?
         composition = normalize_root_level(translate(g))[1]
         mpfile.document.rec_update(nest_dict(
@@ -37,4 +38,3 @@ def run(mpfile):
                 composition, xmcd_frame[['Energy', 'XAS', 'XMCD']],
                 '_'.join(['data', process_chain_name])
             )
-        print '.',
