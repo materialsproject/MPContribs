@@ -75,7 +75,7 @@ class MPFile(MPFileCore):
                 lines += csv_string.split('\n')
             else:
                 level, key = key
-                # truncate scope 
+                # truncate scope
                 level_reduction = bool(level < len(scope))
                 if level_reduction: del scope[level:]
                 # append scope and set delimiters
