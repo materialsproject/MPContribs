@@ -98,13 +98,8 @@ def reset_session():
       if os.path.exists(filepath):
         os.remove(filepath)
 
-@app.route('/view/<template>')
-def view(template):
-    if template not in ['graphs', 'index']:
-        return render_template(
-            'home.html', session=session,
-            alert='view endpoint {} not accepted!'.format(template)
-        )
+@app.route('/view')
+def view():
     output_mpfile_path = default_mpfile_path.replace('.txt', '_out.txt')
     if os.path.exists(output_mpfile_path):
         mpfile = codecs.open(output_mpfile_path, encoding='utf-8').read()
@@ -117,7 +112,7 @@ def view(template):
     fmt = session['options'][0]
     try:
         return Response(stream_with_context(stream_template(
-            '{}.html'.format(template), session=session,
+            'index.html', session=session,
             content=process_mpfile(StringIO(mpfile), fmt=fmt)
         )))
     except:
@@ -161,9 +156,7 @@ def action():
     if request.form['submit'] == 'Load MPFile':
         return redirect(url_for('load'))
     elif request.form['submit'] == 'View MPFile':
-        return redirect(url_for('view', template='index'))
-    elif request.form['submit'] == 'View Graphs':
-        return redirect(url_for('view', template='graphs'))
+        return redirect(url_for('view'))
     elif request.form['submit'] == 'Save MPFile':
         response = make_response(session['mpfile'])
         response.headers["Content-Disposition"] = "attachment; filename=mpfile.txt"
