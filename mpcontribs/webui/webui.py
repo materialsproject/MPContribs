@@ -93,8 +93,10 @@ def reset_session():
     session['options'] = ["archieml"]
     stop_notebook()
     start_notebook()
-    if os.path.exists(default_mpfile_path):
-        os.remove(default_mpfile_path)
+    for suffix in ['_in.txt', '_out.txt']:
+      filepath = default_mpfile_path.replace('.txt', suffix)
+      if os.path.exists(filepath):
+        os.remove(filepath)
 
 @app.route('/view/<template>')
 def view(template):
