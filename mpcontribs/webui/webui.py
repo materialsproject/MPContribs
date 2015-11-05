@@ -142,6 +142,9 @@ def load():
 @app.route('/action', methods=['POST'])
 def action():
     session['options'] = json.loads(request.form.get('options'))
+    thebe_str = request.form.get('thebe')
+    if thebe_str:
+        session['thebe'] = '\n'.join(json.loads(thebe_str))
     fmt = session['options'][0]
     mpfile = request.files.get('file').read().decode('utf-8-sig')
     if not mpfile:
