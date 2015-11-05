@@ -3,7 +3,7 @@
 {% if "archieml" in session.options %}
 <link href="{{ url_for('static', filename='css/archieml.css') }}" media="screen, projection" rel="stylesheet" type="text/css" />
 <script src="{{ url_for('static', filename='js/archieml.js') }}"></script>
-{% if "mpfile" in session and session.options|length == 2 %}
+{% if "mpfile" in session %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/site.css') }}" type="text/css"/>
 <link rel="stylesheet" href="{{ url_for('static', filename='css/codemirror.min.css') }}" type="text/css"/>
 <script src="{{ url_for('static', filename='js/main-built.js') }}" type="text/javascript" charset="utf-8"></script>
@@ -24,9 +24,14 @@ $(function(){
 %load_ext autoreload
 %autoreload 2
 from mpcontribs.io.{{ session.options[0] }}.mpfile import MPFile
-from mpcontribs.users.{{ session.options[1] }}.pre_submission import run
 mpfile = MPFile.from_file()
+{% if session.options|length == 2 %}
+# Load pre-submission processing of "{{ session.options[1] }}" project
+from mpcontribs.users.{{ session.options[1] }}.pre_submission import run
 run(mpfile)
+{% else %}
+# do some pre-submission processing with MPFile ...
+{% endif %}
 mpfile.write_file()
       </pre>
       {% else %}
@@ -34,16 +39,19 @@ mpfile.write_file()
       {% endif %}
     </div>
     <div class="col-md-5">
-      <p class="bg-info" style="padding:5px;">
-      - Editable and runable Jupyter/IPython cell on the left.<br>
-      - Cell contains code for pre-submission processing of <strong>{{ session.options[1] }}</strong> project.<br>
-      - Click <kbd>Load MPFile</kbd> to reload MPFile from ArchieML Sandbox.<br>
-      - Click <kbd>Run/Run Again</kbd>; file I/O is handled automatically.<br>
-      - Resulting output MPFile is used for <kbd>View MPFile/Graphs</kbd>.<br>
-      - Click <kbd>Save Cells</kbd> below to preserve your code changes.<br>
-      - Start from scratch by clicking <kbd>Home</kbd>.
-      </p>
-      <button id="savecells" type="button" class="btn btn-info">Save Cells</button>
+      <div class="alert alert-warning alert-dismissible" role="alert">
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+        - Editable and runable Jupyter/IPython cell on the left.<br>
+        - Use <kbd>Run / Run Again</kbd> or <code>shift + return</code> to execute.<br>
+        - MPFile I/O ishandled automatically by <code>from/write_file()</code>.<br>
+        - Resulting output MPFile is used for <kbd>View MPFile/Graphs</kbd>.<br>
+        - Click <kbd>Load MPFile</kbd> to reload MPFile from ArchieML Sandbox.<br>
+        - Click <kbd>Save Code</kbd> below to preserve your code changes.<br>
+        - Start from scratch by clicking <kbd>Home</kbd>.
+      </div>
+      <button id="savecells" type="button" class="btn btn-info">Save Code</button>
     </div>
   </div>
 </div>
