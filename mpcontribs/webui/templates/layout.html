@@ -22,96 +22,92 @@
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/archieml.css') }}"/>
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/site.css') }}"/>
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/codemirror.min.css') }}"/>
+    <style> body {padding-top: 80px;}</style>
     <link rel="icon" href="data:;base64,=">
-    <div class="container">
-      <a name="top"></a>
-      {% if alert %}
-      <div class="alert alert-warning alert-dismissible" role="alert">
-          <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-            <span aria-hidden="true">&times;</span>
-          </button>
-          {{ alert }}
-      </div>
-      {% endif %}
-      <div class="row">
-        <div class="col-md-1">
-          <a class="btn btn-primary" role="button" href="/">Home</a>
-        </div>
-        <div class="col-md-2">
-          <select id="selectpicker" data-placeholder="Set Options ..." style="width:120%;" multiple>
-            <optgroup label="format">
-              <option value="archieml">ArchieML</option>
-              <option value="custom">Custom</option>
-            </optgroup>
-            <optgroup label="projects">
-              {% for project in session.projects %}
-              <option value="{{ project }}">{{ project }}</option>
-              {% endfor %}
-            </optgroup>
-          </select>
-        </div>
-        <div class="col-md-8">
-          <form action="/action" method=post enctype=multipart/form-data>
-            <div class="col-md-3">
-              <input type=file id=fileUpload name=file class="filestyle" data-iconName="glyphicon glyphicon-file"
-                     data-input="false" data-badge="false" data-buttonName="btn-info" data-buttonText="MPFile ...">
-              <input type=hidden name=mpfile id=inputmpfile value=''>
-              <input type=hidden name=options id=inputopts value=''>
-              <input type=hidden name=thebe id=inputthebe value=''>
-            </div>
-            <div class="col-md-9">
-              <input id="loadbutton" type=submit name="submit" class="btn btn-info" value="Load MPFile">
-              <input type=submit name="submit" class="btn btn-info" value="View MPFile">
-              <input type=submit name="submit" class="btn btn-info" value="Save MPFile">
-              <input type=submit name="submit" class="btn btn-danger" value="Contribute">
-            </div>
-            <script type="text/javascript">
-              $('#selectpicker').chosen({ search_contains: true, max_selected_options: 2 });
-              // select options in selectpicker based on session.options
-              var options = {{ session.options|tojson|safe }}; // list of selected option values
-              for (var i=0, iLen=options.length; i<iLen; i++) {
-                $('#selectpicker option[value="' + options[i] + '"]').prop('selected', true);
-              }
-              $('#selectpicker').trigger('chosen:updated');
-              // initialize hidden input field for options
-              var opt_elem = document.getElementById('inputopts');
-              opt_elem.value = JSON.stringify(options);
-              // replace text of upload button with selected file name
-              $(document.getElementById('fileUpload')).change(function () {
-                var filename=$(this).val().replace(/^.*[\\\/]/, '');
-                $(":file").filestyle('buttonText', filename);
-              });
-              // on-change action for selectpicker
-              $('#selectpicker').on('change', function () {
-                // - update options hidden input field with current selection
-                // - en-/disable ArchieML sandbox and show/hide "Load MPFile"
-                options = [];
-                for (var i=0, iLen=this.options.length; i<iLen; i++) {
-                  var opt = this.options[i];
-                  if (opt.selected) {
-                    options.push(opt.value);
-                    if (opt.parentNode.label == 'format') {
-                      if (opt.value != 'archieml') {
-                        $("#loadbutton").addClass('disabled');
-                        $(".sandbox").hide();
-                      } else {
-                        $("#loadbutton").removeClass('disabled');
-                        $(".sandbox").show();
-                      }
+
+    <a name="top"></a>
+    {% if alert %}
+    <div class="alert alert-warning alert-dismissible" role="alert">
+      <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+        <span aria-hidden="true">&times;</span>
+      </button>
+      {{ alert }}
+    </div>
+    {% endif %}
+
+    <nav class="navbar navbar-default navbar-fixed-top">
+      <div class="container">
+        <ul class="nav navbar-nav navbar-left">
+          <li><a class="btn navbar-btn" href="/">Home</a></li>
+        </ul>
+        <form action="/action" method=post enctype=multipart/form-data class="navbar-form navbar-left">
+          <div class="form-group">
+            <select id="selectpicker" data-placeholder="Set Options ..." style="width:50%;" multiple>
+              <optgroup label="format">
+                <option value="archieml">ArchieML</option>
+                <option value="custom">Custom</option>
+              </optgroup>
+              <optgroup label="projects">
+                {% for project in session.projects %}
+                <option value="{{ project }}">{{ project }}</option>
+                {% endfor %}
+              </optgroup>
+            </select>
+            <input type=file id=fileUpload name=file class="filestyle navbar-btn" data-iconName="glyphicon glyphicon-file"
+                   data-input="false" data-badge="false" data-buttonName="btn-info" data-buttonText="MPFile ...">
+            <input type=hidden name=mpfile id=inputmpfile value=''>
+            <input type=hidden name=options id=inputopts value=''>
+            <input type=hidden name=thebe id=inputthebe value=''>
+            <input id="loadbutton" type=submit name="submit" class="btn btn-info navbar-btn" value="Load MPFile">
+            <input type=submit name="submit" class="btn btn-info navbar-btn" value="View MPFile">
+            <input type=submit name="submit" class="btn btn-info navbar-btn" value="Save MPFile">
+            <input type=submit name="submit" class="btn btn-danger navbar-btn" value="Contribute">
+          </div>
+          <script type="text/javascript">
+            $('#selectpicker').chosen({ search_contains: true, max_selected_options: 2 });
+            // select options in selectpicker based on session.options
+            var options = {{ session.options|tojson|safe }}; // list of selected option values
+            for (var i=0, iLen=options.length; i<iLen; i++) {
+              $('#selectpicker option[value="' + options[i] + '"]').prop('selected', true);
+            }
+            $('#selectpicker').trigger('chosen:updated');
+            // initialize hidden input field for options
+            var opt_elem = document.getElementById('inputopts');
+            opt_elem.value = JSON.stringify(options);
+            // replace text of upload button with selected file name
+            $(document.getElementById('fileUpload')).change(function () {
+              var filename=$(this).val().replace(/^.*[\\\/]/, '');
+              $(":file").filestyle('buttonText', filename);
+            });
+            // on-change action for selectpicker
+            $('#selectpicker').on('change', function () {
+              // - update options hidden input field with current selection
+              // - en-/disable ArchieML sandbox and show/hide "Load MPFile"
+              options = [];
+              for (var i=0, iLen=this.options.length; i<iLen; i++) {
+                var opt = this.options[i];
+                if (opt.selected) {
+                  options.push(opt.value);
+                  if (opt.parentNode.label == 'format') {
+                    if (opt.value != 'archieml') {
+                      $("#loadbutton").addClass('disabled');
+                      $(".sandbox").hide();
+                    } else {
+                      $("#loadbutton").removeClass('disabled');
+                      $(".sandbox").show();
                     }
                   }
                 }
-                opt_elem.value = JSON.stringify(options);
-              });
-            </script>
-          </form>
-        </div>
-        <div class="col-md-1">
-          <a class="btn btn-primary pull-right" role="button" href="/shutdown">Quit</a>
-        </div>
+              }
+              opt_elem.value = JSON.stringify(options);
+            });
+          </script>
+        </form>
+        <ul class="nav navbar-nav navbar-right">
+          <li><a class="btn navbar-btn" href="/shutdown">Quit</a></li>
+        </ul>
       </div>
-    </div>
-    <p></p>
+    </nav>
   </head>
   {% block body %}{% endblock %}
 </html>
