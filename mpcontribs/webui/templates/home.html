@@ -20,20 +20,27 @@ $(function(){
   <div class="row">
     <div id="thebe" class="col-md-7">
       {% if "thebe" not in session %}
+      {% if session.options|length == 2 %}
       <pre data-executable='true'>
 %load_ext autoreload
 %autoreload 2
 from mpcontribs.io.{{ session.options[0] }}.mpfile import MPFile
 mpfile = MPFile.from_file()
-{% if session.options|length == 2 %}
 # Load pre-submission processing of "{{ session.options[1] }}" project
 from mpcontribs.users.{{ session.options[1] }}.pre_submission import run
 run(mpfile)
-{% else %}
-# do some pre-submission processing with MPFile ...
-{% endif %}
 mpfile.write_file()
       </pre>
+      {% else %}
+      <pre data-executable='true'>
+%load_ext autoreload
+%autoreload 2
+from mpcontribs.io.{{ session.options[0] }}.mpfile import MPFile
+mpfile = MPFile.from_file()
+# do some pre-submission processing with MPFile ...
+mpfile.write_file()
+      </pre>
+      {% endif %}
       {% else %}
       <pre data-executable='true'>{{ session.thebe }}</pre>
       {% endif %}
