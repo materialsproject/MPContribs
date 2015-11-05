@@ -17,23 +17,53 @@ $(function(){
 });
 </script>
 <div class="container">
-  <pre data-executable='true'>
-# Pre-submission processing loaded below for project "{{ session.options[1] }}".
-# Click "Load MPFile" to reload MPFile from ArchieML Sandbox.
+  <div class="row">
+    <div id="thebe" class="col-md-7">
+      {% if "thebe" not in session %}
+      <pre data-executable='true'>
 %load_ext autoreload
 %autoreload 2
 from mpcontribs.io.{{ session.options[0] }}.mpfile import MPFile
 from mpcontribs.users.{{ session.options[1] }}.pre_submission import run
-  </pre>
-  <pre data-executable='true'>
-# Click "Run"/"Run Again"; file reading and writing is handled automatically.
-# The resulting output MPFile is used for "View MPFile/Graphs".
-# Start from scratch by clicking "Home".
 mpfile = MPFile.from_file()
 run(mpfile)
 mpfile.write_file()
-  </pre>
+      </pre>
+      {% else %}
+      <pre data-executable='true'>{{ session.thebe }}</pre>
+      {% endif %}
+    </div>
+    <div class="col-md-5">
+      <p class="bg-info" style="padding:5px;">
+      - Editable and runable Jupyter/IPython cell on the left.<br>
+      - Cell contains code for pre-submission processing of <strong>{{ session.options[1] }}</strong> project.<br>
+      - Click <kbd>Load MPFile</kbd> to reload MPFile from ArchieML Sandbox.<br>
+      - Click <kbd>Run/Run Again</kbd>; file I/O is handled automatically.<br>
+      - Resulting output MPFile is used for <kbd>View MPFile/Graphs</kbd>.<br>
+      - Click <kbd>Save Cells</kbd> below to preserve your code changes.<br>
+      - Start from scratch by clicking <kbd>Home</kbd>.
+      </p>
+      <button id="savecells" type="button" class="btn btn-info">Save Cells</button>
+    </div>
+  </div>
 </div>
+<script>
+  // save cell contents to hidden input field to preserve code changes
+  $('#savecells').on('click', function (e) {
+    var thebe_elem = document.getElementById('inputthebe');
+    var thebe_nodes = document.getElementsByTagName('pre');
+    var thebe_cells = [];
+    for (var i=0; i<thebe_nodes.length; i++) {
+      if (thebe_nodes[i].classList.contains("CodeMirror-line")) {
+        var div = document.createElement("div");
+        div.innerHTML = thebe_nodes[i].firstChild.innerHTML;
+        var text = div.textContent || div.innerText || "";
+        thebe_cells.push(text);
+      }
+    }
+    thebe_elem.value = JSON.stringify(thebe_cells);
+  })
+</script>
 {% endif %}
 <div class="sandbox">
   <div class="container"><br>
