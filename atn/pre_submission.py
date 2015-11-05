@@ -28,11 +28,11 @@ def run(mpfile):
         # TODO: Group information is saved into the output. Rethink?
         composition = normalize_root_level(translate(g))[1]
         mpfile.document.rec_update(nest_dict(
-            copy.deepcopy(process_template), [composition]
+            copy.deepcopy(process_template), [composition, 'process_chain']
         ))
         sg = scan_groups.get_group(g)
         for process_chain_name in process_template.keys():
-            scan_params = mpfile.document[composition][process_chain_name]
+            scan_params = mpfile.document[composition]['process_chain'][process_chain_name]
             xmcd_frame = treat_xmcd(sg, scan_params, xas_process.process_dict)
             mpfile.add_data_table(
                 composition, xmcd_frame[['Energy', 'XAS', 'XMCD']],
