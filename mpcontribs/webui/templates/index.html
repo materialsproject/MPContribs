@@ -26,7 +26,14 @@
   {% for c in content: %}
   {% if c is string %}
   <script>$("#output").append("{{ c|safe }}");</script>
-  {% else %}
+  {% elif c is mapping %}
+  {% for k,v in c.iteritems() %}
+  {{ k }}:</br>
+  {% for kk,vv in v.iteritems() %}
+  {{ kk }}</br>
+  {% endfor %}
+  {% endfor %}
+  {% elif c is sequence %}
   <script>
     var list = document.getElementById('gotolist');
     var entry = document.createElement('li');
