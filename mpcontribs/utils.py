@@ -51,6 +51,7 @@ def process_mpfile(path_or_mpfile, target=None, fmt='archieml'):
         full_name = pwd.getpwuid(os.getuid())[4]
         contributor = '{} <phuck@lbl.gov>'.format(full_name) # fake
         cma = ContributionMongoAdapter()
+        axes, ov_data = set(), dict()
         # split input MPFile into contributions: treat every mp_cat_id as separate DB insert
         mpfile, cid_shorts = MPFile.from_dict(), [] # output
         for idx, mpfile_single in enumerate(MPFile.from_file(path_or_mpfile).split()):
@@ -88,10 +89,33 @@ def process_mpfile(path_or_mpfile, target=None, fmt='archieml'):
                        "role='button' target='_blank'>View</a></br>").format(SITE, url)
             else:
                 mcb = MPContributionsBuilder(doc)
-                yield mcb.build(contributor, cid)
+                build_doc = mcb.build(contributor, cid)
+                yield build_doc
+                yield 'determine overview axes ... '
+                scope, local_axes = [], set()
+                for k,v in build_doc[3]['tree_data'].iterate():
+                    if v is None:
+                        scope = scope[:k[0]]
+                        scope.append(k[1])
+                    else:
+                        try:
+                            if k[0] == len(scope): scope.append(k[1])
+                            else: scope[-1] = k[1]
+                            vf = float(v) # trigger exception
+                            scope_str = '.'.join(scope)
+                            if idx == 0:
+                                axes.add(scope_str)
+                                ov_data[scope_str] = {cid_short: (vf, mp_cat_id)}
+                            else:
+                                local_axes.add(scope_str)
+                                ov_data[scope_str][cid_short] = (vf, mp_cat_id)
+                        except:
+                            pass
+                if idx > 0:
+                    axes.intersection_update(local_axes)
                 yield 'OK.</br>'.format(idx, cid_short)
             mpfile.concat(mpfile_single)
-            time.sleep(.1)
+            time.sleep(.01)
         ncontribs = len(cid_shorts)
         #if target is not None and \
         #   isinstance(path_or_mpfile, six.string_types) and \
@@ -101,6 +125,10 @@ def process_mpfile(path_or_mpfile, target=None, fmt='archieml'):
         if target is not None:
             yield '<strong>{} contributions successfully submitted.</strong>'.format(ncontribs)
         else:
+            for k in ov_data:
+                if k not in axes:
+                    ov_data.pop(k)
+            yield ov_data
             yield '<strong>{} contributions successfully processed.</strong>'.format(ncontribs)
     except:
         ex = sys.exc_info()[1]
