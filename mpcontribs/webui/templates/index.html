@@ -1,6 +1,6 @@
 {% extends "layout.html" %}
 {% block body %}
-<a name="top"></a>
+<a class="anchor" name="top"></a>
 
 <div class="container">
   <div class="alert alert-warning" role="alert" style="position:relative; height:150px; overflow:hidden;">
@@ -12,12 +12,15 @@
   <div class="container">
     <form class="navbar-form navbar-left">
       <div class="form-group">
-        <select id="gotolist" data-placeholder="Go to Contribution ..." style="width:120%;">
+        <select id="gotolist" data-placeholder="Go to Contribution ..." style="width:150px;">
           <option></option>
         </select>
-        <button id="toggle_graphs" type="button" class="btn btn-success">Show Graphs Only</button>
+        <button id="toggle_trees" type="button" class="btn btn-success">Toggle hData</button>
+        <button id="toggle_tables" type="button" class="btn btn-success">Toggle Tables</button>
+        <button id="toggle_graphs" type="button" class="btn btn-success">Toggle Graphs</button>
       </div>
     </form>
+    <p class="navbar-text navbar-right"><a href="#top" class="navbar-link">Back to Top</a></p>
   </div>
 </nav>
 
@@ -72,22 +75,13 @@ a.anchor { display: block; position: relative; top: -70px; visibility: hidden; }
 
   <div class="row">
     <div class="col-md-12">
-      <div name="main_header_all">
-        <h1>
-          {{ c[0] }} &raquo; {{ c[1] }} &raquo; #{{ c[2] }}
-          <a href="#top" class="btn btn-default btn-xs pull-right" role="button">back to top</a>
-        </h1>
-      </div>
-      <div name="main_header_graph" style="display:none">
-        <strong>#{{ c[2] }}</strong>
-        <a href="#top" class="btn btn-default btn-xs pull-right" role="button">back to top</a>
-      </div>
+      <h1>{{ c[0] }} &raquo; {{ c[1] }} &raquo; #{{ c[2] }}</h1>
     </div>
   </div>
 
   <div class="row" name="tree_row">
     <div class="col-md-12">
-      <a name="{{ c[2] }}_jump_tree"></a><h2>Hierarchical Data</h2>
+      <h2>Hierarchical Data</h2>
       {% if "tree_data" in c[3] %}
       <div id="{{ c[2] }}_tree"></div>
       <script type="text/javascript">
@@ -103,7 +97,7 @@ a.anchor { display: block; position: relative; top: -70px; visibility: hidden; }
 
   <div class="row" name="table_row">
     <div class="col-md-12">
-      <a name="{{ c[2] }}_jump_tables"></a><h2>Tables</h2>
+      <h2>Tables</h2>
       {% if 'tables' in c[3] %}
       {% for table_name,table_data in c[3]['tables'].iteritems() %}
       <p>
@@ -129,13 +123,10 @@ a.anchor { display: block; position: relative; top: -70px; visibility: hidden; }
     </div>
   </div>
 
-  <div class="row" name="main_header_all">
-    <div class="col-md-12">
-      <a name="{{ c[2] }}_jump_graphs"></a><h2>Graphs</h2>
-    </div>
+  <div class="row" name="graph_row">
+    <div class="col-md-12"><h2>Graphs</h2></div>
   </div>
-
-  <div class="row">
+  <div class="row" name="graph_row">
     {% if 'plotly_urls' in c[3] %}
     {% for url in c[3]['plotly_urls'] %}
     <div class="col-md-6">
@@ -156,20 +147,17 @@ a.anchor { display: block; position: relative; top: -70px; visibility: hidden; }
 {% endfor %}
 
 <script>
-  $('#toggle_graphs').on('click', function (e) {
-    var div_names = ["tree_row", "table_row", "main_header_graph", "main_header_all"];
+  function toggle_divs(div_names) {
     for (var i=0; i<div_names.length; i++) {
       var divs = document.getElementsByName(div_names[i]);
       for (var j=0; j<divs.length; j++) {
-        if ($(divs[j]).is(":visible")) {
-          $(divs[j]).hide();
-          this.innerHTML = "Show All";
-        } else {
-          $(divs[j]).show();
-          this.innerHTML = "Show Graphs Only";
-        }
+        if ($(divs[j]).is(":visible")) { $(divs[j]).hide(); }
+        else { $(divs[j]).show(); }
       }
     }
-  });
+  };
+  $('#toggle_trees').on('click', function () { toggle_divs(["tree_row"]); });
+  $('#toggle_tables').on('click', function () { toggle_divs(["table_row"]); });
+  $('#toggle_graphs').on('click', function () { toggle_divs(["graph_row"]); });
 </script>
 {% endblock %}
