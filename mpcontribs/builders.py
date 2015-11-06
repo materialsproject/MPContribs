@@ -139,11 +139,20 @@ class MPContributionsBuilder():
             if not table_name.startswith(mp_level01_titles[1]): continue
             table_columns, table_rows = None, None
             if isinstance(raw_data, dict):
-                table_columns = [ { 'title': k } for k in raw_data ]
+                #table_columns = [ { 'title': k } for k in raw_data ]
+                #table_rows = [
+                #    [ str(raw_data[d['title']][row_index]) for d in table_columns ]
+                #    for row_index in xrange(len(
+                #        raw_data[table_columns[0]['title']]
+                #    ))
+                #]
+                table_columns = [ { 'name': k, 'cell': 'string' } for k in raw_data ]
                 table_rows = [
-                    [ str(raw_data[d['title']][row_index]) for d in table_columns ]
-                    for row_index in xrange(len(
-                        raw_data[table_columns[0]['title']]
+                    dict(
+                        (d['name'], str(raw_data[d['name']][row_index]))
+                        for d in table_columns
+                    ) for row_index in xrange(len(
+                        raw_data[table_columns[0]['name']]
                     ))
                 ]
             elif isinstance(raw_data, list):
