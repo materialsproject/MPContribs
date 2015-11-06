@@ -1,5 +1,6 @@
 {% extends "layout.html" %}
 {% block body %}
+<a name="top"></a>
 <div class="container">
   <div class="row">
     <div class="col-md-12">
@@ -64,12 +65,32 @@
       <a name="{{ c[2] }}_jump_tree"></a><h2>Hierarchical Data</h2>
       {% if "tree_data" in c[3] %}
       <div id="{{ c[2] }}_tree"></div>
-      <script type="text/jsx">
-      /** @jsx React.DOM */
-      var lol = {{ c[3]['tree_data']|tojson|safe }};
-      React.renderComponent(
-          <JSONTree data={lol} />, document.getElementById('{{ c[2] }}_tree')
-      );
+      <script type="text/javascript">
+        window.options = {
+          showArrayIndex: false,
+          hyperlinks : {
+            enable : true,
+            keys: [],
+            target : '_blank'
+          },
+          bool : {
+            showText : true,
+            text : {
+              true : "true",
+              false : "false"
+            },
+            showImage : true,
+            img : {
+              true : 'css/true.png',
+              false : 'css/false.png'
+            }
+          }
+        };
+        (function (JsonHuman, crel, CodeMirror) {
+          "use strict";
+          var node = JsonHuman.format({{ c[3]['tree_data']|tojson|safe }}, window.options);
+          document.getElementById('{{ c[2] }}_tree').appendChild(node);
+        }(window.JsonHuman, window.crel, window.CodeMirror));
       </script>
       {% endif %}
     </div>
