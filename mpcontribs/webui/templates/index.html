@@ -21,6 +21,7 @@
 .affix { top: 68px; width:100%; z-index: 1000; }
 .navbar-form { padding-left: 0; }
 a.anchor { display: block; position: relative; top: -68px; visibility: hidden; }
+.backgrid .string-cell { text-align: center; }
 </style>
 
 <script>
@@ -39,7 +40,6 @@ a.anchor { display: block; position: relative; top: -68px; visibility: hidden; }
     }
   };
 </script>
-
 
 <div class="container">
   <div class="alert alert-warning" role="alert" style="position:relative; height:150px; overflow:hidden;">
@@ -102,24 +102,22 @@ a.anchor { display: block; position: relative; top: -68px; visibility: hidden; }
       <h2>Tables</h2>
       {% if 'tables' in c[3] %}
       {% for table_name,table_data in c[3]['tables'].iteritems() %}
-      <p>
-        <b>{{ table_name }}</b>
-        <button class="btn btn-primary btn-xs" type="button" data-toggle="collapse"
-            data-target="#{{ c[2] }}_{{ loop.index }}_collapse" aria-expanded="false"
-            aria-controls="{{ c[2] }}_{{ loop.index }}_collapse">
-          Collapse/Expand
-        </button>
-        <div class="collapse" id="{{ c[2] }}_{{ loop.index }}_collapse">
-          <table id="{{ c[2] }}_{{ loop.index }}_table" class="table"></table>
-          <script>
-          var table = {{ table_data|tojson|safe }};
-          $('#{{ c[2] }}_{{ loop.index }}_table').DataTable({
-            "data": table['rows'], "columns": table['columns'], "scrollX": true,
-            "scrollY": "300px", "scrollCollapse": true, "paging": false
-          });
-          </script>
-        </div>
-      </p>
+      <h3>{{ table_name }}</h3>
+      <div id="{{ c[2] }}_{{ loop.index }}_table"></div>
+      <script>
+        var table = {{ table_data|tojson|safe }};
+        var Row = Backbone.Model.extend({});
+        var Rows = Backbone.PageableCollection.extend({
+          model: Row,  state: { pageSize: 15 }, mode: "client"
+        });
+        var rows = new Rows(table['rows']);
+        var grid = new Backgrid.Grid({ columns: [{
+          name: "", cell: "select-row", headerCell: "select-all", renderable: false
+        }].concat(table['columns']), collection: rows });
+        $('#{{ c[2] }}_{{ loop.index }}_table').append(grid.render().el);
+        var paginator = new Backgrid.Extension.Paginator({ collection: rows });
+        $('#{{ c[2] }}_{{ loop.index }}_table').after(paginator.render().el);
+      </script>
       {% endfor %}
       {% endif %}
     </div>
