@@ -8,9 +8,16 @@
         <select id="gotolist" data-placeholder="Go to Contribution ..." style="width:200px;">
           <option></option>
         </select>
-        <button id="toggle_trees" type="button" class="btn btn-success">Toggle hData</button>
-        <button id="toggle_tables" type="button" class="btn btn-success">Toggle Tables</button>
-        <button id="toggle_graphs" type="button" class="btn btn-success">Toggle Graphs</button>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+        <label class="checkbox-inline">
+          <input id="toggle_trees" type="checkbox" checked data-toggle="toggle" data-on="h-Data" data-off="h-Data"  data-size="mini" data-width="80">
+        </label>
+        <label class="checkbox-inline">
+          <input id="toggle_tables" type="checkbox" checked data-toggle="toggle" data-on="Tables" data-off="Tables"  data-size="mini" data-width="80">
+        </label>
+        <label class="checkbox-inline">
+          <input id="toggle_graphs" type="checkbox" checked data-toggle="toggle" data-on="Graphs" data-off="Graphs" data-size="mini" data-width="80">
+        </label>
       </div>
     </form>
     <p class="navbar-text navbar-right"><a href="#top" class="navbar-link">Back to Top</a></p>
@@ -156,8 +163,8 @@ a.anchor { display: block; position: relative; top: -68px; visibility: hidden; }
       }
     }
   };
-  $('#toggle_trees').on('click', function () { toggle_divs(["tree_row"]); });
-  $('#toggle_tables').on('click', function () { toggle_divs(["table_row"]); });
-  $('#toggle_graphs').on('click', function () { toggle_divs(["graph_row"]); });
+  $('#toggle_trees').change(function () { toggle_divs(["tree_row"]); });
+  $('#toggle_tables').change(function () { toggle_divs(["table_row"]); });
+  $('#toggle_graphs').change(function () { toggle_divs(["graph_row"]); });
 </script>
 {% endblock %}
