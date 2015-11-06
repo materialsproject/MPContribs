@@ -1,18 +1,11 @@
 {% extends "layout.html" %}
 {% block body %}
-<a class="anchor" name="top"></a>
-
-<div class="container">
-  <div class="alert alert-warning" role="alert" style="position:relative; height:150px; overflow:hidden;">
-    <div id='output' style="position:absolute; bottom:0; width:100%;"></div>
-  </div>
-</div>
 
 <nav class="navbar navbar-default navbar-lower" role="navigation">
   <div class="container">
     <form class="navbar-form navbar-left">
       <div class="form-group">
-        <select id="gotolist" data-placeholder="Go to Contribution ..." style="width:150px;">
+        <select id="gotolist" data-placeholder="Go to Contribution ..." style="width:200px;">
           <option></option>
         </select>
         <button id="toggle_trees" type="button" class="btn btn-success">Toggle hData</button>
@@ -27,11 +20,11 @@
 <style>
 .affix { top: 68px; width:100%; z-index: 1000; }
 .navbar-form { padding-left: 0; }
-a.anchor { display: block; position: relative; top: -70px; visibility: hidden; }
+a.anchor { display: block; position: relative; top: -68px; visibility: hidden; }
 </style>
 
 <script>
-  $('.navbar-lower').affix({ offset: {top: 68} });
+  $('.navbar-lower').affix({ offset: {top: -5} });
   $('#gotolist').chosen({ search_contains: true });
   $(document).ready(function(){
     $('#gotolist').on('change', function() { location.href = this.value; });
@@ -46,6 +39,15 @@ a.anchor { display: block; position: relative; top: -70px; visibility: hidden; }
     }
   };
 </script>
+
+
+<div class="container">
+  <div class="alert alert-warning" role="alert" style="position:relative; height:150px; overflow:hidden;">
+    <div id='output' style="position:absolute; bottom:0; width:100%;"></div>
+  </div>
+</div>
+
+<a class="anchor" name="top"></a>
 
 {% for c in content: %}
 
