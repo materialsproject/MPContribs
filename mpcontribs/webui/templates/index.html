@@ -21,9 +21,10 @@
       </div>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
       <div class="form-group">
-        <select id="axespicker" data-placeholder="Select x-y-z Axes for Overview Graph ..." style="width:500px;" multiple>
+        <select id="axespicker" data-placeholder="Select x-y-z Axes for Overview Graph ..." style="width:400px;" multiple>
           <option></option>
         </select>
+        <button id="plot_ovdata" type="button" class="btn btn-primary btn-xs">Plot</button>
       </div>
     </form>
     <p class="navbar-text navbar-right"><a href="#top" class="navbar-link">Back to Top</a></p>
@@ -53,6 +54,26 @@ a.anchor { display: block; position: relative; top: -68px; visibility: hidden; }
       showImage : false
     }
   };
+  // http://stackoverflow.com/questions/1344500/efficient-way-to-insert-a-number-into-a-sorted-array-of-numbers
+  // adjusted for uniqueness
+  function insert(element, array) {
+    var loc = locationOf(element, array);
+    if (loc != null) array.splice(loc + 1, 0, element);
+    return array;
+  }
+  function locationOf(element, array, start, end) {
+    start = start || 0;
+    end = end || array.length;
+    var pivot = parseInt(start + (end - start) / 2, 10);
+    if (array[pivot] === element) return null;
+    if (end-start <= 1)
+      return array[pivot] > element ? pivot - 1 : pivot;
+    if (array[pivot] < element) {
+      return locationOf(element, array, pivot, end);
+    } else {
+      return locationOf(element, array, start, pivot);
+    }
+  }
 </script>
 
 <div class="container">
@@ -69,6 +90,7 @@ a.anchor { display: block; position: relative; top: -68px; visibility: hidden; }
 <script>$("#output").append("{{ c|safe }}");</script>
 
 {% elif c is mapping %}
+<input type=hidden name=ovdata id=inputovdata value=''>
 <script>
   var list = document.getElementById('axespicker');
   var entries = {{ c.keys()|tojson|safe }};
@@ -79,6 +101,30 @@ a.anchor { display: block; position: relative; top: -68px; visibility: hidden; }
     list.appendChild(entry);
   }
   $('#axespicker').trigger('chosen:updated');
+  var ovdata = document.getElementById('inputovdata');
+  ovdata.value = JSON.stringify({{ c|tojson|safe }});
+  $('#plot_ovdata').on('click', function() {
+    var axes = [];
+    var axes_select = document.getElementById('axespicker');
+    for (var i=0, iLen=axes_select.options.length; i<iLen; i++) {
+      var opt = axes_select.options[i];
+      if (opt.selected) { axes.push(opt.value); }
+    }
+    var ovdata = JSON.parse(document.getElementById('inputovdata').value);
+    var xValues = [], yValues = [], zValues = [];
+    for (var cid in ovdata[axes[2]]) {
+      var xValue = ovdata[axes[2]][cid][0];
+      insert(xValue, xValues);
+    }
+    console.log(xValues);
+    for (var cid in ovdata[axes[1]]) {
+      var yValue = ovdata[axes[1]][cid][0];
+      insert(yValue, yValues);
+    }
+    console.log(yValues);
+    // zValues = [ y0, y1, y2, ... ] with y_i = [ z0, z1, z2, ... ] for x0, x1, x2, ...
+    //console.log(ovdata[axes[0]]);
+  });
 </script>
 
 {% elif c is sequence %}
