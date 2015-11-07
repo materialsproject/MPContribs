@@ -43,14 +43,17 @@
     </div>
     {% endif %}
 
-    <nav class="navbar navbar-default navbar-fixed-top">
+    <nav class="navbar navbar-default navbar-fixed-top" style="background:url({{ url_for('static', filename='img/headerbg.png') }})">
       <div class="container">
-        <ul class="nav navbar-nav navbar-left">
-          <li><a class="btn navbar-btn" href="/">Home</a></li>
-        </ul>
+        <div class="navbar-header">
+          <a class="navbar-brand" href="/">
+            <img alt="Brand" src="{{ url_for('static', filename='img/mpcontribsheader.png') }}"
+                 height="38">
+          </a>
+        </div>
         <form action="/action" method=post enctype=multipart/form-data class="navbar-form navbar-left">
-          <div class="form-group">
-            <select id="selectpicker" data-placeholder="Set Options ..." style="width:50%;" multiple>
+          <div class="form-group" style="margin-left:100px;">
+            <select id="selectpicker" data-placeholder="Set Options ..." style="width:260px;" multiple>
               <optgroup label="format">
                 <option value="archieml">ArchieML</option>
                 <option value="custom">Custom</option>
@@ -61,15 +64,22 @@
                 {% endfor %}
               </optgroup>
             </select>
-            <input type=file id=fileUpload name=file class="filestyle navbar-btn" data-iconName="glyphicon glyphicon-file"
-                   data-input="false" data-badge="false" data-buttonName="btn-info" data-buttonText="MPFile ...">
-            <input type=hidden name=mpfile id=inputmpfile value=''>
-            <input type=hidden name=options id=inputopts value=''>
-            <input type=hidden name=thebe id=inputthebe value=''>
-            <input id="loadbutton" type=submit name="submit" class="btn btn-info navbar-btn" value="Load MPFile">
-            <input type=submit name="submit" class="btn btn-info navbar-btn" value="View MPFile">
-            <input type=submit name="submit" class="btn btn-info navbar-btn" value="Save MPFile">
-            <input type=submit name="submit" class="btn btn-danger navbar-btn" value="Contribute">
+            <div class="form-group" style="margin-left:20px;">
+              <input type=file id=fileUpload name=file class="navbar-btn">
+              <script>
+                $(":file").filestyle({
+                  iconName: "glyphicon glyphicon-file", input: false, badge: false,
+                  buttonName:"btn-info", buttonText:"MPFile ..."
+                });
+              </script>
+              <input type=hidden name=mpfile id=inputmpfile value=''>
+              <input type=hidden name=options id=inputopts value=''>
+              <input type=hidden name=thebe id=inputthebe value=''>
+              <input id="loadbutton" type=submit name="submit" class="btn btn-info navbar-btn" value="Load MPFile">
+              <input type=submit name="submit" class="btn btn-info navbar-btn" value="View MPFile">
+              <input type=submit name="submit" class="btn btn-info navbar-btn" value="Save MPFile">
+              <input type=submit name="submit" class="btn btn-danger navbar-btn" value="Contribute">
+            </div>
           </div>
           <script type="text/javascript">
             $('#selectpicker').chosen({ search_contains: true, max_selected_options: 2 });
@@ -84,8 +94,8 @@
             opt_elem.value = JSON.stringify(options);
             // replace text of upload button with selected file name
             $(document.getElementById('fileUpload')).change(function () {
-              var filename=$(this).val().replace(/^.*[\\\/]/, '');
-              $(":file").filestyle('buttonText', filename);
+              //var filename=$(this).val().replace(/^.*[\\\/]/, '');
+              $(":file").filestyle('buttonText', 'MPFile <span class="glyphicon glyphicon-ok" aria-hidden="true"></span>');
             });
             // on-change action for selectpicker
             $('#selectpicker').on('change', function () {
@@ -112,7 +122,11 @@
           </script>
         </form>
         <ul class="nav navbar-nav navbar-right">
-          <li><a class="btn navbar-btn" href="/shutdown">Quit</a></li>
+          <li>
+            <a class="btn btn-lg navbar-btn" href="/shutdown">
+              <span class="glyphicon glyphicon-off" aria-hidden="true" style="color:white"></span>
+            </a>
+          </li>
         </ul>
       </div>
     </nav>
