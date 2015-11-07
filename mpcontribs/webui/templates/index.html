@@ -83,6 +83,7 @@ a.anchor { display: block; position: relative; top: -68px; visibility: hidden; }
 </div>
 
 <a class="anchor" name="top"></a>
+<div id="ovdata_graph"></div>
 
 {% for c in content: %}
 
@@ -111,19 +112,21 @@ a.anchor { display: block; position: relative; top: -68px; visibility: hidden; }
       if (opt.selected) { axes.push(opt.value); }
     }
     var ovdata = JSON.parse(document.getElementById('inputovdata').value);
+    var xAxis = ovdata[axes[2]], yAxis = ovdata[axes[1]], zAxis = ovdata[axes[0]];
     var xValues = [], yValues = [], zValues = [];
-    for (var cid in ovdata[axes[2]]) {
-      var xValue = ovdata[axes[2]][cid][0];
-      insert(xValue, xValues);
+    for (var cid in xAxis) { insert(xAxis[cid][0], xValues); }
+    for (var cid in yAxis) { insert(yAxis[cid][0], yValues); }
+    for (var i=0, iLen=yValues.length; i<iLen; i++) { zValues[i] = []; }
+    for (var cid in zAxis) {
+      var xVal = xAxis[cid][0], yVal = yAxis[cid][0], zVal = zAxis[cid][0];
+      var xIdx = xValues.indexOf(xVal), yIdx = yValues.indexOf(yVal);
+      zValues[yIdx][xIdx] = zVal;
     }
-    console.log(xValues);
-    for (var cid in ovdata[axes[1]]) {
-      var yValue = ovdata[axes[1]][cid][0];
-      insert(yValue, yValues);
-    }
-    console.log(yValues);
-    // zValues = [ y0, y1, y2, ... ] with y_i = [ z0, z1, z2, ... ] for x0, x1, x2, ...
-    //console.log(ovdata[axes[0]]);
+    var data = [{ x: xValues, y: yValues, z: zValues, type: 'heatmap' }];
+    var elem = document.getElementById('ovdata_graph');
+    elem.style['width'] = '580px'; elem.style['height'] = "580px";
+    elem.style['margin-left'] = 'auto'; elem.style['margin-right'] = 'auto';
+    Plotly.newPlot('ovdata_graph', data);
   });
 </script>
 
