@@ -19,6 +19,12 @@
           <input id="toggle_graphs" type="checkbox" checked data-toggle="toggle" data-on="Graphs" data-off="Graphs" data-size="mini" data-width="80">
         </label>
       </div>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      <div class="form-group">
+        <select id="axespicker" data-placeholder="Select x-y-z Axes for Overview Graph ..." style="width:500px;" multiple>
+          <option></option>
+        </select>
+      </div>
     </form>
     <p class="navbar-text navbar-right"><a href="#top" class="navbar-link">Back to Top</a></p>
   </div>
@@ -32,6 +38,7 @@ a.anchor { display: block; position: relative; top: -68px; visibility: hidden; }
 </style>
 
 <script>
+  $('#axespicker').chosen({ search_contains: true, max_selected_options: 3 });
   $('.navbar-lower').affix({ offset: {top: -5} });
   $('#gotolist').chosen({ search_contains: true });
   $(document).ready(function(){
@@ -62,12 +69,17 @@ a.anchor { display: block; position: relative; top: -68px; visibility: hidden; }
 <script>$("#output").append("{{ c|safe }}");</script>
 
 {% elif c is mapping %}
-{% for k,v in c.iteritems() %}
-{{ k }}:</br>
-{% for kk,vv in v.iteritems() %}
-{{ kk }}</br>
-{% endfor %}
-{% endfor %}
+<script>
+  var list = document.getElementById('axespicker');
+  var entries = {{ c.keys()|tojson|safe }};
+  for (var i=0; i<entries.length; ++i) {
+    var entry = document.createElement('option');
+    entry.value = entries[i];
+    entry.innerHTML = entries[i];
+    list.appendChild(entry);
+  }
+  $('#axespicker').trigger('chosen:updated');
+</script>
 
 {% elif c is sequence %}
 <script>
