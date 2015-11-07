@@ -26,9 +26,12 @@ def run(mpfile):
 
     for g in tqdm(keys, leave=True):
         # TODO: Group information is saved into the output. Rethink?
-        composition = normalize_root_level(translate(g))[1]
+        comp, sx, sy = translate(g)
+        composition = normalize_root_level(comp)[1]
+        process_template_copy = copy.deepcopy(process_template)
+        process_template_copy['position'] = {'x': sx, 'y': sy}
         mpfile.document.rec_update(nest_dict(
-            copy.deepcopy(process_template), [composition, 'process_chain']
+            process_template_copy, [composition, 'process_chain']
         ))
         sg = scan_groups.get_group(g)
         for process_chain_name in process_template.keys():

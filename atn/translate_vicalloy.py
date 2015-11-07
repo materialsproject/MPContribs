@@ -28,6 +28,10 @@ def get_translate(workdir=None):
         Co = Co_concI(sample_x,sample_y)[0]/100.
         Fe = Fe_concI(sample_x,sample_y)[0]/100.
         V  = V_concI(sample_x,sample_y)[0]/100.
-        return "Fe{:.2f}Co{:.2f}V{:.2f}".format(Fe,Co,V)
+        return (
+            "Fe{:.2f}Co{:.2f}V{:.2f}".format(Fe,Co,V),
+            sample_x, sample_y
+        )
+
 
     return translate
