@@ -9,7 +9,7 @@ import xas_process as xas_process
 from translate_vicalloy import get_translate
 #from translate_PyPt import get_translate
 
-def run(mpfile):
+def run(mpfile, nmax=None):
     #print json.dumps(mpfile.document, indent=4)
     datasource = mpfile.document['general'].pop('Datasource')
     subdir = os.path.abspath(os.path.join(
@@ -24,7 +24,7 @@ def run(mpfile):
     keys = scan_groups.groups.keys()
     keys.sort()
 
-    for g in tqdm(keys, leave=True):
+    for i,g in enumerate(tqdm(keys, leave=True)):
         # TODO: Group information is saved into the output. Rethink?
         comp, sx, sy = translate(g)
         composition = normalize_root_level(comp)[1]
@@ -41,3 +41,5 @@ def run(mpfile):
                 composition, xmcd_frame[['Energy', 'XAS', 'XMCD']],
                 '_'.join(['data', process_chain_name])
             )
+        if nmax is not None and i > nmax:
+          break
