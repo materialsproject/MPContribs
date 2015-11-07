@@ -198,8 +198,7 @@ a.anchor { display: block; position: relative; top: -68px; visibility: hidden; }
       <div id="{{ c[2] }}_{{ loop.index }}_graph" style="width:580px;height:580px;"></div>
       <script>
           var data = {{ url|tojson|safe }};
-          var elem = document.getElementById("{{ c[2] }}_{{ loop.index }}_graph");
-          Plotly.plot(elem, data[0], data[1]);
+          Plotly.newPlot("{{ c[2] }}_{{ loop.index }}_graph", data[0], data[1]);
       </script>
     </div>
     {% endfor %}
