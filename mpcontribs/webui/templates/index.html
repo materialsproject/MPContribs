@@ -142,21 +142,29 @@ a.anchor { display: block; position: relative; top: -120px; visibility: hidden; 
     }
     var ovdata = JSON.parse(document.getElementById('inputovdata').value);
     var xAxis = ovdata[axes[2]], yAxis = ovdata[axes[1]], zAxis = ovdata[axes[0]];
-    var xValues = [], yValues = [], zValues = [];
+    var xValues = [], yValues = [], zValues = [], text = [];
     for (var cid in xAxis) { insert(xAxis[cid][0], xValues); }
     for (var cid in yAxis) { insert(yAxis[cid][0], yValues); }
-    for (var i=0, iLen=yValues.length; i<iLen; i++) { zValues[i] = []; }
+    for (var i=0, iLen=yValues.length; i<iLen; i++) { zValues[i] = []; text[i] = []; }
     for (var cid in zAxis) {
       var xVal = xAxis[cid][0], yVal = yAxis[cid][0], zVal = zAxis[cid][0];
       var xIdx = xValues.indexOf(xVal), yIdx = yValues.indexOf(yVal);
       zValues[yIdx][xIdx] = zVal;
+      text[yIdx][xIdx] = zAxis[cid][1] + ' ' + cid;
     }
-    var data = [{ x: xValues, y: yValues, z: zValues, type: 'heatmap' }];
+    var data = [{ x: xValues, y: yValues, z: zValues, text: text, type: 'heatmap' }];
     var elem = document.getElementById('ovdata_graph');
     elem.style['width'] = '580px'; elem.style['height'] = "580px";
     elem.style['margin-left'] = 'auto'; elem.style['margin-right'] = 'auto';
     Plotly.newPlot('ovdata_graph', data);
     location.href = '#top';
+    $('#ovdata_graph').bind('plotly_click', function(event, data) {
+      for(var i=0; i<data.points.length; i++){
+        var pn = data.points[i].pointNumber;
+        var tx = data.points[i].data.text;
+        location.href = '#cid' + tx[pn[0]][pn[1]].split(" ")[1];
+      }
+    });
   });
 </script>
 
