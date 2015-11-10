@@ -52,8 +52,10 @@ class MPResterBase(object):
         url = self.preamble + sub_url
         try:
             if self.session.cookies.get('csrftoken') is None:
+                from django.core.urlresolvers import reverse
                 uri = urlparse.urlparse(self.preamble)
-                domain = '{uri.scheme}://{uri.netloc}/'.format(uri=uri)
+                domain = '{uri.scheme}://{uri.netloc}'.format(uri=uri)
+                domain += reverse('index')
                 self.session.get(domain)
             headers = {"X-CSRFToken": self.session.cookies.get('csrftoken')}
             response = self.session.post(url, data=payload, headers=headers) \
