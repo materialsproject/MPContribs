@@ -7,7 +7,6 @@ from django.template import RequestContext
 from mpweb_core.connector import ConnectorBase
 from bson.objectid import ObjectId
 from mpweb_core import mapi_func
-from test_site.settings import APPS
 
 class Connector(ConnectorBase):
     def connect(self):
@@ -24,7 +23,7 @@ def index(request):
     from django.core.urlresolvers import reverse
     from .urls import urlpatterns
     urls = [ reverse(url.name) for url in urlpatterns[1:] ]
-    ctx = RequestContext(request, {'apps': APPS})
+    ctx = RequestContext(request)
     return render_to_response("mpcontribs_rest_index.html", locals(), ctx)
 
 @mapi_func(supported_methods=["GET"], requires_api_key=True)

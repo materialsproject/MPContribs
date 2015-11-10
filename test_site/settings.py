@@ -50,11 +50,6 @@ INSTALLED_APPS = (
     'kombu.transport.django',
 )
 
-APPS = [
-    app.replace('.', '/') for app in INSTALLED_APPS
-    if 'django' not in app and 'mpweb_core' not in app
-]
-
 MIDDLEWARE_CLASSES = (
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',

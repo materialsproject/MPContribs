@@ -1,6 +1,5 @@
 """This module provides the views for the explorer interface."""
 
-from test_site.settings import APPS
 from django.shortcuts import render_to_response
 from django.template import RequestContext
 from mpcontribs.rest.rester import MPContribsRester
@@ -16,7 +15,7 @@ def index(request):
                 collection='compositions', projection={'_id': 1}
             )
         ]
-    ctx = RequestContext(request, {'apps': APPS})
+    ctx = RequestContext(request)
     return render_to_response("mpcontribs_explorer_index.html", locals(), ctx)
 
 def composition(request, composition):
@@ -29,7 +28,7 @@ def composition(request, composition):
             )[0].iteritems() if project != '_id'
             for cid in contribs
         ]
-    ctx = RequestContext(request, {'apps': APPS})
+    ctx = RequestContext(request)
     return render_to_response("mpcontribs_explorer_index.html", locals(), ctx)
 
 def contribution(request, composition, project, cid):
@@ -44,7 +43,7 @@ def contribution(request, composition, project, cid):
         material['pretty_formula'] = composition
     else:
         material = {k: composition for k in ['pretty_formula']}
-    ctx = RequestContext(request, {'material': jsanitize(material), 'apps': APPS})
+    ctx = RequestContext(request, {'material': jsanitize(material)})
     return render_to_response("mpcontribs_explorer_composition.html", locals(), ctx)
 
 # Instead of
