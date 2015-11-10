@@ -1,7 +1,6 @@
 import json
 import logging
 from urllib import unquote
-from test_site.settings import APPS
 from django.shortcuts import render_to_response, redirect
 from django.http import HttpResponseServerError
 from django.template import RequestContext
@@ -15,7 +14,6 @@ logger = logging.getLogger('mpweb_core.' + __name__)
 
 def index(request):
     ctx = RequestContext(request)
-    ctx.update({'apps': APPS})
     return render_to_response("index.html", locals(), ctx)
 
 @require_http_methods(["GET", "POST"])
@@ -31,7 +29,6 @@ def dashboard(request):
         except Exception, e:
             return HttpResponseServerError(str(e))
     ctx = RequestContext(request)
-    ctx.update({'apps': APPS})
     return render_to_response("dashboard.html", locals(), ctx)
 
 @login_required
@@ -58,5 +55,4 @@ def register(request):
             u.save()
             return redirect(next)
     ctx = RequestContext(request)
-    ctx.update({'apps': APPS})
     return render_to_response('register.html', locals(), ctx)
