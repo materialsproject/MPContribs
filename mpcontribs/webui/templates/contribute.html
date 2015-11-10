@@ -1,19 +1,37 @@
 {% extends "layout.html" %}
 {% block body %}
-<div class="container">
-  <div class="row">
-    <div class="col-md-12">
-      <input type="button" value="Cancel" class="btn btn-warning" onclick="stopLoad()" />
-      <script>
-        function stopLoad() {
-          if (navigator.appName == 'Microsoft Internet Explorer') {
-            document.execCommand('Stop');
-          } else { window.stop(); }
-          alert('submission process aborted!');
-        }
-      </script>
-    </div>
+
+<nav class="navbar navbar-default navbar-lower" role="navigation">
+  <div class="container">
+    <form class="navbar-form navbar-left">
+      <div class="form-group" style="position:relative; left:20px; margin-left:15px;">
+        <select id="gotolist" data-placeholder="Select DB ..." style="width:200px;">
+          <option></option>
+        </select>
+        <button id="go_contribute" type="button" class="btn btn-primary btn-sm">Go!</button>
+        <input type="button" value="Cancel" class="btn btn-warning btn-sm" onclick="stopLoad()" />
+      </div>
+    </form>
   </div>
+</nav>
+
+<style>
+.affix { top: 68px; width:100%; z-index: 1000; }
+.navbar-form { padding-left: 0; }
+</style>
+
+<script>
+  $('.navbar-lower').affix({ offset: {top: -5} });
+  $('#gotolist').chosen({ search_contains: true });
+  function stopLoad() {
+    if (navigator.appName == 'Microsoft Internet Explorer') {
+      document.execCommand('Stop');
+    } else { window.stop(); }
+    alert('submission process aborted!');
+  }
+</script>
+
+<div class="container">
   <div class="row">
     <div class="col-md-12">
       <div id='output' class="alert alert-warning alert-dismissible" role="alert"></div>
@@ -23,4 +41,5 @@
   <script>$("#output").append("{{ c|safe }}");</script>
   {% endfor %}
 </div>
+
 {% endblock %}
