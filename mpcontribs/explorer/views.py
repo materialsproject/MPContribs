@@ -11,7 +11,6 @@ def get_endpoint():
 def index(request):
     API_KEY = request.user.api_key
     ENDPOINT = request.build_absolute_uri(get_endpoint())
-    print ENDPOINT
     with MPContribsRester(API_KEY, endpoint=ENDPOINT) as mpr:
         urls = [
             request.path + doc['_id']
