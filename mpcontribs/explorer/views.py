@@ -3,11 +3,15 @@
 from django.shortcuts import render_to_response
 from django.template import RequestContext
 from mpcontribs.rest.rester import MPContribsRester
-from mpcontribs.config import SITE
-ENDPOINT = '/'.join([SITE, 'mpcontribs', 'rest'])
+
+def get_endpoint():
+    from django.core.urlresolvers import reverse
+    return reverse('mpcontribs_rest_index')[:-1]
 
 def index(request):
     API_KEY = request.user.api_key
+    ENDPOINT = request.build_absolute_uri(get_endpoint())
+    print ENDPOINT
     with MPContribsRester(API_KEY, endpoint=ENDPOINT) as mpr:
         urls = [
             request.path + doc['_id']
@@ -20,6 +24,7 @@ def index(request):
 
 def composition(request, composition):
     API_KEY = request.user.api_key
+    ENDPOINT = request.build_absolute_uri(get_endpoint())
     with MPContribsRester(API_KEY, endpoint=ENDPOINT) as mpr:
         urls = [
             '/'.join([request.path, project, cid])
@@ -35,6 +40,7 @@ def contribution(request, composition, project, cid):
     if request.user.is_authenticated():
         material = {}
         API_KEY = request.user.api_key
+        ENDPOINT = request.build_absolute_uri(get_endpoint())
         with MPContribsRester(API_KEY, endpoint=ENDPOINT) as mpr:
             material['contributed_data'] = mpr.query_contributions(
                 criteria={'_id': composition}, collection='compositions',
