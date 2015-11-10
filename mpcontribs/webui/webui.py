@@ -100,17 +100,20 @@ def reset_session():
       if os.path.exists(filepath):
         os.remove(filepath)
 
-@app.route('/view')
-def view():
+def read_mpfile_to_view():
     output_mpfile_path = default_mpfile_path.replace('.txt', '_out.txt')
     if os.path.exists(output_mpfile_path):
-        mpfile = codecs.open(output_mpfile_path, encoding='utf-8').read()
+        return codecs.open(output_mpfile_path, encoding='utf-8').read()
     else:
-        mpfile = session.get('mpfile')
-        if mpfile is None:
-            return render_template(
-                'home.html', alert='Choose an MPFile!', session=session
-            )
+        return session.get('mpfile')
+
+@app.route('/view')
+def view():
+    mpfile = read_mpfile_to_view()
+    if mpfile is None:
+        return render_template(
+            'home.html', alert='Choose an MPFile!', session=session
+        )
     fmt = session['options'][0]
     try:
         return Response(stream_with_context(stream_template(
@@ -138,6 +141,24 @@ def load():
         f.write(mpfile)
     return render_template('home.html', session=session)
 
+@app.route('/contribute')
+def contribute():
+    # if not api_key or site in session
+    return render_template('contribute.html', session=session)
+    # if POST request
+    mpfile = read_mpfile_to_view()
+    if mpfile is None:
+        return render_template(
+            'home.html', alert='Choose an MPFile!', session=session
+        )
+    #try:
+    #    return Response(stream_with_context(stream_template(
+    #        'contribute.html', session=session,
+    #        content=submit_mpfile(StringIO(mpfile), fmt=fmt) # TODO api_key, site
+    #    )))
+    #except:
+    #    pass
+
 @app.route('/action', methods=['POST'])
 def action():
     session['options'] = json.loads(request.form.get('options'))
@@ -164,13 +185,7 @@ def action():
         response.headers["Content-Disposition"] = "attachment; filename=mpfile.txt"
         return response
     elif request.form['submit'] == 'Contribute':
-        try:
-            return Response(stream_with_context(stream_template(
-                'contribute.html', session=session,
-                content=submit_mpfile(StringIO(mpfile), fmt=fmt)
-            )))
-        except:
-            pass
+        return redirect(url_for('contribute'))
 
 @app.route('/shutdown', methods=['GET', 'POST'])
 def shutdown():
