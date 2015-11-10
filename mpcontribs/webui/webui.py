@@ -50,9 +50,11 @@ def patched_finish(self):
 
 SocketServer.StreamRequestHandler.finish = patched_finish
 
+processes = {'NotebookProcess': None}
+
 class NotebookProcess(multiprocessing.Process):
     def __init__(self):
-        super(NotebookProcess, self).__init__(name='notebook_process')
+        super(NotebookProcess, self).__init__(name='NotebookProcess')
 
     def run(self):
         warnings.filterwarnings("ignore", module = "zmq.*")
@@ -63,18 +65,20 @@ class NotebookProcess(multiprocessing.Process):
         sys.argv.append('--NotebookApp.allow_origin="*"')
         launch_new_instance()
 
-def start_notebook():
-    global notebook_process
-    if not notebook_process:
-        notebook_process = NotebookProcess()
-        notebook_process.start()
+def start_processes():
+    global processes
+    for process_name in processes.keys():
+        if not processes[process_name]:
+            processes[process_name] = globals()[process_name]()
+            processes[process_name].start()
 
-def stop_notebook():
-    global notebook_process
-    if notebook_process:
-        notebook_process.terminate()
-        notebook_process = None
-        time.sleep(1)
+def stop_processes():
+    global processes
+    for process_name in processes.keys():
+        if processes[process_name]:
+            processes[process_name].terminate()
+            processes[process_name] = None
+            time.sleep(1)
 
 def stream_template(template_name, **context):
     # http://stackoverflow.com/questions/13386681/streaming-data-with-python-and-flask
@@ -84,15 +88,13 @@ def stream_template(template_name, **context):
     rv = t.stream(context)
     return rv
 
-notebook_process = None
-
 def reset_session():
     global session
     session.clear()
     session['projects'] = projects
     session['options'] = ["archieml"]
-    stop_notebook()
-    start_notebook()
+    stop_processes()
+    start_processes()
     for suffix in ['_in.txt', '_out.txt']:
       filepath = default_mpfile_path.replace('.txt', suffix)
       if os.path.exists(filepath):
@@ -172,7 +174,7 @@ def action():
 
 @app.route('/shutdown', methods=['GET', 'POST'])
 def shutdown():
-    stop_notebook()
+    stop_processes()
     func = request.environ.get('werkzeug.server.shutdown')
     if func is None:
         raise RuntimeError('Not running with the Werkzeug Server')
