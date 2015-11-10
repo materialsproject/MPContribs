@@ -8,6 +8,8 @@
   </center>
 </nav>
 {% endif %}
+{% url 'index' as index_url %}
+{% url 'register' as register_url %}
 <nav class="navbar navbar-inverse">
   <div class="navbar-inner">
      <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
@@ -16,19 +18,14 @@
       <span class="icon-bar"></span>
     </a>
     <div class="nav-collapse">
-      <a class="brand" href="/"><img src="{% static 'logo.png' %}"></a>
+      <a class="brand" href="{{ index_url }}"><img src="{% static 'logo.png' %}"></a>
       <ul class="nav pull-right" role="navigation">
-        <li>
-          <a href="/">Home</a>
-        </li>
-        {% for app_url in apps %}
-        <li><a href="/{{ app_url }}">{{ app_url }} </a></li>
-        {% endfor %}
+        <li><a href="{{ index_url }}">Home</a></li>
         {% if user.is_authenticated %}
-        <li><a href="/dashboard" data-icon="&gt;" class="icon"> Dashboard</a></li>
-        <li>{% browserid_logout text='Logout' %}</li>
+        <li><a href="{% url 'dashboard' %}" data-icon="&gt;" class="icon"> Dashboard</a></li>
+        <li>{% browserid_logout text='Logout' next=index_url %}</li>
         {% else %}
-        <li>{% browserid_login text='Login' %}</li>
+        <li>{% browserid_login text='Login' next=register_url %}</li>
         {% endif %}
       </ul>
     </div>

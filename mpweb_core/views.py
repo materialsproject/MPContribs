@@ -7,6 +7,7 @@ from django.template import RequestContext
 from django.views.decorators.http import require_http_methods
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import ensure_csrf_cookie
+from django.core.urlresolvers import reverse
 
 logger = logging.getLogger('mpweb_core.' + __name__)
 
@@ -38,9 +39,9 @@ def register(request):
     email = request.user.email
     username = request.user.username
     u = RegisteredUser.objects.get(username=username)
-    next = unquote(request.GET.get('next', '/'))
-    if next == '/register':
-        next = '/'
+    next = unquote(request.GET.get('next', reverse('index')))
+    if next == reverse('register'):
+        next = reverse('index')
     if request.method == "GET":
         if u.is_registered:
             return redirect(next)

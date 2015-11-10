@@ -21,5 +21,5 @@ urlpatterns = [
     url(r'^mpcontribs/rest/', include('mpcontribs.rest.urls')),
     url(r'^mpcontribs/explorer/', include('mpcontribs.explorer.urls')),
     url(r'^admin/', include(admin.site.urls)),
-    url(r'', include('mpweb_core.urls')),
+    url(r'^mpweb_core/', include('mpweb_core.urls')),
 ]
