@@ -31,6 +31,7 @@
   }
 </script>
 
+{% if content %}
 <div class="container">
   <div class="row">
     <div class="col-md-12">
@@ -41,5 +42,6 @@
   <script>$("#output").append("{{ c|safe }}");</script>
   {% endfor %}
 </div>
+{% endif %}
 
 {% endblock %}
