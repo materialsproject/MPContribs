@@ -9,9 +9,12 @@ from bson.objectid import ObjectId
 from mpweb_core import mapi_func
 
 class Connector(ConnectorBase):
-    def connect(self):
-        super(Connector, self).connect()
-        self.contribs_db = self.get_database('contribs')
+    def connect(self, **kwargs):
+        super(Connector, self).connect(**kwargs)
+        self.contribs_db = self.default_db
+        db_type = kwargs.get('db_type')
+        if db_type is not None:
+            self.contribs_db = self.get_database(db_type)
         from mpcontribs.rest.adapter import ContributionMongoAdapter
         self.contrib_ad = ContributionMongoAdapter(self.contribs_db)
         from mpcontribs.builders import MPContributionsBuilder
@@ -27,7 +30,7 @@ def index(request):
     return render_to_response("mpcontribs_rest_index.html", locals(), ctx)
 
 @mapi_func(supported_methods=["GET"], requires_api_key=True)
-def check_contributor(request, mdb=None):
+def check_contributor(request, db_type=None, mdb=None):
     """check whether user is in contrib(utor) group and return info."""
     is_contrib = request.user.groups.filter(name='contrib').exists()
     contributor = '{} {}'.format(request.user.first_name, request.user.last_name)
@@ -37,7 +40,7 @@ def check_contributor(request, mdb=None):
     }}
 
 @mapi_func(supported_methods=["POST", "GET"], requires_api_key=True)
-def submit_contribution(request, mdb=None):
+def submit_contribution(request, db_type=None, mdb=None):
     """Submits a MPFile with a single contribution."""
     if not request.user.groups.filter(name='contrib').exists():
         raise PermissionDenied("MPFile submission open only to contributors.")
@@ -57,7 +60,7 @@ def submit_contribution(request, mdb=None):
     return {"valid_response": True, 'response': str(cid)}
 
 @mapi_func(supported_methods=["POST", "GET"], requires_api_key=True)
-def build_contribution(request, mdb=None):
+def build_contribution(request, db_type=None, mdb=None):
     """Builds a single contribution into according material/composition"""
     if not request.user.groups.filter(name='contrib').exists():
         raise PermissionDenied("MPFile submission open only to contributors.")
@@ -71,7 +74,7 @@ def build_contribution(request, mdb=None):
     return {"valid_response": True, 'response': url}
 
 @mapi_func(supported_methods=["POST", "GET"], requires_api_key=True)
-def query_contributions(request, mdb=None):
+def query_contributions(request, db_type=None, mdb=None):
     """Query the contributions collection"""
     criteria = json.loads(request.POST.get('criteria', '{}'))
     collection = request.POST.get('collection', 'contributions')
@@ -87,7 +90,7 @@ def query_contributions(request, mdb=None):
     return {"valid_response": True, "response": list(results)}
 
 @mapi_func(supported_methods=["POST", "GET"], requires_api_key=True)
-def delete_contributions(request, mdb=None):
+def delete_contributions(request, db_type=None, mdb=None):
     """Delete a list of contributions"""
     if not request.user.is_staff:
         raise PermissionDenied("contributions deletion open only to staff right now.")
@@ -114,7 +117,7 @@ def delete_contributions(request, mdb=None):
     return {"valid_response": True, "response": results}
 
 @mapi_func(supported_methods=["POST", "GET"], requires_api_key=True)
-def update_collaborators(request, mdb=None):
+def update_collaborators(request, db_type=None, mdb=None):
     """Update the list of collaborators"""
     from mpweb_core.models import RegisteredUser
     if not request.user.is_staff:
