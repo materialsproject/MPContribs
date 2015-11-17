@@ -69,7 +69,7 @@ g_connections = Connections()
 
 class ConnectorBase(six.with_metaclass(ABCMeta, object)):
     """database access (overwrite self.connect)"""
-    def __init__(self, user=None):
+    def __init__(self, user=None, **kwargs):
         """
         :param user: Django User object
         """
@@ -89,7 +89,7 @@ class ConnectorBase(six.with_metaclass(ABCMeta, object)):
             self.user = get_anon_user()
             self.username = 'anonymous'
         # Connect to DBs
-        self.connect()
+        self.connect(**kwargs)
 
     def get_registered_user(self, user):
         try:
@@ -119,7 +119,7 @@ class ConnectorBase(six.with_metaclass(ABCMeta, object)):
         config = self._get_config(name)
         return g_connections.from_config(config)
 
-    def connect(self):
+    def connect(self, **kwargs):
         """Connect to standard set of databases. Optionally override in
         derived class named "Connector" to connect to own databases (mostly
         useful for custom REST interfaces). Define or import "Connector" class
@@ -127,4 +127,11 @@ class ConnectorBase(six.with_metaclass(ABCMeta, object)):
         try:
             self.default_db = self.get_database('default')
         except:
-            self.default_db = None
+            from models import DBConfig
+            dbconf = DBConfig(
+                release=self.release, db_type='default',
+                config="host: localhost\ndb: mpcontribs\nport: 27017"
+            )
+            dbconf.save()
+            self.default_db = self.get_database('default')
+            print self.default_db
