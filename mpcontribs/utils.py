@@ -2,17 +2,16 @@ from __future__ import unicode_literals, print_function
 import os, re, pwd, six, time, json, sys
 from mpcontribs.io.core.recdict import RecursiveDict
 from mpcontribs.io.core.utils import nest_dict, get_short_object_id
-from mpcontribs.config import SITE
 from mpcontribs.rest.rester import MPContribsRester
 from mpcontribs.rest.adapter import ContributionMongoAdapter
 from mpcontribs.builders import MPContributionsBuilder
 from importlib import import_module
 
-ENDPOINT = '/'.join([SITE, 'mpcontribs', 'rest'])
-API_KEY = os.environ.get('MAPI_KEY_LOC')
-
-def submit_mpfile(path_or_mpfile, fmt='archieml'):
-    with MPContribsRester(API_KEY, endpoint=ENDPOINT) as mpr:
+def submit_mpfile(path_or_mpfile, api_key, site, dbtype='default', fmt='archieml'):
+    endpoint = '/'.join([site, 'mpcontribs', 'rest'])
+    yield '{} / {} / {}'.format(api_key, endpoint, dbtype)
+    return
+    with MPContribsRester(api_key, endpoint=endpoint) as mpr:
         try:
             yield 'DB connection? ' # also checks internet connection
             ncontribs = sum(1 for contrib in mpr.query_contributions(contributor_only=True))

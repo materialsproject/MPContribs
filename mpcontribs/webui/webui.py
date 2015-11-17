@@ -93,6 +93,7 @@ def reset_session():
     session.clear()
     session['projects'] = projects
     session['options'] = ["archieml"]
+    session['contribute'] = {}
     stop_processes()
     start_processes()
     for suffix in ['_in.txt', '_out.txt']:
@@ -141,23 +142,30 @@ def load():
         f.write(mpfile)
     return render_template('home.html', session=session)
 
-@app.route('/contribute')
+@app.route('/contribute', methods=['GET', 'POST'])
 def contribute():
-    # if not api_key or site in session
-    return render_template('contribute.html', session=session)
-    # if POST request
-    mpfile = read_mpfile_to_view()
-    if mpfile is None:
-        return render_template(
-            'home.html', alert='Choose an MPFile!', session=session
-        )
-    #try:
-    #    return Response(stream_with_context(stream_template(
-    #        'contribute.html', session=session,
-    #        content=submit_mpfile(StringIO(mpfile), fmt=fmt) # TODO api_key, site
-    #    )))
-    #except:
-    #    pass
+    if request.method == 'GET':
+        return render_template('contribute.html', session=session)
+    elif request.method == 'POST':
+        session['contribute'] = request.form
+        for k,v in session['contribute'].iteritems():
+            if not v:
+                return render_template('contribute.html', session=session,
+                                       missing='{} not set!'.format(k))
+        mpfile = read_mpfile_to_view()
+        if mpfile is None:
+            return render_template(
+                'home.html', alert='Choose an MPFile!', session=session
+            )
+        #try:
+        fmt = session['options'][0]
+        return Response(stream_with_context(stream_template(
+            'contribute.html', session=session, content=submit_mpfile(
+                StringIO(mpfile), api_key=session['contribute']['apikey'],
+                site=session['contribute']['site'], fmt=fmt
+            ))))
+        #except:
+        #    pass
 
 @app.route('/action', methods=['POST'])
 def action():
