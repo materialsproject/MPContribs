@@ -85,7 +85,8 @@ def process_mpfile(path_or_mpfile, target=None, fmt='archieml'):
             if target is not None:
                 url = target.build_contribution(cid)
                 yield ("OK. <a href='{}/{}' class='btn btn-default btn-xs' " +
-                       "role='button' target='_blank'>View</a></br>").format(SITE, url)
+                       "role='button' target='_blank'>View</a></br>").format(
+                           target.preamble, url)
             else:
                 mcb = MPContributionsBuilder(doc)
                 build_doc = mcb.build(contributor, cid)
