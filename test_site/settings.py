@@ -113,7 +113,11 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/1.8/howto/static-files/
 
 STATIC_URL = '/static/'
-STATIC_ROOT = '/tmp/static/'
+
+from tempfile import gettempdir
+STATIC_ROOT = os.path.join(gettempdir(), 'static')
+if not os.path.exists(STATIC_ROOT):
+    os.mkdir(STATIC_ROOT)
 
 LOGGING = {
     'version': 1,
