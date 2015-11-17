@@ -1,5 +1,6 @@
 from __future__ import unicode_literals, print_function
 import os, re
+from tempfile import gettempdir
 
 indent_symbol = '>'
 min_separator_length = 3 # minimum separator length to avoid collision w/ '>>'
@@ -23,4 +24,4 @@ csv_database = os.path.join(
 #SITE = 'https://www.materialsproject.org'
 SITE = 'http://127.0.0.1:8000'
 mp_id_pattern = re.compile('^(mp|por)-\d+$', re.IGNORECASE)
-default_mpfile_path = '/tmp/mpfile.txt'
+default_mpfile_path = os.path.join(gettempdir(), 'mpfile.txt')
