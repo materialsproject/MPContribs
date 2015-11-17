@@ -3,13 +3,28 @@
 
 <nav class="navbar navbar-default navbar-lower" role="navigation">
   <div class="container">
-    <form class="navbar-form navbar-left">
-      <div class="form-group" style="position:relative; left:20px; margin-left:15px;">
-        <select id="gotolist" data-placeholder="Select DB ..." style="width:200px;">
+    <form action="/contribute" method=post enctype=multipart/form-data class="navbar-form navbar-left">
+      <div class="form-group">
+        <select id="siteselect" data-placeholder="Select Site ..." style="width:150px;">
           <option></option>
+          <option value="http://localhost:5000/test_site">Local Test Site</option>
+          <option value="https://www.materialsproject.org" disabled>Materials Project</option>
         </select>
-        <button id="go_contribute" type="button" class="btn btn-primary btn-sm">Go!</button>
-        <input type="button" value="Cancel" class="btn btn-warning btn-sm" onclick="stopLoad()" />
+        <select id="dbselect" data-placeholder="Select DB ..." style="width:150px;">
+          <option></option>
+          <option value="default">default</option>
+          <option value="contribs">contribs</option>
+        </select>
+        <input type="text" class="form-control" name=apikey id=inputapikey placeholder="Insert API Key ...">
+        <input type=hidden name=site id=inputsite value=''>
+        <input type=hidden name=dbtype id=inputdbtype value=''>
+        <input type=submit name="submit" class="btn btn-primary navbar-btn" value="Go!">
+        {% if missing %}<code>{{ missing }}</code>{% endif %}
+      </div>
+    </form>
+    <form class="navbar-form navbar-right">
+      <div class="form-group">
+        <input type="button" value="Cancel" class="btn btn-warning" onclick="stopLoad()"/>
       </div>
     </form>
   </div>
@@ -22,13 +37,20 @@
 
 <script>
   $('.navbar-lower').affix({ offset: {top: -5} });
-  $('#gotolist').chosen({ search_contains: true });
+  $('#siteselect').chosen({ search_contains: true, disable_search_threshold: 10 });
+  $('#dbselect').chosen({ search_contains: true, disable_search_threshold: 10 });
   function stopLoad() {
     if (navigator.appName == 'Microsoft Internet Explorer') {
       document.execCommand('Stop');
     } else { window.stop(); }
     alert('submission process aborted!');
   }
+  $('#siteselect').chosen().change(function () {
+    document.getElementById('inputsite').value = this.value;
+  });
+  $('#dbselect').chosen().change(function () {
+    document.getElementById('inputdbtype').value = this.value;
+  });
 </script>
 
 {% if content %}
