@@ -9,11 +9,9 @@ from importlib import import_module
 
 def submit_mpfile(path_or_mpfile, api_key, site, dbtype='default', fmt='archieml'):
     endpoint = '/'.join([site, 'mpcontribs', 'rest'])
-    yield '{} / {} / {}'.format(api_key, endpoint, dbtype)
-    return
-    with MPContribsRester(api_key, endpoint=endpoint) as mpr:
+    with MPContribsRester(api_key, endpoint=endpoint, dbtype=dbtype) as mpr:
         try:
-            yield 'DB connection? ' # also checks internet connection
+            yield 'Connection to DB {} at {}? '.format(mpr.dbtype, mpr.preamble) # also checks internet connection
             ncontribs = sum(1 for contrib in mpr.query_contributions(contributor_only=True))
             yield 'OK ({} contributions).</br> '.format(ncontribs)
             time.sleep(1)
