@@ -157,15 +157,16 @@ def contribute():
             return render_template(
                 'home.html', alert='Choose an MPFile!', session=session
             )
-        #try:
         fmt = session['options'][0]
-        return Response(stream_with_context(stream_template(
-            'contribute.html', session=session, content=submit_mpfile(
-                StringIO(mpfile), api_key=session['contribute']['apikey'],
-                site=session['contribute']['site'], fmt=fmt
-            ))))
-        #except:
-        #    pass
+        try:
+            return Response(stream_with_context(stream_template(
+                'contribute.html', session=session, content=submit_mpfile(
+                    StringIO(mpfile), api_key=session['contribute']['apikey'],
+                    site=session['contribute']['site'],
+                    dbtype=session['contribute']['dbtype'], fmt=fmt
+                ))))
+        except:
+            pass
 
 @app.route('/action', methods=['POST'])
 def action():

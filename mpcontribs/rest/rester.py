@@ -4,6 +4,18 @@ from mpweb_core.rester import MPResterBase, MPResterError
 
 class MPContribsRester(MPResterBase):
     """convenience functions to interact with MPContribs REST interface"""
+    def __init__(self, api_key=None,
+                 endpoint="https://www.materialsproject.org/mpcontribs/rest",
+                 dbtype='default'):
+        super(MPContribsRester, self).__init__(
+          api_key=api_key, endpoint=endpoint
+        )
+        self.dbtype = dbtype
+
+    def _make_request(self, sub_url, payload=None, method="GET"):
+        return super(MPContribsRester, self)._make_request(
+          '/'.join([sub_url, self.dbtype]), payload=payload, method=method
+        )
 
     def check_contributor(self):
         return self._make_request('/check_contributor')
