@@ -147,7 +147,10 @@ def contribute():
     if request.method == 'GET':
         return render_template('contribute.html', session=session)
     elif request.method == 'POST':
-        session['contribute'] = request.form
+        for k in request.form:
+            v = session['contribute'].get(k)
+            if not v or (request.form[k] and request.form[k] != v):
+                session['contribute'][k] = request.form[k]
         for k,v in session['contribute'].iteritems():
             if not v:
                 return render_template('contribute.html', session=session,
