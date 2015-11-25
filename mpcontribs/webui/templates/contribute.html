@@ -10,21 +10,30 @@
           <option value="http://localhost:5000/test_site">Local Test Site</option>
           <option value="https://www.materialsproject.org" disabled>Materials Project</option>
         </select>
+        <span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
+      </div>
+      <div class="form-group" style="position:relative; margin-left:50px;">
         <select id="dbselect" data-placeholder="Select DB ..." style="width:150px;">
           <option></option>
           <option value="default">default</option>
           <option value="contribs">contribs</option>
         </select>
-        <input type="text" class="form-control" name=apikey id=inputapikey placeholder="Insert API Key ...">
-        <input type=hidden name=site id=inputsite value=''>
-        <input type=hidden name=dbtype id=inputdbtype value=''>
-        <input type=submit name="submit" class="btn btn-primary navbar-btn" value="Go!">
-        {% if missing %}<code>{{ missing }}</code>{% endif %}
+        <span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
       </div>
-    </form>
-    <form class="navbar-form navbar-right">
-      <div class="form-group">
+      <div class="form-group" style="position:relative; margin-left:50px;">
+        <input type="text" class="form-control" name=apikey id=inputapikey placeholder="Insert API Key ...">
+        <a id=dlnk href="http://localhost:5000/test_site/mpweb_core/dashboard" target="_blank">
+          <span class="glyphicon glyphicon-question-sign" aria-hidden="true"></span>
+        </a>
+      </div>
+      <input type=hidden name=site id=inputsite value=''>
+      <input type=hidden name=dbtype id=inputdbtype value=''>
+      <div class="form-group" style="position:relative; margin-left:50px;">
+        <input type=submit name="submit" class="btn btn-primary navbar-btn" value="Go!">
         <input type="button" value="Cancel" class="btn btn-warning navbar-btn" onclick="stopLoad()"/>
+      </div>
+      <div class="form-group" style="position:relative; margin-left:50px;">
+        {% if missing %}<code>{{ missing }}</code>{% endif %}
       </div>
     </form>
   </div>
@@ -61,6 +70,8 @@
   // on-change action for select option
   $('#siteselect').chosen().change(function () {
     document.getElementById('inputsite').value = this.value;
+    var dlnk = document.getElementById('dlnk');
+    dlnk.href = this.value + '/mpweb_core/dashboard';
   });
   $('#dbselect').chosen().change(function () {
     document.getElementById('inputdbtype').value = this.value;
