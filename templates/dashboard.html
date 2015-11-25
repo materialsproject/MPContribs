@@ -1,5 +1,6 @@
 {% extends "base/header_footer.html" %}
 {% block content %}
+{% if user.is_registered %}
 <p>Current user: {{ user.email }}</p>
 <p>
 <button id="keygen">Generate API Key</button>
@@ -33,4 +34,7 @@ $("#keygen").click(function(){
   });
 });
 </script>
+{% else %}
+<p>Please log in!</p>
+{% endif %}
 {% endblock %}
