@@ -1,5 +1,13 @@
 {% extends "../../mpweb_core/templates/base/header_footer.html" %}
 {% block content %}
+{% if alert %}
+<div class="alert alert-warning alert-dismissible" role="alert">
+  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+    <span aria-hidden="true">&times;</span>
+  </button>
+  {{ alert }}
+</div>
+{% endif %}
 <ul>
   {% for link in urls %}
   <li style="list-style-type:none">
