@@ -9,30 +9,36 @@ def get_endpoint():
     return reverse('mpcontribs_rest_index')[:-1]
 
 def index(request):
-    API_KEY = request.user.api_key
-    ENDPOINT = request.build_absolute_uri(get_endpoint())
-    with MPContribsRester(API_KEY, endpoint=ENDPOINT) as mpr:
-        urls = [
-            request.path + doc['_id']
-            for doc in mpr.query_contributions(
-                collection='compositions', projection={'_id': 1}
-            )
-        ]
     ctx = RequestContext(request)
+    if request.user.is_authenticated():
+        API_KEY = request.user.api_key
+        ENDPOINT = request.build_absolute_uri(get_endpoint())
+        with MPContribsRester(API_KEY, endpoint=ENDPOINT) as mpr:
+            urls = [
+                request.path + doc['_id']
+                for doc in mpr.query_contributions(
+                    collection='compositions', projection={'_id': 1}
+                )
+            ]
+    else:
+        ctx.update({'alert': 'Please log in!'})
     return render_to_response("mpcontribs_explorer_index.html", locals(), ctx)
 
 def composition(request, composition):
-    API_KEY = request.user.api_key
-    ENDPOINT = request.build_absolute_uri(get_endpoint())
-    with MPContribsRester(API_KEY, endpoint=ENDPOINT) as mpr:
-        urls = [
-            '/'.join([request.path, project, cid])
-            for project, contribs in mpr.query_contributions(
-                criteria={'_id': composition}, collection='compositions'
-            )[0].iteritems() if project != '_id'
-            for cid in contribs
-        ]
     ctx = RequestContext(request)
+    if request.user.is_authenticated():
+        API_KEY = request.user.api_key
+        ENDPOINT = request.build_absolute_uri(get_endpoint())
+        with MPContribsRester(API_KEY, endpoint=ENDPOINT) as mpr:
+            urls = [
+                '/'.join([request.path, project, cid])
+                for project, contribs in mpr.query_contributions(
+                    criteria={'_id': composition}, collection='compositions'
+                )[0].iteritems() if project != '_id'
+                for cid in contribs
+            ]
+    else:
+        ctx.update({'alert': 'Please log in!'})
     return render_to_response("mpcontribs_explorer_index.html", locals(), ctx)
 
 def contribution(request, composition, project, cid):
