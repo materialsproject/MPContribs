@@ -8,11 +8,68 @@
   {{ alert }}
 </div>
 {% endif %}
-<ul>
-  {% for link in urls %}
-  <li style="list-style-type:none">
-    <a href="{{ link }}">{{ link }}</a>
-  </li>
+<div class="container">
+  <div class="row">
+    Explore
+    <a class="btn btn-primary" href="materials">Materials</a> or
+    <a class="btn btn-primary" href="compositions">Compositions</a>?
+  </div>
+  {% if collection %}
+  <div class="row" style="margin-top:20px;">
+    Make one or more selections:
+    <select id="identifiers_list" data-placeholder="Select {{ collection|slice:":-1" }} ..." style="width:200px;">
+      <option></option>
+    </select>
+    AND
+    <select id="projects_list" data-placeholder="Select project ..." style="width:200px;">
+      <option></option>
+    </select>
+    AND
+    <select id="cids_list" data-placeholder="Select contribution ID ..." style="width:200px;">
+      <option></option>
+    </select>
+  </div>
+  <script>
+    $('#identifiers_list').chosen({ search_contains: true, allow_single_deselect: true });
+    $('#projects_list').chosen({ search_contains: true, allow_single_deselect: true });
+    $('#cids_list').chosen({ search_contains: true, allow_single_deselect: true });
+  </script>
+  {% if identifiers %}
+  {% for identifier in identifiers %}
+  <script>
+    var list = document.getElementById('identifiers_list');
+    var entry = document.createElement('option');
+    entry.value = "{{ identifier }}";
+    entry.innerHTML = "{{ identifier }}";
+    list.appendChild(entry);
+  </script>
   {% endfor %}
-</ul>
+  <script>$('#identifiers_list').trigger('chosen:updated');</script>
+  {% endif %}
+  {% if projects %}
+  {% for project in projects %}
+  <script>
+    var list = document.getElementById('projects_list');
+    var entry = document.createElement('option');
+    entry.value = "{{ project }}";
+    entry.innerHTML = "{{ project }}";
+    list.appendChild(entry);
+  </script>
+  {% endfor %}
+  <script>$('#projects_list').trigger('chosen:updated');</script>
+  {% endif %}
+  {% if cids %}
+  {% for cid in cids %}
+  <script>
+    var list = document.getElementById('cids_list');
+    var entry = document.createElement('option');
+    entry.value = "{{ cid }}";
+    entry.innerHTML = "{{ cid }}";
+    list.appendChild(entry);
+  </script>
+  {% endfor %}
+  <script>$('#cids_list').trigger('chosen:updated');</script>
+  {% endif %}
+  {% endif %}
+</div>
 {% endblock %}
