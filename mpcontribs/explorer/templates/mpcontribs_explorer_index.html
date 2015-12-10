@@ -10,66 +10,72 @@
 {% endif %}
 <div class="container">
   <div class="row">
-    Explore
+    Explore contributed
     <a class="btn btn-primary" href="materials">Materials</a> or
     <a class="btn btn-primary" href="compositions">Compositions</a>?
   </div>
-  {% if collection %}
+  {% if collection and options and not alert %}
   <div class="row" style="margin-top:20px;">
-    Make one or more selections:
-    <select id="identifiers_list" data-placeholder="Select {{ collection|slice:":-1" }} ..." style="width:200px;">
-      <option></option>
-    </select>
-    AND
-    <select id="projects_list" data-placeholder="Select project ..." style="width:200px;">
-      <option></option>
-    </select>
-    AND
-    <select id="cids_list" data-placeholder="Select contribution ID ..." style="width:200px;">
-      <option></option>
-    </select>
+    <form action="{{ collection }}" method=post enctype=multipart/form-data>
+      {% csrf_token %}
+      Make one or more selections:</br>
+      <select id="{{ fields.0 }}_list" data-placeholder="Select {{ collection|slice:":-1" }} ..." style="width:300px;" multiple>
+        <option></option>
+      </select>
+      AND
+      <select id="{{ fields.1 }}_list" data-placeholder="Select project ..." style="width:300px;" multiple>
+        <option></option>
+      </select>
+      AND
+      <select id="{{ fields.2 }}_list" data-placeholder="Select contribution ID ..." style="width:300px;" multiple>
+        <option></option>
+      </select>
+      {% for field in fields %}
+      <input type=hidden name="selection_{{ field }}" id="select_{{ field }}">
+      <input type=hidden name="options_{{ field }}" id="opt_{{ field }}">
+      {% endfor %}
+      <input type=submit name="submit" class="btn btn-primary" value="Find">
+    </form>
   </div>
   <script>
-    $('#identifiers_list').chosen({ search_contains: true, allow_single_deselect: true });
-    $('#projects_list').chosen({ search_contains: true, allow_single_deselect: true });
-    $('#cids_list').chosen({ search_contains: true, allow_single_deselect: true });
+    var options = {{ options|safe }};
+    var selection = {{ selection|safe }};
+    for (field in options) {
+      // initialize selection dropdown menus
+      var list = document.getElementById(field + '_list');
+      for (var i=0, iLen=options[field].length; i<iLen; i++) {
+        var entry = document.createElement('option');
+        var opt = options[field][i];
+        entry.value = opt;
+        entry.innerHTML = opt;
+        if ($.inArray(opt, selection[field]) > -1) {
+          $(entry).prop('selected', true);
+        }
+        list.appendChild(entry);
+      }
+      // activate select DOM as chosen DOM
+      $('#' + field + '_list').chosen({
+        search_contains: true, allow_single_deselect: true
+      });
+      // save options to avoid requerying database
+      var opt_elem = document.getElementById('opt_' + field);
+      opt_elem.value = JSON.stringify(options[field]);
+      // save selection
+      var sel_elem = document.getElementById('select_' + field);
+      sel_elem.value = JSON.stringify(selection[field]);
+      // attach change trigger event to each multi-select to store selection in hidden input fields
+      $('#' + field + '_list').chosen().change(function () {
+        var fld = $(this).attr('id').slice(0,-5);
+        var sel_elem = document.getElementById('select_'+fld);
+        selection[fld] = [];
+        for (var i=0, iLen=this.options.length; i<iLen; i++) {
+          var opt = this.options[i];
+          if (opt.selected) { selection[fld].push(opt.value); }
+        }
+        sel_elem.value = JSON.stringify(selection[fld]);
+      });
+    }
   </script>
-  {% if identifiers %}
-  {% for identifier in identifiers %}
-  <script>
-    var list = document.getElementById('identifiers_list');
-    var entry = document.createElement('option');
-    entry.value = "{{ identifier }}";
-    entry.innerHTML = "{{ identifier }}";
-    list.appendChild(entry);
-  </script>
-  {% endfor %}
-  <script>$('#identifiers_list').trigger('chosen:updated');</script>
-  {% endif %}
-  {% if projects %}
-  {% for project in projects %}
-  <script>
-    var list = document.getElementById('projects_list');
-    var entry = document.createElement('option');
-    entry.value = "{{ project }}";
-    entry.innerHTML = "{{ project }}";
-    list.appendChild(entry);
-  </script>
-  {% endfor %}
-  <script>$('#projects_list').trigger('chosen:updated');</script>
-  {% endif %}
-  {% if cids %}
-  {% for cid in cids %}
-  <script>
-    var list = document.getElementById('cids_list');
-    var entry = document.createElement('option');
-    entry.value = "{{ cid }}";
-    entry.innerHTML = "{{ cid }}";
-    list.appendChild(entry);
-  </script>
-  {% endfor %}
-  <script>$('#cids_list').trigger('chosen:updated');</script>
-  {% endif %}
   {% endif %}
 </div>
 {% endblock %}
