@@ -14,7 +14,7 @@
     <a class="btn btn-primary" href="materials">Materials</a> or
     <a class="btn btn-primary" href="compositions">Compositions</a>?
   </div>
-  {% if collection and options and not alert %}
+  {% if collection and options %}
   <div class="row" style="margin-top:20px;">
     <form action="{{ collection }}" method=post enctype=multipart/form-data>
       {% csrf_token %}

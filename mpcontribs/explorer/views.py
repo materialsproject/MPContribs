@@ -13,6 +13,7 @@ def get_endpoint():
 def index(request, collection=None):
     ctx = RequestContext(request)
     fields = ['identifiers', 'projects', 'cids']
+    projection_keys = ['mp_cat_id', 'project']
     if request.user.is_authenticated():
         if collection in ['materials', 'compositions']:
             API_KEY = request.user.api_key
@@ -45,9 +46,9 @@ def index(request, collection=None):
                         ) for prefix in ['options', 'selection']
                     )
                     mode = request.POST['submit']
-                    if mode == "Find":
-                        criteria, keys = {}, ['mp_cat_id', 'project']
-                        for idx, key in enumerate(keys):
+                    if mode == 'Find':
+                        criteria = {}
+                        for idx, key in enumerate(projection_keys):
                             if selection[fields[idx]]:
                                 criteria.update({
                                     key: {'$in': selection[fields[idx]]}
@@ -57,12 +58,23 @@ def index(request, collection=None):
                                 request.path, doc['mp_cat_id'], doc['project'], doc['_id']
                             ]) for doc in mpr.query_contributions(
                                 criteria=criteria,
-                                projection=dict((key, 1) for key in keys),
+                                projection=dict((key, 1) for key in projection_keys),
                                 collection='contributions'
                             )
                         ]
-                    else:
-                        pass # TODO mpr request for mode == 'Show'
+                    elif mode == 'Show':
+                        if selection[fields[2]]:
+                            urls = [
+                                '/'.join([
+                                    request.path, doc['mp_cat_id'], doc['project'], doc['_id']
+                                ]) for doc in mpr.query_contributions(
+                                    criteria={'_id': {'$in': map(ObjectId, selection[fields[2]])}},
+                                    projection=dict((key, 1) for key in projection_keys),
+                                    collection='contributions'
+                                )
+                            ]
+                        else:
+                            ctx.update({'alert': 'Enter a contribution identifier!'})
         else:
             ctx.update({'alert': 'Collection {} does not exist!'.format(collection)})
     else:
