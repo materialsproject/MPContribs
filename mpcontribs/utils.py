@@ -82,9 +82,9 @@ def process_mpfile(path_or_mpfile, target=None, fmt='archieml'):
             yield 'build into {} ... '.format(mp_cat_id)
             if target is not None:
                 url = target.build_contribution(cid)
-                yield ("OK. <a href='{}/{}' class='btn btn-default btn-xs' " +
-                       "role='button' target='_blank'>View</a></br>").format(
-                           target.preamble, url)
+                url = '/'.join([target.preamble.rsplit('/', 1)[0], 'explorer', url])
+                yield ("OK. <a href='{}' class='btn btn-default btn-xs' " +
+                       "role='button' target='_blank'>View</a></br>").format(url)
             else:
                 mcb = MPContributionsBuilder(doc)
                 build_doc = mcb.build(contributor, cid)
