@@ -1,6 +1,7 @@
 """This module provides the views for the explorer interface."""
 
 import json
+from bson import ObjectId
 from django.shortcuts import render_to_response
 from django.template import RequestContext
 from mpcontribs.rest.rester import MPContribsRester

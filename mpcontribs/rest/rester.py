@@ -1,5 +1,6 @@
 from __future__ import division, unicode_literals
-import json, six, bson
+import six, bson
+from bson.json_util import dumps, loads
 from mpweb_core.rester import MPResterBase, MPResterError
 
 class MPContribsRester(MPResterBase):
@@ -85,9 +86,9 @@ class MPContribsRester(MPResterBase):
         """
         if kwargs:
             payload = {
-                "criteria": json.dumps(kwargs.get('criteria', {})),
-                "contributor_only": json.dumps(kwargs.get('contributor_only', False)),
-                "projection": json.dumps(kwargs.get('projection')),
+                "criteria": dumps(kwargs.get('criteria', {})),
+                "contributor_only": dumps(kwargs.get('contributor_only', False)),
+                "projection": dumps(kwargs.get('projection')),
                 "collection": kwargs.get('collection', 'contributions')
             }
             return self._make_request('/query', payload=payload, method='POST')
@@ -108,12 +109,12 @@ class MPContribsRester(MPResterBase):
             MPContribsRestError
         """
         try:
-            payload = {"cids": json.dumps(cids)}
+            payload = {"cids": dumps(cids)}
             response = self.session.post(
                 "{}/contribs/delete".format(self.preamble), data=payload
             )
             if response.status_code in [200, 400]:
-                resp = json.loads(response.text, cls=MPDecoder)
+                resp = loads(response.text, cls=MPDecoder)
                 if resp['valid_response']:
                     return resp['response']['n']
                 else:
@@ -140,14 +141,14 @@ class MPContribsRester(MPResterBase):
         """
         try:
             payload = {
-                'collaborators': json.dumps(collaborators),
-                'cids': json.dumps(cids), 'mode': mode
+                'collaborators': dumps(collaborators),
+                'cids': dumps(cids), 'mode': mode
             }
             response = self.session.post(
                 "{}/contribs/collab".format(self.preamble), data=payload
             )
             if response.status_code in [200, 400]:
-                resp = json.loads(response.text, cls=MPDecoder)
+                resp = loads(response.text, cls=MPDecoder)
                 if resp['valid_response']:
                     return resp['response']['collaborators']
                 else:

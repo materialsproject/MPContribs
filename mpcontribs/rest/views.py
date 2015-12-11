@@ -1,6 +1,6 @@
 """This module provides the views for the rest interface."""
 
-import json
+from bson.json_util import loads
 from django.core.exceptions import PermissionDenied
 from django.shortcuts import render_to_response
 from django.template import RequestContext
@@ -76,13 +76,13 @@ def build_contribution(request, db_type=None, mdb=None):
 @mapi_func(supported_methods=["POST", "GET"], requires_api_key=True)
 def query_contributions(request, db_type=None, mdb=None):
     """Query the contributions collection"""
-    criteria = json.loads(request.POST.get('criteria', '{}'))
+    criteria = loads(request.POST.get('criteria', '{}'))
     collection = request.POST.get('collection', 'contributions')
-    projection = json.loads(request.POST.get('projection', 'null'))
+    projection = loads(request.POST.get('projection', 'null'))
     contributor = '{} {} <{}>'.format(
         request.user.first_name, request.user.last_name, request.user.email
     )
-    if json.loads(request.POST.get('contributor_only', 'false')):
+    if loads(request.POST.get('contributor_only', 'false')):
         criteria['collaborators'] = {'$in': [contributor]}
     results = mdb.contrib_ad.query_contributions(
         criteria, projection=projection, collection=collection
@@ -95,7 +95,7 @@ def delete_contributions(request, db_type=None, mdb=None):
     if not request.user.is_staff:
         raise PermissionDenied("contributions deletion open only to staff right now.")
     from mpcontribs.utils import get_short_object_id
-    cids = [ ObjectId(cid) for cid in json.loads(request.POST['cids'])]
+    cids = [ ObjectId(cid) for cid in loads(request.POST['cids'])]
     contributor = '{} {} <{}>'.format(
         request.user.first_name, request.user.last_name, request.user.email
     )
@@ -122,8 +122,8 @@ def update_collaborators(request, db_type=None, mdb=None):
     from mpweb_core.models import RegisteredUser
     if not request.user.is_staff:
         raise PermissionDenied("collaborators update open only to staff right now.")
-    collaborators = json.loads(request.POST['collaborators'])
-    cids = json.loads(request.POST['cids'])
+    collaborators = loads(request.POST['collaborators'])
+    cids = loads(request.POST['cids'])
     mode = request.POST['mode']
     contributor = '{} {} <{}>'.format(
         request.user.first_name, request.user.last_name, request.user.email
