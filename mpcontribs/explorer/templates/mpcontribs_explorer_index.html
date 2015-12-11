@@ -18,25 +18,34 @@
   <div class="row" style="margin-top:20px;">
     <form action="{{ collection }}" method=post enctype=multipart/form-data>
       {% csrf_token %}
-      Make one or more selections:</br>
-      <select id="{{ fields.0 }}_list" data-placeholder="Select {{ collection|slice:":-1" }} ..." style="width:300px;" multiple>
+      Select (one or more) {{ collection }} and/or projects:</br>
+      <select id="{{ fields.0 }}_list" data-placeholder="Select {{ collection|slice:":-1" }}(s) ..." style="width:300px;" multiple>
         <option></option>
       </select>
-      AND
-      <select id="{{ fields.1 }}_list" data-placeholder="Select project ..." style="width:300px;" multiple>
+      <select id="{{ fields.1 }}_list" data-placeholder="Select project(s) ..." style="width:300px;" multiple>
         <option></option>
       </select>
-      AND
-      <select id="{{ fields.2 }}_list" data-placeholder="Select contribution ID ..." style="width:300px;" multiple>
+      <input type=submit name="submit" class="btn btn-primary" value="Find">
+      </br>
+      Or enter a (list of) contribution identifiers:</br>
+      <select id="{{ fields.2 }}_list" data-placeholder="Enter contribution ID(s) ..." style="width:300px;" multiple>
         <option></option>
       </select>
       {% for field in fields %}
       <input type=hidden name="selection_{{ field }}" id="select_{{ field }}">
       <input type=hidden name="options_{{ field }}" id="opt_{{ field }}">
       {% endfor %}
-      <input type=submit name="submit" class="btn btn-primary" value="Find">
+      <input type=submit name="submit" class="btn btn-primary" value="Show">
     </form>
   </div>
+  {% if urls %}
+  <div class="row" style="margin-top:20px;">
+    Results:</br>
+    {% for url in urls %}
+    <a href="{{ url }}" target="_blank">{{ url }}</a></br>
+    {% endfor %}
+  </div>
+  {% endif %}
   <script>
     var options = {{ options|safe }};
     var selection = {{ selection|safe }};
