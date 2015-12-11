@@ -43,45 +43,46 @@ def index(request, collection=None):
                             )]) for field in fields
                         ) for prefix in ['options', 'selection']
                     )
-                    # TODO mpr request
+                    mode = request.POST['submit']
+                    if mode == "Find":
+                        criteria, keys = {}, ['mp_cat_id', 'project']
+                        for idx, key in enumerate(keys):
+                            if selection[fields[idx]]:
+                                criteria.update({
+                                    key: {'$in': selection[fields[idx]]}
+                                })
+                        urls = [
+                            '/'.join([
+                                request.path, doc['mp_cat_id'], doc['project'], doc['_id']
+                            ]) for doc in mpr.query_contributions(
+                                criteria=criteria,
+                                projection=dict((key, 1) for key in keys),
+                                collection='contributions'
+                            )
+                        ]
+                    else:
+                        pass # TODO mpr request for mode == 'Show'
         else:
             ctx.update({'alert': 'Collection {} does not exist!'.format(collection)})
     else:
         ctx.update({'alert': 'Please log in!'})
     return render_to_response("mpcontribs_explorer_index.html", locals(), ctx)
 
-def composition(request, composition):
-    ctx = RequestContext(request)
-    if request.user.is_authenticated():
-        API_KEY = request.user.api_key
-        ENDPOINT = request.build_absolute_uri(get_endpoint())
-        with MPContribsRester(API_KEY, endpoint=ENDPOINT) as mpr:
-            urls = [
-                '/'.join([request.path, project, cid])
-                for project, contribs in mpr.query_contributions(
-                    criteria={'_id': composition}, collection='compositions'
-                )[0].iteritems() if project != '_id'
-                for cid in contribs
-            ]
-    else:
-        ctx.update({'alert': 'Please log in!'})
-    return render_to_response("mpcontribs_explorer_index.html", locals(), ctx)
-
-def contribution(request, composition, project, cid):
+def contribution(request, collection, identifier, project, cid):
     if request.user.is_authenticated():
         material = {}
         API_KEY = request.user.api_key
         ENDPOINT = request.build_absolute_uri(get_endpoint())
         with MPContribsRester(API_KEY, endpoint=ENDPOINT) as mpr:
             material['contributed_data'] = mpr.query_contributions(
-                criteria={'_id': composition}, collection='compositions',
+                criteria={'_id': identifier}, collection=collection,
                 projection={'_id': 0, '.'.join([project, cid]): 1}
             )[0][project][cid]
-        material['pretty_formula'] = composition
+        material['pretty_formula'] = identifier
     else:
-        material = {k: composition for k in ['pretty_formula']}
+        material = {k: identifier for k in ['pretty_formula']}
     ctx = RequestContext(request, {'material': jsanitize(material)})
-    return render_to_response("mpcontribs_explorer_composition.html", locals(), ctx)
+    return render_to_response("mpcontribs_explorer_contribution.html", locals(), ctx)
 
 # Instead of
 # from monty.json import jsanitize
