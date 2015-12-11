@@ -186,6 +186,6 @@ class MPContributionsBuilder():
               self.curr_coll[mp_cat_id][project][cid_str]
             ]
         else:
-            return '{}/{}/contributions#{}#{}'.format( # return URL for contribution page
+            return '{}/{}/{}/{}'.format( # return URL for contribution page
                 ('materials' if is_mp_id else 'compositions'),
-                mp_cat_id, project, cid_short)
+                mp_cat_id, project, cid_str)
