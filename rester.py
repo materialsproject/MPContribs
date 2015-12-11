@@ -1,7 +1,8 @@
 # coding: utf-8
 # https://github.com/materialsproject/pymatgen/blob/1eb2f2f/pymatgen/matproj/rest.py
 from __future__ import division, unicode_literals
-import os, requests, json, warnings, urlparse
+import os, requests, warnings, urlparse
+from bson.json_util import loads
 
 class MPResterBase(object):
     """
@@ -65,7 +66,7 @@ class MPResterBase(object):
             response = self.session.post(url, data=payload, headers=headers) \
                 if method == "POST" else self.session.get(url, params=payload)
             if response.status_code in [200, 400]:
-                data = json.loads(response.text)
+                data = loads(response.text)
                 if data["valid_response"]:
                     if data.get("warning"):
                         warnings.warn(data["warning"])
