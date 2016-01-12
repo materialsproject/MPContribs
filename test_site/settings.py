@@ -47,6 +47,7 @@ INSTALLED_APPS = (
     'mpweb_core',
     'mpcontribs.rest',
     'mpcontribs.explorer',
+    'test_site.apps.UWSI2ExplorerConfig',
     'kombu.transport.django',
 )
 
