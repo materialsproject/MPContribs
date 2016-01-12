@@ -1,0 +1,12 @@
+{% extends "../../mpweb_core/templates/base/header_footer.html" %}
+{% block content %}
+{% if alert %}
+<div class="alert alert-warning alert-dismissible" role="alert">
+  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+    <span aria-hidden="true">&times;</span>
+  </button>
+  {{ alert }}
+</div>
+{% endif %}
+<h1>UW/SI2 Explorer</h1>
+{% endblock %}
