@@ -9,4 +9,26 @@
 </div>
 {% endif %}
 <h1>UW/SI2 Explorer</h1>
+<div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
+  {% for contrib in contribs %}
+  <div class="panel panel-default">
+    <div class="panel-heading" role="tab" id="heading{{ forloop.counter }}">
+      <h4 class="panel-title">
+        <a role="button" data-toggle="collapse" data-parent="#accordion"
+           href="#collapse{{ forloop.counter }}" aria-expanded="true" aria-controls="collapse{{ forloop.counter }}">
+          {{ contrib.mp_id }} ({{ contrib.cid }})
+        </a>
+      </h4>
+    </div>
+    <div id="collapse{{ forloop.counter }}" class="panel-collapse collapse" role="tabpanel"
+         aria-labelledby="heading{{ forloop.counter }}">
+      <ul class="list-group">
+        {% for solute in contrib.solutes %}
+        <li class="list-group-item">{{ solute }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+  {% endfor %}
+</div>
 {% endblock %}

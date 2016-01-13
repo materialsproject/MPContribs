@@ -22,8 +22,8 @@ class UWSI2Rester(MPContribsRester):
             }
             d = doc['content']['data_supporting']
             for idx, solute in enumerate(d['solute element']):
-                contrib['solutes'].append([
+                contrib['solutes'].append('  '.join(map(str, [
                     solute, d['D0 basal [cm^2/s]'][idx], d['Q basal [eV]'][idx]
-                ])
+                ])))
             contribs.append(contrib)
         return contribs
