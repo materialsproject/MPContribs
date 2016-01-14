@@ -42,7 +42,8 @@
           <div class="panel-heading" role="tab" id="heading{{ forloop.counter }}">
             <h4 class="panel-title">
               <a role="button" data-toggle="collapse" data-parent="#accordion"
-                 href="#collapse{{ forloop.counter }}" aria-expanded="true" aria-controls="collapse{{ forloop.counter }}">
+                 href="#collapse{{ forloop.counter }}" aria-expanded="true"
+                 aria-controls="collapse{{ forloop.counter }}">
                 <span class="glyphicon glyphicon-chevron-right" aria-hidden="true"></span>
                 {{ contrib.mp_id }} (#{{ contrib.cid }})
               </a>
@@ -69,9 +70,11 @@
           </div>
           <script>
           $('#collapse{{ forloop.counter }}').on('show.bs.collapse', function(){
-              $(this).parent().find(".glyphicon-chevron-right").removeClass("glyphicon-chevron-right").addClass("glyphicon-chevron-down");
+              $(this).parent().find(".glyphicon-chevron-right")
+                .removeClass("glyphicon-chevron-right").addClass("glyphicon-chevron-down");
           }).on('hide.bs.collapse', function(){
-              $(this).parent().find(".glyphicon-chevron-down").removeClass("glyphicon-chevron-down").addClass("glyphicon-chevron-right");
+              $(this).parent().find(".glyphicon-chevron-down")
+                .removeClass("glyphicon-chevron-down").addClass("glyphicon-chevron-right");
           });
           </script>
         </div>
