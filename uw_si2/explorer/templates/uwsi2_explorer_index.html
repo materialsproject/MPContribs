@@ -80,10 +80,12 @@
   </div>
 </div>
 <script>
-$(".backgrid tbody").on('click', 'tr', function () {
-  $(this).toggleClass('highlight');
-  // TODO: also trigger checkbox when clicking row
+$(".backgrid tbody tr").on('click', 'td.string-cell', function () {
+  var chbx = $(this).parent().toggleClass('highlight').find(':checkbox');
+  chbx.prop('checked', !chbx.prop('checked'));
 })
-// TODO: also highlight row when clicking checkbox
+$(':checkbox').on('click', function() {
+  $(this).closest('tr').toggleClass('highlight');
+});
 </script>
 {% endblock %}
