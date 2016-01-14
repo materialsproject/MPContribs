@@ -8,10 +8,33 @@
   {{ alert }}
 </div>
 {% endif %}
+<style>
+.backgrid .string-cell { text-align: center; }
+.backgrid tbody tr:hover { background-color: #f9f9f9; }
+.backgrid tbody tr.highlight { background-color: yellow }
+</style>
 <div class="container">
   <h1>UW/SI2 Explorer</h1>
-  <div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
-    <div class="row">
+  <div class="row" style="margin-bottom: 5px;">
+    <div class="col-md-12">
+      <button id="reveal_all" type="button" class="btn btn-primary">Reveal</button>
+      <button id="collapse_all" type="button" class="btn btn-primary">Collapse</button>
+      <script>
+        function toggle_divs(div_name, on) {
+            var divs = document.getElementsByName(div_name);
+            for (var j=0; j<divs.length; j++) {
+              var visible = $(divs[j]).is(":visible");
+              if (!on && visible) { $(divs[j]).collapse('hide'); }
+              else if (on && !visible) { $(divs[j]).collapse('show'); }
+            }
+        };
+        $('#reveal_all').on('click', function (e) { toggle_divs("host", true) })
+        $('#collapse_all').on('click', function (e) { toggle_divs("host", false) })
+      </script>
+    </div>
+  </div>
+  <div class="row">
+    <div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
       {% for contrib in contribs %}
       <div class="col-md-3">
         <div class="panel panel-default">
@@ -25,7 +48,7 @@
             </h4>
           </div>
           <div id="collapse{{ forloop.counter }}" class="panel-collapse collapse" role="tabpanel"
-               aria-labelledby="heading{{ forloop.counter }}">
+               name="host" aria-labelledby="heading{{ forloop.counter }}">
             <div id="table{{ forloop.counter }}"></div>
             <script>
               var table = {{ contrib.tables.data_supporting|safe }};
@@ -35,9 +58,10 @@
               });
               var rows = new Rows(table['rows']);
               var grid = new Backgrid.Grid({ columns: [{
-                name: "", cell: "select-row", headerCell: "select-all", renderable: false
+                name: "", cell: "select-row", headerCell: "select-all"
               }].concat(table['columns']), collection: rows });
-              $('#table{{ forloop.counter }}').append(grid.render().el);
+              grid.render().sort("solute", "ascending");
+              $('#table{{ forloop.counter }}').append(grid.el);
               var paginator = new Backgrid.Extension.Paginator({ collection: rows });
               $('#table{{ forloop.counter }}').after(paginator.render().el);
             </script>
@@ -55,4 +79,11 @@
     </div>
   </div>
 </div>
+<script>
+$(".backgrid tbody").on('click', 'tr', function () {
+  $(this).toggleClass('highlight');
+  // TODO: also trigger checkbox when clicking row
+})
+// TODO: also highlight row when clicking checkbox
+</script>
 {% endblock %}

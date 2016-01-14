@@ -13,6 +13,7 @@ class UWSI2Rester(MPContribsRester):
             |- ...
         - ...
         """
+        labels = ["El.", "Z", "D0", "Q"]
         contribs = list(self.query_contributions(
             criteria={'project': 'LBNL'},
             projection={'mp_cat_id': 1}
@@ -29,5 +30,9 @@ class UWSI2Rester(MPContribsRester):
             for cid in doc['LBNL']:
                 d = { 'mp_id': doc['_id'], 'cid': get_short_object_id(cid) }
                 d['tables'] = doc['LBNL'][cid]['tables']
+                cols = d['tables']['data_supporting']['columns']
+                for idx, col in enumerate(cols):
+                    col['label'] = labels[idx]
+                    col['editable'] = 'false'
                 data.append(d)
         return data
