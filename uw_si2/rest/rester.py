@@ -2,6 +2,7 @@ from __future__ import division, unicode_literals
 import six, bson
 from bson.json_util import dumps, loads
 from mpcontribs.rest.rester import MPContribsRester
+from mpcontribs.io.core.utils import get_short_object_id
 
 class UWSI2Rester(MPContribsRester):
     """UW/SI2-specific convenience functions to interact with MPContribs REST interface"""
@@ -12,18 +13,21 @@ class UWSI2Rester(MPContribsRester):
             |- ...
         - ...
         """
-        contribs = []
-        for doc in self.query_contributions(
+        contribs = list(self.query_contributions(
             criteria={'project': 'LBNL'},
-            projection={'mp_cat_id': 1, 'content.data_supporting': 1}
+            projection={'mp_cat_id': 1}
+        ))
+        mp_ids = set(c['mp_cat_id'] for c in contribs)
+        data = []
+        for doc in self.query_contributions(
+            criteria={'_id': {'$in': mp_ids}},
+            projection=dict(
+                ('.'.join(['LBNL', c['_id'], 'tables']), 1)
+                for c in contribs
+            ), collection='materials'
         ):
-            contrib = {
-                'mp_id': doc['mp_cat_id'], 'cid': doc['_id'], 'solutes': []
-            }
-            d = doc['content']['data_supporting']
-            for idx, solute in enumerate(d['solute element']):
-                contrib['solutes'].append('  '.join(map(str, [
-                    solute, d['D0 basal [cm^2/s]'][idx], d['Q basal [eV]'][idx]
-                ])))
-            contribs.append(contrib)
-        return contribs
+            for cid in doc['LBNL']:
+                d = { 'mp_id': doc['_id'], 'cid': get_short_object_id(cid) }
+                d['tables'] = doc['LBNL'][cid]['tables']
+                data.append(d)
+        return data

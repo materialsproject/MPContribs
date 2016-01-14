@@ -8,27 +8,51 @@
   {{ alert }}
 </div>
 {% endif %}
-<h1>UW/SI2 Explorer</h1>
-<div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
-  {% for contrib in contribs %}
-  <div class="panel panel-default">
-    <div class="panel-heading" role="tab" id="heading{{ forloop.counter }}">
-      <h4 class="panel-title">
-        <a role="button" data-toggle="collapse" data-parent="#accordion"
-           href="#collapse{{ forloop.counter }}" aria-expanded="true" aria-controls="collapse{{ forloop.counter }}">
-          {{ contrib.mp_id }} ({{ contrib.cid }})
-        </a>
-      </h4>
-    </div>
-    <div id="collapse{{ forloop.counter }}" class="panel-collapse collapse" role="tabpanel"
-         aria-labelledby="heading{{ forloop.counter }}">
-      <ul class="list-group">
-        {% for solute in contrib.solutes %}
-        <li class="list-group-item">{{ solute }}</li>
-        {% endfor %}
-      </ul>
+<div class="container">
+  <h1>UW/SI2 Explorer</h1>
+  <div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
+    <div class="row">
+      {% for contrib in contribs %}
+      <div class="col-md-3">
+        <div class="panel panel-default">
+          <div class="panel-heading" role="tab" id="heading{{ forloop.counter }}">
+            <h4 class="panel-title">
+              <a role="button" data-toggle="collapse" data-parent="#accordion"
+                 href="#collapse{{ forloop.counter }}" aria-expanded="true" aria-controls="collapse{{ forloop.counter }}">
+                <span class="glyphicon glyphicon-chevron-right" aria-hidden="true"></span>
+                {{ contrib.mp_id }} (#{{ contrib.cid }})
+              </a>
+            </h4>
+          </div>
+          <div id="collapse{{ forloop.counter }}" class="panel-collapse collapse" role="tabpanel"
+               aria-labelledby="heading{{ forloop.counter }}">
+            <div id="table{{ forloop.counter }}"></div>
+            <script>
+              var table = {{ contrib.tables.data_supporting|safe }};
+              var Row = Backbone.Model.extend({});
+              var Rows = Backbone.PageableCollection.extend({
+                model: Row,  state: { pageSize: 15 }, mode: "client"
+              });
+              var rows = new Rows(table['rows']);
+              var grid = new Backgrid.Grid({ columns: [{
+                name: "", cell: "select-row", headerCell: "select-all", renderable: false
+              }].concat(table['columns']), collection: rows });
+              $('#table{{ forloop.counter }}').append(grid.render().el);
+              var paginator = new Backgrid.Extension.Paginator({ collection: rows });
+              $('#table{{ forloop.counter }}').after(paginator.render().el);
+            </script>
+          </div>
+          <script>
+          $('#collapse{{ forloop.counter }}').on('show.bs.collapse', function(){
+              $(this).parent().find(".glyphicon-chevron-right").removeClass("glyphicon-chevron-right").addClass("glyphicon-chevron-down");
+          }).on('hide.bs.collapse', function(){
+              $(this).parent().find(".glyphicon-chevron-down").removeClass("glyphicon-chevron-down").addClass("glyphicon-chevron-right");
+          });
+          </script>
+        </div>
+      </div>
+      {% endfor %}
     </div>
   </div>
-  {% endfor %}
 </div>
 {% endblock %}
