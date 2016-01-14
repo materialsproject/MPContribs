@@ -11,7 +11,8 @@
 <style>
 .backgrid .string-cell { text-align: center; }
 .backgrid tbody tr:hover { background-color: #f9f9f9; }
-.backgrid tbody tr.highlight { background-color: yellow }
+.backgrid tbody tr.highlight { background-color: yellow; }
+.backgrid tbody tr { cursor: pointer; }
 </style>
 <div class="container">
   <h1>UW/SI2 Explorer</h1>
@@ -80,12 +81,31 @@
   </div>
 </div>
 <script>
-$(".backgrid tbody tr").on('click', 'td.string-cell', function () {
+document.onselectstart = function() { return false; }
+var lastChecked = null;
+var $chkboxes = $(':checkbox');
+function shift_select(obj, ev) {
+  if(!lastChecked) { lastChecked = obj; return; }
+  if(ev.shiftKey) {
+    var start = $chkboxes.index(obj);
+    var end = $chkboxes.index(lastChecked);
+    var checked = lastChecked.checked;
+    if (typeof checked == 'undefined') {
+      checked = lastChecked.prop('checked');
+    }
+    $chkboxes.slice(Math.min(start,end)+1, Math.max(start,end))
+      .prop('checked', checked).closest('tr').toggleClass('highlight');
+  }
+  lastChecked = obj;
+};
+$(".backgrid tbody tr").on('click', 'td.string-cell', function (e) {
   var chbx = $(this).parent().toggleClass('highlight').find(':checkbox');
   chbx.prop('checked', !chbx.prop('checked'));
-})
-$(':checkbox').on('click', function() {
+  shift_select(chbx, e)
+});
+$chkboxes.on('click', function(e) {
   $(this).closest('tr').toggleClass('highlight');
+  shift_select(this, e);
 });
 </script>
 {% endblock %}
