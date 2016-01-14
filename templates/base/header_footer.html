@@ -9,12 +9,21 @@
     <link rel="stylesheet" type="text/css" href='{% static "css/bootstrap.min.css" %}'/>
     <link rel="stylesheet" type="text/css" href='{% static "css/chosen.min.css" %}'/>
     <link rel="stylesheet" type="text/css" href='/static/nucleus.css' charset="utf-8">
+    <link rel="stylesheet" type="text/css" href='{% static "css/backgrid.min.css" %}'/>
+    <link rel="stylesheet" type="text/css" href='{% static "css/backgrid-paginator.css" %}'/>
+    <link rel="stylesheet" type="text/css" href='{% static "css/backgrid-select-all.css" %}'/>
     {% browserid_css %}
     {% block extra_css %}
     {% endblock extra_css %}
     <script type="text/javascript" charset="utf8" src='{% static "js/jquery.js" %}'></script>
     <script type="text/javascript" charset="utf8" src='{% static "js/bootstrap.min.js" %}'></script>
     <script type="text/javascript" charset="utf8" src='{% static "js/chosen.jquery.min.js" %}'> </script>
+    <script type="text/javascript" charset="utf8" src='{% static "js/underscore-min.js" %}'> </script>
+    <script type="text/javascript" charset="utf8" src='{% static "js/backbone-min.js" %}'></script>
+    <script type="text/javascript" charset="utf8" src='{% static "js/backgrid.min.js" %}'></script>
+    <script type="text/javascript" charset="utf8" src='{% static "js/backbone.paginator.js" %}'></script>
+    <script type="text/javascript" charset="utf8" src='{% static "js/backgrid-paginator.js" %}'></script>
+    <script type="text/javascript" charset="utf8" src='{% static "js/backgrid-select-all.js" %}'></script>
     {% browserid_js %}
   </head>
   <body>
