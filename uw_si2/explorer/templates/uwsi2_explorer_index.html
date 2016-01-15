@@ -13,27 +13,35 @@
 .backgrid tbody tr:hover { background-color: #f9f9f9; }
 .backgrid tbody tr.selected { background-color: yellow; }
 .backgrid tbody tr { cursor: pointer; }
+.backgrid-filter input[type="search"] { width: 88.5%; }
+.backgrid-filter.form-search { margin:0px; }
 </style>
 <div class="container">
   <h1>UW/SI2 Explorer</h1>
   <div class="row" style="margin-bottom: 5px;">
     <div class="col-md-12">
-      <button id="reveal_all" type="button" class="btn btn-primary">Reveal</button>
-      <button id="collapse_all" type="button" class="btn btn-primary">Collapse</button>
-      <script>
-        function toggle_divs(div_name, on) {
-            var divs = document.getElementsByName(div_name);
-            for (var j=0; j<divs.length; j++) {
-              var visible = $(divs[j]).is(":visible");
-              if (!on && visible) { $(divs[j]).collapse('hide'); }
-              else if (on && !visible) { $(divs[j]).collapse('show'); }
-            }
-        };
-        $('#reveal_all').on('click', function (e) { toggle_divs("host", true) })
-        $('#collapse_all').on('click', function (e) { toggle_divs("host", false) })
-      </script>
+      <button id="reveal_all" type="button" class="btn btn-primary btn-xs">Reveal</button>
+      <button id="collapse_all" type="button" class="btn btn-primary btn-xs">Collapse</button>
     </div>
   </div>
+  <script>
+    function toggle_divs(div_name, on) {
+        var divs = document.getElementsByName(div_name);
+        for (var j=0; j<divs.length; j++) {
+          var visible = $(divs[j]).is(":visible");
+          if (!on && visible) { $(divs[j]).collapse('hide'); }
+          else if (on && !visible) { $(divs[j]).collapse('show'); }
+        }
+    };
+    $('#reveal_all').on('click', function (e) { toggle_divs("host", true) })
+    $('#collapse_all').on('click', function (e) { toggle_divs("host", false) })
+    var Row = Backbone.Model.extend({});
+    var Rows = Backbone.Collection.extend({ model: Row, mode: "client" });
+    var ClickableCell = Backgrid.StringCell.extend({
+      events: {"click": "onClick"},
+      onClick: function (e) { Backbone.trigger("cellclicked", e); }
+    })
+  </script>
   <div class="row">
     <div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
       {% for contrib in contribs %}
@@ -64,15 +72,7 @@
             <div id="table{{ forloop.counter }}"></div>
             <script>
               var table = {{ contrib.tables.data_supporting|safe }};
-              var Row = Backbone.Model.extend({});
-              var Rows = Backbone.PageableCollection.extend({
-                model: Row, mode: "client", //state: { pageSize: 15 },
-              });
               var rows = new Rows(table['rows']);
-              var ClickableCell = Backgrid.StringCell.extend({
-                events: {"click": "onClick"},
-                onClick: function (e) { Backbone.trigger("cellclicked", e); }
-              })
               for (var j=0; j<table['columns'].length; j++) {
                 table['columns'][j]['cell'] = ClickableCell;
               }
@@ -84,8 +84,10 @@
               });
               grid.render().sort("solute", "ascending");
               $('#table{{ forloop.counter }}').append(grid.el);
-              //var paginator = new Backgrid.Extension.Paginator({ collection: rows });
-              //$('#table{{ forloop.counter }}').after(paginator.render().el);
+              var filter = new Backgrid.Extension.ClientSideFilter({
+                collection: rows, fields: ['solute'], placeholder: "filter solutes ..."
+              });
+              $('#table{{ forloop.counter }}').before(filter.render().el);
             </script>
           </div>
           <script>
