@@ -18,17 +18,20 @@ class UWSI2Rester(MPContribsRester):
             criteria={'project': 'LBNL'},
             projection={'mp_cat_id': 1}
         ))
-        mp_ids = set(c['mp_cat_id'] for c in contribs)
-        data = []
+        mp_ids, projection, data = set(), {}, []
+        for c in contribs:
+            mp_ids.add(c['mp_cat_id'])
+            projection['.'.join(['LBNL', c['_id'], 'tables'])] = 1
+            projection['.'.join(['LBNL', c['_id'], 'tree_data', 'formula'])] = 1
         for doc in self.query_contributions(
             criteria={'_id': {'$in': mp_ids}},
-            projection=dict(
-                ('.'.join(['LBNL', c['_id'], 'tables']), 1)
-                for c in contribs
-            ), collection='materials'
+            projection=projection, collection='materials'
         ):
             for cid in doc['LBNL']:
-                d = { 'mp_id': doc['_id'], 'cid': get_short_object_id(cid) }
+                d = {
+                    'mp_id': doc['_id'], 'cid': get_short_object_id(cid),
+                    'formula': doc['LBNL'][cid]['tree_data']['formula']
+                }
                 d['tables'] = doc['LBNL'][cid]['tables']
                 cols = d['tables']['data_supporting']['columns']
                 for idx, col in enumerate(cols):
