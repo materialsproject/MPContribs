@@ -29,7 +29,8 @@ class UWSI2Rester(MPContribsRester):
         ):
             for cid in doc['LBNL']:
                 d = {
-                    'mp_id': doc['_id'], 'cid': get_short_object_id(cid),
+                    'mp_id': doc['_id'], 'cid': cid,
+                    'short_cid': get_short_object_id(cid),
                     'formula': doc['LBNL'][cid]['tree_data']['formula']
                 }
                 d['tables'] = doc['LBNL'][cid]['tables']
