@@ -11,7 +11,7 @@
 <style>
 .backgrid .string-cell { text-align: center; }
 .backgrid tbody tr:hover { background-color: #f9f9f9; }
-.backgrid tbody tr.highlight { background-color: yellow; }
+.backgrid tbody tr.selected { background-color: yellow; }
 .backgrid tbody tr { cursor: pointer; }
 </style>
 <div class="container">
@@ -61,9 +61,7 @@
               var rows = new Rows(table['rows']);
               var ClickableCell = Backgrid.StringCell.extend({
                 events: {"click": "onClick"},
-                onClick: function (e) {
-                  Backbone.trigger("cellclicked", e, this.model);
-                }
+                onClick: function (e) { Backbone.trigger("cellclicked", e); }
               })
               for (var j=0; j<table['columns'].length; j++) {
                 table['columns'][j]['cell'] = ClickableCell;
@@ -98,29 +96,20 @@
 <script>
 document.onselectstart = function() { return false; }
 var lastChecked = null;
-function shift_select(obj, ev) {
-  var $chkboxes = $(':checkbox');
-  if(!lastChecked) { lastChecked = obj; return; }
-  if(ev.shiftKey) {
-    var start = $chkboxes.index(obj);
+Backbone.on('cellclicked', function(e) {
+  var row = $(e.currentTarget).parent();
+  var chbx = row.toggleClass('highlight').find(':checkbox');
+  chbx.prop('checked', !chbx.prop('checked')).change();
+  var $chkboxes = row.parent().find(':checkbox');
+  if(!lastChecked) { lastChecked = chbx; return; }
+  if(e.shiftKey) {
+    var start = $chkboxes.index(chbx);
     var end = $chkboxes.index(lastChecked);
-    var checked = lastChecked.checked;
-    if (typeof checked == 'undefined') {
-      checked = lastChecked.prop('checked');
-    }
+    var checked = lastChecked.prop('checked');
     $chkboxes.slice(Math.min(start,end)+1, Math.max(start,end))
-      .prop('checked', checked).closest('tr').toggleClass('highlight');
+      .prop('checked', checked).change();
   }
-  lastChecked = obj;
-};
-Backbone.on('cellclicked', function(e, model) {
-  var chbx = $(e.currentTarget).parent().toggleClass('highlight').find(':checkbox');
-  chbx.prop('checked', !chbx.prop('checked'));
-  shift_select(chbx, e);
+  lastChecked = chbx;
 });
-//Backbone.on('chbxclicked', function(e) {
-//  $(e.currentTarget).closest('tr').toggleClass('highlight');
-//  shift_select(e.currentTarget, e);
-//});
 </script>
 {% endblock %}
