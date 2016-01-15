@@ -59,9 +59,21 @@
                 model: Row, mode: "client", //state: { pageSize: 15 },
               });
               var rows = new Rows(table['rows']);
-              var grid = new Backgrid.Grid({ columns: [{
-                name: "", cell: "select-row", headerCell: "select-all"
-              }].concat(table['columns']), collection: rows });
+              var ClickableCell = Backgrid.StringCell.extend({
+                events: {"click": "onClick"},
+                onClick: function (e) {
+                  Backbone.trigger("cellclicked", e, this.model);
+                }
+              })
+              for (var j=0; j<table['columns'].length; j++) {
+                table['columns'][j]['cell'] = ClickableCell;
+              }
+              var grid = new Backgrid.Grid({
+                columns: [{
+                  name: "", cell: "select-row", headerCell: "select-all"
+                }].concat(table['columns']),
+                collection: rows
+              });
               grid.render().sort("solute", "ascending");
               $('#table{{ forloop.counter }}').append(grid.el);
               //var paginator = new Backgrid.Extension.Paginator({ collection: rows });
@@ -86,8 +98,8 @@
 <script>
 document.onselectstart = function() { return false; }
 var lastChecked = null;
-var $chkboxes = $(':checkbox');
 function shift_select(obj, ev) {
+  var $chkboxes = $(':checkbox');
   if(!lastChecked) { lastChecked = obj; return; }
   if(ev.shiftKey) {
     var start = $chkboxes.index(obj);
@@ -101,14 +113,14 @@ function shift_select(obj, ev) {
   }
   lastChecked = obj;
 };
-$(".backgrid tbody tr").on('click', 'td.string-cell', function (e) {
-  var chbx = $(this).parent().toggleClass('highlight').find(':checkbox');
+Backbone.on('cellclicked', function(e, model) {
+  var chbx = $(e.currentTarget).parent().toggleClass('highlight').find(':checkbox');
   chbx.prop('checked', !chbx.prop('checked'));
-  shift_select(chbx, e)
+  shift_select(chbx, e);
 });
-$chkboxes.on('click', function(e) {
-  $(this).closest('tr').toggleClass('highlight');
-  shift_select(this, e);
-});
+//Backbone.on('chbxclicked', function(e) {
+//  $(e.currentTarget).closest('tr').toggleClass('highlight');
+//  shift_select(e.currentTarget, e);
+//});
 </script>
 {% endblock %}
