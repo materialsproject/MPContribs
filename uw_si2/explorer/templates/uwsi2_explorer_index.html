@@ -19,9 +19,22 @@
 <div class="container">
   <h1>UW/SI2 Explorer</h1>
   <div class="row" style="margin-bottom: 5px;">
-    <div class="col-md-12">
-      <button id="reveal_all" type="button" class="btn btn-primary btn-xs">Reveal</button>
-      <button id="collapse_all" type="button" class="btn btn-primary btn-xs">Collapse</button>
+    <div class="col-md-2">
+      <button id="reveal_all" type="button" class="btn btn-primary btn-sm">Reveal</button>
+      <button id="collapse_all" type="button" class="btn btn-primary btn-sm">Collapse</button>
+    </div>
+    <div class="col-md-3">
+      <div class="input-group input-group-sm">
+        <span class="input-group-addon">
+          <span class="glyphicon glyphicon-search" aria-hidden="true"></span>
+        </span>
+        <input type="text" class="form-control" placeholder="search ..." id="searchinput">
+        <span class="input-group-addon" id="searchclear">
+          <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+        </span>
+      </div>
+    </div>
+    <div class="col-md-7">
     </div>
   </div>
   <script>
@@ -33,8 +46,30 @@
           else if (on && !visible) { $(divs[j]).collapse('show'); }
         }
     };
-    $('#reveal_all').on('click', function (e) { toggle_divs("host", true) })
-    $('#collapse_all').on('click', function (e) { toggle_divs("host", false) })
+    $('#reveal_all').on('click', function (e) { toggle_divs("host", true); })
+    $('#collapse_all').on('click', function (e) { toggle_divs("host", false); })
+    $("#searchclear").click(function(){
+      $("#searchinput").val('');
+      $('#accordion').find(':input').val('').trigger('keydown');
+      //toggle_divs("host", false);
+    });
+    $("#searchinput").focus(function(){ toggle_divs("host", true); })
+    $("#searchinput").on('keyup paste', function(){
+      var txt = $(this).val();
+      var dash = txt.indexOf('-');
+      if (dash === -1) { // no dash found -> search in solutes for all hosts
+        $('div[name^=panel]').show();
+        $('#accordion').find(':input').val(txt).trigger('keydown');
+      } else { // dash found
+        var elems = txt.split('-');
+        console.log(elems);
+        if (elems[1] == "") { // no solute given -> filter/hide hosts
+          $('div.col-md-3').not('[name=panel'+elems[0]+']').hide();
+        } else { // search specific host-solute combination
+          console.log('TODO');
+        }
+      }
+    })
     var Row = Backbone.Model.extend({});
     var Rows = Backbone.Collection.extend({ model: Row, mode: "client" });
     var ClickableCell = Backgrid.StringCell.extend({
@@ -45,7 +80,7 @@
   <div class="row">
     <div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
       {% for contrib in contribs %}
-      <div class="col-md-3">
+      <div class="col-md-3" name="panel{{contrib.formula}}">
         <div class="panel panel-default">
           <div class="panel-heading" role="tab" id="heading{{ forloop.counter }}">
             <h4 class="panel-title">
