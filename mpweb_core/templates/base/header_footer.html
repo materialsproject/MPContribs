@@ -12,6 +12,7 @@
     <link rel="stylesheet" type="text/css" href='{% static "css/backgrid.min.css" %}'/>
     <link rel="stylesheet" type="text/css" href='{% static "css/backgrid-paginator.css" %}'/>
     <link rel="stylesheet" type="text/css" href='{% static "css/backgrid-select-all.css" %}'/>
+    <link rel="stylesheet" type="text/css" href='{% static "css/backgrid-filter.css" %}'/>
     {% browserid_css %}
     {% block extra_css %}
     {% endblock extra_css %}
@@ -24,6 +25,8 @@
     <script type="text/javascript" charset="utf8" src='{% static "js/backbone.paginator.js" %}'></script>
     <script type="text/javascript" charset="utf8" src='{% static "js/backgrid-paginator.js" %}'></script>
     <script type="text/javascript" charset="utf8" src='{% static "js/backgrid-select-all.js" %}'></script>
+    <script type="text/javascript" charset="utf8" src='{% static "js/backgrid-filter.js" %}'></script>
+    <script type="text/javascript" charset="utf8" src='{% static "js/plotly.min.js" %}'></script>
     {% browserid_js %}
   </head>
   <body>
