@@ -17,7 +17,33 @@
 .backgrid-filter.form-search { margin:0px; }
 </style>
 <div class="container">
-  <h1>UW/SI2 Explorer</h1>
+  <div class="row">
+    <div class="col-md-4"><div id="graphDif"></div></div>
+    <div class="col-md-4"><div id="graphD0"></div></div>
+    <div class="col-md-4"><div id="graphQ"></div></div>
+  </div>
+  <script>
+    var graphDif = document.getElementById('graphDif');
+    var graphD0 = document.getElementById('graphD0');
+    var graphQ = document.getElementById('graphQ');
+    var dummy_trace = { x: [], y: [], type: 'scatter' }
+    var margins = { l: 50, r: 5, b: 70, t: 20 };
+    var ranges = {{ ranges|safe }};
+    var layoutDif = { xaxis: {title: '1/T'}, yaxis: {title: 'diffusivity'}, margin: margins };
+    var layoutD0 = {
+      xaxis: {title: 'Z', range: ranges['Z']},
+      yaxis: {title: 'D0', range: ranges['D0 [cm^2/s]']},
+      margin: margins, showlegend: false
+    };
+    var layoutQ = {
+      xaxis: {title: 'Z', range: ranges['Z']},
+      yaxis: {title: 'Q', range: ranges['Q [eV]']},
+      margin: margins, showlegend: false
+    };
+    Plotly.newPlot(graphDif, [dummy_trace], layoutDif);
+    Plotly.newPlot(graphD0, [dummy_trace], layoutD0);
+    Plotly.newPlot(graphQ, [dummy_trace], layoutQ);
+  </script>
   <div class="row" style="margin-bottom: 5px;">
     <div class="col-md-2">
       <button id="reveal_all" type="button" class="btn btn-primary btn-sm">Reveal</button>
@@ -69,6 +95,13 @@
               var Row = Backbone.Model.extend({});
               var Rows = Backbone.Collection.extend({ model: Row, mode: "client" });
               var rows = new Rows(table['rows']);
+              rows.on("backgrid:selected", function (model, selected) {
+                var trace_index = {{ forloop.counter }};
+                var traceQ = graphQ.data[trace_index];
+                var idx = traceQ['x'].indexOf(model.get('Z'));
+                var val = selected ? model.get('Q [eV]') : NaN;
+                Plotly.restyle(graphQ, 'y.'+idx, val, [trace_index]);
+              })
               var ClickableCell = Backgrid.StringCell.extend({
                 events: {"click": "onClick"},
                 onClick: function (e) { Backbone.trigger("cellclicked", e); }
@@ -88,6 +121,20 @@
                 collection: rows, fields: ['solute'], placeholder: "filter solutes ..."
               });
               $('#table{{ forloop.counter }}').before(filter.render().el);
+              var xvals = []; var yvalsD0 = []; var yvalsQ = [];
+              for (var j=0; j<table['rows'].length; j++) {
+                xvals.push(table['rows'][j]['Z']);
+                yvalsD0.push(table['rows'][j]['D0 [cm^2/s]']);
+                yvalsQ.push(NaN);
+              }
+              Plotly.addTraces(graphD0, {
+                x: xvals, y: yvalsD0, name: "{{ contrib.formula|safe }}",
+                connectgaps: true, mode: 'lines+markers'
+              });
+              Plotly.addTraces(graphQ, {
+                x: xvals, y: yvalsQ, name: "{{ contrib.formula|safe }}",
+                connectgaps: true, mode: 'lines+markers'
+              });
             </script>
           </div>
           <script>
