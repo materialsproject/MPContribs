@@ -23,11 +23,12 @@
     <div class="col-md-4"><div id="graphQ"></div></div>
   </div>
   <script>
+    var grids = [];
     var graphDif = document.getElementById('graphDif');
     var graphD0 = document.getElementById('graphD0');
     var graphQ = document.getElementById('graphQ');
     var dummy_trace = { x: [], y: [], type: 'scatter' }
-    var margins = { l: 50, r: 5, b: 70, t: 20 };
+    var margins = { l: 50, r: 5, b: 70, t: 30 };
     var ranges = {{ ranges|safe }};
     var layoutDif = { xaxis: {title: '1/T'}, yaxis: {title: 'diffusivity'}, margin: margins };
     var layoutD0 = {
@@ -40,14 +41,16 @@
       yaxis: {title: 'Q', range: ranges['Q [eV]']},
       margin: margins, showlegend: false
     };
-    Plotly.newPlot(graphDif, [dummy_trace], layoutDif);
-    Plotly.newPlot(graphD0, [dummy_trace], layoutD0);
-    Plotly.newPlot(graphQ, [dummy_trace], layoutQ);
+    var options = {displaylogo: false, displayModeBar: true}
+    Plotly.newPlot(graphDif, [dummy_trace], layoutDif, options);
+    Plotly.newPlot(graphD0, [dummy_trace], layoutD0, options);
+    Plotly.newPlot(graphQ, [dummy_trace], layoutQ, options);
   </script>
   <div class="row" style="margin-bottom: 5px;">
-    <div class="col-md-2">
+    <div class="col-md-4">
       <button id="reveal_all" type="button" class="btn btn-primary btn-sm">Reveal</button>
       <button id="collapse_all" type="button" class="btn btn-primary btn-sm">Collapse</button>
+      <button id="clear_all" type="button" class="btn btn-primary btn-sm">Clear</button>
     </div>
     <div class="col-md-4">
       <div class="input-group input-group-sm">
@@ -60,7 +63,7 @@
         </span>
       </div>
     </div>
-    <div class="col-md-7"></div>
+    <div class="col-md-4"></div>
   </div>
   <div class="row">
     <div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
@@ -97,10 +100,19 @@
               var rows = new Rows(table['rows']);
               rows.on("backgrid:selected", function (model, selected) {
                 var trace_index = {{ forloop.counter }};
+                var traceD0 = graphD0.data[trace_index];
                 var traceQ = graphQ.data[trace_index];
                 var idx = traceQ['x'].indexOf(model.get('Z'));
-                var val = selected ? model.get('Q [eV]') : NaN;
-                Plotly.restyle(graphQ, 'y.'+idx, val, [trace_index]);
+                var Q = selected ? model.get('Q [eV]') : NaN;
+                var D0 = selected ? model.get('D0 [cm^2/s]') : NaN;
+                if (traceQ['y'][idx] != Q) {
+                  traceQ['y'][idx] = Q;
+                  Plotly.redraw(graphQ);
+                }
+                if (traceD0['y'][idx] != D0) {
+                  traceD0['y'][idx] = D0;
+                  Plotly.redraw(graphD0);
+                }
               })
               var ClickableCell = Backgrid.StringCell.extend({
                 events: {"click": "onClick"},
@@ -124,8 +136,7 @@
               var xvals = []; var yvalsD0 = []; var yvalsQ = [];
               for (var j=0; j<table['rows'].length; j++) {
                 xvals.push(table['rows'][j]['Z']);
-                yvalsD0.push(table['rows'][j]['D0 [cm^2/s]']);
-                yvalsQ.push(NaN);
+                yvalsD0.push(NaN); yvalsQ.push(NaN);
               }
               Plotly.addTraces(graphD0, {
                 x: xvals, y: yvalsD0, name: "{{ contrib.formula|safe }}",
@@ -135,6 +146,7 @@
                 x: xvals, y: yvalsQ, name: "{{ contrib.formula|safe }}",
                 connectgaps: true, mode: 'lines+markers'
               });
+              grids.push(grid);
             </script>
           </div>
           <script>
@@ -165,6 +177,9 @@ function collapse_hosts(flag) {
 };
 $('#reveal_all').on('click', function (e) { collapse_hosts(false); })
 $('#collapse_all').on('click', function (e) { collapse_hosts(true); })
+$("#clear_all").on("click", function() {
+  for (var j=0; j<grids.length; j++) { grids[j].clearSelectedModels(); }
+})
 $("#searchinput").focus(function(){ collapse_hosts(false); })
 $("#searchclear").click(function(){
   $("#searchinput").val('');
