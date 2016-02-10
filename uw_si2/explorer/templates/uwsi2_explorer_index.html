@@ -17,35 +17,11 @@
 .backgrid-filter.form-search { margin:0px; }
 </style>
 <div class="container">
-  <div class="row">
+  <div class="row" style="margin-bottom: 5px;">
     <div class="col-md-4"><div id="graphDif"></div></div>
     <div class="col-md-4"><div id="graphD0"></div></div>
     <div class="col-md-4"><div id="graphQ"></div></div>
   </div>
-  <script>
-    var grids = [];
-    var graphDif = document.getElementById('graphDif');
-    var graphD0 = document.getElementById('graphD0');
-    var graphQ = document.getElementById('graphQ');
-    var dummy_trace = { x: [], y: [], type: 'scatter' }
-    var margins = { l: 50, r: 5, b: 70, t: 30 };
-    var ranges = {{ ranges|safe }};
-    var layoutDif = { xaxis: {title: '1/T'}, yaxis: {title: 'diffusivity'}, margin: margins };
-    var layoutD0 = {
-      xaxis: {title: 'Z', range: ranges['Z']},
-      yaxis: {title: 'D0', range: ranges['D0 [cm^2/s]']},
-      margin: margins, showlegend: false
-    };
-    var layoutQ = {
-      xaxis: {title: 'Z', range: ranges['Z']},
-      yaxis: {title: 'Q', range: ranges['Q [eV]']},
-      margin: margins, showlegend: false
-    };
-    var options = {displaylogo: false, displayModeBar: true}
-    Plotly.newPlot(graphDif, [dummy_trace], layoutDif, options);
-    Plotly.newPlot(graphD0, [dummy_trace], layoutD0, options);
-    Plotly.newPlot(graphQ, [dummy_trace], layoutQ, options);
-  </script>
   <div class="row" style="margin-bottom: 5px;">
     <div class="col-md-4">
       <button id="reveal_all" type="button" class="btn btn-primary btn-sm">Reveal</button>
@@ -65,6 +41,40 @@
     </div>
     <div class="col-md-4"></div>
   </div>
+
+  <script>
+    var grids = [];
+    var graphDif = document.getElementById('graphDif');
+    var graphD0 = document.getElementById('graphD0');
+    var graphQ = document.getElementById('graphQ');
+    var dummy_trace = { x: [], y: [], type: 'scatter' }
+    var margins = { l: 50, r: 5, b: 50, t: 30 };
+    var ranges = {{ ranges|safe }};
+    var xvalsDif = []; var yvalsDifNaN = [];
+    for (var j=0; j<80; j++) { xvalsDif.push(j*0.05); yvalsDifNaN.push(NaN); }
+    var host_solute_index_map = {};
+    var host_solute_counter = 0;
+    var layoutDif = {
+      xaxis: {title: '1000/T'},
+      yaxis: {title: 'diffusivity', type: 'log', exponentformat: "power"},
+      margin: margins, showlegend: false
+    };
+    var layoutD0 = {
+      xaxis: {title: 'Z', range: ranges['Z']},
+      yaxis: {title: 'D0', range: ranges['D0 [cm^2/s]']},
+      margin: margins, showlegend: false
+    };
+    var layoutQ = {
+      xaxis: {title: 'Z', range: ranges['Z']},
+      yaxis: {title: 'Q', range: ranges['Q [eV]']},
+      margin: margins, showlegend: false
+    };
+    var options = {displaylogo: false, displayModeBar: true}
+    Plotly.newPlot(graphDif, [dummy_trace], layoutDif, options);
+    Plotly.newPlot(graphD0, [dummy_trace], layoutD0, options);
+    Plotly.newPlot(graphQ, [dummy_trace], layoutQ, options);
+  </script>
+
   <div class="row">
     <div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
       {% for contrib in contribs %}
@@ -113,6 +123,19 @@
                   traceD0['y'][idx] = D0;
                   Plotly.redraw(graphD0);
                 }
+                var host_solute = "{{ contrib.formula|safe }}-" + model.get('solute');
+                var trace_index_dif = host_solute_index_map[host_solute];
+                if (selected) {
+                  var yvalsDif = [];
+                  for (var j=0; j<80; j++) { yvalsDif.push(D0*Math.exp(-Q/0.08617*j*0.05)); }
+                  Plotly.deleteTraces(graphDif, trace_index_dif);
+                  Plotly.addTraces(graphDif, {
+                    x: xvalsDif, y: yvalsDif, mode: 'lines', name: host_solute
+                  }, trace_index_dif);
+                } else {
+                  Plotly.deleteTraces(graphDif, trace_index_dif);
+                  Plotly.addTraces(graphDif, { x: xvalsDif, y: yvalsDifNaN }, trace_index_dif);
+                }
               })
               var ClickableCell = Backgrid.StringCell.extend({
                 events: {"click": "onClick"},
@@ -137,6 +160,10 @@
               for (var j=0; j<table['rows'].length; j++) {
                 xvals.push(table['rows'][j]['Z']);
                 yvalsD0.push(NaN); yvalsQ.push(NaN);
+                var host_solute = "{{ contrib.formula|safe }}-" + table['rows'][j]['solute'];
+                host_solute_index_map[host_solute] = host_solute_counter;
+                Plotly.addTraces(graphDif, { x: xvalsDif, y: yvalsDifNaN });
+                host_solute_counter += 1;
               }
               Plotly.addTraces(graphD0, {
                 x: xvals, y: yvalsD0, name: "{{ contrib.formula|safe }}",
