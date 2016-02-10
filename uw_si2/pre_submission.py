@@ -6,6 +6,21 @@ from mpcontribs.io.archieml.mpfile import MPFile
 from pandas import DataFrame, Series
 ENDPOINT = "https://www.materialsproject.org/rest"
 
+def run(mpfile):
+    """add solute_diffusivity tables to materials in MPFile"""
+    index = [j*0.05 for j in range(80)]
+    for key in mpfile.document.keys():
+        if key == 'general': continue
+        host = mpfile.document[key]['formula']
+        df = DataFrame.from_dict(mpfile.document[key]['data_supporting'])
+        d = {}
+        for idx,row in df.iterrows():
+            solute, D0, Q = row['solute'], float(row['D0 [cm^2/s]']), float(row['Q [eV]'])
+            d[solute] = [ D0*math.exp(-Q/0.08617*j*0.05) for j in range(80) ]
+        df_dif = DataFrame(d, index=index)
+        mpfile.add_data_table(key, df_dif, 'data_solute_diffusivity')
+        print 'added diffusivity table for host', host
+
 class VaspDirCollParser(AbstractVaspDirCollParser):
     """
     An example VASP-Dirs Collection Parser based on UW/SI2 use case::
