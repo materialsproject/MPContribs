@@ -1,5 +1,6 @@
 import yaml, pymongo, os, six
 from abc import ABCMeta
+from django.core.exceptions import ObjectDoesNotExist
 
 class Connections(object):
     """Cache of all DB connections."""
@@ -126,7 +127,7 @@ class ConnectorBase(six.with_metaclass(ABCMeta, object)):
         in app's `views.py` (where @mapi_func is used)."""
         try:
             self.default_db = self.get_database('default')
-        except:
+        except ObjectDoesNotExist:
             from models import DBConfig
             dbconf = DBConfig(
                 release=self.release, db_type='default',
@@ -134,4 +135,3 @@ class ConnectorBase(six.with_metaclass(ABCMeta, object)):
             )
             dbconf.save()
             self.default_db = self.get_database('default')
-            print self.default_db
