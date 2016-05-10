@@ -47,6 +47,8 @@ def mapi_func(supported_methods=("GET",), requires_api_key=False):
                     kwargs['mdb'] = Connector(
                       request.user, db_type=kwargs.get('db_type')
                     )
+                except ImportError as ex:
+                    raise ImportError(str(ex))
                 except:
                     from mpweb_core.connector import ConnectorBase
                     kwargs['mdb'] = ConnectorBase(request.user)
