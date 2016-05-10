@@ -173,7 +173,7 @@ class MPContributionsBuilder():
         else:
             self.curr_coll.update({'_id': mp_cat_id}, {'$set': all_data}, upsert=True)
         # interactive graphs
-        plotly_urls = self.plot(contributor_email, contrib)
+        plotly_urls = None #self.plot(contributor_email, contrib)
         if plotly_urls is not None:
             if isinstance(self.db, dict):
                 unflatten_dict(plotly_urls)
