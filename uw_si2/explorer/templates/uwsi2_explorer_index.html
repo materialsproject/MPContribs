@@ -1,4 +1,6 @@
-{% extends "../../webtzite/templates/base/header_footer.html" %}
+{% extends "home/templates/base/header_footer.html" %}
+{% load staticfiles %}
+{% load require %}
 {% block content %}
 {% if alert %}
 <div class="alert alert-warning alert-dismissible" role="alert">
@@ -8,6 +10,25 @@
   {{ alert }}
 </div>
 {% endif %}
+<link rel="stylesheet" type="text/css" href='{% static "stylesheets/css/mpcontribs/bootstrap.min.css" %}'/>
+<link rel="stylesheet" type="text/css" href='{% static "stylesheets/css/mpcontribs/chosen.min.css" %}'/>
+<link rel="stylesheet" type="text/css" href='{% static "stylesheets/css/mpcontribs/backgrid.min.css" %}'/>
+<link rel="stylesheet" type="text/css" href='{% static "stylesheets/css/mpcontribs/backgrid-paginator.css" %}'/>
+<link rel="stylesheet" type="text/css" href='{% static "stylesheets/css/mpcontribs/backgrid-select-all.css" %}'/>
+<link rel="stylesheet" type="text/css" href='{% static "stylesheets/css/mpcontribs/backgrid-filter.css" %}'/>
+<script type="text/javascript" charset="utf8" src='{% static "js/mpcontribs/jquery.js" %}'></script>
+<script type="text/javascript" charset="utf8" src='{% static "js/mpcontribs/bootstrap.min.js" %}'></script>
+<script type="text/javascript" charset="utf8" src='{% static "js/mpcontribs/chosen.jquery.min.js" %}'> </script>
+<script type="text/javascript" charset="utf8" src='{% static "js/mpcontribs/underscore-min.js" %}'> </script>
+<script type="text/javascript" charset="utf8" src='{% static "js/mpcontribs/backbone-min.js" %}'></script>
+<script type="text/javascript" charset="utf8" src='{% static "js/mpcontribs/backgrid.js" %}'></script>
+<script type="text/javascript" charset="utf8" src='{% static "js/mpcontribs/backbone.paginator.js" %}'></script>
+<script type="text/javascript" charset="utf8" src='{% static "js/mpcontribs/backgrid.paginator.js" %}'></script>
+<script type="text/javascript" charset="utf8" src='{% static "js/mpcontribs/backgrid-select-all.js" %}'></script>
+<script type="text/javascript" charset="utf8" src='{% static "js/mpcontribs/backgrid-filter.js" %}'></script>
+{% block requirejs %}
+<script type="text/javascript" charset="utf8" src='{% static "js/mpcontribs/plotly.min.js" %}'></script>
+{% endblock %}
 <style>
 .backgrid .string-cell { text-align: center; }
 .backgrid tbody tr:hover { background-color: #f9f9f9; }
@@ -90,7 +111,7 @@
               </a>
               <a role="button" class="btn btn-default btn-xs pull-right" target="_blank"
                  style="position:relative;margin-left:5px;margin-top:-2px;"
-                 href="/test_site/mpcontribs/explorer/materials/{{ contrib.cid }}">
+                 href="/mpcontribs/explorer/materials/{{ contrib.cid }}">
                 #{{ contrib.short_cid }}
               </a>
               <a role="button" class="btn btn-default btn-xs pull-right" target="_blank"
