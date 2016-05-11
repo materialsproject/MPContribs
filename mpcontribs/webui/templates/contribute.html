@@ -1,6 +1,30 @@
 {% extends "layout.html" %}
 {% block body %}
 
+<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title" id="myModalLabel">Add a new site</h4>
+      </div>
+      <div class="modal-body">
+        <form class="form-inline">
+          <div class="form-group">
+            <label class="sr-only" for="inputSiteName">Name</label>
+            <input type="text" class="form-control" id="inputSiteName" placeholder="Name" style="width:251px;">
+          </div>
+          <div class="form-group">
+            <label class="sr-only" for="inputSiteUrl">URL</label>
+            <input type="text" class="form-control" id="inputSiteUrl" placeholder="URL" style="width:252px;">
+          </div>
+          <button type="button" class="btn btn-primary" onClick="saveSite()">Save</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
 <nav class="navbar navbar-default navbar-lower" role="navigation">
   <div class="container">
     <form action="/contribute" method=post enctype=multipart/form-data class="navbar-form navbar-left">
@@ -11,7 +35,9 @@
           <option value="http://localhost:8000">Local Materials Project</option>
           <option value="https://www.materialsproject.org" disabled>Materials Project</option>
         </select>
-        <span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
+        <button type=button class="btn btn-primary btn-xs" onClick="$('#myModal').modal()">
+          <span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
+        </button>
       </div>
       <div class="form-group" style="position:relative; margin-left:50px;">
         <select id="dbselect" data-placeholder="Select DB ..." style="width:150px;">
@@ -55,9 +81,30 @@
     } else { window.stop(); }
     alert('submission process aborted!');
   }
+  function saveSite() {
+    var list = document.getElementById('siteselect');
+    var entry = document.createElement('option');
+    entry.value = document.getElementById('inputSiteUrl').value;
+    entry.innerHTML = document.getElementById('inputSiteName').value;
+    list.appendChild(entry);
+    $('#siteselect').trigger('chosen:updated');
+    $('#myModal').modal('hide');
+  }
   // select options in siteselect and dbselect based on session.contribute
   var contrib = {{ session.contribute|tojson|safe }}; // dict: site, db, apikey
   if ( 'site' in contrib ) {
+    var siteselect = document.getElementById('siteselect');
+    for (var i=0, iLen=siteselect.options.length; i<iLen; i++) {
+      site_in_opts = false;
+      if (siteselect.options[i].value == contrib['site']) { site_in_opts = true; break; }
+    }
+    if (!site_in_opts) {
+      var entry = document.createElement('option');
+      entry.value = contrib['site'];
+      entry.innerHTML = 'MP Dev'; // TODO use hidden input field and contrib['name']
+      siteselect.appendChild(entry);
+      $('#siteselect').trigger('chosen:updated');
+    }
     $('#siteselect option[value="' + contrib['site'] + '"]').prop('selected', true);
   }
   $('#siteselect').trigger('chosen:updated');
