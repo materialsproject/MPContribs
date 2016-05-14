@@ -27,10 +27,13 @@ class MPFileCore(six.with_metaclass(ABCMeta, object)):
 
     @classmethod
     def from_dict(cls, data=RecursiveDict()):
-        if not isinstance(data, RecursiveDict):
-            raise ValueError('Need RecursiveDict to init MPFile.')
         mpfile = cls()
-        mpfile.document = data
+        if isinstance(data, RecursiveDict):
+            mpfile.document = data
+        elif isinstance(data, dict):
+            mpfile.document = RecursiveDict(data)
+        else:
+            raise ValueError('Need RecursiveDict or dict to init MPFile.')
         mpfile.document.rec_update() # convert (most) OrderedDict's to RecursiveDict's
         return mpfile
 
