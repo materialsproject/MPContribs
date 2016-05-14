@@ -139,6 +139,10 @@ class MPFileCore(six.with_metaclass(ABCMeta, object)):
     def __repr__(self): return self.get_string()
     def __str__(self): return self.get_string()
 
+    def _repr_html_(self):
+        # TODO represent hierarchical data, tables, and graphs
+        return self.document._repr_html_()
+
     # ----------------------------
     # Override these in subclasses
     # ----------------------------
