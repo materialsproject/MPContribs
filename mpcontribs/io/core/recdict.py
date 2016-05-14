@@ -1,5 +1,5 @@
 from __future__ import unicode_literals, print_function
-import pandas
+import uuid, json
 from collections import OrderedDict as _OrderedDict
 from collections import Mapping as _Mapping
 from mpcontribs.config import mp_level01_titles
@@ -73,3 +73,18 @@ class RecursiveDict(_OrderedDict):
 
     def insert_before(self, existing_key, key_value):
         self.__insertion(self._OrderedDict__map[existing_key][0], key_value)
+
+    def _repr_html_(self):
+        json_str, uuid_str = json.dumps(self), str(uuid.uuid4())
+        html =  "<div id='{}' style='width:100%;'></div>".format(uuid_str)
+        html += """
+        <script>
+        require(["custom/js/json.human"], function(JsonHuman) {
+          "use strict";
+          var data = JSON.parse('%s');
+          var node = JsonHuman.format(data);
+          document.getElementById('%s').appendChild(node);
+        });
+        </script>
+        """ % (json_str, uuid_str)
+        return html
