@@ -4,7 +4,8 @@ from abc import ABCMeta
 from mpcontribs.config import mp_level01_titles, default_mpfile_path
 from recdict import RecursiveDict
 from utils import pandas_to_dict, nest_dict, render_dataframe
-from IPython.display import display_javascript, display_html
+from IPython.display import display_javascript, display_html, display, HTML, Javascript
+from plotly.offline.offline import _plot_html
 
 class MPFileCore(six.with_metaclass(ABCMeta, object)):
     """Abstract Base Class for representing a MP Contribution File"""
@@ -162,6 +163,9 @@ class MPFileCore(six.with_metaclass(ABCMeta, object)):
                 tables[key] = pandas.DataFrame.from_dict(value)
             else:
                 hdata[key] = value
+        display(Javascript("""
+            require("notebook/js/outputarea").OutputArea.prototype._should_scroll=function(){return false;};
+        """))
         display_html('<h1>{}</h1>'.format(mp_cat_id), raw=True)
         display_html('<h2>Hierarchical Data</h2>', raw=True)
         hdata._ipython_display_()
@@ -169,7 +173,31 @@ class MPFileCore(six.with_metaclass(ABCMeta, object)):
         for table_name, table_data in tables.iteritems():
             display_html('<h3>{}</h3>'.format(table_name), raw=True)
             display_html(table_data)
-        # TODO plots (make plotly not replace cell content)
+        if plots is not None:
+            display_html('<h2>Interactive Graphs</h2>', raw=True)
+            for plotopts in plots.itervalues():
+                table_name = plotopts['table']
+                plot_title = ' - '.join([mp_cat_id, table_name])
+                df = tables['_'.join([mp_level01_titles[1], table_name])]
+                xaxis, yaxis = plotopts['x'], plotopts.get('y', None)
+                yaxes = [yaxis] if yaxis is not None else \
+                        [col for col in df.columns if col != xaxis]
+                xvals = df[xaxis].tolist()
+                traces = [dict(
+                    x=xvals, y=df[axis].tolist(), name=axis
+                ) for axis in yaxes]
+                layout = dict(
+                    # TODO: set xTitle and yTitle according to column header
+                    title = plot_title,
+                    xaxis = dict(title=xaxis),
+                    #yaxis = dict(plotopts['yaxis'].iteritems()),
+                    legend = dict(x=0.7, y=1),
+                    margin = dict(r=0, t=40),
+                )
+                fig = dict(data=traces, layout=layout)
+                display(HTML(_plot_html(
+                    fig, False, '', True, '50%', 525, global_requirejs=True
+                )[0].replace('["plotly"]', '["custom/js/plotly.min"]')))
 
     # ----------------------------
     # Override these in subclasses
