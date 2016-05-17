@@ -3,6 +3,7 @@ import uuid, json
 from collections import OrderedDict as _OrderedDict
 from collections import Mapping as _Mapping
 from mpcontribs.config import mp_level01_titles
+from IPython.display import display_javascript, display_html
 
 class RecursiveDict(_OrderedDict):
     """extension of dict for internal representation of MPFile"""
@@ -74,17 +75,16 @@ class RecursiveDict(_OrderedDict):
     def insert_before(self, existing_key, key_value):
         self.__insertion(self._OrderedDict__map[existing_key][0], key_value)
 
-    def _repr_html_(self):
+    def _ipython_display_(self):
         json_str, uuid_str = json.dumps(self), str(uuid.uuid4())
-        html =  "<div id='{}' style='width:100%;'></div>".format(uuid_str)
-        html += """
-        <script>
+        display_html(
+          "<div id='{}' style='width:100%;'></div>".format(uuid_str), raw=True
+        )
+        display_javascript("""
         require(["custom/js/json.human"], function(JsonHuman) {
           "use strict";
           var data = JSON.parse('%s');
           var node = JsonHuman.format(data);
           document.getElementById('%s').appendChild(node);
         });
-        </script>
-        """ % (json_str, uuid_str)
-        return html
+        """ % (json_str, uuid_str), raw=True)
