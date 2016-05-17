@@ -37,6 +37,14 @@ class MPFileCore(six.with_metaclass(ABCMeta, object)):
         mpfile.document.rec_update() # convert (most) OrderedDict's to RecursiveDict's
         return mpfile
 
+    @classmethod
+    def from_contribution(cls, contrib):
+        """construct MPFile from contribution (see rest.adapter.submit_contribution)"""
+        if not 'mp_cat_id' in contrib or not 'content' in contrib:
+            raise ValueError('Dict not in contribution-style format')
+        recdict = RecursiveDict({contrib['mp_cat_id']: contrib['content']})
+        return cls.from_dict(recdict)
+
     def write_file(self, filename=default_mpfile_path.replace('.txt', '_out.txt'), **kwargs):
         """Writes MPFile to a file. The supported kwargs are the same as those
         for the MPFile.get_string method and are passed through directly."""
