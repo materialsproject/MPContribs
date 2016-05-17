@@ -1,9 +1,10 @@
 from __future__ import unicode_literals, print_function
-import six, codecs, locale
+import six, codecs, locale, pandas
 from abc import ABCMeta
 from mpcontribs.config import mp_level01_titles, default_mpfile_path
 from recdict import RecursiveDict
-from utils import pandas_to_dict, nest_dict
+from utils import pandas_to_dict, nest_dict, render_dataframe
+from IPython.display import display_javascript, display_html
 
 class MPFileCore(six.with_metaclass(ABCMeta, object)):
     """Abstract Base Class for representing a MP Contribution File"""
@@ -147,9 +148,28 @@ class MPFileCore(six.with_metaclass(ABCMeta, object)):
     def __repr__(self): return self.get_string()
     def __str__(self): return self.get_string()
 
-    def _repr_html_(self):
-        # TODO represent hierarchical data, tables, and graphs
-        return self.document._repr_html_()
+    def _ipython_display_(self):
+        if len(self.document) > 1:
+            raise ValueError('MPFile display only implemented for single section files')
+        mp_cat_id = self.document.keys()[0]
+        data = self.document[mp_cat_id]
+        plots = data[mp_level01_titles[2]] if mp_level01_titles[2] in data else None
+        hdata, tables = RecursiveDict(), RecursiveDict()
+        for key, value in data.iteritems():
+            if key == mp_level01_titles[2]:
+                continue
+            elif key.startswith(mp_level01_titles[1]):
+                tables[key] = pandas.DataFrame.from_dict(value)
+            else:
+                hdata[key] = value
+        display_html('<h1>{}</h1>'.format(mp_cat_id), raw=True)
+        display_html('<h2>Hierarchical Data</h2>', raw=True)
+        hdata._ipython_display_()
+        display_html('<h2>Tabular Data</h2>', raw=True)
+        for table_name, table_data in tables.iteritems():
+            display_html('<h3>{}</h3>'.format(table_name), raw=True)
+            display_html(table_data)
+        # TODO plots (make plotly not replace cell content)
 
     # ----------------------------
     # Override these in subclasses
