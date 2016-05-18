@@ -3,12 +3,21 @@ import six, codecs, locale, pandas
 from abc import ABCMeta
 from mpcontribs.config import mp_level01_titles, default_mpfile_path
 from recdict import RecursiveDict
-from utils import pandas_to_dict, nest_dict, render_dataframe
-from IPython.display import display_javascript, display_html, display, HTML, Javascript
+from utils import pandas_to_dict, nest_dict
+from components import HierarchicalData, TabularData
+from IPython.display import display_javascript, display_html, display, HTML
 from plotly.offline.offline import _plot_html
 
 class MPFileCore(six.with_metaclass(ABCMeta, object)):
     """Abstract Base Class for representing a MP Contribution File"""
+
+    @property
+    def hdata(self):
+        return HierarchicalData(self)
+
+    @property
+    def tdata(self):
+        return TabularData(self)
 
     @classmethod
     def from_file(cls, filename_or_file=default_mpfile_path.replace('.txt', '_in.txt')):
@@ -150,29 +159,9 @@ class MPFileCore(six.with_metaclass(ABCMeta, object)):
     def __str__(self): return self.get_string()
 
     def _ipython_display_(self):
-        if len(self.document) > 1:
-            raise ValueError('MPFile display only implemented for single section files')
-        mp_cat_id = self.document.keys()[0]
-        data = self.document[mp_cat_id]
+        display_html(self.hdata)
+        display_html(self.tdata)
         plots = data[mp_level01_titles[2]] if mp_level01_titles[2] in data else None
-        hdata, tables = RecursiveDict(), RecursiveDict()
-        for key, value in data.iteritems():
-            if key == mp_level01_titles[2]:
-                continue
-            elif key.startswith(mp_level01_titles[1]):
-                tables[key] = pandas.DataFrame.from_dict(value)
-            else:
-                hdata[key] = value
-        display(Javascript("""
-            require("notebook/js/outputarea").OutputArea.prototype._should_scroll=function(){return false;};
-        """))
-        display_html('<h1>{}</h1>'.format(mp_cat_id), raw=True)
-        display_html('<h2>Hierarchical Data</h2>', raw=True)
-        hdata._ipython_display_()
-        display_html('<h2>Tabular Data</h2>', raw=True)
-        for table_name, table_data in tables.iteritems():
-            display_html('<h3>{}</h3>'.format(table_name), raw=True)
-            display_html(table_data)
         if plots is not None:
             display_html('<h2>Interactive Graphs</h2>', raw=True)
             for plotopts in plots.itervalues():
