@@ -3,8 +3,9 @@ from pandas import DataFrame
 from mpcontribs.config import mp_level01_titles
 from recdict import RecursiveDict
 from utils import disable_ipython_scrollbar
-from IPython.display import display_html
+from IPython.display import display_html, display, HTML
 from IPython import get_ipython
+from plotly.offline.offline import _plot_html
 
 class Tree(RecursiveDict):
     """class to hold and display single tree of hierarchical data"""
@@ -22,6 +23,9 @@ class HierarchicalData(RecursiveDict):
             (identifier, Tree(content))
             for identifier, content in mpfile.document.iteritems()
         )
+
+    def __str__(self):
+        return 'mp-ids: {}'.format(' '.join(self.keys()))
 
     def _ipython_display_(self):
         for identifier, hdata in self.iteritems():
@@ -65,21 +69,88 @@ class Tables(RecursiveDict):
             if key.startswith(mp_level01_titles[1])
         )
 
+    def __str__(self):
+        return 'tables: {}'.format(' '.join(self.keys()))
+
     def _ipython_display_(self):
         for name, table in self.iteritems():
             display_html('<h3>{}</h3>'.format(name), raw=True)
             display_html(table)
 
 class TabularData(RecursiveDict):
-    """class to hold and display tabular data of a MPFile"""
+    """class to hold and display all tabular data of a MPFile"""
     def __init__(self, mpfile):
         super(TabularData, self).__init__(
             (identifier, Tables(content))
             for identifier, content in mpfile.document.iteritems()
         )
 
+    def __str__(self):
+        return 'mp-ids: {}'.format(' '.join(self.keys()))
+
     def _ipython_display_(self):
         disable_ipython_scrollbar()
         for identifier, tables in self.iteritems():
             display_html('<h2>Tabular Data for {}</h2>'.format(identifier), raw=True)
             display_html(tables)
+
+class Plot(object):
+    """class to hold and display single interactive graph/plot"""
+    def __init__(self, config, table):
+        self.config = config
+        self.table = table
+
+    def _ipython_display_(self):
+        disable_ipython_scrollbar()
+        xaxis, yaxis = self.config['x'], self.config.get('y', None)
+        yaxes = [yaxis] if yaxis is not None else \
+                [col for col in self.table.columns if col != xaxis]
+        xvals = self.table[xaxis].tolist()
+        traces = [dict(
+            x=xvals, y=self.table[axis].tolist(), name=axis
+        ) for axis in yaxes]
+        layout = dict(
+            xaxis = dict(title=xaxis),
+            legend = dict(x=0.7, y=1), margin = dict(r=0, t=40),
+        )
+        fig = dict(data=traces, layout=layout)
+        display(HTML(_plot_html(
+            fig, False, '', True, '50%', 525, global_requirejs=True
+        )[0].replace('["plotly"]', '["custom/js/plotly.min"]')))
+
+class Plots(RecursiveDict):
+    """class to hold and display multiple interactive graphs/plots"""
+    def __init__(self, content):
+        plotconfs = content.get(mp_level01_titles[2], RecursiveDict())
+        tables = Tables(content)
+        super(Plots, self).__init__(
+            (plotconf['table'], Plot(
+                plotconf, tables['_'.join([mp_level01_titles[1], plotconf['table']])]
+            )) for plotconf in plotconfs.itervalues()
+        )
+
+    def __str__(self):
+        return 'plots: {}'.format(' '.join(self.keys()))
+
+    def _ipython_display_(self):
+        disable_ipython_scrollbar()
+        for name, plot in self.iteritems():
+            display_html('<h3>{}</h3>'.format(name), raw=True)
+            display_html(plot)
+
+class GraphicalData(RecursiveDict):
+    """class to hold and display all interactive graphs/plots of a MPFile"""
+    def __init__(self, mpfile):
+        super(GraphicalData, self).__init__(
+            (identifier, Plots(content))
+            for identifier, content in mpfile.document.iteritems()
+        )
+
+    def __str__(self):
+        return 'mp-ids: {}'.format(' '.join(self.keys()))
+
+    def _ipython_display_(self):
+        disable_ipython_scrollbar()
+        for identifier, plots in self.iteritems():
+            display_html('<h2>Interactive Plots for {}</h2>'.format(identifier), raw=True)
+            display_html(plots)
