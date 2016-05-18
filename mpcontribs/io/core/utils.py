@@ -1,9 +1,9 @@
-import warnings, pandas, numpy, six, uuid, json
+import warnings, pandas, numpy, six
 from StringIO import StringIO
 from mpcontribs.pmg_utils.composition import Composition
 from mpcontribs.config import mp_level01_titles, mp_id_pattern, csv_comment_char
 from recdict import RecursiveDict
-from IPython import get_ipython
+from IPython.display import display, Javascript
 
 def get_short_object_id(cid):
     length = 7
@@ -86,30 +86,7 @@ def read_csv(body, is_data_section=True):
         **options
     ).dropna(how='all')
 
-def render_dataframe(df):
-    """use BackGrid JS library to render Pandas DataFrame"""
-    table, uuid_str = dict(), str(uuid.uuid4())
-    table['columns'] = [ { 'name': k, 'cell': 'string' } for k in df.columns ]
-    table['rows'] = [
-        dict((col, str(df[col][row_index])) for col in df.columns)
-        for row_index in xrange(len(df[df.columns[0]]))
-    ]
-    html =  "<div id='{}' style='width:100%;'></div>".format(uuid_str)
-    html += """
-    <script>
-    require(["custom/js/backgrid"], function(Backgrid) {
-      "use strict";
-      var table = JSON.parse('%s');
-      var Row = Backbone.Model.extend({});
-      var Rows = Backbone.Collection.extend({model: Row, mode: "client"});
-      var rows = new Rows(table['rows']);
-      var grid = new Backgrid.Grid({ columns: table['columns'], collection: rows });
-      $('#%s').append(grid.render().el);
-    });
-    </script>
-    """ % (json.dumps(table), uuid_str)
-    return html
-
-ipython = get_ipython()
-html_f = ipython.display_formatter.formatters['text/html']
-html_f.for_type(pandas.DataFrame, render_dataframe)
+def disable_ipython_scrollbar():
+    display(Javascript("""
+        require("notebook/js/outputarea").OutputArea.prototype._should_scroll=function(){return false;};
+    """))
