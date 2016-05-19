@@ -2,6 +2,7 @@ from __future__ import division, unicode_literals
 import six, bson
 from bson.json_util import dumps, loads
 from mpweb_core.rester import MPResterBase, MPResterError
+from mpcontribs.io.core.mpfile import MPFileCore
 
 class MPContribsRester(MPResterBase):
     """convenience functions to interact with MPContribs REST interface"""
@@ -91,9 +92,19 @@ class MPContribsRester(MPResterBase):
                 "projection": dumps(kwargs.get('projection')),
                 "collection": kwargs.get('collection', 'contributions')
             }
-            return self._make_request('/query', payload=payload, method='POST')
+            docs = self._make_request('/query', payload=payload, method='POST')
         else:
-            return self._make_request('/query')
+            docs = self._make_request('/query')
+        return docs if len(docs) != 1 else docs[0]
+
+    def find_contribution(self, cid, as_doc=False):
+        """find a specific contribution"""
+        contrib = self.query_contributions(
+            criteria={'_id': bson.ObjectId(cid)},
+            projection={'_id': 0, 'mp_cat_id': 1, 'content': 1}
+        )
+        if as_doc: return contrib
+        return MPFileCore.from_contribution(contrib)
 
     def delete_contributions(self, cids):
         """
