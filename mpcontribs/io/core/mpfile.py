@@ -10,18 +10,6 @@ from IPython.display import display_html
 class MPFileCore(six.with_metaclass(ABCMeta, object)):
     """Abstract Base Class for representing a MP Contribution File"""
 
-    @property
-    def hdata(self):
-        return HierarchicalData(self)
-
-    @property
-    def tdata(self):
-        return TabularData(self)
-
-    @property
-    def gdata(self):
-        return GraphicalData(self)
-
     @classmethod
     def from_file(cls, filename_or_file=default_mpfile_path.replace('.txt', '_in.txt')):
         """Reads a MPFile from a file.
@@ -49,6 +37,10 @@ class MPFileCore(six.with_metaclass(ABCMeta, object)):
         else:
             raise ValueError('Need RecursiveDict or dict to init MPFile.')
         mpfile.document.rec_update() # convert (most) OrderedDict's to RecursiveDict's
+        mpfile.ids = mpfile.document.keys()
+        mpfile.hdata = HierarchicalData(mpfile.document)
+        mpfile.tdata = TabularData(mpfile.document)
+        mpfile.gdata = GraphicalData(mpfile.document)
         return mpfile
 
     @classmethod

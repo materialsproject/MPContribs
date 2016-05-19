@@ -18,10 +18,10 @@ class Tree(RecursiveDict):
 
 class HierarchicalData(RecursiveDict):
     """class to hold and display all hierarchical data in MPFile"""
-    def __init__(self, mpfile):
+    def __init__(self, document):
         super(HierarchicalData, self).__init__(
             (identifier, Tree(content))
-            for identifier, content in mpfile.document.iteritems()
+            for identifier, content in document.iteritems()
         )
 
     def __str__(self):
@@ -79,10 +79,10 @@ class Tables(RecursiveDict):
 
 class TabularData(RecursiveDict):
     """class to hold and display all tabular data of a MPFile"""
-    def __init__(self, mpfile):
+    def __init__(self, document):
         super(TabularData, self).__init__(
             (identifier, Tables(content))
-            for identifier, content in mpfile.document.iteritems()
+            for identifier, content in document.iteritems()
         )
 
     def __str__(self):
@@ -140,10 +140,10 @@ class Plots(RecursiveDict):
 
 class GraphicalData(RecursiveDict):
     """class to hold and display all interactive graphs/plots of a MPFile"""
-    def __init__(self, mpfile):
+    def __init__(self, document):
         super(GraphicalData, self).__init__(
             (identifier, Plots(content))
-            for identifier, content in mpfile.document.iteritems()
+            for identifier, content in document.iteritems()
         )
 
     def __str__(self):
