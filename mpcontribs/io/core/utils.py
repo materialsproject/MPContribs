@@ -5,6 +5,18 @@ from mpcontribs.config import mp_level01_titles, mp_id_pattern, csv_comment_char
 from recdict import RecursiveDict
 from IPython.display import display, Javascript
 
+def flatten_dict(dd, separator='.', prefix=''):
+    """http://stackoverflow.com/a/19647596"""
+    return { prefix + separator + k if prefix else k : v
+            for kk, vv in dd.items()
+            for k, v in flatten_dict(vv, separator, kk).items()
+           } if isinstance(dd, dict) else { prefix : dd }
+
+def unflatten_dict(d):
+    for k in d:
+        value, keys = d.pop(k), k.split('.')
+        d.rec_update(nest_dict({keys[-1]: value}, keys[:-1]))
+
 def get_short_object_id(cid):
     length = 7
     cid_short = str(cid)[-length:]
