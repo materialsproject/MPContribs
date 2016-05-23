@@ -130,7 +130,7 @@ def build_contribution(request, db_type=None, mdb=None):
 def query_contributions(request, db_type=None, mdb=None):
     """
     @api {post} /query?API_KEY=:api_key Query contributions
-    @apiVersion 0.0.0
+    @apiVersion 0.0.1
     @apiName PostQueryContributions
     @apiGroup Contribution
 
@@ -140,9 +140,17 @@ def query_contributions(request, db_type=None, mdb=None):
     @apiParam {String} api_key User's unique API_KEY
     @apiParam {String} collection Collection to run query against
     ('contributions', 'materials', or 'compositions')
+    @apiParam {json} criteria Query criteria (filter documents)
+    @apiParam {json} projection Query projection (reduce returned doc output)
 
     @apiParamExample {json} Request-Example:
-        { "collection": "materials" }
+        {
+            "collection": "materials",
+            "criteria": { "_id": "mp-30" },
+            "projection": {
+                "_id": 0, "LBNL.5733704637202d12f448fc59.tree_data": 1
+            }
+        }
 
     @apiSuccess {String} created_at Response timestamp
     @apiSuccess {Bool} valid_response Response is valid
