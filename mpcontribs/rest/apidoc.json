@@ -1,0 +1,12 @@
+{
+  "name": "mpcontribs.rest",
+  "version": "0.0.0",
+  "description": "MPContribs REST API Docs",
+  "apidoc": {
+    "title": "MPContribs REST API Docs",
+    "url": "http://localhost:5000/test_site/mpcontribs/rest"
+  },
+  "sampleUrl": "http://localhost:5000/test_site/mpcontribs/rest",
+  "template": { "forceLanguage": "en" },
+  "order": [ "User", "Contribution" ]
+}

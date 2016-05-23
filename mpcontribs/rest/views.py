@@ -32,7 +32,36 @@ def index(request):
 
 @mapi_func(supported_methods=["GET"], requires_api_key=True)
 def check_contributor(request, db_type=None, mdb=None):
-    """check whether user is in contrib(utor) group and return info."""
+    """
+    @api {get} /check_contributor?API_KEY=:api_key Trusted contributor?
+    @apiVersion 0.0.0
+    @apiName GetCheckContributor
+    @apiGroup User
+
+    @apiDescription Checked whether user with given API key is registered with
+    the Materials Project as a trusted contributor.
+
+    @apiParam {String} api_key User's unique API_KEY
+
+    @apiSuccess {String} created_at Response timestamp
+    @apiSuccess {Bool} valid_response Response is valid
+    @apiSuccess {Object} response Response dictionary
+    @apiSuccess {Boolean} response.is_contrib User is trusted contributor
+    @apiSuccess {String} response.contributor User's first and last name
+    @apiSuccess {String} response.institution User's institution/project
+
+    @apiSuccessExample Success-Response:
+        HTTP/1.1 200 OK
+        {
+            "created_at": "2016-05-19T16:36:17.011824",
+            "valid_response": true,
+            "response": {
+                "contributor": "Patrick Huck",
+                "is_contrib": true,
+                "institution": "LBNL"
+            }
+        }
+    """
     is_contrib = request.user.groups.filter(name='contrib').exists()
     contributor = '{} {}'.format(request.user.first_name, request.user.last_name)
     return {"valid_response": True, 'response': {
@@ -42,7 +71,30 @@ def check_contributor(request, db_type=None, mdb=None):
 
 @mapi_func(supported_methods=["POST", "GET"], requires_api_key=True)
 def submit_contribution(request, db_type=None, mdb=None):
-    """Submits a MPFile with a single contribution."""
+    """
+    @api {post} /submit?API_KEY=:api_key Submit contribution
+    @apiVersion 0.0.0
+    @apiName PostSubmitContribution
+    @apiGroup Contribution
+    @apiPermission contrib
+    @apiIgnore
+
+    @apiDescription Submit a MPFile containing a single contribution
+
+    @apiParam {String} api_key User's unique API_KEY
+
+    @apiSuccess {String} created_at Response timestamp
+    @apiSuccess {Bool} valid_response Response is valid
+    @apiSuccess {String} response Assigned contribution identifier
+
+    @apiSuccessExample Success-Response:
+        HTTP/1.1 200 OK
+        {
+            "created_at": "2016-05-19T16:36:17.011824",
+            "valid_response": true,
+            "response": "5733904537202d12f59e896d"
+        }
+    """
     if not request.user.groups.filter(name='contrib').exists():
         raise PermissionDenied("MPFile submission open only to contributors.")
     project = request.user.institution # institution is required field in User
@@ -76,7 +128,50 @@ def build_contribution(request, db_type=None, mdb=None):
 
 @mapi_func(supported_methods=["POST", "GET"], requires_api_key=True)
 def query_contributions(request, db_type=None, mdb=None):
-    """Query the contributions collection"""
+    """
+    @api {post} /query?API_KEY=:api_key Query contributions
+    @apiVersion 0.0.0
+    @apiName PostQueryContributions
+    @apiGroup Contribution
+
+    @apiDescription Query the contributions, materials, or compositions
+    collections given specific criteria and projection
+
+    @apiParam {String} api_key User's unique API_KEY
+    @apiParam {String} collection Collection to run query against
+    ('contributions', 'materials', or 'compositions')
+
+    @apiParamExample {json} Request-Example:
+        { "collection": "materials" }
+
+    @apiSuccess {String} created_at Response timestamp
+    @apiSuccess {Bool} valid_response Response is valid
+    @apiSuccess {Object[]} response List of shortened contribution docs (defined
+    as follows) if collection == 'contributions' else list of materials or
+    compositions docs (limited to one doc)
+    @apiSuccess {String} response._id Contribution identifier
+    @apiSuccess {String[]} response.collaborators List of collaborators
+    @apiSuccess {String} response.mp_cat_id MP category identifier (mp-id or
+    composition)
+
+    @apiSuccessExample Success-Response:
+        HTTP/1.1 200 OK
+        {
+            "created_at": "2016-05-20T16:15:26.909038",
+            "valid_response": true,
+            "response": [
+                {
+                    "_id": "57336b0137202d12f6d50b37",
+                    "collaborators": ["Patrick Huck"],
+                    "mp_cat_id": "mp-134"
+                }, {
+                    "_id": "5733704637202d12f448fc59",
+                    "collaborators": ["Patrick Huck"],
+                    "mp_cat_id": "mp-30"
+                }
+            ]
+        }
+    """
     criteria = loads(request.POST.get('criteria', '{}'))
     collection = request.POST.get('collection', 'contributions')
     projection = loads(request.POST.get('projection', 'null'))
