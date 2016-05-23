@@ -1,5 +1,6 @@
 """This module provides the views for the rest interface."""
 
+import os
 from bson.json_util import loads
 from django.core.exceptions import PermissionDenied
 from django.shortcuts import render_to_response
@@ -7,6 +8,8 @@ from django.template import RequestContext
 from mpweb_core.connector import ConnectorBase
 from bson.objectid import ObjectId
 from mpweb_core import mapi_func
+from django.http import HttpResponse
+from test_site.settings import STATIC_ROOT
 
 class Connector(ConnectorBase):
     def connect(self, **kwargs):
@@ -23,11 +26,9 @@ class Connector(ConnectorBase):
 ConnectorBase.register(Connector)
 
 def index(request):
-    from django.core.urlresolvers import reverse
-    from .urls import urlpatterns
-    urls = [ reverse(url.name) for url in urlpatterns[1:] ]
-    ctx = RequestContext(request)
-    return render_to_response("mpcontribs_rest_index.html", locals(), ctx)
+    return HttpResponse(
+        open(os.path.join(STATIC_ROOT, 'index.html'), 'r').read()
+    )
 
 @mapi_func(supported_methods=["GET"], requires_api_key=True)
 def check_contributor(request, db_type=None, mdb=None):
