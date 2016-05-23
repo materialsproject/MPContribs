@@ -174,16 +174,23 @@ def query_contributions(request, db_type=None, mdb=None):
     """
     criteria = loads(request.POST.get('criteria', '{}'))
     collection = request.POST.get('collection', 'contributions')
+    if not collection: collection = 'contributions' # empty string check
     projection = loads(request.POST.get('projection', 'null'))
     contributor = '{} {} <{}>'.format(
         request.user.first_name, request.user.last_name, request.user.email
     )
     if loads(request.POST.get('contributor_only', 'false')):
         criteria['collaborators'] = {'$in': [contributor]}
-    results = mdb.contrib_ad.query_contributions(
+    results = list(mdb.contrib_ad.query_contributions(
         criteria, projection=projection, collection=collection
-    )
-    return {"valid_response": True, "response": list(results)}
+    ))
+    if collection == 'contributions':
+        for doc in results:
+            doc['collaborators'] = [
+                ' '.join(collaborator.split()[:2])
+                for collaborator in doc['collaborators']
+            ]
+    return {"valid_response": True, "response": results}
 
 @mapi_func(supported_methods=["POST", "GET"], requires_api_key=True)
 def delete_contributions(request, db_type=None, mdb=None):
