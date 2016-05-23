@@ -126,12 +126,12 @@ class ConnectorBase(six.with_metaclass(ABCMeta, object)):
         useful for custom REST interfaces). Define or import "Connector" class
         in app's `views.py` (where @mapi_func is used)."""
         try:
-            self.default_db = self.get_database('default')
+            self.default_db = self.get_database('mpcontribs_read')
         except ObjectDoesNotExist:
             from models import DBConfig
             dbconf = DBConfig(
-                release=self.release, db_type='default',
+                release=self.release, db_type='mpcontribs_read',
                 config="host: localhost\ndb: mpcontribs\nport: 27017"
             )
             dbconf.save()
-            self.default_db = self.get_database('default')
+            self.default_db = self.get_database('mpcontribs_read')
