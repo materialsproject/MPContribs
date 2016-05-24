@@ -1,0 +1,5 @@
+{
+  "load_extensions": {
+    "python-markdown/main": true
+  }
+}
