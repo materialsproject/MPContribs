@@ -57,8 +57,9 @@ def render_dataframe(df):
     return html
 
 ipython = get_ipython()
-html_f = ipython.display_formatter.formatters['text/html']
-html_f.for_type(DataFrame, render_dataframe)
+if ipython is not None:
+    html_f = ipython.display_formatter.formatters['text/html']
+    html_f.for_type(DataFrame, render_dataframe)
 
 class Tables(RecursiveDict):
     """class to hold and display multiple data tables"""
