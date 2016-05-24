@@ -1,3 +1,22 @@
+import os, sys
+from jupyter_core.paths import jupyter_data_dir
+
+print jupyter_data_dir()
+sys.path.append(os.path.join(jupyter_data_dir(), 'extensions'))
+
+c = get_config()
+c.NotebookApp.extra_template_paths = [os.path.join(jupyter_data_dir(),'templates') ]
+
+c.NotebookApp.server_extensions = ['nbextensions']
+
+c.Exporter.template_path = [os.path.join(jupyter_data_dir(), 'templates')]
+c.Exporter.preprocessors = [
+    "pre_codefolding.CodeFoldingPreprocessor",
+    "pre_pymarkdown.PyMarkdownPreprocessor"
+]
+
+c.NbConvertApp.postprocessor_class = "post_embedhtml.EmbedPostProcessor"
+
 # Configuration file for jupyter-notebook.
 
 #------------------------------------------------------------------------------
