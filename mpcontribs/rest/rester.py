@@ -8,7 +8,8 @@ class MPContribsRester(MPResterBase):
     """convenience functions to interact with MPContribs REST interface"""
     def __init__(self, api_key=None,
                  endpoint="https://www.materialsproject.org/mpcontribs/rest",
-                 dbtype='default'):
+                 dbtype='read'):
+        # TODO set endpoint automatically based on host or parent django app?
         super(MPContribsRester, self).__init__(
           api_key=api_key, endpoint=endpoint
         )
@@ -101,7 +102,7 @@ class MPContribsRester(MPResterBase):
         """find a specific contribution"""
         contrib = self.query_contributions(
             criteria={'_id': bson.ObjectId(cid)},
-            projection={'_id': 0, 'mp_cat_id': 1, 'content': 1}
+            projection={'_id': 0, 'mp_cat_id': 1, 'content': 1, 'collaborators': 1}
         )
         if as_doc: return contrib
         return MPFileCore.from_contribution(contrib)
