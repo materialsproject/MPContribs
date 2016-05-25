@@ -115,6 +115,7 @@ def submit_contribution(request, db_type=None, mdb=None):
 @mapi_func(supported_methods=["POST", "GET"], requires_api_key=True)
 def build_contribution(request, db_type=None, mdb=None):
     """Builds a single contribution into according material/composition"""
+    # TODO collaborator check (build doc needs 'collaborators' entry)
     if not request.user.groups.filter(name='contrib').exists():
         raise PermissionDenied("MPFile submission open only to contributors.")
     contributor = '{} {} <{}>'.format(
@@ -193,6 +194,7 @@ def query_contributions(request, db_type=None, mdb=None):
         criteria, projection=projection, collection=collection
     ))
     if collection == 'contributions':
+        # remove email addresses from output
         for doc in results:
             doc['collaborators'] = [
                 ' '.join(collaborator.split()[:2])
