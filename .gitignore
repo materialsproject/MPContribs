@@ -8,3 +8,4 @@ db.sqlite3
 .coverage
 build/*
 dist/*
+mpcontribs/rest/static/*
