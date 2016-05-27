@@ -4,10 +4,10 @@ from mpcontribs.io.core.recdict import RecursiveDict
 from mpcontribs.io.core.utils import nest_dict, get_short_object_id
 from mpcontribs.rest.rester import MPContribsRester
 from mpcontribs.rest.adapter import ContributionMongoAdapter
-from mpcontribs.builders import MPContributionsBuilder
+from mpcontribs.builder import MPContributionsBuilder
 from importlib import import_module
 
-def submit_mpfile(path_or_mpfile, api_key, site, dbtype='default', fmt='archieml'):
+def submit_mpfile(path_or_mpfile, api_key, site, dbtype='write', fmt='archieml'):
     endpoint = '/'.join([site, 'mpcontribs', 'rest'])
     with MPContribsRester(api_key, endpoint=endpoint, dbtype=dbtype) as mpr:
         try:

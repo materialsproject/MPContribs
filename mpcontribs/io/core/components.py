@@ -34,6 +34,7 @@ class HierarchicalData(RecursiveDict):
 
 def render_dataframe(df):
     """use BackGrid JS library to render Pandas DataFrame"""
+    # TODO check for index column in df other than the default numbering
     table, uuid_str = dict(), str(uuid.uuid4())
     table['columns'] = [ { 'name': k, 'cell': 'string' } for k in df.columns ]
     table['rows'] = [
