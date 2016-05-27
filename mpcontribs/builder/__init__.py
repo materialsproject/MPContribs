@@ -1,9 +1,13 @@
-import os, re, bson, pandas
+import os, re, bson, pandas, nbformat
 from itertools import groupby
-from io.core.recdict import RecursiveDict
-from io.core.utils import get_short_object_id, nest_dict
-from config import mp_level01_titles, mp_id_pattern
-from pmg_utils.author import Author
+from mpcontribs.io.core.recdict import RecursiveDict
+from mpcontribs.io.core.utils import get_short_object_id, nest_dict
+from mpcontribs.config import mp_level01_titles, mp_id_pattern
+from mpcontribs.pmg_utils.author import Author
+from mpcontribs.io.core.mpfile import MPFileCore
+from nbformat import v4 as nbf
+from nbconvert.preprocessors import ExecutePreprocessor
+from nbconvert.preprocessors.execute import CellExecutionError
 
 class MPContributionsBuilder():
     """build user contributions from `mpcontribs.contributions`"""
@@ -43,26 +47,76 @@ class MPContributionsBuilder():
                         coll.update({'_id': doc['_id']}, {'$unset': {project: 1}})
 
     def find_contribution(self, cid):
-        if isinstance(self.db, dict): return self.db
-        else: return self.contributions.find_one({'_id': cid})
+        return self.db if isinstance(self.db, dict) else \
+                self.contributions.find_one({'_id': cid})
 
     def build(self, contributor_email, cid):
         """update materials/compositions collections with contributed data"""
         cid_short, cid_str = get_short_object_id(cid), str(cid)
-        if isinstance(self.db, dict): cid_str = cid_short
         contrib = self.find_contribution(cid)
         if contributor_email not in contrib['collaborators']: raise ValueError(
             "Build stopped: building contribution {} not "
             "allowed due to insufficient permissions of {}! Ask "
             "someone of {} to make you a collaborator on {}.".format(
                 cid_short, contributor_email, contrib['collaborators'], cid_short))
-        mp_cat_id = contrib['mp_cat_id']
+        mpfile = MPFileCore.from_contribution(contrib)
+        mp_cat_id = mpfile.ids[0]
         is_mp_id = mp_id_pattern.match(mp_cat_id)
         self.curr_coll = self.materials if is_mp_id else self.compositions
         author = Author.parse_author(contributor_email)
         project = str(author.name).translate(None, '.') \
                 if 'project' not in contrib else contrib['project']
-        # TODO prepare Notebook via ExecutePreprocessor
+
+        nb = nbf.new_notebook()
+        nb['cells'].append(nbf.new_code_cell(
+            "from mpcontribs.rest.rester import MPContribsRester"
+        ))
+        # NOTE need to get API_KEY from user when executing NB on server
+        nb['cells'].append(nbf.new_code_cell(
+            "with MPContribsRester() as mpr:\n"
+            "    mpfile = mpr.find_contribution('{}')\n"
+            "    mpid = mpfile.ids[0]"
+            .format(cid)
+        ))
+        nb['cells'].append(nbf.new_markdown_cell(
+            "# Contribution #{} for {}\n"
+            "## Hierarchical Data"
+            .format(cid_short, mp_cat_id)
+        ))
+        nb['cells'].append(nbf.new_code_cell(
+            "hdata = mpfile.hdata[mpid]\n"
+            "hdata"
+        ))
+        nb['cells'].append(nbf.new_markdown_cell("## Tabular Data"))
+        for table_name, table in mpfile.tdata[mp_cat_id].iteritems():
+            nb['cells'].append(nbf.new_markdown_cell(
+                "### {}".format(table_name)
+            ))
+            nb['cells'].append(nbf.new_code_cell(
+                "{} = mpfile.tdata[mpid]['{}'] # pandas.DataFrame\n"
+                "{}".format(table_name, table_name, table_name)
+            ))
+        nb['cells'].append(nbf.new_markdown_cell("## Graphical Data"))
+        for plot_name, plot in mpfile.gdata[mp_cat_id].iteritems():
+            nb['cells'].append(nbf.new_markdown_cell(
+                "### {}".format(plot_name)
+            ))
+            nb['cells'].append(nbf.new_code_cell(
+                "{} = mpfile.gdata[mpid]['{}']\n"
+                "{}".format(plot_name, plot_name, plot_name)
+            ))
+
+        nbdir = os.path.dirname(os.path.abspath(__file__))
+        ep = ExecutePreprocessor(timeout=600, kernel_name='python2')
+        try:
+            out = ep.preprocess(nb, {'metadata': {'path': nbdir}})
+        except CellExecutionError:
+            print 'Execution error in above cell!' # TODO logging
+        finally:
+            nbpath = os.path.join(nbdir, 'test.ipynb')
+            with open(nbpath, mode='wt') as f:
+                nbformat.write(nb, f)
+
         # update collection with tree and table data
         #if isinstance(self.db, dict):
         #    unflatten_dict(all_data)
