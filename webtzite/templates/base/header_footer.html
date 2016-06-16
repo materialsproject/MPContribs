@@ -1,0 +1,48 @@
+{% load staticfiles %}
+{% load browserid %}
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>{% block title %} Materials Project {% endblock title %}</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <link rel="shortcut icon" href='{% static "images/favicon.png" %}' />
+    <link rel="stylesheet" type="text/css" href='{% static "css/bootstrap.min.css" %}'/>
+    <link rel="stylesheet" type="text/css" href='{% static "css/chosen.min.css" %}'/>
+    <link rel="stylesheet" type="text/css" href='/static/nucleus.css' charset="utf-8">
+    <link rel="stylesheet" type="text/css" href='{% static "css/backgrid.min.css" %}'/>
+    <link rel="stylesheet" type="text/css" href='{% static "css/backgrid-paginator.css" %}'/>
+    <link rel="stylesheet" type="text/css" href='{% static "css/backgrid-select-all.css" %}'/>
+    <link rel="stylesheet" type="text/css" href='{% static "css/backgrid-filter.css" %}'/>
+    {% browserid_css %}
+    {% block extra_css %}
+    {% endblock extra_css %}
+    <script type="text/javascript" charset="utf8" src='{% static "js/jquery.js" %}'></script>
+    <script type="text/javascript" charset="utf8" src='{% static "js/bootstrap.min.js" %}'></script>
+    <script type="text/javascript" charset="utf8" src='{% static "js/chosen.jquery.min.js" %}'> </script>
+    <script type="text/javascript" charset="utf8" src='{% static "js/underscore-min.js" %}'> </script>
+    <script type="text/javascript" charset="utf8" src='{% static "js/backbone-min.js" %}'></script>
+    <script type="text/javascript" charset="utf8" src='{% static "js/backgrid.js" %}'></script>
+    <script type="text/javascript" charset="utf8" src='{% static "js/backbone.paginator.js" %}'></script>
+    <script type="text/javascript" charset="utf8" src='{% static "js/backgrid.paginator.js" %}'></script>
+    <script type="text/javascript" charset="utf8" src='{% static "js/backgrid-select-all.js" %}'></script>
+    <script type="text/javascript" charset="utf8" src='{% static "js/backgrid-filter.js" %}'></script>
+    <script type="text/javascript" charset="utf8" src='{% static "js/plotly.min.js" %}'></script>
+    {% browserid_js %}
+  </head>
+  <body>
+    {% browserid_info %}
+    {% block header %}
+    <header>
+      {% include "base/navigation.html" %}
+    </header>
+    {% endblock header %}
+    {% block content %}
+    <!-- Page Content-->
+    {% endblock content %}
+    <footer>
+      {% block footer %}
+      {% endblock footer %}
+      {% include "base/footer.html" %}
+    </footer>
+  </body>
+</html>

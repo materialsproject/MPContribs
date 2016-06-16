@@ -1,0 +1,40 @@
+{% extends "base/header_footer.html" %}
+{% block content %}
+{% if user.is_registered %}
+<p>Current user: {{ user.email }}</p>
+<p>
+<button id="keygen">Generate API Key</button>
+<code id='key'>{{ user.api_key }}</code>
+</p>
+<script src="http://underscorejs.org/underscore-min.js"></script>
+<script src="/static/jquery_cookie.js"></script>
+<script>
+var csrftoken = Cookies.get('csrftoken');
+function csrfSafeMethod(method) {
+  // these HTTP methods do not require CSRF protection
+  return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
+}
+$.ajaxSetup({
+  beforeSend: function(xhr, settings) {
+    if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
+      xhr.setRequestHeader("X-CSRFToken", csrftoken);
+    }
+  }
+});
+$("#keygen").click(function(){
+  chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXTZabcdefghiklmnopqrstuvwxyz'.split('');
+  key = _.sample(chars, 16).join("");
+  var saveData = $.ajax({
+    type: 'POST',
+    url: "{% url 'dashboard' %}",
+    data: {'apikey': key},
+    dataType: "text",
+    success: function(data, textStatus, jqXHR) { $("#key").text(key); },
+    error: function(jqXHR, textStatus, errorThrown) { $("#key").text('ERROR'); }
+  });
+});
+</script>
+{% else %}
+<p>Please log in!</p>
+{% endif %}
+{% endblock %}
