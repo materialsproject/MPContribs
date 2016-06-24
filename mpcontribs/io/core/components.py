@@ -44,7 +44,7 @@ def render_dataframe(df):
     html =  "<div id='{}' style='width:100%;'></div>".format(uuid_str)
     html += """
     <script>
-    require(["custom/js/backgrid"], function(Backgrid) {
+    require(["backgrid"], function(Backgrid) {
       "use strict";
       var table = JSON.parse('%s');
       var Row = Backbone.Model.extend({});
@@ -117,8 +117,8 @@ class Plot(object):
         )
         fig = dict(data=traces, layout=layout)
         display(HTML(_plot_html(
-            fig, False, '', True, '50%', 525, global_requirejs=True
-        )[0].replace('["plotly"]', '["custom/js/plotly.min"]')))
+            fig, False, '', True, '100%', 525, global_requirejs=True
+        )[0]))
 
 class Plots(RecursiveDict):
     """class to hold and display multiple interactive graphs/plots"""
