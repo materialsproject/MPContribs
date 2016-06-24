@@ -191,74 +191,7 @@ a.anchor { display: block; position: relative; top: -120px; visibility: hidden; 
 </script>
 
 <a class="anchor" name="cid{{ c[2] }}"></a><hr>
-<div class="container">
-
-  <div class="row">
-    <div class="col-md-12">
-      <h1>{{ c[0] }} &raquo; {{ c[1] }} &raquo; #{{ c[2] }}</h1>
-    </div>
-  </div>
-
-  <div class="row" name="tree_row">
-    <div class="col-md-12">
-      <h2>Hierarchical Data</h2>
-      {% if "tree_data" in c[3] %}
-      <div id="{{ c[2] }}_tree"></div>
-      <script type="text/javascript">
-        (function (JsonHuman, crel, CodeMirror) {
-          "use strict";
-          var node = JsonHuman.format({{ c[3]['tree_data']|tojson|safe }}, window.options);
-          document.getElementById('{{ c[2] }}_tree').appendChild(node);
-        }(window.JsonHuman, window.crel, window.CodeMirror));
-      </script>
-      {% endif %}
-    </div>
-  </div>
-
-  <div class="row" name="table_row">
-    <div class="col-md-12">
-      <h2>Tables</h2>
-      {% if 'tables' in c[3] %}
-      {% for table_name,table_data in c[3]['tables'].iteritems() %}
-      <h3>{{ table_name }}</h3>
-      <div id="{{ c[2] }}_{{ loop.index }}_table"></div>
-      <script>
-        var table = {{ table_data|tojson|safe }};
-        var Row = Backbone.Model.extend({});
-        var Rows = Backbone.PageableCollection.extend({
-          model: Row,  state: { pageSize: 15 }, mode: "client"
-        });
-        var rows = new Rows(table['rows']);
-        var grid = new Backgrid.Grid({ columns: [{
-          name: "", cell: "select-row", headerCell: "select-all", renderable: false
-        }].concat(table['columns']), collection: rows });
-        $('#{{ c[2] }}_{{ loop.index }}_table').append(grid.render().el);
-        var paginator = new Backgrid.Extension.Paginator({ collection: rows });
-        $('#{{ c[2] }}_{{ loop.index }}_table').after(paginator.render().el);
-      </script>
-      {% endfor %}
-      {% endif %}
-    </div>
-  </div>
-
-  <div class="row" name="graph_row">
-    <div class="col-md-12"><h2>Graphs</h2></div>
-  </div>
-  <div class="row" name="graph_row">
-    {% if 'plotly_urls' in c[3] %}
-    {% for url in c[3]['plotly_urls'] %}
-    <div class="col-md-6">
-      <div id="{{ c[2] }}_{{ loop.index }}_graph" style="width:580px;height:580px;"></div>
-      <script>
-          var data = {{ url|tojson|safe }};
-          Plotly.newPlot("{{ c[2] }}_{{ loop.index }}_graph", data[0], data[1]);
-      </script>
-    </div>
-    {% endfor %}
-    {% endif %}
-  </div>
-
-</div>
+{{ c[3]|safe }}
 
 {% endif %}
 {% endfor %}
