@@ -13,6 +13,7 @@ class MPFile(MPFileCore):
     def from_string(data):
         # use archieml-python parse to import data
         recdict = RecursiveDict(archieml.loads(data))
+        recdict.rec_update()
         # post-process internal representation of file contents
         for key in recdict.keys():
             is_general, root_key = normalize_root_level(key)
