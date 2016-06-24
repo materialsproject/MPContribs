@@ -96,18 +96,12 @@ class MPFileCore(six.with_metaclass(ABCMeta, object)):
         general_title = mp_level01_titles[0]
         general_data = general_mpfile.document[general_title]
         root_key = self.document.keys()[0]
-        # need to reverse-loop to keep the order of the general_mpfile
-        for key, value in reversed(general_data.items()):
+        first_subkey = self.document[root_key].keys()[0]
+        for key, value in general_data.items():
             if key in self.document[root_key]:
                 self.document.rec_update(nest_dict(value, [root_key, key]))
             else:
-                # this approach is due to the order sensitivity of key-value pairs
-                # before or after a `>>>..` row in the custom format (legacy)
-                # => ignoring it here would generate the wrong MPFile in get_string
-                for k,v in self.document[root_key].iteritems():
-                    if isinstance(v, dict):
-                        self.document[root_key].insert_before(k, (key, value))
-                        break
+                self.document[root_key].insert_before(first_subkey, (key, value))
 
     def concat(self, mpfile):
         """concatenate single-section MPFile with this MPFile"""
