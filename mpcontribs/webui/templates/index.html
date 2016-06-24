@@ -6,43 +6,47 @@
 
 <nav class="navbar navbar-default navbar-lower" role="navigation">
   <div class="container">
-    <form class="navbar-form navbar-left">
+    <form class="navbar-form">
       <div class="form-group" style="position:relative; left:20px;">
-        <div>
-          <div class="checkbox" style="padding:1px;">
-            <label>
-              <input id="toggle_trees" type="checkbox" checked>
-              <script>
-                $('#toggle_trees').bootstrapToggle({
-                  on:"h-Data", off:"h-Data", size:"mini", width:65, height:25
-                });
-              </script>
-            </label>
-          </div>
+        <div class="checkbox" style="padding:1px;">
+          <label>
+            <input id="toggle_trees" type="checkbox" checked>
+            <script>
+              $('#toggle_trees').bootstrapToggle({
+                on:"h-Data", off:"h-Data", size:"mini", width:65, height:25
+              });
+            </script>
+          </label>
         </div>
-        <div>
-          <div class="checkbox" style="padding:1px;">
-            <label>
-              <input id="toggle_tables" type="checkbox" checked>
-              <script>
-                $('#toggle_tables').bootstrapToggle({
-                  on:"Tables", off:"Tables", size:"mini", width:65, height:25
-                });
-              </script>
-            </label>
-          </div>
+        <div class="checkbox" style="padding:1px; margin-left:15px;">
+          <label>
+            <input id="toggle_tables" type="checkbox" checked>
+            <script>
+              $('#toggle_tables').bootstrapToggle({
+                on:"Tables", off:"Tables", size:"mini", width:65, height:25
+              });
+            </script>
+          </label>
         </div>
-        <div>
-          <div class="checkbox" style="padding:1px;">
-            <label>
-              <input id="toggle_graphs" type="checkbox" checked>
-              <script>
-                $('#toggle_graphs').bootstrapToggle({
-                  on:"Graphs", off:"Graphs", size:"mini", width:65, height:25
-                });
-              </script>
-            </label>
-          </div>
+        <div class="checkbox" style="padding:1px; margin-left:15px;">
+          <label>
+            <input id="toggle_graphs" type="checkbox" checked>
+            <script>
+              $('#toggle_graphs').bootstrapToggle({
+                on:"Graphs", off:"Graphs", size:"mini", width:65, height:25
+              });
+            </script>
+          </label>
+        </div>
+        <div class="checkbox" style="padding:1px; margin-left:15px;">
+          <label>
+            <input id="toggle_inputs" type="checkbox" checked>
+            <script>
+              $('#toggle_inputs').bootstrapToggle({
+                on:"Inputs", off:"Inputs", size:"mini", width:65, height:25
+              });
+            </script>
+          </label>
         </div>
       </div>
       <div class="form-group" style="position:relative; left:20px; margin-left:15px;">
@@ -50,16 +54,16 @@
           <option></option>
         </select>
       </div>
-      <div class="form-group" style="position:relative; left:20px; margin-left:115px;">
-        <select id="axespicker" data-placeholder="Select x-y-z Axes for Overview Graph (in order!) ..." style="width:600px;" multiple>
+      <div class="form-group" style="position:relative; left:20px; margin-left:15px;">
+        <select id="axespicker" data-placeholder="Select x-y-z Axes for Overview Graph (in order!) ..." style="width:516px;" multiple>
           <option></option>
         </select>
         <button id="plot_ovdata" type="button" class="btn btn-primary btn-sm">Plot</button>
       </div>
+      <div class="form-group" style="position:relative; left:20px; margin-left:15px;">
+        <a class="btn btn-sm" href="#top" role=button><span class="glyphicon glyphicon-menu-up" aria-hidden="true"></span></br>top</a></li>
+      </div>
     </form>
-    <ul class="nav navbar-nav navbar-right">
-      <li><a class="btn btn-lg navbar-btn" href="#top"><span class="glyphicon glyphicon-menu-up" aria-hidden="true"></span></br>top</a></li>
-    </ul>
   </div>
 </nav>
 
@@ -115,6 +119,17 @@ a.anchor { display: block; position: relative; top: -120px; visibility: hidden; 
       return locationOf(element, array, start, pivot);
     }
   }
+  function toggle_divs(name) {
+    var divs = document.getElementsByName(name);
+    for (var j=0; j<divs.length; j++) {
+      if ($(divs[j]).is(":visible")) { $(divs[j]).hide(); }
+      else { $(divs[j]).show(); }
+    }
+  };
+  $('#toggle_trees').change(function () { toggle_divs("Hierarchical"); });
+  $('#toggle_tables').change(function () { toggle_divs("Tabular"); });
+  $('#toggle_graphs').change(function () { toggle_divs("Graphical"); });
+  $('#toggle_inputs').change(function () { toggle_divs("Input"); });
 </script>
 
 <div class="container">
@@ -168,7 +183,7 @@ a.anchor { display: block; position: relative; top: -120px; visibility: hidden; 
     var elem = document.getElementById('ovdata_graph');
     elem.style['width'] = '580px'; elem.style['height'] = "580px";
     elem.style['margin-left'] = 'auto'; elem.style['margin-right'] = 'auto';
-    Plotly.newPlot('ovdata_graph', data);
+    Plotly.newPlot('ovdata_graph', data, {margin: {t: 25}});
     location.href = '#top';
     $('#ovdata_graph').bind('plotly_click', function(event, data) {
       for(var i=0; i<data.points.length; i++){
@@ -182,11 +197,10 @@ a.anchor { display: block; position: relative; top: -120px; visibility: hidden; 
 
 {% elif c is sequence %}
 <script>
-  var list = document.getElementById('gotolist');
   var entry = document.createElement('option');
   entry.value = "#cid{{ c[2] }}";
   entry.innerHTML = "{{ c[0] }} (#{{ c[2] }})";
-  list.appendChild(entry);
+  $('#gotolist').append(entry);
   $('#gotolist').trigger('chosen:updated');
 </script>
 
@@ -196,18 +210,4 @@ a.anchor { display: block; position: relative; top: -120px; visibility: hidden; 
 {% endif %}
 {% endfor %}
 
-<script>
-  function toggle_divs(div_names) {
-    for (var i=0; i<div_names.length; i++) {
-      var divs = document.getElementsByName(div_names[i]);
-      for (var j=0; j<divs.length; j++) {
-        if ($(divs[j]).is(":visible")) { $(divs[j]).hide(); }
-        else { $(divs[j]).show(); }
-      }
-    }
-  };
-  $('#toggle_trees').change(function () { toggle_divs(["tree_row"]); });
-  $('#toggle_tables').change(function () { toggle_divs(["table_row"]); });
-  $('#toggle_graphs').change(function () { toggle_divs(["graph_row"]); });
-</script>
 {% endblock %}
