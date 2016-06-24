@@ -81,7 +81,7 @@ class RecursiveDict(_OrderedDict):
           "<div id='{}' style='width:100%;'></div>".format(uuid_str), raw=True
         )
         display_javascript("""
-        require(["custom/js/json.human"], function(JsonHuman) {
+        require(["json.human"], function(JsonHuman) {
           "use strict";
           var data = JSON.parse('%s');
           var node = JsonHuman.format(data);

@@ -99,6 +99,7 @@ def read_csv(body, is_data_section=True):
     ).dropna(how='all')
 
 def disable_ipython_scrollbar():
-    display(Javascript("""
-        require("notebook/js/outputarea").OutputArea.prototype._should_scroll=function(){return false;};
-    """))
+    pass
+    #display(Javascript("""
+    #    require("notebook/js/outputarea").OutputArea.prototype._should_scroll=function(){return false;};
+    #"""))
