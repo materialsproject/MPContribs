@@ -79,7 +79,7 @@ def process_mpfile(path_or_mpfile, target=None, fmt='archieml'):
             cid_short = get_short_object_id(cid)
             mpfile_single.insert_id(mp_cat_id, cid)
             cid_shorts.append(cid_short)
-            yield 'build into {} ... '.format(mp_cat_id)
+            yield 'build notebook ... '
             if target is not None:
                 url = target.build_contribution(cid)
                 url = '/'.join([target.preamble.rsplit('/', 1)[0], 'explorer', url])
@@ -91,7 +91,8 @@ def process_mpfile(path_or_mpfile, target=None, fmt='archieml'):
                 yield build_doc
                 yield 'determine overview axes ... '
                 scope, local_axes = [], set()
-                for k,v in build_doc[3]['tree_data'].iterate():
+                mpfile_for_axes = MPFile.from_contribution(doc)
+                for k,v in mpfile_for_axes.hdata[mp_cat_id].iterate():
                     if v is None:
                         scope = scope[:k[0]]
                         scope.append(k[1])
