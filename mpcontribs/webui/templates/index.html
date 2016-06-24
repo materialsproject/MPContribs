@@ -1,6 +1,9 @@
 {% extends "layout.html" %}
 {% block body %}
 
+<link rel="stylesheet" type="text/css" media="all" href="{{ url_for('static', filename='css/json.human.css') }}">
+<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/backgrid.min.css') }}"/>
+
 <nav class="navbar navbar-default navbar-lower" role="navigation">
   <div class="container">
     <form class="navbar-form navbar-left">
@@ -67,7 +70,16 @@ a.anchor { display: block; position: relative; top: -120px; visibility: hidden; 
 .backgrid .string-cell { text-align: center; }
 </style>
 
+<script type="text/javascript" charset="utf8" src="{{ url_for('static', filename='js/require.js') }}"></script>
 <script>
+  require.config({
+      baseUrl: "/static/js",
+      paths: {
+        "plotly": "plotly.min",
+        "underscore": "underscore-min",
+        "backbone": "backbone-min"
+      }
+  })
   $('#axespicker').chosen({ search_contains: true, max_selected_options: 3 });
   $('.navbar-lower').affix({ offset: {top: -5} });
   $('#gotolist').chosen({ search_contains: true });
