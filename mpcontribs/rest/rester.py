@@ -1,7 +1,7 @@
 from __future__ import division, unicode_literals
 import six, bson
 from bson.json_util import dumps, loads
-from mpweb_core.rester import MPResterBase, MPResterError
+from webtzite.rester import MPResterBase, MPResterError
 from mpcontribs.io.core.mpfile import MPFileCore
 
 class MPContribsRester(MPResterBase):

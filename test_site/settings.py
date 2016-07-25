@@ -30,8 +30,8 @@ DEBUG = False
 ALLOWED_HOSTS = []
 
 AUTHENTICATION_BACKENDS = (
-    'mpweb_core.backends.CustomModelBackend',
-    'mpweb_core.backends.CustomBrowserIDBackend',
+    'webtzite.backends.CustomModelBackend',
+    'webtzite.backends.CustomBrowserIDBackend',
 )
 
 # Application definition
@@ -44,7 +44,7 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'mpweb_core',
+    'webtzite',
     'mpcontribs.rest',
     'mpcontribs.explorer',
     'test_site.apps.UWSI2ExplorerConfig',
@@ -60,7 +60,7 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.middleware.security.SecurityMiddleware',
-    'mpweb_core.middleware.APIKeyMiddleware',
+    'webtzite.middleware.APIKeyMiddleware',
 )
 
 ROOT_URLCONF = 'test_site.urls'
@@ -136,7 +136,7 @@ LOGGING = {
             'level': 'DEBUG',
             'propagate': True,
         },
-        'mpweb_core': {
+        'webtzite': {
             'handlers': ['file'],
             'level': 'DEBUG',
             'propagate': True,

@@ -1,69 +1,69 @@
-mpweb_core package
+webtzite package
 ==================
 
 Submodules
 ----------
 
-mpweb_core.admin module
+webtzite.admin module
 -----------------------
 
-.. automodule:: mpweb_core.admin
+.. automodule:: webtzite.admin
     :members:
     :undoc-members:
     :show-inheritance:
 
-mpweb_core.backends module
+webtzite.backends module
 --------------------------
 
-.. automodule:: mpweb_core.backends
+.. automodule:: webtzite.backends
     :members:
     :undoc-members:
     :show-inheritance:
 
-mpweb_core.connector module
+webtzite.connector module
 ---------------------------
 
-.. automodule:: mpweb_core.connector
+.. automodule:: webtzite.connector
     :members:
     :undoc-members:
     :show-inheritance:
 
-mpweb_core.middleware module
+webtzite.middleware module
 ----------------------------
 
-.. automodule:: mpweb_core.middleware
+.. automodule:: webtzite.middleware
     :members:
     :undoc-members:
     :show-inheritance:
 
-mpweb_core.models module
+webtzite.models module
 ------------------------
 
-.. automodule:: mpweb_core.models
+.. automodule:: webtzite.models
     :members:
     :undoc-members:
     :show-inheritance:
 
-mpweb_core.rester module
+webtzite.rester module
 ------------------------
 
-.. automodule:: mpweb_core.rester
+.. automodule:: webtzite.rester
     :members:
     :undoc-members:
     :show-inheritance:
 
-mpweb_core.urls module
+webtzite.urls module
 ----------------------
 
-.. automodule:: mpweb_core.urls
+.. automodule:: webtzite.urls
     :members:
     :undoc-members:
     :show-inheritance:
 
-mpweb_core.views module
+webtzite.views module
 -----------------------
 
-.. automodule:: mpweb_core.views
+.. automodule:: webtzite.views
     :members:
     :undoc-members:
     :show-inheritance:
@@ -72,7 +72,7 @@ mpweb_core.views module
 Module contents
 ---------------
 
-.. automodule:: mpweb_core
+.. automodule:: webtzite
     :members:
     :undoc-members:
     :show-inheritance:

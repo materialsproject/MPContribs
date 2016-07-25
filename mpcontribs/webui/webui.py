@@ -10,7 +10,7 @@ from mpcontribs.utils import process_mpfile, submit_mpfile
 from mpcontribs.config import default_mpfile_path
 from mpcontribs import users as mpcontribs_users
 from StringIO import StringIO
-from mpweb_core import configure_settings
+from webtzite import configure_settings
 
 tmpl_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates')
 stat_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static')
@@ -27,7 +27,7 @@ import django
 django.setup()
 celery = Celery(
     app.name, broker=app.config['CELERY_BROKER_URL'],
-    include=['mpweb_core.configure_settings']
+    include=['webtzite.configure_settings']
 )
 celery.conf.update(app.config)
 celery.conf.update(

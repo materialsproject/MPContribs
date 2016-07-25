@@ -5,9 +5,9 @@ from bson.json_util import loads
 from django.core.exceptions import PermissionDenied
 from django.shortcuts import render_to_response
 from django.template import RequestContext
-from mpweb_core.connector import ConnectorBase
+from webtzite.connector import ConnectorBase
 from bson.objectid import ObjectId
-from mpweb_core import mapi_func
+from webtzite import mapi_func
 from django.http import HttpResponse
 from test_site.settings import STATIC_ROOT
 
@@ -232,7 +232,7 @@ def delete_contributions(request, db_type=None, mdb=None):
 @mapi_func(supported_methods=["POST", "GET"], requires_api_key=True)
 def update_collaborators(request, db_type=None, mdb=None):
     """Update the list of collaborators"""
-    from mpweb_core.models import RegisteredUser
+    from webtzite.models import RegisteredUser
     if not request.user.is_staff:
         raise PermissionDenied("collaborators update open only to staff right now.")
     collaborators = loads(request.POST['collaborators'])
