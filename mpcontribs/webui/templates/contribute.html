@@ -49,7 +49,7 @@
       </div>
       <div class="form-group" style="position:relative; margin-left:50px;">
         <input type="text" class="form-control" name=apikey id=inputapikey placeholder="Insert API Key ...">
-        <a id=dlnk href="http://localhost:5000/test_site/mpweb_core/dashboard" target="_blank">
+        <a id=dlnk href="http://localhost:5000/test_site/webtzite/dashboard" target="_blank">
           <span class="glyphicon glyphicon-question-sign" aria-hidden="true"></span>
         </a>
       </div>
@@ -119,7 +119,7 @@
   $('#siteselect').chosen().change(function () {
     document.getElementById('inputsite').value = this.value;
     var dlnk = document.getElementById('dlnk');
-    dlnk.href = this.value + '/mpweb_core/dashboard';
+    dlnk.href = this.value + '/webtzite/dashboard';
   });
   $('#dbselect').chosen().change(function () {
     document.getElementById('inputdbtype').value = this.value;
