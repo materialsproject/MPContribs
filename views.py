@@ -9,7 +9,7 @@ from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.core.urlresolvers import reverse
 
-logger = logging.getLogger('mpweb_core.' + __name__)
+logger = logging.getLogger('webtzite.' + __name__)
 
 @ensure_csrf_cookie
 

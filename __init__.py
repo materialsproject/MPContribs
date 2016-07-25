@@ -50,7 +50,7 @@ def mapi_func(supported_methods=("GET",), requires_api_key=False):
                 except ImportError as ex:
                     raise ImportError(str(ex))
                 except:
-                    from mpweb_core.connector import ConnectorBase
+                    from webtzite.connector import ConnectorBase
                     kwargs['mdb'] = ConnectorBase(request.user)
                 # Call underlying function
                 d = func(*args, **kwargs)

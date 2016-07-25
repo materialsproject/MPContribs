@@ -1,4 +1,4 @@
-import mpweb_core.configure_settings
+import webtzite.configure_settings
 from django.contrib import admin
 from .models import DBConfig, RegisteredUser
 
