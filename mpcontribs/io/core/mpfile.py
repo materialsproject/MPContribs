@@ -153,6 +153,9 @@ class MPFileCore(six.with_metaclass(ABCMeta, object)):
             name (str): table name, optional if only one table in section
         """
         # TODO: optional table name, required if multiple tables per root-level section
+        table_start = mp_level01_titles[1]+'_'
+        if not name.startswith(table_start):
+            name = table_start + name
         self.document.rec_update(nest_dict(
             pandas_to_dict(dataframe), [identifier, name]
         ))
