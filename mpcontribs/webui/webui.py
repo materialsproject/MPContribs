@@ -94,6 +94,9 @@ def reset_session():
     session['projects'] = projects
     session['options'] = ["archieml"]
     session['contribute'] = {}
+    sbx_content = app.config.get('SANDBOX_CONTENT')
+    if sbx_content is not None:
+        session['sbx_content'] = sbx_content
     stop_processes()
     start_processes()
     for suffix in ['_in.txt', '_out.txt']:
