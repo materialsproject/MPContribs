@@ -115,7 +115,7 @@ class MPFileCore(six.with_metaclass(ABCMeta, object)):
             else:
                 self.document[root_key].insert_before(first_subkey, (key, value))
 
-    def concat(self, mpfile):
+    def concat(self, mpfile, uniquify=True):
         """concatenate single-section MPFile with this MPFile"""
         try:
             if len(mpfile.document) > 1:
@@ -129,9 +129,10 @@ class MPFileCore(six.with_metaclass(ABCMeta, object)):
             if general_title not in self.document:
                 self.document.rec_update(nest_dict(general_data, [general_title]))
         mp_cat_id_idx, mp_cat_id_uniq = 0, mp_cat_id
-        while mp_cat_id_uniq in self.document.keys():
-            mp_cat_id_uniq = mp_cat_id + '--{}'.format(mp_cat_id_idx)
-            mp_cat_id_idx += 1
+        if uniquify:
+            while mp_cat_id_uniq in self.document.keys():
+                mp_cat_id_uniq = mp_cat_id + '--{}'.format(mp_cat_id_idx)
+                mp_cat_id_idx += 1
         self.document.rec_update(nest_dict(
             mpfile.document.pop(mp_cat_id), [mp_cat_id_uniq]
         ))
