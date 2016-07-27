@@ -84,6 +84,8 @@ mpfile.write_file()
     </div>
 {% if "mpfile" in session %}
 <aml>{{session.mpfile|safe}}</aml>
+{% elif "sbx_content" in session %}
+<aml>{{session.sbx_content|safe}}</aml>
 {% else %}
 <aml>This is an example MPFile in the ArchieML format.
 
