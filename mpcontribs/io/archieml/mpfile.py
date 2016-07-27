@@ -68,10 +68,14 @@ class MPFile(MPFileCore):
     def get_string(self):
         lines, scope = [], []
         table_start = mp_level01_titles[1]+'_'
+        replacements = {' ': '_', ',': '', '[': '', ']': ''}
         for key,value in self.document.iterate():
             if key is None and isinstance(value, dict):
                 pd_obj = pandas.DataFrame.from_dict(value)
-                csv_string = pd_obj.to_csv(index=False, float_format='%g')[:-1]
+                header = any([isinstance(col, unicode) for col in pd_obj])
+                csv_string = pd_obj.to_csv(
+                    index=False, header=header, float_format='%g'
+                )[:-1]
                 lines += csv_string.split('\n')
             else:
                 level, key = key
@@ -87,7 +91,9 @@ class MPFile(MPFileCore):
                         start, end = '\n[+', ']'
                     else:
                         start, end = '\n{', '}'
-                    scope.append(key.replace(' ', '_'))
+                    scope.append(
+                        ''.join([replacements.get(c, c) for c in key])
+                    )
                 # correct scope to omit internal 'general' section
                 scope_corr = scope
                 if scope[0] == mp_level01_titles[0]:
@@ -98,7 +104,9 @@ class MPFile(MPFileCore):
                     lines.append(start+'.'.join(scope_corr)+end)
                 # insert key-value line
                 if value is not None:
-                    lines.append(make_pair(key.replace(' ', '_'), value))
+                    lines.append(make_pair(
+                        ''.join([replacements.get(c, c) for c in key]), value
+                    ))
         return '\n'.join(lines) + '\n'
 
 MPFileCore.register(MPFile)
