@@ -9,6 +9,30 @@ from IPython.display import display_html
 
 class MPFileCore(six.with_metaclass(ABCMeta, object)):
     """Abstract Base Class for representing a MP Contribution File"""
+    def __init__(self, data=RecursiveDict()):
+        if isinstance(data, RecursiveDict):
+            self.document = data
+        elif isinstance(data, dict):
+            self.document = RecursiveDict(data)
+        else:
+            raise ValueError('Need RecursiveDict or dict to init MPFile.')
+        self.document.rec_update() # convert (most) OrderedDict's to RecursiveDict's
+
+    @property
+    def ids(self):
+        return self.document.keys()
+
+    @property
+    def hdata(self):
+        return HierarchicalData(self.document)
+
+    @property
+    def tdata(self):
+        return TabularData(self.document)
+
+    @property
+    def gdata(self):
+        return GraphicalData(self.document)
 
     @classmethod
     def from_file(cls, filename_or_file=default_mpfile_path.replace('.txt', '_in.txt')):
@@ -29,19 +53,7 @@ class MPFileCore(six.with_metaclass(ABCMeta, object)):
 
     @classmethod
     def from_dict(cls, data=RecursiveDict()):
-        mpfile = cls()
-        if isinstance(data, RecursiveDict):
-            mpfile.document = data
-        elif isinstance(data, dict):
-            mpfile.document = RecursiveDict(data)
-        else:
-            raise ValueError('Need RecursiveDict or dict to init MPFile.')
-        mpfile.document.rec_update() # convert (most) OrderedDict's to RecursiveDict's
-        mpfile.ids = mpfile.document.keys()
-        mpfile.hdata = HierarchicalData(mpfile.document)
-        mpfile.tdata = TabularData(mpfile.document)
-        mpfile.gdata = GraphicalData(mpfile.document)
-        return mpfile
+        return cls(data=data)
 
     @classmethod
     def from_contribution(cls, contrib):
