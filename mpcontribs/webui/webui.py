@@ -197,7 +197,7 @@ def action():
     elif request.form['submit'] == 'View MPFile':
         return redirect(url_for('view'))
     elif request.form['submit'] == 'Save MPFile':
-        response = make_response(session['mpfile'])
+        response = make_response(read_mpfile_to_view())
         response.headers["Content-Disposition"] = "attachment; filename=mpfile.txt"
         return response
     elif request.form['submit'] == 'Contribute':
