@@ -1,12 +1,11 @@
-import os, json, math, glob, fnmatch
+import os, json, math, glob, fnmatch, requests
 import numpy as np
 from collections import OrderedDict
+from pandas import DataFrame, Series, read_excel, isnull
 from mpcontribs.io.vaspdir import AbstractVaspDirCollParser
 from mpcontribs.io.archieml.mpfile import MPFile
-from pandas import DataFrame, Series
-ENDPOINT = "https://www.materialsproject.org/rest"
 
-def run(mpfile):
+def add_diffusivity_table(mpfile):
     """add solute_diffusivity tables to materials in MPFile"""
     index = [j*0.05 for j in range(80)]
     for key in mpfile.document.keys():
@@ -20,6 +19,74 @@ def run(mpfile):
         df_dif = DataFrame(d, index=index)
         mpfile.add_data_table(key, df_dif, 'data_solute_diffusivity')
         print 'added diffusivity table for host', host
+
+def run(mpfile, nhosts=None):
+    from pymatgen import MPRester
+    from unidecode import unidecode
+    mpr = MPRester()
+    general = mpfile.document['general']
+    figshare_id = general['figshare_id']
+    url = 'https://api.figshare.com/v2/articles/{}'.format(figshare_id)
+    print 'get figshare article {}'.format(figshare_id)
+    r = requests.get(url)
+    figshare = json.loads(r.content)
+    print 'load global/general meta-data from figshare'
+    for k in ['title', 'description', 'doi', 'funding', 'figshare_url', 'version']:
+        v = figshare[k]
+        if k == 'description':
+            v = ''.join([i if ord(i) < 128 else '' for i in v[3:-4]])
+        if isinstance(v, str):
+            v = unidecode(v.replace('\n', ' '))
+        general[k] = v
+    general['authors'] = ', '.join([a['full_name'] for a in figshare['authors']])
+    print 'read excel from figshare into DataFrame'
+    df_dct = None
+    for d in figshare['files']:
+        if 'xlsx' in d['name']:
+            # Dict of DataFrames is returned, with keys representing sheets
+            df_dct = read_excel(d['download_url'], sheetname=None)
+            break
+    if df_dct is None:
+        print 'no excel sheet found on figshare'
+        return
+    print 'set index for host info, and add additional info'
+    host_info = df_dct['Host Information']
+    host_info.set_index(host_info.columns[0], inplace=True)
+    add_info = 'Additional Information'
+    general[add_info.lower()] = unidecode(
+        ' '.join(host_info.loc[add_info:].dropna(axis=1).ix[:,0])
+    )
+    host_info.dropna(inplace=True)
+    print 'looping hosts ...'
+    for idx, host in enumerate(host_info):
+        if nhosts is not None and idx+1 > nhosts:
+            break
+        print 'get mp-id for {}'.format(host)
+        mpid = None
+        for doc in mpr.query(
+            criteria={'pretty_formula': host},
+            properties={'task_id': 1}
+        ):
+            if doc['sbxd'][0]['decomposes_to'] is None:
+                mpid = doc['task_id']
+                break
+        if mpid is None:
+            print 'mp-id for {} not found'.format(host)
+            continue
+        print 'add host info for {}'.format(mpid)
+        hdata = {mpid: host_info[host].to_dict()}
+        hdata[mpid]['formula'] = host
+        df = df_dct['{}-X'.format(host)]
+        rows = list(isnull(df).any(1).nonzero()[0])
+        if rows:
+            cells = df.ix[rows].dropna(how='all').dropna(axis=1)[df.columns[0]]
+            note = cells.iloc[0].replace('following', cells.iloc[1])[:-1]
+            hdata[mpid]['note'] = note
+            df.drop(rows, inplace=True)
+        mpfile.concat(MPFile.from_dict(hdata), uniquify=False)
+        print 'add table for supporting data for {}'.format(mpid)
+        mpfile.add_data_table(mpid, df.T, 'supporting')
+    print 'DONE'
 
 class VaspDirCollParser(AbstractVaspDirCollParser):
     """
@@ -77,6 +144,7 @@ class VaspDirCollParser(AbstractVaspDirCollParser):
             ).structure
             reduced = SpacegroupAnalyzer(struct, symprec=1e-2).get_primitive_standard_structure()
             if idx == 0:
+                ENDPOINT = "https://www.materialsproject.org/rest"
                 with MPRester(endpoint=ENDPOINT) as m:
                     matches = m.find_structure(reduced)
                     if len(matches) == 1: mp_id = matches[0]
