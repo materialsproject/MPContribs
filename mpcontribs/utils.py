@@ -66,6 +66,7 @@ def process_mpfile(path_or_mpfile, target=None, fmt='archieml'):
             yield 'check consistency ... '
             mpfile_single_cmp = MPFile.from_string(mpfile_single.get_string())
             if mpfile_single.document != mpfile_single_cmp.document:
+                json.encoder.FLOAT_REPR = lambda o: format(o, 'g')
                 # compare json strings to find first inconsistency
                 for a, b in zip(
                     json.dumps(mpfile_single.document, indent=4).split('\n'),
