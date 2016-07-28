@@ -57,6 +57,7 @@ class NotebookProcess(multiprocessing.Process):
         super(NotebookProcess, self).__init__(name='NotebookProcess')
 
     def run(self):
+        sys.argv[1:] = []
         warnings.filterwarnings("ignore", module = "zmq.*")
         sys.argv.append("notebook")
         sys.argv.append("--IPKernelApp.pylab='inline'")
