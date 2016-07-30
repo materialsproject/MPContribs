@@ -2,16 +2,15 @@
 <html lang="en">
   <head>
     <title>MPFile Viewer</title>
-    <script type="text/javascript" charset="utf8" src="{{ url_for('static', filename='js/jquery.js') }}"></script>
-    <script type="text/javascript" charset="utf8" src="{{ url_for('static', filename='js/d3.min.js') }}"></script>
-    <script type="text/javascript" charset="utf8" src="{{ url_for('static', filename='js/bootstrap.min.js') }}"></script>
-    <script type="text/javascript" charset="utf8" src="{{ url_for('static', filename='js/bootstrap-filestyle.min.js') }}"> </script>
-    <script type="text/javascript" charset="utf8" src="{{ url_for('static', filename='js/chosen.jquery.min.js') }}"> </script>
-    <script type="text/javascript" charset="utf8" src="{{ url_for('static', filename='js/archieml.js') }}"></script>
-    <script type="text/javascript" charset="utf8" src="{{ url_for('static', filename='js/main-built.js') }}"></script>
-    <script type="text/javascript" charset="utf8" src="{{ url_for('static', filename='js/bootstrap-toggle.js') }}"></script>
-    <script type="text/javascript" charset="utf8" src="{{ url_for('static', filename='js/typedarray.js') }}"></script>
-    <script type="text/javascript" charset="utf8" src="{{ url_for('static', filename='js/plotly.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/lib/require.js') }}"></script>
+    <script>
+      define('env', [], {
+        options: {{ session.options|tojson|safe }} // list of selected option values
+      });
+      requirejs(['./static/js/common'], function(common){
+        requirejs(['app/main']);
+      });
+    </script>
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/bootstrap.min.css') }}"/>
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/chosen.min.css') }}"/>
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/archieml.css') }}"/>
@@ -52,13 +51,7 @@
               </optgroup>
             </select>
             <div class="form-group" style="margin-left:20px;">
-              <input type=file id=fileUpload name=file class="navbar-btn">
-              <script>
-                $(":file").filestyle({
-                  iconName: "glyphicon glyphicon-file", input: false, badge: false,
-                  buttonName:"btn-info", buttonText:"MPFile ..."
-                });
-              </script>
+              <input type=file id=fileUpload name=file class="navbar-btn hidden">
               <input type=hidden name=mpfile id=inputmpfile value=''>
               <input type=hidden name=options id=inputopts value=''>
               <input type=hidden name=thebe id=inputthebe value=''>
@@ -68,45 +61,6 @@
               <input type=submit name="submit" class="btn btn-danger navbar-btn" value="Contribute">
             </div>
           </div>
-          <script type="text/javascript">
-            $('#selectpicker').chosen({ search_contains: true, max_selected_options: 2 });
-            // select options in selectpicker based on session.options
-            var options = {{ session.options|tojson|safe }}; // list of selected option values
-            for (var i=0, iLen=options.length; i<iLen; i++) {
-              $('#selectpicker option[value="' + options[i] + '"]').prop('selected', true);
-            }
-            $('#selectpicker').trigger('chosen:updated');
-            // initialize hidden input field for options
-            var opt_elem = document.getElementById('inputopts');
-            opt_elem.value = JSON.stringify(options);
-            // replace text of upload button with selected file name
-            $(document.getElementById('fileUpload')).change(function () {
-              //var filename=$(this).val().replace(/^.*[\\\/]/, '');
-              $(":file").filestyle('buttonText', 'MPFile <span class="glyphicon glyphicon-ok" aria-hidden="true"></span>');
-            });
-            // on-change action for selectpicker
-            $('#selectpicker').on('change', function () {
-              // - update options hidden input field with current selection
-              // - en-/disable ArchieML sandbox and show/hide "Load MPFile"
-              options = [];
-              for (var i=0, iLen=this.options.length; i<iLen; i++) {
-                var opt = this.options[i];
-                if (opt.selected) {
-                  options.push(opt.value);
-                  if (opt.parentNode.label == 'format') {
-                    if (opt.value != 'archieml') {
-                      $("#loadbutton").addClass('disabled');
-                      $(".sandbox").hide();
-                    } else {
-                      $("#loadbutton").removeClass('disabled');
-                      $(".sandbox").show();
-                    }
-                  }
-                }
-              }
-              opt_elem.value = JSON.stringify(options);
-            });
-          </script>
         </form>
         <ul class="nav navbar-nav navbar-right">
           <li>
