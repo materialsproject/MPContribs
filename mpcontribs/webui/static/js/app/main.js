@@ -20,14 +20,14 @@ define(function(require) {
         );
   });
 
-  // init options
-  $('#selectpicker').chosen({ search_contains: true, max_selected_options: 2 });
   // select options in selectpicker based on session.options
   $.waitFor('#selectpicker').done(function(elements) {
     for (var i=0, iLen=env.options.length; i<iLen; i++) {
       $("#selectpicker [value=" + env.options[i] + "]").prop("selected",true);
     }
-    $(elements[0]).trigger('chosen:updated');
+    $(elements[0]).chosen({
+      search_contains: true, max_selected_options: 2, width: "260px"
+    });
     // on-change action for selectpicker
     $(elements[0]).on('change', function () {
       // - update options hidden input field with current selection
