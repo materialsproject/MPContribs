@@ -25,7 +25,7 @@ define(function(require) {
   // select options in selectpicker based on session.options
   $.waitFor('#selectpicker').done(function(elements) {
     for (var i=0, iLen=env.options.length; i<iLen; i++) {
-      $(elements[0]).val(env.options[i]);
+      $("#selectpicker [value=" + env.options[i] + "]").prop("selected",true);
     }
     $(elements[0]).trigger('chosen:updated');
     // on-change action for selectpicker
