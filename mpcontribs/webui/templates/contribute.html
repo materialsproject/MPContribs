@@ -1,6 +1,12 @@
 {% extends "layout.html" %}
 {% block body %}
 
+<script>
+  requirejs(['./static/js/common'], function(){
+    requirejs(['app/contribute']);
+  });
+</script>
+
 <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
   <div class="modal-dialog" role="document">
     <div class="modal-content">
@@ -71,10 +77,9 @@
 .navbar-form { padding-left: 0; }
 </style>
 
+<input type=hidden id=input_contrib value=''>
+
 <script>
-  $('.navbar-lower').affix({ offset: {top: -5} });
-  $('#siteselect').chosen({ search_contains: true, disable_search_threshold: 10 });
-  $('#dbselect').chosen({ search_contains: true, disable_search_threshold: 10 });
   function stopLoad() {
     if (navigator.appName == 'Microsoft Internet Explorer') {
       document.execCommand('Stop');
@@ -87,43 +92,12 @@
     entry.value = document.getElementById('inputSiteUrl').value;
     entry.innerHTML = document.getElementById('inputSiteName').value;
     list.appendChild(entry);
-    $('#siteselect').trigger('chosen:updated');
-    $('#myModal').modal('hide');
+    document.getElementById('siteselect').trigger('chosen:updated');
+    document.getElementById('myModal').modal('hide');
   }
-  // select options in siteselect and dbselect based on session.contribute
   var contrib = {{ session.contribute|tojson|safe }}; // dict: site, db, apikey
-  if ( 'site' in contrib ) {
-    var siteselect = document.getElementById('siteselect');
-    for (var i=0, iLen=siteselect.options.length; i<iLen; i++) {
-      site_in_opts = false;
-      if (siteselect.options[i].value == contrib['site']) { site_in_opts = true; break; }
-    }
-    if (!site_in_opts) {
-      var entry = document.createElement('option');
-      entry.value = contrib['site'];
-      entry.innerHTML = 'MP Dev'; // TODO use hidden input field and contrib['name']
-      siteselect.appendChild(entry);
-      $('#siteselect').trigger('chosen:updated');
-    }
-    $('#siteselect option[value="' + contrib['site'] + '"]').prop('selected', true);
-  }
-  $('#siteselect').trigger('chosen:updated');
-  if ( 'dbtype' in contrib ) {
-    $('#dbselect option[value="' + contrib['dbtype'] + '"]').prop('selected', true);
-  }
-  $('#dbselect').trigger('chosen:updated');
-  if ( 'apikey' in contrib ) {
-    document.getElementById('inputapikey').value = contrib['apikey'];
-  }
-  // on-change action for select option
-  $('#siteselect').chosen().change(function () {
-    document.getElementById('inputsite').value = this.value;
-    var dlnk = document.getElementById('dlnk');
-    dlnk.href = this.value + '/webtzite/dashboard';
-  });
-  $('#dbselect').chosen().change(function () {
-    document.getElementById('inputdbtype').value = this.value;
-  });
+  var contrib_data = document.getElementById('input_contrib');
+  contrib_data.value = JSON.stringify(contrib);
 </script>
 
 {% if content %}
@@ -134,7 +108,11 @@
     </div>
   </div>
   {% for c in content: %}
-  <script>$("#output").append("{{ c|safe }}");</script>
+  <script>
+    require(['jquery'], function($) {
+      $("#output").append("{{ c|safe }}");
+    });
+  </script>
   {% endfor %}
 </div>
 {% endif %}
