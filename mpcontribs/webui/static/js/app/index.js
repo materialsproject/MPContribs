@@ -5,48 +5,6 @@ define(function(require) {
   require('chosen');
   var Plotly = require('plotly');
 
-  $.waitFor('#toggle_trees').done(function(elements) {
-    $(elements[0]).bootstrapToggle({
-      on:"h-Data", off:"h-Data", size:"mini", width:65, height:25
-    });
-  });
-
-  $.waitFor('#toggle_tables').done(function(elements) {
-    $(elements[0]).bootstrapToggle({
-      on:"Tables", off:"Tables", size:"mini", width:65, height:25
-    });
-  });
-
-  $.waitFor('#toggle_graphs').done(function(elements) {
-    $(elements[0]).bootstrapToggle({
-      on:"Graphs", off:"Graphs", size:"mini", width:65, height:25
-    });
-  });
-
-  $.waitFor('#toggle_inputs').done(function(elements) {
-    $(elements[0]).bootstrapToggle({
-      on:"Inputs", off:"Inputs", size:"mini", width:65, height:25
-    });
-  });
-
-  $('#axespicker').chosen({ search_contains: true, max_selected_options: 3 });
-  $('#gotolist').chosen({ search_contains: true });
-  $('.navbar-lower').affix({ offset: {top: -5} });
-
-  $(document).ready(function(){
-    var gotolist_data = document.getElementById('input_gotolist');
-    gotolist_data.value = gotolist_data.value.replace(/,$/, "]");
-    var gotolist_options = JSON.parse(gotolist_data.value);
-    for (var j=0; j<gotolist_options.length; j++) {
-      var entry = document.createElement('option');
-      entry.value = gotolist_options[j][0];
-      entry.innerHTML = gotolist_options[j][1];
-      $('#gotolist').append(entry);
-    }
-    $('#gotolist').trigger('chosen:updated');
-    $('#gotolist').on('change', function() { location.href = this.value; });
-  });
-
   window.options = {
     showArrayIndex: false,
     hyperlinks : { enable : true, keys: [], target : '_blank' },
@@ -91,8 +49,21 @@ define(function(require) {
     }
   }
 
-  // overview plot
   $(document).ready(function(){
+
+    // gotolist
+    var gotolist_data = document.getElementById('input_gotolist');
+    gotolist_data.value = gotolist_data.value.replace(/,$/, "]");
+    var gotolist_options = JSON.parse(gotolist_data.value);
+    for (var j=0; j<gotolist_options.length; j++) {
+      var entry = document.createElement('option');
+      entry.value = gotolist_options[j][0];
+      entry.innerHTML = gotolist_options[j][1];
+      $('#gotolist').append(entry);
+    }
+    $('#gotolist').on('change', function() { location.href = this.value; });
+
+    // overview plot axes
     var ovdata_element = document.getElementById('inputovdata');
     var ovdata = JSON.parse(ovdata_element.value);
     var entries = Object.keys(ovdata);
@@ -103,7 +74,8 @@ define(function(require) {
       entry.innerHTML = entries[i];
       list.appendChild(entry);
     }
-    $('#axespicker').trigger('chosen:updated');
+
+    // overview plot
     $('#plot_ovdata').on('click', function() {
       var axes = [];
       var axes_select = document.getElementById('axespicker');
@@ -137,5 +109,27 @@ define(function(require) {
         }
       });
     });
+
+
+    $('#toggle_trees').bootstrapToggle({
+      on:"h-Data", off:"h-Data", size:"mini", width:65, height:25
+    });
+    $('#toggle_tables').bootstrapToggle({
+      on:"Tables", off:"Tables", size:"mini", width:65, height:25
+    });
+    $('#toggle_graphs').bootstrapToggle({
+      on:"Graphs", off:"Graphs", size:"mini", width:65, height:25
+    });
+    $('#toggle_inputs').bootstrapToggle({
+      on:"Inputs", off:"Inputs", size:"mini", width:65, height:25
+    });
+    //$('.checkbox').show();
+    $('#gotolist').chosen({ search_contains: true , width: "200px" });
+    $('#axespicker').chosen({
+      search_contains: true, max_selected_options: 3, width: "516px"
+    });
+    $('#plot_ovdata').removeClass('hide');
+    $('#top_btn').removeClass('hide');
+
   });
 });

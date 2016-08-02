@@ -15,38 +15,41 @@
       <div class="form-group" style="position:relative; left:20px;">
         <div class="checkbox" style="padding:1px;">
           <label>
-            <input id="toggle_trees" type="checkbox" checked>
+            <input id="toggle_trees" type="checkbox" checked hidden>
           </label>
         </div>
         <div class="checkbox" style="padding:1px; margin-left:15px;">
           <label>
-            <input id="toggle_tables" type="checkbox" checked>
+            <input id="toggle_tables" type="checkbox" checked hidden>
           </label>
         </div>
         <div class="checkbox" style="padding:1px; margin-left:15px;">
           <label>
-            <input id="toggle_graphs" type="checkbox" checked>
+            <input id="toggle_graphs" type="checkbox" checked hidden>
           </label>
         </div>
         <div class="checkbox" style="padding:1px; margin-left:15px;">
           <label>
-            <input id="toggle_inputs" type="checkbox" checked>
+            <input id="toggle_inputs" type="checkbox" checked hidden>
           </label>
         </div>
       </div>
       <div class="form-group" style="position:relative; left:20px; margin-left:15px;">
-        <select id="gotolist" data-placeholder="Go to Contribution ..." style="width:200px;">
+        <select id="gotolist" data-placeholder="Go to Contribution ..." hidden>
           <option></option>
         </select>
       </div>
       <div class="form-group" style="position:relative; left:20px; margin-left:15px;">
-        <select id="axespicker" data-placeholder="Select x-y-z Axes for Overview Graph (in order!) ..." style="width:516px;" multiple>
+        <select id="axespicker" data-placeholder="Select x-y-z Axes for Overview Graph (in order!) ..." multiple hidden>
           <option></option>
         </select>
-        <button id="plot_ovdata" type="button" class="btn btn-primary btn-sm">Plot</button>
+        <button id="plot_ovdata" type="button" class="btn btn-primary btn-sm hide">Plot</button>
       </div>
       <div class="form-group" style="position:relative; left:20px; margin-left:15px;">
-        <a class="btn btn-sm" href="#top" role=button><span class="glyphicon glyphicon-menu-up" aria-hidden="true"></span></br>top</a></li>
+        <a id="top_btn" class="btn btn-sm hide" href="#top" role=button>
+          <span class="glyphicon glyphicon-menu-up" aria-hidden="true"></span>
+          </br>top
+        </a>
       </div>
     </form>
   </div>
@@ -58,6 +61,11 @@
 a.anchor { display: block; position: relative; top: -120px; visibility: hidden; }
 .backgrid .string-cell { text-align: center; }
 </style>
+<script>
+require(['jquery', 'bootstrap'], function($) {
+  $('.navbar-lower').affix({ offset: {top: -50} });
+});
+</script>
 
 <input type=hidden id=input_gotolist value='['>
 
