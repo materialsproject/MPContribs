@@ -3,6 +3,11 @@
 
 <link rel="stylesheet" type="text/css" media="all" href="{{ url_for('static', filename='css/json.human.css') }}">
 <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/backgrid.min.css') }}"/>
+<script>
+  requirejs(['./static/js/common'], function(){
+    requirejs(['app/index']);
+  });
+</script>
 
 <nav class="navbar navbar-default navbar-lower" role="navigation">
   <div class="container">
@@ -11,41 +16,21 @@
         <div class="checkbox" style="padding:1px;">
           <label>
             <input id="toggle_trees" type="checkbox" checked>
-            <script>
-              $('#toggle_trees').bootstrapToggle({
-                on:"h-Data", off:"h-Data", size:"mini", width:65, height:25
-              });
-            </script>
           </label>
         </div>
         <div class="checkbox" style="padding:1px; margin-left:15px;">
           <label>
             <input id="toggle_tables" type="checkbox" checked>
-            <script>
-              $('#toggle_tables').bootstrapToggle({
-                on:"Tables", off:"Tables", size:"mini", width:65, height:25
-              });
-            </script>
           </label>
         </div>
         <div class="checkbox" style="padding:1px; margin-left:15px;">
           <label>
             <input id="toggle_graphs" type="checkbox" checked>
-            <script>
-              $('#toggle_graphs').bootstrapToggle({
-                on:"Graphs", off:"Graphs", size:"mini", width:65, height:25
-              });
-            </script>
           </label>
         </div>
         <div class="checkbox" style="padding:1px; margin-left:15px;">
           <label>
             <input id="toggle_inputs" type="checkbox" checked>
-            <script>
-              $('#toggle_inputs').bootstrapToggle({
-                on:"Inputs", off:"Inputs", size:"mini", width:65, height:25
-              });
-            </script>
           </label>
         </div>
       </div>
@@ -74,63 +59,7 @@ a.anchor { display: block; position: relative; top: -120px; visibility: hidden; 
 .backgrid .string-cell { text-align: center; }
 </style>
 
-<script type="text/javascript" charset="utf8" src="{{ url_for('static', filename='js/require.js') }}"></script>
-<script>
-  require.config({
-      baseUrl: "/static/js",
-      paths: {
-        "plotly": "plotly.min",
-        "underscore": "underscore-min",
-        "backbone": "backbone-min"
-      }
-  })
-  $('#axespicker').chosen({ search_contains: true, max_selected_options: 3 });
-  $('.navbar-lower').affix({ offset: {top: -5} });
-  $('#gotolist').chosen({ search_contains: true });
-  $(document).ready(function(){
-    $('#gotolist').on('change', function() { location.href = this.value; });
-  })
-  window.options = {
-    showArrayIndex: false,
-    hyperlinks : { enable : true, keys: [], target : '_blank' },
-    bool : {
-      showText : true,
-      text : { true : "true", false : "false" },
-      showImage : false
-    }
-  };
-  // http://stackoverflow.com/questions/1344500/efficient-way-to-insert-a-number-into-a-sorted-array-of-numbers
-  // adjusted for uniqueness
-  function insert(element, array) {
-    var loc = locationOf(element, array);
-    if (loc != null) array.splice(loc + 1, 0, element);
-    return array;
-  }
-  function locationOf(element, array, start, end) {
-    start = start || 0;
-    end = end || array.length;
-    var pivot = parseInt(start + (end - start) / 2, 10);
-    if (array[pivot] === element) return null;
-    if (end-start <= 1)
-      return array[pivot] > element ? pivot - 1 : pivot;
-    if (array[pivot] < element) {
-      return locationOf(element, array, pivot, end);
-    } else {
-      return locationOf(element, array, start, pivot);
-    }
-  }
-  function toggle_divs(name) {
-    var divs = document.getElementsByName(name);
-    for (var j=0; j<divs.length; j++) {
-      if ($(divs[j]).is(":visible")) { $(divs[j]).hide(); }
-      else { $(divs[j]).show(); }
-    }
-  };
-  $('#toggle_trees').change(function () { toggle_divs("Hierarchical"); });
-  $('#toggle_tables').change(function () { toggle_divs("Tabular"); });
-  $('#toggle_graphs').change(function () { toggle_divs("Graphical"); });
-  $('#toggle_inputs').change(function () { toggle_divs("Input"); });
-</script>
+<input type=hidden id=input_gotolist value='['>
 
 <div class="container">
   <div class="alert alert-warning" role="alert" style="position:relative; height:150px; overflow:hidden;">
@@ -144,64 +73,24 @@ a.anchor { display: block; position: relative; top: -120px; visibility: hidden; 
 {% for c in content: %}
 
 {% if c is string %}
-<script>$("#output").append("{{ c|safe }}");</script>
+<script>
+require(['jquery'], function($) {
+  $("#output").append("{{ c|safe }}");
+});
+</script>
 
 {% elif c is mapping %}
 <input type=hidden name=ovdata id=inputovdata value=''>
 <script>
-  var list = document.getElementById('axespicker');
-  var entries = {{ c.keys()|tojson|safe }};
-  for (var i=0; i<entries.length; ++i) {
-    var entry = document.createElement('option');
-    entry.value = entries[i];
-    entry.innerHTML = entries[i];
-    list.appendChild(entry);
-  }
-  $('#axespicker').trigger('chosen:updated');
   var ovdata = document.getElementById('inputovdata');
   ovdata.value = JSON.stringify({{ c|tojson|safe }});
-  $('#plot_ovdata').on('click', function() {
-    var axes = [];
-    var axes_select = document.getElementById('axespicker');
-    for (var i=0, iLen=axes_select.options.length; i<iLen; i++) {
-      var opt = axes_select.options[i];
-      if (opt.selected) { axes.push(opt.value); }
-    }
-    var ovdata = JSON.parse(document.getElementById('inputovdata').value);
-    var xAxis = ovdata[axes[2]], yAxis = ovdata[axes[1]], zAxis = ovdata[axes[0]];
-    var xValues = [], yValues = [], zValues = [], text = [];
-    for (var cid in xAxis) { insert(xAxis[cid][0], xValues); }
-    for (var cid in yAxis) { insert(yAxis[cid][0], yValues); }
-    for (var i=0, iLen=yValues.length; i<iLen; i++) { zValues[i] = []; text[i] = []; }
-    for (var cid in zAxis) {
-      var xVal = xAxis[cid][0], yVal = yAxis[cid][0], zVal = zAxis[cid][0];
-      var xIdx = xValues.indexOf(xVal), yIdx = yValues.indexOf(yVal);
-      zValues[yIdx][xIdx] = zVal;
-      text[yIdx][xIdx] = zAxis[cid][1] + ' ' + cid;
-    }
-    var data = [{ x: xValues, y: yValues, z: zValues, text: text, type: 'heatmap' }];
-    var elem = document.getElementById('ovdata_graph');
-    elem.style['width'] = '580px'; elem.style['height'] = "580px";
-    elem.style['margin-left'] = 'auto'; elem.style['margin-right'] = 'auto';
-    Plotly.newPlot('ovdata_graph', data, {margin: {t: 25}});
-    location.href = '#top';
-    $('#ovdata_graph').bind('plotly_click', function(event, data) {
-      for(var i=0; i<data.points.length; i++){
-        var pn = data.points[i].pointNumber;
-        var tx = data.points[i].data.text;
-        location.href = '#cid' + tx[pn[0]][pn[1]].split(" ")[1];
-      }
-    });
-  });
 </script>
 
 {% elif c is sequence %}
 <script>
-  var entry = document.createElement('option');
-  entry.value = "#cid{{ c[2] }}";
-  entry.innerHTML = "{{ c[0] }} (#{{ c[2] }})";
-  $('#gotolist').append(entry);
-  $('#gotolist').trigger('chosen:updated');
+  var gotolist_data = document.getElementById('input_gotolist');
+  var element = ["#cid{{ c[2] }}", "{{ c[0] }} (#{{ c[2] }})"];
+  gotolist_data.value += JSON.stringify(element) + ',';
 </script>
 
 <a class="anchor" name="cid{{ c[2] }}"></a><hr>
