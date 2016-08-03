@@ -109,8 +109,10 @@
   </div>
   {% for c in content: %}
   <script>
-    require(['jquery'], function($) {
-      $("#output").append("{{ c|safe }}");
+    requirejs(['./static/js/common'], function(){
+      require(['jquery'], function($) {
+        $("#output").append("{{ c|safe }}");
+      });
     });
   </script>
   {% endfor %}
