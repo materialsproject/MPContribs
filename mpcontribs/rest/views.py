@@ -20,7 +20,7 @@ class Connector(ConnectorBase):
             self.contribs_db = self.get_database('_'.join(['mpcontribs', db_type]))
         from mpcontribs.rest.adapter import ContributionMongoAdapter
         self.contrib_ad = ContributionMongoAdapter(self.contribs_db)
-        from mpcontribs.builders import MPContributionsBuilder
+        from mpcontribs.builder import MPContributionsBuilder
         self.contrib_build_ad = MPContributionsBuilder(self.contribs_db)
 
 ConnectorBase.register(Connector)
