@@ -35,35 +35,32 @@
   <div class="container">
     <form action="/contribute" method=post enctype=multipart/form-data class="navbar-form navbar-left">
       <div class="form-group">
-        <select id="siteselect" data-placeholder="Select Site ..." style="width:180px;">
+        <select id="siteselect" data-placeholder="Select Site ..." hidden>
           <option></option>
           <option value="http://localhost:5000/test_site">Local Test Site</option>
-          <option value="http://localhost:8000">Local Materials Project</option>
-          <option value="https://www.materialsproject.org" disabled>Materials Project</option>
+          <option value="https://www.materialsproject.org:8080">Materials Project</option>
         </select>
-        <button type=button class="btn btn-primary btn-xs" onClick="$('#myModal').modal()">
+        <button id="add_site_btn" type=button class="btn btn-primary btn-xs hide" onClick="$('#myModal').modal()">
           <span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
         </button>
       </div>
       <div class="form-group" style="position:relative; margin-left:50px;">
-        <select id="dbselect" data-placeholder="Select DB ..." style="width:150px;">
+        <select id="dbselect" data-placeholder="Select DB ..." hidden>
           <option></option>
-          <option value="default">default</option>
-          <option value="contribs">contribs</option>
+          <option value="mpcontribs_read" selected>mpcontribs_read</option>
         </select>
-        <span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
       </div>
       <div class="form-group" style="position:relative; margin-left:50px;">
-        <input type="text" class="form-control" name=apikey id=inputapikey placeholder="Insert API Key ...">
-        <a id=dlnk href="http://localhost:5000/test_site/webtzite/dashboard" target="_blank">
+        <input type="text" class="form-control hide" name=apikey id=inputapikey placeholder="Insert API Key ...">
+        <a id=dlnk href="http://localhost:5000/test_site/webtzite/dashboard" target="_blank" hidden>
           <span class="glyphicon glyphicon-question-sign" aria-hidden="true"></span>
         </a>
       </div>
       <input type=hidden name=site id=inputsite value=''>
-      <input type=hidden name=dbtype id=inputdbtype value=''>
+      <input type=hidden name=dbtype id=inputdbtype value='mpcontribs_read'>
       <div class="form-group" style="position:relative; margin-left:50px;">
-        <input type=submit name="submit" class="btn btn-primary navbar-btn" value="Go!">
-        <input type="button" value="Cancel" class="btn btn-warning navbar-btn" onclick="stopLoad()"/>
+        <input id="go_btn" type=submit name="submit" class="btn btn-primary navbar-btn hide" value="Go!">
+        <input id="cancel_btn" type="button" value="Cancel" class="btn btn-warning navbar-btn hide" onclick="stopLoad()"/>
       </div>
       <div class="form-group" style="position:relative; margin-left:50px;">
         {% if missing %}<code>{{ missing }}</code>{% endif %}
@@ -76,10 +73,20 @@
 .affix { top: 68px; width:100%; z-index: 1000; }
 .navbar-form { padding-left: 0; }
 </style>
+<script>
+requirejs(['./static/js/common'], function(){
+  require(['jquery', 'bootstrap'], function($) {
+    $('.navbar-lower').affix({ offset: {top: -50} });
+  });
+});
+</script>
 
 <input type=hidden id=input_contrib value=''>
 
 <script>
+  var contrib = {{ session.contribute|tojson|safe }}; // dict: site, db, apikey
+  var contrib_data = document.getElementById('input_contrib');
+  contrib_data.value = JSON.stringify(contrib);
   function stopLoad() {
     if (navigator.appName == 'Microsoft Internet Explorer') {
       document.execCommand('Stop');
@@ -95,9 +102,6 @@
     document.getElementById('siteselect').trigger('chosen:updated');
     document.getElementById('myModal').modal('hide');
   }
-  var contrib = {{ session.contribute|tojson|safe }}; // dict: site, db, apikey
-  var contrib_data = document.getElementById('input_contrib');
-  contrib_data.value = JSON.stringify(contrib);
 </script>
 
 {% if content %}
