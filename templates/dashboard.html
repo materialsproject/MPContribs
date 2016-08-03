@@ -2,6 +2,7 @@
 {% block content %}
 {% if user.is_registered %}
 <p>Current user: {{ user.email }}</p>
+<p>Superuser: {{ user.is_superuser }}</p>
 <p>
 <button id="keygen">Generate API Key</button>
 <code id='key'>{{ user.api_key }}</code>

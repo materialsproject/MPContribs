@@ -53,6 +53,7 @@ def register(request):
             u.institution = form.cleaned_data['institution']
             u.first_name = form.cleaned_data['first_name']
             u.last_name = form.cleaned_data['last_name']
+            u.is_superuser = bool(RegisteredUser.objects.count() == 1)
             u.save()
             return redirect(next)
     ctx = RequestContext(request)
