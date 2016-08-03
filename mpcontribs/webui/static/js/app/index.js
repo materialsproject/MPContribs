@@ -1,6 +1,5 @@
 define(function(require) {
   var $ = require('jquery');
-  require('waitfor');
   require('toggle');
   require('chosen');
   var Plotly = require('plotly');
