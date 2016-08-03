@@ -19,6 +19,10 @@ def submit_mpfile(path_or_mpfile, api_key, site, dbtype='write', fmt='archieml')
             check = mpr.check_contributor()
             yield '{} ({}).</br>'.format(check['contributor'], check['institution'])
             time.sleep(1)
+            if check['group_added']:
+                yield '"contrib" group added. '
+            if check['contributor_added']:
+                yield 'User added as contributor. '
             yield 'Registered? '
             if not check['is_contrib']:
                 raise Exception('Please register as contributor!')

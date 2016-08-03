@@ -5,6 +5,7 @@ from bson.json_util import loads
 from django.core.exceptions import PermissionDenied
 from django.shortcuts import render_to_response
 from django.template import RequestContext
+from django.contrib.auth.models import Group
 from webtzite.connector import ConnectorBase
 from bson.objectid import ObjectId
 from webtzite import mapi_func
@@ -62,11 +63,24 @@ def check_contributor(request, db_type=None, mdb=None):
             }
         }
     """
+    group_added, contributor_added = False, False
+    if not Group.objects.filter(name='contrib').exists():
+        g = Group(name='contrib')
+        g.save()
+        group_added = True
+    if request.user.is_superuser:
+        g = Group.objects.get(name='contrib')
+        if not g.user_set.exists():
+            g.user_set.add(request.user)
+            g.save()
+            request.user.save()
+            contributor_added = True
     is_contrib = request.user.groups.filter(name='contrib').exists()
     contributor = '{} {}'.format(request.user.first_name, request.user.last_name)
     return {"valid_response": True, 'response': {
         'is_contrib': is_contrib, 'contributor': contributor,
-        'institution': request.user.institution
+        'institution': request.user.institution,
+        'group_added': group_added, 'contributor_added': contributor_added
     }}
 
 @mapi_func(supported_methods=["POST", "GET"], requires_api_key=True)
