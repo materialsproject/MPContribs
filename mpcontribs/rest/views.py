@@ -17,7 +17,7 @@ class Connector(ConnectorBase):
         self.contribs_db = self.default_db
         db_type = kwargs.get('db_type')
         if db_type is not None:
-            self.contribs_db = self.get_database('_'.join(['mpcontribs', db_type]))
+            self.contribs_db = self.get_database(db_type)
         from mpcontribs.rest.adapter import ContributionMongoAdapter
         self.contrib_ad = ContributionMongoAdapter(self.contribs_db)
         from mpcontribs.builder import MPContributionsBuilder
