@@ -4,6 +4,7 @@ define(function(require) {
   require('toggle');
   require('chosen');
   var Plotly = require('plotly');
+  require('jquery.spin');
 
   window.options = {
     showArrayIndex: false,
@@ -110,7 +111,7 @@ define(function(require) {
       });
     });
 
-
+    $('.navbar-lower').spin(false);
     $('#toggle_trees').bootstrapToggle({
       on:"h-Data", off:"h-Data", size:"mini", width:65, height:25
     });
@@ -123,7 +124,6 @@ define(function(require) {
     $('#toggle_inputs').bootstrapToggle({
       on:"Inputs", off:"Inputs", size:"mini", width:65, height:25
     });
-    //$('.checkbox').show();
     $('#gotolist').chosen({ search_contains: true , width: "200px" });
     $('#axespicker').chosen({
       search_contains: true, max_selected_options: 3, width: "516px"
