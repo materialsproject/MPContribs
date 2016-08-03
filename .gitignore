@@ -9,3 +9,4 @@ db.sqlite3
 build/*
 dist/*
 mpcontribs/rest/static/*
+db/*
