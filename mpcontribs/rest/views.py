@@ -6,6 +6,7 @@ from django.core.exceptions import PermissionDenied
 from django.shortcuts import render_to_response
 from django.template import RequestContext
 from django.contrib.auth.models import Group
+from django.core.urlresolvers import reverse
 from webtzite.connector import ConnectorBase
 from bson.objectid import ObjectId
 from webtzite import mapi_func
@@ -136,7 +137,10 @@ def build_contribution(request, db_type=None, mdb=None):
         request.user.first_name, request.user.last_name, request.user.email)
     try:
         cid = ObjectId(request.POST['cid'])
-        url = mdb.contrib_build_ad.build(contributor, cid)
+        endpoint = request.build_absolute_uri(reverse('mpcontribs_rest_index')[:-1])
+        url = mdb.contrib_build_ad.build(
+            contributor, cid, api_key=request.user.api_key, endpoint=endpoint
+        )
     except Exception as ex:
         raise ValueError('"REST Error: "{}"'.format(str(ex)))
     return {"valid_response": True, 'response': url}
