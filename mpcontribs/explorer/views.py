@@ -1,14 +1,12 @@
 """This module provides the views for the explorer interface."""
 
-import json
+import json, nbformat
 from bson import ObjectId
 from django.shortcuts import render_to_response
 from django.template import RequestContext
 from mpcontribs.rest.rester import MPContribsRester
-
-def get_endpoint():
-    from django.core.urlresolvers import reverse
-    return reverse('mpcontribs_rest_index')[:-1]
+from mpcontribs.rest.views import get_endpoint
+from mpcontribs.builder import export_notebook
 
 def index(request, collection=None):
     ctx = RequestContext(request)
@@ -81,19 +79,18 @@ def index(request, collection=None):
         ctx.update({'alert': 'Please log in!'})
     return render_to_response("mpcontribs_explorer_index.html", locals(), ctx)
 
-def contribution(request, collection, identifier, project, cid):
+def contribution(request, collection, cid):
     if request.user.is_authenticated():
         material = {}
         API_KEY = request.user.api_key
         ENDPOINT = request.build_absolute_uri(get_endpoint())
         with MPContribsRester(API_KEY, endpoint=ENDPOINT) as mpr:
-            material['contributed_data'] = mpr.query_contributions(
-                criteria={'_id': identifier}, collection=collection,
-                projection={'_id': 0, '.'.join([project, cid]): 1}
-            )[0][project][cid]
-        material['pretty_formula'] = identifier
-    else:
-        material = {k: identifier for k in ['pretty_formula']}
+            material = mpr.query_contributions(
+                criteria={'_id': ObjectId(cid)},
+                collection=collection, projection={'_id': 0}
+            )
+            material['nb'] = export_notebook(nbformat.from_dict(material['nb']))
+    material['detail_id'] = collection[:-1]
     ctx = RequestContext(request, {'material': jsanitize(material)})
     return render_to_response("mpcontribs_explorer_contribution.html", locals(), ctx)
 
