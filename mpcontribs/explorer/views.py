@@ -11,7 +11,6 @@ from mpcontribs.builder import export_notebook
 def index(request, collection=None):
     ctx = RequestContext(request)
     fields = ['identifiers', 'projects', 'cids']
-    projection_keys = ['mp_cat_id', 'project']
     if request.user.is_authenticated():
         if collection in ['materials', 'compositions']:
             API_KEY = request.user.api_key
@@ -19,23 +18,20 @@ def index(request, collection=None):
             with MPContribsRester(API_KEY, endpoint=ENDPOINT) as mpr:
                 if request.method == 'GET':
                     options = dict((field, set()) for field in fields)
-                    docs = mpr.query_contributions(collection=collection)
+                    docs = mpr.query_contributions(
+                        collection=collection, projection={'nb': 0}
+                    )
                     if docs:
                         for doc in docs:
-                            for project, contribs in doc.iteritems():
-                                if project == '_id':
-                                    # contribs = mp-id or composition
-                                    options[fields[0]].add(str(contribs))
-                                else:
-                                    options[fields[1]].add(str(project))
-                                    # contribs = contributions for specific project
-                                    for cid in contribs:
-                                        options[fields[2]].add(str(cid))
+                            options[fields[0]].add(str(doc['mp_cat_id']))
+                            options[fields[1]].add(str(doc['project']))
+                            options[fields[2]].add(str(doc['_id']))
                     else:
                         ctx.update({'alert': 'No {} available!'.format(collection)})
                     options = dict((k, list(v)) for k,v in options.iteritems())
                     selection = dict((field, []) for field in fields)
                 elif request.method == 'POST':
+                    projection_keys = ['mp_cat_id', 'project']
                     options, selection = (
                         dict(
                             (field, [str(el) for el in json.loads(
@@ -51,25 +47,25 @@ def index(request, collection=None):
                                 criteria.update({
                                     key: {'$in': selection[fields[idx]]}
                                 })
+                        docs = mpr.query_contributions(
+                            criteria=criteria, collection='contributions'
+                        )
+                        docs = docs if isinstance(docs, list) else [docs]
                         urls = [
-                            '/'.join([
-                                request.path, doc['mp_cat_id'], doc['project'], doc['_id']
-                            ]) for doc in mpr.query_contributions(
-                                criteria=criteria,
-                                projection=dict((key, 1) for key in projection_keys),
-                                collection='contributions'
-                            )
+                            '/'.join([request.path, str(doc['_id'])])
+                            for doc in docs
                         ]
                     elif mode == 'Show':
                         if selection[fields[2]]:
+                            docs = mpr.query_contributions(
+                                criteria={'_id': {
+                                    '$in': map(ObjectId, selection[fields[2]])
+                                }}, collection='contributions'
+                            )
+                            docs = docs if isinstance(docs, list) else [docs]
                             urls = [
-                                '/'.join([
-                                    request.path, doc['mp_cat_id'], doc['project'], doc['_id']
-                                ]) for doc in mpr.query_contributions(
-                                    criteria={'_id': {'$in': map(ObjectId, selection[fields[2]])}},
-                                    projection=dict((key, 1) for key in projection_keys),
-                                    collection='contributions'
-                                )
+                                '/'.join([request.path, str(doc['_id'])])
+                                for doc in docs
                             ]
                         else:
                             ctx.update({'alert': 'Enter a contribution identifier!'})
