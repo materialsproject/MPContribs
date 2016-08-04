@@ -52,7 +52,7 @@ class MPContributionsBuilder():
         return self.db if isinstance(self.db, dict) else \
                 self.contributions.find_one({'_id': cid})
 
-    def build(self, contributor_email, cid):
+    def build(self, contributor_email, cid, api_key=None, endpoint=None):
         """update materials/compositions collections with contributed data"""
         cid_short, cid_str = get_short_object_id(cid), str(cid)
         contrib = self.find_contribution(cid)
@@ -84,7 +84,8 @@ class MPContributionsBuilder():
             nb['cells'].append(nbf.new_code_cell(
                 "from mpcontribs.rest.rester import MPContribsRester"
             ))
-            # NOTE need to get API_KEY from user when executing NB on server
+            os.environ['MAPI_KEY'] = api_key
+            os.environ['MAPI_ENDPOINT'] = endpoint
             nb['cells'].append(nbf.new_code_cell(
                 "with MPContribsRester() as mpr:\n"
                 "    mpfile = mpr.find_contribution('{}')\n"

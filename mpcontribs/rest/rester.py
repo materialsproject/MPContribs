@@ -1,15 +1,14 @@
 from __future__ import division, unicode_literals
-import six, bson
+import six, bson, os
 from bson.json_util import dumps, loads
 from webtzite.rester import MPResterBase, MPResterError
 from mpcontribs.io.core.mpfile import MPFileCore
 
 class MPContribsRester(MPResterBase):
     """convenience functions to interact with MPContribs REST interface"""
-    def __init__(self, api_key=None,
-                 endpoint="https://www.materialsproject.org/mpcontribs/rest",
-                 dbtype='read'):
-        # TODO set endpoint automatically based on host or parent django app?
+    def __init__(self, api_key=None, endpoint=None, dbtype='mpcontribs_read'):
+        if endpoint is None:
+            endpoint = os.environ.get('MAPI_ENDPOINT')
         super(MPContribsRester, self).__init__(
           api_key=api_key, endpoint=endpoint
         )
