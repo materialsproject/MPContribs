@@ -1,6 +1,6 @@
 from __future__ import unicode_literals, print_function, absolute_import
 
-import json, os, socket, SocketServer, codecs, time, pkgutil
+import json, os, socket, SocketServer, codecs, time, pkgutil, psutil
 import sys, warnings, multiprocessing
 from IPython.terminal.ipapp import launch_new_instance
 from flask import Flask, render_template, request, Response
@@ -11,6 +11,8 @@ from mpcontribs.config import default_mpfile_path
 from mpcontribs import users as mpcontribs_users
 from StringIO import StringIO
 from webtzite import configure_settings
+from whichcraft import which
+from subprocess import call
 
 tmpl_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates')
 stat_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static')
@@ -50,7 +52,7 @@ def patched_finish(self):
 
 SocketServer.StreamRequestHandler.finish = patched_finish
 
-processes = {'NotebookProcess': None}
+processes = {'NotebookProcess': None, 'MongodProcess': None}
 
 class NotebookProcess(multiprocessing.Process):
     def __init__(self):
@@ -66,6 +68,19 @@ class NotebookProcess(multiprocessing.Process):
         sys.argv.append('--NotebookApp.allow_origin="*"')
         launch_new_instance()
 
+class MongodProcess(multiprocessing.Process):
+    def __init__(self):
+        super(MongodProcess, self).__init__(name='MongodProcess')
+
+    def run(self):
+        if which('mongod'):
+            cwd = os.getcwd()
+            dbpath = os.path.join(cwd, 'db')
+            logpath = os.path.join(dbpath, 'mongodb.log')
+            call(['mongod', '--dbpath', dbpath, '--logpath', logpath])
+        else:
+            print('install MongoDB to use local DB instance.')
+
 def start_processes():
     global processes
     for process_name in processes.keys():
@@ -77,9 +92,15 @@ def stop_processes():
     global processes
     for process_name in processes.keys():
         if processes[process_name]:
-            processes[process_name].terminate()
+            if process_name != 'MongodProcess':
+                processes[process_name].terminate()
+                time.sleep(1)
             processes[process_name] = None
-            time.sleep(1)
+    parent = psutil.Process(os.getpid())
+    for child in parent.children(recursive=True):
+        if child.name() == 'mongod':
+            child.kill()
+            print('killed mongod')
 
 def stream_template(template_name, **context):
     # http://stackoverflow.com/questions/13386681/streaming-data-with-python-and-flask
