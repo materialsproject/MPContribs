@@ -13,6 +13,9 @@
     <link rel="stylesheet" type="text/css" href='{% static "css/backgrid-paginator.css" %}'/>
     <link rel="stylesheet" type="text/css" href='{% static "css/backgrid-select-all.css" %}'/>
     <link rel="stylesheet" type="text/css" href='{% static "css/backgrid-filter.css" %}'/>
+    <link rel="stylesheet" type="text/css" href='{% static "css/site.css" %}'/>
+    <link rel="stylesheet" type="text/css" href='{% static "css/codemirror.min.css" %}'/>
+    <link rel="stylesheet" type="text/css" href='{% static "css/json.human.css" %}'>
     {% browserid_css %}
     {% block extra_css %}
     {% endblock extra_css %}
@@ -27,6 +30,17 @@
     <script type="text/javascript" charset="utf8" src='{% static "js/lib/backgrid-select-all.js" %}'></script>
     <script type="text/javascript" charset="utf8" src='{% static "js/lib/backgrid-filter.js" %}'></script>
     <script type="text/javascript" charset="utf8" src='{% static "js/lib/plotly.min.js" %}'></script>
+    <script type="text/javascript" charset="utf8" src='{% static "js/lib/require.js" %}'></script>
+    <script>
+    requirejs.config({
+      baseUrl: '/static/js/lib',
+      paths: {
+        plotly: "plotly.min",
+        underscore: "underscore-min",
+        backbone: "backbone-min"
+      }
+    });
+    </script>
     {% browserid_js %}
   </head>
   <body>
