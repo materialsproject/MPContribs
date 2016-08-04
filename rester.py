@@ -3,6 +3,9 @@
 from __future__ import division, unicode_literals
 import os, requests, warnings, urlparse
 from bson.json_util import loads
+import webtzite.configure_settings
+import django
+django.setup()
 
 class MPResterBase(object):
     """
