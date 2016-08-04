@@ -1,17 +1,11 @@
 {% extends "mpcontribs_explorer_detail.html" %}
 {% load staticfiles %}
-{% block title %} Composition {{ material.pretty_formula }} {% endblock %}
-{% block detail_id %}composition{% endblock %}
-{% block detail_type %}composition{% endblock %}
-{% block formula %}{{ material.pretty_formula }}{% endblock %}
-{% block additional_headers %}
-  <span class="detail-section pull-right">
-    <button class="btn btn-primary" id="contribute-for-material">
-      <span class="icon" data-icon="i"></span>
-      <span class="text">Contribute</span>
-    </button>
-  </span>
-{% endblock additional_headers %}
+{% if mp_cat_id in material %}
+{% block title %} {{ material.detail_id }} {{ material.mp_cat_id }} {% endblock %}
+{% block detail_id %}{{ material.detail_id }}{% endblock %}
+{% block detail_type %}{{ material.detail_id }}{% endblock %}
+{% block formula %}{{ material.mp_cat_id }}{% endblock %}
 {% block detail_content %}
-<div>{{ material.contributed_data }}</div>
+<div>{{ material.nb|safe }}</div>
 {% endblock detail_content %}
+{% endif %}
