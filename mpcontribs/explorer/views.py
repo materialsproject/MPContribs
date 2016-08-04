@@ -89,7 +89,9 @@ def contribution(request, collection, cid):
                 criteria={'_id': ObjectId(cid)},
                 collection=collection, projection={'_id': 0}
             )
-            material['nb'] = export_notebook(nbformat.from_dict(material['nb']))
+            material['nb'] = export_notebook(
+                nbformat.from_dict(material['nb']), cid
+            )
     material['detail_id'] = collection[:-1]
     ctx = RequestContext(request, {'material': jsanitize(material)})
     return render_to_response("mpcontribs_explorer_contribution.html", locals(), ctx)
