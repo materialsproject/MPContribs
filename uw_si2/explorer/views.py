@@ -4,7 +4,7 @@ import json
 from bson import ObjectId
 from django.shortcuts import render_to_response
 from django.template import RequestContext
-from mpcontribs.explorer.views import get_endpoint
+from mpcontribs.rest.views import get_endpoint
 from monty.json import jsanitize
 from ..rest.rester import UWSI2Rester
 
