@@ -11,6 +11,27 @@ from nbconvert.preprocessors.execute import CellExecutionError
 from nbconvert import HTMLExporter
 from bs4 import BeautifulSoup
 
+def export_notebook(nb):
+    html_exporter = HTMLExporter()
+    html_exporter.template_file = 'basic'
+    (body, resources) = html_exporter.from_notebook_node(nb)
+    soup = BeautifulSoup(body, 'html.parser')
+    soup.div.extract() # remove first code cell (loads mpfile)
+    [t.extract() for t in soup.find_all('a', 'anchor-link')] # rm anchors
+    # mark cells with special name for toggling, and
+    # make element id's unique by appending cid
+    # NOTE every cell has only one tag with id
+    for idx, div in enumerate(soup.find_all('div', 'cell')[1:]):
+        tag = div.find('h2', id=True)
+        if tag is not None:
+            tag['id'] = '-'.join([tag['id'], str(cid)])
+            div_name = tag['id'].split('-')[0]
+        div['name'] = div_name
+    # name divs for toggling code_cells
+    for div in soup.find_all('div', 'input'):
+        div['name'] = 'Input'
+    return soup.prettify()
+
 class MPContributionsBuilder():
     """build user contributions from `mpcontribs.contributions`"""
     def __init__(self, db):
@@ -124,38 +145,17 @@ class MPContributionsBuilder():
             ))
 
         nbdir = os.path.dirname(os.path.abspath(__file__))
-        ep = ExecutePreprocessor(timeout=600, kernel_name='python2')
-        try:
-            out = ep.preprocess(nb, {'metadata': {'path': nbdir}})
-        except CellExecutionError:
-            return 'Execution Error in Jupyter Cell!'
-        finally:
-            if isinstance(self.db, dict):
-                html_exporter = HTMLExporter()
-                html_exporter.template_file = 'basic'
-                (body, resources) = html_exporter.from_notebook_node(nb)
-                soup = BeautifulSoup(body, 'html.parser')
-                soup.div.extract() # remove first code cell (loads mpfile)
-                [t.extract() for t in soup.find_all('a', 'anchor-link')] # rm anchors
-                # mark cells with special name for toggling, and
-                # make element id's unique by appending cid
-                # NOTE every cell has only one tag with id
-                for idx, div in enumerate(soup.find_all('div', 'cell')[1:]):
-                    tag = div.find('h2', id=True)
-                    if tag is not None:
-                        tag['id'] = '-'.join([tag['id'], str(cid)])
-                        div_name = tag['id'].split('-')[0]
-                    div['name'] = div_name
-                # name divs for toggling code_cells
-                for div in soup.find_all('div', 'input'):
-                    div['name'] = 'Input'
-                return [mp_cat_id, project, cid_short, soup.prettify()]
-            else:
-                build_doc = RecursiveDict()
-                build_doc['mp_cat_id'] = mp_cat_id
-                build_doc['project'] = project
-                build_doc['nb'] = nb
-                self.curr_coll.update({'_id': cid}, {'$set': build_doc}, upsert=True)
-                return '{}/{}/{}/{}'.format( # return URL for contribution page
-                    ('materials' if is_mp_id else 'compositions'),
-                    mp_cat_id, project, cid_str)
+        ep = ExecutePreprocessor(timeout=600, kernel_name='python2',
+                                 allow_errors=True)
+        out = ep.preprocess(nb, {'metadata': {'path': nbdir}})
+
+        if isinstance(self.db, dict):
+            return [mp_cat_id, project, cid_short, export_notebook(nb)]
+        else:
+            build_doc = RecursiveDict()
+            build_doc['mp_cat_id'] = mp_cat_id
+            build_doc['project'] = project
+            build_doc['nb'] = nb
+            self.curr_coll.update({'_id': cid}, {'$set': build_doc}, upsert=True)
+            return '{}/{}'.format( # return URL for contribution page
+                ('materials' if is_mp_id else 'compositions'), cid_str)
