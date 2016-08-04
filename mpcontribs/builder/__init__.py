@@ -11,7 +11,7 @@ from nbconvert.preprocessors.execute import CellExecutionError
 from nbconvert import HTMLExporter
 from bs4 import BeautifulSoup
 
-def export_notebook(nb):
+def export_notebook(nb, cid):
     html_exporter = HTMLExporter()
     html_exporter.template_file = 'basic'
     (body, resources) = html_exporter.from_notebook_node(nb)
@@ -25,8 +25,7 @@ def export_notebook(nb):
         tag = div.find('h2', id=True)
         if tag is not None:
             tag['id'] = '-'.join([tag['id'], str(cid)])
-            div_name = tag['id'].split('-')[0]
-        div['name'] = div_name
+            div['name'] = tag['id'].split('-')[0]
     # name divs for toggling code_cells
     for div in soup.find_all('div', 'input'):
         div['name'] = 'Input'
@@ -102,6 +101,7 @@ class MPContributionsBuilder():
                 .format(contrib, mp_cat_id)
             ))
         else:
+            nb['cells'].append(nbf.new_code_cell("print 'hello'"))
             nb['cells'].append(nbf.new_code_cell(
                 "from mpcontribs.rest.rester import MPContribsRester"
             ))
@@ -150,7 +150,7 @@ class MPContributionsBuilder():
         out = ep.preprocess(nb, {'metadata': {'path': nbdir}})
 
         if isinstance(self.db, dict):
-            return [mp_cat_id, project, cid_short, export_notebook(nb)]
+            return [mp_cat_id, project, cid_short, export_notebook(nb, cid)]
         else:
             build_doc = RecursiveDict()
             build_doc['mp_cat_id'] = mp_cat_id
