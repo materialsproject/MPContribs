@@ -24,7 +24,8 @@ setup(
         'numpy', 'scipy', 'Flask', 'pandas', 'plotly', 'six', 'monty',
         'matplotlib', 'pymongo', 'pyyaml', 'ipython', 'cufflinks',
         'Django==1.8.5', 'archieml', 'django-browserid', 'sphinx', 'notebook',
-        'ipywidgets', 'celery', 'tqdm', 'beautifulsoup4'
+        'ipywidgets', 'celery', 'tqdm', 'beautifulsoup4', 'whichcraft',
+        'unidecode'
     ],
     license = 'MIT',
     keywords = ['materials', 'contribution', 'framework', 'data', 'interactive'],

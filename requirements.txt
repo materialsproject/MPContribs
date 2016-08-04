@@ -66,4 +66,6 @@ terminado==0.5
 tornado==4.2.1
 tqdm==2.0.0
 traitlets==4.0.0
+Unidecode==0.4.19
 Werkzeug==0.10.4
+whichcraft==0.4.0
