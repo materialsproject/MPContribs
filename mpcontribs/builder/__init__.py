@@ -23,9 +23,12 @@ def export_notebook(nb, cid):
     # NOTE every cell has only one tag with id
     for idx, div in enumerate(soup.find_all('div', 'cell')[1:]):
         tag = div.find('h2', id=True)
+        div_name = None
         if tag is not None:
             tag['id'] = '-'.join([tag['id'], str(cid)])
-            div['name'] = tag['id'].split('-')[0]
+            div_name = tag['id'].split('-')[0]
+        if div_name is not None:
+            div['name'] = div_name
     # name divs for toggling code_cells
     for div in soup.find_all('div', 'input'):
         div['name'] = 'Input'
