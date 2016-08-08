@@ -67,40 +67,35 @@ mpfile.write_file()
 {% else %}
 <aml>This is an example MPFile in the ArchieML format.
 
-Experiment.Preparation: Sputter deposition
-
-{Experiment.Sample}
-Material: Vicalloy
-Authors: Contact Alpha T. N'Diaye (atndiaye@lbl.gov)
-
-{Experiment.Measurement}
-Detection: total electron yield
-Temperature: RT
-Orientation: 30° grazing incidence
-
 {Experiment.Measurement.Beamline}
 Beamline: ALS-6.3.1
 Method: Soft x-ray XAS and XMCD
 Monochromator.Exit_Slit: 20µm
 Monochromator.Grating: 600l/mm
 
-{Datasource}
-directory: Vicalloy/rawdata
-group_by: Z Y
+{mp-30.info}
+tag: numbers in hierarchical data
+x: 5
+y: 7
+z: 9
 
-{Fe_XMCD}
-get_xmcd.energy_range: 690 740
-scaling_preedge_to_1.preedge_range: 690 700
-linear_background_removal_preedge_XAS.preedge_range: 690 700
-xas_normalization_to_min_and_max.energy_range: 690 740
-xas_xmcd_minmax:
+{mp-4.info}
+tag: numbers in hierarchical data
+x: 6
+y: 8
+z: 2
 
-[+AlNiCoCu.datatable]
+[+mp-30.datatable]
 Energy,XAS,XMCD
 761,0.008445,-0.001452
 762,0.007812,-0.000682
 
-[+AlNiCoCu.table2]
+[+mp-30.table2]
+Energy,XAS,XMCD
+761,0.008445,-0.001452
+762,0.007812,-0.000682
+
+[+mp-4.xas_data]
 Energy,XAS,XMCD
 761,0.008445,-0.001452
 762,0.007812,-0.000682
