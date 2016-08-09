@@ -1,11 +1,15 @@
 from __future__ import division, unicode_literals
-import six, bson
+import six, bson, os
 from bson.json_util import dumps, loads
 from mpcontribs.rest.rester import MPContribsRester
 from mpcontribs.io.core.utils import get_short_object_id
 
 class UWSI2Rester(MPContribsRester):
     """UW/SI2-specific convenience functions to interact with MPContribs REST interface"""
+    z = loads(open(os.path.join(
+      os.path.dirname(os.path.abspath(__file__)), 'z.json'
+    ), 'r').read())
+
     def get_uwsi2_contributions(self):
         """
         - [<host(pretty-formula)>] <mp_cat_id-linked-to-materials-details-page> <cid-linked-to-contribution-details-page>
