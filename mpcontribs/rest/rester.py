@@ -95,14 +95,14 @@ class MPContribsRester(MPResterBase):
             docs = self._make_request('/query', payload=payload, method='POST')
         else:
             docs = self._make_request('/query')
-        return docs if len(docs) != 1 else docs[0]
+        return docs
 
     def find_contribution(self, cid, as_doc=False):
         """find a specific contribution"""
         contrib = self.query_contributions(
             criteria={'_id': bson.ObjectId(cid)},
             projection={'_id': 0, 'mp_cat_id': 1, 'content': 1, 'collaborators': 1}
-        )
+        )[0]
         if as_doc: return contrib
         return MPFileCore.from_contribution(contrib)
 
