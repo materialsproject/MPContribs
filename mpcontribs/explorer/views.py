@@ -50,7 +50,6 @@ def index(request, collection=None):
                         docs = mpr.query_contributions(
                             criteria=criteria, collection='contributions'
                         )
-                        docs = docs if isinstance(docs, list) else [docs]
                         urls = [
                             '/'.join([request.path, str(doc['_id'])])
                             for doc in docs
@@ -62,7 +61,6 @@ def index(request, collection=None):
                                     '$in': map(ObjectId, selection[fields[2]])
                                 }}, collection='contributions'
                             )
-                            docs = docs if isinstance(docs, list) else [docs]
                             urls = [
                                 '/'.join([request.path, str(doc['_id'])])
                                 for doc in docs
@@ -84,7 +82,7 @@ def contribution(request, collection, cid):
             material = mpr.query_contributions(
                 criteria={'_id': ObjectId(cid)},
                 collection=collection, projection={'_id': 0}
-            )
+            )[0]
             material['nb'] = export_notebook(
                 nbformat.from_dict(material['nb']), cid,
                 set_div_names=False
