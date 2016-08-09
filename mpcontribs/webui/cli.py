@@ -22,9 +22,11 @@ def cli():
     call(['./apidoc.sh'])
     os.chdir(cwd)
 
-    dbpath = os.path.join(cwd, 'db')
+    dbpath = os.path.join('/', 'data', 'db')
     if not os.path.exists(dbpath):
-        os.makedirs(dbpath)
+        dbpath = os.path.join(cwd, 'db')
+        if not os.path.exists(dbpath):
+            os.makedirs(dbpath)
 
     flask_app.debug = args.debug
     flask_app.config['SANDBOX_CONTENT'] = args.sbx
