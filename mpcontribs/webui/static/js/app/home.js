@@ -22,7 +22,7 @@ define(function(require) {
     var thebe = new Thebe({
       tmpnb_mode: false,
       add_interrupt_button: true,
-      url: 'http://localhost:8888/'
+      url: 'http://0.0.0.0:8888/'
     });
   });
 
