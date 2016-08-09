@@ -66,6 +66,7 @@ class NotebookProcess(multiprocessing.Process):
         sys.argv.append("--NotebookApp.ip=localhost")
         sys.argv.append("--NotebookApp.open_browser=False")
         sys.argv.append('--NotebookApp.allow_origin="*"')
+        #sys.argv.append('--NotebookApp.port_retries=0')
         launch_new_instance()
 
 class MongodProcess(multiprocessing.Process):
@@ -77,7 +78,8 @@ class MongodProcess(multiprocessing.Process):
             cwd = os.getcwd()
             dbpath = os.path.join(cwd, 'db')
             logpath = os.path.join(dbpath, 'mongodb.log')
-            call(['mongod', '--dbpath', dbpath, '--logpath', logpath])
+            call(['mongod', '--dbpath', dbpath, '--logpath', logpath, '--logappend'])
+            print('mongod started.')
         else:
             print('install MongoDB to use local DB instance.')
 
