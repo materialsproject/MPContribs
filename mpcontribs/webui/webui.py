@@ -75,9 +75,11 @@ class MongodProcess(multiprocessing.Process):
 
     def run(self):
         if which('mongod'):
-            cwd = os.getcwd()
-            dbpath = os.path.join(cwd, 'db')
-            logpath = os.path.join(dbpath, 'mongodb.log')
+            cwd = os.path.join(os.path.dirname(__file__), '..', '..')
+            dbpath = os.path.join('/', 'data', 'db')
+            if not os.path.exists(dbpath):
+                dbpath = os.path.join(cwd, 'db')
+            logpath = os.path.join(dbpath, 'mongodb-mpcontribs.log')
             call(['mongod', '--dbpath', dbpath, '--logpath', logpath, '--logappend'])
             print('mongod started.')
         else:
