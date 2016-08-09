@@ -3,6 +3,8 @@ import six, bson, os
 from bson.json_util import dumps, loads
 from mpcontribs.rest.rester import MPContribsRester
 from mpcontribs.io.core.utils import get_short_object_id
+from mpcontribs.io.archieml.mpfile import MPFile
+from pandas import Series
 
 class UWSI2Rester(MPContribsRester):
     """UW/SI2-specific convenience functions to interact with MPContribs REST interface"""
@@ -17,30 +19,25 @@ class UWSI2Rester(MPContribsRester):
             |- ...
         - ...
         """
-        labels = ["El.", "Z", "D0", "Q"]
-        contribs = list(self.query_contributions(
-            criteria={'project': 'LBNL'},
-            projection={'mp_cat_id': 1}
-        ))
-        mp_ids, projection, data = set(), {}, []
-        for c in contribs:
-            mp_ids.add(c['mp_cat_id'])
-            projection['.'.join(['LBNL', c['_id'], 'tables'])] = 1
-            projection['.'.join(['LBNL', c['_id'], 'tree_data', 'formula'])] = 1
+        labels = ["Solute element name", "Solute D0 [cm^2/s]", "Solute Q [eV]"]
+        data = []
         for doc in self.query_contributions(
-            criteria={'_id': {'$in': mp_ids}},
-            projection=projection, collection='materials'
+            criteria={'project': 'LBNL'},
+            projection={'_id': 1, 'mp_cat_id': 1, 'content': 1}
         ):
-            for cid in doc['LBNL']:
-                d = {
-                    'mp_id': doc['_id'], 'cid': cid,
-                    'short_cid': get_short_object_id(cid),
-                    'formula': doc['LBNL'][cid]['tree_data']['formula']
-                }
-                d['tables'] = doc['LBNL'][cid]['tables']
-                cols = d['tables']['data_supporting']['columns']
-                for idx, col in enumerate(cols):
-                    col['label'] = labels[idx]
-                    col['editable'] = 'false'
-                data.append(d)
+            mpfile = MPFile.from_contribution(doc)
+            mp_id = mpfile.ids[0]
+            table = mpfile.tdata[mp_id]['data_supporting'][labels]
+            table.columns = ['El.', 'D0 [cm^2/s]', 'Q [eV]']
+            anums = [self.z[el] for el in table['El.']]
+            table.insert(0, 'Z', Series(anums, index=table.index))
+            table.sort_values('Z', inplace=True)
+            table.reset_index(drop=True, inplace=True)
+            hdata = mpfile.hdata[mp_id]
+            data.append({
+                'mp_id': mp_id, 'cid': doc['_id'],
+                'short_cid': get_short_object_id(doc['_id']),
+                'formula': hdata['formula'],
+                'table': table
+            })
         return data
