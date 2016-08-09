@@ -66,7 +66,8 @@ class NotebookProcess(multiprocessing.Process):
         sys.argv.append("--NotebookApp.ip=0.0.0.0")
         sys.argv.append("--NotebookApp.open_browser=False")
         sys.argv.append('--NotebookApp.allow_origin="*"')
-        #sys.argv.append('--NotebookApp.port_retries=0')
+        sys.argv.append('--NotebookApp.port_retries=0')
+        sys.argv.append('--NotebookApp.port=8889')
         launch_new_instance()
 
 class MongodProcess(multiprocessing.Process):
