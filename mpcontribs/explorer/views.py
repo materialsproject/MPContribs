@@ -74,8 +74,8 @@ def index(request, collection=None):
     return render_to_response("mpcontribs_explorer_index.html", locals(), ctx)
 
 def contribution(request, collection, cid):
+    material = {}
     if request.user.is_authenticated():
-        material = {}
         API_KEY = request.user.api_key
         ENDPOINT = request.build_absolute_uri(get_endpoint())
         with MPContribsRester(API_KEY, endpoint=ENDPOINT) as mpr:
