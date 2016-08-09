@@ -17,8 +17,8 @@ def cli():
     parser.add_argument('--debug', action='store_true', help='run in debug mode')
     args = parser.parse_args()
 
-    cwd = os.getcwd()
-    os.chdir(os.path.join('mpcontribs', 'rest'))
+    cwd = os.path.join(os.path.dirname(__file__), '..', '..')
+    os.chdir(os.path.join(cwd, 'mpcontribs', 'rest'))
     call(['./apidoc.sh'])
     os.chdir(cwd)
 
