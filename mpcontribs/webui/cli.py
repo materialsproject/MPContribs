@@ -35,8 +35,7 @@ def cli():
     application = DispatcherMiddleware(flask_app, { '/test_site': django_app })
     application = SharedDataMiddleware(application, { '/static': STATIC_ROOT })
 
-    host = 'localhost' if args.debug else '0.0.0.0'
-    run_simple(host, 5000, application, use_reloader=args.debug,
+    run_simple('localhost', 5000, application, use_reloader=args.debug,
                use_debugger=args.debug, use_evalex=args.debug, threaded=True)
 
 if __name__ == '__main__':
