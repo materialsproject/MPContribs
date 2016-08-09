@@ -63,7 +63,7 @@ class NotebookProcess(multiprocessing.Process):
         warnings.filterwarnings("ignore", module = "zmq.*")
         sys.argv.append("notebook")
         sys.argv.append("--IPKernelApp.pylab='inline'")
-        sys.argv.append("--NotebookApp.ip=localhost")
+        sys.argv.append("--NotebookApp.ip=0.0.0.0")
         sys.argv.append("--NotebookApp.open_browser=False")
         sys.argv.append('--NotebookApp.allow_origin="*"')
         #sys.argv.append('--NotebookApp.port_retries=0')

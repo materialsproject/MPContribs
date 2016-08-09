@@ -37,7 +37,7 @@
       <div class="form-group">
         <select id="siteselect" data-placeholder="Select Site ..." hidden>
           <option></option>
-          <option value="http://localhost:5000/test_site">Local Test Site</option>
+          <option value="{{ request.url_root }}test_site">Local Test Site</option>
           <option value="https://www.materialsproject.org" disabled>Materials Project</option>
         </select>
         <button id="add_site_btn" type=button class="btn btn-primary btn-xs hide" onClick="$('#myModal').modal()">
@@ -52,7 +52,7 @@
       </div>
       <div class="form-group" style="position:relative; margin-left:50px;">
         <input type="password" class="form-control hide" name=apikey id=inputapikey placeholder="Insert API Key ...">
-        <a id=dlnk href="http://localhost:5000/test_site/webtzite/dashboard" target="_blank" hidden>
+        <a id=dlnk href="{{ request.url_root }}/test_site/webtzite/dashboard" target="_blank" hidden>
           <span class="glyphicon glyphicon-question-sign" aria-hidden="true"></span>
         </a>
       </div>
