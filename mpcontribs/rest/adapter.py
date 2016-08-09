@@ -49,7 +49,9 @@ class ContributionMongoAdapter(object):
             props = [ 'collaborators', 'mp_cat_id' ]
           elif collection == 'materials' or collection == 'compositions':
             limit = 1
-          projection = dict((p, 1) for p in props) if props else None
+        elif collection == 'contributions':
+            props = [k for k,v in projection.iteritems() if v] + ['collaborators']
+        projection = dict((p, 1) for p in props) if props else None
         return coll.find(crit, projection=projection, limit=limit)
 
     def delete_contributions(self, crit):
