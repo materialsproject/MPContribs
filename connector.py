@@ -59,7 +59,7 @@ class Connections(object):
         if not isinstance(config, dict):
             config = yaml.load(config)
         db = config.get("db", None)
-        host = config.get("host", "localhost")
+        host = config.get("host", "0.0.0.0")
         user_name = config.get("user_name", None)
         password = config.get("password", None)
         port = int(config.get("port", 27017))
@@ -131,7 +131,7 @@ class ConnectorBase(six.with_metaclass(ABCMeta, object)):
             from models import DBConfig
             dbconf = DBConfig(
                 release=self.release, db_type='mpcontribs_read',
-                config="host: localhost\ndb: mpcontribs\nport: 27017"
+                config="host: 0.0.0.0\ndb: mpcontribs\nport: 27017"
             )
             dbconf.save()
             self.default_db = self.get_database('mpcontribs_read')
