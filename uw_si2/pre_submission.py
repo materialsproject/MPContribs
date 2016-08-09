@@ -20,7 +20,7 @@ def add_diffusivity_table(mpfile):
         mpfile.add_data_table(key, df_dif, 'data_solute_diffusivity')
         print 'added diffusivity table for host', host
 
-def run(mpfile, nhosts=None):
+def run(mpfile, hosts=None):
     from pymatgen import MPRester
     from unidecode import unidecode
     mpr = MPRester()
@@ -59,8 +59,11 @@ def run(mpfile, nhosts=None):
     host_info.dropna(inplace=True)
     print 'looping hosts ...'
     for idx, host in enumerate(host_info):
-        if nhosts is not None and idx+1 > nhosts:
-            break
+        if hosts is not None:
+            if isinstance(hosts, int) and idx+1 > hosts:
+                break
+            elif isinstance(hosts, list) and not host in hosts:
+                continue
         print 'get mp-id for {}'.format(host)
         mpid = None
         for doc in mpr.query(
