@@ -5,6 +5,7 @@ from bson import ObjectId
 from django.shortcuts import render_to_response
 from django.template import RequestContext
 from mpcontribs.rest.views import get_endpoint
+from mpcontribs.io.core.components import get_backgrid_table
 from monty.json import jsanitize
 from ..rest.rester import UWSI2Rester
 
@@ -14,18 +15,23 @@ def index(request):
         API_KEY = request.user.api_key
         ENDPOINT = request.build_absolute_uri(get_endpoint())
         with UWSI2Rester(API_KEY, endpoint=ENDPOINT) as mpr:
-            contribs = jsanitize(mpr.get_uwsi2_contributions())
-            ranges = None
+            contribs = mpr.get_uwsi2_contributions()
+            ranges = {}
             for contrib in contribs:
-                table = contrib['tables']['data_supporting']
-                if ranges is None:
-                    col_names = [ c['name'] for c in table['columns'][1:] ] # skip solute string
-                    ranges = dict((k, [1e3, -1e3]) for k in col_names)
-                for row in table['rows']:
-                    for k,v in ranges.iteritems():
-                        val = float(row[k])
-                        if val < v[0]: v[0] = val
-                        if val > v[1]: v[1] = val
+                df = contrib['table']
+                cols = df.columns[1:] # skip solute string
+                for col in cols:
+                    low, upp = min(df[col]), max(df[col])
+                    if col not in ranges:
+                        ranges[col] = [low, upp]
+                    else:
+                        if low < ranges[col][0]:
+                            ranges[col][0] = low
+                        if upp > ranges[col][1]:
+                            ranges[col][1] = upp
+                contrib['table'] = get_backgrid_table(df)
+            ranges = jsanitize(ranges)
+            contribs = jsanitize(contribs)
     else:
         ctx.update({'alert': 'Please log in!'})
     return render_to_response("uwsi2_explorer_index.html", locals(), ctx)
