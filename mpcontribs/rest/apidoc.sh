@@ -24,7 +24,7 @@ $sed_cmd --in-place \
 
 $sed_cmd --in-place '1,3d' static/utils/send_sample_request.js
 $sed_cmd --in-place '1 i\
-  define(["jquery", "/static/jquery_cookie.js" ], function($, Cookies) {\
+  define(["jquery", "/static/js/lib/jquery_cookie.js" ], function($, Cookies) {\
 ' static/utils/send_sample_request.js
 $sed_cmd -in-place '92 i\
   var csrftoken = Cookies.get("csrftoken");\
