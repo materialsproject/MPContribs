@@ -123,13 +123,9 @@ def reset_session():
     sbx_content = app.config.get('SANDBOX_CONTENT')
     if sbx_content is not None:
         session['sbx_content'] = sbx_content
-    jupyter_url = app.config.get('JUPYTER_URL')
-    if jupyter_url is not None:
-        session['jupyter_url'] = jupyter_url
-        if 'NotebookProcess' in processes:
-            processes.pop('NotebookProcess')
-    else:
-        session['jupyter_url'] = 'http://localhost:8888/'
+    session['jupyter_url'] = app.config.get('JUPYTER_URL')
+    if not app.config.get('start_jupyter') and 'NotebookProcess' in processes:
+        processes.pop('NotebookProcess')
     stop_processes()
     start_processes()
     for suffix in ['_in.txt', '_out.txt']:
