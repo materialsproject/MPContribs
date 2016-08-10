@@ -66,8 +66,7 @@ class NotebookProcess(multiprocessing.Process):
         sys.argv.append("--NotebookApp.ip=0.0.0.0")
         sys.argv.append("--NotebookApp.open_browser=False")
         sys.argv.append('--NotebookApp.allow_origin="*"')
-        sys.argv.append('--NotebookApp.port_retries=0')
-        sys.argv.append('--NotebookApp.port=8889')
+        #sys.argv.append('--NotebookApp.port_retries=0')
         launch_new_instance()
 
 class MongodProcess(multiprocessing.Process):
@@ -116,7 +115,7 @@ def stream_template(template_name, **context):
     return rv
 
 def reset_session():
-    global session
+    global session, processes
     session.clear()
     session['projects'] = projects
     session['options'] = ["archieml"]
@@ -124,6 +123,13 @@ def reset_session():
     sbx_content = app.config.get('SANDBOX_CONTENT')
     if sbx_content is not None:
         session['sbx_content'] = sbx_content
+    jupyter_url = app.config.get('JUPYTER_URL')
+    if jupyter_url is not None:
+        session['jupyter_url'] = jupyter_url
+        if 'NotebookProcess' in processes:
+            processes.pop('NotebookProcess')
+    else:
+        session['jupyter_url'] = 'http://localhost:8888/'
     stop_processes()
     start_processes()
     for suffix in ['_in.txt', '_out.txt']:

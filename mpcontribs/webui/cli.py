@@ -15,6 +15,8 @@ def cli():
     )
     parser.add_argument('--sbx', help='ArchieML Sandbox Content')
     parser.add_argument('--debug', action='store_true', help='run in debug mode')
+    parser.add_argument('--jupyter-url', metavar='URL', dest='jupyter_url',
+                        help='Jupyter URL [no server started]')
     args = parser.parse_args()
 
     cwd = os.path.join(os.path.dirname(__file__), '..', '..')
@@ -30,6 +32,7 @@ def cli():
 
     flask_app.debug = args.debug
     flask_app.config['SANDBOX_CONTENT'] = args.sbx
+    flask_app.config['JUPYTER_URL'] = args.jupyter_url
     call_command('collectstatic', '--clear', '--noinput', '-v 0')
     print 'static files collected.'
 

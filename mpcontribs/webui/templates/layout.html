@@ -5,7 +5,8 @@
     <script src="{{ url_for('static', filename='js/lib/require.js') }}"></script>
     <script>
       define('env', [], {
-        options: {{ session.options|tojson|safe }} // list of selected option values
+        options: {{ session.options|tojson|safe }}, // list of selected option values
+        jupyter_url: {{ session.jupyter_url|tojson|safe }}
       });
       requirejs(['./static/js/common'], function(common){
         requirejs(['app/main']);

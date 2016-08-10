@@ -3,6 +3,7 @@ define(function(require) {
   require('archieml');
   require('sandbox');
   require('thebe');
+  var env = require('env');
 
   // prepare ArchieML sandbox (when ready)
   $.ready(function() {
@@ -19,11 +20,13 @@ define(function(require) {
 
   // Thebe Jupyter Notebook Cell
   $(function(){
+    console.log('starting Thebe');
     var thebe = new Thebe({
       tmpnb_mode: false,
       add_interrupt_button: true,
-      url: 'http://0.0.0.0:8889/'
+      url: env.jupyter_url
     });
+    console.log(env.jupyter_url);
   });
 
   // save cell contents to hidden input field to preserve code changes
