@@ -10,4 +10,4 @@ build/*
 dist/*
 mpcontribs/rest/static/*
 db/*
-profile/migrated
+notebooks/profile/migrated
