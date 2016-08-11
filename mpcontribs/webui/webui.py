@@ -156,6 +156,10 @@ def view():
     except:
         pass
 
+@app.route('/mpcontribs')
+def mpcontribs():
+    return redirect(url_for('home'))
+
 @app.route('/')
 def home():
     #print(add.delay(4, 4))
