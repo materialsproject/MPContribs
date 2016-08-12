@@ -9,7 +9,7 @@ define(function(require) {
   // make file upload button
   var upload_btn = $('#fileUpload');
   upload_btn.filestyle({
-    iconName: "glyphicon glyphicon-file", input: false, badge: false,
+    iconName: "", input: false, badge: false,
     buttonName:"btn-info", buttonText:"MPFile ..."
   });
   // replace text of upload button with selected file name
@@ -26,7 +26,8 @@ define(function(require) {
       $("#selectpicker [value=" + env.options[i] + "]").prop("selected",true);
     }
     $(elements[0]).chosen({
-      search_contains: true, max_selected_options: 2, width: "260px"
+      search_contains: true, max_selected_options: 2, width: "200px",
+      disable_search_threshold: 10
     });
     // on-change action for selectpicker
     $(elements[0]).on('change', function () {

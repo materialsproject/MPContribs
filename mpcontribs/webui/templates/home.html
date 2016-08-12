@@ -6,10 +6,32 @@
     requirejs(['app/home']);
   });
 </script>
+
 {% if "mpfile" in session %}
+
+<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title" id="myModalLabel">Instructions for Jupyter Cell</h4>
+      </div>
+      <div class="modal-body">
+        - Editable and runable Jupyter/IPython cell.<br>
+        - Use <kbd>Run / Run Again</kbd> or <code>shift + return</code> to execute.<br>
+        - Click <kbd>Save Code</kbd> to preserve your code changes.<br>
+        - MPFile I/O is handled automatically by <code>from/write_file()</code>.<br>
+        - Resulting output MPFile is used for <kbd>View MPFile</kbd>.<br>
+        - Click <kbd>Load MPFile</kbd> to reload MPFile from ArchieML Sandbox.<br>
+        - Start from scratch by clicking the logo.
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="container" style="position:relative; top:-70px;">
   <div class="row">
-    <div id="thebe" class="col-md-7">
+    <div id="thebe" class="col-xs-12">
       {% if "thebe" not in session %}
       {% if session.options|length == 2 %}
       <pre data-executable='true'>
@@ -36,29 +58,14 @@ mpfile.write_file()
       <pre data-executable='true'>{{ session.thebe }}</pre>
       {% endif %}
     </div>
-    <div class="col-md-5">
-      <div class="alert alert-warning alert-dismissible" role="alert">
-        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-          <span aria-hidden="true">&times;</span>
-        </button>
-        - Editable and runable Jupyter/IPython cell on the left.<br>
-        - Use <kbd>Run / Run Again</kbd> or <code>shift + return</code> to execute.<br>
-        - MPFile I/O is handled automatically by <code>from/write_file()</code>.<br>
-        - Resulting output MPFile is used for <kbd>View MPFile</kbd>.<br>
-        - Click <kbd>Load MPFile</kbd> to reload MPFile from ArchieML Sandbox.<br>
-        - Click <kbd>Save Code</kbd> below to preserve your code changes.<br>
-        - Start from scratch by clicking the logo.
-      </div>
-      <button id="savecells" type="button" class="btn btn-info">Save Code</button>
-    </div>
   </div>
 </div>
 {% endif %}
 <div class="sandbox" style="position:relative; top:-70px;">
   <div class="container"><br>
     <div class="row">
-      <div class="col-md-6"><strong>edit MPFile contents (ArchieML Sandbox):</strong></div>
-      <div class="col-md-6"><strong>live-preview of JSON representation after default ArchieML parsing:</strong></div>
+      <div class="col-xs-6"><strong>edit MPFile contents (ArchieML Sandbox):</strong></div>
+      <div class="col-xs-6"><strong>live-preview of JSON representation:</strong></div>
     </div>
 {% if "mpfile" in session %}
 <aml>{{session.mpfile|safe}}</aml>

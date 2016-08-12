@@ -44,13 +44,13 @@
           <span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
         </button>
       </div>
-      <div class="form-group" style="position:relative; margin-left:50px;">
+      <div class="form-group" style="position:relative; margin-left:20px;">
         <select id="dbselect" data-placeholder="Select DB ..." hidden>
           <option></option>
           <option value="mpcontribs_read" selected>mpcontribs_read</option>
         </select>
       </div>
-      <div class="form-group" style="position:relative; margin-left:50px;">
+      <div class="form-group" style="position:relative; margin-left:20px;">
         <input type="password" class="form-control hide" name=apikey id=inputapikey placeholder="Insert API Key ...">
         <a id=dlnk href="{{ request.url_root }}test_site/webtzite/dashboard" target="_blank" hidden>
           <span class="glyphicon glyphicon-question-sign" aria-hidden="true"></span>
@@ -58,11 +58,11 @@
       </div>
       <input type=hidden name=site id=inputsite value=''>
       <input type=hidden name=dbtype id=inputdbtype value='mpcontribs_read'>
-      <div class="form-group" style="position:relative; margin-left:50px;">
+      <div class="form-group" style="position:relative; margin-left:20px;">
         <input id="go_btn" type=submit name="submit" class="btn btn-primary navbar-btn hide" value="Go!">
         <input id="cancel_btn" type="button" value="Cancel" class="btn btn-warning navbar-btn hide" onclick="stopLoad()"/>
       </div>
-      <div class="form-group" style="position:relative; margin-left:50px;">
+      <div class="form-group" style="position:relative; margin-left:20px;">
         {% if missing %}<code>{{ missing }}</code>{% endif %}
       </div>
     </form>
@@ -107,7 +107,7 @@ requirejs(['./static/js/common'], function(){
 {% if content %}
 <div class="container">
   <div class="row">
-    <div class="col-md-12">
+    <div class="col-xs-12">
       <div id='output' class="alert alert-warning alert-dismissible" role="alert"></div>
     </div>
   </div>

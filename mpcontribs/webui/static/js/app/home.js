@@ -27,6 +27,10 @@ define(function(require) {
       url: env.jupyter_url
     });
     console.log(env.jupyter_url);
+    var $button = $('<button id="savecells" type="button">Save Code</button>');
+    $button.appendTo($('.thebe_controls'));
+    var $button2 = $('<button type=button onClick="$(\'#myModal\').modal()"><span class="glyphicon glyphicon-info-sign" aria-hidden="true"></span></button>');
+    $button2.appendTo($('.thebe_controls'));
   });
 
   // save cell contents to hidden input field to preserve code changes
