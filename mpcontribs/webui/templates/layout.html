@@ -18,6 +18,7 @@
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/site.css') }}"/>
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/codemirror.min.css') }}"/>
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/bootstrap-toggle.css') }}"/>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/font-awesome-4.6.3/css/font-awesome.min.css') }}"/>
     <style> body {padding-top: 150px;}</style>
     <link rel="icon" href="data:;base64,=">
 
@@ -31,15 +32,30 @@
     {% endif %}
 
     <nav class="navbar navbar-default navbar-fixed-top" style="background:url({{ url_for('static', filename='img/headerbg.png') }})">
-      <div class="container">
+      <div class="container" style="width: 800px !important;">
         <div class="navbar-header">
           <a class="navbar-brand" href="/">
-            <img alt="Brand" src="{{ url_for('static', filename='img/mpcontribsheader.png') }}"
-                 height="38">
+            <img alt="Brand" src="{{ url_for('static', filename='img/mpcontribsheader.png') }}" width="83" height="33">
           </a>
         </div>
         <form action="/action" method=post enctype=multipart/form-data class="navbar-form navbar-left">
-          <div class="form-group" style="margin-left:100px;">
+          <div class="form-group">
+            <div class="form-group">
+              <input type=file id=fileUpload name=file class="navbar-btn hidden">
+              <input type=hidden name=mpfile id=inputmpfile value=''>
+              <input type=hidden name=options id=inputopts value=''>
+              <input type=hidden name=thebe id=inputthebe value=''>
+              <input id="loadbutton" type=submit name="submit" class="btn btn-info navbar-btn" value="Load MPFile">
+              <input type=submit name="submit" class="btn btn-info navbar-btn" value="View MPFile">
+              <label for="savebutton" class="btn btn-info navbar-btn">
+                <span class="glyphicon glyphicon-download-alt"></span>
+              </label>
+              <input id="savebutton" type=submit name="submit" value='Save MPFile' class="hidden">
+              <label for="contribbutton" class="btn btn-danger navbar-btn">
+                <i class="fa fa-database" aria-hidden="true"></i>
+              </label>
+              <input id="contribbutton" type=submit name="submit" value="Contribute" class="hidden">
+            </div>
             <select id="selectpicker" data-placeholder="Set Options ..." multiple hidden>
               <optgroup label="format">
                 <option value="archieml">ArchieML</option>
@@ -51,16 +67,6 @@
                 {% endfor %}
               </optgroup>
             </select>
-            <div class="form-group" style="margin-left:20px;">
-              <input type=file id=fileUpload name=file class="navbar-btn hidden">
-              <input type=hidden name=mpfile id=inputmpfile value=''>
-              <input type=hidden name=options id=inputopts value=''>
-              <input type=hidden name=thebe id=inputthebe value=''>
-              <input id="loadbutton" type=submit name="submit" class="btn btn-info navbar-btn" value="Load MPFile">
-              <input type=submit name="submit" class="btn btn-info navbar-btn" value="View MPFile">
-              <input type=submit name="submit" class="btn btn-info navbar-btn" value="Save MPFile">
-              <input type=submit name="submit" class="btn btn-danger navbar-btn" value="Contribute">
-            </div>
           </div>
         </form>
         <ul class="nav navbar-nav navbar-right">
