@@ -95,7 +95,7 @@ class ConnectorBase(six.with_metaclass(ABCMeta, object)):
     def get_registered_user(self, user):
         try:
             query = {'username': user.username}
-            from models import RegisteredUser
+            from home.models import RegisteredUser
             ru = RegisteredUser.objects.get(**query)
         except ObjectDoesNotExist:
             raise Exception(
@@ -111,7 +111,7 @@ class ConnectorBase(six.with_metaclass(ABCMeta, object)):
         :return: Configuration data, which was stored as a blob in DB
         :rtype: str
         """
-        from models import DBConfig
+        from home.models import DBConfig
         return DBConfig.objects.get(
             release=self.release, db_type=db_type
         ).config
@@ -128,7 +128,7 @@ class ConnectorBase(six.with_metaclass(ABCMeta, object)):
         try:
             self.default_db = self.get_database('mpcontribs_read')
         except ObjectDoesNotExist:
-            from models import DBConfig
+            from home.models import DBConfig
             dbconf = DBConfig(
                 release=self.release, db_type='mpcontribs_read',
                 config="host: 0.0.0.0\ndb: mpcontribs\nport: 27017"
