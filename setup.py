@@ -25,7 +25,7 @@ setup(
         'matplotlib', 'pymongo', 'pyyaml', 'ipython', 'cufflinks',
         'Django==1.8.5', 'archieml', 'django-browserid', 'sphinx', 'notebook',
         'ipywidgets', 'celery', 'tqdm', 'beautifulsoup4', 'whichcraft',
-        'unidecode', 'psutil'
+        'unidecode', 'psutil', 'nbformat'
     ],
     license = 'MIT',
     keywords = ['materials', 'contribution', 'framework', 'data', 'interactive'],
