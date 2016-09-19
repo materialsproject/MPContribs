@@ -35,7 +35,11 @@ define(function(require) {
     $('#siteselect').chosen().change(function () {
       document.getElementById('inputsite').value = this.value;
       var dlnk = document.getElementById('dlnk');
-      dlnk.href = this.value + '/webtzite/dashboard';
+      if ( this.value.indexOf('materialsproject') !== -1 ) {
+        dlnk.href = this.value + '/dashboard';
+      } else {
+        dlnk.href = this.value + '/webtzite/dashboard';
+      }
     });
     $('#add_site_btn').removeClass('hide');
     //$('#dbselect').chosen({
