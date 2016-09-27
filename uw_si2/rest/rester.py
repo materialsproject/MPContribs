@@ -22,13 +22,13 @@ class UWSI2Rester(MPContribsRester):
         labels = ["Solute element name", "Solute D0 [cm^2/s]", "Solute Q [eV]"]
         data = []
         for doc in self.query_contributions(
-            criteria={'project': 'LBNL'},
+            criteria={'project': {'$in': ['LBNL', 'UW-Madison']}},
             projection={'_id': 1, 'mp_cat_id': 1, 'content': 1}
         ):
             mpfile = MPFile.from_contribution(doc)
             mp_id = mpfile.ids[0]
             table = mpfile.tdata[mp_id]['data_supporting'][labels]
-            table.columns = ['El.', 'D0 [cm^2/s]', 'Q [eV]']
+            table.columns = ['El.', 'D0 [cm2/s]', 'Q [eV]']
             anums = [self.z[el] for el in table['El.']]
             table.insert(0, 'Z', Series(anums, index=table.index))
             table.sort_values('Z', inplace=True)
