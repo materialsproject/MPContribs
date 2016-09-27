@@ -11,7 +11,7 @@ from nbconvert.preprocessors.execute import CellExecutionError
 from nbconvert import HTMLExporter
 from bs4 import BeautifulSoup
 
-def export_notebook(nb, cid, set_div_names=True):
+def export_notebook(nb, cid, set_div_names=True, separate_script=False):
     html_exporter = HTMLExporter()
     html_exporter.template_file = 'basic'
     (body, resources) = html_exporter.from_notebook_node(nb)
@@ -31,6 +31,12 @@ def export_notebook(nb, cid, set_div_names=True):
     # name divs for toggling code_cells
     for div in soup.find_all('div', 'input'):
         div['name'] = 'Input'
+    if separate_script:
+        script = []
+	for s in soup.find_all('script'):
+            script.append(s.text)
+            s.extract() # remove javascript
+        return soup.prettify(), '\n'.join(script)
     return soup.prettify()
 
 class MPContributionsBuilder():
