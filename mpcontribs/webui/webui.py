@@ -124,7 +124,7 @@ def reset_session():
     if sbx_content is not None:
         session['sbx_content'] = sbx_content
     session['jupyter_url'] = app.config.get('JUPYTER_URL')
-    if not app.config.get('start_jupyter') and 'NotebookProcess' in processes:
+    if not app.config.get('START_JUPYTER') and 'NotebookProcess' in processes:
         processes.pop('NotebookProcess')
     stop_processes()
     start_processes()
