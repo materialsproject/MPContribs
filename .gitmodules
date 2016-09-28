@@ -1,6 +1,8 @@
 [submodule "mpcontribs/users"]
 	path = mpcontribs/users
 	url = https://github.com/materialsproject/MPContribsUsers.git
+	branch = master
 [submodule "webtzite"]
 	path = webtzite
 	url = https://github.com/materialsproject/webtzite.git
+	branch = master
