@@ -16,6 +16,7 @@ def cli():
     parser.add_argument('--sbx', help='ArchieML Sandbox Content')
     parser.add_argument('--debug', action='store_true', help='run in debug mode')
     parser.add_argument('--start-jupyter', action='store_true', help='start Jupyter server')
+    parser.add_argument('--start-mongodb', action='store_true', help='start MongoDB server')
     parser.add_argument('--jupyter-url', metavar='URL', dest='jupyter_url',
                         default='http://localhost:8888', help='Jupyter URL')
     args = parser.parse_args()
@@ -25,15 +26,17 @@ def cli():
     call(['./apidoc.sh'])
     os.chdir(cwd)
 
-    dbpath = os.path.join('/', 'data', 'db')
-    if not os.path.exists(dbpath):
-        dbpath = os.path.join(cwd, 'db')
+    if args.start_mongodb:
+        dbpath = os.path.join('/', 'data', 'db')
         if not os.path.exists(dbpath):
-            os.makedirs(dbpath)
+            dbpath = os.path.join(cwd, 'db')
+            if not os.path.exists(dbpath):
+                os.makedirs(dbpath)
 
     flask_app.debug = args.debug
     flask_app.config['SANDBOX_CONTENT'] = args.sbx
     flask_app.config['START_JUPYTER'] = args.start_jupyter
+    flask_app.config['START_MONGODB'] = args.start_mongodb
     flask_app.config['JUPYTER_URL'] = args.jupyter_url
     call_command('collectstatic', '--clear', '--noinput', '-v 0')
     print 'static files collected.'
