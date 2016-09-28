@@ -126,6 +126,8 @@ def reset_session():
     session['jupyter_url'] = app.config.get('JUPYTER_URL')
     if not app.config.get('START_JUPYTER') and 'NotebookProcess' in processes:
         processes.pop('NotebookProcess')
+    if not app.config.get('START_MONGODB') and 'MongodProcess' in processes:
+        processes.pop('MongodProcess')
     stop_processes()
     start_processes()
     for suffix in ['_in.txt', '_out.txt']:
