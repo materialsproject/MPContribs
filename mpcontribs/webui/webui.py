@@ -3,7 +3,7 @@ from __future__ import unicode_literals, print_function, absolute_import
 import json, os, socket, SocketServer, codecs, time, pkgutil, psutil
 import sys, warnings, multiprocessing
 from IPython.terminal.ipapp import launch_new_instance
-from flask import Flask, render_template, request, Response
+from flask import Flask, render_template, request, Response, Blueprint, current_app
 from flask import url_for, redirect, make_response, stream_with_context
 from mpcontribs.utils import process_mpfile, submit_mpfile
 from mpcontribs.config import default_mpfile_path
@@ -15,10 +15,7 @@ from subprocess import call
 
 tmpl_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates')
 stat_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static')
-
-app = Flask('mpcontribs.webui', template_folder=tmpl_dir, static_folder=stat_dir)
-app.config['JSON_SORT_KEYS'] = False
-app.secret_key = 'xxxrrr'
+bp = Blueprint('mpcontribs.webui', __name__, template_folder=tmpl_dir, static_folder=stat_dir)
 
 session = {}
 mod_iter = pkgutil.iter_modules(mpcontribs_users.__path__)
@@ -92,24 +89,26 @@ def stop_processes():
 def stream_template(template_name, **context):
     # http://stackoverflow.com/questions/13386681/streaming-data-with-python-and-flask
     # http://flask.pocoo.org/docs/patterns/streaming/#streaming-from-templates
-    app.update_template_context(context)
-    t = app.jinja_env.get_template(template_name)
+    current_app.update_template_context(context)
+    t = current_app.jinja_env.get_template(template_name)
     rv = t.stream(context)
     return rv
 
 def reset_session():
     global session, processes
+    current_app.config['JSON_SORT_KEYS'] = False
+    current_app.secret_key = 'xxxrrr'
     session.clear()
     session['projects'] = projects
     session['options'] = ["archieml"]
     session['contribute'] = {}
-    sbx_content = app.config.get('SANDBOX_CONTENT')
+    sbx_content = current_app.config.get('SANDBOX_CONTENT')
     if sbx_content is not None:
         session['sbx_content'] = sbx_content
-    session['jupyter_url'] = app.config.get('JUPYTER_URL')
-    if not app.config.get('START_JUPYTER') and 'NotebookProcess' in processes:
+    session['jupyter_url'] = current_app.config.get('JUPYTER_URL')
+    if not current_app.config.get('START_JUPYTER') and 'NotebookProcess' in processes:
         processes.pop('NotebookProcess')
-    if not app.config.get('START_MONGODB') and 'MongodProcess' in processes:
+    if not current_app.config.get('START_MONGODB') and 'MongodProcess' in processes:
         processes.pop('MongodProcess')
     stop_processes()
     start_processes()
@@ -125,7 +124,7 @@ def read_mpfile_to_view():
     else:
         return session.get('mpfile')
 
-@app.route('/view')
+@bp.route('/view')
 def view():
     mpfile = read_mpfile_to_view()
     if mpfile is None:
@@ -141,12 +140,12 @@ def view():
     except:
         pass
 
-@app.route('/')
+@bp.route('/')
 def home():
     reset_session()
     return render_template('home.html', session=session)
 
-@app.route('/load')
+@bp.route('/load')
 def load():
     mpfile = session.get('mpfile')
     if mpfile is None:
@@ -158,7 +157,7 @@ def load():
         f.write(mpfile)
     return render_template('home.html', session=session)
 
-@app.route('/contribute', methods=['GET', 'POST'])
+@bp.route('/contribute', methods=['GET', 'POST'])
 def contribute():
     if request.method == 'GET':
         return render_template('contribute.html', session=session)
@@ -187,7 +186,7 @@ def contribute():
         except:
             pass
 
-@app.route('/action', methods=['POST'])
+@bp.route('/action', methods=['POST'])
 def action():
     session['options'] = json.loads(request.form.get('options'))
     thebe_str = request.form.get('thebe')
@@ -215,7 +214,7 @@ def action():
     elif request.form['submit'] == 'Contribute':
         return redirect(url_for('contribute'))
 
-@app.route('/shutdown', methods=['GET', 'POST'])
+@bp.route('/shutdown', methods=['GET', 'POST'])
 def shutdown():
     stop_processes()
     func = request.environ.get('werkzeug.server.shutdown')
@@ -223,3 +222,6 @@ def shutdown():
         raise RuntimeError('Not running with the Werkzeug Server')
     func()
     return 'Server shutting down...'
+
+app = Flask(__name__)
+app.register_blueprint(bp, url_prefix='/mpcontribs/tschaume')
