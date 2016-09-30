@@ -5,7 +5,6 @@ import sys, warnings, multiprocessing
 from IPython.terminal.ipapp import launch_new_instance
 from flask import Flask, render_template, request, Response
 from flask import url_for, redirect, make_response, stream_with_context
-from celery import Celery
 from mpcontribs.utils import process_mpfile, submit_mpfile
 from mpcontribs.config import default_mpfile_path
 from mpcontribs import users as mpcontribs_users
@@ -16,30 +15,14 @@ from subprocess import call
 
 tmpl_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates')
 stat_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static')
+
 app = Flask('mpcontribs.webui', template_folder=tmpl_dir, static_folder=stat_dir)
 app.config['JSON_SORT_KEYS'] = False
-app.config['CELERY_BROKER_URL'] = 'django://'
 app.secret_key = 'xxxrrr'
 
 session = {}
 mod_iter = pkgutil.iter_modules(mpcontribs_users.__path__)
 projects = [ mod for imp, mod, ispkg in mod_iter if ispkg ]
-
-import django
-django.setup()
-celery = Celery(
-    app.name, broker=app.config['CELERY_BROKER_URL'],
-    include=['webtzite.configure_settings']
-)
-celery.conf.update(app.config)
-celery.conf.update(
-    CELERY_TASK_RESULT_EXPIRES=3600,
-    CELERY_ACCEPT_CONTENT=['pickle', 'json', 'msgpack', 'yaml'],
-)
-
-@celery.task(ignore_result=True)
-def add(x, y):
-    return x + y
 
 def patched_finish(self):
     try:
@@ -160,7 +143,6 @@ def view():
 
 @app.route('/')
 def home():
-    #print(add.delay(4, 4))
     reset_session()
     return render_template('home.html', session=session)
 
