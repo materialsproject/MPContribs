@@ -204,15 +204,15 @@ def action():
                 )
     session['mpfile'] = mpfile
     if request.form['submit'] == 'Load MPFile':
-        return redirect(url_for('load'))
+        return redirect(url_for('.load'))
     elif request.form['submit'] == 'View MPFile':
-        return redirect(url_for('view'))
+        return redirect(url_for('.view'))
     elif request.form['submit'] == 'Save MPFile':
         response = make_response(read_mpfile_to_view())
         response.headers["Content-Disposition"] = "attachment; filename=mpfile.txt"
         return response
     elif request.form['submit'] == 'Contribute':
-        return redirect(url_for('contribute'))
+        return redirect(url_for('.contribute'))
 
 @bp.route('/shutdown', methods=['GET', 'POST'])
 def shutdown():
