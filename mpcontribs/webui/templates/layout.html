@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <title>MPFile Viewer</title>
-    <script src="{{ url_for('static', filename='js/lib/require.js') }}"></script>
+    <script src="{{ url_for('mpcontribs.webui.static', filename='js/lib/require.js') }}"></script>
     <script>
       define('env', [], {
         options: {{ session.options|tojson|safe }}, // list of selected option values
@@ -12,13 +12,13 @@
         requirejs(['app/main']);
       });
     </script>
-    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/bootstrap.min.css') }}"/>
-    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/chosen.min.css') }}"/>
-    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/archieml.css') }}"/>
-    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/site.css') }}"/>
-    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/codemirror.min.css') }}"/>
-    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/bootstrap-toggle.css') }}"/>
-    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/font-awesome-4.6.3/css/font-awesome.min.css') }}"/>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('mpcontribs.webui.static', filename='css/bootstrap.min.css') }}"/>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('mpcontribs.webui.static', filename='css/chosen.min.css') }}"/>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('mpcontribs.webui.static', filename='css/archieml.css') }}"/>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('mpcontribs.webui.static', filename='css/site.css') }}"/>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('mpcontribs.webui.static', filename='css/codemirror.min.css') }}"/>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('mpcontribs.webui.static', filename='css/bootstrap-toggle.css') }}"/>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('mpcontribs.webui.static', filename='css/font-awesome-4.6.3/css/font-awesome.min.css') }}"/>
     <style> body {padding-top: 150px;}</style>
     <link rel="icon" href="data:;base64,=">
 
@@ -31,14 +31,14 @@
     </div>
     {% endif %}
 
-    <nav class="navbar navbar-default navbar-fixed-top" style="background:url({{ url_for('static', filename='img/headerbg.png') }})">
+    <nav class="navbar navbar-default navbar-fixed-top" style="background:url({{ url_for('mpcontribs.webui.static', filename='img/headerbg.png') }})">
       <div class="container" style="width: 800px !important;">
         <div class="navbar-header">
           <a class="navbar-brand" href="/">
-            <img alt="Brand" src="{{ url_for('static', filename='img/mpcontribsheader.png') }}" width="83" height="33">
+            <img alt="Brand" src="{{ url_for('mpcontribs.webui.static', filename='img/mpcontribsheader.png') }}" width="83" height="33">
           </a>
         </div>
-        <form action="/action" method=post enctype=multipart/form-data class="navbar-form navbar-left">
+        <form action="{{ url_for('mpcontribs.webui.action') }}" method=post enctype=multipart/form-data class="navbar-form navbar-left">
           <div class="form-group">
             <div class="form-group">
               <input type=file id=fileUpload name=file class="navbar-btn hidden">
