@@ -41,8 +41,8 @@ def cli():
     call_command('collectstatic', '--clear', '--noinput', '-v 0')
     print 'static files collected.'
 
-    application = DispatcherMiddleware(flask_app, { '/test_site': django_app })
-    application = SharedDataMiddleware(application, { '/static': STATIC_ROOT })
+    application = DispatcherMiddleware(flask_app, { '/mpcontribs/tschaume/test_site': django_app })
+    application = SharedDataMiddleware(application, { '/mpcontribs/tschaume/static': STATIC_ROOT })
 
     run_simple('0.0.0.0', 5000, application, use_reloader=args.debug,
                use_debugger=args.debug, use_evalex=args.debug, threaded=True)
