@@ -1,8 +1,8 @@
 {% extends "layout.html" %}
 {% block body %}
 
-<link rel="stylesheet" type="text/css" media="all" href="{{ url_for('static', filename='css/json.human.css') }}">
-<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/backgrid.min.css') }}"/>
+<link rel="stylesheet" type="text/css" media="all" href="{{ url_for('.static', filename='css/json.human.css') }}">
+<link rel="stylesheet" type="text/css" href="{{ url_for('.static', filename='css/backgrid.min.css') }}"/>
 <script>
   requirejs(['./static/js/common'], function(){
     requirejs(['app/index']);
