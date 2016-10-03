@@ -34,7 +34,7 @@
     <nav class="navbar navbar-default navbar-fixed-top" style="background:url({{ url_for('mpcontribs.webui.static', filename='img/headerbg.png') }})">
       <div class="container" style="width: 800px !important;">
         <div class="navbar-header">
-          <a class="navbar-brand" href="/">
+          <a class="navbar-brand" href="{{ url_for('.home') }}">
             <img alt="Brand" src="{{ url_for('mpcontribs.webui.static', filename='img/mpcontribsheader.png') }}" width="83" height="33">
           </a>
         </div>
@@ -71,7 +71,7 @@
         </form>
         <ul class="nav navbar-nav navbar-right">
           <li>
-            <a class="btn btn-lg navbar-btn" href="/shutdown">
+              <a class="btn btn-lg navbar-btn" href="{{ url_for('.shutdown') }}">
               <span class="glyphicon glyphicon-off" aria-hidden="true" style="color:white"></span>
             </a>
           </li>
