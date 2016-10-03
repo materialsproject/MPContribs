@@ -9,7 +9,7 @@ apt-get install ssh
 # install basic vimrc, set default editor
 git clone git://github.com/amix/vimrc.git ~/.vim_runtime
 sh ~/.vim_runtime/install_basic_vimrc.sh
-vim ~/.bashrc # export EDITOR=vim
+vim ~/.bashrc # export EDITOR=vim, export MAPI_KEY='...'
 
 # github ssh key for git push
 mkdir ~/.ssh
@@ -30,4 +30,6 @@ git config --global push.default simple
 pip install -e git+https://github.com/materialsproject/MPContribs#egg=mpcontribs --src .
 cd ~/work/mpcontribs
 git remote set-url --push origin git@github.com:materialsproject/MPContribs.git
+cp db.sqlite3.init db.sqlite3
+mpcontribs --jupyter-url https://matgen8.lbl.gov/user/tschaume
 ```
