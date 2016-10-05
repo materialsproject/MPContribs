@@ -31,7 +31,7 @@
     <script type="text/javascript" charset="utf8" src='{% static "js/lib/require.js" %}'></script>
     <script>
     requirejs.config({
-      baseUrl: '/static/js/lib',
+      baseUrl: '{% static "js/lib" %}',
       paths: {
         plotly: "plotly.min",
         underscore: "underscore-min",
