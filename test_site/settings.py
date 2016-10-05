@@ -31,7 +31,8 @@ ALLOWED_HOSTS = []
 
 AUTHENTICATION_BACKENDS = (
     'webtzite.backends.CustomModelBackend',
-    'webtzite.backends.CustomBrowserIDBackend',
+    #'webtzite.backends.CustomBrowserIDBackend',
+    'nopassword.backends.email.EmailBackend'
 )
 
 # Application definition
@@ -39,7 +40,8 @@ AUTHENTICATION_BACKENDS = (
 INSTALLED_APPS = (
     'django.contrib.admin',
     'django.contrib.auth',
-    'django_browserid',
+    #'django_browserid',
+    'nopassword',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
@@ -143,3 +145,11 @@ LOGGING = {
         },
     },
 }
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'localhost'
+EMAIL_PORT = 25
+EMAIL_HOST_USER = ''
+EMAIL_HOST_PASSWORD = ''
+EMAIL_USE_TLS = False
+DEFAULT_FROM_EMAIL = 'Test Site <test_site@matgen8.lbl.gov>'
