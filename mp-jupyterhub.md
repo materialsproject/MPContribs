@@ -1,7 +1,9 @@
 ```
 # install ssh
 su - # see Dockerfile
-apt-get install ssh
+apt-get install ssh telnet postfix
+# follow http://stackoverflow.com/a/30800260 to configure postfix for nopassword
+#   -> /etc/init.d/postfix start
 # ctrl+d
 
 # install proxy route, see Shreyas email
