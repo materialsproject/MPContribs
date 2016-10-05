@@ -46,6 +46,7 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'require',
     'webtzite',
     'mpcontribs.rest',
     'mpcontribs.explorer',
@@ -153,3 +154,6 @@ EMAIL_HOST_USER = ''
 EMAIL_HOST_PASSWORD = ''
 EMAIL_USE_TLS = False
 DEFAULT_FROM_EMAIL = 'Test Site <test_site@matgen8.lbl.gov>'
+
+REQUIRE_JS = 'components/requirejs/require.js'
+REQUIRE_DEBUG = True
