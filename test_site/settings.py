@@ -116,12 +116,14 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.8/howto/static-files/
 
+ROOT_PROJECT_DIR = os.path.dirname(os.path.dirname(__file__))
+STATIC_ROOT = ROOT_PROJECT_DIR + '/webtzite/static'
 STATIC_URL = '/mpcontribs/tschaume/static/'
 
-from tempfile import gettempdir
-STATIC_ROOT = os.path.join(gettempdir(), 'static')
-if not os.path.exists(STATIC_ROOT):
-    os.mkdir(STATIC_ROOT)
+#from tempfile import gettempdir
+#STATIC_ROOT = os.path.join(gettempdir(), 'static')
+#if not os.path.exists(STATIC_ROOT):
+#    os.mkdir(STATIC_ROOT)
 
 LOGGING = {
     'version': 1,

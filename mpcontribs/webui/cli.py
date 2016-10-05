@@ -38,8 +38,6 @@ def cli():
     flask_app.config['START_JUPYTER'] = args.start_jupyter
     flask_app.config['START_MONGODB'] = args.start_mongodb
     flask_app.config['JUPYTER_URL'] = args.jupyter_url
-    call_command('collectstatic', '--clear', '--noinput', '-v 0')
-    print 'static files collected.'
 
     application = DispatcherMiddleware(flask_app, { '/mpcontribs/tschaume/test_site': django_app })
     application = SharedDataMiddleware(application, { '/mpcontribs/tschaume/static': STATIC_ROOT })
