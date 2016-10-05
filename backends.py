@@ -48,20 +48,31 @@ class CustomModelBackend(ModelBackend):
     Authenticate against the default model backend but return
     a RegisteredUser instead of User
     """
-    def authenticate(self, *args, **kwargs):
+    def authenticate(self, code=None, **credentials):
         """
         Authenticate using default model backend and convert to RegisteredUser
         Return django.contrib.auth.models.User object if there is no RegisteredUser
         """
-        u = super(CustomModelBackend, self).authenticate(*args, **kwargs)
-        if u is not None:
-            from .models import RegisteredUser
+        from .models import RegisteredUser
+        from nopassword.models import LoginCode
+        if code is None:
+            email = credentials.get('username')
             try:
-                r = RegisteredUser.objects.get(email=u.email)
-                return r
+                user = RegisteredUser.objects.get(email=email)
             except RegisteredUser.DoesNotExist:
-                return u
-        return u
+                username = default_username_algo(email)
+                user = RegisteredUser.objects.create_user(
+                        username=username, email=email)
+            return LoginCode.create_code_for_user(user)
+        else:
+            from datetime import datetime, timedelta
+            timestamp = datetime.now() - timedelta(seconds=900)
+            user = RegisteredUser.objects.get(username=credentials.get('username'))
+            login_code = LoginCode.objects.get(user=user, code=code)#, timestamp__gt=timestamp)
+            user = login_code.user
+            user.code = login_code
+            login_code.delete()
+            return user
 
     def get_user(self, user_id):
         """
