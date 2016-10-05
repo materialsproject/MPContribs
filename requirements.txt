@@ -26,6 +26,7 @@ dill==0.2.5
 Django==1.8.5
 django-browserid==2.0.2
 django-nopassword==2.1.1
+django-require==1.0.11
 docutils==0.12
 enum34==1.1.6
 fastcache==1.0.2
@@ -58,7 +59,7 @@ mistune==0.7.3
 mock==2.0.0
 mongomock==3.5.0
 monty==0.9.0
--e git+https://github.com/materialsproject/MPContribs@fe8c2b43b6f14789d791bc108c89e2f5a3e4e558#egg=mpcontribs
+-e git+https://github.com/materialsproject/MPContribs@48554e5595dc6a74904fdb6784081ef207729577#egg=mpcontribs
 mpmath==0.19
 nbconvert==4.2.0
 nbformat==4.0.1
