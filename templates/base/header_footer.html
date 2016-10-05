@@ -1,45 +1,22 @@
 {% load staticfiles %}
+{% load require %}
 <!DOCTYPE html>
 <html>
   <head>
     <title>{% block title %} Materials Project {% endblock title %}</title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <link rel="shortcut icon" href='{% static "images/favicon.png" %}' />
-    <link rel="stylesheet" type="text/css" href='{% static "css/bootstrap.min.css" %}'/>
-    <link rel="stylesheet" type="text/css" href='{% static "css/chosen.min.css" %}'/>
     <link rel="stylesheet" type="text/css" href='{% static "nucleus.css" charset="utf-8" %}'/>
-    <link rel="stylesheet" type="text/css" href='{% static "css/backgrid.min.css" %}'/>
-    <link rel="stylesheet" type="text/css" href='{% static "css/backgrid-paginator.css" %}'/>
-    <link rel="stylesheet" type="text/css" href='{% static "css/backgrid-select-all.css" %}'/>
-    <link rel="stylesheet" type="text/css" href='{% static "css/backgrid-filter.css" %}'/>
-    <link rel="stylesheet" type="text/css" href='{% static "css/site.css" %}'/>
-    <link rel="stylesheet" type="text/css" href='{% static "css/codemirror.min.css" %}'/>
-    <link rel="stylesheet" type="text/css" href='{% static "css/json.human.css" %}'/>
     {% block extra_css %}
     {% endblock extra_css %}
-    <script type="text/javascript" charset="utf8" src='{% static "js/lib/jquery.js" %}'></script>
-    <script type="text/javascript" charset="utf8" src='{% static "js/lib/bootstrap.min.js" %}'></script>
-    <script type="text/javascript" charset="utf8" src='{% static "js/lib/chosen.jquery.min.js" %}'> </script>
-    <script type="text/javascript" charset="utf8" src='{% static "js/lib/underscore-min.js" %}'> </script>
-    <script type="text/javascript" charset="utf8" src='{% static "js/lib/backbone-min.js" %}'></script>
-    <script type="text/javascript" charset="utf8" src='{% static "js/lib/backgrid.js" %}'></script>
-    <script type="text/javascript" charset="utf8" src='{% static "js/lib/backbone.paginator.js" %}'></script>
-    <script type="text/javascript" charset="utf8" src='{% static "js/lib/backgrid.paginator.js" %}'></script>
-    <script type="text/javascript" charset="utf8" src='{% static "js/lib/backgrid-select-all.js" %}'></script>
-    <script type="text/javascript" charset="utf8" src='{% static "js/lib/backgrid-filter.js" %}'></script>
-    <script type="text/javascript" charset="utf8" src='{% static "js/lib/plotly.min.js" %}'></script>
-    <script type="text/javascript" charset="utf8" src='{% static "js/lib/require.js" %}'></script>
+    {% block requirejs %}
+    {% require_module 'config' %}
     <script>
-    requirejs.config({
-      baseUrl: '{% static "js/lib" %}',
-      paths: {
-        plotly: "plotly.min",
-        underscore: "underscore-min",
-        backbone: "backbone-min",
-        cookies: "jquery_cookie"
-      }
-    });
+    window.onload = function () {
+        {% block page_script %}{% endblock %}
+    };
     </script>
+    {% endblock %}
   </head>
   <body>
     {% block header %}
