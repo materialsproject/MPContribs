@@ -5,7 +5,6 @@ from werkzeug.wsgi import DispatcherMiddleware, SharedDataMiddleware
 from mpcontribs.webui.webui import app as flask_app
 from test_site.wsgi import application as django_app
 from test_site.settings import STATIC_ROOT
-from django.core.management import call_command
 from subprocess import call
 
 def cli():
@@ -23,7 +22,8 @@ def cli():
 
     cwd = os.path.join(os.path.dirname(__file__), '..', '..')
     os.chdir(os.path.join(cwd, 'mpcontribs', 'rest'))
-    call(['./apidoc.sh'])
+    apidoc_dir = os.path.join(STATIC_ROOT, 'apidoc')
+    call(['apidoc', '-f "views.py"', '-f "_apidoc.py"', '--output', apidoc_dir])
     os.chdir(cwd)
 
     if args.start_mongodb:
