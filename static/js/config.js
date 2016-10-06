@@ -13,7 +13,8 @@ requirejs.config({
         plotly: 'components/plotlyjs/plotly',
         'backgrid-select-all': 'components/backgrid-select-all/backgrid-select-all',
         'backgrid-filter': 'components/backgrid-filter/backgrid-filter',
-        'json-human': 'components/json-human/src/json.human'
+        'json-human': 'components/json-human/src/json.human',
+        'js-cookie': 'components/js-cookie/src/js.cookie'
         //waitfor: 'jquery.waitFor',
         //thebe: 'main-built',
     },

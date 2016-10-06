@@ -27,6 +27,7 @@
     "backgrid-filter": "^0.3.7",
     "bootstrap-filestyle": "^1.2.1",
     "bootstrap-toggle": "^2.2.2",
-    "requirejs": "^2.3.2"
+    "requirejs": "^2.3.2",
+    "js-cookie": "^2.1.3"
   }
 }
