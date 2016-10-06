@@ -1,5 +1,5 @@
 requirejs.config({
-    baseUrl: 'static/js',
+    baseUrl: '/mpcontribs/tschaume/static/js',
     paths: {
         jquery: 'components/jquery/dist/jquery',
         backbone: 'components/backbone/backbone',
@@ -25,6 +25,7 @@ requirejs.config({
         bootstrap: {deps: ['jquery']},
         filestyle: {deps: ['bootstrap']},
         chosen: { deps: ['jquery', 'bootstrap']},
+        underscore: {exports: '_'},
         toggle: {deps: ['jquery', 'bootstrap']},
         'backgrid-select-all': {deps: ['backgrid']},
         'backgrid-filter': {deps: ['backgrid']}
