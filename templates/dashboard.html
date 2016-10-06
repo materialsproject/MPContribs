@@ -1,5 +1,6 @@
 {% extends "base/header_footer.html" %}
 {% block content %}
+<input type=hidden id=dashboard_url value="{% url 'dashboard' %}">
 {% if user.is_registered %}
 <p>Current user: {{ user.email }}</p>
 <p>Superuser: {{ user.is_superuser }}</p>
@@ -7,34 +8,6 @@
 <button id="keygen">Generate API Key</button>
 <code id='key'>{{ user.api_key }}</code>
 </p>
-<script>
-function csrfSafeMethod(method) {
-  // these HTTP methods do not require CSRF protection
-  return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
-}
-require(['jquery', 'cookies'], function($, Cookies) {
-  $.ajaxSetup({
-    beforeSend: function(xhr, settings) {
-      if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
-        var csrftoken = Cookies.get('csrftoken');
-        xhr.setRequestHeader("X-CSRFToken", csrftoken);
-      }
-    }
-  });
-});
-$("#keygen").click(function(){
-  chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXTZabcdefghiklmnopqrstuvwxyz'.split('');
-  key = _.sample(chars, 16).join("");
-  var saveData = $.ajax({
-    type: 'POST',
-    url: "{% url 'dashboard' %}",
-    data: {'apikey': key},
-    dataType: "text",
-    success: function(data, textStatus, jqXHR) { $("#key").text(key); },
-    error: function(jqXHR, textStatus, errorThrown) { $("#key").text('ERROR'); }
-  });
-});
-</script>
 {% else %}
 <p>Please log in!</p>
 {% endif %}
