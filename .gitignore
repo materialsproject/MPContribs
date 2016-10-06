@@ -89,3 +89,4 @@ ENV/
 .ropeproject
 
 static/js/components/*
+static/apidoc/*
