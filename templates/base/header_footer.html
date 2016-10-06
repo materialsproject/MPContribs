@@ -10,14 +10,7 @@
     <link rel="stylesheet" type="text/css" href='{% static "nucleus.css" charset="utf-8" %}'/>
     {% block extra_css %}
     {% endblock extra_css %}
-    {% block requirejs %}
     {% require_module 'config' %}
-    <script>
-    window.onload = function () {
-        {% block page_script %}{% endblock %}
-    };
-    </script>
-    {% endblock %}
   </head>
   <body>
     {% block header %}
