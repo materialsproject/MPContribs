@@ -120,6 +120,12 @@ ROOT_PROJECT_DIR = os.path.dirname(os.path.dirname(__file__))
 STATIC_ROOT = ROOT_PROJECT_DIR + '/webtzite/static'
 STATIC_URL = '/mpcontribs/tschaume/static/'
 
+# TODO static dirs for mpcontribs/{rest,explorer,users.uwsi2.explorer}
+STATIC_ROOT_URLS = {
+    STATIC_URL: STATIC_ROOT,
+    STATIC_URL[:-1] + '_rest': ROOT_PROJECT_DIR + '/mpcontribs/rest/static'
+}
+
 #from tempfile import gettempdir
 #STATIC_ROOT = os.path.join(gettempdir(), 'static')
 #if not os.path.exists(STATIC_ROOT):

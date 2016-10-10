@@ -4,8 +4,7 @@ from werkzeug.serving import run_simple
 from werkzeug.wsgi import DispatcherMiddleware, SharedDataMiddleware
 from mpcontribs.webui.webui import app as flask_app
 from test_site.wsgi import application as django_app
-from test_site.settings import STATIC_ROOT
-from subprocess import call
+from test_site.settings import STATIC_ROOT_URLS
 
 def cli():
     parser = argparse.ArgumentParser(
@@ -34,7 +33,7 @@ def cli():
     flask_app.config['JUPYTER_URL'] = args.jupyter_url
 
     application = DispatcherMiddleware(flask_app, { '/mpcontribs/tschaume/test_site': django_app })
-    application = SharedDataMiddleware(application, { '/mpcontribs/tschaume/static': STATIC_ROOT })
+    application = SharedDataMiddleware(application, STATIC_ROOT_URLS)
 
     run_simple('0.0.0.0', 5000, application, use_reloader=args.debug,
                use_debugger=args.debug, use_evalex=args.debug, threaded=True)
