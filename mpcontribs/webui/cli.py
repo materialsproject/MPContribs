@@ -20,12 +20,6 @@ def cli():
                         default='http://localhost:8888', help='Jupyter URL')
     args = parser.parse_args()
 
-    cwd = os.path.join(os.path.dirname(__file__), '..', '..')
-    os.chdir(os.path.join(cwd, 'mpcontribs', 'rest'))
-    apidoc_dir = os.path.join(STATIC_ROOT, 'apidoc')
-    call(['apidoc', '-f "views.py"', '-f "_apidoc.py"', '--output', apidoc_dir])
-    os.chdir(cwd)
-
     if args.start_mongodb:
         dbpath = os.path.join('/', 'data', 'db')
         if not os.path.exists(dbpath):

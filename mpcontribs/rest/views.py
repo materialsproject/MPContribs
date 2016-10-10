@@ -1,5 +1,7 @@
 """This module provides the views for the rest interface."""
 
+import os
+from subprocess import call
 from bson.json_util import loads
 from django.core.exceptions import PermissionDenied
 from django.shortcuts import render_to_response
@@ -8,7 +10,6 @@ from django.contrib.auth.models import Group
 from webtzite.connector import ConnectorBase
 from bson.objectid import ObjectId
 from webtzite import mapi_func
-from test_site.settings import STATIC_URL
 from django.shortcuts import redirect
 
 class Connector(ConnectorBase):
@@ -30,7 +31,12 @@ def get_endpoint():
     return reverse('mpcontribs_rest_index')[:-1]
 
 def index(request):
-    return redirect(STATIC_URL + 'apidoc/index.html')
+    module_dir = os.path.dirname(__file__)
+    cwd = os.getcwd()
+    os.chdir(module_dir)
+    call(['apidoc', '-f "views.py"', '-f "_apidoc.py"', '--output', 'static'])
+    os.chdir(cwd)
+    return redirect('/mpcontribs/tschaume/static_rest/index.html')
 
 @mapi_func(supported_methods=["GET"], requires_api_key=True)
 def check_contributor(request, db_type=None, mdb=None):
