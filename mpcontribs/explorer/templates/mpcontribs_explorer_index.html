@@ -1,4 +1,8 @@
 {% extends "../../webtzite/templates/base/header_footer.html" %}
+{% load staticfiles %}
+{% block extra_css %}
+<link rel="stylesheet" type="text/css" href='{% static "js/components/chosen/chosen.css" charset="utf-8" %}'/>
+{% endblock %}
 {% block content %}
 {% if alert %}
 <div class="alert alert-warning alert-dismissible" role="alert">
@@ -47,8 +51,10 @@
   </div>
   {% endif %}
   <script>
+    requirejs(['main'], function() {
     var options = {{ options|safe }};
     var selection = {{ selection|safe }};
+    require(['chosen'], function() {
     for (field in options) {
       // initialize selection dropdown menus
       var list = document.getElementById(field + '_list');
@@ -84,6 +90,8 @@
         sel_elem.value = JSON.stringify(selection[fld]);
       });
     }
+    });
+    });
   </script>
   {% endif %}
 </div>
