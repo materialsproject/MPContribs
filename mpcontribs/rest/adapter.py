@@ -46,7 +46,7 @@ class ContributionMongoAdapter(object):
         limit, props = 0, None
         if projection is None:
           if collection == 'contributions':
-            props = [ 'collaborators', 'mp_cat_id' ]
+            props = [ 'collaborators', 'mp_cat_id', 'project' ]
           elif collection == 'materials' or collection == 'compositions':
             limit = 1
         elif collection == 'contributions':
