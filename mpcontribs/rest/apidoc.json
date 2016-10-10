@@ -4,9 +4,9 @@
   "description": "MPContribs REST API Docs",
   "apidoc": {
     "title": "MPContribs REST API Docs",
-    "url": "http://0.0.0.0:5000/test_site/mpcontribs/rest"
+    "url": "https://matgen8.lbl.gov/mpcontribs/tschaume/test_site/mpcontribs/rest"
   },
-  "sampleUrl": "http://0.0.0.0:5000/test_site/mpcontribs/rest",
+  "sampleUrl": "https://matgen8.lbl.gov/mpcontribs/tschaume/test_site/mpcontribs/rest",
   "template": { "forceLanguage": "en" },
   "order": [ "User", "Contribution" ]
 }
