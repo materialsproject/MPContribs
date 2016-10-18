@@ -1,6 +1,11 @@
-{% extends "home/templates/base/header_footer.html" %}
+{% extends "../../webtzite/templates/base/header_footer.html" %}
 {% load staticfiles %}
-{% load require %}
+{% block extra_css %}
+<link rel="stylesheet" href='{% static "js/components/backgrid/lib/backgrid.css" %}' charset="utf-8">
+<link rel="stylesheet" href='{% static "js/components/backgrid-select-all/backgrid-select-all.css" %}' charset="utf-8">
+<link rel="stylesheet" href='{% static "js/components/backgrid-filter/backgrid-filter.css" %}' charset="utf-8">
+{% endblock extra_css %}
+
 {% block content %}
 {% if alert %}
 <div class="alert alert-warning alert-dismissible" role="alert">
@@ -11,10 +16,6 @@
 </div>
 {% endif %}
 
-<link rel="stylesheet" href='{% static "components/bootstrap/dist/css/bootstrap.css" %}' charset="utf-8">
-<link rel="stylesheet" href='{% static "components/backgrid/lib/backgrid.css" %}' charset="utf-8">
-<link rel="stylesheet" href='{% static "components/backgrid-select-all/backgrid-select-all.css" %}' charset="utf-8">
-<link rel="stylesheet" href='{% static "components/backgrid-filter/backgrid-filter.css" %}' charset="utf-8">
 <style>
 .backgrid .string-cell { text-align: center; }
 .backgrid tbody tr:hover { background-color: #f9f9f9; }
@@ -65,7 +66,7 @@
               </a>
               <a role="button" class="btn btn-default btn-xs pull-right" target="_blank"
                  style="position:relative;margin-left:5px;margin-top:-2px;"
-                 href="/mpcontribs/explorer/materials/{{ contrib.cid }}">
+                 href="/mpcontribs/tschaume/mpcontribs/explorer/materials/{{ contrib.cid }}">
                 #{{ contrib.short_cid }}
               </a>
               <a role="button" class="btn btn-default btn-xs pull-right" target="_blank"
@@ -85,9 +86,9 @@
     </div>
   </div>
 </div>
-{% endblock %}
 
-{% block page_script %}
+<script>
+requirejs(['main'], function() {
 require(["backbone", "backgrid", "backgrid-select-all", "backgrid-filter"], function() {
 require(["plotly"], function(Plotly) {
   var grids = [];
@@ -257,4 +258,6 @@ require(["plotly"], function(Plotly) {
   });
 });
 });
+});
+</script>
 {% endblock %}
