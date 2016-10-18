@@ -122,21 +122,8 @@ class MPContribsRester(MPResterBase):
         Raises:
             MPResterError
         """
-        try:
-            payload = {"cids": dumps(cids)}
-            response = self.session.post(
-                "{}/contribs/delete".format(self.preamble), data=payload
-            )
-            if response.status_code in [200, 400]:
-                resp = loads(response.text, cls=MPDecoder)
-                if resp['valid_response']:
-                    return resp['response']['n']
-                else:
-                    raise MPContribsRestError(resp["error"])
-            raise MPContribsRestError("REST error with status code {} and error {}"
-                              .format(response.status_code, response.text))
-        except Exception as ex:
-            raise MPContribsRestError(str(ex))
+        payload = {"cids": dumps(cids)}
+        return self._make_request('/delete', payload=payload, method='POST')
 
     def update_collaborators(self, collaborators, cids, mode):
         """
