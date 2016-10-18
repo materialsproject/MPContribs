@@ -55,7 +55,7 @@ class MPResterBase(object):
         response = None
         url = self.preamble + sub_url
         try:
-            headers = {}
+            headers = {'Referer': self.preamble}
             if not 'materialsproject' in self.preamble:
                 if self.session.cookies.get('csrftoken') is None:
                     from django.core.urlresolvers import reverse
@@ -67,9 +67,8 @@ class MPResterBase(object):
                         domain += '/' + site_url
                     domain += browserid_csrf
                     self.session.get(domain)
-                headers = {"X-CSRFToken": self.session.cookies.get('csrftoken')}
-            response = self.session.post(url, data=payload, headers=headers) \
-                if method == "POST" else self.session.get(url, params=payload)
+                headers["X-CSRFToken"] = self.session.cookies.get('csrftoken')
+            response = self.session.request(method, url=url, headers=headers, data=payload)
             if response.status_code in [200, 400]:
                 data = loads(response.text)
                 if data["valid_response"]:
