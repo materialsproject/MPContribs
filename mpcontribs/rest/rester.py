@@ -39,7 +39,7 @@ class MPContribsRester(MPResterBase):
             unique contribution ID (ObjectID) for this submission
 
         Raises:
-            MPContribsRestError
+            MPResterError
         """
         try:
             if isinstance(filename_or_mpfile, six.string_types):
@@ -49,7 +49,7 @@ class MPContribsRester(MPResterBase):
                 payload = {'mpfile': filename_or_mpfile.get_string()}
             payload['fmt'] = fmt
         except Exception as ex:
-            raise MPContribsRestError(str(ex))
+            raise MPResterError(str(ex))
         return self._make_request('/submit', payload=payload, method='POST')
 
     def build_contribution(self, cid):
@@ -63,12 +63,12 @@ class MPContribsRester(MPResterBase):
             cid: ObjectId of contribution
 
         Raises:
-            MPContribsRestError
+            MPResterError
         """
         try:
             cid = bson.ObjectId(cid)
         except Exception as ex:
-            raise MPContribsRestError(str(ex))
+            raise MPResterError(str(ex))
         return self._make_request('/build', payload={'cid': cid}, method='POST')
 
     def query_contributions(self, **kwargs):
@@ -84,7 +84,7 @@ class MPContribsRester(MPResterBase):
             A dict, with a list of contributions in the "response" key.
 
         Raises:
-            MPContribsRestError
+            MPResterError
         """
         if kwargs:
             payload = {
@@ -120,7 +120,7 @@ class MPContribsRester(MPResterBase):
             number of contributions deleted
 
         Raises:
-            MPContribsRestError
+            MPResterError
         """
         try:
             payload = {"cids": dumps(cids)}
@@ -151,7 +151,7 @@ class MPContribsRester(MPResterBase):
             the updated list of collaborators for affected contributions
 
         Raises:
-            MPContribsRestError
+            MPResterError
         """
         try:
             payload = {
@@ -166,8 +166,8 @@ class MPContribsRester(MPResterBase):
                 if resp['valid_response']:
                     return resp['response']['collaborators']
                 else:
-                    raise MPContribsRestError(resp["error"])
-            raise MPContribsRestError("REST error with status code {} and error {}"
+                    raise MPResterError(resp["error"])
+            raise MPResterError("REST error with status code {} and error {}"
                               .format(response.status_code, response.text))
         except Exception as ex:
-            raise MPContribsRestError(str(ex))
+            raise MPResterError(str(ex))
