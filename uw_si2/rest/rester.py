@@ -22,8 +22,10 @@ class UWSI2Rester(MPContribsRester):
         labels = ["Solute element name", "Solute D0 [cm^2/s]", "Solute Q [eV]"]
         data = []
         for doc in self.query_contributions(
-            criteria={'project': {'$in': ['LBNL', 'UW-Madison']}},
-            projection={'_id': 1, 'mp_cat_id': 1, 'content': 1}
+            criteria={
+                'project': {'$in': ['LBNL', 'UW-Madison']},
+                'content.figshare_id': {'$exists': 1}
+            }, projection={'_id': 1, 'mp_cat_id': 1, 'content': 1}
         ):
             mpfile = MPFile.from_contribution(doc)
             mp_id = mpfile.ids[0]
