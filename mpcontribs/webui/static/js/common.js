@@ -14,6 +14,7 @@ requirejs.config({
   },
   shim: {
     bootstrap: { deps: ['jquery'] },
+    thebe: { deps: ['jquery'] },
     filestyle: { deps: ['bootstrap'] },
     chosen: { deps: ['jquery', 'bootstrap'] },
     waitfor: { deps: ['jquery'] },
