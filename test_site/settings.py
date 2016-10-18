@@ -165,3 +165,5 @@ DEFAULT_FROM_EMAIL = 'Test Site <test_site@matgen8.lbl.gov>'
 
 REQUIRE_JS = 'components/requirejs/require.js'
 REQUIRE_DEBUG = True
+
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
