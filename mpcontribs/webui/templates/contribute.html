@@ -33,11 +33,11 @@
 
 <nav class="navbar navbar-default navbar-lower" role="navigation">
   <div class="container">
-    <form action="/contribute" method=post enctype=multipart/form-data class="navbar-form navbar-left">
+    <form action="{{ url_for('.contribute') }}" method=post enctype=multipart/form-data class="navbar-form navbar-left">
       <div class="form-group">
         <select id="siteselect" data-placeholder="Select Site ..." hidden>
           <option></option>
-          <option value="{{ request.url_root }}test_site">Local Test Site</option>
+          <option value="{{ request.url_root.replace('http://', 'https://') }}{{ url_for('.home') }}test_site">Local Test Site</option>
           <option value="http://alpha.materialsproject.org">Materials Project</option>
         </select>
         <button id="add_site_btn" type=button class="btn btn-primary btn-xs hide" onClick="$('#myModal').modal()">
