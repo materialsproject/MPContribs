@@ -1,5 +1,9 @@
 {% extends "mpcontribs_explorer_detail.html" %}
 {% load staticfiles %}
+{% block extra_css %}
+<link rel="stylesheet" href='{% static "js/components/json-human/css/json.human.css" %}' charset="utf-8">
+<link rel="stylesheet" href='{% static "js/components/backgrid/lib/backgrid.css" %}' charset="utf-8">
+{% endblock %}
 {% if mp_cat_id in material %}
 {% block title %} {{ material.detail_id }} {{ material.mp_cat_id }} {% endblock %}
 {% block detail_id %}{{ material.detail_id }}{% endblock %}
@@ -7,5 +11,12 @@
 {% block formula %}{{ material.mp_cat_id }}{% endblock %}
 {% block detail_content %}
 <div>{{ material.nb|safe }}</div>
+<script>
+requirejs(['main'], function() {
+    require(["json.human", "plotly", "backgrid"], function() {
+        {{ material.nb_js|safe }}
+    });
+});
+</script>
 {% endblock detail_content %}
 {% endif %}
