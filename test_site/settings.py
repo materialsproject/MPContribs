@@ -48,6 +48,7 @@ INSTALLED_APPS = (
     'django.contrib.staticfiles',
     'require',
     'webtzite',
+    'mpcontribs.portal',
     'mpcontribs.rest',
     'mpcontribs.explorer',
     'test_site.apps.UWSI2ExplorerConfig',

@@ -1,0 +1,8 @@
+from django.conf.urls import include, url
+
+urlpatterns = [
+    url(r'', include('mpcontribs.portal.urls')),
+    url(r'^rest/', include('mpcontribs.rest.urls')),
+    url(r'^explorer/', include('mpcontribs.explorer.urls')),
+    url(r'^uwsi2/explorer/', include('mpcontribs.users.uw_si2.explorer.urls')),
+]
