@@ -9,5 +9,6 @@ db.sqlite3
 build/*
 dist/*
 mpcontribs/rest/static/*
+mpcontribs/rest/apidoc.json
 db/*
 notebooks/profile/migrated
