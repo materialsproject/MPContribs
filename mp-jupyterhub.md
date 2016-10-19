@@ -1,4 +1,19 @@
 ```
+# organization
+alpha.materialsproject.org                  /                           [materials_django.home]
+                                            /<mount>/<path>             [mpcontribs.{rest,explorer,uwsi2}]
+matgen8.lbl.gov/flaskproxy/tschaume         /                           [mpcontribs.webui.main]
+                                            /ingester                   [mpcontribs.webui.webui]
+                                            /test_site/                 [webtzite]
+                                            /test_site/<mount>          [mpcontribs.portal]
+                                            /test_site/<mount>/<path>   [see below]
+
+mount = mpcontribs
+path = rest [mpcontribs.rest, serve-static]
+       explorer [mpcontribs.explorer]
+       uwsi2/explorer [mpcontribs.users.uw_si2.explorer]
+
+
 # install ssh
 su - # see Dockerfile
 apt-get install ssh telnet postfix tree silversearcher-ag
