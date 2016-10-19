@@ -117,7 +117,8 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.8/howto/static-files/
 
-PROXY_URL_PREFIX = '/mpcontribs/tschaume' # optional, default: ''
+JPY_USER = os.environ.get('JPY_USER')
+PROXY_URL_PREFIX = '/mpcontribs/{}'.format(JPY_USER) if JPY_USER else ''
 ROOT_PROJECT_DIR = os.path.dirname(os.path.dirname(__file__))
 STATIC_ROOT = ROOT_PROJECT_DIR + '/webtzite/static'
 STATIC_URL = PROXY_URL_PREFIX + '/static/'

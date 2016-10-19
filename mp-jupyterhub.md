@@ -2,7 +2,7 @@
 # organization
 alpha.materialsproject.org                  /                           [materials_django.home]
                                             /<mount>/<path>             [mpcontribs.{rest,explorer,uwsi2}]
-matgen8.lbl.gov/flaskproxy/tschaume         /                           [mpcontribs.webui.main]
+matgen8.lbl.gov/flaskproxy/$JPY_USER        /                           [mpcontribs.webui.main]
                                             /ingester                   [mpcontribs.webui.webui]
                                             /test_site/                 [webtzite]
                                             /test_site/<mount>          [mpcontribs.portal]
@@ -53,5 +53,5 @@ pip install -e git+https://github.com/materialsproject/MPContribs#egg=mpcontribs
 cd ~/work/mpcontribs
 git remote set-url --push origin git@github.com:materialsproject/MPContribs.git
 cp db.sqlite3.init db.sqlite3
-mpcontribs --jupyter-url https://matgen8.lbl.gov/user/tschaume
+mpcontribs --jupyter-url https://matgen8.lbl.gov$JPY_BASE_URL
 ```
