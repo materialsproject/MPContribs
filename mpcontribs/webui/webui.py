@@ -3,7 +3,7 @@ from __future__ import unicode_literals, print_function, absolute_import
 import json, os, socket, SocketServer, codecs, time, pkgutil, psutil
 import sys, warnings, multiprocessing
 from IPython.terminal.ipapp import launch_new_instance
-from flask import Flask, render_template, request, Response, Blueprint, current_app
+from flask import render_template, request, Response, Blueprint, current_app
 from flask import url_for, redirect, make_response, stream_with_context
 from mpcontribs.utils import process_mpfile, submit_mpfile
 from mpcontribs.config import default_mpfile_path
@@ -15,7 +15,7 @@ from subprocess import call
 
 tmpl_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates')
 stat_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static')
-bp = Blueprint('mpcontribs.webui', __name__, template_folder=tmpl_dir, static_folder=stat_dir)
+ingester_bp = Blueprint('webui_ingester', __name__, template_folder=tmpl_dir, static_folder=stat_dir)
 
 session = {}
 mod_iter = pkgutil.iter_modules(mpcontribs_users.__path__)
@@ -124,7 +124,7 @@ def read_mpfile_to_view():
     else:
         return session.get('mpfile')
 
-@bp.route('/view')
+@ingester_bp.route('/view')
 def view():
     mpfile = read_mpfile_to_view()
     if mpfile is None:
@@ -140,12 +140,12 @@ def view():
     except:
         pass
 
-@bp.route('/')
+@ingester_bp.route('/')
 def home():
     reset_session()
     return render_template('home.html', session=session)
 
-@bp.route('/load')
+@ingester_bp.route('/load')
 def load():
     mpfile = session.get('mpfile')
     if mpfile is None:
@@ -157,7 +157,7 @@ def load():
         f.write(mpfile)
     return render_template('home.html', session=session)
 
-@bp.route('/contribute', methods=['GET', 'POST'])
+@ingester_bp.route('/contribute', methods=['GET', 'POST'])
 def contribute():
     if request.method == 'GET':
         return render_template('contribute.html', session=session)
@@ -186,7 +186,7 @@ def contribute():
         except:
             pass
 
-@bp.route('/action', methods=['POST'])
+@ingester_bp.route('/action', methods=['POST'])
 def action():
     session['options'] = json.loads(request.form.get('options'))
     thebe_str = request.form.get('thebe')
@@ -214,7 +214,7 @@ def action():
     elif request.form['submit'] == 'Contribute':
         return redirect(url_for('.contribute'))
 
-@bp.route('/shutdown', methods=['GET', 'POST'])
+@ingester_bp.route('/shutdown', methods=['GET', 'POST'])
 def shutdown():
     stop_processes()
     func = request.environ.get('werkzeug.server.shutdown')
@@ -222,6 +222,3 @@ def shutdown():
         raise RuntimeError('Not running with the Werkzeug Server')
     func()
     return 'Server shutting down...'
-
-app = Flask(__name__)
-app.register_blueprint(bp, url_prefix='/mpcontribs/tschaume')
