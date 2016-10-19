@@ -45,7 +45,7 @@ def login(request):
             code = LoginCode.objects.filter(**{
                 'user__email': request.POST.get('username')
             })[0]
-            code.next = reverse('register')
+            code.next = reverse('webtzite_register')
             code.save()
             code.send_login_code(
                 secure=request.is_secure(),
@@ -62,9 +62,9 @@ def register(request):
     email = request.user.email
     username = request.user.username
     u = RegisteredUser.objects.get(username=username)
-    next = unquote(request.GET.get('next', reverse('index')))
-    if next == reverse('register'):
-        next = reverse('index')
+    next = unquote(request.GET.get('next', reverse('webtzite_index')))
+    if next == reverse('webtzite_register'):
+        next = reverse('webtzite_index')
     if request.method == "GET":
         if u.is_registered:
             return redirect(next)
@@ -85,4 +85,4 @@ def register(request):
 @login_required
 def logout(request):
     auth_logout(request)
-    return redirect(reverse('index'))
+    return redirect(reverse('webtzite_index'))

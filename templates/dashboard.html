@@ -1,6 +1,6 @@
 {% extends "base/header_footer.html" %}
 {% block content %}
-<input type=hidden id=dashboard_url value="{% url 'dashboard' %}">
+<input type=hidden id=dashboard_url value="{% url 'webtzite_dashboard' %}">
 {% if user.is_registered %}
 <p>Current user: {{ user.email }}</p>
 <p>Superuser: {{ user.is_superuser }}</p>
