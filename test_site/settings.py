@@ -116,20 +116,15 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.8/howto/static-files/
 
+PROXY_URL_PREFIX = '/mpcontribs/tschaume' # optional, default: ''
 ROOT_PROJECT_DIR = os.path.dirname(os.path.dirname(__file__))
 STATIC_ROOT = ROOT_PROJECT_DIR + '/webtzite/static'
-STATIC_URL = '/mpcontribs/tschaume/static'
+STATIC_URL = PROXY_URL_PREFIX + '/static/'
 
-# TODO static dirs for mpcontribs/{rest,explorer,users.uwsi2.explorer}
 STATIC_ROOT_URLS = {
     STATIC_URL: STATIC_ROOT,
-    STATIC_URL + '_rest': ROOT_PROJECT_DIR + '/mpcontribs/rest/static'
+    STATIC_URL[:-1] + '_rest': ROOT_PROJECT_DIR + '/mpcontribs/rest/static'
 }
-
-#from tempfile import gettempdir
-#STATIC_ROOT = os.path.join(gettempdir(), 'static')
-#if not os.path.exists(STATIC_ROOT):
-#    os.mkdir(STATIC_ROOT)
 
 LOGGING = {
     'version': 1,

@@ -2,9 +2,11 @@
 import os, argparse
 from werkzeug.serving import run_simple
 from werkzeug.wsgi import DispatcherMiddleware, SharedDataMiddleware
-from mpcontribs.webui.webui import app as flask_app
+from flask import Flask
+from mpcontribs.webui.main import main_bp
+from mpcontribs.webui.webui import ingester_bp
 from test_site.wsgi import application as django_app
-from test_site.settings import STATIC_ROOT_URLS
+from test_site.settings import STATIC_ROOT_URLS, PROXY_URL_PREFIX
 
 def cli():
     parser = argparse.ArgumentParser(
@@ -26,13 +28,16 @@ def cli():
             if not os.path.exists(dbpath):
                 os.makedirs(dbpath)
 
-    flask_app.debug = args.debug
-    flask_app.config['SANDBOX_CONTENT'] = args.sbx
-    flask_app.config['START_JUPYTER'] = args.start_jupyter
-    flask_app.config['START_MONGODB'] = args.start_mongodb
-    flask_app.config['JUPYTER_URL'] = args.jupyter_url
+    app = Flask(__name__)
+    app.debug = args.debug
+    app.config['SANDBOX_CONTENT'] = args.sbx
+    app.config['START_JUPYTER'] = args.start_jupyter
+    app.config['START_MONGODB'] = args.start_mongodb
+    app.config['JUPYTER_URL'] = args.jupyter_url
+    app.register_blueprint(main_bp, url_prefix=PROXY_URL_PREFIX)
+    app.register_blueprint(ingester_bp, url_prefix=PROXY_URL_PREFIX + '/ingester')
 
-    application = DispatcherMiddleware(flask_app, { '/mpcontribs/tschaume/test_site': django_app })
+    application = DispatcherMiddleware(app, {PROXY_URL_PREFIX + '/test_site': django_app})
     application = SharedDataMiddleware(application, STATIC_ROOT_URLS)
 
     run_simple('0.0.0.0', 5000, application, use_reloader=args.debug,
