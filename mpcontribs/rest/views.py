@@ -11,6 +11,7 @@ from webtzite.connector import ConnectorBase
 from bson.objectid import ObjectId
 from webtzite import mapi_func
 from django.shortcuts import redirect
+from test_site.settings import PROXY_URL_PREFIX
 
 class Connector(ConnectorBase):
     def connect(self, **kwargs):
@@ -36,7 +37,7 @@ def index(request):
     os.chdir(module_dir)
     call(['apidoc', '-f "views.py"', '-f "_apidoc.py"', '--output', 'static'])
     os.chdir(cwd)
-    return redirect('/mpcontribs/tschaume/static_rest/index.html')
+    return redirect(PROXY_URL_PREFIX + '/static_rest/index.html')
 
 @mapi_func(supported_methods=["GET"], requires_api_key=True)
 def check_contributor(request, db_type=None, mdb=None):
