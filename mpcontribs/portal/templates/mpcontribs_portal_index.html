@@ -1,0 +1,13 @@
+{% extends "../../webtzite/templates/base/header_footer.html" %}
+{% block content %}
+<div class="container">
+  <div class="row">
+      <h1>MPContribs Interfaces</h1>
+      <ul>
+          <li><a href="{% url 'mpcontribs_rest_index' %}">REST API</a></li>
+          <li><a href="{% url 'mpcontribs_explorer_index' %}">Explorer</a></li>
+          <li><a href="{% url 'uwsi2_explorer_index' %}">UW/SI2 Explorer</a></li>
+      </ul>
+  </div>
+</div>
+{% endblock %}
