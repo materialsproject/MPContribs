@@ -1,5 +1,4 @@
 requirejs.config({
-    baseUrl: '/mpcontribs/tschaume/static/js',
     paths: {
         jquery: 'components/jquery/dist/jquery',
         backbone: 'components/backbone/backbone',
