@@ -12,8 +12,9 @@ mount = mpcontribs
 path = rest [mpcontribs.rest, serve-static]
        explorer [mpcontribs.explorer]
        uwsi2/explorer [mpcontribs.users.uw_si2.explorer]
+```
 
-
+```
 # install ssh
 su - # see Dockerfile
 apt-get install ssh telnet postfix tree silversearcher-ag
@@ -54,4 +55,14 @@ cd ~/work/mpcontribs
 git remote set-url --push origin git@github.com:materialsproject/MPContribs.git
 cp db.sqlite3.init db.sqlite3
 mpcontribs --jupyter-url https://matgen8.lbl.gov$JPY_BASE_URL
+```
+
+```
+# JupyterHub Docker
+cd /gitrepos/mp/MPContribs/docker/my_jupyterhub
+docker build -t my_jupyterhub .
+cd ../mp-jupyter-docker # -> mpcontribs branch
+docker build -t materialsproject/jupyterhub-singleuser .    <---|
+docker run -d -p 8000:8000 --name my_jupyterhub my_jupyterhub   |
+docker stop my_jupyterhub && docker rm my_jupyterhub   ---------|
 ```
