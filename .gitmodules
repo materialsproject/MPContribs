@@ -6,3 +6,7 @@
 	path = webtzite
 	url = https://github.com/materialsproject/webtzite.git
 	branch = master
+[submodule "docker/mp-jupyter-docker"]
+	path = docker/mp-jupyter-docker
+	url = https://github.com/materialsproject/mp-jupyter-docker.git
+	branch = mpcontribs
