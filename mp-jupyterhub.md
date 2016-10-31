@@ -21,11 +21,9 @@ apt-get install ssh telnet postfix tree silversearcher-ag
 # follow http://stackoverflow.com/a/30800260 to configure postfix for nopassword
 #   -> /etc/init.d/postfix start
 npm install -g bower
+# https://github.com/apidoc/apidoc/pull/536
+npm install -g git+https://github.com/tschaume/apidoc.git#csrf
 # ctrl+d
-
-# CSRF support in apidocjs
-https://github.com/apidoc/apidoc/pull/536
-export PATH=~/work/apidoc/bin:$PATH
 
 # install proxy route, see Shreyas email
 
