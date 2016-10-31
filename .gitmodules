@@ -13,3 +13,4 @@
 [submodule "docker/jupyterhub"]
 	path = docker/jupyterhub
 	url = https://github.com/tschaume/jupyterhub.git
+	branch = mpcontribs
