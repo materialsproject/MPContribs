@@ -10,3 +10,6 @@
 	path = docker/mp-jupyter-docker
 	url = https://github.com/materialsproject/mp-jupyter-docker.git
 	branch = mpcontribs
+[submodule "docker/jupyterhub"]
+	path = docker/jupyterhub
+	url = https://github.com/tschaume/jupyterhub.git
