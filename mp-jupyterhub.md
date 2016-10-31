@@ -64,3 +64,25 @@ docker build -t materialsproject/jupyterhub-singleuser .    <---|
 docker run -d -p 8000:8000 --name my_jupyterhub my_jupyterhub   |
 docker stop my_jupyterhub && docker rm my_jupyterhub   ---------|
 ```
+
+```
+# MP JupyterHub at Gateways2016 Demo
+# build materialsproject/jupyterhub-singleuser (see above)
+cd /gitrepos/mp/MPContribs/docker
+conda create -n mp_jupyterhub pip
+source activate mp_jupyterhub
+npm install -g configurable-http-proxy
+pip install jupyterhub
+git clone https://github.com/jupyterhub/dockerspawner.git
+cd dockerspawner
+pip install -r requirements.txt
+python setup.py install
+cd ..
+git clone git@bitbucket.org:materialsproject/workshop-jupyterhub.git
+cd workshop-jupyterhub
+git checkout -b localhost origin/localhost
+conda install jupyter
+pip install oauthenticator
+cd run
+./run.sh --no-ssl
+```

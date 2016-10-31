@@ -12,3 +12,5 @@ mpcontribs/rest/static/*
 mpcontribs/rest/apidoc.json
 db/*
 notebooks/profile/migrated
+docker/dockerspawner/*
+docker/workshop-jupyterhub/*
