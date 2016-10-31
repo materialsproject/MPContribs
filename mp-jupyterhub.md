@@ -20,7 +20,10 @@ cd ~/gitrepos/mp/MPContribs/docker
 conda create -n mp_jupyterhub pip
 source activate mp_jupyterhub
 npm install -g configurable-http-proxy
-pip install jupyterhub
+cd jupyterhub
+git checkout mpcontribs
+pip install -e .
+cd ..
 git clone https://github.com/jupyterhub/dockerspawner.git
 cd dockerspawner
 pip install -r requirements.txt
@@ -46,6 +49,7 @@ docker build -t materialsproject/jupyterhub-singleuser .
 # run MP JupyterHub on localhost
 source activate mp_jupyterhub
 cd ~/gitrepos/mp/MPContribs/docker/workshop-jupyterhub/run
+docker rm -f jupyter-tschaume # if necessary
 ./run.sh --no-ssl
 # go to http://localhost:8000/, log in, and start server
 ```
