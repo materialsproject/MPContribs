@@ -32,6 +32,7 @@ git checkout -b localhost origin/localhost
 conda install jupyter
 pip install oauthenticator
 # GitHub OAuth App: mp-jupyterhub_oauth_app.jpg
+openssl rand -hex 32 # add to ~/.bashrc or .zshrc: export CONFIGPROXY_AUTH_TOKEN=<insert-key>
 ```
 
 ```
@@ -46,11 +47,20 @@ docker build -t materialsproject/jupyterhub-singleuser .
 source activate mp_jupyterhub
 cd ~/gitrepos/mp/MPContribs/docker/workshop-jupyterhub/run
 ./run.sh --no-ssl
-# go to http://localhost:8000/
+# go to http://localhost:8000/, log in, and start server
 ```
 
 ```
-# install proxy route, see Shreyas email
+# set up proxy route
+export JPY_USER=tschaume
+export JPY_PROXY_ROUTE_TARGET=`docker ps --format "{{.Names}}: {{.Ports}}" | grep $JPY_USER | awk '{print $2}' | cut -d'-' -f1`
+curl -v -H "Authorization: token $CONFIGPROXY_AUTH_TOKEN" http://localhost:8001/api/routes/flaskproxy/$JPY_USER -d '{"target": "http://'"$JPY_PROXY_ROUTE_TARGET"'", "user":"'"$JPY_USER"'"}'
+curl -v -H "Authorization: token $CONFIGPROXY_AUTH_TOKEN" http://localhost:8001/api/routes # to check
+```
+
+```
+# go to http://localhost:8000/
+# start terminal
 vim ~/.bashrc # export MAPI_KEY='...'
 cat /home/jovyan/.ssh/id_rsa.pub # add to GitHub profile
 ssh -T git@github.com
