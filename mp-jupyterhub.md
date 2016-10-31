@@ -15,60 +15,8 @@ path = rest [mpcontribs.rest, serve-static]
 ```
 
 ```
-# install ssh
-su - # see Dockerfile
-apt-get install ssh telnet postfix tree silversearcher-ag
-# follow http://stackoverflow.com/a/30800260 to configure postfix for nopassword
-#   -> /etc/init.d/postfix start
-npm install -g bower
-# https://github.com/apidoc/apidoc/pull/536
-npm install -g git+https://github.com/tschaume/apidoc.git#csrf
-# ctrl+d
-
-# install proxy route, see Shreyas email
-
-# install basic vimrc, set default editor
-git clone git://github.com/amix/vimrc.git ~/.vim_runtime
-sh ~/.vim_runtime/install_basic_vimrc.sh
-vim ~/.bashrc # export EDITOR=vim, export MAPI_KEY='...'
-
-# github ssh key for git push
-mkdir ~/.ssh
-chmod 700 ~/.ssh
-cd .ssh/
-ssh-keygen -t rsa -b 4096 -C "phuck@lbl.gov"
-eval "$(ssh-agent -s)"
-ssh-add ~/.ssh/github
-cat github.pub # add to GitHub profile
-ssh -T git@github.com
-
-# git config
-git config --global user.email "phuck@lbl.gov"
-git config --global user.name "Patrick Huck"
-git config --global push.default simple
-
-# MPContribs
-pip install -e git+https://github.com/materialsproject/MPContribs#egg=mpcontribs --src .
-cd ~/work/mpcontribs
-git remote set-url --push origin git@github.com:materialsproject/MPContribs.git
-cp db.sqlite3.init db.sqlite3
-mpcontribs --jupyter-url https://matgen8.lbl.gov$JPY_BASE_URL
-```
-
-```
-# JupyterHub Docker
-cd /gitrepos/mp/MPContribs/docker/my_jupyterhub
-docker build -t my_jupyterhub .
-cd ../mp-jupyter-docker # -> mpcontribs branch
-docker build -t materialsproject/jupyterhub-singleuser .    <---|
-docker run -d -p 8000:8000 --name my_jupyterhub my_jupyterhub   |
-docker stop my_jupyterhub && docker rm my_jupyterhub   ---------|
-```
-
-```
-# MP JupyterHub at Gateways2016 Demo
-# build materialsproject/jupyterhub-singleuser (see above)
-cd /gitrepos/mp/MPContribs/docker
+# set up MP JupyterHub on localhost
+cd ~/gitrepos/mp/MPContribs/docker
 conda create -n mp_jupyterhub pip
 source activate mp_jupyterhub
 npm install -g configurable-http-proxy
@@ -83,6 +31,33 @@ cd workshop-jupyterhub
 git checkout -b localhost origin/localhost
 conda install jupyter
 pip install oauthenticator
-cd run
+# GitHub OAuth App: mp-jupyterhub_oauth_app.jpg
+```
+
+```
+# build MP jupyterhub-singleuser Docker image
+cd ~/gitrepos/mp/MPContribs/docker/mp-jupyter-docker
+# switch to mpcontribs branch if necessary
+docker build -t materialsproject/jupyterhub-singleuser .
+```
+
+```
+# run MP JupyterHub on localhost
+source activate mp_jupyterhub
+cd ~/gitrepos/mp/MPContribs/docker/workshop-jupyterhub/run
 ./run.sh --no-ssl
+# go to http://localhost:8000/
+```
+
+```
+# install proxy route, see Shreyas email
+vim ~/.bashrc # export MAPI_KEY='...'
+cat /home/jovyan/.ssh/id_rsa.pub # add to GitHub profile
+ssh -T git@github.com
+git config --global user.email "phuck@lbl.gov"
+git config --global user.name "Patrick Huck"
+cd ~/mpcontribs
+git pull
+touch /data/db/mongod.log && mongod --fork --logpath /data/db/mongod.log
+mpcontribs --jupyter-url https://matgen8.lbl.gov$JPY_BASE_URL # http://localhost
 ```
