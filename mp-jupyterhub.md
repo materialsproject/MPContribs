@@ -71,10 +71,10 @@ curl -v -H "Authorization: token $CONFIGPROXY_AUTH_TOKEN" http://localhost:8001/
 vim ~/.bashrc # export MAPI_KEY='...'
 cat /home/jovyan/.ssh/id_rsa.pub # add to GitHub profile
 ssh -T git@github.com
-git config --global user.email "phuck@lbl.gov"
-git config --global user.name "Patrick Huck"
 cd ~/mpcontribs
 git pull
-touch /data/db/mongod.log && mongod --fork --logpath /data/db/mongod.log
+su -
+/etc/init.d/postfix start
+ctrl+d
 mpcontribs --start-mongodb # jupyter url set automatically based on JPY_BASE_URL
 ```
