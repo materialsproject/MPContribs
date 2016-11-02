@@ -44,7 +44,8 @@ openssl rand -hex 32 # add to ~/.bashrc or .zshrc: export CONFIGPROXY_AUTH_TOKEN
 # build MP jupyterhub-singleuser Docker image
 cd ~/gitrepos/mp/MPContribs/docker/mp-jupyter-docker
 # switch to mpcontribs branch if necessary
-docker build -t materialsproject/jupyterhub-singleuser .
+docker build --no-cache -t materialsproject/jupyterhub-singleuser .
+# or insert `RUN pwd` before start step to avoid using --no-cache
 ```
 
 ```
