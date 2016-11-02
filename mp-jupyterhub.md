@@ -1,7 +1,9 @@
 ```
 # organization
+materialsproject.org
 alpha.materialsproject.org                  /                           [materials_django.home]
                                             /<mount>/<path>             [mpcontribs.{rest,explorer,uwsi2}]
+localhost:8000/flaskproxy/$JPY_USER
 matgen8.lbl.gov/flaskproxy/$JPY_USER        /                           [mpcontribs.webui.main]
                                             /ingester                   [mpcontribs.webui.webui]
                                             /test_site/                 [webtzite]
@@ -73,5 +75,5 @@ git config --global user.name "Patrick Huck"
 cd ~/mpcontribs
 git pull
 touch /data/db/mongod.log && mongod --fork --logpath /data/db/mongod.log
-mpcontribs --jupyter-url https://matgen8.lbl.gov$JPY_BASE_URL # http://localhost
+mpcontribs --start-mongodb # jupyter url set automatically based on JPY_BASE_URL
 ```
