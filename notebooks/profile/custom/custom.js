@@ -1,6 +1,6 @@
 console.log('executing custom.js ...');
 requirejs.config({
-  baseUrl: '/custom/js/lib',
+  baseUrl: '/flaskproxy/tschaume/ingester/static/js/lib',
   paths: {
     backbone: "backbone-min",
     plotly: "plotly.min",
