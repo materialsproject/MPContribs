@@ -53,18 +53,18 @@ class MPResterBase(object):
 
     def _make_request(self, sub_url, payload=None, method="GET"):
         response = None
-        url = self.preamble + sub_url
+        url = self.preamble.replace('8000', '5000') + sub_url
         try:
             headers = {'Referer': self.preamble}
             if not 'materialsproject' in self.preamble:
                 if self.session.cookies.get('csrftoken') is None:
                     from django.core.urlresolvers import reverse
                     uri = urlparse.urlparse(self.preamble)
-                    domain = '{uri.scheme}://{uri.netloc}'.format(uri=uri)
+                    domain = '{uri.scheme}://{uri.netloc}'.format(uri=uri).replace('8000', '5000')
                     site_url = '/'.join(uri.path.split('/')[:-2]) # test_site/
                     browserid_csrf = reverse('browserid.csrf')
                     if site_url[:-1] not in browserid_csrf:
-                        domain += '/' + site_url
+                        domain += site_url
                     domain += browserid_csrf
                     self.session.get(domain)
                 headers["X-CSRFToken"] = self.session.cookies.get('csrftoken')
