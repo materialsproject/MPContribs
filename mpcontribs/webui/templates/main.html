@@ -5,13 +5,90 @@
     <link rel="icon" href="data:;base64,=">
   </head>
   <body>
-      <ul>
-          <li><a href="{{ url_for('webui_ingester.home') }}">MPContribs Ingester</a></li>
-          <li><a href="{{ url_for('.home') }}test_site/dashboard">Test Site Dashboard</a></li>
-          <li><a href="{{ url_for('.home') }}test_site/mpcontribs/">Test Site MPContribs</a></li>
-          <li><a href="http://alpha.materialsproject.org/dashboard">Alpha Site Dashboard</a></li>
-          <li><a href="http://alpha.materialsproject.org/mpcontribs/">Alpha Site MPContribs</a></li>
-      </ul>
+      <style type="text/css">
+        .tg {border-collapse:collapse;border-spacing:0;}
+        .tg td{
+            font-family:Arial, sans-serif; font-size:14px; padding:10px 5px; border-style:solid;
+            border-width:1px; overflow:hidden; word-break:normal;
+        }
+        .tg th{
+            font-family:Arial, sans-serif; font-size:14px; font-weight:normal; padding:10px 5px;
+            border-style:solid; border-width:1px; overflow:hidden; word-break:normal;
+        }
+        .tg .tg-yw4l{vertical-align:top}
+      </style>
+      <table class="tg">
+          <tr>
+              <td class="tg-031e" rowspan="3">
+                  Materials Project Alpha Site at<br>
+                  <a href="http://alpha.materialsproject.org" target="_blank">http://alpha.materialsproject.org</a>
+              </td>
+              <td class="tg-yw4l">
+                  <a href="http://alpha.materialsproject.org/mpcontribs/rest" target="_blank">/mpcontribs/rest</a>
+              </td>
+              <td class="tg-yw4l">REST API docs &amp; test queries for public DB</td>
+          </tr>
+          <tr>
+              <td class="tg-yw4l">
+                  <a href="http://alpha.materialsproject.org/mpcontribs/explorer" target="_blank">/mpcontribs/explorer</a>
+              </td>
+              <td class="tg-yw4l">Explore data contributed to public DB</td>
+          </tr>
+          <tr>
+              <td class="tg-yw4l">
+                  <a href="http://alpha.materialsproject.org/uwsi2/explorer" target="_blank">/uwsi2/explorer</a>
+              </td>
+              <td class="tg-yw4l">Custom interface to contributed public UW/SI2 data</td>
+          </tr>
+          <tr>
+              <td class="tg-031e" rowspan="7">
+                  All MPContribs services available to user in<br>
+                  private Local/MP JupyterHub Instance at<br>
+                  <a href="{{ url_for('.home') }}">{{ url_for('.home') }}</a>
+              </td>
+              <td class="tg-yw4l"><a href="{{ url_for('.home') }}">/</a></td>
+              <td class="tg-yw4l">Landing page with OrgTable (this page)</td>
+          </tr>
+          <tr>
+              <td class="tg-yw4l">
+                  <a href="{{ url_for('webui_ingester.home') }}" target="_blank">/ingester</a>
+              </td>
+              <td class="tg-yw4l">Data ingestion, preparation, and DB submission</td>
+          </tr>
+          <tr>
+              <td class="tg-yw4l">
+                  <a href="{{ url_for('.home') }}test_site" target="_blank">/test_site</a>
+              </td>
+              <td class="tg-yw4l">Local MP-like Django test site</td>
+          </tr>
+          <tr>
+              <td class="tg-yw4l">
+                  <a href="{{ url_for('.home') }}test_site/mpcontribs" target="_blank">
+                      /test_site/mpcontribs</a>
+              </td>
+              <td class="tg-yw4l">Entry portal linking to REST &amp; Explorers</td>
+          </tr>
+          <tr>
+              <td class="tg-yw4l">
+                  <a href="{{ url_for('.home') }}test_site/mpcontribs/rest" target="_blank">
+                      /test_site/mpcontribs/rest</a>
+              </td>
+              <td class="tg-yw4l">REST API docs &amp; test queries for private DB</td>
+          </tr>
+          <tr>
+              <td class="tg-yw4l">
+                  <a href="{{ url_for('.home') }}test_site/mpcontribs/explorer" target="_blank">
+                      /test_site/mpcontribs/explorer</a>
+              </td>
+              <td class="tg-yw4l">Explore data contributed to private DB</td>
+          </tr>
+          <tr>
+              <td class="tg-yw4l">
+                  <a href="{{ url_for('.home') }}test_site/mpcontribs/uwsi2/explorer" target="_blank">
+                      /test_site/mpcontribs/uwsi2/explorer</a>
+              </td>
+              <td class="tg-yw4l">Custom Interface to contributed private UW/SI2 data</td>
+          </tr>
+      </table>
   </body>
 </html>
-
