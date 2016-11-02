@@ -37,7 +37,7 @@
       <div class="form-group">
         <select id="siteselect" data-placeholder="Select Site ..." hidden>
           <option></option>
-          <option value="{{ request.url_root.replace('http://', 'https://') }}{{ url_for('webui_main.home') }}test_site">Local Test Site</option>
+          <option value="{{ request.url_root[:-1] }}{{ url_for('webui_main.home') }}test_site">Local Test Site</option>
           <option value="http://alpha.materialsproject.org">Materials Project</option>
         </select>
         <button id="add_site_btn" type=button class="btn btn-primary btn-xs hide" onClick="$('#myModal').modal()">
