@@ -52,7 +52,6 @@ INSTALLED_APPS = (
     'mpcontribs.rest',
     'mpcontribs.explorer',
     'test_site.apps.UWSI2ExplorerConfig',
-    'kombu.transport.django',
 )
 
 MIDDLEWARE_CLASSES = (
