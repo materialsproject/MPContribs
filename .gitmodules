@@ -18,3 +18,7 @@
 	path = docker/dockerspawner
 	url = https://github.com/tschaume/dockerspawner.git
 	branch = flaskproxy
+[submodule "docker/workshop-jupyterhub"]
+	path = docker/workshop-jupyterhub
+	url = https://tschaume@bitbucket.org/materialsproject/workshop-jupyterhub.git
+	branch = localhost
