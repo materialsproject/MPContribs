@@ -14,3 +14,7 @@
 	path = docker/jupyterhub
 	url = https://github.com/tschaume/jupyterhub.git
 	branch = mpcontribs
+[submodule "docker/dockerspawner"]
+	path = docker/dockerspawner
+	url = https://github.com/tschaume/dockerspawner.git
+	branch = flaskproxy
