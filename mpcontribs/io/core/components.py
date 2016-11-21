@@ -118,7 +118,7 @@ class Plot(object):
             x=xvals, y=self.table[axis].tolist(), name=axis
         ) for axis in yaxes]
         layout = dict(
-            xaxis = dict(title=xaxis),
+            xaxis = dict(title=xaxis), yaxis = dict(title=self.config['table']),
             legend = dict(x=0.7, y=1), margin = dict(r=0, t=40),
         )
         fig = dict(data=traces, layout=layout)
