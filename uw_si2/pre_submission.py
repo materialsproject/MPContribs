@@ -87,8 +87,27 @@ def run(mpfile, hosts=None, api_key=None):
             hdata[mpid]['note'] = note
             df.drop(rows, inplace=True)
         mpfile.concat(MPFile.from_dict(hdata), uniquify=False)
-        print 'add table for supporting data for {}'.format(mpid)
-        mpfile.add_data_table(mpid, df.T, 'supporting')
+        df.set_index(df['Solute element number'], inplace=True)
+        df.drop('Solute element number', axis=1, inplace=True)
+        df.loc['Solute element number'] = df.columns
+        df.columns = df.ix[0]
+        df.index.name = 'index'
+        df.drop('Solute element name', inplace=True)
+        df = df.T.reset_index()
+        print 'add table for D0/Q data for {}'.format(mpid)
+        df_D0_Q = df[['Solute element name', 'Solute element number', 'Solute D0 [cm^2/s]', 'Solute Q [eV]']]
+        df_D0_Q.columns = ['El.', 'Z', 'D0 [cm2/s]', 'Q [eV]']
+        mpfile.add_data_table(mpid, df_D0_Q, 'D0_Q')
+        print 'add table for hop activation barriers for {}'.format(mpid)
+        columns_E = ['Hop activation barrier, E_{} [eV]'.format(i) for i in range(5)]
+        df_E = df[['Solute element name'] + columns_E]
+        df_E.columns = ['El.'] + ['E_{} [eV]'.format(i) for i in range(5)]
+        mpfile.add_data_table(mpid, df_E, 'hop_activation_barriers')
+        print 'add table for hop attempt frequencies for {}'.format(mpid)
+        columns_v = ['Hop attempt frequency, v_{} [THz]'.format(i) for i in range(5)]
+        df_v = df[['Solute element name'] + columns_v]
+        df_v.columns = ['El.'] + ['v_{} [THz]'.format(i) for i in range(5)]
+        mpfile.add_data_table(mpid, df_v, 'hop_attempt_frequencies')
     print 'DONE'
 
 class VaspDirCollParser(AbstractVaspDirCollParser):
