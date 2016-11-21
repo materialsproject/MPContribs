@@ -21,7 +21,7 @@ setup(
         '{}.rest'.format(package_name),
     ],
     install_requires = [
-        'numpy', 'scipy', 'Flask', 'pandas', 'plotly', 'six', 'monty',
+        'numpy', 'scipy', 'Flask', 'pandas', 'plotly==1.12.6', 'six', 'monty',
         'matplotlib', 'pymongo', 'pyyaml', 'ipython', 'cufflinks',
         'Django>=1.8.5,<1.9', 'archieml', 'django-browserid', 'sphinx', 'notebook',
         'ipywidgets', 'celery', 'tqdm', 'beautifulsoup4', 'whichcraft',
