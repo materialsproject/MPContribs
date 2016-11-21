@@ -127,10 +127,7 @@ class MPContributionsBuilder():
         nb['cells'].append(nbf.new_markdown_cell(
             "## Hierarchical Data"
         ))
-        nb['cells'].append(nbf.new_code_cell(
-            "hdata = mpfile.hdata[mpid]\n"
-            "hdata"
-        ))
+        nb['cells'].append(nbf.new_code_cell("mpfile.hdata[mpid]"))
         if mpfile.tdata[mp_cat_id]:
             nb['cells'].append(nbf.new_markdown_cell("## Tabular Data"))
         for table_name, table in mpfile.tdata[mp_cat_id].iteritems():
@@ -138,8 +135,7 @@ class MPContributionsBuilder():
                 "### {}".format(table_name)
             ))
             nb['cells'].append(nbf.new_code_cell(
-                "{} = mpfile.tdata[mpid]['{}']\n"
-                "{}".format(table_name, table_name, table_name)
+                "mpfile.tdata[mpid]['{}']".format(table_name)
             ))
         if mpfile.gdata[mp_cat_id]:
             nb['cells'].append(nbf.new_markdown_cell("## Graphical Data"))
@@ -148,8 +144,7 @@ class MPContributionsBuilder():
                 "### {}".format(plot_name)
             ))
             nb['cells'].append(nbf.new_code_cell(
-                "{} = mpfile.gdata[mpid]['{}']\n"
-                "{}".format(plot_name, plot_name, plot_name)
+                "mpfile.gdata[mpid]['{}']".format(plot_name)
             ))
 
         nbdir = os.path.dirname(os.path.abspath(__file__))
