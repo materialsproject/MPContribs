@@ -72,7 +72,9 @@ class MPFile(MPFileCore):
         for key,value in self.document.iterate():
             if key is None and isinstance(value, dict):
                 pd_obj = pandas.DataFrame.from_dict(value)
-                header = any([isinstance(col, unicode) for col in pd_obj])
+                header = any([bool(
+                    isinstance(col, unicode) or isinstance(col, str)
+                ) for col in pd_obj])
                 csv_string = pd_obj.to_csv(
                     index=False, header=header, float_format='%g'
                 )[:-1]
