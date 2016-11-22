@@ -58,7 +58,7 @@ def login(request):
     jpy_user = os.environ.get('JPY_USER')
     if jpy_user:
         from django.contrib.auth import authenticate
-        code = authenticate(code=None, username=jpy_user)
+        code = authenticate(code=None, username=jpy_user+'@users.noreply.github.com')
         user = authenticate(code=code.code, username=code.user.username)
         auth_login(request, user)
         return redirect(reverse('webtzite_register'))
