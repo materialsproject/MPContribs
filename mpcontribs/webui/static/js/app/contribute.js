@@ -35,13 +35,9 @@ define(function(require) {
     $('#siteselect').chosen().change(function () {
       document.getElementById('inputsite').value = this.value;
       var dlnk = document.getElementById('dlnk');
-      if ( this.value.indexOf('materialsproject') !== -1 ) {
-        dlnk.href = this.value + '/dashboard';
-      } else {
-        dlnk.href = this.value + '/webtzite/dashboard';
-      }
+      dlnk.href = this.value + '/dashboard';
     });
-    $('#add_site_btn').removeClass('hide');
+    //$('#add_site_btn').removeClass('hide');
     //$('#dbselect').chosen({
     //  search_contains: true, disable_search_threshold: 10, width: "150px"
     //});
