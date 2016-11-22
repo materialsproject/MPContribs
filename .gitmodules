@@ -20,5 +20,5 @@
 	branch = flaskproxy
 [submodule "docker/workshop-jupyterhub"]
 	path = docker/workshop-jupyterhub
-	url = https://tschaume@bitbucket.org/materialsproject/workshop-jupyterhub.git
+	url = https://github.com/materialsproject/workshop-jupyterhub.git
 	branch = localhost
