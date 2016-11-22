@@ -6,11 +6,11 @@
     <title>{% block title %} Materials Project {% endblock title %}</title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <link rel="shortcut icon" href='{% static "images/favicon.png" %}' />
+    {% require_module 'main' %}
     <link rel="stylesheet" type="text/css" href='{% static "js/components/bootstrap/dist/css/bootstrap.css" charset="utf-8" %}'/>
     <link rel="stylesheet" type="text/css" href='{% static "nucleus.css" charset="utf-8" %}'/>
     {% block extra_css %}
     {% endblock extra_css %}
-    {% require_module 'main' %}
   </head>
   <body>
     {% block header %}
