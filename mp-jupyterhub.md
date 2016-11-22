@@ -67,5 +67,4 @@ cat /home/jovyan/.ssh/id_rsa.pub # add to GitHub profile
 ssh -T git@github.com
 cd ~/mpcontribs
 git pull
-# TODO restart already running mpcontribs?
 ```
