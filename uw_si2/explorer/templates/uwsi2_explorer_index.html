@@ -123,15 +123,25 @@ require(["plotly"], function(Plotly) {
   Plotly.newPlot(graphQ, [dummy_trace], layoutQ, options);
   
   var contributions = {{ contribs|safe }};
+  var formulae = [];
+  var Row = Backbone.Model.extend({});
+  var Rows = Backbone.Collection.extend({
+      model: Row, mode: "client",
+      initialize: function(models, options) {
+          options || (options = {});
+          if (options.title) { this.title = options.title; };
+          if ('cnum' in options) { this.cnum = options.cnum; };
+      }
+  });
   for (var c=0; c<contributions.length; c++) {
     var table = contributions[c]['table'];
     var formula = contributions[c]['formula'];
-    var Row = Backbone.Model.extend({});
-    var Rows = Backbone.Collection.extend({ model: Row, mode: "client" });
-    var rows = new Rows(table['rows']);
+    formulae.push(formula);
+    var rows = new Rows(table['rows'], {title: formula, cnum: c});
     rows.on("backgrid:selected", function (model, selected) {
-      var traceD0 = graphD0.data[c];
-      var traceQ = graphQ.data[c];
+      var cnum = model.collection.cnum;
+      var traceD0 = graphD0.data[cnum+1];
+      var traceQ = graphQ.data[cnum+1];
       var idx = traceQ['x'].indexOf(model.get('Z'));
       var Q = selected ? model.get('Q [eV]') : NaN;
       var D0 = selected ? model.get('D0 [cm2/s]') : NaN;
@@ -143,7 +153,7 @@ require(["plotly"], function(Plotly) {
         traceD0['y'][idx] = D0;
         Plotly.redraw(graphD0);
       }
-      var host_solute = formula + '-' + model.get('El.');
+      var host_solute = formulae[cnum] + '-' + model.get('El.');
       var trace_index_dif = host_solute_index_map[host_solute];
       if (selected) {
         var yvalsDif = [];
@@ -170,7 +180,7 @@ require(["plotly"], function(Plotly) {
       }].concat(table['columns']),
       collection: rows
     });
-    grid.render();//.sort("El.", "ascending"); // sort causes "_.matches not a function"
+    grid.render().sort("El.", "ascending");
     $('#table'+c).append(grid.el);
     var filter = new Backgrid.Extension.ClientSideFilter({
       collection: rows, fields: ['El.'], placeholder: "filter solutes ..."
@@ -180,17 +190,17 @@ require(["plotly"], function(Plotly) {
     for (var j=0; j<table['rows'].length; j++) {
       xvals.push(table['rows'][j]['Z']);
       yvalsD0.push(NaN); yvalsQ.push(NaN);
-      var host_solute = formula + "-" + table['rows'][j]['El.'];
+      var host_solute = formulae[c] + "-" + table['rows'][j]['El.'];
       host_solute_index_map[host_solute] = host_solute_counter;
       Plotly.addTraces(graphDif, { x: xvalsDif, y: yvalsDifNaN });
       host_solute_counter += 1;
     }
     Plotly.addTraces(graphD0, {
-      x: xvals, y: yvalsD0, name: formula,
+      x: xvals, y: yvalsD0, name: formulae[c],
       connectgaps: true, mode: 'lines+markers'
     });
     Plotly.addTraces(graphQ, {
-      x: xvals, y: yvalsQ, name: formula,
+      x: xvals, y: yvalsQ, name: formulae[c],
       connectgaps: true, mode: 'lines+markers'
     });
     grids.push(grid);
