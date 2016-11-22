@@ -86,6 +86,13 @@ def register(request):
             u.institution = form.cleaned_data['institution']
             u.first_name = form.cleaned_data['first_name']
             u.last_name = form.cleaned_data['last_name']
+            if os.environ.get('JPY_USER'):
+                from git.config import GitConfigParser
+                cfg = os.path.normpath(os.path.expanduser("~/.gitconfig"))
+                gcp = GitConfigParser(cfg, read_only=False)
+                full_name = ' '.join([u.first_name, u.last_name])
+                gcp.set_value('user', 'name', full_name)
+                gcp.set_value('user', 'email', u.email)
             u.is_superuser = bool(RegisteredUser.objects.count() == 1)
             u.save()
             return redirect(next)
