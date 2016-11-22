@@ -33,6 +33,9 @@ requirejs.config({
     }
 });
 
+requirejs(['bootstrap'], function() {
+    console.log('bootstrap loaded');
+});
 requirejs(['jquery', 'underscore'], function() {
     $(document).ready(function () {
         require(['js-cookie'], function(Cookies) {
