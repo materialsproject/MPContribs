@@ -1,5 +1,6 @@
 import json
 import logging
+import os
 from urllib import unquote
 from django.shortcuts import render_to_response, redirect
 from django.http import HttpResponseServerError
@@ -34,6 +35,7 @@ def dashboard(request):
 
 from django.contrib.auth.views import login as django_login
 from django.contrib.auth import logout as auth_logout
+from django.contrib.auth import login as auth_login
 from django.shortcuts import render
 from nopassword.forms import AuthenticationForm
 from nopassword.models import LoginCode
@@ -52,6 +54,14 @@ def login(request):
                 host=request.get_host(),
             )
             return render(request, 'registration/sent_mail.html')
+
+    jpy_user = os.environ.get('JPY_USER')
+    if jpy_user:
+        from django.contrib.auth import authenticate
+        code = authenticate(code=None, username=jpy_user)
+        user = authenticate(code=code.code, username=code.user.username)
+        auth_login(request, user)
+        return redirect(reverse('webtzite_register'))
 
     return django_login(request, authentication_form=AuthenticationForm)
 
