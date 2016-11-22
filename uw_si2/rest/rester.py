@@ -19,7 +19,6 @@ class UWSI2Rester(MPContribsRester):
             |- ...
         - ...
         """
-        labels = ["Solute element name", "Solute D0 [cm^2/s]", "Solute Q [eV]"]
         data = []
         for doc in self.query_contributions(
             criteria={
@@ -29,9 +28,8 @@ class UWSI2Rester(MPContribsRester):
         ):
             mpfile = MPFile.from_contribution(doc)
             mp_id = mpfile.ids[0]
-            table = mpfile.tdata[mp_id]['data_supporting'][labels]
-            table.columns = ['El.', 'D0 [cm2/s]', 'Q [eV]']
-            anums = [self.z[el] for el in table['El.']]
+            table = mpfile.tdata[mp_id]['data_D0_Q']
+            anums = [self.z[el] for el in table['element']]
             table.insert(0, 'Z', Series(anums, index=table.index))
             table.sort_values('Z', inplace=True)
             table.reset_index(drop=True, inplace=True)

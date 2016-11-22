@@ -19,8 +19,8 @@ def index(request):
             ranges = {}
             for contrib in contribs:
                 df = contrib['table']
-                cols = df.columns[1:] # skip solute string
-                for col in cols:
+                df.columns = list(df.columns[:-1]) + ['El.']
+                for col in df.columns[:-1]:
                     low, upp = min(df[col]), max(df[col])
                     if col not in ranges:
                         ranges[col] = [low, upp]
