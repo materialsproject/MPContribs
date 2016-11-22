@@ -208,7 +208,8 @@ require(["plotly"], function(Plotly) {
   var panels = $('div.col-md-3[name^=panel]');
   function collapse_hosts(flag) {
       for (var j=0; j<hosts.length; j++) {
-        var visible = !$(hosts[j]).hasClass("collapse");//is(":visible");
+        //var visible = !$(hosts[j]).hasClass("collapse");
+        var visible = $(hosts[j]).is(":visible");
         if (flag && visible) { $(hosts[j]).collapse('hide'); }
         else if (!flag && !visible) { $(hosts[j]).collapse('show'); }
       }
