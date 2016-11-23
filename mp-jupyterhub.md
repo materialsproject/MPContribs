@@ -1,65 +1,73 @@
-# organization
+# Installation
 
-```
-materialsproject.org
-alpha.materialsproject.org                  /                           [materials_django.home]
-                                            /<mount>/<path>             [mpcontribs.{rest,explorer,uwsi2}]
-localhost:8000/flaskproxy/$JPY_USER
-matgen8.lbl.gov/flaskproxy/$JPY_USER        /                           [mpcontribs.webui.main]
-                                            /ingester                   [mpcontribs.webui.webui]
-                                            /test_site/                 [webtzite]
-                                            /test_site/<mount>          [mpcontribs.portal]
-                                            /test_site/<mount>/<path>   [see below]
+- install Anaconda: https://docs.continuum.io/anaconda/install
+- create and activate environment:
 
-mount = mpcontribs
-path = rest [mpcontribs.rest, serve-static]
-       explorer [mpcontribs.explorer]
-       uwsi2/explorer [mpcontribs.users.uw_si2.explorer]
-```
+    ```bash
+    conda create -n mp_jupyterhub pip jupyter
+    source activate mp_jupyterhub
+    ```
 
-# set up MP JupyterHub on localhost
+- install Docker: https://docs.docker.com/engine/installation/
+- install node: https://nodejs.org/en/, and run
 
-```
-cd ~/gitrepos/mp/MPContribs/docker
-conda create -n mp_jupyterhub pip
-source activate mp_jupyterhub
-npm install -g configurable-http-proxy
-cd jupyterhub
-git checkout mpcontribs
-pip install -e .
-cd ../dockerspawner
-pip install -r requirements.txt
-python setup.py install
-cd ../workshop-jupyterhub
-git checkout -b localhost origin/localhost
-conda install jupyter
-pip install oauthenticator
-# GitHub OAuth App: mp-jupyterhub_oauth_app.jpg
-openssl rand -hex 32 # add to ~/.bashrc or .zshrc: export CONFIGPROXY_AUTH_TOKEN=<insert-key>
-```
+    ```bash
+    npm install -g configurable-http-proxy
+    ```
+- in your workdir, clone MPContribs:
 
-# jupyterhub-singleuser Docker image
+    ```bash
+    git clone --recursive https://github.com/materialsproject/MPContribs.git
+    ```
 
-```
-cd ~/gitrepos/mp/MPContribs/docker/mp-jupyter-docker
-# switch to mpcontribs branch if necessary
-docker build --no-cache -t materialsproject/jupyterhub-singleuser .
-# or insert `RUN pwd` before start step to avoid using --no-cache
-```
+- install custom JupyterHub:
 
-# run MP JupyterHub on localhost
+    ```bash
+    cd MPContribs/docker/jupyterhub
+    git checkout -b mpcontribs origin/mpcontribs
+    pip install -e .
+    ```
 
-```
-source activate mp_jupyterhub
-cd ~/gitrepos/mp/MPContribs/docker/workshop-jupyterhub/run
-docker rm -f jupyter-tschaume # if necessary
-./run.sh --no-ssl
-# go to http://localhost:8000/, log in, and start server
-```
+- install custom dockerspawner:
 
-# work in JupyterHub
+    ```bash
+    cd ../dockerspawner
+    git checkout -b flaskproxy origin/flaskproxy
+    pip install -r requirements.txt
+    python setup.py install
+    ```
 
-```
+- set up GitHub OAuth App:
+  https://github.com/materialsproject/MPContribs/blob/master/mp-jupyterhub_oauth_app.jpg,
+  and install
+
+    ```bash
+    pip install oauthenticator
+    ```
+
+- build container:
+
+    ```bash
+    cd ../mp-jupyter-docker
+    git checkout -b mpcontribs origin/mpcontribs
+    docker build -t materialsproject/jupyterhub-singleuser .
+    ```
+
+- run JupyterHub:
+
+    ```bash
+    cd ../workshop-jupyterhub/run
+    git checkout -b localhost origin/localhost
+    # replace GitHub Client ID and Secret in env.sh (see OAuth setup above)
+    # add github handle to env/userlist
+    ./run.sh --no-ssl
+    ```
+
+- go to http://localhost:8000/, log in, and start server
+
+# work in JupyterHub (optional)
+
+```bash
 # go to http://localhost:8000/
 # start terminal
 vim ~/.bashrc # export MAPI_KEY='...'
