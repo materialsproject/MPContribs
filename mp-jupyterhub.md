@@ -50,7 +50,7 @@
     ```bash
     cd ../mp-jupyter-docker
     git checkout -b mpcontribs origin/mpcontribs
-    docker build -t materialsproject/jupyterhub-singleuser .
+    docker build --no-cache -t materialsproject/jupyterhub-singleuser .
     ```
 
 - run JupyterHub:
