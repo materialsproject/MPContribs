@@ -159,6 +159,7 @@ def load():
 
 @ingester_bp.route('/contribute', methods=['GET', 'POST'])
 def contribute():
+    session['scheme'] = 'https' if os.environ.get('DEPLOYMENT') == 'MATGEN' else 'http'
     if request.method == 'GET':
         return render_template('contribute.html', session=session)
     elif request.method == 'POST':
