@@ -18,8 +18,11 @@ def cli():
     parser.add_argument('--start-jupyter', action='store_true', help='start Jupyter server')
     parser.add_argument('--start-mongodb', action='store_true', help='start MongoDB server')
     jpy_base_url = os.environ.get('JPY_BASE_URL')
-    default_jupyter_url = 'http://localhost:'
-    default_jupyter_url += '8000'+jpy_base_url if jpy_base_url else '8888'
+    if os.environ.get('DEPLOYMENT') == 'MATGEN':
+        default_jupyter_url = 'https://matgen8.lbl.gov' + jpy_base_url
+    else:
+        default_jupyter_url = 'http://localhost:'
+        default_jupyter_url += '8000'+jpy_base_url if jpy_base_url else '8888'
     parser.add_argument('--jupyter-url', metavar='URL', dest='jupyter_url',
                         default=default_jupyter_url, help='Jupyter URL')
     args = parser.parse_args()
