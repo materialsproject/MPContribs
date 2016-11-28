@@ -30,7 +30,7 @@ See [official documentation](https://pythonhosted.org/mpcontribs).
     git clone --recursive https://github.com/materialsproject/MPContribs.git
     ```
 
-- install custom JupyterHub:
+- install custom JupyterHub (https://github.com/jupyterhub/jupyterhub/compare/master...tschaume:mpcontribs):
 
     ```bash
     cd MPContribs/docker/jupyterhub
@@ -58,7 +58,8 @@ See [official documentation](https://pythonhosted.org/mpcontribs).
     ```bash
     cd ../mp-jupyter-docker
     git checkout -b mpcontribs origin/mpcontribs
-    docker build --no-cache -t materialsproject/jupyterhub-singleuser .
+    docker build --no-cache -t materialsproject/jupyterhub-singleuser-mpcontribs .
+    # use --build-arg deployment=LOCALHOST for non-matgen build
     ```
 
 - run JupyterHub:
@@ -84,6 +85,14 @@ ssh -T git@github.com
 cd ~/mpcontribs
 git pull
 ```
+
+## matgen8
+
+/usr/local/mpcontribs_jupyterhub
+source bin/activate
+/usr/local/mpcontribs_jupyterhub/MPContribs
+docker pull
+screen -r
 
 ## Organization
 
