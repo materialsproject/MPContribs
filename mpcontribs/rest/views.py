@@ -239,8 +239,8 @@ def query_contributions(request, db_type=None, mdb=None):
 @mapi_func(supported_methods=["POST", "GET"], requires_api_key=True)
 def delete_contributions(request, db_type=None, mdb=None):
     """Delete a list of contributions"""
-    if not request.user.is_staff:
-        raise PermissionDenied("contributions deletion open only to staff right now.")
+    #if not request.user.is_staff:
+    #    raise PermissionDenied("contributions deletion open only to staff right now.")
     from mpcontribs.utils import get_short_object_id
     cids = [ ObjectId(cid) for cid in loads(request.POST['cids'])]
     contributor = '{} {} <{}>'.format(
