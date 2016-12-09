@@ -18,8 +18,10 @@ install:
   - conda install --yes python=$TRAVIS_PYTHON_VERSION numpy scipy matplotlib nose pandas
     # Coverage packages are on my binstar channel
   - conda install --yes -c dan_blanchard python-coveralls nose-cov
-  - pip install -U pip wheel setuptools python-coveralls
-  - python setup.py install
+  - pip install -U pip
+  - pip install entrypoints
+  - pip install wheel setuptools python-coveralls
+  - pip install .
 script:
   - nosetests --with-coverage -c .coveragerc --logging-level=INFO --cover-package=mpcontribs --cover-package=mpweb_core --cover-inclusive
 after_success:
