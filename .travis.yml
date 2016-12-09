@@ -23,7 +23,7 @@ install:
   - pip install wheel setuptools python-coveralls
   - pip install .
 script:
-  - nosetests --with-coverage -c .coveragerc --logging-level=INFO --cover-package=mpcontribs --cover-package=mpweb_core --cover-inclusive
+  - nosetests --with-coverage -c .coveragerc --logging-level=INFO --cover-package=mpcontribs --cover-package=webtzite --cover-package=mpcontribs/users --cover-inclusive
 after_success:
   - coveralls --config_file .coveragerc
 notifications:
