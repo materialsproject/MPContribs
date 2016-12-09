@@ -1,7 +1,6 @@
 import argparse, os, requests, math, threading, webbrowser, random, sys#, pdfkit
 from StringIO import StringIO
 from bson.errors import InvalidId
-from mpcontribs.webui.webui import app
 import matplotlib.tri as tri
 
 if __name__ == '__main__':
@@ -51,6 +50,7 @@ if __name__ == '__main__':
 
     # get all XAS/XMCD spectra
     if args.dev:
+        from mpcontribs.webui.webui import app
         port = 5000 + random.randint(0, 999)
         url = "http://127.0.0.1:{0}/pdf?mpfile={1}".format(port, cids_file)
         #threading.Timer(1.25, lambda: webbrowser.open(url)).start()
