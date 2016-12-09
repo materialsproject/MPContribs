@@ -10,6 +10,7 @@ before_install:
   # not specific to using Miniconda
   - sudo rm -rf /dev/shm
   - sudo ln -s /run/shm /dev/shm
+  - echo -e "machine github.com\n  login $CI_USER_TOKEN" >> ~/.netrc
 install:
   - conda install --yes python=$TRAVIS_PYTHON_VERSION numpy scipy matplotlib nose pandas
     # Coverage packages are on my binstar channel
