@@ -88,11 +88,13 @@ git pull
 
 ## matgen8
 
+```bash
 /usr/local/mpcontribs_jupyterhub
 source bin/activate
 /usr/local/mpcontribs_jupyterhub/MPContribs
 docker pull
 screen -r
+```
 
 ## Organization
 
