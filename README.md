@@ -6,7 +6,9 @@
 MPContribs - The Materials Project's Community Contribution Framework
 ---------------------------------------------------------------------
 
-See [official documentation](https://pythonhosted.org/mpcontribs).
+See [official documentation](https://pythonhosted.org/mpcontribs). Join our
+Slack channel: https://mpcontribs.slack.com/signup (everyone with a @mit.edu
+and @lbl.gov address).
 
 ## Installation
 
