@@ -1,0 +1,26 @@
+{% extends "../../webtzite/templates/base/header_footer.html" %}
+{% load staticfiles %}
+
+{% block extra_css %}
+<link rel="stylesheet" href='{% static "js/components/backgrid/lib/backgrid.css" %}' charset="utf-8">
+{% endblock extra_css %}
+
+{% block content %}
+
+{% if alert %}
+<div class="alert alert-warning alert-dismissible" role="alert">
+  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+    <span aria-hidden="true">&times;</span>
+  </button>
+  {{ alert }}
+</div>
+{% endif %}
+
+<style>
+.backgrid .string-cell { text-align: center; }
+.backgrid tbody tr:hover { background-color: #f9f9f9; }
+</style>
+
+{{ table|safe }}
+
+{% endblock %}
