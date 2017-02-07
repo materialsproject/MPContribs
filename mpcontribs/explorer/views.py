@@ -8,7 +8,7 @@ from mpcontribs.rest.rester import MPContribsRester
 from mpcontribs.rest.views import get_endpoint
 from mpcontribs.builder import export_notebook
 
-def index(request, collection=None):
+def index(request, collection='materials'):
     ctx = RequestContext(request)
     fields = ['identifiers', 'projects', 'cids']
     if request.user.is_authenticated():
