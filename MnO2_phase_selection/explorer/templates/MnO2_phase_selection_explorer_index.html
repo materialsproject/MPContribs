@@ -21,6 +21,9 @@
 .backgrid tbody tr:hover { background-color: #f9f9f9; }
 </style>
 
+{% for phase, table in tables.items %}
+<h3>{{ phase|safe }}</h3>
 {{ table|safe }}
+{% endfor %}
 
 {% endblock %}

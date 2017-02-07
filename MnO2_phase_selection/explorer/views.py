@@ -15,9 +15,10 @@ def index(request):
         ENDPOINT = request.build_absolute_uri(get_endpoint())
         with MnO2PhaseSelectionRester(API_KEY, endpoint=ENDPOINT) as mpr:
             #provenance = mpr.get_provenance()
-            phases = mpr.get_phases()
-            df = mpr.get_contributions(phase=phases[0])
-            table = render_dataframe(df)
+            tables = {}
+            for phase in mpr.get_phases():
+                df = mpr.get_contributions(phase=phase)
+                tables[phase] = render_dataframe(df, webapp=True)
     else:
         ctx.update({'alert': 'Please log in!'})
     return render_to_response("MnO2_phase_selection_explorer_index.html", locals(), ctx)

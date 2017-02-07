@@ -59,5 +59,5 @@ class MnO2PhaseSelectionRester(MPContribsRester):
         ):
             phases.add(doc['content']['info']['Phase'])
 
-        return phases
+        return list(phases)
 
