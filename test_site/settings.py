@@ -52,6 +52,7 @@ INSTALLED_APPS = (
     'mpcontribs.rest',
     'mpcontribs.explorer',
     'test_site.apps.UWSI2ExplorerConfig',
+    'test_site.apps.MnO2PhaseSelectionExplorerConfig',
 )
 
 MIDDLEWARE_CLASSES = (
