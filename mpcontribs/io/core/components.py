@@ -42,14 +42,16 @@ def get_backgrid_table(df):
     ]
     return table
 
-def render_dataframe(df):
+def render_dataframe(df, webapp=False):
     """use BackGrid JS library to render Pandas DataFrame"""
     # TODO check for index column in df other than the default numbering
     uuid_str = str(uuid.uuid4())
     table = get_backgrid_table(df)
-    html =  "<div id='{}' style='width:100%;'></div>".format(uuid_str)
+    html = "<div id='{}' style='width:100%;'></div>".format(uuid_str)
+    html += "<script>"
+    if webapp:
+        html += "requirejs(['main'], function() {"
     html += """
-    <script>
     require(["backgrid"], function(Backgrid) {
       "use strict";
       var table = JSON.parse('%s');
@@ -59,8 +61,10 @@ def render_dataframe(df):
       var grid = new Backgrid.Grid({ columns: table['columns'], collection: rows });
       $('#%s').append(grid.render().el);
     });
-    </script>
     """ % (json.dumps(table), uuid_str)
+    if webapp:
+        html += "});"
+    html += "</script>"
     return html
 
 ipython = get_ipython()
