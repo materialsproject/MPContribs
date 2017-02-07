@@ -21,5 +21,5 @@ csv_database = os.path.join(
   os.path.dirname(os.path.realpath(__file__)),
   '../test_files/lahman-csv_2014-02-14'
 )
-mp_id_pattern = re.compile('^(mp|por)-\d+$', re.IGNORECASE)
+mp_id_pattern = re.compile('^(mp|por|mvc)-\d+$', re.IGNORECASE)
 default_mpfile_path = os.path.join(gettempdir(), 'mpfile.txt')
