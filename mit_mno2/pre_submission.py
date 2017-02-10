@@ -211,5 +211,3 @@ if __name__ == '__main__':
                                            include_cifs=False)
     mpfile = processor.get_mpfile()
     archieml = processor.get_archieml()
-
-    with open("testfile.txt",'w') as fout:fout.write(archieml)
