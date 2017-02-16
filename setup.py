@@ -17,17 +17,17 @@ setup(
     packages = [
         package_name, '{}.fake'.format(package_name),
         '{}.io'.format(package_name), '{}.webui'.format(package_name),
-        '{}.explorer'.format(package_name), '{}.pmg_utils'.format(package_name),
-        '{}.rest'.format(package_name),
+        '{}.explorer'.format(package_name), '{}.portal'.format(package_name),
+        '{}.rest'.format(package_name), '{}.builder'.format(package_name),
     ],
     install_requires = [
         'numpy', 'scipy', 'Flask', 'pandas', 'plotly==1.12.6', 'six', 'monty',
-        'matplotlib', 'pymongo', 'pyyaml', 'ipython', 'cufflinks',
+        'matplotlib', 'pymongo', 'pyyaml', 'ipython', 'cufflinks', 'nose',
         'Django>=1.8.5,<1.9', 'archieml==0.3.0', 'django-browserid', 'sphinx', 'notebook',
-        'ipywidgets', 'celery', 'tqdm', 'beautifulsoup4', 'whichcraft',
+        'ipywidgets', 'celery', 'tqdm', 'beautifulsoup4', 'whichcraft', 'pymatgen',
         'unidecode', 'psutil', 'nbformat', 'xlrd', 'django-nopassword', 'django-require'
     ],
     license = 'MIT',
-    keywords = ['materials', 'contribution', 'framework', 'data', 'interactive'],
+    keywords = ['materials', 'contribution', 'framework', 'data', 'interactive', 'jupyter'],
     scripts = glob.glob(os.path.join(SETUP_PTH, "scripts", "*")),
 )
