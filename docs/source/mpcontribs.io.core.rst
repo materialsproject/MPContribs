@@ -4,6 +4,14 @@ mpcontribs.io.core package
 Submodules
 ----------
 
+mpcontribs.io.core.components module
+------------------------------------
+
+.. automodule:: mpcontribs.io.core.components
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 mpcontribs.io.core.mpfile module
 --------------------------------
 

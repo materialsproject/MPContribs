@@ -15,7 +15,8 @@ MPContribs Development
 
 * Release::
 
-     python setup.py build_sphinx
+     sphinx-apidoc -f -o docs/source . manage.py setup.py mpcontribs/urls.py
+     python setup.py build_sphinx # builds html in docs/build using docs/Makefile
      changes -p mpcontribs changelog
      changes -p mpcontribs build
      changes -p mpcontribs install

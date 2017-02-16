@@ -28,6 +28,14 @@ mpcontribs.users.atn.post_submission module
     :undoc-members:
     :show-inheritance:
 
+mpcontribs.users.atn.pre_submission module
+------------------------------------------
+
+.. automodule:: mpcontribs.users.atn.pre_submission
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 mpcontribs.users.atn.translate_PyPt module
 ------------------------------------------
 

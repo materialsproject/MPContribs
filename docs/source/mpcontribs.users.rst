@@ -6,6 +6,7 @@ Subpackages
 
 .. toctree::
 
+    mpcontribs.users.MnO2_phase_selection
     mpcontribs.users.atn
     mpcontribs.users.uw_si2
 

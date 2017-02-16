@@ -1,11 +1,11 @@
 webtzite package
-==================
+================
 
 Submodules
 ----------
 
 webtzite.admin module
------------------------
+---------------------
 
 .. automodule:: webtzite.admin
     :members:
@@ -13,15 +13,23 @@ webtzite.admin module
     :show-inheritance:
 
 webtzite.backends module
---------------------------
+------------------------
 
 .. automodule:: webtzite.backends
     :members:
     :undoc-members:
     :show-inheritance:
 
+webtzite.configure_settings module
+----------------------------------
+
+.. automodule:: webtzite.configure_settings
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 webtzite.connector module
----------------------------
+-------------------------
 
 .. automodule:: webtzite.connector
     :members:
@@ -29,7 +37,7 @@ webtzite.connector module
     :show-inheritance:
 
 webtzite.middleware module
-----------------------------
+--------------------------
 
 .. automodule:: webtzite.middleware
     :members:
@@ -37,7 +45,7 @@ webtzite.middleware module
     :show-inheritance:
 
 webtzite.models module
-------------------------
+----------------------
 
 .. automodule:: webtzite.models
     :members:
@@ -45,7 +53,7 @@ webtzite.models module
     :show-inheritance:
 
 webtzite.rester module
-------------------------
+----------------------
 
 .. automodule:: webtzite.rester
     :members:
@@ -53,7 +61,7 @@ webtzite.rester module
     :show-inheritance:
 
 webtzite.urls module
-----------------------
+--------------------
 
 .. automodule:: webtzite.urls
     :members:
@@ -61,7 +69,7 @@ webtzite.urls module
     :show-inheritance:
 
 webtzite.views module
------------------------
+---------------------
 
 .. automodule:: webtzite.views
     :members:

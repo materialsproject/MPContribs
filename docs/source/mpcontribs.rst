@@ -6,24 +6,18 @@ Subpackages
 
 .. toctree::
 
+    mpcontribs.builder
     mpcontribs.explorer
     mpcontribs.fake
     mpcontribs.io
     mpcontribs.pmg_utils
+    mpcontribs.portal
     mpcontribs.rest
     mpcontribs.users
     mpcontribs.webui
 
 Submodules
 ----------
-
-mpcontribs.builders module
---------------------------
-
-.. automodule:: mpcontribs.builders
-    :members:
-    :undoc-members:
-    :show-inheritance:
 
 mpcontribs.config module
 ------------------------
