@@ -56,8 +56,9 @@ class MnO2PhaseFormationEnergies():
             for i, phase in enumerate(fdat):
                 c = Composition(phase[0])
                 for hstate in hull_states:
-                    if phase_names[framework] == hstate['phase'] and c.almost_equals(Composition.from_dict(hstate['c'])) and len(
-                            mp_contrib_phases[framework][i]) < 6:
+                    if phase_names[framework] == hstate['phase'] and \
+                            c.almost_equals(Composition.from_dict(hstate['c'])) and \
+                            len(mp_contrib_phases[framework][i]) < 6:
                         mp_contrib_phases[framework][i].append(hstate['path'])
                         mp_contrib_phases[framework][i].append(hstate['s'])
 
@@ -87,79 +88,68 @@ class MnO2PhaseFormationEnergies():
         for framework, fdat in mp_contrib_phases.items():
             for phase in fdat:
                 s = Structure.from_dict(phase[5])
-                cif_str = CifWriter(s, symprec=1e-3).__str__()
+                cif_str = CifWriter(s, symprec=1e-3).__str__() # TODO keep CIF object
+                d = {"info": {
+                    "phase": framework, "Formula": phase[0], "dHf (eV/mol)": phase[1],
+                    "dHh (eV/mol)": phase[3], "Ground state?": phase[2], "Structure CIF": cif_str
+                }}
                 if len(phase[6]) == 0:
-                    no_id_dict[phase[4].replace('all_states/', '')] = {"info": {"phase": framework,
-                                                                                "Formula": phase[0],
-                                                                                "dHf (eV/mol)": phase[1],
-                                                                                "dHh (eV/moL)": phase[3],
-                                                                                "Ground state?": phase[2],
-                                                                                "Structure CIF": cif_str}}
-                for id in phase[6]:
-                    mp_contrib_dict[id] = {"info": {"phase": framework,
-                                                    "Formula": phase[0],
-                                                    "dHf (eV/mol)": phase[1],
-                                                    "dHh (eV/moL)": phase[3],
-                                                    "Ground state?": phase[2],
-                                                    "Structure CIF": cif_str}}
+                    no_id_dict[phase[4].replace('all_states/', '')] = d
+                for mpid in phase[6]:
+                    mp_contrib_dict[mpid] = d
 
         ################################################################################################################
         # Add some unique structures (special cases)
         ################################################################################################################
 
-        s_LiMnO2, s_Na05MnO2, s_KMnO2, s_Ca05MnO2 = None, None, None, None
+        s_special = {'LiMnO2': None, 'Na05MnO2': None, 'KMnO2': None, 'Ca05MnO2': None}
         for hstate in hull_states:
             if 'other' == hstate['phase']:
-                if Composition.from_dict(hstate['c']).almost_equals(Composition("LiMnO2")):
-                    s_LiMnO2 = CifWriter(Structure.from_dict(hstate['s']), symprec=1e-3).__str__()
-                elif Composition.from_dict(hstate['c']).almost_equals(Composition("Na0.5MnO2")):
-                    s_Na05MnO2 = CifWriter(Structure.from_dict(hstate['s']), symprec=1e-3).__str__()
-                elif Composition.from_dict(hstate['c']).almost_equals(Composition("KMnO2")):
-                    s_KMnO2 = CifWriter(Structure.from_dict(hstate['s']), symprec=1e-3).__str__()
-                elif Composition.from_dict(hstate['c']).almost_equals(Composition("Ca0.5MnO2")):
-                    s_Ca05MnO2 = CifWriter(Structure.from_dict(hstate['s']), symprec=1e-3).__str__()
+                c = Composition.from_dict(hstate['c'])
+                s = Structure.from_dict(hstate['s'])
+                cif_str = CifWriter(s, symprec=1e-3).__str__() # TODO keep CIF object
+                for k in s_special:
+                    if c.almost_equals(Composition(k)):
+                        s_special[k] = cif_str
+                        break
 
-        if s_LiMnO2 == None or s_Na05MnO2 == None or s_KMnO2 == None or s_Ca05MnO2 == None:
-            raise ValueError("Missing structures")
+        #for k, v in s_special.items():
+        #    if v is None:
+        #        raise ValueError("Missing structure:", k)
 
         # LiMnO2
-        mp_contrib_dict['mp-18767'] = {"info": {"phase": 'o-LiMnO2',
-                                                "Formula": 'LiMnO2',
-                                                "dHf (eV/mol)": -3.064,
-                                                "dHh (eV/moL)": '--',
-                                                "Ground state?": 'Y',
-                                                "Structure CIF": s_LiMnO2}}
+        mp_contrib_dict['mp-18767'] = {"info": {
+            "phase": 'o-LiMnO2', "Formula": 'LiMnO2',
+            "dHf (eV/mol)": -3.064, "dHh (eV/mol)": '--', "Ground state?": 'Y',
+            "Structure CIF": s_special['LiMnO2']
+        }}
 
         # Na0.5MnO2
-        no_id_dict['postspinel'] = {"info": {"phase": 'postspinel-NaMn2O4',
-                                             "Formula": 'Na0.5MnO2',
-                                             "dHf (eV/mol)": -1.415,
-                                             "dHh (eV/moL)": '--',
-                                             "Ground state?": 'Y',
-                                             "Structure CIF": s_Na05MnO2}}
+        no_id_dict['postspinel'] = {"info": {
+            "phase": 'postspinel-NaMn2O4', "Formula": 'Na0.5MnO2',
+            "dHf (eV/mol)": -1.415, "dHh (eV/mol)": '--', "Ground state?": 'Y',
+            "Structure CIF": s_special['Na05MnO2']
+        }}
 
         # KMnO2
-        mp_contrib_dict['mp-566638'] = {"info": {"phase": 'KMnO2',
-                                                 "Formula": 'KMnO2',
-                                                 "dHf (eV/mol)": -2.222,
-                                                 "dHh (eV/moL)": '--',
-                                                 "Ground state?": 'Y',
-                                                 "Structure CIF": s_KMnO2}}
+        mp_contrib_dict['mp-566638'] = {"info": {
+            "phase": 'KMnO2', "Formula": 'KMnO2',
+            "dHf (eV/mol)": -2.222, "dHh (eV/mol)": '--', "Ground state?": 'Y',
+            "Structure CIF": s_special['KMnO2']
+        }}
 
         # Ca0.5MnO2
-        mp_contrib_dict['mvc-12108'] = {"info": {"phase": 'marokite-CaMn2O4',
-                                                 "Formula": 'Ca0.5MnO2',
-                                                 "dHf (eV/mol)": -2.941,
-                                                 "dHh (eV/moL)": '--',
-                                                 "Ground state?": 'Y',
-                                                 "Structure CIF": s_Ca05MnO2}}
+        mp_contrib_dict['mvc-12108'] = {"info": {
+            "phase": 'marokite-CaMn2O4', "Formula": 'Ca0.5MnO2',
+            "dHf (eV/mol)": -2.941, "dHh (eV/mol)": '--', "Ground state?": 'Y',
+            "Structure CIF": s_special['Ca05MnO2']
+        }}
 
-        mp_contrib_dict['mvc-11565'] = {"info": {"phase": 'marokite-CaMn2O4',
-                                                 "Formula": 'Ca0.5MnO2',
-                                                 "dHf (eV/mol)": -2.941,
-                                                 "dHh (eV/moL)": '--',
-                                                 "Ground state?": 'Y',
-                                                 "Structure CIF": s_Ca05MnO2}}
+        mp_contrib_dict['mvc-11565'] = {"info": {
+            "phase": 'marokite-CaMn2O4', "Formula": 'Ca0.5MnO2',
+            "dHf (eV/mol)": -2.941, "dHh (eV/mol)": '--', "Ground state?": 'Y',
+            "Structure CIF": s_special['Ca05MnO2']
+        }}
 
         self.archieml = self._convert_to_archieml(mp_contrib_dict, include_cifs)
         self.mpfile = MPFile.from_string(self.archieml)
@@ -188,11 +178,11 @@ class MnO2PhaseFormationEnergies():
             mp_contrib_string += 'Formula: ' + mp_contrib_dict[mpid]['info']['Formula'] + '\n'
             mp_contrib_string += 'dHf(eV/mol): ' + '{0:.3f}'.format(
                 mp_contrib_dict[mpid]['info']['dHf (eV/mol)']) + '\n'
-            if type(mp_contrib_dict[mpid]['info']['dHh (eV/moL)']) == float:
+            if type(mp_contrib_dict[mpid]['info']['dHh (eV/mol)']) == float:
                 mp_contrib_string += 'dHh(eV/mol): ' + '{0:.3f}'.format(
-                    mp_contrib_dict[mpid]['info']['dHh (eV/moL)']) + '\n'
+                    mp_contrib_dict[mpid]['info']['dHh (eV/mol)']) + '\n'
             else:
-                mp_contrib_string += 'dHh(eV/mol): ' + mp_contrib_dict[mpid]['info']['dHh (eV/moL)'] + '\n'
+                mp_contrib_string += 'dHh(eV/mol): ' + mp_contrib_dict[mpid]['info']['dHh (eV/mol)'] + '\n'
             mp_contrib_string += 'GS: ' + mp_contrib_dict[mpid]['info']['Ground state?'] + '\n'
             ############################################################################################################
             # If we're including CIFs, replace new lines with escape/newline ('\n' --> '\\n') so ArchieML doesnt freak
