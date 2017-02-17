@@ -1,6 +1,6 @@
 import warnings, pandas, numpy, six
 from StringIO import StringIO
-from mpcontribs.pmg_utils.composition import Composition
+from pymatgen.core.composition import Composition
 from mpcontribs.config import mp_level01_titles, mp_id_pattern, csv_comment_char
 from recdict import RecursiveDict
 from IPython.display import display, Javascript
