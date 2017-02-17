@@ -10,7 +10,6 @@ Subpackages
     mpcontribs.explorer
     mpcontribs.fake
     mpcontribs.io
-    mpcontribs.pmg_utils
     mpcontribs.portal
     mpcontribs.rest
     mpcontribs.users
