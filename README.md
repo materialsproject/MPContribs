@@ -62,6 +62,7 @@ and @lbl.gov address).
     git checkout -b mpcontribs origin/mpcontribs
     docker build --no-cache -t materialsproject/jupyterhub-singleuser-mpcontribs .
     # use --build-arg deployment=LOCALHOST for non-matgen build
+    # docker push materialsproject/jupyterhub-singleuser-mpcontribs
     ```
 
 - run JupyterHub:
@@ -94,7 +95,7 @@ git pull
 /usr/local/mpcontribs_jupyterhub
 source bin/activate
 /usr/local/mpcontribs_jupyterhub/MPContribs
-docker pull
+docker pull materialsproject/jupyterhub-singleuser-mpcontribs
 screen -r
 ```
 
