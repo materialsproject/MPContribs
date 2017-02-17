@@ -15,37 +15,10 @@ class MnO2PhaseFormationEnergies():
     def get_mpfile(self):
         return self.mpfile
 
-    def get_archieml(self):
-        return self.archieml
-
     def _compile_data(self, mp_contrib_phases, hull_states, mp_dup, mp_cmp, include_cifs = False):
-        phase_names = {'Pyrolusite': 'beta',
-                       'Intergrowth': 'gamma',
-                       'Ramsdellite': 'ramsdellite',
-                       'Hollandite': 'alpha',
-                       'Spinel': 'lambda',
-                       'Layered': 'delta',
-                       'Other': 'other'}
 
-        mp_contrib_dict = {
-            "Title": "Framework stabilization in MnO2-derived phases by alkali intercalation and hydration",
-            "Authors": "Daniil Kitchaev, Stephen Dacek, Wenhao Sun, Gerbrand Ceder",
-            "Reference": "tdb",
-            "Methods": {"DFT approach": "SCAN-metaGGA using PAW.52 pseudopotentials in VASP 5.3.5",
-                        "Convergence": "2 * 10^-7 eV/atom on energy; 0.02 A^-1 forces on all atoms",
-                        "K-mesh": "25 A^-1 discretization",
-                        "Corrections": "0.337 eV/e correction on Mn oxidation applied based on fit" + \
-                                       " to oxide formation energy"},
-            "Data": {
-                "Phases": "The phases are referred to by their mineral names, namely Pyrolusite (beta)," + \
-                          " Intergrowth (gamma), Ramsdellite (R), Hollandite (alpha), Spinel (lambda), " + \
-                          "Layered or birnessite (delta)",
-                "dHf": "Formation enthalpy with respect to pyrolusite (beta) MnO2 and standard state " + \
-                       "references for H2, Li, Na, K, Mg, Ca (eV/mol MnO2)",
-                "dHh": "Enthalpy of hydration with respect to the unhydrated phase and liquid water at " + \
-                       "standard state (eV/mol MnO2)",
-                "AxMnO2 ground state": "Is this phase stable versus the AxMnO2 composition line. Y* denotes" + \
-                                       " that the phase is only stable in the hydrated configuration."}}
+        self.mpfile = MPFile.from_file('data/mpfile_init.txt')
+        phase_names = self.mpfile.hdata.general['data']['phase_names']
 
         ################################################################################################################
         # Get mp-ids for all entries based on matching the VASP directory path names
@@ -87,117 +60,81 @@ class MnO2PhaseFormationEnergies():
         no_id_dict = {}
         for framework, fdat in mp_contrib_phases.items():
             for phase in fdat:
-                s = Structure.from_dict(phase[5])
-                cif_str = CifWriter(s, symprec=1e-3).__str__() # TODO keep CIF object
-                d = {"info": {
+                d = {
                     "phase": framework, "Formula": phase[0], "dHf (eV/mol)": phase[1],
-                    "dHh (eV/mol)": phase[3], "Ground state?": phase[2], "Structure CIF": cif_str
-                }}
+                    "dHh (eV/mol)": phase[3], "Ground state?": phase[2]
+                }
+                if include_cifs:
+                    s = Structure.from_dict(phase[5])
+                    cif_str = CifWriter(s, symprec=1e-3).__str__() # TODO keep CIF object
+                    d['Structure CIF'] = cif_str
                 if len(phase[6]) == 0:
                     no_id_dict[phase[4].replace('all_states/', '')] = d
                 for mpid in phase[6]:
-                    mp_contrib_dict[mpid] = d
+                    self.mpfile.add_hierarchical_data(mpid, d)
 
         ################################################################################################################
         # Add some unique structures (special cases)
         ################################################################################################################
 
-        s_special = {'LiMnO2': None, 'Na05MnO2': None, 'KMnO2': None, 'Ca05MnO2': None}
-        for hstate in hull_states:
-            if 'other' == hstate['phase']:
-                c = Composition.from_dict(hstate['c'])
-                s = Structure.from_dict(hstate['s'])
-                cif_str = CifWriter(s, symprec=1e-3).__str__() # TODO keep CIF object
-                for k in s_special:
-                    if c.almost_equals(Composition(k)):
-                        s_special[k] = cif_str
-                        break
+        s_special = { # TODO include in mpfile_init?
+                'LiMnO2': {
+                    "mpid": 'mp-18767', "phase": 'o-LiMnO2', "Formula": 'LiMnO2',
+                    "dHf (eV/mol)": -3.064, "dHh (eV/mol)": '--', "Ground state?": 'Y',
+                },
+                'KMnO2': {
+                    'mpid': 'mp-566638', "phase": 'KMnO2', "Formula": 'KMnO2',
+                    "dHf (eV/mol)": -2.222, "dHh (eV/mol)": '--', "Ground state?": 'Y',
+                },
+                'Ca05MnO2': {
+                    'mpid': 'mvc-12108', "phase": 'marokite-CaMn2O4', "Formula": 'Ca0.5MnO2',
+                    "dHf (eV/mol)": -2.941, "dHh (eV/mol)": '--', "Ground state?": 'Y',
+                },
+                'Na05MnO2': {'mpid': None}
+        }
 
-        #for k, v in s_special.items():
-        #    if v is None:
-        #        raise ValueError("Missing structure:", k)
+        if include_cifs:
+            for hstate in hull_states:
+                if 'other' == hstate['phase']:
+                    c = Composition.from_dict(hstate['c'])
+                    s = Structure.from_dict(hstate['s'])
+                    cif_str = CifWriter(s, symprec=1e-3).__str__() # TODO keep CIF object
+                    for k in s_special:
+                        if c.almost_equals(Composition(k)):
+                            s_special[k]['Structure CIF'] = cif_str
+                            break
 
-        # LiMnO2
-        mp_contrib_dict['mp-18767'] = {"info": {
-            "phase": 'o-LiMnO2', "Formula": 'LiMnO2',
-            "dHf (eV/mol)": -3.064, "dHh (eV/mol)": '--', "Ground state?": 'Y',
-            "Structure CIF": s_special['LiMnO2']
-        }}
+        for k in s_special:
+            if include_cifs and 'Structure CIF' not in s_special[k]:
+                raise ValueError("Missing structure:", k)
+            mpid = s_special[k].pop('mpid')
+            if mpid is not None:
+                self.mpfile.add_hierarchical_data(mpid, s_special[k])
+
+        # Ca0.5MnO2 -- why does this happen? Same structure, two mp-ids. TODO
+        #mp_contrib_dict['mvc-11565'] = {"info": {
+        #    "phase": 'marokite-CaMn2O4', "Formula": 'Ca0.5MnO2',
+        #    "dHf (eV/mol)": -2.941, "dHh (eV/mol)": '--', "Ground state?": 'Y',
+        #    "Structure CIF": s_special['Ca05MnO2']
+        #}}
 
         # Na0.5MnO2
-        no_id_dict['postspinel'] = {"info": {
+        no_id_dict['postspinel'] = {
             "phase": 'postspinel-NaMn2O4', "Formula": 'Na0.5MnO2',
             "dHf (eV/mol)": -1.415, "dHh (eV/mol)": '--', "Ground state?": 'Y',
-            "Structure CIF": s_special['Na05MnO2']
-        }}
-
-        # KMnO2
-        mp_contrib_dict['mp-566638'] = {"info": {
-            "phase": 'KMnO2', "Formula": 'KMnO2',
-            "dHf (eV/mol)": -2.222, "dHh (eV/mol)": '--', "Ground state?": 'Y',
-            "Structure CIF": s_special['KMnO2']
-        }}
-
-        # Ca0.5MnO2
-        mp_contrib_dict['mvc-12108'] = {"info": {
-            "phase": 'marokite-CaMn2O4', "Formula": 'Ca0.5MnO2',
-            "dHf (eV/mol)": -2.941, "dHh (eV/mol)": '--', "Ground state?": 'Y',
-            "Structure CIF": s_special['Ca05MnO2']
-        }}
-
-        mp_contrib_dict['mvc-11565'] = {"info": {
-            "phase": 'marokite-CaMn2O4', "Formula": 'Ca0.5MnO2',
-            "dHf (eV/mol)": -2.941, "dHh (eV/mol)": '--', "Ground state?": 'Y',
-            "Structure CIF": s_special['Ca05MnO2']
-        }}
-
-        self.archieml = self._convert_to_archieml(mp_contrib_dict, include_cifs)
-        self.mpfile = MPFile.from_string(self.archieml)
+        }
+        if include_cifs:
+            no_id_dict['postspinel']["Structure CIF"] = s_special['Na05MnO2']["Structure CIF"]
 
 
-    def _convert_to_archieml(self, mp_contrib_dict, include_cifs):
-        mp_contrib_string = ''
-        mp_contrib_string += 'Title: ' + mp_contrib_dict['Title'] + '\n'
-        mp_contrib_string += 'Authors: ' + mp_contrib_dict['Authors'] + '\n'
-        mp_contrib_string += 'Reference: ' + mp_contrib_dict['Reference'] + '\n\n'
-        mp_contrib_string += '{Methods}\n'
-        mp_contrib_string += 'DFT:' + mp_contrib_dict['Methods']['DFT approach'] + '\n'
-        mp_contrib_string += 'Convergence:' + mp_contrib_dict['Methods']['Convergence'] + '\n'
-        mp_contrib_string += 'K-mesh' + mp_contrib_dict['Methods']['K-mesh'] + '\n'
-        mp_contrib_string += 'Corrections' + mp_contrib_dict['Methods']['Corrections'] + '\n\n'
-        mp_contrib_string += '{Data}\n'
-        mp_contrib_string += 'Phases:' + mp_contrib_dict['Data']['Phases'] + '\n'
-        mp_contrib_string += 'dHf:' + mp_contrib_dict['Data']['dHf'] + '\n'
-        mp_contrib_string += 'dHh:' + mp_contrib_dict['Data']['dHh'] + '\n'
-        mp_contrib_string += 'GS:' + mp_contrib_dict['Data']['AxMnO2 ground state'] + '\n\n'
-
-        for mpid in mp_contrib_dict.keys():
-            if 'mp' not in mpid and 'mvc' not in mpid: continue
-            mp_contrib_string += '{' + mpid + '.info}\n'
-            mp_contrib_string += 'Phase: ' + mp_contrib_dict[mpid]['info']['phase'] + '\n'
-            mp_contrib_string += 'Formula: ' + mp_contrib_dict[mpid]['info']['Formula'] + '\n'
-            mp_contrib_string += 'dHf(eV/mol): ' + '{0:.3f}'.format(
-                mp_contrib_dict[mpid]['info']['dHf (eV/mol)']) + '\n'
-            if type(mp_contrib_dict[mpid]['info']['dHh (eV/mol)']) == float:
-                mp_contrib_string += 'dHh(eV/mol): ' + '{0:.3f}'.format(
-                    mp_contrib_dict[mpid]['info']['dHh (eV/mol)']) + '\n'
-            else:
-                mp_contrib_string += 'dHh(eV/mol): ' + mp_contrib_dict[mpid]['info']['dHh (eV/mol)'] + '\n'
-            mp_contrib_string += 'GS: ' + mp_contrib_dict[mpid]['info']['Ground state?'] + '\n'
-            ############################################################################################################
-            # If we're including CIFs, replace new lines with escape/newline ('\n' --> '\\n') so ArchieML doesnt freak
-            # out. Has to be undone when generating a valid cif file.
-            ############################################################################################################
-            if include_cifs:
-                mp_contrib_string += 'CIF: ' + mp_contrib_dict[mpid]['info']['Structure CIF'].replace('\n','\\n') + '\n'
-
-        return mp_contrib_string
-
-if __name__ == '__main__':
+def run():
     processor = MnO2PhaseFormationEnergies(formatted_entries='data/MPContrib_formatted_entries.json',
                                            hull_entries='data/MPContrib_hull_entries.json',
                                            mpid_existing='data/MPExisting_MnO2_ids.json',
                                            mpid_new='data/MPComplete_MnO2_ids.json',
                                            include_cifs=False)
-    mpfile = processor.get_mpfile()
-    archieml = processor.get_archieml()
+    return processor.get_mpfile()
+
+
+if __name__ == '__main__':
+    print run()
