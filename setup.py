@@ -22,7 +22,7 @@ setup(
     ],
     install_requires = [
         'numpy', 'scipy', 'Flask', 'pandas', 'plotly==1.12.6', 'six', 'monty',
-        'matplotlib', 'pymongo', 'pyyaml', 'ipython', 'cufflinks', 'nose',
+        'matplotlib', 'pymongo', 'pyyaml', 'ipython', 'cufflinks', 'nose', 'pybtex',
         'Django>=1.8.5,<1.9', 'archieml==0.3.0', 'django-browserid', 'sphinx', 'notebook',
         'ipywidgets', 'celery', 'tqdm', 'beautifulsoup4', 'whichcraft', 'pymatgen',
         'unidecode', 'psutil', 'nbformat', 'xlrd', 'django-nopassword', 'django-require'
