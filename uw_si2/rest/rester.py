@@ -13,12 +13,6 @@ class UWSI2Rester(MPContribsRester):
     ), 'r').read())
 
     def get_uwsi2_contributions(self):
-        """
-        - [<host(pretty-formula)>] <mp_cat_id-linked-to-materials-details-page> <cid-linked-to-contribution-details-page>
-            |- <solute> <D0-value> <Q-value> <toggle-in-graph>
-            |- ...
-        - ...
-        """
         data = []
         for doc in self.query_contributions(
             criteria={
