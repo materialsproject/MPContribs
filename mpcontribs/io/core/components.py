@@ -32,8 +32,10 @@ class HierarchicalData(RecursiveDict):
         return 'mp-ids: {}'.format(' '.join(self.keys()))
 
     def _ipython_display_(self):
+        display_html('<h2>Hierarchical Data</h2>', raw=True)
         for identifier, hdata in self.iteritems():
-            display_html('<h2>Hierarchical Data for {}</h2>'.format(identifier), raw=True)
+            if identifier != mp_level01_titles[0]:
+                display_html('<h3>{}</h3>'.format(identifier), raw=True)
             display_html(hdata)
 
 def get_backgrid_table(df):
