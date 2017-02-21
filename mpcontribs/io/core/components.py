@@ -24,6 +24,10 @@ class HierarchicalData(RecursiveDict):
             for identifier, content in document.iteritems()
         )
 
+    @property
+    def general(self):
+        return self[mp_level01_titles[0]]
+
     def __str__(self):
         return 'mp-ids: {}'.format(' '.join(self.keys()))
 

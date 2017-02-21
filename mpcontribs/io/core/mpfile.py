@@ -160,6 +160,9 @@ class MPFileCore(six.with_metaclass(ABCMeta, object)):
             pandas_to_dict(dataframe), [identifier, name]
         ))
 
+    def add_hierarchical_data(self, identifier, dct):
+        self.document.rec_update(nest_dict(dct, [identifier]))
+
     def __repr__(self): return self.get_string()
     def __str__(self): return self.get_string()
 
