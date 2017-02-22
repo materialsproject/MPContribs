@@ -4,6 +4,7 @@ from collections import OrderedDict as _OrderedDict
 from collections import Mapping as _Mapping
 from mpcontribs.config import mp_level01_titles
 from IPython.display import display_javascript, display_html
+from pymatgen import Structure
 
 class RecursiveDict(_OrderedDict):
     """extension of dict for internal representation of MPFile"""
@@ -29,6 +30,9 @@ class RecursiveDict(_OrderedDict):
         self.table = None
         for key,value in d.iteritems():
             if isinstance(value, _Mapping):
+                if '@class' in value and value['@class'] == 'Structure':
+                    yield key, Structure.from_dict(value)
+                    continue
                 yield (self.level, key), None
                 self.level += 1
                 iterator = self.iterate(nested_dict=value)

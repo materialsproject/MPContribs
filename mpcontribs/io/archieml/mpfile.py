@@ -1,5 +1,7 @@
 from __future__ import unicode_literals, print_function
-import six, archieml, warnings, pandas
+import six, archieml, warnings, pandas, textwrap
+from pymatgen import Structure
+from pymatgen.io.cif import CifWriter, CifParser
 from mpcontribs.config import mp_level01_titles
 from ..core.mpfile import MPFileCore
 from ..core.recdict import RecursiveDict
@@ -63,6 +65,15 @@ class MPFile(MPFileCore):
                             plots_dict[mp_level01_titles[2]]
                           )
                           recdict[root_key].insert_before(k, kv)
+                # convert CIF strings into pymatgen structures
+                if mp_level01_titles[3] in recdict[root_key]:
+                    for name in recdict[root_key][mp_level01_titles[3]].keys():
+                        cif = recdict[root_key][mp_level01_titles[3]].pop(name)
+                        parser = CifParser.from_string(cif)
+                        structure = parser.get_structures()[0]
+                        recdict[root_key][mp_level01_titles[3]].rec_update(nest_dict(
+                            structure.as_dict(), [name]
+                        ))
         return MPFile.from_dict(recdict)
 
     def get_string(self):
@@ -79,6 +90,11 @@ class MPFile(MPFileCore):
                     index=False, header=header, float_format='%g'
                 )[:-1]
                 lines += csv_string.split('\n')
+            elif isinstance(value, Structure):
+                cif = CifWriter(value).__str__()
+                lines.append(make_pair(
+                    ''.join([replacements.get(c, c) for c in key]), cif+':end'
+                ))
             else:
                 level, key = key
                 # truncate scope

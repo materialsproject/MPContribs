@@ -15,7 +15,7 @@ mp_categories = {
         'lexify', '??'
     ], # chem. system, e.g. AB
 }
-mp_level01_titles = [ 'hdata', 'tdata', 'gdata' ]
+mp_level01_titles = [ '_hdata', '_tdata', '_gdata', '_structures' ]
 csv_comment_char = '#'
 csv_database = os.path.join(
   os.path.dirname(os.path.realpath(__file__)),
