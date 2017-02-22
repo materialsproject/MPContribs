@@ -6,6 +6,7 @@ from recdict import RecursiveDict
 from utils import pandas_to_dict, nest_dict
 from components import HierarchicalData, TabularData, GraphicalData
 from IPython.display import display_html
+from pymatgen import Structure, MPRester
 
 class MPFileCore(six.with_metaclass(ABCMeta, object)):
     """Abstract Base Class for representing a MP Contribution File"""
@@ -162,6 +163,46 @@ class MPFileCore(six.with_metaclass(ABCMeta, object)):
 
     def add_hierarchical_data(self, identifier, dct):
         self.document.rec_update(nest_dict(dct, [identifier]))
+
+    def add_structure(self, source, name=None, identifier=None, fmt=None):
+        """add a structure to the mpfile"""
+        if isinstance(source, Structure):
+            structure = source
+        elif isinstance(source, dict):
+            structure = Structure.from_dict(source)
+        elif os.path.exists(source):
+            structure = Structure.from_file(source)
+        elif isinstance(source, six.string_types):
+            if fmt is None:
+                raise ValueError('Need fmt to get structure from string!')
+            structure = Structure.from_str(source, fmt)
+        else:
+            raise ValueError(source, 'not supported!')
+
+        mpr = MPRester()
+        if not mpr.api_key:
+            raise ValueError(
+                'API key not set. Run `pmg config --add PMG_MAPI_KEY <USER_API_KEY>`.'
+            )
+        matched_mpids = mpr.find_structure(structure)
+        if not matched_mpids:
+            raise ValueError(
+                'Structure not found in MP. Please submit via MPComplete to obtain mp-id!'
+            )
+        elif identifier is None:
+            identifier = matched_mpids[0]
+            if len(matched_mpids) > 1:
+                print('Multiple matching structures found in MP. Using', identifier)
+        elif identifier not in matched_mpids:
+            raise ValueError('Structure does not match {} but instead {}'.format(
+                identifier, matched_mpids
+            ))
+
+        idx = len(self.document.get(identifier, {}).get(mp_level01_titles[3], {}))
+        sub_key = 's{}'.format(idx) if name is None else name
+        self.document.rec_update(nest_dict(
+            structure.as_dict(), [identifier, mp_level01_titles[3], sub_key]
+        ))
 
     def __repr__(self): return self.get_string()
     def __str__(self): return self.get_string()
