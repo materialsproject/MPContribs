@@ -64,14 +64,16 @@ class MnO2PhaseFormationEnergies():
                     "phase": framework, "Formula": phase[0], "dHf (eV/mol)": phase[1],
                     "dHh (eV/mol)": phase[3], "Ground state?": phase[2]
                 }
-                if include_cifs:
-                    s = Structure.from_dict(phase[5])
-                    cif_str = CifWriter(s, symprec=1e-3).__str__() # TODO keep CIF object
-                    d['Structure CIF'] = cif_str
                 if len(phase[6]) == 0:
                     no_id_dict[phase[4].replace('all_states/', '')] = d
                 for mpid in phase[6]:
                     self.mpfile.add_hierarchical_data(mpid, d)
+                    if include_cifs:
+                        try:
+                            self.mpfile.add_structure(phase[5], identifier=mpid)
+                            print framework, phase[0], 'added to', mpid
+                        except ValueError as ex:
+                            print 'tried to add structure to', mpid, 'but', str(ex)
 
         ################################################################################################################
         # Add some unique structures (special cases)
@@ -90,7 +92,7 @@ class MnO2PhaseFormationEnergies():
                     'mpid': 'mvc-12108', "phase": 'marokite-CaMn2O4', "Formula": 'Ca0.5MnO2',
                     "dHf (eV/mol)": -2.941, "dHh (eV/mol)": '--', "Ground state?": 'Y',
                 },
-                'Na05MnO2': {'mpid': None}
+                #'Na05MnO2': {'mpid': None}
         }
 
         if include_cifs:
@@ -98,33 +100,41 @@ class MnO2PhaseFormationEnergies():
                 if 'other' == hstate['phase']:
                     c = Composition.from_dict(hstate['c'])
                     s = Structure.from_dict(hstate['s'])
-                    cif_str = CifWriter(s, symprec=1e-3).__str__() # TODO keep CIF object
                     for k in s_special:
                         if c.almost_equals(Composition(k)):
-                            s_special[k]['Structure CIF'] = cif_str
+                            s_special[k]['Structure'] = s
                             break
 
         for k in s_special:
-            if include_cifs and 'Structure CIF' not in s_special[k]:
-                raise ValueError("Missing structure:", k)
+            if include_cifs and 'Structure' not in s_special[k]:
+                print "Missing structure for", k
+                continue
             mpid = s_special[k].pop('mpid')
             if mpid is not None:
+                if include_cifs:
+                    struc = s_special[k].pop('Structure')
                 self.mpfile.add_hierarchical_data(mpid, s_special[k])
+                if include_cifs:
+                    try:
+                        self.mpfile.add_structure(struc, identifier=mpid)
+                        print k, 'added to', mpid
+                    except ValueError as ex:
+                        print 'tried to add structure to', mpid, 'but', str(ex)
 
         # Ca0.5MnO2 -- why does this happen? Same structure, two mp-ids. TODO
         #mp_contrib_dict['mvc-11565'] = {"info": {
         #    "phase": 'marokite-CaMn2O4', "Formula": 'Ca0.5MnO2',
         #    "dHf (eV/mol)": -2.941, "dHh (eV/mol)": '--', "Ground state?": 'Y',
-        #    "Structure CIF": s_special['Ca05MnO2']
+        #    "Structure": s_special['Ca05MnO2']
         #}}
 
         # Na0.5MnO2
-        no_id_dict['postspinel'] = {
-            "phase": 'postspinel-NaMn2O4', "Formula": 'Na0.5MnO2',
-            "dHf (eV/mol)": -1.415, "dHh (eV/mol)": '--', "Ground state?": 'Y',
-        }
-        if include_cifs:
-            no_id_dict['postspinel']["Structure CIF"] = s_special['Na05MnO2']["Structure CIF"]
+        #no_id_dict['postspinel'] = {
+        #    "phase": 'postspinel-NaMn2O4', "Formula": 'Na0.5MnO2',
+        #    "dHf (eV/mol)": -1.415, "dHh (eV/mol)": '--', "Ground state?": 'Y',
+        #}
+        #if include_cifs:
+        #    no_id_dict['postspinel']["Structure"] = s_special['Na05MnO2']["Structure"]
 
 
 def run():
@@ -132,7 +142,7 @@ def run():
                                            hull_entries='data/MPContrib_hull_entries.json',
                                            mpid_existing='data/MPExisting_MnO2_ids.json',
                                            mpid_new='data/MPComplete_MnO2_ids.json',
-                                           include_cifs=False)
+                                           include_cifs=True)
     return processor.get_mpfile()
 
 
