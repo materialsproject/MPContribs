@@ -122,8 +122,12 @@ class MPFile(MPFileCore):
                     lines.append(start+'.'.join(scope_corr)+end)
                 # insert key-value line
                 if value is not None:
+                    value_lines = textwrap.wrap(value)
+                    if len(value_lines) > 1:
+                        value_lines = [''] + value_lines + [':end']
                     lines.append(make_pair(
-                        ''.join([replacements.get(c, c) for c in key]), value
+                        ''.join([replacements.get(c, c) for c in key]),
+                        '\n'.join(value_lines)
                     ))
         return '\n'.join(lines) + '\n'
 
