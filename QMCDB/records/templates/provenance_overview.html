@@ -1,0 +1,57 @@
+{% load staticfiles %}
+<script src="{% static "bower_components/clipboard/dist/clipboard.min.js" %}"></script>
+<script>
+(function(){
+    new Clipboard('.btn');
+})();
+</script>
+<table class="table table-striped">
+	{% for rec in attributes.provenance|dictsort:"nfu" %}
+	<tbody>
+		<tr>
+			<td><h3>Formula Units<h3></td>
+			<td><h3>{{rec.nfu}}<h3></td>
+		</tr>
+		<tr>
+			<td><h4>QWalk Parameters<h4></td>
+			<td></td>
+		</tr>
+		<tr>
+			<td>Wave Function Form</td>
+			<td>{{rec.form}}</td>
+		</tr>
+		<tr>
+			<td>Jastrow Type</td>
+			<td>{{rec.jastrow}}</td>
+		</tr>
+		<tr>
+			<td>K-Point Values</td>
+			<td>{{rec.kpt_values}}</td>
+		</tr>
+		<tr>
+			<td>VMC Optimization</td>
+			<td>{{rec.optimization}}</td>
+		</tr>
+		<tr>
+			<td><h4>CRYSTAL Parameters<h4></td>
+			<td></td>
+		</tr>
+		<tr>
+			<td>Pseudopotential</td>
+			<td>{{rec.dft_source.pseudopotential}}</td>
+		</tr>
+		<tr>
+			<td>K-Mesh</td>
+			<td>{{rec.dft_source.kmesh}}</td>
+		</tr>
+		<tr>
+			<td>Basis Set</td>
+			<td><a class="btn btn-default" data-toggle="collapse" data-target="#collapse-basis"><i class="glyphicon glyphicon-plus"></i></a></td>
+		</tr>
+		<tr id="collapse-basis" class="collapse out">
+			<td id="basis-{{rec.nfu}}">{{rec.dft_source.basis}}</td>
+			<td><a class="btn btn-default" data-clipboard-target="#basis-{{rec.nfu}}"><i class="glyphicon glyphicon-copy"></i></a></td>
+		</tr>
+	</tbody>
+	{% endfor %}
+</table>

@@ -1,0 +1,78 @@
+{% load staticfiles %}
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<title>The Quantum Monte Carlo Database</title>
+		<link href="{% static "bower_components/bootstrap/dist/css/bootstrap.css" %}" rel="stylesheet">
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+		<script src="{% static "bower_components/bootstrap/dist/js/bootstrap.min.js" %}"></script>
+	</head>
+	<body>
+		<nav class="navbar navbar-inverse navbar-static-top">
+			<div class="container">
+					<div class="navbar-header">
+						<button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+							<span class="sr-only">Toggle navigation</span>
+							<span class="icon-bar"></span>
+							<span class="icon-bar"></span>
+							<span class="icon-bar"></span>
+						</button>
+						<a class="navbar-brand" href="/">QMCdb</a>
+					</div>
+				<div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+					<ul class="nav navbar-nav navbar-right">
+						<li class="dropdown">
+							<a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">About<span class="caret"></span></a>
+							<ul class="dropdown-menu">
+								<li><a href="#">Documentation</a></li>
+								<li><a href="#">Contact</a></li>
+							</ul>
+						</li>
+						<!-- <li>
+							<a href="/contribute/">Contribute</a>
+						</li>
+						<li>
+							<a href="#">Forums</a>
+						</li>
+						<li>
+							{% if user.is_authenticated %}
+							<a href="/accounts/logout/">Logout</a>
+							{% else %}
+							<a href="/accounts/login/">Login</a>
+							{% endif %}
+						 --></li>     
+					</ul>
+				</div>
+			</div>
+		</nav>
+
+		{% block content %}
+		{% endblock %}
+
+		<br></br>
+		<!-- {% if not user.is_authenticated %}
+		<div class="container">
+			<div class="row">
+				<div class="col-md-4">
+					<h3><a href = "/accounts/register/">Join.</a></h3>
+					<p>Sign up for the QMCDB project to access the database's resources and discussion forums.</p>
+				</div>
+				<div class="col-md-4">
+					<h3><a href="/contribute">Contribute.</a></h3>
+					<p>Add your QMC results to QMCDB and share your knowledge with the world.</p>
+				</div>
+				<div class="col-md-4">
+					<h3>Discuss.</h3>
+					<p>Join the forum to communicate with your peers about quantum Monte Carlo or troubleshoot QMCDB.</p>
+				</div>
+			</div>
+		</div>  
+		{% endif %}
+ -->
+	
+	</body>
+</html>
+

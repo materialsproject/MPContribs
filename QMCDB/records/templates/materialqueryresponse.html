@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="jumbotron">
+  <div class="container">
+    <h1>The Quantum Monte Carlo Database</h1>
+    {% include "materialqueryform.html" %}
+  </div>
+</div>
+<div class="container">
+	<div class="row">
+		<div class="col-md-6">
+			<div class="table-responsive">
+				<table class="table table-striped">
+					<thead>
+						<tr>
+							<th>Formula</th>
+							<th>Space Group</th>
+							<th>Total Energy (eV)</th>
+						</tr>
+					</thead>
+					<tbody>
+						{% for dct in table|dictsort:"total_energy" %}
+							<tr>
+								<td><a href="material_overview/{{ dct.material_id }}">{{dct.formula}}</td>
+								<td>{{dct.spacegroup}}</td>
+								<td>{{dct.total_energy}} +/- {{dct.total_energy_error}}</td>
+							</tr>
+						{% endfor %}
+					</tbody>
+				</table>
+			</div>
+		</div>
+</div>
+{% endblock %}

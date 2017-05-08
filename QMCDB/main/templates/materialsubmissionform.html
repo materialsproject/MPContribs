@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="jumbotron">
+  <h2 class="col-sm-offset-1">Submit a record manually.</h2>
+</div>
+{{ form.non_field_errors }}
+<form class="form-horizontal">{% csrf_token %}
+  {% for field in form %}
+    <div class="form-group">
+      <label class="control-label col-sm-offset-1 col-sm-2" for="{{ field.id_for_label }}">{{ field.label }}</label>
+      {{ field.errors }}
+      <div class=" col-md-6">
+        {{ field }}
+      </div>
+    </div>
+  {% endfor %}
+  <div class="container col-md-4 col-sm-offset-1">
+    <button type="submit" class="btn btn-block btn-primary">Submit</button>
+  </div>
+</form>
+{% endblock %}
+    

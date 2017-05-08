@@ -1,0 +1,14 @@
+<table class="table table-striped">
+	<tbody>
+		<tr>
+			<td>Total Energy</td>
+			<td>{{ attributes.infinite_limit.total_energy.value }} +/- {{ attributes.infinite_limit.total_energy.error }} eV</td>
+		</tr>	
+		{% if attributes.infinite_limit.formation_enthalpy.value != None %}
+		<tr>
+			<td>Formation Enthalpy</td>
+			<td>{{ attributes.infinite_limit.formation_enthalpy.value }} +/- {{ attributes.infinite_limit.formation_enthalpy.error }} eV</td>
+		</tr>					
+		{% endif %}
+	</tbody>
+</table>

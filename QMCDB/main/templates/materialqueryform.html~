@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+
+{% block content %}
+{{ form.non_field_errors }}
+<div class="jumbotron">
+  <div class="container">
+    <h1>The Quantum Monte Carlo Database</h1>
+    <p>Search a chemical system.</p>
+    <form>
+      <div class="form-group row">
+	{{ form.elements.errors }}
+	<div class="col-xs-4">
+	  <label for="{{ form.elements.id_for_label }}">Elements</label></br>
+	  {{ form.elements }}
+	</div>
+      </div>
+      <div class="form-group row">
+	<div class="col-xs-4">
+	  <label for="{{ form.spacegroup_number.id_for_label }}">Space Group Number</label></br>
+	  {{ form.spacegroup_number }}
+	</div>
+      </div>
+      <button type="submit" class="btn btn-primary">Search</button>
+    </form>
+  </div>
+</div>
+
+{% endblock %}
+    

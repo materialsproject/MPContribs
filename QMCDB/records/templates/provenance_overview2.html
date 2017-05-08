@@ -1,0 +1,32 @@
+<script>
+$(function () {
+	$("fu_dropdown").click( function() {
+		var fu = $(this).text()
+	})
+	}
+</script>
+
+<table class="table table-striped">
+	<thead>
+		<tr>
+			<th><h4>Formula Units</h4></th>
+			<th>
+				<div class="btn-group">
+    			<a class="btn dropdown-toggle btn-default" type="button" data-toggle="dropdown">Select Record
+    				<span class="caret"></span></a>
+    				<ul role='menu' id='fu_dropdown' class="dropdown-menu">
+    					{% for rec in attributes.provenance|dictsort:"nfu" %}
+    						<li><a class="menuitem">&emsp;{{rec.nfu}}</a></li>
+    					{% endfor %}
+    				</ul>
+				</div>
+			</th>
+		</tr>
+	</thead>
+	<tbody>
+		<tr>
+			<td>test</td>
+			<td>test</td>
+		</tr>
+	</tbody>
+</table>

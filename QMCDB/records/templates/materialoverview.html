@@ -1,0 +1,119 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<script src="https://code.highcharts.com/highcharts.js"></script>
+<script src="https://code.highcharts.com/highcharts-more.js"></script>
+<script src="https://code.highcharts.com/modules/exporting.js"></script>
+<div class="jumbotron">
+	<div class="container">
+		<h1>{{ attributes.formula }}</h1>
+	</div>
+</div>
+
+<div class="container col-md-6">
+    <h2>Visualization</h2>
+    <div style="width:100%; height:400px;">
+        {% include '3Dmodel_overview.html' %}
+    </div>
+</div>
+
+<div class="container col-md-6">
+	<h2>Publication Information</h2>
+	<div class="table-responsive">
+		{% include "publication_overview.html" %}
+	</div>
+</div>
+
+<div class="container col-md-6">
+	<h2>Structure</h2>
+	<div class="table-responsive">
+		{% include "structure_overview.html" %}
+	</div>
+</div>
+
+<script>
+$(function () {
+    var chart = Highcharts.chart('en_chart', {
+        legend: {enabled: false},
+        chart: {
+            zoomType: 'xy'
+        },
+        title: {text: ''},
+        xAxis: [{
+            title: {text: 'Number of F.U.'},
+            tickPositions: {{chart.nfu}},
+            // maxPadding: 0,
+            // minPadding: 0,
+            labels:
+                {
+                enabled: true,
+                formatter: function () {return 1/this.value}
+                },
+            min: 0,
+        }],
+        yAxis: [{ 
+            labels: {
+                format: '{value}',
+                style: {
+                    color: Highcharts.getOptions().colors[1]
+                }
+            },
+            title: {
+                text: 'DMC Total Energy (eV / F.U.)',
+                style: {
+                    color: Highcharts.getOptions().colors[1]
+                }
+            }
+        }],
+
+        tooltip: {
+            shared: true
+        },
+        series: [{
+            name: 'Total Energy',
+            type: 'scatter',
+            data: {{chart.total_energies}},
+            tooltip: {
+                valueSuffix: ' eV',
+                pointFormat: '<b>{point.y:.1f}</b>'
+            }
+        }
+        ,{
+            name: 'Total Energy Error',
+            type: 'errorbar',
+            whiskerLength: '25%',
+            data: {{chart.total_energy_errors}},
+            enableMouseTracking: false
+        }
+        // ,{
+        //     name: 'Linear Fit',
+        //     type: 'line',
+        //     marker: {enabled: false},
+        //     data: {{ chart.linear_fit }}
+        // }
+        ]
+    });
+});
+</script>
+
+<div class="container col-md-6">
+    <h2>Total Energy Plot</h2>
+    <div id="en_chart" style="width:100%; height:400px;"></div>
+</div>
+
+<div class="container col-md-6">
+    <h2>Properties</h2>
+    <div class="table-responsive">
+        {% include "infinitelimit_overview.html" %}
+    </div>
+</div>
+
+<div class="container col-md-6">
+    <h2>Provenance</h2>
+    <div class="table-responsive">
+        {% include 'provenance_overview.html' %}
+    </div>
+</div>
+
+
+{% endblock %}

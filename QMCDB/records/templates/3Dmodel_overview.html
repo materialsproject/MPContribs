@@ -1,0 +1,14 @@
+{% load staticfiles %}
+
+<link rel="stylesheet" href="{% static "ChemDoodleWeb/install/ChemDoodleWeb.css" %}" type="text/css">
+<script type="text/javascript" src="{% static "ChemDoodleWeb/install/ChemDoodleWeb.js" %}"></script>
+
+<script>
+var cif = '{{attributes.cif}}';
+var myCanvas = new ChemDoodle.TransformCanvas3D('model', 500, 500);
+myCanvas.specs.set3DRepresentation('Ball and Stick');
+var cifmodel = ChemDoodle.readCIF(cif,2,2,2);
+console.log(cifmodel);
+myCanvas.loadContent([cifmodel.molecule],[cifmodel.unitCell]);
+</script>
+<canvas id='model'></canvas>
