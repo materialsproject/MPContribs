@@ -1,11 +1,19 @@
 ## Installation
 
-- install Anaconda: https://docs.continuum.io/anaconda/install
-- create and activate environment:
+- install Anaconda: https://docs.continuum.io/anaconda/install and  
+  create and activate environment:
 
     ```bash
     conda create -n mp_jupyterhub pip jupyter
     source activate mp_jupyterhub
+    ```
+- OR use `virtualenv`:
+
+    ```bash
+    cd /var/www/python
+    mkdir mp_jupyterhub
+    virtualenv -p $(which python3) mp_jupyterhub
+    source mp_juptyerhub/bin/activate
     ```
 
 - install Docker: https://docs.docker.com/engine/installation/
@@ -43,6 +51,12 @@
     pip install oauthenticator
     ```
 
+- install `jupyter_client`:
+
+    ```bash
+    pip install jupyter_client
+    ```
+
 - build container:
 
     ```bash
@@ -77,13 +91,16 @@ cd ~/mpcontribs
 git pull
 ```
 
-## matgen8
+## matgen7 (jupyterhub.materialsproject.org)
 
 ```bash
-/usr/local/mpcontribs_jupyterhub
-source bin/activate
-/usr/local/mpcontribs_jupyterhub/MPContribs
+cd /var/www/python
+source mp_jupyterhub/bin/activate
+cd /var/www/python/matgen_dev/MPContribs
 docker pull materialsproject/jupyterhub-singleuser-mpcontribs
+screen
+cd docker/workshop-juptyerhub/run
+./run.sh
 screen -r
 ```
 
