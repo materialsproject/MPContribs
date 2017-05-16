@@ -100,8 +100,7 @@ cd /var/www/python/matgen_dev/MPContribs
 docker pull materialsproject/jupyterhub-singleuser-mpcontribs
 screen
 cd docker/workshop-juptyerhub/run
-sudo apt-get install libcap2-bin
-sudo setcap cap_net_bind_service=+ep `readlink -f \`which node\``
+# http://jupyterhub.readthedocs.io/en/latest/config-examples.html -> nginx reverse proxy
 ./run.sh
 screen -r
 ```
