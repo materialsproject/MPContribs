@@ -21,7 +21,10 @@ class MPFileCore(six.with_metaclass(ABCMeta, object)):
 
     @property
     def ids(self):
-        return self.document.keys()
+        return [
+            k for k in self.document.keys()
+            if k.lower() != mp_level01_titles[0]
+        ]
 
     @property
     def hdata(self):
