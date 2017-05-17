@@ -19,6 +19,13 @@ class MPFileCore(six.with_metaclass(ABCMeta, object)):
             raise ValueError('Need RecursiveDict or dict to init MPFile.')
         self.document.rec_update() # convert (most) OrderedDict's to RecursiveDict's
 
+    def __getitem__(self, key):
+        item = self.from_dict({key: self.document[key]})
+        general = self.document.get(mp_level01_titles[0])
+        if general:
+            item.insert_general_section(self.from_dict({mp_level01_titles[0]: general}))
+        return item
+
     @property
     def ids(self):
         return [
