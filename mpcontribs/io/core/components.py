@@ -12,7 +12,7 @@ class Tree(RecursiveDict):
     def __init__(self, content):
         super(Tree, self).__init__(
             (key, value) for key, value in content.iteritems()
-            if key != mp_level01_titles[2] and \
+            if key not in mp_level01_titles[2:] and \
             not key.startswith(mp_level01_titles[1])
         )
 
