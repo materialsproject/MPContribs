@@ -4,7 +4,7 @@ from abc import ABCMeta
 from mpcontribs.config import mp_level01_titles, default_mpfile_path
 from recdict import RecursiveDict
 from utils import pandas_to_dict, nest_dict
-from components import HierarchicalData, TabularData, GraphicalData
+from components import HierarchicalData, TabularData, GraphicalData, StructuralData
 from IPython.display import display_html
 from pymatgen import Structure, MPRester
 
@@ -44,6 +44,10 @@ class MPFileCore(six.with_metaclass(ABCMeta, object)):
     @property
     def gdata(self):
         return GraphicalData(self.document)
+
+    @property
+    def sdata(self):
+        return StructuralData(self.document)
 
     @classmethod
     def from_file(cls, filename_or_file=default_mpfile_path.replace('.txt', '_in.txt')):
