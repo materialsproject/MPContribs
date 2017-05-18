@@ -13,7 +13,8 @@ requirejs.config({
         'backgrid-select-all': 'components/backgrid-select-all/backgrid-select-all',
         'backgrid-filter': 'components/backgrid-filter/backgrid-filter',
         'json.human': 'components/json-human/src/json.human',
-        'js-cookie': 'components/js-cookie/src/js.cookie'
+        'js-cookie': 'components/js-cookie/src/js.cookie',
+        'jupyter-widget-chemview': 'components/chemview/js/src/embed.js'
         //waitfor: 'jquery.waitFor',
         //thebe: 'main-built',
     },
