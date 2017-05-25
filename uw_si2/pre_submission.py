@@ -32,7 +32,7 @@ def run(mpfile, hosts=None, api_key=None):
     r = requests.get(url)
     figshare = json.loads(r.content)
     print 'load global/general meta-data from figshare'
-    for k in ['title', 'description', 'doi', 'funding', 'figshare_url', 'version']:
+    for k in ['title', 'description', 'doi', 'funding', 'version']:
         v = figshare[k]
         if k == 'description':
             v = ''.join([i if ord(i) < 128 else '' for i in v[3:-4]])
