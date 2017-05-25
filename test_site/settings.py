@@ -158,7 +158,7 @@ EMAIL_PORT = 25
 EMAIL_HOST_USER = ''
 EMAIL_HOST_PASSWORD = ''
 EMAIL_USE_TLS = False
-DEFAULT_FROM_EMAIL = 'Test Site <test_site@matgen8.lbl.gov>'
+DEFAULT_FROM_EMAIL = 'Test Site <test_site@jupyterhub.materialsproject.org>'
 
 REQUIRE_JS = 'components/requirejs/require.js'
 REQUIRE_DEBUG = True

@@ -80,7 +80,7 @@ class RecursiveDict(_OrderedDict):
         self.__insertion(self._OrderedDict__map[existing_key][0], key_value)
 
     def _ipython_display_(self):
-        json_str, uuid_str = json.dumps(self), str(uuid.uuid4())
+        json_str, uuid_str = json.dumps(self).replace('\\n', ''), str(uuid.uuid4())
         display_html(
           "<div id='{}' style='width:100%;'></div>".format(uuid_str), raw=True
         )

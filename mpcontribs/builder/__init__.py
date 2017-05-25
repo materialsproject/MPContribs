@@ -15,6 +15,7 @@ def export_notebook(nb, cid, set_div_names=True, separate_script=False):
     html_exporter = HTMLExporter()
     html_exporter.template_file = 'basic'
     (body, resources) = html_exporter.from_notebook_node(nb)
+    body = body.replace("var element = $('#", "var element = document.getElementById('")
     soup = BeautifulSoup(body, 'html.parser')
     soup.div.extract() # remove first code cell (loads mpfile)
     [t.extract() for t in soup.find_all('a', 'anchor-link')] # rm anchors
