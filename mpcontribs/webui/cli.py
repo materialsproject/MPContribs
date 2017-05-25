@@ -19,7 +19,7 @@ def cli():
     parser.add_argument('--start-mongodb', action='store_true', help='start MongoDB server')
     jpy_base_url = os.environ.get('JPY_BASE_URL')
     if os.environ.get('DEPLOYMENT') == 'MATGEN':
-        default_jupyter_url = 'https://matgen8.lbl.gov' + jpy_base_url
+        default_jupyter_url = 'https://jupyterhub.materialsproject.org' + jpy_base_url
     else:
         default_jupyter_url = 'http://localhost:'
         default_jupyter_url += '8000'+jpy_base_url if jpy_base_url else '8888'
