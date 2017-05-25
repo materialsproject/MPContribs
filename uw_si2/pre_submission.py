@@ -4,6 +4,7 @@ from collections import OrderedDict
 from pandas import DataFrame, Series, read_excel, isnull
 from mpcontribs.io.vaspdir import AbstractVaspDirCollParser
 from mpcontribs.io.archieml.mpfile import MPFile
+from mpcontribs.config import mp_level01_titles
 
 def add_diffusivity_table(mpfile):
     """add solute_diffusivity tables to materials in MPFile"""
@@ -24,7 +25,7 @@ def run(mpfile, hosts=None, api_key=None):
     from pymatgen import MPRester
     from unidecode import unidecode
     mpr = MPRester(api_key)
-    general = mpfile.document['general']
+    general = mpfile.document[mp_level01_titles[0]]
     figshare_id = general['figshare_id']
     url = 'https://api.figshare.com/v2/articles/{}'.format(figshare_id)
     print 'get figshare article {}'.format(figshare_id)
