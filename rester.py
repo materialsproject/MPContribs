@@ -56,18 +56,17 @@ class MPResterBase(object):
         url = self.preamble.replace('8000', '5000') + sub_url
         try:
             headers = {'Referer': self.preamble}
-            if not 'materialsproject' in self.preamble:
-                if self.session.cookies.get('csrftoken') is None:
-                    from django.core.urlresolvers import reverse
-                    uri = urlparse.urlparse(self.preamble)
-                    domain = '{uri.scheme}://{uri.netloc}'.format(uri=uri).replace('8000', '5000')
-                    site_url = '/'.join(uri.path.split('/')[:-2]) # test_site/
-                    browserid_csrf = reverse('browserid.csrf')
-                    if site_url[:-1] not in browserid_csrf:
-                        domain += site_url
-                    domain += browserid_csrf
-                    self.session.get(domain)
-                headers["X-CSRFToken"] = self.session.cookies.get('csrftoken')
+            if self.session.cookies.get('csrftoken') is None:
+                from django.core.urlresolvers import reverse
+                uri = urlparse.urlparse(self.preamble)
+                domain = '{uri.scheme}://{uri.netloc}'.format(uri=uri).replace('8000', '5000')
+                site_url = '/'.join(uri.path.split('/')[:-2]) # test_site/
+                browserid_csrf = reverse('browserid.csrf')
+                if site_url[:-1] not in browserid_csrf:
+                    domain += site_url
+                domain += browserid_csrf
+                self.session.get(domain)
+            headers["X-CSRFToken"] = self.session.cookies.get('csrftoken')
             response = self.session.request(method, url=url, headers=headers, data=payload)
             if response.status_code in [200, 400]:
                 data = loads(response.text)
