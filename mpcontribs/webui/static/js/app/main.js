@@ -47,6 +47,12 @@ define(function(require) {
               $(".sandbox").show();
             }
           }
+          if (opt.parentNode.label == 'projects') {
+              var aml = document.getElementById('inputaml_'+opt.value).value;
+              var area = document.getElementsByTagName('textarea')[0];
+              area.value = aml;
+              area.dispatchEvent(new Event('keyup'));
+          }
         }
       }
       document.getElementById('inputopts').value = JSON.stringify(options);
