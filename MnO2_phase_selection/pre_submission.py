@@ -92,12 +92,15 @@ def run(mpfile, include_cifs=True):
                 no_id_dict[phase[4].replace('all_states/', '')] = d
             for mpid in phase[6]:
                 mpfile.add_hierarchical_data(mpid, d)
+                print 'added', mpid
                 if include_cifs:
                     try:
                         mpfile.add_structure(phase[5], identifier=mpid)
                         print framework, phase[0], 'added to', mpid
                     except ValueError as ex:
                         print 'tried to add structure to', mpid, 'but', str(ex)
+            break
+        break
 
     return 'DONE. {} do not have mp-ids!'.format(len(no_id_dict))
 
