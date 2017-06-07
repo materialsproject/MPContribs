@@ -45,6 +45,9 @@
               <input type=hidden name=mpfile id=inputmpfile value=''>
               <input type=hidden name=options id=inputopts value=''>
               <input type=hidden name=thebe id=inputthebe value=''>
+              {% for project in session.projects %}
+              <input type=hidden id="inputaml_{{ project }}" value="{{ session['projects'][project] }}">
+              {% endfor %}
               <input id="loadbutton" type=submit name="submit" class="btn btn-info navbar-btn" value="Load MPFile">
               <input type=submit name="submit" class="btn btn-info navbar-btn" value="View MPFile">
               <label for="savebutton" class="btn btn-info navbar-btn">

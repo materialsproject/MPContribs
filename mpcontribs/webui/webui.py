@@ -19,7 +19,15 @@ ingester_bp = Blueprint('webui_ingester', __name__, template_folder=tmpl_dir, st
 
 session = {}
 mod_iter = pkgutil.iter_modules(mpcontribs_users.__path__)
-projects = [ mod for imp, mod, ispkg in mod_iter if ispkg ]
+projects = {}
+for imp, mod, ispkg in mod_iter:
+    if ispkg:
+        path = os.path.join(mpcontribs_users.__path__[0], mod, 'mpfile_init.txt')
+        if os.path.exists(path):
+            with open(path, 'r') as f:
+                projects[mod] = f.read()
+        else:
+            projects[mod] = ''
 
 def patched_finish(self):
     try:
