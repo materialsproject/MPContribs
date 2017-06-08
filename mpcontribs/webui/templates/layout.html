@@ -48,10 +48,16 @@
               {% for project in session.projects %}
               <input type=hidden id="inputaml_{{ project }}" value="{{ session['projects'][project] }}">
               {% endfor %}
-              <input id="loadbutton" type=submit name="submit" class="btn btn-info navbar-btn" value="Load MPFile">
-              <input type=submit name="submit" class="btn btn-info navbar-btn" value="View MPFile">
+              <label for="loadbutton" class="btn btn-info navbar-btn">
+                <i class="fa fa-upload" aria-hidden="true"></i>
+              </label>
+              <input id="loadbutton" type=submit name="submit" value="Load MPFile" class="hidden">
+              <label for="viewbutton" class="btn btn-info navbar-btn">
+                <i class="fa fa-bar-chart" aria-hidden="true"></i>
+              </label>
+              <input id="viewbutton" type=submit name="submit" value="View MPFile" class="hidden">
               <label for="savebutton" class="btn btn-info navbar-btn">
-                <span class="glyphicon glyphicon-download-alt"></span>
+                <i class="fa fa-download" aria-hidden="true"></i>
               </label>
               <input id="savebutton" type=submit name="submit" value='Save MPFile' class="hidden">
               <label for="contribbutton" class="btn btn-danger navbar-btn">
