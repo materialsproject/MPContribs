@@ -10,13 +10,13 @@ define(function(require) {
   var upload_btn = $('#fileUpload');
   upload_btn.filestyle({
     iconName: "", input: false, badge: false,
-    buttonName:"btn-info", buttonText:"MPFile ..."
+    buttonName:"btn-info", buttonText:'<i class="fa fa-file-text" aria-hidden="true"></i>'
   });
   // replace text of upload button with selected file name
   upload_btn.change(function () {
     upload_btn.filestyle(
         'buttonText',
-        'MPFile <span class="glyphicon glyphicon-ok" aria-hidden="true"></span>'
+        '<i class="fa fa-file-text-o" aria-hidden="true"></i>'
         );
   });
 
@@ -26,7 +26,7 @@ define(function(require) {
       $("#selectpicker [value=" + env.options[i] + "]").prop("selected",true);
     }
     $(elements[0]).chosen({
-      search_contains: true, max_selected_options: 2, width: "200px",
+      search_contains: true, max_selected_options: 2, width: "350px",
       disable_search_threshold: 10
     });
     // on-change action for selectpicker
