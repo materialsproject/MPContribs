@@ -15,12 +15,16 @@ class MnO2PhaseSelectionRester(MPContribsRester):
             columns.append('phase')
         columns += ['dH (formation)', 'dH (hydration)', 'GS?', 'CIF']
 
-        for doc in self.query_contributions(
+        docs = self.query_contributions(
             criteria={
-                'project': {'$in': ['LBNL', 'MIT','University of Kentucky']},
+                'project': {'$in': ['LBNL', 'MIT', 'University of Kentucky']},
                 'content.Phase': phase_query_key
             }, projection={'_id': 1, 'mp_cat_id': 1, 'content': 1}
-        ):
+        )
+        if not docs:
+            raise Exception('No contributions found for MnO2 Phase Selection Explorer!')
+
+        for doc in docs:
             mpfile = MPFile.from_contribution(doc)
             mp_id = mpfile.ids[0]
             contrib = mpfile.hdata[mp_id]
@@ -34,29 +38,38 @@ class MnO2PhaseSelectionRester(MPContribsRester):
         return DataFrame.from_items(data, orient='index', columns=columns)
 
     def get_provenance(self):
-        for doc in self.query_contributions(
+        docs = self.query_contributions(
             criteria={
-                'project': {'$in': ['LBNL', 'MIT','University of Kentucky']}, 'content.authors': {'$exists': 1},
-                'content.title': {'$exists': 1}, 'content.reference': {'$exists': 1}
+                'project': {'$in': ['LBNL', 'MIT','University of Kentucky']},
+                'content.authors': {'$exists': 1},
+                'content.title': {'$exists': 1},
+                'content.reference': {'$exists': 1}
             },
             projection={
                 '_id': 1, 'mp_cat_id': 1, 'content.authors': 1,
                 'content.reference': 1, 'content.title': 1
             }
-        ):
+        )
+        if not docs:
+            raise Exception('No contributions found for MnO2 Phase Selection Explorer!')
+
+        for doc in docs:
             mpfile = MPFile.from_contribution(doc)
             mp_id = mpfile.ids[0]
             return mpfile.hdata[mp_id]
 
     def get_phases(self):
         phases = set()
-
-        for doc in self.query_contributions(
+        docs = self.query_contributions(
             criteria={
                 'project': {'$in': ['LBNL', 'MIT','University of Kentucky']},
                 'content.Phase': {'$exists': 1}
             }, projection={'_id': 0, 'content.Phase': 1}
-        ):
+        )
+        if not docs:
+            raise Exception('No contributions found for MnO2 Phase Selection Explorer!')
+
+        for doc in docs:
             phases.add(doc['content']['Phase'])
 
         return list(phases)
