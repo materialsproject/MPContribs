@@ -18,16 +18,16 @@ class MnO2PhaseSelectionRester(MPContribsRester):
         for doc in self.query_contributions(
             criteria={
                 'project': {'$in': ['LBNL', 'MIT']},
-                'content.info.Phase': phase_query_key
+                'content.Phase': phase_query_key
             }, projection={'_id': 1, 'mp_cat_id': 1, 'content': 1}
         ):
             mpfile = MPFile.from_contribution(doc)
             mp_id = mpfile.ids[0]
-            info = mpfile.hdata[mp_id]['info']
-            row = [mp_id, get_short_object_id(doc['_id']), info['Formula']]
+            contrib = mpfile.hdata[mp_id]
+            row = [mp_id, get_short_object_id(doc['_id']), contrib['Formula']]
             if phase is None:
-                row.append(info['Phase'])
-            row += [info['dHf'], info['dHh'], info['GS'], 'TODO']
+                row.append(contrib['Phase'])
+            row += [contrib['dHf'], contrib['dHh'], contrib['GS'], 'TODO']
             # TODO URLs for mp_id and cid
             data.append((mp_id, row))
 
@@ -54,10 +54,10 @@ class MnO2PhaseSelectionRester(MPContribsRester):
         for doc in self.query_contributions(
             criteria={
                 'project': {'$in': ['LBNL', 'MIT']},
-                'content.info.Phase': {'$exists': 1}
-            }, projection={'_id': 0, 'content.info.Phase': 1}
+                'content.Phase': {'$exists': 1}
+            }, projection={'_id': 0, 'content.Phase': 1}
         ):
-            phases.add(doc['content']['info']['Phase'])
+            phases.add(doc['content']['Phase'])
 
         return list(phases)
 
