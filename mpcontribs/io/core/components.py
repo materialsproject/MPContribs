@@ -42,13 +42,21 @@ class HierarchicalData(RecursiveDict):
 def get_backgrid_table(df):
     """Backgrid-conform dict from DataFrame"""
     table = dict()
+    nrows = len(df[df.columns[0]])
+
     table['columns'] = []
     for k in df.columns:
-        # TODO use mp_id_pattern.match on all cells in column
-        cell = 'string' if k != 'mp-id' else 'uri'
-        table['columns'].append({ 'name': k, 'cell': cell })
+        is_url_column = None
+        for row_index in xrange(nrows):
+            cell = df[k][row_index]
+            is_url_column = mp_id_pattern.match(cell)
+            if not is_url_column:
+                break
+        cell_type = 'uri' if is_url_column else 'string'
+        table['columns'].append({ 'name': k, 'cell': cell_type })
+
     table['rows'] = []
-    for row_index in xrange(len(df[df.columns[0]])):
+    for row_index in xrange(nrows):
         table['rows'].append({})
         for col in df.columns:
             value = str(df[col][row_index])
@@ -56,6 +64,7 @@ def get_backgrid_table(df):
                 value = 'https://materialsproject.org/materials/{}'.format(value)
                 #value = '<a href="{}">{}</a>'.format(href, value)
             table['rows'][row_index][col] = value
+
     return table
 
 def render_dataframe(df, webapp=False):
