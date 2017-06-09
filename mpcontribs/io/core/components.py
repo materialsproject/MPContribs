@@ -1,6 +1,6 @@
 import uuid, json
 from pandas import DataFrame
-from mpcontribs.config import mp_level01_titles
+from mpcontribs.config import mp_level01_titles, mp_id_pattern
 from recdict import RecursiveDict
 from utils import disable_ipython_scrollbar
 from IPython.display import display_html, display, HTML
@@ -42,11 +42,20 @@ class HierarchicalData(RecursiveDict):
 def get_backgrid_table(df):
     """Backgrid-conform dict from DataFrame"""
     table = dict()
-    table['columns'] = [ { 'name': k, 'cell': 'string' } for k in df.columns ]
-    table['rows'] = [
-        dict((col, str(df[col][row_index])) for col in df.columns)
-        for row_index in xrange(len(df[df.columns[0]]))
-    ]
+    table['columns'] = []
+    for k in df.columns:
+        # TODO use mp_id_pattern.match on all cells in column
+        cell = 'string' if k != 'mp-id' else 'uri'
+        table['columns'].append({ 'name': k, 'cell': cell })
+    table['rows'] = []
+    for row_index in xrange(len(df[df.columns[0]])):
+        table['rows'].append({})
+        for col in df.columns:
+            value = str(df[col][row_index])
+            if mp_id_pattern.match(value):
+                value = 'https://materialsproject.org/materials/{}'.format(value)
+                #value = '<a href="{}">{}</a>'.format(href, value)
+            table['rows'][row_index][col] = value
     return table
 
 def render_dataframe(df, webapp=False):
