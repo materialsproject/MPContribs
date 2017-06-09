@@ -1,5 +1,5 @@
 from __future__ import unicode_literals, print_function
-import uuid, json
+import uuid, json, six
 from collections import OrderedDict as _OrderedDict
 from collections import Mapping as _Mapping
 from mpcontribs.config import mp_level01_titles
@@ -12,7 +12,9 @@ class RecursiveDict(_OrderedDict):
     def rec_update(self, other=None, overwrite=False):
         """https://gist.github.com/Xjs/114831"""
         # overwrite=False: don't overwrite existing unnested key
-        if other is None: other = self # mode to force RecursiveDicts to be used
+        if other is None: # mode to force RecursiveDicts to be used
+            other = self
+            overwrite = True
         for key,value in other.items():
             if key in self and \
                isinstance(self[key], dict) and \
@@ -21,7 +23,7 @@ class RecursiveDict(_OrderedDict):
                 self[key] = RecursiveDict(self[key])
                 self[key].rec_update(other=value, overwrite=overwrite)
             elif (key in self and overwrite) or key not in self:
-              self[key] = value
+              self[key] = value.replace('\n', ' ') if isinstance(value, six.string_types) else value
 
     def iterate(self, nested_dict=None):
         """http://stackoverflow.com/questions/10756427/loop-through-all-nested-dictionary-values"""
@@ -80,7 +82,7 @@ class RecursiveDict(_OrderedDict):
         self.__insertion(self._OrderedDict__map[existing_key][0], key_value)
 
     def _ipython_display_(self):
-        json_str, uuid_str = json.dumps(self).replace('\\n', ''), str(uuid.uuid4())
+        json_str, uuid_str = json.dumps(self).replace('\\n', ' '), str(uuid.uuid4())
         display_html(
           "<div id='{}' style='width:100%;'></div>".format(uuid_str), raw=True
         )
