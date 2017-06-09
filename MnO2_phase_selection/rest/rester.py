@@ -36,12 +36,12 @@ class MnO2PhaseSelectionRester(MPContribsRester):
     def get_provenance(self):
         for doc in self.query_contributions(
             criteria={
-                'project': {'$in': ['LBNL', 'MIT']}, 'content.Authors': {'$exists': 1},
-                'content.Title': {'$exists': 1}, 'content.Reference': {'$exists': 1}
+                'project': {'$in': ['LBNL', 'MIT']}, 'content.authors': {'$exists': 1},
+                'content.title': {'$exists': 1}, 'content.reference': {'$exists': 1}
             },
             projection={
-                '_id': 1, 'mp_cat_id': 1, 'content.Authors': 1,
-                'content.Reference': 1, 'content.Title': 1
+                '_id': 1, 'mp_cat_id': 1, 'content.authors': 1,
+                'content.reference': 1, 'content.title': 1
             }
         ):
             mpfile = MPFile.from_contribution(doc)
