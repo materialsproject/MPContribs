@@ -141,10 +141,12 @@ def view():
         )
     fmt = session['options'][0]
     try:
-        return Response(stream_with_context(stream_template(
+        response = Response(stream_with_context(stream_template(
             'index.html', session=session,
             content=process_mpfile(StringIO(mpfile), fmt=fmt)
         )))
+        response.headers['X-Accel-Buffering'] = 'no'
+        return response
     except:
         pass
 
@@ -186,12 +188,14 @@ def contribute():
             )
         fmt = session['options'][0]
         try:
-            return Response(stream_with_context(stream_template(
+            response = Response(stream_with_context(stream_template(
                 'contribute.html', session=session, content=submit_mpfile(
                     StringIO(mpfile), api_key=session['contribute']['apikey'],
                     site=session['contribute']['site'],
                     dbtype=session['contribute']['dbtype'], fmt=fmt
                 ))))
+            response.headers['X-Accel-Buffering'] = 'no'
+            return response
         except:
             pass
 

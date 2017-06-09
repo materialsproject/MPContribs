@@ -6,6 +6,7 @@ from mpcontribs.rest.rester import MPContribsRester
 from mpcontribs.rest.adapter import ContributionMongoAdapter
 from mpcontribs.builder import MPContributionsBuilder
 from importlib import import_module
+sys.stdout.flush()
 
 def submit_mpfile(path_or_mpfile, api_key, site, dbtype='write', fmt='archieml'):
     endpoint = '/'.join([site, 'mpcontribs', 'rest'])
