@@ -3,8 +3,28 @@ import uuid, json, six
 from collections import OrderedDict as _OrderedDict
 from collections import Mapping as _Mapping
 from mpcontribs.config import mp_level01_titles
-from IPython.display import display_javascript, display_html
+from IPython.display import display_html
 from pymatgen import Structure
+
+def render_dict(dct, webapp=False):
+    """use JsonHuman library to render a dictionairy"""
+    json_str, uuid_str = json.dumps(dct).replace('\\n', ' '), str(uuid.uuid4())
+    html = "<div id='{}' style='width:100%;'></div>".format(uuid_str)
+    html += "<script>"
+    if webapp:
+        html += "requirejs(['main'], function() {"
+    html += """
+    require(["json.human"], function(JsonHuman) {
+      "use strict";
+      var data = JSON.parse('%s');
+      var node = JsonHuman.format(data);
+      document.getElementById('%s').appendChild(node);
+    });
+    """ % (json_str, uuid_str)
+    if webapp:
+        html += "});"
+    html += "</script>"
+    return html
 
 class RecursiveDict(_OrderedDict):
     """extension of dict for internal representation of MPFile"""
@@ -82,15 +102,4 @@ class RecursiveDict(_OrderedDict):
         self.__insertion(self._OrderedDict__map[existing_key][0], key_value)
 
     def _ipython_display_(self):
-        json_str, uuid_str = json.dumps(self).replace('\\n', ' '), str(uuid.uuid4())
-        display_html(
-          "<div id='{}' style='width:100%;'></div>".format(uuid_str), raw=True
-        )
-        display_javascript("""
-        require(["json.human"], function(JsonHuman) {
-          "use strict";
-          var data = JSON.parse('%s');
-          var node = JsonHuman.format(data);
-          document.getElementById('%s').appendChild(node);
-        });
-        """ % (json_str, uuid_str), raw=True)
+        display_html(render_dict(self), raw=True)
