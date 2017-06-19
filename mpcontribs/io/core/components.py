@@ -48,7 +48,7 @@ def get_backgrid_table(df):
     for k in df.columns:
         is_url_column = None
         for row_index in xrange(nrows):
-            cell = df[k][row_index]
+            cell = str(df[k][row_index])
             is_url_column = mp_id_pattern.match(cell)
             if not is_url_column:
                 break
