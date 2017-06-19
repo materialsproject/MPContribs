@@ -128,8 +128,9 @@ class TabularData(RecursiveDict):
     def _ipython_display_(self):
         disable_ipython_scrollbar()
         for identifier, tables in self.iteritems():
-            display_html('<h2>Tabular Data for {}</h2>'.format(identifier), raw=True)
-            display_html(tables)
+            if identifier != mp_level01_titles[0]:
+                display_html('<h2>Tabular Data for {}</h2>'.format(identifier), raw=True)
+                display_html(tables)
 
 class Plot(object):
     """class to hold and display single interactive graph/plot"""
@@ -189,8 +190,9 @@ class GraphicalData(RecursiveDict):
     def _ipython_display_(self):
         disable_ipython_scrollbar()
         for identifier, plots in self.iteritems():
-            display_html('<h2>Interactive Plots for {}</h2>'.format(identifier), raw=True)
-            display_html(plots)
+            if identifier != mp_level01_titles[0]:
+                display_html('<h2>Interactive Plots for {}</h2>'.format(identifier), raw=True)
+                display_html(plots)
 
 class Structures(RecursiveDict):
     """class to hold and display list of pymatgen structures for single mp-id"""
