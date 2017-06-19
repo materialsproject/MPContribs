@@ -8,6 +8,9 @@ transfer in mono- and bilayer MoSe2 functional materials
 zipfile_path: MoSe2 condensed data.zip
 table_columns: delay time [ps] -- {100} -- {110} -- {200} -- {210} -- {300} -- {220}
 
+mp-1027692.formula: MoSe2
+
+:ignore
 {P1_400nm_ML}
 carrier_density: 0.28E14 cm^-2
 pump_fluence: 0.6 mJ/cm^2
@@ -53,5 +56,3 @@ carrier_density: 2.0E14 cm^-2
 pump_fluence: 4.0 mJ/cm^2
 
 
-{mp-1027692}
-formula: MoSe2
