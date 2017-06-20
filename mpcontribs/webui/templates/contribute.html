@@ -38,7 +38,7 @@
         <select id="siteselect" data-placeholder="Select Site ..." hidden>
           <option></option>
           <option value="{{ url_for('webui_main.home', _external=True, _scheme=session.scheme) }}test_site">Local Test Site</option>
-          <option value="http://alpha.materialsproject.org">Materials Project</option>
+          <option value="https://materialsproject.org">Materials Project</option>
         </select>
         <button id="add_site_btn" type=button class="btn btn-primary btn-xs hide" onClick="$('#myModal').modal()">
           <span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
