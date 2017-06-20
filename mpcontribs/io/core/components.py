@@ -132,6 +132,30 @@ class TabularData(RecursiveDict):
                 display_html('<h2>Tabular Data for {}</h2>'.format(identifier), raw=True)
                 display_html(tables)
 
+def render_plot(plot, webapp=False):
+    xaxis, yaxis = plot.config['x'], plot.config.get('y', None)
+    yaxes = [yaxis] if yaxis is not None else \
+            [col for col in plot.table.columns if col != xaxis]
+    xvals = plot.table[xaxis].tolist()
+    traces = [dict(
+        x=xvals, y=plot.table[axis].tolist(), name=axis
+    ) for axis in yaxes]
+    layout = dict(
+        xaxis = dict(title=xaxis), yaxis = dict(title=plot.config['table']),
+        legend = dict(x=0.7, y=1), margin = dict(r=0, t=40),
+    )
+    fig = dict(data=traces, layout=layout)
+    html = _plot_html(
+        fig, False, '', True, '100%', 525, global_requirejs=True
+    )[0]
+    if not webapp:
+        return html
+    plotly_require = 'require(["plotly"], function(Plotly) {'
+    return html.replace(
+        plotly_require,
+        'requirejs(["main"], function() { ' + plotly_require
+    ).replace('});</script>', '})});</script>')
+
 class Plot(object):
     """class to hold and display single interactive graph/plot"""
     def __init__(self, config, table):
@@ -140,21 +164,7 @@ class Plot(object):
 
     def _ipython_display_(self):
         disable_ipython_scrollbar()
-        xaxis, yaxis = self.config['x'], self.config.get('y', None)
-        yaxes = [yaxis] if yaxis is not None else \
-                [col for col in self.table.columns if col != xaxis]
-        xvals = self.table[xaxis].tolist()
-        traces = [dict(
-            x=xvals, y=self.table[axis].tolist(), name=axis
-        ) for axis in yaxes]
-        layout = dict(
-            xaxis = dict(title=xaxis), yaxis = dict(title=self.config['table']),
-            legend = dict(x=0.7, y=1), margin = dict(r=0, t=40),
-        )
-        fig = dict(data=traces, layout=layout)
-        display(HTML(_plot_html(
-            fig, False, '', True, '100%', 525, global_requirejs=True
-        )[0]))
+        display(HTML(render_plot(self)))
 
 class Plots(RecursiveDict):
     """class to hold and display multiple interactive graphs/plots"""
