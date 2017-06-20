@@ -6,4 +6,5 @@ urlpatterns = [
     url(r'^explorer/', include('mpcontribs.explorer.urls')),
     url(r'^uwsi2/explorer/', include('mpcontribs.users.uw_si2.explorer.urls')),
     url(r'^MnO2_phase_selection/', include('mpcontribs.users.MnO2_phase_selection.explorer.urls')),
+    url(r'^magics/mose2/', include('mpcontribs.users.slac_mose2.explorer.urls')),
 ]
