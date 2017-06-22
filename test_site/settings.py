@@ -54,6 +54,7 @@ INSTALLED_APPS = (
     'test_site.apps.UWSI2ExplorerConfig',
     'test_site.apps.MnO2PhaseSelectionExplorerConfig',
     'test_site.apps.SlacMose2ExplorerConfig',
+    'test_site.apps.DtuExplorerConfig',
 )
 
 MIDDLEWARE_CLASSES = (
