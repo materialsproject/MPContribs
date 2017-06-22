@@ -3,7 +3,7 @@ import ase.db
 import collections as coll
 import urllib
 
-def run(mpfile):
+def run(mpfile, nmax=None):
     url = mpfile.hdata['_hdata']['url']
     dbfile = url.rsplit('/')[-1]
 
@@ -24,6 +24,6 @@ def run(mpfile):
         d['derivative_discontinuity'] = row.gllbsc_disc
         d['quasi-particle_bandgap']['indirect'] = row.gllbsc_ind_gap
         d['quasi-particle_bandgap']['direct'] = row.gllbsc_dir_gap
-        mpfile.add_hierarchical_data(mpid,d)
-        if idx == 10:
+        mpfile.add_hierarchical_data(mpid, d)
+        if nmax and idx == nmax:
             break
