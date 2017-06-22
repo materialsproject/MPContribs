@@ -227,6 +227,11 @@ class Structures(RecursiveDict):
             for key, struc in content.get(mp_level01_titles[3], {}).iteritems()
         )
 
+    def _ipython_display_(self):
+        for name, structure in self.iteritems():
+            print(self.keys())
+            #display_html(self.keys())
+
 class StructuralData(RecursiveDict):
     """class to hold and display all pymatgen structures in MPFile"""
     def __init__(self, document):
@@ -236,9 +241,8 @@ class StructuralData(RecursiveDict):
         )
 
     def _ipython_display_(self):
-        pass
-        #display_html('<h2>Hierarchical Data</h2>', raw=True)
-        #for identifier, hdata in self.iteritems():
-        #    if identifier != mp_level01_titles[0]:
-        #        display_html('<h3>{}</h3>'.format(identifier), raw=True)
-        #    display_html(hdata)
+        display_html('<h2>Structural Data</h2>', raw=True)
+        for identifier, sdata in self.iteritems():
+            if identifier != mp_level01_titles[0]:
+                display_html('<h3>{}</h3>'.format(identifier), raw=True)
+            display_html(sdata)
