@@ -1,13 +1,18 @@
 import os
 import ase.db
 import collections as coll
+import urllib
 
 def run(mpfile):
     url = mpfile.hdata['_hdata']['url']
-    # TODO
-    # - extract db name from url -> dbfile = 'mp_gllbsc.db'
-    # - check if mp_gllbsc.db exists
     dbfile = url.rsplit('/')[-1]
+    
+    if os.path.exists(dbfile):
+        pass
+    else:
+        data = urllib.URLopener()
+        data.retrieve(url,dbfile)
+        
     con = ase.db.connect(dbfile)
     count = 0
     for row in con.select('mpid'):
@@ -25,5 +30,4 @@ def run(mpfile):
         mpfile.add_hierarchical_data(mpid,d) 
         if count == 10:
             break
-    print mpfile
-
+   
