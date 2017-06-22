@@ -62,7 +62,6 @@ def get_backgrid_table(df):
             value = str(df[col][row_index])
             if mp_id_pattern.match(value):
                 value = 'https://materialsproject.org/materials/{}'.format(value)
-                #value = '<a href="{}">{}</a>'.format(href, value)
             table['rows'][row_index][col] = value
 
     return table
@@ -83,6 +82,15 @@ def render_dataframe(df, webapp=False):
       var Row = Backbone.Model.extend({});
       var Rows = Backbone.Collection.extend({model: Row, mode: "client"});
       var rows = new Rows(table['rows']);
+      for (var idx in table['columns']) {
+          if (table['columns'][idx]['cell'] == 'uri') {
+              table['columns'][idx]['formatter'] = _.extend({}, Backgrid.CellFormatter.prototype, {
+                  fromRaw: function (rawValue, model) {
+                      return rawValue.split('/').pop();
+                  }
+              })
+          }
+      }
       var grid = new Backgrid.Grid({ columns: table['columns'], collection: rows });
       $('#%s').append(grid.render().el);
     });
