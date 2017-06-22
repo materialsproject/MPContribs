@@ -29,7 +29,7 @@ def render_dict(dct, webapp=False):
 class RecursiveDict(_OrderedDict):
     """extension of dict for internal representation of MPFile"""
 
-    def rec_update(self, other=None, overwrite=False):
+    def rec_update(self, other=None, overwrite=False, replace_newlines=True):
         """https://gist.github.com/Xjs/114831"""
         # overwrite=False: don't overwrite existing unnested key
         if other is None: # mode to force RecursiveDicts to be used
@@ -41,9 +41,11 @@ class RecursiveDict(_OrderedDict):
                isinstance(value, dict):
                 # ensure RecursiveDict and update key (w/o underscores)
                 self[key] = RecursiveDict(self[key])
-                self[key].rec_update(other=value, overwrite=overwrite)
+                replace_newlines = bool(key != mp_level01_titles[3])
+                self[key].rec_update(other=value, overwrite=overwrite, replace_newlines=replace_newlines)
             elif (key in self and overwrite) or key not in self:
-              self[key] = value.replace('\n', ' ') if isinstance(value, six.string_types) else value
+              self[key] = value.replace('\n', ' ') if isinstance(value, six.string_types) \
+                      and replace_newlines else value
 
     def iterate(self, nested_dict=None):
         """http://stackoverflow.com/questions/10756427/loop-through-all-nested-dictionary-values"""
