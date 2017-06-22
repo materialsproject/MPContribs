@@ -22,4 +22,5 @@ csv_database = os.path.join(
   '../test_files/lahman-csv_2014-02-14'
 )
 mp_id_pattern = re.compile('^(mp|por|mvc)-\d+$', re.IGNORECASE)
+object_id_pattern = re.compile('^[a-f\d]{24}$')
 default_mpfile_path = os.path.join(gettempdir(), 'mpfile.txt')

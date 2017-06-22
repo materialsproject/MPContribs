@@ -1,12 +1,14 @@
 import uuid, json
 from pandas import DataFrame
-from mpcontribs.config import mp_level01_titles, mp_id_pattern
+from mpcontribs.config import mp_level01_titles, mp_id_pattern, object_id_pattern
 from recdict import RecursiveDict
 from utils import disable_ipython_scrollbar
 from IPython.display import display_html, display, HTML
 from IPython import get_ipython
 from plotly.offline.offline import _plot_html
 from pymatgen.core.structure import Structure
+from django.core.validators import URLValidator
+from django.core.exceptions import ValidationError
 
 class Tree(RecursiveDict):
     """class to hold and display single tree of hierarchical data"""
@@ -41,6 +43,7 @@ class HierarchicalData(RecursiveDict):
 
 def get_backgrid_table(df):
     """Backgrid-conform dict from DataFrame"""
+    val = URLValidator()
     table = dict()
     nrows = len(df[df.columns[0]])
 
@@ -51,7 +54,11 @@ def get_backgrid_table(df):
             cell = str(df[k][row_index])
             is_url_column = mp_id_pattern.match(cell)
             if not is_url_column:
-                break
+                try:
+                    val(cell)
+                except ValidationError:
+                    break
+                is_url_column = True
         cell_type = 'uri' if is_url_column else 'string'
         table['columns'].append({ 'name': k, 'cell': cell_type })
 
