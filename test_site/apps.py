@@ -11,3 +11,7 @@ class MnO2PhaseSelectionExplorerConfig(AppConfig):
 class SlacMose2ExplorerConfig(AppConfig):
     name = 'mpcontribs.users.slac_mose2.explorer'
     label = 'slac_mose2_explorer'
+
+class DtuExplorerConfig(AppConfig):
+    name = 'mpcontribs.users.dtu.explorer'
+    label = 'dtu_explorer'
