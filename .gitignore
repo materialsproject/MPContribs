@@ -1,2 +1,4 @@
 *.pyc
 */test_files/*
+*.zip
+.ipynb_checkpoints

@@ -1,6 +1,5 @@
 from __future__ import division, unicode_literals
 from mpcontribs.rest.rester import MPContribsRester
-from mpcontribs.io.core.utils import get_short_object_id
 from mpcontribs.io.archieml.mpfile import MPFile
 from pandas import DataFrame
 
@@ -28,7 +27,10 @@ class MnO2PhaseSelectionRester(MPContribsRester):
             mpfile = MPFile.from_contribution(doc)
             mp_id = mpfile.ids[0]
             contrib = mpfile.hdata[mp_id]
-            row = [mp_id, get_short_object_id(doc['_id']), contrib['Formula']]
+            cid_url = '/'.join([
+                self.preamble.rsplit('/', 1)[0], 'explorer', 'materials', doc['_id']
+            ])
+            row = [mp_id, cid_url, contrib['Formula']]
             if phase is None:
                 row.append(contrib['Phase'])
             row += [contrib['dHf'], contrib['dHh'], contrib['GS'], 'TODO']
