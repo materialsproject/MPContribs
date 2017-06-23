@@ -34,7 +34,6 @@ class MnO2PhaseSelectionRester(MPContribsRester):
             if phase is None:
                 row.append(contrib['Phase'])
             row += [contrib['dHf'], contrib['dHh'], contrib['GS'], 'TODO']
-            # TODO URLs for mp_id and cid
             data.append((mp_id, row))
 
         return DataFrame.from_items(data, orient='index', columns=columns)
