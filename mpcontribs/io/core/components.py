@@ -5,10 +5,7 @@ from recdict import RecursiveDict
 from utils import disable_ipython_scrollbar
 from IPython.display import display_html, display, HTML
 from IPython import get_ipython
-from plotly.offline.offline import _plot_html
 from pymatgen.core.structure import Structure
-from django.core.validators import URLValidator
-from django.core.exceptions import ValidationError
 
 class Tree(RecursiveDict):
     """class to hold and display single tree of hierarchical data"""
@@ -43,6 +40,9 @@ class HierarchicalData(RecursiveDict):
 
 def get_backgrid_table(df):
     """Backgrid-conform dict from DataFrame"""
+    # shorten global import times by importing django here
+    from django.core.validators import URLValidator
+    from django.core.exceptions import ValidationError
     val = URLValidator()
     table = dict()
     nrows = len(df[df.columns[0]])
@@ -148,6 +148,7 @@ class TabularData(RecursiveDict):
                 display_html(tables)
 
 def render_plot(plot, webapp=False):
+    from plotly.offline.offline import _plot_html # long import time
     xaxis, yaxis = plot.config['x'], plot.config.get('y', None)
     yaxes = [yaxis] if yaxis is not None else \
             [col for col in plot.table.columns if col != xaxis]
