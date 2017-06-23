@@ -44,6 +44,8 @@ class MPContributionsBuilder():
     """build user contributions from `mpcontribs.contributions`"""
     def __init__(self, db):
         self.db = db
+        self.nbdir = os.path.dirname(os.path.abspath(__file__))
+        self.ep = ExecutePreprocessor(timeout=600, kernel_name='python2', allow_errors=False)
         if isinstance(self.db, dict):
             self.materials = RecursiveDict()
             self.compositions = RecursiveDict()
@@ -110,7 +112,6 @@ class MPContributionsBuilder():
                 .format(contrib, mp_cat_id)
             ))
         else:
-            nb['cells'].append(nbf.new_code_cell("print 'hello'"))
             nb['cells'].append(nbf.new_code_cell(
                 "from mpcontribs.rest.rester import MPContribsRester"
             ))
@@ -148,10 +149,7 @@ class MPContributionsBuilder():
                 "mpfile.gdata[mpid]['{}']".format(plot_name)
             ))
 
-        nbdir = os.path.dirname(os.path.abspath(__file__))
-        ep = ExecutePreprocessor(timeout=600, kernel_name='python2',
-                                 allow_errors=True)
-        out = ep.preprocess(nb, {'metadata': {'path': nbdir}})
+        self.ep.preprocess(nb, {'metadata': {'path': self.nbdir}})
 
         if isinstance(self.db, dict):
             return [mp_cat_id, project, cid_short, export_notebook(nb, cid)]
