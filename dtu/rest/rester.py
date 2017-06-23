@@ -25,7 +25,10 @@ class DtuRester(MPContribsRester):
             mpfile = MPFile.from_contribution(doc)
             mp_id = mpfile.ids[0]
             contrib = mpfile.hdata[mp_id]
-            row = [mp_id, doc['_id'], contrib['derivative_discontinuity']]
+            cid_url = '/'.join([
+                self.preamble.rsplit('/', 1)[0], 'explorer', 'materials', doc['_id']
+            ])
+            row = [mp_id, cid_url, contrib['derivative_discontinuity']]
             data.append((mp_id, row))
 
         return DataFrame.from_items(data, orient='index', columns=columns)
