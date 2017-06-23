@@ -1,13 +1,15 @@
 import json, os
 from mpcontribs.io.archieml.mpfile import MPFile
+from mpcontribs.io.core.recdict import RecursiveDict
+from mpcontribs.config import mp_level01_titles
 from pymatgen.core.composition import Composition
 from pymatgen.core.structure import Structure
 from pymatgen.io.cif import CifWriter
 
 def run(mpfile, include_cifs=True):
-    data = mpfile.hdata.general['data']
-    phase_names = data['phase_names']
-    data_input = data.pop('input')
+    data_input = mpfile.document[mp_level01_titles[0]].pop('input')
+    print(mpfile.hdata.general.keys())
+    phase_names = mpfile.hdata.general['info']['phase_names']
     dir_path = os.path.dirname(os.path.realpath(__file__))
     for k in data_input.keys():
         data_input[k] = os.path.join(dir_path, data_input[k])
@@ -32,7 +34,7 @@ def run(mpfile, include_cifs=True):
                 c = Composition.from_dict(hstate['c'])
                 s = Structure.from_dict(hstate['s'])
                 for mpid in mpfile.ids:
-                    formula = mpfile.hdata[mpid]['Formula']
+                    formula = mpfile.hdata[mpid]['data']['Formula']
                     if c.almost_equals(Composition(formula)):
                         try:
                             mpfile.add_structure(s, identifier=mpid)

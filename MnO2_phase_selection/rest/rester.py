@@ -17,7 +17,7 @@ class MnO2PhaseSelectionRester(MPContribsRester):
         docs = self.query_contributions(
             criteria={
                 'project': {'$in': ['LBNL', 'MIT', 'University of Kentucky']},
-                'content.Phase': phase_query_key
+                'content.data.Phase': phase_query_key
             }, projection={'_id': 1, 'mp_cat_id': 1, 'content': 1}
         )
         if not docs:
@@ -26,7 +26,7 @@ class MnO2PhaseSelectionRester(MPContribsRester):
         for doc in docs:
             mpfile = MPFile.from_contribution(doc)
             mp_id = mpfile.ids[0]
-            contrib = mpfile.hdata[mp_id]
+            contrib = mpfile.hdata[mp_id]['data']
             cid_url = '/'.join([
                 self.preamble.rsplit('/', 1)[0], 'explorer', 'materials', doc['_id']
             ])
@@ -65,14 +65,14 @@ class MnO2PhaseSelectionRester(MPContribsRester):
         docs = self.query_contributions(
             criteria={
                 'project': {'$in': ['LBNL', 'MIT','University of Kentucky']},
-                'content.Phase': {'$exists': 1}
+                'content.data.Phase': {'$exists': 1}
             }, projection={'_id': 0, 'content.Phase': 1}
         )
         if not docs:
             raise Exception('No contributions found for MnO2 Phase Selection Explorer!')
 
         for doc in docs:
-            phases.add(doc['content']['Phase'])
+            phases.add(doc['content']['data']['Phase'])
 
         return list(phases)
 
