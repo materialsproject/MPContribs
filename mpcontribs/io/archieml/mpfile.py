@@ -91,7 +91,7 @@ class MPFile(MPFileCore):
                 )[:-1]
                 lines += csv_string.split('\n')
             elif isinstance(value, Structure):
-                cif = CifWriter(value).__str__()
+                cif = CifWriter(value, symprec=1e-3).__str__()
                 lines.append(make_pair(
                     ''.join([replacements.get(c, c) for c in key]), cif+':end'
                 ))
