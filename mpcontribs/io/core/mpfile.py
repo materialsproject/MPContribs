@@ -11,12 +11,10 @@ from pymatgen import Structure, MPRester
 class MPFileCore(six.with_metaclass(ABCMeta, object)):
     """Abstract Base Class for representing a MP Contribution File"""
     def __init__(self, data=RecursiveDict()):
-        if isinstance(data, RecursiveDict):
-            self.document = data
-        elif isinstance(data, dict):
+        if isinstance(data, dict):
             self.document = RecursiveDict(data)
         else:
-            raise ValueError('Need RecursiveDict or dict to init MPFile.')
+            raise ValueError('Need dict (or inherited class) to init MPFile.')
         self.document.rec_update() # convert (most) OrderedDict's to RecursiveDict's
 
     def __getitem__(self, key):
