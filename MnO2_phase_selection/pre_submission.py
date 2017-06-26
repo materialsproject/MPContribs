@@ -7,7 +7,6 @@ from pymatgen.core.structure import Structure
 
 def run(mpfile, include_cifs=True):
     data_input = mpfile.document[mp_level01_titles[0]].pop('input')
-    print(mpfile.hdata.general.keys())
     phase_names = mpfile.hdata.general['info']['phase_names']
     dir_path = os.path.dirname(os.path.realpath(__file__))
     for k in data_input.keys():

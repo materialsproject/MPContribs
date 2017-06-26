@@ -65,7 +65,7 @@ class MnO2PhaseSelectionRester(MPContribsRester):
             criteria={
                 'project': {'$in': ['LBNL', 'MIT','University of Kentucky']},
                 'content.data.Phase': {'$exists': 1}
-            }, projection={'_id': 0, 'content.Phase': 1}
+            }, projection={'_id': 0, 'content.data.Phase': 1}
         )
         if not docs:
             raise Exception('No contributions found for MnO2 Phase Selection Explorer!')
