@@ -70,7 +70,7 @@ class MPFile(MPFileCore):
                     for name in recdict[root_key][mp_level01_titles[3]].keys():
                         cif = recdict[root_key][mp_level01_titles[3]].pop(name)
                         parser = CifParser.from_string(cif)
-                        structure = parser.get_structures()[0]
+                        structure = parser.get_structures(primitive=False)[0]
                         recdict[root_key][mp_level01_titles[3]].rec_update(nest_dict(
                             structure.as_dict(), [name]
                         ))
