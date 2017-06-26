@@ -5,6 +5,7 @@ from mpcontribs.io.core.utils import nest_dict, get_short_object_id
 from mpcontribs.rest.rester import MPContribsRester
 from mpcontribs.rest.adapter import ContributionMongoAdapter
 from mpcontribs.builder import MPContributionsBuilder
+from pymatgen.analysis.structure_matcher import StructureMatcher
 from importlib import import_module
 sys.stdout.flush()
 
@@ -43,19 +44,31 @@ def submit_mpfile(path_or_mpfile, api_key, site, dbtype='write', fmt='archieml')
             yield str(ex).replace('"',"'")
             return
 
+def json_compare(d1, d2):
+    json.encoder.FLOAT_REPR = lambda o: format(o, 'g')
+    def dumps(d):
+        return json.dumps(d, indent=4).split('\n')
+
+    for a, b in zip(dumps(d1), dumps(d2)):
+        if a != b:
+            raise Exception('{} <====> {}'.format(a.strip(), b.strip()))
+
 def process_mpfile(path_or_mpfile, target=None, fmt='archieml'):
     try:
         if isinstance(path_or_mpfile, six.string_types) and \
            not os.path.isfile(path_or_mpfile):
             raise Exception('{} not found'.format(path_or_mpfile))
+
         mod = import_module('mpcontribs.io.{}.mpfile'.format(fmt))
         MPFile = getattr(mod, 'MPFile')
         full_name = pwd.getpwuid(os.getuid())[4]
         contributor = '{} <phuck@lbl.gov>'.format(full_name) # fake
         cma = ContributionMongoAdapter()
         axes, ov_data = set(), dict()
-        # split input MPFile into contributions: treat every mp_cat_id as separate DB insert
         mpfile, cid_shorts = MPFile.from_dict(), [] # output
+        sm = StructureMatcher(primitive_cell=False, scale=False)
+
+        # split input MPFile into contributions: treat every mp_cat_id as separate DB insert
         for idx, mpfile_single in enumerate(MPFile.from_file(path_or_mpfile).split()):
             mp_cat_id = mpfile_single.document.keys()[0]
             # TODO test update mode
@@ -64,27 +77,46 @@ def process_mpfile(path_or_mpfile, target=None, fmt='archieml'):
             if update:
                 cid_short = get_short_object_id(cid)
                 yield 'use contribution #{} to update ID #{} ... '.format(idx, cid_short)
+
             # always run local "submission" to catch failure before interacting with DB
             yield 'locally process contribution #{} ... '.format(idx)
             doc = cma.submit_contribution(mpfile_single, contributor) # does not use get_string
             cid = doc['_id']
+
             yield 'check consistency ... '
             mpfile_single_cmp = MPFile.from_string(mpfile_single.get_string())
             if mpfile_single.document != mpfile_single_cmp.document:
-                json.encoder.FLOAT_REPR = lambda o: format(o, 'g')
+                yield 'detailed check ... '
+                found_inconsistency = False
+                # check structural data
+                for name, s1 in mpfile_single.sdata[mp_cat_id].iteritems():
+                    s2 = mpfile_single_cmp.sdata[mp_cat_id][name]
+                    if s1 != s2:
+                        if len(s1) != len(s2):
+                            raise Exception('different number of sites: {} -> {}!'.format(len(s1), len(s2)))
+                        if s1.lattice != s2.lattice:
+                            raise Exception('lattices different!')
+                        for site in s1:
+                            if site not in s2:
+                                found_inconsistency = True
+                                if not sm.fit(s1, s2):
+                                    raise Exception('structures do not match!')
+                                break
+                # check hierarchical and tabular data
                 # compare json strings to find first inconsistency
-                for a, b in zip(
-                    json.dumps(mpfile_single.document, indent=4).split('\n'),
-                    json.dumps(mpfile_single_cmp.document, indent=4).split('\n')
-                ):
-                    if a != b:
-                        raise Exception('{} <====> {}'.format(a.strip(), b.strip()))
+                json_compare(mpfile_single.hdata, mpfile_single_cmp.hdata)
+                json_compare(mpfile_single.tdata, mpfile_single_cmp.tdata)
+                if not found_inconsistency:
+                    # documents are not equal, so some exception must be raised - should never happen
+                    raise Exception('inconsistency found but not identified!')
+
             if target is not None:
                 yield 'submit to MP ... '
                 cid = target.submit_contribution(mpfile_single, fmt) # uses get_string
             cid_short = get_short_object_id(cid)
             mpfile_single.insert_id(mp_cat_id, cid)
             cid_shorts.append(cid_short)
+
             yield 'build notebook ... '
             if target is not None:
                 url = target.build_contribution(cid)
@@ -119,8 +151,10 @@ def process_mpfile(path_or_mpfile, target=None, fmt='archieml'):
                 if idx > 0:
                     axes.intersection_update(local_axes)
                 yield 'OK.</br>'.format(idx, cid_short)
+
             mpfile.concat(mpfile_single)
             time.sleep(.01)
+
         ncontribs = len(cid_shorts)
         #if target is not None and \
         #   isinstance(path_or_mpfile, six.string_types) and \
