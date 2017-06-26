@@ -230,8 +230,10 @@ class Structures(RecursiveDict):
 
     def _ipython_display_(self):
         for name, structure in self.iteritems():
-            print(self.keys())
-            #display_html(self.keys())
+            display_html('<h4>{}</h4>'.format(name), raw=True)
+            display_html('<p>{}</p>'.format(
+                structure.__repr__().replace('\n', '<br>').replace(' ', '&nbsp;')
+            ), raw=True)
 
 class StructuralData(RecursiveDict):
     """class to hold and display all pymatgen structures in MPFile"""
