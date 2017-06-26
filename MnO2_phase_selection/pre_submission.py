@@ -4,7 +4,6 @@ from mpcontribs.io.core.recdict import RecursiveDict
 from mpcontribs.config import mp_level01_titles
 from pymatgen.core.composition import Composition
 from pymatgen.core.structure import Structure
-from pymatgen.io.cif import CifWriter
 
 def run(mpfile, include_cifs=True):
     data_input = mpfile.document[mp_level01_titles[0]].pop('input')
