@@ -185,11 +185,11 @@ class MPFileCore(six.with_metaclass(ABCMeta, object)):
         elif isinstance(source, dict):
             structure = Structure.from_dict(source)
         elif os.path.exists(source):
-            structure = Structure.from_file(source)
+            structure = Structure.from_file(source, sort=True)
         elif isinstance(source, six.string_types):
             if fmt is None:
                 raise ValueError('Need fmt to get structure from string!')
-            structure = Structure.from_str(source, fmt)
+            structure = Structure.from_str(source, fmt, sort=True)
         else:
             raise ValueError(source, 'not supported!')
 
