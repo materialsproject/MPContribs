@@ -149,6 +149,16 @@ class MPContributionsBuilder():
                 "mpfile.gdata[mpid]['{}']".format(plot_name)
             ))
 
+        if mpfile.sdata[mp_cat_id]:
+            nb['cells'].append(nbf.new_markdown_cell("## Structural Data"))
+        for structure_name, structure in mpfile.sdata[mp_cat_id].iteritems():
+            nb['cells'].append(nbf.new_markdown_cell(
+                "### {}".format(structure_name)
+            ))
+            nb['cells'].append(nbf.new_code_cell(
+                "mpfile.sdata[mpid]['{}']".format(structure_name)
+            ))
+
         self.ep.preprocess(nb, {'metadata': {'path': self.nbdir}})
 
         if isinstance(self.db, dict):
