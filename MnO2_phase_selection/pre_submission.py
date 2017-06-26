@@ -84,10 +84,12 @@ def run(mpfile, include_cifs=True):
     no_id_dict = {}
     for framework, fdat in mp_contrib_phases.items():
         for phase in fdat:
-            d = {
-                "Phase": framework, "Formula": phase[0], "dHf": '{} eV/mol'.format(phase[1]),
-                "dHh": '{} eV/mol'.format(phase[3]), "GS": phase[2]
-            }
+            d = RecursiveDict()
+            d["Phase"] = framework
+            d["Formula"] = phase[0]
+            d["dHf"] = '{} eV/mol'.format(phase[1])
+            d["dHh"] = '{} eV/mol'.format(phase[3])
+            d["GS"] = phase[2]
             if len(phase[6]) == 0:
                 no_id_dict[phase[4].replace('all_states/', '')] = d
             for mpid in phase[6]:
