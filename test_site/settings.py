@@ -37,7 +37,7 @@ AUTHENTICATION_BACKENDS = (
 
 # Application definition
 
-INSTALLED_APPS = (
+INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
     #'django_browserid',
@@ -50,12 +50,16 @@ INSTALLED_APPS = (
     'webtzite',
     'mpcontribs.portal',
     'mpcontribs.rest',
-    'mpcontribs.explorer',
-    'test_site.apps.UWSI2ExplorerConfig',
-    'test_site.apps.MnO2PhaseSelectionExplorerConfig',
-    'test_site.apps.SlacMose2ExplorerConfig',
-    'test_site.apps.DtuExplorerConfig',
-)
+    'mpcontribs.explorer'
+]
+
+from mpcontribs.user_modules import get_user_modules
+for mod_path in get_user_modules():
+    mod = os.path.basename(mod_path)
+    explorer = os.path.join(mod_path, 'explorer', 'urls.py')
+    if os.path.exists(explorer):
+        config = ''.join(mod.replace('_', ' ').title().split()) + 'ExplorerConfig'
+        INSTALLED_APPS.append('.'.join(['test_site', 'apps', config]))
 
 MIDDLEWARE_CLASSES = (
     'django.contrib.sessions.middleware.SessionMiddleware',
