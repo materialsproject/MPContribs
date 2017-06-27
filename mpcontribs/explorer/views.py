@@ -4,6 +4,7 @@ import json, nbformat
 from bson import ObjectId
 from django.shortcuts import render_to_response
 from django.template import RequestContext
+from django.http import HttpResponse
 from mpcontribs.rest.rester import MPContribsRester
 from mpcontribs.rest.views import get_endpoint
 from mpcontribs.builder import export_notebook
@@ -90,6 +91,16 @@ def contribution(request, collection, cid):
     material['detail_id'] = collection[:-1]
     ctx = RequestContext(request, {'material': jsanitize(material)})
     return render_to_response("mpcontribs_explorer_contribution.html", locals(), ctx)
+
+def cif(request, cid, structure_name):
+    if request.user.is_authenticated():
+        API_KEY = request.user.api_key
+        ENDPOINT = request.build_absolute_uri(get_endpoint())
+        with MPContribsRester(API_KEY, endpoint=ENDPOINT) as mpr:
+            cif = mpr.get_cif(cid, structure_name)
+            if cif:
+                return HttpResponse(cif, content_type='text/plain')
+    return HttpResponse(status=404)
 
 # Instead of
 # from monty.json import jsanitize
