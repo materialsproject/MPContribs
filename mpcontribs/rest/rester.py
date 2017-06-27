@@ -4,6 +4,7 @@ from bson.json_util import dumps, loads
 from webtzite.rester import MPResterBase, MPResterError
 from mpcontribs.io.core.mpfile import MPFileCore
 from importlib import import_module
+from pymatgen.io.cif import CifWriter
 
 class MPContribsRester(MPResterBase):
     """convenience functions to interact with MPContribs REST interface"""
@@ -158,3 +159,9 @@ class MPContribsRester(MPResterBase):
                               .format(response.status_code, response.text))
         except Exception as ex:
             raise MPResterError(str(ex))
+
+    def get_cif(self, cid, structure_name):
+        mpfile = self.find_contribution(cid)
+        mpid = mpfile.ids[0]
+        structure = mpfile.sdata[mpid][structure_name]
+        return CifWriter(structure, symprec=1e-3).__str__()
