@@ -9,13 +9,13 @@ convergence: 2 * 10^-7 eV/atom on energy; 0.02 A^-1 forces on all atoms
 k-mesh: 25 A^-1 discretization
 corrections: 0.337 eV/e correction on Mn oxidation applied based on fit to oxide formation energy
 
-{data}
+{info}
 dHf: Formation enthalpy w.r.t pyrolusite (beta) MnO2 and standard state references for H2, Li, Na, K, Mg, Ca (eV/mol MnO2)
 dHh: Enthalpy of hydration w.r.t the unhydrated phase and liquid water at standard state (eV/mol MnO2)
 AxMnO2-ground-state: Is this phase stable versus the AxMnO2 composition line? Y*: phase only stable in hydrated configuration
-phases: Phases are referred to by their mineral names (see data.phase_names)
+phases: Phases are referred to by their mineral names (see info.phase_names)
 
-{data.phase_names}
+{info.phase_names}
 Pyrolusite: beta
 Intergrowth: gamma
 Ramsdellite: ramsdellite
@@ -25,27 +25,27 @@ Layered: delta
 Birnessite: delta
 Other: other
 
-{data.input}
+{input}
 formatted_entries: data/MPContrib_formatted_entries.json
 hull_entries: data/MPContrib_hull_entries.json
 mpid_existing: data/MPExisting_MnO2_ids.json
 mpid_new: data/MPComplete_MnO2_ids.json
 
-{mp-18767}
+{mp-18767.data}
 Phase: o-LiMnO2
 Formula: LiMnO2
 dHf: -3.064 eV/mol
 dHh: --
 GS: Y
 
-{mp-566638}
+{mp-566638.data}
 Phase: KMnO2
 Formula: KMnO2
 dHf: -2.222 eV/mol
 dHh: --
 GS: Y
 
-{mp-18844}
+{mp-18844.data}
 Phase: marokite-CaMn2O4
 Formula: Ca0.5MnO2
 dHf: -2.941 eV/mol
