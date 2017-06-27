@@ -1,6 +1,7 @@
 from __future__ import division, unicode_literals
 from mpcontribs.rest.rester import MPContribsRester
 from mpcontribs.io.archieml.mpfile import MPFile
+from mpcontribs.config import mp_level01_titles
 from pandas import DataFrame
 
 class MnO2PhaseSelectionRester(MPContribsRester):
@@ -17,8 +18,12 @@ class MnO2PhaseSelectionRester(MPContribsRester):
         docs = self.query_contributions(
             criteria={
                 'project': {'$in': ['LBNL', 'MIT', 'University of Kentucky']},
-                'content.Phase': phase_query_key
-            }, projection={'_id': 1, 'mp_cat_id': 1, 'content': 1}
+                'content.data.Phase': phase_query_key
+            },
+            projection={
+                '_id': 1, 'mp_cat_id': 1, 'content.data': 1,
+                'content.{}'.format(mp_level01_titles[3]): 1
+            }
         )
         if not docs:
             raise Exception('No contributions found for MnO2 Phase Selection Explorer!')
@@ -26,15 +31,22 @@ class MnO2PhaseSelectionRester(MPContribsRester):
         for doc in docs:
             mpfile = MPFile.from_contribution(doc)
             mp_id = mpfile.ids[0]
-            contrib = mpfile.hdata[mp_id]
+            contrib = mpfile.hdata[mp_id]['data']
             cid_url = '/'.join([
                 self.preamble.rsplit('/', 1)[0], 'explorer', 'materials', doc['_id']
             ])
             row = [mp_id, cid_url, contrib['Formula']]
             if phase is None:
                 row.append(contrib['Phase'])
-            row += [contrib['dHf'], contrib['dHh'], contrib['GS'], 'TODO']
-            # TODO URLs for mp_id and cid
+            row += [contrib['dHf'], contrib['dHh'], contrib['GS']]
+            cif_url = 'N/A'
+            structures = mpfile.sdata.get(mp_id)
+            if structures:
+                cif_url = '/'.join([
+                    self.preamble.rsplit('/', 1)[0], 'explorer', 'materials',
+                    doc['_id'], 'cif', structures.keys()[0]
+                ])
+            row.append(cif_url)
             data.append((mp_id, row))
 
         return DataFrame.from_items(data, orient='index', columns=columns)
@@ -65,14 +77,14 @@ class MnO2PhaseSelectionRester(MPContribsRester):
         docs = self.query_contributions(
             criteria={
                 'project': {'$in': ['LBNL', 'MIT','University of Kentucky']},
-                'content.Phase': {'$exists': 1}
-            }, projection={'_id': 0, 'content.Phase': 1}
+                'content.data.Phase': {'$exists': 1}
+            }, projection={'_id': 0, 'content.data.Phase': 1}
         )
         if not docs:
             raise Exception('No contributions found for MnO2 Phase Selection Explorer!')
 
         for doc in docs:
-            phases.add(doc['content']['Phase'])
+            phases.add(doc['content']['data']['Phase'])
 
         return list(phases)
 

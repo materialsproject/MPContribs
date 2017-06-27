@@ -1,13 +1,13 @@
 import json, os
 from mpcontribs.io.archieml.mpfile import MPFile
+from mpcontribs.io.core.recdict import RecursiveDict
+from mpcontribs.config import mp_level01_titles
 from pymatgen.core.composition import Composition
 from pymatgen.core.structure import Structure
-from pymatgen.io.cif import CifWriter
 
 def run(mpfile, include_cifs=True):
-    data = mpfile.hdata.general['data']
-    phase_names = data['phase_names']
-    data_input = data.pop('input')
+    data_input = mpfile.document[mp_level01_titles[0]].pop('input')
+    phase_names = mpfile.hdata.general['info']['phase_names']
     dir_path = os.path.dirname(os.path.realpath(__file__))
     for k in data_input.keys():
         data_input[k] = os.path.join(dir_path, data_input[k])
@@ -32,7 +32,7 @@ def run(mpfile, include_cifs=True):
                 c = Composition.from_dict(hstate['c'])
                 s = Structure.from_dict(hstate['s'])
                 for mpid in mpfile.ids:
-                    formula = mpfile.hdata[mpid]['Formula']
+                    formula = mpfile.hdata[mpid]['data']['Formula']
                     if c.almost_equals(Composition(formula)):
                         try:
                             mpfile.add_structure(s, identifier=mpid)
@@ -84,10 +84,12 @@ def run(mpfile, include_cifs=True):
     no_id_dict = {}
     for framework, fdat in mp_contrib_phases.items():
         for phase in fdat:
-            d = {
-                "Phase": framework, "Formula": phase[0], "dHf": '{} eV/mol'.format(phase[1]),
-                "dHh": '{} eV/mol'.format(phase[3]), "GS": phase[2]
-            }
+            d = RecursiveDict()
+            d["Phase"] = framework
+            d["Formula"] = phase[0]
+            d["dHf"] = '{} eV/mol'.format(phase[1])
+            d["dHh"] = '{} eV/mol'.format(phase[3])
+            d["GS"] = phase[2]
             if len(phase[6]) == 0:
                 no_id_dict[phase[4].replace('all_states/', '')] = d
             for mpid in phase[6]:
