@@ -11,6 +11,7 @@ from ..rest.rester import MnO2PhaseSelectionRester
 
 def index(request):
     ctx = RequestContext(request)
+    formations = {}
     if request.user.is_authenticated():
         API_KEY = request.user.api_key
         ENDPOINT = request.build_absolute_uri(get_endpoint())
@@ -19,7 +20,9 @@ def index(request):
             tables = {}
             for phase in mpr.get_phases():
                 df = mpr.get_contributions(phase=phase)
+                dHf = df['dH (formation)'][0]
                 tables[phase] = render_dataframe(df, webapp=True)
+                formations[phase] = dHf
     else:
         ctx.update({'alert': 'Please log in!'})
     return render_to_response("MnO2_phase_selection_explorer_index.html", locals(), ctx)

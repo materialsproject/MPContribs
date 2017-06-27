@@ -22,11 +22,45 @@
 .backgrid tbody tr:hover { background-color: #f9f9f9; }
 </style>
 
+<script type = "text/javascript">
+    var formations= [];
+ </script>
+ 
 {{ provenance|safe }}
 
 {% for phase, table in tables.items %}
 <h3>{{ phase|safe }}</h3>
 {{ table|safe }}
 {% endfor %}
+
+{% for dHf in formations.values %}
+<h4> {{ dHf }} </h4>
+
+<script type = "text/javascript">
+    var a = "{{dHf}}";
+    formations.push(a);
+</script>
+
+{% endfor %}
+
+<script type = "text/javascript">
+    for (i=0; i< formations.length; i++)
+        document.write(formations[i]);
+</script>
+
+<h3> Plot below </h3>
+<div id="tester" style="width:600px;height:250px;"></div>
+ 
+<script>
+requirejs(['main'], function() {
+    require(["plotly"], function(Plotly) {
+        var TESTER = document.getElementById('tester');
+        Plotly.plot( TESTER, [{
+            x: [1,2,3,4,5],
+            y: [1,2,4,8,16] }], {
+                margin: { t: 0 } } );
+    });
+});
+</script>
 
 {% endblock %}
