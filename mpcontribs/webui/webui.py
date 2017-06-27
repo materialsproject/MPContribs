@@ -1,11 +1,11 @@
 from __future__ import unicode_literals, print_function, absolute_import
 
-import json, os, socket, SocketServer, codecs, time, pkgutil, psutil
+import json, os, socket, SocketServer, codecs, time, psutil
 import sys, warnings, multiprocessing
 from IPython.terminal.ipapp import launch_new_instance
 from flask import render_template, request, Response, Blueprint, current_app
 from flask import url_for, redirect, make_response, stream_with_context
-from mpcontribs.utils import process_mpfile, submit_mpfile
+from mpcontribs.utils import get_user_modules, process_mpfile, submit_mpfile
 from mpcontribs.config import default_mpfile_path
 from mpcontribs import users as mpcontribs_users
 from StringIO import StringIO
@@ -18,16 +18,15 @@ stat_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static')
 ingester_bp = Blueprint('webui_ingester', __name__, template_folder=tmpl_dir, static_folder=stat_dir)
 
 session = {}
-mod_iter = pkgutil.iter_modules(mpcontribs_users.__path__)
 projects = {}
-for imp, mod, ispkg in mod_iter:
-    if ispkg:
-        path = os.path.join(mpcontribs_users.__path__[0], mod, 'mpfile_init.txt')
-        if os.path.exists(path):
-            with open(path, 'r') as f:
-                projects[mod] = f.read()
-        else:
-            projects[mod] = ''
+for mod_path in get_user_modules():
+    mod = os.path.basename(mod_path)
+    path = os.path.join(mod_path, 'mpfile_init.txt')
+    if os.path.exists(path):
+        with open(path, 'r') as f:
+            projects[mod] = f.read()
+    else:
+        projects[mod] = ''
 
 def patched_finish(self):
     try:
