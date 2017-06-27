@@ -1,7 +1,7 @@
 """This module provides the views for the portal."""
 
 from django.shortcuts import render_to_response
-from mpcontribs.utils import get_user_explorer_name, get_user_modules
+from mpcontribs.user_modules import *
 import os
 
 def index(request):

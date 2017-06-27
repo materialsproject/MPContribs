@@ -5,8 +5,9 @@ import sys, warnings, multiprocessing
 from IPython.terminal.ipapp import launch_new_instance
 from flask import render_template, request, Response, Blueprint, current_app
 from flask import url_for, redirect, make_response, stream_with_context
-from mpcontribs.utils import get_user_modules, process_mpfile, submit_mpfile
+from mpcontribs.utils import process_mpfile, submit_mpfile
 from mpcontribs.config import default_mpfile_path
+from mpcontribs.user_modules import *
 from mpcontribs import users as mpcontribs_users
 from StringIO import StringIO
 from webtzite import configure_settings

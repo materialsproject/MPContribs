@@ -1,5 +1,5 @@
 from django.conf.urls import include, url
-from mpcontribs.utils import get_user_urlpatterns
+from mpcontribs.user_modules import get_user_urlpatterns
 
 urlpatterns = [
     url(r'', include('mpcontribs.portal.urls')),
