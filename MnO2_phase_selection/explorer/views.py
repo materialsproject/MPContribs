@@ -15,11 +15,14 @@ def index(request):
         API_KEY = request.user.api_key
         ENDPOINT = request.build_absolute_uri(get_endpoint())
         with MnO2PhaseSelectionRester(API_KEY, endpoint=ENDPOINT) as mpr:
-            provenance = render_dict(mpr.get_provenance(), webapp=True)
-            tables = {}
-            for phase in mpr.get_phases():
-                df = mpr.get_contributions(phase=phase)
-                tables[phase] = render_dataframe(df, webapp=True)
+            try:
+                provenance = render_dict(mpr.get_provenance(), webapp=True)
+                tables = {}
+                for phase in mpr.get_phases():
+                    df = mpr.get_contributions(phase=phase)
+                    tables[phase] = render_dataframe(df, webapp=True)
+            except Exception as ex:
+                ctx.update({'alert': str(ex)})
     else:
         ctx.update({'alert': 'Please log in!'})
     return render_to_response("MnO2_phase_selection_explorer_index.html", locals(), ctx)

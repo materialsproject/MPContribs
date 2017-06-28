@@ -15,10 +15,13 @@ def index(request):
         API_KEY = request.user.api_key
         ENDPOINT = request.build_absolute_uri(get_endpoint())
         with SlacMoSe2Rester(API_KEY, endpoint=ENDPOINT) as mpr:
-            provenance = render_dict(mpr.get_provenance(), webapp=True)
-            graphs = {}
-            for key, plot in mpr.get_graphs().items():
-                graphs[key] = render_plot(plot, webapp=True)
+            try:
+                provenance = render_dict(mpr.get_provenance(), webapp=True)
+                graphs = {}
+                for key, plot in mpr.get_graphs().items():
+                    graphs[key] = render_plot(plot, webapp=True)
+            except Exception as ex:
+                ctx.update({'alert': str(ex)})
     else:
         ctx.update({'alert': 'Please log in!'})
     return render_to_response("slac_mose2_explorer_index.html", locals(), ctx)
