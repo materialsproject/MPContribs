@@ -1,7 +1,7 @@
 from mpcontribs import users as mpcontribs_users
 import os, pkgutil
 
-def get_user_modules():
+def get_users_modules():
     mod_iter = pkgutil.iter_modules(mpcontribs_users.__path__)
     return [
         os.path.join(mpcontribs_users.__path__[0], mod)
@@ -10,7 +10,7 @@ def get_user_modules():
 
 def get_user_urlpatterns():
     urlpatterns = []
-    for mod_path in get_user_modules():
+    for mod_path in get_users_modules():
         if os.path.exists(os.path.join(mod_path, 'explorer', 'urls.py')):
             url = '^{}'.format(os.path.join(os.path.basename(mod_path), ''))
             mod_path_split = os.path.normpath(mod_path).split(os.sep)[-3:]
@@ -28,7 +28,7 @@ def get_user_explorer_config(mod):
 
 def get_user_installed_apps():
     installed_apps = []
-    for mod_path in get_user_modules():
+    for mod_path in get_users_modules():
         mod = os.path.basename(mod_path)
         explorer = os.path.join(mod_path, 'explorer', 'urls.py')
         if os.path.exists(explorer):

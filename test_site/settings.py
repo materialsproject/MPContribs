@@ -37,7 +37,7 @@ AUTHENTICATION_BACKENDS = (
 
 # Application definition
 
-from mpcontribs.user_modules import get_user_installed_apps
+from mpcontribs.users_modules import get_user_installed_apps
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',

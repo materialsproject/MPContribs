@@ -1,12 +1,12 @@
 """This module provides the views for the portal."""
 
 from django.shortcuts import render_to_response
-from mpcontribs.user_modules import *
+from mpcontribs.users_modules import *
 import os
 
 def index(request):
     a_tags = []
-    for mod_path in get_user_modules():
+    for mod_path in get_users_modules():
         explorer = os.path.join(mod_path, 'explorer', 'urls.py')
         if os.path.exists(explorer):
             a_tags.append({
