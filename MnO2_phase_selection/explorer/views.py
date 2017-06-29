@@ -21,9 +21,7 @@ def index(request):
                 tables = {}
                 for phase in mpr.get_phases():
                     df = mpr.get_contributions(phase=phase)
-                    dHf = df['dH (formation)'][0]
                     tables[phase] = render_dataframe(df, webapp=True)
-                    formations[phase] = dHf
             except Exception as ex:
                 ctx.update({'alert': str(ex)})
     else:
