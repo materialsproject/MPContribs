@@ -65,11 +65,12 @@ def process_mpfile(path_or_mpfile, target=None, fmt='archieml'):
         contributor = '{} <phuck@lbl.gov>'.format(full_name) # fake
         cma = ContributionMongoAdapter()
         axes, ov_data = set(), dict()
-        mpfile, cid_shorts = MPFile.from_dict(), [] # output
+        mpfile_out, cid_shorts = MPFile(), [] # output
         sm = StructureMatcher(primitive_cell=False, scale=False)
 
         # split input MPFile into contributions: treat every mp_cat_id as separate DB insert
-        for idx, mpfile_single in enumerate(MPFile.from_file(path_or_mpfile).split()):
+        mpfile_in = MPFile.from_file(path_or_mpfile)
+        for idx, mpfile_single in enumerate(mpfile_in.split()):
             mp_cat_id = mpfile_single.document.keys()[0]
             # TODO test update mode
             cid = mpfile_single.document[mp_cat_id].get('cid', None)
@@ -152,7 +153,7 @@ def process_mpfile(path_or_mpfile, target=None, fmt='archieml'):
                     axes.intersection_update(local_axes)
                 yield 'OK.</br>'.format(idx, cid_short)
 
-            mpfile.concat(mpfile_single)
+            mpfile_out.concat(mpfile_single)
             time.sleep(.01)
 
         ncontribs = len(cid_shorts)
