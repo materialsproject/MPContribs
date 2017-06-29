@@ -41,7 +41,7 @@ def index(request, collection='materials'):
                         ) for prefix in ['options', 'selection']
                     )
                     mode = request.POST['submit']
-                    if mode == 'Find':
+                    if mode == 'Find' or mode == 'Delete All':
                         criteria = {}
                         for idx, key in enumerate(projection_keys):
                             if selection[fields[idx]]:
@@ -51,10 +51,15 @@ def index(request, collection='materials'):
                         docs = mpr.query_contributions(
                             criteria=criteria, collection='contributions'
                         )
-                        urls = [
-                            '/'.join([request.path, str(doc['_id'])])
-                            for doc in docs
-                        ]
+                        if mode == 'Find':
+                            urls = [
+                                '/'.join([request.path, str(doc['_id'])])
+                                for doc in docs
+                            ]
+                        elif mode == 'Delete All':
+                            # TODO check this deletes only queried docs
+                            cids = [contrib['_id'] for contrib in docs]
+                            docs = mpr.delete_contributions(cids)
                     elif mode == 'Show':
                         if selection[fields[2]]:
                             docs = mpr.query_contributions(
