@@ -37,6 +37,7 @@ AUTHENTICATION_BACKENDS = (
 
 # Application definition
 
+from mpcontribs.user_modules import get_user_installed_apps
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -51,15 +52,7 @@ INSTALLED_APPS = [
     'mpcontribs.portal',
     'mpcontribs.rest',
     'mpcontribs.explorer'
-]
-
-from mpcontribs.user_modules import get_user_modules
-for mod_path in get_user_modules():
-    mod = os.path.basename(mod_path)
-    explorer = os.path.join(mod_path, 'explorer', 'urls.py')
-    if os.path.exists(explorer):
-        config = ''.join(mod.replace('_', ' ').title().split()) + 'ExplorerConfig'
-        INSTALLED_APPS.append('.'.join(['test_site', 'apps', config]))
+] + get_user_installed_apps()
 
 MIDDLEWARE_CLASSES = (
     'django.contrib.sessions.middleware.SessionMiddleware',

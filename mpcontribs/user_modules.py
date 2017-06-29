@@ -22,3 +22,16 @@ def get_user_explorer_name(path):
     return '_'.join(
         os.path.dirname(os.path.normpath(path)).split(os.sep)[-4:] + ['index']
     )
+
+def get_user_explorer_config(mod):
+    return ''.join(mod.replace('_', ' ').title().split()) + 'ExplorerConfig'
+
+def get_user_installed_apps():
+    installed_apps = []
+    for mod_path in get_user_modules():
+        mod = os.path.basename(mod_path)
+        explorer = os.path.join(mod_path, 'explorer', 'urls.py')
+        if os.path.exists(explorer):
+            config = get_user_explorer_config(mod)
+            installed_apps.append('.'.join(['test_site', 'apps', config]))
+    return installed_apps
