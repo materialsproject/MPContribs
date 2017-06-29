@@ -25,5 +25,5 @@ def run(mpfile, nmax=None):
         d['quasi-particle_bandgap']['indirect'] = row.gllbsc_ind_gap
         d['quasi-particle_bandgap']['direct'] = row.gllbsc_dir_gap
         mpfile.add_hierarchical_data(mpid, d)
-        if nmax and idx == nmax:
+        if nmax and idx == nmax-1:
             break
