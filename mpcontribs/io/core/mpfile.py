@@ -191,6 +191,12 @@ class MPFileCore(six.with_metaclass(ABCMeta, object)):
         else:
             raise ValueError(source, 'not supported!')
 
+        if name is not None:
+            if not isinstance(name, six.string_types):
+                raise ValueError('structure name needs to be a string')
+            elif '.' in name:
+                raise ValueError('structure name cannot contain dots (.)')
+
         mpr = MPRester()
         if not mpr.api_key:
             raise ValueError(
@@ -211,7 +217,9 @@ class MPFileCore(six.with_metaclass(ABCMeta, object)):
             ))
 
         idx = len(self.document.get(identifier, {}).get(mp_level01_titles[3], {}))
-        sub_key = 's{}'.format(idx) if name is None else name
+        sub_key = structure.composition.reduced_formula if name is None else name
+        if sub_key in self.document.get(identifier, {}).get(mp_level01_titles[3], {}):
+            sub_key += '_{}'.format(idx)
         self.document.rec_update(nest_dict(
             structure.as_dict(), [identifier, mp_level01_titles[3], sub_key]
         ))
