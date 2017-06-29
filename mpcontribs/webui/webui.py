@@ -7,7 +7,7 @@ from flask import render_template, request, Response, Blueprint, current_app
 from flask import url_for, redirect, make_response, stream_with_context
 from mpcontribs.utils import process_mpfile, submit_mpfile
 from mpcontribs.config import default_mpfile_path
-from mpcontribs.user_modules import *
+from mpcontribs.users_modules import *
 from mpcontribs import users as mpcontribs_users
 from StringIO import StringIO
 from webtzite import configure_settings
@@ -20,7 +20,7 @@ ingester_bp = Blueprint('webui_ingester', __name__, template_folder=tmpl_dir, st
 
 session = {}
 projects = {}
-for mod_path in get_user_modules():
+for mod_path in get_users_modules():
     mod = os.path.basename(mod_path)
     path = os.path.join(mod_path, 'mpfile_init.txt')
     if os.path.exists(path):
