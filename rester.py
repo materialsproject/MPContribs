@@ -33,14 +33,23 @@ class MPResterBase(object):
             to the standard Materials Project REST address, but can be changed
             to other urls implementing a similar interface.
     """
-    def __init__(self, api_key=None,
-                 endpoint="https://www.materialsproject.org/rest/v2"):
+    def __init__(self, api_key=None, endpoint=None):
+        if api_key is None or endpoint is None:
+            try:
+                from pymatgen import SETTINGS
+            except ImportError:
+                warnings.warn('MPResterBase: not using pymatgen SETTINGS!')
+                SETTINGS = {}
         if api_key is not None:
             self.api_key = api_key
         else:
-            from pymatgen import SETTINGS
             self.api_key = SETTINGS.get("PMG_MAPI_KEY", "")
-        self.preamble = endpoint
+        if endpoint is not None:
+            self.preamble = endpoint
+        else:
+            self.preamble = SETTINGS.get(
+                "PMG_MAPI_ENDPOINT", "https://www.materialsproject.org/rest/v2"
+            )
         self.session = requests.Session()
         self.session.headers = {"x-api-key": self.api_key}
 
