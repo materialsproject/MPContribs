@@ -2,10 +2,20 @@ import json, os
 from mpcontribs.io.archieml.mpfile import MPFile
 from mpcontribs.io.core.recdict import RecursiveDict
 from mpcontribs.config import mp_level01_titles
+from mpcontribs.users.MnO2_phase_selection.rest.rester import MnO2PhaseSelectionRester
 from pymatgen.core.composition import Composition
 from pymatgen.core.structure import Structure
 
 def run(mpfile, include_cifs=True):
+
+    mpr = MnO2PhaseSelectionRester()
+    if not mpr.api_key:
+        print 'API key not set. Run `pmg config --add PMG_MAPI_KEY <USER_API_KEY>`.'
+        return
+
+    docs = mpr.query_contributions(criteria={'content.doi': '10.1021/jacs.6b11301'})
+    existing_mpids = [doc['mp_cat_id'] for doc in docs]
+
     data_input = mpfile.document[mp_level01_titles[0]].pop('input')
     phase_names = mpfile.hdata.general['info']['phase_names']
     dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -32,14 +42,18 @@ def run(mpfile, include_cifs=True):
                 c = Composition.from_dict(hstate['c'])
                 s = Structure.from_dict(hstate['s'])
                 for mpid in mpfile.ids:
-                    formula = mpfile.hdata[mpid]['data']['Formula']
-                    if c.almost_equals(Composition(formula)):
-                        try:
-                            mpfile.add_structure(s, identifier=mpid)
-                            print formula, 'added to', mpid
-                        except Exception as ex:
-                            print 'tried to add structure to', mpid, 'but', str(ex)
-                        break
+                    if mpid not in existing_mpids:
+                        formula = mpfile.hdata[mpid]['data']['Formula']
+                        if c.almost_equals(Composition(formula)):
+                            try:
+                                mpfile.add_structure(s, identifier=mpid)
+                                print formula, 'added to', mpid
+                            except Exception as ex:
+                                print 'tried to add structure to', mpid, 'but', str(ex)
+                            break
+                    else:
+                        mpfile.document.pop(mpid)
+                        print mpid, 'already submitted'
 
     # "phase": 'postspinel-NaMn2O4', "Formula": 'Na0.5MnO2',
     # "dHf (eV/mol)": -1.415, "dHh (eV/mol)": '--', "Ground state?": 'Y',
@@ -48,6 +62,8 @@ def run(mpfile, include_cifs=True):
     # Get mp-ids for all entries based on matching the VASP directory path names
     # Paths are different in the existing and new mp-id dictionary, so processing has to be independent
     ################################################################################################################
+
+    print 'get all mp-ids based on VASP directory paths ...'
 
     for framework, fdat in mp_contrib_phases.items():
         for i, phase in enumerate(fdat):
@@ -81,7 +97,14 @@ def run(mpfile, include_cifs=True):
     # For structures that have mp-ids, add them to the contribution dictionary.
     # For those that don't, run a separate dictionary to keep track of them
     ################################################################################################################
+
+    print 'add structures with mp-ids to contribution ...'
+
     no_id_dict = {}
+    errors_file = os.path.join(os.path.dirname(__file__), 'errors.json')
+    with open(errors_file, 'r') as f:
+        errors = json.load(f)
+
     for framework, fdat in mp_contrib_phases.items():
         for phase in fdat:
             d = RecursiveDict()
@@ -93,18 +116,28 @@ def run(mpfile, include_cifs=True):
             if len(phase[6]) == 0:
                 no_id_dict[phase[4].replace('all_states/', '')] = d
             for mpid in phase[6]:
-                mpfile.add_hierarchical_data(mpid, d)
-                print 'added', mpid
-                if include_cifs:
-                    try:
-                        mpfile.add_structure(phase[5], identifier=mpid)
-                        print framework, phase[0], 'added to', mpid
-                    except ValueError as ex:
-                        print 'tried to add structure to', mpid, 'but', str(ex)
-            break
-        break
+                if mpid not in existing_mpids:
+                    mpfile.add_hierarchical_data(mpid, d)
+                    print 'added', mpid
+                    if include_cifs:
+                        try:
+                            mpfile.add_structure(phase[5], identifier=mpid)
+                            print framework, phase[0], 'added to', mpid
+                        except ValueError as ex:
+                            print 'tried to add structure to', mpid, 'but', str(ex)
+                            errors[mpid] = str(ex)
+                else:
+                    print mpid, 'already submitted'
 
-    return 'DONE. {} do not have mp-ids!'.format(len(no_id_dict))
+    with open(errors_file, 'w') as f:
+        json.dump(errors, f)
+
+    print """
+    DONE.
+    {} structures to submit.
+    {} structures do not have mp-ids.
+    {} structures with mp-ids have errors.
+    """.format(len(mpfile.ids), len(no_id_dict), len(errors))
 
 if __name__ == '__main__':
     print run()
