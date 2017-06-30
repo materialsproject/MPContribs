@@ -8,13 +8,26 @@ from pymatgen.io.cif import CifWriter
 
 class MPContribsRester(MPResterBase):
     """convenience functions to interact with MPContribs REST interface"""
-    def __init__(self, api_key=None, endpoint=None, dbtype='mpcontribs_read'):
+    def __init__(self, api_key=None, endpoint=None, dbtype='mpcontribs_read', test_site=False):
         if api_key is None:
             api_key = os.environ.get('PMG_MAPI_KEY')
         if endpoint is None:
             endpoint = os.environ.get(
                 'PMG_MAPI_ENDPOINT', 'http://alpha.materialsproject.org/mpcontribs/rest'
             )
+        if test_site:
+            # override api_key and endpoint with test_site values
+            jpy_user = os.environ.get('JPY_USER')
+            if not jpy_user:
+                raise ValueError('Cannot connect to test_site outside MP JupyterHub!')
+            endpoint = '/'.join([
+                'https://jupyterhub.materialsproject.org/flaskproxy', jpy_user,
+                'test_site/mpcontribs/rest'
+            ])
+            from webtzite.models import RegisteredUser
+            email = jpy_user + '@users.noreply.github.com'
+            u = RegisteredUser.objects.get(email=email)
+            api_key = u.api_key
         super(MPContribsRester, self).__init__(
           api_key=api_key, endpoint=endpoint
         )
