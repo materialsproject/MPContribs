@@ -87,6 +87,8 @@ class MPContributionsBuilder():
         """update materials/compositions collections with contributed data"""
         cid_short, cid_str = get_short_object_id(cid), str(cid)
         contrib = self.find_contribution(cid)
+        if not contrib:
+            raise Exception('Contribution {} not found!'.format(cid))
         if contributor_email not in contrib['collaborators']: raise ValueError(
             "Build stopped: building contribution {} not "
             "allowed due to insufficient permissions of {}! Ask "
