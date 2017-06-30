@@ -50,6 +50,8 @@ class MPResterBase(object):
             self.preamble = SETTINGS.get(
                 "PMG_MAPI_ENDPOINT", "https://www.materialsproject.org/rest/v2"
             )
+        if not self.api_key:
+            raise ValueError('API key not set. Run `pmg config --add PMG_MAPI_KEY <USER_API_KEY>`.')
         self.session = requests.Session()
         self.session.headers = {"x-api-key": self.api_key}
 
