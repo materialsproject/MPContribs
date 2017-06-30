@@ -90,26 +90,36 @@ def process_mpfile(path_or_mpfile, target=None, fmt='archieml'):
                 yield 'detailed check ... '
                 found_inconsistency = False
                 # check structural data
+                structures_ok = True
                 for name, s1 in mpfile_single.sdata[mp_cat_id].iteritems():
                     s2 = mpfile_single_cmp.sdata[mp_cat_id][name]
                     if s1 != s2:
                         if len(s1) != len(s2):
-                            raise Exception('different number of sites: {} -> {}!'.format(len(s1), len(s2)))
+                            yield 'different number of sites: {} -> {}!<br>'.format(len(s1), len(s2))
+                            structures_ok = False
                         if s1.lattice != s2.lattice:
-                            raise Exception('lattices different!')
+                            yield 'lattices different!<br>'
+                            structures_ok = False
                         for site in s1:
                             if site not in s2:
                                 found_inconsistency = True
                                 if not sm.fit(s1, s2):
-                                    raise Exception('structures do not match!')
+                                    yield 'structures do not match!<br>'
+                                    structures_ok = False
                                 break
+                        if not structures_ok:
+                            break
+                if not structures_ok:
+                    continue
                 # check hierarchical and tabular data
                 # compare json strings to find first inconsistency
                 json_compare(mpfile_single.hdata, mpfile_single_cmp.hdata)
                 json_compare(mpfile_single.tdata, mpfile_single_cmp.tdata)
                 if not found_inconsistency:
-                    # documents are not equal, so some exception must be raised - should never happen
-                    raise Exception('inconsistency found but not identified!')
+                    # documents are not equal, but all components checked, skip contribution
+                    # should not happen
+                    yield 'inconsistency found but not identified!<br>'
+                    continue
 
             if target is not None:
                 yield 'submit to MP ... '
