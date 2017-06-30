@@ -17,7 +17,7 @@ class MnO2PhaseSelectionRester(MPContribsRester):
 
         docs = self.query_contributions(
             criteria={
-                'project': {'$in': ['LBNL', 'MIT', 'University of Kentucky']},
+                'content.doi': '10.1021/jacs.6b11301',
                 'content.data.Phase': phase_query_key
             },
             projection={
@@ -54,7 +54,7 @@ class MnO2PhaseSelectionRester(MPContribsRester):
     def get_provenance(self):
         docs = self.query_contributions(
             criteria={
-                'project': {'$in': ['LBNL', 'MIT','University of Kentucky']},
+                'content.doi': '10.1021/jacs.6b11301',
                 'content.authors': {'$exists': 1},
                 'content.title': {'$exists': 1},
                 'content.reference': {'$exists': 1}
@@ -76,7 +76,7 @@ class MnO2PhaseSelectionRester(MPContribsRester):
         phases = set()
         docs = self.query_contributions(
             criteria={
-                'project': {'$in': ['LBNL', 'MIT','University of Kentucky']},
+                'content.doi': '10.1021/jacs.6b11301',
                 'content.data.Phase': {'$exists': 1}
             }, projection={'_id': 0, 'content.data.Phase': 1}
         )
