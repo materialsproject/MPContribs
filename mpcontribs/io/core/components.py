@@ -52,13 +52,15 @@ def get_backgrid_table(df):
         is_url_column = None
         for row_index in xrange(nrows):
             cell = str(df[k][row_index])
-            is_url_column = mp_id_pattern.match(cell)
+            is_url_column = not cell # empty string is ok
             if not is_url_column:
-                try:
-                    val(cell)
-                except ValidationError:
-                    break
-                is_url_column = True
+                is_url_column = mp_id_pattern.match(cell)
+                if not is_url_column:
+                    try:
+                        val(cell)
+                    except ValidationError:
+                        break
+                    is_url_column = True
         cell_type = 'uri' if is_url_column else 'string'
         table['columns'].append({ 'name': k, 'cell': cell_type })
 
