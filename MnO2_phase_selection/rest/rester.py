@@ -39,7 +39,7 @@ class MnO2PhaseSelectionRester(MPContribsRester):
             if phase is None:
                 row.append(contrib['Phase'])
             row += [contrib['dHf'], contrib['dHh'], contrib['GS']]
-            cif_url = 'N/A'
+            cif_url = ''
             structures = mpfile.sdata.get(mp_id)
             if structures:
                 cif_url = '/'.join([
