@@ -15,7 +15,8 @@
   </button>
   {{ alert }}
 </div>
-{% endif %}
+
+{% else %}
 
 <style>
 .backgrid .string-cell { text-align: center; }
@@ -27,4 +28,5 @@
 <h3>Data</h3>
 {{ table|safe }}
 
+{% endif %}
 {% endblock %}
