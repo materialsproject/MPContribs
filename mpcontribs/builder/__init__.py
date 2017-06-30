@@ -117,8 +117,8 @@ class MPContributionsBuilder():
             nb['cells'].append(nbf.new_code_cell(
                 "from mpcontribs.rest.rester import MPContribsRester"
             ))
-            os.environ['MAPI_KEY'] = api_key
-            os.environ['MAPI_ENDPOINT'] = endpoint
+            os.environ['PMG_MAPI_KEY'] = api_key
+            os.environ['PMG_MAPI_ENDPOINT'] = endpoint
             nb['cells'].append(nbf.new_code_cell(
                 "with MPContribsRester() as mpr:\n"
                 "    mpfile = mpr.find_contribution('{}')\n"
