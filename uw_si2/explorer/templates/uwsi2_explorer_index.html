@@ -14,7 +14,8 @@
   </button>
   {{ alert }}
 </div>
-{% endif %}
+
+{% else %}
 
 <style>
 .backgrid .string-cell { text-align: center; }
@@ -271,4 +272,5 @@ require(["plotly"], function(Plotly) {
 });
 });
 </script>
+{% endif %}
 {% endblock %}

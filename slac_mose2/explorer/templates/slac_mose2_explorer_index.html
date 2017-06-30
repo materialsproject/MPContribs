@@ -15,7 +15,8 @@
   </button>
   {{ alert }}
 </div>
-{% endif %}
+
+{% else %}
 
 <style>
 .backgrid .string-cell { text-align: center; }
@@ -29,4 +30,5 @@
 {{ graph|safe }}
 {% endfor %}
 
+{% endif %}
 {% endblock %}
