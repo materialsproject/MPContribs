@@ -16,13 +16,22 @@ class DtuRester(MPContribsRester):
 
     def get_contributions(self):
         data = []
-        columns = ['mp-id', 'contribution', 'kohn-sham_bandgap(indirect)', 'kohn-sham_bandgap(direct)',  'derivative_discontinuity',
-        'quasi-particle_bandgap(indirect)', 'quasi-particle_bandgap(direct)']
+        columns = [
+            'mp-id', 'contribution',
+            'kohn-sham_bandgap(indirect)', 'kohn-sham_bandgap(direct)',
+            'derivative_discontinuity',
+            'quasi-particle_bandgap(indirect)', 'quasi-particle_bandgap(direct)'
+        ]
 
         docs = self.query_contributions(
             criteria=self.dtu_query,
-            projection={'_id': 1, 'mp_cat_id': 1, 'content.kohn-sham_bandgap.indirect': 1, 'content.kohn-sham_bandgap.direct': 1,
-            'content.derivative_discontinuity': 1, 'content.quasi-particle_bandgap.indirect': 1, 'content.quasi-particle_bandgap.direct': 1}
+            projection={
+                '_id': 1, 'mp_cat_id': 1,
+                'content.kohn-sham_bandgap.indirect': 1,
+                'content.kohn-sham_bandgap.direct': 1,
+                'content.derivative_discontinuity': 1,
+                'content.quasi-particle_bandgap.indirect': 1,
+                'content.quasi-particle_bandgap.direct': 1}
         )
         if not docs:
             raise Exception('No contributions found for DTU Explorer!')
@@ -34,8 +43,14 @@ class DtuRester(MPContribsRester):
             cid_url = '/'.join([
                 self.preamble.rsplit('/', 1)[0], 'explorer', 'materials', doc['_id']
             ])
-            row = [mp_id, cid_url, contrib['kohn-sham_bandgap']['indirect'], contrib['kohn-sham_bandgap']['direct'],
-            contrib['derivative_discontinuity'], contrib['quasi-particle_bandgap']['indirect'], contrib['quasi-particle_bandgap']['direct']]
+            row = [
+                mp_id, cid_url,
+                contrib['kohn-sham_bandgap']['indirect'],
+                contrib['kohn-sham_bandgap']['direct'],
+                contrib['derivative_discontinuity'],
+                contrib['quasi-particle_bandgap']['indirect'],
+                contrib['quasi-particle_bandgap']['direct']
+            ]
             data.append((mp_id, row))
         return DataFrame.from_items(data, orient='index', columns=columns)
 
