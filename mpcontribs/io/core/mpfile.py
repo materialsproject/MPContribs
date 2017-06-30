@@ -152,8 +152,6 @@ class MPFileCore(six.with_metaclass(ABCMeta, object)):
 
     def insert_id(self, mp_cat_id, cid):
         """insert contribution ID for `mp_cat_id` as `cid: <cid>`"""
-        if len(self.document) > 1:
-            raise ValueError('ID insertion only possible for single section files')
         first_sub_key = self.document[mp_cat_id].keys()[0]
         self.document[mp_cat_id].insert_before(first_sub_key, ('cid', str(cid)))
 
