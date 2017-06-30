@@ -38,7 +38,8 @@ class MPResterBase(object):
         if api_key is not None:
             self.api_key = api_key
         else:
-            self.api_key = os.environ.get("MAPI_KEY", "")
+            from pymatgen import SETTINGS
+            self.api_key = SETTINGS.get("PMG_MAPI_KEY", "")
         self.preamble = endpoint
         self.session = requests.Session()
         self.session.headers = {"x-api-key": self.api_key}
