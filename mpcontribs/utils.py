@@ -80,12 +80,21 @@ def process_mpfile(path_or_mpfile, target=None, fmt='archieml'):
                 yield 'use contribution #{} to update ID #{} ... '.format(idx, cid_short)
 
             # always run local "submission" to catch failure before interacting with DB
-            yield 'locally process contribution #{} ... '.format(idx)
+            yield 'locally process contribution #{} ({}) ... '.format(idx, mp_cat_id)
             doc = cma.submit_contribution(mpfile_single, contributor) # does not use get_string
             cid = doc['_id']
 
             yield 'check consistency ... '
-            mpfile_single_cmp = MPFile.from_string(mpfile_single.get_string())
+            try:
+                mpfile_single_cmp_str = mpfile_single.get_string()
+            except Exception as ex:
+                yield 'get_string() FAILED!<br>'
+                continue
+            try:
+                mpfile_single_cmp = MPFile.from_string(mpfile_single_cmp_str)
+            except Exception as ex:
+                yield 'from_string() FAILED!<br>'
+                continue
             if mpfile_single.document != mpfile_single_cmp.document:
                 yield 'detailed check ... '
                 found_inconsistency = False
@@ -97,9 +106,11 @@ def process_mpfile(path_or_mpfile, target=None, fmt='archieml'):
                         if len(s1) != len(s2):
                             yield 'different number of sites: {} -> {}!<br>'.format(len(s1), len(s2))
                             structures_ok = False
+                            break
                         if s1.lattice != s2.lattice:
                             yield 'lattices different!<br>'
                             structures_ok = False
+                            break
                         for site in s1:
                             if site not in s2:
                                 found_inconsistency = True
@@ -107,8 +118,8 @@ def process_mpfile(path_or_mpfile, target=None, fmt='archieml'):
                                     yield 'structures do not match!<br>'
                                     structures_ok = False
                                 break
-                        if not structures_ok:
-                            break
+                            if not structures_ok:
+                                break
                 if not structures_ok:
                     continue
                 # check hierarchical and tabular data
