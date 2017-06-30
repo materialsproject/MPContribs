@@ -8,19 +8,18 @@ from pymatgen.core.structure import Structure
 
 def run(mpfile, include_cifs=True):
 
-    mpr = MnO2PhaseSelectionRester()
-    if not mpr.api_key:
-        print 'API key not set. Run `pmg config --add PMG_MAPI_KEY <USER_API_KEY>`.'
-        return
-
-    docs = mpr.query_contributions(criteria={'content.doi': '10.1021/jacs.6b11301'})
-    existing_mpids = [doc['mp_cat_id'] for doc in docs]
-
     data_input = mpfile.document[mp_level01_titles[0]].pop('input')
     phase_names = mpfile.hdata.general['info']['phase_names']
     dir_path = os.path.dirname(os.path.realpath(__file__))
     for k in data_input.keys():
         data_input[k] = os.path.join(dir_path, data_input[k])
+
+    doi = mpfile.hdata.general['doi']
+    existing_mpids = {}
+    for b in [False, True]:
+        with MnO2PhaseSelectionRester(test_site=b) as mpr:
+            for doc in mpr.query_contributions(criteria={'content.doi': doi}):
+                existing_mpids[doc['mp_cat_id']] = doc['_id']
 
     with open(data_input['formatted_entries'], "r") as fin:
         mp_contrib_phases = json.loads(fin.read())
@@ -42,18 +41,18 @@ def run(mpfile, include_cifs=True):
                 c = Composition.from_dict(hstate['c'])
                 s = Structure.from_dict(hstate['s'])
                 for mpid in mpfile.ids:
-                    if mpid not in existing_mpids:
-                        formula = mpfile.hdata[mpid]['data']['Formula']
-                        if c.almost_equals(Composition(formula)):
-                            try:
-                                mpfile.add_structure(s, identifier=mpid)
-                                print formula, 'added to', mpid
-                            except Exception as ex:
-                                print 'tried to add structure to', mpid, 'but', str(ex)
-                            break
-                    else:
-                        mpfile.document.pop(mpid)
-                        print mpid, 'already submitted'
+                    formula = mpfile.hdata[mpid]['data']['Formula']
+                    if c.almost_equals(Composition(formula)):
+                        try:
+                            mpfile.add_structure(s, identifier=mpid)
+                            print formula, 'added to', mpid
+                        except Exception as ex:
+                            print 'tried to add structure to', mpid, 'but', str(ex)
+                        if mpid in existing_mpids:
+                            cid = existing_mpids[mpid]
+                            mpfile.insert_id(mpid, cid)
+                            print cid, 'inserted to update', mpid
+                        break
 
     # "phase": 'postspinel-NaMn2O4', "Formula": 'Na0.5MnO2',
     # "dHf (eV/mol)": -1.415, "dHh (eV/mol)": '--', "Ground state?": 'Y',
@@ -116,18 +115,19 @@ def run(mpfile, include_cifs=True):
             if len(phase[6]) == 0:
                 no_id_dict[phase[4].replace('all_states/', '')] = d
             for mpid in phase[6]:
-                if mpid not in existing_mpids:
-                    mpfile.add_hierarchical_data(mpid, d)
-                    print 'added', mpid
-                    if include_cifs:
-                        try:
-                            mpfile.add_structure(phase[5], identifier=mpid)
-                            print framework, phase[0], 'added to', mpid
-                        except ValueError as ex:
-                            print 'tried to add structure to', mpid, 'but', str(ex)
-                            errors[mpid] = str(ex)
-                else:
-                    print mpid, 'already submitted'
+                mpfile.add_hierarchical_data(mpid, d)
+                print 'added', mpid
+                if mpid in existing_mpids:
+                    cid = existing_mpids[mpid]
+                    mpfile.insert_id(mpid, cid)
+                    print cid, 'inserted to update', mpid
+                if include_cifs:
+                    try:
+                        mpfile.add_structure(phase[5], identifier=mpid)
+                        print framework, phase[0], 'added to', mpid
+                    except ValueError as ex:
+                        print 'tried to add structure to', mpid, 'but', str(ex)
+                        errors[mpid] = str(ex)
 
     with open(errors_file, 'w') as f:
         json.dump(errors, f)
