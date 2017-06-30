@@ -8,10 +8,13 @@ from pymatgen.io.cif import CifWriter
 
 class MPContribsRester(MPResterBase):
     """convenience functions to interact with MPContribs REST interface"""
-    def __init__(self,
-            api_key=None,
-            endpoint='http://alpha.materialsproject.org/mpcontribs/rest',
-            dbtype='mpcontribs_read'):
+    def __init__(self, api_key=None, endpoint=None, dbtype='mpcontribs_read'):
+        if api_key is None:
+            api_key = os.environ.get('PMG_MAPI_KEY')
+        if endpoint is None:
+            endpoint = os.environ.get(
+                'PMG_MAPI_ENDPOINT', 'http://alpha.materialsproject.org/mpcontribs/rest'
+            )
         super(MPContribsRester, self).__init__(
           api_key=api_key, endpoint=endpoint
         )
