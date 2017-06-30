@@ -12,7 +12,7 @@ class ContributionMongoAdapter(object):
             self.fake = Faker()
         except:
             self.fake = None
-        if not self.db is None:
+        if self.db is not None:
             opts = bson.CodecOptions(document_class=bson.SON)
             self.contributions = self.db.contributions.with_options(codec_options=opts)
             self.materials = self.db.materials.with_options(codec_options=opts)
@@ -67,7 +67,7 @@ class ContributionMongoAdapter(object):
         cid = bson.ObjectId(data['cid']) if update else bson.ObjectId()
         cid_short = get_short_object_id(cid)
         collaborators = [contributor_email]
-        if update: # check contributor permissions if update mode
+        if update and self.db is not None: # check contributor permissions if update mode
             data.pop('cid')
             collaborators = self.contributions.find_one(
                 {'_id': cid}, {'collaborators': 1}
