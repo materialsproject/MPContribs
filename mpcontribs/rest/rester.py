@@ -10,7 +10,7 @@ class MPContribsRester(MPResterBase):
     """convenience functions to interact with MPContribs REST interface"""
     def __init__(self,
             api_key=None,
-            endpoint='https://materialsproject.org/mpcontribs/rest',
+            endpoint='http://alpha.materialsproject.org/mpcontribs/rest',
             dbtype='mpcontribs_read'):
         super(MPContribsRester, self).__init__(
           api_key=api_key, endpoint=endpoint
