@@ -6,7 +6,7 @@ from mpcontribs.users.MnO2_phase_selection.rest.rester import MnO2PhaseSelection
 from pymatgen.core.composition import Composition
 from pymatgen.core.structure import Structure
 
-def run(mpfile, include_cifs=True):
+def run(mpfile, include_cifs=True, nmax=None):
 
     data_input = mpfile.document[mp_level01_titles[0]].pop('input')
     phase_names = mpfile.hdata.general['info']['phase_names']
@@ -43,6 +43,9 @@ def run(mpfile, include_cifs=True):
                 for mpid in mpfile.ids:
                     formula = mpfile.hdata[mpid]['data']['Formula']
                     if c.almost_equals(Composition(formula)):
+                        if nmax is not None and mpid in existing_mpids:
+                            mpfile.document.pop(mpid) # skip duplicates
+                            break
                         try:
                             mpfile.add_structure(s, identifier=mpid)
                             print formula, 'added to', mpid
@@ -109,13 +112,18 @@ def run(mpfile, include_cifs=True):
             d = RecursiveDict()
             d["Phase"] = framework
             d["Formula"] = phase[0]
-            d["dHf"] = '{} eV/mol'.format(phase[1])
-            d["dHh"] = '{} eV/mol'.format(phase[3])
+            d["dHf"] = '{} eV/mol'.format(phase[1]) if phase[1] != '--' else phase[1]
+            d["dHh"] = '{} eV/mol'.format(phase[3]) if phase[3] != '--' else phase[3]
             d["GS"] = phase[2]
             if len(phase[6]) == 0:
                 no_id_dict[phase[4].replace('all_states/', '')] = d
             for mpid in phase[6]:
-                mpfile.add_hierarchical_data(mpid, d)
+                if nmax is not None:
+                    if len(mpfile.ids) >= nmax-1:
+                        break
+                    elif mpid in existing_mpids:
+                        continue # skip duplicates
+                mpfile.add_hierarchical_data(mpid, RecursiveDict({'data': d}))
                 print 'added', mpid
                 if mpid in existing_mpids:
                     cid = existing_mpids[mpid]
