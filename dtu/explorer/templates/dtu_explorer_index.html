@@ -1,6 +1,8 @@
 {% extends "../../webtzite/templates/base/header_footer.html" %}
 {% load staticfiles %}
 
+{% block title %} DTU {% endblock title %}
+
 {% block extra_css %}
 <link rel="stylesheet" href='{% static "js/components/backgrid/lib/backgrid.css" %}' charset="utf-8">
 <link rel="stylesheet" href='{% static "js/components/json-human/css/json.human.css" %}' charset="utf-8">
@@ -15,7 +17,8 @@
   </button>
   {{ alert }}
 </div>
-{% endif %}
+
+{% else %}
 
 <style>
 .backgrid .string-cell { text-align: center; }
@@ -27,4 +30,5 @@
 <h3>Data</h3>
 {{ table|safe }}
 
+{% endif %}
 {% endblock %}

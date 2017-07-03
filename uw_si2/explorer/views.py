@@ -17,6 +17,8 @@ def index(request):
         with UWSI2Rester(API_KEY, endpoint=ENDPOINT) as mpr:
             try:
                 contribs = mpr.get_uwsi2_contributions()
+                if not contribs:
+                    raise Exception('No contributions found for UW/SI2 Explorer!')
                 ranges = {}
                 for contrib in contribs:
                     df = contrib['table']
