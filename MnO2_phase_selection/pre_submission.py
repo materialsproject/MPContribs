@@ -112,8 +112,16 @@ def run(mpfile, include_cifs=True, nmax=None):
             d = RecursiveDict()
             d["Phase"] = framework
             d["Formula"] = phase[0]
-            d["dHf"] = '{} eV/mol'.format(phase[1]) if phase[1] != '--' else phase[1]
-            d["dHh"] = '{} eV/mol'.format(phase[3]) if phase[3] != '--' else phase[3]
+            try:
+                float(phase[1])
+                d["dHf"] = '{} eV/mol'.format(phase[1])
+            except:
+                d["dHf"] = '--'
+            try:
+                float(phase[3])
+                d["dHh"] = '{} eV/mol'.format(phase[3])
+            except:
+                d["dHh"] = '--'
             d["GS"] = phase[2]
             if len(phase[6]) == 0:
                 no_id_dict[phase[4].replace('all_states/', '')] = d
