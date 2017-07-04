@@ -105,8 +105,9 @@ class MPContribsRester(MPResterBase):
             MPResterError
         """
         if kwargs:
+            criteria = dict(kwargs.get('criteria', {}))
             payload = {
-                "criteria": dumps(kwargs.get('criteria', {})),
+                "criteria": dumps(criteria),
                 "contributor_only": dumps(kwargs.get('contributor_only', False)),
                 "projection": dumps(kwargs.get('projection')),
                 "collection": kwargs.get('collection', 'contributions')
