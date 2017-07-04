@@ -66,3 +66,9 @@ class DtuRester(MPContribsRester):
         mpfile = MPFile.from_contribution(docs[0])
         mp_id = mpfile.ids[0]
         return mpfile.hdata[mp_id]
+
+    def get_material(self, mpid):
+        query = dict(self.dtu_query)
+        query.update({'mp_cat_id': mpid})
+        docs = self.query_contributions(criteria=query, projection={'content': 1})
+        return docs[0] if docs else None
