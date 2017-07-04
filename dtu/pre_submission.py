@@ -4,13 +4,15 @@ import urllib
 from mpcontribs.users.dtu.rest.rester import DtuRester
 from mpcontribs.io.core.recdict import RecursiveDict
 
-def run(mpfile, nmax=None):
+def run(mpfile, nmax=None, dup_check_test_site=True):
 
     existing_mpids = {}
     for b in [False, True]:
         with DtuRester(test_site=b) as mpr:
             for doc in mpr.query_contributions(criteria=mpr.dtu_query):
                 existing_mpids[doc['mp_cat_id']] = doc['_id']
+        if not dup_check_test_site:
+            break
 
     url = mpfile.hdata['_hdata']['url']
     dbfile = url.rsplit('/')[-1]
