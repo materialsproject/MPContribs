@@ -5,14 +5,14 @@ from pandas import DataFrame
 
 class DtuRester(MPContribsRester):
     """DTU-specific convenience functions to interact with MPContribs REST interface"""
-    dtu_query = {
+    dtu_query = tuple({
         'content.contributor': 'Technical University of Denmark',
         'content.kohn-sham_bandgap.indirect': {'$exists': 1},
         'content.kohn-sham_bandgap.direct': {'$exists': 1},
         'content.derivative_discontinuity': {'$exists': 1},
         'content.quasi-particle_bandgap.indirect': {'$exists': 1},
         'content.quasi-particle_bandgap.direct': {'$exists': 1},
-    }
+    }.iteritems())
 
     def get_contributions(self):
         data = []
