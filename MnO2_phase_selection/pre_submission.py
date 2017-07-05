@@ -133,7 +133,7 @@ def run(mpfile, include_cifs=True, nmax=None, dup_check_test_site=True):
                         break
                     elif mpid in existing_mpids:
                         continue # skip duplicates
-                mpfile.add_hierarchical_data(mpid, RecursiveDict({'data': d}))
+                mpfile.add_hierarchical_data(RecursiveDict({'data': d}), identifier=mpid)
                 print 'added', mpid
                 if mpid in existing_mpids:
                     cid = existing_mpids[mpid]

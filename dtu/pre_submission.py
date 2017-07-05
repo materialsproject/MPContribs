@@ -38,7 +38,7 @@ def run(mpfile, nmax=None, dup_check_test_site=True):
         d['derivative_discontinuity'] = row.gllbsc_disc
         d['quasi-particle_bandgap']['indirect'] = row.gllbsc_ind_gap
         d['quasi-particle_bandgap']['direct'] = row.gllbsc_dir_gap
-        mpfile.add_hierarchical_data(mpid, d)
+        mpfile.add_hierarchical_data(d, identifier=mpid)
         if mpid in existing_mpids:
             cid = existing_mpids[mpid]
             mpfile.insert_id(mpid, cid)
