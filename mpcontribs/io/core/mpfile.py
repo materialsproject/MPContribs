@@ -171,7 +171,7 @@ class MPFileCore(six.with_metaclass(ABCMeta, object)):
             pandas_to_dict(dataframe), [identifier, name]
         ))
 
-    def add_hierarchical_data(self, identifier, dct):
+    def add_hierarchical_data(self, dct, identifier=mp_level01_titles[0]):
         self.document.rec_update(nest_dict(dct, [identifier]))
 
     def add_structure(self, source, name=None, identifier=None, fmt=None):
