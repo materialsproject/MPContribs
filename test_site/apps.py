@@ -15,3 +15,7 @@ class SlacMose2ExplorerConfig(AppConfig):
 class DtuExplorerConfig(AppConfig):
     name = 'mpcontribs.users.dtu.explorer'
     label = 'dtu_explorer'
+
+class TamPerovskitesExplorerConfig(AppConfig):
+    name = 'mpcontribs.users.tam_perovskites.explorer'
+    label = 'tam_perovskites_explorer'
