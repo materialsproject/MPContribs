@@ -2,7 +2,7 @@ from __future__ import unicode_literals, print_function
 import six, archieml, warnings, pandas, textwrap
 from pymatgen import Structure
 from pymatgen.io.cif import CifWriter, CifParser
-from mpcontribs.config import mp_level01_titles
+from mpcontribs.config import mp_level01_titles, symprec
 from ..core.mpfile import MPFileCore
 from ..core.recdict import RecursiveDict
 from ..core.utils import nest_dict, normalize_root_level
@@ -91,7 +91,7 @@ class MPFile(MPFileCore):
                 )[:-1]
                 lines += csv_string.split('\n')
             elif isinstance(value, Structure):
-                cif = CifWriter(value, symprec=1e-3).__str__()
+                cif = CifWriter(value, symprec=symprec).__str__()
                 lines.append(make_pair(
                     ''.join([replacements.get(c, c) for c in key]), cif+':end'
                 ))

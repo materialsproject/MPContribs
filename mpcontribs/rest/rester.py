@@ -179,7 +179,8 @@ class MPContribsRester(MPResterBase):
             raise MPResterError(str(ex))
 
     def get_cif(self, cid, structure_name):
+        from mpcontribs.config import symprec
         mpfile = self.find_contribution(cid)
         mpid = mpfile.ids[0]
         structure = mpfile.sdata[mpid][structure_name]
-        return CifWriter(structure, symprec=1e-3).__str__()
+        return CifWriter(structure, symprec=symprec).__str__()
