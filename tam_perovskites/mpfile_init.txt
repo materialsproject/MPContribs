@@ -1,0 +1,4 @@
+authors: Tam Mayeshiba, Dane Morgan
+descriptors_filepath: data_descriptors_from_20160711_noU_notri.xlsx
+contcars_filepath: bulk_CONTCARs.tar.gz
+

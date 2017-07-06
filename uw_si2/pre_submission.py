@@ -21,10 +21,10 @@ def add_diffusivity_table(mpfile):
         mpfile.add_data_table(key, df_dif, 'data_solute_diffusivity')
         print 'added diffusivity table for host', host
 
-def run(mpfile, hosts=None, api_key=None):
+def run(mpfile, hosts=None):
     from pymatgen import MPRester
     from unidecode import unidecode
-    mpr = MPRester(api_key)
+    mpr = MPRester()
     general = mpfile.document[mp_level01_titles[0]]
     figshare_id = general['figshare_id']
     url = 'https://api.figshare.com/v2/articles/{}'.format(figshare_id)

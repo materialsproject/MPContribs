@@ -6,7 +6,7 @@ from mpcontribs.users.MnO2_phase_selection.rest.rester import MnO2PhaseSelection
 from pymatgen.core.composition import Composition
 from pymatgen.core.structure import Structure
 
-def run(mpfile, include_cifs=True, nmax=None):
+def run(mpfile, include_cifs=True, nmax=None, dup_check_test_site=True):
 
     data_input = mpfile.document[mp_level01_titles[0]].pop('input')
     phase_names = mpfile.hdata.general['info']['phase_names']
@@ -20,6 +20,8 @@ def run(mpfile, include_cifs=True, nmax=None):
         with MnO2PhaseSelectionRester(test_site=b) as mpr:
             for doc in mpr.query_contributions(criteria={'content.doi': doi}):
                 existing_mpids[doc['mp_cat_id']] = doc['_id']
+        if not dup_check_test_site:
+            break
 
     with open(data_input['formatted_entries'], "r") as fin:
         mp_contrib_phases = json.loads(fin.read())
@@ -131,7 +133,7 @@ def run(mpfile, include_cifs=True, nmax=None):
                         break
                     elif mpid in existing_mpids:
                         continue # skip duplicates
-                mpfile.add_hierarchical_data(mpid, RecursiveDict({'data': d}))
+                mpfile.add_hierarchical_data(RecursiveDict({'data': d}), identifier=mpid)
                 print 'added', mpid
                 if mpid in existing_mpids:
                     cid = existing_mpids[mpid]
