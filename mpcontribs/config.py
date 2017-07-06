@@ -24,3 +24,4 @@ csv_database = os.path.join(
 mp_id_pattern = re.compile('^(mp|por|mvc)-\d+$', re.IGNORECASE)
 object_id_pattern = re.compile('^[a-f\d]{24}$')
 default_mpfile_path = os.path.join(gettempdir(), 'mpfile.txt')
+symprec = 1e-10
