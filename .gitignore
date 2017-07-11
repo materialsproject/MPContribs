@@ -2,3 +2,4 @@
 */test_files/*
 *.zip
 .ipynb_checkpoints
+MnO2_phase_selection/errors.json

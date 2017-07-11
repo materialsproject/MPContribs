@@ -1,6 +1,8 @@
 {% extends "../../webtzite/templates/base/header_footer.html" %}
 {% load staticfiles %}
 
+{% block title %} MnO2 Phase Selection {% endblock title %}
+
 {% block extra_css %}
 <link rel="stylesheet" href='{% static "js/components/backgrid/lib/backgrid.css" %}' charset="utf-8">
 <link rel="stylesheet" href='{% static "js/components/json-human/css/json.human.css" %}' charset="utf-8">
@@ -15,7 +17,8 @@
   </button>
   {{ alert }}
 </div>
-{% endif %}
+
+{% else %}
 
 <style>
 .backgrid .string-cell { text-align: center; }
@@ -33,6 +36,7 @@
 {{ table|safe }}
 {% endfor %}
 
+<<<<<<< HEAD
 {% for dHf in formations.values %}
 <h4> {{ dHf }} </h4>
 
@@ -49,18 +53,20 @@
 </script>
 
 <h3> Plot below </h3>
-<div id="tester" style="width:600px;height:250px;"></div>
+ <div id="tester" style="width:600px;height:250px;"></div>
+ <h3> Plot above </h3>
  
-<script>
-requirejs(['main'], function() {
-    require(["plotly"], function(Plotly) {
-        var TESTER = document.getElementById('tester');
-        Plotly.plot( TESTER, [{
-            x: [1,2,3,4,5],
-            y: [1,2,4,8,16] }], {
+ <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+ <script>
+     var TESTER = document.getElementById('tester');
+                Plotly.plot( TESTER, [{
+                x: [1,2,3,4,5],
+                y: [1,2,4,8,16] }], {
                 margin: { t: 0 } } );
-    });
-});
+
 </script>
 
+=======
+{% endif %}
+>>>>>>> 7f23bff20fd65aec8c45deb23ae75c4950e7d860
 {% endblock %}
