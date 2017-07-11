@@ -1,7 +1,7 @@
 {% extends "../../webtzite/templates/base/header_footer.html" %}
 {% load staticfiles %}
 
-{% block title %} SLAC MoSe2 {% endblock title %}
+{% block title %} DTU {% endblock title %}
 
 {% block extra_css %}
 <link rel="stylesheet" href='{% static "js/components/backgrid/lib/backgrid.css" %}' charset="utf-8">
@@ -27,10 +27,8 @@
 
 {{ provenance|safe }}
 
-{% for name, graph in graphs.items %}
-<h3>{{ name|safe }}</h3>
-{{ graph|safe }}
-{% endfor %}
+<h3>Data</h3>
+{{ table|safe }}
 
 {% endif %}
 {% endblock %}

@@ -1,6 +1,8 @@
 {% extends "../../webtzite/templates/base/header_footer.html" %}
 {% load staticfiles %}
 
+{% block title %} MnO2 Phase Selection {% endblock title %}
+
 {% block extra_css %}
 <link rel="stylesheet" href='{% static "js/components/backgrid/lib/backgrid.css" %}' charset="utf-8">
 <link rel="stylesheet" href='{% static "js/components/json-human/css/json.human.css" %}' charset="utf-8">
@@ -15,7 +17,8 @@
   </button>
   {{ alert }}
 </div>
-{% endif %}
+
+{% else %}
 
 <style>
 .backgrid .string-cell { text-align: center; }
@@ -33,6 +36,7 @@
 {{ table|safe }}
 {% endfor %}
 
+<<<<<<< HEAD
 {% for dHf in formations.values %}
 <h4> {{ dHf }} </h4>
 
@@ -62,4 +66,7 @@
 
 </script>
 
+=======
+{% endif %}
+>>>>>>> 7f23bff20fd65aec8c45deb23ae75c4950e7d860
 {% endblock %}
