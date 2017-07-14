@@ -126,6 +126,14 @@ STATIC_ROOT_URLS = {
     STATIC_URL: STATIC_ROOT,
     STATIC_URL[:-1] + '_rest': ROOT_PROJECT_DIR + '/mpcontribs/rest/static'
 }
+from mpcontribs.users_modules import get_user_static_dirs
+STATIC_ROOT_USER_URLS = {}
+for static_dir in get_user_static_dirs():
+    static_url_suffix = static_dir.split(os.sep)[-3]
+    key = '_'.join([STATIC_URL[:-1], static_url_suffix])
+    STATIC_ROOT_USER_URLS[key] = os.path.join(ROOT_PROJECT_DIR, static_dir)
+
+STATIC_ROOT_URLS.update(STATIC_ROOT_USER_URLS)
 
 LOGGING = {
     'version': 1,
