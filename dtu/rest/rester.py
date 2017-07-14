@@ -5,14 +5,14 @@ from pandas import DataFrame
 
 class DtuRester(MPContribsRester):
     """DTU-specific convenience functions to interact with MPContribs REST interface"""
-    dtu_query = {
+    dtu_query = tuple({
         'content.contributor': 'Technical University of Denmark',
         'content.kohn-sham_bandgap.indirect': {'$exists': 1},
         'content.kohn-sham_bandgap.direct': {'$exists': 1},
         'content.derivative_discontinuity': {'$exists': 1},
         'content.quasi-particle_bandgap.indirect': {'$exists': 1},
         'content.quasi-particle_bandgap.direct': {'$exists': 1},
-    }
+    }.iteritems())
 
     def get_contributions(self):
         data = []
@@ -66,3 +66,9 @@ class DtuRester(MPContribsRester):
         mpfile = MPFile.from_contribution(docs[0])
         mp_id = mpfile.ids[0]
         return mpfile.hdata[mp_id]
+
+    def get_material(self, mpid):
+        query = dict(self.dtu_query)
+        query.update({'mp_cat_id': mpid})
+        docs = self.query_contributions(criteria=query, projection={'content': 1})
+        return docs[0] if docs else None
