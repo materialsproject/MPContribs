@@ -18,6 +18,17 @@ def get_user_urlpatterns():
             urlpatterns.append((url, include_urls))
     return urlpatterns
 
+def get_user_static_dirs():
+    static_dirs = []
+    for mod_path in get_users_modules():
+        static_dir = os.path.join(mod_path, 'explorer', 'static')
+        if os.path.exists(static_dir):
+            rel_static_dir = os.sep.join(
+                os.path.normpath(static_dir).split(os.sep)[-5:]
+            )
+            static_dirs.append(rel_static_dir)
+    return static_dirs
+
 def get_user_explorer_name(path):
     return '_'.join(
         os.path.dirname(os.path.normpath(path)).split(os.sep)[-4:] + ['index']
