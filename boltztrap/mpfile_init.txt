@@ -1,0 +1,5 @@
+title: An ab initio electronic transport database for inorganic materials
+authors: Francesco Ricci, Wei Chen, Umut Aydemir, G. Jeffrey Snyder, Gian-Marco Rignanese, Anubhav Jain, Geoffroy Hautier
+journal: Scientific Data 4, 170085 (2017)
+doi: 10.1038/sdata.2017.85
+input_dir: /project/projectdirs/matgen/fricci/transport_data/coarse/
