@@ -1,0 +1,7 @@
+title: Combinatorial study of Fe-Co-V hard magnetic thin films
+reference: Science and Technology of Advanced Materials
+contributor: Sean W. Fackler
+authors: Sean W. Fackler, Vasileios Alexandrakis, Dennis Konig, A. Gilad Kusne, Tieren Gao, Matthew J. Kramer, Drew Stasak, Kenny Lopez, Brad Zayac, Apurva Mehta, Alfred Ludwig and Ichiro Takeuchi
+doi: 10.1080/14686996.2017.1287520
+explanation: The in-plane energy product, the maximum stored magnetic energy, is shown for a library of sputter deposited Fe-Co-V thin films. The composition of each is also displayed.
+input_file: Energy_product_kJ_m3.xlsx
