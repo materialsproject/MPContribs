@@ -50,7 +50,7 @@ class SWFRester(MPContribsRester):
 
 
     def get_provenance(self):
-        provenance_keys = ['title', 'doi', 'reference', 'authors', 'contributor']
+        provenance_keys = ['title', 'doi', 'reference', 'authors', 'contributor', 'explanation']
         projection = {'_id': 1, 'mp_cat_id': 1}
         for key in provenance_keys:
             projection['content.' + key] = 1
