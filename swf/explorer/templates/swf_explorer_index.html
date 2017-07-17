@@ -25,65 +25,23 @@
 .backgrid tbody tr:hover { background-color: #f9f9f9; }
 </style>
 
-{{ provenance|safe }}
+<div class="container">
 
-
-<h3>Data</h3>
-{{ table|safe }}
-<h3>Graphical Abstract</h3>
-<img src="{{ static_url }}/Graphical_abstract.png" width="700" height="400" />
-
-<h3>Figure 3
-(a) Cross-sectional TEM image indicates columnar grain growth in the Fe53Co38V9 thin film.
-(b) SAED pattern shows the high crystallinity of the film. Gray rings indicate the various indices of the α-bcc and γ-fcc phases labelled in white.</h3>
-<img src="{{ static_url }}/Figure_3.png" width="700" height="250" />
-
-<h3>Figure 4(a) VSM results for in-plane and out-of-plane M(H) loops of an Fe38Co53V9 sample
-(b) In-plane (BH) max values</h3>
-<div class="Figures_4">
-    <div class="imgContainer">
-        <img style = "float: left;" src="{{ static_url }}/Figure_4_a.png" width="350" height="350" />
+    <div class="row">
+        {{ provenance|safe }}
     </div>
-    <div class="imgContainer">
-        <img style = "float: left;" src="{{ static_url }}/Figure_4_b.png" width="350" height="350" />
+
+    <div class="row">
+        <h3>Data</h3>
+        {{ table|safe }}
     </div>
-    <div class="imgContainer">
-        <img style = "float: left;" src="{{ static_url }}/blank_white01.png" width="850" height="350" />
+
+    <div class="row">
+        <h3>Graphical Abstract</h3>
+        <img src="{{ static_url }}/Graphical_abstract.png" width="700" height="400" />
     </div>
+
 </div>
-
-<h3>Figure 5(a) Plot showing the experimental angular dependence of switching field for an Fe51Co41V8 sample in black dots and a fit
-with the Kondorsky model in red. Inset of (a) shows the XRD pattern of the same sample as the given angular dependent switching field data. (b) Angular dependence of the inverse switching field for compositions from 0.5 at% V to 8 at%
-V with nominally equal concentrations of Fe and Co.</h3>
-<div class="Figures_5">
-    <div class="imgContainer">
-        <img style = "float: left;" src="{{ static_url }}/Figure_5_a.png" width="350" height="350" />
-    </div>
-    <div class="imgContainer">
-        <img style = "float: left;" src="{{ static_url }}/Figure_5_a_inset.png" width="500" height="300" />
-    </div>
-    <div class="imgContainer">
-        <img style = "float: left;" src="{{ static_url }}/Figure_5_b.png" width="400" height="350" />
-    </div>
-    <div class="imgContainer">
-        <img style = "float: left;" src="{{ static_url }}/blank_white01.png" width="300" height="350" />
-    </div>
-</div>
-
-<h3>Figure 6 (b) Out-of-plane MOKE hysteresis loop map of the same natural thickness spread. The field range of each loop is 400 kA m–1 (5 kOe). Hysteresis loops of the nominal composition Fe65Co26V9 are boxed where decreasing film thickness goes from left to right. (c) In-plane MOKE coercive field (μ0HC) map of thickness versus V composition where coercive field is color mapped. (d) In-plane VSM coercive field map with thickness versus V composition.</h3>
-<div class="Figures_6">
-    <div class="imgContainer">
-        <img style = "float: left;" src="{{ static_url }}/Figure_6_b.png" width="350" height="350" />
-    </div>
-    <div class="imgContainer">
-        <img style = "float: left;" src="{{ static_url }}/Figure_6_c.png" width="500" height="350" />
-    </div>
-    <div class="imgContainer">
-        <img style = "float: left;" src="{{ static_url }}/Figure_6_d.png" width="500" height="350" />
-    </div>
-</div>
-    
-
 
 {% endif %}
 {% endblock %}
