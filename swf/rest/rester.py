@@ -1,18 +1,15 @@
 from __future__ import division, unicode_literals
+import os
 from mpcontribs.rest.rester import MPContribsRester
 from mpcontribs.io.archieml.mpfile import MPFile
 from pandas import DataFrame
 
 class SWFRester(MPContribsRester):
     """SWF-specific convenience functions to interact with MPContribs REST interface"""
-    swf_query = tuple({
-        'content.contributor': 'Sean W. Fackler',
-        'content.compositions.Fe': {'$exists': 1},
-        'content.compositions.Co': {'$exists': 1},
-        'content.compositions.V': {'$exists': 1},
-        'content.IP_Energy_product': {'$exists': 1},
-        
-    }.iteritems())
+    mpfile = MPFile.from_file(os.path.join(
+        os.path.dirname(__file__), '..', 'mpfile_init.txt'
+    ))
+    swf_query = ('doi', mpfile.hdata.general['doi'])
 
     def get_contributions(self):
         data = []
@@ -36,7 +33,6 @@ class SWFRester(MPContribsRester):
 
         for doc in docs:
             mpfile = MPFile.from_contribution(doc)
-            #changed
             formula = mpfile.ids[0]
             contrib = mpfile.hdata[formula]
             cid_url = '/'.join([
@@ -54,7 +50,6 @@ class SWFRester(MPContribsRester):
 
 
     def get_provenance(self):
-          
         provenance_keys = ['title', 'doi', 'reference', 'authors', 'contributor']
         projection = {'_id': 1, 'mp_cat_id': 1}
         for key in provenance_keys:
@@ -64,9 +59,8 @@ class SWFRester(MPContribsRester):
             raise Exception('No contributions found for SWF Explorer!')
 
         mpfile = MPFile.from_contribution(docs[0])
-        #Changed below
         formula = mpfile.ids[0]
         return mpfile.hdata[formula]
-    
-    
-       
+
+
+
