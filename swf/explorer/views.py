@@ -1,8 +1,6 @@
 """This module provides the views for the SWF explorer interface."""
 
-import json
 import os
-from bson import ObjectId
 from django.shortcuts import render_to_response
 from django.template import RequestContext
 from mpcontribs.rest.views import get_endpoint
@@ -18,7 +16,9 @@ def index(request):
         ENDPOINT = request.build_absolute_uri(get_endpoint())
         with SWFRester(API_KEY, endpoint=ENDPOINT) as mpr:
             try:
-                provenance = render_dict(mpr.get_provenance(), webapp=True)
+                prov = mpr.get_provenance()
+                title = prov.get('title')
+                provenance = render_dict(prov, webapp=True)
                 table = render_dataframe(mpr.get_contributions(), webapp=True)
                 mod = os.path.dirname(__file__).split(os.sep)[-2]
                 static_url = '_'.join([STATIC_URL[:-1], mod])
