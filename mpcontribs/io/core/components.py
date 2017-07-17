@@ -87,7 +87,7 @@ def render_dataframe(df, webapp=False):
     html += """
     require(["backgrid"], function(Backgrid) {
       "use strict";
-      var table = JSON.parse('%s');
+      window.table = JSON.parse('%s');
       var Row = Backbone.Model.extend({});
       var Rows = Backbone.Collection.extend({model: Row, mode: "client"});
       var rows = new Rows(table['rows']);
