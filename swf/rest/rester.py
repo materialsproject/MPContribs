@@ -9,7 +9,7 @@ class SWFRester(MPContribsRester):
     mpfile = MPFile.from_file(os.path.join(
         os.path.dirname(__file__), '..', 'mpfile_init.txt'
     ))
-    swf_query = ('doi', mpfile.hdata.general['doi'])
+    swf_query = tuple({'content.doi': mpfile.hdata.general['doi']}.iteritems())
 
     def get_contributions(self):
         data = []
