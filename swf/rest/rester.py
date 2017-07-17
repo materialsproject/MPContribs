@@ -36,7 +36,7 @@ class SWFRester(MPContribsRester):
             formula = mpfile.ids[0]
             contrib = mpfile.hdata[formula]
             cid_url = '/'.join([
-                self.preamble.rsplit('/', 1)[0], 'explorer', 'materials', doc['_id']
+                self.preamble.rsplit('/', 1)[0], 'explorer', 'compositions', doc['_id']
             ])
             row = [
                 formula, cid_url,
