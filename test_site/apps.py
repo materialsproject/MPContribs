@@ -19,3 +19,7 @@ class DtuExplorerConfig(AppConfig):
 class TamPerovskitesExplorerConfig(AppConfig):
     name = 'mpcontribs.users.tam_perovskites.explorer'
     label = 'tam_perovskites_explorer'
+
+class SwfExplorerConfig(AppConfig):
+    name = 'mpcontribs.users.swf.explorer'
+    label = 'swf_explorer'
