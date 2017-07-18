@@ -3,7 +3,6 @@ from StringIO import StringIO
 from pymatgen.core.composition import Composition
 from mpcontribs.config import mp_level01_titles, mp_id_pattern, csv_comment_char
 from recdict import RecursiveDict
-from IPython.display import display, Javascript
 
 def flatten_dict(dd, separator='.', prefix=''):
     """http://stackoverflow.com/a/19647596"""
@@ -100,6 +99,7 @@ def read_csv(body, is_data_section=True):
 
 def disable_ipython_scrollbar():
     pass
+    #from IPython.display import display, Javascript
     #display(Javascript("""
     #    require("notebook/js/outputarea").OutputArea.prototype._should_scroll=function(){return false;};
     #"""))

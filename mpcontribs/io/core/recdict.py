@@ -3,7 +3,6 @@ import uuid, json, six
 from collections import OrderedDict as _OrderedDict
 from collections import Mapping as _Mapping
 from mpcontribs.config import mp_level01_titles
-from IPython.display import display_html
 from pymatgen import Structure
 
 def render_dict(dct, webapp=False):
@@ -104,4 +103,5 @@ class RecursiveDict(_OrderedDict):
         self.__insertion(self._OrderedDict__map[existing_key][0], key_value)
 
     def _ipython_display_(self):
+	from IPython.display import display_html
         display_html(render_dict(self), raw=True)

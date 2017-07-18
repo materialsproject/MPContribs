@@ -2,7 +2,6 @@ from __future__ import unicode_literals, print_function, absolute_import
 
 import json, os, socket, SocketServer, codecs, time, psutil
 import sys, warnings, multiprocessing
-from IPython.terminal.ipapp import launch_new_instance
 from flask import render_template, request, Response, Blueprint, current_app
 from flask import url_for, redirect, make_response, stream_with_context
 from mpcontribs.utils import process_mpfile, submit_mpfile
@@ -47,6 +46,7 @@ class NotebookProcess(multiprocessing.Process):
         super(NotebookProcess, self).__init__(name='NotebookProcess')
 
     def run(self):
+        from IPython.terminal.ipapp import launch_new_instance
         sys.argv[1:] = []
         warnings.filterwarnings("ignore", module = "zmq.*")
         sys.argv.append("notebook")
