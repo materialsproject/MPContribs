@@ -9,11 +9,6 @@ from mpcontribs.io.core.components import render_dataframe, render_plot
 from mpcontribs.io.core.recdict import render_dict
 from test_site.settings import STATIC_URL
 from ..rest.rester import DtuRester
-import plotly
-import plotly.graph_objs as go
-from plotly.offline.offline import _plot_html
-from plotly.offline import download_plotlyjs, init_notebook_mode, plot, iplot
-plotly.offline.init_notebook_mode(connected = True)
 
 def index(request):
     ctx = RequestContext(request)
