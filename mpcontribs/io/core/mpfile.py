@@ -5,7 +5,6 @@ from mpcontribs.config import mp_level01_titles, default_mpfile_path
 from recdict import RecursiveDict
 from utils import pandas_to_dict, nest_dict
 from components import HierarchicalData, TabularData, GraphicalData, StructuralData
-from IPython.display import display_html
 from pymatgen import Structure, MPRester
 
 class MPFileCore(six.with_metaclass(ABCMeta, object)):
@@ -226,6 +225,7 @@ class MPFileCore(six.with_metaclass(ABCMeta, object)):
     def __str__(self): return self.get_string()
 
     def _ipython_display_(self):
+	from IPython.display import display_html
         display_html(self.hdata)
         display_html(self.tdata)
         display_html(self.gdata)
