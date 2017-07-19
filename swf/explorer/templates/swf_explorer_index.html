@@ -33,16 +33,124 @@
     </div>
 
     <div class="row">
-        <h3>Graphical Abstract</h3>
-        <img src="{{ static_url }}/Graphical_abstract.png" width="700" height="400" />
+        <h3>Graphical Abstract and Ternary Phase Diagram</h3>
+        <div class="col-md-7">
+            <img src="{{ static_url }}/Graphical_abstract.png" width='650' height='400' />
+        </div>
+        <div class="col-md-5">
+            <div id="graph1"></div>
+            <script>
+            requirejs(['main'], function() {
+                require(["plotly"], function(Plotly) {
+                    $(document).ready(function(){
+                        var graph1 = document.getElementById('graph1');
+                        function makeAxis(title, tickangle) {
+                            return {
+                              title: title,
+                              titlefont: { size: 20 },
+                              tickangle: tickangle,
+                              tickfont: { size: 15 },
+                              tickcolor: 'rgba(0,0,0,0)',
+                              ticklen: 5,
+                              showline: true,
+                              showgrid: true
+                            };
+                        };
+                        var layout = {
+                            'ternary': {
+                            'sum': 100,
+                            'aaxis': makeAxis('Fe', 0),
+                            'baxis': makeAxis('<br>Co', 45),
+                            'caxis': makeAxis('<br>V', -45)
+                            }
+                        };
+                        var elements = [
+                            'Fe',
+                            'Co',
+                            'V'
+                        ];
+                        var avals = []; var bvals = []; var cvals = []; var comp = []; var EP = [];
+                        for (i = 0; i < window.table['rows'].length; i++) {
+                            var row = window.table['rows'][i];
+                            avals.push(row[elements[0]].substring(0,4))
+                            bvals.push(row[elements[1]].substring(0,4))
+                            cvals.push(row[elements[2]].substring(0,4))
+                            comp.push(row['formula'])
+                            EP.push(row['IP_Energy_product'].substring(0,10))
+                        }
+                        Plotly.plot('graph1', data = [{
+                            type: 'scatterternary',
+                            mode: 'markers',
+                            a: avals,
+                            b: bvals,
+                            c: cvals,
+                            text: EP, 
+                            marker: {
+                                symbol: 100,
+                                color: '#DB7365',
+                                size: 14,
+                                line: { width: 2 }
+                            },
+                        }], layout);
+                    });
+                });
+            });
+            </script>
+        </div>
     </div>
+    
+    <div class="row">
+        <h3>Energy Product Fe-Co-V</h3>
+        <div id="graph2"></div>
+        <script>
+        requirejs(['main'], function() {
+            require(["plotly"], function(Plotly) {
+                $(document).ready(function(){
+                    var graph2 = document.getElementById('graph2');
+                    var layout = {
+                        margin: {t: 0}, barmode: 'basic',
+                        xaxis: {title: 'Composition', type: 'category'},
+                        yaxis: {title: 'IP_Energy_Product (kJ/m3)'}
+                    };
+                    var keys = [
+                        'IP_Energy_product',
+                    ];
+                    var xvals = []; var yvals = {};
+                    for (i = 0; i < window.table['rows'].length; i++) {
+                        var row = window.table['rows'][i];
+                        var formula = row['formula'];
+                        xvals.push(formula);
+                        for (j = 0; j < keys.length; j++) {
+                            var k = keys[j];
+                            if (!(k in yvals)) {yvals[k] = [];}
+                            if (k == 'IP_Energy_product') {row[k] = row[k].substring(0,10);}
+                            yvals[k].push(row[k]);
 
+                        }
+                    }
+                    var data = [];
+                    for (j = 0; j < keys.length; j++) {
+                        var k = keys[j];
+                        var d = {x: xvals, y: yvals[k], type: 'bar', name: k};
+                        data.push(d);
+                    }
+                    Plotly.plot(graph2, data, layout);
+                });
+            });
+        });
+        </script>
+    </div>
+    
     <div class="row">
         <h3>Data</h3>
         {{ table|safe }}
     </div>
 
 </div>
+
+
+
+
 
 {% endif %}
 {% endblock %}
