@@ -1,5 +1,5 @@
 from __future__ import unicode_literals, print_function
-import six, codecs, locale, pandas
+import six, codecs, locale, pandas, os
 from abc import ABCMeta
 from mpcontribs.config import mp_level01_titles, default_mpfile_path
 from recdict import RecursiveDict
@@ -220,6 +220,7 @@ class MPFileCore(six.with_metaclass(ABCMeta, object)):
         self.document.rec_update(nest_dict(
             structure.as_dict(), [identifier, mp_level01_titles[3], sub_key]
         ))
+        return identifier
 
     def __repr__(self): return self.get_string()
     def __str__(self): return self.get_string()
