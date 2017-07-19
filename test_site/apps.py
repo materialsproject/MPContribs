@@ -23,3 +23,7 @@ class TamPerovskitesExplorerConfig(AppConfig):
 class SwfExplorerConfig(AppConfig):
     name = 'mpcontribs.users.swf.explorer'
     label = 'swf_explorer'
+
+class DibbsExplorerConfig(AppConfig):
+    name = 'mpcontribs.users.dibbs.explorer'
+    label = 'dibbs_explorer'
