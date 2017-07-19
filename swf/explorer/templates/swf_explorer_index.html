@@ -92,12 +92,6 @@
                                 line: { width: 2 }
                             },
                         }], layout);
-                        graph1.on('plotly_click', function(data){
-                            for (i = 0; i < window.table['rows'].length; i++) {
-                                var url = window.table['rows'][i]['contribution']
-                            }
-                            window.open(url,'_blank');
-                        });
                     });
                 });
             });
