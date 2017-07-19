@@ -9,14 +9,11 @@ class DibbsRester(MPContribsRester):
 
     def get_contributions(self):
         data = []
-        columns = ['mp-id', 'contribution', 'name', 'formula', 'dISO', 'etaQ', 'QCC', 'B']
+        columns = ['mp-id', 'contribution', 'formula', 'CIF', 'dISO', 'etaQ', 'QCC', 'B']
 
         docs = self.query_contributions(
             criteria=self.dibbs_query,
-            projection={
-                '_id': 1, 'mp_cat_id': 1,
-                'content.name': 1, 'content.formula': 1, 'content.data': 1
-            }
+            projection={'_id': 1, 'mp_cat_id': 1, 'content': 1}
         )
         if not docs:
             raise Exception('No contributions found for Dibbs Explorer!')
@@ -28,7 +25,15 @@ class DibbsRester(MPContribsRester):
             cid_url = '/'.join([
                 self.preamble.rsplit('/', 1)[0], 'explorer', 'materials', doc['_id']
             ])
-            row = [mp_id, cid_url, contrib['name'], contrib['formula']]
+            row = [mp_id, cid_url, contrib['formula']]
+            cif_url = ''
+            structures = mpfile.sdata.get(mp_id)
+            if structures:
+                cif_url = '/'.join([
+                    self.preamble.rsplit('/', 1)[0], 'explorer', 'materials',
+                    doc['_id'], 'cif', structures.keys()[0]
+                ])
+            row.append(cif_url)
             row += [contrib['data'][col] for col in columns[-4:]]
             data.append((mp_id, row))
         return DataFrame.from_items(data, orient='index', columns=columns)
