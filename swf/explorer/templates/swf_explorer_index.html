@@ -46,15 +46,15 @@
                         var graph1 = document.getElementById('graph1');
                         function makeAxis(title, tickangle) {
                             return {
-                              title: title,
-                              titlefont: { size: 20 },
-                              tickangle: tickangle,
-                              tickfont: { size: 15 },
-                              tickcolor: 'rgba(0,0,0,0)',
-                              ticklen: 5,
-                              showline: true,
-                              showgrid: true
-                            };
+                            title: title,
+                            titlefont: { size: 20 },
+                            tickangle: tickangle,
+                            tickfont: { size: 15 },
+                            tickcolor: 'rgba(0,0,0,0)',
+                            ticklen: 5,
+                            showline: true,
+                            showgrid: true
+                            }
                         };
                         var layout = {
                             'ternary': {
@@ -69,7 +69,7 @@
                             'Co',
                             'V'
                         ];
-                        var avals = []; var bvals = []; var cvals = []; var comp = []; var EP = [];
+                        avals = []; var bvals = []; var cvals = []; var comp = []; var EP = [];
                         for (i = 0; i < window.table['rows'].length; i++) {
                             var row = window.table['rows'][i];
                             avals.push(row[elements[0]].substring(0,4))
@@ -77,28 +77,36 @@
                             cvals.push(row[elements[2]].substring(0,4))
                             comp.push(row['formula'])
                             EP.push(row['IP_Energy_product'].substring(0,10))
-                        }
-                        Plotly.plot('graph1', data = [{
+                        };
+                        var data = [{
                             type: 'scatterternary',
                             mode: 'markers',
                             a: avals,
                             b: bvals,
                             c: cvals,
-                            text: EP, 
+                            text: comp, 
                             marker: {
-                                symbol: 100,
-                                color: '#DB7365',
-                                size: 14,
-                                line: { width: 2 }
+                            symbol: 100,
+                            color: '#DB7365',
+                            size: 14,
+                            line: { width: 2 }
                             },
-                        }], layout);
+                        }];
+                        
+                        Plotly.plot('graph1', data, layout)
+                        
+                        graph1.on('plotly_click', function(data){
+                            var pn = data.points[0].pointNumber
+                            var url = window.table['rows'][pn]['contribution']
+                            window.open(url, '_blank')                                                           
+                        });
                     });
                 });
             });
             </script>
         </div>
     </div>
-    
+    <br>
     <div class="row">
         <h3>Energy Product Fe-Co-V</h3>
         <div id="graph2"></div>
