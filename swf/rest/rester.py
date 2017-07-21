@@ -16,17 +16,20 @@ class SWFRester(MPContribsRester):
         columns = [
             'formula', 'contribution',
             'Fe', 'Co', 'V',
-            'IP_Energy_product'
+            'IP_Energy_product','thickness','MOKE_IP_Hc','VSM_IP_Hc'
         ]
 
         docs = self.query_contributions(
             criteria=self.swf_query,
             projection={
                 '_id': 1, 'mp_cat_id': 1,
-                'content.compositions.Fe': 1,
-                'content.compositions.Co': 1,
-                'content.compositions.V': 1,
-                'content.IP_Energy_product': 1}
+                'content.Fe': 1,
+                'content.Co': 1,
+                'content.V': 1,
+                'content.IP_Energy_product': 1,
+                'content.thickness': 1,
+                'content.MOKE_IP_Hc': 1,
+                'content.VSM_IP_Hc': 1}
         )
         if not docs:
             raise Exception('No contributions found for SWF Explorer!')
@@ -35,15 +38,19 @@ class SWFRester(MPContribsRester):
             mpfile = MPFile.from_contribution(doc)
             formula = mpfile.ids[0]
             contrib = mpfile.hdata[formula]
+            tables = mpfile.tdata.get(formula)
             cid_url = '/'.join([
                 self.preamble.rsplit('/', 1)[0], 'explorer', 'compositions', doc['_id']
             ])
             row = [
-                formula, cid_url,
-                contrib['compositions']['Fe'],
-                contrib['compositions']['Co'],
-                contrib['compositions']['V'],
-                contrib['IP_Energy_product']
+                formula, cid_url, tables,
+                contrib['Fe'],
+                contrib['Co'],
+                contrib['V'],
+                contrib['IP_Energy_product'],
+                contrib['thickness'],
+                contrib['MOKE_IP_Hc'],
+                contrib['VSM_IP_Hc']
             ]
             data.append((formula, row))
         return DataFrame.from_items(data, orient='index', columns=columns)

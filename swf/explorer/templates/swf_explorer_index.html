@@ -69,14 +69,13 @@
                             'Co',
                             'V'
                         ];
-                        avals = []; var bvals = []; var cvals = []; var comp = []; var EP = [];
+                        avals = []; var bvals = []; var cvals = []; var comp = [];
                         for (i = 0; i < window.table['rows'].length; i++) {
                             var row = window.table['rows'][i];
                             avals.push(row[elements[0]].substring(0,4))
                             bvals.push(row[elements[1]].substring(0,4))
                             cvals.push(row[elements[2]].substring(0,4))
                             comp.push(row['formula'])
-                            EP.push(row['IP_Energy_product'].substring(0,10))
                         };
                         var data = [{
                             type: 'scatterternary',
@@ -107,48 +106,6 @@
         </div>
     </div>
     <br>
-    <div class="row">
-        <h3>Energy Product Fe-Co-V</h3>
-        <div id="graph2"></div>
-        <script>
-        requirejs(['main'], function() {
-            require(["plotly"], function(Plotly) {
-                $(document).ready(function(){
-                    var graph2 = document.getElementById('graph2');
-                    var layout = {
-                        margin: {t: 0}, barmode: 'basic',
-                        xaxis: {title: 'Composition', type: 'category'},
-                        yaxis: {title: 'IP_Energy_Product (kJ/m3)'}
-                    };
-                    var keys = [
-                        'IP_Energy_product',
-                    ];
-                    var xvals = []; var yvals = {};
-                    for (i = 0; i < window.table['rows'].length; i++) {
-                        var row = window.table['rows'][i];
-                        var formula = row['formula'];
-                        xvals.push(formula);
-                        for (j = 0; j < keys.length; j++) {
-                            var k = keys[j];
-                            if (!(k in yvals)) {yvals[k] = [];}
-                            if (k == 'IP_Energy_product') {row[k] = row[k].substring(0,10);}
-                            yvals[k].push(row[k]);
-
-                        }
-                    }
-                    var data = [];
-                    for (j = 0; j < keys.length; j++) {
-                        var k = keys[j];
-                        var d = {x: xvals, y: yvals[k], type: 'bar', name: k};
-                        data.push(d);
-                    }
-                    Plotly.plot(graph2, data, layout);
-                });
-            });
-        });
-        </script>
-    </div>
-    
     <div class="row">
         <h3>Data</h3>
         {{ table|safe }}
