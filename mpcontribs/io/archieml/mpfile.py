@@ -122,7 +122,9 @@ class MPFile(MPFileCore):
                     lines.append(start+'.'.join(scope_corr)+end)
                 # insert key-value line
                 if value is not None:
-                    value_lines = textwrap.wrap(str(value))
+                    val = str(value)
+                    value_lines = [val] if val.startswith('http') \
+                            else textwrap.wrap(val)
                     if len(value_lines) > 1:
                         value_lines = [''] + value_lines + [':end']
                     lines.append(make_pair(
