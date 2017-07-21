@@ -15,6 +15,7 @@ class MPFileCore(six.with_metaclass(ABCMeta, object)):
         else:
             raise ValueError('Need dict (or inherited class) to init MPFile.')
         self.document.rec_update() # convert (most) OrderedDict's to RecursiveDict's
+        self.unique_mp_cat_ids = True
 
     def __getitem__(self, key):
         item = self.from_dict({key: self.document[key]})
@@ -95,6 +96,11 @@ class MPFileCore(six.with_metaclass(ABCMeta, object)):
         while True:
             try:
                 mpfile_single = self.pop_first_section()
+                mpid_orig = mpfile_single.ids[0]
+                mpid = mpid_orig.split('--')[0]
+                mpfile_single.document.rec_update(nest_dict(
+                    mpfile_single.document.pop(mpid_orig), [mpid]
+                ))
                 if general_mpfile is not None:
                     mpfile_single.insert_general_section(general_mpfile)
                 yield mpfile_single
@@ -127,7 +133,15 @@ class MPFileCore(six.with_metaclass(ABCMeta, object)):
             else:
                 self.document[root_key].insert_before(first_subkey, (key, value))
 
-    def concat(self, mpfile, uniquify=True):
+    def get_unique_mp_cat_id(self, mp_cat_id):
+        if not self.unique_mp_cat_ids or mp_cat_id in mp_level01_titles:
+            return mp_cat_id
+        mp_cat_id_idx = len([i for i in self.ids if i.startswith(mp_cat_id)])
+        if mp_cat_id_idx == 0:
+            return mp_cat_id
+        return '{}--{}'.format(mp_cat_id, mp_cat_id_idx)
+
+    def concat(self, mpfile):
         """concatenate single-section MPFile with this MPFile"""
         try:
             if len(mpfile.document) > 1:
@@ -140,13 +154,9 @@ class MPFileCore(six.with_metaclass(ABCMeta, object)):
             general_data = mpfile.document[mp_cat_id].pop(general_title)
             if general_title not in self.document:
                 self.document.rec_update(nest_dict(general_data, [general_title]))
-        mp_cat_id_idx, mp_cat_id_uniq = 0, mp_cat_id
-        if uniquify:
-            while mp_cat_id_uniq in self.document.keys():
-                mp_cat_id_uniq = mp_cat_id + '--{}'.format(mp_cat_id_idx)
-                mp_cat_id_idx += 1
         self.document.rec_update(nest_dict(
-            mpfile.document.pop(mp_cat_id), [mp_cat_id_uniq]
+            mpfile.document.pop(mp_cat_id),
+            [self.get_unique_mp_cat_id(mp_cat_id)]
         ))
 
     def insert_id(self, mp_cat_id, cid):
