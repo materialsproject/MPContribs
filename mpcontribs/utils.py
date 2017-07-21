@@ -72,7 +72,6 @@ def process_mpfile(path_or_mpfile, target=None, fmt='archieml'):
         mpfile_in = MPFile.from_file(path_or_mpfile)
         for idx, mpfile_single in enumerate(mpfile_in.split()):
             mp_cat_id = mpfile_single.document.keys()[0]
-            # TODO test update mode
             cid = mpfile_single.document[mp_cat_id].get('cid', None)
             update = bool(cid is not None)
             if update:
@@ -178,15 +177,10 @@ def process_mpfile(path_or_mpfile, target=None, fmt='archieml'):
             time.sleep(.01)
 
         ncontribs = len(cid_shorts)
-        #if target is not None and \
-        #   isinstance(path_or_mpfile, six.string_types) and \
-        #   os.path.isfile(path_or_mpfile):
-        #    yield 'embed #{} in MPFile ...'.format('/'.join(cid_shorts))
-        #    mpfile.write_file(path_or_mpfile, with_comments=True)
         if target is not None:
             yield '<strong>{} contributions successfully submitted.</strong>'.format(ncontribs)
         else:
-            for k in ov_data:
+            for k in ov_data.keys():
                 if k not in axes:
                     ov_data.pop(k)
             yield ov_data
