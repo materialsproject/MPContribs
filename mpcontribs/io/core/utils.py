@@ -54,7 +54,7 @@ def normalize_root_level(title):
     """convert root-level title into conventional identifier; non-identifiers
     become part of shared (meta-)data. Returns: (is_general, title)"""
     try:
-        composition = Composition(title).get_integer_formula_and_factor()[0]
+        composition = Composition(title).formula.replace(' ', '')
         return False, composition
     except:
         if mp_id_pattern.match(title.lower()):
