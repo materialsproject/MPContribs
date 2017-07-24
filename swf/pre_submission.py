@@ -96,8 +96,8 @@ def run(mpfile, nmax=None, dup_check_test_site=True):
                     break
             count += 1
 
-    print len(mpfile.ids), 'mp-ids to submit.'
+    print len(mpfile.ids), 'compositions to submit.'
     if nmax is None and update > 0:
-        print update, 'mp-ids to update.'
+        print update, 'compositions to update.'
     if nmax is not None and skipped > 0:
         print skipped, 'duplicates to skip.'
