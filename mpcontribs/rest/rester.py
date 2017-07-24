@@ -3,6 +3,7 @@ import six, bson, os
 from bson.json_util import dumps, loads
 from webtzite.rester import MPResterBase, MPResterError
 from mpcontribs.io.core.mpfile import MPFileCore
+from mpcontribs.config import mp_id_pattern
 from importlib import import_module
 from pymatgen.io.cif import CifWriter
 
@@ -37,6 +38,14 @@ class MPContribsRester(MPResterBase):
         return super(MPContribsRester, self)._make_request(
           '/'.join([sub_url, self.dbtype]), payload=payload, method=method
         )
+
+    def get_cid_url(self, doc):
+        """infer URL for contribution detail page from MongoDB doc"""
+        is_mp_id = mp_id_pattern.match(doc['mp_cat_id'])
+        collection = 'materials' if is_mp_id else 'compositions'
+        return '/'.join([
+            self.preamble.rsplit('/', 1)[0], 'explorer', collection , doc['_id']
+        ])
 
     def check_contributor(self):
         return self._make_request('/check_contributor')
