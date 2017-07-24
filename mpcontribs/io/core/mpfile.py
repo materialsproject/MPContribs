@@ -181,7 +181,7 @@ class MPFileCore(six.with_metaclass(ABCMeta, object)):
         ))
 
     def add_hierarchical_data(self, dct, identifier=mp_level01_titles[0]):
-        self.document.rec_update(nest_dict(dct, [identifier]))
+        self.document.rec_update(nest_dict(RecursiveDict(dct), [identifier]))
 
     def add_structure(self, source, name=None, identifier=None, fmt=None):
         """add a structure to the mpfile"""
