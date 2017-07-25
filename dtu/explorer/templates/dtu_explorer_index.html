@@ -25,13 +25,22 @@
 .backgrid tbody tr:hover { background-color: #f9f9f9; }
 </style>
 
-{{ provenance|safe }}
+<div class="container">
+    <div class="row">
+        <h2>{{ title }}</h2>
+        {{ provenance|safe }}
+    </div>
+    <div class="row">
+        <h3>Overview</h3>
+        <div id="graph"></div>
+    </div>
+    <div class="row">
+        <h3>Data</h3>
+        {{ table|safe }}
+    </div>
+</div>
 
-<h3>Data</h3>
-{{ table|safe }}
 
-<h3>Overview Graph</h3>
-<div id="graph"></div>
 <script>
 requirejs(['main'], function() {
     require(["plotly"], function(Plotly) {
