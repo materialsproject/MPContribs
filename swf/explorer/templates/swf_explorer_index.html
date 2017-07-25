@@ -43,6 +43,7 @@
             requirejs(['main'], function() {
                 require(["plotly"], function(Plotly) {
                     $(document).ready(function(){
+                        var table = window.tables[window.tables.length-1];
                         var graph1 = document.getElementById('graph1');
                         function makeAxis(title, tickangle) {
                             return {
@@ -70,8 +71,8 @@
                             'V'
                         ];
                         avals = []; var bvals = []; var cvals = []; var comp = []; var EP = [];
-                        for (i = 0; i < window.table['rows'].length; i++) {
-                            var row = window.table['rows'][i];
+                        for (i = 0; i < table['rows'].length; i++) {
+                            var row = table['rows'][i];
                             avals.push(row[elements[0]].substring(0,4))
                             bvals.push(row[elements[1]].substring(0,4))
                             cvals.push(row[elements[2]].substring(0,4))
@@ -97,7 +98,7 @@
                         
                         graph1.on('plotly_click', function(data){
                             var pn = data.points[0].pointNumber
-                            var url = window.table['rows'][pn]['contribution']
+                            var url = table['rows'][pn]['contribution']
                             window.open(url, '_blank')                                                           
                         });
                     });
@@ -124,8 +125,8 @@
                         'IP_Energy_product',
                     ];
                     var xvals = []; var yvals = {};
-                    for (i = 0; i < window.table['rows'].length; i++) {
-                        var row = window.table['rows'][i];
+                    for (i = 0; i < table['rows'].length; i++) {
+                        var row = table['rows'][i];
                         var formula = row['formula'];
                         xvals.push(formula);
                         for (j = 0; j < keys.length; j++) {
