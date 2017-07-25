@@ -106,6 +106,7 @@ class MPContribsRester(MPResterBase):
             contributor_only (bool): only show contributions for requesting contributor
             projection (dict): projection dict to reduce output
             collection (str): collection to query (contributions | materials | compositions)
+            limit (int): number of documents to return
 
         Returns:
             A dict, with a list of contributions in the "response" key.
@@ -119,7 +120,8 @@ class MPContribsRester(MPResterBase):
                 "criteria": dumps(criteria),
                 "contributor_only": dumps(kwargs.get('contributor_only', False)),
                 "projection": dumps(kwargs.get('projection')),
-                "collection": kwargs.get('collection', 'contributions')
+                "collection": kwargs.get('collection', 'contributions'),
+                "limit": kwargs.get('limit', 0)
             }
             docs = self._make_request('/query', payload=payload, method='POST')
         else:

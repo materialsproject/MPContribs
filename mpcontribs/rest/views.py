@@ -216,6 +216,7 @@ def query_contributions(request, db_type=None, mdb=None):
         }
     """
     criteria = loads(request.POST.get('criteria', '{}'))
+    limit = loads(request.POST.get('limit', '0'))
     collection = request.POST.get('collection', 'contributions')
     if not collection: collection = 'contributions' # empty string check
     projection = loads(request.POST.get('projection', 'null'))
@@ -225,7 +226,7 @@ def query_contributions(request, db_type=None, mdb=None):
     if loads(request.POST.get('contributor_only', 'false')):
         criteria['collaborators'] = {'$in': [contributor]}
     results = list(mdb.contrib_ad.query_contributions(
-        criteria, projection=projection, collection=collection
+        criteria, projection=projection, collection=collection, limit=limit
     ))
     if collection == 'contributions':
         # remove email addresses from output
