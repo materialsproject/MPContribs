@@ -22,6 +22,7 @@ def add_diffusivity_table(mpfile):
         print 'added diffusivity table for host', host
 
 def run(mpfile, hosts=None):
+    mpfile.unique_mp_cat_ids = False
     from pymatgen import MPRester
     from unidecode import unidecode
     mpr = MPRester()
@@ -87,7 +88,7 @@ def run(mpfile, hosts=None):
             note = cells.iloc[0].replace('following', cells.iloc[1])[:-1]
             hdata[mpid]['note'] = note
             df.drop(rows, inplace=True)
-        mpfile.concat(MPFile.from_dict(hdata), uniquify=False)
+        mpfile.concat(MPFile.from_dict(hdata))
         df.set_index(df['Solute element number'], inplace=True)
         df.drop('Solute element number', axis=1, inplace=True)
         df.columns = df.ix[0]
