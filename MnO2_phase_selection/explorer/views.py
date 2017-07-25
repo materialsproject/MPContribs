@@ -11,7 +11,6 @@ from ..rest.rester import MnO2PhaseSelectionRester
 
 def index(request):
     ctx = RequestContext(request)
-    formations = {}
     if request.user.is_authenticated():
         API_KEY = request.user.api_key
         ENDPOINT = request.build_absolute_uri(get_endpoint())
