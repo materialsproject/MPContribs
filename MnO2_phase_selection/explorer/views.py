@@ -16,24 +16,16 @@ def index(request):
         API_KEY = request.user.api_key
         ENDPOINT = request.build_absolute_uri(get_endpoint())
         with MnO2PhaseSelectionRester(API_KEY, endpoint=ENDPOINT) as mpr:
-<<<<<<< HEAD
-            provenance = render_dict(mpr.get_provenance(), webapp=True)
-            tables = {}
-            for phase in mpr.get_phases():
-                df = mpr.get_contributions(phase=phase)
-                dHf = df['dH (formation)'][0]
-                tables[phase] = render_dataframe(df, webapp=True)
-                formations[phase] = dHf
-=======
             try:
-                provenance = render_dict(mpr.get_provenance(), webapp=True)
+                prov = mpr.get_provenance()
+                title = prov.get('title')
+                provenance = render_dict(prov, webapp=True)
                 tables = {}
                 for phase in mpr.get_phases():
                     df = mpr.get_contributions(phase=phase)
                     tables[phase] = render_dataframe(df, webapp=True)
             except Exception as ex:
                 ctx.update({'alert': str(ex)})
->>>>>>> 7f23bff20fd65aec8c45deb23ae75c4950e7d860
     else:
         ctx.update({'alert': 'Please log in!'})
     return render_to_response("MnO2_phase_selection_explorer_index.html", locals(), ctx)
