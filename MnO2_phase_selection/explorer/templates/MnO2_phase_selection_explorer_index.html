@@ -25,12 +25,50 @@
 .backgrid tbody tr:hover { background-color: #f9f9f9; }
 </style>
 
-{{ provenance|safe }}
+<div class="container">
+    <div class="row">
+        <h2>{{ title }}</h2>
+        {{ provenance|safe }}
+    </div>
+    <div class="row">
+        <div id="graph"></div>
+    </div>
+    {% for phase, table in tables.items %}
+    <div class="row">
+        <h3>{{ phase|safe }}</h3>
+        {{ table|safe }}
+    </div>
+    {% endfor %}
+</div>
 
-{% for phase, table in tables.items %}
-<h3>{{ phase|safe }}</h3>
-{{ table|safe }}
-{% endfor %}
+<script>
+requirejs(['main'], function() {
+    require(["plotly"], function(Plotly) {
+        $(document).ready(function(){
+            var xvals = []; var yvals = [];
+            for (t = 0; t < window.tables.length; t++) {
+                var table = window.tables[t];
+                for (i = 0; i < table['rows'].length; i++) {
+                    var row = table['rows'][i];
+                    var mpid_split = row['mp-id'].split('/');
+                    var mpid = mpid_split[mpid_split.length-1];
+                    xvals.push(mpid);
+                    var value = parseFloat(row['dH (formation)'].split(' ')[0]);
+                    yvals.push(value);
+                }
+            }
+            var graph = document.getElementById('graph');
+            var layout = {
+                margin: {t: 0},
+                xaxis: {title: 'mp-id', type: 'category'},
+                yaxis: {title: 'Formation Enthalpy (eV/mol)'}
+            };
+            var data = [{x: xvals, y: yvals, type: 'bar'}];
+            Plotly.plot(graph, data, layout);
+        });
+    });
+});
+</script>
 
 {% endif %}
 {% endblock %}

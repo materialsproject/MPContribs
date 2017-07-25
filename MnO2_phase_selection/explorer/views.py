@@ -11,12 +11,15 @@ from ..rest.rester import MnO2PhaseSelectionRester
 
 def index(request):
     ctx = RequestContext(request)
+    formations = {}
     if request.user.is_authenticated():
         API_KEY = request.user.api_key
         ENDPOINT = request.build_absolute_uri(get_endpoint())
         with MnO2PhaseSelectionRester(API_KEY, endpoint=ENDPOINT) as mpr:
             try:
-                provenance = render_dict(mpr.get_provenance(), webapp=True)
+                prov = mpr.get_provenance()
+                title = prov.get('title')
+                provenance = render_dict(prov, webapp=True)
                 tables = {}
                 for phase in mpr.get_phases():
                     df = mpr.get_contributions(phase=phase)
