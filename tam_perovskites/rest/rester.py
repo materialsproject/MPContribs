@@ -33,4 +33,4 @@ class TamPerovskitesRester(MPContribsRester):
         return DataFrame.from_items(data, orient='index', columns=columns)
 
     def get_abbreviations(self):
-        return self.get_global_hierarchical_data(['abbreviations'])
+        return self.get_global_hierarchical_data(['abbreviations']).get('abbreviations')
