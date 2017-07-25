@@ -34,6 +34,14 @@ class MPContribsRester(MPResterBase):
         )
         self.dbtype = dbtype
 
+    @property
+    def query(self):
+        return None
+
+    @property
+    def provenance_keys(self):
+        raise NotImplementedError('Implement `provenance_keys` property in Rester!')
+
     def _make_request(self, sub_url, payload=None, method="GET"):
         return super(MPContribsRester, self)._make_request(
           '/'.join([sub_url, self.dbtype]), payload=payload, method=method
@@ -46,6 +54,26 @@ class MPContribsRester(MPResterBase):
         return '/'.join([
             self.preamble.rsplit('/', 1)[0], 'explorer', collection , doc['_id']
         ])
+
+    def get_provenance(self):
+        return self.get_global_hierarchical_data(self.provenance_keys)
+
+    def get_global_hierarchical_data(self, keys):
+        projection = {'_id': 1, 'mp_cat_id': 1}
+        for key in keys:
+            projection['content.' + key] = 1
+        docs = self.query_contributions(projection=projection, limit=1)
+        if not docs:
+            raise Exception('No contributions found!')
+        mpfile = MPFileCore.from_contribution(docs[0])
+        identifier = mpfile.ids[0]
+        return mpfile.hdata[identifier]
+
+    def get_material(self, identifier):
+        docs = self.query_contributions(
+            criteria={'mp_cat_id': identifier}, projection={'content': 1}
+        )
+        return docs[0] if docs else None
 
     def check_contributor(self):
         return self._make_request('/check_contributor')
@@ -114,6 +142,11 @@ class MPContribsRester(MPResterBase):
         Raises:
             MPResterError
         """
+        if self.query is not None:
+            if 'criteria' in kwargs:
+                kwargs['criteria'].update(self.query)
+            else:
+                kwargs['criteria'] = self.query
         if kwargs:
             criteria = dict(kwargs.get('criteria', {}))
             payload = {
@@ -139,7 +172,7 @@ class MPContribsRester(MPResterBase):
         if as_doc: return contrib
         return MPFile.from_contribution(contrib)
 
-    def delete_contributions(self, cids):
+    def delete_contributions(self, cids=[]):
         """
         Delete a list of contributions from the Materials Project site.
 
@@ -152,6 +185,8 @@ class MPContribsRester(MPResterBase):
         Raises:
             MPResterError
         """
+        if not cids:
+            cids = [c['_id'] for c in self.query_contributions()]
         payload = {"cids": dumps(cids)}
         return self._make_request('/delete', payload=payload, method='POST')
 
