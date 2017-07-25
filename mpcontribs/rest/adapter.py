@@ -40,10 +40,10 @@ class ContributionMongoAdapter(object):
     #        elements=['mp-{}'.format(i) for i in range(1, 5)]
     #    )
 
-    def query_contributions(self, crit, projection=None, collection='contributions'):
+    def query_contributions(self, crit, projection=None, collection='contributions', limit=0):
         # TODO be careful with SON for order in crit
         coll = getattr(self, collection)
-        limit, props = 0, None
+        props = None
         if projection is None:
           if collection == 'contributions':
             props = [ 'collaborators', 'mp_cat_id', 'project' ]
