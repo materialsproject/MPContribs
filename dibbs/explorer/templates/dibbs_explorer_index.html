@@ -1,7 +1,8 @@
 {% extends "../../webtzite/templates/base/header_footer.html" %}
 {% load staticfiles %}
+<script>window.table = null;</script>
 
-{% block title %} Tam Perovskites {% endblock title %}
+{% block title %} Dibbs {% endblock title %}
 
 {% block extra_css %}
 <link rel="stylesheet" href='{% static "js/components/backgrid/lib/backgrid.css" %}' charset="utf-8">
@@ -28,26 +29,6 @@
 <div class="container">
     <div class="row">
         <h2>{{ title }}</h2>
-        {{ provenance|safe }}
-    </div>
-    <div class="row">
-        <div id="accordion" class="panel-group">
-            <div class="panel panel-default">
-                <div class="panel-heading">
-                    <h4 class="panel-title">
-                        <a data-toggle="collapse" data-parent="#accordion" href="#collapseOne">Abbreviations</a>
-                    </h4>
-                </div>
-                <div id="collapseOne" class="panel-collapse collapse">
-                    <div class="panel-body">
-                        {{ abbreviations|safe }}
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="row">
-        <h3>Data</h3>
         {{ table|safe }}
     </div>
 </div>
