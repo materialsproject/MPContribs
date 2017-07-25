@@ -25,11 +25,24 @@
 .backgrid tbody tr:hover { background-color: #f9f9f9; }
 </style>
 
-{{ provenance|safe }}
-
-<h3>Data</h3>
-
-{{ table|safe }}
+<div class="container">
+    <div class="row">
+        <h2>{{ title }}</h2>
+        <div class="col-md-6">
+            {{ provenance|safe }}
+        </div>
+        <div class="col-md-6">
+            <h4>Abbreviations</h4>
+            <div style="height:500px; overflow-y:scroll;">
+                {{ abbreviations|safe }}
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <h3>Data</h3>
+        {{ table|safe }}
+    </div>
+</div>
 
 {% endif %}
 {% endblock %}

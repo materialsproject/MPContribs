@@ -1,6 +1,5 @@
 {% extends "../../webtzite/templates/base/header_footer.html" %}
 {% load staticfiles %}
-<script>window.table = null;</script>
 
 {% block title %} DTU {% endblock title %}
 
@@ -26,17 +25,27 @@
 .backgrid tbody tr:hover { background-color: #f9f9f9; }
 </style>
 
-{{ provenance|safe }}
+<div class="container">
+    <div class="row">
+        <h2>{{ title }}</h2>
+        {{ provenance|safe }}
+    </div>
+    <div class="row">
+        <h3>Overview</h3>
+        <div id="graph"></div>
+    </div>
+    <div class="row">
+        <h3>Data</h3>
+        {{ table|safe }}
+    </div>
+</div>
 
-<h3>Data</h3>
-{{ table|safe }}
 
-<h3>Overview Graph</h3>
-<div id="graph"></div>
 <script>
 requirejs(['main'], function() {
     require(["plotly"], function(Plotly) {
         $(document).ready(function(){
+            var table = window.tables[window.tables.length-1];
             var graph = document.getElementById('graph');
             var layout = {
                 margin: {t: 0}, barmode: 'stack',
@@ -49,8 +58,8 @@ requirejs(['main'], function() {
                 'quasi-particle_bandgap(direct)'
             ];
             var xvals = []; var yvals = {};
-            for (i = 0; i < window.table['rows'].length; i++) {
-                var row = window.table['rows'][i];
+            for (i = 0; i < table['rows'].length; i++) {
+                var row = table['rows'][i];
                 var mpid_split = row['mp-id'].split('/');
                 var mpid = mpid_split[mpid_split.length-1];
                 xvals.push(mpid);

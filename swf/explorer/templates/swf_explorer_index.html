@@ -43,6 +43,7 @@
             requirejs(['main'], function() {
                 require(["plotly"], function(Plotly) {
                     $(document).ready(function(){
+                        var table = window.tables[window.tables.length-1];
                         var graph1 = document.getElementById('graph1');
                         function makeAxis(title, tickangle) {
                             return {
@@ -114,7 +115,7 @@
                                 cids_other.push(row['contribution'])
                             }
                         };
-                        
+
                         var IP_Energy_Product_Data = {
                             type: 'scatterternary',
                             mode: 'markers',

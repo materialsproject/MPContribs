@@ -15,9 +15,11 @@ def index(request):
         ENDPOINT = request.build_absolute_uri(get_endpoint())
         with TamPerovskitesRester(API_KEY, endpoint=ENDPOINT) as mpr:
             try:
-                provenance = render_dict(mpr.get_provenance(), webapp=True)
-                df = mpr.get_contributions()
-                table = render_dataframe(df, webapp=True)
+                prov = mpr.get_provenance()
+                title = prov.get('title')
+                provenance = render_dict(prov, webapp=True)
+                abbreviations = render_dict(mpr.get_abbreviations(), webapp=True)
+                table = render_dataframe(mpr.get_contributions(), webapp=True)
             except Exception as ex:
                 ctx.update({'alert': str(ex)})
     else:
