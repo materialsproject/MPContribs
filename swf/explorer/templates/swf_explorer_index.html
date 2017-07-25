@@ -34,10 +34,10 @@
 
     <div class="row">
         <h3>Graphical Abstract and Ternary Phase Diagram</h3>
-        <div class="col-md-7">
-            <img src="{{ static_url }}/Graphical_abstract.png" width='650' height='400' />
+        <div class="col-md-6">
+            <img src="{{ static_url }}/Graphical_abstract.png" width='575' height='375' />
         </div>
-        <div class="col-md-5">
+        <div class="col-md-6">
             <div id="graph1"></div>
             <script>
             requirejs(['main'], function() {
@@ -61,42 +61,116 @@
                             'sum': 100,
                             'aaxis': makeAxis('Fe', 0),
                             'baxis': makeAxis('<br>Co', 45),
-                            'caxis': makeAxis('<br>V', -45)
-                            }
+                            'caxis': makeAxis('<br>V', -45),
+                            },
+                            showlegend: false,
+                            updatemenus: [{
+                                a: 100,
+                                yanchor: 'top',
+                                buttons: [{
+                                    method: 'restyle',
+                                    args: ['visible', [true, true, true]],
+                                    label: 'All'
+                                }, {
+                                    method: 'restyle',
+                                    args: ['visible', [true, false, false]],
+                                    label: 'IP Energy Product'
+                                }, {
+                                    method: 'restyle',
+                                    args: ['visible', [false, true, false]],
+                                    label: 'Coercive Field Data'
+                                }, {
+                                    method: 'restyle',
+                                    args: ['visible', [false, false, true]],
+                                    label: 'Other'
+                                }]
+                            }]
                         };
                         var elements = [
                             'Fe',
                             'Co',
                             'V'
                         ];
-                        avals = []; var bvals = []; var cvals = []; var comp = [];
+                        
+                        var avals0 = []; var bvals0 = []; var cvals0 = []; var cids0 = []
+                        var avals1 = []; var bvals1 = []; var cvals1 = []; var cids1 = []
+                        var avals_other = []; var bvals_other = []; var cvals_other = []; var cids_other = []
                         for (i = 0; i < window.table['rows'].length; i++) {
-                            var row = window.table['rows'][i];
-                            avals.push(row[elements[0]].substring(0,4))
-                            bvals.push(row[elements[1]].substring(0,4))
-                            cvals.push(row[elements[2]].substring(0,4))
-                            comp.push(row['formula'])
+                            row = window.table['rows'][i];
+                            if (row['IP_Energy_product'] != "") {
+                                avals0.push(row[elements[0]].substring(0,4))
+                                bvals0.push(row[elements[1]].substring(0,4))
+                                cvals0.push(row[elements[2]].substring(0,4))
+                                cids0.push(row['contribution'])
+                            } else if (row['MOKE_IP_Hc'] != "" || row['VSM_IP_Hc'] != "" ) {
+                                avals1.push(row[elements[0]].substring(0,4))
+                                bvals1.push(row[elements[1]].substring(0,4))
+                                cvals1.push(row[elements[2]].substring(0,4)) 
+                                cids1.push(row['contribution'])
+                            } else {
+                                avals_other.push(row[elements[0]].substring(0,4))
+                                bvals_other.push(row[elements[1]].substring(0,4))
+                                cvals_other.push(row[elements[2]].substring(0,4)) 
+                                cids_other.push(row['contribution'])
+                            }
                         };
-                        var data = [{
+                        
+                        var IP_Energy_Product_Data = {
                             type: 'scatterternary',
                             mode: 'markers',
-                            a: avals,
-                            b: bvals,
-                            c: cvals,
-                            text: comp, 
+                            a: avals0,
+                            b: bvals0,
+                            c: cvals0,
+                            text: 'Energy Product thin films', 
                             marker: {
-                            symbol: 100,
-                            color: '#DB7365',
-                            size: 14,
-                            line: { width: 2 }
+                            symbol: 0,
+                            color: 'blue',
+                            size: 10
                             },
-                        }];
+                        };
+                        
+                        var Coercive_Field_Data = {
+                            type: 'scatterternary',
+                            mode: 'markers',
+                            a: avals1,
+                            b: bvals1,
+                            c: cvals1,
+                            text: 'Coercive Field thin films', 
+                            marker: {
+                            symbol: 0,
+                            color: 'red',
+                            size: 10
+                            },
+                        };
+                        
+                        var Other_Data = {
+                            type: 'scatterternary',
+                            mode: 'markers',
+                            a: avals_other,
+                            b: bvals_other,
+                            c: cvals_other,
+                            text: 'Other thin films', 
+                            marker: {
+                            symbol: 0,
+                            color: 'green',
+                            size: 10
+                            },
+                        };
+                        
+                        var data = [IP_Energy_Product_Data, Coercive_Field_Data, Other_Data]
                         
                         Plotly.plot('graph1', data, layout)
                         
                         graph1.on('plotly_click', function(data){
                             var pn = data.points[0].pointNumber
-                            var url = window.table['rows'][pn]['contribution']
+                            var cn = data.points[0].curveNumber
+                            if (cn == 0) {
+                                var url = cids0[pn]
+                            } else if (cn == 1) {
+                                var url = cids1[pn]
+                            } else if (cn == 2) {
+                                var url = cids_other[pn]
+                            }
                             window.open(url, '_blank')                                                           
                         });
                     });
