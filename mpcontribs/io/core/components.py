@@ -92,11 +92,16 @@ def render_dataframe(df, webapp=False):
       var Row = Backbone.Model.extend({});
       var Rows = Backbone.Collection.extend({model: Row, mode: "client"});
       var rows = new Rows(table['rows']);
+      var objectid_regex = /^[a-f\d]{24}$/i;
       for (var idx in table['columns']) {
           if (table['columns'][idx]['cell'] == 'uri') {
               table['columns'][idx]['formatter'] = _.extend({}, Backgrid.CellFormatter.prototype, {
                   fromRaw: function (rawValue, model) {
-                      return rawValue.split('/').pop();
+                      var identifier = rawValue.split('/').pop();
+                      if (objectid_regex.test(identifier)) {
+                          return identifier.slice(-7);
+                      };
+                      return identifier;
                   }
               })
           }
