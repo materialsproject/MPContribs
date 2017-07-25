@@ -62,7 +62,7 @@ def get_backgrid_table(df):
                         break
                     is_url_column = True
         cell_type = 'uri' if is_url_column else 'string'
-        table['columns'].append({ 'name': k, 'cell': cell_type })
+        table['columns'].append({ 'name': k, 'cell': cell_type, 'editable': False })
 
     table['rows'] = []
     for row_index in xrange(nrows):
@@ -106,7 +106,7 @@ def render_dataframe(df, webapp=False):
               })
           }
       }
-      var grid = new Backgrid.Grid({ columns: table['columns'], collection: rows });
+      var grid = new Backgrid.Grid({ columns: table['columns'], collection: rows, });
       $('#%s').append(grid.render().el);
     });
     """ % (json.dumps(table), uuid_str)
