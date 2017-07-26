@@ -21,7 +21,15 @@ def round_to_100_percent(number_set, digit_after_decimal=1):
         index = (index + 1) % len(number_set)
     return [int(x)/float(10**digit_after_decimal) for x in unround_numbers]
 
-def run(mpfile, nmax=None):
+def run(mpfile, nmax=None, dup_check_test_site=True):
+
+    existing_compositions = {}
+    for b in [False, True]:
+        with SWFRester(test_site=b) as mpr:
+            for doc in mpr.query_contributions():
+                existing_compositions[doc['mp_cat_id']] = doc['_id']
+        if not dup_check_test_site:
+            break
 
     # load data from google sheet
     # TODO should google sheets URL be removed from contribution?
@@ -46,20 +54,27 @@ def run(mpfile, nmax=None):
 
     row5 = df_dct['formula'].iloc[0]
     formula5 = pymatgen.Composition(10*row5).formula.replace(' ', '')
-    mpfile.add_hierarchical_data(
-        {'data': row5.to_dict()}, identifier=formula5
-    )
-    mpfile.add_data_table(
-        formula5, df_dct['Kondorsky'], name='Angular Dependence of Switching Field'
-    )
+    if nmax is not None and formula5 in existing_compositions:
+        print 'skipping kondorsky for', formula5
+    else:
+        mpfile.add_hierarchical_data(
+            {'data': row5.to_dict()}, identifier=formula5
+        )
+        mpfile.add_data_table(
+            formula5, df_dct['Kondorsky'], name='Angular Dependence of Switching Field'
+        )
 
-    count = 0
+    count, skipped, update = 0, 0, 0
     for sheet, df in df_dct.items():
         if sheet == 'formula' or sheet == 'Kondorsky':
             continue
         for idx, row in df.iterrows():
             composition = pymatgen.Composition(row[elements]*10)
             formula = composition.formula.replace(' ', '')
+            if nmax is not None and formula in existing_compositions:
+                print 'skipping', formula
+                skipped += 1
+                continue # skip duplicates
 
             mpfile.add_hierarchical_data(
                 {'data': row[elements].to_dict()},
@@ -73,8 +88,16 @@ def run(mpfile, nmax=None):
                     {'data': data.to_dict()}, identifier=formula
                 )
 
+            if formula in existing_compositions:
+                cid = existing_compositions[formula]
+                mpfile.insert_id(formula, cid)
+                update += 1
             if nmax is not None and count >= nmax-1:
                     break
             count += 1
 
-    print len(mpfile.ids), 'mp-ids to submit.'
+    print len(mpfile.ids), 'compositions to submit.'
+    if nmax is None and update > 0:
+        print update, 'compositions to update.'
+    if nmax is not None and skipped > 0:
+        print skipped, 'duplicates to skip.'
