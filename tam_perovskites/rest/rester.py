@@ -10,7 +10,7 @@ class TamPerovskitesRester(MPContribsRester):
         os.path.dirname(__file__), '..', 'mpfile_init.txt'
     ))
     query = {'content.doi': mpfile.hdata.general['doi']}
-    provenance_keys = mpfile.hdata.general.keys()
+    provenance_keys = [k for k in mpfile.hdata.general.keys() if k != 'google_sheet']
 
     def get_contributions(self):
         docs = self.query_contributions(

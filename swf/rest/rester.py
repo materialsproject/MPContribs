@@ -10,18 +10,7 @@ class SWFRester(MPContribsRester):
         os.path.dirname(__file__), '..', 'mpfile_init.txt'
     ))
     query = {'content.doi': mpfile.hdata.general['doi']}
-
-    def query_contributions(self, **kwargs):
-        if 'criteria' in kwargs:
-            kwargs['criteria'].update(self.query)
-        else:
-            kwargs['criteria'] = self.query
-        return super(SWFRester, self).query_contributions(**kwargs)
-
-    def delete_contributions(self, cids=[]):
-        if not cids:
-            cids = [c['_id'] for c in self.query_contributions()]
-        return super(SWFRester, self).delete_contributions(cids)
+    provenance_keys = [k for k in mpfile.hdata.general.keys() if k != 'google_sheet']
 
     def get_contributions(self):
         docs = self.query_contributions(
@@ -57,18 +46,3 @@ class SWFRester(MPContribsRester):
                 entry[1] += [''] * (ncols - n)
 
         return DataFrame.from_items(data, orient='index', columns=columns)
-
-
-    def get_provenance(self):
-        provenance_keys = ['title', 'doi', 'reference', 'authors', 'contributor', 'explanation']
-        projection = {'_id': 1, 'mp_cat_id': 1}
-        for key in provenance_keys:
-            projection['content.' + key] = 1
-        docs = self.query_contributions(projection=projection)
-        if not docs:
-            raise Exception('No contributions found for SWF Explorer!')
-
-        mpfile = MPFile.from_contribution(docs[0])
-        formula = mpfile.ids[0]
-        return mpfile.hdata[formula]
-
