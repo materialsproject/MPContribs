@@ -46,7 +46,7 @@
               <input type=hidden name=options id=inputopts value=''>
               <input type=hidden name=thebe id=inputthebe value=''>
               {% for project in session.projects %}
-              <input type=hidden id="inputaml_{{ project }}" value="{{ session['projects'][project] }}">
+              <input charset="UTF-8" type=hidden id="inputaml_{{ project }}" value="{{ session['projects'][project] }}">
               {% endfor %}
               <label for="loadbutton" class="btn btn-info navbar-btn">
                 <i class="fa fa-pencil-square-o" aria-hidden="true"></i>

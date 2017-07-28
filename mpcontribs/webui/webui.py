@@ -23,8 +23,7 @@ for mod_path in get_users_modules():
     mod = os.path.basename(mod_path)
     path = os.path.join(mod_path, 'mpfile_init.txt')
     if os.path.exists(path):
-        with open(path, 'r') as f:
-            projects[mod] = f.read()
+        projects[mod] = codecs.open(path, encoding='utf-8').read()
     else:
         projects[mod] = ''
 
