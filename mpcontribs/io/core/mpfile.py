@@ -233,7 +233,10 @@ class MPFileCore(six.with_metaclass(ABCMeta, object)):
         return identifier
 
     def __repr__(self): return self.get_string()
-    def __str__(self): return self.get_string()
+    def __str__(self):
+        return unicode(self).encode('utf-8')
+    def __unicode__(self):
+        return self.get_string()
 
     def _ipython_display_(self):
 	from IPython.display import display_html
