@@ -71,7 +71,6 @@
 
     ```bash
     cd ../workshop-jupyterhub/run
-    git checkout -b localhost origin/localhost
     # replace GitHub Client ID and Secret in env.sh (see OAuth setup above)
     # add github handle to env/userlist
     ./run.sh --no-ssl
