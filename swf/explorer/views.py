@@ -7,14 +7,14 @@ from mpcontribs.rest.views import get_endpoint
 from mpcontribs.io.core.components import render_dataframe
 from mpcontribs.io.core.recdict import render_dict
 from test_site.settings import STATIC_URL
-from ..rest.rester import SWFRester
+from ..rest.rester import SwfRester
 
 def index(request):
     ctx = RequestContext(request)
     if request.user.is_authenticated():
         API_KEY = request.user.api_key
         ENDPOINT = request.build_absolute_uri(get_endpoint())
-        with SWFRester(API_KEY, endpoint=ENDPOINT) as mpr:
+        with SwfRester(API_KEY, endpoint=ENDPOINT) as mpr:
             try:
                 prov = mpr.get_provenance()
                 title = prov.get('title')

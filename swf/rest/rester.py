@@ -4,7 +4,7 @@ from mpcontribs.rest.rester import MPContribsRester
 from mpcontribs.io.archieml.mpfile import MPFile
 from pandas import DataFrame
 
-class SWFRester(MPContribsRester):
+class SwfRester(MPContribsRester):
     """SWF-specific convenience functions to interact with MPContribs REST interface"""
     mpfile = MPFile.from_file(os.path.join(
         os.path.dirname(__file__), '..', 'mpfile_init.txt'

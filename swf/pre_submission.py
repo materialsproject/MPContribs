@@ -1,5 +1,5 @@
 from mpcontribs.config import mp_level01_titles
-from mpcontribs.users.swf.rest.rester import SWFRester
+from mpcontribs.users.swf.rest.rester import SwfRester
 from mpcontribs.io.core.recdict import RecursiveDict
 import pandas as pd
 import pymatgen
@@ -25,7 +25,7 @@ def run(mpfile, nmax=None, dup_check_test_site=True):
 
     existing_compositions = {}
     for b in [False, True]:
-        with SWFRester(test_site=b) as mpr:
+        with SwfRester(test_site=b) as mpr:
             for doc in mpr.query_contributions():
                 existing_compositions[doc['mp_cat_id']] = doc['_id']
         if not dup_check_test_site:
