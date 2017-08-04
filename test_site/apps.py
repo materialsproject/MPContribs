@@ -1,4 +1,21 @@
 from django.apps import AppConfig
+#from mpcontribs.users_modules import get_user_modules, get_user_explorer_config
+#import os
+#
+#def factory(AppConfig, mod_path):
+#    class NewClass(AppConfig): pass
+#    mod = os.path.basename(mod_path)
+#    mod_path_split = os.path.normpath(mod_path).split(os.sep)[-3:]
+#    NewClass.name = '.'.join(mod_path_split + ['explorer'])
+#    NewClass.label = '_'.join([mod_path, 'explorer'])
+#    NewClass.__name__ = get_user_explorer_config(mod)
+#    return NewClass
+#
+#for mod_path in get_users_modules():
+#    if os.path.exists(os.path.join(mod_path, 'explorer', 'urls.py')):
+#        ... = factory(
+
+
 
 class UwSi2ExplorerConfig(AppConfig):
     name = 'mpcontribs.users.uw_si2.explorer'
