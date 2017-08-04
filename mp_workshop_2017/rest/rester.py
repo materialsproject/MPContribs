@@ -49,3 +49,17 @@ class MpWorkshop2017Rester(MPContribsRester):
         return DataFrame.from_items(data, orient='index', columns=columns)
 
 
+    def get_graphs(self):
+        docs = self.query_contributions(
+            projection={'_id': 1, 'mp_cat_id': 1, 'content': 1}
+        )
+        if not docs:
+            raise Exception('No contributions found for MpWorkshop2017 Explorer!')
+
+        graphs = {}
+        for doc in docs:
+            mpfile = MPFile.from_contribution(doc)
+            mp_id = mpfile.ids[0]
+            graphs[mp_id] = mpfile.gdata[mp_id]
+
+        return graphs

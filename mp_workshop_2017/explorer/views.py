@@ -4,7 +4,7 @@ import os
 from django.shortcuts import render_to_response
 from django.template import RequestContext
 from mpcontribs.rest.views import get_endpoint
-from mpcontribs.io.core.components import render_dataframe
+from mpcontribs.io.core.components import render_dataframe, render_plot
 from mpcontribs.io.core.recdict import render_dict
 from ..rest.rester import MpWorkshop2017Rester
 
@@ -18,7 +18,11 @@ def index(request):
                 prov = mpr.get_provenance()
                 provenance = render_dict(prov, webapp=True)
                 table = render_dataframe(mpr.get_contributions(), webapp=True)
-
+                graphs = {}
+                for mpid, plots in mpr.get_graphs().items():
+                    graphs[mpid] = {}
+                    for name, plot in plots.items():
+                        graphs[mpid][name] = render_plot(plot, webapp=True)
             except Exception as ex:
                 ctx.update({'alert': str(ex)})
     else:
