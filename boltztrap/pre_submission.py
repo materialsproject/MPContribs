@@ -1,7 +1,7 @@
 import os
 from mpcontribs.users.boltztrap.rest.rester import BoltztrapRester
 
-def run(mpfile, nmax=None, dup_check_test_site=True):
+def run(mpfile, nmax=10, dup_check_test_site=True):
 
     existing_mpids = {}
     for b in [False, True]:
@@ -12,4 +12,8 @@ def run(mpfile, nmax=None, dup_check_test_site=True):
             break
 
     input_dir = mpfile.hdata.general['input_dir']
-    print input_dir
+    for idx, fn in enumerate(os.listdir(input_dir)):
+        if os.path.isfile(fn):
+            print (fn)
+        if idx >= nmax+1:
+            break

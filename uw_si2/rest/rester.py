@@ -7,7 +7,7 @@ from mpcontribs.io.archieml.mpfile import MPFile
 from mpcontribs.config import mp_level01_titles
 from pandas import Series
 
-class UWSI2Rester(MPContribsRester):
+class UwSi2Rester(MPContribsRester):
     """UW/SI2-specific convenience functions to interact with MPContribs REST interface"""
     z = loads(open(os.path.join(
       os.path.dirname(os.path.abspath(__file__)), 'z.json'

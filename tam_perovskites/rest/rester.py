@@ -1,55 +1,36 @@
 from __future__ import division, unicode_literals
+import os
 from mpcontribs.rest.rester import MPContribsRester
 from mpcontribs.io.archieml.mpfile import MPFile
 from pandas import DataFrame
 
 class TamPerovskitesRester(MPContribsRester):
     """TamPerovskites-specific convenience functions to interact with MPContribs REST interface"""
-    tam_perovskites_query = tuple({'content.emig': {'$exists': 1}}.iteritems())
+    mpfile = MPFile.from_file(os.path.join(
+        os.path.dirname(__file__), '..', 'mpfile_init.txt'
+    ))
+    query = {'content.doi': mpfile.hdata.general['doi']}
+    provenance_keys = [k for k in mpfile.hdata.general.keys() if k != 'google_sheet']
 
     def get_contributions(self):
-        data = []
-        columns = ['mp-id', 'contribution', 'efermi', 'ehull', 'bandgap']
-
         docs = self.query_contributions(
-            criteria=self.tam_perovskites_query,
-            projection={
-                '_id': 1, 'mp_cat_id': 1,
-                'content.efermi': 1, 'content.ehull': 1, 'content.bandgap': 1
-            }
+            projection={'_id': 1, 'mp_cat_id': 1, 'content.data': 1, 'content.abbreviations': 1}
         )
         if not docs:
             raise Exception('No contributions found for TamPerovskites Explorer!')
 
+        data, columns = [], None
         for doc in docs:
             mpfile = MPFile.from_contribution(doc)
             mp_id = mpfile.ids[0]
-            contrib = mpfile.hdata[mp_id]
-            cid_url = '/'.join([
-                self.preamble.rsplit('/', 1)[0], 'explorer', 'materials', doc['_id']
-            ])
-            row = [
-                mp_id, cid_url,
-                contrib['efermi'], contrib['ehull'], contrib['bandgap']
-            ]
+            contrib = mpfile.hdata[mp_id]['data']
+            cid_url = self.get_cid_url(doc)
+            if columns is None:
+                columns = ['mp-id', 'contribution'] + contrib.keys()
+            row = [mp_id, cid_url] + contrib.values()
             data.append((mp_id, row))
+
         return DataFrame.from_items(data, orient='index', columns=columns)
 
-    def get_provenance(self):
-        provenance_keys = ['authors', 'abbreviations']
-        projection = {'_id': 1, 'mp_cat_id': 1}
-        for key in provenance_keys:
-            projection['content.' + key] = 1
-        docs = self.query_contributions(criteria=self.tam_perovskites_query, projection=projection)
-        if not docs:
-            raise Exception('No contributions found for DTU Explorer!')
-
-        mpfile = MPFile.from_contribution(docs[0])
-        mp_id = mpfile.ids[0]
-        return mpfile.hdata[mp_id]
-
-    def get_material(self, mpid):
-        query = dict(self.tam_perovskites_query)
-        query.update({'mp_cat_id': mpid})
-        docs = self.query_contributions(criteria=query, projection={'content': 1})
-        return docs[0] if docs else None
+    def get_abbreviations(self):
+        return self.get_global_hierarchical_data(['abbreviations']).get('abbreviations')

@@ -1,22 +1,36 @@
-from mpcontribs.io.archieml.mpfile import MPFile
-from mpcontribs.io.core.recdict import RecursiveDict
-from mpcontribs.config import mp_level01_titles
+import tarfile
 from pandas import read_excel
 from six import string_types
+from mpcontribs import MPFile, RecursiveDict, mp_level01_titles
+from mpcontribs.users.tam_perovskites.rest.rester import TamPerovskitesRester
 
+def run(mpfile, nmax=None, dup_check_test_site=True):
 
-def run(mpfile):
+    existing_mpids = {}
+    for b in [False, True]:
+        with TamPerovskitesRester(test_site=b) as mpr:
+            for doc in mpr.query_contributions(
+                    projection={'content.data.directory': 1, 'mp_cat_id': 1}
+                ):
+                key = '_'.join([doc['mp_cat_id'], doc['content']['data']['directory']])
+                existing_mpids[key] = doc['_id']
+        if not dup_check_test_site:
+            break
 
-    descriptors_filepath = mpfile.document[mp_level01_titles[0]].pop('descriptors_filepath')
-    contcars_filepath = mpfile.document[mp_level01_titles[0]].pop('contcars_filepath') # TODO
-    df = read_excel(descriptors_filepath)
-    df = df[df['Materials project match id'] != ' None '].reset_index() # skip un-matched
+    general = mpfile.document[mp_level01_titles[0]]
+    google_sheet = general.pop('google_sheet') + '/export?format=xlsx'
+    contcars_filepath = general.pop('contcars_filepath')
+    contcars = tarfile.open(contcars_filepath)
+
+    df = read_excel(google_sheet)
     keys = df.iloc[[0]].to_dict(orient='records')[0]
     abbreviations = RecursiveDict()
 
+    count, skipped, update = 0, 0, 0
     for index, row in df[1:].iterrows():
         mpid = None
         data = RecursiveDict()
+        mpfile_single = MPFile()
 
         for col, value in row.iteritems():
             if col == 'level_0' or col == 'index':
@@ -31,13 +45,51 @@ def run(mpfile):
 
             if key == 'pmgmatchid':
                 mpid = value.strip()
+                if mpid == 'None':
+                    mpid = None
+                name = '_'.join(data['directory'].split('/')[1:])
+                contcar_path = 'bulk_CONTCARs/{}_CONTCAR'.format(
+                    data['directory'].replace('/', '_')
+                )
+                contcar = contcars.extractfile(contcar_path)
+                try:
+                    mpid_match = mpfile_single.add_structure(
+                        contcar.read(), fmt='poscar',
+                        name=name, identifier=mpid
+                    )
+                except ValueError as ex:
+                    print name, str(ex)
+                    continue
+                mpid = mpid_match
             else:
                 data[key] = value
 
-        mpfile.add_hierarchical_data(data, identifier=mpid)
-        print 'added', mpid
-        if index > 5:
+        if mpid is None:
+            continue
+
+        mpid_mod = '_'.join([mpid, data['directory']])
+        if nmax is not None and mpid_mod in existing_mpids:
+            print 'skipping', mpid_mod
+            skipped += 1
+            continue # skip duplicates
+
+        mpfile_single.add_hierarchical_data({'data': data}, identifier=mpid)
+
+        if mpid_mod in existing_mpids:
+            cid = existing_mpids[mpid_mod]
+            mpfile_single.insert_id(mpid, cid)
+            update += 1
+
+        mpfile.concat(mpfile_single)
+
+        if nmax is not None and count >= nmax-1:
             break
+        count += 1
 
     mpfile.add_hierarchical_data({'abbreviations': abbreviations})
-    print 'DONE'
+
+    print len(mpfile.ids), 'mp-ids to submit.'
+    if nmax is None and update > 0:
+        print update, 'mp-ids to update.'
+    if nmax is not None and skipped > 0:
+        print skipped, 'duplicates to skip.'

@@ -23,13 +23,42 @@
 <style>
 .backgrid .string-cell { text-align: center; }
 .backgrid tbody tr:hover { background-color: #f9f9f9; }
+.jh-root:hover { cursor: default; }
 </style>
 
-{{ provenance|safe }}
+<div class="container">
+    <div class="row">
+        <h2>{{ title }}</h2>
+        <div class="col-md-6">
+            {{ provenance|safe }}
+        </div>
+        <div class="col-md-6">
+            <h4>Abbreviations</h4>
+            <p>Scroll down for more table columns; Click to show/hide.</p>
+            <div style="height:450px; overflow-y:scroll;" id="abbrevs">
+                {{ abbreviations|safe }}
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <h3>Data</h3>
+        {{ table|safe }}
+    </div>
+</div>
 
-<h3>Data</h3>
-
-{{ table|safe }}
+<script>
+requirejs(['main'], function() {
+    require(["backgrid"], function() {
+        $(document).ready(function() {
+            $("div#abbrevs").on("click", "div > table > tbody > tr", function() {
+                var column = $("> th", this).text();
+                $("."+column).toggleClass("renderable");
+                console.log(column);
+            });
+        });
+    });
+});
+</script>
 
 {% endif %}
 {% endblock %}

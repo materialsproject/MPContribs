@@ -4,7 +4,7 @@ from mpcontribs.io.archieml.mpfile import MPFile
 from mpcontribs.config import mp_level01_titles
 from pandas import DataFrame
 
-class MnO2PhaseSelectionRester(MPContribsRester):
+class Mno2PhaseSelectionRester(MPContribsRester):
     """MnO2_phase_selection-specific convenience functions to interact with MPContribs REST interface"""
 
     def get_contributions(self, phase=None):
