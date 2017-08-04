@@ -4,31 +4,31 @@ from mpcontribs.rest.rester import MPContribsRester
 from mpcontribs.io.archieml.mpfile import MPFile
 from pandas import DataFrame
 
-class MPworkshop17Rester(MPContribsRester):
-    """MPworkshop17-specific convenience functions to interact with MPContribs REST interface"""
+class MpWorkshop2017Rester(MPContribsRester):
+    """MpWorkshop2017-specific convenience functions to interact with MPContribs REST interface"""
     mpfile = MPFile.from_file(os.path.join(
         os.path.dirname(__file__), '..', 'mpfile_init.txt'
     ))
-    
+
     query = {'content.contributor': mpfile.hdata.general['contributor']}
     provenance_keys = [k for k in mpfile.hdata.general.keys() if k != 'google_sheet']
-    
+
     def get_contributions(self):
         docs = self.query_contributions(
             projection={'_id': 1, 'mp_cat_id': 1, 'content.data': 1}
         )
         if not docs:
-            raise Exception('No contributions found for MPworkshop17 Explorer!')
+            raise Exception('No contributions found for MpWorkshop2017 Explorer!')
 
         data = []
         columns = ['mp-id', 'contribution']
-        
+
         for doc in docs:
             mpfile = MPFile.from_contribution(doc)
             mp_id = mpfile.ids[0]
             contrib = mpfile.hdata[mp_id]['data']
             cid_url = self.get_cid_url(doc)
-            
+
             for k in contrib.keys():
                 if k not in columns:
                     columns.append(k)
@@ -38,7 +38,7 @@ class MPworkshop17Rester(MPContribsRester):
                 row.append(contrib.get(col, ''))
 
             data.append([mp_id, row])
-        
+
         # enforce equal row lengths
         ncols = len(columns)
         for entry in data:
@@ -48,4 +48,4 @@ class MPworkshop17Rester(MPContribsRester):
 
         return DataFrame.from_items(data, orient='index', columns=columns)
 
-    
+
