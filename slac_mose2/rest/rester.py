@@ -2,7 +2,7 @@ from __future__ import division, unicode_literals
 from mpcontribs.rest.rester import MPContribsRester
 from mpcontribs.io.archieml.mpfile import MPFile
 
-class SlacMoSe2Rester(MPContribsRester):
+class SlacMose2Rester(MPContribsRester):
     """SLAC MoSe2-specific convenience functions to interact with MPContribs REST interface"""
 
     def get_graphs(self):

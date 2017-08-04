@@ -7,14 +7,14 @@ from django.template import RequestContext
 from mpcontribs.rest.views import get_endpoint
 from mpcontribs.io.core.components import get_backgrid_table
 from monty.json import jsanitize
-from ..rest.rester import UWSI2Rester
+from ..rest.rester import UwSi2Rester
 
 def index(request):
     ctx = RequestContext(request)
     if request.user.is_authenticated():
         API_KEY = request.user.api_key
         ENDPOINT = request.build_absolute_uri(get_endpoint())
-        with UWSI2Rester(API_KEY, endpoint=ENDPOINT) as mpr:
+        with UwSi2Rester(API_KEY, endpoint=ENDPOINT) as mpr:
             try:
                 contribs = mpr.get_uwsi2_contributions()
                 if not contribs:
