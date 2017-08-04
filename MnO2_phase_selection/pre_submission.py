@@ -2,7 +2,7 @@ import json, os
 from mpcontribs.io.archieml.mpfile import MPFile
 from mpcontribs.io.core.recdict import RecursiveDict
 from mpcontribs.config import mp_level01_titles
-from mpcontribs.users.MnO2_phase_selection.rest.rester import MnO2PhaseSelectionRester
+from mpcontribs.users.MnO2_phase_selection.rest.rester import Mno2PhaseSelectionRester
 from pymatgen.core.composition import Composition
 from pymatgen.core.structure import Structure
 
@@ -17,7 +17,7 @@ def run(mpfile, include_cifs=True, nmax=None, dup_check_test_site=True):
     doi = mpfile.hdata.general['doi']
     existing_mpids = {}
     for b in [False, True]:
-        with MnO2PhaseSelectionRester(test_site=b) as mpr:
+        with Mno2PhaseSelectionRester(test_site=b) as mpr:
             for doc in mpr.query_contributions(criteria={'content.doi': doi}):
                 existing_mpids[doc['mp_cat_id']] = doc['_id']
         if not dup_check_test_site:

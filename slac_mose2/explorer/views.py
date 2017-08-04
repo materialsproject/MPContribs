@@ -7,14 +7,14 @@ from django.template import RequestContext
 from mpcontribs.rest.views import get_endpoint
 from mpcontribs.io.core.recdict import render_dict
 from mpcontribs.io.core.components import render_plot
-from ..rest.rester import SlacMoSe2Rester
+from ..rest.rester import SlacMose2Rester
 
 def index(request):
     ctx = RequestContext(request)
     if request.user.is_authenticated():
         API_KEY = request.user.api_key
         ENDPOINT = request.build_absolute_uri(get_endpoint())
-        with SlacMoSe2Rester(API_KEY, endpoint=ENDPOINT) as mpr:
+        with SlacMose2Rester(API_KEY, endpoint=ENDPOINT) as mpr:
             try:
                 provenance = render_dict(mpr.get_provenance(), webapp=True)
                 graphs = {}

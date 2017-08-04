@@ -5,14 +5,14 @@ from pandas import DataFrame
 
 class DibbsRester(MPContribsRester):
     """Dibbs-specific convenience functions to interact with MPContribs REST interface"""
-    dibbs_query = tuple({'content.title': 'DIBBS - 27Al NMR'}.iteritems())
+    query = {'content.title': 'DIBBS - 27Al NMR'}
+    provenance_keys = ['title']
 
     def get_contributions(self):
         data = []
         columns = ['mp-id', 'contribution', 'formula', 'CIF', 'dISO', 'etaQ', 'QCC', 'B']
 
         docs = self.query_contributions(
-            criteria=self.dibbs_query,
             projection={'_id': 1, 'mp_cat_id': 1, 'content': 1}
         )
         if not docs:
@@ -37,22 +37,3 @@ class DibbsRester(MPContribsRester):
             row += [contrib['data'][col] for col in columns[-4:]]
             data.append((mp_id, row))
         return DataFrame.from_items(data, orient='index', columns=columns)
-
-    def get_provenance(self):
-        provenance_keys = ['title']
-        projection = {'_id': 1, 'mp_cat_id': 1}
-        for key in provenance_keys:
-            projection['content.' + key] = 1
-        docs = self.query_contributions(criteria=self.dibbs_query, projection=projection)
-        if not docs:
-            raise Exception('No contributions found for Dibbs Explorer!')
-
-        mpfile = MPFile.from_contribution(docs[0])
-        mp_id = mpfile.ids[0]
-        return mpfile.hdata[mp_id]
-
-    def get_material(self, mpid):
-        query = dict(self.dibbs_query)
-        query.update({'mp_cat_id': mpid})
-        docs = self.query_contributions(criteria=query, projection={'content': 1})
-        return docs[0] if docs else None
