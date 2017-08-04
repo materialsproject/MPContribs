@@ -17,6 +17,7 @@ def index(request, collection='materials'):
             API_KEY = request.user.api_key
             ENDPOINT = request.build_absolute_uri(get_endpoint())
             with MPContribsRester(API_KEY, endpoint=ENDPOINT) as mpr:
+
                 if request.method == 'GET':
                     options = dict((field, set()) for field in fields)
                     docs = mpr.query_contributions(
@@ -31,6 +32,7 @@ def index(request, collection='materials'):
                         ctx.update({'alert': 'No {} available!'.format(collection)})
                     options = dict((k, list(v)) for k,v in options.iteritems())
                     selection = dict((field, []) for field in fields)
+
                 elif request.method == 'POST':
                     projection_keys = ['mp_cat_id', 'project']
                     options, selection = (
@@ -41,25 +43,26 @@ def index(request, collection='materials'):
                         ) for prefix in ['options', 'selection']
                     )
                     mode = request.POST['submit']
-                    if mode == 'Find' or mode == 'Delete All':
+                    if mode == 'Find':
                         criteria = {}
                         for idx, key in enumerate(projection_keys):
                             if selection[fields[idx]]:
                                 criteria.update({
                                     key: {'$in': selection[fields[idx]]}
                                 })
-                        docs = mpr.query_contributions(
-                            criteria=criteria, collection='contributions'
-                        )
-                        if mode == 'Find':
+                        if criteria.keys() == [projection_keys[0]]:
+                            # only identifier(s) selected: contribution cards
+                            main_contributions = {}
+                            for identifier in selection[fields[0]]:
+                                main_contributions[identifier] = mpr.get_main_contributions(identifier)
+                        else:
+                            docs = mpr.query_contributions(
+                                criteria=criteria, collection='contributions'
+                            )
                             urls = [
                                 '/'.join([request.path, str(doc['_id'])])
                                 for doc in docs
                             ]
-                        elif mode == 'Delete All':
-                            # TODO check this deletes only queried docs
-                            cids = [contrib['_id'] for contrib in docs]
-                            docs = mpr.delete_contributions(cids)
                     elif mode == 'Show':
                         if selection[fields[2]]:
                             docs = mpr.query_contributions(

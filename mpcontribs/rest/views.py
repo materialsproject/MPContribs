@@ -310,3 +310,55 @@ def update_collaborators(request, db_type=None, mdb=None):
     #results = mdb.contrib_ad.delete_contributions(criteria)
     #mdb.contrib_build_ad.delete(cids)
     return {"valid_response": True, "response": collaborator_emails}
+
+@mapi_func(supported_methods=["GET"], requires_api_key=True)
+def cif(request, cid, structure_name, db_type=None, mdb=None):
+    from mpcontribs.config import symprec, mp_level01_titles
+    from mpcontribs.io.core.components import Structures
+    from pymatgen.io.cif import CifWriter
+    contrib = mdb.contrib_ad.query_contributions(
+        {'_id': ObjectId(cid)},
+        projection={'_id': 0, 'mp_cat_id': 1, 'content': 1, 'collaborators': 1}
+    )[0]
+    structure = Structures(contrib['content']).get(structure_name)
+    if structure:
+        cif = CifWriter(structure, symprec=symprec).__str__()
+        return {"valid_response": True, "response": cif}
+    return {"valid_response": False,
+            "response": "{} not found!".format(structure_name)}
+
+@mapi_func(supported_methods=["POST"], requires_api_key=True)
+def get_card(request, cid, db_type=None, mdb=None):
+    from mpcontribs.io.core.components import Tree, Tables
+    from mpcontribs.io.core.utils import nested_dict_iter
+    from mpcontribs.io.core.recdict import RecursiveDict, render_dict
+    prov_keys = request.POST["provenance_keys"]
+    template = """
+    <table>
+    <tr>
+    <td>{}</td>
+    <td>{}</td>
+    </tr>
+    </table>
+    """
+    contrib = mdb.contrib_ad.query_contributions(
+        {'_id': ObjectId(cid)},
+        projection={'_id': 0, 'mp_cat_id': 1, 'content': 1, 'collaborators': 1}
+    )[0]
+    hdata = Tree(contrib['content'])
+    card = [hdata.get('highlights', hdata.get('explanation', hdata.get('description')))]
+    tdata = Tables(contrib['content'])
+    if tdata:
+        card.append('TODO: generate static graphs')
+    else:
+        sub_hdata = RecursiveDict((k,v) for k,v in hdata.items() if k not in prov_keys)
+        result_hdata = RecursiveDict()
+        for idx, (k,v) in enumerate(nested_dict_iter(sub_hdata)):
+            result_hdata[k] = v
+            if idx >= 5:
+                break
+        card.append(render_dict(result_hdata))
+    html = template.format(*card)
+    return {"valid_response": True, "response": html}
+
+

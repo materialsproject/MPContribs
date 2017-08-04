@@ -15,4 +15,8 @@ urlpatterns = [
     url(r'^delete/(?P<db_type>[\w\d]+)$', views.delete_contributions, name='delete_contributions'),
     url(r'^collab$', views.update_collaborators, name='update_collaborators'),
     url(r'^collab/(?P<db_type>[\w\d]+)$', views.update_collaborators, name='update_collaborators'),
+    url(r'^cif/(?P<cid>[\w\d]+)/(?P<structure_name>[\w]+)$', views.cif, name='cif'),
+    url(r'^cif/(?P<cid>[\w\d]+)/(?P<structure_name>[\w]+)/(?P<db_type>[\w\d]+)$', views.cif, name='cif'),
+    url(r'^card/(?P<cid>[\w\d]+)$', views.get_card, name='card'),
+    url(r'^card/(?P<cid>[\w\d]+)/(?P<db_type>[\w\d]+)$', views.get_card, name='card'),
 ]
