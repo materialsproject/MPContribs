@@ -10,7 +10,7 @@ class MpWorkshop2017Rester(MPContribsRester):
         os.path.dirname(__file__), '..', 'mpfile_init.txt'
     ))
 
-    query = {'content.contributor': mpfile.hdata.general['contributor']}
+    query = {'content.source': mpfile.hdata.general['source']}
     provenance_keys = [k for k in mpfile.hdata.general.keys() if k != 'google_sheet']
 
     def get_contributions(self):

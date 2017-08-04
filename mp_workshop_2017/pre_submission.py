@@ -1,7 +1,6 @@
-from mpcontribs.io.core.recdict import RecursiveDict
-from mpcontribs.users.mpworkshop17.rest.rester import MpWorkshop2017Rester
-import pandas as pd
+from mpcontribs.users.mp_workshop_2017.rest.rester import MpWorkshop2017Rester
 from mpcontribs.config import mp_level01_titles
+import pandas as pd
 
 def run(mpfile, nmax=None, dup_check_test_site=True):
 
@@ -17,41 +16,40 @@ def run(mpfile, nmax=None, dup_check_test_site=True):
     google_sheet += '/export?format=xlsx'
     df_dct = pd.read_excel(google_sheet, sheetname=None)
 
-    hdata_prov = ['reference','title','author','description']
-    hdata_mp = ['identifier','reference','title','author','description']
-    hdata_col_headers = filter(lambda x: x not in hdata_prov, df_dct['main'].columns.values)
-    table_headers = []
-    for sheet, df in df_dct.items():
-        if sheet != 'main':
-            table_headers.append(str(sheet))
+    hdata_prov = ['reference', 'title', 'author', 'description']
+    hdata_mp = ['identifier'] + hdata_prov
+    hdata_col_headers = [x for x in df_dct['main'].columns if x not in hdata_mp]
 
-    print(existing_mpids)
+    tables = dict(
+        tuple(sheet.split('__')) for sheet in df_dct.keys() if sheet != 'main'
+    )
 
     count, skipped, update = 0, 0, 0
     for idx, row in df_dct['main'].iterrows():
         mpid = row['identifier']
+
         if nmax is not None and mpid in existing_mpids:
             print 'skipping', mpid
             skipped += 1
             continue # skip duplicates
+
+        mpfile.add_hierarchical_data(row[hdata_prov].to_dict(), identifier=mpid)
+        mpfile.add_hierarchical_data(
+            {'data': row[hdata_col_headers].to_dict()}, identifier=mpid
+        )
+
+        if mpid in tables:
+            sheet = '__'.join([mpid, tables[mpid]])
+            mpfile.add_data_table(mpid, df_dct[sheet], name=tables[mpid])
+
         if mpid in existing_mpids:
             cid = existing_mpids[mpid]
             mpfile.insert_id(mpid, cid)
             update += 1
+
         if nmax is not None and count >= nmax-1:
             break
         count += 1
-
-        data = RecursiveDict()
-        mpfile.add_hierarchical_data(row[hdata_prov].to_dict(), identifier = mpid)
-        for index in range(len(hdata_col_headers)/2):
-            if pd.isnull(row['x{}_key'.format(index)]):
-                break
-            data[row['x{}_key'.format(index)]] = row['x{}_value'.format(index)]
-            mpfile.add_hierarchical_data({'data': data}, identifier = mpid)
-
-    for idx in range(len(table_headers)):
-        mpfile.add_data_table(table_headers[idx].split('__')[0],df_dct[table_headers[idx]], name= table_headers[idx].split('__')[1])
 
     print len(mpfile.ids), 'mpids to submit.'
     if nmax is None and update > 0:

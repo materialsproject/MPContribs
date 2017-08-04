@@ -1,3 +1,2 @@
-source: RefractiveIndex.INFO Database
-contributor: Your Name
+source: https://refractiveindex.info/
 google_sheet: https://docs.google.com/spreadsheets/d/1mjsUpxyG4oXoyRll3iTR_dUw4sCS0bY-mweK8kP_Hog

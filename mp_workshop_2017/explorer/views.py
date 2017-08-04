@@ -23,4 +23,4 @@ def index(request):
                 ctx.update({'alert': str(ex)})
     else:
         ctx.update({'alert': 'Please log in!'})
-    return render_to_response("mpworkshop17_explorer_index.html", locals(), ctx)
+    return render_to_response("mp_workshop_2017_explorer_index.html", locals(), ctx)
