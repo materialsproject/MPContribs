@@ -2,7 +2,11 @@ from mpcontribs.users.mp_workshop_2017.rest.rester import MpWorkshop2017Rester
 from mpcontribs.config import mp_level01_titles
 import pandas as pd
 
-def run(mpfile, nmax=None, dup_check_test_site=True):
+def run(mpfile, mpids=[], nmax=None, dup_check_test_site=True):
+
+    if not mpids:
+        print 'To continue, set mpids=[...] as argument in run()!'
+        return
 
     existing_mpids = {}
     for b in [False, True]:
@@ -26,7 +30,10 @@ def run(mpfile, nmax=None, dup_check_test_site=True):
 
     count, skipped, update = 0, 0, 0
     for idx, row in df_dct['main'].iterrows():
+        row.dropna(inplace=True)
         mpid = row['identifier']
+        if mpid not in mpids:
+            continue
 
         if nmax is not None and mpid in existing_mpids:
             print 'skipping', mpid
