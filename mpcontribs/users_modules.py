@@ -34,8 +34,11 @@ def get_user_explorer_name(path):
         os.path.dirname(os.path.normpath(path)).split(os.sep)[-4:] + ['index']
     )
 
+def get_user_classname(mod):
+    return ''.join(mod.replace('_', ' ').title().split())
+
 def get_user_explorer_config(mod):
-    return ''.join(mod.replace('_', ' ').title().split()) + 'ExplorerConfig'
+    return get_user_classname(mod) + 'ExplorerConfig'
 
 def get_user_installed_apps():
     installed_apps = []
@@ -46,3 +49,6 @@ def get_user_installed_apps():
             config = get_user_explorer_config(mod)
             installed_apps.append('.'.join(['test_site', 'apps', config]))
     return installed_apps
+
+def get_user_rester(mod):
+    return get_user_classname(mod) + 'Rester'

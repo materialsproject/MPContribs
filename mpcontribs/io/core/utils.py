@@ -1,4 +1,4 @@
-import warnings, pandas, numpy, six
+import warnings, pandas, numpy, six, collections
 from StringIO import StringIO
 from pymatgen.core.composition import Composition
 from mpcontribs.config import mp_level01_titles, mp_id_pattern, csv_comment_char
@@ -103,3 +103,12 @@ def disable_ipython_scrollbar():
     #display(Javascript("""
     #    require("notebook/js/outputarea").OutputArea.prototype._should_scroll=function(){return false;};
     #"""))
+
+def nested_dict_iter(nested, scope=''):
+    for key, value in nested.iteritems():
+        if isinstance(value, collections.Mapping):
+            s = '.'.join([scope, key]) if scope else key
+            for inner_key, inner_value in nested_dict_iter(value, scope=s):
+                yield '.'.join([s, inner_key]), inner_value
+        else:
+            yield key, value

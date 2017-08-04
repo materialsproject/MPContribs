@@ -12,6 +12,7 @@
   {{ alert }}
 </div>
 {% endif %}
+<input type=hidden id=get_card_url value="{% url 'mpcontribs_rest_index' %}">
 <div class="container">
   <div class="row">
     Explore contributed
@@ -30,7 +31,6 @@
         <option></option>
       </select>
       <input type=submit name="submit" class="btn btn-primary" value="Find">
-      <input type=submit name="submit" class="btn btn-primary" value="Delete All">
       </br>
       Or enter a (list of) contribution identifiers:</br>
       <select id="{{ fields.2 }}_list" data-placeholder="Enter contribution ID(s) ..." style="width:300px;" multiple>
@@ -45,11 +45,40 @@
   </div>
   {% if urls %}
   <div class="row" style="margin-top:20px;">
-    Results:</br>
     {% for url in urls %}
     <a href="{{ url }}" target="_blank">{{ url }}</a></br>
     {% endfor %}
   </div>
+  {% elif main_contributions %}
+  <div class="row" style="margin-top:20px;">
+    {% for identifier, main_contribs in main_contributions.items %}
+    <h2>{{ identifier }}</h2>
+    {% for main_contrib in main_contribs %}
+    <h3>{{ main_contrib.title }}</h3>
+    <div class="panel-group" id="accordion">
+        {% for cid in main_contrib.cids %}
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <h4 class="panel-title">
+                    <a
+                    id=get-card{{ forloop.counter }} name=get-card
+                    data-toggle="collapse" data-parent="#accordion"
+                    href="#collapse{{ forloop.counter }}"
+                    data-cid="{{ cid }}"
+                    data-prov="{{ main_contrib.provenance_keys }}"
+                    >{{ cid }}</a>
+                </h4>
+            </div>
+            <div id="collapse{{ forloop.counter }}" class="panel-collapse collapse">
+                <div class="panel-body" id=panel{{ forloop.counter }}></div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endfor %}
+    {% endfor %}
+  <script>
+  </script>
   {% endif %}
   <script>
     requirejs(['main'], function() {
@@ -91,6 +120,28 @@
         sel_elem.value = JSON.stringify(selection[fld]);
       });
     }
+    });
+    require(['jquery', 'underscore'], function() {
+        $(document).ready(function () {
+            require(['js-cookie'], function(Cookies) {
+                $('[name="get-card"]').click(function(){
+                    var cid = $(this).data('cid');
+                    var prov = $(this).data('prov');
+                    var elid = $(this).attr('id').replace('get-card', 'panel');
+                    var saveData = $.ajax({
+                        type: 'POST',
+                        url: $('#get_card_url').val()+'card/'+cid,
+                        data: {'provenance_keys': prov.replace(/'/g, '"')},
+                        dataType: "text",
+                        success: function(data, textStatus, jqXHR) {
+                            var response = JSON.parse(data);
+                            $("#"+elid).html(response['response']);
+                        },
+                        error: function(jqXHR, textStatus, errorThrown) { $("#"+elid).text('ERROR'); }
+                    });
+                });
+            });
+        });
     });
     });
   </script>

@@ -1,11 +1,11 @@
 from __future__ import division, unicode_literals
 import six, bson, os
+from importlib import import_module
 from bson.json_util import dumps, loads
 from webtzite.rester import MPResterBase, MPResterError
 from mpcontribs.io.core.mpfile import MPFileCore
 from mpcontribs.config import mp_id_pattern
-from importlib import import_module
-from pymatgen.io.cif import CifWriter
+from mpcontribs.users_modules import get_users_modules, get_user_rester
 
 class MPContribsRester(MPResterBase):
     """convenience functions to interact with MPContribs REST interface"""
@@ -225,8 +225,33 @@ class MPContribsRester(MPResterBase):
             raise MPResterError(str(ex))
 
     def get_cif(self, cid, structure_name):
-        from mpcontribs.config import symprec
-        mpfile = self.find_contribution(cid)
-        mpid = mpfile.ids[0]
-        structure = mpfile.sdata[mpid][structure_name]
-        return CifWriter(structure, symprec=symprec).__str__()
+        return self._make_request('/cif/{}/{}'.format(cid, structure_name))
+
+    def get_main_contributions(self, identifier):
+        contributions = []
+        for mod_path in get_users_modules():
+            if os.path.exists(os.path.join(mod_path, 'rest', 'rester.py')):
+                mod_path_split = mod_path.split(os.sep)[-3:]
+                m = import_module('.'.join(mod_path_split + ['rest', 'rester']))
+                UserRester = getattr(m, get_user_rester(mod_path_split[-1]))
+                r = UserRester(self.api_key, endpoint=self.preamble)
+                if r.query is not None:
+                    docs = r.query_contributions(
+                        criteria={'mp_cat_id': identifier, 'content.title': {'$exists': 1}},
+                        projection={'content.title': 1, 'mp_cat_id': 1}
+                    )
+                    if docs:
+                        contrib = {}
+                        contrib['title'] = docs[0]['content']['title']
+                        contrib['cids'] = []
+                        for d in docs:
+                            contrib['cids'].append(d['_id'])
+                        contrib['provenance_keys'] = map(str, r.provenance_keys)
+                        contributions.append(contrib)
+        return contributions
+
+    def get_card(self, cid='5956e310043b4b56b253e003',
+        prov_keys=['title', 'url', 'explanation', 'references', 'authors', 'contributor']
+    ):
+        payload = {"provenance_keys": dumps(prov_keys)}
+        return self._make_request('/card/'+cid, payload=payload, method='POST')
