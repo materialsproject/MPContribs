@@ -66,7 +66,7 @@ def run(mpfile, nmax=None, dup_check_test_site=True):
 
     count, skipped, update = 0, 0, 0
     for sheet, df in df_dct.items():
-        if sheet == 'formula' or sheet == 'Kondorsky':
+        if sheet == 'formula' or sheet == 'Kondorsky' or sheet == 'total':
             continue
         for idx, row in df.iterrows():
             composition = pymatgen.Composition(row[elements]*10)
