@@ -27,3 +27,7 @@ class SwfExplorerConfig(AppConfig):
 class DibbsExplorerConfig(AppConfig):
     name = 'mpcontribs.users.dibbs.explorer'
     label = 'dibbs_explorer'
+
+class MpWorkshop2017ExplorerConfig(AppConfig):
+    name = 'mpcontribs.users.mp_workshop_2017.explorer'
+    label = 'mp_workshop_2017_explorer'
