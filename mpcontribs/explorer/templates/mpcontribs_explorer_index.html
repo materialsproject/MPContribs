@@ -55,22 +55,24 @@
     <h2>{{ identifier }}</h2>
     {% for main_contrib in main_contribs %}
     <h3>{{ main_contrib.title }}</h3>
-    <div class="panel-group" id="accordion">
+    <div class="panel-group" id="accordion-{{ identifier }}-{{ forloop.counter }}">
         {% for cid in main_contrib.cids %}
         <div class="panel panel-default">
             <div class="panel-heading">
                 <h4 class="panel-title">
                     <a
-                    id=get-card{{ forloop.counter }} name=get-card
-                    data-toggle="collapse" data-parent="#accordion"
-                    href="#collapse{{ forloop.counter }}"
+                    id="get-card-{{ identifier }}-{{ forloop.parentloop.counter }}-{{ cid }}"
+                    name=get-card data-toggle="collapse"
+                    data-parent="#accordion-{{ identifier }}-{{ forloop.parentloop.counter }}"
+                    href="#collapse-{{ identifier }}-{{ forloop.parentloop.counter }}-{{ cid }}"
                     data-cid="{{ cid }}"
                     data-prov="{{ main_contrib.provenance_keys }}"
                     >{{ cid }}</a>
                 </h4>
             </div>
-            <div id="collapse{{ forloop.counter }}" class="panel-collapse collapse">
-                <div class="panel-body" id=panel{{ forloop.counter }}></div>
+            <div id="collapse-{{ identifier }}-{{ forloop.parentloop.counter }}-{{ cid }}"
+                class="panel-collapse collapse">
+                <div class="panel-body" id="panel-{{ identifier }}-{{ forloop.parentloop.counter }}-{{ cid }}"></div>
             </div>
         </div>
         {% endfor %}
