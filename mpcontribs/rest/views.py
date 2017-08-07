@@ -334,12 +334,10 @@ def get_card(request, cid, db_type=None, mdb=None):
     from mpcontribs.io.core.recdict import RecursiveDict, render_dict
     prov_keys = request.POST["provenance_keys"]
     template = """
-    <table>
-    <tr>
-    <td>{}</td>
-    <td>{}</td>
-    </tr>
-    </table>
+    <div class="row">
+        <div class="col-md-6">{}</div>
+        <div class="col-md-6">{}</div>
+    </div>
     """
     contrib = mdb.contrib_ad.query_contributions(
         {'_id': ObjectId(cid)},
@@ -351,7 +349,10 @@ def get_card(request, cid, db_type=None, mdb=None):
     if tdata:
         card.append('TODO: generate static graphs')
     else:
-        sub_hdata = RecursiveDict((k,v) for k,v in hdata.items() if k not in prov_keys)
+        sub_hdata = RecursiveDict(
+            (k,v) for k,v in hdata.items()
+            if k not in prov_keys and k != 'abbreviations'
+        )
         result_hdata = RecursiveDict()
         for idx, (k,v) in enumerate(nested_dict_iter(sub_hdata)):
             result_hdata[k] = v
