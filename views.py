@@ -72,7 +72,7 @@ def register(request):
     email = request.user.email
     username = request.user.username
     u = RegisteredUser.objects.get(username=username)
-    next = unquote(request.GET.get('next', reverse('webtzite_index')))
+    next = unquote(request.GET.get('next', reverse('webtzite_dashboard')))
     if next == reverse('webtzite_register'):
         next = reverse('webtzite_dashboard')
     if request.method == "GET":
