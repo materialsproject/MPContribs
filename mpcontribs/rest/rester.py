@@ -21,13 +21,15 @@ class MPContribsRester(MPResterBase):
             jpy_user = os.environ.get('JPY_USER')
             if not jpy_user:
                 raise ValueError('Cannot connect to test_site outside MP JupyterHub!')
-            endpoint = '/'.join([
-                'https://jupyterhub.materialsproject.org/flaskproxy', jpy_user,
-                'test_site/mpcontribs/rest'
-            ])
+            flaskproxy = 'https://jupyterhub.materialsproject.org/flaskproxy'
+            endpoint = '/'.join([flaskproxy, jpy_user, 'test_site/mpcontribs/rest'])
             from webtzite.models import RegisteredUser
             email = jpy_user + '@users.noreply.github.com'
-            u = RegisteredUser.objects.get(email=email)
+            try:
+                u = RegisteredUser.objects.get(email=email)
+            except RegisteredUser.DoesNotExist:
+                login_url = '/'.join([flaskproxy, jpy_user, 'test_site/login'])
+                raise ValueError('Go to {} and register first!'.format(login_url))
             api_key = u.api_key
         super(MPContribsRester, self).__init__(
           api_key=api_key, endpoint=endpoint
