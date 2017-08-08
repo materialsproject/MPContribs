@@ -74,7 +74,7 @@ def register(request):
     u = RegisteredUser.objects.get(username=username)
     next = unquote(request.GET.get('next', reverse('webtzite_index')))
     if next == reverse('webtzite_register'):
-        next = reverse('webtzite_index')
+        next = reverse('webtzite_dashboard')
     if request.method == "GET":
         if u.is_registered:
             return redirect(next)
