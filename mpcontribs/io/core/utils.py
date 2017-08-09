@@ -1,6 +1,6 @@
 import warnings, pandas, numpy, six, collections
 from StringIO import StringIO
-from pymatgen.core.composition import Composition
+from pymatgen import Composition, Element
 from mpcontribs.config import mp_level01_titles, mp_id_pattern, csv_comment_char
 from recdict import RecursiveDict
 
@@ -54,7 +54,10 @@ def normalize_root_level(title):
     """convert root-level title into conventional identifier; non-identifiers
     become part of shared (meta-)data. Returns: (is_general, title)"""
     try:
-        composition = Composition(title).formula.replace(' ', '')
+        comp = Composition(title)
+        for element in comp.elements:
+            Element(element)
+        composition = comp.formula.replace(' ', '')
         return False, composition
     except:
         if mp_id_pattern.match(title.lower()):
