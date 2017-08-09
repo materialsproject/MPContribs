@@ -19,6 +19,9 @@ define(function(require) {
         '<i class="fa fa-file-text-o" aria-hidden="true"></i>'
         );
   });
+  $('.bootstrap-filestyle').tooltip({
+      placement: "bottom", container: "body", title: "upload MPFile"
+  });
 
   // select options in selectpicker based on session.options
   $.waitFor('#selectpicker').done(function(elements) {
@@ -57,10 +60,18 @@ define(function(require) {
       }
       document.getElementById('inputopts').value = JSON.stringify(options);
     });
+    $('#selectpicker_chosen').tooltip({
+        placement: "bottom", container: "body", title: "select pre-processing code"
+    });
   });
 
   // initialize hidden input field for options
   $.waitFor('#inputopts').done(function(elements) {
     elements[0].value = JSON.stringify(env.options);
+  });
+
+  // init all tooltips
+  $.waitFor('[data-toggle="tooltip"]').done(function(elements) {
+      $(elements).tooltip();
   });
 });

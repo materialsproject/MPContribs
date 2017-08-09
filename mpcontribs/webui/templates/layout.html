@@ -34,7 +34,9 @@
     <nav class="navbar navbar-default navbar-fixed-top" style="background:url({{ url_for('.static', filename='img/headerbg.png') }})">
       <div class="container" style="width: 800px !important;">
         <div class="navbar-header">
-          <a class="navbar-brand" href="{{ url_for('.home') }}">
+            <a class="navbar-brand" href="{{ url_for('.home') }}" style=".hover {cursor: pointer;}"
+             data-toggle="tooltip" data-placement="bottom" data-container="body"
+             title="reset / start over">
             <img alt="Brand" src="{{ url_for('.static', filename='img/mpcontribsheader.png') }}">
           </a>
         </div>
@@ -48,19 +50,27 @@
               {% for project in session.projects %}
               <input charset="UTF-8" type=hidden id="inputaml_{{ project }}" value="{{ session['projects'][project] }}">
               {% endfor %}
-              <label for="loadbutton" class="btn btn-info navbar-btn">
+              <label for="loadbutton" class="btn btn-info navbar-btn"
+                     data-toggle="tooltip" data-placement="bottom" data-container="body"
+                     title="load / pre-process">
                 <i class="fa fa-pencil-square-o" aria-hidden="true"></i>
               </label>
               <input id="loadbutton" type=submit name="submit" value="Load MPFile" class="hidden">
-              <label for="viewbutton" class="btn btn-info navbar-btn">
+              <label for="viewbutton" class="btn btn-info navbar-btn"
+                     data-toggle="tooltip" data-placement="bottom" data-container="body"
+                     title="build / preview">
                 <i class="fa fa-bar-chart" aria-hidden="true"></i>
               </label>
               <input id="viewbutton" type=submit name="submit" value="View MPFile" class="hidden">
-              <label for="savebutton" class="btn btn-info navbar-btn">
+              <label for="savebutton" class="btn btn-info navbar-btn"
+                     data-toggle="tooltip" data-placement="bottom" data-container="body"
+                     title="download">
                 <i class="fa fa-download" aria-hidden="true"></i>
               </label>
               <input id="savebutton" type=submit name="submit" value='Save MPFile' class="hidden">
-              <label for="contribbutton" class="btn btn-danger navbar-btn">
+              <label for="contribbutton" class="btn btn-danger navbar-btn"
+                     data-toggle="tooltip" data-placement="bottom" data-container="body"
+                     title="contribute / commit to DB">
                 <i class="fa fa-database" aria-hidden="true"></i>
               </label>
               <input id="contribbutton" type=submit name="submit" value="Contribute" class="hidden">
@@ -80,7 +90,9 @@
         </form>
         <ul class="nav navbar-nav navbar-right">
           <li>
-              <a class="btn btn-lg navbar-btn" href="{{ url_for('.shutdown') }}">
+              <a class="btn btn-lg navbar-btn" href="{{ url_for('.shutdown') }}"
+                 data-toggle="tooltip" data-placement="bottom" data-container="body"
+                 title="shutdown / restart">
               <span class="glyphicon glyphicon-off" aria-hidden="true" style="color:white"></span>
             </a>
           </li>
