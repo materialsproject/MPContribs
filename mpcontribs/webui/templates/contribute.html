@@ -32,7 +32,7 @@
 </div>
 
 <nav class="navbar navbar-default navbar-lower" role="navigation">
-  <div class="container">
+  <div class="container" style="width: 800px !important;">
     <form action="{{ url_for('.contribute') }}" method=post enctype=multipart/form-data class="navbar-form navbar-left">
       <div class="form-group">
         <select id="siteselect" data-placeholder="Select Site ..." hidden>
@@ -51,7 +51,7 @@
         </select>
       </div>
       <div class="form-group" style="position:relative; margin-left:20px;">
-        <input type="password" class="form-control hide" name=apikey id=inputapikey placeholder="Insert API Key ...">
+        <input type="password" class="form-control hide" name=apikey id=inputapikey placeholder="Insert API Key ..." hidden>
         <a id=dlnk href="{{ request.url_root }}test_site/dashboard" target="_blank" hidden>
           <span class="glyphicon glyphicon-question-sign" aria-hidden="true"></span>
         </a>
@@ -105,7 +105,7 @@ requirejs(['./static/js/common'], function(){
 </script>
 
 {% if content %}
-<div class="container">
+<div class="container" style="width: 800px !important;">
   <div class="row">
     <div class="col-xs-12">
       <div id='output' class="alert alert-warning alert-dismissible" role="alert"></div>

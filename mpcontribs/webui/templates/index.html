@@ -10,7 +10,7 @@
 </script>
 
 <nav class="navbar navbar-default navbar-lower" role="navigation">
-  <div class="container">
+  <div class="container" style="width: 800px !important;">
     <form class="navbar-form">
       <div class="form-group" style="position:relative; left:20px;">
         <div class="checkbox" style="padding:1px;">
@@ -39,7 +39,7 @@
           <option></option>
         </select>
       </div>
-      <div class="form-group" style="position:relative; left:20px; margin-left:15px;">
+      <div class="form-group">
         <select id="axespicker" data-placeholder="Select x-y-z Axes for Overview Graph (in order!) ..." multiple hidden>
           <option></option>
         </select>
@@ -72,7 +72,7 @@ requirejs(['./static/js/common'], function(){
 
 <input type=hidden id=input_gotolist value='['>
 
-<div class="container">
+<div class="container" style="width: 800px !important;">
   <div class="alert alert-warning" role="alert" style="position:relative; height:150px; overflow:hidden;">
     <div id='output' style="position:absolute; bottom:0; width:100%;"></div>
   </div>
