@@ -9,9 +9,9 @@ from pymatgen.analysis.structure_matcher import StructureMatcher
 from importlib import import_module
 sys.stdout.flush()
 
-def submit_mpfile(path_or_mpfile, api_key, site, dbtype='write', fmt='archieml'):
-    endpoint = '/'.join([site, 'mpcontribs', 'rest'])
-    with MPContribsRester(api_key, endpoint=endpoint, dbtype=dbtype) as mpr:
+def submit_mpfile(path_or_mpfile, site, fmt='archieml'):
+    test_site = bool('jupyterhub' in site)
+    with MPContribsRester(test_site=test_site) as mpr:
         try:
             yield 'Connection to DB {} at {}? '.format(mpr.dbtype, mpr.preamble) # also checks internet connection
             ncontribs = sum(1 for contrib in mpr.query_contributions(contributor_only=True))
@@ -79,7 +79,7 @@ def process_mpfile(path_or_mpfile, target=None, fmt='archieml'):
                 yield 'use contribution #{} to update ID #{} ... '.format(idx, cid_short)
 
             # always run local "submission" to catch failure before interacting with DB
-            yield 'locally process contribution #{} ({}) ... '.format(idx, mp_cat_id)
+            yield 'process #{} ({}) ... '.format(idx, mp_cat_id)
             doc = cma.submit_contribution(mpfile_single, contributor) # does not use get_string
             cid = doc['_id']
 

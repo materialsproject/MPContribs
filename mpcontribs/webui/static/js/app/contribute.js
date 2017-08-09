@@ -22,12 +22,12 @@ define(function(require) {
       }
       $('#siteselect option[value="' + contrib['site'] + '"]').prop('selected', true);
     }
-    if ( 'dbtype' in contrib ) {
-      $('#dbselect option[value="' + contrib['dbtype'] + '"]').prop('selected', true);
-    }
-    if ( 'apikey' in contrib ) {
-      document.getElementById('inputapikey').value = contrib['apikey'];
-    }
+    //if ( 'dbtype' in contrib ) {
+    //  $('#dbselect option[value="' + contrib['dbtype'] + '"]').prop('selected', true);
+    //}
+    //if ( 'apikey' in contrib ) {
+    //  document.getElementById('inputapikey').value = contrib['apikey'];
+    //}
 
     $('#siteselect').chosen({
       search_contains: true, disable_search_threshold: 10, width: "180px"
@@ -44,8 +44,8 @@ define(function(require) {
     //$('#dbselect').chosen().change(function () {
     //  document.getElementById('inputdbtype').value = this.value;
     //});
-    $('#inputapikey').removeClass('hide');
-    $('#dlnk').show();
+    //$('#inputapikey').removeClass('hide');
+    //$('#dlnk').show();
     $('#go_btn').removeClass('hide');
     $('#cancel_btn').removeClass('hide');
 

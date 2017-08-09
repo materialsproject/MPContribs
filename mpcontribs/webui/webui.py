@@ -176,10 +176,9 @@ def contribute():
             v = session['contribute'].get(k)
             if not v or (request.form[k] and request.form[k] != v):
                 session['contribute'][k] = request.form[k]
-        for k,v in session['contribute'].iteritems():
-            if not v:
-                return render_template('contribute.html', session=session,
-                                       missing='{} not set!'.format(k))
+        if not session['contribute'].get('site'):
+            return render_template('contribute.html', session=session,
+                                   missing='site not set!')
         mpfile = read_mpfile_to_view()
         if mpfile is None:
             return render_template(
@@ -189,9 +188,7 @@ def contribute():
         try:
             response = Response(stream_with_context(stream_template(
                 'contribute.html', session=session, content=submit_mpfile(
-                    StringIO(mpfile), api_key=session['contribute']['apikey'],
-                    site=session['contribute']['site'],
-                    dbtype=session['contribute']['dbtype'], fmt=fmt
+                    StringIO(mpfile), site=session['contribute']['site'], fmt=fmt
                 ))))
             response.headers['X-Accel-Buffering'] = 'no'
             return response
