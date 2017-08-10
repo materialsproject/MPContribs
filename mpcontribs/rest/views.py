@@ -394,7 +394,8 @@ def get_card(request, cid, db_type=None, mdb=None):
     @apiName PostGetCard
     @apiGroup Contribution
 
-    @apiDescription Returns html/js code to render a contribution preview
+    @apiDescription Either returns a string containing html for hierarchical
+    data, or if existent, a list of URLs for static versions of embedded graphs.
 
     @apiParam {String} api_key User's unique API_KEY
     @apiParam {json} provenance_keys List of provenance keys
@@ -408,10 +409,10 @@ def get_card(request, cid, db_type=None, mdb=None):
         {
             "created_at": "2017-08-09T19:59:59.936618",
             "valid_response": true,
-            "response":
+            "response": ["<graph-url>"]
         }
     """
-    from mpcontribs.io.core.components import Tree, Tables
+    from mpcontribs.io.core.components import Tree, Plots
     from mpcontribs.io.core.utils import nested_dict_iter
     from mpcontribs.io.core.recdict import RecursiveDict, render_dict
     from django.template import Template, Context
@@ -420,13 +421,15 @@ def get_card(request, cid, db_type=None, mdb=None):
         {'_id': ObjectId(cid)},
         projection={'_id': 0, 'mp_cat_id': 1, 'content': 1, 'collaborators': 1}
     )[0]
+    mpid = contrib['mp_cat_id']
     hdata = Tree(contrib['content'])
     #card = hdata.get('highlights', hdata.get('explanation', hdata.get('description')))
-    # TODO use description of first dataset contribution along with title in /datasets/:identifier
-    tdata = Tables(contrib['content'])
-    if tdata:
-        card = 'TODO: generate static graphs'
-        # TODO append full URL to static image to card
+    plots = Plots(contrib['content'])
+    if plots:
+        card = []
+        for name, plot in plots.items():
+            # full URL to static image to card
+            card.append('{}_{}.png'.format(mpid, name))
     else:
         sub_hdata = RecursiveDict(
             (k,v) for k,v in hdata.items()
