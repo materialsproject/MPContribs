@@ -412,7 +412,7 @@ def get_card(request, cid, db_type=None, mdb=None):
             "response": ["<graph-url>"]
         }
     """
-    from mpcontribs.io.core.components import Tree, Plots
+    from mpcontribs.io.core.components import Tree, Plots, render_plot
     from mpcontribs.io.core.utils import nested_dict_iter
     from mpcontribs.io.core.recdict import RecursiveDict, render_dict
     from django.template import Template, Context
@@ -428,8 +428,9 @@ def get_card(request, cid, db_type=None, mdb=None):
     if plots:
         card = []
         for name, plot in plots.items():
-            # full URL to static image to card
-            card.append('{}_{}.png'.format(mpid, name))
+            filename = '{}_{}'.format(mpid, name)
+            #render_plot(plot, filename=filename) # TODO
+            card.append(filename+'.png')
     else:
         sub_hdata = RecursiveDict(
             (k,v) for k,v in hdata.items()
