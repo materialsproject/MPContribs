@@ -17,6 +17,8 @@ urlpatterns = [
     url(r'^collab/(?P<db_type>[\w\d]+)$', views.update_collaborators, name='update_collaborators'),
     url(r'^cif/(?P<cid>[\w\d]+)/(?P<structure_name>[\w]+)$', views.cif, name='cif'),
     url(r'^cif/(?P<cid>[\w\d]+)/(?P<structure_name>[\w]+)/(?P<db_type>[\w\d]+)$', views.cif, name='cif'),
+    url(r'^datasets/(?P<identifier>[-\w\d]+)$', views.datasets, name='datasets'),
+    url(r'^datasets/(?P<identifier>[-\w\d]+)/(?P<db_type>[\w\d]+)$', views.datasets, name='datasets'),
     url(r'^card/(?P<cid>[\w\d]+)$', views.get_card, name='card'),
     url(r'^card/(?P<cid>[\w\d]+)/(?P<db_type>[\w\d]+)$', views.get_card, name='card'),
 ]

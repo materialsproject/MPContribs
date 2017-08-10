@@ -8,22 +8,20 @@ from pymatgen import Structure
 def render_dict(dct, webapp=False):
     """use JsonHuman library to render a dictionairy"""
     json_str, uuid_str = json.dumps(dct).replace('\\n', ' '), str(uuid.uuid4())
-    html = "<div id='{}' style='width:100%;'></div>".format(uuid_str)
-    html += "<script>"
+    html = ["<div id='{}' style='width:100%;'></div>".format(uuid_str)]
+    html.append("<script>")
     if webapp:
-        html += "requirejs(['main'], function() {"
-    html += """
-    require(["json.human"], function(JsonHuman) {
-      "use strict";
-      var data = JSON.parse('%s');
-      var node = JsonHuman.format(data);
-      document.getElementById('%s').appendChild(node);
-    });
-    """ % (json_str, uuid_str)
+        html.append("requirejs(['main'], function() {")
+    html.append("require(['json.human'], function(JsonHuman) {")
+    html.append("'use strict';")
+    html.append("var data = JSON.parse('{}');".format(json_str))
+    html.append("var node = JsonHuman.format(data);")
+    html.append("document.getElementById('{}').appendChild(node);".format(uuid_str))
+    html.append("});")
     if webapp:
-        html += "});"
-    html += "</script>"
-    return html
+        html.append("});")
+    html.append("</script>")
+    return ' '.join(html) # TODO use \n?
 
 class RecursiveDict(_OrderedDict):
     """extension of dict for internal representation of MPFile"""
