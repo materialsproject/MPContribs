@@ -11,6 +11,7 @@ from webtzite.connector import ConnectorBase
 from bson.objectid import ObjectId
 from webtzite import mapi_func
 from django.shortcuts import redirect
+from importlib import import_module
 from test_site.settings import PROXY_URL_PREFIX
 
 class Connector(ConnectorBase):
@@ -327,27 +328,105 @@ def cif(request, cid, structure_name, db_type=None, mdb=None):
     return {"valid_response": False,
             "response": "{} not found!".format(structure_name)}
 
+@mapi_func(supported_methods=["GET"], requires_api_key=True)
+def datasets(request, identifier, db_type=None, mdb=None):
+    """
+    @api {get} /datasets/:identifier?API_KEY=:api_key List of Datasets
+    @apiVersion 0.2.0
+    @apiName GetDatasets
+    @apiGroup Contribution
+
+    @apiDescription Returns a list of datasets and their respective
+    contributions for a given identifier (mp-id or composition)
+
+    @apiParam {String} api_key User's unique API_KEY
+
+    @apiSuccess {String} created_at Response timestamp
+    @apiSuccess {Bool} valid_response Response is valid
+    @apiSuccess {Object} response Response List of Dictionaries
+    @apiSuccess {Boolean} response.title Dataset title
+    @apiSuccess {String} response.provenance_keys Provenance keys for dataset
+    @apiSuccess {String} response.cids List of contribution id's
+
+    @apiSuccessExample Success-Response:
+        HTTP/1.1 200 OK
+        {
+            "created_at": "2017-08-09T19:59:59.936618",
+            "valid_response": true,
+            "response": [
+                {
+                    "cids": [ "598b69700425d5032cc8e586" ],
+                    "provenance_keys": [ "source" ],
+                    "title": "Optical constants of Cu-Zn (Copper-zinc alloy, Brass)"
+                }
+            ]
+        }
+    """
+    from mpcontribs.users_modules import get_users_modules, get_user_rester
+    contributions = []
+    for mod_path in get_users_modules():
+        if os.path.exists(os.path.join(mod_path, 'rest', 'rester.py')):
+            mod_path_split = mod_path.split(os.sep)[-3:]
+            m = import_module('.'.join(mod_path_split + ['rest', 'rester']))
+            UserRester = getattr(m, get_user_rester(mod_path_split[-1]))
+            endpoint = request.build_absolute_uri(get_endpoint())
+            r = UserRester(request.user.api_key, endpoint=endpoint)
+            if r.query is not None:
+                docs = r.query_contributions(
+                    criteria={'mp_cat_id': identifier, 'content.title': {'$exists': 1}},
+                    projection={'content.title': 1, 'mp_cat_id': 1}
+                )
+                if docs:
+                    contrib = {}
+                    contrib['title'] = docs[0]['content']['title']
+                    contrib['cids'] = []
+                    for d in docs:
+                        contrib['cids'].append(d['_id'])
+                    contrib['provenance_keys'] = map(str, r.provenance_keys)
+                    contributions.append(contrib)
+    return {"valid_response": True, "response": contributions}
+
 @mapi_func(supported_methods=["POST"], requires_api_key=True)
 def get_card(request, cid, db_type=None, mdb=None):
+    """
+    @api {post} /card/:cid?API_KEY=:api_key Contribution Card/Preview
+    @apiVersion 0.2.0
+    @apiName PostGetCard
+    @apiGroup Contribution
+
+    @apiDescription Returns html/js code to render a contribution preview
+
+    @apiParam {String} api_key User's unique API_KEY
+    @apiParam {json} provenance_keys List of provenance keys
+
+    @apiSuccess {String} created_at Response timestamp
+    @apiSuccess {Bool} valid_response Response is valid
+    @apiSuccess {String} response Response preview of h- or t-data/graphs ("card")
+
+    @apiSuccessExample Success-Response:
+        HTTP/1.1 200 OK
+        {
+            "created_at": "2017-08-09T19:59:59.936618",
+            "valid_response": true,
+            "response":
+        }
+    """
     from mpcontribs.io.core.components import Tree, Tables
     from mpcontribs.io.core.utils import nested_dict_iter
     from mpcontribs.io.core.recdict import RecursiveDict, render_dict
+    from django.template import Template, Context
     prov_keys = request.POST["provenance_keys"]
-    template = """
-    <div class="row">
-        <div class="col-md-6">{}</div>
-        <div class="col-md-6">{}</div>
-    </div>
-    """
     contrib = mdb.contrib_ad.query_contributions(
         {'_id': ObjectId(cid)},
         projection={'_id': 0, 'mp_cat_id': 1, 'content': 1, 'collaborators': 1}
     )[0]
     hdata = Tree(contrib['content'])
-    card = [hdata.get('highlights', hdata.get('explanation', hdata.get('description')))]
+    #card = hdata.get('highlights', hdata.get('explanation', hdata.get('description')))
+    # TODO use description of first dataset contribution along with title in /datasets/:identifier
     tdata = Tables(contrib['content'])
     if tdata:
-        card.append('TODO: generate static graphs')
+        card = 'TODO: generate static graphs'
+        # TODO append full URL to static image to card
     else:
         sub_hdata = RecursiveDict(
             (k,v) for k,v in hdata.items()
@@ -358,8 +437,5 @@ def get_card(request, cid, db_type=None, mdb=None):
             result_hdata[k] = v
             if idx >= 5:
                 break
-        card.append(render_dict(result_hdata))
-    html = template.format(*card)
-    return {"valid_response": True, "response": html}
-
-
+        card = render_dict(result_hdata)
+    return {"valid_response": True, "response": card}
