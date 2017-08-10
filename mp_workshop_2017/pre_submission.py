@@ -20,7 +20,7 @@ def run(mpfile, mpids=[], nmax=None, dup_check_test_site=True):
     google_sheet += '/export?format=xlsx'
     df_dct = pd.read_excel(google_sheet, sheetname=None)
 
-    hdata_prov = ['reference', 'title', 'author', 'description']
+    hdata_prov = ['reference', 'subtitle', 'author', 'description']
     hdata_mp = ['identifier'] + hdata_prov
     hdata_col_headers = [x for x in df_dct['main'].columns if x not in hdata_mp]
 
@@ -31,6 +31,8 @@ def run(mpfile, mpids=[], nmax=None, dup_check_test_site=True):
     count, skipped, update = 0, 0, 0
     for idx, row in df_dct['main'].iterrows():
         row.dropna(inplace=True)
+        if 'identifier' not in row:
+            continue
         mpid = row['identifier']
         if mpid not in mpids:
             continue
