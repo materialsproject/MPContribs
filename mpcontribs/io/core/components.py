@@ -158,8 +158,7 @@ class TabularData(RecursiveDict):
                 display_html('<h2>Tabular Data for {}</h2>'.format(identifier), raw=True)
                 display_html(tables)
 
-def render_plot(plot, webapp=False):
-    from plotly.offline.offline import _plot_html # long import time
+def render_plot(plot, webapp=False, filename=None):
     xaxis, yaxis = plot.config['x'], plot.config.get('y', None)
     yaxes = [yaxis] if yaxis is not None else \
             [col for col in plot.table.columns if col != xaxis]
@@ -172,6 +171,11 @@ def render_plot(plot, webapp=False):
         legend = dict(x=0.7, y=1), margin = dict(r=0, t=40),
     )
     fig = dict(data=traces, layout=layout)
+    if filename:
+        from plotly.offline.offline import plot # long import time
+        plot(fig, include_plotlyjs=False, image='png', image_filename=filename)
+        return
+    from plotly.offline.offline import _plot_html # long import time
     html = _plot_html(
         fig, False, '', True, '100%', 525, global_requirejs=True
     )[0]
