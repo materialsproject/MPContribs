@@ -437,5 +437,9 @@ def get_card(request, cid, db_type=None, mdb=None):
             result_hdata[k] = v
             if idx >= 5:
                 break
-        card = render_dict(result_hdata)
+        card = "<table>"
+        for k, v in result_hdata.items():
+            card += "<tr><td>{}</td><td>{}</td></tr>".format(k, v)
+        card += "</table>"
+        #card = render_dict(result_hdata)
     return {"valid_response": True, "response": card}
