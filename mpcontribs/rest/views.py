@@ -416,6 +416,7 @@ def get_card(request, cid, db_type=None, mdb=None):
     from mpcontribs.io.core.utils import nested_dict_iter
     from mpcontribs.io.core.recdict import RecursiveDict, render_dict
     from django.template import Template, Context
+    from django.core.urlresolvers import reverse
     prov_keys = request.POST["provenance_keys"]
     contrib = mdb.contrib_ad.query_contributions(
         {'_id': ObjectId(cid)},
@@ -428,9 +429,17 @@ def get_card(request, cid, db_type=None, mdb=None):
     if plots:
         card = []
         for name, plot in plots.items():
-            filename = '{}_{}'.format(mpid, name)
-            #render_plot(plot, filename=filename) # TODO
-            card.append(filename+'.png')
+            filename = '{}_{}.png'.format(mpid, name)
+            cwd = os.path.dirname(__file__)
+            filepath = os.path.abspath(os.path.join(
+                cwd, '..', '..', 'webtzite', 'static', 'img', filename
+            ))
+            if not os.path.exists(filepath):
+                render_plot(plot, filename=filepath)
+            index = request.build_absolute_uri(reverse('webtzite_index')[:-1])
+            imgdir = '/'.join([index.rsplit('/', 1)[0], 'static', 'img'])
+            fileurl = '/'.join([imgdir, filename])
+            card.append(fileurl)
     else:
         sub_hdata = RecursiveDict(
             (k,v) for k,v in hdata.items()
