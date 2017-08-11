@@ -90,3 +90,4 @@ ENV/
 
 static/js/components/*
 static/apidoc/*
+static/img/*.png
