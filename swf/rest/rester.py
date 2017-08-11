@@ -25,7 +25,9 @@ class SwfRester(MPContribsRester):
         for doc in docs:
             mpfile = MPFile.from_contribution(doc)
             formula = mpfile.ids[0]
-            contrib = mpfile.hdata[formula]['data']
+            contrib = mpfile.hdata[formula].get('data')
+            if contrib is None:
+                continue
             cid_url = self.get_cid_url(doc)
 
             for k in contrib.keys():
