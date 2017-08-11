@@ -4,8 +4,8 @@
 {% if user.is_registered %}
 <p>Current user: {{ user.email }}</p>
 <p>Superuser: {{ user.is_superuser }}</p>
-<p>API Key: <code id='key'>{{ user.api_key }}</code></p>
-<button id="keygen">Regenerate API Key</button>
+<p hidden>API Key: <code id='key'>{{ user.api_key }}</code></p>
+<button id="keygen" hidden>Regenerate API Key</button>
 {% else %}
 <p>Please log in!</p>
 {% endif %}
