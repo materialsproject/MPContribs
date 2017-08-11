@@ -172,8 +172,8 @@ def render_plot(plot, webapp=False, filename=None):
     )
     fig = dict(data=traces, layout=layout)
     if filename:
-        from plotly.offline.offline import plot # long import time
-        plot(fig, include_plotlyjs=False, image='png', image_filename=filename)
+        import plotly.plotly as py
+        py.image.save_as(fig, filename)
         return
     from plotly.offline.offline import _plot_html # long import time
     html = _plot_html(
