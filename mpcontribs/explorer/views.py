@@ -50,19 +50,19 @@ def index(request, collection='materials'):
                                 criteria.update({
                                     key: {'$in': selection[fields[idx]]}
                                 })
-                        if criteria.keys() == [projection_keys[0]]:
-                            # only identifier(s) selected: contribution cards
-                            main_contributions = {}
-                            for identifier in selection[fields[0]]:
-                                main_contributions[identifier] = mpr.get_main_contributions(identifier)
-                        else:
-                            docs = mpr.query_contributions(
-                                criteria=criteria, collection='contributions'
-                            )
-                            urls = [
-                                '/'.join([request.path, str(doc['_id'])])
-                                for doc in docs
-                            ]
+                        #if criteria.keys() == [projection_keys[0]]:
+                        #    # only identifier(s) selected: contribution cards
+                        #    main_contributions = {}
+                        #    for identifier in selection[fields[0]]:
+                        #        main_contributions[identifier] = mpr.get_main_contributions(identifier)
+                        #else:
+                        docs = mpr.query_contributions(
+                            criteria=criteria, collection='contributions'
+                        )
+                        urls = [
+                            '/'.join([request.path, str(doc['_id'])])
+                            for doc in docs
+                        ]
                     elif mode == 'Show':
                         if selection[fields[2]]:
                             docs = mpr.query_contributions(
