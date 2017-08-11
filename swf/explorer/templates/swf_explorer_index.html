@@ -33,11 +33,10 @@
     </div>
     <div class="row">
         <h3>Graphical Abstract and Ternary Phase Diagram</h3>
-        <br>
-        <div class="col-md-5">
-            <img src="{{ static_url }}/Graphical_abstract.png" width='475' height='300' />
+        <div class="col-md-6">
+            <img src="{% static 'Graphical_abstract.png' %}" width='500' height='300' />
         </div>
-        <div class="col-md-7">
+        <div class="col-md-6">
             <div id="graph1"></div>
             <script>
             requirejs(['main'], function() {
