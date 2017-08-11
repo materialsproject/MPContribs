@@ -16,6 +16,7 @@ def index(request):
         with MpWorkshop2017Rester(API_KEY, endpoint=ENDPOINT) as mpr:
             try:
                 prov = mpr.get_provenance()
+                title = prov.get('title')
                 provenance = render_dict(prov, webapp=True)
                 table = render_dataframe(mpr.get_contributions(), webapp=True)
                 graphs = {}
