@@ -17,9 +17,9 @@ from django.apps import AppConfig
 
 
 
-class UwSi2ExplorerConfig(AppConfig):
-    name = 'mpcontribs.users.uw_si2.explorer'
-    label = 'uwsi2_explorer'
+class DiluteSoluteDiffusionExplorerConfig(AppConfig):
+    name = 'mpcontribs.users.dilute_solute_diffusion.explorer'
+    label = 'dilute_solute_diffusion_explorer'
 
 class Mno2PhaseSelectionExplorerConfig(AppConfig):
     name = 'mpcontribs.users.MnO2_phase_selection.explorer'
@@ -33,9 +33,9 @@ class DtuExplorerConfig(AppConfig):
     name = 'mpcontribs.users.dtu.explorer'
     label = 'dtu_explorer'
 
-class TamPerovskitesExplorerConfig(AppConfig):
-    name = 'mpcontribs.users.tam_perovskites.explorer'
-    label = 'tam_perovskites_explorer'
+class PerovskitesDiffusionExplorerConfig(AppConfig):
+    name = 'mpcontribs.users.perovskites_diffusion.explorer'
+    label = 'perovskites_diffusion_explorer'
 
 class SwfExplorerConfig(AppConfig):
     name = 'mpcontribs.users.swf.explorer'
