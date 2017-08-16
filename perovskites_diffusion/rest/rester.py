@@ -4,8 +4,8 @@ from mpcontribs.rest.rester import MPContribsRester
 from mpcontribs.io.archieml.mpfile import MPFile
 from pandas import DataFrame
 
-class TamPerovskitesRester(MPContribsRester):
-    """TamPerovskites-specific convenience functions to interact with MPContribs REST interface"""
+class PerovskitesDiffusionRester(MPContribsRester):
+    """PerovskitesDiffusion-specific convenience functions to interact with MPContribs REST interface"""
     mpfile = MPFile.from_file(os.path.join(
         os.path.dirname(__file__), '..', 'mpfile_init.txt'
     ))
@@ -17,7 +17,7 @@ class TamPerovskitesRester(MPContribsRester):
             projection={'_id': 1, 'mp_cat_id': 1, 'content.data': 1, 'content.abbreviations': 1}
         )
         if not docs:
-            raise Exception('No contributions found for TamPerovskites Explorer!')
+            raise Exception('No contributions found for PerovskitesDiffusion Explorer!')
 
         data, columns = [], None
         for doc in docs:

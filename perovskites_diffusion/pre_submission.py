@@ -2,13 +2,13 @@ import tarfile
 from pandas import read_excel
 from six import string_types
 from mpcontribs import MPFile, RecursiveDict, mp_level01_titles
-from mpcontribs.users.tam_perovskites.rest.rester import TamPerovskitesRester
+from mpcontribs.users.perovskites_diffusion.rest.rester import PerovskitesDiffusionRester
 
 def run(mpfile, nmax=None, dup_check_test_site=True):
 
     existing_mpids = {}
     for b in [False, True]:
-        with TamPerovskitesRester(test_site=b) as mpr:
+        with PerovskitesDiffusionRester(test_site=b) as mpr:
             for doc in mpr.query_contributions(
                     projection={'content.data.directory': 1, 'mp_cat_id': 1}
                 ):
