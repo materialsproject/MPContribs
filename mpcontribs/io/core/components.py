@@ -62,9 +62,9 @@ def get_backgrid_table(df):
                         break
                     is_url_column = True
         cell_type = 'uri' if is_url_column else 'string'
-        table['columns'].append({'name': k, 'cell': cell_type, 'editable': False})
+        table['columns'].append({'name': k, 'cell': cell_type, 'editable': 0})
         if len(table['columns']) > 9:
-            table['columns'][-1]['renderable'] = False
+            table['columns'][-1]['renderable'] = 0
 
     table['rows'] = []
     for row_index in xrange(nrows):
