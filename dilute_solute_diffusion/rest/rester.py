@@ -7,13 +7,13 @@ from mpcontribs.io.archieml.mpfile import MPFile
 from mpcontribs.config import mp_level01_titles
 from pandas import Series
 
-class UwSi2Rester(MPContribsRester):
-    """UW/SI2-specific convenience functions to interact with MPContribs REST interface"""
+class DiluteSoluteDiffusionRester(MPContribsRester):
+    """DiluteSoluteDiffusion-specific convenience functions to interact with MPContribs REST interface"""
     z = loads(open(os.path.join(
       os.path.dirname(os.path.abspath(__file__)), 'z.json'
     ), 'r').read())
 
-    def get_uwsi2_contributions(self):
+    def get_contributions(self):
         data = []
         for doc in self.query_contributions(
             criteria={'content.figshare_id': '1546772'},
