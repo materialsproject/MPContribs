@@ -29,15 +29,24 @@
 .backgrid-filter.form-search { margin:0px; }
 </style>
 
+<script>
+  function sleep(miliseconds) {
+      var currentTime = new Date().getTime();
+      while (currentTime + miliseconds >= new Date().getTime()) {
+      }
+  }
+</script>
+
 <div class="container">
   <div class="row" style="margin-bottom: 5px;">
     <div class="col-md-4"><div id="graphDif"></div></div>
     <div class="col-md-4"><div id="graphD0"></div></div>
     <div class="col-md-4"><div id="graphQ"></div></div>
   </div>
-  <div class="row" style="margin-bottom: 5px;">
-    <div class="col-md-4">
-      <button id="reveal_all" type="button" class="btn btn-primary btn-sm">Reveal</button>
+
+  <div class="row" style="margin-bottom: 5px;" id=row-navigation>
+    <div class="col-md-3">
+      <button id="reveal_all" type="button" class="btn btn-primary btn-sm" >Reveal</button>
       <button id="collapse_all" type="button" class="btn btn-primary btn-sm">Collapse</button>
       <button id="clear_all" type="button" class="btn btn-primary btn-sm">Clear</button>
     </div>
@@ -52,7 +61,16 @@
         </span>
       </div>
     </div>
-    <div class="col-md-4"></div>
+    <div class="col-md-5">
+      <div id="spinner" ></div>
+      <script>
+          requirejs(['main'], function() {
+              require(["jquery.spin"], function() {
+                  $("#spinner").spin('small');
+              });
+          });
+      </script>
+    </div>
   </div>
 
   <div class="row">
@@ -93,8 +111,9 @@
 
 <script>
 requirejs(['main'], function() {
-require(["backbone", "backgrid", "backgrid-select-all", "backgrid-filter"], function() {
+require(["backbone", "backgrid", "backgrid-select-all", "backgrid-filter", "jquery.spin"], function() {
 require(["plotly"], function(Plotly) {
+
   var grids = [];
   var graphDif = document.getElementById('graphDif');
   var graphD0 = document.getElementById('graphD0');
@@ -122,10 +141,8 @@ require(["plotly"], function(Plotly) {
     margin: margins, showlegend: false
   };
   var options = {displaylogo: false, displayModeBar: true}
-  Plotly.newPlot(graphDif, [dummy_trace], layoutDif, options);
-  Plotly.newPlot(graphD0, [dummy_trace], layoutD0, options);
-  Plotly.newPlot(graphQ, [dummy_trace], layoutQ, options);
   
+  console.log('starting contribs ...')
   var contributions = {{ contribs|safe }};
   var formulae = [];
   var Row = Backbone.Model.extend({});
@@ -137,140 +154,199 @@ require(["plotly"], function(Plotly) {
           if ('cnum' in options) { this.cnum = options.cnum; };
       }
   });
-  for (var c=0; c<contributions.length; c++) {
-    var table = contributions[c]['table'];
-    var formula = contributions[c]['formula'];
-    formulae.push(formula);
-    var rows = new Rows(table['rows'], {title: formula, cnum: c});
-    rows.on("backgrid:selected", function (model, selected) {
-      var cnum = model.collection.cnum;
-      var traceD0 = graphD0.data[cnum+1];
-      var traceQ = graphQ.data[cnum+1];
-      var idx = traceQ['x'].indexOf(model.get('Z'));
-      var Q = selected ? model.get('Q [eV]') : NaN;
-      var D0 = selected ? model.get('D0 [cm2/s]') : NaN;
-      if (traceQ['y'][idx] != Q) {
-        traceQ['y'][idx] = Q;
-        Plotly.redraw(graphQ);
-      }
-      if (traceD0['y'][idx] != D0) {
-        traceD0['y'][idx] = D0;
-        Plotly.redraw(graphD0);
-      }
-      var host_solute = formulae[cnum] + '-' + model.get('El.');
-      var trace_index_dif = host_solute_index_map[host_solute];
-      if (selected) {
-        var yvalsDif = [];
-        for (var j=0; j<80; j++) { yvalsDif.push(D0*Math.exp(-Q/0.08617*j*0.05)); }
-        Plotly.deleteTraces(graphDif, trace_index_dif);
-        Plotly.addTraces(graphDif, {
-          x: xvalsDif, y: yvalsDif, mode: 'lines', name: host_solute
-        }, trace_index_dif);
-      } else {
-        Plotly.deleteTraces(graphDif, trace_index_dif);
-        Plotly.addTraces(graphDif, { x: xvalsDif, y: yvalsDifNaN }, trace_index_dif);
-      }
-    })
-    var ClickableCell = Backgrid.StringCell.extend({
-      events: {"click": "onClick"},
-      onClick: function (e) { Backbone.trigger("cellclicked", e); }
-    })
-    for (var j=0; j<table['columns'].length; j++) {
-      table['columns'][j]['cell'] = ClickableCell;
+  var ClickableCell = Backgrid.StringCell.extend({
+    events: {"click": "onClick"},
+    onClick: function (e) { Backbone.trigger("cellclicked", e); }
+  })
+
+
+  Plotly.plot('graphDif', [dummy_trace], layoutDif, options);
+  //Plotly.newPlot(graphDif, [dummy_trace], layoutDif, options);
+  //Plotly.newPlot(graphD0, [dummy_trace], layoutD0, options);
+  //Plotly.newPlot(graphQ, [dummy_trace], layoutQ, options);
+
+  var c = 0;
+  function add_contrib(c) {
+    if(c === contributions.length) {
+        $('#spinner').spin(false);
+        return;
     }
-    var grid = new Backgrid.Grid({
-      columns: [{
-        name: "", cell: "select-row", headerCell: "select-all"
-      }].concat(table['columns']),
-      collection: rows
-    });
-    grid.render().sort("El.", "ascending");
-    $('#table'+c).append(grid.el);
-    var filter = new Backgrid.Extension.ClientSideFilter({
-      collection: rows, fields: ['El.'], placeholder: "filter solutes ..."
-    });
-    $('#table'+c).before(filter.render().el);
-    var xvals = []; var yvalsD0 = []; var yvalsQ = [];
-    for (var j=0; j<table['rows'].length; j++) {
-      xvals.push(table['rows'][j]['Z']);
-      yvalsD0.push(NaN); yvalsQ.push(NaN);
-      var host_solute = formulae[c] + "-" + table['rows'][j]['El.'];
-      host_solute_index_map[host_solute] = host_solute_counter;
-      Plotly.addTraces(graphDif, { x: xvalsDif, y: yvalsDifNaN });
-      host_solute_counter += 1;
-    }
-    Plotly.addTraces(graphD0, {
-      x: xvals, y: yvalsD0, name: formulae[c],
-      connectgaps: true, mode: 'lines+markers'
-    });
-    Plotly.addTraces(graphQ, {
-      x: xvals, y: yvalsQ, name: formulae[c],
-      connectgaps: true, mode: 'lines+markers'
-    });
-    grids.push(grid);
-    $('#collapse'+c).on('show.bs.collapse', function(){
-        $(this).parent().find(".glyphicon-chevron-right")
-          .removeClass("glyphicon-chevron-right").addClass("glyphicon-chevron-down");
-    }).on('hide.bs.collapse', function(){
-        $(this).parent().find(".glyphicon-chevron-down")
-          .removeClass("glyphicon-chevron-down").addClass("glyphicon-chevron-right");
-    });
+      
+    setTimeout(function() {
+      //var updateObj = {
+      //  name: ['update ' + c],
+      //  y: [makeData(c)],
+      //};
+      //Plotly.restyle('graphDif', updateObj, [1])
+      // TODO graphD0, graphQ
+
+      var data = getData(c);
+      Plotly.addTraces('graphDif', data['graphDif'])
+        .then(function() { add_contrib(++c); });
+  
+    }, 200);
   }
 
-  var hosts = $('[name=host]');
-  var inputs = $('#accordion').find(':input');
-  var panels = $('div.col-md-3[name^=panel]');
-  function collapse_hosts(flag) {
-      for (var j=0; j<hosts.length; j++) {
-        //var visible = !$(hosts[j]).hasClass("collapse");
-        var visible = $(hosts[j]).is(":visible");
-        if (flag && visible) { $(hosts[j]).collapse('hide'); }
-        else if (!flag && !visible) { $(hosts[j]).collapse('show'); }
+  function getData(cnt) {
+    console.log('contrib'+cnt);
+    var table = contributions[cnt]['table'];
+    var formula = contributions[cnt]['formula'];
+    formulae.push(formula);
+
+    var data = {'graphDif': []}
+    var xvals = []; var yvalsD0 = []; var yvalsQ = [];
+    for (var i=0; i<table['rows'].length; i++) {
+      //xvals.push(table['rows'][i]['Z']);
+      //yvalsD0.push(NaN); yvalsQ.push(NaN);
+      var host_solute = formulae[c] + "-" + table['rows'][i]['El.'];
+      var D0 = table['rows'][i]['D0 [cm2/s]'];
+      var Q = table['rows'][i]['Q [eV]'];
+      host_solute_index_map[host_solute] = host_solute_counter;
+      var yvalsDif = [];
+      for (var j=0; j<80; j++) {
+        var dif = D0*Math.exp(-Q/0.08617*j*0.05);
+        yvalsDif.push(dif);
       }
-  };
-  $('#reveal_all').on('click', function (e) { collapse_hosts(false); })
-  $('#collapse_all').on('click', function (e) { collapse_hosts(true); })
-  $("#clear_all").on("click", function() {
-    for (var j=0; j<grids.length; j++) { grids[j].clearSelectedModels(); }
-  })
-  $("#searchinput").focus(function(){ collapse_hosts(false); })
-  $("#searchclear").click(function(){
-    $("#searchinput").val('');
-    inputs.val('').trigger('keydown');
-    panels.show();
-  });
-  $("#searchinput").on('keyup paste', function(){
-    var txt = $(this).val();
-    var dash = txt.indexOf('-');
-    if (dash === -1) { // no dash found -> search in solutes for all hosts
-      panels.show();
-      inputs.val(txt).trigger('keydown');
-    } else { // dash found -> filter/hide hosts
-      var elems = txt.split('-');
-      $('div.col-md-3').not('[name=panel'+elems[0]+']').hide();
-      inputs.val('').trigger('keydown');
-      if (elems[1] != "") { // search specific host-solute combination
-        inputs.val(elems[1]).trigger('keydown');
-      }
+      data['graphDif'].push({
+        x: xvalsDif, y: yvalsDif, mode: 'lines', name: host_solute
+      });
+      host_solute_counter += 1;
     }
-  })
-  document.onselectstart = function() { return false; }
-  var lastChecked = null;
-  Backbone.on('cellclicked', function(e) {
-    var row = $(e.currentTarget).parent();
-    var chbx = row.toggleClass('highlight').find(':checkbox');
-    chbx.prop('checked', !chbx.prop('checked')).change();
-    if(!lastChecked) { lastChecked = chbx; return; }
-    if(e.shiftKey) {
-      var $chkboxes = row.parent().find(':checkbox');
-      var start = $chkboxes.index(chbx);
-      var end = $chkboxes.index(lastChecked);
-      var checked = lastChecked.prop('checked');
-      $chkboxes.slice(Math.min(start,end)+1, Math.max(start,end))
-        .prop('checked', checked).change();
-    }
-    lastChecked = chbx;
-  });
+
+    //Plotly.addTraces(graphD0, {
+    //  x: xvals, y: yvalsD0, name: formulae[c],
+    //  connectgaps: true, mode: 'lines+markers'
+    //});
+    //Plotly.addTraces(graphQ, {
+    //  x: xvals, y: yvalsQ, name: formulae[c],
+    //  connectgaps: true, mode: 'lines+markers'
+    //});
+
+    return data;
+  }
+
+  add_contrib(0);
+
+  //for (var c=0; c<contributions.length; c++) {
+
+  //  var rows = new Rows(table['rows'], {title: formula, cnum: c});
+  //  console.log('contrib'+c+': backgrid-selected');
+  //  rows.on("backgrid:selected", function (model, selected) {
+  //    var cnum = model.collection.cnum;
+  //    var traceD0 = graphD0.data[cnum+1];
+  //    var traceQ = graphQ.data[cnum+1];
+  //    var idx = traceQ['x'].indexOf(model.get('Z'));
+  //    var Q = selected ? model.get('Q [eV]') : NaN;
+  //    var D0 = selected ? model.get('D0 [cm2/s]') : NaN;
+  //    if (traceQ['y'][idx] != Q) {
+  //      traceQ['y'][idx] = Q;
+  //      Plotly.redraw(graphQ);
+  //    }
+  //    if (traceD0['y'][idx] != D0) {
+  //      traceD0['y'][idx] = D0;
+  //      Plotly.redraw(graphD0);
+  //    }
+  //    var host_solute = formulae[cnum] + '-' + model.get('El.');
+  //    var trace_index_dif = host_solute_index_map[host_solute];
+  //    if (selected) {
+  //      var yvalsDif = [];
+  //      for (var j=0; j<80; j++) { yvalsDif.push(D0*Math.exp(-Q/0.08617*j*0.05)); }
+  //      Plotly.deleteTraces(graphDif, trace_index_dif);
+  //      Plotly.addTraces(graphDif, {
+  //        x: xvalsDif, y: yvalsDif, mode: 'lines', name: host_solute
+  //      }, trace_index_dif);
+  //    } else {
+  //      Plotly.deleteTraces(graphDif, trace_index_dif);
+  //      Plotly.addTraces(graphDif, { x: xvalsDif, y: yvalsDifNaN }, trace_index_dif);
+  //    }
+  //  })
+
+  //  for (var j=0; j<table['columns'].length; j++) {
+  //    table['columns'][j]['cell'] = ClickableCell;
+  //  }
+
+  //  var grid = new Backgrid.Grid({
+  //    columns: [{
+  //      name: "", cell: "select-row", headerCell: "select-all"
+  //    }].concat(table['columns']),
+  //    collection: rows
+  //  });
+  //  grid.render().sort("El.", "ascending");
+
+  //  $('#table'+c).append(grid.el);
+  //  var filter = new Backgrid.Extension.ClientSideFilter({
+  //    collection: rows, fields: ['El.'], placeholder: "filter solutes ..."
+  //  });
+  //  $('#table'+c).before(filter.render().el);
+
+  //  console.log('contrib'+c+': push grid - collapse');
+  //  grids.push(grid);
+  //  $('#collapse'+c).on('show.bs.collapse', function(){
+  //      $(this).parent().find(".glyphicon-chevron-right")
+  //        .removeClass("glyphicon-chevron-right").addClass("glyphicon-chevron-down");
+  //  }).on('hide.bs.collapse', function(){
+  //      $(this).parent().find(".glyphicon-chevron-down")
+  //        .removeClass("glyphicon-chevron-down").addClass("glyphicon-chevron-right");
+  //  });
+  //  sleep(1000);
+  //}
+
+  //console.log('other things ...');
+  //var hosts = $('[name=host]');
+  //var inputs = $('#accordion').find(':input');
+  //var panels = $('div.col-md-3[name^=panel]');
+  //function collapse_hosts(flag) {
+  //    for (var j=0; j<hosts.length; j++) {
+  //      //var visible = !$(hosts[j]).hasClass("collapse");
+  //      var visible = $(hosts[j]).is(":visible");
+  //      if (flag && visible) { $(hosts[j]).collapse('hide'); }
+  //      else if (!flag && !visible) { $(hosts[j]).collapse('show'); }
+  //    }
+  //};
+  //$('#reveal_all').on('click', function (e) { collapse_hosts(false); })
+  //$('#collapse_all').on('click', function (e) { collapse_hosts(true); })
+  //$("#clear_all").on("click", function() {
+  //  for (var j=0; j<grids.length; j++) { grids[j].clearSelectedModels(); }
+  //})
+  //$("#searchinput").focus(function(){ collapse_hosts(false); })
+  //$("#searchclear").click(function(){
+  //  $("#searchinput").val('');
+  //  inputs.val('').trigger('keydown');
+  //  panels.show();
+  //});
+  //$("#searchinput").on('keyup paste', function(){
+  //  var txt = $(this).val();
+  //  var dash = txt.indexOf('-');
+  //  if (dash === -1) { // no dash found -> search in solutes for all hosts
+  //    panels.show();
+  //    inputs.val(txt).trigger('keydown');
+  //  } else { // dash found -> filter/hide hosts
+  //    var elems = txt.split('-');
+  //    $('div.col-md-3').not('[name=panel'+elems[0]+']').hide();
+  //    inputs.val('').trigger('keydown');
+  //    if (elems[1] != "") { // search specific host-solute combination
+  //      inputs.val(elems[1]).trigger('keydown');
+  //    }
+  //  }
+  //})
+  //document.onselectstart = function() { return false; }
+  //var lastChecked = null;
+  //Backbone.on('cellclicked', function(e) {
+  //  var row = $(e.currentTarget).parent();
+  //  var chbx = row.toggleClass('highlight').find(':checkbox');
+  //  chbx.prop('checked', !chbx.prop('checked')).change();
+  //  if(!lastChecked) { lastChecked = chbx; return; }
+  //  if(e.shiftKey) {
+  //    var $chkboxes = row.parent().find(':checkbox');
+  //    var start = $chkboxes.index(chbx);
+  //    var end = $chkboxes.index(lastChecked);
+  //    var checked = lastChecked.prop('checked');
+  //    $chkboxes.slice(Math.min(start,end)+1, Math.max(start,end))
+  //      .prop('checked', checked).change();
+  //  }
+  //  lastChecked = chbx;
+  //});
+  console.log('done');
 });
 });
 });
