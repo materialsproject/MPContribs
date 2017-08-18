@@ -25,6 +25,9 @@ def index(request):
                     df.columns = list(df.columns[:-1]) + ['El.']
                     for col in df.columns[:-1]:
                         low, upp = min(df[col]), max(df[col])
+                        if col == 'Z':
+                            low -= 1
+                            upp += 1
                         if col not in ranges:
                             ranges[col] = [low, upp]
                         else:

@@ -98,15 +98,13 @@ def run(mpfile, hosts=None):
         print 'add table for D0/Q data for {}'.format(mpid)
         if str(host)=='Fe':
             df_D0_Q = df[['Solute element name', 'Solute D0, paramagnetic [cm^2/s]', 'Solute Q, paramagnetic [eV]']]
-            df_D0_Q.columns = ['element', 'D0, paramagnetic [cm2/s]', 'Q, paramagnetic [eV]']
         elif hdata[mpid]['Host crystal structure']=='HCP':
             df_D0_Q = df[['Solute element name', 'Solute D0 basal [cm^2/s]', 'Solute Q basal [eV]']]
-            df_D0_Q.columns = ['element', 'D0 basal [cm2/s]', 'Q basal [eV]']
         else:
             df_D0_Q = df[['Solute element name', 'Solute D0 [cm^2/s]', 'Solute Q [eV]']]
-            df_D0_Q.columns = ['element', 'D0 [cm2/s]', 'Q [eV]']
+        df_D0_Q.columns = ['element', 'D0 [cm2/s]', 'Q [eV]']
         mpfile.add_data_table(mpid, df_D0_Q, 'D0_Q')
-        
+
         if hdata[mpid]['Host crystal structure']=='BCC':
             print 'add table for hop activation barriers for {}'.format(mpid)
             columns_E = ['Hop activation barrier, E_{} [eV]'.format(i) for i in range(2,5)]+["Hop activation barrier, E'_{} [eV]".format(i) for i in range(3,5)]+["Hop activation barrier, E''_{} [eV]".format(i) for i in range(3,5)]+['Hop activation barrier, E_{} [eV]'.format(i) for i in range(5,7)]
@@ -118,7 +116,7 @@ def run(mpfile, hosts=None):
             df_v = df[['Solute element name'] + columns_v]
             df_v.columns = ['element'] + ['v_{} [THz]'.format(i) for i in range(2,5)] + ["v''_{} [THz]".format(i) for i in range(3,5)] + ["v''_{} [THz]".format(i) for i in range(3,5)] + ['v_{} [THz]'.format(i) for i in range(5,7)]
             mpfile.add_data_table(mpid, df_v, 'hop_attempt_frequencies')
-        
+
         elif hdata[mpid]['Host crystal structure']=='FCC':
             print 'add table for hop activation barriers for {}'.format(mpid)
             columns_E = ['Hop activation barrier, E_{} [eV]'.format(i) for i in range(5)]
@@ -130,7 +128,7 @@ def run(mpfile, hosts=None):
             df_v = df[['Solute element name'] + columns_v]
             df_v.columns = ['element'] + ['v_{} [THz]'.format(i) for i in range(5)]
             mpfile.add_data_table(mpid, df_v, 'hop_attempt_frequencies')
-            
+
         elif hdata[mpid]['Host crystal structure']=='HCP':
             print 'add table for hop activation barriers for {}'.format(mpid)
             columns_E = ["Hop activation barrier, E_X [eV]","Hop activation barrier, E'_X [eV]","Hop activation barrier, E_a [eV]","Hop activation barrier, E'_a [eV]","Hop activation barrier, E_b [eV]","Hop activation barrier, E'_b [eV]","Hop activation barrier, E_c [eV]","Hop activation barrier, E'_c [eV]"]
@@ -142,7 +140,7 @@ def run(mpfile, hosts=None):
             df_v = df[['Solute element name'] + columns_v]
             df_v.columns = ['element'] + ['v_a [THz]'] + ['v_X [THz]']
             mpfile.add_data_table(mpid, df_v, 'hop_attempt_frequencies')
-            
+
     print 'DONE'
 
 class VaspDirCollParser(AbstractVaspDirCollParser):
