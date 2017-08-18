@@ -14,7 +14,9 @@ requirejs.config({
         'backgrid-filter': 'components/backgrid-filter/backgrid-filter',
         'json.human': 'components/json-human/src/json.human',
         'js-cookie': 'components/js-cookie/src/js.cookie',
-        'jupyter-widget-chemview': 'components/chemview/js/src/embed.js'
+        'jupyter-widget-chemview': 'components/chemview/js/src/embed.js',
+        'jquery.spin': 'components/spin.js/jquery.spin',
+        'spin': 'components/spin.js/spin'
         //waitfor: 'jquery.waitFor',
         //thebe: 'main-built',
     },
@@ -28,7 +30,8 @@ requirejs.config({
         underscore: {exports: '_'},
         toggle: {deps: ['jquery', 'bootstrap']},
         'backgrid-select-all': {deps: ['backgrid']},
-        'backgrid-filter': {deps: ['backgrid']}
+        'backgrid-filter': {deps: ['backgrid']},
+        'jquery.spin': {deps: ['jquery']}
         //waitfor: {deps: ['jquery']},
         //sandbox: {deps: ['archieml']},
     }

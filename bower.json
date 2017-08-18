@@ -29,7 +29,8 @@
     "bootstrap-toggle": "^2.2.2",
     "requirejs": "^2.3.2",
     "js-cookie": "^2.1.3",
-    "chemview": "gabrielelanaro/chemview"
+    "chemview": "gabrielelanaro/chemview",
+    "spin.js": "spinjs#^2.3.2"
   },
   "resolutions": {
     "backbone": "~1.2.3"
