@@ -50,14 +50,17 @@ def nest_dict(dct, keys):
         nested_dict = RecursiveDict({key: nested_dict})
     return nested_dict
 
+def get_composition_from_string(s):
+    comp = Composition(s)
+    for element in comp.elements:
+        Element(element)
+    return comp.formula.replace(' ', '')
+
 def normalize_root_level(title):
     """convert root-level title into conventional identifier; non-identifiers
     become part of shared (meta-)data. Returns: (is_general, title)"""
     try:
-        comp = Composition(title)
-        for element in comp.elements:
-            Element(element)
-        composition = comp.formula.replace(' ', '')
+        composition = get_composition_from_string(title)
         return False, composition
     except:
         if mp_id_pattern.match(title.lower()):
