@@ -52,3 +52,7 @@ class MpWorkshop2017ExplorerConfig(AppConfig):
 class BoltztrapExplorerConfig(AppConfig):
     name = 'mpcontribs.users.boltztrap.explorer'
     label = 'boltztrap_explorer'
+
+class DlrVietenExplorerConfig(AppConfig):
+    name = 'mpcontribs.users.dlr_vieten.explorer'
+    label = 'dlr_vieten_explorer'
