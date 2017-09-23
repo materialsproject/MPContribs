@@ -54,6 +54,7 @@ def get_composition_from_string(s):
     comp = Composition(s)
     for element in comp.elements:
         Element(element)
+    comp = Composition(comp.get_integer_formula_and_factor()[0])
     return comp.formula.replace(' ', '')
 
 def normalize_root_level(title):

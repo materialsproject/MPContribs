@@ -3,7 +3,7 @@ import six, codecs, locale, pandas, os
 from abc import ABCMeta
 from mpcontribs.config import mp_level01_titles, default_mpfile_path
 from recdict import RecursiveDict
-from utils import pandas_to_dict, nest_dict
+from utils import pandas_to_dict, nest_dict, get_composition_from_string
 from components import HierarchicalData, TabularData, GraphicalData, StructuralData
 from pymatgen import Structure, MPRester
 
@@ -210,9 +210,14 @@ class MPFileCore(six.with_metaclass(ABCMeta, object)):
                 'API key not set. Run `pmg config --add PMG_MAPI_KEY <USER_API_KEY>`.'
             )
         matched_mpids = mpr.find_structure(structure)
+        formula = get_composition_from_string(structure.composition.formula)
         if not matched_mpids:
-            raise ValueError(
-                'Structure not found in MP. Please submit via MPComplete to obtain mp-id!'
+            if identifier is None:
+                identifier = formula
+            print(
+                'Structure not found in MP! Please submit via MPComplete to '
+                'obtain mp-id or manually choose an anchor mp-id! Continuing '
+                'with {} as identifier!'.format(formula)
             )
         elif identifier is None:
             identifier = matched_mpids[0]
@@ -224,7 +229,7 @@ class MPFileCore(six.with_metaclass(ABCMeta, object)):
             ))
 
         idx = len(self.document.get(identifier, {}).get(mp_level01_titles[3], {}))
-        sub_key = structure.composition.reduced_formula if name is None else name
+        sub_key = formula if name is None else name
         if sub_key in self.document.get(identifier, {}).get(mp_level01_titles[3], {}):
             sub_key += '_{}'.format(idx)
         self.document.rec_update(nest_dict(
