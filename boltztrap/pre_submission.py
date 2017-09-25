@@ -5,7 +5,7 @@ from mpcontribs.io.core.recdict import RecursiveDict
 from mpcontribs.io.core.utils import get_composition_from_string
 from mpcontribs.users.boltztrap.rest.rester import BoltztrapRester
 
-def run(mpfile, nmax=5, dup_check_test_site=True):
+def run(mpfile, nmax=1, dup_check_test_site=True):
 
     # book-keeping
     existing_mpids = {}
@@ -40,24 +40,25 @@ def run(mpfile, nmax=5, dup_check_test_site=True):
             #)
 
             # add data table
-            for doping_type in ['n', 'p']:
-                seebeck = data['GGA']['seebeck_doping'][doping_type]
-                seebeck_averages, dopings, columns = [], None, ['T']
-                temps = sorted(map(int, seebeck.keys()))
-                for temp in temps:
-                    row = ['{} K'.format(temp)]
-                    if dopings is None:
-                        dopings = sorted(map(float, seebeck[str(temp)].keys()))
-                    for doping in dopings:
-                        doping_str = '%.0e' % doping
-                        if len(columns) <= len(dopings):
-                            columns.append(doping_str + ' cm-3')
-                        eigs = seebeck[str(temp)][doping_str]['eigs']
-                        row.append(np.mean(eigs))
-                    seebeck_averages.append(row)
-                df = DataFrame.from_records(seebeck_averages, columns=columns)
-                table_name = doping_type + '-type average seeback'
-                mpfile.add_data_table(data['mp_id'], df, table_name)
+            for prop_name in ['seebeck_doping','cond_doping']:
+                for doping_type in ['n', 'p']:
+                    prop = data['GGA'][prop_name][doping_type]
+                    prop_averages, dopings, columns = [], None, ['T']
+                    temps = sorted(map(int, prop.keys()))
+                    for temp in temps:
+                        row = ['{} K'.format(temp)]
+                        if dopings is None:
+                            dopings = sorted(map(float, prop[str(temp)].keys()))
+                        for doping in dopings:
+                            doping_str = '%.0e' % doping
+                            if len(columns) <= len(dopings):
+                                columns.append(doping_str + ' cm-3')
+                            eigs = prop[str(temp)][doping_str]['eigs']
+                            row.append(np.mean(eigs))
+                        prop_averages.append(row)
+                    df = DataFrame.from_records(prop_averages, columns=columns)
+                    table_name = doping_type + '-type average ' + prop_name
+                    mpfile.add_data_table(data['mp_id'], df, table_name)
 
         finally:
             input_file.close()
