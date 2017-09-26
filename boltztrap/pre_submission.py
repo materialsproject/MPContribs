@@ -5,7 +5,7 @@ from mpcontribs.io.core.recdict import RecursiveDict
 from mpcontribs.io.core.utils import get_composition_from_string
 from mpcontribs.users.boltztrap.rest.rester import BoltztrapRester
 
-def run(mpfile, nmax=1, dup_check_test_site=True):
+def run(mpfile, nmax=5, dup_check_test_site=True):
 
     # book-keeping
     existing_mpids = {}
@@ -19,7 +19,7 @@ def run(mpfile, nmax=1, dup_check_test_site=True):
     # extract data from json files
     keys = ['pretty_formula', 'volume']
     input_dir = mpfile.hdata.general['input_dir']
-    for idx, fn in enumerate(os.listdir(input_dir)):
+    for idx, fn in enumerate(os.listdir(input_dir)[::-1]):
         print(fn)
         input_file = gzip.open(os.path.join(input_dir, fn), 'rb')
         try:
@@ -38,9 +38,31 @@ def run(mpfile, nmax=1, dup_check_test_site=True):
             #    data['cif_structure'], name=name,
             #    identifier=data['mp_id'], fmt='cif'
             #)
+            
+            #add data table for cond eff mass
+            columns = ['type','eig_1','eig_2','eig_3','average']
+            eff_mass_data = []
+            if data['GGA']['cond_eff_mass'] != {}:
+                for dt in ['n', 'p']:
+                    eff_mass = data['GGA']['cond_eff_mass'][dt]['300']['1e+18']
+                    avg_eigs = np.mean(eff_mass)
+                    row = [dt]
+                    for eig in eff_mass:
+                        row.append(eig)
+                    row.append(avg_eigs)
+                    eff_mass_data.append(row)
 
-            # add data table
-            for prop_name in ['seebeck_doping','cond_doping']:
+                df = DataFrame.from_records(eff_mass_data, columns=columns)
+                table_name = "cond_eff_mass_eigs_300K_1e18"
+                mpfile.add_data_table(data['mp_id'], df, table_name)
+                print "eff mass table added",eff_mass_data
+            else:
+                #print a message in the webpage
+                print "no data for effective mass"
+
+            # add data table for seebeck, conductivity and kappa
+            '''
+            for prop_name in ['seebeck_doping','cond_doping','kappa_doping']:
                 for doping_type in ['n', 'p']:
                     prop = data['GGA'][prop_name][doping_type]
                     prop_averages, dopings, columns = [], None, ['T']
@@ -59,8 +81,9 @@ def run(mpfile, nmax=1, dup_check_test_site=True):
                     df = DataFrame.from_records(prop_averages, columns=columns)
                     table_name = doping_type + '-type average ' + prop_name
                     mpfile.add_data_table(data['mp_id'], df, table_name)
+            '''
 
         finally:
             input_file.close()
-        if idx >= nmax+1:
+        if idx >= nmax:
             break
