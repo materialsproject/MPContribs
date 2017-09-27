@@ -6,28 +6,28 @@ from mpcontribs.users.tam_perovskites.rest.rester import TamPerovskitesRester
 
 def run(mpfile, nmax=None, dup_check_test_site=True):
 
-    existing_mpids = {}
-    for b in [False, True]:
-        with TamPerovskitesRester(test_site=b) as mpr:
-            for doc in mpr.query_contributions(
-                    projection={'content.data.directory': 1, 'mp_cat_id': 1}
-                ):
-                key = '_'.join([doc['mp_cat_id'], doc['content']['data']['directory']])
-                existing_mpids[key] = doc['_id']
-        if not dup_check_test_site:
-            break
+   existing_mpids = {}
+   #for b in [False, True]:
+        #with TamPerovskitesRester(test_site=b) as mpr:
+         #   for doc in mpr.query_contributions(
+          #          projection={'content.data.directory': 1, 'mp_cat_id': 1}
+           #     ):
+            #    key = '_'.join([doc['mp_cat_id'], doc['content']['data']['directory']])
+             #   existing_mpids[key] = doc['_id']
+        #if not dup_check_test_site:
+         #   break
 
-    general = mpfile.document[mp_level01_titles[0]]
-    google_sheet = general.pop('google_sheet') + '/export?format=xlsx'
-    contcars_filepath = general.pop('contcars_filepath')
-    contcars = tarfile.open(contcars_filepath)
+   general = mpfile.document[mp_level01_titles[0]]
+   google_sheet = general.pop('google_sheet') + '/export?format=xlsx'
+   contcars_filepath = general.pop('contcars_filepath')
+   contcars = tarfile.open(contcars_filepath)
 
-    df = read_excel(google_sheet)
-    keys = df.iloc[[0]].to_dict(orient='records')[0]
-    abbreviations = RecursiveDict()
+   df = read_excel(google_sheet)
+   keys = df.iloc[[0]].to_dict(orient='records')[0]
+   abbreviations = RecursiveDict()
 
-    count, skipped, update = 0, 0, 0
-    for index, row in df[1:].iterrows():
+   count, skipped, update = 0, 0, 0
+   for index, row in df[1:].iterrows():
         mpid = None
         data = RecursiveDict()
         mpfile_single = MPFile()
@@ -86,10 +86,10 @@ def run(mpfile, nmax=None, dup_check_test_site=True):
             break
         count += 1
 
-    mpfile.add_hierarchical_data({'abbreviations': abbreviations})
+   mpfile.add_hierarchical_data({'abbreviations': abbreviations})
 
-    print len(mpfile.ids), 'mp-ids to submit.'
-    if nmax is None and update > 0:
+   print len(mpfile.ids), 'mp-ids to submit.'
+   if nmax is None and update > 0:
         print update, 'mp-ids to update.'
-    if nmax is not None and skipped > 0:
+   if nmax is not None and skipped > 0:
         print skipped, 'duplicates to skip.'
