@@ -5,7 +5,7 @@ from mpcontribs.io.core.recdict import RecursiveDict
 from mpcontribs.io.core.utils import get_composition_from_string
 from mpcontribs.users.boltztrap.rest.rester import BoltztrapRester
 
-def run(mpfile, nmax=5, dup_check_test_site=True):
+def run(mpfile, nmax=1, dup_check_test_site=True):
 
     # book-keeping
     existing_mpids = {}
@@ -38,6 +38,9 @@ def run(mpfile, nmax=5, dup_check_test_site=True):
             #    data['cif_structure'], name=name,
             #    identifier=data['mp_id'], fmt='cif'
             #)
+
+            #add table of max avg eigenv for seebeck, conductivity and kappa_el
+
             
             #add data table for cond eff mass
             columns = ['type','eig_1','eig_2','eig_3','average']
@@ -61,14 +64,19 @@ def run(mpfile, nmax=5, dup_check_test_site=True):
                 print "no data for effective mass"
 
             # add data table for seebeck, conductivity and kappa
-            '''
+            dfs = []
+            table_names = []
+            max_values = []
+            columns_max = ['property']+['max value n','temperature (K) n','Doping (cm-3) n']+\
+                          ['max value p','temperature (K) p','Doping (cm-3) p']
             for prop_name in ['seebeck_doping','cond_doping','kappa_doping']:
+                max_values.append([prop_name.split('_')[0]])
                 for doping_type in ['n', 'p']:
                     prop = data['GGA'][prop_name][doping_type]
-                    prop_averages, dopings, columns = [], None, ['T']
+                    prop_averages, dopings, columns = [], None, ['T (K)']
                     temps = sorted(map(int, prop.keys()))
                     for temp in temps:
-                        row = ['{} K'.format(temp)]
+                        row = [temp]
                         if dopings is None:
                             dopings = sorted(map(float, prop[str(temp)].keys()))
                         for doping in dopings:
@@ -78,12 +86,21 @@ def run(mpfile, nmax=5, dup_check_test_site=True):
                             eigs = prop[str(temp)][doping_str]['eigs']
                             row.append(np.mean(eigs))
                         prop_averages.append(row)
-                    df = DataFrame.from_records(prop_averages, columns=columns)
-                    table_name = doping_type + '-type average ' + prop_name
-                    mpfile.add_data_table(data['mp_id'], df, table_name)
-            '''
+                    arr_prop_avg = np.array(prop_averages)[:,1:]
+                    max_v = np.max(arr_prop_avg)
+                    arg_max = np.argwhere(arr_prop_avg==max_v)[0]
+                    max_values[-1].extend([max_v,temps[arg_max[0]],dopings[arg_max[1]]])
+                    dfs.append(DataFrame.from_records(prop_averages, columns=columns))
+                    table_names.append(doping_type + '-type average ' + prop_name)
+            print max_values
+            print np.shape(max_values)
+                
+            df = DataFrame.from_records(max_values, columns=columns_max)
+            table_name = 'max_values'
+            mpfile.add_data_table(data['mp_id'], df, table_name)
+    
 
         finally:
             input_file.close()
-        if idx >= nmax:
+        if idx >= nmax-1:
             break
