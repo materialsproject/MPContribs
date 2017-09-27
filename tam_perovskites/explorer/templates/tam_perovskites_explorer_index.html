@@ -101,7 +101,6 @@ var names = [];
 requirejs(['main'], function() {
     require(["plotly"], function(Plotly) {
     $(document).ready(function() {
-        console.log(window.tables.length);
         for (t = 0; t < window.tables.length; t++) {
                 var table = window.tables[t];
                 
@@ -124,7 +123,6 @@ requirejs(['main'], function() {
              rows.push(table['rows'][i]);
              names.push(rows[i]['composition']);
         }
-        console.log(names);
     });
 });
 });
@@ -149,8 +147,6 @@ function plot(){
   requirejs(['main'], function() {
     require(["plotly"], function(Plotly) {
         $(document).ready(function(){
-          console.log(yVals.length);
-          console.log(xVals.length);
           if(yVals.length != 0 && xVals.length != 0){
             var graph = document.getElementById('graph');
             var xClone = xVals.slice(0);
@@ -200,15 +196,11 @@ function plot(){
                         //decrement i so as to not skip values
                         i--;
                      }
-                 }
-                    
+                 }  
                     labels.push(tempLabel);
                     xTraces.push(tempX);
                     yTraces.push(tempY);
-
             }
-            console.log(xTraces);
-            console.log(yTraces);
             
             for (var i = 0; i < labels.length; i++){
                 var aSite = findASite(labels[i][0]);
