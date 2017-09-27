@@ -63,7 +63,7 @@ def run(mpfile, nmax=1, dup_check_test_site=True):
                 #print a message in the webpage
                 print "no data for effective mass"
 
-            # add data table for seebeck, conductivity and kappa
+            # build data and max values table for seebeck, conductivity and kappa
             dfs = []
             table_names = []
             max_values = []
@@ -88,17 +88,21 @@ def run(mpfile, nmax=1, dup_check_test_site=True):
                         prop_averages.append(row)
                     arr_prop_avg = np.array(prop_averages)[:,1:]
                     max_v = np.max(arr_prop_avg)
+                    if prop_name[0] == 's' and doping_type == 'n':
+                        max_v = np.min(arr_prop_avg)
                     arg_max = np.argwhere(arr_prop_avg==max_v)[0]
                     max_values[-1].extend([max_v,temps[arg_max[0]],dopings[arg_max[1]]])
                     dfs.append(DataFrame.from_records(prop_averages, columns=columns))
                     table_names.append(doping_type + '-type average ' + prop_name)
             print max_values
             print np.shape(max_values)
-                
+            # add max values table    
             df = DataFrame.from_records(max_values, columns=columns_max)
             table_name = 'max_values'
             mpfile.add_data_table(data['mp_id'], df, table_name)
-    
+            #add data table
+            for df,tn in zip(dfs,table_names):
+                mpfile.add_data_table(data['mp_id'], df, tn)
 
         finally:
             input_file.close()
