@@ -3,19 +3,97 @@
 {% block extra_css %}
 <link rel="stylesheet" href='{% static "js/components/json-human/css/json.human.css" %}' charset="utf-8">
 <link rel="stylesheet" href='{% static "js/components/backgrid/lib/backgrid.css" %}' charset="utf-8">
+<link rel="stylesheet" href='{% static "js/components/bootstrap-toggle/css/bootstrap-toggle.css" %}' charset="utf-8"/>
 {% endblock %}
 {% if mp_cat_id in material %}
 {% block title %} {{ material.detail_id }} {{ material.mp_cat_id }} {% endblock %}
 {% block detail_id %}{{ material.detail_id }}{% endblock %}
 {% block detail_type %}{{ material.detail_id }}{% endblock %}
 {% block formula %}{{ material.mp_cat_id }}{% endblock %}
+
 {% block detail_content %}
+
+<nav class="navbar navbar-default navbar-lower" role="navigation">
+  <div class="container">
+    <form class="navbar-form">
+      <div class="form-group" style="position:relative; left:20px;">
+        <div class="checkbox" style="padding:1px;">
+          <label>
+            <input id="toggle_inputs" type="checkbox" checked hidden>
+          </label>
+        </div>
+        <div class="checkbox" style="padding:1px; margin-left:15px;">
+          <label>
+            <input id="toggle_trees" type="checkbox" checked hidden>
+          </label>
+        </div>
+        <div class="checkbox" style="padding:1px; margin-left:15px;">
+          <label>
+            <input id="toggle_tables" type="checkbox" checked hidden>
+          </label>
+        </div>
+        <div class="checkbox" style="padding:1px; margin-left:15px;">
+          <label>
+            <input id="toggle_graphs" type="checkbox" checked hidden>
+          </label>
+        </div>
+        <div class="checkbox" style="padding:1px; margin-left:15px;">
+          <label>
+            <input id="toggle_structures" type="checkbox" checked hidden>
+          </label>
+        </div>
+        <div id="spinner" ></div>
+        <script>
+            requirejs(['main'], function() {
+                require(["jquery.spin"], function() {
+                    $("#spinner").spin('small');
+                });
+            });
+        </script>
+      </div>
+    </form>
+  </div>
+</nav>
+
 <div>{{ material.nb|safe }}</div>
 <script>
 requirejs(['main'], function() {
-    require(["json.human", "plotly", "backgrid"], function() {
+    require(["json.human", "plotly", "backgrid", "toggle", "jquery.spin"], function() {
         {{ material.nb_js|safe }}
-    });
+
+        // toggle divs
+        function toggle_divs(name) {
+          var divs = document.getElementsByName(name);
+          for (var j=0; j<divs.length; j++) {
+            if ($(divs[j]).is(":visible")) { $(divs[j]).hide(); }
+            else { $(divs[j]).show(); }
+          }
+        };
+        $('#toggle_trees').change(function () { toggle_divs("Hierarchical"); });
+        $('#toggle_tables').change(function () { toggle_divs("Tabular"); });
+        $('#toggle_graphs').change(function () { toggle_divs("Graphical"); });
+        $('#toggle_inputs').change(function () { toggle_divs("Input"); });
+        $('#toggle_structures').change(function () { toggle_divs("Structural"); });
+
+        $(document).ready(function(){
+            $('#toggle_trees').bootstrapToggle({
+              on:"h-Data", off:"h-Data", size:"mini", width:65, height:25
+            });
+            $('#toggle_tables').bootstrapToggle({
+              on:"Tables", off:"Tables", size:"mini", width:65, height:25
+            });
+            $('#toggle_graphs').bootstrapToggle({
+              on:"Graphs", off:"Graphs", size:"mini", width:65, height:25
+            });
+            $('#toggle_inputs').bootstrapToggle({
+              on:"Inputs", off:"Inputs", size:"mini", width:65, height:25
+            });
+            $('#toggle_structures').bootstrapToggle({
+              on:"Structures", off:"Structures", size:"mini", width:65, height:25
+            });
+            $('#spinner').spin(false);
+        });
+     });
 });
 </script>
 {% endblock detail_content %}

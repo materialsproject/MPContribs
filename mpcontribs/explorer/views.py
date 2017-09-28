@@ -93,8 +93,7 @@ def contribution(request, collection, cid):
                 collection=collection, projection={'_id': 0}
             )[0]
             material['nb'], material['nb_js'] = export_notebook(
-                nbformat.from_dict(material['nb']), cid,
-                set_div_names=False, separate_script=True
+                nbformat.from_dict(material['nb']), cid, separate_script=True
             )
     material['detail_id'] = collection[:-1]
     ctx = RequestContext(request, {'material': jsanitize(material)})
