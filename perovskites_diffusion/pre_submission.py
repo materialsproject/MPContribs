@@ -52,13 +52,12 @@ def run(mpfile, nmax=None, dup_check_test_site=True):
                     data['directory'].replace('/', '_')
                 )
                 contcar = contcars.extractfile(contcar_path)
-                try:
-                    mpid_match = mpfile_single.add_structure(
-                        contcar.read(), fmt='poscar',
-                        name=name, identifier=mpid
-                    )
-                except ValueError as ex:
-                    print name, str(ex)
+                mpid_match = mpfile_single.add_structure(
+                    contcar.read(), fmt='poscar',
+                    name=name, identifier=mpid
+                )
+                if not mp_id_pattern.match(mpid_match):
+                    print 'skipping', name
                     continue
                 mpid = mpid_match
             else:

@@ -27,141 +27,215 @@
 </style>
 
 <div class="container">
+
     <div class="row">
-        <h2>{{ title }}</h2>
+        <div class="col-md-12">
+            <h2>{{ title }}</h2>
+        </div>
+    </div>
+
+    <div class="row">
         <div class="col-md-6">
-            {{ provenance|safe }}
+            <h3>Provenance
+                <button type="button"
+                    class="btn btn-info btn-xs" data-toggle="collapse"
+                    data-target="#provenance">Show/Hide</button>
+            </h3>
+            <div id="provenance"; class= "collapse in">
+                {{ provenance|safe }}
+            </div>
         </div>
         <div class="col-md-6">
-            <h4>Abbreviations</h4>
-            <p>Scroll down for more table columns; Click to show/hide.</p>
-            <div style="height:450px; overflow-y:scroll;" id="abbrevs">
+            <h3>Abbreviations
+                <button type="button"
+                    class="btn btn-info btn-xs" data-toggle="collapse"
+                    data-target="#abbrevs">Show/Hide</button>
+            </h3>
+            <div id="abbrevs" class= "collapse in">
+                <p>Click row to show/hide data in table below.</p>
                 {{ abbreviations|safe }}
             </div>
         </div>
     </div>
-    <div class = "row">
-        <div id= "graph">
+
+    <div class="row">
+        <div class="col-md-12">
+            <h3>Graph
+                <button type="button"
+                        class="btn btn-info btn-xs" data-toggle="collapse"
+                                                    data-target="#plot">Show/Hide</button>
+            </h3>
+            <div id="plot"; class="collapse in">
+                <div id="navs" style="display: inline">
+                    <select id="yChoose" style="width:20%">
+                        <option value="" disabled="" selected="">Choose an Y-Axis</option>
+                    </select>
+                    <p style="display: inline">as a function of</p>
+                    <select id="xChoose" style="width:20%">
+                        <option value="" disabled="" selected="">Choose an X-Axis</option>
+                    </select>
+                </div>
+                <div id="graph"></div>  
+            </div>
         </div>
     </div>
+
     <div class="row">
-        <h3>Data</h3>
-        {{ table|safe }}
+        <div class="col-md-12">
+            <h3>Data
+                <button type="button"
+                        class="btn btn-info btn-xs" data-toggle="collapse"
+                                                    data-target="#table">Show/Hide</button>
+            </h3>
+            <div id="table" class= "collapse in">
+                {{ table|safe }}
+            </div>
+        </div>
     </div>
 </div>
 
-
-
 <script>
 requirejs(['main'], function() {
-    require(["backgrid"], function() {
+    require(["plotly", "backgrid"], function(Plotly) {
         $(document).ready(function() {
+
             $("div#abbrevs").on("click", "div > table > tbody > tr", function() {
                 var column = $("> th", this).text();
                 $("."+column).toggleClass("renderable");
-                console.log(column);
             });
-        });
-    });
-});
-</script>
 
-<script>
+            var xKey = "";
+            var yKey = "";
+            var xTitle;
+            var yTitle;
+            var xVals = []; 
+            var yVals = [];
+            var rows = [];
+            var keys = [];
+            var names = [];
 
-function isUpperCase(c){
-    return (c >= 'A') && (c <= 'Z')
-}
+            var table = window.tables[0];
+            for (var h in table['rows'][0]){ keys.push(h); }
 
-function findASite(comp){
-    var aSite = comp.substring(0,comp.length-4);
-        if (isUpperCase(aSite.charAt(aSite.length -1))){
-            aSite= aSite.substring(0,aSite.length-1);
-        }
-                
-        else{
-             aSite = aSite.substring(0,aSite.length-2);
-        }
-        return aSite;
-}
+            for(var i = 0; i < keys.length; i++){
+                var optionX = document.createElement("option");
+                optionX.setAttribute("value", keys[i]);
+                optionX.appendChild(document.createTextNode(keys[i]));
+                var optionY=optionX.cloneNode(true);
+                document.getElementById("xChoose").appendChild(optionX);
+                document.getElementById("yChoose").appendChild(optionY);
+            }
 
-requirejs(['main'], function() {
-    require(["plotly"], function(Plotly) {
-        $(document).ready(function(){
-            var xVals = []; var yVals = []; var names = [];
-            for (t = 0; t < window.tables.length; t++) {
-                var table = window.tables[t];
-                for (i = 0; i < table['rows'].length; i++) {
-                    var row = table['rows'][i];
-                    xVals.push(row['opband']);
-                    yVals.push(row['emig']);
-                    names.push(row['composition'])
+            for (i = 0; i < table['rows'].length; i++) {
+                rows.push(table['rows'][i]);
+                names.push(rows[i]['composition']);
+            }
+
+            function isUpperCase(c) { return (c >= 'A') && (c <= 'Z') }
+
+            function findASite(comp){
+                var aSite = comp.substring(0, comp.length-4);
+                if (isUpperCase(aSite.charAt(aSite.length -1))) {
+                    aSite = aSite.substring(0, aSite.length-1);
+                } else {
+                    aSite = aSite.substring(0, aSite.length-2);
+                }
+                return aSite;
+            }
+
+            function plot(){
+                if(yVals.length != 0 && xVals.length != 0){
+                    var graph = document.getElementById('graph');
+                    var xClone = xVals.slice(0);
+                    var yClone = yVals.slice(0);
+                    var nClone = names.slice(0);
+
+                    Plotly.purge(graph);
+                    var layout = {
+                        margin: {t: 0},
+                        xaxis: {title: xTitle},
+                        yaxis: {title: yTitle}
+                    };
+                    var data = [];
+                    Plotly.newPlot(graph, [data], layout);
+
+                    var labels = []; var xTraces = []; var yTraces= [];
+                    while(names[0] != null){
+                        var aSite = findASite(names[0]);
+
+                        //make temporary lists
+                        var tempLabel = [];
+                        var tempX = [];
+                        var tempY = [];
+
+                        //put first element in the lists
+                        tempLabel.push(names[0]);
+                        tempX.push(xVals[0]);
+                        tempY.push(yVals[0]);
+
+                        //delete said element from the parent lists
+                        names.splice(0,1);
+                        xVals.splice(0,1);
+                        yVals.splice(0,1);
+                        //go through rest of list looking for matching aSites
+                        for(var i = 0; i < names.length; i++){
+                            if( findASite(names[i]) == aSite ){
+                                //push into temp lists
+                                tempLabel.push(names[i]);
+                                tempX.push(xVals[i]);
+                                tempY.push(yVals[i]);
+
+                                //delete said element from the parent lists
+                                names.splice(i,1);
+                                xVals.splice(i,1);
+                                yVals.splice(i,1);
+
+                                //decrement i so as to not skip values
+                                i--;
+                            }
+                        }  
+                        labels.push(tempLabel);
+                        xTraces.push(tempX);
+                        yTraces.push(tempY);
+                    }
+
+                    for (var i = 0; i < labels.length; i++){
+                        var aSite = findASite(labels[i][0]);
+
+                        var data = [ {
+                            x : xTraces[i],
+                            y : yTraces[i],
+                            text : labels[i],
+                            marker: {size: 10},
+                            mode: 'markers',
+                            name: aSite + "XO3",
+                            type: 'scatter'
+                        }];
+                        Plotly.addTraces(graph, data);
+                    }
+                    xVals=xClone;
+                    yVals=yClone;
+                    names=nClone;
                 }
             }
-            var graph = document.getElementById('graph');
-            var layout = {
-                margin: {t: 0},
-                xaxis: {title: 'O p-band center energy(eV)'},
-                yaxis: {title: 'Migration Barrier(eV)'}
-            };
-            var data = [];
-            Plotly.newPlot(graph, [data], layout);
-            
-            var labels = []; var xTraces = []; var yTraces= [];
-            while( names[0] != null){
-                var aSite = findASite(names[0]);
-                
-                //make temporary lists
-                var tempLabel = [];
-                var tempX = [];
-                var tempY = [];
-                
-                //put first element in the lists
-                tempLabel.push(names[0]);
-                tempX.push(xVals[0]);
-                tempY.push(yVals[0]);
-                
-                //delete said element from the parent lists
-                names.splice(0,1);
-                xVals.splice(0,1);
-                yVals.splice(0,1);
-                //go through rest of list looking for matching aSites
-                for(var i = 0; i < names.length; i++){
-                    if( findASite(names[i]) == aSite ){
-                        //push into temp lists
-                        tempLabel.push(names[i]);
-                        tempX.push(xVals[i]);
-                        tempY.push(yVals[i]);
-                        
-                        //delete said element from the parent lists
-                        names.splice(i,1);
-                        xVals.splice(i,1);
-                        yVals.splice(i,1);
-                        
-                        //decrement i so as to not skip values
-                        i--;
-                     }
-                 }
-                    
-                    labels.push(tempLabel);
-                    xTraces.push(tempX);
-                    yTraces.push(tempY);
+    
+            $( "#xChoose" ).change(function() {
+                xKey = this.options[this.selectedIndex].value;
+                xVals = [];
+                xTitle=xKey;
+                for (i=0; i < rows.length; i++){ xVals.push(rows[i][xKey]); }
+                plot();
+            });
+        
+            $( "#yChoose" ).change(function() {
+                yKey = this.options[this.selectedIndex].value;
+                yVals = [];
+                yTitle=yKey;
+                for (i=0; i< rows.length; i++){ yVals.push(rows[i][yKey]); }
+                plot();
+            });
 
-            }
-            
-            for (var i = 0; i < labels.length; i++){
-                var aSite = findASite(labels[i][0]);
-                
-                var data = [ {
-                x : xTraces[i],
-                y : yTraces[i],
-                text : labels[i],
-                marker: {size: 10},
-                mode: 'markers',
-                name: aSite + "XO3",
-                type: 'scatter'
-                }];
-               Plotly.addTraces(graph, data);
-            }
+
         });
     });
 });
