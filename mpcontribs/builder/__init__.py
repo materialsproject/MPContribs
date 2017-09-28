@@ -11,7 +11,7 @@ from nbconvert.preprocessors.execute import CellExecutionError
 from nbconvert import HTMLExporter
 from bs4 import BeautifulSoup
 
-def export_notebook(nb, cid, set_div_names=True, separate_script=False):
+def export_notebook(nb, cid, separate_script=False):
     html_exporter = HTMLExporter()
     html_exporter.template_file = 'basic'
     (body, resources) = html_exporter.from_notebook_node(nb)
@@ -22,12 +22,13 @@ def export_notebook(nb, cid, set_div_names=True, separate_script=False):
     # mark cells with special name for toggling, and
     # make element id's unique by appending cid
     # NOTE every cell has only one tag with id
+    div_name = None
     for idx, div in enumerate(soup.find_all('div', 'cell')[1:]):
         tag = div.find('h2', id=True)
         if tag is not None:
             tag['id'] = '-'.join([tag['id'], str(cid)])
             div_name = tag['id'].split('-')[0]
-        if set_div_names:
+        if div_name is not None:
             div['name'] = div_name
     # name divs for toggling code_cells
     for div in soup.find_all('div', 'input'):
