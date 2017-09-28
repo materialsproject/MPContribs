@@ -1,0 +1,42 @@
+{% extends "../../webtzite/templates/base/header_footer.html" %}
+{% load staticfiles %}
+
+{% block title %} DLR Vieten {% endblock title %}
+
+{% block extra_css %}
+<link rel="stylesheet" href='{% static "js/components/backgrid/lib/backgrid.css" %}' charset="utf-8">
+<link rel="stylesheet" href='{% static "js/components/json-human/css/json.human.css" %}' charset="utf-8">
+{% endblock extra_css %}
+
+{% block content %}
+
+{% if alert %}
+<div class="alert alert-warning alert-dismissible" role="alert">
+  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+    <span aria-hidden="true">&times;</span>
+  </button>
+  {{ alert }}
+</div>
+
+{% else %}
+
+<style>
+.backgrid .string-cell { text-align: center; }
+.backgrid tbody tr:hover { background-color: #f9f9f9; }
+</style>
+
+<div class="container">
+
+    <div class="row">
+        <h2>{{ title }}</h2>
+        {{ provenance|safe }}
+    </div>
+    <div class="row">
+        <h3>Data</h3>
+        {{ table|safe }}
+    </div>
+
+</div>
+
+{% endif %}
+{% endblock %}

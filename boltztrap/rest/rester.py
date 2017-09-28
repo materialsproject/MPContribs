@@ -6,13 +6,13 @@ from pandas import DataFrame
 class BoltztrapRester(MPContribsRester):
     """Boltztrap-specific convenience functions to interact with MPContribs REST interface"""
     query = {'content.doi': '10.1038/sdata.2017.85'}
-    provenance_keys = ['title', 'authors', 'journal', 'doi']
+    provenance_keys = ['title', 'authors', 'journal', 'doi', 'remarks']
 
     def get_contributions(self):
         data = []
-        columns = ['mp-id', 'contribution']
+        columns = ['mp-id', 'contribution', 'volume', 'formula']
 
-        docs = self.query_contributions(projection={'_id': 1, 'mp_cat_id': 1})
+        docs = self.query_contributions(projection={'_id': 1, 'mp_cat_id': 1, 'content': 1})
         if not docs:
             raise Exception('No contributions found for Boltztrap Explorer!')
 
@@ -24,7 +24,7 @@ class BoltztrapRester(MPContribsRester):
                 self.preamble.rsplit('/', 1)[0], 'explorer', 'materials', doc['_id']
             ])
             row = [
-                mp_id, cid_url,
+                mp_id, cid_url, contrib['volume'], contrib['pretty_formula']
             ]
             data.append((mp_id, row))
         return DataFrame.from_items(data, orient='index', columns=columns)
