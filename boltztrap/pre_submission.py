@@ -103,8 +103,8 @@ def run(mpfile, nmax=1, dup_check_test_site=True):
             mpfile.add_data_table(data['mp_id'], df, table_name)
 
             #add data table
-            for df,tn in zip(dfs,table_names):
-                mpfile.add_data_table(data['mp_id'], df, tn)
+#            for df,tn in zip(dfs,table_names):
+#                mpfile.add_data_table(data['mp_id'], df, tn)
             
 
         finally:
