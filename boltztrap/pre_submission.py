@@ -39,8 +39,6 @@ def run(mpfile, nmax=1, dup_check_test_site=True):
             #    identifier=data['mp_id'], fmt='cif'
             #)
 
-            #add table of max avg eigenv for seebeck, conductivity and kappa_el
-
             
             #add data table for cond eff mass
             columns = ['type','eig_1','eig_2','eig_3','average']
@@ -67,11 +65,11 @@ def run(mpfile, nmax=1, dup_check_test_site=True):
             dfs = []
             table_names = []
             max_values = []
-            columns_max = ['property']+['max value n','temperature (K) n','Doping (cm-3) n']+\
-                          ['max value p','temperature (K) p','Doping (cm-3) p']
+            columns_max = ['property','type','max value','temperature (K)','Doping (cm-3)']
+
             for prop_name in ['seebeck_doping','cond_doping','kappa_doping']:
-                max_values.append([prop_name.split('_')[0]])
                 for doping_type in ['n', 'p']:
+                    max_values.append([prop_name.split('_')[0],doping_type])
                     prop = data['GGA'][prop_name][doping_type]
                     prop_averages, dopings, columns = [], None, ['T (K)']
                     temps = sorted(map(int, prop.keys()))
@@ -90,19 +88,24 @@ def run(mpfile, nmax=1, dup_check_test_site=True):
                     max_v = np.max(arr_prop_avg)
                     if prop_name[0] == 's' and doping_type == 'n':
                         max_v = np.min(arr_prop_avg)
+                    if prop_name[0] == 'k':
+                        max_v = np.min(arr_prop_avg)
                     arg_max = np.argwhere(arr_prop_avg==max_v)[0]
                     max_values[-1].extend([max_v,temps[arg_max[0]],dopings[arg_max[1]]])
                     dfs.append(DataFrame.from_records(prop_averages, columns=columns))
                     table_names.append(doping_type + '-type average ' + prop_name)
             print max_values
             print np.shape(max_values)
-            # add max values table    
+            
+           # add max values table    
             df = DataFrame.from_records(max_values, columns=columns_max)
             table_name = 'max_values'
             mpfile.add_data_table(data['mp_id'], df, table_name)
+
             #add data table
             for df,tn in zip(dfs,table_names):
                 mpfile.add_data_table(data['mp_id'], df, tn)
+            
 
         finally:
             input_file.close()
