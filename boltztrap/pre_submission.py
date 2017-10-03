@@ -63,6 +63,7 @@ def run(mpfile, nmax=1, dup_check_test_site=True):
                 print "no data for effective mass"
 
             # build data and max values table for seebeck, conductivity and kappa
+            # max/min values computed using numpy. It may be better to code it in pure python.
             dfs = []
             table_names = []
             max_values = []
