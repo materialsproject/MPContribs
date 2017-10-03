@@ -41,7 +41,7 @@ def run(mpfile, nmax=1, dup_check_test_site=True):
 
             
             #add data table for cond eff mass
-            columns = ['type','eig_1','eig_2','eig_3','average']
+            columns = ['type','eig_1 (m$_e$)','eig_2 (m$_e$)','eig_3 (m$_e$)','average (m$_e$)']
             eff_mass_data = []
             if data['GGA']['cond_eff_mass'] != {}:
                 for dt in ['n', 'p']:
@@ -54,7 +54,7 @@ def run(mpfile, nmax=1, dup_check_test_site=True):
                     eff_mass_data.append(row)
 
                 df = DataFrame.from_records(eff_mass_data, columns=columns)
-                table_name = "cond_eff_mass_eigs_300K_1e18"
+                table_name = "cond_eff_mass"
                 mpfile.add_data_table(data['mp_id'], df, table_name)
                 print "eff mass table added",eff_mass_data
             else:
@@ -65,11 +65,21 @@ def run(mpfile, nmax=1, dup_check_test_site=True):
             dfs = []
             table_names = []
             max_values = []
-            columns_max = ['property','type','max value','temperature (K)','Doping (cm-3)']
+            columns_max = ['property','type','value','temperature (K)','Doping (cm$^-3$)']
 
             for prop_name in ['seebeck_doping','cond_doping','kappa_doping']:
                 for doping_type in ['n', 'p']:
-                    max_values.append([prop_name.split('_')[0],doping_type])
+                    #TODO: make latex working
+                    #if I insert latex format in a cell, the cell itself is not going to be shown
+                    #while in the header the text appears as I wrote it here
+                    if prop_name[0] == 's':
+                        lbl = "max Seebeck" #"Seebeck $\mu$V/K"
+                    elif prop_name[0] == 'c':
+                        lbl = "max Conductivity" #$\Sigma$ m s)$-1$"
+                    elif prop_name[0] == 'k':                        
+                        lbl = "min k_el" #k$_el$ W/(m K s)"
+                    
+                    max_values.append([lbl,doping_type])
                     prop = data['GGA'][prop_name][doping_type]
                     prop_averages, dopings, columns = [], None, ['T (K)']
                     temps = sorted(map(int, prop.keys()))
@@ -80,7 +90,7 @@ def run(mpfile, nmax=1, dup_check_test_site=True):
                         for doping in dopings:
                             doping_str = '%.0e' % doping
                             if len(columns) <= len(dopings):
-                                columns.append(doping_str + ' cm-3')
+                                columns.append(doping_str + ' cm$^-3$')
                             eigs = prop[str(temp)][doping_str]['eigs']
                             row.append(np.mean(eigs))
                         prop_averages.append(row)
