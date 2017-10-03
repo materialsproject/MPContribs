@@ -39,6 +39,7 @@ def run(mpfile, nmax=1, dup_check_test_site=True):
             #    identifier=data['mp_id'], fmt='cif'
             #)
 
+            #TODO: add a text for the description of each table
             
             #add data table for cond eff mass
             columns = ['type','eig_1 (m$_e$)','eig_2 (m$_e$)','eig_3 (m$_e$)','average (m$_e$)']
