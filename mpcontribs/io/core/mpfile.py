@@ -57,12 +57,10 @@ class MPFileCore(six.with_metaclass(ABCMeta, object)):
         Returns:
             MPFile object.
         """
-        if isinstance(filename_or_file, six.string_types):
-            lang, encoding = locale.getdefaultlocale()
-            file_string = codecs.open(filename_or_file, encoding=encoding).read()
-        else:
-            file_string = filename_or_file.read()
-        return cls.from_string(file_string)
+        f = open(filename_or_file) \
+            if isinstance(filename_or_file, six.string_types) \
+            else filename_or_file
+        return cls.from_string(f.read())
 
     @classmethod
     def from_dict(cls, data=RecursiveDict()):

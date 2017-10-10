@@ -87,9 +87,9 @@ class MPFile(MPFileCore):
                     isinstance(col, unicode) or isinstance(col, str)
                 ) for col in pd_obj])
                 csv_string = pd_obj.to_csv(
-                    index=False, header=header, float_format='%g'
+                    index=False, header=header, float_format='%g', encoding='utf-8'
                 )[:-1]
-                lines += csv_string.split('\n')
+                lines += csv_string.decode('utf-8').split('\n')
             elif isinstance(value, Structure):
                 cif = CifWriter(value, symprec=symprec).__str__()
                 lines.append(make_pair(
@@ -97,6 +97,7 @@ class MPFile(MPFileCore):
                 ))
             else:
                 level, key = key
+                key = key if isinstance(key, unicode) else key.decode('utf-8')
                 # truncate scope
                 level_reduction = bool(level < len(scope))
                 if level_reduction: del scope[level:]
@@ -122,7 +123,7 @@ class MPFile(MPFileCore):
                     lines.append(start+'.'.join(scope_corr)+end)
                 # insert key-value line
                 if value is not None:
-                    val = unicode(value)
+                    val = unicode(value) if not isinstance(value, str) else value
                     value_lines = [val] if val.startswith('http') \
                             else textwrap.wrap(val)
                     if len(value_lines) > 1:

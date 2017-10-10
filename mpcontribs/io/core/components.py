@@ -51,7 +51,7 @@ def get_backgrid_table(df):
     for k in df.columns:
         is_url_column = None
         for row_index in xrange(nrows):
-            cell = str(df[k][row_index])
+            cell = unicode(df[k][row_index])
             is_url_column = not cell # empty string is ok
             if not is_url_column:
                 is_url_column = mp_id_pattern.match(cell)
@@ -70,7 +70,7 @@ def get_backgrid_table(df):
     for row_index in xrange(nrows):
         table['rows'].append({})
         for col in df.columns:
-            value = str(df[col][row_index])
+            value = unicode(df[col][row_index])
             if mp_id_pattern.match(value):
                 value = 'https://materialsproject.org/materials/{}'.format(value)
             table['rows'][row_index][col] = value

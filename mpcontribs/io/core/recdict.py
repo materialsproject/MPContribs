@@ -41,8 +41,12 @@ class RecursiveDict(_OrderedDict):
                 replace_newlines = bool(key != mp_level01_titles[3])
                 self[key].rec_update(other=value, overwrite=overwrite, replace_newlines=replace_newlines)
             elif (key in self and overwrite) or key not in self:
-              self[key] = value.replace('\n', ' ') if isinstance(value, six.string_types) \
-                      and replace_newlines else value
+                if isinstance(value, six.string_types) and replace_newlines:
+                    if not isinstance(value, unicode):
+                        value = value.decode('utf-8')
+                    self[key] = value.replace('\n', ' ')
+                else:
+                    self[key] = value
 
     def iterate(self, nested_dict=None):
         """http://stackoverflow.com/questions/10756427/loop-through-all-nested-dictionary-values"""
