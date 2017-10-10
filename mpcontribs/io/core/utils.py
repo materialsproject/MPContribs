@@ -23,10 +23,11 @@ def get_short_object_id(cid):
         cid_short = str(cid)[:length]
     return cid_short
 
-def make_pair(key, value, sep=':'):
+def make_pair(key, value, sep=u':'):
     """make a key-value pair"""
-    if not isinstance(value, six.string_types): value = str(value)
-    return '{} '.format(sep).join([key, value])
+    if not isinstance(value, six.string_types):
+        value = unicode(value)
+    return u'{} '.format(sep).join([key, value])
 
 def pandas_to_dict(pandas_object):
     """convert pandas object to dict"""

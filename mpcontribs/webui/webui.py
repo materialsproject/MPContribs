@@ -127,7 +127,7 @@ def reset_session():
 def read_mpfile_to_view():
     output_mpfile_path = default_mpfile_path.replace('.txt', '_out.txt')
     if os.path.exists(output_mpfile_path):
-        return codecs.open(output_mpfile_path, encoding='utf-8').read()
+        return open(output_mpfile_path).read()
     else:
         return session.get('mpfile')
 
