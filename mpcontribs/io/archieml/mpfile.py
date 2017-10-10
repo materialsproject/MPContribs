@@ -79,7 +79,7 @@ class MPFile(MPFileCore):
     def get_string(self):
         lines, scope = [], []
         table_start = mp_level01_titles[1]+'_'
-        replacements = {' ': '_', ',': '', '[': '', ']': ''}
+        replacements = {' ': '_', '[': '', ']': '', '{': '', '}': '', ':': '_'}
         for key,value in self.document.iterate():
             if key is None and isinstance(value, dict):
                 pd_obj = pandas.DataFrame.from_dict(value)
