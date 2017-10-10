@@ -6,11 +6,15 @@ from pandas import DataFrame
 class BoltztrapRester(MPContribsRester):
     """Boltztrap-specific convenience functions to interact with MPContribs REST interface"""
     query = {'content.doi': '10.1038/sdata.2017.85'}
-    provenance_keys = ['title', 'authors', 'journal', 'doi', 'remarks']
+    provenance_keys = ['title', 'authors', 'journal', 'doi', 'url', 'remarks']
 
     def get_contributions(self):
         data = []
-        columns = ['mp-id', 'contribution', 'avg cond eff mass n','avg cond eff mass p','volume', 'formula']
+        columns = [
+            'mp-id', 'contribution',
+            'avg cond eff mass n', 'avg cond eff mass p',
+            'volume', 'formula'
+        ]
 
         docs = self.query_contributions(projection={'_id': 1, 'mp_cat_id': 1, 'content': 1})
         if not docs:

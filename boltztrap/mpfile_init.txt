@@ -7,7 +7,7 @@ Rignanese, Anubhav Jain, Geoffroy Hautier
 
 journal: Scientific Data 4, 170085 (2017)
 doi: 10.1038/sdata.2017.85
-link: https://www.nature.com/articles/sdata201785
+url: https://www.nature.com/articles/sdata201785
 input_dir: /wkshp_shared/fricci
 
 remarks:
