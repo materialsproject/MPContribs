@@ -7,10 +7,9 @@ Rignanese, Anubhav Jain, Geoffroy Hautier
 
 journal: Scientific Data 4, 170085 (2017)
 doi: 10.1038/sdata.2017.85
+url: https://www.nature.com/articles/sdata201785
 input_dir: /wkshp_shared/fricci
 
 remarks:
 The properties reported here are divided by the constant relaxation time tau.
-The zT value is computed assuming a constant k_lattice = 1 W/(m*K*s). See <link
-to the wikipage>.
 :end

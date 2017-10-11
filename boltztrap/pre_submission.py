@@ -1,11 +1,12 @@
+# -*- coding: utf-8 -*-
 import os, gzip, json
 import numpy as np
 from pandas import DataFrame
 from mpcontribs.io.core.recdict import RecursiveDict
-from mpcontribs.io.core.utils import get_composition_from_string
+from mpcontribs.io.core.utils import nest_dict
 from mpcontribs.users.boltztrap.rest.rester import BoltztrapRester
 
-def run(mpfile, nmax=5, dup_check_test_site=True):
+def run(mpfile, nmax=1, dup_check_test_site=True):
 
     # book-keeping
     existing_mpids = {}
@@ -19,47 +20,76 @@ def run(mpfile, nmax=5, dup_check_test_site=True):
     # extract data from json files
     keys = ['pretty_formula', 'volume']
     input_dir = mpfile.hdata.general['input_dir']
-    for idx, fn in enumerate(os.listdir(input_dir)):
+    for idx, fn in enumerate(os.listdir(input_dir)[::-1]):
         print(fn)
         input_file = gzip.open(os.path.join(input_dir, fn), 'rb')
         try:
             data = json.loads(input_file.read())
 
             # add hierarchical data (nested key-values)
-            # TODO: extreme values for Seebeck, conductivity, power factor, zT, effective mass
+            # TODO: extreme values for power factor, zT, effective mass
+            # TODO: add a text for the description of each table
+            hdata = RecursiveDict((k, data[k]) for k in keys)
+            hdata['cond_eff_mass'] = RecursiveDict()
+            names = [u'ε₁', u'ε₂', u'ε₃', u'<ε>']
+            for dt, d in data['GGA']['cond_eff_mass'].items():
+                eff_mass = d['300']['1e+18']
+                eff_mass.append(np.mean(eff_mass))
+                hdata['cond_eff_mass'][dt] = RecursiveDict(
+                    (names[idx], u'{:.4f} mₑ'.format(x))
+                    for idx, x in enumerate(eff_mass)
+                )
+
+            # build data and max values for seebeck, conductivity and kappa
+            # max/min values computed using numpy. It may be better to code it in pure python.
+            cols = ['value', 'temperature', 'doping']
+            for prop_name in ['seebeck_doping', 'cond_doping', 'kappa_doping']:
+                if prop_name[0] == 's':
+                    lbl, unit = u"seebeck", u"μV/K"
+                elif prop_name[0] == 'c':
+                    lbl, unit = u"Σ", u"(ms)⁻¹"
+                elif prop_name[0] == 'k':
+                    lbl, unit = u"κₑ", u"W/(mKs)"
+                hdata[lbl] = RecursiveDict()
+
+                for doping_type in ['p', 'n']:
+                    prop = data['GGA'][prop_name][doping_type]
+                    prop_averages, dopings, columns = [], None, ['T (K)']
+                    temps = sorted(map(int, prop.keys()))
+                    for temp in temps:
+                        row = [temp]
+                        if dopings is None:
+                            dopings = sorted(map(float, prop[str(temp)].keys()))
+                        for doping in dopings:
+                            doping_str = '%.0e' % doping
+                            if len(columns) <= len(dopings):
+                                columns.append(doping_str + u' cm⁻³')
+                            eigs = prop[str(temp)][doping_str]['eigs']
+                            row.append(np.mean(eigs))
+                        prop_averages.append(row)
+
+                    arr_prop_avg = np.array(prop_averages)[:,1:]
+                    max_v = np.max(arr_prop_avg)
+                    if prop_name[0] == 's' and doping_type == 'n':
+                        max_v = np.min(arr_prop_avg)
+                    if prop_name[0] == 'k':
+                        max_v = np.min(arr_prop_avg)
+                    arg_max = np.argwhere(arr_prop_avg==max_v)[0]
+
+                    vals = [
+                        u'{} {}'.format(max_v, unit),
+                        u'{} K'.format(temps[arg_max[0]]),
+                        u'{} cm⁻³'.format(dopings[arg_max[1]])
+                    ]
+                    hdata[lbl][doping_type] = RecursiveDict(
+                        (k, v) for k, v in zip(cols, vals)
+                    )
+
             mpfile.add_hierarchical_data(
-                RecursiveDict((k, data[k]) for k in keys),
-                identifier=data['mp_id']
+                nest_dict(hdata, ['data']), identifier=data['mp_id']
             )
-
-            # add structure; TODO necessary only if not canonical from MP
-            #name = get_composition_from_string(data['pretty_formula'])
-            #mpfile.add_structure(
-            #    data['cif_structure'], name=name,
-            #    identifier=data['mp_id'], fmt='cif'
-            #)
-
-            # add data table
-            for doping_type in ['n', 'p']:
-                seebeck = data['GGA']['seebeck_doping'][doping_type]
-                seebeck_averages, dopings, columns = [], None, ['T']
-                temps = sorted(map(int, seebeck.keys()))
-                for temp in temps:
-                    row = ['{} K'.format(temp)]
-                    if dopings is None:
-                        dopings = sorted(map(float, seebeck[str(temp)].keys()))
-                    for doping in dopings:
-                        doping_str = '%.0e' % doping
-                        if len(columns) <= len(dopings):
-                            columns.append(doping_str + ' cm-3')
-                        eigs = seebeck[str(temp)][doping_str]['eigs']
-                        row.append(np.mean(eigs))
-                    seebeck_averages.append(row)
-                df = DataFrame.from_records(seebeck_averages, columns=columns)
-                table_name = doping_type + '-type average seeback'
-                mpfile.add_data_table(data['mp_id'], df, table_name)
 
         finally:
             input_file.close()
-        if idx >= nmax+1:
+        if idx >= nmax-1:
             break
