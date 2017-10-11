@@ -1,5 +1,13 @@
 {% extends "../../webtzite/templates/base/header_footer.html" %}
 {% block content %}
+{% if alert %}
+<div class="alert alert-warning alert-dismissible" role="alert">
+  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+    <span aria-hidden="true">&times;</span>
+  </button>
+  {{ alert }}
+</div>
+{% else %}
 <div class="container">
   <div class="detail" id="{% block detail_id %}{% endblock %}">
     <div class="row detail-header">
@@ -13,4 +21,5 @@
     {% block detail_content %}{% endblock %}
   </div>
 </div>
+{% endif %}
 {% endblock content %}
