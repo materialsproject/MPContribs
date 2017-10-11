@@ -2,7 +2,8 @@
 # https://github.com/materialsproject/pymatgen/blob/1eb2f2f/pymatgen/matproj/rest.py
 from __future__ import division, unicode_literals
 import os, requests, warnings, urlparse
-from bson.json_util import loads
+from bson.json_util import loads, JSONOptions
+from collections import OrderedDict
 import webtzite.configure_settings
 import django
 django.setup()
@@ -81,7 +82,7 @@ class MPResterBase(object):
             headers["X-CSRFToken"] = self.session.cookies.get('csrftoken')
             response = self.session.request(method, url=url, headers=headers, data=payload)
             if response.status_code in [200, 400]:
-                data = loads(response.text)
+                data = loads(response.text, json_options=JSONOptions(document_class=OrderedDict))
                 if data["valid_response"]:
                     if data.get("warning"):
                         warnings.warn(data["warning"])
