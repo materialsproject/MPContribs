@@ -27,7 +27,7 @@ def run(mpfile, nmax=1, dup_check_test_site=True):
             data = json.loads(input_file.read())
 
             # add hierarchical data (nested key-values)
-            # TODO: extreme values for Seebeck, conductivity, power factor, zT, effective mass
+            # TODO: extreme values for power factor, zT, effective mass
             # TODO: add a text for the description of each table
             hdata = RecursiveDict((k, data[k]) for k in keys)
             hdata['cond_eff_mass'] = RecursiveDict()
@@ -44,16 +44,15 @@ def run(mpfile, nmax=1, dup_check_test_site=True):
             # max/min values computed using numpy. It may be better to code it in pure python.
             cols = ['value', 'temperature', 'doping']
             for prop_name in ['seebeck_doping', 'cond_doping', 'kappa_doping']:
-                # TODO move units to value/number
                 if prop_name[0] == 's':
-                    lbl = u"Seebeck μV/K"
+                    lbl, unit = u"seebeck", u"μV/K"
                 elif prop_name[0] == 'c':
-                    lbl = u"Σ (ms)⁻¹"
+                    lbl, unit = u"Σ", u"(ms)⁻¹"
                 elif prop_name[0] == 'k':
-                    lbl = u"κₑ W/(mKs)"
+                    lbl, unit = u"κₑ", u"W/(mKs)"
                 hdata[lbl] = RecursiveDict()
 
-                for doping_type in ['n', 'p']:
+                for doping_type in ['p', 'n']:
                     prop = data['GGA'][prop_name][doping_type]
                     prop_averages, dopings, columns = [], None, ['T (K)']
                     temps = sorted(map(int, prop.keys()))
@@ -78,7 +77,8 @@ def run(mpfile, nmax=1, dup_check_test_site=True):
                     arg_max = np.argwhere(arr_prop_avg==max_v)[0]
 
                     vals = [
-                        max_v, u'{} K'.format(temps[arg_max[0]]),
+                        u'{} {}'.format(max_v, unit),
+                        u'{} K'.format(temps[arg_max[0]]),
                         u'{} cm⁻³'.format(dopings[arg_max[1]])
                     ]
                     hdata[lbl][doping_type] = RecursiveDict(
