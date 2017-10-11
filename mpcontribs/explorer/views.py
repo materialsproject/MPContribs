@@ -83,7 +83,8 @@ def index(request, collection='materials'):
     return render_to_response("mpcontribs_explorer_index.html", locals(), ctx)
 
 def contribution(request, collection, cid):
-    material = {}
+    material = {'detail_id': collection[:-1]}
+    ctx = RequestContext(request)
     if request.user.is_authenticated():
         API_KEY = request.user.api_key
         ENDPOINT = request.build_absolute_uri(get_endpoint())
@@ -95,8 +96,9 @@ def contribution(request, collection, cid):
             material['nb'], material['nb_js'] = export_notebook(
                 nbformat.from_dict(material['nb']), cid, separate_script=True
             )
-    material['detail_id'] = collection[:-1]
-    ctx = RequestContext(request, {'material': jsanitize(material)})
+            ctx.update({'material': jsanitize(material)})
+    else:
+        ctx.update({'alert': 'Please log in!'})
     return render_to_response("mpcontribs_explorer_contribution.html", locals(), ctx)
 
 def cif(request, cid, structure_name):
