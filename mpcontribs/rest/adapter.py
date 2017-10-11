@@ -23,10 +23,16 @@ class ContributionMongoAdapter(object):
         import os
         from pymongo import MongoClient
         from monty.serialization import loadfn
-        config = loadfn(os.path.join(os.environ['DB_LOC'], db_yaml))
-        client = MongoClient(config['host'], config['port'], j=False)
-        db = client[config['db']]
-        db.authenticate(config['username'], config['password'])
+        db_loc = os.environ.get('DB_LOC', '')
+        config_path = os.path.join(db_loc, db_yaml)
+        if os.path.exists(config_path):
+            config = loadfn(config_path)
+            client = MongoClient(config['host'], config['port'], j=False)
+            db = client[config['db']]
+            db.authenticate(config['username'], config['password'])
+        else:
+            client = MongoClient(j=False)
+            db = client['mpcontribs']
         return ContributionMongoAdapter(db)
 
     def _reset(self):
