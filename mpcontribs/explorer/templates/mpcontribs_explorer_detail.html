@@ -8,6 +8,12 @@
   {{ alert }}
 </div>
 {% else %}
+<style>
+    .jh-root {font-family: "symbola"; }
+    .backgrid {font-family: "symbola"; }
+    .backgrid tbody tr:hover { background-color: #f9f9f9; }
+    .jh-type-string { font-style: normal; }
+</style>
 <div class="container">
   <div class="detail" id="{% block detail_id %}{% endblock %}">
     <div class="row detail-header">

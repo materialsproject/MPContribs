@@ -19,7 +19,12 @@
     <link rel="stylesheet" type="text/css" href="{{ url_for('.static', filename='css/codemirror.min.css') }}"/>
     <link rel="stylesheet" type="text/css" href="{{ url_for('.static', filename='css/bootstrap-toggle.css') }}"/>
     <link rel="stylesheet" type="text/css" href="{{ url_for('.static', filename='css/font-awesome-4.6.3/css/font-awesome.min.css') }}"/>
-    <style> body {padding-top: 150px;}</style>
+    <style>
+        body {padding-top: 150px;}
+        .jh-root {font-family: "symbola"; }
+        .backgrid {font-family: "symbola"; }
+        .backgrid tbody tr:hover { background-color: #f9f9f9; }
+    </style>
     <link rel="icon" href="data:;base64,=">
 
     {% if alert %}
