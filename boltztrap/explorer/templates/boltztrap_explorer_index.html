@@ -20,9 +20,19 @@
 
 {% else %}
 
+<div class="alert alert-warning alert-dismissible" role="alert">
+  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+    <span aria-hidden="true">&times;</span>
+  </button>
+  This page uses the Symbola font. Please install it from
+  https://fonts2u.com/symbola.font to display this page correctly.
+</div>
+
 <style>
-.backgrid .string-cell { text-align: center; }
+.backgrid { font-family: "symbola"; }
 .backgrid tbody tr:hover { background-color: #f9f9f9; }
+.jh-root { font-family: "symbola"; }
+.jh-type-string { font-style: normal; }
 </style>
 
 <div class="container">
@@ -31,10 +41,12 @@
         <h2>{{ title }}</h2>
         {{ provenance|safe }}
     </div>
+    {% for doping, table in tables.items %}
     <div class="row">
-        <h3>Data</h3>
+        <h3>{{ doping|safe }}-type</h3>
         {{ table|safe }}
     </div>
+    {% endfor %}
 
 </div>
 

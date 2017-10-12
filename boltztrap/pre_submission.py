@@ -21,7 +21,8 @@ def run(mpfile, nmax=1, dup_check_test_site=True):
     keys = ['pretty_formula', 'volume']
     input_dir = mpfile.hdata.general['input_dir']
     for idx, fn in enumerate(os.listdir(input_dir)[::-1]):
-        print(fn)
+        mpid = fn.split('.', 1)[0].rsplit('_', 1)[1]
+        print(mpid)
         input_file = gzip.open(os.path.join(input_dir, fn), 'rb')
         try:
             data = json.loads(input_file.read())
@@ -30,12 +31,13 @@ def run(mpfile, nmax=1, dup_check_test_site=True):
             # TODO: extreme values for power factor, zT, effective mass
             # TODO: add a text for the description of each table
             hdata = RecursiveDict((k, data[k]) for k in keys)
-            hdata['cond_eff_mass'] = RecursiveDict()
+            cond_eff_mass = u'mₑᶜᵒⁿᵈ'
+            hdata[cond_eff_mass] = RecursiveDict()
             names = [u'ε₁', u'ε₂', u'ε₃', u'<ε>']
             for dt, d in data['GGA']['cond_eff_mass'].items():
                 eff_mass = d['300']['1e+18']
                 eff_mass.append(np.mean(eff_mass))
-                hdata['cond_eff_mass'][dt] = RecursiveDict(
+                hdata[cond_eff_mass][dt] = RecursiveDict(
                     (names[idx], u'{:.4f} mₑ'.format(x))
                     for idx, x in enumerate(eff_mass)
                 )
@@ -44,12 +46,14 @@ def run(mpfile, nmax=1, dup_check_test_site=True):
             # max/min values computed using numpy. It may be better to code it in pure python.
             cols = ['value', 'temperature', 'doping']
             for prop_name in ['seebeck_doping', 'cond_doping', 'kappa_doping']:
+                # TODO install Symbola font if you see squares here (https://fonts2u.com/symbola.font)
+                # and select it as standard font in your browser (leave other fonts as is, esp. fixed width)
                 if prop_name[0] == 's':
-                    lbl, unit = u"seebeck", u"μV/K"
+                    lbl, unit = u"Sₘₐₓ", u"μV/K"
                 elif prop_name[0] == 'c':
-                    lbl, unit = u"Σ", u"(ms)⁻¹"
+                    lbl, unit = u"σₘₐₓ", u"(Ωms)⁻¹"
                 elif prop_name[0] == 'k':
-                    lbl, unit = u"κₑ", u"W/(mKs)"
+                    lbl, unit = u"κₑ₋ₘᵢₙ", u"W/(mKs)"
                 hdata[lbl] = RecursiveDict()
 
                 for doping_type in ['p', 'n']:
@@ -88,6 +92,11 @@ def run(mpfile, nmax=1, dup_check_test_site=True):
             mpfile.add_hierarchical_data(
                 nest_dict(hdata, ['data']), identifier=data['mp_id']
             )
+
+            if mpid in existing_mpids:
+                cid = existing_mpids[mpid]
+                mpfile.insert_id(mpid, cid)
+                print cid, 'inserted to update', mpid
 
         finally:
             input_file.close()

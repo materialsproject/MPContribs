@@ -18,7 +18,10 @@ def index(request):
                 prov = mpr.get_provenance()
                 title = prov.get('title')
                 provenance = render_dict(prov, webapp=True)
-                table = render_dataframe(mpr.get_contributions(), webapp=True)
+                tables = {}
+                for doping in ['n', 'p']:
+                    df = mpr.get_contributions(doping=doping)
+                    tables[doping] = render_dataframe(df, webapp=True)
             except Exception as ex:
                 ctx.update({'alert': str(ex)})
     else:

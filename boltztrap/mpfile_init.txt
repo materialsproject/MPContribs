@@ -12,4 +12,7 @@ input_dir: /wkshp_shared/fricci
 
 remarks:
 The properties reported here are divided by the constant relaxation time tau.
+S is the Seebeck coefficient, σ the conductivity, mₑᶜᵒⁿᵈ the effective mass for
+conductivity calculation, and κₑ the ...
+<also describe temp/doping for cond_eff_mass here>
 :end
