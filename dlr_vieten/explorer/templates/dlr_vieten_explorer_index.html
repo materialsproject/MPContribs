@@ -21,8 +21,10 @@
 {% else %}
 
 <style>
-.backgrid .string-cell { text-align: center; }
+.backgrid { font-family: "symbola"; }
 .backgrid tbody tr:hover { background-color: #f9f9f9; }
+.jh-root { font-family: "symbola"; }
+.jh-type-string { font-style: normal; }
 </style>
 
 <div class="container">
@@ -34,6 +36,10 @@
     <div class="row">
         <h3>Data</h3>
         {{ table|safe }}
+    </div>
+    <div class="row">
+        <h3>Ionic Radii</h3>
+        {{ ionic_radii|safe }}
     </div>
 
 </div>

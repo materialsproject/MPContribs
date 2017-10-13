@@ -18,7 +18,11 @@ def index(request):
                 prov = mpr.get_provenance()
                 title = prov.get('title')
                 provenance = render_dict(prov, webapp=True)
-                table = render_dataframe(mpr.get_contributions(), webapp=True)
+                try:
+                    table = render_dataframe(mpr.get_contributions(), webapp=True)
+                except:
+                    table = 'No Data Available!'
+                ionic_radii = render_dataframe(mpr.get_ionic_radii(), webapp=True)
             except Exception as ex:
                 ctx.update({'alert': str(ex)})
     else:
