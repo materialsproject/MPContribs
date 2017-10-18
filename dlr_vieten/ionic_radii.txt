@@ -1,0 +1,439 @@
+title: Ionic Radii
+author: Josua Vieten
+
+temperature_effects:
+The values specified are valid for approx 0 - 500 K. In this temperature range,
+temperature effects on the tolerance factor are < 0.002 and therefore assumed
+neglible. Higher temperature typcially increases the tolerance factors, as
+specified in Dabrowski et al., J Sol State Chem 170 (2003) 154–164,
+dx.doi.org/10.1016/S0022-4596(02)00056-7. As a rule of thumb (estimated from
+Fig. 6 in Dabrowski et al.): 800 K → 0.005; 1000 K → 0.010; 1300 K → 0.020. Due
+to temperature effects, it can make a difference in crystal structure whether a
+certain reduction level is obtained thermally or by decrease in partial
+pressure!
+:end
+
+spin_effects:
+select `HS` for high spin configuration and `LS` for low spin configuration
+where applicable. Most perovskites show high spin configuration under ambient
+temperature and pressure conditions.
+:end
+
+reduction_extent: All ions in oxidation state 4+ at 0%, and all ions in oxidation state 3+ at 100%
+
+tolerance_factor.remarks:
+to be reached at target reduction extent and RT (approx.  values, dependent on
+composition - values listed have been multiplied by 1000)
+:end
+
+{A-site_coordination}
+
+remarks:
+Complete 13-fold coordination assumed at 100% and complete 10-fold coordination
+assumed at 0%. Mixture assumed at intermediate values. In cubic perovskites CN =
+12, in distorted perovskites the coordination number is assumed to decrease (see
+references). For SrFeOx, an 80%/20% CN 12/10 ratio gives tolerance factors in
+good agreement with the observed crystal structures in our studied cases.
+Perovskites with stronger distortion may require different values.
+:end
+
+references:
+Hendriksen et al., J Electroceram (2015) 34:100–107,
+dx.doi.org/10.1007/s10832-014-9916-2;
+Yokokawa et al., J Sol State Chem 94,
+106-120 (1991), dx.doi.org/10.1016/0022-4596(91)90225-7
+:end
+
+{tolerance_factor.targets}
+>1100: Very high tolerance factor - potentially not a stable perovskite
+1035-1100: Hexagonal or rhombohedral structure - most likely stable during reduction
+1025-1035: Hexagonal or rhombohedral structure - phase transition to cubic perovskite likely upon reduction
+1010-1025: cubic perovskite - typically stable during reduction
+1000-1010: cubic perovskites with tetragonal or orthorhombic distortion upon reduction
+0970-1000: distorted perovskite - usually orthorhombic or tetragonal
+0900-0970: strongly distorted perovskite - potential decomposition upon reduction
+<0900: most likely no stable perovskite phase - or strongly distorted perovskite phase
+
+{mp-153.data}
+species: Mg
+type: alkali earth
+charge: 2+
+remarks:
+Mg ionic radii in perovskites are hypothetical. Shannon does not
+provide data for 12- or 10-fold coordination of Mg, and it is probably
+difficult to achieve 12-fold coordination around the small Mg2+ ion.
+However, one can estimate the effective ionic radii r with these high
+coordination numbers from the Pauling bond strengths: r = a - b
+log(z/n) with a = 0.2446, b = 1.0222, z = 2 (charge) and n = CN; see
+Kudoh et al. in High Pressure Research: Application to Earth and
+Planetary Sciences (1992), American Geophysical Union, Washington
+D.C., dx.doi.org/10.1029/GM067p0215. Mg-containing perovskites and
+post-perovskite phases with highly coordinated Mg2+ are typically most
+stable under high pressure, see for instance
+dx.doi.org/10.1126/science.1095932.
+:end
+
+{mp-153.data.0}
+rᵢₒₙ: 104.0 pm
+CN: 12
+
+{mp-153.data.1}
+rᵢₒₙ: 96.0 pm
+CN: 10
+
+{mp-132.data}
+species: Ca
+type: alkali earth
+charge: 2+
+remarks:
+ionic radius from R.D. Shannon, 1976;
+dx.doi.org/10.1107/S0567739476001551
+:end
+
+{mp-132.data.0}
+rᵢₒₙ: 134.0 pm
+CN: 12
+
+{mp-132.data.1}
+rᵢₒₙ: 123.0 pm
+CN: 10
+
+{mp-76.data}
+species: Sr
+type: alkali earth
+charge: 2+
+remarks:
+ionic radius from R.D. Shannon, 1976;
+dx.doi.org/10.1107/S0567739476001551
+:end
+
+{mp-76.data.0}
+rᵢₒₙ: 144.0 pm
+CN: 12
+
+{mp-76.data.1}
+rᵢₒₙ: 136.0 pm
+CN: 10
+
+{mp-122.data}
+species: Ba
+type: alkali earth
+charge: 2+
+remarks:
+ionic radius from R.D. Shannon, 1976;
+dx.doi.org/10.1107/S0567739476001551
+:end
+
+{mp-122.data.0}
+rᵢₒₙ: 161.0 pm
+CN: 12
+
+{mp-122.data.1}
+rᵢₒₙ: 152.0 pm
+CN: 10
+
+{mp-72.data}
+species: Ti
+type: transition metal
+CN: 6
+remarks:
+ionic radius from R.D. Shannon, 1976;
+dx.doi.org/10.1107/S0567739476001551
+:end
+
+{mp-72.data.0}
+rᵢₒₙ: 67.0 pm
+charge: 3+
+
+{mp-72.data.1}
+rᵢₒₙ: 60.5 pm
+charge: 4+
+
+{mp-90.data}
+species: Cr
+type: transition metal
+CN: 6
+remarks:
+ionic radius from R.D. Shannon, 1976;
+dx.doi.org/10.1107/S0567739476001551
+:end
+
+{mp-90.data.0}
+rᵢₒₙ: 61.5 pm
+charge: 3+
+
+{mp-90.data.1}
+rᵢₒₙ: 55.0 pm
+charge: 4+
+
+{mp-35.data}
+species: Mn
+type: transition metal
+CN: 6
+remarks:
+ionic radius from R.D. Shannon, 1976;
+dx.doi.org/10.1107/S0567739476001551
+:end
+
+{mp-35.data.0}
+rᵢₒₙ: 53.0 pm
+charge: 4+
+
+{mp-35.data.1}
+HS/LS: HS
+rᵢₒₙ: 64.5 pm
+charge: 3+
+
+{mp-35.data.2}
+HS/LS: LS
+rᵢₒₙ: 58.0 pm
+charge: 3+
+
+{mp-13.data}
+species: Fe
+type: transition metal
+CN: 6
+remarks:
+ionic radius from R.D. Shannon, 1976;
+dx.doi.org/10.1107/S0567739476001551
+:end
+
+{mp-13.data.0}
+rᵢₒₙ: 58.5 pm
+charge: 4+
+
+{mp-13.data.1}
+HS/LS: HS
+rᵢₒₙ: 64.5 pm
+charge: 3+
+
+{mp-13.data.2}
+HS/LS: LS
+rᵢₒₙ: 55.0 pm
+charge: 3+
+
+{mp-54.data}
+species: Co
+type: transition metal
+CN: 6
+remarks:
+ionic radius from R.D. Shannon, 1976;
+dx.doi.org/10.1107/S0567739476001551
+:end
+
+{mp-54.data.0}
+HS/LS: HS
+rᵢₒₙ: 61.0 pm
+charge: 3+
+
+{mp-54.data.1}
+HS/LS: HS
+rᵢₒₙ: 53.0 pm
+charge: 4+
+
+{mp-54.data.2}
+HS/LS: LS
+rᵢₒₙ: 54.5 pm
+charge: 3+
+
+{mp-30.data}
+species: Cu
+type: transition metal
+CN: 6
+remarks:
+Shannon does not provide data for Cu4+ or high spin Cu3+. However, one
+can estimate the effective ionic radii r with these high coordination
+numbers from the Pauling bond strengths: r = a - b log(z/n) with a =
+0.6666, b = 0.1329, z = 3,4 (charge) and n = 6 (CN), based upon IR for
+Cu+ and Cu2+ (Shannon); see Kudoh et al.,
+dx.doi.org/10.1029/GM067p0215. Cu4+ is a rare oxidation state which
+can only be formed at high oxygen pressures or in the presence of
+strong oxidants, see Levason et al., Coordination Chemistry Reviews
+(1987), dx.doi.org/10.1016/0010-8545(87)85002-6 and Wu et al., Physica
+C: Superconductivity (1994), dx.doi.org/10.1016/0921-4534(94)90418-9
+:end
+
+{mp-30.data.0}
+rᵢₒₙ: 71.0 pm
+charge: 3+
+
+{mp-30.data.1}
+rᵢₒₙ: 69.0 pm
+charge: 4+
+
+{mp-146.data}
+species: V
+type: transition metal
+CN: 6
+remarks:
+ionic radius from R.D. Shannon, 1976;
+dx.doi.org/10.1107/S0567739476001551
+:end
+
+{mp-146.data.0}
+rᵢₒₙ: 64.0 pm
+charge: 3+
+
+{mp-146.data.1}
+rᵢₒₙ: 58.0 pm
+charge: 4+
+
+{mp-75.data}
+species: Nb
+type: transition metal
+CN: 6
+remarks:
+ionic radius from R.D. Shannon, 1976;
+dx.doi.org/10.1107/S0567739476001551
+:end
+
+{mp-75.data.0}
+rᵢₒₙ: 79.0 pm
+charge: 3+
+
+{mp-75.data.1}
+rᵢₒₙ: 72.0 pm
+charge: 4+
+
+{mp-129.data}
+species: Mo
+type: transition metal
+CN: 6
+remarks:
+ionic radius from R.D. Shannon, 1976;
+dx.doi.org/10.1107/S0567739476001551
+:end
+
+{mp-129.data.0}
+rᵢₒₙ: 69.0 pm
+charge: 3+
+
+{mp-129.data.1}
+rᵢₒₙ: 65.0 pm
+charge: 4+
+
+{mp-33.data}
+species: Ru
+type: transition metal
+CN: 6
+remarks:
+ionic radius from R.D. Shannon, 1976;
+dx.doi.org/10.1107/S0567739476001551
+:end
+
+{mp-33.data.0}
+rᵢₒₙ: 62.0 pm
+charge: 3+
+
+{mp-33.data.1}
+rᵢₒₙ: 68.0 pm
+charge: 4+
+
+{mp-2.data}
+species: Pd
+type: transition metal
+CN: 6
+remarks:
+ionic radius from R.D. Shannon, 1976;
+dx.doi.org/10.1107/S0567739476001551
+:end
+
+{mp-2.data.0}
+rᵢₒₙ: 76.0 pm
+charge: 3+
+
+{mp-2.data.1}
+rᵢₒₙ: 61.5 pm
+charge: 4+
+
+{mp-50.data}
+species: Ta
+type: transition metal
+CN: 6
+remarks:
+ionic radius from R.D. Shannon, 1976;
+dx.doi.org/10.1107/S0567739476001551
+:end
+
+{mp-50.data.0}
+rᵢₒₙ: 72.0 pm
+charge: 3+
+
+{mp-50.data.1}
+rᵢₒₙ: 68.0 pm
+charge: 4+
+
+{mp-91.data}
+species: W
+type: transition metal
+CN: 6
+remarks:
+ionic radius from R.D. Shannon, 1976;
+dx.doi.org/10.1107/S0567739476001551
+:end
+
+{mp-91.data.0}
+rᵢₒₙ: 66.0 pm
+charge: 3+
+
+{mp-91.data.1}
+rᵢₒₙ: 54.0 pm
+charge: 4+
+
+{mp-74.data}
+species: Rh
+type: transition metal
+CN: 6
+remarks:
+ionic radius from R.D. Shannon, 1976;
+dx.doi.org/10.1107/S0567739476001551
+:end
+
+{mp-74.data.0}
+rᵢₒₙ: 66.5 pm
+charge: 3+
+
+{mp-74.data.1}
+rᵢₒₙ: 60.0 pm
+charge: 4+
+
+{mp-101.data}
+species: Ir
+type: transition metal
+CN: 6
+remarks:
+ionic radius from R.D. Shannon, 1976;
+dx.doi.org/10.1107/S0567739476001551
+:end
+
+{mp-101.data.0}
+rᵢₒₙ: 68.0 pm
+charge: 3+
+
+{mp-101.data.1}
+rᵢₒₙ: 62.5 pm
+charge: 4+
+
+{mp-12957.data}
+CN: 6
+
+{mp-12957.data.0}
+species: O2-
+type: oxide ion
+charge: 2-
+rᵢₒₙ: 140 pm
+remarks:
+ionic radius from R.D. Shannon, 1976;
+dx.doi.org/10.1107/S0567739476001551
+:end
+
+{mp-12957.data.1}
+species: Ovac
+type: oxygen vacancy
+charge: 0
+rᵢₒₙ: 131 pm
+remarks:
+Chatzichristodoulou et al., J. Electroceram (2015) 34:100-107,
+dx.doi.org/10.1007/s10832-014-9916-2 value for LaGaO3, actual value may differ
+in each case;
+:end
