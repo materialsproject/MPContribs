@@ -15,16 +15,26 @@ def index(request):
         ENDPOINT = request.build_absolute_uri(get_endpoint())
         with DlrVietenRester(API_KEY, endpoint=ENDPOINT) as mpr:
             try:
+                table = render_dataframe(mpr.get_contributions(), webapp=True)
                 prov = mpr.get_provenance()
                 title = prov.get('title')
                 provenance = render_dict(prov, webapp=True)
-                try:
-                    table = render_dataframe(mpr.get_contributions(), webapp=True)
-                except:
-                    table = 'No Data Available!'
-                ionic_radii = render_dataframe(mpr.get_ionic_radii(), webapp=True)
             except Exception as ex:
                 ctx.update({'alert': str(ex)})
     else:
         ctx.update({'alert': 'Please log in!'})
     return render_to_response("dlr_vieten_explorer_index.html", locals(), ctx)
+
+def tolerance_factors(request):
+    ctx = RequestContext(request)
+    if request.user.is_authenticated():
+        API_KEY = request.user.api_key
+        ENDPOINT = request.build_absolute_uri(get_endpoint())
+        with DlrVietenRester(API_KEY, endpoint=ENDPOINT) as mpr:
+            try:
+                ionic_radii = render_dataframe(mpr.get_ionic_radii(), webapp=True)
+            except Exception as ex:
+                ctx.update({'alert': str(ex)})
+    else:
+        ctx.update({'alert': 'Please log in!'})
+    return render_to_response("dlr_vieten_explorer_tolerance_factors.html", locals(), ctx)

@@ -9,12 +9,8 @@
 {% endblock extra_css %}
 
 {% block content %}
-<ul class="nav nav-pills">
-    <li role="presentation"><a href='tolerance_factors/'>tolerance factors</a></li>
-</ul>
 
 {% if alert %}
-
 <div class="alert alert-warning alert-dismissible" role="alert">
   <button type="button" class="close" data-dismiss="alert" aria-label="Close">
     <span aria-hidden="true">&times;</span>
@@ -34,13 +30,10 @@
 <div class="container">
 
     <div class="row">
-        <h2>{{ title }}</h2>
-        {{ provenance|safe }}
+        <h3>Ionic Radii</h3>
+        {{ ionic_radii|safe }}
     </div>
-    <div class="row">
-        <h3>Data</h3>
-        {{ table|safe }}
-    </div>
+
 
 </div>
 

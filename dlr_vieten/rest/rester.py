@@ -15,7 +15,7 @@ class DlrVietenRester(MPContribsRester):
         columns = ['identifier', 'contribution', 'composition', 'CIF']
 
         docs = self.query_contributions(
-            criteria={'content.ionic_radii': {'$exists': 0}},
+            criteria={'content.title': {'$ne': 'Ionic Radii'}},
             projection={'_id': 1, 'mp_cat_id': 1, 'content': 1}
         )
         if not docs:
@@ -43,11 +43,11 @@ class DlrVietenRester(MPContribsRester):
 
     def get_ionic_radii(self):
         data = []
-        columns = ['mp-id', 'cid', 'type', 'charge', u'rᵢₒₙ (pm)', 'HS/LS', 'CN']
+        columns = ['mp-id', 'cid', 'species', 'charge', u'rᵢₒₙ', 'HS/LS', 'CN']
 
         docs = self.query_contributions(
-            criteria={'content.ionic_radii': {'$exists': 1}},
-            projection={'_id': 1, 'mp_cat_id': 1, 'content': 1}
+            criteria={'content.title': 'Ionic Radii'},
+            projection={'_id': 1, 'mp_cat_id': 1, 'content.data': 1}
         )
         if not docs:
             raise Exception('No contributions found for DlrVieten Ionic Radii!')
@@ -55,15 +55,21 @@ class DlrVietenRester(MPContribsRester):
         for doc in docs:
             mpfile = MPFile.from_contribution(doc)
             identifier = mpfile.ids[0]
-            contrib = mpfile.hdata[identifier]['ionic_radii']['data']
+            contrib = mpfile.hdata[identifier]['data']
             cid_url = '/'.join([
                 self.preamble.rsplit('/', 1)[0], 'explorer', 'materials', doc['_id']
             ])
-            row = [
-                identifier, cid_url, contrib['type'], contrib['charge'],
-                contrib['ionic_radius_(pm)'], contrib['high_spin/low_spin'],
-                contrib['coordination_number']
-            ]
-            data.append((identifier, row))
+            nrows = sum(1 for v in contrib.values() if isinstance(v, dict))
+            rows = [[identifier, cid_url] for i in range(nrows)]
+
+            for col in columns[2:]:
+                for irow, row in enumerate(rows):
+                    val = contrib.get(col)
+                    if val is None:
+                        val = contrib[str(irow)].get(col, '-')
+                    row.append(val)
+
+            for row in rows:
+                data.append((identifier, row))
 
         return DataFrame.from_items(data, orient='index', columns=columns)
