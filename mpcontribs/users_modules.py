@@ -29,9 +29,9 @@ def get_user_static_dirs():
             static_dirs.append(rel_static_dir)
     return static_dirs
 
-def get_user_explorer_name(path):
+def get_user_explorer_name(path, view='index'):
     return '_'.join(
-        os.path.dirname(os.path.normpath(path)).split(os.sep)[-4:] + ['index']
+        os.path.dirname(os.path.normpath(path)).split(os.sep)[-4:] + [view]
     )
 
 def get_user_classname(mod):
