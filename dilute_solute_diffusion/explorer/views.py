@@ -22,8 +22,10 @@ def index(request):
                 ranges = {}
                 for contrib in contribs:
                     df = contrib['table']
-                    df.columns = list(df.columns[:-1]) + ['El.']
-                    for col in df.columns[:-1]:
+                    df.columns = [df.columns[0], 'El.'] + list(df.columns[2:])
+                    for col in df.columns:
+                        if col == 'El.':
+                            continue
                         low, upp = min(df[col]), max(df[col])
                         if col == 'Z':
                             low -= 1
