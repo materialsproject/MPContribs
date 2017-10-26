@@ -56,3 +56,7 @@ class BoltztrapExplorerConfig(AppConfig):
 class DlrVietenExplorerConfig(AppConfig):
     name = 'mpcontribs.users.dlr_vieten.explorer'
     label = 'dlr_vieten_explorer'
+
+class DefectGenomePcfcMaterialsExplorerConfig(AppConfig):
+    name = 'mpcontribs.users.defect_genome_pcfc_materials.explorer'
+    label = 'defect_genome_pcfc_materials_explorer'
