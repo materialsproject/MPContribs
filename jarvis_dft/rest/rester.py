@@ -31,11 +31,13 @@ class JarvisDftRester(MPContribsRester):
         for doc in docs:
             mpfile = MPFile.from_contribution(doc)
             mp_id = mpfile.ids[0]
-            contrib = mpfile.hdata[mp_id]['data'][typ]
+            hdata = mpfile.hdata[mp_id]
+            contrib = hdata['data'][typ]
 
             cid_url = '/'.join([
                 self.preamble.rsplit('/', 1)[0], 'explorer', 'materials', doc['_id']
             ])
-            row = [mp_id, cid_url] + [contrib[k] for k in columns[2:]]
+            row = [mp_id, cid_url] + [contrib[k] for k in columns[2:-1]]
+            row.append(hdata['details_url'].format(contrib['jid']))
             data.append((mp_id, row))
         return DataFrame.from_items(data, orient='index', columns=columns)
