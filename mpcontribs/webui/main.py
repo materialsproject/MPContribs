@@ -9,7 +9,7 @@ main_bp = Blueprint('webui_main', __name__, template_folder=tmpl_dir, static_fol
 
 @main_bp.route('/')
 def home():
-    from mpcontribs import MPContribsRester
+    from mpcontribs.rest.rester import MPContribsRester
     try:
         with MPContribsRester(test_site=True) as mpr:
             return render_template('main.html')
