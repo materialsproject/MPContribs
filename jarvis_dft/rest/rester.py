@@ -24,7 +24,7 @@ class JarvisDftRester(MPContribsRester):
 
         data = []
         columns = [
-            'mp-id', 'cid', 'formula', 'final_energy', 'optB88vDW_bandgap',
+            'mp-id', 'cid', 'CIF', 'final_energy', 'optB88vDW_bandgap',
             'mbj_bandgap', 'bulk_modulus', 'shear_modulus', 'jid'
         ]
 
@@ -37,7 +37,16 @@ class JarvisDftRester(MPContribsRester):
             cid_url = '/'.join([
                 self.preamble.rsplit('/', 1)[0], 'explorer', 'materials', doc['_id']
             ])
-            row = [mp_id, cid_url] + [contrib[k] for k in columns[2:-1]]
+
+            cif_url = ''
+            structures = mpfile.sdata.get(mp_id)
+            if structures:
+                cif_url = '/'.join([
+                    self.preamble.rsplit('/', 1)[0], 'explorer', 'materials',
+                    doc['_id'], 'cif', structures.keys()[0]
+                ])
+
+            row = [mp_id, cid_url, cif_url] + [contrib[k] for k in columns[3:-1]]
             row.append(hdata['details_url'].format(contrib['jid']))
             data.append((mp_id, row))
         return DataFrame.from_items(data, orient='index', columns=columns)
