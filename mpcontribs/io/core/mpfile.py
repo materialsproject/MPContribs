@@ -212,11 +212,13 @@ class MPFileCore(six.with_metaclass(ABCMeta, object)):
         if not matched_mpids:
             if identifier is None:
                 identifier = formula
-            print(
-                'Structure not found in MP! Please submit via MPComplete to '
-                'obtain mp-id or manually choose an anchor mp-id! Continuing '
-                'with {} as identifier!'.format(formula)
-            )
+                print(
+                    'Structure not found in MP! Please submit via MPComplete to '
+                    'obtain mp-id or manually choose an anchor mp-id! Continuing '
+                    'with {} as identifier!'.format(identifier)
+                )
+            else:
+                print('Structure not found in MP! Forcing {} as identifier!'.format(identifier))
         elif identifier is None:
             identifier = matched_mpids[0]
             if len(matched_mpids) > 1:
@@ -246,6 +248,7 @@ class MPFileCore(six.with_metaclass(ABCMeta, object)):
         display_html(self.hdata)
         display_html(self.tdata)
         display_html(self.gdata)
+        display_html(self.sdata)
 
     # ----------------------------
     # Override these in subclasses
