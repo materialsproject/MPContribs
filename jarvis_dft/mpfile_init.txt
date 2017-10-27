@@ -1,4 +1,4 @@
-title: Defect Genome PCFC Materials
+title: Jarvis DFT
 
 description:
 We introduce a simple criterion to identify two-dimensional (2D)
