@@ -100,7 +100,7 @@ def render_dataframe(df, webapp=False):
           if (table['columns'][idx]['cell'] == 'uri') {
               table['columns'][idx]['formatter'] = _.extend({}, Backgrid.CellFormatter.prototype, {
                   fromRaw: function (rawValue, model) {
-                      var identifier = rawValue.split('/').pop();
+                      var identifier = rawValue.split('/').pop().split('.')[0];
                       if (objectid_regex.test(identifier)) {
                           return identifier.slice(-7);
                       };
