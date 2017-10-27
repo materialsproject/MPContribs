@@ -60,3 +60,7 @@ class DlrVietenExplorerConfig(AppConfig):
 class DefectGenomePcfcMaterialsExplorerConfig(AppConfig):
     name = 'mpcontribs.users.defect_genome_pcfc_materials.explorer'
     label = 'defect_genome_pcfc_materials_explorer'
+
+class JarvisDftExplorerConfig(AppConfig):
+    name = 'mpcontribs.users.jarvis_dft.explorer'
+    label = 'jarvis_dft_explorer'
