@@ -83,7 +83,7 @@ def process_mpfile(path_or_mpfile, target=None, fmt='archieml'):
             doc = cma.submit_contribution(mpfile_single, contributor) # does not use get_string
             cid = doc['_id']
 
-            yield 'check consistency ... '
+            yield 'check ... '
             try:
                 mpfile_single_cmp_str = mpfile_single.get_string()
             except Exception as ex:
@@ -95,7 +95,7 @@ def process_mpfile(path_or_mpfile, target=None, fmt='archieml'):
                 yield 'from_string() FAILED!<br>'
                 continue
             if mpfile_single.document != mpfile_single_cmp.document:
-                yield 'detailed check ... '
+                yield 'check again ... '
                 found_inconsistency = False
                 # check structural data
                 structures_ok = True
@@ -132,13 +132,13 @@ def process_mpfile(path_or_mpfile, target=None, fmt='archieml'):
                     continue
 
             if target is not None:
-                yield 'submit to MP ... '
+                yield 'submit ... '
                 cid = target.submit_contribution(mpfile_single, fmt) # uses get_string
             cid_short = get_short_object_id(cid)
             mpfile_single.insert_id(mp_cat_id, cid)
             cid_shorts.append(cid_short)
 
-            yield 'build notebook ... '
+            yield 'build ... '
             if target is not None:
                 url = target.build_contribution(cid)
                 url = '/'.join([target.preamble.rsplit('/', 1)[0], 'explorer', url])
@@ -148,7 +148,7 @@ def process_mpfile(path_or_mpfile, target=None, fmt='archieml'):
                 mcb = MPContributionsBuilder(doc)
                 build_doc = mcb.build(contributor, cid)
                 yield build_doc
-                yield 'determine overview axes ... '
+                yield 'overview axes ... '
                 scope, local_axes = [], set()
                 mpfile_for_axes = MPFile.from_contribution(doc)
                 for k,v in mpfile_for_axes.hdata[mp_cat_id].iterate():
