@@ -1,0 +1,1 @@
+default_app_config = 'mpcontribs.users.boltztrap.explorer.apps.BoltztrapExplorerConfig'

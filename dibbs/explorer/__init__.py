@@ -1,0 +1,1 @@
+default_app_config = 'mpcontribs.users.dibbs.explorer.apps.DibbsExplorerConfig'
