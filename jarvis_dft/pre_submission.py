@@ -5,17 +5,17 @@ from pandas import DataFrame
 from mpcontribs.io.core.recdict import RecursiveDict
 from mpcontribs.io.core.utils import nest_dict
 from monty.json import MontyDecoder
-from mpcontribs.users.jarvis_dft.rest.rester import DefectGenomePcfcMaterialsRester
+from mpcontribs.users.jarvis_dft.rest.rester import JarvisDftRester
 
 def clean_value(val, unit):
-    return None if val == 'na' else '{} {}'.format(val, unit)
+    return '-' if val == 'na' else '{} {}'.format(val, unit)
 
 def run(mpfile, nmax=10, dup_check_test_site=True):
 
     # book-keeping
     existing_mpids = {}
     for b in [False, True]:
-        with DefectGenomePcfcMaterialsRester(test_site=b) as mpr:
+        with JarvisDftRester(test_site=b) as mpr:
             for doc in mpr.query_contributions(criteria=mpr.query):
                 existing_mpids[doc['mp_cat_id']] = doc['_id']
         if not dup_check_test_site:

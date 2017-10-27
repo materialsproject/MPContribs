@@ -4,8 +4,8 @@ from mpcontribs.rest.rester import MPContribsRester
 from mpcontribs.io.archieml.mpfile import MPFile
 from pandas import DataFrame
 
-class DefectGenomePcfcMaterialsRester(MPContribsRester):
-    """DefectGenomePcfcMaterials-specific convenience functions to interact with MPContribs REST interface"""
+class JarvisDftRester(MPContribsRester):
+    """JarvisDft-specific convenience functions to interact with MPContribs REST interface"""
     query = {'content.doi': '10.1038/s41598-017-05402-0'}
     provenance_keys = ['title', 'description', 'authors', 'website', 'journal', 'doi', 'url']
 
@@ -20,7 +20,7 @@ class DefectGenomePcfcMaterialsRester(MPContribsRester):
             projection={'_id': 1, 'mp_cat_id': 1, 'content': 1}
         )
         if not docs:
-            raise Exception('No contributions found for DefectGenomePcfcMaterials Explorer!')
+            raise Exception('No contributions found for JarvisDft Explorer!')
 
         data = []
         columns = [
