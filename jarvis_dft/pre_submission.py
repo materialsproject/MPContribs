@@ -5,18 +5,21 @@ from pandas import DataFrame
 from mpcontribs.io.core.recdict import RecursiveDict
 from mpcontribs.io.core.utils import nest_dict
 from monty.json import MontyDecoder
-#from mpcontribs.users.boltztrap.rest.rester import BoltztrapRester
+from mpcontribs.users.jarvis_dft.rest.rester import DefectGenomePcfcMaterialsRester
+
+def clean_value(val, unit):
+    return None if val == 'na' else '{} {}'.format(val, unit)
 
 def run(mpfile, nmax=10, dup_check_test_site=True):
 
     # book-keeping
     existing_mpids = {}
-    #for b in [False, True]:
-    #    with BoltztrapRester(test_site=b) as mpr:
-    #        for doc in mpr.query_contributions(criteria=mpr.query):
-    #            existing_mpids[doc['mp_cat_id']] = doc['_id']
-    #    if not dup_check_test_site:
-    #        break
+    for b in [False, True]:
+        with DefectGenomePcfcMaterialsRester(test_site=b) as mpr:
+            for doc in mpr.query_contributions(criteria=mpr.query):
+                existing_mpids[doc['mp_cat_id']] = doc['_id']
+        if not dup_check_test_site:
+            break
 
     for typ in ['2d', '3d']:
 
@@ -42,13 +45,18 @@ def run(mpfile, nmax=10, dup_check_test_site=True):
                     data['jid'] = i['jid']
                     data['formula'] = i['final_str'].composition.reduced_formula
                     data['spacegroup'] = i['final_str'].get_space_group_info()[0]
-                    data['final_energy'] = '{} eV'.format(i["fin_en"])
-                    data['optB88vDW_bandgap'] = '{} eV'.format(i["op_gap"])
-                    data['mbj_bandgap'] = None if i["mbj_gap"] == 'na' else '{} eV'.format(i["mbj_gap"])
-                    data['bulk_modulus'] = '{} GPa'.format(i["kv"])
-                    data['shear_modulus'] = '{} GPa'.format(i["gv"])
+                    data['final_energy'] = clean_value(i["fin_en"], 'eV')
+                    data['optB88vDW_bandgap'] = clean_value(i["op_gap"], 'eV')
+                    data['mbj_bandgap'] = clean_value(i["mbj_gap"], 'eV')
+                    data['bulk_modulus'] = clean_value(i["kv"], 'GPa')
+                    data['shear_modulus'] = clean_value(i["gv"], 'GPa')
                     mpfile.add_hierarchical_data(nest_dict(data, ['data', typ]), identifier=mpid)
                     mpfile.add_structure(i['final_str'], name=data['formula'], identifier=mpid)
+
+                    if mpid in existing_mpids:
+                        cid = existing_mpids[mpid]
+                        mpfile.insert_id(mpid, cid)
+                        print cid, 'inserted to update', mpid
 
                     if idx >= nmax-1:
                         break
