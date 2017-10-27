@@ -1,0 +1,54 @@
+{% extends "../../webtzite/templates/base/header_footer.html" %}
+{% load staticfiles %}
+
+{% block title %} Jarvis DFT {% endblock title %}
+
+{% block extra_css %}
+<link rel="stylesheet" href='{% static "js/components/backgrid/lib/backgrid.css" %}' charset="utf-8">
+<link rel="stylesheet" href='{% static "js/components/json-human/css/json.human.css" %}' charset="utf-8">
+{% endblock extra_css %}
+
+{% block content %}
+
+{% if alert %}
+<div class="alert alert-warning alert-dismissible" role="alert">
+  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+    <span aria-hidden="true">&times;</span>
+  </button>
+  {{ alert }}
+</div>
+
+{% else %}
+
+<style>
+.backgrid tbody tr:hover { background-color: #f9f9f9; }
+.jh-type-string { font-style: normal; }
+code { display: block; white-space: pre-wrap; }
+</style>
+
+<div class="container">
+
+    <div class="row">
+        <h2>{{ title }}</h2>
+        {{ provenance|safe }}
+    </div>
+
+    <div class="row">
+        <code>
+            from mpcontribs.users.jarvis_dft.rest.rester import JarvisDftRester
+            mpr = JarvisDftRester()
+            mpr.get_contributions(typ) # typ = '2d' or '3d'
+        </code>
+    </div>
+
+    {% for typ, table in tables.items %}
+    <div class="row">
+        <h3>{{ typ|safe }}</h3>
+        {{ table|safe }}
+    </div>
+    {% endfor %}
+
+</div>
+
+{% endif %}
+{% endblock %}
