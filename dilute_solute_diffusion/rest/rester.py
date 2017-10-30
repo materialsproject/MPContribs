@@ -9,6 +9,7 @@ from pandas import Series
 
 class DiluteSoluteDiffusionRester(MPContribsRester):
     """DiluteSoluteDiffusion-specific convenience functions to interact with MPContribs REST interface"""
+    query = {'content.figshare_id': '1546772'}
     z = loads(open(os.path.join(
       os.path.dirname(os.path.abspath(__file__)), 'z.json'
     ), 'r').read())
@@ -16,7 +17,6 @@ class DiluteSoluteDiffusionRester(MPContribsRester):
     def get_contributions(self):
         data = []
         for doc in self.query_contributions(
-            criteria={'content.figshare_id': '1546772'},
             projection={'_id': 1, 'mp_cat_id': 1, 'content': 1}
         ):
             mpfile = MPFile.from_contribution(doc)
