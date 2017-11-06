@@ -417,7 +417,7 @@ def get_card(request, cid, db_type=None, mdb=None):
     from mpcontribs.io.core.recdict import RecursiveDict, render_dict
     from django.template import Template, Context
     from django.core.urlresolvers import reverse
-    prov_keys = request.POST["provenance_keys"]
+    prov_keys = loads(request.POST.get('provenance_keys', '["title"]'))
     contrib = mdb.contrib_ad.query_contributions(
         {'_id': ObjectId(cid)},
         projection={'_id': 0, 'mp_cat_id': 1, 'content': 1, 'collaborators': 1}
