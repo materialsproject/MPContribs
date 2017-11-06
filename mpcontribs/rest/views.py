@@ -445,14 +445,9 @@ def get_card(request, cid, db_type=None, mdb=None):
             (k,v) for k,v in hdata.items()
             if k not in prov_keys and k != 'abbreviations'
         )
-        result_hdata = RecursiveDict()
+        card = RecursiveDict()
         for idx, (k,v) in enumerate(nested_dict_iter(sub_hdata)):
-            result_hdata[k] = v
+            card[k] = v
             if idx >= 5:
                 break
-        card = "<table>"
-        for k, v in result_hdata.items():
-            card += "<tr><td>{}</td><td>{}</td></tr>".format(k, v)
-        card += "</table>"
-        #card = render_dict(result_hdata)
     return {"valid_response": True, "response": card}
