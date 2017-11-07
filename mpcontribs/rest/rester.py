@@ -43,6 +43,10 @@ class MPContribsRester(MPResterBase):
     def provenance_keys(self):
         raise NotImplementedError('Implement `provenance_keys` property in Rester!')
 
+    @property
+    def released(self):
+        return False
+
     def _make_request(self, sub_url, payload=None, method="GET"):
         return super(MPContribsRester, self)._make_request(
           '/'.join([sub_url, self.dbtype]), payload=payload, method=method
