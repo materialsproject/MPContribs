@@ -371,7 +371,7 @@ def datasets(request, identifier, db_type=None, mdb=None):
             UserRester = getattr(m, get_user_rester(mod_path_split[-1]))
             endpoint = request.build_absolute_uri(get_endpoint())
             r = UserRester(request.user.api_key, endpoint=endpoint)
-            if r.query is not None:
+            if r.released and r.query is not None:
                 docs = r.query_contributions(
                     criteria={'mp_cat_id': identifier, 'content.title': {'$exists': 1}},
                     projection={'content.title': 1, 'mp_cat_id': 1}
