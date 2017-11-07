@@ -14,6 +14,7 @@ class DtuRester(MPContribsRester):
         'content.quasi-particle_bandgap.direct': {'$exists': 1},
     }
     provenance_keys = ['title', 'url', 'explanation', 'references', 'authors', 'contributor']
+    released = True
 
     def get_contributions(self):
         projection = {'_id': 1, 'mp_cat_id': 1}
