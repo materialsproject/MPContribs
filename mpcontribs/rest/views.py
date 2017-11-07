@@ -448,6 +448,6 @@ def get_card(request, cid, db_type=None, mdb=None):
         card = RecursiveDict()
         for idx, (k,v) in enumerate(nested_dict_iter(sub_hdata)):
             card[k] = v
-            if idx >= 5:
-                break
+            if idx >= 6:
+                break # humans can grasp 7 items quickly
     return {"valid_response": True, "response": card}
