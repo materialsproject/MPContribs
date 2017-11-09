@@ -1,11 +1,26 @@
-url: https://cmr.fysik.dtu.dk/_downloads/mp_gllbsc.db
 
 title: GLLB-SC Bandgaps
+contributor : Technical University of Denmark
+url: https://cmr.fysik.dtu.dk/_downloads/mp_gllbsc.db
+
 references.AEM: Advanced Energy Materials, Juli 22, 2014
 references.PRA: O. Gritsenko, R. van  Leeuwen, E. van Lenthe, E. J. Baerends, Phys. Rev. A 1995, 51, 1944.
 references.PRB: M. Kuisma, J. Ojanen, J. Enkovaara, T. T. Rantala, Phys. Rev. B 2010, 82, 115106.
 
-contributor : Technical University of Denmark
-authors: Ivano E. Castelli, Falco Hueser, Mohnish Pandey, Hong Li, Kristian S. Thygesen, Brian Seger, Anubhav Jain, Kristin A. Persson, Gerbrand Ceder, and Karsten W. Jacobsen
-explanation: Bandgaps calculated using GLLB-SC potential by Gritsenko, van Leeuwen, van Lenthe, and Baerends (GLLB), adapted by Kuisma et al to account for solids (-SC). The Kohn-Sham gap most basically refers to the energy difference between the bottom of the conduction band and the top of the valence band. The Quasi-Particle gap takes into account the derivative discontinuity of the chemical potential and gives the bandgap as the difference between ionization potenital and electron affinity.
+authors:
+Ivano E. Castelli, Falco Hueser, Mohnish Pandey, Hong Li,
+Kristian S. Thygesen, Brian Seger, Anubhav Jain, Kristin A.
+Persson, Gerbrand Ceder, and Karsten W. Jacobsen
+:end
 
+description:
+Bandgaps calculated using GLLB-SC potential by Gritsenko, van
+Leeuwen, van Lenthe, and Baerends (GLLB), adapted by Kuisma et al
+to account for solids (-SC). The Kohn-Sham gap (ΔE-KS) most
+basically refers to the energy difference between the bottom of
+the conduction band and the top of the valence band. The
+Quasi-Particle gap (ΔE-QS) takes into account the derivative
+discontinuity (C) of the chemical potential and gives the bandgap
+as the difference between ionization potential and electron
+affinity.
+:end
