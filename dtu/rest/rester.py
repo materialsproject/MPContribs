@@ -5,30 +5,20 @@ from pandas import DataFrame
 
 class DtuRester(MPContribsRester):
     """DTU-specific convenience functions to interact with MPContribs REST interface"""
-    query = {
-        'content.contributor': 'Technical University of Denmark',
-        'content.kohn-sham_bandgap.indirect': {'$exists': 1},
-        'content.kohn-sham_bandgap.direct': {'$exists': 1},
-        'content.derivative_discontinuity': {'$exists': 1},
-        'content.quasi-particle_bandgap.indirect': {'$exists': 1},
-        'content.quasi-particle_bandgap.direct': {'$exists': 1},
-    }
-    provenance_keys = ['title', 'url', 'explanation', 'references', 'authors', 'contributor']
+    query = {'content.url': 'https://cmr.fysik.dtu.dk/_downloads/mp_gllbsc.db'}
+    provenance_keys = ['title', 'url', 'description', 'references', 'authors', 'contributor']
     released = True
 
     def get_contributions(self):
-        projection = {'_id': 1, 'mp_cat_id': 1}
-        projection.update(dict((k, 1) for k in self.query.keys()))
+        projection = {'_id': 1, 'mp_cat_id': 1, 'content': 1}
         docs = self.query_contributions(projection=projection)
         if not docs:
             raise Exception('No contributions found for DTU Explorer!')
 
         data = []
         columns = [
-            'mp-id', 'contribution',
-            'kohn-sham_bandgap(indirect)', 'kohn-sham_bandgap(direct)',
-            'derivative_discontinuity',
-            'quasi-particle_bandgap(indirect)', 'quasi-particle_bandgap(direct)'
+            'mp-id', 'cid',
+            'indirect ΔE-KS', 'direct ΔE-KS', 'C', 'indirect ΔE-QP', 'direct ΔE-QP'
         ]
 
         for doc in docs:
@@ -38,11 +28,9 @@ class DtuRester(MPContribsRester):
             cid_url = self.get_cid_url(doc)
             row = [
                 mp_id, cid_url,
-                contrib['kohn-sham_bandgap']['indirect'],
-                contrib['kohn-sham_bandgap']['direct'],
-                contrib['derivative_discontinuity'],
-                contrib['quasi-particle_bandgap']['indirect'],
-                contrib['quasi-particle_bandgap']['direct']
+                contrib['ΔE-KS']['indirect'], contrib['ΔE-KS']['direct'],
+                contrib['C'],
+                contrib['ΔE-QP']['indirect'], contrib['ΔE-QP']['direct']
             ]
             data.append((mp_id, row))
         return DataFrame.from_items(data, orient='index', columns=columns)
