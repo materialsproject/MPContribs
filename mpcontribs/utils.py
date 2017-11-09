@@ -76,7 +76,7 @@ def process_mpfile(path_or_mpfile, target=None, fmt='archieml'):
             update = bool(cid is not None)
             if update:
                 cid_short = get_short_object_id(cid)
-                yield 'use contribution #{} to update ID #{} ... '.format(idx, cid_short)
+                yield 'use #{} to update #{} ... '.format(idx, cid_short)
 
             # always run local "submission" to catch failure before interacting with DB
             yield 'process #{} ({}) ... '.format(idx, mp_cat_id)
