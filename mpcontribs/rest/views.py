@@ -424,7 +424,6 @@ def get_card(request, cid, db_type=None, mdb=None):
     )[0]
     mpid = contrib['mp_cat_id']
     hdata = Tree(contrib['content'])
-    #card = hdata.get('highlights', hdata.get('explanation', hdata.get('description')))
     plots = Plots(contrib['content'])
     if plots:
         card = []
@@ -441,10 +440,11 @@ def get_card(request, cid, db_type=None, mdb=None):
             fileurl = '/'.join([imgdir, filename])
             card.append(fileurl)
     else:
-        card = RecursiveDict(
-            (k,v) for k,v in hdata.items()
-            if k not in prov_keys and k != 'abbreviations'
-        )
+        info = hdata.get('highlights', hdata.get('explanation', hdata.get('description')))
+        card = RecursiveDict({'info': info}) if info is not None else RecursiveDict()
+        for k,v in hdata.items():
+            if k not in prov_keys and k != 'abbreviations':
+                card[k] = v
         #card = RecursiveDict()
         #for idx, (k,v) in enumerate(nested_dict_iter(sub_hdata)):
         #    card[k] = v
