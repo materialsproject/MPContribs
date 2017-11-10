@@ -28,12 +28,20 @@
 .backgrid .uri-cell { text-align: center; }
 .jh-root { font-family: "symbola"; }
 .jh-type-string { font-style: normal; }
+code { display: block; white-space: pre-wrap; }
 </style>
 
 <div class="container">
     <div class="row">
         <h2>{{ title }}</h2>
         {{ provenance|safe }}
+    </div>
+    <div class="row">
+        <code>
+            from mpcontribs.users.dtu.rest.rester import DtuRester
+            mpr = DtuRester()
+            mpr.get_contributions()
+        </code>
     </div>
     <div class="row">
         <h3>Overview</h3>
