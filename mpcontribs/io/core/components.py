@@ -80,20 +80,23 @@ def get_backgrid_table(df):
 def render_dataframe(df, webapp=False):
     """use BackGrid JS library to render Pandas DataFrame"""
     # TODO check for index column in df other than the default numbering
-    uuid_str = str(uuid.uuid4())
+    uuid_str, uuid_str_paginator = str(uuid.uuid4()), str(uuid.uuid4())
     table = get_backgrid_table(df)
     html = "<div id='{}' style='width:100%;'></div>".format(uuid_str)
+    html += "<div id='{}'></div>".format(uuid_str_paginator)
     html += "<script>"
     if webapp:
         html += "requirejs(['main'], function() {"
     html += """
-    require(["backgrid"], function(Backgrid) {
+    require(["backgrid", "backgrid-paginator"], function(Backgrid) {
       "use strict";
       if (!("tables" in window)) { window.tables = []; }
       window.tables.push(JSON.parse('%s'));
       var table = window.tables[window.tables.length-1];
       var Row = Backbone.Model.extend({});
-      var Rows = Backbone.Collection.extend({model: Row, mode: "client"});
+      var Rows = Backbone.PageableCollection.extend({
+          model: Row, mode: "client", state: {pageSize: 20}
+      });
       var rows = new Rows(table['rows']);
       var objectid_regex = /^[a-f\d]{24}$/i;
       for (var idx in table['columns']) {
@@ -110,9 +113,11 @@ def render_dataframe(df, webapp=False):
           }
       }
       var grid = new Backgrid.Grid({ columns: table['columns'], collection: rows, });
+      var paginator = new Backgrid.Extension.Paginator({collection: rows});
       $('#%s').append(grid.render().el);
+      $("#%s").append(paginator.render().$el);
     });
-    """ % (json.dumps(table), uuid_str)
+    """ % (json.dumps(table), uuid_str, uuid_str_paginator)
     if webapp:
         html += "});"
     html += "</script>"
