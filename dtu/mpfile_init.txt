@@ -19,7 +19,7 @@ Leeuwen, van Lenthe, and Baerends (GLLB), adapted by Kuisma et al
 to account for solids (-SC). The Kohn-Sham gap (ΔE-KS) most
 basically refers to the energy difference between the bottom of
 the conduction band and the top of the valence band. The
-Quasi-Particle gap (ΔE-QS) takes into account the derivative
+Quasi-Particle gap (ΔE-QP) takes into account the derivative
 discontinuity (C) of the chemical potential and gives the bandgap
 as the difference between ionization potential and electron
 affinity.
