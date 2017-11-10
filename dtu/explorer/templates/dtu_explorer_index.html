@@ -65,7 +65,7 @@ requirejs(['main'], function() {
                 for (j = 0; j < keys.length; j++) {
                     var k = keys[j];
                     if (!(k in yvals)) {yvals[k] = [];}
-                    yvals[k].push(row[k]);
+                    yvals[k].push(row[k].split(' ')[0]);
                 }
             }
             var data = [];
