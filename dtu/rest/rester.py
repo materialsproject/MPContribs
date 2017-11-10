@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from __future__ import division, unicode_literals
 from mpcontribs.rest.rester import MPContribsRester
 from mpcontribs.io.archieml.mpfile import MPFile
@@ -24,7 +25,7 @@ class DtuRester(MPContribsRester):
         for doc in docs:
             mpfile = MPFile.from_contribution(doc)
             mp_id = mpfile.ids[0]
-            contrib = mpfile.hdata[mp_id]
+            contrib = mpfile.hdata[mp_id]['data']
             cid_url = self.get_cid_url(doc)
             row = [
                 mp_id, cid_url,
