@@ -441,13 +441,13 @@ def get_card(request, cid, db_type=None, mdb=None):
             fileurl = '/'.join([imgdir, filename])
             card.append(fileurl)
     else:
-        sub_hdata = RecursiveDict(
+        card = RecursiveDict(
             (k,v) for k,v in hdata.items()
             if k not in prov_keys and k != 'abbreviations'
         )
-        card = RecursiveDict()
-        for idx, (k,v) in enumerate(nested_dict_iter(sub_hdata)):
-            card[k] = v
-            if idx >= 6:
-                break # humans can grasp 7 items quickly
+        #card = RecursiveDict()
+        #for idx, (k,v) in enumerate(nested_dict_iter(sub_hdata)):
+        #    card[k] = v
+        #    if idx >= 6:
+        #        break # humans can grasp 7 items quickly
     return {"valid_response": True, "response": card}
