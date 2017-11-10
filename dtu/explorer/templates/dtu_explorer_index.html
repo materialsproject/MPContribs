@@ -55,11 +55,7 @@ requirejs(['main'], function() {
                 xaxis: {title: 'mp-id', type: 'category'},
                 yaxis: {title: 'Energy (eV)'}
             };
-            var keys = [
-                'derivative_discontinuity',
-                'quasi-particle_bandgap(indirect)',
-                'quasi-particle_bandgap(direct)'
-            ];
+            var keys = ['C', 'indirect ΔE-QP', 'direct ΔE-QP'];
             var xvals = []; var yvals = {};
             for (i = 0; i < table['rows'].length; i++) {
                 var row = table['rows'][i];
