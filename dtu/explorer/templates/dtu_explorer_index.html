@@ -24,6 +24,8 @@
 <style>
 .backgrid { font-family: "symbola"; }
 .backgrid tbody tr:hover { background-color: #f9f9f9; }
+.backgrid .string-cell { text-align: center; }
+.backgrid .uri-cell { text-align: center; }
 .jh-root { font-family: "symbola"; }
 .jh-type-string { font-style: normal; }
 </style>
@@ -52,7 +54,7 @@ requirejs(['main'], function() {
             var graph = document.getElementById('graph');
             var layout = {
                 margin: {t: 0}, barmode: 'stack',
-                xaxis: {title: 'mp-id', type: 'category'},
+                xaxis: {type: 'category'},
                 yaxis: {title: 'Energy (eV)'}
             };
             var keys = ['C', 'indirect ΔE-QP', 'direct ΔE-QP'];
