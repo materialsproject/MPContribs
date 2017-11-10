@@ -6,6 +6,7 @@
 {% block extra_css %}
 <link rel="stylesheet" href='{% static "js/components/backgrid/lib/backgrid.css" %}' charset="utf-8">
 <link rel="stylesheet" href='{% static "js/components/json-human/css/json.human.css" %}' charset="utf-8">
+<link href="//db.onlinewebfonts.com/c/1a6abbd133be395c851e058cbcb2a80a?family=Symbola" rel="stylesheet" type="text/css"/>
 {% endblock extra_css %}
 
 {% block content %}
@@ -21,8 +22,10 @@
 {% else %}
 
 <style>
-.backgrid .string-cell { text-align: center; }
+.backgrid { font-family: "symbola"; }
 .backgrid tbody tr:hover { background-color: #f9f9f9; }
+.jh-root { font-family: "symbola"; }
+.jh-type-string { font-style: normal; }
 </style>
 
 <div class="container">
