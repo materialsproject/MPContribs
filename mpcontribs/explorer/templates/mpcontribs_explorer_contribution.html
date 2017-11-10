@@ -13,6 +13,10 @@
 
 {% block detail_content %}
 
+<style>
+.navbar .btn, .navbar .btn-group { margin-top: 0px; }
+</style>
+
 <nav class="navbar navbar-default navbar-lower" role="navigation">
   <div class="container">
     <form class="navbar-form">
@@ -89,7 +93,7 @@ requirejs(['main'], function() {
               on:"Inputs", off:"Inputs", size:"mini", width:65, height:25
             });
             $('#toggle_structures').bootstrapToggle({
-              on:"Structures", off:"Structures", size:"mini", width:65, height:25
+              on:"Structures", off:"Structures", size:"mini", width:75, height:25
             });
             $('#spinner').spin(false);
         });
