@@ -12,6 +12,7 @@ requirejs.config({
         plotly: 'components/plotlyjs/plotly',
         'backgrid-select-all': 'components/backgrid-select-all/backgrid-select-all',
         'backgrid-filter': 'components/backgrid-filter/backgrid-filter',
+        'backbone.paginator': 'components/backbone.paginator/lib/backbone.paginator',
         'backgrid-paginator': 'components/backgrid-paginator/backgrid-paginator',
         'json.human': 'components/json-human/src/json.human',
         'js-cookie': 'components/js-cookie/src/js.cookie',
@@ -32,7 +33,8 @@ requirejs.config({
         toggle: {deps: ['jquery', 'bootstrap']},
         'backgrid-select-all': {deps: ['backgrid']},
         'backgrid-filter': {deps: ['backgrid']},
-        'backgrid-paginator': {deps: ['backgrid']},
+        'backbone.paginator': {deps: ['backbone']},
+        'backgrid-paginator': {deps: ['backgrid', 'backbone.paginator']},
         'jquery.spin': {deps: ['jquery']}
         //waitfor: {deps: ['jquery']},
         //sandbox: {deps: ['archieml']},
