@@ -10,7 +10,8 @@ requirejs.config({
     toggle: 'bootstrap-toggle',
     plotly: "plotly.min",
     underscore: "underscore-min",
-    backbone: "backbone-min"
+    backbone: "backbone-min",
+    backgrid-paginator: "backgrid.paginator"
   },
   shim: {
     bootstrap: { deps: ['jquery'] },
@@ -19,6 +20,7 @@ requirejs.config({
     chosen: { deps: ['jquery', 'bootstrap'] },
     waitfor: { deps: ['jquery'] },
     sandbox: { deps: ['archieml'] },
-    toggle: { deps: ['jquery', 'bootstrap'] }
+    toggle: { deps: ['jquery', 'bootstrap'] },
+    backgrid-paginator: { deps: ['backgrid'] }
   }
 });
