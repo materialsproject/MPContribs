@@ -81,14 +81,16 @@ def render_dataframe(df, webapp=False):
     """use BackGrid JS library to render Pandas DataFrame"""
     # TODO check for index column in df other than the default numbering
     uuid_str, uuid_str_paginator = str(uuid.uuid4()), str(uuid.uuid4())
+    uuid_str_filter = str(uuid.uuid4())
     table = get_backgrid_table(df)
-    html = "<div id='{}' style='width:100%;'></div>".format(uuid_str)
+    html = "<div id='{}'></div>".format(uuid_str_filter)
+    html += "<div id='{}' style='width:100%;'></div>".format(uuid_str)
     html += "<div id='{}'></div>".format(uuid_str_paginator)
     html += "<script>"
     if webapp:
         html += "requirejs(['main'], function() {"
     html += """
-    require(["backgrid", "backgrid-paginator"], function(Backgrid) {
+    require(["backgrid", "backgrid-paginator", "backgrid-filter"], function(Backgrid) {
       "use strict";
       if (!("tables" in window)) { window.tables = []; }
       window.tables.push(JSON.parse('%s'));
@@ -114,10 +116,12 @@ def render_dataframe(df, webapp=False):
       }
       var grid = new Backgrid.Grid({ columns: table['columns'], collection: rows, });
       var paginator = new Backgrid.Extension.Paginator({collection: rows});
+      var filter = new Backgrid.Extension.ClientSideFilter({collection: rows, placeholder: "Search"});
       $('#%s').append(grid.render().el);
       $("#%s").append(paginator.render().$el);
+      $("#%s").append(filter.render().$el);
     });
-    """ % (json.dumps(table), uuid_str, uuid_str_paginator)
+    """ % (json.dumps(table), uuid_str, uuid_str_paginator, uuid_str_filter)
     if webapp:
         html += "});"
     html += "</script>"
