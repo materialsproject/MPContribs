@@ -3,7 +3,7 @@ from __future__ import unicode_literals, print_function, absolute_import
 import json, os, socket, SocketServer, codecs, time, psutil
 import sys, warnings, multiprocessing
 from flask import render_template, request, Response, Blueprint, current_app
-from flask import url_for, redirect, make_response, stream_with_context
+from flask import url_for, redirect, make_response, stream_with_context, jsonify
 from mpcontribs.utils import process_mpfile, submit_mpfile
 from mpcontribs.config import default_mpfile_path
 from mpcontribs.users_modules import *
@@ -132,7 +132,8 @@ def read_mpfile_to_view():
         return session.get('mpfile')
 
 @ingester_bp.route('/view')
-def view():
+@ingester_bp.route('/view/<identifier>/<cid_short>')
+def view(identifier=None, cid_short=None):
     mpfile = read_mpfile_to_view()
     if mpfile is None:
         return render_template(
@@ -140,12 +141,21 @@ def view():
         )
     fmt = session['options'][0]
     try:
-        response = Response(stream_with_context(stream_template(
-            'index.html', session=session,
-            content=process_mpfile(StringIO(mpfile), fmt=fmt) # TODO ids kwarg
-        )))
-        response.headers['X-Accel-Buffering'] = 'no'
-        return response
+        mpfile_stringio = StringIO(mpfile)
+        if identifier is None or cid_short is None:
+            response = Response(stream_with_context(stream_template(
+                'index.html', session=session,
+                content=process_mpfile(mpfile_stringio, fmt=fmt)
+            )))
+            response.headers['X-Accel-Buffering'] = 'no'
+            return response
+        else:
+            ids = [identifier, cid_short]
+            iterator = process_mpfile(mpfile_stringio, fmt=fmt, ids=ids)
+            for it in iterator:
+                if isinstance(it, list):
+                    d = jsonify(it)
+            return d
     except:
         pass
 

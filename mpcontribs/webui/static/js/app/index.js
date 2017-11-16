@@ -64,12 +64,28 @@ define(function(require) {
     $('#gotolist').on('change', function() {
         var text_split = this.options[this.selectedIndex].text.split(' ');
         var mpid = text_split[0];
-        var cid = text_split[1].slice(1,-1);
-        var id = 'Contribution-' + cid + '-for-' + mpid;
+        var cid = text_split[1].slice(2,-1);
+        var id = 'Contribution-#' + cid + '-for-' + mpid;
+        var location_href = this.value;
         if (document.getElementById(id) === null) {
-            console.log('build notebook');
+            $("#spinner").spin('small');
+            $.ajax({
+                type: 'GET',
+                url: 'view/' + mpid + '/' + cid,
+                success: function(data, textStatus, jqXHR) {
+                    // data = [mpid, '', cid_short, string with notebook html]
+                    $(data[3]).insertAfter($("a[name='cid"+data[2]+"']").next());
+                    $("#spinner").spin(false);
+                    location.href = location_href;
+                },
+                error: function(jqXHR, textStatus, errorThrown) {
+                    $("#spinner").spin(false);
+                    console.log(errorThrown);
+                }
+            });
+        } else {
+            location.href = location_href;
         }
-        location.href = this.value;
     });
 
     // overview plot axes
