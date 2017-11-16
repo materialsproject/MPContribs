@@ -142,7 +142,7 @@ def view():
     try:
         response = Response(stream_with_context(stream_template(
             'index.html', session=session,
-            content=process_mpfile(StringIO(mpfile), fmt=fmt)
+            content=process_mpfile(StringIO(mpfile), fmt=fmt) # TODO ids kwarg
         )))
         response.headers['X-Accel-Buffering'] = 'no'
         return response

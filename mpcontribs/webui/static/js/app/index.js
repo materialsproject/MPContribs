@@ -61,7 +61,16 @@ define(function(require) {
       entry.innerHTML = gotolist_options[j][1];
       $('#gotolist').append(entry);
     }
-    $('#gotolist').on('change', function() { location.href = this.value; });
+    $('#gotolist').on('change', function() {
+        var text_split = this.options[this.selectedIndex].text.split(' ');
+        var mpid = text_split[0];
+        var cid = text_split[1].slice(1,-1);
+        var id = 'Contribution-' + cid + '-for-' + mpid;
+        if (document.getElementById(id) === null) {
+            console.log('build notebook');
+        }
+        location.href = this.value;
+    });
 
     // overview plot axes
     var ovdata_element = document.getElementById('inputovdata');
