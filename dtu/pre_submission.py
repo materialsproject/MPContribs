@@ -15,12 +15,13 @@ def run(mpfile, **kwargs):
         data.retrieve(url, dbfile)
 
     con = ase.db.connect(dbfile)
+    nr_mpids = con.count(selection='mpid')
 
     for idx, row in enumerate(con.select('mpid')):
+        if idx and not idx%10:
+            print 'added', idx, '/', nr_mpids, 'materials'
+            break
         mpid = 'mp-' + str(row.mpid)
-        if mpid not in run.existing_identifiers:
-            continue
-
         d = RecursiveDict()
 
         # kohn-sham band gap
