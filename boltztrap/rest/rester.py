@@ -30,8 +30,34 @@ class BoltztrapRester(MPContribsRester):
             cid_url = '/'.join([
                 self.preamble.rsplit('/', 1)[0], 'explorer', 'materials', doc['_id']
             ])
-            cond_eff_mass = contrib[columns[3]].get(doping, {}).get('<ε>', '')
+            cond_eff_mass = contrib[columns[3]].get(doping, {}).get('<m>', '')
             row = [mp_id, cid_url, contrib['pretty_formula'], cond_eff_mass]
             row += [contrib[k][doping]['value'] for k in columns[4:]]
             data.append((mp_id, row))
         return DataFrame.from_items(data, orient='index', columns=columns)
+    
+    def get_detail_data(self,doping):
+        '''
+            function to get doping and temperature related to the max values
+            and the three eigenvalues of the effective mass tensor
+        '''
+        
+        dopings = ['n', 'p']
+        if doping not in dopings:
+            raise Exception('doping has to be n or p!')
+        
+        docs = self.query_contributions(projection={'_id': 1, 'mp_cat_id': 1, 'content': 1})
+        if not docs:
+            raise Exception('No contributions found for Boltztrap Explorer!')
+
+        data = []
+        columns = ['mp-id', 'cid', 'formula', u'mₑᶜᵒⁿᵈ', u"Sₘₐₓ", u"σₘₐₓ", u"κₑ₋ₘᵢₙ"]
+        for doc in docs:
+            mpfile = MPFile.from_contribution(doc)
+            mp_id = mpfile.ids[0]
+            contrib = mpfile.hdata[mp_id]['data']
+        
+            details = {k:[contrib[k][doping]['temperature'],contrib[k][doping]['doping']] for k in columns[4:]}
+            data.append((mp_id, details))
+         
+        return data

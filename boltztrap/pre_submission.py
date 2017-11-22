@@ -33,12 +33,12 @@ def run(mpfile, nmax=1, dup_check_test_site=True):
             hdata = RecursiveDict((k, data[k]) for k in keys)
             cond_eff_mass = u'mₑᶜᵒⁿᵈ'
             hdata[cond_eff_mass] = RecursiveDict()
-            names = [u'ε₁', u'ε₂', u'ε₃', u'<ε>']
+            names = [u'm₁', u'm₂', u'm₃', u'<m>']
             for dt, d in data['GGA']['cond_eff_mass'].items():
                 eff_mass = d['300']['1e+18']
                 eff_mass.append(np.mean(eff_mass))
                 hdata[cond_eff_mass][dt] = RecursiveDict(
-                    (names[idx], u'{:.4f} mₑ'.format(x))
+                    (names[idx], u'{:.2f} mₑ'.format(x))
                     for idx, x in enumerate(eff_mass)
                 )
 
@@ -81,9 +81,9 @@ def run(mpfile, nmax=1, dup_check_test_site=True):
                     arg_max = np.argwhere(arr_prop_avg==max_v)[0]
 
                     vals = [
-                        u'{} {}'.format(max_v, unit),
-                        u'{} K'.format(temps[arg_max[0]]),
-                        u'{} cm⁻³'.format(dopings[arg_max[1]])
+                        u'{:.2e} {}'.format(max_v, unit),
+                        u'{:.2e} K'.format(temps[arg_max[0]]),
+                        u'{:.2e} cm⁻³'.format(dopings[arg_max[1]])
                     ]
                     hdata[lbl][doping_type] = RecursiveDict(
                         (k, v) for k, v in zip(cols, vals)
