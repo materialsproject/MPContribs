@@ -5,17 +5,10 @@ from pandas import DataFrame
 from mpcontribs.io.core.recdict import RecursiveDict
 from mpcontribs.io.core.utils import nest_dict
 from mpcontribs.users.boltztrap.rest.rester import BoltztrapRester
+from mpcontribs.users.utils import clean_value, duplicate_check
 
-def run(mpfile, nmax=1, dup_check_test_site=True):
-
-    # book-keeping
-    existing_mpids = {}
-    for b in [False, True]:
-        with BoltztrapRester(test_site=b) as mpr:
-            for doc in mpr.query_contributions(criteria=mpr.query):
-                existing_mpids[doc['mp_cat_id']] = doc['_id']
-        if not dup_check_test_site:
-            break
+@duplicate_check
+def run(mpfile, **kwargs):
 
     # extract data from json files
     keys = ['pretty_formula', 'volume']
@@ -93,12 +86,5 @@ def run(mpfile, nmax=1, dup_check_test_site=True):
                 nest_dict(hdata, ['data']), identifier=data['mp_id']
             )
 
-            if mpid in existing_mpids:
-                cid = existing_mpids[mpid]
-                mpfile.insert_id(mpid, cid)
-                print cid, 'inserted to update', mpid
-
         finally:
             input_file.close()
-        if idx >= nmax-1:
-            break
