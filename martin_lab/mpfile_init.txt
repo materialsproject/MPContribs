@@ -1,0 +1,10 @@
+title: Pulse-Laser Deposition Growth
+author: Josh Agar
+
+
+sample_name: XXXX
+substrate: GDSCO3
+
+
+input_dir: /wkshp_shared/Growth_Test
+
