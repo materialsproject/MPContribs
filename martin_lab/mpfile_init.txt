@@ -2,9 +2,65 @@ title: Pulse-Laser Deposition Growth
 author: Josh Agar
 
 
-sample_name: XXXX
+sample_name: JA306
 substrate: GDSCO3
+Research_Group: Lane Martin
+Laser: 1A
+Chamber: 1C
+Base_Pressure: 5e-6
+Cure_Temperature: 60 C
 
+layer1.Temperature: 700 C
+layer1.Pressure: 20 mtorr
+layer1.Target: SrRuO3
+layer1.Target_ID: Fall 2016A
+layer1.Target_Height: 35 cm
+add translation for for each chamber to give target substrate spacing
+layer1.Frequency: 2 Hz
+layer1.Aperature_size: 12.5 mm
+layer1.Focus_Depth: 17.9
+layer1.Focus_Position_X: 19.0
+layer1.Focus_Position_Y: 10.10
+layer1.Laser_Voltage: 19.5 kV
+layer1.Laser_Internal_Energy: 408
+layer1.Angular_Translation: 0-15
+layer1.Angular_Translation_Speed: 15 deg/s
+layer1.Target_Rotation_Speed: 5 deg/s
+layer1.Mirror_Depth: 3.44 cm
+layer1.External_Energy_Detector: Detector 1
+layer1.Measured_Energy_Average: 140 mJ
+layer1.Measured_Energy_STD: 2 mJ
+layer1.Measured_Number_of_Pulses: 100
+layer1.Preablation_Pulses: 1000
+layer1.Preablation_Frequency: 20 Hz
+layer1.Ablation_Pulses: 600
+layer1.Film_Type: Bottom Electrode
+
+layer2.Temperature: 750 C
+layer2.Pressure: 100 mtorr
+layer2.Target: PbZr20Ti80O3
+layer2.Target_ID: Fall 2015B
+layer2.Target_Height: 35 cm
+add translation for for each chamber to give target substrate spacing
+layer2.Frequency: 2 Hz
+layer2.Aperature_size: 12.5 mm
+layer2.Focus_Depth: 17.9
+layer2.Focus_Position_X: 19.0
+layer2.Focus_Position_Y: 10.10
+layer2.Laser_Voltage: 20 kV
+layer2.Laser_Internal_Energy: 428
+layer2.Angular_Translation: 0-15
+layer2.Angular_Translation_Speed: 15 deg/s
+layer2.Target_Rotation_Speed: 5 deg/s
+layer2.Mirror_Depth: 3.44 cm
+layer2.External_Energy_Detector: Detector 1
+layer2.Measured_Energy_Average: 115 mJ
+layer2.Measured_Energy_STD: 4 mJ
+layer2.Measured_Number_of_Pulses: 100
+layer2.Preablation_Frequency: 20 Hz
+layer2.Preablation_Pulses: 1000
+layer2.Ablation_Pulses: 600
+layer2.Film_Type: Ferroelectric Layer
 
 input_dir: /wkshp_shared/Growth_Test
 
