@@ -1,66 +1,65 @@
+TODO add translation for for each chamber to give target substrate spacing
+
 title: Pulse-Laser Deposition Growth
 author: Josh Agar
-
+research_group: Lane Martin
+input_dir: /wkshp_shared/Growth_Test
 
 sample_name: JA306
 substrate: GDSCO3
-Research_Group: Lane Martin
-Laser: 1A
-Chamber: 1C
-Base_Pressure: 5e-6
-Cure_Temperature: 60 C
+laser: 1A
+chamber: 1C
+base_pressure: 5e-6
+cure_temperature: 60 C
 
-layer1.Temperature: 700 C
-layer1.Pressure: 20 mtorr
-layer1.Target: SrRuO3
-layer1.Target_ID: Fall 2016A
-layer1.Target_Height: 35 cm
-add translation for for each chamber to give target substrate spacing
-layer1.Frequency: 2 Hz
-layer1.Aperature_size: 12.5 mm
-layer1.Focus_Depth: 17.9
-layer1.Focus_Position_X: 19.0
-layer1.Focus_Position_Y: 10.10
-layer1.Laser_Voltage: 19.5 kV
-layer1.Laser_Internal_Energy: 408
-layer1.Angular_Translation: 0-15
-layer1.Angular_Translation_Speed: 15 deg/s
-layer1.Target_Rotation_Speed: 5 deg/s
-layer1.Mirror_Depth: 3.44 cm
-layer1.External_Energy_Detector: Detector 1
-layer1.Measured_Energy_Average: 140 mJ
-layer1.Measured_Energy_STD: 2 mJ
-layer1.Measured_Number_of_Pulses: 100
-layer1.Preablation_Pulses: 1000
-layer1.Preablation_Frequency: 20 Hz
-layer1.Ablation_Pulses: 600
-layer1.Film_Type: Bottom Electrode
+{PbZr20Ti80O3.layer1}
+temperature: 700 C
+pressure: 20 mtorr
+frequency: 2 Hz
+aperature_size: 12.5 mm
+mirror_depth: 3.44 cm
+target.name: SrRuO3
+target.id: Fall 2016A
+target.height: 35 cm
+target.rotation_speed: 5 deg/s
+focus.depth: 17.9
+focus.x: 19.0
+focus.y: 10.10
+laser.voltage: 19.5 kV
+laser.internal_energy: 408
+angular_translation: 0-15
+angular_translation_speed: 15 deg/s
+external_energy_detector: Detector 1
+measured_energy.average: 140 mJ
+measured_energy.std: 2 mJ
+measured_number_of_pulses: 100
+preablation.pulses: 1000
+preablation.frequency: 20 Hz
+ablation_pulses: 600
+film_type: Bottom Electrode
 
-layer2.Temperature: 750 C
-layer2.Pressure: 100 mtorr
-layer2.Target: PbZr20Ti80O3
-layer2.Target_ID: Fall 2015B
-layer2.Target_Height: 35 cm
-add translation for for each chamber to give target substrate spacing
-layer2.Frequency: 2 Hz
-layer2.Aperature_size: 12.5 mm
-layer2.Focus_Depth: 17.9
-layer2.Focus_Position_X: 19.0
-layer2.Focus_Position_Y: 10.10
-layer2.Laser_Voltage: 20 kV
-layer2.Laser_Internal_Energy: 428
-layer2.Angular_Translation: 0-15
-layer2.Angular_Translation_Speed: 15 deg/s
-layer2.Target_Rotation_Speed: 5 deg/s
-layer2.Mirror_Depth: 3.44 cm
-layer2.External_Energy_Detector: Detector 1
-layer2.Measured_Energy_Average: 115 mJ
-layer2.Measured_Energy_STD: 4 mJ
-layer2.Measured_Number_of_Pulses: 100
-layer2.Preablation_Frequency: 20 Hz
-layer2.Preablation_Pulses: 1000
-layer2.Ablation_Pulses: 600
-layer2.Film_Type: Ferroelectric Layer
-
-input_dir: /wkshp_shared/Growth_Test
-
+{PbZr20Ti80O3.layer2}
+temperature: 750 C
+pressure: 100 mtorr
+frequency: 2 Hz
+aperature_size: 12.5 mm
+mirror_depth: 3.44 cm
+target.name: PbZr20Ti80O3
+target.id: Fall 2015B
+target.height: 35 cm
+focus.depth: 17.9
+focus.x: 19.0
+focus.y: 10.10
+laser.voltage: 20 kV
+laser.internal_energy: 428
+angular_translation: 0-15
+angular_translation_speed: 15 deg/s
+target_rotation_speed: 5 deg/s
+external_energy_detector: Detector 1
+measured_energy_average: 115 mJ
+measured_energy_std: 4 mJ
+measured_number_of_pulses: 100
+preablation.frequency: 20 Hz
+preablation.pulses: 1000
+ablation_pulses: 600
+film_type: Ferroelectric Layer
