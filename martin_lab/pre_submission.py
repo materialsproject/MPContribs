@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import os
 from mpcontribs.io.core.recdict import RecursiveDict
-from mpcontribs.io.core.utils import nest_dict
+from mpcontribs.io.core.utils import nest_dict, get_composition_from_string
 from igor import binarywave
 from xrdtools import read_xrdml
 from collections import OrderedDict
@@ -59,7 +59,7 @@ def load_RSM(filename):
 def run(mpfile, **kwargs):
 
     input_dir = mpfile.hdata['_hdata']['input_dir']
-    identifier = 'PbZr20Ti80O3'
+    identifier = get_composition_from_string('PbZr20Ti80O3')
     print identifier
 
     files = ['SP128_NSO_VPFM0000.ibw', 'SP128_NSO_LPFM0000.ibw', 'BR_60016 (1).ibw']
