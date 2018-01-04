@@ -44,6 +44,7 @@ def get_backgrid_table(df):
     import numpy as np
     from django.core.validators import URLValidator
     from django.core.exceptions import ValidationError
+    from pandas.core.indexes.multi import MultiIndex
     val = URLValidator()
     table = dict()
     nrows = df.shape[0]
@@ -53,9 +54,11 @@ def get_backgrid_table(df):
     numeric_columns = df.select_dtypes(include=[np.number]).columns.tolist()
 
     table['columns'] = []
+    if isinstance(df.index, MultiIndex):
+        df.reset_index(inplace=True)
     for col_index, col in enumerate(df.columns):
         cell_type = 'number'
-        if col not in numeric_columns:
+        if not col.startswith('level_') and col not in numeric_columns:
             is_url_column = None
             for row_index in xrange(nrows):
                 cell = unicode(df.iat[row_index, col_index])
@@ -75,7 +78,7 @@ def get_backgrid_table(df):
 
     table['rows'] = df.to_dict('records')
     for col_index, col in enumerate(df.columns):
-        if col not in numeric_columns:
+        if not col.startswith('level_') and col not in numeric_columns:
             for row_index in xrange(nrows):
                 value = unicode(df.iat[row_index, col_index])
                 if mp_id_pattern.match(value):
