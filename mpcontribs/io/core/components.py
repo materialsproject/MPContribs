@@ -41,39 +41,46 @@ class HierarchicalData(RecursiveDict):
 def get_backgrid_table(df):
     """Backgrid-conform dict from DataFrame"""
     # shorten global import times by importing django here
+    import numpy as np
     from django.core.validators import URLValidator
     from django.core.exceptions import ValidationError
     val = URLValidator()
     table = dict()
-    nrows = len(df[df.columns[0]])
+    nrows = df.shape[0]
+    nrows_max = 5000
+    if nrows > nrows_max:
+        df = df.head(n=nrows_max)
+    numeric_columns = df.select_dtypes(include=[np.number]).columns.tolist()
 
     table['columns'] = []
-    for k in df.columns:
-        is_url_column = None
-        for row_index in xrange(nrows):
-            cell = unicode(df[k][row_index])
-            is_url_column = not cell # empty string is ok
-            if not is_url_column:
-                is_url_column = mp_id_pattern.match(cell)
+    for col_index, col in enumerate(df.columns):
+        cell_type = 'number'
+        if col not in numeric_columns:
+            is_url_column = None
+            for row_index in xrange(nrows):
+                cell = unicode(df.iat[row_index, col_index])
+                is_url_column = not cell # empty string is ok
                 if not is_url_column:
-                    try:
-                        val(cell)
-                    except ValidationError:
-                        break
-                    is_url_column = True
-        cell_type = 'uri' if is_url_column else 'string'
-        table['columns'].append({'name': k, 'cell': cell_type, 'editable': 0})
+                    is_url_column = mp_id_pattern.match(cell)
+                    if not is_url_column:
+                        try:
+                            val(cell)
+                        except ValidationError:
+                            break
+                        is_url_column = True
+            cell_type = 'uri' if is_url_column else 'string'
+        table['columns'].append({'name': col, 'cell': cell_type, 'editable': 0})
         if len(table['columns']) > 9:
             table['columns'][-1]['renderable'] = 0
 
-    table['rows'] = []
-    for row_index in xrange(nrows):
-        table['rows'].append({})
-        for col in df.columns:
-            value = unicode(df[col][row_index])
-            if mp_id_pattern.match(value):
-                value = 'https://materialsproject.org/materials/{}'.format(value)
-            table['rows'][row_index][col] = value
+    table['rows'] = df.to_dict('records')
+    for col_index, col in enumerate(df.columns):
+        if col not in numeric_columns:
+            for row_index in xrange(nrows):
+                value = unicode(df.iat[row_index, col_index])
+                if mp_id_pattern.match(value):
+                    value = 'https://materialsproject.org/materials/{}'.format(value)
+                table['rows'][row_index][col] = value
 
     return table
 
@@ -83,6 +90,7 @@ def render_dataframe(df, webapp=False):
     uuid_str, uuid_str_paginator = str(uuid.uuid4()), str(uuid.uuid4())
     uuid_str_filter = str(uuid.uuid4())
     table = get_backgrid_table(df)
+    table_str = json.dumps(table)
     html = "<div id='{}'></div>".format(uuid_str_filter)
     html += "<div id='{}' style='width:100%;'></div>".format(uuid_str)
     html += "<div id='{}'></div>".format(uuid_str_paginator)
@@ -90,7 +98,7 @@ def render_dataframe(df, webapp=False):
     if webapp:
         html += "requirejs(['main'], function() {"
     html += """
-    require(["backgrid", "backgrid-paginator", "backgrid-filter"], function(Backgrid) {
+    require(["backbone", "backgrid", "backgrid-paginator", "backgrid-filter"], function(Backbone, Backgrid) {
       "use strict";
       if (!("tables" in window)) { window.tables = []; }
       window.tables.push(JSON.parse('%s'));
@@ -121,10 +129,13 @@ def render_dataframe(df, webapp=False):
       $("#%s").append(paginator.render().$el);
       $("#%s").append(filter.render().$el);
     });
-    """ % (json.dumps(table), uuid_str, uuid_str_paginator, uuid_str_filter)
+    """ % (table_str, uuid_str, uuid_str_paginator, uuid_str_filter)
     if webapp:
         html += "});"
     html += "</script>"
+    html_size = len(html.encode('utf-8')) / 1024. / 1024.
+    if html_size > 1.1:
+        return 'table too large to show ({:.2f}MB)'.format(html_size)
     return html
 
 ipython = get_ipython()
