@@ -2,7 +2,7 @@ import warnings, pandas, numpy, six, collections
 from StringIO import StringIO
 from pymatgen import Composition, Element
 from mpcontribs.config import mp_level01_titles, mp_id_pattern, csv_comment_char
-from recdict import RecursiveDict
+from mpcontribs.io.core.recdict import RecursiveDict
 
 def flatten_dict(dd, separator='.', prefix=''):
     """http://stackoverflow.com/a/19647596"""
