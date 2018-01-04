@@ -162,13 +162,14 @@ class MPFileCore(six.with_metaclass(ABCMeta, object)):
         first_sub_key = self.document[mp_cat_id].keys()[0]
         self.document[mp_cat_id].insert_before(first_sub_key, ('cid', str(cid)))
 
-    def add_data_table(self, identifier, dataframe, name):
+    def add_data_table(self, identifier, dataframe, name, plot_options=None):
         """add a datatable to the root-level section
 
         Args:
             identifier (str): MP category ID (`mp_cat_id`)
             dataframe (pandas.DataFrame): tabular data as Pandas DataFrame
             name (str): table name, optional if only one table in section
+            plot_options (dict): options for according plotly graph
         """
         # TODO: optional table name, required if multiple tables per root-level section
         table_start = mp_level01_titles[1]+'_'
@@ -177,7 +178,9 @@ class MPFileCore(six.with_metaclass(ABCMeta, object)):
         self.document.rec_update(nest_dict(
             pandas_to_dict(dataframe), [identifier, name]
         ))
-        self.document[identifier].insert_default_plot_options(dataframe, name)
+        self.document[identifier].insert_default_plot_options(
+            dataframe, name, update_plot_options=plot_options
+        )
 
     def add_hierarchical_data(self, dct, identifier=mp_level01_titles[0]):
         self.document.rec_update(nest_dict(RecursiveDict(dct), [identifier]))

@@ -104,17 +104,20 @@ class RecursiveDict(_OrderedDict):
     def insert_before(self, existing_key, key_value):
         self.__insertion(self._OrderedDict__map[existing_key][0], key_value)
 
-    def insert_default_plot_options(self, pd_obj, k):
+    def insert_default_plot_options(self, pd_obj, k, update_plot_options=None):
         # make default plot (add entry in 'plots') for each
         # table, first column as x-column
         table_name = k[len(mp_level01_titles[1]+'_'):]
+        key = 'default_{}'.format(k)
         plots_dict = _OrderedDict([(
             mp_level01_titles[2], _OrderedDict([(
-                'default_{}'.format(k), _OrderedDict([
+                key, _OrderedDict([
                     ('x', pd_obj.columns[0]), ('table', table_name)
                 ])
             )])
         )])
+        if update_plot_options is not None:
+            plots_dict[mp_level01_titles[2]][key].update(update_plot_options)
         if mp_level01_titles[2] in self:
             self.rec_update(plots_dict)
         else:

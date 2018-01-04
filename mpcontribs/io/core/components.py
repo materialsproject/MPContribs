@@ -182,12 +182,17 @@ def render_plot(plot, webapp=False, filename=None):
     xaxis, yaxis = plot.config['x'], plot.config.get('y', None)
     yaxes = [yaxis] if yaxis is not None else \
             [col for col in plot.table.columns if col != xaxis]
-    xvals = plot.table[xaxis].tolist()
     traces = [dict(
-        x=xvals, y=plot.table[axis].tolist(), name=axis
+        x=plot.table[xaxis].tolist(),
+        y=plot.table[axis].tolist(),
+        name=axis
     ) for axis in yaxes]
     layout = dict(
-        xaxis = dict(title=xaxis), yaxis = dict(title=plot.config['table']),
+        xaxis = dict(title=xaxis),
+        yaxis = dict(
+            title=plot.config['table'],
+            type=plot.config.get('yaxis', {}).get('type', '-')
+        ),
         legend = dict(x=0.7, y=1), margin = dict(r=0, t=40),
     )
     fig = dict(data=traces, layout=layout)
