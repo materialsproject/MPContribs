@@ -177,6 +177,7 @@ class MPFileCore(six.with_metaclass(ABCMeta, object)):
         self.document.rec_update(nest_dict(
             pandas_to_dict(dataframe), [identifier, name]
         ))
+        self.document[identifier].insert_default_plot_options(dataframe, name)
 
     def add_hierarchical_data(self, dct, identifier=mp_level01_titles[0]):
         self.document.rec_update(nest_dict(RecursiveDict(dct), [identifier]))

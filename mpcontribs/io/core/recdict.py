@@ -104,6 +104,23 @@ class RecursiveDict(_OrderedDict):
     def insert_before(self, existing_key, key_value):
         self.__insertion(self._OrderedDict__map[existing_key][0], key_value)
 
+    def insert_default_plot_options(self, pd_obj, k):
+        # make default plot (add entry in 'plots') for each
+        # table, first column as x-column
+        table_name = k[len(mp_level01_titles[1]+'_'):]
+        plots_dict = _OrderedDict([(
+            mp_level01_titles[2], _OrderedDict([(
+                'default_{}'.format(k), _OrderedDict([
+                    ('x', pd_obj.columns[0]), ('table', table_name)
+                ])
+            )])
+        )])
+        if mp_level01_titles[2] in self:
+            self.rec_update(plots_dict)
+        else:
+          kv = (mp_level01_titles[2], plots_dict[mp_level01_titles[2]])
+          self.insert_before(k, kv)
+
     def _ipython_display_(self):
 	from IPython.display import display_html
         display_html(render_dict(self), raw=True)
