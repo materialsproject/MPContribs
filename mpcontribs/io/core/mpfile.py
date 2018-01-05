@@ -1,7 +1,7 @@
 from __future__ import unicode_literals, print_function
 import six, codecs, locale, pandas, os
 from abc import ABCMeta
-from mpcontribs.config import mp_level01_titles, default_mpfile_path
+from mpcontribs.config import mp_level01_titles, default_mpfile_path, replacements
 from recdict import RecursiveDict
 from utils import nest_dict, get_composition_from_string
 from components import HierarchicalData, TabularData, GraphicalData, StructuralData, Table
@@ -175,6 +175,7 @@ class MPFileCore(six.with_metaclass(ABCMeta, object)):
         table_start = mp_level01_titles[1]+'_'
         if not name.startswith(table_start):
             name = table_start + name
+        name = ''.join([replacements.get(c, c) for c in name])
         self.document.rec_update(nest_dict(
             Table(dataframe).to_dict(), [identifier, name]
         ))

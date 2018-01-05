@@ -47,7 +47,7 @@ def get_backgrid_table(df):
     val = URLValidator()
     table = dict()
     nrows = df.shape[0]
-    nrows_max = 5000
+    nrows_max = 1000
     if nrows > nrows_max:
         df = df.head(n=nrows_max)
     numeric_columns = df.select_dtypes(include=[np.number]).columns.tolist()
@@ -209,7 +209,8 @@ def render_plot(plot, webapp=False, filename=None):
     if isinstance(plot.table.index, MultiIndex):
         import plotly.graph_objs as go
         from plotly import tools
-        cols, ncols = plot.table.columns, 2
+        cols = plot.table.columns
+        ncols = 2 if len(cols) > 1 else 1
         nrows = len(cols)/ncols + len(cols)%ncols
         fig = tools.make_subplots(
             rows=nrows, cols=ncols, subplot_titles=cols, print_grid=False
