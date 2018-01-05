@@ -2,7 +2,7 @@ from __future__ import unicode_literals, print_function
 import six, archieml, warnings, textwrap
 from pymatgen import Structure
 from pymatgen.io.cif import CifWriter, CifParser
-from mpcontribs.config import mp_level01_titles, symprec
+from mpcontribs.config import mp_level01_titles, symprec, replacements
 from mpcontribs.io.core.mpfile import MPFileCore
 from mpcontribs.io.core.recdict import RecursiveDict
 from mpcontribs.io.core.utils import nest_dict, normalize_root_level
@@ -68,7 +68,6 @@ class MPFile(MPFileCore):
     def get_string(self):
         lines, scope = [], []
         table_start = mp_level01_titles[1]+'_'
-        replacements = {' ': '_', '[': '', ']': '', '{': '', '}': '', ':': '_'}
         for key,value in self.document.iterate():
             if isinstance(value, Table):
                 header = any([bool(
