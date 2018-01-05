@@ -80,6 +80,9 @@ class MPFileCore(six.with_metaclass(ABCMeta, object)):
         with codecs.open(filename, encoding='utf-8', mode='w') as f:
             file_str = self.get_string(**kwargs) + '\n'
             f.write(file_str)
+            print('{} ({:.3f}MB) written'.format(
+                filename, os.path.getsize(filename) / 1024. / 1024.
+            ))
 
     def get_number_of_lines(self, **kwargs):
         return len(self.get_string(**kwargs).split('\n'))
