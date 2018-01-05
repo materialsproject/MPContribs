@@ -182,23 +182,38 @@ class TabularData(RecursiveDict):
                 display_html(tables)
 
 def render_plot(plot, webapp=False, filename=None):
-    xaxis, yaxis = plot.config['x'], plot.config.get('y', None)
-    yaxes = [yaxis] if yaxis is not None else \
-            [col for col in plot.table.columns if col != xaxis]
-    traces = [dict(
-        x=plot.table[xaxis].tolist(),
-        y=plot.table[axis].tolist(),
-        name=axis
-    ) for axis in yaxes]
-    layout = dict(
-        xaxis = dict(title=xaxis),
-        yaxis = dict(
-            title=plot.config['table'],
-            type=plot.config.get('yaxis', {}).get('type', '-')
-        ),
-        legend = dict(x=0.7, y=1), margin = dict(r=0, t=40),
-    )
-    fig = dict(data=traces, layout=layout)
+    from pandas.core.indexes.multi import MultiIndex
+    layout = dict(legend = dict(x=0.7, y=1), margin = dict(r=0, t=40))
+    if isinstance(plot.table.index, MultiIndex):
+        import plotly.graph_objs as go
+        from plotly import tools
+        cols, ncols = plot.table.columns, 2
+        nrows = len(cols)/ncols + len(cols)%ncols
+        fig = tools.make_subplots(
+            rows=nrows, cols=ncols, subplot_titles=cols, print_grid=False
+        )
+        for idx, col in enumerate(cols):
+            series = plot.table[col]
+            z = [s.tolist() for i, s in series.groupby(level=0)]
+            fig.append_trace(go.Heatmap(z=z, showscale=False), idx/ncols+1, idx%ncols+1)
+        fig['layout'].update(layout)
+    else:
+        xaxis, yaxis = plot.config['x'], plot.config.get('y', None)
+        yaxes = [yaxis] if yaxis is not None else \
+                [col for col in plot.table.columns if col != xaxis]
+        traces = [dict(
+            x=plot.table[xaxis].tolist(),
+            y=plot.table[axis].tolist(),
+            name=axis
+        ) for axis in yaxes]
+        layout.update(dict(
+            xaxis = dict(title=xaxis),
+            yaxis = dict(
+                title=plot.config['table'],
+                type=plot.config.get('yaxis', {}).get('type', '-')
+            ),
+        ))
+        fig = dict(data=traces, layout=layout)
     if filename:
         import plotly.plotly as py
         py.image.save_as(fig, filename, width=350, height=250)
