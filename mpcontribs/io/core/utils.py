@@ -72,6 +72,8 @@ def read_csv(body, is_data_section=True):
     if not body: return None
     if is_data_section:
         options = { 'sep': ',', 'header': 0 }
+        if body.startswith('\nlevel_'):
+            options.update({'index_col': [0, 1]})
         cur_line = 1
         while 1:
             first_line = body.split('\n', cur_line)[cur_line-1]
