@@ -4,7 +4,6 @@ from mpcontribs.config import mp_level01_titles, mp_id_pattern, object_id_patter
 from recdict import RecursiveDict
 from utils import disable_ipython_scrollbar
 from IPython.display import display_html, display, HTML
-from IPython import get_ipython
 from pymatgen.core.structure import Structure
 
 class Tree(RecursiveDict):
@@ -141,16 +140,39 @@ def render_dataframe(df, webapp=False):
         return 'table too large to show ({:.2f}MB)'.format(html_size)
     return html
 
-ipython = get_ipython()
-if ipython is not None:
-    html_f = ipython.display_formatter.formatters['text/html']
-    html_f.for_type(DataFrame, render_dataframe)
+#from IPython import get_ipython
+#ipython = get_ipython()
+#if ipython is not None:
+#    html_f = ipython.display_formatter.formatters['text/html']
+#    html_f.for_type(DataFrame, render_dataframe)
+
+class Table(DataFrame):
+
+    def to_dict(self):
+        rdct = super(Table, self).to_dict(into=RecursiveDict)
+        rdct.rec_update({
+            "@module": self.__class__.__module__,
+            "@class": self.__class__.__name__
+        })
+        return rdct
+
+    @classmethod
+    def from_dict(cls, rdct):
+        d = RecursiveDict(
+            (k, v) for k, v in rdct.iteritems()
+            if k not in ['@module', '@class']
+        )
+        return super(Table, cls).from_dict(d)
+
+    def _ipython_display_(self):
+        disable_ipython_scrollbar()
+        display(HTML(render_dataframe(super(Table, self))))
 
 class Tables(RecursiveDict):
     """class to hold and display multiple data tables"""
     def __init__(self, content):
         super(Tables, self).__init__(
-            (key, DataFrame.from_dict(value))
+            (key, Table.from_dict(value))
             for key, value in content.iteritems()
             if key.startswith(mp_level01_titles[1])
         )

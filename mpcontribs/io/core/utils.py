@@ -2,7 +2,6 @@ import warnings, pandas, numpy, six, collections
 from StringIO import StringIO
 from pymatgen import Composition, Element
 from mpcontribs.config import mp_level01_titles, mp_id_pattern, csv_comment_char
-from mpcontribs.io.core.recdict import RecursiveDict
 
 def flatten_dict(dd, separator='.', prefix=''):
     """http://stackoverflow.com/a/19647596"""
@@ -29,12 +28,9 @@ def make_pair(key, value, sep=u':'):
         value = unicode(value)
     return u'{} '.format(sep).join([key, value])
 
-def pandas_to_dict(pandas_object):
-    """convert pandas object to dict"""
-    return pandas_object.to_dict(into=RecursiveDict)
-
 def nest_dict(dct, keys):
     """nest dict under list of keys"""
+    from mpcontribs.io.core.recdict import RecursiveDict
     nested_dict = dct
     for key in reversed(keys):
         nested_dict = RecursiveDict({key: nested_dict})

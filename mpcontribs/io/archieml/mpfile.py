@@ -1,12 +1,13 @@
 from __future__ import unicode_literals, print_function
-import six, archieml, warnings, pandas, textwrap
+import six, archieml, warnings, textwrap
 from pymatgen import Structure
 from pymatgen.io.cif import CifWriter, CifParser
 from mpcontribs.config import mp_level01_titles, symprec
-from ..core.mpfile import MPFileCore
-from ..core.recdict import RecursiveDict
-from ..core.utils import nest_dict, normalize_root_level
-from ..core.utils import read_csv, pandas_to_dict, make_pair
+from mpcontribs.io.core.mpfile import MPFileCore
+from mpcontribs.io.core.recdict import RecursiveDict
+from mpcontribs.io.core.utils import nest_dict, normalize_root_level
+from mpcontribs.io.core.utils import read_csv, make_pair
+from mpcontribs.io.core.components import Table
 
 class MPFile(MPFileCore):
     """Object for representing a MP Contribution File in ArchieML format."""
@@ -46,10 +47,10 @@ class MPFile(MPFileCore):
                         # k = table name (incl. data prefix)
                         # v = csv string from ArchieML free-form arrays
                         table_name = k[len(mp_level01_titles[1]+'_'):]
-                        pd_obj = read_csv(v)
+                        pd_obj = Table(read_csv(v))
                         rdct[root_key].pop(table_name)
                         rdct[root_key].rec_update(nest_dict(
-                            pandas_to_dict(pd_obj), [k]
+                            pd_obj.to_dict(pd_obj), [k]
                         ))
                         rdct[root_key].insert_default_plot_options(pd_obj, k)
                 # convert CIF strings into pymatgen structures
@@ -68,12 +69,11 @@ class MPFile(MPFileCore):
         table_start = mp_level01_titles[1]+'_'
         replacements = {' ': '_', '[': '', ']': '', '{': '', '}': '', ':': '_'}
         for key,value in self.document.iterate():
-            if key is None and isinstance(value, dict):
-                pd_obj = pandas.DataFrame.from_dict(value)
+            if isinstance(value, Table):
                 header = any([bool(
                     isinstance(col, unicode) or isinstance(col, str)
-                ) for col in pd_obj])
-                csv_string = pd_obj.to_csv(
+                ) for col in value])
+                csv_string = value.to_csv(
                     index=False, header=header, float_format='%g', encoding='utf-8'
                 )[:-1]
                 lines += csv_string.decode('utf-8').split('\n')
