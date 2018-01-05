@@ -51,7 +51,7 @@ class MPFile(MPFileCore):
                         pd_obj = Table(read_csv(v))
                         rdct[root_key].pop(table_name)
                         rdct[root_key].rec_update(nest_dict(
-                            pd_obj.to_dict(pd_obj), [k]
+                            pd_obj.to_dict(), [k]
                         ))
                         rdct[root_key].insert_default_plot_options(pd_obj, k)
                 # convert CIF strings into pymatgen structures
