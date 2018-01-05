@@ -2,7 +2,7 @@ from __future__ import unicode_literals, print_function
 import uuid, json, six
 from collections import OrderedDict as _OrderedDict
 from collections import Mapping as _Mapping
-from mpcontribs.config import mp_level01_titles
+from mpcontribs.config import mp_level01_titles, replacements
 
 def render_dict(dct, webapp=False):
     """use JsonHuman library to render a dictionairy"""
@@ -89,7 +89,9 @@ class RecursiveDict(_OrderedDict):
     def insert_default_plot_options(self, pd_obj, k, update_plot_options=None):
         # make default plot (add entry in 'plots') for each
         # table, first column as x-column
-        table_name = k[len(mp_level01_titles[1]+'_'):]
+        table_name = ''.join([
+            replacements.get(c, c) for c in k[len(mp_level01_titles[1]+'_'):]
+        ])
         key = 'default_{}'.format(k)
         plots_dict = _OrderedDict([(
             mp_level01_titles[2], _OrderedDict([(
