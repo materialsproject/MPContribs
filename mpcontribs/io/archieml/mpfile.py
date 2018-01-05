@@ -8,6 +8,7 @@ from mpcontribs.io.core.recdict import RecursiveDict
 from mpcontribs.io.core.utils import nest_dict, normalize_root_level
 from mpcontribs.io.core.utils import read_csv, make_pair
 from mpcontribs.io.core.components import Table
+from pandas.core.indexes.multi import MultiIndex
 
 class MPFile(MPFileCore):
     """Object for representing a MP Contribution File in ArchieML format."""
@@ -73,6 +74,8 @@ class MPFile(MPFileCore):
                 header = any([bool(
                     isinstance(col, unicode) or isinstance(col, str)
                 ) for col in value])
+                if isinstance(value.index, MultiIndex):
+                    value.reset_index(inplace=True)
                 csv_string = value.to_csv(
                     index=False, header=header, float_format='%g', encoding='utf-8'
                 )[:-1]
