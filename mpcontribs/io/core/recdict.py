@@ -3,7 +3,6 @@ import uuid, json, six
 from collections import OrderedDict as _OrderedDict
 from collections import Mapping as _Mapping
 from mpcontribs.config import mp_level01_titles
-from pymatgen import Structure
 
 def render_dict(dct, webapp=False):
     """use JsonHuman library to render a dictionairy"""
@@ -50,41 +49,24 @@ class RecursiveDict(_OrderedDict):
 
     def iterate(self, nested_dict=None):
         """http://stackoverflow.com/questions/10756427/loop-through-all-nested-dictionary-values"""
+        from mpcontribs.io.core.components import Table
+        from pymatgen import Structure
         d = self if nested_dict is None else nested_dict
-        if nested_dict is None: self.level = 0
-        self.table = None
+        if nested_dict is None:
+            self.level = 0
         for key,value in d.iteritems():
             if isinstance(value, _Mapping):
-                if '@class' in value and value['@class'] == 'Structure':
+                if value.get('@class') == 'Structure':
                     yield key, Structure.from_dict(value)
                     continue
                 yield (self.level, key), None
+                if value.get('@class') == 'Table':
+                    yield key, Table.from_dict(value)
+                    continue
                 self.level += 1
-                iterator = self.iterate(nested_dict=value)
-                while True:
-                    try:
-                        inner_key, inner_value = iterator.next()
-                    except StopIteration:
-                        if self.level > 0 and self.table:
-                            yield None, self.table
-                            self.table = None
-                        break
+                for inner_key, inner_value in self.iterate(nested_dict=value):
                     yield inner_key, inner_value
                 self.level -= 1
-            elif isinstance(value, list):
-                if isinstance(value[0], dict):
-                    # index (from archieml parser)
-                    if self.table is None: self.table = ''
-                    for row_dct in value:
-                        self.table = '\n'.join([
-                            self.table, row_dct['value']
-                        ])
-                    yield '_'.join([mp_level01_titles[1], key]), self.table
-                    self.table = None
-                else:
-                    if self.table is None:
-                        self.table = RecursiveDict()
-                    self.table[key] = value # columns
             else:
                 yield (self.level, key), value
 

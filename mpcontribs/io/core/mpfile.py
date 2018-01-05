@@ -3,8 +3,8 @@ import six, codecs, locale, pandas, os
 from abc import ABCMeta
 from mpcontribs.config import mp_level01_titles, default_mpfile_path
 from recdict import RecursiveDict
-from utils import pandas_to_dict, nest_dict, get_composition_from_string
-from components import HierarchicalData, TabularData, GraphicalData, StructuralData
+from utils import nest_dict, get_composition_from_string
+from components import HierarchicalData, TabularData, GraphicalData, StructuralData, Table
 from pymatgen import Structure, MPRester
 
 class MPFileCore(six.with_metaclass(ABCMeta, object)):
@@ -176,7 +176,7 @@ class MPFileCore(six.with_metaclass(ABCMeta, object)):
         if not name.startswith(table_start):
             name = table_start + name
         self.document.rec_update(nest_dict(
-            pandas_to_dict(dataframe), [identifier, name]
+            Table(dataframe).to_dict(), [identifier, name]
         ))
         self.document[identifier].insert_default_plot_options(
             dataframe, name, update_plot_options=plot_options
