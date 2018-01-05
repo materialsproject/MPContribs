@@ -54,7 +54,8 @@ class RecursiveDict(_OrderedDict):
         d = self if nested_dict is None else nested_dict
         if nested_dict is None:
             self.level = 0
-        for key,value in d.iteritems():
+        for key in list(d.keys()):
+            value = d[key]
             if isinstance(value, _Mapping):
                 if value.get('@class') == 'Structure':
                     yield key, Structure.from_dict(value)
@@ -67,6 +68,12 @@ class RecursiveDict(_OrderedDict):
                 for inner_key, inner_value in self.iterate(nested_dict=value):
                     yield inner_key, inner_value
                 self.level -= 1
+            elif isinstance(value, list) and isinstance(value[0], dict):
+                # index (from archieml parser)
+                table = ''
+                for row_dct in value:
+                    table = '\n'.join([table, row_dct['value']])
+                yield '_'.join([mp_level01_titles[1], key]), table
             else:
                 yield (self.level, key), value
 
