@@ -106,7 +106,8 @@ class MPContributionsBuilder():
         nb = nbf.new_notebook()
         if isinstance(self.db, dict):
             contrib.pop('_id')
-            contrib['content'].pop('cid')
+            if 'cid' in contrib['content']:
+                contrib['content'].pop('cid')
             nb['cells'].append(nbf.new_code_cell(
                 "from mpcontribs.io.core.mpfile import MPFileCore\n"
                 "from mpcontribs.io.core.recdict import RecursiveDict\n"

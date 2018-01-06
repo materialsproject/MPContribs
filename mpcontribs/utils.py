@@ -73,7 +73,9 @@ def process_mpfile(path_or_mpfile, target=None, fmt='archieml', ids=None):
         sm = StructureMatcher(primitive_cell=False, scale=False)
 
         # split input MPFile into contributions: treat every mp_cat_id as separate DB insert
-        mpfile_in = MPFile.from_file(path_or_mpfile)
+        mpfile_in = path_or_mpfile
+        if isinstance(path_or_mpfile, six.string_types):
+            mpfile_in = MPFile.from_file(path_or_mpfile)
         for idx, mpfile_single in enumerate(mpfile_in.split()):
 
             mp_cat_id = mpfile_single.document.keys()[0]
