@@ -7,6 +7,7 @@ from mpcontribs.rest.adapter import ContributionMongoAdapter
 from mpcontribs.builder import MPContributionsBuilder
 from pymatgen.analysis.structure_matcher import StructureMatcher
 from pymatgen.matproj.snl import Author
+from pympler import asizeof
 from importlib import import_module
 sys.stdout.flush()
 
@@ -95,52 +96,56 @@ def process_mpfile(path_or_mpfile, target=None, fmt='archieml', ids=None):
                 if ids is None or cid_short == ids[1]:
 
                     yield 'check ... '
-                    try:
-                        mpfile_single_cmp_str = mpfile_single.get_string()
-                    except Exception as ex:
-                        yield 'get_string() FAILED!<br>'
-                        continue
-                    try:
-                        mpfile_single_cmp = MPFile.from_string(mpfile_single_cmp_str)
-                    except Exception as ex:
-                        yield 'from_string() FAILED!<br>'
-                        continue
-                    if mpfile_single.document != mpfile_single_cmp.document:
-                        yield 'check again ... '
-                        found_inconsistency = False
-                        # check structural data
-                        structures_ok = True
-                        for name, s1 in mpfile_single.sdata[mp_cat_id].iteritems():
-                            s2 = mpfile_single_cmp.sdata[mp_cat_id][name]
-                            if s1 != s2:
-                                if len(s1) != len(s2):
-                                    yield 'different number of sites: {} -> {}!<br>'.format(len(s1), len(s2))
-                                    structures_ok = False
-                                    break
-                                if s1.lattice != s2.lattice:
-                                    yield 'lattices different!<br>'
-                                    structures_ok = False
-                                    break
-                                for site in s1:
-                                    if site not in s2:
-                                        found_inconsistency = True
-                                        if not sm.fit(s1, s2):
-                                            yield 'structures do not match!<br>'
-                                            structures_ok = False
-                                        break
-                                    if not structures_ok:
-                                        break
-                        if not structures_ok:
+                    obj_size = asizeof.asizeof(mpfile_single) / 1024. / 1024.
+                    if obj_size > 0.5:
+                        yield 'skip ({:.3f}MB) ... '.format(obj_size)
+                    else:
+                        try:
+                            mpfile_single_cmp_str = mpfile_single.get_string()
+                        except Exception as ex:
+                            yield 'get_string() FAILED!<br>'
                             continue
-                        # check hierarchical and tabular data
-                        # compare json strings to find first inconsistency
-                        json_compare(mpfile_single.hdata, mpfile_single_cmp.hdata)
-                        json_compare(mpfile_single.tdata, mpfile_single_cmp.tdata)
-                        if not found_inconsistency:
-                            # documents are not equal, but all components checked, skip contribution
-                            # should not happen
-                            yield 'inconsistency found but not identified!<br>'
+                        try:
+                            mpfile_single_cmp = MPFile.from_string(mpfile_single_cmp_str)
+                        except Exception as ex:
+                            yield 'from_string() FAILED!<br>'
                             continue
+                        if mpfile_single.document != mpfile_single_cmp.document:
+                            yield 'check again ... '
+                            found_inconsistency = False
+                            # check structural data
+                            structures_ok = True
+                            for name, s1 in mpfile_single.sdata[mp_cat_id].iteritems():
+                                s2 = mpfile_single_cmp.sdata[mp_cat_id][name]
+                                if s1 != s2:
+                                    if len(s1) != len(s2):
+                                        yield 'different number of sites: {} -> {}!<br>'.format(len(s1), len(s2))
+                                        structures_ok = False
+                                        break
+                                    if s1.lattice != s2.lattice:
+                                        yield 'lattices different!<br>'
+                                        structures_ok = False
+                                        break
+                                    for site in s1:
+                                        if site not in s2:
+                                            found_inconsistency = True
+                                            if not sm.fit(s1, s2):
+                                                yield 'structures do not match!<br>'
+                                                structures_ok = False
+                                            break
+                                        if not structures_ok:
+                                            break
+                            if not structures_ok:
+                                continue
+                            # check hierarchical and tabular data
+                            # compare json strings to find first inconsistency
+                            json_compare(mpfile_single.hdata, mpfile_single_cmp.hdata)
+                            json_compare(mpfile_single.tdata, mpfile_single_cmp.tdata)
+                            if not found_inconsistency:
+                                # documents are not equal, but all components checked, skip contribution
+                                # should not happen
+                                yield 'inconsistency found but not identified!<br>'
+                                continue
 
                     if target is not None:
                         yield 'submit ... '
