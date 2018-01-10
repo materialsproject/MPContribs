@@ -20,8 +20,10 @@ class BoltztrapRester(MPContribsRester):
             raise Exception('No contributions found for Boltztrap Explorer!')
 
         data = []
-        columns = ['mp-id', 'cid', 'formula', u'mₑᶜᵒⁿᵈ', u"Sₘₐₓ", u"σₘₐₓ", u"κₑ₋ₘᵢₙ"]
-
+        columns = ['mp-id', 'cid', 'formula'] 
+        columns += [u'mₑᶜᵒⁿᵈ']+[u"e_"+ str(i) for i in range(1,4)]
+        columns += [u"Seebeck"]+[u"e_"+ str(i) for i in range(1,4)]
+        #print columns
         for doc in docs:
             mpfile = MPFile.from_contribution(doc)
             mp_id = mpfile.ids[0]
@@ -30,10 +32,13 @@ class BoltztrapRester(MPContribsRester):
             cid_url = '/'.join([
                 self.preamble.rsplit('/', 1)[0], 'explorer', 'materials', doc['_id']
             ])
-            cond_eff_mass = contrib[columns[3]].get(doping, {}).get('<m>', '')
-            row = [mp_id, cid_url, contrib['pretty_formula'], cond_eff_mass]
-            row += [contrib[k][doping]['value'] for k in columns[4:]]
+            cond_eff_mass = [contrib[columns[3]].get(doping, {}).get(k, '') for k in (u'm₁', u'm₂', u'm₃')]
+            seebeck = [contrib[columns[7]].get(doping, {}).get(k, '') for k in ('eig_1','eig_2','eig_3')]
+            row = [mp_id, cid_url, contrib['pretty_formula']]
+            row += [u"/"] + cond_eff_mass
+            row += [u"/"] + seebeck
             data.append((mp_id, row))
+            print len(columns),len(row)
         return DataFrame.from_items(data, orient='index', columns=columns)
     
     def get_detail_data(self,doping):
