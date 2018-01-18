@@ -3,7 +3,7 @@ from pandas import DataFrame
 from mpcontribs.config import mp_level01_titles, mp_id_pattern, object_id_pattern
 from recdict import RecursiveDict
 from utils import disable_ipython_scrollbar
-from IPython.display import display_html, display, HTML
+from IPython.display import display_html, display, HTML, Image
 from pymatgen.core.structure import Structure
 
 class Tree(RecursiveDict):
@@ -246,17 +246,25 @@ def render_plot(plot, webapp=False, filename=None):
         import plotly.plotly as py
         py.image.save_as(fig, filename, width=350, height=250)
         return
-    from plotly.offline.offline import _plot_html # long import time
-    html = _plot_html(
-        fig, False, '', True, '100%', 525, global_requirejs=True
-    )[0]
-    if not webapp:
-        return html
-    plotly_require = 'require(["plotly"], function(Plotly) {'
-    return html.replace(
-        plotly_require,
-        'requirejs(["main"], function() { ' + plotly_require
-    ).replace('});</script>', '})});</script>')
+    axis = 'z' if is_3d else 'x'
+    npts = len(fig.get('data')[0][axis])
+    static_fig = (is_3d and npts > 15) or (not is_3d and npts > 200)
+    if static_fig:
+        from plotly.plotly import image
+        img = image.get(fig)
+        print type(img)
+    else:
+        from plotly.offline.offline import _plot_html # long import time
+        html = _plot_html(
+            fig, False, '', True, '100%', 525, global_requirejs=True
+        )[0]
+        if not webapp:
+            return html
+        plotly_require = 'require(["plotly"], function(Plotly) {'
+        return html.replace(
+            plotly_require,
+            'requirejs(["main"], function() { ' + plotly_require
+        ).replace('});</script>', '})});</script>')
 
 class Plot(object):
     """class to hold and display single interactive graph/plot"""
