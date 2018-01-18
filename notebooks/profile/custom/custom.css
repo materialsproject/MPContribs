@@ -2,4 +2,12 @@
 @import url("css/backgrid.min.css");
 @import url("css/backgrid-paginator.css");
 @import url("css/backgrid-filter.css");
-@import url(https://db.onlinewebfonts.com/c/1a6abbd133be395c851e058cbcb2a80a?family=Symbola);
+@import url("css/backgrid-grouped-columns.css");
+@font-face {font-family: "Symbola";
+    src: url("//db.onlinewebfonts.com/t/bd95c919d5566390c0565bea43f95495.eot");
+    src: url("//db.onlinewebfonts.com/t/bd95c919d5566390c0565bea43f95495.eot?#iefix") format("embedded-opentype"),
+    url("//db.onlinewebfonts.com/t/bd95c919d5566390c0565bea43f95495.woff2") format("woff2"),
+    url("//db.onlinewebfonts.com/t/bd95c919d5566390c0565bea43f95495.woff") format("woff"),
+    url("//db.onlinewebfonts.com/t/bd95c919d5566390c0565bea43f95495.ttf") format("truetype"),
+    url("//db.onlinewebfonts.com/t/bd95c919d5566390c0565bea43f95495.svg#Symbola") format("svg");
+}

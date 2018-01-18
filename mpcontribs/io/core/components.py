@@ -102,7 +102,9 @@ def render_dataframe(df, webapp=False):
     if webapp:
         html += "requirejs(['main'], function() {"
     html += """
-    require(["backbone", "backgrid", "backgrid-paginator", "backgrid-filter"], function(Backbone, Backgrid) {
+    require([
+      "backbone", "backgrid", "backgrid-paginator", "backgrid-filter", "backgrid-grouped-columns"
+    ], function(Backbone, Backgrid) {
       "use strict";
       if (!("tables" in window)) { window.tables = []; }
       window.tables.push(JSON.parse('%s'));
