@@ -71,7 +71,13 @@ def get_backgrid_table(df):
                             break
                         is_url_column = True
             cell_type = 'uri' if is_url_column else 'string'
-        table['columns'].append({'name': col, 'cell': cell_type, 'editable': 0})
+        col_split = col.split('##')
+        nesting = [col_split[0]] if len(col_split) > 1 else []
+        table['columns'].append({
+            'name': col,  'cell': cell_type, 'nesting': nesting, 'editable': 0
+        })
+        if len(col_split) > 1:
+            table['columns'][-1].update({'label': '##'.join(col_split[1:])})
         if len(table['columns']) > 9:
             table['columns'][-1]['renderable'] = 0
 
