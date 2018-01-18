@@ -20,6 +20,6 @@ mₑᶜᵒⁿᵈ is the conductivity effective mass. The values reported
 are the eigenvalues and their average at a doping level of 1e+18
 cm⁻³ and at a temperature of 300 K.  All the properties are
 reported for both doping type (n and p).  The properties that
-depends on the relaxation time are reported divided by the
-constant value tau used.
+depend on the relaxation time are reported divided by the
+constant value τ used.
 :end

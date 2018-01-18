@@ -13,7 +13,7 @@ def run(mpfile, **kwargs):
     # extract data from json files
     keys = ['pretty_formula', 'volume']
     input_dir = mpfile.hdata.general['input_dir']
-    for idx, fn in enumerate(os.listdir(input_dir)[::-1][0:1]):
+    for idx, fn in enumerate(os.listdir(input_dir)[::-1]):
         mpid = fn.split('.', 1)[0].rsplit('_', 1)[1]
         print(mpid)
         input_file = gzip.open(os.path.join(input_dir, fn), 'rb')
@@ -26,7 +26,7 @@ def run(mpfile, **kwargs):
             hdata = RecursiveDict((k, data[k]) for k in keys)
             cond_eff_mass = u'mₑᶜᵒⁿᵈ'
             hdata[cond_eff_mass] = RecursiveDict()
-            names = [u'm₁', u'm₂', u'm₃', u'<m>']
+            names = [u'e₁', u'e₂', u'e₃', u'<m>']
             for dt, d in data['GGA']['cond_eff_mass'].items():
                 eff_mass = d['300']['1e+18']
                 eff_mass.append(np.mean(eff_mass))
@@ -36,10 +36,9 @@ def run(mpfile, **kwargs):
                 )
             seebeck_fix_dop_temp = "Seebeck"
             hdata[seebeck_fix_dop_temp] = RecursiveDict()
-            cols = ['eig_1','eig_2','eig_3', 'temperature', 'doping']
+            cols = ['e₁','e₂','e₃', 'temperature', 'doping']
             for doping_type in ['p', 'n']:
                 sbk=[float(i) for i in data['GGA']['seebeck_doping'][doping_type]['300']['1e+18']['eigs']]
-                print type(sbk[1])
                 vals = [u'{:.2e} μV/K'.format(s) for s in sbk] + [u'{} K'.format('300'), u'{} cm⁻³'.format('1e+18')]
                 hdata[seebeck_fix_dop_temp][doping_type] = RecursiveDict(
                             (k, v) for k, v in zip(cols, vals))
