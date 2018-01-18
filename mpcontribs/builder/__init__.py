@@ -14,6 +14,7 @@ from bs4 import BeautifulSoup
 def export_notebook(nb, cid, separate_script=False):
     html_exporter = HTMLExporter()
     html_exporter.template_file = 'basic'
+    # TODO pop first code cell here
     (body, resources) = html_exporter.from_notebook_node(nb)
     body = body.replace("var element = $('#", "var element = document.getElementById('")
     soup = BeautifulSoup(body, 'html.parser')
@@ -128,36 +129,36 @@ class MPContributionsBuilder():
                 .format(cid)
             ))
         nb['cells'].append(nbf.new_markdown_cell(
-            "# Contribution #{} for {}".format(cid_short, mp_cat_id)
+            "## Contribution #{} for {}".format(cid_short, mp_cat_id)
         ))
         nb['cells'].append(nbf.new_markdown_cell(
-            "## Hierarchical Data"
+            "### Hierarchical Data"
         ))
         nb['cells'].append(nbf.new_code_cell("mpfile.hdata[identifier]"))
         if mpfile.tdata[mp_cat_id]:
-            nb['cells'].append(nbf.new_markdown_cell("## Tabular Data"))
+            nb['cells'].append(nbf.new_markdown_cell("### Tabular Data"))
         for table_name, table in mpfile.tdata[mp_cat_id].iteritems():
             nb['cells'].append(nbf.new_markdown_cell(
-                "### {}".format(table_name)
+                "#### {}".format(table_name)
             ))
             nb['cells'].append(nbf.new_code_cell(
                 "mpfile.tdata[identifier]['{}']".format(table_name)
             ))
         if mpfile.gdata[mp_cat_id]:
-            nb['cells'].append(nbf.new_markdown_cell("## Graphical Data"))
+            nb['cells'].append(nbf.new_markdown_cell("### Graphical Data"))
         for plot_name, plot in mpfile.gdata[mp_cat_id].iteritems():
             nb['cells'].append(nbf.new_markdown_cell(
-                "### {}".format(plot_name)
+                "#### {}".format(plot_name)
             ))
             nb['cells'].append(nbf.new_code_cell(
                 "mpfile.gdata[identifier]['{}']".format(plot_name)
             ))
 
         if mpfile.sdata[mp_cat_id]:
-            nb['cells'].append(nbf.new_markdown_cell("## Structural Data"))
+            nb['cells'].append(nbf.new_markdown_cell("### Structural Data"))
         for structure_name, structure in mpfile.sdata[mp_cat_id].iteritems():
             nb['cells'].append(nbf.new_markdown_cell(
-                "### {}".format(structure_name)
+                "#### {}".format(structure_name)
             ))
             nb['cells'].append(nbf.new_code_cell(
                 "mpfile.sdata[identifier]['{}']".format(structure_name)

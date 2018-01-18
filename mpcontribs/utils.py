@@ -155,11 +155,14 @@ def process_mpfile(path_or_mpfile, target=None, fmt='archieml', ids=None):
                     cid_shorts.append(cid_short)
 
                     if target is not None:
-                        yield 'build ... '
-                        url = target.build_contribution(cid)
-                        url = '/'.join([target.preamble.rsplit('/', 1)[0], 'explorer', url])
-                        yield ("OK. <a href='{}' class='btn btn-default btn-xs' " +
-                               "role='button' target='_blank'>View</a></br>").format(url)
+                        if idx < 5:
+                            yield 'build ... '
+                            url = target.build_contribution(cid)
+                            url = '/'.join([target.preamble.rsplit('/', 1)[0], 'explorer', url])
+                            yield ("OK. <a href='{}' class='btn btn-default btn-xs' " +
+                                   "role='button' target='_blank'>View</a></br>").format(url)
+                        else:
+                            yield 'OK (queued).</br>'
                     else:
                         if (ids is None and idx < 5) or ids is not None:
                             yield 'build ... '
