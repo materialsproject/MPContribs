@@ -97,12 +97,59 @@ cd /var/www/python
 source mp_jupyterhub/bin/activate
 cd /var/www/python/matgen_dev/MPContribs
 docker pull materialsproject/jupyterhub-singleuser-mpcontribs
-screen
+screen -S mp-jupyterhub
 cd docker/workshop-juptyerhub/run
 # http://jupyterhub.readthedocs.io/en/latest/config-examples.html -> nginx reverse proxy
 ./run.sh
-screen -r
+screen -r mp-jupyterhub
 ```
+
+## add access to matgen projectdir (optional)
+
+- don’t wanna run containers with `--privileged` or `CAP_SYS_ADMIN`
+- also should use user-specific ssh key to connect to matgen projectdirs
+- do the following as root on the node running the container for which to add sshfs access
+- install sshfs plugin on each node:
+
+    ```bash
+    docker plugin install --grant-all-permissions vieux/sshfs DEBUG=1 sshkey.source=/root/.ssh/
+    ```
+    
+- generate new NERSC ssh key pair for user
+
+    ```bash
+    ssh-keygen -t rsa -b 4096 -f /root/.ssh/nersc_<user> # no passphrase
+    ```
+
+- ask user to upload public ssh key to NIM: https://nim.nersc.gov/ > My Stuff > My SSH Keys
+- check ssh connection for user:
+
+    ```bash
+    ssh -o IdentityFile=/root/.ssh/nersc_<user> <user>@dtn02.nersc.gov
+    # also takes care of adding host to known hosts
+    ```
+- create sshfs volume and test it:
+
+    ```bash
+    docker volume create -d vieux/sshfs \
+      -o sshcmd=<user>@dtn02.nersc.gov:/project/projectdirs/matgen/ \
+      -o IdentityFile=/root/.ssh/nersc_<user> \
+      -o allow_other matgen_<user>
+    docker run --rm -it -v matgen_<user>:/data:ro busybox ls /data
+    ```
+   
+- stop current user container, e.g. `jupyter-tschaume`, make an image, start new container from it, and rename:
+
+    ```bash
+    docker commit jupyter-tschaume jupyter-tschaume-image
+    docker run -d -P --name jupyter-tschaume-matgen \
+      -v /home/huck/wkshp_shared:/wkshp_shared:ro
+      -v matgen_<user>:/matgen:ro jupyter-tschaume-image
+    docker rename jupyter-tschaume jupyter-tschaume-old
+    docker rename jupyter-tschaume-matgen jupyter-tschaume
+    ```
+   
+- may have to restart JupyterHub
 
 ## Organization
 
