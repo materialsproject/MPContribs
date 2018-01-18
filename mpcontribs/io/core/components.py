@@ -47,7 +47,7 @@ def get_backgrid_table(df):
     val = URLValidator()
     table = dict()
     nrows = df.shape[0]
-    nrows_max = 1000
+    nrows_max = 200
     if nrows > nrows_max:
         df = df.head(n=nrows_max)
     numeric_columns = df.select_dtypes(include=[np.number]).columns.tolist()
@@ -76,12 +76,14 @@ def get_backgrid_table(df):
             table['columns'][-1]['renderable'] = 0
 
     table['rows'] = df.to_dict('records')
+
     for col_index, col in enumerate(df.columns):
+        # avoid looping rows to minimize use of `df.iat` (time-consuming in 3d)
         if not col.startswith('level_') and col not in numeric_columns:
             for row_index in xrange(nrows):
                 value = unicode(df.iat[row_index, col_index])
                 if mp_id_pattern.match(value):
-                    value = 'https://materialsproject.org/materials/{}'.format(value)
+                    value = u'https://materialsproject.org/materials/{}'.format(value)
                 table['rows'][row_index][col] = value
 
     return table
@@ -166,7 +168,7 @@ class Table(DataFrame):
 
     def _ipython_display_(self):
         disable_ipython_scrollbar()
-        display(HTML(render_dataframe(super(Table, self))))
+        display(HTML(render_dataframe(DataFrame(self))))
 
 class Tables(RecursiveDict):
     """class to hold and display multiple data tables"""
@@ -206,7 +208,8 @@ class TabularData(RecursiveDict):
 def render_plot(plot, webapp=False, filename=None):
     from pandas.core.indexes.multi import MultiIndex
     layout = dict(legend = dict(x=0.7, y=1), margin = dict(r=0, t=40))
-    if isinstance(plot.table.index, MultiIndex):
+    is_3d = isinstance(plot.table.index, MultiIndex)
+    if is_3d:
         import plotly.graph_objs as go
         from plotly import tools
         cols = plot.table.columns
