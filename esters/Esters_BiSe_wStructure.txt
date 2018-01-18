@@ -1,0 +1,47 @@
+
+{mp-27902}
+author: Marco Esters
+description: 
+More accurate c-axis lattice parameter than what is currently on MP.
+The downside is that this calculation increases the error of the
+a-axis lattice parameter from 1.9% to 2.5%. The error in the c-axis
+lattice parameter, however, is decreased from 4.9% to 2.8%, and the
+error in the cell volume decreases from 8.9% to 7.9%.
+:end
+
+{mp-27902._structures}
+BiSe: # generated using pymatgen
+data_BiSe
+_symmetry_space_group_name_H-M   P-1
+_cell_length_a   4.28124124
+_cell_length_b   4.28124200
+_cell_length_c   23.67252804
+_cell_angle_alpha   89.99994619
+_cell_angle_beta   89.99993209
+_cell_angle_gamma   60.00001595
+_symmetry_Int_Tables_number   2
+_chemical_formula_structural   BiSe
+_chemical_formula_sum   'Bi6 Se6'
+_cell_volume   375.763696163
+_cell_formula_units_Z   6
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Bi  Bi1  2  0.000001  0.999998  0.874431  1
+  Bi  Bi2  2  0.333331  0.333332  0.460824  1
+  Bi  Bi3  2  0.333337  0.333334  0.713788  1
+  Se  Se4  2  0.000000  0.000000  0.353296  1
+  Se  Se5  2  0.333333  0.333333  0.207794  1
+  Se  Se6  2  0.333334  0.333334  0.938463  1
+:end
+

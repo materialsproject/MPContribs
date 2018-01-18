@@ -1,0 +1,9 @@
+{mp-27902}
+author: Marco Esters
+description:
+More accurate c-axis lattice parameter than what is currently on MP. The
+downside is that this calculation increases the error of the a-axis lattice
+parameter from 1.9% to 2.5%. The error in the c-axis lattice parameter,
+however, is decreased from 4.9% to 2.8%, and the error in the cell volume
+decreases from 8.9% to 7.9%.
+:end
