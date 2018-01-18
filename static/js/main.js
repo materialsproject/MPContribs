@@ -14,6 +14,7 @@ requirejs.config({
         'backgrid-filter': 'components/backgrid-filter/backgrid-filter',
         'backbone.paginator': 'components/backbone.paginator/lib/backbone.paginator',
         'backgrid-paginator': 'components/backgrid-paginator/backgrid-paginator',
+        'backgrid-grouped-columns': 'components/backgrid-grouped-columns/backgrid-grouped-columns',
         'json.human': 'components/json-human/src/json.human',
         'js-cookie': 'components/js-cookie/src/js.cookie',
         'jupyter-widget-chemview': 'components/chemview/js/src/embed.js',
@@ -35,6 +36,7 @@ requirejs.config({
         'backgrid-filter': {deps: ['backgrid']},
         'backbone.paginator': {deps: ['backbone']},
         'backgrid-paginator': {deps: ['backgrid', 'backbone.paginator']},
+        'backgrid-grouped-columns': {deps: ['backgrid']},
         'jquery.spin': {deps: ['jquery']}
         //waitfor: {deps: ['jquery']},
         //sandbox: {deps: ['archieml']},
