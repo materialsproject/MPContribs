@@ -138,15 +138,14 @@ screen -r mp-jupyterhub
     docker run --rm -it -v matgen_<user>:/data:ro busybox ls /data
     ```
    
-- stop current user container, e.g. `jupyter-tschaume`, make an image, start new container from it, and rename:
+- stop current user container, e.g. `jupyter-tschaume`, make an image, rename, and start new container:
 
     ```bash
     docker commit jupyter-tschaume jupyter-tschaume-image
-    docker run -d -P --name jupyter-tschaume-matgen \
+    docker rename jupyter-tschaume jupyter-tschaume-old
+    docker run -d -P --name jupyter-tschaume \
       -v /home/huck/wkshp_shared:/wkshp_shared:ro
       -v matgen_<user>:/matgen:ro jupyter-tschaume-image
-    docker rename jupyter-tschaume jupyter-tschaume-old
-    docker rename jupyter-tschaume-matgen jupyter-tschaume
     ```
    
 - may have to restart JupyterHub
