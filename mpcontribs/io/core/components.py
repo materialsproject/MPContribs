@@ -43,7 +43,7 @@ def get_backgrid_table(df):
     import numpy as np
     from django.core.validators import URLValidator
     from django.core.exceptions import ValidationError
-    from pandas.core.indexes.multi import MultiIndex
+    from pandas import MultiIndex
     val = URLValidator()
     table = dict()
     nrows = df.shape[0]
@@ -214,7 +214,7 @@ class TabularData(RecursiveDict):
                 display_html(tables)
 
 def render_plot(plot, webapp=False, filename=None):
-    from pandas.core.indexes.multi import MultiIndex
+    from pandas import MultiIndex
     layout = dict(legend = dict(x=0.7, y=1), margin = dict(r=0, t=40))
     is_3d = isinstance(plot.table.index, MultiIndex)
     if is_3d:

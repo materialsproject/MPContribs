@@ -8,7 +8,7 @@ from mpcontribs.io.core.recdict import RecursiveDict
 from mpcontribs.io.core.utils import nest_dict, normalize_root_level
 from mpcontribs.io.core.utils import read_csv, make_pair
 from mpcontribs.io.core.components import Table
-from pandas.core.indexes.multi import MultiIndex
+from pandas import MultiIndex
 
 class MPFile(MPFileCore):
     """Object for representing a MP Contribution File in ArchieML format."""
