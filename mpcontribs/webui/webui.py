@@ -212,7 +212,7 @@ def action():
     if thebe_str:
         session['thebe'] = '\n'.join(json.loads(thebe_str))
     fmt = session['options'][0]
-    mpfile = request.files.get('file').read().decode('utf-8-sig')
+    mpfile = request.files.get('file', StringIO()).read().decode('utf-8-sig')
     if not mpfile:
         mpfile = request.form.get('mpfile')
         if not mpfile:
