@@ -3,7 +3,7 @@ from itertools import groupby
 from mpcontribs.io.core.recdict import RecursiveDict
 from mpcontribs.io.core.utils import get_short_object_id, nest_dict
 from mpcontribs.config import mp_level01_titles, mp_id_pattern
-from pymatgen.matproj.snl import Author
+from pymatgen.util.provenance import Author
 from mpcontribs.io.core.mpfile import MPFileCore
 from nbformat import v4 as nbf
 from nbconvert.preprocessors import ExecutePreprocessor
