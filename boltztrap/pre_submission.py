@@ -7,16 +7,21 @@ from mpcontribs.io.core.utils import nest_dict
 from mpcontribs.users.boltztrap.rest.rester import BoltztrapRester
 from mpcontribs.users.utils import clean_value, duplicate_check
 
+try:
+    from os import scandir # python3
+except ImportError:
+    from scandir import scandir
+
 @duplicate_check
 def run(mpfile, **kwargs):
 
     # extract data from json files
     keys = ['pretty_formula', 'volume']
     input_dir = mpfile.hdata.general['input_dir']
-    for idx, fn in enumerate(os.listdir(input_dir)[::-1]):
-        mpid = fn.split('.', 1)[0].rsplit('_', 1)[1]
+    for idx, obj in enumerate(scandir(input_dir)):
+        mpid = obj.name.split('.', 1)[0].rsplit('_', 1)[1]
         print(mpid)
-        input_file = gzip.open(os.path.join(input_dir, fn), 'rb')
+        input_file = gzip.open(obj.path, 'rb')
         try:
             data = json.loads(input_file.read())
 
