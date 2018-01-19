@@ -6,7 +6,7 @@ from mpcontribs.rest.rester import MPContribsRester
 from mpcontribs.rest.adapter import ContributionMongoAdapter
 from mpcontribs.builder import MPContributionsBuilder
 from pymatgen.analysis.structure_matcher import StructureMatcher
-from pymatgen.matproj.snl import Author
+from pymatgen.util.provenance import Author
 from pympler import asizeof
 from importlib import import_module
 from StringIO import StringIO
