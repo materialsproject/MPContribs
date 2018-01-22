@@ -144,7 +144,7 @@ screen -r mp-jupyterhub
     docker commit jupyter-tschaume jupyter-tschaume-image
     docker rename jupyter-tschaume jupyter-tschaume-old
     docker run -d -P --name jupyter-tschaume \
-      -v /home/huck/wkshp_shared:/wkshp_shared:ro
+      -v /home/huck/wkshp_shared:/wkshp_shared:ro \
       -v matgen_<user>:/matgen:ro jupyter-tschaume-image
     ```
    
