@@ -21,6 +21,13 @@ requirejs.config({
     waitfor: { deps: ['jquery'] },
     sandbox: { deps: ['archieml'] },
     toggle: { deps: ['jquery', 'bootstrap'] },
-    "backgrid-paginator": { deps: ['backgrid'] }
+    backgrid: {deps: ['backbone'], exports: 'Backgrid'},
+    underscore: {exports: '_'},
+    toggle: {deps: ['jquery', 'bootstrap']},
+    'backgrid-filter': {deps: ['backgrid']},
+    'backbone.paginator': {deps: ['backbone']},
+    'backgrid-paginator': {deps: ['backgrid', 'backbone.paginator']},
+    'backgrid-grouped-columns': {deps: ['backgrid']},
+    'backgrid-patch': {deps: ['backgrid-grouped-columns']},
   }
 });

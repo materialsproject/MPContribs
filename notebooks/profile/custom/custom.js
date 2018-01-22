@@ -11,10 +11,13 @@ requirejs.config({
     underscore: {exports: '_'},
     "backgrid-paginator": { deps: ['backgrid'] },
     "backgrid-filter": { deps: ['backgrid'] },
-    "backgrid-grouped-columns": { deps: ['backgrid'] }
+    "backgrid-grouped-columns": { deps: ['backgrid', 'backgrid-patch'] },
   }
 });
 require(['json.human']);
-require(['backbone', 'backgrid', 'backgrid-paginator', 'backgrid-filter', 'backgrid-grouped-columns']);
+require([
+    'backbone', 'backgrid', 'backgrid-paginator',
+    'backgrid-filter', 'backgrid-grouped-columns'
+]);
 require(['plotly']);
 console.log('DONE');

@@ -109,7 +109,8 @@ def render_dataframe(df, webapp=False):
         html += "requirejs(['main'], function() {"
     html += """
     require([
-      "backbone", "backgrid", "backgrid-paginator", "backgrid-filter", "backgrid-grouped-columns"
+      "backbone", "backgrid", "backgrid-paginator",
+      "backgrid-filter", "backgrid-grouped-columns"
     ], function(Backbone, Backgrid) {
       "use strict";
       if (!("tables" in window)) { window.tables = []; }
@@ -134,7 +135,8 @@ def render_dataframe(df, webapp=False):
               })
           }
       }
-      var grid = new Backgrid.Grid({ columns: table['columns'], collection: rows, });
+      var header = Backgrid.Extension.GroupedHeader;
+      var grid = new Backgrid.Grid({ header: header, columns: table['columns'], collection: rows, });
       var paginator = new Backgrid.Extension.Paginator({collection: rows});
       var filter = new Backgrid.Extension.ClientSideFilter({collection: rows, placeholder: "Search"});
       $('#%s').append(grid.render().el);
