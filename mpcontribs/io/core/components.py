@@ -194,8 +194,9 @@ class Tables(RecursiveDict):
 
     def _ipython_display_(self):
         for name, table in self.iteritems():
-            display_html('<h3>{}</h3>'.format(name), raw=True)
-            display_html(table)
+            if table:
+                display_html('<h3>{}</h3>'.format(name), raw=True)
+                display_html(table)
 
 class TabularData(RecursiveDict):
     """class to hold and display all tabular data of a MPFile"""
@@ -211,7 +212,7 @@ class TabularData(RecursiveDict):
     def _ipython_display_(self):
         disable_ipython_scrollbar()
         for identifier, tables in self.iteritems():
-            if identifier != mp_level01_titles[0]:
+            if identifier != mp_level01_titles[0] and tables:
                 display_html('<h2>Tabular Data for {}</h2>'.format(identifier), raw=True)
                 display_html(tables)
 
@@ -301,8 +302,9 @@ class Plots(RecursiveDict):
     def _ipython_display_(self):
         disable_ipython_scrollbar()
         for name, plot in self.iteritems():
-            display_html('<h3>{}</h3>'.format(name), raw=True)
-            display_html(plot)
+            if plot:
+                display_html('<h3>{}</h3>'.format(name), raw=True)
+                display_html(plot)
 
 class GraphicalData(RecursiveDict):
     """class to hold and display all interactive graphs/plots of a MPFile"""
@@ -318,7 +320,7 @@ class GraphicalData(RecursiveDict):
     def _ipython_display_(self):
         disable_ipython_scrollbar()
         for identifier, plots in self.iteritems():
-            if identifier != mp_level01_titles[0]:
+            if identifier != mp_level01_titles[0] and plots:
                 display_html('<h2>Interactive Plots for {}</h2>'.format(identifier), raw=True)
                 display_html(plots)
 
@@ -332,10 +334,11 @@ class Structures(RecursiveDict):
 
     def _ipython_display_(self):
         for name, structure in self.iteritems():
-            display_html('<h4>{}</h4>'.format(name), raw=True)
-            display_html('<p>{}</p>'.format(
-                structure.__repr__().replace('\n', '<br>').replace(' ', '&nbsp;')
-            ), raw=True)
+            if structure:
+                display_html('<h4>{}</h4>'.format(name), raw=True)
+                display_html('<p>{}</p>'.format(
+                    structure.__repr__().replace('\n', '<br>').replace(' ', '&nbsp;')
+                ), raw=True)
 
 class StructuralData(RecursiveDict):
     """class to hold and display all pymatgen structures in MPFile"""
@@ -346,8 +349,7 @@ class StructuralData(RecursiveDict):
         )
 
     def _ipython_display_(self):
-        display_html('<h2>Structural Data</h2>', raw=True)
         for identifier, sdata in self.iteritems():
-            if identifier != mp_level01_titles[0]:
-                display_html('<h3>{}</h3>'.format(identifier), raw=True)
-            display_html(sdata)
+            if identifier != mp_level01_titles[0] and sdata:
+                display_html('<h2>Structural Data for {}</h2>'.format(identifier), raw=True)
+                display_html(sdata)
