@@ -26,4 +26,5 @@ object_id_pattern = re.compile('^[a-f\d]{24}$')
 default_mpfile_path = os.path.join(gettempdir(), 'mpfile.txt')
 symprec = 1e-10
 replacements = {' ': '_', '[': '', ']': '', '{': '', '}': '', ':': '_'}
+max_contribs_per_mpfile = 10
 
