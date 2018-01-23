@@ -21,7 +21,10 @@ def duplicate_check(f):
             for doc in mpr.query_contributions(criteria=mpr.query):
                 existing_identifiers[doc['mp_cat_id']] = doc['_id']
 
-        f(*args, **kwargs)
+        try:
+            f(*args, **kwargs)
+        except StopIteration:
+            print 'not adding more contributions'
 
         mpfile = args[0]
         update = 0

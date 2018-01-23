@@ -20,7 +20,6 @@ def run(mpfile, **kwargs):
     for idx, row in enumerate(con.select('mpid')):
         if idx and not idx%10:
             print 'added', idx, '/', nr_mpids, 'materials'
-            break
         mpid = 'mp-' + str(row.mpid)
         d = RecursiveDict()
 
