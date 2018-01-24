@@ -14,12 +14,12 @@ remarks:
 S is the Seebeck coefficient, σ the conductivity, and κₑ the
 electronic part of the thermal conductivity. The values reported
 are the maximum (minimum for κₑ) of the average of the
-eigenvalues of the respective tensors.  The values of the doping
+eigenvalues of the respective tensors. The values of the doping
 and the temperature that give that maximum are also reported.
 mₑᶜᵒⁿᵈ is the conductivity effective mass. The values reported
 are the eigenvalues and their average at a doping level of 1e+18
-cm⁻³ and at a temperature of 300 K.  All the properties are
-reported for both doping type (n and p).  The properties that
+cm⁻³ and at a temperature of 300 K. All the properties are
+reported for both doping type (n and p). The properties that
 depend on the relaxation time are reported divided by the
 constant value τ used.
 :end
