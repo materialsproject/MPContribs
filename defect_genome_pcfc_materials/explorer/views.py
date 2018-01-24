@@ -5,12 +5,12 @@ from django.shortcuts import render_to_response
 from django.template import RequestContext
 from mpcontribs.io.core.components import render_dataframe
 from webtzite.rester import MPResterBase
-from pymatgen import SETTINGS
 from pandas import DataFrame
 
 def index(request):
     ctx = RequestContext(request)
     if request.user.is_authenticated():
+        from pymatgen import SETTINGS
         API_KEY = SETTINGS.get("PMG_MAPI_KEY", request.user.api_key) # jupyterhub vs alpha page
         with MPResterBase(API_KEY) as mpr: # falls back on MAPI endpoint
             try:

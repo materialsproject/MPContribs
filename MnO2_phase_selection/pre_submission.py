@@ -3,10 +3,11 @@ from mpcontribs.io.archieml.mpfile import MPFile
 from mpcontribs.io.core.recdict import RecursiveDict
 from mpcontribs.config import mp_level01_titles
 from mpcontribs.users.MnO2_phase_selection.rest.rester import Mno2PhaseSelectionRester
-from pymatgen.core.composition import Composition
-from pymatgen.core.structure import Structure
 
 def run(mpfile, include_cifs=True, nmax=None, dup_check_test_site=True):
+
+    from pymatgen.core.composition import Composition
+    from pymatgen.core.structure import Structure
 
     data_input = mpfile.document[mp_level01_titles[0]].pop('input')
     phase_names = mpfile.hdata.general['info']['phase_names']

@@ -6,13 +6,13 @@ from django.template import RequestContext
 from mpcontribs.rest.views import get_endpoint
 from mpcontribs.io.core.components import render_dataframe, render_plot
 from mpcontribs.io.core.recdict import render_dict
-from ..rest.rester import DlrVietenRester
 
 def index(request):
     ctx = RequestContext(request)
     if request.user.is_authenticated():
         API_KEY = request.user.api_key
         ENDPOINT = request.build_absolute_uri(get_endpoint())
+        from ..rest.rester import DlrVietenRester
         with DlrVietenRester(API_KEY, endpoint=ENDPOINT) as mpr:
             try:
                 table = render_dataframe(mpr.get_contributions(), webapp=True)
@@ -30,6 +30,7 @@ def tolerance_factors(request):
     if request.user.is_authenticated():
         API_KEY = request.user.api_key
         ENDPOINT = request.build_absolute_uri(get_endpoint())
+        from ..rest.rester import DlrVietenRester
         with DlrVietenRester(API_KEY, endpoint=ENDPOINT) as mpr:
             try:
                 ionic_radii = render_dataframe(mpr.get_ionic_radii(), webapp=True)

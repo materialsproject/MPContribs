@@ -2,7 +2,6 @@ from mpcontribs.config import mp_level01_titles
 from mpcontribs.users.swf.rest.rester import SwfRester
 from mpcontribs.io.core.recdict import RecursiveDict
 import pandas as pd
-import pymatgen
 
 def round_to_100_percent(number_set, digit_after_decimal=1):
     unround_numbers = [
@@ -22,6 +21,7 @@ def round_to_100_percent(number_set, digit_after_decimal=1):
     return [int(x)/float(10**digit_after_decimal) for x in unround_numbers]
 
 def run(mpfile, nmax=None, dup_check_test_site=True):
+    import pymatgen
 
     existing_compositions = {}
     for b in [False, True]:
