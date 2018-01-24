@@ -24,7 +24,7 @@ def run(mpfile, **kwargs):
         d = RecursiveDict()
 
         # kohn-sham band gap
-        d['ΔE-KS'] = RecursiveDict([
+        d[u'ΔE-KS'] = RecursiveDict([
             ('indirect', clean_value(
                 row.gllbsc_ind_gap - row.gllbsc_disc, 'eV'
             )), ('direct', clean_value(
@@ -36,7 +36,7 @@ def run(mpfile, **kwargs):
         d['C'] = clean_value(row.gllbsc_disc, 'eV')
 
         # quasi particle band gap
-        d['ΔE-QP'] = RecursiveDict([
+        d[u'ΔE-QP'] = RecursiveDict([
             ('indirect', clean_value(row.gllbsc_ind_gap, 'eV')),
             ('direct', clean_value(row.gllbsc_dir_gap, 'eV'))
         ])
