@@ -5,8 +5,6 @@ from mpcontribs.io.core.utils import nest_dict, get_short_object_id
 from mpcontribs.rest.rester import MPContribsRester
 from mpcontribs.rest.adapter import ContributionMongoAdapter
 from mpcontribs.builder import MPContributionsBuilder
-from pymatgen.analysis.structure_matcher import StructureMatcher
-from pymatgen.util.provenance import Author
 from pympler import asizeof
 from importlib import import_module
 from StringIO import StringIO
@@ -65,6 +63,7 @@ def process_mpfile(path_or_mpfile, target=None, fmt='archieml', ids=None):
         if ids is not None and not isinstance(ids, list) and not len(ids) == 2:
             raise Exception('{} is not list of length 2!'.format(ids))
 
+        from pymatgen.analysis.structure_matcher import StructureMatcher
         mod = import_module('mpcontribs.io.{}.mpfile'.format(fmt))
         MPFile = getattr(mod, 'MPFile')
         full_name = pwd.getpwuid(os.getuid())[4]
@@ -170,6 +169,7 @@ def process_mpfile(path_or_mpfile, target=None, fmt='archieml', ids=None):
                             build_doc = mcb.build(contributor, cid)
                         else:
                             yield 'skip ... '
+                            from pymatgen.util.provenance import Author
                             author = Author.parse_author(contributor)
                             build_doc = [mp_cat_id, author.name, cid_short, '']
                         yield build_doc

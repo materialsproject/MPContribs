@@ -4,7 +4,6 @@ from mpcontribs.config import mp_level01_titles, mp_id_pattern, object_id_patter
 from recdict import RecursiveDict
 from utils import disable_ipython_scrollbar
 from IPython.display import display_html, display, HTML, Image
-from pymatgen.core.structure import Structure
 
 class Tree(RecursiveDict):
     """class to hold and display single tree of hierarchical data"""
@@ -327,6 +326,7 @@ class GraphicalData(RecursiveDict):
 class Structures(RecursiveDict):
     """class to hold and display list of pymatgen structures for single mp-id"""
     def __init__(self, content):
+        from pymatgen import Structure
         super(Structures, self).__init__(
             (key, Structure.from_dict(struc))
             for key, struc in content.get(mp_level01_titles[3], {}).iteritems()

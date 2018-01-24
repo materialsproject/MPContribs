@@ -6,7 +6,6 @@ from mpcontribs.config import mp_level01_titles, default_mpfile_path, \
 from recdict import RecursiveDict
 from utils import nest_dict, get_composition_from_string
 from components import HierarchicalData, TabularData, GraphicalData, StructuralData, Table
-from pymatgen import Structure, MPRester
 
 class MPFileCore(six.with_metaclass(ABCMeta, object)):
     """Abstract Base Class for representing a MP Contribution File"""
@@ -194,6 +193,7 @@ class MPFileCore(six.with_metaclass(ABCMeta, object)):
 
     def add_structure(self, source, name=None, identifier=None, fmt=None):
         """add a structure to the mpfile"""
+        from pymatgen import Structure, MPRester
         if isinstance(source, Structure):
             structure = source
         elif isinstance(source, dict):

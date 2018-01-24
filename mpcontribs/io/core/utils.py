@@ -1,6 +1,5 @@
 import warnings, pandas, numpy, six, collections
 from StringIO import StringIO
-from pymatgen import Composition, Element
 from mpcontribs.config import mp_level01_titles, mp_id_pattern, csv_comment_char
 
 def flatten_dict(dd, separator='.', prefix=''):
@@ -37,6 +36,7 @@ def nest_dict(dct, keys):
     return nested_dict
 
 def get_composition_from_string(s):
+    from pymatgen import Composition, Element
     comp = Composition(s)
     for element in comp.elements:
         Element(element)
