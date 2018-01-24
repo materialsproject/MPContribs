@@ -10,7 +10,7 @@ from importlib import import_module
 from StringIO import StringIO
 sys.stdout.flush()
 
-def submit_mpfile(path_or_mpfile, site, fmt='archieml'):
+def submit_mpfile(path_or_mpfile, site='jupyterhub', fmt='archieml'):
     test_site = bool('jupyterhub' in site)
     with MPContribsRester(test_site=test_site) as mpr:
         try:
