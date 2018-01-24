@@ -32,6 +32,9 @@ def run(mpfile, **kwargs):
             cond_eff_mass = u'mₑᶜᵒⁿᵈ'
             hdata[cond_eff_mass] = RecursiveDict()
             names = [u'e₁', u'e₂', u'e₃', u'<m>']
+            if 'GGA' not in data:
+                print('no GGA key for', mpid)
+                continue
             for dt, d in data['GGA']['cond_eff_mass'].items():
                 eff_mass = d['300']['1e+18']
                 eff_mass.append(np.mean(eff_mass))
