@@ -23,7 +23,7 @@ def info(args):
            (args.mp_cat_ids is not None and k in args.mp_cat_ids):
             print '{}: {}'.format(k, ' '.join(v))
 
-def init(args):
+def load(args):
     for project in args.projects:
         module_presub = '.'.join(['mpcontribs', 'users', project, 'pre_submission'])
         mod = import_module(module_presub)
@@ -83,11 +83,11 @@ def main():
     )
     parser_info.set_defaults(func=info)
 
-    parser_init = subparsers.add_parser(
-        'init', help="""run pre-submission processing & submit data for a project"""
+    parser_load = subparsers.add_parser(
+        'load', help="""run pre-submission processing to load data for a project"""
     )
-    parser_init.add_argument('projects', type=str, nargs='+', help='projects to init')
-    parser_init.set_defaults(func=init)
+    parser_load.add_argument('projects', type=str, nargs='+', help='projects to load')
+    parser_load.set_defaults(func=init)
 
     #parser_delete = subparsers.add_parser(
     #    'delete', help="""delete contributions belonging to the contributor"""
