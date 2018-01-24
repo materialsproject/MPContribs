@@ -1,7 +1,5 @@
 from __future__ import unicode_literals, print_function
 import six, archieml, warnings, textwrap
-from pymatgen import Structure
-from pymatgen.io.cif import CifWriter, CifParser
 from mpcontribs.config import mp_level01_titles, symprec, replacements
 from mpcontribs.io.core.mpfile import MPFileCore
 from mpcontribs.io.core.recdict import RecursiveDict
@@ -15,6 +13,7 @@ class MPFile(MPFileCore):
 
     @staticmethod
     def from_string(data):
+        from pymatgen.io.cif import CifParser
         # use archieml-python parse to import data
         rdct = RecursiveDict(archieml.loads(data))
         rdct.rec_update()
@@ -66,6 +65,8 @@ class MPFile(MPFileCore):
         return MPFile.from_dict(rdct)
 
     def get_string(self):
+        from pymatgen import Structure
+        from pymatgen.io.cif import CifWriter
         lines, scope = [], []
         table_start = mp_level01_titles[1]+'_'
         for key,value in self.document.iterate():

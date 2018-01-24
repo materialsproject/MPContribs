@@ -3,7 +3,6 @@ from itertools import groupby
 from mpcontribs.io.core.recdict import RecursiveDict
 from mpcontribs.io.core.utils import get_short_object_id, nest_dict
 from mpcontribs.config import mp_level01_titles, mp_id_pattern
-from pymatgen.util.provenance import Author
 from mpcontribs.io.core.mpfile import MPFileCore
 from nbformat import v4 as nbf
 from nbconvert.preprocessors import ExecutePreprocessor
@@ -96,6 +95,7 @@ class MPContributionsBuilder():
             "allowed due to insufficient permissions of {}! Ask "
             "someone of {} to make you a collaborator on {}.".format(
                 cid_short, contributor_email, contrib['collaborators'], cid_short))
+        from pymatgen.util.provenance import Author
         mpfile = MPFileCore.from_contribution(contrib)
         mp_cat_id = mpfile.ids[0]
         is_mp_id = mp_id_pattern.match(mp_cat_id)
