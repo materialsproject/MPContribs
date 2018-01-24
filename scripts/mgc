@@ -1,26 +1,19 @@
 #!/usr/bin/env python
-
 import sys, os, argparse
-import random, threading, webbrowser
-from mpcontribs.webui.webui import app
-from mpcontribs.utils import submit_mpfile
-from mpcontribs.io.core.utils import get_short_object_id
-from mpcontribs.io.custom.mpfile import MPFile
-from mpcontribs.rest.adapter import ContributionMongoAdapter
-from mpcontribs.rest.rester import MPContribsRester
-from mpcontribs.builder import MPContributionsBuilder
 
-cma, mpr = None, None
+def load_mprester(f):
+    from mpcontribs.rest.rester import MPContribsRester
+    with MPContribsRester(test_site=True) as mpr:
+        def wrapper(*args, **kwargs):
+            f(*args, **kwargs)
+        wrapper.mpr = mpr
+        return wrapper
 
-def load_mprester():
-    global mpr
-    mpr = MPContribsRester(API_KEY) # connect to MP
-    # TODO close session if not using with context
-
+@load_mprester
 def info(args):
-    load_mprester()
+    from mpcontribs.io.core.utils import get_short_object_id
     infos = {}
-    for contrib in mpr.query_contributions(contributor_only=True):
+    for contrib in info.mpr.query_contributions(contributor_only=True):
         mid, cid = contrib['mp_cat_id'], get_short_object_id(contrib['_id'])
         if mid not in infos: infos[mid] = [cid]
         else: infos[mid].append(cid)
@@ -30,20 +23,15 @@ def info(args):
             print '{}: {}'.format(k, ' '.join(v))
 
 def submit(args):
-    if args.dry:
-        viewer(args)
-    else:
-        load_mprester()
-        # TODO: for msg in submit_mpfile(...): print(msg)
-        submit_mpfile(args.mpfile, target=mpr, test=args.test)
+    #from mpcontribs.utils import submit_mpfile
+    # TODO: for msg in submit_mpfile(...): print(msg)
+    pass
 
 def delete(args):
-    load_mprester()
     ndel = mpr.delete_contributions(args.cids)
     print '{} contributions deleted.'.format(ndel)
 
 def collab_add(args):
-    load_mprester()
     cids = [] if args.to is None else args.to
     if args.to is None:
         for contrib in mpr.query_contributions(contributor_only=True):
@@ -51,7 +39,6 @@ def collab_add(args):
     print mpr.update_collaborators(args.collaborators, cids, 'add')
 
 def collab_remove(args):
-    load_mprester()
     cids = [] if args['from'] is None else args['from']
     if args['from'] is None:
         for contrib in mpr.query_contributions(contributor_only=True):
@@ -59,38 +46,11 @@ def collab_remove(args):
     print mpr.update_collaborators(args.collaborators, cids, 'remove')
 
 def collab_primary(args):
-    load_mprester()
     cids = [] if args['for'] is None else args['for']
     if args['for'] is None:
         for contrib in mpr.query_contributions(contributor_only=True):
             cids.append(contrib['contribution_id'])
     print mpr.update_collaborators([args.collaborator], cids, 'primary')
-
-def viewer(args):
-    port = 5000 + random.randint(0, 999)
-    url = "http://127.0.0.1:{0}/".format(port)
-    if args.mpfile is not None: url += args.mpfile
-    threading.Timer(1.25, lambda: webbrowser.open(url)).start()
-    app.run(port=port, debug=False)
-
-def load_cma():
-    global cma
-    try:
-      cma = ContributionMongoAdapter.from_config()
-    except:
-      raise ValueError("Couldn't load ContributionMongoAdapter from config")
-
-#def fake(args):
-#    load_cma()
-#    mcb = MPContributionsBuilder(cma.db)
-#    cids = cma.fake_multiple_contributions(num_contributions=args.num)
-#    if cids is not None:
-#      mcb.build(args.contributor, cids=cids)
-
-def reset(args):
-    load_cma()
-    cma._reset()
-
 
 def main():
     parser = argparse.ArgumentParser(
@@ -98,7 +58,8 @@ def main():
         contribution framework MPContribs to submit user-contributed data to the
         MP for dissemination to MP users. For help on sub-commands:
         `mgc sub-command -h`.""",
-        epilog='Author: Patrick Huck <phuck@lbl.gov> (LBNL)'
+        epilog='Author: Patrick Huck <phuck@lbl.gov> (LBNL)',
+        formatter_class=argparse.RawTextHelpFormatter
     )
     subparsers = parser.add_subparsers()
 
