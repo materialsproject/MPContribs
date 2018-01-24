@@ -87,7 +87,7 @@ def main():
         'load', help="""run pre-submission processing to load data for a project"""
     )
     parser_load.add_argument('projects', type=str, nargs='+', help='projects to load')
-    parser_load.set_defaults(func=init)
+    parser_load.set_defaults(func=load)
 
     #parser_delete = subparsers.add_parser(
     #    'delete', help="""delete contributions belonging to the contributor"""
