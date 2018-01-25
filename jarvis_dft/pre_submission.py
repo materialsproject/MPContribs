@@ -1,35 +1,27 @@
 # -*- coding: utf-8 -*-
-import os, tarfile, json, re, urllib
+import os, tarfile, json, re, urllib, certifi
 import numpy as np
 from pandas import DataFrame
 from mpcontribs.io.core.recdict import RecursiveDict
 from mpcontribs.io.core.utils import nest_dict
 from monty.json import MontyDecoder
-from mpcontribs.users.jarvis_dft.rest.rester import JarvisDftRester
+from mpcontribs.users.utils import duplicate_check
 
 def clean_value(val, unit):
     return '-' if val == 'na' else '{} {}'.format(val, unit)
 
-def run(mpfile, nmax=10, dup_check_test_site=True):
-
-    # book-keeping
-    existing_mpids = {}
-    for b in [False, True]:
-        with JarvisDftRester(test_site=b) as mpr:
-            for doc in mpr.query_contributions(criteria=mpr.query):
-                existing_mpids[doc['mp_cat_id']] = doc['_id']
-        if not dup_check_test_site:
-            break
+@duplicate_check
+def run(mpfile):
 
     for typ in ['2d', '3d']:
 
-        url = mpfile.hdata['_hdata']['input_url'].format(typ)
-        dbfile = url.rsplit('/')[-1]
+        url = mpfile.hdata.general['input_url'].format(typ)
+        dbfile = os.path.join(os.environ['HOME'], 'work', url.rsplit('/')[-1])
 
         if not os.path.exists(dbfile):
             print 'downloading', dbfile, '...'
-            url_opener = urllib.URLopener()
-            url_opener.retrieve(url, dbfile)
+            urllib.urlretrieve(url, dbfile)
+            #resp = urlrq.urlopen('https://foo.com/bar/baz.html', cafile=certifi.where())
 
         else:
             print 'unpacking', dbfile, '...'
@@ -52,13 +44,5 @@ def run(mpfile, nmax=10, dup_check_test_site=True):
                     data['shear_modulus'] = clean_value(i["gv"], 'GPa')
                     mpfile.add_hierarchical_data(nest_dict(data, ['data', typ]), identifier=mpid)
                     mpfile.add_structure(i['final_str'], name=data['formula'], identifier=mpid)
-
-                    if mpid in existing_mpids:
-                        cid = existing_mpids[mpid]
-                        mpfile.insert_id(mpid, cid)
-                        print cid, 'inserted to update', mpid
-
-                    if idx >= nmax-1:
-                        break
 
             print 'DONE with', typ
