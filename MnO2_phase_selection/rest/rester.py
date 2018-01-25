@@ -2,7 +2,7 @@ from __future__ import division, unicode_literals
 from mpcontribs.rest.rester import MPContribsRester
 from mpcontribs.io.archieml.mpfile import MPFile
 from mpcontribs.config import mp_level01_titles
-from pandas import DataFrame
+from mpcontribs.io.core.components import Table
 
 class Mno2PhaseSelectionRester(MPContribsRester):
     """MnO2_phase_selection-specific convenience functions to interact with MPContribs REST interface"""
@@ -32,9 +32,7 @@ class Mno2PhaseSelectionRester(MPContribsRester):
             mpfile = MPFile.from_contribution(doc)
             mp_id = mpfile.ids[0]
             contrib = mpfile.hdata[mp_id]['data']
-            cid_url = '/'.join([
-                self.preamble.rsplit('/', 1)[0], 'explorer', 'materials', doc['_id']
-            ])
+            cid_url = self.get_cid_url(doc)
             row = [mp_id, cid_url, contrib['Formula']]
             if phase is None:
                 row.append(contrib['Phase'])
@@ -49,7 +47,7 @@ class Mno2PhaseSelectionRester(MPContribsRester):
             row.append(cif_url)
             data.append((mp_id, row))
 
-        return DataFrame.from_items(data, orient='index', columns=columns)
+        return Table.from_items(data, orient='index', columns=columns)
 
     def get_provenance(self):
         docs = self.query_contributions(

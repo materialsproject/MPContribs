@@ -2,7 +2,7 @@
 from __future__ import division, unicode_literals
 from mpcontribs.rest.rester import MPContribsRester
 from mpcontribs.io.archieml.mpfile import MPFile
-from pandas import DataFrame
+from mpcontribs.io.core.components import Table
 
 class DtuRester(MPContribsRester):
     """DTU-specific convenience functions to interact with MPContribs REST interface"""
@@ -34,4 +34,4 @@ class DtuRester(MPContribsRester):
                 contrib['ΔE-QP']['indirect'], contrib['ΔE-QP']['direct']
             ]
             data.append((mp_id, row))
-        return DataFrame.from_items(data, orient='index', columns=columns)
+        return Table.from_items(data, orient='index', columns=columns)

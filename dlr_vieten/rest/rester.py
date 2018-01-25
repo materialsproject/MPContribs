@@ -3,7 +3,7 @@ from __future__ import division, unicode_literals
 from mpcontribs.rest.rester import MPContribsRester
 from mpcontribs.io.archieml.mpfile import MPFile
 from mpcontribs.config import mp_id_pattern
-from pandas import DataFrame
+from mpcontribs.io.core.components import Table
 
 class DlrVietenRester(MPContribsRester):
     """DlrVieten-specific convenience functions to interact with MPContribs REST interface"""
@@ -25,10 +25,7 @@ class DlrVietenRester(MPContribsRester):
             mpfile = MPFile.from_contribution(doc)
             identifier = mpfile.ids[0]
             contrib = mpfile.hdata[identifier]
-            endpoint = 'materials' if mp_id_pattern.match(identifier) else 'compositions'
-            cid_url = '/'.join([
-                self.preamble.rsplit('/', 1)[0], 'explorer', endpoint, doc['_id']
-            ])
+            cid_url = self.get_cid_url(doc)
             row = [identifier, cid_url, contrib['composition']]
             cif_url = ''
             structures = mpfile.sdata.get(identifier)
@@ -39,7 +36,7 @@ class DlrVietenRester(MPContribsRester):
                 ])
             row.append(cif_url)
             data.append((identifier, row))
-        return DataFrame.from_items(data, orient='index', columns=columns)
+        return Table.from_items(data, orient='index', columns=columns)
 
     def get_ionic_radii(self):
         data = []
@@ -72,4 +69,4 @@ class DlrVietenRester(MPContribsRester):
             for row in rows:
                 data.append((identifier, row))
 
-        return DataFrame.from_items(data, orient='index', columns=columns)
+        return Table.from_items(data, orient='index', columns=columns)

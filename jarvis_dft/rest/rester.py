@@ -2,7 +2,7 @@
 from __future__ import division, unicode_literals
 from mpcontribs.rest.rester import MPContribsRester
 from mpcontribs.io.archieml.mpfile import MPFile
-from pandas import DataFrame
+from mpcontribs.io.core.components import Table
 
 class JarvisDftRester(MPContribsRester):
     """JarvisDft-specific convenience functions to interact with MPContribs REST interface"""
@@ -33,10 +33,7 @@ class JarvisDftRester(MPContribsRester):
             mp_id = mpfile.ids[0]
             hdata = mpfile.hdata[mp_id]
             contrib = hdata['data'][typ]
-
-            cid_url = '/'.join([
-                self.preamble.rsplit('/', 1)[0], 'explorer', 'materials', doc['_id']
-            ])
+            cid_url = self.get_cid_url(doc)
 
             cif_url = ''
             structures = mpfile.sdata.get(mp_id)
@@ -49,4 +46,4 @@ class JarvisDftRester(MPContribsRester):
             row = [mp_id, cid_url, cif_url] + [contrib[k] for k in columns[3:-1]]
             row.append(hdata['details_url'].format(contrib['jid']))
             data.append((mp_id, row))
-        return DataFrame.from_items(data, orient='index', columns=columns)
+        return Table.from_items(data, orient='index', columns=columns)

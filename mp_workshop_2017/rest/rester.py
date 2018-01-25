@@ -2,7 +2,7 @@ from __future__ import division, unicode_literals
 import os
 from mpcontribs.rest.rester import MPContribsRester
 from mpcontribs.io.archieml.mpfile import MPFile
-from pandas import DataFrame
+from mpcontribs.io.core.components import Table
 
 class MpWorkshop2017Rester(MPContribsRester):
     """MpWorkshop2017-specific convenience functions to interact with MPContribs REST interface"""
@@ -46,7 +46,7 @@ class MpWorkshop2017Rester(MPContribsRester):
             if n != ncols:
                 entry[1] += [''] * (ncols - n)
 
-        return DataFrame.from_items(data, orient='index', columns=columns)
+        return Table.from_items(data, orient='index', columns=columns)
 
 
     def get_graphs(self):

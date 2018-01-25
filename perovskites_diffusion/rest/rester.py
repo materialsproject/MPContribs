@@ -2,7 +2,7 @@ from __future__ import division, unicode_literals
 import os
 from mpcontribs.rest.rester import MPContribsRester
 from mpcontribs.io.archieml.mpfile import MPFile
-from pandas import DataFrame
+from mpcontribs.io.core.components import Table
 
 class PerovskitesDiffusionRester(MPContribsRester):
     """PerovskitesDiffusion-specific convenience functions to interact with MPContribs REST interface"""
@@ -30,7 +30,7 @@ class PerovskitesDiffusionRester(MPContribsRester):
             row = [mp_id, cid_url] + contrib.values()
             data.append((mp_id, row))
 
-        return DataFrame.from_items(data, orient='index', columns=columns)
+        return Table.from_items(data, orient='index', columns=columns)
 
     def get_abbreviations(self):
         return self.get_global_hierarchical_data(['abbreviations']).get('abbreviations')
