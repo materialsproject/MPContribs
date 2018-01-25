@@ -32,6 +32,8 @@ class RecursiveDict(_OrderedDict):
             other = self
             overwrite = True
         for key,value in other.items():
+            if isinstance(key, six.string_types):
+                key = ''.join([replacements.get(c, c) for c in key])
             if key in self and \
                isinstance(self[key], dict) and \
                isinstance(value, dict):
