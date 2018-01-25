@@ -27,6 +27,7 @@
 .backgrid tbody tr:hover { background-color: #f9f9f9; }
 .jh-root { font-family: "symbola"; }
 .jh-type-string { font-style: normal; }
+code { display: block; white-space: pre-wrap; }
 </style>
 
 <div class="container">
@@ -34,6 +35,14 @@
     <div class="row">
         <h2>{{ title }}</h2>
         {{ provenance|safe }}
+    </div>
+    <div class="row">
+        <code>
+            from mpcontribs.users.boltztrap.rest.rester import BoltztrapRester
+            mpr = BoltztrapRester()
+            for doping in ['n', 'p']:
+                df = mpr.get_contributions(doping=doping)
+        </code>
     </div>
     {% for doping, table in tables.items %}
     <div class="row">
