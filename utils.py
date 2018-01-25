@@ -4,7 +4,7 @@ from importlib import import_module
 from mpcontribs.users_modules import get_user_rester
 
 def clean_value(value, unit):
-    return '{:.3g} {}'.format(value, unit)
+    return u'{:.3g} {}'.format(value, unit)
 
 def duplicate_check(f):
     existing_identifiers = {}

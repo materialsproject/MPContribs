@@ -102,7 +102,7 @@ def run(mpfile, hosts=None):
                 unit = u'Å'
             try:
                 hdata[ks[0]][subkey] = clean_value(v, unit.replace('angstrom', u'Å'))
-            except:
+            except ValueError:
                 hdata[ks[0]][subkey] = v
         hdata['formula'] = host
         df = df_dct['{}-X'.format(host)]
@@ -113,7 +113,6 @@ def run(mpfile, hosts=None):
             hdata['note'] = note
             df.drop(rows, inplace=True)
         mpfile.add_hierarchical_data(hdata, identifier=mpid)
-        continue
 
         print 'add table for D0/Q data for {}'.format(mpid)
         df.set_index(df['Solute element number'], inplace=True)
