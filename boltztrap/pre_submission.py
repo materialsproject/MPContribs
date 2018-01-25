@@ -29,6 +29,7 @@ def run(mpfile, **kwargs):
             # TODO: extreme values for power factor, zT, effective mass
             # TODO: add a text for the description of each table
             hdata = RecursiveDict((k, data[k]) for k in keys)
+            hdata['volume'] = u'{:g} Å³'.format(hdata['volume'])
             cond_eff_mass = u'mₑᶜᵒⁿᵈ'
             hdata[cond_eff_mass] = RecursiveDict()
             names = [u'e₁', u'e₂', u'e₃', u'<m>']
@@ -44,13 +45,11 @@ def run(mpfile, **kwargs):
                 )
             seebeck_fix_dop_temp = "Seebeck"
             hdata[seebeck_fix_dop_temp] = RecursiveDict()
-            cols = ['e₁','e₂','e₃', 'temperature', 'doping']
+            cols = [u'e₁', u'e₂', u'e₃', 'temperature', 'doping']
             for doping_type in ['p', 'n']:
                 sbk=[float(i) for i in data['GGA']['seebeck_doping'][doping_type]['300']['1e+18']['eigs']]
                 vals = [u'{:.2e} μV/K'.format(s) for s in sbk] + [u'{} K'.format('300'), u'{} cm⁻³'.format('1e+18')]
-                hdata[seebeck_fix_dop_temp][doping_type] = RecursiveDict(
-                            (k, v) for k, v in zip(cols, vals))
-
+                hdata[seebeck_fix_dop_temp][doping_type] = RecursiveDict((k, v) for k, v in zip(cols, vals))
 
             # build data and max values for seebeck, conductivity and kappa
             # max/min values computed using numpy. It may be better to code it in pure python.

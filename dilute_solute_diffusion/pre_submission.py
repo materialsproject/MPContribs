@@ -1,10 +1,13 @@
+# -*- coding: utf-8 -*-
 import os, json, math, glob, fnmatch, requests
 import numpy as np
 from collections import OrderedDict
 from pandas import DataFrame, Series, read_excel, isnull
 from mpcontribs.io.vaspdir import AbstractVaspDirCollParser
 from mpcontribs.io.archieml.mpfile import MPFile
+from mpcontribs.io.core.recdict import RecursiveDict
 from mpcontribs.config import mp_level01_titles
+from mpcontribs.users.utils import duplicate_check, clean_value
 
 def add_diffusivity_table(mpfile):
     """add solute_diffusivity tables to materials in MPFile"""
@@ -21,44 +24,50 @@ def add_diffusivity_table(mpfile):
         mpfile.add_data_table(key, df_dif, 'data_solute_diffusivity')
         print 'added diffusivity table for host', host
 
+@duplicate_check
 def run(mpfile, hosts=None):
     mpfile.unique_mp_cat_ids = False
     from pymatgen import MPRester
     from unidecode import unidecode
     mpr = MPRester()
-    general = mpfile.document[mp_level01_titles[0]]
-    figshare_id = general['figshare_id']
+    figshare_id = mpfile.hdata.general['figshare_id']
     url = 'https://api.figshare.com/v2/articles/{}'.format(figshare_id)
     print 'get figshare article {}'.format(figshare_id)
     r = requests.get(url)
     figshare = json.loads(r.content)
+
     print 'load global/general meta-data from figshare'
+    general = RecursiveDict()
     for k in ['title', 'description', 'doi', 'funding', 'version']:
         v = figshare[k]
         if k == 'description':
             v = ''.join([i if ord(i) < 128 else '' for i in v[3:-4]])
         if isinstance(v, str):
             v = unidecode(v.replace('\n', ' '))
-        general[k] = v
+        general[k] = unicode(v)
     general['authors'] = ', '.join([a['full_name'] for a in figshare['authors']])
+
     print 'read excel from figshare into DataFrame'
     df_dct = None
     for d in figshare['files']:
         if 'xlsx' in d['name']:
             # Dict of DataFrames is returned, with keys representing sheets
-            df_dct = read_excel(d['download_url'], sheetname=None)
+            df_dct = read_excel(d['download_url'], sheet_name=None)
             break
     if df_dct is None:
         print 'no excel sheet found on figshare'
         return
+
     print 'set index for host info, and add additional info'
     host_info = df_dct['Host Information']
     host_info.set_index(host_info.columns[0], inplace=True)
     add_info = 'Additional Information'
     general[add_info.lower()] = unidecode(
-        ' '.join(host_info.loc[add_info:].dropna(axis=1).ix[:,0])
+        ' '.join(host_info.loc[add_info:].dropna(axis=1).ix[:,0]).replace('  ', ' ')
     )
+    mpfile.add_hierarchical_data(general)
     host_info.dropna(inplace=True)
+
     print 'looping hosts ...'
     for idx, host in enumerate(host_info):
         if hosts is not None:
@@ -66,6 +75,7 @@ def run(mpfile, hosts=None):
                 break
             elif isinstance(hosts, list) and not host in hosts:
                 continue
+
         print 'get mp-id for {}'.format(host)
         mpid = None
         for doc in mpr.query(
@@ -78,34 +88,53 @@ def run(mpfile, hosts=None):
         if mpid is None:
             print 'mp-id for {} not found'.format(host)
             continue
+
         print 'add host info for {}'.format(mpid)
-        hdata = {mpid: host_info[host].to_dict()}
-        hdata[mpid]['formula'] = host
+        hdata = host_info[host].to_dict(into=RecursiveDict)
+        for k in hdata.keys():
+            v = hdata.pop(k)
+            ks = k.split()
+            if ks[0] not in hdata:
+                hdata[ks[0]] = RecursiveDict()
+            unit = ks[-1][1:-1] if ks[-1].startswith('[') else ''
+            subkey = '_'.join(ks[1:-1] if unit else ks[1:]).split(',')[0]
+            if subkey == "lattice_constant":
+                unit = u'Å'
+            try:
+                hdata[ks[0]][subkey] = clean_value(v, unit.replace('angstrom', u'Å'))
+            except:
+                hdata[ks[0]][subkey] = v
+        hdata['formula'] = host
         df = df_dct['{}-X'.format(host)]
         rows = list(isnull(df).any(1).nonzero()[0])
         if rows:
             cells = df.ix[rows].dropna(how='all').dropna(axis=1)[df.columns[0]]
             note = cells.iloc[0].replace('following', cells.iloc[1])[:-1]
-            hdata[mpid]['note'] = note
+            hdata['note'] = note
             df.drop(rows, inplace=True)
-        mpfile.concat(MPFile.from_dict(hdata))
+        mpfile.add_hierarchical_data(hdata, identifier=mpid)
+        continue
+
+        print 'add table for D0/Q data for {}'.format(mpid)
         df.set_index(df['Solute element number'], inplace=True)
         df.drop('Solute element number', axis=1, inplace=True)
         df.columns = df.ix[0]
         df.index.name = 'index'
         df.drop('Solute element name', inplace=True)
         df = df.T.reset_index()
-        print 'add table for D0/Q data for {}'.format(mpid)
-        if str(host)=='Fe':
-            df_D0_Q = df[['Solute element name', 'Solute D0, paramagnetic [cm^2/s]', 'Solute Q, paramagnetic [eV]']]
-        elif hdata[mpid]['Host crystal structure']=='HCP':
+        if str(host) == 'Fe':
+            df_D0_Q = df[[
+                'Solute element name', 'Solute D0, paramagnetic [cm^2/s]',
+                'Solute Q, paramagnetic [eV]'
+            ]]
+        elif hdata['Host']['crystal_structure'] == 'HCP':
             df_D0_Q = df[['Solute element name', 'Solute D0 basal [cm^2/s]', 'Solute Q basal [eV]']]
         else:
             df_D0_Q = df[['Solute element name', 'Solute D0 [cm^2/s]', 'Solute Q [eV]']]
         df_D0_Q.columns = ['element', 'D0 [cm2/s]', 'Q [eV]']
         mpfile.add_data_table(mpid, df_D0_Q, 'D0_Q')
 
-        if hdata[mpid]['Host crystal structure']=='BCC':
+        if hdata['Host']['crystal_structure'] == 'BCC':
             print 'add table for hop activation barriers for {}'.format(mpid)
             columns_E = ['Hop activation barrier, E_{} [eV]'.format(i) for i in range(2,5)]+["Hop activation barrier, E'_{} [eV]".format(i) for i in range(3,5)]+["Hop activation barrier, E''_{} [eV]".format(i) for i in range(3,5)]+['Hop activation barrier, E_{} [eV]'.format(i) for i in range(5,7)]
             df_E = df[['Solute element name'] + columns_E]
@@ -117,7 +146,7 @@ def run(mpfile, hosts=None):
             df_v.columns = ['element'] + ['v_{} [THz]'.format(i) for i in range(2,5)] + ["v''_{} [THz]".format(i) for i in range(3,5)] + ["v''_{} [THz]".format(i) for i in range(3,5)] + ['v_{} [THz]'.format(i) for i in range(5,7)]
             mpfile.add_data_table(mpid, df_v, 'hop_attempt_frequencies')
 
-        elif hdata[mpid]['Host crystal structure']=='FCC':
+        elif hdata['Host']['crystal_structure'] == 'FCC':
             print 'add table for hop activation barriers for {}'.format(mpid)
             columns_E = ['Hop activation barrier, E_{} [eV]'.format(i) for i in range(5)]
             df_E = df[['Solute element name'] + columns_E]
@@ -129,7 +158,7 @@ def run(mpfile, hosts=None):
             df_v.columns = ['element'] + ['v_{} [THz]'.format(i) for i in range(5)]
             mpfile.add_data_table(mpid, df_v, 'hop_attempt_frequencies')
 
-        elif hdata[mpid]['Host crystal structure']=='HCP':
+        elif hdata['Host']['crystal_structure'] == 'HCP':
             print 'add table for hop activation barriers for {}'.format(mpid)
             columns_E = ["Hop activation barrier, E_X [eV]","Hop activation barrier, E'_X [eV]","Hop activation barrier, E_a [eV]","Hop activation barrier, E'_a [eV]","Hop activation barrier, E_b [eV]","Hop activation barrier, E'_b [eV]","Hop activation barrier, E_c [eV]","Hop activation barrier, E'_c [eV]"]
             df_E = df[['Solute element name'] + columns_E]

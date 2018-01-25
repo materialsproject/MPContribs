@@ -7,8 +7,8 @@ from mpcontribs.users.utils import clean_value, duplicate_check
 @duplicate_check
 def run(mpfile, **kwargs):
 
-    url = mpfile.hdata['_hdata']['url']
-    dbfile = url.rsplit('/')[-1]
+    url = mpfile.hdata.general['url']
+    dbfile = os.path.join(os.environ['HOME'], 'work', url.rsplit('/')[-1])
 
     if not os.path.exists(dbfile):
         data = urllib.URLopener()

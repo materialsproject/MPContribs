@@ -1,5 +1,7 @@
+# -*- coding: utf-8 -*-
 import inspect
 from importlib import import_module
+from mpcontribs.users_modules import get_user_rester
 
 def clean_value(value, unit):
     return '{:.3g} {}'.format(value, unit)
@@ -11,7 +13,7 @@ def duplicate_check(f):
 
         module = inspect.getmodule(f)
         module_split = module.__name__.split('.')[:-1]
-        module_name = module_split[-1].title() + 'Rester'
+        module_name = get_user_rester(module_split[-1])
         module_rester = '.'.join(module_split + ['rest', 'rester'])
         mod = import_module(module_rester)
         Rester = getattr(mod, module_name)
