@@ -1,8 +1,7 @@
 from __future__ import unicode_literals, print_function
 import six, codecs, locale, pandas, os
 from abc import ABCMeta
-from mpcontribs.config import mp_level01_titles, default_mpfile_path, \
-        replacements, max_contribs_per_mpfile
+from mpcontribs.config import mp_level01_titles, default_mpfile_path, replacements
 from recdict import RecursiveDict
 from utils import nest_dict, get_composition_from_string
 from components import HierarchicalData, TabularData, GraphicalData, StructuralData, Table
@@ -16,6 +15,7 @@ class MPFileCore(six.with_metaclass(ABCMeta, object)):
             raise ValueError('Need dict (or inherited class) to init MPFile.')
         self.document.rec_update() # convert (most) OrderedDict's to RecursiveDict's
         self.unique_mp_cat_ids = True
+        self.max_contribs = 10
 
     def __getitem__(self, key):
         item = self.from_dict({key: self.document[key]})
@@ -187,7 +187,7 @@ class MPFileCore(six.with_metaclass(ABCMeta, object)):
         )
 
     def add_hierarchical_data(self, dct, identifier=mp_level01_titles[0]):
-        if len(self.ids) > max_contribs_per_mpfile:
+        if len(self.ids) >= self.max_contribs:
             raise StopIteration('Reached max. number of contributions in MPFile')
         self.document.rec_update(nest_dict(RecursiveDict(dct), [identifier]))
 
