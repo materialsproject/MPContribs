@@ -24,11 +24,12 @@ def run(mpfile, **kwargs):
         input_file = gzip.open(obj.path, 'rb')
         try:
             data = json.loads(input_file.read())
-            
-            #filter out metals
-            if data['gap']['GGA'] < 0.1:
-                return
-            
+
+            # filter out metals
+            if 'GGA' not in data['gap'] or data['gap']['GGA'] < 0.1:
+                print('GGA gap < 0.1 -> skip')
+                continue
+
             # add hierarchical data (nested key-values)
             # TODO: extreme values for power factor, zT, effective mass
             # TODO: add a text for the description of each table
