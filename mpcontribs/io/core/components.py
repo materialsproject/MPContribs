@@ -80,7 +80,7 @@ def get_backgrid_table(df):
         if len(table['columns']) > 9:
             table['columns'][-1]['renderable'] = 0
 
-    table['rows'] = df.to_dict('records')
+    table['rows'] = super(Table, df).to_dict(orient='records')
 
     for col_index, col in enumerate(df.columns):
         # avoid looping rows to minimize use of `df.iat` (time-consuming in 3d)
@@ -177,7 +177,7 @@ class Table(DataFrame):
 
     def _ipython_display_(self):
         disable_ipython_scrollbar()
-        display(HTML(render_dataframe(DataFrame(self))))
+        display(HTML(render_dataframe(self)))
 
 class Tables(RecursiveDict):
     """class to hold and display multiple data tables"""
