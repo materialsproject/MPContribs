@@ -2,7 +2,7 @@
 import sys, os, argparse
 from importlib import import_module
 
-def load_mprester(f):
+def mprester(f):
     from mpcontribs.rest.rester import MPContribsRester
     with MPContribsRester(test_site=True) as mpr:
         def wrapper(*args, **kwargs):
@@ -10,7 +10,7 @@ def load_mprester(f):
         wrapper.mpr = mpr
         return wrapper
 
-@load_mprester
+@mprester
 def info(args):
     from mpcontribs.io.core.utils import get_short_object_id
     infos = {}
@@ -24,22 +24,39 @@ def info(args):
             print '{}: {}'.format(k, ' '.join(v))
 
 def load(args):
-    for project in args.projects:
-        module_presub = '.'.join(['mpcontribs', 'users', project, 'pre_submission'])
-        mod = import_module(module_presub)
-        run = getattr(mod, 'run')
-        filedir = os.path.abspath(os.path.dirname(__file__))
-        path = os.sep.join([filedir, '..', 'mpcontribs', 'users', project, 'mpfile_init.txt'])
-        if os.path.exists(path):
-            from mpcontribs.io.archieml.mpfile import MPFile
-            mpfile = MPFile.from_file(path)
-        else:
-            print 'mpfile_init.txt not available for {} project'.format(project)
-            return
-        run(mpfile)
-        from mpcontribs.utils import submit_mpfile
-        for msg in submit_mpfile(mpfile):
-            print msg
+    if args.projects is None:
+        from mpcontribs.users_modules import get_users_modules
+        projects = [
+            os.path.basename(mod_path)
+            for mod_path in get_users_modules()
+            if os.path.exists(os.path.join(mod_path, 'mpfile_init.txt')) and \
+                    os.path.exists(os.path.join(mod_path, 'pre_submission.py'))
+        ]
+        for a, b, c in zip(projects[::3], projects[1::3], projects[2::3]):
+            print '{:<30}{:<30}{:<}'.format(a, b, c)
+    else:
+        projects = args.projects if isinstance(args.projects, list) else [args.projects]
+        for project in projects:
+            module_presub = '.'.join(['mpcontribs', 'users', project, 'pre_submission'])
+            mod = import_module(module_presub)
+            run = getattr(mod, 'run')
+            filedir = os.path.abspath(os.path.dirname(__file__))
+            path = os.sep.join([filedir, '..', 'mpcontribs', 'users', project, 'mpfile_init.txt'])
+            if os.path.exists(path):
+                from mpcontribs.io.archieml.mpfile import MPFile
+                mpfile = MPFile.from_file(path)
+                mpfile.max_contribs = args.n
+            else:
+                print 'mpfile_init.txt not available for {} project'.format(project)
+                return
+            run(mpfile)
+            #import json
+            #mpfile_cmp = MPFile.from_string(mpfile.get_string())
+            #json.dump(mpfile.document, open('f1.json', 'w'), indent=2)
+            #json.dump(mpfile_cmp.document, open('f2.json', 'w'), indent=2)
+            from mpcontribs.utils import submit_mpfile
+            for msg in submit_mpfile(mpfile):
+                print msg
 
 def delete(args):
     ndel = mpr.delete_contributions(args.cids)
@@ -86,7 +103,8 @@ def main():
     parser_load = subparsers.add_parser(
         'load', help="""run pre-submission processing to load data for a project"""
     )
-    parser_load.add_argument('projects', type=str, nargs='+', help='projects to load')
+    parser_load.add_argument('-n', type=int, default=10, help='number of contributions to load')
+    parser_load.add_argument('projects', type=str, nargs='?', help='projects to load')
     parser_load.set_defaults(func=load)
 
     #parser_delete = subparsers.add_parser(
