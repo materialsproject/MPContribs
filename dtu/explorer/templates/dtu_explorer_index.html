@@ -66,7 +66,7 @@ requirejs(['main'], function() {
                 xaxis: {type: 'category'},
                 yaxis: {title: 'Energy (eV)'}
             };
-            var keys = ['C', 'indirect ΔE-QP', 'direct ΔE-QP'];
+            var keys = ['C', 'ΔE-QP##indirect', 'ΔE-QP##direct'];
             var xvals = []; var yvals = {};
             for (i = 0; i < table['rows'].length; i++) {
                 var row = table['rows'][i];
@@ -82,7 +82,14 @@ requirejs(['main'], function() {
             var data = [];
             for (j = 0; j < keys.length; j++) {
                 var k = keys[j];
-                var d = {x: xvals, y: yvals[k], type: 'bar', name: k};
+                var ks = k.split('##');
+                if ( ks.length > 1 ) {
+                    var name = ks[1] + ' ' + ks[0];
+                } else {
+                    var name = ks[0];
+                }
+
+                var d = {x: xvals, y: yvals[k], type: 'bar', name: name};
                 data.push(d);
             }
             Plotly.plot(graph, data, layout);
