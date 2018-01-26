@@ -90,6 +90,12 @@ def contribution(request, collection, cid):
         ENDPOINT = request.build_absolute_uri(get_endpoint())
         with MPContribsRester(API_KEY, endpoint=ENDPOINT) as mpr:
             try:
+                contrib = mpr.query_contributions(
+                    criteria={'_id': cid}, projection={'build': 1}
+                )[0]
+                if 'build' in contrib and contrib['build']:
+                    mpr.build_contribution(cid)
+                    mpr.set_build_flag(cid, False)
                 material = mpr.query_contributions(
                     criteria={'_id': ObjectId(cid)},
                     collection=collection, projection={'_id': 0}
