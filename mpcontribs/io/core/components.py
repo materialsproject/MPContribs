@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 import uuid, json
 from pandas import DataFrame
 from mpcontribs.config import mp_level01_titles, mp_id_pattern, object_id_pattern
@@ -51,25 +52,46 @@ def get_backgrid_table(df):
         df = df.head(n=nrows_max)
     numeric_columns = df.select_dtypes(include=[np.number]).columns.tolist()
 
-    table['columns'] = []
     if isinstance(df.index, MultiIndex):
         df.reset_index(inplace=True)
+
+    table['columns'] = []
+    table['rows'] = super(Table, df).to_dict(orient='records')
+
     for col_index, col in enumerate(df.columns):
         cell_type = 'number'
+
+        # avoid looping rows to minimize use of `df.iat` (time-consuming in 3d)
         if not col.startswith('level_') and col not in numeric_columns:
-            is_url_column = None
+            is_url_column, prev_unit = True, None
+
             for row_index in xrange(nrows):
                 cell = unicode(df.iat[row_index, col_index])
-                is_url_column = not cell # empty string is ok
-                if not is_url_column:
-                    is_url_column = mp_id_pattern.match(cell)
-                    if not is_url_column:
-                        try:
-                            val(cell)
-                        except ValidationError:
-                            break
-                        is_url_column = True
+                cell_split = cell.split(' ', 1)
+                if not cell or len(cell_split) == 1: # empty cell or no space
+                    if is_url_column:
+                        is_url_column = bool(not cell or mp_id_pattern.match(cell))
+                        if is_url_column:
+                            if cell:
+                                value = 'https://materialsproject.org/materials/{}'.format(cell)
+                                table['rows'][row_index][col] = value
+                        else:
+                            try:
+                                val(cell)
+                                is_url_column = True
+                            except ValidationError:
+                                # is_url_column already set to False
+                                break
+                else:
+                    value, unit = cell_split # TODO convert cell_split[0] to float?
+                    if prev_unit is None:
+                        is_url_column = False
+                        prev_unit = unit
+                    elif prev_unit != unit:
+                        break
+
             cell_type = 'uri' if is_url_column else 'string'
+
         col_split = col.split('##')
         nesting = [col_split[0]] if len(col_split) > 1 else []
         table['columns'].append({
@@ -79,17 +101,6 @@ def get_backgrid_table(df):
             table['columns'][-1].update({'label': '##'.join(col_split[1:])})
         if len(table['columns']) > 9:
             table['columns'][-1]['renderable'] = 0
-
-    table['rows'] = super(Table, df).to_dict(orient='records')
-
-    for col_index, col in enumerate(df.columns):
-        # avoid looping rows to minimize use of `df.iat` (time-consuming in 3d)
-        if not col.startswith('level_') and col not in numeric_columns:
-            for row_index in xrange(nrows):
-                value = unicode(df.iat[row_index, col_index])
-                if mp_id_pattern.match(value):
-                    value = u'https://materialsproject.org/materials/{}'.format(value)
-                table['rows'][row_index][col] = value
 
     return table
 
