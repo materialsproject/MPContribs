@@ -58,6 +58,8 @@ class ContributionMongoAdapter(object):
         elif collection == 'contributions':
             props = [k for k,v in projection.iteritems() if v] + ['collaborators']
         projection = dict((p, 1) for p in props) if props else None
+        if '_id' in crit and not isinstance(crit['_id'], bson.ObjectId):
+            crit['_id'] = bson.ObjectId(crit['_id'])
         return coll.find(crit, projection=projection, limit=limit)
 
     def delete_contributions(self, crit):
