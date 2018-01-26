@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import unicode_literals
 import os, gzip, json
 import numpy as np
 from pandas import DataFrame
@@ -34,10 +35,10 @@ def run(mpfile, **kwargs):
             # TODO: extreme values for power factor, zT, effective mass
             # TODO: add a text for the description of each table
             hdata = RecursiveDict((k, data[k]) for k in keys)
-            hdata['volume'] = u'{:g} Å³'.format(hdata['volume'])
-            cond_eff_mass = u'mₑᶜᵒⁿᵈ'
+            hdata['volume'] = '{:g} Å³'.format(hdata['volume'])
+            cond_eff_mass = 'mₑᶜᵒⁿᵈ'
             hdata[cond_eff_mass] = RecursiveDict()
-            names = [u'e₁', u'e₂', u'e₃', u'<m>']
+            names = ['e₁', 'e₂', 'e₃', '<m>']
             if 'GGA' not in data:
                 print('no GGA key for', mpid)
                 continue
@@ -45,15 +46,15 @@ def run(mpfile, **kwargs):
                 eff_mass = d['300']['1e+18']
                 eff_mass.append(np.mean(eff_mass))
                 hdata[cond_eff_mass][dt] = RecursiveDict(
-                    (names[idx], u'{:.2f} mₑ'.format(x))
+                    (names[idx], clean_value(x, 'mₑ'))
                     for idx, x in enumerate(eff_mass)
                 )
             seebeck_fix_dop_temp = "Seebeck"
             hdata[seebeck_fix_dop_temp] = RecursiveDict()
-            cols = [u'e₁', u'e₂', u'e₃', 'temperature', 'doping']
+            cols = ['e₁', 'e₂', 'e₃', 'temperature', 'doping']
             for doping_type in ['p', 'n']:
                 sbk=[float(i) for i in data['GGA']['seebeck_doping'][doping_type]['300']['1e+18']['eigs']]
-                vals = [u'{:.2e} μV/K'.format(s) for s in sbk] + [u'{} K'.format('300'), u'{} cm⁻³'.format('1e+18')]
+                vals = [clean_value(s, 'μV/K') for s in sbk] + ['300 K', '10¹⁸ cm⁻³']
                 hdata[seebeck_fix_dop_temp][doping_type] = RecursiveDict((k, v) for k, v in zip(cols, vals))
 
             # build data and max values for seebeck, conductivity and kappa
@@ -81,7 +82,7 @@ def run(mpfile, **kwargs):
                         for doping in dopings:
                             doping_str = '%.0e' % doping
                             if len(columns) <= len(dopings):
-                                columns.append(doping_str + u' cm⁻³')
+                                columns.append(doping_str + ' cm⁻³')
                             eigs = prop[str(temp)][doping_str]['eigs']
                             row.append(np.mean(eigs))
                         prop_averages.append(row)
@@ -95,9 +96,9 @@ def run(mpfile, **kwargs):
                     arg_max = np.argwhere(arr_prop_avg==max_v)[0]
 
                     vals = [
-                        u'{:.2e} {}'.format(max_v, unit),
-                        u'{:.2e} K'.format(temps[arg_max[0]]),
-                        u'{:.2e} cm⁻³'.format(dopings[arg_max[1]])
+                        clean_value(max_v, unit),
+                        clean_value(temps[arg_max[0]], 'K'),
+                        clean_value(dopings[arg_max[1]], 'cm⁻³')
                     ]
                     hdata[lbl][doping_type] = RecursiveDict(
                         (k, v) for k, v in zip(cols, vals)
