@@ -232,6 +232,12 @@ class MPContribsRester(MPResterBase):
     def get_cif(self, cid, structure_name):
         return self._make_request('/cif/{}/{}'.format(cid, structure_name))
 
+    def set_build_flag(self, cid, flag):
+        if not isinstance(flag, bool) and not isinstance(flag, int):
+            raise MPResterError('flag needs to be boolean')
+        cid = bson.ObjectId(cid)
+        return self._make_request('/build', payload={'cid': cid, 'flag': int(flag)}, method='POST')
+
     def get_main_contributions(self, identifier):
         pass
 

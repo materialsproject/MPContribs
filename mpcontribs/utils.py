@@ -161,6 +161,7 @@ def process_mpfile(path_or_mpfile, target=None, fmt='archieml', ids=None):
                             yield ("OK. <a href='{}' class='btn btn-default btn-xs' " +
                                    "role='button' target='_blank'>View</a></br>").format(url)
                         else:
+                            target.set_build_flag(cid, True)
                             yield 'OK (queued).</br>'
                     else:
                         if (ids is None and idx < 5) or ids is not None:
