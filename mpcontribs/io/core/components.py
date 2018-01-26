@@ -58,12 +58,12 @@ def get_backgrid_table(df):
     table['columns'] = []
     table['rows'] = super(Table, df).to_dict(orient='records')
 
-    for col_index, col in enumerate(df.columns):
+    for col_index, col in enumerate(list(df.columns)):
         cell_type = 'number'
 
         # avoid looping rows to minimize use of `df.iat` (time-consuming in 3d)
         if not col.startswith('level_') and col not in numeric_columns:
-            is_url_column, prev_unit = True, None
+            is_url_column, prev_unit, old_col = True, None, col
 
             for row_index in xrange(nrows):
                 cell = unicode(df.iat[row_index, col_index])
@@ -84,18 +84,19 @@ def get_backgrid_table(df):
                                 break
                 else:
                     value, unit = cell_split # TODO convert cell_split[0] to float?
+                    table['rows'][row_index].pop(old_col)
                     if prev_unit is None:
                         is_url_column = False
                         prev_unit = unit
-                    elif prev_unit != unit:
-                        break
+                        col = '{} [{}]'.format(col, unit)
+                    table['rows'][row_index][col] = cell if prev_unit != unit else value
 
             cell_type = 'uri' if is_url_column else 'string'
 
         col_split = col.split('##')
         nesting = [col_split[0]] if len(col_split) > 1 else []
         table['columns'].append({
-            'name': col,  'cell': cell_type, 'nesting': nesting, 'editable': 0
+            'name': col, 'cell': cell_type, 'nesting': nesting, 'editable': 0
         })
         if len(col_split) > 1:
             table['columns'][-1].update({'label': '##'.join(col_split[1:])})
