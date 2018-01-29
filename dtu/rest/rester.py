@@ -18,7 +18,7 @@ class DtuRester(MPContribsRester):
             raise Exception('No contributions found for DTU Explorer!')
 
         data = []
-        columns = ['mp-id', 'cid', 'C']
+        columns = ['mp-id', 'cid', 'formula', 'ICSD', 'C']
         keys, subkeys = ['ΔE-KS', 'ΔE-QP'], ['indirect', 'direct']
         columns += ['##'.join([k, sk]) for k in keys for sk in subkeys]
 
@@ -27,7 +27,7 @@ class DtuRester(MPContribsRester):
             mp_id = mpfile.ids[0]
             contrib = mpfile.hdata[mp_id]['data']
             cid_url = self.get_cid_url(doc)
-            row = [mp_id, cid_url, contrib['C']]
+            row = [mp_id, cid_url, contrib['formula'], contrib['ICSD'], contrib['C']]
             row += [contrib[k][sk] for k in keys for sk in subkeys]
             data.append((mp_id, row))
         return Table.from_items(data, orient='index', columns=columns)

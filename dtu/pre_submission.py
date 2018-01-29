@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import unicode_literals
 import os, urllib, ase.db
 from mpcontribs.io.core.recdict import RecursiveDict
 from mpcontribs.io.core.utils import nest_dict
@@ -22,9 +23,11 @@ def run(mpfile, **kwargs):
             print 'added', idx, '/', nr_mpids, 'materials'
         mpid = 'mp-' + str(row.mpid)
         d = RecursiveDict()
+        d['formula'] = row.formula
+        d['ICSD'] = str(row.icsd_id)
 
         # kohn-sham band gap
-        d[u'ΔE-KS'] = RecursiveDict([
+        d['ΔE-KS'] = RecursiveDict([
             ('indirect', clean_value(
                 row.gllbsc_ind_gap - row.gllbsc_disc, 'eV'
             )), ('direct', clean_value(
@@ -36,7 +39,7 @@ def run(mpfile, **kwargs):
         d['C'] = clean_value(row.gllbsc_disc, 'eV')
 
         # quasi particle band gap
-        d[u'ΔE-QP'] = RecursiveDict([
+        d['ΔE-QP'] = RecursiveDict([
             ('indirect', clean_value(row.gllbsc_ind_gap, 'eV')),
             ('direct', clean_value(row.gllbsc_dir_gap, 'eV'))
         ])
