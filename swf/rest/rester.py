@@ -21,6 +21,7 @@ class SwfRester(MPContribsRester):
 
         data = []
         columns = ['formula', 'contribution']
+        ncols = 9
 
         for doc in docs:
             mpfile = MPFile.from_contribution(doc)
@@ -37,14 +38,11 @@ class SwfRester(MPContribsRester):
             row = [formula, cid_url]
             for col in columns[2:]:
                 row.append(contrib.get(col, ''))
+            
+            n = len(row)
+            if n < ncols:
+                row += [''] * (ncols - n)
 
-            data.append([formula, row])
-
-        # enforce equal row lengths
-        ncols = len(columns)
-        for entry in data:
-            n = len(entry[1])
-            if n != ncols:
-                entry[1] += [''] * (ncols - n)
+            data.append((formula, row))
 
         return Table.from_items(data, orient='index', columns=columns)

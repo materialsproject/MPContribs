@@ -25,6 +25,8 @@
 <style>
 .backgrid { font-family: "symbola"; }
 .backgrid tbody tr:hover { background-color: #f9f9f9; }
+.backgrid .sortable { text-align: center; }
+.backgrid thead th button { display: inline; }
 .jh-root { font-family: "symbola"; }
 .jh-type-string { font-style: normal; }
 code { display: block; white-space: pre-wrap; }
@@ -48,8 +50,8 @@ code { display: block; white-space: pre-wrap; }
     </div>
 
     <div class="row">
-        <h4>Below, the eigenvalues of the Seebeck coefficient and the conductivity 
-        effective mass for a doping level of 10¹⁸ cm⁻³ at 300K are shown.</h4>
+        <h5>Below, the eigenvalues of the Seebeck coefficient and the conductivity 
+        effective mass for a doping level of 10¹⁸ cm⁻³ at 300K are shown.</h5>
     </div>
 
     {% for doping, table in tables.items %}

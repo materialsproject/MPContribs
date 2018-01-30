@@ -19,7 +19,8 @@ def index(request):
                 prov = mpr.get_provenance()
                 title = prov.get('title')
                 provenance = render_dict(prov, webapp=True)
-                table = render_dataframe(mpr.get_contributions(), webapp=True)
+                df = mpr.get_contributions()
+                table = render_dataframe(df, webapp=True)
                 mod = os.path.dirname(__file__).split(os.sep)[-2]
                 static_url = '_'.join([STATIC_URL[:-1], mod])
             except Exception as ex:

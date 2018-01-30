@@ -1,10 +1,19 @@
 # -*- coding: utf-8 -*-
-import inspect
+from __future__ import unicode_literals
+import inspect, six
 from importlib import import_module
 from mpcontribs.users_modules import get_user_rester
 
-def clean_value(value, unit):
-    return u'{:.3g} {}'.format(value, unit)
+def clean_value(value, unit=''):
+    if isinstance(value, six.string_types):
+        try:
+            value = float(value)
+        except:
+            return value
+    v = '{:.3g}'.format(value)
+    if unit:
+        v += ' {}'.format(unit)
+    return v
 
 def duplicate_check(f):
     existing_identifiers = {}

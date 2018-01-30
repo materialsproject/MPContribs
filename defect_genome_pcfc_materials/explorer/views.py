@@ -3,9 +3,9 @@
 import os, json
 from django.shortcuts import render_to_response
 from django.template import RequestContext
-from mpcontribs.io.core.components import render_dataframe
+from mpcontribs.io.core.components import render_dataframe, Table
 from webtzite.rester import MPResterBase
-from pandas import DataFrame
+from mpcontribs.users.utils import clean_value
 
 def index(request):
     ctx = RequestContext(request)
@@ -32,13 +32,12 @@ def index(request):
                     'MP Id', 'Formula', 'Spacegroup', 'Formation Energy (eV)',
                     'E above Hull (eV)', 'Band Gap (eV)', 'Nsites', 'Density (gm/cc)', 'Volume'
                 ]
-                df = DataFrame(columns=columns)
+                data = []
                 for doc in docs:
-                    row = dict(
-                        (columns[i], doc[k]) for i, k in enumerate(properties)
-                    )
-                    df = df.append(row, ignore_index=True)
+                    row = [clean_value(doc[k]) for k in properties]
+                    data.append((doc['task_id'], row))
 
+                df = Table.from_items(data, orient='index', columns=columns)
                 table = render_dataframe(df, webapp=True)
             except Exception as ex:
                 ctx.update({'alert': str(ex)})
