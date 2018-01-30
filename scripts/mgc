@@ -3,18 +3,20 @@ import sys, os, argparse
 from importlib import import_module
 
 def mprester(f):
-    from mpcontribs.rest.rester import MPContribsRester
-    with MPContribsRester(test_site=True) as mpr:
-        def wrapper(*args, **kwargs):
-            f(*args, **kwargs)
-        wrapper.mpr = mpr
-        return wrapper
+
+    def wrapper(*args, **kwargs):
+        from mpcontribs.rest.rester import MPContribsRester
+        test_site = not args[0].prod
+        with MPContribsRester(test_site=test_site) as mpr:
+            f(*args, mpr=mpr)
+
+    return wrapper
 
 @mprester
-def info(args):
+def info(args, mpr=None):
     from mpcontribs.io.core.utils import get_short_object_id
     infos = {}
-    for contrib in info.mpr.query_contributions(contributor_only=True):
+    for contrib in mpr.query_contributions(contributor_only=True):
         mid, cid = contrib['mp_cat_id'], get_short_object_id(contrib['_id'])
         if mid not in infos: infos[mid] = [cid]
         else: infos[mid].append(cid)
@@ -49,14 +51,16 @@ def load(args):
             else:
                 print 'mpfile_init.txt not available for {} project'.format(project)
                 return
-            run(mpfile)
+            test_site = not args.prod
+            run(mpfile, test_site=test_site)
             #import json
             #mpfile_cmp = MPFile.from_string(mpfile.get_string())
             #json.dump(mpfile.document, open('f1.json', 'w'), indent=2)
             #json.dump(mpfile_cmp.document, open('f2.json', 'w'), indent=2)
-            if not args.test:
+            if not args.skip:
                 from mpcontribs.utils import submit_mpfile
-                for msg in submit_mpfile(mpfile):
+                site = 'jupyterhub' if not args.prod else ''
+                for msg in submit_mpfile(mpfile, site=site):
                     print msg
 
 def delete(args):
@@ -99,13 +103,15 @@ def main():
         '-m', '--mp_cat_ids', type=str, nargs='+',
         help="""reduce output to specific MP category IDs"""
     )
+    parser_info.add_argument('--prod', action='store_true', help='check MP')
     parser_info.set_defaults(func=info)
 
     parser_load = subparsers.add_parser(
         'load', help="""run pre-submission processing to load data for a project"""
     )
     parser_load.add_argument('-n', type=int, default=10, help='number of contributions to load')
-    parser_load.add_argument('-t', '--test', action='store_true', help='test only, no submission')
+    parser_load.add_argument('-s', '--skip', action='store_true', help='skip actual submission')
+    parser_load.add_argument('--prod', action='store_true', help='submit to MP')
     parser_load.add_argument('projects', type=str, nargs='?', help='projects to load')
     parser_load.set_defaults(func=load)
 
