@@ -66,10 +66,11 @@ requirejs(['main'], function() {
                 xaxis: {type: 'category'},
                 yaxis: {title: 'Energy (eV)'}
             };
-            var keys = ['C', 'ΔE-QP##indirect', 'ΔE-QP##direct'];
+            var keys = ['C [eV]', 'ΔE-QP##indirect [eV]', 'ΔE-QP##direct [eV]'];
             var xvals = []; var yvals = {};
             for (i = 0; i < table['rows'].length; i++) {
                 var row = table['rows'][i];
+                console.log(row);
                 var mpid_split = row['mp-id'].split('/');
                 var mpid = mpid_split[mpid_split.length-1];
                 xvals.push(mpid);
@@ -84,7 +85,7 @@ requirejs(['main'], function() {
                 var k = keys[j];
                 var ks = k.split('##');
                 if ( ks.length > 1 ) {
-                    var name = ks[1] + ' ' + ks[0];
+                    var name = ks[1].split(' ')[0] + ' ' + ks[0];
                 } else {
                     var name = ks[0];
                 }
