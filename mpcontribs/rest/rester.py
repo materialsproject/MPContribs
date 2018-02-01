@@ -238,11 +238,9 @@ class MPContribsRester(MPResterBase):
         cid = bson.ObjectId(cid)
         return self._make_request('/build', payload={'cid': cid, 'flag': int(flag)}, method='POST')
 
-    def get_main_contributions(self, identifier):
-        pass
+    def get_datasets(self, identifier):
+        return self._make_request('/datasets/'+identifier)
 
-    def get_card(self, cid='5956e310043b4b56b253e003',
-        prov_keys=['title', 'url', 'explanation', 'references', 'authors', 'contributor']
-    ):
+    def get_card(self, cid, prov_keys=['title']):
         payload = {"provenance_keys": dumps(prov_keys)}
         return self._make_request('/card/'+cid, payload=payload, method='POST')
