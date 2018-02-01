@@ -91,25 +91,26 @@ class MPContributionsBuilder():
             raise ValueError('flag needs to be boolean but is {}'.format(type(flag)))
         self.contributions.update({'_id': cid}, {'$set': {'build': flag}})
 
-    def build(self, contributor_email, cid, api_key=None, endpoint=None):
+    def build(self, cid, api_key=None, endpoint=None):
         """update materials/compositions collections with contributed data"""
         cid_short, cid_str = get_short_object_id(cid), str(cid)
         contrib = self.find_contribution(cid)
         if not contrib:
             raise Exception('Contribution {} not found!'.format(cid))
-        if contributor_email not in contrib['collaborators']: raise ValueError(
-            "Build stopped: building contribution {} not "
-            "allowed due to insufficient permissions of {}! Ask "
-            "someone of {} to make you a collaborator on {}.".format(
-                cid_short, contributor_email, contrib['collaborators'], cid_short))
-        from pymatgen.util.provenance import Author
+        #if contributor_email not in contrib['collaborators']: raise ValueError(
+        #    "Build stopped: building contribution {} not "
+        #    "allowed due to insufficient permissions of {}! Ask "
+        #    "someone of {} to make you a collaborator on {}.".format(
+        #        cid_short, contributor_email, contrib['collaborators'], cid_short))
+        #from pymatgen.util.provenance import Author
         mpfile = MPFileCore.from_contribution(contrib)
         mp_cat_id = mpfile.ids[0]
         is_mp_id = mp_id_pattern.match(mp_cat_id)
         self.curr_coll = self.materials if is_mp_id else self.compositions
-        author = Author.parse_author(contributor_email)
-        project = str(author.name).translate(None, '.') \
-                if 'project' not in contrib else contrib['project']
+        #author = Author.parse_author(contributor_email)
+        #project = str(author.name).translate(None, '.') \
+        #        if 'project' not in contrib else contrib['project']
+        project = contrib.get('project')
 
         nb = nbf.new_notebook()
         if isinstance(self.db, dict):

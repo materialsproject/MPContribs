@@ -153,15 +153,13 @@ def submit_contribution(request, db_type=None, mdb=None):
 @mapi_func(supported_methods=["POST", "GET"], requires_api_key=True)
 def build_contribution(request, db_type=None, mdb=None):
     """Builds a single contribution into according material/composition"""
-    contributor = '{} {} <{}>'.format(
-        request.user.first_name, request.user.last_name, request.user.email)
     try:
         cid = ObjectId(request.POST['cid'])
         flag = request.POST.get('flag')
         if flag is None:
             endpoint = request.build_absolute_uri(get_endpoint())
             response = mdb.contrib_build_ad.build(
-                contributor, cid, api_key=request.user.api_key, endpoint=endpoint
+                cid, api_key=request.user.api_key, endpoint=endpoint
             )
         else:
             try:

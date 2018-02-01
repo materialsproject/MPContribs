@@ -172,7 +172,7 @@ def process_mpfile(path_or_mpfile, target=None, fmt='archieml', ids=None, projec
                         if (ids is None and idx < 5) or ids is not None:
                             yield 'build ... '
                             mcb = MPContributionsBuilder(doc)
-                            build_doc = mcb.build(contributor, cid)
+                            build_doc = mcb.build(cid)
                         else:
                             yield 'skip ... '
                             from pymatgen.util.provenance import Author
