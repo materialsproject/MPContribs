@@ -44,12 +44,13 @@ def get_backgrid_table(df):
     from django.core.validators import URLValidator
     from django.core.exceptions import ValidationError
     from pandas import MultiIndex
+
     val = URLValidator()
     table = dict()
     nrows = df.shape[0]
     nrows_max = 200
     if nrows > nrows_max:
-        df = df.head(n=nrows_max)
+        df = Table(df.head(n=nrows_max))
     numeric_columns = df.select_dtypes(include=[np.number]).columns.tolist()
 
     if isinstance(df.index, MultiIndex):
@@ -205,9 +206,8 @@ class Tables(RecursiveDict):
 
     def _ipython_display_(self):
         for name, table in self.iteritems():
-            if table:
-                display_html('<h3>{}</h3>'.format(name), raw=True)
-                display_html(table)
+            display_html('<h3>{}</h3>'.format(name), raw=True)
+            display_html(table)
 
 class TabularData(RecursiveDict):
     """class to hold and display all tabular data of a MPFile"""
@@ -268,7 +268,7 @@ def render_plot(plot, webapp=False, filename=None):
         return
     axis = 'z' if is_3d else 'x'
     npts = len(fig.get('data')[0][axis])
-    static_fig = (is_3d and npts > 15) or (not is_3d and npts > 200)
+    static_fig = (is_3d and npts > 15) or (not is_3d and npts > 700)
     if static_fig:
         from plotly.plotly import image
         img = image.get(fig)
