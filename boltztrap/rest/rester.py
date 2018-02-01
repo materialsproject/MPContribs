@@ -6,8 +6,8 @@ from mpcontribs.io.core.components import Table
 
 class BoltztrapRester(MPContribsRester):
     """Boltztrap-specific convenience functions to interact with MPContribs REST interface"""
-    query = {'content.doi': '10.1038/sdata.2017.85'}
-    provenance_keys = ['title', 'authors', 'journal', 'doi', 'url', 'remarks']
+    query = {'content.url': 'https://www.nature.com/articles/sdata201785'}
+    provenance_keys = ['title', 'authors', 'journal', 'dois', 'url', 'description']
 
     def get_contributions(self, doping):
 

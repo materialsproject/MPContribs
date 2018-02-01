@@ -7,7 +7,7 @@ from mpcontribs.io.core.components import Table
 class DtuRester(MPContribsRester):
     """DTU-specific convenience functions to interact with MPContribs REST interface"""
     query = {'content.url': 'https://cmr.fysik.dtu.dk/_downloads/mp_gllbsc.db'}
-    provenance_keys = ['title', 'url', 'description', 'references', 'authors', 'contributor']
+    provenance_keys = ['title', 'url', 'description', 'dois', 'authors', 'contributor']
     released = True
 
     # TODO implement decorator to reduce this to column definitions and rows
@@ -25,9 +25,9 @@ class DtuRester(MPContribsRester):
         for doc in docs:
             mpfile = MPFile.from_contribution(doc)
             mp_id = mpfile.ids[0]
-            contrib = mpfile.hdata[mp_id]['data']
+            contrib = mpfile.hdata[mp_id]
             cid_url = self.get_cid_url(doc)
-            row = [mp_id, cid_url, contrib['formula'], contrib['ICSD'], contrib['C']]
-            row += [contrib[k][sk] for k in keys for sk in subkeys]
+            row = [mp_id, cid_url, contrib['formula'], contrib['ICSD'], contrib['data']['C']]
+            row += [contrib['data'][k][sk] for k in keys for sk in subkeys]
             data.append((mp_id, row))
         return Table.from_items(data, orient='index', columns=columns)

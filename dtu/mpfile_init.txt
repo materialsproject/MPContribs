@@ -1,17 +1,4 @@
-
 title: GLLB-SC Bandgaps
-contributor : Technical University of Denmark
-url: https://cmr.fysik.dtu.dk/_downloads/mp_gllbsc.db
-
-references.AEM: Advanced Energy Materials, Juli 22, 2014
-references.PRA: O. Gritsenko, R. van  Leeuwen, E. van Lenthe, E. J. Baerends, Phys. Rev. A 1995, 51, 1944.
-references.PRB: M. Kuisma, J. Ojanen, J. Enkovaara, T. T. Rantala, Phys. Rev. B 2010, 82, 115106.
-
-authors:
-Ivano E. Castelli, Falco Hueser, Mohnish Pandey, Hong Li,
-Kristian S. Thygesen, Brian Seger, Anubhav Jain, Kristin A.
-Persson, Gerbrand Ceder, and Karsten W. Jacobsen
-:end
 
 description:
 Bandgaps calculated using GLLB-SC potential by Gritsenko, van
@@ -24,3 +11,13 @@ discontinuity (C) of the chemical potential and gives the bandgap
 as the difference between ionization potential and electron
 affinity.
 :end
+
+authors:
+I. Castelli, F. Hueser, M. Pandey, H. Li, K. Thygesen, B. Seger,
+A. Jain, K. Persson, G. Ceder, K. Jacobsen
+:end
+
+dois: 10.1002/aenm.201400915 10.1103/PhysRevA.51.1944 10.1103/PhysRevB.82.115106
+
+contributor : Technical University of Denmark
+url: https://cmr.fysik.dtu.dk/_downloads/mp_gllbsc.db

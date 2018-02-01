@@ -18,8 +18,8 @@ def duplicate_check(f):
         mod = import_module(module_rester)
         Rester = getattr(mod, module_name)
 
-        check_test_site = kwargs.get('check_test_site', True)
-        with Rester(test_site=check_test_site) as mpr:
+        test_site = kwargs.get('test_site', True)
+        with Rester(test_site=test_site) as mpr:
             for doc in mpr.query_contributions(criteria=mpr.query):
                 existing_identifiers[doc['mp_cat_id']] = doc['_id']
 
