@@ -2,6 +2,7 @@
 {% load staticfiles %}
 {% block extra_css %}
 <link rel="stylesheet" type="text/css" href='{% static "js/components/chosen/chosen.css" charset="utf-8" %}'/>
+<link rel="stylesheet" href='{% static "js/components/json-human/css/json.human.css" %}' charset="utf-8">
 {% endblock %}
 {% block content %}
 {% if alert %}
@@ -12,19 +13,18 @@
   {{ alert }}
 </div>
 {% endif %}
+<style>
+    .jh-root {font-family: "symbola"; }
+    .jh-type-string { font-style: normal; }
+</style>
 <input type=hidden id=get_card_url value="{% url 'mpcontribs_rest_index' %}">
 <div class="container">
-  <div class="row">
-    Explore contributed
-    <a class="btn btn-primary" href="materials">Materials</a> or
-    <a class="btn btn-primary" href="compositions">Compositions</a>?
-  </div>
-  {% if collection and options %}
+  {% if options %}
   <div class="row" style="margin-top:20px;">
-    <form action="{{ collection }}" method=post enctype=multipart/form-data>
+    <form action="{% url 'mpcontribs_explorer_index' %}" method=post enctype=multipart/form-data>
       {% csrf_token %}
-      Select (one or more) {{ collection }} and/or projects:</br>
-      <select id="{{ fields.0 }}_list" data-placeholder="Select {{ collection|slice:":-1" }}(s) ..." style="width:300px;" multiple>
+      Select one or more:</br>
+      <select id="{{ fields.0 }}_list" data-placeholder="Select material/composition(s) ..." style="width:300px;" multiple>
         <option></option>
       </select>
       <select id="{{ fields.1 }}_list" data-placeholder="Select project(s) ..." style="width:300px;" multiple>
@@ -46,7 +46,7 @@
   {% if urls %}
   <div class="row" style="margin-top:20px;">
     {% for url in urls %}
-    <a href="{{ url }}" target="_blank">{{ url }}</a></br>
+    <div class="col-md-6">{{ url|safe }}</div>
     {% endfor %}
   </div>
   {% elif main_contributions %}

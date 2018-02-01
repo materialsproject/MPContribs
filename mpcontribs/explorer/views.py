@@ -9,75 +9,66 @@ from mpcontribs.rest.rester import MPContribsRester
 from mpcontribs.rest.views import get_endpoint
 from mpcontribs.builder import export_notebook
 
-def index(request, collection='materials'):
+def index(request):
     ctx = RequestContext(request)
     fields = ['identifiers', 'projects', 'cids']
     if request.user.is_authenticated():
-        if collection in ['materials', 'compositions']:
-            API_KEY = request.user.api_key
-            ENDPOINT = request.build_absolute_uri(get_endpoint())
-            with MPContribsRester(API_KEY, endpoint=ENDPOINT) as mpr:
+        API_KEY = request.user.api_key
+        ENDPOINT = request.build_absolute_uri(get_endpoint())
+        with MPContribsRester(API_KEY, endpoint=ENDPOINT) as mpr:
 
-                if request.method == 'GET':
-                    options = dict((field, set()) for field in fields)
-                    docs = mpr.query_contributions(
-                        collection=collection, projection={'nb': 0}
-                    )
-                    if docs:
-                        for doc in docs:
-                            options[fields[0]].add(str(doc['mp_cat_id']))
-                            options[fields[1]].add(str(doc['project']))
-                            options[fields[2]].add(str(doc['_id']))
-                    else:
-                        ctx.update({'alert': 'No {} available!'.format(collection)})
-                    options = dict((k, list(v)) for k,v in options.iteritems())
-                    selection = dict((field, []) for field in fields)
+            if request.method == 'GET':
+                options = dict((field, set()) for field in fields)
+                docs = mpr.query_contributions()
+                if docs:
+                    for doc in docs:
+                        options[fields[0]].add(str(doc['mp_cat_id']))
+                        options[fields[1]].add(str(doc['project']))
+                        options[fields[2]].add(str(doc['_id']))
+                else:
+                    ctx.update({'alert': 'No contributions available!'})
+                options = dict((k, list(v)) for k,v in options.iteritems())
+                selection = dict((field, []) for field in fields)
 
-                elif request.method == 'POST':
-                    projection_keys = ['mp_cat_id', 'project']
-                    options, selection = (
-                        dict(
-                            (field, [str(el) for el in json.loads(
-                                request.POST['_'.join([prefix, field])]
-                            )]) for field in fields
-                        ) for prefix in ['options', 'selection']
-                    )
-                    mode = request.POST['submit']
-                    if mode == 'Find':
-                        criteria = {}
-                        for idx, key in enumerate(projection_keys):
-                            if selection[fields[idx]]:
-                                criteria.update({
-                                    key: {'$in': selection[fields[idx]]}
-                                })
-                        #if criteria.keys() == [projection_keys[0]]:
-                        #    # only identifier(s) selected: contribution cards
-                        #    main_contributions = {}
-                        #    for identifier in selection[fields[0]]:
-                        #        main_contributions[identifier] = mpr.get_main_contributions(identifier)
-                        #else:
+            elif request.method == 'POST':
+                projection_keys = ['mp_cat_id', 'project']
+                options, selection = (
+                    dict(
+                        (field, [str(el) for el in json.loads(
+                            request.POST['_'.join([prefix, field])]
+                        )]) for field in fields
+                    ) for prefix in ['options', 'selection']
+                )
+                mode = request.POST['submit']
+                if mode == 'Find':
+                    criteria = {}
+                    for idx, key in enumerate(projection_keys):
+                        if selection[fields[idx]]:
+                            criteria.update({
+                                key: {'$in': selection[fields[idx]]}
+                            })
+                    #if criteria.keys() == [projection_keys[0]]:
+                    #    # only identifier(s) selected: contribution cards
+                    #    main_contributions = {}
+                    #    for identifier in selection[fields[0]]:
+                    #        main_contributions[identifier] = mpr.get_main_contributions(identifier)
+                    #else:
+                    docs = mpr.query_contributions(criteria=criteria)
+                    urls = [mpr.get_card(doc['_id']) for doc in docs]
+                elif mode == 'Show':
+                    if selection[fields[2]]:
                         docs = mpr.query_contributions(
-                            criteria=criteria, collection='contributions'
+                            criteria={'_id': {
+                                '$in': map(ObjectId, selection[fields[2]])
+                            }}
                         )
-                        urls = [
-                            '/'.join([request.path, str(doc['_id'])])
-                            for doc in docs
-                        ]
-                    elif mode == 'Show':
-                        if selection[fields[2]]:
-                            docs = mpr.query_contributions(
-                                criteria={'_id': {
-                                    '$in': map(ObjectId, selection[fields[2]])
-                                }}, collection='contributions'
-                            )
-                            urls = [
-                                '/'.join([request.path, str(doc['_id'])])
-                                for doc in docs
-                            ]
-                        else:
-                            ctx.update({'alert': 'Enter a contribution identifier!'})
-        else:
-            ctx.update({'alert': 'Collection {} does not exist!'.format(collection)})
+                        urls = []
+                        for doc in docs:
+                            urls.append(['', ''])
+                            urls[-1][0] = '/'.join([request.path, str(doc['_id'])])
+                            #urls[-1][1] = mpr.get_card(doc['_id'])
+                    else:
+                        ctx.update({'alert': 'Enter a contribution identifier!'})
     else:
         ctx.update({'alert': 'Please log in!'})
     return render_to_response("mpcontribs_explorer_index.html", locals(), ctx)

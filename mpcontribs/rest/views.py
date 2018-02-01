@@ -1,5 +1,6 @@
 """This module provides the views for the rest interface."""
 
+from __future__ import unicode_literals
 import os, string
 from subprocess import call
 from bson.json_util import loads
@@ -376,6 +377,7 @@ def datasets(request, identifier, db_type=None, mdb=None):
     """
     from mpcontribs.users_modules import get_users_modules, get_user_rester
     contributions = []
+    required_keys = ['title', 'description', 'authors', 'dois']
     for mod_path in get_users_modules():
         if os.path.exists(os.path.join(mod_path, 'rest', 'rester.py')):
             mod_path_split = mod_path.split(os.sep)[-3:]
@@ -384,8 +386,13 @@ def datasets(request, identifier, db_type=None, mdb=None):
             endpoint = request.build_absolute_uri(get_endpoint())
             r = UserRester(request.user.api_key, endpoint=endpoint)
             if r.released and r.query is not None:
+                criteria = {'mp_cat_id': identifier}
+                criteria.update(dict(
+                    ('content.{}'.format(k), {'$exists': 1})
+                    for k in required_keys
+                ))
                 docs = r.query_contributions(
-                    criteria={'mp_cat_id': identifier, 'content.title': {'$exists': 1}},
+                    criteria=criteria,
                     projection={'content.title': 1, 'mp_cat_id': 1}
                 )
                 if docs:
@@ -398,7 +405,7 @@ def datasets(request, identifier, db_type=None, mdb=None):
                     contributions.append(contrib)
     return {"valid_response": True, "response": contributions}
 
-@mapi_func(supported_methods=["POST"], requires_api_key=True)
+@mapi_func(supported_methods=["GET", "POST"], requires_api_key=True)
 def get_card(request, cid, db_type=None, mdb=None):
     """
     @api {post} /card/:cid?API_KEY=:api_key Contribution Card/Preview
@@ -429,6 +436,7 @@ def get_card(request, cid, db_type=None, mdb=None):
     from mpcontribs.io.core.recdict import RecursiveDict, render_dict
     from django.template import Template, Context
     from django.core.urlresolvers import reverse
+    from mpcontribs.config import mp_id_pattern
     prov_keys = loads(request.POST.get('provenance_keys', '["title"]'))
     contrib = mdb.contrib_ad.query_contributions(
         {'_id': ObjectId(cid)},
@@ -437,29 +445,81 @@ def get_card(request, cid, db_type=None, mdb=None):
     mpid = contrib['mp_cat_id']
     hdata = Tree(contrib['content'])
     plots = Plots(contrib['content'])
-    if plots:
-        card = []
-        for name, plot in plots.items():
-            filename = '{}_{}.png'.format(mpid, name)
-            cwd = os.path.dirname(__file__)
-            filepath = os.path.abspath(os.path.join(
-                cwd, '..', '..', 'webtzite', 'static', 'img', filename
-            ))
-            if not os.path.exists(filepath):
-                render_plot(plot, filename=filepath)
-            index = request.build_absolute_uri(reverse('webtzite_index')[:-1])
-            imgdir = '/'.join([index.rsplit('/', 1)[0], 'static', 'img'])
-            fileurl = '/'.join([imgdir, filename])
-            card.append(fileurl)
-    else:
-        info = hdata.get('highlights', hdata.get('explanation', hdata.get('description')))
-        card = RecursiveDict({'info': info}) if info is not None else RecursiveDict()
-        for k,v in hdata.items():
-            if k not in prov_keys and k != 'abbreviations':
-                card[k] = v
-        #card = RecursiveDict()
-        #for idx, (k,v) in enumerate(nested_dict_iter(sub_hdata)):
-        #    card[k] = v
-        #    if idx >= 6:
-        #        break # humans can grasp 7 items quickly
+    title = hdata.get('title', 'No title available.')
+    descriptions = hdata.get('description', 'No description available.').split('.', 1)
+    description = '''
+    {}. <a href="#" class="read_more">More &raquo;</a>
+    <span class="more_text" hidden>{}</span>
+    '''.format(*descriptions) if len(descriptions) > 1 else descriptions[0]+'.'
+    authors = hdata.get('authors', 'No authors available.').split(',', 1)
+    provenance = '<h5>{}'.format(authors[0])
+    if len(authors) > 1:
+        provenance += '''<button class="btn-sm btn-link" type=button
+        data-toggle="tooltip" data-placement="bottom"
+        data-container="body" title="{}">et al.</a>'''.format(authors[1].strip())
+    provenance += '</h5>'
+    dois = hdata.get('dois', '').split(' ')
+    doi_urls = ['https://doi.org/{}'.format(x) for x in dois]
+    provenance += ''.join(['''<a href={}
+        class="btn btn-link" role=button style="padding: 0"
+        target="_blank"><i class="fa fa-book fa-border fa-lg"></i></a>'''.format(x, y) for x, y in zip(doi_urls, dois)
+    ])
+    #if plots:
+    #    card = []
+    #    for name, plot in plots.items():
+    #        filename = '{}_{}.png'.format(mpid, name)
+    #        cwd = os.path.dirname(__file__)
+    #        filepath = os.path.abspath(os.path.join(
+    #            cwd, '..', '..', 'webtzite', 'static', 'img', filename
+    #        ))
+    #        if not os.path.exists(filepath):
+    #            render_plot(plot, filename=filepath)
+    #        index = request.build_absolute_uri(reverse('webtzite_index')[:-1])
+    #        imgdir = '/'.join([index.rsplit('/', 1)[0], 'static', 'img'])
+    #        fileurl = '/'.join([imgdir, filename])
+    #        card.append(fileurl)
+    #else:
+    data = RecursiveDict()
+    for idx, (k,v) in enumerate(hdata.get('data', {}).items()):
+        data[k] = v
+        if idx >= 6:
+            break # humans can grasp 7 items quickly
+    data = render_dict(data, webapp=True)
+    is_mp_id = mp_id_pattern.match(mpid)
+    collection = 'materials' if is_mp_id else 'compositions'
+    more = reverse('mpcontribs_explorer_contribution', args=[collection, cid])
+    card = '''
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h4 class="panel-title">
+                {}
+                <a class="btn-sm btn-default pull-right" role="button"
+                   style=" margin-top:-6px;"
+                   href="{}" target="_blank">More Info</a>
+            </h4>
+        </div>
+        <div class="panel-body" style="padding-left: 0px">
+            <div class="col-md-8" style="padding-top: 0px">
+                <blockquote class="blockquote" style="font-size: 13px;">{}</blockquote>
+            </div>
+            <div class="col-md-4 well" style="padding-top: 0px; padding-bottom: 5px">{}</div>
+            <div class="col-md-12" style="padding-right: 0px;">{}</div>
+        </div>
+    </div>
+    <script>
+    requirejs(['main'], function() {{
+        require(['jquery'], function() {{
+            $(function(){{
+                $("a.read_more").click(function(event){{
+                    event.preventDefault();
+                    $(this).parents(".blockquote").find(".more_text").show();
+                    $(this).parents(".blockquote").find(".read_more").hide();
+                }});
+            }});
+        }});
+    }});
+    </script>
+    '''.format(
+            title, more, description, provenance, data
+    )
     return {"valid_response": True, "response": card}

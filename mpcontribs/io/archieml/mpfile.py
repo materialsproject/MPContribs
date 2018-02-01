@@ -13,7 +13,6 @@ class MPFile(MPFileCore):
 
     @staticmethod
     def from_string(data):
-        from pymatgen.io.cif import CifParser
         # use archieml-python parse to import data
         rdct = RecursiveDict(archieml.loads(data))
         rdct.rec_update()
@@ -55,6 +54,7 @@ class MPFile(MPFileCore):
                         rdct[root_key].insert_default_plot_options(pd_obj, k)
                 # convert CIF strings into pymatgen structures
                 if mp_level01_titles[3] in rdct[root_key]:
+                    from pymatgen.io.cif import CifParser
                     for name in rdct[root_key][mp_level01_titles[3]].keys():
                         cif = rdct[root_key][mp_level01_titles[3]].pop(name)
                         parser = CifParser.from_string(cif)
