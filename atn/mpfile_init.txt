@@ -1,0 +1,1694 @@
+title: CuCoCe Project
+authors: Alpha T. N'Diaye, Ryan Ott, Alex A. Baker
+measurement_location: ALS Beamline 6.3.1
+sample: CMSI-2-10_1 CMSI-2-10_2 CMSI-2-10_3 CMSI-2-10_4 CMSI-2-10_6
+input_file: /wkshp_shared/dataset.zip
+
+{Co61Cu8Ce24}
+filename: Co_(-08.50,082.60).csv
+
+{Co61Cu8Ce24}.composition
+Co: 0.6146
+Cu: 0.0761
+Ce: 0.2404
+method: interpolated XRF
+
+:ignore
+
+{Co73Cu15Ce13}
+filename: Co_(-06.10,057.50).csv
+
+{Co73Cu15Ce13}.composition
+Co: 0.7317
+Cu: 0.1467
+Ce: 0.1319
+method: interpolated XRF
+
+{Co74Cu14Ce13}
+filename: Co_(-06.30,063.90).csv
+
+{Co74Cu14Ce13}.composition
+Co: 0.7443
+Cu: 0.1370
+Ce: 0.1289
+method: interpolated XRF
+
+{Co78Cu11Ce12}
+filename: Co_(-06.10,071.00).csv
+
+{Co78Cu11Ce12}.composition
+Co: 0.7754
+Cu: 0.1130
+Ce: 0.1215
+method: interpolated XRF
+
+{Co51Cu10Ce41}
+filename: Co_(-05.00,044.60).csv
+
+{Co51Cu10Ce41}.composition
+Co: 0.5051
+Cu: 0.0958
+Ce: 0.4108
+method: interpolated XRF
+
+{Co56Cu13Ce32}
+filename: Co_(-05.00,069.60).csv
+
+{Co56Cu13Ce32}.composition
+Co: 0.5623
+Cu: 0.1251
+Ce: 0.3233
+method: interpolated XRF
+
+{Co55Cu7Ce31}
+filename: Co_(-08.50,062.60).csv
+
+{Co55Cu7Ce31}.composition
+Co: 0.5468
+Cu: 0.0658
+Ce: 0.3082
+method: interpolated XRF
+
+{Co73Cu5Ce24}
+filename: Co_(-07.20,068.90).csv
+
+{Co73Cu5Ce24}.composition
+Co: 0.7331
+Cu: 0.0529
+Ce: 0.2432
+method: interpolated XRF
+
+{Co67Cu8Ce19}
+filename: Co_(-08.50,097.60).csv
+
+{Co67Cu8Ce19}.composition
+Co: 0.6654
+Cu: 0.0838
+Ce: 0.1896
+method: interpolated XRF
+
+{Co52Cu16Ce27}
+filename: Co_(-08.70,072.00).csv
+
+{Co52Cu16Ce27}.composition
+Co: 0.5181
+Cu: 0.1601
+Ce: 0.2665
+method: interpolated XRF
+
+{Co86Cu5Ce10}
+filename: Co_(-06.30,098.90).csv
+
+{Co86Cu5Ce10}.composition
+Co: 0.8578
+Cu: 0.0495
+Ce: 0.1019
+method: interpolated XRF
+
+{Co73Cu15Ce13}
+filename: Co_(-06.30,058.90).csv
+
+{Co73Cu15Ce13}.composition
+Co: 0.7281
+Cu: 0.1495
+Ce: 0.1327
+method: interpolated XRF
+
+{Co68Cu5Ce28}
+filename: Co_(-07.20,056.40).csv
+
+{Co68Cu5Ce28}.composition
+Co: 0.6843
+Cu: 0.0489
+Ce: 0.2826
+method: interpolated XRF
+
+{Co77Cu12Ce12}
+filename: Co_(-06.10,069.50).csv
+
+{Co77Cu12Ce12}.composition
+Co: 0.7706
+Cu: 0.1167
+Ce: 0.1226
+method: interpolated XRF
+
+{Co51Cu6Ce34}
+filename: Co_(-08.50,052.60).csv
+
+{Co51Cu6Ce34}.composition
+Co: 0.5129
+Cu: 0.0607
+Ce: 0.3421
+method: interpolated XRF
+
+{Co76Cu13Ce13}
+filename: Co_(-06.10,065.00).csv
+
+{Co76Cu13Ce13}.composition
+Co: 0.7560
+Cu: 0.1280
+Ce: 0.1261
+method: interpolated XRF
+
+{Co51Cu15Ce29}
+filename: Co_(-08.70,064.50).csv
+
+{Co51Cu15Ce29}.composition
+Co: 0.5110
+Cu: 0.1530
+Ce: 0.2920
+method: interpolated XRF
+
+{Co76Cu13Ce13}
+filename: Co_(-06.10,066.00).csv
+
+{Co76Cu13Ce13}.composition
+Co: 0.7592
+Cu: 0.1255
+Ce: 0.1253
+method: interpolated XRF
+
+{Co77Cu11Ce12}
+filename: Co_(-06.10,070.50).csv
+
+{Co77Cu11Ce12}.composition
+Co: 0.7738
+Cu: 0.1142
+Ce: 0.1219
+method: interpolated XRF
+
+{Co64Cu8Ce22}
+filename: Co_(-08.50,090.10).csv
+
+{Co64Cu8Ce22}.composition
+Co: 0.6400
+Cu: 0.0799
+Ce: 0.2150
+method: interpolated XRF
+
+{Co74Cu14Ce13}
+filename: Co_(-06.30,061.40).csv
+
+{Co74Cu14Ce13}.composition
+Co: 0.7362
+Cu: 0.1432
+Ce: 0.1308
+method: interpolated XRF
+
+{Co63Cu16Ce22}
+filename: Co_(-05.00,099.60).csv
+
+{Co63Cu16Ce22}.composition
+Co: 0.6309
+Cu: 0.1602
+Ce: 0.2183
+method: interpolated XRF
+
+{Co56Cu12Ce33}
+filename: Co_(-05.00,067.10).csv
+
+{Co56Cu12Ce33}.composition
+Co: 0.5566
+Cu: 0.1221
+Ce: 0.3320
+method: interpolated XRF
+
+{Co67Cu19Ce15}
+filename: Co_(-06.30,041.40).csv
+
+{Co67Cu19Ce15}.composition
+Co: 0.6714
+Cu: 0.1932
+Ce: 0.1462
+method: interpolated XRF
+
+{Co79Cu10Ce12}
+filename: Co_(-06.10,076.50).csv
+
+{Co79Cu10Ce12}.composition
+Co: 0.7933
+Cu: 0.0992
+Ce: 0.1173
+method: interpolated XRF
+
+{Co57Cu13Ce31}
+filename: Co_(-05.00,072.10).csv
+
+{Co57Cu13Ce31}.composition
+Co: 0.5680
+Cu: 0.1280
+Ce: 0.3145
+method: interpolated XRF
+
+{Co49Cu6Ce37}
+filename: Co_(-08.50,045.10).csv
+
+{Co49Cu6Ce37}.composition
+Co: 0.4874
+Cu: 0.0568
+Ce: 0.3676
+method: interpolated XRF
+
+{Co72Cu5Ce25}
+filename: Co_(-07.20,066.40).csv
+
+{Co72Cu5Ce25}.composition
+Co: 0.7234
+Cu: 0.0521
+Ce: 0.2511
+method: interpolated XRF
+
+{Co64Cu17Ce20}
+filename: Co_(-05.00,104.60).csv
+
+{Co64Cu17Ce20}.composition
+Co: 0.6423
+Cu: 0.1661
+Ce: 0.2007
+method: interpolated XRF
+
+{Co71Cu16Ce14}
+filename: Co_(-06.30,053.90).csv
+
+{Co71Cu16Ce14}.composition
+Co: 0.7119
+Cu: 0.1620
+Ce: 0.1366
+method: interpolated XRF
+
+{Co74Cu14Ce13}
+filename: Co_(-06.10,061.50).csv
+
+{Co74Cu14Ce13}.composition
+Co: 0.7446
+Cu: 0.1367
+Ce: 0.1288
+method: interpolated XRF
+
+{Co78Cu11Ce12}
+filename: Co_(-06.10,073.50).csv
+
+{Co78Cu11Ce12}.composition
+Co: 0.7836
+Cu: 0.1067
+Ce: 0.1196
+method: interpolated XRF
+
+{Co54Cu18Ce20}
+filename: Co_(-08.70,092.00).csv
+
+{Co54Cu18Ce20}.composition
+Co: 0.5369
+Cu: 0.1789
+Ce: 0.1985
+method: interpolated XRF
+
+{Co65Cu8Ce21}
+filename: Co_(-08.50,092.60).csv
+
+{Co65Cu8Ce21}.composition
+Co: 0.6485
+Cu: 0.0812
+Ce: 0.2065
+method: interpolated XRF
+
+{Co80Cu9Ce12}
+filename: Co_(-06.10,078.50).csv
+
+{Co80Cu9Ce12}.composition
+Co: 0.7998
+Cu: 0.0942
+Ce: 0.1157
+method: interpolated XRF
+
+{Co70Cu17Ce14}
+filename: Co_(-06.30,048.90).csv
+
+{Co70Cu17Ce14}.composition
+Co: 0.6957
+Cu: 0.1745
+Ce: 0.1404
+method: interpolated XRF
+
+{Co85Cu6Ce10}
+filename: Co_(-06.30,096.40).csv
+
+{Co85Cu6Ce10}.composition
+Co: 0.8497
+Cu: 0.0557
+Ce: 0.1039
+method: interpolated XRF
+
+{Co74Cu14Ce13}
+filename: Co_(-06.10,059.00).csv
+
+{Co74Cu14Ce13}.composition
+Co: 0.7365
+Cu: 0.1430
+Ce: 0.1307
+method: interpolated XRF
+
+{Co66Cu5Ce30}
+filename: Co_(-07.20,051.40).csv
+
+{Co66Cu5Ce30}.composition
+Co: 0.6647
+Cu: 0.0473
+Ce: 0.2984
+method: interpolated XRF
+
+{Co74Cu14Ce13}
+filename: Co_(-06.10,060.00).csv
+
+{Co74Cu14Ce13}.composition
+Co: 0.7398
+Cu: 0.1405
+Ce: 0.1300
+method: interpolated XRF
+
+{Co77Cu12Ce12}
+filename: Co_(-06.30,071.40).csv
+
+{Co77Cu12Ce12}.composition
+Co: 0.7686
+Cu: 0.1182
+Ce: 0.1231
+method: interpolated XRF
+
+
+{Co54Cu19Ce17}
+filename: Co_(-08.70,099.50).csv
+
+{Co54Cu19Ce17}.composition
+Co: 0.5440
+Cu: 0.1860
+Ce: 0.1730
+method: interpolated XRF
+
+{Co75Cu13Ce13}
+filename: Co_(-06.10,062.50).csv
+
+{Co75Cu13Ce13}.composition
+Co: 0.7479
+Cu: 0.1342
+Ce: 0.1280
+method: interpolated XRF
+
+{Co50Cu14Ce33}
+filename: Co_(-08.70,054.50).csv
+
+{Co50Cu14Ce33}.composition
+Co: 0.5016
+Cu: 0.1436
+Ce: 0.3260
+method: interpolated XRF
+
+{Co75Cu5Ce23}
+filename: Co_(-07.20,073.90).csv
+
+{Co75Cu5Ce23}.composition
+Co: 0.7527
+Cu: 0.0545
+Ce: 0.2274
+method: interpolated XRF
+
+{Co84Cu6Ce11}
+filename: Co_(-06.30,093.90).csv
+
+{Co84Cu6Ce11}.composition
+Co: 0.8416
+Cu: 0.0620
+Ce: 0.1058
+method: interpolated XRF
+
+{Co52Cu16Ce26}
+filename: Co_(-08.70,074.50).csv
+
+{Co52Cu16Ce26}.composition
+Co: 0.5204
+Cu: 0.1624
+Ce: 0.2580
+method: interpolated XRF
+
+{Co63Cu8Ce22}
+filename: Co_(-08.50,087.60).csv
+
+{Co63Cu8Ce22}.composition
+Co: 0.6315
+Cu: 0.0786
+Ce: 0.2235
+method: interpolated XRF
+
+{Co73Cu15Ce13}
+filename: Co_(-06.10,058.00).csv
+
+{Co73Cu15Ce13}.composition
+Co: 0.7333
+Cu: 0.1455
+Ce: 0.1315
+method: interpolated XRF
+
+{Co53Cu17Ce23}
+filename: Co_(-08.70,082.00).csv
+
+{Co53Cu17Ce23}.composition
+Co: 0.5275
+Cu: 0.1695
+Ce: 0.2325
+method: interpolated XRF
+
+{Co68Cu19Ce14}
+filename: Co_(-06.30,043.90).csv
+
+{Co68Cu19Ce14}.composition
+Co: 0.6795
+Cu: 0.1870
+Ce: 0.1443
+method: interpolated XRF
+
+{Co52Cu6Ce33}
+filename: Co_(-08.50,055.10).csv
+
+{Co52Cu6Ce33}.composition
+Co: 0.5213
+Cu: 0.0620
+Ce: 0.3337
+method: interpolated XRF
+
+{Co72Cu15Ce13}
+filename: Co_(-06.10,054.50).csv
+
+{Co72Cu15Ce13}.composition
+Co: 0.7219
+Cu: 0.1542
+Ce: 0.1342
+method: interpolated XRF
+
+{Co54Cu18Ce19}
+filename: Co_(-08.70,094.50).csv
+
+{Co54Cu18Ce19}.composition
+Co: 0.5393
+Cu: 0.1813
+Ce: 0.1900
+method: interpolated XRF
+
+{Co80Cu9Ce12}
+filename: Co_(-06.10,079.00).csv
+
+{Co80Cu9Ce12}.composition
+Co: 0.8014
+Cu: 0.0930
+Ce: 0.1153
+method: interpolated XRF
+
+{Co56Cu7Ce30}
+filename: Co_(-08.50,065.10).csv
+
+{Co56Cu7Ce30}.composition
+Co: 0.5552
+Cu: 0.0671
+Ce: 0.2998
+method: interpolated XRF
+
+{Co74Cu14Ce13}
+filename: Co_(-06.10,061.00).csv
+
+{Co74Cu14Ce13}.composition
+Co: 0.7430
+Cu: 0.1380
+Ce: 0.1292
+method: interpolated XRF
+
+{Co77Cu12Ce12}
+filename: Co_(-06.10,068.00).csv
+
+{Co77Cu12Ce12}.composition
+Co: 0.7657
+Cu: 0.1205
+Ce: 0.1238
+method: interpolated XRF
+
+{Co53Cu17Ce22}
+filename: Co_(-08.70,084.50).csv
+
+{Co53Cu17Ce22}.composition
+Co: 0.5299
+Cu: 0.1719
+Ce: 0.2240
+method: interpolated XRF
+
+{Co56Cu7Ce29}
+filename: Co_(-08.50,067.60).csv
+
+{Co56Cu7Ce29}.composition
+Co: 0.5637
+Cu: 0.0684
+Ce: 0.2913
+method: interpolated XRF
+
+{Co72Cu16Ce13}
+filename: Co_(-06.30,056.40).csv
+
+{Co72Cu16Ce13}.composition
+Co: 0.7200
+Cu: 0.1557
+Ce: 0.1347
+method: interpolated XRF
+
+{Co69Cu5Ce27}
+filename: Co_(-07.20,058.90).csv
+
+{Co69Cu5Ce27}.composition
+Co: 0.6941
+Cu: 0.0497
+Ce: 0.2747
+method: interpolated XRF
+
+{Co80Cu10Ce12}
+filename: Co_(-06.10,077.50).csv
+
+{Co80Cu10Ce12}.composition
+Co: 0.7965
+Cu: 0.0967
+Ce: 0.1165
+method: interpolated XRF
+
+{Co78Cu11Ce12}
+filename: Co_(-06.10,072.50).csv
+
+{Co78Cu11Ce12}.composition
+Co: 0.7803
+Cu: 0.1092
+Ce: 0.1203
+method: interpolated XRF
+
+{Co50Cu15Ce32}
+filename: Co_(-08.70,057.00).csv
+
+{Co50Cu15Ce32}.composition
+Co: 0.5039
+Cu: 0.1459
+Ce: 0.3175
+method: interpolated XRF
+
+{Co52Cu16Ce28}
+filename: Co_(-08.70,069.50).csv
+
+{Co52Cu16Ce28}.composition
+Co: 0.5157
+Cu: 0.1577
+Ce: 0.2750
+method: interpolated XRF
+
+{Co53Cu6Ce33}
+filename: Co_(-08.50,057.60).csv
+
+{Co53Cu6Ce33}.composition
+Co: 0.5298
+Cu: 0.0633
+Ce: 0.3252
+method: interpolated XRF
+
+{Co51Cu15Ce30}
+filename: Co_(-08.70,062.00).csv
+
+{Co51Cu15Ce30}.composition
+Co: 0.5086
+Cu: 0.1506
+Ce: 0.3005
+method: interpolated XRF
+
+{Co65Cu5Ce31}
+filename: Co_(-07.20,046.40).csv
+
+{Co65Cu5Ce31}.composition
+Co: 0.6452
+Cu: 0.0457
+Ce: 0.3142
+method: interpolated XRF
+
+{Co75Cu13Ce13}
+filename: Co_(-06.30,066.40).csv
+
+{Co75Cu13Ce13}.composition
+Co: 0.7524
+Cu: 0.1307
+Ce: 0.1270
+method: interpolated XRF
+
+{Co74Cu14Ce13}
+filename: Co_(-06.10,060.50).csv
+
+{Co74Cu14Ce13}.composition
+Co: 0.7414
+Cu: 0.1392
+Ce: 0.1296
+method: interpolated XRF
+
+{Co67Cu9Ce18}
+filename: Co_(-08.50,100.10).csv
+
+{Co67Cu9Ce18}.composition
+Co: 0.6739
+Cu: 0.0851
+Ce: 0.1811
+method: interpolated XRF
+
+{Co77Cu12Ce12}
+filename: Co_(-06.10,069.00).csv
+
+{Co77Cu12Ce12}.composition
+Co: 0.7690
+Cu: 0.1180
+Ce: 0.1230
+method: interpolated XRF
+
+{Co73Cu15Ce13}
+filename: Co_(-06.10,057.00).csv
+
+{Co73Cu15Ce13}.composition
+Co: 0.7300
+Cu: 0.1480
+Ce: 0.1323
+method: interpolated XRF
+
+{Co50Cu14Ce33}
+filename: Co_(-08.70,052.00).csv
+
+{Co50Cu14Ce33}.composition
+Co: 0.4992
+Cu: 0.1412
+Ce: 0.3345
+method: interpolated XRF
+
+{Co50Cu9Ce42}
+filename: Co_(-05.00,042.10).csv
+
+{Co50Cu9Ce42}.composition
+Co: 0.4994
+Cu: 0.0929
+Ce: 0.4195
+method: interpolated XRF
+
+{Co80Cu9Ce11}
+filename: Co_(-06.10,079.50).csv
+
+{Co80Cu9Ce11}.composition
+Co: 0.8030
+Cu: 0.0917
+Ce: 0.1149
+method: interpolated XRF
+
+{Co60Cu15Ce26}
+filename: Co_(-05.00,087.10).csv
+
+{Co60Cu15Ce26}.composition
+Co: 0.6023
+Cu: 0.1456
+Ce: 0.2620
+method: interpolated XRF
+
+{Co50Cu6Ce35}
+filename: Co_(-08.50,050.10).csv
+
+{Co50Cu6Ce35}.composition
+Co: 0.5044
+Cu: 0.0594
+Ce: 0.3506
+method: interpolated XRF
+
+{Co50Cu6Ce36}
+filename: Co_(-08.50,047.60).csv
+
+{Co50Cu6Ce36}.composition
+Co: 0.4959
+Cu: 0.0581
+Ce: 0.3591
+method: interpolated XRF
+
+{Co79Cu10Ce12}
+filename: Co_(-06.30,078.90).csv
+
+{Co79Cu10Ce12}.composition
+Co: 0.7930
+Cu: 0.0995
+Ce: 0.1173
+method: interpolated XRF
+
+{Co57Cu7Ce28}
+filename: Co_(-08.50,070.10).csv
+
+{Co57Cu7Ce28}.composition
+Co: 0.5722
+Cu: 0.0697
+Ce: 0.2828
+method: interpolated XRF
+
+{Co49Cu9Ce43}
+filename: Co_(-05.00,039.60).csv
+
+{Co49Cu9Ce43}.composition
+Co: 0.4937
+Cu: 0.0899
+Ce: 0.4283
+method: interpolated XRF
+
+{Co53Cu11Ce38}
+filename: Co_(-05.00,054.60).csv
+
+{Co53Cu11Ce38}.composition
+Co: 0.5280
+Cu: 0.1075
+Ce: 0.3758
+method: interpolated XRF
+
+{Co86Cu6Ce14}
+filename: Co_(-07.20,101.40).csv
+
+{Co86Cu6Ce14}.composition
+Co: 0.8601
+Cu: 0.0632
+Ce: 0.1407
+method: interpolated XRF
+
+{Co74Cu5Ce24}
+filename: Co_(-07.20,071.40).csv
+
+{Co74Cu5Ce24}.composition
+Co: 0.7429
+Cu: 0.0537
+Ce: 0.2353
+method: interpolated XRF
+
+{Co79Cu6Ce20}
+filename: Co_(-07.20,083.90).csv
+
+{Co79Cu6Ce20}.composition
+Co: 0.7917
+Cu: 0.0576
+Ce: 0.1959
+method: interpolated XRF
+
+{Co79Cu11Ce12}
+filename: Co_(-06.10,074.00).csv
+
+{Co79Cu11Ce12}.composition
+Co: 0.7852
+Cu: 0.1055
+Ce: 0.1192
+method: interpolated XRF
+
+{Co62Cu8Ce23}
+filename: Co_(-08.50,085.10).csv
+
+{Co62Cu8Ce23}.composition
+Co: 0.6230
+Cu: 0.0774
+Ce: 0.2320
+method: interpolated XRF
+
+{Co77Cu12Ce12}
+filename: Co_(-06.10,070.00).csv
+
+{Co77Cu12Ce12}.composition
+Co: 0.7722
+Cu: 0.1155
+Ce: 0.1223
+method: interpolated XRF
+
+{Co49Cu13Ce37}
+filename: Co_(-08.70,042.00).csv
+
+{Co49Cu13Ce37}.composition
+Co: 0.4898
+Cu: 0.1318
+Ce: 0.3685
+method: interpolated XRF
+
+{Co75Cu13Ce13}
+filename: Co_(-06.10,063.50).csv
+
+{Co75Cu13Ce13}.composition
+Co: 0.7511
+Cu: 0.1317
+Ce: 0.1273
+method: interpolated XRF
+
+{Co81Cu9Ce11}
+filename: Co_(-06.30,083.90).csv
+
+{Co81Cu9Ce11}.composition
+Co: 0.8092
+Cu: 0.0870
+Ce: 0.1135
+method: interpolated XRF
+
+{Co74Cu14Ce13}
+filename: Co_(-06.10,059.50).csv
+
+{Co74Cu14Ce13}.composition
+Co: 0.7382
+Cu: 0.1417
+Ce: 0.1303
+method: interpolated XRF
+
+{Co80Cu6Ce19}
+filename: Co_(-07.20,086.40).csv
+
+{Co80Cu6Ce19}.composition
+Co: 0.8015
+Cu: 0.0584
+Ce: 0.1880
+method: interpolated XRF
+
+
+{Co80Cu10Ce12}
+filename: Co_(-06.10,078.00).csv
+
+{Co80Cu10Ce12}.composition
+Co: 0.7981
+Cu: 0.0955
+Ce: 0.1161
+method: interpolated XRF
+
+{Co49Cu13Ce38}
+filename: Co_(-08.70,039.50).csv
+
+{Co49Cu13Ce38}.composition
+Co: 0.4874
+Cu: 0.1294
+Ce: 0.3770
+method: interpolated XRF
+
+{Co49Cu13Ce39}
+filename: Co_(-08.70,037.00).csv
+
+{Co49Cu13Ce39}.composition
+Co: 0.4851
+Cu: 0.1271
+Ce: 0.3855
+method: interpolated XRF
+
+{Co50Cu14Ce34}
+filename: Co_(-08.70,049.50).csv
+
+{Co50Cu14Ce34}.composition
+Co: 0.4969
+Cu: 0.1389
+Ce: 0.3430
+method: interpolated XRF
+
+{Co65Cu5Ce31}
+filename: Co_(-07.20,048.90).csv
+
+{Co65Cu5Ce31}.composition
+Co: 0.6550
+Cu: 0.0465
+Ce: 0.3063
+method: interpolated XRF
+
+{Co87Cu4Ce10}
+filename: Co_(-06.30,103.90).csv
+
+{Co87Cu4Ce10}.composition
+Co: 0.8740
+Cu: 0.0370
+Ce: 0.0981
+method: interpolated XRF
+
+{Co81Cu6Ce18}
+filename: Co_(-07.20,088.90).csv
+
+{Co81Cu6Ce18}.composition
+Co: 0.8113
+Cu: 0.0592
+Ce: 0.1801
+method: interpolated XRF
+
+{Co78Cu11Ce12}
+filename: Co_(-06.30,073.90).csv
+
+{Co78Cu11Ce12}.composition
+Co: 0.7767
+Cu: 0.1120
+Ce: 0.1212
+method: interpolated XRF
+
+{Co54Cu11Ce36}
+filename: Co_(-05.00,059.60).csv
+
+{Co54Cu11Ce36}.composition
+Co: 0.5394
+Cu: 0.1134
+Ce: 0.3583
+method: interpolated XRF
+
+{Co82Cu6Ce17}
+filename: Co_(-07.20,091.40).csv
+
+{Co82Cu6Ce17}.composition
+Co: 0.8210
+Cu: 0.0600
+Ce: 0.1722
+method: interpolated XRF
+
+{Co70Cu17Ce14}
+filename: Co_(-06.30,051.40).csv
+
+{Co70Cu17Ce14}.composition
+Co: 0.7038
+Cu: 0.1682
+Ce: 0.1385
+method: interpolated XRF
+
+{Co78Cu11Ce12}
+filename: Co_(-06.30,076.40).csv
+
+{Co78Cu11Ce12}.composition
+Co: 0.7849
+Cu: 0.1057
+Ce: 0.1193
+method: interpolated XRF
+
+{Co75Cu14Ce13}
+filename: Co_(-06.10,062.00).csv
+
+{Co75Cu14Ce13}.composition
+Co: 0.7463
+Cu: 0.1355
+Ce: 0.1284
+method: interpolated XRF
+
+{Co76Cu12Ce13}
+filename: Co_(-06.30,068.90).csv
+
+{Co76Cu12Ce13}.composition
+Co: 0.7605
+Cu: 0.1245
+Ce: 0.1250
+method: interpolated XRF
+
+{Co73Cu15Ce13}
+filename: Co_(-06.10,056.50).csv
+
+{Co73Cu15Ce13}.composition
+Co: 0.7284
+Cu: 0.1492
+Ce: 0.1327
+method: interpolated XRF
+
+{Co83Cu7Ce11}
+filename: Co_(-06.30,088.90).csv
+
+{Co83Cu7Ce11}.composition
+Co: 0.8254
+Cu: 0.0745
+Ce: 0.1096
+method: interpolated XRF
+
+{Co69Cu9Ce16}
+filename: Co_(-08.50,105.10).csv
+
+{Co69Cu9Ce16}.composition
+Co: 0.6908
+Cu: 0.0876
+Ce: 0.1642
+method: interpolated XRF
+
+{Co78Cu11Ce12}
+filename: Co_(-06.10,071.50).csv
+
+{Co78Cu11Ce12}.composition
+Co: 0.7771
+Cu: 0.1117
+Ce: 0.1211
+method: interpolated XRF
+
+{Co61Cu7Ce25}
+filename: Co_(-08.50,080.10).csv
+
+{Co61Cu7Ce25}.composition
+Co: 0.6061
+Cu: 0.0748
+Ce: 0.2489
+method: interpolated XRF
+
+{Co58Cu7Ce27}
+filename: Co_(-08.50,072.60).csv
+
+{Co58Cu7Ce27}.composition
+Co: 0.5807
+Cu: 0.0709
+Ce: 0.2743
+method: interpolated XRF
+
+{Co47Cu5Ce38}
+filename: Co_(-08.50,040.10).csv
+
+{Co47Cu5Ce38}.composition
+Co: 0.4705
+Cu: 0.0543
+Ce: 0.3845
+method: interpolated XRF
+
+{Co62Cu15Ce24}
+filename: Co_(-05.00,094.60).csv
+
+{Co62Cu15Ce24}.composition
+Co: 0.6194
+Cu: 0.1544
+Ce: 0.2358
+method: interpolated XRF
+
+{Co72Cu15Ce13}
+filename: Co_(-06.10,055.00).csv
+
+{Co72Cu15Ce13}.composition
+Co: 0.7236
+Cu: 0.1530
+Ce: 0.1338
+method: interpolated XRF
+
+{Co55Cu12Ce35}
+filename: Co_(-05.00,062.10).csv
+
+{Co55Cu12Ce35}.composition
+Co: 0.5451
+Cu: 0.1163
+Ce: 0.3495
+method: interpolated XRF
+
+{Co63Cu4Ce33}
+filename: Co_(-07.20,041.40).csv
+
+{Co63Cu4Ce33}.composition
+Co: 0.6257
+Cu: 0.0441
+Ce: 0.3300
+method: interpolated XRF
+
+{Co55Cu12Ce34}
+filename: Co_(-05.00,064.60).csv
+
+{Co55Cu12Ce34}.composition
+Co: 0.5509
+Cu: 0.1192
+Ce: 0.3408
+method: interpolated XRF
+
+{Co80Cu9Ce12}
+filename: Co_(-06.30,081.40).csv
+
+{Co80Cu9Ce12}.composition
+Co: 0.8011
+Cu: 0.0932
+Ce: 0.1154
+method: interpolated XRF
+
+{Co58Cu13Ce30}
+filename: Co_(-05.00,077.10).csv
+
+{Co58Cu13Ce30}.composition
+Co: 0.5794
+Cu: 0.1339
+Ce: 0.2970
+method: interpolated XRF
+
+{Co84Cu6Ce16}
+filename: Co_(-07.20,096.40).csv
+
+{Co84Cu6Ce16}.composition
+Co: 0.8406
+Cu: 0.0616
+Ce: 0.1564
+method: interpolated XRF
+
+{Co87Cu4Ce10}
+filename: Co_(-06.30,101.40).csv
+
+{Co87Cu4Ce10}.composition
+Co: 0.8659
+Cu: 0.0432
+Ce: 0.1000
+method: interpolated XRF
+
+{Co51Cu10Ce40}
+filename: Co_(-05.00,047.10).csv
+
+{Co51Cu10Ce40}.composition
+Co: 0.5109
+Cu: 0.0987
+Ce: 0.4020
+method: interpolated XRF
+
+{Co79Cu10Ce12}
+filename: Co_(-06.10,075.50).csv
+
+{Co79Cu10Ce12}.composition
+Co: 0.7900
+Cu: 0.1017
+Ce: 0.1180
+method: interpolated XRF
+
+{Co64Cu4Ce32}
+filename: Co_(-07.20,043.90).csv
+
+{Co64Cu4Ce32}.composition
+Co: 0.6354
+Cu: 0.0449
+Ce: 0.3221
+method: interpolated XRF
+
+{Co76Cu12Ce12}
+filename: Co_(-06.10,066.50).csv
+
+{Co76Cu12Ce12}.composition
+Co: 0.7609
+Cu: 0.1242
+Ce: 0.1250
+method: interpolated XRF
+
+{Co57Cu13Ce31}
+filename: Co_(-05.00,074.60).csv
+
+{Co57Cu13Ce31}.composition
+Co: 0.5737
+Cu: 0.1309
+Ce: 0.3058
+method: interpolated XRF
+
+{Co53Cu18Ce21}
+filename: Co_(-08.70,089.50).csv
+
+{Co53Cu18Ce21}.composition
+Co: 0.5346
+Cu: 0.1766
+Ce: 0.2070
+method: interpolated XRF
+
+{Co75Cu13Ce13}
+filename: Co_(-06.10,063.00).csv
+
+{Co75Cu13Ce13}.composition
+Co: 0.7495
+Cu: 0.1330
+Ce: 0.1276
+method: interpolated XRF
+
+{Co62Cu4Ce34}
+filename: Co_(-07.20,038.90).csv
+
+{Co62Cu4Ce34}.composition
+Co: 0.6159
+Cu: 0.0433
+Ce: 0.3378
+method: interpolated XRF
+
+{Co59Cu14Ce28}
+filename: Co_(-05.00,082.10).csv
+
+{Co59Cu14Ce28}.composition
+Co: 0.5909
+Cu: 0.1397
+Ce: 0.2795
+method: interpolated XRF
+
+{Co67Cu5Ce29}
+filename: Co_(-07.20,053.90).csv
+
+{Co67Cu5Ce29}.composition
+Co: 0.6745
+Cu: 0.0481
+Ce: 0.2905
+method: interpolated XRF
+
+{Co77Cu12Ce12}
+filename: Co_(-06.10,068.50).csv
+
+{Co77Cu12Ce12}.composition
+Co: 0.7673
+Cu: 0.1192
+Ce: 0.1234
+method: interpolated XRF
+
+{Co82Cu8Ce11}
+filename: Co_(-06.30,086.40).csv
+
+{Co82Cu8Ce11}.composition
+Co: 0.8173
+Cu: 0.0807
+Ce: 0.1116
+method: interpolated XRF
+
+{Co60Cu14Ce27}
+filename: Co_(-05.00,084.60).csv
+
+{Co60Cu14Ce27}.composition
+Co: 0.5966
+Cu: 0.1426
+Ce: 0.2708
+method: interpolated XRF
+
+{Co76Cu12Ce12}
+filename: Co_(-06.10,067.50).csv
+
+{Co76Cu12Ce12}.composition
+Co: 0.7641
+Cu: 0.1217
+Ce: 0.1242
+method: interpolated XRF
+
+{Co78Cu11Ce12}
+filename: Co_(-06.10,073.00).csv
+
+{Co78Cu11Ce12}.composition
+Co: 0.7819
+Cu: 0.1080
+Ce: 0.1199
+method: interpolated XRF
+
+{Co79Cu10Ce12}
+filename: Co_(-06.10,077.00).csv
+
+{Co79Cu10Ce12}.composition
+Co: 0.7949
+Cu: 0.0980
+Ce: 0.1169
+method: interpolated XRF
+
+{Co51Cu15Ce31}
+filename: Co_(-08.70,059.50).csv
+
+{Co51Cu15Ce31}.composition
+Co: 0.5063
+Cu: 0.1483
+Ce: 0.3090
+method: interpolated XRF
+
+{Co53Cu17Ce22}
+filename: Co_(-08.70,087.00).csv
+
+{Co53Cu17Ce22}.composition
+Co: 0.5322
+Cu: 0.1742
+Ce: 0.2155
+method: interpolated XRF
+
+{Co49Cu13Ce36}
+filename: Co_(-08.70,044.50).csv
+
+{Co49Cu13Ce36}.composition
+Co: 0.4921
+Cu: 0.1341
+Ce: 0.3600
+method: interpolated XRF
+
+{Co75Cu13Ce13}
+filename: Co_(-06.10,064.50).csv
+
+{Co75Cu13Ce13}.composition
+Co: 0.7544
+Cu: 0.1292
+Ce: 0.1265
+method: interpolated XRF
+
+{Co75Cu13Ce13}
+filename: Co_(-06.10,064.00).csv
+
+{Co75Cu13Ce13}.composition
+Co: 0.7527
+Cu: 0.1305
+Ce: 0.1269
+method: interpolated XRF
+
+{Co69Cu18Ce14}
+filename: Co_(-06.30,046.40).csv
+
+{Co69Cu18Ce14}.composition
+Co: 0.6876
+Cu: 0.1807
+Ce: 0.1424
+method: interpolated XRF
+
+{Co83Cu7Ce11}
+filename: Co_(-06.30,091.40).csv
+
+{Co83Cu7Ce11}.composition
+Co: 0.8335
+Cu: 0.0682
+Ce: 0.1077
+method: interpolated XRF
+
+{Co63Cu16Ce23}
+filename: Co_(-05.00,097.10).csv
+
+{Co63Cu16Ce23}.composition
+Co: 0.6251
+Cu: 0.1573
+Ce: 0.2270
+method: interpolated XRF
+
+{Co48Cu6Ce38}
+filename: Co_(-08.50,042.60).csv
+
+{Co48Cu6Ce38}.composition
+Co: 0.4790
+Cu: 0.0556
+Ce: 0.3760
+method: interpolated XRF
+
+{Co70Cu5Ce27}
+filename: Co_(-07.20,061.40).csv
+
+{Co70Cu5Ce27}.composition
+Co: 0.7038
+Cu: 0.0505
+Ce: 0.2669
+method: interpolated XRF
+
+{Co76Cu6Ce22}
+filename: Co_(-07.20,076.40).csv
+
+{Co76Cu6Ce22}.composition
+Co: 0.7624
+Cu: 0.0553
+Ce: 0.2195
+method: interpolated XRF
+
+{Co61Cu15Ce25}
+filename: Co_(-05.00,089.60).csv
+
+{Co61Cu15Ce25}.composition
+Co: 0.6080
+Cu: 0.1485
+Ce: 0.2533
+method: interpolated XRF
+
+{Co73Cu15Ce13}
+filename: Co_(-06.10,056.00).csv
+
+{Co73Cu15Ce13}.composition
+Co: 0.7268
+Cu: 0.1505
+Ce: 0.1330
+method: interpolated XRF
+
+{Co79Cu10Ce12}
+filename: Co_(-06.10,074.50).csv
+
+{Co79Cu10Ce12}.composition
+Co: 0.7868
+Cu: 0.1042
+Ce: 0.1188
+method: interpolated XRF
+
+{Co64Cu16Ce21}
+filename: Co_(-05.00,102.10).csv
+
+{Co64Cu16Ce21}.composition
+Co: 0.6366
+Cu: 0.1631
+Ce: 0.2095
+method: interpolated XRF
+
+{Co79Cu10Ce12}
+filename: Co_(-06.10,076.00).csv
+
+{Co79Cu10Ce12}.composition
+Co: 0.7917
+Cu: 0.1005
+Ce: 0.1176
+method: interpolated XRF
+
+{Co68Cu9Ce17}
+filename: Co_(-08.50,102.60).csv
+
+{Co68Cu9Ce17}.composition
+Co: 0.6824
+Cu: 0.0863
+Ce: 0.1726
+method: interpolated XRF
+
+{Co61Cu15Ce24}
+filename: Co_(-05.00,092.10).csv
+
+{Co61Cu15Ce24}.composition
+Co: 0.6137
+Cu: 0.1514
+Ce: 0.2445
+method: interpolated XRF
+
+{Co49Cu14Ce35}
+filename: Co_(-08.70,047.00).csv
+
+{Co49Cu14Ce35}.composition
+Co: 0.4945
+Cu: 0.1365
+Ce: 0.3515
+method: interpolated XRF
+
+{Co54Cu18Ce18}
+filename: Co_(-08.70,097.00).csv
+
+{Co54Cu18Ce18}.composition
+Co: 0.5416
+Cu: 0.1836
+Ce: 0.1815
+method: interpolated XRF
+
+{Co76Cu13Ce13}
+filename: Co_(-06.10,065.50).csv
+
+{Co76Cu13Ce13}.composition
+Co: 0.7576
+Cu: 0.1267
+Ce: 0.1257
+method: interpolated XRF
+
+{Co51Cu16Ce28}
+filename: Co_(-08.70,067.00).csv
+
+{Co51Cu16Ce28}.composition
+Co: 0.5134
+Cu: 0.1554
+Ce: 0.2835
+method: interpolated XRF
+
+{Co52Cu10Ce38}
+filename: Co_(-05.00,052.10).csv
+
+{Co52Cu10Ce38}.composition
+Co: 0.5223
+Cu: 0.1046
+Ce: 0.3845
+method: interpolated XRF
+
+{Co53Cu17Ce24}
+filename: Co_(-08.70,079.50).csv
+
+{Co53Cu17Ce24}.composition
+Co: 0.5251
+Cu: 0.1671
+Ce: 0.2410
+method: interpolated XRF
+
+{Co71Cu5Ce26}
+filename: Co_(-07.20,063.90).csv
+
+{Co71Cu5Ce26}.composition
+Co: 0.7136
+Cu: 0.0513
+Ce: 0.2590
+method: interpolated XRF
+
+{Co54Cu6Ce32}
+filename: Co_(-08.50,060.10).csv
+
+{Co54Cu6Ce32}.composition
+Co: 0.5383
+Cu: 0.0645
+Ce: 0.3167
+method: interpolated XRF
+
+{Co78Cu6Ce20}
+filename: Co_(-07.20,081.40).csv
+
+{Co78Cu6Ce20}.composition
+Co: 0.7820
+Cu: 0.0568
+Ce: 0.2038
+method: interpolated XRF
+
+{Co73Cu15Ce13}
+filename: Co_(-06.10,055.50).csv
+
+{Co73Cu15Ce13}.composition
+Co: 0.7252
+Cu: 0.1517
+Ce: 0.1334
+method: interpolated XRF
+
+{Co55Cu19Ce16}
+filename: Co_(-08.70,104.50).csv
+
+{Co55Cu19Ce16}.composition
+Co: 0.5487
+Cu: 0.1907
+Ce: 0.1560
+method: interpolated XRF
+
+{Co59Cu7Ce27}
+filename: Co_(-08.50,075.10).csv
+
+{Co59Cu7Ce27}.composition
+Co: 0.5891
+Cu: 0.0722
+Ce: 0.2659
+method: interpolated XRF
+
+{Co83Cu6Ce16}
+filename: Co_(-07.20,093.90).csv
+
+{Co83Cu6Ce16}.composition
+Co: 0.8308
+Cu: 0.0608
+Ce: 0.1643
+method: interpolated XRF
+
+{Co52Cu10Ce39}
+filename: Co_(-05.00,049.60).csv
+
+{Co52Cu10Ce39}.composition
+Co: 0.5166
+Cu: 0.1016
+Ce: 0.3933
+method: interpolated XRF
+
+{Co78Cu11Ce12}
+filename: Co_(-06.10,072.00).csv
+
+{Co78Cu11Ce12}.composition
+Co: 0.7787
+Cu: 0.1105
+Ce: 0.1207
+method: interpolated XRF
+
+{Co73Cu14Ce13}
+filename: Co_(-06.10,058.50).csv
+
+{Co73Cu14Ce13}.composition
+Co: 0.7349
+Cu: 0.1442
+Ce: 0.1311
+method: interpolated XRF
+
+{Co52Cu16Ce25}
+filename: Co_(-08.70,077.00).csv
+
+{Co52Cu16Ce25}.composition
+Co: 0.5228
+Cu: 0.1648
+Ce: 0.2495
+method: interpolated XRF
+
+{Co60Cu7Ce26}
+filename: Co_(-08.50,077.60).csv
+
+{Co60Cu7Ce26}.composition
+Co: 0.5976
+Cu: 0.0735
+Ce: 0.2574
+method: interpolated XRF
+
+{Co76Cu12Ce12}
+filename: Co_(-06.10,067.00).csv
+
+{Co76Cu12Ce12}.composition
+Co: 0.7625
+Cu: 0.1230
+Ce: 0.1246
+method: interpolated XRF
+
+{Co85Cu6Ce15}
+filename: Co_(-07.20,098.90).csv
+
+{Co85Cu6Ce15}.composition
+Co: 0.8504
+Cu: 0.0624
+Ce: 0.1486
+method: interpolated XRF
+
+{Co79Cu10Ce12}
+filename: Co_(-06.10,075.00).csv
+
+{Co79Cu10Ce12}.composition
+Co: 0.7884
+Cu: 0.1030
+Ce: 0.1184
+method: interpolated XRF
+
+{Co55Cu19Ce16}
+filename: Co_(-08.70,102.00).csv
+
+{Co55Cu19Ce16}.composition
+Co: 0.5464
+Cu: 0.1884
+Ce: 0.1645
+method: interpolated XRF
+
+{Co87Cu6Ce13}
+filename: Co_(-07.20,103.90).csv
+
+{Co87Cu6Ce13}.composition
+Co: 0.8699
+Cu: 0.0640
+Ce: 0.1328
+method: interpolated XRF
+
+{Co53Cu11Ce37}
+filename: Co_(-05.00,057.10).csv
+
+{Co53Cu11Ce37}.composition
+Co: 0.5337
+Cu: 0.1104
+Ce: 0.3670
+method: interpolated XRF
+
+{Co66Cu20Ce15}
+filename: Co_(-06.30,038.90).csv
+
+{Co66Cu20Ce15}.composition
+Co: 0.6632
+Cu: 0.1995
+Ce: 0.1481
+method: interpolated XRF
+
+{Co77Cu6Ce21}
+filename: Co_(-07.20,078.90).csv
+
+{Co77Cu6Ce21}.composition
+Co: 0.7722
+Cu: 0.0561
+Ce: 0.2117
+method: interpolated XRF
+
+{Co66Cu8Ce20}
+filename: Co_(-08.50,095.10).csv
+
+{Co66Cu8Ce20}.composition
+Co: 0.6569
+Cu: 0.0825
+Ce: 0.1981
+method: interpolated XRF
+
+{Co59Cu14Ce29}
+filename: Co_(-05.00,079.60).csv
+
+{Co59Cu14Ce29}.composition
+Co: 0.5851
+Cu: 0.1368
+Ce: 0.2883
+method: interpolated XRF
+
+[array(0.5860571428571428), array(0.13725428571428572), array(0.28685000000000005)]
