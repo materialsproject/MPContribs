@@ -14,7 +14,7 @@ def submit_mpfile(path_or_mpfile, site='jupyterhub', fmt='archieml'):
     test_site = bool('jupyterhub' in site)
     with MPContribsRester(test_site=test_site) as mpr:
         try:
-            yield 'Connection to DB {} at {}? '.format(mpr.dbtype, mpr.preamble) # also checks internet connection
+            yield 'Connection to DB {} at {}? '.format(mpr.dbtype, mpr.preamble)
             ncontribs = sum(1 for contrib in mpr.query_contributions(contributor_only=True))
             yield 'OK ({} contributions).</br> '.format(ncontribs)
             time.sleep(1)
