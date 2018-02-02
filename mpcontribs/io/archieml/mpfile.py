@@ -66,7 +66,6 @@ class MPFile(MPFileCore):
 
     def get_string(self):
         from pymatgen import Structure
-        from pymatgen.io.cif import CifWriter
         lines, scope = [], []
         table_start = mp_level01_titles[1]+'_'
         for key,value in self.document.iterate():
@@ -81,6 +80,7 @@ class MPFile(MPFileCore):
                 )[:-1]
                 lines += csv_string.decode('utf-8').split('\n')
             elif isinstance(value, Structure):
+                from pymatgen.io.cif import CifWriter
                 cif = CifWriter(value, symprec=symprec).__str__()
                 lines.append(make_pair(
                     ''.join([replacements.get(c, c) for c in key]), cif+':end'
