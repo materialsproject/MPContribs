@@ -43,7 +43,7 @@ def get_composition_from_string(s):
     for element in comp.elements:
         Element(element)
     comp = Composition(comp.get_integer_formula_and_factor()[0])
-    return comp.formula.replace(' ', '')
+    return comp.reduced_formula
 
 def normalize_root_level(title):
     """convert root-level title into conventional identifier; non-identifiers

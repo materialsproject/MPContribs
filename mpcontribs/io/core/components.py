@@ -41,9 +41,12 @@ def get_backgrid_table(df):
     """Backgrid-conform dict from DataFrame"""
     # shorten global import times by importing django here
     import numpy as np
+    from mpcontribs.io.core.utils import get_composition_from_string
     from django.core.validators import URLValidator
     from django.core.exceptions import ValidationError
     from pandas import MultiIndex
+    import pymatgen.util as pmg_util
+    from pymatgen.core.composition import CompositionError
 
     val = URLValidator()
     table = dict()
@@ -69,20 +72,25 @@ def get_backgrid_table(df):
             for row_index in xrange(nrows):
                 cell = unicode(df.iat[row_index, col_index])
                 cell_split = cell.split(' ', 1)
+
                 if not cell or len(cell_split) == 1: # empty cell or no space
+                    is_url_column = bool(not cell or mp_id_pattern.match(cell))
                     if is_url_column:
-                        is_url_column = bool(not cell or mp_id_pattern.match(cell))
-                        if is_url_column:
-                            if cell:
-                                value = 'https://materialsproject.org/materials/{}'.format(cell)
-                                table['rows'][row_index][col] = value
-                        else:
+                        if cell:
+                            value = 'https://materialsproject.org/materials/{}'.format(cell)
+                            table['rows'][row_index][col] = value
+                    elif cell:
+                        try:
+                            composition = get_composition_from_string(cell)
+                            composition = pmg_util.string.unicodeify(composition)
+                            table['rows'][row_index][col] = composition
+                        except CompositionError:
                             try:
                                 val(cell)
                                 is_url_column = True
                             except ValidationError:
-                                # is_url_column already set to False
                                 break
+
                 else:
                     value, unit = cell_split # TODO convert cell_split[0] to float?
                     table['rows'][row_index].pop(old_col)
