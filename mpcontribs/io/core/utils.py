@@ -1,5 +1,7 @@
+from __future__ import unicode_literals
 import warnings, pandas, numpy, six, collections
 from StringIO import StringIO
+from decimal import Decimal
 from mpcontribs.config import mp_level01_titles, mp_id_pattern, csv_comment_char
 
 def flatten_dict(dd, separator='.', prefix=''):
@@ -21,11 +23,11 @@ def get_short_object_id(cid):
         cid_short = str(cid)[:length]
     return cid_short
 
-def make_pair(key, value, sep=u':'):
+def make_pair(key, value, sep=':'):
     """make a key-value pair"""
     if not isinstance(value, six.string_types):
         value = unicode(value)
-    return u'{} '.format(sep).join([key, value])
+    return '{} '.format(sep).join([key, value])
 
 def nest_dict(dct, keys):
     """nest dict under list of keys"""
@@ -60,7 +62,7 @@ def strip_converter(text):
     if not text:
         return numpy.nan
     try:
-        return float(text)
+        return str(Decimal(text))
     except ValueError:
         try:
             return text.strip()
@@ -70,6 +72,7 @@ def strip_converter(text):
 def read_csv(body, is_data_section=True):
     """run pandas.read_csv on (sub)section body"""
     if not body: return None
+    from mpcontribs.io.core.components import Table
     if is_data_section:
         options = { 'sep': ',', 'header': 0 }
         if body.startswith('\nlevel_'):
@@ -78,19 +81,19 @@ def read_csv(body, is_data_section=True):
         while 1:
             first_line = body.split('\n', cur_line)[cur_line-1]
             cur_line += 1
-            if not first_line.strip().startswith(csv_comment_char):
+            if first_line and not first_line.strip().startswith(csv_comment_char):
                 break
         ncols = len(first_line.split(options['sep']))
     else:
         options = { 'sep': ':', 'header': None, 'index_col': 0 }
         ncols = 2
     converters = dict((col,strip_converter) for col in range(ncols))
-    return pandas.read_csv(
+    return Table(pandas.read_csv(
         StringIO(body), comment=csv_comment_char,
         skipinitialspace=True, squeeze=True,
         converters=converters, encoding='utf8',
         **options
-    ).dropna(how='all')
+    ).dropna(how='all'))
 
 def disable_ipython_scrollbar():
     from IPython.display import display, Javascript

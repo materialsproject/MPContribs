@@ -46,7 +46,7 @@ class MPFile(MPFileCore):
                         # k = table name (incl. data prefix)
                         # v = csv string from ArchieML free-form arrays
                         table_name = k[len(mp_level01_titles[1]+'_'):]
-                        pd_obj = Table(read_csv(v))
+                        pd_obj = read_csv(v)
                         rdct[root_key].pop(table_name)
                         rdct[root_key].rec_update(nest_dict(
                             pd_obj.to_dict(), [k]

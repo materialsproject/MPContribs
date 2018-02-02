@@ -173,11 +173,12 @@ def render_dataframe(df, webapp=False):
 class Table(DataFrame):
 
     def to_dict(self):
-        rdct = super(Table, self).to_dict(into=RecursiveDict)
-        rdct.rec_update({
-            "@module": self.__class__.__module__,
-            "@class": self.__class__.__name__
-        })
+        rdct = super(Table, self).to_dict(
+            orient='split', into=RecursiveDict
+        )
+        rdct.pop('index')
+        rdct["@module"] = self.__class__.__module__
+        rdct["@class"] = self.__class__.__name__
         return rdct
 
     @classmethod
@@ -186,7 +187,7 @@ class Table(DataFrame):
             (k, v) for k, v in rdct.iteritems()
             if k not in ['@module', '@class']
         )
-        return super(Table, cls).from_dict(d)
+        return Table(d['data'], columns=d['columns'])
 
     def _ipython_display_(self):
         disable_ipython_scrollbar()
