@@ -1,4 +1,5 @@
 {% extends "../../webtzite/templates/base/header_footer.html" %}
+
 {% block content %}
 {% if alert %}
 <div class="alert alert-warning alert-dismissible" role="alert">
@@ -8,30 +9,88 @@
   {{ alert }}
 </div>
 {% else %}
+
+<style>
+.row .thumbnail {
+    border: 2px solid #000000;
+    padding: 10px;
+}
+.row .thumbnail:hover {
+    box-shadow: 0 0 5px 5px rgba(0, 140, 186, 0.5);
+}
+</style>
+
 <div class="container">
-  <div class="row">
-      <h1>MPContribs Interfaces</h1>
-      <ul>
-          <li><a href="{% url 'mpcontribs_rest_index' %}">REST API</a></li>
-          <li><a href="{% url 'mpcontribs_explorer_index' %}">Explorer</a></li>
-          <li>Contributed Explorers:
-              <ul>
-                  {% for l in a_tags %}
-                  {% if forloop.counter0 %}
-                  <li>In Preparation:</li>
-                  {% else %}
-                  <li>Released:</li>
-                  {% endif %}
-                  <ul>
-                      {% for a_tag in l %}
-                      <li><a href="{% url a_tag.name %}">{{ a_tag.title }}</a></li>
-                      {% endfor %}
-                  </ul>
-                  {% endfor %}
-              </ul>
-          </li>
-      </ul>
-  </div>
-</div>
+    <h1>MPContribs</h1>
+    <div class="row">
+        <div class="col-lg-3 col-sm-6 col-xs-12">
+            <div class = "thumbnail">
+            <a href="#">
+                <img src= "https://www.researchgate.net/publication/265016713/figure/fig2/AS:271746121072653@1441800732625/Figure-2-Bandgaps-at-G-point-of-20-structure-calculated-with-LDA-in-black-GW.png" alt="Image" class="img-responsive">
+                <div class="caption">
+                <h4>GLLB-SC Bandgaps</h4>
+                <p>Ivano E. Castelli, et. al</p>
+                </div>
+            </div>
+            </a>
+        </div>
+         <div class="col-lg-3 col-sm-6 col-xs-12">
+            <a href="#">
+                 <img src="http://placehold.it/1000x1100" class="thumbnail img-responsive">
+            </a>
+        </div>
+         <div class="col-lg-3 col-sm-6 col-xs-12">
+            <a href="#">
+                 <img src="http://placehold.it/1000x1100" class="thumbnail img-responsive">
+            </a>
+        </div>
+         <div class="col-lg-3 col-sm-6 col-xs-12">
+            <a href="#">
+                 <img src="http://placehold.it/1000x1100" class="thumbnail img-responsive">
+            </a>
+        </div>
+         <div class="col-lg-3 col-sm-6 col-xs-12">
+            <a href="#">
+                 <img src="http://placehold.it/1000x1100" class="thumbnail img-responsive">
+            </a>
+        </div>
+         <div class="col-lg-3 col-sm-6 col-xs-12">
+            <a href="#">
+                 <img src="http://placehold.it/1000x1100" class="thumbnail img-responsive">
+            </a>
+        </div>
+         <div class="col-lg-3 col-sm-6 col-xs-12">
+            <a href="#">
+                 <img src="http://placehold.it/1000x1100" class="thumbnail img-responsive">
+            </a>
+        </div>
+         <div class="col-lg-3 col-sm-6 col-xs-12">
+            <a href="#">
+                 <img src="http://placehold.it/1000x1100" class="thumbnail img-responsive">
+            </a>
+        </div>
+         <div class="col-lg-3 col-sm-6 col-xs-12">
+            <a href="#">
+                 <img src="http://placehold.it/1000x1100" class="thumbnail img-responsive">
+            </a>
+        </div>
+         <div class="col-lg-3 col-sm-6 col-xs-12">
+            <a href="#">
+                 <img src="http://placehold.it/1000x1100" class="thumbnail img-responsive">
+            </a>
+        </div>
+         <div class="col-lg-3 col-sm-6 col-xs-12">
+            <a href="#">
+                 <img src="http://placehold.it/1000x1100" class="thumbnail img-responsive">
+            </a>
+        </div>
+         <div class="col-lg-3 col-sm-6 col-xs-12">
+            <a href="#">
+                 <img src="http://placehold.it/1000x1100" class="thumbnail img-responsive">
+            </a>
+        </div>
+      </div>
+    </div>
+
 {% endif %}
 {% endblock %}
