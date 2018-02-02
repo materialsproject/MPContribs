@@ -11,6 +11,7 @@ def clean_value(value, unit='', convert_to_percent=False):
     try:
         value = Decimal(value)
         dgts = len(value.as_tuple().digits)
+        dgts = 3 if dgts > 3 else dgts
     except:
         return value
     if convert_to_percent:
