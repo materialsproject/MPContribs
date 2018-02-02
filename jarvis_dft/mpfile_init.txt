@@ -1,4 +1,4 @@
-title: Jarvis DFT
+title: JARVIS-DFT
 
 description:
 We introduce a simple criterion to identify two-dimensional (2D)
@@ -25,24 +25,20 @@ elements, 2D, solar cell and thermoelectric materials. For 2D
 materials, bulk and 1 layer material properties are compared
 right now with three different exchange-correlation
 functional-LDA, PBE and PBEBO (else only PBEBO is used).  The
-PBEBO (or optB88) generally works well for 2D materials. If data
+PBEBO (or optB88vDW) generally works well for 2D materials. If data
 shows `na`, it implies the calculation has not completed yet.
 Please learn about the assumptions used during calculations and
 use the data at your own risk!
 :end
 
 authors:
-Francesca Tavazza (NIST), Carelyn E. Campbell (NIST), Arunima
-Singh (LBNL), Lidia Carvalho Gomes (NUS), Tao Liang (PSU),
-Richard G. Hennig (UF), Sugata Chowdhury (NIST), Atsushi Togo
-(KU), James Warren (NIST), Kristin Persson (LBNL), Kiran Mathew
-(LBNL).
+Kamal Choudhary and Francesca Tavazza (NIST)
 :end
 
 website: http://www.ctcms.nist.gov/~knc6/JVASP.html
 url: https://www.nature.com/articles/s41598-017-05402-0
 journal: Scientific Reports 7, 5179 (2017)
 doi: 10.1038/s41598-017-05402-0
-
+github: https://github.com/usnistgov/jarvis
 input_url: https://www.ctcms.nist.gov/~knc6/jdft_{}.json.tgz
 details_url: https://www.ctcms.nist.gov/~knc6/jsmol/{}.html
