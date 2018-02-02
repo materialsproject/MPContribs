@@ -187,7 +187,7 @@ class Table(DataFrame):
             (k, v) for k, v in rdct.iteritems()
             if k not in ['@module', '@class']
         )
-        return Table(d['data'], columns=d['columns'])
+        return cls(d['data'], columns=d['columns'])
 
     def _ipython_display_(self):
         disable_ipython_scrollbar()
