@@ -57,12 +57,29 @@ def normalize_root_level(title):
         else:
             return True, title
 
+def clean_value(value, unit='', convert_to_percent=False, max_dgts=3):
+    dgts = max_dgts
+    value = str(value) if not isinstance(value, six.string_types) else value
+    try:
+        value = Decimal(value)
+        dgts = len(value.as_tuple().digits)
+        dgts = max_dgts if dgts > max_dgts else dgts
+    except:
+        return value
+    if convert_to_percent:
+        value = Decimal(value) * Decimal('100')
+        unit = '%'
+    v = '{{:.{}g}}'.format(dgts).format(value)
+    if unit:
+        v += ' {}'.format(unit)
+    return v
+
 def strip_converter(text):
     """http://stackoverflow.com/questions/13385860"""
     if not text:
         return numpy.nan
     try:
-        return str(Decimal(text))
+        return str(Decimal(clean_value(text, max_dgts=6)))
     except ValueError:
         try:
             return text.strip()
