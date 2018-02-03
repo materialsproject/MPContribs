@@ -21,27 +21,29 @@
 <div class="container">
   {% if options %}
   <div class="row" style="margin-top:20px;">
-    <form action="{% url 'mpcontribs_explorer_index' %}" method=post enctype=multipart/form-data>
-      {% csrf_token %}
-      Select one or more:</br>
-      <select id="{{ fields.0 }}_list" data-placeholder="Select material/composition(s) ..." style="width:300px;" multiple>
-        <option></option>
-      </select>
-      <select id="{{ fields.1 }}_list" data-placeholder="Select project(s) ..." style="width:300px;" multiple>
-        <option></option>
-      </select>
-      <input type=submit name="submit" class="btn btn-primary" value="Find">
-      </br>
-      Or enter a (list of) contribution identifiers:</br>
-      <select id="{{ fields.2 }}_list" data-placeholder="Enter contribution ID(s) ..." style="width:300px;" multiple>
-        <option></option>
-      </select>
-      {% for field in fields %}
-      <input type=hidden name="selection_{{ field }}" id="select_{{ field }}">
-      <input type=hidden name="options_{{ field }}" id="opt_{{ field }}">
-      {% endfor %}
-      <input type=submit name="submit" class="btn btn-primary" value="Show">
-    </form>
+      <div class="col-md-12">
+        <form action="{% url 'mpcontribs_explorer_index' %}" method=post enctype=multipart/form-data>
+          {% csrf_token %}
+          Select one or more:</br>
+          <select id="{{ fields.0 }}_list" data-placeholder="Select material/composition(s) ..." style="width:300px;" multiple>
+            <option></option>
+          </select>
+          <select id="{{ fields.1 }}_list" data-placeholder="Select project(s) ..." style="width:300px;" multiple>
+            <option></option>
+          </select>
+          <input type=submit name="submit" class="btn btn-primary" value="Find">
+          </br>
+          Or enter a (list of) contribution identifiers:</br>
+          <select id="{{ fields.2 }}_list" data-placeholder="Enter contribution ID(s) ..." style="width:300px;" multiple>
+            <option></option>
+          </select>
+          {% for field in fields %}
+          <input type=hidden name="selection_{{ field }}" id="select_{{ field }}">
+          <input type=hidden name="options_{{ field }}" id="opt_{{ field }}">
+          {% endfor %}
+          <input type=submit name="submit" class="btn btn-primary" value="Show">
+        </form>
+      </div>
   </div>
   {% if urls %}
   <div class="row" style="margin-top:20px;">
@@ -49,38 +51,6 @@
     <div class="col-md-6">{{ url|safe }}</div>
     {% endfor %}
   </div>
-  {% elif main_contributions %}
-  <div class="row" style="margin-top:20px;">
-    {% for identifier, main_contribs in main_contributions.items %}
-    <h2>{{ identifier }}</h2>
-    {% for main_contrib in main_contribs %}
-    <h3>{{ main_contrib.title }}</h3>
-    <div class="panel-group" id="accordion-{{ identifier }}-{{ forloop.counter }}">
-        {% for cid in main_contrib.cids %}
-        <div class="panel panel-default">
-            <div class="panel-heading">
-                <h4 class="panel-title">
-                    <a
-                    id="get-card-{{ identifier }}-{{ forloop.parentloop.counter }}-{{ cid }}"
-                    name=get-card data-toggle="collapse"
-                    data-parent="#accordion-{{ identifier }}-{{ forloop.parentloop.counter }}"
-                    href="#collapse-{{ identifier }}-{{ forloop.parentloop.counter }}-{{ cid }}"
-                    data-cid="{{ cid }}"
-                    data-prov="{{ main_contrib.provenance_keys }}"
-                    >{{ cid }}</a>
-                </h4>
-            </div>
-            <div id="collapse-{{ identifier }}-{{ forloop.parentloop.counter }}-{{ cid }}"
-                class="panel-collapse collapse">
-                <div class="panel-body" id="panel-{{ identifier }}-{{ forloop.parentloop.counter }}-{{ cid }}"></div>
-            </div>
-        </div>
-        {% endfor %}
-    </div>
-    {% endfor %}
-    {% endfor %}
-  <script>
-  </script>
   {% endif %}
   <script>
     requirejs(['main'], function() {
@@ -122,28 +92,6 @@
         sel_elem.value = JSON.stringify(selection[fld]);
       });
     }
-    });
-    require(['jquery', 'underscore'], function() {
-        $(document).ready(function () {
-            require(['js-cookie'], function(Cookies) {
-                $('[name="get-card"]').click(function(){
-                    var cid = $(this).data('cid');
-                    var prov = $(this).data('prov');
-                    var elid = $(this).attr('id').replace('get-card', 'panel');
-                    var saveData = $.ajax({
-                        type: 'POST',
-                        url: $('#get_card_url').val()+'card/'+cid,
-                        data: {'provenance_keys': prov.replace(/'/g, '"')},
-                        dataType: "text",
-                        success: function(data, textStatus, jqXHR) {
-                            var response = JSON.parse(data);
-                            $("#"+elid).html(response['response']);
-                        },
-                        error: function(jqXHR, textStatus, errorThrown) { $("#"+elid).text('ERROR'); }
-                    });
-                });
-            });
-        });
     });
     });
   </script>
