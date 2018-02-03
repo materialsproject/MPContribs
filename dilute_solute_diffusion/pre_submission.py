@@ -6,8 +6,9 @@ from pandas import DataFrame, Series, read_excel, isnull
 from mpcontribs.io.vaspdir import AbstractVaspDirCollParser
 from mpcontribs.io.archieml.mpfile import MPFile
 from mpcontribs.io.core.recdict import RecursiveDict
+from mpcontribs.io.core.utils import clean_value
 from mpcontribs.config import mp_level01_titles
-from mpcontribs.users.utils import duplicate_check, clean_value
+from mpcontribs.users.utils import duplicate_check
 
 def add_diffusivity_table(mpfile):
     """add solute_diffusivity tables to materials in MPFile"""

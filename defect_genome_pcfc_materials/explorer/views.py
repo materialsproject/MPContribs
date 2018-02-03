@@ -5,7 +5,7 @@ from django.shortcuts import render_to_response
 from django.template import RequestContext
 from mpcontribs.io.core.components import render_dataframe, Table
 from webtzite.rester import MPResterBase
-from mpcontribs.users.utils import clean_value
+from mpcontribs.io.core.utils import clean_value
 
 def index(request):
     ctx = RequestContext(request)

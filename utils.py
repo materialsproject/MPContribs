@@ -1,26 +1,8 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
-import inspect, six
-from decimal import Decimal
+import inspect
 from importlib import import_module
 from mpcontribs.users_modules import get_user_rester
-
-def clean_value(value, unit='', convert_to_percent=False):
-    dgts = 3
-    value = str(value) if not isinstance(value, six.string_types) else value
-    try:
-        value = Decimal(value)
-        dgts = len(value.as_tuple().digits)
-        dgts = 3 if dgts > 3 else dgts
-    except:
-        return value
-    if convert_to_percent:
-        value = Decimal(value) * Decimal('100')
-        unit = '%'
-    v = '{{:.{}g}}'.format(dgts).format(value)
-    if unit:
-        v += ' {}'.format(unit)
-    return v
 
 def duplicate_check(f):
     existing_identifiers = {}

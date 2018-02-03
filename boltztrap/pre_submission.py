@@ -4,9 +4,9 @@ import os, gzip, json
 import numpy as np
 from pandas import DataFrame
 from mpcontribs.io.core.recdict import RecursiveDict
-from mpcontribs.io.core.utils import nest_dict
+from mpcontribs.io.core.utils import nest_dict, clean_value
 from mpcontribs.users.boltztrap.rest.rester import BoltztrapRester
-from mpcontribs.users.utils import clean_value, duplicate_check
+from mpcontribs.users.utils import duplicate_check
 
 try:
     from os import scandir # python3

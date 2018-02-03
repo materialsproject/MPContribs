@@ -4,10 +4,10 @@ import os
 from decimal import Decimal
 from zipfile import ZipFile
 from StringIO import StringIO
-from mpcontribs.users.utils import clean_value, duplicate_check
+from mpcontribs.users.utils import duplicate_check
 from mpcontribs.io.core.recdict import RecursiveDict
 from mpcontribs.io.archieml.mpfile import MPFile
-from mpcontribs.io.core.utils import read_csv
+from mpcontribs.io.core.utils import read_csv, clean_value
 from mpcontribs.io.core.components import Table
 
 @duplicate_check

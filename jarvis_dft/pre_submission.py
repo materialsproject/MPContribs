@@ -7,9 +7,6 @@ from mpcontribs.io.core.utils import nest_dict
 from monty.json import MontyDecoder
 from mpcontribs.users.utils import duplicate_check
 
-def clean_value(val, unit):
-    return '-' if val == 'na' else '{} {}'.format(val, unit)
-
 @duplicate_check
 def run(mpfile):
 

@@ -2,7 +2,8 @@
 from __future__ import unicode_literals
 import os, urllib, ase.db
 from mpcontribs.io.core.recdict import RecursiveDict
-from mpcontribs.users.utils import clean_value, duplicate_check
+from mpcontribs.io.core.utils import clean_value
+from mpcontribs.users.utils import duplicate_check
 
 @duplicate_check
 def run(mpfile, **kwargs):
