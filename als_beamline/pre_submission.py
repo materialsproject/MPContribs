@@ -9,6 +9,7 @@ from mpcontribs.io.core.recdict import RecursiveDict
 from mpcontribs.io.archieml.mpfile import MPFile
 from mpcontribs.io.core.utils import read_csv, clean_value
 from mpcontribs.io.core.components import Table
+from mpcontribs.io.core.utils import nest_dict
 
 @duplicate_check
 def run(mpfile, **kwargs):
@@ -44,9 +45,6 @@ def run(mpfile, **kwargs):
             for k, v in zip(['x', 'y'], xy[1:-1].split(','))
         )
 
-        # add hierarchical data to MPFile
-        mpfile.add_hierarchical_data(d, identifier=composition)
-
         # load csv file
         try:
             csv = zip_file.read(data['filename'])
@@ -56,5 +54,14 @@ def run(mpfile, **kwargs):
         # read csv to pandas DataFrame and add to MPFile
         df = read_csv(csv)
         df = df[['Energy', 'XAS', 'XMCD']]
-        #print df.from_dict(df.to_dict())
+
+        # min and max
+        d.rec_update(RecursiveDict(
+            (y, RecursiveDict([
+                ('min', df[y].min()), ('max', df[y].max())
+            ])) for y in ['XAS', 'XMCD']
+        ))
+
+        # add data to MPFile
+        mpfile.add_hierarchical_data(nest_dict(d, ['data']), identifier=composition)
         mpfile.add_data_table(composition, df, name=name)
