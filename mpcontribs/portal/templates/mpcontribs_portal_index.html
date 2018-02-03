@@ -21,22 +21,60 @@
 </style>
 
 <div class="container">
-    <h1>MPContribs</h1>
+    <h1>MPContribs Portal</h1>
+    <div class="row">
+        <div class="col-md-3">
+            <a href="{% url 'mpcontribs_rest_index' %}">REST API</a>
+        </div>
+        <div class="col-md-3">
+            <div class = "thumbnail">
+                <a href="{% url 'mpcontribs_explorer_index' %}">
+                    <img src= "https://www.researchgate.net/publication/265016713/figure/fig2/AS:271746121072653@1441800732625/Figure-2-Bandgaps-at-G-point-of-20-structure-calculated-with-LDA-in-black-GW.png" alt="Image" class="img-responsive">
+                    <div class="caption">
+                        <h4>All Contributions</h4>
+                        <p>Materials Project</p>
+                    </div>
+                </a>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <ul>
+                <li>Contributed Explorers:
+                    <ul>
+                        {% for l in a_tags %}
+                        {% if forloop.counter0 %}
+                        <li>In Preparation:</li>
+                        {% else %}
+                        <li>Released:</li>
+                        {% endif %}
+                        <ul>
+                            {% for a_tag in l %}
+                            <li><a href="{% url a_tag.name %}">{{ a_tag.title }}</a></li>
+                            {% endfor %}
+                        </ul>
+                        {% endfor %}
+                    </ul>
+                </li>
+            </ul>
+        </div>
+        <div class="col-md-3">
+        </div>
+    </div>
     <div class="row">
         <div class="col-lg-3 col-sm-6 col-xs-12">
             <div class = "thumbnail">
-            <a href="#">
-                <img src= "https://www.researchgate.net/publication/265016713/figure/fig2/AS:271746121072653@1441800732625/Figure-2-Bandgaps-at-G-point-of-20-structure-calculated-with-LDA-in-black-GW.png" alt="Image" class="img-responsive">
-                <div class="caption">
-                <h4>GLLB-SC Bandgaps</h4>
-                <p>Ivano E. Castelli, et. al</p>
-                </div>
+                <a href="#">
+                    <img src= "https://www.researchgate.net/publication/265016713/figure/fig2/AS:271746121072653@1441800732625/Figure-2-Bandgaps-at-G-point-of-20-structure-calculated-with-LDA-in-black-GW.png" alt="Image" class="img-responsive">
+                    <div class="caption">
+                        <h4>GLLB-SC Bandgaps</h4>
+                        <p>Ivano E. Castelli, et. al</p>
+                    </div>
             </div>
-            </a>
+                </a>
         </div>
-         <div class="col-lg-3 col-sm-6 col-xs-12">
+        <div class="col-lg-3 col-sm-6 col-xs-12">
             <a href="#">
-                 <img src="http://placehold.it/1000x1100" class="thumbnail img-responsive">
+                <img src="http://placehold.it/1000x1100" class="thumbnail img-responsive">
             </a>
         </div>
          <div class="col-lg-3 col-sm-6 col-xs-12">
