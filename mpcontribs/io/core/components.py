@@ -50,8 +50,8 @@ def get_backgrid_table(df):
 
     val = URLValidator()
     table = dict()
-    nrows = df.shape[0]
     nrows_max = 200
+    nrows = df.shape[0]
     if nrows > nrows_max:
         df = Table(df.head(n=nrows_max))
     numeric_columns = df.select_dtypes(include=[np.number]).columns.tolist()
@@ -69,7 +69,7 @@ def get_backgrid_table(df):
         if not col.startswith('level_') and col not in numeric_columns:
             is_url_column, prev_unit, old_col = True, None, col
 
-            for row_index in xrange(nrows):
+            for row_index in xrange(df.shape[0]):
                 cell = unicode(df.iat[row_index, col_index])
                 cell_split = cell.split(' ', 1)
 
