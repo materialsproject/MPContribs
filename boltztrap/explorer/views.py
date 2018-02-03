@@ -16,7 +16,7 @@ def index(request):
         with BoltztrapRester(API_KEY, endpoint=ENDPOINT) as mpr:
             try:
                 prov = mpr.get_provenance()
-                title = prov.get('title')
+                title = prov.pop('title')
                 provenance = render_dict(prov, webapp=True)
                 tables = {}
                 for doping in ['n', 'p']:

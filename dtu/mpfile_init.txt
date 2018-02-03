@@ -17,7 +17,11 @@ I. Castelli, F. Hueser, M. Pandey, H. Li, K. Thygesen, B. Seger,
 A. Jain, K. Persson, G. Ceder, K. Jacobsen
 :end
 
-dois: 10.1002/aenm.201400915 10.1103/PhysRevA.51.1944 10.1103/PhysRevB.82.115106
+contributor: Technical University of Denmark
+input_url: https://cmr.fysik.dtu.dk/_downloads/mp_gllbsc.db
 
-contributor : Technical University of Denmark
-url: https://cmr.fysik.dtu.dk/_downloads/mp_gllbsc.db
+{urls}
+AENM: https://doi.org/10.1002/aenm.201400915
+PRA: https://doi.org/10.1103/PhysRevA.51.1944
+PRB: https://doi.org/10.1103/PhysRevB.82.115106
+

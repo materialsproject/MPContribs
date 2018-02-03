@@ -6,8 +6,8 @@ from mpcontribs.io.core.components import Table
 
 class DtuRester(MPContribsRester):
     """DTU-specific convenience functions to interact with MPContribs REST interface"""
-    query = {'content.url': 'https://cmr.fysik.dtu.dk/_downloads/mp_gllbsc.db'}
-    provenance_keys = ['title', 'url', 'description', 'dois', 'authors', 'contributor']
+    query = {'content.input_url': 'https://cmr.fysik.dtu.dk/_downloads/mp_gllbsc.db'}
+    provenance_keys = ['title', 'input_url', 'description', 'urls', 'authors', 'contributor']
     released = True
 
     # TODO implement decorator to reduce this to column definitions and rows

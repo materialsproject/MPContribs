@@ -17,7 +17,7 @@ def index(request):
         with DtuRester(API_KEY, endpoint=ENDPOINT) as mpr:
             try:
                 prov = mpr.get_provenance()
-                title = prov.get('title')
+                title = prov.pop('title')
                 provenance = render_dict(prov, webapp=True)
                 table = render_dataframe(mpr.get_contributions(), webapp=True)
             except Exception as ex:

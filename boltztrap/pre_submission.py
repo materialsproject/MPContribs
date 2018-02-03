@@ -34,8 +34,9 @@ def run(mpfile, **kwargs):
             # add hierarchical data (nested key-values)
             # TODO: extreme values for power factor, zT, effective mass
             # TODO: add a text for the description of each table
-            hdata = RecursiveDict((k, data[k]) for k in keys)
-            hdata['volume'] = '{:g} Å³'.format(hdata['volume'])
+
+            hdata = RecursiveDict()
+
             cond_eff_mass = 'mₑᶜᵒⁿᵈ'
             hdata[cond_eff_mass] = RecursiveDict()
             names = ['e₁', 'e₂', 'e₃', '<m>']
@@ -49,16 +50,22 @@ def run(mpfile, **kwargs):
                     (names[idx], clean_value(x, 'mₑ'))
                     for idx, x in enumerate(eff_mass)
                 )
+
             seebeck_fix_dop_temp = "Seebeck"
             hdata[seebeck_fix_dop_temp] = RecursiveDict()
             cols = ['e₁', 'e₂', 'e₃', 'temperature', 'doping']
             for doping_type in ['p', 'n']:
-                sbk=[float(i) for i in data['GGA']['seebeck_doping'][doping_type]['300']['1e+18']['eigs']]
+                sbk = map(float, data['GGA']['seebeck_doping'][doping_type]['300']['1e+18']['eigs'])
                 vals = [clean_value(s, 'μV/K') for s in sbk] + ['300 K', '10¹⁸ cm⁻³']
-                hdata[seebeck_fix_dop_temp][doping_type] = RecursiveDict((k, v) for k, v in zip(cols, vals))
+                hdata[seebeck_fix_dop_temp][doping_type] = RecursiveDict(
+                        (k, v) for k, v in zip(cols, vals))
+
+            mpfile_data = nest_dict(hdata, ['data'])
 
             # build data and max values for seebeck, conductivity and kappa
             # max/min values computed using numpy. It may be better to code it in pure python.
+            hdata = RecursiveDict((k, data[k]) for k in keys)
+            hdata['volume'] = clean_value(hdata['volume'], 'Å³')
             cols = ['value', 'temperature', 'doping']
             for prop_name in ['seebeck_doping', 'cond_doping', 'kappa_doping']:
                 # TODO install Symbola font if you see squares here (https://fonts2u.com/symbola.font)
@@ -104,9 +111,8 @@ def run(mpfile, **kwargs):
                         (k, v) for k, v in zip(cols, vals)
                     )
 
-            mpfile.add_hierarchical_data(
-                nest_dict(hdata, ['data']), identifier=data['mp_id']
-            )
+            mpfile_data.rec_update(nest_dict(hdata, ['extra_data']))
+            mpfile.add_hierarchical_data(mpfile_data, identifier=data['mp_id'])
 
         finally:
             input_file.close()

@@ -7,7 +7,7 @@ from mpcontribs.users.utils import clean_value, duplicate_check
 @duplicate_check
 def run(mpfile, **kwargs):
 
-    url = mpfile.hdata.general['url']
+    url = mpfile.hdata.general['input_url']
     dbfile = os.path.join(os.environ['HOME'], 'work', url.rsplit('/')[-1])
 
     if not os.path.exists(dbfile):

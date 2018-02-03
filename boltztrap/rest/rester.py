@@ -6,8 +6,8 @@ from mpcontribs.io.core.components import Table
 
 class BoltztrapRester(MPContribsRester):
     """Boltztrap-specific convenience functions to interact with MPContribs REST interface"""
-    query = {'content.url': 'https://www.nature.com/articles/sdata201785'}
-    provenance_keys = ['title', 'authors', 'journal', 'dois', 'url', 'description']
+    query = {'content.urls.url': 'https://www.nature.com/articles/sdata201785'}
+    provenance_keys = ['title', 'authors', 'journal', 'urls', 'url', 'description']
     released = True
 
     def get_contributions(self, doping):
@@ -28,12 +28,12 @@ class BoltztrapRester(MPContribsRester):
         for doc in docs:
             mpfile = MPFile.from_contribution(doc)
             mp_id = mpfile.ids[0]
-            contrib = mpfile.hdata[mp_id]['data']
+            contrib = mpfile.hdata[mp_id]
             cid_url = self.get_cid_url(doc)
 
-            row = [mp_id, cid_url, contrib['pretty_formula']]
+            row = [mp_id, cid_url, contrib['extra_data']['pretty_formula']]
             row += [
-                contrib[k].get(doping, {}).get(sk, '')
+                contrib['data'][k].get(doping, {}).get(sk, '')
                 for k in keys for sk in subkeys
             ]
             data.append((mp_id, row))

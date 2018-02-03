@@ -1,16 +1,17 @@
 title: CuCoCe Project
 authors: A.T. N`Diaye, R. Ott, A.A. Baker
-urls: https://sites.google.com/a/lbl.gov/magnetism/home
 description:
 Magnetic moment and coercivity are determined for CoCuCe
 through composition-dependent XAS and XMCD spectra on the Co
 L3,2 edge.
 :end
-
 measurement_location: ALS Beamline 6.3.1
 method: interpolated XRF
 sample: CMSI-2-10_1 CMSI-2-10_2 CMSI-2-10_3 CMSI-2-10_4 CMSI-2-10_6
 input_file: dataset.zip
+
+{urls}
+ALS: https://sites.google.com/a/lbl.gov/magnetism/home
 
 {Co61Cu8Ce24}
 filename: Co_(-08.50,082.60).csv
