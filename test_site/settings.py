@@ -124,7 +124,8 @@ STATIC_URL = PROXY_URL_PREFIX + '/static/'
 
 STATIC_ROOT_URLS = {
     STATIC_URL: STATIC_ROOT,
-    STATIC_URL[:-1] + '_rest': ROOT_PROJECT_DIR + '/mpcontribs/rest/static'
+    STATIC_URL[:-1] + '_rest': ROOT_PROJECT_DIR + '/mpcontribs/rest/static',
+    STATIC_URL[:-1] + '_portal': ROOT_PROJECT_DIR + '/mpcontribs/portal/static'
 }
 from mpcontribs.users_modules import get_user_static_dirs
 STATIC_ROOT_USER_URLS = {}

@@ -6,10 +6,13 @@ from django.shortcuts import render_to_response
 from django.template import RequestContext
 from mpcontribs.users_modules import *
 from mpcontribs.rest.views import get_endpoint
+from test_site.settings import STATIC_URL
 
 def index(request):
     ctx = RequestContext(request)
     if request.user.is_authenticated():
+        mod = os.path.dirname(__file__).split(os.sep)[-1]
+        static_url = '_'.join([STATIC_URL[:-1], mod])
         a_tags = [[], []]
         for mod_path in get_users_modules():
             explorer = os.path.join(mod_path, 'explorer', 'apps.py')
