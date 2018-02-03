@@ -449,28 +449,22 @@ def get_card(request, cid, db_type=None, mdb=None):
     descriptions = hdata.get('description', 'No description available.').strip().split('.', 1)
     description = '{}.'.format(descriptions[0])
     if len(descriptions) > 1 and descriptions[1]:
-        description += '''<a href="#"
+        description += ''' <a href="#"
         class="read_more">More &raquo;</a><span class="more_text"
         hidden>{}</span>'''.format(descriptions[1])
     authors = hdata.get('authors', 'No authors available.').split(',', 1)
-    provenance = '<h5>{}'.format(authors[0])
+    provenance = '<h5 style="margin: 5px;">{}'.format(authors[0])
     if len(authors) > 1:
-        provenance += '''<button class="btn-sm btn-link" type=button
+        provenance += '''<button class="btn btn-sm btn-link"
         data-toggle="tooltip" data-placement="bottom"
-        data-container="body" title="{}" style="padding: 0px 0px 0px 3px;"
+        title="{}" style="padding: 0px 0px 0px 3px;"
         >et al.</a>'''.format(authors[1].strip())
     provenance += '</h5>'
-    dois = hdata.get('dois', hdata.get('urls', '')).split(' ')
-    doi_urls = []
-    for x in dois:
-        if x.startswith('http'):
-            doi_urls.append(x)
-        else:
-            doi_urls.append('https://doi.org/{}'.format(x))
+    urls = hdata.get('urls', {}).values()
     provenance += ''.join(['''<a href={}
         class="btn btn-link" role=button style="padding: 0"
-        target="_blank"><i class="fa fa-book fa-border fa-lg"></i></a>'''.format(x, y)
-        for x, y in zip(doi_urls, dois) if x
+        target="_blank"><i class="fa fa-book fa-border fa-lg"></i></a>'''.format(x)
+        for x in urls if x
     ])
     #if plots:
     #    card = []
@@ -507,27 +501,31 @@ def get_card(request, cid, db_type=None, mdb=None):
             </h4>
         </div>
         <div class="panel-body" style="padding-left: 0px">
-            <div class="col-md-8" style="padding-top: 0px">
-                <blockquote class="blockquote" style="font-size: 13px;">{}</blockquote>
+            <div class="col-md-12" style="padding-top: 0px">
+                <div class="well pull-right"
+                style="padding: 5px 5px 5px 5px; margin-bottom: 2px;
+                margin-left: 5px;">{}</div>
+                <blockquote class="blockquote"
+                style="font-size: 13px; padding: 0px 10px;">{}</blockquote>
             </div>
-            <div class="col-md-4 well" style="padding: 0px 0px 5px 5px;">{}</div>
             <div class="col-md-12" style="padding-right: 0px;">{}</div>
         </div>
     </div>
     <script>
     requirejs(['main'], function() {{
-        require(['jquery'], function() {{
+        require(['jquery', 'bootstrap'], function() {{
             $(function(){{
                 $("a.read_more").click(function(event){{
                     event.preventDefault();
                     $(this).parents(".blockquote").find(".more_text").show();
                     $(this).parents(".blockquote").find(".read_more").hide();
                 }});
+                $('.btn-link').tooltip();
             }});
         }});
     }});
     </script>
     '''.format(
-            title, more, description, provenance, data
+            title, more, provenance, description, data
     )
     return {"valid_response": True, "response": card}
