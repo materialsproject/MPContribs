@@ -1,4 +1,5 @@
 {% extends "../../webtzite/templates/base/header_footer.html" %}
+{% load staticfiles %}
 
 {% block content %}
 {% if alert %}
@@ -11,122 +12,84 @@
 {% else %}
 
 <style>
-.row .thumbnail {
-    border: 2px solid #000000;
-    padding: 10px;
-}
-.row .thumbnail:hover {
-    box-shadow: 0 0 5px 5px rgba(0, 140, 186, 0.5);
-}
+.panel { border: 2px solid #000000; }
+.panel-default > .panel-heading { border-color: #000; }
+.panel:hover { box-shadow: 0 0 5px 5px rgba(0, 140, 186, 0.5); }
 </style>
 
 <div class="container">
-    <h1>MPContribs Portal</h1>
-    <div class="row">
-        <div class="col-md-3">
-            <a href="{% url 'mpcontribs_rest_index' %}">REST API</a>
+    <h1 align="center" style="border-top: 2px solid; border-bottom: 2px solid;
+        margin: 15px 0 15px; padding: 10px;
+        background: #eee; font-variant: small-caps;">
+        MPContribs Portal
+        <a class="btn btn-info pull-right" style="margin-top: 2px" target="_blank"
+            href="https://jupyterhub.materialsproject.org">
+            MP JupyterHub
+        </a>
+    </h1>
+    <div class="row" style="margin-top: 20px">
+        <div class="col-md-4">
+            <blockquote class="blockquote" style="font-size: 14px; padding: 0px 10px;">
+                Write a little intro to MPContribs here. Also explain the Portal.
+            </blockquote>
         </div>
-        <div class="col-md-3">
-            <div class = "thumbnail">
-                <a href="{% url 'mpcontribs_explorer_index' %}">
-                    <img src= "https://www.researchgate.net/publication/265016713/figure/fig2/AS:271746121072653@1441800732625/Figure-2-Bandgaps-at-G-point-of-20-structure-calculated-with-LDA-in-black-GW.png" alt="Image" class="img-responsive">
-                    <div class="caption">
-                        <h4>All Contributions</h4>
-                        <p>Materials Project</p>
+        <div class="col-md-4">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h4 class="panel-title">Contribution Cards Explorer</h4>
+                </div>
+                <div class="panel-body" style="padding: 0px">
+                    <div class="col-md-12" style="padding: 5px">
+                        <a href="{% url 'mpcontribs_explorer_index' %}">
+                            <img src="{{ static_url }}/explorer.jpg" width=100% />
+                        </a>
                     </div>
-                </a>
+                </div>
             </div>
         </div>
-        <div class="col-md-3">
-            <ul>
-                <li>Contributed Explorers:
-                    <ul>
-                        {% for l in a_tags %}
-                        {% if forloop.counter0 %}
-                        <li>In Preparation:</li>
-                        {% else %}
-                        <li>Released:</li>
-                        {% endif %}
-                        <ul>
-                            {% for a_tag in l %}
-                            <li><a href="{% url a_tag.name %}">{{ a_tag.title }}</a></li>
-                            {% endfor %}
-                        </ul>
-                        {% endfor %}
-                    </ul>
-                </li>
-            </ul>
-        </div>
-        <div class="col-md-3">
+        <div class="col-md-4">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h4 class="panel-title">RESTful API Docs</h4>
+                </div>
+                <div class="panel-body" style="padding: 0px">
+                    <div class="col-md-12" style="padding: 5px; overflow:scroll; height:209px;">
+                        <a href="{% url 'mpcontribs_rest_index' %}">
+                            <img src="{{ static_url }}/rest_api.jpg" width=100% />
+                        </a>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
+    <h2 align="center" style="border-top: 2px dashed; border-bottom: 2px dashed;
+        margin: 15px 0 15px; padding: 10px;
+        background: #eee; font-variant: small-caps;">Landing Pages</h2>
     <div class="row">
-        <div class="col-lg-3 col-sm-6 col-xs-12">
-            <div class = "thumbnail">
-                <a href="#">
-                    <img src= "https://www.researchgate.net/publication/265016713/figure/fig2/AS:271746121072653@1441800732625/Figure-2-Bandgaps-at-G-point-of-20-structure-calculated-with-LDA-in-black-GW.png" alt="Image" class="img-responsive">
-                    <div class="caption">
-                        <h4>GLLB-SC Bandgaps</h4>
-                        <p>Ivano E. Castelli, et. al</p>
+        {% for l in a_tags %}
+        {% for a_tag in l %}
+        <div class="col-md-4">
+            {% if forloop.parentloop.counter0 %}
+            <a href="{% url a_tag.name %}">{{ a_tag.title }}</a>
+            {% else %}
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h4 class="panel-title">{{ a_tag.title  }}
+                        <span class="pull-right" style="font-size: 14px">
+                            Author {{ forloop.counter }} et al.</span></h4>
+                </div>
+                <div class="panel-body" style="padding: 0px">
+                    <div class="col-md-12" style="padding: 5px">
+                        <a href="{% url a_tag.name %}">
+                            <img src="{{ static_url }}/{{ a_tag.title }}.jpg" width=100% />
+                        </a>
                     </div>
+                </div>
             </div>
-                </a>
+            {% endif %}
         </div>
-        <div class="col-lg-3 col-sm-6 col-xs-12">
-            <a href="#">
-                <img src="http://placehold.it/1000x1100" class="thumbnail img-responsive">
-            </a>
-        </div>
-         <div class="col-lg-3 col-sm-6 col-xs-12">
-            <a href="#">
-                 <img src="http://placehold.it/1000x1100" class="thumbnail img-responsive">
-            </a>
-        </div>
-         <div class="col-lg-3 col-sm-6 col-xs-12">
-            <a href="#">
-                 <img src="http://placehold.it/1000x1100" class="thumbnail img-responsive">
-            </a>
-        </div>
-         <div class="col-lg-3 col-sm-6 col-xs-12">
-            <a href="#">
-                 <img src="http://placehold.it/1000x1100" class="thumbnail img-responsive">
-            </a>
-        </div>
-         <div class="col-lg-3 col-sm-6 col-xs-12">
-            <a href="#">
-                 <img src="http://placehold.it/1000x1100" class="thumbnail img-responsive">
-            </a>
-        </div>
-         <div class="col-lg-3 col-sm-6 col-xs-12">
-            <a href="#">
-                 <img src="http://placehold.it/1000x1100" class="thumbnail img-responsive">
-            </a>
-        </div>
-         <div class="col-lg-3 col-sm-6 col-xs-12">
-            <a href="#">
-                 <img src="http://placehold.it/1000x1100" class="thumbnail img-responsive">
-            </a>
-        </div>
-         <div class="col-lg-3 col-sm-6 col-xs-12">
-            <a href="#">
-                 <img src="http://placehold.it/1000x1100" class="thumbnail img-responsive">
-            </a>
-        </div>
-         <div class="col-lg-3 col-sm-6 col-xs-12">
-            <a href="#">
-                 <img src="http://placehold.it/1000x1100" class="thumbnail img-responsive">
-            </a>
-        </div>
-         <div class="col-lg-3 col-sm-6 col-xs-12">
-            <a href="#">
-                 <img src="http://placehold.it/1000x1100" class="thumbnail img-responsive">
-            </a>
-        </div>
-         <div class="col-lg-3 col-sm-6 col-xs-12">
-            <a href="#">
-                 <img src="http://placehold.it/1000x1100" class="thumbnail img-responsive">
-            </a>
-        </div>
+        {% endfor %}
+        {% endfor %}
       </div>
     </div>
 
