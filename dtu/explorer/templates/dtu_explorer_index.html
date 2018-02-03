@@ -34,23 +34,31 @@ code { display: block; white-space: pre-wrap; }
 
 <div class="container">
     <div class="row">
-        <h2>{{ title }}</h2>
-        {{ provenance|safe }}
+        <div class="col-md-12">
+            <h2>{{ title }}</h2>
+            {{ provenance|safe }}
+        </div>
     </div>
     <div class="row">
-        <code>
-            from mpcontribs.users.dtu.rest.rester import DtuRester
-            mpr = DtuRester()
-            mpr.get_contributions()
-        </code>
+        <div class="col-md-12">
+            <code>
+                from mpcontribs.users.dtu.rest.rester import DtuRester
+                mpr = DtuRester()
+                mpr.get_contributions()
+            </code>
+        </div>
     </div>
     <div class="row">
-        <h3>Overview</h3>
-        <div id="graph"></div>
+        <div class="col-md-12">
+            <h3>Overview</h3>
+            <div id="graph"></div>
+        </div>
     </div>
     <div class="row">
-        <h3>Data</h3>
-        {{ table|safe }}
+        <div class="col-md-12">
+            <h3>Data</h3>
+            {{ table|safe }}
+        </div>
     </div>
 </div>
 
@@ -62,9 +70,10 @@ requirejs(['main'], function() {
             var table = window.tables[window.tables.length-1];
             var graph = document.getElementById('graph');
             var layout = {
-                margin: {t: 0}, barmode: 'stack',
-                xaxis: {type: 'category'},
-                yaxis: {title: 'Energy (eV)'}
+                margin: {t: 0, r: 0, l: 40}, barmode: 'stack',
+                xaxis: {type: 'category', showticklabels: false, ticks: ''},
+                yaxis: {title: 'Energy (eV)'},
+                legend: {x: 0.05, y: 0.95},
             };
             var keys = ['C [eV]', 'ΔE-QP##indirect [eV]', 'ΔE-QP##direct [eV]'];
             var xvals = []; var yvals = {};
