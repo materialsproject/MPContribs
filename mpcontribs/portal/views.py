@@ -31,10 +31,22 @@ def index(request):
                     UserRester = getattr(m, get_user_rester(mod_path_split[-1]))
                     endpoint = request.build_absolute_uri(get_endpoint())
                     r = UserRester(request.user.api_key, endpoint=endpoint)
-                    docs = r.query_contributions(limit=1, projection={'content.title': 1})
+                    docs = r.query_contributions(
+                        limit=1, projection={'content.title': 1, 'content.authors': 1}
+                    )
                     if docs:
                         idx = int(not r.released)
-                        entry['title'] = docs[0]['content'].get('title', entry['project'])
+                        content = docs[0]['content']
+                        entry['title'] = content.get('title', entry['project'])
+                        authors = content.get('authors', 'No authors available.').split(',', 1)
+                        provenance = '<span class="pull-right" style="font-size: 13px;">{}'.format(authors[0])
+                        if len(authors) > 1:
+                            provenance += '''<button class="btn btn-sm btn-link"
+                            data-toggle="tooltip" data-placement="bottom"
+                            title="{}" style="padding: 0px 0px 2px 5px;">et al.</a>'''.format(
+                                    authors[1].strip())
+                        provenance += '</span>'
+                        entry['provenance'] = provenance
                     else:
                         idx = 1 # not released
                         entry['title'] = entry['project']

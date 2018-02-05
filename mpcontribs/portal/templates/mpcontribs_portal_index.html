@@ -74,9 +74,10 @@
             {% else %}
             <div class="panel panel-default">
                 <div class="panel-heading">
-                    <h4 class="panel-title">{{ a_tag.title  }}
-                        <span class="pull-right" style="font-size: 14px">
-                            Author {{ forloop.counter }} et al.</span></h4>
+                    <h4 class="panel-title">
+                        <a href="{% url a_tag.name %}">{{ a_tag.title  }}</a>
+                        {% if "provenance" in a_tag %}{{ a_tag.provenance|safe }}{% endif %}
+                    </h4>
                 </div>
                 <div class="panel-body" style="padding: 0px">
                     <div class="col-md-12" style="padding: 5px">
@@ -92,6 +93,14 @@
         {% endfor %}
       </div>
     </div>
+
+    <script>
+    requirejs(['main'], function() {
+        require(['jquery', 'bootstrap'], function() {
+            $(document).ready(function(){ $('.btn-link').tooltip(); })
+        });
+    });
+    </script>
 
 {% endif %}
 {% endblock %}
