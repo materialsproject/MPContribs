@@ -53,15 +53,9 @@ def index(request):
                 elif mode == 'Show':
                     if selection[fields[2]]:
                         docs = mpr.query_contributions(
-                            criteria={'_id': {
-                                '$in': map(ObjectId, selection[fields[2]])
-                            }}
+                            criteria={'_id': {'$in': selection[fields[2]]}}
                         )
-                        urls = []
-                        for doc in docs:
-                            urls.append(['', ''])
-                            urls[-1][0] = '/'.join([request.path, str(doc['_id'])])
-                            #urls[-1][1] = mpr.get_card(doc['_id'])
+                        urls = [mpr.get_card(doc['_id']) for doc in docs]
                     else:
                         ctx.update({'alert': 'Enter a contribution identifier!'})
 
