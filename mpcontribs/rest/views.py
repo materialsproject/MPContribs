@@ -491,11 +491,14 @@ def get_card(request, cid, db_type=None, mdb=None):
     is_mp_id = mp_id_pattern.match(mpid)
     collection = 'materials' if is_mp_id else 'compositions'
     more = reverse('mpcontribs_explorer_contribution', args=[collection, cid])
+    project = hdata.get('project')
+    if project is not None:
+        landing_page = reverse('mpcontribs_users_{}_explorer_index'.format(project))
     card = '''
     <div class="panel panel-default">
         <div class="panel-heading">
             <h4 class="panel-title">
-                {}
+                <a href="{}" target="_blank">{}</a>
                 <a class="btn-sm btn-default pull-right" role="button"
                    style=" margin-top:-6px;"
                    href="{}" target="_blank">More Info</a>
@@ -527,6 +530,6 @@ def get_card(request, cid, db_type=None, mdb=None):
     }});
     </script>
     '''.format(
-            title, more, provenance, description, data
+            landing_page, title, more, provenance, description, data
     )
     return {"valid_response": True, "response": card}
