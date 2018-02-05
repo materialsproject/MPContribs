@@ -39,6 +39,7 @@ def index(request):
                         )]) for field in fields
                     ) for prefix in ['options', 'selection']
                 )
+
                 mode = request.POST['submit']
                 if mode == 'Find':
                     criteria = {}
@@ -47,12 +48,6 @@ def index(request):
                             criteria.update({
                                 key: {'$in': selection[fields[idx]]}
                             })
-                    #if criteria.keys() == [projection_keys[0]]:
-                    #    # only identifier(s) selected: contribution cards
-                    #    main_contributions = {}
-                    #    for identifier in selection[fields[0]]:
-                    #        main_contributions[identifier] = mpr.get_main_contributions(identifier)
-                    #else:
                     docs = mpr.query_contributions(criteria=criteria)
                     urls = [mpr.get_card(doc['_id']) for doc in docs]
                 elif mode == 'Show':
@@ -69,6 +64,7 @@ def index(request):
                             #urls[-1][1] = mpr.get_card(doc['_id'])
                     else:
                         ctx.update({'alert': 'Enter a contribution identifier!'})
+
     else:
         ctx.update({'alert': 'Please log in!'})
     return render_to_response("mpcontribs_explorer_index.html", locals(), ctx)

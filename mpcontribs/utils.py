@@ -119,7 +119,8 @@ def process_mpfile(path_or_mpfile, target=None, fmt='archieml', ids=None):
                                 s2 = mpfile_single_cmp.sdata[mp_cat_id][name]
                                 if s1 != s2:
                                     if len(s1) != len(s2):
-                                        yield 'different number of sites: {} -> {}!<br>'.format(len(s1), len(s2))
+                                        yield 'different number of sites: {} -> {}!<br>'.format(
+                                                len(s1), len(s2))
                                         structures_ok = False
                                         break
                                     if s1.lattice != s2.lattice:
