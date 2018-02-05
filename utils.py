@@ -31,7 +31,7 @@ def duplicate_check(f):
         for identifier in mpfile.ids:
             if identifier in existing_identifiers:
                 cid = existing_identifiers[identifier]
-                mpfile.insert_id(identifier, cid)
+                mpfile.insert_top(identifier, 'cid', cid)
                 update += 1
 
         print len(mpfile.ids), 'mp-ids to submit.'
