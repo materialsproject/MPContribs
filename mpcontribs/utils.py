@@ -150,7 +150,7 @@ def process_mpfile(path_or_mpfile, target=None, fmt='archieml', ids=None):
                     if target is not None:
                         yield 'submit ... '
                         cid = target.submit_contribution(mpfile_single, fmt) # uses get_string
-                    mpfile_single.insert_id(mp_cat_id, cid)
+                    mpfile_single.insert_top(mp_cat_id, 'cid', cid)
                     cid_shorts.append(cid_short)
 
                     if target is not None:

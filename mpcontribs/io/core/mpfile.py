@@ -160,10 +160,10 @@ class MPFileCore(six.with_metaclass(ABCMeta, object)):
             [self.get_unique_mp_cat_id(mp_cat_id)]
         ))
 
-    def insert_id(self, mp_cat_id, cid):
-        """insert contribution ID for `mp_cat_id` as `cid: <cid>`"""
+    def insert_top(self, mp_cat_id, key, value):
+        """insert value for `mp_cat_id` as `key: <value>` at top"""
         first_sub_key = self.document[mp_cat_id].keys()[0]
-        self.document[mp_cat_id].insert_before(first_sub_key, ('cid', str(cid)))
+        self.document[mp_cat_id].insert_before(first_sub_key, (key, str(value)))
 
     def add_data_table(self, identifier, dataframe, name, plot_options=None):
         """add a datatable to the root-level section
