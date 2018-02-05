@@ -19,7 +19,7 @@ def index(request):
             if os.path.exists(explorer):
                 entry = {
                     'name': get_user_explorer_name(explorer),
-                    'title': os.path.basename(mod_path).replace('_', ' ')
+                    'project': os.path.basename(mod_path)
                 }
                 mod_path_split = mod_path.split(os.sep)
                 rester_path_split = mod_path_split[-4:] + ['rest', 'rester']
@@ -31,7 +31,13 @@ def index(request):
                     UserRester = getattr(m, get_user_rester(mod_path_split[-1]))
                     endpoint = request.build_absolute_uri(get_endpoint())
                     r = UserRester(request.user.api_key, endpoint=endpoint)
-                    idx = int(not r.released)
+                    docs = r.query_contributions(limit=1, projection={'content.title': 1})
+                    if docs:
+                        idx = int(not r.released)
+                        entry['title'] = docs[0]['content'].get('title', entry['project'])
+                    else:
+                        idx = 1 # not released
+                        entry['title'] = entry['project']
                 a_tags[idx].append(entry)
     else:
         ctx.update({'alert': 'Please log in!'})
