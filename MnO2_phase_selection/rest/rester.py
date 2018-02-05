@@ -6,6 +6,8 @@ from mpcontribs.io.core.components import Table
 
 class Mno2PhaseSelectionRester(MPContribsRester):
     """MnO2_phase_selection-specific convenience functions to interact with MPContribs REST interface"""
+    query = {'content.doi': '10.1021/jacs.6b11301'}
+    provenance_keys = ['title', 'authors', 'reference']
 
     def get_contributions(self, phase=None):
         data = []
@@ -16,10 +18,7 @@ class Mno2PhaseSelectionRester(MPContribsRester):
         columns += ['dH (formation)', 'dH (hydration)', 'GS?', 'CIF']
 
         docs = self.query_contributions(
-            criteria={
-                'content.doi': '10.1021/jacs.6b11301',
-                'content.data.Phase': phase_query_key
-            },
+            criteria={'content.data.Phase': phase_query_key},
             projection={
                 '_id': 1, 'mp_cat_id': 1, 'content.data': 1,
                 'content.{}'.format(mp_level01_titles[3]): 1
@@ -49,34 +48,11 @@ class Mno2PhaseSelectionRester(MPContribsRester):
 
         return Table.from_items(data, orient='index', columns=columns)
 
-    def get_provenance(self):
-        docs = self.query_contributions(
-            criteria={
-                'content.doi': '10.1021/jacs.6b11301',
-                'content.authors': {'$exists': 1},
-                'content.title': {'$exists': 1},
-                'content.reference': {'$exists': 1}
-            },
-            projection={
-                '_id': 1, 'mp_cat_id': 1, 'content.authors': 1,
-                'content.reference': 1, 'content.title': 1
-            }
-        )
-        if not docs:
-            raise Exception('No contributions found for MnO2 Phase Selection Explorer!')
-
-        for doc in docs:
-            mpfile = MPFile.from_contribution(doc)
-            mp_id = mpfile.ids[0]
-            return mpfile.hdata[mp_id]
-
     def get_phases(self):
         phases = set()
         docs = self.query_contributions(
-            criteria={
-                'content.doi': '10.1021/jacs.6b11301',
-                'content.data.Phase': {'$exists': 1}
-            }, projection={'_id': 0, 'content.data.Phase': 1}
+            criteria={'content.data.Phase': {'$exists': 1}},
+            projection={'_id': 0, 'content.data.Phase': 1}
         )
         if not docs:
             raise Exception('No contributions found for MnO2 Phase Selection Explorer!')
@@ -85,4 +61,3 @@ class Mno2PhaseSelectionRester(MPContribsRester):
             phases.add(doc['content']['data']['Phase'])
 
         return list(phases)
-
