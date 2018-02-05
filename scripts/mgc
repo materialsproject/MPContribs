@@ -60,7 +60,7 @@ def load(args):
             if not args.skip:
                 from mpcontribs.utils import submit_mpfile
                 site = 'jupyterhub' if not args.prod else ''
-                for msg in submit_mpfile(mpfile, site=site):
+                for msg in submit_mpfile(mpfile, site=site, project=project):
                     print msg
 
 def delete(args):

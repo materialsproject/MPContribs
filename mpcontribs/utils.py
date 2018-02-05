@@ -10,7 +10,7 @@ from importlib import import_module
 from StringIO import StringIO
 sys.stdout.flush()
 
-def submit_mpfile(path_or_mpfile, site='jupyterhub', fmt='archieml'):
+def submit_mpfile(path_or_mpfile, site='jupyterhub', fmt='archieml', project=None):
     test_site = bool('jupyterhub' in site)
     with MPContribsRester(test_site=test_site) as mpr:
         try:
@@ -37,7 +37,7 @@ def submit_mpfile(path_or_mpfile, site='jupyterhub', fmt='archieml'):
                 yield '#'
                 time.sleep(1)
             yield ' NO.</br>'
-            for msg in process_mpfile(path_or_mpfile, target=mpr, fmt=fmt):
+            for msg in process_mpfile(path_or_mpfile, target=mpr, fmt=fmt, project=project):
                 yield msg
         except:
             ex = sys.exc_info()[1]
@@ -54,7 +54,7 @@ def json_compare(d1, d2):
         if a != b:
             raise Exception('{} <====> {}'.format(a.strip(), b.strip()))
 
-def process_mpfile(path_or_mpfile, target=None, fmt='archieml', ids=None):
+def process_mpfile(path_or_mpfile, target=None, fmt='archieml', ids=None, project=None):
     try:
         if isinstance(path_or_mpfile, six.string_types) and \
            not os.path.isfile(path_or_mpfile):
@@ -90,7 +90,8 @@ def process_mpfile(path_or_mpfile, target=None, fmt='archieml', ids=None):
 
                 # always run local "submission" to catch failure before interacting with DB
                 yield 'process #{} ({}) ... '.format(idx, mp_cat_id)
-                doc = cma.submit_contribution(mpfile_single, contributor) # does not use get_string
+                # does not use get_string
+                doc = cma.submit_contribution(mpfile_single, contributor, project=project)
                 cid = doc['_id']
                 cid_short = get_short_object_id(cid)
                 if ids is None or cid_short == ids[1]:
@@ -150,6 +151,8 @@ def process_mpfile(path_or_mpfile, target=None, fmt='archieml', ids=None):
 
                     if target is not None:
                         yield 'submit ... '
+                        if project is not None:
+                            mpfile_single.insert_top(mp_cat_id, 'project', project)
                         cid = target.submit_contribution(mpfile_single, fmt) # uses get_string
                     mpfile_single.insert_top(mp_cat_id, 'cid', cid)
                     cid_shorts.append(cid_short)
