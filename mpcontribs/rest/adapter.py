@@ -1,4 +1,4 @@
-import bson
+import bson, six
 from mpcontribs.config import mp_level01_titles, mp_id_pattern
 from mpcontribs.io.core.utils import get_short_object_id
 from datetime import datetime
@@ -58,8 +58,11 @@ class ContributionMongoAdapter(object):
         elif collection == 'contributions':
             props = [k for k,v in projection.iteritems() if v] + ['collaborators']
         projection = dict((p, 1) for p in props) if props else None
-        if '_id' in crit and not isinstance(crit['_id'], bson.ObjectId):
-            crit['_id'] = bson.ObjectId(crit['_id'])
+        if '_id' in crit:
+            if isinstance(crit['_id'], dict) and '$in' in crit['_id']:
+                crit['_id']['$in'] = map(bson.ObjectId, crit['_id']['$in'])
+            elif isinstance(crit['_id'], six.string_types):
+                crit['_id'] = bson.ObjectId(crit['_id'])
         return coll.find(crit, projection=projection, limit=limit)
 
     def delete_contributions(self, crit):
