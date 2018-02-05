@@ -130,7 +130,6 @@ def submit_contribution(request, db_type=None, mdb=None):
     """
     if not request.user.groups.filter(name='contrib').exists():
         raise PermissionDenied("MPFile submission open only to contributors.")
-    project = request.user.institution # institution is required field in User
     contributor = '{} {} <{}>'.format(
         request.user.first_name, request.user.last_name, request.user.email)
     try:
@@ -140,6 +139,8 @@ def submit_contribution(request, db_type=None, mdb=None):
         mpfile = MPFile.from_string(request.POST['mpfile'])
         if len(mpfile.document) > 1:
             raise ValueError('Invalid MPFile: Only single contributions allowed')
+        # institution is required field in User
+        project = mpfile.document[mpfile.ids[0]].get('project', request.user.institution)
         cid = mdb.contrib_ad.submit_contribution(mpfile, contributor, project=project)
     except Exception as ex:
         raise ValueError('"REST Error: "{}"'.format(str(ex)))

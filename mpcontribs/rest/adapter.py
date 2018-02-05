@@ -87,7 +87,7 @@ class ContributionMongoAdapter(object):
                     cid_short, contributor_email, collaborators, cid_short))
         # prepare document
         doc = { 'collaborators': collaborators, 'mp_cat_id': mp_cat_id, 'content': data }
-        if project is not None: doc['project'] = project
+        doc['project'] = data.get('project', 'other') if project is None else project
         if self.db is None:
             doc['_id'] = cid
             return doc
