@@ -124,10 +124,10 @@ def process_mpfile(path_or_mpfile, target=None, fmt='archieml', ids=None, projec
                                                 len(s1), len(s2))
                                         structures_ok = False
                                         break
-                                    if s1.lattice != s2.lattice:
-                                        yield 'lattices different!<br>'
-                                        structures_ok = False
-                                        break
+                                    #if s1.lattice != s2.lattice:
+                                    #    yield 'lattices different!<br>'
+                                    #    structures_ok = False
+                                    #    break
                                     for site in s1:
                                         if site not in s2:
                                             found_inconsistency = True
