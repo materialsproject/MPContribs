@@ -52,7 +52,7 @@ code { display: block; white-space: pre-wrap; }
     <div class="row">
         <div class="col-md-12">
             <h3>Overview</h3>
-            <div id="graph"></div>
+            <div id="graph" style="width: 100%;"></div>
         </div>
     </div>
     <div class="row">
@@ -104,6 +104,9 @@ requirejs(['main'], function() {
                 data.push(d);
             }
             Plotly.plot(graph, data, layout);
+            window.onresize = function() {
+                Plotly.Plots.resize(graph);
+            };
         });
     });
 });
