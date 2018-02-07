@@ -84,7 +84,7 @@ def get_backgrid_table(df):
                             composition = get_composition_from_string(cell)
                             composition = pmg_util.string.unicodeify(composition)
                             table['rows'][row_index][col] = composition
-                        except CompositionError:
+                        except (CompositionError, ValueError):
                             try:
                                 val(cell)
                                 is_url_column = True
@@ -146,6 +146,7 @@ def render_dataframe(df, webapp=False):
           if (table['columns'][idx]['cell'] == 'uri') {
               table['columns'][idx]['formatter'] = _.extend({}, Backgrid.CellFormatter.prototype, {
                   fromRaw: function (rawValue, model) {
+                      if (typeof rawValue === "undefined") { return ''; }
                       var identifier = rawValue.split('/').pop().split('.')[0];
                       if (objectid_regex.test(identifier)) {
                           return identifier.slice(-7);
