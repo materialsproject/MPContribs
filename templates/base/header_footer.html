@@ -12,13 +12,14 @@
     <link rel="stylesheet" type="text/css" href='{% static "nucleus.css" charset="utf-8" %}'/>
     <link rel="stylesheet" type="text/css" href='{% static "font-awesome-4.7.0/css/font-awesome.min.css" %}'/>
     <style>
-    @font-face {font-family: "Symbola";
-        src: url("//db.onlinewebfonts.com/t/bd95c919d5566390c0565bea43f95495.eot");
-        src: url("//db.onlinewebfonts.com/t/bd95c919d5566390c0565bea43f95495.eot?#iefix") format("embedded-opentype"),
-        url("//db.onlinewebfonts.com/t/bd95c919d5566390c0565bea43f95495.woff2") format("woff2"),
-        url("//db.onlinewebfonts.com/t/bd95c919d5566390c0565bea43f95495.woff") format("woff"),
-        url("//db.onlinewebfonts.com/t/bd95c919d5566390c0565bea43f95495.ttf") format("truetype"),
-        url("//db.onlinewebfonts.com/t/bd95c919d5566390c0565bea43f95495.svg#Symbola") format("svg");
+    @font-face {
+        font-family: 'Symbola';
+        src:url('{% static "Symbola.ttf.woff" %}') format('woff'),
+            url('{% static "Symbola.ttf.svg#Symbola" %}') format('svg'),
+            url('{% static "Symbola.ttf.eot" %}'),
+            url('{% static "Symbola.ttf.eot?#iefix" %}') format('embedded-opentype'); 
+        font-weight: normal;
+        font-style: normal;
     }
     </style>
     {% block extra_css %}
