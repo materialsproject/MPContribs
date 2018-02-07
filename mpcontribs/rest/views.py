@@ -458,9 +458,9 @@ def get_card(request, cid, db_type=None, mdb=None):
     provenance = '<h5 style="margin: 5px;">{}'.format(authors[0])
     if len(authors) > 1:
         provenance += '''<button class="btn btn-sm btn-link"
-        data-toggle="tooltip" data-placement="bottom"
-        title="{}" style="padding: 0px 0px 0px 3px;"
-        >et al.</a>'''.format(authors[1].strip())
+        data-toggle="tooltip" data-placement="bottom" data-html="true"
+        data-container="body" title="{}" style="padding: 0px 0px 0px 3px;"
+        >et al.</a>'''.format(authors[1].strip().replace(', ', '<br/>'))
     provenance += '</h5>'
     urls = hdata.get('urls', {}).values()
     provenance += ''.join(['''<a href={}
