@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-import sys, os, argparse
+import sys, os, argparse, six
 from importlib import import_module
 
 def mprester(f):
@@ -53,11 +53,13 @@ def load(args):
                 return
             test_site = not args.prod
             run(mpfile, test_site=test_site)
-            #import json
-            #mpfile_cmp = MPFile.from_string(mpfile.get_string())
-            #json.dump(mpfile.document, open('f1.json', 'w'), indent=2)
-            #json.dump(mpfile_cmp.document, open('f2.json', 'w'), indent=2)
-            if not args.skip:
+            if args.skip:
+                print 'process MPFile only, no DB submission'
+                from mpcontribs.utils import process_mpfile
+                for msg in process_mpfile(mpfile):
+                    if isinstance(msg, six.string_types):
+                        print msg
+            else:
                 from mpcontribs.utils import submit_mpfile
                 site = 'jupyterhub' if not args.prod else ''
                 for msg in submit_mpfile(mpfile, site=site, project=project):
