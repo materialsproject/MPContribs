@@ -48,7 +48,7 @@ def index(request):
                             criteria.update({
                                 key: {'$in': selection[fields[idx]]}
                             })
-                    docs = mpr.query_contributions(criteria=criteria)
+                    docs = mpr.query_contributions(criteria=criteria, limit=10)
                     urls = [mpr.get_card(doc['_id']) for doc in docs]
                 elif mode == 'Show':
                     if selection[fields[2]]:
