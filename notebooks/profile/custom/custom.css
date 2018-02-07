@@ -3,11 +3,12 @@
 @import url("css/backgrid-paginator.css");
 @import url("css/backgrid-filter.css");
 @import url("css/backgrid-grouped-columns.css");
-@font-face {font-family: "Symbola";
-    src: url("//db.onlinewebfonts.com/t/bd95c919d5566390c0565bea43f95495.eot");
-    src: url("//db.onlinewebfonts.com/t/bd95c919d5566390c0565bea43f95495.eot?#iefix") format("embedded-opentype"),
-    url("//db.onlinewebfonts.com/t/bd95c919d5566390c0565bea43f95495.woff2") format("woff2"),
-    url("//db.onlinewebfonts.com/t/bd95c919d5566390c0565bea43f95495.woff") format("woff"),
-    url("//db.onlinewebfonts.com/t/bd95c919d5566390c0565bea43f95495.ttf") format("truetype"),
-    url("//db.onlinewebfonts.com/t/bd95c919d5566390c0565bea43f95495.svg#Symbola") format("svg");
+@font-face {
+    font-family: 'Symbola';
+    src:url('fonts/Symbola.ttf.woff') format('woff'),
+        url('fonts/Symbola.ttf.svg#Symbola') format('svg'),
+        url('fonts/Symbola.ttf.eot'),
+        url('fonts/Symbola.ttf.eot?#iefix') format('embedded-opentype'); 
+    font-weight: normal;
+    font-style: normal;
 }
