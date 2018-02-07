@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """This module provides the views for the rest interface."""
 
 from __future__ import unicode_literals
@@ -531,5 +532,5 @@ def get_card(request, cid, db_type=None, mdb=None):
     </script>
     '''.format(
             landing_page, title, more, provenance, description, data
-    )
-    return {"valid_response": True, "response": card}
+    ).replace('\n', '')
+    return {"valid_response": True, "response": ' '.join(card.split())}
