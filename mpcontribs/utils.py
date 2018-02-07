@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from __future__ import unicode_literals, print_function
 import os, re, pwd, six, time, json, sys, pkgutil
 from mpcontribs.io.core.recdict import RecursiveDict
@@ -42,7 +43,7 @@ def submit_mpfile(path_or_mpfile, site='jupyterhub', fmt='archieml', project=Non
         except:
             ex = sys.exc_info()[1]
             yield 'FAILED.</br>'
-            yield str(ex).replace('"',"'")
+            yield unicode(ex).replace('"',"'")
             return
 
 def json_compare(d1, d2):
@@ -222,5 +223,5 @@ def process_mpfile(path_or_mpfile, target=None, fmt='archieml', ids=None, projec
     except:
         ex = sys.exc_info()[1]
         yield 'FAILED.</br>'
-        yield str(ex).replace('"',"'")
+        yield unicode(ex).replace('"',"'")
         return
