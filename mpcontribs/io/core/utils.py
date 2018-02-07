@@ -80,7 +80,7 @@ def strip_converter(text):
         return numpy.nan
     try:
         return str(Decimal(clean_value(text, max_dgts=6)))
-    except ValueError:
+    except:
         try:
             return text.strip()
         except AttributeError:
