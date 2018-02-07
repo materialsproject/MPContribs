@@ -1,28 +1,23 @@
+# -*- coding: utf-8 -*-
+from __future__ import unicode_literals
 import json, os
 from mpcontribs.io.archieml.mpfile import MPFile
 from mpcontribs.io.core.recdict import RecursiveDict
+from mpcontribs.io.core.utils import clean_value
+from mpcontribs.users.utils import duplicate_check
 from mpcontribs.config import mp_level01_titles
-from mpcontribs.users.MnO2_phase_selection.rest.rester import Mno2PhaseSelectionRester
 
-def run(mpfile, include_cifs=True, nmax=None, dup_check_test_site=True):
+@duplicate_check
+def run(mpfile, include_cifs=True, **kwargs):
 
     from pymatgen.core.composition import Composition
     from pymatgen.core.structure import Structure
 
     data_input = mpfile.document[mp_level01_titles[0]].pop('input')
-    phase_names = mpfile.hdata.general['info']['phase_names']
+    phase_names = mpfile.hdata.general['phase_names']
     dir_path = os.path.dirname(os.path.realpath(__file__))
     for k in data_input.keys():
         data_input[k] = os.path.join(dir_path, data_input[k])
-
-    doi = mpfile.hdata.general['doi']
-    existing_mpids = {}
-    for b in [False, True]:
-        with Mno2PhaseSelectionRester(test_site=b) as mpr:
-            for doc in mpr.query_contributions(criteria={'content.doi': doi}):
-                existing_mpids[doc['mp_cat_id']] = doc['_id']
-        if not dup_check_test_site:
-            break
 
     with open(data_input['formatted_entries'], "r") as fin:
         mp_contrib_phases = json.loads(fin.read())
@@ -46,22 +41,15 @@ def run(mpfile, include_cifs=True, nmax=None, dup_check_test_site=True):
                 for mpid in mpfile.ids:
                     formula = mpfile.hdata[mpid]['data']['Formula']
                     if c.almost_equals(Composition(formula)):
-                        if nmax is not None and mpid in existing_mpids:
-                            mpfile.document.pop(mpid) # skip duplicates
-                            break
                         try:
-                            mpfile.add_structure(s, identifier=mpid)
+                            #mpfile.add_structure(s, identifier=mpid)
                             print formula, 'added to', mpid
                         except Exception as ex:
                             print 'tried to add structure to', mpid, 'but', str(ex)
-                        if mpid in existing_mpids:
-                            cid = existing_mpids[mpid]
-                            mpfile.insert_id(mpid, cid)
-                            print cid, 'inserted to update', mpid
                         break
 
     # "phase": 'postspinel-NaMn2O4', "Formula": 'Na0.5MnO2',
-    # "dHf (eV/mol)": -1.415, "dHh (eV/mol)": '--', "Ground state?": 'Y',
+    # "ΔH (eV/mol)": -1.415, "ΔHₕ (eV/mol)": '', "Ground state?": 'Y',
 
     ################################################################################################################
     # Get mp-ids for all entries based on matching the VASP directory path names
@@ -106,9 +94,6 @@ def run(mpfile, include_cifs=True, nmax=None, dup_check_test_site=True):
     print 'add structures with mp-ids to contribution ...'
 
     no_id_dict = {}
-    errors_file = os.path.join(os.path.dirname(__file__), 'errors.json')
-    with open(errors_file, 'r') as f:
-        errors = json.load(f)
 
     for framework, fdat in mp_contrib_phases.items():
         for phase in fdat:
@@ -117,46 +102,27 @@ def run(mpfile, include_cifs=True, nmax=None, dup_check_test_site=True):
             d["Formula"] = phase[0]
             try:
                 float(phase[1])
-                d["dHf"] = '{} eV/mol'.format(phase[1])
+                d["ΔH"] = clean_value(phase[1], 'eV/mol')
             except:
-                d["dHf"] = '--'
+                d["ΔH"] = 'N/A eV/mol'
             try:
                 float(phase[3])
-                d["dHh"] = '{} eV/mol'.format(phase[3])
+                d["ΔHₕ"] = clean_value(phase[3], 'eV/mol')
             except:
-                d["dHh"] = '--'
-            d["GS"] = phase[2]
+                d["ΔHₕ"] = 'N/A eV/mol'
+            d["GS"] = 'Yes' if phase[2] == 'Y' else 'No'
             if len(phase[6]) == 0:
+                print 'no id for', d['Formula'], d['Phase']
                 no_id_dict[phase[4].replace('all_states/', '')] = d
             for mpid in phase[6]:
-                if nmax is not None:
-                    if len(mpfile.ids) >= nmax-1:
-                        break
-                    elif mpid in existing_mpids:
-                        continue # skip duplicates
-                mpfile.add_hierarchical_data(RecursiveDict({'data': d}), identifier=mpid)
-                print 'added', mpid
-                if mpid in existing_mpids:
-                    cid = existing_mpids[mpid]
-                    mpfile.insert_id(mpid, cid)
-                    print cid, 'inserted to update', mpid
                 if include_cifs:
                     try:
-                        mpfile.add_structure(phase[5], identifier=mpid)
+                        #mpfile.add_structure(phase[5], identifier=mpid)
                         print framework, phase[0], 'added to', mpid
                     except ValueError as ex:
                         print 'tried to add structure to', mpid, 'but', str(ex)
-                        errors[mpid] = str(ex)
-
-    with open(errors_file, 'w') as f:
-        json.dump(errors, f)
-
-    print """
-    DONE.
-    {} structures to submit.
-    {} structures do not have mp-ids.
-    {} structures with mp-ids have errors.
-    """.format(len(mpfile.ids), len(no_id_dict), len(errors))
+                mpfile.add_hierarchical_data(RecursiveDict({'data': d}), identifier=mpid)
+                print 'added', mpid
 
 if __name__ == '__main__':
     print run()

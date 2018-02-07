@@ -35,19 +35,37 @@ code { display: block; white-space: pre-wrap; }
 </style>
 
 <div class="container">
+    <a href="{% url 'mpcontribs_portal_index' %}">&laquo; Portal</a>
     <div class="row">
-        <h2>{{ title }}</h2>
-        {{ provenance|safe }}
+        <div class="col-md-12">
+            <h2>{{ title }}</h2>
+            {{ provenance|safe }}
+        </div>
     </div>
     <div class="row">
-        <div id="graph"></div>
+        <div class="col-md-12">
+            <code>
+                from mpcontribs.users.MnO2_phase_selection.rest.rester import Mno2PhaseSelectionRester
+                mpr = Mno2PhaseSelectionRester()
+                mpr.get_contributions() # phase kwarg see mpr.get_phases()
+            </code>
+        </div>
     </div>
-    {% for phase, table in tables.items %}
     <div class="row">
-        <h3>{{ phase|safe }}</h3>
-        {{ table|safe }}
+        <div class="col-md-12">
+            <h3>Overview</h3>
+            <div id="graph" style="width: 100%;"></div>
+        </div>
     </div>
-    {% endfor %}
+    <div class="row">
+        <div class="col-md-12">
+            <h3>Data</h3>
+            {% for phase, table in tables.items %}
+            <h4>{{ phase|safe }}</h4>
+            {{ table|safe }}
+            {% endfor %}
+        </div>
+    </div>
 </div>
 
 <script>
@@ -62,18 +80,21 @@ requirejs(['main'], function() {
                     var mpid_split = row['mp-id'].split('/');
                     var mpid = mpid_split[mpid_split.length-1];
                     xvals.push(mpid);
-                    var value = parseFloat(row['dH (formation)'].split(' ')[0]);
+                    var value = parseFloat(row['ΔH [eV/mol]'].split(' ')[0]);
                     yvals.push(value);
                 }
             }
             var graph = document.getElementById('graph');
             var layout = {
-                margin: {t: 0},
-                xaxis: {title: 'mp-id', type: 'category'},
-                yaxis: {title: 'Formation Enthalpy (eV/mol)'}
+                margin: {l: 40, t: 0, b: 25, r: 0},
+                xaxis: {type: 'category', showticklabels: false, ticks: ''},
+                yaxis: {title: 'Formation Enthalpy [eV/mol]'}
             };
             var data = [{x: xvals, y: yvals, type: 'bar'}];
             Plotly.plot(graph, data, layout);
+            window.onresize = function() {
+                Plotly.Plots.resize(graph);
+            };
         });
     });
 });

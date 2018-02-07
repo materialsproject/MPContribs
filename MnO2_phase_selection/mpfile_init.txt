@@ -1,21 +1,26 @@
-title: Framework stabilization in MnO2-derived phases by alkali intercalation and hydration
-authors: Daniil Kitchaev, Stephen Dacek, Wenhao Sun, Gerbrand Ceder
-reference: J. Am. Chem. Soc. (2017)
-doi: 10.1021/jacs.6b11301
+title: MnO₂ Phase Selection
+authors: D. Kitchaev, S. Dacek, W. Sun, G. Ceder
+description:
+Framework stabilization in MnO₂-derived phases by alkali
+intercalation and hydration. The approach for DFT is SCAN-metaGGA
+using PAW.52 pseudopotentials in VASP 5.3.5. Convergence is 2 *
+10⁻⁷ eV/atom on energy and 0.02 A⁻¹ forces on all atoms. A k-mesh
+with 25 A⁻¹ discretization has been used and a 0.337 eV/e
+correction on Mn oxidation applied based on fit to oxide
+formation energy. ΔH is the formation enthalpy w.r.t pyrolusite
+(beta) MnO₂ and standard state references for H₂, Li, Na, K, Mg,
+Ca (eV/mol MnO₂). ΔHₕ is the enthalpy of hydration w.r.t the
+unhydrated phase and liquid water at standard state (eV/mol
+MnO₂). GS indicates whether this phase is stable versus the
+AₓMnO₂ composition line (Y*: phase only stable in hydrated
+configuration). Phases are referred to by their mineral names
+(see phase_names).
+:end
 
-{methods}
-DFT-approach: SCAN-metaGGA using PAW.52 pseudopotentials in VASP 5.3.5
-convergence: 2 * 10^-7 eV/atom on energy; 0.02 A^-1 forces on all atoms
-k-mesh: 25 A^-1 discretization
-corrections: 0.337 eV/e correction on Mn oxidation applied based on fit to oxide formation energy
+{urls}
+JACS: https://doi.org/10.1021/jacs.6b11301
 
-{info}
-dHf: Formation enthalpy w.r.t pyrolusite (beta) MnO2 and standard state references for H2, Li, Na, K, Mg, Ca (eV/mol MnO2)
-dHh: Enthalpy of hydration w.r.t the unhydrated phase and liquid water at standard state (eV/mol MnO2)
-AxMnO2-ground-state: Is this phase stable versus the AxMnO2 composition line? Y*: phase only stable in hydrated configuration
-phases: Phases are referred to by their mineral names (see info.phase_names)
-
-{info.phase_names}
+{phase_names}
 Pyrolusite: beta
 Intergrowth: gamma
 Ramsdellite: ramsdellite
@@ -34,20 +39,20 @@ mpid_new: data/MPComplete_MnO2_ids.json
 {mp-18767.data}
 Phase: o-LiMnO2
 Formula: LiMnO2
-dHf: -3.064 eV/mol
-dHh: --
-GS: Y
+ΔH: -3.064 eV/mol
+ΔHₕ: N/A eV/mol
+GS: Yes
 
 {mp-566638.data}
 Phase: KMnO2
 Formula: KMnO2
-dHf: -2.222 eV/mol
-dHh: --
-GS: Y
+ΔH: -2.222 eV/mol
+ΔHₕ: N/A eV/mol
+GS: Yes
 
 {mp-18844.data}
 Phase: marokite-CaMn2O4
 Formula: Ca0.5MnO2
-dHf: -2.941 eV/mol
-dHh: --
-GS: Y
+ΔH: -2.941 eV/mol
+ΔHₕ: N/A eV/mol
+GS: Yes

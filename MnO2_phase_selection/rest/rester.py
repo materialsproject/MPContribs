@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from __future__ import division, unicode_literals
 from mpcontribs.rest.rester import MPContribsRester
 from mpcontribs.io.archieml.mpfile import MPFile
@@ -6,8 +7,9 @@ from mpcontribs.io.core.components import Table
 
 class Mno2PhaseSelectionRester(MPContribsRester):
     """MnO2_phase_selection-specific convenience functions to interact with MPContribs REST interface"""
-    query = {'content.doi': '10.1021/jacs.6b11301'}
-    provenance_keys = ['title', 'authors', 'reference']
+    query = {'content.urls.JACS': 'https://doi.org/10.1021/jacs.6b11301'}
+    provenance_keys = ['title', 'authors', 'description', 'urls']
+    released = True
 
     def get_contributions(self, phase=None):
         data = []
@@ -15,7 +17,7 @@ class Mno2PhaseSelectionRester(MPContribsRester):
         columns = ['mp-id', 'contribution', 'formula']
         if phase is None:
             columns.append('phase')
-        columns += ['dH (formation)', 'dH (hydration)', 'GS?', 'CIF']
+        columns += ['ΔH', 'ΔHₕ', 'GS?', 'CIF']
 
         docs = self.query_contributions(
             criteria={'content.data.Phase': phase_query_key},
@@ -32,10 +34,10 @@ class Mno2PhaseSelectionRester(MPContribsRester):
             mp_id = mpfile.ids[0]
             contrib = mpfile.hdata[mp_id]['data']
             cid_url = self.get_cid_url(doc)
-            row = [mp_id, cid_url, contrib['Formula']]
+            row = [mp_id, cid_url, contrib['Formula'].replace(' ', '')]
             if phase is None:
                 row.append(contrib['Phase'])
-            row += [contrib['dHf'], contrib['dHh'], contrib['GS']]
+            row += [contrib['ΔH'], contrib['ΔHₕ'], contrib['GS']]
             cif_url = ''
             structures = mpfile.sdata.get(mp_id)
             if structures:
