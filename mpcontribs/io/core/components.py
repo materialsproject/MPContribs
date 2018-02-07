@@ -3,7 +3,7 @@ import uuid, json
 from pandas import DataFrame
 from mpcontribs.config import mp_level01_titles, mp_id_pattern, object_id_pattern
 from recdict import RecursiveDict
-from utils import disable_ipython_scrollbar
+from utils import disable_ipython_scrollbar, clean_value
 from IPython.display import display_html, display, HTML, Image
 
 class Tree(RecursiveDict):
@@ -182,9 +182,9 @@ def render_dataframe(df, webapp=False):
 class Table(DataFrame):
 
     def to_dict(self):
-        rdct = super(Table, self).to_dict(
-            orient='split', into=RecursiveDict
-        )
+        for col in self.columns:
+            self[col] = self[col].apply(lambda x: clean_value(x, max_dgts=6))
+        rdct = super(Table, self).to_dict(orient='split', into=RecursiveDict)
         rdct.pop('index')
         rdct["@module"] = self.__class__.__module__
         rdct["@class"] = self.__class__.__name__
