@@ -17,11 +17,13 @@ def index(request):
         with AlsBeamlineRester(API_KEY, endpoint=ENDPOINT) as mpr:
             try:
                 prov = mpr.get_provenance()
-                title = prov.pop('title')
-                provenance = render_dict(prov, webapp=True)
-                table = render_dataframe(mpr.get_contributions(), webapp=True)
+                ctx['title'] = prov.pop('title')
+                ctx['provenance'] = render_dict(prov, webapp=True)
+                ctx['table'] = render_dataframe(mpr.get_contributions(), webapp=True)
+                for typ in ['XAS', 'XMCD']:
+                    ctx[typ] = render_plot(mpr.get_all_spectra(typ), webapp=True)
             except Exception as ex:
                 ctx.update({'alert': str(ex)})
     else:
         ctx.update({'alert': 'Please log in!'})
-    return render_to_response("als_beamline_explorer_index.html", locals(), ctx)
+    return render_to_response("als_beamline_explorer_index.html", ctx)
