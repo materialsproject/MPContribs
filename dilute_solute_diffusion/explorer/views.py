@@ -2,12 +2,14 @@
 """This module provides the views for DiluteSoluteDiffusion's explorer interface."""
 
 from __future__ import division, unicode_literals
+from bson.json_util import dumps
 from django.shortcuts import render_to_response
 from django.template import RequestContext
 from mpcontribs.rest.views import get_endpoint
 from mpcontribs.io.core.components import render_dataframe, render_plot
 from mpcontribs.io.core.recdict import render_dict
 from mpcontribs.io.core.components import get_backgrid_table
+from mpcontribs.io.core.utils import get_short_object_id
 from monty.json import jsanitize
 
 def index(request):
@@ -19,17 +21,18 @@ def index(request):
         with DiluteSoluteDiffusionRester(API_KEY, endpoint=ENDPOINT) as mpr:
             try:
                 prov = mpr.get_provenance()
-                title = prov.pop('title')
-                provenance = render_dict(prov, webapp=True)
+                ctx['title'] = prov.pop('title')
+                ctx['provenance'] = render_dict(prov, webapp=True)
                 ranges, contribs = {}, []
+
                 for host in mpr.get_hosts():
-                    contribs.append({})
+                    contrib = {}
                     df = mpr.get_contributions(host)
-                    contribs[-1]['table'] = get_backgrid_table(df)
-                    contribs[-1]['formula'] = host
-                    contribs[-1]['cid'] = 'test'
-                    contribs[-1]['short_cid'] = 'test'
-                    contribs[-1]['mp_id'] = 'test'
+                    contrib['table'] = render_dataframe(df, webapp=True)
+                    contrib['formula'] = host
+                    contrib.update(mpr.get_table_info(host))
+                    contrib['short_cid'] = get_short_object_id(contrib['cid'])
+                    contribs.append(contrib)
 
                     for col in df.columns:
                         if col == 'El.':
@@ -45,10 +48,11 @@ def index(request):
                                 ranges[col][0] = low
                             if upp > ranges[col][1]:
                                 ranges[col][1] = upp
-                ranges = jsanitize(ranges)
-                #contribs = jsanitize(contribs)
+
+                ctx['ranges'] = dumps(ranges)
+                ctx['contribs'] = contribs
             except Exception as ex:
-                ctx.update({'alert': str(ex)})
+                ctx['alert'] = str(ex)
     else:
-        ctx.update({'alert': 'Please log in!'})
-    return render_to_response("dilute_solute_diffusion_explorer_index.html", locals(), ctx)
+        ctx['alert'] = 'Please log in!'
+    return render_to_response("dilute_solute_diffusion_explorer_index.html", ctx)

@@ -38,6 +38,20 @@ class DiluteSoluteDiffusionRester(MPContribsRester):
         table.reset_index(drop=True, inplace=True)
         return table
 
+    def get_table_info(self, host):
+        hosts = self.get_hosts()
+        if host not in hosts:
+            raise Exception('{} not a host: {}'.format(host, hosts))
+
+        projection = {'_id': 1, 'mp_cat_id': 1}
+        docs = self.query_contributions(
+            criteria={'content.data.formula': host}, projection=projection
+        )
+        if not docs:
+            raise Exception('No contributions found for DiluteSoluteDiffusion Explorer!')
+
+        return {'cid': docs[0]['_id'], 'mp_id': docs[0]['mp_cat_id']}
+
     def get_hosts(self):
         hosts = set()
         docs = self.query_contributions(
