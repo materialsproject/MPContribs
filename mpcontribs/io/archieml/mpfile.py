@@ -16,9 +16,11 @@ class MPFile(MPFileCore):
         # use archieml-python parse to import data
         rdct = RecursiveDict(archieml.loads(data))
         rdct.rec_update()
+
         # post-process internal representation of file contents
         for key in rdct.keys():
             is_general, root_key = normalize_root_level(key)
+
             if is_general:
                 # make part of shared (meta-)data, i.e. nest under `general` at
                 # the beginning of the MPFile
@@ -27,41 +29,47 @@ class MPFile(MPFileCore):
                         rdct.keys()[0],
                         (mp_level01_titles[0], RecursiveDict())
                     )
-                rdct.rec_update(nest_dict(
-                    rdct.pop(key), [ mp_level01_titles[0], root_key ]
-                ))
-            else:
-                # normalize identifier key (pop & insert)
-                # using rec_update since we're looping over all entries
-                # also: support data in bare tables (marked-up only by
-                #       root-level identifier) by nesting under 'data'
-                value = rdct.pop(key)
-                keys = [ root_key ]
-                if isinstance(value, list): keys.append('table')
-                rdct.rec_update(nest_dict(value, keys))
-                # Note: CSV section is marked with 'data ' prefix during iterate()
-                for k,v in rdct[root_key].iterate():
-                    if isinstance(k, six.string_types) and \
-                       k.startswith(mp_level01_titles[1]):
-                        # k = table name (incl. data prefix)
-                        # v = csv string from ArchieML free-form arrays
-                        table_name = k[len(mp_level01_titles[1]+'_'):]
-                        pd_obj = read_csv(v)
-                        rdct[root_key].pop(table_name)
-                        rdct[root_key].rec_update(nest_dict(
-                            pd_obj.to_dict(), [k]
-                        ))
-                        rdct[root_key].insert_default_plot_options(pd_obj, k)
-                # convert CIF strings into pymatgen structures
-                if mp_level01_titles[3] in rdct[root_key]:
-                    from pymatgen.io.cif import CifParser
-                    for name in rdct[root_key][mp_level01_titles[3]].keys():
-                        cif = rdct[root_key][mp_level01_titles[3]].pop(name)
-                        parser = CifParser.from_string(cif)
-                        structure = parser.get_structures(primitive=False)[0]
-                        rdct[root_key][mp_level01_titles[3]].rec_update(nest_dict(
-                            structure.as_dict(), [name]
-                        ))
+
+            # normalize identifier key (pop & insert)
+            # using rec_update since we're looping over all entries
+            # also: support data in bare tables (marked-up only by
+            #       root-level identifier) by nesting under 'data'
+            value = rdct.pop(key)
+            keys = [mp_level01_titles[0]] if is_general else []
+            keys.append(root_key)
+            if isinstance(value, list):
+                keys.append('table')
+            rdct.rec_update(nest_dict(value, keys))
+
+            # reference to section to iterate or parse as CIF
+            section = rdct[mp_level01_titles[0]][root_key] \
+                    if is_general else rdct[root_key]
+
+            # Note: CSV section is marked with 'data ' prefix during iterate()
+            for k,v in section.iterate():
+                if isinstance(k, six.string_types) and \
+                   k.startswith(mp_level01_titles[1]):
+                    # k = table name (incl. data prefix)
+                    # v = csv string from ArchieML free-form arrays
+                    table_name = k[len(mp_level01_titles[1]+'_'):]
+                    pd_obj = read_csv(v)
+                    section.pop(table_name)
+                    section.rec_update(nest_dict(
+                        pd_obj.to_dict(), [k]
+                    ))
+                    section.insert_default_plot_options(pd_obj, k)
+
+            # convert CIF strings into pymatgen structures
+            if mp_level01_titles[3] in section:
+                from pymatgen.io.cif import CifParser
+                for name in section[mp_level01_titles[3]].keys():
+                    cif = section[mp_level01_titles[3]].pop(name)
+                    parser = CifParser.from_string(cif)
+                    structure = parser.get_structures(primitive=False)[0]
+                    section[mp_level01_titles[3]].rec_update(nest_dict(
+                        structure.as_dict(), [name]
+                    ))
+
         return MPFile.from_dict(rdct)
 
     def get_string(self):

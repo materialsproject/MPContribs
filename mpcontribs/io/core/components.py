@@ -18,10 +18,14 @@ class Tree(RecursiveDict):
 class HierarchicalData(RecursiveDict):
     """class to hold and display all hierarchical data in MPFile"""
     def __init__(self, document):
-        super(HierarchicalData, self).__init__(
-            (identifier, Tree(content))
-            for identifier, content in document.iteritems()
-        )
+        super(HierarchicalData, self).__init__()
+        if mp_level01_titles[0] in document:
+            self[mp_level01_titles[0]] = RecursiveDict()
+            for key, content in document[mp_level01_titles[0]].iteritems():
+                self[mp_level01_titles[0]][key] = Tree(content)
+        for identifier, content in document.iteritems():
+            if identifier != mp_level01_titles[0]:
+                self[identifier] = Tree(content)
 
     @property
     def general(self):
@@ -225,7 +229,11 @@ class TabularData(RecursiveDict):
         super(TabularData, self).__init__(
             (identifier, Tables(content))
             for identifier, content in document.iteritems()
+            if identifier != mp_level01_titles[0]
         )
+        if mp_level01_titles[0] in document:
+            for key, content in document[mp_level01_titles[0]].iteritems():
+                self[key] = Tables(content)
 
     def __str__(self):
         return 'mp-ids: {}'.format(' '.join(self.keys()))
@@ -233,7 +241,7 @@ class TabularData(RecursiveDict):
     def _ipython_display_(self):
         disable_ipython_scrollbar()
         for identifier, tables in self.iteritems():
-            if identifier != mp_level01_titles[0] and tables:
+            if tables:
                 display_html('<h2>Tabular Data for {}</h2>'.format(identifier), raw=True)
                 display_html(tables)
 
