@@ -1,5 +1,5 @@
 from __future__ import unicode_literals
-import warnings, pandas, numpy, six, collections
+import warnings, pandas, numpy, six, collections, string
 from StringIO import StringIO
 from decimal import Decimal
 from mpcontribs.config import mp_level01_titles, mp_id_pattern, csv_comment_char
@@ -76,35 +76,41 @@ def clean_value(value, unit='', convert_to_percent=False, max_dgts=3):
 
 def strip_converter(text):
     """http://stackoverflow.com/questions/13385860"""
-    if not text:
-        return numpy.nan
     try:
-        return str(Decimal(clean_value(text, max_dgts=6)))
-    except:
+        text = text.strip()
+        if not text:
+            return numpy.nan
         try:
-            return text.strip()
-        except AttributeError:
+            val = clean_value(text, max_dgts=6)
+            return str(Decimal(val))
+        except:
             return text
+    except AttributeError:
+        return text
 
 def read_csv(body, is_data_section=True):
     """run pandas.read_csv on (sub)section body"""
+    body = body.strip()
     if not body: return None
     from mpcontribs.io.core.components import Table
     if is_data_section:
-        options = { 'sep': ',', 'header': 0 }
-        if body.startswith('\nlevel_'):
-            options.update({'index_col': [0, 1]})
         cur_line = 1
         while 1:
-            first_line = body.split('\n', cur_line)[cur_line-1]
+            body_split = body.split('\n', cur_line)
+            first_line = body_split[cur_line-1].strip()
             cur_line += 1
-            if first_line and not first_line.strip().startswith(csv_comment_char):
+            if first_line and not first_line.startswith(csv_comment_char):
                 break
-        ncols = len(first_line.split(options['sep']))
+        options = {'sep': ',', 'header': 0}
+        header = map(string.strip, first_line.split(options['sep']))
+        body = '\n'.join([options['sep'].join(header), body_split[1]])
+        if first_line.startswith('level_'):
+            options.update({'index_col': [0, 1]})
+        ncols = len(header)
     else:
         options = { 'sep': ':', 'header': None, 'index_col': 0 }
         ncols = 2
-    converters = dict((col,strip_converter) for col in range(ncols))
+    converters = dict((col, strip_converter) for col in range(ncols))
     return Table(pandas.read_csv(
         StringIO(body), comment=csv_comment_char,
         skipinitialspace=True, squeeze=True,
