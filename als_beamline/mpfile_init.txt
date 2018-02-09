@@ -3,10 +3,9 @@ authors: A.T. N`Diaye, R. Ott, A.A. Baker
 description:
 Magnetic moment and coercivity are determined for CoCuCe
 through composition-dependent XAS and XMCD spectra on the Co
-L3,2 edge.
+L3,2 edge. Composition determined by XRF.
 :end
 measurement_location: ALS Beamline 6.3.1
-method: interpolated XRF
 sample: CMSI-2-10_1 CMSI-2-10_2 CMSI-2-10_3 CMSI-2-10_4 CMSI-2-10_6
 input_file: dataset.zip
 

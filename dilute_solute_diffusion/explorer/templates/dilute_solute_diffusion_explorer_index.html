@@ -6,7 +6,9 @@
 {% block extra_css %}
 <link rel="stylesheet" href='{% static "js/components/backgrid/lib/backgrid.css" %}' charset="utf-8">
 <link rel="stylesheet" href='{% static "js/components/backgrid-select-all/backgrid-select-all.css" %}' charset="utf-8">
+<link rel="stylesheet" href='{% static "js/components/backgrid-paginator/backgrid-paginator.css" %}' charset="utf-8">
 <link rel="stylesheet" href='{% static "js/components/backgrid-filter/backgrid-filter.css" %}' charset="utf-8">
+<link rel="stylesheet" href='{% static "js/components/json-human/css/json.human.css" %}' charset="utf-8">
 {% endblock extra_css %}
 
 {% block content %}
@@ -21,12 +23,18 @@
 {% else %}
 
 <style>
+.backgrid { font-family: "symbola"; }
 .backgrid .string-cell { text-align: center; }
 .backgrid tbody tr:hover { background-color: #f9f9f9; }
 .backgrid tbody tr.selected { background-color: yellow; }
 .backgrid tbody tr { cursor: pointer; }
+.backgrid .sortable { text-align: center; }
+.backgrid thead th button { display: inline; }
 .backgrid-filter input[type="search"] { width: 80%; }
 .backgrid-filter.form-search { margin:0px; }
+.jh-root { font-family: "symbola"; }
+.jh-type-string { font-style: normal; }
+code { display: block; white-space: pre-wrap; }
 </style>
 
 <script>
@@ -38,6 +46,23 @@
 </script>
 
 <div class="container">
+  <a href="{% url 'mpcontribs_portal_index' %}">&laquo; Portal</a>
+  <div class="row">
+      <div class="col-md-12">
+          <h2>{{ title }}</h2>
+          {{ provenance|safe }}
+      </div>
+  </div>
+  <div class="row">
+      <div class="col-md-12">
+          <code>
+              from mpcontribs.users.dilute_solute_diffusion.rest.rester import DiluteSoluteDiffusionRester
+              mpr = DiluteSoluteDiffusionRester()
+              mpr.get_contributions(host) # host from mpr.get_hosts()
+          </code>
+      </div>
+  </div>
+
   <div class="row" style="margin-bottom: 5px;">
     <div class="col-md-4"><div id="graphDif"></div></div>
     <div class="col-md-4"><div id="graphD0"></div></div>
@@ -100,7 +125,7 @@
           </div>
           <div id="collapse{{ forloop.counter0 }}" class="panel-collapse collapse" role="tabpanel"
                name="host" aria-labelledby="heading{{ forloop.counter0 }}">
-            <div id="table{{ forloop.counter0 }}"></div>
+              <div id="table{{ forloop.counter0 }}">{{contrib.table|safe}}</div>
           </div>
         </div>
       </div>
@@ -111,8 +136,7 @@
 
 <script>
 requirejs(['main'], function() {
-require(["backbone", "backgrid", "backgrid-select-all", "backgrid-filter", "jquery.spin"], function() {
-require(["plotly"], function(Plotly) {
+require(["plotly", "jquery.spin"], function(Plotly) {
 
   var grids = [];
   var graphDif = document.getElementById('graphDif');
@@ -121,10 +145,10 @@ require(["plotly"], function(Plotly) {
   var dummy_trace = { x: [], y: [], type: 'scatter' }
   var margins = { l: 50, r: 5, b: 50, t: 30 };
   var ranges = {{ ranges|safe }};
+
   var xvalsDif = []; var yvalsDifNaN = [];
   for (var j=0; j<80; j++) { xvalsDif.push(j*0.05); yvalsDifNaN.push(NaN); }
-  var host_solute_index_map = {};
-  var host_solute_counter = 0;
+
   var layoutDif = {
     xaxis: {title: '1000/T'},
     yaxis: {title: 'diffusivity', type: 'log', exponentformat: "power"},
@@ -142,260 +166,14 @@ require(["plotly"], function(Plotly) {
   };
   var options = {displaylogo: false, displayModeBar: true}
   
-  var contributions = {{ contribs|safe }};
-  var Row = Backbone.Model.extend({});
-  var Rows = Backbone.Collection.extend({
-      model: Row, mode: "client",
-      initialize: function(models, options) {
-          options || (options = {});
-          if (options.title) { this.title = options.title; };
-          if ('cnum' in options) { this.cnum = options.cnum; };
-      }
-  });
-  var ClickableCell = Backgrid.StringCell.extend({
-    events: {"click": "onClick"},
-    onClick: function (e) { Backbone.trigger("cellclicked", e); }
-  })
-
   Plotly.newPlot('graphDif', [dummy_trace], layoutDif, options);
   Plotly.newPlot('graphD0', [dummy_trace], layoutD0, options);
   Plotly.newPlot('graphQ', [dummy_trace], layoutQ, options);
 
-  var c = 0;
-  function add_contrib(c) {
 
-    if(c === contributions.length) {
-      $(".select-all-header-cell").find("input").attr("disabled", true);
-      var hosts = $('[name=host]');
-      var panels = $('div.col-md-3[name^=panel]');
-      function collapse_hosts(flag) {
-          for (var j=0; j<hosts.length; j++) {
-            //var visible = !$(hosts[j]).hasClass("collapse");
-            var visible = $(hosts[j]).is(":visible");
-            if (flag && visible) { $(hosts[j]).collapse('hide'); }
-            else if (!flag && !visible) { $(hosts[j]).collapse('show'); }
-          }
-      };
-      $('#reveal_all').on('click', function (e) { collapse_hosts(false); })
-      $('#collapse_all').on('click', function (e) { collapse_hosts(true); })
-      $("#clear_all").on("click", function() {
-        var tracesD0 = [dummy_trace];
-        var tracesQ = [dummy_trace];
-        var tracesDif = [dummy_trace];
-        var traceDif = { x: xvalsDif, y: yvalsDifNaN };
-        for (var j=0; j<grids.length; j++) {
-          var collection = grids[j].collection;
-          var traceD0 = {
-            x: [], y: [], name: collection.title,
-            connectgaps: true, mode: 'lines+markers'
-          };
-          var traceQ = {
-            x: [], y: [], name: collection.title,
-            connectgaps: true, mode: 'lines+markers'
-          };
-          collection.each(function(model){
-            tracesDif.push(traceDif);
-            traceD0['x'].push(model.get('Z')); 
-            traceD0['y'].push(NaN); 
-            traceQ['x'].push(model.get('Z')); 
-            traceQ['y'].push(NaN); 
-          });
-          tracesD0.push(traceD0);
-          tracesQ.push(traceQ);
-        }
-        Plotly.newPlot('graphDif', tracesDif, layoutDif, options);
-        Plotly.newPlot('graphD0', tracesD0, layoutD0, options);
-        Plotly.newPlot('graphQ', tracesQ, layoutQ, options);
-        for (var j=0; j<grids.length; j++) {
-          var selectedModels = grids[j].getSelectedModels();
-          for (var i = 0, l = selectedModels.length; i < l; i++) {
-            var model = selectedModels[i];
-            model.trigger("backgrid:select", model, false);
-          }
-        }
-      })
-      $("#searchinput").focus(function(){ collapse_hosts(false); })
-
-      var inputs = $('.backgrid-filter').find(':input');
-      $("#searchclear").click(function(){
-        $("#searchinput").val('');
-        inputs.val('').trigger('keydown');
-        panels.show();
-      });
-      $("#searchinput").on('keyup paste', function(){
-        var txt = $(this).val();
-        var dash = txt.indexOf('-');
-        if (dash === -1) { // no dash found -> search in solutes for all hosts
-          panels.show();
-          inputs.val(txt).trigger('keydown');
-        } else { // dash found -> filter/hide hosts
-          var elems = txt.split('-');
-          $('div.col-md-3').not('[name=panel'+elems[0]+']').hide();
-          inputs.val('').trigger('keydown');
-          if (elems[1] != "") { // search specific host-solute combination
-            inputs.val(elems[1]).trigger('keydown');
-          }
-        }
-      })
-
-      document.onselectstart = function() { return false; }
-      var lastChecked = null;
-      Backbone.on('cellclicked', function(e) {
-        var row = $(e.currentTarget).parent();
-        var chbx = row.toggleClass('highlight').find(':checkbox');
-        chbx.prop('checked', !chbx.prop('checked')).change();
-        if(!lastChecked) { lastChecked = chbx; return; }
-        if(e.shiftKey) {
-          var $chkboxes = row.parent().find(':checkbox');
-          var start = $chkboxes.index(chbx);
-          var end = $chkboxes.index(lastChecked);
-          var checked = lastChecked.prop('checked');
-          $chkboxes.slice(Math.min(start,end)+1, Math.max(start,end))
-            .prop('checked', checked).change();
-        }
-        lastChecked = chbx;
-      });
-
-      $('#spinner').spin(false);
-      return;
-    }
-      
-    setTimeout(function() {
-
-      var data = getData(c);
-      Plotly.addTraces('graphD0', data['graphD0']);
-      Plotly.addTraces('graphQ', data['graphQ']);
-      Plotly.addTraces('graphDif', data['graphDif'])
-        .then(function() {
-            
-          var formula = contributions[c]['formula'];
-          var table = contributions[c]['table'];
-          var rows = new Rows(table['rows'], {title: formula, cnum: c});
-
-          rows.on("backgrid:selected", function (model, selected) {
-            var host_solute = model.collection.title + '-' + model.get('El.');
-            var graphDif = document.getElementById('graphDif');
-            var graphD0 = document.getElementById('graphD0');
-            var graphQ = document.getElementById('graphQ');
-            var cnum = model.collection.cnum+1;
-            var traceD0 = graphD0.data[cnum];
-            var traceQ = graphQ.data[cnum];
-            var idx = traceQ['x'].indexOf(model.get('Z'));
-            var Q = selected ? model.get('Q [eV]') : NaN;
-            var D0 = selected ? model.get('D0 [cm2/s]') : NaN;
-            if( !(isNaN(traceQ['y'][idx]) && isNaN(Q))) {
-              var equal = (Math.abs(traceQ['y'][idx] - Q) < Number.EPSILON);
-              if (!equal) {
-                traceQ['y'][idx] = Q;
-                Plotly.redraw(graphQ); // TODO restyle?
-              }
-            }
-            if( !(isNaN(traceD0['y'][idx]) && isNaN(D0))) {
-              var equal = (Math.abs(traceD0['y'][idx] - D0) < Number.EPSILON);
-              if (!equal) {
-                traceD0['y'][idx] = D0;
-                Plotly.redraw(graphD0); // TODO restyle?
-              }
-            }
-            var trace_index_dif = host_solute_index_map[host_solute]+1;
-            if (selected) {
-              var traceDif = graphDif.data[trace_index_dif];
-              var y1 = D0*Math.exp(-Q/0.08617*1*0.05);
-              var equal = (Math.abs(y1 - traceDif.y[1]) < Number.EPSILON);
-              if (!equal) {
-                var yvalsDif = [];
-                for (var j=0; j<80; j++) { yvalsDif.push(D0*Math.exp(-Q/0.08617*j*0.05)); }
-                Plotly.deleteTraces(graphDif, trace_index_dif);
-                Plotly.addTraces(graphDif, {
-                  x: xvalsDif, y: yvalsDif, mode: 'lines', name: host_solute
-                }, trace_index_dif);
-              }
-            } else {
-              if(isNaN(Q) && isNaN(D0) && !isNaN(graphDif.data[trace_index_dif]['y'][0])) {
-                Plotly.deleteTraces(graphDif, trace_index_dif);
-                Plotly.addTraces(graphDif, { x: xvalsDif, y: yvalsDifNaN }, trace_index_dif);
-              }
-            }
-            
-          })
-
-          for (var j=0; j<table['columns'].length; j++) {
-            table['columns'][j]['cell'] = ClickableCell;
-          }
-
-          var grid = new Backgrid.Grid({
-            columns: [{
-              name: "", cell: "select-row", headerCell: "select-all"
-            }].concat(table['columns']),
-            collection: rows
-          });
-          grid.render().sort("Z", "ascending");
-
-          $('#table'+c).append(grid.el);
-          var filter = new Backgrid.Extension.ClientSideFilter({
-            collection: rows, fields: ['El.'], placeholder: "filter solutes ..."
-          });
-          $('#table'+c).before(filter.render().el);
-
-          grid.collection.each(function (model, i) {
-            model.trigger("backgrid:select", model, true);
-          }); 
-
-          grids.push(grid);
-          $('#collapse'+c).on('show.bs.collapse', function(){
-              $(this).parent().find(".glyphicon-chevron-right")
-                .removeClass("glyphicon-chevron-right").addClass("glyphicon-chevron-down");
-          }).on('hide.bs.collapse', function(){
-              $(this).parent().find(".glyphicon-chevron-down")
-                .removeClass("glyphicon-chevron-down").addClass("glyphicon-chevron-right");
-          });
-              
-          add_contrib(++c);
-
-        });
-    }, 200);
-  }
-
-  function getData(cnt) {
-    var table = contributions[cnt]['table'];
-    var formula = contributions[cnt]['formula'];
-
-    var data = {'graphDif': []}
-    var xvals = []; var yvalsD0 = []; var yvalsQ = [];
-    for (var i=0; i<table['rows'].length; i++) {
-      var host_solute = formula + "-" + table['rows'][i]['El.'];
-      var D0 = table['rows'][i]['D0 [cm2/s]'];
-      var Q = table['rows'][i]['Q [eV]'];
-      host_solute_index_map[host_solute] = host_solute_counter;
-      var yvalsDif = [];
-      for (var j=0; j<80; j++) {
-        var dif = D0*Math.exp(-Q/0.08617*j*0.05);
-        yvalsDif.push(dif);
-      }
-      data['graphDif'].push({
-        x: xvalsDif, y: yvalsDif, mode: 'lines', name: host_solute
-      });
-      xvals.push(table['rows'][i]['Z']);
-      yvalsD0.push(D0); yvalsQ.push(Q);
-      host_solute_counter += 1;
-    }
-    data['graphD0'] = {
-      x: xvals, y: yvalsD0, name: formula,
-      connectgaps: true, mode: 'lines+markers'
-    };
-    data['graphQ'] = {
-      x: xvals, y: yvalsQ, name: formula,
-      connectgaps: true, mode: 'lines+markers'
-    };
-
-    return data;
-  }
-
-  add_contrib(0);
-
-});
 });
 });
 </script>
+
 {% endif %}
 {% endblock %}

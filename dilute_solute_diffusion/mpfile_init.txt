@@ -1,1 +1,29 @@
+title: Dilute Solute Diffusion
+authors: H. Wu, T. Mayeshiba, D. Morgan
+
+description:
+A total of more than 360 dilute solute diffusion systems in FCC,
+BCC, and HCP host lattices (Al, Cu, Ni, Pd, Pt, Mg, Fe, W, Mo,
+Au, Ca, Ir, Pb, and Ag) have been determined using density
+functional theory (DFT) calculations and multi-frequency
+diffusion models. This dataset includes the jump barriers and
+attempt frequencies for each solute as well as final Arrhenius
+diffusion constant (D₀) and diffusion activation barrier (Q).
+:end
+
+{urls}
+figshare: https://doi.org/10.6084/m9.figshare.1546772
+
+{info}
 figshare_id: 1546772
+funding: NSF award No. 1148011
+version: 8
+Fe-X:
+Diffusion values for Fe-X are given for the α-BCC phase, both
+paramagnetic and ferromagnetic. The paramagnetic D₀ and Q are
+given here, the full diffusivity can be obtained by:
+D_BCC(T) = D0_para * exp[-Q_para*(1+αs²)/(kT)]
+where α=0.156 and s is the temperature dependent spontaneous
+magnetization of Fe relative to T=0K.
+:end
+

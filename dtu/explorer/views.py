@@ -1,7 +1,5 @@
 """This module provides the views for the DTU explorer interface."""
 
-import json, os
-from bson import ObjectId
 from django.shortcuts import render_to_response
 from django.template import RequestContext
 from mpcontribs.rest.views import get_endpoint
