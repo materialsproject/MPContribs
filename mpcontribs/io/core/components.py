@@ -280,6 +280,7 @@ def render_plot(plot, webapp=False, filename=None):
                 title=plot.config['table'],
                 type=plot.config.get('yaxis', {}).get('type', '-')
             ),
+            showlegend=plot.config.get('showlegend', True)
         ))
         fig = dict(data=traces, layout=layout)
     if filename:
@@ -296,7 +297,7 @@ def render_plot(plot, webapp=False, filename=None):
     else:
         from plotly.offline.offline import _plot_html # long import time
         html = _plot_html(
-            fig, False, '', True, '100%', 525, global_requirejs=True
+            fig, False, '', True, '100%', '100%', global_requirejs=True
         )[0]
         if not webapp:
             return html
