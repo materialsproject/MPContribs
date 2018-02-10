@@ -46,18 +46,19 @@ class MPFile(MPFileCore):
                     if is_general else rdct[root_key]
 
             # Note: CSV section is marked with 'data ' prefix during iterate()
-            for k,v in section.iterate():
-                if isinstance(k, six.string_types) and \
-                   k.startswith(mp_level01_titles[1]):
-                    # k = table name (incl. data prefix)
-                    # v = csv string from ArchieML free-form arrays
-                    table_name = k[len(mp_level01_titles[1]+'_'):]
-                    pd_obj = read_csv(v)
-                    section.pop(table_name)
-                    section.rec_update(nest_dict(
-                        pd_obj.to_dict(), [k]
-                    ))
-                    section.insert_default_plot_options(pd_obj, k)
+            if isinstance(section, dict):
+                for k,v in section.iterate():
+                    if isinstance(k, six.string_types) and \
+                       k.startswith(mp_level01_titles[1]):
+                        # k = table name (incl. data prefix)
+                        # v = csv string from ArchieML free-form arrays
+                        table_name = k[len(mp_level01_titles[1]+'_'):]
+                        pd_obj = read_csv(v)
+                        section.pop(table_name)
+                        section.rec_update(nest_dict(
+                            pd_obj.to_dict(), [k]
+                        ))
+                        section.insert_default_plot_options(pd_obj, k)
 
             # convert CIF strings into pymatgen structures
             if mp_level01_titles[3] in section:
