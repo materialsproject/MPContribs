@@ -70,12 +70,6 @@ class RecursiveDict(_OrderedDict):
                 for inner_key, inner_value in self.iterate(nested_dict=value):
                     yield inner_key, inner_value
                 self.level -= 1
-            elif isinstance(value, list) and isinstance(value[0], dict):
-                # index (from archieml parser)
-                table = ''
-                for row_dct in value:
-                    table = '\n'.join([table, row_dct['value']])
-                yield '_'.join([mp_level01_titles[1], key]), table
             else:
                 yield (self.level, key), value
 
@@ -98,10 +92,8 @@ class RecursiveDict(_OrderedDict):
     def insert_default_plot_options(self, pd_obj, k, update_plot_options=None):
         # make default plot (add entry in 'plots') for each
         # table, first column as x-column
-        table_name = ''.join([
-            replacements.get(c, c) for c in k[len(mp_level01_titles[1]+'_'):]
-        ])
-        key = 'default_{}'.format(k)
+        table_name = ''.join([replacements.get(c, c) for c in k])
+        key = 'default_{}'.format(table_name)
         plots_dict = _OrderedDict([(
             mp_level01_titles[2], _OrderedDict([(
                 key, _OrderedDict([

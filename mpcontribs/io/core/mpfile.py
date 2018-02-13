@@ -175,9 +175,6 @@ class MPFileCore(six.with_metaclass(ABCMeta, object)):
             plot_options (dict): options for according plotly graph
         """
         # TODO: optional table name, required if multiple tables per root-level section
-        table_start = mp_level01_titles[1]+'_'
-        if not name.startswith(table_start):
-            name = table_start + name
         name = ''.join([replacements.get(c, c) for c in name])
         self.document.rec_update(nest_dict(
             Table(dataframe).to_dict(), [identifier, name]
@@ -248,11 +245,11 @@ class MPFileCore(six.with_metaclass(ABCMeta, object)):
         ))
         return identifier
 
-    def __repr__(self): return self.get_string()
+    def __repr__(self): return self.get_string(df_head_only=True)
     def __str__(self):
         return unicode(self).encode('utf-8')
     def __unicode__(self):
-        return self.get_string()
+        return self.get_string(df_head_only=True)
 
     def _ipython_display_(self):
 	from IPython.display import display_html
