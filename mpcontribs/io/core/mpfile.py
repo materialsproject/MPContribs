@@ -98,10 +98,11 @@ class MPFileCore(six.with_metaclass(ABCMeta, object)):
             try:
                 mpfile_single = self.pop_first_section()
                 mpid_orig = mpfile_single.ids[0]
-                mpid = mpid_orig.split('--')[0]
-                mpfile_single.document.rec_update(nest_dict(
-                    mpfile_single.document.pop(mpid_orig), [mpid]
-                ))
+                if '--' in mpid_orig:
+                    mpid = mpid_orig.split('--')[0]
+                    mpfile_single.document.rec_update(nest_dict(
+                        mpfile_single.document.pop(mpid_orig), [mpid]
+                    ))
                 if general_mpfile is not None:
                     mpfile_single.insert_general_section(general_mpfile)
                 yield mpfile_single
