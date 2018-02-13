@@ -90,11 +90,11 @@ class MPContribsRester(MPResterBase):
         site. Only MPFiles with a single root-level section are allowed
         ("single contribution"). Don't use this function directly but rather go
         through the dedicated command line program `mgc` or through the
-        web UI `MPFileViewer`.
+        web UI `MPContribs Ingester`.
 
         Args:
             filename_or_mpfile: MPFile name, or MPFile object
-            fmt: archieml or custom
+            fmt: archieml
 
         Returns:
             unique contribution ID (ObjectID) for this submission
