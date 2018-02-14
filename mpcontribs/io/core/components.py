@@ -2,37 +2,28 @@ from __future__ import unicode_literals
 import uuid, json
 from pandas import DataFrame
 from mpcontribs.config import mp_level01_titles, mp_id_pattern, object_id_pattern
+from mpcontribs.io.core.utils import nest_dict
 from recdict import RecursiveDict
 from utils import disable_ipython_scrollbar, clean_value
 from IPython.display import display_html, display, HTML, Image
 
-class Tree(RecursiveDict):
-    """class to hold and display single tree of hierarchical data"""
-    def __init__(self, content):
-        super(Tree, self).__init__(
-            item for item in content.iteritems()
-            if not self.skip(item)
-        )
-
-    def skip(self, item):
-        key, value = item
-        return bool(
-            key in mp_level01_titles[2:] or
-            (isinstance(value, dict) and value.get('@class') == 'Table')
-        )
-
 class HierarchicalData(RecursiveDict):
     """class to hold and display all hierarchical data in MPFile"""
     def __init__(self, document):
+        from pymatgen import Structure
         super(HierarchicalData, self).__init__()
-        if mp_level01_titles[0] in document:
-            self[mp_level01_titles[0]] = RecursiveDict()
-            for key, content in document[mp_level01_titles[0]].iteritems():
-                self[mp_level01_titles[0]][key] = Tree(content) \
-                       if isinstance(content, dict) else content
-        for identifier, content in document.iteritems():
-            if identifier != mp_level01_titles[0]:
-                self[identifier] = Tree(content)
+        scope = []
+        for key, value in document.iterate():
+            if isinstance(value, Table) or isinstance(value, Structure):
+                continue
+            level, key = key
+            level_reduction = bool(level < len(scope))
+            if level_reduction:
+                del scope[level:]
+            if value is None:
+                scope.append(key)
+            elif mp_level01_titles[2] not in scope:
+                self.rec_update(nest_dict({key: value}, scope))
 
     @property
     def general(self):
@@ -215,11 +206,10 @@ class Table(DataFrame):
 
 class Tables(RecursiveDict):
     """class to hold and display multiple data tables"""
-    def __init__(self, content):
+    def __init__(self, content=RecursiveDict()):
         super(Tables, self).__init__(
-            (key, Table.from_dict(value))
-            for key, value in content.iteritems()
-            if isinstance(value, dict) and value.get('@class') == 'Table'
+            (key, value) for key, value in content.iteritems()
+            if isinstance(value, Table)
         )
 
     def __str__(self):
@@ -233,15 +223,20 @@ class Tables(RecursiveDict):
 class TabularData(RecursiveDict):
     """class to hold and display all tabular data of a MPFile"""
     def __init__(self, document):
-        super(TabularData, self).__init__(
-            (identifier, Tables(content))
-            for identifier, content in document.iteritems()
-            if identifier != mp_level01_titles[0]
-        )
-        if mp_level01_titles[0] in document:
-            for key, content in document[mp_level01_titles[0]].iteritems():
-                if isinstance(content, dict):
-                    self[key] = Tables(content)
+        super(TabularData, self).__init__()
+        scope = []
+        for key, value in document.iterate():
+            if isinstance(value, Table):
+                self[scope[0]].rec_update({'.'.join(scope[1:]): value})
+            else:
+                level, key = key
+                level_reduction = bool(level < len(scope))
+                if level_reduction:
+                    del scope[level:]
+                if value is None:
+                    scope.append(key)
+                    if scope[0] not in self:
+                        self[scope[0]] = Tables()
 
     def __str__(self):
         return 'mp-ids: {}'.format(' '.join(self.keys()))

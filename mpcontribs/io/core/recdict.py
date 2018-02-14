@@ -52,7 +52,6 @@ class RecursiveDict(_OrderedDict):
     def iterate(self, nested_dict=None):
         """http://stackoverflow.com/questions/10756427/loop-through-all-nested-dictionary-values"""
         from mpcontribs.io.core.components import Table
-        from pymatgen import Structure
         d = self if nested_dict is None else nested_dict
         if nested_dict is None:
             self.level = 0
@@ -60,6 +59,7 @@ class RecursiveDict(_OrderedDict):
             value = d[key]
             if isinstance(value, _Mapping):
                 if value.get('@class') == 'Structure':
+                    from pymatgen import Structure
                     yield key, Structure.from_dict(value)
                     continue
                 yield (self.level, key), None
