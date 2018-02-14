@@ -47,8 +47,10 @@ class MPContribsRester(MPResterBase):
         return False
 
     def _make_request(self, sub_url, payload=None, method="GET"):
+        from mpcontribs.io.core.recdict import RecursiveDict
         return super(MPContribsRester, self)._make_request(
-          '/'.join([sub_url, self.dbtype]), payload=payload, method=method
+          '/'.join([sub_url, self.dbtype]), payload=payload, method=method,
+          document_class=RecursiveDict
         )
 
     def get_cid_url(self, doc):

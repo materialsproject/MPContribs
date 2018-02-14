@@ -2,6 +2,7 @@
 from __future__ import unicode_literals
 import bson, six
 from mpcontribs.config import mp_level01_titles, mp_id_pattern
+from mpcontribs.io.core.recdict import RecursiveDict
 from mpcontribs.io.core.utils import get_short_object_id
 from datetime import datetime
 
@@ -15,7 +16,7 @@ class ContributionMongoAdapter(object):
         except:
             self.fake = None
         if self.db is not None:
-            opts = bson.CodecOptions(document_class=bson.SON)
+            opts = bson.CodecOptions(document_class=RecursiveDict)
             self.contributions = self.db.contributions.with_options(codec_options=opts)
             self.materials = self.db.materials.with_options(codec_options=opts)
             self.compositions = self.db.compositions.with_options(codec_options=opts)
@@ -29,11 +30,14 @@ class ContributionMongoAdapter(object):
         config_path = os.path.join(db_loc, db_yaml)
         if os.path.exists(config_path):
             config = loadfn(config_path)
-            client = MongoClient(config['host'], config['port'], j=False)
+            client = MongoClient(
+                config['host'], config['port'],
+                j=False, document_class=RecursiveDict
+            )
             db = client[config['db']]
             db.authenticate(config['username'], config['password'])
         else:
-            client = MongoClient(j=False)
+            client = MongoClient(j=False, document_class=RecursiveDict)
             db = client['mpcontribs']
         return ContributionMongoAdapter(db)
 
