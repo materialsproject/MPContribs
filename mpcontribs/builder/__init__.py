@@ -142,34 +142,34 @@ class MPContributionsBuilder():
             "### Hierarchical Data"
         ))
         nb['cells'].append(nbf.new_code_cell("mpfile.hdata[identifier]"))
-        if mpfile.tdata[mp_cat_id]:
+        if mpfile.tdata.get(mp_cat_id):
             nb['cells'].append(nbf.new_markdown_cell("### Tabular Data"))
-        for table_name, table in mpfile.tdata[mp_cat_id].iteritems():
-            nb['cells'].append(nbf.new_markdown_cell(
-                "#### {}".format(table_name)
-            ))
-            nb['cells'].append(nbf.new_code_cell(
-                "mpfile.tdata[identifier][u'{}']".format(table_name)
-            ))
-        if mpfile.gdata[mp_cat_id]:
+            for table_name, table in mpfile.tdata[mp_cat_id].iteritems():
+                nb['cells'].append(nbf.new_markdown_cell(
+                    "#### {}".format(table_name)
+                ))
+                nb['cells'].append(nbf.new_code_cell(
+                    "mpfile.tdata[identifier][u'{}']".format(table_name)
+                ))
+        if mpfile.gdata.get(mp_cat_id):
             nb['cells'].append(nbf.new_markdown_cell("### Graphical Data"))
-        for plot_name, plot in mpfile.gdata[mp_cat_id].iteritems():
-            nb['cells'].append(nbf.new_markdown_cell(
-                "#### {}".format(plot_name)
-            ))
-            nb['cells'].append(nbf.new_code_cell(
-                "mpfile.gdata[identifier][u'{}']".format(plot_name)
-            ))
+            for plot_name, plot in mpfile.gdata[mp_cat_id].iteritems():
+                nb['cells'].append(nbf.new_markdown_cell(
+                    "#### {}".format(plot_name)
+                ))
+                nb['cells'].append(nbf.new_code_cell(
+                    "mpfile.gdata[identifier][u'{}']".format(plot_name)
+                ))
 
-        if mpfile.sdata[mp_cat_id]:
+        if mpfile.sdata.get(mp_cat_id):
             nb['cells'].append(nbf.new_markdown_cell("### Structural Data"))
-        for structure_name, structure in mpfile.sdata[mp_cat_id].iteritems():
-            nb['cells'].append(nbf.new_markdown_cell(
-                "#### {}".format(structure_name)
-            ))
-            nb['cells'].append(nbf.new_code_cell(
-                "mpfile.sdata[identifier][u'{}']".format(structure_name)
-            ))
+            for structure_name, structure in mpfile.sdata[mp_cat_id].iteritems():
+                nb['cells'].append(nbf.new_markdown_cell(
+                    "#### {}".format(structure_name)
+                ))
+                nb['cells'].append(nbf.new_code_cell(
+                    "mpfile.sdata[identifier][u'{}']".format(structure_name)
+                ))
 
         self.ep.preprocess(nb, {'metadata': {'path': self.nbdir}})
 

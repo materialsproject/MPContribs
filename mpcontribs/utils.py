@@ -115,6 +115,14 @@ def process_mpfile(path_or_mpfile, target=None, fmt='archieml', ids=None, projec
                         if mpfile_single.document != mpfile_single_cmp.document:
                             yield 'check again ... '
                             found_inconsistency = False
+                            # check hierarchical and tabular data
+                            # compare json strings to find first inconsistency
+                            if mpfile_single.hdata != mpfile_single_cmp.hdata:
+                                yield 'hdata not OK:'
+                                json_compare(mpfile_single.hdata, mpfile_single_cmp.hdata)
+                            if mpfile_single.tdata != mpfile_single_cmp.tdata:
+                                yield 'tdata not OK:'
+                                json_compare(mpfile_single.tdata, mpfile_single_cmp.tdata)
                             # check structural data
                             structures_ok = True
                             for name, s1 in mpfile_single.sdata[mp_cat_id].iteritems():
@@ -125,10 +133,6 @@ def process_mpfile(path_or_mpfile, target=None, fmt='archieml', ids=None, projec
                                                 len(s1), len(s2))
                                         structures_ok = False
                                         break
-                                    #if s1.lattice != s2.lattice:
-                                    #    yield 'lattices different!<br>'
-                                    #    structures_ok = False
-                                    #    break
                                     for site in s1:
                                         if site not in s2:
                                             found_inconsistency = True
@@ -140,10 +144,6 @@ def process_mpfile(path_or_mpfile, target=None, fmt='archieml', ids=None, projec
                                             break
                             if not structures_ok:
                                 continue
-                            # check hierarchical and tabular data
-                            # compare json strings to find first inconsistency
-                            json_compare(mpfile_single.hdata, mpfile_single_cmp.hdata)
-                            json_compare(mpfile_single.tdata, mpfile_single_cmp.tdata)
                             if not found_inconsistency:
                                 # documents are not equal, but all components checked, skip contribution
                                 # should not happen

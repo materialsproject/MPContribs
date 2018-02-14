@@ -224,11 +224,12 @@ class TabularData(RecursiveDict):
     """class to hold and display all tabular data of a MPFile"""
     def __init__(self, document):
         super(TabularData, self).__init__()
+        from pymatgen import Structure
         scope = []
         for key, value in document.iterate():
             if isinstance(value, Table):
                 self[scope[0]].rec_update({'.'.join(scope[1:]): value})
-            else:
+            elif not isinstance(value, Structure):
                 level, key = key
                 level_reduction = bool(level < len(scope))
                 if level_reduction:
