@@ -64,7 +64,7 @@ class MPResterBase(object):
         """Support for "with" context."""
         self.session.close()
 
-    def _make_request(self, sub_url, payload=None, method="GET"):
+    def _make_request(self, sub_url, payload=None, method="GET", document_class=OrderedDict):
         response = None
         url = self.preamble.replace('8000', '5000') + sub_url
         try:
@@ -82,7 +82,7 @@ class MPResterBase(object):
             headers["X-CSRFToken"] = self.session.cookies.get('csrftoken')
             response = self.session.request(method, url=url, headers=headers, data=payload)
             if response.status_code in [200, 400]:
-                data = loads(response.text, json_options=JSONOptions(document_class=OrderedDict))
+                data = loads(response.text, json_options=JSONOptions(document_class=document_class))
                 if data["valid_response"]:
                     if data.get("warning"):
                         warnings.warn(data["warning"])
