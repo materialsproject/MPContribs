@@ -10,9 +10,15 @@ class Tree(RecursiveDict):
     """class to hold and display single tree of hierarchical data"""
     def __init__(self, content):
         super(Tree, self).__init__(
-            (key, value) for key, value in content.iteritems()
-            if key not in mp_level01_titles[2:] and \
-            not key.startswith(mp_level01_titles[1])
+            item for item in content.iteritems()
+            if not self.skip(item)
+        )
+
+    def skip(self, item):
+        key, value = item
+        return bool(
+            key in mp_level01_titles[2:] or
+            (isinstance(value, dict) and value.get('@class') == 'Table')
         )
 
 class HierarchicalData(RecursiveDict):
@@ -213,7 +219,7 @@ class Tables(RecursiveDict):
         super(Tables, self).__init__(
             (key, Table.from_dict(value))
             for key, value in content.iteritems()
-            if key.startswith(mp_level01_titles[1])
+            if isinstance(value, dict) and value.get('@class') == 'Table'
         )
 
     def __str__(self):
@@ -324,7 +330,7 @@ class Plots(RecursiveDict):
         tables = Tables(content)
         super(Plots, self).__init__(
             (plotconf['table'], Plot(
-                plotconf, tables['_'.join([mp_level01_titles[1], plotconf['table']])]
+                plotconf, tables[plotconf['table']]
             )) for plotconf in plotconfs.itervalues()
         )
 
