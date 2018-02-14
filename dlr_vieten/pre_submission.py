@@ -1,56 +1,22 @@
-#from mpcontribs.users.dlr_vieten.rest.rester import DlrVietenRester
-from mpcontribs.config import mp_level01_titles, mp_id_pattern
+# -*- coding: utf-8 -*-
+from __future__ import unicode_literals
+import os
 from mpcontribs.io.core.utils import get_composition_from_string
 from mpcontribs.io.core.recdict import RecursiveDict
-import pandas as pd
-import csv
+from mpcontribs.io.core.utils import clean_value, read_csv, nest_dict
+from mpcontribs.io.core.components import Table
+from mpcontribs.users.utils import duplicate_check
 
-def run(mpfile, dup_check_test_site=True):
-
-    from pymatgen import MPRester
-    existing_identifiers = {}
-    #for b in [False, True]:
-    #    with DlrVietenRester(test_site=b) as mpr:
-    #        for doc in mpr.query_contributions():
-    #            existing_identifiers[doc['mp_cat_id']] = doc['_id']
-    #    if not dup_check_test_site:
-    #        break
-
-    google_sheet = mpfile.document[mp_level01_titles[0]].pop('google_sheet')
-    google_sheet += '/export?format=xlsx'
-    df_dct = pd.read_excel(google_sheet, sheetname=None)
-
-    mpr = MPRester()
-    update = 0
-    for sheet in df_dct.keys():
-        print(sheet)
-        df = df_dct[sheet]
-
-        sheet_split = sheet.split()
-        composition = sheet_split[0]
+@duplicate_check
+def run(mpfile, **kwargs):
+    input_file = os.path.join(
+        os.path.dirname(__file__), mpfile.hdata.general['input_file']
+    )
+    table = read_csv(open(input_file, 'r').read())
+    dct = super(Table, table).to_dict(orient='records', into=RecursiveDict)
+    for row in dct:
+        composition = row['full_composition'].replace('Ox', '')
         identifier = get_composition_from_string(composition)
-        if len(sheet_split) > 1 and mp_id_pattern.match(sheet_split[1]):
-            identifier = sheet_split[1]
-        print('identifier = {}'.format(identifier))
-
-        if 'CIF' in sheet_split:
-            print('adding CIF ...')
-            df.columns = [df.columns[0]] + ['']*(df.shape[1]-1)
-            cif = df.to_csv(na_rep='', index=False, sep='\t', quoting=csv.QUOTE_NONE)
-            mpfile.add_structure(cif, identifier=identifier, fmt='cif')
-
-        else:
-            print('adding data ...')
-            mpfile.add_hierarchical_data({'composition': composition}, identifier=identifier)
-            mpfile.add_data_table(identifier, df, name='dH_dS')
-
-        if identifier in existing_identifiers:
-            cid = existing_identifiers[identifier]
-            mpfile.insert_id(identifier, cid)
-            update += 1
-
-    print len(mpfile.ids), 'contributions to submit.'
-    if update > 0:
-        print update, 'contributions to update.'
-
-
+        mpfile.add_hierarchical_data(
+            nest_dict(row, ['data']), identifier=identifier
+        )
