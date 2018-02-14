@@ -41,10 +41,10 @@ def index(request):
                         authors = content.get('authors', 'No authors available.').split(',', 1)
                         provenance = '<span class="pull-right" style="font-size: 13px;">{}'.format(authors[0])
                         if len(authors) > 1:
-                            provenance += '''<button class="btn btn-sm btn-link"
-                            data-toggle="tooltip" data-placement="bottom"
+                            provenance += '''<button class="btn btn-sm btn-link" data-html="true"
+                            data-toggle="tooltip" data-placement="bottom" data-container="body"
                             title="{}" style="padding: 0px 0px 2px 5px;">et al.</a>'''.format(
-                                    authors[1].strip())
+                                    authors[1].strip().replace(', ', '<br/>'))
                         provenance += '</span>'
                         entry['provenance'] = provenance
                     else:
