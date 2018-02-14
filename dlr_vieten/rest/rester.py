@@ -16,7 +16,10 @@ class DlrVietenRester(MPContribsRester):
             raise Exception('No contributions found for DlrVieten Explorer!')
 
         data = []
-        columns = ['identifier', 'contribution', 'composition', 'tolerance factor']
+        columns = [
+            'identifier', 'contribution', 'sample number',
+            'full composition', 'tolerance factor'
+        ]
 
         for doc in docs:
             mpfile = MPFile.from_contribution(doc)
@@ -24,7 +27,7 @@ class DlrVietenRester(MPContribsRester):
             contrib = mpfile.hdata[identifier]['data']
             cid_url = self.get_cid_url(doc)
             row = [identifier, cid_url]
-            row += [contrib['full_composition'], contrib['tolerance_factor']]
+            row += [contrib[k.replace(' ', '_')] for k in columns[2:]]
             data.append((identifier, row))
         return Table.from_items(data, orient='index', columns=columns)
 
