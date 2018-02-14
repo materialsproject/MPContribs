@@ -53,7 +53,7 @@ class MPContributionsBuilder():
             self.materials = RecursiveDict()
             self.compositions = RecursiveDict()
         else:
-            opts = bson.CodecOptions(document_class=bson.SON)
+            opts = bson.CodecOptions(document_class=RecursiveDict)
             self.contributions = self.db.contributions.with_options(codec_options=opts)
             self.materials = self.db.materials.with_options(codec_options=opts)
             self.compositions = self.db.compositions.with_options(codec_options=opts)
@@ -63,7 +63,7 @@ class MPContributionsBuilder():
         from monty.serialization import loadfn
         from pymongo import MongoClient
         config = loadfn(os.path.join(os.environ['DB_LOC'], db_yaml))
-        client = MongoClient(config['host'], config['port'], j=False)
+        client = MongoClient(config['host'], config['port'], j=False, document_class=RecursiveDict)
         db = client[config['db']]
         db.authenticate(config['username'], config['password'])
         return MPContributionsBuilder(db)
