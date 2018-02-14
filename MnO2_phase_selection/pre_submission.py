@@ -42,7 +42,7 @@ def run(mpfile, include_cifs=True, **kwargs):
                     formula = mpfile.hdata[mpid]['data']['Formula']
                     if c.almost_equals(Composition(formula)):
                         try:
-                            #mpfile.add_structure(s, identifier=mpid)
+                            mpfile.add_structure(s, identifier=mpid)
                             print formula, 'added to', mpid
                         except Exception as ex:
                             print 'tried to add structure to', mpid, 'but', str(ex)
@@ -117,7 +117,7 @@ def run(mpfile, include_cifs=True, **kwargs):
             for mpid in phase[6]:
                 if include_cifs:
                     try:
-                        #mpfile.add_structure(phase[5], identifier=mpid)
+                        mpfile.add_structure(phase[5], identifier=mpid)
                         print framework, phase[0], 'added to', mpid
                     except ValueError as ex:
                         print 'tried to add structure to', mpid, 'but', str(ex)
