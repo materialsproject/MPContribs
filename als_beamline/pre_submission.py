@@ -1,15 +1,46 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 import os
-from decimal import Decimal
 from zipfile import ZipFile
 from StringIO import StringIO
+from scipy import where
+from decimal import Decimal
+from scipy.interpolate import interp1d, interp2d
+from pandas import to_numeric
 from mpcontribs.users.utils import duplicate_check
 from mpcontribs.io.core.recdict import RecursiveDict
 from mpcontribs.io.archieml.mpfile import MPFile
 from mpcontribs.io.core.utils import read_csv, clean_value
 from mpcontribs.io.core.components import Table
-from mpcontribs.io.core.utils import nest_dict
+from mpcontribs.io.core.utils import nest_dict, get_composition_from_string
+
+def get_concentration_functions(composition_table_dict):
+
+    meta = composition_table_dict['meta']
+    composition_table = Table.from_dict(composition_table_dict['data'])
+    elements = [col for col in composition_table.columns if col not in meta]
+    x = composition_table["X"].values
+    y = composition_table["Y"].values
+    cats = composition_table["X"].unique()
+    concentration, conc, d, y_c, functions = {}, {}, {}, {}, RecursiveDict()
+
+    for el in elements:
+        concentration[el] = to_numeric(composition_table[el].values)/100.
+        conc[el], d[el], y_c[el] = {}, {}, {}
+
+        if meta['X'] == 'category':
+            for i in cats:
+                k = '{:06.2f}'.format(float(i))
+                y_c[el][k] = to_numeric(y[where(x==i)])
+                conc[el][k] = to_numeric(concentration[el][where(x==i)])
+                d[el][k] = interp1d(y_c[el][k], conc[el][k])
+
+            functions[el] = lambda a, b, el=el: d[el][a](b)
+
+        else:
+            functions[el] = interp2d(float(x), float(y), concentration[el])
+
+    return functions
 
 @duplicate_check
 def run(mpfile, **kwargs):
@@ -20,36 +51,37 @@ def run(mpfile, **kwargs):
         return 'Please upload', zip_path
     zip_file = ZipFile(zip_path, 'r')
 
-    # pop all compositions to only submit processed contributions
-    # TODO: this could be skipped if positions in filename were automatically
-    #       converted to compositions
-    config = RecursiveDict(
-        (composition, mpfile.document.pop(composition))
-        for composition in mpfile.ids
-    )
+    composition_table_dict = mpfile.document['_hdata']['composition_table']
+    conc_funcs = get_concentration_functions(composition_table_dict)
 
-    for composition, data in config.items():
-        print composition
+    for info in zip_file.infolist():
+        print info.filename
         d = RecursiveDict()
 
-        # reset compositions to use % and clean_value
-        d['composition'] = RecursiveDict(
-            (k, clean_value(v, convert_to_percent=True))
-            for k, v in data['composition'].items()
-        )
-
-        # get positions.x/y from filename, e.g. Co_(-08.50,082.60).csv
-        name, xy = os.path.splitext(data['filename'])[0].split('_')
+        # positions.x/y from filename, <scan-id>_<meas-element>_<X>_<Y>.csv
+        element, x, y = os.path.splitext(info.filename)[0].rsplit('_', 4)
         d['position'] = RecursiveDict(
             (k, clean_value(v, 'mm'))
-            for k, v in zip(['x', 'y'], xy[1:-1].split(','))
+            for k, v in zip(['x', 'y'], [x, y])
         )
+
+        # composition
+        d['composition'] = RecursiveDict(
+            (el, clean_value(f(x, y), convert_to_percent=True))
+            for el, f in conc_funcs.items()
+        )
+
+        # identifier
+        identifier = get_composition_from_string(''.join([
+            '{}{}'.format(el, int(round(Decimal(comp.split()[0]))))
+            for el, comp in d['composition'].items()
+        ]))
 
         # load csv file
         try:
-            csv = zip_file.read(data['filename'])
+            csv = zip_file.read(info.filename)
         except KeyError:
-            print 'ERROR: Did not find %s in zip file' % data['filename']
+            print 'ERROR: Did not find %s in zip file' % info.filename
 
         # read csv to pandas DataFrame and add to MPFile
         df = read_csv(csv)
@@ -63,5 +95,5 @@ def run(mpfile, **kwargs):
         ))
 
         # add data to MPFile
-        mpfile.add_hierarchical_data(nest_dict(d, ['data']), identifier=composition)
-        mpfile.add_data_table(composition, df, name=name)
+        mpfile.add_hierarchical_data(nest_dict(d, ['data']), identifier=identifier)
+        mpfile.add_data_table(identifier, df, name=element)
