@@ -433,7 +433,7 @@ def get_card(request, cid, db_type=None, mdb=None):
             "response": ["<graph-url>"]
         }
     """
-    from mpcontribs.io.core.components import Tree, Plots, render_plot
+    from mpcontribs.io.core.components import HierarchicalData, Plots, render_plot
     from mpcontribs.io.core.utils import nested_dict_iter
     from mpcontribs.io.core.recdict import RecursiveDict, render_dict
     from django.template import Template, Context
@@ -445,7 +445,7 @@ def get_card(request, cid, db_type=None, mdb=None):
         projection={'_id': 0, 'mp_cat_id': 1, 'content': 1, 'collaborators': 1}
     )[0]
     mpid = contrib['mp_cat_id']
-    hdata = Tree(contrib['content'])
+    hdata = HierarchicalData(contrib['content'])
     plots = Plots(contrib['content'])
     title = hdata.get('title', 'No title available.')
     descriptions = hdata.get('description', 'No description available.').strip().split('.', 1)
