@@ -320,9 +320,7 @@ class Plot(object):
 
 class Plots(RecursiveDict):
     """class to hold and display multiple interactive graphs/plots"""
-    def __init__(self, content):
-        plotconfs = content.get(mp_level01_titles[2], RecursiveDict())
-        tables = Tables(content)
+    def __init__(self, tables, plotconfs):
         super(Plots, self).__init__(
             (plotconf['table'], Plot(
                 plotconf, tables[plotconf['table']]
@@ -342,9 +340,12 @@ class Plots(RecursiveDict):
 class GraphicalData(RecursiveDict):
     """class to hold and display all interactive graphs/plots of a MPFile"""
     def __init__(self, document):
+        tdata = TabularData(document)
         super(GraphicalData, self).__init__(
-            (identifier, Plots(content))
-            for identifier, content in document.iteritems()
+            (identifier, Plots(
+                tdata[identifier], content[mp_level01_titles[2]]
+            )) for identifier, content in document.iteritems()
+            if mp_level01_titles[2] in content
         )
 
     def __str__(self):
