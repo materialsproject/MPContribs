@@ -92,7 +92,7 @@ def strip_converter(text):
     except AttributeError:
         return text
 
-def read_csv(body, is_data_section=True):
+def read_csv(body, is_data_section=True, **kwargs):
     """run pandas.read_csv on (sub)section body"""
     body = body.strip()
     if not body: return None
@@ -114,6 +114,7 @@ def read_csv(body, is_data_section=True):
     else:
         options = { 'sep': ':', 'header': None, 'index_col': 0 }
         ncols = 2
+    options.update(**kwargs)
     converters = dict((col, strip_converter) for col in range(ncols))
     return Table(pandas.read_csv(
         StringIO(body), comment=csv_comment_char,
