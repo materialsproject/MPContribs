@@ -50,7 +50,8 @@ def index(request):
                     else:
                         idx = 1 # not released
                         entry['title'] = entry['project']
-                a_tags[idx].append(entry)
+                if not idx or (idx and 'jupyterhub' in endpoint):
+                    a_tags[idx].append(entry)
     else:
         ctx.update({'alert': 'Please log in!'})
     return render_to_response("mpcontribs_portal_index.html", locals(), ctx)
