@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 import uuid, json
 from pandas import DataFrame
@@ -280,7 +281,13 @@ def render_plot(plot, webapp=False, filename=None):
             x=plot.table[xaxis].tolist(),
             y=plot.table[axis].tolist(),
             name=axis
-        ) for axis in yaxes]
+        ) for axis in yaxes if 'ₑᵣᵣ' not in axis]
+        for trace in traces:
+            err_axis = trace['name'] + 'ₑᵣᵣ'
+            if err_axis in yaxes:
+                trace['error_y'] = dict(
+                    type='data', array=plot.table[err_axis], visible=True
+                )
         layout.update(dict(
             xaxis = dict(title=xaxis),
             yaxis = dict(
