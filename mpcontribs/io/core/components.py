@@ -95,6 +95,11 @@ def get_backgrid_table(df):
 
                 else:
                     value, unit = cell_split # TODO convert cell_split[0] to float?
+                    try:
+                        float(value) # unit is only a unit if value is number
+                    except:
+                        is_url_column = False
+                        continue
                     table['rows'][row_index].pop(old_col)
                     if prev_unit is None:
                         is_url_column = False
