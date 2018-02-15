@@ -15,11 +15,7 @@ class DlrVietenRester(MPContribsRester):
         if not docs:
             raise Exception('No contributions found for DlrVieten Explorer!')
 
-        data = []
-        columns = [
-            'identifier', 'contribution', 'sample number',
-            'full composition', 'tolerance factor'
-        ]
+        data, columns = [], ['identifier', 'contribution']
 
         for doc in docs:
             mpfile = MPFile.from_contribution(doc)
@@ -27,8 +23,23 @@ class DlrVietenRester(MPContribsRester):
             contrib = mpfile.hdata[identifier]['data']
             cid_url = self.get_cid_url(doc)
             row = [identifier, cid_url]
-            row += [contrib[k.replace(' ', '_')] for k in columns[2:]]
+
+            scope = []
+            for key, value in contrib.iterate():
+                    level, key = key
+                    level_reduction = bool(level < len(scope))
+                    if level_reduction:
+                        del scope[level:]
+                    if value is None:
+                        scope.append(key)
+                    else:
+                        col = '##'.join(scope + [key]).replace('_', ' ')
+                        if col not in columns:
+                            columns.append(col)
+                        row.append(value)
+
             data.append((identifier, row))
+
         return Table.from_items(data, orient='index', columns=columns)
 
     def get_ionic_radii(self):
