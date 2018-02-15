@@ -10,7 +10,7 @@ from mpcontribs.users.utils import duplicate_check
 @duplicate_check
 def run(mpfile, **kwargs):
     # TODO clone solar_perovskite if needed, abort if insufficient permissions
-    #from .solar_perovskite.core import GetExpThermo
+    from .solar_perovskite.core import GetExpThermo
 
     input_file = mpfile.hdata.general['input_file']
     input_file = os.path.join(os.path.dirname(__file__), input_file)
@@ -39,8 +39,9 @@ def run(mpfile, **kwargs):
             nest_dict(d, ['data']), identifier=identifier
         )
 
-        #exp_thermo = GetExpThermo(int(row['sample_number']), plotting=False)
-        ## delta, dh, dh_err, x, dh_fit, extrapolate, abs_delta
-        #results = exp_thermo.exp_dh()
-        #print delta
-        #print x
+        exp_thermo = GetExpThermo(int(row['sample_number']), plotting=False)
+        # TODO: x, dh_fit, extrapolate, abs_delta
+        delta, dh, dh_err = exp_thermo.exp_dh()
+        df = Table(RecursiveDict([('δ', delta), ('ΔH', dh), ('ΔHₑᵣᵣ', dh_err)]))
+        mpfile.add_data_table(identifier, df, name='ΔHₒ')
+        print 'DONE'
