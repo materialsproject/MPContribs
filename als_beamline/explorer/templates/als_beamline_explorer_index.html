@@ -45,185 +45,96 @@ code { display: block; white-space: pre-wrap; }
             mpr.get_contributions()
         </code>
     </div>
-    <div class="row">
-        <h3>Overview</h3>
-        <div id="graph1"></div>
-        <script>
-            requirejs(['main'], function() {
-                require(["plotly"], function(Plotly) {
-                    $(document).ready(function(){
-                        var table = window.tables[window.tables.length-1];
-                        var graph1 = document.getElementById('graph1');
-                        function makeAxis(title, tickangle) {
-                            return {
-                            title: title,
-                            titlefont: { size: 20 },
-                            tickangle: tickangle,
-                            tickfont: { size: 15 },
-                            tickcolor: 'rgba(0,0,0,0)',
-                            ticklen: 5,
-                            showline: true,
-                            showgrid: true
-                            }
-                        };
-                        var layout = {
-                            'ternary': {
-                            'sum': 100,
-                            'aaxis': makeAxis('Co', 0),
-                            'baxis': makeAxis('<br>Cu', 45),
-                            'caxis': makeAxis('<br>Ce', -45),
-                            },
-                            showlegend: false,
-                            updatemenus: [{
-                                a: 100,
-                                yanchor: 'top',
-                                xanchor: 'center',
-                                buttons: [{
-                                    method: 'restlye',
-                                    args: ['visible', [false, false, true]],
-                                    label: 'All'
-                                }, {
-                                    method: 'restyle',
-                                    args: ['visible', [true, false, false]],
-                                    label: 'XAS Data'
-                                }, {
-                                    method: 'restyle',
-                                    args: ['visible', [false, true, false]],
-                                    label: 'XMCD Data'
-                                }]
-                            }]
-                        };
-                        var elements = [
-                            'Co',
-                            'Cu',
-                            'Ce'
-                        ];
-                        
-                        var data_layers = [
-                            'XAS##min',
-                            'XMCD##min'
-                        ];
-                        
-                        console.log(table['rows'][0]['composition##Co [%]'])
-                       
-                        var avals = new Array(), bvals = new Array(), cvals = new Array(), cids = new Array(), 
-                        markercolor = new Array(), a_all = new Array(), b_all = new Array(), c_all = new Array(),
-                        color_all = new Array(), cids_all = new Array();
-                        
-                        for (j = 0; j < data_layers.length; j++) {
-                            avals[j] = new Array(); bvals[j] = new Array(); cvals[j] = new Array();
-                            cids[j] = new Array(); markercolor[j] = new Array()
-                            for (i = 0; i < table['rows'].length; i++) {
-                                row = table['rows'][i];
-                                if (row[data_layers[j]] != "") {
-                                    avals[j].push(row['composition##Co [%]'])
-                                    bvals[j].push(row['composition##Cu [%]'])
-                                    cvals[j].push(row['composition##Ce [%]'])
-                                    cids[j].push(row['cid'])
-                                    markercolor[j].push(row[data_layers[j]])
-                                    a_all.push(row['composition##Co [%]'])
-                                    b_all.push(row['composition##Cu [%]'])
-                                    c_all.push(row['composition##Ce [%]'])
-                                    color_all.push(j)
-                                    cids_all.push(row['cid'])
+    <div class="row" style="display: flex; align-items: center;">
+        <div class="col-md-5">
+            <div id="graph1" style="width: 100%;"></div>
+            <script>
+                requirejs(['main'], function() {
+                    require(["plotly"], function(Plotly) {
+                        $(document).ready(function(){
+                            var table = window.tables[window.tables.length-1];
+                            var graph1 = document.getElementById('graph1');
+                            function makeAxis(title, tickangle) {
+                                return {
+                                title: title,
+                                titlefont: { size: 20 },
+                                tickangle: tickangle,
+                                tickfont: { size: 15 },
+                                tickcolor: 'rgba(0,0,0,0)',
+                                ticklen: 5,
+                                showline: true,
+                                showgrid: true
                                 }
                             };
-                        };
-                        var XAS_Data = {
-                            type: 'scatterternary',
-                            mode: 'markers',
-                            a: avals[0],
-                            b: bvals[0],
-                            c: cvals[0],
-                            name: 'XAS',
-                            marker: {
-                            symbol: 0,
-                            color: markercolor[0],
-                            showscale: true,
-                            colorscale: 'Electric',
-                            size: 12,
-                            colorbar: {
-                                title: 'XAS min'
-                            }
-                            },
-                        };
-                        
-                        console.log(markercolor[0])
-                        
-                        var XMCD_Data = {
-                            type: 'scatterternary',
-                            mode: 'markers',
-                            a: avals[1],
-                            b: bvals[1],
-                            c: cvals[1],
-                            name: 'XMCD',
-                            marker: {
-                            symbol: 0,
-                            color: markercolor[1],
-                            showscale: true,
-                            colorscale: 'Jet',
-                            size: 12,
-                            colorbar: {
-                                title: 'XMCD min'
-                            }
-                            },
-                        };
-                        
-                        var All = {
-                            type: 'scatterternary',
-                            mode: 'markers',
-                            a: a_all,
-                            b: b_all,
-                            c: c_all,
-                            name: 'All',
-                            marker: {
-                            symbol: 0,
-                            color: color_all,
-                            showscale: false,
-                            colorscale: 'Portland',
-                            size: 12
-                            },
-                        };
-                  
-                        var data = [XAS_Data, XMCD_Data, All]
-                        
-                        Plotly.plot('graph1', data, layout)
-                        
-                        var update = {
-                            visible: false
-                        }
-                        
-                        Plotly.restyle('graph1', update, [0,1,2]);
-                        
-                        graph1.on('plotly_click', function(data){
-                            var pn = data.points[0].pointNumber
-                            var cn = data.points[0].curveNumber
-                            if (cn == 0) {
-                                var url = cids[0][pn]
-                            } else if (cn == 1) {
-                                var url = cids[1][pn]
-                            } else if (cn == 2) {
-                                var url = cids[2][pn]
-                            } else if (cn == 3) {
-                                var url = cids_all[pn]
-                            }
-                            window.open(url, '_blank')                                                           
+                          
+                            var layout = {
+                                'ternary': {
+                                'sum': 100,
+                                'aaxis': makeAxis('Co', 0),
+                                'baxis': makeAxis('<br>Cu', 45),
+                                'caxis': makeAxis('<br>Ce', -45),
+                                },
+                                showlegend: false,
+                            };
+
+                            var avals = new Array(), bvals = new Array(), cvals = new Array(), cids = new Array()
+
+                            for (i = 0; i < table['rows'].length; i++) {
+                                row = table['rows'][i];
+                                avals.push(row['composition##Co [%]'])
+                                bvals.push(row['composition##Cu [%]'])
+                                cvals.push(row['composition##Ce [%]'])
+                                cids.push(row['cid'])  
+                            };
+
+
+                            var data1 = {
+                                type: 'scatterternary',
+                                mode: 'markers',
+                                a: avals,
+                                b: bvals,
+                                c: cvals,
+                                name: 'CoCuCe',
+                                marker: {
+                                symbol: 0
+                                },
+                            };
+                            
+                            var data2 = {
+                                type: 'scatterternary',
+                                mode: 'lines',
+                                a: [100,0,66.667,0,0],
+                                b: [0,83.333,0, 66.667,],
+                                c: [0,16.667,33.333,33.333],
+                                name: 'MP-points',
+                                line: { color: 'black' }
+                            };
+
+                            var data = [data1, data2]
+
+                            Plotly.plot('graph1', data, layout)
+
+
+                            graph1.on('plotly_click', function(data){
+                                var pn = data.points[0].pointNumber
+                                var url = cids[pn]
+                                window.open(url, '_blank')                                                           
+                            });
                         });
                     });
                 });
-            });
-        </script>
-    <div class="row" style="display: flex; align-items: center;">
-        <div class="col-md-6">
-            <div id="graph1" style="width: 100%;"></div>
+            </script>
         </div>
-        <div class="col-md-6">
+        <div class="col-md-7" style=" flex-direction: column;">
             <h5>{{ XAS.divid }}</h5>
-            <div class="col-md-12" style="height: 300px;">{{ XAS.html|safe }}</div>
+            <div class="col-md-12" style="height: auto; max-width: 100%;">{{ XAS.html|safe }}</div>
             <h5>{{ XMCD.divid }}</h5>
-            <div class="col-md-12" style="height: 300px;">{{ XMCD.html|safe }}</div>
+            <div class="col-md-12" style="height: auto; max-width: 100%;">{{ XMCD.html|safe }}</div>
         </div>
     </div>
+    </div>
+    
+    
     <div class="row">
         {{ table|safe }}
     </div>
