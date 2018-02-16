@@ -20,6 +20,12 @@ def run(mpfile, **kwargs):
 
     for row in dct:
 
+        #d['oxidized_phase']['closest_MP'] = row['closest phase MP (oxidized)'].replace('n.a.', '')
+        # finish calculations for mp-id; fake until then ;)
+        composition = row['composition oxidized phase']
+        identifier = get_composition_from_string(composition) # TODO oxidized phase mp-id
+        print identifier
+
         d = RecursiveDict()
         #d['full_composition'] = row['full_composition']
         d['tolerance_factor'] = row['tolerance_factor']
@@ -33,36 +39,30 @@ def run(mpfile, **kwargs):
         d['Reference'] = row['Reference']
         d['sample_number'] = row['sample_number']
 
-        #d['oxidized_phase']['closest_MP'] = row['closest phase MP (oxidized)'].replace('n.a.', '')
-        # finish calculations for mp-id; fake until then ;)
-        composition = d['oxidized_phase']['composition']
-        identifier = get_composition_from_string(composition) # TODO oxidized phase mp-id
         mpfile.add_hierarchical_data(
             nest_dict(d, ['data']), identifier=identifier
         )
 
+        print 'add ΔH ...'
         sample_number = int(row['sample_number'])
         exp_thermo = GetExpThermo(sample_number, plotting=False)
         delta, dh, dh_err, x, dh_fit, extrapolate, abs_delta = exp_thermo.exp_dh()
         df = Table(RecursiveDict([('δ', delta), ('ΔH', dh), ('ΔHₑᵣᵣ', dh_err)]))
         mpfile.add_data_table(identifier, df, name='ΔHₒ')
 
+        print 'add ΔS ...'
         delta, ds, ds_err, x, ds_fit, extrapolate, abs_delta = exp_thermo.exp_ds()
         df = Table(RecursiveDict([('δ', delta), ('ΔS', ds), ('ΔSₑᵣᵣ', ds_err)]))
         mpfile.add_data_table(identifier, df, name='ΔSₒ')
 
-        #for path in glob('solar_perovskite/tga_results/ExpDat_JV_P_{}_*.csv'.format(sample_number)):
-        #    print path
-        #    body = open(path).read()
-        #    cols = ['Time [min]', 'Temperature [C]']#, 'dm [%]']#, 'pO2']
-        #    # TODO show secondary y-axes in graph if column values differ by more than an order of magnitude
-        #    table = read_csv(body, usecols=cols)#, skiprows=5)
-        #    table = Table(table[cols].iloc[::200, :])
-        #    print table.head()
-        #    mpfile.add_data_table(identifier, table, name='raw_data')
-        #    print mpfile.tdata[identifier]['raw_data']
-        #    break
-
-
+        print 'add raw data ...'
+        tga_results = os.path.join(os.path.dirname(__file__), 'solar_perovskite', 'tga_results')
+        for path in glob(os.path.join(tga_results, 'ExpDat_JV_P_{}_*.csv'.format(sample_number))):
+            print path.split('_{}_'.format(sample_number))[-1].split('.')[0], '...'
+            body = open(path, 'r').read()
+            cols = ['Time [min]', 'Temperature [C]', 'dm [%]', 'pO2']
+            table = read_csv(body, lineterminator=os.linesep, usecols=cols, skiprows=5)
+            table = table[cols].iloc[::100, :]
+            mpfile.add_data_table(identifier, table, name='raw_data')
 
         print 'DONE'
