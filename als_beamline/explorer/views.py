@@ -21,7 +21,8 @@ def index(request):
                 ctx['provenance'] = render_dict(prov, webapp=True)
                 ctx['table'] = render_dataframe(mpr.get_contributions(), webapp=True)
                 for typ in ['XAS', 'XMCD']:
-                    ctx[typ] = render_plot(mpr.get_all_spectra(typ), webapp=True)
+                    html, divid = render_plot(mpr.get_all_spectra(typ), webapp=True)
+                    ctx[typ] = {'html': html, 'divid': divid}
             except Exception as ex:
                 ctx.update({'alert': str(ex)})
     else:

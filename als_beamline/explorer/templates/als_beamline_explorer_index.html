@@ -50,8 +50,10 @@ code { display: block; white-space: pre-wrap; }
             <div id="graph1" style="width: 100%;"></div>
         </div>
         <div class="col-md-6">
-            <div class="col-md-12" style="height: 300px;">{{ XAS|safe }}</div>
-            <div class="col-md-12" style="height: 300px;">{{ XMCD|safe }}</div>
+            <h5>{{ XAS.divid }}</h5>
+            <div class="col-md-12" style="height: 300px;">{{ XAS.html|safe }}</div>
+            <h5>{{ XMCD.divid }}</h5>
+            <div class="col-md-12" style="height: 300px;">{{ XMCD.html|safe }}</div>
         </div>
     </div>
     <div class="row">

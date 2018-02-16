@@ -4,7 +4,7 @@ import os
 from django.shortcuts import render_to_response
 from django.template import RequestContext
 from mpcontribs.rest.views import get_endpoint
-from mpcontribs.io.core.components import render_dataframe, render_plot
+from mpcontribs.io.core.components import render_dataframe
 from mpcontribs.io.core.recdict import render_dict
 
 def index(request):
