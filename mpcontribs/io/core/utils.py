@@ -1,5 +1,5 @@
 from __future__ import unicode_literals
-import warnings, pandas, numpy, six, collections, string
+import warnings, pandas, six, collections, string
 from StringIO import StringIO
 from decimal import Decimal
 from mpcontribs.config import mp_level01_titles, mp_id_pattern, csv_comment_char
@@ -83,7 +83,7 @@ def strip_converter(text):
     try:
         text = text.strip()
         if not text:
-            return numpy.nan
+            return ''
         try:
             val = clean_value(text, max_dgts=6)
             return str(Decimal(val))
