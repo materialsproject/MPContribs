@@ -39,6 +39,7 @@
 %autoreload 2
 from mpcontribs.io.{{ session.options[0] }}.mpfile import MPFile
 mpfile = MPFile.from_file()
+mpfile.max_contribs = 5
 # Load pre-submission processing of "{{ session.options[1] }}" project
 from mpcontribs.users.{{ session.options[1] }}.pre_submission import run
 run(mpfile)
@@ -50,6 +51,7 @@ mpfile.write_file()
 %autoreload 2
 from mpcontribs.io.{{ session.options[0] }}.mpfile import MPFile
 mpfile = MPFile.from_file()
+mpfile.max_contribs = 5
 # do some pre-submission processing with MPFile ...
 mpfile.write_file()
       </pre>
