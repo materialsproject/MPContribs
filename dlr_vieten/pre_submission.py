@@ -15,7 +15,7 @@ def get_table(results, letter):
         ('δ', results[0]), (y, results[1]), (y+'ₑᵣᵣ', results[2])
     ]))
     x0, x1 = map(float, df['δ'].iloc[[0,-1]])
-    pad = 0.1 * (x1 - x0)
+    pad = 0.15 * (x1 - x0)
     mask = (results[3] > x0 - pad) & (results[3] < x1 + pad)
     x, fit = results[3][mask], results[4][mask]
     df.set_index('δ', inplace=True)
@@ -39,14 +39,12 @@ def run(mpfile, **kwargs):
 
     for row in dct:
 
-        #d['oxidized_phase']['closest_MP'] = row['closest phase MP (oxidized)'].replace('n.a.', '')
-        # finish calculations for mp-id; fake until then ;)
-        composition = row['composition oxidized phase']
-        identifier = get_composition_from_string(composition) # TODO oxidized phase mp-id
+        identifier = row['closest phase MP (oxidized)'].replace('n.a.', '')
+        if not identifier:
+            continue
         print identifier
 
         d = RecursiveDict()
-        #d['full_composition'] = row['full_composition']
         d['tolerance_factor'] = row['tolerance_factor']
         d['solid_solution'] = row['type of solid solution']
         d['oxidized_phase'] = RecursiveDict()
@@ -55,7 +53,7 @@ def run(mpfile, **kwargs):
         d['reduced_phase'] = RecursiveDict()
         d['reduced_phase']['composition'] = row['composition reduced phase']
         d['reduced_phase']['closest_MP'] = row['closest phase MP (reduced)'].replace('n.a.', '')
-        d['Reference'] = row['Reference']
+        #d['Reference'] = row['Reference']
         d['sample_number'] = row['sample_number']
 
         mpfile.add_hierarchical_data(
@@ -82,6 +80,14 @@ def run(mpfile, **kwargs):
             cols = ['Time [min]', 'Temperature [C]', 'dm [%]', 'pO2']
             table = read_csv(body, lineterminator=os.linesep, usecols=cols, skiprows=5)
             table = table[cols].iloc[::100, :]
+            # scale/shift for better graphs
+            T, dm, p = [pd.to_numeric(table[col]) for col in cols[1:]]
+            T_min, T_max, dm_min, dm_max, p_max = T.min(), T.max(), dm.min(), dm.max(), p.max()
+            rT, rdm = abs(T_max - T_min), abs(dm_max - dm_min)
+            table[cols[2]] = (dm - dm_min) * rT/rdm
+            table[cols[3]] = p * rT/p_max
+            table.rename(columns={
+                'dm [%]': '(dm [%] + {:.4g}) * {:.4g}'.format(-dm_min, rT/rdm),
+                'pO2': 'pO₂ * {:.4g}'.format(rT/p_max)
+            }, inplace=True)
             mpfile.add_data_table(identifier, table, name='raw')
-
-        print 'DONE'

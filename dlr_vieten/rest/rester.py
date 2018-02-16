@@ -8,6 +8,7 @@ class DlrVietenRester(MPContribsRester):
     """DlrVieten-specific convenience functions to interact with MPContribs REST interface"""
     query = {'content.urls.GitHub': 'https://github.com/josuav1/solar_perovskite'}
     provenance_keys = ['title', 'authors', 'description', 'urls']
+    released = True
 
     def get_contributions(self):
         projection = {'_id': 1, 'mp_cat_id': 1, 'content': 1}
