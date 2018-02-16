@@ -2,11 +2,30 @@
 from __future__ import unicode_literals
 import os
 from glob import glob
+import pandas as pd
 from mpcontribs.io.core.utils import get_composition_from_string
 from mpcontribs.io.core.recdict import RecursiveDict
 from mpcontribs.io.core.utils import clean_value, read_csv, nest_dict
 from mpcontribs.io.core.components import Table
 from mpcontribs.users.utils import duplicate_check
+
+def get_table(results, letter):
+    y = 'Δ{}'.format(letter)
+    df = Table(RecursiveDict([
+        ('δ', results[0]), (y, results[1]), (y+'ₑᵣᵣ', results[2])
+    ]))
+    x0, x1 = map(float, df['δ'].iloc[[0,-1]])
+    pad = 0.1 * (x1 - x0)
+    mask = (results[3] > x0 - pad) & (results[3] < x1 + pad)
+    x, fit = results[3][mask], results[4][mask]
+    df.set_index('δ', inplace=True)
+    df2 = pd.DataFrame(RecursiveDict([
+        ('δ', x), (y+' Fit', fit)
+    ]))
+    df2.set_index('δ', inplace=True)
+    cols = ['δ', y, y+'ₑᵣᵣ', y+' Fit']
+    return pd.concat([df, df2]).sort_index().reset_index().rename(
+        columns={'index': 'δ'}).fillna('')[cols]
 
 @duplicate_check
 def run(mpfile, **kwargs):
@@ -46,14 +65,14 @@ def run(mpfile, **kwargs):
         print 'add ΔH ...'
         sample_number = int(row['sample_number'])
         exp_thermo = GetExpThermo(sample_number, plotting=False)
-        delta, dh, dh_err, x, dh_fit, extrapolate, abs_delta = exp_thermo.exp_dh()
-        df = Table(RecursiveDict([('δ', delta), ('ΔH', dh), ('ΔHₑᵣᵣ', dh_err)]))
-        mpfile.add_data_table(identifier, df, name='ΔHₒ')
+        enthalpy = exp_thermo.exp_dh()
+        table = get_table(enthalpy, 'H')
+        mpfile.add_data_table(identifier, table, name='enthalpy')
 
         print 'add ΔS ...'
-        delta, ds, ds_err, x, ds_fit, extrapolate, abs_delta = exp_thermo.exp_ds()
-        df = Table(RecursiveDict([('δ', delta), ('ΔS', ds), ('ΔSₑᵣᵣ', ds_err)]))
-        mpfile.add_data_table(identifier, df, name='ΔSₒ')
+        entropy = exp_thermo.exp_ds()
+        table = get_table(entropy, 'S')
+        mpfile.add_data_table(identifier, table, name='entropy')
 
         print 'add raw data ...'
         tga_results = os.path.join(os.path.dirname(__file__), 'solar_perovskite', 'tga_results')
@@ -63,6 +82,6 @@ def run(mpfile, **kwargs):
             cols = ['Time [min]', 'Temperature [C]', 'dm [%]', 'pO2']
             table = read_csv(body, lineterminator=os.linesep, usecols=cols, skiprows=5)
             table = table[cols].iloc[::100, :]
-            mpfile.add_data_table(identifier, table, name='raw_data')
+            mpfile.add_data_table(identifier, table, name='raw')
 
         print 'DONE'
