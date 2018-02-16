@@ -314,16 +314,18 @@ def render_plot(plot, webapp=False, filename=None):
         print type(img)
     else:
         from plotly.offline.offline import _plot_html # long import time
-        html = _plot_html(
+        plot_html = _plot_html(
             fig, False, '', True, '100%', '100%', global_requirejs=True
-        )[0]
+        )
+        html, divid = plot_html[0], plot_html[1]
         if not webapp:
             return html
         plotly_require = 'require(["plotly"], function(Plotly) {'
-        return html.replace(
+        html = html.replace(
             plotly_require,
             'requirejs(["main"], function() { ' + plotly_require
         ).replace('});</script>', '})});</script>')
+        return html, divid
 
 class Plot(object):
     """class to hold and display single interactive graph/plot"""
