@@ -117,6 +117,7 @@ class MPContributionsBuilder():
             if 'cid' in contrib['content']:
                 contrib['content'].pop('cid')
             nb['cells'].append(nbf.new_code_cell(
+                "from __future__ import unicode_literals\n"
                 "from mpcontribs.io.core.mpfile import MPFileCore\n"
                 "from mpcontribs.io.core.recdict import RecursiveDict\n"
                 "mpfile = MPFileCore.from_contribution({})\n"
@@ -125,6 +126,7 @@ class MPContributionsBuilder():
             ))
         else:
             nb['cells'].append(nbf.new_code_cell(
+                "from __future__ import unicode_literals\n"
                 "from mpcontribs.rest.rester import MPContribsRester"
             ))
             os.environ['PMG_MAPI_KEY'] = api_key
@@ -149,7 +151,7 @@ class MPContributionsBuilder():
                     "#### {}".format(table_name)
                 ))
                 nb['cells'].append(nbf.new_code_cell(
-                    "mpfile.tdata[identifier][u'{}']".format(table_name)
+                    "mpfile.tdata[identifier]['{}']".format(table_name)
                 ))
         if mpfile.gdata.get(mp_cat_id):
             nb['cells'].append(nbf.new_markdown_cell("### Graphical Data"))
@@ -158,7 +160,7 @@ class MPContributionsBuilder():
                     "#### {}".format(plot_name)
                 ))
                 nb['cells'].append(nbf.new_code_cell(
-                    "mpfile.gdata[identifier][u'{}']".format(plot_name)
+                    "mpfile.gdata[identifier]['{}']".format(plot_name)
                 ))
 
         if mpfile.sdata.get(mp_cat_id):
@@ -168,7 +170,7 @@ class MPContributionsBuilder():
                     "#### {}".format(structure_name)
                 ))
                 nb['cells'].append(nbf.new_code_cell(
-                    "mpfile.sdata[identifier][u'{}']".format(structure_name)
+                    "mpfile.sdata[identifier]['{}']".format(structure_name)
                 ))
 
         self.ep.preprocess(nb, {'metadata': {'path': self.nbdir}})
