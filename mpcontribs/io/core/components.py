@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 import uuid, json
-from pandas import DataFrame
+import pandas as pd
 from mpcontribs.config import mp_level01_titles, mp_id_pattern, object_id_pattern
 from mpcontribs.io.core.utils import nest_dict
 from recdict import RecursiveDict
@@ -187,7 +187,7 @@ def render_dataframe(df, webapp=False):
 #    html_f = ipython.display_formatter.formatters['text/html']
 #    html_f.for_type(DataFrame, render_dataframe)
 
-class Table(DataFrame):
+class Table(pd.DataFrame):
 
     def to_dict(self):
         for col in self.columns:
@@ -277,17 +277,21 @@ def render_plot(plot, webapp=False, filename=None):
         xaxis, yaxis = plot.config['x'], plot.config.get('y', None)
         yaxes = [yaxis] if yaxis is not None else \
                 [col for col in plot.table.columns if col != xaxis]
-        traces = [dict(
-            x=plot.table[xaxis].tolist(),
-            y=plot.table[axis].tolist(),
-            name=axis
-        ) for axis in yaxes if 'ₑᵣᵣ' not in axis]
+        traces = []
+        for axis in yaxes:
+            if 'ₑᵣᵣ' not in axis:
+                tbl = plot.table[[xaxis, axis]].replace('', pd.np.nan).dropna()
+                traces.append(dict(
+                    x=tbl[xaxis].tolist(), y=tbl[axis].tolist(), name=axis
+                ))
         for trace in traces:
             err_axis = trace['name'] + 'ₑᵣᵣ'
             if err_axis in yaxes:
+                errors = plot.table[err_axis].replace('', pd.np.nan).dropna()
                 trace['error_y'] = dict(
-                    type='data', array=plot.table[err_axis], visible=True
+                    type='data', array=errors, visible=True
                 )
+                trace['mode'] = 'markers'
         layout.update(dict(
             xaxis = dict(title=xaxis),
             yaxis = dict(
