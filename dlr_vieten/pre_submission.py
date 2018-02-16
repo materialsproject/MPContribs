@@ -1,56 +1,93 @@
-#from mpcontribs.users.dlr_vieten.rest.rester import DlrVietenRester
-from mpcontribs.config import mp_level01_titles, mp_id_pattern
+# -*- coding: utf-8 -*-
+from __future__ import unicode_literals
+import os
+from glob import glob
+import pandas as pd
 from mpcontribs.io.core.utils import get_composition_from_string
 from mpcontribs.io.core.recdict import RecursiveDict
-import pandas as pd
-import csv
+from mpcontribs.io.core.utils import clean_value, read_csv, nest_dict
+from mpcontribs.io.core.components import Table
+from mpcontribs.users.utils import duplicate_check
 
-def run(mpfile, dup_check_test_site=True):
+def get_table(results, letter):
+    y = 'Δ{}'.format(letter)
+    df = Table(RecursiveDict([
+        ('δ', results[0]), (y, results[1]), (y+'ₑᵣᵣ', results[2])
+    ]))
+    x0, x1 = map(float, df['δ'].iloc[[0,-1]])
+    pad = 0.15 * (x1 - x0)
+    mask = (results[3] > x0 - pad) & (results[3] < x1 + pad)
+    x, fit = results[3][mask], results[4][mask]
+    df.set_index('δ', inplace=True)
+    df2 = pd.DataFrame(RecursiveDict([
+        ('δ', x), (y+' Fit', fit)
+    ]))
+    df2.set_index('δ', inplace=True)
+    cols = ['δ', y, y+'ₑᵣᵣ', y+' Fit']
+    return pd.concat([df, df2]).sort_index().reset_index().rename(
+        columns={'index': 'δ'}).fillna('')[cols]
 
-    from pymatgen import MPRester
-    existing_identifiers = {}
-    #for b in [False, True]:
-    #    with DlrVietenRester(test_site=b) as mpr:
-    #        for doc in mpr.query_contributions():
-    #            existing_identifiers[doc['mp_cat_id']] = doc['_id']
-    #    if not dup_check_test_site:
-    #        break
+@duplicate_check
+def run(mpfile, **kwargs):
+    # TODO clone solar_perovskite if needed, abort if insufficient permissions
+    from .solar_perovskite.core import GetExpThermo
 
-    google_sheet = mpfile.document[mp_level01_titles[0]].pop('google_sheet')
-    google_sheet += '/export?format=xlsx'
-    df_dct = pd.read_excel(google_sheet, sheetname=None)
+    input_file = mpfile.hdata.general['input_file']
+    input_file = os.path.join(os.path.dirname(__file__), input_file)
+    table = read_csv(open(input_file, 'r').read().replace(';', ','))
+    dct = super(Table, table).to_dict(orient='records', into=RecursiveDict)
 
-    mpr = MPRester()
-    update = 0
-    for sheet in df_dct.keys():
-        print(sheet)
-        df = df_dct[sheet]
+    for row in dct:
 
-        sheet_split = sheet.split()
-        composition = sheet_split[0]
-        identifier = get_composition_from_string(composition)
-        if len(sheet_split) > 1 and mp_id_pattern.match(sheet_split[1]):
-            identifier = sheet_split[1]
-        print('identifier = {}'.format(identifier))
+        identifier = row['closest phase MP (oxidized)'].replace('n.a.', '')
+        if not identifier:
+            continue
+        print identifier
 
-        if 'CIF' in sheet_split:
-            print('adding CIF ...')
-            df.columns = [df.columns[0]] + ['']*(df.shape[1]-1)
-            cif = df.to_csv(na_rep='', index=False, sep='\t', quoting=csv.QUOTE_NONE)
-            mpfile.add_structure(cif, identifier=identifier, fmt='cif')
+        d = RecursiveDict()
+        d['tolerance_factor'] = row['tolerance_factor']
+        d['solid_solution'] = row['type of solid solution']
+        d['oxidized_phase'] = RecursiveDict()
+        d['oxidized_phase']['composition'] = row['composition oxidized phase']
+        d['oxidized_phase']['crystal_structure'] = row['crystal structure (fully oxidized)']
+        d['reduced_phase'] = RecursiveDict()
+        d['reduced_phase']['composition'] = row['composition reduced phase']
+        d['reduced_phase']['closest_MP'] = row['closest phase MP (reduced)'].replace('n.a.', '')
+        #d['Reference'] = row['Reference']
+        d['sample_number'] = row['sample_number']
 
-        else:
-            print('adding data ...')
-            mpfile.add_hierarchical_data({'composition': composition}, identifier=identifier)
-            mpfile.add_data_table(identifier, df, name='dH_dS')
+        mpfile.add_hierarchical_data(
+            nest_dict(d, ['data']), identifier=identifier
+        )
 
-        if identifier in existing_identifiers:
-            cid = existing_identifiers[identifier]
-            mpfile.insert_id(identifier, cid)
-            update += 1
+        print 'add ΔH ...'
+        sample_number = int(row['sample_number'])
+        exp_thermo = GetExpThermo(sample_number, plotting=False)
+        enthalpy = exp_thermo.exp_dh()
+        table = get_table(enthalpy, 'H')
+        mpfile.add_data_table(identifier, table, name='enthalpy')
 
-    print len(mpfile.ids), 'contributions to submit.'
-    if update > 0:
-        print update, 'contributions to update.'
+        print 'add ΔS ...'
+        entropy = exp_thermo.exp_ds()
+        table = get_table(entropy, 'S')
+        mpfile.add_data_table(identifier, table, name='entropy')
 
-
+        print 'add raw data ...'
+        tga_results = os.path.join(os.path.dirname(__file__), 'solar_perovskite', 'tga_results')
+        for path in glob(os.path.join(tga_results, 'ExpDat_JV_P_{}_*.csv'.format(sample_number))):
+            print path.split('_{}_'.format(sample_number))[-1].split('.')[0], '...'
+            body = open(path, 'r').read()
+            cols = ['Time [min]', 'Temperature [C]', 'dm [%]', 'pO2']
+            table = read_csv(body, lineterminator=os.linesep, usecols=cols, skiprows=5)
+            table = table[cols].iloc[::100, :]
+            # scale/shift for better graphs
+            T, dm, p = [pd.to_numeric(table[col]) for col in cols[1:]]
+            T_min, T_max, dm_min, dm_max, p_max = T.min(), T.max(), dm.min(), dm.max(), p.max()
+            rT, rdm = abs(T_max - T_min), abs(dm_max - dm_min)
+            table[cols[2]] = (dm - dm_min) * rT/rdm
+            table[cols[3]] = p * rT/p_max
+            table.rename(columns={
+                'dm [%]': '(dm [%] + {:.4g}) * {:.4g}'.format(-dm_min, rT/rdm),
+                'pO2': 'pO₂ * {:.4g}'.format(rT/p_max)
+            }, inplace=True)
+            mpfile.add_data_table(identifier, table, name='raw')

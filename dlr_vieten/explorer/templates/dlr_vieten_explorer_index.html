@@ -1,7 +1,7 @@
 {% extends "../../webtzite/templates/base/header_footer.html" %}
 {% load staticfiles %}
 
-{% block title %} DLR Vieten {% endblock title %}
+{% block title %} RedoxThermoCSP {% endblock title %}
 
 {% block extra_css %}
 <link rel="stylesheet" href='{% static "js/components/bootstrap/dist/css/bootstrap.css" %}' charset="utf-8">
@@ -13,9 +13,11 @@
 {% endblock extra_css %}
 
 {% block content %}
+<!--
 <ul class="nav nav-pills">
     <li role="presentation"><a href='tolerance_factors/'>tolerance factors</a></li>
 </ul>
+-->
 
 {% if alert %}
 
@@ -31,19 +33,35 @@
 <style>
 .backgrid { font-family: "symbola"; }
 .backgrid tbody tr:hover { background-color: #f9f9f9; }
+.backgrid .sortable { text-align: center; }
+.backgrid thead th button { display: inline; }
 .jh-root { font-family: "symbola"; }
 .jh-type-string { font-style: normal; }
+code { display: block; white-space: pre-wrap; }
 </style>
 
 <div class="container">
-
+    <a href="{% url 'mpcontribs_portal_index' %}">&laquo; Portal</a>
     <div class="row">
-        <h2>{{ title }}</h2>
-        {{ provenance|safe }}
+        <div class="col-md-12">
+            <h2>{{ title }}</h2>
+            {{ provenance|safe }}
+        </div>
     </div>
     <div class="row">
-        <h3>Data</h3>
-        {{ table|safe }}
+        <div class="col-md-12">
+            <code>
+                from mpcontribs.users.dlr_vieten.rest.rester import DlrVietenRester
+                mpr = DlrVietenRester()
+                mpr.get_contributions()
+            </code>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-12">
+            <h3>Data</h3>
+            {{ table|safe }}
+        </div>
     </div>
 
 </div>

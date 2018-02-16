@@ -43,7 +43,7 @@ class AlsBeamlineRester(MPContribsRester):
         if typ not in types:
             raise Exception('{} not in {}'.format(typ, types))
 
-        projection = {'_id': 1, 'mp_cat_id': 1, 'content._tdata_Co': 1}
+        projection = {'_id': 1, 'mp_cat_id': 1, 'content.Co': 1}
         docs = self.query_contributions(projection=projection)
         if not docs:
             raise Exception('No contributions found for ALS Beamline Explorer!')
@@ -52,7 +52,7 @@ class AlsBeamlineRester(MPContribsRester):
         for doc in docs:
             mpfile = MPFile.from_contribution(doc)
             identifier = mpfile.ids[0]
-            df = mpfile.tdata[identifier]['_tdata_Co']
+            df = mpfile.tdata[identifier]['Co']
             if 'Energy' not in table.columns:
                 table['Energy'] = df['Energy']
             table[identifier] = df[typ]

@@ -3,3 +3,4 @@
 *.zip
 .ipynb_checkpoints
 MnO2_phase_selection/errors.json
+dlr_vieten/solar_perovskite

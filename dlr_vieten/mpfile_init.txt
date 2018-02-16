@@ -1,11 +1,21 @@
-title: Redox Thermodynamics Perovskites ABO3
-author: Josua Vieten
-google_sheet: https://docs.google.com/spreadsheets/d/1CF_u6FepS3_IuRAwta0KIhONmKXzPicZVS0v_h1JiXw
+title: RedoxThermoCSP
+authors:
+J. Vieten, B. Bulfin, D. Guban, L. Zhu, P. Huck, M. Horton,
+K. Persson, M. Roeb, C. Sattler
+:end
 
 description:
-We have measured thermodynamic data of perovskites ABO3-δ , i.e. ΔH and ΔS in
-dependence of the non-stoichiometry δ by means of thermogravimetric analysis.
-That means, we measured the mass changes in dependence of T and p(O2),
-determined the corresponding non-stoichiometry changes and used this data to
-extract thermodynamic properties from van’t Hoff plots. [t=1.006]
+Redox Materials Thermochemistry Data for Application in
+Concentrated Solar Power. We have measured thermodynamic data of
+perovskites ABOₓ with x=3-δ, i.e. ΔH and ΔS in dependence of the
+non-stoichiometry δ by means of thermogravimetric analysis. That
+means, we measured the mass changes in dependence of T and p(O₂),
+determined the corresponding non-stoichiometry changes and used
+this data to extract thermodynamic properties from van’t Hoff
+plots. [t=1.006]
 :end
+
+input_file: solar_perovskite/datafiles/Exp_sample_data.csv
+
+{urls}
+GitHub: https://github.com/josuav1/solar_perovskite
