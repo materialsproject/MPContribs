@@ -11,11 +11,12 @@ def get_users_modules():
 def get_user_urlpatterns():
     urlpatterns = []
     for mod_path in get_users_modules():
-        if os.path.exists(os.path.join(mod_path, 'explorer', 'apps.py')):
-            url = '^{}'.format(os.path.join(os.path.basename(mod_path), ''))
-            mod_path_split = os.path.normpath(mod_path).split(os.sep)[-3:]
-            include_urls = '.'.join(mod_path_split + ['explorer', 'urls'])
-            urlpatterns.append((url, include_urls))
+        for app in ['explorer', 'rest']:
+            if os.path.exists(os.path.join(mod_path, app, 'apps.py')):
+                url = '^{}'.format(os.path.join(os.path.basename(mod_path), ''))
+                mod_path_split = os.path.normpath(mod_path).split(os.sep)[-3:]
+                include_urls = '.'.join(mod_path_split + [app, 'urls'])
+                urlpatterns.append((url, include_urls))
     return urlpatterns
 
 def get_user_static_dirs():
@@ -44,13 +45,14 @@ def get_user_installed_apps():
     installed_apps = []
     for mod_path in get_users_modules():
         mod = os.path.basename(mod_path)
-        explorer = os.path.join(mod_path, 'explorer', 'apps.py')
-        if os.path.exists(explorer):
-            #config = get_user_explorer_config(mod)
-            #installed_apps.append('.'.join(['test_site', 'apps', config]))
-            mod_path_split = os.path.normpath(mod_path).split(os.sep)[-3:]
-            name = '.'.join(mod_path_split + ['explorer'])
-            installed_apps.append(name)
+        for app in ['explorer', 'rest']:
+            explorer = os.path.join(mod_path, app, 'apps.py')
+            if os.path.exists(explorer):
+                #config = get_user_explorer_config(mod)
+                #installed_apps.append('.'.join(['test_site', 'apps', config]))
+                mod_path_split = os.path.normpath(mod_path).split(os.sep)[-3:]
+                name = '.'.join(mod_path_split + [app])
+                installed_apps.append(name)
     return installed_apps
 
 def get_user_rester(mod):
