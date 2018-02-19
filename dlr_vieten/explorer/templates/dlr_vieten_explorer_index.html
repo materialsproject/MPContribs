@@ -63,8 +63,35 @@ code { display: block; white-space: pre-wrap; }
             {{ table|safe }}
         </div>
     </div>
+    <div class="row">
+        <div class="col-md-12">
+            <div id=isotherm></div>
+        </div>
+    </div>
 
 </div>
+
+<script>
+requirejs(['main'], function() {
+    require(["plotly"], function(Plotly) {
+        $(document).ready(function(){
+            var cid = '5a8a2b7b7b4b7e31c1104c74';
+            $.ajax({
+                type: 'GET',
+                url: 'rest/' + cid,
+                success: function(data, textStatus, jqXHR) {
+                    // data['response'] = {'x':, [...], 'y': [...]}
+                    console.log(data['response']);
+                    Plotly.plot('isotherm', [data['response']], {title: 'Isotherm for ' + cid});
+                },
+                error: function(jqXHR, textStatus, errorThrown) {
+                    console.log(errorThrown);
+                }
+            });
+        });
+    });
+});
+</script>
 
 {% endif %}
 {% endblock %}
