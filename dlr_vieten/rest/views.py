@@ -9,9 +9,8 @@ from mpcontribs.rest.views import Connector
 ConnectorBase.register(Connector)
 
 @mapi_func(supported_methods=["POST", "GET"], requires_api_key=True)
-def index(request, db_type=None, mdb=None):
+def index(request, cid, db_type=None, mdb=None):
     try:
-        cid = '5a8687dc7b4b7e0bc8433fe0'
         pars = mdb.contrib_ad.query_contributions(
             {'_id': cid}, projection={'_id': 0, 'content.pars': 1}
         )[0]['content']['pars']
@@ -35,8 +34,8 @@ def index(request, db_type=None, mdb=None):
                 solutioniso = a if abs(funciso(a, *args)) < abs(funciso(b, *args)) else b
             resiso.append(solutioniso)
 
-        ##print pd.np.exp(x_val)
-        response = resiso
+        x = list(pd.np.exp(x_val))
+        response = {'x': x, 'y': resiso}
     except Exception as ex:
         raise ValueError('"REST Error: "{}"'.format(str(ex)))
     return {"valid_response": True, 'response': response}
