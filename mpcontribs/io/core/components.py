@@ -137,7 +137,7 @@ def render_dataframe(df, webapp=False):
         html += "requirejs(['main'], function() {"
     html += """
     require([
-      "backbone", "backgrid", "backgrid-paginator",
+      "backbone", "backgrid", "backgrid-paginator", "backgrid-select-all",
       "backgrid-filter", "backgrid-grouped-columns"
     ], function(Backbone, Backgrid) {
       "use strict";
@@ -148,6 +148,10 @@ def render_dataframe(df, webapp=False):
       var Rows = Backbone.PageableCollection.extend({
           model: Row, mode: "client", state: {pageSize: 20}
       });
+      var ClickableCell = Backgrid.StringCell.extend({
+        events: {"click": "onClick"},
+        onClick: function (e) { Backbone.trigger("cellclicked", e); }
+      })
       var rows = new Rows(table['rows']);
       var objectid_regex = /^[a-f\d]{24}$/i;
       for (var idx in table['columns']) {
@@ -162,6 +166,8 @@ def render_dataframe(df, webapp=False):
                       return identifier;
                   }
               })
+          } else {
+            table['columns'][idx]['cell'] = ClickableCell;
           }
       }
       var header = Backgrid.Extension.GroupedHeader;
