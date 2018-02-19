@@ -21,7 +21,7 @@ def index(request, db_type=None, mdb=None):
             elif not v[0].isalpha():
                 pars[k] = float(v)
 
-        temp = 800
+        temp = pars['t_avg']
         temp += 273.15 # Celsius vs Kelvin / decide via unit?
         x_val = pd.np.log(pd.np.logspace(-5, -1, num=100)) # pd.np.log10(p_min, p_max)
         resiso = []
@@ -43,8 +43,11 @@ def index(request, db_type=None, mdb=None):
 
 def funciso(delta, T, x, p):
     d_delta = delta - p['delta_0']
-    dh = enth_arctan(d_delta, *(p['fit_param_enth'].values())) * 1000.
-    ds_pars = p['fit_par_ent'].values() + [p['act_mat'].values()[0], p['fit_param_fe'].values()]
+    dh_pars = [p['fit_param_enth'][c] for c in 'abcd']
+    dh = enth_arctan(d_delta, *(dh_pars)) * 1000.
+    ds_pars = [p['fit_par_ent'][c] for c in 'abc']
+    ds_pars.append(p['act_mat'].values()[0])
+    ds_pars.append([p['fit_param_fe'][c] for c in 'abcd'])
     ds = entr_mixed(delta-p['fit_par_ent']['c'], *ds_pars)
     return dh - x*ds + R*T*x/2
 

@@ -12,6 +12,7 @@ from mpcontribs.users.utils import duplicate_check
 def get_fit_pars(sample_number):
     from .solar_perovskite.modelling.isographs import Experimental
     from .solar_perovskite.init.import_data import Importdata
+    max_dgts = 6
     d = RecursiveDict()
     exp = Experimental(sample_number)
     fitparam = exp.get_fit_parameters()
@@ -19,27 +20,33 @@ def get_fit_pars(sample_number):
     #            fit_type_entr, fit_param_entr, delta_min, delta_max
     fit_par_ent = [fitparam[6][0], fitparam[6][1], fitparam[1]]
     d['fit_par_ent'] = RecursiveDict(
-        (k, clean_value(v))
+        (k, clean_value(v, max_dgts=max_dgts))
         for k, v in zip('abc', fit_par_ent)
     )
     d['fit_param_enth'] = RecursiveDict(
-        (k, clean_value(v))
+        (k, clean_value(v, max_dgts=max_dgts))
         for k, v in zip('abcd', fitparam[4])
     )
-    d['fit_type_entr'] = clean_value(fitparam[5])
-    d['delta_0'] = clean_value(fitparam[1])
-    d['delta_min'] = clean_value(fitparam[7])
-    d['delta_max'] = clean_value(fitparam[8])
+    d['fit_type_entr'] = clean_value(fitparam[5], max_dgts=max_dgts)
+    d['delta_0'] = clean_value(fitparam[1], max_dgts=max_dgts)
+    d['delta_min'] = clean_value(fitparam[7], max_dgts=max_dgts)
+    d['delta_max'] = clean_value(fitparam[8], max_dgts=max_dgts)
     fit_param_fe = pd.np.loadtxt(os.path.abspath(os.path.join(
         os.path.dirname(__file__), 'solar_perovskite', "datafiles", "entropy_fitparam_SrFeOx"
     )))
     d['fit_param_fe'] = RecursiveDict(
-        (k, clean_value(v))
+        (k, clean_value(v, max_dgts=max_dgts))
         for k,v in zip('abcd', fit_param_fe)
     )
     imp = Importdata()
     act_mat = imp.find_active(sample_no=sample_number)
-    d['act_mat'] = {act_mat[0]: clean_value(act_mat[1])}
+    d['act_mat'] = {act_mat[0]: clean_value(act_mat[1], max_dgts=max_dgts)}
+    fpath = os.path.join(
+        os.path.dirname(__file__), 'solar_perovskite', 'rawdata',
+        'JV_P_{}_H_S_error_advanced.csv'.format(sample_number)
+    )
+    temps = read_csv(open(fpath, 'r').read(), usecols=['T'])
+    d['t_avg'] = clean_value(pd.to_numeric(temps['T']).mean(), max_dgts=max_dgts)
     return d
 
 def get_table(results, letter):
@@ -72,9 +79,13 @@ def run(mpfile, **kwargs):
 
     for row in dct:
 
-        identifier = row['closest phase MP (oxidized)'].replace('n.a.', '')
-        if not identifier:
+        sample_number = int(row['sample_number'])
+        if sample_number not in [100, 106]:
             continue
+
+        #identifier = row['closest phase MP (oxidized)'].replace('n.a.', '')
+        #if not identifier:
+        identifier = get_composition_from_string(row['composition oxidized phase'])
         print identifier
 
         print 'add hdata ...'
@@ -88,7 +99,6 @@ def run(mpfile, **kwargs):
         d['reduced_phase']['composition'] = row['composition reduced phase']
         d['reduced_phase']['closest_MP'] = row['closest phase MP (reduced)'].replace('n.a.', '')
         d = nest_dict(d, ['data'])
-        sample_number = int(row['sample_number'])
         d['pars'] = get_fit_pars(sample_number)
         mpfile.add_hierarchical_data(d, identifier=identifier)
 
