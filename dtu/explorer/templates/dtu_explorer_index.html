@@ -25,6 +25,22 @@
 {% else %}
 
 <style>
+.carousel-indicators li {
+  background-color: #999;
+  background-color: rgba(70,70,70,.25);
+}
+.carousel-indicators .active {
+  background-color: #444;
+}
+.carousel-control { background: none !important; filter: none !important; progid:none !important; top: 35%;
+  bottom: 35%;}
+.carousel-control:focus {
+    opacity: 0.5;
+}
+.carousel-control:focus:hover {
+    opacity: 0.9;
+}
+
 .backgrid { font-family: "symbola"; }
 .backgrid tbody tr:hover { background-color: #f9f9f9; }
 .backgrid .sortable { text-align: center; }
@@ -32,6 +48,7 @@
 .jh-root { font-family: "symbola"; }
 .jh-type-string { font-style: normal; }
 code { display: block; white-space: pre-wrap; }
+
 </style>
 
 <div class="container">
@@ -51,12 +68,71 @@ code { display: block; white-space: pre-wrap; }
             </code>
         </div>
     </div>
+</div>
+
+<div class= "container">
+    <div class= "row">
+        <div class="well">
+            <div id="myCarousel" class="carousel slide">
+                <!-- Carousel items -->
+                <div class="carousel-inner">
+                    <div class="item active">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div id="graph1" style="width: 100%;"></div>
+                            </div>
+                        </div>
+                        <!--/row-->
+                    </div>
+                    <!--/item-->
+                    <div class="item">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div id="graph2" style="width: 100%;"></div>
+                            </div>
+                        </div>
+                        <!--/row-->
+                    </div>
+                    <!--/item-->
+                    <div class="item">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div id="graph3" style="width: 100%;"></div>
+                            </div>
+                        </div>
+                        <!--/row-->
+                    </div>
+                    <!--/item-->
+                </div>
+                <!--/inner-->
+                <div class="controlsBlock">
+                    <div class="controls">
+                    <a class="left carousel-control" href="#myCarousel" data-slide="prev"><span class="glyphicon glyphicon-chevron-left" style="color: black;"></span></a>
+                     <a class="right carousel-control" href="#myCarousel" data-slide="next"><span class="glyphicon glyphicon-chevron-right" style="color: black;"></span></a>
+                        <div class="carousel-indicators">
+                            <li data-target="#myCarousel" data-slide-to="0" class="active"></li>
+                            <li data-target="#myCarousel" data-slide-to="1"></li>
+                            <li data-target="#myCarousel" data-slide-to="2"></li>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!--/myCarousel-->
+        </div>
+        <!--/col-md-12-->
+    </div>
+</div>
+
+<div class="container"> 
     <div class="row">
         <div class="col-md-12">
             <h3>Overview</h3>
             <div id="graph" style="width: 100%;"></div>
         </div>
     </div>
+</div>
+    
+<div class="container">    
     <div class="row">
         <div class="col-md-12">
             <h3>Data</h3>
@@ -72,6 +148,9 @@ requirejs(['main'], function() {
         $(document).ready(function(){
             var table = window.tables[window.tables.length-1];
             var graph = document.getElementById('graph');
+            var graph1 = document.getElementById('graph1');
+            var graph2 = document.getElementById('graph2');
+            var graph3 = document.getElementById('graph3');
             var layout = {
                 margin: {t: 0, r: 0, l: 40}, barmode: 'stack',
                 xaxis: {type: 'category', showticklabels: false, ticks: ''},
@@ -92,7 +171,7 @@ requirejs(['main'], function() {
                     yvals[k].push(row[k].split(' ')[0]);
                 }
             }
-            var data = [];
+            var data = []; var data1 = []; var data2 = []; var data3 = [];
             for (j = 0; j < keys.length; j++) {
                 var k = keys[j];
                 var ks = k.split('##');
@@ -104,10 +183,21 @@ requirejs(['main'], function() {
 
                 var d = {x: xvals, y: yvals[k], type: 'bar', name: name};
                 data.push(d);
+                var d1 = {x: xvals.slice(0,20), y: yvals[k].slice(0,20), type: 'bar', name: name};
+                data1.push(d1);
+                var d2 = {x: xvals.slice(21,40), y: yvals[k].slice(21,40), type: 'bar', name: name};
+                data2.push(d2);
+                var d3 = {x: xvals.slice(41,60), y: yvals[k].slice(41,60), type: 'bar', name: name};
+                data3.push(d3);
             }
+            
+                
             Plotly.plot(graph, data, layout);
+            Plotly.plot(graph1, data1, layout);
+            Plotly.plot(graph2, data2, layout);
+            Plotly.plot(graph3, data3, layout);
             window.onresize = function() {
-                Plotly.Plots.resize(graph);
+                Plotly.Plots.resize(graph, graph1, graph2, graph3);
             };
         });
     });
