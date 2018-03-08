@@ -59,12 +59,43 @@ code { display: block; white-space: pre-wrap; }
     </div>
     <div class="row">
         <div class="col-md-12">
-            <h3>Data</h3>
+            <h3>List of Contributions</h3>
             {{ table|safe }}
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-12">
+            <div id=isotherm></div>
         </div>
     </div>
 
 </div>
+
+<script>
+requirejs(['main'], function() {
+    require(["plotly", "backbone"], function(Plotly, Backbone) {
+        $(document).ready(function(){
+            Backbone.on('cellclicked', function(e) {
+                var row = $(e.currentTarget).parent();
+                var url = row.find("td:nth-child(2) > a").attr('href');
+                var cid = url.split('/').pop();
+                $.ajax({
+                    type: 'GET',
+                    url: 'rest/' + cid,
+                    success: function(data, textStatus, jqXHR) {
+                        // data['response'] = {'x':, [...], 'y': [...]}
+                        Plotly.newPlot('isotherm', [data['response']],
+                                {title: 'Isotherm for ' + cid, showLegend: false});
+                    },
+                    error: function(jqXHR, textStatus, errorThrown) {
+                        console.log(errorThrown);
+                    }
+                });
+            });
+        });
+    });
+});
+</script>
 
 {% endif %}
 {% endblock %}
