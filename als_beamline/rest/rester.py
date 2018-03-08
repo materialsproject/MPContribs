@@ -11,6 +11,7 @@ class AlsBeamlineRester(MPContribsRester):
     provenance_keys = [
         'title', 'authors', 'description', 'measurement_location', 'sample', 'urls'
     ]
+    released = True
 
     def get_contributions(self):
         projection = {'_id': 1, 'mp_cat_id': 1, 'content': 1}
