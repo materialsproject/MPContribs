@@ -9,7 +9,7 @@ class AlsBeamlineRester(MPContribsRester):
     """ALS Beamline-specific convenience functions to interact with MPContribs REST interface"""
     query = {'content.measurement_location': 'ALS Beamline 6.3.1'}
     provenance_keys = [
-        'title', 'authors', 'description', 'measurement_location', 'method', 'sample'
+        'title', 'authors', 'description', 'measurement_location', 'sample', 'urls'
     ]
 
     def get_contributions(self):
