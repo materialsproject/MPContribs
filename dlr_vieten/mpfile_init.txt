@@ -15,7 +15,7 @@ this data to extract thermodynamic properties from van’t Hoff
 plots. [t=1.006]
 :end
 
-input_file: solar_perovskite/datafiles/Exp_sample_data.csv
+input_file: datafiles/Exp_sample_data.csv
 
 {urls}
 GitHub: https://github.com/josuav1/solar_perovskite
