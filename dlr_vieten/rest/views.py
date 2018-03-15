@@ -21,30 +21,49 @@ def index(request, cid, db_type=None, mdb=None):
             elif not v[0].isalpha():
                 pars[k] = float(v)
 
-        payload = {} if request.method == 'GET' else json.loads(request.body)
-        temp, rng = float(payload.get('temp', 800.)), payload.get('range', '-5,1')
-        rng = map(int, rng.split(','))
+        keys = ['isotherm', 'isobar']
 
-        x_val = pd.np.log(pd.np.logspace(rng[0], rng[1], num=100))
-        resiso = []
-        a, b = 1e-10, 0.5-1e-10
+        if request.method == 'GET':
+            payload = dict((k, {}) for k in keys)
+            payload['isotherm']['iso'] = 800.
+            payload['isotherm']['rng'] = [-5, 1]
+            payload['isobar']['iso'] = -5
+            payload['isobar']['rng'] = [600, 1000]
+        elif request.method == 'POST':
+            payload = json.loads(request.body)
+            for k in keys:
+                payload[k]['rng'] = map(int, payload[k]['rng'].split(','))
+                payload[k]['iso'] = int(payload[k]['iso'])
 
-        for xv in x_val:
-            args = (temp, xv, pars)
-            try:
-                solutioniso = brentq(funciso, a, b, args=args)
-            except ValueError:
-                solutioniso = a if abs(funciso(a, *args)) < abs(funciso(b, *args)) else b
-            resiso.append(solutioniso)
+        response = {}
+        for k in ['isotherm', 'isobar']:
+            rng = payload[k]['rng']
+            iso = payload[k]['iso']
+            if k == 'isotherm':
+                x_val = pd.np.log(pd.np.logspace(rng[0], rng[1], num=100))
+            elif k == 'isobar':
+                x_val = pd.np.linspace(rng[0], rng[1], num=100)
+                iso = pd.np.log(iso)
 
-        x = list(pd.np.exp(x_val))
-        response = {'x': x, 'y': resiso}
+            resiso = []
+            a, b = 1e-10, 0.5-1e-10
+
+            for xv in x_val:
+                args = (iso, xv, pars)
+                try:
+                    solutioniso = brentq(funciso, a, b, args=args)
+                except ValueError:
+                    solutioniso = a if abs(funciso(a, *args)) < abs(funciso(b, *args)) else b
+                resiso.append(solutioniso)
+
+            x = list(x_val) if k == 'isobar' else list(pd.np.exp(x_val))
+            response[k] = {'x': x, 'y': resiso}
 
     except Exception as ex:
         raise ValueError('"REST Error: "{}"'.format(str(ex)))
     return {"valid_response": True, 'response': response}
 
-def funciso(delta, T, x, p):
+def funciso(delta, iso, x, p):
     d_delta = delta - p['delta_0']
     dh_pars = [p['fit_param_enth'][c] for c in 'abcd']
     dh = enth_arctan(d_delta, *(dh_pars)) * 1000.
@@ -52,7 +71,7 @@ def funciso(delta, T, x, p):
     ds_pars.append(p['act_mat'].values()[0])
     ds_pars.append([p['fit_param_fe'][c] for c in 'abcd'])
     ds = entr_mixed(delta-p['fit_par_ent']['c'], *ds_pars)
-    return dh - x*ds + R*T*x/2
+    return dh - x*ds + R*iso*x/2
 
 def enth_arctan(x, dh_max, dh_min, t, s):
     """

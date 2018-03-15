@@ -82,6 +82,14 @@ code { display: block; white-space: pre-wrap; }
             data-slider-value="[-7,-4]"/><b> 10ⁿ bar</b>
         </div>
         <div class="col-md-4">
+            <h4>Isobar</h4>
+            <b>Pressure: </b><input id="pressure_slider" type="text"
+            data-slider-min="-7" data-slider-max="3" data-slider-step="1"
+            data-slider-value="-5"/><b> 10ⁿ bar</b><br>
+            <b>Plot Range: </b>
+            <input id="temp_range" type="text" class="span2" value=""
+            data-slider-min="300" data-slider-max="1300" data-slider-step="100"
+            data-slider-value="[600,1000]"/><b> K</b>
         </div>
         <div class="col-md-4">
         </div>
@@ -96,8 +104,10 @@ code { display: block; white-space: pre-wrap; }
             <div id=isotherm></div>
         </div>
         <div class="col-md-4">
+            <div id=isobar></div>
         </div>
         <div class="col-md-4">
+            <div id=isoredox></div>
         </div>
     </div>
 
@@ -108,13 +118,20 @@ requirejs(['main'], function() {
     require(["plotly", "backbone", "bootstrap-slider"], function(Plotly, Backbone) {
         $(document).ready(function(){
             $('#temp_slider').slider({}); $('#pressure_range').slider({});
+            $('#pressure_slider').slider({}); $('#temp_range').slider({});
             Backbone.on('cellclicked', function(e) {
                 var row = $(e.currentTarget).parent();
                 var url = row.find("td:nth-child(2) > a").attr('href');
                 var cid = url.split('/').pop();
-                var temp = $('#temp_slider').attr('value');
-                var range = $('#pressure_range').attr('value');
-                var payload = JSON.stringify({'temp': temp, 'range': range});
+                var payload = JSON.stringify({
+                    'isotherm': {
+                        'iso': $('#temp_slider').attr('value'),
+                        'rng': $('#pressure_range').attr('value')
+                    }, 'isobar': {
+                        'iso': $('#pressure_slider').attr('value'),
+                        'rng': $('#temp_range').attr('value')
+                    }
+                });
                 $.ajax({
                     type: 'POST',
                     url: 'rest/' + cid,
@@ -122,9 +139,16 @@ requirejs(['main'], function() {
                     dataType: "json",
                     contentType: "application/json; charset=utf-8",
                     success: function(data, textStatus, jqXHR) {
-                        // data['response'] = {'x':, [...], 'y': [...]}
-                        Plotly.newPlot('isotherm', [data['response']], {
-                            showLegend: false, margin: {l: 30, r: 15, b: 25, t: 25}
+                        // data['response'] = {'isotherm': {'x':, [...], 'y': [...]}, 'isobar': ...}
+                        var r = data['response'];
+                        Object.keys(r).forEach(function(key,index) {
+                            // key: the name of the object key
+                            // index: the ordinal position of the key within the object 
+                            var div = document.getElementById(key);
+                            Plotly.newPlot(div, [r[key]], {
+                                title: key, showLegend: false,
+                                margin: {l: 30, r: 15, b: 25, t: 25}
+                            });
                         });
                     },
                     error: function(jqXHR, textStatus, errorThrown) {
