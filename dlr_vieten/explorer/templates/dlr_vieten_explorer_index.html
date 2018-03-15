@@ -5,6 +5,7 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href='{% static "js/components/bootstrap/dist/css/bootstrap.css" %}' charset="utf-8">
+<link rel="stylesheet" href='{% static "js/components/seiyria-bootstrap-slider/dist/css/bootstrap-slider.css" %}' charset="utf-8">
 <link rel="stylesheet" href='{% static "js/components/backgrid/lib/backgrid.css" %}' charset="utf-8">
 <link rel="stylesheet" href='{% static "js/components/backgrid-paginator/backgrid-paginator.css" %}' charset="utf-8">
 <link rel="stylesheet" href='{% static "js/components/backgrid-filter/backgrid-filter.css" %}' charset="utf-8">
@@ -60,12 +61,43 @@ code { display: block; white-space: pre-wrap; }
     <div class="row">
         <div class="col-md-12">
             <h3>List of Contributions</h3>
-            {{ table|safe }}
+            <ul>
+                <li>Click on a Contribution Identifier in the table to open a
+                    detail page with graphs for ΔH/ΔS vs δ, and the raw data.</li>
+                <li>To show isotherm, isobar, and isoredox functions, set the
+                    variables and plot ranges below, and click on a row in the table.
+                </li>
+            </ul>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-4">
+            <h4>Isotherm</h4>
+            <b>Temperature: </b><input id="temp_slider" type="text"
+            data-slider-min="500" data-slider-max="1800" data-slider-step="10"
+            data-slider-value="1300"/><b> K</b><br>
+            <b>Plot Range: </b>
+            <input id="pressure_range" type="text" class="span2" value=""
+            data-slider-min="-7" data-slider-max="3" data-slider-step="1"
+            data-slider-value="[-7,-4]"/><b> 10ⁿ bar</b>
+        </div>
+        <div class="col-md-4">
+        </div>
+        <div class="col-md-4">
         </div>
     </div>
     <div class="row">
         <div class="col-md-12">
+            {{ table|safe }}
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-4">
             <div id=isotherm></div>
+        </div>
+        <div class="col-md-4">
+        </div>
+        <div class="col-md-4">
         </div>
     </div>
 
@@ -73,25 +105,34 @@ code { display: block; white-space: pre-wrap; }
 
 <script>
 requirejs(['main'], function() {
-    require(["plotly", "backbone"], function(Plotly, Backbone) {
+    require(["plotly", "backbone", "bootstrap-slider"], function(Plotly, Backbone) {
         $(document).ready(function(){
+            $('#temp_slider').slider({}); $('#pressure_range').slider({});
             Backbone.on('cellclicked', function(e) {
                 var row = $(e.currentTarget).parent();
                 var url = row.find("td:nth-child(2) > a").attr('href');
                 var cid = url.split('/').pop();
+                var temp = $('#temp_slider').attr('value');
+                var range = $('#pressure_range').attr('value');
+                var payload = JSON.stringify({'temp': temp, 'range': range});
                 $.ajax({
-                    type: 'GET',
+                    type: 'POST',
                     url: 'rest/' + cid,
+                    data: payload,
+                    dataType: "json",
+                    contentType: "application/json; charset=utf-8",
                     success: function(data, textStatus, jqXHR) {
                         // data['response'] = {'x':, [...], 'y': [...]}
-                        Plotly.newPlot('isotherm', [data['response']],
-                                {title: 'Isotherm for ' + cid, showLegend: false});
+                        Plotly.newPlot('isotherm', [data['response']], {
+                            showLegend: false, margin: {l: 30, r: 15, b: 25, t: 25}
+                        });
                     },
                     error: function(jqXHR, textStatus, errorThrown) {
                         console.log(errorThrown);
                     }
                 });
-            });
+            }); 
+
         });
     });
 });

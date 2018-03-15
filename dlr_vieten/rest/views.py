@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
+import json
 from webtzite import mapi_func
 import pandas as pd
 from scipy.constants import pi, R
@@ -20,9 +21,11 @@ def index(request, cid, db_type=None, mdb=None):
             elif not v[0].isalpha():
                 pars[k] = float(v)
 
-        temp = pars['t_avg']
-        temp += 273.15 # Celsius vs Kelvin / decide via unit?
-        x_val = pd.np.log(pd.np.logspace(-5, -1, num=100)) # pd.np.log10(p_min, p_max)
+        payload = {} if request.method == 'GET' else json.loads(request.body)
+        temp, rng = float(payload.get('temp', 800.)), payload.get('range', '-5,1')
+        rng = map(int, rng.split(','))
+
+        x_val = pd.np.log(pd.np.logspace(rng[0], rng[1], num=100))
         resiso = []
         a, b = 1e-10, 0.5-1e-10
 
@@ -36,6 +39,7 @@ def index(request, cid, db_type=None, mdb=None):
 
         x = list(pd.np.exp(x_val))
         response = {'x': x, 'y': resiso}
+
     except Exception as ex:
         raise ValueError('"REST Error: "{}"'.format(str(ex)))
     return {"valid_response": True, 'response': response}
