@@ -3,6 +3,8 @@ from __future__ import division, unicode_literals
 from mpcontribs.rest.rester import MPContribsRester
 from mpcontribs.io.archieml.mpfile import MPFile
 from mpcontribs.io.core.components import Table
+import decimal
+D = decimal.Decimal
 
 class DtuRester(MPContribsRester):
     """DTU-specific convenience functions to interact with MPContribs REST interface"""
@@ -11,7 +13,8 @@ class DtuRester(MPContribsRester):
     released = True
 
     # TODO implement decorator to reduce this to column definitions and rows
-    def get_contributions(self):
+    def get_contributions(self, bandgap_range= None):
+
         projection = {'_id': 1, 'mp_cat_id': 1, 'content': 1}
         docs = self.query_contributions(projection=projection)
         if not docs:
@@ -29,5 +32,19 @@ class DtuRester(MPContribsRester):
             cid_url = self.get_cid_url(doc)
             row = [mp_id, cid_url, contrib['formula'], contrib['ICSD'], contrib['data']['C']]
             row += [contrib['data'][k][sk] for k in keys for sk in subkeys]
-            data.append((mp_id, row))
+            if bandgap_range:
+                for k1, v1 in bandgap_range.iteritems():
+                    if isinstance(v1, dict):
+                        for k2, v2 in v1.iteritems():
+                            dec = D(contrib['data'][k1][k2][:-3])
+                            dec = float(dec)
+                            if dec >= float(v2[0]) and dec <= float(v2[2]):
+                                data.append((mp_id, row))   
+                    else:
+                        dec = D(contrib['data'][k1][:-3])
+                        dec = float(dec)
+                        if dec >= float(v1[0]) and dec <= float(v1[2]):
+                            data.append((mp_id, row))
+            else:
+                data.append((mp_id, row))
         return Table.from_items(data, orient='index', columns=columns)
