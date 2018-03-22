@@ -5,12 +5,12 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href='{% static "js/components/bootstrap/dist/css/bootstrap.css" %}' charset="utf-8">
+<link rel="stylesheet" href='{% static "js/components/seiyria-bootstrap-slider/dist/css/bootstrap-slider.css" %}' charset="utf-8">
 <link rel="stylesheet" href='{% static "js/components/backgrid/lib/backgrid.css" %}' charset="utf-8">
 <link rel="stylesheet" href='{% static "js/components/backgrid-paginator/backgrid-paginator.css" %}' charset="utf-8">
 <link rel="stylesheet" href='{% static "js/components/backgrid-filter/backgrid-filter.css" %}' charset="utf-8">
 <link rel="stylesheet" href='{% static "js/components/backgrid-grouped-columns/backgrid-grouped-columns.css" %}' charset="utf-8">
 <link rel="stylesheet" href='{% static "js/components/json-human/css/json.human.css" %}' charset="utf-8">
-<link rel="stylesheet" type="text/css" href='{% static "js/components/chosen/chosen.css" charset="utf-8" %}'/>
 {% endblock extra_css %}
 
 {% block content %}
@@ -26,22 +26,6 @@
 {% else %}
 
 <style>
-.carousel-indicators li {
-  background-color: #999;
-  background-color: rgba(70,70,70,.25);
-}
-.carousel-indicators .active {
-  background-color: #444;
-}
-.carousel-control { background: none !important; filter: none !important; progid:none !important; top: 35%;
-  bottom: 35%;}
-.carousel-control:focus {
-    opacity: 0.5;
-}
-.carousel-control:focus:hover {
-    opacity: 0.9;
-}
-
 .backgrid { font-family: "symbola"; }
 .backgrid tbody tr:hover { background-color: #f9f9f9; }
 .backgrid .sortable { text-align: center; }
@@ -49,7 +33,6 @@
 .jh-root { font-family: "symbola"; }
 .jh-type-string { font-style: normal; }
 code { display: block; white-space: pre-wrap; }
-
 </style>
 
 <div class="container">
@@ -62,6 +45,7 @@ code { display: block; white-space: pre-wrap; }
     </div>
     <div class="row">
         <div class="col-md-12">
+            <h5>Python code to get the contributions from the DtuRester</h5>
             <code>
                 from mpcontribs.users.dtu.rest.rester import DtuRester
                 mpr = DtuRester()
@@ -69,125 +53,52 @@ code { display: block; white-space: pre-wrap; }
             </code>
         </div>
     </div>
-</div>
-
-<div class="container">
-    <div class="row" style="margin-top:20px;">
-    <h3>Filter contributions by specifying one or more bandgap ranges:</h3>
-        <div class="col-md-3">
+    <div class="row">
+        <div class="col-md-12">
+            <h5>Filter contributions below by specifying one or more bandgap ranges:</h5>
             <form action="{% url 'mpcontribs_users_dtu_explorer_index' %}" method="post" class="form-inline">
                 {% csrf_token %}
                 <div class="form-group">
-                    <label for="C_range">C</label>
-                    <input class="form-control input-sm" name="C_range" id="C_range" type="text">
-                </div>
-                <div class="form-group">
-                    <label for="KS_ID_range">KS-indirect</label>
-                    <input class="form-control input-sm" name="KS_ID_range" id="KS_ID_range" type="text">
-                </div>
-                <div class="form-group">
-                    <label for="KS_D_range">KS-direct</label>
-                    <input class="form-control input-sm" name="KS_D_range" id="KS_D_range" type="text">
-                </div>
-                <div class="form-group">
-                    <label for="QP_ID_range">QP-indirect</label>
-                    <input class="form-control input-sm" name="QP_ID_range" id="QP_ID_range" type="text">
-                </div>
-                <div class="form-group">
-                    <label for="QP_D_range">QP-direct</label>
-                    <input class="form-control input-sm" name="QP_D_range" id="QP_D_range" type="text">
-                </div>
-                <div class="form-group">
-                    <input type="submit" name="submit" class="btn btn-primary" value="submit">
+                    <div class="col-md-10">
+                        {% for key, range in filters.items %}
+                        <div class="col-md-6">
+                            <b>{{ key }}:&nbsp;&nbsp;&nbsp;</b>
+                            <input name="{{ key }}_slider" id="{{ key }}_slider" type="text" class="form-control span2" value=""
+                            data-slider-min="{{ range.0 }}" data-slider-max="{{ range.1 }}" data-slider-step="0.1"
+                            data-slider-value="[{{range.0}},{{range.1}}]"/><b>&nbsp;&nbsp;&nbsp;eV</b>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <div class="col-md-2">
+                        <input type="submit" name="submit" class="btn btn-primary" value="filter">
+                        {{ nresults }} results (max. 200 shown below)
+                    </div>
                 </div>
             </form>
+            <a href="{% url 'mpcontribs_users_dtu_explorer_index' %}" role="button" class="btn btn-sm btn-primary">reset</a>
         </div>
     </div>
-</div>
-
-<div class= "container">
-    <div class= "row">
-        <div class="well">
-            <div id="myCarousel" class="carousel slide">
-                <!-- Carousel items -->
-                <div class="carousel-inner">
-                    <div class="item active">
-                        <div class="row">
-                            <div class="col-md-12">
-                                <div id="graph1" style="width: 100%;"></div>
-                            </div>
-                        </div>
-                        <!--/row-->
-                    </div>
-                    <!--/item-->
-                    <div class="item">
-                        <div class="row">
-                            <div class="col-md-12">
-                                <div id="graph2" style="width: 100%;"></div>
-                            </div>
-                        </div>
-                        <!--/row-->
-                    </div>
-                    <!--/item-->
-                    <div class="item">
-                        <div class="row">
-                            <div class="col-md-12">
-                                <div id="graph3" style="width: 100%;"></div>
-                            </div>
-                        </div>
-                        <!--/row-->
-                    </div>
-                    <!--/item-->
-                </div>
-                <!--/inner-->
-                <div class="controlsBlock">
-                    <div class="controls">
-                    <a class="left carousel-control" href="#myCarousel" data-slide="prev"><span class="glyphicon glyphicon-chevron-left" style="color: black;"></span></a>
-                     <a class="right carousel-control" href="#myCarousel" data-slide="next"><span class="glyphicon glyphicon-chevron-right" style="color: black;"></span></a>
-                        <div class="carousel-indicators">
-                            <li data-target="#myCarousel" data-slide-to="0" class="active"></li>
-                            <li data-target="#myCarousel" data-slide-to="1"></li>
-                            <li data-target="#myCarousel" data-slide-to="2"></li>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <!--/myCarousel-->
-        </div>
-        <!--/col-md-12-->
-    </div>
-</div>
-
-<div class="container"> 
     <div class="row">
         <div class="col-md-12">
-            <h3>Overview</h3>
             <div id="graph" style="width: 100%;"></div>
         </div>
     </div>
-</div>
-    
-<div class="container">    
     <div class="row">
         <div class="col-md-12">
-            <h3>Data</h3>
             {{ table|safe }}
         </div>
     </div>
 </div>
 
-
 <script>
 requirejs(['main'], function() {
-    require(["plotly"], function(Plotly) {
+    require(["plotly", "bootstrap-slider"], function(Plotly) {
         $(document).ready(function(){
+            $("[name*='_slider']").slider({}); 
             var table = window.tables[window.tables.length-1];
             var graph = document.getElementById('graph');
-            var graph1 = document.getElementById('graph1');
-            var graph2 = document.getElementById('graph2');
-            var graph3 = document.getElementById('graph3');
             var layout = {
-                margin: {t: 0, r: 0, l: 40}, barmode: 'stack',
+                margin: {t: 0, r: 0, l: 40, b: 25}, barmode: 'stack',
                 xaxis: {type: 'category', showticklabels: false, ticks: ''},
                 yaxis: {title: 'Energy (eV)'},
                 legend: {x: 0.05, y: 0.95},
@@ -205,33 +116,20 @@ requirejs(['main'], function() {
                     yvals[k].push(row[k].split(' ')[0]);
                 }
             }
-            var data = []; var data1 = []; var data2 = []; var data3 = [];
+            var data = [];
             for (j = 0; j < keys.length; j++) {
                 var k = keys[j];
                 var ks = k.split('##');
+                var name = ks[0];
                 if ( ks.length > 1 ) {
-                    var name = ks[1].split(' ')[0] + ' ' + ks[0];
-                } else {
-                    var name = ks[0];
+                    name = ks[1].split(' ')[0] + ' ' + ks[0];
                 }
-
                 var d = {x: xvals, y: yvals[k], type: 'bar', name: name};
                 data.push(d);
-                var d1 = {x: xvals.slice(0,20), y: yvals[k].slice(0,20), type: 'bar', name: name};
-                data1.push(d1);
-                var d2 = {x: xvals.slice(21,40), y: yvals[k].slice(21,40), type: 'bar', name: name};
-                data2.push(d2);
-                var d3 = {x: xvals.slice(41,60), y: yvals[k].slice(41,60), type: 'bar', name: name};
-                data3.push(d3);
             }
-            
-                
             Plotly.plot(graph, data, layout);
-            Plotly.plot(graph1, data1, layout);
-            Plotly.plot(graph2, data2, layout);
-            Plotly.plot(graph3, data3, layout);
             window.onresize = function() {
-                Plotly.Plots.resize(graph, graph1, graph2, graph3);
+                Plotly.Plots.resize(graph);
             };
         });
     });
