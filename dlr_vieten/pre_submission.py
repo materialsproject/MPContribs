@@ -10,8 +10,9 @@ from mpcontribs.io.core.components import Table
 from mpcontribs.users.utils import duplicate_check
 
 def get_fit_pars(sample_number):
-    from .solar_perovskite.modelling.isographs import Experimental
-    from .solar_perovskite.init.import_data import Importdata
+    import solar_perovskite
+    from solar_perovskite.modelling.isographs import Experimental
+    from solar_perovskite.init.import_data import Importdata
     max_dgts = 6
     d = RecursiveDict()
     exp = Experimental(sample_number)
@@ -32,7 +33,7 @@ def get_fit_pars(sample_number):
     d['delta_min'] = clean_value(fitparam[7], max_dgts=max_dgts)
     d['delta_max'] = clean_value(fitparam[8], max_dgts=max_dgts)
     fit_param_fe = pd.np.loadtxt(os.path.abspath(os.path.join(
-        os.path.dirname(__file__), 'solar_perovskite', "datafiles", "entropy_fitparam_SrFeOx"
+        os.path.dirname(solar_perovskite.__file__), "datafiles", "entropy_fitparam_SrFeOx"
     )))
     d['fit_param_fe'] = RecursiveDict(
         (k, clean_value(v, max_dgts=max_dgts))
@@ -42,7 +43,7 @@ def get_fit_pars(sample_number):
     act_mat = imp.find_active(sample_no=sample_number)
     d['act_mat'] = {act_mat[0]: clean_value(act_mat[1], max_dgts=max_dgts)}
     fpath = os.path.join(
-        os.path.dirname(__file__), 'solar_perovskite', 'rawdata',
+        os.path.dirname(solar_perovskite.__file__), 'rawdata',
         'JV_P_{}_H_S_error_advanced.csv'.format(sample_number)
     )
     temps = read_csv(open(fpath, 'r').read(), usecols=['T'])
@@ -70,10 +71,11 @@ def get_table(results, letter):
 @duplicate_check
 def run(mpfile, **kwargs):
     # TODO clone solar_perovskite if needed, abort if insufficient permissions
-    from .solar_perovskite.core import GetExpThermo
+    import solar_perovskite
+    from solar_perovskite.core import GetExpThermo
 
     input_file = mpfile.hdata.general['input_file']
-    input_file = os.path.join(os.path.dirname(__file__), input_file)
+    input_file = os.path.join(os.path.dirname(solar_perovskite.__file__), input_file)
     table = read_csv(open(input_file, 'r').read().replace(';', ','))
     dct = super(Table, table).to_dict(orient='records', into=RecursiveDict)
 
@@ -114,7 +116,7 @@ def run(mpfile, **kwargs):
         mpfile.add_data_table(identifier, table, name='entropy')
 
         print 'add raw data ...'
-        tga_results = os.path.join(os.path.dirname(__file__), 'solar_perovskite', 'tga_results')
+        tga_results = os.path.join(os.path.dirname(solar_perovskite.__file__), 'tga_results')
         for path in glob(os.path.join(tga_results, 'ExpDat_JV_P_{}_*.csv'.format(sample_number))):
             print path.split('_{}_'.format(sample_number))[-1].split('.')[0], '...'
             body = open(path, 'r').read()
