@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
+import json
 from webtzite import mapi_func
 import pandas as pd
 from scipy.constants import pi, R
@@ -20,27 +21,64 @@ def index(request, cid, db_type=None, mdb=None):
             elif not v[0].isalpha():
                 pars[k] = float(v)
 
-        temp = pars['t_avg']
-        temp += 273.15 # Celsius vs Kelvin / decide via unit?
-        x_val = pd.np.log(pd.np.logspace(-5, -1, num=100)) # pd.np.log10(p_min, p_max)
-        resiso = []
-        a, b = 1e-10, 0.5-1e-10
+        keys = ['isotherm', 'isobar', 'isoredox']
 
-        for xv in x_val:
-            args = (temp, xv, pars)
-            try:
-                solutioniso = brentq(funciso, a, b, args=args)
-            except ValueError:
-                solutioniso = a if abs(funciso(a, *args)) < abs(funciso(b, *args)) else b
-            resiso.append(solutioniso)
+        if request.method == 'GET':
+            payload = dict((k, {}) for k in keys)
+            payload['isotherm']['iso'] = 800.
+            payload['isotherm']['rng'] = [-5, 1]
+            payload['isobar']['iso'] = -5
+            payload['isobar']['rng'] = [600, 1000]
+            payload['isoredox']['iso'] = 0.3
+            payload['isoredox']['rng'] = [700, 1000]
+        elif request.method == 'POST':
+            payload = json.loads(request.body)
+            for k in keys:
+                payload[k]['rng'] = map(int, payload[k]['rng'].split(','))
+                if k == 'isoredox':
+                    payload[k]['iso'] = float(payload[k]['iso'])
+                else:
+                    payload[k]['iso'] = int(payload[k]['iso'])
 
-        x = list(pd.np.exp(x_val))
-        response = {'x': x, 'y': resiso}
+        response = {}
+        for k in keys:
+            rng = payload[k]['rng']
+            iso = payload[k]['iso']
+            if k == 'isotherm':
+                x_val = pd.np.log(pd.np.logspace(rng[0], rng[1], num=100))
+            elif k == 'isobar' or k == 'isoredox':
+                x_val = pd.np.linspace(rng[0], rng[1], num=100)
+                if k == 'isobar':
+                    iso = pd.np.log(iso)
+
+            resiso = []
+            a, b = 1e-10, 0.5-1e-10
+            if k == 'isoredox':
+                a, b = -300, 300
+
+            for xv in x_val:
+                args = (iso, xv, pars)
+                if k != 'isoredox':
+                    try:
+                        solutioniso = brentq(funciso, a, b, args=args)
+                    except ValueError:
+                        solutioniso = a if abs(funciso(a, *args)) < abs(funciso(b, *args)) else b
+                    resiso.append(solutioniso)
+                else:
+                    try:
+                        solutioniso = brentq(funciso_redox, a, b, args=args)
+                    except ValueError:
+                        solutioniso = None # insufficient accuracy for ꪲδ/T combo
+                    resiso.append(pd.np.exp(solutioniso))
+
+            x = list(pd.np.exp(x_val)) if k == 'isotherm' else list(x_val)
+            response[k] = {'x': x, 'y': resiso}
+
     except Exception as ex:
         raise ValueError('"REST Error: "{}"'.format(str(ex)))
     return {"valid_response": True, 'response': response}
 
-def funciso(delta, T, x, p):
+def dh_ds(delta, p):
     d_delta = delta - p['delta_0']
     dh_pars = [p['fit_param_enth'][c] for c in 'abcd']
     dh = enth_arctan(d_delta, *(dh_pars)) * 1000.
@@ -48,7 +86,15 @@ def funciso(delta, T, x, p):
     ds_pars.append(p['act_mat'].values()[0])
     ds_pars.append([p['fit_param_fe'][c] for c in 'abcd'])
     ds = entr_mixed(delta-p['fit_par_ent']['c'], *ds_pars)
-    return dh - x*ds + R*T*x/2
+    return dh, ds
+
+def funciso(delta, iso, x, p):
+    dh, ds = dh_ds(delta, p)
+    return dh - x*ds + R*iso*x/2
+
+def funciso_redox(po2, delta, x, p):
+    dh, ds = dh_ds(delta, p)
+    return dh - x*ds + R*po2*x/2
 
 def enth_arctan(x, dh_max, dh_min, t, s):
     """

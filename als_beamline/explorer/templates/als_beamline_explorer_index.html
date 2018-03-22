@@ -39,6 +39,7 @@ code { display: block; white-space: pre-wrap; }
         {{ provenance|safe }}
     </div>
     <div class="row">
+        <h5>Python code to get contributions from AlsBeamlineRester</h5>
         <code>
             from mpcontribs.users.als_beamline.rest.rester import AlsBeamlineRester
             mpr = AlsBeamlineRester()
@@ -46,29 +47,32 @@ code { display: block; white-space: pre-wrap; }
         </code>
     </div>
     <div class="row" style="display: flex; align-items: center;">
-        <div class="col-md-6">
+        <div class="col-md-5">
+            <h5>Select observable in drop-down.<br>Hover points in ternary to highlight according XAS/XMCD spectra.</h5>
             <div id="graph1" style="width: 100%;"></div>
         </div>
-        <div class="col-md-6">
-            <h5>{{ XAS.divid }}</h5>
-            <div class="col-md-12" style="height: 300px;">{{ XAS.html|safe }}</div>
-            <h5>{{ XMCD.divid }}</h5>
-            <div class="col-md-12" style="height: 300px;">{{ XMCD.html|safe }}</div>
+        <div class="col-md-7" style=" flex-direction: column;">
+            <div class="col-md-12">
+                <div id = 'XAS_Graph' style="height: auto; max-width: 100%;">{{ XAS.html|safe }}</div>
+            </div>
+            <div class="col-md-12" style="height: auto; max-width: 100%;">{{ XMCD.html|safe }}</div>
         </div>
     </div>
     <div class="row">
+        <h3>List of Contributions</h3>
         {{ table|safe }}
     </div>
 </div>
 
+
 <script>
-    requirejs(['main'], function() {
-        require(["plotly"], function(Plotly) {
-            $(document).ready(function(){
-                var table = window.tables[window.tables.length-1];
-                var graph1 = document.getElementById('graph1');
-                function makeAxis(title, tickangle) {
-                    return {
+requirejs(['main'], function() {
+    require(["plotly"], function(Plotly) {
+        $(document).ready(function(){
+            var table = window.tables[window.tables.length-1];
+            var graph1 = document.getElementById('graph1');
+            function makeAxis(title, tickangle) {
+                return {
                     title: title,
                     titlefont: { size: 20 },
                     tickangle: tickangle,
@@ -76,161 +80,273 @@ code { display: block; white-space: pre-wrap; }
                     tickcolor: 'rgba(0,0,0,0)',
                     ticklen: 5,
                     showline: true,
-                    showgrid: true
-                    }
-                };
-                var layout = {
-                    'ternary': {
+                    showgrid: true,
+                    linewidth: 2,
+                    linecolor: 'black'
+                }
+            };
+
+            var layout = {
+                'ternary': {
                     'sum': 100,
                     'aaxis': makeAxis('Co', 0),
                     'baxis': makeAxis('<br>Cu', 45),
                     'caxis': makeAxis('<br>Ce', -45),
-                    },
-                    showlegend: false,
-                    updatemenus: [{
-                        a: 100,
-                        yanchor: 'top',
-                        xanchor: 'center',
-                        buttons: [{
-                            method: 'restlye',
-                            args: ['visible', [false, false, true]],
-                            label: 'All'
-                        }, {
-                            method: 'restyle',
-                            args: ['visible', [true, false, false]],
-                            label: 'XAS Data'
-                        }, {
-                            method: 'restyle',
-                            args: ['visible', [false, true, false]],
-                            label: 'XMCD Data'
-                        }]
+                },
+                showlegend: false,
+                updatemenus: [{
+                    a: 100,
+                    yanchor: 'top',
+                    xanchor: 'center',
+                    buttons: [{
+                        method: 'restlye',
+                        args: ['visible', [true, true, true, false, false, false, false]],
+                        label: 'All'
+                    }, {
+                        method: 'restyle',
+                        args: ['visible', [true, true, false, true, false, false, false]],
+                        label: 'XAS Min'
+                    }, {
+                        method: 'restyle',
+                        args: ['visible', [true, true, false, false, true, false, false]],
+                        label: 'XAS Max'
+                    }, {
+                        method: 'restyle',
+                        args: ['visible', [true, true, false, false, false, true, false]],
+                        label: 'XMCD Min'
+                    }, {
+                        method: 'restyle',
+                        args: ['visible', [true, true, false, false, false, false, true]],
+                        label: 'XMCD Max'
                     }]
+                }]
+            };
+
+
+            var avals = new Array(), bvals = new Array(), cvals = new Array(), cids = new Array(), 
+            xmcd_min = new Array(), xmcd_max = new Array(), xas_min = new Array(), xas_max = new Array()
+
+                for (i = 0; i < table['rows'].length; i++) {
+                    row = table['rows'][i];
+                    avals.push(row['composition##Co [%]'])
+                        bvals.push(row['composition##Cu [%]'])
+                        cvals.push(row['composition##Ce [%]'])
+                        cids.push(row['cid'])
+                        xas_min.push(row['XAS##min'])
+                        xas_max.push(row['XAS##max'])
+                        xmcd_min.push(row['XMCD##min'])
+                        xmcd_max.push(row['XMCD##max'])
+
                 };
-                var elements = [
-                    'Co',
-                    'Cu',
-                    'Ce'
-                ];
-                
-                var data_layers = [
-                    'XAS##min',
-                    'XMCD##min'
-                ];
-                
-                console.log(table['rows'][0]['composition##Co [%]'])
-               
-                var avals = new Array(), bvals = new Array(), cvals = new Array(), cids = new Array(), 
-                markercolor = new Array(), a_all = new Array(), b_all = new Array(), c_all = new Array(),
-                color_all = new Array(), cids_all = new Array();
-                
-                for (j = 0; j < data_layers.length; j++) {
-                    avals[j] = new Array(); bvals[j] = new Array(); cvals[j] = new Array();
-                    cids[j] = new Array(); markercolor[j] = new Array()
-                    for (i = 0; i < table['rows'].length; i++) {
-                        row = table['rows'][i];
-                        if (row[data_layers[j]] != "") {
-                            avals[j].push(row['composition##Co [%]'])
-                            bvals[j].push(row['composition##Cu [%]'])
-                            cvals[j].push(row['composition##Ce [%]'])
-                            cids[j].push(row['cid'])
-                            markercolor[j].push(row[data_layers[j]])
-                            a_all.push(row['composition##Co [%]'])
-                            b_all.push(row['composition##Cu [%]'])
-                            c_all.push(row['composition##Ce [%]'])
-                            color_all.push(j)
-                            cids_all.push(row['cid'])
-                        }
-                    };
+
+            String.prototype.format = function () {
+                var args = [].slice.call(arguments);
+                return this.replace(/(\{\d+\})/g, function (a){
+                    return args[+(a.substr(1,a.length-2))||0];
+                });
+            };
+
+            var textAll = new Array(), textXASmin = new Array(), textXMCDmin = new Array(), textXASmax = new Array(), textXMCDmax = new Array(), textpP = new Array()
+
+                var a = [0,0,100,0,66.667,0]
+                var b = [0,100,0,83.333,0, 66.667]
+                var c = [100,0,0,16.667,33.333,33.333]
+
+                for (k = 0; k < a.length; k++) {
+                    textpP[k] = 'Co: '+'{0}'.format(a[k])+'<br>Cu: '+'{0}'.format(b[k])+'<br>Ce: '+'{0}'.format(c[k])
                 };
-                var XAS_Data = {
-                    type: 'scatterternary',
-                    mode: 'markers',
-                    a: avals[0],
-                    b: bvals[0],
-                    c: cvals[0],
-                    name: 'XAS',
-                    marker: {
+
+
+            for (k = 0; k < avals.length; k++) {
+                textAll[k] = 'Co: '+'{0}'.format(avals[k])+'<br>Cu: '+'{0}'.format(bvals[k])+'<br>Ce: '+'{0}'.format(cvals[k])
+                    textXASmin[k] = 'Co: '+'{0}'.format(avals[k])+'<br>Cu: '+'{0}'.format(bvals[k])+'<br>Ce: '+'{0}'.format(cvals[k])+'<br>XASmin = '+'{0}'.format(xas_min[k]) 
+                    textXASmax[k] = 'Co: '+'{0}'.format(avals[k])+'<br>Cu: '+'{0}'.format(bvals[k])+'<br>Ce: '+'{0}'.format(cvals[k])+'<br>XASmax = '+'{0}'.format(xas_max[k]) 
+                    textXMCDmin[k] = 'Co: '+'{0}'.format(avals[k])+'<br>Cu: '+'{0}'.format(bvals[k])+'<br>Ce: '+'{0}'.format(cvals[k])+'<br>XMCDmin = '+'{0}'.format(xmcd_min[k]) 
+                    textXMCDmax[k] = 'Co: '+'{0}'.format(avals[k])+'<br>Cu: '+'{0}'.format(bvals[k])+'<br>Ce: '+'{0}'.format(cvals[k])+'<br>XMCDmax = '+'{0}'.format(xmcd_max[k])
+            };
+
+
+
+
+            var phasePoints = {
+                type: 'scatterternary',
+                mode: 'markers',
+                hoverinfo: 'text',
+                text: textpP,
+                a: a,
+                b: b,
+                c: c,
+                name: 'MP-points',
+                marker: {
                     symbol: 0,
-                    color: markercolor[0],
-                    showscale: true,
-                    colorscale: 'Electric',
-                    size: 12,
-                    colorbar: {
-                        title: 'XAS min'
-                    }
-                    },
-                };
-                
-                console.log(markercolor[0])
-                
-                var XMCD_Data = {
-                    type: 'scatterternary',
-                    mode: 'markers',
-                    a: avals[1],
-                    b: bvals[1],
-                    c: cvals[1],
-                    name: 'XMCD',
-                    marker: {
+                    size: 14,
+                    color: 'blue'
+                },
+
+            };
+
+            var phaseDiagram = {
+                type: 'scatterternary',
+                mode: 'lines',
+                a: [100,0,66.667,0],
+                b: [0,83.333,0, 66.667],
+                c: [0,16.667,33.333,33.333],
+                name: 'MP-trace',
+                line: { color: 'black' },
+                hoverinfo: 'skip'
+            };
+
+            var All = {
+                type: 'scatterternary',
+                mode: 'markers',
+                hoverinfo: 'text',
+                text: textAll,
+                a: avals,
+                b: bvals,
+                c: cvals,
+                name: 'All',
+                marker: {
                     symbol: 0,
-                    color: markercolor[1],
+                    size: 10,
+                    color: 'green'
+                },
+            };
+
+            var XAS_Min = {
+                type: 'scatterternary',
+                mode: 'markers',
+                hoverinfo: 'text',
+                text: textXASmin,
+                a: avals,
+                b: bvals,
+                c: cvals,
+                name: 'XAS Min',
+                marker: {
+                    symbol: 0,
+                    color: xas_min,
                     showscale: true,
                     colorscale: 'Jet',
-                    size: 12,
+                    size: 10,
                     colorbar: {
-                        title: 'XMCD min'
+                        title: 'XAS Min'
                     }
-                    },
-                };
-                
-                var All = {
-                    type: 'scatterternary',
-                    mode: 'markers',
-                    a: a_all,
-                    b: b_all,
-                    c: c_all,
-                    name: 'All',
-                    marker: {
+                },
+            };
+
+            var XAS_Max = {
+                type: 'scatterternary',
+                mode: 'markers',
+                hoverinfo: 'text',
+                text: textXASmax,
+                a: avals,
+                b: bvals,
+                c: cvals,
+                name: 'XAS Max',
+                marker: {
                     symbol: 0,
-                    color: color_all,
-                    showscale: false,
-                    colorscale: 'Portland',
-                    size: 12
-                    },
-                };
-          
-                var data = [XAS_Data, XMCD_Data, All]
-                
+                    color: xas_max,
+                    showscale: true,
+                    colorscale: 'Jet',
+                    size: 10,
+                    colorbar: {
+                        title: 'XAS Max'
+                    }
+                },
+            };
+
+            var XMCD_Min = {
+                type: 'scatterternary',
+                mode: 'markers',
+                hoverinfo: 'text',
+                text: textXMCDmin,
+                a: avals,
+                b: bvals,
+                c: cvals,
+                name: 'XMCD Min',
+                marker: {
+                    symbol: 0,
+                    color: xmcd_min,
+                    showscale: true,
+                    colorscale: 'Electric',
+                    size: 10,
+                    colorbar: {
+                        title: 'XMCD Min'
+                    }
+                },
+            };
+
+            var XMCD_Max = {
+                type: 'scatterternary',
+                mode: 'markers',
+                hoverinfo: 'text',
+                text: textXMCDmax,
+                a: avals,
+                b: bvals,
+                c: cvals,
+                name: 'XMCD Max',
+                marker: {
+                    symbol: 0,
+                    color: xmcd_max,
+                    showscale: true,
+                    colorscale: 'Electric',
+                    size: 10,
+                    colorbar: {
+                        title: 'XMCD Max'
+                    }
+                },
+            };
+
+
+            var data = [phasePoints, phaseDiagram, All, XAS_Min, XAS_Max, XMCD_Min, XMCD_Max]
+
                 Plotly.plot('graph1', data, layout)
-                
+
                 var update = {
                     visible: false
                 }
-                
-                Plotly.restyle('graph1', update, [0,1,2]);
-                
+
+            Plotly.restyle('graph1', update, [3,4,5,6]);
+
+            var mp_urls = ['https://materialsproject.org/materials/mp-28', 'https://materialsproject.org/materials/mp-30','https://materialsproject.org/materials/mp-54/', 'https://materialsproject.org/materials/mp-21708', 'https://materialsproject.org/materials/mp-1112', 'https://materialsproject.org/materials/mp-2801']
+
                 graph1.on('plotly_click', function(data){
                     var pn = data.points[0].pointNumber
-                    var cn = data.points[0].curveNumber
-                    if (cn == 0) {
-                        var url = cids[0][pn]
-                    } else if (cn == 1) {
-                        var url = cids[1][pn]
-                    } else if (cn == 2) {
-                        var url = cids[2][pn]
-                    } else if (cn == 3) {
-                        var url = cids_all[pn]
-                    }
+                        var cn = data.points[0].curveNumber
+                        if (cn == 0) {
+                            var url = mp_urls[pn]
+                        } else {
+                            var url = cids[pn]
+                        }
                     window.open(url, '_blank')                                                           
                 });
 
-                window.onresize = function() {
-                    Plotly.Plots.resize(graph);
-                };
+            graph1.on('plotly_hover', function(eventdata){
+                var spectra_graphs = document.getElementsByClassName('plotly-graph-div js-plotly-plot')
+                    XASgraph  = spectra_graphs[0]
+                    XMCDgraph = spectra_graphs[1]
+                    var update = {
+                        opacity: 0.2,
+                    }
+                var hoverdata = eventdata.points[0]
+                    var hoverUpdate = {
+                        opacity: 1,
+                    };
+                cn = hoverdata.curveNumber
+
+                    if (cn != 0 && cn != 1) {
+                        Plotly.restyle(XASgraph, update);
+                        Plotly.restyle(XMCDgraph, update);
+
+                        pn = hoverdata.pointNumber
+                            Plotly.restyle(XASgraph, hoverUpdate, pn)
+                            Plotly.restyle(XMCDgraph, hoverUpdate, pn)
+                    };
+
             });
         });
     });
+});
 </script>
-
 
 {% endif %}
 {% endblock %}
