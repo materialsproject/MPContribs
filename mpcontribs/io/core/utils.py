@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 import warnings, pandas, six, collections, string
 from StringIO import StringIO
@@ -105,9 +106,10 @@ def read_csv(body, is_data_section=True, **kwargs):
             cur_line += 1
             if first_line and not first_line.startswith(csv_comment_char):
                 break
-        options = {'sep': ',', 'header': 0}
-        header = map(string.strip, first_line.split(options['sep']))
-        body = '\n'.join([options['sep'].join(header), body_split[1]])
+        sep = kwargs.get('sep', ',')
+        options = {'sep': sep, 'header': 0}
+        header = map(string.strip, first_line.split(sep))
+        body = '\n'.join([sep.join(header), body_split[1]])
         if first_line.startswith('level_'):
             options.update({'index_col': [0, 1]})
         ncols = len(header)
