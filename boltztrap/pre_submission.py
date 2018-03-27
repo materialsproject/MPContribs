@@ -7,6 +7,7 @@ from mpcontribs.io.core.recdict import RecursiveDict
 from mpcontribs.io.core.utils import nest_dict, clean_value
 from mpcontribs.users.boltztrap.rest.rester import BoltztrapRester
 from mpcontribs.users.utils import duplicate_check
+from mpcontribs.io.core.components import Table
 
 try:
     from os import scandir # python3
@@ -32,9 +33,6 @@ def run(mpfile, **kwargs):
                 continue
 
             # add hierarchical data (nested key-values)
-            # TODO: extreme values for power factor, zT, effective mass
-            # TODO: add a text for the description of each table
-
             hdata = RecursiveDict()
 
             cond_eff_mass = 'mₑᶜᵒⁿᵈ'
@@ -67,20 +65,23 @@ def run(mpfile, **kwargs):
             hdata = RecursiveDict((k, data[k]) for k in keys)
             hdata['volume'] = clean_value(hdata['volume'], 'Å³')
             cols = ['value', 'temperature', 'doping']
-            for prop_name in ['seebeck_doping', 'cond_doping', 'kappa_doping']:
+            tables = RecursiveDict()
+            props = RecursiveDict()
+            props['seebeck_doping'] = ['S', 'μV/K']
+            props['cond_doping'] = ['σ', '(Ωms)⁻¹']
+            props['kappa_doping'] = ['κₑ', 'W/(mKs)']
+
+            for prop_name, (lbl, unit) in props.iteritems():
                 # TODO install Symbola font if you see squares here (https://fonts2u.com/symbola.font)
                 # and select it as standard font in your browser (leave other fonts as is, esp. fixed width)
-                if prop_name[0] == 's':
-                    lbl, unit = u"Sₘₐₓ", u"μV/K"
-                elif prop_name[0] == 'c':
-                    lbl, unit = u"σₘₐₓ", u"(Ωms)⁻¹"
-                elif prop_name[0] == 'k':
-                    lbl, unit = u"κₑ₋ₘᵢₙ", u"W/(mKs)"
-                hdata[lbl] = RecursiveDict()
+                tables[lbl] = RecursiveDict()
+                hlbl = lbl+'₋' if len(lbl) > 1 else lbl
+                hlbl += 'ₑₓₜᵣ'
+                hdata[hlbl] = RecursiveDict()
 
                 for doping_type in ['p', 'n']:
                     prop = data['GGA'][prop_name][doping_type]
-                    prop_averages, dopings, columns = [], None, ['T (K)']
+                    prop_averages, dopings, columns = [], None, ['T [K]']
                     temps = sorted(map(int, prop.keys()))
                     for temp in temps:
                         row = [temp]
@@ -89,12 +90,16 @@ def run(mpfile, **kwargs):
                         for doping in dopings:
                             doping_str = '%.0e' % doping
                             if len(columns) <= len(dopings):
-                                columns.append(doping_str + ' cm⁻³')
+                                columns.append('{} cm⁻³ [{}]'.format(doping_str, unit))
                             eigs = prop[str(temp)][doping_str]['eigs']
                             row.append(np.mean(eigs))
-                        prop_averages.append(row)
+                        prop_averages.append((temp, row))
 
-                    arr_prop_avg = np.array(prop_averages)[:,1:]
+                    tables[lbl][doping_type] = Table.from_items(
+                        prop_averages, orient='index', columns=columns
+                    )
+
+                    arr_prop_avg = np.array([item[1] for item in prop_averages])[:,1:]
                     max_v = np.max(arr_prop_avg)
                     if prop_name[0] == 's' and doping_type == 'n':
                         max_v = np.min(arr_prop_avg)
@@ -107,12 +112,17 @@ def run(mpfile, **kwargs):
                         clean_value(temps[arg_max[0]], 'K'),
                         clean_value(dopings[arg_max[1]], 'cm⁻³')
                     ]
-                    hdata[lbl][doping_type] = RecursiveDict(
+                    hdata[hlbl][doping_type] = RecursiveDict(
                         (k, v) for k, v in zip(cols, vals)
                     )
 
             mpfile_data.rec_update(nest_dict(hdata, ['extra_data']))
             mpfile.add_hierarchical_data(mpfile_data, identifier=data['mp_id'])
+            for lbl, dct in tables.iteritems():
+                for doping_type, table in dct.iteritems():
+                    mpfile.add_data_table(
+                        data['mp_id'], table, name='{}({})'.format(lbl, doping_type)
+                    )
 
         finally:
             input_file.close()
