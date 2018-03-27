@@ -26,7 +26,7 @@ def export_notebook(nb, cid, separate_script=False):
     # NOTE every cell has only one tag with id
     div_name = None
     for idx, div in enumerate(soup.find_all('div', 'cell')[1:]):
-        tag = div.find('h2', id=True)
+        tag = div.find('h3', id=True)
         if tag is not None:
             tag['id'] = '-'.join([tag['id'], str(cid)])
             div_name = tag['id'].split('-')[0]
