@@ -8,4 +8,6 @@ urlpatterns = [
         views.contribution, name='mpcontribs_explorer_contribution'),
     url(r'^materials/(?P<cid>[\w\d]+)/cif/(?P<structure_name>[\w]+)$',
         views.cif, name='mpcontribs_explorer_cif'),
+    url(r'^(?P<collection>[\w]+)/(?P<cid>[\w\d]+).json$',
+        views.download_json, name='mpcontribs_explorer_contribution_json'),
 ]
