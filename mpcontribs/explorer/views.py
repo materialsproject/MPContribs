@@ -105,6 +105,19 @@ def cif(request, cid, structure_name):
                 return HttpResponse(cif, content_type='text/plain')
     return HttpResponse(status=404)
 
+def download_json(request, collection, cid):
+    if request.user.is_authenticated():
+        API_KEY = request.user.api_key
+        ENDPOINT = request.build_absolute_uri(get_endpoint())
+        with MPContribsRester(API_KEY, endpoint=ENDPOINT) as mpr:
+            contrib = mpr.find_contribution(cid, as_doc=True)
+            if contrib:
+                json_str = json.dumps(contrib)
+                response = HttpResponse(json_str, content_type='application/json')
+                response['Content-Disposition'] = 'attachment; filename={}.json'.format(cid)
+                return response
+    return HttpResponse(status=404)
+
 # Instead of
 # from monty.json import jsanitize
 # use the following to fix UnicodeEncodeError

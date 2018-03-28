@@ -23,43 +23,46 @@
 
 <nav class="navbar navbar-default navbar-lower" role="navigation">
   <div class="container">
-    <form class="navbar-form">
-      <div class="form-group" style="position:relative; left:20px;">
+    <form class="navbar-form" role="search">
+      <div class="form-group">
         <div class="checkbox" style="padding:1px;">
           <label>
             <input id="toggle_inputs" type="checkbox" checked hidden>
           </label>
         </div>
-        <div class="checkbox" style="padding:1px; margin-left:15px;">
+        <div class="checkbox" style="padding:1px; margin-left:20px;">
           <label>
             <input id="toggle_trees" type="checkbox" checked hidden>
           </label>
         </div>
-        <div class="checkbox" style="padding:1px; margin-left:15px;">
+        <div class="checkbox" style="padding:1px; margin-left:20px;">
           <label>
             <input id="toggle_tables" type="checkbox" checked hidden>
           </label>
         </div>
-        <div class="checkbox" style="padding:1px; margin-left:15px;">
+        <div class="checkbox" style="padding:1px; margin-left:20px;">
           <label>
             <input id="toggle_graphs" type="checkbox" checked hidden>
           </label>
         </div>
-        <div class="checkbox" style="padding:1px; margin-left:15px;">
+        <div class="checkbox" style="padding:1px; margin-left:20px;">
           <label>
             <input id="toggle_structures" type="checkbox" checked hidden>
           </label>
         </div>
-        <div id="spinner" ></div>
-        <script>
-            requirejs(['main'], function() {
-                require(["jquery.spin"], function() {
-                    $("#spinner").spin('small');
-                });
-            });
-        </script>
+      </div>
+      <div class="navbar-right" id="download" style="margin-right:10px;" hidden>
+          <a class="btn btn-sm btn-success" href="{{ request.path }}.json" role="button">Download</a>
       </div>
     </form>
+    <div id="spinner" ></div>
+    <script>
+        requirejs(['main'], function() {
+            require(["jquery.spin"], function() {
+                $("#spinner").spin('small');
+            });
+        });
+    </script>
   </div>
 </nav>
 
@@ -99,6 +102,7 @@ requirejs(['main'], function() {
             $('#toggle_structures').bootstrapToggle({
               on:"Structures", off:"Structures", size:"mini", width:75, height:25
             });
+            $('#download').show();
             $('#spinner').spin(false);
         });
      });
