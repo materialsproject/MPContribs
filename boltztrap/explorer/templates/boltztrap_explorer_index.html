@@ -51,18 +51,59 @@ code { display: block; white-space: pre-wrap; }
     </div>
 
     <div class="row">
-        <h5>Below, the eigenvalues of the Seebeck coefficient and the conductivity 
-        effective mass for a doping level of 10¹⁸ cm⁻³ at 300K are shown.</h5>
+        <div class="col-md-12">
+            <div id="graph" style="width: 100%;"></div>
+        </div>
     </div>
 
     {% for doping, table in tables.items %}
     <div class="row">
-        <h3>{{ doping|safe }}-type</h3>
+        <h3>{{ doping|safe }}-type @ 300 K & 10¹⁸ cm⁻³</h3>
         {{ table|safe }}
     </div>
     {% endfor %}
 
 </div>
+
+<script>
+requirejs(['main'], function() {
+    require(["plotly"], function(Plotly) {
+        $(document).ready(function(){
+            var table = window.tables[window.tables.length-1];
+            var graph = document.getElementById('graph');
+
+            var xvals = []; var yvals = [];
+            var zvals = []; var text = [];
+            for (i = 0; i < table['rows'].length; i++) {
+                var row = table['rows'][i];
+                var mpid_split = row['mp-id'].split('/');
+                var mpid = mpid_split[mpid_split.length-1];
+                text.push(mpid);
+                xvals.push(row['<σ> [(Ωms)⁻¹]']);
+                yvals.push(row['<S> [μV/K]']);
+                zvals.push(Math.log10(row['<S²σ> [μW/(cmK²s)]']));
+            }
+
+            var data = [{
+                x: xvals, y: yvals, mode: 'markers', text: text,
+                marker: {
+                    color: zvals, colorscale: 'Viridis',
+                    colorbar: {title: 'log(PF)'}
+                }
+            }];
+            var layout = {
+                xaxis: {title: '<σ> [(Ωms)⁻¹]', exponentformat: "power"},
+                yaxis: {title: '<S> [μV/K]'},
+                margin: {l: 50, b: 50, t: 20}
+            };
+            Plotly.newPlot(graph, data, layout);
+            window.onresize = function() {
+                Plotly.Plots.resize(graph);
+            };
+        });
+    });
+});
+</script>
 
 {% endif %}
 {% endblock %}

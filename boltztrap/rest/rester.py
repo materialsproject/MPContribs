@@ -21,21 +21,15 @@ class BoltztrapRester(MPContribsRester):
             raise Exception('No contributions found for Boltztrap Explorer!')
 
         data = []
-        columns = ['##'.join(['general', sk]) for sk in ['mp-id', 'cid', 'formula']]
-        keys, subkeys = [u'mₑᶜᵒⁿᵈ', u"Seebeck"], [u"e₁", u"e₂", u"e₃"]
-        columns += ['##'.join([k, sk]) for k in keys for sk in subkeys]
+        columns = ['mp-id', 'cid', 'formula', '<mₑᶜᵒⁿᵈ>', '<S>', '<σ>', '<S²σ>']
 
         for doc in docs:
             mpfile = MPFile.from_contribution(doc)
             mp_id = mpfile.ids[0]
             contrib = mpfile.hdata[mp_id]
             cid_url = self.get_cid_url(doc)
-
             row = [mp_id, cid_url, contrib['extra_data']['pretty_formula']]
-            row += [
-                contrib['data'][k].get(doping, {}).get(sk, '')
-                for k in keys for sk in subkeys
-            ]
+            row += [contrib['data'][k][doping] for k in columns[3:]]
             data.append((mp_id, row))
 
         return Table.from_items(data, orient='index', columns=columns)
