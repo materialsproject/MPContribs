@@ -47,16 +47,17 @@ def run(mpfile, **kwargs):
             for v in variables:
                 hdata[v['name']] = RecursiveDict()
                 for doping_type in ['p', 'n']:
-                    d = data['GGA'][v['key']][doping_type][T][lvl]
-                    eigs = map(float, d if isinstance(d, list) else d['eigs'])
-                    hdata[v['name']][doping_type] = clean_value(np.mean(eigs), v['unit'])
-                    if v['key'] == 'seebeck_doping':
-                        S2 = np.dot(d['tensor'], d['tensor'])
-                    elif v['key'] == 'cond_doping':
-                        pf = np.mean(np.linalg.eigh(np.dot(S2, d['tensor']))[0]) * 1e-8
-                        if pf_key not in hdata:
-                            hdata[pf_key] = RecursiveDict()
-                        hdata[pf_key][doping_type] = clean_value(pf, 'μW/(cmK²s)')
+                    if doping_type in data['GGA'][v['key']]:
+                        d = data['GGA'][v['key']][doping_type][T][lvl]
+                        eigs = map(float, d if isinstance(d, list) else d['eigs'])
+                        hdata[v['name']][doping_type] = clean_value(np.mean(eigs), v['unit'])
+                        if v['key'] == 'seebeck_doping':
+                            S2 = np.dot(d['tensor'], d['tensor'])
+                        elif v['key'] == 'cond_doping':
+                            pf = np.mean(np.linalg.eigh(np.dot(S2, d['tensor']))[0]) * 1e-8
+                            if pf_key not in hdata:
+                                hdata[pf_key] = RecursiveDict()
+                            hdata[pf_key][doping_type] = clean_value(pf, 'μW/(cmK²s)')
 
 
             mpfile_data = nest_dict(hdata, ['data'])
