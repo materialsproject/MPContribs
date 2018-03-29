@@ -51,18 +51,18 @@ code { display: block; white-space: pre-wrap; }
     </div>
 
     <div class="row">
-        <div class="col-md-12">
+        <div class="col-md-6">
             <div id="graph" style="width: 100%;"></div>
+        </div>
+        <div class="col-md-6">
             <div id="graph2" style="width: 100%;"></div>
         </div>
     </div>
 
-    {% for doping, table in tables.items %}
     <div class="row">
-        <h3>{{ doping|safe }}-type @ 300 K & 10¹⁸ cm⁻³</h3>
+        <h3>average eigenvalues @ 300 K & 10¹⁸ cm⁻³</h3>
         {{ table|safe }}
     </div>
-    {% endfor %}
 
 </div>
 
@@ -77,12 +77,15 @@ requirejs(['main'], function() {
             var zvals = []; var text = [];
             for (i = 0; i < table['rows'].length; i++) {
                 var row = table['rows'][i];
-                var mpid_split = row['mp-id'].split('/');
+                var mpid_split = row['general##mp-id'].split('/');
                 var mpid = mpid_split[mpid_split.length-1];
-                text.push(mpid);
-                xvals.push(row['<σ> [(Ωms)⁻¹]']);
-                yvals.push(row['<S> [μV/K]']);
-                zvals.push(Math.log10(row['<S²σ> [μW/(cmK²s)]']));
+                var dopings = ['n', 'p'];
+                for (var j = 0; j < dopings.length; j++) {
+                    text.push(mpid + ' / ' + dopings[j]);
+                    xvals.push(row['<σ>##' + dopings[j] + ' [(Ωms)⁻¹]']);
+                    yvals.push(row['<S>##' + dopings[j] + ' [μV/K]']);
+                    zvals.push(Math.log10(row['<S²σ>##' + dopings[j] + ' [μW/(cmK²s)]']));
+                }
             }
 
             var data = [{
@@ -113,7 +116,7 @@ requirejs(['main'], function() {
                     success: function(data, textStatus, jqXHR) {
                         var div = document.getElementById('graph2');
                         Plotly.newPlot(div, [data['response']], {
-                            showLegend: false, margin: {l: 50, r: 15, b: 50, t: 20},
+                            showLegend: false, margin: {l: 50, r: 0, b: 50, t: 20},
                             xaxis: {type: 'log', title: 'doping level [cm⁻³]', exponentformat: "power"},
                             yaxis: {title: 'temperature [K]'},
                         });

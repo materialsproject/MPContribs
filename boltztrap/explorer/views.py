@@ -19,11 +19,8 @@ def index(request):
                 prov = mpr.get_provenance()
                 ctx['title'] = prov.pop('title')
                 ctx['provenance'] = render_dict(prov, webapp=True)
-                ctx['tables'] = OrderedDict()
-                for doping in ['n', 'p']:
-                    df = mpr.get_contributions(doping=doping)
-                    table = render_dataframe(df, webapp=True)
-                    ctx['tables'][doping] = table
+                df = mpr.get_contributions()
+                ctx['table'] = render_dataframe(df, webapp=True)
             except Exception as ex:
                 ctx.update({'alert': str(ex)})
     else:
