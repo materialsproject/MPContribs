@@ -38,18 +38,22 @@ code { display: block; white-space: pre-wrap; }
     <a href="{% url 'mpcontribs_portal_index' %}">&laquo; Portal</a>
 
     <div class="row">
-        <h2>{{ title }}</h2>
-        {{ provenance|safe }}
+        <div class="col-md-8">
+            <h2>{{ title }}</h2>
+        </div>
+        <div class="col-md-4">
+            <div class="bg-danger" style="padding: 5px;">
+                An example notebook to retrieve and interact with this data can be found
+                <a target="_blank"
+                   href="https://github.com/materialsproject/MPContribsUsers/blob/master/boltztrap/boltztrap.ipynb">here</a>.
+               It's easiest to run it on the <a target="_blank" href="https://jupyterhub.materialsproject.org">MP JupyterHub</a> 
+               (contact <a href="mailto:phuck@lbl.gov">Patrick Huck</a> to request access).
+            </div>
+        </div>
     </div>
 
     <div class="row">
-        <h5>Python code to get the contributions from the BoltztrapRester</h5>
-        <code>
-            from mpcontribs.users.boltztrap.rest.rester import BoltztrapRester
-            mpr = BoltztrapRester()
-            for doping in ['n', 'p']:
-                df = mpr.get_contributions(doping=doping)
-        </code>
+        {{ provenance|safe }}
     </div>
 
     <div class="row">
@@ -61,10 +65,19 @@ code { display: block; white-space: pre-wrap; }
         </div>
     </div>
 
+    <div class="row" style="margin-top: 10px;">
+        <div class="col-md-8">
+            <h3>average eigenvalues @ 300 K & 10¹⁸ cm⁻³</h3>
+        </div>
+        <div class="col-md-4">
+            <div class="bg-success" style="padding: 5px;">
+                Click a green cell to show/update
+                temperature and doping level dependence on the right above.
+            </div>
+        </div>
+    </div>
+
     <div class="row">
-        <h3>average eigenvalues @ 300 K & 10¹⁸ cm⁻³</h3>
-        <p class="bg-success">Click a green cell to show/update
-        temperature and doping level dependence on the right above.</p>
         {{ table|safe }}
     </div>
 
