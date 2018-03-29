@@ -63,6 +63,12 @@ code { display: block; white-space: pre-wrap; }
     </div>
     {% endfor %}
 
+    <div class="row">
+        <div class="col-md-12">
+            <div id="graph2" style="width: 100%;"></div>
+        </div>
+    </div>
+
 </div>
 
 <script>
@@ -100,6 +106,26 @@ requirejs(['main'], function() {
             window.onresize = function() {
                 Plotly.Plots.resize(graph);
             };
+
+            Backbone.on('cellclicked', function(e) {
+                var row = $(e.currentTarget).parent();
+                var url = row.find("td:nth-child(2) > a").attr('href');
+                var cid = url.split('/').pop();
+                $.ajax({
+                    type: 'GET',
+                    url: 'rest/' + cid,
+                    contentType: "application/json; charset=utf-8",
+                    success: function(data, textStatus, jqXHR) {
+                        var div = document.getElementById('graph2');
+                        Plotly.newPlot(div, [data['response']], {
+                            showLegend: false, margin: {l: 30, r: 15, b: 25, t: 25}
+                        });
+                    },
+                    error: function(jqXHR, textStatus, errorThrown) {
+                        console.log(errorThrown);
+                    }
+                });
+            }); 
         });
     });
 });
