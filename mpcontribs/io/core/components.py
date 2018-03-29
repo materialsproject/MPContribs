@@ -117,8 +117,27 @@ def get_backgrid_table(df):
         })
         if len(col_split) > 1:
             table['columns'][-1].update({'label': '##'.join(col_split[1:])})
-        if len(table['columns']) > 9:
+        if len(table['columns']) > 11:
             table['columns'][-1]['renderable'] = 0
+
+    header = RecursiveDict()
+    for idx, col in enumerate(table['columns']):
+        if 'label' in col:
+            k, sk = col['name'].split('##')
+            sk_split = sk.split()
+            if len(sk_split) == 2:
+                d = {'name': sk_split[0], 'unit': sk_split[1], 'idx': idx}
+                if k not in header:
+                    header[k] = [d]
+                else:
+                    header[k].append(d)
+
+    for k, skl in header.items():
+        units = [sk['unit'] for sk in skl]
+        if units.count(units[0]) == len(units):
+            for sk in skl:
+                table['columns'][sk['idx']]['label'] = sk['name']
+                table['columns'][sk['idx']]['nesting'][0] = '{} {}'.format(k, sk['unit'])
 
     return table
 
