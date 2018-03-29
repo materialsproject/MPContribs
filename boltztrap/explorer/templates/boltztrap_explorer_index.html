@@ -53,6 +53,7 @@ code { display: block; white-space: pre-wrap; }
     <div class="row">
         <div class="col-md-12">
             <div id="graph" style="width: 100%;"></div>
+            <div id="graph2" style="width: 100%;"></div>
         </div>
     </div>
 
@@ -62,12 +63,6 @@ code { display: block; white-space: pre-wrap; }
         {{ table|safe }}
     </div>
     {% endfor %}
-
-    <div class="row">
-        <div class="col-md-12">
-            <div id="graph2" style="width: 100%;"></div>
-        </div>
-    </div>
 
 </div>
 
@@ -98,7 +93,7 @@ requirejs(['main'], function() {
                 }
             }];
             var layout = {
-                xaxis: {title: '<σ> [(Ωms)⁻¹]', exponentformat: "power"},
+                xaxis: {title: '<σ> [(Ωms)⁻¹]', exponentformat: "power", type: 'log'},
                 yaxis: {title: '<S> [μV/K]'},
                 margin: {l: 50, b: 50, t: 20}
             };
@@ -118,8 +113,13 @@ requirejs(['main'], function() {
                     success: function(data, textStatus, jqXHR) {
                         var div = document.getElementById('graph2');
                         Plotly.newPlot(div, [data['response']], {
-                            showLegend: false, margin: {l: 30, r: 15, b: 25, t: 25}
+                            showLegend: false, margin: {l: 50, r: 15, b: 50, t: 20},
+                            xaxis: {type: 'log', title: 'doping level [cm⁻³]', exponentformat: "power"},
+                            yaxis: {title: 'temperature [K]'},
                         });
+                        window.onresize = function() {
+                            Plotly.Plots.resize(div);
+                        };
                     },
                     error: function(jqXHR, textStatus, errorThrown) {
                         console.log(errorThrown);

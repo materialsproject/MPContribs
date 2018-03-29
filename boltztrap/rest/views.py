@@ -17,7 +17,7 @@ def index(request, cid, db_type=None, mdb=None):
         x = [col.split()[0] for col in table.columns[1:]]
         y = list(table[table.columns[0]])
         z = table[table.columns[1:]].values.tolist()
-        response = {'x': x, 'y': y, 'z': z, 'type': 'heatmap'}
+        response = {'x': x, 'y': y, 'z': z, 'type': 'heatmap', 'colorbar': {'title': '<S> [μV/K]'}}
     except Exception as ex:
         raise ValueError('"REST Error: "{}"'.format(str(ex)))
     return {"valid_response": True, 'response': response}
