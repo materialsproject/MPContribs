@@ -27,9 +27,11 @@
 .backgrid tbody tr:hover { background-color: #f9f9f9; }
 .backgrid .sortable { text-align: center; }
 .backgrid thead th button { display: inline; }
+.backgrid tbody tr { cursor: pointer; } 
 .jh-root { font-family: "symbola"; }
 .jh-type-string { font-style: normal; }
 code { display: block; white-space: pre-wrap; }
+.backgrid tbody tr td:nth-child(n+6):nth-child(-n+9) { background-color: #d0efc9; }
 </style>
 
 <div class="container">
@@ -61,6 +63,8 @@ code { display: block; white-space: pre-wrap; }
 
     <div class="row">
         <h3>average eigenvalues @ 300 K & 10¹⁸ cm⁻³</h3>
+        <p class="bg-success">Click a green cell to show/update
+        temperature and doping level dependence on the right above.</p>
         {{ table|safe }}
     </div>
 
@@ -109,20 +113,26 @@ requirejs(['main'], function() {
                 var row = $(e.currentTarget).parent();
                 var url = row.find("td:nth-child(2) > a").attr('href');
                 var cid = url.split('/').pop();
+                var classes = $(e.currentTarget).attr("class").split(' ');
+                var payload = JSON.stringify({name: classes[3] + ' ' + classes[4]});
                 $.ajax({
-                    type: 'GET',
+                    type: 'POST',
                     url: 'rest/' + cid,
+                    data: payload,
+                    dataType: "json",
                     contentType: "application/json; charset=utf-8",
                     success: function(data, textStatus, jqXHR) {
-                        var div = document.getElementById('graph2');
-                        Plotly.newPlot(div, [data['response']], {
-                            showLegend: false, margin: {l: 50, r: 0, b: 50, t: 20},
-                            xaxis: {type: 'log', title: 'doping level [cm⁻³]', exponentformat: "power"},
-                            yaxis: {title: 'temperature [K]'},
-                        });
-                        window.onresize = function() {
-                            Plotly.Plots.resize(div);
-                        };
+                        if ( 'null' != data['response'] ) {
+                            var div = document.getElementById('graph2');
+                            Plotly.newPlot(div, [data['response']], {
+                                showLegend: false, margin: {l: 50, r: 0, b: 50, t: 20},
+                                xaxis: {type: 'log', title: 'doping level [cm⁻³]', exponentformat: "power"},
+                                yaxis: {title: 'temperature [K]'},
+                            });
+                            window.onresize = function() {
+                                Plotly.Plots.resize(div);
+                            };
+                        }
                     },
                     error: function(jqXHR, textStatus, errorThrown) {
                         console.log(errorThrown);
