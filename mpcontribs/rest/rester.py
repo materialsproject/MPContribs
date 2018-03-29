@@ -171,13 +171,14 @@ class MPContribsRester(MPResterBase):
 
     def find_contribution(self, cid, as_doc=False, fmt='archieml'):
         """find a specific contribution"""
+        projection = {'mp_cat_id': 1, 'content': 1, 'collaborators': 1, 'project': 1}
+        contrib = self.query_contributions(
+            criteria={'_id': bson.ObjectId(cid)}, projection=projection
+        )[0]
+        if as_doc:
+            return contrib
         mod = import_module('mpcontribs.io.{}.mpfile'.format(fmt))
         MPFile = getattr(mod, 'MPFile')
-        contrib = self.query_contributions(
-            criteria={'_id': bson.ObjectId(cid)},
-            projection={'_id': 0, 'mp_cat_id': 1, 'content': 1, 'collaborators': 1}
-        )[0]
-        if as_doc: return contrib
         return MPFile.from_contribution(contrib)
 
     def delete_contributions(self, cids=[]):
