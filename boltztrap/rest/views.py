@@ -60,6 +60,9 @@ def table(request, db_type=None, mdb=None):
     try:
         page = int(request.GET.get('page', '1'))
         crit = {'project': 'boltztrap'}
+        search = request.GET.get('q')
+        if search is not None:
+            crit.update({'content.extra_data.pretty_formula': {'$regex': search}})
         proj = {'content.data': 1, 'content.extra_data': 1, 'mp_cat_id': 1}
         total_count = mdb.contrib_ad.query_contributions(crit).count()
         last_id = None
