@@ -70,7 +70,8 @@ def table(request, db_type=None, mdb=None):
             limit = (page-1) * 20 # TODO page_size from where?
             ids = [d['_id'] for d in mdb.contrib_ad.query_contributions(crit, limit=limit)]
             last_id = ids[-1]
-        docs, last_id = mdb.contrib_ad.query_paginate(crit, projection=proj, last_id=last_id)
+        sort = {'key': request.GET.get('sort'), 'order': request.GET.get('order')}
+        docs, last_id = mdb.contrib_ad.query_paginate(crit, projection=proj, last_id=last_id, sort=sort)
         if not docs:
             raise Exception('No contributions found for Boltztrap Explorer!')
 
