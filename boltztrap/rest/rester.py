@@ -10,9 +10,10 @@ class BoltztrapRester(MPContribsRester):
     provenance_keys = ['title', 'authors', 'journal', 'urls', 'url', 'description']
     released = True
 
-    def get_contributions(self):
+    def get_contributions(self, limit=20):
 
-        docs = self.query_contributions(projection={'_id': 1, 'mp_cat_id': 1, 'content': 1})
+        docs = self.query_contributions(
+            projection={'_id': 1, 'mp_cat_id': 1, 'content': 1}, limit=limit) # use URL for all data
         if not docs:
             raise Exception('No contributions found for Boltztrap Explorer!')
 

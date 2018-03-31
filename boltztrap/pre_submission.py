@@ -18,7 +18,6 @@ except ImportError:
 def run(mpfile, **kwargs):
 
     # extract data from json files
-    keys = ['pretty_formula', 'volume']
     input_dir = mpfile.hdata.general['input_dir']
     for idx, obj in enumerate(scandir(input_dir)):
         mpid = obj.name.split('.', 1)[0].rsplit('_', 1)[1]
@@ -64,8 +63,10 @@ def run(mpfile, **kwargs):
 
             # build data and max values for seebeck, conductivity and kappa
             # max/min values computed using numpy. It may be better to code it in pure python.
+            keys = ['pretty_formula', 'volume']
             hdata = RecursiveDict((k, data[k]) for k in keys)
             hdata['volume'] = clean_value(hdata['volume'], 'Å³')
+            hdata['bandgap'] = clean_value(data['gap']['GGA'], 'eV')
             cols = ['value', 'temperature', 'doping']
             tables = RecursiveDict()
             props = RecursiveDict()
