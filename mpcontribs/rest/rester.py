@@ -169,6 +169,22 @@ class MPContribsRester(MPResterBase):
             docs = self._make_request('/query')
         return docs
 
+    def count(self, **kwargs):
+        if self.query is not None:
+            if 'criteria' in kwargs:
+                kwargs['criteria'].update(self.query)
+            else:
+                kwargs['criteria'] = self.query
+        if kwargs:
+            criteria = dict(kwargs.get('criteria', {}))
+            payload = {
+                "criteria": dumps(criteria),
+                "collection": kwargs.get('collection', 'contributions'),
+            }
+            return self._make_request('/count', payload=payload, method='POST')
+        else:
+            return self._make_request('/count')
+
     def find_contribution(self, cid, as_doc=False, fmt='archieml'):
         """find a specific contribution"""
         projection = {'mp_cat_id': 1, 'content': 1, 'collaborators': 1, 'project': 1}

@@ -254,6 +254,15 @@ def query_contributions(request, db_type=None, mdb=None):
     return {"valid_response": True, "response": results}
 
 @mapi_func(supported_methods=["POST", "GET"], requires_api_key=True)
+def count(request, db_type=None, mdb=None):
+    criteria = loads(request.POST.get('criteria', '{}'))
+    collection = request.POST.get('collection', 'contributions')
+    if not collection:
+        collection = 'contributions' # empty string check
+    cnt = mdb.contrib_ad.count(criteria, collection=collection)
+    return {"valid_response": True, "response": cnt}
+
+@mapi_func(supported_methods=["POST", "GET"], requires_api_key=True)
 def delete_contributions(request, db_type=None, mdb=None):
     """Delete a list of contributions"""
     #if not request.user.is_staff:

@@ -65,11 +65,28 @@ class ContributionMongoAdapter(object):
             props = [k for k,v in projection.iteritems() if v] + ['collaborators']
         projection = dict((p, 1) for p in props) if props else None
         if '_id' in crit:
-            if isinstance(crit['_id'], dict) and '$in' in crit['_id']:
-                crit['_id']['$in'] = map(bson.ObjectId, crit['_id']['$in'])
+            if isinstance(crit['_id'], dict):
+                if '$in' in crit['_id']:
+                    crit['_id']['$in'] = map(bson.ObjectId, crit['_id']['$in'])
+                elif '$gt' in crit['_id'] and isinstance(crit['_id']['$gt'], six.string_types):
+                    crit['_id']['$gt'] = bson.ObjectId(crit['_id']['$gt'])
             elif isinstance(crit['_id'], six.string_types):
                 crit['_id'] = bson.ObjectId(crit['_id'])
         return coll.find(crit, projection=projection, limit=limit)
+
+    def query_paginate(self, crit, projection=None, page_size=20, last_id=None):
+        # https://arpitbhayani.me/techie/fast-and-efficient-pagination-in-mongodb.html
+        """Function returns `page_size` number of documents after last_id and the new last_id."""
+        if last_id is None: # first page
+            data = list(self.query_contributions(crit, projection=projection, limit=page_size))
+        else:
+            crit.update({'_id': {'$gt': last_id}})
+            data = list(self.query_contributions(crit, projection=projection, limit=page_size))
+        return (data, data[-1]['_id']) if data else (None, None)
+
+    def count(self, crit, collection='contributions'):
+        coll = getattr(self, collection)
+        return coll.count(crit)
 
     def delete_contributions(self, crit):
         return self.contributions.remove(crit)

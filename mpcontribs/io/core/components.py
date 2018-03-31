@@ -117,7 +117,7 @@ def get_backgrid_table(df):
         })
         if len(col_split) > 1:
             table['columns'][-1].update({'label': '##'.join(col_split[1:])})
-        if len(table['columns']) > 11:
+        if len(table['columns']) > 12:
             table['columns'][-1]['renderable'] = 0
 
     header = RecursiveDict()
@@ -141,13 +141,15 @@ def get_backgrid_table(df):
 
     return table
 
-def render_dataframe(df, webapp=False):
+def render_dataframe(df, url=None, total_records=None, webapp=False):
     """use BackGrid JS library to render Pandas DataFrame"""
     # TODO check for index column in df other than the default numbering
     uuid_str, uuid_str_paginator = str(uuid.uuid4()), str(uuid.uuid4())
     uuid_str_filter = str(uuid.uuid4())
     table = get_backgrid_table(df)
     table_str = json.dumps(table)
+    if total_records is None:
+        total_records = df.shape[0]
     html = "<div id='{}'></div>".format(uuid_str_filter)
     html += "<div id='{}' style='width:100%;'></div>".format(uuid_str)
     html += "<div id='{}'></div>".format(uuid_str_paginator)
@@ -161,17 +163,35 @@ def render_dataframe(df, webapp=False):
     ], function(Backbone, Backgrid) {
       "use strict";
       if (!("tables" in window)) { window.tables = []; }
-      window.tables.push(JSON.parse('%s'));
-      var table = window.tables[window.tables.length-1];
-      var Row = Backbone.Model.extend({});
-      var Rows = Backbone.PageableCollection.extend({
-          model: Row, mode: "client", state: {pageSize: 20}
-      });
+          window.tables.push(JSON.parse('%s'));
+          var table = window.tables[window.tables.length-1];
+          var Row = Backbone.Model.extend({});
+          var rows_opt = {model: Row, state: {pageSize: 20, order: 1, totalRecords: %s}};
+    """ % (table_str, total_records)
+    if url is not None:
+        html += """
+          rows_opt["url"] = "%s";
+          rows_opt["parseState"] = function (resp, queryParams, state, options) {
+              return {
+                  totalRecords: resp.total_count, totalPages: resp.total_pages,
+                  currentPage: resp.page, lastPage: resp.last_page
+              };
+          }
+          rows_opt["parseRecords"] = function (resp, options) { return resp.items; }
+        """ % url
+    html += """
+      var Rows = Backbone.PageableCollection.extend(rows_opt);
       var ClickableCell = Backgrid.StringCell.extend({
         events: {"click": "onClick"},
         onClick: function (e) { Backbone.trigger("cellclicked", e); }
       })
+    """
+    html += """
       var rows = new Rows(table['rows']);
+    """ if url is None else """
+      var rows = new Rows();
+    """
+    html += """
       var objectid_regex = /^[a-f\d]{24}$/i;
       for (var idx in table['columns']) {
           if (table['columns'][idx]['cell'] == 'uri') {
@@ -192,12 +212,18 @@ def render_dataframe(df, webapp=False):
       var header = Backgrid.Extension.GroupedHeader;
       var grid = new Backgrid.Grid({ header: header, columns: table['columns'], collection: rows, });
       var paginator = new Backgrid.Extension.Paginator({collection: rows});
-      var filter = new Backgrid.Extension.ClientSideFilter({collection: rows, placeholder: "Search"});
+      var filter = new Backgrid.Extension.ServerSideFilter({
+          collection: rows, placeholder: "Search", name: "q"
+      });
       $('#%s').append(grid.render().el);
       $("#%s").append(paginator.render().$el);
       $("#%s").append(filter.render().$el);
-    });
-    """ % (table_str, uuid_str, uuid_str_paginator, uuid_str_filter)
+    """ % (uuid_str, uuid_str_paginator, uuid_str_filter)
+    if url is not None:
+        html += """
+          rows.fetch({reset: true});
+        """
+    html += "});"
     if webapp:
         html += "});"
     html += "</script>"
