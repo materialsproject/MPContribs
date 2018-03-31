@@ -52,7 +52,7 @@ class ContributionMongoAdapter(object):
     #        elements=['mp-{}'.format(i) for i in range(1, 5)]
     #    )
 
-    def query_contributions(self, crit, projection=None, collection='contributions', limit=0):
+    def query_contributions(self, crit, projection=None, collection='contributions', limit=0, sort=None):
         # TODO be careful with SON for order in crit
         coll = getattr(self, collection)
         props = None
@@ -72,16 +72,18 @@ class ContributionMongoAdapter(object):
                     crit['_id']['$gt'] = bson.ObjectId(crit['_id']['$gt'])
             elif isinstance(crit['_id'], six.string_types):
                 crit['_id'] = bson.ObjectId(crit['_id'])
-        return coll.find(crit, projection=projection, limit=limit)
+        cursor = coll.find(crit, projection=projection, limit=limit)
+        # TODO first sort then limit??
+        #if sort is not None and isinstance(sort, dict) and 'key' in sort and 'order' in sort:
+        #    return cursor.sort(sort['key'], sort['order'])
+        return cursor
 
-    def query_paginate(self, crit, projection=None, page_size=20, last_id=None):
+    def query_paginate(self, crit, projection=None, page_size=20, last_id=None, sort=None):
         # https://arpitbhayani.me/techie/fast-and-efficient-pagination-in-mongodb.html
         """Function returns `page_size` number of documents after last_id and the new last_id."""
-        if last_id is None: # first page
-            data = list(self.query_contributions(crit, projection=projection, limit=page_size))
-        else:
+        if last_id is not None:
             crit.update({'_id': {'$gt': last_id}})
-            data = list(self.query_contributions(crit, projection=projection, limit=page_size))
+        data = list(self.query_contributions(crit, projection=projection, limit=page_size, sort=sort))
         return (data, data[-1]['_id']) if data else (None, None)
 
     def count(self, crit, collection='contributions'):

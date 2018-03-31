@@ -166,7 +166,11 @@ def render_dataframe(df, url=None, total_records=None, webapp=False):
           window.tables.push(JSON.parse('%s'));
           var table = window.tables[window.tables.length-1];
           var Row = Backbone.Model.extend({});
-          var rows_opt = {model: Row, state: {pageSize: 20, order: 1, totalRecords: %s}};
+          var rows_opt = {
+              model: Row, state: {
+                  pageSize: 20, order: 1, sortKey: "sort", totalRecords: %s
+              }
+          };
     """ % (table_str, total_records)
     if url is not None:
         html += """
@@ -213,7 +217,7 @@ def render_dataframe(df, url=None, total_records=None, webapp=False):
       var grid = new Backgrid.Grid({ header: header, columns: table['columns'], collection: rows, });
       var paginator = new Backgrid.Extension.Paginator({collection: rows});
       var filter = new Backgrid.Extension.ServerSideFilter({
-          collection: rows, placeholder: "Search", name: "q"
+          collection: rows, placeholder: "Search formula (hit <enter>)", name: "q"
       });
       $('#%s').append(grid.render().el);
       $("#%s").append(paginator.render().$el);
