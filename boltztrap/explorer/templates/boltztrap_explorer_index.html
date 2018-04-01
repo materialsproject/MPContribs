@@ -135,11 +135,17 @@ requirejs(['main'], function() {
                     contentType: "application/json; charset=utf-8",
                     success: function(data, textStatus, jqXHR) {
                         if ( 'null' != data['response'] ) {
+                            var eigs = data['response']['eigs'];
+                            var annot = '<b>ε₁ = '+eigs[0]+'<br>ε₂ = '+eigs[1]+'<br>ε₃ = '+eigs[2]+'</b>';
                             var div = document.getElementById('graph2');
                             Plotly.newPlot(div, [data['response']], {
                                 showLegend: false, margin: {l: 50, r: 0, b: 50, t: 20},
                                 xaxis: {type: 'log', title: 'doping level [cm⁻³]', exponentformat: "power"},
                                 yaxis: {title: 'temperature [K]'},
+                                annotations: [{
+                                    xref: 'paper', yref: 'paper', x: 1.03, xanchor: 'left',
+                                    y: 0, yanchor: 'top', text: annot, showarrow: false
+                                }]
                             });
                             window.onresize = function() {
                                 Plotly.Plots.resize(div);

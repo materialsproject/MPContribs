@@ -37,9 +37,13 @@ def index(request, cid=None, db_type=None, mdb=None):
         elif request.method == 'POST':
             name = json.loads(request.body)['name']
             names = name.split('##')
-            table_name = '{}({})'.format(names[0][1:-1], names[1][0])
+            key, subkey = names[0][1:-1], names[1][0]
+            table_name = '{}({})'.format(key, subkey)
             doc = mdb.contrib_ad.query_contributions(
-                {'_id': cid}, projection={'_id': 0, 'content.{}'.format(table_name): 1}
+                {'_id': cid}, projection={
+                    '_id': 0, 'content.{}'.format(table_name): 1,
+                    'content.data.{}.{}'.format(key, subkey): 1
+                }
             )[0]
             table = doc['content'].get(table_name)
             if table:
@@ -50,7 +54,13 @@ def index(request, cid=None, db_type=None, mdb=None):
                 if not table_name.startswith('S'):
                     z = [[math.log10(float(c)) for c in r] for r in z]
                 title = ' '.join([table_name, names[1].split()[-1]])
-                response = {'x': x, 'y': y, 'z': z, 'type': 'heatmap', 'colorbar': {'title': title}}
+                eigs = doc['content']['data'][key][subkey].values()[:-1]
+                eigs = [eig.split()[0] for eig in eigs]
+                response = {
+                    'x': x, 'y': y, 'z': z, 'type': 'heatmap',
+                    'colorbar': {'title': title},
+                    'eigs': eigs
+                }
     except Exception as ex:
         raise ValueError('"REST Error: "{}"'.format(str(ex)))
     return {"valid_response": True, 'response': response}
