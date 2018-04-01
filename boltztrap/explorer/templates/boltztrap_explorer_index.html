@@ -59,6 +59,7 @@ code { display: block; white-space: pre-wrap; }
     <div class="row">
         <div class="col-md-6">
             <div id="graph" style="width: 100%;"></div>
+            <div id="spinner" ></div>
         </div>
         <div class="col-md-6">
             <div id="graph2" style="width: 100%;"></div>
@@ -85,7 +86,8 @@ code { display: block; white-space: pre-wrap; }
 
 <script>
 requirejs(['main'], function() {
-    require(["plotly"], function(Plotly) {
+    require(["plotly", "jquery.spin"], function(Plotly) {
+        $("#spinner").spin('small');
 
         $.ajax({
             type: 'GET',
@@ -110,6 +112,7 @@ requirejs(['main'], function() {
                         Plotly.Plots.resize(graph);
                     };
                 }
+                $('#spinner').spin(false);
             },
             error: function(jqXHR, textStatus, errorThrown) {
                 console.log(errorThrown);
@@ -148,6 +151,8 @@ requirejs(['main'], function() {
                     }
                 });
             }); 
+
+            $(".backgrid > tbody > tr:first > td:nth-child(6)").click()
 
         });
     });
