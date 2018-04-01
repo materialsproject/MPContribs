@@ -54,13 +54,7 @@ def index(request, cid=None, db_type=None, mdb=None):
                 if not table_name.startswith('S'):
                     z = [[math.log10(float(c)) for c in r] for r in z]
                 title = ' '.join([table_name, names[1].split()[-1]])
-                eigs = doc['content']['data'][key][subkey].values()[:-1]
-                eigs = [eig.split()[0] for eig in eigs]
-                response = {
-                    'x': x, 'y': y, 'z': z, 'type': 'heatmap',
-                    'colorbar': {'title': title},
-                    'eigs': eigs
-                }
+                response = {'x': x, 'y': y, 'z': z, 'type': 'heatmap', 'colorbar': {'title': title}}
     except Exception as ex:
         raise ValueError('"REST Error: "{}"'.format(str(ex)))
     return {"valid_response": True, 'response': response}
@@ -117,4 +111,23 @@ def table(request, db_type=None, mdb=None):
         }
     except Exception as ex:
         raise ValueError('"REST Error: "{}"'.format(str(ex)))
+    return response
+
+@mapi_func(supported_methods=["GET"], requires_api_key=False)
+def eigenvalues(request, cid, db_type=None, mdb=None):
+    doc = mdb.contrib_ad.query_contributions(
+        {'_id': cid}, projection={'_id': 0, 'content.data': 1}
+    )[0]
+    response = {}
+    for key, value in doc['content']['data'].iteritems():
+        if key != 'S²σ':
+            response[key] = {}
+            if isinstance(value, dict):
+                for doping, dct in value.iteritems():
+                    response[key][doping] = {}
+                    for eig_key, eig in dct.iteritems():
+                        if eig_key != '<ε>':
+                            response[key][doping][eig_key] = eig
+            else:
+                response[key] = value
     return response
