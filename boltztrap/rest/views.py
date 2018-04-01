@@ -14,7 +14,7 @@ def index(request, cid=None, db_type=None, mdb=None):
         response = None
         if request.method == 'GET':
             axes, dopings = ['<S>', '<σ>', '<S²σ>'], ['n', 'p']
-            projection = dict(('content.data.{}'.format(k), 1) for k in axes)
+            projection = dict(('content.data.{}'.format(k[1:-1]), 1) for k in axes)
             projection.update({'mp_cat_id': 1})
             docs = mdb.contrib_ad.query_contributions(
                 {'project': 'boltztrap'}, projection=projection
@@ -25,8 +25,9 @@ def index(request, cid=None, db_type=None, mdb=None):
                 d = doc['content']['data']
                 for doping in dopings:
                     for idx, k in enumerate(axes):
-                        if k in d and doping in d[k]:
-                            value = d[k][doping]
+                        kk = k[1:-1]
+                        if kk in d and doping in d[kk]:
+                            value = d[kk][doping]['<ε>']
                             value = float(value.split()[0])
                             if idx == 2:
                                 value = math.log10(value)
@@ -91,7 +92,7 @@ def table(request, db_type=None, mdb=None):
             mp_id_url = 'https://materialsproject.org/materials/{}'.format(mp_id)
             row = [mp_id_url, cid_url, contrib['extra_data']['pretty_formula']]
             row += [
-                contrib['data'].get(k, {}).get(sk, '-').split()[0]
+                contrib['data'].get(k[1:-1], {}).get(sk, {}).get('<ε>', '-').split()[0]
                 for k in keys for sk in subkeys
             ]
             items.append(dict((k, v) for k, v in zip(columns, row)))

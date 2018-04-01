@@ -29,7 +29,7 @@ class BoltztrapRester(MPContribsRester):
             cid_url = self.get_cid_url(doc)
             row = [mp_id, cid_url, contrib['extra_data']['pretty_formula']]
             row += [
-                contrib['data'].get(k, {}).get(sk, 'n.a. mₑ')
+                contrib['data'].get(k[1:-1], {}).get(sk, {}).get('<ε>', 'n.a. mₑ')
                 for k in keys for sk in subkeys
             ]
             data.append((mp_id, row))

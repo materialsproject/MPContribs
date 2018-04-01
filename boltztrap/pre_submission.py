@@ -34,14 +34,15 @@ def run(mpfile, **kwargs):
             # add hierarchical data (nested key-values)
             hdata = RecursiveDict()
             T, lvl, S2 = '300', '1e+18', None
-            pf_key = '<S²σ>'
+            pf_key = 'S²σ'
             hdata['temperature'] = T + ' K'
             hdata['doping_level'] = lvl + ' cm⁻³'
             variables = [
-                {'key': 'cond_eff_mass', 'name': '<mₑᶜᵒⁿᵈ>', 'unit': 'mₑ'},
-                {'key': 'seebeck_doping', 'name': '<S>', 'unit': 'μV/K'},
-                {'key': 'cond_doping', 'name': '<σ>', 'unit': '(Ωms)⁻¹'},
+                {'key': 'cond_eff_mass', 'name': 'mₑᶜᵒⁿᵈ', 'unit': 'mₑ'},
+                {'key': 'seebeck_doping', 'name': 'S', 'unit': 'μV/K'},
+                {'key': 'cond_doping', 'name': 'σ', 'unit': '(Ωms)⁻¹'},
             ]
+            eigs_keys = ['ε₁', 'ε₂', 'ε₃', '<ε>']
 
             for v in variables:
                 hdata[v['name']] = RecursiveDict()
@@ -49,14 +50,18 @@ def run(mpfile, **kwargs):
                     if doping_type in data['GGA'][v['key']]:
                         d = data['GGA'][v['key']][doping_type][T][lvl]
                         eigs = map(float, d if isinstance(d, list) else d['eigs'])
-                        hdata[v['name']][doping_type] = clean_value(np.mean(eigs), v['unit'])
+                        hdata[v['name']][doping_type] = RecursiveDict(
+                            (eigs_keys[neig], clean_value(eig, v['unit']))
+                            for neig, eig in enumerate(eigs)
+                        )
+                        hdata[v['name']][doping_type][eigs_keys[-1]] = clean_value(np.mean(eigs), v['unit'])
                         if v['key'] == 'seebeck_doping':
                             S2 = np.dot(d['tensor'], d['tensor'])
                         elif v['key'] == 'cond_doping':
                             pf = np.mean(np.linalg.eigh(np.dot(S2, d['tensor']))[0]) * 1e-8
                             if pf_key not in hdata:
                                 hdata[pf_key] = RecursiveDict()
-                            hdata[pf_key][doping_type] = clean_value(pf, 'μW/(cmK²s)')
+                            hdata[pf_key][doping_type] = {eigs_keys[-1]: clean_value(pf, 'μW/(cmK²s)')}
 
 
             mpfile_data = nest_dict(hdata, ['data'])
