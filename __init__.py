@@ -62,6 +62,10 @@ def mapi_func(supported_methods=("GET",), requires_api_key=False):
                 d = {"valid_response": False, "error": str(ex)}
                 return HttpResponseBadRequest(
                     json.dumps(d), content_type="application/json")
+            if not isinstance(d, dict):
+                d = {"valid_response": False, "error": "response is not a dict!"}
+                return HttpResponseBadRequest(
+                    json.dumps(d), content_type="application/json")
             d["created_at"] = datetime.datetime.now().isoformat()
             return HttpResponse(json.dumps(d, cls=MongoJSONEncoder),
                                 content_type="application/json")
