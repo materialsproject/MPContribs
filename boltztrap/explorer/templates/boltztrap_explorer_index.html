@@ -67,7 +67,8 @@ code { display: block; white-space: pre-wrap; }
         {{ provenance|safe }}
     </div>
 
-    <div class="row">
+    <a id="graphs"></a>
+    <div class="row" style="margin-top: 10px">
         <div class="col-md-6">
             <div id="graph" style="width: 100%;"></div>
             <div id="spinner" ></div>
@@ -160,6 +161,7 @@ requirejs(['main'], function() {
                                 window.onresize = function() {
                                     Plotly.Plots.resize(div);
                                 };
+                                document.getElementById("graphs").scrollIntoView();
                             }
                         },
                         error: function(jqXHR, textStatus, errorThrown) {
