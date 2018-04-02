@@ -1,25 +1,53 @@
 from __future__ import unicode_literals, print_function
-import uuid, json, six
+import uuid, json, six, os
 from collections import OrderedDict as _OrderedDict
 from collections import Mapping as _Mapping
 from mpcontribs.config import mp_level01_titles, replacements
 
-def render_dict(dct, webapp=False):
+cwd = os.path.dirname(__file__)
+json_human = {}
+for ext in ['js', 'css']:
+    path_list = [cwd, '..', '..', 'webui', 'static', ext]
+    if ext == 'js':
+        path_list.append('lib')
+    path_list.append('json.human.{}'.format(ext))
+    json_human_path = os.path.abspath(os.path.join(*path_list))
+    json_human[ext] = open(json_human_path, 'r').read()
+json_human['css'] = ' '.join(json_human['css'].replace('\n', ' ').split())
+
+def render_dict(dct, webapp=False, require=True, script_only=False):
     """use JsonHuman library to render a dictionairy"""
     json_str, uuid_str = json.dumps(dct).replace('\\n', ' '), str(uuid.uuid4())
-    html = ["<div id='{}' style='width:100%;'></div>".format(uuid_str)]
-    html.append("<script>")
+    html = []
+    if not script_only:
+        html.append("<div id='{}' style='width:100%;'></div>".format(uuid_str))
+        html.append("<script>")
     if webapp:
         html.append("requirejs(['main'], function() {")
-    html.append("require(['json.human'], function(JsonHuman) {")
+    if require:
+        html.append("require(['json.human'], function(JsonHuman) {")
+    else:
+        html.append("""
+        var style = document.createElement('style');
+        style.type = 'text/css';
+        var tn = document.createTextNode('{}');
+        style.appendChild(tn);
+        document.body.appendChild(style);
+        """.format(json_human['css']))
+        html.append('\n' + json_human['js'])
     html.append("'use strict';")
     html.append("var data = JSON.parse('{}');".format(json_str))
     html.append("var node = JsonHuman.format(data);")
-    html.append("document.getElementById('{}').appendChild(node);".format(uuid_str))
-    html.append("});")
+    if script_only:
+        html.append("document.body.appendChild(node);")
+    else:
+        html.append("document.getElementById('{}').appendChild(node);".format(uuid_str))
+    if require:
+        html.append("});")
     if webapp:
         html.append("});")
-    html.append("</script>")
+    if not script_only:
+        html.append("</script>")
     return ' '.join(html) # TODO use \n?
 
 class RecursiveDict(_OrderedDict):
