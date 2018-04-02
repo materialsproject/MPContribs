@@ -20,7 +20,9 @@ requirejs.config({
         'js-cookie': 'components/js-cookie/src/js.cookie',
         'jupyter-widget-chemview': 'components/chemview/js/src/embed.js',
         'jquery.spin': 'components/spin.js/jquery.spin',
-        'spin': 'components/spin.js/spin'
+        'spin': 'components/spin.js/spin',
+        'linkify': 'components/linkifyjs/linkify.amd',
+        'linkify-element': 'components/linkifyjs/linkify-element.amd'
         //waitfor: 'jquery.waitFor',
         //thebe: 'main-built',
     },
@@ -39,7 +41,8 @@ requirejs.config({
         'backgrid-paginator': {deps: ['backgrid', 'backbone.paginator']},
         'backgrid-grouped-columns': {deps: ['backgrid']},
         'bootstrap-slider': {deps: ['jquery', 'bootstrap']},
-        'jquery.spin': {deps: ['jquery']}
+        'jquery.spin': {deps: ['jquery']},
+        'linkify-element': {deps: ['linkify']}
         //waitfor: {deps: ['jquery']},
         //sandbox: {deps: ['archieml']},
     }
