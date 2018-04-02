@@ -45,13 +45,15 @@
         </form>
       </div>
   </div>
-  {% if urls %}
   <div class="row" style="margin-top:20px;">
+  {% if urls %}
     {% for url in urls %}
     <div class="col-md-6">{{ url|safe }}</div>
     {% endfor %}
-  </div>
+  {% elif request.method == 'POST' %}
+    <div class="col-md-12">No contributions found!</div>
   {% endif %}
+  </div>
   <script>
     requirejs(['main'], function() {
     var options = {{ options|safe }};
