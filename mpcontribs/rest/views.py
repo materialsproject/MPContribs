@@ -448,6 +448,16 @@ def get_card(request, cid, db_type=None, mdb=None):
     from django.template import Template, Context
     from django.core.urlresolvers import reverse
     from mpcontribs.config import mp_id_pattern
+
+    embed = loads(request.POST.get('embed', 'true'))
+    if embed:
+        from selenium import webdriver
+        from bs4 import BeautifulSoup
+        options = webdriver.ChromeOptions()
+        options.add_argument("no-sandbox")
+        options.set_headless()
+        browser = webdriver.Chrome(chrome_options=options)
+
     prov_keys = loads(request.POST.get('provenance_keys', '["title"]'))
     contrib = mdb.contrib_ad.query_contributions(
         {'_id': ObjectId(cid)},
@@ -461,9 +471,10 @@ def get_card(request, cid, db_type=None, mdb=None):
     description = '{}.'.format(descriptions[0])
     if len(descriptions) > 1 and descriptions[1]:
         description += ''' <a href="#"
-        class="read_more">More &raquo;</a><span class="more_text"
+        onclick="read_more()" id="read_more">More &raquo;</a><span id="more_text"
         hidden>{}</span>'''.format(descriptions[1])
     authors = hdata.get('authors', 'No authors available.').split(',', 1)
+
     provenance = '<h5 style="margin: 5px;">{}'.format(authors[0])
     if len(authors) > 1:
         provenance += '''<button class="btn btn-sm btn-link"
@@ -477,6 +488,7 @@ def get_card(request, cid, db_type=None, mdb=None):
         target="_blank"><i class="fa fa-book fa-border fa-lg"></i></a>'''.format(x)
         for x in urls if x
     ])
+
     #if plots:
     #    card = []
     #    for name, plot in plots.items():
@@ -497,13 +509,25 @@ def get_card(request, cid, db_type=None, mdb=None):
         data[k] = v
         if idx >= 6:
             break # humans can grasp 7 items quickly
-    data = render_dict(data, webapp=True)
+
+    if embed:
+        data = render_dict(data, require=False, script_only=True)
+        browser.execute_script(data)
+        src = browser.page_source.encode("utf-8")
+        card = src
+        #bs = BeautifulSoup(src, 'html.parser')
+        #card = bs.body.prettify()
+        #card = data.body
+    else:
+        data = render_dict(data, webapp=True)
+
     is_mp_id = mp_id_pattern.match(mpid)
     collection = 'materials' if is_mp_id else 'compositions'
     more = reverse('mpcontribs_explorer_contribution', args=[collection, cid])
     project = hdata.get('project')
     if project is not None:
         landing_page = reverse('mpcontribs_users_{}_explorer_index'.format(project))
+
     card = '''
     <div class="panel panel-default">
         <div class="panel-heading">
@@ -526,20 +550,21 @@ def get_card(request, cid, db_type=None, mdb=None):
         </div>
     </div>
     <script>
-    requirejs(['main'], function() {{
-        require(['jquery', 'bootstrap'], function() {{
-            $(function(){{
-                $("a.read_more").click(function(event){{
-                    event.preventDefault();
-                    $(this).parents(".blockquote").find(".more_text").show();
-                    $(this).parents(".blockquote").find(".read_more").hide();
-                }});
-                $('.btn-link').tooltip();
-            }});
-        }});
-    }});
+        function read_more() {{
+            document.getElementById("more_text").style.display = 'block';
+            document.getElementById("read_more").style.display = 'none';
+        }};
     </script>
     '''.format(
             landing_page, title, more, provenance, description, data
     ).replace('\n', '')
-    return {"valid_response": True, "response": ' '.join(card.split())}
+
+    if embed:
+        browser.get('about:blank')
+        innerHtml = '<head></head><body onload="...">' + card + '</body>';
+        browser.execute_script("document.innerHTML = " + innerHTML)
+        browser.execute_script("$(document.body).trigger('load');");
+        card = browser.execute_script("document.body.innerHTML;");
+        browser.close()
+
+    return {"valid_response": True, "response": card}

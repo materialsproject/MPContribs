@@ -261,6 +261,6 @@ class MPContribsRester(MPResterBase):
     def get_datasets(self, identifier):
         return self._make_request('/datasets/'+identifier)
 
-    def get_card(self, cid, prov_keys=['title']):
-        payload = {"provenance_keys": dumps(prov_keys)}
+    def get_card(self, cid, prov_keys=['title'], embed=True):
+        payload = {"provenance_keys": dumps(prov_keys), "embed": dumps(embed)}
         return self._make_request('/card/'+cid, payload=payload, method='POST')
