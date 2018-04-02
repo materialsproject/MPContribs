@@ -478,8 +478,7 @@ def get_card(request, cid, db_type=None, mdb=None):
     descriptions = hdata.get('description', 'No description available.').strip().split('.', 1)
     description = '{}.'.format(descriptions[0])
     if len(descriptions) > 1 and descriptions[1]:
-        description += ''' <a href="#"
-        onclick="read_more()" id="read_more">More &raquo;</a><span id="more_text"
+        description += ''' <a onclick="read_more()" id="read_more">More &raquo;</a><span id="more_text"
         hidden>{}</span>'''.format(descriptions[1])
     authors = hdata.get('authors', 'No authors available.').split(',', 1)
 
