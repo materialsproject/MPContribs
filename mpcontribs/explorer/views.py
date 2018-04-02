@@ -49,13 +49,13 @@ def index(request):
                                 key: {'$in': selection[fields[idx]]}
                             })
                     docs = mpr.query_contributions(criteria=criteria, limit=10)
-                    urls = [mpr.get_card(doc['_id']) for doc in docs]
+                    urls = [mpr.get_card(doc['_id'], embed=False) for doc in docs]
                 elif mode == 'Show':
                     if selection[fields[2]]:
                         docs = mpr.query_contributions(
                             criteria={'_id': {'$in': selection[fields[2]]}}
                         )
-                        urls = [mpr.get_card(doc['_id']) for doc in docs]
+                        urls = [mpr.get_card(doc['_id'], embed=False) for doc in docs]
                     else:
                         ctx.update({'alert': 'Enter a contribution identifier!'})
 
