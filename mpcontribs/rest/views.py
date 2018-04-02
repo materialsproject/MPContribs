@@ -512,10 +512,9 @@ def get_card(request, cid, db_type=None, mdb=None):
         data = render_dict(data, require=False, script_only=True)
         browser.execute_script(data)
         src = browser.page_source.encode("utf-8")
-        card = src
-        #bs = BeautifulSoup(src, 'html.parser')
-        #card = bs.body.prettify()
-        #card = data.body
+        bs = BeautifulSoup(src, 'html.parser')
+        data = unicode(bs.body.style) + unicode(bs.body.table)
+        browser.close()
     else:
         data = render_dict(data, webapp=True)
 
@@ -594,13 +593,5 @@ def get_card(request, cid, db_type=None, mdb=None):
     '''.format(
             landing_page, title, more, provenance, description, data
     ).replace('\n', '')
-
-    if embed:
-        browser.get('about:blank')
-        innerHtml = '<head></head><body onload="...">' + card + '</body>';
-        browser.execute_script("document.innerHTML = " + innerHTML)
-        browser.execute_script("$(document.body).trigger('load');");
-        card = browser.execute_script("document.body.innerHTML;");
-        browser.close()
 
     return {"valid_response": True, "response": card}
