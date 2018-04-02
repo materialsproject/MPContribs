@@ -453,10 +453,18 @@ def get_card(request, cid, db_type=None, mdb=None):
     if embed:
         from selenium import webdriver
         from bs4 import BeautifulSoup
-        options = webdriver.ChromeOptions()
-        options.add_argument("no-sandbox")
-        options.set_headless()
-        browser = webdriver.Chrome(chrome_options=options)
+        try:
+            options = webdriver.FirefoxOptions()
+            options.set_headless()
+            browser = webdriver.Firefox(firefox_options=options)
+        except:
+            try:
+                options = webdriver.ChromeOptions()
+                options.add_argument("no-sandbox")
+                options.set_headless()
+                browser = webdriver.Chrome(chrome_options=options)
+            except:
+                raise
 
     prov_keys = loads(request.POST.get('provenance_keys', '["title"]'))
     contrib = mdb.contrib_ad.query_contributions(
