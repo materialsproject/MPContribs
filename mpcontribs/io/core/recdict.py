@@ -25,7 +25,7 @@ def render_dict(dct, webapp=False, require=True, script_only=False):
     if webapp:
         html.append("requirejs(['main'], function() {")
     if require:
-        html.append("require(['json.human'], function(JsonHuman) {")
+        html.append("require(['json.human', 'linkify-element'], function(JsonHuman, linkifyElement) {")
     else:
         html.append("""
         var style = document.createElement('style');
@@ -38,6 +38,8 @@ def render_dict(dct, webapp=False, require=True, script_only=False):
     html.append("'use strict';")
     html.append("var data = JSON.parse('{}');".format(json_str))
     html.append("var node = JsonHuman.format(data);")
+    if require:
+        html.append("linkifyElement(node, { target: '_blank' });")
     if script_only:
         html.append("document.body.appendChild(node);")
     else:
