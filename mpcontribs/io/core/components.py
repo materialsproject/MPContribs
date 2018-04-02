@@ -183,6 +183,10 @@ def render_dataframe(df, url=None, total_records=None, webapp=False):
           }
           rows_opt["parseRecords"] = function (resp, options) { return resp.items; }
         """ % url
+    else:
+        html += """
+        rows_opt["mode"] = "client";
+        """
     html += """
       var Rows = Backbone.PageableCollection.extend(rows_opt);
       var ClickableCell = Backgrid.StringCell.extend({
@@ -195,6 +199,10 @@ def render_dataframe(df, url=None, total_records=None, webapp=False):
     """ if url is None else """
       var rows = new Rows();
     """
+    filter_type = "Server" if url is not None else "Client"
+    placeholder = "Search"
+    if url is not None:
+        placeholder += " formula (hit <enter>)"
     html += """
       var objectid_regex = /^[a-f\d]{24}$/i;
       for (var idx in table['columns']) {
@@ -216,13 +224,13 @@ def render_dataframe(df, url=None, total_records=None, webapp=False):
       var header = Backgrid.Extension.GroupedHeader;
       var grid = new Backgrid.Grid({ header: header, columns: table['columns'], collection: rows, });
       var paginator = new Backgrid.Extension.Paginator({collection: rows});
-      var filter = new Backgrid.Extension.ServerSideFilter({
-          collection: rows, placeholder: "Search formula (hit <enter>)", name: "q"
+      var filter = new Backgrid.Extension.%sSideFilter({
+          collection: rows, placeholder: "%s", name: "q"
       });
       $('#%s').append(grid.render().el);
       $("#%s").append(paginator.render().$el);
       $("#%s").append(filter.render().$el);
-    """ % (uuid_str, uuid_str_paginator, uuid_str_filter)
+    """ % (filter_type, placeholder, uuid_str, uuid_str_paginator, uuid_str_filter)
     if url is not None:
         html += """
           rows.fetch({reset: true});
