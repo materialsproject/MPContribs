@@ -17,10 +17,10 @@ def index(request):
         from ..rest.rester import DibbsRester
         with DibbsRester(API_KEY, endpoint=ENDPOINT) as mpr:
             try:
-                title = mpr.get_provenance().get('title')
-                table = render_dataframe(mpr.get_contributions(), webapp=True)
+                ctx['title'] = mpr.get_provenance().get('title')
+                ctx['table'] = render_dataframe(mpr.get_contributions(), webapp=True)
             except Exception as ex:
                 ctx.update({'alert': str(ex)})
     else:
         ctx.update({'alert': 'Please log in!'})
-    return render_to_response("dibbs_explorer_index.html", locals(), ctx)
+    return render_to_response("dibbs_explorer_index.html", ctx)

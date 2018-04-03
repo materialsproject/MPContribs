@@ -16,12 +16,13 @@ def index(request):
         from ..rest.rester import SlacMose2Rester
         with SlacMose2Rester(API_KEY, endpoint=ENDPOINT) as mpr:
             try:
-                provenance = render_dict(mpr.get_provenance(), webapp=True)
+                ctx['provenance'] = render_dict(mpr.get_provenance(), webapp=True)
                 graphs = {}
                 for key, plot in mpr.get_graphs().items():
                     graphs[key] = render_plot(plot, webapp=True)
+                ctx['graphs'] = graphs
             except Exception as ex:
                 ctx.update({'alert': str(ex)})
     else:
         ctx.update({'alert': 'Please log in!'})
-    return render_to_response("slac_mose2_explorer_index.html", locals(), ctx)
+    return render_to_response("slac_mose2_explorer_index.html", ctx)

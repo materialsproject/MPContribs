@@ -38,9 +38,9 @@ def index(request):
                     data.append((doc['task_id'], row))
 
                 df = Table.from_items(data, orient='index', columns=columns)
-                table = render_dataframe(df, webapp=True)
+                ctx['table'] = render_dataframe(df, webapp=True)
             except Exception as ex:
                 ctx.update({'alert': str(ex)})
     else:
         ctx.update({'alert': 'Please log in!'})
-    return render_to_response("defect_genome_pcfc_materials_explorer_index.html", locals(), ctx)
+    return render_to_response("defect_genome_pcfc_materials_explorer_index.html", ctx)
