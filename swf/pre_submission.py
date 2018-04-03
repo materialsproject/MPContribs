@@ -1,7 +1,7 @@
 from mpcontribs.config import mp_level01_titles
-from mpcontribs.users.swf.rest.rester import SwfRester
 from mpcontribs.io.core.recdict import RecursiveDict
-import pandas as pd
+from mpcontribs.io.core.utils import clean_value, get_composition_from_string
+from mpcontribs.users.utils import duplicate_check
 
 def round_to_100_percent(number_set, digit_after_decimal=1):
     unround_numbers = [
@@ -20,22 +20,16 @@ def round_to_100_percent(number_set, digit_after_decimal=1):
         index = (index + 1) % len(number_set)
     return [int(x)/float(10**digit_after_decimal) for x in unround_numbers]
 
-def run(mpfile, nmax=None, dup_check_test_site=True):
+@duplicate_check
+def run(mpfile, **kwargs):
     import pymatgen
-
-    existing_compositions = {}
-    for b in [False, True]:
-        with SwfRester(test_site=b) as mpr:
-            for doc in mpr.query_contributions():
-                existing_compositions[doc['mp_cat_id']] = doc['_id']
-        if not dup_check_test_site:
-            break
+    import pandas as pd
+    from mpcontribs.users.swf.rest.rester import SwfRester
 
     # load data from google sheet
-    # TODO should google sheets URL be removed from contribution?
     google_sheet = mpfile.document[mp_level01_titles[0]].pop('google_sheet')
     google_sheet += '/export?format=xlsx'
-    df_dct = pd.read_excel(google_sheet, sheetname=None)
+    df_dct = pd.read_excel(google_sheet, sheet_name=None)
 
     # rename sheet columns
     elements = ['Fe', 'V', 'Co']
@@ -53,51 +47,26 @@ def run(mpfile, nmax=None, dup_check_test_site=True):
                 df.loc[idx:idx, elements] = round_to_100_percent(row[elements])
 
     row5 = df_dct['formula'].iloc[0]
-    formula5 = pymatgen.Composition(10*row5).formula.replace(' ', '')
-    if nmax is not None and formula5 in existing_compositions:
-        print 'skipping kondorsky for', formula5
-    else:
-        mpfile.add_hierarchical_data(
-            {'data': row5.to_dict()}, identifier=formula5
-        )
-        mpfile.add_data_table(
-            formula5, df_dct['Kondorsky'], name='Angular Dependence of Switching Field'
-        )
+    formula5 = get_composition_from_string(
+        pymatgen.Composition(10*row5).formula.replace(' ', '')
+    )
+    dct = dict((k, clean_value(v, '%')) for k,v in row5.to_dict().items())
+    mpfile.add_hierarchical_data({'data': dct}, identifier=formula5)
+    mpfile.add_data_table(
+        formula5, df_dct['Kondorsky'], name='Angular Dependence of Switching Field'
+    )
 
-    count, skipped, update = 0, 0, 0
     for sheet, df in df_dct.items():
         if sheet == 'formula' or sheet == 'Kondorsky' or sheet == 'total':
             continue
         for idx, row in df.iterrows():
             composition = pymatgen.Composition(row[elements]*10)
-            formula = composition.formula.replace(' ', '')
-            if nmax is not None and formula in existing_compositions:
-                print 'skipping', formula
-                skipped += 1
-                continue # skip duplicates
-
-            mpfile.add_hierarchical_data(
-                {'data': row[elements].to_dict()},
-                identifier=formula
-            )
-
+            formula = get_composition_from_string(composition.formula.replace(' ', ''))
+            dct = dict((k, clean_value(v, '%')) for k,v in row[elements].to_dict().items())
+            mpfile.add_hierarchical_data({'data': dct}, identifier=formula)
             columns = [x for x in row.index if x not in elements]
             if columns:
                 data = row[columns].round(decimals=1)
-                mpfile.add_hierarchical_data(
-                    {'data': data.to_dict()}, identifier=formula
-                )
+                dct = dict((k, clean_value(v)) for k,v in data.to_dict().items())
+                mpfile.add_hierarchical_data({'data': dct}, identifier=formula)
 
-            if formula in existing_compositions:
-                cid = existing_compositions[formula]
-                mpfile.insert_id(formula, cid)
-                update += 1
-            if nmax is not None and count >= nmax-1:
-                    break
-            count += 1
-
-    print len(mpfile.ids), 'compositions to submit.'
-    if nmax is None and update > 0:
-        print update, 'compositions to update.'
-    if nmax is not None and skipped > 0:
-        print skipped, 'duplicates to skip.'

@@ -34,9 +34,9 @@ def duplicate_check(f):
                 mpfile.insert_top(identifier, 'cid', cid)
                 update += 1
 
-        print len(mpfile.ids), 'mp-ids to submit.'
+        print len(mpfile.ids), 'contributions to submit.'
         if update > 0:
-            print update, 'mp-ids to update.'
+            print update, 'contributions to update.'
 
     wrapper.existing_identifiers = existing_identifiers
     return wrapper

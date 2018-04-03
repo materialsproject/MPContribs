@@ -9,8 +9,9 @@ class SwfRester(MPContribsRester):
     mpfile = MPFile.from_file(os.path.join(
         os.path.dirname(__file__), '..', 'mpfile_init.txt'
     ))
-    query = {'content.doi': mpfile.hdata.general['doi']}
+    query = {'content.urls.STAM': mpfile.hdata.general['urls']['STAM']}
     provenance_keys = [k for k in mpfile.hdata.general.keys() if k != 'google_sheet']
+    released = True
 
     def get_contributions(self):
         docs = self.query_contributions(
@@ -38,7 +39,7 @@ class SwfRester(MPContribsRester):
             row = [formula, cid_url]
             for col in columns[2:]:
                 row.append(contrib.get(col, ''))
-            
+
             n = len(row)
             if n < ncols:
                 row += [''] * (ncols - n)

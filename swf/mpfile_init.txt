@@ -1,7 +1,20 @@
-title: Combinatorial study of Fe-Co-V hard magnetic thin films
-reference: Science and Technology of Advanced Materials
-contributor: Sean W. Fackler
-authors: Sean W. Fackler, Vasileios Alexandrakis, Dennis Konig, A. Gilad Kusne, Tieren Gao, Matthew J. Kramer, Drew Stasak, Kenny Lopez, Brad Zayac, Apurva Mehta, Alfred Ludwig and Ichiro Takeuchi
-doi: 10.1080/14686996.2017.1287520
-explanation: The in-plane energy product, the maximum stored magnetic energy, is shown for a library of sputter deposited Fe-Co-V thin films. In addition, a comparison of MOKE screening to more traditional VSM measurements is detailed by coercive field (μ0HC) data. The composition of each thin film is also displayed with the accompanying entries. 
+title: Fe-Co-V Magnetic Thin Films
+
+description:
+The in-plane energy product, the maximum stored magnetic energy, is
+shown for a combinatorial library of sputter deposited Fe-Co-V thin
+films. In addition, a comparison of MOKE screening to more traditional
+VSM measurements is detailed by coercive field (μ₀-HC) data. The
+composition of each thin film is also displayed with the accompanying
+entries.
+:end
+
+authors:
+S. Fackler, V. Alexandrakis, D. Konig, A. Gilad Kusne, T. Gao, M.
+Kramer, D. Stasak, K. Lopez, B. Zayac, A. Mehta, A. Ludwig, I. Takeuchi
+:end
+
 google_sheet: https://docs.google.com/a/lbl.gov/spreadsheets/d/18Q9ozAMmhqF6PGLbnEwqCTmMCq7WA-3LEF6khQN9WmE
+
+{urls}
+STAM: https://doi.org/10.1080/14686996.2017.1287520

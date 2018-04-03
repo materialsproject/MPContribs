@@ -4,7 +4,12 @@
 {% block title %} Fe-V-Co hard magnetic thin films {% endblock title %}
 
 {% block extra_css %}
+<link rel="stylesheet" href='{% static "js/components/bootstrap/dist/css/bootstrap.css" %}' charset="utf-8">
+<link rel="stylesheet" href='{% static "js/components/seiyria-bootstrap-slider/dist/css/bootstrap-slider.css" %}' charset="utf-8">
 <link rel="stylesheet" href='{% static "js/components/backgrid/lib/backgrid.css" %}' charset="utf-8">
+<link rel="stylesheet" href='{% static "js/components/backgrid-paginator/backgrid-paginator.css" %}' charset="utf-8">
+<link rel="stylesheet" href='{% static "js/components/backgrid-filter/backgrid-filter.css" %}' charset="utf-8">
+<link rel="stylesheet" href='{% static "js/components/backgrid-grouped-columns/backgrid-grouped-columns.css" %}' charset="utf-8">
 <link rel="stylesheet" href='{% static "js/components/json-human/css/json.human.css" %}' charset="utf-8">
 {% endblock extra_css %}
 
@@ -21,20 +26,38 @@
 {% else %}
 
 <style>
-.backgrid .string-cell { text-align: center; }
+.backgrid { font-family: "symbola"; }
 .backgrid tbody tr:hover { background-color: #f9f9f9; }
+.backgrid .sortable { text-align: center; }
+.backgrid thead th button { display: inline; }
+.jh-root { font-family: "symbola"; }
+.jh-type-string { font-style: normal; }
+code { display: block; white-space: pre-wrap; }
 </style>
 
 <div class="container">
 
+    <a href="{% url 'mpcontribs_portal_index' %}">&laquo; Portal</a>
     <div class="row">
-        <h2>{{ title }}</h2>
-        {{ provenance|safe }}
+        <div class="col-md-12">
+            <h2>{{ title }}</h2>
+            {{ provenance|safe }}
+        </div>
     </div>
     <div class="row">
-        <h3>Graphical Abstract and Ternary Phase Diagram</h3>
+        <div class="col-md-12">
+            <h5>Python code to get the contributions from the SwfRester</h5>
+            <code>
+                from mpcontribs.users.swf.rest.rester import SwfRester
+                mpr = SwfRester()
+                mpr.get_contributions()
+            </code>
+        </div>
+    </div>
+    <div class="row">
         <div class="col-md-6">
-            <img src="{% static 'Graphical_abstract.png' %}" width='500' height='300' />
+            <h3>Graphical Abstract and Ternary Phase Diagram</h3>
+            <img src="{{ static_url }}/Graphical_abstract.png" width='500' height='300' />
         </div>
         <div class="col-md-6">
             <div id="graph1"></div>
@@ -87,11 +110,7 @@
                                 }]
                             }]
                         };
-                        var elements = [
-                            'Fe',
-                            'Co',
-                            'V'
-                        ];
+                        var elements = ['Fe [%]', 'Co [%]', 'V [%]'];
                         
                         var data_layers = [
                             'IP_Energy_product',
@@ -249,7 +268,7 @@
                         for (i = 0; i < table['rows'].length; i++) {
                             row = table['rows'][i];
                             if (row['MOKE_IP_Hc'] != "") {
-                                xvals.push(row['V'])
+                                xvals.push(row['V [%]'])
                                 yvals.push(row['thickness'])
                                 MOKE_color.push(row['MOKE_IP_Hc'])
                                 cids.push(row['contribution'])
@@ -286,70 +305,71 @@
         </div>
         <div class="col-md-6">
             <div id="graph3"></div>
-            <script>
-            requirejs(['main'], function() {
-                require(["plotly"], function(Plotly) {
-                    $(document).ready(function(){
-                        var table = window.tables[window.tables.length-1];
-                        var graph3 = document.getElementById('graph3');
-                        var layout = {
-                            hovermode: 'closest',
-                            title: 'In-plane VSM Coercive Field Map',
-                            xaxis: {
-                                title: 'Percent V (at%)'
-                            },
-                            yaxis: {
-                                title: 'Film Thickness (nm)'
-                            }
-                        };
-                        var xvals = []; var yvals = []; VSM_color = []; var cids = [];
-                        for (i = 0; i < table['rows'].length; i++) {
-                            row = table['rows'][i];
-                            if (row['VSM_IP_Hc'] != "") {
-                                xvals.push(row['V'])
-                                yvals.push(row['thickness'])
-                                VSM_color.push(row['VSM_IP_Hc'])
-                                cids.push(row['contribution'])
-                            }
-                        };
-                        var VSM_trace = {
-                            x: xvals,
-                            y: yvals,
-                            text: VSM_color,
-                            mode: 'markers',
-                            type: 'scatter',
-                            marker: {
-                                size: 16,
-                                color: VSM_color,
-                                colorscale: 'Jet',
-                                showscale: true,
-                                colorbar: {
-                                    title: 'IP-VSM (G)'
-                                }
-                            }
-                        };
-                        
-                        Plotly.plot('graph3', [VSM_trace], layout)
-                        
-                        graph3.on('plotly_click', function(data){
-                            var pn = data.points[0].pointNumber
-                            var url = cids[pn]
-                            window.open(url, '_blank')                                                           
-                        });
-                    });
-                });
-            });
-            </script>
         </div>
     </div>             
     <div class="row">
-        <h3>Data</h3>
-        {{ table|safe }}
+        <div class="col-md-12">
+            <h3>Data</h3>
+            {{ table|safe }}
+        </div>
     </div>
 
 </div>
 
-
+<script>
+requirejs(['main'], function() {
+    require(["plotly"], function(Plotly) {
+        $(document).ready(function(){
+            var table = window.tables[window.tables.length-1];
+            var graph3 = document.getElementById('graph3');
+            var layout = {
+                hovermode: 'closest',
+                title: 'In-plane VSM Coercive Field Map',
+                xaxis: {
+                    title: 'Percent V (at%)'
+                },
+                yaxis: {
+                    title: 'Film Thickness (nm)'
+                }
+            };
+            var xvals = []; var yvals = []; VSM_color = []; var cids = [];
+            for (i = 0; i < table['rows'].length; i++) {
+                row = table['rows'][i];
+                if (row['VSM_IP_Hc'] != "") {
+                    xvals.push(row['V [%]'])
+                    yvals.push(row['thickness'])
+                    VSM_color.push(row['VSM_IP_Hc'])
+                    cids.push(row['contribution'])
+                }
+            };
+            var VSM_trace = {
+                x: xvals,
+                y: yvals,
+                text: VSM_color,
+                mode: 'markers',
+                type: 'scatter',
+                marker: {
+                    size: 16,
+                    color: VSM_color,
+                    colorscale: 'Jet',
+                    showscale: true,
+                    colorbar: {
+                        title: 'IP-VSM (G)'
+                    }
+                }
+            };
+            
+            Plotly.plot('graph3', [VSM_trace], layout)
+            
+            graph3.on('plotly_click', function(data){
+                var pn = data.points[0].pointNumber
+                var url = cids[pn]
+                window.open(url, '_blank')                                                           
+            });
+        });
+    });
+});
+</script>
 
 
 
