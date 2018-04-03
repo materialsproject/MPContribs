@@ -12,8 +12,8 @@ def index(request):
     ctx = RequestContext(request)
     if request.user.is_authenticated():
         mod = os.path.dirname(__file__).split(os.sep)[-1]
-        static_url = '_'.join([STATIC_URL[:-1], mod])
-        a_tags = [[], []]
+        ctx['static_url'] = '_'.join([STATIC_URL[:-1], mod])
+        ctx['a_tags'] = [[], []]
         for mod_path in get_users_modules():
             explorer = os.path.join(mod_path, 'explorer', 'apps.py')
             if os.path.exists(explorer):
@@ -51,7 +51,7 @@ def index(request):
                         idx = 1 # not released
                         entry['title'] = entry['project']
                 if not idx or (idx and 'jupyterhub' in endpoint):
-                    a_tags[idx].append(entry)
+                    ctx['a_tags'][idx].append(entry)
     else:
         ctx.update({'alert': 'Please log in!'})
-    return render_to_response("mpcontribs_portal_index.html", locals(), ctx)
+    return render_to_response("mpcontribs_portal_index.html", ctx)
