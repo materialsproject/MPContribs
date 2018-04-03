@@ -53,7 +53,7 @@ def get_backgrid_table(df):
 
     val = URLValidator()
     table = dict()
-    nrows_max = 200
+    nrows_max = 260
     nrows = df.shape[0]
     if nrows > nrows_max:
         df = Table(df.head(n=nrows_max))
