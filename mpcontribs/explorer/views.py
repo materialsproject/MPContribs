@@ -12,6 +12,7 @@ from mpcontribs.builder import export_notebook
 def index(request):
     ctx = RequestContext(request)
     fields = ['identifiers', 'projects', 'cids']
+    ctx['fields'] = fields
     if request.user.is_authenticated():
         API_KEY = request.user.api_key
         ENDPOINT = request.build_absolute_uri(get_endpoint())
@@ -49,19 +50,21 @@ def index(request):
                                 key: {'$in': selection[fields[idx]]}
                             })
                     docs = mpr.query_contributions(criteria=criteria, limit=10)
-                    urls = [mpr.get_card(doc['_id'], embed=False) for doc in docs]
+                    ctx['urls'] = [mpr.get_card(doc['_id'], embed=False) for doc in docs]
                 elif mode == 'Show':
                     if selection[fields[2]]:
                         docs = mpr.query_contributions(
                             criteria={'_id': {'$in': selection[fields[2]]}}
                         )
-                        urls = [mpr.get_card(doc['_id'], embed=False) for doc in docs]
+                        ctx['urls'] = [mpr.get_card(doc['_id'], embed=False) for doc in docs]
                     else:
                         ctx.update({'alert': 'Enter a contribution identifier!'})
 
+        ctx['options'] = options
+        ctx['selection'] = selection
     else:
         ctx.update({'alert': 'Please log in!'})
-    return render_to_response("mpcontribs_explorer_index.html", locals(), ctx)
+    return render_to_response("mpcontribs_explorer_index.html", ctx)
 
 def contribution(request, collection, cid):
     material = {'detail_id': collection[:-1]}
