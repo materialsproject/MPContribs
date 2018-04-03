@@ -11,7 +11,9 @@ requirejs.config({
     plotly: "plotly.min",
     underscore: "underscore-min",
     backbone: "backbone-min",
-    "backgrid-paginator": "backgrid.paginator"
+    "backgrid-paginator": "backgrid.paginator",
+    "linkify": "linkify.amd",
+    "linkify-element": "linkify-element.amd"
   },
   shim: {
     bootstrap: { deps: ['jquery'] },
@@ -29,5 +31,6 @@ requirejs.config({
     'backgrid-paginator': {deps: ['backgrid', 'backbone.paginator']},
     'backgrid-grouped-columns': {deps: ['backgrid']},
     'backgrid-patch': {deps: ['backgrid-grouped-columns']},
+    'linkify-element': {deps: ['linkify']},
   }
 });
