@@ -96,7 +96,7 @@ def contribution(request, collection, cid):
             ctx.update({'material': jsanitize(material)})
     else:
         ctx.update({'alert': 'Please log in!'})
-    return render_to_response("mpcontribs_explorer_contribution.html", locals(), ctx)
+    return render_to_response("mpcontribs_explorer_contribution.html", ctx)
 
 def cif(request, cid, structure_name):
     if request.user.is_authenticated():
