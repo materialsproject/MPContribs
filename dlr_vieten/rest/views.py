@@ -21,7 +21,7 @@ def index(request, cid, db_type=None, mdb=None):
             elif not v[0].isalpha():
                 pars[k] = float(v)
 
-        keys = ['isotherm', 'isobar', 'isoredox', 'ellingham']
+        keys = ['isotherm', 'isobar', 'isoredox']#, 'ellingham']
 
         if request.method == 'GET':
             payload = dict((k, {}) for k in keys)
@@ -31,8 +31,8 @@ def index(request, cid, db_type=None, mdb=None):
             payload['isobar']['rng'] = [600, 1000]
             payload['isoredox']['iso'] = 0.3
             payload['isoredox']['rng'] = [700, 1000]
-            payload['ellingham']['iso'] = -5
-            payload['ellingham']['rng'] = [600, 1000]
+            #payload['ellingham']['iso'] = -5
+            #payload['ellingham']['rng'] = [600, 1000]
         elif request.method == 'POST':
             payload = json.loads(request.body)
             for k in keys:
