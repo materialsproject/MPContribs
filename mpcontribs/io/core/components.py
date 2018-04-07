@@ -187,13 +187,14 @@ def render_dataframe(df, url=None, total_records=None, webapp=False, paginate=Tr
         html += """
         rows_opt["mode"] = "client";
         """
+    collection = 'Pageable' if paginate else ''
     html += """
-      var Rows = Backbone.PageableCollection.extend(rows_opt);
+      var Rows = Backbone.%sCollection.extend(rows_opt);
       var ClickableCell = Backgrid.StringCell.extend({
         events: {"click": "onClick"},
         onClick: function (e) { Backbone.trigger("cellclicked", e); }
       })
-    """
+    """ % collection
     html += """
       var rows = new Rows(table['rows']);
     """ if url is None else """
@@ -223,7 +224,6 @@ def render_dataframe(df, url=None, total_records=None, webapp=False, paginate=Tr
       }
       var header = Backgrid.Extension.GroupedHeader;
       var grid = new Backgrid.Grid({ header: header, columns: table['columns'], collection: rows, });
-      var paginator = new Backgrid.Extension.Paginator({collection: rows});
       var filter = new Backgrid.Extension.%sSideFilter({
           collection: rows, placeholder: "%s", name: "q"
       });
@@ -232,6 +232,7 @@ def render_dataframe(df, url=None, total_records=None, webapp=False, paginate=Tr
     """ % (filter_type, placeholder, uuid_str, uuid_str_filter)
     if paginate:
         html += """
+          var paginator = new Backgrid.Extension.Paginator({collection: rows});
           $("#%s").append(paginator.render().$el);
         """ % uuid_str_paginator
     if url is not None:
