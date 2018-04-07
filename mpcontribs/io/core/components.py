@@ -141,7 +141,7 @@ def get_backgrid_table(df):
 
     return table
 
-def render_dataframe(df, url=None, total_records=None, webapp=False):
+def render_dataframe(df, url=None, total_records=None, webapp=False, paginate=True):
     """use BackGrid JS library to render Pandas DataFrame"""
     # TODO check for index column in df other than the default numbering
     uuid_str, uuid_str_paginator = str(uuid.uuid4()), str(uuid.uuid4())
@@ -158,7 +158,7 @@ def render_dataframe(df, url=None, total_records=None, webapp=False):
         html += "requirejs(['main'], function() {"
     html += """
     require([
-      "backbone", "backgrid", "backgrid-paginator", "backgrid-select-all",
+      "backbone", "backgrid", "backgrid-paginator",
       "backgrid-filter", "backgrid-grouped-columns"
     ], function(Backbone, Backgrid) {
       "use strict";
@@ -228,9 +228,12 @@ def render_dataframe(df, url=None, total_records=None, webapp=False):
           collection: rows, placeholder: "%s", name: "q"
       });
       $('#%s').append(grid.render().el);
-      $("#%s").append(paginator.render().$el);
       $("#%s").append(filter.render().$el);
-    """ % (filter_type, placeholder, uuid_str, uuid_str_paginator, uuid_str_filter)
+    """ % (filter_type, placeholder, uuid_str, uuid_str_filter)
+    if paginate:
+        html += """
+          $("#%s").append(paginator.render().$el);
+        """ % uuid_str_paginator
     if url is not None:
         html += """
           rows.fetch({reset: true});
