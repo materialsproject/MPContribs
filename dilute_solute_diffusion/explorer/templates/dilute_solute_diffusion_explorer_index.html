@@ -47,7 +47,17 @@ code { display: block; white-space: pre-wrap; }
 <div class="container">
   <a href="{% url 'mpcontribs_portal_index' %}">&laquo; Portal</a>
   <div class="row">
-      <div class="col-md-4"><h2>{{ title }}</h2></div>
+      <div class="col-md-4">
+          <h2>{{ title }}</h2>
+          <div id="spinner" ></div>
+          <script>
+            requirejs(['main'], function() {
+                require(["jquery.spin"], function() {
+                    $("#spinner").spin('small');
+                });
+            });
+          </script>
+      </div>
       <div class="col-md-8">
           <code>
 from mpcontribs.users.dilute_solute_diffusion.rest.rester import DiluteSoluteDiffusionRester
@@ -57,77 +67,73 @@ mpr.get_contributions(host) # see mpr.get_hosts()
       </div>
   </div>
 
-  <div class="row">{{ provenance|safe }}</div>
-
-  <div class="row" style="margin-bottom: 5px;">
-    <div class="col-md-4"><div id="graphDif"></div></div>
-    <div class="col-md-4"><div id="graphD0"></div></div>
-    <div class="col-md-4"><div id="graphQ"></div></div>
-  </div>
-
-  <div class="row" style="margin-bottom: 5px;" id=row-navigation>
-    <div class="col-md-3">
-      <button id="reveal_all" type="button" class="btn btn-primary btn-sm" >Reveal</button>
-      <button id="collapse_all" type="button" class="btn btn-primary btn-sm">Collapse</button>
-      <button id="clear_all" type="button" class="btn btn-primary btn-sm">Clear</button>
-    </div>
-    <div class="col-md-3">
-      <div class="input-group input-group-sm">
-        <span class="input-group-addon">
-          <span class="glyphicon glyphicon-search" aria-hidden="true"></span>
-        </span>
-        <input type="text" class="form-control" placeholder="search ..." id="searchinput">
-        <span class="input-group-addon" id="searchclear">
-          <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
-        </span>
-      </div>
-    </div>
-    <div class="col-md-6">
-      <div id="spinner" ></div>
-      <script>
-          requirejs(['main'], function() {
-              require(["jquery.spin"], function() {
-                  $("#spinner").spin('small');
-              });
-          });
-      </script>
-    </div>
-  </div>
+  <div class="row" style="margin-bottom: 10px">{{ provenance|safe }}</div>
 
   <div class="row">
-    <div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
-      {% for contrib in contribs %}
-      <div class="col-md-3 col-sm-4 col-lg-2" name="panel{{contrib.formula}}" style="padding-left: 1px; padding-right: 1px">
-        <div class="panel panel-default">
-          <div class="panel-heading" role="tab" id="heading{{ forloop.counter0 }}" style="padding-left: 5px; padding-right: 5px">
-            <h4 class="panel-title">
-              <a role="button" data-toggle="collapse" data-parent="#accordion"
-                 href="#collapse{{ forloop.counter0 }}" aria-expanded="true"
-                 aria-controls="collapse{{ forloop.counter0 }}">
-                <span class="glyphicon glyphicon-chevron-right" aria-hidden="true"></span>
-                <span>{{ contrib.formula }}</span>
-              </a>
-              <a role="button" class="btn btn-default btn-xs pull-right" target="_blank"
-                 style="position:relative;margin-left:5px;margin-top:-2px;"
-                 href="{% url 'mpcontribs_explorer_collection' 'materials' %}/{{ contrib.cid }}">
-                #{{ contrib.short_cid }}
-              </a>
-              <a role="button" class="btn btn-default btn-xs pull-right" target="_blank"
-                 style="position:relative;margin-top:-2px;"
-                 href="https://materialsproject.org/materials/{{ contrib.mp_id }}">
-                {{ contrib.mp_id }}
-              </a>
-            </h4>
+
+      <div class="col-md-6">
+
+          <div class="row" style="margin-bottom: 10px">
+              <div class="input-group input-group-sm" style="width: 50%;">
+                  <button id="clear_all" type="button" class="btn btn-primary btn-sm">Clear</button>
+                  <span class="input-group-addon">
+                      <span class="glyphicon glyphicon-search" aria-hidden="true"></span>
+                  </span>
+                  <input type="text" class="form-control" placeholder="enter solute or host-solute"
+                  id="searchinput" style="float: none;">
+                  <span class="input-group-addon" id="searchclear">
+                      <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+                  </span>
+              </div>
           </div>
-          <div id="collapse{{ forloop.counter0 }}" class="panel-collapse collapse" role="tabpanel"
-               name="host" aria-labelledby="heading{{ forloop.counter0 }}">
-              <div id="table{{ forloop.counter0 }}">{{contrib.table|safe}}</div>
+
+          <div class="row">
+            <div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
+              {% for contrib in contribs %}
+              <div class="col-md-6 col-sm-8 col-lg-4" name="panel{{contrib.formula}}"
+                  style="padding-left: 1px; padding-right: 1px; margin-bottom: 3px;">
+                <div class="panel panel-default">
+                  <div class="panel-heading" role="tab" id="heading{{ forloop.counter0 }}"
+                      style="padding-left: 5px; padding-right: 5px">
+                    <h4 class="panel-title">
+                      <a role="button" data-toggle="collapse" data-parent="#accordion"
+                         href="#collapse{{ forloop.counter0 }}" aria-expanded="true"
+                         aria-controls="collapse{{ forloop.counter0 }}">
+                        <span class="glyphicon glyphicon-chevron-right" aria-hidden="true"></span>
+                        <span>{{ contrib.formula }}</span>
+                      </a>
+                      <a role="button" class="btn btn-default btn-xs pull-right" target="_blank"
+                         style="position:relative;margin-left:5px;margin-top:-2px;"
+                         href="{% url 'mpcontribs_explorer_collection' 'materials' %}/{{ contrib.cid }}">
+                        #{{ contrib.short_cid }}
+                      </a>
+                      <a role="button" class="btn btn-default btn-xs pull-right" target="_blank"
+                         style="position:relative;margin-top:-2px;"
+                         href="https://materialsproject.org/materials/{{ contrib.mp_id }}">
+                        {{ contrib.mp_id }}
+                      </a>
+                    </h4>
+                  </div>
+                  <div id="collapse{{ forloop.counter0 }}" class="panel-collapse collapse" role="tabpanel"
+                       name="host" aria-labelledby="heading{{ forloop.counter0 }}">
+                      <div id="table{{ forloop.counter0 }}">{{contrib.table|safe}}</div>
+                  </div>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
           </div>
-        </div>
+
       </div>
-      {% endfor %}
-    </div>
+
+      <div class="col-md-6">
+        <div class="col-md-12"><div id="graphDif"></div></div>
+        <div class="col-md-6"><div id="graphD0"></div></div>
+        <div class="col-md-6"><div id="graphQ"></div></div>
+      </div>
+
   </div>
+
 </div>
 
 <script>
@@ -135,37 +141,52 @@ requirejs(['main'], function() {
     require(["backbone", "plotly", "jquery.spin"], function(Backbone, Plotly) {
         $(document).ready(function(){
             var selection = {};
-            var panels = $('div.col-md-3[name^=panel]');
+            var panels = $('div.col-md-6[name^=panel]');
             $('div[id^=table] div:first-child').hide(); // hide search
+
+            // turn chevron glyphicon on reveal/collapse
+            for (var c = 0; c < window.tables.length; ++c) {
+                $('#collapse'+c).on('show.bs.collapse', function(){
+                    $(this).parent().find(".glyphicon-chevron-right")
+                        .removeClass("glyphicon-chevron-right").addClass("glyphicon-chevron-down");
+                }).on('hide.bs.collapse', function(){
+                    $(this).parent().find(".glyphicon-chevron-down")
+                        .removeClass("glyphicon-chevron-down").addClass("glyphicon-chevron-right");
+                });
+            }
 
             // init plotly data
             var data = {};
             data['graphDif'] = []; data['graphD0'] = []; data['graphQ'] = [];
             panels.each(function(index) {
-                if (index > 1) { return false; } // only show first two hosts ['Al', 'Cu']
+                if (selection.length == 2) { return false; } // only show two hosts
                 var host = $('.panel-heading .panel-title a span:nth-child(2)', this).text();
-                selection[index] = []
-                var rows = $('.panel-collapse table.backgrid tbody tr', this);
-                data['graphD0'].push({x: [], y: [], name: host, connectgaps: true, mode: 'lines+markers'});
-                data['graphQ'].push({x: [], y: [], name: host, connectgaps: true, mode: 'lines+markers'});
-                for (var i = 0; i < window.tables[index]["rows"].length; i++) {
-                    var row = window.tables[index]["rows"][i];
-                    var Z = row['Z'];
-                    if (Z > 20 && Z < 30) { // only show subset of solutes
-                        var D0 = row["D₀ [cm²/s]"];
-                        data['graphD0'][index].x.push(Z);
-                        data['graphD0'][index].y.push(D0);
-                        var Q = row["Q [eV]"];
-                        data['graphQ'][index].x.push(Z);
-                        data['graphQ'][index].y.push(Q);
-                        var trace = {x: [], y: [], mode: 'lines', name: host+'-'+row['El.']};
-                        for (var j=0; j<40; j++) {
-                            trace.x.push(j*0.1);
-                            trace.y.push(D0*Math.exp(-Q/0.08617*j*0.1));
+                if ( host === 'Al' || host === 'Cu' ) { 
+                    $('div[name=host]', this).collapse('show');
+                    selection[index] = [];
+                    var rows = $('.panel-collapse table.backgrid tbody tr', this);
+                    data['graphD0'].push({x: [], y: [], name: host, connectgaps: true, mode: 'lines+markers'});
+                    data['graphQ'].push({x: [], y: [], name: host, connectgaps: true, mode: 'lines+markers'});
+                    var idx = data['graphD0'].length-1
+                    for (var i = 0; i < window.tables[index]["rows"].length; i++) {
+                        var row = window.tables[index]["rows"][i];
+                        var Z = row['Z'];
+                        if (Z > 20 && Z < 30) { // only show subset of solutes
+                            var D0 = row["D₀ [cm²/s]"];
+                            data['graphD0'][idx].x.push(Z);
+                            data['graphD0'][idx].y.push(D0);
+                            var Q = row["Q [eV]"];
+                            data['graphQ'][idx].x.push(Z);
+                            data['graphQ'][idx].y.push(Q);
+                            var trace = {x: [], y: [], mode: 'lines', name: host+'-'+row['El.']};
+                            for (var j=0; j<40; j++) {
+                                trace.x.push(j*0.1);
+                                trace.y.push(D0*Math.exp(-Q/0.08617*j*0.1));
+                            }
+                            data['graphDif'].push(trace);
+                            rows.eq(i).toggleClass('selected');
+                            selection[index].push(i);
                         }
-                        data['graphDif'].push(trace);
-                        rows.eq(i).toggleClass('selected');
-                        selection[index].push(i);
                     }
                 }
             });
@@ -190,62 +211,50 @@ requirejs(['main'], function() {
                     margin: margins, showlegend: false
                 }
             };
-            var options = {displaylogo: false, displayModeBar: true};
             Object.keys(data).forEach(function(key, index) {
-                Plotly.newPlot(key, data[key], layouts[key], options);
+                Plotly.newPlot(key, data[key], layouts[key], {displaylogo: false});
             });
 
-            // turn chevron glyphicon on reveal/collapse
-            for (var c = 0; c < window.tables.length; ++c) {
-                $('#collapse'+c).on('show.bs.collapse', function(){
-                    $(this).parent().find(".glyphicon-chevron-right")
-                        .removeClass("glyphicon-chevron-right").addClass("glyphicon-chevron-down");
-                }).on('hide.bs.collapse', function(){
-                    $(this).parent().find(".glyphicon-chevron-down")
-                        .removeClass("glyphicon-chevron-down").addClass("glyphicon-chevron-right");
-                });
-            }
-
-            // reveal and collapse all
+            // collapse function
             var hosts = $('[name=host]');
             function collapse_hosts(flag) {
                 for (var j=0; j<hosts.length; j++) {
+                    //var visible = !$(hosts[j]).hasClass("collapse");
                     var visible = $(hosts[j]).is(":visible");
                     if (flag && visible) { $(hosts[j]).collapse('hide'); }
                     else if (!flag && !visible) { $(hosts[j]).collapse('show'); }
                 }
             };
-            $('#reveal_all').on('click', function (e) { collapse_hosts(false); });
-            $('#collapse_all').on('click', function (e) { collapse_hosts(true); });
 
             // search field functionality
-            $("#searchinput").focus(function(){ collapse_hosts(false); });
             $("#searchclear").click(function(){
                 $("#searchinput").val('');
                 panels.each(function(index) {
-                    $('input', this).val('').trigger('keydown');
-                    $(this).show();
-                    if (index in selection) {
-                        var rows = $('.panel-collapse table.backgrid tbody tr', this);
-                        selection[index].forEach(function(i) {
-                            rows.eq(i).addClass('selected');
-                        });
-                    }
+                    $('a[data-backgrid-action=clear]', this).trigger('click', function() {
+                        //$('div[name=host]', this).collapse('hide');
+                        console.log('hello');
+                        if (index in selection) {
+                            var rows = $('.panel-collapse table.backgrid tbody tr', this);
+                            selection[index].forEach(function(i) {
+                                rows.eq(i).addClass('selected');
+                            });
+                        }
+                    });
                 });
             });
             $("#searchinput").on('keyup paste', function(){
                 var txt = $(this).val();
                 var dash = txt.indexOf('-');
                 if (dash === -1) { // no dash found -> search in solutes for all hosts
-                    //panels.show();
                     $('.backgrid-filter input').val(txt).trigger('keydown');
+                    collapse_hosts(false);
                 } else { // dash found -> filter/hide hosts
                     var elems = txt.split('-');
-                    $('div.col-md-3').not('[name=panel'+elems[0]+']').hide();
-                    inputs.val('').trigger('keydown');
-                    if (elems[1] != "") { // search specific host-solute combination
-                        inputs.val(elems[1]).trigger('keydown');
-                    }
+                    //$('div.col-md-6').not('[name=panel'+elems[0]+']').hide();
+                    //inputs.val('').trigger('keydown');
+                    //if (elems[1] != "") { // search specific host-solute combination
+                    //    inputs.val(elems[1]).trigger('keydown');
+                    //}
                 }
             });
 
