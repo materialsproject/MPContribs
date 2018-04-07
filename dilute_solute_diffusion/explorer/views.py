@@ -28,7 +28,7 @@ def index(request):
                 for host in mpr.get_hosts():
                     contrib = {}
                     df = mpr.get_contributions(host)
-                    contrib['table'] = render_dataframe(df, webapp=True)
+                    contrib['table'] = render_dataframe(df, webapp=True, paginate=False)
                     contrib['formula'] = host
                     contrib.update(mpr.get_table_info(host))
                     contrib['short_cid'] = get_short_object_id(contrib['cid'])
