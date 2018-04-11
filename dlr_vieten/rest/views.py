@@ -60,11 +60,22 @@ def index(request, cid, db_type=None, mdb=None):
 
             for xv in x_val:
                 args = (iso, xv, pars)
+                if k == "isotherm": # for isotherms, pressure is variable and temperature is constant
+                    args = (xv, iso, pars)
                 if k != 'isoredox':
+                    solutioniso = 0
                     try:
                         solutioniso = brentq(funciso, a, b, args=args)
                     except ValueError:
-                        solutioniso = a if abs(funciso(a, *args)) < abs(funciso(b, *args)) else b
+                        new_a = a
+                        while new_a < 0.5:
+                            try:
+                                solutioniso = brentq(funciso, new_a, b, args=args)
+                            except ValueError:
+                                pass
+                            new_a += 0.05
+                        if solutioniso == 0:
+                            solutioniso = a if abs(funciso(a, *args)) < abs(funciso(b, *args)) else b
                     resiso.append(solutioniso)
                 else:
                     try:
