@@ -19,7 +19,7 @@ def index(request):
                 title = prov.get('title')
                 provenance = render_dict(prov, webapp=True)
                 tables = {}
-                for typ in ['2d', '3d']:
+                for typ in ['2d']:
                     df = mpr.get_contributions(typ)
                     tables[typ] = render_dataframe(df, webapp=True)
             except Exception as ex:

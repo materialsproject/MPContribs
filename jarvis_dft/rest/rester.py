@@ -1,13 +1,16 @@
-# -*- coding: utf-8 -*-
 from __future__ import division, unicode_literals
+import os
 from mpcontribs.rest.rester import MPContribsRester
 from mpcontribs.io.archieml.mpfile import MPFile
 from mpcontribs.io.core.components import Table
 
 class JarvisDftRester(MPContribsRester):
     """JarvisDft-specific convenience functions to interact with MPContribs REST interface"""
-    query = {'content.doi': '10.1038/s41598-017-05402-0'}
-    provenance_keys = ['title', 'description', 'authors', 'website', 'journal', 'doi', 'url']
+    mpfile = MPFile.from_file(os.path.join(
+        os.path.dirname(__file__), '..', 'mpfile_init.txt'
+    ))
+    query = {'content.title': mpfile.hdata.general['title']}
+    provenance_keys = [k for k in mpfile.hdata.general.keys()]
 
     def get_contributions(self, typ):
 

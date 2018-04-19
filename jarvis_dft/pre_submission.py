@@ -6,9 +6,10 @@ from mpcontribs.io.core.recdict import RecursiveDict
 from mpcontribs.io.core.utils import nest_dict
 from monty.json import MontyDecoder
 from mpcontribs.users.utils import duplicate_check
+from mpcontribs.io.core.utils import clean_value
 
 @duplicate_check
-def run(mpfile):
+def run(mpfile, **kwargs):
 
     for typ in ['2d', '3d']:
 
