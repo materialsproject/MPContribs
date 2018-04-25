@@ -80,9 +80,9 @@ def index(request, cid, db_type=None, mdb=None):
                 else:
                     try:
                         solutioniso = brentq(funciso_redox, a, b, args=args)
+                        resiso.append(pd.np.exp(solutioniso))
                     except ValueError:
-                        solutioniso = None # insufficient accuracy for ꪲδ/T combo
-                    resiso.append(pd.np.exp(solutioniso))
+                        resiso.append(None) # insufficient accuracy for ꪲδ/T combo
 
             x = list(pd.np.exp(x_val)) if k == 'isotherm' else list(x_val)
             response[k] = {'x': x, 'y': resiso}
