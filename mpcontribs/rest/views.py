@@ -574,7 +574,7 @@ def get_card(request, cid, db_type=None, mdb=None):
     .custom {{ padding: 0.5em 0.8em 0.8em 2em; }}
     * html a:hover {{ background: transparent; }}
     .classic {{ background: #000000; color: #FFFFFF; }}
-    .panel {{
+    #user_contribs .panel {{
         width: 97%;
         margin-bottom: 20px;
         background-color: #fff;
@@ -583,24 +583,25 @@ def get_card(request, cid, db_type=None, mdb=None):
         -webkit-box-shadow: 0 1px 1px rgba(0,0,0,.05);
         box-shadow: 0 1px 1px rgba(0,0,0,.05);
     }}
-    .panel-default {{
+    #user_contribs .panel-default {{
         border-color: #ddd;
     }}
-    .panel-default>.panel-heading {{
+    #user_contribs .panel-default>.panel-heading {{
         color: #333;
         background-color: #f5f5f5;
         border-color: #ddd;
     }}
-    .panel-heading {{
+    #user_contribs .panel-heading {{
         padding: 10px 15px;
         border-bottom: 1px solid transparent;
         border-top-left-radius: 3px;
         border-top-right-radius: 3px;
     }}
-    .panel-body {{
+    #user_contribs .panel-body {{
         padding: 15px;
     }}
     </style>
+    <div id="user_contribs">
     <div class="panel panel-default">
         <div class="panel-heading">
             <h4 class="panel-title">
@@ -627,6 +628,7 @@ def get_card(request, cid, db_type=None, mdb=None):
             document.getElementById("read_more_{}").style.display = 'none';
         }};
     </script>
+    </div>
     '''.format(
             landing_page, title, more, provenance, description, data, cid, cid, cid
     ).replace('\n', '')
