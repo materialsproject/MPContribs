@@ -82,12 +82,11 @@ def run(mpfile, **kwargs):
     for row in dct:
 
         sample_number = int(row['sample_number'])
-        if sample_number not in [100, 106]:
+        identifier = row['closest phase MP (oxidized)'].replace('n.a.', '')
+        if not identifier.startswith('mp-'):
             continue
-
-        #identifier = row['closest phase MP (oxidized)'].replace('n.a.', '')
-        #if not identifier:
-        identifier = get_composition_from_string(row['composition oxidized phase'])
+        if not identifier:
+            identifier = get_composition_from_string(row['composition oxidized phase'])
         print identifier
 
         print 'add hdata ...'
