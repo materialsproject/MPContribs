@@ -36,11 +36,8 @@ def index(request, cid, db_type=None, mdb=None):
         elif request.method == 'POST':
             payload = json.loads(request.body)
             for k in keys:
-                payload[k]['rng'] = map(int, payload[k]['rng'].split(','))
-                if k == 'isoredox':
-                    payload[k]['iso'] = float(payload[k]['iso'])
-                else:
-                    payload[k]['iso'] = int(payload[k]['iso'])
+                payload[k]['rng'] = map(float, payload[k]['rng'].split(','))
+                payload[k]['iso'] = float(payload[k]['iso'])
 
         response = {}
         for k in keys:
