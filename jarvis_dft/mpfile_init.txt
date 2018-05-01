@@ -32,13 +32,16 @@ Please learn about the assumptions used during calculations and
 use the data at your own risk!
 :end
 
-urls:
-http://www.ctcms.nist.gov/~knc6/JVASP.html
-https://www.nature.com/articles/s41598-017-05402-0
-10.1038/s41598-017-05402-0
-https://github.com/usnistgov/jarvis
-:end
+
+website: http://www.ctcms.nist.gov/~knc6/JVASP.html
+journal_link: https://www.nature.com/articles/s41598-017-05402-0
+doi: 10.1038/s41598-017-05402-0
+url: https://github.com/usnistgov/jarvis
+
 
 journal: Scientific Reports 7, 5179 (2017)
-input_url: https://www.ctcms.nist.gov/~knc6/jdft_{}.json.tgz
-details_url: https://www.ctcms.nist.gov/~knc6/jsmol/{}.html
+jarvis2d_url: https://www.ctcms.nist.gov/~knc6/jdft_2d.json.tgz
+jarvis3d_url: https://www.ctcms.nist.gov/~knc6/jdft_3d.json.tgz
+2D_sample_url: http://2dmaterials.nus.edu.sg/sample/materials.json.gz
+details_url_jarvis: https://www.ctcms.nist.gov/~knc6/jsmol/{}.html
+details_url_2D: http://137.132.5.72/2dmaterials/doc/{}
