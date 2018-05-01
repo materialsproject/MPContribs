@@ -21,7 +21,7 @@ def index(request, cid, db_type=None, mdb=None):
             elif not v[0].isalpha():
                 pars[k] = float(v)
 
-        keys = ['isotherm', 'isobar', 'isoredox']#, 'ellingham']
+        keys = ['isotherm', 'isobar', 'isoredox', 'ellingham']
 
         if request.method == 'GET':
             payload = dict((k, {}) for k in keys)
@@ -31,26 +31,31 @@ def index(request, cid, db_type=None, mdb=None):
             payload['isobar']['rng'] = [600, 1000]
             payload['isoredox']['iso'] = 0.3
             payload['isoredox']['rng'] = [700, 1000]
-            #payload['ellingham']['iso'] = -5
-            #payload['ellingham']['rng'] = [600, 1000]
+            payload['ellingham']['iso'] = 0
+            payload['ellingham']['rng'] = [700, 1000]
+            payload['ellingham']['del'] = 0.3
         elif request.method == 'POST':
             payload = json.loads(request.body)
             for k in keys:
                 payload[k]['rng'] = map(float, payload[k]['rng'].split(','))
                 payload[k]['iso'] = float(payload[k]['iso'])
+                payload['ellingham']['del'] = float(payload['ellingham']['del'])
 
         response = {}
         for k in keys:
             rng = payload[k]['rng']
             iso = payload[k]['iso']
+            if k == 'ellingham':
+                delt = payload['ellingham']['del']
             if k == 'isotherm':
                 x_val = pd.np.log(pd.np.logspace(rng[0], rng[1], num=100))
             else:
                 x_val = pd.np.linspace(rng[0], rng[1], num=100)
                 if k == 'isobar':
-                    iso = pd.np.log(iso)
-
+                    iso = pd.np.log(10**iso)
+            
             resiso = []
+            ellingiso = []
             a, b = 1e-10, 0.5-1e-10
             if k == 'isoredox':
                 a, b = -300, 300
@@ -59,7 +64,12 @@ def index(request, cid, db_type=None, mdb=None):
                 args = (iso, xv, pars)
                 if k == "isotherm": # for isotherms, pressure is variable and temperature is constant
                     args = (xv, iso, pars)
-                if k != 'isoredox':
+                if k == "ellingham":
+                    solutioniso = (dh_ds(delt, args[-1])[0] - dh_ds(delt, args[-1])[1]*xv)/1000
+                    resiso.append(solutioniso)
+                    ellingiso_i = isobar_line_elling(args[0], xv)/1000
+                    ellingiso.append(ellingiso_i)
+                if (k != 'isoredox' and k != 'ellingham'):
                     solutioniso = 0
                     try:
                         solutioniso = brentq(funciso, a, b, args=args)
@@ -74,7 +84,7 @@ def index(request, cid, db_type=None, mdb=None):
                         if solutioniso == 0:
                             solutioniso = a if abs(funciso(a, *args)) < abs(funciso(b, *args)) else b
                     resiso.append(solutioniso)
-                else:
+                elif k == "isoredox":
                     try:
                         solutioniso = brentq(funciso_redox, a, b, args=args)
                         resiso.append(pd.np.exp(solutioniso))
@@ -82,12 +92,15 @@ def index(request, cid, db_type=None, mdb=None):
                         resiso.append(None) # insufficient accuracy for ꪲδ/T combo
 
             x = list(pd.np.exp(x_val)) if k == 'isotherm' else list(x_val)
-            response[k] = {'x': x, 'y': resiso}
+            if k != "ellingham":
+                response[k] = {'x': x, 'y': resiso}
+            else:
+                response[k] = {'x': x, 'y': resiso, 'z': ellingiso}
 
     except Exception as ex:
         raise ValueError('"REST Error: "{}"'.format(str(ex)))
     return {"valid_response": True, 'response': response}
-
+    
 def dh_ds(delta, p):
     d_delta = delta - p['delta_0']
     dh_pars = [p['fit_param_enth'][c] for c in 'abcd']
@@ -101,6 +114,9 @@ def dh_ds(delta, p):
 def funciso(delta, iso, x, p):
     dh, ds = dh_ds(delta, p)
     return dh - x*ds + R*iso*x/2
+    
+def isobar_line_elling(iso, x):
+    return -R*iso*x/2
 
 def funciso_redox(po2, delta, x, p):
     dh, ds = dh_ds(delta, p)
