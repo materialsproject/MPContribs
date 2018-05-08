@@ -193,188 +193,43 @@ requirejs(['main'], function() {
                         Object.keys(r).forEach(function(key,index) {
                             // key: the name of the object key
                             // index: the ordinal position of the key within the object 
-                            if (key = "isotherm")
-                            {
                             var div = document.getElementById(key);
-                            Plotly.newPlot(div, [r[key]], {
-                                title: "T=" + $('#temp_slider').attr('value') + " K", 
-                                showLegend: false,
-                                xaxis: {
-                                    exponentformat: "E",
-                                    tickfont: {
-                                      size: 13
-                                      },
-                                    title: "p<sub>O2</sub> (bar)",
-                                    type: "log",
-                                    showline: "True",
-                                    ticks: "inside",
-                                    tickwidth: 1,
-                                    tickcolor: '#000000',
-                                    linewidth: 1,
-                                    zeroline: "False",
-                                    titlefont: {
-                                      family: 'Arial',
-                                      size: 20,
-                                      color: '#000000',
-                                      }
-                                    },
-                                yaxis: {
-                                    exponentformat: "E",
-                                    title: "δ",
-                                    showline: "True",
-                                    linewidth: 1,
-                                    zeroline: "False",
-                                    ticks: "inside",
-                                    tickwidth: 1,
-                                    tickcolor: '#000000',
-                                    tickfont: {
-                                      size: 15
-                                      },
-                                    titlefont: {
-                                      family: 'Arial',
-                                      size: 20,
-                                      color: '#000000',
-                                      }
-                                    },
-                                margin: {l: 80, r: 20, b: 60, t: 25}
-                            });
+                            if (key === "isotherm") {
+                                var title = "T=" + $('#temp_slider').attr('value') + " K";
+                                var xaxis_title = "p<sub>O2</sub> (bar)";
+                                var yaxis_title = "δ";
+                            }
+                            if (key === "isobar") {
+                                var title = "p<sub>O2</sub>=10<sup>" + $('#pressure_slider').attr('value') + "</sup> bar"; 
+                                var xaxis_title = "T (K)";
+                                var yaxis_title = "δ";
+                            }
+                            if (key === "isoredox") {
+                                var title = "δ=" + $('#redox_slider').attr('value'); 
+                                var xaxis_title = "T (K)";
+                                var yaxis_title = "p<sub>O2</sub> (bar)";
+                            }
+                            if (key === "ellingham") {
+                                var title = "δ=" + $('#elling_redox_slider').attr('value'); 
+                                var xaxis_title = "T (K)";
+                                var yaxis_title = "ΔG (kJ/mol)";
+                            }
+                            var axis = {
+                                exponentformat: "E", tickfont: { size: 15 }, showline: "True",
+                                ticks: "inside", tickwidth: 1, tickcolor: '#000000',
+                                linewidth: 1, zeroline: "False",
+                                titlefont: { family: 'Arial', size: 20, color: '#000000' }
                             };
-                            if (key = "isobar")
-                            {
-                            var div = document.getElementById(key);
-                            Plotly.newPlot(div, [r[key]], {
-                                title: "p<sub>O2</sub>=10<sup>" + $('#pressure_slider').attr('value') + "</sup> bar", 
-                                showLegend: false,
-                                xaxis: {
-                                    exponentformat: "E",
-                                    title: "T (K)",
-                                    showline: "True",
-                                    linewidth: 1,
-                                    ticks: "inside",
-                                    tickwidth: 1,
-                                    tickcolor: '#000000',
-                                    zeroline: "False",
-                                    tickfont: {
-                                      size: 15
-                                      },
-                                    titlefont: {
-                                      family: 'Arial',
-                                      size: 20,
-                                      color: '#000000',
-                                      }
-                                    },
-                                yaxis: {
-                                    exponentformat: "E",
-                                    title: "δ",
-                                    showline: "True",
-                                    linewidth: 1,
-                                    ticks: "inside",
-                                    tickwidth: 1,
-                                    tickcolor: '#000000',
-                                    zeroline: "False",
-                                    tickfont: {
-                                      size: 15
-                                      },
-                                    titlefont: {
-                                      family: 'Arial',
-                                      size: 20,
-                                      color: '#000000',
-                                      }
-                                    },
+                            var xaxis = JSON.parse(JSON.stringify(axis)); // deepcopy
+                            xaxis['title'] = xaxis_title;
+                            if (key === "isotherm") { xaxis['type'] = 'log'; }
+                            var yaxis = JSON.parse(JSON.stringify(axis)); // deepcopy
+                            yaxis['title'] = yaxis_title;
+                            if (key === "isoredox") { yaxis['type'] = 'log'; }
+                            Plotly.newPlot(div, r[key], {
+                                title: title, showlegend: false, xaxis: xaxis, yaxis: yaxis,
                                 margin: {l: 80, r: 20, b: 60, t: 35}
                             });
-                            };
-                            if (key = "isoredox")
-                            {
-                            var div = document.getElementById(key);
-                            Plotly.newPlot(div, [r[key]], {
-                                title: "δ=" + $('#redox_slider').attr('value'), 
-                                showLegend: false,
-                                xaxis: {
-                                    exponentformat: "E",
-                                    showline: "True",
-                                    linewidth: 1,
-                                    ticks: "inside",
-                                    tickwidth: 1,
-                                    tickcolor: '#000000',
-                                    zeroline: "False",
-                                    tickfont: {
-                                      size: 15
-                                      },
-                                    title: "T (K)",
-                                    titlefont: {
-                                      family: 'Arial',
-                                      size: 20,
-                                      color: '#000000',
-                                      }
-                                    },
-                                yaxis: {
-                                    exponentformat: "E",
-                                    title: "p<sub>O2</sub> (bar)",
-                                    showline: "True",
-                                    linewidth: 1,
-                                    ticks: "inside",
-                                    tickwidth: 1,
-                                    tickcolor: '#000000',
-                                    zeroline: "False",
-                                    tickfont: {
-                                      size: 13
-                                      },
-                                    type: "log",
-                                    titlefont: {
-                                      family: 'Arial',
-                                      size: 20,
-                                      color: '#000000',
-                                      }
-                                    },
-                                margin: {l: 80, r: 20, b: 60, t: 25}
-                            });
-                            };
-                            if (key = "ellingham")
-                            {
-                            var div = document.getElementById(key);
-                            Plotly.newPlot(div, [r[key]], {
-                                title: "δ=" + $('#elling_redox_slider').attr('value'), 
-                                showLegend: false,
-                                xaxis: {
-                                    exponentformat: "E",
-                                    title: "T (K)",
-                                    showline: "True",
-                                    linewidth: 1,
-                                    ticks: "inside",
-                                    tickwidth: 1,
-                                    tickcolor: '#000000',
-                                    zeroline: "False",
-                                    tickfont: {
-                                      size: 15
-                                      },
-                                    titlefont: {
-                                      family: 'Arial',
-                                      size: 20,
-                                      color: '#000000',
-                                      }
-                                    },
-                                yaxis: {
-                                    exponentformat: "E",
-                                    title: "ΔG (kJ/mol)",
-                                    showline: "True",
-                                    linewidth: 1,
-                                    ticks: "inside",
-                                    tickwidth: 1,
-                                    tickcolor: '#000000',
-                                    zeroline: "False",
-                                    tickfont: {
-                                      size: 13
-                                      },
-                                    titlefont: {
-                                      family: 'Arial',
-                                      size: 20,
-                                      color: '#000000',
-                                      }
-                                    },
-                                margin: {l: 80, r: 20, b: 60, t: 25}
-                            });
-                            };
                         });
                     },
                     error: function(jqXHR, textStatus, errorThrown) {

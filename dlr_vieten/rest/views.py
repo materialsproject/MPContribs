@@ -12,9 +12,11 @@ ConnectorBase.register(Connector)
 @mapi_func(supported_methods=["POST", "GET"], requires_api_key=True)
 def index(request, cid, db_type=None, mdb=None):
     try:
-        pars = mdb.contrib_ad.query_contributions(
-            {'_id': cid}, projection={'_id': 0, 'content.pars': 1}
-        )[0]['content']['pars']
+        contrib = mdb.contrib_ad.query_contributions(
+            {'_id': cid}, projection={'_id': 0, 'content.pars': 1, 'content.shomate.O2': 1}
+        )[0]
+        pars = contrib['content']['pars']
+        shomate = contrib['content']['shomate']['O2']
         for k, v in pars.items():
             if isinstance(v, dict):
                 pars[k] = dict((kk, float(x)) for kk, x in v.items())
@@ -39,36 +41,46 @@ def index(request, cid, db_type=None, mdb=None):
             for k in keys:
                 payload[k]['rng'] = map(float, payload[k]['rng'].split(','))
                 payload[k]['iso'] = float(payload[k]['iso'])
-                payload['ellingham']['del'] = float(payload['ellingham']['del'])
+                if k == 'ellingham':
+                    payload[k]['del'] = float(payload[k]['del'])
 
         response = {}
         for k in keys:
             rng = payload[k]['rng']
             iso = payload[k]['iso']
             if k == 'ellingham':
-                delt = payload['ellingham']['del']
+                delt = payload[k]['del']
             if k == 'isotherm':
                 x_val = pd.np.log(pd.np.logspace(rng[0], rng[1], num=100))
             else:
                 x_val = pd.np.linspace(rng[0], rng[1], num=100)
                 if k == 'isobar':
                     iso = pd.np.log(10**iso)
-            
-            resiso = []
+
+            resiso, resiso_theo = [], []
             ellingiso = []
             a, b = 1e-10, 0.5-1e-10
             if k == 'isoredox':
                 a, b = -300, 300
 
+            if k == 'isotherm':
+                stho = s_th_o(iso, shomate)
+
             for xv in x_val:
                 args = (iso, xv, pars)
                 if k == "isotherm": # for isotherms, pressure is variable and temperature is constant
                     args = (xv, iso, pars)
-                if k == "ellingham":
+                    act = float(pars['act_mat'].values()[0])
+                    delta_mix = delta_fun(stho, iso, xv, pars['dh_min'], act/2.)
+                    delta_mix += delta_fun(stho, iso, xv, pars['dh_max'], (1.-act)/2.)
+                    resiso_theo.append(delta_mix)
+
+                elif k == "ellingham":
                     solutioniso = (dh_ds(delt, args[-1])[0] - dh_ds(delt, args[-1])[1]*xv)/1000
                     resiso.append(solutioniso)
                     ellingiso_i = isobar_line_elling(args[0], xv)/1000
                     ellingiso.append(ellingiso_i)
+
                 if (k != 'isoredox' and k != 'ellingham'):
                     solutioniso = 0
                     try:
@@ -92,15 +104,42 @@ def index(request, cid, db_type=None, mdb=None):
                         resiso.append(None) # insufficient accuracy for ꪲδ/T combo
 
             x = list(pd.np.exp(x_val)) if k == 'isotherm' else list(x_val)
-            if k != "ellingham":
-                response[k] = {'x': x, 'y': resiso}
-            else:
-                response[k] = {'x': x, 'y': resiso, 'z': ellingiso}
+            response[k] = [{'x': x, 'y': resiso, 'name': 'exp'}, {'x': x, 'y': resiso_theo, 'name': 'theo'}]
+            if k == 'ellingham':
+                response[k][-1].update({'y': ellingiso})
 
     except Exception as ex:
         raise ValueError('"REST Error: "{}"'.format(str(ex)))
     return {"valid_response": True, 'response': response}
-    
+
+def s_th_o(temp, shomate):
+    shomate_ranges = [map(int, k.split('-')) for k in shomate.keys()]
+    shomate_keys = shomate.keys()
+    if temp < shomate_ranges[0][0]:
+        rng = shomate_keys[0]
+    elif temp >= shomate_ranges[-1][-1]:
+        rng = shomate_keys[-1]
+    else:
+        for i, r in enumerate(shomate_ranges):
+            if temp >= r[0] and temp < r[1]:
+                rng = shomate_keys[i]
+                break
+    shomdat = [float(v) for v in shomate[rng].values()]
+    temp_frac = temp / 1000.
+    szero = shomdat[0] * pd.np.log(temp_frac)
+    szero += shomdat[1] * temp_frac
+    szero += 0.5 * shomdat[2] * temp_frac**2
+    szero += shomdat[3]/3. * temp_frac**3
+    szero -= shomdat[4] / (2 * temp_frac**2)
+    szero += shomdat[6]
+    return 0.5 * szero
+
+def delta_fun(stho, temp, p_o2_l, dh, d_max):
+    common = pd.np.exp(stho*d_max/R)
+    common *= pd.np.exp(p_o2_l)**(-d_max/2.)
+    common *= pd.np.exp(-dh*d_max/(R*temp))
+    return d_max * common / (1. + common)
+
 def dh_ds(delta, p):
     d_delta = delta - p['delta_0']
     dh_pars = [p['fit_param_enth'][c] for c in 'abcd']
@@ -114,7 +153,7 @@ def dh_ds(delta, p):
 def funciso(delta, iso, x, p):
     dh, ds = dh_ds(delta, p)
     return dh - x*ds + R*iso*x/2
-    
+
 def isobar_line_elling(iso, x):
     return -R*iso*x/2
 
@@ -152,4 +191,3 @@ def entr_mixed(x, s, shift, delta_0, act_s1, fit_param_fe):
     """
     efe = entr_fe(x+delta_0, fit_param_fe)
     return ((act_s1*efe)/pi) * (pd.np.arctan((x-delta_0)*s)+pi/2) + (1-act_s1)*efe + shift
-
