@@ -131,6 +131,8 @@ def get_backgrid_table(df):
                     header[k] = [d]
                 else:
                     header[k].append(d)
+            elif k in header:
+                header.pop(k)
 
     for k, skl in header.items():
         units = [sk['unit'] for sk in skl]
