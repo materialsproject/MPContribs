@@ -8,44 +8,31 @@ import os
 
 class DefectGenomePcfcMaterialsRester(MPContribsRester):
     """defect_genome__pcfc_materials-specific convenience functions to interact with MPContribs REST interface"""
-    mpfile = MPFile.from_file(os.path.join(
-        os.path.dirname(__file__), '..', 'mpfile_init.txt'
-    ))
-    query = {'content.title': mpfile.hdata.general['title']}
-    provenance_keys = [k for k in mpfile.hdata.general.keys()]
-    
+    query = {'content.urls.JPC': 'https://doi.org/10.1021/acs.jpcc.7b08716'}
+    provenance_keys = ['title', 'description', 'authors', 'urls']
+    released = True
+
     def get_contributions(self):
         docs = self.query_contributions(
-            projection={'_id': 1, 'mp_cat_id': 1, 'content': 1}
+            projection={'_id': 1, 'mp_cat_id': 1, 'content.data': 1}
         )
         if not docs:
             raise Exception('No contributions found for PCFC Explorer!')
 
         data = []
-        columns = ['formula', 'contribution']
-        ncols = 9
+        columns = ['mp-id', 'cid']
         for doc in docs:
             mpfile = MPFile.from_contribution(doc)
-            formula = mpfile.ids[0]
-            contrib = mpfile.hdata[formula]
-            if contrib is None:
-                continue
+            mpid = mpfile.ids[0]
+            contrib = mpfile.hdata[mpid]['data']
             cid_url = self.get_cid_url(doc)
-
-            for k in contrib.keys()[4:11]:
-                if k not in columns:
-                    columns.append(k)
-
-            row = [formula, cid_url]
+            row = [mpid, cid_url]
+            if len(columns) == 2:
+                columns += [k for k in contrib.keys()]
             for col in columns[2:]:
                 row.append(contrib.get(col, ''))
-            
-            n = len(row)
-            if n < ncols:
-                row += [''] * (ncols - n)
-
-            data.append((formula, row))
+            data.append((mpid, row))
 
         return Table.from_items(data, orient='index', columns=columns)
 
-    
+
