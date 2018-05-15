@@ -1,49 +1,54 @@
 # -*- coding: utf-8 -*-
-from __future__ import division, unicode_literals
+from __future__ import unicode_literals
+import os
 from mpcontribs.rest.rester import MPContribsRester
 from mpcontribs.io.archieml.mpfile import MPFile
 from mpcontribs.io.core.components import Table
 
 class JarvisDftRester(MPContribsRester):
     """JarvisDft-specific convenience functions to interact with MPContribs REST interface"""
-    query = {'content.doi': '10.1038/s41598-017-05402-0'}
-    provenance_keys = ['title', 'description', 'authors', 'website', 'journal', 'doi', 'url']
+    mpfile = MPFile.from_file(os.path.join(
+        os.path.dirname(__file__), '..', 'mpfile_init.txt'
+    ))
+    query = {'content.urls.DOI': mpfile.hdata.general['urls']['DOI']}
+    provenance_keys = ['title', 'description', 'authors', 'urls']
 
-    def get_contributions(self, typ):
-
-        types = ['2d', '3d']
-        if typ not in types:
-            raise Exception('typ has to be 2d or 3d!')
+    def get_contributions(self):
 
         docs = self.query_contributions(
-            criteria={'content.data.{}'.format(typ): {'$exists': 1}},
             projection={'_id': 1, 'mp_cat_id': 1, 'content': 1}
         )
         if not docs:
             raise Exception('No contributions found for JarvisDft Explorer!')
 
         data = []
-        columns = [
-            'mp-id', 'cid', 'CIF', 'final_energy', 'optB88vDW_bandgap',
-            'mbj_bandgap', 'bulk_modulus', 'shear_modulus', 'jid'
-        ]
+        columns = ['mp-id', 'cid', 'formula']
+        keys, subkeys = ['NUS', 'JARVIS'], ['id', 'Eₓ', 'CIF']
+        columns += ['##'.join([k, sk]) for k in keys for sk in subkeys]
 
         for doc in docs:
             mpfile = MPFile.from_contribution(doc)
             mp_id = mpfile.ids[0]
-            hdata = mpfile.hdata[mp_id]
-            contrib = hdata['data'][typ]
+            contrib = mpfile.hdata[mp_id]['data']
             cid_url = self.get_cid_url(doc)
-
-            cif_url = ''
             structures = mpfile.sdata.get(mp_id)
-            if structures:
-                cif_url = '/'.join([
-                    self.preamble.rsplit('/', 1)[0], 'explorer', 'materials',
-                    doc['_id'], 'cif', structures.keys()[0]
-                ])
 
-            row = [mp_id, cid_url, cif_url] + [contrib[k] for k in columns[3:-1]]
-            row.append(hdata['details_url'].format(contrib['jid']))
-            data.append((mp_id, row))
+            row = [mp_id, cid_url, contrib['formula']]
+            for k in keys:
+                for sk in subkeys:
+                    if sk == subkeys[-1]:
+                        cif_url = ''
+                        name = '{}_{}'.format(contrib['formula'], k)
+                        if structures.get(name) is not None:
+                            cif_url = '/'.join([
+                                self.preamble.rsplit('/', 1)[0], 'explorer', 'materials',
+                                doc['_id'], 'cif', name
+                            ])
+                        row.append(cif_url)
+                    else:
+                        cell = contrib.get(k, {sk: ''})[sk]
+                        row.append(cell)
+
+            if row[6]:
+                data.append((mp_id, row))
         return Table.from_items(data, orient='index', columns=columns)

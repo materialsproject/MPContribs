@@ -1,45 +1,90 @@
 # -*- coding: utf-8 -*-
-import os, tarfile, json, re, urllib, certifi
-import numpy as np
-from pandas import DataFrame
+from __future__ import unicode_literals
+import os, tarfile, json, urllib, gzip
 from mpcontribs.io.core.recdict import RecursiveDict
 from mpcontribs.io.core.utils import nest_dict
 from monty.json import MontyDecoder
 from mpcontribs.users.utils import duplicate_check
+from mpcontribs.io.core.utils import clean_value
 
 @duplicate_check
-def run(mpfile):
+def run(mpfile, **kwargs):
+    from pymatgen import Structure
 
-    for typ in ['2d', '3d']:
+    reference_project = None
+    input_data, input_keys, extra = RecursiveDict(), RecursiveDict(), RecursiveDict()
+    input_urls = mpfile.document['_hdata'].pop('input_urls')
 
-        url = mpfile.hdata.general['input_url'].format(typ)
-        dbfile = os.path.join(os.environ['HOME'], 'work', url.rsplit('/')[-1])
+    for project in input_urls:
+        input_url = input_urls[project]['file']
+        if '{}' in input_url:
+            input_url = input_url.format('2d') # TODO 3d for Jarvis
 
+        dbfile = os.path.join(os.environ['HOME'], 'work', input_url.rsplit('/')[-1])
         if not os.path.exists(dbfile):
             print 'downloading', dbfile, '...'
-            urllib.urlretrieve(url, dbfile)
-            #resp = urlrq.urlopen('https://foo.com/bar/baz.html', cafile=certifi.where())
+            urllib.urlretrieve(input_url, dbfile)
 
-        else:
-            print 'unpacking', dbfile, '...'
+        ext = os.path.splitext(dbfile)[1]
+        is_nus = bool(ext == '.gz')
+        id_key = 'parent_id' if is_nus else 'mpid'
+        if not is_nus:
             with tarfile.open(dbfile, "r:gz") as tar:
                 member = tar.getmembers()[0]
-                d = json.load(tar.extractfile(member), cls=MontyDecoder)
-                print len(d), 'materials loaded.'
+                raw_data = json.load(tar.extractfile(member), cls=MontyDecoder)
+        else:
+            reference_project = project
+            raw_data = []
+            with gzip.open(dbfile, 'rb') as f:
+                for line in f:
+                    raw_data.append(json.loads(line))
+        input_data[project] = RecursiveDict((d[id_key], d) for d in raw_data)
 
-                for idx,i in enumerate(d):
-                    mpid = i['mpid']
-                    print 'adding', mpid, '...'
-                    data = RecursiveDict()
-                    data['jid'] = i['jid']
-                    data['formula'] = i['final_str'].composition.reduced_formula
-                    data['spacegroup'] = i['final_str'].get_space_group_info()[0]
-                    data['final_energy'] = clean_value(i["fin_en"], 'eV')
-                    data['optB88vDW_bandgap'] = clean_value(i["op_gap"], 'eV')
-                    data['mbj_bandgap'] = clean_value(i["mbj_gap"], 'eV')
-                    data['bulk_modulus'] = clean_value(i["kv"], 'GPa')
-                    data['shear_modulus'] = clean_value(i["gv"], 'GPa')
-                    mpfile.add_hierarchical_data(nest_dict(data, ['data', typ]), identifier=mpid)
-                    mpfile.add_structure(i['final_str'], name=data['formula'], identifier=mpid)
+        input_keys[project] = [
+            'material_id', 'exfoliation_energy_per_atom', 'structure'
+        ] if is_nus else ['jid', 'exfoliation_en', 'final_str']
+        extra[project] = [
+            ('fin_en', ('E', 'eV')),
+            ('op_gap', ('ΔE|optB88vdW', 'eV')),
+            ('mbj_gap', ('ΔE|mbj', 'eV')),
+            ('kv', ('Kᵥ', 'GPa')),
+            ('gv', ('Gᵥ', 'GPa'))
+        ] if not is_nus else []
 
-            print 'DONE with', typ
+        print len(input_data[project]), 'materials loaded for', project
+
+    projects = input_data.keys()
+    identifiers = []
+    for d in input_data.values():
+        identifiers += list(d.keys())
+
+    for identifier in identifiers:
+        data, structures = RecursiveDict(), RecursiveDict()
+
+        for project in projects:
+            if project not in data:
+                data[project] = RecursiveDict()
+                structures[project] = RecursiveDict()
+            if identifier in input_data[project]:
+                d = input_data[project][identifier]
+                s = d[input_keys[project][-1]]
+                structures[project] = Structure.from_dict(s) if project == reference_project else s
+                if data.get('formula') is None:
+                    data['formula'] = structures[project].composition.reduced_formula
+                data[project]['id'] = input_urls[project]['detail'].format(d[input_keys[project][0]])
+                Ex = d[input_keys[project][1]]
+                if project == reference_project:
+                    Ex *= 1000.
+                data[project]['Eₓ'] = clean_value(Ex, 'eV')
+                for k, (sym, unit) in extra[project]:
+                    if d[k] != 'na':
+                        data[project][sym] = clean_value(d[k], unit)
+
+        mpfile.add_hierarchical_data(nest_dict(data, ['data']), identifier=identifier)
+        for project, structure in structures.items():
+            name = '{}_{}'.format(data['formula'], project)
+            try:
+                mpfile.add_structure(structure, name=name, identifier=identifier)
+            except Exception as ex:
+                print 'error adding structure for', project
+                print str(ex)
