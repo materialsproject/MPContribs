@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import division, unicode_literals
+from __future__ import unicode_literals
 import os
 from mpcontribs.rest.rester import MPContribsRester
 from mpcontribs.io.archieml.mpfile import MPFile
@@ -10,46 +10,45 @@ class JarvisDftRester(MPContribsRester):
     mpfile = MPFile.from_file(os.path.join(
         os.path.dirname(__file__), '..', 'mpfile_init.txt'
     ))
-    query = {'content.title': mpfile.hdata.general['title']}
-    provenance_keys = ['title', 'description', 'authors', 'website', 'journal', 'doi', 'url']
+    query = {'content.urls.DOI': mpfile.hdata.general['urls']['DOI']}
+    provenance_keys = ['title', 'description', 'authors', 'urls']
 
     def get_contributions(self):
 
         docs = self.query_contributions(
-            criteria={'content.data.2d_J': {'$exists': 1}, 'content.data.3d_J': {'$exists': 1}, 'content.data.2D': {'$exists': 1} },
             projection={'_id': 1, 'mp_cat_id': 1, 'content': 1}
         )
         if not docs:
             raise Exception('No contributions found for JarvisDft Explorer!')
 
         data = []
-        columns = ['mp-id', 'cid', 'CIF']
-        keys, subkeys = ['2d_J', '3d_J', '2D'], ['exfoliation_energy', 'final_energy', 'source_detail_page']
+        columns = ['mp-id', 'cid', 'formula']
+        keys, subkeys = ['NUS', 'JARVIS'], ['id', 'Eₓ', 'CIF']
         columns += ['##'.join([k, sk]) for k in keys for sk in subkeys]
 
         for doc in docs:
             mpfile = MPFile.from_contribution(doc)
             mp_id = mpfile.ids[0]
-            hdata = mpfile.hdata[mp_id]
-            contrib = hdata['data']
+            contrib = mpfile.hdata[mp_id]['data']
             cid_url = self.get_cid_url(doc)
-            cif_url = ''
             structures = mpfile.sdata.get(mp_id)
-            if structures:
-                cif_url = '/'.join([
-                    self.preamble.rsplit('/', 1)[0], 'explorer', 'materials',
-                    doc['_id'], 'cif', structures.keys()[0]
-                ])
 
-            row = [mp_id, cid_url, cif_url]
+            row = [mp_id, cid_url, contrib['formula']]
             for k in keys:
                 for sk in subkeys:
-                    if sk is subkeys[-1]:
-                        if k is not '2D':
-                            row.append(hdata['details_url_jarvis'].format(contrib[k]['source_detail_page']))
-                        else:
-                            row.append(hdata['details_url_2D'].format(contrib[k]['source_detail_page']))
+                    if sk == subkeys[-1]:
+                        cif_url = ''
+                        name = '{}_{}'.format(contrib['formula'], k)
+                        if structures.get(name) is not None:
+                            cif_url = '/'.join([
+                                self.preamble.rsplit('/', 1)[0], 'explorer', 'materials',
+                                doc['_id'], 'cif', name
+                            ])
+                        row.append(cif_url)
                     else:
-                        row.append(contrib[k][sk])
-            data.append((mp_id, row))
+                        cell = contrib.get(k, {sk: ''})[sk]
+                        row.append(cell)
+
+            if row[6]:
+                data.append((mp_id, row))
         return Table.from_items(data, orient='index', columns=columns)
