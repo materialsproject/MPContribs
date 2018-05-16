@@ -12,6 +12,7 @@ class JarvisDftRester(MPContribsRester):
     ))
     query = {'content.urls.DOI': mpfile.hdata.general['urls']['DOI']}
     provenance_keys = ['title', 'description', 'authors', 'urls']
+    released = True
 
     def get_contributions(self):
 
