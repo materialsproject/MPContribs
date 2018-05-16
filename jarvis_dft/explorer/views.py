@@ -21,7 +21,10 @@ def index(request):
                 prov = mpr.get_provenance()
                 ctx['title'] = prov.pop('title')
                 ctx['provenance'] = render_dict(prov, webapp=True)
-                ctx['table'] = render_dataframe(mpr.get_contributions(), webapp=True)
+                ctx['tables'] = [
+                    render_dataframe(table, webapp=True)
+                    for table in mpr.get_contributions()
+                ]
             except Exception as ex:
                 ctx.update({'alert': str(ex)})
     else:

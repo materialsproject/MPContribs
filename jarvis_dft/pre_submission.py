@@ -5,7 +5,7 @@ from mpcontribs.io.core.recdict import RecursiveDict
 from mpcontribs.io.core.utils import nest_dict
 from monty.json import MontyDecoder
 from mpcontribs.users.utils import duplicate_check
-from mpcontribs.io.core.utils import clean_value
+from mpcontribs.io.core.utils import clean_value, get_composition_from_string
 
 @duplicate_check
 def run(mpfile, **kwargs):
@@ -37,7 +37,7 @@ def run(mpfile, **kwargs):
             raw_data = []
             with gzip.open(dbfile, 'rb') as f:
                 for line in f:
-                    raw_data.append(json.loads(line))
+                    raw_data.append(json.loads(line, cls=MontyDecoder))
         input_data[project] = RecursiveDict((d[id_key], d) for d in raw_data)
 
         input_keys[project] = [
@@ -47,8 +47,8 @@ def run(mpfile, **kwargs):
             ('fin_en', ('E', 'eV')),
             ('op_gap', ('ΔE|optB88vdW', 'eV')),
             ('mbj_gap', ('ΔE|mbj', 'eV')),
-            ('kv', ('Kᵥ', 'GPa')),
-            ('gv', ('Gᵥ', 'GPa'))
+            #('kv', ('Kᵥ', 'GPa')),
+            #('gv', ('Gᵥ', 'GPa'))
         ] if not is_nus else []
 
         print len(input_data[project]), 'materials loaded for', project
@@ -64,13 +64,13 @@ def run(mpfile, **kwargs):
         for project in projects:
             if project not in data:
                 data[project] = RecursiveDict()
-                structures[project] = RecursiveDict()
             if identifier in input_data[project]:
                 d = input_data[project][identifier]
-                s = d[input_keys[project][-1]]
-                structures[project] = Structure.from_dict(s) if project == reference_project else s
+                structures[project] = d[input_keys[project][-1]]
                 if data.get('formula') is None:
-                    data['formula'] = structures[project].composition.reduced_formula
+                    data['formula'] = get_composition_from_string(
+                        structures[project].composition.reduced_formula
+                    )
                 data[project]['id'] = input_urls[project]['detail'].format(d[input_keys[project][0]])
                 Ex = d[input_keys[project][1]]
                 if project == reference_project:
@@ -83,8 +83,4 @@ def run(mpfile, **kwargs):
         mpfile.add_hierarchical_data(nest_dict(data, ['data']), identifier=identifier)
         for project, structure in structures.items():
             name = '{}_{}'.format(data['formula'], project)
-            try:
-                mpfile.add_structure(structure, name=name, identifier=identifier)
-            except Exception as ex:
-                print 'error adding structure for', project
-                print str(ex)
+            mpfile.add_structure(structure, name=name, identifier=identifier)
