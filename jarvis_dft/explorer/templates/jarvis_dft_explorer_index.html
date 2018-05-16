@@ -61,6 +61,15 @@ code { display: block; white-space: pre-wrap; }
     <div class="row">
         <div class="col-md-12">
             <h3>Additional JARVIS Data</h3>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-12">
+            <div id="graph_jarvis" style="width: 100%;"></div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-12">
             {{ tables.1|safe }}
         </div>
     </div>
@@ -68,7 +77,8 @@ code { display: block; white-space: pre-wrap; }
 
 <script>
 requirejs(['main'], function() {
-    require(["plotly", "bootstrap-slider"], function(Plotly) {
+    require(["plotly"], function(Plotly) {
+
         var table = window.tables[0];
         var graph = document.getElementById('graph');
         var layout = {
@@ -92,7 +102,24 @@ requirejs(['main'], function() {
             }
         }
         Plotly.plot(graph, data, layout);
-        window.onresize = function() { Plotly.Plots.resize(graph); };
+
+        var table_jarvis = window.tables[1];
+        var graph_jarvis = document.getElementById('graph_jarvis');
+        var key = 'ΔE|optB88vdW [eV]';
+        var layout_jarvis = {
+            margin: {t: 0, r: 0, l: 40},
+            yaxis: {title: key}, showlegend: false
+        };
+        var data_jarvis = [{x: [], y: [], type: 'bar'}];
+        for (i = 0; i < table_jarvis['rows'].length; i++) {
+            var row = table_jarvis['rows'][i];
+            if (row[key]) {
+                data_jarvis[0]['x'].push(row['formula']);
+                data_jarvis[0]['y'].push(row[key]);
+            }
+        }
+        Plotly.plot(graph_jarvis, data_jarvis, layout_jarvis);
+        window.onresize = function() { Plotly.Plots.resize(graph, graph_jarvis); };
     });
 });
 </script>
