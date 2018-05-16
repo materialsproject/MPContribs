@@ -46,6 +46,15 @@ code { display: block; white-space: pre-wrap; }
     <div class="row">
         <div class="col-md-12">
             <h3>Comparison of Exfoliation Energies</h3>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-12">
+            <div id="graph" style="width: 100%;"></div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-12">
             {{ tables.0|safe }}
         </div>
     </div>
@@ -56,6 +65,37 @@ code { display: block; white-space: pre-wrap; }
         </div>
     </div>
 </div>
+
+<script>
+requirejs(['main'], function() {
+    require(["plotly", "bootstrap-slider"], function(Plotly) {
+        var table = window.tables[0];
+        var graph = document.getElementById('graph');
+        var layout = {
+            margin: {t: 0, r: 0, l: 40, b: 25},
+            yaxis: {title: 'Exfoliation Energy Eₓ [eV]'},
+            legend: {x: 0.05, y: 0.95},
+            barmode: 'group'
+        };
+        var keys = ['NUS##Eₓ [eV]', 'JARVIS##Eₓ [eV]'];
+        var data = [];
+        for (i = 0; i < keys.length; i++) {
+            data.push({x: [], y: [], name: keys[i].split('##')[0], type: 'bar'})
+        }
+        for (i = 0; i < table['rows'].length; i++) {
+            var row = table['rows'][i];
+            if (row[keys[0]] && row[keys[1]]) {
+                for (j = 0; j < keys.length; j++) {
+                    data[j]['x'].push(row['formula']);
+                    data[j]['y'].push(row[keys[j]]);
+                }
+            }
+        }
+        Plotly.plot(graph, data, layout);
+        window.onresize = function() { Plotly.Plots.resize(graph); };
+    });
+});
+</script>
 
 {% endif %}
 {% endblock %}
