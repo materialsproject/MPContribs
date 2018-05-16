@@ -77,7 +77,7 @@ def get_backgrid_table(df):
                 cell_split = cell.split(' ', 1)
 
                 if not cell or len(cell_split) == 1: # empty cell or no space
-                    is_url_column = bool(not cell or mp_id_pattern.match(cell))
+                    is_url_column = bool(is_url_column and (not cell or mp_id_pattern.match(cell)))
                     if is_url_column:
                         if cell:
                             value = 'https://materialsproject.org/materials/{}'.format(cell)
@@ -103,7 +103,6 @@ def get_backgrid_table(df):
                         continue
                     table['rows'][row_index].pop(old_col)
                     if prev_unit is None:
-                        is_url_column = False
                         prev_unit = unit
                         col = '{} [{}]'.format(col, unit)
                     table['rows'][row_index][col] = cell if prev_unit != unit else value

@@ -234,10 +234,7 @@ class MPFileCore(six.with_metaclass(ABCMeta, object)):
                 print('Multiple matching structures found in MP. Using', identifier)
         elif identifier not in matched_mpids:
             msg = 'Structure does not match {} but instead {}!'.format(identifier, matched_mpids)
-            if len(matched_mpids) == 1:
-                print(msg + ' Using {} as identifier!'.format(matched_mpids[0]))
-            else:
-                raise ValueError(msg)
+            raise ValueError(msg)
 
         idx = len(self.document.get(identifier, {}).get(mp_level01_titles[3], {}))
         sub_key = formula if name is None else name
