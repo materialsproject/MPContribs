@@ -1,12 +1,14 @@
 """This module provides the views for the SLAC MoSe2 explorer interface."""
 
 import json
+import os
 from bson import ObjectId
 from django.shortcuts import render_to_response
 from django.template import RequestContext
 from mpcontribs.rest.views import get_endpoint
 from mpcontribs.io.core.recdict import render_dict
 from mpcontribs.io.core.components import render_plot
+from test_site.settings import STATIC_URL
 
 def index(request):
     ctx = RequestContext(request)
@@ -21,6 +23,10 @@ def index(request):
                 for key, plot in mpr.get_graphs().items():
                     graphs[key] = render_plot(plot, webapp=True)
                 ctx['graphs'] = graphs
+                ctx['lineprofiles'] = mpr.get_line_profiles()
+                #  following example of swf explorer
+                mod = os.path.dirname(__file__).split(os.sep)[-2]
+                ctx['static_url'] = '_'.join([STATIC_URL[:-1], mod])
             except Exception as ex:
                 ctx.update({'alert': str(ex)})
     else:
