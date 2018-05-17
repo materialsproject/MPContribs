@@ -1,11 +1,23 @@
-authors: Ming-Fu Lin, Uwe Bergmann
-reference: manuscript submitted to Nature Physics
+title: SLAC MoSe₂/MoTe₂
+authors: M.F. Lin, U. Bergmann
+
 description:
-observation of efficient subpicosecond electron-to-lattice energy
-transfer in mono- and bilayer MoSe2 functional materials
+Momentum Dependent Electron-Phonon Coupling in MoSe₂/MoTe₂. Observation
+of efficient subpicosecond electron-to-lattice energy transfer in
+mono- and bilayer MoSe₂/MoTe₂ functional materials.
 :end
 
+{urls}
+NPHYS: https://www.nature.com/nphys
+
+{input}
 csv_path: DS4_brag_110_BZ_better_nor_2H-MoTe2_20170223.csv
 table_columns: delay time [ps] -- position 1 -- position 2 -- M -- position 3 -- K -- position 4 -- position 5
 
-mp-1027692.formula: MoSe2
+{mp-602}
+formula: MoTe2
+
+:ignore
+{mp-1027692}
+formula: MoSe2
+
