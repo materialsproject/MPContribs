@@ -1,17 +1,17 @@
-title: SLAC MoSe₂/MoTe₂
+title: SLAC MoSe₂/2H-MoTe₂
 authors: M.F. Lin, U. Bergmann
 
 description:
-Momentum Dependent Electron-Phonon Coupling in MoSe₂/MoTe₂. Observation
+Momentum Dependent Electron-Phonon Coupling in MoSe₂/2H-MoTe₂. Observation
 of efficient subpicosecond electron-to-lattice energy transfer in
-mono- and bilayer MoSe₂/MoTe₂ functional materials.
+mono- and bilayer MoSe₂/2H-MoTe₂ functional materials.
 :end
 
 {urls}
 NPHYS: https://www.nature.com/nphys
 
 {input}
-csv_path: DS4_brag_110_BZ_better_nor_2H-MoTe2_20170223.csv
+file_path: slac_mose2.tar.gz
 table_columns: delay time [ps] -- position 1 -- position 2 -- M -- position 3 -- K -- position 4 -- position 5
 
 {mp-602}
