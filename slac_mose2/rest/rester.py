@@ -7,6 +7,7 @@ class SlacMose2Rester(MPContribsRester):
     """SLAC MoSe2-specific convenience functions to interact with MPContribs REST interface"""
     query = {'content.title': 'SLAC MoSe₂/2H-MoTe₂'}
     provenance_keys = ['title', 'authors', 'description', 'urls']
+    released = True
 
     def get_contributions(self):
 
