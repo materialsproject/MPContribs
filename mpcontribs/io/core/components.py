@@ -258,10 +258,12 @@ def render_dataframe(df, url=None, total_records=None, webapp=False, paginate=Tr
 class Table(pd.DataFrame):
 
     def to_dict(self):
+        from pandas import MultiIndex
         for col in self.columns:
             self[col] = self[col].apply(lambda x: clean_value(x, max_dgts=6))
         rdct = super(Table, self).to_dict(orient='split', into=RecursiveDict)
-        rdct.pop('index')
+        if not isinstance(self.index, MultiIndex):
+            rdct.pop('index')
         rdct["@module"] = self.__class__.__module__
         rdct["@class"] = self.__class__.__name__
         return rdct
@@ -272,7 +274,11 @@ class Table(pd.DataFrame):
             (k, v) for k, v in rdct.iteritems()
             if k not in ['@module', '@class']
         )
-        return cls(d['data'], columns=d['columns'])
+        index = None
+        if 'index' in d:
+            from pandas import MultiIndex
+            index = MultiIndex.from_tuples(d['index'])
+        return cls(d['data'], columns=d['columns'], index=index)
 
     def _ipython_display_(self):
         disable_ipython_scrollbar()
