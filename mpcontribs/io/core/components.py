@@ -381,7 +381,7 @@ def render_plot(plot, webapp=False, filename=None):
         return
     axis = 'z' if is_3d else 'x'
     npts = len(fig.get('data')[0][axis])
-    static_fig = (is_3d and npts > 15) or (not is_3d and npts > 700)
+    static_fig = (is_3d and npts > 150) or (not is_3d and npts > 700)
     if static_fig:
         from plotly.plotly import image
         img = image.get(fig)
