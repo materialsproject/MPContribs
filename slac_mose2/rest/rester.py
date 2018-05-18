@@ -8,7 +8,8 @@ class SlacMose2Rester(MPContribsRester):
     query = {'content.title': 'SLAC MoSe₂/2H-MoTe₂'}
     provenance_keys = ['title', 'authors', 'description', 'urls']
 
-    def get_graphs(self):
+    def get_contributions(self):
+
         docs = self.query_contributions(
             projection={'_id': 1, 'mp_cat_id': 1, 'content': 1}
         )
@@ -18,36 +19,22 @@ class SlacMose2Rester(MPContribsRester):
         doc = docs[0] # there should be only one for MoSe2
         mpfile = MPFile.from_contribution(doc)
         mp_id = mpfile.ids[0]
-        graphs = mpfile.gdata[mp_id]
+        response = {}
 
-        return graphs
+        response['graphs'] = [
+            plot for key, plot in mpfile.gdata[mp_id].items() if 'pump' in key
+        ]
 
-    def get_line_profiles(self):
-
-        docs = self.query_contributions(
-                projection={'_id': 1, 'mp_cat_id': 1, 'content': 1}
-            )
-        if not docs:
-            raise Exception('No contributions found for SLAC MoSe2 Explorer!')
-
-        doc = docs[0] # there should be only one for MoSe2
-        mpfile = MPFile.from_contribution(doc)
-        mp_id = mpfile.ids[0]
         tdata = mpfile.tdata[mp_id]
-        name = tdata.keys()[0]
+        name = tdata.keys()[-1]
         table = tdata[name]
 
-        global_x_values = []
-        y_values = {}
+        response['traces'] = []
+        for col in table.columns[1:]:
+            response['traces'].append({
+                'x': table[table.columns[0]].values,
+                'y': table[col].values,
+                'name': col
+            })
 
-        for key, values in table.items():
-            values = list(map(float, values))
-            if 'delay time' in key:
-                global_x_values = values
-            else:
-                y_values[key] = values
-
-        return {
-            'global_x_values': global_x_values,
-            'y_values': y_values,
-        }
+        return response

@@ -46,9 +46,9 @@ def run(mpfile, **kwargs):
                     print 'read_csv ...'
                     df = read_csv(fstr, header=None)
                     arr = [[[cell] for cell in row] for row in df.values]
-                    df = Panel(arr, minor_axis=['intensity']).transpose(2, 0, 1).to_frame()
-                    print df.head()
                     sub_name = '{}_{}_{}'.format(name, x, y)
+                    df = Panel(arr, minor_axis=[sub_name]).transpose(2, 0, 1).to_frame()
+                    print df.head()
                     print 'add', sub_name, '...'
                     mpfile.add_data_table(identifier, df, sub_name)
                     f.seek(0)

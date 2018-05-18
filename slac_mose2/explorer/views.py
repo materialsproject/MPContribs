@@ -1,8 +1,7 @@
-"""This module provides the views for the SLAC MoSe2 explorer interface."""
-
-import json
+# -*- coding: utf-8 -*-
+from __future__ import unicode_literals
 import os
-from bson import ObjectId
+from bson.json_util import dumps
 from django.shortcuts import render_to_response
 from django.template import RequestContext
 from mpcontribs.rest.views import get_endpoint
@@ -21,13 +20,16 @@ def index(request):
                 prov = mpr.get_provenance()
                 ctx['title'] = prov.pop('title')
                 ctx['provenance'] = render_dict(prov, webapp=True)
-                ctx['graphs'] = {}
-                for key, plot in mpr.get_graphs().items():
-                    if 'pump' in key:
-                        rplot = render_plot(plot, webapp=True)
-                        ctx['graphs'][rplot[1]] = rplot[0]
-                ctx['lineprofiles'] = mpr.get_line_profiles()
-                #  following example of swf explorer
+
+                contribs = mpr.get_contributions()
+                ctx['graphs'], ctx['uuids'] = [], []
+                for plot in contribs['graphs']:
+                    rplot = render_plot(plot, webapp=True)
+                    ctx['graphs'].append(rplot[0])
+                    ctx['uuids'].append(str(rplot[1]))
+
+                ctx['traces'] = dumps(contribs['traces'])
+                ctx['trace_names'] = [trace['name'] for trace in contribs['traces']]
                 mod = os.path.dirname(__file__).split(os.sep)[-2]
                 ctx['static_url'] = '_'.join([STATIC_URL[:-1], mod])
             except Exception as ex:
