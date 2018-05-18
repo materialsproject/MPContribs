@@ -31,20 +31,28 @@ code { display: block; white-space: pre-wrap; }
 </style>
 
 <div class="container">
-    
-    <img src="{{ static_url }}/magics_logo.png" width="200px" />                                                                 
-    <br />
-
     <a href="{% url 'mpcontribs_portal_index' %}">&laquo; Portal</a>
     <div class="row">
         <div class="col-md-12">
             <h2>{{ title }}</h2>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-9">
             {{ provenance|safe }}
+        </div>
+        <div class="col-md-3">
+            <img class="pull-right" src="{{ static_url }}/magics_logo.png" height="107px" />
         </div>
     </div>
     <div class="row">
         <div class="col-md-6" style="text-align: center">
-            <strong>Pump-Probe Delay Time [ps]</strong>
+            {% for uuid, graph in graphs.items %}
+            <div class="col-md-6">{{ graph|safe }}</div>
+            {% endfor %}
+        </div>
+        <div class="col-md-6" style="text-align: center">
+            <h5>Pump-Probe Delay Time [ps]</h5>
             {% for position_label, values in lineprofiles.y_values.items %}
             <div id="{{ position_label|safe }}_graph"></div>
             {% endfor %}
@@ -55,7 +63,7 @@ code { display: block; white-space: pre-wrap; }
 <script>
     requirejs(['main'], function() {
         require(['plotly'], function(Plotly) {
-            //$(document).ready(function(){
+            $(document).ready(function(){
             
                 var layout = {
                     width: 500,
@@ -139,33 +147,8 @@ code { display: block; white-space: pre-wrap; }
                 
                 
                 {% endfor %}
-
-                
-                //var main_graph = document.getElementById('main_graph');
-                //var traces = [];
-                //
-                //{% for position_label, values in lineprofiles.y_values.items %}
-                //var trace = {
-                //    x: {{ lineprofiles.global_x_values|safe }},
-                //    y: {{ values|safe }},
-                //    type: 'scatter',
-                //    name: '{{ position_label|safe }}'
-                //}
-                //traces.push(trace);
-                //{% endfor %}
-                //
-                //var layout = {
-                //  yaxis: {domain: [0, 0.266]},
-                //  legend: {traceorder: 'reversed'},
-                //  xaxis3: {anchor: 'y3'},
-                //  xaxis2: {anchor: 'y2'},
-                //  yaxis2: {domain: [0.366, 0.633]},
-                //  yaxis3: {domain: [0.733, 1]}
-                //};
-                //
-                //Plotly.newPlot('main_graph', traces);
             
-             //});
+             });
         });        
     });
 </script>

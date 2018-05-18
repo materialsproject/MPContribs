@@ -33,7 +33,9 @@ class SlacMose2Rester(MPContribsRester):
         doc = docs[0] # there should be only one for MoSe2
         mpfile = MPFile.from_contribution(doc)
         mp_id = mpfile.ids[0]
-        table = mpfile.tdata[mp_id]['main_table']
+        tdata = mpfile.tdata[mp_id]
+        name = tdata.keys()[0]
+        table = tdata[name]
 
         global_x_values = []
         y_values = {}

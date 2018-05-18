@@ -18,11 +18,14 @@ def index(request):
         from ..rest.rester import SlacMose2Rester
         with SlacMose2Rester(API_KEY, endpoint=ENDPOINT) as mpr:
             try:
-                ctx['provenance'] = render_dict(mpr.get_provenance(), webapp=True)
-                graphs = {}
+                prov = mpr.get_provenance()
+                ctx['title'] = prov.pop('title')
+                ctx['provenance'] = render_dict(prov, webapp=True)
+                ctx['graphs'] = {}
                 for key, plot in mpr.get_graphs().items():
-                    graphs[key] = render_plot(plot, webapp=True)
-                ctx['graphs'] = graphs
+                    if 'pump' in key:
+                        rplot = render_plot(plot, webapp=True)
+                        ctx['graphs'][rplot[1]] = rplot[0]
                 ctx['lineprofiles'] = mpr.get_line_profiles()
                 #  following example of swf explorer
                 mod = os.path.dirname(__file__).split(os.sep)[-2]
