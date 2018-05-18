@@ -16,6 +16,7 @@ class SlacMose2Rester(MPContribsRester):
         if not docs:
             raise Exception('No contributions found for SLAC MoSe2 Explorer!')
 
+        import pandas as pd
         doc = docs[0] # there should be only one for MoSe2
         mpfile = MPFile.from_contribution(doc)
         mp_id = mpfile.ids[0]
@@ -28,6 +29,8 @@ class SlacMose2Rester(MPContribsRester):
         tdata = mpfile.tdata[mp_id]
         name = tdata.keys()[-1]
         table = tdata[name]
+        table = table.apply(pd.to_numeric)
+        table.dropna(how='any', inplace=True)
 
         response['traces'] = []
         for col in table.columns[1:]:
