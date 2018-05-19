@@ -22,7 +22,7 @@ def run(mpfile, **kwargs):
         ('Eᶠ|Hᵢ', 'eV'), ('ΔEᵢ|Yᴮ-Hᵢ', 'eV')
     ]
     columns = df_dct.columns
-    mpr = MPRester(endpoint="http://next.materialsproject.org/rest/v2")
+    mpr = MPRester(endpoint="http://materialsproject.org:8080/rest/v2")
 
     for row_idx, row in df_dct.iterrows():
         formula = '{}{}O3'.format(row[columns[0]], row[columns[1]])

@@ -83,4 +83,7 @@ def run(mpfile, **kwargs):
         mpfile.add_hierarchical_data(nest_dict(data, ['data']), identifier=identifier)
         for project, structure in structures.items():
             name = '{}_{}'.format(data['formula'], project)
-            mpfile.add_structure(structure, name=name, identifier=identifier)
+            try:
+                mpfile.add_structure(structure, name=name, identifier=identifier)
+            except Exception as ex:
+                print str(ex)
