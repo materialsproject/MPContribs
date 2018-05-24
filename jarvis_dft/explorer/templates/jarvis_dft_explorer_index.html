@@ -1,7 +1,7 @@
 {% extends "../../webtzite/templates/base/header_footer.html" %}
 {% load staticfiles %}
 
-{% block title %} Jarvis DFT {% endblock title %}
+{% block title %} {{ title }} {% endblock title %}
 
 {% block extra_css %}
 <link rel="stylesheet" href='{% static "js/components/bootstrap/dist/css/bootstrap.css" %}' charset="utf-8">
@@ -10,6 +10,7 @@
 <link rel="stylesheet" href='{% static "js/components/backgrid-filter/backgrid-filter.css" %}' charset="utf-8">
 <link rel="stylesheet" href='{% static "js/components/backgrid-grouped-columns/backgrid-grouped-columns.css" %}' charset="utf-8">
 <link rel="stylesheet" href='{% static "js/components/json-human/css/json.human.css" %}' charset="utf-8">
+<link rel="stylesheet" type="text/css" href='{% static "js/components/chosen/chosen.css" charset="utf-8" %}'/>
 {% endblock extra_css %}
 
 {% block content %}
@@ -34,29 +35,94 @@
 code { display: block; white-space: pre-wrap; }
 </style>
 
-<div class="container">
-
+<div class="container">  
+    <a href="{% url 'mpcontribs_portal_index' %}">&laquo; Portal</a>
     <div class="row">
-        <h2>{{ title }}</h2>
-        {{ provenance|safe }}
+        <div class="col-md-12">
+            <h2>{{ title }}</h2>
+            {{ provenance|safe }}
+        </div>
     </div>
-
     <div class="row">
-        <code>
-            from mpcontribs.users.jarvis_dft.rest.rester import JarvisDftRester
-            mpr = JarvisDftRester()
-            mpr.get_contributions(typ) # typ = '2d' or '3d'
-        </code>
+        <div class="col-md-12">
+            <h3>Comparison of Exfoliation Energies</h3>
+        </div>
     </div>
-
-    {% for typ, table in tables.items %}
     <div class="row">
-        <h3>{{ typ|safe }}</h3>
-        {{ table|safe }}
+        <div class="col-md-12">
+            <div id="graph" style="width: 100%;"></div>
+        </div>
     </div>
-    {% endfor %}
-
+    <div class="row">
+        <div class="col-md-12">
+            {{ tables.0|safe }}
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-12">
+            <h3>Additional JARVIS Data</h3>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-12">
+            <div id="graph_jarvis" style="width: 100%;"></div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-12">
+            {{ tables.1|safe }}
+        </div>
+    </div>
 </div>
+
+<script>
+requirejs(['main'], function() {
+    require(["plotly"], function(Plotly) {
+
+        var table = window.tables[0];
+        var graph = document.getElementById('graph');
+        var layout = {
+            margin: {t: 0, r: 0, l: 40, b: 25},
+            yaxis: {title: 'Exfoliation Energy Eₓ [eV]'},
+            legend: {x: 0.05, y: 0.95},
+            barmode: 'group'
+        };
+        var keys = ['NUS##Eₓ [eV]', 'JARVIS##Eₓ [eV]'];
+        var data = [];
+        for (i = 0; i < keys.length; i++) {
+            data.push({x: [], y: [], name: keys[i].split('##')[0], type: 'bar'})
+        }
+        for (i = 0; i < table['rows'].length; i++) {
+            var row = table['rows'][i];
+            if (row[keys[0]] && row[keys[1]]) {
+                for (j = 0; j < keys.length; j++) {
+                    data[j]['x'].push(row['formula']);
+                    data[j]['y'].push(row[keys[j]]);
+                }
+            }
+        }
+        Plotly.plot(graph, data, layout);
+
+        var table_jarvis = window.tables[1];
+        var graph_jarvis = document.getElementById('graph_jarvis');
+        var key = 'ΔE|optB88vdW [eV]';
+        var layout_jarvis = {
+            margin: {t: 0, r: 0, l: 40},
+            yaxis: {title: key}, showlegend: false
+        };
+        var data_jarvis = [{x: [], y: [], type: 'bar'}];
+        for (i = 0; i < table_jarvis['rows'].length; i++) {
+            var row = table_jarvis['rows'][i];
+            if (row[key]) {
+                data_jarvis[0]['x'].push(row['formula']);
+                data_jarvis[0]['y'].push(row[key]);
+            }
+        }
+        Plotly.plot(graph_jarvis, data_jarvis, layout_jarvis);
+        window.onresize = function() { Plotly.Plots.resize(graph, graph_jarvis); };
+    });
+});
+</script>
 
 {% endif %}
 {% endblock %}

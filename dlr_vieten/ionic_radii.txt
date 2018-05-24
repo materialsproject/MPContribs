@@ -64,7 +64,7 @@ provide data for 12- or 10-fold coordination of Mg, and it is probably
 difficult to achieve 12-fold coordination around the small Mg2+ ion.
 However, one can estimate the effective ionic radii r with these high
 coordination numbers from the Pauling bond strengths: r = a - b
-log(z/n) with a = 0.2446, b = 1.0222, z = 2 (charge) and n = CN; see
+log(z/n) with a = 0.2430, b = 1.05058, z = 2 (charge) and n = CN; see
 Kudoh et al. in High Pressure Research: Application to Earth and
 Planetary Sciences (1992), American Geophysical Union, Washington
 D.C., dx.doi.org/10.1029/GM067p0215. Mg-containing perovskites and
@@ -74,11 +74,11 @@ dx.doi.org/10.1126/science.1095932.
 :end
 
 {mp-153.data.0}
-rᵢₒₙ: 104.0 pm
+rᵢₒₙ: 106.0 pm
 CN: 12
 
 {mp-153.data.1}
-rᵢₒₙ: 96.0 pm
+rᵢₒₙ: 108.0 pm
 CN: 10
 
 {mp-132.data}

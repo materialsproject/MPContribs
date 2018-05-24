@@ -1,44 +1,26 @@
+# -*- coding: utf-8 -*-
 """This module provides the views for the defect_genome_pcfc_materials explorer interface."""
 
-import os, json
+import json, os
+from bson import ObjectId
 from django.shortcuts import render_to_response
 from django.template import RequestContext
-from mpcontribs.io.core.components import render_dataframe, Table
-from webtzite.rester import MPResterBase
-from mpcontribs.io.core.utils import clean_value
+from mpcontribs.rest.views import get_endpoint
+from mpcontribs.io.core.components import render_dataframe, render_plot
+from mpcontribs.io.core.recdict import render_dict
 
 def index(request):
     ctx = RequestContext(request)
     if request.user.is_authenticated():
-        from pymatgen import SETTINGS
-        API_KEY = SETTINGS.get("PMG_MAPI_KEY", request.user.api_key) # jupyterhub vs alpha page
-        with MPResterBase(API_KEY) as mpr: # falls back on MAPI endpoint
+        API_KEY = request.user.api_key
+        ENDPOINT = request.build_absolute_uri(get_endpoint())
+        from ..rest.rester import DefectGenomePcfcMaterialsRester
+        with DefectGenomePcfcMaterialsRester(API_KEY, endpoint=ENDPOINT) as mpr:
             try:
-                criteria = {"snl.about.authors.email": "balachandraj@ornl.gov"}
-                properties = [
-                        "task_id", "pretty_formula", "spacegroup.symbol",
-                        "formation_energy_per_atom", "e_above_hull", "band_gap",
-                        "nsites", "density", "volume"
-                ]
-                payload = {
-                    "criteria": json.dumps(criteria),
-                    "properties": json.dumps(properties)
-                }
-                docs = mpr._make_request("/query", payload=payload, method="POST")
-                if not docs:
-                    raise Exception('No contributions found for Defect Genome PCFC Materials!')
-
-                columns = [
-                    'MP Id', 'Formula', 'Spacegroup', 'Formation Energy (eV)',
-                    'E above Hull (eV)', 'Band Gap (eV)', 'Nsites', 'Density (gm/cc)', 'Volume'
-                ]
-                data = []
-                for doc in docs:
-                    row = [clean_value(doc[k]) for k in properties]
-                    data.append((doc['task_id'], row))
-
-                df = Table.from_items(data, orient='index', columns=columns)
-                ctx['table'] = render_dataframe(df, webapp=True)
+                prov = mpr.get_provenance()
+                ctx['title'] = prov.pop('title')
+                ctx['provenance'] = render_dict(prov, webapp=True)
+                ctx['table'] = render_dataframe(mpr.get_contributions(), webapp=True)
             except Exception as ex:
                 ctx.update({'alert': str(ex)})
     else:

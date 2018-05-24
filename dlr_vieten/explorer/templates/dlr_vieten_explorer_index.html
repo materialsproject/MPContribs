@@ -72,6 +72,7 @@ code { display: block; white-space: pre-wrap; }
     </div>
     <div class="row">
         <div class="col-md-4">
+            <center>
             <h4>Isotherm</h4>
             <b>Temperature: </b><input id="temp_slider" type="text"
             data-slider-min="500" data-slider-max="1800" data-slider-step="10"
@@ -80,18 +81,22 @@ code { display: block; white-space: pre-wrap; }
             <input id="pressure_range" type="text" class="span2" value=""
             data-slider-min="-7" data-slider-max="3" data-slider-step="0.05"
             data-slider-value="[-5,1]"/><b> 10ⁿ bar</b>
+            </center>
         </div>
         <div class="col-md-4">
+            <center>
             <h4>Isobar</h4>
             <b>Pressure: </b><input id="pressure_slider" type="text"
-            data-slider-min="-7" data-slider-max="3" data-slider-step="0.05"
-            data-slider-value="1"/><b> 10ⁿ bar</b><br>
+            data-slider-min="-7" data-slider-max="4" data-slider-step="0.05"
+            data-slider-value="0"/><b> 10ⁿ bar</b><br>
             <b>Plot Range: </b>
             <input id="temp_range" type="text" class="span2" value=""
             data-slider-min="500" data-slider-max="1800" data-slider-step="10"
             data-slider-value="[600,1200]"/><b> K</b>
+            </center>
         </div>
         <div class="col-md-4">
+            <center>
             <h4>Isoredox</h4>
             <b>Redox δ: </b><input id="redox_slider" type="text"
             data-slider-min="0" data-slider-max="0.5" data-slider-step="0.01"
@@ -100,19 +105,8 @@ code { display: block; white-space: pre-wrap; }
             <input id="redox_temp_range" type="text" class="span2" value=""
             data-slider-min="500" data-slider-max="1800" data-slider-step="10"
             data-slider-value="[600,1200]"/><b> K</b>
+            </center>
         </div>
-        <!--
-        <div class="col-md-3">
-            <h4>Ellingham</h4>
-            <b>Pressure: </b><input id="elling_pressure_slider" type="text"
-            data-slider-min="-7" data-slider-max="3" data-slider-step="1"
-            data-slider-value="1"/><b> 10ⁿ bar</b><br>
-            <b>Plot Range: </b>
-            <input id="elling_temp_range" type="text" class="span2" value=""
-            data-slider-min="300" data-slider-max="1300" data-slider-step="100"
-            data-slider-value="[400,1200]"/><b> K</b>
-        </div>
-        -->
     </div>
 
     <div class="row" style="margin-top: 10px;">
@@ -124,6 +118,30 @@ code { display: block; white-space: pre-wrap; }
         </div>
         <div class="col-md-4">
             <div id=isoredox></div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-4">
+            <center>
+            <h4>Ellingham</h4>
+            <b>Redox δ: </b><input id="elling_redox_slider" type="text"
+            data-slider-min="0" data-slider-max="0.5" data-slider-step="0.01"
+            data-slider-value="0.3"/><br>
+            <b>Plot Range: </b>
+            <input id="elling_temp_range" type="text" class="span2" value=""
+            data-slider-min="200" data-slider-max="2000" data-slider-step="100"
+            data-slider-value="[400,1500]"/><b> K</b><br>
+            <b>Isobar line: </b><input id="elling_pressure_slider" type="text"
+            data-slider-min="-10" data-slider-max="5" data-slider-step="0.05"
+            data-slider-value="0"/><b> 10ⁿ bar</b><br>
+            </center>
+        </div>
+    </div>
+    
+    <div class="row" style="margin-top: 10px;">
+        <div class="col-md-4">
+            <div id=ellingham></div>
         </div>
     </div>
 
@@ -142,7 +160,7 @@ requirejs(['main'], function() {
             $('#temp_slider').slider({}); $('#pressure_range').slider({});
             $('#pressure_slider').slider({}); $('#temp_range').slider({});
             $('#redox_slider').slider({}); $('#redox_temp_range').slider({});
-            //$('#elling_pressure_slider').slider({}); $('#elling_temp_range').slider({});
+            $('#elling_redox_slider').slider({}); $('#elling_temp_range').slider({}); $('#elling_pressure_slider').slider({}); 
             Backbone.on('cellclicked', function(e) {
                 var row = $(e.currentTarget).parent();
                 var url = row.find("td:nth-child(2) > a").attr('href');
@@ -157,11 +175,11 @@ requirejs(['main'], function() {
                     }, 'isoredox': {
                         'iso': $('#redox_slider').attr('value'),
                         'rng': $('#redox_temp_range').attr('value')
-                    },
-                    //'ellingham': {
-                    //    'iso': $('#elling_pressure_slider').attr('value'),
-                    //    'rng': $('#elling_temp_range').attr('value')
-                    //}
+                    }, 'ellingham': {
+                        'del': $('#elling_redox_slider').attr('value'),
+                        'rng': $('#elling_temp_range').attr('value'),
+                        'iso': $('#elling_pressure_slider').attr('value'),
+                    }
                 });
                 $.ajax({
                     type: 'POST',
@@ -175,143 +193,43 @@ requirejs(['main'], function() {
                         Object.keys(r).forEach(function(key,index) {
                             // key: the name of the object key
                             // index: the ordinal position of the key within the object 
-                            if (key = "isotherm")
-                            {
                             var div = document.getElementById(key);
-                            Plotly.newPlot(div, [r[key]], {
-                                title: key+ ", T=" + $('#temp_slider').attr('value') + " K", 
-                                showLegend: false,
-                                xaxis: {
-                                    exponentformat: "E",
-                                    tickfont: {
-                                      size: 13
-                                      },
-                                    title: "p<sub>O2</sub> (bar)",
-                                    type: "log",
-                                    showline: "True",
-                                    ticks: "inside",
-                                    tickwidth: 1,
-                                    tickcolor: '#000000',
-                                    linewidth: 1,
-                                    zeroline: "False",
-                                    titlefont: {
-                                      family: 'Arial',
-                                      size: 20,
-                                      color: '#000000',
-                                      }
-                                    },
-                                yaxis: {
-                                    exponentformat: "E",
-                                    title: "δ",
-                                    showline: "True",
-                                    linewidth: 1,
-                                    zeroline: "False",
-                                    ticks: "inside",
-                                    tickwidth: 1,
-                                    tickcolor: '#000000',
-                                    tickfont: {
-                                      size: 15
-                                      },
-                                    titlefont: {
-                                      family: 'Arial',
-                                      size: 20,
-                                      color: '#000000',
-                                      }
-                                    },
-                                margin: {l: 80, r: 20, b: 60, t: 25}
-                            });
+                            if (key === "isotherm") {
+                                var title = "T=" + $('#temp_slider').attr('value') + " K";
+                                var xaxis_title = "p<sub>O2</sub> (bar)";
+                                var yaxis_title = "δ";
+                            }
+                            if (key === "isobar") {
+                                var title = "p<sub>O2</sub>=10<sup>" + $('#pressure_slider').attr('value') + "</sup> bar"; 
+                                var xaxis_title = "T (K)";
+                                var yaxis_title = "δ";
+                            }
+                            if (key === "isoredox") {
+                                var title = "δ=" + $('#redox_slider').attr('value'); 
+                                var xaxis_title = "T (K)";
+                                var yaxis_title = "p<sub>O2</sub> (bar)";
+                            }
+                            if (key === "ellingham") {
+                                var title = "δ=" + $('#elling_redox_slider').attr('value'); 
+                                var xaxis_title = "T (K)";
+                                var yaxis_title = "ΔG (kJ/mol)";
+                            }
+                            var axis = {
+                                exponentformat: "E", tickfont: { size: 15 }, showline: "True",
+                                ticks: "inside", tickwidth: 1, tickcolor: '#000000',
+                                linewidth: 1, zeroline: "False",
+                                titlefont: { family: 'Arial', size: 20, color: '#000000' }
                             };
-                            if (key = "isobar")
-                            {
-                            var div = document.getElementById(key);
-                            Plotly.newPlot(div, [r[key]], {
-                                title: key+ ", p<sub>O2</sub>=" + $('#pressure_slider').attr('value') + " bar", 
-                                showLegend: false,
-                                xaxis: {
-                                    exponentformat: "E",
-                                    title: "T (K)",
-                                    showline: "True",
-                                    linewidth: 1,
-                                    ticks: "inside",
-                                    tickwidth: 1,
-                                    tickcolor: '#000000',
-                                    zeroline: "False",
-                                    tickfont: {
-                                      size: 15
-                                      },
-                                    titlefont: {
-                                      family: 'Arial',
-                                      size: 20,
-                                      color: '#000000',
-                                      }
-                                    },
-                                yaxis: {
-                                    exponentformat: "E",
-                                    title: "δ",
-                                    showline: "True",
-                                    linewidth: 1,
-                                    ticks: "inside",
-                                    tickwidth: 1,
-                                    tickcolor: '#000000',
-                                    zeroline: "False",
-                                    tickfont: {
-                                      size: 15
-                                      },
-                                    titlefont: {
-                                      family: 'Arial',
-                                      size: 20,
-                                      color: '#000000',
-                                      }
-                                    },
-                                margin: {l: 80, r: 20, b: 60, t: 25}
+                            var xaxis = JSON.parse(JSON.stringify(axis)); // deepcopy
+                            xaxis['title'] = xaxis_title;
+                            if (key === "isotherm") { xaxis['type'] = 'log'; }
+                            var yaxis = JSON.parse(JSON.stringify(axis)); // deepcopy
+                            yaxis['title'] = yaxis_title;
+                            if (key === "isoredox") { yaxis['type'] = 'log'; }
+                            Plotly.newPlot(div, r[key], {
+                                title: title, showlegend: false, xaxis: xaxis, yaxis: yaxis,
+                                margin: {l: 80, r: 20, b: 60, t: 35}
                             });
-                            };
-                            if (key = "isoredox")
-                            {
-                            var div = document.getElementById(key);
-                            Plotly.newPlot(div, [r[key]], {
-                                title: key+ ", δ=" + $('#redox_slider').attr('value'), 
-                                showLegend: false,
-                                xaxis: {
-                                    exponentformat: "E",
-                                    showline: "True",
-                                    linewidth: 1,
-                                    ticks: "inside",
-                                    tickwidth: 1,
-                                    tickcolor: '#000000',
-                                    zeroline: "False",
-                                    tickfont: {
-                                      size: 15
-                                      },
-                                    title: "T (K)",
-                                    titlefont: {
-                                      family: 'Arial',
-                                      size: 20,
-                                      color: '#000000',
-                                      }
-                                    },
-                                yaxis: {
-                                    exponentformat: "E",
-                                    title: "p<sub>O2</sub> (bar)",
-                                    showline: "True",
-                                    linewidth: 1,
-                                    ticks: "inside",
-                                    tickwidth: 1,
-                                    tickcolor: '#000000',
-                                    zeroline: "False",
-                                    tickfont: {
-                                      size: 13
-                                      },
-                                    type: "log",
-                                    titlefont: {
-                                      family: 'Arial',
-                                      size: 20,
-                                      color: '#000000',
-                                      }
-                                    },
-                                margin: {l: 80, r: 20, b: 60, t: 25}
-                            });
-                            };
                         });
                     },
                     error: function(jqXHR, textStatus, errorThrown) {
@@ -320,7 +238,6 @@ requirejs(['main'], function() {
                 });
             }); 
             $(".backgrid > tbody > tr:first > td:nth-child(4)").click()
-
         });
     });
 });

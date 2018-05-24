@@ -73,21 +73,38 @@ def run(mpfile, **kwargs):
     # TODO clone solar_perovskite if needed, abort if insufficient permissions
     import solar_perovskite
     from solar_perovskite.core import GetExpThermo
+    from solar_perovskite.init.find_structures import FindStructures
+    from solar_perovskite.init.import_data import Importdata
+    from solar_perovskite.modelling.from_theo import EnthTheo
 
     input_file = mpfile.hdata.general['input_file']
     input_file = os.path.join(os.path.dirname(solar_perovskite.__file__), input_file)
     table = read_csv(open(input_file, 'r').read().replace(';', ','))
     dct = super(Table, table).to_dict(orient='records', into=RecursiveDict)
 
+    shomate = pd.read_csv(os.path.abspath(os.path.join(
+        os.path.dirname(solar_perovskite.__file__), "datafiles", "shomate.csv"
+    )), index_col=0)
+    shomate_dct = RecursiveDict()
+    for col in shomate.columns:
+        key = col.split('.')[0]
+        if key not in shomate_dct:
+            shomate_dct[key] = RecursiveDict()
+        d = shomate[col].to_dict(into=RecursiveDict)
+        subkey = '{}-{}'.format(int(d.pop('low')), int(d.pop('high')))
+        shomate_dct[key][subkey] = RecursiveDict(
+            (k, clean_value(v, max_dgts=6)) for k, v in d.items()
+        )
+    mpfile.add_hierarchical_data(nest_dict(shomate_dct, ['shomate']))
+
     for row in dct:
 
         sample_number = int(row['sample_number'])
-        if sample_number not in [100, 106]:
+        identifier = row['closest phase MP (oxidized)'].replace('n.a.', '')
+        if not identifier.startswith('mp-'):
             continue
-
-        #identifier = row['closest phase MP (oxidized)'].replace('n.a.', '')
-        #if not identifier:
-        identifier = get_composition_from_string(row['composition oxidized phase'])
+        if not identifier:
+            identifier = get_composition_from_string(row['composition oxidized phase'])
         print identifier
 
         print 'add hdata ...'
@@ -96,12 +113,29 @@ def run(mpfile, **kwargs):
         d['solid_solution'] = row['type of solid solution']
         d['oxidized_phase'] = RecursiveDict()
         d['oxidized_phase']['composition'] = row['composition oxidized phase']
-        d['oxidized_phase']['crystal_structure'] = row['crystal structure (fully oxidized)']
+        d['oxidized_phase']['crystal-structure'] = row['crystal structure (fully oxidized)']
         d['reduced_phase'] = RecursiveDict()
         d['reduced_phase']['composition'] = row['composition reduced phase']
-        d['reduced_phase']['closest_MP'] = row['closest phase MP (reduced)'].replace('n.a.', '')
+        d['reduced_phase']['closest-MP'] = row['closest phase MP (reduced)'].replace('n.a.', '')
         d = nest_dict(d, ['data'])
         d['pars'] = get_fit_pars(sample_number)
+        d['pars']['theo_compstr'] = row['theo_compstr']
+        try:
+            fs = FindStructures(compstr=row['theo_compstr'])
+            theo_redenth = fs.find_theo_redenth()
+            imp = Importdata()
+            splitcomp = imp.split_comp(row['theo_compstr'])
+            conc_act = imp.find_active(mat_comp=splitcomp)[1]
+            et = EnthTheo(comp=row['theo_compstr'])
+            dh_max, dh_min = et.calc_dh_endm()
+            red_enth_mean_endm = (conc_act * dh_min) + ((1 - conc_act) * dh_max)
+            difference = theo_redenth - red_enth_mean_endm
+            d['pars']['dh_min'] = clean_value(dh_min + difference, max_dgts=8)
+            d['pars']['dh_max'] = clean_value(dh_max + difference, max_dgts=8)
+        except Exception as ex:
+            print('error in dh_min/max!')
+            print(str(ex))
+            pass
         mpfile.add_hierarchical_data(d, identifier=identifier)
 
         print 'add ΔH ...'

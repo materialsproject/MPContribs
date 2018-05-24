@@ -1,58 +1,23 @@
-authors: Ming-Fu Lin, Uwe Bergmann
-reference: manuscript submitted to Nature Physics
+title: SLAC MoSe₂/2H-MoTe₂
+authors: M.F. Lin, U. Bergmann
+
 description:
-observation of efficient subpicosecond electron-to-lattice energy
-transfer in mono- and bilayer MoSe2 functional materials
+Momentum Dependent Electron-Phonon Coupling in MoSe₂/2H-MoTe₂. Observation
+of efficient subpicosecond electron-to-lattice energy transfer in
+mono- and bilayer MoSe₂/2H-MoTe₂ functional materials.
 :end
 
-zipfile_path: MoSe2 condensed data.zip
-table_columns: delay time [ps] -- {100} -- {110} -- {200} -- {210} -- {300} -- {220}
+{urls}
+NPHYS: https://www.nature.com/nphys
 
-mp-1027692.formula: MoSe2
+{input}
+file_path: slac_mose2.tar.gz
+table_columns: delay time [ps] -- position 1 -- position 2 -- M -- position 3 -- K -- position 4 -- position 5
+
+{mp-602}
+formula: MoTe2
 
 :ignore
-{P1_400nm_ML}
-carrier_density: 0.28E14 cm^-2
-pump_fluence: 0.6 mJ/cm^2
-
-{P2_400nm_ML}
-carrier_density: 0.74E14 cm^-2
-pump_fluence: 2.2 mJ/cm^2
-
-{P3_400nm_ML}
-carrier_density: 1.10E14 cm^-2
-pump_fluence: 4.2 mJ/cm^2
-
-{P2_400nm_BL}
-carrier_density: 0.68E14 cm^-2
-pump_fluence: 0.84 mJ/cm^2
-
-{P3_400nm_BL}
-carrier_density: 1.15E14 cm^-2
-pump_fluence: 1.7 mJ/cm^2
-
-{P4_400nm_BL}
-carrier_density: 1.77E14 cm^-2
-pump_fluence: 3.4 mJ/cm^2
-
-{P5_400nm_BL}
-carrier_density: 2.14E14 cm^-2
-pump_fluence: 5.1 mJ/cm^2
-
-{P1_800nm_BL}
-carrier_density: 0.55E14 cm^-2
-pump_fluence: 1.0 mJ/cm^2
-
-{P2b_800nm_BL}
-carrier_density: 1.10E14 cm^-2
-pump_fluence: 2.0 mJ/cm^2
-
-{P4b_800nm_BL}
-carrier_density: 2.0E14 cm^-2
-pump_fluence: 4.0 mJ/cm^2
-
-{P4c_800nm_BL}
-carrier_density: 2.0E14 cm^-2
-pump_fluence: 4.0 mJ/cm^2
-
+{mp-1027692}
+formula: MoSe2
 

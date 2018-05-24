@@ -19,7 +19,7 @@ class DiluteSoluteDiffusionRester(MPContribsRester):
         if host not in hosts:
             raise Exception('{} not a host: {}'.format(host, hosts))
 
-        projection = {'_id': 1, 'mp_cat_id': 1, 'content._tdata_D₀_Q': 1}
+        projection = {'_id': 1, 'mp_cat_id': 1, 'content.D₀_Q': 1}
         docs = self.query_contributions(
             criteria={'content.data.formula': host}, projection=projection
         )
@@ -29,7 +29,7 @@ class DiluteSoluteDiffusionRester(MPContribsRester):
         from pandas import Series
         mpfile = MPFile.from_contribution(docs[0])
         mp_id = mpfile.ids[0]
-        table = mpfile.tdata[mp_id]['_tdata_D₀_Q']
+        table = mpfile.tdata[mp_id]['D₀_Q']
         for col in table.columns:
             table[col] = table[col].apply(lambda x: clean_value(x))
         anums = [self.z[el] for el in table['El.']]

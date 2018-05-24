@@ -1,44 +1,33 @@
-title: JARVIS-DFT
-authors: K. Choudhary, F. Tavazza
+title: JARVIS-DFT / NUS-2D
+authors: M. Dias Costa, F.Y. Ping, Z. Jun, K. Choudhary, F. Tavazza
 
 description:
-We introduce a simple criterion to identify two-dimensional (2D)
-materials based on the comparison between experimental lattice
-constants and lattice constants mainly obtained from
-Materials-Project (MP) density functional theory (DFT)
-calculation repository. Specifically, if the relative difference
-between the two lattice constants for a specific material is
-greater than or equal to 5%, we predict them to be good
-candidates for 2D materials. We have predicted at least 1356 such
-2D materials. For all the systems satisfying our criterion, we
-manually create single layer systems and calculate their
-energetics, structural, electronic, and elastic properties for
-both the bulk and the single layer cases.  To validate our
-criterion, we calculated the exfoliation energy of the suggested
-layered materials, and we found that in 88.9% of the cases the
-currently accepted criterion for exfoliation was satisfied.
-Also, using molybdenum telluride as a test case, we performed
-X-ray diffraction and Raman scattering experiments to benchmark
-our calculations and understand their applicability and
-limitations. The website contains over ~16000 density functional
+Comparison of exfoliation energies Eₓ between Jarvis-DFT and NUS-2D.
+(JARVIS-DFT) The website contains over ~16000 density functional
 theory calculation (315634 sub-calculations) data for pure
 elements, 2D, solar cell and thermoelectric materials. For 2D
 materials, bulk and 1 layer material properties are compared
 right now with three different exchange-correlation
 functional-LDA, PBE and PBEBO (else only PBEBO is used). The
-PBEBO (or optB88vDW) generally works well for 2D materials. If data
-shows `na`, it implies the calculation has not completed yet.
-Please learn about the assumptions used during calculations and
-use the data at your own risk!
+PBEBO (or optB88vDW) generally works well for 2D materials.
+(NUS-2D) 2,000 layered materials by applying simple rules
+based on inter-atomic plane spacing and bonded clusters of atoms
+in the structures, similar to what Hennig’s group has done. He
+then calculated exfoliation energy of these materials to identify
+possible layered structures that can be experimentally exfoliated
+into 2D materials. He has almost completed high-throughput
+calculations on the properties of these 2D materials.
 :end
 
-urls:
-http://www.ctcms.nist.gov/~knc6/JVASP.html
-https://www.nature.com/articles/s41598-017-05402-0
-10.1038/s41598-017-05402-0
-https://github.com/usnistgov/jarvis
-:end
+{urls}
+JVASP: http://www.ctcms.nist.gov/~knc6/JVASP.html
+DOI: https://doi.org/10.1038/s41598-017-05402-0
+GitHub: https://github.com/usnistgov/jarvis
 
-journal: Scientific Reports 7, 5179 (2017)
-input_url: https://www.ctcms.nist.gov/~knc6/jdft_{}.json.tgz
-details_url: https://www.ctcms.nist.gov/~knc6/jsmol/{}.html
+{input_urls.NUS}
+file: http://2dmaterials.nus.edu.sg/sample/materials.json.gz
+detail: http://137.132.5.72/2dmaterials/doc/{}
+
+{input_urls.JARVIS}
+file: https://www.ctcms.nist.gov/~knc6/jdft_{}.json.tgz
+detail: https://www.ctcms.nist.gov/~knc6/jsmol/{}.html
