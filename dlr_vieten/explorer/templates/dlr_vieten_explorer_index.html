@@ -60,13 +60,25 @@ code { display: block; white-space: pre-wrap; }
     </div>
     <div class="row">
         <div class="col-md-12">
-            <h3>Data</h3>
+            <h3>Redox Thermodynamics</h3>
             <ul>
+                <li><b>Experimental data:</b> Retrieved via van't Hoff method from equilibrium thermogravimetric 
+                    data. ΔH(Δδ) and ΔS(Δδ) determined (temperature dependence not considered), <br>with Δδ = δ - δ<sub>0</sub>; 
+                    δ<sub>0</sub>: δ at T = 400 °C, p<sub>O2</sub> = 0.18 bar; δ<sub>0</sub>: determined from entropy fit
+                <br>Inaccurate values for δ<sub>0</sub> lead to a shift of the absolute δ values for some materials. This does not affect the accuracy of the relative oxygen release/uptake values.
+                <br>Experimental data may be highly inaccurate for extrapolated values (indicated by dashed lines).</li>
+                <li><b>Theoretical data:</b> ΔH(δ, T) calculated from DFT values for the reduction enthalpies from perovskite to brownmillerite, ΔS(δ, T) calculated as a sum of configurational and vibrational entropy and the partial molar entropy of oxygen. 
+                <br>Vibrational entropy calculated from elastic tensors (from DFT, The Materials Project). If no elastic tensors are availble, the data for SrFeO<sub>3</sub> is used as an approximation.</li>
                 <li>Click on a Contribution Identifier in the table to open a
                     detail page with graphs for ΔH/ΔS vs δ, and the raw data.</li>
                 <li>To update isotherm, isobar, and isoredox functions, set the
                     variables and plot ranges below, and click on a row in the table.
                 </li>
+                <li>Due to the numerical derivation neccessary for the theoretical data, the calculation of all graphs may take around <b>10-15 seconds.</b> Thank you for your patience.
+                </li>
+                <li>All thermodynamic quantities are given as per mol of O (monatomic oxygen).
+                </li>
+                <br>
             </ul>
         </div>
     </div>
@@ -92,7 +104,7 @@ code { display: block; white-space: pre-wrap; }
             <b>Plot Range: </b>
             <input id="temp_range" type="text" class="span2" value=""
             data-slider-min="500" data-slider-max="1800" data-slider-step="10"
-            data-slider-value="[600,1200]"/><b> K</b>
+            data-slider-value="[700,1400]"/><b> K</b>
             </center>
         </div>
         <div class="col-md-4">
@@ -104,7 +116,7 @@ code { display: block; white-space: pre-wrap; }
             <b>Plot Range: </b>
             <input id="redox_temp_range" type="text" class="span2" value=""
             data-slider-min="500" data-slider-max="1800" data-slider-step="10"
-            data-slider-value="[600,1200]"/><b> K</b>
+            data-slider-value="[700,1400]"/><b> K</b>
             </center>
         </div>
     </div>
@@ -120,8 +132,26 @@ code { display: block; white-space: pre-wrap; }
             <div id=isoredox></div>
         </div>
     </div>
-    
+    <br><br><br>
     <div class="row">
+        <div class="col-md-4">
+            <center>
+            <br>
+            <h4>Enthalpy (dH)</h4>
+            <b>Temperature (theo): </b><input id="dH_temp_slider" type="text"
+            data-slider-min="100" data-slider-max="2000" data-slider-step="10"
+            data-slider-value="500"/><b> K</b><br>
+            </center>
+        </div>
+        <div class="col-md-4">
+            <center>
+            <br>
+            <h4>Entropy (dS)</h4>
+            <b>Temperature (theo): </b><input id="dS_temp_slider" type="text"
+            data-slider-min="100" data-slider-max="2000" data-slider-step="10"
+            data-slider-value="500"/><b> K</b><br>
+            </center>
+        </div>
         <div class="col-md-4">
             <center>
             <h4>Ellingham</h4>
@@ -133,13 +163,19 @@ code { display: block; white-space: pre-wrap; }
             data-slider-min="200" data-slider-max="2000" data-slider-step="100"
             data-slider-value="[400,1500]"/><b> K</b><br>
             <b>Isobar line: </b><input id="elling_pressure_slider" type="text"
-            data-slider-min="-10" data-slider-max="5" data-slider-step="0.05"
+            data-slider-min="-20" data-slider-max="10" data-slider-step="0.05"
             data-slider-value="0"/><b> 10ⁿ bar</b><br>
             </center>
         </div>
     </div>
     
     <div class="row" style="margin-top: 10px;">
+        <div class="col-md-4">
+            <div id=enthalpy_dH></div>
+        </div>
+        <div class="col-md-4">
+            <div id=entropy_dS></div>
+        </div>
         <div class="col-md-4">
             <div id=ellingham></div>
         </div>
@@ -160,6 +196,7 @@ requirejs(['main'], function() {
             $('#temp_slider').slider({}); $('#pressure_range').slider({});
             $('#pressure_slider').slider({}); $('#temp_range').slider({});
             $('#redox_slider').slider({}); $('#redox_temp_range').slider({});
+            $('#dH_temp_slider').slider({});$('#dS_temp_slider').slider({});
             $('#elling_redox_slider').slider({}); $('#elling_temp_range').slider({}); $('#elling_pressure_slider').slider({}); 
             Backbone.on('cellclicked', function(e) {
                 var row = $(e.currentTarget).parent();
@@ -175,7 +212,9 @@ requirejs(['main'], function() {
                     }, 'isoredox': {
                         'iso': $('#redox_slider').attr('value'),
                         'rng': $('#redox_temp_range').attr('value')
-                    }, 'ellingham': {
+                    }, 'enthalpy_dH': {'iso': $('#dH_temp_slider').attr('value')}, 
+                    'entropy_dS': {'iso': $('#dS_temp_slider').attr('value')}, 
+                    'ellingham': {
                         'del': $('#elling_redox_slider').attr('value'),
                         'rng': $('#elling_temp_range').attr('value'),
                         'iso': $('#elling_pressure_slider').attr('value'),
@@ -209,10 +248,20 @@ requirejs(['main'], function() {
                                 var xaxis_title = "T (K)";
                                 var yaxis_title = "p<sub>O2</sub> (bar)";
                             }
+                            if (key === "enthalpy_dH") {
+                                var title = "theo: T=" + $('#dH_temp_slider').attr('value') + " K, exp: T undefined";
+                                var xaxis_title = "δ";
+                                var yaxis_title = "ΔH<sub>O</sub> (kJ/mol)";
+                            }
+                            if (key === "entropy_dS") {
+                                var title = "theo: T=" + $('#dS_temp_slider').attr('value') + " K, exp: T undefined";
+                                var xaxis_title = "δ";
+                                var yaxis_title = "ΔS<sub>O</sub> (J/molK)";
+                            }
                             if (key === "ellingham") {
                                 var title = "δ=" + $('#elling_redox_slider').attr('value'); 
                                 var xaxis_title = "T (K)";
-                                var yaxis_title = "ΔG (kJ/mol)";
+                                var yaxis_title = "ΔG<sub>O</sub> (kJ/mol)";
                             }
                             var axis = {
                                 exponentformat: "E", tickfont: { size: 15 }, showline: "True",
@@ -226,6 +275,8 @@ requirejs(['main'], function() {
                             var yaxis = JSON.parse(JSON.stringify(axis)); // deepcopy
                             yaxis['title'] = yaxis_title;
                             if (key === "isoredox") { yaxis['type'] = 'log'; }
+                            if (key === "enthalpy_dH") { yaxis['range'] = r[key].slice(-1)[0] ; }
+                            if (key === "entropy_dS") { yaxis['range'] = r[key].slice(-1)[0]; }
                             Plotly.newPlot(div, r[key], {
                                 title: title, showlegend: false, xaxis: xaxis, yaxis: yaxis,
                                 margin: {l: 80, r: 20, b: 60, t: 35}
@@ -237,7 +288,7 @@ requirejs(['main'], function() {
                     }
                 });
             }); 
-            $(".backgrid > tbody > tr:first > td:nth-child(4)").click()
+            $(".backgrid > tbody > tr:first > td:nth-child(6)").click()
         });
     });
 });
