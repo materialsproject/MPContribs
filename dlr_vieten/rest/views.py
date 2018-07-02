@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 import json
+import re
+import os
 from webtzite import mapi_func
 import pandas as pd
 from itertools import groupby
@@ -16,35 +18,81 @@ from scipy.integrate import quad
 from webtzite.connector import ConnectorBase
 from mpcontribs.rest.views import Connector
 ConnectorBase.register(Connector)
-mpr = MPRester(endpoint="http://materialsproject.org:8080/rest/v2")
+mpr = MPRester()
+from energy_analysis import EnergyAnalysis as enera
 
-@mapi_func(supported_methods=["POST", "GET"], requires_api_key=True)
+# load the parameter list to know where to find energy data
+# (sort of a map for the huge sampledata dict)
+path = os.path.abspath(os.path.dirname( __file__ ))
+filepath_params = os.path.join(path, "parameter_list.json")
+with open(filepath_params) as handle:
+    paramlist = json.loads(handle.read())
+handle.close()
+
+# load the sample data  
+filepath = os.path.join(path, "energy_data.json")
+with open(filepath) as json_data:
+   eneradata = json.load(json_data)
+json_data.close()
+
+@mapi_func(supported_methods=["POST", "GET"], requires_api_key=False)
 def index(request, cid, db_type=None, mdb=None):
     mpid_b = None
     try:
+        from_file = True #change this to False if the MPRester shall be used instead
         contrib = mdb.contrib_ad.query_contributions(
-            {'_id': cid}, projection={'_id': 0, 'content.pars': 1})[0]
+            {'_id': cid}, projection={'_id': 0, 'content.pars': 1, 'content.data': 1})[0]
         pars = contrib['content']['pars']
         compstr = contrib['content']['pars']['theo_compstr']
-        compstr_disp = remove_comp_one(compstr)
+        compstr_init = compstr
+        compstr_disp = remove_comp_one(compstr_init)
+        if compstr_disp == compstr_init:
+            compstr = add_comp_one(compstr)
+        compstr_disp = [''.join(g) for _, g in groupby(str(compstr_disp), str.isalpha)]
+        if contrib['content']['pars']['fit_type_entr'] != []:
+            compstr_exp = contrib['content']['data']['oxidized_phase']['composition']
+            compstr_exp = [''.join(g) for _, g in groupby(str(compstr_exp), str.isalpha)]
+        else:
+            compstr_exp = "n.a."
         d_min_exp = float(contrib['content']['pars']['delta_min'])
         d_max_exp = float(contrib['content']['pars']['delta_max'])
 
-        try: # get Debye temperatures for vibrational entropy
-            mp_ids = get_mpids_comps_perov_brownm(compstr=compstr)
-            t_d_perov = get_debye_temp(mp_ids[0])
-            t_d_brownm = get_debye_temp(mp_ids[1])
-        except Exception as e: # if no elastic tensors or no data for this material is available 
-            compstr_here = "Sr1Fe1Ox" # using data for SrFeOx if no data is available (close approximation)
-            mp_ids = get_mpids_comps_perov_brownm(compstr=compstr_here)
-            t_d_perov = get_debye_temp(mp_ids[0])
-            t_d_brownm = get_debye_temp(mp_ids[1])
-            
-        # get redox enthalpies and active species
-        red_act = redenth_act(compstr)
-        dh_min = red_act[1]
-        dh_max = red_act[2]
-        act = red_act[3]
+        if not from_file:
+            try: # get Debye temperatures for vibrational entropy
+                mp_ids = get_mpids_comps_perov_brownm(compstr=compstr)
+                t_d_perov = get_debye_temp(mp_ids[0])
+                t_d_brownm = get_debye_temp(mp_ids[1])
+            except Exception as e: # if no elastic tensors or no data for this material is available 
+                mp_ids = ("mp-510624", "mp-561589") # using data for SrFeOx if no data is available (close approximation)
+                t_d_perov = get_debye_temp(mp_ids[0])
+                t_d_brownm = get_debye_temp(mp_ids[1])
+
+            # get redox enthalpies and active species
+            red_act = redenth_act(compstr)
+            dh_min = red_act[1]
+            dh_max = red_act[2]
+            act = red_act[3]
+        else:
+            path = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..'))
+            filepath = os.path.join(path, "rest", "theo_redenth_debye.json")
+            with open(filepath) as handle:
+                sampledata = json.loads(handle.read())
+            compositions = sampledata["compstr"]
+            s_index = -1
+            for i in range(len(compositions)):
+                if compositions[i].split("O")[0] == compstr_init.split("O")[0]:
+                    s_index = i
+            if s_index == -1:
+                raise ValueError("Sample data not found in file")
+            updt = sampledata["Last updated"][s_index]
+            dh_min = float(sampledata["dH_min"][s_index])
+            dh_max = float(sampledata["dH_max"][s_index])
+            elast = sampledata["Elastic tensors available"][s_index]
+            if compstr == "Sr1Fe1Ox":
+                elast = "true"
+            act = float(sampledata["act"][s_index])
+            t_d_perov = float(sampledata["Debye temp perovskite"][i])
+            t_d_brownm = float(sampledata["Debye temp brownmillerite"][i])
         
         for k, v in pars.items():
             if isinstance(v, dict):
@@ -52,7 +100,7 @@ def index(request, cid, db_type=None, mdb=None):
             elif not v[0].isalpha():
                 pars[k] = float(v)
 
-        keys = ['isotherm', 'isobar', 'isoredox', 'enthalpy_dH', 'entropy_dS', 'ellingham']
+        keys = ["isotherm", "isobar", "isoredox", "enthalpy_dH", "entropy_dS", "ellingham", "energy_analysis"]
 
         if request.method == 'GET':
             payload = dict((k, {}) for k in keys)
@@ -67,167 +115,317 @@ def index(request, cid, db_type=None, mdb=None):
             payload['ellingham']['del'] = 0.3
             payload['enthalpy_dH']['iso'] = 500.
             payload['entropy_dS']['iso'] = 500.
+            payload['energy_analysis']['data_source'] = "Theoretical"
+            payload['energy_analysis']['process_type'] = "Air separation / Oxygen pumping / Oxygen storage"
+            payload['energy_analysis']['t_ox'] = 500.
+            payload['energy_analysis']['t_red'] = 1000.
+            payload['energy_analysis']['p_ox'] = 1e-6
+            payload['energy_analysis']['p_red'] = 0.21
+            payload['energy_analysis']['h_rec'] = 0.6
+            payload['energy_analysis']['mech_env'] = True
+            payload['energy_analysis']['pump_ener'] = "0.0"
+            payload['energy_analysis']['w_feed'] = 200.
+            payload['energy_analysis']['steam_h_rec'] = 0.8
+            payload['energy_analysis']['param_disp'] = "kJ/L of product"
+            payload['updatekeys'] = ["isotherm", "isobar", "isoredox", "enthalpy_dH", "entropy_dS", "ellingham", "energy_analysis"]
         elif request.method == 'POST':
             payload = json.loads(request.body)
-            for k in keys:               
-                if (k != 'enthalpy_dH' and k != 'entropy_dS'):
-                    payload[k]['rng'] = map(float, payload[k]['rng'].split(','))
-                payload[k]['iso'] = float(payload[k]['iso'])
-                if k == 'ellingham':
-                    payload[k]['del'] = float(payload[k]['del'])
+            keys = payload['updatekeys'].values()[0]
+            del payload['updatekeys']
+            
+            for k in keys:   
+                if k != "energy_analysis":
+                    if (k != 'enthalpy_dH' and k != 'entropy_dS'):
+                        payload[k]['rng'] = map(float, payload[k]['rng'].split(','))
+                    payload[k]['iso'] = float(payload[k]['iso'])
+                    if k == 'ellingham':
+                        payload[k]['del'] = float(payload[k]['del'])
 
         response = {}
         for k in keys:
-            if (k != 'enthalpy_dH' and k != 'entropy_dS'):
-                rng = payload[k]['rng']
-            iso = payload[k]['iso']
-            if k == 'ellingham':
-                delt = payload[k]['del']
-            if k == 'isotherm':
-                x_val = pd.np.log(pd.np.logspace(rng[0], rng[1], num=100))
-            elif k == "enthalpy_dH" or k == "entropy_dS":
-                x_val = pd.np.linspace(0.01, 0.49, num=100)
-            else:
-                x_val = pd.np.linspace(rng[0], rng[1], num=100)
-                if k == 'isobar':
-                    iso = pd.np.log(10**iso)
-
-            resiso, resiso_theo, ellingiso = [], [], []
-            a, b = 1e-10, 0.5-1e-10
-
-            for xv in x_val:
-                if k == "enthalpy_dH" or k== "entropy_dS":
-                    s_th = s_th_o(iso)
+            if k != "energy_analysis":
+                if (k != 'enthalpy_dH' and k != 'entropy_dS'):
+                    rng = payload[k]['rng']
+                iso = payload[k]['iso']
+                if k == 'ellingham':
+                    delt = payload[k]['del']
+                if k == 'isotherm':
+                    x_val = pd.np.log(pd.np.logspace(rng[0], rng[1], num=100))
+                elif k == "enthalpy_dH" or k == "entropy_dS":
+                    x_val = pd.np.linspace(0.01, 0.49, num=100)
                 else:
-                    s_th = s_th_o(xv)
-                args = (iso, xv, pars, s_th)
-                if k == "isotherm": # for isotherms, pressure is variable and temperature is constant
-                    s_th = s_th_o(iso)
-                    args = (xv, iso, pars, s_th)
-                    
-                elif k == "ellingham":
-                    solutioniso = (dh_ds(delt, args[-1], args[-2])[0] - dh_ds(delt, args[-1], args[-2])[1]*xv)/1000
-                    resiso.append(solutioniso)
-                    ellingiso_i = isobar_line_elling(args[0], xv)/1000
-                    ellingiso.append(ellingiso_i)
+                    x_val = pd.np.linspace(rng[0], rng[1], num=100)
+                    if k == 'isobar':
+                        iso = pd.np.log(10**iso)
 
-                if (k != 'isoredox' and k != 'ellingham') and (k != 'enthalpy_dH' and k != 'entropy_dS'):
-                    solutioniso = rootfind(a, b, args, funciso)
-                    resiso.append(solutioniso)
-                   
-                elif k == "isoredox":
-                    try:
-                        solutioniso = brentq(funciso_redox, -300, 300, args=args)
-                        resiso.append(pd.np.exp(solutioniso))
-                    except ValueError:
-                        resiso.append(None) # insufficient accuracy for ꪲδ/T combo
-                        
-                if k == "enthalpy_dH":
-                     solutioniso = dh_ds(xv, args[-1], args[-2])[0] / 1000
-                     resiso.append(solutioniso)
-                    
-                if k == "entropy_dS":
-                     solutioniso = dh_ds(xv, args[-1], args[-2])[1]
-                     resiso.append(solutioniso)
+                resiso, resiso_theo, ellingiso = [], [], []
+                a, b = 1e-10, 0.5-1e-10
                 
-            # show interpolation
-            res_interp, res_fit = [], []
-            for i in range(len(resiso)):
-                if k == "isotherm" or k == "isobar":
-                    delta_val = resiso[i]
-                elif k == "isoredox":
-                    delta_val = iso
-                elif k == "ellingham":
-                    delta_val = delt
-                else:
-                    delta_val = x_val[i]
-                if d_min_exp < delta_val < d_max_exp:
-                    res_fit.append(resiso[i])
-                    res_interp.append(None)
-                else:
-                    res_fit.append(None)
-                    res_interp.append(resiso[i])
-                        
-            for xv in x_val[::4]: # use less data points for theoretical graphs to improve speed
-                args_theo = (iso, xv, pars, t_d_perov, t_d_brownm, dh_min, dh_max, act)
-                if k == "isotherm": # for isotherms, pressure is variable and temperature is constant
-                    args_theo = (xv, iso, pars, t_d_perov, t_d_brownm, dh_min, dh_max, act)
-                   
-                elif k == "ellingham":
-                    dh = d_h_num_dev_calc(delta=delt, dh_1=dh_min, dh_2=dh_max, 
-                        temp=xv, act=act)
-                    ds = d_s_fundamental(delta=delt, dh_1=dh_min, dh_2=dh_max, temp=xv, 
-                        act=act, t_d_perov=t_d_perov, t_d_brownm=t_d_brownm)
-                    solutioniso_theo = (dh - ds*xv)/1000
-                    resiso_theo.append(solutioniso_theo)
+                if pars['fit_type_entr'] != []: # only execute this if experimental data is available
+                    for xv in x_val:
+                        if k == "enthalpy_dH" or k== "entropy_dS":
+                            s_th = s_th_o(iso)
+                        else:
+                            s_th = s_th_o(xv)
+                        args = (iso, xv, pars, s_th)
+                        if k == "isotherm": # for isotherms, pressure is variable and temperature is constant
+                            s_th = s_th_o(iso)
+                            args = (xv, iso, pars, s_th)
 
-                if (k != 'isoredox' and k != 'ellingham') and (k != 'enthalpy_dH' and k != 'entropy_dS'):
-                    solutioniso_theo = rootfind(a, b, args_theo, funciso_theo)
-                    resiso_theo.append(solutioniso_theo)
-                elif k == "isoredox":
-                    try:
+                        elif k == "ellingham":
+                            solutioniso = (dh_ds(delt, args[-1], args[-2])[0] - dh_ds(delt, args[-1], args[-2])[1]*xv)/1000
+                            resiso.append(solutioniso)
+                            ellingiso_i = isobar_line_elling(args[0], xv)/1000
+                            ellingiso.append(ellingiso_i)
+
+                        if (k != 'isoredox' and k != 'ellingham') and (k != 'enthalpy_dH' and k != 'entropy_dS'):
+                            solutioniso = rootfind(a, b, args, funciso)
+                            resiso.append(solutioniso)
+
+                        elif k == "isoredox":
+                            try:
+                                solutioniso = brentq(funciso_redox, -300, 300, args=args)
+                                resiso.append(pd.np.exp(solutioniso))
+                            except ValueError:
+                                resiso.append(None) # insufficient accuracy for ꪲδ/T combo
+
+                        if k == "enthalpy_dH":
+                             solutioniso = dh_ds(xv, args[-1], args[-2])[0] / 1000
+                             resiso.append(solutioniso)
+
+                        if k == "entropy_dS":
+                             solutioniso = dh_ds(xv, args[-1], args[-2])[1]
+                             resiso.append(solutioniso)
+
+                    # show interpolation
+                    res_interp, res_fit = [], []
+                    for i in range(len(resiso)):
+                        if k == "isotherm" or k == "isobar":
+                            delta_val = resiso[i]
+                        elif k == "isoredox":
+                            delta_val = iso
+                        elif k == "ellingham":
+                            delta_val = delt
+                        else:
+                            delta_val = x_val[i]
+                        if d_min_exp < delta_val < d_max_exp:
+                            res_fit.append(resiso[i])
+                            res_interp.append(None)
+                        else:
+                            res_fit.append(None)
+                            res_interp.append(resiso[i])
+                else:
+                    res_fit, res_interp = None, None # don't plot any experimental data
+
+                for xv in x_val[::4]: # use less data points for theoretical graphs to improve speed
+                    args_theo = (iso, xv, pars, t_d_perov, t_d_brownm, dh_min, dh_max, act)
+                    if k == "isotherm": # for isotherms, pressure is variable and temperature is constant
+                        args_theo = (xv, iso, pars, t_d_perov, t_d_brownm, dh_min, dh_max, act)
+
+                    elif k == "ellingham":
+                        dh = d_h_num_dev_calc(delta=delt, dh_1=dh_min, dh_2=dh_max, 
+                            temp=xv, act=act)
+                        ds = d_s_fundamental(delta=delt, dh_1=dh_min, dh_2=dh_max, temp=xv, 
+                            act=act, t_d_perov=t_d_perov, t_d_brownm=t_d_brownm)
+                        solutioniso_theo = (dh - ds*xv)/1000
+                        resiso_theo.append(solutioniso_theo)
+
+                    if (k != 'isoredox' and k != 'ellingham') and (k != 'enthalpy_dH' and k != 'entropy_dS'):
+                        solutioniso_theo = rootfind(a, b, args_theo, funciso_theo)
+                        resiso_theo.append(solutioniso_theo)
+                    elif k == "isoredox":
                         try:
-                            solutioniso_theo = brentq(funciso_redox_theo, -300, 300, args=args_theo)
+                            try:
+                                solutioniso_theo = brentq(funciso_redox_theo, -300, 300, args=args_theo)
+                            except ValueError:
+                                solutioniso_theo = brentq(funciso_redox_theo, -100, 100, args=args_theo)
+                            resiso_theo.append(pd.np.exp(solutioniso_theo))
                         except ValueError:
-                            solutioniso_theo = brentq(funciso_redox_theo, -100, 100, args=args_theo)
-                        resiso_theo.append(pd.np.exp(solutioniso_theo))
-                    except ValueError:
-                        resiso_theo.append(None)
-                        
-                if k == "enthalpy_dH":
-                    solutioniso_theo = d_h_num_dev_calc(delta=xv, dh_1=dh_min, dh_2=dh_max, 
-                        temp=iso, act=act) / 1000
-                    resiso_theo.append(solutioniso_theo)
-                    
-                if k == "entropy_dS":
-                    solutioniso_theo = d_s_fundamental(delta=xv, dh_1=dh_min, dh_2=dh_max, temp=iso, 
-                        act=act, t_d_perov=t_d_perov, t_d_brownm=t_d_brownm)
-                    resiso_theo.append(solutioniso_theo)
-                    
-            x = list(pd.np.exp(x_val)) if k == 'isotherm' else list(x_val)
-            y_min, y_max = 0, 0
-            
-            if k == "enthalpy_dH":
-                if max(pd.np.append(resiso, resiso_theo)) > (dh_max * 0.0015):
-                    y_max = dh_max * 0.0015
-                else:
-                    y_max = max(pd.np.append(resiso, resiso_theo))*1.2
-                if min(pd.np.append(resiso, resiso_theo)) < -10:
-                    y_min = -10
-                else:
-                    y_min = min(pd.np.append(resiso, resiso_theo)) * 0.8
-                    
-            if k == "entropy_dS":
-                y_min = -10
-                if max(pd.np.append(resiso, resiso_theo)) > 250 :
-                    y_max = 250
-                else:
-                    y_max = max(pd.np.append(resiso, resiso_theo)) * 1.2
-                   
-            if k == "enthalpy_dH":
-                name_exp_fit = "ΔH(δ) exp_fit"
-                name_exp_interp = "ΔH(δ)exp_interp"
-                name_theo = "ΔH(δ, T) theo"
-            elif k == "entropy_dS":
-                name_exp_fit = "ΔS(δ) exp_fit"
-                name_exp_interp = "ΔS(δ)exp_interp"
-                name_theo = "ΔS(δ, T) theo"
-            else:
-                name_exp_fit = "exp_fit"
-                name_exp_interp = "exp_interp"
-                name_theo = "theo"
-            
-            if k != 'ellingham':
-            
-                response[k] = [{'x': x, 'y': res_fit, 'name': name_exp_fit, 'line': { 'color': 'rgb(5,103,166)', 'width': 2.5 }}, 
-                {'x': x, 'y': res_interp, 'name': name_exp_interp, 'line': { 'color': 'rgb(5,103,166)', 'width': 2.5, 'dash': 'dot' }}, 
-                {'x': x[::4], 'y': resiso_theo, 'name': name_theo, 'line': { 'color': 'rgb(217,64,41)', 'width': 2.5}}, [y_min,y_max]]
-            else:
-                response[k] = [{'x': x, 'y': res_fit, 'name': 'exp_fit', 'line': { 'color': 'rgb(5,103,166)', 'width': 2.5 }}, 
-                {'x': x, 'y': res_interp, 'name': 'exp_interp', 'line': { 'color': 'rgb(5,103,166)', 'width': 2.5, 'dash': 'dot' }}, 
-                {'x': x[::4], 'y': resiso_theo, 'name': 'theo', 'line': { 'color': 'rgb(217,64,41)', 'width': 2.5}},
-                {'x': x, 'y': ellingiso, 'name': 'isobar line', 'line': { 'color': 'rgb(100,100,100)', 'width': 2.5}}]
+                            resiso_theo.append(None)
 
+                    if k == "enthalpy_dH":
+                        solutioniso_theo = d_h_num_dev_calc(delta=xv, dh_1=dh_min, dh_2=dh_max, 
+                            temp=iso, act=act) / 1000
+                        resiso_theo.append(solutioniso_theo)
+
+                    if k == "entropy_dS":
+                        solutioniso_theo = d_s_fundamental(delta=xv, dh_1=dh_min, dh_2=dh_max, temp=iso, 
+                            act=act, t_d_perov=t_d_perov, t_d_brownm=t_d_brownm)
+                        resiso_theo.append(solutioniso_theo)
+                        
+                x = list(pd.np.exp(x_val)) if k == 'isotherm' else list(x_val)   
+                x_theo = x[::4]
+                
+                if pars['fit_type_entr'] != []:
+                    x_exp = x 
+                else:
+                    x_exp = None
+                    for xv in x_theo:
+                        if k == "ellingham":
+                            ellingiso_i = isobar_line_elling(iso, xv)/1000
+                            ellingiso.append(ellingiso_i)
+                            
+                y_min, y_max = 0, 0
+
+                if k == "enthalpy_dH":
+                    if max(pd.np.append(resiso, resiso_theo)) > (dh_max * 0.0015):
+                        y_max = dh_max * 0.0015
+                    else:
+                        y_max = max(pd.np.append(resiso, resiso_theo))*1.2
+                    if min(pd.np.append(resiso, resiso_theo)) < -10:
+                        y_min = -10
+                    else:
+                        y_min = min(pd.np.append(resiso, resiso_theo)) * 0.8
+
+                if k == "entropy_dS":
+                    y_min = -10
+                    if max(pd.np.append(resiso, resiso_theo)) > 250 :
+                        y_max = 250
+                    else:
+                        y_max = max(pd.np.append(resiso, resiso_theo)) * 1.2
+
+                if k == "enthalpy_dH":
+                    name_exp_fit = "ΔH(δ) exp_fit"
+                    name_exp_interp = "ΔH(δ)exp_interp"
+                    name_theo = "ΔH(δ, T) theo"
+                elif k == "entropy_dS":
+                    name_exp_fit = "ΔS(δ) exp_fit"
+                    name_exp_interp = "ΔS(δ)exp_interp"
+                    name_theo = "ΔS(δ, T) theo"
+                else:
+                    name_exp_fit = "exp_fit"
+                    name_exp_interp = "exp_interp"
+                    name_theo = "theo"
+
+                if k != 'ellingham':
+
+                    response[k] = [{'x': x_exp, 'y': res_fit, 'name': name_exp_fit, 'line': { 'color': 'rgb(5,103,166)', 'width': 2.5 }}, 
+                    {'x': x_exp, 'y': res_interp, 'name': name_exp_interp, 'line': { 'color': 'rgb(5,103,166)', 'width': 2.5, 'dash': 'dot' }}, 
+                    {'x': x_theo, 'y': resiso_theo, 'name': name_theo, 'line': { 'color': 'rgb(217,64,41)', 'width': 2.5}}, [y_min,y_max], [compstr_disp, compstr_exp, elast, updt]]
+                else:
+                    response[k] = [{'x': x_exp, 'y': res_fit, 'name': 'exp_fit', 'line': { 'color': 'rgb(5,103,166)', 'width': 2.5 }}, 
+                    {'x': x_exp, 'y': res_interp, 'name': 'exp_interp', 'line': { 'color': 'rgb(5,103,166)', 'width': 2.5, 'dash': 'dot' }}, 
+                    {'x': x_theo, 'y': resiso_theo, 'name': 'theo', 'line': { 'color': 'rgb(217,64,41)', 'width': 2.5}},
+                    {'x': x_theo, 'y': ellingiso, 'name': 'isobar line', 'line': { 'color': 'rgb(100,100,100)', 'width': 2.5}}, [compstr_disp, compstr_exp, elast, updt]]
+            else: # energy analysis
+                
+                cutoff = int(payload['energy_analysis']['cutoff']) # this sets the number of materials to display in the graph
+                data_source = payload['energy_analysis']['data_source']
+                if data_source == "Theoretical":
+                    data_source = "Theo"
+                else:
+                    data_source = "Exp"
+                process_type = payload['energy_analysis']['process_type']
+                if "Air separation" in process_type:
+                    process_type = "Air Separation"
+                elif "Water Splitting" in process_type:
+                    process_type = "Water Splitting"
+                else:
+                    process_type = "CO2 Splitting"
+                t_ox = float(payload['energy_analysis']['t_ox'])
+                t_red = float(payload['energy_analysis']['t_red'])
+                p_ox = float(payload['energy_analysis']['p_ox'])
+                
+                p_red = float(payload['energy_analysis']['p_red'])
+                h_rec = float(payload['energy_analysis']['h_rec'])
+                mech_env = bool(payload['energy_analysis']['mech_env'])
+                pump_ener = float(payload['energy_analysis']['pump_ener'].split("/")[0])
+                if mech_env:
+                    pump_ener = -1
+                w_feed = float(payload['energy_analysis']['w_feed'])
+                steam_h_rec = float(payload['energy_analysis']['steam_h_rec'])
+                param_disp = payload['energy_analysis']['param_disp']
+                resdict = get_energy_data(process=process_type, t_ox=t_ox, t_red=t_red, p_ox=p_ox, p_red=p_red, data_source=data_source)
+                
+                try:
+                    results = enera(process=process_type).on_the_fly(resdict=resdict, pump_ener=pump_ener, w_feed=w_feed, h_rec=h_rec, h_rec_steam=steam_h_rec, p_ox_wscs = p_ox)
+
+                    prodstr = resdict['prodstr'][0]
+                    prodstr_alt = resdict['prodstr_alt'][0]
+
+                    if param_disp == "kJ/mol of product":
+                        param_disp = str("kJ/mol of " + prodstr_alt)
+                    elif param_disp == "kJ/L of product":
+                        param_disp = str("kJ/L of " + prodstr)
+                    elif param_disp == "Wh/L of product":
+                        param_disp = str("Wh/L of " + prodstr)
+                    elif param_disp == "mol product per mol redox material":
+                        param_disp = str("mol " + prodstr_alt + " per mol redox material")
+                    elif param_disp == "L product per mol redox material":
+                        param_disp = str("L " + prodstr + " per mol redox material")
+                    elif param_disp == "g product per mol redox material":
+                        param_disp = str("g " + prodstr + " per mol redox material")
+                    result = results[param_disp]
+
+                    if process_type == "Air Separation":
+                        titlestr = param_disp + ", \nT(ox)= " + str(t_ox) + " °C, T(red) = " + str(t_red) + " °C, p(ox)= " + str(
+                            p_ox) + " bar, p(red) = " + str(p_red) + " bar"
+                    elif process_type == "CO2 Splitting":
+                        titlestr = param_disp + ", \nT(ox)= " + str(t_ox) + " °C, T(red) = " + str(t_red) + " °C, pCO/pCO2(ox)= " + str(
+                            p_ox) + ", p(red) = " + str(p_red) + " bar"
+                    else:  # Water Splitting
+                        titlestr = param_disp + ", \nT(ox)= " + str(t_ox) + " °C, T(red) = " + str(t_red) + " °C, pH2/pH2O(ox)= " + str(
+                            p_ox) + ", p(red) = " + str(p_red) + " bar"
+
+                    # remove duplicates (SrFeOx sometimes appears twice)
+                    rem_pos = -1
+                    for elem in range(len(result)):
+                        if elem > 0 and (result[elem][-1] == result[elem-1][-1]):
+                            to_remove = result[elem]
+                            rem_pos = elem
+                    if rem_pos > -1:
+                        result = [i for i in result if str(i) != str(to_remove)] 
+                        result.insert(rem_pos-1, to_remove)
+                    result = [i for i in result if "inf" not in str(i[0])] # this removes all inf values
+
+                    if cutoff < len(result):
+                        result_part = result[:cutoff]
+                    else:
+                        result_part = result
+
+                    # if only one property per material is displayed   
+                    if len(result_part[0]) == 2:
+                        x_0 = [i[-1] for i in result_part]
+                        y_0 = pd.np.array([i[0] for i in result_part]).astype(float).tolist()
+                        name_0 = param_disp
+                        if "non-stoichiometry" in param_disp:
+                            param_disp = name_0.split("between")[0] + " (Δδ)" #otherwise would be too long for y-axis label
+                        if "Mass change" in param_disp:
+                            param_disp = "mass change (%)" 
+                        if "Heat to fuel efficiency" in param_disp:
+                            param_disp = "Heat to fuel efficiency (%)" 
+                        x_1, x_2, x_3, y_1, y_2, y_3, name_1, name_2, name_3 = None, None, None, None, None, None, None, None, None
+
+                    else:
+                        x_0 = [i[-1] for i in result_part]
+                        y_0 = np.array([i[1] for i in result_part]).astype(float).tolist()
+                        name_0 = "Chemical Energy"
+                        x_1 = [i[-1] for i in result_part]
+                        y_1 = np.array([i[2] for i in result_part]).astype(float).tolist()
+                        name_1 = "Sensible Energy"
+                        x_2 = [i[-1] for i in result_part]
+                        y_2 = np.array([i[3] for i in result_part]).astype(float).tolist()
+                        name_2 = "Pumping Energy"
+                        if process_type == "Water Splitting":
+                            x_3 = [i[-1] for i in result_part]
+                            y_3 = np.array([i[4] for i in result_part]).astype(float).tolist()
+                            name_3 = "Steam Generation"
+                        else:
+                            x_3, y_3, name_3 = None, None, None
+
+                    if "heat to fuel efficiency" in param_disp and process_type != "Water Splitting":
+                        x_0, y_0, name_0 = None, None, None
+                        x_1, x_2, x_3, y_1, y_2, y_3, name_1, name_2, name_3 = None, None, None, None, None, None, None, None, None
+                except IndexError: # if the complete dict only shows inf, create empty graph
+                    x_0, y_0, name_0 = None, None, None
+                    x_1, x_2, x_3, y_1, y_2, y_3, name_1, name_2, name_3 = None, None, None, None, None, None, None, None, None
+                    titlestr = None
+                    
+                response[k] = [{'x': x_0, 'y': y_0, 'name': name_0, 'type': 'bar', 'title': titlestr, 'yaxis_title': param_disp}, 
+                            {'x': x_1, 'y': y_1, 'name': name_1, 'type': 'bar'},
+                            {'x': x_2, 'y': y_2, 'name': name_2, 'type': 'bar'},
+                            {'x': x_3, 'y': y_3, 'name': name_3, 'type': 'bar'}]
+                
     except Exception as ex:
         raise ValueError('"REST Error: "{}"'.format(str(ex)))
     return {"valid_response": True, 'response': response}
@@ -244,6 +442,24 @@ def remove_comp_one(compstr):
     compstr_rem = compstr_rem + "Ox"
     return compstr_rem
     
+def add_comp_one(compstr):
+    """
+    Adds stoichiometries of 1 to compstr that don't have them
+    :param compstr:  composition as a string
+    :return:         compositon with stoichiometries of 1 added
+    """
+    sample = re.sub(r"([A-Z])", r" \1", compstr).split()
+    sample = [''.join(g) for _, g in groupby(str(sample), str.isalpha)]
+    samp_new = ""
+    for k in range(len(sample)):
+        spl_samp = re.sub(r"([A-Z])", r" \1", sample[k]).split()
+        for l in range(len(spl_samp)):
+            if spl_samp[l][-1].isalpha() and spl_samp[l][-1] != "x":
+                spl_samp[l] = spl_samp[l] + "1"
+            samp_new += spl_samp[l]
+
+    return samp_new
+    
 def rootfind(a, b, args, funciso_here):
     solutioniso = 0
     try:
@@ -254,6 +470,26 @@ def rootfind(a, b, args, funciso_here):
         except ValueError:
             solutioniso = None # if no solution can be found
     return solutioniso
+    
+def get_energy_data(process, t_ox, t_red, p_ox, p_red, data_source, enth_steps=20, celsius=True):
+    resdict_i = None
+    for i in range(len(paramlist["ParametersetNo."])):
+        par_set_no_i = int(paramlist["ParametersetNo."][i])
+        process_i = str(paramlist["process"][i])[1:]
+        data_source_i = str(paramlist["data_source"][i])[1:]
+        enth_steps_i = float(str(paramlist["enth_steps"][i])[1:])
+        celsius_i = bool(str(paramlist["celsius"][i])[1:])
+        t_red_i = float(str(paramlist["T_red"][i])[1:])
+        t_ox_i = float(str(paramlist["T_ox"][i])[1:])
+        p_red_i = float(str(paramlist["p_red"][i])[1:])
+        p_ox_i = float(str(paramlist["p_ox"][i])[1:])
+        
+        if process_i == process and data_source_i == data_source and t_ox_i == t_ox and \
+           t_red_i == t_red and p_ox_i == p_ox and p_red_i == p_red and celsius_i == celsius and enth_steps_i == enth_steps:
+            paramset_i = eneradata["Parameter set"][par_set_no_i-1]
+            resdict_i = eneradata["Results (general)"][par_set_no_i-1]
+
+    return resdict_i
 
 def s_th_o(temp):
     # constants: Chase, NIST-JANAF Thermochemistry tables, Fourth Edition, 1998
@@ -859,7 +1095,7 @@ def find_active(mat_comp):
         raise ValueError("B species reducibility unknown, preferred reduction of species not predicted")
         
     # correct bug for the most reducible species
-    if act_a[0] == red_order[-2]:
+    if act_a[0] == red_order[-2] and (red_order[-1] in str(mat_comp)):
         act_a[0] = red_order[-1]
         act_a[1] = 1-act_a[1]
 
@@ -868,7 +1104,7 @@ def find_active(mat_comp):
 def find_theo_redenth(compstr):
     """
     Finds theoretical redox enthalpies from the Materials Project from perovskite to brownmillerite
-    based on https://github.com/materialsproject/pymatgen/blob/b3e972e293885c5b3c69fb3e9aa55287869d4d84/
+    based partially on https://github.com/materialsproject/pymatgen/blob/b3e972e293885c5b3c69fb3e9aa55287869d4d84/
     examples/Calculating%20Reaction%20Energies%20with%20the%20Materials%20API.ipynb
 
     :param compstr: composition as a string

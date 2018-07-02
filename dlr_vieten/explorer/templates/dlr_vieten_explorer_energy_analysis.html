@@ -1,0 +1,562 @@
+{% extends "../../webtzite/templates/base/header_footer.html" %}
+{% load staticfiles %}
+
+{% block title %} RedoxThermoCSP {% endblock title %}
+
+{% block extra_css %}
+<link rel="stylesheet" href='{% static "js/components/bootstrap/dist/css/bootstrap.css" %}' charset="utf-8">
+<link rel="stylesheet" href='{% static "js/components/seiyria-bootstrap-slider/dist/css/bootstrap-slider.css" %}' charset="utf-8">
+<link rel="stylesheet" href='{% static "js/components/backgrid/lib/backgrid.css" %}' charset="utf-8">
+<link rel="stylesheet" href='{% static "js/components/backgrid-paginator/backgrid-paginator.css" %}' charset="utf-8">
+<link rel="stylesheet" href='{% static "js/components/backgrid-filter/backgrid-filter.css" %}' charset="utf-8">
+<link rel="stylesheet" href='{% static "js/components/backgrid-grouped-columns/backgrid-grouped-columns.css" %}' charset="utf-8">
+<link rel="stylesheet" href='{% static "js/components/json-human/css/json.human.css" %}' charset="utf-8">
+{% endblock extra_css %}
+
+{% block content %}
+<!--
+<ul class="nav nav-pills">
+    <li role="presentation"><a href='tolerance_factors/'>tolerance factors</a></li>
+</ul>
+-->
+
+{% if alert %}
+
+<div class="alert alert-warning alert-dismissible" role="alert">
+  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+    <span aria-hidden="true">&times;</span>
+  </button>
+  {{ alert }}
+</div>
+
+{% else %}
+
+<style>
+.backgrid { font-family: "symbola"; }
+.backgrid tbody tr:hover { background-color: #f9f9f9; }
+.backgrid .sortable { text-align: center; }
+.backgrid thead th button { display: inline; }
+.jh-root { font-family: "symbola"; }
+.jh-type-string { font-style: normal; }
+code { display: block; white-space: pre-wrap; }
+</style>
+
+<div class="container">
+    <a href="{% url 'mpcontribs_portal_index' %}">&laquo; Portal</a>
+    <br><a href="../">&laquo; RedoxThermoCSP</a>
+    <div class="row">
+        <div class="col-md-12">
+            <h2>{{ title }}</h2>
+            {{ provenance|safe }}
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-12">
+            <code>
+                from mpcontribs.users.dlr_vieten.rest.rester import DlrVietenRester
+                mpr = DlrVietenRester()
+                mpr.get_contributions()
+            </code>
+        </div>
+    </div>
+    
+   
+    <div class="row">
+        <div class="col-md-12"><br>
+            <h4><b>Energy Analysis</b></h4><br>
+            Allows finding the ideal material for different thermochemical applications. Please note that this is based on thermodynamics of redox reactions. Not all materials shown here are neccessarly stable or can be synthesized. This tool allows a pre-selection of materials.<br>
+        Please refer to the <a href="../documentation/">documentation</a> for more detailed information.<br><br>
+        <h4><b>Citation</b></h4>
+            <ul><li>J. Vieten, B. Bulfin, P. Huck, M. Horton, D. Guban, L. Zhu, K. A. Persson, M. Roeb, C. Sattler (2018). "*** Title will be inserted1 ***" <u>Journal goes here</u> <b>99</b>(99): 99999-99999., <a href="http://dx.doi.org/">DOI: ***</a></li>
+            <li>J. Vieten, B. Bulfin, P. Huck, M. Horton, D. Guban, L. Zhu, K. A. Persson, M. Roeb, C. Sattler (2018). "*** Title will be inserted2 ***" <u>Journal goes here</u> <b>99</b>(99): 99999-99999., <a href="http://dx.doi.org/">DOI: ***</a></li></ul><br>
+        </div><br><br>
+        <div class="col-md-3">
+            <label for="enal_data_source">Data Source</label>
+            <br>
+                <label class="radio-inline"><input type="radio" id="enal_data_source" name="enal_data_source"
+                value="Experimental">Experimental</label>
+                <label class="radio-inline"><input type="radio" id="enal_data_source" checked="checked" name="enal_data_source"
+                value="Theoretical">Theoretical</label>
+                <br>
+            </label>
+        </div>
+        <div class="col-md-7">
+        <label for="process">Process type</label>
+            <select class="form-control" id="process">
+                <option class="opt0">Air separation / Oxygen pumping / Oxygen storage</option>
+                <option class="opt1">Water Splitting</option>
+                <option class="opt2">CO2 Splitting</option>
+        </select>
+    </div></div>
+    
+    <div class="row">
+        <div class="col-md-2">
+            <br><b>Redox conditions</b><br><br>
+        </div>
+        <div class="col-md-3">
+        </div>
+        <div class="col-md-2">
+            <br><b>Process conditions</b><br><br>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-2">
+            <b>T<sub>ox</sub> (°C)</b>
+        </div>
+        <div class="wrapper col-md-3">
+            <div id="cT_ox_enera_air">
+                <input id="T_ox_enera_air" type="text"
+                data-slider-ticks-snap-bounds="200"
+                data-slider-ticks="[350, 400, 450, 500, 600, 700, 800]"
+                data-slider-ticks-labels="['350', '400', '450', '500', '600', '700', '800']"
+                data-slider-value="500"
+                /><br><br><br>
+            </div>
+            <div id="cT_ox_enera_non_air">
+                <input id="T_ox_enera_non_air" type="text"
+                data-slider-ticks-snap-bounds="200"
+                data-slider-ticks="[600, 700, 800, 900, 1000, 1050, 1100, 1150]"
+                data-slider-ticks-labels="['600', '700', '800', '900', '1000', '1050', '1100', '1150']"
+                data-slider-value="900"
+                /><br><br><br>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <b>Heat rec. eff.  (&#x03B7<sub>hrec, solid</sub>)</b>
+        </div>
+        <div class="col-md-3">
+            <center>
+            <input id="h_rec_eff" type="text"
+            data-slider-min="0" data-slider-max="1.0" data-slider-step="0.01"
+            data-slider-value="0.6"/><br>    
+            </center>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-2">
+            <div id="ox_type"></div>
+        </div>
+        <div class="wrapper col-md-3">
+            <div id="cp_ox_enera_air">
+                <input id="p_ox_enera_air" type="text"
+                data-slider-ticks-snap-bounds="200"
+                data-slider-ticks="[1e-20, 1e-15, 1e-12, 1e-10, 1e-8, 1e-6, 1e-5, 1e-4, 1e-3]"
+                data-slider-ticks-labels="['1e-20', '1e-15', '1e-12', '1e-10', '1e-8', '1e-6', '1e-5', '1e-4', '1e-3']"
+                data-slider-value="1e-6"
+                /><br><br><br>
+            </div>
+            <div id="cp_ox_enera_non_air">
+                <input id="p_ox_enera_non_air" type="text"
+                data-slider-ticks-snap-bounds="200"
+                data-slider-ticks="[1e-6, 1e-5, 1e-4, 1e-3, 1e-2, 1e-1]"
+                data-slider-ticks-labels="['1e-6', '1e-5', '1e-4', '1e-3', '1e-2', '1e-1']"
+                data-slider-value="1e-3"
+                /><br><br><br>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <b>Pumping energy (Q<sub>pump</sub>)</b>
+        </div>
+        <div class="col-md-3">
+            <center>
+            <input id="mech_env" type="checkbox" checked="checked"/><font size="2">  use mech. envelope (1e-6 bar to 0.7 bar)<br><a href="https://www.sciencedirect.com/science/article/pii/S0038092X16305552">(Brendelberger et. al)</a></font><br><br>
+            </center>
+        </div>
+        <div class="col-md-1">
+            <font size="2"><b>or define</b></font>
+            <input id="pump_ener" type="text" value="0.0" placeholder="0.0"><br>
+        </div>
+        <div class="col-md-2">
+            kJ/kg of redox material
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-2">
+            <b>T<sub>red</sub> (°C)</b>
+        </div>
+        <div class="wrapper col-md-3">
+            <div id="cT_red_enera_air">
+                <input id="T_red_enera_air" type="text"
+                data-slider-ticks-snap-bounds="200"
+                data-slider-ticks="[600, 700, 800, 900, 1000, 1100, 1200, 1400]"
+                data-slider-ticks-labels="['600', '700', '800', '900', '1000', '1100', '1200', '1400']"
+                data-slider-value="900"
+                /><br><br><br>
+            </div>
+            <div id="cT_red_enera_non_air">
+                <input id="T_red_enera_non_air" type="text"
+                data-slider-ticks-snap-bounds="200"
+                data-slider-ticks="[1100, 1200, 1250, 1300, 1350, 1400, 1450, 1500]"
+                data-slider-ticks-labels="['1100', '1200', '1250', '1300', '1350', '1400', '1450', '1500']"
+                data-slider-value="1400"
+                /><br><br><br>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <b>Water feed temp. (°C)</b>
+        </div>
+        <div class="col-md-3">
+            <center>
+            <input id="w_feed_temp" type="text"
+            data-slider-min="5" data-slider-max="600" data-slider-step="5"
+            data-slider-value="200"/><br>    
+            </center>
+        </div>
+        <div class="col-md-2">
+            <br>
+            (only for water splitting)
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-2">
+            <b>p(O<sub>2</sub>)<sub>red</sub> (bar)</b>
+        </div>
+        <div class="wrapper col-md-3">
+            <div id="cp_red_enera_air">
+                <input id="p_red_enera_air" type="text"
+                data-slider-ticks-snap-bounds="200"
+                data-slider-ticks="[1e-8, 1e-6, 1e-5, 1e-4, 1e-3, 0.21, 1]"
+                data-slider-ticks-labels="['1e-8', '1e-6', '1e-5', '1e-4', '1e-3', '0.21', '1']"
+                data-slider-value="0.21"
+                /><br><br><br>
+            </div>
+            <div id="cp_red_enera_non_air">
+                <input id="p_red_enera_non_air" type="text"
+                data-slider-ticks-snap-bounds="200"
+                data-slider-ticks="[1e-6, 1e-5, 1e-3, 0.21, 1]"
+                data-slider-ticks-labels="['1e-6', '1e-5', '1e-3', '0.21', '1']"
+                data-slider-value="1e-5"
+                /><br><br><br>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <b>Steam h.rec.  (&#x03B7<sub>hrec, steam</sub>)</b>
+        </div>
+        <div class="col-md-3">
+            <center>
+            <input id="steam_h_rec_eff" type="text"
+            data-slider-min="0" data-slider-max="1.0" data-slider-step="0.01"
+            data-slider-value="0.8"/><br>    
+            </center>
+        </div>
+        <div class="col-md-2">
+            (only for water splitting)
+        </div>
+    </div>
+    
+    <div class="row" style="margin-top: 10px;">
+    <div class="col-md-8">
+        <label for="disp_par">Parameters to display</label>
+            <select class="form-control" id="disp_par">
+                <option>kJ/mol redox material</option>
+                <option>kJ/kg redox material</option>
+                <option>Wh/kg redox material</option>
+                <option selected>kJ/mol of product</option>
+                <option>kJ/L of product</option>
+                <option>Wh/L of product</option>
+                <option>Heat to fuel efficiency in % (only valid for Water Splitting)</option>
+                <option>mol product per mol redox material</option>
+                <option>L product per mol redox material</option>
+                <option>g product per mol redox material</option>
+                <option>Change in non-stoichiometry between T_ox and T_red</option>
+                <option>Mass change between T_ox and T_red</option>
+        </select>
+        <br>
+        </div>
+        <div class="col-md-4">
+            <b>Max. no. of materials to display</b>
+        </div>
+    <div class="col-md-2" style="margin-top: 10px;">
+            <center>
+            <input id="num_mat" type="text"
+            data-slider-min="1" data-slider-max="250" data-slider-step="1"
+            data-slider-value="25"/><br>    
+            </center>
+    </div>
+    </div>
+    
+    <div class="row" style="margin-top: 10px">
+        <div class="col-md-12">
+            <center>
+            <div id=energy_analysis></center></div>
+        </div>
+    </div>
+
+</div>
+<br><br><center><font size="4">
+Find more materials data in the <a href="../isographs/">Isographs</a> section.</center></font>
+
+<script>
+requirejs(['main'], function() {
+    require(["plotly", "backbone", "bootstrap-slider"], function(Plotly, Backbone) {
+        $(document).ready(function(){
+      
+            // configure sliders for energy analysis
+            $('#process').val("Air separation / Oxygen pumping / Oxygen storage"); 
+            $('#T_ox_enera_air').slider({tooltip: "always"}); $('#T_ox_enera_non_air').slider({tooltip: "always"});
+            $('#p_ox_enera_air').slider({scale: "logarithmic", tooltip: "always", min: 1e-20, max: 1, step:1e-20, ticks_snap_bounds:1});
+            $('#p_ox_enera_non_air').slider({
+            scale: "logarithmic", tooltip: "always", min: 1e-20, max: 1, step:1e-20, ticks_snap_bounds:1});
+            $('#T_red_enera_air').slider({tooltip: "always"}); $('#T_red_enera_non_air').slider({tooltip: "always"}); 
+            $('#p_red_enera_air').slider({scale: "logarithmic", tooltip: "always", min: 1e-20, max: 1, step:1e-20, ticks_snap_bounds:1});
+            $('#p_red_enera_non_air').slider({
+            scale: "logarithmic", tooltip: "always", min: 1e-20, max: 1, step:1e-20, ticks_snap_bounds:1});
+            $('#h_rec_eff').slider({tooltip: "always"}); $('#w_feed_temp').slider({tooltip: "always", tooltip: "always",
+            tooltip_position:'bottom'});
+            $('#steam_h_rec_eff').slider({tooltip: "always", tooltip_position:'bottom'}); 
+            $('#pump_ener').val("0.0"); $('#disp_par').val("kJ/mol of product");
+            $('#num_mat').slider({tooltip: "always",tooltip_position:'bottom'});  
+            document.getElementById("ox_type").value = "<b>p(O<sub>2</sub>)<sub>ox</sub> (bar)</b>";
+            
+            // update all isoplots if new material is selected, define global cid (cidnow)
+            Backbone.on('cellclicked', function(er){var row = $(er.currentTarget).parent();
+                var url = row.find("td:nth-child(2) > a").attr('href');
+                var cid = url.split('/').pop();
+                window.cidnow = cid;
+                updatekeys = "isobar, isotherm, isoredox, ellingham, enthalpy_dH, entropy_dS"
+                e(cid,updatekeys);});
+                
+            var ener_empty = "True";
+             if (ener_empty === "True"){
+                            // if the energy analysis has not been done yet, try to do it
+                            var cid_enera = "5b073569a1b5ef0274baa09f";
+                            var updatekeys_enera = "energy_analysis";
+                            e(cid_enera,updatekeys_enera);
+                            ener_empty = "False";
+                            };
+
+            // update the energy analysis
+            $("input[type='radio']").on('change', function(ev){
+            var cid = "5b073569a1b5ef0274baa09f";updatekeys = "energy_analysis";e(cid,updatekeys);}); //cid:dummy
+            $("select").on('change', function(ev){
+            var cid = "5b073569a1b5ef0274baa09f";updatekeys = "energy_analysis";e(cid,updatekeys);}); //cid:dummy
+            $('#pump_ener').on('change', function(ev){
+            var cid = "5b073569a1b5ef0274baa09f";updatekeys = "energy_analysis";e(cid,updatekeys);}); //cid:dummy
+            $("input[type='checkbox']").on('change', function(ev){
+            var cid = "5b073569a1b5ef0274baa09f";updatekeys = "energy_analysis";e(cid,updatekeys);}); //cid:dummy
+            $('#T_ox_enera_air').slider().on('slideStop', function(ev){
+            var cid = "5b073569a1b5ef0274baa09f";updatekeys = "energy_analysis";e(cid,updatekeys);}); //cid:dummy
+            $('#T_ox_enera_non_air').slider().on('slideStop', function(ev){
+            var cid = "5b073569a1b5ef0274baa09f";updatekeys = "energy_analysis";e(cid,updatekeys);}); //cid:dummy
+            $('#p_ox_enera_air').slider().on('slideStop', function(ev){
+            var cid = "5b073569a1b5ef0274baa09f";updatekeys = "energy_analysis";e(cid,updatekeys);}); //cid:dummy
+            $('#p_ox_enera_non_air').slider().on('slideStop', function(ev){
+            var cid = "5b073569a1b5ef0274baa09f";updatekeys = "energy_analysis";e(cid,updatekeys);}); //cid:dummy
+            $('#p_red_enera_air').slider().on('slideStop', function(ev){
+            var cid = "5b073569a1b5ef0274baa09f";updatekeys = "energy_analysis";e(cid,updatekeys);}); //cid:dummy
+            $('#p_red_enera_non_air').slider().on('slideStop', function(ev){
+            var cid = "5b073569a1b5ef0274baa09f";updatekeys = "energy_analysis";e(cid,updatekeys);}); //cid:dummy
+            $('#T_red_enera_air').slider().on('slideStop', function(ev){
+            var cid = "5b073569a1b5ef0274baa09f";updatekeys = "energy_analysis";e(cid,updatekeys);}); //cid:dummy
+            $('#T_red_enera_non_air').slider().on('slideStop', function(ev){
+            var cid = "5b073569a1b5ef0274baa09f";updatekeys = "energy_analysis";e(cid,updatekeys);}); //cid:dummy
+            $('#h_rec_eff').slider().on('slideStop', function(ev){
+            var cid = "5b073569a1b5ef0274baa09f";updatekeys = "energy_analysis";e(cid,updatekeys);}); //cid:dummy
+            $('#steam_h_rec_eff').slider().on('slideStop', function(ev){
+            var cid = "5b073569a1b5ef0274baa09f";updatekeys = "energy_analysis";e(cid,updatekeys);}); //cid:dummy
+            $('#w_feed_temp').slider().on('slideStop', function(ev){
+            var cid = "5b073569a1b5ef0274baa09f";updatekeys = "energy_analysis";e(cid,updatekeys);}); //cid:dummy
+            $('#num_mat').slider().on('slideStop', function(ev){
+            var cid = "5b073569a1b5ef0274baa09f";updatekeys = "energy_analysis";e(cid,updatekeys);}); //cid:dummy
+
+            function e(cid, updatekeys) { 
+            // enable / disable some sliders and fields in the energy analysis depending on values of other sliders/fields
+            if ($("input:checked").val() === "Experimental"){$('#process').val("Air separation / Oxygen pumping / Oxygen storage");};
+            if ($('#process').val() != "Water Splitting") {     $("#steam_h_rec_eff").slider("disable");
+            $("#w_feed_temp").slider("disable");}
+            if ($('#process').val() === "Water Splitting") {     $("#steam_h_rec_eff").slider("enable");
+            $("#w_feed_temp").slider("enable");}
+            $('#pump_ener').prop("disabled", $("input[type='checkbox']").prop("checked"));
+            var ox_type_output = document.getElementById('ox_type');
+            if ($('#process').val() === "Water Splitting") {
+            ox_type_output.innerHTML = "<b>p(H<sub>2</sub>)/p(H<sub>2</sub>O)</b>";
+            };
+            if ($('#process').val() === "CO2 Splitting") {
+            ox_type_output.innerHTML = "<b>p(CO)/p(CO<sub>2</sub>)</b>";};
+            if ($('#process').val() === "Air separation / Oxygen pumping / Oxygen storage") {
+            ox_type_output.innerHTML = "<b>p(O<sub>2</sub>)<sub>ox</sub> (bar)</b>";};
+            
+            // change ticks of some sliders depending on the selected type of energy analysis
+            var T_ox = 0;
+            var p_ox = 0;
+            var T_red = 0;
+            var p_red = 0;
+            if ($('#process').val() != "Air separation / Oxygen pumping / Oxygen storage") { 
+            document.getElementById("cT_ox_enera_air").className = "hidden";
+            document.getElementById("cT_ox_enera_non_air").className = "";
+            document.getElementById("cp_ox_enera_air").className = "hidden";
+            document.getElementById("cp_ox_enera_non_air").className = "";
+            document.getElementById("cT_red_enera_air").className = "hidden";
+            document.getElementById("cT_red_enera_non_air").className = "";
+            document.getElementById("cp_red_enera_air").className = "hidden";
+            document.getElementById("cp_red_enera_non_air").className = "";
+            T_ox = $('#T_ox_enera_non_air').attr('value');
+            T_red = $('#T_red_enera_non_air').attr('value');
+            p_ox = $('#p_ox_enera_non_air').attr('value');
+            p_red = $('#p_red_enera_non_air').attr('value');
+            } else
+            {
+            document.getElementById("cT_ox_enera_air").className = "";
+            document.getElementById("cT_ox_enera_non_air").className = "hidden";
+            document.getElementById("cp_ox_enera_air").className = "";
+            document.getElementById("cp_ox_enera_non_air").className = "hidden";
+            document.getElementById("cT_red_enera_air").className = "";
+            document.getElementById("cT_red_enera_non_air").className = "hidden";
+            document.getElementById("cp_red_enera_air").className = "";
+            document.getElementById("cp_red_enera_non_air").className = "hidden";
+            T_ox = $('#T_ox_enera_air').attr('value');
+            T_red = $('#T_red_enera_air').attr('value');
+            p_ox = $('#p_ox_enera_air').attr('value');
+            p_red = $('#p_red_enera_air').attr('value');
+            }
+
+            // reformats the update keys so the python script can read them
+            var update_to_views = updatekeys + ''
+            update_to_views = update_to_views.replace(/\s/g, '')
+            update_to_views = update_to_views.split(",")
+            
+                // read slider/field values
+                var payload = JSON.stringify({
+                    'isotherm': {
+                        'iso': $('#temp_slider').attr('value'),
+                        'rng': $('#pressure_range').attr('value')
+                    }, 'isobar': {
+                        'iso': $('#pressure_slider').attr('value'),
+                        'rng': $('#temp_range').attr('value')
+                    }, 'isoredox': {
+                        'iso': $('#redox_slider').attr('value'),
+                        'rng': $('#redox_temp_range').attr('value')
+                    }, 'enthalpy_dH': {'iso': $('#dH_temp_slider').attr('value')}, 
+                    'entropy_dS': {'iso': $('#dS_temp_slider').attr('value')}, 
+                    'ellingham': {
+                        'del': $('#elling_redox_slider').attr('value'),
+                        'rng': $('#elling_temp_range').attr('value'),
+                        'iso': $('#elling_pressure_slider').attr('value')},
+                    'energy_analysis': {
+                        'data_source': $("input:checked").val(),
+                        'process_type': $('#process').val(),
+                        't_ox': T_ox,
+                        't_red': T_red,
+                        'p_ox': p_ox,
+                        'p_red': p_red,
+                        'h_rec': $('#h_rec_eff').attr('value'),
+                        'mech_env': $("input[type='checkbox']").prop("checked"),
+                        'pump_ener': $('#pump_ener').val(),
+                        'w_feed': $('#w_feed_temp').attr('value'),
+                        'steam_h_rec': $('#steam_h_rec_eff').attr('value'),
+                        'param_disp': $('#disp_par').val(),
+                        'cutoff': $('#num_mat').attr('value')
+                        },
+                    'updatekeys': { update_to_views }
+                });
+          
+                // update plots depending on the keys
+                function update_plots(div, r, key){
+                            if (key === "isotherm") {
+                                var title = "T=" + $('#temp_slider').attr('value') + " K";
+                                var xaxis_title = "p<sub>O2</sub> (bar)";
+                                var yaxis_title = "δ";
+                            }
+                            if (key === "isobar") {
+                                var title = "p<sub>O2</sub>=10<sup>" + $('#pressure_slider').attr('value') + "</sup> bar"; 
+                                var xaxis_title = "T (K)";
+                                var yaxis_title = "δ";
+                            }
+                            if (key === "isoredox") {
+                                var title = "δ=" + $('#redox_slider').attr('value'); 
+                                var xaxis_title = "T (K)";
+                                var yaxis_title = "p<sub>O2</sub> (bar)";
+                            }
+                            if (key === "enthalpy_dH") {
+                                var title = "theo: T=" + $('#dH_temp_slider').attr('value') + " K, exp: T undefined";
+                                var xaxis_title = "δ";
+                                var yaxis_title = "ΔH<sub>O</sub> (kJ/mol)";
+                            }
+                            if (key === "entropy_dS") {
+                                var title = "theo: T=" + $('#dS_temp_slider').attr('value') + " K, exp: T undefined";
+                                var xaxis_title = "δ";
+                                var yaxis_title = "ΔS<sub>O</sub> (J/molK)";
+                            }
+                            if (key === "ellingham") {
+                                var title = "δ=" + $('#elling_redox_slider').attr('value'); 
+                                var xaxis_title = "T (K)";
+                                var yaxis_title = "ΔG<sub>O</sub> (kJ/mol)";
+                            }
+                            if (key === "energy_analysis") {
+                                var title = r[key][0]['title']; 
+                                var yaxis_title = r[key][0]['yaxis_title'];
+                                var yaxis_titlefont = {
+                                                  size: 22,
+                                                      };
+                                var xaxis_tickfont = {
+                                                  size: 12,
+                                                      };
+                            }
+                            var axis = {
+                                exponentformat: "E", tickfont: { size: 15 }, showline: "True",
+                                ticks: "inside", tickwidth: 1, tickcolor: '#000000',
+                                linewidth: 1, zeroline: "False",
+                                titlefont: { family: 'Arial', size: 20, color: '#000000' }
+                            };
+                            var xaxis = JSON.parse(JSON.stringify(axis)); // deepcopy
+                            xaxis['title'] = xaxis_title;
+                            if (key === "isotherm") { xaxis['type'] = 'log'; }
+                            var yaxis = JSON.parse(JSON.stringify(axis)); // deepcopy
+                            yaxis['title'] = yaxis_title;
+                            yaxis['titlefont'] = yaxis_titlefont;
+                            xaxis['tickfont'] = xaxis_tickfont;
+                            if (key === "isoredox") { yaxis['type'] = 'log'; }
+                            if (key === "enthalpy_dH") { yaxis['range'] = r[key].slice(-2)[0] ; }
+                            if (key === "entropy_dS") { yaxis['range'] = r[key].slice(-2)[0]; }
+                            if (key != "energy_analysis"){
+                            Plotly.newPlot(div, r[key].slice(0, -1), {
+                                title: title, showlegend: false, xaxis: xaxis, yaxis: yaxis,
+                                margin: {l: 80, r: 20, b: 60, t: 35}
+                            });}
+                            if (key === "energy_analysis"){
+                            Plotly.newPlot(div, r[key] , {
+                                title: title, showlegend: false, xaxis: xaxis, yaxis: yaxis, 
+                                margin: {l: 80, r: 120, b: 130, t: 35}, height: 650, width: 1200, autosize: false, barmode: 'stack'
+                            });
+                            }
+                            };
+                        
+                $.ajax({
+                    type: 'POST',
+                    url: '../rest/' + cid,
+                    data: payload,
+                    dataType: "json",
+                    contentType: "application/json; charset=utf-8",
+                    success: function(data, textStatus, jqXHR) {
+                        // data['response'] = {'isotherm': {'x':, [...], 'y': [...]}, 'isobar': ...}
+                        var r = data['response'];
+                        Object.keys(r).forEach(function(key,index) {
+                            // key: the name of the object key
+                            // index: the ordinal position of the key within the object 
+                            if (key != "energy_analysis") { showdata(r, key); };
+                            var div = document.getElementById(key);
+                            if (updatekeys.includes(key)){ // only update those plots defined in updatekeys
+                            window.filleddivs += key;
+                            update_plots(div,r,key);
+                            };
+                            if (filleddivs.includes("energy_analysis")){} else { 
+                            // if the energy analysis has not been done yet, try to do it
+                            var cid_enera = "5b073569a1b5ef0274baa09f";
+                            var updatekeys_enera = "energy_analysis";
+                            e(cid_enera,updatekeys_enera);
+                            };
+                        });
+                    },
+                    error: function(jqXHR, textStatus, errorThrown) {
+                        console.log(errorThrown);
+                    }
+                });
+            }; 
+            $(".backgrid > tbody > tr:first > td:nth-child(6)").click()
+        });
+    });
+});
+</script>
+
+{% endif %}
+{% endblock %}

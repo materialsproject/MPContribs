@@ -24,6 +24,60 @@ def index(request):
     else:
         ctx.update({'alert': 'Please log in!'})
     return render_to_response("dlr_vieten_explorer_index.html", ctx)
+    
+def isographs(request):
+    ctx = RequestContext(request)
+    if request.user.is_authenticated():
+        API_KEY = request.user.api_key
+        ENDPOINT = request.build_absolute_uri(get_endpoint())
+        from ..rest.rester import DlrVietenRester
+        with DlrVietenRester(API_KEY, endpoint=ENDPOINT) as mpr:
+            try:
+                ctx['table'] = render_dataframe(mpr.get_contributions(), webapp=True)
+                prov = mpr.get_provenance()
+                ctx['title'] = prov.pop('title')
+                ctx['provenance'] = render_dict(prov, webapp=True)
+            except Exception as ex:
+                ctx.update({'alert': str(ex)})
+    else:
+        ctx.update({'alert': 'Please log in!'})
+    return render_to_response("dlr_vieten_explorer_isographs.html", ctx)
+    
+def energy_analysis(request):
+    ctx = RequestContext(request)
+    if request.user.is_authenticated():
+        API_KEY = request.user.api_key
+        ENDPOINT = request.build_absolute_uri(get_endpoint())
+        from ..rest.rester import DlrVietenRester
+        with DlrVietenRester(API_KEY, endpoint=ENDPOINT) as mpr:
+            try:
+                ctx['table'] = render_dataframe(mpr.get_contributions(), webapp=True)
+                prov = mpr.get_provenance()
+                ctx['title'] = prov.pop('title')
+                ctx['provenance'] = render_dict(prov, webapp=True)
+            except Exception as ex:
+                ctx.update({'alert': str(ex)})
+    else:
+        ctx.update({'alert': 'Please log in!'})
+    return render_to_response("dlr_vieten_explorer_energy_analysis.html", ctx)
+    
+def documentation(request):
+    ctx = RequestContext(request)
+    if request.user.is_authenticated():
+        API_KEY = request.user.api_key
+        ENDPOINT = request.build_absolute_uri(get_endpoint())
+        from ..rest.rester import DlrVietenRester
+        with DlrVietenRester(API_KEY, endpoint=ENDPOINT) as mpr:
+            try:
+                ctx['table'] = render_dataframe(mpr.get_contributions(), webapp=True)
+                prov = mpr.get_provenance()
+                ctx['title'] = prov.pop('title')
+                ctx['provenance'] = render_dict(prov, webapp=True)
+            except Exception as ex:
+                ctx.update({'alert': str(ex)})
+    else:
+        ctx.update({'alert': 'Please log in!'})
+    return render_to_response("dlr_vieten_explorer_documentation.html", ctx)
 
 def tolerance_factors(request):
     ctx = RequestContext(request)
