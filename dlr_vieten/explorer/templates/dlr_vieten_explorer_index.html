@@ -1,13 +1,5 @@
 {% extends "../../webtzite/templates/base/header_footer.html" %}
 {% load staticfiles %}
-<head>
-<style>
-body {background-image: url("{{ static_url }}/background.jpg");
-background-size: 75%;
-background-repeat: no-repeat;
-background-position: center 100px;}
-</head>
-</style>
 
 {% block title %} RedoxThermoCSP {% endblock title %}
 
@@ -40,6 +32,10 @@ background-position: center 100px;}
 {% else %}
 
 <style>
+body {background-image: url("{{ static_url }}/background.jpg");
+background-size: 75%;
+background-repeat: no-repeat;
+background-position: center 100px;}
 .backgrid { font-family: "symbola"; }
 .backgrid tbody tr:hover { background-color: #f9f9f9; }
 .backgrid body  { background-color: blue; }

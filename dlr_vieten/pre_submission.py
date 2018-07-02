@@ -82,20 +82,20 @@ def run(mpfile, **kwargs):
     table = read_csv(open(input_file, 'r').read().replace(';', ','))
     dct = super(Table, table).to_dict(orient='records', into=RecursiveDict)
 
-    shomate = pd.read_csv(os.path.abspath(os.path.join(
-        os.path.dirname(solar_perovskite.__file__), "datafiles", "shomate.csv"
-    )), index_col=0)
-    shomate_dct = RecursiveDict()
-    for col in shomate.columns:
-        key = col.split('.')[0]
-        if key not in shomate_dct:
-            shomate_dct[key] = RecursiveDict()
-        d = shomate[col].to_dict(into=RecursiveDict)
-        subkey = '{}-{}'.format(int(d.pop('low')), int(d.pop('high')))
-        shomate_dct[key][subkey] = RecursiveDict(
-            (k, clean_value(v, max_dgts=6)) for k, v in d.items()
-        )
-    mpfile.add_hierarchical_data(nest_dict(shomate_dct, ['shomate']))
+    #shomate = pd.read_csv(os.path.abspath(os.path.join(
+    #    os.path.dirname(solar_perovskite.__file__), "datafiles", "shomate.csv"
+    #)), index_col=0)
+    #shomate_dct = RecursiveDict()
+    #for col in shomate.columns:
+    #    key = col.split('.')[0]
+    #    if key not in shomate_dct:
+    #        shomate_dct[key] = RecursiveDict()
+    #    d = shomate[col].to_dict(into=RecursiveDict)
+    #    subkey = '{}-{}'.format(int(d.pop('low')), int(d.pop('high')))
+    #    shomate_dct[key][subkey] = RecursiveDict(
+    #        (k, clean_value(v, max_dgts=6)) for k, v in d.items()
+    #    )
+    #mpfile.add_hierarchical_data(nest_dict(shomate_dct, ['shomate']))
 
     for row in dct:
 
@@ -109,11 +109,12 @@ def run(mpfile, **kwargs):
 
         print 'add hdata ...'
         d = RecursiveDict()
+        d['theo_compstr'] = row['theo_compstr']
         d['tolerance_factor'] = row['tolerance_factor']
         d['solid_solution'] = row['type of solid solution']
         d['oxidized_phase'] = RecursiveDict()
         d['oxidized_phase']['composition'] = row['composition oxidized phase']
-        d['oxidized_phase']['crystal-structure'] = row['crystal structure (fully oxidized)']
+        #d['oxidized_phase']['crystal-structure'] = row['crystal structure (fully oxidized)']
         d['reduced_phase'] = RecursiveDict()
         d['reduced_phase']['composition'] = row['composition reduced phase']
         d['reduced_phase']['closest-MP'] = row['closest phase MP (reduced)'].replace('n.a.', '')

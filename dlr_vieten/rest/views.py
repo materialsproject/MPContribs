@@ -29,13 +29,13 @@ with open(filepath_params) as handle:
     paramlist = json.loads(handle.read())
 handle.close()
 
-# load the sample data  
+# load the sample data
 filepath = os.path.join(path, "energy_data.json")
 with open(filepath) as json_data:
    eneradata = json.load(json_data)
 json_data.close()
 
-@mapi_func(supported_methods=["POST", "GET"], requires_api_key=False)
+@mapi_func(supported_methods=["POST", "GET"], requires_api_key=True)
 def index(request, cid, db_type=None, mdb=None):
     mpid_b = None
     try:
@@ -62,7 +62,7 @@ def index(request, cid, db_type=None, mdb=None):
                 mp_ids = get_mpids_comps_perov_brownm(compstr=compstr)
                 t_d_perov = get_debye_temp(mp_ids[0])
                 t_d_brownm = get_debye_temp(mp_ids[1])
-            except Exception as e: # if no elastic tensors or no data for this material is available 
+            except Exception as e: # if no elastic tensors or no data for this material is available
                 mp_ids = ("mp-510624", "mp-561589") # using data for SrFeOx if no data is available (close approximation)
                 t_d_perov = get_debye_temp(mp_ids[0])
                 t_d_brownm = get_debye_temp(mp_ids[1])
@@ -93,7 +93,7 @@ def index(request, cid, db_type=None, mdb=None):
             act = float(sampledata["act"][s_index])
             t_d_perov = float(sampledata["Debye temp perovskite"][i])
             t_d_brownm = float(sampledata["Debye temp brownmillerite"][i])
-        
+
         for k, v in pars.items():
             if isinstance(v, dict):
                 pars[k] = dict((kk, float(x)) for kk, x in v.items())
@@ -132,8 +132,8 @@ def index(request, cid, db_type=None, mdb=None):
             payload = json.loads(request.body)
             keys = payload['updatekeys'].values()[0]
             del payload['updatekeys']
-            
-            for k in keys:   
+
+            for k in keys:
                 if k != "energy_analysis":
                     if (k != 'enthalpy_dH' and k != 'entropy_dS'):
                         payload[k]['rng'] = map(float, payload[k]['rng'].split(','))
@@ -160,7 +160,7 @@ def index(request, cid, db_type=None, mdb=None):
 
                 resiso, resiso_theo, ellingiso = [], [], []
                 a, b = 1e-10, 0.5-1e-10
-                
+
                 if pars['fit_type_entr'] != []: # only execute this if experimental data is available
                     for xv in x_val:
                         if k == "enthalpy_dH" or k== "entropy_dS":
@@ -223,9 +223,9 @@ def index(request, cid, db_type=None, mdb=None):
                         args_theo = (xv, iso, pars, t_d_perov, t_d_brownm, dh_min, dh_max, act)
 
                     elif k == "ellingham":
-                        dh = d_h_num_dev_calc(delta=delt, dh_1=dh_min, dh_2=dh_max, 
+                        dh = d_h_num_dev_calc(delta=delt, dh_1=dh_min, dh_2=dh_max,
                             temp=xv, act=act)
-                        ds = d_s_fundamental(delta=delt, dh_1=dh_min, dh_2=dh_max, temp=xv, 
+                        ds = d_s_fundamental(delta=delt, dh_1=dh_min, dh_2=dh_max, temp=xv,
                             act=act, t_d_perov=t_d_perov, t_d_brownm=t_d_brownm)
                         solutioniso_theo = (dh - ds*xv)/1000
                         resiso_theo.append(solutioniso_theo)
@@ -244,27 +244,27 @@ def index(request, cid, db_type=None, mdb=None):
                             resiso_theo.append(None)
 
                     if k == "enthalpy_dH":
-                        solutioniso_theo = d_h_num_dev_calc(delta=xv, dh_1=dh_min, dh_2=dh_max, 
+                        solutioniso_theo = d_h_num_dev_calc(delta=xv, dh_1=dh_min, dh_2=dh_max,
                             temp=iso, act=act) / 1000
                         resiso_theo.append(solutioniso_theo)
 
                     if k == "entropy_dS":
-                        solutioniso_theo = d_s_fundamental(delta=xv, dh_1=dh_min, dh_2=dh_max, temp=iso, 
+                        solutioniso_theo = d_s_fundamental(delta=xv, dh_1=dh_min, dh_2=dh_max, temp=iso,
                             act=act, t_d_perov=t_d_perov, t_d_brownm=t_d_brownm)
                         resiso_theo.append(solutioniso_theo)
-                        
-                x = list(pd.np.exp(x_val)) if k == 'isotherm' else list(x_val)   
+
+                x = list(pd.np.exp(x_val)) if k == 'isotherm' else list(x_val)
                 x_theo = x[::4]
-                
+
                 if pars['fit_type_entr'] != []:
-                    x_exp = x 
+                    x_exp = x
                 else:
                     x_exp = None
                     for xv in x_theo:
                         if k == "ellingham":
                             ellingiso_i = isobar_line_elling(iso, xv)/1000
                             ellingiso.append(ellingiso_i)
-                            
+
                 y_min, y_max = 0, 0
 
                 if k == "enthalpy_dH":
@@ -299,16 +299,16 @@ def index(request, cid, db_type=None, mdb=None):
 
                 if k != 'ellingham':
 
-                    response[k] = [{'x': x_exp, 'y': res_fit, 'name': name_exp_fit, 'line': { 'color': 'rgb(5,103,166)', 'width': 2.5 }}, 
-                    {'x': x_exp, 'y': res_interp, 'name': name_exp_interp, 'line': { 'color': 'rgb(5,103,166)', 'width': 2.5, 'dash': 'dot' }}, 
+                    response[k] = [{'x': x_exp, 'y': res_fit, 'name': name_exp_fit, 'line': { 'color': 'rgb(5,103,166)', 'width': 2.5 }},
+                    {'x': x_exp, 'y': res_interp, 'name': name_exp_interp, 'line': { 'color': 'rgb(5,103,166)', 'width': 2.5, 'dash': 'dot' }},
                     {'x': x_theo, 'y': resiso_theo, 'name': name_theo, 'line': { 'color': 'rgb(217,64,41)', 'width': 2.5}}, [y_min,y_max], [compstr_disp, compstr_exp, elast, updt]]
                 else:
-                    response[k] = [{'x': x_exp, 'y': res_fit, 'name': 'exp_fit', 'line': { 'color': 'rgb(5,103,166)', 'width': 2.5 }}, 
-                    {'x': x_exp, 'y': res_interp, 'name': 'exp_interp', 'line': { 'color': 'rgb(5,103,166)', 'width': 2.5, 'dash': 'dot' }}, 
+                    response[k] = [{'x': x_exp, 'y': res_fit, 'name': 'exp_fit', 'line': { 'color': 'rgb(5,103,166)', 'width': 2.5 }},
+                    {'x': x_exp, 'y': res_interp, 'name': 'exp_interp', 'line': { 'color': 'rgb(5,103,166)', 'width': 2.5, 'dash': 'dot' }},
                     {'x': x_theo, 'y': resiso_theo, 'name': 'theo', 'line': { 'color': 'rgb(217,64,41)', 'width': 2.5}},
                     {'x': x_theo, 'y': ellingiso, 'name': 'isobar line', 'line': { 'color': 'rgb(100,100,100)', 'width': 2.5}}, [compstr_disp, compstr_exp, elast, updt]]
             else: # energy analysis
-                
+
                 cutoff = int(payload['energy_analysis']['cutoff']) # this sets the number of materials to display in the graph
                 data_source = payload['energy_analysis']['data_source']
                 if data_source == "Theoretical":
@@ -325,7 +325,7 @@ def index(request, cid, db_type=None, mdb=None):
                 t_ox = float(payload['energy_analysis']['t_ox'])
                 t_red = float(payload['energy_analysis']['t_red'])
                 p_ox = float(payload['energy_analysis']['p_ox'])
-                
+
                 p_red = float(payload['energy_analysis']['p_red'])
                 h_rec = float(payload['energy_analysis']['h_rec'])
                 mech_env = bool(payload['energy_analysis']['mech_env'])
@@ -336,7 +336,7 @@ def index(request, cid, db_type=None, mdb=None):
                 steam_h_rec = float(payload['energy_analysis']['steam_h_rec'])
                 param_disp = payload['energy_analysis']['param_disp']
                 resdict = get_energy_data(process=process_type, t_ox=t_ox, t_red=t_red, p_ox=p_ox, p_red=p_red, data_source=data_source)
-                
+
                 try:
                     results = enera(process=process_type).on_the_fly(resdict=resdict, pump_ener=pump_ener, w_feed=w_feed, h_rec=h_rec, h_rec_steam=steam_h_rec, p_ox_wscs = p_ox)
 
@@ -374,7 +374,7 @@ def index(request, cid, db_type=None, mdb=None):
                             to_remove = result[elem]
                             rem_pos = elem
                     if rem_pos > -1:
-                        result = [i for i in result if str(i) != str(to_remove)] 
+                        result = [i for i in result if str(i) != str(to_remove)]
                         result.insert(rem_pos-1, to_remove)
                     result = [i for i in result if "inf" not in str(i[0])] # this removes all inf values
 
@@ -383,7 +383,7 @@ def index(request, cid, db_type=None, mdb=None):
                     else:
                         result_part = result
 
-                    # if only one property per material is displayed   
+                    # if only one property per material is displayed
                     if len(result_part[0]) == 2:
                         x_0 = [i[-1] for i in result_part]
                         y_0 = pd.np.array([i[0] for i in result_part]).astype(float).tolist()
@@ -391,9 +391,9 @@ def index(request, cid, db_type=None, mdb=None):
                         if "non-stoichiometry" in param_disp:
                             param_disp = name_0.split("between")[0] + " (Δδ)" #otherwise would be too long for y-axis label
                         if "Mass change" in param_disp:
-                            param_disp = "mass change (%)" 
+                            param_disp = "mass change (%)"
                         if "Heat to fuel efficiency" in param_disp:
-                            param_disp = "Heat to fuel efficiency (%)" 
+                            param_disp = "Heat to fuel efficiency (%)"
                         x_1, x_2, x_3, y_1, y_2, y_3, name_1, name_2, name_3 = None, None, None, None, None, None, None, None, None
 
                     else:
@@ -420,16 +420,16 @@ def index(request, cid, db_type=None, mdb=None):
                     x_0, y_0, name_0 = None, None, None
                     x_1, x_2, x_3, y_1, y_2, y_3, name_1, name_2, name_3 = None, None, None, None, None, None, None, None, None
                     titlestr = None
-                    
-                response[k] = [{'x': x_0, 'y': y_0, 'name': name_0, 'type': 'bar', 'title': titlestr, 'yaxis_title': param_disp}, 
+
+                response[k] = [{'x': x_0, 'y': y_0, 'name': name_0, 'type': 'bar', 'title': titlestr, 'yaxis_title': param_disp},
                             {'x': x_1, 'y': y_1, 'name': name_1, 'type': 'bar'},
                             {'x': x_2, 'y': y_2, 'name': name_2, 'type': 'bar'},
                             {'x': x_3, 'y': y_3, 'name': name_3, 'type': 'bar'}]
-                
+
     except Exception as ex:
         raise ValueError('"REST Error: "{}"'.format(str(ex)))
     return {"valid_response": True, 'response': response}
-    
+
 def remove_comp_one(compstr):
     compspl = split_comp(compstr=compstr)
     compstr_rem = ""
@@ -441,7 +441,7 @@ def remove_comp_one(compstr):
                 compstr_rem = compstr_rem + str(compspl[i][0])
     compstr_rem = compstr_rem + "Ox"
     return compstr_rem
-    
+
 def add_comp_one(compstr):
     """
     Adds stoichiometries of 1 to compstr that don't have them
@@ -459,7 +459,7 @@ def add_comp_one(compstr):
             samp_new += spl_samp[l]
 
     return samp_new
-    
+
 def rootfind(a, b, args, funciso_here):
     solutioniso = 0
     try:
@@ -470,7 +470,7 @@ def rootfind(a, b, args, funciso_here):
         except ValueError:
             solutioniso = None # if no solution can be found
     return solutioniso
-    
+
 def get_energy_data(process, t_ox, t_red, p_ox, p_red, data_source, enth_steps=20, celsius=True):
     resdict_i = None
     for i in range(len(paramlist["ParametersetNo."])):
@@ -483,7 +483,7 @@ def get_energy_data(process, t_ox, t_red, p_ox, p_red, data_source, enth_steps=2
         t_ox_i = float(str(paramlist["T_ox"][i])[1:])
         p_red_i = float(str(paramlist["p_red"][i])[1:])
         p_ox_i = float(str(paramlist["p_ox"][i])[1:])
-        
+
         if process_i == process and data_source_i == data_source and t_ox_i == t_ox and \
            t_red_i == t_red and p_ox_i == p_ox and p_red_i == p_red and celsius_i == celsius and enth_steps_i == enth_steps:
             paramset_i = eneradata["Parameter set"][par_set_no_i-1]
@@ -513,7 +513,7 @@ def dh_ds(delta, s_th, p):
     dh_pars = [p['fit_param_enth'][c] for c in 'abcd']
     dh = enth_arctan(d_delta, *(dh_pars)) * 1000.
     ds_pars = [p['fit_par_ent'][c] for c in 'abc']
-    
+
     # distinguish two differnt entropy fits
     fit_type = p['fit_type_entr']
     if fit_type == "Solid_Solution":
@@ -566,7 +566,7 @@ def entr_mixed(x, s, shift, delta_0, act_s1, fit_param_fe):
     """
     efe = entr_fe(x+delta_0, fit_param_fe)
     return ((act_s1*efe)/pi) * (pd.np.arctan((x-delta_0)*s)+pi/2) + (1-act_s1)*efe + shift
-    
+
 def entr_dilute_spec(x, s_v, a, delta_0, s_th_o):
     """
     :param x:       Delta_delta, change in non-stoichiometric redox extent vs. a reference
@@ -578,24 +578,24 @@ def entr_dilute_spec(x, s_v, a, delta_0, s_th_o):
     :return:        fit function based on the model in Bulfin et. al., doi: 10.1039/C7TA00822H
     """
     return s_th_o + s_v + (2 * a * R * (np.log(0.5 - (x + delta_0)) - np.log(x + delta_0)))
-    
+
 def funciso_theo(delta, iso, x, p, t_d_perov, t_d_brownm, dh_min, dh_max, act):
     dh = d_h_num_dev_calc(delta=delta, dh_1=dh_min, dh_2=dh_max, temp=x, act=act)
-    ds = d_s_fundamental(delta=delta, dh_1=dh_min, dh_2=dh_max, temp=x,  
+    ds = d_s_fundamental(delta=delta, dh_1=dh_min, dh_2=dh_max, temp=x,
     act=act, t_d_perov=t_d_perov, t_d_brownm=t_d_brownm)
     return dh - x*ds + R*iso*x/2
-    
+
 def funciso_redox_theo(po2, delta, x, p, t_d_perov, t_d_brownm, dh_min, dh_max, act):
     dh = d_h_num_dev_calc(delta=delta, dh_1=dh_min, dh_2=dh_max, temp=x, act=act)
-    ds = d_s_fundamental(delta=delta, dh_1=dh_min, dh_2=dh_max, temp=x, 
+    ds = d_s_fundamental(delta=delta, dh_1=dh_min, dh_2=dh_max, temp=x,
     act=act, t_d_perov=t_d_perov, t_d_brownm=t_d_brownm)
     return dh - x*ds + R*po2*x/2
-    
+
 def d_h_num_dev_calc(delta, dh_1, dh_2, temp, act):
     """
     Calculates dH using the numerical derivative with f(x0) + f(x0+h) / h
     this function is split up in f(x0) and f(x0+h) for simplification and understanding
-    :param delta:   non-stoichiometry delta 
+    :param delta:   non-stoichiometry delta
     :param dh_1:    reaction enthalpy of perovskite 1
     :param dh_2:    reaction enthalpy of perovskite 2
     :param temp:    temperature in K
@@ -622,7 +622,7 @@ def d_h_num_dev_1(delta, dh_1, dh_2, temp, act):
     """
     Part of the numerical derivative calculation used to find dH as a function of delta and temperature
     This function is f(x0+h) in f(x0) + f(x0+h) / h
-    :param delta:   non-stoichiometry delta 
+    :param delta:   non-stoichiometry delta
     :param dh_1:    reaction enthalpy of perovskite 1
     :param dh_2:    reaction enthalpy of perovskite 2
     :param temp:    temperature in K
@@ -661,13 +661,13 @@ def delta_mix(temp, p_o2_l, dh_1, dh_2, act):
     stho = s_th_o(temp)
     return delta_fun(stho, temp, p_o2_l, dh_1, (act / 2)) + \
         + delta_fun(stho, temp, p_o2_l, dh_2, ((1 - act) / 2))
-        
+
 def delta_fun(stho, temp, p_o2_l, dh, d_max):
     common = pd.np.exp(stho*d_max/R)
     common *= pd.np.exp(p_o2_l)**(-d_max/2.)
     common *= pd.np.exp(-dh*d_max/(R*temp))
     return d_max * common / (1. + common)
-    
+
 def d_s_fundamental(delta, dh_1, dh_2, temp, act, t_d_perov, t_d_brownm):
     """
     dG = dH - T*dS, at dG = 0 => dh/T = dS
@@ -689,7 +689,7 @@ def d_s_fundamental(delta, dh_1, dh_2, temp, act, t_d_perov, t_d_brownm):
     d_s = p_mol_ent_o + entr_con + entr_vib
 
     return d_s
-    
+
 def entr_con_mixed(temp, p_o2_l, dh_1, dh_2, act):
     """
     Reference: Brendan Bulfin et. al. DOI:  10.1039/C6CP03158G
@@ -703,7 +703,7 @@ def entr_con_mixed(temp, p_o2_l, dh_1, dh_2, act):
     """
     a = 2
     stho = s_th_o(temp)
-    
+
     # fix reversed orders
     if dh_1 > dh_2:
         dh_2_old = dh_2
@@ -736,24 +736,24 @@ def entr_con_mixed(temp, p_o2_l, dh_1, dh_2, act):
         entr_con_2 = 0
 
     return entr_con_1 + entr_con_2
-    
+
 def get_mpids_comps_perov_brownm(compstr):
 
     compstr = compstr.split("O")[0] + "Ox"
     find_struct = find_structures(compstr=compstr)
-    
+
     try:
         mpid_p = find_struct[1].entry_id
     except AttributeError:
         mpid_p = None
-    
+
     try:
         mpid_b = find_struct[3].entry_id
     except AttributeError:
         mpid_b = None
 
     return str(mpid_p), str(mpid_b)
-    
+
 def split_comp(compstr):
     """
     Splits a string containing the composition of a perovskite solid solution into its components
@@ -763,11 +763,11 @@ def split_comp(compstr):
     each of these output variables contains the species and the stoichiometries
     i.e. ("Fe", 0.6)
     """
-    
+
     am_1, am_2, tm_1, tm_2 = None, None, None, None
-    
+
     compstr_spl = [''.join(g) for _, g in groupby(str(compstr), str.isalpha)]
-    
+
     for l in range(len(compstr_spl)):
         try:
             if ptable.Element(compstr_spl[l]).is_alkaline or ptable.Element(
@@ -787,7 +787,7 @@ def split_comp(compstr):
             pass
 
     return am_1, am_2, tm_1, tm_2
-    
+
 def find_structures(compstr):
     """
     Finds the perovskite and brownmillerite data in Materials Project for a given perovskite composition
@@ -799,7 +799,7 @@ def find_structures(compstr):
     brownmillerite:         chemical formula of the brownmillerite
     brownmillerite_data:    materials data for the brownmillerite
     """
-    
+
     perovskite_data = None
     brownmillerite_data = None
     comp_spl = split_comp(compstr=compstr)
@@ -847,7 +847,7 @@ def find_structures(compstr):
         pass
 
     return perovskite, perovskite_data, brownmillerite, brownmillerite_data
-    
+
 def get_debye_temp(mpid):
     """
     Calculates the debye temperature from eleastic tensors on the Materials Project
@@ -914,7 +914,7 @@ def find_endmembers(compstr):
         am_2 = split_comp(compstr)[1]
     else:
         am_2 = None
-        
+
     tm_1 = split_comp(compstr)[2]
     if split_comp(compstr)[3]:
         tm_2 = split_comp(compstr)[3]
@@ -988,7 +988,7 @@ def redenth_act(compstr):
 
     dh_min = None
     dh_max = None
-    
+
     # calculate redox enthalpies of endmembers
     try:
         dhs = calc_dh_endm(compstr)
@@ -1017,7 +1017,7 @@ def redenth_act(compstr):
     # brownmillerite as expected according to the endmember redox enthalpies
     conc_act = find_active(mat_comp=splitcomp)[1]
     red_enth_mean_endm = (conc_act * dh_min) + ((1 - conc_act) * dh_max)
-    
+
     if theo_solid_solution:
         if not red_enth_mean_endm:
             difference = float('inf')
@@ -1032,7 +1032,7 @@ def redenth_act(compstr):
             dh_max = dh_max + difference
 
     return theo_solid_solution, dh_min, dh_max, conc_act
-    
+
 def find_active(mat_comp):
     """
     Finds the more redox-active species in a perovskite solid solution
@@ -1081,7 +1081,7 @@ def find_active(mat_comp):
     # order of binary oxide reducibility according to Materials Project (A2O3 -> AO + O2)
     if round((6 - charge_sum), 2) == 5:
         red_order = ["Ta", "Nb", "W", "Mo", "V", "Cr"]
-    
+
     act_a = None
     if red_order:
         for i in range(len(red_order)):
@@ -1093,14 +1093,14 @@ def find_active(mat_comp):
                     act_a = mat_comp[2]
     if act_a is None:
         raise ValueError("B species reducibility unknown, preferred reduction of species not predicted")
-        
+
     # correct bug for the most reducible species
     if act_a[0] == red_order[-2] and (red_order[-1] in str(mat_comp)):
         act_a[0] = red_order[-1]
         act_a[1] = 1-act_a[1]
 
     return act_a[0], act_a[1]
-        
+
 def find_theo_redenth(compstr):
     """
     Finds theoretical redox enthalpies from the Materials Project from perovskite to brownmillerite
@@ -1108,7 +1108,7 @@ def find_theo_redenth(compstr):
     examples/Calculating%20Reaction%20Energies%20with%20the%20Materials%20API.ipynb
 
     :param compstr: composition as a string
-    
+
     :return:
     red_enth:  redox enthalpy in kJ/mol O
     """
