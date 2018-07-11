@@ -15,8 +15,7 @@ setup(
     author_email = metadata['email'],
     url = metadata['url'],
     packages = [
-        package_name, '{}.fake'.format(package_name),
-        '{}.io'.format(package_name), '{}.webui'.format(package_name),
+        package_name, '{}.io'.format(package_name), '{}.webui'.format(package_name),
         '{}.explorer'.format(package_name), '{}.portal'.format(package_name),
         '{}.rest'.format(package_name), '{}.builder'.format(package_name),
     ],
@@ -25,7 +24,8 @@ setup(
         'matplotlib', 'pymongo', 'pyyaml', 'ipython', 'nose', 'pybtex',
         'Django>=1.8.5,<1.9', 'archieml', 'django-browserid', 'sphinx', 'notebook',
         'ipywidgets', 'celery', 'tqdm', 'beautifulsoup4', 'whichcraft', 'pymatgen',
-        'unidecode', 'psutil', 'nbformat', 'xlrd', 'django-nopassword', 'django-require'
+        'unidecode', 'psutil', 'nbformat', 'xlrd', 'django-nopassword',
+        'django-require', 'pympler'
     ],
     license = 'MIT',
     keywords = ['materials', 'contribution', 'framework', 'data', 'interactive', 'jupyter'],

@@ -30,7 +30,7 @@ def cli():
     if args.start_mongodb:
         dbpath = os.path.join('/', 'data', 'db')
         if not os.path.exists(dbpath):
-            dbpath = os.path.join(cwd, 'db')
+            dbpath = os.path.join(os.getcwd(), 'db')
             if not os.path.exists(dbpath):
                 os.makedirs(dbpath)
 
