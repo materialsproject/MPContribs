@@ -1,7 +1,7 @@
 from __future__ import unicode_literals, print_function, absolute_import
 
 import os
-from flask import Blueprint, render_template, redirect
+from flask import Blueprint, render_template, redirect, url_for
 
 tmpl_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates')
 stat_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static')
@@ -17,6 +17,6 @@ def home():
         jpy_user = os.environ.get('JPY_USER')
         if not jpy_user:
             raise ValueError('Cannot connect to test_site outside MP JupyterHub!')
-        flaskproxy = 'https://jupyterhub.materialsproject.org/flaskproxy'
+        flaskproxy = url_for('.home')
         login_url = '/'.join([flaskproxy, jpy_user, 'test_site/login'])
         return redirect(login_url)

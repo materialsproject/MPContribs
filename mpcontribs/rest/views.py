@@ -49,7 +49,10 @@ def index(request):
              f2.write(text)
     call(['apidoc', '-f "views.py"', '-f "_apidoc.py"', '--output', 'static'])
     os.chdir(cwd)
-    return redirect(PROXY_URL_PREFIX + '/static_rest/index.html')
+    jpy_user = os.environ.get('JPY_USER')
+    if jpy_user:
+        return redirect(PROXY_URL_PREFIX + '/static_rest/index.html')
+    return redirect('/static/index.html')
 
 @mapi_func(supported_methods=["GET"], requires_api_key=True)
 def check_contributor(request, db_type=None, mdb=None):
@@ -150,9 +153,6 @@ def submit_contribution(request, db_type=None, mdb=None):
 @mapi_func(supported_methods=["POST", "GET"], requires_api_key=True)
 def build_contribution(request, db_type=None, mdb=None):
     """Builds a single contribution into according material/composition"""
-    # TODO collaborator check (build doc needs 'collaborators' entry)
-    if not request.user.groups.filter(name='contrib').exists():
-        raise PermissionDenied("MPFile submission open only to contributors.")
     contributor = '{} {} <{}>'.format(
         request.user.first_name, request.user.last_name, request.user.email)
     try:

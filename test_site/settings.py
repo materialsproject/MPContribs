@@ -30,9 +30,12 @@ DEBUG = True
 ALLOWED_HOSTS = []
 
 AUTHENTICATION_BACKENDS = (
-    'webtzite.backends.CustomModelBackend',
-    #'webtzite.backends.CustomBrowserIDBackend',
-    'nopassword.backends.email.EmailBackend'
+    'django.contrib.auth.backends.ModelBackend',
+    #'django_cas_ng.backends.CASBackend',
+    'webtzite.backends.CASBackend',
+    #'webtzite.backends.CustomModelBackend',
+    ##'webtzite.backends.CustomBrowserIDBackend',
+    #'nopassword.backends.email.EmailBackend'
 )
 
 # Application definition
@@ -47,6 +50,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django_cas_ng',
     'require',
     'webtzite',
     'mpcontribs.portal',
@@ -173,3 +177,11 @@ REQUIRE_DEBUG = True
 
 if os.environ.get('DEPLOYMENT') == 'MATGEN':
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+CAS_SERVER_URL = 'http://127.0.0.2:8000/cas/' # https://materialsproject.org/cas/
+CAS_VERSION = '3'
+CAS_LOGOUT_COMPLETELY = False
+CAS_REDIRECT_URL = '/dashboard'
+CAS_RETRY_LOGIN = True
+CAS_USERNAME_ATTRIBUTE = 'username'
+CAS_APPLY_ATTRIBUTES_TO_USER = True
