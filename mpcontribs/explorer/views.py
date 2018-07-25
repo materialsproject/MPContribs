@@ -8,13 +8,15 @@ from django.http import HttpResponse
 from mpcontribs.rest.rester import MPContribsRester
 from mpcontribs.rest.views import get_endpoint
 from mpcontribs.builder import export_notebook
+from webtzite.models import RegisteredUser
 
 def index(request):
     ctx = RequestContext(request)
     fields = ['identifiers', 'projects', 'cids']
     ctx['fields'] = fields
     if request.user.is_authenticated():
-        API_KEY = request.user.api_key
+        user = RegisteredUser.objects.get(username=request.user.username)
+        API_KEY = user.api_key
         ENDPOINT = request.build_absolute_uri(get_endpoint())
         with MPContribsRester(API_KEY, endpoint=ENDPOINT) as mpr:
 
@@ -70,7 +72,8 @@ def contribution(request, collection, cid):
     material = {'detail_id': collection[:-1]}
     ctx = RequestContext(request)
     if request.user.is_authenticated():
-        API_KEY = request.user.api_key
+        user = RegisteredUser.objects.get(username=request.user.username)
+        API_KEY = user.api_key
         ENDPOINT = request.build_absolute_uri(get_endpoint())
         with MPContribsRester(API_KEY, endpoint=ENDPOINT) as mpr:
             try:
@@ -100,7 +103,8 @@ def contribution(request, collection, cid):
 
 def cif(request, cid, structure_name):
     if request.user.is_authenticated():
-        API_KEY = request.user.api_key
+        user = RegisteredUser.objects.get(username=request.user.username)
+        API_KEY = user.api_key
         ENDPOINT = request.build_absolute_uri(get_endpoint())
         with MPContribsRester(API_KEY, endpoint=ENDPOINT) as mpr:
             cif = mpr.get_cif(cid, structure_name)
@@ -110,7 +114,8 @@ def cif(request, cid, structure_name):
 
 def download_json(request, collection, cid):
     if request.user.is_authenticated():
-        API_KEY = request.user.api_key
+        user = RegisteredUser.objects.get(username=request.user.username)
+        API_KEY = user.api_key
         ENDPOINT = request.build_absolute_uri(get_endpoint())
         with MPContribsRester(API_KEY, endpoint=ENDPOINT) as mpr:
             contrib = mpr.find_contribution(cid, as_doc=True)
