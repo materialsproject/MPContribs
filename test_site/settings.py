@@ -27,7 +27,7 @@ SECRET_KEY = os.environ['SECRET_KEY']
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['contribs.materialsproject.org', 'localhost']
 
 AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend',
@@ -178,7 +178,7 @@ REQUIRE_DEBUG = True
 if os.environ.get('DEPLOYMENT') == 'MATGEN':
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
-CAS_SERVER_URL = 'http://127.0.0.2:8000/cas/' # https://materialsproject.org/cas/
+CAS_SERVER_URL = 'https://materialsproject.org/cas/'
 CAS_VERSION = '3'
 CAS_LOGOUT_COMPLETELY = False
 CAS_REDIRECT_URL = '/dashboard'
