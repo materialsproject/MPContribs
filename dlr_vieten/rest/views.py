@@ -25,15 +25,15 @@ from energy_analysis import EnergyAnalysis as enera
 # (sort of a map for the huge sampledata dict)
 path = os.path.abspath(os.path.dirname( __file__ ))
 filepath_params = os.path.join(path, "parameter_list.json")
-with open(filepath_params) as handle:
-    paramlist = json.loads(handle.read())
-handle.close()
+if os.path.exists(filepath_params):
+    with open(filepath_params) as handle:
+        paramlist = json.loads(handle.read())
 
 # load the sample data
 filepath = os.path.join(path, "energy_data.json")
-with open(filepath) as json_data:
-   eneradata = json.load(json_data)
-json_data.close()
+if os.path.exists(filepath):
+    with open(filepath) as json_data:
+       eneradata = json.load(json_data)
 
 @mapi_func(supported_methods=["POST", "GET"], requires_api_key=True)
 def index(request, cid, db_type=None, mdb=None):
