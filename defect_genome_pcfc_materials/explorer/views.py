@@ -10,9 +10,11 @@ from mpcontribs.io.core.components import render_dataframe, render_plot
 from mpcontribs.io.core.recdict import render_dict
 
 def index(request):
+    from webtzite.models import RegisteredUser
     ctx = RequestContext(request)
     if request.user.is_authenticated():
-        API_KEY = request.user.api_key
+        user = RegisteredUser.objects.get(username=request.user.username)
+        API_KEY = user.api_key
         ENDPOINT = request.build_absolute_uri(get_endpoint())
         from ..rest.rester import DefectGenomePcfcMaterialsRester
         with DefectGenomePcfcMaterialsRester(API_KEY, endpoint=ENDPOINT) as mpr:

@@ -7,12 +7,14 @@ from mpcontribs.rest.views import get_endpoint
 from mpcontribs.io.core.components import render_dataframe
 from mpcontribs.io.core.recdict import render_dict
 from test_site.settings import STATIC_URL
+from webtzite.models import RegisteredUser
 
 def index(request):
     ctx = RequestContext(request)
     if request.user.is_authenticated():
-        if request.user.groups.filter(name='dlr_vieten').exists():
-            API_KEY = request.user.api_key
+        user = RegisteredUser.objects.get(username=request.user.username)
+        if user.groups.filter(name='dlr_vieten').exists():
+            API_KEY = user.api_key
             ENDPOINT = request.build_absolute_uri(get_endpoint())
             from ..rest.rester import DlrVietenRester
             with DlrVietenRester(API_KEY, endpoint=ENDPOINT) as mpr:
@@ -34,8 +36,9 @@ def index(request):
 def isographs(request):
     ctx = RequestContext(request)
     if request.user.is_authenticated():
-        if request.user.groups.filter(name='dlr_vieten').exists():
-            API_KEY = request.user.api_key
+        user = RegisteredUser.objects.get(username=request.user.username)
+        if user.groups.filter(name='dlr_vieten').exists():
+            API_KEY = user.api_key
             ENDPOINT = request.build_absolute_uri(get_endpoint())
             from ..rest.rester import DlrVietenRester
             with DlrVietenRester(API_KEY, endpoint=ENDPOINT) as mpr:
@@ -55,8 +58,9 @@ def isographs(request):
 def energy_analysis(request):
     ctx = RequestContext(request)
     if request.user.is_authenticated():
-        if request.user.groups.filter(name='dlr_vieten').exists():
-            API_KEY = request.user.api_key
+        user = RegisteredUser.objects.get(username=request.user.username)
+        if user.groups.filter(name='dlr_vieten').exists():
+            API_KEY = user.api_key
             ENDPOINT = request.build_absolute_uri(get_endpoint())
             from ..rest.rester import DlrVietenRester
             with DlrVietenRester(API_KEY, endpoint=ENDPOINT) as mpr:
@@ -78,8 +82,9 @@ def energy_analysis(request):
 def documentation(request):
     ctx = RequestContext(request)
     if request.user.is_authenticated():
-        if request.user.groups.filter(name='dlr_vieten').exists():
-            API_KEY = request.user.api_key
+        user = RegisteredUser.objects.get(username=request.user.username)
+        if user.groups.filter(name='dlr_vieten').exists():
+            API_KEY = user.api_key
             ENDPOINT = request.build_absolute_uri(get_endpoint())
             from ..rest.rester import DlrVietenRester
             with DlrVietenRester(API_KEY, endpoint=ENDPOINT) as mpr:
@@ -101,7 +106,8 @@ def documentation(request):
 def tolerance_factors(request):
     ctx = RequestContext(request)
     if request.user.is_authenticated():
-        API_KEY = request.user.api_key
+        user = RegisteredUser.objects.get(username=request.user.username)
+        API_KEY = user.api_key
         ENDPOINT = request.build_absolute_uri(get_endpoint())
         from ..rest.rester import DlrVietenRester
         with DlrVietenRester(API_KEY, endpoint=ENDPOINT) as mpr:

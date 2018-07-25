@@ -7,11 +7,13 @@ from django.template import RequestContext
 from mpcontribs.rest.views import get_endpoint
 from mpcontribs.io.core.components import render_dataframe
 from mpcontribs.io.core.recdict import render_dict
+from webtzite.models import RegisteredUser
 
 def index(request):
     ctx = RequestContext(request)
     if request.user.is_authenticated():
-        API_KEY = request.user.api_key
+        user = RegisteredUser.objects.get(username=request.user.username)
+        API_KEY = user.api_key
         ENDPOINT = request.build_absolute_uri(get_endpoint())
         from ..rest.rester import Mno2PhaseSelectionRester
         with Mno2PhaseSelectionRester(API_KEY, endpoint=ENDPOINT) as mpr:
