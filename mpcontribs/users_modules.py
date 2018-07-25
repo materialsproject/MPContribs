@@ -1,11 +1,13 @@
 from mpcontribs import users as mpcontribs_users
 import os, pkgutil
+from importlib import import_module
 
 def get_users_modules():
     mod_iter = pkgutil.iter_modules(mpcontribs_users.__path__)
     return [
-        os.path.join(mpcontribs_users.__path__[0], mod)
-        for imp, mod, ispkg in mod_iter if ispkg
+        os.path.abspath(os.path.realpath(os.path.join(
+            mpcontribs_users.__path__[0], mod
+        ))) for imp, mod, ispkg in mod_iter if ispkg
     ]
 
 def get_user_urlpatterns():
@@ -55,5 +57,11 @@ def get_user_installed_apps():
                 installed_apps.append(name)
     return installed_apps
 
-def get_user_rester(mod):
-    return get_user_classname(mod) + 'Rester'
+def get_user_rester(mod_path):
+    UserRester = None
+    mod = os.path.basename(mod_path)
+    rester_path = os.path.join(mod_path, 'rest', 'rester.py')
+    if os.path.exists(rester_path):
+        m = import_module('mpcontribs.users.{}.rest.rester'.format(mod))
+        UserRester = getattr(m, get_user_classname(mod) + 'Rester')
+    return UserRester
