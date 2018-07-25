@@ -66,13 +66,14 @@ class MPResterBase(object):
 
     def _make_request(self, sub_url, payload=None, method="GET", document_class=OrderedDict):
         response = None
-        url = self.preamble.replace('8000', '5000') + sub_url
+        preamble = self.preamble#.replace('8000', '5000') # TODO
+        url = preamble + sub_url
         try:
-            headers = {'Referer': self.preamble}
+            headers = {'Referer': preamble}
             if self.session.cookies.get('csrftoken') is None:
                 from django.core.urlresolvers import reverse
-                uri = urlparse.urlparse(self.preamble)
-                domain = '{uri.scheme}://{uri.netloc}'.format(uri=uri).replace('8000', '5000')
+                uri = urlparse.urlparse(preamble)
+                domain = '{uri.scheme}://{uri.netloc}'.format(uri=uri)
                 site_url = '/'.join(uri.path.split('/')[:-2]) # test_site/
                 browserid_csrf = reverse('browserid.csrf')
                 if site_url[:-1] not in browserid_csrf:

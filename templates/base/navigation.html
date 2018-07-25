@@ -7,7 +7,6 @@
   </center>
 </nav>
 {% endif %}
-{% url 'webtzite_index' as index_url %}
 <nav class="navbar navbar-inverse">
   <div class="navbar-inner">
      <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
@@ -16,14 +15,14 @@
       <span class="icon-bar"></span>
     </a>
     <div class="nav-collapse">
-      <a class="brand" href="{{ index_url }}"><img src="{% static 'logo.png' %}"></a>
+      <a class="brand" href="/"><img src="{% static 'logo.png' %}"></a>
       <ul class="nav pull-right" role="navigation">
-        <li><a href="{{ index_url }}">Home</a></li>
+        <li><a href="/">Home</a></li>
         {% if user.is_authenticated %}
-        <li><a href="{% url 'webtzite_dashboard' %}" data-icon="&gt;" class="icon"> Dashboard</a></li>
-        <li><a href="{% url 'webtzite_logout' %}">Logout</a></li>
+        <li><a href="{% url 'webtzite_dashboard' %}" data-icon="&gt;" class="icon">Dashboard</a></li>
+        <li><a href="{% url 'cas_ng_logout' %}?next=/">Logout</a></li>
         {% else %}
-        <li><a href="{% url 'webtzite_login' %}">Login</a></li>
+        <li><a href="{% url 'cas_ng_login' %}?next=/dashboard">Login</a></li>
         {% endif %}
       </ul>
     </div>

@@ -1,8 +1,6 @@
 import json
 import logging
 import os
-import random
-import string
 from urllib import unquote
 from django.shortcuts import render_to_response, redirect
 from django.http import HttpResponseServerError
@@ -20,21 +18,10 @@ def index(request):
     ctx = RequestContext(request)
     return render_to_response("index.html", locals(), ctx)
 
-def generate_key(length):
-    return ''.join(random.choice(string.ascii_letters + string.digits) for _ in range(length))
-
 @require_http_methods(["GET", "POST"])
 def dashboard(request):
     from .models import RegisteredUser
-    u = RegisteredUser.objects.get(username=request.user.username)
-    if request.method == 'POST' or not u.api_key:
-        api_key = request.POST.get('apikey')
-        if api_key == 'None': api_key = None
-        try:
-            u.api_key = api_key if api_key else generate_key(16)
-            u.save()
-        except Exception, e:
-            return HttpResponseServerError(str(e))
+    user = RegisteredUser.objects.get(username=request.user.username)
     ctx = RequestContext(request)
     return render_to_response("dashboard.html", locals(), ctx)
 

@@ -1,10 +1,13 @@
 {% extends "base/header_footer.html" %}
 {% block content %}
-<input type=hidden id=dashboard_url value="{% url 'webtzite_dashboard' %}">
 {% if user.is_registered %}
-<p>Current user: {{ user.email }}</p>
-<p>Superuser: {{ user.is_superuser }}</p>
-<p hidden>API Key: <code id='key'>{{ user.api_key }}</code></p>
+<dl class="dl-horizontal">
+  <dt>Current user:</dt><dd>{{ user.email }}</dd>
+  <dt>Institution:</dt><dd>{{ user.institution }}</dd>
+  <dt>Superuser:</dt><dd>{{ user.is_superuser }}</dd>
+  <dt>API Key:</dt><dd><code id='key'>{{ user.api_key }}</code></dd>
+  <dt>Groups:</dt><dd>{{ user.groups }}</dd>
+</dl>
 <button id="keygen" hidden>Regenerate API Key</button>
 {% else %}
 <p>Please log in!</p>
