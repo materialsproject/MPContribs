@@ -123,11 +123,12 @@ USE_TZ = True
 JPY_USER = os.environ.get('JPY_USER')
 PROXY_URL_PREFIX = '/flaskproxy/{}'.format(JPY_USER) if JPY_USER else ''
 ROOT_PROJECT_DIR = os.path.dirname(os.path.dirname(__file__))
-STATIC_ROOT = ROOT_PROJECT_DIR + '/webtzite/static'
+STATIC_ROOT = ROOT_PROJECT_DIR
+STATIC_ROOT += '/webtzite/static' if DEBUG else '/static'
 STATIC_URL = PROXY_URL_PREFIX + '/static/'
 
 STATIC_ROOT_URLS = {
-    STATIC_URL: STATIC_ROOT,
+    STATIC_URL[:-1]: STATIC_ROOT,
     STATIC_URL[:-1] + '_rest': ROOT_PROJECT_DIR + '/mpcontribs/rest/static',
     STATIC_URL[:-1] + '_portal': ROOT_PROJECT_DIR + '/mpcontribs/portal/static'
 }
@@ -140,29 +141,29 @@ for static_dir in get_user_static_dirs():
 
 STATIC_ROOT_URLS.update(STATIC_ROOT_USER_URLS)
 
-LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'handlers': {
-        'file': {
-            'level': 'DEBUG',
-            'class': 'logging.FileHandler',
-            'filename': '/tmp/mpappkit.log',
-        },
-    },
-    'loggers': {
-        'django.request': {
-            'handlers': ['file'],
-            'level': 'DEBUG',
-            'propagate': True,
-        },
-        'webtzite': {
-            'handlers': ['file'],
-            'level': 'DEBUG',
-            'propagate': True,
-        },
-    },
-}
+#LOGGING = {
+#    'version': 1,
+#    'disable_existing_loggers': False,
+#    'handlers': {
+#        'file': {
+#            'level': 'DEBUG',
+#            'class': 'logging.FileHandler',
+#            'filename': os.path.join(ROOT_PROJECT_DIR, 'test_site.log'),
+#        },
+#    },
+#    'loggers': {
+#        'django.request': {
+#            'handlers': ['file'],
+#            'level': 'DEBUG',
+#            'propagate': True,
+#        },
+#        'webtzite': {
+#            'handlers': ['file'],
+#            'level': 'DEBUG',
+#            'propagate': True,
+#        },
+#    },
+#}
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'localhost'
@@ -178,7 +179,7 @@ REQUIRE_DEBUG = True
 if os.environ.get('DEPLOYMENT') == 'MATGEN':
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
-CAS_SERVER_URL = 'https://materialsproject.org/cas/'
+CAS_SERVER_URL = 'http://materialsproject.org:8080/cas/'
 CAS_VERSION = '3'
 CAS_LOGOUT_COMPLETELY = False
 CAS_REDIRECT_URL = '/dashboard'

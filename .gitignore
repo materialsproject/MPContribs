@@ -12,3 +12,6 @@ mpcontribs/rest/static/*
 mpcontribs/rest/apidoc.json
 db/*
 notebooks/profile/migrated
+access.log
+error.log
+static/*
