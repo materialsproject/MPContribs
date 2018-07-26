@@ -25,7 +25,7 @@ setup(
         'Django>=1.8.5,<1.9', 'archieml', 'django-browserid', 'sphinx', 'notebook',
         'ipywidgets', 'celery', 'tqdm', 'beautifulsoup4', 'whichcraft', 'pymatgen',
         'unidecode', 'psutil', 'nbformat', 'xlrd', 'django-nopassword',
-        'django-require', 'pympler', 'django_cas_ng'
+        'django-require', 'pympler', 'django_cas_ng', 'django-extensions'
     ],
     license = 'MIT',
     keywords = ['materials', 'contribution', 'framework', 'data', 'interactive', 'jupyter'],
