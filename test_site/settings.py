@@ -143,29 +143,30 @@ for static_dir in get_user_static_dirs():
 
 STATIC_ROOT_URLS.update(STATIC_ROOT_USER_URLS)
 
-#LOGGING = {
-#    'version': 1,
-#    'disable_existing_loggers': False,
-#    'handlers': {
-#        'file': {
-#            'level': 'DEBUG',
-#            'class': 'logging.FileHandler',
-#            'filename': os.path.join(ROOT_PROJECT_DIR, 'test_site.log'),
-#        },
-#    },
-#    'loggers': {
-#        'django.request': {
-#            'handlers': ['file'],
-#            'level': 'DEBUG',
-#            'propagate': True,
-#        },
-#        'webtzite': {
-#            'handlers': ['file'],
-#            'level': 'DEBUG',
-#            'propagate': True,
-#        },
-#    },
-#}
+if not DEBUG:
+    LOGGING = {
+        'version': 1,
+        'disable_existing_loggers': False,
+        'handlers': {
+            'file': {
+                'level': 'DEBUG',
+                'class': 'logging.FileHandler',
+                'filename': '/var/www/python/MPContribs/test_site.log',
+            },
+        },
+        'loggers': {
+            'django.request': {
+                'handlers': ['file'],
+                'level': 'DEBUG',
+                'propagate': True,
+            },
+            'webtzite': {
+                'handlers': ['file'],
+                'level': 'DEBUG',
+                'propagate': True,
+            },
+        },
+    }
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'localhost'
@@ -178,10 +179,10 @@ DEFAULT_FROM_EMAIL = 'Test Site <test_site@jupyterhub.materialsproject.org>'
 REQUIRE_JS = 'components/requirejs/require.js'
 REQUIRE_DEBUG = True
 
-if os.environ.get('DEPLOYMENT') == 'MATGEN':
+if not DEBUG or os.environ.get('DEPLOYMENT') == 'MATGEN':
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
-CAS_SERVER_URL = 'http://materialsproject.org:8080/cas/'
+CAS_SERVER_URL = 'https://materialsproject.org/cas/'
 CAS_VERSION = '3'
 CAS_LOGOUT_COMPLETELY = False
 CAS_REDIRECT_URL = '/dashboard'
