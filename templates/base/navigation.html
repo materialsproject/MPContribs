@@ -19,10 +19,13 @@
       <ul class="nav pull-right" role="navigation">
         <li><a href="/">Home</a></li>
         {% if user.is_authenticated %}
+        {% if user.is_superuser %}
+        <li><a href="/admin" data-icon="&gt;" class="icon">Admin</a></li>
+        {% endif %}
         <li><a href="{% url 'webtzite_dashboard' %}" data-icon="&gt;" class="icon">Dashboard</a></li>
         <li><a href="{% url 'cas_ng_logout' %}?next=/">Logout</a></li>
         {% else %}
-        <li><a href="{% url 'cas_ng_login' %}?next=/dashboard">Login</a></li>
+        <li><a href="{% url 'cas_ng_login' %}">Login</a></li>
         {% endif %}
       </ul>
     </div>
