@@ -6,12 +6,14 @@ from django.template import RequestContext
 from mpcontribs.rest.views import get_endpoint
 from mpcontribs.io.core.components import render_dataframe
 from mpcontribs.io.core.recdict import render_dict
-from test_site.settings import STATIC_URL
+from test_site.settings import STATIC_URL, DEBUG
 
 def index(request):
     ctx = RequestContext(request)
     if request.user.is_authenticated():
-        API_KEY = request.user.api_key
+        from webtzite.models import RegisteredUser
+        user = RegisteredUser.objects.get(username=request.user.username)
+        API_KEY = user.api_key
         ENDPOINT = request.build_absolute_uri(get_endpoint())
         from ..rest.rester import SwfRester
         with SwfRester(API_KEY, endpoint=ENDPOINT) as mpr:
@@ -21,8 +23,10 @@ def index(request):
                 ctx['provenance'] = render_dict(prov, webapp=True)
                 df = mpr.get_contributions()
                 ctx['table'] = render_dataframe(df, webapp=True)
-                mod = os.path.dirname(__file__).split(os.sep)[-2]
-                ctx['static_url'] = '_'.join([STATIC_URL[:-1], mod])
+                ctx['static_url'] = STATIC_URL
+                if DEBUG:
+                    mod = os.path.dirname(__file__).split(os.sep)[-2]
+                    ctx['static_url'] = '_'.join([STATIC_URL[:-1], mod])
             except Exception as ex:
                 ctx.update({'alert': str(ex)})
     else:
