@@ -26,7 +26,8 @@ from django_extensions.management.commands.generate_secret_key import get_random
 SECRET_KEY = get_random_secret_key()
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+import ast
+DEBUG = ast.literal_eval(os.environ.get('MPCONTRIBS_DEBUG', 'False'))
 
 ALLOWED_HOSTS = ['contribs.materialsproject.org', 'localhost']
 
