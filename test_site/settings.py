@@ -186,7 +186,7 @@ if not DEBUG or os.environ.get('DEPLOYMENT') == 'MATGEN':
 CAS_SERVER_URL = 'https://materialsproject.org/cas/'
 CAS_VERSION = '3'
 CAS_LOGOUT_COMPLETELY = False
-CAS_REDIRECT_URL = '/dashboard'
+CAS_REDIRECT_URL = '/'
 CAS_RETRY_LOGIN = True
 CAS_USERNAME_ATTRIBUTE = 'username'
 CAS_APPLY_ATTRIBUTES_TO_USER = True

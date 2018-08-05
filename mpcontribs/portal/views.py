@@ -1,8 +1,9 @@
 """This module provides the views for the portal."""
 
 import os
-from django.shortcuts import render_to_response
+from django.shortcuts import render_to_response, redirect
 from django.template import RequestContext
+from django.core.urlresolvers import reverse
 from mpcontribs.users_modules import *
 from mpcontribs.rest.views import get_endpoint
 from test_site.settings import STATIC_URL
@@ -50,5 +51,6 @@ def index(request):
                 if not idx or (idx and 'jupyterhub' in endpoint):
                     ctx['a_tags'][idx].append(entry)
     else:
-        ctx.update({'alert': 'Please log in!'})
+        #ctx.update({'alert': 'Please log in!'})
+        return redirect(reverse('cas_ng_login'))
     return render_to_response("mpcontribs_portal_index.html", ctx)
