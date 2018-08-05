@@ -12,7 +12,7 @@ class MPContribsRester(MPResterBase):
             api_key = os.environ.get('PMG_MAPI_KEY')
         if endpoint is None:
             endpoint = os.environ.get(
-                'PMG_MAPI_ENDPOINT', 'http://alpha.materialsproject.org/mpcontribs/rest'
+                'PMG_MAPI_ENDPOINT', 'https://contribs.materialsproject.org/rest'
             )
         if test_site:
             # override api_key and endpoint with test_site values
