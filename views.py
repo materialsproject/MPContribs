@@ -20,10 +20,12 @@ def index(request):
 
 @require_http_methods(["GET", "POST"])
 def dashboard(request):
-    from .models import RegisteredUser
-    user = RegisteredUser.objects.get(username=request.user.username)
     ctx = RequestContext(request)
-    return render_to_response("dashboard.html", locals(), ctx)
+    print(request.user.username, request.user.is_authenticated())
+    if request.user.is_authenticated():
+        from .models import RegisteredUser
+        ctx['user'] = RegisteredUser.objects.get(username=request.user.username)
+    return render_to_response("dashboard.html", ctx)
 
 from django.contrib.auth.views import login as django_login
 from django.contrib.auth import logout as auth_logout

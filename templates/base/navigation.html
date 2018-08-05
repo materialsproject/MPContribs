@@ -17,15 +17,15 @@
     <div class="nav-collapse">
       <a class="brand" href="/"><img src="{% static 'logo.png' %}"></a>
       <ul class="nav pull-right" role="navigation">
-        <li><a href="/">Home</a></li>
+        <li><a href="/">Portal</a></li>
         {% if user.is_authenticated %}
         {% if user.is_superuser %}
-        <li><a href="/admin" data-icon="&gt;" class="icon">Admin</a></li>
+        <li><a href="/admin">Admin</a></li>
         {% endif %}
-        <li><a href="{% url 'webtzite_dashboard' %}" data-icon="&gt;" class="icon">Dashboard</a></li>
-        <li><a href="{% url 'cas_ng_logout' %}?next=/">Logout</a></li>
+        <li><a href="{% url 'webtzite_dashboard' %}">Dashboard</a></li>
+        <li><a href="{% url 'cas_ng_logout' %}?next={% url 'webtzite_dashboard' %}">Logout</a></li>
         {% else %}
-        <li><a href="{% url 'cas_ng_login' %}">Login</a></li>
+        <li><a href="{% url 'cas_ng_login' %}?next=/">Login</a></li>
         {% endif %}
       </ul>
     </div>
