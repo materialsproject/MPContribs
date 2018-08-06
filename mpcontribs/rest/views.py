@@ -38,19 +38,19 @@ def get_endpoint():
     return reverse('mpcontribs_rest_index')[:-1]
 
 def index(request):
-    endpoint = request.build_absolute_uri(get_endpoint())
-    module_dir = os.path.dirname(__file__)
-    cwd = os.getcwd()
-    os.chdir(module_dir)
-    with open('apidoc_template.json', 'r') as f:
-         template = CustomTemplate(f.read())
-         text = template.substitute({'URL': endpoint})
-         with open('apidoc.json', 'w') as f2:
-             f2.write(text)
-    call(['apidoc', '-f "views.py"', '-f "_apidoc.py"', '--output', 'static'])
-    os.chdir(cwd)
     jpy_user = os.environ.get('JPY_USER')
     if jpy_user:
+        endpoint = request.build_absolute_uri(get_endpoint())
+        module_dir = os.path.dirname(__file__)
+        cwd = os.getcwd()
+        os.chdir(module_dir)
+        with open('apidoc_template.json', 'r') as f:
+             template = CustomTemplate(f.read())
+             text = template.substitute({'URL': endpoint})
+             with open('apidoc.json', 'w') as f2:
+                 f2.write(text)
+        call(['apidoc', '-f "views.py"', '-f "_apidoc.py"', '--output', 'static'])
+        os.chdir(cwd)
         return redirect(PROXY_URL_PREFIX + '/static_rest/index.html')
     return redirect('/static/index.html')
 
