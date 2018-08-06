@@ -16,6 +16,7 @@ from scipy.constants import pi, R
 from scipy.optimize import brentq
 from scipy.integrate import quad
 mpr = MPRester()
+import views
     
 def remove_comp_one(compstr):
     compspl = split_comp(compstr=compstr)
@@ -1108,7 +1109,106 @@ class EnergyAnalysis:
             q_pump = q_pump / 2000
 
         return q_pump
+        
+    @staticmethod
+    def dhf_h2o(t_ox):
+        """
+        Gets the heat of formation of water for at certain temperature
+        Based on the Shomate equation and the NIST-JANAF thermochemical tables
+        H° − H°298.15= A*t + B*t2/2 + C*t3/3 + D*t4/4 − E/t + F − H
+        H° = A*t + B*t2/2 + C*t3/3 + D*t4/4 − E/t + F 
+        https://webbook.nist.gov/cgi/cbook.cgi?ID=C7732185&Units=SI&Mask=1#Thermo-Gas
+        """
 
+        if t_ox <= 1700:
+            a = 30.09200
+            b = 6.832514
+            c = 6.793435
+            d = -2.534480
+            e = 0.082139
+            f = -250.8810
+
+        else:
+            a = 41.96426
+            b = 8.622053
+            c = -1.499780
+            d = 0.098119
+            e = -11.15764
+            f = -272.1797
+
+        t_1000 = t_ox / 1000
+        hform = a*t_1000
+        hform += 0.5*b*(t_1000**2)
+        hform += (1/3)*c*(t_1000**3)
+        hform += (1/4)*c*(t_1000**4)
+        hform += -e/t_1000
+        hform += f
+
+        return hform
+    
+    @staticmethod
+    def dh_co_co2(t_ox):
+        """
+        Gets the heat of formation of CO2 and of CO and returns the difference to get the heat of reaction
+        Based on the Shomate equation and the NIST-JANAF thermochemical tables
+        H° − H°298.15= A*t + B*t2/2 + C*t3/3 + D*t4/4 − E/t + F − H
+        H° = A*t + B*t2/2 + C*t3/3 + D*t4/4 − E/t + F 
+        
+        CO2: https://webbook.nist.gov/cgi/cbook.cgi?ID=C124389&Units=SI&Mask=1#Thermo-Gas
+        CO:  https://webbook.nist.gov/cgi/cbook.cgi?ID=C630080&Units=SI&Mask=1#Thermo-Gas
+        """
+        t_1000 = t_ox / 1000
+
+        # CO2
+        if t_ox <= 1200:
+            a = 24.99735
+            b = 55.18696
+            c = -33.69137
+            d = 7.948387
+            e = -0.136638
+            f = -403.6075
+
+        else:
+            a = 58.16639
+            b = 2.720074
+            c = -0.492289
+            d = 0.038844
+            e = -6.447293
+            f = -425.9186
+
+        hco2 = a*t_1000
+        hco2 += 0.5*b*(t_1000**2)
+        hco2 += (1/3)*c*(t_1000**3)
+        hco2 += (1/4)*c*(t_1000**4)
+        hco2 += -e/t_1000
+        hco2 += f
+        
+        # CO
+        if t_ox <= 1300:
+            a = 25.56759
+            b = 6.096130
+            c = 4.054656
+            d = -2.671301
+            e = 0.131021
+            f = -118.0089
+
+        else:
+            a = 35.15070
+            b = 1.300095
+            c = -0.205921
+            d = 0.013550
+            e = -3.282780
+            f = -127.8375
+
+        hco = a*t_1000
+        hco += 0.5*b*(t_1000**2)
+        hco += (1/3)*c*(t_1000**3)
+        hco += (1/4)*c*(t_1000**4)
+        hco += -e/t_1000
+        hco += f
+
+        return hco2-hco
+        
     def calc(self, p_ox, p_red, t_ox, t_red, data_origin="Exp", data_use="combined",
              enth_steps=30, sample_ident=-1, celsius=True, from_file=True,
              heat_cap=True,
@@ -1166,12 +1266,13 @@ class EnergyAnalysis:
         else:
             temp_1_corr = t_ox
             temp_2_corr = t_red
-            
-        # load experimental sample data from file
-        path = os.path.abspath("")
-        filepath = os.path.join(path, "exp_data.json")
-        with open(filepath) as handle:
-            expdata = json.loads(handle.read())
+        
+        if data_origin == "Exp": # currently not in use for updates of existing data
+            # load experimental sample data from file
+            path = os.path.abspath("")
+            filepath = os.path.join(path, "exp_data.json")
+            with open(filepath) as handle:
+                expdata = json.loads(handle.read())
 
         # use equivalent partial pressures for Water Splitting and CO2 splitting
         if self.process == "Water Splitting":
@@ -1204,10 +1305,7 @@ class EnergyAnalysis:
                         sample_ident = pd.np.genfromtxt(fo, dtype='str', delimiter=",", skip_header=1)
                         fo.close()
                     else:
-                        path = os.path.abspath("")
-                        filepath = os.path.join(path, "theo_redenth_debye.json")
-                        with open(filepath) as handle:
-                            sampledata = json.loads(handle.read())
+                        sampledata = views.get_theo_data()
                         sample_ident = sampledata["compstr"]
                     no_range = range(len(sample_ident))
 
@@ -1266,10 +1364,7 @@ class EnergyAnalysis:
                     delta_2 = rootfind(1e-10, 0.5-1e-10, args_2, funciso)
                     
                     # use theoretical elastic tensors
-                    path = os.path.abspath("")
-                    filepath = os.path.join(path, "theo_redenth_debye.json")
-                    with open(filepath) as handle:
-                        sampledata = json.loads(handle.read())
+                    sampledata = views.get_theo_data()
                     for z in range(len(sampledata["compstr"])):
                         if (sampledata["compstr"][z]).split("O3")[0] == compstr.split("Ox")[0]:
                             index_debye = z
@@ -1384,7 +1479,6 @@ class EnergyAnalysis:
                         energy_sensible = EnergyAnalysis().heat_input_linear(temp_1=temp_1_corr, temp_2=temp_2_corr, delta_1=delta_1, 
                             delta_2=delta_2, t_d_perov=t_d_perov, t_d_brownm=t_d_brownm, num=40) / 1000
 
-                sample_l.append(sample)
                 chemical_energy_l.append(energy_integral_dh)
                 sensible_energy_l.append(energy_sensible)
                 mol_mass_ox_l.append(mol_mass_ox)
@@ -1408,8 +1502,7 @@ class EnergyAnalysis:
                 #print("No data for sample " + str(sample) + " found!" + str(e))
             sample = None
                     
-        resdict = { "sample": sample_l,
-                    "Chemical Energy": chemical_energy_l,
+        resdict = { "Chemical Energy": chemical_energy_l,
                     "Sensible Energy": sensible_energy_l,
                     "mol_mass_ox": mol_mass_ox_l,
                     "mol_prod_mol_red": mol_prod_mol_red_l,
@@ -1426,8 +1519,8 @@ class EnergyAnalysis:
                     "l_prod_kg_red": l_prod_kg_red_l,
                     "g_prod_kg_red": g_prod_kg_red_l}
         return resdict
-    
-    def on_the_fly(self, resdict, pump_ener, w_feed, h_rec, h_rec_steam, celsius=True, h_val="high", p_ox_wscs=0):
+
+    def on_the_fly(self, resdict, pump_ener, w_feed, h_rec, h_rec_steam, celsius=True, h_val="high", p_ox_wscs=0, rem_unstable=True):
         """
         Allows to calculate the energy input for different conditions rather quickly, without having to re-calculate
         the time-intensive chemical and sensible energy every time again
@@ -1452,8 +1545,18 @@ class EnergyAnalysis:
                                                                'high' -> higher heating value
                                                                
         :param p_ox_wscs:   ratio H2/H2O / ratio CO/CO2
-        """
         
+        :param rem_unstable: if True, phases which are potentially unstable for chemical reasons are removed
+                            this is based on the phases in "unstable_phases.json"
+                            currently, phases are excluded for the following reasons: 
+                            - tolerance factor below 0.9 (e.g. EuCuO3, which cannot be synthesized as opposed to EuFeO3)
+                            - phases with expected high covalency (V5+ cations, for instance, NaVO3 is stable but not a perovskite)
+                            - phases with expected low melting point (Mo5+ cations, see this article for NaMoO3
+                            http://www.journal.csj.jp/doi/pdf/10.1246/bcsj.64.161)
+                            
+                            By default, this is always True and there is no way in the user front-end to change this. 
+                            However, this could be changed manually by the developers, if neccessary.
+        """
         if self.process == "Air Separation":
             p_ox_wscs = 1
         
@@ -1471,25 +1574,40 @@ class EnergyAnalysis:
         result_val_delta_redox = pd.np.empty(2)
         result_val_mass_change = pd.np.empty(2)
         
-        for i in range(len(resdict['Chemical Energy'])):
-            energy_integral_dh = resdict['Chemical Energy'][i]
-            if len(resdict['sample']) < 50: # for experimental data: convert J/mol to kJ/mol
-                energy_integral_dh = energy_integral_dh / 1000
-            energy_sensible = resdict['Sensible Energy'][i]
-            mol_mass_ox = resdict['mol_mass_ox'][i]
-            mol_prod_mol_red = resdict['mol_prod_mol_red'][i]
-            t_ox = resdict['T_ox'][i]
-            t_red = resdict['T_red'][i]
-            p_red = resdict['p_red'][i]
-            p_ox = resdict['p_ox'][i]
-            compstr = resdict['compstr'][i]
-            delta_1 = resdict['delta_1'][i]
-            delta_2 = resdict['delta_2'][i]
-            mass_redox_i = resdict['mass_redox'][i]
-            prodstr = resdict['prodstr'][i]
-            prodstr_alt = resdict['prodstr_alt'][i]
-            l_prod_kg_red = resdict['l_prod_kg_red'][i]
-            g_prod_kg_red = resdict['g_prod_kg_red'][i]
+        for i in range(len(resdict)):
+            mol_prod_mol_red = resdict[i]['mol_prod_mol_red']
+            t_ox = resdict[i]['T_ox']
+            t_red = resdict[i]['T_red']
+            t_mean = (t_ox + t_red) / 2
+            
+            # chemical energy stored in products
+            if self.process == "Water Splitting":
+                dh_wscs = EnergyAnalysis().dhf_h2o(t_mean) * mol_prod_mol_red
+            elif self.process == "CO2 Splitting":
+                dh_wscs = EnergyAnalysis().dh_co_co2(t_mean) * mol_prod_mol_red
+            else:
+                dh_wscs = 0
+                
+            energy_integral_dh = resdict[i]['Chemical Energy'] - ( (resdict[i]['Chemical Energy'] + dh_wscs) * h_rec )
+            
+            if len(resdict) < 50: # for experimental data: convert J/mol to kJ/mol
+                energy_integral_dh = energy_integral_dh / 1000 
+                # wscs does not matter, as no water splitting / co2 splitting is considered for exp data
+                
+            energy_sensible = resdict[i]['Sensible Energy']
+            mol_mass_ox = resdict[i]['mol_mass_ox']
+           
+            p_red = resdict[i]['p_red']
+            p_ox = resdict[i]['p_ox']
+            compstr = resdict[i]['compstr']
+            delta_1 = resdict[i]['delta_1']
+            delta_2 = resdict[i]['delta_2']
+            mass_redox_i = resdict[i]['mass_redox']
+            prodstr = resdict[i]['prodstr']
+            prodstr_alt = resdict[i]['prodstr_alt']
+            l_prod_kg_red = resdict[i]['l_prod_kg_red']
+            g_prod_kg_red = resdict[i]['g_prod_kg_red']
+            unstable = resdict[i]['unstable']
             
             # pumping energy
             if pump_ener != -1:
@@ -1503,18 +1621,17 @@ class EnergyAnalysis:
             # steam generation
             if self.process == "Water Splitting" and h_rec_steam != 1:
                 energy_steam = mol_prod_mol_red * EnergyAnalysis().energy_steam_generation(temp_1=w_feed,
-                temp_2=t_ox-273.15,
+                temp_2=((t_ox+t_red)*0.5)-273.15,
                 h_2_h2o=p_ox_wscs,
                 celsius=celsius,
                 h_rec=h_rec_steam)
             else:
                 energy_steam = 0
-            
+                
             # total energy
-            energy_total = energy_integral_dh * (1 - h_rec) + energy_sensible * (
-            1 - h_rec) + energy_pumping + energy_steam
+            energy_total = energy_integral_dh  + energy_sensible * (1 - h_rec) + energy_pumping + energy_steam
 
-            ener_i = pd.np.array([energy_total, energy_integral_dh * (1 - h_rec), energy_sensible * (1 - h_rec),
+            ener_i = pd.np.array([energy_total, energy_integral_dh, energy_sensible * (1 - h_rec),
             energy_pumping,
             energy_steam])
 
@@ -1550,11 +1667,10 @@ class EnergyAnalysis:
             delta_redox_i = [float(delta_2 - delta_1)]
             mass_change_i = [float(mass_redox_i)]
             compdisp = remove_comp_one(compstr=compstr)
-
-            # sort out unphysically large values due to extrapolation of experimental data outside of the measured range
-            invalid_val = False
-            #if (kj_mol_prod[1] / (1 - h_rec+1E-6)) > 200000: # add 1E-6 to avoid division by zero
-                #invalid_val = True 
+            
+            invalid_val = False # remove data of unstable compounds
+            if rem_unstable and unstable:
+                invalid_val = True
                 
             # append new values to result and add compositions
             if (ener_i[0] < 0) or invalid_val: # sort out negative values, heat input is always positive              
@@ -1633,7 +1749,6 @@ class EnergyAnalysis:
         result_val_g_prod_kg_red = sorted(result_val_g_prod_kg_red[1:], key=lambda x: float(x[0]), reverse=True)
         result_val_delta_redox = sorted(result_val_delta_redox[1:], key=lambda x: float(x[0]), reverse=True)
         result_val_mass_change = sorted(result_val_mass_change[1:], key=lambda x: float(x[0]), reverse=True)
-        
         
         # create dictionary with results
         dict_result = {"kJ/mol redox material": result_val_ener_i,

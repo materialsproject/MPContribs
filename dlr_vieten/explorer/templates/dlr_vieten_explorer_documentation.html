@@ -174,6 +174,32 @@ code { display: block; white-space: pre-wrap; }
             </p></font>
         </div>
     </div>
+    
+     <br>
+  <div class="row">
+        <div class="col-md-12">
+            <h4><b>5. Using the results for materials selection</h4></b>
+            <p class="justify">
+            <font size="2">Although the <i>RedoxThermoCSP</i> tools yield a rich dataset with profound physical and chemical background, it is important to consider its limitations. Any theoretical dataset is only as good as the theory behind it, and fitted experimental data may be biased by the fitting method. In general, we want these tools to serve as a method of materials pre-selection. The theoretical data cannot replace experiments, but it will significantly reduce the amount of materials to investigate experimentally and increase the success rate of experiments.<br><br>
+            Our materials screening method predicts some materials which are likely to be unstable. We excluded those materials in the <i>Energy Analysis</i> section, but this data is still available to plot <i>Isographs</i>, and more information can be found in the accompanying publications. We excluded 36 materials out of the >200 theoretical datasets for the following reasons:<br>
+            <ul><li><b>tolerance factor < 0.9:</b> Experiments performed in our labs have shown that EuFeO<sub>3-δ</sub> is a stable perovskite, whereas EuCuO<sub>3-δ</sub> could not be synthesized due to its tolerance factor of about 0.88 (Cu<sup>3+</sup> ions have a too large ionic radius).</li>
+            <li><b>Covalent V-O bonds:</b> Compounds such as NaVO<sub>3</sub> are stable, but those are not perovskite-structured. Due to the high covalency of the V-O bond in those cases, they form salt like structures with vanadate anions. Therefore, we exclude all compounds with V<sup>5+</sup> cations in the lattice.</li>
+            <li><b>Low melting points (alkali molybdenates):</b> Some compounds form perovskites and similar structures, but they have melting points of only a few hundred degrees centrigrade, making them not useful for most thermochemical applications. Moreover, it is not reasonable to calculate properties like the oxygen non-stoichiometry for these compounds, at least not the way we treat solids. One example is sodium molybenate, and therefore exclude all compounds containing Mo<sup>5+</sup> cations. See also:<br>
+            K. Eda, K. Furusawa, F. Hatayama, S. Takagi, N. Sotani (1991). "Formation of Na<sub>0.9</sub>Mo<sub>6</sub>O<sub>17</sub> in a Solid-Phase Process. Transformations of a Hydrated Soldium Molybdenum Bronze, Na<sub>0.23</sub>(H<sub>2</sub>O)<sub>0.78</sub>MoO<sub>3</sub>, with Heat Treatments in a Nitrogen Atmosphere" <u>Bull. Chem. Soc. Jpn.</u> <b>64</b>(99): 161-164., <a href="http://dx.doi.org/10.1246/bcsj.64.161">DOI: 10.1246/bcsj.64.161</a>
+            </li></ul>
+            This list is by no means complete, most of the perovskite solid solutions we suggest have never been systhesized. However, with some understanding of perovskite chemistry and using literature on similar phases, it should be possible to get a good estimate on the stability of a suggested phase.<br>
+            Moreover, one can also search these phases in <i>The Materials Project</i> and find the so-called energy above hull. This is the DFT-calculated energy difference between this phase and the most stable phase(s) containing the same elements. In principle, if this energy is above 0, it means that the phase is metastable according to DFT and may eventually decompose. However, some of these phases have been synthesiszed and are stable, so this value just gives a first indication. <br>
+            Finally, kinetic limitations also play a role, which are completely neglected herein, as DFT calculations are performed for a temperature of 0 K. Especially at low temperatures (below 350-600 °C), the phase may never be oxidized to the level predicted by thermodynamic calculations. Therefore, one should be especially careful when looking for materials to be applied in this temperature range, especially if they have very low redox enthalpies (chemical energy per mol of redox material).
+            <br><br><b>
+            This checklist may be helpful to evaluate whether a material suggested in the <i>Energy Analysis</i> section is actually a good choice:</b><br>
+            <ul><li>Is the phase a stable perovskite (ionic structure)? What are its expected physical properties (compare literature on similar phases)?</li>
+            <li>May the oxidation reaction be kinetically limited? Check if the oxidation temperature is high enough. Most perovskites require 350-600 °C to show appreciable oxidation rates.</li>
+            <li>Is the energy above hull exceptionally large? Is the predicted redox enthalpy reasonable? Check the materials on <i>The Materials Project</i> in terms of the energy above hull (-> "Explore Materials" on The Materials Project) and in terms of the redox enthalpy (-> "Calculate Reaction")</li></ul>
+            That being said, we believe that <i>RedoxThermoCSP</i> will make it a lot easier to find perovskite materials for thermochemical applications. Enjoy using it and feel free to use the data for your research! <br>Our journal publications (see above) must be attributed.
+            
+            </p></font>
+        </div>
+    </div>
 
 {% endif %}
 {% endblock %}
