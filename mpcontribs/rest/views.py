@@ -388,12 +388,10 @@ def datasets(request, identifier, db_type=None, mdb=None):
     """
     from mpcontribs.users_modules import get_users_modules, get_user_rester
     contributions = []
-    required_keys = ['title', 'description', 'authors', 'dois']
+    required_keys = ['title', 'description', 'authors', 'urls']
     for mod_path in get_users_modules():
         if os.path.exists(os.path.join(mod_path, 'rest', 'rester.py')):
-            mod_path_split = mod_path.split(os.sep)[-3:]
-            m = import_module('.'.join(mod_path_split + ['rest', 'rester']))
-            UserRester = getattr(m, get_user_rester(mod_path_split[-1]))
+            UserRester = get_user_rester(mod_path)
             endpoint = request.build_absolute_uri(get_endpoint())
             r = UserRester(request.user.api_key, endpoint=endpoint)
             if r.released and r.query is not None:
@@ -452,21 +450,25 @@ def get_card(request, cid, db_type=None, mdb=None):
     embed = loads(request.POST.get('embed', 'true'))
     if embed:
         from selenium import webdriver
+        from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
         from bs4 import BeautifulSoup
         try:
-            options = webdriver.FirefoxOptions()
+            options = webdriver.ChromeOptions()
+            options.add_argument("no-sandbox")
+            options.add_argument('--disable-dev-shm-usage')
             options.set_headless()
-            browser = webdriver.Firefox(firefox_options=options)
+            browser = webdriver.Remote(command_executor="http://127.0.0.1:4444/wd/hub", desired_capabilities=DesiredCapabilities.CHROME, options=options)
         except:
             try:
+                options = webdriver.FirefoxOptions()
+                options.set_headless()
+                browser = webdriver.Firefox(firefox_options=options)
+            except:
                 options = webdriver.ChromeOptions()
                 options.add_argument("no-sandbox")
                 options.set_headless()
                 browser = webdriver.Chrome(chrome_options=options)
-            except:
-                raise
 
-    prov_keys = loads(request.POST.get('provenance_keys', '["title"]'))
     contrib = mdb.contrib_ad.query_contributions(
         {'_id': ObjectId(cid)},
         projection={'_id': 0, 'mp_cat_id': 1, 'content': 1, 'collaborators': 1}
@@ -528,9 +530,11 @@ def get_card(request, cid, db_type=None, mdb=None):
     is_mp_id = mp_id_pattern.match(mpid)
     collection = 'materials' if is_mp_id else 'compositions'
     more = reverse('mpcontribs_explorer_contribution', args=[collection, cid])
+    more = request.build_absolute_uri(more)
     project = hdata.get('project')
     if project is not None:
         landing_page = reverse('mpcontribs_users_{}_explorer_index'.format(project))
+        landing_page = request.build_absolute_uri(landing_page)
 
     card = '''
     <style>
