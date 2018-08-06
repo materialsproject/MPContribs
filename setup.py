@@ -21,11 +21,11 @@ setup(
     ],
     install_requires = [
         'numpy', 'scipy', 'Flask', 'pandas', 'plotly==1.12.6', 'six', 'monty',
-        'matplotlib', 'pymongo', 'pyyaml', 'ipython', 'nose', 'pybtex',
-        'Django>=1.8.5,<1.9', 'archieml', 'django-browserid', 'sphinx', 'notebook',
+        'matplotlib', 'pymongo', 'pyyaml', 'ipython', 'nose', 'pybtex', 'requests[security]',
+        'Django==1.8.5', 'archieml', 'django-browserid', 'sphinx', 'notebook',
         'ipywidgets', 'celery', 'tqdm', 'beautifulsoup4', 'whichcraft', 'pymatgen',
-        'unidecode', 'psutil', 'nbformat', 'xlrd', 'django-nopassword',
-        'django-require', 'pympler', 'django_cas_ng', 'django-extensions'
+        'unidecode', 'psutil', 'nbformat', 'xlrd', 'django-nopassword', 'mod_wsgi',
+        'django-require', 'pympler', 'django_cas_ng', 'django-extensions', 'selenium'
     ],
     license = 'MIT',
     keywords = ['materials', 'contribution', 'framework', 'data', 'interactive', 'jupyter'],
