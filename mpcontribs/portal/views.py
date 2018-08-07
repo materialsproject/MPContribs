@@ -52,5 +52,5 @@ def index(request):
                     ctx['a_tags'][idx].append(entry)
     else:
         #ctx.update({'alert': 'Please log in!'})
-        return redirect(reverse('cas_ng_login'))
+        return redirect('{}?next={}'.format(reverse('cas_ng_login'), reverse('mpcontribs_portal_index')))
     return render_to_response("mpcontribs_portal_index.html", ctx)
