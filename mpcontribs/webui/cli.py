@@ -1,5 +1,5 @@
 # http://flask.pocoo.org/docs/0.10/patterns/appdispatch/
-import os, argparse
+import os, argparse, string
 from werkzeug.serving import run_simple
 from werkzeug.wsgi import DispatcherMiddleware, SharedDataMiddleware
 from flask import Flask
@@ -7,6 +7,9 @@ from mpcontribs.webui.main import main_bp
 from mpcontribs.webui.webui import ingester_bp
 from test_site.wsgi import application as django_app
 from test_site.settings import STATIC_ROOT_URLS, PROXY_URL_PREFIX
+
+class CustomTemplate(string.Template):
+    delimiter = '$$'
 
 def cli():
     parser = argparse.ArgumentParser(
@@ -33,6 +36,16 @@ def cli():
             dbpath = os.path.join(os.getcwd(), 'db')
             if not os.path.exists(dbpath):
                 os.makedirs(dbpath)
+
+    custom_js = '/home/jovyan/work/MPContribs/notebooks/profile/custom/custom.js'
+    if not os.path.exists(custom_js):
+        with open('{}_template'.format(custom_js), 'r') as f:
+            fstr = f.read()
+            template = CustomTemplate(fstr)
+            jpy_user = os.environ.get('JPY_USER')
+            text = template.substitute({'JPY_USER': jpy_user})
+            with open(custom_js, 'w') as f2:
+                f2.write(text)
 
     app = Flask(__name__)
     app.debug = args.debug
