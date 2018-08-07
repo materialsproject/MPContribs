@@ -23,10 +23,10 @@ class MPContribsRester(MPResterBase):
             endpoint = '/'.join([flaskproxy, jpy_user, 'test_site/mpcontribs/rest'])
             from webtzite.models import RegisteredUser
             try:
-                u = RegisteredUser.objects.get(username=jpy_user)
+                u = RegisteredUser.objects.first()
             except RegisteredUser.DoesNotExist:
-                login_url = '/'.join([flaskproxy, jpy_user, 'test_site/login'])
-                raise ValueError('Go to {} and register first!'.format(login_url))
+                login_url = '/'.join([flaskproxy, jpy_user, 'test_site'])
+                raise ValueError('Visit {} to get registered first!'.format(login_url))
             api_key = u.api_key
         super(MPContribsRester, self).__init__(
           api_key=api_key, endpoint=endpoint
