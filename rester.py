@@ -74,7 +74,7 @@ class MPResterBase(object):
                 from django.core.urlresolvers import reverse
                 uri = urlparse.urlparse(preamble)
                 domain = '{uri.scheme}://{uri.netloc}'.format(uri=uri)
-                site_url = '/'.join(uri.path.split('/')[:-2]) # test_site/
+                site_url = '/'.join(uri.path.split('/')[:-1]) # test_site/
                 browserid_csrf = reverse('browserid.csrf')
                 if site_url[:-1] not in browserid_csrf:
                     domain += site_url
