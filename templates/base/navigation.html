@@ -15,12 +15,12 @@
       <span class="icon-bar"></span>
     </a>
     <div class="nav-collapse">
-      <a class="brand" href="/"><img src="{% static 'logo.png' %}"></a>
+        <a class="brand" href="{% url 'mpcontribs_portal_index' %}"><img src="{% static 'logo.png' %}"></a>
       <ul class="nav pull-right" role="navigation">
-        <li><a href="/">Portal</a></li>
+        <li><a href="{% url 'mpcontribs_portal_index' %}">Portal</a></li>
         {% if user.is_authenticated %}
         {% if user.is_superuser %}
-        <li><a href="/admin">Admin</a></li>
+        <li><a href="{% url 'mpcontribs_portal_index' %}admin">Admin</a></li>
         {% endif %}
         <li><a href="{% url 'webtzite_dashboard' %}">Dashboard</a></li>
         <li><a href="{% url 'cas_ng_logout' %}?next={% url 'webtzite_dashboard' %}">Logout</a></li>
