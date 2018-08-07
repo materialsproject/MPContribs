@@ -26,8 +26,8 @@ from django_extensions.management.commands.generate_secret_key import get_random
 SECRET_KEY = get_random_secret_key()
 
 # SECURITY WARNING: don't run with debug turned on in production!
-import ast
-DEBUG = ast.literal_eval(os.environ.get('MPCONTRIBS_DEBUG', 'False'))
+JPY_USER = os.environ.get('JPY_USER')
+DEBUG = bool(JPY_USER)
 
 ALLOWED_HOSTS = ['contribs.materialsproject.org', 'localhost']
 
@@ -123,7 +123,6 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.8/howto/static-files/
 
-JPY_USER = os.environ.get('JPY_USER')
 PROXY_URL_PREFIX = '/flaskproxy/{}'.format(JPY_USER) if JPY_USER else ''
 ROOT_PROJECT_DIR = os.path.dirname(os.path.dirname(__file__))
 STATIC_ROOT = ROOT_PROJECT_DIR
