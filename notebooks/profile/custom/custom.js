@@ -1,6 +1,6 @@
 console.log('executing custom.js ...');
 requirejs.config({
-  baseUrl: '/flaskproxy/tschaume/ingester/static/js/lib',
+  baseUrl: '/flaskproxy/$$JPY_USER/ingester/static/js/lib',
   paths: {
     underscore: 'underscore-min',
     backbone: "backbone-min",
