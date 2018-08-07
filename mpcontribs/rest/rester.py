@@ -22,9 +22,8 @@ class MPContribsRester(MPResterBase):
             flaskproxy = 'https://jupyterhub.materialsproject.org/flaskproxy'
             endpoint = '/'.join([flaskproxy, jpy_user, 'test_site/mpcontribs/rest'])
             from webtzite.models import RegisteredUser
-            email = jpy_user + '@users.noreply.github.com'
             try:
-                u = RegisteredUser.objects.get(email=email)
+                u = RegisteredUser.objects.get(username=jpy_user)
             except RegisteredUser.DoesNotExist:
                 login_url = '/'.join([flaskproxy, jpy_user, 'test_site/login'])
                 raise ValueError('Go to {} and register first!'.format(login_url))
