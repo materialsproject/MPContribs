@@ -61,6 +61,9 @@ def get_user_rester(mod_path):
     UserRester = None
     mod = os.path.basename(mod_path)
     rester_path = os.path.join(mod_path, 'rest', 'rester.py')
+    if not rester_path.startswith(os.sep):
+        thisdir = os.path.abspath(os.path.dirname(__file__))
+        rester_path = os.path.abspath(os.path.join(thisdir, '..', rester_path))
     if os.path.exists(rester_path):
         m = import_module('mpcontribs.users.{}.rest.rester'.format(mod))
         UserRester = getattr(m, get_user_classname(mod) + 'Rester')
