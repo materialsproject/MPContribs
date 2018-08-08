@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
-import inspect
+import inspect, os
 from importlib import import_module
 from mpcontribs.users_modules import get_user_rester
 
@@ -11,10 +11,8 @@ def duplicate_check(f):
 
         module = inspect.getmodule(f)
         module_split = module.__name__.split('.')[:-1]
-        module_name = get_user_rester(module_split[-1])
-        module_rester = '.'.join(module_split + ['rest', 'rester'])
-        mod = import_module(module_rester)
-        Rester = getattr(mod, module_name)
+        mod_path = os.sep.join(module_split)
+        Rester = get_user_rester(mod_path)
 
         test_site = kwargs.get('test_site', True)
         with Rester(test_site=test_site) as mpr:
