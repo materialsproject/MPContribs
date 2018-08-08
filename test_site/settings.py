@@ -27,7 +27,7 @@ SECRET_KEY = get_random_secret_key()
 
 # SECURITY WARNING: don't run with debug turned on in production!
 JPY_USER = os.environ.get('JPY_USER')
-DEBUG = bool(JPY_USER)
+DEBUG = os.environ.get('MPCONTRIBS_DEBUG', bool(JPY_USER))
 
 ALLOWED_HOSTS = ['contribs.materialsproject.org', 'localhost']
 
