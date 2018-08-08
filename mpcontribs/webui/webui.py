@@ -198,7 +198,8 @@ def contribute():
         try:
             response = Response(stream_with_context(stream_template(
                 'contribute.html', session=session, content=submit_mpfile(
-                    StringIO(mpfile), site=session['contribute']['site'], fmt=fmt
+                    StringIO(mpfile), site=session['contribute']['site'],
+                    fmt=fmt, project=session['options'][1]
                 ))))
             response.headers['X-Accel-Buffering'] = 'no'
             return response
