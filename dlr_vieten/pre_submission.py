@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
-import os
+import os, json, re
 from glob import glob
+from itertools import groupby
 import pandas as pd
 from mpcontribs.io.core.utils import get_composition_from_string
 from mpcontribs.io.core.recdict import RecursiveDict
@@ -65,8 +66,25 @@ def get_table(results, letter):
     ]))
     df2.set_index('δ', inplace=True)
     cols = ['δ', y, y+'ₑᵣᵣ', y+' Fit']
-    return pd.concat([df, df2]).sort_index().reset_index().rename(
+    return pd.concat([df, df2], sort=True).sort_index().reset_index().rename(
         columns={'index': 'δ'}).fillna('')[cols]
+
+def add_comp_one(compstr):
+    """
+    Adds stoichiometries of 1 to compstr that don't have them
+    :param compstr:  composition as a string
+    :return:         compositon with stoichiometries of 1 added
+    """
+    sample = pd.np.array(re.sub(r"([A-Z])", r" \1", compstr).split()).astype(str)
+    sample = [''.join(g) for _, g in groupby(sample, str.isalpha)]
+    samp_new = ""
+    for k in range(len(sample)):
+        spl_samp = re.sub(r"([A-Z])", r" \1", sample[k]).split()
+        for l in range(len(spl_samp)):
+            if spl_samp[l][-1].isalpha() and spl_samp[l][-1] != "x":
+                spl_samp[l] = spl_samp[l] + "1"
+            samp_new += spl_samp[l]
+    return samp_new
 
 @duplicate_check
 def run(mpfile, **kwargs):
@@ -76,26 +94,16 @@ def run(mpfile, **kwargs):
     from solar_perovskite.init.find_structures import FindStructures
     from solar_perovskite.init.import_data import Importdata
     from solar_perovskite.modelling.from_theo import EnthTheo
+    from solar_perovskite.convert.generate_theo_redenth_debye_data import generate_theo_data as gentheo
 
-    input_file = mpfile.hdata.general['input_file']
-    input_file = os.path.join(os.path.dirname(solar_perovskite.__file__), input_file)
+    input_files = mpfile.hdata.general['input_files']
+    input_dir = os.path.dirname(solar_perovskite.__file__)
+    input_file = os.path.join(input_dir, input_files['exp'])
     table = read_csv(open(input_file, 'r').read().replace(';', ','))
     dct = super(Table, table).to_dict(orient='records', into=RecursiveDict)
 
-    #shomate = pd.read_csv(os.path.abspath(os.path.join(
-    #    os.path.dirname(solar_perovskite.__file__), "datafiles", "shomate.csv"
-    #)), index_col=0)
-    #shomate_dct = RecursiveDict()
-    #for col in shomate.columns:
-    #    key = col.split('.')[0]
-    #    if key not in shomate_dct:
-    #        shomate_dct[key] = RecursiveDict()
-    #    d = shomate[col].to_dict(into=RecursiveDict)
-    #    subkey = '{}-{}'.format(int(d.pop('low')), int(d.pop('high')))
-    #    shomate_dct[key][subkey] = RecursiveDict(
-    #        (k, clean_value(v, max_dgts=6)) for k, v in d.items()
-    #    )
-    #mpfile.add_hierarchical_data(nest_dict(shomate_dct, ['shomate']))
+    with open(os.path.join(input_dir, input_files['theo']), 'r') as f:
+        theo_dat = json.loads(f.read())
 
     for row in dct:
 
@@ -105,22 +113,31 @@ def run(mpfile, **kwargs):
             continue
         if not identifier:
             identifier = get_composition_from_string(row['composition oxidized phase'])
-        print identifier
+        theo_idx = theo_dat['identifier'].index(identifier)
+        print identifier, theo_idx
 
         print 'add hdata ...'
         d = RecursiveDict()
         d['theo_compstr'] = row['theo_compstr']
         d['tolerance_factor'] = row['tolerance_factor']
+        d['tolerance_factor'] = clean_value(theo_dat["data"]["tolerance_factor"][theo_idx])
         d['solid_solution'] = row['type of solid solution']
+        d['solid_solution'] = theo_dat["data"]["solid_solution"][theo_idx]
         d['oxidized_phase'] = RecursiveDict()
         d['oxidized_phase']['composition'] = row['composition oxidized phase']
+        d['oxidized_phase']['composition'] = theo_dat["data"]["oxidized_phase"]["composition"][theo_idx]
         #d['oxidized_phase']['crystal-structure'] = row['crystal structure (fully oxidized)']
+        #d['oxidized_phase']['crystal-structure'] = theo_dat["data"]["oxidized_phase"]["crystal-structure"][theo_idx]
         d['reduced_phase'] = RecursiveDict()
         d['reduced_phase']['composition'] = row['composition reduced phase']
+        d['reduced_phase']['composition'] = theo_dat["data"]["reduced_phase"]["composition"][theo_idx]
         d['reduced_phase']['closest-MP'] = row['closest phase MP (reduced)'].replace('n.a.', '')
+        d['reduced_phase']['closest-MP'] = theo_dat["data"]["reduced_phase"]["closest-MP"][theo_idx]
+        compstr = add_comp_one(theo_dat["pars"]["theo_compstr"][theo_idx])
+        d['availability'] = "Exp+Theo" #if compstr in str(exp_data) else "Theo"
         d = nest_dict(d, ['data'])
         d['pars'] = get_fit_pars(sample_number)
-        d['pars']['theo_compstr'] = row['theo_compstr']
+        d['pars']['theo_compstr'] = compstr #row['theo_compstr']
         try:
             fs = FindStructures(compstr=row['theo_compstr'])
             theo_redenth = fs.find_theo_redenth()
@@ -137,6 +154,18 @@ def run(mpfile, **kwargs):
             print('error in dh_min/max!')
             print(str(ex))
             pass
+
+        theo_data = gentheo(compstr)
+        d['pars']['dh_min'] = clean_value(theo_data["dH_min"][0])
+        d['pars']['dh_max'] = clean_value(theo_data["dH_max"][0])
+        d['pars']['last_updated'] = str(theo_data["Last updated"][0])
+        act_mat = d['pars']['act_mat'].keys()[0]
+        d['pars']['act_mat'][act_mat] = clean_value(theo_data["act"])
+        d['pars']['elastic'] = RecursiveDict()
+        d['pars']['elastic']['tensors_available'] = clean_value(theo_data["Elastic tensors available"][0])
+        d['pars']['elastic']['debye_temp'] = RecursiveDict()
+        d['pars']['elastic']['debye_temp']['perovskite'] = clean_value(theo_data["Debye temp perovskite"][0])
+        d['pars']['elastic']['debye_temp']['brownmillerite'] = clean_value(theo_data["Debye temp brownmillerite"][0])
         mpfile.add_hierarchical_data(d, identifier=identifier)
 
         print 'add ΔH ...'
