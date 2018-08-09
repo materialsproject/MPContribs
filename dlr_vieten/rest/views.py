@@ -24,9 +24,10 @@ from energy_analysis import EnergyAnalysis as enera
 # load the sample data for energy analysis
 path = os.path.abspath(os.path.dirname( __file__ ))
 filepath = os.path.join(path, "energy_data.json")
-with open(filepath) as json_data:
-   eneradata = json.load(json_data)["collection"]
-json_data.close()
+if os.path.exists(filepath):
+    with open(filepath) as json_data:
+       eneradata = json.load(json_data)["collection"]
+    json_data.close()
 
 def get_theo_data():
     """
