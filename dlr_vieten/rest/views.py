@@ -21,21 +21,54 @@ ConnectorBase.register(Connector)
 mpr = MPRester()
 from energy_analysis import EnergyAnalysis as enera
 
-# load the parameter list to know where to find energy data
-# (sort of a map for the huge sampledata dict)
+# load the sample data for energy analysis
 path = os.path.abspath(os.path.dirname( __file__ ))
-filepath_params = os.path.join(path, "parameter_list.json")
-if os.path.exists(filepath_params):
-    with open(filepath_params) as handle:
-        paramlist = json.loads(handle.read())
-
-# load the sample data
 filepath = os.path.join(path, "energy_data.json")
-if os.path.exists(filepath):
-    with open(filepath) as json_data:
-       eneradata = json.load(json_data)
+with open(filepath) as json_data:
+   eneradata = json.load(json_data)["collection"]
+json_data.close()
 
-@mapi_func(supported_methods=["POST", "GET"], requires_api_key=True)
+def get_theo_data():
+    """
+    Loads the theoretical data from file "theo_data.json"
+    """
+    path = os.path.abspath(os.path.dirname( __file__ ))
+    filepath = os.path.join(path, "theo_data.json")
+    with open(filepath) as json_data:
+       theodata = json.load(json_data)["collection"]
+    json_data.close()
+    compstr_list, debye_perov_list, debye_brownm_list, dh_min_list, dh_max_list  = [], [], [], [], []
+    elast_available_list, act_list, last_updated_list = [], [], []
+    for dataset in theodata:
+        compstr = dataset["pars"]["theo_compstr"].split("O")[0] + "O3"
+        compstr_list.append(compstr)
+        debye_perov = dataset["pars"]["elastic"]["Debye temp perovskite"]
+        debye_perov_list.append(debye_perov)
+        debye_brownm = dataset["pars"]["elastic"]["Debye temp brownmillerite"]
+        debye_brownm_list.append(debye_brownm)
+        dh_min = dataset["pars"]["dh_min"]
+        dh_min_list.append(dh_min)
+        dh_max = dataset["pars"]["dh_max"]
+        dh_max_list.append(dh_max)
+        elast_available = dataset["pars"]["elastic"]["Elastic tensors available"]
+        elast_available_list.append(elast_available)
+        act = dataset["pars"]["act_mat"][1]
+        act_list.append(act)
+        last_updated = dataset["pars"]["last_updated"]
+        last_updated_list.append(last_updated)
+
+    theoset = {"Debye temp perovskite": debye_perov_list,
+               "Debye temp brownmillerite": debye_brownm_list,
+               "dH_min": dh_min_list,
+               "dH_max": dh_max_list,
+               "Elastic tensors available": elast_available_list,
+               "act": act_list,
+               "Last updated": last_updated_list,
+               "compstr": compstr_list}
+
+    return theoset
+
+@mapi_func(supported_methods=["POST", "GET"], requires_api_key=False)
 def index(request, cid, db_type=None, mdb=None):
     mpid_b = None
     try:
@@ -49,7 +82,8 @@ def index(request, cid, db_type=None, mdb=None):
         if compstr_disp == compstr_init:
             compstr = add_comp_one(compstr)
         compstr_disp = [''.join(g) for _, g in groupby(str(compstr_disp), str.isalpha)]
-        if contrib['content']['pars']['fit_type_entr'] != []:
+        experimental_data_available = contrib['content']['pars'].get('fit_type_entr')
+        if experimental_data_available:
             compstr_exp = contrib['content']['data']['oxidized_phase']['composition']
             compstr_exp = [''.join(g) for _, g in groupby(str(compstr_exp), str.isalpha)]
         else:
@@ -73,10 +107,7 @@ def index(request, cid, db_type=None, mdb=None):
             dh_max = red_act[2]
             act = red_act[3]
         else:
-            path = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..'))
-            filepath = os.path.join(path, "rest", "theo_redenth_debye.json")
-            with open(filepath) as handle:
-                sampledata = json.loads(handle.read())
+            sampledata = get_theo_data()
             compositions = sampledata["compstr"]
             s_index = -1
             for i in range(len(compositions)):
@@ -140,7 +171,6 @@ def index(request, cid, db_type=None, mdb=None):
                     payload[k]['iso'] = float(payload[k]['iso'])
                     if k == 'ellingham':
                         payload[k]['del'] = float(payload[k]['del'])
-
         response = {}
         for k in keys:
             if k != "energy_analysis":
@@ -161,7 +191,7 @@ def index(request, cid, db_type=None, mdb=None):
                 resiso, resiso_theo, ellingiso = [], [], []
                 a, b = 1e-10, 0.5-1e-10
 
-                if pars['fit_type_entr'] != []: # only execute this if experimental data is available
+                if experimental_data_available: # only execute this if experimental data is available
                     for xv in x_val:
                         if k == "enthalpy_dH" or k== "entropy_dS":
                             s_th = s_th_o(iso)
@@ -256,7 +286,7 @@ def index(request, cid, db_type=None, mdb=None):
                 x = list(pd.np.exp(x_val)) if k == 'isotherm' else list(x_val)
                 x_theo = x[::4]
 
-                if pars['fit_type_entr'] != []:
+                if experimental_data_available:
                     x_exp = x
                 else:
                     x_exp = None
@@ -303,13 +333,13 @@ def index(request, cid, db_type=None, mdb=None):
                     {'x': x_exp, 'y': res_interp, 'name': name_exp_interp, 'line': { 'color': 'rgb(5,103,166)', 'width': 2.5, 'dash': 'dot' }},
                     {'x': x_theo, 'y': resiso_theo, 'name': name_theo, 'line': { 'color': 'rgb(217,64,41)', 'width': 2.5}}, [y_min,y_max], [compstr_disp, compstr_exp, elast, updt]]
                 else:
-                    response[k] = [{'x': x_exp, 'y': res_fit, 'name': 'exp_fit', 'line': { 'color': 'rgb(5,103,166)', 'width': 2.5 }},
-                    {'x': x_exp, 'y': res_interp, 'name': 'exp_interp', 'line': { 'color': 'rgb(5,103,166)', 'width': 2.5, 'dash': 'dot' }},
+                    response[k] = [{None: x_exp, None: res_fit, 'name': 'exp_fit', 'line': { 'color': 'rgb(5,103,166)', 'width': 2.5 }},
+                    {None: x_exp, None: res_interp, 'name': 'exp_interp', 'line': { 'color': 'rgb(5,103,166)', 'width': 2.5, 'dash': 'dot' }},
                     {'x': x_theo, 'y': resiso_theo, 'name': 'theo', 'line': { 'color': 'rgb(217,64,41)', 'width': 2.5}},
                     {'x': x_theo, 'y': ellingiso, 'name': 'isobar line', 'line': { 'color': 'rgb(100,100,100)', 'width': 2.5}}, [compstr_disp, compstr_exp, elast, updt]]
             else: # energy analysis
 
-                cutoff = int(payload['energy_analysis']['cutoff']) # this sets the number of materials to display in the graph
+                # parameters for the database ID
                 data_source = payload['energy_analysis']['data_source']
                 if data_source == "Theoretical":
                     data_source = "Theo"
@@ -326,6 +356,8 @@ def index(request, cid, db_type=None, mdb=None):
                 t_red = float(payload['energy_analysis']['t_red'])
                 p_ox = float(payload['energy_analysis']['p_ox'])
 
+                # these parameters are used to process the data from the database
+                cutoff = int(payload['energy_analysis']['cutoff']) # this sets the number of materials to display in the graph
                 p_red = float(payload['energy_analysis']['p_red'])
                 h_rec = float(payload['energy_analysis']['h_rec'])
                 mech_env = bool(payload['energy_analysis']['mech_env'])
@@ -340,8 +372,8 @@ def index(request, cid, db_type=None, mdb=None):
                 try:
                     results = enera(process=process_type).on_the_fly(resdict=resdict, pump_ener=pump_ener, w_feed=w_feed, h_rec=h_rec, h_rec_steam=steam_h_rec, p_ox_wscs = p_ox)
 
-                    prodstr = resdict['prodstr'][0]
-                    prodstr_alt = resdict['prodstr_alt'][0]
+                    prodstr = resdict[0]['prodstr']
+                    prodstr_alt = resdict[0]['prodstr_alt']
 
                     if param_disp == "kJ/mol of product":
                         param_disp = str("kJ/mol of " + prodstr_alt)
@@ -472,22 +504,28 @@ def rootfind(a, b, args, funciso_here):
     return solutioniso
 
 def get_energy_data(process, t_ox, t_red, p_ox, p_red, data_source, enth_steps=20, celsius=True):
-    resdict_i = None
-    for i in range(len(paramlist["ParametersetNo."])):
-        par_set_no_i = int(paramlist["ParametersetNo."][i])
-        process_i = str(paramlist["process"][i])[1:]
-        data_source_i = str(paramlist["data_source"][i])[1:]
-        enth_steps_i = float(str(paramlist["enth_steps"][i])[1:])
-        celsius_i = bool(str(paramlist["celsius"][i])[1:])
-        t_red_i = float(str(paramlist["T_red"][i])[1:])
-        t_ox_i = float(str(paramlist["T_ox"][i])[1:])
-        p_red_i = float(str(paramlist["p_red"][i])[1:])
-        p_ox_i = float(str(paramlist["p_ox"][i])[1:])
 
-        if process_i == process and data_source_i == data_source and t_ox_i == t_ox and \
-           t_red_i == t_red and p_ox_i == p_ox and p_red_i == p_red and celsius_i == celsius and enth_steps_i == enth_steps:
-            paramset_i = eneradata["Parameter set"][par_set_no_i-1]
-            resdict_i = eneradata["Results (general)"][par_set_no_i-1]
+    # generate database ID
+    # the variable "celsius" is not included as it is always True
+    # for now we do not intend to offer a user input in Kelvin
+    if process == "Air Separation":
+        db_id = "AS_"
+    elif process == "Water Splitting":
+        db_id = "WS_"
+    else:
+        db_id = "CS_"
+    db_id += str(t_ox) + "_"
+    db_id += str(t_red) + "_"
+    db_id += str(p_ox) + "_"
+    db_id += str(p_red) + "_"
+    db_id += str(data_source) + "_"
+    db_id += str(float(enth_steps))
+
+    resdict_i = None
+    for i in range(len(eneradata)): # search for the right database entry
+        document_here = eneradata[i]
+        if document_here["_id"] == db_id:
+            resdict_i = document_here["energy_analysis"]
 
     return resdict_i
 
@@ -1175,3 +1213,53 @@ def find_theo_redenth(compstr):
     ener = ener / 2
 
     return ener
+
+def unstable_phases(compstr):
+    """
+    hard-coded list of unstable phases
+    phases are considered unstable for reasons listed in the documentation
+    these phases shall not appear in the energy analysis
+    """
+    unstable_list = ["Na0.5K0.5Mo1O",
+                    "Mg1Co1O",
+                    "Sm1Ag1O",
+                    "Na0.625K0.375Mo0.75V0.25O",
+                    "Na0.875K0.125Mo0.125V0.875O",
+                    "Rb1Mo1O",
+                    "Na0.875K0.125V1O",
+                    "Na0.75K0.25Mo0.375V0.625O",
+                    "Eu1Ag1O",
+                    "Na0.875K0.125V0.875Cr0.125O",
+                    "Na0.5K0.5W0.25Mo0.75O",
+                    "Na0.5K0.5Mo0.875V0.125O",
+                    "Na1Mo1O",
+                    "Mg1Ti1O",
+                    "Na0.5K0.5W0.5Mo0.5O",
+                    "Na1V1O",
+                    "K1V1O",
+                    "Sm1Cu1O",
+                    "Na0.75K0.25Mo0.5V0.5O",
+                    "Sm1Ti1O",
+                    "Na0.5K0.5W0.125Mo0.875O",
+                    "Eu1Ti1O",
+                    "Na0.625K0.375Mo0.625V0.375O",
+                    "Rb1V1O",
+                    "Mg1Mn1O",
+                    "Na0.5K0.5W0.875Mo0.125O",
+                    "Na0.875K0.125V0.75Cr0.25O",
+                    "K1Mo1O",
+                    "Na0.5K0.5W0.375Mo0.625O",
+                    "Na0.875K0.125Mo0.25V0.75O",
+                    "Na0.5K0.5W0.625Mo0.375O",
+                    "Mg1Fe1O",
+                    "Na0.5K0.5W0.75Mo0.25O",
+                    "Mg1Cu1O",
+                    "Eu1Cu1O",
+                    "Na0.625K0.375Mo0.875V0.125O"]
+
+    if compstr.split("O")[0] in str(unstable_list):
+        unstable = True
+    else:
+        unstable = False
+
+    return unstable
