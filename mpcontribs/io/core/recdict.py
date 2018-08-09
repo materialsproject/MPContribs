@@ -15,8 +15,14 @@ for ext in ['js', 'css']:
     json_human[ext] = open(json_human_path, 'r').read()
 json_human['css'] = ' '.join(json_human['css'].replace('\n', ' ').split())
 
+linkify = ''
+for lib in ['linkify.min', 'linkify-element.min']:
+    path_list = [cwd, '..', '..', 'webui', 'static', 'js', 'lib', '{}.js'.format(lib)]
+    lib_path = os.path.abspath(os.path.join(*path_list))
+    linkify += open(lib_path, 'r').read().decode("UTF-8")
+
 def render_dict(dct, webapp=False, require=True, script_only=False):
-    """use JsonHuman library to render a dictionairy"""
+    """use JsonHuman library to render a dictionary"""
     json_str, uuid_str = json.dumps(dct).replace('\\n', ' '), str(uuid.uuid4())
     html = []
     if not script_only:
@@ -35,11 +41,11 @@ def render_dict(dct, webapp=False, require=True, script_only=False):
         document.body.appendChild(style);
         """.format(json_human['css']))
         html.append('\n' + json_human['js'])
+        html.append('\n' + linkify)
     html.append("'use strict';")
     html.append("var data = JSON.parse('{}');".format(json_str))
     html.append("var node = JsonHuman.format(data);")
-    if require:
-        html.append("linkifyElement(node, { target: '_blank' });")
+    html.append("linkifyElement(node, { target: '_blank' });")
     if script_only:
         html.append("document.body.appendChild(node);")
     else:
