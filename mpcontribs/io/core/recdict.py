@@ -33,13 +33,14 @@ def render_dict(dct, webapp=False, require=True, script_only=False):
     if require:
         html.append("require(['json.human', 'linkify-element'], function(JsonHuman, linkifyElement) {")
     else:
+        json_human_extra = ' .jh-root {font-family: "symbola"; } .jh-type-string { font-style: normal; }'
         html.append("""
         var style = document.createElement('style');
         style.type = 'text/css';
         var tn = document.createTextNode('{}');
         style.appendChild(tn);
         document.body.appendChild(style);
-        """.format(json_human['css']))
+        """.format(json_human['css'] + json_human_extra))
         html.append('\n' + json_human['js'])
         html.append('\n' + linkify)
     html.append("'use strict';")
