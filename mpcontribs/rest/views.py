@@ -450,22 +450,15 @@ def get_card(request, cid, db_type=None, mdb=None):
         from selenium import webdriver
         from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
         from bs4 import BeautifulSoup
-        try:
-            options = webdriver.ChromeOptions()
-            options.add_argument("no-sandbox")
-            options.add_argument('--disable-dev-shm-usage')
-            options.set_headless()
-            browser = webdriver.Remote(command_executor="http://127.0.0.1:4444/wd/hub", desired_capabilities=DesiredCapabilities.CHROME, options=options)
-        except:
-            try:
-                options = webdriver.FirefoxOptions()
-                options.set_headless()
-                browser = webdriver.Firefox(firefox_options=options)
-            except:
-                options = webdriver.ChromeOptions()
-                options.add_argument("no-sandbox")
-                options.set_headless()
-                browser = webdriver.Chrome(chrome_options=options)
+        options = webdriver.ChromeOptions()
+        options.add_argument("no-sandbox")
+        options.add_argument('--disable-dev-shm-usage')
+        options.set_headless()
+        browser = webdriver.Remote(
+            command_executor="http://127.0.0.1:4444/wd/hub",
+            desired_capabilities=DesiredCapabilities.CHROME,
+            options=options
+        )
 
     contrib = mdb.contrib_ad.query_contributions(
         {'_id': ObjectId(cid)},
