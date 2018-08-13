@@ -132,6 +132,7 @@ pep8==1.7.1
 pexpect==4.5.0
 pickleshare==0.7.4
 Pillow==5.1.0
+pipdeptree==0.13.0
 pkginfo==1.4.2
 plotly==1.12.6
 pluggy==0.6.0
@@ -145,7 +146,6 @@ pycairo==1.15.4
 pycodestyle==2.4.0
 pycosat==0.6.3
 pycparser==2.18
-pycrypto==2.6.1
 pycurl==7.43.0.1
 PyDispatcher==2.0.5
 pyflakes==1.6.0
