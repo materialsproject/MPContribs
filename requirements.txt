@@ -102,7 +102,6 @@ mkl-random==1.0.1
 mod-wsgi==4.6.4
 monty==1.0.3
 more-itertools==4.1.0
--e git+git@github.com:materialsproject/MPContribs.git@50edb1b516cfe15e2fd5475dc5f6f54e706f8de1#egg=mpcontribs
 mpmath==1.0.0
 msgpack==0.5.6
 msgpack-python==0.5.6
