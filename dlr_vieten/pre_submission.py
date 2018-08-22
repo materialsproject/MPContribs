@@ -113,59 +113,54 @@ def run(mpfile, **kwargs):
             continue
         if not identifier:
             identifier = get_composition_from_string(row['composition oxidized phase'])
-        theo_idx = theo_dat['identifier'].index(identifier)
+        try:
+            theo_idx = theo_dat['identifier'].index(identifier)
+        except ValueError:
+            theo_idx = None
         print identifier, theo_idx
 
         print 'add hdata ...'
         d = RecursiveDict()
         d['theo_compstr'] = row['theo_compstr']
         d['tolerance_factor'] = row['tolerance_factor']
-        d['tolerance_factor'] = clean_value(theo_dat["data"]["tolerance_factor"][theo_idx])
+        if theo_idx is not None:
+            d['tolerance_factor'] = clean_value(theo_dat["data"]["tolerance_factor"][theo_idx])
         d['solid_solution'] = row['type of solid solution']
-        d['solid_solution'] = theo_dat["data"]["solid_solution"][theo_idx]
+        if theo_idx is not None and not d['solid_solution']:
+            d['solid_solution'] = theo_dat["data"]["solid_solution"][theo_idx]
         d['oxidized_phase'] = RecursiveDict()
         d['oxidized_phase']['composition'] = row['composition oxidized phase']
-        d['oxidized_phase']['composition'] = theo_dat["data"]["oxidized_phase"]["composition"][theo_idx]
+        if theo_idx is not None:
+            d['oxidized_phase']['composition'] = theo_dat["data"]["oxidized_phase"]["composition"][theo_idx]
         #d['oxidized_phase']['crystal-structure'] = row['crystal structure (fully oxidized)']
-        #d['oxidized_phase']['crystal-structure'] = theo_dat["data"]["oxidized_phase"]["crystal-structure"][theo_idx]
+        #if theo_idx is not None:
+        #    d['oxidized_phase']['crystal-structure'] = theo_dat["data"]["oxidized_phase"]["crystal-structure"][theo_idx]
         d['reduced_phase'] = RecursiveDict()
         d['reduced_phase']['composition'] = row['composition reduced phase']
-        d['reduced_phase']['composition'] = theo_dat["data"]["reduced_phase"]["composition"][theo_idx]
+        if theo_idx is not None:
+            d['reduced_phase']['composition'] = theo_dat["data"]["reduced_phase"]["composition"][theo_idx]
         d['reduced_phase']['closest-MP'] = row['closest phase MP (reduced)'].replace('n.a.', '')
-        d['reduced_phase']['closest-MP'] = theo_dat["data"]["reduced_phase"]["closest-MP"][theo_idx]
-        compstr = add_comp_one(theo_dat["pars"]["theo_compstr"][theo_idx])
-        d['availability'] = "Exp+Theo" #if compstr in str(exp_data) else "Theo"
+        if theo_idx is not None:
+            d['reduced_phase']['closest-MP'] = theo_dat["data"]["reduced_phase"]["closest-MP"][theo_idx]
+        if theo_idx is not None:
+            compstr = add_comp_one(theo_dat["pars"]["theo_compstr"][theo_idx])
+        else:
+            compstr = row['theo_compstr']
+        d['availability'] = "Exp+Theo" if theo_idx is not None else "Exp"
         d = nest_dict(d, ['data'])
         d['pars'] = get_fit_pars(sample_number)
-        d['pars']['theo_compstr'] = compstr #row['theo_compstr']
-        try:
-            fs = FindStructures(compstr=row['theo_compstr'])
-            theo_redenth = fs.find_theo_redenth()
-            imp = Importdata()
-            splitcomp = imp.split_comp(row['theo_compstr'])
-            conc_act = imp.find_active(mat_comp=splitcomp)[1]
-            et = EnthTheo(comp=row['theo_compstr'])
-            dh_max, dh_min = et.calc_dh_endm()
-            red_enth_mean_endm = (conc_act * dh_min) + ((1 - conc_act) * dh_max)
-            difference = theo_redenth - red_enth_mean_endm
-            d['pars']['dh_min'] = clean_value(dh_min + difference, max_dgts=8)
-            d['pars']['dh_max'] = clean_value(dh_max + difference, max_dgts=8)
-        except Exception as ex:
-            print('error in dh_min/max!')
-            print(str(ex))
-            pass
-
+        d['pars']['theo_compstr'] = compstr
         theo_data = gentheo(compstr)
         d['pars']['dh_min'] = clean_value(theo_data["dH_min"][0])
         d['pars']['dh_max'] = clean_value(theo_data["dH_max"][0])
-        d['pars']['last_updated'] = str(theo_data["Last updated"][0])
-        act_mat = d['pars']['act_mat'].keys()[0]
-        d['pars']['act_mat'][act_mat] = clean_value(theo_data["act"])
-        d['pars']['elastic'] = RecursiveDict()
-        d['pars']['elastic']['tensors_available'] = clean_value(theo_data["Elastic tensors available"][0])
-        d['pars']['elastic']['debye_temp'] = RecursiveDict()
-        d['pars']['elastic']['debye_temp']['perovskite'] = clean_value(theo_data["Debye temp perovskite"][0])
-        d['pars']['elastic']['debye_temp']['brownmillerite'] = clean_value(theo_data["Debye temp brownmillerite"][0])
+        #d['pars']['last_updated'] = str(theo_data["Last updated"][0])
+        #act_mat = d['pars']['act_mat'].keys()[0]
+        #d['pars']['act_mat'][act_mat] = clean_value(theo_data["act"])
+        #d['pars']['elastic'] = RecursiveDict()
+        #d['pars']['elastic']['tensors_available'] = clean_value(theo_data["Elastic tensors available"][0])
+        #d['pars']['elastic']['debye_temp'] = RecursiveDict()
+        #d['pars']['elastic']['debye_temp']['perovskite'] = clean_value(theo_data["Debye temp perovskite"][0])
+        #d['pars']['elastic']['debye_temp']['brownmillerite'] = clean_value(theo_data["Debye temp brownmillerite"][0])
         mpfile.add_hierarchical_data(d, identifier=identifier)
 
         print 'add ΔH ...'

@@ -155,6 +155,7 @@ def index(request, cid, db_type=None, mdb=None):
             payload['energy_analysis']['p_red'] = 0.21
             payload['energy_analysis']['h_rec'] = 0.6
             payload['energy_analysis']['mech_env'] = True
+            payload['energy_analysis']['cutoff'] = 25
             payload['energy_analysis']['pump_ener'] = "0.0"
             payload['energy_analysis']['w_feed'] = 200.
             payload['energy_analysis']['steam_h_rec'] = 0.8
