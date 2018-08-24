@@ -107,8 +107,11 @@ def run(mpfile, **kwargs):
 
     with open('/home/jovyan/work/energy_data.json', 'r') as f:
         data = json.load(f).pop('collection')
-    l = [dict(sdoc, _id=doc['_id']) for doc in data for sdoc in doc['energy_analysis']]
+    l = [dict(sdoc, parameters=doc['_id']) for doc in data for sdoc in doc['energy_analysis']]
     frame = pd.DataFrame(l)
+    parameters = frame['parameters']
+    frame.drop(labels=['parameters'], axis=1, inplace=True)
+    frame.insert(0, 'parameters', parameters)
     print frame.shape
 
     for row in dct:
@@ -176,7 +179,7 @@ def run(mpfile, **kwargs):
 	    for unstable, subsubgroup in subgroup.groupby('unstable', sort=False):
 		subsubgroup.drop(labels='unstable', axis=1, inplace=True)
 		name = 'energy-analysis_{}_{}'.format('unstable' if unstable else 'stable', '-'.join(prodstr))
-		mpfile.add_data_table(identifier, subsubgroup, name, plot_options={'x': '_id'})
+		mpfile.add_data_table(identifier, subsubgroup, name)
 
         print 'add ΔH ...'
         exp_thermo = GetExpThermo(sample_number, plotting=False)
