@@ -21,14 +21,6 @@ ConnectorBase.register(Connector)
 mpr = MPRester()
 from energy_analysis import EnergyAnalysis as enera
 
-# load the sample data for energy analysis
-path = os.path.abspath(os.path.dirname( __file__ ))
-filepath = os.path.join(path, "energy_data.json")
-if os.path.exists(filepath):
-    with open(filepath) as json_data:
-       eneradata = json.load(json_data)["collection"]
-    json_data.close()
-
 def get_theo_data():
     """
     Loads the theoretical data from file "theo_data.json"
@@ -369,7 +361,7 @@ def index(request, cid, db_type=None, mdb=None):
                 w_feed = float(payload['energy_analysis']['w_feed'])
                 steam_h_rec = float(payload['energy_analysis']['steam_h_rec'])
                 param_disp = payload['energy_analysis']['param_disp']
-                resdict = get_energy_data(process=process_type, t_ox=t_ox, t_red=t_red, p_ox=p_ox, p_red=p_red, data_source=data_source)
+                resdict = get_energy_data(mdb, process_type, t_ox, t_red, p_ox, p_red, data_source)
 
                 try:
                     results = enera(process=process_type).on_the_fly(resdict=resdict, pump_ener=pump_ener, w_feed=w_feed, h_rec=h_rec, h_rec_steam=steam_h_rec, p_ox_wscs = p_ox)
@@ -505,7 +497,7 @@ def rootfind(a, b, args, funciso_here):
             solutioniso = None # if no solution can be found
     return solutioniso
 
-def get_energy_data(process, t_ox, t_red, p_ox, p_red, data_source, enth_steps=20, celsius=True):
+def get_energy_data(mdb, process, t_ox, t_red, p_ox, p_red, data_source, enth_steps=20, celsius=True):
 
     # generate database ID
     # the variable "celsius" is not included as it is always True
@@ -523,13 +515,27 @@ def get_energy_data(process, t_ox, t_red, p_ox, p_red, data_source, enth_steps=2
     db_id += str(data_source) + "_"
     db_id += str(float(enth_steps))
 
-    resdict_i = None
-    for i in range(len(eneradata)): # search for the right database entry
-        document_here = eneradata[i]
-        if document_here["_id"] == db_id:
-            resdict_i = document_here["energy_analysis"]
+    resdict = []
+    for a in ['stable', 'unstable']:
+	for b in ['O2-O', 'H2-H2', 'CO-CO']:
+	    name = 'energy-analysis_{}_{}'.format(a, b)
+	    key = 'content.{}.data'.format(name)
+	    crit = {key: {'$elemMatch': {'0': db_id}}}
+	    proj = {
+		'{}.$'.format(key): 1, 'mp_cat_id': 1,
+		'content.{}.columns'.format(name): 1,
+		'content.pars.theo_compstr': 1
+	    }
+	    for d in mdb.contrib_ad.query_contributions(crit, projection=proj):
+		keys = d['content'][name]['columns'][1:]
+		values = map(float, d['content'][name]['data'][0][1:])
+		dct = dict(zip(keys, values))
+		dct['prodstr'], dct['prodstr_alt'] = b.split('-')
+		dct['unstable'] = bool(a == 'unstable')
+		dct['compstr'] = d['content']['pars']['theo_compstr']
+		resdict.append(dct)
 
-    return resdict_i
+    return resdict
 
 def s_th_o(temp):
     # constants: Chase, NIST-JANAF Thermochemistry tables, Fourth Edition, 1998

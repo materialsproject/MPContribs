@@ -1574,11 +1574,25 @@ class EnergyAnalysis:
         result_val_delta_redox = pd.np.empty(2)
         result_val_mass_change = pd.np.empty(2)
 
-        for i in range(len(resdict)):
-            mol_prod_mol_red = resdict[i]['mol_prod_mol_red']
-            t_ox = resdict[i]['T_ox']
-            t_red = resdict[i]['T_red']
+        for rd in resdict:
+            chemical_energy = rd['Chemical Energy']
+            energy_sensible = rd['Sensible Energy']
+            t_ox = rd['T_ox']
+            t_red = rd['T_red']
             t_mean = (t_ox + t_red) / 2
+            delta_1 = rd['delta_1']
+            delta_2 = rd['delta_2']
+            g_prod_kg_red = rd['g_prod_kg_red']
+            l_prod_kg_red = rd['l_prod_kg_red']
+            mass_redox_i = rd['mass_redox']
+            mol_mass_ox = rd['mol_mass_ox']
+            mol_prod_mol_red = rd['mol_prod_mol_red']
+            p_ox = rd['p_ox']
+            p_red = rd['p_red']
+            compstr = rd['compstr']
+            prodstr = rd['prodstr']
+            prodstr_alt = rd['prodstr_alt']
+            unstable = rd['unstable']
 
             # chemical energy stored in products
             if self.process == "Water Splitting":
@@ -1588,26 +1602,11 @@ class EnergyAnalysis:
             else:
                 dh_wscs = 0
 
-            energy_integral_dh = resdict[i]['Chemical Energy'] - ( (resdict[i]['Chemical Energy'] + dh_wscs) * h_rec )
+            energy_integral_dh = chemical_energy - ( (chemical_energy + dh_wscs) * h_rec )
 
             if len(resdict) < 50: # for experimental data: convert J/mol to kJ/mol
                 energy_integral_dh = energy_integral_dh / 1000
                 # wscs does not matter, as no water splitting / co2 splitting is considered for exp data
-
-            energy_sensible = resdict[i]['Sensible Energy']
-            mol_mass_ox = resdict[i]['mol_mass_ox']
-
-            p_red = resdict[i]['p_red']
-            p_ox = resdict[i]['p_ox']
-            compstr = resdict[i]['compstr']
-            delta_1 = resdict[i]['delta_1']
-            delta_2 = resdict[i]['delta_2']
-            mass_redox_i = resdict[i]['mass_redox']
-            prodstr = resdict[i]['prodstr']
-            prodstr_alt = resdict[i]['prodstr_alt']
-            l_prod_kg_red = resdict[i]['l_prod_kg_red']
-            g_prod_kg_red = resdict[i]['g_prod_kg_red']
-            unstable = resdict[i]['unstable']
 
             # pumping energy
             if pump_ener != -1:
