@@ -306,59 +306,50 @@ requirejs(['main'], function() {
             $('#pump_ener').val("0.0"); $('#disp_par').val("kJ/mol of product");
             $('#num_mat').slider({tooltip: "always",tooltip_position:'bottom'});  
             document.getElementById("ox_type").value = "<b>p(O<sub>2</sub>)<sub>ox</sub> (bar)</b>";
-            
-            // update all isoplots if new material is selected, define global cid (cidnow)
-            Backbone.on('cellclicked', function(er){var row = $(er.currentTarget).parent();
-                var url = row.find("td:nth-child(2) > a").attr('href');
-                var cid = url.split('/').pop();
-                window.cidnow = cid;
-                updatekeys = "isobar, isotherm, isoredox, ellingham, enthalpy_dH, entropy_dS"
-                e(cid,updatekeys);});
                 
             var ener_empty = "True";
              if (ener_empty === "True"){
                             // if the energy analysis has not been done yet, try to do it
-                            var cid_enera = "5b073569a1b5ef0274baa09f";
                             var updatekeys_enera = "energy_analysis";
-                            e(cid_enera,updatekeys_enera);
+                            e(updatekeys_enera);
                             ener_empty = "False";
                             };
 
             // update the energy analysis
             $("input[type='radio']").on('change', function(ev){
-            var cid = "5b073569a1b5ef0274baa09f";updatekeys = "energy_analysis";e(cid,updatekeys);}); //cid:dummy
+            updatekeys = "energy_analysis";e(updatekeys);}); 
             $("select").on('change', function(ev){
-            var cid = "5b073569a1b5ef0274baa09f";updatekeys = "energy_analysis";e(cid,updatekeys);}); //cid:dummy
+            updatekeys = "energy_analysis";e(updatekeys);});
             $('#pump_ener').on('change', function(ev){
-            var cid = "5b073569a1b5ef0274baa09f";updatekeys = "energy_analysis";e(cid,updatekeys);}); //cid:dummy
+            updatekeys = "energy_analysis";e(updatekeys);}); 
             $("input[type='checkbox']").on('change', function(ev){
-            var cid = "5b073569a1b5ef0274baa09f";updatekeys = "energy_analysis";e(cid,updatekeys);}); //cid:dummy
+            updatekeys = "energy_analysis";e(updatekeys);}); 
             $('#T_ox_enera_air').slider().on('slideStop', function(ev){
-            var cid = "5b073569a1b5ef0274baa09f";updatekeys = "energy_analysis";e(cid,updatekeys);}); //cid:dummy
+            updatekeys = "energy_analysis";e(updatekeys);}); 
             $('#T_ox_enera_non_air').slider().on('slideStop', function(ev){
-            var cid = "5b073569a1b5ef0274baa09f";updatekeys = "energy_analysis";e(cid,updatekeys);}); //cid:dummy
+            updatekeys = "energy_analysis";e(updatekeys);}); 
             $('#p_ox_enera_air').slider().on('slideStop', function(ev){
-            var cid = "5b073569a1b5ef0274baa09f";updatekeys = "energy_analysis";e(cid,updatekeys);}); //cid:dummy
+            updatekeys = "energy_analysis";e(updatekeys);}); 
             $('#p_ox_enera_non_air').slider().on('slideStop', function(ev){
-            var cid = "5b073569a1b5ef0274baa09f";updatekeys = "energy_analysis";e(cid,updatekeys);}); //cid:dummy
+            updatekeys = "energy_analysis";e(updatekeys);}); 
             $('#p_red_enera_air').slider().on('slideStop', function(ev){
-            var cid = "5b073569a1b5ef0274baa09f";updatekeys = "energy_analysis";e(cid,updatekeys);}); //cid:dummy
+            updatekeys = "energy_analysis";e(updatekeys);});
             $('#p_red_enera_non_air').slider().on('slideStop', function(ev){
-            var cid = "5b073569a1b5ef0274baa09f";updatekeys = "energy_analysis";e(cid,updatekeys);}); //cid:dummy
+            updatekeys = "energy_analysis";e(updatekeys);}); 
             $('#T_red_enera_air').slider().on('slideStop', function(ev){
-            var cid = "5b073569a1b5ef0274baa09f";updatekeys = "energy_analysis";e(cid,updatekeys);}); //cid:dummy
+            updatekeys = "energy_analysis";e(updatekeys);}); 
             $('#T_red_enera_non_air').slider().on('slideStop', function(ev){
-            var cid = "5b073569a1b5ef0274baa09f";updatekeys = "energy_analysis";e(cid,updatekeys);}); //cid:dummy
+            updatekeys = "energy_analysis";e(updatekeys);}); 
             $('#h_rec_eff').slider().on('slideStop', function(ev){
-            var cid = "5b073569a1b5ef0274baa09f";updatekeys = "energy_analysis";e(cid,updatekeys);}); //cid:dummy
+            updatekeys = "energy_analysis";e(updatekeys);});
             $('#steam_h_rec_eff').slider().on('slideStop', function(ev){
-            var cid = "5b073569a1b5ef0274baa09f";updatekeys = "energy_analysis";e(cid,updatekeys);}); //cid:dummy
+            updatekeys = "energy_analysis";e(updatekeys);}); 
             $('#w_feed_temp').slider().on('slideStop', function(ev){
-            var cid = "5b073569a1b5ef0274baa09f";updatekeys = "energy_analysis";e(cid,updatekeys);}); //cid:dummy
+            updatekeys = "energy_analysis";e(updatekeys);}); 
             $('#num_mat').slider().on('slideStop', function(ev){
-            var cid = "5b073569a1b5ef0274baa09f";updatekeys = "energy_analysis";e(cid,updatekeys);}); //cid:dummy
+            updatekeys = "energy_analysis";e(updatekeys);}); 
 
-            function e(cid, updatekeys) { 
+            function e(updatekeys) { 
             // enable / disable some sliders and fields in the energy analysis depending on values of other sliders/fields
             if ($("input:checked").val() === "Experimental"){$('#process').val("Air separation / Oxygen pumping / Oxygen storage");};
             if ($('#process').val() != "Water Splitting") {     $("#steam_h_rec_eff").slider("disable");
@@ -522,7 +513,7 @@ requirejs(['main'], function() {
                         
                 $.ajax({
                     type: 'POST',
-                    url: '../rest/' + cid,
+                    url: '../rest/5b7de86f7acebe21da74172f',
                     data: payload,
                     dataType: "json",
                     contentType: "application/json; charset=utf-8",
@@ -540,9 +531,8 @@ requirejs(['main'], function() {
                             };
                             if (filleddivs.includes("energy_analysis")){} else { 
                             // if the energy analysis has not been done yet, try to do it
-                            var cid_enera = "5b073569a1b5ef0274baa09f";
                             var updatekeys_enera = "energy_analysis";
-                            e(cid_enera,updatekeys_enera);
+                            e(updatekeys_enera);
                             };
                         });
                     },
