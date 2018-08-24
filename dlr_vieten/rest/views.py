@@ -1064,7 +1064,7 @@ def redenth_act(compstr):
         else:
             difference = theo_solid_solution - red_enth_mean_endm
 
-        if abs(difference) > 30000:
+        if abs(difference) > 30000 or not splitcomp[-1]:
             dh_min = theo_solid_solution
             dh_max = theo_solid_solution
         else:

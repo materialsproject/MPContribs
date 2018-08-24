@@ -577,14 +577,14 @@ def redenth_act(compstr):
     # brownmillerite as expected according to the endmember redox enthalpies
     conc_act = find_active(mat_comp=splitcomp)[1]
     red_enth_mean_endm = (conc_act * dh_min) + ((1 - conc_act) * dh_max)
-    
+
     if theo_solid_solution:
         if not red_enth_mean_endm:
             difference = float('inf')
         else:
             difference = theo_solid_solution - red_enth_mean_endm
 
-        if abs(difference) > 30000:
+        if abs(difference) > 30000 or not splitcomp[-1]:
             dh_min = theo_solid_solution
             dh_max = theo_solid_solution
         else:
