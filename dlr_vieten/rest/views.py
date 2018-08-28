@@ -526,14 +526,14 @@ def get_energy_data(mdb, process, t_ox, t_red, p_ox, p_red, data_source, enth_st
 		'content.{}.columns'.format(name): 1,
 		'content.pars.theo_compstr': 1
 	    }
-	    for d in mdb.contrib_ad.query_contributions(crit, projection=proj):
-		keys = d['content'][name]['columns'][1:]
-		values = map(float, d['content'][name]['data'][0][1:])
-		dct = dict(zip(keys, values))
-		dct['prodstr'], dct['prodstr_alt'] = b.split('-')
-		dct['unstable'] = bool(a == 'unstable')
-		dct['compstr'] = d['content']['pars']['theo_compstr']
-		resdict.append(dct)
+            for d in mdb.contrib_ad.query_contributions(crit, projection=proj):
+                keys = d['content'][name]['columns'][1:]
+                values = map(float, d['content'][name]['data'][0][1:])
+                dct = dict(zip(keys, values))
+                dct['prodstr'], dct['prodstr_alt'] = b.split('-')
+                dct['unstable'] = bool(a == 'unstable')
+                dct['compstr'] = d['content']['pars']['theo_compstr']
+                resdict.append(dct)
 
     return resdict
 
