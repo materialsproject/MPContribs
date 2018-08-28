@@ -383,9 +383,10 @@ def render_plot(plot, webapp=False, filename=None):
     npts = len(fig.get('data')[0][axis])
     static_fig = (is_3d and npts > 150) or (not is_3d and npts > 700)
     if static_fig:
-        from plotly.plotly import image
-        img = image.get(fig)
-        print type(img)
+        print 'TODO static figure'
+        #from plotly.plotly import image
+        #img = image.get(fig)
+        #print type(img)
     else:
         from plotly.offline.offline import _plot_html # long import time
         plot_html = _plot_html(
