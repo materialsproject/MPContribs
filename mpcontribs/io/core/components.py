@@ -87,7 +87,7 @@ def get_backgrid_table(df):
                             composition = get_composition_from_string(cell)
                             composition = pmg_util.string.unicodeify(composition)
                             table['rows'][row_index][col] = composition
-                        except (CompositionError, ValueError):
+                        except (CompositionError, ValueError, OverflowError):
                             try:
                                 val(cell)
                                 is_url_column = True
