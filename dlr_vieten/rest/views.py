@@ -21,46 +21,6 @@ ConnectorBase.register(Connector)
 mpr = MPRester()
 from energy_analysis import EnergyAnalysis as enera
 
-def get_theo_data():
-    """
-    Loads the theoretical data from file "theo_data.json"
-    """
-    path = os.path.abspath(os.path.dirname( __file__ ))
-    filepath = os.path.join(path, "theo_data.json")
-    with open(filepath) as json_data:
-       theodata = json.load(json_data)["collection"]
-    json_data.close()
-    compstr_list, debye_perov_list, debye_brownm_list, dh_min_list, dh_max_list  = [], [], [], [], []
-    elast_available_list, act_list, last_updated_list = [], [], []
-    for dataset in theodata:
-        compstr = dataset["pars"]["theo_compstr"].split("O")[0] + "O3"
-        compstr_list.append(compstr)
-        debye_perov = dataset["pars"]["elastic"]["Debye temp perovskite"]
-        debye_perov_list.append(debye_perov)
-        debye_brownm = dataset["pars"]["elastic"]["Debye temp brownmillerite"]
-        debye_brownm_list.append(debye_brownm)
-        dh_min = dataset["pars"]["dh_min"]
-        dh_min_list.append(dh_min)
-        dh_max = dataset["pars"]["dh_max"]
-        dh_max_list.append(dh_max)
-        elast_available = dataset["pars"]["elastic"]["Elastic tensors available"]
-        elast_available_list.append(elast_available)
-        act = dataset["pars"]["act_mat"][1]
-        act_list.append(act)
-        last_updated = dataset["pars"]["last_updated"]
-        last_updated_list.append(last_updated)
-
-    theoset = {"Debye temp perovskite": debye_perov_list,
-               "Debye temp brownmillerite": debye_brownm_list,
-               "dH_min": dh_min_list,
-               "dH_max": dh_max_list,
-               "Elastic tensors available": elast_available_list,
-               "act": act_list,
-               "Last updated": last_updated_list,
-               "compstr": compstr_list}
-
-    return theoset
-
 @mapi_func(supported_methods=["POST", "GET"], requires_api_key=False)
 def index(request, cid, db_type=None, mdb=None):
     mpid_b = None
@@ -69,20 +29,18 @@ def index(request, cid, db_type=None, mdb=None):
         contrib = mdb.contrib_ad.query_contributions(
             {'_id': cid}, projection={'_id': 0, 'content.pars': 1, 'content.data': 1})[0]
         pars = contrib['content']['pars']
-        compstr = contrib['content']['pars']['theo_compstr']
+        compstr = pars['theo_compstr']
         compstr_init = compstr
         compstr_disp = remove_comp_one(compstr_init)
         if compstr_disp == compstr_init:
             compstr = add_comp_one(compstr)
         compstr_disp = [''.join(g) for _, g in groupby(str(compstr_disp), str.isalpha)]
-        experimental_data_available = contrib['content']['pars'].get('fit_type_entr')
+        experimental_data_available = pars.get('fit_type_entr')
         if experimental_data_available:
             compstr_exp = contrib['content']['data']['oxidized_phase']['composition']
             compstr_exp = [''.join(g) for _, g in groupby(str(compstr_exp), str.isalpha)]
         else:
             compstr_exp = "n.a."
-        d_min_exp = float(contrib['content']['pars']['delta_min'])
-        d_max_exp = float(contrib['content']['pars']['delta_max'])
 
         if not from_file:
             try: # get Debye temperatures for vibrational entropy
@@ -100,29 +58,29 @@ def index(request, cid, db_type=None, mdb=None):
             dh_max = red_act[2]
             act = red_act[3]
         else:
-            sampledata = get_theo_data()
-            compositions = sampledata["compstr"]
-            s_index = -1
-            for i in range(len(compositions)):
-                if compositions[i].split("O")[0] == compstr_init.split("O")[0]:
-                    s_index = i
-            if s_index == -1:
-                raise ValueError("Sample data not found in file")
-            updt = sampledata["Last updated"][s_index]
-            dh_min = float(sampledata["dH_min"][s_index])
-            dh_max = float(sampledata["dH_max"][s_index])
-            elast = sampledata["Elastic tensors available"][s_index]
+            updt = pars["last_updated"]
+            dh_min = float(pars["dh_min"])
+            dh_max = float(pars["dh_max"])
+            elast = pars["elastic"]["tensors_available"] # NOTE string boolean?
             if compstr == "Sr1Fe1Ox":
                 elast = "true"
-            act = float(sampledata["act"][s_index])
-            t_d_perov = float(sampledata["Debye temp perovskite"][i])
-            t_d_brownm = float(sampledata["Debye temp brownmillerite"][i])
+            t_d_perov = float(pars["elastic"]["debye_temp"]["perovskite"])
+            t_d_brownm = float(pars["elastic"]["debye_temp"]["brownmillerite"])
+            act = float(pars["act_mat"])
 
         for k, v in pars.items():
             if isinstance(v, dict):
-                pars[k] = dict((kk, float(x)) for kk, x in v.items())
+                pars[k] = {}
+                for kk, x in v.items():
+                    try:
+                        pars[k][kk] = float(x)
+                    except:
+                        continue
             elif not v[0].isalpha():
-                pars[k] = float(v)
+                try:
+                    pars[k] = float(v)
+                except:
+                    continue
 
         keys = ["isotherm", "isobar", "isoredox", "enthalpy_dH", "entropy_dS", "ellingham", "energy_analysis"]
 
@@ -186,6 +144,9 @@ def index(request, cid, db_type=None, mdb=None):
                 a, b = 1e-10, 0.5-1e-10
 
                 if experimental_data_available: # only execute this if experimental data is available
+                    d_min_exp = float(pars['delta_min'])
+                    d_max_exp = float(pars['delta_max'])
+
                     for xv in x_val:
                         if k == "enthalpy_dH" or k== "entropy_dS":
                             s_th = s_th_o(iso)
@@ -518,14 +479,14 @@ def get_energy_data(mdb, process, t_ox, t_red, p_ox, p_red, data_source, enth_st
     resdict = []
     for a in ['stable', 'unstable']:
 	for b in ['O2-O', 'H2-H2', 'CO-CO']:
-	    name = 'energy-analysis_{}_{}'.format(a, b)
-	    key = 'content.{}.data'.format(name)
-	    crit = {key: {'$elemMatch': {'0': db_id}}}
-	    proj = {
+            name = 'energy-analysis_{}_{}'.format(a, b)
+            key = 'content.{}.data'.format(name)
+            crit = {key: {'$elemMatch': {'0': db_id}}}
+            proj = {
 		'{}.$'.format(key): 1, 'mp_cat_id': 1,
 		'content.{}.columns'.format(name): 1,
 		'content.pars.theo_compstr': 1
-	    }
+            }
             for d in mdb.contrib_ad.query_contributions(crit, projection=proj):
                 keys = d['content'][name]['columns'][1:]
                 values = map(float, d['content'][name]['data'][0][1:])
@@ -563,7 +524,7 @@ def dh_ds(delta, s_th, p):
     # distinguish two differnt entropy fits
     fit_type = p['fit_type_entr']
     if fit_type == "Solid_Solution":
-        ds_pars.append(p['act_mat'].values()[0])
+        ds_pars.append(p['act_mat'])
         ds_pars.append([p['fit_param_fe'][c] for c in 'abcd'])
         ds = entr_mixed(delta-p['fit_par_ent']['c'], *ds_pars)
     else:
