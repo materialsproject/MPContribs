@@ -119,7 +119,15 @@ def run(mpfile, **kwargs):
 
     for theo_dct in theo_data:
         identifier = theo_dct['_id']
+        #if identifier in run.existing_identifiers:
+        #    print 'not updating', identifier
+        #    continue
+
 	print identifier
+        if identifier == 'None':
+            print 'Invalid Identifier!'
+            print theo_dct
+            continue
 
         print 'add hdata ...'
         d = RecursiveDict()
@@ -131,9 +139,10 @@ def run(mpfile, **kwargs):
         d['oxidized_phase']['composition'] = theo_dct['data']['oxidized_phase']['composition'] \
                 if row.empty else row.iloc[0]['composition oxidized phase']
         d['reduced_phase'] = RecursiveDict()
-        d['reduced_phase']['composition'] = theo_dct['data']['reduced_phase']['composition'] \
+        red_comp = theo_dct['data']['reduced_phase']['composition'] \
                 if row.empty else row.iloc[0]['composition reduced phase']
-        d['reduced_phase']['closest-MP'] = theo_dct['data']['reduced_phase']['closest_MP'] \
+        d['reduced_phase']['composition'] = '' if red_comp is None else red_comp
+        d['reduced_phase']['closest-MP'] = theo_dct['data']['reduced_phase']['closest_MP'].replace('None', '') \
                 if row.empty else row.iloc[0]['closest phase MP (reduced)'].replace('n.a.', '')
         compstr = add_comp_one(theo_dct['pars']['theo_compstr']) if row.empty else row.iloc[0]['theo_compstr']
         d['availability'] = theo_dct['pars']['data_availability']
