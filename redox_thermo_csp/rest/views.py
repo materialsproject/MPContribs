@@ -363,6 +363,7 @@ def index(request, cid, db_type=None, mdb=None):
                     if rem_pos > -1:
                         result = [i for i in result if str(i) != str(to_remove)]
                         result.insert(rem_pos-1, to_remove)
+
                     result = [i for i in result if "inf" not in str(i[0])] # this removes all inf values
 
                     if cutoff < len(result):
@@ -475,6 +476,7 @@ def get_energy_data(mdb, process, t_ox, t_red, p_ox, p_red, data_source, enth_st
     db_id += str(p_red) + "_"
     db_id += str(data_source) + "_"
     db_id += str(float(enth_steps))
+    #db_id = 'AS_350.0_600.0_0.0001_0.21_Theo_20.0'
 
     resdict = []
     for a in ['stable', 'unstable']:

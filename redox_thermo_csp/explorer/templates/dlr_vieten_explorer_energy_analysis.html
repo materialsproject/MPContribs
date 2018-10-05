@@ -324,7 +324,7 @@ code { display: block; white-space: pre-wrap; }
                     <input id="w_feed_temp" type="text"
                            data-slider-min="5" data-slider-max="600" data-slider-step="5"
                            data-slider-value="200" data-slider-tooltip="always"
-                           data-slider-tooltip-position="bottom"/>
+                           data-slider-tooltip-position="bottom" disabled/>
                 </div>
             </div>
 
@@ -334,7 +334,7 @@ code { display: block; white-space: pre-wrap; }
                     (only for water splitting)
                 </div>
                 <div class="col-md-8">
-                    <input id="steam_h_rec_eff" type="text"
+                    <input id="steam_h_rec_eff" type="text" disabled
                     data-slider-min="0" data-slider-max="1.0" data-slider-step="0.01"
                     data-slider-value="0.8" data-slider-tooltip="always" data-slider-tooltip-position="bottom"/><br>    
                 </div>
@@ -494,7 +494,7 @@ requirejs(['main'], function() {
                 if ($("input:checked").val() === "Experimental"){
                     $('#process').val("Air separation / Oxygen pumping / Oxygen storage");
                 };
-                if ($('#process').val() != "Water Splitting") {
+                if ($('#process').val() != "Water Splitting" && !($('#steam_h_rec_eff').prop('disabled'))) {
                     $("#steam_h_rec_eff").slider("disable"); $("#w_feed_temp").slider("disable");
                 }
                 if ($('#process').val() === "Water Splitting") {
@@ -584,7 +584,7 @@ requirejs(['main'], function() {
           
                 $.ajax({
                     type: 'POST',
-                    url: '../rest/5b7dd89585ef96010bfe7d2e',
+                    url: '../rest/5b87fa9485ef960f7ac6ed64',
                     data: payload,
                     dataType: "json",
                     contentType: "application/json; charset=utf-8",
