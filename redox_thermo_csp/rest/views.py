@@ -123,6 +123,7 @@ def index(request, cid, db_type=None, mdb=None):
                     payload[k]['iso'] = float(payload[k]['iso'])
                     if k == 'ellingham':
                         payload[k]['del'] = float(payload[k]['del'])
+
         response = {}
         for k in keys:
             if k != "energy_analysis":

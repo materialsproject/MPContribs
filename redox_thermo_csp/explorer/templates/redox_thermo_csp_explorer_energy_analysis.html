@@ -395,13 +395,6 @@ requirejs(['main'], function() {
             $('#pump_ener').val("0.0"); $('#disp_par').val("kJ/mol of product");
             document.getElementById("ox_type").value = "<b>p(O<sub>2</sub>)<sub>ox</sub> (bar)</b>";
                 
-            var ener_empty = "True";
-            if (ener_empty === "True") {
-                // if the energy analysis has not been done yet, try to do it
-                e("energy_analysis");
-                ener_empty = "False";
-            };
-
             // update the energy analysis
             selectors = ["input[type='radio']", "select", "#pump_ener", "input[type='checkbox']"]
             selectors.forEach(function(selector) {
@@ -414,8 +407,15 @@ requirejs(['main'], function() {
                 '#w_feed_temp', '#num_mat'
             ]
             slide_selectors.forEach(function(selector) {
-                $(selector).slider().on('slideStop', function(ev) { e("energy_analysis"); }); 
+                $(selector).slider().on('slideStop', function(ev) { e("energy_analysis"); });
             });
+
+            var ener_empty = "True";
+            if (ener_empty === "True") {
+                // if the energy analysis has not been done yet, try to do it
+                e("energy_analysis");
+                ener_empty = "False";
+            };
 
             // update plots depending on the keys
             function update_plots(div, r, key) {
@@ -450,7 +450,6 @@ requirejs(['main'], function() {
                     var yaxis_title = "ΔG<sub>O</sub> (kJ/mol)";
                 }
                 if (key === "energy_analysis") {
-                    console.log(r[key][0]);
                     var title = r[key][0]['title']; 
                     var yaxis_title = r[key][0]['yaxis_title'];
                     var yaxis_titlefont = {size: 22};
@@ -595,7 +594,6 @@ requirejs(['main'], function() {
                             // key: the name of the object key
                             // index: the ordinal position of the key within the object 
                             var div = document.getElementById(key);
-                            console.log(key, updatekeys, window.filleddivs);
                             if (updatekeys.includes(key)) { // only update those plots defined in updatekeys
                                 if ( !(window.filleddivs.includes(key)) ) { window.filleddivs += key; }
                                 update_plots(div, r, key);

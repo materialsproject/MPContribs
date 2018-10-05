@@ -119,9 +119,9 @@ def run(mpfile, **kwargs):
 
     for theo_dct in theo_data:
         identifier = theo_dct['_id']
-        #if identifier in run.existing_identifiers:
-        #    print 'not updating', identifier
-        #    continue
+        if identifier in run.existing_identifiers:
+            print 'not updating', identifier
+            continue
 
 	print identifier
         if identifier == 'None':
