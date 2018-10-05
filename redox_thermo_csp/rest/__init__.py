@@ -1,1 +1,1 @@
-default_app_config = 'mpcontribs.users.dlr_vieten.rest.apps.DlrVietenRestConfig'
+default_app_config = 'mpcontribs.users.redox_thermo_csp.rest.apps.RedoxThermoCspRestConfig'

@@ -4,8 +4,8 @@ from mpcontribs.rest.rester import MPContribsRester
 from mpcontribs.io.archieml.mpfile import MPFile
 from mpcontribs.io.core.components import Table
 
-class DlrVietenRester(MPContribsRester):
-    """DlrVieten-specific convenience functions to interact with MPContribs REST interface"""
+class RedoxThermoCspRester(MPContribsRester):
+    """RedoxThermoCsp-specific convenience functions to interact with MPContribs REST interface"""
     query = {'content.urls.GitHub': 'https://github.com/josuav1/solar_perovskite'}
     provenance_keys = ['title', 'authors', 'description', 'urls']
     released = True
@@ -14,7 +14,7 @@ class DlrVietenRester(MPContribsRester):
         projection = {'_id': 1, 'mp_cat_id': 1, 'content': 1}
         docs = self.query_contributions(projection=projection)
         if not docs:
-            raise Exception('No contributions found for DlrVieten Explorer!')
+            raise Exception('No contributions found for RedoxThermoCsp Explorer!')
 
         data, columns = [], ['identifier', 'contribution']
 
@@ -52,7 +52,7 @@ class DlrVietenRester(MPContribsRester):
             projection={'_id': 1, 'mp_cat_id': 1, 'content.data': 1}
         )
         if not docs:
-            raise Exception('No contributions found for DlrVieten Ionic Radii!')
+            raise Exception('No contributions found for RedoxThermoCsp Ionic Radii!')
 
         for doc in docs:
             mpfile = MPFile.from_contribution(doc)

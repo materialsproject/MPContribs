@@ -1,4 +1,4 @@
-"""This module provides the views for the dlr_vieten explorer interface."""
+"""This module provides the views for the redox_thermo_csp explorer interface."""
 
 import os
 from django.shortcuts import render_to_response
@@ -15,11 +15,11 @@ def index(request):
     ctx = RequestContext(request)
     if request.user.is_authenticated():
         user = RegisteredUser.objects.get(username=request.user.username)
-        if user.groups.filter(name='dlr_vieten').exists():
+        if user.groups.filter(name='redox_thermo_csp').exists():
             API_KEY = user.api_key
             ENDPOINT = request.build_absolute_uri(get_endpoint())
-            from ..rest.rester import DlrVietenRester
-            with DlrVietenRester(API_KEY, endpoint=ENDPOINT) as mpr:
+            from ..rest.rester import RedoxThermoCspRester
+            with RedoxThermoCspRester(API_KEY, endpoint=ENDPOINT) as mpr:
                 try:
                     ctx['table'] = render_dataframe(mpr.get_contributions(), webapp=True)
                     prov = mpr.get_provenance()
@@ -35,17 +35,17 @@ def index(request):
             ctx.update({'alert': access_msg})
     else:
         ctx.update({'alert': 'Please log in!'})
-    return render_to_response("dlr_vieten_explorer_index.html", ctx)
+    return render_to_response("redox_thermo_csp_explorer_index.html", ctx)
 
 def isographs(request):
     ctx = RequestContext(request)
     if request.user.is_authenticated():
         user = RegisteredUser.objects.get(username=request.user.username)
-        if user.groups.filter(name='dlr_vieten').exists():
+        if user.groups.filter(name='redox_thermo_csp').exists():
             API_KEY = user.api_key
             ENDPOINT = request.build_absolute_uri(get_endpoint())
-            from ..rest.rester import DlrVietenRester
-            with DlrVietenRester(API_KEY, endpoint=ENDPOINT) as mpr:
+            from ..rest.rester import RedoxThermoCspRester
+            with RedoxThermoCspRester(API_KEY, endpoint=ENDPOINT) as mpr:
                 try:
                     ctx['table'] = render_dataframe(mpr.get_contributions(), webapp=True)
                     prov = mpr.get_provenance()
@@ -57,17 +57,17 @@ def isographs(request):
             ctx.update({'alert': access_msg})
     else:
         ctx.update({'alert': 'Please log in!'})
-    return render_to_response("dlr_vieten_explorer_isographs.html", ctx)
+    return render_to_response("redox_thermo_csp_explorer_isographs.html", ctx)
 
 def energy_analysis(request):
     ctx = RequestContext(request)
     if request.user.is_authenticated():
         user = RegisteredUser.objects.get(username=request.user.username)
-        if user.groups.filter(name='dlr_vieten').exists():
+        if user.groups.filter(name='redox_thermo_csp').exists():
             API_KEY = user.api_key
             ENDPOINT = request.build_absolute_uri(get_endpoint())
-            from ..rest.rester import DlrVietenRester
-            with DlrVietenRester(API_KEY, endpoint=ENDPOINT) as mpr:
+            from ..rest.rester import RedoxThermoCspRester
+            with RedoxThermoCspRester(API_KEY, endpoint=ENDPOINT) as mpr:
                 try:
                     ctx['table'] = render_dataframe(mpr.get_contributions(), webapp=True)
                     prov = mpr.get_provenance()
@@ -83,17 +83,17 @@ def energy_analysis(request):
             ctx.update({'alert': access_msg})
     else:
         ctx.update({'alert': 'Please log in!'})
-    return render_to_response("dlr_vieten_explorer_energy_analysis.html", ctx)
+    return render_to_response("redox_thermo_csp_explorer_energy_analysis.html", ctx)
 
 def documentation(request):
     ctx = RequestContext(request)
     if request.user.is_authenticated():
         user = RegisteredUser.objects.get(username=request.user.username)
-        if user.groups.filter(name='dlr_vieten').exists():
+        if user.groups.filter(name='redox_thermo_csp').exists():
             API_KEY = user.api_key
             ENDPOINT = request.build_absolute_uri(get_endpoint())
-            from ..rest.rester import DlrVietenRester
-            with DlrVietenRester(API_KEY, endpoint=ENDPOINT) as mpr:
+            from ..rest.rester import RedoxThermoCspRester
+            with RedoxThermoCspRester(API_KEY, endpoint=ENDPOINT) as mpr:
                 try:
                     ctx['table'] = render_dataframe(mpr.get_contributions(), webapp=True)
                     prov = mpr.get_provenance()
@@ -109,7 +109,7 @@ def documentation(request):
             ctx.update({'alert': access_msg})
     else:
         ctx.update({'alert': 'Please log in!'})
-    return render_to_response("dlr_vieten_explorer_documentation.html", ctx)
+    return render_to_response("redox_thermo_csp_explorer_documentation.html", ctx)
 
 def tolerance_factors(request):
     ctx = RequestContext(request)
@@ -117,12 +117,12 @@ def tolerance_factors(request):
         user = RegisteredUser.objects.get(username=request.user.username)
         API_KEY = user.api_key
         ENDPOINT = request.build_absolute_uri(get_endpoint())
-        from ..rest.rester import DlrVietenRester
-        with DlrVietenRester(API_KEY, endpoint=ENDPOINT) as mpr:
+        from ..rest.rester import RedoxThermoCspRester
+        with RedoxThermoCspRester(API_KEY, endpoint=ENDPOINT) as mpr:
             try:
                 ionic_radii = render_dataframe(mpr.get_ionic_radii(), webapp=True)
             except Exception as ex:
                 ctx.update({'alert': str(ex)})
     else:
         ctx.update({'alert': 'Please log in!'})
-    return render_to_response("dlr_vieten_explorer_tolerance_factors.html", ctx)
+    return render_to_response("redox_thermo_csp_explorer_tolerance_factors.html", ctx)
