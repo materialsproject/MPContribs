@@ -280,6 +280,10 @@ class Table(pd.DataFrame):
             index = MultiIndex.from_tuples(d['index'])
         return cls(d['data'], columns=d['columns'], index=index)
 
+    @classmethod
+    def from_items(cls, rdct, **kwargs):
+        return super(Table, cls).from_dict(RecursiveDict(rdct), **kwargs)
+
     def _ipython_display_(self):
         disable_ipython_scrollbar()
         display(HTML(render_dataframe(self)))
