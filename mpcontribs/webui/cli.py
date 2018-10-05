@@ -56,6 +56,29 @@ def cli():
     app.register_blueprint(main_bp, url_prefix=PROXY_URL_PREFIX)
     app.register_blueprint(ingester_bp, url_prefix=PROXY_URL_PREFIX + '/ingester')
 
+    import dash
+    dash_app = dash.Dash(server=app, url_base_pathname=PROXY_URL_PREFIX + '/dash_app/')
+    dash_app.config.suppress_callback_exceptions = True
+
+    import dash_core_components as dcc
+    import dash_html_components as html
+    from dash.dependencies import Input, Output
+
+    dash_app.layout = html.Div([
+	dcc.Location(id='url', refresh=False),
+	html.Div(id='page-content')
+    ])
+
+    @dash_app.callback(Output('page-content', 'children'), [Input('url', 'pathname')])
+    def display_page(pathname):
+	return pathname
+	#if pathname == '/apps/app1':
+	#    return app1.layout
+	#elif pathname == '/apps/app2':
+	#    return app2.layout
+	#else:
+	#    return '404'
+
     application = DispatcherMiddleware(app, {PROXY_URL_PREFIX + '/test_site': django_app})
     application = SharedDataMiddleware(application, STATIC_ROOT_URLS)
 
