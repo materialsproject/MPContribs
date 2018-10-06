@@ -39,84 +39,123 @@
 .jh-root { font-family: "symbola"; }
 .jh-type-string { font-style: normal; }
 code { display: block; white-space: pre-wrap; }
+.mytooltip {
+      border-bottom: 1px dotted #000000;
+      color: #000000; outline: none;
+      cursor: help; text-decoration: none;
+      position: relative;
+}
+.mytooltip span {
+      margin-left: -999em;
+      position: absolute;
+}
+.mytooltip:hover span {
+  font-family: Calibri, Tahoma, Geneva, sans-serif;
+  position: absolute;
+  left: 1em;
+  top: 2em;
+  z-index: 99;
+  margin-left: 0;
+  width: 100px;
+}
+.mytooltip:hover img {
+  border: 0;
+  margin: -10px 0 0 -55px;
+  float: left;
+  position: absolute;
+}
+.mytooltip:hover em {
+  font-family: Candara, Tahoma, Geneva, sans-serif;
+  font-size: 1.2em;
+  font-weight: bold;
+  display: block;
+  padding: 0.2em 0 0.6em 0;
+}
+.classic { padding: 0.8em 1em; }
+.custom { padding: 0.5em 0.8em 0.8em 2em; }
+* html a:hover { background: transparent; }
+.classic { background: #000000; color: #FFFFFF; }
 </style>
+
 <div class="container">
-    <br><a href="../">&laquo; RedoxThermoCSP</a>
     <div class="row">
         <div class="col-md-12">
-            <h2>{{ title }}</h2>
-            {{ provenance|safe }}
+            <a href="../">&laquo; RedoxThermoCSP</a>
+            <h3>Isographs</h3>
         </div>
     </div>
-    <div class="row">
-        <div class="col-md-12">
-            <code>
-                from mpcontribs.users.redox_thermo_csp.rest.rester import RedoxThermoCspRester
-                mpr = RedoxThermoCspRester()
-                mpr.get_contributions()
-            </code>
-        </div>
-    </div>
-    
 
     <div class="row">
-        <div class="col-md-12">
-            <h3>Isographs</h3>
-            <ul>
-                <li><b>Experimental data:</b> Retrieved via van't Hoff method from equilibrium thermogravimetric 
-                    data. ΔH(Δδ) and ΔS(Δδ) determined (temperature dependence not considered), <br>with Δδ = δ - δ<sub>0</sub>; 
-                    δ<sub>0</sub>: δ at T = 400 °C, p<sub>O2</sub> = 0.18 bar; δ<sub>0</sub>: determined from entropy fit
-                <br>Inaccurate values for δ<sub>0</sub> lead to a shift of the absolute δ values for some materials. This does not affect the accuracy of the relative oxygen release/uptake values.
-                <br>Experimental data may be highly inaccurate for extrapolated values (indicated by dashed lines).</li>
-                <li><b>Theoretical data:</b> ΔH(δ, T) calculated from DFT values for the reduction enthalpies from perovskite to brownmillerite, ΔS(δ, T) calculated as a sum of configurational and vibrational entropy and the partial molar entropy of oxygen. 
-                <br>Vibrational entropy calculated from elastic tensors (from DFT, The Materials Project). If no elastic tensors are availble, the data for SrFeO<sub>3-&delta;</sub> is used as an approximation.</li>
-                <li>Click on a Contribution Identifier in the table to open a
-                    detail page with graphs for ΔH/ΔS vs δ, and the raw data.</li>
-                <li>To update isotherm, isobar, and isoredox functions, set the
-                    variables and plot ranges below, and click on a row in the table.
-                </li>
-                <li>All thermodynamic quantities are given as per mol of O (monatomic oxygen).
-                </li>
-                <li>Please refer to the <a href="../documentation/">documentation</a> for more detailed information.</li>
-            </ul><br>
-            <h4><b>Citation</b></h4>
-            <ul><li>J. Vieten, B. Bulfin, P. Huck, M. Horton, D. Guban, L. Zhu, K. A. Persson, M. Roeb, C. Sattler (2018). "*** Title will be inserted1 ***" <u>Journal goes here</u> <b>99</b>(99): 99999-99999., <a href="http://dx.doi.org/">DOI: ***</a></li>
-            <li>J. Vieten, B. Bulfin, P. Huck, M. Horton, D. Guban, L. Zhu, K. A. Persson, M. Roeb, C. Sattler (2018). "*** Title will be inserted2 ***" <u>Journal goes here</u> <b>99</b>(99): 99999-99999., <a href="http://dx.doi.org/">DOI: ***</a></li></ul><br>
+        <div class="col-md-5" style="padding-top: 0px">
+            <div class="well" style="padding: 5px 5px 5px 5px; margin-bottom: 2px; margin-left: 5px;">
+                <b>Experimental data:</b> Retrieved via van't Hoff method from equilibrium
+                thermogravimetric data. ΔH(Δδ) and ΔS(Δδ) determined (temperature
+                dependence not considered), with Δδ = δ - δ<sub>0</sub>;
+                δ<sub>0</sub>: δ at T = 400 °C, p<sub>O2</sub> = 0.18 bar; δ<sub>0</sub>:
+                determined from entropy fit Inaccurate values for δ<sub>0</sub> lead to a
+                shift of the absolute δ values for some materials. This does not affect
+                the accuracy of the relative oxygen release/uptake values.  Experimental data
+                may be highly inaccurate for extrapolated values (indicated by dashed
+                lines).
+            </div>
+        </div>
+        <div class="col-md-5" style="padding-top: 0px">
+            <div class="well" style="padding: 5px 5px 5px 5px; margin-bottom: 2px; margin-left: 5px;">
+                <b>Theoretical data:</b> ΔH(δ, T) calculated from DFT values for the
+                reduction enthalpies from perovskite to brownmillerite, ΔS(δ, T)
+                calculated as a sum of configurational and vibrational entropy and the
+                partial molar entropy of oxygen.  Vibrational entropy calculated from
+                elastic tensors (from DFT, The Materials Project).  If no elastic tensors
+                are availble, the data for SrFeO<sub>3-&delta;</sub> is used as an
+                approximation.
+            </div>
+        </div>
+        <div class="col-md-2">
+            <blockquote class="blockquote pull-right" style="font-size: 13px; padding: 0px 10px;">
+                <h5 style="margin: 5px;">
+                    J. Vieten
+                    <a class="mytooltip" href="#">
+                        et al.
+                        <span class="classic">
+                            B. Bulfin<br>P. Huck<br>M. Horton<br>D. Guban<br>
+                            L. Zhu<br>K. A. Persson<br>M. Roeb<br>C. Sattler
+                        </span>
+                    </a>
+                </h5>
+                <a href="http://dx.doi.org/" target="_blank"
+                                             class="btn btn-link" role=button style="padding: 0">
+                    <i class="fa fa-book fa-border fa-lg"></i>
+                </a>
+            </blockquote>
         </div>
     </div>
+
     <hr>
     <div class="row">
         <div class="col-md-3">
             <h4>Currently selected: </h4>
+            <h5>Experimental data available: </h4>
+            <h5>Elastic tensors available: </h4>
+            <h5>Theoretical data updated: </h4>
         </div>
         <div class="col-md-4">
             <div id="selected_mat"></div>
-        </div>
-    </div>
-    <div class="row">
-        <div class="col-md-3">
-            <h5>Experimental data available: </h4>
-        </div>
-        <div class="col-md-4">
             <div id="selected_exp_mat"></div>
-        </div>
-    </div>
-    <div class="row">
-        <div class="col-md-3">
-            <h5>Elastic tensors available: </h4>
-        </div>
-        <div class="col-md-6">
             <div id="selected_elast"></div>
-        </div>
-    </div>
-    <div class="row">
-        <div class="col-md-3">
-            <h5>Theoretical data updated: </h4>
-        </div>
-        <div class="col-md-6">
             <div id="selected_updt"></div>
         </div>
+        <div class="col-md-5">
+            <div class="well" style="padding: 5px 5px 5px 5px; margin-bottom: 2px; margin-left: 5px;">
+                <small>Click on a Contribution Identifier in the table to open a detail page with
+                graphs for ΔH/ΔS vs δ, and the raw data. To update isotherm, isobar, and
+                isoredox functions, set the variables and plot ranges below, and click on
+                a row in the table.  All thermodynamic quantities are given as per mol of
+                O (monatomic oxygen).  Please refer to the <a href="../documentation/">documentation</a>
+                for more detailed information.</small>
+            </div>
+        </div>
     </div>
+
     <hr>
     <div class="row">
         <div class="col-md-4">
