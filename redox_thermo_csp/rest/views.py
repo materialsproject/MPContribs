@@ -21,7 +21,7 @@ ConnectorBase.register(Connector)
 mpr = MPRester()
 from energy_analysis import EnergyAnalysis as enera
 
-@mapi_func(supported_methods=["POST", "GET"], requires_api_key=False)
+@mapi_func(supported_methods=["POST", "GET"], requires_api_key=True)
 def index(request, cid, db_type=None, mdb=None):
     mpid_b = None
     try:
