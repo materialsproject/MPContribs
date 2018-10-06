@@ -48,22 +48,21 @@ code { display: block; white-space: pre-wrap; }
 <div class="container">
 
     <div class="row">
-        <div class="col-md-8">
+        <div class="col-md-6">
             <h2>{{ title }}</h2>
         </div>
-        <div class="col-md-4">
-            <div class="bg-danger" style="padding: 5px;">
-                An example notebook to retrieve and interact with this data can be found
-                <a target="_blank"
-                   href="https://github.com/materialsproject/MPContribsUsers/blob/master/boltztrap/boltztrap.ipynb">here</a>.
-               It's easiest to run it on the <a target="_blank" href="https://jupyterhub.materialsproject.org">MP JupyterHub</a> 
-               (contact <a href="mailto:phuck@lbl.gov">Patrick Huck</a> to request access).
-            </div>
+        <div class="col-md-6">
+            <a class="btn btn-info pull-right" role="button" target="_blank"
+            href="https://jupyterhub.materialsproject.org/user/{{ request.user.username }}/notebooks/MPContribs/mpcontribs/users/boltztrap/boltztrap.ipynb">
+                Work with this dataset <i class="fa fa-external-link"></i>
+            </a>
         </div>
     </div>
 
     <div class="row">
-        {{ provenance|safe }}
+        <div class="col-md-12">
+            {{ provenance|safe }}
+        </div>
     </div>
 
     <a id="graphs"></a>
