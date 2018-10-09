@@ -32,54 +32,36 @@
 {% else %}
 
 <style>
-body {background-image: url("{{ static_url }}/background.jpg");
-background-size: 75%;
-background-repeat: no-repeat;
-background-position: center 100px;}
-.backgrid { font-family: "symbola"; }
-.backgrid tbody tr:hover { background-color: #f9f9f9; }
-.backgrid body  { background-color: blue; }
-.backgrid .sortable { text-align: center; }
-.backgrid thead th button { display: inline; }
-.jh-root { font-family: "symbola"; }
-.jh-type-string { font-style: normal; }
-code { display: block; white-space: pre-wrap; }
+.jumbotron {
+    background-image: url("{{ static_url }}background.jpg");
+    background-repeat: no-repeat;
+    background-position: center center;
+    background-size: 100% 100%;
+    width: 100%;
+    padding-top: 50%; /* 1:1 Aspect Ratio */
+    position: relative; /* If you want text inside of it */
+}
+.text { color: white; position: absolute; top: 0; }
+.nav-stacked > li > a { color: white; font-size: 150%; text-align: center; }
+.nav-stacked > li > a:hover { background-color: black; }
 </style>
-    <br><br>
-    <div class="row">
-        <div class="col-md-2"></div>
-        <div class="col-md-4">
-            <font color="white" face="calibri" size=20><b>RedoxThermoCSP</b><br></font>
-            <font color="white" face="calibri" size=5>Redox Materials Thermochemistry Data<br>for Application in Concentrated Solar Power
-<br></font><br><br><br>
+
+
+<div class="container">
+  <div class="jumbotron">
+    <div class="text">
+      <h1 class="page-header">RedoxThermoCSP</h1>
+      <p>Redox Materials Thermochemistry Data for Application in Concentrated Solar Power</p>
+      <p>
+        <ul class="nav nav-pills nav-stacked">
+            <li role="presentation"><a href="isographs/">Generate Isographs</a></li>
+            <li role="presentation"><a href="energy_analysis/">Energy Analysis</a></li>
+            <li role="presentation"><a href="documentation/">Documentation</a></li>
+        </ul>
+      </p>
     </div>
-    </div>   
-    <br>
-    <div class="row" style="margin-top: 10px;>
-        <div id="centered" style="margin: 0 auto; width:400px; ">
-        <center><font size=6 face="calibri">
-        <a href="isographs/" style="color: white">Generate Isographs</a>
-        </center></font>
-        </div>
-    </div>
-    
-    <div class="row" style="margin-top: 30px;>
-        <div id="centered" style="margin: 0 auto; width:400px;">
-        <center><font size=6 face="calibri">
-         <a href="energy_analysis/" style="color: white">Energy Analysis</a>
-        </center></font>
-        </div>
-    </div>
-    
-    <div class="row" style="margin-top: 30px;>
-        <div id="centered" style="margin: 0 auto; width:400px;">
-        <center><font size=6 face="calibri">
-        <a href="documentation/" style="color: white">Documentation</a>
-        </center></font>
-        </div>
-    </div>
-    
-<div id="bottom_div" style="margin: 0 auto; position:absolute; bottom:20px; right:40%; left:40%;"/>    
+  </div>
+</div>   
+
 {% endif %}
 {% endblock %}
-</div>
