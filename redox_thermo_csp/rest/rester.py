@@ -11,7 +11,7 @@ class RedoxThermoCspRester(MPContribsRester):
     released = True
 
     def get_contributions(self):
-        projection = {'_id': 1, 'mp_cat_id': 1, 'content': 1}
+        projection = {'_id': 1, 'mp_cat_id': 1, 'content.data': 1}
         docs = self.query_contributions(projection=projection)
         if not docs:
             raise Exception('No contributions found for RedoxThermoCsp Explorer!')
