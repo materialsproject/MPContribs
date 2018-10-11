@@ -1,4 +1,45 @@
-## Installation
+## Quick-Start
+
+Follow the steps below if you're only interested in accessing publicy released data through the MPContribs API:
+
+```bash
+conda create -qy -n mpcontribs python==2.7.13
+source activate mpcontribs
+pip install pymatgen
+git clone https://github.com/materialsproject/MPContribs.git && cd MPContribs
+git submodule init mpcontribs/users && git submodule update mpcontribs/users
+cd mpcontribs/users && git checkout master && cd -
+git submodule init webtzite && git submodule update webtzite
+cd webtzite && git checkout master && bower install && cd -
+pip install -e .
+pmg config --add PMG_MAPI_KEY <your-key> # AttributeError: 'module' object has no attribute 'ABC'
+```
+
+```python
+import os
+os.environ['MPCONTRIBS_DEBUG'] = "True"
+from mpcontribs.rest.rester import MPContribsRester
+with MPContribsRester() as mpr:
+  print '# total contributions:', mpr.count()
+  # work with specific contribution
+  portal = 'https://materialsproject.org/mpcontribs'
+  mpid = 'mp-27502' # use MPContribs Portal (or MP Explorer) to find material with contributions
+  cid = mpr.query_contributions(criteria={'mp_cat_id': mpid})[0]['_id']
+  mpfile = mpr.find_contribution(cid)
+  print 'see {}/explorer/materials/{}'.format(portal, cid)
+  hdata = mpfile.hdata[mpid] # dictionary with hierarchical data
+  tdata = mpfile.tdata[mpid] # dictionary with tables as Pandas DataFrames
+  print 'table names:', tdata.keys()
+  df = mpfile.tdata[mpid]['S(p)'] # Pandas DataFrame
+  df.head()
+  # query contributions (better through dataset-specifc Resters - see below)
+  docs = mpr.query_contributions(projection={'content.data.σ.p.<ε>': 1, 'mp_cat_id': 1})
+  print 'found {} contributions'.format(len(docs))
+```
+
+See the [BoltzTraP notebook](https://github.com/materialsproject/MPContribsUsers/blob/master/boltztrap/boltztrap.ipynb) for a dataset-specific working example and more details. FYI, transition to python3 and release of a Docker image are in progress.
+
+## Full Installation as part of JupyterHub
 
 - install Anaconda: https://docs.continuum.io/anaconda/install and  
   create and activate environment:
