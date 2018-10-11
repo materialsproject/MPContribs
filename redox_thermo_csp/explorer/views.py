@@ -1,7 +1,8 @@
 """This module provides the views for the redox_thermo_csp explorer interface."""
 
 import os
-from django.shortcuts import render_to_response
+from django.shortcuts import render_to_response, redirect
+from django.core.urlresolvers import reverse
 from django.template import RequestContext
 from mpcontribs.rest.views import get_endpoint
 from mpcontribs.io.core.components import render_dataframe
@@ -24,7 +25,7 @@ def index(request):
         else:
             ctx.update({'alert': access_msg})
     else:
-        ctx.update({'alert': 'Please log in!'})
+        return redirect('{}?next={}'.format(reverse('cas_ng_login'), request.path))
     return render_to_response("redox_thermo_csp_explorer_index.html", ctx)
 
 def isographs(request):
@@ -51,7 +52,7 @@ def isographs(request):
         else:
             ctx.update({'alert': access_msg})
     else:
-        ctx.update({'alert': 'Please log in!'})
+        return redirect('{}?next={}'.format(reverse('cas_ng_login'), request.path))
     return render_to_response("redox_thermo_csp_explorer_isographs.html", ctx)
 
 def energy_analysis(request):
@@ -66,7 +67,7 @@ def energy_analysis(request):
         else:
             ctx.update({'alert': 'Currently under maintenance' if maintenance else access_msg})
     else:
-        ctx.update({'alert': 'Please log in!'})
+        return redirect('{}?next={}'.format(reverse('cas_ng_login'), request.path))
     return render_to_response("redox_thermo_csp_explorer_energy_analysis.html", ctx)
 
 def documentation(request):
@@ -81,7 +82,7 @@ def documentation(request):
         else:
             ctx.update({'alert': access_msg})
     else:
-        ctx.update({'alert': 'Please log in!'})
+        return redirect('{}?next={}'.format(reverse('cas_ng_login'), request.path))
     return render_to_response("redox_thermo_csp_explorer_documentation.html", ctx)
 
 def tolerance_factors(request):
@@ -97,5 +98,5 @@ def tolerance_factors(request):
             except Exception as ex:
                 ctx.update({'alert': str(ex)})
     else:
-        ctx.update({'alert': 'Please log in!'})
+        return redirect('{}?next={}'.format(reverse('cas_ng_login'), request.path))
     return render_to_response("redox_thermo_csp_explorer_tolerance_factors.html", ctx)
