@@ -37,10 +37,15 @@ def isographs(request):
             from ..rest.rester import RedoxThermoCspRester
             with RedoxThermoCspRester(API_KEY, endpoint=ENDPOINT) as mpr:
                 try:
-                    ctx['table'] = render_dataframe(mpr.get_contributions(), webapp=True)
                     prov = mpr.get_provenance()
                     ctx['title'] = prov.pop('title')
                     ctx['provenance'] = render_dict(prov, webapp=True)
+                    df = mpr.get_contributions()
+                    url = request.build_absolute_uri(request.path) + 'rest/table'
+                    ctx['table'] = render_dataframe(
+                        df, webapp=True,
+                        #url=url, total_records=mpr.count()
+                    )
                 except Exception as ex:
                     ctx.update({'alert': str(ex)})
         else:

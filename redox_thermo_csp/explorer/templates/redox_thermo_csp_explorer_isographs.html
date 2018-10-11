@@ -139,6 +139,7 @@ code { display: block; white-space: pre-wrap; }
             <h5>Theoretical data updated: </h4>
         </div>
         <div class="col-md-4">
+            <div id="spinner" ></div>
             <div id="selected_mat"></div>
             <div id="selected_exp_mat"></div>
             <div id="selected_elast"></div>
@@ -153,6 +154,12 @@ code { display: block; white-space: pre-wrap; }
                 O (monatomic oxygen).  Please refer to the <a href="../documentation/">documentation</a>
                 for more detailed information.</small>
             </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">
+            {{ table|safe }}
         </div>
     </div>
 
@@ -340,57 +347,170 @@ code { display: block; white-space: pre-wrap; }
             <div id=ellingham></div>
         </div>
     </div>
-    <hr>
-
-    <div class="row">
-        <div class="col-md-12">
-            {{ table|safe }}
-        </div>
-    </div>
 
 </div>
 
 <script>
 requirejs(['main'], function() {
-    require(["plotly", "backbone", "bootstrap-slider"], function(Plotly, Backbone) {
+    require(["plotly", "backbone", "bootstrap-slider", "jquery.spin"], function(Plotly, Backbone) {
         $(document).ready(function(){
 
-            // configure sliders for isoplots
-            $('#temp_slider').slider({tooltip: "always"}); $('#pressure_range').slider({tooltip_position:'bottom'});
-            $('#pressure_slider').slider({tooltip: "always"}); $('#temp_range').slider({tooltip_position:'bottom'});
-            $('#redox_slider').slider({tooltip: "always"}); $('#redox_temp_range').slider({tooltip_position:'bottom'});
-            $('#dH_temp_slider').slider({tooltip: "always"});$('#dS_temp_slider').slider({tooltip: "always"});
-            $('#elling_redox_slider').slider({tooltip: "always"}); $('#elling_temp_range').slider({tooltip_position:'bottom'});
-            $('#elling_pressure_slider').slider({tooltip_position:'bottom', tooltip: "always"}); 
-            
             // update all isoplots if new material is selected, define global cid (cidnow)
-            Backbone.on('cellclicked', function(er){var row = $(er.currentTarget).parent();
+            Backbone.on('cellclicked', function(er) {
+                $('#spinner').spin();
+                var row = $(er.currentTarget).parent();
                 var url = row.find("td:nth-child(2) > a").attr('href');
                 var cid = url.split('/').pop();
                 window.cidnow = cid;
                 updatekeys = "isobar, isotherm, isoredox, ellingham, enthalpy_dH, entropy_dS"
-                e(cid,updatekeys);});
-            
-            // update the respective isoplot if the respective value is changed
-            $('#temp_slider').slider().on('slideStop', function(ev){updatekeys = "isotherm";e(cidnow,updatekeys);}); 
-            $('#pressure_range').slider().on('slideStop', function(ev){updatekeys = "isotherm";e(cidnow,updatekeys);});
-            $('#pressure_slider').slider().on('slideStop', function(ev){updatekeys = "isobar";e(cidnow,updatekeys);}); 
-            $('#temp_range').slider().on('slideStop', function(ev){updatekeys = "isobar";e(cidnow,updatekeys);}); 
-            $('#redox_slider').slider().on('slideStop', function(ev){updatekeys = "isoredox";e(cidnow,updatekeys);}); 
-            $('#redox_temp_range').slider().on('slideStop', function(ev){updatekeys = "isoredox";e(cidnow,updatekeys);}); 
-            $('#dH_temp_slider').slider().on('slideStop', function(ev){updatekeys = "enthalpy_dH";e(cidnow,updatekeys);}); 
-            $('#dS_temp_slider').slider().on('slideStop', function(ev){updatekeys = "entropy_dS";e(cidnow,updatekeys);}); 
-            $('#elling_redox_slider').slider().on('slideStop', function(ev){updatekeys = "ellingham";e(cidnow,updatekeys);}); 
-            $('#elling_temp_range').slider().on('slideStop', function(ev){updatekeys = "ellingham";e(cidnow,updatekeys);}); 
-            $('#elling_pressure_slider').slider().on('slideStop', function(ev){updatekeys = "ellingham";e(cidnow,updatekeys);}); 
+                console.log(updatekeys);
+                e(cid, updatekeys);
+            });
+
+            var sliders = {
+                temp_slider: {config: {tooltip: "always"}, updkey: "isotherm"},
+                pressure_range: {config: {tooltip_position: "bottom"}, updkey: "isotherm"},
+                pressure_slider: {config: {tooltip: "always"}, updkey: "isobar"},
+                temp_range: {config: {tooltip_position: "bottom"}, updkey: "isobar"},
+                redox_slider: {config: {tooltip: "always"}, updkey: "isoredox"},
+                redox_temp_range: {config: {tooltip_position: "bottom"}, updkey: "isoredox"},
+                dH_temp_slider: {config: {tooltip: "always"}, updkey: "enthalpy_dH"},
+                dS_temp_slider: {config: {tooltip: "always"}, updkey: "entropy_dS"},
+                elling_redox_slider: {config: {tooltip: "always"}, updkey: "ellingham"},
+                elling_temp_range: {config: {tooltip_position: "bottom"}, updkey: "ellingham"},
+                elling_pressure_slider: {config: {tooltip: "always", tooltip_position: "bottom"}, updkey: "ellingham"},
+            }
+            Object.keys(sliders).forEach(function(key, index) {
+                // configure sliders for isoplots
+                // update the respective isoplot if the respective value is changed
+                config = sliders[key]['config'];
+                updkey = sliders[key]['updkey'];
+                $('#'+key).slider(config).on('slideStop', function(ev) { e(cidnow, updkey); }); 
+            });
+
+
+            // displays the currently selected material and data properties
+            function showdata(r, key) { 
+                var selected = r[key].slice(-1) + ''
+                selected = selected.split(",");
+                var selected_form = "";
+                for (var i = 0; i < selected.length; i++) { 
+                    if (isNaN(selected[i])) {
+                        selected_form += selected[i];
+                    } else {
+                        selected_form += "<sub>" + selected[i] + "</sub>";
+                    };
+                };
+                selected_form = "<h4>" + selected_form.split("Ox")[0] + "O<sub>3-&delta;</sub>" + "</h4>";
+                $('#selected_mat').html(selected_form);
+
+                var selected_exp = r[key].slice(-1) + ''
+                if (selected_exp.includes("n.a.")){
+                    selected_exp_form = "<h5>no</h5>";
+                } else {
+                    selected_exp = selected_exp.split("Ox").slice(-1) + ''
+                    selected_exp = selected_exp.split(",");
+                    var selected_exp_form = "";
+                    for (var j = 1; j < selected_exp.length; j++) { 
+                        if (isNaN(selected_exp[j])) {
+                            selected_exp_form += selected_exp[j];
+                        } else {
+                            selected_exp_form += "<sub>" + selected_exp[j] + "</sub>";
+                        };
+                    };
+                    selected_exp_form = "<h5>yes: " + selected_exp_form.split("O<sub>3</sub>")[0];
+                    selected_exp_form += "O<sub>3-&delta;</sub>" + "</h5>";
+                };
+                $('#selected_exp_mat').html(selected_exp_form);
+
+                var selected_elastic = r[key].slice(-1) + ''
+                selected_elastic = selected_elastic.split(",").slice(-2);
+                if (selected_elastic.includes("true")) {
+                    selected_elastic = "<h5>yes</h5>";
+                } else {
+                    selected_elastic = "<h5>no, using data for SrFeO<sub>3-&delta;</sub> as an approximation</h5>";
+                };
+                $('#selected_elast').html(selected_elastic);
+
+                var selected_updt_form = r[key].slice(-1) + ''
+                selected_updt_form = selected_updt_form.split(",").slice(-1);
+                $('#selected_updt').html("<h5>" + selected_updt_form + "</h5>");
+            };
+                        
+            // update plots depending on the keys
+            function update_plots(div, r, key) {
+                if (key === "isotherm") {
+                    var title = "T=" + $('#temp_slider').attr('value') + " K";
+                    var xaxis_title = "p<sub>O2</sub> (bar)";
+                    var yaxis_title = "δ";
+                }
+                if (key === "isobar") {
+                    var title = "p<sub>O2</sub>=10<sup>" + $('#pressure_slider').attr('value') + "</sup> bar"; 
+                    var xaxis_title = "T (K)";
+                    var yaxis_title = "δ";
+                }
+                if (key === "isoredox") {
+                    var title = "δ=" + $('#redox_slider').attr('value'); 
+                    var xaxis_title = "T (K)";
+                    var yaxis_title = "p<sub>O2</sub> (bar)";
+                }
+                if (key === "enthalpy_dH") {
+                    var title = "theo: T=" + $('#dH_temp_slider').attr('value') + " K, exp: T undefined";
+                    var xaxis_title = "δ";
+                    var yaxis_title = "ΔH<sub>O</sub> (kJ/mol)";
+                }
+                if (key === "entropy_dS") {
+                    var title = "theo: T=" + $('#dS_temp_slider').attr('value') + " K, exp: T undefined";
+                    var xaxis_title = "δ";
+                    var yaxis_title = "ΔS<sub>O</sub> (J/molK)";
+                }
+                if (key === "ellingham") {
+                    var title = "δ=" + $('#elling_redox_slider').attr('value'); 
+                    var xaxis_title = "T (K)";
+                    var yaxis_title = "ΔG<sub>O</sub> (kJ/mol)";
+                }
+                if (key === "energy_analysis") {
+                    var title = r[key][0]['title']; 
+                    var yaxis_title = r[key][0]['yaxis_title'];
+                    var yaxis_titlefont = { size: 22 };
+                    var xaxis_tickfont = { size: 12 };
+                }
+                var axis = {
+                    exponentformat: "E", tickfont: { size: 15 }, showline: "True",
+                    ticks: "inside", tickwidth: 1, tickcolor: '#000000',
+                    linewidth: 1, zeroline: "False",
+                    titlefont: { family: 'Arial', size: 20, color: '#000000' }
+                };
+                var xaxis = JSON.parse(JSON.stringify(axis)); // deepcopy
+                xaxis['title'] = xaxis_title;
+                if (key === "isotherm") { xaxis['type'] = 'log'; }
+                var yaxis = JSON.parse(JSON.stringify(axis)); // deepcopy
+                yaxis['title'] = yaxis_title;
+                yaxis['titlefont'] = yaxis_titlefont;
+                xaxis['tickfont'] = xaxis_tickfont;
+                if (key === "isoredox") { yaxis['type'] = 'log'; }
+                if (key === "enthalpy_dH") { yaxis['range'] = r[key].slice(-2)[0] ; }
+                if (key === "entropy_dS") { yaxis['range'] = r[key].slice(-2)[0]; }
+                if (key != "energy_analysis") {
+                    Plotly.newPlot(div, r[key].slice(0, -1), {
+                        title: title, showlegend: false, xaxis: xaxis, yaxis: yaxis,
+                        margin: {l: 80, r: 20, b: 60, t: 35}
+                    });}
+                if (key === "energy_analysis") {
+                    Plotly.newPlot(div, r[key] , {
+                        title: title, showlegend: false, xaxis: xaxis, yaxis: yaxis, 
+                        margin: {l: 80, r: 120, b: 130, t: 35}, height: 650, width: 1200, autosize: false, barmode: 'stack'
+                    });
+                }
+            };
 
             function e(cid, updatekeys) { 
 
-            // reformats the update keys so the python script can read them
-            var update_to_views = updatekeys + ''
-            update_to_views = update_to_views.replace(/\s/g, '')
-            update_to_views = update_to_views.split(",")
-            
+                // reformats the update keys so the python script can read them
+                var update_to_views = updatekeys + ''
+                update_to_views = update_to_views.replace(/\s/g, '')
+                update_to_views = update_to_views.split(",")
+
                 // read slider/field values
                 var payload = JSON.stringify({
                     'isotherm': {
@@ -422,121 +542,11 @@ requirejs(['main'], function() {
                         'steam_h_rec': 0,
                         'param_disp': 0,
                         'cutoff': 0
-                        },
+                    },
                     'updatekeys': { update_to_views }
                 });
-                // displays the currently selected material and data properties
-                function showdata(r, key){ 
-                        var selected = r[key].slice(-1) + ''
-                        selected = selected.split(",");
-                        var i;
-                        var selected_form = "";
-                        for (i = 0; i < selected.length; i++) { 
-                        if (isNaN(selected[i])){selected_form += selected[i];} else
-                        {selected_form += "<sub>" + selected[i] + "</sub>";};
-                        };
-                        selected_form = "<h4>" + selected_form.split("Ox")[0] + "O<sub>3-&delta;</sub>" + "</h4>";
-                        selected_mat.innerHTML = selected_form;
-                        
-                        var selected_exp = r[key].slice(-1) + ''
-                        
-                        if (selected_exp.includes("n.a.")){
-                        selected_exp_form = "<h5>no</h5>";
-                        } else {
-                        selected_exp = selected_exp.split("Ox").slice(-1) + ''
-                        selected_exp = selected_exp.split(",");
-                        var j;
-                        var selected_exp_form = "";
-                        for (j = 1; j < selected_exp.length; j++) { 
-                        if (isNaN(selected_exp[j])){selected_exp_form += selected_exp[j];} else
-                        {selected_exp_form += "<sub>" + selected_exp[j] + "</sub>";};
-                        };
-                        selected_exp_form = "<h5>yes: " + selected_exp_form.split("O<sub>3</sub>")[0] + "O<sub>3-&delta;</sub>" + "</h5>";
-                        };
-                        selected_exp_mat.innerHTML = selected_exp_form;
-                        
-                        var selected_elastic = r[key].slice(-1) + ''
-                        selected_elastic = selected_elastic.split(",").slice(-2);
-                        if (selected_elastic.includes("true")){selected_elastic = "<h5>yes</h5>";} else
-                        {selected_elastic = "<h5>no, using data for SrFeO<sub>3-&delta;</sub> as an approximation</h5>";};
-                        selected_elast.innerHTML = selected_elastic;
-                        
-                        var selected_updt_form = r[key].slice(-1) + ''
-                        selected_updt_form = selected_updt_form.split(",").slice(-1);
-                        selected_updt.innerHTML = "<h5>" + selected_updt_form + "</h5>";
-                        };
-                        
-                // update plots depending on the keys
-                function update_plots(div, r, key){
-                            if (key === "isotherm") {
-                                var title = "T=" + $('#temp_slider').attr('value') + " K";
-                                var xaxis_title = "p<sub>O2</sub> (bar)";
-                                var yaxis_title = "δ";
-                            }
-                            if (key === "isobar") {
-                                var title = "p<sub>O2</sub>=10<sup>" + $('#pressure_slider').attr('value') + "</sup> bar"; 
-                                var xaxis_title = "T (K)";
-                                var yaxis_title = "δ";
-                            }
-                            if (key === "isoredox") {
-                                var title = "δ=" + $('#redox_slider').attr('value'); 
-                                var xaxis_title = "T (K)";
-                                var yaxis_title = "p<sub>O2</sub> (bar)";
-                            }
-                            if (key === "enthalpy_dH") {
-                                var title = "theo: T=" + $('#dH_temp_slider').attr('value') + " K, exp: T undefined";
-                                var xaxis_title = "δ";
-                                var yaxis_title = "ΔH<sub>O</sub> (kJ/mol)";
-                            }
-                            if (key === "entropy_dS") {
-                                var title = "theo: T=" + $('#dS_temp_slider').attr('value') + " K, exp: T undefined";
-                                var xaxis_title = "δ";
-                                var yaxis_title = "ΔS<sub>O</sub> (J/molK)";
-                            }
-                            if (key === "ellingham") {
-                                var title = "δ=" + $('#elling_redox_slider').attr('value'); 
-                                var xaxis_title = "T (K)";
-                                var yaxis_title = "ΔG<sub>O</sub> (kJ/mol)";
-                            }
-                            if (key === "energy_analysis") {
-                                var title = r[key][0]['title']; 
-                                var yaxis_title = r[key][0]['yaxis_title'];
-                                var yaxis_titlefont = {
-                                                  size: 22,
-                                                      };
-                                var xaxis_tickfont = {
-                                                  size: 12,
-                                                      };
-                            }
-                            var axis = {
-                                exponentformat: "E", tickfont: { size: 15 }, showline: "True",
-                                ticks: "inside", tickwidth: 1, tickcolor: '#000000',
-                                linewidth: 1, zeroline: "False",
-                                titlefont: { family: 'Arial', size: 20, color: '#000000' }
-                            };
-                            var xaxis = JSON.parse(JSON.stringify(axis)); // deepcopy
-                            xaxis['title'] = xaxis_title;
-                            if (key === "isotherm") { xaxis['type'] = 'log'; }
-                            var yaxis = JSON.parse(JSON.stringify(axis)); // deepcopy
-                            yaxis['title'] = yaxis_title;
-                            yaxis['titlefont'] = yaxis_titlefont;
-                            xaxis['tickfont'] = xaxis_tickfont;
-                            if (key === "isoredox") { yaxis['type'] = 'log'; }
-                            if (key === "enthalpy_dH") { yaxis['range'] = r[key].slice(-2)[0] ; }
-                            if (key === "entropy_dS") { yaxis['range'] = r[key].slice(-2)[0]; }
-                            if (key != "energy_analysis"){
-                            Plotly.newPlot(div, r[key].slice(0, -1), {
-                                title: title, showlegend: false, xaxis: xaxis, yaxis: yaxis,
-                                margin: {l: 80, r: 20, b: 60, t: 35}
-                            });}
-                            if (key === "energy_analysis"){
-                            Plotly.newPlot(div, r[key] , {
-                                title: title, showlegend: false, xaxis: xaxis, yaxis: yaxis, 
-                                margin: {l: 80, r: 120, b: 130, t: 35}, height: 650, width: 1200, autosize: false, barmode: 'stack'
-                            });
-                            }
-                            };
-                        
+
+                console.log('ajax request...');
                 $.ajax({
                     type: 'POST',
                     url: '../rest/' + cid,
@@ -547,22 +557,26 @@ requirejs(['main'], function() {
                         // data['response'] = {'isotherm': {'x':, [...], 'y': [...]}, 'isobar': ...}
                         var r = data['response'];
                         Object.keys(r).forEach(function(key,index) {
+                            console.log(key);
                             // key: the name of the object key
                             // index: the ordinal position of the key within the object 
                             if (key != "energy_analysis") { showdata(r, key); };
                             var div = document.getElementById(key);
-                            if (updatekeys.includes(key)){ // only update those plots defined in updatekeys
-                            window.filleddivs += key;
-                            update_plots(div,r,key);
+                            if (updatekeys.includes(key)) { // only update those plots defined in updatekeys
+                                window.filleddivs += key;
+                                update_plots(div,r,key);
                             };
-       
+
                         });
+                        $('#spinner').spin(false);
                     },
                     error: function(jqXHR, textStatus, errorThrown) {
                         console.log(errorThrown);
                     }
                 });
+
             }; 
+                        
             $(".backgrid > tbody > tr:first > td:nth-child(6)").click()
         });
     });
