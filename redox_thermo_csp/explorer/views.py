@@ -31,7 +31,7 @@ def isographs(request):
     ctx = RequestContext(request)
     if request.user.is_authenticated():
         user = RegisteredUser.objects.get(username=request.user.username)
-        if not maintenance and user.groups.filter(name='redox_thermo_csp').exists():
+        if user.groups.filter(name='redox_thermo_csp').exists():
             API_KEY = user.api_key
             ENDPOINT = request.build_absolute_uri(get_endpoint())
             from ..rest.rester import RedoxThermoCspRester
@@ -49,7 +49,7 @@ def isographs(request):
                 except Exception as ex:
                     ctx.update({'alert': str(ex)})
         else:
-            ctx.update({'alert': 'Currently under maintenance' if maintenance else access_msg})
+            ctx.update({'alert': access_msg})
     else:
         ctx.update({'alert': 'Please log in!'})
     return render_to_response("redox_thermo_csp_explorer_isographs.html", ctx)
