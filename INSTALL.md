@@ -30,7 +30,7 @@ with MPContribsRester() as mpr:
   hdata = mpfile.hdata[mpid] # dictionary with hierarchical data
   tdata = mpfile.tdata[mpid] # dictionary with tables as Pandas DataFrames
   print 'table names:', tdata.keys()
-  df = mpfile.tdata[mpid]['S(p)'] # Pandas DataFrame
+  df = tdata[mpid]['S(p)'] # Pandas DataFrame
   df.head()
   # query contributions (better through dataset-specifc Resters - see below)
   docs = mpr.query_contributions(projection={'content.data.σ.p.<ε>': 1, 'mp_cat_id': 1})
