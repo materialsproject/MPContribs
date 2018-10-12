@@ -140,6 +140,7 @@ code { display: block; white-space: pre-wrap; }
         </div>
         <div class="col-md-4">
             <div id="spinner" ></div>
+            <input type="hidden" id="cid">
             <div id="selected_mat"></div>
             <div id="selected_exp_mat"></div>
             <div id="selected_elast"></div>
@@ -356,16 +357,15 @@ requirejs(['main'], function() {
     require(["plotly", "backbone", "bootstrap-slider", "jquery.spin"], function(Plotly, Backbone) {
         $(document).ready(function(){
 
-            // update all isoplots if new material is selected, define global cid (cidnow)
+            // update all isoplots if new material is selected
             Backbone.on('cellclicked', function(er) {
                 $('#spinner').spin();
                 var row = $(er.currentTarget).parent();
                 var url = row.find("td:nth-child(2) > a").attr('href');
                 var cid = url.split('/').pop();
-                window.cidnow = cid;
-                updatekeys = "isobar, isotherm, isoredox, ellingham, enthalpy_dH, entropy_dS"
-                console.log(updatekeys);
-                e(cid, updatekeys);
+                $('#cid').val(cid);
+                var updatekeys = "isobar, isotherm, isoredox, ellingham, enthalpy_dH, entropy_dS"
+                send_request(updatekeys);
             });
 
             var sliders = {
@@ -384,9 +384,12 @@ requirejs(['main'], function() {
             Object.keys(sliders).forEach(function(key, index) {
                 // configure sliders for isoplots
                 // update the respective isoplot if the respective value is changed
-                config = sliders[key]['config'];
-                updkey = sliders[key]['updkey'];
-                $('#'+key).slider(config).on('slideStop', function(ev) { e(cidnow, updkey); }); 
+                $('#'+key).slider(sliders[key]['config'])
+                    .on('slideStop', function(ev) {
+                        var k = ev.currentTarget.id;
+                        var updkey = sliders[k]['updkey'];
+                        send_request(updkey);
+                    }); 
             });
 
 
@@ -496,8 +499,8 @@ requirejs(['main'], function() {
                     Plotly.newPlot(div, r[key].slice(0, -1), {
                         title: title, showlegend: false, xaxis: xaxis, yaxis: yaxis,
                         margin: {l: 80, r: 20, b: 60, t: 35}
-                    });}
-                if (key === "energy_analysis") {
+                    });
+                } else {
                     Plotly.newPlot(div, r[key] , {
                         title: title, showlegend: false, xaxis: xaxis, yaxis: yaxis, 
                         margin: {l: 80, r: 120, b: 130, t: 35}, height: 650, width: 1200, autosize: false, barmode: 'stack'
@@ -505,7 +508,9 @@ requirejs(['main'], function() {
                 }
             };
 
-            function e(cid, updatekeys) { 
+            function send_request(updatekeys) { 
+
+                var cid = $('#cid').val();
 
                 // reformats the update keys so the python script can read them
                 var update_to_views = updatekeys + ''
@@ -513,7 +518,7 @@ requirejs(['main'], function() {
                 update_to_views = update_to_views.split(",")
 
                 // read slider/field values
-                var payload = JSON.stringify({
+                var payload = {
                     'isotherm': {
                         'iso': $('#temp_slider').attr('value'),
                         'rng': $('#pressure_range').attr('value')
@@ -545,26 +550,23 @@ requirejs(['main'], function() {
                         'cutoff': 0
                     },
                     'updatekeys': { update_to_views }
-                });
+                }
 
-                console.log('ajax request...');
                 $.ajax({
                     type: 'POST',
                     url: '../rest/' + cid,
-                    data: payload,
+                    data: JSON.stringify(payload),
                     dataType: "json",
                     contentType: "application/json; charset=utf-8",
                     success: function(data, textStatus, jqXHR) {
                         // data['response'] = {'isotherm': {'x':, [...], 'y': [...]}, 'isobar': ...}
                         var r = data['response'];
                         Object.keys(r).forEach(function(key,index) {
-                            console.log(key);
                             // key: the name of the object key
                             // index: the ordinal position of the key within the object 
                             if (key != "energy_analysis") { showdata(r, key); };
-                            var div = document.getElementById(key);
-                            if (updatekeys.includes(key)) { // only update those plots defined in updatekeys
-                                window.filleddivs += key;
+                            if (update_to_views.includes(key)) { // only update those plots defined in updatekeys
+                                var div = document.getElementById(key);
                                 update_plots(div,r,key);
                             };
 
