@@ -138,7 +138,7 @@ def index(request, cid, db_type=None, mdb=None):
                     x_val = pd.np.linspace(0.01, 0.49, num=100)
                 else:
                     x_val = pd.np.linspace(rng[0], rng[1], num=100)
-                    if k == 'isobar':
+                    if (k == 'isobar') or (k == "ellingham"):
                         iso = pd.np.log(10**iso)
 
                 resiso, resiso_theo, ellingiso = [], [], []
@@ -288,6 +288,11 @@ def index(request, cid, db_type=None, mdb=None):
                     response[k] = [{'x': x_exp, 'y': res_fit, 'name': name_exp_fit, 'line': { 'color': 'rgb(5,103,166)', 'width': 2.5 }},
                     {'x': x_exp, 'y': res_interp, 'name': name_exp_interp, 'line': { 'color': 'rgb(5,103,166)', 'width': 2.5, 'dash': 'dot' }},
                     {'x': x_theo, 'y': resiso_theo, 'name': name_theo, 'line': { 'color': 'rgb(217,64,41)', 'width': 2.5}}, [y_min,y_max], [compstr_disp, compstr_exp, elast, updt]]
+                elif experimental_data_available:
+                    response[k] = [{'x': x_exp, 'y': res_fit, 'name': 'exp_fit', 'line': { 'color': 'rgb(5,103,166)', 'width': 2.5 }},
+                    {'x': x_exp, 'y': res_interp, 'name': 'exp_interp', 'line': { 'color': 'rgb(5,103,166)', 'width': 2.5, 'dash': 'dot' }},
+                    {'x': x_theo, 'y': resiso_theo, 'name': 'theo', 'line': { 'color': 'rgb(217,64,41)', 'width': 2.5}},
+                    {'x': x_exp, 'y': ellingiso, 'name': 'isobar line', 'line': { 'color': 'rgb(100,100,100)', 'width': 2.5}}, [compstr_disp, compstr_exp, elast, updt]]
                 else:
                     response[k] = [{'x': x_exp, 'y': res_fit, 'name': 'exp_fit', 'line': { 'color': 'rgb(5,103,166)', 'width': 2.5 }},
                     {'x': x_exp, 'y': res_interp, 'name': 'exp_interp', 'line': { 'color': 'rgb(5,103,166)', 'width': 2.5, 'dash': 'dot' }},
