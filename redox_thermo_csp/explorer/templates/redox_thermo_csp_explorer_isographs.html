@@ -161,7 +161,10 @@ code { display: block; white-space: pre-wrap; }
 
     <div class="row">
         <div class="col-md-12">
-            {{ table|safe }}
+            <a data-toggle="collapse" href="#datatable" aria-expanded="false" aria-controls="datatable">
+                <b>Show/Hide Data Table</b>
+            </a>
+            <div class="collapse" id="datatable">{{ table|safe }}</div>
         </div>
     </div>
 
@@ -365,6 +368,7 @@ requirejs(['main'], function() {
                 var cid = url.split('/').pop();
                 $('#cid').val(cid);
                 var updatekeys = "isobar, isotherm, isoredox, ellingham, enthalpy_dH, entropy_dS"
+                $('#datatable').toggleClass('in', false);
                 send_request(updatekeys);
             });
 
