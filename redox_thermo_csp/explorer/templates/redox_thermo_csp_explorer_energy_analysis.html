@@ -377,6 +377,7 @@ code { display: block; white-space: pre-wrap; }
 
     <div class="row" style="padding-top: 25px;">
         <div class="col-md-12">
+            <div name="spinner"></div>
             <div id=energy_analysis></div>
         </div>
     </div>
@@ -385,11 +386,9 @@ code { display: block; white-space: pre-wrap; }
 
 <script>
 requirejs(['main'], function() {
-    require(["plotly", "backbone", "bootstrap-slider", "chosen"], function(Plotly, Backbone) {
+    require(["plotly", "backbone", "bootstrap-slider", "chosen", "jquery.spin"], function(Plotly, Backbone) {
         $(document).ready(function() {
 
-            window.filleddivs = [];
-      
             $('#disp_par').chosen({disable_search: true});
             $('#process').chosen({disable_search: true, width: "100%"});
             $('#pump_ener').val("0.0"); $('#disp_par').val("kJ/mol of product");
@@ -398,7 +397,7 @@ requirejs(['main'], function() {
             // update the energy analysis
             selectors = ["input[type='radio']", "select", "#pump_ener", "input[type='checkbox']"]
             selectors.forEach(function(selector) {
-                $(selector).on('change', function(ev) { e("energy_analysis"); }); 
+                $(selector).on('change', function(ev) { send_request("energy_analysis"); }); 
             });
 
             slide_selectors = [
@@ -407,87 +406,18 @@ requirejs(['main'], function() {
                 '#w_feed_temp', '#num_mat'
             ]
             slide_selectors.forEach(function(selector) {
-                $(selector).slider().on('slideStop', function(ev) { e("energy_analysis"); });
+                $(selector).slider().on('slideStop', function(ev) { send_request("energy_analysis"); });
             });
 
             var ener_empty = "True";
             if (ener_empty === "True") {
                 // if the energy analysis has not been done yet, try to do it
-                e("energy_analysis");
+                send_request("energy_analysis");
                 ener_empty = "False";
             };
 
-            // update plots depending on the keys
-            function update_plots(div, r, key) {
-                if (key === "isotherm") {
-                    var title = "T=" + $('#temp_slider').attr('value') + " K";
-                    var xaxis_title = "p<sub>O2</sub> (bar)";
-                    var yaxis_title = "δ";
-                }
-                if (key === "isobar") {
-                    var title = "p<sub>O2</sub>=10<sup>" + $('#pressure_slider').attr('value') + "</sup> bar"; 
-                    var xaxis_title = "T (K)";
-                    var yaxis_title = "δ";
-                }
-                if (key === "isoredox") {
-                    var title = "δ=" + $('#redox_slider').attr('value'); 
-                    var xaxis_title = "T (K)";
-                    var yaxis_title = "p<sub>O2</sub> (bar)";
-                }
-                if (key === "enthalpy_dH") {
-                    var title = "theo: T=" + $('#dH_temp_slider').attr('value') + " K, exp: T undefined";
-                    var xaxis_title = "δ";
-                    var yaxis_title = "ΔH<sub>O</sub> (kJ/mol)";
-                }
-                if (key === "entropy_dS") {
-                    var title = "theo: T=" + $('#dS_temp_slider').attr('value') + " K, exp: T undefined";
-                    var xaxis_title = "δ";
-                    var yaxis_title = "ΔS<sub>O</sub> (J/molK)";
-                }
-                if (key === "ellingham") {
-                    var title = "δ=" + $('#elling_redox_slider').attr('value'); 
-                    var xaxis_title = "T (K)";
-                    var yaxis_title = "ΔG<sub>O</sub> (kJ/mol)";
-                }
-                if (key === "energy_analysis") {
-                    var title = r[key][0]['title']; 
-                    var yaxis_title = r[key][0]['yaxis_title'];
-                    var yaxis_titlefont = {size: 22};
-                    var xaxis_tickfont = {size: 12};
-                }
-                var axis = {
-                    exponentformat: "E", tickfont: { size: 15 }, showline: "True",
-                    ticks: "inside", tickwidth: 1, tickcolor: '#000000',
-                    linewidth: 1, zeroline: "False",
-                    titlefont: { family: 'Arial', size: 20, color: '#000000' }
-                };
-                var xaxis = JSON.parse(JSON.stringify(axis)); // deepcopy
-                xaxis['title'] = xaxis_title;
-                if (key === "isotherm") { xaxis['type'] = 'log'; }
-                var yaxis = JSON.parse(JSON.stringify(axis)); // deepcopy
-                yaxis['title'] = yaxis_title;
-                yaxis['titlefont'] = yaxis_titlefont;
-                xaxis['tickfont'] = xaxis_tickfont;
-                if (key === "isoredox") { yaxis['type'] = 'log'; }
-                if (key === "enthalpy_dH") { yaxis['range'] = r[key].slice(-2)[0] ; }
-                if (key === "entropy_dS") { yaxis['range'] = r[key].slice(-2)[0]; }
-                if (key === "energy_analysis") {
-                    Plotly.newPlot(div, r[key] , {
-                        title: title, showlegend: false, xaxis: xaxis, yaxis: yaxis, 
-                        margin: {l: 80, r: 120, b: 130, t: 35}, height: 650, width: 1200,
-                        autosize: false, barmode: 'stack'
-                    });
-                } else {
-                    Plotly.newPlot(div, r[key].slice(0, -1), {
-                        title: title, showlegend: false, xaxis: xaxis, yaxis: yaxis,
-                        margin: {l: 80, r: 20, b: 60, t: 35}
-                    });
-                }
-
-            };
-                        
-
-            function e(updatekeys) { 
+            function send_request(updatekeys) { 
+                $("[name='spinner']").spin();
 
                 // enable / disable some sliders and fields in the energy analysis depending on values of other sliders/fields
                 if ($("input:checked").val() === "Experimental"){
@@ -594,14 +524,27 @@ requirejs(['main'], function() {
                             // key: the name of the object key
                             // index: the ordinal position of the key within the object 
                             var div = document.getElementById(key);
-                            if (updatekeys.includes(key)) { // only update those plots defined in updatekeys
-                                if ( !(window.filleddivs.includes(key)) ) { window.filleddivs += key; }
-                                update_plots(div, r, key);
+                            var title = r[key][0]['title']; 
+                            var yaxis_title = r[key][0]['yaxis_title'];
+                            var yaxis_titlefont = {size: 22};
+                            var xaxis_tickfont = {size: 12};
+                            var axis = {
+                                exponentformat: "E", tickfont: { size: 15 }, showline: "True",
+                                ticks: "inside", tickwidth: 1, tickcolor: '#000000',
+                                linewidth: 1, zeroline: "False",
+                                titlefont: { family: 'Arial', size: 20, color: '#000000' }
                             };
-                            if ( !(window.filleddivs.includes("energy_analysis")) ) { 
-                                // if the energy analysis has not been done yet, try to do it
-                                e("energy_analysis");
-                            };
+                            var xaxis = JSON.parse(JSON.stringify(axis)); // deepcopy
+                            var yaxis = JSON.parse(JSON.stringify(axis)); // deepcopy
+                            yaxis['title'] = yaxis_title;
+                            yaxis['titlefont'] = yaxis_titlefont;
+                            xaxis['tickfont'] = xaxis_tickfont;
+                            Plotly.newPlot(div, r[key] , {
+                                title: title, showlegend: false, xaxis: xaxis, yaxis: yaxis, 
+                                margin: {l: 80, r: 120, b: 130, t: 35}, height: 650, width: 1200,
+                                autosize: false, barmode: 'stack'
+                            });
+                            $("[name='spinner']").spin(false);
                         });
                     },
                     error: function(jqXHR, textStatus, errorThrown) {
