@@ -9,6 +9,8 @@ from mpcontribs.io.core.recdict import render_dict
 from mpcontribs.io.core.components import render_plot
 from test_site.settings import STATIC_URL, DEBUG
 
+msg = 'Coming Soon! Contact <a href="mailto:mfucb@slac.stanford.edu">Ming-Fu Lu</a> for pre-publication access.'
+
 def index(request):
     ctx = RequestContext(request)
     if request.user.is_authenticated():
@@ -40,7 +42,7 @@ def index(request):
                 except Exception as ex:
                     ctx.update({'alert': str(ex)})
         else:
-            ctx.update({'alert': 'Coming Soon! Contact <a href="mailto:mfucb@slac.stanford.edu">Ming-Fu Lu</a> for pre-publication access.'})
+            ctx.update({'alert': msg})
     else:
-        ctx.update({'alert': 'Please log in!'})
+        return redirect('{}?next={}'.format(reverse('cas_ng_login'), request.path))
     return render_to_response("slac_mose2_explorer_index.html", ctx)

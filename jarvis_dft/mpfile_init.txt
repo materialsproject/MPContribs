@@ -1,26 +1,23 @@
-title: JARVIS-DFT / NUS-2D
-authors: M. Dias Costa, F.Y. Ping, Z. Jun, K. Choudhary, F. Tavazza
+title: 2D JARVIS-DFT / NUS
+authors: K. Choudhary, F. Tavazza, M. Dias Costa, F.Y. Ping, Z. Jun
 
 description:
-Comparison of exfoliation energies Eₓ between Jarvis-DFT and NUS-2D.
-(JARVIS-DFT) The website contains over ~16000 density functional
-theory calculation (315634 sub-calculations) data for pure
-elements, 2D, solar cell and thermoelectric materials. For 2D
-materials, bulk and 1 layer material properties are compared
-right now with three different exchange-correlation
-functional-LDA, PBE and PBEBO (else only PBEBO is used). The
-PBEBO (or optB88vDW) generally works well for 2D materials.
-(NUS-2D) 2,000 layered materials by applying simple rules
-based on inter-atomic plane spacing and bonded clusters of atoms
-in the structures, similar to what Hennig’s group has done. He
-then calculated exfoliation energy of these materials to identify
-possible layered structures that can be experimentally exfoliated
-into 2D materials. He has almost completed high-throughput
-calculations on the properties of these 2D materials.
+Comparison of exfoliation energies Eₓ between JARVIS-DFT (NIST) and NU Singapore.
+(JARVIS-DFT@NIST) density functional theory based database which consists of thousands
+of VASP calculations (vdW-DF-optB88 functional). JARVIS-DFT includes data for more than
+25000 bulk and 600 monolayer materials for properties such as energetics, diffraction
+pattern, radial distribution function, band-structure, density of states, carrier
+effective mass, temperature and carrier concentration dependent thermoelectric
+properties, elastic constants and gamma-point phonons. (NUS-2D) 2,000 layered materials
+were discovered by applying simple rules based on inter-atomic plane spacing and bonded
+clusters of atoms in the structures, similar to what Hennig’s group has done. He then
+calculated exfoliation energy of these materials to identify possible layered structures
+that can be experimentally exfoliated into 2D materials. He has almost completed
+high-throughput calculations on the properties of these 2D materials.
 :end
 
 {urls}
-JVASP: http://www.ctcms.nist.gov/~knc6/JVASP.html
+JARVIS-DFT: http://www.ctcms.nist.gov/~knc6/JVASP.html
 DOI: https://doi.org/10.1038/s41598-017-05402-0
 GitHub: https://github.com/usnistgov/jarvis
 

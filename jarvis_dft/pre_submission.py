@@ -44,9 +44,9 @@ def run(mpfile, **kwargs):
             'material_id', 'exfoliation_energy_per_atom', 'structure'
         ] if is_nus else ['jid', 'exfoliation_en', 'final_str']
         extra[project] = [
-            ('fin_en', ('E', 'eV')),
-            ('op_gap', ('ΔE|optB88vdW', 'eV')),
-            ('mbj_gap', ('ΔE|mbj', 'eV')),
+            ('fin_en', ('E', 'meV/atom')),
+            ('op_gap', ('ΔE|optB88vdW', 'meV/atom')),
+            ('mbj_gap', ('ΔE|mbj', 'meV/atom')),
             #('kv', ('Kᵥ', 'GPa')),
             #('gv', ('Gᵥ', 'GPa'))
         ] if not is_nus else []

@@ -21,55 +21,7 @@ ConnectorBase.register(Connector)
 mpr = MPRester()
 from energy_analysis import EnergyAnalysis as enera
 
-# load the sample data for energy analysis
-path = os.path.abspath(os.path.dirname( __file__ ))
-filepath = os.path.join(path, "energy_data.json")
-if os.path.exists(filepath):
-    with open(filepath) as json_data:
-       eneradata = json.load(json_data)["collection"]
-    json_data.close()
-
-def get_theo_data():
-    """
-    Loads the theoretical data from file "theo_data.json"
-    """
-    path = os.path.abspath(os.path.dirname( __file__ ))
-    filepath = os.path.join(path, "theo_data.json")
-    with open(filepath) as json_data:
-       theodata = json.load(json_data)["collection"]
-    json_data.close()
-    compstr_list, debye_perov_list, debye_brownm_list, dh_min_list, dh_max_list  = [], [], [], [], []
-    elast_available_list, act_list, last_updated_list = [], [], []
-    for dataset in theodata:
-        compstr = dataset["pars"]["theo_compstr"].split("O")[0] + "O3"
-        compstr_list.append(compstr)
-        debye_perov = dataset["pars"]["elastic"]["Debye temp perovskite"]
-        debye_perov_list.append(debye_perov)
-        debye_brownm = dataset["pars"]["elastic"]["Debye temp brownmillerite"]
-        debye_brownm_list.append(debye_brownm)
-        dh_min = dataset["pars"]["dh_min"]
-        dh_min_list.append(dh_min)
-        dh_max = dataset["pars"]["dh_max"]
-        dh_max_list.append(dh_max)
-        elast_available = dataset["pars"]["elastic"]["Elastic tensors available"]
-        elast_available_list.append(elast_available)
-        act = dataset["pars"]["act_mat"][1]
-        act_list.append(act)
-        last_updated = dataset["pars"]["last_updated"]
-        last_updated_list.append(last_updated)
-
-    theoset = {"Debye temp perovskite": debye_perov_list,
-               "Debye temp brownmillerite": debye_brownm_list,
-               "dH_min": dh_min_list,
-               "dH_max": dh_max_list,
-               "Elastic tensors available": elast_available_list,
-               "act": act_list,
-               "Last updated": last_updated_list,
-               "compstr": compstr_list}
-
-    return theoset
-
-@mapi_func(supported_methods=["POST", "GET"], requires_api_key=False)
+@mapi_func(supported_methods=["POST", "GET"], requires_api_key=True)
 def index(request, cid, db_type=None, mdb=None):
     mpid_b = None
     try:
@@ -77,20 +29,18 @@ def index(request, cid, db_type=None, mdb=None):
         contrib = mdb.contrib_ad.query_contributions(
             {'_id': cid}, projection={'_id': 0, 'content.pars': 1, 'content.data': 1})[0]
         pars = contrib['content']['pars']
-        compstr = contrib['content']['pars']['theo_compstr']
+        compstr = pars['theo_compstr']
         compstr_init = compstr
         compstr_disp = remove_comp_one(compstr_init)
         if compstr_disp == compstr_init:
             compstr = add_comp_one(compstr)
         compstr_disp = [''.join(g) for _, g in groupby(str(compstr_disp), str.isalpha)]
-        experimental_data_available = contrib['content']['pars'].get('fit_type_entr')
+        experimental_data_available = pars.get('fit_type_entr')
         if experimental_data_available:
             compstr_exp = contrib['content']['data']['oxidized_phase']['composition']
             compstr_exp = [''.join(g) for _, g in groupby(str(compstr_exp), str.isalpha)]
         else:
             compstr_exp = "n.a."
-        d_min_exp = float(contrib['content']['pars']['delta_min'])
-        d_max_exp = float(contrib['content']['pars']['delta_max'])
 
         if not from_file:
             try: # get Debye temperatures for vibrational entropy
@@ -108,29 +58,29 @@ def index(request, cid, db_type=None, mdb=None):
             dh_max = red_act[2]
             act = red_act[3]
         else:
-            sampledata = get_theo_data()
-            compositions = sampledata["compstr"]
-            s_index = -1
-            for i in range(len(compositions)):
-                if compositions[i].split("O")[0] == compstr_init.split("O")[0]:
-                    s_index = i
-            if s_index == -1:
-                raise ValueError("Sample data not found in file")
-            updt = sampledata["Last updated"][s_index]
-            dh_min = float(sampledata["dH_min"][s_index])
-            dh_max = float(sampledata["dH_max"][s_index])
-            elast = sampledata["Elastic tensors available"][s_index]
+            updt = pars["last_updated"]
+            dh_min = float(pars["dh_min"])
+            dh_max = float(pars["dh_max"])
+            elast = pars["elastic"]["tensors_available"] # NOTE string boolean?
             if compstr == "Sr1Fe1Ox":
                 elast = "true"
-            act = float(sampledata["act"][s_index])
-            t_d_perov = float(sampledata["Debye temp perovskite"][i])
-            t_d_brownm = float(sampledata["Debye temp brownmillerite"][i])
+            t_d_perov = float(pars["elastic"]["debye_temp"]["perovskite"])
+            t_d_brownm = float(pars["elastic"]["debye_temp"]["brownmillerite"])
+            act = float(pars["act_mat"])
 
         for k, v in pars.items():
             if isinstance(v, dict):
-                pars[k] = dict((kk, float(x)) for kk, x in v.items())
+                pars[k] = {}
+                for kk, x in v.items():
+                    try:
+                        pars[k][kk] = float(x)
+                    except:
+                        continue
             elif not v[0].isalpha():
-                pars[k] = float(v)
+                try:
+                    pars[k] = float(v)
+                except:
+                    continue
 
         keys = ["isotherm", "isobar", "isoredox", "enthalpy_dH", "entropy_dS", "ellingham", "energy_analysis"]
 
@@ -160,7 +110,6 @@ def index(request, cid, db_type=None, mdb=None):
             payload['energy_analysis']['w_feed'] = 200.
             payload['energy_analysis']['steam_h_rec'] = 0.8
             payload['energy_analysis']['param_disp'] = "kJ/L of product"
-            payload['updatekeys'] = ["isotherm", "isobar", "isoredox", "enthalpy_dH", "entropy_dS", "ellingham", "energy_analysis"]
         elif request.method == 'POST':
             payload = json.loads(request.body)
             keys = payload['updatekeys'].values()[0]
@@ -173,6 +122,7 @@ def index(request, cid, db_type=None, mdb=None):
                     payload[k]['iso'] = float(payload[k]['iso'])
                     if k == 'ellingham':
                         payload[k]['del'] = float(payload[k]['del'])
+
         response = {}
         for k in keys:
             if k != "energy_analysis":
@@ -187,47 +137,51 @@ def index(request, cid, db_type=None, mdb=None):
                     x_val = pd.np.linspace(0.01, 0.49, num=100)
                 else:
                     x_val = pd.np.linspace(rng[0], rng[1], num=100)
-                    if k == 'isobar':
+                    if (k == 'isobar') or (k == "ellingham"):
                         iso = pd.np.log(10**iso)
 
                 resiso, resiso_theo, ellingiso = [], [], []
                 a, b = 1e-10, 0.5-1e-10
 
                 if experimental_data_available: # only execute this if experimental data is available
+                    d_min_exp = float(pars['delta_min'])
+                    d_max_exp = float(pars['delta_max'])
+
                     for xv in x_val:
-                        if k == "enthalpy_dH" or k== "entropy_dS":
-                            s_th = s_th_o(iso)
-                        else:
-                            s_th = s_th_o(xv)
-                        args = (iso, xv, pars, s_th)
-                        if k == "isotherm": # for isotherms, pressure is variable and temperature is constant
-                            s_th = s_th_o(iso)
-                            args = (xv, iso, pars, s_th)
+                        try:
+                            if k == "enthalpy_dH" or k== "entropy_dS":
+                                s_th = s_th_o(iso)
+                            else:
+                                s_th = s_th_o(xv)
+                            args = (iso, xv, pars, s_th)
+                            if k == "isotherm": # for isotherms, pressure is variable and temperature is constant
+                                s_th = s_th_o(iso)
+                                args = (xv, iso, pars, s_th)
 
-                        elif k == "ellingham":
-                            solutioniso = (dh_ds(delt, args[-1], args[-2])[0] - dh_ds(delt, args[-1], args[-2])[1]*xv)/1000
-                            resiso.append(solutioniso)
-                            ellingiso_i = isobar_line_elling(args[0], xv)/1000
-                            ellingiso.append(ellingiso_i)
+                            elif k == "ellingham":
+                                solutioniso = (dh_ds(delt, args[-1], args[-2])[0] - dh_ds(delt, args[-1], args[-2])[1]*xv)/1000
+                                resiso.append(solutioniso)
+                                ellingiso_i = isobar_line_elling(args[0], xv)/1000
+                                ellingiso.append(ellingiso_i)
 
-                        if (k != 'isoredox' and k != 'ellingham') and (k != 'enthalpy_dH' and k != 'entropy_dS'):
-                            solutioniso = rootfind(a, b, args, funciso)
-                            resiso.append(solutioniso)
+                            if (k != 'isoredox' and k != 'ellingham') and (k != 'enthalpy_dH' and k != 'entropy_dS'):
+                                solutioniso = rootfind(a, b, args, funciso)
+                                resiso.append(solutioniso)
 
-                        elif k == "isoredox":
-                            try:
+                            elif k == "isoredox":
                                 solutioniso = brentq(funciso_redox, -300, 300, args=args)
                                 resiso.append(pd.np.exp(solutioniso))
-                            except ValueError:
-                                resiso.append(None) # insufficient accuracy for ꪲδ/T combo
 
-                        if k == "enthalpy_dH":
-                             solutioniso = dh_ds(xv, args[-1], args[-2])[0] / 1000
-                             resiso.append(solutioniso)
+                            if k == "enthalpy_dH":
+                                 solutioniso = dh_ds(xv, args[-1], args[-2])[0] / 1000
+                                 resiso.append(solutioniso)
 
-                        if k == "entropy_dS":
-                             solutioniso = dh_ds(xv, args[-1], args[-2])[1]
-                             resiso.append(solutioniso)
+                            if k == "entropy_dS":
+                                 solutioniso = dh_ds(xv, args[-1], args[-2])[1]
+                                 resiso.append(solutioniso)
+                        except ValueError: # if brentq function finds no zero point due to plot out of range
+                            resiso.append(None)
+                            ellingiso.append(None)
 
                     # show interpolation
                     res_interp, res_fit = [], []
@@ -248,42 +202,40 @@ def index(request, cid, db_type=None, mdb=None):
                             res_interp.append(resiso[i])
                 else:
                     res_fit, res_interp = None, None # don't plot any experimental data
+                try:
+                    for xv in x_val[::4]: # use less data points for theoretical graphs to improve speed
+                        args_theo = (iso, xv, pars, t_d_perov, t_d_brownm, dh_min, dh_max, act)
+                        if k == "isotherm": # for isotherms, pressure is variable and temperature is constant
+                            args_theo = (xv, iso, pars, t_d_perov, t_d_brownm, dh_min, dh_max, act)
+                        elif k == "ellingham":
+                            dh = d_h_num_dev_calc(delta=delt, dh_1=dh_min, dh_2=dh_max,
+                                temp=xv, act=act)
+                            ds = d_s_fundamental(delta=delt, dh_1=dh_min, dh_2=dh_max, temp=xv,
+                                act=act, t_d_perov=t_d_perov, t_d_brownm=t_d_brownm)
+                            solutioniso_theo = (dh - ds*xv)/1000
+                            resiso_theo.append(solutioniso_theo)
 
-                for xv in x_val[::4]: # use less data points for theoretical graphs to improve speed
-                    args_theo = (iso, xv, pars, t_d_perov, t_d_brownm, dh_min, dh_max, act)
-                    if k == "isotherm": # for isotherms, pressure is variable and temperature is constant
-                        args_theo = (xv, iso, pars, t_d_perov, t_d_brownm, dh_min, dh_max, act)
-
-                    elif k == "ellingham":
-                        dh = d_h_num_dev_calc(delta=delt, dh_1=dh_min, dh_2=dh_max,
-                            temp=xv, act=act)
-                        ds = d_s_fundamental(delta=delt, dh_1=dh_min, dh_2=dh_max, temp=xv,
-                            act=act, t_d_perov=t_d_perov, t_d_brownm=t_d_brownm)
-                        solutioniso_theo = (dh - ds*xv)/1000
-                        resiso_theo.append(solutioniso_theo)
-
-                    if (k != 'isoredox' and k != 'ellingham') and (k != 'enthalpy_dH' and k != 'entropy_dS'):
-                        solutioniso_theo = rootfind(a, b, args_theo, funciso_theo)
-                        resiso_theo.append(solutioniso_theo)
-                    elif k == "isoredox":
-                        try:
+                        if (k != 'isoredox' and k != 'ellingham') and (k != 'enthalpy_dH' and k != 'entropy_dS'):
+                            solutioniso_theo = rootfind(a, b, args_theo, funciso_theo)
+                            resiso_theo.append(solutioniso_theo)
+                        elif k == "isoredox":
                             try:
                                 solutioniso_theo = brentq(funciso_redox_theo, -300, 300, args=args_theo)
                             except ValueError:
                                 solutioniso_theo = brentq(funciso_redox_theo, -100, 100, args=args_theo)
                             resiso_theo.append(pd.np.exp(solutioniso_theo))
-                        except ValueError:
-                            resiso_theo.append(None)
 
-                    if k == "enthalpy_dH":
-                        solutioniso_theo = d_h_num_dev_calc(delta=xv, dh_1=dh_min, dh_2=dh_max,
-                            temp=iso, act=act) / 1000
-                        resiso_theo.append(solutioniso_theo)
+                        if k == "enthalpy_dH":
+                            solutioniso_theo = d_h_num_dev_calc(delta=xv, dh_1=dh_min, dh_2=dh_max,
+                                temp=iso, act=act) / 1000
+                            resiso_theo.append(solutioniso_theo)
 
-                    if k == "entropy_dS":
-                        solutioniso_theo = d_s_fundamental(delta=xv, dh_1=dh_min, dh_2=dh_max, temp=iso,
-                            act=act, t_d_perov=t_d_perov, t_d_brownm=t_d_brownm)
-                        resiso_theo.append(solutioniso_theo)
+                        if k == "entropy_dS":
+                            solutioniso_theo = d_s_fundamental(delta=xv, dh_1=dh_min, dh_2=dh_max, temp=iso,
+                                act=act, t_d_perov=t_d_perov, t_d_brownm=t_d_brownm)
+                            resiso_theo.append(solutioniso_theo)
+                except ValueError: # if brentq function finds no zero point due to plot out of range
+                    resiso_theo.append(None)
 
                 x = list(pd.np.exp(x_val)) if k == 'isotherm' else list(x_val)
                 x_theo = x[::4]
@@ -334,6 +286,11 @@ def index(request, cid, db_type=None, mdb=None):
                     response[k] = [{'x': x_exp, 'y': res_fit, 'name': name_exp_fit, 'line': { 'color': 'rgb(5,103,166)', 'width': 2.5 }},
                     {'x': x_exp, 'y': res_interp, 'name': name_exp_interp, 'line': { 'color': 'rgb(5,103,166)', 'width': 2.5, 'dash': 'dot' }},
                     {'x': x_theo, 'y': resiso_theo, 'name': name_theo, 'line': { 'color': 'rgb(217,64,41)', 'width': 2.5}}, [y_min,y_max], [compstr_disp, compstr_exp, elast, updt]]
+                elif experimental_data_available:
+                    response[k] = [{'x': x_exp, 'y': res_fit, 'name': 'exp_fit', 'line': { 'color': 'rgb(5,103,166)', 'width': 2.5 }},
+                    {'x': x_exp, 'y': res_interp, 'name': 'exp_interp', 'line': { 'color': 'rgb(5,103,166)', 'width': 2.5, 'dash': 'dot' }},
+                    {'x': x_theo, 'y': resiso_theo, 'name': 'theo', 'line': { 'color': 'rgb(217,64,41)', 'width': 2.5}},
+                    {'x': x_exp, 'y': ellingiso, 'name': 'isobar line', 'line': { 'color': 'rgb(100,100,100)', 'width': 2.5}}, [compstr_disp, compstr_exp, elast, updt]]
                 else:
                     response[k] = [{'x': x_exp, 'y': res_fit, 'name': 'exp_fit', 'line': { 'color': 'rgb(5,103,166)', 'width': 2.5 }},
                     {'x': x_exp, 'y': res_interp, 'name': 'exp_interp', 'line': { 'color': 'rgb(5,103,166)', 'width': 2.5, 'dash': 'dot' }},
@@ -369,7 +326,7 @@ def index(request, cid, db_type=None, mdb=None):
                 w_feed = float(payload['energy_analysis']['w_feed'])
                 steam_h_rec = float(payload['energy_analysis']['steam_h_rec'])
                 param_disp = payload['energy_analysis']['param_disp']
-                resdict = get_energy_data(process=process_type, t_ox=t_ox, t_red=t_red, p_ox=p_ox, p_red=p_red, data_source=data_source)
+                resdict = get_energy_data(mdb, process_type, t_ox, t_red, p_ox, p_red, data_source)
 
                 try:
                     results = enera(process=process_type).on_the_fly(resdict=resdict, pump_ener=pump_ener, w_feed=w_feed, h_rec=h_rec, h_rec_steam=steam_h_rec, p_ox_wscs = p_ox)
@@ -410,6 +367,7 @@ def index(request, cid, db_type=None, mdb=None):
                     if rem_pos > -1:
                         result = [i for i in result if str(i) != str(to_remove)]
                         result.insert(rem_pos-1, to_remove)
+
                     result = [i for i in result if "inf" not in str(i[0])] # this removes all inf values
 
                     if cutoff < len(result):
@@ -505,7 +463,7 @@ def rootfind(a, b, args, funciso_here):
             solutioniso = None # if no solution can be found
     return solutioniso
 
-def get_energy_data(process, t_ox, t_red, p_ox, p_red, data_source, enth_steps=20, celsius=True):
+def get_energy_data(mdb, process, t_ox, t_red, p_ox, p_red, data_source, enth_steps=20, celsius=True):
 
     # generate database ID
     # the variable "celsius" is not included as it is always True
@@ -523,13 +481,27 @@ def get_energy_data(process, t_ox, t_red, p_ox, p_red, data_source, enth_steps=2
     db_id += str(data_source) + "_"
     db_id += str(float(enth_steps))
 
-    resdict_i = None
-    for i in range(len(eneradata)): # search for the right database entry
-        document_here = eneradata[i]
-        if document_here["_id"] == db_id:
-            resdict_i = document_here["energy_analysis"]
+    resdict = []
+    for a in ['stable', 'unstable']:
+	for b in ['O2-O', 'H2-H2', 'CO-CO']:
+            name = 'energy-analysis_{}_{}'.format(a, b)
+            key = 'content.{}.data'.format(name)
+            crit = {key: {'$elemMatch': {'0': db_id}}}
+            proj = {
+		'{}.$'.format(key): 1, 'mp_cat_id': 1,
+		'content.{}.columns'.format(name): 1,
+		'content.pars.theo_compstr': 1
+            }
+            for d in mdb.contrib_ad.query_contributions(crit, projection=proj):
+                keys = d['content'][name]['columns'][1:]
+                values = map(float, d['content'][name]['data'][0][1:])
+                dct = dict(zip(keys, values))
+                dct['prodstr'], dct['prodstr_alt'] = b.split('-')
+                dct['unstable'] = bool(a == 'unstable')
+                dct['compstr'] = d['content']['pars']['theo_compstr']
+                resdict.append(dct)
 
-    return resdict_i
+    return resdict
 
 def s_th_o(temp):
     # constants: Chase, NIST-JANAF Thermochemistry tables, Fourth Edition, 1998
@@ -557,7 +529,7 @@ def dh_ds(delta, s_th, p):
     # distinguish two differnt entropy fits
     fit_type = p['fit_type_entr']
     if fit_type == "Solid_Solution":
-        ds_pars.append(p['act_mat'].values()[0])
+        ds_pars.append(p['act_mat'])
         ds_pars.append([p['fit_param_fe'][c] for c in 'abcd'])
         ds = entr_mixed(delta-p['fit_par_ent']['c'], *ds_pars)
     else:
@@ -1064,7 +1036,7 @@ def redenth_act(compstr):
         else:
             difference = theo_solid_solution - red_enth_mean_endm
 
-        if abs(difference) > 30000:
+        if abs(difference) > 30000 or not splitcomp[-1]:
             dh_min = theo_solid_solution
             dh_max = theo_solid_solution
         else:

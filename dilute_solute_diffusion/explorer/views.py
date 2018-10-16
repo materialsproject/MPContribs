@@ -3,7 +3,8 @@
 
 from __future__ import division, unicode_literals
 from bson.json_util import dumps
-from django.shortcuts import render_to_response
+from django.shortcuts import render_to_response, redirect
+from django.core.urlresolvers import reverse
 from django.template import RequestContext
 from mpcontribs.rest.views import get_endpoint
 from mpcontribs.io.core.components import render_dataframe
@@ -54,5 +55,5 @@ def index(request):
             except Exception as ex:
                 ctx['alert'] = str(ex)
     else:
-        ctx['alert'] = 'Please log in!'
+        return redirect('{}?next={}'.format(reverse('cas_ng_login'), request.path))
     return render_to_response("dilute_solute_diffusion_explorer_index.html", ctx)

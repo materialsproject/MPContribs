@@ -17,7 +17,8 @@ plots. [t=1.006]
 
 {input_files}
 exp: datafiles/Exp_sample_data.csv
-theo: convert/theo_data_basic.json
+theo: /home/jovyan/work/theo_data.json
+energy: /home/jovyan/work/energy_data.json
 
 {urls}
 GitHub: https://github.com/josuav1/solar_perovskite

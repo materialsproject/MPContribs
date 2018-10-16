@@ -1,1 +1,0 @@
-default_app_config = 'mpcontribs.users.dlr_vieten.explorer.apps.DlrVietenExplorerConfig'

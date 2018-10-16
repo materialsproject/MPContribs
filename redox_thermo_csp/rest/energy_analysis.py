@@ -17,7 +17,7 @@ from scipy.optimize import brentq
 from scipy.integrate import quad
 mpr = MPRester()
 import views
-    
+
 def remove_comp_one(compstr):
     compspl = split_comp(compstr=compstr)
     compstr_rem = ""
@@ -29,7 +29,7 @@ def remove_comp_one(compstr):
                 compstr_rem = compstr_rem + str(compspl[i][0])
     compstr_rem = compstr_rem + "Ox"
     return compstr_rem
-    
+
 def rootfind(a, b, args, funciso_here):
     solutioniso = 0
     try:
@@ -63,7 +63,7 @@ def dh_ds(delta, s_th, p):
     dh_pars = [p['fit_param_enth'][c] for c in 'abcd']
     dh = enth_arctan(d_delta, *(dh_pars)) * 1000.
     ds_pars = [p['fit_par_ent'][c] for c in 'abc']
-    
+
     # distinguish two differnt entropy fits
     fit_type = p['fit_type_entr']
     if fit_type == "Solid_Solution":
@@ -109,7 +109,7 @@ def entr_mixed(x, s, shift, delta_0, act_s1, fit_param_fe):
     """
     efe = entr_fe(x+delta_0, fit_param_fe)
     return ((act_s1*efe)/pi) * (pd.np.arctan((x-delta_0)*s)+pi/2) + (1-act_s1)*efe + shift
-    
+
 def entr_dilute_spec(x, s_v, a, delta_0, s_th_o):
     """
     :param x:       Delta_delta, change in non-stoichiometric redox extent vs. a reference
@@ -121,24 +121,24 @@ def entr_dilute_spec(x, s_v, a, delta_0, s_th_o):
     :return:        fit function based on the model in Bulfin et. al., doi: 10.1039/C7TA00822H
     """
     return s_th_o + s_v + (2 * a * R * (np.log(0.5 - (x + delta_0)) - np.log(x + delta_0)))
-    
+
 def funciso_theo(delta, iso, x, p, t_d_perov, t_d_brownm, dh_min, dh_max, act):
     dh = d_h_num_dev_calc(delta=delta, dh_1=dh_min, dh_2=dh_max, temp=x, act=act)
-    ds = d_s_fundamental(delta=delta, dh_1=dh_min, dh_2=dh_max, temp=x,  
+    ds = d_s_fundamental(delta=delta, dh_1=dh_min, dh_2=dh_max, temp=x,
     act=act, t_d_perov=t_d_perov, t_d_brownm=t_d_brownm)
     return dh - x*ds + R*iso*x/2
-    
+
 def funciso_redox_theo(po2, delta, x, p, t_d_perov, t_d_brownm, dh_min, dh_max, act):
     dh = d_h_num_dev_calc(delta=delta, dh_1=dh_min, dh_2=dh_max, temp=x, act=act)
-    ds = d_s_fundamental(delta=delta, dh_1=dh_min, dh_2=dh_max, temp=x, 
+    ds = d_s_fundamental(delta=delta, dh_1=dh_min, dh_2=dh_max, temp=x,
     act=act, t_d_perov=t_d_perov, t_d_brownm=t_d_brownm)
     return dh - x*ds + R*po2*x/2
-    
+
 def d_h_num_dev_calc(delta, dh_1, dh_2, temp, act):
     """
     Calculates dH using the numerical derivative with f(x0) + f(x0+h) / h
     this function is split up in f(x0) and f(x0+h) for simplification and understanding
-    :param delta:   non-stoichiometry delta 
+    :param delta:   non-stoichiometry delta
     :param dh_1:    reaction enthalpy of perovskite 1
     :param dh_2:    reaction enthalpy of perovskite 2
     :param temp:    temperature in K
@@ -165,7 +165,7 @@ def d_h_num_dev_1(delta, dh_1, dh_2, temp, act):
     """
     Part of the numerical derivative calculation used to find dH as a function of delta and temperature
     This function is f(x0+h) in f(x0) + f(x0+h) / h
-    :param delta:   non-stoichiometry delta 
+    :param delta:   non-stoichiometry delta
     :param dh_1:    reaction enthalpy of perovskite 1
     :param dh_2:    reaction enthalpy of perovskite 2
     :param temp:    temperature in K
@@ -204,13 +204,13 @@ def delta_mix(temp, p_o2_l, dh_1, dh_2, act):
     stho = s_th_o(temp)
     return delta_fun(stho, temp, p_o2_l, dh_1, (act / 2)) + \
         + delta_fun(stho, temp, p_o2_l, dh_2, ((1 - act) / 2))
-        
+
 def delta_fun(stho, temp, p_o2_l, dh, d_max):
     common = pd.np.exp(stho*d_max/R)
     common *= pd.np.exp(p_o2_l)**(-d_max/2.)
     common *= pd.np.exp(-dh*d_max/(R*temp))
     return d_max * common / (1. + common)
-    
+
 def d_s_fundamental(delta, dh_1, dh_2, temp, act, t_d_perov, t_d_brownm):
     """
     dG = dH - T*dS, at dG = 0 => dh/T = dS
@@ -232,7 +232,7 @@ def d_s_fundamental(delta, dh_1, dh_2, temp, act, t_d_perov, t_d_brownm):
     d_s = p_mol_ent_o + entr_con + entr_vib
 
     return d_s
-    
+
 def entr_con_mixed(temp, p_o2_l, dh_1, dh_2, act):
     """
     Reference: Brendan Bulfin et. al. DOI:  10.1039/C6CP03158G
@@ -246,7 +246,7 @@ def entr_con_mixed(temp, p_o2_l, dh_1, dh_2, act):
     """
     a = 2
     stho = s_th_o(temp)
-    
+
     # fix reversed orders
     if dh_1 > dh_2:
         dh_2_old = dh_2
@@ -279,24 +279,24 @@ def entr_con_mixed(temp, p_o2_l, dh_1, dh_2, act):
         entr_con_2 = 0
 
     return entr_con_1 + entr_con_2
-    
+
 def get_mpids_comps_perov_brownm(compstr):
 
     compstr = compstr.split("O")[0] + "Ox"
     find_struct = find_structures(compstr=compstr)
-    
+
     try:
         mpid_p = find_struct[1].entry_id
     except AttributeError:
         mpid_p = None
-    
+
     try:
         mpid_b = find_struct[3].entry_id
     except AttributeError:
         mpid_b = None
 
     return str(mpid_p), str(mpid_b)
-    
+
 def split_comp(compstr):
     """
     Splits a string containing the composition of a perovskite solid solution into its components
@@ -306,11 +306,11 @@ def split_comp(compstr):
     each of these output variables contains the species and the stoichiometries
     i.e. ("Fe", 0.6)
     """
-    
+
     am_1, am_2, tm_1, tm_2 = None, None, None, None
-    
+
     compstr_spl = [''.join(g) for _, g in groupby(str(compstr), str.isalpha)]
-    
+
     for l in range(len(compstr_spl)):
         try:
             if ptable.Element(compstr_spl[l]).is_alkaline or ptable.Element(
@@ -330,7 +330,7 @@ def split_comp(compstr):
             pass
 
     return am_1, am_2, tm_1, tm_2
-    
+
 def find_structures(compstr):
     """
     Finds the perovskite and brownmillerite data in Materials Project for a given perovskite composition
@@ -342,7 +342,7 @@ def find_structures(compstr):
     brownmillerite:         chemical formula of the brownmillerite
     brownmillerite_data:    materials data for the brownmillerite
     """
-    
+
     perovskite_data = None
     brownmillerite_data = None
     comp_spl = split_comp(compstr=compstr)
@@ -390,7 +390,7 @@ def find_structures(compstr):
         pass
 
     return perovskite, perovskite_data, brownmillerite, brownmillerite_data
-    
+
 def get_debye_temp(mpid):
     """
     Calculates the debye temperature from eleastic tensors on the Materials Project
@@ -436,7 +436,7 @@ def vib_ent(temp, t_d_perov, t_d_brownm):
     vib_ent = 2 * s_perov - (2 * s_brownm)
 
     return vib_ent
-    
+
 def add_comp_one(compstr):
     """
     Adds stoichiometries of 1 to compstr that don't have them
@@ -474,7 +474,7 @@ def find_endmembers(compstr):
         am_2 = split_comp(compstr)[1]
     else:
         am_2 = None
-        
+
     tm_1 = split_comp(compstr)[2]
     if split_comp(compstr)[3]:
         tm_2 = split_comp(compstr)[3]
@@ -548,7 +548,7 @@ def redenth_act(compstr):
 
     dh_min = None
     dh_max = None
-    
+
     # calculate redox enthalpies of endmembers
     try:
         dhs = calc_dh_endm(compstr)
@@ -577,14 +577,14 @@ def redenth_act(compstr):
     # brownmillerite as expected according to the endmember redox enthalpies
     conc_act = find_active(mat_comp=splitcomp)[1]
     red_enth_mean_endm = (conc_act * dh_min) + ((1 - conc_act) * dh_max)
-    
+
     if theo_solid_solution:
         if not red_enth_mean_endm:
             difference = float('inf')
         else:
             difference = theo_solid_solution - red_enth_mean_endm
 
-        if abs(difference) > 30000:
+        if abs(difference) > 30000 or not splitcomp[-1]:
             dh_min = theo_solid_solution
             dh_max = theo_solid_solution
         else:
@@ -592,7 +592,7 @@ def redenth_act(compstr):
             dh_max = dh_max + difference
 
     return theo_solid_solution, dh_min, dh_max, conc_act
-    
+
 def find_active(mat_comp):
     """
     Finds the more redox-active species in a perovskite solid solution
@@ -641,7 +641,7 @@ def find_active(mat_comp):
     # order of binary oxide reducibility according to Materials Project (A2O3 -> AO + O2)
     if round((6 - charge_sum), 2) == 5:
         red_order = ["Ta", "Nb", "W", "Mo", "V", "Cr"]
-    
+
     act_a = None
     if red_order:
         for i in range(len(red_order)):
@@ -653,14 +653,14 @@ def find_active(mat_comp):
                     act_a = mat_comp[2]
     if act_a is None:
         raise ValueError("B species reducibility unknown, preferred reduction of species not predicted")
-        
+
     # correct bug for the most reducible species
     if act_a[0] == red_order[-2] and (red_order[-1] in str(mat_comp)):
         act_a[0] = red_order[-1]
         act_a[1] = 1-act_a[1]
 
     return act_a[0], act_a[1]
-        
+
 def find_theo_redenth(compstr):
     """
     Finds theoretical redox enthalpies from the Materials Project from perovskite to brownmillerite
@@ -668,7 +668,7 @@ def find_theo_redenth(compstr):
     examples/Calculating%20Reaction%20Energies%20with%20the%20Materials%20API.ipynb
 
     :param compstr: composition as a string
-    
+
     :return:
     red_enth:  redox enthalpy in kJ/mol O
     """
@@ -746,7 +746,7 @@ class WaterSplitting:
         """
         dg_zero = ((-0.052489 * temp) + 245.039) * 1000
         return dg_zero
-    
+
     @staticmethod
     def k_water_splitting(temp):
         """
@@ -783,7 +783,7 @@ class WaterSplitting:
         po2 = (WaterSplitting().k_water_splitting(temp) / h2_h2o) ** 2
 
         return po2
-        
+
 class CO2Splitting:
     @staticmethod
     def dg_zero_co2_splitting(temp):
@@ -836,7 +836,7 @@ class CO2Splitting:
         po2 = (CO2Splitting().k_co2_splitting(temp) / co_co2) ** 2
 
         return po2
-    
+
 class EnergyAnalysis:
     """
     Analyze the energy input for different redox cycles
@@ -844,7 +844,7 @@ class EnergyAnalysis:
 
     def __init__(self, process="Air Separation"):
         self.process = process
-        
+
     @staticmethod
     def c_p_water_liquid(temp):
         """
@@ -860,7 +860,7 @@ class EnergyAnalysis:
             shomdat[3] * (temp_frac ** 3)) + (shomdat[4] / (temp_frac ** 2))
 
         return c_p_water
-        
+
     @staticmethod
     def c_p_steam(temp):
         """
@@ -877,7 +877,7 @@ class EnergyAnalysis:
         shomdat[3] * (temp_frac ** 3)) + (shomdat[4] / (temp_frac ** 2))
 
         return c_p_steam
-    
+
     @staticmethod
     def get_heat_capacity(temp, td):
         # credits to Dr. Joseph Montoya, LBNL
@@ -892,7 +892,7 @@ class EnergyAnalysis:
                 cv_i = 9 * R * (t_ratio[i] ** 3) * quad(integrand, 0, t_ratio[i] ** -1)[0]
                 cv_p = np.append(cv_p, cv_i)
         return cv_p * 5
-        
+
     @staticmethod
     def get_heat_capacity_mixed(temp, delta, td_p=None, td_b=None):
         enal = EnergyAnalysis()
@@ -944,7 +944,7 @@ class EnergyAnalysis:
                     # calculate the area under the step for each step
                     dq = 0
                     for i in range(len(delta_x0_x1)):
-                        cv_step = EnergyAnalysis().get_heat_capacity_mixed(temp_x0_x1[i], delta_x0_x1[i], td_p=t_d_perov, 
+                        cv_step = EnergyAnalysis().get_heat_capacity_mixed(temp_x0_x1[i], delta_x0_x1[i], td_p=t_d_perov,
                         td_b=t_d_brownm)[1]
                         q_step = cv_step * del_temp
                         dq += q_step
@@ -1076,7 +1076,7 @@ class EnergyAnalysis:
         energy_integral_dh = sum(energy_red) / 1000
 
         return energy_integral_dh
-        
+
     @staticmethod
     def mechanical_envelope(p_red):
         """
@@ -1109,14 +1109,14 @@ class EnergyAnalysis:
             q_pump = q_pump / 2000
 
         return q_pump
-        
+
     @staticmethod
     def dhf_h2o(t_ox):
         """
         Gets the heat of formation of water for at certain temperature
         Based on the Shomate equation and the NIST-JANAF thermochemical tables
         H° − H°298.15= A*t + B*t2/2 + C*t3/3 + D*t4/4 − E/t + F − H
-        H° = A*t + B*t2/2 + C*t3/3 + D*t4/4 − E/t + F 
+        H° = A*t + B*t2/2 + C*t3/3 + D*t4/4 − E/t + F
         https://webbook.nist.gov/cgi/cbook.cgi?ID=C7732185&Units=SI&Mask=1#Thermo-Gas
         """
 
@@ -1145,15 +1145,15 @@ class EnergyAnalysis:
         hform += f
 
         return hform
-    
+
     @staticmethod
     def dh_co_co2(t_ox):
         """
         Gets the heat of formation of CO2 and of CO and returns the difference to get the heat of reaction
         Based on the Shomate equation and the NIST-JANAF thermochemical tables
         H° − H°298.15= A*t + B*t2/2 + C*t3/3 + D*t4/4 − E/t + F − H
-        H° = A*t + B*t2/2 + C*t3/3 + D*t4/4 − E/t + F 
-        
+        H° = A*t + B*t2/2 + C*t3/3 + D*t4/4 − E/t + F
+
         CO2: https://webbook.nist.gov/cgi/cbook.cgi?ID=C124389&Units=SI&Mask=1#Thermo-Gas
         CO:  https://webbook.nist.gov/cgi/cbook.cgi?ID=C630080&Units=SI&Mask=1#Thermo-Gas
         """
@@ -1182,7 +1182,7 @@ class EnergyAnalysis:
         hco2 += (1/4)*c*(t_1000**4)
         hco2 += -e/t_1000
         hco2 += f
-        
+
         # CO
         if t_ox <= 1300:
             a = 25.56759
@@ -1208,7 +1208,7 @@ class EnergyAnalysis:
         hco += f
 
         return hco2-hco
-        
+
     def calc(self, p_ox, p_red, t_ox, t_red, data_origin="Exp", data_use="combined",
              enth_steps=30, sample_ident=-1, celsius=True, from_file=True,
              heat_cap=True,
@@ -1248,7 +1248,7 @@ class EnergyAnalysis:
                             subtracted beforehand, as it is not considered herein.
 
         :param celsius:             if True, assumes all input temperatures are in °C instead of K
-        
+
         :param from_file:           if True, takes the enthalpies, Debye temperatures, and materials lists from
                                     the file "theo_redenth_debye.json". Much faster than using the MPRester
                                     Only works if sample_ident = -1
@@ -1266,7 +1266,7 @@ class EnergyAnalysis:
         else:
             temp_1_corr = t_ox
             temp_2_corr = t_red
-        
+
         if data_origin == "Exp": # currently not in use for updates of existing data
             # load experimental sample data from file
             path = os.path.abspath("")
@@ -1326,13 +1326,13 @@ class EnergyAnalysis:
                         raise ValueError("Experimental data for this sample not found.")
                     compstr = expdata["theo_compstr"][exp_index]
                     compstr_x = compstr.split("Ox")[0]
-                    
+
                     # this formats the parameters the same way we have them in views.py
                     fit_param_enth = {"a": float(expdata["dH_max"][exp_index]),
                                       "b": float(expdata["dH_min"][exp_index]),
                                       "c": float(expdata["t"][exp_index]),
                                       "d": float(expdata["s"][exp_index])}
-                    fit_type_entr = str(expdata["fit type entropy"][exp_index]) 
+                    fit_type_entr = str(expdata["fit type entropy"][exp_index])
                     if fit_type_entr == "Dilute_Species":
                         fit_par_ent = {"a": float(expdata["entr_dil_s_v"][exp_index]),
                                           "b": float(expdata["entr_dil_a"][exp_index]),
@@ -1357,12 +1357,12 @@ class EnergyAnalysis:
                             "fit_param_fe": fit_param_fe,
                             "act_mat": act_mat
                             }
-                            
+
                     args_1 = (pd.np.log(p_ox), temp_1_corr, pars, s_th_o(temp_1_corr))
                     args_2 = (pd.np.log(p_red), temp_2_corr, pars, s_th_o(temp_2_corr))
                     delta_1 = rootfind(1e-10, 0.5-1e-10, args_1, funciso)
                     delta_2 = rootfind(1e-10, 0.5-1e-10, args_2, funciso)
-                    
+
                     # use theoretical elastic tensors
                     sampledata = views.get_theo_data()
                     for z in range(len(sampledata["compstr"])):
@@ -1387,13 +1387,13 @@ class EnergyAnalysis:
                         act = float(sampledata["act"][i])
                     compstr = sample
                     compstr_x = compstr.split("O")[0]
-                    
+
                     if not from_file or si_first != -1:
                         try: # get Debye temperatures for vibrational entropy
                             mp_ids = get_mpids_comps_perov_brownm(compstr=compstr)
                             t_d_perov = get_debye_temp(mp_ids[0])
                             t_d_brownm = get_debye_temp(mp_ids[1])
-                        except Exception as e: # if no elastic tensors or no data for this material is available 
+                        except Exception as e: # if no elastic tensors or no data for this material is available
                             mp_ids = ("mp-510624", "mp-561589") # using data for SrFeOx if no data is available (close approximation)
                             t_d_perov = get_debye_temp(mp_ids[0])
                             t_d_brownm = get_debye_temp(mp_ids[1])
@@ -1462,7 +1462,7 @@ class EnergyAnalysis:
                     # chemical energy
                     if data_origin == "Exp":
                         s_th_mean = (s_th_o(temp_1_corr) + s_th_o(temp_1_corr)) / 2
-                        def dh_func_exp(d_delta_func):                        
+                        def dh_func_exp(d_delta_func):
                             return dh_ds(d_delta_func, s_th_mean, pars)[0]
                         energy_integral_dh = quad(dh_func_exp, d_delta_1, d_delta_2)[0]
                         if energy_integral_dh < 0:
@@ -1476,7 +1476,7 @@ class EnergyAnalysis:
                     # sensible energy
                     energy_sensible = 0
                     if heat_cap:
-                        energy_sensible = EnergyAnalysis().heat_input_linear(temp_1=temp_1_corr, temp_2=temp_2_corr, delta_1=delta_1, 
+                        energy_sensible = EnergyAnalysis().heat_input_linear(temp_1=temp_1_corr, temp_2=temp_2_corr, delta_1=delta_1,
                             delta_2=delta_2, t_d_perov=t_d_perov, t_d_brownm=t_d_brownm, num=40) / 1000
 
                 chemical_energy_l.append(energy_integral_dh)
@@ -1495,13 +1495,13 @@ class EnergyAnalysis:
                 prodstr_alt_l.append(prodstr_alt)
                 l_prod_kg_red_l.append(l_prod_kg_red)
                 g_prod_kg_red_l.append(g_prod_kg_red)
-                
+
             # skip this sample if the sample number does not exist
             except Exception as e:
                 pass
                 #print("No data for sample " + str(sample) + " found!" + str(e))
             sample = None
-                    
+
         resdict = { "Chemical Energy": chemical_energy_l,
                     "Sensible Energy": sensible_energy_l,
                     "mol_mass_ox": mol_mass_ox_l,
@@ -1524,18 +1524,18 @@ class EnergyAnalysis:
         """
         Allows to calculate the energy input for different conditions rather quickly, without having to re-calculate
         the time-intensive chemical and sensible energy every time again
-        
+
         :param resdict:     dictionary with results (mainly for chemical and sesible energy, as calculated by
                             EnergyAnalysis().calc()
-                                    
+
         :param pump_ener:   allows to consider the pumping energy required to pump from p_o_2_1 to p_o_2_2
                             input in kJ per kg of redox material in the oxidized state + the losses
                             This depends on many factors, such as the type of pumps used, the volume of the
                             reaction chamber, the reactor type etc., so the user needs to calculate this
                             value beforehand depending on the individual process conditions
                             In case some of the pumping energy can be recovered, this share needs to be
-                            subtracted beforehand, as it is not considered herein.                           
-                                    
+                            subtracted beforehand, as it is not considered herein.
+
         :param h_rec:               heat recovery efficiency factor (0...1) for chemical and sensible energy
 
         ***these values are only relevant for water splitting***
@@ -1543,23 +1543,23 @@ class EnergyAnalysis:
         :param w_feed:              water inlet temperature (in °C or K as defined by 'celsius')
         :param h_val:               heating value of hydrogen: 'low' -> lower heating value,
                                                                'high' -> higher heating value
-                                                               
+
         :param p_ox_wscs:   ratio H2/H2O / ratio CO/CO2
-        
+
         :param rem_unstable: if True, phases which are potentially unstable for chemical reasons are removed
                             this is based on the phases in "unstable_phases.json"
-                            currently, phases are excluded for the following reasons: 
+                            currently, phases are excluded for the following reasons:
                             - tolerance factor below 0.9 (e.g. EuCuO3, which cannot be synthesized as opposed to EuFeO3)
                             - phases with expected high covalency (V5+ cations, for instance, NaVO3 is stable but not a perovskite)
                             - phases with expected low melting point (Mo5+ cations, see this article for NaMoO3
                             http://www.journal.csj.jp/doi/pdf/10.1246/bcsj.64.161)
-                            
-                            By default, this is always True and there is no way in the user front-end to change this. 
+
+                            By default, this is always True and there is no way in the user front-end to change this.
                             However, this could be changed manually by the developers, if neccessary.
         """
         if self.process == "Air Separation":
             p_ox_wscs = 1
-        
+
         # initialize result variables
         result_val_ener_i = pd.np.empty(6)
         result_val_per_kg_redox = pd.np.empty(6)
@@ -1573,13 +1573,27 @@ class EnergyAnalysis:
         result_val_g_prod_kg_red = pd.np.empty(2)
         result_val_delta_redox = pd.np.empty(2)
         result_val_mass_change = pd.np.empty(2)
-        
-        for i in range(len(resdict)):
-            mol_prod_mol_red = resdict[i]['mol_prod_mol_red']
-            t_ox = resdict[i]['T_ox']
-            t_red = resdict[i]['T_red']
+
+        for rd in resdict:
+            chemical_energy = rd['Chemical Energy']
+            energy_sensible = rd['Sensible Energy']
+            t_ox = rd['T_ox']
+            t_red = rd['T_red']
             t_mean = (t_ox + t_red) / 2
-            
+            delta_1 = rd['delta_1']
+            delta_2 = rd['delta_2']
+            g_prod_kg_red = rd['g_prod_kg_red']
+            l_prod_kg_red = rd['l_prod_kg_red']
+            mass_redox_i = rd['mass_redox']
+            mol_mass_ox = rd['mol_mass_ox']
+            mol_prod_mol_red = rd['mol_prod_mol_red']
+            p_ox = rd['p_ox']
+            p_red = rd['p_red']
+            compstr = rd['compstr']
+            prodstr = rd['prodstr']
+            prodstr_alt = rd['prodstr_alt']
+            unstable = rd['unstable']
+
             # chemical energy stored in products
             if self.process == "Water Splitting":
                 dh_wscs = EnergyAnalysis().dhf_h2o(t_mean) * mol_prod_mol_red
@@ -1587,28 +1601,13 @@ class EnergyAnalysis:
                 dh_wscs = EnergyAnalysis().dh_co_co2(t_mean) * mol_prod_mol_red
             else:
                 dh_wscs = 0
-                
-            energy_integral_dh = resdict[i]['Chemical Energy'] - ( (resdict[i]['Chemical Energy'] + dh_wscs) * h_rec )
-            
+
+            energy_integral_dh = chemical_energy - ( (chemical_energy + dh_wscs) * h_rec )
+
             if len(resdict) < 50: # for experimental data: convert J/mol to kJ/mol
-                energy_integral_dh = energy_integral_dh / 1000 
+                energy_integral_dh = energy_integral_dh / 1000
                 # wscs does not matter, as no water splitting / co2 splitting is considered for exp data
-                
-            energy_sensible = resdict[i]['Sensible Energy']
-            mol_mass_ox = resdict[i]['mol_mass_ox']
-           
-            p_red = resdict[i]['p_red']
-            p_ox = resdict[i]['p_ox']
-            compstr = resdict[i]['compstr']
-            delta_1 = resdict[i]['delta_1']
-            delta_2 = resdict[i]['delta_2']
-            mass_redox_i = resdict[i]['mass_redox']
-            prodstr = resdict[i]['prodstr']
-            prodstr_alt = resdict[i]['prodstr_alt']
-            l_prod_kg_red = resdict[i]['l_prod_kg_red']
-            g_prod_kg_red = resdict[i]['g_prod_kg_red']
-            unstable = resdict[i]['unstable']
-            
+
             # pumping energy
             if pump_ener != -1:
                 energy_pumping = (float(pump_ener) * mol_mass_ox) / 1000
@@ -1616,7 +1615,7 @@ class EnergyAnalysis:
                 # per mol O
                 energy_pumping = EnergyAnalysis().mechanical_envelope(p_red=p_red)
                 # per mol material
-                energy_pumping = energy_pumping * mol_prod_mol_red    
+                energy_pumping = energy_pumping * mol_prod_mol_red
 
             # steam generation
             if self.process == "Water Splitting" and h_rec_steam != 1:
@@ -1627,7 +1626,7 @@ class EnergyAnalysis:
                 h_rec=h_rec_steam)
             else:
                 energy_steam = 0
-                
+
             # total energy
             energy_total = energy_integral_dh  + energy_sensible * (1 - h_rec) + energy_pumping + energy_steam
 
@@ -1667,17 +1666,17 @@ class EnergyAnalysis:
             delta_redox_i = [float(delta_2 - delta_1)]
             mass_change_i = [float(mass_redox_i)]
             compdisp = remove_comp_one(compstr=compstr)
-            
+
             invalid_val = False # remove data of unstable compounds
             if rem_unstable and unstable:
                 invalid_val = True
-                
+
             # append new values to result and add compositions
-            if (ener_i[0] < 0) or invalid_val: # sort out negative values, heat input is always positive              
+            if (ener_i[0] < 0) or invalid_val: # sort out negative values, heat input is always positive
                 ener_i[0] = float('inf')
             res_i = pd.np.append(ener_i, compdisp)
             result_val_ener_i = np.vstack((result_val_ener_i, res_i))
-            
+
             if per_kg_redox[0] < 0 or invalid_val:
                 per_kg_redox[0] = float('inf')
             res_i = pd.np.append(per_kg_redox, compdisp)
@@ -1687,7 +1686,7 @@ class EnergyAnalysis:
                 per_kg_wh_redox[0] = float('inf')
             res_i = pd.np.append(per_kg_wh_redox, compdisp)
             result_val_per_kg_wh_redox = np.vstack((result_val_per_kg_wh_redox, res_i))
-            
+
             if kj_mol_prod[0] < 0 or invalid_val:
                 kj_mol_prod[0] = float('inf')
             res_i = pd.np.append(kj_mol_prod, compdisp)
@@ -1732,7 +1731,7 @@ class EnergyAnalysis:
                 mass_change_i = float('-inf')
             res_i = pd.np.append(mass_change_i, compdisp)
             result_val_mass_change = np.vstack((result_val_mass_change, res_i))
-        
+
         # sort results
         result_val_ener_i = sorted(result_val_ener_i[1:], key=lambda x: float(x[0]))
         result_val_per_kg_redox = sorted(result_val_per_kg_redox[1:], key=lambda x: float(x[0]))
@@ -1749,7 +1748,7 @@ class EnergyAnalysis:
         result_val_g_prod_kg_red = sorted(result_val_g_prod_kg_red[1:], key=lambda x: float(x[0]), reverse=True)
         result_val_delta_redox = sorted(result_val_delta_redox[1:], key=lambda x: float(x[0]), reverse=True)
         result_val_mass_change = sorted(result_val_mass_change[1:], key=lambda x: float(x[0]), reverse=True)
-        
+
         # create dictionary with results
         dict_result = {"kJ/mol redox material": result_val_ener_i,
                        "kJ/kg redox material": result_val_per_kg_redox,
