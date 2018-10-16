@@ -11,7 +11,6 @@ from test_site.settings import STATIC_URL, DEBUG
 from webtzite.models import RegisteredUser
 
 access_msg = 'Coming Soon! Contact <a href="mailto:josua.vieten@dlr.de">J. Vieten</a> to request pre-publication access.'
-maintenance = True
 
 def index(request):
     ctx = RequestContext(request)
@@ -59,13 +58,13 @@ def energy_analysis(request):
     ctx = RequestContext(request)
     if request.user.is_authenticated():
         user = RegisteredUser.objects.get(username=request.user.username)
-        if not maintenance and user.groups.filter(name='redox_thermo_csp').exists():
+        if user.groups.filter(name='redox_thermo_csp').exists():
             ctx['static_url'] = STATIC_URL
             if DEBUG:
                 mod = os.path.dirname(__file__).split(os.sep)[-2]
                 ctx['static_url'] = '_'.join([STATIC_URL[:-1], mod])
         else:
-            ctx.update({'alert': 'Currently under maintenance' if maintenance else access_msg})
+            ctx.update({'alert': access_msg})
     else:
         return redirect('{}?next={}'.format(reverse('cas_ng_login'), request.path))
     return render_to_response("redox_thermo_csp_explorer_energy_analysis.html", ctx)

@@ -110,7 +110,6 @@ def index(request, cid, db_type=None, mdb=None):
             payload['energy_analysis']['w_feed'] = 200.
             payload['energy_analysis']['steam_h_rec'] = 0.8
             payload['energy_analysis']['param_disp'] = "kJ/L of product"
-            payload['updatekeys'] = ["isotherm", "isobar", "isoredox", "enthalpy_dH", "entropy_dS", "ellingham", "energy_analysis"]
         elif request.method == 'POST':
             payload = json.loads(request.body)
             keys = payload['updatekeys'].values()[0]
@@ -482,7 +481,6 @@ def get_energy_data(mdb, process, t_ox, t_red, p_ox, p_red, data_source, enth_st
     db_id += str(p_red) + "_"
     db_id += str(data_source) + "_"
     db_id += str(float(enth_steps))
-    #db_id = 'AS_350.0_600.0_0.0001_0.21_Theo_20.0'
 
     resdict = []
     for a in ['stable', 'unstable']:
