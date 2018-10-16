@@ -37,7 +37,7 @@ with MPContribsRester() as mpr:
   print 'found {} contributions'.format(len(docs))
 ```
 
-See the [BoltzTraP notebook](https://github.com/materialsproject/MPContribsUsers/blob/master/boltztrap/boltztrap.ipynb) for a dataset-specific working example and more details. FYI, transition to python3 and release of a Docker image are in progress.
+See the [CarrierTransport notebook](https://github.com/materialsproject/MPContribsUsers/blob/master/carrier_transport/carrier_transport.ipynb) for a dataset-specific working example and more details. FYI, transition to python3 and release of a Docker image are in progress.
 
 ## Full Installation as part of JupyterHub
 
