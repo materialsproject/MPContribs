@@ -48,7 +48,7 @@ requirejs.config({
     }
 });
 
-requirejs(['bootstrap'], function() {
+requirejs(['bootstrap', 'bootstrap-slider'], function() {
     console.log('bootstrap loaded');
 });
 requirejs(['jquery', 'underscore'], function() {
