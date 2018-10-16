@@ -139,7 +139,7 @@ code { display: block; white-space: pre-wrap; }
             <h5>Theoretical data updated: </h4>
         </div>
         <div class="col-md-4">
-            <div name="spinner"></div>
+            <div id="spinner_main" name="spinner"></div>
             <input type="hidden" id="cid">
             <div id="selected_mat"></div>
             <div id="selected_exp_mat"></div>
@@ -241,15 +241,15 @@ code { display: block; white-space: pre-wrap; }
     <br>
     <div class="row" style="margin-top: 10px;">
         <div class="col-md-4">
-            <div name="spinner"></div>
+            <div id="spinner_isotherm" name="spinner"></div>
             <div id=isotherm></div>
         </div>
         <div class="col-md-4">
-            <div name="spinner"></div>
+            <div id="spinner_isobar" name="spinner"></div>
             <div id=isobar></div>
         </div>
         <div class="col-md-4">
-            <div name="spinner"></div>
+            <div id="spinner_isoredox" name="spinner"></div>
             <div id=isoredox></div>
         </div>
     </div>
@@ -346,15 +346,15 @@ code { display: block; white-space: pre-wrap; }
     <br>
     <div class="row" style="margin-top: 10px;">
         <div class="col-md-4">
-            <div name="spinner"></div>
+            <div id="spinner_enthalpy_dH" name="spinner"></div>
             <div id=enthalpy_dH></div>
         </div>
         <div class="col-md-4">
-            <div name="spinner"></div>
+            <div id="spinner_entropy_dS" name="spinner"></div>
             <div id=entropy_dS></div>
         </div>
         <div class="col-md-4">
-            <div name="spinner"></div>
+            <div id="spinner_ellingham" name="spinner"></div>
             <div id=ellingham></div>
         </div>
     </div>
@@ -376,12 +376,7 @@ requirejs(['main'], function() {
                 $('#cid').val(cid);
                 var updatekeys = "isobar, isotherm, isoredox, ellingham, enthalpy_dH, entropy_dS"
                 $('#datatable').toggleClass('in', false);
-                send_request("isobar");
-                send_request("isoredox");
-                send_request("isotherm");
-                send_request("ellingham");
-                send_request("enthalpy_dH");
-                send_request("entropy_dS");
+                updatekeys.split(",").forEach(function(k) { send_request(k.trim()); });
             });
 
             var sliders = {
@@ -402,10 +397,10 @@ requirejs(['main'], function() {
                 // update the respective isoplot if the respective value is changed
                 $('#'+key).slider(sliders[key]['config'])
                     .on('slideStop', function(ev) {
-                        $("[name='spinner']").spin();
-                        $('input:text').slider('disable');
                         var k = ev.currentTarget.id;
+                        $('input:text').slider('disable');
                         var updkey = sliders[k]['updkey'];
+                        $("#spinner_"+updkey).spin();
                         send_request(updkey);
                     }); 
             });
@@ -457,6 +452,7 @@ requirejs(['main'], function() {
                 var selected_updt_form = r[key].slice(-1) + ''
                 selected_updt_form = selected_updt_form.split(",").slice(-1);
                 $('#selected_updt').html("<h5>" + selected_updt_form + "</h5>");
+                $('#spinner_main').spin(false);
             };
                         
             // update plots depending on the keys
@@ -491,12 +487,6 @@ requirejs(['main'], function() {
                     var xaxis_title = "T (K)";
                     var yaxis_title = "ΔG<sub>O</sub> (kJ/mol)";
                 }
-                if (key === "energy_analysis") {
-                    var title = r[key][0]['title']; 
-                    var yaxis_title = r[key][0]['yaxis_title'];
-                    var yaxis_titlefont = { size: 22 };
-                    var xaxis_tickfont = { size: 12 };
-                }
                 var axis = {
                     exponentformat: "E", tickfont: { size: 15 }, showline: "True",
                     ticks: "inside", tickwidth: 1, tickcolor: '#000000',
@@ -508,22 +498,15 @@ requirejs(['main'], function() {
                 if (key === "isotherm") { xaxis['type'] = 'log'; }
                 var yaxis = JSON.parse(JSON.stringify(axis)); // deepcopy
                 yaxis['title'] = yaxis_title;
-                yaxis['titlefont'] = yaxis_titlefont;
-                xaxis['tickfont'] = xaxis_tickfont;
+                yaxis['titlefont'] = { size: 22 };
+                xaxis['tickfont'] = { size: 12 };
                 if (key === "isoredox") { yaxis['type'] = 'log'; }
                 if (key === "enthalpy_dH") { yaxis['range'] = r[key].slice(-2)[0] ; }
                 if (key === "entropy_dS") { yaxis['range'] = r[key].slice(-2)[0]; }
-                if (key != "energy_analysis") {
-                    Plotly.newPlot(div, r[key].slice(0, -1), {
-                        title: title, showlegend: false, xaxis: xaxis, yaxis: yaxis,
-                        margin: {l: 80, r: 20, b: 60, t: 35}
-                    });
-                } else {
-                    Plotly.newPlot(div, r[key] , {
-                        title: title, showlegend: false, xaxis: xaxis, yaxis: yaxis, 
-                        margin: {l: 80, r: 120, b: 130, t: 35}, height: 650, width: 1200, autosize: false, barmode: 'stack'
-                    });
-                }
+                Plotly.newPlot(div, r[key].slice(0, -1), {
+                    title: title, showlegend: false, xaxis: xaxis, yaxis: yaxis,
+                    margin: {l: 80, r: 20, b: 60, t: 35}
+                });
             };
 
             function send_request(updatekeys) { 
@@ -587,10 +570,9 @@ requirejs(['main'], function() {
                                 var div = document.getElementById(key);
                                 update_plots(div,r,key);
                             };
-
+                            $("#spinner_"+key).spin(false);
                         });
                         $('input:text').slider('enable');
-                        $("[name='spinner']").spin(false);
                     },
                     error: function(jqXHR, textStatus, errorThrown) {
                         console.log(errorThrown);
