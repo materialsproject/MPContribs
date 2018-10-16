@@ -3,35 +3,10 @@
 
 {% block title %} Transport Properties {% endblock title %}
 
-{% block extra_css %}
-<link rel="stylesheet" href='{% static "js/components/backgrid/lib/backgrid.css" %}' charset="utf-8">
-<link rel="stylesheet" href='{% static "js/components/backgrid-paginator/backgrid-paginator.css" %}' charset="utf-8">
-<link rel="stylesheet" href='{% static "js/components/backgrid-filter/backgrid-filter.css" %}' charset="utf-8">
-<link rel="stylesheet" href='{% static "js/components/json-human/css/json.human.css" %}' charset="utf-8">
-{% endblock extra_css %}
-
 {% block content %}
 
-{% if alert %}
-<div class="alert alert-warning alert-dismissible" role="alert">
-  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-    <span aria-hidden="true">&times;</span>
-  </button>
-  {{ alert }}
-</div>
-
-{% else %}
-
 <style>
-.backgrid { font-family: "symbola"; }
-.backgrid tbody tr:hover { background-color: #f9f9f9; }
-.backgrid .sortable { text-align: center; }
-.backgrid thead th button { display: inline; }
-.backgrid tbody tr { cursor: pointer; } 
-.jh-root { font-family: "symbola"; }
-.jh-type-string { font-style: normal; }
-code { display: block; white-space: pre-wrap; }
-.backgrid tbody tr td:nth-child(n+6):nth-child(-n+9) { background-color: #d0efc9; }
+.backgrid tbody tr td:nth-child(n+6):nth-child(-n+9) { background-color: #d0efc9;  }
 </style>
 
 <div id="modal" class="modal fade" 
@@ -182,5 +157,4 @@ requirejs(['main'], function() {
 });
 </script>
 
-{% endif %}
 {% endblock %}

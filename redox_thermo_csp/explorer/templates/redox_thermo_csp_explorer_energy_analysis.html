@@ -3,80 +3,7 @@
 
 {% block title %} RedoxThermoCSP {% endblock title %}
 
-{% block extra_css %}
-<link rel="stylesheet" href='{% static "js/components/bootstrap/dist/css/bootstrap.css" %}' charset="utf-8">
-<link rel="stylesheet" href='{% static "js/components/seiyria-bootstrap-slider/dist/css/bootstrap-slider.css" %}' charset="utf-8">
-<link rel="stylesheet" href='{% static "js/components/backgrid/lib/backgrid.css" %}' charset="utf-8">
-<link rel="stylesheet" href='{% static "js/components/backgrid-paginator/backgrid-paginator.css" %}' charset="utf-8">
-<link rel="stylesheet" href='{% static "js/components/backgrid-filter/backgrid-filter.css" %}' charset="utf-8">
-<link rel="stylesheet" href='{% static "js/components/backgrid-grouped-columns/backgrid-grouped-columns.css" %}' charset="utf-8">
-<link rel="stylesheet" href='{% static "js/components/json-human/css/json.human.css" %}' charset="utf-8">
-<link rel="stylesheet" href='{% static "js/components/chosen/chosen.css" %}' charset="utf-8" />
-{% endblock extra_css %}
-
 {% block content %}
-<!--
-<ul class="nav nav-pills">
-    <li role="presentation"><a href='tolerance_factors/'>tolerance factors</a></li>
-</ul>
--->
-
-{% if alert %}
-
-<div class="alert alert-warning alert-dismissible" role="alert">
-  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-    <span aria-hidden="true">&times;</span>
-  </button>
-  {{ alert }}
-</div>
-
-{% else %}
-
-<style>
-.backgrid { font-family: "symbola"; }
-.backgrid tbody tr:hover { background-color: #f9f9f9; }
-.backgrid .sortable { text-align: center; }
-.backgrid thead th button { display: inline; }
-.jh-root { font-family: "symbola"; }
-.jh-type-string { font-style: normal; }
-code { display: block; white-space: pre-wrap; }
-.mytooltip {
-      border-bottom: 1px dotted #000000;
-      color: #000000; outline: none;
-      cursor: help; text-decoration: none;
-      position: relative;
-}
-.mytooltip span {
-      margin-left: -999em;
-      position: absolute;
-}
-.mytooltip:hover span {
-  font-family: Calibri, Tahoma, Geneva, sans-serif;
-  position: absolute;
-  left: 1em;
-  top: 2em;
-  z-index: 99;
-  margin-left: 0;
-  width: 100px;
-}
-.mytooltip:hover img {
-  border: 0;
-  margin: -10px 0 0 -55px;
-  float: left;
-  position: absolute;
-}
-.mytooltip:hover em {
-  font-family: Candara, Tahoma, Geneva, sans-serif;
-  font-size: 1.2em;
-  font-weight: bold;
-  display: block;
-  padding: 0.2em 0 0.6em 0;
-}
-.classic { padding: 0.8em 1em; }
-.custom { padding: 0.5em 0.8em 0.8em 2em; }
-* html a:hover { background: transparent; }
-.classic { background: #000000; color: #FFFFFF; }
-</style>
 
 <div class="container">
    
@@ -526,5 +453,4 @@ requirejs(['main'], function() {
 });
 </script>
 
-{% endif %}
 {% endblock %}
