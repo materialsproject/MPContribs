@@ -376,7 +376,12 @@ requirejs(['main'], function() {
                 $('#cid').val(cid);
                 var updatekeys = "isobar, isotherm, isoredox, ellingham, enthalpy_dH, entropy_dS"
                 $('#datatable').toggleClass('in', false);
-                send_request(updatekeys);
+                send_request("isobar");
+                send_request("isoredox");
+                send_request("isotherm");
+                send_request("ellingham");
+                send_request("enthalpy_dH");
+                send_request("entropy_dS");
             });
 
             var sliders = {
