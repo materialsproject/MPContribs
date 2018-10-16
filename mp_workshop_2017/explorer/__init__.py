@@ -1,1 +1,0 @@
-default_app_config = 'mpcontribs.users.mp_workshop_2017.explorer.apps.MpWorkshop2017ExplorerConfig'
