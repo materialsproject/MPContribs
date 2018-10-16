@@ -148,39 +148,40 @@ def index(request, cid, db_type=None, mdb=None):
                     d_max_exp = float(pars['delta_max'])
 
                     for xv in x_val:
-                        if k == "enthalpy_dH" or k== "entropy_dS":
-                            s_th = s_th_o(iso)
-                        else:
-                            s_th = s_th_o(xv)
-                        args = (iso, xv, pars, s_th)
-                        if k == "isotherm": # for isotherms, pressure is variable and temperature is constant
-                            s_th = s_th_o(iso)
-                            args = (xv, iso, pars, s_th)
+                        try:
+                            if k == "enthalpy_dH" or k== "entropy_dS":
+                                s_th = s_th_o(iso)
+                            else:
+                                s_th = s_th_o(xv)
+                            args = (iso, xv, pars, s_th)
+                            if k == "isotherm": # for isotherms, pressure is variable and temperature is constant
+                                s_th = s_th_o(iso)
+                                args = (xv, iso, pars, s_th)
 
-                        elif k == "ellingham":
-                            solutioniso = (dh_ds(delt, args[-1], args[-2])[0] - dh_ds(delt, args[-1], args[-2])[1]*xv)/1000
-                            resiso.append(solutioniso)
-                            ellingiso_i = isobar_line_elling(args[0], xv)/1000
-                            ellingiso.append(ellingiso_i)
+                            elif k == "ellingham":
+                                solutioniso = (dh_ds(delt, args[-1], args[-2])[0] - dh_ds(delt, args[-1], args[-2])[1]*xv)/1000
+                                resiso.append(solutioniso)
+                                ellingiso_i = isobar_line_elling(args[0], xv)/1000
+                                ellingiso.append(ellingiso_i)
 
-                        if (k != 'isoredox' and k != 'ellingham') and (k != 'enthalpy_dH' and k != 'entropy_dS'):
-                            solutioniso = rootfind(a, b, args, funciso)
-                            resiso.append(solutioniso)
+                            if (k != 'isoredox' and k != 'ellingham') and (k != 'enthalpy_dH' and k != 'entropy_dS'):
+                                solutioniso = rootfind(a, b, args, funciso)
+                                resiso.append(solutioniso)
 
-                        elif k == "isoredox":
-                            try:
+                            elif k == "isoredox":
                                 solutioniso = brentq(funciso_redox, -300, 300, args=args)
                                 resiso.append(pd.np.exp(solutioniso))
-                            except ValueError:
-                                resiso.append(None) # insufficient accuracy for ꪲδ/T combo
 
-                        if k == "enthalpy_dH":
-                             solutioniso = dh_ds(xv, args[-1], args[-2])[0] / 1000
-                             resiso.append(solutioniso)
+                            if k == "enthalpy_dH":
+                                 solutioniso = dh_ds(xv, args[-1], args[-2])[0] / 1000
+                                 resiso.append(solutioniso)
 
-                        if k == "entropy_dS":
-                             solutioniso = dh_ds(xv, args[-1], args[-2])[1]
-                             resiso.append(solutioniso)
+                            if k == "entropy_dS":
+                                 solutioniso = dh_ds(xv, args[-1], args[-2])[1]
+                                 resiso.append(solutioniso)
+                        except ValueError: # if brentq function finds no zero point due to plot out of range
+                            resiso.append(None)
+                            ellingiso.append(None)
 
                     # show interpolation
                     res_interp, res_fit = [], []
@@ -201,42 +202,40 @@ def index(request, cid, db_type=None, mdb=None):
                             res_interp.append(resiso[i])
                 else:
                     res_fit, res_interp = None, None # don't plot any experimental data
+                try:
+                    for xv in x_val[::4]: # use less data points for theoretical graphs to improve speed
+                        args_theo = (iso, xv, pars, t_d_perov, t_d_brownm, dh_min, dh_max, act)
+                        if k == "isotherm": # for isotherms, pressure is variable and temperature is constant
+                            args_theo = (xv, iso, pars, t_d_perov, t_d_brownm, dh_min, dh_max, act)
+                        elif k == "ellingham":
+                            dh = d_h_num_dev_calc(delta=delt, dh_1=dh_min, dh_2=dh_max,
+                                temp=xv, act=act)
+                            ds = d_s_fundamental(delta=delt, dh_1=dh_min, dh_2=dh_max, temp=xv,
+                                act=act, t_d_perov=t_d_perov, t_d_brownm=t_d_brownm)
+                            solutioniso_theo = (dh - ds*xv)/1000
+                            resiso_theo.append(solutioniso_theo)
 
-                for xv in x_val[::4]: # use less data points for theoretical graphs to improve speed
-                    args_theo = (iso, xv, pars, t_d_perov, t_d_brownm, dh_min, dh_max, act)
-                    if k == "isotherm": # for isotherms, pressure is variable and temperature is constant
-                        args_theo = (xv, iso, pars, t_d_perov, t_d_brownm, dh_min, dh_max, act)
-
-                    elif k == "ellingham":
-                        dh = d_h_num_dev_calc(delta=delt, dh_1=dh_min, dh_2=dh_max,
-                            temp=xv, act=act)
-                        ds = d_s_fundamental(delta=delt, dh_1=dh_min, dh_2=dh_max, temp=xv,
-                            act=act, t_d_perov=t_d_perov, t_d_brownm=t_d_brownm)
-                        solutioniso_theo = (dh - ds*xv)/1000
-                        resiso_theo.append(solutioniso_theo)
-
-                    if (k != 'isoredox' and k != 'ellingham') and (k != 'enthalpy_dH' and k != 'entropy_dS'):
-                        solutioniso_theo = rootfind(a, b, args_theo, funciso_theo)
-                        resiso_theo.append(solutioniso_theo)
-                    elif k == "isoredox":
-                        try:
+                        if (k != 'isoredox' and k != 'ellingham') and (k != 'enthalpy_dH' and k != 'entropy_dS'):
+                            solutioniso_theo = rootfind(a, b, args_theo, funciso_theo)
+                            resiso_theo.append(solutioniso_theo)
+                        elif k == "isoredox":
                             try:
                                 solutioniso_theo = brentq(funciso_redox_theo, -300, 300, args=args_theo)
                             except ValueError:
                                 solutioniso_theo = brentq(funciso_redox_theo, -100, 100, args=args_theo)
                             resiso_theo.append(pd.np.exp(solutioniso_theo))
-                        except ValueError:
-                            resiso_theo.append(None)
 
-                    if k == "enthalpy_dH":
-                        solutioniso_theo = d_h_num_dev_calc(delta=xv, dh_1=dh_min, dh_2=dh_max,
-                            temp=iso, act=act) / 1000
-                        resiso_theo.append(solutioniso_theo)
+                        if k == "enthalpy_dH":
+                            solutioniso_theo = d_h_num_dev_calc(delta=xv, dh_1=dh_min, dh_2=dh_max,
+                                temp=iso, act=act) / 1000
+                            resiso_theo.append(solutioniso_theo)
 
-                    if k == "entropy_dS":
-                        solutioniso_theo = d_s_fundamental(delta=xv, dh_1=dh_min, dh_2=dh_max, temp=iso,
-                            act=act, t_d_perov=t_d_perov, t_d_brownm=t_d_brownm)
-                        resiso_theo.append(solutioniso_theo)
+                        if k == "entropy_dS":
+                            solutioniso_theo = d_s_fundamental(delta=xv, dh_1=dh_min, dh_2=dh_max, temp=iso,
+                                act=act, t_d_perov=t_d_perov, t_d_brownm=t_d_brownm)
+                            resiso_theo.append(solutioniso_theo)
+                except ValueError: # if brentq function finds no zero point due to plot out of range
+                    resiso_theo.append(None)
 
                 x = list(pd.np.exp(x_val)) if k == 'isotherm' else list(x_val)
                 x_theo = x[::4]
