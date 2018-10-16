@@ -21,22 +21,35 @@
 </div>
 
 <div class="container">
+    <h2>{{ provenance.title }}</h2>
 
     <div class="row">
-        <div class="col-md-6">
-            <h2>{{ title }}</h2>
+        <div class="col-md-10">
+            <div class="well" style="padding: 5px 5px 5px 5px; margin-bottom: 2px; margin-left: 5px;">
+                {{ provenance.description|safe }}
+            </div>
         </div>
-        <div class="col-md-6">
+        <div class="col-md-2">
             <a class="btn btn-info pull-right" role="button" target="_blank"
             href="https://jupyterhub.materialsproject.org/user/{{ request.user.username }}/notebooks/MPContribs/mpcontribs/users/carrier_transport/carrier_transport.ipynb">
                 Work with this dataset <i class="fa fa-external-link"></i>
             </a>
-        </div>
-    </div>
-
-    <div class="row">
-        <div class="col-md-12">
-            {{ provenance|safe }}
+            <blockquote class="blockquote pull-right" style="font-size: 13px; padding: 0px 10px;">
+                <h5 style="margin: 5px;">
+                    {{ provenance.main_author|safe }}
+                    <a class="mytooltip" href="#">
+                        et al.
+                        <span class="classic">
+                            {{ provenance.etal_authors|safe }}
+                        </span>
+                    </a>
+                </h5>
+                {% for href in provenance.urls.values %}
+                <a href="{{ href }}" target="_blank" class="btn btn-link" role=button style="padding: 0">
+                    <i class="fa fa-book fa-border fa-lg"></i>
+                </a>
+                {% endfor %}
+            </blockquote>
         </div>
     </div>
 

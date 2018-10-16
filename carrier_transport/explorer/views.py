@@ -19,9 +19,10 @@ def index(request):
         from ..rest.rester import CarrierTransportRester
         with CarrierTransportRester(API_KEY, endpoint=ENDPOINT) as mpr:
             try:
-                prov = mpr.get_provenance()
-                ctx['title'] = prov.pop('title')
-                ctx['provenance'] = render_dict(prov, webapp=True)
+                ctx['provenance'] = mpr.get_provenance()
+                authors = ctx['provenance'].pop('authors').split(', ')
+                ctx['provenance']['main_author'] = authors[0]
+                ctx['provenance']['etal_authors'] = '<br>'.join(authors[1:])
                 df = mpr.get_contributions(limit=3)
                 url = request.build_absolute_uri(request.path) + 'rest/table'
                 ctx['table'] = render_dataframe(
