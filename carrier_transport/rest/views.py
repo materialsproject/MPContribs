@@ -17,7 +17,7 @@ def index(request, cid=None, db_type=None, mdb=None):
             projection = dict(('content.data.{}'.format(k[1:-1]), 1) for k in axes)
             projection.update({'mp_cat_id': 1})
             docs = mdb.contrib_ad.query_contributions(
-                {'project': 'boltztrap'}, projection=projection
+                {'project': 'carrier_transport'}, projection=projection
             )
             response = {'text': []}
             response.update(dict((k, []) for k in axes))
@@ -64,7 +64,7 @@ def index(request, cid=None, db_type=None, mdb=None):
 def table(request, db_type=None, mdb=None):
     try:
         page = int(request.GET.get('page', '1'))
-        crit = {'project': 'boltztrap'}
+        crit = {'project': 'carrier_transport'}
         search = request.GET.get('q')
         if search is not None:
             crit.update({'content.extra_data.pretty_formula': {'$regex': search}})
@@ -78,7 +78,7 @@ def table(request, db_type=None, mdb=None):
         sort = {'key': request.GET.get('sort'), 'order': request.GET.get('order')}
         docs, last_id = mdb.contrib_ad.query_paginate(crit, projection=proj, last_id=last_id, sort=sort)
         if not docs:
-            raise Exception('No contributions found for Boltztrap Explorer!')
+            raise Exception('No contributions found for CarrierTransport Explorer!')
 
         items = []
         columns = ['##'.join(['general', sk]) for sk in ['mp-id', 'cid', 'formula']]

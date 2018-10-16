@@ -1,4 +1,4 @@
-title: BoltzTraP Database
+title: Carrier Transport
 
 description:
 Ab-initio electronic transport database for inorganic materials.
@@ -21,7 +21,7 @@ G-M. Rignanese, A. Jain, G. Hautier
 :end
 
 journal: Scientific Data 4, 170085 (2017)
-input_dir: /matgen/fricci/transport_data/coarse/
+input_dir: /wkshp_shared/fricci/
 
 {urls}
 doi: https://doi.org/10.1038/sdata.2017.85

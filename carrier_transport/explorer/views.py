@@ -1,4 +1,4 @@
-"""This module provides the views for the boltztrap explorer interface."""
+"""This module provides the views for the carrier_transport explorer interface."""
 
 import os
 from django.shortcuts import render_to_response, redirect
@@ -16,8 +16,8 @@ def index(request):
         user = RegisteredUser.objects.get(username=request.user.username)
         API_KEY = user.api_key
         ENDPOINT = request.build_absolute_uri(get_endpoint())
-        from ..rest.rester import BoltztrapRester
-        with BoltztrapRester(API_KEY, endpoint=ENDPOINT) as mpr:
+        from ..rest.rester import CarrierTransportRester
+        with CarrierTransportRester(API_KEY, endpoint=ENDPOINT) as mpr:
             try:
                 prov = mpr.get_provenance()
                 ctx['title'] = prov.pop('title')
@@ -31,4 +31,4 @@ def index(request):
                 ctx.update({'alert': str(ex)})
     else:
         return redirect('{}?next={}'.format(reverse('cas_ng_login'), request.path))
-    return render_to_response("boltztrap_explorer_index.html", ctx)
+    return render_to_response("carrier_transport_explorer_index.html", ctx)

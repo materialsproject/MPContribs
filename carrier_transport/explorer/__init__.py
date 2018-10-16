@@ -1,0 +1,1 @@
+default_app_config = 'mpcontribs.users.carrier_transport.explorer.apps.CarrierTransportExplorerConfig'

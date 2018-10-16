@@ -5,7 +5,7 @@ import numpy as np
 from pandas import DataFrame
 from mpcontribs.io.core.recdict import RecursiveDict
 from mpcontribs.io.core.utils import nest_dict, clean_value
-from mpcontribs.users.boltztrap.rest.rester import BoltztrapRester
+from mpcontribs.users.carrier_transport.rest.rester import CarrierTransportRester
 from mpcontribs.users.utils import duplicate_check
 from mpcontribs.io.core.components import Table
 

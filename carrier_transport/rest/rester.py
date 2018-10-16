@@ -4,8 +4,8 @@ from mpcontribs.rest.rester import MPContribsRester
 from mpcontribs.io.archieml.mpfile import MPFile
 from mpcontribs.io.core.components import Table
 
-class BoltztrapRester(MPContribsRester):
-    """Boltztrap-specific convenience functions to interact with MPContribs REST interface"""
+class CarrierTransportRester(MPContribsRester):
+    """CarrierTransport-specific convenience functions to interact with MPContribs REST interface"""
     query = {'content.urls.url': 'https://www.nature.com/articles/sdata201785'}
     provenance_keys = ['title', 'authors', 'journal', 'urls', 'url', 'description']
     released = True
@@ -15,7 +15,7 @@ class BoltztrapRester(MPContribsRester):
         docs = self.query_contributions(
             projection={'_id': 1, 'mp_cat_id': 1, 'content': 1}, limit=limit) # use URL for all data
         if not docs:
-            raise Exception('No contributions found for Boltztrap Explorer!')
+            raise Exception('No contributions found for CarrierTransport Explorer!')
 
         data = []
         columns = ['##'.join(['general', sk]) for sk in ['mp-id', 'cid', 'formula']]
@@ -48,7 +48,7 @@ class BoltztrapRester(MPContribsRester):
 
         docs = self.query_contributions(projection={'_id': 1, 'mp_cat_id': 1, 'content': 1})
         if not docs:
-            raise Exception('No contributions found for Boltztrap Explorer!')
+            raise Exception('No contributions found for CarrierTransport Explorer!')
 
         data = []
         columns = ['mp-id', 'cid', 'formula', u'mₑᶜᵒⁿᵈ', u"Sₘₐₓ", u"σₘₐₓ", u"κₑ₋ₘᵢₙ"]
