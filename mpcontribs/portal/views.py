@@ -6,7 +6,7 @@ from django.template import RequestContext
 from django.core.urlresolvers import reverse
 from mpcontribs.users_modules import *
 from mpcontribs.rest.views import get_endpoint
-from test_site.settings import STATIC_URL
+from test_site.settings import STATIC_URL, PROXY_URL_PREFIX
 
 def index(request):
     from webtzite.models import RegisteredUser
@@ -19,11 +19,11 @@ def index(request):
         ctx['a_tags'] = [[], []]
         for mod_path in get_users_modules():
             explorer = os.path.join(mod_path, 'explorer', 'apps.py')
-            if os.path.exists(explorer):
-                entry = {
-                    'name': get_user_explorer_name(explorer),
-                    'project': os.path.basename(mod_path)
-                }
+            dash_app_exists = os.path.exists(os.path.join(mod_path, 'dash_app.py'))
+            if os.path.exists(explorer) or dash_app_exists:
+                entry = {'project': os.path.basename(mod_path)}
+                entry['url'] = os.path.join(PROXY_URL_PREFIX, mod_path.split(os.sep)[-1]) if dash_app_exists \
+                        else reverse(get_user_explorer_name(explorer))
                 idx = 1
                 UserRester = get_user_rester(mod_path)
                 if UserRester is not None:

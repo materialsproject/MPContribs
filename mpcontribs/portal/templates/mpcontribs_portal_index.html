@@ -84,18 +84,18 @@
         {% for a_tag in l %}
         <div class="col-md-4">
             {% if forloop.parentloop.counter0 %}
-            <a href="{% url a_tag.name %}">{{ a_tag.title }}</a>
+            <a href="{{ a_tag.url }}">{{ a_tag.title }}</a>
             {% else %}
             <div class="panel panel-default">
                 <div class="panel-heading">
                     <h4 class="panel-title">
-                        <a href="{% url a_tag.name %}">{{ a_tag.title  }}</a>
+                        <a href="{{ a_tag.url }}">{{ a_tag.title  }}</a>
                         {% if "provenance" in a_tag %}{{ a_tag.provenance|safe }}{% endif %}
                     </h4>
                 </div>
                 <div class="panel-body" style="padding: 0px">
                     <div class="col-md-12" style="padding: 5px;">
-                        <a href="{% url a_tag.name %}">
+                        <a href="{{ a_tag.url }}">
                             <img src="{{ static_url }}/{{ a_tag.project }}.jpg" width=100% />
                         </a>
                     </div>

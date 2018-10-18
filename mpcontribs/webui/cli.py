@@ -1,10 +1,12 @@
+# -*- coding: utf-8 -*-
 # http://flask.pocoo.org/docs/0.10/patterns/appdispatch/
-import os, argparse, string
+import os, argparse, string, flask
 from werkzeug.serving import run_simple
 from werkzeug.wsgi import DispatcherMiddleware, SharedDataMiddleware
 from flask import Flask
 from mpcontribs.webui.main import main_bp
 from mpcontribs.webui.webui import ingester_bp
+from mpcontribs.users_modules import add_all_dash_apps
 from test_site.wsgi import application as django_app
 from test_site.settings import STATIC_ROOT_URLS, PROXY_URL_PREFIX
 
@@ -55,33 +57,7 @@ def cli():
     app.config['JUPYTER_URL'] = args.jupyter_url
     app.register_blueprint(main_bp, url_prefix=PROXY_URL_PREFIX)
     app.register_blueprint(ingester_bp, url_prefix=PROXY_URL_PREFIX + '/ingester')
-
-    try:
-        import dash
-        dash_app = dash.Dash(server=app, url_base_pathname=PROXY_URL_PREFIX + '/dash_app/')
-        dash_app.config.suppress_callback_exceptions = True
-
-        import dash_core_components as dcc
-        import dash_html_components as html
-        from dash.dependencies import Input, Output
-
-        dash_app.layout = html.Div([
-            dcc.Location(id='url', refresh=False),
-            html.Div(id='page-content')
-        ])
-
-        @dash_app.callback(Output('page-content', 'children'), [Input('url', 'pathname')])
-        def display_page(pathname):
-            return pathname
-            #if pathname == '/apps/app1':
-            #    return app1.layout
-            #elif pathname == '/apps/app2':
-            #    return app2.layout
-            #else:
-            #    return '404'
-    except ImportError:
-        print "Plotly Dash not installed."
-
+    app = add_all_dash_apps(app)
     application = DispatcherMiddleware(app, {PROXY_URL_PREFIX + '/test_site': django_app})
     application = SharedDataMiddleware(application, STATIC_ROOT_URLS)
 

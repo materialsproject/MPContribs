@@ -68,3 +68,12 @@ def get_user_rester(mod_path):
         m = import_module('mpcontribs.users.{}.rest.rester'.format(mod))
         UserRester = getattr(m, get_user_classname(mod) + 'Rester')
     return UserRester
+
+def add_all_dash_apps(server):
+    for mod_path in get_users_modules():
+        if os.path.exists(os.path.join(mod_path, 'dash_app.py')):
+            mod = os.path.split(mod_path)[-1]
+            m = import_module('mpcontribs.users.{}.dash_app'.format(mod))
+            add_dash = getattr(m, 'add_dash')
+            server = add_dash(server)
+    return server

@@ -25,7 +25,8 @@ setup(
         'Django==1.8.5', 'archieml', 'django-browserid', 'sphinx', 'notebook',
         'ipywidgets', 'celery', 'tqdm', 'beautifulsoup4', 'whichcraft', 'pymatgen',
         'unidecode', 'psutil', 'nbformat', 'xlrd', 'django-nopassword', 'mod_wsgi',
-        'django-require', 'pympler', 'django_cas_ng', 'django-extensions', 'selenium'
+        'django-require', 'pympler', 'django_cas_ng', 'django-extensions', 'selenium',
+        'dash', 'dash-html-components', 'dash-core-components'
     ],
     license = 'MIT',
     keywords = ['materials', 'contribution', 'framework', 'data', 'interactive', 'jupyter'],
