@@ -39,12 +39,12 @@ def cli():
             if not os.path.exists(dbpath):
                 os.makedirs(dbpath)
 
+    jpy_user = os.environ.get('JPY_USER')
     custom_js = '/home/jovyan/work/MPContribs/notebooks/profile/custom/custom.js'
-    if not os.path.exists(custom_js):
+    if jpy_user is not None and not os.path.exists(custom_js):
         with open('{}_template'.format(custom_js), 'r') as f:
             fstr = f.read()
             template = CustomTemplate(fstr)
-            jpy_user = os.environ.get('JPY_USER')
             text = template.substitute({'JPY_USER': jpy_user})
             with open(custom_js, 'w') as f2:
                 f2.write(text)
