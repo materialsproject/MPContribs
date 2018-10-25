@@ -13,4 +13,6 @@ RUN git clone https://github.com/materialsproject/MPContribs.git . && cp db.sqli
       cd static && ln -s /usr/lib/python2.7/site-packages/django/contrib/admin/static/admin && \
       cd /app && pip install -e . && MPCONTRIBS_DEBUG="True" python manage.py migrate
 
+RUN cd / && wget https://raw.githubusercontent.com/vishnubob/wait-for-it/master/wait-for-it.sh && chmod +x /wait-for-it.sh
+RUN apk add --no-cache bash
 CMD ["mpcontribs", "--debug"]
