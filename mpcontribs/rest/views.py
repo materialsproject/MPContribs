@@ -33,9 +33,17 @@ ConnectorBase.register(Connector)
 class CustomTemplate(string.Template):
     delimiter = '$$'
 
+# https://stackoverflow.com/a/42674935
+def in_docker():
+    """ Returns: True if running in a Docker container, else False """
+    with open('/proc/1/cgroup', 'rt') as ifh:
+        return 'docker' in ifh.read()
+
 def get_endpoint(request):
     from django.core.urlresolvers import reverse
     url = reverse('mpcontribs_rest_index')[:-1]
+    if in_docker():
+        return 'http://app:5000' + url
     return request.build_absolute_uri(url)
 
 def index(request):
