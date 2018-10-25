@@ -11,7 +11,7 @@ from django.template import RequestContext
 from django.contrib.auth.models import Group
 from webtzite.connector import ConnectorBase
 from bson.objectid import ObjectId
-from webtzite import mapi_func
+from webtzite import mapi_func, in_docker
 from django.shortcuts import redirect
 from importlib import import_module
 from test_site.settings import PROXY_URL_PREFIX
@@ -32,12 +32,6 @@ ConnectorBase.register(Connector)
 
 class CustomTemplate(string.Template):
     delimiter = '$$'
-
-# https://stackoverflow.com/a/42674935
-def in_docker():
-    """ Returns: True if running in a Docker container, else False """
-    with open('/proc/1/cgroup', 'rt') as ifh:
-        return 'docker' in ifh.read()
 
 def get_endpoint(request):
     from django.core.urlresolvers import reverse
