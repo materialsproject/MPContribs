@@ -28,8 +28,10 @@ RUN cd /usr/bin && ln -s /app/node_modules/grunt-cli/bin/grunt
 RUN grunt compile && python3 manage.py makemigrations && python3 manage.py migrate && \
     python3 manage.py init_sandboxes configs/sandboxes.yaml && \
     sed -i 's@localhost@tunnels@g' configs/*_db_*.yaml && \
+    echo -e "\nALLOWED_HOSTS.extend(['docker.for.mac.localhost', 'docker.for.mac.host.internal'])" >> /app/materials_django/settings.py && \
     python3 manage.py load_db_config configs/*_db_*.yaml && mkdir -p /var/www && \
     python3 manage.py collectstatic --noinput && python3 manage.py cleanupcas
-RUN sed -i 's@https://contribs.materialsproject.org@http://localhost:5001@' /app/materials_django/settings.py
+RUN cd / && wget https://raw.githubusercontent.com/vishnubob/wait-for-it/master/wait-for-it.sh && chmod +x /wait-for-it.sh
+RUN apk add --no-cache bash
 ENTRYPOINT ["python3"]
 CMD ["manage.py", "runserver", "0.0.0.0:8000"]

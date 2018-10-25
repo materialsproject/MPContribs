@@ -8,10 +8,10 @@ services:
       - mpdev
     entrypoint: /bin/sh
     command: "-c 'cd /app && \
-              sed -i 's@https://materialsproject.org/cas/@http://localhost:8001@' test_site/settings.py && \
-              git pull && mpcontribs --debug'"
+              sed -i 's@https://materialsproject.org/cas/@http://docker.for.mac.localhost:8001/cas/@' test_site/settings.py && \
+              git pull && /wait-for-it.sh mpdev:8000 --timeout=15 --strict -- mpcontribs --debug'"
     ports:
-      - 5001:5000
+      - 127.0.0.2:5001:5000
   #web:
   #  image: mpcontribs-nginx
   #  ports:
@@ -25,7 +25,7 @@ services:
     tty: true
     volumes:
       - ~/.ssh/mendel@mac14:/root/.ssh/id_rsa:ro
-    command: "-vN -oStrictHostKeyChecking=no -oServerAliveInterval=60 \
+    command: "-N -oStrictHostKeyChecking=no -oServerAliveInterval=60 \
               -oServerAliveCountMax=2 -4 -t -i /root/.ssh/id_rsa \
               -L*:57001:mongodb01.nersc.gov:27017 \
               -L*:57002:matgen2.lbl.gov:27017 \
@@ -34,8 +34,13 @@ services:
               huck@matgen2.lbl.gov"
   mpdev:
     image: mpdev-app
+    entrypoint: /bin/sh
     tty: true
     ports:
       - 8001:8000
     depends_on:
       - tunnels
+    command: "-c 'pip3 install -U pymatgen \"Django>=1.11,<1.12\" && \
+              grunt compile && python3 manage.py cleanupcas && \
+              sed -i 's@https://contribs.materialsproject.org@http://127.0.0.2:5001@' /app/materials_django/settings.py && \
+              /wait-for-it.sh tunnels:57001 --timeout=1 --strict -- python3 manage.py gruntserver 0.0.0.0:8000'"
