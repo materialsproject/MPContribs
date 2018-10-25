@@ -15,10 +15,8 @@ def index(request):
     ctx = RequestContext(request)
     if request.user.is_authenticated():
         user = RegisteredUser.objects.get(username=request.user.username)
-        API_KEY = user.api_key
-        ENDPOINT = request.build_absolute_uri(get_endpoint())
         from ..rest.rester import DefectGenomePcfcMaterialsRester
-        with DefectGenomePcfcMaterialsRester(API_KEY, endpoint=ENDPOINT) as mpr:
+        with DefectGenomePcfcMaterialsRester(user.api_key, endpoint=get_endpoint(request)) as mpr:
             try:
                 prov = mpr.get_provenance()
                 ctx['title'] = prov.pop('title')

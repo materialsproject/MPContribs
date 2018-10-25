@@ -14,10 +14,8 @@ def index(request):
     from webtzite.models import RegisteredUser
     if request.user.is_authenticated():
         user = RegisteredUser.objects.get(username=request.user.username)
-        API_KEY = user.api_key
-        ENDPOINT = request.build_absolute_uri(get_endpoint())
         from ..rest.rester import CarrierTransportRester
-        with CarrierTransportRester(API_KEY, endpoint=ENDPOINT) as mpr:
+        with CarrierTransportRester(user.api_key, endpoint=get_endpoint(request)) as mpr:
             try:
                 ctx['provenance'] = mpr.get_provenance()
                 authors = ctx['provenance'].pop('authors').split(', ')

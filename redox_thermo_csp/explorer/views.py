@@ -32,10 +32,8 @@ def isographs(request):
     if request.user.is_authenticated():
         user = RegisteredUser.objects.get(username=request.user.username)
         if user.groups.filter(name='redox_thermo_csp').exists():
-            API_KEY = user.api_key
-            ENDPOINT = request.build_absolute_uri(get_endpoint())
             from ..rest.rester import RedoxThermoCspRester
-            with RedoxThermoCspRester(API_KEY, endpoint=ENDPOINT) as mpr:
+            with RedoxThermoCspRester(user.api_key, endpoint=get_endpoint(request)) as mpr:
                 try:
                     prov = mpr.get_provenance()
                     ctx['title'] = prov.pop('title')
@@ -88,10 +86,8 @@ def tolerance_factors(request):
     ctx = RequestContext(request)
     if request.user.is_authenticated():
         user = RegisteredUser.objects.get(username=request.user.username)
-        API_KEY = user.api_key
-        ENDPOINT = request.build_absolute_uri(get_endpoint())
         from ..rest.rester import RedoxThermoCspRester
-        with RedoxThermoCspRester(API_KEY, endpoint=ENDPOINT) as mpr:
+        with RedoxThermoCspRester(user.api_key, endpoint=get_endpoint(request)) as mpr:
             try:
                 ionic_radii = render_dataframe(mpr.get_ionic_radii(), webapp=True)
             except Exception as ex:

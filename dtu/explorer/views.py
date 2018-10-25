@@ -12,10 +12,8 @@ def index(request):
     if request.user.is_authenticated():
         from webtzite.models import RegisteredUser
         user = RegisteredUser.objects.get(username=request.user.username)
-        API_KEY = user.api_key
-        ENDPOINT = request.build_absolute_uri(get_endpoint())
         from ..rest.rester import DtuRester
-        with DtuRester(API_KEY, endpoint=ENDPOINT) as mpr:
+        with DtuRester(user.api_key, endpoint=get_endpoint(request)) as mpr:
             try:
                 prov = mpr.get_provenance()
                 ctx['title'] = prov.pop('title')

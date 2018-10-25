@@ -16,10 +16,8 @@ from monty.json import jsanitize
 def index(request):
     ctx = RequestContext(request)
     if request.user.is_authenticated():
-        API_KEY = request.user.api_key
-        ENDPOINT = request.build_absolute_uri(get_endpoint())
         from ..rest.rester import DiluteSoluteDiffusionRester
-        with DiluteSoluteDiffusionRester(API_KEY, endpoint=ENDPOINT) as mpr:
+        with DiluteSoluteDiffusionRester(user.api_key, endpoint=get_endpoint(request)) as mpr:
             try:
                 prov = mpr.get_provenance()
                 ctx['title'] = prov.pop('title')
