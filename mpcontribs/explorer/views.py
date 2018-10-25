@@ -16,9 +16,7 @@ def index(request):
     ctx['fields'] = fields
     if request.user.is_authenticated():
         user = RegisteredUser.objects.get(username=request.user.username)
-        API_KEY = user.api_key
-        ENDPOINT = request.build_absolute_uri(get_endpoint())
-        with MPContribsRester(API_KEY, endpoint=ENDPOINT) as mpr:
+        with MPContribsRester(user.api_key, endpoint=get_endpoint(request)) as mpr:
 
             if request.method == 'GET':
                 options = dict((field, set()) for field in fields)
@@ -73,9 +71,7 @@ def contribution(request, collection, cid):
     ctx = RequestContext(request)
     if request.user.is_authenticated():
         user = RegisteredUser.objects.get(username=request.user.username)
-        API_KEY = user.api_key
-        ENDPOINT = request.build_absolute_uri(get_endpoint())
-        with MPContribsRester(API_KEY, endpoint=ENDPOINT) as mpr:
+        with MPContribsRester(user.api_key, endpoint=get_endpoint(request)) as mpr:
             try:
                 contrib = mpr.query_contributions(
                     criteria={'_id': cid}, projection={'build': 1}
@@ -104,9 +100,7 @@ def contribution(request, collection, cid):
 def cif(request, cid, structure_name):
     if request.user.is_authenticated():
         user = RegisteredUser.objects.get(username=request.user.username)
-        API_KEY = user.api_key
-        ENDPOINT = request.build_absolute_uri(get_endpoint())
-        with MPContribsRester(API_KEY, endpoint=ENDPOINT) as mpr:
+        with MPContribsRester(user.api_key, endpoint=get_endpoint(request)) as mpr:
             cif = mpr.get_cif(cid, structure_name)
             if cif:
                 return HttpResponse(cif, content_type='text/plain')
@@ -115,9 +109,7 @@ def cif(request, cid, structure_name):
 def download_json(request, collection, cid):
     if request.user.is_authenticated():
         user = RegisteredUser.objects.get(username=request.user.username)
-        API_KEY = user.api_key
-        ENDPOINT = request.build_absolute_uri(get_endpoint())
-        with MPContribsRester(API_KEY, endpoint=ENDPOINT) as mpr:
+        with MPContribsRester(user.api_key, endpoint=get_endpoint(request)) as mpr:
             contrib = mpr.find_contribution(cid, as_doc=True)
             if contrib:
                 json_str = json.dumps(contrib)
