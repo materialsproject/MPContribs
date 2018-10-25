@@ -3,7 +3,7 @@ MAINTAINER Patrick Huck <phuck@lbl.gov>
 
 RUN apk add --no-cache build-base npm git linux-headers \
       python2 py2-pip py2-numpy py2-scipy py2-psutil py2-libxml2 py2-lxml \
-      freetype-dev libpng-dev apache2-dev libffi-dev libxml2-dev
+      freetype-dev libpng-dev apache2-dev libffi-dev libxml2-dev bash vim
 RUN npm install npm@latest -g && npm install -g git+https://github.com/tschaume/apidoc.git#csrf bower
 
 WORKDIR /app
@@ -14,5 +14,4 @@ RUN git clone https://github.com/materialsproject/MPContribs.git . && cp db.sqli
       cd /app && pip install -e . && MPCONTRIBS_DEBUG="True" python manage.py migrate
 
 RUN cd / && wget https://raw.githubusercontent.com/vishnubob/wait-for-it/master/wait-for-it.sh && chmod +x /wait-for-it.sh
-RUN apk add --no-cache bash
 CMD ["mpcontribs", "--debug"]
