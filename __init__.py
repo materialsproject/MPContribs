@@ -6,6 +6,12 @@ from django.core.exceptions import PermissionDenied
 from django.http import HttpResponse, HttpResponseBadRequest,\
     HttpResponseForbidden
 
+# https://stackoverflow.com/a/42674935
+def in_docker():
+    """ Returns: True if running in a Docker container, else False """
+    with open('/proc/1/cgroup', 'rt') as ifh:
+        return 'docker' in ifh.read()
+
 class MongoJSONEncoder(DjangoJSONEncoder):
     def default(self, obj):
         if isinstance(obj, bson.objectid.ObjectId):

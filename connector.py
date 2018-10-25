@@ -138,9 +138,11 @@ class ConnectorBase(six.with_metaclass(ABCMeta, object)):
                 from home.models import DBConfig
             except ImportError:
                 from models import DBConfig
+            from webtzite import in_docker
+            host = 'docker.for.mac.localhost' if in_docker() else '0.0.0.0'
             dbconf = DBConfig(
                 release=self.release, db_type='mpcontribs_read',
-                config="host: 0.0.0.0\ndb: mpcontribs\nport: 27017"
+                config="host: {}\ndb: mpcontribs\nport: 27017".format(host)
             )
             dbconf.save()
             self.default_db = self.get_database('mpcontribs_read')
