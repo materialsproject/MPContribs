@@ -16,7 +16,8 @@ COPY --from=intermediate /app /app
 COPY --from=intermediate /pymatpro /pymatpro
 
 RUN apk add --no-cache build-base python3 py3-pip py-numpy-dev py3-numpy py3-scipy \
-      freetype-dev libpng-dev libffi-dev libxml2-dev py3-cffi py3-pynacl openssl-dev npm
+      freetype-dev libpng-dev libffi-dev libxml2-dev py3-cffi py3-pynacl openssl-dev npm bash vim
+RUN wget https://raw.githubusercontent.com/vishnubob/wait-for-it/master/wait-for-it.sh && chmod +x /wait-for-it.sh
 
 WORKDIR /app
 RUN pip3 install spglib
@@ -31,7 +32,6 @@ RUN grunt compile && python3 manage.py makemigrations && python3 manage.py migra
     echo -e "\nALLOWED_HOSTS.extend(['docker.for.mac.localhost', 'docker.for.mac.host.internal'])" >> /app/materials_django/settings.py && \
     python3 manage.py load_db_config configs/*_db_*.yaml && mkdir -p /var/www && \
     python3 manage.py collectstatic --noinput && python3 manage.py cleanupcas
-RUN cd / && wget https://raw.githubusercontent.com/vishnubob/wait-for-it/master/wait-for-it.sh && chmod +x /wait-for-it.sh
-RUN apk add --no-cache bash
+
 ENTRYPOINT ["python3"]
 CMD ["manage.py", "runserver", "0.0.0.0:8000"]

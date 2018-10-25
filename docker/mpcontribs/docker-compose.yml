@@ -7,11 +7,28 @@ services:
     depends_on:
       - mpdev
     entrypoint: /bin/sh
-    command: "-c 'cd /app && \
+    command: "-c 'cd /app/webtzite && git checkout master && git pull && bower install --allow-root && \
+              cd /app/mpcontribs/users && git checkout master && git pull && cd /app && \
               sed -i 's@https://materialsproject.org/cas/@http://docker.for.mac.localhost:8001/cas/@' test_site/settings.py && \
-              git pull && /wait-for-it.sh mpdev:8000 --timeout=15 --strict -- mpcontribs --debug'"
+              git pull && python manage.py collectstatic --noinput && \
+              /wait-for-it.sh mpdev:8000 --timeout=15 --strict -- mpcontribs --debug'"
     ports:
       - 127.0.0.2:5001:5000
+  mongo:
+    image: mongo
+    restart: always
+    command: --noauth
+  mongo-express:
+    image: mongo-express
+    restart: always
+    ports:
+      - 8081:8081
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: root
+      ME_CONFIG_MONGODB_ADMINPASSWORD: example
+  #jupyter:
+  #  image: jupyter/base-notebook
+  #  command: /usr/local/bin/start-singleuser.sh
   #web:
   #  image: mpcontribs-nginx
   #  ports:
