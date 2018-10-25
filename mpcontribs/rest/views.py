@@ -33,20 +33,20 @@ ConnectorBase.register(Connector)
 class CustomTemplate(string.Template):
     delimiter = '$$'
 
-def get_endpoint():
+def get_endpoint(request):
     from django.core.urlresolvers import reverse
-    return reverse('mpcontribs_rest_index')[:-1]
+    url = reverse('mpcontribs_rest_index')[:-1]
+    return request.build_absolute_uri(url)
 
 def index(request):
     jpy_user = os.environ.get('JPY_USER')
     if jpy_user:
-        endpoint = request.build_absolute_uri(get_endpoint())
         module_dir = os.path.dirname(__file__)
         cwd = os.getcwd()
         os.chdir(module_dir)
         with open('apidoc_template.json', 'r') as f:
              template = CustomTemplate(f.read())
-             text = template.substitute({'URL': endpoint})
+             text = template.substitute({'URL': get_endpoint(request)})
              with open('apidoc.json', 'w') as f2:
                  f2.write(text)
         call(['apidoc', '-f "views.py"', '-f "_apidoc.py"', '--output', 'static'])
@@ -157,9 +157,8 @@ def build_contribution(request, db_type=None, mdb=None):
         cid = ObjectId(request.POST['cid'])
         flag = request.POST.get('flag')
         if flag is None:
-            endpoint = request.build_absolute_uri(get_endpoint())
             response = mdb.contrib_build_ad.build(
-                cid, api_key=request.user.api_key, endpoint=endpoint
+                cid, api_key=request.user.api_key, endpoint=get_endpoint(request)
             )
         else:
             try:
@@ -390,8 +389,7 @@ def datasets(request, identifier, db_type=None, mdb=None):
     for mod_path in get_users_modules():
         if os.path.exists(os.path.join(mod_path, 'rest', 'rester.py')):
             UserRester = get_user_rester(mod_path)
-            endpoint = request.build_absolute_uri(get_endpoint())
-            r = UserRester(request.user.api_key, endpoint=endpoint)
+            r = UserRester(request.user.api_key, endpoint=get_endpoint(request))
             if r.released and r.query is not None:
                 criteria = {'mp_cat_id': identifier}
                 criteria.update(dict(

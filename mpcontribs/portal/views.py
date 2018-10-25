@@ -27,8 +27,7 @@ def index(request):
                 idx = 1
                 UserRester = get_user_rester(mod_path)
                 if UserRester is not None:
-                    endpoint = request.build_absolute_uri(get_endpoint())
-                    r = UserRester(user.api_key, endpoint=endpoint)
+                    r = UserRester(user.api_key, endpoint=get_endpoint(request))
                     docs = r.query_contributions(
                         limit=1, projection={'content.title': 1, 'content.authors': 1}
                     )
@@ -48,7 +47,7 @@ def index(request):
                     else:
                         idx = 1 # not released
                         entry['title'] = entry['project']
-                if not idx or (idx and 'jupyterhub' in endpoint):
+                if not idx or (idx and 'jupyterhub' in get_endpoint(request)):
                     ctx['a_tags'][idx].append(entry)
     else:
         #ctx.update({'alert': 'Please log in!'})
