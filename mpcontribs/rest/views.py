@@ -454,8 +454,9 @@ def get_card(request, cid, db_type=None, mdb=None):
         options.add_argument("no-sandbox")
         options.add_argument('--disable-dev-shm-usage')
         options.set_headless()
+        host = 'hub' if in_docker() else '127.0.0.1'
         browser = webdriver.Remote(
-            command_executor="http://127.0.0.1:4444/wd/hub",
+            command_executor="http://{}:4444/wd/hub".format(host),
             desired_capabilities=DesiredCapabilities.CHROME,
             options=options
         )
