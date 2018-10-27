@@ -7,7 +7,7 @@ RUN mkdir /root/.ssh/ && chmod 0700 /root/.ssh && \
       touch /root/.ssh/known_hosts && \
       ssh-keyscan github.com >> /root/.ssh/known_hosts && \
       chmod 600 /root/.ssh/id_rsa
-RUN git clone git@github.com:materialsproject/materials_django.git /app
+RUN git clone git@github.com:materialsproject/materials_django.git /app && cd /app && git checkout -b patrick origin/patrick
 RUN git clone git@github.com:materialsproject/pymatpro.git /pymatpro
 
 FROM amancevice/pandas:0.23.4-python3-alpine
@@ -29,9 +29,9 @@ RUN cd /usr/bin && ln -s /app/node_modules/grunt-cli/bin/grunt
 RUN grunt compile && python3 manage.py makemigrations && python3 manage.py migrate && \
     python3 manage.py init_sandboxes configs/sandboxes.yaml && \
     sed -i 's@localhost@tunnels@g' configs/*_db_*.yaml && \
-    echo -e "\nALLOWED_HOSTS.extend(['docker.for.mac.localhost', 'docker.for.mac.host.internal'])" >> /app/materials_django/settings.py && \
     python3 manage.py load_db_config configs/*_db_*.yaml && mkdir -p /var/www && \
-    python3 manage.py collectstatic --noinput && python3 manage.py cleanupcas
+    python3 manage.py collectstatic --noinput && python3 manage.py cleanupcas && \
+    python3 manage.py register_user phuck@lbl.gov
 
 ENTRYPOINT ["python3"]
 CMD ["manage.py", "runserver", "0.0.0.0:8000"]
