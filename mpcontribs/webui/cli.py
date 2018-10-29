@@ -61,7 +61,7 @@ def cli():
     application = DispatcherMiddleware(app, {PROXY_URL_PREFIX + '/test_site': django_app})
     application = SharedDataMiddleware(application, STATIC_ROOT_URLS)
 
-    run_simple('0.0.0.0', 5000, application, use_reloader=args.debug,
+    run_simple('0.0.0.0', 5000, application, use_reloader=args.debug, ssl_context='adhoc',
                use_debugger=args.debug, use_evalex=args.debug, threaded=True)
 
 if __name__ == '__main__':
