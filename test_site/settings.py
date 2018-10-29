@@ -151,7 +151,7 @@ if not DEBUG:
             'file': {
                 'level': 'DEBUG',
                 'class': 'logging.FileHandler',
-                'filename': '/var/www/python/MPContribs/test_site.log',
+                'filename': os.path.join(ROOT_PROJECT_DIR, 'test_site.log'),
             },
         },
         'loggers': {
