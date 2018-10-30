@@ -7,13 +7,13 @@ services:
     environment:
       - MPCONTRIBS_DEBUG="True"
     depends_on:
-      - mpdev
+      - mp
     entrypoint: /bin/sh
     command: "-c 'cd /app/webtzite && git checkout master && git pull && bower install --allow-root && \
               cd /app/mpcontribs/users && git checkout master && git pull && cd /app && \
               sed -i 's@https://materialsproject.org/cas/@http://docker.for.mac.localhost:8001/cas/@' test_site/settings.py && \
               git pull && python manage.py collectstatic --noinput && \
-              /wait-for-it.sh mpdev:8000 --timeout=30 --strict -- mpcontribs --debug'"
+              /wait-for-it.sh mp:8000 --timeout=30 --strict -- mpcontribs --debug'"
     ports:
       - 127.0.0.2:5001:5000
   #web:
@@ -59,8 +59,8 @@ services:
               -L*:57003:mongodb03.nersc.gov:27017 \
               -L*:57004:mongodb04.nersc.gov:27017 \
               huck@matgen2.lbl.gov"
-  mpdev:
-    image: mpdev-app
+  mp:
+    image: mp-app
     entrypoint: /bin/sh
     tty: true
     ports:
