@@ -36,7 +36,7 @@ class CustomTemplate(string.Template):
 def get_endpoint(request):
     from django.core.urlresolvers import reverse
     url = reverse('mpcontribs_rest_index')[:-1]
-    if in_docker():
+    if os.environ.get('JPY_USER') is None and in_docker():
         return 'http://app:5000' + url
     return request.build_absolute_uri(url)
 
