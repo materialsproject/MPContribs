@@ -5,7 +5,7 @@ import pandas as pd
 from mpcontribs.config import mp_level01_titles, mp_id_pattern, object_id_pattern
 from mpcontribs.io.core.utils import nest_dict
 from recdict import RecursiveDict
-from utils import disable_ipython_scrollbar, clean_value
+from utils import clean_value
 from IPython.display import display_html, display, HTML, Image
 
 class HierarchicalData(RecursiveDict):
@@ -285,7 +285,6 @@ class Table(pd.DataFrame):
         return super(Table, cls).from_dict(RecursiveDict(rdct), **kwargs)
 
     def _ipython_display_(self):
-        disable_ipython_scrollbar()
         display(HTML(render_dataframe(self)))
 
 class Tables(RecursiveDict):
@@ -327,7 +326,6 @@ class TabularData(RecursiveDict):
         return 'mp-ids: {}'.format(' '.join(self.keys()))
 
     def _ipython_display_(self):
-        disable_ipython_scrollbar()
         for identifier, tables in self.iteritems():
             if isinstance(tables, dict) and tables:
                 display_html('<h2>Tabular Data for {}</h2>'.format(identifier), raw=True)
@@ -413,7 +411,6 @@ class Plot(object):
         self.table = table
 
     def _ipython_display_(self):
-        disable_ipython_scrollbar()
         display(HTML(render_plot(self)))
 
 class Plots(RecursiveDict):
@@ -429,7 +426,6 @@ class Plots(RecursiveDict):
         return 'plots: {}'.format(' '.join(self.keys()))
 
     def _ipython_display_(self):
-        disable_ipython_scrollbar()
         for name, plot in self.iteritems():
             if plot:
                 display_html('<h3>{}</h3>'.format(name), raw=True)
@@ -450,7 +446,6 @@ class GraphicalData(RecursiveDict):
         return 'mp-ids: {}'.format(' '.join(self.keys()))
 
     def _ipython_display_(self):
-        disable_ipython_scrollbar()
         for identifier, plots in self.iteritems():
             if identifier != mp_level01_titles[0] and plots:
                 display_html('<h2>Interactive Plots for {}</h2>'.format(identifier), raw=True)

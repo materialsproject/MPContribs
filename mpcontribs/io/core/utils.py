@@ -5,18 +5,6 @@ from StringIO import StringIO
 from decimal import Decimal
 from mpcontribs.config import mp_level01_titles, mp_id_pattern, csv_comment_char
 
-def flatten_dict(dd, separator='.', prefix=''):
-    """http://stackoverflow.com/a/19647596"""
-    return { prefix + separator + k if prefix else k : v
-            for kk, vv in dd.items()
-            for k, v in flatten_dict(vv, separator, kk).items()
-           } if isinstance(dd, dict) else { prefix : dd }
-
-def unflatten_dict(d):
-    for k in d:
-        value, keys = d.pop(k), k.split('.')
-        d.rec_update(nest_dict({keys[-1]: value}, keys[:-1]))
-
 def get_short_object_id(cid):
     length = 7
     cid_short = str(cid)[-length:]
@@ -124,13 +112,6 @@ def read_csv(body, is_data_section=True, **kwargs):
         converters=converters, encoding='utf8',
         **options
     ).dropna(how='all'))
-
-def disable_ipython_scrollbar():
-    pass
-    #from IPython.display import display, Javascript
-    #display(Javascript("""
-    #    require("notebook/js/outputarea").OutputArea.prototype._should_scroll=function(){return false;};
-    #"""))
 
 def nested_dict_iter(nested, scope=''):
     for key, value in nested.iteritems():
