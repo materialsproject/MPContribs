@@ -6,6 +6,13 @@ from decimal import Decimal
 from mpcontribs.config import mp_level01_titles, mp_id_pattern, csv_comment_char
 
 def get_short_object_id(cid):
+    """return shortened contribution ID (ObjectId) for `cid`.
+
+    >>> get_short_object_id('5a8638add4f144413451852a')
+    '451852a'
+    >>> get_short_object_id('5a8638add4f1400000000000')
+    '5a8638a'
+    """
     length = 7
     cid_short = str(cid)[-length:]
     if cid_short == '0'*length:
@@ -13,7 +20,15 @@ def get_short_object_id(cid):
     return cid_short
 
 def make_pair(key, value, sep=':'):
-    """make a key-value pair"""
+    """return string for `key`-`value` pair with separator `sep`.
+
+    >>> make_pair('Phase', 'Hollandite')
+    u'Phase: Hollandite'
+    >>> print make_pair('ΔH', '0.066 eV/mol', sep=';')
+    ΔH; 0.066 eV/mol
+    >>> make_pair('k', 2.3)
+    u'k: 2.3'
+    """
     if not isinstance(value, six.string_types):
         value = unicode(value)
     return '{} '.format(sep).join([key, value])
