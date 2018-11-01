@@ -1,14 +1,12 @@
 # -*- coding: utf-8 -*-
 """module defines utility methods for MPContribs core.io library"""
 from __future__ import unicode_literals
-import warnings
-import pandas
-import six
 import collections
 import string
 from StringIO import StringIO
-from decimal import Decimal
-from mpcontribs.config import mp_level01_titles
+from decimal import Decimal, DecimalException
+import six
+import pandas
 from mpcontribs.config import mp_id_pattern
 from mpcontribs.config import csv_comment_char
 
@@ -64,10 +62,11 @@ def get_composition_from_string(comp_str):
 def normalize_root_level(title):
     """convert root-level title into conventional identifier; non-identifiers
     become part of shared (meta-)data. Returns: (is_general, title)"""
+    from pymatgen.core.composition import CompositionError
     try:
         composition = get_composition_from_string(title)
         return False, composition
-    except Exception:
+    except (CompositionError, KeyError, TypeError):
         if mp_id_pattern.match(title.lower()):
             return False, title.lower()
         return True, title
@@ -80,7 +79,7 @@ def clean_value(value, unit='', convert_to_percent=False, max_dgts=3):
         value = Decimal(value)
         dgts = len(value.as_tuple().digits)
         dgts = max_dgts if dgts > max_dgts else dgts
-    except:
+    except DecimalException:
         return value
     if convert_to_percent:
         value = Decimal(value) * Decimal('100')
@@ -96,11 +95,8 @@ def strip_converter(text):
         text = text.strip()
         if not text:
             return ''
-        try:
-            val = clean_value(text, max_dgts=6)
-            return str(Decimal(val))
-        except:
-            return text
+        val = clean_value(text, max_dgts=6)
+        return str(Decimal(val))
     except AttributeError:
         return text
 
@@ -138,10 +134,11 @@ def read_csv(body, is_data_section=True, **kwargs):
     ).dropna(how='all'))
 
 def nested_dict_iter(nested, scope=''):
+    """iterate a nested dict"""
     for key, value in nested.iteritems():
         if isinstance(value, collections.Mapping):
-            s = '.'.join([scope, key]) if scope else key
-            for inner_key, inner_value in nested_dict_iter(value, scope=s):
-                yield '.'.join([s, inner_key]), inner_value
+            inner_scope = '.'.join([scope, key]) if scope else key
+            for inner_key, inner_value in nested_dict_iter(value, scope=inner_scope):
+                yield '.'.join([inner_scope, inner_key]), inner_value
         else:
             yield key, value
