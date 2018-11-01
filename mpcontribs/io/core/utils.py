@@ -1,9 +1,16 @@
 # -*- coding: utf-8 -*-
+"""module defines utility methods for MPContribs core.io library"""
 from __future__ import unicode_literals
-import warnings, pandas, six, collections, string
+import warnings
+import pandas
+import six
+import collections
+import string
 from StringIO import StringIO
 from decimal import Decimal
-from mpcontribs.config import mp_level01_titles, mp_id_pattern, csv_comment_char
+from mpcontribs.config import mp_level01_titles
+from mpcontribs.config import mp_id_pattern
+from mpcontribs.config import csv_comment_char
 
 def get_short_object_id(cid):
     """return shortened contribution ID (ObjectId) for `cid`.
@@ -41,13 +48,14 @@ def nest_dict(dct, keys):
         nested_dict = RecursiveDict({key: nested_dict})
     return nested_dict
 
-def get_composition_from_string(s):
+def get_composition_from_string(comp_str):
+    """validate and return composition from string `comp_str`."""
     from pymatgen import Composition, Element
-    comp = Composition(s)
+    comp = Composition(comp_str)
     for element in comp.elements:
         Element(element)
-    c = comp.get_integer_formula_and_factor()[0]
-    comp = Composition(c)
+    formula = comp.get_integer_formula_and_factor()[0]
+    comp = Composition(formula)
     return ''.join([
         '{}{}'.format(key, int(value) if value > 1 else '')
         for key, value in comp.as_dict().items()
@@ -59,13 +67,13 @@ def normalize_root_level(title):
     try:
         composition = get_composition_from_string(title)
         return False, composition
-    except:
+    except Exception:
         if mp_id_pattern.match(title.lower()):
             return False, title.lower()
-        else:
-            return True, title
+        return True, title
 
 def clean_value(value, unit='', convert_to_percent=False, max_dgts=3):
+    """return clean value with maximum digits and optional unit and percent"""
     dgts = max_dgts
     value = str(value) if not isinstance(value, six.string_types) else value
     try:
@@ -77,10 +85,10 @@ def clean_value(value, unit='', convert_to_percent=False, max_dgts=3):
     if convert_to_percent:
         value = Decimal(value) * Decimal('100')
         unit = '%'
-    v = '{{:.{}g}}'.format(dgts).format(value)
+    val = '{{:.{}g}}'.format(dgts).format(value)
     if unit:
-        v += ' {}'.format(unit)
-    return v
+        val += ' {}'.format(unit)
+    return val
 
 def strip_converter(text):
     """http://stackoverflow.com/questions/13385860"""
@@ -99,7 +107,8 @@ def strip_converter(text):
 def read_csv(body, is_data_section=True, **kwargs):
     """run pandas.read_csv on (sub)section body"""
     body = body.strip()
-    if not body: return None
+    if not body:
+        return None
     from mpcontribs.io.core.components import Table
     if is_data_section:
         cur_line = 1
@@ -117,7 +126,7 @@ def read_csv(body, is_data_section=True, **kwargs):
             options.update({'index_col': [0, 1]})
         ncols = len(header)
     else:
-        options = { 'sep': ':', 'header': None, 'index_col': 0 }
+        options = {'sep': ':', 'header': None, 'index_col': 0}
         ncols = 2
     options.update(**kwargs)
     converters = dict((col, strip_converter) for col in range(ncols))
