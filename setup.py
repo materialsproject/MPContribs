@@ -26,7 +26,8 @@ setup(
         'ipywidgets', 'celery', 'tqdm', 'beautifulsoup4', 'whichcraft', 'pymatgen',
         'unidecode', 'psutil', 'nbformat', 'xlrd', 'django-nopassword', 'mod_wsgi',
         'django-require', 'pympler', 'django_cas_ng', 'django-extensions', 'selenium',
-        'dash', 'dash-html-components', 'dash-core-components', 'dash-table-experiments'
+        'dash', 'dash-html-components', 'dash-core-components', 'dash-table-experiments',
+        'ase', 'igor'
     ],
     license = 'MIT',
     keywords = ['materials', 'contribution', 'framework', 'data', 'interactive', 'jupyter'],
