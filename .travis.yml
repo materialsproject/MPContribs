@@ -6,26 +6,11 @@ python:
 git:
   submodules: false
 before_install:
+  - sudo apt-get install -y apache2-dev
   - echo -e "machine github.com\n  login $CI_USER_TOKEN" >> ~/.netrc
   - git submodule update --init --recursive
-    #  - wget http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh
-    #  - chmod +x miniconda.sh
-    #  - ./miniconda.sh -b -p /home/travis/miniconda
-    #  - export PATH=/home/travis/miniconda/bin:$PATH
-    #  - conda update --yes conda
-    #    # The next couple lines fix a crash with multiprocessing on Travis and are
-    #    # not specific to using Miniconda
-    #  - sudo rm -rf /dev/shm
-    #  - sudo ln -s /run/shm /dev/shm
 install:
-  #- conda install --yes python=$TRAVIS_PYTHON_VERSION numpy scipy matplotlib nose pandas
-  #  # Coverage packages are on my binstar channel
-  #- conda install --yes -c dan_blanchard python-coveralls nose-cov
-  #- pip install -U pip
-  #- pip install entrypoints
-  #- pip install wheel setuptools python-coveralls
-  #- pip install pymatgen
-  - pip install --upgrade pip setuptools wheel
+  - pip install --upgrade pip setuptools wheel python-coveralls
   - pip install --only-binary=numpy,scipy,pandas,Ipython,matplotlib numpy scipy pandas ipython matplotlib
   - pip install .
 script:
