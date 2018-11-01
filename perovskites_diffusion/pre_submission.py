@@ -1,7 +1,7 @@
 import tarfile
 from pandas import read_excel
 from six import string_types
-from mpcontribs.io.core.mpfile import MPFile
+from mpcontribs.io.archieml.mpfile import MPFile
 from mpcontribs.io.core.recdict import RecursiveDict
 from mpcontribs.config import mp_level01_titles
 from mpcontribs.users.perovskites_diffusion.rest.rester import PerovskitesDiffusionRester
