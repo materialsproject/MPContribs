@@ -735,7 +735,7 @@ def entr_con_mixed(temp, p_o2_l, dh_1, dh_2, act):
     delta_1 = delta_fun(stho, temp, p_o2_l, dh_1, (act / 2))
     delta_2 = delta_fun(stho, temp, p_o2_l, dh_2, ((1 - act) / 2))
 
-    if delta_2 > 0.:
+    if delta_1 > 0.:
         entr_con_1 = (1 / delta_max_1) * (a / 2) * R * (pd.np.log(delta_max_1 - delta_1) - pd.np.log(delta_1)) * (
         delta_1 / (delta_1 + delta_2))
     else:
