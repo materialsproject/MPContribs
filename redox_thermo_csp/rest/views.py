@@ -202,14 +202,14 @@ def index(request, cid, db_type=None, mdb=None):
                             res_interp.append(resiso[i])
                 else:
                     res_fit, res_interp = None, None # don't plot any experimental data
+
                 try:
                     for xv in x_val[::4]: # use less data points for theoretical graphs to improve speed
                         args_theo = (iso, xv, pars, t_d_perov, t_d_brownm, dh_min, dh_max, act)
                         if k == "isotherm": # for isotherms, pressure is variable and temperature is constant
                             args_theo = (xv, iso, pars, t_d_perov, t_d_brownm, dh_min, dh_max, act)
                         elif k == "ellingham":
-                            dh = d_h_num_dev_calc(delta=delt, dh_1=dh_min, dh_2=dh_max,
-                                temp=xv, act=act)
+                            dh = d_h_num_dev_calc(delta=delt, dh_1=dh_min, dh_2=dh_max, temp=xv, act=act)
                             ds = d_s_fundamental(delta=delt, dh_1=dh_min, dh_2=dh_max, temp=xv,
                                 act=act, t_d_perov=t_d_perov, t_d_brownm=t_d_brownm)
                             solutioniso_theo = (dh - ds*xv)/1000
@@ -234,7 +234,7 @@ def index(request, cid, db_type=None, mdb=None):
                             solutioniso_theo = d_s_fundamental(delta=xv, dh_1=dh_min, dh_2=dh_max, temp=iso,
                                 act=act, t_d_perov=t_d_perov, t_d_brownm=t_d_brownm)
                             resiso_theo.append(solutioniso_theo)
-                except ValueError: # if brentq function finds no zero point due to plot out of range
+                except: # if brentq function finds no zero point due to plot out of range
                     resiso_theo.append(None)
 
                 x = list(pd.np.exp(x_val)) if k == 'isotherm' else list(x_val)
@@ -282,7 +282,6 @@ def index(request, cid, db_type=None, mdb=None):
                     name_theo = "theo"
 
                 if k != 'ellingham':
-
                     response[k] = [{'x': x_exp, 'y': res_fit, 'name': name_exp_fit, 'line': { 'color': 'rgb(5,103,166)', 'width': 2.5 }},
                     {'x': x_exp, 'y': res_interp, 'name': name_exp_interp, 'line': { 'color': 'rgb(5,103,166)', 'width': 2.5, 'dash': 'dot' }},
                     {'x': x_theo, 'y': resiso_theo, 'name': name_theo, 'line': { 'color': 'rgb(217,64,41)', 'width': 2.5}}, [y_min,y_max], [compstr_disp, compstr_exp, elast, updt]]
@@ -736,16 +735,16 @@ def entr_con_mixed(temp, p_o2_l, dh_1, dh_2, act):
     delta_1 = delta_fun(stho, temp, p_o2_l, dh_1, (act / 2))
     delta_2 = delta_fun(stho, temp, p_o2_l, dh_2, ((1 - act) / 2))
 
-    entr_con_1 = (1 / delta_max_1) * (a / 2) * R * (pd.np.log(delta_max_1 - delta_1) - pd.np.log(delta_1)) * (
-    delta_1 / (delta_1 + delta_2))
-    entr_con_2 = (1 / delta_max_2) * (a / 2) * R * (pd.np.log(delta_max_2 - delta_2) - pd.np.log(delta_2)) * (
-    delta_2 / (delta_1 + delta_2))
-
-    # avoid errors in case of delta = 0 (undefined logarithm)
-    if str(entr_con_1) == "nan":
-        entr_con_1 = 0
-    if str(entr_con_2) == "nan":
-        entr_con_2 = 0
+    if delta_2 > 0.:
+        entr_con_1 = (1 / delta_max_1) * (a / 2) * R * (pd.np.log(delta_max_1 - delta_1) - pd.np.log(delta_1)) * (
+        delta_1 / (delta_1 + delta_2))
+    else:
+        entr_con_1 = 0.
+    if delta_2 > 0.:
+        entr_con_2 = (1 / delta_max_2) * (a / 2) * R * (pd.np.log(delta_max_2 - delta_2) - pd.np.log(delta_2)) * (
+        delta_2 / (delta_1 + delta_2))
+    else:
+        entr_con_2 = 0.
 
     return entr_con_1 + entr_con_2
 
