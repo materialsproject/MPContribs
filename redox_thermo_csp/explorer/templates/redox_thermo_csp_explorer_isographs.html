@@ -509,7 +509,13 @@ requirejs(['main'], function() {
 
             }; 
                         
-            $(".backgrid > tbody > tr:first > td:nth-child(6)").click()
+            // show default material SrFeOx
+            //$(".backgrid > tbody > tr:first > td:nth-child(6)").click()
+            $("[name='spinner']").spin();
+            $('input:text').slider('disable');
+            $('#cid').val('5bb821a79225576aeda99475');
+            var updatekeys = "isobar, isotherm, isoredox, ellingham, enthalpy_dH, entropy_dS"
+            updatekeys.split(",").forEach(function(k) { send_request(k.trim()); });
         });
     });
 });
