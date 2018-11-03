@@ -23,8 +23,8 @@ def index(request):
             dash_app_exists = os.path.exists(os.path.join(mod_path, 'dash_app.py'))
             if os.path.exists(explorer) or dash_app_exists:
                 entry = {'project': os.path.basename(mod_path)}
-                entry['url'] = os.path.join(PROXY_URL_PREFIX, mod_path.split(os.sep)[-1]) if dash_app_exists \
-                        else reverse(get_user_explorer_name(explorer))
+                #entry['url'] = os.path.join(PROXY_URL_PREFIX, mod_path.split(os.sep)[-1]) if dash_app_exists else
+                entry['url'] = reverse(get_user_explorer_name(explorer))
                 idx = 1
                 UserRester = get_user_rester(mod_path)
                 if UserRester is not None:
