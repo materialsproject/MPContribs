@@ -23,4 +23,6 @@ urlpatterns = [
     url(r'^datasets/(?P<identifier>[-\w\d]+)/(?P<db_type>[\w\d]+)$', views.datasets, name='datasets'),
     url(r'^card/(?P<cid>[\w\d]+)$', views.get_card, name='card'),
     url(r'^card/(?P<cid>[\w\d]+)/(?P<db_type>[\w\d]+)$', views.get_card, name='card'),
+    url(r'^groupadd/(?P<token>\w+)$', views.groupadd, name='groupadd'),
+    url(r'^groupadd/(?P<token>\w+)/(?P<db_type>[\w\d]+)$', views.groupadd, name='groupadd'),
 ]

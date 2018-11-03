@@ -85,6 +85,9 @@ class MPContribsRester(MPResterBase):
     def check_contributor(self):
         return self._make_request('/check_contributor')
 
+    def groupadd(self, token):
+        return self._make_request('/groupadd/{}'.format(token))
+
     def submit_contribution(self, filename_or_mpfile, fmt):
         """
         Submit a MPFile containing contribution data to the Materials Project

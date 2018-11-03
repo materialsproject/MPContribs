@@ -626,3 +626,17 @@ def get_card(request, cid, db_type=None, mdb=None):
     ).replace('\n', '')
 
     return {"valid_response": True, "response": card}
+
+@mapi_func(supported_methods=["GET"], requires_api_key=True)
+def groupadd(request, token, db_type=None, mdb=None):
+    coll = mdb.contribs_db.groupadd_tokens
+    doc = coll.find_one({'token': token})
+    if doc is None:
+        return {"valid_response": False, "error": "invalid token: {}".format(token)}
+    group_exists = Group.objects.filter(name=doc['group']).exists()
+    if request.user.is_superuser and not group_exists:
+        g = Group(name=doc['group'])
+        g.save()
+    group = Group.objects.get(name=doc['group'])
+    group.user_set.add(request.user)
+    return {"valid_response": True, 'response': 'user access granted.'}

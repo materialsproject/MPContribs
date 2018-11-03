@@ -6,6 +6,7 @@ from django.template import RequestContext
 from django.core.urlresolvers import reverse
 from mpcontribs.users_modules import *
 from mpcontribs.rest.views import get_endpoint
+from mpcontribs.rest.rester import MPContribsRester
 from test_site.settings import STATIC_URL, PROXY_URL_PREFIX
 
 def index(request):
@@ -53,3 +54,16 @@ def index(request):
         #ctx.update({'alert': 'Please log in!'})
         return redirect('{}?next={}'.format(reverse('cas_ng_login'), reverse('mpcontribs_portal_index')))
     return render_to_response("mpcontribs_portal_index.html", ctx)
+
+def groupadd(request, token):
+    from webtzite.models import RegisteredUser
+    if request.user.is_authenticated():
+        user = RegisteredUser.objects.get(username=request.user.username)
+        r = MPContribsRester(user.api_key, endpoint=get_endpoint(request))
+        r.groupadd(token)
+        return redirect(reverse('mpcontribs_portal_index'))
+    else:
+        return redirect('{}?next={}'.format(
+            reverse('cas_ng_login'),
+            reverse('mpcontribs_portal_groupadd', kwargs={'token': token})
+        ))
