@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+from __future__ import unicode_literals
 import io, re, glob, os
 from setuptools import setup
 
@@ -27,7 +29,8 @@ setup(
         'unidecode', 'psutil', 'nbformat', 'xlrd', 'django-nopassword', 'mod_wsgi',
         'django-require', 'pympler', 'django_cas_ng', 'django-extensions', 'selenium',
         'dash', 'dash-html-components', 'dash-core-components', 'dash-table-experiments',
-        'ase', 'igor', 'xrdtools', 'xrayutilities', 'h5py', 'python-coveralls'
+        'ase', 'igor', 'xrdtools', 'xrayutilities', 'h5py', 'python-coveralls',
+        'coverage==4.0.3', 'pytest-cov>=2.4.0,<2.6'
     ],
     license = 'MIT',
     keywords = ['materials', 'contribution', 'framework', 'data', 'interactive', 'jupyter'],
