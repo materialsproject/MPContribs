@@ -16,3 +16,4 @@ notebooks/profile/custom/custom.js
 access.log
 error.log
 static/*
+test_site.log
