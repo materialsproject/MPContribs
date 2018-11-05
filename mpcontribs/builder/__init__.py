@@ -147,7 +147,7 @@ class MPContributionsBuilder():
         nb['cells'].append(nbf.new_code_cell("mpfile.hdata[identifier]"))
         if mpfile.tdata.get(mp_cat_id):
             nb['cells'].append(nbf.new_markdown_cell("### Tabular Data"))
-            for table_name, table in mpfile.tdata[mp_cat_id].iteritems():
+            for table_name in mpfile.tdata[mp_cat_id].keys():
                 nb['cells'].append(nbf.new_markdown_cell(
                     "#### {}".format(table_name)
                 ))
