@@ -9,8 +9,10 @@ from django.http import HttpResponse, HttpResponseBadRequest,\
 # https://stackoverflow.com/a/42674935
 def in_docker():
     """ Returns: True if running in a Docker container, else False """
-    with open('/proc/1/cgroup', 'rt') as ifh:
-        return 'docker' in ifh.read()
+    if os.path.exists('/proc/1/cgroup'):
+        with open('/proc/1/cgroup', 'rt') as ifh:
+            return 'docker' in ifh.read()
+    return False
 
 class MongoJSONEncoder(DjangoJSONEncoder):
     def default(self, obj):
