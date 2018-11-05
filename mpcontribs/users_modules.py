@@ -46,7 +46,7 @@ def get_user_explorer_config(mod):
 def get_user_installed_apps():
     installed_apps = []
     for mod_path in get_users_modules():
-        mod = os.path.basename(mod_path)
+        #mod = os.path.basename(mod_path)
         for app in ['explorer', 'rest']:
             explorer = os.path.join(mod_path, app, 'apps.py')
             if os.path.exists(explorer):

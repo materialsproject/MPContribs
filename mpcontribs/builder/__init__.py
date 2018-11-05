@@ -16,7 +16,7 @@ def export_notebook(nb, cid, separate_script=False):
     html_exporter = HTMLExporter()
     html_exporter.template_file = 'basic'
     # TODO pop first code cell here
-    (body, resources) = html_exporter.from_notebook_node(nb)
+    body = html_exporter.from_notebook_node(nb)[0]
     body = body.replace("var element = $('#", "var element = document.getElementById('")
     soup = BeautifulSoup(body, 'html.parser')
     soup.div.extract() # remove first code cell (loads mpfile)
@@ -25,7 +25,7 @@ def export_notebook(nb, cid, separate_script=False):
     # make element id's unique by appending cid
     # NOTE every cell has only one tag with id
     div_name = None
-    for idx, div in enumerate(soup.find_all('div', 'cell')[1:]):
+    for div in soup.find_all('div', 'cell')[1:]:
         tag = div.find('h3', id=True)
         if tag is not None:
             tag['id'] = '-'.join([tag['id'], str(cid)])
@@ -156,7 +156,7 @@ class MPContributionsBuilder():
                 ))
         if mpfile.gdata.get(mp_cat_id):
             nb['cells'].append(nbf.new_markdown_cell("### Graphical Data"))
-            for plot_name, plot in mpfile.gdata[mp_cat_id].iteritems():
+            for plot_name in mpfile.gdata[mp_cat_id].keys():
                 nb['cells'].append(nbf.new_markdown_cell(
                     "#### {}".format(plot_name)
                 ))
@@ -166,7 +166,7 @@ class MPContributionsBuilder():
 
         if mpfile.sdata.get(mp_cat_id):
             nb['cells'].append(nbf.new_markdown_cell("### Structural Data"))
-            for structure_name, structure in mpfile.sdata[mp_cat_id].iteritems():
+            for structure_name in mpfile.sdata[mp_cat_id].keys():
                 nb['cells'].append(nbf.new_markdown_cell(
                     "#### {}".format(structure_name)
                 ))

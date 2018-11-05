@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 import bson, six
-from mpcontribs.config import mp_level01_titles, mp_id_pattern
+from mpcontribs.config import mp_id_pattern
 from mpcontribs.io.core.recdict import RecursiveDict
 from mpcontribs.io.core.utils import get_short_object_id
-from datetime import datetime
 
 class ContributionMongoAdapter(object):
     """adapter/interface for user contributions"""

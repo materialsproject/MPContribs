@@ -2,11 +2,11 @@
 from __future__ import unicode_literals
 import uuid, json
 import pandas as pd
-from mpcontribs.config import mp_level01_titles, mp_id_pattern, object_id_pattern
+from mpcontribs.config import mp_level01_titles, mp_id_pattern
 from mpcontribs.io.core.utils import nest_dict
 from recdict import RecursiveDict
 from utils import clean_value
-from IPython.display import display_html, display, HTML, Image
+from IPython.display import display_html, HTML, Image
 
 class HierarchicalData(RecursiveDict):
     """class to hold and display all hierarchical data in MPFile"""
@@ -346,7 +346,7 @@ def render_plot(plot, webapp=False, filename=None):
         )
         for idx, col in enumerate(cols):
             series = plot.table[col]
-            z = [s.tolist() for i, s in series.groupby(level=0)]
+            z = [s.tolist() for _, s in series.groupby(level=0)]
             fig.append_trace(go.Heatmap(z=z, showscale=False), idx/ncols+1, idx%ncols+1)
         fig['layout'].update(layout)
     else:

@@ -7,7 +7,6 @@ from flask import url_for, redirect, make_response, stream_with_context, jsonify
 from mpcontribs.utils import process_mpfile, submit_mpfile
 from mpcontribs.config import default_mpfile_path
 from mpcontribs.users_modules import *
-from mpcontribs import users as mpcontribs_users
 from StringIO import StringIO
 from webtzite import configure_settings
 from whichcraft import which
@@ -212,7 +211,7 @@ def action():
     thebe_str = request.form.get('thebe')
     if thebe_str:
         session['thebe'] = '\n'.join(json.loads(thebe_str))
-    fmt = session['options'][0]
+    #fmt = session['options'][0]
     mpfile = request.files.get('file', StringIO()).read().decode('utf-8-sig')
     if not mpfile:
         mpfile = request.form.get('mpfile')

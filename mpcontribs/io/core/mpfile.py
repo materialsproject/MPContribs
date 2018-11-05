@@ -1,5 +1,5 @@
 from __future__ import unicode_literals, print_function
-import six, codecs, locale, pandas, os
+import six, codecs, pandas, os
 from abc import ABCMeta
 from mpcontribs.config import mp_level01_titles, default_mpfile_path, replacements
 from recdict import RecursiveDict

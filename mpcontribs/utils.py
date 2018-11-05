@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals, print_function
-import os, re, pwd, six, time, json, sys, pkgutil
-from mpcontribs.io.core.recdict import RecursiveDict
-from mpcontribs.io.core.utils import nest_dict, get_short_object_id
+import os, re, pwd, six, json, sys, pkgutil
+from mpcontribs.io.core.utils import get_short_object_id
 from mpcontribs.rest.rester import MPContribsRester
 from mpcontribs.rest.adapter import ContributionMongoAdapter
 from mpcontribs.builder import MPContributionsBuilder
@@ -203,7 +202,7 @@ def process_mpfile(path_or_mpfile, target=None, fmt='archieml', ids=None, projec
                                     pass
                         if idx > 0:
                             axes.intersection_update(local_axes)
-                        yield 'OK.</br>'.format(idx, cid_short)
+                        yield 'OK.</br>'
 
                 else:
                     yield 'wrong CID.</br>'

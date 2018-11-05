@@ -1,5 +1,5 @@
 from __future__ import unicode_literals, print_function
-import six, archieml, warnings, textwrap
+import archieml, warnings, textwrap
 from mpcontribs.config import mp_level01_titles, symprec, replacements
 from mpcontribs.io.core.mpfile import MPFileCore
 from mpcontribs.io.core.recdict import RecursiveDict
