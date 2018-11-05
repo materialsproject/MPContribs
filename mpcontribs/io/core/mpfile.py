@@ -266,6 +266,6 @@ class MPFileCore(six.with_metaclass(ABCMeta, object)):
         """Reads a MPFile from a string containing contribution data."""
         return MPFileCore()
 
-    def get_string(self):
+    def get_string(self, df_head_only=False):
         """Returns a string to be written as a file"""
         return 'empty file'
