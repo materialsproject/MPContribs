@@ -1,5 +1,4 @@
 FROM alpine:3.8 AS intermediate
-MAINTAINER Patrick Huck <phuck@lbl.gov>
 RUN apk add --no-cache git openssh
 ARG SSH_PRIVATE_KEY
 RUN mkdir /root/.ssh/ && chmod 0700 /root/.ssh && \

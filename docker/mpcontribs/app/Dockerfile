@@ -1,5 +1,4 @@
 FROM amancevice/pandas:0.23.4-python2-alpine
-MAINTAINER Patrick Huck <phuck@lbl.gov>
 
 RUN apk add --no-cache build-base npm git linux-headers \
       python2 py2-pip py2-numpy py2-scipy py2-psutil py2-libxml2 py2-lxml \
