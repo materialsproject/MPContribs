@@ -1,3 +1,4 @@
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/33c638ec9a814f4eaf22e5b930fee8e7)](https://app.codacy.com/app/tschaume/MPContribs?utm_source=github.com&utm_medium=referral&utm_content=materialsproject/MPContribs&utm_campaign=Badge_Grade_Settings)
 [![slack badge](https://mpcontribs-slackin.herokuapp.com/badge.svg)](https://mpcontribs-slackin.herokuapp.com/)
 [![Build Status](https://travis-ci.org/materialsproject/MPContribs.svg?branch=master)](https://travis-ci.org/materialsproject/MPContribs)
 [![Coverage Status](https://coveralls.io/repos/materialsproject/MPContribs/badge.svg?branch=master&service=github)](https://coveralls.io/github/materialsproject/MPContribs?branch=master)
