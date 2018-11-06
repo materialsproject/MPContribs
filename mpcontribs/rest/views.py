@@ -7,7 +7,6 @@ from subprocess import call
 from bson.json_util import loads
 from django.core.exceptions import PermissionDenied
 from django.shortcuts import render_to_response
-from django.template import RequestContext
 from django.contrib.auth.models import Group
 from webtzite.connector import ConnectorBase
 from bson.objectid import ObjectId
@@ -164,7 +163,7 @@ def build_contribution(request, db_type=None, mdb=None):
         else:
             try:
                 flag = bool(int(flag))
-            except:
+            except ValueError:
                 if flag in ['True', 'False']:
                     flag = True if flag == 'True' else False
                 else:
@@ -295,7 +294,7 @@ def update_collaborators(request, db_type=None, mdb=None):
         raise PermissionDenied("collaborators update open only to staff right now.")
     collaborators = loads(request.POST['collaborators'])
     cids = loads(request.POST['cids'])
-    mode = request.POST['mode']
+    #mode = request.POST['mode']
     contributor = '{} {} <{}>'.format(
         request.user.first_name, request.user.last_name, request.user.email
     )
@@ -437,10 +436,9 @@ def get_card(request, cid, db_type=None, mdb=None):
             "response": ["<graph-url>"]
         }
     """
-    from mpcontribs.io.core.components import HierarchicalData, GraphicalData, render_plot
-    from mpcontribs.io.core.utils import nested_dict_iter
+    from mpcontribs.io.core.components import HierarchicalData, GraphicalData#, render_plot
+    #from mpcontribs.io.core.utils import nested_dict_iter
     from mpcontribs.io.core.recdict import RecursiveDict, render_dict
-    from django.template import Context
     from django.core.urlresolvers import reverse
     from mpcontribs.config import mp_id_pattern
 

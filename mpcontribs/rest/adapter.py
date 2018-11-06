@@ -8,11 +8,6 @@ class ContributionMongoAdapter(object):
     """adapter/interface for user contributions"""
     def __init__(self, db=None):
         self.db = db
-        try:
-            from faker import Faker
-            self.fake = Faker()
-        except:
-            self.fake = None
         if self.db is not None:
             opts = bson.CodecOptions(document_class=RecursiveDict)
             self.contributions = self.db.contributions.with_options(codec_options=opts)
@@ -43,12 +38,6 @@ class ContributionMongoAdapter(object):
         self.db.contributions.remove()
         self.db.materials.remove()
         self.db.compositions.remove()
-
-    #def _get_mp_category_id(self, key, fake_it):
-    #    not_fake = (not fake_it or self.fake is None)
-    #    return key.split('--')[0] if not_fake else self.fake.random_element(
-    #        elements=['mp-{}'.format(i) for i in range(1, 5)]
-    #    )
 
     def query_contributions(self, crit, projection=None, collection='contributions', limit=0, sort=None):
         # TODO be careful with SON for order in crit
@@ -119,15 +108,3 @@ class ContributionMongoAdapter(object):
             return doc
         self.contributions.find_and_modify({'_id': cid}, doc, upsert=True)
         return cid
-
-    #def fake_multiple_contributions(self, num_contributions=20):
-    #    """fake the submission of many contributions"""
-    #    if self.fake is None:
-    #        print 'Install fake-factory to fake submissions'
-    #        return 'Nothing done.'
-    #    from mpcontribs.fake.v1 import MPFakeFile
-    #    for n in range(num_contributions):
-    #        f = MPFakeFile(usable=True, main_general=self.fake.pybool())
-    #        mpfile = f.make_file()
-    #        contributor = '%s <%s>' % (self.fake.name(), self.fake.email())
-    #        self.submit_mpfile(mpfile, contributor, fake_it=True)

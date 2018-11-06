@@ -1,5 +1,5 @@
 from __future__ import unicode_literals, print_function
-import six, codecs, pandas, os
+import six, codecs, os
 from abc import ABCMeta
 from mpcontribs.config import mp_level01_titles, default_mpfile_path, replacements
 from recdict import RecursiveDict
@@ -262,10 +262,11 @@ class MPFileCore(six.with_metaclass(ABCMeta, object)):
     # Override these in subclasses
     # ----------------------------
 
+    @staticmethod
     def from_string(data):
         """Reads a MPFile from a string containing contribution data."""
         return MPFileCore()
 
     def get_string(self, df_head_only=False):
         """Returns a string to be written as a file"""
-        return 'empty file'
+        return repr(self.document)

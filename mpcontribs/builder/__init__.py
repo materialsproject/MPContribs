@@ -20,7 +20,8 @@ def export_notebook(nb, cid, separate_script=False):
     body = body.replace("var element = $('#", "var element = document.getElementById('")
     soup = BeautifulSoup(body, 'html.parser')
     soup.div.extract() # remove first code cell (loads mpfile)
-    [t.extract() for t in soup.find_all('a', 'anchor-link')] # rm anchors
+    for t in soup.find_all('a', 'anchor-link'):
+        t.extract() # rm anchors
     # mark cells with special name for toggling, and
     # make element id's unique by appending cid
     # NOTE every cell has only one tag with id
@@ -43,7 +44,7 @@ def export_notebook(nb, cid, separate_script=False):
         return soup.prettify(), '\n'.join(script)
     return soup.prettify()
 
-class MPContributionsBuilder():
+class MPContributionsBuilder(object):
     """build user contributions from `mpcontribs.contributions`"""
     def __init__(self, db):
         self.db = db

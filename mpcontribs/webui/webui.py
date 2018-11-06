@@ -202,7 +202,7 @@ def contribute():
                 ))))
             response.headers['X-Accel-Buffering'] = 'no'
             return response
-        except:
+        except Exception:
             pass
 
 @ingester_bp.route('/action', methods=['POST'])

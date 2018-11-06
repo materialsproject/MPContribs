@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals, print_function
-import os, re, pwd, six, json, sys, pkgutil
+import os, pwd, six, json, sys, pkgutil
 from mpcontribs.io.core.utils import get_short_object_id
 from mpcontribs.rest.rester import MPContribsRester
 from mpcontribs.rest.adapter import ContributionMongoAdapter
@@ -33,7 +33,7 @@ def submit_mpfile(path_or_mpfile, site='jupyterhub', fmt='archieml', project=Non
             yield 'YES.</br>'
             time.sleep(1)
             yield 'Cancel data transmission? '
-            for i in range(5):
+            for _ in range(5):
                 yield '#'
                 time.sleep(1)
             yield ' NO.</br>'
@@ -198,7 +198,7 @@ def process_mpfile(path_or_mpfile, target=None, fmt='archieml', ids=None, projec
                                     else:
                                         local_axes.add(scope_str)
                                         ov_data[scope_str][cid_short] = (vf, mp_cat_id)
-                                except Exception:
+                                except ValueError:
                                     pass
                         if idx > 0:
                             axes.intersection_update(local_axes)
@@ -219,7 +219,7 @@ def process_mpfile(path_or_mpfile, target=None, fmt='archieml', ids=None, projec
                     ov_data.pop(k)
             yield ov_data
             yield '<strong>{} contributions successfully processed.</strong>'.format(ncontribs)
-    except:
+    except Exception:
         ex = sys.exc_info()[1]
         yield 'FAILED.</br>'
         yield unicode(ex).replace('"',"'")
