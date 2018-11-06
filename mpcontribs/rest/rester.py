@@ -199,7 +199,7 @@ class MPContribsRester(MPResterBase):
         MPFile = getattr(mod, 'MPFile')
         return MPFile.from_contribution(contrib)
 
-    def delete_contributions(self, cids=[]):
+    def delete_contributions(self, cids=None):
         """
         Delete a list of contributions from the Materials Project site.
 
@@ -212,8 +212,7 @@ class MPContribsRester(MPResterBase):
         Raises:
             MPResterError
         """
-        if not cids:
-            cids = [c['_id'] for c in self.query_contributions()]
+        cids = cids or [c['_id'] for c in self.query_contributions()]
         payload = {"cids": dumps(cids)}
         return self._make_request('/delete', payload=payload, method='POST')
 

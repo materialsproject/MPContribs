@@ -13,7 +13,6 @@ from webtzite.connector import ConnectorBase
 from bson.objectid import ObjectId
 from webtzite import mapi_func, in_docker
 from django.shortcuts import redirect
-from importlib import import_module
 from test_site.settings import PROXY_URL_PREFIX
 
 class Connector(ConnectorBase):
@@ -337,7 +336,7 @@ def update_collaborators(request, db_type=None, mdb=None):
 
 @mapi_func(supported_methods=["GET"], requires_api_key=True)
 def cif(request, cid, structure_name, db_type=None, mdb=None):
-    from mpcontribs.config import symprec, mp_level01_titles
+    from mpcontribs.config import symprec
     from mpcontribs.io.core.components import Structures
     from pymatgen.io.cif import CifWriter
     contrib = mdb.contrib_ad.query_contributions(
@@ -441,7 +440,7 @@ def get_card(request, cid, db_type=None, mdb=None):
     from mpcontribs.io.core.components import HierarchicalData, GraphicalData, render_plot
     from mpcontribs.io.core.utils import nested_dict_iter
     from mpcontribs.io.core.recdict import RecursiveDict, render_dict
-    from django.template import Template, Context
+    from django.template import Context
     from django.core.urlresolvers import reverse
     from mpcontribs.config import mp_id_pattern
 
@@ -467,7 +466,7 @@ def get_card(request, cid, db_type=None, mdb=None):
     )[0]
     mpid = contrib['mp_cat_id']
     hdata = HierarchicalData(contrib['content'])
-    plots = GraphicalData(contrib['content'])
+    #plots = GraphicalData(contrib['content'])
     title = hdata.get('title', 'No title available.')
     descriptions = hdata.get('description', 'No description available.').strip().split('.', 1)
     description = '{}.'.format(descriptions[0])

@@ -39,7 +39,7 @@ def submit_mpfile(path_or_mpfile, site='jupyterhub', fmt='archieml', project=Non
             yield ' NO.</br>'
             for msg in process_mpfile(path_or_mpfile, target=mpr, fmt=fmt, project=project):
                 yield msg
-        except:
+        except Exception:
             ex = sys.exc_info()[1]
             yield 'FAILED.</br>'
             yield unicode(ex).replace('"',"'")
@@ -198,7 +198,7 @@ def process_mpfile(path_or_mpfile, target=None, fmt='archieml', ids=None, projec
                                     else:
                                         local_axes.add(scope_str)
                                         ov_data[scope_str][cid_short] = (vf, mp_cat_id)
-                                except:
+                                except Exception:
                                     pass
                         if idx > 0:
                             axes.intersection_update(local_axes)

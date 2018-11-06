@@ -99,7 +99,7 @@ def get_backgrid_table(df):
                     is_url_column = False
                     try:
                         float(value) # unit is only a unit if value is number
-                    except:
+                    except ValueError:
                         continue
                     table['rows'][row_index].pop(old_col)
                     if prev_unit is None:

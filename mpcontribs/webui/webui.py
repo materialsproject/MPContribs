@@ -155,7 +155,7 @@ def view(identifier=None, cid_short=None):
                 if isinstance(it, list):
                     d = jsonify(it)
             return d
-    except:
+    except Exception:
         pass
 
 @ingester_bp.route('/')

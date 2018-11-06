@@ -7,7 +7,7 @@ from django.core.urlresolvers import reverse
 from mpcontribs.users_modules import *
 from mpcontribs.rest.views import get_endpoint
 from mpcontribs.rest.rester import MPContribsRester
-from test_site.settings import STATIC_URL, PROXY_URL_PREFIX
+from test_site.settings import STATIC_URL#, PROXY_URL_PREFIX
 
 def index(request):
     from webtzite.models import RegisteredUser
