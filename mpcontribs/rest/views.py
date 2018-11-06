@@ -3,10 +3,8 @@
 
 from __future__ import unicode_literals
 import os, string
-from subprocess import call
 from bson.json_util import loads
 from django.core.exceptions import PermissionDenied
-from django.shortcuts import render_to_response
 from django.contrib.auth.models import Group
 from webtzite.connector import ConnectorBase
 from bson.objectid import ObjectId
@@ -39,6 +37,7 @@ def get_endpoint(request):
     return request.build_absolute_uri(url)
 
 def index(request):
+    from subprocess import call
     jpy_user = os.environ.get('JPY_USER')
     if jpy_user:
         module_dir = os.path.dirname(__file__)
@@ -436,7 +435,7 @@ def get_card(request, cid, db_type=None, mdb=None):
             "response": ["<graph-url>"]
         }
     """
-    from mpcontribs.io.core.components import HierarchicalData, GraphicalData#, render_plot
+    from mpcontribs.io.core.components import HierarchicalData#, GraphicalData, render_plot
     #from mpcontribs.io.core.utils import nested_dict_iter
     from mpcontribs.io.core.recdict import RecursiveDict, render_dict
     from django.core.urlresolvers import reverse

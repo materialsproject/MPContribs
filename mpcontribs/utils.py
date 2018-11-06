@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals, print_function
-import os, pwd, six, json, sys, pkgutil
+import os, pwd, six, json, sys
 from mpcontribs.io.core.utils import get_short_object_id
 from mpcontribs.rest.rester import MPContribsRester
 from mpcontribs.rest.adapter import ContributionMongoAdapter
