@@ -252,6 +252,28 @@ Resources:
         # And we deploy the application resources (Elasticache, DynamoDB, etc)
         - Name: AppResources
           Actions:
+            # Deploy the app resources
+            - Name: Deploy
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Version: 1
+                Provider: CloudFormation
+              Configuration:
+                ActionMode: CREATE_UPDATE
+                RoleArn: !GetAtt CloudFormationDeployRole.Arn
+                StackName: !Sub ${EnvironmentName}-AppResources
+                TemplatePath: Source::resources.yml
+                Capabilities: CAPABILITY_IAM
+                ParameterOverrides: !Sub |
+                  {
+                    "EnvironmentName": "${EnvironmentName}"
+                  }
+              InputArtifacts:
+                - Name: Source
+              OutputArtifacts:
+                - Name: AppResources
+
             # And build the app docker image
             - Name: Build
               ActionTypeId:

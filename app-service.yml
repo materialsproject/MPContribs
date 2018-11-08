@@ -17,7 +17,7 @@ Parameters:
                  will handle the traffic for this service
   ContainerPort:
     Type: Number
-    Default: 8000
+    Default: 8080
     Description: What port number the application inside the docker container is binding to
   ContainerCpu:
     Type: Number
@@ -41,12 +41,8 @@ Parameters:
                  assigned to different paths on the load balancer.
   DesiredCount:
     Type: Number
-    Default: 2
+    Default: 1
     Description: How many copies of the service task to run
-  MongoUri:
-    Type: String
-    Default: ""
-    Description: (Optional) Mongo URI
 
 Resources:
   # A log group for storing the container logs for this service
@@ -69,9 +65,9 @@ Resources:
       ExecutionRoleArn:
         Fn::ImportValue:
           !Join [':', [!Ref 'EnvironmentName', 'ECSTaskExecutionRole']]
-      #TaskRoleArn:
-      #  Fn::ImportValue:
-      #    !Join [':', [!Ref 'EnvironmentName', 'AppServiceRole']]
+      TaskRoleArn:
+        Fn::ImportValue:
+          !Join [':', [!Ref 'EnvironmentName', 'AppServiceRole']]
       ContainerDefinitions:
         - Name: !Ref 'ServiceName'
           Cpu: !Ref 'ContainerCpu'
@@ -80,8 +76,6 @@ Resources:
           Environment:
             - Name: REGION
               Value: !Ref 'AWS::Region'
-            - Name: MONGO_URI
-              Value: !Ref 'MongoUri'
             - Name: ENV_NAME
               Value: !Ref 'EnvironmentName'
           PortMappings:
