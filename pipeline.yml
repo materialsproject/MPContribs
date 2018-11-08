@@ -173,7 +173,6 @@ Resources:
                 - git submodule update mpcontribs/users
                 - git submodule init webtzite
                 - git submodule update webtzite
-                - $(aws ecr get-login --no-include-email)
                 - docker build --tag "${IMAGE_URI}" .
             post_build:
               commands:

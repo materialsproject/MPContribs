@@ -69,9 +69,9 @@ Resources:
       ExecutionRoleArn:
         Fn::ImportValue:
           !Join [':', [!Ref 'EnvironmentName', 'ECSTaskExecutionRole']]
-      TaskRoleArn:
-        Fn::ImportValue:
-          !Join [':', [!Ref 'EnvironmentName', 'AppServiceRole']]
+      #TaskRoleArn:
+      #  Fn::ImportValue:
+      #    !Join [':', [!Ref 'EnvironmentName', 'AppServiceRole']]
       ContainerDefinitions:
         - Name: !Ref 'ServiceName'
           Cpu: !Ref 'ContainerCpu'
