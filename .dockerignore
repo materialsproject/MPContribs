@@ -1,0 +1,7 @@
+db/*
+docker/*
+docs/*
+notebooks/*
+test_files/*
+mpcontribs/webui/static/*
+mpcontribs/users/atn/test_files/*
