@@ -165,10 +165,15 @@ Resources:
                 - IMAGE_URI="${REPOSITORY_URI}:${TAG}"
             build:
               commands:
+                - git init
+                - git remote add origin https://github.com/${GITHUB_USER}/${GITHUB_REPO}.git
+                - git fetch
+                - git checkout -f -t origin/master
                 - git submodule init mpcontribs/users
                 - git submodule update mpcontribs/users
                 - git submodule init webtzite
                 - git submodule update webtzite
+                - $(aws ecr get-login --no-include-email)
                 - docker build --tag "${IMAGE_URI}" .
             post_build:
               commands:
@@ -185,6 +190,10 @@ Resources:
             Value: !Ref AWS::Region
           - Name: REPOSITORY_URI
             Value: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${Repository}
+          - Name: GITHUB_USER
+            Value: !Ref GitHubUser
+          - Name: GITHUB_REPO
+            Value: !Ref GitHubRepo
       Name: !Ref AWS::StackName
       ServiceRole: !Ref CodeBuildServiceRole
 
