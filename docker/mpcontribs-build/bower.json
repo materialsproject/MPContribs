@@ -1,0 +1,42 @@
+{
+  "name": "mpcontribs",
+  "homepage": "https://github.com/materialsproject/MPContribs",
+  "authors": [
+    "Patrick Huck <phuck@lbl.gov>"
+  ],
+  "description": "Materials Project Contribution Framework",
+  "main": "",
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "jquery": "^3.1.1",
+    "bootstrap": "^3.3.7",
+    "underscore": "^1.8.3",
+    "chosen": "^1.6.2",
+    "json-human": "^0.1.1",
+    "plotlyjs": "plotly#^1.16.2",
+    "backbone": "~1.2.3",
+    "backgrid": "^0.3.7",
+    "backgrid-select-all": "^0.3.5",
+    "backgrid-filter": "^0.3.7",
+    "bootstrap-filestyle": "^1.2.1",
+    "bootstrap-toggle": "^2.2.2",
+    "requirejs": "^2.3.2",
+    "js-cookie": "^2.1.3",
+    "chemview": "gabrielelanaro/chemview",
+    "spin.js": "spinjs#^2.3.2",
+    "backgrid-paginator": "^0.3.9",
+    "backgrid-grouped-columns": "^0.1.4",
+    "seiyria-bootstrap-slider": "^10.0.0",
+    "linkifyjs": "^2.1.6"
+  },
+  "resolutions": {
+    "backbone": "1.1.2 || 1.2.3 || ~1.3.2"
+  }
+}
