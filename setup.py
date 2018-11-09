@@ -9,6 +9,9 @@ metadata = dict(re.findall("__([a-z]+)__ = '([^']+)'", init_py))
 metadata['doc'] = re.findall('"""(.+)"""', init_py)[0]
 SETUP_PTH = os.path.dirname(os.path.abspath(__file__))
 
+with open(os.path.join(SETUP_PTH, 'requirements.txt')) as f:
+    required = f.read().splitlines()
+
 setup(
     name = package_name,
     version = metadata['version'],
@@ -21,17 +24,7 @@ setup(
         '{}.explorer'.format(package_name), '{}.portal'.format(package_name),
         '{}.rest'.format(package_name), '{}.builder'.format(package_name),
     ],
-    install_requires = [
-        'numpy', 'scipy', 'Flask', 'pandas', 'plotly==1.12.6', 'six', 'monty',
-        'matplotlib', 'pymongo', 'pyyaml', 'ipython', 'nose', 'pybtex', 'requests[security]',
-        'Django==1.8.5', 'archieml', 'django-browserid', 'sphinx', 'notebook',
-        'ipywidgets', 'celery', 'tqdm', 'beautifulsoup4', 'whichcraft', 'pymatgen',
-        'unidecode', 'psutil', 'nbformat', 'xlrd', 'django-nopassword', 'mod_wsgi',
-        'django-require', 'pympler', 'django_cas_ng', 'django-extensions', 'selenium',
-        'dash', 'dash-html-components', 'dash-core-components', 'dash-table-experiments',
-        'ase', 'igor', 'xrdtools', 'xrayutilities', 'h5py', 'python-coveralls',
-        'coverage==4.0.3', 'pytest-cov>=2.4.0,<2.6'
-    ],
+    install_requires = required,
     license = 'MIT',
     keywords = ['materials', 'contribution', 'framework', 'data', 'interactive', 'jupyter'],
     scripts = glob.glob(os.path.join(SETUP_PTH, "scripts", "*")),
