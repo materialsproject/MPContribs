@@ -13,8 +13,7 @@ WORKDIR /app
 ADD db.sqlite3.init db.sqlite3
 ADD requirements.txt .
 RUN pip install -r requirements.txt && rm -v requirements.txt
+RUN git clone https://github.com/materialsproject/webtzite.git
 
 WORKDIR /app/webtzite
-ADD bower.json .
-RUN bower install --allow-root && rm -v bower.json && mkdir static && \
-      ln -s /usr/lib/python2.7/site-packages/django/contrib/admin/static/admin static/admin
+RUN bower install --allow-root
