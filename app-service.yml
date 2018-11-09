@@ -65,9 +65,6 @@ Resources:
       ExecutionRoleArn:
         Fn::ImportValue:
           !Join [':', [!Ref 'EnvironmentName', 'ECSTaskExecutionRole']]
-      TaskRoleArn:
-        Fn::ImportValue:
-          !Join [':', [!Ref 'EnvironmentName', 'AppServiceRole']]
       ContainerDefinitions:
         - Name: !Ref 'ServiceName'
           Cpu: !Ref 'ContainerCpu'
@@ -78,6 +75,8 @@ Resources:
               Value: !Ref 'AWS::Region'
             - Name: ENV_NAME
               Value: !Ref 'EnvironmentName'
+            - Name: MPCONTRIBS_DEBUG
+              Value: 'True'
           PortMappings:
             - ContainerPort: !Ref 'ContainerPort'
           LogConfiguration:
