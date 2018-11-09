@@ -1,7 +1,8 @@
 FROM 416700756612.dkr.ecr.us-east-1.amazonaws.com/mpcontribs-build:latest
 WORKDIR /app
 ADD . .
-RUN python manage.py clearsessions && \
+RUN python manage.py makemigrations webtzite && \
+      python manage.py migrate && python manage.py clearsessions && \
       python manage.py django_cas_ng_clean_sessions && \
       python manage.py collectstatic --noinput
 EXPOSE 8080
