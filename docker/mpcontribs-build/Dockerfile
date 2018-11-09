@@ -9,11 +9,14 @@ RUN pip install --no-cache-dir --no-binary :all: tables h5py
 RUN npm install npm@latest -g && npm install -g git+https://github.com/tschaume/apidoc.git#csrf bower
 RUN wget https://raw.githubusercontent.com/vishnubob/wait-for-it/master/wait-for-it.sh && chmod +x /wait-for-it.sh
 
+RUN git clone https://github.com/Miserlou/zappa-django-utils.git && cd zappa-django-utils && \
+      echo "Django==1.8.5" > requirements.txt && echo "boto3==1.9.41" >> requirements.txt && \
+      pip install --no-cache-dir -e .
+
 WORKDIR /app
-ADD db.sqlite3.init db.sqlite3
-ADD requirements.txt .
-RUN pip install -r requirements.txt && rm -v requirements.txt
-RUN git clone https://github.com/materialsproject/webtzite.git
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt && rm -v requirements.txt && \
+      git clone https://github.com/materialsproject/webtzite.git
 
 WORKDIR /app/webtzite
-RUN bower install --allow-root
+RUN bower install --allow-root && bower cache clean --allow-root
