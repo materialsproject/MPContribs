@@ -29,7 +29,7 @@ SECRET_KEY = get_random_secret_key()
 JPY_USER = os.environ.get('JPY_USER')
 DEBUG = os.environ.get('MPCONTRIBS_DEBUG', bool(JPY_USER))
 
-ALLOWED_HOSTS = ['contribs.materialsproject.org', 'localhost']
+ALLOWED_HOSTS = ['portal.mpcontribs.org', 'contribs.materialsproject.org', 'localhost']
 
 AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend',
@@ -147,30 +147,30 @@ for static_dir in get_user_static_dirs():
 
 STATIC_ROOT_URLS.update(STATIC_ROOT_USER_URLS)
 
-if not DEBUG:
-    LOGGING = {
-        'version': 1,
-        'disable_existing_loggers': False,
-        'handlers': {
-            'file': {
-                'level': 'DEBUG',
-                'class': 'logging.FileHandler',
-                'filename': os.path.join(ROOT_PROJECT_DIR, 'test_site.log'),
-            },
-        },
-        'loggers': {
-            'django.request': {
-                'handlers': ['file'],
-                'level': 'DEBUG',
-                'propagate': True,
-            },
-            'webtzite': {
-                'handlers': ['file'],
-                'level': 'DEBUG',
-                'propagate': True,
-            },
-        },
-    }
+#if not DEBUG:
+#    LOGGING = {
+#        'version': 1,
+#        'disable_existing_loggers': False,
+#        'handlers': {
+#            'file': {
+#                'level': 'DEBUG',
+#                'class': 'logging.FileHandler',
+#                'filename': os.path.join(ROOT_PROJECT_DIR, 'test_site.log'),
+#            },
+#        },
+#        'loggers': {
+#            'django.request': {
+#                'handlers': ['file'],
+#                'level': 'DEBUG',
+#                'propagate': True,
+#            },
+#            'webtzite': {
+#                'handlers': ['file'],
+#                'level': 'DEBUG',
+#                'propagate': True,
+#            },
+#        },
+#    }
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'localhost'
