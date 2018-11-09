@@ -133,13 +133,13 @@ Resources:
       HealthCheckIntervalSeconds: 6
       HealthCheckPath: /
       Matcher:
-        HttpCode: 301
+        HttpCode: 301,200
       HealthCheckProtocol: HTTP
       HealthCheckTimeoutSeconds: 5
       HealthyThresholdCount: 2
       TargetType: ip
       Name: !Join ['-', [!Ref 'EnvironmentName', !Ref 'ServiceName']]
-      Port: 80
+      Port: 8080
       Protocol: HTTP
       UnhealthyThresholdCount: 2
       TargetGroupAttributes:
