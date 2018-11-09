@@ -58,7 +58,8 @@ INSTALLED_APPS = [
     'webtzite',
     'mpcontribs.portal',
     'mpcontribs.rest',
-    'mpcontribs.explorer'
+    'mpcontribs.explorer',
+    'zappa_django_utils'
 ] + get_user_installed_apps()
 
 MIDDLEWARE_CLASSES = (
@@ -97,11 +98,14 @@ WSGI_APPLICATION = 'test_site.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/1.8/ref/settings/#databases
 
-DATABASE_ENGINE = 'django.db.backends.sqlite3',
+#DATABASE_ENGINE = 'django.db.backends.sqlite3',
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+        #'ENGINE': 'django.db.backends.sqlite3',
+        #'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+        'ENGINE': 'zappa_django_utils.db.backends.s3sqlite',
+        'NAME': 'db.sqlite3',
+        'BUCKET': 'mpcontribs-sqlite'
     }
 }
 
