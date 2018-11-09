@@ -77,6 +77,8 @@ Resources:
               Value: !Ref 'EnvironmentName'
             - Name: MPCONTRIBS_DEBUG
               Value: 'True'
+            - Name: DEPLOYMENT
+              Value: 'MATGEN'
           PortMappings:
             - ContainerPort: !Ref 'ContainerPort'
           LogConfiguration:
