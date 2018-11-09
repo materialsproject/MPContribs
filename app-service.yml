@@ -135,11 +135,12 @@ Resources:
       Matcher:
         HttpCode: 301,200
       HealthCheckProtocol: HTTP
+      HealthCheckPort: 8080
       HealthCheckTimeoutSeconds: 5
       HealthyThresholdCount: 2
       TargetType: ip
       Name: !Join ['-', [!Ref 'EnvironmentName', !Ref 'ServiceName']]
-      Port: 8080
+      Port: 80
       Protocol: HTTP
       UnhealthyThresholdCount: 2
       TargetGroupAttributes:
