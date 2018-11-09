@@ -39,6 +39,10 @@ with MPContribsRester() as mpr:
 
 See the [CarrierTransport notebook](https://github.com/materialsproject/MPContribsUsers/blob/master/carrier_transport/carrier_transport.ipynb) for a dataset-specific working example and more details. FYI, transition to python3 and release of a Docker image are in progress.
 
+## AWS
+
+https://github.com/nathanpeck/socket.io-chat-fargate/blob/master/docs/deploy.md
+
 ## Full Installation as part of JupyterHub
 
 - install Anaconda: https://docs.continuum.io/anaconda/install and  
