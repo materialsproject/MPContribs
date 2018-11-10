@@ -27,7 +27,8 @@ SECRET_KEY = get_random_secret_key()
 
 # SECURITY WARNING: don't run with debug turned on in production!
 JPY_USER = os.environ.get('JPY_USER')
-DEBUG = os.environ.get('MPCONTRIBS_DEBUG', bool(JPY_USER))
+#DEBUG = os.environ.get('MPCONTRIBS_DEBUG', bool(JPY_USER))
+#DEBUG = True
 
 ALLOWED_HOSTS = ['portal.mpcontribs.org', 'contribs.materialsproject.org', 'localhost']
 
@@ -130,23 +131,23 @@ USE_TZ = True
 
 PROXY_URL_PREFIX = '/flaskproxy/{}'.format(JPY_USER) if JPY_USER else ''
 ROOT_PROJECT_DIR = os.path.dirname(os.path.dirname(__file__))
-STATIC_ROOT = ROOT_PROJECT_DIR
-STATIC_ROOT += '/webtzite/static' if DEBUG else '/static'
+STATIC_ROOT = ROOT_PROJECT_DIR + '/static'
+#STATIC_ROOT += '/webtzite/static' if DEBUG else '/static'
 STATIC_URL = PROXY_URL_PREFIX + '/static/'
 
 STATIC_ROOT_URLS = {
     STATIC_URL[:-1]: STATIC_ROOT,
-    STATIC_URL[:-1] + '_rest': ROOT_PROJECT_DIR + '/mpcontribs/rest/static',
-    STATIC_URL[:-1] + '_portal': ROOT_PROJECT_DIR + '/mpcontribs/portal/static'
+    #STATIC_URL[:-1] + '_rest': ROOT_PROJECT_DIR + '/mpcontribs/rest/static',
+    #STATIC_URL[:-1] + '_portal': ROOT_PROJECT_DIR + '/mpcontribs/portal/static'
 }
-from mpcontribs.users_modules import get_user_static_dirs
-STATIC_ROOT_USER_URLS = {}
-for static_dir in get_user_static_dirs():
-    static_url_suffix = static_dir.split(os.sep)[-3]
-    key = '_'.join([STATIC_URL[:-1], static_url_suffix])
-    STATIC_ROOT_USER_URLS[key] = os.path.join(ROOT_PROJECT_DIR, static_dir)
-
-STATIC_ROOT_URLS.update(STATIC_ROOT_USER_URLS)
+#from mpcontribs.users_modules import get_user_static_dirs
+#STATIC_ROOT_USER_URLS = {}
+#for static_dir in get_user_static_dirs():
+#    static_url_suffix = static_dir.split(os.sep)[-3]
+#    key = '_'.join([STATIC_URL[:-1], static_url_suffix])
+#    STATIC_ROOT_USER_URLS[key] = os.path.join(ROOT_PROJECT_DIR, static_dir)
+#
+#STATIC_ROOT_URLS.update(STATIC_ROOT_USER_URLS)
 
 AWS_S3_CUSTOM_DOMAIN = 's3.amazonaws.com/{}'.format(AWS_STORAGE_BUCKET_NAME)
 AWS_S3_OBJECT_PARAMETERS = {'CacheControl': 'max-age=86400'}
@@ -203,7 +204,7 @@ DEFAULT_FROM_EMAIL = 'Test Site <test_site@jupyterhub.materialsproject.org>'
 REQUIRE_JS = 'components/requirejs/require.js'
 REQUIRE_DEBUG = True
 
-if not DEBUG or os.environ.get('DEPLOYMENT') == 'MATGEN':
+if os.environ.get('DEPLOYMENT') == 'MATGEN':
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 CAS_SERVER_URL = 'https://materialsproject.org/cas/'

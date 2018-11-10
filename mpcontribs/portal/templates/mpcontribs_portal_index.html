@@ -41,7 +41,7 @@
                 interactive gateway (this portal) powered by Jupyter notebooks and through
                 <a href="https://github.com/materialsproject/MPContribsUsers">landing pages</a>
                 targeted to the project/contributor's needs.</p>
-                <p><img src="{{ static_url }}/lsdi_logo.png" width=35% style="float: left; padding: 5px;"/>
+                <p><img src="{% static lsdi_logo.png %}" width=35% style="float: left; padding: 5px;"/>
                 The development of MPContribs is supported by NSF LSDI Data Infrastructure
                 Building Blocks program and DOE Basic Energy Sciences Materials
                 Project.</p>
@@ -55,7 +55,7 @@
                 <div class="panel-body" style="padding: 0px">
                     <div class="col-md-12" style="padding: 5px">
                         <a href="{% url 'mpcontribs_explorer_index' %}">
-                            <img src="{{ static_url }}/explorer.jpg" width=100% />
+                          <img src="{% static explorer.jpg %}" width=100% />
                         </a>
                     </div>
                 </div>
@@ -69,7 +69,7 @@
                 <div class="panel-body" style="padding: 0px">
                     <div class="col-md-12" style="padding: 5px; overflow:scroll; height:209px;">
                         <a href="{% url 'mpcontribs_rest_index' %}">
-                            <img src="{{ static_url }}/rest_api.jpg" width=100% />
+                          <img src="{% static rest_api.jpg %}" width=100% />
                         </a>
                     </div>
                 </div>
@@ -96,7 +96,7 @@
                 <div class="panel-body" style="padding: 0px">
                     <div class="col-md-12" style="padding: 5px;">
                         <a href="{{ a_tag.url }}">
-                            <img src="{{ static_url }}/{{ a_tag.project }}.jpg" width=100% />
+                          <img src="{% static a_tag.project %}.jpg" width=100% />
                         </a>
                     </div>
                 </div>

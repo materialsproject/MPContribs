@@ -6,7 +6,6 @@ from django.template import RequestContext
 from django.core.urlresolvers import reverse
 from mpcontribs.users_modules import *
 from mpcontribs.rest.views import get_endpoint
-from test_site.settings import STATIC_URL#, PROXY_URL_PREFIX
 
 def index(request):
     from webtzite.models import RegisteredUser
@@ -14,8 +13,6 @@ def index(request):
     if request.user.is_authenticated():
         user = RegisteredUser.objects.get(username=request.user.username)
         mod = os.path.dirname(__file__).split(os.sep)[-1]
-        jpy_user = os.environ.get('JPY_USER')
-        ctx['static_url'] = '_'.join([STATIC_URL[:-1], mod]) if jpy_user else STATIC_URL[:-1]
         ctx['a_tags'] = [[], []]
         for mod_path in get_users_modules():
             explorer = os.path.join(mod_path, 'explorer', 'apps.py')

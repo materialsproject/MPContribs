@@ -100,8 +100,6 @@ Resources:
               Value: !Ref 'AWS::Region'
             - Name: ENV_NAME
               Value: !Ref 'EnvironmentName'
-            - Name: MPCONTRIBS_DEBUG
-              Value: 'True'
             - Name: DEPLOYMENT
               Value: 'MATGEN'
           PortMappings:
