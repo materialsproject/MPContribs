@@ -98,6 +98,7 @@ WSGI_APPLICATION = 'test_site.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/1.8/ref/settings/#databases
 
+AWS_STORAGE_BUCKET_NAME = 'mpcontribs-sqlite'
 #DATABASE_ENGINE = 'django.db.backends.sqlite3',
 DATABASES = {
     'default': {
@@ -105,7 +106,7 @@ DATABASES = {
         #'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
         'ENGINE': 'zappa_django_utils.db.backends.s3sqlite',
         'NAME': 'db.sqlite3',
-        'BUCKET': 'mpcontribs-sqlite'
+        'BUCKET': AWS_STORAGE_BUCKET_NAME
     }
 }
 
@@ -146,6 +147,25 @@ for static_dir in get_user_static_dirs():
     STATIC_ROOT_USER_URLS[key] = os.path.join(ROOT_PROJECT_DIR, static_dir)
 
 STATIC_ROOT_URLS.update(STATIC_ROOT_USER_URLS)
+
+AWS_S3_CUSTOM_DOMAIN = 's3.amazonaws.com/{}'.format(AWS_STORAGE_BUCKET_NAME)
+AWS_S3_OBJECT_PARAMETERS = {'CacheControl': 'max-age=86400'}
+AWS_LOCATION = 'static'
+AWS_DEFAULT_ACL = None
+
+STATIC_URL = 'https://{}/{}/'.format(AWS_S3_CUSTOM_DOMAIN, AWS_LOCATION)
+DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+STATICFILES_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+
+#STATICFILES_STORAGE = 'pipeline.storage.PipelineCachedStorage'
+#STATICFILES_STORAGE = 'leftbehind.apps.matchmaker.utils.S3PipelineStorage'
+#STATICFILES_FINDERS = (
+#    'django.contrib.staticfiles.finders.FileSystemFinder',
+#    'django.contrib.staticfiles.finders.AppDirectoriesFinder',
+#    'pipeline.finders.PipelineFinder',
+#)
+#PIPELINE_DISABLE_WRAPPER = True
+
 
 #if not DEBUG:
 #    LOGGING = {
