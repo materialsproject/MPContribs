@@ -39,9 +39,15 @@ def make_pair(key, value, sep=':'):
     return '{} '.format(sep).join([key, value])
 
 def nest_dict(dct, keys):
-    """nest dict under list of keys"""
+    #"""nest `dct` under list of `keys`.
+
+    #>>> print nest_dict({'key': {'subkey': 'value'}}, ['a', 'b'])
+    #RecursiveDict([('a', RecursiveDict([('b', RecursiveDict([('key', RecursiveDict([('subkey', u'value')]))]))]))])
+    #"""
     from mpcontribs.io.core.recdict import RecursiveDict
     nested_dict = dct
+    #nested_dict = RecursiveDict(dct)
+    #nested_dict.rec_update()
     for key in reversed(keys):
         nested_dict = RecursiveDict({key: nested_dict})
     return nested_dict
