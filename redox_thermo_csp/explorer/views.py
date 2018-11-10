@@ -7,7 +7,6 @@ from django.template import RequestContext
 from mpcontribs.rest.views import get_endpoint
 from mpcontribs.io.core.components import render_dataframe
 from mpcontribs.io.core.recdict import render_dict
-from test_site.settings import STATIC_URL, DEBUG
 from webtzite.models import RegisteredUser
 
 access_msg = 'Coming Soon! Contact <a href="mailto:josua.vieten@dlr.de">J. Vieten</a> to request pre-publication access.'
@@ -16,12 +15,7 @@ def index(request):
     ctx = RequestContext(request)
     if request.user.is_authenticated():
         user = RegisteredUser.objects.get(username=request.user.username)
-        if user.groups.filter(name='redox_thermo_csp').exists():
-            ctx['static_url'] = STATIC_URL
-            if DEBUG:
-                mod = os.path.dirname(__file__).split(os.sep)[-2]
-                ctx['static_url'] = '_'.join([STATIC_URL[:-1], mod])
-        else:
+        if not user.groups.filter(name='redox_thermo_csp').exists():
             ctx.update({'alert': access_msg})
     else:
         return redirect('{}?next={}'.format(reverse('cas_ng_login'), request.path))
@@ -56,12 +50,7 @@ def energy_analysis(request):
     ctx = RequestContext(request)
     if request.user.is_authenticated():
         user = RegisteredUser.objects.get(username=request.user.username)
-        if user.groups.filter(name='redox_thermo_csp').exists():
-            ctx['static_url'] = STATIC_URL
-            if DEBUG:
-                mod = os.path.dirname(__file__).split(os.sep)[-2]
-                ctx['static_url'] = '_'.join([STATIC_URL[:-1], mod])
-        else:
+        if not user.groups.filter(name='redox_thermo_csp').exists():
             ctx.update({'alert': access_msg})
     else:
         return redirect('{}?next={}'.format(reverse('cas_ng_login'), request.path))
@@ -71,12 +60,7 @@ def documentation(request):
     ctx = RequestContext(request)
     if request.user.is_authenticated():
         user = RegisteredUser.objects.get(username=request.user.username)
-        if user.groups.filter(name='redox_thermo_csp').exists():
-            ctx['static_url'] = STATIC_URL
-            if DEBUG:
-                mod = os.path.dirname(__file__).split(os.sep)[-2]
-                ctx['static_url'] = '_'.join([STATIC_URL[:-1], mod])
-        else:
+        if not user.groups.filter(name='redox_thermo_csp').exists():
             ctx.update({'alert': access_msg})
     else:
         return redirect('{}?next={}'.format(reverse('cas_ng_login'), request.path))
