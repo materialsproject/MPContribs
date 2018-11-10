@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import os
 from mpcontribs.users_modules import get_users_modules, get_user_explorer_config
 

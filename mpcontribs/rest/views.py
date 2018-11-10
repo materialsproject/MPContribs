@@ -37,7 +37,6 @@ def get_endpoint(request):
     return request.build_absolute_uri(url)
 
 def index(request):
-    from subprocess import call
     jpy_user = os.environ.get('JPY_USER')
     if jpy_user:
         module_dir = os.path.dirname(__file__)
@@ -48,6 +47,7 @@ def index(request):
              text = template.substitute({'URL': get_endpoint(request)})
              with open('apidoc.json', 'w') as f2:
                  f2.write(text)
+        from subprocess import call
         call(['apidoc', '-f "views.py"', '-f "_apidoc.py"', '--output', 'static'])
         os.chdir(cwd)
         return redirect(PROXY_URL_PREFIX + '/static_rest/index.html')
