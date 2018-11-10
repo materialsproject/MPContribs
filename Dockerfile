@@ -4,10 +4,11 @@ WORKDIR /app
 ADD . .
 
 WORKDIR /app/mpcontribs/rest
-RUN apidoc -f "views.py" -f "_apidoc.py" --output static
+RUN python make_apidoc_json.py && \
+      apidoc -f "views.py" -f "_apidoc.py" --output static
 
 WORKDIR /app
-RUN pip install -e . && python manage.py makemigrations webzite && \
+RUN pip install -e . && python manage.py makemigrations webtzite && \
       python manage.py migrate && python manage.py clearsessions && \
       python manage.py django_cas_ng_clean_sessions && \
       python manage.py collectstatic --noinput

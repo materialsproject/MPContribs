@@ -2,7 +2,7 @@
 """This module provides the views for the rest interface."""
 
 from __future__ import unicode_literals
-import os, string
+import os
 from bson.json_util import loads
 from django.core.exceptions import PermissionDenied
 from django.contrib.auth.models import Group
@@ -26,9 +26,6 @@ class Connector(ConnectorBase):
 
 ConnectorBase.register(Connector)
 
-class CustomTemplate(string.Template):
-    delimiter = '$$'
-
 def get_endpoint(request):
     from django.core.urlresolvers import reverse
     url = reverse('mpcontribs_rest_index')[:-1]
@@ -39,15 +36,9 @@ def get_endpoint(request):
 def index(request):
     jpy_user = os.environ.get('JPY_USER')
     if jpy_user:
-        module_dir = os.path.dirname(__file__)
-        cwd = os.getcwd()
-        os.chdir(module_dir)
-        with open('apidoc_template.json', 'r') as f:
-             template = CustomTemplate(f.read())
-             text = template.substitute({'URL': get_endpoint(request)})
-             with open('apidoc.json', 'w') as f2:
-                 f2.write(text)
+        from mpcontribs.rest.make_apidoc_json import make_apidoc_json
         from subprocess import call
+        make_apidoc_json(get_endpoint(request))
         call(['apidoc', '-f "views.py"', '-f "_apidoc.py"', '--output', 'static'])
         os.chdir(cwd)
         return redirect(PROXY_URL_PREFIX + '/static_rest/index.html')

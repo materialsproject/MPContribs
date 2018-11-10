@@ -4,3 +4,17 @@ docs/*
 notebooks/*
 test_files/*
 mpcontribs/users/atn/test_files/*
+*.swp
+*.pyc
+mpcontribs.egg-info
+.ipynb_checkpoints/
+.coverage
+build/*
+dist/*
+mpcontribs/rest/static/*
+mpcontribs/rest/apidoc.json
+db/*
+access.log
+error.log
+static/*
+test_site.log
