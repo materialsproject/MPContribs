@@ -15,11 +15,11 @@ RUN git clone https://github.com/Miserlou/zappa-django-utils.git && cd zappa-dja
 
 WORKDIR /app
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt && rm -v requirements.txt && \
-      git clone https://github.com/materialsproject/webtzite.git
+RUN pip install --no-cache-dir -r requirements.txt && rm -v requirements.txt
+#RUN git clone https://github.com/materialsproject/webtzite.git
 
 RUN git clone https://github.com/jschneier/django-storages.git /django-storages && cd /django-storages && \
       sed -i 's@Django>=1.11@Django==1.8.5@' setup.py && pip install --no-cache-dir -e .
 
-WORKDIR /app/webtzite
-RUN git pull && bower install --allow-root && bower cache clean --allow-root
+#WORKDIR /app/webtzite
+#RUN git pull && bower install --allow-root && bower cache clean --allow-root
