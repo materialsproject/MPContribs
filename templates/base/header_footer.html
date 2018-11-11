@@ -8,16 +8,17 @@
     <link rel="shortcut icon" href='{% static "images/favicon.png" %}' />
     {% require_module 'main' %}
     <script>window.tables = [];</script>
-    <link rel="stylesheet" type="text/css" href='{% static "js/components/bootstrap/dist/css/bootstrap.css" charset="utf-8" %}'/>
-    <link rel="stylesheet" type="text/css" href='{% static "nucleus.css" charset="utf-8" %}'/>
-    <link rel="stylesheet" type="text/css" href='{% static "font-awesome-4.7.0/css/font-awesome.min.css" %}'/>
-    <link rel="stylesheet" href='{% static "js/components/seiyria-bootstrap-slider/dist/css/bootstrap-slider.css" %}' charset="utf-8">
-    <link rel="stylesheet" href='{% static "js/components/backgrid/lib/backgrid.css" %}' charset="utf-8">
-    <link rel="stylesheet" href='{% static "js/components/backgrid-paginator/backgrid-paginator.css" %}' charset="utf-8">
-    <link rel="stylesheet" href='{% static "js/components/backgrid-filter/backgrid-filter.css" %}' charset="utf-8">
-    <link rel="stylesheet" href='{% static "js/components/backgrid-grouped-columns/backgrid-grouped-columns.css" %}' charset="utf-8">
-    <link rel="stylesheet" href='{% static "js/components/json-human/css/json.human.css" %}' charset="utf-8">
-<link rel="stylesheet" type="text/css" href='{% static "js/components/chosen/chosen.css" charset="utf-8" %}'/>
+    <link rel="stylesheet" type="text/css" href='{% static "js/components/bootstrap/dist/css/bootstrap.css" %}' charset="utf-8" />
+    <link rel="stylesheet" type="text/css" href='{% static "nucleus.css" %}' charset="utf-8" />
+    <link rel="stylesheet" type="text/css" href='{% static "font-awesome-4.7.0/css/font-awesome.min.css" %}' />
+    <link rel="stylesheet" href='{% static "js/components/seiyria-bootstrap-slider/dist/css/bootstrap-slider.css" %}' charset="utf-8" />
+    <link rel="stylesheet" href='{% static "js/components/backgrid/lib/backgrid.css" %}' charset="utf-8" />
+    <link rel="stylesheet" href='{% static "js/components/backgrid-paginator/backgrid-paginator.css" %}' charset="utf-8" />
+    <link rel="stylesheet" href='{% static "js/components/backgrid-filter/backgrid-filter.css" %}' charset="utf-8" />
+    <link rel="stylesheet" href='{% static "js/components/bootstrap-toggle/css/bootstrap-toggle.css" %}' charset="utf-8" />
+    <link rel="stylesheet" href='{% static "js/components/backgrid-grouped-columns/backgrid-grouped-columns.css" %}' charset="utf-8" />
+    <link rel="stylesheet" href='{% static "js/components/json-human/css/json.human.css" %}' charset="utf-8" />
+    <link rel="stylesheet" type="text/css" href='{% static "js/components/chosen/chosen.css" %}' charset="utf-8" />
     <style>
     @font-face {
         font-family: 'Symbola';
@@ -79,6 +80,11 @@
     .custom { padding: 0.5em 0.8em 0.8em 2em; }
     * html a:hover { background: transparent; }
     .classic { background: #000000; color: #FFFFFF; }
+    .panel { border: 2px solid #000000; }
+    .panel-default { height: 95%; }
+    .panel-default > .panel-heading { border-color: #000; }
+    .panel:hover { box-shadow: 0 0 5px 5px rgba(0, 140, 186, 0.5); }
+    .equal { display: flex; display: -webkit-flex; flex-wrap: wrap; }
     </style>
     {% block extra_css %}
     {% endblock extra_css %}
