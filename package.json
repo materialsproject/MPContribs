@@ -1,0 +1,36 @@
+{
+  "name": "webtzite",
+  "version": "1.0.0",
+  "description": "Webtzite is a [Django](https://www.djangoproject.com/) app containing the core functionality of MP's web site. It enables the development of pluggable web apps contributed by MP users. To develop an \"MP-ready\" app, you start a new Django project, add `webtzite` as as app in the project, develop your app, and export your app for release.",
+  "private": true,
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/materialsproject/MPContribs.git"
+  },
+  "author": "Patrick Huck",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/materialsproject/MPContribs/issues"
+  },
+  "homepage": "https://github.com/materialsproject/MPContribs#readme",
+  "devDependencies": {
+    "css-loader": "^1.0.1",
+    "exports-loader": "^0.7.0",
+    "file-loader": "^2.0.0",
+    "imports-loader": "^0.8.0",
+    "mini-css-extract-plugin": "^0.4.4",
+    "node-sass": "^4.10.0",
+    "sass-loader": "^7.1.0",
+    "style-loader": "^0.23.1",
+    "url-loader": "^1.1.2",
+    "webpack": "^4.25.1",
+    "webpack-bundle-tracker": "^0.4.2-beta",
+    "webpack-cli": "^3.1.2"
+  }
+}

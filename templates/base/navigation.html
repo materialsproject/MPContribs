@@ -1,4 +1,4 @@
-{% load staticfiles %}
+{% load webpack_static from webpack_loader %}
 {% if show_warning_banner %}
 <nav class="navbar navbar-warning">
   <center class="alert alert-warning">
@@ -15,7 +15,7 @@
       <span class="icon-bar"></span>
     </a>
     <div class="nav-collapse">
-        <a class="brand" href="{% url 'mpcontribs_portal_index' %}"><img src="{% static 'logo.png' %}"></a>
+        <a class="brand" href="{% url 'mpcontribs_portal_index' %}"><img src="{% webpack_static 'logo.png' %}"></a>
       <ul class="nav pull-right" role="navigation">
         <li><a href="{% url 'mpcontribs_portal_index' %}">Portal</a></li>
         {% if user.is_authenticated %}

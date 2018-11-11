@@ -88,7 +88,10 @@ ENV/
 # Rope project settings
 .ropeproject
 
-static/js/components/*
 static/apidoc/*
-static/img/*.png
+assets/img/*.png
 static/admin
+assets/bundles/*
+bower_components/*
+node_modules/*
+webpack-stats.json
