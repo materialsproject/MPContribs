@@ -8,9 +8,9 @@ from mpcontribs.users_modules import *
 from mpcontribs.rest.views import get_endpoint
 
 def index(request):
-    from webtzite.models import RegisteredUser
     ctx = RequestContext(request)
     if request.user.is_authenticated():
+        from webtzite.models import RegisteredUser
         user = RegisteredUser.objects.get(username=request.user.username)
         mod = os.path.dirname(__file__).split(os.sep)[-1]
         ctx['a_tags'] = [[], []]
@@ -52,9 +52,9 @@ def index(request):
     return render_to_response("mpcontribs_portal_index.html", ctx)
 
 def groupadd(request, token):
-    from webtzite.models import RegisteredUser
-    from mpcontribs.rest.rester import MPContribsRester
     if request.user.is_authenticated():
+        from webtzite.models import RegisteredUser
+        from mpcontribs.rest.rester import MPContribsRester
         user = RegisteredUser.objects.get(username=request.user.username)
         r = MPContribsRester(user.api_key, endpoint=get_endpoint(request))
         r.groupadd(token)
