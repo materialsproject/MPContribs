@@ -1,9 +1,6 @@
 @font-face {
   font-family: 'Symbola';
-  src:url('{% static "Symbola.ttf.woff" %}') format('woff'),
-  url('{% static "Symbola.ttf.svg#Symbola" %}') format('svg'),
-  url('{% static "Symbola.ttf.eot" %}'),
-  url('{% static "Symbola.ttf.eot?#iefix" %}') format('embedded-opentype'); 
+  src: 'Symbola.ttf.svg';
   font-weight: normal;
   font-style: normal;
 }
