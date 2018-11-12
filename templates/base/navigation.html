@@ -1,4 +1,3 @@
-{% load webpack_static from webpack_loader %}
 {% if show_warning_banner %}
 <nav class="navbar navbar-warning">
   <center class="alert alert-warning">
@@ -8,26 +7,23 @@
 </nav>
 {% endif %}
 <nav class="navbar navbar-inverse">
-  <div class="navbar-inner">
-     <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
-      <span class="icon-bar"></span>
-      <span class="icon-bar"></span>
-      <span class="icon-bar"></span>
-    </a>
-    <div class="nav-collapse">
-        <a class="brand" href="{% url 'mpcontribs_portal_index' %}"><img src="{% webpack_static 'logo.png' %}"></a>
-      <ul class="nav pull-right" role="navigation">
-        <li><a href="{% url 'mpcontribs_portal_index' %}">Portal</a></li>
-        {% if user.is_authenticated %}
-        {% if user.is_superuser %}
-        <li><a href="{% url 'mpcontribs_portal_index' %}admin">Admin</a></li>
-        {% endif %}
-        <li><a href="{% url 'webtzite_dashboard' %}">Dashboard</a></li>
-        <li><a href="{% url 'cas_ng_logout' %}?next={% url 'webtzite_dashboard' %}">Logout</a></li>
-        {% else %}
-        <li><a href="{% url 'cas_ng_login' %}?next={% url 'mpcontribs_portal_index' %}">Login</a></li>
-        {% endif %}
-      </ul>
+  <div class="container-fluid">
+    <div class="navbar-header">
+      <a class="navbar-brand" href="{% url 'mpcontribs_portal_index' %}" style="padding: 5px;">
+        <img id="logo">
+      </a>
     </div>
+    <ul class="nav navbar-nav navbar-right">
+      <li><a href="{% url 'mpcontribs_portal_index' %}">Portal</a></li>
+      {% if user.is_authenticated %}
+      {% if user.is_superuser %}
+      <li><a href="{% url 'mpcontribs_portal_index' %}admin">Admin</a></li>
+      {% endif %}
+      <li><a href="{% url 'webtzite_dashboard' %}">Dashboard</a></li>
+      <li><a href="{% url 'cas_ng_logout' %}?next={% url 'webtzite_dashboard' %}">Logout</a></li>
+      {% else %}
+      <li><a href="{% url 'cas_ng_login' %}?next={% url 'mpcontribs_portal_index' %}">Login</a></li>
+      {% endif %}
+    </ul>
   </div>
 </nav>
