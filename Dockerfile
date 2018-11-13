@@ -6,15 +6,9 @@ ENV PYTHONUNBUFFERED 1
 WORKDIR /app
 COPY . .
 
-#WORKDIR /app/mpcontribs/rest
-#RUN python make_apidoc_json.py && \
-#      apidoc -f "views.py" -f "_apidoc.py" --output static
-
-#WORKDIR /app
-RUN pip install -e . && python manage.py makemigrations webtzite && \
+ENV NODE_ENV=production
+RUN npm run webpack && pip install -e . && python manage.py makemigrations webtzite && \
       python manage.py migrate && python manage.py clearsessions && \
       python manage.py django_cas_ng_clean_sessions
-#RUN python manage.py collectstatic --noinput
 
-#CMD ["python", "manage.py", "runserver", "0.0.0.0:8080"]
-CMD ["uwsgi", "uwsgi.ini"]
+CMD ["gunicorn", "-b", "0.0.0.0:8080", "--log-level=debug", "test_site.wsgi:application"]

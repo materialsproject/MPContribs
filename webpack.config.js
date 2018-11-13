@@ -37,7 +37,8 @@ module.exports = {
       src: "mpcontribs/rest/",
       dest: "dist/apidoc/",
       debug: true,
-      includeFilters: [ "views.py$", "_apidoc.py" ]
+      includeFilters: [ "views.py$", "_apidoc.py" ],
+      config: path.resolve(__dirname)
     }),
   ],
   optimization: {
