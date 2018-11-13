@@ -42,7 +42,7 @@ def index(request):
         call(['apidoc', '-f "views.py"', '-f "_apidoc.py"', '--output', 'static'])
         os.chdir(cwd)
         return redirect(PROXY_URL_PREFIX + '/static_rest/index.html')
-    return redirect('/static/index.html')
+    return redirect('/static/apidoc/index.html')
 
 @mapi_func(supported_methods=["GET"], requires_api_key=True)
 def check_contributor(request, db_type=None, mdb=None):
