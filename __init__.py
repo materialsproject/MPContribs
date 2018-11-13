@@ -36,12 +36,11 @@ def mapi_func(supported_methods=("GET",), requires_api_key=False):
     def wrap(func):
         def wrapped(*args, **kwargs):
             request = args[0]
-            check_api = (not request.is_ajax()) and requires_api_key
             try:
                 if request.method not in supported_methods:
                     raise PermissionDenied("Invalid request method.")
                 # Get API key, if required
-                if check_api:
+                if requires_api_key:
                     api_key = get_api_key(request)
                     if not api_key:
                         raise PermissionDenied("API_KEY is not supplied.")
