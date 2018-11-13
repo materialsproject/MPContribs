@@ -266,3 +266,7 @@ class MPContribsRester(MPResterBase):
         prov_keys = prov_keys or ['title']
         payload = {"provenance_keys": dumps(prov_keys), "embed": dumps(embed)}
         return self._make_request('/card/'+cid, payload=payload, method='POST')
+
+    def get_landing_pages(self):
+        return self._make_request('/landing_pages')
+

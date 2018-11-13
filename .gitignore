@@ -19,3 +19,4 @@ static/*
 test_site.log
 node_modules/*
 webpack-stats.json
+package-lock.json

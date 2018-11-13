@@ -627,3 +627,12 @@ def groupadd(request, token, db_type=None, mdb=None):
     group = Group.objects.get(name=doc['group'])
     group.user_set.add(request.user)
     return {"valid_response": True, 'response': 'user access granted.'}
+
+@mapi_func(supported_methods=["GET"], requires_api_key=True)
+def landing_pages(request, db_type=None, mdb=None):
+    coll = mdb.contribs_db.contributions
+    results = [coll.find_one(
+        {'project': project},
+        {'project': 1, 'content.title': 1, 'content.authors': 1}
+    ) for project in coll.distinct("project")]
+    return {"valid_response": True, 'response': results}

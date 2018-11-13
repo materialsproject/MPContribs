@@ -1,20 +1,13 @@
-{% extends "../../webtzite/templates/base/header_footer.html" %}
+{% extends "../../webtzite/templates/header_footer.html" %}
 {% load staticfiles %}
-
+{% load render_bundle from webpack_loader %}
+{% block extra_css %}{% render_bundle 'portal' 'css' %}{% endblock %}
+{% block footer %}{% render_bundle 'portal' 'js' %}{% endblock %}
 {% block title %}MPContribs Portal{% endblock %}
+{% block caption %}MPContribs Portal{% endblock %}
 
 {% block content %}
-
 <div class="container">
-  <h1 align="center" style="border-top: 2px solid; border-bottom: 2px solid;
-  margin: 15px 0 15px; padding: 10px;
-  background: #eee; font-variant: small-caps;">
-    MPContribs Portal
-    <a class="btn btn-info pull-right" style="margin-top: 2px" target="_blank"
-                                                               href="https://jupyterhub.materialsproject.org">
-      MP JupyterHub
-    </a>
-  </h1>
   <div class="row" style="margin-top: 20px">
     <div class="col-md-4">
       <blockquote class="blockquote" style="font-size: 14px; padding: 0px 10px;">
@@ -25,10 +18,6 @@
         interactive gateway (this portal) powered by Jupyter notebooks and through
         <a href="https://github.com/materialsproject/MPContribsUsers">landing pages</a>
         targeted to the project/contributor's needs.</p>
-        <p><img src='{% static "lsdi_logo.png" %}' width=35% style="float: left; padding: 5px;"/>
-        The development of MPContribs is supported by NSF LSDI Data Infrastructure
-        Building Blocks program and DOE Basic Energy Sciences Materials
-        Project.</p>
       </blockquote>
     </div>
     <div class="col-md-4">
@@ -46,58 +35,44 @@
       </div>
     </div>
     <div class="col-md-4">
-      <div class="panel panel-default">
-        <div class="panel-heading">
-          <h4 class="panel-title">RESTful API Docs</h4>
-        </div>
-        <div class="panel-body" style="padding: 0px">
-          <div class="col-md-12" style="padding: 5px; overflow:scroll; height:209px;">
-            <a href="{% url 'mpcontribs_rest_index' %}">
-              <img src='{% static "rest_api.jpg" %}' width=100% />
-            </a>
-          </div>
-        </div>
-      </div>
+        <p><img src='{% static "lsdi_logo.png" %}' width=35% style="float: left; padding: 5px;"/>
+        The development of MPContribs is supported by NSF LSDI Data Infrastructure
+        Building Blocks program and DOE Basic Energy Sciences Materials
+        Project.</p>
     </div>
   </div>
   <h2 align="center" style="border-top: 2px dashed; border-bottom: 2px dashed;
   margin: 15px 0 15px; padding: 10px;
   background: #eee; font-variant: small-caps;">Contributed Materials Data</h2>
   <div class="row equal">
-    {% for l in a_tags %}
-    {% for a_tag in l %}
+    {% for lp in landing_pages %}
     <div class="col-md-4">
-      {% if forloop.parentloop.counter0 %}
-      <a href="{{ a_tag.url }}">{{ a_tag.title }}</a>
-      {% else %}
       <div class="panel panel-default">
         <div class="panel-heading">
           <h4 class="panel-title">
-            <a href="{{ a_tag.url }}">{{ a_tag.title  }}</a>
-            {% if "provenance" in a_tag %}{{ a_tag.provenance|safe }}{% endif %}
+            <a href="{{ lp.url }}">{{ lp.title  }}</a>
+            {% if "provenance" in lp %}{{ lp.provenance|safe }}{% endif %}
           </h4>
         </div>
         <div class="panel-body" style="padding: 0px">
           <div class="col-md-12" style="padding: 5px;">
-            <a href="{{ a_tag.url }}">
-              <img src="{% static a_tag.project %}.jpg" width=100% />
+            <a href="{{ lp.url }}">
+              <img src="{% static lp.project %}.jpg" width=100% />
             </a>
           </div>
         </div>
       </div>
-      {% endif %}
     </div>
-    {% endfor %}
     {% endfor %}
   </div>
 </div>
+{% endblock %}
 
-<script>
-  requirejs(['main'], function() {
-    require(['jquery', 'bootstrap'], function() {
-      $(document).ready(function(){ $('.btn-link').tooltip(); })
-    });
-  });
-</script>
-
+{% block extra_items %}
+<li><a href="https://jupyterhub.materialsproject.org">MP JupyterHub</a></li>
+<li><a href="{% url 'mpcontribs_rest_index' %}">API</a></li>
+<li><a href="{% url 'mpcontribs_portal_index' %}">Portal</a></li>
+{% if user.is_authenticated and user.is_superuser %}
+<li><a href="{% url 'mpcontribs_portal_index' %}admin">Admin</a></li>
+{% endif %}
 {% endblock %}

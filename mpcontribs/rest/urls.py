@@ -25,4 +25,6 @@ urlpatterns = [
     url(r'^card/(?P<cid>[\w\d]+)/(?P<db_type>[\w\d]+)$', views.get_card, name='card'),
     url(r'^groupadd/(?P<token>\w+)$', views.groupadd, name='groupadd'),
     url(r'^groupadd/(?P<token>\w+)/(?P<db_type>[\w\d]+)$', views.groupadd, name='groupadd'),
+    url(r'^landing_pages$', views.landing_pages, name='landing_pages'),
+    url(r'^landing_pages/(?P<db_type>[\w\d]+)$', views.landing_pages, name='landing_pages'),
 ]

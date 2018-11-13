@@ -1,0 +1,25 @@
+{
+  "name": "mpcontribs",
+  "version": "1.0.0",
+  "description": "",
+  "private": true,
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "webpack": "./node_modules/.bin/webpack"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/materialsproject/MPContribs.git"
+  },
+  "author": "Patrick Huck",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/materialsproject/MPContribs/issues"
+  },
+  "homepage": "https://github.com/materialsproject/MPContribs#readme",
+  "dependencies": {
+    "webtzite": "file:webtzite"
+  }
+}
