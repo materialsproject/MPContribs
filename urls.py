@@ -6,7 +6,6 @@ from . import views
 
 urlpatterns = [
     url(r'^admin/', include(admin.site.urls)),
-    #url(r'^$', views.index, name='webtzite_index'),
     url(r'^dashboard$', views.dashboard, name='webtzite_dashboard'),
     url(r'^accounts/login$', cas_views.login, name='cas_ng_login'),
     url(r'^accounts/logout$', cas_views.logout, name='cas_ng_logout'),

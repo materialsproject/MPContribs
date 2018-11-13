@@ -60,4 +60,3 @@ code { display: block; white-space: pre-wrap; }
 .panel-default > .panel-heading { border-color: #000; }
 .panel:hover { box-shadow: 0 0 5px 5px rgba(0, 140, 186, 0.5); }
 .equal { display: flex; display: -webkit-flex; flex-wrap: wrap; }
-

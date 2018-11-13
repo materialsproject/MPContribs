@@ -13,4 +13,4 @@ import "../../node_modules/chosen-js/chosen.min.css";
 import "./extra.css";
 
 window.tables = [];
-$(document).ready(function() { $("#logo").attr("src", img); });
+document.getElementById("logo").src = img;

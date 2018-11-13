@@ -96,4 +96,4 @@ def register(request):
 @login_required
 def logout(request):
     auth_logout(request)
-    return redirect(reverse('webtzite_index'))
+    return redirect('/')
