@@ -16,52 +16,53 @@ def index(request):
     ctx['fields'] = fields
     if request.user.is_authenticated():
         user = RegisteredUser.objects.get(username=request.user.username)
-        with MPContribsRester(user.api_key, endpoint=get_endpoint(request)) as mpr:
+        ctx['alert'] = 'Under Construction'
+        #with MPContribsRester(user.api_key, endpoint=get_endpoint(request)) as mpr:
 
-            if request.method == 'GET':
-                options = dict((field, set()) for field in fields)
-                docs = mpr.query_contributions()
-                if docs:
-                    for doc in docs:
-                        options[fields[0]].add(str(doc['mp_cat_id']))
-                        options[fields[1]].add(str(doc['project']))
-                        options[fields[2]].add(str(doc['_id']))
-                else:
-                    ctx.update({'alert': 'No contributions available!'})
-                options = dict((k, list(v)) for k,v in options.iteritems())
-                selection = dict((field, []) for field in fields)
+        #    if request.method == 'GET':
+        #        options = dict((field, set()) for field in fields)
+        #        docs = mpr.query_contributions()
+        #        if docs:
+        #            for doc in docs:
+        #                options[fields[0]].add(str(doc['mp_cat_id']))
+        #                options[fields[1]].add(str(doc['project']))
+        #                options[fields[2]].add(str(doc['_id']))
+        #        else:
+        #            ctx.update({'alert': 'No contributions available!'})
+        #        options = dict((k, list(v)) for k,v in options.iteritems())
+        #        selection = dict((field, []) for field in fields)
 
-            elif request.method == 'POST':
-                projection_keys = ['mp_cat_id', 'project']
-                options, selection = (
-                    dict(
-                        (field, [str(el) for el in json.loads(
-                            request.POST['_'.join([prefix, field])]
-                        )]) for field in fields
-                    ) for prefix in ['options', 'selection']
-                )
+        #    elif request.method == 'POST':
+        #        projection_keys = ['mp_cat_id', 'project']
+        #        options, selection = (
+        #            dict(
+        #                (field, [str(el) for el in json.loads(
+        #                    request.POST['_'.join([prefix, field])]
+        #                )]) for field in fields
+        #            ) for prefix in ['options', 'selection']
+        #        )
 
-                mode = request.POST['submit']
-                if mode == 'Find':
-                    criteria = {}
-                    for idx, key in enumerate(projection_keys):
-                        if selection[fields[idx]]:
-                            criteria.update({
-                                key: {'$in': selection[fields[idx]]}
-                            })
-                    docs = mpr.query_contributions(criteria=criteria, limit=10)
-                    ctx['urls'] = [mpr.get_card(doc['_id'], embed=False) for doc in docs]
-                elif mode == 'Show':
-                    if selection[fields[2]]:
-                        docs = mpr.query_contributions(
-                            criteria={'_id': {'$in': selection[fields[2]]}}
-                        )
-                        ctx['urls'] = [mpr.get_card(doc['_id'], embed=False) for doc in docs]
-                    else:
-                        ctx.update({'alert': 'Enter a contribution identifier!'})
+        #        mode = request.POST['submit']
+        #        if mode == 'Find':
+        #            criteria = {}
+        #            for idx, key in enumerate(projection_keys):
+        #                if selection[fields[idx]]:
+        #                    criteria.update({
+        #                        key: {'$in': selection[fields[idx]]}
+        #                    })
+        #            docs = mpr.query_contributions(criteria=criteria, limit=10)
+        #            ctx['urls'] = [mpr.get_card(doc['_id'], embed=False) for doc in docs]
+        #        elif mode == 'Show':
+        #            if selection[fields[2]]:
+        #                docs = mpr.query_contributions(
+        #                    criteria={'_id': {'$in': selection[fields[2]]}}
+        #                )
+        #                ctx['urls'] = [mpr.get_card(doc['_id'], embed=False) for doc in docs]
+        #            else:
+        #                ctx.update({'alert': 'Enter a contribution identifier!'})
 
-        ctx['options'] = options
-        ctx['selection'] = selection
+        #ctx['options'] = options
+        #ctx['selection'] = selection
     else:
         ctx.update({'alert': 'Please log in!'})
     return render_to_response("mpcontribs_explorer_index.html", ctx)
