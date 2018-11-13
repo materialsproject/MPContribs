@@ -129,7 +129,7 @@ Resources:
         MaximumPercent: 200
         MinimumHealthyPercent: 75
       DesiredCount: !Ref 'DesiredCount'
-      HealthCheckGracePeriodSeconds: 120
+      HealthCheckGracePeriodSeconds: 600
       NetworkConfiguration:
         AwsvpcConfiguration:
           AssignPublicIp: ENABLED
@@ -158,7 +158,7 @@ Resources:
       HealthCheckIntervalSeconds: 6
       HealthCheckPath: /
       Matcher:
-        HttpCode: 301,200
+        HttpCode: 301,200,400 # TODO remove 400
       HealthCheckProtocol: HTTP
       HealthCheckPort: 8080
       HealthCheckTimeoutSeconds: 5
