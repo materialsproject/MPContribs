@@ -18,3 +18,4 @@ access.log
 error.log
 static/*
 test_site.log
+node_modules/*

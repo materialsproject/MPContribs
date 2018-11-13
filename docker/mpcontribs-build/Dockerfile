@@ -6,8 +6,7 @@ RUN apk add --no-cache --allow-untrusted --repository \
       http://dl-3.alpinelinux.org/alpine/edge/testing \
       hdf5 hdf5-dev
 RUN pip install --no-cache-dir --no-binary :all: tables h5py
-RUN npm install npm@latest -g && npm install -g git+https://github.com/tschaume/apidoc.git#csrf bower
-RUN wget https://raw.githubusercontent.com/vishnubob/wait-for-it/master/wait-for-it.sh && chmod +x /wait-for-it.sh
+RUN npm install npm@latest -g && npm install -g git+https://github.com/tschaume/apidoc.git#csrf
 
 RUN git clone https://github.com/Miserlou/zappa-django-utils.git && cd zappa-django-utils && \
       echo "Django==1.8.5" > requirements.txt && echo "boto3==1.9.41" >> requirements.txt && \
@@ -16,10 +15,5 @@ RUN git clone https://github.com/Miserlou/zappa-django-utils.git && cd zappa-dja
 WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt && rm -v requirements.txt
-#RUN git clone https://github.com/materialsproject/webtzite.git
-
-RUN git clone https://github.com/jschneier/django-storages.git /django-storages && cd /django-storages && \
-      sed -i 's@Django>=1.11@Django==1.8.5@' setup.py && pip install --no-cache-dir -e .
-
-#WORKDIR /app/webtzite
-#RUN git pull && bower install --allow-root && bower cache clean --allow-root
+COPY package.json .
+RUN npm install
