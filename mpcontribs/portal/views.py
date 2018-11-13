@@ -10,9 +10,9 @@ from mpcontribs.rest.rester import MPContribsRester
 def index(request):
     ctx = RequestContext(request)
     if request.user.is_authenticated():
-        ctx.update({'alert': '{} authenticated'.format(request.user.username)})
-        #from webtzite.models import RegisteredUser
-        #user = RegisteredUser.objects.get(username=request.user.username)
+        from webtzite.models import RegisteredUser
+        user = RegisteredUser.objects.get(username=request.user.username)
+        ctx.update({'alert': '{} authenticated'.format(user.email)})
         #ctx['landing_pages'] = []
         #rester = MPContribsRester(user.api_key, endpoint=get_endpoint(request))
         #for doc in rester.get_landing_pages():
