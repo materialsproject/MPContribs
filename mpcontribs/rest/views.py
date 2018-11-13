@@ -29,8 +29,6 @@ ConnectorBase.register(Connector)
 def get_endpoint(request):
     from django.core.urlresolvers import reverse
     url = reverse('mpcontribs_rest_index')[:-1]
-    if os.environ.get('DEPLOYMENT') is not None:
-        return 'http://localhost:8080' + url
     if os.environ.get('JPY_USER') is None and in_docker():
         return 'http://app:5000' + url
     return request.build_absolute_uri(url)
