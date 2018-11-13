@@ -7,7 +7,8 @@ WORKDIR /app
 COPY . .
 
 ENV NODE_ENV=production
-RUN npm run webpack && pip install -e . && python manage.py makemigrations webtzite && \
+RUN npm install && npm run webpack && pip install -e . && \
+      python manage.py makemigrations webtzite && \
       python manage.py migrate && python manage.py clearsessions && \
       python manage.py django_cas_ng_clean_sessions
 
