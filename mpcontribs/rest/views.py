@@ -183,11 +183,9 @@ def query_contributions(request, db_type=None, mdb=None):
 
     @apiParamExample {json} Request-Example:
         {
-            "collection": "materials",
-            "criteria": { "_id": "mp-30" },
-            "projection": {
-                "_id": 0, "LBNL.5733704637202d12f448fc59.tree_data": 1
-            }
+            "collection": "contributions",
+            "criteria": { "_id": "mp-2715" },
+            "projection": { "content.data": 1 }
         }
 
     @apiSuccess {String} created_at Response timestamp
@@ -207,14 +205,22 @@ def query_contributions(request, db_type=None, mdb=None):
             "valid_response": true,
             "response": [
                 {
-                    "_id": "57336b0137202d12f6d50b37",
-                    "collaborators": ["Patrick Huck"],
-                    "mp_cat_id": "mp-134"
-                }, {
-                    "_id": "5733704637202d12f448fc59",
-                    "collaborators": ["Patrick Huck"],
-                    "mp_cat_id": "mp-30"
-                }
+                    "_id": "5a862202d4f1443a18fab254",
+                    "content": {
+                        "data": {
+                            "ΔE-KS": {
+                                "indirect": "0.0991 eV",
+                                "direct": "0.275 eV"
+                            },
+                            "ΔE-QP": {
+                                "indirect": "0.135 eV",
+                                "direct": "0.311 eV"
+                            },
+                            "C": "0.0357 eV"
+                        }
+                    },
+                    "collaborators": [ "Patrick Huck" ]
+                }, ...
             ]
         }
     """
@@ -356,7 +362,9 @@ def datasets(request, identifier, db_type=None, mdb=None):
     @apiSuccess {Bool} valid_response Response is valid
     @apiSuccess {Object} response Response List of Dictionaries
     @apiSuccess {Boolean} response.title Dataset title
-    @apiSuccess {String} response.provenance_keys Provenance keys for dataset
+    @apiSuccess {Boolean} response.authors Dataset authors
+    @apiSuccess {Boolean} response.description Dataset description
+    @apiSuccess {Boolean} response.urls Dataset urls
     @apiSuccess {String} response.cids List of contribution id's
 
     @apiSuccessExample Success-Response:
@@ -366,39 +374,29 @@ def datasets(request, identifier, db_type=None, mdb=None):
             "valid_response": true,
             "response": [
                 {
-                    "cids": [ "598b69700425d5032cc8e586" ],
-                    "provenance_keys": [ "source" ],
-                    "title": "Optical constants of Cu-Zn (Copper-zinc alloy, Brass)"
-                }
+                    "_id": "carrier_transport",
+                    "description": "...",
+                    "title": "Carrier Transport",
+                    "urls": {
+                        "url": "https://www.nature.com/articles/sdata201785",
+                        "doi": "https://doi.org/10.1038/sdata.2017.85"
+                    },
+                    "authors": "F. Ricci, W. Chen, ...",
+                    "cids": [ "5ac0a17fd4f1443de2674074" ]
+                }, ...
             ]
         }
     """
-    from mpcontribs.users_modules import get_users_modules, get_user_rester
     contributions = []
     required_keys = ['title', 'description', 'authors', 'urls']
-    for mod_path in get_users_modules():
-        if os.path.exists(os.path.join(mod_path, 'rest', 'rester.py')):
-            UserRester = get_user_rester(mod_path)
-            r = UserRester(request.user.api_key, endpoint=get_endpoint(request))
-            if r.released and r.query is not None:
-                criteria = {'mp_cat_id': identifier}
-                criteria.update(dict(
-                    ('content.{}'.format(k), {'$exists': 1})
-                    for k in required_keys
-                ))
-                docs = r.query_contributions(
-                    criteria=criteria,
-                    projection={'content.title': 1, 'mp_cat_id': 1}
-                )
-                if docs:
-                    contrib = {}
-                    contrib['title'] = docs[0]['content']['title']
-                    contrib['cids'] = []
-                    for d in docs:
-                        contrib['cids'].append(d['_id'])
-                    contrib['provenance_keys'] = map(str, r.provenance_keys)
-                    contributions.append(contrib)
-    return {"valid_response": True, "response": contributions}
+    projection = {'mp_cat_id': 1, 'project': 1, '_id': 1}
+    projection.update(dict(('content.'+k, 1) for k in required_keys))
+    group = {'_id': '$project', 'cids': {'$push': '$_id'}}
+    group.update(dict((k, {'$first': '$content.'+k}) for k in required_keys))
+    docs = list(mdb.contribs_db.contributions.aggregate([
+        {'$match': {'mp_cat_id': identifier}}, {'$project': projection}, {'$group': group}
+    ]))
+    return {"valid_response": True, "response": docs}
 
 @mapi_func(supported_methods=["GET", "POST"], requires_api_key=True)
 def get_card(request, cid, db_type=None, mdb=None):
@@ -408,11 +406,10 @@ def get_card(request, cid, db_type=None, mdb=None):
     @apiName PostGetCard
     @apiGroup Contribution
 
-    @apiDescription Either returns a string containing html for hierarchical
-    data, or if existent, a list of URLs for static versions of embedded graphs.
+    @apiDescription returns an (embeddable) string for the contribution card.
 
     @apiParam {String} api_key User's unique API_KEY
-    @apiParam {json} provenance_keys List of provenance keys
+    @apiParam {String} embed Return embeddable card
 
     @apiSuccess {String} created_at Response timestamp
     @apiSuccess {Bool} valid_response Response is valid
@@ -423,7 +420,7 @@ def get_card(request, cid, db_type=None, mdb=None):
         {
             "created_at": "2017-08-09T19:59:59.936618",
             "valid_response": true,
-            "response": ["<graph-url>"]
+            "response": []
         }
     """
     from mpcontribs.io.core.components import HierarchicalData#, GraphicalData, render_plot
