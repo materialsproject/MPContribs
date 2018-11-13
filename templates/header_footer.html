@@ -1,8 +1,13 @@
 {% load render_bundle from webpack_loader %}
+{% load kwacros %}
+{% kwacro title %}
+    {% block title %}Materials Project{% endblock %}
+{% endkwacro %}
+
 <!DOCTYPE html>
 <html>
   <head>
-    <title>{% block title %}Materials Project{% endblock title %}</title>
+    <title>{% usekwacro title %}</title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     {% render_bundle 'styles' %}
     {% block extra_css %}
@@ -26,11 +31,15 @@
               <img id="logo">
             </a>
           </div>
-	  <h1 class="navbar-text" style="font-variant: small-caps; color: white; margin: 5px;">
-	    {% block caption %}
-	    <!-- CAPTION -->
-	    {% endblock caption %}
-	  </h1>
+          <ul class="nav navbar-nav">
+            <li>
+              <a href="{% block caption_url %}{% endblock caption_url %}" style="padding-top: 0px; padding-bottom: 0px;">
+                <h1 style="font-variant: small-caps; color: white; margin: 5px;">
+                  {% usekwacro title %}
+                </h1>
+              </a>
+            </li>
+	  </ul>
           <ul class="nav navbar-nav navbar-right">
             {% block extra_items %}
             {% endblock extra_items %}
