@@ -1,5 +1,6 @@
 import yaml, pymongo, os, six
 from abc import ABCMeta
+from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 
 class Connections(object):
@@ -74,9 +75,8 @@ class ConnectorBase(six.with_metaclass(ABCMeta, object)):
         """
         :param user: Django User object
         """
-        # PRODUCTION env-var gets set by apache WSGI handler
         PRODUCTION = True if os.environ.get('PRODUCTION') == '1' else False
-        self.release = ('dev', 'prod')[PRODUCTION]
+        self.release = 'dev' if settings.DEBUG else 'prod'
         # replace Django User object with RegisteredUser
         anon_user = False
         try:

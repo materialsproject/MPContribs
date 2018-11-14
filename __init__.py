@@ -3,8 +3,7 @@ from importlib import import_module
 from django.core.serializers.json import DjangoJSONEncoder
 from django.utils.encoding import force_unicode
 from django.core.exceptions import PermissionDenied
-from django.http import HttpResponse, HttpResponseBadRequest,\
-    HttpResponseForbidden
+from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseForbidden
 
 # https://stackoverflow.com/a/42674935
 def in_docker():
