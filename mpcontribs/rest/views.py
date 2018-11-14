@@ -4,13 +4,12 @@
 from __future__ import unicode_literals
 import os
 from bson.json_util import loads
+from bson.objectid import ObjectId
 from django.core.exceptions import PermissionDenied
 from django.contrib.auth.models import Group
-from webtzite.connector import ConnectorBase
-from bson.objectid import ObjectId
-from webtzite import mapi_func, in_docker
 from django.shortcuts import redirect
-from test_site.settings import PROXY_URL_PREFIX
+from webtzite.connector import ConnectorBase
+from webtzite import mapi_func, in_docker
 
 class Connector(ConnectorBase):
     def connect(self, **kwargs):
@@ -29,13 +28,12 @@ ConnectorBase.register(Connector)
 def get_endpoint(request):
     from django.core.urlresolvers import reverse
     url = reverse('mpcontribs_rest_index')[:-1]
-    if os.environ.get('JPY_USER') is None and in_docker():
-        return 'http://app:5000' + url
     return request.build_absolute_uri(url)
 
 def index(request):
     jpy_user = os.environ.get('JPY_USER')
     if jpy_user:
+        from test_site.settings import PROXY_URL_PREFIX
         from mpcontribs.rest.make_apidoc_json import make_apidoc_json
         from subprocess import call
         make_apidoc_json(get_endpoint(request))

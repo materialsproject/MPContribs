@@ -26,26 +26,20 @@ from django_extensions.management.commands.generate_secret_key import get_random
 SECRET_KEY = get_random_secret_key()
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+NODE_ENV = os.environ.get('NODE_ENV', 'production')
+DEBUG = True #bool(NODE_ENV == 'development')
 
 ALLOWED_HOSTS = ['portal.mpcontribs.org', 'contribs.materialsproject.org', 'localhost']
 
 AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend',
-    #'django_cas_ng.backends.CASBackend',
     'webtzite.backends.CASBackend',
-    #'webtzite.backends.CustomModelBackend',
-    ##'webtzite.backends.CustomBrowserIDBackend',
-    #'nopassword.backends.email.EmailBackend'
 )
-
-# Application definition
 
 from mpcontribs.users_modules import get_user_installed_apps
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
-    #'django_browserid',
     'nopassword',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
@@ -60,9 +54,11 @@ INSTALLED_APPS = [
     'mpcontribs.explorer',
     'zappa_django_utils',
     'webpack_loader',
+    #'corsheaders',
 ] + get_user_installed_apps()
 
 MIDDLEWARE_CLASSES = (
+    #'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -95,10 +91,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'test_site.wsgi.application'
 
-
-# Database
-# https://docs.djangoproject.com/en/1.8/ref/settings/#databases
-
 DATABASES = {
     'default': {
         'ENGINE': 'zappa_django_utils.db.backends.s3sqlite',
@@ -108,22 +100,11 @@ DATABASES = {
 }
 
 
-# Internationalization
-# https://docs.djangoproject.com/en/1.8/topics/i18n/
-
 LANGUAGE_CODE = 'en-us'
-
 TIME_ZONE = 'UTC'
-
 USE_I18N = True
-
 USE_L10N = True
-
 USE_TZ = True
-
-
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/1.8/howto/static-files/
 
 JPY_USER = os.environ.get('JPY_USER')
 PROXY_URL_PREFIX = '/flaskproxy/{}'.format(JPY_USER) if JPY_USER else ''
@@ -148,3 +129,12 @@ CAS_REDIRECT_URL = '/'
 CAS_RETRY_LOGIN = True
 CAS_USERNAME_ATTRIBUTE = 'username'
 CAS_APPLY_ATTRIBUTES_TO_USER = True
+
+#CORS_ORIGIN_ALLOW_ALL = True
+#CORS_ALLOW_CREDENTIALS = True
+#CSRF_TRUSTED_ORIGINS = ( 'localhost',)
+#CORS_ORIGIN_WHITELIST = (
+#    'contribs.materialsproject.org',
+#    'portal.mpcontribs.org',
+#    'localhost:8080',
+#)
