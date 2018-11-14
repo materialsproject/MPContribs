@@ -2,7 +2,7 @@ from __future__ import unicode_literals, print_function
 import archieml, textwrap
 from mpcontribs.config import mp_level01_titles, symprec, replacements
 from mpcontribs.io.core.mpfile import MPFileCore
-from mpcontribs.io.core.recdict import RecursiveDict
+from mpcontribs.io.core.recdict import RecursiveDict, Quantity
 from mpcontribs.io.core.utils import nest_dict, normalize_root_level
 from mpcontribs.io.core.utils import read_csv, make_pair
 from mpcontribs.io.core.components import Table
@@ -46,6 +46,7 @@ class MPFile(MPFileCore):
                     if is_general else rdct[root_key]
 
             # iterate to find CSV sections to parse
+            # also parse propnet quantities
             if isinstance(section, dict):
                 scope = []
                 for k, v in section.iterate():
@@ -65,6 +66,11 @@ class MPFile(MPFileCore):
                         section.rec_update(d, overwrite=True)
                         if not is_general and level == 0:
                             section.insert_default_plot_options(pd_obj, key)
+                    elif Quantity is not None and isinstance(v, six.string_types) and ' ' in v:
+                        quantity = Quantity.from_key_value(key, v)
+                        d = nest_dict(quantity.as_dict(), scope + [key]) # TODO quantity.symbol.name
+                        section.rec_update(d, overwrite=True)
+
 
             # convert CIF strings into pymatgen structures
             if mp_level01_titles[3] in section:
@@ -103,6 +109,10 @@ class MPFile(MPFileCore):
                 cif = CifWriter(value, symprec=symprec).__str__()
                 lines.append(make_pair(
                     ''.join([replacements.get(c, c) for c in key]), cif+':end'
+                ))
+            elif Quantity is not None and isinstance(value, Quantity):
+                lines.append(make_pair(
+                    value.display_symbols[0], value.pretty_string()
                 ))
             else:
                 level, key = key

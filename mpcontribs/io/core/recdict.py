@@ -4,6 +4,11 @@ from collections import OrderedDict as _OrderedDict
 from collections import Mapping as _Mapping
 from mpcontribs.config import mp_level01_titles, replacements
 
+try:
+    from propnet.core.quantity import Quantity
+except ImportError:
+    Quantity = None
+
 cwd = os.path.dirname(__file__)
 json_human = {}
 for ext in ['js', 'css']:
@@ -88,7 +93,6 @@ class RecursiveDict(_OrderedDict):
 
     def iterate(self, nested_dict=None):
         """http://stackoverflow.com/questions/10756427/loop-through-all-nested-dictionary-values"""
-        from mpcontribs.io.core.components import Table
         d = self if nested_dict is None else nested_dict
         if nested_dict is None:
             self.level = 0
@@ -101,7 +105,12 @@ class RecursiveDict(_OrderedDict):
                     continue
                 yield (self.level, key), None
                 if value.get('@class') == 'Table':
+                    from mpcontribs.io.core.components import Table
                     yield key, Table.from_dict(value)
+                    continue
+                if Quantity is not None and value.get('@class') == 'Quantity':
+                    quantity = Quantity.from_dict(value)
+                    yield key, quantity
                     continue
                 self.level += 1
                 for inner_key, inner_value in self.iterate(nested_dict=value):
