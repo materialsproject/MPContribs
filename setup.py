@@ -23,6 +23,7 @@ setup(
         package_name, '{}.io'.format(package_name), '{}.webui'.format(package_name),
         '{}.explorer'.format(package_name), '{}.portal'.format(package_name),
         '{}.rest'.format(package_name), '{}.builder'.format(package_name),
+        '{}.api'.format(package_name),
     ],
     install_requires = required,
     license = 'MIT',
