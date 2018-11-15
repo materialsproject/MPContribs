@@ -1,8 +1,9 @@
 import os
 
-from flask import Flask, request
+from flask import Flask
 from flask_pymongo import PyMongo
 from flask_restplus import Api
+from mpcontribs.api.decorators import api_check
 
 app = Flask(__name__)
 app.secret_key = b'super-secret' # reset in local prod config
@@ -18,34 +19,6 @@ app.config['MONGO_URI'] = "{0}://{1}/{2}?retryWrites=true".format(
 )
 mongo = PyMongo(app)
 
-
-import re
-from decorator import decorator
-from requests import get
-from flask import current_app
-from flask_restplus.errors import abort
-from flask_restplus._http import HTTPStatus
-
-@decorator
-def api_check(f, *args, **kw):
-    # TODO SSL check?
-    kwstr = ', '.join('%r: %r' % (k, kw[k]) for k in sorted(kw))
-    print("calling %s with args %s, {%s}" % (f.__name__, args, kwstr))
-    api_key = request.headers.get('X-API-KEY')
-    if not api_key:
-        abort(HTTPStatus.FORBIDDEN, "X-API-KEY not supplied.")
-    if not re.match('^[0-9,A-Z,a-z]{16}$', api_key):
-        abort(HTTPStatus.FORBIDDEN, "X-API-KEY wrong format.")
-    api_check_endpoint = current_app.config.get('API_CHECK_ENDPOINT')
-    if not api_check_endpoint:
-        abort(HTTPStatus.INTERNAL_SERVER_ERROR, 'API_CHECK_ENDPOINT not set!')
-    headers = {'X-API-KEY': api_key}
-    api_check_response = get(api_check_endpoint, headers=headers).json()
-    if not api_check_response['api_key_valid']:
-        abort(HTTPStatus.FORBIDDEN, "API_KEY is not a valid key.")
-    return f(*args, **kw)
-
-
 authorizations = {
     'apikey': {'type': 'apiKey', 'in': 'header', 'name': 'X-API-KEY'}
 }
@@ -57,6 +30,7 @@ api = Api(
 )
 
 
+from flask import request
 from flask_restplus import Namespace
 from flask_restplus import Resource as OriginalResource
 from flask_restplus.mask import Mask
@@ -69,7 +43,7 @@ class Resource(OriginalResource):
 
 
 
-from models import model as contribution_model
+from mpcontribs.api.models import model as contribution_model
 
 namespace = Namespace(
     'contributions', description='operations for canonical contributions'

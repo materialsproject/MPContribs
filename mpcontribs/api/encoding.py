@@ -4,7 +4,7 @@ from bson import json_util
 from bson.objectid import ObjectId
 from datetime import datetime, date
 
-from app import api
+from mpcontribs.api.app import api
 
 # https://stackoverflow.com/a/11286887
 # https://gist.github.com/akhenakh/2954605
