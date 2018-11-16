@@ -1,10 +1,8 @@
 import json
-from Flask import make_response, current_app
+from flask import make_response, current_app
 from bson import json_util
 from bson.objectid import ObjectId
 from datetime import datetime, date
-
-from mpcontribs.api.app import api
 
 # https://stackoverflow.com/a/11286887
 # https://gist.github.com/akhenakh/2954605
@@ -17,7 +15,6 @@ class MongoJsonEncoder(json.JSONEncoder):
             return str(obj)
         return json.JSONEncoder.default(self, obj)
 
-@api.representation('application/json')
 def output_json(data, code, headers=None):
     settings = {'cls': MongoJsonEncoder}
     if current_app.debug:
