@@ -1,6 +1,7 @@
 aniso8601==4.0.1
 atomicwrites==1.2.1
 attrs==18.2.0
+backports.csv==1.0.6
 backports.functools-lru-cache==1.5
 beautifulsoup4==4.6.3
 certifi==2018.10.15
@@ -15,7 +16,8 @@ feedparser==5.2.1
 Flask==1.0.2
 Flask-CAS==1.0.0
 Flask-PyMongo==2.2.0
-flask-restplus==0.12.1
+-e git+https://github.com/noirbizarre/flask-restplus.git@a8f35823fe40b2c7385632a2ad6b35b26467402c#egg=flask_restplus
+future==0.17.1
 idna==2.7
 itsdangerous==1.1.0
 jaraco.functools==1.20
@@ -24,8 +26,9 @@ jsonschema==2.6.0
 lxml==4.2.5
 MarkupSafe==1.1.0
 more-itertools==4.3.0
--e git+git@github.com:materialsproject/MPContribs.git@075f20a696052eab1a26d80968e6e706fe9545f2#egg=mpcontribs
-pattern3==3.0.0
+nltk==3.3
+numpy==1.15.4
+-e git+https://github.com/clips/pattern@5b85d998c30ddc6772b56310713530224466083a#egg=Pattern
 pdfminer.six==20181108
 pdfminer3k==1.3.1
 Pillow==5.3.0
@@ -36,8 +39,10 @@ py==1.7.0
 pycryptodome==3.7.0
 pymongo==3.7.2
 pytest==4.0.0
+python-docx==0.8.7
 pytz==2018.7
 requests==2.20.1
+scipy==1.1.0
 simplejson==3.16.0
 six==1.11.0
 sortedcontainers==2.0.5
