@@ -1,66 +1,47 @@
-from flask_restplus import fields, Model, SchemaModel
+from flask_restplus import SchemaModel
 
-dtu_urls = SchemaModel('DtuUrls', {
-    'properties': {
-        "AENM": {'type': 'string', 'format': 'uri'},
-        "PRA": {'type': 'string', 'format': 'uri'},
-        "PRB": {'type': 'string', 'format': 'uri'},
-    }
-})
+#### PROJECT-SPECIFIC CONTENT ####
 
-dtu_bandgaps = SchemaModel('DtuBandgaps', {
-    'properties': {
-        "direct": {'type': 'string'},
-        "indirect": {'type': 'string'},
-    }
-})
+schema_models = [
+    SchemaModel('DtuBandgaps', {
+        'properties': {
+            "direct": {'type': 'string'},
+            "indirect": {'type': 'string'},
+        }
+    }),
+    SchemaModel('DtuData', {
+        'properties': {
+            "C": {'type': 'string'},
+            "ΔE-KS": {'$ref': '#/definitions/DtuBandgaps'},
+            "ΔE-QP": {'$ref': '#/definitions/DtuBandgaps'},
+        }
+    })
+    #"contributor": {'type': 'string'},
+    #"formula": {'type': 'string'},
+    #"input_url": {'type': 'string', 'format': 'uri'},
+    #"ICSD": {'type': 'string'},
+    #"data": {'$ref': '#/definitions/DtuData'},
+]
 
-dtu_data = SchemaModel('DtuData', {
-    'properties': {
-        "C": {'type': 'string'},
-        "ΔE-KS": {'$ref': '#/definitions/DtuBandgaps'},
-        "ΔE-QP": {'$ref': '#/definitions/DtuBandgaps'},
-    }
-})
+from flask_restplus import fields, Model
 
-content = SchemaModel('Content', {
-    'required': ['title', 'description', 'authors', 'urls'],
-    'properties': {
-        'title': {'type': 'string'},
-        'description': {'type': 'string'},
-        'authors': {'type': 'string'},
-        'urls': {'$ref': '#/definitions/DtuUrls'},
-        "contributor": {'type': 'string'},
-        "formula": {'type': 'string'},
-        "input_url": {'type': 'string', 'format': 'uri'},
-        "project": {'type': 'string'},
-        "ICSD": {'type': 'string'},
-        "data": {'$ref': '#/definitions/DtuData'},
-    }
-})
+wild = fields.Wildcard(fields.Url) # URL format?
+urls_model = Model('Urls', {'*': wild})
 
-model = Model('ContributionModel', {
-    '_id': fields.String(
-        readOnly=True, required=True,
+provenance_model = Model('Content', {
+    'title': fields.String(
+        required=True, example='GLLB-SC Bandgaps',
         description='unique contribution identifier (bson.ObjectId)',
-        example='5a862206d4f1443a18fab255'
     ),
-    'mp_cat_id': fields.String(
-        required=True, #attribute='identifier',
-        description='material/composition identifier',
-        example='mp-2715'
+    'description': fields.String(
+        required=True, description='Brief description of the project',
     ),
-    'project': fields.String(
-        required=True, example='dtu', readOnly=True,
-        description='project slug',
+    'authors': fields.String(
+        required=True, example='P. Huck, K. Persson',
+        description='comma-separated list of authors',
     ),
-    'collaborators': fields.List(
-        fields.String(example='Patrick Huck <phuck@lbl.gov>'),
-        required=True, description='list of collaborators'
-    ),
-    #'content': fields.Nested(
-    #    content, required=True,
-    #    description='free-form content of the contribution'
-    #)
-}, mask='{_id,mp_cat_id,collaborators}') # TODO SchemaModel.items error for content!
-
+    'urls': fields.Nested(
+        urls, required=True,
+        description='list of URLs for references'
+    )
+})
