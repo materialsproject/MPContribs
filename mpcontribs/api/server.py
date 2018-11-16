@@ -2,8 +2,8 @@ import os
 
 from flask import Flask
 from flask_restplus import Api
-from mpcontribs.api.core.resource_patched import mongo
-from mpcontribs.api.core.encoding import output_json
+from mpcontribs.api.core.resource import db
+from flask_pymongo import BSONObjectIdConverter
 
 app = Flask(__name__)
 app.secret_key = b'super-secret' # reset in local prod config
@@ -16,7 +16,11 @@ host = '{0}{1}{2}'.format(
 app.config['MONGO_URI'] = "{0}://{1}/{2}?retryWrites=true".format(
     'mongodb+srv', host, 'mpcontribs'
 )
-mongo.init_app(app)
+app.config['MONGODB_SETTINGS'] = {
+    'db': 'mpcontribs', 'host': app.config['MONGO_URI'], 'connect': False
+}
+db.init_app(app)
+app.url_map.converters["ObjectId"] = BSONObjectIdConverter
 authorizations = {
     'apikey': {'type': 'apiKey', 'in': 'header', 'name': 'X-API-KEY'}
 }
@@ -25,7 +29,8 @@ api = Api(
     description='API for contributed Materials Project data',
     authorizations=authorizations, security='apikey', contact='phuck@lbl.gov',
 )
-api.representations['application/json'] = output_json
+#from mpcontribs.api.core.encoding import output_json
+#api.representations['application/json'] = output_json
 
 from mpcontribs.api.contributions.namespace import contributions_namespace
 

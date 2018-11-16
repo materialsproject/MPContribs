@@ -1,5 +1,5 @@
 from flask_restplus import Namespace
-from mpcontribs.api.core.resource_patched import Resource
+from mpcontribs.api.core.resource import Resource
 from mpcontribs.api.core.decorators import api_check
 from mpcontribs.api.contributions.models import contribution_model
 

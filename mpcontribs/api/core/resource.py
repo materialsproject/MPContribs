@@ -1,10 +1,10 @@
 from flask import request
 from flask_restplus import Resource as OriginalResource
 from flask_restplus.mask import Mask
-from flask_pymongo import PyMongo
+from flask_mongoengine import MongoEngine
 from pattern.en import singularize, pluralize
 
-mongo = PyMongo()
+db = MongoEngine()
 
 class Resource(OriginalResource):
     """Resource with query methods to apply mask as MongoDB projection"""
