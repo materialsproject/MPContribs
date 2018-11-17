@@ -1,10 +1,14 @@
 certifi==2018.10.15
+chardet==3.0.4
 Click==7.0
+decorator==4.3.0
 dnspython==1.15.0
 Flask==1.0.2
+flask-marshmallow==0.9.0
 flask-mongoengine==0.9.5
 flask-rebar==1.1.0
 Flask-WTF==0.14.2
+idna==2.7
 itsdangerous==1.1.0
 Jinja2==2.10
 MarkupSafe==1.1.0
@@ -12,6 +16,8 @@ marshmallow==2.16.3
 marshmallow-mongoengine==0.9.1
 mongoengine==0.16.1
 pymongo==3.7.2
+requests==2.20.1
 six==1.11.0
+urllib3==1.24.1
 Werkzeug==0.14.1
 WTForms==2.2.1
