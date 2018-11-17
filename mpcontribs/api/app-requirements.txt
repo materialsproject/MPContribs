@@ -1,0 +1,17 @@
+certifi==2018.10.15
+Click==7.0
+dnspython==1.15.0
+Flask==1.0.2
+flask-mongoengine==0.9.5
+flask-rebar==1.1.0
+Flask-WTF==0.14.2
+itsdangerous==1.1.0
+Jinja2==2.10
+MarkupSafe==1.1.0
+marshmallow==2.16.3
+marshmallow-mongoengine==0.9.1
+mongoengine==0.16.1
+pymongo==3.7.2
+six==1.11.0
+Werkzeug==0.14.1
+WTForms==2.2.1
