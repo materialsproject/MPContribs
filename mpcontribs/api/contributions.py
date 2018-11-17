@@ -49,3 +49,6 @@ class Contribution(db.DynamicDocument):
 class ContributionSchema(ModelSchema):
     class Meta:
         model = Contribution
+
+#registry.handles('/<ObjectId:cid>')
+
