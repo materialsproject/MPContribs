@@ -25,30 +25,30 @@
 #    #)
 #}, mask='{_id,identifier,collaborators}')
 
-from marshmallow_mongoengine import ModelSchema
-from mpcontribs.api.app import db
-
-class Content(db.EmbeddedDocument):
-    data = db.DynamicField()
-
-class Collaborator(db.EmbeddedDocument):
-    name = db.StringField(required=True)
-    email = db.EmailField(required=True)
-
-class Contribution(db.DynamicDocument):
-    _id = db.ObjectIdField(required=True)
-    identifier = db.StringField(required=True)
-    project = db.StringField(max_length=30, required=True)
-    collaborators = db.EmbeddedDocumentListField(Collaborator, required=True)
-    content = db.EmbeddedDocumentField(Content)
-    meta = {
-        'collection': 'contributions',
-        'indexes': ['identifier', 'project']
-    }
-
-class ContributionSchema(ModelSchema):
-    class Meta:
-        model = Contribution
-
-#registry.handles('/<ObjectId:cid>')
+#from marshmallow_mongoengine import ModelSchema
+#from mpcontribs.api.app import db
+#
+#class Content(db.EmbeddedDocument):
+#    data = db.DynamicField()
+#
+#class Collaborator(db.EmbeddedDocument):
+#    name = db.StringField(required=True)
+#    email = db.EmailField(required=True)
+#
+#class Contribution(db.DynamicDocument):
+#    _id = db.ObjectIdField(required=True)
+#    identifier = db.StringField(required=True)
+#    project = db.StringField(max_length=30, required=True)
+#    collaborators = db.EmbeddedDocumentListField(Collaborator, required=True)
+#    content = db.EmbeddedDocumentField(Content)
+#    meta = {
+#        'collection': 'contributions',
+#        'indexes': ['identifier', 'project']
+#    }
+#
+#class ContributionSchema(ModelSchema):
+#    class Meta:
+#        model = Contribution
+#
+##registry.handles('/<ObjectId:cid>')
 

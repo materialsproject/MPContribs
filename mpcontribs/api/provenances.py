@@ -21,11 +21,10 @@ from mongoengine import fields, DynamicEmbeddedDocument, EmbeddedDocumentField
 
 class Urls(DynamicEmbeddedDocument):
     main = fields.URLField(required=True)
+    # TODO make sure all fields show up in response
 
-# TODO Document
-# TODO make sure all fields in urls show up in response
-class Provenance(DynamicDocument):
-    _id = fields.ObjectIdField(required=True)
+class Provenance(DynamicDocument): # TODO use Document?
+    _id = fields.ObjectIdField(required=True) # `id` to avoid 'auto_id_0' in the schema?
     title = fields.StringField(max_length=30, required=True, unique=True)
     authors = fields.StringField(required=True)
     description = fields.StringField(required=True)
@@ -40,18 +39,16 @@ class ProvenanceSchema(ModelSchema):
     class Meta:
         model = Provenance
 
-class GetProvenancesQuerySchema(ma.Schema):
+class GetProvenanceQuerySchema(ma.Schema):
     project = ma.fields.String(max_length=30)
     title = ma.fields.String(max_length=30)
 
-def get_provenances():
-    """retrieve provenance information for projects"""
+def get_provenance():
+    """retrieve provenance for a project (via slug or title)"""
     valid_args = g.validated_args
     return Provenance.objects.get_or_404(**valid_args)
 
-def add_all_handlers(registry):
-    registry.add_handler(
-        get_provenances, rule='/provenances', method='GET',
-        query_string_schema=GetProvenancesQuerySchema(),
-        marshal_schema=ProvenanceSchema(),
-    )
+def get_projects():
+    """retrieve list of all available project slugs"""
+    #print(Provenance.objects.get_or_404())
+    return 'hello world'
