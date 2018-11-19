@@ -24,49 +24,56 @@ provenances = Blueprint("provenances", __name__)
 
 class Urls(DynamicEmbeddedDocument):
     main = fields.StringField(required=True)
+    # TODO URL validation?
     # TODO make sure all fields show up in response
 
-class Provenance(DynamicDocument): # TODO use Document?
+class Provenance(DynamicDocument):
+    project = fields.StringField(
+        min_length=3, max_length=30, required=True, unique=True,
+        regex = '^[a-zA-Z0-9_]+$', help_text="help text for project field"
+    )
     title = fields.StringField(
-        max_length=30, required=True, unique=True,
+        min_length=5, max_length=30, required=True, unique=True
     )
     authors = fields.StringField(required=True)
-    description = fields.StringField(required=True)
+    description = fields.StringField(
+        min_length=50, max_length=250, required=True
+    )
     urls = EmbeddedDocumentField(Urls, required=True)
-    project = fields.StringField(max_length=30, required=True, unique=True)
     meta = {
-        'collection': 'provenances',
-        'indexes': ['title', 'project'],
+        'collection': 'provenances', 'indexes': [{
+            'fields': ['$title', "$description", "$authors"],
+        }, 'project']
     }
+
+    def __repr__(self):
+        return '<Provenance(project={self.project!r})>'.format(self=self)
 
 class ProvenanceSchema(ModelSchema):
     class Meta:
         model = Provenance
+        ordered = True
 
 class ProvenanceView(SwaggerView):
-    # TODO tags, description
-    definitions = {'ProvenanceSchema': ProvenanceSchema}
-    #validation = True # for request.json only (PUT, POST, ...)
+    summary = "Operations for provenance info of materials data contributed to MP"
+    tags = ['provenances']
+    parameters = ProvenanceSchema # default (can be overidden in methods below)
 
     def get(self, project=None):
-        """Retrieve provenance information for contributed projects/datasets.
-        Provenance information for a project includes `title`, `authors`,
-        `description`, and `urls`. Without a project name/slug provided in the
-        URL, this endpoint retrieves a list of provenance entries for projects
-        matching the query parameters.
+        """Retrieve a project/dataset's provenance information.
+        Provenance information for a project includes `title`, `authors`, \
+        `description`, and `urls`. Without a project name/slug provided in the \
+        URL, this endpoint retrieves a list of provenance entries for projects \
+        matching the other query parameters (see body/schema description below). \
+        For the parameters `title`, `description`, and `authors` a search over
+        the MongoEngine/MongoDB text index is being used (see \
+        https://docs.mongodb.com/manual/text-search/)
         ---
         parameters:
             - name: project
               in: path
               type: string
-              minLength: 3
-              maxLength: 30
-              pattern: '^[a-zA-Z0-9_]*$'
               description: project identifier (name/slug)
-            - name: title
-              in: query
-              type: string
-              description: search project titles
         responses:
             200:
                 description: one or list of provenance entries
@@ -84,34 +91,41 @@ class ProvenanceView(SwaggerView):
                         }
                     list: [entry1, entry2, ...]
         """
+        data, errors = ProvenanceSchema().load(request.args, partial=True)
+        if errors:
+            return jsonify(errors), 404
+        project = data.project if 'project' in data else project
+        print(project, data)
+        #    provenance = Provenance.objects.get_or_404(project=project)
         # TODO text search in descriptions, authors, titles
-        project = request.parsed_data['path'].get('project')
-        if project is not None:
-            provenance = Provenance.objects.get_or_404(project=project)
+        # db.provenances.find({ $text: { $search: "bandgap phases" } })
         return jsonify(project)
-        # TODO marshal the response
-        #return jsonify(ProvenanceSchema().dump(provenance).data)
+        # many=True to validate list
+        #ProvenanceSchema().dump(provenance).data
+        #return jsonify(provenance)
 
     def post(self):
-        """POST /tickets - Creates a new ticket"""
+        """Create a new provenance entry"""
         pass
 
-    def put(self):
-        """PUT /tickets/12 - Updates ticket #12"""
+    def put(self, project):
+        """Update a project's provenance entry"""
         pass
 
-    def patch(self):
-        """PATCH /tickets/12 - Partially updates ticket #12"""
+    def patch(self, project):
+        """Partially update a project's provenance entry"""
         pass
 
-    def delete(self):
-        """DELETE /tickets/12 - Deletes ticket #12"""
+    def delete(self, project):
+        """Delete a project's provenance entry"""
         pass
 
 # Flask-RESTful/plus
 # api.add_resource(UserAPI, '/<userId>', '/<userId>/<username>', endpoint = 'user')
+view_func = ProvenanceView.as_view('provenance')
+# url_prefix added in register_blueprint
+provenances.add_url_rule('/', view_func=view_func, methods=['POST'])
 provenances.add_url_rule(
-    '/<string:project>', # url_prefix added in register_blueprint
-    view_func=ProvenanceView.as_view('provenance'),
-    methods=['GET']
+    '/<string:project>', view_func=view_func,
+    methods=['GET', 'DELETE', 'PATCH', 'PUT']
 )

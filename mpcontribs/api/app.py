@@ -15,12 +15,11 @@ def create_app(name):
     #rebar = Rebar()
     app = Flask(name)
     app.config.from_envvar('APP_CONFIG_FILE')
-    #app.config['SWAGGER'] = { 'title': 'My API' } # TODO
     log = Logging(app)
     #app.url_map.converters["ObjectId"] = BSONObjectIdConverter
     ma = Marshmallow(app)
     db = MongoEngine(app)
-    swagger = Swagger(app, parse=True)
+    swagger = Swagger(app)
     from mpcontribs.api.provenances import provenances
     #conn = app.extensions['mongoengine'][db]['conn']
     #registry = setup_registry(conn)

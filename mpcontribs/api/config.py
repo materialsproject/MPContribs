@@ -9,4 +9,8 @@ MONGODB_SETTINGS = {
         os.environ.get('MPCONTRIBS_MONGO_HOST', 'localhost')
     ), 'connect': False
 }
-
+SWAGGER = {
+    'title': 'MPContribs API',
+    "description": "operations for materials data contributed to MP",
+    "version": None,
+}
