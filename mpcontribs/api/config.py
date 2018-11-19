@@ -23,5 +23,5 @@ SWAGGER = {
         }
     ],
     "swagger_ui": True,
-    "specs_route": "/"
+    "specs_route": "/apidocs"
 }
