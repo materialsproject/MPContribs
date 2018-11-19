@@ -2,6 +2,7 @@ import re, inspect, logging
 from requests import get
 from importlib import import_module
 from marshmallow_mongoengine import fields
+from marshmallow import Schema
 from flask import request, current_app
 from flask_rebar import HandlerRegistry, errors, messages
 from flask_rebar.authenticators.base import Authenticator
@@ -40,6 +41,9 @@ class HeaderApiKeyAuthenticator(Authenticator):
         if not api_check_response['api_key_valid']:
             raise errors.Unauthorized(messages.invalid_auth_token)
 
+class DefaultResponseSchema(Schema):
+    text = fields.String()
+
 def get_members(module, typ):
     return [
         m for m in inspect.getmembers(module, typ)
@@ -54,10 +58,10 @@ def setup_registry(conn):
     collections = ['contributions', 'provenances']
 
     # TODO add https scheme
-    # TODO default_response_schema ?
     swaggen = SwaggerV2Generator(
         title='MPContribs API', version=None,
-        description='Operations to retrieve materials data contributed to MP'
+        description='Operations to retrieve materials data contributed to MP',
+        default_response_schema=DefaultResponseSchema()
     )
     swaggen.authenticator_converters = { # reset default
         HeaderApiKeyAuthenticator: _convert_header_api_key_authenticator
