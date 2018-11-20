@@ -1,3 +1,5 @@
+import re
+from requests import get
 from importlib import import_module
 from flask import request, current_app
 from flask.views import MethodViewType
@@ -22,18 +24,18 @@ def login_required(f):
     @wraps(f)
     def authenticate(*args, **kwargs):
         # TODO SSL check?
-        #if HEADER not in request.headers:
-        #    raise errors.Unauthorized(messages.missing_auth_token)
-        #api_key = request.headers[HEADER]
-        #if not re.match('^[0-9,A-Z,a-z]{16}$', api_key):
-        #    raise errors.Unauthorized(messages.invalid_auth_token)
-        #api_check_endpoint = current_app.config.get('API_CHECK_ENDPOINT')
-        #if not api_check_endpoint:
-        #    raise errors.InternalError('API_CHECK_ENDPOINT not set!')
-        #headers = {HEADER: api_key}
-        #api_check_response = get(api_check_endpoint, headers=headers).json()
-        #if not api_check_response['api_key_valid']:
-        #    raise errors.Unauthorized(messages.invalid_auth_token)
+        if HEADER not in request.headers:
+            raise JsonError(401, error='{} header missing'.format(HEADER))
+        api_key = request.headers[HEADER]
+        if not re.match('^[0-9,A-Z,a-z]{16}$', api_key):
+            raise JsonError(401, error='{} format invalid'.format(HEADER))
+        api_check_endpoint = current_app.config.get('API_CHECK_ENDPOINT')
+        if not api_check_endpoint:
+            raise JsonError(500, error='API_CHECK_ENDPOINT not set!')
+        headers = {HEADER: api_key}
+        api_check_response = get(api_check_endpoint, headers=headers).json()
+        if not api_check_response['api_key_valid']:
+            raise JsonError(401, error='{} invalid'.format(HEADER))
         return f(*args, **kwargs)
     return authenticate
 
