@@ -1,6 +1,7 @@
 import os
 
 DEBUG = True
+JSON_ADD_STATUS = False
 FLASK_LOG_LEVEL = 'DEBUG' if DEBUG else 'WARNING'
 SECRET_KEY = b'super-secret' # reset in local prod config
 API_CHECK_ENDPOINT = 'https://materialsproject.org/rest/api_check'

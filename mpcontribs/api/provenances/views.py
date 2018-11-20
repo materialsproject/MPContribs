@@ -1,5 +1,5 @@
 from mongoengine.queryset import DoesNotExist
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, request
 from mpcontribs.api.core import SwaggerView
 from mpcontribs.api.provenances.document import Provenances
 
@@ -75,10 +75,7 @@ class ProjectsView(SwaggerView):
                             "urls": { "main": "https://doi.org/10.1002/aenm.201400915" }
                         }
         """
-        try:
-            entry = Provenances.objects.get(project=project)
-        except DoesNotExist:
-            return jsonify({project: 'DoesNotExist'}), 404
+        entry = Provenances.objects.get(project=project)
         return self.marshal(entry)
 
     def put(self, project):
