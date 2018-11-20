@@ -3,6 +3,7 @@ from flask import jsonify
 from flask.views import MethodViewType
 from flasgger import SwaggerView as OriginalSwaggerView
 from marshmallow_mongoengine import ModelSchema
+from flask_mongoengine import BaseQuerySet
 
 # https://github.com/pallets/flask/blob/master/flask/views.py
 class SwaggerViewType(MethodViewType):
@@ -27,5 +28,5 @@ class SwaggerView(OriginalSwaggerView, metaclass=SwaggerViewType):
     """A class-based view defining a `marshal` method to run query results
     through the accordung marshmallow schema"""
     def marshal(self, entries):
-        # TODO check length of entries for many=True
-        return jsonify(self.Schema().dump(entries, many=True).data)
+        many = isinstance(entries, BaseQuerySet)
+        return jsonify(self.Schema().dump(entries, many=many).data)
