@@ -13,10 +13,15 @@ class Urls(DynamicEmbeddedDocument):
     # TODO URL validation?
     # TODO make sure all fields show up in response
 
+
 class Provenance(DynamicDocument):
+    __project_regex__ = '^[a-zA-Z0-9_]+$'
     project = fields.StringField(
         min_length=3, max_length=30, required=True, unique=True,
-        regex = '^[a-zA-Z0-9_]+$', help_text="project name/slug"
+        regex = __project_regex__,
+        help_text="project name/slug (valid format: `{}`)".format(
+            __project_regex__
+        )
     )
     title = fields.StringField(
         min_length=5, max_length=30, required=True, unique=True,

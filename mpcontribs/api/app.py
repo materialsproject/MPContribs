@@ -17,7 +17,6 @@ from flasgger import Swagger
 #}
 #registry.set_default_authenticator(authenticator)
 
-
 #authenticator = HeaderApiKeyAuthenticator('X-API-KEY', 'MAPI_KEY')
 #class HeaderApiKeyAuthenticator(Authenticator):
 #    def __init__(self, header, name):
@@ -46,7 +45,8 @@ def create_app(name):
     #app.url_map.converters["ObjectId"] = BSONObjectIdConverter
     ma = Marshmallow(app)
     db = MongoEngine(app)
-    swagger = Swagger(app)
+    swagger = Swagger(app, template=app.config.get('TEMPLATE'))
+
     #conn = app.extensions['mongoengine'][db]['conn']
     #api_pkg_path = __name__.split('.')[:-1]
     #db_name = api_pkg_path[0]
