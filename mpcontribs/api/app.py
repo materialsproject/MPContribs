@@ -1,5 +1,13 @@
-from flask import redirect
-from mpcontribs.api.core import create_app
+import logging
+from importlib import import_module
+from flask import Flask, redirect
+from flask_marshmallow import Marshmallow
+from flask_mongoengine import MongoEngine
+from flask_log import Logging
+#from flask_pymongo import BSONObjectIdConverter
+from flasgger import Swagger
+
+logger = logging.getLogger('app')
 
 #def projection(self):
 #    mask = Mask(request.headers.get('X-Fields', self.model.__mask__))
@@ -32,6 +40,36 @@ from mpcontribs.api.core import create_app
 #        api_check_response = get(api_check_endpoint, headers=headers).json()
 #        if not api_check_response['api_key_valid']:
 #            raise errors.Unauthorized(messages.invalid_auth_token)
+
+def get_collections(db):
+    conn = db.app.extensions['mongoengine'][db]['conn']
+    #return conn.mpcontribs.list_collection_names() # TODO replace below
+    return ['provenances']
+
+def create_app(name):
+    app = Flask(name)
+    app.config.from_envvar('APP_CONFIG_FILE')
+    log = Logging(app)
+    #app.url_map.converters["ObjectId"] = BSONObjectIdConverter
+    ma = Marshmallow(app)
+    db = MongoEngine(app)
+    swagger = Swagger(app, template=app.config.get('TEMPLATE'))
+    collections = get_collections(db)
+    for collection in collections:
+        module_path = '.'.join(['mpcontribs', 'api', collection, 'views'])
+        try:
+            module = import_module(module_path)
+        except ModuleNotFoundError:
+            logger.warning('API module {} not found!'.format(module_path))
+            continue
+        try:
+            blueprint = getattr(module, collection)
+            app.register_blueprint(blueprint, url_prefix='/'+collection)
+        except AttributeError as ex:
+            logger.warning('Failed to register blueprint {}: {}'.format(
+                module_path, collection, ex
+            ))
+    return app
 
 if __name__ == '__main__':
     app = create_app(__name__)

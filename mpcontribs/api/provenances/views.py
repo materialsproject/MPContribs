@@ -1,62 +1,12 @@
-import marshmallow as ma
-from marshmallow_mongoengine import ModelSchema
-from flask_mongoengine import Document, DynamicDocument
-from mongoengine import fields, DynamicEmbeddedDocument, EmbeddedDocumentField
 from mongoengine.queryset import DoesNotExist
 from flask import Blueprint, jsonify, request
-from flasgger import SwaggerView
+from mpcontribs.api.core import SwaggerView
+from mpcontribs.api.provenances.document import Provenances
 
 provenances = Blueprint("provenances", __name__)
 
-class Urls(DynamicEmbeddedDocument):
-    main = fields.StringField(required=True)
-    # TODO URL validation?
-    # TODO make sure all fields show up in response
-
-
-class Provenances(DynamicDocument):
-    __project_regex__ = '^[a-zA-Z0-9_]+$'
-    project = fields.StringField(
-        min_length=3, max_length=30, required=True, unique=True,
-        regex = __project_regex__,
-        help_text="project name/slug (valid format: `{}`)".format(
-            __project_regex__
-        )
-    )
-    title = fields.StringField(
-        min_length=5, max_length=30, required=True, unique=True,
-        help_text='(short) title for the project/dataset'
-    )
-    authors = fields.StringField(
-        required=True, help_text='comma-separated list of authors'
-    )
-    description = fields.StringField(
-        min_length=5, max_length=1500, required=True,
-        help_text='brief description of the project'
-    )
-    urls = EmbeddedDocumentField(
-        Urls, required=True, help_text='list of URLs for references'
-    )
-    meta = {
-        'collection': 'provenances', 'indexes': [{
-            'fields': ['$title', "$description", "$authors"],
-        }, 'project']
-    }
-
-    def __str__(self):
-        return '<Provenances(project={self.project!r})>'.format(self=self)
-
-class ProvenancesSchema(ModelSchema):
-    class Meta:
-        model = Provenances
-        ordered = True
-
 class ProvenancesView(SwaggerView):
-    definitions = {'ProvenancesSchema': ProvenancesSchema}
-    tags = ['provenances']
-
-    def marshal(self, entries):
-        return jsonify(ProvenancesSchema().dump(entries, many=True).data)
+    """defines methods for API operations with provenances"""
 
     def get(self):
         """Retrieve and search provenance information for all projects.
@@ -97,11 +47,7 @@ class ProvenancesView(SwaggerView):
         pass
 
 class ProjectsView(SwaggerView):
-    definitions = {'ProvenancesSchema': ProvenancesSchema}
-    tags = ['provenances']
-
-    def marshal(self, entry):
-        return jsonify(ProvenancesSchema().dump(entry).data)
+    """defines methods for API operations with project provenance"""
 
     def get(self, project):
         """Retrieve a project/dataset's provenance information.
@@ -146,9 +92,6 @@ class ProjectsView(SwaggerView):
     def delete(self, project):
         """Delete a project's provenance entry"""
         pass
-
-# Flask-RESTful/plus
-# api.add_resource(UserAPI, '/<userId>', '/<userId>/<username>', endpoint = 'user')
 
 # url_prefix added in register_blueprint
 provenances.add_url_rule(

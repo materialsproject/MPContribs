@@ -1,40 +1,31 @@
-import logging
 from importlib import import_module
-from flask import Flask
-from flask_marshmallow import Marshmallow
-from flask_mongoengine import MongoEngine
-from flask_log import Logging
-#from flask_pymongo import BSONObjectIdConverter
-from flasgger import Swagger
+from flask import jsonify
+from flask.views import MethodViewType
+from flasgger import SwaggerView as OriginalSwaggerView
+from marshmallow_mongoengine import ModelSchema
 
-logger = logging.getLogger('app')
+# https://github.com/pallets/flask/blob/master/flask/views.py
+class SwaggerViewType(MethodViewType):
+    """Metaclass for `SwaggerView` ..."""
+    def __init__(cls, name, bases, d):
+        super(SwaggerViewType, cls).__init__(name, bases, d)
+        if not __name__ == cls.__module__:
+            # e.g.: cls.__module__ = mpcontribs.api.provenances.views
+            views_path = cls.__module__.split('.')
+            doc_path = '.'.join(views_path[:-1] + ['document'])
+            doc_name = views_path[-2].capitalize()
+            Model = getattr(import_module(doc_path), doc_name)
+            schema_name = doc_name + 'Schema'
+            cls.Schema = type(schema_name, (ModelSchema, object), {
+                'Meta': type('Meta', (object,), dict(model=Model, ordered=True))
+            })
+            #cls.decorators = [login_required]
+            cls.definitions = {schema_name: cls.Schema}
+            cls.tags = [views_path[-2]]
 
-def get_collections(db):
-    conn = db.app.extensions['mongoengine'][db]['conn']
-    #return conn.mpcontribs.list_collection_names() # TODO replace below
-    return ['provenances']
-
-def create_app(name):
-    app = Flask(name)
-    app.config.from_envvar('APP_CONFIG_FILE')
-    log = Logging(app)
-    #app.url_map.converters["ObjectId"] = BSONObjectIdConverter
-    ma = Marshmallow(app)
-    db = MongoEngine(app)
-    swagger = Swagger(app, template=app.config.get('TEMPLATE'))
-    collections = get_collections(db)
-    for collection in collections:
-        module_path = '.'.join(['mpcontribs', 'api', collection])
-        try:
-            module = import_module(module_path)
-        except ModuleNotFoundError:
-            logger.warning('API module {} not found!'.format(module_path))
-            continue
-        try:
-            blueprint = getattr(module, collection)
-            app.register_blueprint(blueprint, url_prefix='/'+collection)
-        except AttributeError as ex:
-            logger.warning('Failed to register blueprint {}: {}'.format(
-                module_path, collection, ex
-            ))
-    return app
+class SwaggerView(OriginalSwaggerView, metaclass=SwaggerViewType):
+    """A class-based view defining a `marshal` method to run query results
+    through the accordung marshmallow schema"""
+    def marshal(self, entries):
+        # TODO check length of entries for many=True
+        return jsonify(self.Schema().dump(entries, many=True).data)
