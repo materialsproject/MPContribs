@@ -43,9 +43,9 @@ TEMPLATE = {
             'type': 'apiKey'
         }
     },
-    "security": [{"ApiKeyAuth": []}]
-    #"host": "mysite.com",  # overrides localhost:500
+    "security": [{"ApiKeyAuth": []}],
+    "host": "127.0.0.1:5000",  # overrides localhost:500
     #"basePath": "/api",  # base bash for blueprint registration
-    #"schemes": [ "http", "https" ],
+    "schemes": [ "http" ],
     #"operationId": "getmyData"
 }
