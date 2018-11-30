@@ -2,6 +2,7 @@
 from __future__ import unicode_literals
 import os, json, re
 from glob import glob
+from datetime import datetime
 from itertools import groupby
 import pandas as pd
 from mpcontribs.io.core.utils import get_composition_from_string
@@ -9,6 +10,7 @@ from mpcontribs.io.core.recdict import RecursiveDict
 from mpcontribs.io.core.utils import clean_value, read_csv, nest_dict
 from mpcontribs.io.core.components import Table
 from mpcontribs.users.utils import duplicate_check
+from utils import redenth_act, get_debye_temp
 
 def get_fit_pars(sample_number):
     import solar_perovskite
@@ -86,6 +88,17 @@ def add_comp_one(compstr):
             samp_new += spl_samp[l]
     return samp_new
 
+t_ox_airsep = [350, 400, 450, 500, 600, 700, 800]
+t_red_airsep = [600, 700, 800, 900, 1000, 1100, 1200, 1400]
+p_ox_airsep = [1e-20, 1e-15, 1e-12, 1e-10, 1e-8, 1e-6, 1e-5, 1e-4, 1e-3]
+p_red_airsep = [1e-8, 1e-6, 1e-5, 1e-4, 1e-3, 0.21, 1]
+processes = ["AS", "WS", "CS"]
+enth_steps = 20
+t_ox_ws_cs = [600, 700, 800, 900, 1000, 1050, 1100, 1150]
+t_red_ws_cs = [1100, 1200, 1250, 1300, 1350, 1400, 1450, 1500]
+p_ox_ws_cs = [1e-6, 1e-5, 1e-4, 1e-3, 1e-2, 1e-1]
+p_red_ws_cs = [1e-6, 1e-5, 1e-3, 0.21, 1]
+
 @duplicate_check
 def run(mpfile, **kwargs):
     # TODO clone solar_perovskite if needed, abort if insufficient permissions
@@ -104,67 +117,75 @@ def run(mpfile, **kwargs):
     input_file = os.path.join(input_dir, input_files['exp'])
     exp_table = read_csv(open(input_file, 'r').read().replace(';', ','))
     print 'exp data loaded.'
-    with open(os.path.join(input_dir, input_files['theo']), 'r') as f:
-        theo_data = json.loads(f.read()).pop('collection')
-    print 'theo data loaded.'
-    with open(input_files['energy'], 'r') as f:
-        data = json.load(f).pop('collection')
-    print 'energy data loaded.'
-    l = [dict(sdoc, parameters=doc['_id']) for doc in data for sdoc in doc['energy_analysis']]
-    frame = pd.DataFrame(l)
-    parameters = frame['parameters']
-    frame.drop(labels=['parameters'], axis=1, inplace=True)
-    frame.insert(0, 'parameters', parameters)
-    print 'energy dataframe:', frame.shape
 
-    for theo_dct in theo_data:
-        identifier = theo_dct['_id']
-        if identifier in run.existing_identifiers:
-            print 'not updating', identifier
-            continue
-
+    mpfile_singles = [m for m in mpfile.split()]
+    for mpfile_single in mpfile_singles:
+        #if identifier in run.existing_identifiers:
+        #    print 'not updating', identifier
+        #    continue
+        identifier = mpfile_single.ids[0]
+        hdata = mpfile_single.hdata[identifier]
 	print identifier
-        if identifier == 'None':
-            print 'Invalid Identifier!'
-            print theo_dct
-            continue
 
         print 'add hdata ...'
         d = RecursiveDict()
-        d['theo_compstr'] = theo_dct['pars']['theo_compstr']
-        row = exp_table.loc[exp_table['theo_compstr'] == d['theo_compstr']]
-        d['tolerance_factor'] = clean_value(theo_dct['data']['tolerance_factor'])
-        d['solid_solution'] = theo_dct['data']['solid_solution'] if row.empty else row.iloc[0]['type of solid solution']
-        d['oxidized_phase'] = RecursiveDict()
-        d['oxidized_phase']['composition'] = theo_dct['data']['oxidized_phase']['composition'] \
-                if row.empty else row.iloc[0]['composition oxidized phase']
-        d['reduced_phase'] = RecursiveDict()
-        red_comp = theo_dct['data']['reduced_phase']['composition'] \
-                if row.empty else row.iloc[0]['composition reduced phase']
-        d['reduced_phase']['composition'] = '' if red_comp is None else red_comp
-        d['reduced_phase']['closest-MP'] = theo_dct['data']['reduced_phase']['closest_MP'].replace('None', '') \
-                if row.empty else row.iloc[0]['closest phase MP (reduced)'].replace('n.a.', '')
-        compstr = add_comp_one(theo_dct['pars']['theo_compstr']) if row.empty else row.iloc[0]['theo_compstr']
-        d['availability'] = theo_dct['pars']['data_availability']
-        d = nest_dict(d, ['data'])
-
+        d['data'] = RecursiveDict()
+        compstr = hdata['pars']['theo_compstr']
+        row = exp_table.loc[exp_table['theo_compstr'] == compstr]
         if not row.empty:
             sample_number = int(row.iloc[0]['sample_number'])
             d['pars'] = get_fit_pars(sample_number)
+            d['data']['availability'] = 'Exp+Theo'
         else:
             d['pars'] = RecursiveDict()
-        d['pars']['theo_compstr'] = compstr
-        d['pars']['dh_min'] = clean_value(theo_dct['pars']['dh_min'])
-        d['pars']['dh_max'] = clean_value(theo_dct['pars']['dh_max'])
-        d['pars']['last_updated'] = theo_dct['pars']['last_updated']
-        d['pars']['act_mat'] = clean_value(theo_dct['pars']['act_mat'][1])
+            d['data']['availability'] = 'Theo'
+        print 'dh_min, dh_max ...'
+        _, dh_min, dh_max, _ = redenth_act(compstr)
+        d['pars']['dh_min'] = clean_value(dh_min, max_dgts=4)
+        d['pars']['dh_max'] = clean_value(dh_max, max_dgts=4)
         d['pars']['elastic'] = RecursiveDict()
-        elastic = theo_dct['pars']['elastic']
-        d['pars']['elastic']['tensors_available'] = clean_value(elastic["Elastic tensors available"])
+        print 'debye temps ...'
         d['pars']['elastic']['debye_temp'] = RecursiveDict()
-        d['pars']['elastic']['debye_temp']['perovskite'] = clean_value(elastic["Debye temp perovskite"])
-        d['pars']['elastic']['debye_temp']['brownmillerite'] = clean_value(elastic["Debye temp brownmillerite"])
-        mpfile.add_hierarchical_data(d, identifier=identifier)
+        try:
+            t_d_perov = get_debye_temp(identifier)
+            t_d_brownm = get_debye_temp(hdata['data']['reduced_phase']['closest-MP'])
+            tensors_available = 'True'
+        except TypeError:
+            t_d_perov = get_debye_temp("mp-510624")
+            t_d_brownm = get_debye_temp("mp-561589")
+            tensors_available = 'False'
+        d['pars']['elastic']['debye_temp']['perovskite'] = clean_value(t_d_perov, max_dgts=6)
+        d['pars']['elastic']['debye_temp']['brownmillerite'] = clean_value(t_d_brownm, max_dgts=6)
+        d['pars']['elastic']['tensors_available'] = tensors_available
+        d['pars']['last_updated'] = str(datetime.now())
+        mpfile_single.add_hierarchical_data(d, identifier=identifier)
+
+        for process in processes:
+            if process != "AS":
+                t_ox_l = t_ox_ws_cs
+                t_red_l = t_red_ws_cs
+                p_ox_l = p_ox_ws_cs
+                p_red_l = p_red_ws_cs
+                data_source = ["Theo"]
+            else:
+                t_ox_l = t_ox_airsep
+                t_red_l = t_red_airsep
+                p_ox_l = p_ox_airsep
+                p_red_l = p_red_airsep
+                data_source = ["Theo", "Exp"]
+
+            for red_temp in t_red_l:
+                for ox_temp in t_ox_l:
+                    for ox_pr in p_ox_l:
+                        for red_pr in p_red_l:
+                            for data_sources in data_source:
+                                db_id = process + "_" + str(float(ox_temp)) + "_" \
+                                        + str(float(red_temp)) + "_" + str(float(ox_pr)) \
+                                        + "_" + str(float(red_pr)) + "_" + data_sources + \
+                                        "_" + str(float(enth_steps))
+
+
+        break
 
         print 'add energy analysis ...'
 	group = frame[frame['compstr']==compstr.replace('x', '3')]

@@ -1,19 +1,18 @@
 title: RedoxThermoCSP
-authors:
-J. Vieten, B. Bulfin, D. Guban, L. Zhu, P. Huck, M. Horton,
-K. Persson, M. Roeb, C. Sattler
+authors: 
+J. Vieten, B. Bulfin, D. Guban, L. Zhu, P. Huck, M. Horton, K.
+Persson, M. Roeb, C. Sattler
 :end
-
-description:
-Redox Materials Thermochemistry Data for Application in
-Concentrated Solar Power. We have measured thermodynamic data of
-perovskites ABOₓ with x=3-δ, i.e. ΔH and ΔS in dependence of the
-non-stoichiometry δ by means of thermogravimetric analysis. That
-means, we measured the mass changes in dependence of T and p(O₂),
-determined the corresponding non-stoichiometry changes and used
-this data to extract thermodynamic properties from van’t Hoff
-plots. In parallel, we performed density functional theory
-calculations (DFT) to get theoretical thermodynamic data.
+description: 
+Redox Materials Thermochemistry Data for Application in Concentrated
+Solar Power. We have measured thermodynamic data of perovskites ABOₓ
+with x=3-δ, i.e. ΔH and ΔS in dependence of the non-stoichiometry δ by
+means of thermogravimetric analysis. That means, we measured the mass
+changes in dependence of T and p(O₂), determined the corresponding
+non-stoichiometry changes and used this data to extract thermodynamic
+properties from van’t Hoff plots. In parallel, we performed density
+functional theory calculations (DFT) to get theoretical thermodynamic
+data.
 :end
 
 {input_files}
@@ -23,3 +22,3819 @@ energy: /home/jovyan/work/energy_data.json
 
 {urls}
 GitHub: https://github.com/josuav1/solar_perovskite
+
+{mp-1099702}
+
+{mp-1099702.pars}
+theo_compstr: Ca0.75Sr0.25Ti0.125Mn0.875Ox
+act_mat: 0.875
+
+{mp-1099702.data}
+tolerance_factor: 1.001
+solid_solution: Ti-Mn
+
+{mp-1099702.data.oxidized_phase}
+composition: Sr2Ca6TiMn7O24
+
+{mp-1099702.data.reduced_phase}
+closest_MP: mp-1076877
+composition: Sr2Ca6TiMn7O20
+
+{mp-554938}
+
+{mp-554938.pars}
+theo_compstr: Ba1Co1Ox
+act_mat: 1.0
+
+{mp-554938.data}
+tolerance_factor: 1.096
+solid_solution: Co
+
+{mp-554938.data.oxidized_phase}
+composition: BaCoO3
+
+{mp-554938.data.reduced_phase}
+closest_MP: mp-1076439
+composition: Ba2Co2O5
+
+{mp-1076581}
+
+{mp-1076581.pars}
+theo_compstr: Sm0.125La0.875Ti0.375V0.625Ox
+act_mat: 0.625
+
+{mp-1076581.data}
+tolerance_factor: 0.94
+solid_solution: Ti-V
+
+{mp-1076581.data.oxidized_phase}
+composition: La7SmTi3V5O24
+
+{mp-1076581.data.reduced_phase}
+closest_MP: mp-1076885
+composition: La7SmTi3V5O20
+
+{mp-1099803}
+
+{mp-1099803.pars}
+theo_compstr: Sm1V1Ox
+act_mat: 1.0
+
+{mp-1099803.data}
+tolerance_factor: 0.91
+solid_solution: V
+
+{mp-1099803.data.oxidized_phase}
+composition: SmVO3
+
+{mp-1099803.data.reduced_phase}
+closest_MP: mp-1076055
+composition: Sm2V2O5
+
+{mp-1076600}
+
+{mp-1076600.pars}
+theo_compstr: Sr0.625Ba0.375Co0.375Cu0.625Ox
+act_mat: 0.625
+
+{mp-1076600.data}
+tolerance_factor: 1.006
+solid_solution: Co-Cu
+
+{mp-1076600.data.oxidized_phase}
+composition: Ba3Sr5Co3Cu5O24
+
+{mp-1076600.data.reduced_phase}
+closest_MP: mp-1076881
+composition: Ba3Sr5Co3(CuO4)5
+
+{mp-1077670}
+
+{mp-1077670.pars}
+theo_compstr: Ca0.25Sr0.75Mn0.375Fe0.625Ox
+act_mat: 0.625
+
+{mp-1077670.data}
+tolerance_factor: 1.007
+solid_solution: Mn-Fe
+
+{mp-1077670.data.oxidized_phase}
+composition: Sr6Ca2Mn3Fe5O24
+
+{mp-1077670.data.reduced_phase}
+closest_MP: mp-1076177
+composition: Sr6Ca2Mn3(FeO4)5
+
+{mp-1076792}
+
+{mp-1076792.pars}
+theo_compstr: Sm0.125La0.875Fe0.125Mn0.875Ox
+act_mat: 0.875
+
+{mp-1076792.data}
+tolerance_factor: 0.943
+solid_solution: Fe-Mn
+
+{mp-1076792.data.oxidized_phase}
+composition: La7SmMn7FeO24
+
+{mp-1076792.data.reduced_phase}
+closest_MP: mp-1099704
+composition: La7SmMn7FeO20
+
+{mp-1076382}
+
+{mp-1076382.pars}
+theo_compstr: Sm0.125La0.875Fe1Ox
+act_mat: 1.0
+
+{mp-1076382.data}
+tolerance_factor: 0.943
+solid_solution: Fe
+
+{mp-1076382.data.oxidized_phase}
+composition: La7Sm(FeO3)8
+
+{mp-1076382.data.reduced_phase}
+closest_MP: mp-1076176
+composition: La7Sm(Fe2O5)4
+
+{mp-1076843}
+
+{mp-1076843.pars}
+theo_compstr: Na1Mo1Ox
+act_mat: 1.0
+
+{mp-1076843.data}
+tolerance_factor: 0.971
+solid_solution: Mo
+
+{mp-1076843.data.oxidized_phase}
+composition: NaMoO3
+
+{mp-1076843.data.reduced_phase}
+closest_MP: mp-1099875
+composition: Na2Mo2O5
+
+{mp-1076096}
+
+{mp-1076096.pars}
+theo_compstr: Ca0.75Sr0.25Co1Ox
+act_mat: 1.0
+
+{mp-1076096.data}
+tolerance_factor: 1.006
+solid_solution: Co
+
+{mp-1076096.data.oxidized_phase}
+composition: SrCa3(CoO3)4
+
+{mp-1076096.data.reduced_phase}
+closest_MP: mp-1076675
+composition: SrCa3(Co2O5)2
+
+{mp-32341}
+
+{mp-32341.pars}
+theo_compstr: Eu1Ni1Ox
+act_mat: 1.0
+
+{mp-32341.data}
+tolerance_factor: 0.928
+solid_solution: Ni
+
+{mp-32341.data.oxidized_phase}
+composition: EuNiO3
+
+{mp-32341.data.reduced_phase}
+closest_MP: mp-1076223
+composition: Eu2Ni2O5
+
+{mp-1076802}
+
+{mp-1076802.pars}
+theo_compstr: Ca0.625Sr0.375Fe0.625Co0.375Ox
+act_mat: 0.375
+
+{mp-1076802.data}
+tolerance_factor: 0.993
+solid_solution: Fe-Co
+
+{mp-1076802.data.oxidized_phase}
+composition: Sr3Ca5Fe5(CoO8)3
+
+{mp-1076802.data.reduced_phase}
+closest_MP: mp-1076614
+composition: Sr3Ca5Fe5Co3O20
+
+{mp-1076484}
+
+{mp-1076484.pars}
+theo_compstr: Na0.625K0.375Mo0.75V0.25Ox
+act_mat: 0.25
+
+{mp-1076484.data}
+tolerance_factor: 1.015
+solid_solution: Mo-V
+
+{mp-1076484.data.oxidized_phase}
+composition: K3Na5V2(MoO4)6
+
+{mp-1076484.data.reduced_phase}
+closest_MP: mp-1076637
+composition: K3Na5V2(Mo3O10)2
+
+{mp-4651}
+
+{mp-4651.pars}
+theo_compstr: Sr1Ti1Ox
+act_mat: 1.0
+
+{mp-4651.data}
+tolerance_factor: 0.996
+solid_solution: Ti
+
+{mp-4651.data.oxidized_phase}
+composition: SrTiO3
+
+{mp-4651.data.reduced_phase}
+closest_MP: mp-1097778
+composition: Sr2Ti2O5
+
+{mp-1076543}
+
+{mp-1076543.pars}
+theo_compstr: Mg0.125Ca0.875Ti0.125Mn0.875Ox
+act_mat: 0.875
+
+{mp-1076543.data}
+tolerance_factor: 0.979
+solid_solution: Ti-Mn
+
+{mp-1076543.data.oxidized_phase}
+composition: Ca7MgTiMn7O24
+
+{mp-1076543.data.reduced_phase}
+closest_MP: mp-1077701
+composition: Ca7MgTiMn7O20
+
+{mp-1099938}
+
+{mp-1099938.pars}
+theo_compstr: Na0.625K0.375Mo0.875V0.125Ox
+act_mat: 0.125
+
+{mp-1099938.data}
+tolerance_factor: 1.011
+solid_solution: Mo-V
+
+{mp-1099938.data.oxidized_phase}
+composition: K3Na5VMo7O24
+
+{mp-1099938.data.reduced_phase}
+closest_MP: mp-1076540
+composition: K3Na5VMo7O20
+
+{mp-1076128}
+
+{mp-1076128.pars}
+theo_compstr: Mg0.125Ca0.875Co1Ox
+act_mat: 1.0
+
+{mp-1076128.data}
+tolerance_factor: 0.983
+solid_solution: Co
+
+{mp-1076128.data.oxidized_phase}
+composition: Ca7Mg(CoO3)8
+
+{mp-1076128.data.reduced_phase}
+closest_MP: mp-1076526
+composition: Ca7Mg(Co2O5)4
+
+{mp-1076611}
+
+{mp-1076611.pars}
+theo_compstr: Sm0.25La0.75Cr0.5Fe0.5Ox
+act_mat: 0.5
+
+{mp-1076611.data}
+tolerance_factor: 0.945
+solid_solution: Cr-Fe
+
+{mp-1076611.data.oxidized_phase}
+composition: La3SmCr2(FeO6)2
+
+{mp-1076611.data.reduced_phase}
+closest_MP: mp-1076194
+composition: La3SmCr2(FeO5)2
+
+{mp-778717}
+
+{mp-778717.pars}
+theo_compstr: Mg1Fe1Ox
+act_mat: 1.0
+
+{mp-778717.data}
+tolerance_factor: 0.871
+solid_solution: Fe
+
+{mp-778717.data.oxidized_phase}
+composition: MgFeO3
+
+{mp-778717.data.reduced_phase}
+closest_MP: mp-705864
+composition: Mg2Fe2O5
+
+{mp-22013}
+
+{mp-22013.pars}
+theo_compstr: La1Ti1Ox
+act_mat: 1.0
+
+{mp-22013.data}
+tolerance_factor: 0.937
+solid_solution: Ti
+
+{mp-22013.data.oxidized_phase}
+composition: LaTiO3
+
+{mp-22013.data.reduced_phase}
+closest_MP: mp-1097763
+composition: La2Ti2O5
+
+{mp-1077667}
+
+{mp-1077667.pars}
+theo_compstr: Ca0.875Sr0.125Mn0.75Fe0.25Ox
+act_mat: 0.25
+
+{mp-1077667.data}
+tolerance_factor: 0.994
+solid_solution: Mn-Fe
+
+{mp-1077667.data.oxidized_phase}
+composition: SrCa7Mn6(FeO12)2
+
+{mp-1077667.data.reduced_phase}
+closest_MP: mp-1077691
+composition: SrCa7Mn6(FeO10)2
+
+{mp-1076431}
+
+{mp-1076431.pars}
+theo_compstr: Sm0.125La0.875Cr0.25Fe0.75Ox
+act_mat: 0.75
+
+{mp-1076431.data}
+tolerance_factor: 0.947
+solid_solution: Cr-Fe
+
+{mp-1076431.data.oxidized_phase}
+composition: La7SmCr2(FeO4)6
+
+{mp-1076431.data.reduced_phase}
+closest_MP: mp-1076204
+composition: La7SmCr2(Fe3O10)2
+
+{mp-19339}
+
+{mp-19339.pars}
+theo_compstr: La1Ni1Ox
+act_mat: 1.0
+
+{mp-19339.data}
+tolerance_factor: 0.969
+solid_solution: Ni
+
+{mp-19339.data.oxidized_phase}
+composition: LaNiO3
+
+{mp-19339.data.reduced_phase}
+closest_MP: mp-1076121
+composition: La2Ni2O5
+
+{mp-1076659}
+
+{mp-1076659.pars}
+theo_compstr: Na0.5K0.5W0.5Mo0.5Ox
+act_mat: 0.5
+
+{mp-1076659.data}
+tolerance_factor: 1.016
+solid_solution: W-Mo
+
+{mp-1076659.data.oxidized_phase}
+composition: KNaMoWO6
+
+{mp-1076659.data.reduced_phase}
+closest_MP: mp-1076195
+composition: KNaMoWO5
+
+{mp-768308}
+
+{mp-768308.pars}
+theo_compstr: La1Ag1Ox
+act_mat: 1.0
+
+{mp-768308.data}
+tolerance_factor: 0.902
+solid_solution: Ag
+
+{mp-768308.data.oxidized_phase}
+composition: LaAgO3
+
+{mp-768308.data.reduced_phase}
+closest_MP: mp-1076119
+composition: La2Ag2O5
+
+{mp-1099629}
+
+{mp-1099629.pars}
+theo_compstr: Na0.75K0.25Mo0.375V0.625Ox
+act_mat: 0.625
+
+{mp-1099629.data}
+tolerance_factor: 1.017
+solid_solution: Mo-V
+
+{mp-1099629.data.oxidized_phase}
+composition: K2Na6V5(MoO8)3
+
+{mp-1099629.data.reduced_phase}
+closest_MP: mp-1076545
+composition: K2Na6V5Mo3O20
+
+{mp-1076603}
+
+{mp-1076603.pars}
+theo_compstr: Sm0.375La0.625Cr1Ox
+act_mat: 1.0
+
+{mp-1076603.data}
+tolerance_factor: 0.947
+solid_solution: Cr
+
+{mp-1076603.data.oxidized_phase}
+composition: La5Sm3Cr8O24
+
+{mp-1076603.data.reduced_phase}
+closest_MP: mp-1100028
+composition: La5Sm3Cr8O20
+
+{mp-1077605}
+
+{mp-1077605.pars}
+theo_compstr: Sm0.125La0.875Cu0.25Co0.75Ox
+act_mat: 0.75
+
+{mp-1077605.data}
+tolerance_factor: 0.948
+solid_solution: Cu-Co
+
+{mp-1077605.data.oxidized_phase}
+composition: La7SmCo6(CuO12)2
+
+{mp-1077605.data.reduced_phase}
+closest_MP: mp-1076871
+composition: La7SmCo6(CuO10)2
+
+{mp-1099605}
+
+{mp-1099605.pars}
+theo_compstr: Ca0.5Sr0.5Fe0.25Co0.75Ox
+act_mat: 0.75
+
+{mp-1099605.data}
+tolerance_factor: 1.008
+solid_solution: Fe-Co
+
+{mp-1099605.data.oxidized_phase}
+composition: Sr2Ca2Fe(CoO4)3
+
+{mp-1099605.data.reduced_phase}
+closest_MP: mp-1099665
+composition: Sr2Ca2FeCo3O10
+
+{mp-1099824}
+
+{mp-1099824.pars}
+theo_compstr: Sr0.125Ba0.875Cu1Ox
+act_mat: 1.0
+
+{mp-1099824.data}
+tolerance_factor: 1.005
+solid_solution: Cu
+
+{mp-1099824.data.oxidized_phase}
+composition: Ba7Sr(CuO3)8
+
+{mp-1099824.data.reduced_phase}
+closest_MP: mp-1099795
+composition: Ba7Sr(Cu2O5)4
+
+{mp-1076268}
+
+{mp-1076268.pars}
+theo_compstr: Ca0.75Sr0.25Mn0.625Fe0.375Ox
+act_mat: 0.375
+
+{mp-1076268.data}
+tolerance_factor: 0.995
+solid_solution: Mn-Fe
+
+{mp-1076268.data.oxidized_phase}
+composition: Sr2Ca6Mn5(FeO8)3
+
+{mp-1076268.data.reduced_phase}
+closest_MP: mp-1076862
+composition: Sr2Ca6Mn5Fe3O20
+
+{mp-1099601}
+
+{mp-1099601.pars}
+theo_compstr: Na0.5K0.5W0.625Mo0.375Ox
+act_mat: 0.375
+
+{mp-1099601.data}
+tolerance_factor: 1.015
+solid_solution: W-Mo
+
+{mp-1099601.data.oxidized_phase}
+composition: K4Na4Mo3W5O24
+
+{mp-1099601.data.reduced_phase}
+closest_MP: mp-1076205
+composition: K4Na4Mo3(WO4)5
+
+{mp-1075968}
+
+{mp-1075968.pars}
+theo_compstr: Ca0.625Sr0.375Mn0.5Fe0.5Ox
+act_mat: 0.5
+
+{mp-1075968.data}
+tolerance_factor: 0.996
+solid_solution: Mn-Fe
+
+{mp-1075968.data.oxidized_phase}
+composition: Sr3Ca5Mn4(FeO6)4
+
+{mp-1075968.data.reduced_phase}
+closest_MP: mp-1076450
+composition: Sr3Ca5Mn4(FeO5)4
+
+{mp-1076137}
+
+{mp-1076137.pars}
+theo_compstr: Sr0.625Ba0.375Co0.25Cu0.75Ox
+act_mat: 0.75
+
+{mp-1076137.data}
+tolerance_factor: 0.996
+solid_solution: Co-Cu
+
+{mp-1076137.data.oxidized_phase}
+composition: Ba3Sr5Co2(CuO4)6
+
+{mp-1076137.data.reduced_phase}
+closest_MP: None
+
+{mp-1076137.data.reduced_phase.composition}
+
+{mp-1077659}
+
+{mp-1077659.pars}
+theo_compstr: Ca0.375Sr0.625Ti0.625Mn0.375Ox
+act_mat: 0.375
+
+{mp-1077659.data}
+tolerance_factor: 0.996
+solid_solution: Ti-Mn
+
+{mp-1077659.data.oxidized_phase}
+composition: Sr5Ca3Ti5Mn3O24
+
+{mp-1077659.data.reduced_phase}
+closest_MP: mp-1076557
+composition: Sr5Ca3Ti5Mn3O20
+
+{mp-1076836}
+
+{mp-1076836.pars}
+theo_compstr: Na0.5K0.5W0.25Mo0.75Ox
+act_mat: 0.75
+
+{mp-1076836.data}
+tolerance_factor: 1.017
+solid_solution: W-Mo
+
+{mp-1076836.data.oxidized_phase}
+composition: K2Na2Mo3WO12
+
+{mp-1076836.data.reduced_phase}
+closest_MP: mp-1076891
+composition: K2Na2Mo3WO10
+
+{mp-3474}
+
+{mp-3474.pars}
+theo_compstr: La1Cu1Ox
+act_mat: 1.0
+
+{mp-3474.data}
+tolerance_factor: 0.919
+solid_solution: Cu
+
+{mp-3474.data.oxidized_phase}
+composition: LaCuO3
+
+{mp-3474.data.reduced_phase}
+closest_MP: mp-5696
+composition: La2Cu2O5
+
+{mp-1076585}
+
+{mp-1076585.pars}
+theo_compstr: Sr1Fe1Ox
+act_mat: 1.0
+
+{mp-1076585.data}
+tolerance_factor: 1.006
+solid_solution: Fe
+
+{mp-1076585.data.oxidized_phase}
+composition: SrFeO3
+
+{mp-1076585.data.reduced_phase}
+closest_MP: mp-561589
+composition: Sr2Fe2O5
+
+{mp-1079111}
+
+{mp-1079111.pars}
+theo_compstr: Eu1Ti1Ox
+act_mat: 1.0
+
+{mp-1079111.data}
+tolerance_factor: 0.896
+solid_solution: Ti
+
+{mp-1079111.data.oxidized_phase}
+composition: EuTiO3
+
+{mp-1079111.data.reduced_phase}
+closest_MP: mp-1076037
+composition: Eu2Ti2O5
+
+{mp-19035}
+
+{mp-19035.pars}
+theo_compstr: Ba1Fe1Ox
+act_mat: 1.0
+
+{mp-19035.data}
+tolerance_factor: 1.066
+solid_solution: Fe
+
+{mp-19035.data.oxidized_phase}
+composition: BaFeO3
+
+{mp-19035.data.reduced_phase}
+closest_MP: mp-654312
+composition: Ba2Fe2O5
+
+{mp-1076800}
+
+{mp-1076800.pars}
+theo_compstr: Ba1Cu1Ox
+act_mat: 1.0
+
+{mp-1076800.data}
+tolerance_factor: 1.012
+solid_solution: Cu
+
+{mp-1076800.data.oxidized_phase}
+composition: BaCuO3
+
+{mp-1076800.data.reduced_phase}
+closest_MP: mp-772788
+composition: Ba2Cu2O5
+
+{mp-1076474}
+
+{mp-1076474.pars}
+theo_compstr: K1Mo1Ox
+act_mat: 1.0
+
+{mp-1076474.data}
+tolerance_factor: 1.066
+solid_solution: Mo
+
+{mp-1076474.data.oxidized_phase}
+composition: KMoO3
+
+{mp-1076474.data.reduced_phase}
+closest_MP: mp-1075956
+composition: K2Mo2O5
+
+{mp-1099827}
+
+{mp-1099827.pars}
+theo_compstr: Ca0.625Sr0.375Fe0.125Co0.875Ox
+act_mat: 0.875
+
+{mp-1099827.data}
+tolerance_factor: 1.007
+solid_solution: Fe-Co
+
+{mp-1099827.data.oxidized_phase}
+composition: Sr3Ca5FeCo7O24
+
+{mp-1099827.data.reduced_phase}
+closest_MP: mp-1076479
+composition: Sr3Ca5FeCo7O20
+
+{mp-1076249}
+
+{mp-1076249.pars}
+theo_compstr: Sm0.375La0.625Ag0.125Ni0.875Ox
+act_mat: 0.125
+
+{mp-1076249.data}
+tolerance_factor: 0.945
+solid_solution: Ag-Ni
+
+{mp-1076249.data.oxidized_phase}
+composition: La5Sm3Ni7AgO24
+
+{mp-1076249.data.reduced_phase}
+closest_MP: mp-1076656
+composition: La5Sm3Ni7AgO20
+
+{mp-1076598}
+
+{mp-1076598.pars}
+theo_compstr: Sm0.125La0.875Fe0.75Mn0.25Ox
+act_mat: 0.25
+
+{mp-1076598.data}
+tolerance_factor: 0.943
+solid_solution: Fe-Mn
+
+{mp-1076598.data.oxidized_phase}
+composition: La7SmMn2(FeO4)6
+
+{mp-1076598.data.reduced_phase}
+closest_MP: mp-1076418
+composition: La7SmMn2(Fe3O10)2
+
+{mp-1076723}
+
+{mp-1076723.pars}
+theo_compstr: Sm0.125La0.875Ag0.25Ni0.75Ox
+act_mat: 0.25
+
+{mp-1076723.data}
+tolerance_factor: 0.947
+solid_solution: Ag-Ni
+
+{mp-1076723.data.oxidized_phase}
+composition: La7SmNi6(AgO12)2
+
+{mp-1076723.data.reduced_phase}
+closest_MP: mp-1099871
+composition: La7SmNi6(AgO10)2
+
+{mp-1076342}
+
+{mp-1076342.pars}
+theo_compstr: Sr0.125Ba0.875Co0.125Cu0.875Ox
+act_mat: 0.875
+
+{mp-1076342.data}
+tolerance_factor: 1.015
+solid_solution: Co-Cu
+
+{mp-1076342.data.oxidized_phase}
+composition: Ba7SrCoCu7O24
+
+{mp-1076342.data.reduced_phase}
+closest_MP: None
+
+{mp-1076342.data.reduced_phase.composition}
+
+{mp-1075982}
+
+{mp-1075982.pars}
+theo_compstr: Sr0.875Ba0.125Co0.625Cu0.375Ox
+act_mat: 0.375
+
+{mp-1075982.data}
+tolerance_factor: 1.011
+solid_solution: Co-Cu
+
+{mp-1075982.data.oxidized_phase}
+composition: BaSr7Co5(CuO8)3
+
+{mp-1075982.data.reduced_phase}
+closest_MP: mp-1100068
+composition: BaSr7Co5Cu3O20
+
+{mp-1099918}
+
+{mp-1099918.pars}
+theo_compstr: Na1W1Ox
+act_mat: 1.0
+
+{mp-1099918.data}
+tolerance_factor: 0.966
+solid_solution: W
+
+{mp-1099918.data.oxidized_phase}
+composition: NaWO3
+
+{mp-1099918.data.reduced_phase}
+closest_MP: mp-1097724
+composition: Na2W2O5
+
+{mp-975156}
+
+{mp-975156.pars}
+theo_compstr: Rb1W1Ox
+act_mat: 1.0
+
+{mp-975156.data}
+tolerance_factor: 1.088
+solid_solution: W
+
+{mp-975156.data.oxidized_phase}
+composition: RbWO3
+
+{mp-975156.data.reduced_phase}
+closest_MP: mp-1075937
+composition: Rb2W2O5
+
+{mp-1094055}
+
+{mp-1094055.pars}
+theo_compstr: Ca0.25Sr0.75Fe1Ox
+act_mat: 1.0
+
+{mp-1094055.data}
+tolerance_factor: 0.997
+solid_solution: Fe
+
+{mp-1094055.data.oxidized_phase}
+composition: Sr3Ca(FeO3)4
+
+{mp-1094055.data.reduced_phase}
+closest_MP: mp-1076761
+composition: Sr3Ca(Fe2O5)2
+
+{mp-1075975}
+
+{mp-1075975.pars}
+theo_compstr: Eu1Co1Ox
+act_mat: 1.0
+
+{mp-1075975.data}
+tolerance_factor: 0.923
+solid_solution: Co
+
+{mp-1075975.data.oxidized_phase}
+composition: EuCoO3
+
+{mp-1075975.data.reduced_phase}
+closest_MP: mp-1076123
+composition: Eu2Co2O5
+
+{mp-1076626}
+
+{mp-1076626.pars}
+theo_compstr: Ca0.75Sr0.25Fe0.125Co0.875Ox
+act_mat: 0.875
+
+{mp-1076626.data}
+tolerance_factor: 1.002
+solid_solution: Fe-Co
+
+{mp-1076626.data.oxidized_phase}
+composition: Sr2Ca6FeCo7O24
+
+{mp-1076626.data.reduced_phase}
+closest_MP: mp-1099653
+composition: Sr2Ca6FeCo7O20
+
+{mp-1076674}
+
+{mp-1076674.pars}
+theo_compstr: Ca0.5Sr0.5Fe0.375Co0.625Ox
+act_mat: 0.625
+
+{mp-1076674.data}
+tolerance_factor: 1.004
+solid_solution: Fe-Co
+
+{mp-1076674.data.oxidized_phase}
+composition: Sr4Ca4Fe3Co5O24
+
+{mp-1076674.data.reduced_phase}
+closest_MP: mp-1076502
+composition: Sr4Ca4Fe3(CoO4)5
+
+{mp-1075935}
+
+{mp-1075935.pars}
+theo_compstr: Sr0.875Ba0.125Fe0.875Co0.125Ox
+act_mat: 0.125
+
+{mp-1075935.data}
+tolerance_factor: 1.017
+solid_solution: Fe-Co
+
+{mp-1075935.data.oxidized_phase}
+composition: BaSr7Fe7CoO24
+
+{mp-1075935.data.reduced_phase}
+closest_MP: mp-1076892
+composition: BaSr7Fe7CoO20
+
+{mp-1099746}
+
+{mp-1099746.pars}
+theo_compstr: Sm0.125La0.875Ti0.25V0.75Ox
+act_mat: 0.75
+
+{mp-1099746.data}
+tolerance_factor: 0.942
+solid_solution: Ti-V
+
+{mp-1099746.data.oxidized_phase}
+composition: La7SmTi2V6O24
+
+{mp-1099746.data.reduced_phase}
+closest_MP: mp-1076595
+composition: La7SmTi2V6O20
+
+{mp-1099763}
+
+{mp-1099763.pars}
+theo_compstr: Sr0.5Ba0.5Co0.25Cu0.75Ox
+act_mat: 0.75
+
+{mp-1099763.data}
+tolerance_factor: 1.003
+solid_solution: Co-Cu
+
+{mp-1099763.data.oxidized_phase}
+composition: Ba2Sr2Co(CuO4)3
+
+{mp-1099763.data.reduced_phase}
+closest_MP: mp-1099812
+composition: Ba2Sr2CoCu3O10
+
+{mp-1076485}
+
+{mp-1076485.pars}
+theo_compstr: Mg0.125Ca0.875Mn1Ox
+act_mat: 1.0
+
+{mp-1076485.data}
+tolerance_factor: 0.983
+solid_solution: Mn
+
+{mp-1076485.data.oxidized_phase}
+composition: Ca7MgMn8O24
+
+{mp-1076485.data.reduced_phase}
+closest_MP: mp-1076897
+composition: Ca7MgMn8O20
+
+{mp-1075954}
+
+{mp-1075954.pars}
+theo_compstr: Sm0.375La0.625Cr0.875Fe0.125Ox
+act_mat: 0.125
+
+{mp-1075954.data}
+tolerance_factor: 0.945
+solid_solution: Cr-Fe
+
+{mp-1075954.data.oxidized_phase}
+composition: La5Sm3Cr7FeO24
+
+{mp-1075954.data.reduced_phase}
+closest_MP: mp-1100047
+composition: La5Sm3Cr7FeO20
+
+{mp-1099674}
+
+{mp-1099674.pars}
+theo_compstr: Ca0.5Sr0.5Mn0.75Fe0.25Ox
+act_mat: 0.25
+
+{mp-1099674.data}
+tolerance_factor: 1.008
+solid_solution: Mn-Fe
+
+{mp-1099674.data.oxidized_phase}
+composition: Sr2Ca2Mn3FeO12
+
+{mp-1099674.data.reduced_phase}
+closest_MP: mp-1076197
+composition: Sr2Ca2Mn3FeO10
+
+{mp-1076669}
+
+{mp-1076669.pars}
+theo_compstr: Sm0.125La0.875Fe0.25Mn0.75Ox
+act_mat: 0.75
+
+{mp-1076669.data}
+tolerance_factor: 0.943
+solid_solution: Fe-Mn
+
+{mp-1076669.data.oxidized_phase}
+composition: La7SmMn6(FeO12)2
+
+{mp-1076669.data.reduced_phase}
+closest_MP: mp-1076797
+composition: La7SmMn6(FeO10)2
+
+{mp-1076491}
+
+{mp-1076491.pars}
+theo_compstr: Sr0.5Ba0.5Co0.375Cu0.625Ox
+act_mat: 0.625
+
+{mp-1076491.data}
+tolerance_factor: 1.013
+solid_solution: Co-Cu
+
+{mp-1076491.data.oxidized_phase}
+composition: Ba4Sr4Co3Cu5O24
+
+{mp-1076491.data.reduced_phase}
+closest_MP: mp-1076896
+composition: Ba4Sr4Co3(CuO4)5
+
+{mp-25667}
+
+{mp-25667.pars}
+theo_compstr: Eu1Mn1Ox
+act_mat: 1.0
+
+{mp-25667.data}
+tolerance_factor: 0.907
+solid_solution: Mn
+
+{mp-25667.data.oxidized_phase}
+composition: EuMnO3
+
+{mp-25667.data.reduced_phase}
+closest_MP: mp-1099747
+composition: Eu2Mn2O5
+
+{mp-19051}
+
+{mp-19051.pars}
+theo_compstr: La1Co1Ox
+act_mat: 1.0
+
+{mp-19051.data}
+tolerance_factor: 0.965
+solid_solution: Co
+
+{mp-19051.data.oxidized_phase}
+composition: LaCoO3
+
+{mp-19051.data.reduced_phase}
+closest_MP: mp-1076438
+composition: La2Co2O5
+
+{mp-1076222}
+
+{mp-1076222.pars}
+theo_compstr: Na0.875K0.125Mo0.125V0.875Ox
+act_mat: 0.875
+
+{mp-1076222.data}
+tolerance_factor: 1.014
+solid_solution: Mo-V
+
+{mp-1076222.data.oxidized_phase}
+composition: KNa7V7MoO24
+
+{mp-1076222.data.reduced_phase}
+closest_MP: mp-1099669
+composition: KNa7V7MoO20
+
+{mvc-776}
+
+{mvc-776.pars}
+theo_compstr: Ca1Fe1Ox
+act_mat: 1.0
+
+{mvc-776.data}
+tolerance_factor: 0.968
+solid_solution: Fe
+
+{mvc-776.data.oxidized_phase}
+composition: CaFeO3
+
+{mvc-776.data.reduced_phase}
+closest_MP: mp-25750
+composition: Ca2Fe2O5
+
+{mp-1076062}
+
+{mp-1076062.pars}
+theo_compstr: Ca0.125Sr0.875Fe0.625Co0.375Ox
+act_mat: 0.375
+
+{mp-1076062.data}
+tolerance_factor: 1.012
+solid_solution: Fe-Co
+
+{mp-1076062.data.oxidized_phase}
+composition: Sr7CaFe5(CoO8)3
+
+{mp-1076062.data.reduced_phase}
+closest_MP: mp-1100087
+composition: Sr7CaFe5Co3O20
+
+{mp-1099887}
+
+{mp-1099887.pars}
+theo_compstr: Sm0.125La0.875Fe0.375Mn0.625Ox
+act_mat: 0.625
+
+{mp-1099887.data}
+tolerance_factor: 0.943
+solid_solution: Fe-Mn
+
+{mp-1099887.data.oxidized_phase}
+composition: La7SmMn5(FeO8)3
+
+{mp-1099887.data.reduced_phase}
+closest_MP: mp-1099861
+composition: La7SmMn5Fe3O20
+
+{mp-3858}
+
+{mp-3858.pars}
+theo_compstr: Na1Ta1Ox
+act_mat: 1.0
+
+{mp-3858.data}
+tolerance_factor: 0.957
+solid_solution: Ta
+
+{mp-3858.data.oxidized_phase}
+composition: NaTaO3
+
+{mp-3858.data.reduced_phase}
+closest_MP: mp-1075952
+composition: Na2Ta2O5
+
+{mp-1076217}
+
+{mp-1076217.pars}
+theo_compstr: Ca0.625Sr0.375Ti0.125Mn0.875Ox
+act_mat: 0.875
+
+{mp-1076217.data}
+tolerance_factor: 1.005
+solid_solution: Ti-Mn
+
+{mp-1076217.data.oxidized_phase}
+composition: Sr3Ca5TiMn7O24
+
+{mp-1076217.data.reduced_phase}
+closest_MP: mp-1077695
+composition: Sr3Ca5TiMn7O20
+
+{mp-1099855}
+
+{mp-1099855.pars}
+theo_compstr: Ca0.25Sr0.75Ti0.25Mn0.75Ox
+act_mat: 0.75
+
+{mp-1099855.data}
+tolerance_factor: 1.015
+solid_solution: Ti-Mn
+
+{mp-1099855.data.oxidized_phase}
+composition: Sr3CaTiMn3O12
+
+{mp-1099855.data.reduced_phase}
+closest_MP: mp-1076505
+composition: Sr3CaTiMn3O10
+
+{mp-1075961}
+
+{mp-1075961.pars}
+theo_compstr: Sm0.125La0.875Cu0.375Co0.625Ox
+act_mat: 0.625
+
+{mp-1075961.data}
+tolerance_factor: 0.942
+solid_solution: Cu-Co
+
+{mp-1075961.data.oxidized_phase}
+composition: La7SmCo5(CuO8)3
+
+{mp-1075961.data.reduced_phase}
+closest_MP: mp-1076880
+composition: La7SmCo5Cu3O20
+
+{mp-1099808}
+
+{mp-1099808.pars}
+theo_compstr: Sm0.125La0.875Cr0.125Fe0.875Ox
+act_mat: 0.875
+
+{mp-1099808.data}
+tolerance_factor: 0.945
+solid_solution: Cr-Fe
+
+{mp-1099808.data.oxidized_phase}
+composition: La7SmCrFe7O24
+
+{mp-1099808.data.reduced_phase}
+closest_MP: mp-1076459
+composition: La7SmCrFe7O20
+
+{mp-1076275}
+
+{mp-1076275.pars}
+theo_compstr: Sm0.125La0.875Co0.75Ag0.25Ox
+act_mat: 0.75
+
+{mp-1076275.data}
+tolerance_factor: 0.943
+solid_solution: Co-Ag
+
+{mp-1076275.data.oxidized_phase}
+composition: La7SmCo6(AgO12)2
+
+{mp-1076275.data.reduced_phase}
+closest_MP: mp-1076866
+composition: La7SmCo6(AgO10)2
+
+{mp-1076074}
+
+{mp-1076074.pars}
+theo_compstr: Ca0.75Sr0.25Ti0.25Mn0.75Ox
+act_mat: 0.75
+
+{mp-1076074.data}
+tolerance_factor: 0.996
+solid_solution: Ti-Mn
+
+{mp-1076074.data.oxidized_phase}
+composition: SrCa3TiMn3O12
+
+{mp-1076074.data.reduced_phase}
+closest_MP: mp-1076776
+composition: SrCa3TiMn3O10
+
+{mp-1076377}
+
+{mp-1076377.pars}
+theo_compstr: Sr0.875Ba0.125Ti0.875Mn0.125Ox
+act_mat: 0.125
+
+{mp-1076377.data}
+tolerance_factor: 1.008
+solid_solution: Ti-Mn
+
+{mp-1076377.data.oxidized_phase}
+composition: BaSr7Ti7MnO24
+
+{mp-1076377.data.reduced_phase}
+closest_MP: mp-1076193
+composition: BaSr7Ti7MnO20
+
+{mp-1076570}
+
+{mp-1076570.pars}
+theo_compstr: Ca0.125Sr0.875Ti0.875Mn0.125Ox
+act_mat: 0.125
+
+{mp-1076570.data}
+tolerance_factor: 0.996
+solid_solution: Ti-Mn
+
+{mp-1076570.data.oxidized_phase}
+composition: Sr7CaTi7MnO24
+
+{mp-1076570.data.reduced_phase}
+closest_MP: mp-1099889
+composition: Sr7CaTi7MnO20
+
+{mp-1076260}
+
+{mp-1076260.pars}
+theo_compstr: Ca0.375Sr0.625Fe0.25Co0.75Ox
+act_mat: 0.75
+
+{mp-1076260.data}
+tolerance_factor: 1.013
+solid_solution: Fe-Co
+
+{mp-1076260.data.oxidized_phase}
+composition: Sr5Ca3Fe2(CoO4)6
+
+{mp-1076260.data.reduced_phase}
+closest_MP: mp-1099798
+composition: Sr5Ca3Fe2(Co3O10)2
+
+{None}
+
+{None.pars}
+theo_compstr: Na0.5K0.5Mo0.875V0.125Ox
+act_mat: 0.125
+
+{None.data}
+tolerance_factor: 1.023
+solid_solution: Mo-V
+
+{None.data.oxidized_phase}
+
+{None.data.oxidized_phase.composition}
+
+{None.data.reduced_phase}
+closest_MP: mp-1076539
+composition: K4Na4VMo7O20
+
+{mp-1076372}
+
+{mp-1076372.pars}
+theo_compstr: Ca0.125Sr0.875Fe0.75Co0.25Ox
+act_mat: 0.25
+
+{mp-1076372.data}
+tolerance_factor: 1.008
+solid_solution: Fe-Co
+
+{mp-1076372.data.oxidized_phase}
+composition: Sr7CaFe6(CoO12)2
+
+{mp-1076372.data.reduced_phase}
+closest_MP: mp-1076631
+composition: Sr7CaFe6(CoO10)2
+
+{mp-1075989}
+
+{mp-1075989.pars}
+theo_compstr: Sr0.625Ba0.375Co0.5Cu0.5Ox
+act_mat: 0.5
+
+{mp-1075989.data}
+tolerance_factor: 1.016
+solid_solution: Co-Cu
+
+{mp-1075989.data.oxidized_phase}
+composition: Ba3Sr5Co4(CuO6)4
+
+{mp-1075989.data.reduced_phase}
+closest_MP: mp-1076683
+composition: Ba3Sr5Co4(CuO5)4
+
+{mvc-3994}
+
+{mvc-3994.pars}
+theo_compstr: Ca1Co1Ox
+act_mat: 1.0
+
+{mvc-3994.data}
+tolerance_factor: 0.996
+solid_solution: Co
+
+{mvc-3994.data.oxidized_phase}
+composition: CaCoO3
+
+{mvc-3994.data.reduced_phase}
+closest_MP: mp-1099786
+composition: Ca2Co2O5
+
+{mp-1076399}
+
+{mp-1076399.pars}
+theo_compstr: Ca0.25Sr0.75Fe0.875Co0.125Ox
+act_mat: 0.125
+
+{mp-1076399.data}
+tolerance_factor: 1.0
+solid_solution: Fe-Co
+
+{mp-1076399.data.oxidized_phase}
+composition: Sr6Ca2Fe7CoO24
+
+{mp-1076399.data.reduced_phase}
+closest_MP: mp-1100030
+composition: Sr6Ca2Fe7CoO20
+
+{mp-1076457}
+
+{mp-1076457.pars}
+theo_compstr: Ca0.25Sr0.75Fe0.625Co0.375Ox
+act_mat: 0.375
+
+{mp-1076457.data}
+tolerance_factor: 1.007
+solid_solution: Fe-Co
+
+{mp-1076457.data.oxidized_phase}
+composition: Sr6Ca2Fe5(CoO8)3
+
+{mp-1076457.data.reduced_phase}
+closest_MP: mp-1076769
+composition: Sr6Ca2Fe5Co3O20
+
+{mp-1076671}
+
+{mp-1076671.pars}
+theo_compstr: Sm0.125La0.875Fe0.5Mn0.5Ox
+act_mat: 0.5
+
+{mp-1076671.data}
+tolerance_factor: 0.943
+solid_solution: Fe-Mn
+
+{mp-1076671.data.oxidized_phase}
+composition: La7SmMn4(FeO6)4
+
+{mp-1076671.data.reduced_phase}
+closest_MP: mp-1076172
+composition: La7SmMn4(FeO5)4
+
+{mp-1077669}
+
+{mp-1077669.pars}
+theo_compstr: Ca0.5Sr0.5Ti0.25Mn0.75Ox
+act_mat: 0.75
+
+{mp-1077669.data}
+tolerance_factor: 1.005
+solid_solution: Ti-Mn
+
+{mp-1077669.data.oxidized_phase}
+composition: Sr2Ca2TiMn3O12
+
+{mp-1077669.data.reduced_phase}
+closest_MP: mp-1076680
+composition: Sr2Ca2TiMn3O10
+
+{mp-25588}
+
+{mp-25588.pars}
+theo_compstr: Sm1Ni1Ox
+act_mat: 1.0
+
+{mp-25588.data}
+tolerance_factor: 0.928
+solid_solution: Ni
+
+{mp-25588.data.oxidized_phase}
+composition: SmNiO3
+
+{mp-25588.data.reduced_phase}
+closest_MP: mp-1099625
+composition: Sm2Ni2O5
+
+{mp-1099676}
+
+{mp-1099676.pars}
+theo_compstr: Sr0.5Ba0.5Co0.125Cu0.875Ox
+act_mat: 0.875
+
+{mp-1099676.data}
+tolerance_factor: 0.993
+solid_solution: Co-Cu
+
+{mp-1099676.data.oxidized_phase}
+composition: Ba4Sr4CoCu7O24
+
+{mp-1099676.data.reduced_phase}
+closest_MP: None
+
+{mp-1099676.data.reduced_phase.composition}
+
+{mp-1076107}
+
+{mp-1076107.pars}
+theo_compstr: Ca0.375Sr0.625Fe0.125Co0.875Ox
+act_mat: 0.875
+
+{mp-1076107.data}
+tolerance_factor: 1.016
+solid_solution: Fe-Co
+
+{mp-1076107.data.oxidized_phase}
+composition: Sr5Ca3FeCo7O24
+
+{mp-1076107.data.reduced_phase}
+closest_MP: mp-1099816
+composition: Sr5Ca3FeCo7O20
+
+{mp-1099611}
+
+{mp-1099611.pars}
+theo_compstr: Ca0.5Sr0.5Co0.875Cu0.125Ox
+act_mat: 0.125
+
+{mp-1099611.data}
+tolerance_factor: 1.005
+solid_solution: Co-Cu
+
+{mp-1099611.data.oxidized_phase}
+composition: Sr4Ca4Co7CuO24
+
+{mp-1099611.data.reduced_phase}
+closest_MP: mp-1076175
+composition: Sr4Ca4Co7CuO20
+
+{mp-771930}
+
+{mp-771930.pars}
+theo_compstr: Eu1Cr1Ox
+act_mat: 1.0
+
+{mp-771930.data}
+tolerance_factor: 0.921
+solid_solution: Cr
+
+{mp-771930.data.oxidized_phase}
+composition: EuCrO3
+
+{mp-771930.data.reduced_phase}
+closest_MP: mp-1076286
+composition: Eu2Cr2O5
+
+{mp-1076681}
+
+{mp-1076681.pars}
+theo_compstr: Sr0.875Ba0.125Co0.75Cu0.25Ox
+act_mat: 0.25
+
+{mp-1076681.data}
+tolerance_factor: 1.021
+solid_solution: Co-Cu
+
+{mp-1076681.data.oxidized_phase}
+composition: BaSr7Co6(CuO12)2
+
+{mp-1076681.data.reduced_phase}
+closest_MP: None
+
+{mp-1076681.data.reduced_phase.composition}
+
+{mp-769926}
+
+{mp-769926.pars}
+theo_compstr: Eu1V1Ox
+act_mat: 1.0
+
+{mp-769926.data}
+tolerance_factor: 0.91
+solid_solution: V
+
+{mp-769926.data.oxidized_phase}
+composition: EuVO3
+
+{mp-769926.data.reduced_phase}
+closest_MP: mp-1099750
+composition: Eu2V2O5
+
+{mp-1075984}
+
+{mp-1075984.pars}
+theo_compstr: Sm0.125La0.875Fe0.625Mn0.375Ox
+act_mat: 0.375
+
+{mp-1075984.data}
+tolerance_factor: 0.943
+solid_solution: Fe-Mn
+
+{mp-1075984.data.oxidized_phase}
+composition: La7SmMn3Fe5O24
+
+{mp-1075984.data.reduced_phase}
+closest_MP: mp-1076455
+composition: La7SmMn3(FeO4)5
+
+{mp-5020}
+
+{mp-5020.pars}
+theo_compstr: Ba1Ti1Ox
+act_mat: 1.0
+
+{mp-5020.data}
+tolerance_factor: 1.055
+solid_solution: Ti
+
+{mp-5020.data.oxidized_phase}
+composition: BaTiO3
+
+{mp-5020.data.reduced_phase}
+closest_MP: mp-1076521
+composition: Ba2Ti2O5
+
+{mp-1076337}
+
+{mp-1076337.pars}
+theo_compstr: Sr0.75Ba0.25Ti0.875Mn0.125Ox
+act_mat: 0.125
+
+{mp-1076337.data}
+tolerance_factor: 1.016
+solid_solution: Ti-Mn
+
+{mp-1076337.data.oxidized_phase}
+composition: Ba2Sr6Ti7MnO24
+
+{mp-1076337.data.reduced_phase}
+closest_MP: None
+
+{mp-1076337.data.reduced_phase.composition}
+
+{mp-1099703}
+
+{mp-1099703.pars}
+theo_compstr: Ca0.25Sr0.75Ti0.75Mn0.25Ox
+act_mat: 0.25
+
+{mp-1099703.data}
+tolerance_factor: 0.996
+solid_solution: Ti-Mn
+
+{mp-1099703.data.oxidized_phase}
+composition: Sr3CaTi3MnO12
+
+{mp-1099703.data.reduced_phase}
+closest_MP: mp-1076170
+composition: Sr3CaTi3MnO10
+
+{mp-1099606}
+
+{mp-1099606.pars}
+theo_compstr: Na0.625K0.375Mo0.625V0.375Ox
+act_mat: 0.375
+
+{mp-1099606.data}
+tolerance_factor: 1.02
+solid_solution: Mo-V
+
+{mp-1099606.data.oxidized_phase}
+composition: K3Na5V3Mo5O24
+
+{mp-1099606.data.reduced_phase}
+closest_MP: mp-1076888
+composition: K3Na5V3(MoO4)5
+
+{mp-1076351}
+
+{mp-1076351.pars}
+theo_compstr: Na0.875K0.125Mo0.25V0.75Ox
+act_mat: 0.75
+
+{mp-1076351.data}
+tolerance_factor: 1.009
+solid_solution: Mo-V
+
+{mp-1076351.data.oxidized_phase}
+composition: KNa7V6(MoO12)2
+
+{mp-1076351.data.reduced_phase}
+closest_MP: mp-1099956
+composition: KNa7V6(MoO10)2
+
+{mp-1099832}
+
+{mp-1099832.pars}
+theo_compstr: Sm0.125La0.875Mn0.875Cu0.125Ox
+act_mat: 0.125
+
+{mp-1099832.data}
+tolerance_factor: 0.939
+solid_solution: Mn-Cu
+
+{mp-1099832.data.oxidized_phase}
+composition: La7SmMn7CuO24
+
+{mp-1099832.data.reduced_phase}
+closest_MP: mp-1076513
+composition: La7SmMn7CuO20
+
+{mp-1099923}
+
+{mp-1099923.pars}
+theo_compstr: Sm0.125La0.875Mn1Ox
+act_mat: 1.0
+
+{mp-1099923.data}
+tolerance_factor: 0.943
+solid_solution: Mn
+
+{mp-1099923.data.oxidized_phase}
+composition: La7SmMn8O24
+
+{mp-1099923.data.reduced_phase}
+closest_MP: mp-1099865
+composition: La7SmMn8O20
+
+{mp-1076079}
+
+{mp-1076079.pars}
+theo_compstr: Ca0.375Sr0.625Mn0.125Fe0.875Ox
+act_mat: 0.875
+
+{mp-1076079.data}
+tolerance_factor: 0.995
+solid_solution: Mn-Fe
+
+{mp-1076079.data.oxidized_phase}
+composition: Sr5Ca3MnFe7O24
+
+{mp-1076079.data.reduced_phase}
+closest_MP: mp-1076199
+composition: Sr5Ca3MnFe7O20
+
+{mp-1076805}
+
+{mp-1076805.pars}
+theo_compstr: Ca0.25Sr0.75Fe0.375Co0.625Ox
+act_mat: 0.625
+
+{mp-1076805.data}
+tolerance_factor: 1.014
+solid_solution: Fe-Co
+
+{mp-1076805.data.oxidized_phase}
+composition: Sr6Ca2Fe3Co5O24
+
+{mp-1076805.data.reduced_phase}
+closest_MP: mp-1076488
+composition: Sr6Ca2Fe3(CoO4)5
+
+{mp-975304}
+
+{mp-975304.pars}
+theo_compstr: Rb1Mo1Ox
+act_mat: 1.0
+
+{mp-975304.data}
+tolerance_factor: 1.093
+solid_solution: Mo
+
+{mp-975304.data.oxidized_phase}
+composition: RbMoO3
+
+{mp-975304.data.reduced_phase}
+closest_MP: mp-1099822
+composition: Rb2Mo2O5
+
+{mp-1099696}
+
+{mp-1099696.pars}
+theo_compstr: Ca0.875Sr0.125Mn0.875Fe0.125Ox
+act_mat: 0.125
+
+{mp-1099696.data}
+tolerance_factor: 0.997
+solid_solution: Mn-Fe
+
+{mp-1099696.data.oxidized_phase}
+composition: SrCa7Mn7FeO24
+
+{mp-1099696.data.reduced_phase}
+closest_MP: mp-1076449
+composition: SrCa7Mn7FeO20
+
+{mp-25026}
+
+{mp-25026.pars}
+theo_compstr: Sm1Mn1Ox
+act_mat: 1.0
+
+{mp-25026.data}
+tolerance_factor: 0.908
+solid_solution: Mn
+
+{mp-25026.data.oxidized_phase}
+composition: SmMnO3
+
+{mp-25026.data.reduced_phase}
+closest_MP: mp-1076289
+composition: Sm2Mn2O5
+
+{mp-540832}
+
+{mp-540832.pars}
+theo_compstr: Eu1Fe1Ox
+act_mat: 1.0
+
+{mp-540832.data}
+tolerance_factor: 0.907
+solid_solution: Fe
+
+{mp-540832.data.oxidized_phase}
+composition: EuFeO3
+
+{mp-540832.data.reduced_phase}
+closest_MP: mp-1077617
+composition: Eu2Fe2O5
+
+{mp-1076858}
+
+{mp-1076858.pars}
+theo_compstr: Ca0.125Sr0.875Fe0.875Co0.125Ox
+act_mat: 0.125
+
+{mp-1076858.data}
+tolerance_factor: 1.005
+solid_solution: Fe-Co
+
+{mp-1076858.data.oxidized_phase}
+composition: Sr7CaFe7CoO24
+
+{mp-1076858.data.reduced_phase}
+closest_MP: mp-1099946
+composition: Sr7CaFe7CoO20
+
+{mp-1076642}
+
+{mp-1076642.pars}
+theo_compstr: Na1Cr1Ox
+act_mat: 1.0
+
+{mp-1076642.data}
+tolerance_factor: 1.033
+solid_solution: Cr
+
+{mp-1076642.data.oxidized_phase}
+composition: NaCrO3
+
+{mp-1076642.data.reduced_phase}
+closest_MP: mp-1099683
+composition: Na2Cr2O5
+
+{mp-1076360}
+
+{mp-1076360.pars}
+theo_compstr: Rb1Cr1Ox
+act_mat: 1.0
+
+{mp-1076360.data}
+tolerance_factor: 1.163
+solid_solution: Cr
+
+{mp-1076360.data.oxidized_phase}
+composition: RbCrO3
+
+{mp-1076360.data.reduced_phase}
+closest_MP: mp-1076401
+composition: Rb2Cr2O5
+
+{mp-1099624}
+
+{mp-1099624.pars}
+theo_compstr: Sr0.875Ba0.125Ti0.625Mn0.375Ox
+act_mat: 0.375
+
+{mp-1099624.data}
+tolerance_factor: 1.018
+solid_solution: Ti-Mn
+
+{mp-1099624.data.oxidized_phase}
+composition: BaSr7Ti5Mn3O24
+
+{mp-1099624.data.reduced_phase}
+closest_MP: mp-1100246
+composition: BaSr7Ti5Mn3O20
+
+{mp-1099778}
+
+{mp-1099778.pars}
+theo_compstr: Sr0.875Ba0.125Ti1Ox
+act_mat: 1.0
+
+{mp-1099778.data}
+tolerance_factor: 1.003
+solid_solution: Ti
+
+{mp-1099778.data.oxidized_phase}
+composition: BaSr7Ti8O24
+
+{mp-1099778.data.reduced_phase}
+closest_MP: mp-1099682
+composition: BaSr7Ti8O20
+
+{mp-1099685}
+
+{mp-1099685.pars}
+theo_compstr: Sr0.875Ba0.125Fe1Ox
+act_mat: 1.0
+
+{mp-1099685.data}
+tolerance_factor: 1.013
+solid_solution: Fe
+
+{mp-1099685.data.oxidized_phase}
+composition: BaSr7(FeO3)8
+
+{mp-1099685.data.reduced_phase}
+closest_MP: mp-1076090
+composition: BaSr7(Fe2O5)4
+
+{mp-1076529}
+
+{mp-1076529.pars}
+theo_compstr: Sm0.25La0.75Cr0.375Fe0.625Ox
+act_mat: 0.625
+
+{mp-1076529.data}
+tolerance_factor: 0.943
+solid_solution: Cr-Fe
+
+{mp-1076529.data.oxidized_phase}
+composition: La6Sm2Cr3Fe5O24
+
+{mp-1076529.data.reduced_phase}
+closest_MP: mp-1099892
+composition: La6Sm2Cr3(FeO4)5
+
+{mp-1099890}
+
+{mp-1099890.pars}
+theo_compstr: Ca0.75Sr0.25Fe0.375Co0.625Ox
+act_mat: 0.625
+
+{mp-1099890.data}
+tolerance_factor: 0.995
+solid_solution: Fe-Co
+
+{mp-1099890.data.oxidized_phase}
+composition: Sr2Ca6Fe3Co5O24
+
+{mp-1099890.data.reduced_phase}
+closest_MP: mp-1076198
+composition: Sr2Ca6Fe3(CoO4)5
+
+{mp-1076854}
+
+{mp-1076854.pars}
+theo_compstr: Ca0.625Sr0.375Mn0.375Fe0.625Ox
+act_mat: 0.625
+
+{mp-1076854.data}
+tolerance_factor: 0.993
+solid_solution: Mn-Fe
+
+{mp-1076854.data.oxidized_phase}
+composition: Sr3Ca5Mn3Fe5O24
+
+{mp-1076854.data.reduced_phase}
+closest_MP: mp-1076482
+composition: Sr3Ca5Mn3(FeO4)5
+
+{mp-3033}
+
+{mp-3033.pars}
+theo_compstr: Rb1Ta1Ox
+act_mat: 1.0
+
+{mp-3033.data}
+tolerance_factor: 1.077
+solid_solution: Ta
+
+{mp-3033.data.oxidized_phase}
+composition: RbTaO3
+
+{mp-3033.data.reduced_phase}
+closest_MP: mp-1076737
+composition: Rb2Ta2O5
+
+{mp-1076429}
+
+{mp-1076429.pars}
+theo_compstr: Sr0.75Ba0.25Co0.625Cu0.375Ox
+act_mat: 0.375
+
+{mp-1076429.data}
+tolerance_factor: 1.018
+solid_solution: Co-Cu
+
+{mp-1076429.data.oxidized_phase}
+composition: Ba2Sr6Co5(CuO8)3
+
+{mp-1076429.data.reduced_phase}
+closest_MP: mp-1076893
+composition: Ba2Sr6Co5Cu3O20
+
+{mp-1099818}
+
+{mp-1099818.pars}
+theo_compstr: K1W1Ox
+act_mat: 1.0
+
+{mp-1099818.data}
+tolerance_factor: 1.061
+solid_solution: W
+
+{mp-1099818.data.oxidized_phase}
+composition: KWO3
+
+{mp-1099818.data.reduced_phase}
+closest_MP: mp-1097834
+composition: K2W2O5
+
+{mp-1076247}
+
+{mp-1076247.pars}
+theo_compstr: Sr0.25Ba0.75Co0.125Cu0.875Ox
+act_mat: 0.875
+
+{mp-1076247.data}
+tolerance_factor: 1.008
+solid_solution: Co-Cu
+
+{mp-1076247.data.oxidized_phase}
+composition: Ba6Sr2CoCu7O24
+
+{mp-1076247.data.reduced_phase}
+closest_MP: mp-1076296
+composition: Ba6Sr2CoCu7O20
+
+{mp-1076796}
+
+{mp-1076796.pars}
+theo_compstr: Ca0.375Sr0.625Mn0.5Fe0.5Ox
+act_mat: 0.5
+
+{mp-1076796.data}
+tolerance_factor: 1.006
+solid_solution: Mn-Fe
+
+{mp-1076796.data.oxidized_phase}
+composition: Sr5Ca3Mn4(FeO6)4
+
+{mp-1076796.data.reduced_phase}
+closest_MP: mp-1076141
+composition: Sr5Ca3Mn4(FeO5)4
+
+{mp-1077660}
+
+{mp-1077660.pars}
+theo_compstr: Sr1Fe0.875Co0.125Ox
+act_mat: 0.125
+
+{mp-1077660.data}
+tolerance_factor: 1.009
+solid_solution: Fe-Co
+
+{mp-1077660.data.oxidized_phase}
+composition: Sr8Fe7CoO24
+
+{mp-1077660.data.reduced_phase}
+closest_MP: mp-1076165
+composition: Sr8Fe7CoO20
+
+{mp-1075955}
+
+{mp-1075955.pars}
+theo_compstr: Ca0.375Sr0.625Fe0.875Co0.125Ox
+act_mat: 0.125
+
+{mp-1075955.data}
+tolerance_factor: 0.995
+solid_solution: Fe-Co
+
+{mp-1075955.data.oxidized_phase}
+composition: Sr5Ca3Fe7CoO24
+
+{mp-1075955.data.reduced_phase}
+closest_MP: mp-1076516
+composition: Sr5Ca3Fe7CoO20
+
+{mp-1076510}
+
+{mp-1076510.pars}
+theo_compstr: Na0.375K0.625Ta1Ox
+act_mat: 1.0
+
+{mp-1076510.data}
+tolerance_factor: 1.015
+solid_solution: Ta
+
+{mp-1076510.data.oxidized_phase}
+composition: K5Na3Ta8O24
+
+{mp-1076510.data.reduced_phase}
+closest_MP: None
+
+{mp-1076510.data.reduced_phase.composition}
+
+{mp-1076747}
+
+{mp-1076747.pars}
+theo_compstr: Ca0.125Sr0.875Fe0.5Co0.5Ox
+act_mat: 0.5
+
+{mp-1076747.data}
+tolerance_factor: 1.015
+solid_solution: Fe-Co
+
+{mp-1076747.data.oxidized_phase}
+composition: Sr7CaFe4(CoO6)4
+
+{mp-1076747.data.reduced_phase}
+closest_MP: mp-1076159
+composition: Sr7CaFe4(CoO5)4
+
+{mp-1076685}
+
+{mp-1076685.pars}
+theo_compstr: Na0.5K0.5W0.875Mo0.125Ox
+act_mat: 0.125
+
+{mp-1076685.data}
+tolerance_factor: 1.014
+solid_solution: W-Mo
+
+{mp-1076685.data.oxidized_phase}
+composition: K4Na4MoW7O24
+
+{mp-1076685.data.reduced_phase}
+closest_MP: mp-1099972
+composition: K4Na4MoW7O20
+
+{mp-1076139}
+
+{mp-1076139.pars}
+theo_compstr: Mg0.125Ca0.875Fe0.125Co0.875Ox
+act_mat: 0.875
+
+{mp-1076139.data}
+tolerance_factor: 0.98
+solid_solution: Fe-Co
+
+{mp-1076139.data.oxidized_phase}
+composition: Ca7MgFeCo7O24
+
+{mp-1076139.data.reduced_phase}
+closest_MP: mp-1099907
+composition: Ca7MgFeCo7O20
+
+{mp-1076602}
+
+{mp-1076602.pars}
+theo_compstr: Ca0.625Sr0.375Fe0.5Co0.5Ox
+act_mat: 0.5
+
+{mp-1076602.data}
+tolerance_factor: 0.996
+solid_solution: Fe-Co
+
+{mp-1076602.data.oxidized_phase}
+composition: Sr3Ca5Fe4(CoO6)4
+
+{mp-1076602.data.reduced_phase}
+closest_MP: mp-1099708
+composition: Sr3Ca5Fe4(CoO5)4
+
+{mp-568977}
+
+{mp-568977.pars}
+theo_compstr: Sr1Mn1Ox
+act_mat: 1.0
+
+{mp-568977.data}
+tolerance_factor: 1.035
+solid_solution: Mn
+
+{mp-568977.data.oxidized_phase}
+composition: SrMnO3
+
+{mp-568977.data.reduced_phase}
+closest_MP: mp-18798
+composition: Sr2Mn2O5
+
+{mp-761524}
+
+{mp-761524.pars}
+theo_compstr: Mg1Co1Ox
+act_mat: 1.0
+
+{mp-761524.data}
+tolerance_factor: 0.895
+solid_solution: Co
+
+{mp-761524.data.oxidized_phase}
+composition: MgCoO3
+
+{mp-761524.data.reduced_phase}
+closest_MP: mp-1076088
+composition: Mg2Co2O5
+
+{mp-1076080}
+
+{mp-1076080.pars}
+theo_compstr: Ca0.375Sr0.625Mn0.875Fe0.125Ox
+act_mat: 0.125
+
+{mp-1076080.data}
+tolerance_factor: 1.016
+solid_solution: Mn-Fe
+
+{mp-1076080.data.oxidized_phase}
+composition: Sr5Ca3Mn7FeO24
+
+{mp-1076080.data.reduced_phase}
+closest_MP: mp-1099672
+composition: Sr5Ca3Mn7FeO20
+
+{mp-542920}
+
+{mp-542920.pars}
+theo_compstr: La1Fe1Ox
+act_mat: 1.0
+
+{mp-542920.data}
+tolerance_factor: 0.948
+solid_solution: Fe
+
+{mp-542920.data.oxidized_phase}
+composition: LaFeO3
+
+{mp-542920.data.reduced_phase}
+closest_MP: mp-1099626
+composition: La2Fe2O5
+
+{mp-1076224}
+
+{mp-1076224.pars}
+theo_compstr: Na0.5K0.5W1Ox
+act_mat: 1.0
+
+{mp-1076224.data}
+tolerance_factor: 1.013
+solid_solution: W
+
+{mp-1076224.data.oxidized_phase}
+composition: KNa(WO3)2
+
+{mp-1076224.data.reduced_phase}
+closest_MP: mp-1099945
+composition: KNaW2O5
+
+{mp-1094044}
+
+{mp-1094044.pars}
+theo_compstr: Ca0.75Sr0.25Mn1Ox
+act_mat: 1.0
+
+{mp-1094044.data}
+tolerance_factor: 1.006
+solid_solution: Mn
+
+{mp-1094044.data.oxidized_phase}
+composition: SrCa3Mn4O12
+
+{mp-1094044.data.reduced_phase}
+closest_MP: mp-1076184
+composition: SrCa3Mn4O10
+
+{mp-1075948}
+
+{mp-1075948.pars}
+theo_compstr: Ca0.125Sr0.875Ti0.625Mn0.375Ox
+act_mat: 0.375
+
+{mp-1075948.data}
+tolerance_factor: 1.005
+solid_solution: Ti-Mn
+
+{mp-1075948.data.oxidized_phase}
+composition: Sr7CaTi5Mn3O24
+
+{mp-1075948.data.reduced_phase}
+closest_MP: mp-1076202
+composition: Sr7CaTi5Mn3O20
+
+{mp-1075930}
+
+{mp-1075930.pars}
+theo_compstr: Sm0.5La0.5Co1Ox
+act_mat: 1.0
+
+{mp-1075930.data}
+tolerance_factor: 0.944
+solid_solution: Co
+
+{mp-1075930.data.oxidized_phase}
+composition: LaSm(CoO3)2
+
+{mp-1075930.data.reduced_phase}
+closest_MP: mp-1076759
+composition: LaSmCo2O5
+
+{mp-1076651}
+
+{mp-1076651.pars}
+theo_compstr: Ca0.125Sr0.875Mn0.375Fe0.625Ox
+act_mat: 0.625
+
+{mp-1076651.data}
+tolerance_factor: 1.012
+solid_solution: Mn-Fe
+
+{mp-1076651.data.oxidized_phase}
+composition: Sr7CaMn3Fe5O24
+
+{mp-1076651.data.reduced_phase}
+closest_MP: mp-1099661
+composition: Sr7CaMn3(FeO4)5
+
+{mp-1099873}
+
+{mp-1099873.pars}
+theo_compstr: Ca1Cu1Ox
+act_mat: 1.0
+
+{mp-1099873.data}
+tolerance_factor: 0.92
+solid_solution: Cu
+
+{mp-1099873.data.oxidized_phase}
+composition: CaCuO3
+
+{mp-1099873.data.reduced_phase}
+closest_MP: mp-772813
+composition: Ca2Cu2O5
+
+{mp-1075988}
+
+{mp-1075988.pars}
+theo_compstr: Sr0.875Ba0.125Ti0.75Mn0.25Ox
+act_mat: 0.25
+
+{mp-1075988.data}
+tolerance_factor: 1.013
+solid_solution: Ti-Mn
+
+{mp-1075988.data.oxidized_phase}
+composition: BaSr7Ti6Mn2O24
+
+{mp-1075988.data.reduced_phase}
+closest_MP: mp-1076196
+composition: BaSr7Ti6Mn2O20
+
+{mp-1076138}
+
+{mp-1076138.pars}
+theo_compstr: Ca0.25Sr0.75Ti0.5Mn0.5Ox
+act_mat: 0.5
+
+{mp-1076138.data}
+tolerance_factor: 1.005
+solid_solution: Ti-Mn
+
+{mp-1076138.data.oxidized_phase}
+composition: Sr3CaTi2Mn2O12
+
+{mp-1076138.data.reduced_phase}
+closest_MP: mp-1076875
+composition: Sr3CaTi2Mn2O10
+
+{mp-1075928}
+
+{mp-1075928.pars}
+theo_compstr: Ca0.5Sr0.5Co1Ox
+act_mat: 1.0
+
+{mp-1075928.data}
+tolerance_factor: 1.015
+solid_solution: Co
+
+{mp-1075928.data.oxidized_phase}
+composition: SrCa(CoO3)2
+
+{mp-1075928.data.reduced_phase}
+closest_MP: mp-1099694
+composition: SrCaCo2O5
+
+{mp-1076171}
+
+{mp-1076171.pars}
+theo_compstr: Sm0.375La0.625Cu0.125Co0.875Ox
+act_mat: 0.875
+
+{mp-1076171.data}
+tolerance_factor: 0.943
+solid_solution: Cu-Co
+
+{mp-1076171.data.oxidized_phase}
+composition: La5Sm3Co7CuO24
+
+{mp-1076171.data.reduced_phase}
+closest_MP: mp-1076874
+composition: La5Sm3Co7CuO20
+
+{mp-19267}
+
+{mp-19267.pars}
+theo_compstr: Ba1Mn1Ox
+act_mat: 1.0
+
+{mp-19267.data}
+tolerance_factor: 1.096
+solid_solution: Mn
+
+{mp-19267.data.oxidized_phase}
+composition: BaMnO3
+
+{mp-19267.data.reduced_phase}
+closest_MP: mp-1099904
+composition: Ba2Mn2O5
+
+{mp-1076831}
+
+{mp-1076831.pars}
+theo_compstr: Na0.5K0.5Mo1Ox
+act_mat: 1.0
+
+{mp-1076831.data}
+tolerance_factor: 1.018
+solid_solution: Mo
+
+{mp-1076831.data.oxidized_phase}
+composition: KNa(MoO3)2
+
+{mp-1076831.data.reduced_phase}
+closest_MP: mp-1076606
+composition: KNaMo2O5
+
+{mp-1099600}
+
+{mp-1099600.pars}
+theo_compstr: Ca0.75Sr0.25Co0.875Cu0.125Ox
+act_mat: 0.125
+
+{mp-1099600.data}
+tolerance_factor: 0.995
+solid_solution: Co-Cu
+
+{mp-1099600.data.oxidized_phase}
+composition: Sr2Ca6Co7CuO24
+
+{mp-1099600.data.reduced_phase}
+closest_MP: mp-1076470
+composition: Sr2Ca6Co7CuO20
+
+{mp-22416}
+
+{mp-22416.pars}
+theo_compstr: Sm1Ti1Ox
+act_mat: 1.0
+
+{mp-22416.data}
+tolerance_factor: 0.897
+solid_solution: Ti
+
+{mp-22416.data.oxidized_phase}
+composition: SmTiO3
+
+{mp-22416.data.reduced_phase}
+closest_MP: mp-1099757
+composition: Sm2Ti2O5
+
+{mp-1075966}
+
+{mp-1075966.pars}
+theo_compstr: Ca0.5Sr0.5Fe0.75Co0.25Ox
+act_mat: 0.25
+
+{mp-1075966.data}
+tolerance_factor: 0.994
+solid_solution: Fe-Co
+
+{mp-1075966.data.oxidized_phase}
+composition: Sr2Ca2Fe3CoO12
+
+{mp-1075966.data.reduced_phase}
+closest_MP: mp-1076147
+composition: Sr2Ca2Fe3CoO10
+
+{mp-1077663}
+
+{mp-1077663.pars}
+theo_compstr: Ca0.875Sr0.125Ti0.125Mn0.875Ox
+act_mat: 0.875
+
+{mp-1077663.data}
+tolerance_factor: 0.996
+solid_solution: Ti-Mn
+
+{mp-1077663.data.oxidized_phase}
+composition: SrCa7TiMn7O24
+
+{mp-1077663.data.reduced_phase}
+closest_MP: mp-1077688
+composition: SrCa7TiMn7O20
+
+{mp-1076287}
+
+{mp-1076287.pars}
+theo_compstr: Sm0.25La0.75Co0.875Ag0.125Ox
+act_mat: 0.875
+
+{mp-1076287.data}
+tolerance_factor: 0.946
+solid_solution: Co-Ag
+
+{mp-1076287.data.oxidized_phase}
+composition: La6Sm2Co7AgO24
+
+{mp-1076287.data.reduced_phase}
+closest_MP: mp-1076492
+composition: La6Sm2Co7AgO20
+
+{mp-1076688}
+
+{mp-1076688.pars}
+theo_compstr: Ca0.25Sr0.75Co0.75Cu0.25Ox
+act_mat: 0.25
+
+{mp-1076688.data}
+tolerance_factor: 1.004
+solid_solution: Co-Cu
+
+{mp-1076688.data.oxidized_phase}
+composition: Sr3CaCo3CuO12
+
+{mp-1076688.data.reduced_phase}
+closest_MP: mp-1099678
+composition: Sr3CaCo3CuO10
+
+{mp-1099896}
+
+{mp-1099896.pars}
+theo_compstr: Sm0.25La0.75Cr0.625Fe0.375Ox
+act_mat: 0.375
+
+{mp-1099896.data}
+tolerance_factor: 0.947
+solid_solution: Cr-Fe
+
+{mp-1099896.data.oxidized_phase}
+composition: La6Sm2Cr5(FeO8)3
+
+{mp-1099896.data.reduced_phase}
+closest_MP: mp-1099978
+composition: La6Sm2Cr5Fe3O20
+
+{mp-1075902}
+
+{mp-1075902.pars}
+theo_compstr: Eu1Cu1Ox
+act_mat: 1.0
+
+{mp-1075902.data}
+tolerance_factor: 0.879
+solid_solution: Cu
+
+{mp-1075902.data.oxidized_phase}
+composition: EuCuO3
+
+{mp-1075902.data.reduced_phase}
+closest_MP: mp-1099765
+composition: Eu2Cu2O5
+
+{mp-1075969}
+
+{mp-1075969.pars}
+theo_compstr: Ca0.25Sr0.75Mn0.125Fe0.875Ox
+act_mat: 0.875
+
+{mp-1075969.data}
+tolerance_factor: 1.0
+solid_solution: Mn-Fe
+
+{mp-1075969.data.oxidized_phase}
+composition: Sr6Ca2MnFe7O24
+
+{mp-1075969.data.reduced_phase}
+closest_MP: mp-1099974
+composition: Sr6Ca2MnFe7O20
+
+{mp-1099881}
+
+{mp-1099881.pars}
+theo_compstr: Sr1Ti0.5Mn0.5Ox
+act_mat: 0.5
+
+{mp-1099881.data}
+tolerance_factor: 1.015
+solid_solution: Ti-Mn
+
+{mp-1099881.data.oxidized_phase}
+composition: Sr2TiMnO6
+
+{mp-1099881.data.reduced_phase}
+closest_MP: mp-1076627
+composition: Sr2TiMnO5
+
+{mp-24877}
+
+{mp-24877.pars}
+theo_compstr: Sm1Co1Ox
+act_mat: 1.0
+
+{mp-24877.data}
+tolerance_factor: 0.924
+solid_solution: Co
+
+{mp-24877.data.oxidized_phase}
+composition: SmCoO3
+
+{mp-24877.data.reduced_phase}
+closest_MP: mp-1076063
+composition: Sm2Co2O5
+
+{mp-1076610}
+
+{mp-1076610.pars}
+theo_compstr: Sm0.125La0.875Fe0.875Mn0.125Ox
+act_mat: 0.125
+
+{mp-1076610.data}
+tolerance_factor: 0.943
+solid_solution: Fe-Mn
+
+{mp-1076610.data.oxidized_phase}
+composition: La7SmMnFe7O24
+
+{mp-1076610.data.reduced_phase}
+closest_MP: mp-1099902
+composition: La7SmMnFe7O20
+
+{mp-1076214}
+
+{mp-1076214.pars}
+theo_compstr: Mg0.125Ca0.875Mn0.875Fe0.125Ox
+act_mat: 0.125
+
+{mp-1076214.data}
+tolerance_factor: 0.98
+solid_solution: Mn-Fe
+
+{mp-1076214.data.oxidized_phase}
+composition: Ca7MgMn7FeO24
+
+{mp-1076214.data.reduced_phase}
+closest_MP: mp-1099831
+composition: Ca7MgMn7FeO20
+
+{mp-1099602}
+
+{mp-1099602.pars}
+theo_compstr: Sr0.25Ba0.75Cu1Ox
+act_mat: 1.0
+
+{mp-1099602.data}
+tolerance_factor: 0.998
+solid_solution: Cu
+
+{mp-1099602.data.oxidized_phase}
+composition: Ba3Sr(CuO3)4
+
+{mp-1099602.data.reduced_phase}
+closest_MP: mp-1076189
+composition: Ba3Sr(Cu2O5)2
+
+{mp-19281}
+
+{mp-19281.pars}
+theo_compstr: La1Cr1Ox
+act_mat: 1.0
+
+{mp-19281.data}
+tolerance_factor: 0.962
+solid_solution: Cr
+
+{mp-19281.data.oxidized_phase}
+composition: LaCrO3
+
+{mp-19281.data.reduced_phase}
+closest_MP: mp-1097715
+composition: La2Cr2O5
+
+{mp-561952}
+
+{mp-561952.pars}
+theo_compstr: Sr1Co1Ox
+act_mat: 1.0
+
+{mp-561952.data}
+tolerance_factor: 1.035
+solid_solution: Co
+
+{mp-561952.data.oxidized_phase}
+composition: SrCoO3
+
+{mp-561952.data.reduced_phase}
+closest_MP: mp-556076
+composition: Sr2Co2O5
+
+{mp-1076597}
+
+{mp-1076597.pars}
+theo_compstr: Ca0.125Sr0.875Mn0.25Fe0.75Ox
+act_mat: 0.75
+
+{mp-1076597.data}
+tolerance_factor: 1.008
+solid_solution: Mn-Fe
+
+{mp-1076597.data.oxidized_phase}
+composition: Sr7CaMn2(FeO4)6
+
+{mp-1076597.data.reduced_phase}
+closest_MP: mp-1076092
+composition: Sr7CaMn2(Fe3O10)2
+
+{mp-1076132}
+
+{mp-1076132.pars}
+theo_compstr: Mg0.125Ca0.875Co0.875Cu0.125Ox
+act_mat: 0.125
+
+{mp-1076132.data}
+tolerance_factor: 0.973
+solid_solution: Co-Cu
+
+{mp-1076132.data.oxidized_phase}
+composition: Ca7MgCo7CuO24
+
+{mp-1076132.data.reduced_phase}
+closest_MP: mp-1099952
+composition: Ca7MgCo7CuO20
+
+{mp-1076058}
+
+{mp-1076058.pars}
+theo_compstr: Ca0.5Sr0.5Mn0.625Fe0.375Ox
+act_mat: 0.375
+
+{mp-1076058.data}
+tolerance_factor: 1.004
+solid_solution: Mn-Fe
+
+{mp-1076058.data.oxidized_phase}
+composition: Sr4Ca4Mn5(FeO8)3
+
+{mp-1076058.data.reduced_phase}
+closest_MP: mp-1076190
+composition: Sr4Ca4Mn5Fe3O20
+
+{mp-1076861}
+
+{mp-1076861.pars}
+theo_compstr: Ca0.875Sr0.125Fe0.125Co0.875Ox
+act_mat: 0.875
+
+{mp-1076861.data}
+tolerance_factor: 0.997
+solid_solution: Fe-Co
+
+{mp-1076861.data.oxidized_phase}
+composition: SrCa7FeCo7O24
+
+{mp-1076861.data.reduced_phase}
+closest_MP: mp-1099847
+composition: SrCa7FeCo7O20
+
+{mp-1076445}
+
+{mp-1076445.pars}
+theo_compstr: Sr1Mn0.125Fe0.875Ox
+act_mat: 0.875
+
+{mp-1076445.data}
+tolerance_factor: 1.009
+solid_solution: Mn-Fe
+
+{mp-1076445.data.oxidized_phase}
+composition: Sr8MnFe7O24
+
+{mp-1076445.data.reduced_phase}
+closest_MP: mp-1076409
+composition: Sr8MnFe7O20
+
+{mp-1076317}
+
+{mp-1076317.pars}
+theo_compstr: Mg1Cu1Ox
+act_mat: 1.0
+
+{mp-1076317.data}
+tolerance_factor: 0.827
+solid_solution: Cu
+
+{mp-1076317.data.oxidized_phase}
+composition: MgCuO3
+
+{mp-1076317.data.reduced_phase}
+closest_MP: mp-1076527
+composition: Mg2Cu2O5
+
+{mp-19083}
+
+{mp-19083.pars}
+theo_compstr: Na1V1Ox
+act_mat: 1.0
+
+{mp-19083.data}
+tolerance_factor: 1.006
+solid_solution: V
+
+{mp-19083.data.oxidized_phase}
+composition: NaVO3
+
+{mp-19083.data.reduced_phase}
+closest_MP: mp-1076048
+composition: Na2V2O5
+
+{mp-19257}
+
+{mp-19257.pars}
+theo_compstr: Sm1Cr1Ox
+act_mat: 1.0
+
+{mp-19257.data}
+tolerance_factor: 0.922
+solid_solution: Cr
+
+{mp-19257.data.oxidized_phase}
+composition: SmCrO3
+
+{mp-19257.data.reduced_phase}
+closest_MP: mp-1099951
+composition: Sm2Cr2O5
+
+{mp-1076732}
+
+{mp-1076732.pars}
+theo_compstr: K1Cr1Ox
+act_mat: 1.0
+
+{mp-1076732.data}
+tolerance_factor: 1.134
+solid_solution: Cr
+
+{mp-1076732.data.oxidized_phase}
+composition: KCrO3
+
+{mp-1076732.data.reduced_phase}
+closest_MP: mp-1076696
+composition: K2Cr2O5
+
+{mp-1099936}
+
+{mp-1099936.pars}
+theo_compstr: Sr0.875Ba0.125Fe0.75Co0.25Ox
+act_mat: 0.25
+
+{mp-1099936.data}
+tolerance_factor: 1.021
+solid_solution: Fe-Co
+
+{mp-1099936.data.oxidized_phase}
+composition: BaSr7Fe6(CoO12)2
+
+{mp-1099936.data.reduced_phase}
+closest_MP: mp-1099862
+composition: BaSr7Fe6(CoO10)2
+
+{mp-1076359}
+
+{mp-1076359.pars}
+theo_compstr: Ca0.5Sr0.5Mn0.875Fe0.125Ox
+act_mat: 0.125
+
+{mp-1076359.data}
+tolerance_factor: 1.012
+solid_solution: Mn-Fe
+
+{mp-1076359.data.oxidized_phase}
+composition: Sr4Ca4Mn7FeO24
+
+{mp-1076359.data.reduced_phase}
+closest_MP: mp-1076163
+composition: Sr4Ca4Mn7FeO20
+
+{mp-1099698}
+
+{mp-1099698.pars}
+theo_compstr: Sm0.5La0.5Co0.875Ag0.125Ox
+act_mat: 0.875
+
+{mp-1099698.data}
+tolerance_factor: 0.936
+solid_solution: Co-Ag
+
+{mp-1099698.data.oxidized_phase}
+composition: La4Sm4Co7AgO24
+
+{mp-1099698.data.reduced_phase}
+closest_MP: mp-1076724
+composition: La4Sm4Co7AgO20
+
+{mp-1099932}
+
+{mp-1099932.pars}
+theo_compstr: Na0.875K0.125V0.75Cr0.25Ox
+act_mat: 0.25
+
+{mp-1099932.data}
+tolerance_factor: 1.025
+solid_solution: V-Cr
+
+{mp-1099932.data.oxidized_phase}
+composition: KNa7V6Cr2O24
+
+{mp-1099932.data.reduced_phase}
+closest_MP: mp-1099912
+composition: KNa7V6Cr2O20
+
+{mp-1076528}
+
+{mp-1076528.pars}
+theo_compstr: Sr0.75Ba0.25Co0.5Cu0.5Ox
+act_mat: 0.5
+
+{mp-1076528.data}
+tolerance_factor: 1.008
+solid_solution: Co-Cu
+
+{mp-1076528.data.oxidized_phase}
+composition: BaSr3Co2(CuO6)2
+
+{mp-1076528.data.reduced_phase}
+closest_MP: mp-1100092
+composition: BaSr3Co2(CuO5)2
+
+{mp-4019}
+
+{mp-4019.pars}
+theo_compstr: Ca1Ti1Ox
+act_mat: 1.0
+
+{mp-4019.data}
+tolerance_factor: 0.959
+solid_solution: Ti
+
+{mp-4019.data.oxidized_phase}
+composition: CaTiO3
+
+{mp-4019.data.reduced_phase}
+closest_MP: mp-1096895
+composition: Ca2Ti2O5
+
+{mp-19201}
+
+{mp-19201.pars}
+theo_compstr: Ca1Mn1Ox
+act_mat: 1.0
+
+{mp-19201.data}
+tolerance_factor: 0.996
+solid_solution: Mn
+
+{mp-19201.data.oxidized_phase}
+composition: CaMnO3
+
+{mp-19201.data.reduced_phase}
+closest_MP: mp-25008
+composition: Ca2Mn2O5
+
+{mp-1075922}
+
+{mp-1075922.pars}
+theo_compstr: Ca0.125Sr0.875Ti1Ox
+act_mat: 1.0
+
+{mp-1075922.data}
+tolerance_factor: 0.991
+solid_solution: Ti
+
+{mp-1075922.data.oxidized_phase}
+composition: Sr7CaTi8O24
+
+{mp-1075922.data.reduced_phase}
+closest_MP: mp-1076695
+composition: Sr7CaTi8O20
+
+{mp-1076561}
+
+{mp-1076561.pars}
+theo_compstr: Ca0.5Sr0.5Ti0.125Mn0.875Ox
+act_mat: 0.875
+
+{mp-1076561.data}
+tolerance_factor: 1.01
+solid_solution: Ti-Mn
+
+{mp-1076561.data.oxidized_phase}
+composition: Sr4Ca4TiMn7O24
+
+{mp-1076561.data.reduced_phase}
+closest_MP: mp-1099799
+composition: Sr4Ca4TiMn7O20
+
+{mp-1099664}
+
+{mp-1099664.pars}
+theo_compstr: Na0.875K0.125V1Ox
+act_mat: 1.0
+
+{mp-1099664.data}
+tolerance_factor: 1.018
+solid_solution: V
+
+{mp-1099664.data.oxidized_phase}
+composition: KNa7V8O24
+
+{mp-1099664.data.reduced_phase}
+closest_MP: mp-1076630
+composition: KNa7V8O20
+
+{mp-1075974}
+
+{mp-1075974.pars}
+theo_compstr: Sr0.625Ba0.375Ti0.875Mn0.125Ox
+act_mat: 0.125
+
+{mp-1075974.data}
+tolerance_factor: 1.023
+solid_solution: Ti-Mn
+
+{mp-1075974.data.oxidized_phase}
+composition: Ba3Sr5Ti7MnO24
+
+{mp-1075974.data.reduced_phase}
+closest_MP: mp-1076186
+composition: Ba3Sr5Ti7MnO20
+
+{mp-1076628}
+
+{mp-1076628.pars}
+theo_compstr: Ca0.625Sr0.375Ti0.375Mn0.625Ox
+act_mat: 0.625
+
+{mp-1076628.data}
+tolerance_factor: 0.996
+solid_solution: Ti-Mn
+
+{mp-1076628.data.oxidized_phase}
+composition: Sr3Ca5Ti3Mn5O24
+
+{mp-1076628.data.reduced_phase}
+closest_MP: mp-1076134
+composition: Sr3Ca5Ti3Mn5O20
+
+{mp-1075976}
+
+{mp-1075976.pars}
+theo_compstr: Ca0.375Sr0.625Ti0.125Mn0.875Ox
+act_mat: 0.875
+
+{mp-1075976.data}
+tolerance_factor: 1.015
+solid_solution: Ti-Mn
+
+{mp-1075976.data.oxidized_phase}
+composition: Sr5Ca3TiMn7O24
+
+{mp-1075976.data.reduced_phase}
+closest_MP: mp-1076192
+composition: Sr5Ca3TiMn7O20
+
+{mp-3614}
+
+{mp-3614.pars}
+theo_compstr: K1Ta1Ox
+act_mat: 1.0
+
+{mp-3614.data}
+tolerance_factor: 1.05
+solid_solution: Ta
+
+{mp-3614.data.oxidized_phase}
+composition: KTaO3
+
+{mp-3614.data.reduced_phase}
+closest_MP: mp-1099764
+composition: K2Ta2O5
+
+{mp-24989}
+
+{mp-24989.pars}
+theo_compstr: Sm1Fe1Ox
+act_mat: 1.0
+
+{mp-24989.data}
+tolerance_factor: 0.908
+solid_solution: Fe
+
+{mp-24989.data.oxidized_phase}
+composition: SmFeO3
+
+{mp-24989.data.reduced_phase}
+closest_MP: mp-1076463
+composition: Sm2Fe2O5
+
+{mp-1099886}
+
+{mp-1099886.pars}
+theo_compstr: Sr0.25Ba0.75Co0.25Cu0.75Ox
+act_mat: 0.75
+
+{mp-1099886.data}
+tolerance_factor: 1.018
+solid_solution: Co-Cu
+
+{mp-1099886.data.oxidized_phase}
+composition: Ba3SrCo(CuO4)3
+
+{mp-1099886.data.reduced_phase}
+closest_MP: mp-1100085
+composition: Ba3SrCoCu3O10
+
+{mp-1099788}
+
+{mp-1099788.pars}
+theo_compstr: Ca0.75Sr0.25Mn0.875Fe0.125Ox
+act_mat: 0.125
+
+{mp-1099788.data}
+tolerance_factor: 1.002
+solid_solution: Mn-Fe
+
+{mp-1099788.data.oxidized_phase}
+composition: Sr2Ca6Mn7FeO24
+
+{mp-1099788.data.reduced_phase}
+closest_MP: mp-1099810
+composition: Sr2Ca6Mn7FeO20
+
+{mp-1076580}
+
+{mp-1076580.pars}
+theo_compstr: Sm0.375La0.625Cr0.75Fe0.25Ox
+act_mat: 0.25
+
+{mp-1076580.data}
+tolerance_factor: 0.943
+solid_solution: Cr-Fe
+
+{mp-1076580.data.oxidized_phase}
+composition: La5Sm3Cr6(FeO12)2
+
+{mp-1076580.data.reduced_phase}
+closest_MP: mp-1076203
+composition: La5Sm3Cr6(FeO10)2
+
+{mp-770767}
+
+{mp-770767.pars}
+theo_compstr: Sm1Cu1Ox
+act_mat: 1.0
+
+{mp-770767.data}
+tolerance_factor: 0.88
+solid_solution: Cu
+
+{mp-770767.data.oxidized_phase}
+composition: SmCuO3
+
+{mp-770767.data.reduced_phase}
+closest_MP: mp-768866
+composition: Sm2Cu2O5
+
+{mp-3283}
+
+{mp-3283.pars}
+theo_compstr: Rb1Nb1Ox
+act_mat: 1.0
+
+{mp-3283.data}
+tolerance_factor: 1.077
+solid_solution: Nb
+
+{mp-3283.data.oxidized_phase}
+composition: RbNbO3
+
+{mp-3283.data.reduced_phase}
+closest_MP: mp-1076323
+composition: Rb2Nb2O5
+
+{mp-1076219}
+
+{mp-1076219.pars}
+theo_compstr: Sm0.5La0.5Cu0.125Co0.875Ox
+act_mat: 0.875
+
+{mp-1076219.data}
+tolerance_factor: 0.938
+solid_solution: Cu-Co
+
+{mp-1076219.data.oxidized_phase}
+composition: La4Sm4Co7CuO24
+
+{mp-1076219.data.reduced_phase}
+closest_MP: mp-1076483
+composition: La4Sm4Co7CuO20
+
+{mp-1077622}
+
+{mp-1077622.pars}
+theo_compstr: Eu1Ag1Ox
+act_mat: 1.0
+
+{mp-1077622.data}
+tolerance_factor: 0.863
+solid_solution: Ag
+
+{mp-1077622.data.oxidized_phase}
+composition: EuAgO3
+
+{mp-1077622.data.reduced_phase}
+closest_MP: mp-1099927
+composition: Eu2Ag2O5
+
+{mp-1076827}
+
+{mp-1076827.pars}
+theo_compstr: Ca0.125Sr0.875Ti0.375Mn0.625Ox
+act_mat: 0.625
+
+{mp-1076827.data}
+tolerance_factor: 1.015
+solid_solution: Ti-Mn
+
+{mp-1076827.data.oxidized_phase}
+composition: Sr7CaTi3Mn5O24
+
+{mp-1076827.data.reduced_phase}
+closest_MP: mp-1076183
+composition: Sr7CaTi3Mn5O20
+
+{mp-1075962}
+
+{mp-1075962.pars}
+theo_compstr: Ca0.375Sr0.625Ti0.375Mn0.625Ox
+act_mat: 0.625
+
+{mp-1075962.data}
+tolerance_factor: 1.005
+solid_solution: Ti-Mn
+
+{mp-1075962.data.oxidized_phase}
+composition: Sr5Ca3Ti3Mn5O24
+
+{mp-1075962.data.reduced_phase}
+closest_MP: mp-1099762
+composition: Sr5Ca3Ti3Mn5O20
+
+{mp-629046}
+
+{mp-629046.pars}
+theo_compstr: La1Mn1Ox
+act_mat: 1.0
+
+{mp-629046.data}
+tolerance_factor: 0.948
+solid_solution: Mn
+
+{mp-629046.data.oxidized_phase}
+composition: LaMnO3
+
+{mp-629046.data.reduced_phase}
+closest_MP: mp-1099627
+composition: La2Mn2O5
+
+{mp-1076054}
+
+{mp-1076054.pars}
+theo_compstr: Sr0.875Ba0.125Co0.5Cu0.5Ox
+act_mat: 0.5
+
+{mp-1076054.data}
+tolerance_factor: 1.001
+solid_solution: Co-Cu
+
+{mp-1076054.data.oxidized_phase}
+composition: BaSr7Co4(CuO6)4
+
+{mp-1076054.data.reduced_phase}
+closest_MP: mp-1099990
+composition: BaSr7Co4(CuO5)4
+
+{mp-1075997}
+
+{mp-1075997.pars}
+theo_compstr: Ca0.5Sr0.5Fe0.125Co0.875Ox
+act_mat: 0.875
+
+{mp-1075997.data}
+tolerance_factor: 1.012
+solid_solution: Fe-Co
+
+{mp-1075997.data.oxidized_phase}
+composition: Sr4Ca4FeCo7O24
+
+{mp-1075997.data.reduced_phase}
+closest_MP: mp-1100009
+composition: Sr4Ca4FeCo7O20
+
+{mp-1099603}
+
+{mp-1099603.pars}
+theo_compstr: Ca0.375Sr0.625Mn0.75Fe0.25Ox
+act_mat: 0.25
+
+{mp-1099603.data}
+tolerance_factor: 1.013
+solid_solution: Mn-Fe
+
+{mp-1099603.data.oxidized_phase}
+composition: Sr5Ca3Mn6(FeO12)2
+
+{mp-1099603.data.reduced_phase}
+closest_MP: mp-1076601
+composition: Sr5Ca3Mn6(FeO10)2
+
+{mp-1099867}
+
+{mp-1099867.pars}
+theo_compstr: Na0.75K0.25Mo0.5V0.5Ox
+act_mat: 0.5
+
+{mp-1099867.data}
+tolerance_factor: 1.012
+solid_solution: Mo-V
+
+{mp-1099867.data.oxidized_phase}
+composition: KNa3V2(MoO6)2
+
+{mp-1099867.data.reduced_phase}
+closest_MP: mp-1099868
+composition: KNa3V2(MoO5)2
+
+{mp-1076829}
+
+{mp-1076829.pars}
+theo_compstr: Ca0.875Sr0.125Fe0.25Co0.75Ox
+act_mat: 0.75
+
+{mp-1076829.data}
+tolerance_factor: 0.994
+solid_solution: Fe-Co
+
+{mp-1076829.data.oxidized_phase}
+composition: SrCa7Fe2(CoO4)6
+
+{mp-1076829.data.reduced_phase}
+closest_MP: mp-1099745
+composition: SrCa7Fe2(Co3O10)2
+
+{mp-1099727}
+
+{mp-1099727.pars}
+theo_compstr: Na0.5K0.5W0.375Mo0.625Ox
+act_mat: 0.625
+
+{mp-1099727.data}
+tolerance_factor: 1.017
+solid_solution: W-Mo
+
+{mp-1099727.data.oxidized_phase}
+composition: K4Na4Mo5(WO8)3
+
+{mp-1099727.data.reduced_phase}
+closest_MP: mp-1076890
+composition: K4Na4Mo5W3O20
+
+{mp-1076264}
+
+{mp-1076264.pars}
+theo_compstr: Sr0.75Ba0.25Co0.375Cu0.625Ox
+act_mat: 0.625
+
+{mp-1076264.data}
+tolerance_factor: 0.998
+solid_solution: Co-Cu
+
+{mp-1076264.data.oxidized_phase}
+composition: Ba2Sr6Co3Cu5O24
+
+{mp-1076264.data.reduced_phase}
+closest_MP: mp-1099742
+composition: Ba2Sr6Co3(CuO4)5
+
+{mp-1076408}
+
+{mp-1076408.pars}
+theo_compstr: Sr0.875Ba0.125Mn0.25Fe0.75Ox
+act_mat: 0.75
+
+{mp-1076408.data}
+tolerance_factor: 1.021
+solid_solution: Mn-Fe
+
+{mp-1076408.data.oxidized_phase}
+composition: BaSr7Mn2(FeO4)6
+
+{mp-1076408.data.reduced_phase}
+closest_MP: mp-1076181
+composition: BaSr7Mn2(Fe3O10)2
+
+{mp-1076410}
+
+{mp-1076410.pars}
+theo_compstr: Ca0.5Sr0.5Mn0.25Fe0.75Ox
+act_mat: 0.75
+
+{mp-1076410.data}
+tolerance_factor: 0.994
+solid_solution: Mn-Fe
+
+{mp-1076410.data.oxidized_phase}
+composition: Sr2Ca2Mn(FeO4)3
+
+{mp-1076410.data.reduced_phase}
+closest_MP: mp-1076444
+composition: Sr2Ca2MnFe3O10
+
+{mp-1075987}
+
+{mp-1075987.pars}
+theo_compstr: Sm0.125La0.875Ti0.125V0.875Ox
+act_mat: 0.875
+
+{mp-1075987.data}
+tolerance_factor: 0.944
+solid_solution: Ti-V
+
+{mp-1075987.data.oxidized_phase}
+composition: La7SmTiV7O24
+
+{mp-1075987.data.reduced_phase}
+closest_MP: mp-1076664
+composition: La7SmTiV7O20
+
+{mp-1076711}
+
+{mp-1076711.pars}
+theo_compstr: Sr1Cu1Ox
+act_mat: 1.0
+
+{mp-1076711.data}
+tolerance_factor: 0.955
+solid_solution: Cu
+
+{mp-1076711.data.oxidized_phase}
+composition: SrCuO3
+
+{mp-1076711.data.reduced_phase}
+closest_MP: mp-21129
+composition: Sr2Cu2O5
+
+{mp-1075901}
+
+{mp-1075901.pars}
+theo_compstr: Ca0.25Sr0.75Co0.625Cu0.375Ox
+act_mat: 0.375
+
+{mp-1075901.data}
+tolerance_factor: 0.994
+solid_solution: Co-Cu
+
+{mp-1075901.data.oxidized_phase}
+composition: Sr6Ca2Co5(CuO8)3
+
+{mp-1075901.data.reduced_phase}
+closest_MP: mp-1076678
+composition: Sr6Ca2Co5Cu3O20
+
+{mp-1076325}
+
+{mp-1076325.pars}
+theo_compstr: Sm0.5La0.5Ni1Ox
+act_mat: 1.0
+
+{mp-1076325.data}
+tolerance_factor: 0.949
+solid_solution: Ni
+
+{mp-1076325.data.oxidized_phase}
+composition: LaSm(NiO3)2
+
+{mp-1076325.data.reduced_phase}
+closest_MP: mp-1076810
+composition: LaSmNi2O5
+
+{mp-1076546}
+
+{mp-1076546.pars}
+theo_compstr: Na0.5K0.5W0.125Mo0.875Ox
+act_mat: 0.875
+
+{mp-1076546.data}
+tolerance_factor: 1.018
+solid_solution: W-Mo
+
+{mp-1076546.data.oxidized_phase}
+composition: K4Na4Mo7WO24
+
+{mp-1076546.data.reduced_phase}
+closest_MP: mp-1076754
+composition: K4Na4Mo7WO20
+
+{mp-1075933}
+
+{mp-1075933.pars}
+theo_compstr: Sm1Ag1Ox
+act_mat: 1.0
+
+{mp-1075933.data}
+tolerance_factor: 0.864
+solid_solution: Ag
+
+{mp-1075933.data.oxidized_phase}
+composition: SmAgO3
+
+{mp-1075933.data.reduced_phase}
+closest_MP: mp-1076848
+composition: Sm2Ag2O5
+
+{mp-1099713}
+
+{mp-1099713.pars}
+theo_compstr: Ca0.125Sr0.875Mn0.5Fe0.5Ox
+act_mat: 0.5
+
+{mp-1099713.data}
+tolerance_factor: 1.015
+solid_solution: Mn-Fe
+
+{mp-1099713.data.oxidized_phase}
+composition: Sr7CaMn4(FeO6)4
+
+{mp-1099713.data.reduced_phase}
+closest_MP: mp-1099692
+composition: Sr7CaMn4(FeO5)4
+
+{mp-1076741}
+
+{mp-1076741.pars}
+theo_compstr: Ca0.25Sr0.75Co0.875Cu0.125Ox
+act_mat: 0.125
+
+{mp-1076741.data}
+tolerance_factor: 1.014
+solid_solution: Co-Cu
+
+{mp-1076741.data.oxidized_phase}
+composition: Sr6Ca2Co7CuO24
+
+{mp-1076741.data.reduced_phase}
+closest_MP: mp-1076118
+composition: Sr6Ca2Co7CuO20
+
+{mp-19031}
+
+{mp-19031.pars}
+theo_compstr: Rb1V1Ox
+act_mat: 1.0
+
+{mp-19031.data}
+tolerance_factor: 1.133
+solid_solution: V
+
+{mp-19031.data.oxidized_phase}
+composition: RbVO3
+
+{mp-19031.data.reduced_phase}
+closest_MP: mp-1076354
+composition: Rb2V2O5
+
+{mp-1099821}
+
+{mp-1099821.pars}
+theo_compstr: Na0.5K0.5W0.75Mo0.25Ox
+act_mat: 0.25
+
+{mp-1099821.data}
+tolerance_factor: 1.015
+solid_solution: W-Mo
+
+{mp-1099821.data.oxidized_phase}
+composition: K2Na2Mo(WO4)3
+
+{mp-1099821.data.reduced_phase}
+closest_MP: mp-1099722
+composition: K2Na2MoW3O10
+
+{mp-1076592}
+
+{mp-1076592.pars}
+theo_compstr: Sr0.875Ba0.125Mn0.125Fe0.875Ox
+act_mat: 0.875
+
+{mp-1076592.data}
+tolerance_factor: 1.017
+solid_solution: Mn-Fe
+
+{mp-1076592.data.oxidized_phase}
+composition: BaSr7MnFe7O24
+
+{mp-1076592.data.reduced_phase}
+closest_MP: mp-1076473
+composition: BaSr7MnFe7O20
+
+{mp-1099844}
+
+{mp-1099844.pars}
+theo_compstr: Ca0.5Sr0.5Co0.75Cu0.25Ox
+act_mat: 0.25
+
+{mp-1099844.data}
+tolerance_factor: 0.995
+solid_solution: Co-Cu
+
+{mp-1099844.data.oxidized_phase}
+composition: Sr2Ca2Co3CuO12
+
+{mp-1099844.data.reduced_phase}
+closest_MP: mp-1076273
+composition: Sr2Ca2Co3CuO10
+
+{mp-1077671}
+
+{mp-1077671.pars}
+theo_compstr: Ca0.25Sr0.75Mn0.625Fe0.375Ox
+act_mat: 0.375
+
+{mp-1077671.data}
+tolerance_factor: 1.014
+solid_solution: Mn-Fe
+
+{mp-1077671.data.oxidized_phase}
+composition: Sr6Ca2Mn5(FeO8)3
+
+{mp-1077671.data.reduced_phase}
+closest_MP: mp-1076182
+composition: Sr6Ca2Mn5Fe3O20
+
+{mp-18815}
+
+{mp-18815.pars}
+theo_compstr: K1V1Ox
+act_mat: 1.0
+
+{mp-18815.data}
+tolerance_factor: 1.104
+solid_solution: V
+
+{mp-18815.data.oxidized_phase}
+composition: KVO3
+
+{mp-18815.data.reduced_phase}
+closest_MP: mp-1099837
+composition: K2V2O5
+
+{mp-7375}
+
+{mp-7375.pars}
+theo_compstr: K1Nb1Ox
+act_mat: 1.0
+
+{mp-7375.data}
+tolerance_factor: 1.05
+solid_solution: Nb
+
+{mp-7375.data.oxidized_phase}
+composition: KNbO3
+
+{mp-7375.data.reduced_phase}
+closest_MP: mp-1076215
+composition: K2Nb2O5
+
+{mp-1076665}
+
+{mp-1076665.pars}
+theo_compstr: Na0.875K0.125V0.875Cr0.125Ox
+act_mat: 0.125
+
+{mp-1076665.data}
+tolerance_factor: 1.022
+solid_solution: V-Cr
+
+{mp-1076665.data.oxidized_phase}
+composition: KNa7V7CrO24
+
+{mp-1076665.data.reduced_phase}
+closest_MP: mp-1076821
+composition: KNa7V7CrO20
+
+{mp-1099701}
+
+{mp-1099701.pars}
+theo_compstr: Ca0.125Sr0.875Mn0.125Fe0.875Ox
+act_mat: 0.875
+
+{mp-1099701.data}
+tolerance_factor: 1.005
+solid_solution: Mn-Fe
+
+{mp-1099701.data.oxidized_phase}
+composition: Sr7CaMnFe7O24
+
+{mp-1099701.data.reduced_phase}
+closest_MP: mp-1076487
+composition: Sr7CaMnFe7O20
+
+{mp-1075943}
+
+{mp-1075943.pars}
+theo_compstr: Sr0.625Ba0.375Ti1Ox
+act_mat: 1.0
+
+{mp-1075943.data}
+tolerance_factor: 1.018
+solid_solution: Ti
+
+{mp-1075943.data.oxidized_phase}
+composition: Ba3Sr5Ti8O24
+
+{mp-1075943.data.reduced_phase}
+closest_MP: mp-1099792
+composition: Ba3Sr5Ti8O20
+
+{mp-3771}
+
+{mp-3771.pars}
+theo_compstr: Mg1Ti1Ox
+act_mat: 1.0
+
+{mp-3771.data}
+tolerance_factor: 0.862
+solid_solution: Ti
+
+{mp-3771.data.oxidized_phase}
+composition: MgTiO3
+
+{mp-3771.data.reduced_phase}
+closest_MP: mp-1076652
+composition: Mg2Ti2O5
+
+{mp-1076213}
+
+{mp-1076213.pars}
+theo_compstr: Ca0.5Sr0.5Mn1Ox
+act_mat: 1.0
+
+{mp-1076213.data}
+tolerance_factor: 1.015
+solid_solution: Mn
+
+{mp-1076213.data.oxidized_phase}
+composition: SrCaMn2O6
+
+{mp-1076213.data.reduced_phase}
+closest_MP: mp-1076496
+composition: SrCaMn2O5
+
+{mp-1076384}
+
+{mp-1076384.pars}
+theo_compstr: Ca0.5Sr0.5Ti0.5Mn0.5Ox
+act_mat: 0.5
+
+{mp-1076384.data}
+tolerance_factor: 0.996
+solid_solution: Ti-Mn
+
+{mp-1076384.data.oxidized_phase}
+composition: SrCaTiMnO6
+
+{mp-1076384.data.reduced_phase}
+closest_MP: mp-1099877
+composition: SrCaTiMnO5
+
