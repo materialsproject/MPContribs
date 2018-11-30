@@ -6,14 +6,13 @@ from mpcontribs.io.core.components import Table
 
 class CarrierTransportRester(MPContribsRester):
     """CarrierTransport-specific convenience functions to interact with MPContribs REST interface"""
-    query = {'content.urls.url': 'https://www.nature.com/articles/sdata201785'}
-    provenance_keys = ['title', 'authors', 'journal', 'urls', 'url', 'description']
+    query = {'project': 'carrier_transport'}
     released = True
 
     def get_contributions(self, limit=20):
 
         docs = self.query_contributions(
-            projection={'_id': 1, 'mp_cat_id': 1, 'content': 1}, limit=limit) # use URL for all data
+            projection={'_id': 1, 'identifier': 1, 'content': 1}, limit=limit) # use URL for all data
         if not docs:
             raise Exception('No contributions found for CarrierTransport Explorer!')
 
@@ -46,7 +45,7 @@ class CarrierTransportRester(MPContribsRester):
         if doping not in dopings:
             raise Exception('doping has to be n or p!')
 
-        docs = self.query_contributions(projection={'_id': 1, 'mp_cat_id': 1, 'content': 1})
+        docs = self.query_contributions(projection={'_id': 1, 'identifier': 1, 'content': 1})
         if not docs:
             raise Exception('No contributions found for CarrierTransport Explorer!')
 

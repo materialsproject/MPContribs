@@ -487,7 +487,7 @@ def get_energy_data(mdb, process, t_ox, t_red, p_ox, p_red, data_source, enth_st
             key = 'content.{}.data'.format(name)
             crit = {key: {'$elemMatch': {'0': db_id}}}
             proj = {
-		'{}.$'.format(key): 1, 'mp_cat_id': 1,
+		'{}.$'.format(key): 1, 'identifier': 1,
 		'content.{}.columns'.format(name): 1,
 		'content.pars.theo_compstr': 1
             }

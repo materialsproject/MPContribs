@@ -6,16 +6,12 @@ from mpcontribs.io.core.components import Table
 
 class SwfRester(MPContribsRester):
     """SWF-specific convenience functions to interact with MPContribs REST interface"""
-    mpfile = MPFile.from_file(os.path.join(
-        os.path.dirname(__file__), '..', 'mpfile_init.txt'
-    ))
-    query = {'content.urls.STAM': mpfile.hdata.general['urls']['STAM']}
-    provenance_keys = [k for k in mpfile.hdata.general.keys() if k != 'google_sheet']
+    query = {'project': 'swf'}
     released = True
 
     def get_contributions(self):
         docs = self.query_contributions(
-            projection={'_id': 1, 'mp_cat_id': 1, 'content.data': 1}
+            projection={'_id': 1, 'identifier': 1, 'content.data': 1}
         )
         if not docs:
             raise Exception('No contributions found for SWF Explorer!')

@@ -7,7 +7,7 @@ from mpcontribs.io.core.components import Table
 
 class Mno2PhaseSelectionRester(MPContribsRester):
     """MnO2_phase_selection-specific convenience functions to interact with MPContribs REST interface"""
-    query = {'content.urls.JACS': 'https://doi.org/10.1021/jacs.6b11301'}
+    query = {'project': 'MnO2_phase_selection'}
     provenance_keys = ['title', 'authors', 'description', 'urls']
     released = True
 
@@ -22,7 +22,7 @@ class Mno2PhaseSelectionRester(MPContribsRester):
         docs = self.query_contributions(
             criteria={'content.data.Phase': phase_query_key},
             projection={
-                '_id': 1, 'mp_cat_id': 1, 'content.data': 1,
+                '_id': 1, 'identifier': 1, 'content.data': 1,
                 'content.{}'.format(mp_level01_titles[3]): 1
             }
         )

@@ -8,8 +8,7 @@ from mpcontribs.io.archieml.mpfile import MPFile
 
 class DiluteSoluteDiffusionRester(MPContribsRester):
     """DiluteSoluteDiffusion-specific convenience functions to interact with MPContribs REST interface"""
-    query = {'content.info.figshare_id': '1546772'}
-    provenance_keys = ['title', 'authors', 'description', 'urls', 'info']
+    query = {'project': 'dilute_solute_diffusion'}
     z = loads(open(os.path.join(
       os.path.dirname(os.path.abspath(__file__)), 'z.json'
     ), 'r').read())

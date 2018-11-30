@@ -7,14 +7,11 @@ from mpcontribs.io.core.components import Table, Plot
 
 class AlsBeamlineRester(MPContribsRester):
     """ALS Beamline-specific convenience functions to interact with MPContribs REST interface"""
-    query = {'content.measurement_location': 'ALS Beamline 6.3.1'}
-    provenance_keys = [
-        'title', 'authors', 'description', 'measurement_location', 'sample', 'urls'
-    ]
+    query = {'project': 'als_beamline'}
     released = True
 
     def get_contributions(self):
-        projection = {'_id': 1, 'mp_cat_id': 1, 'content': 1}
+        projection = {'_id': 1, 'identifier': 1, 'content': 1}
         docs = self.query_contributions(projection=projection)
         if not docs:
             raise Exception('No contributions found for ALS Beamline Explorer!')
@@ -44,7 +41,7 @@ class AlsBeamlineRester(MPContribsRester):
         if typ not in types:
             raise Exception('{} not in {}'.format(typ, types))
 
-        projection = {'_id': 1, 'mp_cat_id': 1, 'content.Co': 1}
+        projection = {'_id': 1, 'identifier': 1, 'content.Co': 1}
         docs = self.query_contributions(projection=projection)
         if not docs:
             raise Exception('No contributions found for ALS Beamline Explorer!')

@@ -6,12 +6,11 @@ from mpcontribs.io.core.components import Table
 
 class RedoxThermoCspRester(MPContribsRester):
     """RedoxThermoCsp-specific convenience functions to interact with MPContribs REST interface"""
-    query = {'content.urls.GitHub': 'https://github.com/josuav1/solar_perovskite'}
-    provenance_keys = ['title', 'authors', 'description', 'urls']
+    query = {'project': 'redox_thermo_csp'}
     released = True
 
     def get_contributions(self):
-        projection = {'_id': 1, 'mp_cat_id': 1, 'content.data': 1}
+        projection = {'_id': 1, 'identifier': 1, 'content.data': 1}
         docs = self.query_contributions(projection=projection)
         if not docs:
             raise Exception('No contributions found for RedoxThermoCsp Explorer!')
@@ -49,7 +48,7 @@ class RedoxThermoCspRester(MPContribsRester):
 
         docs = self.query_contributions(
             criteria={'content.title': 'Ionic Radii'},
-            projection={'_id': 1, 'mp_cat_id': 1, 'content.data': 1}
+            projection={'_id': 1, 'identifier': 1, 'content.data': 1}
         )
         if not docs:
             raise Exception('No contributions found for RedoxThermoCsp Ionic Radii!')

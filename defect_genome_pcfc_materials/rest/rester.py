@@ -8,13 +8,12 @@ import os
 
 class DefectGenomePcfcMaterialsRester(MPContribsRester):
     """defect_genome__pcfc_materials-specific convenience functions to interact with MPContribs REST interface"""
-    query = {'content.urls.JPC': 'https://doi.org/10.1021/acs.jpcc.7b08716'}
-    provenance_keys = ['title', 'description', 'authors', 'urls']
+    query = {'project': 'defect_genome_pcfc_materials'}
     released = True
 
     def get_contributions(self):
         docs = self.query_contributions(
-            projection={'_id': 1, 'mp_cat_id': 1, 'content.data': 1}
+            projection={'_id': 1, 'identifier': 1, 'content.data': 1}
         )
         if not docs:
             raise Exception('No contributions found for PCFC Explorer!')

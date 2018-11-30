@@ -7,17 +7,13 @@ from mpcontribs.io.core.components import Table
 
 class JarvisDftRester(MPContribsRester):
     """JarvisDft-specific convenience functions to interact with MPContribs REST interface"""
-    mpfile = MPFile.from_file(os.path.join(
-        os.path.dirname(__file__), '..', 'mpfile_init.txt'
-    ))
-    query = {'content.urls.DOI': mpfile.hdata.general['urls']['DOI']}
-    provenance_keys = ['title', 'description', 'authors', 'urls']
+    query = {'project': 'jarvis_dft'}
     released = True
 
     def get_contributions(self):
 
         docs = self.query_contributions(
-            projection={'_id': 1, 'mp_cat_id': 1, 'content': 1}
+            projection={'_id': 1, 'identifier': 1, 'content': 1}
         )
         if not docs:
             raise Exception('No contributions found for JarvisDft Explorer!')

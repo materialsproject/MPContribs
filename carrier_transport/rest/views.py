@@ -15,7 +15,7 @@ def index(request, cid=None, db_type=None, mdb=None):
         if request.method == 'GET':
             axes, dopings = ['<S>', '<σ>', '<S²σ>'], ['n', 'p']
             projection = dict(('content.data.{}'.format(k[1:-1]), 1) for k in axes)
-            projection.update({'mp_cat_id': 1})
+            projection.update({'identifier': 1})
             docs = mdb.contrib_ad.query_contributions(
                 {'project': 'carrier_transport'}, projection=projection
             )
@@ -31,7 +31,7 @@ def index(request, cid=None, db_type=None, mdb=None):
                             value = float(value.split()[0])
                             if idx == 2:
                                 value = math.log10(value)
-                            response['text'].append(doc['mp_cat_id'])
+                            response['text'].append(doc['identifier'])
                             response[k].append(value)
 
         elif request.method == 'POST':
@@ -68,7 +68,7 @@ def table(request, db_type=None, mdb=None):
         search = request.GET.get('q')
         if search is not None:
             crit.update({'content.extra_data.pretty_formula': {'$regex': search}})
-        proj = {'content.data': 1, 'content.extra_data': 1, 'mp_cat_id': 1}
+        proj = {'content.data': 1, 'content.extra_data': 1, 'identifier': 1}
         total_count = mdb.contrib_ad.query_contributions(crit).count()
         last_id = None
         if page is not None and page > 1:

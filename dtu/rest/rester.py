@@ -6,15 +6,14 @@ from mpcontribs.io.core.components import Table
 
 class DtuRester(MPContribsRester):
     """DTU-specific convenience functions to interact with MPContribs REST interface"""
-    query = {'content.input_url': 'https://cmr.fysik.dtu.dk/_downloads/mp_gllbsc.db'}
-    provenance_keys = ['title', 'input_url', 'description', 'urls', 'authors', 'contributor']
+    query = {'project': 'dtu'}
     released = True
 
     # TODO implement decorator to reduce this to column definitions and rows
     def get_contributions(self, bandgap_range=None):
 
         projection = {
-            '_id': 1, 'mp_cat_id': 1,
+            '_id': 1, 'identifier': 1,
             'content.formula': 1, 'content.ICSD': 1, 'content.data': 1
         }
         docs = self.query_contributions(projection=projection)
