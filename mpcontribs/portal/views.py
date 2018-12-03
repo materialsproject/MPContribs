@@ -32,8 +32,8 @@ def index(request):
         #        entry['provenance'] = provenance
         #    ctx['landing_pages'].append(entry) # consider everything in DB released
     else:
-        #ctx.update({'alert': 'Please log in!'})
-        return redirect('{}?next={}'.format(reverse('cas_ng_login'), reverse('mpcontribs_portal_index')))
+        ctx.update({'alert': 'Please log in!'})
+        #return redirect('{}?next={}'.format(reverse('cas_ng_login'), reverse('mpcontribs_portal_index')))
     return render_to_response("mpcontribs_portal_index.html", ctx)
 
 def groupadd(request, token):

@@ -69,9 +69,9 @@ class MPFileCore(six.with_metaclass(ABCMeta, object)):
     @classmethod
     def from_contribution(cls, contrib):
         """construct MPFile from contribution (see rest.adapter.submit_contribution)"""
-        if not 'mp_cat_id' in contrib or not 'content' in contrib:
+        if not 'identifier' in contrib or not 'content' in contrib:
             raise ValueError('Dict not in contribution-style format')
-        recdict = RecursiveDict({contrib['mp_cat_id']: contrib['content']})
+        recdict = RecursiveDict({contrib['identifier']: contrib['content']})
         return cls.from_dict(recdict)
 
     def write_file(self, filename=default_mpfile_path.replace('.txt', '_out.txt'), **kwargs):
@@ -118,13 +118,13 @@ class MPFileCore(six.with_metaclass(ABCMeta, object)):
         ]
 
     def pop_first_section(self):
-        return self.from_dict(RecursiveDict([
-            self.document.popitem(last=False)
-        ]))
+        item = self.document.popitem(last=False)
+        return self.from_dict(RecursiveDict([item]))
 
     def insert_general_section(self, general_mpfile):
         """insert general section from `general_mpfile` into this MPFile"""
-        if general_mpfile is None: return
+        if general_mpfile is None:
+            return
         general_title = mp_level01_titles[0]
         general_data = general_mpfile.document[general_title]
         root_key = self.document.keys()[0]

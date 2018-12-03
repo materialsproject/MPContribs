@@ -196,7 +196,7 @@ def query_contributions(request, db_type=None, mdb=None):
     compositions docs (limited to one doc)
     @apiSuccess {String} response._id Contribution identifier
     @apiSuccess {String[]} response.collaborators List of collaborators
-    @apiSuccess {String} response.mp_cat_id MP category identifier (mp-id or
+    @apiSuccess {String} response.identifier MP category identifier (mp-id or
     composition)
 
     @apiSuccessExample Success-Response:
@@ -238,13 +238,14 @@ def query_contributions(request, db_type=None, mdb=None):
     results = list(mdb.contrib_ad.query_contributions(
         criteria, projection=projection, collection=collection, limit=limit
     ))
-    if collection == 'contributions':
-        # remove email addresses from output
-        for doc in results:
-            doc['collaborators'] = [
-                ' '.join(collaborator.split()[:2])
-                for collaborator in doc['collaborators']
-            ]
+    # TODO collaborators is a dict now! {'name': .., 'email': ...}
+    #if collection == 'contributions':
+    #    # remove email addresses from output
+    #    for doc in results:
+    #        doc['collaborators'] = [
+    #            ' '.join(collaborator.split()[:2])
+    #            for collaborator in doc['collaborators']
+    #        ]
     return {"valid_response": True, "response": results}
 
 @mapi_func(supported_methods=["POST", "GET"], requires_api_key=True)
@@ -337,7 +338,7 @@ def cif(request, cid, structure_name, db_type=None, mdb=None):
     from pymatgen.io.cif import CifWriter
     contrib = mdb.contrib_ad.query_contributions(
         {'_id': ObjectId(cid)},
-        projection={'_id': 0, 'mp_cat_id': 1, 'content': 1, 'collaborators': 1}
+        projection={'_id': 0, 'identifier': 1, 'content': 1, 'collaborators': 1}
     )[0]
     structure = Structures(contrib['content']).get(structure_name)
     if structure:
@@ -390,12 +391,12 @@ def datasets(request, identifier, db_type=None, mdb=None):
     """
     contributions = []
     required_keys = ['title', 'description', 'authors', 'urls']
-    projection = {'mp_cat_id': 1, 'project': 1, '_id': 1}
+    projection = {'identifier': 1, 'project': 1, '_id': 1}
     projection.update(dict(('content.'+k, 1) for k in required_keys))
     group = {'_id': '$project', 'cids': {'$push': '$_id'}}
     group.update(dict((k, {'$first': '$content.'+k}) for k in required_keys))
     docs = list(mdb.contribs_db.contributions.aggregate([
-        {'$match': {'mp_cat_id': identifier}}, {'$project': projection}, {'$group': group}
+        {'$match': {'identifier': identifier}}, {'$project': projection}, {'$group': group}
     ]))
     return {"valid_response": True, "response": docs}
 
@@ -450,26 +451,31 @@ def get_card(request, cid, db_type=None, mdb=None):
         )
 
     contrib = mdb.contrib_ad.query_contributions(
-        {'_id': ObjectId(cid)},
-        projection={'_id': 0, 'mp_cat_id': 1, 'content': 1, 'collaborators': 1}
+        {'_id': ObjectId(cid)}, projection={
+            '_id': 0, 'project': 1, 'identifier': 1, 'content': 1, 'collaborators': 1
+        }
     )[0]
-    mpid = contrib['mp_cat_id']
+    project = contrib['project']
+    prov = list(mdb.contrib_ad.query_contributions(
+        {'project': project}, collection='provenances', limit=1
+    ))[0]
+    mpid = contrib['identifier']
     hdata = HierarchicalData(contrib['content'])
-    #plots = GraphicalData(contrib['content'])
-    title = hdata.get('title', 'No title available.')
-    descriptions = hdata.get('description', 'No description available.').strip().split('.', 1)
+    plots = GraphicalData(contrib['content'])
+    title = prov.get('title', 'No title available.')
+    descriptions = prov.get('description', 'No description available.').strip().split('.', 1)
     description = '{}.'.format(descriptions[0])
     if len(descriptions) > 1 and descriptions[1]:
         description += ''' <a onclick="read_more_{}()" id="read_more_{}">More &raquo;</a><span id="more_text_{}"
         hidden>{}</span>'''.format(cid, cid, cid, descriptions[1])
-    authors = hdata.get('authors', 'No authors available.').split(',', 1)
+    authors = prov.get('authors', 'No authors available.').split(',', 1)
 
     provenance = '<h5 style="margin: 5px;">{}'.format(authors[0])
     if len(authors) > 1:
         authors = authors[1].strip().replace(', ', '<br/>')
         provenance += ' <a class="mytooltip" href="#">et al.<span class="classic">' + authors + '</span></a>'
     provenance += '</h5>'
-    urls = hdata.get('urls', {}).values()
+    urls = prov.get('urls', {}).values()
     provenance += ''.join(['''<a href={}
         class="btn btn-link" role=button style="padding: 0"
         target="_blank"><i class="fa fa-book fa-border fa-lg"></i></a>'''.format(x)
@@ -511,10 +517,8 @@ def get_card(request, cid, db_type=None, mdb=None):
     collection = 'materials' if is_mp_id else 'compositions'
     more = reverse('mpcontribs_explorer_contribution', args=[collection, cid])
     more = request.build_absolute_uri(more)
-    project = hdata.get('project')
-    if project is not None:
-        landing_page = reverse('mpcontribs_users_{}_explorer_index'.format(project))
-        landing_page = request.build_absolute_uri(landing_page)
+    landing_page = reverse('mpcontribs_users_{}_explorer_index'.format(project))
+    landing_page = request.build_absolute_uri(landing_page)
 
     card = '''
     <style>

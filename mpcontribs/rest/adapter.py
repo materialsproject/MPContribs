@@ -10,6 +10,7 @@ class ContributionMongoAdapter(object):
         self.db = db
         if self.db is not None:
             opts = bson.CodecOptions(document_class=RecursiveDict)
+            self.provenances = self.db.provenances.with_options(codec_options=opts)
             self.contributions = self.db.contributions.with_options(codec_options=opts)
             self.materials = self.db.materials.with_options(codec_options=opts)
             self.compositions = self.db.compositions.with_options(codec_options=opts)
@@ -45,7 +46,7 @@ class ContributionMongoAdapter(object):
         props = None
         if projection is None:
           if collection == 'contributions':
-            props = [ 'collaborators', 'mp_cat_id', 'project' ]
+            props = [ 'collaborators', 'identifier', 'project' ]
           elif collection == 'materials' or collection == 'compositions':
             limit = 1
         elif collection == 'contributions':
@@ -84,8 +85,8 @@ class ContributionMongoAdapter(object):
         """submit a single contribution to `mpcontribs.contributions` collection"""
         if len(mpfile.document) > 1:
             raise ValueError('submission only possible for single section MPFiles')
-        mp_cat_id = mpfile.document.keys()[0]
-        data = mpfile.document[mp_cat_id]
+        identifier = mpfile.document.keys()[0]
+        data = mpfile.document[identifier]
         update = ('cid' in data) # new vs update
         cid = bson.ObjectId(data['cid']) if update else bson.ObjectId()
         cid_short = get_short_object_id(cid)
@@ -101,7 +102,7 @@ class ContributionMongoAdapter(object):
                 "someone of {} to make you a collaborator on #{}.".format(
                     cid_short, contributor_email, collaborators, cid_short))
         # prepare document
-        doc = { 'collaborators': collaborators, 'mp_cat_id': mp_cat_id, 'content': data }
+        doc = { 'collaborators': collaborators, 'identifier': identifier, 'content': data }
         doc['project'] = data.get('project', 'other') if project is None else project
         if self.db is None:
             doc['_id'] = cid
