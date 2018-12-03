@@ -335,8 +335,8 @@ requirejs(['main'], function() {
 
 
             // displays the currently selected material and data properties
-            function showdata(r, key) { 
-                var selected = r[key].slice(-1) + ''
+            function showdata(r) {
+                var selected = r.slice(-1) + ''
                 selected = selected.split(",");
                 var selected_form = "";
                 for (var i = 0; i < selected.length; i++) { 
@@ -349,7 +349,7 @@ requirejs(['main'], function() {
                 selected_form = "<h4>" + selected_form.split("Ox")[0] + "O<sub>3-&delta;</sub>" + "</h4>";
                 $('#selected_mat').html(selected_form);
 
-                var selected_exp = r[key].slice(-1) + ''
+                var selected_exp = r.slice(-1) + ''
                 if (selected_exp.includes("n.a.")){
                     selected_exp_form = "<h5>no</h5>";
                 } else {
@@ -368,7 +368,7 @@ requirejs(['main'], function() {
                 };
                 $('#selected_exp_mat').html(selected_exp_form);
 
-                var selected_elastic = r[key].slice(-1) + ''
+                var selected_elastic = r.slice(-1) + ''
                 selected_elastic = selected_elastic.split(",").slice(-2);
                 if (selected_elastic.includes("true")) {
                     selected_elastic = "<h5>yes</h5>";
@@ -377,7 +377,7 @@ requirejs(['main'], function() {
                 };
                 $('#selected_elast').html(selected_elastic);
 
-                var selected_updt_form = r[key].slice(-1) + ''
+                var selected_updt_form = r.slice(-1) + ''
                 selected_updt_form = selected_updt_form.split(",").slice(-1);
                 $('#selected_updt').html("<h5>" + selected_updt_form + "</h5>");
                 $('#spinner_main').spin(false);
@@ -390,27 +390,27 @@ requirejs(['main'], function() {
                     var xaxis_title = "p<sub>O2</sub> (bar)";
                     var yaxis_title = "δ";
                 }
-                if (key === "isobar") {
+                else if (key === "isobar") {
                     var title = "p<sub>O2</sub>=10<sup>" + $('#pressure_slider').attr('value') + "</sup> bar"; 
                     var xaxis_title = "T (K)";
                     var yaxis_title = "δ";
                 }
-                if (key === "isoredox") {
+                else if (key === "isoredox") {
                     var title = "δ=" + $('#redox_slider').attr('value'); 
                     var xaxis_title = "T (K)";
                     var yaxis_title = "p<sub>O2</sub> (bar)";
                 }
-                if (key === "enthalpy_dH") {
+                else if (key === "enthalpy_dH") {
                     var title = "theo: T=" + $('#dH_temp_slider').attr('value') + " K, exp: T undefined";
                     var xaxis_title = "δ";
                     var yaxis_title = "ΔH<sub>O</sub> (kJ/mol)";
                 }
-                if (key === "entropy_dS") {
+                else if (key === "entropy_dS") {
                     var title = "theo: T=" + $('#dS_temp_slider').attr('value') + " K, exp: T undefined";
                     var xaxis_title = "δ";
                     var yaxis_title = "ΔS<sub>O</sub> (J/molK)";
                 }
-                if (key === "ellingham") {
+                else if (key === "ellingham") {
                     var title = "δ=" + $('#elling_redox_slider').attr('value'); 
                     var xaxis_title = "T (K)";
                     var yaxis_title = "ΔG<sub>O</sub> (kJ/mol)";
@@ -429,77 +429,68 @@ requirejs(['main'], function() {
                 yaxis['titlefont'] = { size: 22 };
                 xaxis['tickfont'] = { size: 12 };
                 if (key === "isoredox") { yaxis['type'] = 'log'; }
-                if (key === "enthalpy_dH") { yaxis['range'] = r[key].slice(-2)[0] ; }
-                if (key === "entropy_dS") { yaxis['range'] = r[key].slice(-2)[0]; }
-                Plotly.newPlot(div, r[key].slice(0, -1), {
+                if (key === "enthalpy_dH") { yaxis['range'] = r.slice(-2)[0] ; }
+                if (key === "entropy_dS") { yaxis['range'] = r.slice(-2)[0]; }
+                Plotly.newPlot(div, r.slice(0, -1), {
                     title: title, showlegend: false, xaxis: xaxis, yaxis: yaxis,
                     margin: {l: 80, r: 20, b: 60, t: 35}
                 });
             };
 
-            function send_request(updatekeys) { 
+            function send_request(updatekey) {
 
                 var cid = $('#cid').val();
 
-                // reformats the update keys so the python script can read them
-                var update_to_views = updatekeys + ''
-                update_to_views = update_to_views.replace(/\s/g, '')
-                update_to_views = update_to_views.split(",")
-
                 // read slider/field values
-                var payload = {
-                    'isotherm': {
+
+                if (updatekey === "isotherm") {
+                    var payload = {
                         'iso': $('#temp_slider').attr('value'),
                         'rng': $('#pressure_range').attr('value')
-                    }, 'isobar': {
+                    }
+                }
+                else if (updatekey === "isobar") {
+                    var payload = {
                         'iso': $('#pressure_slider').attr('value'),
                         'rng': $('#temp_range').attr('value')
-                    }, 'isoredox': {
+                    }
+                }
+                else if (updatekey === "isoredox") {
+                    var payload = {
                         'iso': $('#redox_slider').attr('value'),
                         'rng': $('#redox_temp_range').attr('value')
-                    }, 'enthalpy_dH': {'iso': $('#dH_temp_slider').attr('value')}, 
-                    'entropy_dS': {'iso': $('#dS_temp_slider').attr('value')}, 
-                    'ellingham': {
+                    }
+                }
+
+                else if (updatekey === "enthalpy_dH") {
+                    var payload =  {'iso': $('#dH_temp_slider').attr('value')}
+                }
+
+                else if (updatekey === "entropy_dS") {
+                    var payload =  {'iso': $('#dS_temp_slider').attr('value')}
+                }
+
+                else if (updatekey === "ellingham")  {
+                     var payload = {
                         'del': $('#elling_redox_slider').attr('value'),
                         'rng': $('#elling_temp_range').attr('value'),
-                        'iso': $('#elling_pressure_slider').attr('value')},
-                    'energy_analysis': {
-                        'data_source':0,
-                        'process_type': 0,
-                        't_ox': 0,
-                        't_red': 0,
-                        'p_ox': 0,
-                        'p_red': 0,
-                        'h_rec': 0,
-                        'mech_env': 0,
-                        'pump_ener': 0,
-                        'w_feed': 0,
-                        'steam_h_rec': 0,
-                        'param_disp': 0,
-                        'cutoff': 0
-                    },
-                    'updatekeys': { update_to_views }
+                        'iso': $('#elling_pressure_slider').attr('value')
+                     }
                 }
 
                 $.ajax({
                     type: 'POST',
-                    url: '../rest/' + cid,
+                    url: '../rest/' + cid + '/' + updatekey,
                     data: JSON.stringify(payload),
                     dataType: "json",
                     contentType: "application/json; charset=utf-8",
                     success: function(data, textStatus, jqXHR) {
                         // data['response'] = {'isotherm': {'x':, [...], 'y': [...]}, 'isobar': ...}
                         var r = data['response'];
-                        Object.keys(r).forEach(function(key,index) {
-                            // key: the name of the object key
-                            // index: the ordinal position of the key within the object 
-                            if (key != "energy_analysis") { showdata(r, key); };
-                            if (update_to_views.includes(key)) { // only update those plots defined in updatekeys
-                                var div = document.getElementById(key);
-                                update_plots(div,r,key);
-                            };
-                            $("#spinner_"+key).spin(false);
-                        });
+                        showdata(r);
+                        var div = document.getElementById(updatekey);
+                        update_plots(div,r,updatekey);
+                        $("#spinner_"+updatekey).spin(false);
                         $('input:text').slider('enable');
                     },
                     error: function(jqXHR, textStatus, errorThrown) {
@@ -510,7 +501,6 @@ requirejs(['main'], function() {
             }; 
                         
             // show default material SrFeOx
-            //$(".backgrid > tbody > tr:first > td:nth-child(6)").click()
             $("[name='spinner']").spin();
             $('input:text').slider('disable');
             $('#cid').val('5bb821a79225576aeda99475');

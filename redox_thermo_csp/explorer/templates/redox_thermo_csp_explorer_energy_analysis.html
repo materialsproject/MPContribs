@@ -51,11 +51,11 @@
             <div class="col-md-4"><b>Data Source:</b></div>
             <div class="col-md-8">
                 <label class="radio-inline">
-                    <input type="radio" id="enal_data_source" name="enal_data_source" value="Experimental">
+                    <input type="radio" id="enal_data_source_exp" name="enal_data_source" value="Experimental">
                     Experimental
                 </label>
                 <label class="radio-inline">
-                    <input type="radio" id="enal_data_source" checked="checked" name="enal_data_source" value="Theoretical">
+                    <input type="radio" id="enal_data_source_theo" checked="checked" name="enal_data_source" value="Theoretical">
                     Theoretical
                 </label>
             </div>
@@ -66,7 +66,7 @@
                     <label class="col-md-2 control-label" for="process" style="padding: 2px;"><b>Process Type:</b></label>
                     <div class="col-md-9">
                         <select class="form-control" id="process">
-                            <option class="opt0" selected>Air separation / Oxygen pumping / Oxygen storage</option>
+                            <option class="opt0" selected>Air Separation / Oxygen pumping / Oxygen storage</option>
                             <option class="opt1">Water Splitting</option>
                             <option class="opt2">CO2 Splitting</option>
                         </select>
@@ -329,14 +329,15 @@ requirejs(['main'], function() {
                 return slide_selectors[slider]['values'][index].toString();
             }
 
-            function send_request(updatekeys) { 
+            function send_request(updatekey) {
                 $("[name='spinner']").spin();
 
                 // enable / disable some sliders and fields in the energy analysis depending on values of other sliders/fields
                 if ($("input:checked").val() === "Experimental"){
-                    $('#process').val("Air separation / Oxygen pumping / Oxygen storage");
+                    $('#process').val("Air Separation / Oxygen pumping / Oxygen storage");
+                    $('#process').trigger("chosen:updated");
                 };
-                if ($('#process').val() != "Water Splitting" && !($('#steam_h_rec_eff').prop('disabled'))) {
+                if ($('#process').val() != "Water Splitting" ) {
                     $("#steam_h_rec_eff").slider("disable"); $("#w_feed_temp").slider("disable");
                 }
                 if ($('#process').val() === "Water Splitting") {
@@ -350,13 +351,13 @@ requirejs(['main'], function() {
                 if ($('#process').val() === "CO2 Splitting") {
                     ox_type_output.innerHTML = "<b>p(CO)/p(CO<sub>2</sub>)</b>";
                 };
-                if ($('#process').val() === "Air separation / Oxygen pumping / Oxygen storage") {
+                if ($('#process').val() === "Air Separation / Oxygen pumping / Oxygen storage") {
                     ox_type_output.innerHTML = "<b>p(O<sub>2</sub>)<sub>ox</sub> (bar)</b>";
                 };
 
                 // change ticks of some sliders depending on the selected type of energy analysis
                 var T_ox = 0; var p_ox = 0; var T_red = 0; var p_red = 0;
-                if ($('#process').val() != "Air separation / Oxygen pumping / Oxygen storage") { 
+                if ($('#process').val() != "Air Separation / Oxygen pumping / Oxygen storage") {
                     document.getElementById("cT_ox_enera_air").className = "hidden";
                     document.getElementById("cT_ox_enera_non_air").className = "";
                     document.getElementById("cp_ox_enera_air").className = "hidden";
@@ -384,16 +385,10 @@ requirejs(['main'], function() {
                     p_red = get_value('p_red_enera_air');
                 }
 
-                // reformats the update keys so the python script can read them
-                var update_to_views = updatekeys + ''
-                update_to_views = update_to_views.replace(/\s/g, '')
-                update_to_views = update_to_views.split(",")
-            
                 // read slider/field values
                 var payload = JSON.stringify({
-                    'energy_analysis': {
                         'data_source': $("input:checked").val(),
-                        'process_type': $('#process').val(),
+                        'process_type': $('#process').val().split(" ").slice(0, 2).join(" "),
                         't_ox': T_ox,
                         't_red': T_red,
                         'p_ox': p_ox,
@@ -405,23 +400,18 @@ requirejs(['main'], function() {
                         'steam_h_rec': get_value('steam_h_rec_eff'),
                         'param_disp': $('#disp_par').val(),
                         'cutoff': get_value('num_mat')
-                    },
-                    'updatekeys': { update_to_views }
                 });
           
                 $.ajax({
                     type: 'POST',
-                    url: '../rest/5bb822469225576aeda99487',
+                    url: '../rest/energy_analysis',
                     data: payload,
                     dataType: "json",
                     contentType: "application/json; charset=utf-8",
                     success: function(data, textStatus, jqXHR) {
                         // data['response'] = {'isotherm': {'x':, [...], 'y': [...]}, 'isobar': ...}
                         var r = data['response'];
-                        Object.keys(r).forEach(function(key, index) {
-                            // key: the name of the object key
-                            // index: the ordinal position of the key within the object 
-                            var div = document.getElementById(key);
+                        var div = document.getElementById(updatekey);
                             var axis = {
                                 exponentformat: "E", tickfont: { size: 15 }, showline: "True",
                                 ticks: "inside", tickwidth: 1, tickcolor: '#000000',
@@ -430,16 +420,15 @@ requirejs(['main'], function() {
                             };
                             var xaxis = JSON.parse(JSON.stringify(axis)); // deepcopy
                             var yaxis = JSON.parse(JSON.stringify(axis)); // deepcopy
-                            yaxis['title'] = r[key][0]['yaxis_title'];
+                            yaxis['title'] = r[0]['yaxis_title'];
                             yaxis['titlefont'] = {size: 22};
                             xaxis['tickfont'] = {size: 12};
-                            Plotly.newPlot(div, r[key] , {
-                                title: r[key][0]['title'], showlegend: false, xaxis: xaxis, yaxis: yaxis, 
+                            Plotly.newPlot(div, r , {
+                                title: r[0]['title'], showlegend: false, xaxis: xaxis, yaxis: yaxis,
                                 margin: {l: 80, r: 120, b: 130, t: 35}, height: 650, width: 1200,
                                 autosize: false, barmode: 'stack'
                             });
                             $("[name='spinner']").spin(false);
-                        });
                     },
                     error: function(jqXHR, textStatus, errorThrown) {
                         console.log(errorThrown);
