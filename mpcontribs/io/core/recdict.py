@@ -3,18 +3,17 @@ import uuid, json, six, os
 from collections import OrderedDict as _OrderedDict
 from collections import Mapping as _Mapping
 from mpcontribs.config import mp_level01_titles, replacements
+from test_site.settings import BASE_DIR
 
 try:
     from propnet.core.quantity import Quantity
 except ImportError:
     Quantity = None
 
-cwd = os.path.dirname(__file__)
 json_human = {}
 for ext in ['js', 'css']:
-    path_list = [cwd, '..', '..', 'webui', 'static', ext]
-    if ext == 'js':
-        path_list.append('lib')
+    subdir = 'src' if ext == 'js' else 'css'
+    path_list = [BASE_DIR, 'node_modules', 'json-human', subdir]
     path_list.append('json.human.{}'.format(ext))
     json_human_path = os.path.abspath(os.path.join(*path_list))
     json_human[ext] = open(json_human_path, 'r').read()
@@ -22,9 +21,9 @@ json_human['css'] = ' '.join(json_human['css'].replace('\n', ' ').split())
 
 linkify = ''
 for lib in ['linkify.min', 'linkify-element.min']:
-    path_list = [cwd, '..', '..', 'webui', 'static', 'js', 'lib', '{}.js'.format(lib)]
+    path_list = [BASE_DIR, 'node_modules', 'linkifyjs', 'dist', '{}.js'.format(lib)]
     lib_path = os.path.abspath(os.path.join(*path_list))
-    linkify += open(lib_path, 'r').read().decode("UTF-8")
+    linkify += open(lib_path, 'r').read()#.decode("UTF-8")
 
 def render_dict(dct, webapp=False, require=True, script_only=False):
     """use JsonHuman library to render a dictionary"""
