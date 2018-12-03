@@ -8,7 +8,7 @@ from mpcontribs.webui.main import main_bp
 from mpcontribs.webui.webui import ingester_bp
 from mpcontribs.users_modules import add_all_dash_apps
 from test_site.wsgi import application as django_app
-from test_site.settings import PROXY_URL_PREFIX
+from test_site.settings import PROXY_URL_PREFIX, STATIC_URL, STATIC_ROOT
 
 class CustomTemplate(string.Template):
     delimiter = '$$'
@@ -62,7 +62,7 @@ def cli():
     except ImportError:
         print('Dash not installed.')
     application = DispatcherMiddleware(app, {PROXY_URL_PREFIX + '/test_site': django_app})
-    application = SharedDataMiddleware(application, STATIC_ROOT_URLS)
+    application = SharedDataMiddleware(application, {STATIC_URL[:-1]: STATIC_ROOT})
 
     run_simple('0.0.0.0', 5000, application, use_reloader=args.debug, #ssl_context='adhoc',
                use_debugger=args.debug, use_evalex=args.debug, threaded=True)
