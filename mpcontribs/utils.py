@@ -7,7 +7,12 @@ from mpcontribs.rest.adapter import ContributionMongoAdapter
 from mpcontribs.builder import MPContributionsBuilder
 from pympler import asizeof
 from importlib import import_module
-from StringIO import StringIO
+
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io import StringIO
+
 sys.stdout.flush()
 
 def submit_mpfile(path_or_mpfile, site='jupyterhub', fmt='archieml', project=None):

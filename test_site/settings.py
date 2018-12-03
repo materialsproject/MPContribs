@@ -29,7 +29,10 @@ SECRET_KEY = get_random_secret_key()
 NODE_ENV = os.environ.get('NODE_ENV', 'production')
 DEBUG = True #bool(NODE_ENV == 'development')
 
-ALLOWED_HOSTS = ['portal.mpcontribs.org', 'contribs.materialsproject.org', 'localhost']
+ALLOWED_HOSTS = [
+    'portal.mpcontribs.org', 'contribs.materialsproject.org', 'localhost',
+    'jupyterhub.materialsproject.org'
+]
 
 AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend',
@@ -40,30 +43,27 @@ from mpcontribs.users_modules import get_user_installed_apps
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
-    'nopassword',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django_extensions',
     'django_cas_ng',
-    'require',
     'webtzite',
     'mpcontribs.portal',
     'mpcontribs.rest',
     'mpcontribs.explorer',
-    'zappa_django_utils',
     'webpack_loader',
+    'macros',
     #'corsheaders',
 ] + get_user_installed_apps()
 
-MIDDLEWARE_CLASSES = (
+MIDDLEWARE = (
     #'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.middleware.security.SecurityMiddleware',
@@ -93,9 +93,8 @@ WSGI_APPLICATION = 'test_site.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'zappa_django_utils.db.backends.s3sqlite',
-        'NAME': 'db.sqlite3',
-        'BUCKET': 'mpcontribs-sqlite'
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': os.path.join(BASE_DIR,'db.sqlite3'),
     }
 }
 
@@ -110,6 +109,7 @@ JPY_USER = os.environ.get('JPY_USER')
 PROXY_URL_PREFIX = '/flaskproxy/{}'.format(JPY_USER) if JPY_USER else ''
 STATIC_URL = PROXY_URL_PREFIX + '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'dist')
+STATICFILES_DIRS = (STATIC_ROOT,)
 
 WEBPACK_LOADER = {
     'DEFAULT': {

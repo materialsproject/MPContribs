@@ -1,11 +1,10 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
+from __future__ import unicode_literals, print_function
 import uuid, json
 import pandas as pd
 from mpcontribs.config import mp_level01_titles, mp_id_pattern
-from mpcontribs.io.core.utils import nest_dict
-from recdict import RecursiveDict
-from utils import clean_value
+from mpcontribs.io.core.utils import nest_dict, clean_value
+from mpcontribs.io.core.recdict import RecursiveDict
 from IPython.display import display_html, HTML
 
 class HierarchicalData(RecursiveDict):
@@ -385,7 +384,7 @@ def render_plot(plot, webapp=False, filename=None):
     npts = len(fig.get('data')[0][axis])
     static_fig = (is_3d and npts > 150) or (not is_3d and npts > 700)
     if static_fig:
-        print 'TODO static figure'
+        print('TODO static figure')
         #from plotly.plotly import image
         #img = image.get(fig)
         #print type(img)

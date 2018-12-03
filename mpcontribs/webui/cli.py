@@ -8,7 +8,7 @@ from mpcontribs.webui.main import main_bp
 from mpcontribs.webui.webui import ingester_bp
 from mpcontribs.users_modules import add_all_dash_apps
 from test_site.wsgi import application as django_app
-from test_site.settings import STATIC_ROOT_URLS, PROXY_URL_PREFIX
+from test_site.settings import PROXY_URL_PREFIX
 
 class CustomTemplate(string.Template):
     delimiter = '$$'
@@ -57,7 +57,10 @@ def cli():
     app.config['JUPYTER_URL'] = args.jupyter_url
     app.register_blueprint(main_bp, url_prefix=PROXY_URL_PREFIX)
     app.register_blueprint(ingester_bp, url_prefix=PROXY_URL_PREFIX + '/ingester')
-    app = add_all_dash_apps(app)
+    try:
+        app = add_all_dash_apps(app)
+    except ImportError:
+        print('Dash not installed.')
     application = DispatcherMiddleware(app, {PROXY_URL_PREFIX + '/test_site': django_app})
     application = SharedDataMiddleware(application, STATIC_ROOT_URLS)
 

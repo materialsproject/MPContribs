@@ -1,16 +1,25 @@
 from __future__ import unicode_literals, print_function, absolute_import
 
-import json, os, socket, SocketServer, codecs, time, psutil
+import json, os, socket, codecs, time, psutil
 import sys, warnings, multiprocessing
 from flask import render_template, request, Response, Blueprint, current_app
 from flask import url_for, redirect, make_response, stream_with_context, jsonify
 from mpcontribs.utils import process_mpfile, submit_mpfile
 from mpcontribs.config import default_mpfile_path
 from mpcontribs.users_modules import *
-from StringIO import StringIO
 from webtzite import configure_settings
 from whichcraft import which
 from subprocess import call
+
+try:
+    import SocketServer as socketserver
+except ImportError:
+    import socketserver
+
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io import StringIO
 
 tmpl_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates')
 stat_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static')
@@ -35,7 +44,7 @@ def patched_finish(self):
         pass
     self.rfile.close()
 
-SocketServer.StreamRequestHandler.finish = patched_finish
+socketserver.StreamRequestHandler.finish = patched_finish
 
 processes = {'NotebookProcess': None, 'MongodProcess': None}
 

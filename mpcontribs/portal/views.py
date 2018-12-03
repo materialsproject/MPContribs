@@ -2,14 +2,16 @@
 
 import os
 from django.shortcuts import render_to_response, redirect
-from django.template import RequestContext
-from django.core.urlresolvers import reverse
+try:
+    from django.core.urlresolvers import reverse
+except ImportError:
+    from django.urls import reverse
 from mpcontribs.rest.views import get_endpoint
 from mpcontribs.rest.rester import MPContribsRester
 
 def index(request):
-    ctx = RequestContext(request)
-    if request.user.is_authenticated():
+    ctx = {}
+    if request.user.is_authenticated:
         from webtzite.models import RegisteredUser
         user = RegisteredUser.objects.get(username=request.user.username)
         ctx['landing_pages'] = []
@@ -35,7 +37,7 @@ def index(request):
     return render_to_response("mpcontribs_portal_index.html", ctx)
 
 def groupadd(request, token):
-    if request.user.is_authenticated():
+    if request.user.is_authenticated:
         from webtzite.models import RegisteredUser
         from mpcontribs.rest.rester import MPContribsRester
         user = RegisteredUser.objects.get(username=request.user.username)

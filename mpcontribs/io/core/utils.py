@@ -3,12 +3,16 @@
 from __future__ import unicode_literals
 import collections
 import string
-from StringIO import StringIO
 from decimal import Decimal, DecimalException
 import six
 import pandas
 from mpcontribs.config import mp_id_pattern
 from mpcontribs.config import csv_comment_char
+
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io import StringIO
 
 def get_short_object_id(cid):
     """return shortened contribution ID (ObjectId) for `cid`.

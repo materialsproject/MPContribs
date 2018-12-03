@@ -26,7 +26,10 @@ class Connector(ConnectorBase):
 ConnectorBase.register(Connector)
 
 def get_endpoint(request):
-    from django.core.urlresolvers import reverse
+    try:
+        from django.core.urlresolvers import reverse
+    except ImportError:
+        from django.urls import reverse
     url = reverse('mpcontribs_rest_index')[:-1]
     return request.build_absolute_uri(url)
 
@@ -424,7 +427,10 @@ def get_card(request, cid, db_type=None, mdb=None):
     from mpcontribs.io.core.components import HierarchicalData#, GraphicalData, render_plot
     #from mpcontribs.io.core.utils import nested_dict_iter
     from mpcontribs.io.core.recdict import RecursiveDict, render_dict
-    from django.core.urlresolvers import reverse
+    try:
+        from django.core.urlresolvers import reverse
+    except ImportError:
+        from django.urls import reverse
     from mpcontribs.config import mp_id_pattern
 
     embed = loads(request.POST.get('embed', 'true'))
