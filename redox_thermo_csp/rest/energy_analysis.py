@@ -7,10 +7,10 @@ from pymatgen.core.composition import Composition
 from pymatgen.core.units import FloatWithUnit
 from scipy.constants import R
 from scipy.integrate import quad
-from utils import remove_comp_one, add_comp_one, rootfind, s_th_o
-from utils import dh_ds, funciso, funciso_theo, d_h_num_dev_calc
-from utils import get_mpids_comps_perov_brownm, split_comp
-from utils import redenth_act, find_active, get_debye_temp
+from mpcontribs.users.redox_thermo_csp.rest.utils import remove_comp_one, add_comp_one, rootfind, s_th_o
+from mpcontribs.users.redox_thermo_csp.rest.utils import dh_ds, funciso, funciso_theo, d_h_num_dev_calc
+from mpcontribs.users.redox_thermo_csp.rest.utils import get_mpids_comps_perov_brownm, split_comp
+from mpcontribs.users.redox_thermo_csp.rest.utils import redenth_act, find_active, get_debye_temp
 
 class WaterSplitting:
     @staticmethod

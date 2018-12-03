@@ -9,9 +9,9 @@ from scipy.optimize import brentq
 from webtzite.connector import ConnectorBase
 from mpcontribs.rest.views import Connector
 from mpcontribs.users.redox_thermo_csp.rest.energy_analysis import EnergyAnalysis as enera
-from utils import remove_comp_one, add_comp_one, rootfind, get_energy_data
-from utils import s_th_o, dh_ds, funciso, funciso_redox, isobar_line_elling
-from utils import funciso_theo, funciso_redox_theo, d_h_num_dev_calc, d_s_fundamental
+from mpcontribs.users.redox_thermo_csp.rest.utils import remove_comp_one, add_comp_one, rootfind, get_energy_data
+from mpcontribs.users.redox_thermo_csp.rest.utils import s_th_o, dh_ds, funciso, funciso_redox, isobar_line_elling
+from mpcontribs.users.redox_thermo_csp.rest.utils import funciso_theo, funciso_redox_theo, d_h_num_dev_calc, d_s_fundamental
 ConnectorBase.register(Connector)
 
 def init_isographs(request, db_type, cid, mdb):
