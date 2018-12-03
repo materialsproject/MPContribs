@@ -252,7 +252,7 @@ class MPFileCore(six.with_metaclass(ABCMeta, object)):
         return self.get_string(df_head_only=True)
 
     def _ipython_display_(self):
-	from IPython.display import display_html
+        from IPython.display import display_html
         display_html(self.hdata)
         display_html(self.tdata)
         display_html(self.gdata)

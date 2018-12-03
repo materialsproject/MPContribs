@@ -155,5 +155,5 @@ class RecursiveDict(_OrderedDict):
           self.insert_before(k, kv)
 
     def _ipython_display_(self):
-	from IPython.display import display_html
+        from IPython.display import display_html
         display_html(render_dict(self), raw=True)

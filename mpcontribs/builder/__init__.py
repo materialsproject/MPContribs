@@ -38,7 +38,7 @@ def export_notebook(nb, cid, separate_script=False):
         div['name'] = 'Input'
     if separate_script:
         script = []
-	for s in soup.find_all('script'):
+        for s in soup.find_all('script'):
             script.append(s.text)
             s.extract() # remove javascript
         return soup.prettify(), '\n'.join(script)
