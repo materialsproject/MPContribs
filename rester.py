@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # https://github.com/materialsproject/pymatgen/blob/1eb2f2f/pymatgen/matproj/rest.py
 from __future__ import division, unicode_literals
-import os, requests, warnings, urlparse
+import os, requests, warnings#, urlparse
 from bson.json_util import loads, JSONOptions
 from collections import OrderedDict
 import webtzite.configure_settings

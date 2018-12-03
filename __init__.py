@@ -1,7 +1,7 @@
 import datetime, json, bson, os
 from importlib import import_module
 from django.core.serializers.json import DjangoJSONEncoder
-from django.utils.encoding import force_unicode
+#from django.utils.encoding import force_unicode
 from django.core.exceptions import PermissionDenied
 from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseForbidden
 
@@ -16,7 +16,7 @@ def in_docker():
 class MongoJSONEncoder(DjangoJSONEncoder):
     def default(self, obj):
         if isinstance(obj, bson.objectid.ObjectId):
-            return force_unicode(obj)
+            return unicode(obj)
         return super(MongoJSONEncoder, self).default(obj)
 
 def get_api_key(request):

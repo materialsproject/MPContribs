@@ -1,13 +1,13 @@
 {% load render_bundle from webpack_loader %}
-{% load kwacros %}
-{% kwacro title %}
+{% load macros %}
+{% macro title %}
     {% block title %}Materials Project{% endblock %}
-{% endkwacro %}
+{% endmacro %}
 
 <!DOCTYPE html>
 <html>
   <head>
-    <title>{% usekwacro title %}</title>
+    <title>{% usemacro title %}</title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     {% render_bundle 'styles' %}
     {% block extra_css %}
@@ -35,7 +35,7 @@
             <li>
               <a href="/" style="padding-top: 0px; padding-bottom: 0px;">
                 <h1 style="font-variant: small-caps; color: white; margin: 5px;">
-                  {% usekwacro title %}
+                  {% usemacro title %}
                 </h1>
               </a>
             </li>
@@ -44,9 +44,9 @@
             {% block extra_items %}
             {% endblock extra_items %}
             {% if user.is_authenticated %}
-            <li><a href="{% url 'webtzite_dashboard' %}">Dashboard</a></li>
+            <li><a href="{% url 'webtzite:dashboard' %}">Dashboard</a></li>
             {% else %}
-            <li><a href="{% url 'cas_ng_login' %}?next={% url 'webtzite_dashboard' %}">Login</a></li>
+            <li><a href="{% url 'webtzite:cas_ng_login' %}?next={% url 'webtzite:dashboard' %}">Login</a></li>
             {% endif %}
           </ul>
         </div>

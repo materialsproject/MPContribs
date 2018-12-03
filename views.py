@@ -1,14 +1,14 @@
 import json
 import logging
 import os
-from urllib import unquote
+from urllib.parse import unquote
 from django.shortcuts import render_to_response, redirect
 from django.http import HttpResponseServerError
 from django.template import RequestContext
 from django.views.decorators.http import require_http_methods
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import ensure_csrf_cookie
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 
 logger = logging.getLogger('webtzite.' + __name__)
 
@@ -26,38 +26,6 @@ def dashboard(request):
         from .models import RegisteredUser
         ctx['user'] = RegisteredUser.objects.get(username=request.user.username)
     return render_to_response("dashboard.html", ctx)
-
-from django.contrib.auth.views import login as django_login
-from django.contrib.auth import logout as auth_logout
-from django.contrib.auth import login as auth_login
-from django.shortcuts import render
-from nopassword.forms import AuthenticationForm
-from nopassword.models import LoginCode
-
-def login(request):
-    if request.method == 'POST':
-        form = AuthenticationForm(data=request.POST)
-        if form.is_valid():
-            code = LoginCode.objects.filter(**{
-                'user__email': request.POST.get('username')
-            })[0]
-            code.next = reverse('webtzite_register')
-            code.save()
-            code.send_login_code(
-                secure=request.is_secure(),
-                host=request.get_host(),
-            )
-            return render(request, 'registration/sent_mail.html')
-
-    jpy_user = os.environ.get('JPY_USER')
-    if jpy_user:
-        from django.contrib.auth import authenticate
-        code = authenticate(code=None, username=jpy_user+'@users.noreply.github.com')
-        user = authenticate(code=code.code, username=code.user.username)
-        auth_login(request, user)
-        return redirect(reverse('webtzite_register'))
-
-    return django_login(request, authentication_form=AuthenticationForm)
 
 @login_required
 def register(request):
@@ -92,8 +60,3 @@ def register(request):
             return redirect(next)
     ctx = RequestContext(request)
     return render_to_response('register.html', locals(), ctx)
-
-@login_required
-def logout(request):
-    auth_logout(request)
-    return redirect('/')

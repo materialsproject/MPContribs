@@ -1,9 +1,10 @@
 from django.conf import settings
 from django.http import HttpResponseForbidden
+from django.utils.deprecation import MiddlewareMixin
 from . import get_api_key
 from .models import RegisteredUser
 
-class APIKeyMiddleware(object):
+class APIKeyMiddleware(MiddlewareMixin):
     """Middleware to handle api key based requests"""
     def process_request(self, request):
         # extracts api key either from HTTP_X_API_KEY header or API_KEY get/post param
