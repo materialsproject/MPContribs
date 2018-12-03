@@ -16,7 +16,7 @@ from scipy.constants import pi, R
 from scipy.optimize import brentq
 from scipy.integrate import quad
 mpr = MPRester()
-import views
+import mpcontribs.users.redox_thermo_csp.rest.views as views
 
 def remove_comp_one(compstr):
     compspl = split_comp(compstr=compstr)

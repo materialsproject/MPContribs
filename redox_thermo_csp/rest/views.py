@@ -19,7 +19,7 @@ from webtzite.connector import ConnectorBase
 from mpcontribs.rest.views import Connector
 ConnectorBase.register(Connector)
 mpr = MPRester()
-from energy_analysis import EnergyAnalysis as enera
+from mpcontribs.users.redox_thermo_csp.rest.energy_analysis import EnergyAnalysis as enera
 
 @mapi_func(supported_methods=["POST", "GET"], requires_api_key=True)
 def index(request, cid, db_type=None, mdb=None):
