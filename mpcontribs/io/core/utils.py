@@ -2,8 +2,7 @@
 """module defines utility methods for MPContribs core.io library"""
 from __future__ import unicode_literals
 import collections
-import string
-from decimal import Decimal, DecimalException
+from decimal import Decimal, DecimalException, InvalidOperation
 import six
 import pandas
 from mpcontribs.config import mp_id_pattern
@@ -107,7 +106,7 @@ def strip_converter(text):
             return ''
         val = clean_value(text, max_dgts=6)
         return str(Decimal(val))
-    except AttributeError:
+    except InvalidOperation:
         return text
 
 def read_csv(body, is_data_section=True, **kwargs):
@@ -126,7 +125,7 @@ def read_csv(body, is_data_section=True, **kwargs):
                 break
         sep = kwargs.get('sep', ',')
         options = {'sep': sep, 'header': 0}
-        header = map(string.strip, first_line.split(sep))
+        header = [col.strip() for col in first_line.split(sep)]
         body = '\n'.join([sep.join(header), body_split[1]])
         if first_line.startswith('level_'):
             options.update({'index_col': [0, 1]})

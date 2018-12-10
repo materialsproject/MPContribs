@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals, print_function
-import os, pwd, six, json, sys
+import os, pwd, six, json, sys, time
 from mpcontribs.io.core.utils import get_short_object_id
 from mpcontribs.rest.rester import MPContribsRester
 from mpcontribs.rest.adapter import ContributionMongoAdapter
 from mpcontribs.builder import MPContributionsBuilder
 from pympler import asizeof
 from importlib import import_module
+from traceback import format_exc
 
 try:
     from StringIO import StringIO
@@ -20,7 +21,7 @@ def submit_mpfile(path_or_mpfile, site='jupyterhub', fmt='archieml', project=Non
     with MPContribsRester(test_site=test_site) as mpr:
         try:
             yield 'Connection to DB {} at {}? '.format(mpr.dbtype, mpr.preamble)
-            ncontribs = sum(1 for contrib in mpr.query_contributions(contributor_only=True))
+            ncontribs = mpr.count()#sum(1 for contrib in mpr.query_contributions(contributor_only=True))
             yield 'OK ({} contributions).</br> '.format(ncontribs)
             time.sleep(1)
             yield 'Contributor? '
@@ -45,9 +46,9 @@ def submit_mpfile(path_or_mpfile, site='jupyterhub', fmt='archieml', project=Non
             for msg in process_mpfile(path_or_mpfile, target=mpr, fmt=fmt, project=project):
                 yield msg
         except Exception:
-            ex = sys.exc_info()[1]
+            ex = format_exc()
             yield 'FAILED.</br>'
-            yield unicode(ex).replace('"',"'")
+            yield str(ex).replace('"',"'")
             return
 
 def json_compare(d1, d2):
@@ -84,7 +85,7 @@ def process_mpfile(path_or_mpfile, target=None, fmt='archieml', ids=None, projec
             mpfile_in = MPFile.from_file(path_or_mpfile)
         for idx, mpfile_single in enumerate(mpfile_in.split()):
 
-            mp_cat_id = mpfile_single.document.keys()[0]
+            mp_cat_id = list(mpfile_single.document.keys())[0]
             if ids is None or mp_cat_id == ids[0]:
 
                 cid = mpfile_single.document[mp_cat_id].get('cid', None)
@@ -225,7 +226,7 @@ def process_mpfile(path_or_mpfile, target=None, fmt='archieml', ids=None, projec
             yield ov_data
             yield '<strong>{} contributions successfully processed.</strong>'.format(ncontribs)
     except Exception:
-        ex = sys.exc_info()[1]
+        ex = format_exc()
         yield 'FAILED.</br>'
-        yield unicode(ex).replace('"',"'")
+        yield str(ex).replace('"',"'")
         return

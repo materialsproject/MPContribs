@@ -85,7 +85,7 @@ class ContributionMongoAdapter(object):
         """submit a single contribution to `mpcontribs.contributions` collection"""
         if len(mpfile.document) > 1:
             raise ValueError('submission only possible for single section MPFiles')
-        identifier = mpfile.document.keys()[0]
+        identifier = list(mpfile.document.keys())[0]
         data = mpfile.document[identifier]
         update = ('cid' in data) # new vs update
         cid = bson.ObjectId(data['cid']) if update else bson.ObjectId()

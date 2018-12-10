@@ -35,7 +35,7 @@ ALLOWED_HOSTS = [
 ]
 
 AUTHENTICATION_BACKENDS = (
-    'django.contrib.auth.backends.ModelBackend',
+    #'django.contrib.auth.backends.ModelBackend',
     'webtzite.backends.CASBackend',
 )
 
@@ -62,7 +62,7 @@ MIDDLEWARE = (
     #'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
+    #'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
@@ -130,11 +130,7 @@ CAS_RETRY_LOGIN = True
 CAS_USERNAME_ATTRIBUTE = 'username'
 CAS_APPLY_ATTRIBUTES_TO_USER = True
 
-#CORS_ORIGIN_ALLOW_ALL = True
-#CORS_ALLOW_CREDENTIALS = True
-#CSRF_TRUSTED_ORIGINS = ( 'localhost',)
-#CORS_ORIGIN_WHITELIST = (
-#    'contribs.materialsproject.org',
-#    'portal.mpcontribs.org',
-#    'localhost:8080',
-#)
+CORS_ORIGIN_ALLOW_ALL = True
+CORS_ALLOW_CREDENTIALS = True
+CSRF_TRUSTED_ORIGINS = ALLOWED_HOSTS
+CORS_ORIGIN_WHITELIST = ALLOWED_HOSTS

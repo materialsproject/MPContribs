@@ -84,8 +84,6 @@ class RecursiveDict(_OrderedDict):
                 self[key].rec_update(other=value, overwrite=overwrite, replace_newlines=replace_newlines)
             elif (key in self and overwrite) or key not in self:
                 if isinstance(value, six.string_types) and replace_newlines:
-                    if not isinstance(value, unicode):
-                        value = value.decode('utf-8')
                     self[key] = value.replace('\n', ' ')
                 else:
                     self[key] = value
@@ -151,8 +149,7 @@ class RecursiveDict(_OrderedDict):
         if mp_level01_titles[2] in self:
             self.rec_update(plots_dict)
         else:
-          kv = (mp_level01_titles[2], plots_dict[mp_level01_titles[2]])
-          self.insert_before(k, kv)
+          self[mp_level01_titles[2]] = plots_dict[mp_level01_titles[2]]
 
     def _ipython_display_(self):
         from IPython.display import display_html

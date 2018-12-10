@@ -18,17 +18,15 @@ class MPFile(MPFileCore):
         rdct.rec_update()
 
         # post-process internal representation of file contents
-        for key in rdct.keys():
+        for key in list(rdct.keys()):
             is_general, root_key = normalize_root_level(key)
 
             if is_general:
                 # make part of shared (meta-)data, i.e. nest under `general` at
                 # the beginning of the MPFile
                 if mp_level01_titles[0] not in rdct:
-                    rdct.insert_before(
-                        rdct.keys()[0],
-                        (mp_level01_titles[0], RecursiveDict())
-                    )
+                    rdct[mp_level01_titles[0]] = RecursiveDict()
+                    rdct.move_to_end(mp_level01_titles[0], last=False)
 
             # normalize identifier key (pop & insert)
             # using rec_update since we're looping over all entries
@@ -91,9 +89,7 @@ class MPFile(MPFileCore):
         for key,value in self.document.iterate():
             if isinstance(value, Table):
                 lines[-1] = lines[-1].replace('{', '[+').replace('}', ']')
-                header = any([bool(
-                    isinstance(col, unicode) or isinstance(col, str)
-                ) for col in value])
+                header = any([isinstance(col, str) for col in value])
                 if isinstance(value.index, MultiIndex):
                     value.reset_index(inplace=True)
                 if df_head_only:
@@ -101,7 +97,7 @@ class MPFile(MPFileCore):
                 csv_string = value.to_csv(
                     index=False, header=header, float_format='%g', encoding='utf-8'
                 )[:-1]
-                lines += csv_string.decode('utf-8').split('\n')
+                lines += csv_string.split('\n')
                 if df_head_only:
                     lines.append('...')
             elif isinstance(value, Structure):
@@ -116,7 +112,6 @@ class MPFile(MPFileCore):
                 ))
             else:
                 level, key = key
-                key = key if isinstance(key, unicode) else key.decode('utf-8')
                 # truncate scope
                 level_reduction = bool(level < len(scope))
                 if level_reduction:

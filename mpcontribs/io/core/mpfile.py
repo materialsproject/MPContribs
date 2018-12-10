@@ -127,13 +127,14 @@ class MPFileCore(six.with_metaclass(ABCMeta, object)):
             return
         general_title = mp_level01_titles[0]
         general_data = general_mpfile.document[general_title]
-        root_key = self.document.keys()[0]
-        first_subkey = self.document[root_key].keys()[0]
+        root_key = list(self.document.keys())[0]
         for key, value in general_data.items():
             if key in self.document[root_key]:
                 self.document.rec_update(nest_dict(value, [root_key, key]))
             else:
-                self.document[root_key].insert_before(first_subkey, (key, value))
+                self.document[root_key][key] = value
+        for key in reversed(general_data.keys()):
+            self.document[root_key].move_to_end(key, last=False)
 
     def get_unique_mp_cat_id(self, mp_cat_id):
         if not self.unique_mp_cat_ids or mp_cat_id in mp_level01_titles:
@@ -150,7 +151,7 @@ class MPFileCore(six.with_metaclass(ABCMeta, object)):
                 raise ValueError('concatenation only possible with single section files')
         except AttributeError:
             raise ValueError('Provide a MPFile to concatenate')
-        mp_cat_id = mpfile.document.keys()[0]
+        mp_cat_id = list(mpfile.document.keys())[0]
         general_title = mp_level01_titles[0]
         if general_title in mpfile.document[mp_cat_id]:
             general_data = mpfile.document[mp_cat_id].pop(general_title)
@@ -163,8 +164,8 @@ class MPFileCore(six.with_metaclass(ABCMeta, object)):
 
     def insert_top(self, mp_cat_id, key, value):
         """insert value for `mp_cat_id` as `key: <value>` at top"""
-        first_sub_key = self.document[mp_cat_id].keys()[0]
-        self.document[mp_cat_id].insert_before(first_sub_key, (key, str(value)))
+        self.document[mp_cat_id][key] = str(value)
+        self.document[mp_cat_id].move_to_end(key, last=False)
 
     def add_data_table(self, identifier, dataframe, name, plot_options=None):
         """add a datatable to the root-level section
@@ -247,8 +248,6 @@ class MPFileCore(six.with_metaclass(ABCMeta, object)):
 
     def __repr__(self): return self.get_string(df_head_only=True)
     def __str__(self):
-        return unicode(self).encode('utf-8')
-    def __unicode__(self):
         return self.get_string(df_head_only=True)
 
     def _ipython_display_(self):

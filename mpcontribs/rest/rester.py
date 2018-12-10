@@ -21,6 +21,9 @@ class MPContribsRester(MPResterBase):
                 raise ValueError('Cannot connect to test_site outside MP JupyterHub!')
             flaskproxy = 'https://jupyterhub.materialsproject.org/flaskproxy'
             endpoint = '/'.join([flaskproxy, jpy_user, 'test_site/rest'])
+            import webtzite.configure_settings
+            import django
+            django.setup()
             from webtzite.models import RegisteredUser
             try:
                 u = RegisteredUser.objects.first()
