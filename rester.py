@@ -4,9 +4,7 @@ from __future__ import division, unicode_literals
 import os, requests, warnings#, urlparse
 from bson.json_util import loads, JSONOptions
 from collections import OrderedDict
-import webtzite.configure_settings
-import django
-django.setup()
+from traceback import format_exc
 
 class MPResterBase(object):
     """
@@ -68,8 +66,9 @@ class MPResterBase(object):
         response = None
         try:
             headers = {'Referer': self.preamble}
+            # TODO set CSRF header?
             url = self.preamble + sub_url
-            response = self.session.request(method, url=url, headers=headers, data=payload)
+            response = self.session.request(method, url=url, headers=headers, data=payload, verify=True)
             if response.status_code in [200, 400]:
                 data = loads(response.text, json_options=JSONOptions(document_class=document_class))
                 if data["valid_response"]:
@@ -82,7 +81,8 @@ class MPResterBase(object):
                 "REST query returned with error status code {}"
                 .format(response.status_code)
             )
-        except Exception as ex:
+        except Exception:
+            ex = format_exc()
             msg = "{}. Content: {}".format(str(ex), repr(response.content)) \
                     if hasattr(response, "content") else str(ex)
             raise MPResterError(msg)

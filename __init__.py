@@ -16,7 +16,7 @@ def in_docker():
 class MongoJSONEncoder(DjangoJSONEncoder):
     def default(self, obj):
         if isinstance(obj, bson.objectid.ObjectId):
-            return unicode(obj)
+            return str(obj)
         return super(MongoJSONEncoder, self).default(obj)
 
 def get_api_key(request):

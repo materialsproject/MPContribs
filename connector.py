@@ -98,7 +98,7 @@ class ConnectorBase(six.with_metaclass(ABCMeta, object)):
             try:
                 from home.models import RegisteredUser
             except ImportError:
-                from models import RegisteredUser
+                from webtzite.models import RegisteredUser
             ru = RegisteredUser.objects.get(**query)
         except ObjectDoesNotExist:
             raise Exception(
@@ -117,7 +117,7 @@ class ConnectorBase(six.with_metaclass(ABCMeta, object)):
         try:
             from home.models import DBConfig
         except ImportError:
-            from models import DBConfig
+            from webtzite.models import DBConfig
         return DBConfig.objects.get(
             release=self.release, db_type=db_type
         ).config
@@ -137,7 +137,7 @@ class ConnectorBase(six.with_metaclass(ABCMeta, object)):
             try:
                 from home.models import DBConfig
             except ImportError:
-                from models import DBConfig
+                from webtzite.models import DBConfig
             from webtzite import in_docker
             host = 'mongo' if in_docker() else '0.0.0.0'
             dbconf = DBConfig(

@@ -4,25 +4,26 @@ import os
 from urllib.parse import unquote
 from django.shortcuts import render_to_response, redirect
 from django.http import HttpResponseServerError
+from django.template import RequestContext
 from django.views.decorators.http import require_http_methods
 from django.contrib.auth.decorators import login_required
-from django.views.decorators.csrf import ensure_csrf_cookie
+#from django.views.decorators.csrf import ensure_csrf_cookie
 from django.urls import reverse
 
 logger = logging.getLogger('webtzite.' + __name__)
 
-@ensure_csrf_cookie
+#@ensure_csrf_cookie
 
 def index(request):
     return render_to_response("index.html")
 
 @require_http_methods(["GET", "POST"])
 def dashboard(request):
-    ctx = {}
+    ctx = RequestContext(request)
     if request.user.is_authenticated:
         from .models import RegisteredUser
         ctx['user'] = RegisteredUser.objects.get(username=request.user.username)
-    return render_to_response("dashboard.html", ctx)
+    return render_to_response("dashboard.html", ctx.flatten())
 
 @login_required
 def register(request):

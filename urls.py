@@ -1,8 +1,9 @@
 from django.conf.urls import include, url
+from django.urls import path
 from django.contrib import admin
 admin.autodiscover()
 import django_cas_ng.views as cas_views
-from . import views
+from webtzite import views
 
 app_name = 'webtzite'
 urlpatterns = [
