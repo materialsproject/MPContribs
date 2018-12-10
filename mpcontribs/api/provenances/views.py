@@ -78,6 +78,7 @@ class ProjectsView(SwaggerView):
         entry = Provenances.objects.get(project=project)
         return self.marshal(entry)
 
+    # TODO: only emails with readWrite permissions can use methods below
     def put(self, project):
         """Update a project's provenance entry"""
         pass
@@ -88,6 +89,7 @@ class ProjectsView(SwaggerView):
 
     def delete(self, project):
         """Delete a project's provenance entry"""
+        # TODO should also delete all contributions
         pass
 
 # url_prefix added in register_blueprint

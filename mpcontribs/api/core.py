@@ -36,6 +36,8 @@ def login_required(f):
         api_check_response = get(api_check_endpoint, headers=headers).json()
         if not api_check_response['api_key_valid']:
             raise JsonError(401, error='{} invalid'.format(HEADER))
+        if request.method == 'POST' and not api_check_response['is_staff']:
+            raise JsonError(401, error='staff status required for POST')
         return f(*args, **kwargs)
     return authenticate
 

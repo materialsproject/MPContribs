@@ -29,6 +29,8 @@ class Provenances(DynamicDocument):
     urls = EmbeddedDocumentField(
         Urls, required=True, help_text='list of URLs for references'
     )
+    # TODO permissions EmbeddedDocumentField
+    # is required on POST but should never be returned on GET
     meta = {
         'collection': 'provenances', 'indexes': [{
             'fields': ['$title', "$description", "$authors"],
