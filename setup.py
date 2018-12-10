@@ -26,6 +26,7 @@ setup(
         '{}.api'.format(package_name),
     ],
     install_requires = required,
+    dependency_links = ['https://github.com/rochacbruno/flasgger.git#egg=flasgger'],
     license = 'MIT',
     keywords = ['materials', 'contribution', 'framework', 'data', 'interactive', 'jupyter'],
     scripts = glob.glob(os.path.join(SETUP_PTH, "scripts", "*")),

@@ -4,11 +4,12 @@ DEBUG = True
 JSON_ADD_STATUS = False
 FLASK_LOG_LEVEL = 'DEBUG' if DEBUG else 'WARNING'
 SECRET_KEY = b'super-secret' # reset in local prod config
+#API_CHECK_ENDPOINT = 'http://localhost:8000/rest/api_check'
 API_CHECK_ENDPOINT = 'https://materialsproject.org/rest/api_check'
 MONGODB_SETTINGS = {
     'host': "mongodb+srv://{0}/mpcontribs?retryWrites=true".format(
         os.environ.get('MPCONTRIBS_MONGO_HOST', 'localhost')
-    ), 'connect': False
+    ), 'connect': False, 'db': 'mpcontribs'
 }
 SWAGGER = {"specs": [
     {
@@ -24,7 +25,7 @@ TEMPLATE = {
         "title": "MPContribs API",
         "description": "Operations to retrieve materials data contributed to MP",
         "termsOfService": "http://me.com/terms",
-        "version": None,
+        "version": "2018.12.10",
         "contact": {
             "name": "Materials Project",
             "email": "phuck@lbl.gov",
@@ -44,8 +45,6 @@ TEMPLATE = {
         }
     },
     "security": [{"ApiKeyAuth": []}],
-    "host": "127.0.0.1:5000",  # overrides localhost:500
-    #"basePath": "/api",  # base bash for blueprint registration
+    "host": "0.0.0.0:5000",  # overrides localhost:5000
     "schemes": [ "http" ],
-    #"operationId": "getmyData"
 }

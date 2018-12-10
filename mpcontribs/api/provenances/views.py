@@ -95,10 +95,10 @@ class ProjectsView(SwaggerView):
 # url_prefix added in register_blueprint
 provenances.add_url_rule(
     '/', view_func=ProvenancesView.as_view(ProvenancesView.__name__),
-    methods=['GET', 'POST']
+    methods=['GET']#, 'POST']
 )
 provenances.add_url_rule(
     '/<string:project>',
     view_func=ProjectsView.as_view(ProjectsView.__name__),
-    methods=['GET', 'DELETE', 'PATCH', 'PUT']
+    methods=['GET']#, 'DELETE', 'PATCH', 'PUT']
 )

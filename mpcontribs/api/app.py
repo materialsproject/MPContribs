@@ -1,6 +1,6 @@
-import logging
+import logging, os
 from importlib import import_module
-from flask import Flask, redirect
+from flask import Flask, redirect, send_from_directory
 from flask_marshmallow import Marshmallow
 from flask_mongoengine import MongoEngine
 from flask_log import Logging
@@ -20,7 +20,7 @@ def get_collections(db):
     return ['provenances']
 
 def create_app(name):
-    app = Flask(name)
+    app = Flask(name, static_url_path='/', static_folder='build/html/')
     app.config.from_envvar('APP_CONFIG_FILE')
     FlaskJSON(app)
     Logging(app)
@@ -48,8 +48,9 @@ def create_app(name):
 if __name__ == '__main__':
     app = create_app(__name__)
 
-    @app.route("/")
-    def index():
-        return redirect("/apidocs")
+    @app.route('/')
+    @app.route('/<path:filename>')
+    def index(filename='index.html'):
+        return app.send_static_file(filename)
 
     app.run()
