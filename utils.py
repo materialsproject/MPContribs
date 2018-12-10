@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
+from __future__ import unicode_literals, print_function
 import inspect, os
 from importlib import import_module
 from mpcontribs.users_modules import get_user_rester
@@ -17,12 +17,12 @@ def duplicate_check(f):
         test_site = kwargs.get('test_site', True)
         with Rester(test_site=test_site) as mpr:
             for doc in mpr.query_contributions(criteria=mpr.query):
-                existing_identifiers[doc['mp_cat_id']] = doc['_id']
+                existing_identifiers[doc['identifier']] = doc['_id']
 
         try:
             f(*args, **kwargs)
         except StopIteration:
-            print 'not adding more contributions'
+            print('not adding more contributions')
 
         mpfile = args[0]
         update = 0
@@ -32,9 +32,9 @@ def duplicate_check(f):
                 mpfile.insert_top(identifier, 'cid', cid)
                 update += 1
 
-        print len(mpfile.ids), 'contributions to submit.'
+        print(len(mpfile.ids), 'contributions to submit.')
         if update > 0:
-            print update, 'contributions to update.'
+            print(update, 'contributions to update.')
 
     wrapper.existing_identifiers = existing_identifiers
     return wrapper

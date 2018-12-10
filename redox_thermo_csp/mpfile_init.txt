@@ -1,9 +1,9 @@
 title: RedoxThermoCSP
-authors: 
+authors:
 J. Vieten, B. Bulfin, D. Guban, L. Zhu, P. Huck, M. Horton, K.
 Persson, M. Roeb, C. Sattler
 :end
-description: 
+description:
 Redox Materials Thermochemistry Data for Application in Concentrated
 Solar Power. We have measured thermodynamic data of perovskites ABOₓ
 with x=3-δ, i.e. ΔH and ΔS in dependence of the non-stoichiometry δ by
@@ -1351,21 +1351,21 @@ composition: Sr5Ca3Fe2(CoO4)6
 closest_MP: mp-1099798
 composition: Sr5Ca3Fe2(Co3O10)2
 
-{None}
+{mp-1076539}
 
-{None.pars}
+{mp-1076539.pars}
 theo_compstr: Na0.5K0.5Mo0.875V0.125Ox
 act_mat: 0.125
 
-{None.data}
+{mp-1076539.data}
 tolerance_factor: 1.023
 solid_solution: Mo-V
 
-{None.data.oxidized_phase}
+{mp-1076539.data.oxidized_phase}
 
-{None.data.oxidized_phase.composition}
+{mp-1076539.data.oxidized_phase.composition}
 
-{None.data.reduced_phase}
+{mp-1076539.data.reduced_phase}
 closest_MP: mp-1076539
 composition: K4Na4VMo7O20
 

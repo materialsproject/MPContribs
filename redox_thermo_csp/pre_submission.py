@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
-import os, json, re
+import os, json, re, sys
 from glob import glob
 from datetime import datetime
 from itertools import groupby
@@ -10,7 +10,7 @@ from mpcontribs.io.core.recdict import RecursiveDict
 from mpcontribs.io.core.utils import clean_value, read_csv, nest_dict
 from mpcontribs.io.core.components import Table
 from mpcontribs.users.utils import duplicate_check
-from utils import redenth_act, get_debye_temp
+from mpcontribs.users.redox_thermo_csp.utils import redenth_act, get_debye_temp
 
 def get_fit_pars(sample_number):
     import solar_perovskite
@@ -109,25 +109,39 @@ def run(mpfile, **kwargs):
         from solar_perovskite.init.import_data import Importdata
         from solar_perovskite.modelling.from_theo import EnthTheo
     except ImportError:
-        print 'could not import solar_perovskite, clone github repo'
-        return
+        print('could not import solar_perovskite, clone github repo')
+        sys.exit(1)
 
     input_files = mpfile.hdata.general['input_files']
     input_dir = os.path.dirname(solar_perovskite.__file__)
     input_file = os.path.join(input_dir, input_files['exp'])
     exp_table = read_csv(open(input_file, 'r').read().replace(';', ','))
-    print 'exp data loaded.'
+    print('exp data loaded.')
+    with open(os.path.join(input_dir, input_files['theo']), 'r') as f:
+        theo_data = json.loads(f.read()).pop('collection')
+    print('theo data loaded.')
+    with open(input_files['energy'], 'r') as f:
+        data = json.load(f).pop('collection')
+    print('energy data loaded.')
+    l = [dict(sdoc, parameters=doc['_id']) for doc in data for sdoc in doc['energy_analysis']]
+    frame = pd.DataFrame(l)
+    parameters = frame['parameters']
+    frame.drop(labels=['parameters'], axis=1, inplace=True)
+    frame.insert(0, 'parameters', parameters)
+    print('energy dataframe:', frame.shape)
 
     mpfile_singles = [m for m in mpfile.split()]
     for mpfile_single in mpfile_singles:
-        #if identifier in run.existing_identifiers:
-        #    print 'not updating', identifier
-        #    continue
         identifier = mpfile_single.ids[0]
+        #if identifier in run.existing_identifiers:
+        #    print (not updating', identifier)
+        #    continue
+        if identifier != 'mp-1076585':
+            continue
         hdata = mpfile_single.hdata[identifier]
-	print identifier
+        print(identifier)
 
-        print 'add hdata ...'
+        print('add hdata ...')
         d = RecursiveDict()
         d['data'] = RecursiveDict()
         compstr = hdata['pars']['theo_compstr']
@@ -139,81 +153,83 @@ def run(mpfile, **kwargs):
         else:
             d['pars'] = RecursiveDict()
             d['data']['availability'] = 'Theo'
-        print 'dh_min, dh_max ...'
-        _, dh_min, dh_max, _ = redenth_act(compstr)
-        d['pars']['dh_min'] = clean_value(dh_min, max_dgts=4)
-        d['pars']['dh_max'] = clean_value(dh_max, max_dgts=4)
-        d['pars']['elastic'] = RecursiveDict()
-        print 'debye temps ...'
-        d['pars']['elastic']['debye_temp'] = RecursiveDict()
-        try:
-            t_d_perov = get_debye_temp(identifier)
-            t_d_brownm = get_debye_temp(hdata['data']['reduced_phase']['closest-MP'])
-            tensors_available = 'True'
-        except TypeError:
-            t_d_perov = get_debye_temp("mp-510624")
-            t_d_brownm = get_debye_temp("mp-561589")
-            tensors_available = 'False'
-        d['pars']['elastic']['debye_temp']['perovskite'] = clean_value(t_d_perov, max_dgts=6)
-        d['pars']['elastic']['debye_temp']['brownmillerite'] = clean_value(t_d_brownm, max_dgts=6)
-        d['pars']['elastic']['tensors_available'] = tensors_available
+        #print('dh_min, dh_max ...')
+        #_, dh_min, dh_max, _ = redenth_act(compstr)
+        #d['pars']['dh_min'] = clean_value(dh_min, max_dgts=4)
+        #d['pars']['dh_max'] = clean_value(dh_max, max_dgts=4)
+        #d['pars']['elastic'] = RecursiveDict()
+        #print('debye temps ...')
+        #d['pars']['elastic']['debye_temp'] = RecursiveDict()
+        #try:
+        #    t_d_perov = get_debye_temp(identifier)
+        #    t_d_brownm = get_debye_temp(hdata['data']['reduced_phase']['closest-MP'])
+        #    tensors_available = 'True'
+        #except TypeError:
+        #    t_d_perov = get_debye_temp("mp-510624")
+        #    t_d_brownm = get_debye_temp("mp-561589")
+        #    tensors_available = 'False'
+        #d['pars']['elastic']['debye_temp']['perovskite'] = clean_value(t_d_perov, max_dgts=6)
+        #d['pars']['elastic']['debye_temp']['brownmillerite'] = clean_value(t_d_brownm, max_dgts=6)
+        #d['pars']['elastic']['tensors_available'] = tensors_available
         d['pars']['last_updated'] = str(datetime.now())
         mpfile_single.add_hierarchical_data(d, identifier=identifier)
 
-        for process in processes:
-            if process != "AS":
-                t_ox_l = t_ox_ws_cs
-                t_red_l = t_red_ws_cs
-                p_ox_l = p_ox_ws_cs
-                p_red_l = p_red_ws_cs
-                data_source = ["Theo"]
-            else:
-                t_ox_l = t_ox_airsep
-                t_red_l = t_red_airsep
-                p_ox_l = p_ox_airsep
-                p_red_l = p_red_airsep
-                data_source = ["Theo", "Exp"]
+        #for process in processes:
+        #    if process != "AS":
+        #        t_ox_l = t_ox_ws_cs
+        #        t_red_l = t_red_ws_cs
+        #        p_ox_l = p_ox_ws_cs
+        #        p_red_l = p_red_ws_cs
+        #        data_source = ["Theo"]
+        #    else:
+        #        t_ox_l = t_ox_airsep
+        #        t_red_l = t_red_airsep
+        #        p_ox_l = p_ox_airsep
+        #        p_red_l = p_red_airsep
+        #        data_source = ["Theo", "Exp"]
 
-            for red_temp in t_red_l:
-                for ox_temp in t_ox_l:
-                    for ox_pr in p_ox_l:
-                        for red_pr in p_red_l:
-                            for data_sources in data_source:
-                                db_id = process + "_" + str(float(ox_temp)) + "_" \
-                                        + str(float(red_temp)) + "_" + str(float(ox_pr)) \
-                                        + "_" + str(float(red_pr)) + "_" + data_sources + \
-                                        "_" + str(float(enth_steps))
+        #    for red_temp in t_red_l:
+        #        for ox_temp in t_ox_l:
+        #            for ox_pr in p_ox_l:
+        #                for red_pr in p_red_l:
+        #                    for data_sources in data_source:
+        #                        db_id = process + "_" + str(float(ox_temp)) + "_" \
+        #                                + str(float(red_temp)) + "_" + str(float(ox_pr)) \
+        #                                + "_" + str(float(red_pr)) + "_" + data_sources + \
+        #                                "_" + str(float(enth_steps))
 
 
-        break
-
-        print 'add energy analysis ...'
-	group = frame[frame['compstr']==compstr.replace('x', '3')]
-	group.drop(labels='compstr', axis=1, inplace=True)
-	for prodstr, subgroup in group.groupby(['prodstr', 'prodstr_alt'], sort=False):
+        print('add energy analysis ...')
+        group = frame.query('compstr.str.contains("{}")'.format(compstr[:-1]))
+        group.drop(labels='compstr', axis=1, inplace=True)
+        for prodstr, subgroup in group.groupby(['prodstr', 'prodstr_alt'], sort=False):
             subgroup.drop(labels=['prodstr', 'prodstr_alt'], axis=1, inplace=True)
             for unstable, subsubgroup in subgroup.groupby('unstable', sort=False):
-		subsubgroup.drop(labels='unstable', axis=1, inplace=True)
-		name = 'energy-analysis_{}_{}'.format('unstable' if unstable else 'stable', '-'.join(prodstr))
-                print name
-                mpfile.add_data_table(identifier, subsubgroup, name)
+                subsubgroup.drop(labels='unstable', axis=1, inplace=True)
+                name = 'energy-analysis_{}_{}'.format('unstable' if unstable else 'stable', '-'.join(prodstr))
+                print(name)
+                mpfile_single.add_data_table(identifier, subsubgroup, name)
+
+        print(mpfile_single)
+        mpfile.concat(mpfile_single)
+        break
 
         if not row.empty:
-            print 'add ΔH ...'
+            print('add ΔH ...')
             exp_thermo = GetExpThermo(sample_number, plotting=False)
             enthalpy = exp_thermo.exp_dh()
             table = get_table(enthalpy, 'H')
-            mpfile.add_data_table(identifier, table, name='enthalpy')
+            mpfile_single.add_data_table(identifier, table, name='enthalpy')
 
-            print 'add ΔS ...'
+            print('add ΔS ...')
             entropy = exp_thermo.exp_ds()
             table = get_table(entropy, 'S')
-            mpfile.add_data_table(identifier, table, name='entropy')
+            mpfile_single.add_data_table(identifier, table, name='entropy')
 
-            print 'add raw data ...'
+            print('add raw data ...')
             tga_results = os.path.join(os.path.dirname(solar_perovskite.__file__), 'tga_results')
             for path in glob(os.path.join(tga_results, 'ExpDat_JV_P_{}_*.csv'.format(sample_number))):
-                print path.split('_{}_'.format(sample_number))[-1].split('.')[0], '...'
+                print(path.split('_{}_'.format(sample_number))[-1].split('.')[0], '...')
                 body = open(path, 'r').read()
                 cols = ['Time [min]', 'Temperature [C]', 'dm [%]', 'pO2']
                 table = read_csv(body, lineterminator=os.linesep, usecols=cols, skiprows=5)
@@ -228,4 +244,4 @@ def run(mpfile, **kwargs):
                     'dm [%]': '(dm [%] + {:.4g}) * {:.4g}'.format(-dm_min, rT/rdm),
                     'pO2': 'pO₂ * {:.4g}'.format(rT/p_max)
                 }, inplace=True)
-                mpfile.add_data_table(identifier, table, name='raw')
+                mpfile_single.add_data_table(identifier, table, name='raw')

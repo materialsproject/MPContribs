@@ -16,17 +16,17 @@ access_msg = 'Coming Soon! Contact <a href="mailto:josua.vieten@dlr.de">J. Viete
 
 def index(request):
     ctx = RequestContext(request)
-    if request.user.is_authenticated():
+    if request.user.is_authenticated:
         user = RegisteredUser.objects.get(username=request.user.username)
         if not user.groups.filter(name='redox_thermo_csp').exists():
             ctx.update({'alert': access_msg})
     else:
-        return redirect('{}?next={}'.format(reverse('cas_ng_login'), request.path))
-    return render_to_response("redox_thermo_csp_explorer_index.html", ctx)
+        return redirect('{}?next={}'.format(reverse('webtzite:cas_ng_login'), request.path))
+    return render_to_response("redox_thermo_csp_explorer_index.html", ctx.flatten())
 
 def isographs(request):
     ctx = RequestContext(request)
-    if request.user.is_authenticated():
+    if request.user.is_authenticated:
         user = RegisteredUser.objects.get(username=request.user.username)
         if user.groups.filter(name='redox_thermo_csp').exists():
             from ..rest.rester import RedoxThermoCspRester
@@ -46,32 +46,32 @@ def isographs(request):
         else:
             ctx.update({'alert': access_msg})
     else:
-        return redirect('{}?next={}'.format(reverse('cas_ng_login'), request.path))
-    return render_to_response("redox_thermo_csp_explorer_isographs.html", ctx)
+        return redirect('{}?next={}'.format(reverse('webtzite:cas_ng_login'), request.path))
+    return render_to_response("redox_thermo_csp_explorer_isographs.html", ctx.flatten())
 
 def energy_analysis(request):
     ctx = RequestContext(request)
-    if request.user.is_authenticated():
+    if request.user.is_authenticated:
         user = RegisteredUser.objects.get(username=request.user.username)
         if not user.groups.filter(name='redox_thermo_csp').exists():
             ctx.update({'alert': access_msg})
     else:
-        return redirect('{}?next={}'.format(reverse('cas_ng_login'), request.path))
-    return render_to_response("redox_thermo_csp_explorer_energy_analysis.html", ctx)
+        return redirect('{}?next={}'.format(reverse('webtzite:cas_ng_login'), request.path))
+    return render_to_response("redox_thermo_csp_explorer_energy_analysis.html", ctx.flatten())
 
 def documentation(request):
     ctx = RequestContext(request)
-    if request.user.is_authenticated():
+    if request.user.is_authenticated:
         user = RegisteredUser.objects.get(username=request.user.username)
         if not user.groups.filter(name='redox_thermo_csp').exists():
             ctx.update({'alert': access_msg})
     else:
-        return redirect('{}?next={}'.format(reverse('cas_ng_login'), request.path))
-    return render_to_response("redox_thermo_csp_explorer_documentation.html", ctx)
+        return redirect('{}?next={}'.format(reverse('webtzite:cas_ng_login'), request.path))
+    return render_to_response("redox_thermo_csp_explorer_documentation.html", ctx.flatten())
 
 def tolerance_factors(request):
     ctx = RequestContext(request)
-    if request.user.is_authenticated():
+    if request.user.is_authenticated:
         user = RegisteredUser.objects.get(username=request.user.username)
         from ..rest.rester import RedoxThermoCspRester
         with RedoxThermoCspRester(user.api_key, endpoint=get_endpoint(request)) as mpr:
@@ -80,5 +80,5 @@ def tolerance_factors(request):
             except Exception as ex:
                 ctx.update({'alert': str(ex)})
     else:
-        return redirect('{}?next={}'.format(reverse('cas_ng_login'), request.path))
-    return render_to_response("redox_thermo_csp_explorer_tolerance_factors.html", ctx)
+        return redirect('{}?next={}'.format(reverse('webtzite:cas_ng_login'), request.path))
+    return render_to_response("redox_thermo_csp_explorer_tolerance_factors.html", ctx.flatten())
