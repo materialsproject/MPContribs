@@ -25,7 +25,9 @@ class ProvenancesView(SwaggerView):
             200:
                 description: list of provenance entries
                 schema:
-                    $ref: '#/definitions/ProvenancesSchema'
+                    type: array
+                    items:
+                        $ref: '#/definitions/ProvenancesSchema'
                 examples:
                     entries: |
                         [{
