@@ -19,14 +19,14 @@
 
 # -- Project information -----------------------------------------------------
 
-project = 'MPContribsAPI'
+project = 'MPContribs API'
 copyright = '2018, Patrick Huck'
 author = 'Patrick Huck'
 
 # The short X.Y version
 version = ''
 # The full version, including alpha/beta/rc tags
-release = '2018.12.10'
+release = '2018.12.11'
 
 
 # -- General configuration ---------------------------------------------------
@@ -63,7 +63,7 @@ language = None
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
-exclude_patterns = []
+exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = None
@@ -101,7 +101,7 @@ html_static_path = ['_static']
 # -- Options for HTMLHelp output ---------------------------------------------
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'mpcontribs-apidoc'
+htmlhelp_basename = 'MPContribsAPIdoc'
 
 
 # -- Options for LaTeX output ------------------------------------------------
@@ -128,7 +128,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'mpcontribs-api.tex', 'mpcontribs-api Documentation',
+    (master_doc, 'MPContribsAPI.tex', 'MPContribs API Documentation',
      'Patrick Huck', 'manual'),
 ]
 
@@ -138,7 +138,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'mpcontribs-api', 'mpcontribs-api Documentation',
+    (master_doc, 'mpcontribsapi', 'MPContribs API Documentation',
      [author], 1)
 ]
 
@@ -149,8 +149,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'mpcontribs-api', 'mpcontribs-api Documentation',
-     author, 'mpcontribs-api', 'One line description of project.',
+    (master_doc, 'MPContribsAPI', 'MPContribs API Documentation',
+     author, 'MPContribsAPI', 'One line description of project.',
      'Miscellaneous'),
 ]
 
