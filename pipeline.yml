@@ -280,6 +280,7 @@ Resources:
                 ParameterOverrides: !Sub |
                   {
                     "EnvironmentName": "${EnvironmentName}",
+                    "MongoHost": "${MongoHost}",
                     "ImageUrl": {
                       "Fn::GetParam" : ["BuildOutput", "build.json", "ImageUri"]
                     }

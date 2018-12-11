@@ -19,7 +19,7 @@
 
 # -- Project information -----------------------------------------------------
 
-project = 'MPContribs API'
+project = ''
 copyright = '2018, Patrick Huck'
 author = 'Patrick Huck'
 
@@ -75,6 +75,7 @@ pygments_style = None
 # a list of builtin themes.
 #
 html_theme = 'alabaster'
+html_logo = '_static/mpcontribs_api_logo.png'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -95,7 +96,9 @@ html_static_path = ['_static']
 # default: ``['localtoc.html', 'relations.html', 'sourcelink.html',
 # 'searchbox.html']``.
 #
-# html_sidebars = {}
+html_sidebars = {
+    '**': ['about.html',]
+}
 
 
 # -- Options for HTMLHelp output ---------------------------------------------

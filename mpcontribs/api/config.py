@@ -19,14 +19,14 @@ SWAGGER = {"specs": [
         "rule_filter": lambda rule: True,  # all in
         "model_filter": lambda tag: True,  # all in
     }
-]}
+], "specs_route": "/docs/"}
 TEMPLATE = {
     "swagger": "2.0",
     "info": {
         "title": "MPContribs API",
         "description": "Operations to retrieve materials data contributed to MP",
-        "termsOfService": "http://me.com/terms",
-        "version": "2018.12.10",
+        #"termsOfService": "http://me.com/terms",
+        "version": "2018.12.11",
         "contact": {
             "name": "Materials Project",
             "email": "phuck@lbl.gov",
@@ -48,5 +48,5 @@ TEMPLATE = {
     "security": [{"ApiKeyAuth": []}],
     "host": "api.mpcontribs.org",
     #"host": "0.0.0.0:5000",  # overrides localhost:5000
-    "schemes": [ "http", "https" ],
+    "schemes": [ "https", "http" ],
 }
