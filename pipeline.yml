@@ -8,6 +8,9 @@ Parameters:
     NoEcho: true
   GitHubUser:
     Type: String
+  MongoHost:
+    Type: String
+    NoEcho: true
   EnvironmentName:
     Type: String
   CertificateArn:
@@ -165,14 +168,6 @@ Resources:
                 - IMAGE_URI="${REPOSITORY_URI}:${TAG}"
             build:
               commands:
-                - git init
-                - git remote add origin https://github.com/${GITHUB_USER}/${GITHUB_REPO}.git
-                - git fetch
-                - git checkout -f -t origin/master
-                - git submodule init mpcontribs/users
-                - git submodule update mpcontribs/users
-                - git submodule init webtzite
-                - git submodule update webtzite
                 - docker build --tag "${IMAGE_URI}" .
             post_build:
               commands:

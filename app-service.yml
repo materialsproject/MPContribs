@@ -6,6 +6,10 @@ Parameters:
     Default: production
     Description: A name for the environment that this cloudformation will be part of.
                  Used to locate other resources in the same environment.
+  MongoHost:
+    Type: String
+    Default: localhost
+    Description: MongoDB host that the app connects to.
   ServiceName:
     Type: String
     Default: app
@@ -17,7 +21,7 @@ Parameters:
                  will handle the traffic for this service
   ContainerPort:
     Type: Number
-    Default: 8080
+    Default: 5000
     Description: What port number the application inside the docker container is binding to
   ContainerCpu:
     Type: Number
@@ -102,6 +106,8 @@ Resources:
               Value: !Ref 'EnvironmentName'
             - Name: DEPLOYMENT
               Value: 'MATGEN'
+            - Name: MPCONTRIBS_MONGO_HOST
+              Value: !Ref 'MongoHost'
           PortMappings:
             - ContainerPort: !Ref 'ContainerPort'
           LogConfiguration:
@@ -158,9 +164,9 @@ Resources:
       HealthCheckIntervalSeconds: 6
       HealthCheckPath: /
       Matcher:
-        HttpCode: 301,200,400 # TODO remove 400
+        HttpCode: 301,200
       HealthCheckProtocol: HTTP
-      HealthCheckPort: 8080
+      HealthCheckPort: 5000
       HealthCheckTimeoutSeconds: 5
       HealthyThresholdCount: 2
       TargetType: ip
