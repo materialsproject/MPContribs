@@ -9,7 +9,7 @@ metadata = dict(re.findall("__([a-z]+)__ = '([^']+)'", init_py))
 metadata['doc'] = re.findall('"""(.+)"""', init_py)[0]
 SETUP_PTH = os.path.dirname(os.path.abspath(__file__))
 
-with open(os.path.join(SETUP_PTH, 'requirements.txt')) as f:
+with open(os.path.join(SETUP_PTH, 'mpcontribs/api/requirements.txt')) as f:
     required = f.read().splitlines()
 
 setup(
