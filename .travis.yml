@@ -13,7 +13,7 @@ install:
   - pip install --upgrade pip setuptools wheel
   - pip install pytest pytest-cov coveralls
   - pip install --only-binary=numpy,scipy,pandas,Ipython,matplotlib numpy scipy pandas ipython matplotlib
-  - pip install .
+  - pip install -e . --process-dependency-links
   - pip install -U coverage
   - pip install codacy-coverage
 script:
