@@ -9,7 +9,7 @@ API for contributed MP Data
 .. highlight:: python
 
 Use `bravado <https://bravado.readthedocs.io>`_ as python client
-(see `API Docs <https://api.mpcontribs.org/docs>`_ for details about available operations)::
+(see `API Docs </docs/>`_ for details about available operations)::
 
    from bravado.requests_client import RequestsClient
    from bravado.client import SwaggerClient
