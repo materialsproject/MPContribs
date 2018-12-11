@@ -53,4 +53,4 @@ if __name__ == '__main__':
     def index(filename='index.html'):
         return app.send_static_file(filename)
 
-    app.run()
+    app.run(host='0.0.0.0')
