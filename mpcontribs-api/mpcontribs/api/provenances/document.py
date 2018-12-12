@@ -1,10 +1,5 @@
 from flask_mongoengine import Document, DynamicDocument
-from mongoengine import fields, DynamicEmbeddedDocument, EmbeddedDocumentField
-
-class Urls(DynamicEmbeddedDocument):
-    main = fields.StringField(required=True)
-    # TODO URL validation?
-    # TODO make sure all fields show up in response
+from mongoengine import fields
 
 class Provenances(DynamicDocument):
     __project_regex__ = '^[a-zA-Z0-9_]+$'
@@ -26,10 +21,11 @@ class Provenances(DynamicDocument):
         min_length=5, max_length=1500, required=True,
         help_text='brief description of the project'
     )
-    urls = EmbeddedDocumentField(
-        Urls, required=True, help_text='list of URLs for references'
+    urls = fields.MapField(
+        fields.StringField(), required=True,
+        help_text='list of URLs for references'
     )
-    # TODO permissions EmbeddedDocumentField
+    # TODO permissions MapField
     # is required on POST but should never be returned on GET
     meta = {
         'collection': 'provenances', 'indexes': [{
