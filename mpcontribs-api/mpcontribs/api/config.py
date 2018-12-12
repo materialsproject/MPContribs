@@ -1,6 +1,6 @@
 import os
 
-DEBUG = False
+DEBUG = bool(os.environ.get('FLASK_ENV') == 'development')
 JSON_ADD_STATUS = False
 FLASK_LOG_LEVEL = 'DEBUG' if DEBUG else 'WARNING'
 SECRET_KEY = b'super-secret' # reset in local prod config
@@ -12,14 +12,12 @@ MONGODB_SETTINGS = {
         os.environ.get('MPCONTRIBS_MONGO_HOST', 'localhost')
     ), 'connect': False, 'db': 'mpcontribs'
 }
-SWAGGER = {"specs": [
-    {
-        "endpoint": 'apispec',
-        "route": '/apispec.json',
-        "rule_filter": lambda rule: True,  # all in
-        "model_filter": lambda tag: True,  # all in
-    }
-], "specs_route": "/docs/"}
+SWAGGER = {"specs": [{
+    "endpoint": 'apispec',
+    "route": '/apispec.json',
+    "rule_filter": lambda rule: True,  # all in
+    "model_filter": lambda tag: True,  # all in
+}], "specs_route": "/docs/"}
 TEMPLATE = {
     "swagger": "2.0",
     "info": {
@@ -46,7 +44,6 @@ TEMPLATE = {
         }
     },
     "security": [{"ApiKeyAuth": []}],
-    "host": "api.mpcontribs.org",
-    #"host": "0.0.0.0:5000",  # overrides localhost:5000
-    "schemes": [ "https", "http" ],
+    "host": '0.0.0.0:5000' if DEBUG else "api.mpcontribs.org",
+    "schemes": ['http', 'https'] if DEBUG else ['https', 'http'],
 }

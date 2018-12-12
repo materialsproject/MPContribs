@@ -1,7 +1,7 @@
 *.swp
 *.pyc
 lahman-csv_2014-02-14*
-mpcontribs.egg-info
+*.egg-info
 docs/build
 .ipynb_checkpoints/
 db.sqlite3
@@ -20,4 +20,4 @@ test_site.log
 node_modules/*
 webpack-stats.json
 package-lock.json
-mpcontribs/api/docs/_build/*
+mpcontribs-api/docs/_build/*

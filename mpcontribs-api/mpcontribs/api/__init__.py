@@ -19,9 +19,9 @@ def get_collections(db):
     #return conn.mpcontribs.list_collection_names() # TODO replace below
     return ['provenances']
 
-def create_app(name):
-    app = Flask(name, static_url_path='/', static_folder='docs/_build/html/')
-    app.config.from_envvar('APP_CONFIG_FILE')
+def create_app():
+    app = Flask(__name__, static_url_path='/', static_folder='docs/_build/html/')
+    app.config.from_pyfile('config.py', silent=True)
     FlaskJSON(app)
     Logging(app)
     #app.url_map.converters["ObjectId"] = BSONObjectIdConverter
@@ -29,6 +29,7 @@ def create_app(name):
     db = MongoEngine(app)
     swagger = Swagger(app, template=app.config.get('TEMPLATE'))
     collections = get_collections(db)
+
     for collection in collections:
         module_path = '.'.join(['mpcontribs', 'api', collection, 'views'])
         try:
@@ -43,14 +44,10 @@ def create_app(name):
             logger.warning('Failed to register blueprint {}: {}'.format(
                 module_path, collection, ex
             ))
-    return app
-
-if __name__ == '__main__':
-    app = create_app(__name__)
 
     @app.route('/')
     @app.route('/<path:filename>')
     def index(filename='index.html'):
         return app.send_static_file(filename)
 
-    app.run(host='0.0.0.0')
+    return app

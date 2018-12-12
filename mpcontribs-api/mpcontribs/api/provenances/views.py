@@ -44,9 +44,17 @@ class ProvenancesView(SwaggerView):
         return self.marshal(entries)
 
     def post(self):
-        """Create a new provenance entry"""
-        # validate ProvenancesSchema().load(args, partial=True)
-        pass
+        """Create a new provenance entry.
+        Only MP staff can submit a new/non-existing project (or use POST
+        endpoints in general). The staff member's email address will be set as
+        the first readWrite entry in the permissions dict.
+        """
+        from flask_json import JsonError
+        unmarshalled = self.Schema().load(request.json)
+        if unmarshalled.errors:
+            raise JsonError(400, )
+            return unmarshalled.errors
+        return unmarshalled.data
 
 class ProjectsView(SwaggerView):
     """defines methods for API operations with project provenance"""
