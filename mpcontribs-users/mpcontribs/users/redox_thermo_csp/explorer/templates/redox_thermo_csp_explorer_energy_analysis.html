@@ -1,0 +1,445 @@
+{% extends "../../webtzite/templates/header_footer.html" %}
+{% load staticfiles %}
+
+{% block title %} RedoxThermoCSP {% endblock title %}
+
+{% block content %}
+
+<div class="container">
+   
+    <div class="row">
+        <div class="col-md-12">
+            <a href="../">&laquo; RedoxThermoCSP</a>
+            <h3>Energy Analysis</h3>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-9" style="padding-top: 0px">
+            <div class="well" style="padding: 5px 5px 5px 5px; margin-bottom: 2px; margin-left: 5px;">
+                Allows finding the ideal material for different thermochemical
+                applications. Please note that this is based on thermodynamics
+                of redox reactions. Not all materials shown here are neccessarly
+                stable or can be synthesized. This tool allows a pre-selection
+                of materials. Please refer to the 
+                <a href="../documentation/">documentation</a> for more detailed
+                information. Find more materials data in the <a href="../isographs/">Isographs</a> section.
+            </div>
+        </div>
+        <div class="col-md-3">
+            <blockquote class="blockquote pull-right" style="font-size: 13px; padding: 0px 10px;">
+                <h5 style="margin: 5px;">
+                    J. Vieten
+                    <a class="mytooltip" href="#">
+                        et al.
+                        <span class="classic">
+                            B. Bulfin<br>P. Huck<br>M. Horton<br>D. Guban<br>
+                            L. Zhu<br>K. A. Persson<br>M. Roeb<br>C. Sattler
+                        </span>
+                    </a>
+                </h5>
+                <a href="http://dx.doi.org/" target="_blank"
+                                             class="btn btn-link" role=button style="padding: 0">
+                    <i class="fa fa-book fa-border fa-lg"></i>
+                </a>
+            </blockquote>
+        </div>
+    </div>
+
+    <div class="row" style="padding-top: 10px;">
+        <div class="col-md-5">
+            <div class="col-md-4"><b>Data Source:</b></div>
+            <div class="col-md-8">
+                <label class="radio-inline">
+                    <input type="radio" id="enal_data_source_exp" name="enal_data_source" value="Experimental">
+                    Experimental
+                </label>
+                <label class="radio-inline">
+                    <input type="radio" id="enal_data_source_theo" checked="checked" name="enal_data_source" value="Theoretical">
+                    Theoretical
+                </label>
+            </div>
+        </div>
+        <div class="col-md-7">
+            <form class="form-horizontal">
+                <div class="form-group" style="margin-bottom: 0px;">
+                    <label class="col-md-2 control-label" for="process" style="padding: 2px;"><b>Process Type:</b></label>
+                    <div class="col-md-9">
+                        <select class="form-control" id="process">
+                            <option class="opt0" selected>Air Separation / Oxygen pumping / Oxygen storage</option>
+                            <option class="opt1">Water Splitting</option>
+                            <option class="opt2">CO2 Splitting</option>
+                        </select>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <div class="row" style="padding-top: 10px;">
+        <div class="col-md-5">
+            <h5>Redox Conditions</h5>
+
+            <div class="row">
+                <div class="col-md-4">
+                    <b>T<sub>ox</sub> (°C)</b>
+                </div>
+                <div class="wrapper col-md-8">
+                    <div id="cT_ox_enera_air">
+                        <input id="T_ox_enera_air" type="text" />
+                    </div>
+                    <div id="cT_ox_enera_non_air">
+                        <input id="T_ox_enera_non_air" type="text" />
+                    </div>
+                </div>
+            </div>
+
+            <div class="row" style="padding-top: 40px;">
+                <div class="col-md-4">
+                    <div id="ox_type"></div>
+                </div>
+                <div class="wrapper col-md-8">
+                    <div id="cp_ox_enera_air">
+                        <input id="p_ox_enera_air" type="text" />
+                    </div>
+                    <div id="cp_ox_enera_non_air">
+                        <input id="p_ox_enera_non_air" type="text" />
+                    </div>
+                </div>
+            </div>
+
+            <div class="row" style="padding-top: 40px;">
+                <div class="col-md-4">
+                    <b>T<sub>red</sub> (°C)</b>
+                </div>
+                <div class="wrapper col-md-8">
+                    <div id="cT_red_enera_air">
+                        <input id="T_red_enera_air" type="text"
+                        />
+                    </div>
+                    <div id="cT_red_enera_non_air">
+                        <input id="T_red_enera_non_air" type="text" />
+                    </div>
+                </div>
+            </div>
+
+            <div class="row" style="padding-top: 40px;">
+                <div class="col-md-4">
+                    <b>p(O<sub>2</sub>)<sub>red</sub> (bar)</b>
+                </div>
+                <div class="wrapper col-md-8">
+                    <div id="cp_red_enera_air">
+                        <input id="p_red_enera_air" type="text" />
+                    </div>
+                    <div id="cp_red_enera_non_air">
+                        <input id="p_red_enera_non_air" type="text" />
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="col-md-7">
+            <h5>Process Conditions</h5>
+
+            <div class="row">
+                <div class="col-md-4">
+                    <b>Heat rec. eff.  (&#x03B7<sub>hrec, solid</sub>)</b>
+                </div>
+                <div class="col-md-8">
+                    <input id="h_rec_eff" type="text" />
+                </div>
+            </div>
+
+            <div class="row" style="padding-top: 15px;">
+				<form class="col-md-12 form-horizontal">
+					<div class="form-group">
+						<div class="col-md-4">
+							<b>Pumping energy (Q<sub>pump</sub>)</b>
+						</div>
+						<div class="col-md-3">
+							<input id="pump_ener" type="text" value="0.0" placeholder="0.0" class="form-control">
+						</div>
+						<div class="col-md-5">
+							<div class="checkbox">
+								<b>kJ/kg of redox material or</b>
+								<label>
+									<input id="mech_env" type="checkbox" checked="checked" style="padding-top: 0px;"/>
+									use mech. envelope (10⁻⁶ - 0.7 bar) 
+									<a class="pull-right" target="_blank" style="padding-left: 3px;"
+									   href="https://www.sciencedirect.com/science/article/pii/S0038092X16305552">
+                                        <i class="fa fa-book fa-sm"></i>
+                                        <!--<span class="glyphicon glyphicon-book" aria-hidden="true"></span>-->
+									</a>
+								</label>
+							</div>
+						</div>
+					</div>
+				</form>
+            </div>
+
+
+            <div class="row">
+                <div class="col-md-4">
+                    <b>Water feed temp. (°C)</b><br>
+                    (only for water splitting)
+                </div>
+                <div class="col-md-8">
+                    <input id="w_feed_temp" type="text" disabled/>
+                </div>
+            </div>
+
+            <div class="row" style="padding-top: 30px;">
+                <div class="col-md-4">
+                    <b>Steam h.rec.  (&#x03B7<sub>hrec, steam</sub>)</b><br>
+                    (only for water splitting)
+                </div>
+                <div class="col-md-8">
+                    <input id="steam_h_rec_eff" type="text" disabled />
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <div class="row" style="padding-top: 40px;">
+        <form class="form-horizontal">
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="disp_par" style="padding: 2px;">Display:</label>
+                <div class="col-md-4">
+                    <select class="form-control" id="disp_par">
+                        <option>kJ/mol redox material</option>
+                        <option>kJ/kg redox material</option>
+                        <option>Wh/kg redox material</option>
+                        <option selected>kJ/mol of product</option>
+                        <option>kJ/L of product</option>
+                        <option>Wh/L of product</option>
+                        <option>Heat to fuel efficiency in % (only valid for Water Splitting)</option>
+                        <option>mol product per mol redox material</option>
+                        <option>L product per mol redox material</option>
+                        <option>g product per mol redox material</option>
+                        <option>Change in non-stoichiometry between T_ox and T_red</option>
+                        <option>Mass change between T_ox and T_red</option>
+                    </select>
+                </div>
+                <label class="col-md-2 control-label" for="num_mat" style="padding: 2px;">Max # materials:</label>
+                <div class="col-md-3">
+                    <input id="num_mat" type="text" />
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <div class="row" style="padding-top: 25px;">
+        <div class="col-md-12">
+            <div name="spinner"></div>
+            <div id=energy_analysis></div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+requirejs(['main'], function() {
+    require(["plotly", "backbone", "bootstrap-slider", "chosen", "jquery.spin", "underscore"], function(Plotly, Backbone) {
+        $(document).ready(function() {
+
+            $('#disp_par').chosen({disable_search: true});
+            $('#process').chosen({disable_search: true, width: "100%"});
+            $('#pump_ener').val("0.0"); $('#disp_par').val("kJ/mol of product");
+            document.getElementById("ox_type").value = "<b>p(O<sub>2</sub>)<sub>ox</sub> (bar)</b>";
+                
+            // update the energy analysis
+            selectors = ["input[type='radio']", "select", "#pump_ener", "input[type='checkbox']"]
+            selectors.forEach(function(selector) {
+                $(selector).on('change', function(ev) { send_request("energy_analysis"); }); 
+            });
+
+            hdrth = _.range(100).map(function(val) { return val/100.; });
+            slide_selectors = {
+                'T_ox_enera_air': {
+                    values: [350, 400, 450, 500, 600, 700, 800], value: 3,
+                    tooltip: "always"
+                },
+                'T_ox_enera_non_air': {
+                    values: [600, 700, 800, 900, 1000, 1050, 1100, 1150], value: 3,
+                    tooltip: "always"
+                },
+                'p_ox_enera_air': {
+                    values: [1e-20, 1e-15, 1e-12, 1e-10, 1e-8, 1e-6, 1e-5, 1e-4, 1e-3], value: 5,
+                    tooltip: "always"
+                },
+                'p_ox_enera_non_air': {
+                    values: [1e-6, 1e-5, 1e-4, 1e-3, 1e-2, 1e-1], value: 3,
+                    tooltip: "always"
+                },
+                'p_red_enera_air': {
+                    values: [1e-8, 1e-6, 1e-5, 1e-4, 1e-3, 0.21, 1], value: 5,
+                    tooltip: "always"
+                },
+                'p_red_enera_non_air': {
+                    values: [1e-6, 1e-5, 1e-3, 0.21, 1], value: 1,
+                    tooltip: "always"
+                },
+                'T_red_enera_air': {
+                    values: [600, 700, 800, 900, 1000, 1100, 1200, 1400], value: 3,
+                    tooltip: "always"
+                },
+                'T_red_enera_non_air': {
+                    values: [1100, 1200, 1250, 1300, 1350, 1400, 1450, 1500], value: 5,
+                    tooltip: "always"
+                },
+                'h_rec_eff': {
+                    values: hdrth, value: 60, tooltip: "always"
+                },
+                'steam_h_rec_eff': {
+                    values: hdrth, value: 80, tooltip: "always", tooltip_position: "bottom"
+                },
+                'w_feed_temp': {
+                    values: _.range(5, 600, 5), value: 39,
+                    tooltip: "always", tooltip_position: "bottom"
+                },
+                'num_mat': {
+                    values: _.range(1, 250), value: 24,
+                    tooltip: "always", tooltip_position: "bottom"
+                }
+            }
+            Object.keys(slide_selectors).forEach(function(key, index) {
+                var config = slide_selectors[key];
+                var nticks = config['values'].length;
+                $.extend(config, {
+                    min: 0, max: nticks-1, step: 1,
+                    ticks: _.range(nticks),
+                    formatter: function(val) { return config['values'][val]; }
+                });
+                $('#'+key).slider(config).on('slideStop', function(ev) { send_request("energy_analysis"); });
+            });
+
+            var ener_empty = "True";
+            if (ener_empty === "True") {
+                // if the energy analysis has not been done yet, try to do it
+                send_request("energy_analysis");
+                ener_empty = "False";
+            };
+
+            function get_value(slider) {
+                var index = $('#'+slider).attr('value');
+                return slide_selectors[slider]['values'][index].toString();
+            }
+
+            function send_request(updatekey) {
+                $("[name='spinner']").spin();
+
+                // enable / disable some sliders and fields in the energy analysis depending on values of other sliders/fields
+                if ($("input:checked").val() === "Experimental"){
+                    $('#process').val("Air Separation / Oxygen pumping / Oxygen storage");
+                    $('#process').trigger("chosen:updated");
+                };
+                if ($('#process').val() != "Water Splitting" ) {
+                    $("#steam_h_rec_eff").slider("disable"); $("#w_feed_temp").slider("disable");
+                }
+                if ($('#process').val() === "Water Splitting") {
+                    $("#steam_h_rec_eff").slider("enable"); $("#w_feed_temp").slider("enable");
+                }
+                $('#pump_ener').prop("disabled", $("input[type='checkbox']").prop("checked"));
+                var ox_type_output = document.getElementById('ox_type');
+                if ($('#process').val() === "Water Splitting") {
+                    ox_type_output.innerHTML = "<b>p(H<sub>2</sub>)/p(H<sub>2</sub>O)</b>";
+                };
+                if ($('#process').val() === "CO2 Splitting") {
+                    ox_type_output.innerHTML = "<b>p(CO)/p(CO<sub>2</sub>)</b>";
+                };
+                if ($('#process').val() === "Air Separation / Oxygen pumping / Oxygen storage") {
+                    ox_type_output.innerHTML = "<b>p(O<sub>2</sub>)<sub>ox</sub> (bar)</b>";
+                };
+
+                // change ticks of some sliders depending on the selected type of energy analysis
+                var T_ox = 0; var p_ox = 0; var T_red = 0; var p_red = 0;
+                if ($('#process').val() != "Air Separation / Oxygen pumping / Oxygen storage") {
+                    document.getElementById("cT_ox_enera_air").className = "hidden";
+                    document.getElementById("cT_ox_enera_non_air").className = "";
+                    document.getElementById("cp_ox_enera_air").className = "hidden";
+                    document.getElementById("cp_ox_enera_non_air").className = "";
+                    document.getElementById("cT_red_enera_air").className = "hidden";
+                    document.getElementById("cT_red_enera_non_air").className = "";
+                    document.getElementById("cp_red_enera_air").className = "hidden";
+                    document.getElementById("cp_red_enera_non_air").className = "";
+                    T_ox = get_value('T_ox_enera_non_air');
+                    T_red = get_value('T_red_enera_non_air');
+                    p_ox = get_value('p_ox_enera_non_air');
+                    p_red = get_value('p_red_enera_non_air');
+                } else {
+                    document.getElementById("cT_ox_enera_air").className = "";
+                    document.getElementById("cT_ox_enera_non_air").className = "hidden";
+                    document.getElementById("cp_ox_enera_air").className = "";
+                    document.getElementById("cp_ox_enera_non_air").className = "hidden";
+                    document.getElementById("cT_red_enera_air").className = "";
+                    document.getElementById("cT_red_enera_non_air").className = "hidden";
+                    document.getElementById("cp_red_enera_air").className = "";
+                    document.getElementById("cp_red_enera_non_air").className = "hidden";
+                    T_ox = get_value('T_ox_enera_air');
+                    T_red = get_value('T_red_enera_air');
+                    p_ox = get_value('p_ox_enera_air');
+                    p_red = get_value('p_red_enera_air');
+                }
+
+                // read slider/field values
+                var payload = JSON.stringify({
+                        'data_source': $("input:checked").val(),
+                        'process_type': $('#process').val().split(" ").slice(0, 2).join(" "),
+                        't_ox': T_ox,
+                        't_red': T_red,
+                        'p_ox': p_ox,
+                        'p_red': p_red,
+                        'h_rec': get_value('h_rec_eff'),
+                        'mech_env': $("input[type='checkbox']").prop("checked"),
+                        'pump_ener': $('#pump_ener').val(),
+                        'w_feed': get_value('w_feed_temp'),
+                        'steam_h_rec': get_value('steam_h_rec_eff'),
+                        'param_disp': $('#disp_par').val(),
+                        'cutoff': get_value('num_mat')
+                });
+          
+                $.ajax({
+                    type: 'POST',
+                    url: '../rest/energy_analysis',
+                    data: payload,
+                    dataType: "json",
+                    contentType: "application/json; charset=utf-8",
+                    success: function(data, textStatus, jqXHR) {
+                        // data['response'] = {'isotherm': {'x':, [...], 'y': [...]}, 'isobar': ...}
+                        var r = data['response'];
+                        var div = document.getElementById(updatekey);
+                            var axis = {
+                                exponentformat: "E", tickfont: { size: 15 }, showline: "True",
+                                ticks: "inside", tickwidth: 1, tickcolor: '#000000',
+                                linewidth: 1, zeroline: "False",
+                                titlefont: { family: 'Arial', size: 20, color: '#000000' }
+                            };
+                            var xaxis = JSON.parse(JSON.stringify(axis)); // deepcopy
+                            var yaxis = JSON.parse(JSON.stringify(axis)); // deepcopy
+                            yaxis['title'] = r[0]['yaxis_title'];
+                            yaxis['titlefont'] = {size: 22};
+                            xaxis['tickfont'] = {size: 12};
+                            Plotly.newPlot(div, r , {
+                                title: r[0]['title'], showlegend: false, xaxis: xaxis, yaxis: yaxis,
+                                margin: {l: 80, r: 120, b: 130, t: 35}, height: 650, width: 1200,
+                                autosize: false, barmode: 'stack'
+                            });
+                            $("[name='spinner']").spin(false);
+                    },
+                    error: function(jqXHR, textStatus, errorThrown) {
+                        console.log(errorThrown);
+                    }
+                });
+
+            }; 
+
+        });
+    });
+});
+</script>
+
+{% endblock %}

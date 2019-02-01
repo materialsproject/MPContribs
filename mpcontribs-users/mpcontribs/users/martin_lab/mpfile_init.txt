@@ -1,0 +1,65 @@
+TODO add translation for for each chamber to give target substrate spacing
+
+title: Pulse-Laser Deposition Growth
+author: Josh Agar
+research_group: Lane Martin
+input_dir: /wkshp_shared/Growth_Test
+
+sample_name: JA306
+substrate: GDSCO3
+laser: 1A
+chamber: 1C
+base_pressure: 5e-6
+cure_temperature: 60 C
+
+{PbZr20Ti80O3.layer1}
+temperature: 700 C
+pressure: 20 mtorr
+frequency: 2 Hz
+aperature_size: 12.5 mm
+mirror_depth: 3.44 cm
+target.name: SrRuO3
+target.id: Fall 2016A
+target.height: 35 cm
+target.rotation_speed: 5 deg/s
+focus.depth: 17.9
+focus.x: 19.0
+focus.y: 10.10
+laser.voltage: 19.5 kV
+laser.internal_energy: 408
+angular_translation: 0-15
+angular_translation_speed: 15 deg/s
+external_energy_detector: Detector 1
+measured_energy.average: 140 mJ
+measured_energy.std: 2 mJ
+measured_number_of_pulses: 100
+preablation.pulses: 1000
+preablation.frequency: 20 Hz
+ablation_pulses: 600
+film_type: Bottom Electrode
+
+{PbZr20Ti80O3.layer2}
+temperature: 750 C
+pressure: 100 mtorr
+frequency: 2 Hz
+aperature_size: 12.5 mm
+mirror_depth: 3.44 cm
+target.name: PbZr20Ti80O3
+target.id: Fall 2015B
+target.height: 35 cm
+focus.depth: 17.9
+focus.x: 19.0
+focus.y: 10.10
+laser.voltage: 20 kV
+laser.internal_energy: 428
+angular_translation: 0-15
+angular_translation_speed: 15 deg/s
+target_rotation_speed: 5 deg/s
+external_energy_detector: Detector 1
+measured_energy_average: 115 mJ
+measured_energy_std: 4 mJ
+measured_number_of_pulses: 100
+preablation.frequency: 20 Hz
+preablation.pulses: 1000
+ablation_pulses: 600
+film_type: Ferroelectric Layer

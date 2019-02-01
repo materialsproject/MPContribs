@@ -1,0 +1,18 @@
+title: Defect Genome PCFC
+
+description:
+Defect Genome of Cubic Perovskites for Fuel Cell Applications.
+Employing computationally tractable ab initio models driven by
+highly scalable workflows, to study formation and interaction of
+various point defects (e.g., O vacancies, H interstitials, and Y
+substitutional dopant), in over 80 cubic perovskites, for
+potential proton-conducting ceramic fuel cell (PCFC)
+applications.
+:end
+
+authors: J. Balachandran, L. Lin, J. Anchell, C. Bridges, P. Ganesh
+
+input_file: DefectGenome_JPCC-data_MP.xlsx
+
+{urls}
+JPC: https://doi.org/10.1021/acs.jpcc.7b08716

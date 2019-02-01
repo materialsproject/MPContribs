@@ -1,0 +1,1 @@
+default_app_config = 'mpcontribs.users.slac_mose2.explorer.apps.SlacMose2ExplorerConfig'

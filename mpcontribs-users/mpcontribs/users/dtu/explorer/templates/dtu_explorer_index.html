@@ -1,0 +1,108 @@
+{% extends "../../webtzite/templates/header_footer.html" %}
+{% load staticfiles %}
+
+{% block title %} {{ title }} {% endblock title %}
+
+{% block content %}
+
+<div class="container">
+    <div class="row">
+        <div class="col-md-12">
+            <h2>{{ title }}</h2>
+            {{ provenance|safe }}
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-12">
+            <h5>Python code to get the contributions from the DtuRester</h5>
+            <code>
+                from mpcontribs.users.dtu.rest.rester import DtuRester
+                mpr = DtuRester()
+                mpr.get_contributions()
+            </code>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-12">
+            <h5>Filter contributions below by specifying one or more bandgap ranges:</h5>
+            <form action="{% url 'mpcontribs_users_dtu_explorer_index' %}" method="post" class="form-inline">
+                {% csrf_token %}
+                <div class="form-group">
+                    <div class="col-md-10">
+                        {% for key, range in filters.items %}
+                        <div class="col-md-6">
+                            <b>{{ key }}:&nbsp;&nbsp;&nbsp;</b>
+                            <input name="{{ key }}_slider" id="{{ key }}_slider" type="text" class="form-control span2" value=""
+                            data-slider-min="{{ range.0 }}" data-slider-max="{{ range.1 }}" data-slider-step="0.1"
+                            data-slider-value="[{{range.0}},{{range.1}}]"/><b>&nbsp;&nbsp;&nbsp;eV</b>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <div class="col-md-2">
+                        <input type="submit" name="submit" class="btn btn-primary" value="filter">
+                        {{ nresults }} results (max. 200 shown below)
+                    </div>
+                </div>
+            </form>
+            <a href="{% url 'mpcontribs_users_dtu_explorer_index' %}" role="button" class="btn btn-sm btn-primary">reset</a>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-12">
+            <div id="graph" style="width: 100%;"></div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-12">
+            {{ table|safe }}
+        </div>
+    </div>
+</div>
+
+<script>
+requirejs(['main'], function() {
+    require(["plotly", "bootstrap-slider"], function(Plotly) {
+        $(document).ready(function(){
+            $("[name*='_slider']").slider({}); 
+            var table = window.tables[window.tables.length-1];
+            var graph = document.getElementById('graph');
+            var layout = {
+                margin: {t: 0, r: 0, l: 40, b: 25}, barmode: 'stack',
+                xaxis: {type: 'category', showticklabels: false, ticks: ''},
+                yaxis: {title: 'Energy (eV)'},
+                legend: {x: 0.05, y: 0.95},
+            };
+            var keys = ['C [eV]', 'ΔE-QP##indirect [eV]', 'ΔE-QP##direct [eV]'];
+            var xvals = []; var yvals = {};
+            for (i = 0; i < table['rows'].length; i++) {
+                var row = table['rows'][i];
+                var mpid_split = row['mp-id'].split('/');
+                var mpid = mpid_split[mpid_split.length-1];
+                xvals.push(mpid);
+                for (j = 0; j < keys.length; j++) {
+                    var k = keys[j];
+                    if (!(k in yvals)) {yvals[k] = [];}
+                    yvals[k].push(row[k].split(' ')[0]);
+                }
+            }
+            var data = [];
+            for (j = 0; j < keys.length; j++) {
+                var k = keys[j];
+                var ks = k.split('##');
+                var name = ks[0];
+                if ( ks.length > 1 ) {
+                    name = ks[1].split(' ')[0] + ' ' + ks[0];
+                }
+                var d = {x: xvals, y: yvals[k], type: 'bar', name: name};
+                data.push(d);
+            }
+            Plotly.plot(graph, data, layout);
+            window.onresize = function() {
+                Plotly.Plots.resize(graph);
+            };
+        });
+    });
+});
+</script>
+
+{% endblock %}

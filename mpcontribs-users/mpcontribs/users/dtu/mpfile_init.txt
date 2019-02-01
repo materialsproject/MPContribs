@@ -1,0 +1,27 @@
+title: GLLB-SC Bandgaps
+
+description:
+Bandgaps calculated using GLLB-SC potential by Gritsenko, van
+Leeuwen, van Lenthe, and Baerends (GLLB), adapted by Kuisma et al
+to account for solids (-SC). The Kohn-Sham gap (ΔE-KS) most
+basically refers to the energy difference between the bottom of
+the conduction band and the top of the valence band. The
+Quasi-Particle gap (ΔE-QP) takes into account the derivative
+discontinuity (C) of the chemical potential and gives the bandgap
+as the difference between ionization potential and electron
+affinity.
+:end
+
+authors:
+I. Castelli, F. Hueser, M. Pandey, H. Li, K. Thygesen, B. Seger,
+A. Jain, K. Persson, G. Ceder, K. Jacobsen
+:end
+
+contributor: Technical University of Denmark
+input_url: https://cmr.fysik.dtu.dk/_downloads/mp_gllbsc.db
+
+{urls}
+AENM: https://doi.org/10.1002/aenm.201400915
+PRA: https://doi.org/10.1103/PhysRevA.51.1944
+PRB: https://doi.org/10.1103/PhysRevB.82.115106
+

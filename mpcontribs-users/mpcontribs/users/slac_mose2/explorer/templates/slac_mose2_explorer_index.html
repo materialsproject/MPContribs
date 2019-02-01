@@ -1,0 +1,91 @@
+{% extends "../../webtzite/templates/header_footer.html" %}
+{% load staticfiles %}
+
+{% block title %} {{ title }} {% endblock title %}
+
+{% block content %}
+
+<div class="container">
+    <div class="row">
+        <div class="col-md-12">
+            <h2>{{ title }}</h2>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-9">
+            {{ provenance|safe }}
+        </div>
+        <div class="col-md-3">
+            <img class="pull-right" src='{% static "magics_logo.png" %}' height="107px" />
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-8" style="text-align: center">
+            <h4>Diffuse Scattering Intensity</h4>
+            {% for graph in graphs %}
+            <div class="col-md-6">{{ graph|safe }}</div>
+            {% endfor %}
+        </div>
+        <div class="col-md-4" style="text-align: center">
+            <h4>Pump-Probe Delay Time [ps]</h4>
+            {% for trace_name in trace_names %}
+            <div id="{{ trace_name|safe }}"></div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<script>
+    requirejs(['main'], function() {
+        require(['plotly'], function(Plotly) {
+            $(document).ready(function(){
+                // intensity updates
+                var uuids = {{ uuids|safe }};
+                for (var i=0; i<uuids.length; i++) {
+                    Plotly.relayout(uuids[i], {title: ' ', height: 200, margin: {l: 1, b: 1, r: 1, t: 20}});
+                }
+                // pump probe
+                var traces = {{ traces|safe }};
+                var layout = {
+                    height: 100, margin: { b: 20, t: 1, l: 1, r: 1 },
+                    xaxis: {
+                        showline: true, showgrid: false, zeroline: false,
+                        mirror: true, ticks: 'inside'
+                    },
+                    yaxis: {
+                        showline: true, showgrid: false, zeroline: false,
+                        mirror: true, ticks: 'inside', showticklabels: false
+                    }
+                }
+                var config = { displayModeBar: false }
+                var colors = ['#EC3323', '#001DF5', '#E08244', '#70FBFD', '#4CAD5B', '#4BAEEA', '#EB3CF7']
+                var annotations = [ // TODO move these into MPFile where they belong
+                    '<b>5.1±0.8 ps</b>', '<b>2.7±0.6 ps</b>', '<b>1.9±0.5 ps</b>', '<b>1.4±0.4 ps</b>',
+                    '<b>1.3±0.3 ps</b>', '<b>1.6±0.4 ps</b>', '<b>3.4±0.6 ps</b>'
+                ]
+                for (var i=0; i<traces.length; i++) {
+                    var trace = traces[i];
+                    $.extend(true, trace, {
+                        type: 'scatter', mode: 'lines+markers',
+                        line: { color: colors[i], width: 3 },
+                        marker: {
+                            symbol: 'circle', size: 4, color: '#fff',
+                            line: { color: '#444', width: 1 }
+                        }
+                    });
+                    layout.annotations = [{
+                        text: annotations[i], xref: 'paper', x: 0.9, yref: 'paper', y: 0.1,
+                        showarrow: false, font: { size: 14, color: colors[i] }
+                    }]
+                    Plotly.newPlot(trace['name'], [trace], layout, config);
+                }
+                window.onresize = function() {
+                    for (var i=0; i<uuids.length; i++) { Plotly.Plots.resize('#'+uuids[i]); };
+                    for (var i=0; i<traces.length; i++) { Plotly.Plots.resize('#'+traces[i].name); };
+                }
+             });
+        });        
+    });
+</script>
+
+{% endblock %}

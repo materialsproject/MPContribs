@@ -1,0 +1,173 @@
+{% extends "../../webtzite/templates/header_footer.html" %}
+{% load staticfiles %}
+
+{% block title %} Transport Properties {% endblock title %}
+
+{% block content %}
+
+<style>
+.backgrid tbody tr td:nth-child(n+6):nth-child(-n+9) { background-color: #d0efc9;  }
+</style>
+
+<div id="modal" class="modal fade" 
+     tabindex="-1" role="dialog" aria-labelledby="plan-info" aria-hidden="true">
+    <div class="modal-dialog modal-full-screen">
+        <div class="modal-content">
+            <div class="modal-body">
+                <!-- /# content goes here -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <h2>{{ provenance.title }}</h2>
+
+    <div class="row">
+        <div class="col-md-10">
+            <div class="well" style="padding: 5px 5px 5px 5px; margin-bottom: 2px; margin-left: 5px;">
+                {{ provenance.description|safe }}
+            </div>
+        </div>
+        <div class="col-md-2">
+            <a class="btn btn-info pull-right" role="button" target="_blank"
+            href="https://jupyterhub.materialsproject.org/user/{{ request.user.username }}/notebooks/MPContribs/mpcontribs/users/carrier_transport/carrier_transport.ipynb">
+                Work with this dataset <i class="fa fa-external-link"></i>
+            </a>
+            <blockquote class="blockquote pull-right" style="font-size: 13px; padding: 0px 10px;">
+                <h5 style="margin: 5px;">
+                    {{ provenance.main_author|safe }}
+                    <a class="mytooltip" href="#">
+                        et al.
+                        <span class="classic">
+                            {{ provenance.etal_authors|safe }}
+                        </span>
+                    </a>
+                </h5>
+                {% for href in provenance.urls.values %}
+                <a href="{{ href }}" target="_blank" class="btn btn-link" role=button style="padding: 0">
+                    <i class="fa fa-book fa-border fa-lg"></i>
+                </a>
+                {% endfor %}
+            </blockquote>
+        </div>
+    </div>
+
+    <a id="graphs"></a>
+    <div class="row" style="margin-top: 10px">
+        <div class="col-md-6">
+            <div id="graph" style="width: 100%;"></div>
+            <div id="spinner" ></div>
+        </div>
+        <div class="col-md-6">
+            <div id="graph2" style="width: 100%;"></div>
+        </div>
+    </div>
+
+    <div class="row" style="margin-top: 10px;">
+        <div class="col-md-6">
+            <h3>Eigenvalues @ 300 K & 10¹⁸ cm⁻³</h3>
+        </div>
+        <div class="col-md-6">
+            <div class="bg-success" style="padding: 5px;">
+                Click a green cell to update the temperature and
+                doping level dependence above, or click anywhere else in 
+                a row to display the according eigenvalues.
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        {{ table|safe }}
+    </div>
+
+</div>
+
+<script>
+requirejs(['main'], function() {
+    require(["plotly", "json.human", "jquery.spin"], function(Plotly, JsonHuman) {
+        $("#spinner").spin('small');
+
+        $.ajax({
+            type: 'GET',
+            url: 'rest',
+            contentType: "application/json; charset=utf-8",
+            success: function(data, textStatus, jqXHR) {
+                var r = data['response'];
+                if ( 'null' != r ) {
+                    var graph = document.getElementById('graph');
+                    Plotly.newPlot(graph, [{
+                        x: r['<σ>'], y: r['<S>'], mode: 'markers', text: r['text'],
+                        type: 'scattergl', marker: {
+                            color: r['<S²σ>'], colorscale: 'Viridis',
+                            colorbar: {title: 'log(PF)'}
+                        }
+                    }], {
+                        xaxis: {title: 'σ [(Ωms)⁻¹]', exponentformat: "power", type: 'log'},
+                        yaxis: {title: 'S [μV/K]'},
+                        margin: {l: 60, b: 50, t: 20}
+                    });
+                    window.onresize = function() {
+                        Plotly.Plots.resize(graph);
+                    };
+                }
+                $(".backgrid > tbody > tr:first > td:nth-child(6)").click()
+                $('#spinner').spin(false);
+
+            },
+            error: function(jqXHR, textStatus, errorThrown) {
+                console.log(errorThrown);
+            }
+        });
+
+        $(document).ready(function(){
+
+            Backbone.on('cellclicked', function(e) {
+                var row = $(e.currentTarget).parent();
+                var url = row.find("td:nth-child(2) > a").attr('href');
+                var cid = url.split('/').pop();
+                var col = $(e.currentTarget).index();
+                if ( col > 4 && col < 9 ) {
+                    var classes = $(e.currentTarget).attr("class").split(' ');
+                    var payload = JSON.stringify({name: classes[3] + ' ' + classes[4]});
+                    $.ajax({
+                        type: 'POST',
+                        url: 'rest/' + cid,
+                        data: payload,
+                        dataType: "json",
+                        contentType: "application/json; charset=utf-8",
+                        success: function(data, textStatus, jqXHR) {
+                            if ( 'null' != data['response'] ) {
+                                var div = document.getElementById('graph2');
+                                Plotly.newPlot(div, [data['response']], {
+                                    showLegend: false, margin: {l: 50, r: 0, b: 50, t: 20},
+                                    xaxis: {type: 'log', title: 'doping level [cm⁻³]', exponentformat: "power"},
+                                    yaxis: {title: 'temperature [K]'}
+                                });
+                                window.onresize = function() {
+                                    Plotly.Plots.resize(div);
+                                };
+                                document.getElementById("graphs").scrollIntoView();
+                            }
+                        },
+                        error: function(jqXHR, textStatus, errorThrown) {
+                            console.log(errorThrown);
+                        }
+                    });
+                } else {
+                    $.getJSON('rest/eigenvalues/'+cid, function(data){
+                        var modal = $('#modal').modal();
+                        var node = JsonHuman.format(data);
+                        modal.find('.modal-body').html(node);
+                        modal.show();
+                    });
+                }
+            }); 
+
+
+        });
+    });
+});
+</script>
+
+{% endblock %}
