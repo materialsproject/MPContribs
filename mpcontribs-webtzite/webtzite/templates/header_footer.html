@@ -1,0 +1,80 @@
+{% load render_bundle from webpack_loader %}
+{% load macros %}
+{% macro title %}
+    {% block title %}Materials Project{% endblock %}
+{% endmacro %}
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>{% usemacro title %}</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    {% render_bundle 'styles' %}
+    {% block extra_css %}
+    {% endblock extra_css %}
+  </head>
+  <body>
+    {% block header %}
+    <header>
+      {% if show_warning_banner %}
+      <nav class="navbar navbar-warning">
+        <center class="alert alert-warning">
+          <button type="button" class="close" data-dismiss="alert">&times;</button>
+          We are currently experiencing issues with the web site and are working to fix the situation.
+        </center>
+      </nav>
+      {% endif %}
+      <nav class="navbar navbar-inverse">
+        <div class="container-fluid">
+          <div class="navbar-header">
+            <a class="navbar-brand" href="/" style="padding: 5px;">
+              <img id="logo">
+            </a>
+          </div>
+          <ul class="nav navbar-nav">
+            <li>
+              <a href="/" style="padding-top: 0px; padding-bottom: 0px;">
+                <h1 style="font-variant: small-caps; color: white; margin: 5px;">
+                  {% usemacro title %}
+                </h1>
+              </a>
+            </li>
+	  </ul>
+          <ul class="nav navbar-nav navbar-right">
+            {% block extra_items %}
+            {% endblock extra_items %}
+            {% if user.is_authenticated %}
+            <li><a href="{% url 'webtzite:dashboard' %}">Dashboard</a></li>
+            {% else %}
+            <li><a href="{% url 'webtzite:cas_ng_login' %}?next={% url 'webtzite:dashboard' %}">Login</a></li>
+            {% endif %}
+          </ul>
+        </div>
+      </nav>
+    </header>
+    {% endblock header %}
+    {% if alert %}
+    <div class="alert alert-warning alert-dismissible" role="alert">
+      <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+        <span aria-hidden="true">&times;</span>
+      </button>
+      {{ alert|safe }}
+    </div>
+    {% else %}
+    {% block content %}
+    <!-- Page Content-->
+    {% endblock content %}
+    {% endif %}
+    <footer>
+      <hr>
+      <div class="pad-top row text-center">
+        <small>
+          Powered by <a href="https://materialsproject.org">Materials Project</a>.
+        </small>
+      </div>
+      {% render_bundle 'main' %}
+      {% block footer %}
+      {% endblock footer %}
+    </footer>
+  </body>
+</html>
