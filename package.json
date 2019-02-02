@@ -20,7 +20,8 @@
   },
   "homepage": "https://github.com/materialsproject/MPContribs#readme",
   "dependencies": {
-    "webtzite": "file:webtzite"
+    "webpack": "^4.29.0",
+    "webtzite": "file:mpcontribs-webtzite/webtzite"
   },
   "apidoc": {
     "name": "mpcontribs.rest",
@@ -29,7 +30,12 @@
     "title": "MPContribs REST API Docs",
     "url": "https://portal.mpcontribs.org/rest",
     "sampleUrl": "https://portal.mpcontribs.org/rest",
-    "template": { "forceLanguage": "en" },
-    "order": [ "User", "Contribution" ]
+    "template": {
+      "forceLanguage": "en"
+    },
+    "order": [
+      "User",
+      "Contribution"
+    ]
   }
 }

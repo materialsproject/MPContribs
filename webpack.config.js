@@ -11,7 +11,7 @@ console.log('devMode = ' + devMode)
 module.exports = {
   context: __dirname,
   entry: {
-    'main': './webtzite/assets/index',
+    'main': './mpcontribs-webtzite/webtzite/assets/index',
     'portal': './mpcontribs/portal/assets/index',
   },
   output: {
