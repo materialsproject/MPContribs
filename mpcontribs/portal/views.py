@@ -1,7 +1,7 @@
 """This module provides the views for the portal."""
 
 import os
-from django.shortcuts import render_to_response, redirect
+from django.shortcuts import render, redirect
 from django.template import RequestContext
 try:
     from django.core.urlresolvers import reverse
@@ -33,9 +33,9 @@ def index(request):
         #        entry['provenance'] = provenance
         #    ctx['landing_pages'].append(entry) # consider everything in DB released
     else:
-        ctx.update({'alert': 'Please log in!'})
-        #return redirect('{}?next={}'.format(reverse('cas_ng_login'), reverse('mpcontribs_portal_index')))
-    return render_to_response("mpcontribs_portal_index.html", ctx.flatten())
+        #ctx.update({'alert': 'Please log in!'})
+        return redirect('{}?next={}'.format(reverse('webtzite:cas_ng_login'), reverse('mpcontribs_portal_index')))
+    return render(request, "mpcontribs_portal_index.html", ctx.flatten())
 
 def groupadd(request, token):
     if request.user.is_authenticated:
