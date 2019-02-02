@@ -27,11 +27,11 @@ SECRET_KEY = get_random_secret_key()
 
 # SECURITY WARNING: don't run with debug turned on in production!
 NODE_ENV = os.environ.get('NODE_ENV', 'production')
-DEBUG = True #bool(NODE_ENV == 'development')
+DEBUG = bool(NODE_ENV == 'development')
 
 ALLOWED_HOSTS = [
     'portal.mpcontribs.org', 'contribs.materialsproject.org', 'localhost',
-    'jupyterhub.materialsproject.org'
+    'jupyterhub.materialsproject.org', '127.0.0.2'
 ]
 
 AUTHENTICATION_BACKENDS = (
@@ -109,7 +109,7 @@ JPY_USER = os.environ.get('JPY_USER')
 PROXY_URL_PREFIX = '/flaskproxy/{}'.format(JPY_USER) if JPY_USER else ''
 STATIC_URL = PROXY_URL_PREFIX + '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'dist')
-STATICFILES_DIRS = (STATIC_ROOT,)
+#STATICFILES_DIRS = (STATIC_ROOT,)
 
 WEBPACK_LOADER = {
     'DEFAULT': {
