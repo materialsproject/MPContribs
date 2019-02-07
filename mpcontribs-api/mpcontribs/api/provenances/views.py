@@ -48,18 +48,14 @@ class ProvenancesView(SwaggerView):
                 if 'search' in request.args else objects.all()
         return self.marshal(entries)
 
+    # TODO: only staff can start new project (post new provenance entry)
     def post(self):
         """Create a new provenance entry.
         Only MP staff can submit a new/non-existing project (or use POST
         endpoints in general). The staff member's email address will be set as
         the first readWrite entry in the permissions dict.
         """
-        from flask_json import JsonError
-        unmarshalled = self.Schema().load(request.json)
-        if unmarshalled.errors:
-            raise JsonError(400, )
-            return unmarshalled.errors
-        return unmarshalled.data
+        pass
 
 class ProjectsView(SwaggerView):
     """defines methods for API operations with project provenance"""
@@ -95,12 +91,28 @@ class ProjectsView(SwaggerView):
 
     # TODO: only emails with readWrite permissions can use methods below
     def put(self, project):
-        """Update a project's provenance entry"""
+        """Replace a project's provenance entry"""
+        # TODO id/project are read-only
         pass
 
     def patch(self, project):
         """Partially update a project's provenance entry"""
-        pass
+        schema = self.Schema(dump_only=('id', 'project')) # id/project read-only
+        schema.opts.model_build_obj = False
+        payload = schema.load(request.json, partial=True)
+        if payload.errors:
+            return payload.errors # TODO raise JsonError 400?
+        # set fields defined in model
+        if 'urls' in payload.data:
+            urls = payload.data.pop('urls')
+            payload.data.update(dict(
+                ('urls__'+key, getattr(urls, key)) for key in urls
+            ))
+        # set dynamic fields for urls
+        for key, url in request.json.get('urls', {}).items():
+            payload.data['urls__'+key] = url
+        return payload.data
+        #Provenances.objects(project=project).update(**payload.data)
 
     def delete(self, project):
         """Delete a project's provenance entry"""
@@ -115,5 +127,5 @@ provenances.add_url_rule(
 provenances.add_url_rule(
     '/<string:project>',
     view_func=ProjectsView.as_view(ProjectsView.__name__),
-    methods=['GET']#, 'DELETE', 'PATCH', 'PUT']
+    methods=['GET']#, 'PUT', 'PATCH', 'DELETE']
 )
