@@ -9,8 +9,8 @@ class ProvenancesView(SwaggerView):
     """defines methods for API operations with provenances"""
 
     def get(self):
-        """Retrieve and search provenance information for all projects.
-        If a string is provided  via the search parameter, `title`, \
+        """Retrieve (and optionally filter) provenances.
+        If a string is provided via the search parameter, `title`, \
         `description`, and `authors` are searched using a MongoEngine/MongoDB \
         text index. Provide a space-separated list to the search query \
         parameter to search for multiple words. For more, see \
@@ -23,24 +23,29 @@ class ProvenancesView(SwaggerView):
               description: string to search for in title, authors, description
         responses:
             200:
-                description: list of provenance entries
+                description: list of provenance entries with fields project, title, and authors
                 schema:
                     type: array
                     items:
                         $ref: '#/definitions/ProvenancesSchema'
                 examples:
                     entries: |
-                        [{
-                            "authors": "P. Huck, K. Persson",
-                            "description": "Bandgaps calculated ... electron affinity.",
-                            "id": "5bef38d9aba702da481fe974",
-                            "project": "dtu",
-                            "title": "GLLB-SC Bandgaps",
-                            "urls": { "main": "https://doi.org/10.1002/aenm.201400915" }
-                        }, ...]
+                        [ {
+                            "authors": "J. Vieten, B. Bulfin, D. Guban, L. Zhu, P. Huck, M. Horton, K. Persson, M. Roeb, C. Sattler",
+                            "id": "5bef38a0aba702da481fe970",
+                            "project": "redox_thermo_csp",
+                            "title": "RedoxThermoCSP"
+                        }, {
+                            "authors": "A.T. N`Diaye, R. Ott, A.A. Baker",
+                            "id": "5bef38b1aba702da481fe971",
+                            "project": "als_beamline",
+                            "title": "CuCoCe Project"
+                        }, ... ]
         """
-        entries = Provenances.objects.search_text(request.args['search']) \
-                if 'search' in request.args else Provenances.objects.all()
+        mask = ['project', 'title', 'authors'] # TODO make HEADER option?
+        objects = Provenances.objects.only(*mask)
+        entries = objects.search_text(request.args['search']) \
+                if 'search' in request.args else objects.all()
         return self.marshal(entries)
 
     def post(self):
