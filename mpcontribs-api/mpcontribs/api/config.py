@@ -5,9 +5,8 @@ DEBUG = bool(os.environ.get('FLASK_ENV') == 'development')
 JSON_ADD_STATUS = False
 FLASK_LOG_LEVEL = 'DEBUG' if DEBUG else 'WARNING'
 SECRET_KEY = b'super-secret' # reset in local prod config
-#API_CHECK_ENDPOINT = 'http://localhost:8000/rest/api_check'
-#API_CHECK_ENDPOINT = 'https://materialsproject.org/rest/api_check'
-API_CHECK_ENDPOINT = 'https://zola.lbl.gov/rest/api_check'
+API_CHECK_ENDPOINT = 'http://127.0.0.1:8000/rest/api_check' if DEBUG else \
+        'https://materialsproject.org/rest/api_check'
 MONGODB_SETTINGS = {
     'host': "mongodb+srv://{0}/mpcontribs?retryWrites=true".format(
         os.environ.get('MPCONTRIBS_MONGO_HOST', 'localhost')

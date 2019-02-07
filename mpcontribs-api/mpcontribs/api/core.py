@@ -9,8 +9,6 @@ from flask_mongoengine import BaseQuerySet
 from functools import wraps
 from flask_json import as_json, JsonError
 
-HEADER = 'X-API-KEY'
-
 def catch_error(f):
     @wraps(f)
     def reraise(*args, **kwargs):
@@ -72,6 +70,7 @@ def login_required(f):
     @wraps(f)
     def authenticate(*args, **kwargs):
         # TODO SSL check?
+        HEADER = 'X-API-KEY'
         if HEADER not in request.headers:
             raise JsonError(401, error='{} header missing'.format(HEADER))
         api_key = request.headers[HEADER]
@@ -84,7 +83,7 @@ def login_required(f):
         api_check_response = get(api_check_endpoint, headers=headers).json()
         if not api_check_response['api_key_valid']:
             raise JsonError(401, error='{} invalid'.format(HEADER))
-        if request.method == 'POST' and not api_check_response['is_staff']:
+        if request.method == 'POST' and not api_check_response.get('is_staff'):
             raise JsonError(401, error='staff status required for POST')
         return f(*args, **kwargs)
     return authenticate
