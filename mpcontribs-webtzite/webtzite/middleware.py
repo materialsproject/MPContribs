@@ -1,5 +1,6 @@
+import json
 from django.conf import settings
-from django.http import HttpResponseForbidden
+from django.http import HttpResponseForbidden, HttpResponse
 from django.utils.deprecation import MiddlewareMixin
 from . import get_api_key
 from .models import RegisteredUser
@@ -13,6 +14,14 @@ class APIKeyMiddleware(MiddlewareMixin):
             # Restricts API KEY access to HTTPS connections
             if not settings.DEBUG and (not request.is_secure()):
                 return HttpResponseForbidden("Connection must be made over secure https.")
-            u = RegisteredUser.objects.get(api_key=api_key)
-            request.user = u
+            try:
+                u = RegisteredUser.objects.get(api_key=api_key)
+                request.user = u
+            except RegisteredUser.DoesNotExist:
+                url = "https://materialsproject.org/mpcontribs"
+                atag = "<a href=\"{}\" target=\"_blank\">MPContribs Portal</a>".format(url)
+                msg = "Please access the {} once to display contributions.".format(atag)
+                d = {"valid_response": True, "response": msg}
+                d["created_at"] = datetime.datetime.now().isoformat()
+                return HttpResponse(json.dumps(d), content_type="application/json")
         return None
