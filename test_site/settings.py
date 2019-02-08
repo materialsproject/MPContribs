@@ -108,13 +108,12 @@ USE_TZ = True
 JPY_USER = os.environ.get('JPY_USER')
 PROXY_URL_PREFIX = '/flaskproxy/{}'.format(JPY_USER) if JPY_USER else ''
 STATIC_URL = PROXY_URL_PREFIX + '/static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'dist')
-#STATICFILES_DIRS = (STATIC_ROOT,)
+STATICFILES_DIRS = (os.path.join(BASE_DIR, 'dist'),)
 
 WEBPACK_LOADER = {
     'DEFAULT': {
         'CACHE': not DEBUG,
-        'BUNDLE_DIR_NAME': '',
+        'BUNDLE_DIR_NAME': './',
         'STATS_FILE': os.path.join(BASE_DIR, 'webpack-stats.json'),
     }
 }
@@ -122,7 +121,7 @@ WEBPACK_LOADER = {
 if os.environ.get('DEPLOYMENT') == 'MATGEN':
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
-CAS_SERVER_URL = 'https://materialsproject.org/cas/'
+CAS_SERVER_URL = 'http://localhost:8000/cas/' if DEBUG else 'https://materialsproject.org/cas/'
 CAS_VERSION = '3'
 CAS_LOGOUT_COMPLETELY = False
 CAS_REDIRECT_URL = '/'
