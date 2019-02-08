@@ -23,19 +23,4 @@
     "webpack": "^4.29.0",
     "webtzite": "file:mpcontribs-webtzite/webtzite"
   },
-  "apidoc": {
-    "name": "mpcontribs.rest",
-    "version": "0.1.0",
-    "description": "MPContribs REST API Docs",
-    "title": "MPContribs REST API Docs",
-    "url": "https://portal.mpcontribs.org/rest",
-    "sampleUrl": "https://portal.mpcontribs.org/rest",
-    "template": {
-      "forceLanguage": "en"
-    },
-    "order": [
-      "User",
-      "Contribution"
-    ]
-  }
 }

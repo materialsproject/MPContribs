@@ -2,7 +2,6 @@ from django.conf.urls import url
 from . import views
 
 urlpatterns = [
-    url(r'^$', views.index, name='mpcontribs_rest_index'),
     url(r'^check_contributor$', views.check_contributor, name='check_contributor'),
     url(r'^check_contributor/(?P<db_type>[\w\d]+)$', views.check_contributor, name='check_contributor'),
     url(r'^submit$', views.submit_contribution, name='submit_contribution'),

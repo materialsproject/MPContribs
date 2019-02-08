@@ -3,7 +3,6 @@ const webpack = require('webpack');
 const BundleTracker = require('webpack-bundle-tracker');
 const CleanWebpackPlugin = require("clean-webpack-plugin");
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
-const Apidoc = require('webpack-apidoc');
 //const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
 const devMode = process.env.NODE_ENV !== 'production'
 console.log('devMode = ' + devMode)
@@ -32,13 +31,6 @@ module.exports = {
     new webpack.ProvidePlugin({
       _: "underscore", $: "jquery", jquery: "jquery",
       "window.jQuery": "jquery", jQuery:"jquery"
-    }),
-    new Apidoc({
-      src: "mpcontribs/rest/",
-      dest: "dist/apidoc/",
-      debug: true,
-      includeFilters: [ "views.py$", "_apidoc.py" ],
-      config: path.resolve(__dirname)
     }),
   ],
   optimization: {

@@ -7,7 +7,6 @@ from bson.json_util import loads
 from bson.objectid import ObjectId
 from django.core.exceptions import PermissionDenied
 from django.contrib.auth.models import Group
-from django.shortcuts import redirect
 from webtzite.connector import ConnectorBase
 from webtzite import mapi_func, in_docker
 
@@ -32,18 +31,6 @@ def get_endpoint(request):
         from django.urls import reverse
     url = reverse('mpcontribs_rest_index')[:-1]
     return request.build_absolute_uri(url)
-
-def index(request):
-    jpy_user = os.environ.get('JPY_USER')
-    if jpy_user:
-        from test_site.settings import PROXY_URL_PREFIX
-        from mpcontribs.rest.make_apidoc_json import make_apidoc_json
-        from subprocess import call
-        make_apidoc_json(get_endpoint(request))
-        call(['apidoc', '-f "views.py"', '-f "_apidoc.py"', '--output', 'static'])
-        os.chdir(cwd)
-        return redirect(PROXY_URL_PREFIX + '/static_rest/index.html')
-    return redirect('/static/apidoc/index.html')
 
 @mapi_func(supported_methods=["GET"], requires_api_key=True)
 def check_contributor(request, db_type=None, mdb=None):

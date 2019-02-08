@@ -2,22 +2,21 @@
 
 import json, nbformat
 from bson import ObjectId
-from django.shortcuts import render_to_response
+from django.shortcuts import render
 from django.template import RequestContext
 from django.http import HttpResponse
 from mpcontribs.rest.rester import MPContribsRester
 from mpcontribs.rest.views import get_endpoint
 from mpcontribs.builder import export_notebook
-from webtzite.models import RegisteredUser
 
 def index(request):
     ctx = RequestContext(request)
     fields = ['identifiers', 'projects', 'cids']
     ctx['fields'] = fields
-    if request.user.is_authenticated():
+    if request.user.is_authenticated:
+        from webtzite.models import RegisteredUser
         user = RegisteredUser.objects.get(username=request.user.username)
         ctx['alert'] = 'Under Construction'
-        #with MPContribsRester(user.api_key, endpoint=get_endpoint(request)) as mpr:
 
         #    if request.method == 'GET':
         #        options = dict((field, set()) for field in fields)
@@ -65,7 +64,7 @@ def index(request):
         #ctx['selection'] = selection
     else:
         ctx.update({'alert': 'Please log in!'})
-    return render_to_response("mpcontribs_explorer_index.html", ctx)
+    return render(request, "mpcontribs_explorer_index.html", ctx.flatten())
 
 def contribution(request, collection, cid):
     material = {'detail_id': collection[:-1]}

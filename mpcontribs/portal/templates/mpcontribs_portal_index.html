@@ -68,8 +68,6 @@
 {% endblock %}
 
 {% block extra_items %}
-<li><a href="https://jupyterhub.materialsproject.org" target="_blank">MP JupyterHub</a></li>
-<li><a href="{% url 'mpcontribs_rest_index' %}" target="_blank">API</a></li>
 {% if user.is_authenticated and user.is_superuser %}
 <li><a href="{% url 'mpcontribs_portal_index' %}admin">Admin</a></li>
 {% endif %}
