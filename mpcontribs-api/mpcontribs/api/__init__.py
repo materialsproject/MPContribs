@@ -20,7 +20,7 @@ def get_collections(db):
     return ['provenances']
 
 def create_app():
-    app = Flask(__name__, static_url_path='/', static_folder='docs/_build/html/')
+    app = Flask(__name__, static_url_path='/', static_folder='../../docs/_build/html')
     app.config.from_pyfile('config.py', silent=True)
     FlaskJSON(app)
     Logging(app)

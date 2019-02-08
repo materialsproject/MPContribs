@@ -1,6 +1,5 @@
-import os, git
+import os, datetime
 
-VERSION = git.Repo().head.object.hexsha[:7]
 DEBUG = bool(os.environ.get('FLASK_ENV') == 'development')
 JSON_ADD_STATUS = False
 FLASK_LOG_LEVEL = 'DEBUG' if DEBUG else 'WARNING'
@@ -24,7 +23,7 @@ TEMPLATE = {
         "title": "MPContribs API",
         "description": "Operations to retrieve materials data contributed to MP",
         #"termsOfService": "http://me.com/terms",
-        "version": VERSION,
+        "version": datetime.datetime.today().strftime('%Y.%m.%d'),
         "contact": {
             "name": "Materials Project",
             "email": "phuck@lbl.gov",
