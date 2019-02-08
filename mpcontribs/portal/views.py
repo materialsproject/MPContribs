@@ -7,31 +7,48 @@ try:
     from django.core.urlresolvers import reverse
 except ImportError:
     from django.urls import reverse
+from test_site.settings import MPCONTRIBS_API_HOST, MPCONTRIBS_API_SPEC
 from mpcontribs.rest.views import get_endpoint
 from mpcontribs.rest.rester import MPContribsRester
+
+from bravado.requests_client import RequestsClient
+from bravado.client import SwaggerClient
+from bravado.swagger_model import Loader
+
+http_client = RequestsClient()
+loader = Loader(http_client)
+spec_dict = loader.load_spec(MPCONTRIBS_API_SPEC)
 
 def index(request):
     ctx = RequestContext(request)
     if request.user.is_authenticated:
         from webtzite.models import RegisteredUser
         user = RegisteredUser.objects.get(username=request.user.username)
+        http_client.set_api_key(
+            MPCONTRIBS_API_HOST, user.api_key,
+            param_in='header', param_name='x-api-key'
+        )
+        client = SwaggerClient.from_spec(
+            spec_dict, origin_url=MPCONTRIBS_API_SPEC, http_client=http_client,
+            config={'validate_responses': False}
+        )
+
         ctx['landing_pages'] = []
-        #rester = MPContribsRester(user.api_key, endpoint=get_endpoint(request))
-        #for doc in rester.get_landing_pages():
-        #    explorer = 'mpcontribs_users_{}_explorer_index'.format(doc['project'])
-        #    entry = {'project': doc['project'], 'url': reverse(explorer)}
-        #    content = doc['content']
-        #    entry['title'] = content.get('title', doc['project'])
-        #    authors = content.get('authors', 'No authors available.').split(',', 1)
-        #    provenance = '<span class="pull-right" style="font-size: 13px;">{}'.format(authors[0])
-        #    if len(authors) > 1:
-        #        provenance += '''<button class="btn btn-sm btn-link" data-html="true"
-        #        data-toggle="tooltip" data-placement="bottom" data-container="body"
-        #        title="{}" style="padding: 0px 0px 2px 5px;">et al.</a>'''.format(
-        #            authors[1].strip().replace(', ', '<br/>'))
-        #        provenance += '</span>'
-        #        entry['provenance'] = provenance
-        #    ctx['landing_pages'].append(entry) # consider everything in DB released
+        provenances = client.provenances.get_provenances().response().result
+        for provenance in provenances:
+            explorer = 'mpcontribs_users_{}_explorer_index'.format(provenance.project)
+            entry = {'project': provenance.project, 'url': reverse(explorer)}
+            entry['title'] = provenance.title
+            authors = provenance.authors.split(',', 1)
+            prov_display = '<span class="pull-right" style="font-size: 13px;">{}'.format(authors[0])
+            if len(authors) > 1:
+                prov_display += '''<button class="btn btn-sm btn-link" data-html="true"
+                data-toggle="tooltip" data-placement="bottom" data-container="body"
+                title="{}" style="padding: 0px 0px 2px 5px;">et al.</a>'''.format(
+                    authors[1].strip().replace(', ', '<br/>'))
+                prov_display += '</span>'
+                entry['provenance'] = prov_display
+            ctx['landing_pages'].append(entry) # consider everything in DB released
     else:
         #ctx.update({'alert': 'Please log in!'})
         return redirect('{}?next={}'.format(reverse('webtzite:cas_ng_login'), reverse('mpcontribs_portal_index')))

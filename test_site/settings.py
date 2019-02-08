@@ -134,3 +134,8 @@ CORS_ORIGIN_ALLOW_ALL = True
 CORS_ALLOW_CREDENTIALS = True
 CSRF_TRUSTED_ORIGINS = ALLOWED_HOSTS
 CORS_ORIGIN_WHITELIST = ALLOWED_HOSTS
+
+MPCONTRIBS_API_HOST = '0.0.0.0' if DEBUG else 'api.mpcontribs.org'
+MPCONTRIBS_API_SPEC = '{}://{}{}/apispec.json'.format(
+    'http' if DEBUG else 'https', MPCONTRIBS_API_HOST, ':5000' if DEBUG else ''
+)
