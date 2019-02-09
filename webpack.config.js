@@ -11,7 +11,7 @@ module.exports = {
   context: __dirname,
   entry: {
     'main': './mpcontribs-webtzite/webtzite/assets/index',
-    'portal': './mpcontribs/portal/assets/index',
+    'portal': './mpcontribs-portal/mpcontribs/portal/assets/index',
   },
   output: {
     path: path.resolve(__dirname, 'dist'),

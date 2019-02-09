@@ -168,13 +168,16 @@ Resources:
                 - IMAGE_URI="${REPOSITORY_URI}:${TAG}"
             build:
               commands:
-                - docker build --tag "${IMAGE_URI}" mpcontribs-api
+                - docker build --tag "${IMAGE_URI}-api" mpcontribs-api
+                - docker build --tag "${IMAGE_URI}-portal" .
             post_build:
               commands:
-                - docker push "$IMAGE_URI"
-                - printf '{"ImageUri":"%s"}' "$IMAGE_URI" > build.json
+                - docker push "${IMAGE_URI}-api"
+                - docker push "${IMAGE_URI}-portal"
+                - printf '{"ImageUri":"%s"}' "${IMAGE_URI}-api" > build-api.json
+                - printf '{"ImageUri":"%s"}' "${IMAGE_URI}-portal" > build-portal.json
           artifacts:
-            files: build.json
+            files: build-api.json build-portal.json
       Environment:
         ComputeType: BUILD_GENERAL1_SMALL
         Image: aws/codebuild/docker:17.09.0
@@ -282,7 +285,30 @@ Resources:
                     "EnvironmentName": "${EnvironmentName}",
                     "MongoHost": "${MongoHost}",
                     "ImageUrl": {
-                      "Fn::GetParam" : ["BuildOutput", "build.json", "ImageUri"]
+                      "Fn::GetParam" : ["BuildOutput", "build-api.json", "ImageUri"]
+                    }
+                  }
+              InputArtifacts:
+                - Name: Source
+                - Name: BuildOutput
+
+            - Name: DeployPortal
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Version: 1
+                Provider: CloudFormation
+              Configuration:
+                ActionMode: CREATE_UPDATE
+                RoleArn: !GetAtt CloudFormationDeployRole.Arn
+                StackName: !Sub ${EnvironmentName}-PortalService
+                TemplatePath: Source::portal-service.yml
+                Capabilities: CAPABILITY_IAM
+                ParameterOverrides: !Sub |
+                  {
+                    "EnvironmentName": "${EnvironmentName}",
+                    "ImageUrl": {
+                      "Fn::GetParam" : ["BuildOutput", "build-portal.json", "ImageUri"]
                     }
                   }
               InputArtifacts:

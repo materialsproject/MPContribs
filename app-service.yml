@@ -55,30 +55,6 @@ Resources:
     Properties:
       LogGroupName: !Join ['-', [!Ref 'EnvironmentName', 'service', !Ref 'ServiceName']]
 
-  # A role for the service so it can access the tables
-  AppServiceRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Statement:
-        - Effect: Allow
-          Principal:
-            Service: "ecs-tasks.amazonaws.com"
-          Action: ['sts:AssumeRole']
-      Path: /
-      Policies:
-      - PolicyName: app-sqlite
-        PolicyDocument:
-          Statement:
-          - Effect: Allow
-            Action:
-              - "s3:PutObject"
-              - "s3:GetObject"
-              - "s3:ListBucket"
-            Resource:
-              - "arn:aws:s3:::mpcontribs-sqlite/db.sqlite3"
-              - "arn:aws:s3:::mpcontribs-sqlite"
-
   # The task definition. This is a simple metadata description of what
   # container to run, and what resource requirements it has.
   TaskDefinition:
@@ -93,7 +69,7 @@ Resources:
       ExecutionRoleArn:
         Fn::ImportValue:
           !Join [':', [!Ref 'EnvironmentName', 'ECSTaskExecutionRole']]
-      TaskRoleArn: !Ref 'AppServiceRole'
+      #TaskRoleArn: !Ref 'AppServiceRole'
       ContainerDefinitions:
         - Name: !Ref 'ServiceName'
           Cpu: !Ref 'ContainerCpu'
