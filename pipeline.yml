@@ -177,7 +177,9 @@ Resources:
                 - printf '{"ImageUri":"%s"}' "${IMAGE_URI}-api" > build-api.json
                 - printf '{"ImageUri":"%s"}' "${IMAGE_URI}-portal" > build-portal.json
           artifacts:
-            files: build-api.json build-portal.json
+            files:
+                - build-api.json
+                - build-portal.json
       Environment:
         ComputeType: BUILD_GENERAL1_SMALL
         Image: aws/codebuild/docker:17.09.0
