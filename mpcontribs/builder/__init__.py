@@ -1,14 +1,8 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
-import os, re, bson, pandas, nbformat
-from itertools import groupby
-from mpcontribs.io.core.recdict import RecursiveDict
-from mpcontribs.io.core.utils import get_short_object_id, nest_dict
-from mpcontribs.config import mp_level01_titles, mp_id_pattern
-from mpcontribs.io.core.mpfile import MPFileCore
-from nbformat import v4 as nbf
+import os, re, bson
+from mpcontribs.config import mp_id_pattern
 from nbconvert.preprocessors import ExecutePreprocessor
-from nbconvert.preprocessors.execute import CellExecutionError
 from nbconvert import HTMLExporter
 from bs4 import BeautifulSoup
 
@@ -47,6 +41,7 @@ def export_notebook(nb, cid, separate_script=False):
 class MPContributionsBuilder(object):
     """build user contributions from `mpcontribs.contributions`"""
     def __init__(self, db):
+        from mpcontribs.io.core.recdict import RecursiveDict
         self.db = db
         self.nbdir = os.path.dirname(os.path.abspath(__file__))
         self.ep = ExecutePreprocessor(timeout=600, kernel_name='python2', allow_errors=False)
@@ -94,6 +89,9 @@ class MPContributionsBuilder(object):
 
     def build(self, cid, api_key=None, endpoint=None):
         """update materials/compositions collections with contributed data"""
+        from mpcontribs.io.core.utils import get_short_object_id
+        from nbformat import v4 as nbf
+        from mpcontribs.io.core.mpfile import MPFileCore
         cid_short, cid_str = get_short_object_id(cid), str(cid)
         contrib = self.find_contribution(cid)
         if not contrib:

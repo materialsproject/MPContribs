@@ -4,7 +4,6 @@ from __future__ import unicode_literals
 import collections
 from decimal import Decimal, DecimalException, InvalidOperation
 import six
-import pandas
 from mpcontribs.config import mp_id_pattern
 from mpcontribs.config import csv_comment_char
 
@@ -111,6 +110,7 @@ def strip_converter(text):
 
 def read_csv(body, is_data_section=True, **kwargs):
     """run pandas.read_csv on (sub)section body"""
+    import pandas
     body = body.strip()
     if not body:
         return None
