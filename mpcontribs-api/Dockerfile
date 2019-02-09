@@ -10,7 +10,7 @@ RUN pip install -U pip
 
 WORKDIR /app
 COPY . .
-RUN pip install -e .
+RUN pip install .
 
 WORKDIR /app/docs
 RUN make html

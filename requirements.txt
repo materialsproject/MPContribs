@@ -1,10 +1,6 @@
 Django==2.1.5
 django-extensions==2.1.5
-git+https://github.com/materialsproject/MPContribs.git#egg=mpcontribs_users&subdirectory=mpcontribs-users
 django-cas-ng==3.6.0
-git+https://github.com/materialsproject/MPContribs.git#egg=mpcontribs_webtzite&subdirectory=mpcontribs-webtzite
-git+https://github.com/materialsproject/MPContribs.git#egg=mpcontribs_portal&subdirectory=mpcontribs-portal
-git+https://github.com/materialsproject/MPContribs.git#egg=mpcontribs_explorer&subdirectory=mpcontribs-explorer
 django-webpack-loader==0.6.0
 django-templates-macros==0.2
 bravado==10.2.2

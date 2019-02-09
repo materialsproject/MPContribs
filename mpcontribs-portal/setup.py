@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
 import io, re, glob, os, datetime
 from setuptools import setup
 
@@ -8,15 +7,14 @@ with open(os.path.join(SETUP_PTH, 'requirements.txt')) as f:
     required = f.read().splitlines()
 
 setup(
-    name = 'mpcontribs',
+    name = 'mpcontribs-portal',
     version = datetime.datetime.today().strftime('%Y.%m.%d'),
-    description = "The Materials Project's Community Contribution Framework",
+    description = 'MPContribs Portal',
     author = 'Patrick Huck',
     author_email = 'phuck@lbl.gov',
-    url = 'https://mpcontribs.org',
-    packages = ['mpcontribs'],
+    url = 'https://portal.mpcontribs.org',
+    packages = ['mpcontribs.portal'],
     install_requires = required,
     license = 'MIT',
-    keywords = ['materials', 'contribution', 'framework', 'data', 'interactive', 'jupyter'],
-    scripts = glob.glob(os.path.join(SETUP_PTH, "scripts", "*")),
+    zip_safe=False,
 )

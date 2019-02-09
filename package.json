@@ -21,6 +21,6 @@
   "homepage": "https://github.com/materialsproject/MPContribs#readme",
   "dependencies": {
     "webpack": "^4.29.0",
-    "webtzite": "file:mpcontribs-webtzite/webtzite"
-  },
+    "webtzite": "file:mpcontribs-webtzite"
+  }
 }
