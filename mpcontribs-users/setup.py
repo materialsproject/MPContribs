@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import io, re, glob, os
+import io, re, glob, os, datetime
 from setuptools import setup
 
 SETUP_PTH = os.path.dirname(os.path.abspath(__file__))
@@ -8,14 +8,13 @@ with open(os.path.join(SETUP_PTH, 'requirements.txt')) as f:
 
 setup(
     name = 'mpcontribs-users',
-    version = '2019.01.31',
+    version = datetime.datetime.today().strftime('%Y.%m.%d'),
     description = 'Contributor Modules to enable their data submissions via MPContribs',
     author = 'Patrick Huck',
     author_email = 'phuck@lbl.gov',
-    url = 'https://mpcontribs.org',
+    url = 'https://portal.mpcontribs.org',
     packages = ['mpcontribs.users'],
-    #install_requires = required,
-    #dependency_links = ['git+https://github.com/rochacbruno/flasgger.git#egg=flasgger-0.9.3.dev0'],
+    install_requires = required,
     license = 'MIT',
     zip_safe=False,
 )

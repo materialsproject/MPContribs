@@ -51,7 +51,7 @@ INSTALLED_APPS = [
     'django_cas_ng',
     'webtzite',
     'mpcontribs.portal',
-    'mpcontribs.rest',
+    #'mpcontribs.rest',
     'mpcontribs.explorer',
     'webpack_loader',
     'macros',

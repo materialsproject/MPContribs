@@ -1,0 +1,6 @@
+pandas==0.24.1
+ipython==7.2.0
+archieml==0.3.4
+monty==1.0.5
+scipy==1.2.0
+pymatgen==2019.2.4
