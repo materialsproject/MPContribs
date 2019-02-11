@@ -35,7 +35,7 @@ Parameters:
                  traffic to this service.
   Priority:
     Type: Number
-    Default: 1
+    Default: 2
     Description: The priority for the routing rule added to the load balancer.
                  This only applies if your have multiple services which have been
                  assigned to different paths on the load balancer.
@@ -52,7 +52,7 @@ Resources:
       LogGroupName: !Join ['-', [!Ref 'EnvironmentName', 'service', !Ref 'ServiceName']]
 
   # A role for the service so it can access the tables
-  AppServiceRole:
+  PortalServiceRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
@@ -89,7 +89,7 @@ Resources:
       ExecutionRoleArn:
         Fn::ImportValue:
           !Join [':', [!Ref 'EnvironmentName', 'ECSTaskExecutionRole']]
-      TaskRoleArn: !Ref 'AppServiceRole'
+      TaskRoleArn: !Ref 'PortalServiceRole'
       ContainerDefinitions:
         - Name: !Ref 'ServiceName'
           Cpu: !Ref 'ContainerCpu'
