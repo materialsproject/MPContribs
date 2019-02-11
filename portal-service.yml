@@ -29,7 +29,7 @@ Parameters:
     Description: How much memory in megabytes to give the container
   Path:
     Type: String
-    Default: "*"
+    Default: "portal.*"
     Description: A path on the public load balancer that this service
                  should be connected to. Use * to send all load balancer
                  traffic to this service.
@@ -187,7 +187,7 @@ Resources:
         - TargetGroupArn: !Ref 'TargetGroup'
           Type: 'forward'
       Conditions:
-        - Field: path-pattern
+        - Field: host-header
           Values: [!Ref 'Path']
       ListenerArn:
         Fn::ImportValue:
@@ -200,7 +200,7 @@ Resources:
         - TargetGroupArn: !Ref 'TargetGroup'
           Type: 'forward'
       Conditions:
-        - Field: path-pattern
+        - Field: host-header
           Values: [!Ref 'Path']
       ListenerArn:
         Fn::ImportValue:
