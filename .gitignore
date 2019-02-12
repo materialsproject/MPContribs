@@ -21,3 +21,4 @@ node_modules/*
 webpack-stats.json
 package-lock.json
 mpcontribs-api/docs/_build/*
+mpcontribs-webtzite/webtzite/migrations/*
