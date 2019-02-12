@@ -1,2 +1,2 @@
 pymongo==3.7.2
-PyYAML==3.13
+pyyaml @ git+https://github.com/yaml/pyyaml.git#egg=pyyaml-4.2b2
