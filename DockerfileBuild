@@ -27,8 +27,3 @@ RUN pip3 install -r requirements-webtzite.txt
 #      http://dl-3.alpinelinux.org/alpine/edge/testing \
 #      hdf5 hdf5-dev
 #RUN pip install --no-cache-dir --no-binary :all: tables h5py
-#
-#RUN git clone https://github.com/Miserlou/zappa-django-utils.git && cd zappa-django-utils && \
-#      echo "Django==1.8.5" > requirements.txt && echo "boto3==1.9.41" >> requirements.txt && \
-#      pip install --no-cache-dir -e .
-#
