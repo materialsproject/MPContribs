@@ -117,6 +117,8 @@ USE_TZ = True
 JPY_USER = os.environ.get('JPY_USER')
 PROXY_URL_PREFIX = '/flaskproxy/{}'.format(JPY_USER) if JPY_USER else ''
 STATIC_URL = PROXY_URL_PREFIX + '/static/'
+if not DEBUG:
+    STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 STATICFILES_DIRS = (os.path.join(BASE_DIR, 'dist'),)
 
 WEBPACK_LOADER = {
