@@ -28,10 +28,11 @@ SECRET_KEY = get_random_secret_key()
 # SECURITY WARNING: don't run with debug turned on in production!
 NODE_ENV = os.environ.get('NODE_ENV', 'production')
 DEBUG = bool(NODE_ENV == 'development')
+print(DEBUG)
 
 ALLOWED_HOSTS = [
     'portal.mpcontribs.org', 'contribs.materialsproject.org', 'localhost',
-    'jupyterhub.materialsproject.org', '127.0.0.2'
+    'jupyterhub.materialsproject.org', '127.0.0.2', '0.0.0.0'
 ]
 
 AUTHENTICATION_BACKENDS = (
