@@ -27,7 +27,7 @@ SECRET_KEY = get_random_secret_key()
 
 # SECURITY WARNING: don't run with debug turned on in production!
 NODE_ENV = os.environ.get('NODE_ENV', 'production')
-DEBUG = bool(NODE_ENV == 'development')
+DEBUG = True #bool(NODE_ENV == 'development')
 
 ALLOWED_HOSTS = [
     'portal.mpcontribs.org', 'contribs.materialsproject.org', 'localhost',
@@ -129,7 +129,8 @@ WEBPACK_LOADER = {
 if os.environ.get('DEPLOYMENT') == 'MATGEN':
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
-CAS_SERVER_URL = 'http://localhost:8000/cas/' if DEBUG else 'https://materialsproject.org/cas/'
+#CAS_SERVER_URL = 'http://localhost:8000/cas/' if DEBUG else 'https://materialsproject.org/cas/'
+CAS_SERVER_URL = 'https://materialsproject.org/cas/'
 CAS_VERSION = '3'
 CAS_LOGOUT_COMPLETELY = False
 CAS_REDIRECT_URL = '/'
@@ -142,7 +143,10 @@ CORS_ALLOW_CREDENTIALS = True
 CSRF_TRUSTED_ORIGINS = ALLOWED_HOSTS
 CORS_ORIGIN_WHITELIST = ALLOWED_HOSTS
 
-MPCONTRIBS_API_HOST = '0.0.0.0' if DEBUG else 'api.mpcontribs.org'
-MPCONTRIBS_API_SPEC = '{}://{}{}/apispec.json'.format(
-    'http' if DEBUG else 'https', MPCONTRIBS_API_HOST, ':5000' if DEBUG else ''
-)
+#MPCONTRIBS_API_HOST = '0.0.0.0' if DEBUG else 'api.mpcontribs.org'
+#MPCONTRIBS_API_SPEC = '{}://{}{}/apispec.json'.format(
+#    'http' if DEBUG else 'https', MPCONTRIBS_API_HOST, ':5000' if DEBUG else ''
+#)
+MPCONTRIBS_API_HOST = 'api.mpcontribs.org'
+MPCONTRIBS_API_SPEC = 'https://api.mpcontribs.org/apispec.json'
+print(MPCONTRIBS_API_SPEC)

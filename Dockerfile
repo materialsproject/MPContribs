@@ -27,7 +27,8 @@ RUN npm install webpack 2>&1
 RUN npm install 2>&1
 RUN npm run webpack 2>&1
 
-RUN python3 manage.py migrate && \
+RUN python3 manage.py collectstatic --no-input && \
+        python3 manage.py migrate && \
         python3 manage.py clearsessions && \
         python3 manage.py django_cas_ng_clean_sessions
 
