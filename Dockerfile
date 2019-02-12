@@ -29,7 +29,7 @@ RUN npm run webpack 2>&1
 
 #RUN python3 manage.py collectstatic --no-input && \
 #RUN python3 manage.py migrate && \
-RUN python3 manage.py clearsessions && \
-        python3 manage.py django_cas_ng_clean_sessions
+#RUN python3 manage.py clearsessions && \
+#        python3 manage.py django_cas_ng_clean_sessions
 
 CMD ["python3",  "manage.py", "runserver", "0.0.0.0:8080"]
