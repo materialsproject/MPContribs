@@ -8,8 +8,6 @@ try:
 except ImportError:
     from django.urls import reverse
 from test_site.settings import MPCONTRIBS_API_HOST, MPCONTRIBS_API_SPEC
-from mpcontribs.rest.views import get_endpoint
-from mpcontribs.rest.rester import MPContribsRester
 
 from bravado.requests_client import RequestsClient
 from bravado.client import SwaggerClient
@@ -58,6 +56,7 @@ def groupadd(request, token):
     if request.user.is_authenticated:
         from webtzite.models import RegisteredUser
         from mpcontribs.rest.rester import MPContribsRester
+        from mpcontribs.rest.views import get_endpoint
         user = RegisteredUser.objects.get(username=request.user.username)
         r = MPContribsRester(user.api_key, endpoint=get_endpoint(request))
         r.groupadd(token)

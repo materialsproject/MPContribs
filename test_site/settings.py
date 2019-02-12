@@ -39,7 +39,7 @@ AUTHENTICATION_BACKENDS = (
     'webtzite.backends.CASBackend',
 )
 
-from mpcontribs.users_modules import get_user_installed_apps
+#from mpcontribs.users_modules import get_user_installed_apps
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -50,14 +50,14 @@ INSTALLED_APPS = [
     'django_extensions',
     'django_cas_ng',
     'zappa_django_utils',
-    'webtzite',
-    'mpcontribs.portal',
-    #'mpcontribs.rest',
-    'mpcontribs.explorer',
     'webpack_loader',
     'macros',
     #'corsheaders',
-] + get_user_installed_apps()
+    'webtzite',
+    'mpcontribs.portal',
+    ##'mpcontribs.rest',
+    #'mpcontribs.explorer',
+] #+ get_user_installed_apps()
 
 MIDDLEWARE = (
     #'corsheaders.middleware.CorsMiddleware',
