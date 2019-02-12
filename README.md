@@ -24,6 +24,6 @@ databases as annotations to existing MP materials. It subsequently disseminates
 them through a generic interactive gateway powered by Jupyter notebooks or
 through custom project web apps enabled by the webtzite app kit.
 
-See [official documentation](https://pythonhosted.org/mpcontribs). Join our
+See [official documentation](https://mpcontribs.org). Join our
 Slack channel: https://mpcontribs.slack.com/signup (everyone with a @mit.edu
 and @lbl.gov address).
