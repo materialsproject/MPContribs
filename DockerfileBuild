@@ -14,13 +14,11 @@ COPY mpcontribs-portal/requirements.txt requirements-portal.txt
 COPY mpcontribs-explorer/requirements.txt requirements-explorer.txt
 COPY mpcontribs-users/requirements.txt requirements-users.txt
 COPY mpcontribs-webtzite/requirements.txt requirements-webtzite.txt
-COPY requirements.txt .
 
 RUN pip3 install -r requirements-portal.txt
 RUN pip3 install -r requirements-explorer.txt
 RUN pip3 install -r requirements-users.txt
 RUN pip3 install -r requirements-webtzite.txt
-RUN pip3 install -r requirements.txt
 
 #RUN apk add --no-cache build-base npm git linux-headers \
 #      python2 py2-pip py2-numpy py2-scipy py2-psutil py2-libxml2 py2-lxml \

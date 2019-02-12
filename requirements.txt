@@ -1,8 +1,0 @@
-Django==2.1.5
-django-extensions==2.1.5
-django-cas-ng==3.6.0
-django-webpack-loader==0.6.0
-django-templates-macros==0.2
-bravado==10.2.2
-zappa-django-utils==0.4.0
-django-s3-storage==0.12.4
