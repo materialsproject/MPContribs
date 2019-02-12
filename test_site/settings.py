@@ -27,7 +27,7 @@ SECRET_KEY = get_random_secret_key()
 
 # SECURITY WARNING: don't run with debug turned on in production!
 NODE_ENV = os.environ.get('NODE_ENV', 'production')
-DEBUG = True #bool(NODE_ENV == 'development')
+DEBUG = bool(NODE_ENV == 'development')
 
 ALLOWED_HOSTS = [
     'portal.mpcontribs.org', 'contribs.materialsproject.org', 'localhost',
