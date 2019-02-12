@@ -50,8 +50,8 @@ def index(request):
                 entry['provenance'] = prov_display
             ctx['landing_pages'].append(entry) # consider everything in DB released
     else:
-        #ctx.update({'alert': 'Please log in!'})
-        return redirect('{}?next={}'.format(reverse('webtzite:cas_ng_login'), reverse('mpcontribs_portal_index')))
+        ctx.update({'alert': 'Please log in!'})
+        #return redirect('{}?next={}'.format(reverse('webtzite:cas_ng_login'), reverse('mpcontribs_portal_index')))
     return render(request, "mpcontribs_portal_index.html", ctx.flatten())
 
 def groupadd(request, token):
