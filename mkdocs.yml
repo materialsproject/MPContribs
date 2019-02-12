@@ -1,0 +1,8 @@
+site_name: MPContribs
+theme:
+    name: 'material'
+markdown_extensions:
+    - codehilite
+nav:
+    - Home: index.md
+    - API: api.md
