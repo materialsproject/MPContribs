@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django_extensions',
     'django_cas_ng',
+    'zappa_django_utils',
     'webtzite',
     'mpcontribs.portal',
     #'mpcontribs.rest',
@@ -93,10 +94,17 @@ WSGI_APPLICATION = 'test_site.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR,'db.sqlite3'),
+        'ENGINE': 'zappa_django_utils.db.backends.s3sqlite',
+        'NAME': 'db.sqlite3',
+        'BUCKET': 'mpcontribs-sqlite'
     }
 }
+#DATABASES = {
+#    'default': {
+#        'ENGINE': 'django.db.backends.sqlite3',
+#        'NAME': os.path.join(BASE_DIR,'db.sqlite3'),
+#    }
+#}
 
 
 LANGUAGE_CODE = 'en-us'
