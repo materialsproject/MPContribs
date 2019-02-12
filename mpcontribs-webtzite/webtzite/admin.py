@@ -1,6 +1,6 @@
 import webtzite.configure_settings
 from django.contrib import admin
-from .models import DBConfig, RegisteredUser
+from .models import RegisteredUser
 
-admin.site.register(DBConfig)
+#admin.site.register(DBConfig)
 admin.site.register(RegisteredUser)
