@@ -13,7 +13,7 @@ non-stoichiometry δ by means of thermogravimetric analysis.
 
 {input_files}
 csv: Demographic_Statistics_By_Zip_Code.csv
-cif: test_files/Fe3O4.cif
+cif: Fe3O4.cif
 
 {urls}
 GitHub: https://github.com/materialsproject/MPContribs
@@ -71,7 +71,7 @@ loop_
   _symmetry_equiv_pos_site_id
   _symmetry_equiv_pos_as_xyz
    1  'x, y, z'
- 
+
 loop_
   _atom_site_type_symbol
   _atom_site_label
