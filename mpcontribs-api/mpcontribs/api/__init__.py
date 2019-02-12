@@ -1,6 +1,6 @@
 import logging, os
 from importlib import import_module
-from flask import Flask, redirect, send_from_directory
+from flask import Flask, redirect
 from flask_marshmallow import Marshmallow
 from flask_mongoengine import MongoEngine
 from flask_log import Logging
@@ -20,7 +20,7 @@ def get_collections(db):
     return ['provenances']
 
 def create_app():
-    app = Flask(__name__, static_url_path='/', static_folder='../../docs/_build/html')
+    app = Flask(__name__)
     app.config.from_pyfile('config.py', silent=True)
     FlaskJSON(app)
     Logging(app)
@@ -44,10 +44,5 @@ def create_app():
             logger.warning('Failed to register blueprint {}: {}'.format(
                 module_path, collection, ex
             ))
-
-    @app.route('/')
-    @app.route('/<path:filename>')
-    def index(filename='index.html'):
-        return app.send_static_file(filename)
 
     return app

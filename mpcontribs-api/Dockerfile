@@ -9,11 +9,10 @@ ENV FLASK_APP mpcontribs.api
 RUN pip install -U pip
 
 WORKDIR /app
+COPY requirements.txt .
+RUN pip install -r requirements.txt
+
 COPY . .
 RUN pip install .
 
-WORKDIR /app/docs
-RUN make html
-
-WORKDIR /app
 CMD ["flask", "run", "-h", "0.0.0.0"]

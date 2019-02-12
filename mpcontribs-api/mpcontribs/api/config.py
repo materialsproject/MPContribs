@@ -4,8 +4,7 @@ DEBUG = bool(os.environ.get('FLASK_ENV') == 'development')
 JSON_ADD_STATUS = False
 FLASK_LOG_LEVEL = 'DEBUG' if DEBUG else 'WARNING'
 SECRET_KEY = b'super-secret' # reset in local prod config
-API_CHECK_ENDPOINT = 'http://127.0.0.1:8000/rest/api_check' if DEBUG else \
-        'https://materialsproject.org/rest/api_check'
+API_CHECK_ENDPOINT = 'https://materialsproject.org/rest/api_check'
 MONGODB_SETTINGS = {
     'host': "mongodb+srv://{0}/mpcontribs?retryWrites=true".format(
         os.environ.get('MPCONTRIBS_MONGO_HOST', 'localhost')
@@ -16,7 +15,7 @@ SWAGGER = {"specs": [{
     "route": '/apispec.json',
     "rule_filter": lambda rule: True,  # all in
     "model_filter": lambda tag: True,  # all in
-}], "specs_route": "/docs/"}
+}], "specs_route": "/"}
 TEMPLATE = {
     "swagger": "2.0",
     "info": {
@@ -25,9 +24,9 @@ TEMPLATE = {
         #"termsOfService": "http://me.com/terms",
         "version": datetime.datetime.today().strftime('%Y.%m.%d'),
         "contact": {
-            "name": "Materials Project",
+            "name": "MPContribs",
             "email": "phuck@lbl.gov",
-            "url": "https://materialsproject.org",
+            "url": "https://mpcontribs.org",
         },
         "license": {
             "name": "Apache 2.0",
