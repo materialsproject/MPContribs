@@ -1,0 +1,26 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Demo Kong Custom Provider CloudFormation '
+Parameters:
+  AdminURL:
+    Type: String
+    Description: 'the Kong admin URL, must be reachable from the Lambda '
+Resources:
+  HeaderService:
+    Type: Custom::KongService
+    Properties:
+      Service:
+        name: mpcontribs-test
+        host: mockbin.org
+        path: /request
+      AdminURL: !Ref 'AdminURL'
+      ServiceToken: !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:binxio-cfn-kong-provider'
+  HeaderRoute:
+    Type: Custom::KongRoute
+    Properties:
+      Route:
+        hosts:
+          - kong.mpcontribs.org
+        service:
+          id: !Ref 'HeaderService'
+      AdminURL: !Ref 'AdminURL'
+      ServiceToken: !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:binxio-cfn-kong-provider'

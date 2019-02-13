@@ -381,7 +381,7 @@ Resources:
         - !Ref 'PublicSubnet2'
       CrossZone: 'true'
       Listeners:
-        - LoadBalancerPort: '8000'
+        - LoadBalancerPort: '80'
           InstancePort: '8000'
           Protocol: HTTP
         - LoadBalancerPort: '8001'
@@ -404,7 +404,7 @@ Resources:
         - !Ref 'SubnetId2'
       CrossZone: 'true'
       Listeners:
-        - LoadBalancerPort: '8000'
+        - LoadBalancerPort: '80'
           InstancePort: '8000'
           Protocol: HTTP
         - LoadBalancerPort: '8001'
@@ -426,7 +426,7 @@ Resources:
         - !Ref 'VpcId'
       SecurityGroupIngress:
         - IpProtocol: tcp
-          FromPort: '8000'
+          FromPort: '80'
           ToPort: '8000'
           CidrIp: !Ref 'KongProxyAccess'
         - IpProtocol: tcp
@@ -577,7 +577,7 @@ Resources:
         - !Ref 'VpcId'
       SecurityGroupIngress:
         - IpProtocol: tcp
-          FromPort: '8000'
+          FromPort: '80'
           ToPort: '8001'
           SourceSecurityGroupId: !Ref 'LoadBalancerSecurityGroup'
         - IpProtocol: tcp
@@ -658,7 +658,7 @@ Outputs:
   ProxyURL:
     Description: Kong Proxy URL
     Value: !Sub
-      - http://${Param1}:8000
+      - http://${Param1}
       - Param1: !If
           - CreateVpcResources
           - !GetAtt 'KongLoadBalancerNewVPC.DNSName'
