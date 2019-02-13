@@ -1,0 +1,88 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: CloudFormation Kong API Gateway Provider
+Parameters:
+  AppVPC:
+    Type: String
+    Default: ''
+  PrivateSubnets:
+    Type: CommaDelimitedList
+    Default: ''
+  DefaultSecurityGroup:
+    Type: String
+    Default: ''
+  LambdaS3Bucket:
+    Type: String
+    Default: ''
+  CFNCustomProviderZipFileName:
+    Type: String
+    Default: lambdas/cfn-kong-provider-0.5.2.zip
+Conditions:
+  UsePublicBucket: !Equals
+    - !Ref 'LambdaS3Bucket'
+    - ''
+  DoNotAttachToVpc: !Equals
+    - !Ref 'AppVPC'
+    - ''
+Resources:
+  LambdaPolicy:
+    Type: AWS::IAM::Policy
+    DependsOn:
+      - LambdaRole
+    Properties:
+      PolicyName: CFNCustomKongProviderPolicy
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - ssm:GetParameter
+            Resource:
+              - '*'
+          - Effect: Allow
+            Action:
+              - kms:Encrypt
+            Resource:
+              - '*'
+          - Action:
+              - logs:*
+            Resource: arn:aws:logs:*:*:*
+            Effect: Allow
+      Roles:
+        - !Ref 'LambdaRole'
+  LambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Action:
+              - sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+  CFNKongProvider:
+    Type: AWS::Lambda::Function
+    DependsOn:
+      - LambdaRole
+    Properties:
+      Description: CloudFormation Custom::KongAPI implementation
+      Code:
+        S3Bucket: !If
+          - UsePublicBucket
+          - !Sub 'binxio-public-${AWS::Region}'
+          - !Ref 'LambdaS3Bucket'
+        S3Key: !Ref 'CFNCustomProviderZipFileName'
+      FunctionName: binxio-cfn-kong-provider
+      Handler: kong.handler
+      MemorySize: 128
+      Role: !GetAtt 'LambdaRole.Arn'
+      VpcConfig: !If
+        - DoNotAttachToVpc
+        - !Ref 'AWS::NoValue'
+        - SecurityGroupIds:
+            - !Ref 'DefaultSecurityGroup'
+          SubnetIds: !Ref 'PrivateSubnets'
+      Runtime: python3.6
