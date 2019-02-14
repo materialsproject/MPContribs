@@ -5,22 +5,22 @@ Parameters:
     Type: String
     Description: 'the Kong admin URL, must be reachable from the Lambda '
 Resources:
-  HeaderService:
+  KongTestService:
     Type: Custom::KongService
     Properties:
       Service:
-        name: mpcontribs-test
+        name: mpcontribs-kong
         host: mockbin.org
         path: /request
       AdminURL: !Ref 'AdminURL'
       ServiceToken: !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:binxio-cfn-kong-provider'
-  HeaderRoute:
+  KongTestRoute:
     Type: Custom::KongRoute
     Properties:
       Route:
         hosts:
           - kong.mpcontribs.org
         service:
-          id: !Ref 'HeaderService'
+          id: !Ref 'KongTestService'
       AdminURL: !Ref 'AdminURL'
       ServiceToken: !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:binxio-cfn-kong-provider'
