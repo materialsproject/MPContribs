@@ -624,25 +624,25 @@ Resources:
               Service:
                 - lambda.amazonaws.com
 
-  CFNKongProvider:
-    Type: AWS::Lambda::Function
-    DependsOn:
-      - LambdaRole
-    Properties:
-      Description: CloudFormation Custom::KongAPI implementation
-      Code:
-        S3Bucket: ''
-        S3Key: lambdas/cfn-kong-provider-0.5.2.zip
-      FunctionName: binxio-cfn-kong-provider
-      Handler: kong.handler
-      MemorySize: 128
-      Role: !GetAtt 'LambdaRole.Arn'
-      VpcConfig:
-        SecurityGroupIds:
-          - !Ref 'KongSecurityGroup'
-        SubnetIds:
-          - !Ref 'PrivateSubnet'
-      Runtime: python3.6
+  #CFNKongProvider:
+  #  Type: AWS::Lambda::Function
+  #  DependsOn:
+  #    - LambdaRole
+  #  Properties:
+  #    Description: CloudFormation Custom::KongAPI implementation
+  #    Code:
+  #      S3Bucket: !Sub 'binxio-public-${AWS::Region}' # TODO permission denied
+  #      S3Key: lambdas/cfn-kong-provider-0.5.2.zip
+  #    FunctionName: binxio-cfn-kong-provider
+  #    Handler: kong.handler
+  #    MemorySize: 128
+  #    Role: !GetAtt 'LambdaRole.Arn'
+  #    VpcConfig:
+  #      SecurityGroupIds:
+  #        - !Ref 'KongSecurityGroup'
+  #      SubnetIds:
+  #        - !Ref 'PrivateSubnet'
+  #    Runtime: python3.6
 
 # These are the values output by the CloudFormation template. Be careful
 # about changing any of them, because of them are exported with specific
