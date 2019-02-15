@@ -459,14 +459,10 @@ Resources:
           ToPort: '65535'
           CidrIp: 0.0.0.0/0
   PublicLoadBalancer:
-    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Type: AWS::ElasticLoadBalancing::LoadBalancer
     Properties:
       Scheme: internet-facing
-      LoadBalancerAttributes:
-        - Key: idle_timeout.timeout_seconds
-          Value: '30'
-      Subnets:
-        - !Ref PublicSubnet
+      Subnets: [!Ref 'PublicSubnet']
       SecurityGroups: [!Ref 'PublicLoadBalancerSG']
       CrossZone: 'true'
       Listeners:
