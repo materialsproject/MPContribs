@@ -214,11 +214,15 @@ Resources:
     Properties:
       VpcId: !Ref 'VPC'
       CidrBlock: '10.0.0.0/24'
+      AvailabilityZone: !GetAZs
+        Ref: AWS::Region
   PrivateSubnet:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref 'VPC'
       CidrBlock: '10.0.1.0/24'
+      AvailabilityZone: !GetAZs
+        Ref: AWS::Region
   InternetGateway:
     Type: AWS::EC2::InternetGateway
   GatewayAttachement:
