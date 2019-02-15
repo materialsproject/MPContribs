@@ -631,7 +631,7 @@ Resources:
     Properties:
       Description: CloudFormation Custom::KongAPI implementation
       Code:
-        S3Bucket: 'binxio-public-${AWS::Region}'
+        S3Bucket: !Sub 'binxio-public-${AWS::Region}'
         S3Key: lambdas/cfn-kong-provider-0.5.2.zip
       FunctionName: binxio-cfn-kong-provider
       Handler: kong.handler
