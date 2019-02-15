@@ -360,7 +360,8 @@ Resources:
       AvailabilityZones:
         - !GetAtt 'PublicSubnetOne.AvailabilityZone'
         - !GetAtt 'PublicSubnetTwo.AvailabilityZone'
-      VPCZoneIdentifier: !Sub '${PublicSubnetOne},${PublicSubnetTwo}'
+      VPCZoneIdentifier:
+        - !Sub '${PublicSubnetOne},${PublicSubnetTwo}'
       LaunchConfigurationName: !Ref 'KongLaunchConfig'
       MinSize: '1'
       MaxSize: '1'
