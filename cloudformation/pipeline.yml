@@ -257,7 +257,7 @@ Resources:
                 ActionMode: CREATE_UPDATE
                 RoleArn: !GetAtt CloudFormationDeployRole.Arn
                 StackName: !Sub ${EnvironmentName}-BaseResources
-                TemplatePath: Source::cluster.yml
+                TemplatePath: Source::cloudformation/cluster.yml
                 Capabilities: CAPABILITY_IAM
                 ParameterOverrides: !Sub |
                   {
@@ -302,7 +302,7 @@ Resources:
                 ActionMode: CREATE_UPDATE
                 RoleArn: !GetAtt CloudFormationDeployRole.Arn
                 StackName: !Sub ${EnvironmentName}-AppService
-                TemplatePath: Source::app-service.yml
+                TemplatePath: Source::cloudformation/app-service.yml
                 Capabilities: CAPABILITY_IAM
                 ParameterOverrides: !Sub |
                   {
@@ -326,7 +326,7 @@ Resources:
         #    ActionMode: CREATE_UPDATE
         #    RoleArn: !GetAtt CloudFormationDeployRole.Arn
         #    StackName: !Sub ${EnvironmentName}-PortalService
-        #    TemplatePath: Source::portal-service.yml
+        #    TemplatePath: Source::cloudformation/portal-service.yml
         #    Capabilities: CAPABILITY_IAM
         #    ParameterOverrides: !Sub |
         #      {
