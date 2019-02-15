@@ -485,12 +485,12 @@ Resources:
         - LoadBalancerPort: '8001'
           InstancePort: '8001'
           Protocol: HTTP
-      HealthCheck:
-        Target: TCP:8000
-        HealthyThreshold: '3'
-        UnhealthyThreshold: '5'
-        Interval: '90'
-        Timeout: '60'
+      #HealthCheck:
+      #  Target: TCP:8000
+      #  HealthyThreshold: '3'
+      #  UnhealthyThreshold: '5'
+      #  Interval: '90'
+      #  Timeout: '60'
 
   # This is an IAM role which authorizes ECS to manage resources on your
   # account on your behalf, such as updating your load balancer with the
