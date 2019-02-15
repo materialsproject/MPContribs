@@ -209,7 +209,7 @@ Resources:
       EnableDnsSupport: true
       EnableDnsHostnames: true
       CidrBlock: '10.0.0.0/16'
-  PublicSubnet:
+  PublicSubnetOne:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref 'VPC'
@@ -217,11 +217,19 @@ Resources:
       AvailabilityZone: !Select
         - 0
         - Fn::GetAZs: !Ref 'AWS::Region'
-  PrivateSubnet:
+  PublicSubnetTwo:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref 'VPC'
       CidrBlock: '10.0.1.0/24'
+      AvailabilityZone: !Select
+        - 1
+        - Fn::GetAZs: !Ref 'AWS::Region'
+  PrivateSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref 'VPC'
+      CidrBlock: '10.0.2.0/24'
       AvailabilityZone: !Select
         - 0
         - Fn::GetAZs: !Ref 'AWS::Region'
@@ -243,7 +251,7 @@ Resources:
       RouteTableId: !Ref 'PublicRouteTable'
       DestinationCidrBlock: '0.0.0.0/0'
       GatewayId: !Ref 'InternetGateway'
-  PublicSubnetRouteTableAssociation:
+  PrivateSubnetRouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
       SubnetId: !Ref PrivateSubnet
@@ -350,8 +358,9 @@ Resources:
         Timeout: PT15M
     Properties:
       AvailabilityZones:
-        - !GetAtt 'PublicSubnet.AvailabilityZone'
-      VPCZoneIdentifier: !Sub '${PublicSubnet}'
+        - !GetAtt 'PublicSubnetOne.AvailabilityZone'
+        - !GetAtt 'PublicSubnetTwo.AvailabilityZone'
+      VPCZoneIdentifier: !Sub '${PublicSubnetOne},${PublicSubnetTwo}'
       LaunchConfigurationName: !Ref 'KongLaunchConfig'
       MinSize: '1'
       MaxSize: '1'
@@ -398,7 +407,8 @@ Resources:
     Properties:
       DBSubnetGroupDescription: Subnets available for the RDS DB Instance
       SubnetIds:
-        - !Ref 'PublicSubnet'
+        - !Ref 'PublicSubnetOne'
+        - !Ref 'PublicSubnetTwo'
   PostgresDB:
     Type: AWS::RDS::DBInstance
     Properties:
@@ -462,7 +472,9 @@ Resources:
     Type: AWS::ElasticLoadBalancing::LoadBalancer
     Properties:
       Scheme: internet-facing
-      Subnets: [!Ref 'PublicSubnet']
+      Subnets:
+        - !Ref 'PublicSubnetOne'
+        - !Ref 'PublicSubnetTwo'
       SecurityGroups: [!Ref 'PublicLoadBalancerSG']
       CrossZone: 'true'
       Listeners:
@@ -666,11 +678,16 @@ Outputs:
     Value: !Ref 'VPC'
     Export:
       Name: !Join [ ':', [ !Ref 'EnvironmentName', 'VPCId' ] ]
-  PublicSubnet:
-    Description: Public subnet
-    Value: !Ref 'PublicSubnet'
+  PublicSubnetOne:
+    Description: Public subnet 1
+    Value: !Ref 'PublicSubnetOne'
     Export:
-      Name: !Join [ ':', [ !Ref 'EnvironmentName', 'PublicSubnet' ] ]
+      Name: !Join [ ':', [ !Ref 'EnvironmentName', 'PublicSubnetOne' ] ]
+  PublicSubnetTwo:
+    Description: Public subnet 2
+    Value: !Ref 'PublicSubnetTwo'
+    Export:
+      Name: !Join [ ':', [ !Ref 'EnvironmentName', 'PublicSubnetTwo' ] ]
   PrivateSubnet:
     Description: Private subnet
     Value: !Ref 'PrivateSubnet'
