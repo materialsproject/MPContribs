@@ -365,7 +365,7 @@ Resources:
       MinSize: '1'
       MaxSize: '1'
       DesiredCapacity: '1'
-      LoadBalancerNames: !Ref 'PublicLoadBalancer'
+      LoadBalancerNames: [!Ref 'PublicLoadBalancer']
 
   ASGUpdateRole:
     Type: AWS::IAM::Role
