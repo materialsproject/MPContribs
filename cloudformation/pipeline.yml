@@ -164,6 +164,7 @@ Resources:
                   - "cloudwatch:*"
                   - "route53:*"
                   - "rds:*"
+                  - "lambda:*"
                 Resource: "*"
 
   # While the build is in progress we need a place to store artifacts
