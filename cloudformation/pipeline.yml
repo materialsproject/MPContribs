@@ -163,6 +163,7 @@ Resources:
                   - "application-autoscaling:*"
                   - "cloudwatch:*"
                   - "route53:*"
+                  - "rds:*"
                 Resource: "*"
 
   # While the build is in progress we need a place to store artifacts
