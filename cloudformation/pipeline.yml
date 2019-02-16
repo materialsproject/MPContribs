@@ -173,7 +173,7 @@ Resources:
     DeletionPolicy: Retain
 
   # This is the definition of how to build the code in the repository
-  CodeBuildProject:
+  CodeBuildProjectApp:
     Type: AWS::CodeBuild::Project
     Properties:
       Artifacts:
@@ -191,17 +191,13 @@ Resources:
             build:
               commands:
                 - docker build --tag "${IMAGE_URI}-api" mpcontribs-api
-                #- docker build --tag "${IMAGE_URI}-portal" .
             post_build:
               commands:
                 - docker push "${IMAGE_URI}-api"
-                #- docker push "${IMAGE_URI}-portal"
                 - printf '{"ImageUri":"%s"}' "${IMAGE_URI}-api" > build-api.json
-                #- printf '{"ImageUri":"%s"}' "${IMAGE_URI}-portal" > build-portal.json
           artifacts:
             files:
                 - build-api.json
-                #- build-portal.json
       Environment:
         ComputeType: BUILD_GENERAL1_SMALL
         Image: aws/codebuild/docker:17.09.0
@@ -215,7 +211,48 @@ Resources:
             Value: !Ref GitHubUser
           - Name: GITHUB_REPO
             Value: !Ref GitHubRepo
-      Name: !Ref AWS::StackName
+      Name: !Sub ${AWS::StackName}-app
+      ServiceRole: !Ref CodeBuildServiceRole
+
+  CodeBuildProjectPortal:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Artifacts:
+        Type: CODEPIPELINE
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: |
+          version: 0.2
+          phases:
+            pre_build:
+              commands:
+                - $(aws ecr get-login --no-include-email)
+                - TAG="$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | head -c 8)"
+                - IMAGE_URI="${REPOSITORY_URI}:${TAG}"
+            build:
+              commands:
+                - docker build --tag "${IMAGE_URI}-portal" .
+            post_build:
+              commands:
+                - docker push "${IMAGE_URI}-portal"
+                - printf '{"ImageUri":"%s"}' "${IMAGE_URI}-portal" > build-portal.json
+          artifacts:
+            files:
+                - build-portal.json
+      Environment:
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/docker:17.09.0
+        Type: LINUX_CONTAINER
+        EnvironmentVariables:
+          - Name: AWS_DEFAULT_REGION
+            Value: !Ref AWS::Region
+          - Name: REPOSITORY_URI
+            Value: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${Repository}
+          - Name: GITHUB_USER
+            Value: !Ref GitHubUser
+          - Name: GITHUB_REPO
+            Value: !Ref GitHubRepo
+      Name: !Sub ${AWS::StackName}-portal
       ServiceRole: !Ref CodeBuildServiceRole
 
   # This pipeline defines the steps to build, deploy, and release the application
@@ -273,22 +310,33 @@ Resources:
               OutputArtifacts:
                 - Name: BaseResources
 
-        # And we deploy the application resources (Elasticache, DynamoDB, etc)
         - Name: AppResources
           Actions:
-            # And build the app docker image
-            - Name: Build
+            - Name: BuildApp
               ActionTypeId:
                 Category: Build
                 Owner: AWS
                 Version: 1
                 Provider: CodeBuild
               Configuration:
-                ProjectName: !Ref CodeBuildProject
+                ProjectName: !Ref CodeBuildProjectApp
               InputArtifacts:
                 - Name: Source
               OutputArtifacts:
-                - Name: BuildOutput
+                - Name: BuildOutputApp
+              RunOrder: 1
+            - Name: BuildPortal
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Version: 1
+                Provider: CodeBuild
+              Configuration:
+                ProjectName: !Ref CodeBuildProjectPortal
+              InputArtifacts:
+                - Name: Source
+              OutputArtifacts:
+                - Name: BuildOutputPortal
               RunOrder: 1
 
         # Finally we deploy the Fargate service to the cluster
@@ -311,12 +359,12 @@ Resources:
                     "EnvironmentName": "${EnvironmentName}",
                     "MongoHost": "${MongoHost}",
                     "ImageUrl": {
-                      "Fn::GetParam" : ["BuildOutput", "build-api.json", "ImageUri"]
+                      "Fn::GetParam" : ["BuildOutputApp", "build-api.json", "ImageUri"]
                     }
                   }
               InputArtifacts:
                 - Name: Source
-                - Name: BuildOutput
+                - Name: BuildOutputApp
 
         #- Name: DeployPortal
         #  ActionTypeId:
@@ -334,12 +382,12 @@ Resources:
         #      {
         #        "EnvironmentName": "${EnvironmentName}",
         #        "ImageUrl": {
-        #          "Fn::GetParam" : ["BuildOutput", "build-portal.json", "ImageUri"]
+        #          "Fn::GetParam" : ["BuildOutputPortal", "build-portal.json", "ImageUri"]
         #        }
         #      }
         #  InputArtifacts:
         #    - Name: Source
-        #    - Name: BuildOutput
+        #    - Name: BuildOutpuPortal
 
 Outputs:
   PipelineUrl:
