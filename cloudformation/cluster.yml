@@ -267,7 +267,7 @@ Resources:
       SubnetId: !Ref PrivateSubnet
       RouteTableId: !Ref PublicRouteTable
 
-  PrivateLink:
+  EcrEndpoint:
     Type: AWS::EC2::VPCEndpoint
     Properties:
       VpcId: !Ref 'VPC'
@@ -276,6 +276,14 @@ Resources:
       PrivateDnsEnabled: true
       SubnetIds:
         - !Ref 'PrivateSubnet'
+  S3Endpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      VpcId: !Ref 'VPC'
+      ServiceName: !Sub 'com.amazonaws.${AWS::Region}.s3'
+      VpcEndpointType: Gateway
+      RouteTableIds:
+        - !Ref 'PublicRouteTable'
 
   ECSCluster:
     Type: AWS::ECS::Cluster
