@@ -267,6 +267,16 @@ Resources:
       SubnetId: !Ref PrivateSubnet
       RouteTableId: !Ref PublicRouteTable
 
+  PrivateLink:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      VpcId: !Ref 'VPC'
+      ServiceName: !Sub 'com.amazonaws.${AWS::Region}.ecr.dkr'
+      VpcEndpointType: Interface
+      PrivateDnsEnabled: true
+      SubnetIds:
+        - !Ref 'PrivateSubnet'
+
   ECSCluster:
     Type: AWS::ECS::Cluster
 
