@@ -284,6 +284,15 @@ Resources:
       VpcEndpointType: Gateway
       RouteTableIds:
         - !Ref 'PublicRouteTable'
+  LogsEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      VpcId: !Ref 'VPC'
+      ServiceName: !Sub 'com.amazonaws.${AWS::Region}.logs'
+      VpcEndpointType: Interface
+      PrivateDnsEnabled: true
+      SubnetIds:
+        - !Ref 'PrivateSubnet'
 
   ECSCluster:
     Type: AWS::ECS::Cluster
