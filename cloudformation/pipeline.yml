@@ -395,12 +395,15 @@ Resources:
                 ParameterOverrides: !Sub |
                   {
                     "EnvironmentName": "${EnvironmentName}",
+                    "DBPassword": "${DBPassword}",
+                    "DBAddress": {"Fn::ImportValue" : "${EnvironmentName}:DBAddress"},
                     "ImageUrl": {
                       "Fn::GetParam" : ["BuildOutputKong", "build-kong.json", "ImageUri"]
                     }
                   }
               InputArtifacts:
                 - Name: Source
+                - Name: BaseResources
                 - Name: BuildOutputKong
 
             #- Name: DeployApp

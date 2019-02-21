@@ -332,13 +332,3 @@ Outputs:
     Value: !GetAtt 'PostgresDB.Endpoint.Address'
     Export:
       Name: !Join [ ':', [ !Ref 'EnvironmentName', 'DBAddress' ] ]
-  DBPort:
-    Description: DB Port
-    Value: !GetAtt 'PostgresDB.Endpoint.Port'
-    Export:
-      Name: !Join [ ':', [ !Ref 'EnvironmentName', 'DBPort' ] ]
-  DBPassword:
-    Description: DB Password
-    Value: !Ref 'DBPassword'
-    Export:
-      Name: !Join [ ':', [ !Ref 'EnvironmentName', 'DBPassword' ] ]
