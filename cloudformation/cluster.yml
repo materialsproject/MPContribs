@@ -24,34 +24,26 @@ Resources:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref 'VPC'
-      CidrBlock: '10.0.0.0/24'
-      AvailabilityZone: !Select
-        - 0
-        - Fn::GetAZs: !Ref 'AWS::Region'
+      CidrBlock: '10.0.8.0/24'
+      AvailabilityZone: !Join [ '', [!Ref 'AWS::Region', 'a']]
   PublicSubnetTwo:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref 'VPC'
-      CidrBlock: '10.0.1.0/24'
-      AvailabilityZone: !Select
-        - 1
-        - Fn::GetAZs: !Ref 'AWS::Region'
+      CidrBlock: '10.0.9.0/24'
+      AvailabilityZone: !Join [ '', [!Ref 'AWS::Region', 'b']]
   PrivateSubnetOne:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref 'VPC'
-      CidrBlock: '10.0.2.0/24'
-      AvailabilityZone: !Select
-        - 0
-        - Fn::GetAZs: !Ref 'AWS::Region'
+      CidrBlock: '10.0.10.0/24'
+      AvailabilityZone: !Join [ '', [!Ref 'AWS::Region', 'c']]
   PrivateSubnetTwo:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref 'VPC'
-      CidrBlock: '10.0.3.0/24'
-      AvailabilityZone: !Select
-        - 1
-        - Fn::GetAZs: !Ref 'AWS::Region'
+      CidrBlock: '10.0.11.0/24'
+      AvailabilityZone: !Join [ '', [!Ref 'AWS::Region', 'd']]
 
   InternetGateway:
     Type: AWS::EC2::InternetGateway
@@ -160,6 +152,8 @@ Resources:
       VpcEndpointType: Interface
       PrivateDnsEnabled: true
       SubnetIds:
+        - !Ref 'PublicSubnetOne'
+        - !Ref 'PublicSubnetTwo'
         - !Ref 'PrivateSubnetOne'
         - !Ref 'PrivateSubnetTwo'
   S3Endpoint:
@@ -179,6 +173,8 @@ Resources:
       VpcEndpointType: Interface
       PrivateDnsEnabled: true
       SubnetIds:
+        - !Ref 'PublicSubnetOne'
+        - !Ref 'PublicSubnetTwo'
         - !Ref 'PrivateSubnetOne'
         - !Ref 'PrivateSubnetTwo'
 
