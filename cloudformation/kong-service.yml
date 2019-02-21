@@ -66,7 +66,7 @@ Resources:
             - Name: ENV_NAME
               Value: !Ref 'EnvironmentName'
             - Name: KONG_ADMIN_LISTEN
-              Value: '0.0.0.0:8001, 0.0.0.0:8444 ssl'
+              Value: '0.0.0.0:8001'
             - Name: KONG_DATABASE
               Value: postgres
             - Name: KONG_PG_USER
@@ -110,6 +110,9 @@ Resources:
       DesiredCount: 1
       NetworkConfiguration:
         AwsvpcConfiguration:
+          SecurityGroups:
+            - Fn::ImportValue:
+                !Join [':', [!Ref 'EnvironmentName', 'PublicSecurityGroup']]
           Subnets:
             - Fn::ImportValue:
                 !Join [':', [!Ref 'EnvironmentName', 'PublicSubnetOne']]
