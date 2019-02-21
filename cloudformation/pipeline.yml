@@ -189,6 +189,7 @@ Resources:
         ComputeType: BUILD_GENERAL1_SMALL
         Image: aws/codebuild/docker:17.09.0
         Type: LINUX_CONTAINER
+        PrivilegedMode: true
         EnvironmentVariables:
           - Name: AWS_DEFAULT_REGION
             Value: !Ref AWS::Region
@@ -198,6 +199,12 @@ Resources:
             Value: !Ref GitHubUser
           - Name: GITHUB_REPO
             Value: !Ref GitHubRepo
+      Cache:
+        Type: LOCAL
+        Modes: # You can specify one or more cache mode,
+          - LOCAL_CUSTOM_CACHE
+          - LOCAL_DOCKER_LAYER_CACHE
+          - LOCAL_SOURCE_CACHE
       Name: !Sub ${AWS::StackName}-kong
       ServiceRole: !Ref CodeBuildServiceRole
 
@@ -230,6 +237,7 @@ Resources:
         ComputeType: BUILD_GENERAL1_SMALL
         Image: aws/codebuild/docker:17.09.0
         Type: LINUX_CONTAINER
+        PrivilegedMode: true
         EnvironmentVariables:
           - Name: AWS_DEFAULT_REGION
             Value: !Ref AWS::Region
@@ -239,6 +247,12 @@ Resources:
             Value: !Ref GitHubUser
           - Name: GITHUB_REPO
             Value: !Ref GitHubRepo
+      Cache:
+        Type: LOCAL
+        Modes: # You can specify one or more cache mode,
+          - LOCAL_CUSTOM_CACHE
+          - LOCAL_DOCKER_LAYER_CACHE
+          - LOCAL_SOURCE_CACHE
       Name: !Sub ${AWS::StackName}-app
       ServiceRole: !Ref CodeBuildServiceRole
 
@@ -351,19 +365,19 @@ Resources:
               OutputArtifacts:
                 - Name: BuildOutputKong
               RunOrder: 1
-            #- Name: BuildApp
-            #  ActionTypeId:
-            #    Category: Build
-            #    Owner: AWS
-            #    Version: 1
-            #    Provider: CodeBuild
-            #  Configuration:
-            #    ProjectName: !Ref CodeBuildProjectApp
-            #  InputArtifacts:
-            #    - Name: Source
-            #  OutputArtifacts:
-            #    - Name: BuildOutputApp
-            #  RunOrder: 1
+            - Name: BuildApp
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Version: 1
+                Provider: CodeBuild
+              Configuration:
+                ProjectName: !Ref CodeBuildProjectApp
+              InputArtifacts:
+                - Name: Source
+              OutputArtifacts:
+                - Name: BuildOutputApp
+              RunOrder: 1
             #- Name: BuildPortal
             #  ActionTypeId:
             #    Category: Build
@@ -405,29 +419,29 @@ Resources:
                 - Name: BaseResources
                 - Name: BuildOutputKong
 
-            #- Name: DeployApp
-            #  ActionTypeId:
-            #    Category: Deploy
-            #    Owner: AWS
-            #    Version: 1
-            #    Provider: CloudFormation
-            #  Configuration:
-            #    ActionMode: CREATE_UPDATE
-            #    RoleArn: !GetAtt CloudFormationDeployRole.Arn
-            #    StackName: !Sub ${EnvironmentName}-AppService
-            #    TemplatePath: Source::cloudformation/app-service.yml
-            #    Capabilities: CAPABILITY_IAM
-            #    ParameterOverrides: !Sub |
-            #      {
-            #        "EnvironmentName": "${EnvironmentName}",
-            #        "MongoHost": "${MongoHost}",
-            #        "ImageUrl": {
-            #          "Fn::GetParam" : ["BuildOutputApp", "build-api.json", "ImageUri"]
-            #        }
-            #      }
-            #  InputArtifacts:
-            #    - Name: Source
-            #    - Name: BuildOutputApp
+            - Name: DeployApp
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Version: 1
+                Provider: CloudFormation
+              Configuration:
+                ActionMode: CREATE_UPDATE
+                RoleArn: !GetAtt CloudFormationDeployRole.Arn
+                StackName: !Sub ${EnvironmentName}-AppService
+                TemplatePath: Source::cloudformation/app-service.yml
+                Capabilities: CAPABILITY_IAM
+                ParameterOverrides: !Sub |
+                  {
+                    "EnvironmentName": "${EnvironmentName}",
+                    "MongoHost": "${MongoHost}",
+                    "ImageUrl": {
+                      "Fn::GetParam" : ["BuildOutputApp", "build-api.json", "ImageUri"]
+                    }
+                  }
+              InputArtifacts:
+                - Name: Source
+                - Name: BuildOutputApp
 
             #- Name: DeployPortal
             #  ActionTypeId:
