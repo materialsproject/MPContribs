@@ -6,201 +6,12 @@ Parameters:
     Type: String
     Default: production
     Description: A name for the environment that this cloudformation will be part of.
-  DBName:
-    Default: kong
-    Description: The database name
-    Type: String
-    MinLength: '1'
-    AllowedPattern: '[a-zA-Z][a-zA-Z0-9]*'
-    ConstraintDescription: must begin with a letter and contain only alphanumeric
-      characters.
-  DBUsername:
-    Default: kong
-    Description: The database admin account username
-    Type: String
-    MinLength: '1'
-    AllowedPattern: '[a-zA-Z][a-zA-Z0-9]*'
-    ConstraintDescription: must begin with a letter and contain only alphanumeric
-      characters.
   DBPassword:
     Default: changeit
     NoEcho: 'true'
     Description: The database admin account password
     Type: String
     MinLength: '8'
-  DBClass:
-    Default: db.t2.small
-    Description: Database instance class
-    Type: String
-    AllowedValues:
-      - db.t2.micro
-      - db.t2.small
-      - db.t2.medium
-      - db.t2.large
-      - db.m1.small
-      - db.m1.large
-      - db.m1.xlarge
-      - db.m2.xlarge
-      - db.m4.large
-      - db.m4.xlarge
-      - db.m4.2xlarge
-      - db.m4.4xlarge
-      - db.m4.10xlarge
-      - db.m3.medium
-      - db.m3.large
-      - db.m3.xlarge
-      - db.m3.2xlarge
-      - db.r3.large
-      - db.r3.xlarge
-      - db.r3.2xlarge
-      - db.r3.4xlarge
-      - db.r3.8xlarge
-    ConstraintDescription: must select a valid database instance type.
-  DBAllocatedStorage:
-    Default: '5'
-    Description: The size of the database (Gb)
-    Type: Number
-    MinValue: '5'
-    MaxValue: '6144'
-    ConstraintDescription: must be between 5+
-  DBVersion:
-    Description: Postgres version
-    Type: String
-    Default: 9.6.8
-    AllowedValues:
-      - 9.6.8
-      - 9.5.12
-  DBStorageEncrypted:
-    Default: false
-    Description: Specifies whether the DB instance is encrypted
-    Type: String
-    AllowedValues:
-      - true
-      - false
-  DBStorageType:
-    Description: Storage Type for RDS volume
-    Type: String
-    Default: gp2
-    AllowedValues:
-      - gp2
-      - standard
-  SSHLocation:
-    Description: The IP address range that can be used to SSH to the Kong and Cassandra
-      EC2 instances
-    Type: String
-    MinLength: '9'
-    MaxLength: '18'
-    Default: 0.0.0.0/0
-    AllowedPattern: (\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})/(\d{1,2})
-    ConstraintDescription: must be a valid IP CIDR range of the form x.x.x.x/x.
-  KongProxyAccess:
-    Description: The IP address range that can be used to access the Kong proxy port 8000
-    Type: String
-    MinLength: '9'
-    MaxLength: '18'
-    Default: 0.0.0.0/0
-    AllowedPattern: (\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})/(\d{1,2})
-    ConstraintDescription: must be a valid IP CIDR range of the form x.x.x.x/x.
-  KongAdminAccess:
-    Description: The IP address range that can be used to access the Kong Admin port 8001
-    Type: String
-    MinLength: '9'
-    MaxLength: '18'
-    Default: 0.0.0.0/0
-    AllowedPattern: (\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})/(\d{1,2})
-    ConstraintDescription: must be a valid IP CIDR range of the form x.x.x.x/x.
-  KongKeyName:
-    Description: Required- Name of an existing EC2 KeyPair to enable SSH access to
-      the instances for Kong
-    Type: AWS::EC2::KeyPair::KeyName
-    Default: ''
-  KongFleetMaxSize:
-    Description: Max Number of Kong instances
-    Type: Number
-    Default: '1'
-    MinValue: '1'
-  KongFleetDesiredSize:
-    Description: Desired Number of Kong instances
-    Type: Number
-    Default: '1'
-    MinValue: '1'
-  KongInstanceType:
-    Description: 'Kong EC2 instance type. Note: T2 instance is not supported on the
-      EC2-Classic platform'
-    Type: String
-    Default: t2.large
-    AllowedValues:
-      - t2.small
-      - t2.micro
-      - t2.medium
-      - t2.large
-      - m3.medium
-      - m3.large
-      - m3.xlarge
-      - m3.2xlarge
-      - m4.large
-      - m4.xlarge
-      - m4.2xlarge
-      - m4.4xlarge
-      - m4.10xlarge
-      - c3.large
-      - c3.xlarge
-      - c3.2xlarge
-      - c3.4xlarge
-      - c3.8xlarge
-      - c4.large
-      - c4.xlarge
-      - c4.xlarge
-      - c4.2xlarge
-      - c4.4xlarge
-      - c4.8xlarge
-      - r3.large
-      - r3.xlarge
-      - r3.2xlarge
-      - r3.4xlarge
-      - r3.8xlarge
-    ConstraintDescription: must be a valid EC2 instance type.
-  KongVersion:
-    Description: Kong version (Only 0.13.x and above supported). Leave it blank to
-      install latest version.
-    Type: String
-    Default: '0.15.0'
-  KongMigration:
-    Description: Run the Kong migrations by default, set it to false to disable migrations.
-    Type: String
-    Default: 'true'
-    AllowedValues:
-      - 'true'
-      - 'false'
-  KongConfigs:
-    Description: Kong configuration
-    Type: CommaDelimitedList
-    ConstraintDescription: must be in KONG_ENV1=v1[, KONG_ENV2=v2] format
-    Default: ''
-
-
-Mappings:
-  RegionKongAmiMap:
-    us-east-1:
-      HVM: ami-a4c7edb2
-    us-east-2:
-      HVM: ami-8a7859ef
-    us-west-1:
-      HVM: ami-327f5352
-    us-west-2:
-      HVM: ami-6df1e514
-    eu-west-1:
-      HVM: ami-d7b9a2b1
-    eu-west-2:
-      HVM: ami-ed100689
-    eu-central-1:
-      HVM: ami-0dea4adc94d997fbe
-    ap-southeast-1:
-      HVM: ami-77af2014
-    ap-southeast-2:
-      HVM: ami-10918173
-    sa-east-1:
-      HVM: ami-87dab1eb
 
 Resources:
   VPC:
@@ -225,7 +36,7 @@ Resources:
       AvailabilityZone: !Select
         - 1
         - Fn::GetAZs: !Ref 'AWS::Region'
-  PrivateSubnet:
+  PrivateSubnetOne:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref 'VPC'
@@ -233,6 +44,15 @@ Resources:
       AvailabilityZone: !Select
         - 0
         - Fn::GetAZs: !Ref 'AWS::Region'
+  PrivateSubnetTwo:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref 'VPC'
+      CidrBlock: '10.0.3.0/24'
+      AvailabilityZone: !Select
+        - 1
+        - Fn::GetAZs: !Ref 'AWS::Region'
+
   InternetGateway:
     Type: AWS::EC2::InternetGateway
   GatewayAttachement:
@@ -240,6 +60,7 @@ Resources:
     Properties:
       VpcId: !Ref 'VPC'
       InternetGatewayId: !Ref 'InternetGateway'
+
   PublicRouteTable:
     Type: AWS::EC2::RouteTable
     Properties:
@@ -261,11 +82,75 @@ Resources:
     Properties:
       SubnetId: !Ref PublicSubnetTwo
       RouteTableId: !Ref PublicRouteTable
-  PrivateSubnetRouteTableAssociation:
+
+  PrivateRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref 'VPC'
+  PrivateSubnetOneRouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
       SubnetId: !Ref PrivateSubnet
-      RouteTableId: !Ref PublicRouteTable
+      RouteTableId: !Ref PrivateRouteTable
+  PrivateSubnetTwoRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateSubnet
+      RouteTableId: !Ref PrivateRouteTable
+
+  PublicSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Access to the public facing services
+      VpcId: !Ref 'VPC'
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: '80'
+          ToPort: '8000'
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: '8001'
+          ToPort: '8001'
+          CidrIp: 0.0.0.0/0
+
+  DBSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Access to Database
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 5432
+          ToPort: '5432'
+          CidrIp: !Ref 'PublicSecurityGroup'
+      VpcId: !Ref 'VPC'
+
+  DBSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: Subnets available for the RDS DB Instance
+      SubnetIds:
+        - !Ref 'PrivateSubnetOne'
+        - !Ref 'PrivateSubnetTwo'
+
+  PostgresDB:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      Engine: postgres
+      DBName: kong
+      MasterUsername: kong
+      DBInstanceClass: db.t2.micro
+      AllocatedStorage: 5
+      MasterUserPassword: !Ref 'DBPassword'
+      DBSubnetGroupName: !Ref 'DBSubnetGroup'
+      PubliclyAccessible: false
+      EngineVersion: 9.6.8
+      DBSnapshotIdentifier: !Ref 'AWS::NoValue'
+      MultiAZ: false
+      StorageEncrypted: false
+      StorageType: gp2
+      VPCSecurityGroups:
+        - !Ref 'DBSecurityGroup'
+    DeletionPolicy: Snapshot
 
   EcrEndpoint:
     Type: AWS::EC2::VPCEndpoint
@@ -275,7 +160,8 @@ Resources:
       VpcEndpointType: Interface
       PrivateDnsEnabled: true
       SubnetIds:
-        - !Ref 'PrivateSubnet'
+        - !Ref 'PrivateSubnetOne'
+        - !Ref 'PrivateSubnetTwo'
   S3Endpoint:
     Type: AWS::EC2::VPCEndpoint
     Properties:
@@ -284,6 +170,7 @@ Resources:
       VpcEndpointType: Gateway
       RouteTableIds:
         - !Ref 'PublicRouteTable'
+        - !Ref 'PrivateRouteTable'
   LogsEndpoint:
     Type: AWS::EC2::VPCEndpoint
     Properties:
@@ -292,242 +179,11 @@ Resources:
       VpcEndpointType: Interface
       PrivateDnsEnabled: true
       SubnetIds:
-        - !Ref 'PrivateSubnet'
+        - !Ref 'PrivateSubnetOne'
+        - !Ref 'PrivateSubnetTwo'
 
   ECSCluster:
     Type: AWS::ECS::Cluster
-
-  KongSecurityGroup:
-    Type: AWS::EC2::SecurityGroup
-    Properties:
-      GroupDescription: Enable SSH access and HTTP access on the inbound port
-      VpcId: !Ref 'VPC'
-      SecurityGroupIngress:
-        - IpProtocol: tcp
-          FromPort: '80'
-          ToPort: '8001'
-          SourceSecurityGroupId: !Ref 'PublicLoadBalancerSG'
-        - IpProtocol: tcp
-          FromPort: '22'
-          ToPort: '22'
-          CidrIp: !Ref 'SSHLocation'
-      SecurityGroupEgress:
-        - IpProtocol: tcp
-          FromPort: '1'
-          ToPort: '65535'
-          CidrIp: 0.0.0.0/0
-  Ingress7946:
-    Type: AWS::EC2::SecurityGroupIngress
-    Properties:
-      GroupId: !GetAtt 'KongSecurityGroup.GroupId'
-      IpProtocol: tcp
-      FromPort: '7946'
-      ToPort: '7946'
-      SourceSecurityGroupId: !GetAtt 'KongSecurityGroup.GroupId'
-
-  KongLaunchConfig:
-    Type: AWS::AutoScaling::LaunchConfiguration
-    Properties:
-      AssociatePublicIpAddress: true
-      ImageId: !FindInMap
-        - RegionKongAmiMap
-        - !Ref 'AWS::Region'
-        - HVM
-      InstanceType: !Ref 'KongInstanceType'
-      KeyName: !Ref 'KongKeyName'
-      SecurityGroups:
-        - !Ref 'KongSecurityGroup'
-      IamInstanceProfile: !Ref 'ASGUpdateProfile'
-      UserData: !Base64
-        Fn::Sub:
-          - "#!/bin/bash\nyum update -y aws-cfn-bootstrap\necho '* soft nofile 65000'\
-            \ >> /etc/security/limits.conf\necho '* hard nofile 65000' >> /etc/security/limits.conf\n\
-            kong_version=${KongVersion}\nif [ \"$kong_version\" != \"\" ]\nthen\n\
-            \   kong_version=\"-$kong_version\"\nfi\nkong_migrations=${KongMigration}\n\
-            KONG_ENV=\"${Param1}\"\nexport $KONG_ENV\nexport KONG_DATABASE=postgres\n\
-            export KONG_PG_HOST=${Param2}\nexport KONG_PG_PORT=${Param3}\nexport KONG_PG_USER=${DBUsername}\n\
-            export KONG_PLUGINS=oidc,oidc-consumer\nexport KONG_PG_DATABASE=${DBName}\nexport KONG_PG_PASSWORD='${DBPassword}'\n\
-            export KONG_ADMIN_LISTEN='0.0.0.0:8001, 0.0.0.0:8444 ssl'\necho \"[kong]\
-            \ installing Kong with following environments:\" \nenv\nmkdir /usr/local/kong\
-            \ && chown ec2-user /usr/local/kong \nwget https://bintray.com/kong/kong-community-edition-aws/rpm\
-            \ -O bintray-kong-kong-community-edition-aws.repo\nif [ \"$?\" -ne \"\
-            0\" ]\nthen\n   /opt/aws/bin/cfn-signal -e 1 --stack ${AWS::StackName}\
-            \ --resource KongScalingGroup  --region ${AWS::Region} --reason \"failed\
-            \ to install kong-community-edition$kong_version\" \n   echo \"[kong]\
-            \ failed to install kong-community-edition$kong_version, exiting...\"\
-            \ \n   exit\nfi\nmv bintray-kong-kong-community-edition-aws.repo /etc/yum.repos.d/\n\
-            yum update -y\nyum install -y epel-release\nyum install -y kong-community-edition$kong_version\
-            \ --nogpgcheck\nif [ \"$?\" -ne \"0\" ]\nthen\n   /opt/aws/bin/cfn-signal\
-            \ -e 1 --stack ${AWS::StackName} --resource KongScalingGroup  --region\
-            \ ${AWS::Region} --reason \"failed to install kong$kong_version.aws.rpm\"\
-            \ \n   echo \"[kong] failed to install kong-$kong_version.aws.rpm, exiting...\"\
-            \ \n   exit\nfi\nsu -s /bin/sh -c \"/usr/local/bin/luarocks install kong-oidc\"\
-            \ \nsu -s /bin/sh -c \"/usr/local/bin/luarocks install kong-oidc-consumer\"\
-            \ \nsu -s /bin/sh -c \"/usr/local/bin/kong migrations bootstrap\"\
-            \ \nif [ \"$kong_migrations\" == \"true\" ]\nthen\n   echo\
-            \ \"[kong] starting migrations...\" \n   su -s /bin/sh -c \"/usr/local/bin/kong\
-            \ migrations up\" ec2-user\nfi\nsu -s /bin/sh -c \"/usr/local/bin/kong\
-            \ start\" ec2-user\nif ! /usr/local/bin/kong health; then\n   echo \"\
-            [kong] failed to start kong, exiting...\" \n   /opt/aws/bin/cfn-signal\
-            \ -e 1 --stack ${AWS::StackName} --resource KongScalingGroup  --region\
-            \ ${AWS::Region} --reason \"Failed to start Kong\" \n   exit\nfi\ninstance_id=`curl\
-            \ http://169.254.169.254/latest/meta-data/instance-id`\nautoscale_group=`aws\
-            \ ec2 describe-tags --filters \"Name=resource-id,Values=$instance_id\"\
-            \ --region ${AWS::Region} \"Name=key,Values=aws:autoscaling:groupName\"\
-            \ | sed -ne 's/[ ]*\"Value\":\\s\"\\(.*\\)\",/\\1/p'`\naws autoscaling\
-            \ update-auto-scaling-group --auto-scaling-group-name $autoscale_group\
-            \ --region ${AWS::Region} --max-size ${KongFleetMaxSize} --desired-capacity\
-            \ ${KongFleetDesiredSize} \n/opt/aws/bin/cfn-signal -e 0 --stack ${AWS::StackName}\
-            \ --resource KongScalingGroup  --region ${AWS::Region} --reason \"Kong\
-            \ setup completed\" \n"
-          - Param1:
-              Fn::Join:
-                - ' '
-                - !Ref 'KongConfigs'
-            Param2: !GetAtt 'PostgresDB.Endpoint.Address'
-            Param3: !GetAtt 'PostgresDB.Endpoint.Port'
-
-  KongScalingGroup:
-    Type: AWS::AutoScaling::AutoScalingGroup
-    CreationPolicy:
-      ResourceSignal:
-        Count: !Ref 'KongFleetDesiredSize'
-        Timeout: PT15M
-    Properties:
-      AvailabilityZones:
-        - !GetAtt 'PublicSubnetOne.AvailabilityZone'
-        - !GetAtt 'PublicSubnetTwo.AvailabilityZone'
-      VPCZoneIdentifier:
-        - !Sub '${PublicSubnetOne},${PublicSubnetTwo}'
-      LaunchConfigurationName: !Ref 'KongLaunchConfig'
-      MinSize: '1'
-      MaxSize: '1'
-      DesiredCapacity: '1'
-      LoadBalancerNames: [!Ref 'PublicLoadBalancer']
-
-  ASGUpdateRole:
-    Type: AWS::IAM::Role
-    Properties:
-      Path: /
-      Policies:
-        - PolicyName: ASGUpdateRole
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Action:
-                  - ec2:Describe*
-                  - cloudformation:DescribeStackResource
-                Resource:
-                  - '*'
-                Effect: Allow
-              - Effect: Allow
-                Action: autoscaling:UpdateAutoScalingGroup
-                Resource:
-                  - '*'
-      AssumeRolePolicyDocument:
-        Statement:
-          - Action:
-              - sts:AssumeRole
-            Effect: Allow
-            Principal:
-              Service:
-                - ec2.amazonaws.com
-  ASGUpdateProfile:
-    Type: AWS::IAM::InstanceProfile
-    Properties:
-      Path: /
-      Roles:
-        - !Ref 'ASGUpdateRole'
-
-
-  DBSubnetGroup:
-    Type: AWS::RDS::DBSubnetGroup
-    Properties:
-      DBSubnetGroupDescription: Subnets available for the RDS DB Instance
-      SubnetIds:
-        - !Ref 'PublicSubnetOne'
-        - !Ref 'PublicSubnetTwo'
-  PostgresDB:
-    Type: AWS::RDS::DBInstance
-    Properties:
-      Engine: postgres
-      DBName: !Ref 'DBName'
-      MasterUsername: !Ref 'DBUsername'
-      DBInstanceClass: !Ref 'DBClass'
-      AllocatedStorage: !Ref 'DBAllocatedStorage'
-      MasterUserPassword: !Ref 'DBPassword'
-      DBSubnetGroupName: !Ref 'DBSubnetGroup'
-      PubliclyAccessible: false
-      EngineVersion: !Ref 'DBVersion'
-      DBSnapshotIdentifier: !Ref 'AWS::NoValue'
-      MultiAZ: false
-      StorageEncrypted: !Ref 'DBStorageEncrypted'
-      StorageType: !Ref 'DBStorageType'
-      VPCSecurityGroups:
-        - !Ref 'DBSecurityGroup'
-    DeletionPolicy: Snapshot
-  DBSecurityGroup:
-    Type: AWS::EC2::SecurityGroup
-    Properties:
-      GroupDescription: Database security groups
-      SecurityGroupIngress:
-        - IpProtocol: tcp
-          FromPort: 5432
-          ToPort: '5432'
-          SourceSecurityGroupId: !Ref 'KongSecurityGroup'
-        - IpProtocol: tcp
-          FromPort: '22'
-          ToPort: '22'
-          CidrIp: !Ref 'SSHLocation'
-      SecurityGroupEgress:
-        - IpProtocol: tcp
-          FromPort: '1'
-          ToPort: '65535'
-          CidrIp: 0.0.0.0/0
-      VpcId: !Ref 'VPC'
-
-
-  PublicLoadBalancerSG:
-    Type: AWS::EC2::SecurityGroup
-    Properties:
-      GroupDescription: Access to the public facing load balancer
-      VpcId: !Ref 'VPC'
-      SecurityGroupIngress:
-        - IpProtocol: tcp
-          FromPort: '80'
-          ToPort: '8000'
-          CidrIp: !Ref 'KongProxyAccess'
-        - IpProtocol: tcp
-          FromPort: '8001'
-          ToPort: '8001'
-          CidrIp: !Ref 'KongAdminAccess'
-      SecurityGroupEgress:
-        - IpProtocol: tcp
-          FromPort: '1'
-          ToPort: '65535'
-          CidrIp: 0.0.0.0/0
-  PublicLoadBalancer:
-    Type: AWS::ElasticLoadBalancing::LoadBalancer
-    Properties:
-      Scheme: internet-facing
-      Subnets:
-        - !Ref 'PublicSubnetOne'
-        - !Ref 'PublicSubnetTwo'
-      SecurityGroups: [!Ref 'PublicLoadBalancerSG']
-      CrossZone: 'true'
-      Listeners:
-        - LoadBalancerPort: '80'
-          InstancePort: '8000'
-          Protocol: HTTP
-        - LoadBalancerPort: '8001'
-          InstancePort: '8001'
-          Protocol: HTTP
-      HealthCheck:
-        Target: TCP:8000
-        HealthyThreshold: '3'
-        UnhealthyThreshold: '5'
-        Interval: '90'
-        Timeout: '60'
 
   # This is an IAM role which authorizes ECS to manage resources on your
   # account on your behalf, such as updating your load balancer with the
@@ -622,66 +278,6 @@ Resources:
             Resource: '*'
 
 
-  LambdaPolicy:
-    Type: AWS::IAM::Policy
-    DependsOn:
-      - LambdaRole
-    Properties:
-      PolicyName: CFNCustomKongProviderPolicy
-      PolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Effect: Allow
-            Action:
-              - ssm:GetParameter
-            Resource:
-              - '*'
-          - Effect: Allow
-            Action:
-              - kms:Encrypt
-            Resource:
-              - '*'
-          - Action:
-              - logs:*
-            Resource: arn:aws:logs:*:*:*
-            Effect: Allow
-      Roles:
-        - !Ref 'LambdaRole'
-  LambdaRole:
-    Type: AWS::IAM::Role
-    Properties:
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Action:
-              - sts:AssumeRole
-            Effect: Allow
-            Principal:
-              Service:
-                - lambda.amazonaws.com
-
-  #CFNKongProvider:
-  #  Type: AWS::Lambda::Function
-  #  DependsOn:
-  #    - LambdaRole
-  #  Properties:
-  #    Description: CloudFormation Custom::KongAPI implementation
-  #    Code:
-  #      S3Bucket: !Sub 'binxio-public-${AWS::Region}' # TODO permission denied
-  #      S3Key: lambdas/cfn-kong-provider-0.5.2.zip
-  #    FunctionName: binxio-cfn-kong-provider
-  #    Handler: kong.handler
-  #    MemorySize: 128
-  #    Role: !GetAtt 'LambdaRole.Arn'
-  #    VpcConfig:
-  #      SecurityGroupIds:
-  #        - !Ref 'KongSecurityGroup'
-  #      SubnetIds:
-  #        - !Ref 'PrivateSubnet'
-  #    Runtime: python3.6
-
 # These are the values output by the CloudFormation template. Be careful
 # about changing any of them, because of them are exported with specific
 # names so that the other task related CF templates can use them.
@@ -691,11 +287,6 @@ Outputs:
     Value: !Ref 'ECSCluster'
     Export:
       Name: !Join [ ':', [ !Ref 'EnvironmentName', 'ClusterName' ] ]
-  ExternalUrl:
-    Description: The url of the external load balancer
-    Value: !Join ['', ['http://', !GetAtt 'PublicLoadBalancer.DNSName']]
-    Export:
-      Name: !Join [ ':', [ !Ref 'EnvironmentName', 'ExternalUrl' ] ]
   ECSRole:
     Description: The ARN of the ECS role
     Value: !GetAtt 'ECSRole.Arn'
@@ -726,18 +317,28 @@ Outputs:
     Value: !Ref 'PublicSubnetTwo'
     Export:
       Name: !Join [ ':', [ !Ref 'EnvironmentName', 'PublicSubnetTwo' ] ]
-  PrivateSubnet:
-    Description: Private subnet
-    Value: !Ref 'PrivateSubnet'
+  PrivateSubnetOne:
+    Description: Private subnet 1
+    Value: !Ref 'PrivateSubnetOne'
     Export:
-      Name: !Join [ ':', [ !Ref 'EnvironmentName', 'PrivateSubnet' ] ]
-  ProxyURL:
-    Description: Kong Proxy URL
-    Value: !Sub
-      - http://${Param1}
-      - Param1: !GetAtt 'PublicLoadBalancer.DNSName'
-  AdminURL:
-    Description: Kong Admin URL
-    Value: !Sub
-      - http://${Param1}:8001
-      - Param1: !GetAtt 'PublicLoadBalancer.DNSName'
+      Name: !Join [ ':', [ !Ref 'EnvironmentName', 'PrivateSubnetOne' ] ]
+  PrivateSubnetTwo:
+    Description: Private subnet 2
+    Value: !Ref 'PrivateSubnetTwo'
+    Export:
+      Name: !Join [ ':', [ !Ref 'EnvironmentName', 'PrivateSubnetTwo' ] ]
+  DBAddress:
+    Description: DB Address
+    Value: !GetAtt 'PostgresDB.Endpoint.Address'
+    Export:
+      Name: !Join [ ':', [ !Ref 'EnvironmentName', 'DBAddress' ] ]
+  DBPort:
+    Description: DB Port
+    Value: !GetAtt 'PostgresDB.Endpoint.Port'
+    Export:
+      Name: !Join [ ':', [ !Ref 'EnvironmentName', 'DBPort' ] ]
+  DBPassword:
+    Description: DB Password
+    Value: !Ref 'DBPassword'
+    Export:
+      Name: !Join [ ':', [ !Ref 'EnvironmentName', 'DBPassword' ] ]

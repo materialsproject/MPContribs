@@ -23,19 +23,6 @@ Parameters:
     Description: The database admin account password
     Type: String
     MinLength: '8'
-  KongAdminAccess:
-    Description: The IP address range that can be used to access the Kong Admin port 8001
-    Type: String
-    MinLength: '9'
-    MaxLength: '18'
-    Default: 0.0.0.0/0
-    AllowedPattern: (\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})/(\d{1,2})
-    ConstraintDescription: must be a valid IP CIDR range of the form x.x.x.x/x.
-  KongKeyName:
-    Description: Required- Name of an existing EC2 KeyPair to enable SSH access to
-      the instances for Kong
-    Type: AWS::EC2::KeyPair::KeyName
-    Default: ''
 
 Resources:
   # Create the ECR respository to hold built docker images
@@ -173,6 +160,47 @@ Resources:
     DeletionPolicy: Retain
 
   # This is the definition of how to build the code in the repository
+  CodeBuildProjectKong:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Artifacts:
+        Type: CODEPIPELINE
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: |
+          version: 0.2
+          phases:
+            pre_build:
+              commands:
+                - $(aws ecr get-login --no-include-email)
+                - TAG="$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | head -c 8)"
+                - IMAGE_URI="${REPOSITORY_URI}:${TAG}"
+            build:
+              commands:
+                - docker build --tag "${IMAGE_URI}-kong" cloudformation
+            post_build:
+              commands:
+                - docker push "${IMAGE_URI}-kong"
+                - printf '{"ImageUri":"%s"}' "${IMAGE_URI}-kong" > build-kong.json
+          artifacts:
+            files:
+                - build-kong.json
+      Environment:
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/docker:17.09.0
+        Type: LINUX_CONTAINER
+        EnvironmentVariables:
+          - Name: AWS_DEFAULT_REGION
+            Value: !Ref AWS::Region
+          - Name: REPOSITORY_URI
+            Value: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${Repository}
+          - Name: GITHUB_USER
+            Value: !Ref GitHubUser
+          - Name: GITHUB_REPO
+            Value: !Ref GitHubRepo
+      Name: !Sub ${AWS::StackName}-kong
+      ServiceRole: !Ref CodeBuildServiceRole
+
   CodeBuildProjectApp:
     Type: AWS::CodeBuild::Project
     Properties:
@@ -301,9 +329,7 @@ Resources:
                 ParameterOverrides: !Sub |
                   {
                     "EnvironmentName": "${EnvironmentName}",
-                    "DBPassword": "${DBPassword}",
-                    "KongAdminAccess": "${KongAdminAccess}",
-                    "KongKeyName": "${KongKeyName}"
+                    "DBPassword": "${DBPassword}"
                   }
               InputArtifacts:
                 - Name: Source
@@ -339,10 +365,9 @@ Resources:
             #    - Name: BuildOutputPortal
             #  RunOrder: 1
 
-        # Finally we deploy the Fargate service to the cluster
         - Name: Deploy
           Actions:
-            - Name: Deploy
+            - Name: DeployKong
               ActionTypeId:
                 Category: Deploy
                 Owner: AWS
@@ -351,43 +376,67 @@ Resources:
               Configuration:
                 ActionMode: CREATE_UPDATE
                 RoleArn: !GetAtt CloudFormationDeployRole.Arn
-                StackName: !Sub ${EnvironmentName}-AppService
-                TemplatePath: Source::cloudformation/app-service.yml
+                StackName: !Sub ${EnvironmentName}-KongService
+                TemplatePath: Source::cloudformation/kong-service.yml
                 Capabilities: CAPABILITY_IAM
                 ParameterOverrides: !Sub |
                   {
                     "EnvironmentName": "${EnvironmentName}",
                     "MongoHost": "${MongoHost}",
                     "ImageUrl": {
-                      "Fn::GetParam" : ["BuildOutputApp", "build-api.json", "ImageUri"]
+                      "Fn::GetParam" : ["BuildOutputKong", "build-kong.json", "ImageUri"]
                     }
                   }
               InputArtifacts:
                 - Name: Source
-                - Name: BuildOutputApp
+                - Name: BuildOutputKong
 
-        #- Name: DeployPortal
-        #  ActionTypeId:
-        #    Category: Deploy
-        #    Owner: AWS
-        #    Version: 1
-        #    Provider: CloudFormation
-        #  Configuration:
-        #    ActionMode: CREATE_UPDATE
-        #    RoleArn: !GetAtt CloudFormationDeployRole.Arn
-        #    StackName: !Sub ${EnvironmentName}-PortalService
-        #    TemplatePath: Source::cloudformation/portal-service.yml
-        #    Capabilities: CAPABILITY_IAM
-        #    ParameterOverrides: !Sub |
-        #      {
-        #        "EnvironmentName": "${EnvironmentName}",
-        #        "ImageUrl": {
-        #          "Fn::GetParam" : ["BuildOutputPortal", "build-portal.json", "ImageUri"]
-        #        }
-        #      }
-        #  InputArtifacts:
-        #    - Name: Source
-        #    - Name: BuildOutpuPortal
+            #- Name: DeployApp
+            #  ActionTypeId:
+            #    Category: Deploy
+            #    Owner: AWS
+            #    Version: 1
+            #    Provider: CloudFormation
+            #  Configuration:
+            #    ActionMode: CREATE_UPDATE
+            #    RoleArn: !GetAtt CloudFormationDeployRole.Arn
+            #    StackName: !Sub ${EnvironmentName}-AppService
+            #    TemplatePath: Source::cloudformation/app-service.yml
+            #    Capabilities: CAPABILITY_IAM
+            #    ParameterOverrides: !Sub |
+            #      {
+            #        "EnvironmentName": "${EnvironmentName}",
+            #        "MongoHost": "${MongoHost}",
+            #        "ImageUrl": {
+            #          "Fn::GetParam" : ["BuildOutputApp", "build-api.json", "ImageUri"]
+            #        }
+            #      }
+            #  InputArtifacts:
+            #    - Name: Source
+            #    - Name: BuildOutputApp
+
+            #- Name: DeployPortal
+            #  ActionTypeId:
+            #    Category: Deploy
+            #    Owner: AWS
+            #    Version: 1
+            #    Provider: CloudFormation
+            #  Configuration:
+            #    ActionMode: CREATE_UPDATE
+            #    RoleArn: !GetAtt CloudFormationDeployRole.Arn
+            #    StackName: !Sub ${EnvironmentName}-PortalService
+            #    TemplatePath: Source::cloudformation/portal-service.yml
+            #    Capabilities: CAPABILITY_IAM
+            #    ParameterOverrides: !Sub |
+            #      {
+            #        "EnvironmentName": "${EnvironmentName}",
+            #        "ImageUrl": {
+            #          "Fn::GetParam" : ["BuildOutputPortal", "build-portal.json", "ImageUri"]
+            #        }
+            #      }
+            #  InputArtifacts:
+            #    - Name: Source
+            #    - Name: BuildOutputPortal
 
 Outputs:
   PipelineUrl:
