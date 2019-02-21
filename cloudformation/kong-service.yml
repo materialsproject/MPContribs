@@ -66,17 +66,11 @@ Resources:
             - Name: KONG_PLUGINS
               Value: oidc,oidc-consumer
             - Name: KONG_PG_HOST
-              Value: |
-                  Fn::ImportValue:
-                      !Join [':', [!Ref 'EnvironmentName', 'DBAddress']]
+              Value: !Join [':', [!Ref 'EnvironmentName', 'DBAddress']]
             - Name: KONG_PG_PORT
-              Value: |
-                  Fn::ImportValue:
-                      !Join [':', [!Ref 'EnvironmentName', 'DBPort']]
+              Value: !Join [':', [!Ref 'EnvironmentName', 'DBPort']]
             - Name: KONG_PG_PASSWORD
-              Value: |
-                  Fn::ImportValue:
-                      !Join [':', [!Ref 'EnvironmentName', 'DBPassword']]
+              Value: !Join [':', [!Ref 'EnvironmentName', 'DBPassword']]
           PortMappings:
             - ContainerPort: 8000
             - ContainerPort: 8001
