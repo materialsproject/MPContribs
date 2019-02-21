@@ -90,12 +90,12 @@ Resources:
   PrivateSubnetOneRouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
-      SubnetId: !Ref PrivateSubnet
+      SubnetId: !Ref PrivateSubnetOne
       RouteTableId: !Ref PrivateRouteTable
   PrivateSubnetTwoRouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
-      SubnetId: !Ref PrivateSubnet
+      SubnetId: !Ref PrivateSubnetTwo
       RouteTableId: !Ref PrivateRouteTable
 
   PublicSecurityGroup:

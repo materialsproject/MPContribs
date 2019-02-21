@@ -338,19 +338,32 @@ Resources:
 
         - Name: AppResources
           Actions:
-            - Name: BuildApp
+            - Name: BuildKong
               ActionTypeId:
                 Category: Build
                 Owner: AWS
                 Version: 1
                 Provider: CodeBuild
               Configuration:
-                ProjectName: !Ref CodeBuildProjectApp
+                ProjectName: !Ref CodeBuildProjectKong
               InputArtifacts:
                 - Name: Source
               OutputArtifacts:
-                - Name: BuildOutputApp
+                - Name: BuildOutputKong
               RunOrder: 1
+            #- Name: BuildApp
+            #  ActionTypeId:
+            #    Category: Build
+            #    Owner: AWS
+            #    Version: 1
+            #    Provider: CodeBuild
+            #  Configuration:
+            #    ProjectName: !Ref CodeBuildProjectApp
+            #  InputArtifacts:
+            #    - Name: Source
+            #  OutputArtifacts:
+            #    - Name: BuildOutputApp
+            #  RunOrder: 1
             #- Name: BuildPortal
             #  ActionTypeId:
             #    Category: Build
