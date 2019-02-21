@@ -92,5 +92,7 @@ Resources:
         AwsvpcConfiguration:
           Subnets:
             - Fn::ImportValue:
-                !Join [':', [!Ref 'EnvironmentName', 'PrivateSubnet']]
+                !Join [':', [!Ref 'EnvironmentName', 'PrivateSubnetOne']]
+            - Fn::ImportValue:
+                !Join [':', [!Ref 'EnvironmentName', 'PrivateSubnetTwo']]
       TaskDefinition: !Ref 'TaskDefinition'
