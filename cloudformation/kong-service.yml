@@ -23,14 +23,10 @@ Parameters:
     Type: Number
     Default: 1024
     Description: How much memory in megabytes to give the container
-  DBAddress:
-    Type: String
-    Default: rds.amazonaws.com
-    Description: address for the Postgres DB
-  DBPort:
-    Type: Number
-    Default: 5432
-    Description: port for the Postgres DB
+  #DBAddress:
+  #  Type: String
+  #  Default: rds.amazonaws.com
+  #  Description: address for the Postgres DB
   DBPassword:
     Type: String
     Default: change-me
@@ -80,9 +76,11 @@ Resources:
             - Name: KONG_PLUGINS
               Value: oidc,oidc-consumer
             - Name: KONG_PG_HOST
-              Value: !Ref 'DBAddress'
+              Value:
+                Fn::ImportValue:
+                    !Join [':', [!Ref 'EnvironmentName', 'DBAddress']]
             - Name: KONG_PG_PORT
-              Value: !Ref 'DBPort'
+              Value: 5432
             - Name: KONG_PG_PASSWORD
               Value: !Ref 'DBPassword'
           PortMappings:
