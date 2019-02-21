@@ -332,3 +332,8 @@ Outputs:
     Value: !GetAtt 'PostgresDB.Endpoint.Address'
     Export:
       Name: !Join [ ':', [ !Ref 'EnvironmentName', 'DBAddress' ] ]
+  PublicSecurityGroup:
+    Description: Public Security Group
+    Value: !Ref 'PublicSecurityGroup'
+    Export:
+      Name: !Join [ ':', [ !Ref 'EnvironmentName', 'PublicSecurityGroup' ] ]
