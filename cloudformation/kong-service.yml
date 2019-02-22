@@ -110,9 +110,9 @@ Resources:
       NetworkConfiguration:
         AwsvpcConfiguration:
           AssignPublicIp: ENABLED
-          SecurityGroups:
-            - Fn::ImportValue:
-                !Join [':', [!Ref 'EnvironmentName', 'PublicSecurityGroup']]
+          #SecurityGroups:
+          #  - Fn::ImportValue:
+          #      !Join [':', [!Ref 'EnvironmentName', 'PublicSecurityGroup']]
           Subnets:
             - Fn::ImportValue:
                 !Join [':', [!Ref 'EnvironmentName', 'PublicSubnetOne']]
