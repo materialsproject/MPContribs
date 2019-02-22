@@ -401,30 +401,30 @@ Resources:
 
         - Name: Deploy
           Actions:
-            #- Name: DeployKong
-            #  ActionTypeId:
-            #    Category: Deploy
-            #    Owner: AWS
-            #    Version: 1
-            #    Provider: CloudFormation
-            #  Configuration:
-            #    ActionMode: CREATE_UPDATE
-            #    RoleArn: !GetAtt CloudFormationDeployRole.Arn
-            #    StackName: !Sub ${EnvironmentName}-KongService
-            #    TemplatePath: Source::cloudformation/kong-service.yml
-            #    Capabilities: CAPABILITY_IAM
-            #    ParameterOverrides: !Sub |
-            #      {
-            #        "EnvironmentName": "${EnvironmentName}",
-            #        "DBPassword": "${DBPassword}",
-            #        "ImageUrl": {
-            #          "Fn::GetParam" : ["BuildOutputKong", "build-kong.json", "ImageUri"]
-            #        }
-            #      }
-            #  InputArtifacts:
-            #    - Name: Source
-            #    - Name: BaseResources
-            #    - Name: BuildOutputKong
+            - Name: DeployKong
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Version: 1
+                Provider: CloudFormation
+              Configuration:
+                ActionMode: CREATE_UPDATE
+                RoleArn: !GetAtt CloudFormationDeployRole.Arn
+                StackName: !Sub ${EnvironmentName}-KongService
+                TemplatePath: Source::cloudformation/kong-service.yml
+                Capabilities: CAPABILITY_IAM
+                ParameterOverrides: !Sub |
+                  {
+                    "EnvironmentName": "${EnvironmentName}",
+                    "DBPassword": "${DBPassword}",
+                    "ImageUrl": {
+                      "Fn::GetParam" : ["BuildOutputKong", "build-kong.json", "ImageUri"]
+                    }
+                  }
+              InputArtifacts:
+                - Name: Source
+                - Name: BaseResources
+                - Name: BuildOutputKong
 
             - Name: DeployApp
               ActionTypeId:
