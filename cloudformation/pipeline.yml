@@ -285,6 +285,7 @@ Resources:
         ComputeType: BUILD_GENERAL1_SMALL
         Image: aws/codebuild/docker:17.09.0
         Type: LINUX_CONTAINER
+        PrivilegedMode: true
         EnvironmentVariables:
           - Name: AWS_DEFAULT_REGION
             Value: !Ref AWS::Region
@@ -294,6 +295,12 @@ Resources:
             Value: !Ref GitHubUser
           - Name: GITHUB_REPO
             Value: !Ref GitHubRepo
+      Cache:
+        Type: LOCAL
+        Modes: # You can specify one or more cache mode,
+          - LOCAL_CUSTOM_CACHE
+          - LOCAL_DOCKER_LAYER_CACHE
+          - LOCAL_SOURCE_CACHE
       Name: !Sub ${AWS::StackName}-portal
       ServiceRole: !Ref CodeBuildServiceRole
 
@@ -394,30 +401,30 @@ Resources:
 
         - Name: Deploy
           Actions:
-            - Name: DeployKong
-              ActionTypeId:
-                Category: Deploy
-                Owner: AWS
-                Version: 1
-                Provider: CloudFormation
-              Configuration:
-                ActionMode: CREATE_UPDATE
-                RoleArn: !GetAtt CloudFormationDeployRole.Arn
-                StackName: !Sub ${EnvironmentName}-KongService
-                TemplatePath: Source::cloudformation/kong-service.yml
-                Capabilities: CAPABILITY_IAM
-                ParameterOverrides: !Sub |
-                  {
-                    "EnvironmentName": "${EnvironmentName}",
-                    "DBPassword": "${DBPassword}",
-                    "ImageUrl": {
-                      "Fn::GetParam" : ["BuildOutputKong", "build-kong.json", "ImageUri"]
-                    }
-                  }
-              InputArtifacts:
-                - Name: Source
-                - Name: BaseResources
-                - Name: BuildOutputKong
+            #- Name: DeployKong
+            #  ActionTypeId:
+            #    Category: Deploy
+            #    Owner: AWS
+            #    Version: 1
+            #    Provider: CloudFormation
+            #  Configuration:
+            #    ActionMode: CREATE_UPDATE
+            #    RoleArn: !GetAtt CloudFormationDeployRole.Arn
+            #    StackName: !Sub ${EnvironmentName}-KongService
+            #    TemplatePath: Source::cloudformation/kong-service.yml
+            #    Capabilities: CAPABILITY_IAM
+            #    ParameterOverrides: !Sub |
+            #      {
+            #        "EnvironmentName": "${EnvironmentName}",
+            #        "DBPassword": "${DBPassword}",
+            #        "ImageUrl": {
+            #          "Fn::GetParam" : ["BuildOutputKong", "build-kong.json", "ImageUri"]
+            #        }
+            #      }
+            #  InputArtifacts:
+            #    - Name: Source
+            #    - Name: BaseResources
+            #    - Name: BuildOutputKong
 
             - Name: DeployApp
               ActionTypeId:
