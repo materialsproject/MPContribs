@@ -23,10 +23,6 @@ Parameters:
     Type: Number
     Default: 1024
     Description: How much memory in megabytes to give the container
-  #DBAddress:
-  #  Type: String
-  #  Default: rds.amazonaws.com
-  #  Description: address for the Postgres DB
   DBPassword:
     Type: String
     Default: change-me
