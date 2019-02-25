@@ -112,6 +112,28 @@ Resources:
       IpProtocol: -1
       SourceSecurityGroupId: !Ref 'PublicSecurityGroup'
 
+  PrivateSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Access to the private services
+      VpcId: !Ref 'VPC'
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 8000
+          ToPort: 8000
+          SourceSecurityGroupId: !Ref 'PublicSecurityGroup'
+        - IpProtocol: tcp
+          FromPort: 5000
+          ToPort: 5000
+          SourceSecurityGroupId: !Ref 'PublicSecurityGroup'
+  PrivateSecurityGroupIngressFromSelf:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      Description: Ingress from other containers in the same security group
+      GroupId: !Ref 'PrivateSecurityGroup'
+      IpProtocol: -1
+      SourceSecurityGroupId: !Ref 'PrivateSecurityGroup'
+
   DBSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -165,6 +187,7 @@ Resources:
         - !Ref 'PrivateSubnetTwo'
       SecurityGroupIds:
         - !Ref 'PublicSecurityGroup'
+        - !Ref 'PrivateSecurityGroup'
   S3Endpoint:
     Type: AWS::EC2::VPCEndpoint
     Properties:
@@ -188,6 +211,7 @@ Resources:
         - !Ref 'PrivateSubnetTwo'
       SecurityGroupIds:
         - !Ref 'PublicSecurityGroup'
+        - !Ref 'PrivateSecurityGroup'
 
   ECSCluster:
     Type: AWS::ECS::Cluster
@@ -344,3 +368,8 @@ Outputs:
     Value: !Ref 'PublicSecurityGroup'
     Export:
       Name: !Join [ ':', [ !Ref 'EnvironmentName', 'PublicSecurityGroup' ] ]
+  PrivateSecurityGroup:
+    Description: Private Security Group
+    Value: !Ref 'PrivateSecurityGroup'
+    Export:
+      Name: !Join [ ':', [ !Ref 'EnvironmentName', 'PrivateSecurityGroup' ] ]

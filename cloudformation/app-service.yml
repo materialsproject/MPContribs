@@ -90,6 +90,9 @@ Resources:
       DesiredCount: 1
       NetworkConfiguration:
         AwsvpcConfiguration:
+          SecurityGroups:
+            - Fn::ImportValue:
+                !Join [':', [!Ref 'EnvironmentName', 'PrivateSecurityGroup']]
           Subnets:
             - Fn::ImportValue:
                 !Join [':', [!Ref 'EnvironmentName', 'PrivateSubnetOne']]
