@@ -96,6 +96,8 @@ Resources:
       GroupDescription: Access to the public facing services
       VpcId: !Ref 'VPC'
       SecurityGroupIngress:
+        - IpProtocol: -1
+          SourceSecurityGroupId: !Ref 'PublicSecurityGroup'
         - IpProtocol: tcp
           FromPort: 8000
           ToPort: 8000
