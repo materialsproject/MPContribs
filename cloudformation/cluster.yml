@@ -163,6 +163,8 @@ Resources:
         - !Ref 'PublicSubnetTwo'
         - !Ref 'PrivateSubnetOne'
         - !Ref 'PrivateSubnetTwo'
+      SecurityGroupIds:
+        - !Ref 'PublicSecurityGroup'
   S3Endpoint:
     Type: AWS::EC2::VPCEndpoint
     Properties:
@@ -184,6 +186,8 @@ Resources:
         - !Ref 'PublicSubnetTwo'
         - !Ref 'PrivateSubnetOne'
         - !Ref 'PrivateSubnetTwo'
+      SecurityGroupIds:
+        - !Ref 'PublicSecurityGroup'
 
   ECSCluster:
     Type: AWS::ECS::Cluster
