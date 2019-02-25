@@ -221,6 +221,7 @@ Resources:
     Properties:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
+        - arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -264,7 +265,7 @@ Resources:
     Properties:
       Description: CloudFormation Custom::KongAPI implementation
       Code:
-        S3Bucket: !Sub 'binxio-public-${AWS::Region}' # TODO permission denied
+        S3Bucket: !Sub 'binxio-public-${AWS::Region}'
         S3Key: lambdas/cfn-kong-provider-0.5.2.zip
       FunctionName: binxio-cfn-kong-provider
       Handler: kong.handler
