@@ -96,8 +96,6 @@ Resources:
       GroupDescription: Access to the public facing services
       VpcId: !Ref 'VPC'
       SecurityGroupIngress:
-        - IpProtocol: -1
-          SourceSecurityGroupId: !Ref 'PublicSecurityGroup'
         - IpProtocol: tcp
           FromPort: 8000
           ToPort: 8000
@@ -106,6 +104,13 @@ Resources:
           FromPort: 8001
           ToPort: 8001
           CidrIp: 0.0.0.0/0
+  PublicSecurityGroupIngressFromSelf:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      Description: Ingress from other containers in the same security group
+      GroupId: !Ref 'PublicSecurityGroup'
+      IpProtocol: -1
+      SourceSecurityGroupId: !Ref 'PublicSecurityGroup'
 
   DBSecurityGroup:
     Type: AWS::EC2::SecurityGroup
