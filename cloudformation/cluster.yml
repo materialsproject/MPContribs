@@ -271,12 +271,12 @@ Resources:
       Handler: kong.handler
       MemorySize: 128
       Role: !GetAtt 'LambdaRole.Arn'
-      VpcConfig:
-        SecurityGroupIds:
-          - !Ref 'PublicSecurityGroup'
-        SubnetIds:
-          - !Ref 'PublicSubnetOne'
-          - !Ref 'PublicSubnetTwo'
+      #VpcConfig:
+      #  SecurityGroupIds:
+      #    - !Ref 'PublicSecurityGroup'
+      #  SubnetIds:
+      #    - !Ref 'PublicSubnetOne'
+      #    - !Ref 'PublicSubnetTwo'
       Runtime: python3.6
 
   # This is an IAM role which authorizes ECS to manage resources on your
