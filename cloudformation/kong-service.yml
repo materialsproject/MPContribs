@@ -115,3 +115,29 @@ Resources:
             - Fn::ImportValue:
                 !Join [':', [!Ref 'EnvironmentName', 'PublicSubnetTwo']]
       TaskDefinition: !Ref 'TaskDefinition'
+      LoadBalancers:
+        - ContainerName: !Ref 'ServiceName'
+          ContainerPort: 8000
+          TargetGroupArn: !Ref 'NetworkLoadBalancerTargetGroup'
+
+  NetworkLoadBalancerTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Port: 8000
+      Protocol: TCP
+      TargetType: ip
+      VpcId:
+        Fn::ImportValue:
+          !Join [':', [!Ref 'EnvironmentName', 'VPCId']]
+
+  NetworkLoadBalancerListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref NetworkLoadBalancerTargetGroup
+      LoadBalancerArn:
+        Fn::ImportValue:
+          !Join [':', [!Ref 'EnvironmentName', 'NetworkLoadBalancer']]
+      Port: 80
+      Protocol: TCP
