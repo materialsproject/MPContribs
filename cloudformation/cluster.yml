@@ -95,8 +95,8 @@ Resources:
     Properties:
       Scheme: internet-facing
       Subnets:
-        - !Ref 'PrivateSubnetOne'
-        - !Ref 'PrivateSubnetTwo'
+        - !Ref 'PublicSubnetOne'
+        - !Ref 'PublicSubnetTwo'
       Type: network
 
   PublicSecurityGroup:
