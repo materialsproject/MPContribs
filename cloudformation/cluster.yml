@@ -216,68 +216,68 @@ Resources:
   ECSCluster:
     Type: AWS::ECS::Cluster
 
-  LambdaRole:
-    Type: AWS::IAM::Role
-    Properties:
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
-        - arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Action:
-              - sts:AssumeRole
-            Effect: Allow
-            Principal:
-              Service:
-                - lambda.amazonaws.com
+  #LambdaRole:
+  #  Type: AWS::IAM::Role
+  #  Properties:
+  #    ManagedPolicyArns:
+  #      - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
+  #      - arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess
+  #    AssumeRolePolicyDocument:
+  #      Version: '2012-10-17'
+  #      Statement:
+  #        - Action:
+  #            - sts:AssumeRole
+  #          Effect: Allow
+  #          Principal:
+  #            Service:
+  #              - lambda.amazonaws.com
 
-  LambdaPolicy:
-    Type: AWS::IAM::Policy
-    DependsOn:
-      - LambdaRole
-    Properties:
-      PolicyName: CFNCustomKongProviderPolicy
-      PolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Effect: Allow
-            Action:
-              - ssm:GetParameter
-            Resource:
-              - '*'
-          - Effect: Allow
-            Action:
-              - kms:Encrypt
-            Resource:
-              - '*'
-          - Action:
-              - logs:*
-            Resource: arn:aws:logs:*:*:*
-            Effect: Allow
-      Roles:
-        - !Ref 'LambdaRole'
+  #LambdaPolicy:
+  #  Type: AWS::IAM::Policy
+  #  DependsOn:
+  #    - LambdaRole
+  #  Properties:
+  #    PolicyName: CFNCustomKongProviderPolicy
+  #    PolicyDocument:
+  #      Version: '2012-10-17'
+  #      Statement:
+  #        - Effect: Allow
+  #          Action:
+  #            - ssm:GetParameter
+  #          Resource:
+  #            - '*'
+  #        - Effect: Allow
+  #          Action:
+  #            - kms:Encrypt
+  #          Resource:
+  #            - '*'
+  #        - Action:
+  #            - logs:*
+  #          Resource: arn:aws:logs:*:*:*
+  #          Effect: Allow
+  #    Roles:
+  #      - !Ref 'LambdaRole'
 
-  CFNKongProvider:
-    Type: AWS::Lambda::Function
-    DependsOn:
-      - LambdaRole
-    Properties:
-      Description: CloudFormation Custom::KongAPI implementation
-      Code:
-        S3Bucket: !Sub 'binxio-public-${AWS::Region}'
-        S3Key: lambdas/cfn-kong-provider-0.5.2.zip
-      FunctionName: binxio-cfn-kong-provider
-      Handler: kong.handler
-      MemorySize: 128
-      Role: !GetAtt 'LambdaRole.Arn'
-      #VpcConfig:
-      #  SecurityGroupIds:
-      #    - !Ref 'PublicSecurityGroup'
-      #  SubnetIds:
-      #    - !Ref 'PublicSubnetOne'
-      #    - !Ref 'PublicSubnetTwo'
-      Runtime: python3.6
+  #CFNKongProvider:
+  #  Type: AWS::Lambda::Function
+  #  DependsOn:
+  #    - LambdaRole
+  #  Properties:
+  #    Description: CloudFormation Custom::KongAPI implementation
+  #    Code:
+  #      S3Bucket: !Sub 'binxio-public-${AWS::Region}'
+  #      S3Key: lambdas/cfn-kong-provider-0.5.2.zip
+  #    FunctionName: binxio-cfn-kong-provider
+  #    Handler: kong.handler
+  #    MemorySize: 128
+  #    Role: !GetAtt 'LambdaRole.Arn'
+  #    VpcConfig:
+  #      SecurityGroupIds:
+  #        - !Ref 'PublicSecurityGroup'
+  #      SubnetIds:
+  #        - !Ref 'PublicSubnetOne'
+  #        - !Ref 'PublicSubnetTwo'
+  #    Runtime: python3.6
 
   # This is an IAM role which authorizes ECS to manage resources on your
   # account on your behalf, such as updating your load balancer with the
