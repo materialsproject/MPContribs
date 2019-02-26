@@ -70,7 +70,7 @@ Resources:
             - Name: KONG_PG_DATABASE
               Value: kong
             - Name: KONG_PLUGINS
-              Value: oidc,oidc-consumer
+              Value: key-auth,oidc,oidc-consumer
             - Name: KONG_PG_HOST
               Value:
                 Fn::ImportValue:
