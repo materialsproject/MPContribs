@@ -258,26 +258,26 @@ Resources:
       Roles:
         - !Ref 'LambdaRole'
 
-  CFNKongProvider:
-    Type: AWS::Lambda::Function
-    DependsOn:
-      - LambdaRole
-    Properties:
-      Description: CloudFormation Custom::KongAPI implementation
-      Code:
-        S3Bucket: !Sub 'binxio-public-${AWS::Region}'
-        S3Key: lambdas/cfn-kong-provider-0.5.2.zip
-      FunctionName: binxio-cfn-kong-provider
-      Handler: kong.handler
-      MemorySize: 128
-      Role: !GetAtt 'LambdaRole.Arn'
-      VpcConfig:
-        SecurityGroupIds:
-          - !Ref 'PublicSecurityGroup'
-        SubnetIds:
-          - !Ref 'PublicSubnetOne'
-          - !Ref 'PublicSubnetTwo'
-      Runtime: python3.6
+  #CFNKongProvider:
+  #  Type: AWS::Lambda::Function
+  #  DependsOn:
+  #    - LambdaRole
+  #  Properties:
+  #    Description: CloudFormation Custom::KongAPI implementation
+  #    Code:
+  #      S3Bucket: !Sub 'binxio-public-${AWS::Region}'
+  #      S3Key: lambdas/cfn-kong-provider-0.5.2.zip
+  #    FunctionName: binxio-cfn-kong-provider
+  #    Handler: kong.handler
+  #    MemorySize: 128
+  #    Role: !GetAtt 'LambdaRole.Arn'
+  #    VpcConfig:
+  #      SecurityGroupIds:
+  #        - !Ref 'PublicSecurityGroup'
+  #      SubnetIds:
+  #        - !Ref 'PublicSubnetOne'
+  #        - !Ref 'PublicSubnetTwo'
+  #    Runtime: python3.6
 
   # This is an IAM role which authorizes ECS to manage resources on your
   # account on your behalf, such as updating your load balancer with the
