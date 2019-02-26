@@ -123,6 +123,10 @@ Resources:
   NetworkLoadBalancerTargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
+      HealthCheckIntervalSeconds: 30
+      HealthCheckPath: /
+      HealthCheckProtocol: HTTP
+      HealthCheckPort: 8001
       Port: 8000
       Protocol: TCP
       TargetType: ip
