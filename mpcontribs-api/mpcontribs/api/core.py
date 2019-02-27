@@ -69,22 +69,8 @@ def catch_error(f):
 def login_required(f):
     @wraps(f)
     def authenticate(*args, **kwargs):
-        # TODO SSL check?
-        HEADER = 'X-API-KEY'
-        if HEADER not in request.headers:
-            raise JsonError(401, error='{} header missing'.format(HEADER))
-        api_key = request.headers[HEADER]
-        if not re.match('^[0-9,A-Z,a-z]{16}$', api_key):
-            raise JsonError(401, error='{} format invalid'.format(HEADER))
-        api_check_endpoint = current_app.config.get('API_CHECK_ENDPOINT')
-        if not api_check_endpoint:
-            raise JsonError(500, error='API_CHECK_ENDPOINT not set!')
-        headers = {HEADER: api_key}
-        api_check_response = get(api_check_endpoint, headers=headers).json()
-        if not api_check_response['api_key_valid']:
-            raise JsonError(401, error='{} invalid'.format(HEADER))
-        if request.method == 'POST' and not api_check_response.get('is_staff'):
-            raise JsonError(401, error='staff status required for POST')
+        raise JsonError(401, error='apikey OK but requests temporarily blocked
+                        (figuring out MongoDB Atlas VPC Peering connection)')
         return f(*args, **kwargs)
     return authenticate
 
