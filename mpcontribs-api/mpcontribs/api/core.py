@@ -69,8 +69,8 @@ def catch_error(f):
 def login_required(f):
     @wraps(f)
     def authenticate(*args, **kwargs):
-        raise JsonError(401, error='apikey OK but requests temporarily blocked
-                        (figuring out MongoDB Atlas VPC Peering connection)')
+        # TODO: figure out MongoDB Atlas VPC Peering connection
+        raise JsonError(401, error='apikey OK but requests temporarily blocked')
         return f(*args, **kwargs)
     return authenticate
 
