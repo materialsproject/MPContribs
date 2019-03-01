@@ -11,6 +11,15 @@ Parameters:
   GitHubUser:
     Type: String
     Default: materialsproject
+  GitHubRepoKong:
+    Type: String
+    Default: mpcontribs
+  GitHubBranchKong:
+    Type: String
+    Default: release
+  GitHubUserKong:
+    Type: String
+    Default: materialsproject
   MongoHost:
     Type: String
     NoEcho: true
@@ -177,7 +186,7 @@ Resources:
                 - IMAGE_URI="${REPOSITORY_URI}:${TAG}"
             build:
               commands:
-                - docker build --tag "${IMAGE_URI}-kong" cloudformation
+                - docker build --tag "${IMAGE_URI}-kong" .
             post_build:
               commands:
                 - docker push "${IMAGE_URI}-kong"
@@ -191,14 +200,8 @@ Resources:
         Type: LINUX_CONTAINER
         PrivilegedMode: true
         EnvironmentVariables:
-          - Name: AWS_DEFAULT_REGION
-            Value: !Ref AWS::Region
           - Name: REPOSITORY_URI
             Value: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${Repository}
-          - Name: GITHUB_USER
-            Value: !Ref GitHubUser
-          - Name: GITHUB_REPO
-            Value: !Ref GitHubRepo
       Cache:
         Type: LOCAL
         Modes: # You can specify one or more cache mode,
@@ -239,14 +242,8 @@ Resources:
         Type: LINUX_CONTAINER
         PrivilegedMode: true
         EnvironmentVariables:
-          - Name: AWS_DEFAULT_REGION
-            Value: !Ref AWS::Region
           - Name: REPOSITORY_URI
             Value: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${Repository}
-          - Name: GITHUB_USER
-            Value: !Ref GitHubUser
-          - Name: GITHUB_REPO
-            Value: !Ref GitHubRepo
       Cache:
         Type: LOCAL
         Modes: # You can specify one or more cache mode,
@@ -287,14 +284,8 @@ Resources:
         Type: LINUX_CONTAINER
         PrivilegedMode: true
         EnvironmentVariables:
-          - Name: AWS_DEFAULT_REGION
-            Value: !Ref AWS::Region
           - Name: REPOSITORY_URI
             Value: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${Repository}
-          - Name: GITHUB_USER
-            Value: !Ref GitHubUser
-          - Name: GITHUB_REPO
-            Value: !Ref GitHubRepo
       Cache:
         Type: LOCAL
         Modes: # You can specify one or more cache mode,
@@ -330,6 +321,20 @@ Resources:
                 OAuthToken: !Ref GitHubToken
               OutputArtifacts:
                 - Name: Source
+              RunOrder: 1
+            - Name: Kong
+              ActionTypeId:
+                Category: Source
+                Owner: ThirdParty
+                Version: 1
+                Provider: GitHub
+              Configuration:
+                Owner: !Ref GitHubUserKong
+                Repo: !Ref GitHubRepoKong
+                Branch: !Ref GitHubBranchKong
+                OAuthToken: !Ref GitHubToken
+              OutputArtifacts:
+                - Name: SourceKong
               RunOrder: 1
 
         # Now we deploy the base resources: the cluster and VPC itself.
@@ -367,8 +372,9 @@ Resources:
                 Provider: CodeBuild
               Configuration:
                 ProjectName: !Ref CodeBuildProjectKong
+                PrimarySource: SourceKong
               InputArtifacts:
-                - Name: Source
+                - Name: SourceKong
               OutputArtifacts:
                 - Name: BuildOutputKong
               RunOrder: 1
@@ -380,6 +386,7 @@ Resources:
                 Provider: CodeBuild
               Configuration:
                 ProjectName: !Ref CodeBuildProjectApp
+                PrimarySource: Source
               InputArtifacts:
                 - Name: Source
               OutputArtifacts:
