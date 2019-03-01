@@ -70,7 +70,7 @@ Resources:
             - Name: KONG_PG_DATABASE
               Value: kong
             - Name: KONG_PLUGINS
-              Value: key-auth,oidc,oidc-consumer
+              Value: oidc,oidc-consumer,key-auth
             - Name: KONG_PG_HOST
               Value:
                 Fn::ImportValue:
@@ -79,6 +79,18 @@ Resources:
               Value: 5432
             - Name: KONG_PG_PASSWORD
               Value: !Ref 'DBPassword'
+            - Name: KONG_LOG_LEVEL
+              Value: debug
+            - Name: KONG_LUA_PACKAGE_PATH
+              Value: '/usr/local/oidc/?.lua;;'
+            - Name: KONG_ADMIN_ACCESS_LOG
+              Value: '/dev/stdout'
+            - Name: KONG_ADMIN_ERROR_LOG
+              Value: '/dev/stderr'
+            - Name: KONG_PROXY_ACCESS_LOG
+              Value: '/dev/stdout'
+            - Name: KONG_PROXY_ERROR_LOG
+              Value: '/dev/stderr'
           PortMappings:
             - ContainerPort: 8000
             - ContainerPort: 8001
