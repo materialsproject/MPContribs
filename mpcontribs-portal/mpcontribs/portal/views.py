@@ -8,14 +8,13 @@ try:
     from django.core.urlresolvers import reverse
 except ImportError:
     from django.urls import reverse
-from test_site.settings import MPCONTRIBS_API_HOST, MPCONTRIBS_API_SPEC
 
 from bravado.requests_client import RequestsClient
 from bravado.client import SwaggerClient
 from bravado.swagger_model import load_file
 
 http_client = RequestsClient()
-spec_dict = load_file(MPCONTRIBS_API_SPEC, http_client=http_client)
+spec_dict = load_file('apispec.json', http_client=http_client)
 
 def index(request):
     ctx = RequestContext(request)
@@ -23,11 +22,11 @@ def index(request):
     api_key = request.META.get('HTTP_X_CONSUMER_CUSTOM_ID')
     if api_key and ctx['email']:
         http_client.set_api_key(
-            MPCONTRIBS_API_HOST, b64decode(api_key),
+            os.environ['MPCONTRIBS_API_HOST'], b64decode(api_key),
             param_in='header', param_name='x-api-key'
         )
         client = SwaggerClient.from_spec(
-            spec_dict, origin_url=MPCONTRIBS_API_SPEC, http_client=http_client,
+            spec_dict, http_client=http_client,
             config={'validate_responses': False}
         )
         ctx['landing_pages'] = []

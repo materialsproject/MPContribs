@@ -86,6 +86,10 @@ Resources:
               Value: !Ref 'EnvironmentName'
             - Name: DEPLOYMENT
               Value: 'MATGEN'
+            - Name: MPCONTRIBS_API_HOST
+              Value: |
+                  Fn::ImportValue:
+                      !Join [':', [!Ref 'EnvironmentName', 'NetworkLoadBalancer']]
           PortMappings:
             - ContainerPort: !Ref 'ContainerPort'
           LogConfiguration:

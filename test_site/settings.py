@@ -125,6 +125,3 @@ if os.environ.get('DEPLOYMENT') == 'MATGEN':
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 CSRF_TRUSTED_ORIGINS = ALLOWED_HOSTS
-
-MPCONTRIBS_API_HOST = 'api.mpcontribs.org'
-MPCONTRIBS_API_SPEC = 'apispec.json'
