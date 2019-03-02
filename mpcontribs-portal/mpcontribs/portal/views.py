@@ -12,11 +12,10 @@ from test_site.settings import MPCONTRIBS_API_HOST, MPCONTRIBS_API_SPEC
 
 from bravado.requests_client import RequestsClient
 from bravado.client import SwaggerClient
-from bravado.swagger_model import Loader
+from bravado.swagger_model import load_file
 
 http_client = RequestsClient()
-loader = Loader(http_client)
-spec_dict = loader.load_spec(MPCONTRIBS_API_SPEC)
+spec_dict = load_file(MPCONTRIBS_API_SPEC, http_client=http_client)
 
 def index(request):
     ctx = RequestContext(request)
