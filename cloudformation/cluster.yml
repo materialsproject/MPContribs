@@ -120,6 +120,13 @@ Resources:
       GroupId: !Ref 'PublicSecurityGroup'
       IpProtocol: -1
       SourceSecurityGroupId: !Ref 'PublicSecurityGroup'
+  PublicSecurityGroupIngressFromPrivate:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      Description: Ingress from containers in private security group
+      GroupId: !Ref 'PublicSecurityGroup'
+      IpProtocol: -1
+      SourceSecurityGroupId: !Ref 'PrivateSecurityGroup'
 
   PrivateSecurityGroup:
     Type: AWS::EC2::SecurityGroup
@@ -187,6 +194,21 @@ Resources:
     Properties:
       VpcId: !Ref 'VPC'
       ServiceName: !Sub 'com.amazonaws.${AWS::Region}.ecr.dkr'
+      VpcEndpointType: Interface
+      PrivateDnsEnabled: true
+      SubnetIds:
+        - !Ref 'PublicSubnetOne'
+        - !Ref 'PublicSubnetTwo'
+        - !Ref 'PrivateSubnetOne'
+        - !Ref 'PrivateSubnetTwo'
+      SecurityGroupIds:
+        - !Ref 'PublicSecurityGroup'
+        - !Ref 'PrivateSecurityGroup'
+  ElbEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      VpcId: !Ref 'VPC'
+      ServiceName: !Sub 'com.amazonaws.${AWS::Region}.elasticloadbalancing'
       VpcEndpointType: Interface
       PrivateDnsEnabled: true
       SubnetIds:

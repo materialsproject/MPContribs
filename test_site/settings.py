@@ -127,4 +127,4 @@ if os.environ.get('DEPLOYMENT') == 'MATGEN':
 CSRF_TRUSTED_ORIGINS = ALLOWED_HOSTS
 
 MPCONTRIBS_API_HOST = 'api.mpcontribs.org'
-MPCONTRIBS_API_SPEC = 'http://api.mpcontribs.org/apispec.json'
+MPCONTRIBS_API_SPEC = 'apispec.json'
