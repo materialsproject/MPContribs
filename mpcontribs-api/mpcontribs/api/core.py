@@ -66,14 +66,6 @@ def catch_error(f):
 #            # TODO there needs to be another staff email in permissions dict
 #            pass
 
-def login_required(f):
-    @wraps(f)
-    def authenticate(*args, **kwargs):
-        # TODO: figure out MongoDB Atlas VPC Peering connection
-        raise JsonError(401, error='apikey OK but requests temporarily blocked')
-        return f(*args, **kwargs)
-    return authenticate
-
 # https://github.com/pallets/flask/blob/master/flask/views.py
 class SwaggerViewType(MethodViewType):
     """Metaclass for `SwaggerView` ..."""
@@ -89,7 +81,7 @@ class SwaggerViewType(MethodViewType):
             cls.Schema = type(schema_name, (ModelSchema, object), {
                 'Meta': type('Meta', (object,), dict(model=Model, ordered=True))
             })
-            cls.decorators = [as_json, catch_error, login_required]
+            cls.decorators = [as_json, catch_error]
             cls.definitions = {schema_name: cls.Schema}
             cls.tags = [views_path[-2]]
 
