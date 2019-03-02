@@ -34,14 +34,16 @@ ENV NODE_ENV production
 
 WORKDIR /app
 
+RUN mkdir -p mpcontribs-webtzite/webtzite
+COPY mpcontribs-webtzite/webtzite/package.json mpcontribs-webtzite/webtzite/
+COPY package.json .
+RUN npm install 2>&1
+
 COPY mpcontribs-webtzite mpcontribs-webtzite
 RUN cd mpcontribs-webtzite && pip install .
 
 COPY mpcontribs-portal mpcontribs-portal
 RUN cd mpcontribs-portal && pip install .
-
-COPY package.json .
-RUN npm install 2>&1
 
 COPY mpcontribs-users mpcontribs-users
 RUN cd mpcontribs-users && pip install .
@@ -58,7 +60,6 @@ COPY manage.py .
 RUN python3 manage.py collectstatic --no-input && \
         python3 manage.py makemigrations webtzite && \
         python3 manage.py migrate && \
-        python3 manage.py clearsessions && \
-        python3 manage.py django_cas_ng_clean_sessions
+        python3 manage.py clearsessions
 
 CMD ["python3",  "manage.py", "runserver", "0.0.0.0:8080"]
