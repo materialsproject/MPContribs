@@ -1,15 +1,13 @@
 {% extends "header_footer.html" %}
 {% block content %}
-{% if user.is_registered %}
-<dl class="dl-horizontal">
-  <dt>Current user:</dt><dd>{{ user.email }}</dd>
-  <dt>Institution:</dt><dd>{{ user.institution }}</dd>
-  <dt>Superuser:</dt><dd>{{ user.is_superuser }}</dd>
-  <dt>API Key:</dt><dd><code id='key'>{{ user.api_key }}</code></dd>
-  <dt>Groups:</dt><dd>{{ user.groups }}</dd>
-</dl>
-<button id="keygen" hidden>Regenerate API Key</button>
-{% else %}
-<p>Please log in!</p>
-{% endif %}
+<div class="container">
+    <div class="row" style="margin-top: 20px">
+        <div class="col-md-8">
+            <dl class="dl-horizontal">
+                <dt>Current user:</dt><dd>{{ email }}</dd>
+                <dt>API Key:</dt><dd><code>{{ api_key }}</code></dd>
+            </dl>
+        </div>
+    </div>
+</div>
 {% endblock %}

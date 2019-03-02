@@ -46,11 +46,7 @@
             <li><a href="https://jupyterhub.materialsproject.org" target="_blank">MP JupyterHub</a></li>
             {% block extra_items %}
             {% endblock extra_items %}
-            {% if user.is_authenticated %}
             <li><a href="{% url 'webtzite:dashboard' %}">Dashboard</a></li>
-            {% else %}
-            <li><a href="{% url 'webtzite:cas_ng_login' %}?next={% url 'webtzite:dashboard' %}">Login</a></li>
-            {% endif %}
           </ul>
         </div>
       </nav>

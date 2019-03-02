@@ -32,13 +32,8 @@ print(DEBUG)
 
 ALLOWED_HOSTS = [
     'portal.mpcontribs.org', 'contribs.materialsproject.org', 'localhost',
-    'jupyterhub.materialsproject.org', '127.0.0.2', '0.0.0.0'
+    'jupyterhub.materialsproject.org', '127.0.0.2', '0.0.0.0', 'docker.for.mac.localhost'
 ]
-
-AUTHENTICATION_BACKENDS = (
-    #'django.contrib.auth.backends.ModelBackend',
-    'webtzite.backends.CASBackend',
-)
 
 #from mpcontribs.users_modules import get_user_installed_apps
 INSTALLED_APPS = [
@@ -49,11 +44,9 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django_extensions',
-    'django_cas_ng',
     'zappa_django_utils',
     'webpack_loader',
     'macros',
-    #'corsheaders',
     'webtzite',
     'mpcontribs.portal',
     ##'mpcontribs.rest',
@@ -61,7 +54,6 @@ INSTALLED_APPS = [
 ] #+ get_user_installed_apps()
 
 MIDDLEWARE = (
-    #'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     #'django.middleware.csrf.CsrfViewMiddleware',
@@ -132,24 +124,7 @@ WEBPACK_LOADER = {
 if os.environ.get('DEPLOYMENT') == 'MATGEN':
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
-#CAS_SERVER_URL = 'http://localhost:8000/cas/' if DEBUG else 'https://materialsproject.org/cas/'
-CAS_SERVER_URL = 'https://materialsproject.org/cas/'
-CAS_VERSION = '3'
-CAS_LOGOUT_COMPLETELY = False
-CAS_REDIRECT_URL = '/'
-CAS_RETRY_LOGIN = True
-CAS_USERNAME_ATTRIBUTE = 'username'
-CAS_APPLY_ATTRIBUTES_TO_USER = True
-
-CORS_ORIGIN_ALLOW_ALL = True
-CORS_ALLOW_CREDENTIALS = True
 CSRF_TRUSTED_ORIGINS = ALLOWED_HOSTS
-CORS_ORIGIN_WHITELIST = ALLOWED_HOSTS
 
-#MPCONTRIBS_API_HOST = '0.0.0.0' if DEBUG else 'api.mpcontribs.org'
-#MPCONTRIBS_API_SPEC = '{}://{}{}/apispec.json'.format(
-#    'http' if DEBUG else 'https', MPCONTRIBS_API_HOST, ':5000' if DEBUG else ''
-#)
 MPCONTRIBS_API_HOST = 'api.mpcontribs.org'
-MPCONTRIBS_API_SPEC = 'https://api.mpcontribs.org/apispec.json'
-print(MPCONTRIBS_API_SPEC)
+MPCONTRIBS_API_SPEC = 'http://api.mpcontribs.org/apispec.json'

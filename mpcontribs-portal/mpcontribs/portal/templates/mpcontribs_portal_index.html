@@ -26,7 +26,7 @@
         </div>
         <div class="panel-body" style="padding: 0px">
           <div class="col-md-12" style="padding: 5px">
-            <a href="{% url 'mpcontribs_explorer_index' %}">
+            <a href="#"> <!-- TODO -->
               <img src='{% static "explorer.jpg" %}' width=100% />
             </a>
           </div>
@@ -40,35 +40,31 @@
         Project.</p>
     </div>
   </div>
-  <h2 align="center" style="border-top: 2px dashed; border-bottom: 2px dashed;
-  margin: 15px 0 15px; padding: 10px;
-  background: #eee; font-variant: small-caps;">Contributed Materials Data</h2>
-  <div class="row equal">
-    {% for lp in landing_pages %}
-    <div class="col-md-4">
-      <div class="panel panel-default">
-        <div class="panel-heading">
-          <h4 class="panel-title">
-            <a href="{{ lp.url }}">{{ lp.title  }}</a>
-            {% if "provenance" in lp %}{{ lp.provenance|safe }}{% endif %}
-          </h4>
-        </div>
-        <div class="panel-body" style="padding: 0px">
-          <div class="col-md-12" style="padding: 5px;">
-            <a href="{{ lp.url }}">
-              <img src="{% static lp.project %}.jpg" width=100% />
-            </a>
+  {% if landing_pages %}
+      <h2 align="center" style="border-top: 2px dashed; border-bottom: 2px dashed;
+      margin: 15px 0 15px; padding: 10px;
+      background: #eee; font-variant: small-caps;">Contributed Materials Data</h2>
+      <div class="row equal">
+        {% for lp in landing_pages %}
+        <div class="col-md-4">
+          <div class="panel panel-default">
+            <div class="panel-heading">
+              <h4 class="panel-title">
+                <a href="{{ lp.url }}">{{ lp.title  }}</a>
+                {% if "provenance" in lp %}{{ lp.provenance|safe }}{% endif %}
+              </h4>
+            </div>
+            <div class="panel-body" style="padding: 0px">
+              <div class="col-md-12" style="padding: 5px;">
+                <a href="{{ lp.url }}">
+                  <img src="{% static lp.project %}.jpg" width=100% />
+                </a>
+              </div>
+            </div>
           </div>
         </div>
+        {% endfor %}
       </div>
-    </div>
-    {% endfor %}
-  </div>
+  {% endif %}
 </div>
-{% endblock %}
-
-{% block extra_items %}
-{% if user.is_authenticated and user.is_superuser %}
-<li><a href="{% url 'mpcontribs_portal_index' %}admin">Admin</a></li>
-{% endif %}
 {% endblock %}
