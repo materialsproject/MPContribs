@@ -14,6 +14,7 @@ from bravado.client import SwaggerClient
 from bravado.swagger_model import load_file
 
 http_client = RequestsClient()
+http_client.session.verify = False # TODO remove when SSL enabled
 spec_dict = load_file('apispec.json', http_client=http_client)
 
 def index(request):
