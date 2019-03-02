@@ -29,6 +29,9 @@ Parameters:
     Description: password for the Postgres DB
     NoEcho: 'true'
     MinLength: '8'
+  CertificateArn:
+    Type: String
+    Description: ARN of the Amazon Certificate Manager SSL certificate to use for this app
 
 Resources:
   # A log group for storing the container logs for this service
@@ -157,3 +160,17 @@ Resources:
           !Join [':', [!Ref 'EnvironmentName', 'NetworkLoadBalancer']]
       Port: 80
       Protocol: TCP
+
+  NetworkLoadBalancerListenerHTTPS:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref NetworkLoadBalancerTargetGroup
+      LoadBalancerArn:
+        Fn::ImportValue:
+          !Join [':', [!Ref 'EnvironmentName', 'NetworkLoadBalancer']]
+      Port: 443
+      Protocol: TLS
+      Certificates:
+        - CertificateArn: !Ref 'CertificateArn'

@@ -32,6 +32,9 @@ Parameters:
     Description: The database admin account password
     Type: String
     MinLength: '8'
+  CertificateArn:
+    Type: String
+    Description: ARN of the Amazon Certificate Manager SSL certificate to use for this app
 
 Resources:
   # Create the ECR respository to hold built docker images
@@ -426,6 +429,7 @@ Resources:
                   {
                     "EnvironmentName": "${EnvironmentName}",
                     "DBPassword": "${DBPassword}",
+                    "CertificateArn": "${CertificateArn}",
                     "ImageUrl": {
                       "Fn::GetParam" : ["BuildOutputKong", "build-kong.json", "ImageUri"]
                     }
