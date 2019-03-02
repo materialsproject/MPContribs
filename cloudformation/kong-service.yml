@@ -64,8 +64,10 @@ Resources:
               Value: !Ref 'AWS::Region'
             - Name: ENV_NAME
               Value: !Ref 'EnvironmentName'
+            - Name: KONG_PROXY_LISTEN
+              Value: '0.0.0.0:8000, 0.0.0.0:8443 ssl'
             - Name: KONG_ADMIN_LISTEN
-              Value: '0.0.0.0:8001'
+              Value: '0.0.0.0:8001, 0.0.0.0:8444 ssl'
             - Name: KONG_DATABASE
               Value: postgres
             - Name: KONG_PG_USER
@@ -97,6 +99,8 @@ Resources:
           PortMappings:
             - ContainerPort: 8000
             - ContainerPort: 8001
+            - ContainerPort: 8443
+            - ContainerPort: 8444
           LogConfiguration:
             LogDriver: 'awslogs'
             Options:
@@ -132,7 +136,7 @@ Resources:
       TaskDefinition: !Ref 'TaskDefinition'
       LoadBalancers:
         - ContainerName: !Ref 'ServiceName'
-          ContainerPort: 8000
+          ContainerPort: 8443
           TargetGroupArn: !Ref 'NetworkLoadBalancerTargetGroup'
 
   NetworkLoadBalancerTargetGroup:
@@ -142,26 +146,14 @@ Resources:
       HealthCheckPath: /
       HealthCheckProtocol: HTTP
       HealthCheckPort: 8001
-      Port: 8000
-      Protocol: TCP
+      Port: 8443
+      Protocol: TLS
       TargetType: ip
       VpcId:
         Fn::ImportValue:
           !Join [':', [!Ref 'EnvironmentName', 'VPCId']]
 
   NetworkLoadBalancerListener:
-    Type: AWS::ElasticLoadBalancingV2::Listener
-    Properties:
-      DefaultActions:
-        - Type: forward
-          TargetGroupArn: !Ref NetworkLoadBalancerTargetGroup
-      LoadBalancerArn:
-        Fn::ImportValue:
-          !Join [':', [!Ref 'EnvironmentName', 'NetworkLoadBalancer']]
-      Port: 80
-      Protocol: TCP
-
-  NetworkLoadBalancerListenerHTTPS:
     Type: AWS::ElasticLoadBalancingV2::Listener
     Properties:
       DefaultActions:
