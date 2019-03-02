@@ -392,19 +392,20 @@ Resources:
               OutputArtifacts:
                 - Name: BuildOutputApp
               RunOrder: 1
-            #- Name: BuildPortal
-            #  ActionTypeId:
-            #    Category: Build
-            #    Owner: AWS
-            #    Version: 1
-            #    Provider: CodeBuild
-            #  Configuration:
-            #    ProjectName: !Ref CodeBuildProjectPortal
-            #  InputArtifacts:
-            #    - Name: Source
-            #  OutputArtifacts:
-            #    - Name: BuildOutputPortal
-            #  RunOrder: 1
+            - Name: BuildPortal
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Version: 1
+                Provider: CodeBuild
+              Configuration:
+                ProjectName: !Ref CodeBuildProjectPortal
+                PrimarySource: Source
+              InputArtifacts:
+                - Name: Source
+              OutputArtifacts:
+                - Name: BuildOutputPortal
+              RunOrder: 1
 
         - Name: Deploy
           Actions:
@@ -457,28 +458,28 @@ Resources:
                 - Name: Source
                 - Name: BuildOutputApp
 
-            #- Name: DeployPortal
-            #  ActionTypeId:
-            #    Category: Deploy
-            #    Owner: AWS
-            #    Version: 1
-            #    Provider: CloudFormation
-            #  Configuration:
-            #    ActionMode: CREATE_UPDATE
-            #    RoleArn: !GetAtt CloudFormationDeployRole.Arn
-            #    StackName: !Sub ${EnvironmentName}-PortalService
-            #    TemplatePath: Source::cloudformation/portal-service.yml
-            #    Capabilities: CAPABILITY_IAM
-            #    ParameterOverrides: !Sub |
-            #      {
-            #        "EnvironmentName": "${EnvironmentName}",
-            #        "ImageUrl": {
-            #          "Fn::GetParam" : ["BuildOutputPortal", "build-portal.json", "ImageUri"]
-            #        }
-            #      }
-            #  InputArtifacts:
-            #    - Name: Source
-            #    - Name: BuildOutputPortal
+            - Name: DeployPortal
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Version: 1
+                Provider: CloudFormation
+              Configuration:
+                ActionMode: CREATE_UPDATE
+                RoleArn: !GetAtt CloudFormationDeployRole.Arn
+                StackName: !Sub ${EnvironmentName}-PortalService
+                TemplatePath: Source::cloudformation/portal-service.yml
+                Capabilities: CAPABILITY_IAM
+                ParameterOverrides: !Sub |
+                  {
+                    "EnvironmentName": "${EnvironmentName}",
+                    "ImageUrl": {
+                      "Fn::GetParam" : ["BuildOutputPortal", "build-portal.json", "ImageUri"]
+                    }
+                  }
+              InputArtifacts:
+                - Name: Source
+                - Name: BuildOutputPortal
 
 Outputs:
   PipelineUrl:
