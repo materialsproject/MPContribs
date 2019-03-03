@@ -33,6 +33,7 @@ def index(request):
             spec_dict, http_client=http_client,
             config={'validate_responses': False}
         )
+        return render(request, "mpcontribs_portal_index.html", ctx.flatten())
         ctx['landing_pages'] = []
         provenances = client.provenances.get_provenances().response().result
         for provenance in provenances:
