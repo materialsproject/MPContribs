@@ -89,7 +89,7 @@ Resources:
             - Name: MPCONTRIBS_API_HOST
               Value:
                 Fn::ImportValue:
-                  !Join [':', [!Ref 'EnvironmentName', 'NetworkLoadBalancer']]
+                  !Join [':', [!Ref 'EnvironmentName', 'NetworkLoadBalancerDNSName']]
           PortMappings:
             - ContainerPort: !Ref 'ContainerPort'
           LogConfiguration:

@@ -472,3 +472,8 @@ Outputs:
     Value: !Ref 'NetworkLoadBalancer'
     Export:
       Name: !Join [ ':', [ !Ref 'EnvironmentName', 'NetworkLoadBalancer' ] ]
+  NetworkLoadBalancerDNSName:
+    Description: DNS name of the Network Load Balancer for Kong
+    Value: !GetAtt 'NetworkLoadBalancer.DNSName'
+    Export:
+      Name: !Join [ ':', [ !Ref 'EnvironmentName', 'NetworkLoadBalancerDNSName' ] ]
