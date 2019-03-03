@@ -21,6 +21,18 @@ def index(request):
     ctx['email'] = request.META.get('HTTP_X_CONSUMER_USERNAME')
     api_key = request.META.get('HTTP_X_CONSUMER_CUSTOM_ID')
     if api_key and ctx['email']:
+        return render(request, "mpcontribs_portal_index.html", ctx.flatten())
+        import requests
+        #host = 'elasticloadbalancing.us-east-1.amazonaws.com'
+        #url = f'https://{host}/apispec.json'
+        host = '10.0.11.34:8000'
+        url = f'http://{host}/apispec.json'
+        headers = {'Host': 'api.mpcontribs.org', 'X-API-Key': b64decode(api_key)}
+        r = requests.get(url, headers=headers)
+        from django.http import JsonResponse, HttpResponse
+        #return JsonResponse(r.json())
+        return r.raw #HttpResponse(r.raw)
+
         host = os.environ['MPCONTRIBS_API_HOST']
         http_client.set_api_key(
             host, b64decode(api_key),
