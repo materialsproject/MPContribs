@@ -10,7 +10,7 @@ except ImportError:
     from django.urls import reverse
 
 from bravado.requests_client import RequestsClient
-from bravado.client import SwaggerClient
+from bravado.client import SwaggerClient, inject_headers_for_remote_refs
 from bravado.swagger_model import load_file
 
 http_client = RequestsClient()
@@ -21,10 +21,14 @@ def index(request):
     ctx['email'] = request.META.get('HTTP_X_CONSUMER_USERNAME')
     api_key = request.META.get('HTTP_X_CONSUMER_CUSTOM_ID')
     if api_key and ctx['email']:
+        host = os.environ['MPCONTRIBS_API_HOST']
         http_client.set_api_key(
-            os.environ['MPCONTRIBS_API_HOST'], b64decode(api_key),
+            host, b64decode(api_key),
             param_in='header', param_name='x-api-key'
         )
+        request_headers = {'Host': spec_dict['host']} # Host: api.mpcontribs.org
+        http_client.request = inject_headers_for_remote_refs(http_client.request, request_headers)
+        spec_dict['host'] = host
         client = SwaggerClient.from_spec(
             spec_dict, http_client=http_client,
             config={'validate_responses': False}

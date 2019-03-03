@@ -42,5 +42,5 @@ TEMPLATE = {
     },
     "security": [{"ApiKeyAuth": []}],
     "host": '0.0.0.0:5000' if DEBUG else "api.mpcontribs.org",
-    "schemes": ['http', 'https'] if DEBUG else ['https', 'http'],
+    "schemes": ['http', 'https'] if DEBUG else ['https'],
 }
