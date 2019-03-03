@@ -164,5 +164,5 @@ Resources:
           !Join [':', [!Ref 'EnvironmentName', 'NetworkLoadBalancer']]
       Port: 443
       Protocol: TLS
-      Certificates:
-        - CertificateArn: !Ref 'CertificateArn'
+      #Certificates:
+      #  - CertificateArn: !Ref 'CertificateArn'
