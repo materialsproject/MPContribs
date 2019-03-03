@@ -106,12 +106,12 @@ Resources:
       VpcId: !Ref 'VPC'
       SecurityGroupIngress:
         - IpProtocol: tcp
-          FromPort: 8443
-          ToPort: 8443
+          FromPort: 8000
+          ToPort: 8000
           CidrIp: 0.0.0.0/0
         - IpProtocol: tcp
-          FromPort: 8444
-          ToPort: 8444
+          FromPort: 8001
+          ToPort: 8001
           CidrIp: 0.0.0.0/0
   PublicSecurityGroupIngressFromSelf:
     Type: AWS::EC2::SecurityGroupIngress

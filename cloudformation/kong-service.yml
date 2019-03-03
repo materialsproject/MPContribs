@@ -64,10 +64,8 @@ Resources:
               Value: !Ref 'AWS::Region'
             - Name: ENV_NAME
               Value: !Ref 'EnvironmentName'
-            - Name: KONG_PROXY_LISTEN
-              Value: '0.0.0.0:8000, 0.0.0.0:8443 ssl'
             - Name: KONG_ADMIN_LISTEN
-              Value: '0.0.0.0:8001, 0.0.0.0:8444 ssl'
+              Value: '0.0.0.0:8001'
             - Name: KONG_DATABASE
               Value: postgres
             - Name: KONG_PG_USER
@@ -99,8 +97,6 @@ Resources:
           PortMappings:
             - ContainerPort: 8000
             - ContainerPort: 8001
-            - ContainerPort: 8443
-            - ContainerPort: 8444
           LogConfiguration:
             LogDriver: 'awslogs'
             Options:
@@ -136,7 +132,7 @@ Resources:
       TaskDefinition: !Ref 'TaskDefinition'
       LoadBalancers:
         - ContainerName: !Ref 'ServiceName'
-          ContainerPort: 8443
+          ContainerPort: 8000
           TargetGroupArn: !Ref 'NetworkLoadBalancerTargetGroup'
 
   NetworkLoadBalancerTargetGroup:
@@ -146,8 +142,8 @@ Resources:
       HealthCheckPath: /
       HealthCheckProtocol: HTTP
       HealthCheckPort: 8001
-      Port: 8443
-      Protocol: TLS
+      Port: 8000
+      Protocol: TCP
       TargetType: ip
       VpcId:
         Fn::ImportValue:
@@ -164,5 +160,5 @@ Resources:
           !Join [':', [!Ref 'EnvironmentName', 'NetworkLoadBalancer']]
       Port: 443
       Protocol: TLS
-      #Certificates:
-      #  - CertificateArn: !Ref 'CertificateArn'
+      Certificates:
+        - CertificateArn: !Ref 'CertificateArn'
