@@ -14,15 +14,12 @@ Parameters:
     Type: String
     Default: app
     Description: A name for the service
-  ImageUrl:
+  ImageUrlApi:
     Type: String
-    Default: nginx
-    Description: The url of a docker image that contains the application process that
-                 will handle the traffic for this service
-  ContainerPort:
-    Type: Number
-    Default: 5000
-    Description: What port number the application inside the docker container is binding to
+    Description: url for the api docker image
+  ImageUrlPortal:
+    Type: String
+    Description: url for the portal docker image
   ContainerCpu:
     Type: Number
     Default: 512
@@ -39,6 +36,30 @@ Resources:
     Properties:
       LogGroupName: !Join ['-', [!Ref 'EnvironmentName', 'service', !Ref 'ServiceName']]
 
+  # A role for the service so it can access the tables
+  AppServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: "ecs-tasks.amazonaws.com"
+          Action: ['sts:AssumeRole']
+      Path: /
+      Policies:
+      - PolicyName: app-sqlite
+        PolicyDocument:
+          Statement:
+          - Effect: Allow
+            Action:
+              - "s3:PutObject"
+              - "s3:GetObject"
+              - "s3:ListBucket"
+            Resource:
+              - "arn:aws:s3:::mpcontribs-sqlite/db.sqlite3"
+              - "arn:aws:s3:::mpcontribs-sqlite"
+
   # The task definition. This is a simple metadata description of what
   # container to run, and what resource requirements it has.
   TaskDefinition:
@@ -53,20 +74,32 @@ Resources:
       ExecutionRoleArn:
         Fn::ImportValue:
           !Join [':', [!Ref 'EnvironmentName', 'ECSTaskExecutionRole']]
+      TaskRoleArn: !Ref 'AppServiceRole'
       ContainerDefinitions:
-        - Name: !Ref 'ServiceName'
+        - Name: api
           Cpu: !Ref 'ContainerCpu'
           Memory: !Ref 'ContainerMemory'
-          Image: !Ref 'ImageUrl'
+          Image: !Ref 'ImageUrlApi'
           Environment:
-            - Name: REGION
-              Value: !Ref 'AWS::Region'
-            - Name: ENV_NAME
-              Value: !Ref 'EnvironmentName'
             - Name: MPCONTRIBS_MONGO_HOST
               Value: !Ref 'MongoHost'
           PortMappings:
-            - ContainerPort: !Ref 'ContainerPort'
+            - ContainerPort: 5000
+          LogConfiguration:
+            LogDriver: 'awslogs'
+            Options:
+              awslogs-group: !Join ['-', [!Ref 'EnvironmentName', 'service', !Ref 'ServiceName']]
+              awslogs-region: !Ref 'AWS::Region'
+              awslogs-stream-prefix: !Ref 'ServiceName'
+        - Name: portal
+          Cpu: !Ref 'ContainerCpu'
+          Memory: !Ref 'ContainerMemory'
+          Image: !Ref 'ImageUrlPortal'
+          Environment:
+            - Name: DEPLOYMENT
+              Value: 'MATGEN'
+          PortMappings:
+            - ContainerPort: 8080
           LogConfiguration:
             LogDriver: 'awslogs'
             Options:
