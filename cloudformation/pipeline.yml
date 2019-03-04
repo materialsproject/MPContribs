@@ -448,7 +448,7 @@ Resources:
                 ActionMode: CREATE_UPDATE
                 RoleArn: !GetAtt CloudFormationDeployRole.Arn
                 StackName: !Sub ${EnvironmentName}-AppService
-                TemplatePath: Source::cloudformation/app-service.yml
+                TemplatePath: Source::cloudformation/service.yml
                 Capabilities: CAPABILITY_IAM
                 ParameterOverrides: !Sub |
                   {
