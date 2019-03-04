@@ -26,7 +26,7 @@ def index(request):
         headers = {'X-API-Key': b64decode(api_key)}
         r = requests.get(url, headers=headers)
         from django.http import JsonResponse, HttpResponse
-        return JsonResponse(r.json())
+        return JsonResponse(r.json(), safe=False)
 
         host = os.environ['MPCONTRIBS_API_HOST']
         http_client.set_api_key(
