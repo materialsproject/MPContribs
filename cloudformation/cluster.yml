@@ -232,69 +232,6 @@ Resources:
   ECSCluster:
     Type: AWS::ECS::Cluster
 
-  #LambdaRole:
-  #  Type: AWS::IAM::Role
-  #  Properties:
-  #    ManagedPolicyArns:
-  #      - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
-  #      - arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess
-  #    AssumeRolePolicyDocument:
-  #      Version: '2012-10-17'
-  #      Statement:
-  #        - Action:
-  #            - sts:AssumeRole
-  #          Effect: Allow
-  #          Principal:
-  #            Service:
-  #              - lambda.amazonaws.com
-
-  #LambdaPolicy:
-  #  Type: AWS::IAM::Policy
-  #  DependsOn:
-  #    - LambdaRole
-  #  Properties:
-  #    PolicyName: CFNCustomKongProviderPolicy
-  #    PolicyDocument:
-  #      Version: '2012-10-17'
-  #      Statement:
-  #        - Effect: Allow
-  #          Action:
-  #            - ssm:GetParameter
-  #          Resource:
-  #            - '*'
-  #        - Effect: Allow
-  #          Action:
-  #            - kms:Encrypt
-  #          Resource:
-  #            - '*'
-  #        - Action:
-  #            - logs:*
-  #          Resource: arn:aws:logs:*:*:*
-  #          Effect: Allow
-  #    Roles:
-  #      - !Ref 'LambdaRole'
-
-  #CFNKongProvider:
-  #  Type: AWS::Lambda::Function
-  #  DependsOn:
-  #    - LambdaRole
-  #  Properties:
-  #    Description: CloudFormation Custom::KongAPI implementation
-  #    Code:
-  #      S3Bucket: !Sub 'binxio-public-${AWS::Region}'
-  #      S3Key: lambdas/cfn-kong-provider-0.5.2.zip
-  #    FunctionName: binxio-cfn-kong-provider
-  #    Handler: kong.handler
-  #    MemorySize: 128
-  #    Role: !GetAtt 'LambdaRole.Arn'
-  #    VpcConfig:
-  #      SecurityGroupIds:
-  #        - !Ref 'PublicSecurityGroup'
-  #      SubnetIds:
-  #        - !Ref 'PublicSubnetOne'
-  #        - !Ref 'PublicSubnetTwo'
-  #    Runtime: python3.6
-
   # This is an IAM role which authorizes ECS to manage resources on your
   # account on your behalf, such as updating your load balancer with the
   # details of where your containers are, so that traffic can reach your
@@ -362,32 +299,6 @@ Resources:
                 - 'logs:PutLogEvents'
               Resource: '*'
 
-  # A role used by AWS Autoscaling to get the stats for a Fargate
-  # service, and update it to increase or decrease the number of containers
-  AutoscalingRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Statement:
-        - Effect: Allow
-          Principal:
-            Service: [application-autoscaling.amazonaws.com]
-          Action: ['sts:AssumeRole']
-      Path: /
-      Policies:
-      - PolicyName: service-autoscaling
-        PolicyDocument:
-          Statement:
-          - Effect: Allow
-            Action:
-              - 'application-autoscaling:*'
-              - 'cloudwatch:DescribeAlarms'
-              - 'cloudwatch:PutMetricAlarm'
-              - 'ecs:DescribeServices'
-              - 'ecs:UpdateService'
-            Resource: '*'
-
-
 # These are the values output by the CloudFormation template. Be careful
 # about changing any of them, because of them are exported with specific
 # names so that the other task related CF templates can use them.
@@ -407,11 +318,6 @@ Outputs:
     Value: !GetAtt 'ECSTaskExecutionRole.Arn'
     Export:
       Name: !Join [ ':', [ !Ref 'EnvironmentName', 'ECSTaskExecutionRole' ] ]
-  AutoscalingRole:
-    Description: The ARN of the ECS role
-    Value: !GetAtt 'ECSTaskExecutionRole.Arn'
-    Export:
-      Name: !Join [ ':', [ !Ref 'EnvironmentName', 'AutoscalingRole' ] ]
   VPCId:
     Description: The ID of the VPC that this stack is deployed in
     Value: !Ref 'VPC'
@@ -457,8 +363,3 @@ Outputs:
     Value: !Ref 'NetworkLoadBalancer'
     Export:
       Name: !Join [ ':', [ !Ref 'EnvironmentName', 'NetworkLoadBalancer' ] ]
-  NetworkLoadBalancerDNSName:
-    Description: DNS name of the Network Load Balancer for Kong
-    Value: !GetAtt 'NetworkLoadBalancer.DNSName'
-    Export:
-      Name: !Join [ ':', [ !Ref 'EnvironmentName', 'NetworkLoadBalancerDNSName' ] ]
