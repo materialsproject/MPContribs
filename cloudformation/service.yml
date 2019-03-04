@@ -20,14 +20,6 @@ Parameters:
   ImageUrlPortal:
     Type: String
     Description: url for the portal docker image
-  ContainerCpu:
-    Type: Number
-    Default: 512
-    Description: How much CPU to give the container. 1024 is 1 CPU
-  ContainerMemory:
-    Type: Number
-    Default: 1024
-    Description: How much memory in megabytes to give the container
 
 Resources:
   # A log group for storing the container logs for this service
@@ -66,8 +58,8 @@ Resources:
     Type: AWS::ECS::TaskDefinition
     Properties:
       Family: !Ref 'ServiceName'
-      Cpu: !Ref 'ContainerCpu'
-      Memory: !Ref 'ContainerMemory'
+      Cpu: 512
+      Memory: 1024
       NetworkMode: awsvpc
       RequiresCompatibilities:
         - FARGATE
@@ -77,8 +69,8 @@ Resources:
       TaskRoleArn: !Ref 'AppServiceRole'
       ContainerDefinitions:
         - Name: api
-          Cpu: !Ref 'ContainerCpu'
-          Memory: !Ref 'ContainerMemory'
+          Cpu: 256
+          Memory: 512
           Image: !Ref 'ImageUrlApi'
           Environment:
             - Name: MPCONTRIBS_MONGO_HOST
@@ -92,8 +84,8 @@ Resources:
               awslogs-region: !Ref 'AWS::Region'
               awslogs-stream-prefix: !Ref 'ServiceName'
         - Name: portal
-          Cpu: !Ref 'ContainerCpu'
-          Memory: !Ref 'ContainerMemory'
+          Cpu: 256
+          Memory: 512
           Image: !Ref 'ImageUrlPortal'
           Environment:
             - Name: DEPLOYMENT
