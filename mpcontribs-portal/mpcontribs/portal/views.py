@@ -10,37 +10,27 @@ except ImportError:
     from django.urls import reverse
 
 from bravado.requests_client import RequestsClient
-from bravado.client import SwaggerClient, inject_headers_for_remote_refs
+from bravado.client import SwaggerClient
 from bravado.swagger_model import load_file
 
 http_client = RequestsClient()
 spec_dict = load_file('apispec.json', http_client=http_client)
+spec_dict['host'] = '127.0.0.1:5000' # docker container networking within Fargate task
+client = SwaggerClient.from_spec(
+    spec_dict, http_client=http_client,
+    config={'validate_responses': False}
+)
 
 def index(request):
     ctx = RequestContext(request)
     ctx['email'] = request.META.get('HTTP_X_CONSUMER_USERNAME')
     api_key = request.META.get('HTTP_X_CONSUMER_CUSTOM_ID')
-    if api_key and ctx['email']:
-        import requests
-        url = 'http://127.0.0.1:5000/provenances/'
-        headers = {'X-API-Key': b64decode(api_key)}
-        r = requests.get(url, headers=headers)
-        from django.http import JsonResponse, HttpResponse
-        return JsonResponse(r.json(), safe=False)
 
-        host = os.environ['MPCONTRIBS_API_HOST']
+    if api_key and ctx['email']:
         http_client.set_api_key(
-            host, b64decode(api_key),
+            spec_dict['host'], b64decode(api_key),
             param_in='header', param_name='x-api-key'
         )
-        request_headers = {'Host': spec_dict['host']} # Host: api.mpcontribs.org
-        http_client.request = inject_headers_for_remote_refs(http_client.request, request_headers)
-        spec_dict['host'] = host
-        client = SwaggerClient.from_spec(
-            spec_dict, http_client=http_client,
-            config={'validate_responses': False}
-        )
-        return render(request, "mpcontribs_portal_index.html", ctx.flatten())
         ctx['landing_pages'] = []
         provenances = client.provenances.get_provenances().response().result
         for provenance in provenances:
