@@ -16,6 +16,7 @@ from bravado.swagger_model import load_file
 http_client = RequestsClient()
 spec_dict = load_file('apispec.json', http_client=http_client)
 spec_dict['host'] = '127.0.0.1:5000' # docker container networking within Fargate task
+spec_dict['schemes'].append('http')
 client = SwaggerClient.from_spec(
     spec_dict, http_client=http_client,
     config={'validate_responses': False}
