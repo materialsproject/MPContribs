@@ -253,7 +253,7 @@ Resources:
           - LOCAL_CUSTOM_CACHE
           - LOCAL_DOCKER_LAYER_CACHE
           - LOCAL_SOURCE_CACHE
-      Name: !Sub ${AWS::StackName}-app
+      Name: !Sub ${AWS::StackName}-api
       ServiceRole: !Ref CodeBuildServiceRole
 
   CodeBuildProjectPortal:
