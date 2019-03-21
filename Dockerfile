@@ -59,8 +59,6 @@ RUN npm run webpack 2>&1
 COPY apispec.json .
 COPY manage.py .
 RUN python3 manage.py collectstatic --no-input && \
-        python3 manage.py makemigrations webtzite && \
-        python3 manage.py migrate && \
-        python3 manage.py clearsessions
+        python3 manage.py migrate
 
 CMD ["python3",  "manage.py", "runserver", "0.0.0.0:8080"]

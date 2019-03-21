@@ -5,9 +5,6 @@ from django.template import RequestContext
 
 logger = logging.getLogger('webtzite.' + __name__)
 
-def index(request):
-    return render_to_response("index.html")
-
 def dashboard(request):
     # user is already logged in (and consumer/api_key created) through kong-oidc-consumer
     ctx = RequestContext(request)
