@@ -24,8 +24,7 @@ INSTALLED_APPS = [
     'macros',
     'webtzite',
     'mpcontribs.portal',
-    ##'mpcontribs.rest',
-    #'mpcontribs.explorer',
+    'mpcontribs.explorer',
 ] #+ get_user_installed_apps()
 
 MIDDLEWARE = (

@@ -1,13 +1,11 @@
 """This module provides the views for the portal."""
 
 import os
-from base64 import b64decode
-from django.shortcuts import render, redirect
+from django.shortcuts import render
 from django.template import RequestContext
-try:
-    from django.core.urlresolvers import reverse
-except ImportError:
-    from django.urls import reverse
+from django.urls import reverse_lazy
+
+from test_site.settings import DEBUG
 
 from bravado.requests_client import RequestsClient
 from bravado.client import SwaggerClient
@@ -15,7 +13,9 @@ from bravado.swagger_model import load_file
 
 http_client = RequestsClient()
 spec_dict = load_file('apispec.json', http_client=http_client)
-spec_dict['host'] = '127.0.0.1:5000' # docker container networking within Fargate task
+# docker containers networking within docker-compose or Fargate task
+host = 'api' if DEBUG else '127.0.0.1'
+spec_dict['host'] = f'{host}:5000'
 spec_dict['schemes'].append('http')
 client = SwaggerClient.from_spec(
     spec_dict, http_client=http_client,
