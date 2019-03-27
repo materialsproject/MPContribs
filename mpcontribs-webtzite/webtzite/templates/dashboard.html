@@ -5,7 +5,7 @@
         <div class="col-md-8">
             <dl class="dl-horizontal">
                 <dt>Current user:</dt><dd>{{ email }}</dd>
-                <dt>API Key:</dt><dd><code>{{ api_key }}</code></dd>
+                {% if api_key %}<dt>API Key:</dt><dd><code>{{ api_key }}</code></dd>{% endif %}
             </dl>
         </div>
     </div>

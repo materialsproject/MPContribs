@@ -9,5 +9,7 @@ def dashboard(request):
     # user is already logged in (and consumer/api_key created) through kong-oidc-consumer
     ctx = RequestContext(request)
     ctx['email'] = request.META.get('HTTP_X_CONSUMER_USERNAME')
-    ctx['api_key'] = b64decode(request.META.get('HTTP_X_CONSUMER_CUSTOM_ID')).decode('utf-8')
+    api_key = request.META.get('HTTP_X_CONSUMER_CUSTOM_ID')
+    if api_key:
+        ctx['api_key'] = b64decode(api_key).decode('utf-8')
     return render_to_response("dashboard.html", ctx.flatten())

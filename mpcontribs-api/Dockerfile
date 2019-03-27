@@ -3,7 +3,6 @@ RUN apk add --no-cache git make gcc musl-dev
 
 EXPOSE 5000
 ENV PYTHONUNBUFFERED 1
-ENV FLASK_ENV production
 ENV FLASK_APP mpcontribs.api
 
 RUN pip install -U pip
@@ -13,6 +12,6 @@ COPY requirements.txt .
 RUN pip install -r requirements.txt
 
 COPY . .
-RUN pip install .
+RUN pip install -e .
 
 CMD ["flask", "run", "-h", "0.0.0.0"]

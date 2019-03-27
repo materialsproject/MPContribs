@@ -30,7 +30,6 @@ RUN pip3 install -r requirements-webtzite.txt
 
 EXPOSE 8080
 ENV PYTHONUNBUFFERED 1
-ENV NODE_ENV production
 
 WORKDIR /app
 
@@ -39,17 +38,19 @@ COPY mpcontribs-webtzite/webtzite/package.json mpcontribs-webtzite/webtzite/
 COPY package.json .
 RUN npm install 2>&1
 
+RUN pip install --upgrade pip
+
 COPY mpcontribs-webtzite mpcontribs-webtzite
-RUN cd mpcontribs-webtzite && pip install .
+RUN cd mpcontribs-webtzite && pip install -e .
 
 COPY mpcontribs-portal mpcontribs-portal
-RUN cd mpcontribs-portal && pip install .
+RUN cd mpcontribs-portal && pip install -e .
 
 COPY mpcontribs-users mpcontribs-users
-#RUN cd mpcontribs-users && pip install .
+#RUN cd mpcontribs-users && pip install -e .
 
 COPY mpcontribs-explorer mpcontribs-explorer
-RUN cd mpcontribs-explorer && pip install .
+RUN cd mpcontribs-explorer && pip install -e .
 
 COPY test_site test_site
 

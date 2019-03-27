@@ -1,0 +1,24 @@
+version: '3'
+
+services:
+  web:
+    build: .
+    volumes:
+      - ./test_site:/app/test_site
+      - ./mpcontribs-portal:/app/mpcontribs-portal
+      - ./mpcontribs-explorer:/app/mpcontribs-explorer
+      - ./mpcontribs-users:/app/mpcontribs-users
+      - ./mpcontribs-webtzite:/app/mpcontribs-webtzite
+    environment:
+      - NODE_ENV=development
+    ports:
+      - "8080:8080"
+  api:
+    build: ./mpcontribs-api
+    volumes:
+      - ./mpcontribs-api:/app
+    environment:
+      - FLASK_ENV=development
+      - MPCONTRIBS_MONGO_HOST=$MPCONTRIBS_MONGO_HOST
+    ports:
+      - "5000:5000"
