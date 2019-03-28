@@ -17,7 +17,7 @@ logger = logging.getLogger('app')
 def get_collections(db):
     conn = db.app.extensions['mongoengine'][db]['conn']
     #return conn.mpcontribs.list_collection_names() # TODO replace below
-    return ['provenances']
+    return ['provenances', 'contributions']
 
 def create_app():
     app = Flask(__name__)
