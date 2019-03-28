@@ -57,7 +57,6 @@ COPY test_site test_site
 COPY webpack.config.js .
 RUN npm run webpack 2>&1
 
-COPY apispec.json .
 COPY manage.py .
 RUN python3 manage.py collectstatic --no-input && \
         python3 manage.py migrate
