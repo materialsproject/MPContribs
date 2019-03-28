@@ -3,6 +3,8 @@ version: '3'
 services:
   web:
     build: .
+    depends_on:
+      - api
     volumes:
       - ./test_site:/app/test_site
       - ./mpcontribs-portal:/app/mpcontribs-portal

@@ -83,3 +83,10 @@ WEBPACK_LOADER = {
 
 if os.environ.get('DEPLOYMENT') == 'MATGEN':
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+from bravado.client import SwaggerClient
+# docker containers networking within docker-compose or Fargate task
+swagger_host = 'api' if DEBUG else '127.0.0.1'
+swagger_apispec = 'http://{}/apispec.json'.format(f'{swagger_host}:5000')
+swagger_client = SwaggerClient.from_url(swagger_apispec,
+                                        config={'validate_responses': False})
