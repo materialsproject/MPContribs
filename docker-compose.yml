@@ -22,3 +22,9 @@ services:
       - MPCONTRIBS_MONGO_HOST=$MPCONTRIBS_MONGO_HOST
     ports:
       - "5000:5000"
+  docs:
+    image: squidfunk/mkdocs-material
+    volumes:
+      - .:/docs
+    ports:
+      - "8000:8000"
