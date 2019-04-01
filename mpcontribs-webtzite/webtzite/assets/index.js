@@ -12,5 +12,8 @@ import("../../../node_modules/json-human/css/json.human.css");
 import("../../../node_modules/chosen-js/chosen.min.css");
 import("./extra.css");
 
+function importAll(r) { return r.keys().map(r); }
+importAll(require.context('../../../node_modules/chosen-js', true, /\.(png|jpe?g|svg)$/));
+
 window.tables = [];
 document.getElementById("logo").src = img;
