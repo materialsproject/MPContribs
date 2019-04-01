@@ -55,7 +55,7 @@ module.exports = {
       "backbone": 'backbone/backbone',
       "backgrid": 'backgrid/lib/backgrid',
       "filestyle": 'bootstrap-filestyle/src/bootstrap-filestyle',
-      "chosen": 'chosen/chosen.jquery',
+      "chosen": 'chosen-js/chosen.jquery',
       "toggle": 'bootstrap-toggle/js/bootstrap-toggle',
       "underscore": 'underscore/underscore',
       "lunr": 'lunr.js/lunr',
