@@ -58,7 +58,4 @@ COPY webpack.config.js .
 RUN npm run webpack 2>&1
 
 COPY manage.py .
-RUN python3 manage.py collectstatic --no-input && \
-        python3 manage.py migrate
-
-CMD ["python3",  "manage.py", "runserver", "0.0.0.0:8080"]
+CMD ["sh", "-c", "python3 manage.py collectstatic --no-input && python3 manage.py migrate && python3 manage.py runserver 0.0.0.0:8080"]
