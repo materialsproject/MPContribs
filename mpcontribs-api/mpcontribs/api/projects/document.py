@@ -6,7 +6,7 @@ class Urls(DynamicEmbeddedDocument):
 
 # DynamicDocument documents work in the same way as Document but any data /
 # attributes set to them will also be saved
-class Provenances(Document):
+class Projects(Document):
     __project_regex__ = '^[a-zA-Z0-9_]+$'
     project = fields.StringField(
         min_length=3, max_length=30, required=True, unique=True,
@@ -32,7 +32,7 @@ class Provenances(Document):
     # TODO permissions MapField
     # is required on POST but should never be returned on GET (write-only)
     meta = {
-        'collection': 'provenances', 'indexes': [{
+        'collection': 'projects', 'indexes': [{
             'fields': ['$title', "$description", "$authors"],
         }, 'project']
     }
