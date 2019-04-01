@@ -12,39 +12,18 @@ def index(request):
         if request.method == 'GET':
             resp = client.projects.get_entries(mask=['project']).response()
             ctx['projects'] = [r.project for r in resp.result]
-
-            #resp = swagger_client.contributions.get_contributions().response()
-            #for contrib in resp.result:
-            #    options[fields[0]].add(str(doc['identifier']))
-
-            #    elif request.method == 'POST':
-            #        projection_keys = ['mp_cat_id', 'project']
-            #        options, selection = (
-            #            dict(
-            #                (field, [str(el) for el in json.loads(
-            #                    request.POST['_'.join([prefix, field])]
-            #                )]) for field in fields
-            #            ) for prefix in ['options', 'selection']
-            #        )
-
-            #        mode = request.POST['submit']
-            #        if mode == 'Find':
-            #            criteria = {}
-            #            for idx, key in enumerate(projection_keys):
-            #                if selection[fields[idx]]:
-            #                    criteria.update({
-            #                        key: {'$in': selection[fields[idx]]}
-            #                    })
-            #            docs = mpr.query_contributions(criteria=criteria, limit=10)
-            #            ctx['urls'] = [mpr.get_card(doc['_id'], embed=False) for doc in docs]
-            #        elif mode == 'Show':
-            #            if selection[fields[2]]:
-            #                docs = mpr.query_contributions(
-            #                    criteria={'_id': {'$in': selection[fields[2]]}}
-            #                )
-            #                ctx['urls'] = [mpr.get_card(doc['_id'], embed=False) for doc in docs]
-            #            else:
-            #                ctx.update({'alert': 'Enter a contribution identifier!'})
+            resp = client.contributions.distinct().response()
+            ctx['identifiers'] = resp.result
+        #elif request.method == 'POST':
+        #    projection_keys = ['mp_cat_id', 'project']
+        #        criteria = {}
+        #        for idx, key in enumerate(projection_keys):
+        #            if selection[fields[idx]]:
+        #                criteria.update({
+        #                    key: {'$in': selection[fields[idx]]}
+        #                })
+        #        docs = mpr.query_contributions(criteria=criteria, limit=10)
+        #        ctx['urls'] = [mpr.get_card(doc['_id'], embed=False) for doc in docs]
     except Exception as ex:
         ctx['alert'] = f'{ex}'
 
