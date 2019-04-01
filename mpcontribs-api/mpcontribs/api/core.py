@@ -89,5 +89,5 @@ class SwaggerView(OriginalSwaggerView, metaclass=SwaggerViewType):
     """A class-based view defining a `marshal` method to run query results
     through the accordung marshmallow schema"""
     def marshal(self, entries):
-        many = isinstance(entries, BaseQuerySet)
+        many = isinstance(entries, BaseQuerySet) or isinstance(entries, list)
         return self.Schema().dump(entries, many=many).data
