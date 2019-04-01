@@ -12,6 +12,7 @@ module.exports = {
   entry: {
     'main': './mpcontribs-webtzite/webtzite/assets/index',
     'portal': './mpcontribs-portal/mpcontribs/portal/assets/index',
+    'explorer': './mpcontribs-explorer/mpcontribs/explorer/assets/index',
   },
   output: {
     path: path.resolve(__dirname, 'dist'),

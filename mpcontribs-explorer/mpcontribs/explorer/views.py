@@ -1,68 +1,59 @@
 """This module provides the views for the explorer interface."""
 
-import json, nbformat
-from bson import ObjectId
+import json
 from django.shortcuts import render
 from django.template import RequestContext
 from django.http import HttpResponse
-#from mpcontribs.rest.rester import MPContribsRester
-#from mpcontribs.rest.views import get_endpoint
-#from mpcontribs.builder import export_notebook
+from test_site.settings import swagger_client as client
 
 def index(request):
     ctx = RequestContext(request)
-    fields = ['identifiers', 'projects', 'cids']
-    ctx['fields'] = fields
-    ctx['alert'] = 'Under Construction'
+    try:
+        if request.method == 'GET':
+            resp = client.projects.get_entries(mask=['project']).response()
+            ctx['projects'] = [r.project for r in resp.result]
 
-        #    if request.method == 'GET':
-        #        options = dict((field, set()) for field in fields)
-        #        docs = mpr.query_contributions()
-        #        if docs:
-        #            for doc in docs:
-        #                options[fields[0]].add(str(doc['mp_cat_id']))
-        #                options[fields[1]].add(str(doc['project']))
-        #                options[fields[2]].add(str(doc['_id']))
-        #        else:
-        #            ctx.update({'alert': 'No contributions available!'})
-        #        options = dict((k, list(v)) for k,v in options.iteritems())
-        #        selection = dict((field, []) for field in fields)
+            #resp = swagger_client.contributions.get_contributions().response()
+            #for contrib in resp.result:
+            #    options[fields[0]].add(str(doc['identifier']))
 
-        #    elif request.method == 'POST':
-        #        projection_keys = ['mp_cat_id', 'project']
-        #        options, selection = (
-        #            dict(
-        #                (field, [str(el) for el in json.loads(
-        #                    request.POST['_'.join([prefix, field])]
-        #                )]) for field in fields
-        #            ) for prefix in ['options', 'selection']
-        #        )
+            #    elif request.method == 'POST':
+            #        projection_keys = ['mp_cat_id', 'project']
+            #        options, selection = (
+            #            dict(
+            #                (field, [str(el) for el in json.loads(
+            #                    request.POST['_'.join([prefix, field])]
+            #                )]) for field in fields
+            #            ) for prefix in ['options', 'selection']
+            #        )
 
-        #        mode = request.POST['submit']
-        #        if mode == 'Find':
-        #            criteria = {}
-        #            for idx, key in enumerate(projection_keys):
-        #                if selection[fields[idx]]:
-        #                    criteria.update({
-        #                        key: {'$in': selection[fields[idx]]}
-        #                    })
-        #            docs = mpr.query_contributions(criteria=criteria, limit=10)
-        #            ctx['urls'] = [mpr.get_card(doc['_id'], embed=False) for doc in docs]
-        #        elif mode == 'Show':
-        #            if selection[fields[2]]:
-        #                docs = mpr.query_contributions(
-        #                    criteria={'_id': {'$in': selection[fields[2]]}}
-        #                )
-        #                ctx['urls'] = [mpr.get_card(doc['_id'], embed=False) for doc in docs]
-        #            else:
-        #                ctx.update({'alert': 'Enter a contribution identifier!'})
-
-        #ctx['options'] = options
-        #ctx['selection'] = selection
+            #        mode = request.POST['submit']
+            #        if mode == 'Find':
+            #            criteria = {}
+            #            for idx, key in enumerate(projection_keys):
+            #                if selection[fields[idx]]:
+            #                    criteria.update({
+            #                        key: {'$in': selection[fields[idx]]}
+            #                    })
+            #            docs = mpr.query_contributions(criteria=criteria, limit=10)
+            #            ctx['urls'] = [mpr.get_card(doc['_id'], embed=False) for doc in docs]
+            #        elif mode == 'Show':
+            #            if selection[fields[2]]:
+            #                docs = mpr.query_contributions(
+            #                    criteria={'_id': {'$in': selection[fields[2]]}}
+            #                )
+            #                ctx['urls'] = [mpr.get_card(doc['_id'], embed=False) for doc in docs]
+            #            else:
+            #                ctx.update({'alert': 'Enter a contribution identifier!'})
+    except Exception as ex:
+        ctx['alert'] = f'{ex}'
 
     return render(request, "mpcontribs_explorer_index.html", ctx.flatten())
 
 def contribution(request, collection, cid):
+    import nbformat
+    from bson import ObjectId
+    #from mpcontribs.builder import export_notebook
     material = {'detail_id': collection[:-1]}
     ctx = RequestContext(request)
     if request.user.is_authenticated():

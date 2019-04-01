@@ -1,115 +1,55 @@
 {% extends "header_footer.html" %}
 {% load staticfiles %}
+{% load render_bundle from webpack_loader %}
+{% block extra_css %}{% render_bundle 'explorer' 'css' %}{% endblock %}
+{% block footer %}{% render_bundle 'explorer' 'js' %}{% endblock %}
 {% block title %}MPContribs Explorer{% endblock %}
 
 {% block content %}
 <div class="container">
-  <div class="row">
-      <div class="col-md-12">
-          <div id="spinner" ></div>
-          <script>
-            requirejs(['main'], function() {
-                require(["jquery.spin"], function() { $("#spinner").spin('small'); });
-            });
-          </script>
-      </div>
-  </div>
-  {% if options %}
-  <div class="row" style="margin-top:20px;">
-      <div class="col-md-12">
-        <form action="{% url 'mpcontribs_explorer_index' %}" method=post enctype=multipart/form-data id='explorer_form' hidden>
-          {% csrf_token %}
-          Select one or more:</br>
-          <div class="row">
-              <div class="col-md-4">
-                  <select id="{{ fields.0 }}_list" data-placeholder="Select material/composition(s) ..." multiple>
-                    <option></option>
-                  </select>
-              </div>
-              <div class="col-md-4">
-                  <select id="{{ fields.1 }}_list" data-placeholder="Select project(s) ..." multiple>
-                    <option></option>
-                  </select>
-              </div>
-              <div class="col-md-3">
-                  <input type=submit name="submit" class="btn btn-primary" value="Find">
-              </div>
-          </div>
-          Or enter a (list of) contribution identifiers:</br>
-          <div class="row">
-              <div class="col-md-4">
-                  <select id="{{ fields.2 }}_list" data-placeholder="Enter contribution ID(s) ..." multiple>
-                    <option></option>
-                  </select>
-                  {% for field in fields %}
-                  <input type=hidden name="selection_{{ field }}" id="select_{{ field }}">
-                  <input type=hidden name="options_{{ field }}" id="opt_{{ field }}">
-                  {% endfor %}
-              </div>
-              <div class="col-md-8">
-                  <input type=submit name="submit" class="btn btn-primary" value="Show">
-              </div>
-        </form>
-      </div>
-  </div>
-  <div class="row">
-      {% if urls %}
-          <div class="col-md-12" style="margin-top:30px;">
-            {% for url in urls %}
-            <div class="col-md-6">{{ url|safe }}</div>
-            {% endfor %}
-          </div>
-      {% elif request.method == 'POST' %}
-        <div class="col-md-12">No contributions found!</div>
-      {% endif %}
-  </div>
-  <script>
-    requirejs(['main'], function() {
-    require(["jquery.spin"], function() {
-    var options = {{ options|safe }};
-    var selection = {{ selection|safe }};
-    require(['chosen'], function() {
-    for (field in options) {
-      // initialize selection dropdown menus
-      var list = document.getElementById(field + '_list');
-      for (var i=0, iLen=options[field].length; i<iLen; i++) {
-        var entry = document.createElement('option');
-        var opt = options[field][i];
-        entry.value = opt;
-        entry.innerHTML = opt;
-        if ($.inArray(opt, selection[field]) > -1) {
-          $(entry).prop('selected', true);
-        }
-        list.appendChild(entry);
-      }
-      // activate select DOM as chosen DOM
-      $('#' + field + '_list').chosen({
-        search_contains: true, allow_single_deselect: true, width: "100%"
-      });
-      // save options to avoid requerying database
-      var opt_elem = document.getElementById('opt_' + field);
-      opt_elem.value = JSON.stringify(options[field]);
-      // save selection
-      var sel_elem = document.getElementById('select_' + field);
-      sel_elem.value = JSON.stringify(selection[field]);
-      // attach change trigger event to each multi-select to store selection in hidden input fields
-      $('#' + field + '_list').chosen().change(function () {
-        var fld = $(this).attr('id').slice(0,-5);
-        var sel_elem = document.getElementById('select_'+fld);
-        selection[fld] = [];
-        for (var i=0, iLen=this.options.length; i<iLen; i++) {
-          var opt = this.options[i];
-          if (opt.selected) { selection[fld].push(opt.value); }
-        }
-        sel_elem.value = JSON.stringify(selection[fld]);
-      });
-    }
-    $('#explorer_form').show();
-    $("#spinner").spin(false);
-    });
-    });
-    });
-  </script>
-  {% endif %}
+
+    <div class="row">
+        <div class="col-md-12">
+            <div id="spinner" ></div>
+        </div>
+    </div>
+
+    <div class="row" style="margin-top:20px;" id="explorer_form">
+        <div class="col-md-12">
+            Select one or more:</br>
+            <div class="row">
+                <div class="col-md-4">
+                    <select id="identifiers_list" data-placeholder="Select material/composition(s) ..." multiple>
+                        {% for identifier in identifiers %}
+                        <option value="{{ identifier }}">{{ identifier }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <select id="projects_list" data-placeholder="Select project(s) ..." multiple>
+                        {% for project in projects %}
+                        <option value="{{ project }}">{{ project }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <input type=submit name="submit" class="btn btn-primary" value="Find">
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            {% if urls %}
+            <div class="col-md-12" style="margin-top:30px;">
+                {% for url in urls %}
+                <div class="col-md-6">{{ url|safe }}</div>
+                {% endfor %}
+            </div>
+            {% elif request.method == 'POST' %}
+            <div class="col-md-12">No contributions found!</div>
+            {% endif %}
+        </div>
+    </div>
+
 </div>
 {% endblock %}
