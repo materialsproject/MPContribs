@@ -4,6 +4,8 @@
 Use [bravado](https://bravado.readthedocs.io) as python client
 (see [API Docs](https://api.mpcontribs.org) for details about available operations):
 
+## Setup
+
 ```python
 from bravado.requests_client import RequestsClient
 from bravado.client import SwaggerClient
@@ -19,20 +21,27 @@ client = SwaggerClient.from_url(apispec, http_client=http_client,
                                config={'validate_responses': False})
 
 dir(client) # available resources
-dir(client.provenances) # operations available on resource
-provs = client.provenances # shortcut
+dir(client.projects) # operations available on resource
+```
 
-# get provenance for all available projects/datasets
-resp = provs.get_provenances().response()
-projects = [r.project for r in resp.result] # r.authors/title
+## Projects
+
+```python
+# retrieve list of all available projects/datasets
+resp = client.projects.get_entries().response()
+projects = [r.project for r in resp.result] # or r.title
 print(projects)
 
-# search provenance entries for keywords
-resp = provs.get_provenances(search='bandgap values').response()
+# search projects for keywords
+resp = client.projects.get_entries(search='bandgap values').response()
 projects = [r.project for r in resp.result]
 print(projects)
 
-# get provenance for a specific project/dataset
-resp = provs.get_provenances_project(project='dtu').response()
+# use mask to control which fields to retrieve
+resp = client.projects.get_entries(mask=['project', 'authors']).response()
+print(resp.result[0]['authors'])
+
+# get info about specific project/dataset
+resp = client.projects.get_entry(project='dtu').response()
 print(resp.result.authors)
 ```
