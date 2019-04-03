@@ -1,7 +1,7 @@
 import re
 from requests import get
 from importlib import import_module
-from flask import request, current_app
+from flask import request
 from flask.views import MethodViewType
 from flasgger import SwaggerView as OriginalSwaggerView
 from marshmallow_mongoengine import ModelSchema
@@ -87,7 +87,7 @@ class SwaggerViewType(MethodViewType):
 
 class SwaggerView(OriginalSwaggerView, metaclass=SwaggerViewType):
     """A class-based view defining a `marshal` method to run query results
-    through the accordung marshmallow schema"""
+    through the according marshmallow schema"""
     def marshal(self, entries):
         many = isinstance(entries, BaseQuerySet) or isinstance(entries, list)
         return self.Schema().dump(entries, many=many).data

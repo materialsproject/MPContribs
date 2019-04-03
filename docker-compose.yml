@@ -24,6 +24,10 @@ services:
       - MPCONTRIBS_MONGO_HOST=$MPCONTRIBS_MONGO_HOST
     ports:
       - "5000:5000"
+  chrome:
+    image: selenium/standalone-chrome-debug
+    ports:
+      - "4444:4444"
   docs:
     image: squidfunk/mkdocs-material
     volumes:

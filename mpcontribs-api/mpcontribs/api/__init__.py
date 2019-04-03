@@ -1,29 +1,29 @@
 import logging, os
 from importlib import import_module
-from flask import Flask, redirect
+from flask import Flask, redirect, current_app
 from flask_marshmallow import Marshmallow
 from flask_mongoengine import MongoEngine
 from flask_log import Logging
-#from flask_pymongo import BSONObjectIdConverter
 from flasgger import Swagger
 from flask_json import FlaskJSON
 
 logger = logging.getLogger('app')
 
-#def projection(self):
-#    mask = Mask(request.headers.get('X-Fields', self.model.__mask__))
-#    return None if '*' in mask.keys() else mask
-
 def get_collections(db):
     conn = db.app.extensions['mongoengine'][db]['conn']
     return conn.mpcontribs.list_collection_names()
 
+# http://flask.pocoo.org/snippets/77/
+def get_resource_as_string(name, charset='utf-8'):
+    with current_app.open_resource(name) as f:
+        return f.read().decode(charset)
+
 def create_app():
     app = Flask(__name__)
     app.config.from_pyfile('config.py', silent=True)
+    app.jinja_env.globals['get_resource_as_string'] = get_resource_as_string
     FlaskJSON(app)
     Logging(app)
-    #app.url_map.converters["ObjectId"] = BSONObjectIdConverter
     Marshmallow(app)
     db = MongoEngine(app)
     swagger = Swagger(app, template=app.config.get('TEMPLATE'))

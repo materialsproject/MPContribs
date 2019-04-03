@@ -12,3 +12,6 @@ marshmallow-mongoengine==0.9.1
 mongoengine==0.16.3
 pymongo==3.7.2
 requests==2.21.0
+selenium==3.141.0
+beautifulsoup4==4.7.1
+css-html-js-minify==2.5.5

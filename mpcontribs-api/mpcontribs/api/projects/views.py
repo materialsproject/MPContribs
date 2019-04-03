@@ -54,7 +54,7 @@ class ProjectsView(SwaggerView):
 class ProjectView(SwaggerView):
 
     def get(self, project):
-        """Retrieve a single project.
+        """Retrieve provenance info for a single project.
         ---
         operationId: get_entry
         parameters:
@@ -63,7 +63,7 @@ class ProjectView(SwaggerView):
               type: string
               pattern: '^[a-zA-Z0-9_]{3,30}$'
               required: true
-              description: get provenance entry for a project (name/slug)
+              description: project name/slug
         responses:
             200:
                 description: single project
