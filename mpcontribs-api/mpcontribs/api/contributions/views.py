@@ -73,6 +73,8 @@ def get_browser():
     if 'browser' not in g:
         options = webdriver.ChromeOptions()
         options.add_argument("no-sandbox")
+        options.add_argument('--disable-gpu')
+        options.add_argument('--window-size=800,600')
         options.add_argument('--disable-dev-shm-usage')
         options.set_headless()
         host = 'chrome' if current_app.config['DEBUG'] else '127.0.0.1'
@@ -120,6 +122,7 @@ class CardView(SwaggerView):
         browser = get_browser()
         browser.execute_script(card_script, data)
         src = browser.page_source.encode("utf-8")
+        browser.close()
         bs = BeautifulSoup(src, 'html.parser')
         ctx['data'] = bs.body.table
         rendered = render_template('card.html', **ctx)

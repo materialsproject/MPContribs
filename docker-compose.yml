@@ -25,7 +25,9 @@ services:
     ports:
       - "5000:5000"
   chrome:
-    image: selenium/standalone-chrome-debug
+    image: selenium/standalone-chrome
+    environment:
+        - START_XVFB=false
     ports:
       - "4444:4444"
   docs:
