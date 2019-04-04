@@ -1,5 +1,5 @@
 <style type=text/css>{{ get_resource_as_string('templates/card.min.css')|safe }}</style>
-<div id="user_contribs">
+<div name="user_contribs">
     <div class="panel panel-default">
         <div class="panel-heading">
             <h4 class="panel-title">
@@ -18,14 +18,14 @@
                         <a class="mytooltip" href="#">
                             et al.
                             <span class="classic">
-                                {% for author in authors.etal %}{{ author }}</br>{% endfor %}
+                                {% for author in authors.etal %}{{ author }}<br/>{% endfor %}
                             </span>
                         </a>
                         {% endif %}
                     </h5>
                     {% for url in urls %}
                     <a href="{{ url }}" class="btn btn-link" role=button style="padding: 0" target="_blank">
-                        <i class="fa fa-book fa-border fa-lg"></i>
+                        <span class="glyphicon glyphicon-book" aria-hidden="true"></span>
                     </a>
                     {% endfor %}
                 </div>
