@@ -8,13 +8,7 @@
 {% block content %}
 <div class="container">
 
-    <div class="row">
-        <div class="col-md-12">
-            <div id="spinner" ></div>
-        </div>
-    </div>
-
-    <div class="row" style="margin-top:20px;" id="explorer_form">
+    <div class="row" style="margin-top:20px;" id="explorer_form" hidden>
         <div class="col-md-12">
             Select one or more:</br>
             <div class="row">
@@ -33,21 +27,15 @@
                     </select>
                 </div>
                 <div class="col-md-3">
-                    <input type=submit name="submit" class="btn btn-primary" value="Find">
+                    <button class="btn btn-primary" type="submit" id="btnFind">Find</button>
                 </div>
             </div>
         </div>
 
         <div class="row">
-            {% if urls %}
-            <div class="col-md-12" style="margin-top:30px;">
-                {% for url in urls %}
-                <div class="col-md-6">{{ url|safe }}</div>
-                {% endfor %}
+            <div class="col-md-12" style="margin-top:30px;" id=cards>
+                <!-- cards dynamically added -->
             </div>
-            {% elif request.method == 'POST' %}
-            <div class="col-md-12">No contributions found!</div>
-            {% endif %}
         </div>
     </div>
 

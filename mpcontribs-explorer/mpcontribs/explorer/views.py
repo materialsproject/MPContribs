@@ -9,24 +9,12 @@ from test_site.settings import swagger_client as client
 def index(request):
     ctx = RequestContext(request)
     try:
-        if request.method == 'GET':
-            resp = client.projects.get_entries(mask=['project']).response()
-            ctx['projects'] = [r.project for r in resp.result]
-            resp = client.contributions.distinct().response()
-            ctx['identifiers'] = resp.result
-        #elif request.method == 'POST':
-        #    projection_keys = ['mp_cat_id', 'project']
-        #        criteria = {}
-        #        for idx, key in enumerate(projection_keys):
-        #            if selection[fields[idx]]:
-        #                criteria.update({
-        #                    key: {'$in': selection[fields[idx]]}
-        #                })
-        #        docs = mpr.query_contributions(criteria=criteria, limit=10)
-        #        ctx['urls'] = [mpr.get_card(doc['_id'], embed=False) for doc in docs]
+        resp = client.projects.get_entries(mask=['project']).response()
+        ctx['projects'] = [r.project for r in resp.result]
+        resp = client.contributions.distinct().response()
+        ctx['identifiers'] = resp.result
     except Exception as ex:
         ctx['alert'] = f'{ex}'
-
     return render(request, "mpcontribs_explorer_index.html", ctx.flatten())
 
 def contribution(request, collection, cid):
