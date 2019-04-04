@@ -1,5 +1,5 @@
 FROM python:3.7-alpine3.8
-RUN apk add --no-cache git make gcc musl-dev
+RUN apk add --no-cache git make gcc musl-dev libxml2-dev libffi-dev libxslt-dev
 
 EXPOSE 5000
 ENV PYTHONUNBUFFERED 1

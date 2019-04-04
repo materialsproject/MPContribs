@@ -15,3 +15,5 @@ requests==2.21.0
 selenium==3.141.0
 beautifulsoup4==4.7.1
 css-html-js-minify==2.5.5
+flask-cors==3.0.7
+toronado==0.0.11

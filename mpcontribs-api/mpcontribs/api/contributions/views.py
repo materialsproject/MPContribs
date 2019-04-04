@@ -8,6 +8,8 @@ from mpcontribs.api.core import SwaggerView
 from mpcontribs.api.projects.document import Projects
 from mpcontribs.api.contributions.document import Contributions
 from css_html_js_minify import html_minify
+from lxml import html
+from toronado import inline
 
 contributions = Blueprint("contributions", __name__)
 
@@ -125,8 +127,11 @@ class CardView(SwaggerView):
         browser.close()
         bs = BeautifulSoup(src, 'html.parser')
         ctx['data'] = bs.body.table
-        rendered = render_template('card.html', **ctx)
-        return html_minify(rendered)
+        rendered = html_minify(render_template('card.html', **ctx))
+        return rendered # TODO hover doesn't work after inline-ing
+        #tree = html.fromstring(rendered)
+        #inline(tree)
+        #return html.tostring(tree.body[0])
 
 # url_prefix added in register_blueprint
 multi_view = ContributionsView.as_view(ContributionsView.__name__)
