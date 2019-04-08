@@ -10,6 +10,7 @@ import("../../../node_modules/backgrid-filter/backgrid-filter.min.css");
 import("../../../node_modules/backgrid-grouped-columns/backgrid-grouped-columns.css");
 import("../../../node_modules/json-human/css/json.human.css");
 import("../../../node_modules/chosen-js/chosen.min.css");
+import("../../../node_modules/select2/dist/css/select2.min.css");
 import("./extra.css");
 
 function importAll(r) { return r.keys().map(r); }

@@ -6,36 +6,36 @@
 {% block title %}MPContribs Explorer{% endblock %}
 
 {% block content %}
+<style>
+.myrow { font-size: 0; }
+.myrow > * { float: none; display: inline-block; font-size: 14px; }
+.myrow > *:last-child { vertical-align: bottom; }
+.myrow p:last-child { margin-bottom: 0; }
+</style>
+
 <div class="container">
 
-    <div class="row" style="margin-top:20px;" id="explorer_form" hidden>
-        <div class="col-md-12">
-            Select one or more:</br>
-            <div class="row">
-                <div class="col-md-4">
-                    <select id="identifiers_list" data-placeholder="Select material/composition(s) ..." multiple>
-                        {% for identifier in identifiers %}
-                        <option value="{{ identifier }}">{{ identifier }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="col-md-4">
-                    <select id="projects_list" data-placeholder="Select project(s) ..." multiple>
-                        {% for project in projects %}
-                        <option value="{{ project }}">{{ project }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="col-md-3">
-                    <button class="btn btn-primary" type="submit" id="btnFind">Find</button>
-                </div>
-            </div>
+    <div class="row myrow" style="margin-top:20px;" id="explorer_form" hidden>
+        <div class="col-md-5">
+            <label for="projects_list">Click to select project(s):</label>
+            <select id="projects_list" style="width: 100%;" multiple="multiple">
+                {% for project in projects %}
+                <option value="{{ project }}">{{ project }}</option>
+                {% endfor %}
+            </select>
         </div>
+        <div class="col-md-5">
+            <label for="identifiers_list">Click to select material(s) or composition(s):</label>
+            <select id="identifiers_list" style="width: 100%;" multiple="multiple"></select>
+        </div>
+        <div class="col-md-2">
+            <button class="btn btn-primary" type="submit" id="btnFind">Find</button>
+        </div>
+    </div>
 
-        <div class="row">
-            <div class="col-md-12" style="margin-top:30px;" id=cards>
-                <!-- cards dynamically added -->
-            </div>
+    <div class="row">
+        <div class="col-md-12" style="margin-top:30px;" id=cards>
+            <!-- cards dynamically added -->
         </div>
     </div>
 
