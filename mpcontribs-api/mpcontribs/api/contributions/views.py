@@ -42,7 +42,14 @@ class ContributionsView(SwaggerView):
               in: query
               type: integer
               default: 1
-              description: page to retrieve (in batches of 20)
+              description: page to retrieve (in batches of `per_page`)
+            - name: per_page
+              in: query
+              type: integer
+              default: 20
+              minimum: 2
+              maximum: 20
+              description: number of results to return per page
             - name: mask
               in: query
               type: array
@@ -70,7 +77,8 @@ class ContributionsView(SwaggerView):
         if contains:
             objects = objects(identifier__icontains=contains)
         page = int(request.args.get('page', 1))
-        entries = objects.paginate(page=page, per_page=20).items
+        per_page = int(request.args.get('per_page', 20))
+        entries = objects.paginate(page=page, per_page=per_page).items
         return self.marshal(entries)
 
 def get_browser():
