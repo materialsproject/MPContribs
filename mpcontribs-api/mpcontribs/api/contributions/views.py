@@ -125,10 +125,11 @@ class CardView(SwaggerView):
         authors = [a.strip() for a in info.authors.split(',') if a]
         ctx['authors'] = {'main': authors[0], 'etal': authors[1:]}
         debug = current_app.config['DEBUG']
-        portal = '0.0.0.0:8080' if debug else 'https://portal.mpcontribs.org'
+        portal = 'localhost:8080' if debug else 'https://portal.mpcontribs.org'
         ctx['landing_page'] = f'{portal}/{contrib.project}'
         ctx['more'] = f'{portal}/explorer/{cid}'
-        ctx['urls'] = ['TODO']#info.urls
+        urls = dict(info.urls.to_mongo())
+        ctx['urls'] = urls.values()
         card_script = get_resource_as_string('templates/card.min.js')
         data = {'hello': 'world'} # TODO from contrib.content.data
         browser = get_browser()
