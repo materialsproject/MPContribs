@@ -11,8 +11,6 @@ def index(request):
     try:
         resp = client.projects.get_entries(mask=['project']).response()
         ctx['projects'] = [r.project for r in resp.result]
-        resp = client.contributions.distinct().response()
-        ctx['identifiers'] = resp.result
     except Exception as ex:
         ctx['alert'] = f'{ex}'
     return render(request, "mpcontribs_explorer_index.html", ctx.flatten())

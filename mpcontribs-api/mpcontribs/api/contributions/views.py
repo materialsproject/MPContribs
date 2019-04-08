@@ -21,10 +21,23 @@ class ContributionsView(SwaggerView):
         ---
         operationId: get_entries
         parameters:
-            - name: project
+            - name: projects
+              in: query
+              type: array
+              items:
+                  type: string
+              description: comma-separated list of projects
+            - name: identifiers
+              in: query
+              type: array
+              items:
+                  type: string
+              description: comma-separated list of identifiers
+            - name: contains
               in: query
               type: string
-              description: retrieve contributions for specific project
+              minLength: 3
+              description: substring to search for in identifiers
             - name: page
               in: query
               type: integer
@@ -47,29 +60,18 @@ class ContributionsView(SwaggerView):
         """
         mask = request.args.get('mask', 'project,identifier').split(',')
         objects = Contributions.objects.only(*mask)
+        projects = request.args.get('projects', '').split(',')
+        if projects and projects[0]:
+            objects = objects(project__in=projects)
+        identifiers = request.args.get('identifiers', '').split(',')
+        if identifiers and identifiers[0]:
+            objects = objects(identifier__in=identifiers)
+        contains = request.args.get('contains')
+        if contains:
+            objects = objects(identifier__icontains=contains)
         page = int(request.args.get('page', 1))
-        project = request.args.get('project')
-        if project:
-            objects = objects(project=project)
         entries = objects.paginate(page=page, per_page=20).items
         return self.marshal(entries)
-
-class DistinctView(SwaggerView):
-    # TODO extend to more fields via query/path parameter?
-
-    def get(self):
-        """Retrieve distinct list of identifiers
-        ---
-        operationId: distinct
-        responses:
-            200:
-                description: list of contributed materials/compositions
-                schema:
-                    type: array
-                    items:
-                        type: string
-        """
-        return Contributions.objects.distinct('identifier')
 
 def get_browser():
     if 'browser' not in g:
@@ -136,9 +138,6 @@ class CardView(SwaggerView):
 # url_prefix added in register_blueprint
 multi_view = ContributionsView.as_view(ContributionsView.__name__)
 contributions.add_url_rule('/', view_func=multi_view, methods=['GET'])#, 'POST'])
-
-distinct_view = DistinctView.as_view(DistinctView.__name__)
-contributions.add_url_rule('/distinct', view_func=distinct_view, methods=['GET'])
 
 card_view = CardView.as_view(CardView.__name__)
 contributions.add_url_rule('/<string:cid>/card', view_func=card_view, methods=['GET'])
