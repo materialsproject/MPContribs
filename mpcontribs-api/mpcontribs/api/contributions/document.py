@@ -10,8 +10,10 @@ class Collaborator(fields.EmbeddedDocument):
     email = fields.EmailField(required=True)
 
 class Contents(DynamicEmbeddedDocument):
-    # TODO this has to somehow load from project-specific contributions schema
-    pass
+    data = fields.DictField(
+        required=True,
+        help_text='data to be shown in Contribution Card'
+    )
 
 # DynamicDocument documents work in the same way as Document but any data /
 # attributes set to them will also be saved

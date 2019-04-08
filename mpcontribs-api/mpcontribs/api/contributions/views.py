@@ -117,7 +117,7 @@ class CardView(SwaggerView):
                     type: string
         """
         ctx = {'cid': cid}
-        mask = ['project', 'identifier'] # TODO add content.data
+        mask = ['project', 'identifier', 'content.data']
         contrib = Contributions.objects.only(*mask).get(id=cid)
         info = Projects.objects.get(project=contrib.project)
         ctx['title'] = info.title
@@ -128,10 +128,9 @@ class CardView(SwaggerView):
         portal = 'localhost:8080' if debug else 'https://portal.mpcontribs.org'
         ctx['landing_page'] = f'{portal}/{contrib.project}'
         ctx['more'] = f'{portal}/explorer/{cid}'
-        urls = dict(info.urls.to_mongo())
-        ctx['urls'] = urls.values()
+        ctx['urls'] = info.urls.values()
         card_script = get_resource_as_string('templates/card.min.js')
-        data = {'hello': 'world'} # TODO from contrib.content.data
+        data = contrib.content.data
         browser = get_browser()
         browser.execute_script(card_script, data)
         src = browser.page_source.encode("utf-8")

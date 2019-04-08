@@ -1,9 +1,6 @@
 from flask_mongoengine import Document
 from mongoengine import fields, DynamicEmbeddedDocument
 
-class Urls(DynamicEmbeddedDocument):
-    main = fields.StringField()
-
 # DynamicDocument documents work in the same way as Document but any data /
 # attributes set to them will also be saved
 class Projects(Document):
@@ -26,8 +23,8 @@ class Projects(Document):
         min_length=5, max_length=1500, required=True,
         help_text='brief description of the project'
     )
-    urls = fields.EmbeddedDocumentField(
-        Urls, required=True, help_text='list of URLs for references'
+    urls = fields.DictField(
+        required=True, help_text='list of URLs for references'
     )
     # TODO permissions MapField
     # is required on POST but should never be returned on GET (write-only)
