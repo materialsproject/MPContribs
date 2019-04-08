@@ -1,24 +1,10 @@
-from flask_restplus import SchemaModel
+from mongoengine import fields, DynamicEmbeddedDocument
 
-#### PROJECT-SPECIFIC CONTENT ####
-
-schema_models = [
-    SchemaModel('DtuBandgaps', {
-        'properties': {
-            "direct": {'type': 'string'},
-            "indirect": {'type': 'string'},
-        }
-    }),
-    SchemaModel('DtuData', {
-        'properties': {
-            "C": {'type': 'string'},
-            "ΔE-KS": {'$ref': '#/definitions/DtuBandgaps'},
-            "ΔE-QP": {'$ref': '#/definitions/DtuBandgaps'},
-        }
-    })
-    #"contributor": {'type': 'string'},
-    #"formula": {'type': 'string'},
-    #"input_url": {'type': 'string', 'format': 'uri'},
-    #"ICSD": {'type': 'string'},
-    #"data": {'$ref': '#/definitions/DtuData'},
-]
+class Data(DynamicEmbeddedDocument):
+    __value_regex__ = '^(\d.\d{3,})\s+(eV)$'
+    C = fields.StringField(
+        min_length=8, max_length=10, required=True, regex = __value_regex__,
+        help_text="derivative discontinuity (valid format: `{}`)".format(
+            __value_regex__
+        )
+    )
