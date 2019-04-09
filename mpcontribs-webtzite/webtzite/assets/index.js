@@ -15,7 +15,6 @@ import("./extra.css");
 
 function importAll(r) { return r.keys().map(r); }
 importAll(require.context('../../../node_modules/chosen-js', true, /\.(png|jpe?g|svg)$/));
-import("./Symbola.ttf.svg");
 
 import 'webpack-icons-installer';
 
