@@ -44,25 +44,13 @@ class MPContributionsBuilder(object):
         from mpcontribs.io.core.recdict import RecursiveDict
         self.db = db
         self.nbdir = os.path.dirname(os.path.abspath(__file__))
-        self.ep = ExecutePreprocessor(timeout=600, kernel_name='python2', allow_errors=False)
+        self.ep = ExecutePreprocessor(timeout=600, allow_errors=False)
         if isinstance(self.db, dict):
-            self.materials = RecursiveDict()
-            self.compositions = RecursiveDict()
+            self.notebooks = RecursiveDict()
         else:
             opts = bson.CodecOptions(document_class=RecursiveDict)
             self.contributions = self.db.contributions.with_options(codec_options=opts)
-            self.materials = self.db.materials.with_options(codec_options=opts)
-            self.compositions = self.db.compositions.with_options(codec_options=opts)
-
-    @classmethod
-    def from_config(cls, db_yaml='mpcontribs_db.yaml'):
-        from monty.serialization import loadfn
-        from pymongo import MongoClient
-        config = loadfn(os.path.join(os.environ['DB_LOC'], db_yaml))
-        client = MongoClient(config['host'], config['port'], j=False, document_class=RecursiveDict)
-        db = client[config['db']]
-        db.authenticate(config['username'], config['password'])
-        return MPContributionsBuilder(db)
+            self.notebooks = self.db.compositions.with_options(codec_options=opts)
 
     def delete(self, project, cids):
         for contrib in self.contributions.find({'_id': {'$in': cids}}):
@@ -82,11 +70,6 @@ class MPContributionsBuilder(object):
         return self.db if isinstance(self.db, dict) else \
                 self.contributions.find_one({'_id': cid})
 
-    def set_build_flag(self, cid, flag):
-        if not isinstance(flag, bool):
-            raise ValueError('flag needs to be boolean but is {}'.format(type(flag)))
-        self.contributions.update({'_id': cid}, {'$set': {'build': flag}})
-
     def build(self, cid, api_key=None, endpoint=None):
         """update materials/compositions collections with contributed data"""
         from mpcontribs.io.core.utils import get_short_object_id
@@ -96,19 +79,10 @@ class MPContributionsBuilder(object):
         contrib = self.find_contribution(cid)
         if not contrib:
             raise Exception('Contribution {} not found!'.format(cid))
-        #if contributor_email not in contrib['collaborators']: raise ValueError(
-        #    "Build stopped: building contribution {} not "
-        #    "allowed due to insufficient permissions of {}! Ask "
-        #    "someone of {} to make you a collaborator on {}.".format(
-        #        cid_short, contributor_email, contrib['collaborators'], cid_short))
-        #from pymatgen.util.provenance import Author
         mpfile = MPFileCore.from_contribution(contrib)
         mp_cat_id = mpfile.ids[0]
         is_mp_id = mp_id_pattern.match(mp_cat_id)
         self.curr_coll = self.materials if is_mp_id else self.compositions
-        #author = Author.parse_author(contributor_email)
-        #project = str(author.name).translate(None, '.') \
-        #        if 'project' not in contrib else contrib['project']
         project = contrib.get('project')
 
         nb = nbf.new_notebook()
