@@ -248,12 +248,6 @@ def render_dataframe(df, url=None, total_records=None, webapp=False, paginate=Tr
         return 'table too large to show ({:.2f}MB)'.format(html_size)
     return html
 
-#from IPython import get_ipython
-#ipython = get_ipython()
-#if ipython is not None:
-#    html_f = ipython.display_formatter.formatters['text/html']
-#    html_f.for_type(DataFrame, render_dataframe)
-
 class Table(pd.DataFrame):
 
     def to_dict(self):
@@ -389,13 +383,16 @@ def render_plot(plot, webapp=False, filename=None):
         #img = image.get(fig)
         #print type(img)
     else:
-        from plotly.offline.offline import _plot_html # long import time
-        plot_html = _plot_html(
-            fig, False, '', True, '100%', '100%', global_requirejs=True
+        from plotly.offline.offline import _plot_html, _build_resize_script
+        html, divid, width, height = _plot_html(
+            fig, {}, True, '100%', 525, True, False
         )
-        html, divid = plot_html[0], plot_html[1]
+        display_bundle = {'application/vnd.plotly.v1+json': fig}
+        resize_script = _build_resize_script(divid, 'window._Plotly')
+        display_bundle['text/html'] = html + resize_script
         if not webapp:
-            return html
+            return display_bundle
+        raise NotImplementedError('render_plot: webapp=True TODO!')
         plotly_require = 'require(["plotly"], function(Plotly) {'
         html = html.replace(
             plotly_require,
@@ -410,7 +407,7 @@ class Plot(object):
         self.table = table
 
     def _ipython_display_(self):
-        display(HTML(render_plot(self)))
+        display(render_plot(self), raw=True)
 
 class Plots(RecursiveDict):
     """class to hold and display multiple interactive graphs/plots"""

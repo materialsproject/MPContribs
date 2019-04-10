@@ -74,7 +74,7 @@ def normalize_root_level(title):
     try:
         composition = get_composition_from_string(title)
         return False, composition
-    except (CompositionError, KeyError, TypeError):
+    except (CompositionError, KeyError, TypeError, ValueError):
         if mp_id_pattern.match(title.lower()):
             return False, title.lower()
         return True, title
