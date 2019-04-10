@@ -92,9 +92,6 @@ class MPContribsRester(MPResterBase):
     def check_contributor(self):
         return self._make_request('/check_contributor')
 
-    def groupadd(self, token):
-        return self._make_request('/groupadd/{}'.format(token))
-
     def submit_contribution(self, filename_or_mpfile, fmt):
         """
         Submit a MPFile containing contribution data to the Materials Project
@@ -124,76 +121,6 @@ class MPContribsRester(MPResterBase):
             raise MPResterError(str(ex))
         return self._make_request('/submit', payload=payload, method='POST')
 
-    def build_contribution(self, cid):
-        """
-        Build a contribution into the according material/composition on the
-        Materials Project site.  Don't use this function directly but rather go
-        through the dedicated command line program `mgc` or through the web UI
-        `MPFileViewer`.
-
-        Args:
-            cid: ObjectId of contribution
-
-        Raises:
-            MPResterError
-        """
-        try:
-            cid = bson.ObjectId(cid)
-        except Exception as ex:
-            raise MPResterError(str(ex))
-        return self._make_request('/build', payload={'cid': cid}, method='POST')
-
-    def query_contributions(self, **kwargs):
-        """Query the contributions collection of the Materials Project site.
-
-        Args:
-            criteria (dict): Query criteria.
-            contributor_only (bool): only show contributions for requesting contributor
-            projection (dict): projection dict to reduce output
-            collection (str): collection to query (contributions | materials | compositions)
-            limit (int): number of documents to return
-
-        Returns:
-            A dict, with a list of contributions in the "response" key.
-
-        Raises:
-            MPResterError
-        """
-        if self.query is not None:
-            if 'criteria' in kwargs:
-                kwargs['criteria'].update(self.query)
-            else:
-                kwargs['criteria'] = self.query
-        if kwargs:
-            criteria = dict(kwargs.get('criteria', {}))
-            payload = {
-                "criteria": dumps(criteria),
-                "contributor_only": dumps(kwargs.get('contributor_only', False)),
-                "projection": dumps(kwargs.get('projection')),
-                "collection": kwargs.get('collection', 'contributions'),
-                "limit": kwargs.get('limit', 0)
-            }
-            docs = self._make_request('/query', payload=payload, method='POST')
-        else:
-            docs = self._make_request('/query')
-        return docs
-
-    def count(self, **kwargs):
-        if self.query is not None:
-            if 'criteria' in kwargs:
-                kwargs['criteria'].update(self.query)
-            else:
-                kwargs['criteria'] = self.query
-        if kwargs:
-            criteria = dict(kwargs.get('criteria', {}))
-            payload = {
-                "criteria": dumps(criteria),
-                "collection": kwargs.get('collection', 'contributions'),
-            }
-            return self._make_request('/count', payload=payload, method='POST')
-        else:
-            return self._make_request('/count')
-
     def find_contribution(self, cid, as_doc=False, fmt='archieml'):
         """find a specific contribution"""
         projection = {'identifier': 1, 'content': 1, 'collaborators': 1, 'project': 1}
@@ -205,75 +132,3 @@ class MPContribsRester(MPResterBase):
         mod = import_module('mpcontribs.io.{}.mpfile'.format(fmt))
         MPFile = getattr(mod, 'MPFile')
         return MPFile.from_contribution(contrib)
-
-    def delete_contributions(self, cids=None):
-        """
-        Delete a list of contributions from the Materials Project site.
-
-        Args:
-            cids (list): list of contribution IDs
-
-        Returns:
-            number of contributions deleted
-
-        Raises:
-            MPResterError
-        """
-        cids = cids or [c['_id'] for c in self.query_contributions()]
-        payload = {"cids": dumps(cids)}
-        return self._make_request('/delete', payload=payload, method='POST')
-
-    def update_collaborators(self, collaborators, cids, mode):
-        """
-        Update collaborator for contributions to the Materials Project site.
-
-        Args:
-            collaborators (list): list of `FullNameInitial.LastName`
-            cids (list): list of contribution IDs
-            mode (str): add/remove/primary
-
-        Returns:
-            the updated list of collaborators for affected contributions
-
-        Raises:
-            MPResterError
-        """
-        try:
-            payload = {
-                'collaborators': dumps(collaborators),
-                'cids': dumps(cids), 'mode': mode
-            }
-            response = self.session.post(
-                "{}/contribs/collab".format(self.preamble), data=payload
-            )
-            if response.status_code in [200, 400]:
-                resp = loads(response.text, cls=MPDecoder)
-                if resp['valid_response']:
-                    return resp['response']['collaborators']
-                else:
-                    raise MPResterError(resp["error"])
-            raise MPResterError("REST error with status code {} and error {}"
-                              .format(response.status_code, response.text))
-        except Exception as ex:
-            raise MPResterError(str(ex))
-
-    def get_cif(self, cid, structure_name):
-        return self._make_request('/cif/{}/{}'.format(cid, structure_name))
-
-    def set_build_flag(self, cid, flag):
-        if not isinstance(flag, bool) and not isinstance(flag, int):
-            raise MPResterError('flag needs to be boolean')
-        cid = bson.ObjectId(cid)
-        return self._make_request('/build', payload={'cid': cid, 'flag': int(flag)}, method='POST')
-
-    def get_datasets(self, identifier):
-        return self._make_request('/datasets/'+identifier)
-
-    def get_card(self, cid, prov_keys=None, embed=True):
-        prov_keys = prov_keys or ['title']
-        payload = {"provenance_keys": dumps(prov_keys), "embed": dumps(embed)}
-        return self._make_request('/card/'+cid, payload=payload, method='POST')
-
-    def get_landing_pages(self):
-        return self._make_request('/landing_pages')
-
