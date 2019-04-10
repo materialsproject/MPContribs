@@ -81,6 +81,29 @@ class ContributionsView(SwaggerView):
         entries = objects.paginate(page=page, per_page=per_page).items
         return self.marshal(entries)
 
+class ContributionView(SwaggerView):
+
+    def get(self, cid):
+        """Retrieve single contribution.
+        ---
+        operationId: get_entry
+        parameters:
+            - name: cid
+              in: path
+              type: string
+              pattern: '^[a-f0-9]{24}$'
+              required: true
+              description: contribution ID (ObjectId)
+        responses:
+            200:
+                description: single contribution
+                schema:
+                    $ref: '#/definitions/ContributionsSchema'
+        """
+        entry = Contributions.objects.get(id=cid)
+        return entry
+        #return self.marshal(entry) # TODO also define contents in document!?
+
 def get_browser():
     if 'browser' not in g:
         options = webdriver.ChromeOptions()
@@ -145,6 +168,10 @@ class CardView(SwaggerView):
 # url_prefix added in register_blueprint
 multi_view = ContributionsView.as_view(ContributionsView.__name__)
 contributions.add_url_rule('/', view_func=multi_view, methods=['GET'])#, 'POST'])
+
+single_view = ContributionView.as_view(ContributionView.__name__)
+contributions.add_url_rule('/<string:cid>', view_func=single_view,
+                         methods=['GET'])#, 'PUT', 'PATCH', 'DELETE'])
 
 card_view = CardView.as_view(CardView.__name__)
 contributions.add_url_rule('/<string:cid>/card', view_func=card_view, methods=['GET'])
