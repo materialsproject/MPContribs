@@ -1,5 +1,4 @@
 apispec==0.39.0
-bravado==10.2.1
 dnspython==1.16.0
 flasgger @ git+https://github.com/rochacbruno/flasgger#egg=flasgger-0.9.3.dev0
 Flask==1.0.2
@@ -17,3 +16,8 @@ beautifulsoup4==4.7.1
 css-html-js-minify==2.5.5
 flask-cors==3.0.7
 toronado==0.0.11
+nbconvert==5.4.1
+nbformat==4.4.0
+jupyter_client==5.2.4
+ipykernel==5.1.0
+mpcontribs-utils @ git+https://github.com/materialsproject/MPContribs@dev#egg=mpcontribs-utils&subdirectory=mpcontribs-utils
