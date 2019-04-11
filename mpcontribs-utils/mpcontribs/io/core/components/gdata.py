@@ -1,5 +1,6 @@
 import pandas as pd
 import plotly.io as pio
+from IPython.display import display_html
 from mpcontribs.config import mp_level01_titles
 from mpcontribs.io.core.recdict import RecursiveDict
 
