@@ -29,8 +29,9 @@ class NotebookView(SwaggerView):
                     $ref: '#/definitions/NotebooksSchema'
         """
         try:
-            entry = Notebooks.objects.get(id=cid)
+            return Notebooks.objects.get(id=cid)
         except DoesNotExist:
+            print('building notebook ...')
             cells = [
                 nbf.new_code_cell(
                     "from mpcontribs.client import load_client\n"
@@ -45,16 +46,14 @@ class NotebookView(SwaggerView):
             ]
             #for typ in ['h', 't', 'g', 's']:
             #    cells.append(nbf.new_code_cell(f"mpfile.{typ}data[identifier]"))
-
             nb = nbf.new_notebook()
             nb['cells'] = cells
             nbdir = os.path.dirname(os.path.abspath(__file__))
             exprep.preprocess(nb, {'metadata': {'path': nbdir}})
-            return nb
+            print(nb)
+            Notebooks(**nb).save()
             # TODO commit nb to database
-
-        return entry
-        #return self.marshal(entry)
+            return nb
 
     #def delete(self, project, cids):
     #    for contrib in self.contributions.find({'_id': {'$in': cids}}):
