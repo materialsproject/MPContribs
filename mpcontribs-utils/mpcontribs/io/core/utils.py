@@ -114,7 +114,7 @@ def read_csv(body, is_data_section=True, **kwargs):
     body = body.strip()
     if not body:
         return None
-    from mpcontribs.io.core.components import Table
+    from mpcontribs.io.core.components.tdata import Table
     if is_data_section:
         cur_line = 1
         while 1:

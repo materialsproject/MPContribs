@@ -5,7 +5,7 @@ from mpcontribs.io.core.mpfile import MPFileCore
 from mpcontribs.io.core.recdict import RecursiveDict, Quantity
 from mpcontribs.io.core.utils import nest_dict, normalize_root_level
 from mpcontribs.io.core.utils import read_csv, make_pair
-from mpcontribs.io.core.components import Table
+from mpcontribs.io.core.components.tdata import Table
 from pandas import MultiIndex
 
 class MPFile(MPFileCore):

@@ -102,7 +102,7 @@ class RecursiveDict(_OrderedDict):
                     continue
                 yield (self.level, key), None
                 if value.get('@class') == 'Table':
-                    from mpcontribs.io.core.components import Table
+                    from mpcontribs.io.core.components.tdata import Table
                     yield key, Table.from_dict(value)
                     continue
                 if Quantity is not None and value.get('@class') == 'Quantity':
