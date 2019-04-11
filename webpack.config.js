@@ -13,6 +13,7 @@ module.exports = {
     'main': './mpcontribs-webtzite/webtzite/assets/index',
     'portal': './mpcontribs-portal/mpcontribs/portal/assets/index',
     'explorer': './mpcontribs-explorer/mpcontribs/explorer/assets/index',
+    'explorer_contribution': './mpcontribs-explorer/mpcontribs/explorer/assets/contribution',
   },
   output: {
     path: path.resolve(__dirname, 'dist'),
@@ -60,7 +61,7 @@ module.exports = {
       "toggle": 'bootstrap-toggle/js/bootstrap-toggle',
       "underscore": 'underscore/underscore',
       "lunr": 'lunr.js/lunr',
-      "plotly": 'plotlyjs/plotly',
+      "plotly": 'plotly.js/dist/plotly',
       "backgrid-select-all": 'backgrid-select-all/backgrid-select-all',
       "backgrid-filter": 'backgrid-filter/backgrid-filter',
       "backbone.paginator": 'backbone.paginator/lib/backbone.paginator',

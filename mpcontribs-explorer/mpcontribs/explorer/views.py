@@ -1,9 +1,11 @@
 """This module provides the views for the explorer interface."""
 
-import json
 from django.shortcuts import render
 from django.template import RequestContext
 from django.http import HttpResponse
+import nbformat
+from nbconvert import HTMLExporter
+from bs4 import BeautifulSoup
 from test_site.settings import swagger_client as client
 
 def index(request):
@@ -15,39 +17,43 @@ def index(request):
         ctx['alert'] = f'{ex}'
     return render(request, "mpcontribs_explorer_index.html", ctx.flatten())
 
-def contribution(request, collection, cid):
-    import nbformat
-    from bson import ObjectId
-    #from mpcontribs.builder import export_notebook
-    material = {'detail_id': collection[:-1]}
+def export_notebook(nb, cid):
+    nb = nbformat.from_dict(nb)
+    html_exporter = HTMLExporter()
+    html_exporter.template_file = 'basic'
+    # TODO pop first code cell here
+    body = html_exporter.from_notebook_node(nb)[0]
+    body = body.replace("var element = $('#", "var element = document.getElementById('")
+    soup = BeautifulSoup(body, 'html.parser')
+    soup.div.extract() # remove first code cell (loads mpfile)
+    for t in soup.find_all('a', 'anchor-link'):
+        t.extract() # rm anchors
+    # mark cells with special name for toggling, and
+    # make element id's unique by appending cid
+    # NOTE every cell has only one tag with id
+    div_name = None
+    for div in soup.find_all('div', 'cell')[1:]:
+        tag = div.find('h3', id=True)
+        if tag is not None:
+            tag['id'] = '-'.join([tag['id'], str(cid)])
+            div_name = tag['id'].split('-')[0]
+        if div_name is not None:
+            div['name'] = div_name
+    # name divs for toggling code_cells
+    for div in soup.find_all('div', 'input'):
+        div['name'] = 'Input'
+    # separate script
+    script = []
+    for s in soup.find_all('script'):
+        script.append(s.text)
+        s.extract() # remove javascript
+    return soup.prettify(), '\n'.join(script)
+
+def contribution(request, cid):
     ctx = RequestContext(request)
-    if request.user.is_authenticated():
-        user = RegisteredUser.objects.get(username=request.user.username)
-        with MPContribsRester(user.api_key, endpoint=get_endpoint(request)) as mpr:
-            try:
-                contrib = mpr.query_contributions(
-                    criteria={'_id': cid}, projection={'build': 1}
-                )[0]
-                if 'build' in contrib and contrib['build']:
-                    mpr.build_contribution(cid)
-                    mpr.set_build_flag(cid, False)
-                material = mpr.query_contributions(
-                    criteria={'_id': ObjectId(cid)},
-                    collection=collection, projection={'_id': 0}
-                )[0]
-            except IndexError:
-                mpr.build_contribution(cid)
-                material = mpr.query_contributions(
-                    criteria={'_id': ObjectId(cid)},
-                    collection=collection, projection={'_id': 0}
-                )[0]
-            material['nb'], material['nb_js'] = export_notebook(
-                nbformat.from_dict(material['nb']), cid, separate_script=True
-            )
-            ctx.update({'material': jsanitize(material)})
-    else:
-        ctx.update({'alert': 'Please log in!'})
-    return render_to_response("mpcontribs_explorer_contribution.html", ctx)
+    nb = client.notebooks.get_entry(cid=cid).response().result
+    ctx['nb'], ctx['js'] = export_notebook(nb, cid)
+    return render("mpcontribs_explorer_contribution.html", ctx.flatten())
 
 def cif(request, cid, structure_name):
     if request.user.is_authenticated():
@@ -59,6 +65,7 @@ def cif(request, cid, structure_name):
     return HttpResponse(status=404)
 
 def download_json(request, collection, cid):
+    import json
     if request.user.is_authenticated():
         user = RegisteredUser.objects.get(username=request.user.username)
         with MPContribsRester(user.api_key, endpoint=get_endpoint(request)) as mpr:
@@ -69,23 +76,3 @@ def download_json(request, collection, cid):
                 response['Content-Disposition'] = 'attachment; filename={}.json'.format(cid)
                 return response
     return HttpResponse(status=404)
-
-# Instead of
-# from monty.json import jsanitize
-# use the following to fix UnicodeEncodeError
-# and play nice with utf-8 encoding
-from bson import SON
-def jsanitize(obj):
-    if isinstance(obj, (list, tuple)):
-        return [jsanitize(i) for i in obj]
-    elif isinstance(obj, dict):
-        return SON([
-            (unicode(k).encode('utf-8'), jsanitize(v))
-            for k, v in obj.items()
-        ])
-    elif isinstance(obj, (int, float)):
-        return obj
-    elif obj is None:
-        return None
-    else:
-        return unicode(obj).encode('utf-8')

@@ -6,6 +6,7 @@ class Collaborator(fields.EmbeddedDocument):
     email = fields.StringField(required=True)
     # TODO hide email field?
     # TODO use EmailField but "email format is not registered with bravado-core"
+    # https://bravado-core.readthedocs.io/en/stable/formats.html#formats
 
 class Contents(DynamicEmbeddedDocument):
     data = fields.DictField(

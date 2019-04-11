@@ -6,7 +6,7 @@ RUN apk add --no-cache git make gcc musl-dev npm py3-pip libgfortran build-base 
 RUN pip3 install -U pip
 RUN pip3 install matplotlib
 RUN pip3 install scipy
-RUN pip3 install -e "git+https://github.com/materialsproject/MPContribs@dev#egg=mpcontribs-utils&subdirectory=mpcontribs-utils"
+RUN pip3 install -e "git+https://github.com/plotly/plotly.py#egg=plotly"
 
 EXPOSE 5000
 ENV PYTHONUNBUFFERED 1
@@ -17,6 +17,7 @@ COPY requirements.txt .
 RUN pip3 install -r requirements.txt
 
 COPY . .
+RUN pip3 install -e "git+https://github.com/materialsproject/MPContribs@dev#egg=mpcontribs-utils&subdirectory=mpcontribs-utils"
 RUN pip3 install -e .
 
 CMD ["flask", "run", "-h", "0.0.0.0"]

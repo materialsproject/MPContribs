@@ -1,14 +1,14 @@
-{% extends "mpcontribs_explorer_detail.html" %}
+{% extends "header_footer.html" %}
 {% load staticfiles %}
+{% load render_bundle from webpack_loader %}
+{% block extra_css %}{% render_bundle 'explorer_contribution' 'css' %}{% endblock %}
+{% block footer %}
+{% render_bundle 'explorer_contribution' 'js' %}
+{{ js|safe }}
+{% endblock %}
+{% block title %}MPContribs Contribution Details Page{% endblock %}
 
-{% if mp_cat_id in material %}
-{% block title %} {{ material.detail_id }} {{ material.mp_cat_id }} {% endblock %}
-{% block detail_id %}{{ material.detail_id }}{% endblock %}
-{% block detail_type %}{{ material.detail_id }}{% endblock %}
-{% block formula %}{{ material.mp_cat_id }}{% endblock %}
-
-{% block detail_content %}
-
+{% block content %}
 <style>
 .navbar .btn, .navbar .btn-group { margin-top: 0px; }
 </style>
@@ -47,58 +47,8 @@
           <a class="btn btn-sm btn-success" href="{{ request.path }}.json" role="button">Download</a>
       </div>
     </form>
-    <div id="spinner" ></div>
-    <script>
-        requirejs(['main'], function() {
-            require(["jquery.spin"], function() {
-                $("#spinner").spin('small');
-            });
-        });
-    </script>
   </div>
 </nav>
 
-<div>{{ material.nb|safe }}</div>
-<script>
-requirejs(['main'], function() {
-    require(["json.human", "plotly", "backgrid", "toggle", "jquery.spin"], function() {
-        {{ material.nb_js|safe }}
-
-        // toggle divs
-        function toggle_divs(name) {
-          var divs = document.getElementsByName(name);
-          for (var j=0; j<divs.length; j++) {
-            if ($(divs[j]).is(":visible")) { $(divs[j]).hide(); }
-            else { $(divs[j]).show(); }
-          }
-        };
-        $('#toggle_trees').change(function () { toggle_divs("Hierarchical"); });
-        $('#toggle_tables').change(function () { toggle_divs("Tabular"); });
-        $('#toggle_graphs').change(function () { toggle_divs("Graphical"); });
-        $('#toggle_inputs').change(function () { toggle_divs("Input"); });
-        $('#toggle_structures').change(function () { toggle_divs("Structural"); });
-
-        $(document).ready(function(){
-            $('#toggle_trees').bootstrapToggle({
-              on:"h-Data", off:"h-Data", size:"mini", width:65, height:25
-            });
-            $('#toggle_tables').bootstrapToggle({
-              on:"Tables", off:"Tables", size:"mini", width:65, height:25
-            });
-            $('#toggle_graphs').bootstrapToggle({
-              on:"Graphs", off:"Graphs", size:"mini", width:65, height:25
-            });
-            $('#toggle_inputs').bootstrapToggle({
-              on:"Inputs", off:"Inputs", size:"mini", width:65, height:25
-            });
-            $('#toggle_structures').bootstrapToggle({
-              on:"Structures", off:"Structures", size:"mini", width:75, height:25
-            });
-            $('#download').show();
-            $('#spinner').spin(false);
-        });
-     });
-});
-</script>
-{% endblock detail_content %}
-{% endif %}
+<div>{{ nb|safe }}</div>
+{% endblock content %}
