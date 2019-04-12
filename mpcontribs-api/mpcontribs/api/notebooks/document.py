@@ -30,9 +30,7 @@ class Metadata(fields.EmbeddedDocument):
 class Cell(DynamicEmbeddedDocument):
     cell_type = fields.StringField(required=True, help_text='cell type')
     execution_count = fields.IntField(required=True, help_text='exec count')
-    source = fields.ListField(
-        fields.StringField(), required=True, help_text='source'
-    )
+    source = fields.StringField(required=True, help_text='source')
     metadata = fields.DictField()
     outputs = fields.ListField(fields.DictField())
 
@@ -44,3 +42,26 @@ class Notebooks(Document):
     )
     cells = fields.EmbeddedDocumentListField(Cell, required=True, help_text='cells')
     meta = {'collection': 'notebooks'}
+
+    problem_key = 'application/vnd.plotly.v1+json'
+    escaped_key = problem_key.replace('.', '~dot~')
+
+    def transform(self, incoming=True):
+        if incoming:
+            old_key = self.problem_key
+            new_key = self.escaped_key
+        else:
+            old_key = self.escaped_key
+            new_key = self.problem_key
+
+        for cell in self.cells:
+            for output in cell.outputs:
+                if old_key in output['data']:
+                    output['data'][new_key] = output['data'].pop(old_key)
+
+    def clean(self):
+        self.transform()
+
+    def restore(self):
+        del self.id
+        self.transform(incoming=False)
