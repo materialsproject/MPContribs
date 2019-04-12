@@ -3,65 +3,11 @@ import uuid, json, six, os
 from collections import OrderedDict as _OrderedDict
 from collections import Mapping as _Mapping
 from mpcontribs.config import mp_level01_titles, replacements
-#from test_site.settings import BASE_DIR
 
 try:
     from propnet.core.quantity import Quantity
 except ImportError:
     Quantity = None
-
-#json_human = {}
-#for ext in ['js', 'css']:
-#    subdir = 'src' if ext == 'js' else 'css'
-#    path_list = [BASE_DIR, 'node_modules', 'json-human', subdir]
-#    path_list.append('json.human.{}'.format(ext))
-#    json_human_path = os.path.abspath(os.path.join(*path_list))
-#    json_human[ext] = open(json_human_path, 'r').read()
-#json_human['css'] = ' '.join(json_human['css'].replace('\n', ' ').split())
-#
-#linkify = ''
-#for lib in ['linkify.min', 'linkify-element.min']:
-#    path_list = [BASE_DIR, 'node_modules', 'linkifyjs', 'dist', '{}.js'.format(lib)]
-#    lib_path = os.path.abspath(os.path.join(*path_list))
-#    linkify += open(lib_path, 'r').read()#.decode("UTF-8")
-#
-#def render_dict(dct, webapp=False, require=True, script_only=False):
-#    """use JsonHuman library to render a dictionary"""
-#    json_str, uuid_str = json.dumps(dct).replace('\\n', ' '), str(uuid.uuid4())
-#    html = []
-#    if not script_only:
-#        html.append("<div id='{}' style='width:100%;'></div>".format(uuid_str))
-#        html.append("<script>")
-#    if webapp:
-#        html.append("requirejs(['main'], function() {")
-#    if require:
-#        html.append("require(['json.human', 'linkify-element'], function(JsonHuman, linkifyElement) {")
-#    else:
-#        json_human_extra = ' .jh-root {font-family: "symbola"; } .jh-type-string { font-style: normal; }'
-#        html.append("""
-#        var style = document.createElement('style');
-#        style.type = 'text/css';
-#        var tn = document.createTextNode('{}');
-#        style.appendChild(tn);
-#        document.body.appendChild(style);
-#        """.format(json_human['css'] + json_human_extra))
-#        html.append('\n' + json_human['js'])
-#        html.append('\n' + linkify)
-#    html.append("'use strict';")
-#    html.append("var data = JSON.parse('{}');".format(json_str))
-#    html.append("var node = JsonHuman.format(data);")
-#    html.append("linkifyElement(node, { target: '_blank' });")
-#    if script_only:
-#        html.append("document.body.appendChild(node);")
-#    else:
-#        html.append("document.getElementById('{}').appendChild(node);".format(uuid_str))
-#    if require:
-#        html.append("});")
-#    if webapp:
-#        html.append("});")
-#    if not script_only:
-#        html.append("</script>")
-#    return ' '.join(html) # TODO use \n?
 
 class RecursiveDict(_OrderedDict):
     """extension of dict for internal representation of MPFile"""
@@ -151,6 +97,16 @@ class RecursiveDict(_OrderedDict):
         else:
           self[mp_level01_titles[2]] = plots_dict[mp_level01_titles[2]]
 
-    #def _ipython_display_(self):
-    #    from IPython.display import display_html
-    #    display_html(render_dict(self), raw=True)
+    def render(self):
+        """use JsonHuman library to render a dictionary"""
+        json_str, uuid_str = json.dumps(self).replace('\\n', ' '), str(uuid.uuid4())
+        html = f"<div id='{uuid_str}' style='width:100%;'></div><script>"
+        html += f"var data = JSON.parse('{json_str}');"
+        html += "var node = JsonHuman.format(data);"
+        html += "linkifyElement(node, { target: '_blank' });"
+        html += f"document.getElementById('{uuid_str}').appendChild(node);</script>"
+        return html
+
+    def _ipython_display_(self):
+        from IPython.display import display_html
+        display_html(self.render(), raw=True)
