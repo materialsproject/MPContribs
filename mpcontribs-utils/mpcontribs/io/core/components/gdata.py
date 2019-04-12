@@ -1,21 +1,29 @@
+import json, uuid
 import pandas as pd
 import plotly.io as pio
+from plotly.io._utils import validate_coerce_fig_to_dict
+from plotly.offline.offline import _get_jconfig
+from plotly.utils import PlotlyJSONEncoder
 from IPython.display import display_html
 from mpcontribs.config import mp_level01_titles
 from mpcontribs.io.core.recdict import RecursiveDict
 
 class MyRenderer(pio.base_renderers.MimetypeRenderer):
-    def to_mimebundle(self, fig_dict):
-        from plotly.io import to_html
-        html = to_html(
-            fig_dict,
-            config=None,
-            auto_play=False,
-            include_plotlyjs=False,
-            include_mathjax=False,
-            post_script=None,
-            full_html=False,
-            animation_opts=None)
+    def to_mimebundle(self, fig):
+        fig_dict = validate_coerce_fig_to_dict(fig, True)
+        divid = str(uuid.uuid4())
+        data = fig_dict.get('data', [])
+        jdata = json.dumps(data, cls=PlotlyJSONEncoder, sort_keys=True)
+        layout = fig_dict.get('layout', {})
+        jlayout = json.dumps(layout, cls=PlotlyJSONEncoder, sort_keys=True)
+        config = _get_jconfig(None)
+        config.setdefault('responsive', True)
+        jconfig = json.dumps(config)
+        script = f'render_plot({{\
+        divid: "{divid}", data: {jdata}, layout: {jlayout}, config: {jconfig}\
+        }})'
+        html = f'<div><div id="{divid}"></div>'
+        html += f'<script type="text/javascript">{script};</script></div>'
         return {'text/html': html}
 
 my_renderer = MyRenderer()
