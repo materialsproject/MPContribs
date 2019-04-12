@@ -11,6 +11,7 @@ from test_site.settings import swagger_client as client
 def index(request):
     ctx = RequestContext(request)
     try:
+        client.swagger_spec.config['use_models'] = True
         resp = client.projects.get_entries(mask=['project']).response()
         ctx['projects'] = [r.project for r in resp.result]
     except Exception as ex:
@@ -21,11 +22,8 @@ def export_notebook(nb, cid):
     nb = nbformat.from_dict(nb)
     html_exporter = HTMLExporter()
     html_exporter.template_file = 'basic'
-    # TODO pop first code cell here
     body = html_exporter.from_notebook_node(nb)[0]
-    body = body.replace("var element = $('#", "var element = document.getElementById('")
     soup = BeautifulSoup(body, 'html.parser')
-    soup.div.extract() # remove first code cell (loads mpfile)
     for t in soup.find_all('a', 'anchor-link'):
         t.extract() # rm anchors
     # mark cells with special name for toggling, and
@@ -51,9 +49,10 @@ def export_notebook(nb, cid):
 
 def contribution(request, cid):
     ctx = RequestContext(request)
+    client.swagger_spec.config['use_models'] = False
     nb = client.notebooks.get_entry(cid=cid).response().result
     ctx['nb'], ctx['js'] = export_notebook(nb, cid)
-    return render("mpcontribs_explorer_contribution.html", ctx.flatten())
+    return render(request, "mpcontribs_explorer_contribution.html", ctx.flatten())
 
 def cif(request, cid, structure_name):
     if request.user.is_authenticated():
