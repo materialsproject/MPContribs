@@ -1,5 +1,6 @@
 """This module provides the views for the explorer interface."""
 
+import json
 from django.shortcuts import render
 from django.template import RequestContext
 from django.http import HttpResponse
@@ -54,24 +55,17 @@ def contribution(request, cid):
     ctx['nb'], ctx['js'] = export_notebook(nb, cid)
     return render(request, "mpcontribs_explorer_contribution.html", ctx.flatten())
 
-def cif(request, cid, structure_name):
-    if request.user.is_authenticated():
-        user = RegisteredUser.objects.get(username=request.user.username)
-        with MPContribsRester(user.api_key, endpoint=get_endpoint(request)) as mpr:
-            cif = mpr.get_cif(cid, structure_name)
-            if cif:
-                return HttpResponse(cif, content_type='text/plain')
+def cif(request, cid, structure_name): # TODO
+    cif = mpr.get_cif(cid, structure_name)
+    if cif:
+        return HttpResponse(cif, content_type='text/plain')
     return HttpResponse(status=404)
 
-def download_json(request, collection, cid):
-    import json
-    if request.user.is_authenticated():
-        user = RegisteredUser.objects.get(username=request.user.username)
-        with MPContribsRester(user.api_key, endpoint=get_endpoint(request)) as mpr:
-            contrib = mpr.find_contribution(cid, as_doc=True)
-            if contrib:
-                json_str = json.dumps(contrib)
-                response = HttpResponse(json_str, content_type='application/json')
-                response['Content-Disposition'] = 'attachment; filename={}.json'.format(cid)
-                return response
+def download_json(request, collection, cid): # TODO
+    contrib = mpr.find_contribution(cid, as_doc=True)
+    if contrib:
+        json_str = json.dumps(contrib)
+        response = HttpResponse(json_str, content_type='application/json')
+        response['Content-Disposition'] = 'attachment; filename={}.json'.format(cid)
+        return response
     return HttpResponse(status=404)

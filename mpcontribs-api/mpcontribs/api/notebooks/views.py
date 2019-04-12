@@ -35,18 +35,18 @@ class NotebookView(SwaggerView):
         except DoesNotExist:
             cells = [
                 nbf.new_code_cell(
+                    "# provide apikey to `load_client` in order to connect to api.mpcontribs.org\n"
+                    "# or use bravado (see https://mpcontribs.org/api)"
                     "from mpcontribs.client import load_client\n"
-                    "client = load_client() # provide apikey to connect to api.mpcontribs.org"
+                    "client = load_client()"
                 ), nbf.new_code_cell(
                     "from mpcontribs.io.archieml.mpfile import MPFile\n"
                     f"result = client.contributions.get_entry(cid='{cid}').response().result\n"
-                    "mpfile = MPFile.from_contribution(result)\n"
-                    "identifier = mpfile.ids[0]\n"
-                    "mpfile.gdata[identifier]"
+                    "mpfile = MPFile.from_contribution(result)"
                 )
             ]
-            #for typ in ['h', 't', 'g', 's']:
-            #    cells.append(nbf.new_code_cell(f"mpfile.{typ}data[identifier]"))
+            for typ in ['h', 't', 'g', 's']:
+                cells.append(nbf.new_code_cell(f"mpfile.{typ}data"))
             nb = nbf.new_notebook()
             nb['cells'] = cells
             exprep.preprocess(nb, {})
