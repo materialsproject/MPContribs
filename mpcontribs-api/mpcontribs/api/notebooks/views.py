@@ -8,6 +8,7 @@ from mpcontribs.api.notebooks.document import Notebooks
 
 notebooks = Blueprint("notebooks", __name__)
 exprep = ExecutePreprocessor(timeout=600, allow_errors=False)
+exprep.enabled = True
 
 class NotebookView(SwaggerView):
 
@@ -48,12 +49,12 @@ class NotebookView(SwaggerView):
             #    cells.append(nbf.new_code_cell(f"mpfile.{typ}data[identifier]"))
             nb = nbf.new_notebook()
             nb['cells'] = cells
-            nbdir = os.path.dirname(os.path.abspath(__file__))
-            exprep.preprocess(nb, {'metadata': {'path': nbdir}})
+            exprep.preprocess(nb, {})
             nb = Notebooks(**nb)
-            nb.id = cid
+            nb.id = cid # to link to the according contribution
             nb.save() # calls Notebooks.clean()
 
+        del nb.id
         return nb
 
     #def delete(self, project, cids):

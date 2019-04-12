@@ -2,43 +2,44 @@ from flask_mongoengine import Document
 from mongoengine import fields, DynamicEmbeddedDocument
 
 class Kernelspec(fields.EmbeddedDocument):
-    display_name = fields.StringField(required=True)
-    language = fields.StringField(required=True)
-    name = fields.StringField(required=True)
+    name = fields.StringField(required=True, default='python3')
+    display_name = fields.StringField(required=True, default='Python 3')
+    language = fields.StringField()
 
 class CodemirrorMode(fields.EmbeddedDocument):
     name = fields.StringField(required=True)
     version = fields.IntField(required=True)
 
 class LanguageInfo(fields.EmbeddedDocument):
-    file_extension = fields.StringField(required=True)
-    mimetype = fields.StringField(required=True)
     name = fields.StringField(required=True)
-    nbconvert_exporter = fields.StringField(required=True)
-    pygments_lexer = fields.StringField(required=True)
-    version = fields.StringField(required=True)
-    codemirror_mode = fields.EmbeddedDocumentField(
-        CodemirrorMode, required=True, help_text='codemirror'
-    )
+    file_extension = fields.StringField()
+    mimetype = fields.StringField()
+    nbconvert_exporter = fields.StringField()
+    pygments_lexer = fields.StringField()
+    version = fields.StringField()
+    codemirror_mode = fields.EmbeddedDocumentField(CodemirrorMode, help_text='codemirror')
 
 class Metadata(fields.EmbeddedDocument):
-    kernelspec = fields.EmbeddedDocumentField(Kernelspec, help_text='kernelspec')
+    kernelspec = fields.EmbeddedDocumentField(
+        Kernelspec, required=True, help_text='kernelspec', default=Kernelspec
+    )
     language_info = fields.EmbeddedDocumentField(
-        LanguageInfo, required=True, help_text='language info'
+        LanguageInfo, required=True, help_text='language info',
+        default=LanguageInfo
     )
 
 class Cell(DynamicEmbeddedDocument):
     cell_type = fields.StringField(required=True, help_text='cell type')
-    execution_count = fields.IntField(required=True, help_text='exec count')
+    metadata = fields.DictField(help_text='cell metadata')
     source = fields.StringField(required=True, help_text='source')
-    metadata = fields.DictField()
-    outputs = fields.ListField(fields.DictField())
+    outputs = fields.ListField(fields.DictField(), help_text='outputs')
+    execution_count = fields.IntField(required=True, help_text='exec count')
 
 class Notebooks(Document):
     nbformat = fields.IntField(required=True, help_text="nbformat version")
     nbformat_minor = fields.IntField(required=True, help_text="nbformat minor version")
     metadata = fields.EmbeddedDocumentField(
-        Metadata, required=True, help_text='notebook metadata'
+        Metadata, required=True, help_text='notebook metadata', default=Metadata
     )
     cells = fields.EmbeddedDocumentListField(Cell, required=True, help_text='cells')
     meta = {'collection': 'notebooks'}
@@ -63,5 +64,4 @@ class Notebooks(Document):
         self.transform()
 
     def restore(self):
-        del self.id
         self.transform(incoming=False)
