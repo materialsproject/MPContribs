@@ -1,5 +1,5 @@
 import 'toggle';
-import 'plotly';
+import Plotly from 'plotly';
 import 'json.human';
 // TODO "backgrid", "jquery.spin"
 
@@ -34,3 +34,10 @@ $('#toggle_structures').bootstrapToggle({
 });
 
 $('#download').show();
+
+window.PLOTLYENV=window.PLOTLYENV || {};
+window.PLOTLYENV.BASE_URL='https://plot.ly';
+
+window.render_plot = function(props) {
+    Plotly.newPlot(props.divid, props.data, props.layout, props.config);
+}

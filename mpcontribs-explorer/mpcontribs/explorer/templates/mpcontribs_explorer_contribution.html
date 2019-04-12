@@ -4,7 +4,7 @@
 {% block extra_css %}{% render_bundle 'explorer_contribution' 'css' %}{% endblock %}
 {% block footer %}
 {% render_bundle 'explorer_contribution' 'js' %}
-{{ js|safe }}
+<script>{{ js|safe }}</script>
 {% endblock %}
 {% block title %}MPContribs Contribution Details Page{% endblock %}
 
@@ -50,5 +50,11 @@
   </div>
 </nav>
 
-<div>{{ nb|safe }}</div>
+<div class="container">
+    <div class="row">
+        <div class="col-md-12">
+            {{ nb|safe }}
+        </div>
+    </div>
+</div>
 {% endblock content %}

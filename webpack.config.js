@@ -80,7 +80,6 @@ module.exports = {
   },
   module: {
     rules: [
-      //{ test: /jquery/, loader: 'exports-loader?jQuery' },
       //{ test: /underscore/, loader: 'exports-loader?_' },
       { test: /backbone/, loader: 'exports-loader?Backbone!imports-loader?underscore,jquery' },
       { test: /backgrid/, loader: 'imports-loader?backbone' },
