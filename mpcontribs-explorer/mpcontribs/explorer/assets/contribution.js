@@ -1,6 +1,7 @@
 import 'toggle';
 import Plotly from 'plotly';
-import 'json.human';
+import JsonHuman from 'json.human';
+import linkifyElement from 'linkify-element';
 // TODO "backgrid", "jquery.spin"
 
 function toggle_divs(name) {
@@ -40,4 +41,10 @@ window.PLOTLYENV.BASE_URL='https://plot.ly';
 
 window.render_plot = function(props) {
     Plotly.newPlot(props.divid, props.data, props.layout, props.config);
+}
+
+window.render_json = function(props) {
+    var node = JsonHuman.format(props.data);
+    linkifyElement(node, { target: '_blank' });
+    document.getElementById(props.divid).appendChild(node);
 }
