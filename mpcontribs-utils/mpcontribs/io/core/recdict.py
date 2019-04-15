@@ -99,14 +99,12 @@ class RecursiveDict(_OrderedDict):
 
     def render(self):
         """use JsonHuman library to render a dictionary"""
-        json_str, uuid_str = json.dumps(self).replace('\\n', ' '), str(uuid.uuid4())
-        html = f"<div id='{uuid_str}' style='width:100%;'></div><script>"
-        html += f"var data = JSON.parse('{json_str}');"
-        html += "var node = JsonHuman.format(data);"
-        html += "linkifyElement(node, { target: '_blank' });"
-        html += f"document.getElementById('{uuid_str}').appendChild(node);</script>"
+        jdata, divid = json.dumps(self).replace('\\n', ' '), str(uuid.uuid4())
+        html = f'<div id="{divid}" style="width:100%;"></div><script>'
+        html += f'render_json({{divid: "{divid}", data: {jdata}}});</script>'
         return html
 
     def _ipython_display_(self):
+        # TODO jupyterlab mimetype extension
         from IPython.display import display_html
         display_html(self.render(), raw=True)

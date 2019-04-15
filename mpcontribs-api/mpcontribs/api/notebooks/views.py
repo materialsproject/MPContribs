@@ -36,7 +36,7 @@ class NotebookView(SwaggerView):
             cells = [
                 nbf.new_code_cell(
                     "# provide apikey to `load_client` in order to connect to api.mpcontribs.org\n"
-                    "# or use bravado (see https://mpcontribs.org/api)"
+                    "# or use bravado (see https://mpcontribs.org/api)\n"
                     "from mpcontribs.client import load_client\n"
                     "client = load_client()"
                 ), nbf.new_code_cell(
