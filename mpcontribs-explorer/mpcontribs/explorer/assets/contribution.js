@@ -14,7 +14,7 @@ function toggle_divs(name) {
 
 $('#toggle_trees').change(function () { toggle_divs("Hierarchical"); });
 $('#toggle_tables').change(function () { toggle_divs("Tabular"); });
-$('#toggle_graphs').change(function () { toggle_divs("Graphical"); });
+$('#toggle_graphs').change(function () { toggle_divs("Interactive"); });
 $('#toggle_inputs').change(function () { toggle_divs("Input"); });
 $('#toggle_structures').change(function () { toggle_divs("Structural"); });
 

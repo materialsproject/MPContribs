@@ -1,9 +1,3 @@
-@font-face {
-  font-family: 'Symbola';
-  src: 'Symbola.ttf.svg';
-  font-weight: normal;
-  font-style: normal;
-}
 .backgrid { font-family: "symbola"; }
 .backgrid tbody tr:hover { background-color: #f9f9f9; }
 .backgrid .sortable { text-align: center; }
@@ -16,8 +10,7 @@
 .backgrid thead th button { display: inline; }
 .backgrid-filter input[type="search"] { width: 100px; }
 .backgrid-filter.form-search { margin:0px; }
-.jh-root { font-family: "symbola"; }
-.jh-type-string { font-style: normal; }
+.jh-type-string { font-weight: normal; }
 code { display: block; white-space: pre-wrap; }
 .mytooltip {
   border-bottom: 1px dotted #000000;
