@@ -63,8 +63,8 @@ class Table(pd.DataFrame):
             if not col.startswith('level_') and col not in numeric_columns:
                 is_url_column, prev_unit, old_col = True, None, col
 
-                for row_index in xrange(df.shape[0]):
-                    cell = unicode(df.iat[row_index, col_index])
+                for row_index in range(df.shape[0]):
+                    cell = str(df.iat[row_index, col_index])
                     cell_split = cell.split(' ', 1)
 
                     if not cell or len(cell_split) == 1: # empty cell or no space
