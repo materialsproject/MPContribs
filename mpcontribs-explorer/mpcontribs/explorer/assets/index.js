@@ -1,4 +1,3 @@
-import 'bootstrap';
 import 'select2';
 
 var api_url = 'http://localhost:5000/contributions/'
