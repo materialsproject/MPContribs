@@ -12,10 +12,10 @@ def index(request):
     mask = ['project', 'title', 'authors']
     provenances = client.projects.get_entries(mask=mask).response().result
     for provenance in provenances:
-        explorer = 'mpcontribs_users_{}_explorer_index'.format(provenance.project)
-        entry = {'project': provenance.project, 'url': '#'}# TODO reverse(explorer)}
-        entry['title'] = provenance.title
-        authors = provenance.authors.split(',', 1)
+        explorer = 'mpcontribs_users_{}_explorer_index'.format(provenance['project'])
+        entry = {'project': provenance['project'], 'url': '#'}# TODO reverse(explorer)}
+        entry['title'] = provenance['title']
+        authors = provenance['authors'].split(',', 1)
         prov_display = f'<span class="pull-right" style="font-size: 13px;">{authors[0]}'
         if len(authors) > 1:
             prov_display += '''<button class="btn btn-sm btn-link" data-html="true"

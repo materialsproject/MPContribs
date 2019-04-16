@@ -8,7 +8,6 @@ import nbformat
 from nbconvert import HTMLExporter
 from bs4 import BeautifulSoup
 from test_site.settings import swagger_client as client
-client.swagger_spec.config['use_models'] = False
 
 def index(request):
     ctx = RequestContext(request)

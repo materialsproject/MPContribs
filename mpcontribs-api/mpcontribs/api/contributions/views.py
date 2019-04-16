@@ -148,9 +148,8 @@ class CardView(SwaggerView):
         authors = [a.strip() for a in info.authors.split(',') if a]
         ctx['authors'] = {'main': authors[0], 'etal': authors[1:]}
         debug = current_app.config['DEBUG']
-        portal = 'localhost:8080' if debug else 'https://portal.mpcontribs.org'
-        ctx['landing_page'] = f'{portal}/{contrib.project}'
-        ctx['more'] = f'{portal}/explorer/{cid}'
+        ctx['landing_page'] = f'/{contrib.project}'
+        ctx['more'] = f'/explorer/{cid}'
         ctx['urls'] = info.urls.values()
         card_script = get_resource_as_string('templates/card.min.js')
         data = contrib.content.data

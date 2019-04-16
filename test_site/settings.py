@@ -96,5 +96,6 @@ loader = Loader(http_client)
 spec_dict = loader.load_spec(spec_url)
 spec_dict['host'] = apihost
 swagger_client = SwaggerClient.from_spec(
-    spec_dict, spec_url, http_client, {'validate_responses': False}
+    spec_dict, spec_url, http_client,
+    {'validate_responses': False, 'use_models': False}
 )
