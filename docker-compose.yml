@@ -25,7 +25,9 @@ services:
     ports:
       - "5000:5000"
   chrome:
-    image: selenium/standalone-chrome
+    build:
+        context: .
+        dockerfile: DockerfileChrome
     environment:
         - START_XVFB=false
     ports:
