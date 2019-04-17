@@ -1,6 +1,7 @@
 import 'select2';
 
-var api_url = 'http://localhost:5000/contributions/'
+var api_url = 'http://' + window.location.hostname + ':5000/contributions/'
+console.log(api_url);
 
 $('#projects_list').select2({
     multiple: true, width: 'style', maximumSelectionLength: 3

@@ -91,18 +91,15 @@ from bravado.swagger_model import Loader
 apihost = 'api' if DEBUG else 'localhost'
 apihost = f'{apihost}:5000'
 spec_url = 'http://{}/apispec.json'.format(apihost)
-print(spec_url)
 http_client = RequestsClient()
 loader = Loader(http_client)
 spec_dict = loader.load_spec(spec_url)
-print('spec_dict OK')
 spec_dict['host'] = apihost
 spec_dict['schemes'] = ['http']
 swagger_client = SwaggerClient.from_spec(
     spec_dict, spec_url, http_client,
     {'validate_responses': False, 'use_models': False}
 )
-print('swagger_client OK')
 
 #from mpcontribs.users_modules import get_user_installed_apps
 #+ get_user_installed_apps()
