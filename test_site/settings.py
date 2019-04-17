@@ -13,7 +13,6 @@ ALLOWED_HOSTS = [
 ]
 ALLOWED_HOSTS += ['10.0.{}.{}'.format(i,j) for i in [10, 11] for j in range(256)]
 
-#from mpcontribs.users_modules import get_user_installed_apps
 INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
@@ -25,7 +24,7 @@ INSTALLED_APPS = [
     'webtzite',
     'mpcontribs.portal',
     'mpcontribs.explorer',
-] #+ get_user_installed_apps()
+]
 
 MIDDLEWARE = (
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -84,18 +83,26 @@ WEBPACK_LOADER = {
 if os.environ.get('DEPLOYMENT') == 'MATGEN':
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
+print('bravado ...')
 from bravado.client import SwaggerClient
 from bravado.requests_client import RequestsClient
 from bravado.swagger_model import Loader
 # docker containers networking within docker-compose or Fargate task
-apihost = 'api' if DEBUG else '127.0.0.1'
+apihost = 'api' if DEBUG else 'localhost'
 apihost = f'{apihost}:5000'
 spec_url = 'http://{}/apispec.json'.format(apihost)
+print(spec_url)
 http_client = RequestsClient()
 loader = Loader(http_client)
 spec_dict = loader.load_spec(spec_url)
+print('spec_dict OK')
 spec_dict['host'] = apihost
+spec_dict['schemes'] = ['http']
 swagger_client = SwaggerClient.from_spec(
     spec_dict, spec_url, http_client,
     {'validate_responses': False, 'use_models': False}
 )
+print('swagger_client OK')
+
+#from mpcontribs.users_modules import get_user_installed_apps
+#+ get_user_installed_apps()
