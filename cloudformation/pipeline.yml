@@ -516,7 +516,7 @@ Resources:
                     "ImageUrlPortal": {
                       "Fn::GetParam" : ["BuildOutputPortal", "build-portal.json", "ImageUri"]
                     },
-                    "ImageUrlPortal": {
+                    "ImageUrlChrome": {
                       "Fn::GetParam" : ["BuildOutputChrome", "build-chrome.json", "ImageUri"]
                     }
                   }
