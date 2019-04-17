@@ -298,6 +298,48 @@ Resources:
       Name: !Sub ${AWS::StackName}-portal
       ServiceRole: !Ref CodeBuildServiceRole
 
+  CodeBuildProjectChrome:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Artifacts:
+        Type: CODEPIPELINE
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: |
+          version: 0.2
+          phases:
+            pre_build:
+              commands:
+                - $(aws ecr get-login --no-include-email)
+                - TAG="$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | head -c 8)"
+                - IMAGE_URI="${REPOSITORY_URI}:${TAG}"
+            build:
+              commands:
+                - docker build --tag "${IMAGE_URI}-chrome" -f DockerfileChrome .
+            post_build:
+              commands:
+                - docker push "${IMAGE_URI}-chrome"
+                - printf '{"ImageUri":"%s"}' "${IMAGE_URI}-chrome" > build-chrome.json
+          artifacts:
+            files:
+                - build-chrome.json
+      Environment:
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/docker:17.09.0
+        Type: LINUX_CONTAINER
+        PrivilegedMode: true
+        EnvironmentVariables:
+          - Name: REPOSITORY_URI
+            Value: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${Repository}
+      Cache:
+        Type: LOCAL
+        Modes: # You can specify one or more cache mode,
+          - LOCAL_CUSTOM_CACHE
+          - LOCAL_DOCKER_LAYER_CACHE
+          - LOCAL_SOURCE_CACHE
+      Name: !Sub ${AWS::StackName}-chrome
+      ServiceRole: !Ref CodeBuildServiceRole
+
   # This pipeline defines the steps to build, deploy, and release the application
   Pipeline:
     Type: AWS::CodePipeline::Pipeline
@@ -381,6 +423,20 @@ Resources:
               OutputArtifacts:
                 - Name: BuildOutputKong
               RunOrder: 1
+            - Name: BuildChrome
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Version: 1
+                Provider: CodeBuild
+              Configuration:
+                ProjectName: !Ref CodeBuildProjectChrome
+                PrimarySource: Source
+              InputArtifacts:
+                - Name: Source
+              OutputArtifacts:
+                - Name: BuildOutputChrome
+              RunOrder: 1
             - Name: BuildApi
               ActionTypeId:
                 Category: Build
@@ -459,12 +515,16 @@ Resources:
                     },
                     "ImageUrlPortal": {
                       "Fn::GetParam" : ["BuildOutputPortal", "build-portal.json", "ImageUri"]
+                    },
+                    "ImageUrlPortal": {
+                      "Fn::GetParam" : ["BuildOutputChrome", "build-chrome.json", "ImageUri"]
                     }
                   }
               InputArtifacts:
                 - Name: Source
                 - Name: BuildOutputApi
                 - Name: BuildOutputPortal
+                - Name: BuildOutputChrome
 
 Outputs:
   PipelineUrl:
