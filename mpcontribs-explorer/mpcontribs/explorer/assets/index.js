@@ -16,7 +16,7 @@ $('#projects_list').on('change', function() {
 $('#identifiers_list').select2({
     ajax: {
         url: api_url,
-        headers: {'x-api-key': api_key},
+        headers: {'X-API-KEY': api_key, 'accept': 'application/json'},
         delay: 400,
         minimumInputLength: 3,
         maximumSelectionLength: 3,

@@ -24,7 +24,7 @@ def create_app():
     app.config.from_pyfile('config.py', silent=True)
     app.jinja_env.globals['get_resource_as_string'] = get_resource_as_string
     origins = 'http://localhost:8080' if app.config['DEBUG'] else 'https://portal.mpcontribs.org'
-    CORS(app, origins=origins, methods='GET')
+    CORS(app, origins=origins)
     FlaskJSON(app)
     Logging(app)
     Marshmallow(app)
