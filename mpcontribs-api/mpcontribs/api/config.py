@@ -14,7 +14,7 @@ SWAGGER = {"specs": [{
     "route": '/apispec.json',
     "rule_filter": lambda rule: True,  # all in
     "model_filter": lambda tag: True,  # all in
-}], "specs_route": "/", "ignore_verbs": []}
+}], "specs_route": "/"}
 TEMPLATE = {
     "swagger": "2.0",
     "info": {

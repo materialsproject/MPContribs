@@ -6,6 +6,9 @@
 {% block title %}MPContribs Portal{% endblock %}
 
 {% block content %}
+{% if api_key %}
+<input id="api_key" type="hidden" value="{{ api_key }}">
+{% endif %}
 <div class="container">
     <div class="row" style="margin-top: 20px">
         <div class="col-md-4">
