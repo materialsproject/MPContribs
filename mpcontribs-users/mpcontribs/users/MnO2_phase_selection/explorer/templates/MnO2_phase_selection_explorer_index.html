@@ -1,4 +1,4 @@
-{% extends "../../webtzite/templates/header_footer.html" %}
+{% extends "header_footer.html" %}
 {% load staticfiles %}
 
 {% block title %} {{ title }} {% endblock title %}
@@ -10,15 +10,6 @@
         <div class="col-md-12">
             <h2>{{ title }}</h2>
             {{ provenance|safe }}
-        </div>
-    </div>
-    <div class="row">
-        <div class="col-md-12">
-            <code>
-                from mpcontribs.users.MnO2_phase_selection.rest.rester import Mno2PhaseSelectionRester
-                mpr = Mno2PhaseSelectionRester()
-                mpr.get_contributions() # phase kwarg see mpr.get_phases()
-            </code>
         </div>
     </div>
     <div class="row">

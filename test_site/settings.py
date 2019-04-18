@@ -102,4 +102,4 @@ swagger_client = SwaggerClient.from_spec(
 
 #from mpcontribs.users_modules import get_user_installed_apps
 #+ get_user_installed_apps()
-#INSTALLED_APPS.append('mpcontribs.users.MnO2_phase_selection.explorer')
+INSTALLED_APPS.append('mpcontribs.users.MnO2_phase_selection.explorer')
