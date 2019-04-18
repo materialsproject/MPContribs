@@ -70,8 +70,7 @@ module.exports = {
       "bootstrap-slider": 'seiyria-bootstrap-slider/dist/bootstrap-slider',
       "json.human": 'json-human/src/json.human',
       "js-cookie": 'js-cookie/src/js.cookie',
-      "jquery.spin": 'spin.js/jquery.spin',
-      "spin": 'spin.js/spin',
+      "spin.js": 'spin.js/spin',
       "linkify": 'linkifyjs/lib/linkify',
       "linkify-element": 'linkifyjs/lib/linkify-element'
       //waitfor: 'jquery.waitFor',
@@ -94,7 +93,6 @@ module.exports = {
       { test: /backgrid-paginator/, loader: 'imports-loader?backgrid,backbone.paginator' },
       { test: /backgrid-grouped-columns/, loader: 'imports-loader?backgrid' },
       { test: /bootstrap-slider/, loader: 'imports-loader?jquery,bootstrap' },
-      { test: /jquery.spin/, loader: 'imports-loader?jquery' },
       { test: /linkify-element/, loader: 'imports-loader?linkify' },
       //{ test: /waitfor/, loader: 'imports-loader?jquery' },
       //{ test: /sandbox/, loader: 'imports-loader?archieml' },

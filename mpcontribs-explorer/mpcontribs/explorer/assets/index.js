@@ -1,5 +1,8 @@
 import 'select2';
+import {Spinner} from 'spin.js';
 
+var target = document.getElementById('spinner');
+var spinner = new Spinner({scale: 0.5});
 var api_key = $('#api_key').val();
 var host;
 if (typeof api_key !== 'undefined') { host = 'https://api.mpcontribs.org/' }
@@ -45,6 +48,7 @@ $('#identifiers_list').select2({
 });
 
 $('#btnFind').on('click', function(event) {
+    spinner.spin(target);
     event.preventDefault(); // To prevent following the link (optional)
     var queries = [];
     var query_tpl = {'mask': 'id', 'per_page': 2}; // limit to two entries per query
@@ -67,6 +71,7 @@ $('#btnFind').on('click', function(event) {
     var cids = $.map(queries, function(query) {
         return $.get({url: api_url, data: query});
     });
+    if (cids.length === 0) { spinner.stop(); alert('Please make a selection'); }
     $.when.apply($, cids).done(function() {
         var args = arguments;
         if (args.length === 0) { return; }
@@ -84,6 +89,7 @@ $('#btnFind').on('click', function(event) {
             if (!$.isArray(args[0])) { args = [arguments]; } // only one project selected
             $.map(args, function(response) { $('#cards').append(response[0]); });
             $('div[name=user_contribs]').addClass('col-md-6');
+            spinner.stop();
         });
     });
 });
