@@ -41,7 +41,7 @@ $('#identifiers_list').select2({
             });
             return {results: results};
         }
-    },
+    }
 });
 
 $('#btnFind').on('click', function(event) {

@@ -7,76 +7,76 @@
 
 {% block content %}
 <div class="container">
-  <div class="row" style="margin-top: 20px">
-    <div class="col-md-4">
-      <blockquote class="blockquote" style="font-size: 14px; padding: 0px 10px;">
-        <p>The <a href="https://github.com/materialsproject/MPContribs">MPContribs Framework</a>
-        serves the purpose of collectively maintaining
-        contributions to local and MP community databases as annotations to
-        existing MP materials. It subsequently disseminates them through a generic
-        interactive gateway (this portal) powered by Jupyter notebooks and through
-        <a href="https://github.com/materialsproject/MPContribsUsers">landing pages</a>
-        targeted to the project/contributor's needs.</p>
-      </blockquote>
-    </div>
-    <div class="col-md-4">
-      <div class="panel panel-default">
-        <div class="panel-heading">
-          <h4 class="panel-title">Contribution Cards Explorer</h4>
-        </div>
-        <div class="panel-body" style="padding: 0px">
-          <div class="col-md-12" style="padding: 5px">
-            <a href="{% url 'mpcontribs_explorer:index' %}">
-              <img src='{% static "explorer.jpg" %}' width=100% />
-            </a>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="col-md-4">
-        <p><img src='{% static "lsdi_logo.png" %}' width=35% style="float: left; padding: 5px;"/>
-        The development of MPContribs is supported by NSF LSDI Data Infrastructure
-        Building Blocks program and DOE Basic Energy Sciences Materials
-        Project.</p>
-    </div>
-  </div>
-  {% if landing_pages %}
-      <div class="row" style="margin-bottom: 10px;">
-          <div class="col-md-12" style="border-top: 2px dashed; border-bottom: 2px dashed; background: #eee;">
-              <div class="row">
-                  <div class="col-md-6">
-                      <h2 style="font-variant: small-caps;">
-                          Contributed Materials Data
-                      </h2>
-                  </div>
-                  <div class="col-md-6">
-                      <label for="search"></label>
-                      <select id="search" style="width: 100%;" multiple="multiple"></select>
-                  </div>
-              </div>
-          </div>
-      </div>
-      <div class="row equal">
-        {% for lp in landing_pages %}
+    <div class="row" style="margin-top: 20px">
         <div class="col-md-4">
-          <div class="panel panel-default">
-            <div class="panel-heading">
-              <h4 class="panel-title">
-                <a href="{{ lp.url }}">{{ lp.title  }}</a>
-                {% if "provenance" in lp %}{{ lp.provenance|safe }}{% endif %}
-              </h4>
+            <blockquote class="blockquote" style="font-size: 14px; padding: 0px 10px;">
+                <p>The <a href="https://github.com/materialsproject/MPContribs">MPContribs Framework</a>
+                serves the purpose of collectively maintaining
+                contributions to local and MP community databases as annotations to
+                existing MP materials. It subsequently disseminates them through a generic
+                interactive gateway (this portal) powered by Jupyter notebooks and through
+                <a href="https://github.com/materialsproject/MPContribsUsers">landing pages</a>
+                targeted to the project/contributor's needs.</p>
+            </blockquote>
+        </div>
+        <div class="col-md-4">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h4 class="panel-title">Contribution Cards Explorer</h4>
+                </div>
+                <div class="panel-body" style="padding: 0px">
+                    <div class="col-md-12" style="padding: 5px">
+                        <a href="{% url 'mpcontribs_explorer:index' %}">
+                            <img src='{% static "explorer.jpg" %}' width=100% />
+                        </a>
+                    </div>
+                </div>
             </div>
-            <div class="panel-body" style="padding: 0px">
-              <div class="col-md-12" style="padding: 5px;">
-                <a href="{{ lp.url }}">
-                  <img src="{% static lp.project %}.jpg" width=100% />
-                </a>
-              </div>
+        </div>
+        <div class="col-md-4">
+            <p><img src='{% static "lsdi_logo.png" %}' width=35% style="float: left; padding: 5px;"/>
+            The development of MPContribs is supported by NSF LSDI Data Infrastructure
+            Building Blocks program and DOE Basic Energy Sciences Materials
+            Project.</p>
+        </div>
+    </div>
+    {% if landing_pages %}
+    <div class="row" style="margin-bottom: 10px;">
+        <div class="col-md-12" style="border-top: 2px dashed; border-bottom: 2px dashed; background: #eee; padding: 5px;">
+            <div class="row">
+                <div class="col-md-6">
+                    <h2 style="font-variant: small-caps;">
+                        Contributed Materials Data
+                    </h2>
+                </div>
+                <div class="col-md-6">
+                    <label for="search">Type keywords to search title, description and authors:</label>
+                    <select id="search" style="width: 100%;" multiple="multiple"></select>
+                </div>
             </div>
-          </div>
+        </div>
+    </div>
+    <div class="row equal">
+        {% for lp in landing_pages %}
+        <div class="col-md-4" id="{{ lp.project }}">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h4 class="panel-title">
+                        <a href="{{ lp.url }}">{{ lp.title  }}</a>
+                        {% if "provenance" in lp %}{{ lp.provenance|safe }}{% endif %}
+                    </h4>
+                </div>
+                <div class="panel-body" style="padding: 0px">
+                    <div class="col-md-12" style="padding: 5px;">
+                        <a href="{{ lp.url }}">
+                            <img src="{% static lp.project %}.jpg" width=100% />
+                        </a>
+                    </div>
+                </div>
+            </div>
         </div>
         {% endfor %}
-      </div>
-  {% endif %}
+    </div>
+    {% endif %}
 </div>
 {% endblock %}
