@@ -9,6 +9,7 @@ from flask_json import FlaskJSON
 from flask_cors import CORS
 
 logger = logging.getLogger('app')
+logging.getLogger('flask_cors').level = logging.DEBUG
 
 def get_collections(db):
     conn = db.app.extensions['mongoengine'][db]['conn']
