@@ -1,8 +1,9 @@
-# -*- coding: utf-8 -*-
-from __future__ import unicode_literals, print_function
 import inspect, os
-from importlib import import_module
-from mpcontribs.users_modules import get_user_rester
+
+def get_user_explorer_name(path, view='index'):
+    return '_'.join(
+        os.path.dirname(os.path.normpath(path)).split(os.sep)[-4:] + [view]
+    )
 
 def duplicate_check(f):
     existing_identifiers = {}
@@ -12,6 +13,7 @@ def duplicate_check(f):
         module = inspect.getmodule(f)
         module_split = module.__name__.split('.')[:-1]
         mod_path = os.sep.join(module_split)
+        from mpcontribs.users_modules import get_user_rester
         Rester = get_user_rester(mod_path)
 
         test_site = kwargs.get('test_site', True)
