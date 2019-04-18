@@ -1,11 +1,9 @@
 from mongoengine.queryset import DoesNotExist
 from flask import Blueprint, request
-from flask_cors import CORS
 from mpcontribs.api.core import SwaggerView
 from mpcontribs.api.projects.document import Projects
 
 projects = Blueprint("projects", __name__)
-CORS(projects)
 
 class ProjectsView(SwaggerView):
 
