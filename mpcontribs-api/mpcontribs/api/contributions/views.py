@@ -1,5 +1,6 @@
 from mongoengine.queryset import DoesNotExist
 from flask import Blueprint, request, current_app, render_template, g
+from flask_cors import CORS
 from selenium import webdriver
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 from bs4 import BeautifulSoup
@@ -12,6 +13,7 @@ from lxml import html
 from toronado import inline
 
 contributions = Blueprint("contributions", __name__)
+CORS(contributions)
 
 class ContributionsView(SwaggerView):
     # TODO http://docs.mongoengine.org/guide/querying.html#raw-queries
