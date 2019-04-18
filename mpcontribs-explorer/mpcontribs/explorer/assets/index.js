@@ -1,7 +1,10 @@
 import 'select2';
 
-var api_url = 'http://' + window.location.hostname + ':5000/contributions/'
-console.log(api_url);
+var api_key = $('#api_key').val();
+var host;
+if (typeof api_key !== 'undefined') { host = 'https://api.mpcontribs.org/' }
+else { host = 'http://localhost:5000/' }
+var api_url = host + 'contributions/';
 
 $('#projects_list').select2({
     multiple: true, width: 'style', maximumSelectionLength: 3
@@ -13,6 +16,7 @@ $('#projects_list').on('change', function() {
 $('#identifiers_list').select2({
     ajax: {
         url: api_url,
+        headers: {'x-api-key': api_key},
         delay: 400,
         minimumInputLength: 3,
         maximumSelectionLength: 3,

@@ -4,7 +4,7 @@ const BundleTracker = require('webpack-bundle-tracker');
 const CleanWebpackPlugin = require("clean-webpack-plugin");
 //const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 //const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
-const devMode = process.env.NODE_ENV !== 'production'
+const devMode = process.env.NODE_ENV == 'development'
 console.log('devMode = ' + devMode)
 
 module.exports = {

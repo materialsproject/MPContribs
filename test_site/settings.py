@@ -83,7 +83,6 @@ WEBPACK_LOADER = {
 if os.environ.get('DEPLOYMENT') == 'MATGEN':
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
-print('bravado ...')
 from bravado.client import SwaggerClient
 from bravado.requests_client import RequestsClient
 from bravado.swagger_model import Loader
