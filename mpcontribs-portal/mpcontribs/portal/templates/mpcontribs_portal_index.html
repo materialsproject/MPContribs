@@ -41,9 +41,21 @@
     </div>
   </div>
   {% if landing_pages %}
-      <h2 align="center" style="border-top: 2px dashed; border-bottom: 2px dashed;
-      margin: 15px 0 15px; padding: 10px;
-      background: #eee; font-variant: small-caps;">Contributed Materials Data</h2>
+      <div class="row" style="margin-bottom: 10px;">
+          <div class="col-md-12" style="border-top: 2px dashed; border-bottom: 2px dashed; background: #eee;">
+              <div class="row">
+                  <div class="col-md-6">
+                      <h2 style="font-variant: small-caps;">
+                          Contributed Materials Data
+                      </h2>
+                  </div>
+                  <div class="col-md-6">
+                      <label for="search"></label>
+                      <select id="search" style="width: 100%;" multiple="multiple"></select>
+                  </div>
+              </div>
+          </div>
+      </div>
       <div class="row equal">
         {% for lp in landing_pages %}
         <div class="col-md-4">

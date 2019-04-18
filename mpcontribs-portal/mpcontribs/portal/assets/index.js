@@ -1,4 +1,4 @@
-import 'bootstrap';
+import 'select2';
 
 function importAll(r) { return r.keys().map(r); }
 importAll(require.context('./images/', false, /\.(png|jpe?g|svg)$/));
@@ -7,3 +7,5 @@ importAll(require.context('../../../../mpcontribs-users/mpcontribs/users/', true
 $(document).ready(function() {
   $('.btn-link').tooltip();
 });
+
+$('#search').select2({multiple: true, width: 'style'});
