@@ -3,6 +3,8 @@ version: '3'
 services:
   web:
     build: .
+    environment:
+      - NODE_ENV=development
     depends_on:
       - api
     volumes:
