@@ -17,7 +17,106 @@ import("./extra.css");
 function importAll(r) { return r.keys().map(r); }
 importAll(require.context('../../../node_modules/chosen-js', true, /\.(png|jpe?g|svg)$/));
 
+import Plotly from 'plotly';
+import JsonHuman from 'json.human';
+import linkifyElement from 'linkify-element';
+import Backbone from 'backbone';
+import Backgrid from 'backgrid';
+import 'backgrid-paginator';
+import 'backgrid-filter';
+import 'backgrid-grouped-columns';
 //import 'webpack-icons-installer'; // also loads bootstrap!
 
 window.tables = [];
-document.getElementById("logo").src = img;
+
+window.PLOTLYENV=window.PLOTLYENV || {};
+window.PLOTLYENV.BASE_URL='https://plot.ly';
+
+window.render_plot = function(props) {
+    Plotly.newPlot(props.divid, props.data, props.layout, props.config);
+}
+
+window.render_json = function(props) {
+    var node = JsonHuman.format(props.data);
+    linkifyElement(node, { target: '_blank' });
+    document.getElementById(props.divid).appendChild(node);
+}
+
+window.render_table = function(props) {
+    if (!("tables" in window)) { window.tables = []; }
+
+    window.tables.push(props.table);
+    var table = window.tables[window.tables.length-1];
+    var Row = Backbone.Model.extend({});
+    var rows_opt = {
+        model: Row, state: {
+            pageSize: 20, order: 1, sortKey: "sort", totalRecords: props.total_records
+        }
+    };
+
+    if (props.url !== null) {
+        rows_opt["url"] = props.url;
+        rows_opt["parseState"] = function (resp, queryParams, state, options) {
+            return {
+                totalRecords: resp.total_count, totalPages: resp.total_pages,
+                currentPage: resp.page, lastPage: resp.last_page
+            };
+        }
+        rows_opt["parseRecords"] = function (resp, options) { return resp.items; }
+    } else {
+        rows_opt["mode"] = "client";
+    }
+
+    var Rows = Backbone.PageableCollection.extend(rows_opt);
+    var ClickableCell = Backgrid.StringCell.extend({
+        events: {"click": "onClick"},
+        onClick: function (e) { Backbone.trigger("cellclicked", e); }
+    })
+
+    var rows, filter_type, placeholder;
+    if (props.url !== null) {
+        rows = new Rows();
+        placeholder = "Search formula (hit <enter>)";
+    } else {
+        rows = new Rows(table['rows']);
+        placeholder = "Search";
+    }
+
+    var objectid_regex = /^[a-f\d]{24}$/i;
+    for (var idx in table['columns']) {
+        if (table['columns'][idx]['cell'] == 'uri') {
+            table['columns'][idx]['formatter'] = _.extend({}, Backgrid.CellFormatter.prototype, {
+                fromRaw: function (rawValue, model) {
+                    if (typeof rawValue === "undefined") { return ''; }
+                    var identifier = rawValue.split('/').pop().split('.')[0];
+                    if (objectid_regex.test(identifier)) {
+                        return identifier.slice(-7);
+                    };
+                    return identifier;
+                }
+            })
+        } else {
+            table['columns'][idx]['cell'] = ClickableCell;
+        }
+    }
+
+    var header = Backgrid.Extension.GroupedHeader;
+    var grid = new Backgrid.Grid({ header: header, columns: table['columns'], collection: rows, });
+    var filter_props = {collection: rows, placeholder: placeholder, name: "q"};
+    var filter;
+    if (props.url !== null) {
+        filter = new Backgrid.Extension.ServerSideFilter(filter_props);
+    } else {
+        filter = new Backgrid.Extension.ClientSideFilter(filter_props);
+    }
+    $('#'+props.uuids[1]).append(grid.render().el);
+    $("#"+props.uuids[0]).append(filter.render().$el);
+
+    var paginator = new Backgrid.Extension.Paginator({collection: rows});
+    $("#"+props.uuids[2]).append(paginator.render().$el);
+    if (props.url !== null) { rows.fetch({reset: true}); }
+}
+
+$(document).ready(function () {
+    document.getElementById("logo").src = img;
+})

@@ -12,6 +12,7 @@
     {% render_bundle 'styles' %}
     {% block extra_css %}
     {% endblock extra_css %}
+    {% render_bundle 'main' %}
   </head>
   <body>
     {% block header %}
@@ -71,7 +72,6 @@
           Powered by <a href="https://materialsproject.org">Materials Project</a>.
         </small>
       </div>
-      {% render_bundle 'main' %}
       {% block footer %}
       {% endblock footer %}
     </footer>
