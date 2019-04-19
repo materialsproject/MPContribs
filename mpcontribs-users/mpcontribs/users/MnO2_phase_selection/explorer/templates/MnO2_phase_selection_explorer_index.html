@@ -1,5 +1,6 @@
 {% extends "header_footer.html" %}
 {% load staticfiles %}
+{% load render_bundle from webpack_loader %}
 
 {% block title %} {{ title }} {% endblock title %}
 
@@ -21,14 +22,12 @@
     <div class="row">
         <div class="col-md-12">
             <h3>Data</h3>
-            {% for phase, table in tables.items %}
-            <h4>{{ phase|safe }}</h4>
             {{ table|safe }}
-            {% endfor %}
         </div>
     </div>
 </div>
 
+<!--
 <script>
 requirejs(['main'], function() {
     require(["plotly"], function(Plotly) {
@@ -60,5 +59,6 @@ requirejs(['main'], function() {
     });
 });
 </script>
+-->
 
 {% endblock %}
