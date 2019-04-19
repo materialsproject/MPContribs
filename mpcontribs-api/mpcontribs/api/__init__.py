@@ -6,10 +6,8 @@ from flask_mongoengine import MongoEngine
 from flask_log import Logging
 from flasgger import Swagger
 from flask_json import FlaskJSON
-from flask_cors import CORS
 
 logger = logging.getLogger('app')
-logging.getLogger('flask_cors').level = logging.DEBUG
 
 def get_collections(db):
     conn = db.app.extensions['mongoengine'][db]['conn']
@@ -24,7 +22,6 @@ def create_app():
     app = Flask(__name__)
     app.config.from_pyfile('config.py', silent=True)
     app.jinja_env.globals['get_resource_as_string'] = get_resource_as_string
-    CORS(app)
     FlaskJSON(app)
     Logging(app)
     Marshmallow(app)
