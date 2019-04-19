@@ -4,6 +4,7 @@ import {Spinner} from 'spin.js';
 var target = document.getElementById('spinner');
 var spinner = new Spinner({scale: 0.5});
 var api_key = $('#api_key').val();
+var headers = {'X-API-KEY': api_key};
 var host;
 if (typeof api_key !== 'undefined') { host = 'https://api.mpcontribs.org/' }
 else { host = 'http://localhost:5000/' }
@@ -19,7 +20,7 @@ $('#projects_list').on('change', function() {
 $('#identifiers_list').select2({
     ajax: {
         url: api_url,
-        headers: { 'X-API-KEY': api_key },
+        headers: headers,
         delay: 400,
         minimumInputLength: 3,
         maximumSelectionLength: 3,
@@ -69,7 +70,7 @@ $('#btnFind').on('click', function(event) {
     });
     if (queries.length === 0 && 'identifiers' in query_tpl) { queries.push(query_tpl); }
     var cids = $.map(queries, function(query) {
-        return $.get({url: api_url, data: query});
+        return $.get({url: api_url, data: query, headers: headers});
     });
     if (cids.length === 0) { spinner.stop(); alert('Please make a selection'); }
     $.when.apply($, cids).done(function() {
@@ -80,8 +81,7 @@ $('#btnFind').on('click', function(event) {
         $.map(args, function(response) {
             $.each(response[0], function (index, contrib) {
                 var ajax = $.get({
-                    url: api_url + contrib['id'] + '/card',
-                    headers: { 'X-API-KEY': api_key }
+                    url: api_url + contrib['id'] + '/card', headers: headers
                 });
                 cards.push(ajax);
             });
