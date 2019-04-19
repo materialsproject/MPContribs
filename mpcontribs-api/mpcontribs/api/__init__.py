@@ -22,6 +22,9 @@ def create_app():
     app = Flask(__name__)
     app.config.from_pyfile('config.py', silent=True)
     app.jinja_env.globals['get_resource_as_string'] = get_resource_as_string
+    if app.config.get('DEBUG'):
+        from flask_cors import CORS
+        CORS(app) # enable for development (allow localhost)
     FlaskJSON(app)
     Logging(app)
     Marshmallow(app)
