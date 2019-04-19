@@ -79,7 +79,10 @@ $('#btnFind').on('click', function(event) {
         if (args[0].length != 3) { args = [arguments]; } // only one project selected
         $.map(args, function(response) {
             $.each(response[0], function (index, contrib) {
-                var ajax = $.get({url: api_url + contrib['id'] + '/card'});
+                var ajax = $.get({
+                    url: api_url + contrib['id'] + '/card',
+                    headers: { 'X-API-KEY': api_key }
+                });
                 cards.push(ajax);
             });
         });
