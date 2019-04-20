@@ -78,6 +78,7 @@ class ContributionsView(SwaggerView):
             objects = objects(identifier__icontains=contains)
         page = int(request.args.get('page', 1))
         per_page = int(request.args.get('per_page', 20))
+        per_page = 20 if per_page > 20 else per_page
         entries = objects.paginate(page=page, per_page=per_page).items
         return self.marshal(entries)
 
