@@ -4,17 +4,7 @@ from django.shortcuts import render
 from django.template import RequestContext
 from test_site.settings import swagger_client as client
 from mpcontribs.io.core.recdict import RecursiveDict
-
-#data = []
-#columns = ['mp-id', 'contribution', 'formula', 'phase']
-#columns += ['ΔH', 'ΔH|hyd', 'GS?', 'CIF']
-
-#docs = self.query_contributions(
-#    projection={
-#        '_id': 1, 'identifier': 1, 'content.data': 1,
-#        'content.{}'.format(mp_level01_titles[3]): 1
-#    }
-#)
+from mpcontribs.config import mp_level01_titles
 
 #for doc in docs:
 #    mpfile = MPFile.from_contribution(doc)
@@ -38,12 +28,20 @@ from mpcontribs.io.core.recdict import RecursiveDict
 
 def index(request):
     ctx = RequestContext(request)
+    project = 'MnO2_phase_selection'
     try:
-        prov = client.projects.get_entry(project='MnO2_phase_selection').response().result
+        # provenance
+        prov = client.projects.get_entry(project=project).response().result
         prov.pop('id')
         ctx['title'] = prov.pop('title')
         ctx['provenance'] = RecursiveDict(prov).render()
-        #df = mpr.get_contributions()
+
+        # overview table
+        data = []
+        columns = ['mp-id', 'contribution', 'formula', 'phase']
+        columns += ['ΔH', 'ΔH|hyd', 'GS?', 'CIF']
+        mask = ['identifier', 'content.data', f'content.{mp_level01_titles[3]}']
+        #docs = client.contributions.get_entries(projects=[project], mask=mask).response().result
         ctx['table'] = 'world' #render_dataframe(df, webapp=True)
     except Exception as ex:
         ctx['alert'] = str(ex)
