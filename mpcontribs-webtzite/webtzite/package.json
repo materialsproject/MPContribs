@@ -46,7 +46,7 @@
     "bootstrap-slider": "github:seiyria/bootstrap-slider#v10.0.0",
     "browserify": "^16.2.3",
     "json-human": "github:marianoguerra/json.human.js#0.1.1",
-    "plotly.js": "github:plotly/plotly.js#v1.16.2",
+    "plotly.js": "^1.47.3",
     "spin.js": "^4.0.0"
   },
   "resolutions": {

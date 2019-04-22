@@ -11,6 +11,9 @@ module.exports = {
   context: __dirname,
   entry: {
     'main': './mpcontribs-webtzite/webtzite/assets/index',
+    'render_json': './mpcontribs-webtzite/webtzite/assets/render_json',
+    'render_table': './mpcontribs-webtzite/webtzite/assets/render_table',
+    'render_plot': './mpcontribs-webtzite/webtzite/assets/render_plot',
     'portal': './mpcontribs-portal/mpcontribs/portal/assets/index',
     'explorer': './mpcontribs-explorer/mpcontribs/explorer/assets/index',
     'explorer_contribution': './mpcontribs-explorer/mpcontribs/explorer/assets/contribution',
@@ -61,7 +64,7 @@ module.exports = {
       "toggle": 'bootstrap-toggle/js/bootstrap-toggle',
       "underscore": 'underscore/underscore',
       "lunr": 'lunr.js/lunr',
-      "plotly": 'plotly.js/dist/plotly',
+      "plotly": 'plotly.js/dist/plotly-basic.min',
       "backgrid-select-all": 'backgrid-select-all/backgrid-select-all',
       "backgrid-filter": 'backgrid-filter/backgrid-filter',
       "backbone.paginator": 'backbone.paginator/lib/backbone.paginator',

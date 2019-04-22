@@ -4,6 +4,9 @@
 {% block extra_css %}{% render_bundle 'explorer_contribution' 'css' %}{% endblock %}
 {% block footer %}
 {% render_bundle 'explorer_contribution' 'js' %}
+{% render_bundle 'render_json' 'js' %}
+{% render_bundle 'render_table' 'js' %}
+{% render_bundle 'render_plot' 'js' %}
 <script>{{ js|safe }}</script>
 {% endblock %}
 {% block title %}MPContribs Contribution Details Page{% endblock %}
