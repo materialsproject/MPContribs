@@ -165,6 +165,35 @@ class CardView(SwaggerView):
         inline(tree)
         return html.tostring(tree.body[0])
 
+class StructureNamesView(SwaggerView):
+
+    def get(self):
+        """Retrieve list of structure names for a project.
+        ---
+        operationId: get_structure_names
+        parameters:
+            - name: project
+              in: query
+              type: string
+              pattern: '^[a-zA-Z0-9_]{3,30}$'
+              required: true
+              description: project name/slug
+        responses:
+            200:
+                description: dict with `cid` keys and structure names as values
+                schema:
+                    type: object
+        """
+        # https://stackoverflow.com/a/43570730
+        project = request.args.get('project')
+        pipeline = [
+            {"$match": {"project": project}},
+            {"$project": {"arrayofkeyvalue": {"$objectToArray": "$content.structures"}}},
+            {"$project": {"keys": "$arrayofkeyvalue.k"}}
+        ]
+        cursor = Contributions.objects.aggregate(*pipeline)
+        return dict((str(doc["_id"]), doc["keys"]) for doc in cursor)
+
 # url_prefix added in register_blueprint
 multi_view = ContributionsView.as_view(ContributionsView.__name__)
 contributions.add_url_rule('/', view_func=multi_view, methods=['GET'])#, 'POST'])
@@ -175,3 +204,6 @@ contributions.add_url_rule('/<string:cid>', view_func=single_view,
 
 card_view = CardView.as_view(CardView.__name__)
 contributions.add_url_rule('/<string:cid>/card', view_func=card_view, methods=['GET'])
+
+structure_names_view = StructureNamesView.as_view(StructureNamesView.__name__)
+contributions.add_url_rule('/structure_names', view_func=structure_names_view, methods=['GET'])

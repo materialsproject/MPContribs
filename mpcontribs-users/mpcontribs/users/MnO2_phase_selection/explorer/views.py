@@ -3,28 +3,11 @@
 from django.shortcuts import render
 from django.template import RequestContext
 from test_site.settings import swagger_client as client
+from test_site.settings import DEBUG
 from mpcontribs.io.core.recdict import RecursiveDict
-from mpcontribs.config import mp_level01_titles
+from mpcontribs.io.core.components.tdata import Table
 
-#for doc in docs:
-#    mpfile = MPFile.from_contribution(doc)
-#    mp_id = mpfile.ids[0]
-#    contrib = mpfile.hdata[mp_id]['data']
-#    cid_url = self.get_cid_url(doc)
-#    row = [mp_id, cid_url, contrib['Formula'].replace(' ', ''), contrib['Phase']]
-#    row += [contrib['ΔH'], contrib['ΔH|hyd'], contrib['GS']]
-#    cif_url = ''
-#    structures = mpfile.sdata.get(mp_id)
-#    if structures:
-#        cif_url = '/'.join([
-#            self.preamble.rsplit('/', 1)[0], 'explorer', 'materials',
-#            doc['_id'], 'cif', structures.keys()[0]
-#        ])
-#    row.append(cif_url)
-#    data.append((mp_id, row))
-
-#return Table.from_items(data, orient='index', columns=columns)
-
+api_url = 'http://localhost:5000' if DEBUG else 'https://api.mpcontribs.org'
 
 def index(request):
     ctx = RequestContext(request)
@@ -35,14 +18,31 @@ def index(request):
         prov.pop('id')
         ctx['title'] = prov.pop('title')
         ctx['provenance'] = RecursiveDict(prov).render()
+        host = request.build_absolute_uri()[:-1].rsplit('/', 1)[0]
 
         # overview table
         data = []
         columns = ['mp-id', 'contribution', 'formula', 'phase']
         columns += ['ΔH', 'ΔH|hyd', 'GS?', 'CIF']
-        mask = ['identifier', 'content.data', f'content.{mp_level01_titles[3]}']
-        #docs = client.contributions.get_entries(projects=[project], mask=mask).response().result
-        ctx['table'] = 'world' #render_dataframe(df, webapp=True)
+        mask = ['identifier', 'content.data']
+        docs = client.contributions.get_entries(projects=[project], mask=mask).response().result
+        # TODO pagination (or do through Backgrid?)
+        struc_names = client.contributions.get_structure_names(project=project).response().result
+
+        for doc in docs:
+            mp_id = doc['identifier']
+            contrib = doc['content']['data']
+            formula = contrib['Formula'].replace(' ', '')
+            row = [mp_id, f"{host}/explorer/{doc['id']}", formula, contrib['Phase']]
+            row += [contrib['ΔH'], contrib['ΔH|hyd'], contrib['GS']]
+            cif_url = ''
+            if struc_names.get(doc['id']):
+                cif_url = f"{api_url}/contributions/{doc['id']}/cif/{struc_names[doc['id']][0]}"
+            row.append(cif_url)
+            data.append((mp_id, row))
+
+        table = Table.from_items(data, orient='index', columns=columns)
+        ctx['table'] = table.render()
     except Exception as ex:
         ctx['alert'] = str(ex)
     return render(request, "MnO2_phase_selection_explorer_index.html", ctx.flatten())
