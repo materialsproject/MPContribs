@@ -166,34 +166,151 @@ class CardView(SwaggerView):
         inline(tree)
         return html.tostring(tree.body[0])
 
-class StructureNamesView(SwaggerView):
+class TableView(SwaggerView):
 
-    def get(self):
-        """Retrieve list of structure names for a project.
+    def get(self, project):
+        """Retrieve a table of contributions for a project.
         ---
-        operationId: get_structure_names
+        operationId: get_table
         parameters:
             - name: project
-              in: query
+              in: path
               type: string
               pattern: '^[a-zA-Z0-9_]{3,30}$'
               required: true
               description: project name/slug
+            - name: page
+              in: query
+              type: integer
+              default: 1
+              description: page to retrieve (in batches of `per_page`)
+            - name: per_page
+              in: query
+              type: integer
+              default: 20
+              minimum: 2
+              maximum: 20
+              description: number of results to return per page
+            - name: q
+              in: query
+              type: string
+              description: substring to search for in formula
+            - name: order
+              in: query
+              type: string
+              description: sort ascending or descending
+              enum: [asc, desc]
+            - name: sort_by
+              in: query
+              type: string
+              description: column name to sort by
         responses:
             200:
                 description: dict with `cid` keys and structure names as values
                 schema:
-                    type: object
+                    type: string
         """
-        # https://stackoverflow.com/a/43570730
-        project = request.args.get('project')
+        portal = 'http://localhost:8080' if current_app.config['DEBUG'] else 'https://portal.mpcontribs.org'
+        mask = ['content.data', 'content.structures', 'identifier']
+        search = request.args.get('q')
+        page = int(request.args.get('page', 1))
+        per_page = int(request.args.get('per_page', PER_PAGE_MAX))
+        per_page = PER_PAGE_MAX if per_page > PER_PAGE_MAX else per_page
+
+        objects = Contributions.objects.only(*mask)
+        objects = objects(project=project)
+        if search is not None:
+            objects = objects(content__data__Formula__contains=search)
+
+        columns = ['mp-id', 'contribution', 'formula', 'phase']
+        columns += ['ΔH', 'ΔH|hyd', 'GS?', 'CIF']
+
+        order = request.args.get('order')
+        order_sign = '-' if order == 'desc' else '+'
+        sort_by = request.args.get('sort_by')
+        sort_by_key = sort_by if sort_by in columns else columns[0]
+        order_by = f"{order_sign}{sort_by_key}"
+        print(order_by)
+        objects = objects.order_by(order_by)
+        docs = objects.paginate(page=page, per_page=per_page).items
+
         pipeline = [
-            {"$match": {"project": project}},
             {"$project": {"arrayofkeyvalue": {"$objectToArray": "$content.structures"}}},
             {"$project": {"keys": "$arrayofkeyvalue.k"}}
         ]
-        cursor = Contributions.objects.aggregate(*pipeline)
-        return dict((str(doc["_id"]), doc["keys"]) for doc in cursor)
+        cursor = objects.aggregate(*pipeline)
+        struc_names = dict((str(doc["_id"]), doc["keys"]) for doc in cursor)
+
+        items = []
+        for doc in docs:
+            mp_id = doc['identifier']
+            contrib = doc['content']['data']
+            formula = contrib['Formula'].replace(' ', '')
+            row = [mp_id, f"{portal}/explorer/{doc['id']}", formula, contrib['Phase']]
+            row += [contrib['ΔH'], contrib['ΔH|hyd'], contrib['GS']]
+            cif_url = ''
+            struc_name = struc_names.get(str(doc['id']), [None])[0] # TODO multiple structures
+            if struc_name is not None:
+                cif_url = f"{request.host_url}contributions/{doc['id']}/cif/{struc_name}"
+            row.append(cif_url)
+            items.append(dict(zip(columns, row)))
+
+        total_count = objects.count()
+        total_pages = int(total_count/per_page)
+        if total_pages%per_page:
+            total_pages += 1
+        return {
+            'total_count': total_count, 'total_pages': total_pages, 'page': page,
+            'last_page': total_pages, 'per_page': per_page, 'items': items
+        }
+
+class GraphView(SwaggerView):
+
+    def get(self, project):
+        """Retrieve overview graph for a project.
+        ---
+        operationId: get_graph
+        parameters:
+            - name: project
+              in: path
+              type: string
+              pattern: '^[a-zA-Z0-9_]{3,30}$'
+              required: true
+              description: project name/slug
+            - name: columns
+              in: query
+              type: array
+              items:
+                  type: string
+              required: true
+              description: comma-separated list of column names to plot
+        responses:
+            200:
+                description: x-y-data in plotly format
+                schema:
+                    type: array
+                    items:
+                        type: object
+                        properties:
+                            x:
+                                type: array
+                                items:
+                                    type: number
+                            y:
+                                type: array
+                                items:
+                                    type: number
+        """
+        mask = ['content.data', 'identifier']
+        columns = request.args.get('columns').split(',')
+        objects = Contributions.objects(project=project).only(*mask)
+        data = [{'x': [], 'y': []} for col in columns]
+        for obj in objects:
+            for idx, col in enumerate(columns):
+                data[idx]['x'].append(obj.identifier)
+                val = obj['content']['data'][col].split(' ')[0]
+                data[idx]['y'].append(val)
+        return data
 
 # url_prefix added in register_blueprint
 multi_view = ContributionsView.as_view(ContributionsView.__name__)
@@ -206,5 +323,8 @@ contributions.add_url_rule('/<string:cid>', view_func=single_view,
 card_view = CardView.as_view(CardView.__name__)
 contributions.add_url_rule('/<string:cid>/card', view_func=card_view, methods=['GET'])
 
-structure_names_view = StructureNamesView.as_view(StructureNamesView.__name__)
-contributions.add_url_rule('/structure_names', view_func=structure_names_view, methods=['GET'])
+table_view = TableView.as_view(TableView.__name__)
+contributions.add_url_rule('/<string:project>/table', view_func=table_view, methods=['GET'])
+
+graph_view = GraphView.as_view(GraphView.__name__)
+contributions.add_url_rule('/<string:project>/graph', view_func=graph_view, methods=['GET'])

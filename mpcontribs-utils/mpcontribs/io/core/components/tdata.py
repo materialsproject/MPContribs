@@ -136,20 +136,20 @@ class Table(pd.DataFrame):
 
         return table
 
-    def render(self, url=None, total_records=None):
+    def render(self, project=None, total_records=None):
         """use BackGrid JS library to render Pandas DataFrame"""
         # TODO check for index column in df other than the default numbering
         table = json.dumps(self.to_backgrid_dict())
         if total_records is None:
             total_records = self.shape[0]
         uuids = [str(uuid.uuid4()) for i in range(3)]
-        juuids, jurl = json.dumps(uuids), json.dumps(url)
+        juuids, jproject = json.dumps(uuids), json.dumps(project)
         html = f'<div id="{uuids[0]}"></div>'
         html += f'<div id="{uuids[1]}" style="width:100%;"></div>'
         html += f'<div id="{uuids[2]}"></div>'
         html += f'<script>render_table({{\
-                total_records: {total_records},\
-                uuids: {juuids}, url: {jurl}, table: {table}\
+                total_records: {total_records}, project: {jproject},\
+                uuids: {juuids}, table: {table}\
                 }})</script>'
         return html
 
