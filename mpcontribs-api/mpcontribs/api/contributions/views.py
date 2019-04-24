@@ -12,6 +12,7 @@ from lxml import html
 from toronado import inline
 
 contributions = Blueprint("contributions", __name__)
+PER_PAGE_MAX = 20
 
 class ContributionsView(SwaggerView):
     # TODO http://docs.mongoengine.org/guide/querying.html#raw-queries
@@ -77,8 +78,8 @@ class ContributionsView(SwaggerView):
         if contains:
             objects = objects(identifier__icontains=contains)
         page = int(request.args.get('page', 1))
-        per_page = int(request.args.get('per_page', 20))
-        per_page = 20 if per_page > 20 else per_page
+        per_page = int(request.args.get('per_page', PER_PAGE_MAX))
+        per_page = PER_PAGE_MAX if per_page > PER_PAGE_MAX else per_page
         entries = objects.paginate(page=page, per_page=per_page).items
         return self.marshal(entries)
 
