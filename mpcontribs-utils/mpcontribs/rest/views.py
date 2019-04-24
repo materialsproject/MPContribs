@@ -319,22 +319,6 @@ def update_collaborators(request, db_type=None, mdb=None):
     return {"valid_response": True, "response": collaborator_emails}
 
 @mapi_func(supported_methods=["GET"], requires_api_key=True)
-def cif(request, cid, structure_name, db_type=None, mdb=None):
-    from mpcontribs.config import symprec
-    from mpcontribs.io.core.components import Structures
-    from pymatgen.io.cif import CifWriter
-    contrib = mdb.contrib_ad.query_contributions(
-        {'_id': ObjectId(cid)},
-        projection={'_id': 0, 'identifier': 1, 'content': 1, 'collaborators': 1}
-    )[0]
-    structure = Structures(contrib['content']).get(structure_name)
-    if structure:
-        cif = CifWriter(structure, symprec=symprec).__str__()
-        return {"valid_response": True, "response": cif}
-    return {"valid_response": False,
-            "response": "{} not found!".format(structure_name)}
-
-@mapi_func(supported_methods=["GET"], requires_api_key=True)
 def datasets(request, identifier, db_type=None, mdb=None):
     """
     @api {get} /datasets/:identifier?API_KEY=:api_key List of Datasets

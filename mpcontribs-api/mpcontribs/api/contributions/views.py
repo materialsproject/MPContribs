@@ -7,6 +7,8 @@ from mpcontribs.api import get_resource_as_string
 from mpcontribs.api.core import SwaggerView
 from mpcontribs.api.projects.document import Projects
 from mpcontribs.api.contributions.document import Contributions
+from pymatgen import Structure
+from pymatgen.io.cif import CifWriter
 from css_html_js_minify import html_minify
 from lxml import html
 from toronado import inline
@@ -210,7 +212,8 @@ class TableView(SwaggerView):
                 schema:
                     type: string
         """
-        portal = 'http://localhost:8080' if current_app.config['DEBUG'] else 'https://portal.mpcontribs.org'
+        explorer = 'http://localhost:8080/explorer' if current_app.config['DEBUG'] \
+            else 'https://portal.mpcontribs.org/explorer'
         mp_site = 'https://materialsproject.org/materials'
         mask = ['content.data', 'content.structures', 'identifier']
         search = request.args.get('q')
@@ -246,12 +249,12 @@ class TableView(SwaggerView):
             mp_id = doc['identifier']
             contrib = doc['content']['data']
             formula = contrib['Formula'].replace(' ', '')
-            row = [f"{mp_site}/{mp_id}", f"{portal}/explorer/{doc['id']}", formula, contrib['Phase']]
+            row = [f"{mp_site}/{mp_id}", f"{explorer}/{doc['id']}", formula, contrib['Phase']]
             row += [contrib['ΔH'], contrib['ΔH|hyd'], contrib['GS']]
             cif_url = ''
             struc_name = struc_names.get(str(doc['id']), [None])[0] # TODO multiple structures
             if struc_name is not None:
-                cif_url = f"{request.host_url}contributions/{doc['id']}/cif/{struc_name}"
+                cif_url = f"{explorer}/{doc['id']}/{struc_name}.cif"
             row.append(cif_url)
             items.append(dict(zip(columns, row)))
 
@@ -312,6 +315,38 @@ class GraphView(SwaggerView):
                 data[idx]['y'].append(val)
         return data
 
+class CifView(SwaggerView):
+
+    def get(self, cid, name):
+        """Retrieve structure for contribution in CIF format.
+        ---
+        operationId: get_cif
+        parameters:
+            - name: cid
+              in: path
+              type: string
+              pattern: '^[a-f0-9]{24}$'
+              required: true
+              description: contribution ID (ObjectId)
+            - name: name
+              in: path
+              type: string
+              required: true
+              description: name of structure
+        responses:
+            200:
+                description: structure in CIF format
+                schema:
+                    type: string
+        """
+        mask = [f'content.structures.{name}']
+        entry = Contributions.objects.only(*mask).get(id=cid)
+        structure = Structure.from_dict(entry.content.structures.get(name))
+        if structure:
+            return CifWriter(structure, symprec=1e-10).__str__()
+        return f"Structure with name {name} not found for {cid}!" # TODO raise 404?
+
+
 # url_prefix added in register_blueprint
 multi_view = ContributionsView.as_view(ContributionsView.__name__)
 contributions.add_url_rule('/', view_func=multi_view, methods=['GET'])#, 'POST'])
@@ -322,6 +357,9 @@ contributions.add_url_rule('/<string:cid>', view_func=single_view,
 
 card_view = CardView.as_view(CardView.__name__)
 contributions.add_url_rule('/<string:cid>/card', view_func=card_view, methods=['GET'])
+
+cif_view = CifView.as_view(CifView.__name__)
+contributions.add_url_rule('/<string:cid>/<string:name>.cif', view_func=cif_view, methods=['GET'])
 
 table_view = TableView.as_view(TableView.__name__)
 contributions.add_url_rule('/<string:project>/table', view_func=table_view, methods=['GET'])
