@@ -13,6 +13,19 @@ import("./extra.css");
 function importAll(r) { return r.keys().map(r); }
 importAll(require.context('../../../node_modules/chosen-js', true, /\.(png|jpe?g|svg)$/));
 
+window.api = {}
+var api_key = $('#api_key').val();
+if (typeof api_key !== 'undefined') {
+    window.api['host'] = 'https://api.mpcontribs.org/';
+    var api_key_code = window.atob(api_key);
+    window.api['headers'] = {'X-API-KEY': api_key_code};
+} else {
+    window.api['host'] = 'http://localhost:5000/';
+    window.api['headers'] = {};
+}
+
 $(document).ready(function () {
     document.getElementById("logo").src = img;
+    $('#api_key_code').html(api_key_code);
 })
+

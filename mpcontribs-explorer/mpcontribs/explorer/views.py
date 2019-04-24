@@ -5,7 +5,6 @@ from django.shortcuts import render
 from django.template import RequestContext
 from django.http import HttpResponse
 import nbformat
-from base64 import b64decode
 from nbconvert import HTMLExporter
 from bs4 import BeautifulSoup
 from test_site.settings import swagger_client as client
@@ -17,9 +16,6 @@ def index(request):
         ctx['projects'] = [r['project'] for r in resp.result]
     except Exception as ex:
         ctx['alert'] = f'{ex}'
-    api_key = request.META.get('HTTP_X_CONSUMER_CUSTOM_ID')
-    if api_key:
-        ctx['api_key'] = b64decode(api_key).decode('utf-8')
     return render(request, "mpcontribs_explorer_index.html", ctx.flatten())
 
 def export_notebook(nb, cid):

@@ -4,8 +4,8 @@
     <div class="row" style="margin-top: 20px">
         <div class="col-md-8">
             <dl class="dl-horizontal">
-                <dt>Current user:</dt><dd>{{ email }}</dd>
-                {% if api_key %}<dt>API Key:</dt><dd><code>{{ api_key }}</code></dd>{% endif %}
+                <dt>Current user:</dt><dd>{{ request.META.HTTP_X_CONSUMER_USERNAME }}</dd>
+                <dt>API Key:</dt><dd><code id='api_key_code'></code></dd>
             </dl>
         </div>
     </div>

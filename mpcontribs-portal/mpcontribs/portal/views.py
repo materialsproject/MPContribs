@@ -4,7 +4,6 @@ import os
 from django.shortcuts import render
 from django.template import RequestContext
 from django.urls import reverse_lazy
-from base64 import b64decode
 from test_site.settings import swagger_client as client
 
 def index(request):
@@ -26,8 +25,4 @@ def index(request):
             prov_display += '</span>'
             entry['provenance'] = prov_display
         ctx['landing_pages'].append(entry) # consider everything in DB released
-
-    api_key = request.META.get('HTTP_X_CONSUMER_CUSTOM_ID')
-    if api_key:
-        ctx['api_key'] = b64decode(api_key).decode('utf-8')
     return render(request, "mpcontribs_portal_index.html", ctx.flatten())

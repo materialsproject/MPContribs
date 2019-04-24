@@ -3,12 +3,7 @@ import {Spinner} from 'spin.js';
 
 var target = document.getElementById('spinner');
 var spinner = new Spinner({scale: 0.5});
-var api_key = $('#api_key').val();
-var headers = {'X-API-KEY': api_key};
-var host;
-if (typeof api_key !== 'undefined') { host = 'https://api.mpcontribs.org/' }
-else { host = 'http://localhost:5000/' }
-var api_url = host + 'contributions/';
+var api_url = window.api['host'] + 'contributions/';
 
 $('#projects_list').select2({
     multiple: true, width: 'style', maximumSelectionLength: 3
@@ -20,7 +15,7 @@ $('#projects_list').on('change', function() {
 $('#identifiers_list').select2({
     ajax: {
         url: api_url,
-        headers: headers,
+        headers: window.api['headers'],
         delay: 400,
         minimumInputLength: 3,
         maximumSelectionLength: 3,
@@ -70,7 +65,7 @@ $('#btnFind').on('click', function(event) {
     });
     if (queries.length === 0 && 'identifiers' in query_tpl) { queries.push(query_tpl); }
     var cids = $.map(queries, function(query) {
-        return $.get({url: api_url, data: query, headers: headers});
+        return $.get({url: api_url, data: query, headers: window.api['headers']});
     });
     if (cids.length === 0) { spinner.stop(); alert('Please make a selection'); }
     $.when.apply($, cids).done(function() {
@@ -81,7 +76,7 @@ $('#btnFind').on('click', function(event) {
         $.map(args, function(response) {
             $.each(response[0], function (index, contrib) {
                 var ajax = $.get({
-                    url: api_url + contrib['id'] + '/card', headers: headers
+                    url: api_url + contrib['id'] + '/card', headers: window.api['headers']
                 });
                 cards.push(ajax);
             });

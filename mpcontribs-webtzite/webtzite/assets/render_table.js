@@ -9,13 +9,10 @@ import("../../../node_modules/backgrid-paginator/backgrid-paginator.min.css");
 import("../../../node_modules/backgrid-filter/backgrid-filter.min.css");
 import("../../../node_modules/backgrid-grouped-columns/backgrid-grouped-columns.css");
 
-window.tables = [];
+var api_url = window.api['host'] + 'contributions/';
 
 window.render_table = function(props) {
-    if (!("tables" in window)) { window.tables = []; }
 
-    window.tables.push(props.table);
-    var table = window.tables[window.tables.length-1];
     var Row = Backbone.Model.extend({});
     var rows_opt = {
         model: Row, state: {
@@ -52,9 +49,9 @@ window.render_table = function(props) {
     }
 
     var objectid_regex = /^[a-f\d]{24}$/i;
-    for (var idx in table['columns']) {
-        if (table['columns'][idx]['cell'] == 'uri') {
-            table['columns'][idx]['formatter'] = _.extend({}, Backgrid.CellFormatter.prototype, {
+    for (var idx in props.table['columns']) {
+        if (props.table['columns'][idx]['cell'] == 'uri') {
+            props.table['columns'][idx]['formatter'] = _.extend({}, Backgrid.CellFormatter.prototype, {
                 fromRaw: function (rawValue, model) {
                     if (typeof rawValue === "undefined") { return ''; }
                     var identifier = rawValue.split('/').pop().split('.')[0];

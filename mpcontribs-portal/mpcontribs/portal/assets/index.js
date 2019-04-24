@@ -1,11 +1,7 @@
 import 'bootstrap';
 import 'select2';
 
-var api_key = $('#api_key').val();
-var host;
-if (typeof api_key !== 'undefined') { host = 'https://api.mpcontribs.org/' }
-else { host = 'http://localhost:5000/' }
-var api_url = host + 'projects/';
+var api_url = window.api['host'] + 'projects/';
 
 function importAll(r) { return r.keys().map(r); }
 importAll(require.context('./images/', false, /\.(png|jpe?g|svg)$/));
@@ -16,7 +12,7 @@ $('.btn-link').tooltip();
 $('#search').select2({
     ajax: {
         url: api_url,
-        headers: {'X-API-KEY': api_key },
+        headers: window.api['headers'],
         delay: 400,
         minimumInputLength: 3,
         maximumSelectionLength: 3,

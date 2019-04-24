@@ -9,6 +9,7 @@
   <head>
     <title>{% usemacro title %}</title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <input id="api_key" type="hidden" value="{{ request.META.HTTP_X_CONSUMER_CUSTOM_ID }}">
     {% render_bundle 'styles' %}
     {% block extra_css %}
     {% endblock extra_css %}
