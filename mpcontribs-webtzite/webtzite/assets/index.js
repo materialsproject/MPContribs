@@ -15,7 +15,7 @@ importAll(require.context('../../../node_modules/chosen-js', true, /\.(png|jpe?g
 
 window.api = {}
 var api_key = $('#api_key').val();
-if (typeof api_key !== 'undefined') {
+if (api_key !== '') {
     window.api['host'] = 'https://api.mpcontribs.org/';
     var api_key_code = window.atob(api_key);
     window.api['headers'] = {'X-API-KEY': api_key_code};
