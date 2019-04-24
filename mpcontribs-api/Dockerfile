@@ -1,4 +1,11 @@
-FROM amancevice/pandas:0.23.4-python3-alpine
+FROM alpine:edge
+ARG PANDAS_VERSION=0.23.4
+RUN apk add --no-cache python3-dev libstdc++ && \
+    apk add --no-cache --virtual .build-deps g++ && \
+    ln -s /usr/include/locale.h /usr/include/xlocale.h && \
+    pip3 install numpy==1.16.2 && \
+    pip3 install pandas==${PANDAS_VERSION} && \
+    apk del .build-deps
 RUN apk add --no-cache git make gcc musl-dev npm py3-pip libgfortran build-base \
     libstdc++ libpng libpng-dev freetype freetype-dev gfortran lapack-dev \
     libxml2-dev libxslt-dev py3-lxml libffi-dev zeromq-dev

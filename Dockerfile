@@ -1,4 +1,11 @@
-FROM amancevice/pandas:0.23.4-python3-alpine
+FROM alpine:edge
+ARG PANDAS_VERSION=0.23.4
+RUN apk add --no-cache python3-dev libstdc++ && \
+    apk add --no-cache --virtual .build-deps g++ && \
+    ln -s /usr/include/locale.h /usr/include/xlocale.h && \
+    pip3 install numpy==1.16.2 && \
+    pip3 install pandas==${PANDAS_VERSION} && \
+    apk del .build-deps
 RUN apk add git make gcc musl-dev npm py3-pip libgfortran build-base \
     libstdc++ libpng libpng-dev freetype freetype-dev gfortran lapack-dev \
     libxml2-dev libxslt-dev py3-lxml
@@ -40,22 +47,22 @@ COPY mpcontribs-webtzite/webtzite/package.json mpcontribs-webtzite/webtzite/
 COPY package.json .
 RUN npm install 2>&1
 
-RUN pip install --upgrade pip
+RUN pip3 install --upgrade pip
 
 COPY mpcontribs-utils mpcontribs-utils
-RUN cd mpcontribs-utils && pip install -e .
+RUN cd mpcontribs-utils && pip3 install -e .
 
 COPY mpcontribs-webtzite mpcontribs-webtzite
-RUN cd mpcontribs-webtzite && pip install -e .
+RUN cd mpcontribs-webtzite && pip3 install -e .
 
 COPY mpcontribs-portal mpcontribs-portal
-RUN cd mpcontribs-portal && pip install -e .
+RUN cd mpcontribs-portal && pip3 install -e .
 
 COPY mpcontribs-users mpcontribs-users
-RUN cd mpcontribs-users && pip install -e .
+RUN cd mpcontribs-users && pip3 install -e .
 
 COPY mpcontribs-explorer mpcontribs-explorer
-RUN cd mpcontribs-explorer && pip install -e .
+RUN cd mpcontribs-explorer && pip3 install -e .
 
 COPY test_site test_site
 
