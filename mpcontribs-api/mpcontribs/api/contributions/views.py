@@ -211,6 +211,7 @@ class TableView(SwaggerView):
                     type: string
         """
         portal = 'http://localhost:8080' if current_app.config['DEBUG'] else 'https://portal.mpcontribs.org'
+        mp_site = 'https://materialsproject.org/materials'
         mask = ['content.data', 'content.structures', 'identifier']
         search = request.args.get('q')
         page = int(request.args.get('page', 1))
@@ -230,7 +231,6 @@ class TableView(SwaggerView):
         sort_by = request.args.get('sort_by')
         sort_by_key = sort_by if sort_by in columns else columns[0]
         order_by = f"{order_sign}{sort_by_key}"
-        print(order_by)
         objects = objects.order_by(order_by)
         docs = objects.paginate(page=page, per_page=per_page).items
 
@@ -246,7 +246,7 @@ class TableView(SwaggerView):
             mp_id = doc['identifier']
             contrib = doc['content']['data']
             formula = contrib['Formula'].replace(' ', '')
-            row = [mp_id, f"{portal}/explorer/{doc['id']}", formula, contrib['Phase']]
+            row = [f"{mp_site}/{mp_id}", f"{portal}/explorer/{doc['id']}", formula, contrib['Phase']]
             row += [contrib['ΔH'], contrib['ΔH|hyd'], contrib['GS']]
             cif_url = ''
             struc_name = struc_names.get(str(doc['id']), [None])[0] # TODO multiple structures
