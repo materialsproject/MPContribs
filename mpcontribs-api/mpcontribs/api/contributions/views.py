@@ -349,10 +349,14 @@ class GraphView(SwaggerView):
         objects = Contributions.objects(project=project).only(*mask)
         data = [{'x': [], 'y': []} for col in columns]
         for obj in objects:
+            d = obj['content']['data']
             for idx, col in enumerate(columns):
-                data[idx]['x'].append(obj.identifier)
-                val = obj['content']['data'][col].split(' ')[0]
-                data[idx]['y'].append(val)
+                k, sk = padded(col.split('##'), n=2)
+                if k in d:
+                    val = d[k].get(sk) if sk else d[k]
+                    if val:
+                        data[idx]['x'].append(obj.identifier)
+                        data[idx]['y'].append(val.split(' ')[0])
         return data
 
 class CifView(SwaggerView):
