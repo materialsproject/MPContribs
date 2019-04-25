@@ -262,25 +262,25 @@ class TableView(SwaggerView):
             contrib = doc['content']['data']
             formula = contrib['formula'].replace(' ', '')
             row = [f"{mp_site}/{mp_id}", f"{explorer}/{doc['id']}", formula]
-            for k, sk in grouped_columns:
-                cell = contrib.get(k, {sk: ''}).get(sk, '') if sk is not None else contrib.get(k, '')
-                row.append(cell)
+            snames = struc_names.get(str(doc['id']))
 
-            ##if 'CIF' in columns
-            #cif_url = ''
-            #struc_name = struc_names.get(str(doc['id']), [None])[0] # TODO multiple structures
-            #if struc_name is not None:
-            #    cif_url = f"{explorer}/{doc['id']}/{struc_name}.cif"
-            ## cif_urls = {}
-            ## for k in keys:
-            ##     cif_urls[k] = ''
-            ##     name = '{}_{}'.format(contrib['formula'], k)
-            ##     if structures.get(name) is not None:
-            ##         cif_urls[k] = '/'.join([
-            ##             self.preamble.rsplit('/', 1)[0], 'explorer', 'materials',
-            ##             doc['_id'], 'cif', name
-            ##         ])
-            #row.append(cif_url)
+            for k, sk in grouped_columns:
+                cell = ''
+                if k == 'CIF' or sk == 'CIF':
+                    if snames:
+                        if k == 'CIF':
+                            cell = f"{explorer}/{doc['id']}/{snames[0]}.cif"
+                        else:
+                            for sname in snames:
+                                if k in sname:
+                                    cell = f"{explorer}/{doc['id']}/{sname}.cif"
+                                    break
+                else:
+                    if sk is None:
+                        cell = contrib.get(k, '')
+                    else:
+                        cell = contrib.get(k, {sk: ''}).get(sk, '')
+                row.append(cell)
 
             items.append(dict(zip(columns, row)))
 

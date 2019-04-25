@@ -13,7 +13,7 @@ exprep.enabled = True
 class NotebookView(SwaggerView):
 
     def get(self, cid):
-        """Retrieve (and build) notebook for a single contribution.
+        """Retrieve (and build) notebook for a single contribution [internal].
         ---
         operationId: get_entry
         parameters:

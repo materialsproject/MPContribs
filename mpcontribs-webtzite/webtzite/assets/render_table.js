@@ -20,7 +20,10 @@ window.render_table = function(props) {
         }
     };
 
-    rows_opt["url"] = api_url + props.project + '/table';
+    var columns = $.map(props.table['columns'].slice(3), function(col) {
+        return col['name'].split(' ')[0];
+    })
+    rows_opt["url"] = api_url + props.project + '/table?columns=' + columns.join(',');
     rows_opt["sync"] = function(method, model, options){
         options.beforeSend = function(xhr) {
             $.each(window.api['headers'], function(k, v) {
@@ -43,9 +46,6 @@ window.render_table = function(props) {
         onClick: function (e) { Backbone.trigger("cellclicked", e); }
     })
 
-    var rows = new Rows();
-    var placeholder = "Search formula (hit <enter>)";
-
     var objectid_regex = /^[a-f\d]{24}$/i;
     for (var idx in props.table['columns']) {
         if (props.table['columns'][idx]['cell'] == 'uri') {
@@ -64,9 +64,10 @@ window.render_table = function(props) {
         }
     }
 
+    var rows = new Rows();
     var header = Backgrid.Extension.GroupedHeader;
-    var grid = new Backgrid.Grid({ header: header, columns: props.table['columns'], collection: rows, });
-    var filter_props = {collection: rows, placeholder: placeholder, name: "q"};
+    var grid = new Backgrid.Grid({header: header, columns: props.table['columns'], collection: rows});
+    var filter_props = {collection: rows, placeholder: "Search formula (hit <enter>)", name: "q"};
     var filter = new Backgrid.Extension.ServerSideFilter(filter_props);
     $('#'+props.uuids[1]).append(grid.render().el);
     $("#"+props.uuids[0]).append(filter.render().$el);

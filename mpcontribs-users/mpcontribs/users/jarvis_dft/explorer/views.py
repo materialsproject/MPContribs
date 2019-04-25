@@ -15,10 +15,15 @@ def index(request):
         prov.pop('id')
         ctx['title'] = prov.pop('title')
         ctx['provenance'] = RecursiveDict(prov).render()
-        #    keys, subkeys = ['NUS', 'JARVIS'], ['id', 'Eₓ', 'CIF']
-        #    columns = general_columns + ['##'.join([k, sk]) for k in keys for sk in subkeys]
-        #    columns_jarvis = general_columns + ['id', 'E', 'ΔE|optB88vdW', 'ΔE|mbj', 'CIF']
-        ctx['table'] = 'hello'
+        keys, subkeys = ['NUS', 'JARVIS'], ['id', 'Eₓ', 'CIF']
+        columns = ['##'.join([k, sk]) for k in keys for sk in subkeys]
+        # columns_jarvis = ['id', 'E', 'ΔE|optB88vdW', 'ΔE|mbj', 'CIF']
+        data = client.contributions.get_table(
+            project=project, columns=columns, per_page=3
+        ).response().result
+        columns = list(data['items'][0].keys())
+        table = Table(data['items'], columns=columns)
+        ctx['table'] = table.render(project=project)
     except Exception as ex:
         ctx['alert'] = str(ex)
     return render(request, "explorer_index.html", ctx.flatten())
