@@ -20,7 +20,6 @@ INSTALLED_APPS = [
     'django_extensions',
     'zappa_django_utils',
     'webpack_loader',
-    'macros',
     'webtzite',
     'mpcontribs.portal',
     'mpcontribs.explorer',

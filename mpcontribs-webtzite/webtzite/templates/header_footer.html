@@ -1,13 +1,8 @@
 {% load render_bundle from webpack_loader %}
-{% load macros %}
-{% macro title %}
-    {% block title %}Materials Project{% endblock %}
-{% endmacro %}
-
 <!DOCTYPE html>
 <html>
   <head>
-    <title>{% usemacro title %}</title>
+    <title>MPContribs Portal</title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <input id="api_key" type="hidden" value="{{ request.META.HTTP_X_CONSUMER_CUSTOM_ID }}">
     {% render_bundle 'styles' %}
@@ -37,7 +32,7 @@
             <li>
               <a href="/" style="padding-top: 0px; padding-bottom: 0px;">
                 <h1 style="font-variant: small-caps; color: white; margin: 5px;">
-                  {% usemacro title %}
+                  MPContribs Portal
                 </h1>
               </a>
             </li>
