@@ -21,6 +21,14 @@ window.render_table = function(props) {
     };
 
     rows_opt["url"] = api_url + props.project + '/table';
+    rows_opt["sync"] = function(method, model, options){
+        options.beforeSend = function(xhr) {
+            $.each(window.api['headers'], function(k, v) {
+                xhr.setRequestHeader(k, v);
+            });
+        };
+        return Backbone.sync(method, model, options);
+    }
     rows_opt["parseState"] = function (resp, queryParams, state, options) {
         return {
             totalRecords: resp.total_count, totalPages: resp.total_pages,
