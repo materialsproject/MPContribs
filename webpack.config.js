@@ -18,6 +18,7 @@ module.exports = {
     'explorer': './mpcontribs-explorer/mpcontribs/explorer/assets/index',
     'explorer_contribution': './mpcontribs-explorer/mpcontribs/explorer/assets/contribution',
     'MnO2_phase_selection': './mpcontribs-users/mpcontribs/users/MnO2_phase_selection/explorer/assets/index',
+    'jarvis_dft': './mpcontribs-users/mpcontribs/users/jarvis_dft/explorer/assets/index',
   },
   output: {
     path: path.resolve(__dirname, 'dist'),

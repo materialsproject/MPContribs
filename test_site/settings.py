@@ -27,6 +27,7 @@ INSTALLED_APPS = [
 ]
 
 INSTALLED_APPS.append('test_site.apps.Mno2PhaseSelectionExplorerConfig')
+INSTALLED_APPS.append('test_site.apps.JarvisDftExplorerConfig')
 
 MIDDLEWARE = (
     'django.contrib.sessions.middleware.SessionMiddleware',
