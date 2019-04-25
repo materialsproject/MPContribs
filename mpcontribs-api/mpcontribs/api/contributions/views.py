@@ -264,7 +264,7 @@ class TableView(SwaggerView):
             row = [f"{mp_site}/{mp_id}", f"{explorer}/{doc['id']}", formula]
             snames = struc_names.get(str(doc['id']))
 
-            for k, sk in grouped_columns:
+            for idx, (k, sk) in enumerate(grouped_columns):
                 cell = ''
                 if k == 'CIF' or sk == 'CIF':
                     if snames:
@@ -280,8 +280,13 @@ class TableView(SwaggerView):
                         cell = contrib.get(k, '')
                     else:
                         cell = contrib.get(k, {sk: ''}).get(sk, '')
-                row.append(cell)
+                # move unit to column header and only append value to row
+                value, unit = padded(cell.split(), fillvalue='', n=2)
+                if unit and unit not in user_columns[idx]:
+                    user_columns[idx] += f' [{unit}]'
+                row.append(value)
 
+            columns = general_columns + user_columns # rewrite after update
             items.append(dict(zip(columns, row)))
 
             # row_jarvis = [mp_id, cid_url, contrib['formula']]
