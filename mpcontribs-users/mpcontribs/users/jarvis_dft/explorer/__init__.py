@@ -1,1 +1,0 @@
-default_app_config = 'mpcontribs.users.jarvis_dft.explorer.apps.JarvisDftExplorerConfig'

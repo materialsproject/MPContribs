@@ -26,6 +26,8 @@ INSTALLED_APPS = [
     'mpcontribs.explorer',
 ]
 
+INSTALLED_APPS.append('test_site.apps.Mno2PhaseSelectionExplorerConfig')
+
 MIDDLEWARE = (
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -99,7 +101,3 @@ swagger_client = SwaggerClient.from_spec(
     spec_dict, spec_url, http_client,
     {'validate_responses': False, 'use_models': False}
 )
-
-#from mpcontribs.users_modules import get_user_installed_apps
-#+ get_user_installed_apps()
-INSTALLED_APPS.append('mpcontribs.users.MnO2_phase_selection.explorer')

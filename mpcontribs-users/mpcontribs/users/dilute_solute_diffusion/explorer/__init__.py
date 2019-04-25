@@ -1,1 +1,0 @@
-default_app_config = 'mpcontribs.users.dilute_solute_diffusion.explorer.apps.DiluteSoluteDiffusionExplorerConfig'

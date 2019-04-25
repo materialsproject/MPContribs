@@ -1,1 +1,0 @@
-default_app_config = 'mpcontribs.users.MnO2_phase_selection.explorer.apps.Mno2PhaseSelectionExplorerConfig'

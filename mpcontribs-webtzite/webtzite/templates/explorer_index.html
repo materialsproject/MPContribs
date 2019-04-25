@@ -2,7 +2,7 @@
 {% load staticfiles %}
 {% load render_bundle from webpack_loader %}
 {% block footer %}
-{% render_bundle 'MnO2_phase_selection' 'js' %}
+{% render_bundle project 'js' %}
 {% endblock %}
 
 {% block title %} {{ title }} {% endblock title %}

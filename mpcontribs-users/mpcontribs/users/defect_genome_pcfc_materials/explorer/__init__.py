@@ -1,1 +1,0 @@
-default_app_config = 'mpcontribs.users.defect_genome_pcfc_materials.explorer.apps.DefectGenomePcfcMaterialsExplorerConfig'
