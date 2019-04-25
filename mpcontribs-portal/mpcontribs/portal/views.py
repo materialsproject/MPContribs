@@ -3,7 +3,7 @@
 import os
 from django.shortcuts import render
 from django.template import RequestContext
-from django.urls import reverse_lazy
+from django.urls import reverse
 from test_site.settings import swagger_client as client
 
 def index(request):
@@ -12,8 +12,11 @@ def index(request):
     mask = ['project', 'title', 'authors']
     provenances = client.projects.get_entries(mask=mask).response().result
     for provenance in provenances:
-        explorer = 'mpcontribs_users_{}_explorer_index'.format(provenance['project'])
-        entry = {'project': provenance['project'], 'url': '#'}# TODO reverse(explorer)}
+        try:
+            url = reverse(provenance['project'] + ':index')
+        except:
+            url = '#'
+        entry = {'project': provenance['project'], 'url': url}
         entry['title'] = provenance['title']
         authors = provenance['authors'].split(',', 1)
         prov_display = f'<span class="pull-right" style="font-size: 13px;">{authors[0]}'

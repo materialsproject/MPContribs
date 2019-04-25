@@ -1,7 +1,7 @@
 from django.conf.urls import url
 from . import views
-from mpcontribs.users.utils import get_user_explorer_name
 
+app_name = 'MnO2_phase_selection'
 urlpatterns = [
-    url(r'^$', views.index, name=get_user_explorer_name(__file__))
+    url(r'^$', views.index, name='index')
 ]
