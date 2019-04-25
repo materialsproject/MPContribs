@@ -12,6 +12,7 @@ from pymatgen.io.cif import CifWriter
 from css_html_js_minify import html_minify
 from lxml import html
 from toronado import inline
+from more_itertools import padded
 
 contributions = Blueprint("contributions", __name__)
 PER_PAGE_MAX = 20
@@ -181,6 +182,13 @@ class TableView(SwaggerView):
               pattern: '^[a-zA-Z0-9_]{3,30}$'
               required: true
               description: project name/slug
+            - name: columns
+              in: query
+              type: array
+              items:
+                  type: string
+              required: true
+              description: comma-separated list of column names to tabulate
             - name: page
               in: query
               type: integer
@@ -208,10 +216,11 @@ class TableView(SwaggerView):
               description: column name to sort by
         responses:
             200:
-                description: dict with `cid` keys and structure names as values
+                description: paginated table response in backgrid format
                 schema:
                     type: string
         """
+        # config and parameters
         explorer = 'http://localhost:8080/explorer' if current_app.config['DEBUG'] \
             else 'https://portal.mpcontribs.org/explorer'
         mp_site = 'https://materialsproject.org/materials'
@@ -220,14 +229,15 @@ class TableView(SwaggerView):
         page = int(request.args.get('page', 1))
         per_page = int(request.args.get('per_page', PER_PAGE_MAX))
         per_page = PER_PAGE_MAX if per_page > PER_PAGE_MAX else per_page
+        general_columns = ['mp-id', 'cid', 'formula']
+        user_columns = request.args.get('columns', '').split(',')
+        columns = general_columns + user_columns
+        grouped_columns = [list(padded(col.split('##'), n=2)) for col in user_columns]
 
-        objects = Contributions.objects.only(*mask)
-        objects = objects(project=project)
+        # documents
+        objects = Contributions.objects(project=project).only(*mask)
         if search is not None:
-            objects = objects(content__data__Formula__contains=search)
-
-        columns = ['mp-id', 'contribution', 'formula', 'phase']
-        columns += ['ΔH', 'ΔH|hyd', 'GS?', 'CIF']
+            objects = objects(content__data__formula__contains=search)
 
         order = request.args.get('order')
         order_sign = '-' if order == 'desc' else '+'
@@ -237,31 +247,61 @@ class TableView(SwaggerView):
         objects = objects.order_by(order_by)
         docs = objects.paginate(page=page, per_page=per_page).items
 
+        # structure names
         pipeline = [
             {"$project": {"arrayofkeyvalue": {"$objectToArray": "$content.structures"}}},
             {"$project": {"keys": "$arrayofkeyvalue.k"}}
         ]
         cursor = objects.aggregate(*pipeline)
-        struc_names = dict((str(doc["_id"]), doc["keys"]) for doc in cursor)
+        struc_names = dict((str(doc["_id"]), doc.get("keys", [])) for doc in cursor)
 
+        # generate table page
         items = []
         for doc in docs:
             mp_id = doc['identifier']
             contrib = doc['content']['data']
-            formula = contrib['Formula'].replace(' ', '')
-            row = [f"{mp_site}/{mp_id}", f"{explorer}/{doc['id']}", formula, contrib['Phase']]
-            row += [contrib['ΔH'], contrib['ΔH|hyd'], contrib['GS']]
-            cif_url = ''
-            struc_name = struc_names.get(str(doc['id']), [None])[0] # TODO multiple structures
-            if struc_name is not None:
-                cif_url = f"{explorer}/{doc['id']}/{struc_name}.cif"
-            row.append(cif_url)
+            formula = contrib['formula'].replace(' ', '')
+            row = [f"{mp_site}/{mp_id}", f"{explorer}/{doc['id']}", formula]
+            for k, sk in grouped_columns:
+                cell = contrib.get(k, {sk: ''}).get(sk, '') if sk is not None else contrib.get(k, '')
+                row.append(cell)
+
+            ##if 'CIF' in columns
+            #cif_url = ''
+            #struc_name = struc_names.get(str(doc['id']), [None])[0] # TODO multiple structures
+            #if struc_name is not None:
+            #    cif_url = f"{explorer}/{doc['id']}/{struc_name}.cif"
+            ## cif_urls = {}
+            ## for k in keys:
+            ##     cif_urls[k] = ''
+            ##     name = '{}_{}'.format(contrib['formula'], k)
+            ##     if structures.get(name) is not None:
+            ##         cif_urls[k] = '/'.join([
+            ##             self.preamble.rsplit('/', 1)[0], 'explorer', 'materials',
+            ##             doc['_id'], 'cif', name
+            ##         ])
+            #row.append(cif_url)
+
             items.append(dict(zip(columns, row)))
+
+            # row_jarvis = [mp_id, cid_url, contrib['formula']]
+            # for k in columns_jarvis[len(general_columns):]:
+            #     if k == columns_jarvis[-1]:
+            #         row_jarvis.append(cif_urls[keys[1]])
+            #     else:
+            #         row_jarvis.append(contrib.get(keys[1], {k: ''}).get(k, ''))
+            # if row_jarvis[3]:
+            #     data_jarvis.append((mp_id, row_jarvis))
 
         total_count = objects.count()
         total_pages = int(total_count/per_page)
         if total_pages%per_page:
             total_pages += 1
+
+        #    return [
+        #        Table.from_items(data, orient='index', columns=columns),
+        #        Table.from_items(data_jarvis, orient='index', columns=columns_jarvis)
+        #    ]
         return {
             'total_count': total_count, 'total_pages': total_pages, 'page': page,
             'last_page': total_pages, 'per_page': per_page, 'items': items

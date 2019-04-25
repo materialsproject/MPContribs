@@ -19,3 +19,4 @@ nbconvert==5.4.1
 nbformat==4.4.0
 jupyter_client==5.2.4
 ipykernel==5.1.0
+more-itertools==7.0.0
