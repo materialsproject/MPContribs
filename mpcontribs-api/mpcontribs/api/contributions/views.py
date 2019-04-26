@@ -229,44 +229,44 @@ class TableView(SwaggerView):
         page = int(request.args.get('page', 1))
         per_page = int(request.args.get('per_page', PER_PAGE_MAX))
         per_page = PER_PAGE_MAX if per_page > PER_PAGE_MAX else per_page
+        order = request.args.get('order')
+        sort_by = request.args.get('sort_by')
         general_columns = ['mp-id', 'cid', 'formula']
         user_columns = request.args.get('columns', '').split(',')
         columns = general_columns + user_columns
         grouped_columns = [list(padded(col.split('##'), n=2)) for col in user_columns]
+        pipeline = [ # pipeline to determine structure names
+            {"$project": {"arrayofkeyvalue": {"$objectToArray": "$content.structures"}}},
+            {"$project": {"keys": "$arrayofkeyvalue.k"}}
+        ]
 
         # documents
         objects = Contributions.objects(project=project).only(*mask)
         if search is not None:
             objects = objects(content__data__formula__contains=search)
-
-        order = request.args.get('order')
         order_sign = '-' if order == 'desc' else '+'
-        sort_by = request.args.get('sort_by')
         sort_by_key = sort_by if sort_by in columns else columns[0]
         order_by = f"{order_sign}{sort_by_key}"
         objects = objects.order_by(order_by)
-        docs = objects.paginate(page=page, per_page=per_page).items
-
-        # structure names
-        pipeline = [
-            {"$project": {"arrayofkeyvalue": {"$objectToArray": "$content.structures"}}},
-            {"$project": {"keys": "$arrayofkeyvalue.k"}}
-        ]
-        cursor = objects.aggregate(*pipeline)
-        struc_names = dict((str(doc["_id"]), doc.get("keys", [])) for doc in cursor)
 
         # generate table page
-        items = []
-        for doc in docs:
+        cursor, items = None, []
+        for doc in objects.paginate(page=page, per_page=per_page).items:
             mp_id = doc['identifier']
             contrib = doc['content']['data']
             formula = contrib['formula'].replace(' ', '')
             row = [f"{mp_site}/{mp_id}", f"{explorer}/{doc['id']}", formula]
-            snames = struc_names.get(str(doc['id']))
 
             for idx, (k, sk) in enumerate(grouped_columns):
                 cell = ''
                 if k == 'CIF' or sk == 'CIF':
+                    if cursor is None:
+                        cursor = objects.aggregate(*pipeline)
+                        struc_names = dict(
+                            (str(item["_id"]), item.get("keys", []))
+                            for item in cursor
+                        )
+                    snames = struc_names.get(str(doc['id']))
                     if snames:
                         if k == 'CIF':
                             cell = f"{explorer}/{doc['id']}/{snames[0]}.cif"
