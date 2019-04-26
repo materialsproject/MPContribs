@@ -169,6 +169,12 @@ class CardView(SwaggerView):
         inline(tree)
         return html.tostring(tree.body[0])
 
+def get_pipeline(key):
+    return [
+        {"$project": {"arrayofkeyvalue": {"$objectToArray": f"${key}"}}},
+        {"$project": {"keys": "$arrayofkeyvalue.k"}}
+    ]
+
 class TableView(SwaggerView):
 
     def get(self, project):
@@ -231,21 +237,19 @@ class TableView(SwaggerView):
         per_page = PER_PAGE_MAX if per_page > PER_PAGE_MAX else per_page
         order = request.args.get('order')
         sort_by = request.args.get('sort_by')
-        general_columns = ['mp-id', 'cid', 'formula']
+        general_columns = ['identifier', 'id', 'formula']
         user_columns = request.args.get('columns', '').split(',')
         columns = general_columns + user_columns
         grouped_columns = [list(padded(col.split('##'), n=2)) for col in user_columns]
-        pipeline = [ # pipeline to determine structure names
-            {"$project": {"arrayofkeyvalue": {"$objectToArray": "$content.structures"}}},
-            {"$project": {"keys": "$arrayofkeyvalue.k"}}
-        ]
 
-        # documents
+        # query, projection and search
         objects = Contributions.objects(project=project).only(*mask)
         if search is not None:
             objects = objects(content__data__formula__contains=search)
+
+        # sorting
+        sort_by_key = sort_by if sort_by in general_columns[:2] else f'content.data.{sort_by}'
         order_sign = '-' if order == 'desc' else '+'
-        sort_by_key = sort_by if sort_by in columns else columns[0]
         order_by = f"{order_sign}{sort_by_key}"
         objects = objects.order_by(order_by)
 
@@ -261,7 +265,7 @@ class TableView(SwaggerView):
                 cell = ''
                 if k == 'CIF' or sk == 'CIF':
                     if cursor is None:
-                        cursor = objects.aggregate(*pipeline)
+                        cursor = objects.aggregate(*get_pipeline('content.structures'))
                         struc_names = dict(
                             (str(item["_id"]), item.get("keys", []))
                             for item in cursor

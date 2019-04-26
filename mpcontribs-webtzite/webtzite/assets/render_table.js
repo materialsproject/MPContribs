@@ -16,7 +16,7 @@ window.render_table = function(props) {
     var Row = Backbone.Model.extend({});
     var rows_opt = {
         model: Row, state: {
-            pageSize: 20, order: 1, sortKey: "sort", totalRecords: props.total_records
+            pageSize: 20, order: 1, sortKey: "identifier", totalRecords: props.total_records
         }
     };
 
