@@ -8,6 +8,7 @@ from mpcontribs.api.notebooks.document import Notebooks
 
 notebooks = Blueprint("notebooks", __name__)
 exprep = ExecutePreprocessor(timeout=600, allow_errors=False)
+exprep.log.setLevel('DEBUG')
 exprep.enabled = True
 
 class NotebookView(SwaggerView):
