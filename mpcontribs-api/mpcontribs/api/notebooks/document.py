@@ -57,7 +57,7 @@ class Notebooks(Document):
 
         for cell in self.cells:
             for output in cell.outputs:
-                if old_key in output['data']:
+                if old_key in output.get('data', {}):
                     output['data'][new_key] = output['data'].pop(old_key)
 
     def clean(self):
