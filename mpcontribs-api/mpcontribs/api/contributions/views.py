@@ -222,9 +222,24 @@ class TableView(SwaggerView):
               description: column name to sort by
         responses:
             200:
-                description: paginated table response in backgrid format
+                description: Paginated table response in backgrid format (items = rows of table)
                 schema:
-                    type: string
+                    type: object
+                    properties:
+                        total_count:
+                            type: integer
+                        total_pages:
+                            type: integer
+                        page:
+                            type: integer
+                        last_page:
+                            type: integer
+                        per_page:
+                            type: integer
+                        items:
+                            type: array
+                            items:
+                                type: object
         """
         # config and parameters
         explorer = 'http://localhost:8080/explorer' if current_app.config['DEBUG'] \
@@ -293,24 +308,11 @@ class TableView(SwaggerView):
             columns = general_columns + user_columns # rewrite after update
             items.append(dict(zip(columns, row)))
 
-            # row_jarvis = [mp_id, cid_url, contrib['formula']]
-            # for k in columns_jarvis[len(general_columns):]:
-            #     if k == columns_jarvis[-1]:
-            #         row_jarvis.append(cif_urls[keys[1]])
-            #     else:
-            #         row_jarvis.append(contrib.get(keys[1], {k: ''}).get(k, ''))
-            # if row_jarvis[3]:
-            #     data_jarvis.append((mp_id, row_jarvis))
-
         total_count = objects.count()
         total_pages = int(total_count/per_page)
         if total_pages%per_page:
             total_pages += 1
 
-        #    return [
-        #        Table.from_items(data, orient='index', columns=columns),
-        #        Table.from_items(data_jarvis, orient='index', columns=columns_jarvis)
-        #    ]
         return {
             'total_count': total_count, 'total_pages': total_pages, 'page': page,
             'last_page': total_pages, 'per_page': per_page, 'items': items
