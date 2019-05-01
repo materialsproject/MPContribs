@@ -27,5 +27,8 @@ if (api_key !== '') {
 $(document).ready(function () {
     document.getElementById("logo").src = img;
     $('#api_key_code').html(api_key_code);
+    $('header').show();
+    $('.container').show();
+    $('footer').show();
 })
 

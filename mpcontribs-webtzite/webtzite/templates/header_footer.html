@@ -12,7 +12,7 @@
   </head>
   <body>
     {% block header %}
-    <header>
+    <header hidden>
       {% if show_warning_banner %}
       <nav class="navbar navbar-warning">
         <center class="alert alert-warning">
@@ -36,7 +36,7 @@
                 </h1>
               </a>
             </li>
-	  </ul>
+          </ul>
           <ul class="nav navbar-nav navbar-right">
             <li><a href="https://mpcontribs.org">Docs</a></li>
             <li><a href="https://api.mpcontribs.org">API</a></li>
@@ -61,7 +61,7 @@
     <!-- Page Content-->
     {% endblock content %}
     {% endif %}
-    <footer>
+    <footer hidden>
       <hr>
       <div class="pad-top row text-center">
         <small>
