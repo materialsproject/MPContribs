@@ -1,6 +1,6 @@
 import Plotly from 'plotly';
 
-var api_url = window.api['host'] + 'contributions/MnO2_phase_selection/graph';
+var api_url = window.api['host'] + 'projects/MnO2_phase_selection/graph';
 var graph = document.getElementById('graph');
 var layout = {
     margin: {l: 40, t: 0, b: 25, r: 0},

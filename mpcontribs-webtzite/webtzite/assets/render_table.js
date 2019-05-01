@@ -9,7 +9,7 @@ import("../../../node_modules/backgrid-paginator/backgrid-paginator.min.css");
 import("../../../node_modules/backgrid-filter/backgrid-filter.min.css");
 import("../../../node_modules/backgrid-grouped-columns/backgrid-grouped-columns.css");
 
-var api_url = window.api['host'] + 'contributions/';
+var api_url = window.api['host'] + 'projects/';
 
 window.render_table = function(props) {
 

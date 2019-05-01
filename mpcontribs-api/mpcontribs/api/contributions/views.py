@@ -12,10 +12,8 @@ from pymatgen.io.cif import CifWriter
 from css_html_js_minify import html_minify
 from lxml import html
 from toronado import inline
-from more_itertools import padded
 
 contributions = Blueprint("contributions", __name__)
-PER_PAGE_MAX = 20
 
 class ContributionsView(SwaggerView):
     # TODO http://docs.mongoengine.org/guide/querying.html#raw-queries
@@ -81,6 +79,7 @@ class ContributionsView(SwaggerView):
         if contains:
             objects = objects(identifier__icontains=contains)
         page = int(request.args.get('page', 1))
+        PER_PAGE_MAX = current_app.config['PER_PAGE_MAX']
         per_page = int(request.args.get('per_page', PER_PAGE_MAX))
         per_page = PER_PAGE_MAX if per_page > PER_PAGE_MAX else per_page
         entries = objects.paginate(page=page, per_page=per_page).items
@@ -169,32 +168,24 @@ class CardView(SwaggerView):
         inline(tree)
         return html.tostring(tree.body[0])
 
-def get_pipeline(key):
-    return [
-        {"$project": {"arrayofkeyvalue": {"$objectToArray": f"${key}"}}},
-        {"$project": {"keys": "$arrayofkeyvalue.k"}}
-    ]
-
 class TableView(SwaggerView):
 
-    def get(self, project):
-        """Retrieve a table of contributions for a project.
+    def get(self, cid, name):
+        """Retrieve a specific table for a contribution.
         ---
         operationId: get_table
         parameters:
-            - name: project
+            - name: cid
               in: path
               type: string
-              pattern: '^[a-zA-Z0-9_]{3,30}$'
+              pattern: '^[a-f0-9]{24}$'
               required: true
-              description: project name/slug
-            - name: columns
-              in: query
-              type: array
-              items:
-                  type: string
+              description: contribution ID (ObjectId)
+            - name: name
+              in: path
+              type: string
               required: true
-              description: comma-separated list of column names to tabulate
+              description: table name
             - name: page
               in: query
               type: integer
@@ -242,133 +233,30 @@ class TableView(SwaggerView):
                                 type: object
         """
         # config and parameters
-        explorer = 'http://localhost:8080/explorer' if current_app.config['DEBUG'] \
-            else 'https://portal.mpcontribs.org/explorer'
-        mp_site = 'https://materialsproject.org/materials'
-        mask = ['content.data', 'content.structures', 'identifier']
+        mask = [f'content.tables.{name}']
         search = request.args.get('q')
         page = int(request.args.get('page', 1))
+        PER_PAGE_MAX = current_app.config['PER_PAGE_MAX']
         per_page = int(request.args.get('per_page', PER_PAGE_MAX))
         per_page = PER_PAGE_MAX if per_page > PER_PAGE_MAX else per_page
         order = request.args.get('order')
         sort_by = request.args.get('sort_by')
-        general_columns = ['identifier', 'id', 'formula']
-        user_columns = request.args.get('columns', '').split(',')
-        columns = general_columns + user_columns
-        grouped_columns = [list(padded(col.split('##'), n=2)) for col in user_columns]
 
         # query, projection and search
-        objects = Contributions.objects(project=project).only(*mask)
-        if search is not None:
-            objects = objects(content__data__formula__contains=search)
+        entry = Contributions.objects.only(*mask).get(id=cid)
+        columns = entry.content.tables.get(name, {}).get('columns')
+        if columns is None:
+            raise ValueError(f'{name} not valid table name for {cid}')
+        #if search is not None: # TODO search first column?
+        #    objects = objects(content__data__formula__contains=search)
+        # TODO sorting
 
-        # sorting
-        sort_by_key = sort_by if sort_by in general_columns[:2] else f'content.data.{sort_by}'
-        order_sign = '-' if order == 'desc' else '+'
-        order_by = f"{order_sign}{sort_by_key}"
-        objects = objects.order_by(order_by)
+        #field, items = f'content.tables.{name}.data', []
+        #for row in entry.content.tables[name].paginate_field('data', page, per_page=per_page).items:
+        #    items.append(dict(zip(columns, row)))
+        #    print(items[-1])
+        return 'HELLO'
 
-        # generate table page
-        cursor, items = None, []
-        for doc in objects.paginate(page=page, per_page=per_page).items:
-            mp_id = doc['identifier']
-            contrib = doc['content']['data']
-            formula = contrib['formula'].replace(' ', '')
-            row = [f"{mp_site}/{mp_id}", f"{explorer}/{doc['id']}", formula]
-
-            for idx, (k, sk) in enumerate(grouped_columns):
-                cell = ''
-                if k == 'CIF' or sk == 'CIF':
-                    if cursor is None:
-                        cursor = objects.aggregate(*get_pipeline('content.structures'))
-                        struc_names = dict(
-                            (str(item["_id"]), item.get("keys", []))
-                            for item in cursor
-                        )
-                    snames = struc_names.get(str(doc['id']))
-                    if snames:
-                        if k == 'CIF':
-                            cell = f"{explorer}/{doc['id']}/{snames[0]}.cif"
-                        else:
-                            for sname in snames:
-                                if k in sname:
-                                    cell = f"{explorer}/{doc['id']}/{sname}.cif"
-                                    break
-                else:
-                    if sk is None:
-                        cell = contrib.get(k, '')
-                    else:
-                        cell = contrib.get(k, {sk: ''}).get(sk, '')
-                # move unit to column header and only append value to row
-                value, unit = padded(cell.split(), fillvalue='', n=2)
-                if unit and unit not in user_columns[idx]:
-                    user_columns[idx] += f' [{unit}]'
-                row.append(value)
-
-            columns = general_columns + user_columns # rewrite after update
-            items.append(dict(zip(columns, row)))
-
-        total_count = objects.count()
-        total_pages = int(total_count/per_page)
-        if total_pages%per_page:
-            total_pages += 1
-
-        return {
-            'total_count': total_count, 'total_pages': total_pages, 'page': page,
-            'last_page': total_pages, 'per_page': per_page, 'items': items
-        }
-
-class GraphView(SwaggerView):
-
-    def get(self, project):
-        """Retrieve overview graph for a project.
-        ---
-        operationId: get_graph
-        parameters:
-            - name: project
-              in: path
-              type: string
-              pattern: '^[a-zA-Z0-9_]{3,30}$'
-              required: true
-              description: project name/slug
-            - name: columns
-              in: query
-              type: array
-              items:
-                  type: string
-              required: true
-              description: comma-separated list of column names to plot
-        responses:
-            200:
-                description: x-y-data in plotly format
-                schema:
-                    type: array
-                    items:
-                        type: object
-                        properties:
-                            x:
-                                type: array
-                                items:
-                                    type: number
-                            y:
-                                type: array
-                                items:
-                                    type: number
-        """
-        mask = ['content.data', 'identifier']
-        columns = request.args.get('columns').split(',')
-        objects = Contributions.objects(project=project).only(*mask)
-        data = [{'x': [], 'y': []} for col in columns]
-        for obj in objects:
-            d = obj['content']['data']
-            for idx, col in enumerate(columns):
-                k, sk = padded(col.split('##'), n=2)
-                if k in d:
-                    val = d[k].get(sk) if sk else d[k]
-                    if val:
-                        data[idx]['x'].append(obj.identifier)
-                        data[idx]['y'].append(val.split(' ')[0])
-        return data
 
 class CifView(SwaggerView):
 
@@ -417,7 +305,4 @@ cif_view = CifView.as_view(CifView.__name__)
 contributions.add_url_rule('/<string:cid>/<string:name>.cif', view_func=cif_view, methods=['GET'])
 
 table_view = TableView.as_view(TableView.__name__)
-contributions.add_url_rule('/<string:project>/table', view_func=table_view, methods=['GET'])
-
-graph_view = GraphView.as_view(GraphView.__name__)
-contributions.add_url_rule('/<string:project>/graph', view_func=graph_view, methods=['GET'])
+contributions.add_url_rule('/<string:cid>/table/<string:name>', view_func=table_view, methods=['GET'])

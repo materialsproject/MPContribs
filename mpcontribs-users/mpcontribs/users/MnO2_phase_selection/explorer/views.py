@@ -16,7 +16,7 @@ def index(request):
         ctx['title'] = prov.pop('title')
         ctx['provenance'] = RecursiveDict(prov).render()
         columns = ['phase', 'ΔH', 'ΔH|hyd', 'GS?', 'CIF']
-        data = client.contributions.get_table(
+        data = client.projects.get_table(
             project=project, columns=columns, per_page=3
         ).response().result
         columns = list(data['items'][0].keys())

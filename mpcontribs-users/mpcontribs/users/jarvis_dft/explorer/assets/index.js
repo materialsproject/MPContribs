@@ -1,6 +1,6 @@
 import Plotly from 'plotly';
 
-var api_url = window.api['host'] + 'contributions/jarvis_dft/graph';
+var api_url = window.api['host'] + 'projects/jarvis_dft/graph';
 var graph = document.getElementById('graph');
 var layout = {
     margin: {t: 0, r: 0, l: 40, b: 25},

@@ -1,5 +1,6 @@
 import os, datetime
 
+PER_PAGE_MAX = 20
 DEBUG = bool(os.environ.get('FLASK_ENV') == 'development')
 JSON_SORT_KEYS = False
 JSON_ADD_STATUS = False
