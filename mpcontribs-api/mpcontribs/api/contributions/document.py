@@ -13,9 +13,7 @@ class Contents(DynamicEmbeddedDocument):
         required=True,
         help_text='data to be shown in Contribution Card'
     )
-    structures = fields.DictField(
-        help_text='contributed structures'
-    )
+    structures = fields.DictField(help_text='contributed structures')
     # TODO other mp_level01_titles?
 
 # DynamicDocument documents work in the same way as Document but any data /

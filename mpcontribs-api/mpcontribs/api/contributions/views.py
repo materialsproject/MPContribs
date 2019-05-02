@@ -168,96 +168,6 @@ class CardView(SwaggerView):
         inline(tree)
         return html.tostring(tree.body[0])
 
-class TableView(SwaggerView):
-
-    def get(self, cid, name):
-        """Retrieve a specific table for a contribution.
-        ---
-        operationId: get_table
-        parameters:
-            - name: cid
-              in: path
-              type: string
-              pattern: '^[a-f0-9]{24}$'
-              required: true
-              description: contribution ID (ObjectId)
-            - name: name
-              in: path
-              type: string
-              required: true
-              description: table name
-            - name: page
-              in: query
-              type: integer
-              default: 1
-              description: page to retrieve (in batches of `per_page`)
-            - name: per_page
-              in: query
-              type: integer
-              default: 20
-              minimum: 2
-              maximum: 20
-              description: number of results to return per page
-            - name: q
-              in: query
-              type: string
-              description: substring to search for in formula
-            - name: order
-              in: query
-              type: string
-              description: sort ascending or descending
-              enum: [asc, desc]
-            - name: sort_by
-              in: query
-              type: string
-              description: column name to sort by
-        responses:
-            200:
-                description: Paginated table response in backgrid format (items = rows of table)
-                schema:
-                    type: object
-                    properties:
-                        total_count:
-                            type: integer
-                        total_pages:
-                            type: integer
-                        page:
-                            type: integer
-                        last_page:
-                            type: integer
-                        per_page:
-                            type: integer
-                        items:
-                            type: array
-                            items:
-                                type: object
-        """
-        # config and parameters
-        mask = [f'content.tables.{name}']
-        search = request.args.get('q')
-        page = int(request.args.get('page', 1))
-        PER_PAGE_MAX = current_app.config['PER_PAGE_MAX']
-        per_page = int(request.args.get('per_page', PER_PAGE_MAX))
-        per_page = PER_PAGE_MAX if per_page > PER_PAGE_MAX else per_page
-        order = request.args.get('order')
-        sort_by = request.args.get('sort_by')
-
-        # query, projection and search
-        entry = Contributions.objects.only(*mask).get(id=cid)
-        columns = entry.content.tables.get(name, {}).get('columns')
-        if columns is None:
-            raise ValueError(f'{name} not valid table name for {cid}')
-        #if search is not None: # TODO search first column?
-        #    objects = objects(content__data__formula__contains=search)
-        # TODO sorting
-
-        #field, items = f'content.tables.{name}.data', []
-        #for row in entry.content.tables[name].paginate_field('data', page, per_page=per_page).items:
-        #    items.append(dict(zip(columns, row)))
-        #    print(items[-1])
-        return 'HELLO'
-
-
 class CifView(SwaggerView):
 
     def get(self, cid, name):
@@ -303,6 +213,3 @@ contributions.add_url_rule('/<string:cid>/card', view_func=card_view, methods=['
 
 cif_view = CifView.as_view(CifView.__name__)
 contributions.add_url_rule('/<string:cid>/<string:name>.cif', view_func=cif_view, methods=['GET'])
-
-table_view = TableView.as_view(TableView.__name__)
-contributions.add_url_rule('/<string:cid>/table/<string:name>', view_func=table_view, methods=['GET'])
