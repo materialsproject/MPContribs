@@ -104,9 +104,8 @@ class ContributionView(SwaggerView):
                 schema:
                     $ref: '#/definitions/ContributionsSchema'
         """
-        entry = Contributions.objects.get(id=cid)
-        return entry
-        #return self.marshal(entry) # TODO also define contents in document!?
+        entry = Contributions.objects.get(id=cid).select_related()
+        return self.marshal(entry)
 
 def get_browser():
     if 'browser' not in g:

@@ -1,5 +1,6 @@
 from flask_mongoengine import Document
-from mongoengine import fields, DynamicEmbeddedDocument
+from mongoengine import fields, DynamicEmbeddedDocument, CASCADE
+from mpcontribs.api.tables.document import Tables
 
 class Collaborator(fields.EmbeddedDocument):
     name = fields.StringField(required=True)
@@ -14,6 +15,8 @@ class Contents(DynamicEmbeddedDocument):
         help_text='data to be shown in Contribution Card'
     )
     structures = fields.DictField(help_text='contributed structures')
+    tables = fields.ListField(fields.ReferenceField(Tables))
+    # reverse_delete_rule=CASCADE not supported for EmbeddedDocuments
     # TODO other mp_level01_titles?
 
 # DynamicDocument documents work in the same way as Document but any data /
@@ -39,5 +42,5 @@ class Contributions(Document):
     )
     meta = {
         'collection': 'contributions',
-        'indexes': ['identifier', 'project']
+        'indexes': ['identifier', 'project', {'fields': ['project', 'identifier']}]
     }

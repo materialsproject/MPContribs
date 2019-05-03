@@ -6,8 +6,47 @@ tables = Blueprint("tables", __name__)
 
 class TableView(SwaggerView):
 
+    def get(self, tid):
+        """Retrieve single table.
+        ---
+        operationId: get_entry
+        parameters:
+            - name: tid
+              in: path
+              type: string
+              pattern: '^[a-f0-9]{24}$'
+              required: true
+              description: Table ID (ObjectId)
+            - name: page
+              in: query
+              type: integer
+              default: 1
+              description: page to retrieve (in batches of `per_page`)
+            - name: per_page
+              in: query
+              type: integer
+              default: 20
+              minimum: 2
+              maximum: 20
+              description: number of results to return per page
+        responses:
+            200:
+                description: single table
+                schema:
+                    $ref: '#/definitions/TablesSchema'
+        """
+        page = int(request.args.get('page', 1))
+        PER_PAGE_MAX = current_app.config['PER_PAGE_MAX']
+        per_page = int(request.args.get('per_page', PER_PAGE_MAX))
+        per_page = PER_PAGE_MAX if per_page > PER_PAGE_MAX else per_page
+        entry = Tables.objects.no_dereference().get(id=tid)
+        entry.data = entry.paginate_field('data', page, per_page=per_page).items
+        return self.marshal(entry)
+
+class BackgridTableView(SwaggerView):
+
     def get(self, cid, name):
-        """Retrieve a specific table for a contribution.
+        """Retrieve a specific table for a contribution in backgrid format.
         ---
         operationId: get_table
         parameters:
@@ -92,5 +131,9 @@ class TableView(SwaggerView):
             'last_page': total_pages, 'per_page': per_page, 'items': items
         }
 
-table_view = TableView.as_view(TableView.__name__)
+single_view = TableView.as_view(TableView.__name__)
+tables.add_url_rule('/<string:tid>', view_func=single_view,
+                    methods=['GET'])#, 'PUT', 'PATCH', 'DELETE'])
+
+table_view = BackgridTableView.as_view(BackgridTableView.__name__)
 tables.add_url_rule('/<string:cid>/<string:name>', view_func=table_view, methods=['GET'])
