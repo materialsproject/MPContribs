@@ -66,13 +66,23 @@ class ProjectView(SwaggerView):
               pattern: '^[a-zA-Z0-9_]{3,30}$'
               required: true
               description: project name/slug
+            - name: mask
+              in: query
+              type: array
+              items:
+                  type: string
+              default: ["title", "authors", "description", "urls"]
+              description: comma-separated list of fields to return (MongoDB syntax)
         responses:
             200:
                 description: single project
                 schema:
                     $ref: '#/definitions/ProjectsSchema'
         """
-        return self.marshal(Projects.objects.get(project=project))
+        mask_default = ','.join(['title', 'authors', 'description', 'urls'])
+        mask = request.args.get('mask', mask_default).split(',')
+        objects = Projects.objects.only(*mask)
+        return self.marshal(objects.get(project=project))
 
     # TODO: only emails with readWrite permissions can use methods below
     def put(self, project):

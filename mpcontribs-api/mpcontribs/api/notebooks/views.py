@@ -37,21 +37,32 @@ class NotebookView(SwaggerView):
         except DoesNotExist:
             contrib = Contributions.objects.get(id=cid)
             ntables = len(contrib.content['tables'])
-            cells = [nbf.new_code_cell(
-                "from mpcontribs.client import load_client\n"
-                "client = load_client() # provide apikey as argument to use api.mpcontribs.org\n"
-                f"contrib = client.contributions.get_entry(cid='{cid}').response().result"
-            )]
+            cells = [
+                nbf.new_code_cell(
+                    "from mpcontribs.client import load_client\n"
+                    "client = load_client() # provide apikey as argument to use api.mpcontribs.org\n"
+                    f"contrib = client.contributions.get_entry(cid='{cid}').response().result"
+                ),
+                nbf.new_markdown_cell(
+                    f"## Provenance for Project {contrib['project']}"
+                ),
+                nbf.new_code_cell(
+                    "from mpcontribs.io.core.recdict import RecursiveDict\n"
+                    "mask = ['title', 'authors', 'description', 'urls', 'other', 'project']\n"
+                    "prov = client.projects.get_entry(project=contrib['project'], mask=mask).response().result\n"
+                    "RecursiveDict(prov)"
+                )
+            ]
             if ntables:
+                cells.append(nbf.new_markdown_cell(
+                    f"## Tabular Data for {contrib['identifier']}"
+                ))
                 cells.append(nbf.new_code_cell(
                     "# set `per_page` to retrieve up to 200 rows at once (paginate for more)\n"
                     "from mpcontribs.io.core.components.tdata import Table\n"
                     "tables = [Table.from_dict(\n"
                     "\tclient.tables.get_entry(tid=tid).response().result\n"
-                    ") for tid in contrib.content['tables']]\n"
-                ))
-                cells.append(nbf.new_markdown_cell(
-                    f"## Tabular Data for {contrib.identifier}"
+                    ") for tid in contrib['content']['tables']]\n"
                 ))
                 for n in range(ntables):
                     cells.append(nbf.new_code_cell(

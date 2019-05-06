@@ -26,6 +26,7 @@ class Projects(Document):
     urls = fields.DictField(
         required=True, help_text='list of URLs for references'
     )
+    other = fields.DictField(help_text='other information')
     # TODO permissions MapField
     # is required on POST but should never be returned on GET (write-only)
     meta = {

@@ -16,4 +16,4 @@ def load_client(apikey=None):
     spec_dict['host'] = host
     spec_dict['schemes'] = [protocol]
     return SwaggerClient.from_spec(spec_dict, spec_url, http_client,
-                                   {'validate_responses': False})
+                                   {'validate_responses': False, 'use_models': False})
