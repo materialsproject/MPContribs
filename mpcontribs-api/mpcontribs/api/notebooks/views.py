@@ -5,6 +5,7 @@ from nbformat import v4 as nbf
 from nbconvert.preprocessors import ExecutePreprocessor
 from mpcontribs.api.core import SwaggerView
 from mpcontribs.api.notebooks.document import Notebooks
+from mpcontribs.api.contributions.document import Contributions
 
 notebooks = Blueprint("notebooks", __name__)
 exprep = ExecutePreprocessor(timeout=600, allow_errors=False)
@@ -34,20 +35,30 @@ class NotebookView(SwaggerView):
             nb = Notebooks.objects.get(id=cid)
             nb.restore()
         except DoesNotExist:
-            cells = [
-                nbf.new_code_cell(
-                    "# provide apikey to `load_client` in order to connect to api.mpcontribs.org\n"
-                    "# or use bravado (see https://mpcontribs.org/api)\n"
-                    "from mpcontribs.client import load_client\n"
-                    "client = load_client()"
-                ), nbf.new_code_cell(
-                    "from mpcontribs.io.archieml.mpfile import MPFile\n"
-                    f"result = client.contributions.get_entry(cid='{cid}').response().result\n"
-                    "mpfile = MPFile.from_contribution(result)"
-                )
-            ]
-            for typ in ['h', 't', 'g', 's']:
-                cells.append(nbf.new_code_cell(f"mpfile.{typ}data"))
+            contrib = Contributions.objects.get(id=cid)
+            ntables = len(contrib.content['tables'])
+            cells = [nbf.new_code_cell(
+                "from mpcontribs.client import load_client\n"
+                "client = load_client() # provide apikey as argument to use api.mpcontribs.org\n"
+                f"contrib = client.contributions.get_entry(cid='{cid}').response().result"
+            )]
+            if ntables:
+                cells.append(nbf.new_code_cell(
+                    "# set `per_page` to retrieve up to 200 rows at once (paginate for more)\n"
+                    "from mpcontribs.io.core.components.tdata import Table\n"
+                    "tables = [Table.from_dict(\n"
+                    "\tclient.tables.get_entry(tid=tid).response().result\n"
+                    ") for tid in contrib.content['tables']]\n"
+                ))
+                cells.append(nbf.new_markdown_cell(
+                    f"## Tabular Data for {contrib.identifier}"
+                ))
+                for n in range(ntables):
+                    cells.append(nbf.new_code_cell(
+                        f"tables[{n}] # DataFrame with Backgrid IPython Display"
+                    ))
+            #for typ in ['h', 't', 'g', 's']:
+            #    cells.append(nbf.new_code_cell(f"mpfile.{typ}data"))
             nb = nbf.new_notebook()
             nb['cells'] = cells
             exprep.preprocess(nb, {})

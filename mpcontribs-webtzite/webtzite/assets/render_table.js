@@ -9,8 +9,6 @@ import("../../../node_modules/backgrid-paginator/backgrid-paginator.min.css");
 import("../../../node_modules/backgrid-filter/backgrid-filter.min.css");
 import("../../../node_modules/backgrid-grouped-columns/backgrid-grouped-columns.css");
 
-var api_url = window.api['host'] + 'projects/';
-
 window.render_table = function(props) {
 
     var Row = Backbone.Model.extend({});
@@ -20,10 +18,15 @@ window.render_table = function(props) {
         }
     };
 
-    var columns = $.map(props.table['columns'].slice(3), function(col) {
-        return col['name'].split(' ')[0];
-    })
-    rows_opt["url"] = api_url + props.project + '/table?columns=' + columns.join(',');
+    if (typeof props.project !== 'undefined') {
+        var columns = $.map(props.table['columns'].slice(3), function(col) {
+            return col['name'].split(' ')[0];
+        })
+        rows_opt["url"] = window.api['host'] + 'projects/' + props.project + '/table?columns=' + columns.join(',');
+    } else {
+        rows_opt["url"] = window.api['host'] + 'tables/' + props.cid + '/' + props.name;
+    }
+
     rows_opt["sync"] = function(method, model, options){
         options.beforeSend = function(xhr) {
             $.each(window.api['headers'], function(k, v) {

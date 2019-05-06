@@ -7,7 +7,7 @@ tables = Blueprint("tables", __name__)
 class TableView(SwaggerView):
 
     def get(self, tid):
-        """Retrieve single table.
+        """Retrieve single table in DataFrame format.
         ---
         operationId: get_entry
         parameters:
@@ -27,7 +27,7 @@ class TableView(SwaggerView):
               type: integer
               default: 20
               minimum: 2
-              maximum: 20
+              maximum: 200
               description: number of results to return per page
         responses:
             200:
@@ -36,8 +36,8 @@ class TableView(SwaggerView):
                     $ref: '#/definitions/TablesSchema'
         """
         page = int(request.args.get('page', 1))
-        PER_PAGE_MAX = current_app.config['PER_PAGE_MAX']
-        per_page = int(request.args.get('per_page', PER_PAGE_MAX))
+        per_page = int(request.args.get('per_page', 20))
+        PER_PAGE_MAX = 200 # different for number of table rows
         per_page = PER_PAGE_MAX if per_page > PER_PAGE_MAX else per_page
         entry = Tables.objects.no_dereference().get(id=tid)
         entry.data = entry.paginate_field('data', page, per_page=per_page).items

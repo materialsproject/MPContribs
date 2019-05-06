@@ -20,16 +20,15 @@ class Table(pd.DataFrame):
         return rdct
 
     @classmethod
-    def from_dict(cls, rdct):
-        d = RecursiveDict(
-            (k, v) for k, v in rdct.items()
-            if k not in ['@module', '@class']
-        )
+    def from_dict(cls, d):
         index = None
         if 'index' in d:
             from pandas import MultiIndex
             index = MultiIndex.from_tuples(d['index'])
-        return cls(d['data'], columns=d['columns'], index=index)
+        obj = cls(d['data'], columns=d['columns'], index=index)
+        obj.name = d.get('name')
+        obj.cid = d.get('cid')
+        return obj
 
     @classmethod
     def from_items(cls, rdct, **kwargs):
@@ -138,19 +137,23 @@ class Table(pd.DataFrame):
 
     def render(self, project=None, total_records=None):
         """use BackGrid JS library to render Pandas DataFrame"""
+        # if project given, this will result in an overview table of contributions
         # TODO check for index column in df other than the default numbering
-        table = json.dumps(self.to_backgrid_dict())
+        jtable = json.dumps(self.to_backgrid_dict())
         if total_records is None:
             total_records = self.shape[0]
-        uuids = [str(uuid.uuid4()) for i in range(3)]
-        juuids, jproject = json.dumps(uuids), json.dumps(project)
-        html = f'<div id="{uuids[0]}"></div>'
-        html += f'<div id="{uuids[1]}" style="width:100%;"></div>'
-        html += f'<div id="{uuids[2]}"></div>'
-        html += f'<script>render_table({{\
-                total_records: {total_records}, project: {jproject},\
-                uuids: {juuids}, table: {table}\
-                }})</script>'
+        config = {"total_records": total_records}
+        config['uuids'] = [str(uuid.uuid4()) for i in range(3)]
+        if project is None:
+            config['name'] = self.name
+            config['cid'] = self.cid
+        else:
+            config['project'] = project
+        jconfig = json.dumps(config)
+        html = '<div id="{}"></div>'.format(config['uuids'][0])
+        html += '<div id="{}" style="width:100%;"></div>'.format(config['uuids'][1])
+        html += '<div id="{}"></div>'.format(config['uuids'][2])
+        html += f'<script>render_table({{table: {jtable}, config: {jconfig}}})</script>'
         return html
 
     def _ipython_display_(self):

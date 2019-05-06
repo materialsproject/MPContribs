@@ -33,7 +33,7 @@ class Cell(DynamicEmbeddedDocument):
     metadata = fields.DictField(help_text='cell metadata')
     source = fields.StringField(required=True, help_text='source')
     outputs = fields.ListField(fields.DictField(), help_text='outputs')
-    execution_count = fields.IntField(required=True, help_text='exec count')
+    execution_count = fields.IntField(help_text='exec count')
 
 class Notebooks(Document):
     nbformat = fields.IntField(required=True, help_text="nbformat version")
