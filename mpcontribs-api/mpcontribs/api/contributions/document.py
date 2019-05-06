@@ -1,6 +1,7 @@
 from flask_mongoengine import Document
 from mongoengine import fields, DynamicEmbeddedDocument, CASCADE
 from mpcontribs.api.tables.document import Tables
+from mpcontribs.api.structures.document import Structures
 
 class Collaborator(fields.EmbeddedDocument):
     name = fields.StringField(required=True)
@@ -14,10 +15,9 @@ class Contents(DynamicEmbeddedDocument):
         required=True,
         help_text='data to be shown in Contribution Card'
     )
-    structures = fields.DictField(help_text='contributed structures')
+    structures = fields.ListField(fields.ReferenceField(Structures))
     tables = fields.ListField(fields.ReferenceField(Tables))
     # reverse_delete_rule=CASCADE not supported for EmbeddedDocuments
-    # TODO other mp_level01_titles?
 
 # DynamicDocument documents work in the same way as Document but any data /
 # attributes set to them will also be saved
