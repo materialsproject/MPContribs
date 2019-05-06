@@ -36,8 +36,6 @@ class NotebookView(SwaggerView):
             nb.restore()
         except DoesNotExist:
             contrib = Contributions.objects.get(id=cid)
-            ntables = len(contrib.content['tables'])
-            nstructures = len(contrib.content['structures'])
             cells = [
                 nbf.new_code_cell(
                     "from mpcontribs.client import load_client\n"
@@ -61,21 +59,46 @@ class NotebookView(SwaggerView):
                     "HierarchicalData(contrib['content'])"
                 )
             ]
+
+            ntables = len(contrib.content['tables'])
             if ntables:
                 cells.append(nbf.new_markdown_cell(
                     f"## Tabular Data for {contrib['identifier']}"
                 ))
                 cells.append(nbf.new_code_cell(
                     "# set `per_page` to retrieve up to 200 rows at once (paginate for more)\n"
-                    "from mpcontribs.io.core.components.tdata import Table\n"
-                    "tables = [Table.from_dict(\n"
+                    "raw_tables = [\n"
                     "\tclient.tables.get_entry(tid=tid).response().result\n"
-                    ") for tid in contrib['content']['tables']]\n"
+                    "\tfor tid in contrib['content']['tables']\n"
+                    "]\n"
+                    "from mpcontribs.io.core.components.tdata import Table\n"
+                    "tables = {}"
                 ))
                 for n in range(ntables):
                     cells.append(nbf.new_code_cell(
-                        f"tables[{n}] # DataFrame with Backgrid IPython Display"
+                        f"table = raw_tables[{n}]\n"
+                        "tables[table['name']] = Table.from_dict(table) # DataFrame with Backgrid IPython Display\n"
+                        "tables[table['name']]"
                     ))
+
+            ngraphs = len(contrib.content['graphs'])
+            if ngraphs:
+                cells.append(nbf.new_markdown_cell(
+                    f"## Graphs for {contrib['identifier']}"
+                ))
+                cells.append(nbf.new_code_cell(
+                    "from mpcontribs.io.core.components.gdata import Plot\n"
+                    "graphs = [\n"
+                    "\tPlot(conf, tables[conf['table']])\n"
+                    "\tfor k, conf in contrib['content']['graphs'].items()\n"
+                    "]"
+                ))
+                for n in range(ngraphs):
+                    cells.append(nbf.new_code_cell(
+                        f"graphs[{n}] # Plotly interactive graph"
+                    ))
+
+            nstructures = len(contrib.content['structures'])
             if nstructures:
                 cells.append(nbf.new_markdown_cell(
                     f"## Structures for {contrib['identifier']}"

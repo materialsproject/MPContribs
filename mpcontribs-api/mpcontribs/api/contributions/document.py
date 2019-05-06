@@ -17,6 +17,7 @@ class Contents(DynamicEmbeddedDocument):
     )
     structures = fields.ListField(fields.ReferenceField(Structures))
     tables = fields.ListField(fields.ReferenceField(Tables))
+    graphs = fields.DictField(help_text='configs for graphs')
     # reverse_delete_rule=CASCADE not supported for EmbeddedDocuments
 
 # DynamicDocument documents work in the same way as Document but any data /
