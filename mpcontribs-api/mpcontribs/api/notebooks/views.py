@@ -37,6 +37,7 @@ class NotebookView(SwaggerView):
         except DoesNotExist:
             contrib = Contributions.objects.get(id=cid)
             ntables = len(contrib.content['tables'])
+            nstructures = len(contrib.content['structures'])
             cells = [
                 nbf.new_code_cell(
                     "from mpcontribs.client import load_client\n"
@@ -75,8 +76,20 @@ class NotebookView(SwaggerView):
                     cells.append(nbf.new_code_cell(
                         f"tables[{n}] # DataFrame with Backgrid IPython Display"
                     ))
-            #for typ in ['h', 't', 'g', 's']:
-            #    cells.append(nbf.new_code_cell(f"mpfile.{typ}data"))
+            if nstructures:
+                cells.append(nbf.new_markdown_cell(
+                    f"## Structures for {contrib['identifier']}"
+                ))
+                cells.append(nbf.new_code_cell(
+                    "from pymatgen import Structure\n"
+                    "structures = [Structure.from_dict(\n"
+                    "\tclient.structures.get_entry(sid=sid).response().result\n"
+                    ") for sid in contrib['content']['structures']]\n"
+                ))
+                for n in range(nstructures):
+                    cells.append(nbf.new_code_cell(
+                        f"structures[{n}] # Pymatgen Structure"
+                    ))
             nb = nbf.new_notebook()
             nb['cells'] = cells
             exprep.preprocess(nb, {})
