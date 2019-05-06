@@ -51,6 +51,13 @@ class NotebookView(SwaggerView):
                     "mask = ['title', 'authors', 'description', 'urls', 'other', 'project']\n"
                     "prov = client.projects.get_entry(project=contrib['project'], mask=mask).response().result\n"
                     "RecursiveDict(prov)"
+                ),
+                nbf.new_markdown_cell(
+                    f"## Hierarchical Data for {contrib['identifier']}"
+                ),
+                nbf.new_code_cell(
+                    "from mpcontribs.io.core.components.hdata import HierarchicalData\n"
+                    "HierarchicalData(contrib['content'])"
                 )
             ]
             if ntables:

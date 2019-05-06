@@ -8,6 +8,3 @@ class HierarchicalData(RecursiveDict):
         super(HierarchicalData, self).__init__(
             (k, v) for k, v in doc.items() if k not in mp_level01_titles
         )
-
-    def _ipython_display_(self):
-        display_html(self)
