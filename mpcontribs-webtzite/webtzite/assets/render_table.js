@@ -10,21 +10,21 @@ import("../../../node_modules/backgrid-filter/backgrid-filter.min.css");
 import("../../../node_modules/backgrid-grouped-columns/backgrid-grouped-columns.css");
 
 window.render_table = function(props) {
-
+    var config = props.config;
     var Row = Backbone.Model.extend({});
     var rows_opt = {
         model: Row, state: {
-            pageSize: 20, order: 1, sortKey: "identifier", totalRecords: props.total_records
+            pageSize: 20, order: 1, sortKey: "identifier", totalRecords: config.total_records
         }
     };
 
-    if (typeof props.project !== 'undefined') {
+    if (typeof config.project !== 'undefined') {
         var columns = $.map(props.table['columns'].slice(3), function(col) {
             return col['name'].split(' ')[0];
         })
-        rows_opt["url"] = window.api['host'] + 'projects/' + props.project + '/table?columns=' + columns.join(',');
+        rows_opt["url"] = window.api['host'] + 'projects/' + config.project + '/table?columns=' + columns.join(',');
     } else {
-        rows_opt["url"] = window.api['host'] + 'tables/' + props.cid + '/' + props.name;
+        rows_opt["url"] = window.api['host'] + 'tables/' + config.cid + '/' + config.name;
     }
 
     rows_opt["sync"] = function(method, model, options){
@@ -72,10 +72,10 @@ window.render_table = function(props) {
     var grid = new Backgrid.Grid({header: header, columns: props.table['columns'], collection: rows});
     var filter_props = {collection: rows, placeholder: "Search formula (hit <enter>)", name: "q"};
     var filter = new Backgrid.Extension.ServerSideFilter(filter_props);
-    $('#'+props.uuids[1]).append(grid.render().el);
-    $("#"+props.uuids[0]).append(filter.render().$el);
+    $('#'+config.uuids[1]).append(grid.render().el);
+    $("#"+config.uuids[0]).append(filter.render().$el);
 
     var paginator = new Backgrid.Extension.Paginator({collection: rows});
-    $("#"+props.uuids[2]).append(paginator.render().$el);
+    $("#"+config.uuids[2]).append(paginator.render().$el);
     rows.fetch({reset: true});
 }

@@ -7,6 +7,10 @@ from mpcontribs.io.core.recdict import RecursiveDict
 from urllib.parse import urlparse
 
 class Table(pd.DataFrame):
+    def __init__(self, data, columns=None, index=None, cid=None, name=None):
+        super(Table, self).__init__(data=data, index=index, columns=columns)
+        self.cid = cid
+        self.name = name
 
     def to_dict(self):
         from pandas import MultiIndex
@@ -25,9 +29,12 @@ class Table(pd.DataFrame):
         if 'index' in d:
             from pandas import MultiIndex
             index = MultiIndex.from_tuples(d['index'])
-        obj = cls(d['data'], columns=d['columns'], index=index)
-        obj.name = d.get('name')
-        obj.cid = d.get('cid')
+        obj = cls(
+            d['data'], columns=d['columns'], index=index,
+            cid=d['cid'], name=d['name']
+        ) if 'cid' in d and 'name' in d else cls(
+            d['data'], columns=d['columns'], index=index
+        )
         return obj
 
     @classmethod
