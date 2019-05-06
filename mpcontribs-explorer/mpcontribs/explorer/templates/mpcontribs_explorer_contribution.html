@@ -16,37 +16,37 @@
 .navbar .btn, .navbar .btn-group { margin-top: 0px; }
 </style>
 
-<nav class="navbar navbar-default navbar-lower" role="navigation" hidden>
-  <div class="container">
+<nav class="navbar navbar-default navbar-lower" role="navigation">
+  <div class="container" hidden>
     <form class="navbar-form" role="search">
       <div class="form-group">
         <div class="checkbox" style="padding:1px;">
           <label>
-            <input id="toggle_inputs" type="checkbox" checked hidden>
+            <input id="toggle_inputs" type="checkbox" checked>
           </label>
         </div>
         <div class="checkbox" style="padding:1px; margin-left:20px;">
           <label>
-            <input id="toggle_trees" type="checkbox" checked hidden>
+            <input id="toggle_trees" type="checkbox" checked>
           </label>
         </div>
         <div class="checkbox" style="padding:1px; margin-left:20px;">
           <label>
-            <input id="toggle_tables" type="checkbox" checked hidden>
+            <input id="toggle_tables" type="checkbox" checked>
           </label>
         </div>
         <div class="checkbox" style="padding:1px; margin-left:20px;">
           <label>
-            <input id="toggle_graphs" type="checkbox" checked hidden>
+            <input id="toggle_graphs" type="checkbox" checked>
           </label>
         </div>
         <div class="checkbox" style="padding:1px; margin-left:20px;">
           <label>
-            <input id="toggle_structures" type="checkbox" checked hidden>
+            <input id="toggle_structures" type="checkbox" checked>
           </label>
         </div>
       </div>
-      <div class="navbar-right" id="download" style="margin-right:10px;" hidden>
+      <div class="navbar-right" id="download" style="margin-right:10px;">
           <a class="btn btn-sm btn-success" href="{{ request.path }}.json" role="button">Download</a>
       </div>
     </form>

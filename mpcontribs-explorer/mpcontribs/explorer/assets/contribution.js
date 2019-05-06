@@ -29,5 +29,3 @@ $('#toggle_inputs').bootstrapToggle({
 $('#toggle_structures').bootstrapToggle({
     on:"Structures", off:"Structures", size:"mini", width:75, height:25
 });
-
-$('#download').show();
