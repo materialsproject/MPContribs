@@ -7,8 +7,6 @@ from mpcontribs.api import get_resource_as_string
 from mpcontribs.api.core import SwaggerView
 from mpcontribs.api.projects.document import Projects
 from mpcontribs.api.contributions.document import Contributions
-from pymatgen import Structure
-from pymatgen.io.cif import CifWriter
 from css_html_js_minify import html_minify
 from lxml import html
 from toronado import inline
@@ -167,37 +165,6 @@ class CardView(SwaggerView):
         inline(tree)
         return html.tostring(tree.body[0])
 
-class CifView(SwaggerView):
-
-    def get(self, cid, name):
-        """Retrieve structure for contribution in CIF format.
-        ---
-        operationId: get_cif
-        parameters:
-            - name: cid
-              in: path
-              type: string
-              pattern: '^[a-f0-9]{24}$'
-              required: true
-              description: contribution ID (ObjectId)
-            - name: name
-              in: path
-              type: string
-              required: true
-              description: name of structure
-        responses:
-            200:
-                description: structure in CIF format
-                schema:
-                    type: string
-        """
-        mask = [f'content.structures.{name}']
-        entry = Contributions.objects.only(*mask).get(id=cid)
-        structure = Structure.from_dict(entry.content.structures.get(name))
-        if structure:
-            return CifWriter(structure, symprec=1e-10).__str__()
-        return f"Structure with name {name} not found for {cid}!" # TODO raise 404?
-
 
 # url_prefix added in register_blueprint
 multi_view = ContributionsView.as_view(ContributionsView.__name__)
@@ -209,6 +176,3 @@ contributions.add_url_rule('/<string:cid>', view_func=single_view,
 
 card_view = CardView.as_view(CardView.__name__)
 contributions.add_url_rule('/<string:cid>/card', view_func=card_view, methods=['GET'])
-
-cif_view = CifView.as_view(CifView.__name__)
-contributions.add_url_rule('/<string:cid>/<string:name>.cif', view_func=cif_view, methods=['GET'])
