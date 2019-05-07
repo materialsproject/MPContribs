@@ -40,3 +40,22 @@ def duplicate_check(f):
 
     wrapper.existing_identifiers = existing_identifiers
     return wrapper
+
+from test_site.settings import swagger_client as client
+from mpcontribs.io.core.recdict import RecursiveDict
+from mpcontribs.io.core.components.tdata import Table
+
+def get_context(project, columns):
+    ctx = {'project': project}
+    prov = client.projects.get_entry(project=project).response().result
+    for k in ['id', 'project', 'other']:
+        prov.pop(k)
+    ctx['title'] = prov.pop('title')
+    ctx['provenance'] = RecursiveDict(prov).render()
+    data = client.projects.get_table(
+        project=project, columns=columns, per_page=3
+    ).response().result
+    columns = list(data['items'][0].keys())
+    table = Table(data['items'], columns=columns)
+    ctx['table'] = table.render(project=project)
+    return ctx
