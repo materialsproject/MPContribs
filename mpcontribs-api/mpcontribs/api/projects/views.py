@@ -115,12 +115,6 @@ class ProjectView(SwaggerView):
         # TODO should also delete all contributions
         return NotImplemented()
 
-def get_pipeline(key):
-    return [
-        {"$project": {"arrayofkeyvalue": {"$objectToArray": f"${key}"}}},
-        {"$project": {"keys": "$arrayofkeyvalue.k"}}
-    ]
-
 class TableView(SwaggerView):
 
     def get(self, project):
@@ -216,7 +210,7 @@ class TableView(SwaggerView):
         objects = objects.order_by(order_by)
 
         # generate table page
-        cursor, items = None, []
+        items = []
         for doc in objects.paginate(page=page, per_page=per_page).items:
             mp_id = doc['identifier']
             contrib = doc['content']['data']
@@ -226,14 +220,9 @@ class TableView(SwaggerView):
             for idx, (k, sk) in enumerate(grouped_columns):
                 cell = ''
                 if k == 'CIF' or sk == 'CIF':
-                    if cursor is None:
-                        cursor = objects.aggregate(*get_pipeline('content.structures'))
-                        struc_names = dict(
-                            (str(item["_id"]), item.get("keys", []))
-                            for item in cursor
-                        )
-                    snames = struc_names.get(str(doc['id']))
-                    if snames:
+                    structures = doc['content']['structures'] # mongoengine will de-ref
+                    if structures:
+                        snames = [s['name'] for s in structures]
                         if k == 'CIF':
                             cell = f"{explorer}/{doc['id']}/{snames[0]}.cif"
                         else:
