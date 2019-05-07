@@ -3,7 +3,6 @@
 {% load render_bundle from webpack_loader %}
 {% block extra_css %}{% render_bundle 'portal' 'css' %}{% endblock %}
 {% block footer %}{% render_bundle 'portal' 'js' %}{% endblock %}
-{% block title %}MPContribs Portal{% endblock %}
 
 {% block content %}
 <div class="container" hidden>
@@ -11,11 +10,9 @@
         <div class="col-md-4">
             <blockquote class="blockquote" style="font-size: 14px; padding: 0px 10px;">
                 <p>The <a href="https://github.com/materialsproject/MPContribs">MPContribs Framework</a>
-                serves the purpose of collectively maintaining
-                contributions to local and MP community databases as annotations to
-                existing MP materials. It subsequently disseminates them through a generic
-                interactive gateway (this portal) powered by Jupyter notebooks and through
-                <a href="https://github.com/materialsproject/MPContribsUsers">landing pages</a>
+                serves the purpose of collectively maintaining contributions to local and MP community
+                databases as annotations to existing MP materials. It subsequently disseminates them
+                on this portal through detail pages powered by Jupyter notebooks, and through landing pages
                 targeted to the project/contributor's needs.</p>
             </blockquote>
         </div>
@@ -34,28 +31,11 @@
             </div>
         </div>
         <div class="col-md-4">
-            <p><img src='{% static "lsdi_logo.png" %}' width=35% style="float: left; padding: 5px;"/>
-            The development of MPContribs is supported by NSF LSDI Data Infrastructure
-            Building Blocks program and DOE Basic Energy Sciences Materials
-            Project.</p>
+            <label for="search">Type keywords to search projects below:</label>
+            <select id="search" style="width: 100%;" multiple="multiple"></select>
         </div>
     </div>
     {% if landing_pages %}
-    <div class="row" style="margin-bottom: 10px;">
-        <div class="col-md-12" style="border-top: 2px dashed; border-bottom: 2px dashed; background: #eee; padding: 5px;">
-            <div class="row">
-                <div class="col-md-6">
-                    <h2 style="font-variant: small-caps;">
-                        Contributed Materials Data
-                    </h2>
-                </div>
-                <div class="col-md-6">
-                    <label for="search">Type keywords to search title, description and authors:</label>
-                    <select id="search" style="width: 100%;" multiple="multiple"></select>
-                </div>
-            </div>
-        </div>
-    </div>
     <div class="row equal">
         {% for lp in landing_pages %}
         <div class="col-md-4" id="{{ lp.project }}">
