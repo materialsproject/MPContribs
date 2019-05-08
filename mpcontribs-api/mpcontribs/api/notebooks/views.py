@@ -42,9 +42,7 @@ class NotebookView(SwaggerView):
                     "client = load_client() # provide apikey as argument to use api.mpcontribs.org\n"
                     f"contrib = client.contributions.get_entry(cid='{cid}').response().result"
                 ),
-                nbf.new_markdown_cell(
-                    f"## Provenance for Project {contrib['project']}"
-                ),
+                nbf.new_markdown_cell("## Provenance Info"),
                 nbf.new_code_cell(
                     "from mpcontribs.io.core.recdict import RecursiveDict\n"
                     "mask = ['title', 'authors', 'description', 'urls', 'other', 'project']\n"
@@ -83,7 +81,7 @@ class NotebookView(SwaggerView):
             structures = contrib.content['structures']
             if structures:
                 cells.append(nbf.new_markdown_cell(
-                    f"## Structures for {contrib['identifier']}"
+                    f"## Pymatgen Structures for {contrib['identifier']}"
                 ))
                 cells.append(nbf.new_code_cell(
                     "# structure IDs `sid` are in `contrib['content']['structures']`\n"

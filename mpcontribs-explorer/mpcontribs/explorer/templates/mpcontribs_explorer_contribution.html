@@ -19,8 +19,11 @@
 <nav class="navbar navbar-default navbar-lower" role="navigation">
   <div class="container" hidden>
     <form class="navbar-form" role="search">
+      <ul class="nav nav-pills navbar-left" id="anchors" style="margin-right:10px;">
+          <!-- anchors dynamically added -->
+      </ul>
       <div class="form-group">
-        <div class="checkbox" style="padding:1px;">
+        <div class="checkbox" style="padding:1px; margin-left:10px;">
           <label>
             <input id="toggle_inputs" type="checkbox" checked>
           </label>
@@ -47,7 +50,7 @@
         </div>
       </div>
       <div class="navbar-right" id="download" style="margin-right:10px;">
-          <a class="btn btn-sm btn-success" href="{{ request.path }}.json" role="button">Download</a>
+          <a class="btn btn-success" href="{{ request.path }}.json" role="button">Download</a>
       </div>
     </form>
   </div>

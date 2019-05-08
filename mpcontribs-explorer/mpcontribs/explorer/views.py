@@ -25,13 +25,24 @@ def export_notebook(nb, cid):
     body = html_exporter.from_notebook_node(nb)[0]
     soup = BeautifulSoup(body, 'html.parser')
     # mark cells with special name for toggling, and
-    # TODO make element id's unique by appending cid
+    # TODO make element id's unique by appending cid (for ingester)
     for div in soup.find_all('div', 'output_wrapper'):
-        tag = div.find('h2')
-        div['name'] = tag.text.split()[0]
+        script = div.find('script')
+        if script:
+            script = script.contents[0]
+            if script.startswith('render_json'):
+                div['name'] = 'HData'
+            elif script.startswith('render_table'):
+                div['name'] = 'Table'
+            elif script.startswith('render_plot'):
+                div['name'] = 'Graph'
+        else:
+            pre = div.find('pre')
+            if pre and pre.contents[0].startswith('Structure'):
+                div['name'] = 'Structure'
     # name divs for toggling code_cells
     for div in soup.find_all('div', 'input'):
-        div['name'] = 'Input'
+        div['name'] = 'Code'
     # separate script
     script = []
     for s in soup.find_all('script'):
