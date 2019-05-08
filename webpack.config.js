@@ -77,7 +77,8 @@ module.exports = {
       "js-cookie": 'js-cookie/src/js.cookie',
       "spin.js": 'spin.js/spin',
       "linkify": 'linkifyjs/lib/linkify',
-      "linkify-element": 'linkifyjs/lib/linkify-element'
+      "linkify-element": 'linkifyjs/lib/linkify-element',
+      "mathjs": 'mathjs/dist/math'
       //waitfor: 'jquery.waitFor',
       //thebe: 'main-built',
     }

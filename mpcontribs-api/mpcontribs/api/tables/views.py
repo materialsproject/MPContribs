@@ -29,6 +29,12 @@ class TableView(SwaggerView):
               minimum: 2
               maximum: 200
               description: number of results to return per page
+            - name: mask
+              in: query
+              type: array
+              items:
+                  type: string
+              description: comma-separated list of fields to return (MongoDB syntax)
         responses:
             200:
                 description: single table
@@ -39,7 +45,11 @@ class TableView(SwaggerView):
         per_page = int(request.args.get('per_page', 20))
         PER_PAGE_MAX = 200 # different for number of table rows
         per_page = PER_PAGE_MAX if per_page > PER_PAGE_MAX else per_page
-        entry = Tables.objects.no_dereference().get(id=tid)
+        objects = Tables.objects.no_dereference()
+        mask = request.args.get('mask')
+        if mask:
+            objects = objects.only(*mask.split(','))
+        entry = objects.get(id=tid)
         entry.data = entry.paginate_field('data', page, per_page=per_page).items
         return self.marshal(entry)
 
