@@ -1,3 +1,4 @@
+import("./highlight.css");
 import 'toggle';
 
 function toggle_divs(name) {
