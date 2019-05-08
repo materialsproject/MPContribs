@@ -35,7 +35,7 @@ class NotebookView(SwaggerView):
             nb = Notebooks.objects.get(id=cid)
             nb.restore()
         except DoesNotExist:
-            contrib = Contributions.objects.get(id=cid)
+            contrib = Contributions.objects.no_dereference().get(id=cid)
             cells = [
                 nbf.new_code_cell(
                     "from mpcontribs.client import load_client\n"
@@ -60,59 +60,40 @@ class NotebookView(SwaggerView):
                 )
             ]
 
-            ntables = len(contrib.content['tables'])
-            if ntables:
+            tables = contrib.content['tables']
+            if tables:
                 cells.append(nbf.new_markdown_cell(
                     f"## Tabular Data for {contrib['identifier']}"
                 ))
                 cells.append(nbf.new_code_cell(
-                    "# set `per_page` to retrieve up to 200 rows at once (paginate for more)\n"
-                    "raw_tables = [\n"
-                    "\tclient.tables.get_entry(tid=tid).response().result\n"
-                    "\tfor tid in contrib['content']['tables']\n"
-                    "]\n"
-                    "from mpcontribs.io.core.components.tdata import Table\n"
-                    "tables = {}"
+                    "# - table IDs `tid` are in `contrib['content']['tables']`\n"
+                    "# - set `per_page` query parameter to retrieve up to 200 rows at once (paginate for more)\n"
+                    "from mpcontribs.io.core.components.tdata import Table # DataFrame with Backgrid IPython Display\n"
+                    "from mpcontribs.io.core.components.gdata import Plot # Plotly interactive graph"
                 ))
-                for n in range(ntables):
+                for ref in tables:
                     cells.append(nbf.new_code_cell(
-                        f"table = raw_tables[{n}]\n"
-                        "tables[table['name']] = Table.from_dict(table) # DataFrame with Backgrid IPython Display\n"
-                        "tables[table['name']]"
+                        f"table = client.tables.get_entry(tid='{ref.id}').response().result\n"
+                        "Table.from_dict(table)"
                     ))
+                    #cells.append(nbf.new_code_cell(
+                    #    f"Plot(conf, tables[conf['table']], cid={cid})\n"
+                    #))
 
-            ngraphs = len(contrib.content['graphs'])
-            if ngraphs:
-                cells.append(nbf.new_markdown_cell(
-                    f"## Graphs for {contrib['identifier']}"
-                ))
-                cells.append(nbf.new_code_cell(
-                    "from mpcontribs.io.core.components.gdata import Plot\n"
-                    "graphs = [\n"
-                    "\tPlot(conf, tables[conf['table']])\n"
-                    "\tfor k, conf in contrib['content']['graphs'].items()\n"
-                    "]"
-                ))
-                for n in range(ngraphs):
-                    cells.append(nbf.new_code_cell(
-                        f"graphs[{n}] # Plotly interactive graph"
-                    ))
-
-            nstructures = len(contrib.content['structures'])
-            if nstructures:
+            structures = contrib.content['structures']
+            if structures:
                 cells.append(nbf.new_markdown_cell(
                     f"## Structures for {contrib['identifier']}"
                 ))
                 cells.append(nbf.new_code_cell(
+                    "# - structure IDs `sid` are in `contrib['content']['structures']`\n"
                     "from pymatgen import Structure\n"
-                    "structures = [Structure.from_dict(\n"
-                    "\tclient.structures.get_entry(sid=sid).response().result\n"
-                    ") for sid in contrib['content']['structures']]\n"
                 ))
-                for n in range(nstructures):
+                for ref in structures:
                     cells.append(nbf.new_code_cell(
-                        f"structures[{n}] # Pymatgen Structure"
+                        f"Structure.from_dict(client.structures.get_entry(sid='{ref.id}').response().result)"
                     ))
+
             nb = nbf.new_notebook()
             nb['cells'] = cells
             exprep.preprocess(nb, {})
