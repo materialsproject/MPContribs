@@ -23,6 +23,7 @@ class Tables(Document):
         fields.ListField(fields.StringField()),
         required=True, help_text="table rows"
     )
+    config = fields.DictField(help_text="graph config")
     meta = {
         'collection': 'tables', 'indexes': [
             'identifier', 'project', 'cid', 'name',

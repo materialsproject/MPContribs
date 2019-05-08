@@ -73,12 +73,12 @@ class NotebookView(SwaggerView):
                 ))
                 for ref in tables:
                     cells.append(nbf.new_code_cell(
-                        f"table = client.tables.get_entry(tid='{ref.id}').response().result\n"
+                        f"table = client.tables.get_entry(tid='{ref.id}').response().result # Pandas DataFrame format\n"
                         "Table.from_dict(table)"
                     ))
-                    #cells.append(nbf.new_code_cell(
-                    #    f"Plot(conf, tables[conf['table']], cid={cid})\n"
-                    #))
+                    cells.append(nbf.new_code_cell(
+                        "Plot.from_dict(table)"
+                    ))
 
             structures = contrib.content['structures']
             if structures:
@@ -86,7 +86,7 @@ class NotebookView(SwaggerView):
                     f"## Structures for {contrib['identifier']}"
                 ))
                 cells.append(nbf.new_code_cell(
-                    "# - structure IDs `sid` are in `contrib['content']['structures']`\n"
+                    "# structure IDs `sid` are in `contrib['content']['structures']`\n"
                     "from pymatgen import Structure\n"
                 ))
                 for ref in structures:

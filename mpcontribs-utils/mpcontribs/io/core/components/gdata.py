@@ -7,6 +7,7 @@ from plotly.utils import PlotlyJSONEncoder
 from IPython.display import display_html
 from mpcontribs.config import mp_level01_titles
 from mpcontribs.io.core.recdict import RecursiveDict
+from mpcontribs.io.core.components.tdata import Table
 
 class MyRenderer(pio.base_renderers.MimetypeRenderer):
     def to_mimebundle(self, fig):
@@ -19,9 +20,8 @@ class MyRenderer(pio.base_renderers.MimetypeRenderer):
         config = _get_jconfig(None)
         config.setdefault('responsive', True)
         jconfig = json.dumps(config)
-        script = f'render_plot({{\
-        divid: "{divid}", data: {jdata}, layout: {jlayout}, config: {jconfig}\
-        }})'
+        script = f'render_plot({{divid: {divid}, layout: {jlayout}, config: {jconfig}'
+        script += f'tid: {fig.tid}, data: {jdata}}})'
         html = f'<div><div id="{divid}"></div>'
         html += f'<script type="text/javascript">{script};</script></div>'
         return {'text/html': html}
@@ -32,9 +32,16 @@ pio.renderers.render_on_display = True
 
 class Plot(object):
     """class to hold and display single interactive graph/plot"""
-    def __init__(self, config, table):
-        self.config = config
+    def __init__(self, table, config=None, tid=None):
         self.table = table
+        self.config = config or {}
+        self.tid = tid
+
+    @classmethod
+    def from_dict(cls, d):
+        return cls(
+            Table.from_dict(d), config=d.get('config'), tid=d['id']
+        )
 
     def get_figure(self):
         from pandas import MultiIndex
@@ -55,7 +62,8 @@ class Plot(object):
                 fig.append_trace(go.Heatmap(z=z, showscale=False), idx/ncols+1, idx%ncols+1)
             fig['layout'].update(layout)
         else:
-            xaxis, yaxis = self.config['x'], self.config.get('y', None)
+            xaxis = self.config.get('x', self.table.columns[0])
+            yaxis = self.config.get('y', None)
             yaxes = [yaxis] if yaxis is not None else \
                     [col for col in self.table.columns if col != xaxis]
             traces = []
@@ -76,7 +84,7 @@ class Plot(object):
             layout.update(dict(
                 xaxis = dict(title=xaxis),
                 yaxis = dict(
-                    title=self.config['table'],
+                    title=self.config.get('ytitle'),
                     type=self.config.get('yaxis', {}).get('type', '-')
                 ),
                 showlegend=self.config.get('showlegend', True)
@@ -87,6 +95,7 @@ class Plot(object):
 
     def _ipython_display_(self):
         fig = self.get_figure()
+        fig.tid = self.tid
         is_3d = False # TODO decide by heatmap
         axis = 'z' if is_3d else 'x'
         npts = len(fig.get('data')[0][axis])
