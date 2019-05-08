@@ -10,6 +10,8 @@ from mpcontribs.io.core.recdict import RecursiveDict
 from mpcontribs.io.core.components.tdata import Table
 
 class MyRenderer(pio.base_renderers.MimetypeRenderer):
+    tid = None
+
     def to_mimebundle(self, fig):
         fig_dict = validate_coerce_fig_to_dict(fig, True)
         divid = str(uuid.uuid4())
@@ -20,8 +22,8 @@ class MyRenderer(pio.base_renderers.MimetypeRenderer):
         config = _get_jconfig(None)
         config.setdefault('responsive', True)
         jconfig = json.dumps(config)
-        script = f'render_plot({{divid: {divid}, layout: {jlayout}, config: {jconfig}'
-        script += f'tid: {fig.tid}, data: {jdata}}})'
+        script = f'render_plot({{divid: "{divid}", layout: {jlayout}, config: {jconfig}'
+        script += f', tid: "{self.tid}", data: {jdata}}})'
         html = f'<div><div id="{divid}"></div>'
         html += f'<script type="text/javascript">{script};</script></div>'
         return {'text/html': html}
@@ -95,7 +97,6 @@ class Plot(object):
 
     def _ipython_display_(self):
         fig = self.get_figure()
-        fig.tid = self.tid
         is_3d = False # TODO decide by heatmap
         axis = 'z' if is_3d else 'x'
         npts = len(fig.get('data')[0][axis])
@@ -103,7 +104,7 @@ class Plot(object):
         renderers = ['jupyterlab']
         renderers.append('png' if static_fig else 'my_renderer')
         pio.renderers.default = '+'.join(renderers)
-        pio.show(fig)
+        pio.show(fig, tid=self.tid)
 
 class Plots(RecursiveDict):
     """class to hold and display multiple interactive graphs/plots"""
