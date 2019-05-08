@@ -30,29 +30,24 @@ class StructureView(SwaggerView):
 
 class CifView(SwaggerView):
 
-    def get(self, cid, name):
+    def get(self, sid):
         """Retrieve structure for contribution in CIF format.
         ---
         operationId: get_cif
         parameters:
-            - name: cid
+            - name: sid
               in: path
               type: string
               pattern: '^[a-f0-9]{24}$'
               required: true
-              description: contribution ID (ObjectId)
-            - name: name
-              in: path
-              type: string
-              required: true
-              description: name of structure
+              description: Structure ID (ObjectId)
         responses:
             200:
                 description: structure in CIF format
                 schema:
                     type: string
         """
-        entry = Structures.objects.get(cid=cid, name=name)
+        entry = Structures.objects.no_dereference().get(id=sid)
         structure = Structure.from_dict(entry.to_mongo())
         return CifWriter(structure, symprec=1e-10).__str__()
 
@@ -61,4 +56,4 @@ structures.add_url_rule('/<string:sid>', view_func=single_view,
                         methods=['GET'])#, 'PUT', 'PATCH', 'DELETE'])
 
 cif_view = CifView.as_view(CifView.__name__)
-structures.add_url_rule('/<string:cid>/<string:name>.cif', view_func=cif_view, methods=['GET'])
+structures.add_url_rule('/<string:sid>.cif', view_func=cif_view, methods=['GET'])

@@ -1,9 +1,11 @@
 from mongoengine.queryset import DoesNotExist
+from mongoengine.context_managers import no_dereference
 from flask import Blueprint, request, current_app
 from more_itertools import padded
 from mpcontribs.api.core import SwaggerView
 from mpcontribs.api.projects.document import Projects
 from mpcontribs.api.contributions.document import Contributions
+from mpcontribs.api.structures.document import Structures
 
 projects = Blueprint("projects", __name__)
 
@@ -198,61 +200,63 @@ class TableView(SwaggerView):
         columns = general_columns + user_columns
         grouped_columns = [list(padded(col.split('##'), n=2)) for col in user_columns]
 
-        # query, projection and search
-        objects = Contributions.objects(project=project).only(*mask)
-        if search is not None:
-            objects = objects(content__data__formula__contains=search)
+        with no_dereference(Contributions) as ContributionsDeref:
+            # query, projection and search
+            objects = ContributionsDeref.objects(project=project).only(*mask)
+            if search is not None:
+                objects = objects(content__data__formula__contains=search)
 
-        # sorting
-        sort_by_key = sort_by if sort_by in general_columns[:2] else f'content.data.{sort_by}'
-        order_sign = '-' if order == 'desc' else '+'
-        order_by = f"{order_sign}{sort_by_key}"
-        objects = objects.order_by(order_by)
+            # sorting
+            sort_by_key = sort_by if sort_by in general_columns[:2] else f'content.data.{sort_by}'
+            order_sign = '-' if order == 'desc' else '+'
+            order_by = f"{order_sign}{sort_by_key}"
+            objects = objects.order_by(order_by)
 
-        # generate table page
-        items = []
-        for doc in objects.paginate(page=page, per_page=per_page).items:
-            mp_id = doc['identifier']
-            contrib = doc['content']['data']
-            formula = contrib['formula'].replace(' ', '')
-            row = [f"{mp_site}/{mp_id}", f"{explorer}/{doc['id']}", formula]
+            # generate table page
+            items = []
+            for doc in objects.paginate(page=page, per_page=per_page).items:
+                mp_id = doc['identifier']
+                contrib = doc['content']['data']
+                formula = contrib['formula'].replace(' ', '')
+                row = [f"{mp_site}/{mp_id}", f"{explorer}/{doc['id']}", formula]
 
-            for idx, (k, sk) in enumerate(grouped_columns):
-                cell = ''
-                if k == 'CIF' or sk == 'CIF':
-                    structures = doc['content']['structures'] # mongoengine will de-ref
-                    if structures:
-                        snames = [s['name'] for s in structures]
-                        if k == 'CIF':
-                            cell = f"{explorer}/{doc['id']}/{snames[0]}.cif"
-                        else:
-                            for sname in snames:
-                                if k in sname:
-                                    cell = f"{explorer}/{doc['id']}/{sname}.cif"
-                                    break
-                else:
-                    if sk is None:
-                        cell = contrib.get(k, '')
+                for idx, (k, sk) in enumerate(grouped_columns):
+                    cell = ''
+                    if k == 'CIF' or sk == 'CIF':
+                        structures = doc['content']['structures']
+                        if structures:
+                            if k == 'CIF':
+                                cell = f"{explorer}/{structures[0].id}.cif"
+                            else:
+                                objects = Structures.objects.no_dereference().only('name')
+                                for ref in structures:
+                                    sname = objects.get(id=ref.id)['name']
+                                    if k in sname:
+                                        cell = f"{explorer}/{ref.id}.cif"
+                                        break
                     else:
-                        cell = contrib.get(k, {sk: ''}).get(sk, '')
-                # move unit to column header and only append value to row
-                value, unit = padded(cell.split(), fillvalue='', n=2)
-                if unit and unit not in user_columns[idx]:
-                    user_columns[idx] += f' [{unit}]'
-                row.append(value)
+                        if sk is None:
+                            cell = contrib.get(k, '')
+                        else:
+                            cell = contrib.get(k, {sk: ''}).get(sk, '')
+                    # move unit to column header and only append value to row
+                    value, unit = padded(cell.split(), fillvalue='', n=2)
+                    if unit and unit not in user_columns[idx]:
+                        user_columns[idx] += f' [{unit}]'
+                    row.append(value)
 
-            columns = general_columns + user_columns # rewrite after update
-            items.append(dict(zip(columns, row)))
+                columns = general_columns + user_columns # rewrite after update
+                items.append(dict(zip(columns, row)))
 
-        total_count = objects.count()
-        total_pages = int(total_count/per_page)
-        if total_pages%per_page:
-            total_pages += 1
+            total_count = objects.count()
+            total_pages = int(total_count/per_page)
+            if total_pages%per_page:
+                total_pages += 1
 
-        return {
-            'total_count': total_count, 'total_pages': total_pages, 'page': page,
-            'last_page': total_pages, 'per_page': per_page, 'items': items
-        }
+            return {
+                'total_count': total_count, 'total_pages': total_pages, 'page': page,
+                'last_page': total_pages, 'per_page': per_page, 'items': items
+            }
 
 class GraphView(SwaggerView):
 
@@ -293,18 +297,19 @@ class GraphView(SwaggerView):
         """
         mask = ['content.data', 'identifier']
         columns = request.args.get('columns').split(',')
-        objects = Contributions.objects(project=project).only(*mask)
-        data = [{'x': [], 'y': []} for col in columns]
-        for obj in objects:
-            d = obj['content']['data']
-            for idx, col in enumerate(columns):
-                k, sk = padded(col.split('##'), n=2)
-                if k in d:
-                    val = d[k].get(sk) if sk else d[k]
-                    if val:
-                        data[idx]['x'].append(obj.identifier)
-                        data[idx]['y'].append(val.split(' ')[0])
-        return data
+        with no_dereference(Contributions) as ContributionsDeref:
+            objects = ContributionsDeref.objects(project=project).only(*mask)
+            data = [{'x': [], 'y': []} for col in columns]
+            for obj in objects:
+                d = obj['content']['data']
+                for idx, col in enumerate(columns):
+                    k, sk = padded(col.split('##'), n=2)
+                    if k in d:
+                        val = d[k].get(sk) if sk else d[k]
+                        if val:
+                            data[idx]['x'].append(obj.identifier)
+                            data[idx]['y'].append(val.split(' ')[0])
+            return data
 
 # url_prefix added in register_blueprint
 # also see http://flask.pocoo.org/docs/1.0/views/#method-views-for-apis

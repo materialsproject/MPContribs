@@ -45,8 +45,8 @@ def contribution(request, cid):
     ctx['nb'], ctx['js'] = export_notebook(nb, cid)
     return render(request, "mpcontribs_explorer_contribution.html", ctx.flatten())
 
-def cif(request, cid, name):
-    cif = client.structures.get_cif(cid=cid, name=name).response().result
+def cif(request, sid):
+    cif = client.structures.get_cif(sid=sid).response().result
     if cif:
         return HttpResponse(cif, content_type='text/plain')
     return HttpResponse(status=404)
