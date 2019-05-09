@@ -1,6 +1,6 @@
 apispec==0.39.0
 dnspython==1.16.0
-flasgger @ git+https://github.com/rochacbruno/flasgger#egg=flasgger-0.9.3.dev0
+flasgger @ git+https://github.com/rochacbruno/flasgger@37ee86401e7c6c30dd45ef258d2f51647c48ef8c#egg=flasgger-0.9.3.dev0
 Flask==1.0.2
 Flask-JSON==0.3.3
 flask-log==0.1.0
