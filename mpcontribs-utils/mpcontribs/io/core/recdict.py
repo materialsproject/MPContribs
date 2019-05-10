@@ -1,5 +1,4 @@
-from __future__ import unicode_literals, print_function
-import uuid, json, six, os
+import uuid, json, os
 from collections import OrderedDict as _OrderedDict
 from collections import Mapping as _Mapping
 from mpcontribs.config import mp_level01_titles, replacements
@@ -19,7 +18,7 @@ class RecursiveDict(_OrderedDict):
             other = self
             overwrite = True
         for key,value in other.items():
-            if isinstance(key, six.string_types):
+            if isinstance(key, str):
                 key = ''.join([replacements.get(c, c) for c in key])
             if key in self and \
                isinstance(self[key], dict) and \
@@ -29,7 +28,7 @@ class RecursiveDict(_OrderedDict):
                 replace_newlines = bool(key != mp_level01_titles[3])
                 self[key].rec_update(other=value, overwrite=overwrite, replace_newlines=replace_newlines)
             elif (key in self and overwrite) or key not in self:
-                if isinstance(value, six.string_types) and replace_newlines:
+                if isinstance(value, str) and replace_newlines:
                     self[key] = value.replace('\n', ' ')
                 else:
                     self[key] = value
