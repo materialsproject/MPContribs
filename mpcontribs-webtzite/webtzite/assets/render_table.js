@@ -4,11 +4,6 @@ import 'backgrid-paginator';
 import 'backgrid-filter';
 import 'backgrid-grouped-columns';
 
-import("../../../node_modules/backgrid/lib/backgrid.min.css");
-import("../../../node_modules/backgrid-paginator/backgrid-paginator.min.css");
-import("../../../node_modules/backgrid-filter/backgrid-filter.min.css");
-import("../../../node_modules/backgrid-grouped-columns/backgrid-grouped-columns.css");
-
 window.render_table = function(props) {
     var config = props.config;
     var Row = Backbone.Model.extend({});
