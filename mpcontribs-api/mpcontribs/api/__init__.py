@@ -26,17 +26,19 @@ def create_app():
     if app.config.get('DEBUG'):
         from flask_cors import CORS
         CORS(app) # enable for development (allow localhost)
+
     json = FlaskJSON(app)
-    Logging(app)
-    Marshmallow(app)
-    db = MongoEngine(app)
-    swagger = Swagger(app, template=app.config.get('TEMPLATE'))
-    collections = get_collections(db)
 
     @json.encoder
     def custom_encoder(o):
         if isinstance(o, Decimal128):
             return float(o.to_decimal())
+
+    Logging(app)
+    Marshmallow(app)
+    db = MongoEngine(app)
+    swagger = Swagger(app, template=app.config.get('TEMPLATE'))
+    collections = get_collections(db)
 
     for collection in collections:
         module_path = '.'.join(['mpcontribs', 'api', collection, 'views'])
