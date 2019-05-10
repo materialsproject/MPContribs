@@ -71,41 +71,25 @@ class Table(pd.DataFrame):
 
                 for row_index in range(df.shape[0]):
                     cell = str(df.iat[row_index, col_index])
-                    cell_split = cell.split(' ', 1)
-
-                    if not cell or len(cell_split) == 1: # empty cell or no space
-                        is_url_column = bool(is_url_column and (not cell or mp_id_pattern.match(cell)))
-                        if is_url_column:
-                            if cell:
-                                value = 'https://materialsproject.org/materials/{}'.format(cell)
-                                table['rows'][row_index][col] = value
-                        elif cell:
-                            try:
-                                composition = get_composition_from_string(cell)
-                                composition = pmg_util.string.unicodeify(composition)
-                                table['rows'][row_index][col] = composition
-                            except (CompositionError, ValueError, OverflowError):
-                                try:
-                                    # https://stackoverflow.com/a/38020041
-                                    result = urlparse(cell)
-                                    if not all([result.scheme, result.netloc, result.path]):
-                                        break
-                                    is_url_column = True
-                                except:
-                                    break
-
-                    else:
-                        value, unit = cell_split # TODO convert cell_split[0] to float?
-                        is_url_column = False
+                    is_url_column = bool(is_url_column and (not cell or mp_id_pattern.match(cell)))
+                    if is_url_column:
+                        if cell:
+                            value = 'https://materialsproject.org/materials/{}'.format(cell)
+                            table['rows'][row_index][col] = value
+                    elif cell:
                         try:
-                            float(value) # unit is only a unit if value is number
-                        except ValueError:
-                            continue
-                        table['rows'][row_index].pop(old_col)
-                        if prev_unit is None:
-                            prev_unit = unit
-                            col = '{} [{}]'.format(col, unit)
-                        table['rows'][row_index][col] = cell if prev_unit != unit else value
+                            composition = get_composition_from_string(cell)
+                            composition = pmg_util.string.unicodeify(composition)
+                            table['rows'][row_index][col] = composition
+                        except (CompositionError, ValueError, OverflowError):
+                            try:
+                                # https://stackoverflow.com/a/38020041
+                                result = urlparse(cell)
+                                if not all([result.scheme, result.netloc, result.path]):
+                                    break
+                                is_url_column = True
+                            except:
+                                break
 
                 cell_type = 'uri' if is_url_column else 'string'
 
@@ -118,27 +102,6 @@ class Table(pd.DataFrame):
                 table['columns'][-1].update({'label': '.'.join(col_split[1:])})
             if len(table['columns']) > 12:
                 table['columns'][-1]['renderable'] = 0
-
-        header = RecursiveDict()
-        for idx, col in enumerate(table['columns']):
-            if 'label' in col:
-                k, sk = col['name'].split('.')
-                sk_split = sk.split()
-                if len(sk_split) == 2:
-                    d = {'name': sk_split[0], 'unit': sk_split[1], 'idx': idx}
-                    if k not in header:
-                        header[k] = [d]
-                    else:
-                        header[k].append(d)
-                elif k in header:
-                    header.pop(k)
-
-        for k, skl in header.items():
-            units = [sk['unit'] for sk in skl]
-            if units.count(units[0]) == len(units):
-                for sk in skl:
-                    table['columns'][sk['idx']]['label'] = sk['name']
-                    table['columns'][sk['idx']]['nesting'][0] = '{} {}'.format(k, sk['unit'])
 
         return table
 
