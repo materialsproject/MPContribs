@@ -195,7 +195,7 @@ class TableView(SwaggerView):
         per_page = int(request.args.get('per_page', PER_PAGE_MAX))
         per_page = PER_PAGE_MAX if per_page > PER_PAGE_MAX else per_page
         order = request.args.get('order')
-        sort_by = request.args.get('sort_by')
+        sort_by = request.args.get('sort_by', 'identifier')
         general_columns = ['identifier', 'id', 'formula']
         user_columns = request.args.get('columns', '').split(',')
         objects = Contributions.objects(project=project).only(*mask)
@@ -210,6 +210,9 @@ class TableView(SwaggerView):
         # search and sort
         if search is not None:
             objects = objects(content__data__formula__contains=search)
+        print(sort_by)
+        if ' ' in sort_by and sort_by[-1] == ']':
+            sort_by = sort_by.split(' ')[0] # remove unit
         sort_by_key = sort_by if sort_by in general_columns[:2] else f'content.data.{sort_by}.value'
         order_sign = '-' if order == 'desc' else '+'
         order_by = f"{order_sign}{sort_by_key}"
