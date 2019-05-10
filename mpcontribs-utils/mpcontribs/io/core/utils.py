@@ -141,13 +141,3 @@ def read_csv(body, is_data_section=True, **kwargs):
         converters=converters, encoding='utf8',
         **options
     ).dropna(how='all'))
-
-def nested_dict_iter(nested, scope=''):
-    """iterate a nested dict"""
-    for key, value in nested.iteritems():
-        if isinstance(value, collections.Mapping):
-            inner_scope = '.'.join([scope, key]) if scope else key
-            for inner_key, inner_value in nested_dict_iter(value, scope=inner_scope):
-                yield '.'.join([inner_scope, inner_key]), inner_value
-        else:
-            yield key, value
