@@ -1,7 +1,8 @@
 from mongoengine.queryset import DoesNotExist
 from mongoengine.context_managers import no_dereference
 from flask import Blueprint, request, current_app
-from more_itertools import padded
+from bson.decimal128 import Decimal128
+from pandas.io.json.normalize import nested_to_record
 from mpcontribs.api.core import SwaggerView
 from mpcontribs.api.projects.document import Projects
 from mpcontribs.api.contributions.document import Contributions
@@ -197,66 +198,53 @@ class TableView(SwaggerView):
         sort_by = request.args.get('sort_by')
         general_columns = ['identifier', 'id', 'formula']
         user_columns = request.args.get('columns', '').split(',')
-        columns = general_columns + user_columns
-        grouped_columns = [list(padded(col.split('##'), n=2)) for col in user_columns]
+        objects = Contributions.objects(project=project).only(*mask)
 
-        with no_dereference(Contributions) as ContributionsDeref:
-            # query, projection and search
-            objects = ContributionsDeref.objects(project=project).only(*mask)
-            if search is not None:
-                objects = objects(content__data__formula__contains=search)
+        # add units to column names
+        columns = general_columns + [
+            '{} [{}]'.format(col, objects.distinct(f'content.data.{col}.unit')[0])
+            for col in user_columns
+        ]
 
-            # sorting
-            sort_by_key = sort_by if sort_by in general_columns[:2] else f'content.data.{sort_by}'
-            order_sign = '-' if order == 'desc' else '+'
-            order_by = f"{order_sign}{sort_by_key}"
-            objects = objects.order_by(order_by)
+        # search and sort
+        if search is not None:
+            objects = objects(content__data__formula__contains=search)
+        sort_by_key = sort_by if sort_by in general_columns[:2] else f'content.data.{sort_by}.value'
+        order_sign = '-' if order == 'desc' else '+'
+        order_by = f"{order_sign}{sort_by_key}"
+        objects = objects.order_by(order_by)
 
-            # generate table page
-            items = []
-            for doc in objects.paginate(page=page, per_page=per_page).items:
-                mp_id = doc['identifier']
-                contrib = doc['content']['data']
-                formula = contrib['formula'].replace(' ', '')
-                row = [f"{mp_site}/{mp_id}", f"{explorer}/{doc['id']}", formula]
+        # generate table page
+        items = []
+        for doc in objects.paginate(page=page, per_page=per_page).items:
+            mp_id = doc['identifier']
+            contrib = nested_to_record(doc['content']['data'], sep='.')
+            formula = contrib['formula'].replace(' ', '')
+            row = [f"{mp_site}/{mp_id}", f"{explorer}/{doc['id']}", formula]
 
-                for idx, (k, sk) in enumerate(grouped_columns):
-                    cell = ''
-                    if k == 'CIF' or sk == 'CIF':
-                        structures = doc['content']['structures']
-                        if structures:
-                            if k == 'CIF':
-                                cell = f"{explorer}/{structures[0].id}.cif"
-                            else:
-                                objects = Structures.objects.no_dereference().only('name')
-                                for ref in structures:
-                                    sname = objects.get(id=ref.id)['name']
-                                    if k in sname:
-                                        cell = f"{explorer}/{ref.id}.cif"
-                                        break
-                    else:
-                        if sk is None:
-                            cell = contrib.get(k, '')
-                        else:
-                            cell = contrib.get(k, {sk: ''}).get(sk, '')
-                    # move unit to column header and only append value to row
-                    value, unit = padded(cell.split(), fillvalue='', n=2)
-                    if unit and unit not in user_columns[idx]:
-                        user_columns[idx] += f' [{unit}]'
-                    row.append(value)
+            for idx, col in enumerate(user_columns):
+                cell = ''
+                if 'CIF' in col:
+                    sname = '.'.join(col.split('.')[:-1]) # remove CIF string from field name
+                    for d in doc['content']['structures']:
+                        if d['name'] == sname:
+                            cell = f"{explorer}/{d['id']}.cif"
+                            break
+                else:
+                    cell = contrib.get(col+'.value', '')
+                row.append(str(cell))
 
-                columns = general_columns + user_columns # rewrite after update
-                items.append(dict(zip(columns, row)))
+            items.append(dict(zip(columns, row)))
 
-            total_count = objects.count()
-            total_pages = int(total_count/per_page)
-            if total_pages%per_page:
-                total_pages += 1
+        total_count = objects.count()
+        total_pages = int(total_count/per_page)
+        if total_pages%per_page:
+            total_pages += 1
 
-            return {
-                'total_count': total_count, 'total_pages': total_pages, 'page': page,
-                'last_page': total_pages, 'per_page': per_page, 'items': items
-            }
+        return {
+            'total_count': total_count, 'total_pages': total_pages, 'page': page,
+            'last_page': total_pages, 'per_page': per_page, 'items': items
+        }
 
 class GraphView(SwaggerView):
 
@@ -277,7 +265,7 @@ class GraphView(SwaggerView):
               items:
                   type: string
               required: true
-              description: comma-separated list of column names to plot
+              description: comma-separated list of column names to plot (in MongoDB dot notation)
         responses:
             200:
                 description: x-y-data in plotly format
@@ -301,14 +289,12 @@ class GraphView(SwaggerView):
             objects = ContributionsDeref.objects(project=project).only(*mask)
             data = [{'x': [], 'y': []} for col in columns]
             for obj in objects:
-                d = obj['content']['data']
+                d = nested_to_record(obj['content']['data'], sep='.')
                 for idx, col in enumerate(columns):
-                    k, sk = padded(col.split('##'), n=2)
-                    if k in d:
-                        val = d[k].get(sk) if sk else d[k]
-                        if val:
-                            data[idx]['x'].append(obj.identifier)
-                            data[idx]['y'].append(val.split(' ')[0])
+                    val = d.get(col)
+                    if val:
+                        data[idx]['x'].append(obj.identifier)
+                        data[idx]['y'].append(val.split(' ')[0])
             return data
 
 # url_prefix added in register_blueprint
