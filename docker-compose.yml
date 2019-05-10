@@ -13,6 +13,7 @@ services:
       - ./mpcontribs-explorer:/app/mpcontribs-explorer
       - ./mpcontribs-users:/app/mpcontribs-users
       - ./mpcontribs-webtzite:/app/mpcontribs-webtzite
+      - ./mpcontribs-utils:/app/mpcontribs-utils
     environment:
       - NODE_ENV=development
     ports:
