@@ -51,9 +51,12 @@ class RecursiveDict(_OrderedDict):
                     from mpcontribs.io.core.components.tdata import Table
                     yield key, Table.from_dict(value)
                     continue
-                if Quantity is not None and value.get('@class') == 'Quantity':
-                    quantity = Quantity.from_dict(value)
-                    yield key, quantity
+                #if Quantity is not None and value.get('@class') == 'Quantity':
+                #    quantity = Quantity.from_dict(value)
+                #    yield key, quantity
+                #    continue
+                if 'display' in value and 'value' in value and 'unit' in value:
+                    yield (self.level, key), value['display']
                     continue
                 self.level += 1
                 for inner_key, inner_value in self.iterate(nested_dict=value):

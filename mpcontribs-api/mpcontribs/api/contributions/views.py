@@ -7,6 +7,7 @@ from mpcontribs.api import get_resource_as_string
 from mpcontribs.api.core import SwaggerView
 from mpcontribs.api.projects.document import Projects
 from mpcontribs.api.contributions.document import Contributions
+from mpcontribs.io.core.components.hdata import HierarchicalData
 from css_html_js_minify import html_minify
 from lxml import html
 from toronado import inline
@@ -153,7 +154,7 @@ class CardView(SwaggerView):
         ctx['more'] = f'/explorer/{cid}'
         ctx['urls'] = info.urls.values()
         card_script = get_resource_as_string('templates/card.min.js')
-        data = contrib.content.data
+        data = HierarchicalData(contrib.content.data)
         browser = get_browser()
         browser.execute_script(card_script, data)
         src = browser.page_source.encode("utf-8")
