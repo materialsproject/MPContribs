@@ -1,5 +1,6 @@
 import logging, os
 from importlib import import_module
+from bson.decimal128 import Decimal128
 from flask import Flask, redirect, current_app
 from flask_marshmallow import Marshmallow
 from flask_mongoengine import MongoEngine
@@ -25,12 +26,17 @@ def create_app():
     if app.config.get('DEBUG'):
         from flask_cors import CORS
         CORS(app) # enable for development (allow localhost)
-    FlaskJSON(app)
+    json = FlaskJSON(app)
     Logging(app)
     Marshmallow(app)
     db = MongoEngine(app)
     swagger = Swagger(app, template=app.config.get('TEMPLATE'))
     collections = get_collections(db)
+
+    @json.encoder
+    def custom_encoder(o):
+        if isinstance(o, Decimal128):
+            return float(o.to_decimal())
 
     for collection in collections:
         module_path = '.'.join(['mpcontribs', 'api', collection, 'views'])
