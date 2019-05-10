@@ -4,7 +4,8 @@ var api_url = window.api['host'] + 'projects/jarvis_dft/graph';
 var graph = document.getElementById('graph');
 var layout = {
     margin: {t: 0, r: 0, l: 40, b: 25},
-    yaxis: {title: 'Exfoliation Energy Eₓ [eV]'},
+    yaxis: {title: 'Exfoliation Energy Eₓ [eV]', type: 'log', autorange: true},
+    xaxis: {showticklabels: false},
     legend: {x: 0.05, y: 0.95},
     barmode: 'group'
 };
@@ -19,7 +20,7 @@ $.get({
     $.each(data, function(idx, trace) {
         trace['type'] = 'bar';
         trace['name'] = columns[idx].split('.')[0];
-    })
+    });
     Plotly.plot(graph, data, layout);
 });
 
