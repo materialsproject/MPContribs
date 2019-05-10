@@ -210,10 +210,13 @@ class TableView(SwaggerView):
         # search and sort
         if search is not None:
             objects = objects(content__data__formula__contains=search)
-        print(sort_by)
         if ' ' in sort_by and sort_by[-1] == ']':
             sort_by = sort_by.split(' ')[0] # remove unit
-        sort_by_key = sort_by if sort_by in general_columns[:2] else f'content.data.{sort_by}.value'
+        sort_by_key = sort_by
+        if sort_by in user_columns:
+            sort_by_key = f'content.data.{sort_by}.value'
+        elif sort_by == general_columns[-1]:
+            sort_by_key = f'content.data.{sort_by}'
         order_sign = '-' if order == 'desc' else '+'
         order_by = f"{order_sign}{sort_by_key}"
         objects = objects.order_by(order_by)

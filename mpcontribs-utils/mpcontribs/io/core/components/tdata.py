@@ -54,7 +54,6 @@ class Table(pd.DataFrame):
         nrows_max = 260
         nrows = self.shape[0]
         df = Table(self.head(n=nrows_max)) if nrows > nrows_max else self
-        numeric_columns = df.select_dtypes(include=[np.number]).columns.tolist()
 
         if isinstance(df.index, MultiIndex):
             df.reset_index(inplace=True)
@@ -66,8 +65,8 @@ class Table(pd.DataFrame):
             cell_type = 'number'
 
             # avoid looping rows to minimize use of `df.iat` (time-consuming in 3d)
-            if not col.startswith('level_') and col not in numeric_columns:
-                is_url_column, prev_unit, old_col = True, None, col
+            if not col.startswith('level_') and col[-1] != ']':
+                is_url_column = True
 
                 for row_index in range(df.shape[0]):
                     cell = str(df.iat[row_index, col_index])
