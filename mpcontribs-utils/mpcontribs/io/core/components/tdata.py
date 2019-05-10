@@ -109,20 +109,20 @@ class Table(pd.DataFrame):
 
                 cell_type = 'uri' if is_url_column else 'string'
 
-            col_split = col.split('##')
+            col_split = col.split('.')
             nesting = [col_split[0]] if len(col_split) > 1 else []
             table['columns'].append({
                 'name': col, 'cell': cell_type, 'nesting': nesting, 'editable': 0
             })
             if len(col_split) > 1:
-                table['columns'][-1].update({'label': '##'.join(col_split[1:])})
+                table['columns'][-1].update({'label': '.'.join(col_split[1:])})
             if len(table['columns']) > 12:
                 table['columns'][-1]['renderable'] = 0
 
         header = RecursiveDict()
         for idx, col in enumerate(table['columns']):
             if 'label' in col:
-                k, sk = col['name'].split('##')
+                k, sk = col['name'].split('.')
                 sk_split = sk.split()
                 if len(sk_split) == 2:
                     d = {'name': sk_split[0], 'unit': sk_split[1], 'idx': idx}

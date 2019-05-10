@@ -9,7 +9,7 @@ def index(request):
     ctx = RequestContext(request)
     try:
         keys, subkeys = ['NUS', 'JARVIS'], ['id', 'Eₓ', 'CIF']
-        columns = ['##'.join([k, sk]) for k in keys for sk in subkeys]
+        columns = ['.'.join([k, sk]) for k in keys for sk in subkeys]
         # columns_jarvis = ['id', 'E', 'ΔE|optB88vdW', 'ΔE|mbj', 'CIF']
         ctx.update(get_context(project, columns))
     except Exception as ex:

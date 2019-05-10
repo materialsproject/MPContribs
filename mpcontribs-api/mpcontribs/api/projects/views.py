@@ -201,9 +201,10 @@ class TableView(SwaggerView):
         objects = Contributions.objects(project=project).only(*mask)
 
         # add units to column names
+        units = [objects.distinct(f'content.data.{col}.unit') for col in user_columns]
         columns = general_columns + [
-            '{} [{}]'.format(col, objects.distinct(f'content.data.{col}.unit')[0])
-            for col in user_columns
+            '{} [{}]'.format(col, units[idx][0])
+            for idx, col in enumerate(user_columns) if units[idx]
         ]
 
         # search and sort

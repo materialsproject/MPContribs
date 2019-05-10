@@ -9,7 +9,7 @@ var layout = {
     barmode: 'group'
 };
 
-var columns = ['NUS##Eₓ', 'JARVIS##Eₓ'];
+var columns = ['NUS.Eₓ', 'JARVIS.Eₓ'];
 
 $.get({
     url: api_url, data: {'columns': columns.join(',')},
@@ -18,7 +18,7 @@ $.get({
     var data = arguments[0];
     $.each(data, function(idx, trace) {
         trace['type'] = 'bar';
-        trace['name'] = columns[idx].split('##')[0];
+        trace['name'] = columns[idx].split('.')[0];
     })
     Plotly.plot(graph, data, layout);
 });
