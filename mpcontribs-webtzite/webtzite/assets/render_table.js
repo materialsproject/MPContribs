@@ -3,6 +3,9 @@ import Backgrid from 'backgrid';
 import 'backgrid-paginator';
 import 'backgrid-filter';
 import 'backgrid-grouped-columns';
+import {Spinner} from 'spin.js';
+
+var spinner_table = new Spinner({scale: 0.5});
 
 window.render_table = function(props) {
     var config = props.config;
@@ -24,6 +27,8 @@ window.render_table = function(props) {
 
     rows_opt["sync"] = function(method, model, options){
         options.beforeSend = function(xhr) {
+            var target = document.getElementById('spinner_table');
+            spinner_table.spin(target);
             $.each(window.api['headers'], function(k, v) {
                 xhr.setRequestHeader(k, v);
             });
@@ -63,6 +68,8 @@ window.render_table = function(props) {
     }
 
     var rows = new Rows();
+    rows.on('sync', function(e) { spinner_table.stop(); })
+
     var header = Backgrid.Extension.GroupedHeader;
     var grid = new Backgrid.Grid({header: header, columns: props.table['columns'], collection: rows});
     var filter_props = {collection: rows, placeholder: "Search formula (hit <enter>)", name: "q"};
