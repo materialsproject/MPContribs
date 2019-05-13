@@ -72,7 +72,7 @@ window.render_table = function(props) {
 
     var header = Backgrid.Extension.GroupedHeader;
     var grid = new Backgrid.Grid({header: header, columns: props.table['columns'], collection: rows});
-    var filter_props = {collection: rows, placeholder: "Search formula (hit <enter>)", name: "q"};
+    var filter_props = {collection: rows, placeholder: "Search (hit <enter>)", name: "q"};
     var filter = new Backgrid.Extension.ServerSideFilter(filter_props);
     $('#'+config.uuids[1]).append(grid.render().el);
     $("#"+config.uuids[0]).append(filter.render().$el);

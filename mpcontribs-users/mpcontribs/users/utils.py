@@ -45,7 +45,7 @@ from test_site.settings import swagger_client as client
 from mpcontribs.io.core.recdict import RecursiveDict
 from mpcontribs.io.core.components.tdata import Table
 
-def get_context(project, columns):
+def get_context(project, columns=None):
     ctx = {'project': project}
     prov = client.projects.get_entry(project=project).response().result
     for k in ['id', 'project', 'other']:

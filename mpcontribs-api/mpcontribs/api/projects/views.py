@@ -136,7 +136,6 @@ class TableView(SwaggerView):
               type: array
               items:
                   type: string
-              required: true
               description: comma-separated list of column names to tabulate
             - name: page
               in: query
@@ -153,7 +152,7 @@ class TableView(SwaggerView):
             - name: q
               in: query
               type: string
-              description: substring to search for in formula
+              description: substring to search for in first non-id column
             - name: order
               in: query
               type: string
@@ -196,9 +195,20 @@ class TableView(SwaggerView):
         per_page = PER_PAGE_MAX if per_page > PER_PAGE_MAX else per_page
         order = request.args.get('order')
         sort_by = request.args.get('sort_by', 'identifier')
-        general_columns = ['identifier', 'id', 'formula']
+        general_columns = ['identifier', 'id']
         user_columns = request.args.get('columns', '').split(',')
         objects = Contributions.objects(project=project).only(*mask)
+
+        # default user_columns
+        data_keys = list(objects.first()['content']['data'].keys())
+        formula_key_exists = bool('formula' in data_keys)
+        general_columns.append('formula' if formula_key_exists else data_keys[0])
+        if not user_columns[0]:
+            if formula_key_exists:
+                data_keys.remove('formula')
+                user_columns = data_keys
+            else:
+                user_columns = data_keys[1:]
 
         # add units to column names
         units = [objects.distinct(f'content.data.{col}.unit') for col in user_columns]
@@ -210,7 +220,8 @@ class TableView(SwaggerView):
 
         # search and sort
         if search is not None:
-            objects = objects(content__data__formula__contains=search)
+            kwargs = {f'content__data__{general_columns[-1]}__contains': search}
+            objects = objects(**kwargs)
         sort_by_key = sort_by
         if ' ' in sort_by and sort_by[-1] == ']':
             sort_by = sort_by.split(' ')[0] # remove unit
@@ -226,8 +237,8 @@ class TableView(SwaggerView):
         for doc in objects.paginate(page=page, per_page=per_page).items:
             mp_id = doc['identifier']
             contrib = nested_to_record(doc['content']['data'], sep='.')
-            formula = contrib['formula'].replace(' ', '')
-            row = [f"{mp_site}/{mp_id}", f"{explorer}/{doc['id']}", formula]
+            search_value = contrib[general_columns[-1]].replace(' ', '')
+            row = [f"{mp_site}/{mp_id}", f"{explorer}/{doc['id']}", search_value]
 
             for idx, col in enumerate(user_columns):
                 cell = ''
