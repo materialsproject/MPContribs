@@ -7,3 +7,7 @@ class Mno2PhaseSelectionExplorerConfig(AppConfig):
 class JarvisDftExplorerConfig(AppConfig):
     name = 'mpcontribs.users.jarvis_dft.explorer'
     label = 'jarvis_dft'
+
+class DefectGenomePcfcMaterialsConfig(AppConfig):
+    name = 'mpcontribs.users.defect_genome_pcfc_materials.explorer'
+    label = 'defect_genome_pcfc_materials'
