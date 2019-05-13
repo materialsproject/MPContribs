@@ -204,7 +204,8 @@ class TableView(SwaggerView):
         units = [objects.distinct(f'content.data.{col}.unit') for col in user_columns]
         columns = general_columns + [
             '{} [{}]'.format(col, units[idx][0])
-            for idx, col in enumerate(user_columns) if units[idx]
+            if units[idx] else col
+            for idx, col in enumerate(user_columns)
         ]
 
         # search and sort
@@ -232,13 +233,17 @@ class TableView(SwaggerView):
             for idx, col in enumerate(user_columns):
                 cell = ''
                 if 'CIF' in col:
-                    sname = '.'.join(col.split('.')[:-1]) # remove CIF string from field name
-                    for d in doc['content']['structures']:
-                        if d['name'] == sname:
-                            cell = f"{explorer}/{d['id']}.cif"
-                            break
+                    structures = doc['content']['structures']
+                    if '.' in col: # grouped columns
+                        sname = '.'.join(col.split('.')[:-1]) # remove CIF string from field name
+                        for d in structures:
+                            if d['name'] == sname:
+                                cell = f"{explorer}/{d['id']}.cif"
+                                break
+                    elif structures:
+                        cell = f"{explorer}/{structures[0]['id']}.cif"
                 else:
-                    cell = contrib.get(col+'.value', '')
+                    cell = contrib.get(col+'.value', contrib.get(col, ''))
                 row.append(str(cell))
 
             items.append(dict(zip(columns, row)))
