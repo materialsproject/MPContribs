@@ -1,7 +1,8 @@
+import os
 from django.conf.urls import url
 from . import views
-from mpcontribs.users_modules import get_user_explorer_name
 
+app_name = os.path.dirname(__file__).split(os.sep)[-2]
 urlpatterns = [
-    url(r'^$', views.index, name=get_user_explorer_name(__file__))
+    url(r'^$', views.index, name='index')
 ]

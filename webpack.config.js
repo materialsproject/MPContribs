@@ -21,6 +21,7 @@ module.exports = {
     'jarvis_dft': './mpcontribs-users/mpcontribs/users/jarvis_dft/explorer/assets/index',
     'defect_genome_pcfc_materials': './mpcontribs-users/mpcontribs/users/defect_genome_pcfc_materials/explorer/assets/index',
     'slac_mose2': './mpcontribs-users/mpcontribs/users/slac_mose2/explorer/assets/index',
+    'swf': './mpcontribs-users/mpcontribs/users/swf/explorer/assets/index',
   },
   output: {
     path: path.resolve(__dirname, 'dist'),

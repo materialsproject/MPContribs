@@ -8,4 +8,6 @@ urlpatterns = [
     url(r'jarvis_dft/', include('mpcontribs.users.jarvis_dft.explorer.urls')),
     url(r'defect_genome_pcfc_materials/', include('mpcontribs.users.defect_genome_pcfc_materials.explorer.urls')),
     url(r'slac_mose2/', include('mpcontribs.users.slac_mose2.explorer.urls')),
+    url(r'swf/', include('mpcontribs.users.swf.explorer.urls')),
+    url(r'fe-co-v/', include('mpcontribs.users.swf.explorer.urls')),
 ]

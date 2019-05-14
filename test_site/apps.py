@@ -15,3 +15,7 @@ class DefectGenomePcfcMaterialsConfig(AppConfig):
 class SlacMose2Config(AppConfig):
     name = 'mpcontribs.users.slac_mose2.explorer'
     label = 'slac_mose2'
+
+class SwfConfig(AppConfig):
+    name = 'mpcontribs.users.swf.explorer'
+    label = 'swf'

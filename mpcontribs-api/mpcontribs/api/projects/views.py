@@ -1,5 +1,6 @@
 from mongoengine.queryset import DoesNotExist
 from mongoengine.context_managers import no_dereference
+from mongoengine.queryset.visitor import Q
 from flask import Blueprint, request, current_app
 from bson.decimal128 import Decimal128
 from pandas.io.json.normalize import nested_to_record
@@ -207,10 +208,21 @@ class TableView(SwaggerView):
                 'last_page': 1, 'per_page': per_page, 'items': []
             }
         formula_key_exists = bool('formula' in data_keys)
-        general_columns.append('formula' if formula_key_exists else data_keys[0])
+        if formula_key_exists:
+            general_columns.append('formula')
+        else:
+            # test whether search key exists in all docs and is not a number/object
+            q1 = {f'content__data__{data_keys[0]}__exists': False}
+            q2 = {f'content__data__{data_keys[0]}__type': 'object'}
+            if objects(Q(**q1) | Q(**q2)).count() < 1:
+                general_columns.append(data_keys[0])
+
+        use_default_search = bool(len(general_columns) < 3)
         if not user_columns[0]:
             if formula_key_exists:
                 data_keys.remove('formula')
+                user_columns = data_keys
+            elif use_default_search:
                 user_columns = data_keys
             else:
                 user_columns = data_keys[1:]
@@ -225,7 +237,8 @@ class TableView(SwaggerView):
 
         # search and sort
         if search is not None:
-            kwargs = {f'content__data__{general_columns[-1]}__contains': search}
+            search_field = general_columns[0] if use_default_search else f'content__data__{general_columns[-1]}'
+            kwargs = {f'{search_field}__contains': search}
             objects = objects(**kwargs)
         sort_by_key = sort_by
         if ' ' in sort_by and sort_by[-1] == ']':
@@ -242,8 +255,10 @@ class TableView(SwaggerView):
         for doc in objects.paginate(page=page, per_page=per_page).items:
             mp_id = doc['identifier']
             contrib = nested_to_record(doc['content']['data'], sep='.')
-            search_value = contrib[general_columns[-1]].replace(' ', '')
-            row = [f"{mp_site}/{mp_id}", f"{explorer}/{doc['id']}", search_value]
+            row = [f"{mp_site}/{mp_id}", f"{explorer}/{doc['id']}"]
+            if not use_default_search:
+                search_value = contrib[general_columns[-1]]
+                row.append(search_value.replace(' ', ''))
 
             for idx, col in enumerate(user_columns):
                 cell = ''
