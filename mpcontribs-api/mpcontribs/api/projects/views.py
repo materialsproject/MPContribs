@@ -201,6 +201,11 @@ class TableView(SwaggerView):
 
         # default user_columns
         data_keys = list(objects.first()['content']['data'].keys())
+        if not data_keys:
+            return {
+                'total_count': 0, 'total_pages': 0, 'page': 1,
+                'last_page': 1, 'per_page': per_page, 'items': []
+            }
         formula_key_exists = bool('formula' in data_keys)
         general_columns.append('formula' if formula_key_exists else data_keys[0])
         if not user_columns[0]:

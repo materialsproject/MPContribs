@@ -20,6 +20,7 @@ module.exports = {
     'MnO2_phase_selection': './mpcontribs-users/mpcontribs/users/MnO2_phase_selection/explorer/assets/index',
     'jarvis_dft': './mpcontribs-users/mpcontribs/users/jarvis_dft/explorer/assets/index',
     'defect_genome_pcfc_materials': './mpcontribs-users/mpcontribs/users/defect_genome_pcfc_materials/explorer/assets/index',
+    'slac_mose2': './mpcontribs-users/mpcontribs/users/slac_mose2/explorer/assets/index',
   },
   output: {
     path: path.resolve(__dirname, 'dist'),

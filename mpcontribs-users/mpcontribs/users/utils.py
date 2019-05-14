@@ -55,7 +55,8 @@ def get_context(project, columns=None):
     data = client.projects.get_table(
         project=project, columns=columns, per_page=3
     ).response().result
-    columns = list(data['items'][0].keys())
-    table = Table(data['items'], columns=columns)
-    ctx['table'] = table.render(project=project)
+    if data['items']:
+        columns = list(data['items'][0].keys())
+        table = Table(data['items'], columns=columns)
+        ctx['table'] = table.render(project=project)
     return ctx
