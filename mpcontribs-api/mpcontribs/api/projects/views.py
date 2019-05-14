@@ -216,16 +216,13 @@ class TableView(SwaggerView):
             q2 = {f'content__data__{data_keys[0]}__type': 'object'}
             if objects(Q(**q1) | Q(**q2)).count() < 1:
                 general_columns.append(data_keys[0])
+            else:
+                general_columns.append('formula')
 
-        use_default_search = bool(len(general_columns) < 3)
         if not user_columns[0]:
             if formula_key_exists:
                 data_keys.remove('formula')
-                user_columns = data_keys
-            elif use_default_search:
-                user_columns = data_keys
-            else:
-                user_columns = data_keys[1:]
+            user_columns = data_keys if 'formula' in general_columns else data_keys[1:]
 
         # add units to column names
         units = [objects.distinct(f'content.data.{col}.unit') for col in user_columns]
@@ -237,9 +234,11 @@ class TableView(SwaggerView):
 
         # search and sort
         if search is not None:
-            search_field = general_columns[0] if use_default_search else f'content__data__{general_columns[-1]}'
-            kwargs = {f'{search_field}__contains': search}
-            objects = objects(**kwargs)
+            kwargs = {
+                f'content__data__{general_columns[-1]}__exists': True,
+                f'content__data__{general_columns[-1]}__contains': search
+            }
+            objects = objects(Q(identifier__contains=search) | Q(**kwargs))
         sort_by_key = sort_by
         if ' ' in sort_by and sort_by[-1] == ']':
             sort_by = sort_by.split(' ')[0] # remove unit
@@ -255,10 +254,8 @@ class TableView(SwaggerView):
         for doc in objects.paginate(page=page, per_page=per_page).items:
             mp_id = doc['identifier']
             contrib = nested_to_record(doc['content']['data'], sep='.')
-            row = [f"{mp_site}/{mp_id}", f"{explorer}/{doc['id']}"]
-            if not use_default_search:
-                search_value = contrib[general_columns[-1]]
-                row.append(search_value.replace(' ', ''))
+            search_value = contrib.get(general_columns[-1], mp_id).replace(' ', '')
+            row = [f"{mp_site}/{mp_id}", f"{explorer}/{doc['id']}", search_value]
 
             for idx, col in enumerate(user_columns):
                 cell = ''
