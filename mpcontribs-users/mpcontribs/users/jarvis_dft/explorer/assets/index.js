@@ -23,17 +23,3 @@ $.get({
     });
     Plotly.plot(graph, data, layout);
 });
-
-//var key = 'ΔE|optB88vdW [meV/atom]';
-//var layout_jarvis = {
-//    margin: {t: 0, r: 0, l: 40},
-//    yaxis: {title: key}, showlegend: false
-//};
-//var data_jarvis = [{x: [], y: [], type: 'bar'}];
-//for (i = 0; i < table_jarvis['rows'].length; i++) {
-//    var row = table_jarvis['rows'][i];
-//    if (row[key]) {
-//        data_jarvis[0]['x'].push(row['formula']);
-//        data_jarvis[0]['y'].push(row[key]);
-//    }
-//}

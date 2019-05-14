@@ -312,11 +312,12 @@ class GraphView(SwaggerView):
             data = [{'x': [], 'y': []} for col in columns]
             for obj in objects:
                 d = nested_to_record(obj['content']['data'], sep='.')
-                for idx, col in enumerate(columns):
-                    val = d.get(col, d.get(col+'.display'))
-                    if val:
-                        data[idx]['x'].append(obj.identifier)
-                        data[idx]['y'].append(val.split(' ')[0])
+                if all(f'{c}.display' in d.keys() for c in columns):
+                    for idx, col in enumerate(columns):
+                        val = d.get(f'{col}.display')
+                        if val:
+                            data[idx]['x'].append(obj.identifier)
+                            data[idx]['y'].append(val.split(' ')[0])
             return data
 
 # url_prefix added in register_blueprint

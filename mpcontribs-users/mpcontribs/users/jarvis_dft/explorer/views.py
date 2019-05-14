@@ -10,8 +10,9 @@ def index(request):
     try:
         keys, subkeys = ['NUS', 'JARVIS'], ['id', 'Eₓ', 'CIF']
         columns = ['.'.join([k, sk]) for k in keys for sk in subkeys]
-        # columns_jarvis = ['id', 'E', 'ΔE|optB88vdW', 'ΔE|mbj', 'CIF']
-        ctx.update(get_context(project, columns))
+        extra_keys = ['E', 'ΔE|optB88vdW', 'ΔE|mbj']
+        columns += [f'JARVIS.{k}' for k in extra_keys]
+        ctx.update(get_context(project, columns=sorted(columns)))
     except Exception as ex:
         ctx['alert'] = str(ex)
     return render(request, "explorer_index.html", ctx.flatten())
