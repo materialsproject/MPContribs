@@ -11,7 +11,7 @@ window.render_plot = function(props) {
     if (typeof props.tid !== 'undefined') {
         var target = document.getElementById('spinner_graph');
         spinner_plot.spin(target);
-        var ajax = $.get({
+        $.get({
             url: window.api['host'] + 'tables/' + props.tid + '?mask=data&per_page=200',
             headers: window.api['headers']
         }).done(function(response) {
