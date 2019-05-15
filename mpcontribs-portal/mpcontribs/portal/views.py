@@ -23,7 +23,7 @@ def index(request):
         style = 'font-size: 13px;'
         if '/' in authors[0]:
             style += 'margin-top: -7px;'
-        prov_display = f'<span class="pull-right" style="{style}">{authors[0]}'
+        prov_display = f'<span class="pull-right" style="{style}">{authors[0].replace("/", "/<br>")}'
         if len(authors) > 1:
             prov_display += '''<button class="btn btn-sm btn-link" data-html="true"
             data-toggle="tooltip" data-placement="bottom" data-container="body"
