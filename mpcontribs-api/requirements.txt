@@ -4,6 +4,7 @@ flasgger @ git+https://github.com/rochacbruno/flasgger@37ee86401e7c6c30dd45ef258
 Flask==1.0.2
 Flask-JSON==0.3.3
 flask-log==0.1.0
+flask-cors==3.0.7
 flask-marshmallow==0.9.0
 flask-mongoengine==0.9.5
 marshmallow==2.16.3
@@ -20,3 +21,4 @@ nbformat==4.4.0
 jupyter_client==5.2.4
 ipykernel==5.1.0
 more-itertools==7.0.0
+uwsgi>=2.0,<2.1
