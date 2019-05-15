@@ -18,7 +18,6 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.staticfiles',
     'django_extensions',
-    'zappa_django_utils',
     'webpack_loader',
     'webtzite',
     'mpcontribs.portal',
