@@ -1,5 +1,63 @@
-//var table = window.tables[window.tables.length-1];
-//var graph1 = document.getElementById('graph1');
+import Plotly from 'plotly';
+
+var api_url = window.api['host'] + 'projects/swf/graph';
+var graph = document.getElementById('graph');
+var layout = {
+    hovermode: 'closest',
+    title: 'In-plane MOKE Coercive Field Map',
+    xaxis: { title: 'Percent V (at%)' },
+    yaxis: { title: 'Film Thickness (nm)' }
+};
+
+$.get({
+    url: api_url, data: {'columns': 'V,thickness,Hc|MOKE'}, headers: window.api['headers']
+}).done(function(response) {
+    console.log(response);
+    //arguments[0][0]['type'] = 'bar';
+    //Plotly.plot(graph, arguments[0], layout);
+});
+//var xvals = []; var yvals = []; MOKE_color = []; var cids = [];
+//for (i = 0; i < table['rows'].length; i++) {
+//    row = table['rows'][i];
+//    if (row['MOKE_IP_Hc'] != "") {
+//        xvals.push(row['V [%]'])
+//        yvals.push(row['thickness'])
+//        MOKE_color.push(row['MOKE_IP_Hc'])
+//        cids.push(row['contribution'])
+//    }
+//};
+//var MOKE_trace = {
+//    x: xvals,
+//    y: yvals,
+//    text: MOKE_color,
+//    mode: 'markers',
+//    type: 'scatter',
+//    marker: {
+//        size: 16,
+//        color: MOKE_color,
+//        colorscale: 'Jet',
+//        showscale: true,
+//        colorbar: {
+//            title: 'IP-MOKE (G)'
+//        }
+//    }
+//};
+//
+//Plotly.plot('graph2', [MOKE_trace], layout)
+//
+//graph2.on('plotly_click', function(data){
+//    var pn = data.points[0].pointNumber
+//    var url = cids[pn]
+//    window.open(url, '_blank')
+//});
+
+
+
+
+
+
+
+
 //function makeAxis(title, tickangle) {
 //    return {
 //        title: title,
@@ -12,6 +70,7 @@
 //        showgrid: true
 //    }
 //};
+//
 //var layout = {
 //    'ternary': {
 //        'sum': 100,
@@ -43,14 +102,10 @@
 //        }]
 //    }]
 //};
-//var elements = ['Fe [%]', 'Co [%]', 'V [%]'];
 //
-//var data_layers = [
-//    'IP_Energy_product',
-//    'MOKE_IP_Hc',
-//    'VSM_IP_Hc'
-//];
-//
+//var elements = ['Fe', 'Co', 'V'];
+//var data_layers = ['BH|max', 'Hc|MOKE', 'Hc|VSM'];
+
 //var avals = new Array(), bvals = new Array(), cvals = new Array(), cids = new Array(),
 //    markercolor = new Array(), a_all = new Array(), b_all = new Array(), c_all = new Array(),
 //    color_all = new Array(), cids_all = new Array();
@@ -171,53 +226,7 @@
 //    }
 //    window.open(url, '_blank')
 //});
-//
-//var table = window.tables[window.tables.length-1];
-//var graph2 = document.getElementById('graph2');
-//var layout = {
-//    hovermode: 'closest',
-//    title: 'In-plane MOKE Coercive Field Map',
-//    xaxis: {
-//        title: 'Percent V (at%)'
-//    },
-//    yaxis: {
-//        title: 'Film Thickness (nm)'
-//    }
-//};
-//var xvals = []; var yvals = []; MOKE_color = []; var cids = [];
-//for (i = 0; i < table['rows'].length; i++) {
-//    row = table['rows'][i];
-//    if (row['MOKE_IP_Hc'] != "") {
-//        xvals.push(row['V [%]'])
-//        yvals.push(row['thickness'])
-//        MOKE_color.push(row['MOKE_IP_Hc'])
-//        cids.push(row['contribution'])
-//    }
-//};
-//var MOKE_trace = {
-//    x: xvals,
-//    y: yvals,
-//    text: MOKE_color,
-//    mode: 'markers',
-//    type: 'scatter',
-//    marker: {
-//        size: 16,
-//        color: MOKE_color,
-//        colorscale: 'Jet',
-//        showscale: true,
-//        colorbar: {
-//            title: 'IP-MOKE (G)'
-//        }
-//    }
-//};
-//
-//Plotly.plot('graph2', [MOKE_trace], layout)
-//
-//graph2.on('plotly_click', function(data){
-//    var pn = data.points[0].pointNumber
-//    var url = cids[pn]
-//    window.open(url, '_blank')
-//});
+
 //
 //var table = window.tables[window.tables.length-1];
 //var graph3 = document.getElementById('graph3');
