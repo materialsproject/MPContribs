@@ -7,11 +7,12 @@ from django.http import HttpResponse
 import nbformat
 from nbconvert import HTMLExporter
 from bs4 import BeautifulSoup
-from test_site.settings import swagger_client as client
+from mpcontribs.client import load_client
 
 def index(request):
     ctx = RequestContext(request)
     try:
+        client = load_client()
         resp = client.projects.get_entries(mask=['project']).response()
         ctx['projects'] = [r['project'] for r in resp.result]
     except Exception as ex:
@@ -52,17 +53,20 @@ def export_notebook(nb, cid):
 
 def contribution(request, cid):
     ctx = RequestContext(request)
+    client = load_client()
     nb = client.notebooks.get_entry(cid=cid).response().result
     ctx['nb'], ctx['js'] = export_notebook(nb, cid)
     return render(request, "mpcontribs_explorer_contribution.html", ctx.flatten())
 
 def cif(request, sid):
+    client = load_client()
     cif = client.structures.get_cif(sid=sid).response().result
     if cif:
         return HttpResponse(cif, content_type='text/plain')
     return HttpResponse(status=404)
 
 def download_json(request, cid):
+    client = load_client()
     contrib = client.contributions.get_entry(cid=cid).response().result
     if contrib:
         jcontrib = json.dumps(contrib)

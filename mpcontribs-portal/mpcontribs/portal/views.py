@@ -4,12 +4,13 @@ import os
 from django.shortcuts import render
 from django.template import RequestContext
 from django.urls import reverse
-from test_site.settings import swagger_client as client
+from mpcontribs.client import load_client
 
 def index(request):
     ctx = RequestContext(request)
     ctx['landing_pages'] = []
     mask = ['project', 'title', 'authors']
+    client = load_client()
     provenances = client.projects.get_entries(mask=mask).response().result
     for provenance in provenances:
         try:

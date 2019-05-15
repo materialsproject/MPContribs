@@ -1,19 +1,32 @@
+import os
 from bravado.client import SwaggerClient
 from bravado.requests_client import RequestsClient
 from bravado.swagger_model import Loader
 
+NODE_ENV = os.environ.get('NODE_ENV', 'production')
+DEBUG = bool(NODE_ENV == 'development')
+client = None
+
 def load_client(apikey=None):
-    host = 'api.mpcontribs.org' if apikey else 'localhost:5000'
-    protocol = 'https' if apikey else 'http'
-    spec_url = f'{protocol}://{host}/apispec.json'
-    http_client = RequestsClient()
-    if apikey:
-        http_client.set_api_key(
-            host, apikey, param_in='header', param_name='x-api-key'
+    global client
+    if client is None:
+        # docker containers networking within docker-compose or Fargate task
+        host = 'api.mpcontribs.org'
+        if apikey is None:
+            host = 'api:5000' if DEBUG else 'localhost:5000'
+        protocol = 'https' if apikey else 'http'
+        spec_url = f'{protocol}://{host}/apispec.json'
+        http_client = RequestsClient()
+        if apikey:
+            http_client.set_api_key(
+                host, apikey, param_in='header', param_name='x-api-key'
+            )
+        loader = Loader(http_client)
+        spec_dict = loader.load_spec(spec_url)
+        spec_dict['host'] = host
+        spec_dict['schemes'] = [protocol]
+        client = SwaggerClient.from_spec(
+            spec_dict, spec_url, http_client,
+            {'validate_responses': False, 'use_models': False}
         )
-    loader = Loader(http_client)
-    spec_dict = loader.load_spec(spec_url)
-    spec_dict['host'] = host
-    spec_dict['schemes'] = [protocol]
-    return SwaggerClient.from_spec(spec_dict, spec_url, http_client,
-                                   {'validate_responses': False, 'use_models': False})
+    return client
