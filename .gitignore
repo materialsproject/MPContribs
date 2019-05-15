@@ -24,3 +24,4 @@ mpcontribs-api/docs/_build/*
 mpcontribs-webtzite/webtzite/migrations/*
 src/*
 site/
+cloudformation/kong/
