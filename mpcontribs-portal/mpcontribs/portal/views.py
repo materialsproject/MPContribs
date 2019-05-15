@@ -20,7 +20,10 @@ def index(request):
         entry = {'project': provenance['project'], 'url': url}
         entry['title'] = provenance['title']
         authors = provenance['authors'].split(',', 1)
-        prov_display = f'<span class="pull-right" style="font-size: 13px;">{authors[0]}'
+        style = 'font-size: 13px;'
+        if '/' in authors[0]:
+            style += 'margin-top: -7px;'
+        prov_display = f'<span class="pull-right" style="{style}">{authors[0]}'
         if len(authors) > 1:
             prov_display += '''<button class="btn btn-sm btn-link" data-html="true"
             data-toggle="tooltip" data-placement="bottom" data-container="body"
