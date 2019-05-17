@@ -14,8 +14,6 @@ services:
       - ./mpcontribs-users:/app/mpcontribs-users
       - ./mpcontribs-webtzite:/app/mpcontribs-webtzite
       - ./mpcontribs-utils:/app/mpcontribs-utils
-    environment:
-      - NODE_ENV=development
     ports:
       - "8080:8080"
   api:
@@ -25,6 +23,7 @@ services:
     environment:
       - FLASK_ENV=development
       - MPCONTRIBS_MONGO_HOST=$MPCONTRIBS_MONGO_HOST
+      - GATEWAY_HOST=kernel_gateway:8888
     ports:
       - "5000:5000"
   chrome:
@@ -35,6 +34,17 @@ services:
         - START_XVFB=false
     ports:
       - "4444:4444"
+  kernel_gateway:
+    build:
+      context: .
+      dockerfile: DockerfileKernelGateway
+    image: jupyter/kernel-gateway
+    volumes:
+      - ./mpcontribs-utils:/src/mpcontribs-utils
+    ports:
+      - "8888:8888"
+    environment:
+      - KG_ALLOW_ORIGIN='*'
   docs:
     image: squidfunk/mkdocs-material
     volumes:

@@ -3,3 +3,5 @@ archieml==0.3.4
 pandas==0.23.4
 ipython==7.4.0
 pymatgen==2019.3.27
+jupyter_enterprise_gateway @ git+https://github.com/jupyter/enterprise_gateway@v2.0.0rc1#egg=enterprise_gateway-2.0.0rc1
+plotly @ git+https://github.com/plotly/plotly.py#egg=plotly

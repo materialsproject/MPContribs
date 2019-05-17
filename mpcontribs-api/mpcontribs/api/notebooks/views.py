@@ -1,16 +1,69 @@
-import os
+import os, requests
 from flask import Blueprint
+from copy import deepcopy
 from mongoengine import DoesNotExist
 from nbformat import v4 as nbf
-from nbconvert.preprocessors import ExecutePreprocessor
+from nbformat import read
+from enterprise_gateway.client.gateway_client import GatewayClient, KernelClient
+from tornado.escape import json_encode
 from mpcontribs.api.core import SwaggerView
 from mpcontribs.api.notebooks.document import Notebooks
 from mpcontribs.api.contributions.document import Contributions
 
 notebooks = Blueprint("notebooks", __name__)
-exprep = ExecutePreprocessor(timeout=600, allow_errors=False)
-exprep.log.setLevel('DEBUG')
-exprep.enabled = True
+
+class CustomGatewayClient(GatewayClient):
+
+    def start_kernel(self):
+        json_data = {'name': 'python3', 'env': {
+            'KERNEL_GATEWAY_HOST': self.DEFAULT_GATEWAY_HOST
+        }}
+        response = requests.post(self.http_api_endpoint, data=json_encode(json_data))
+
+        if response.status_code == 201:
+            json_data = response.json()
+            kernel_id = json_data.get("id")
+            self.log.info('Started kernel with id {}'.format(kernel_id))
+        else:
+            raise RuntimeError('Error starting kernel : {} response code \n {}'.
+                               format(response.status_code, response.content))
+
+        return CustomKernelClient(self.http_api_endpoint, self.ws_api_endpoint, kernel_id, logger=self.log)
+
+class CustomKernelClient(KernelClient):
+
+    def execute(self, code):
+        response = []
+        try:
+            msg_id = self._send_request(code)
+            post_idle = False
+            while True:
+                msg = self._get_response(msg_id, 60, post_idle)
+                if msg:
+                    msg_type, content = msg['msg_type'], msg['content']
+                    if msg_type == 'error' or (msg_type == 'execute_reply' and content['status'] == 'error'):
+                        self.log.error(f"{content['ename']}:{content['evalue']}:{content['traceback']}")
+                    elif msg_type == 'execute_result' or msg_type == 'display_data':
+                        content['output_type'] = msg_type
+                        response.append(content)
+                    elif msg_type == 'status':
+                        if content['execution_state'] == 'idle':
+                            post_idle = True
+                            continue
+                    else:
+                        self.log.debug(f"Unhandled response for msg_id: {msg_id} of msg_type: {msg_type}")
+                elif msg is None: # We timed out. If post idle, its ok, else make mention of it
+                    if not post_idle:
+                        self.log.warning(f"Unexpected timeout occurred for msg_id: {msg_id} - no 'idle' status received!")
+                    break
+        except BaseException as b:
+            self.log.debug(b)
+
+        return response
+
+client = CustomGatewayClient()
+with open('kernel_imports.ipynb') as fh:
+    seed_nb = read(fh, 4)
 
 class NotebookView(SwaggerView):
 
@@ -38,13 +91,11 @@ class NotebookView(SwaggerView):
             contrib = Contributions.objects.no_dereference().get(id=cid)
             cells = [
                 nbf.new_code_cell(
-                    "from mpcontribs.client import load_client\n"
                     "client = load_client() # provide apikey as argument to use api.mpcontribs.org\n"
                     f"contrib = client.contributions.get_entry(cid='{cid}').response().result"
                 ),
                 nbf.new_markdown_cell("## Provenance Info"),
                 nbf.new_code_cell(
-                    "from mpcontribs.io.core.recdict import RecursiveDict\n"
                     "mask = ['title', 'authors', 'description', 'urls', 'other', 'project']\n"
                     "prov = client.projects.get_entry(project=contrib['project'], mask=mask).response().result\n"
                     "RecursiveDict(prov)"
@@ -53,7 +104,6 @@ class NotebookView(SwaggerView):
                     f"## Hierarchical Data for {contrib['identifier']}"
                 ),
                 nbf.new_code_cell(
-                    "from mpcontribs.io.core.components.hdata import HierarchicalData\n"
                     "HierarchicalData(contrib['content'])"
                 )
             ]
@@ -62,12 +112,6 @@ class NotebookView(SwaggerView):
             if tables:
                 cells.append(nbf.new_markdown_cell(
                     f"## Tabular Data for {contrib['identifier']}"
-                ))
-                cells.append(nbf.new_code_cell(
-                    "# - table IDs `tid` are in `contrib['content']['tables']`\n"
-                    "# - set `per_page` query parameter to retrieve up to 200 rows at once (paginate for more)\n"
-                    "from mpcontribs.io.core.components.tdata import Table # DataFrame with Backgrid IPython Display\n"
-                    "from mpcontribs.io.core.components.gdata import Plot # Plotly interactive graph"
                 ))
                 for ref in tables:
                     cells.append(nbf.new_code_cell(
@@ -83,18 +127,19 @@ class NotebookView(SwaggerView):
                 cells.append(nbf.new_markdown_cell(
                     f"## Pymatgen Structures for {contrib['identifier']}"
                 ))
-                cells.append(nbf.new_code_cell(
-                    "# structure IDs `sid` are in `contrib['content']['structures']`\n"
-                    "from pymatgen import Structure\n"
-                ))
                 for ref in structures:
                     cells.append(nbf.new_code_cell(
                         f"Structure.from_dict(client.structures.get_entry(sid='{ref.id}').response().result)"
                     ))
 
-            nb = nbf.new_notebook()
-            nb['cells'] = cells
-            exprep.preprocess(nb, {})
+            kernel = client.start_kernel()
+            for cell in cells:
+                if cell.cell_type == 'code':
+                    cell.outputs = kernel.execute(cell.source)
+            client.shutdown_kernel(kernel)
+
+            nb = deepcopy(seed_nb)
+            nb.cells += cells
             nb = Notebooks(**nb)
             nb.id = cid # to link to the according contribution
             nb.save() # calls Notebooks.clean()

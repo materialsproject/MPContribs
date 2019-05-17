@@ -3,8 +3,12 @@ from bravado.client import SwaggerClient
 from bravado.requests_client import RequestsClient
 from bravado.swagger_model import Loader
 
-NODE_ENV = os.environ.get('NODE_ENV', 'production')
-DEBUG = bool(NODE_ENV == 'development')
+NODE_ENV = os.environ.get('NODE_ENV')
+GATEWAY_HOST = os.getenv('KERNEL_GATEWAY_HOST')
+DEBUG = bool(
+    (NODE_ENV and NODE_ENV == 'development') or
+    (GATEWAY_HOST and not 'localhost' in GATEWAY_HOST)
+)
 client = None
 
 def load_client(apikey=None):
