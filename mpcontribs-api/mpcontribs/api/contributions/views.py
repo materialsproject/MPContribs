@@ -3,14 +3,16 @@ from flask import Blueprint, request, current_app, render_template, g
 from selenium import webdriver
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 from bs4 import BeautifulSoup
+from pandas.io.json.normalize import nested_to_record
+from css_html_js_minify import html_minify
+from lxml import html
+from toronado import inline
+from typing import Any, Dict
+
 from mpcontribs.api import get_resource_as_string
 from mpcontribs.api.core import SwaggerView
 from mpcontribs.api.projects.document import Projects
 from mpcontribs.api.contributions.document import Contributions
-from mpcontribs.io.core.components.hdata import HierarchicalData
-from css_html_js_minify import html_minify
-from lxml import html
-from toronado import inline
 
 contributions = Blueprint("contributions", __name__)
 
@@ -122,6 +124,53 @@ def get_browser():
         )
     return g.browser
 
+# https://stackoverflow.com/a/55545369
+def unflatten(
+    d: Dict[str, Any],
+    base: Dict[str, Any] = None,
+) -> Dict[str, Any]:
+    """Convert any keys containing dotted paths to nested dicts
+
+    >>> unflatten({'a': 12, 'b': 13, 'c': 14})  # no expansion
+    {'a': 12, 'b': 13, 'c': 14}
+
+    >>> unflatten({'a.b.c': 12})  # dotted path expansion
+    {'a': {'b': {'c': 12}}}
+
+    >>> unflatten({'a.b.c': 12, 'a': {'b.d': 13}})  # merging
+    {'a': {'b': {'c': 12, 'd': 13}}}
+
+    >>> unflatten({'a.b': 12, 'a': {'b': 13}})  # insertion-order overwrites
+    {'a': {'b': 13}}
+
+    >>> unflatten({'a': {}})  # insertion-order overwrites
+    {'a': {}}
+    """
+    if base is None:
+        base = {}
+
+    for key, value in d.items():
+        root = base
+
+        ###
+        # If a dotted path is encountered, create nested dicts for all but
+        # the last level, then change root to that last level, and key to
+        # the final key in the path. This allows one final setitem at the bottom
+        # of the loop.
+        if '.' in key:
+            *parts, key = key.split('.')
+
+            for part in parts:
+                root.setdefault(part, {})
+                root = root[part]
+
+        if isinstance(value, dict):
+            value = unflatten(value, root.get(key, {}))
+
+        root[key] = value
+
+    return base
+
 class CardView(SwaggerView):
 
     def get(self, cid):
@@ -154,17 +203,21 @@ class CardView(SwaggerView):
         ctx['more'] = f'/explorer/{cid}'
         ctx['urls'] = info.urls.values()
         card_script = get_resource_as_string('templates/card.min.js')
-        data = HierarchicalData(contrib.content.data)
+        data = unflatten(dict(
+            (k.rsplit('.', 1)[0] if k.endswith('.display') else k, v)
+            for k, v in nested_to_record(contrib.content.data, sep='.').items()
+            if not k.endswith('.value') and not k.endswith('.unit')
+        ))
         browser = get_browser()
         browser.execute_script(card_script, data)
-        src = browser.page_source.encode("utf-8")
-        browser.close()
-        bs = BeautifulSoup(src, 'html.parser')
+        bs = BeautifulSoup(browser.page_source, 'html.parser')
         ctx['data'] = bs.body.table
+        browser.close()
         rendered = html_minify(render_template('card.html', **ctx))
         tree = html.fromstring(rendered)
         inline(tree)
-        return html.tostring(tree.body[0])
+        card = html.tostring(tree.body[0]).decode('utf-8')
+        return card
 
 
 # url_prefix added in register_blueprint
