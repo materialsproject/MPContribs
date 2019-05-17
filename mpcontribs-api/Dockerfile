@@ -40,4 +40,4 @@ WORKDIR /app
 COPY . .
 RUN /venv/bin/pip install -e .
 
-CMD ["/venv/bin/uwsgi", "--show-config"]
+CMD ["/venv/bin/uwsgi", "--show-config", "--py-autoreload=1"]

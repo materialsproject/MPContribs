@@ -15,4 +15,4 @@ ENV NODE_ENV production
 USER $NB_USER
 RUN cd src/mpcontribs-utils && pip install -e .
 
-CMD ["jupyter", "enterprisegateway", "--ip=0.0.0.0", "--port_retries=0", "--log-level=DEBUG", "--seed_uri='kernel_imports.ipynb'"]
+CMD ["jupyter", "enterprisegateway", "--ip=0.0.0.0", "--port_retries=0", "--seed_uri='kernel_imports.ipynb'"]

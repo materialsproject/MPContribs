@@ -83,4 +83,4 @@ ENV UWSGI_BUFFER_SIZE=65535 UWSGI_WORKERS=2 UWSGI_THREADS=4
 COPY docker-entrypoint.sh .
 RUN chmod +x /app/docker-entrypoint.sh
 ENTRYPOINT ["/app/docker-entrypoint.sh"]
-CMD ["/venv/bin/uwsgi", "--show-config"]
+CMD ["/venv/bin/uwsgi", "--show-config", "--py-autoreload=1"]

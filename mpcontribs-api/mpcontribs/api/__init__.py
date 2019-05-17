@@ -8,6 +8,10 @@ from flask_log import Logging
 from flasgger import Swagger
 from flask_json import FlaskJSON
 
+for mod in ['matplotlib', 'toronado.cssutils', 'selenium.webdriver.remote.remote_connection']:
+    log = logging.getLogger(mod)
+    log.setLevel('INFO')
+
 logger = logging.getLogger('app')
 
 def get_collections(db):
