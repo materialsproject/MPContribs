@@ -574,7 +574,7 @@ Resources:
                     },
                     "ImageUrlChrome": {
                       "Fn::GetParam" : ["BuildOutputChrome", "build-chrome.json", "ImageUri"]
-                    }
+                    },
                     "ImageUrlGateway": {
                       "Fn::GetParam" : ["BuildOutputGateway", "build-gateway.json", "ImageUri"]
                     }
