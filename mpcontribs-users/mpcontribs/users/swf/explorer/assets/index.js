@@ -1,4 +1,9 @@
 import Plotly from 'plotly';
+import {Spinner} from 'spin.js';
+
+var target = document.getElementById('spinner_graph');
+var spinner_plot = new Spinner({scale: 0.5});
+spinner_plot.spin(target);
 
 var api_url = window.api['host'] + 'projects/swf/graph';
 var graph = document.getElementById('graph');
@@ -15,6 +20,7 @@ $.get({
     console.log(response);
     //arguments[0][0]['type'] = 'bar';
     //Plotly.plot(graph, arguments[0], layout);
+    spinner_plot.stop();
 });
 //var xvals = []; var yvals = []; MOKE_color = []; var cids = [];
 //for (i = 0; i < table['rows'].length; i++) {
