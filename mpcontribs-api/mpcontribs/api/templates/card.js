@@ -375,4 +375,5 @@
 }));
 
 var node = JsonHuman.format(arguments[0]);
+linkifyElement(node, { target: '_blank' });
 document.body.appendChild(node);

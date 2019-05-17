@@ -202,7 +202,9 @@ class CardView(SwaggerView):
         ctx['landing_page'] = f'/{contrib.project}'
         ctx['more'] = f'/explorer/{cid}'
         ctx['urls'] = info.urls.values()
-        card_script = get_resource_as_string('templates/card.min.js')
+        card_script = get_resource_as_string('templates/linkify.min.js')
+        card_script += get_resource_as_string('templates/linkify-element.min.js')
+        card_script += get_resource_as_string('templates/card.min.js')
         data = unflatten(dict(
             (k.rsplit('.', 1)[0] if k.endswith('.display') else k, v)
             for k, v in nested_to_record(contrib.content.data, sep='.').items()
