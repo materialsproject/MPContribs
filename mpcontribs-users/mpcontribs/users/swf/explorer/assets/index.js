@@ -8,57 +8,56 @@ spinner_plot.spin(target);
 var api_url = window.api['host'] + 'projects/swf/graph';
 var graph = document.getElementById('graph');
 var layout = {
+    grid: {rows: 1, columns: 2, pattern: 'independent'},
     hovermode: 'closest',
-    title: 'In-plane MOKE Coercive Field Map',
-    xaxis: { title: 'Percent V (at%)' },
-    yaxis: { title: 'Film Thickness (nm)' }
+    title: 'In-plane Coercive Field Maps',
+    xaxis1: { title: 'Percent V [at%]' },
+    yaxis1: { title: 'Film Thickness [nm]' },
+    xaxis2: { title: 'Percent V [at%]' },
+    showlegend: false
 };
 
-$.get({
-    url: api_url, data: {'columns': 'V,thickness,Hc|MOKE'}, headers: window.api['headers']
-}).done(function(response) {
-    console.log(response);
-    //arguments[0][0]['type'] = 'bar';
-    //Plotly.plot(graph, arguments[0], layout);
+var graph_columns = [
+    ['V', 'thickness', 'Hc|MOKE'],
+    ['V', 'thickness', 'Hc|VSM']
+];
+var barx = [0.45, 1]
+
+var gets = $.map(graph_columns, function(columns) {
+    return $.get({
+        url: api_url, data: {'columns': columns.join(',')},
+        headers: window.api['headers']
+    });
+})
+
+$.when.apply($, gets).done(function() {
+    var data = [];
+    $.each(arguments, function(index, response) {
+        var r = response[0];
+        data.push({
+            name: graph_columns[index][2],
+            x: r[0]['y'], // V
+            y: r[1]['y'], // thickness
+            xaxis: 'x'+(index+1), yaxis: 'y'+(index+1),
+            text: r[2]['y'], // Hc|MOKE and Hc|VSM
+            mode: 'markers', type: 'scatter', showlegend: false,
+            marker: {
+                size: 16, colorscale: 'Jet', showscale: true,
+                color: r[2]['y'], colorbar: {
+                    title: graph_columns[index][2],
+                    x: barx[index], xanchor: "left"
+                }
+            }
+        });
+    });
+    Plotly.plot(graph, data, layout);
+    ////graph.on('plotly_click', function(data){
+    ////    var pn = data.points[0].pointNumber
+    ////    var url = cids[pn]
+    ////    window.open(url, '_blank')
+    ////});
     spinner_plot.stop();
 });
-//var xvals = []; var yvals = []; MOKE_color = []; var cids = [];
-//for (i = 0; i < table['rows'].length; i++) {
-//    row = table['rows'][i];
-//    if (row['MOKE_IP_Hc'] != "") {
-//        xvals.push(row['V [%]'])
-//        yvals.push(row['thickness'])
-//        MOKE_color.push(row['MOKE_IP_Hc'])
-//        cids.push(row['contribution'])
-//    }
-//};
-//var MOKE_trace = {
-//    x: xvals,
-//    y: yvals,
-//    text: MOKE_color,
-//    mode: 'markers',
-//    type: 'scatter',
-//    marker: {
-//        size: 16,
-//        color: MOKE_color,
-//        colorscale: 'Jet',
-//        showscale: true,
-//        colorbar: {
-//            title: 'IP-MOKE (G)'
-//        }
-//    }
-//};
-//
-//Plotly.plot('graph2', [MOKE_trace], layout)
-//
-//graph2.on('plotly_click', function(data){
-//    var pn = data.points[0].pointNumber
-//    var url = cids[pn]
-//    window.open(url, '_blank')
-//});
-
-
-
 
 
 
@@ -233,51 +232,3 @@ $.get({
 //    window.open(url, '_blank')
 //});
 
-//
-//var table = window.tables[window.tables.length-1];
-//var graph3 = document.getElementById('graph3');
-//var layout = {
-//    hovermode: 'closest',
-//    title: 'In-plane VSM Coercive Field Map',
-//    xaxis: {
-//        title: 'Percent V (at%)'
-//    },
-//    yaxis: {
-//        title: 'Film Thickness (nm)'
-//    }
-//};
-//var xvals = []; var yvals = []; VSM_color = []; var cids = [];
-//for (i = 0; i < table['rows'].length; i++) {
-//    row = table['rows'][i];
-//    if (row['VSM_IP_Hc'] != "") {
-//        xvals.push(row['V [%]'])
-//        yvals.push(row['thickness'])
-//        VSM_color.push(row['VSM_IP_Hc'])
-//        cids.push(row['contribution'])
-//    }
-//};
-//var VSM_trace = {
-//    x: xvals,
-//    y: yvals,
-//    text: VSM_color,
-//    mode: 'markers',
-//    type: 'scatter',
-//    marker: {
-//        size: 16,
-//        color: VSM_color,
-//        colorscale: 'Jet',
-//        showscale: true,
-//        colorbar: {
-//            title: 'IP-VSM (G)'
-//        }
-//    }
-//};
-//
-//Plotly.plot('graph3', [VSM_trace], layout)
-//
-//graph3.on('plotly_click', function(data){
-//    var pn = data.points[0].pointNumber
-//    var url = cids[pn]
-//    window.open(url, '_blank')
-//});
-//
