@@ -34,17 +34,14 @@ module.exports = {
     //new BundleAnalyzerPlugin(),
     new BundleTracker({filename: './webpack-stats.json'}),
     new CleanWebpackPlugin(["dist"]),
-    //new MiniCssExtractPlugin({
-    //  filename: "[name].[hash].css",
-    //  chunkFilename: "[id].[hash].css",
-    //}),
     new webpack.ProvidePlugin({
       _: "underscore", $: "jquery", jquery: "jquery",
       "window.jQuery": "jquery", jQuery:"jquery"
     }),
-    new CompressionPlugin()
+    new CompressionPlugin({minRatio: 1})
   ],
   optimization: {
+    minimize: true,
     splitChunks: {
       cacheGroups: {
         styles: {
