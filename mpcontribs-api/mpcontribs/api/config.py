@@ -11,12 +11,24 @@ MONGODB_SETTINGS = {
         os.environ.get('MPCONTRIBS_MONGO_HOST', 'localhost')
     ), 'connect': False, 'db': 'mpcontribs'
 }
-SWAGGER = {"specs": [{
-    "endpoint": 'apispec',
-    "route": '/apispec.json',
-    "rule_filter": lambda rule: True,  # all in
-    "model_filter": lambda tag: True,  # all in
-}], "specs_route": "/"}
+SWAGGER = {
+    "specs": [{
+        "endpoint": 'apispec',
+        "route": '/apispec.json',
+        "rule_filter": lambda rule: True,  # all in
+        "model_filter": lambda tag: True,  # all in
+    }],
+    "specs_route": "/", "head_text": '\n'.join([
+        "<!-- Global site tag (gtag.js) - Google Analytics -->",
+        '<script async src= "https://www.googletagmanager.com/gtag/js?id=UA-140392573-3"></script>',
+        "<script>",
+        "window.dataLayer = window.dataLayer || [];",
+        "function gtag(){dataLayer.push(arguments);}",
+        "gtag('js', new Date());",
+        "gtag('config', 'UA-140392573-3');",
+        "</script>"
+    ])
+}
 TEMPLATE = {
     "swagger": "2.0",
     "info": {
