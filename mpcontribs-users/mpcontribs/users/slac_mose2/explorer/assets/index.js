@@ -1,6 +1,10 @@
 import Plotly from 'plotly';
-import math from 'mathjs';
+import core from 'mathjs';
 import {Spinner} from 'spin.js';
+
+const math = core.create();
+math.import(require('../../../../../../node_modules/mathjs/lib/type/matrix/index'));
+math.import(require('../../../../../../node_modules/mathjs/lib/function/matrix/transpose'));
 
 var tid = '5cca3b57e7004456f9ba72cc';
 var api_url = window.api['host'] + 'tables/' + tid + '?mask=data,columns&per_page=200';

@@ -2,7 +2,7 @@ const path = require("path");
 const webpack = require('webpack');
 const BundleTracker = require('webpack-bundle-tracker');
 const CleanWebpackPlugin = require("clean-webpack-plugin");
-//const MiniCssExtractPlugin = require("mini-css-extract-plugin");
+const CompressionPlugin = require('compression-webpack-plugin');
 //const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
 const devMode = process.env.NODE_ENV == 'development'
 console.log('devMode = ' + devMode)
@@ -26,7 +26,7 @@ module.exports = {
   output: {
     path: path.resolve(__dirname, 'dist'),
     filename: "[name].[hash].js",
-    chunkFilename: '[id].[hash].js',
+    chunkFilename: '[name].[hash].js',
     crossOriginLoading: "anonymous",
     publicPath: '/static/'
   },
@@ -42,6 +42,7 @@ module.exports = {
       _: "underscore", $: "jquery", jquery: "jquery",
       "window.jQuery": "jquery", jQuery:"jquery"
     }),
+    new CompressionPlugin()
   ],
   optimization: {
     splitChunks: {
@@ -51,6 +52,11 @@ module.exports = {
           test: /\.css$/,
           chunks: 'all',
           enforce: true
+        },
+        plotly: {
+          test: /[\\/]node_modules[\\/]plotly.js[\\/]/,
+          name: 'plotly',
+          chunks: 'all',
         }
       }
     }
@@ -81,7 +87,7 @@ module.exports = {
       "spin.js": 'spin.js/spin',
       "linkify": 'linkifyjs/lib/linkify',
       "linkify-element": 'linkifyjs/lib/linkify-element',
-      "mathjs": 'mathjs/dist/math'
+      "mathjs": 'mathjs/core'
       //waitfor: 'jquery.waitFor',
       //thebe: 'main-built',
     }
