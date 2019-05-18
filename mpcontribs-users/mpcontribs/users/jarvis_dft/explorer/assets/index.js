@@ -20,12 +20,16 @@ var columns = ['NUS.Eₓ', 'JARVIS.Eₓ'];
 $.get({
     url: api_url, data: {'columns': columns.join(',')},
     headers: window.api['headers']
-}).done(function() {
-    var data = arguments[0];
+}).done(function(data) {
     $.each(data, function(idx, trace) {
         trace['type'] = 'bar';
         trace['name'] = columns[idx].split('.')[0];
     });
     Plotly.plot(graph, data, layout);
+    graph.on('plotly_click', function(d){
+        var cid = d.points[0].text;
+        var url = '/explorer/' + cid;
+        window.open(url, '_blank');
+    });
     spinner_plot.stop();
 });

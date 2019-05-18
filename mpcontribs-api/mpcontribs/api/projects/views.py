@@ -326,7 +326,7 @@ class GraphView(SwaggerView):
         columns = request.args.get('columns').split(',')
         with no_dereference(Contributions) as ContributionsDeref:
             objects = ContributionsDeref.objects(project=project).only(*mask)
-            data = [{'x': [], 'y': []} for col in columns]
+            data = [{'x': [], 'y': [], 'text': []} for col in columns]
             for obj in objects:
                 d = nested_to_record(obj['content']['data'], sep='.')
                 if all(f'{c}.display' in d.keys() for c in columns):
@@ -335,6 +335,7 @@ class GraphView(SwaggerView):
                         if val:
                             data[idx]['x'].append(obj.identifier)
                             data[idx]['y'].append(val.split(' ')[0])
+                            data[idx]['text'].append(str(obj.id))
             return data
 
 # url_prefix added in register_blueprint

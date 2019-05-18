@@ -15,8 +15,13 @@ var layout = {
 
 $.get({
     url: api_url, data: {'columns': 'ΔH'}, headers: window.api['headers']
-}).done(function() {
-    arguments[0][0]['type'] = 'bar';
-    Plotly.plot(graph, arguments[0], layout);
+}).done(function(response) {
+    response[0]['type'] = 'bar';
+    Plotly.plot(graph, response, layout);
+    graph.on('plotly_click', function(data){
+        var cid = data.points[0].text;
+        var url = '/explorer/' + cid;
+        window.open(url, '_blank');
+    });
     spinner_plot.stop();
 });

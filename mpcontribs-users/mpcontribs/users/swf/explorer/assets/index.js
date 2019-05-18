@@ -39,7 +39,7 @@ $.when.apply($, gets).done(function() {
             x: r[0]['y'], // V
             y: r[1]['y'], // thickness
             xaxis: 'x'+(index+1), yaxis: 'y'+(index+1),
-            text: r[2]['y'], // Hc|MOKE and Hc|VSM
+            text: r[2]['text'], // Hc|MOKE and Hc|VSM
             mode: 'markers', type: 'scatter', showlegend: false,
             marker: {
                 size: 16, colorscale: 'Jet', showscale: true,
@@ -51,11 +51,11 @@ $.when.apply($, gets).done(function() {
         });
     });
     Plotly.plot(graph, data, layout);
-    ////graph.on('plotly_click', function(data){
-    ////    var pn = data.points[0].pointNumber
-    ////    var url = cids[pn]
-    ////    window.open(url, '_blank')
-    ////});
+    graph.on('plotly_click', function(d){
+        var cid = d.points[0].text;
+        var url = '/explorer/' + cid;
+        window.open(url, '_blank');
+    });
     spinner_plot.stop();
 });
 
