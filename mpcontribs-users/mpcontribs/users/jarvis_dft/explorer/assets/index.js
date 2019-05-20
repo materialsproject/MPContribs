@@ -1,9 +1,13 @@
-import Plotly from 'plotly';
+import Plotly from 'plotly'; // plotly core only
 import {Spinner} from 'spin.js';
 
 var target = document.getElementById('spinner_graph');
 var spinner_plot = new Spinner({scale: 0.5});
 spinner_plot.spin(target);
+
+Plotly.register([
+    require('../../../../../../node_modules/plotly.js/lib/bar')
+])
 
 var api_url = window.api['host'] + 'projects/jarvis_dft/graph';
 var graph = document.getElementById('graph');

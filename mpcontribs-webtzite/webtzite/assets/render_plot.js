@@ -1,5 +1,5 @@
-import Plotly from 'plotly';
-import core from 'mathjs';
+import Plotly from 'plotly'; // plotly core only
+import core from 'mathjs'; // mathjs core only
 import {Spinner} from 'spin.js';
 
 window.PLOTLYENV=window.PLOTLYENV || {};
@@ -9,6 +9,10 @@ var spinner_plot = new Spinner({scale: 0.5});
 const math = core.create();
 math.import(require('../../../node_modules/mathjs/lib/type/matrix/index'));
 math.import(require('../../../node_modules/mathjs/lib/function/matrix/transpose'));
+
+Plotly.register([
+    require('../../../node_modules/plotly.js/lib/scatter')
+])
 
 window.render_plot = function(props) {
     Plotly.newPlot(props.divid, props.data, props.layout, props.config);

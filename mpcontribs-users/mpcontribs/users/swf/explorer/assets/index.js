@@ -1,4 +1,4 @@
-import Plotly from 'plotly';
+import Plotly from 'plotly'; // plotly core only
 import {Spinner} from 'spin.js';
 
 var target = document.getElementById('spinner_graph');

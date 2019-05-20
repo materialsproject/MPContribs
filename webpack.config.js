@@ -49,11 +49,6 @@ module.exports = {
           test: /\.css$/,
           chunks: 'all',
           enforce: true
-        },
-        plotly: {
-          test: /[\\/]node_modules[\\/]plotly.js[\\/]/,
-          name: 'plotly',
-          chunks: 'all',
         }
       }
     }
@@ -72,7 +67,7 @@ module.exports = {
       "toggle": 'bootstrap-toggle/js/bootstrap-toggle',
       "underscore": 'underscore/underscore',
       "lunr": 'lunr.js/lunr',
-      "plotly": 'plotly.js/dist/plotly-basic.min',
+      "plotly": 'plotly.js/lib/core',
       "backgrid-select-all": 'backgrid-select-all/backgrid-select-all',
       "backgrid-filter": 'backgrid-filter/backgrid-filter',
       "backbone.paginator": 'backbone.paginator/lib/backbone.paginator',

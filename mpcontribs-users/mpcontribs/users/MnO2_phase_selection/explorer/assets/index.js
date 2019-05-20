@@ -1,4 +1,4 @@
-import Plotly from 'plotly';
+import Plotly from 'plotly'; // plotly core only
 import {Spinner} from 'spin.js';
 
 var target = document.getElementById('spinner_graph');
@@ -12,6 +12,10 @@ var layout = {
     xaxis: {type: 'category', showticklabels: false, ticks: ''},
     yaxis: {title: 'Formation Enthalpy [eV/mol]'}
 };
+
+Plotly.register([
+    require('../../../../../../node_modules/plotly.js/lib/bar')
+])
 
 $.get({
     url: api_url, data: {'columns': 'ΔH'}, headers: window.api['headers']
