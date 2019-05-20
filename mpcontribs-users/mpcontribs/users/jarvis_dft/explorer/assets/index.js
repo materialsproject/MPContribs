@@ -7,7 +7,7 @@ spinner_plot.spin(target);
 
 Plotly.register([
     require('../../../../../../node_modules/plotly.js/lib/bar')
-])
+]);
 
 var api_url = window.api['host'] + 'projects/jarvis_dft/graph';
 var graph = document.getElementById('graph');

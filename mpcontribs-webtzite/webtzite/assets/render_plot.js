@@ -10,10 +10,6 @@ const math = core.create();
 math.import(require('../../../node_modules/mathjs/lib/type/matrix/index'));
 math.import(require('../../../node_modules/mathjs/lib/function/matrix/transpose'));
 
-Plotly.register([
-    require('../../../node_modules/plotly.js/lib/scatter')
-])
-
 window.render_plot = function(props) {
     Plotly.newPlot(props.divid, props.data, props.layout, props.config);
     if (typeof props.tid !== 'undefined') {

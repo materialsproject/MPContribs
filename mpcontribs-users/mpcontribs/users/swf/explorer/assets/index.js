@@ -9,9 +9,8 @@ var api_url = window.api['host'] + 'projects/swf/graph';
 var graph = document.getElementById('graph');
 
 Plotly.register([
-    require('../../../../../../node_modules/plotly.js/lib/scatter'),
     require('../../../../../../node_modules/plotly.js/lib/scatterternary')
-])
+]);
 
 function makeAxis(title, tickangle) {
     return {
@@ -124,6 +123,3 @@ $.when.apply($, gets).done(function() {
     });
     spinner_plot.stop();
 });
-
-//var update = { visible: false }
-//Plotly.restyle('graph1', update, [0,1,2]);

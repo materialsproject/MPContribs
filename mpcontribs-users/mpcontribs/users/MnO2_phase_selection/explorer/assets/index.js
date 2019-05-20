@@ -5,6 +5,10 @@ var target = document.getElementById('spinner_graph');
 var spinner_plot = new Spinner({scale: 0.5});
 spinner_plot.spin(target);
 
+Plotly.register([
+    require('../../../../../../node_modules/plotly.js/lib/bar')
+]);
+
 var api_url = window.api['host'] + 'projects/MnO2_phase_selection/graph';
 var graph = document.getElementById('graph');
 var layout = {
@@ -12,10 +16,6 @@ var layout = {
     xaxis: {type: 'category', showticklabels: false, ticks: ''},
     yaxis: {title: 'Formation Enthalpy [eV/mol]'}
 };
-
-Plotly.register([
-    require('../../../../../../node_modules/plotly.js/lib/bar')
-])
 
 $.get({
     url: api_url, data: {'columns': 'ΔH'}, headers: window.api['headers']

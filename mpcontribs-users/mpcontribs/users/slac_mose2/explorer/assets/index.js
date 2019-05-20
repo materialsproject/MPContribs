@@ -1,5 +1,5 @@
-import Plotly from 'plotly';
-import core from 'mathjs';
+import Plotly from 'plotly'; // plotly core only
+import core from 'mathjs'; // mathjs core only
 import {Spinner} from 'spin.js';
 
 const math = core.create();
