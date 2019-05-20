@@ -54,7 +54,7 @@ class RecursiveDict(_OrderedDict):
                 #    quantity = Quantity.from_dict(value)
                 #    yield key, quantity
                 #    continue
-                if 'display' in value and 'value' in value and 'unit' in value:
+                if 'display' in value and 'value' in value: # 'unit' is optional
                     yield (self.level, key), value['display']
                     continue
                 self.level += 1

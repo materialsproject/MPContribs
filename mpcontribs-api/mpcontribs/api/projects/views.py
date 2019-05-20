@@ -201,7 +201,12 @@ class TableView(SwaggerView):
         objects = Contributions.objects(project=project).only(*mask)
 
         # default user_columns
-        data_keys = list(objects.first()['content']['data'].keys())
+        sample = objects.first()['content']['data']
+        data_keys = sorted(list(
+            k.rsplit('.', 1)[0] if k.endswith('.display') else k
+            for k, v in nested_to_record(sample, sep='.').items()
+            if not k.endswith('.value') and not k.endswith('.unit')
+        ))
         if not data_keys:
             return {
                 'total_count': 0, 'total_pages': 0, 'page': 1,
@@ -212,8 +217,9 @@ class TableView(SwaggerView):
             general_columns.append('formula')
         else:
             # test whether search key exists in all docs and is not a number/object
-            q1 = {f'content__data__{data_keys[0]}__exists': False}
-            q2 = {f'content__data__{data_keys[0]}__type': 'object'}
+            search_key = data_keys[0].replace('.', '__')
+            q1 = {f'content__data__{search_key}__exists': False}
+            q2 = {f'content__data__{search_key}__type': 'object'}
             if objects(Q(**q1) | Q(**q2)).count() < 1:
                 general_columns.append(data_keys[0])
             else:

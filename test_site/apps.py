@@ -19,3 +19,7 @@ class SlacMose2Config(AppConfig):
 class SwfConfig(AppConfig):
     name = 'mpcontribs.users.swf.explorer'
     label = 'swf'
+
+class AlsBeamlineConfig(AppConfig):
+    name = 'mpcontribs.users.als_beamline.explorer'
+    label = 'als_beamline'
