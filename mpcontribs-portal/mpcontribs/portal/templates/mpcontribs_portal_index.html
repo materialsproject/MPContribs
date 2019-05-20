@@ -1,8 +1,8 @@
 {% extends "header_footer.html" %}
 {% load staticfiles %}
-{% load render_bundle from webpack_loader %}
-{% block extra_css %}{% render_bundle 'portal' 'css' %}{% endblock %}
-{% block footer %}{% render_bundle 'portal' 'js' %}{% endblock %}
+{% load render_entrypoint from webpack_loader %}
+{% block extra_css %}{% render_entrypoint 'portal' 'css' %}{% endblock %}
+{% block footer %}{% render_entrypoint 'portal' 'js' %}{% endblock %}
 
 {% block content %}
 <div class="container" hidden>

@@ -1,6 +1,6 @@
 const path = require("path");
 const webpack = require('webpack');
-const BundleTracker = require('webpack-bundle-tracker');
+const BundleTracker = require('webpack4-bundle-tracker');
 const CleanWebpackPlugin = require("clean-webpack-plugin");
 const CompressionPlugin = require('compression-webpack-plugin');
 //const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
@@ -43,14 +43,9 @@ module.exports = {
   optimization: {
     minimize: true,
     splitChunks: {
-      cacheGroups: {
-        styles: {
-          name: 'styles',
-          test: /\.css$/,
-          chunks: 'all',
-          enforce: true
-        }
-      }
+      chunks: 'all',
+      maxInitialRequests: Infinity,
+      minSize: 0
     }
   },
   resolve: {

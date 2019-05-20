@@ -1,13 +1,13 @@
 {% extends "header_footer.html" %}
 {% load staticfiles %}
-{% load render_bundle from webpack_loader %}
+{% load render_entrypoint from webpack_loader %}
 {% block footer %}
-{% render_bundle project 'js' %}
+{% render_entrypoint project 'js' %}
 {% endblock %}
 
 {% block content %}
-{% render_bundle 'render_json' 'js' %}
-{% render_bundle 'render_table' 'js' %}
+{% render_entrypoint 'render_json' 'js' %}
+{% render_entrypoint 'render_table' 'js' %}
 
 <div class="container" hidden>
     <div class="row">

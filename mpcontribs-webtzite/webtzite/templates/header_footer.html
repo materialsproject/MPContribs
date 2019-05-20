@@ -1,4 +1,4 @@
-{% load render_bundle from webpack_loader %}
+{% load render_entrypoint from webpack_loader %}
 <!DOCTYPE html>
 <html>
   <head>
@@ -13,10 +13,9 @@
         gtag('config', 'UA-140392573-2');
     </script>
     <input id="api_key" type="hidden" value="{{ request.META.HTTP_X_CONSUMER_CUSTOM_ID }}">
-    {% render_bundle 'styles' %}
     {% block extra_css %}
     {% endblock extra_css %}
-    {% render_bundle 'main' %}
+    {% render_entrypoint 'main' %}
   </head>
   <body>
     {% block header %}
