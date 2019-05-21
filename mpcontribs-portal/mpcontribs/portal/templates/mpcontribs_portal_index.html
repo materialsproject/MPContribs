@@ -45,7 +45,7 @@
                         {% if lp.url %}
                         <a href="{{ lp.url }}">{{ lp.title  }}</a>
                         {% else %}
-                        {{ lp.title  }}
+                        {{ lp.title }}
                         {% endif %}
                         {% if "provenance" in lp %}{{ lp.provenance|safe }}{% endif %}
                     </h4>
@@ -57,7 +57,11 @@
                             <img src="{% static lp.project %}.jpg" width=100% />
                         </a>
                         {% else %}
-                        Landing page not available (yet).
+                        <ul>
+                            {% for contrib in lp.contribs %}
+                            <li><a href="/explorer/{{ contrib.id }}">{{ contrib.identifier }}</a></li>
+                            {% endfor %}
+                        </ul>
                         {% endif %}
                     </div>
                 </div>

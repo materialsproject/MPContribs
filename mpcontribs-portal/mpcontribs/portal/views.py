@@ -13,11 +13,13 @@ def index(request):
     client = load_client()
     provenances = client.projects.get_entries(mask=mask).response().result
     for provenance in provenances:
+        entry = {'project': provenance['project']}
         try:
-            url = reverse(provenance['project'] + ':index')
+            entry['url'] = reverse(provenance['project'] + ':index')
         except:
-            url = None
-        entry = {'project': provenance['project'], 'url': url}
+            entry['contribs'] = client.contributions.get_entries(
+                projects=[provenance['project']], mask=['identifier'], per_page=2
+            ).response().result
         entry['title'] = provenance['title']
         authors = provenance['authors'].split(',', 1)
         style = 'font-size: 13px;'
