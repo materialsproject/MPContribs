@@ -22,7 +22,6 @@ function makeAxis(title, tickangle) {
 };
 
 var layout = {
-    //grid: {pattern: 'independent'},
     hovermode: 'closest', height: 900,
     title: 'In-plane Coercive Field Maps',
     xaxis1: {
