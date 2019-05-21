@@ -16,7 +16,7 @@ def index(request):
         try:
             url = reverse(provenance['project'] + ':index')
         except:
-            url = '#'
+            url = None
         entry = {'project': provenance['project'], 'url': url}
         entry['title'] = provenance['title']
         authors = provenance['authors'].split(',', 1)
@@ -30,6 +30,6 @@ def index(request):
             title="{}" style="padding: 0px 0px 2px 5px;">et al.</a>'''.format(
                 authors[1].strip().replace(', ', '<br/>'))
             prov_display += '</span>'
-            entry['provenance'] = prov_display
+        entry['provenance'] = prov_display
         ctx['landing_pages'].append(entry) # consider everything in DB released
     return render(request, "mpcontribs_portal_index.html", ctx.flatten())

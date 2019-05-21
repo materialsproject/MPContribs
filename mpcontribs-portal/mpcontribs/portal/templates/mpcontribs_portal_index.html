@@ -42,15 +42,23 @@
             <div class="panel panel-default">
                 <div class="panel-heading">
                     <h4 class="panel-title">
+                        {% if lp.url %}
                         <a href="{{ lp.url }}">{{ lp.title  }}</a>
+                        {% else %}
+                        {{ lp.title  }}
+                        {% endif %}
                         {% if "provenance" in lp %}{{ lp.provenance|safe }}{% endif %}
                     </h4>
                 </div>
                 <div class="panel-body" style="padding: 0px">
                     <div class="col-md-12" style="padding: 5px;">
+                        {% if lp.url %}
                         <a href="{{ lp.url }}">
                             <img src="{% static lp.project %}.jpg" width=100% />
                         </a>
+                        {% else %}
+                        Landing page not available (yet).
+                        {% endif %}
                     </div>
                 </div>
             </div>
