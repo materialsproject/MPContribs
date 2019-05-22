@@ -99,7 +99,11 @@ module.exports = {
       { test: /linkify-element/, loader: 'imports-loader?linkify' },
       //{ test: /waitfor/, loader: 'imports-loader?jquery' },
       //{ test: /sandbox/, loader: 'imports-loader?archieml' },
-      { test: /\.(jp(e*)g|png)$/, loader: 'url-loader', options: { limit: 1, name: '[name].[ext]' } },
+      //{ test: /\.(jp(e*)g|png)$/, loader: 'url-loader', options: { limit: 1, name: '[name].[ext]' } },
+      {
+        test: /\.(gif|png|jpe?g|svg)$/i,
+        use: ['file-loader', {loader: 'image-webpack-loader'}],
+      },
       { test: /\.css$/, loaders: ["style-loader","css-loader"] },
       {
         test: /\.(woff(2)?|ttf|eot|svg)(\?v=[0-9]\.[0-9]\.[0-9])?$/, loader: 'url-loader',

@@ -24,7 +24,7 @@
                 <div class="panel-body" style="padding: 0px">
                     <div class="col-md-12" style="padding: 5px">
                         <a href="{% url 'mpcontribs_explorer:index' %}">
-                            <img src='{% static "explorer.jpg" %}' width=100% />
+                            <img id="explorer_img" width=100% />
                         </a>
                     </div>
                 </div>
@@ -54,7 +54,7 @@
                     <div class="col-md-12" style="padding: 5px;">
                         {% if lp.url %}
                         <a href="{{ lp.url }}">
-                            <img src="{% static lp.project %}.jpg" width=100% />
+                            <img id="{{ lp.project }}_img" width=100% />
                         </a>
                         {% else %}
                         <ul>
