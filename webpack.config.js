@@ -26,8 +26,8 @@ module.exports = {
   },
   output: {
     path: path.resolve(__dirname, 'dist'),
-    filename: "[name].[hash].js",
-    chunkFilename: '[name].[hash].js',
+    filename: "[name].[chunkhash].js",
+    chunkFilename: '[name].[chunkhash].js',
     crossOriginLoading: "anonymous",
     publicPath: '/static/'
   },
@@ -39,21 +39,26 @@ module.exports = {
       _: "underscore", $: "jquery", jquery: "jquery",
       "window.jQuery": "jquery", jQuery:"jquery"
     }),
+    new webpack.HashedModuleIdsPlugin(),
     new CompressionPlugin({minRatio: 1})
   ],
   optimization: {
     minimize: true,
     splitChunks: {
-      chunks: 'all',
       maxInitialRequests: Infinity,
-      minSize: 0
+      minSize: 0,
+      cacheGroups: {
+          default: false,
+          vendors: false,
+          vendor: { chunks: 'all', test: /node_modules/ }
+      }
     }
   },
   resolve: {
     modules: ['node_modules'],
     extensions: ['.js'],
     alias: {
-      "jquery": 'jquery/dist/jquery',
+      "jquery": 'jquery/src/jquery',
       "bootstrap": 'bootstrap/dist/js/bootstrap',
       "backbone": 'backbone/backbone',
       "backgrid": 'backgrid/lib/backgrid',
@@ -69,7 +74,7 @@ module.exports = {
       "backbone.paginator": 'backbone.paginator/lib/backbone.paginator',
       "backgrid-paginator": 'backgrid-paginator/backgrid-paginator',
       "backgrid-grouped-columns": 'backgrid-grouped-columns/backgrid-grouped-columns',
-      "bootstrap-slider": 'seiyria-bootstrap-slider/dist/bootstrap-slider',
+      "bootstrap-slider": 'bootstrap-slider/src/js/bootstrap-slider',
       "json.human": 'json-human/src/json.human',
       "js-cookie": 'js-cookie/src/js.cookie',
       "spin.js": 'spin.js/spin',
@@ -84,7 +89,7 @@ module.exports = {
     rules: [
       //{ test: /underscore/, loader: 'exports-loader?_' },
       { test: /backbone/, loader: 'exports-loader?Backbone!imports-loader?underscore,jquery' },
-      { test: /backgrid/, loader: 'imports-loader?backbone' },
+      { test: /backgrid/, loader: 'imports-loader?jquery,backbone' },
       { test: /bootstrap/, loader: 'imports-loader?jquery' },
       { test: /filestyle/, loader: 'imports-loader?bootstrap' },
       { test: /chosen/, loader: 'imports-loader?jquery,bootstrap' },
