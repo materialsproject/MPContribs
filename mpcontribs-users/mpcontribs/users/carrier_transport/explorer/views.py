@@ -8,7 +8,7 @@ project = os.path.dirname(__file__).split(os.sep)[-2]
 def index(request):
     ctx = RequestContext(request)
     try:
-        keys, subkeys = ['mₑᶜᵒⁿᵈ', 'S', 'σ', 'S²σ'], ['n.<ε>', 'p.<ε>']
+        keys, subkeys = ['<mₑᶜᵒⁿᵈ>', '<S>', '<σ>', '<S²σ>'], ['n', 'p']
         columns = ['.'.join([k, sk]) for k in keys for sk in subkeys]
         ctx.update(get_context(project, columns=columns))
     except Exception as ex:
