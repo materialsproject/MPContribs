@@ -26,18 +26,13 @@ RUN set -ex \
     && rm -rf /var/lib/apt/lists/*
 
 EXPOSE 5000
+ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 ENV FLASK_APP mpcontribs.api
 ENV FLASK_ENV production
-ENV UWSGI_VIRTUALENV=/venv UWSGI_HTTP=:5000 UWSGI_MASTER=1
-ENV UWSGI_HTTP_AUTO_CHUNKED=1 UWSGI_HTTP_KEEPALIVE=1
-#ENV UWSGI_UID=1000 UWSGI_GID=2000
-ENV UWSGI_LAZY_APPS=1 UWSGI_WSGI_ENV_BEHAVIOR=holy
-ENV UWSGI_WORKERS=2 UWSGI_THREADS=4 UWSGI_BUFFER_SIZE=65535
-ENV UWSGI_MODULE=mpcontribs.api:create_app()
 
 WORKDIR /app
 COPY . .
 RUN /venv/bin/pip install -e .
 
-CMD ["/venv/bin/uwsgi", "--show-config", "--py-autoreload=1"]
+CMD ["/venv/bin/gunicorn", "-b", "0.0.0.0:5000", "-k", "gevent", "-w", "4", "mpcontribs.api:create_app()"]

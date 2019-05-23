@@ -38,6 +38,7 @@ RUN set -ex \
     && rm -rf /var/lib/apt/lists/*
 
 EXPOSE 8080
+ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 
 WORKDIR /app
@@ -72,15 +73,7 @@ ENV DJANGO_SETTINGS_MODULE=test_site.settings
 COPY manage.py .
 RUN /venv/bin/python manage.py collectstatic --noinput
 
-ENV UWSGI_WSGI_FILE=test_site/wsgi.py
-
-ENV UWSGI_VIRTUALENV=/venv UWSGI_HTTP=:8080 UWSGI_MASTER=1
-ENV UWSGI_HTTP_AUTO_CHUNKED=1 UWSGI_HTTP_KEEPALIVE=1
-ENV UWSGI_UID=1000 UWSGI_GID=2000 UWSGI_LAZY_APPS=1 UWSGI_WSGI_ENV_BEHAVIOR=holy
-ENV UWSGI_BUFFER_SIZE=65535 UWSGI_WORKERS=2 UWSGI_THREADS=4
-
-# ENV UWSGI_ROUTE_HOST="^(?!localhost:8080$) break:400"
 COPY docker-entrypoint.sh .
 RUN chmod +x /app/docker-entrypoint.sh
 ENTRYPOINT ["/app/docker-entrypoint.sh"]
-CMD ["/venv/bin/uwsgi", "--show-config", "--py-autoreload=1"]
+CMD ["/venv/bin/gunicorn", "-b", "0.0.0.0:8080", "-k", "gevent", "-w", "4", "test_site.wsgi:application"]

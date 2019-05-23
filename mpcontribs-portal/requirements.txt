@@ -3,5 +3,4 @@ whitenoise==4.1.2
 Django==2.2rc1
 django-extensions==2.1.5
 django-webpack4-loader==0.0.5
-uwsgi>=2.0,<2.1
-dj-database-url>=0.5,<0.6
+gunicorn[gevent]>=19.9.0
