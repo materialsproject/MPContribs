@@ -311,6 +311,27 @@ class GraphView(SwaggerView):
                   type: string
               required: true
               description: comma-separated list of column names to plot (in MongoDB dot notation)
+            - name: filters
+              in: query
+              type: array
+              items:
+                  type: string
+              description: list of `column__operator:value` filters \
+                      with `column` in dot notation and `operator` in mongoengine format \
+                      (http://docs.mongoengine.org/guide/querying.html#query-operators). \
+                      `column` needs to be a valid field in `content.data`.
+            - name: page
+              in: query
+              type: integer
+              default: 1
+              description: page to retrieve (in batches of `per_page`)
+            - name: per_page
+              in: query
+              type: integer
+              default: 200
+              minimum: 2
+              maximum: 200
+              description: number of results to return per page
         responses:
             200:
                 description: x-y-data in plotly format
@@ -330,10 +351,28 @@ class GraphView(SwaggerView):
         """
         mask = ['content.data', 'identifier']
         columns = request.args.get('columns').split(',')
+        filters = request.args.get('filters', '').split(',')
+        page = int(request.args.get('page', 1))
+        PER_PAGE_MAX = 200
+        per_page = int(request.args.get('per_page', PER_PAGE_MAX))
+        per_page = PER_PAGE_MAX if per_page > PER_PAGE_MAX else per_page
+
         with no_dereference(Contributions) as ContributionsDeref:
             objects = ContributionsDeref.objects(project=project).only(*mask)
             data = [{'x': [], 'y': [], 'text': []} for col in columns]
-            for obj in objects:
+            # C__gte:0.42,C__lte:2.10,ΔE-QP.direct__lte:11.3 -> content__data__C__value__lte
+            if filters:
+                query = {}
+                for f in filters:
+                    if '__' in f and ':' in f:
+                        k, v = f.split(':')
+                        col, op = k.rsplit('__', 1)
+                        col = col.replace(".", "__")
+                        key = f'content__data__{col}__value__{op}'
+                        query[key] = float(v)
+                objects = objects(**query)
+
+            for obj in objects.paginate(page=page, per_page=per_page).items:
                 d = nested_to_record(obj['content']['data'], sep='.')
                 if all(f'{c}.display' in d.keys() for c in columns):
                     for idx, col in enumerate(columns):
