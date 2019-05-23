@@ -23,3 +23,7 @@ class SwfConfig(AppConfig):
 class AlsBeamlineConfig(AppConfig):
     name = 'mpcontribs.users.als_beamline.explorer'
     label = 'als_beamline'
+
+class DtuConfig(AppConfig):
+    name = 'mpcontribs.users.dtu.explorer'
+    label = 'dtu'

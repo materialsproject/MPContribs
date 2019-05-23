@@ -11,4 +11,5 @@ urlpatterns = [
     url(r'swf/', include('mpcontribs.users.swf.explorer.urls')),
     url(r'fe-co-v/', include('mpcontribs.users.swf.explorer.urls')),
     url(r'als_beamline/', include('mpcontribs.users.als_beamline.explorer.urls')),
+    url(r'dtu/', include('mpcontribs.users.dtu.explorer.urls')),
 ]

@@ -23,6 +23,7 @@ module.exports = {
     'slac_mose2': './mpcontribs-users/mpcontribs/users/slac_mose2/explorer/assets/index',
     'swf': './mpcontribs-users/mpcontribs/users/swf/explorer/assets/index',
     'als_beamline': './mpcontribs-users/mpcontribs/users/als_beamline/explorer/assets/index',
+    'dtu': './mpcontribs-users/mpcontribs/users/dtu/explorer/assets/index',
   },
   output: {
     path: path.resolve(__dirname, 'dist'),

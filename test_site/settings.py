@@ -26,6 +26,11 @@ INSTALLED_APPS = [
 
 INSTALLED_APPS.append('test_site.apps.Mno2PhaseSelectionExplorerConfig')
 INSTALLED_APPS.append('test_site.apps.JarvisDftExplorerConfig')
+INSTALLED_APPS.append('test_site.apps.DefectGenomePcfcMaterialsConfig')
+INSTALLED_APPS.append('test_site.apps.SlacMose2Config')
+INSTALLED_APPS.append('test_site.apps.SwfConfig')
+INSTALLED_APPS.append('test_site.apps.AlsBeamlineConfig')
+INSTALLED_APPS.append('test_site.apps.DtuConfig')
 
 MIDDLEWARE = (
     'django.contrib.sessions.middleware.SessionMiddleware',
