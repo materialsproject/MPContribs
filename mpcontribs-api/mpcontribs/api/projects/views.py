@@ -358,10 +358,15 @@ class GraphView(SwaggerView):
         per_page = PER_PAGE_MAX if per_page > PER_PAGE_MAX else per_page
 
         with no_dereference(Contributions) as ContributionsDeref:
-            objects = ContributionsDeref.objects(project=project).only(*mask)
-            data = [{'x': [], 'y': [], 'text': []} for col in columns]
-            # C__gte:0.42,C__lte:2.10,ΔE-QP.direct__lte:11.3 -> content__data__C__value__lte
+            query = {'project': project}
+            query.update(dict((
+                f'content__data__{col.replace(".", "__")}__display__exists', True
+            ) for col in columns))
+            objects = ContributionsDeref.objects(**query).only(*mask)
+
             if filters:
+                # C__gte:0.42,C__lte:2.10,ΔE-QP.direct__lte:11.3
+                # -> content__data__C__value__lte
                 query = {}
                 for f in filters:
                     if '__' in f and ':' in f:
@@ -372,15 +377,14 @@ class GraphView(SwaggerView):
                         query[key] = float(v)
                 objects = objects(**query)
 
+            data = [{'x': [], 'y': [], 'text': []} for col in columns]
             for obj in objects.paginate(page=page, per_page=per_page).items:
                 d = nested_to_record(obj['content']['data'], sep='.')
-                if all(f'{c}.display' in d.keys() for c in columns):
-                    for idx, col in enumerate(columns):
-                        val = d.get(f'{col}.display')
-                        if val:
-                            data[idx]['x'].append(obj.identifier)
-                            data[idx]['y'].append(val.split(' ')[0])
-                            data[idx]['text'].append(str(obj.id))
+                for idx, col in enumerate(columns):
+                    val = d[f'{col}.display']
+                    data[idx]['x'].append(obj.identifier)
+                    data[idx]['y'].append(val.split(' ')[0])
+                    data[idx]['text'].append(str(obj.id))
             return data
 
 # url_prefix added in register_blueprint
