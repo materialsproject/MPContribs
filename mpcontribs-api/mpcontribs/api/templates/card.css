@@ -66,6 +66,7 @@ div[name=user_contribs] .well blockquote {
 .jh-root, .jh-type-object, .jh-type-array, .jh-key, .jh-value, .jh-root tr {
     box-sizing: border-box;         /* Opera/IE 8+ */
     font-weight: normal;
+    font-family: monospace;
 }
 .jh-key, .jh-value { margin: 0; padding: 0.2em; font-weight: normal; }
 .jh-value{ border-left: 1px solid #ddd; }
