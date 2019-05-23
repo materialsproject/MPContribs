@@ -31,6 +31,7 @@ INSTALLED_APPS.append('test_site.apps.SlacMose2Config')
 INSTALLED_APPS.append('test_site.apps.SwfConfig')
 INSTALLED_APPS.append('test_site.apps.AlsBeamlineConfig')
 INSTALLED_APPS.append('test_site.apps.DtuConfig')
+INSTALLED_APPS.append('test_site.apps.CarrierTransportConfig')
 
 MIDDLEWARE = (
     'django.contrib.sessions.middleware.SessionMiddleware',

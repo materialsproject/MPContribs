@@ -27,3 +27,7 @@ class AlsBeamlineConfig(AppConfig):
 class DtuConfig(AppConfig):
     name = 'mpcontribs.users.dtu.explorer'
     label = 'dtu'
+
+class CarrierTransportConfig(AppConfig):
+    name = 'mpcontribs.users.carrier_transport.explorer'
+    label = 'carrier_transport'

@@ -24,6 +24,7 @@ module.exports = {
     'swf': './mpcontribs-users/mpcontribs/users/swf/explorer/assets/index',
     'als_beamline': './mpcontribs-users/mpcontribs/users/als_beamline/explorer/assets/index',
     'dtu': './mpcontribs-users/mpcontribs/users/dtu/explorer/assets/index',
+    'carrier_transport': './mpcontribs-users/mpcontribs/users/carrier_transport/explorer/assets/index',
   },
   output: {
     path: path.resolve(__dirname, 'dist'),
