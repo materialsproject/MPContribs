@@ -1,3 +1,4 @@
+.backgrid { font-family: Consolas; }
 .backgrid tbody tr:hover { background-color: #f9f9f9; }
 .backgrid .sortable { text-align: center; }
 .backgrid thead th button { display: inline; }
@@ -7,6 +8,7 @@
 .backgrid tbody tr { cursor: pointer; }
 .backgrid .sortable { text-align: center; }
 .backgrid thead th button { display: inline; }
+.backgrid thead th { font-weight: normal; }
 .backgrid-filter.form-search { margin:0px; }
 .jh-type-string { font-weight: normal; }
 code { display: block; white-space: pre-wrap; }
