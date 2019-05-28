@@ -231,10 +231,16 @@ class TableView(SwaggerView):
             user_columns = data_keys if 'formula' in general_columns else data_keys[1:]
 
         # add units to column names
-        units = [objects.distinct(f'content.data.{col}.unit') for col in user_columns]
+        q_unit = dict(
+            (f'content__data__{col.replace(".", "__")}__unit__exists', True)
+            for col in user_columns
+        )
+        mask_unit = [f'content.data.{col}.unit' for col in user_columns]
+        unit_sample = objects(**q_unit).only(*mask_unit).first()
+        unit_sample_record = nested_to_record(unit_sample['content']['data'], sep='.')
+        units = [unit_sample_record.get(f'{col}.unit') for col in user_columns]
         columns = general_columns + [
-            '{} [{}]'.format(col, units[idx][0])
-            if units[idx] else col
+            '{} [{}]'.format(col, units[idx]) if units[idx] else col
             for idx, col in enumerate(user_columns)
         ]
 
