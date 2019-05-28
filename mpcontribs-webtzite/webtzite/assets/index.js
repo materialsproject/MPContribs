@@ -31,6 +31,10 @@ if (api_key !== '') {
 $(document).ready(function () {
     document.getElementById("logo").src = img;
     $('#api_key_code').html(api_key_code);
+    $('a[name="read_more"]').on('click', function() {
+        $(this).css('display', 'none');
+        $(this).next('span[name="read_more"]').css('display', 'block');
+    });
     $('header').show();
     $('.container').show();
     $('footer').show();

@@ -52,7 +52,10 @@ def get_context(project, columns=None):
     for k in ['id', 'project', 'other']:
         prov.pop(k)
     ctx['title'] = prov.pop('title')
-    ctx['provenance'] = RecursiveDict(prov).render()
+    ctx['descriptions'] = prov['description'].strip().split('.', 1)
+    authors = [a.strip() for a in prov['authors'].split(',') if a]
+    ctx['authors'] = {'main': authors[0], 'etal': authors[1:]}
+    ctx['urls'] = list(prov['urls'].values())
     data = client.projects.get_table(
         project=project, columns=columns, per_page=3
     ).response().result
