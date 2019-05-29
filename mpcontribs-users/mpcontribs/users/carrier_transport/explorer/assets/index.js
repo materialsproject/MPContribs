@@ -21,13 +21,15 @@ var layout = {
 }
 
 $.get({
-    url: api_url, data: {'columns': '<σ>.p,<S>.p,<S²σ>.p'}, // TODO n-doping
+    url: api_url, data: {'columns': '<σ>.p,<S>.p,<S²σ>.p,<σ>.n,<S>.n,<S²σ>.n'},
     headers: window.api['headers']
 }).done(function(r) {
     var data = [{
-        x: r[0]['y'], y: r[1]['y'], text: r[2]['text'],
+        x: r[0]['y'].concat(r[3]['y']),
+        y: r[1]['y'].concat(r[4]['y']),
+        text: r[2]['text'].concat(r[5]['text']),
         mode: 'markers', type: 'scatter', marker: {
-            color: math.log10(r[2]['y']), colorscale: 'Viridis',
+            color: math.log10(r[2]['y'].concat(r[2]['y'])), colorscale: 'Viridis',
             colorbar: {title: 'log(<S²σ>)', xanchor: "left", x: 0.45}
         }
     }];
