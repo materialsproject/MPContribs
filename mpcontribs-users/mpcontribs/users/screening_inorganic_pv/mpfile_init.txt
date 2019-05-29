@@ -13,6 +13,3 @@ database), "corrected" bandgaps based on the method of Chan and Ceder (PRL 105, 
 
 {urls}
 ACS: https://pubs.acs.org/doi/10.1021/acs.chemmater.8b04542
-
-{input}
-summary: /home/jovyan/work/SUMMARY.json
