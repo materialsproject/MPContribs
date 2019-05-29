@@ -17,6 +17,7 @@ def run(mpfile, **kwargs):
     summary_data = json.load(open(os.path.join(indir, 'SUMMARY.json'), 'r'))
     absorption_data = json.load(open(os.path.join(indir, 'ABSORPTION.json'), 'r'))
     dos_data = json.load(open(os.path.join(indir, 'DOS.json'), 'r'))
+    formulae_data = json.load(open(os.path.join(indir, 'FORMATTED-FORMULAE.json'), 'r'))
     config = RecursiveDict([
         ('SLME_500_nm', ['SLME|500nm', '%']),
         ('SLME_1000_nm', ['SLME|1000nm', '%']),
@@ -30,7 +31,13 @@ def run(mpfile, **kwargs):
     print(len(summary_data.keys()))
     for mp_id, d in summary_data.items():
         print(mp_id)
-        rd = RecursiveDict()
+        formula = formulae_data[mp_id].replace('<sub>', '').replace('</sub>', '')
+        query = {'identifier': mp_id, 'project': 'screening_inorganic_pv'}
+        r = db.contributions.update_one(query, {'$set': {'content.data.formula': formula}})
+        print(r.modified_count)
+        continue
+
+        rd = RecursiveDict({'formula': formula})
         for k, v in config.items():
             value = clean_value(d[k], v[1], max_dgts=4)
             if not '.' in v[0]:
@@ -44,7 +51,6 @@ def run(mpfile, **kwargs):
 
         mpfile.add_hierarchical_data({'data': rd}, identifier=mp_id)
 
-        query = {'identifier': mp_id, 'project': 'screening_inorganic_pv'}
         doc = query.copy()
         doc['content.data'] = mpfile.document[mp_id]['data']
         doc['collaborators'] = [{'name': 'Patrick Huck', 'email': 'phuck@lbl.gov'}]
