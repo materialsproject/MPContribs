@@ -60,7 +60,7 @@ $.when.apply($, gets).done(function() {
             data.push(r);
         }
     });
-    Plotly.plot(graph, data, layout);
+    Plotly.plot(graph, data, layout, {displayModeBar: true});
     graph.on('plotly_click', function(data){
         var cid = data.points[0].text;
         if (typeof cid !== 'undefined') {

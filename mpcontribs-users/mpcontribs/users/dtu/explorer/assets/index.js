@@ -50,7 +50,7 @@ $.get({
         trace['type'] = 'bar';
         trace['name'] = columns[idx];
     })
-    Plotly.plot(graph, response, layout);
+    Plotly.plot(graph, response, layout, {displayModeBar: true});
     graph.on('plotly_click', function(data){
         var cid = data.points[0].text;
         var url = '/explorer/' + cid;
