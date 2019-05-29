@@ -13,4 +13,5 @@ urlpatterns = [
     url(r'als_beamline/', include('mpcontribs.users.als_beamline.explorer.urls')),
     url(r'dtu/', include('mpcontribs.users.dtu.explorer.urls')),
     url(r'carrier_transport/', include('mpcontribs.users.carrier_transport.explorer.urls')),
+    url(r'screening_inorganic_pv/', include('mpcontribs.users.screening_inorganic_pv.explorer.urls')),
 ]

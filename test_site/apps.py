@@ -31,3 +31,7 @@ class DtuConfig(AppConfig):
 class CarrierTransportConfig(AppConfig):
     name = 'mpcontribs.users.carrier_transport.explorer'
     label = 'carrier_transport'
+
+class ScreeningInorganicPvConfig(AppConfig):
+    name = 'mpcontribs.users.screening_inorganic_pv.explorer'
+    label = 'screening_inorganic_pv'
