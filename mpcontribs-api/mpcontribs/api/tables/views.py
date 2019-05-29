@@ -141,9 +141,89 @@ class BackgridTableView(SwaggerView):
             'last_page': total_pages, 'per_page': per_page, 'items': items
         }
 
+class PlotlyTableView(SwaggerView):
+
+    def get(self, project, identifier, name):
+        """Retrieve a specific table for a contribution in Plotly format (x-y-z if #columns > 2).
+        ---
+        operationId: get_graph
+        parameters:
+            - name: project
+              in: path
+              type: string
+              pattern: '^[a-zA-Z0-9_]{3,30}$'
+              required: true
+              description: project name/slug
+            - name: identifier
+              in: path
+              type: string
+              required: true
+              description: material/composition identifier
+            - name: name
+              in: path
+              type: string
+              required: true
+              description: table name
+            - name: page
+              in: query
+              type: integer
+              default: 1
+              description: page to retrieve (in batches of `per_page`)
+            - name: per_page
+              in: query
+              type: integer
+              default: 20
+              minimum: 2
+              maximum: 20
+              description: number of results to return per page
+        responses:
+            200:
+                description: Paginated table response in plotly format
+                schema:
+                    type: object
+                    properties:
+                        x:
+                            type: array
+                            items:
+                                type: number
+                        y:
+                            type: array
+                            items:
+                                type: number
+                        z:
+                            type: array
+                            items:
+                                type: array
+                                items:
+                                    type: number
+        """
+        page = int(request.args.get('page', 1))
+        per_page = int(request.args.get('per_page', 20))
+        PER_PAGE_MAX = 200 # different for number of table rows
+        per_page = PER_PAGE_MAX if per_page > PER_PAGE_MAX else per_page
+        table = Tables.objects.get(project=project, identifier=identifier, name=name)
+        x, y, z = [], [], []
+        rows = table.paginate_field('data', page, per_page=per_page).items
+        if len(table.columns) > 2:
+            for col in table.columns[1:]:
+                x.append(col.split()[0])
+            for row in rows:
+                y.append(row[0])
+                z.append(row[1:])
+        else:
+            for row in rows:
+                x.append(row[0])
+                y.append(row[1])
+
+        return {'x': x, 'y': y, 'z': z} if z else {'x': x, 'y': y}
+
 single_view = TableView.as_view(TableView.__name__)
 tables.add_url_rule('/<string:tid>', view_func=single_view,
                     methods=['GET'])#, 'PUT', 'PATCH', 'DELETE'])
 
 table_view = BackgridTableView.as_view(BackgridTableView.__name__)
 tables.add_url_rule('/<string:cid>/<string:name>', view_func=table_view, methods=['GET'])
+
+graph_view = PlotlyTableView.as_view(PlotlyTableView.__name__)
+tables.add_url_rule('/<string:project>/<string:identifier>/<string:name>',
+                    view_func=graph_view, methods=['GET'])

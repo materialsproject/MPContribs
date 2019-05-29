@@ -27,6 +27,7 @@ class Tables(Document):
     meta = {
         'collection': 'tables', 'indexes': [
             'identifier', 'project', 'cid', 'name',
-            {'fields': ['cid', 'name'], 'unique': True}
+            {'fields': ['cid', 'name'], 'unique': True},
+            {'fields': ['identifier', 'project', 'name'], 'unique': True}
         ]
     }
