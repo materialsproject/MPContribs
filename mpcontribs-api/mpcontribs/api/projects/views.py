@@ -231,18 +231,15 @@ class TableView(SwaggerView):
             user_columns = data_keys if 'formula' in general_columns else data_keys[1:]
 
         # add units to column names
-        q_unit = dict(
-            (f'content__data__{col.replace(".", "__")}__unit__exists', True)
-            for col in user_columns
-        )
-        mask_unit = [f'content.data.{col}.unit' for col in user_columns]
-        unit_sample = objects(**q_unit).only(*mask_unit).first()
-        unit_sample_record = nested_to_record(unit_sample['content']['data'], sep='.')
-        units = [unit_sample_record.get(f'{col}.unit') for col in user_columns]
-        columns = general_columns + [
-            '{} [{}]'.format(col, units[idx]) if units[idx] else col
-            for idx, col in enumerate(user_columns)
-        ]
+        columns = general_columns.copy()
+        for col in user_columns:
+            if 'CIF' in col:
+                continue
+            q_unit = {f'content__data__{col.replace(".", "__")}__exists': True}
+            unit_sample = objects(**q_unit).only(f'content.data.{col}.unit').first()
+            unit_sample_record = nested_to_record(unit_sample['content']['data'], sep='.')
+            unit = unit_sample_record.get(f'{col}.unit')
+            columns.append('{} [{}]'.format(col, unit) if unit else col)
 
         # search and sort
         if search is not None:
