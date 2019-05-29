@@ -1,25 +1,14 @@
 title: Screening Inorganic PV
 authors: D. Fabini, M. Koerner, R. Seshadri
 description:
-Approximately 33,000 valence-precise, ordered inorganic compounds tabulated in
-the Inorganic Crystal Structure Database have been screened for their potential
-as photovoltaic (PV) absorbers. This has been accomplished through the use of
-proxies for charge carrier mobilities and optical absorption properties from
-electronic structure calculations, in addition to constraints on thermodynamic
-stability. Preliminary screening of computed properties tabulated in the
-Materials Project Database, with subsequent high(er)-fidelity electronic
-structure calculations of optical properties and band gap corrections, indicates
-~200 known compounds on or near the convex hull which exhibit spectroscopic
-limited maximum efficiency (SLME) in excess of 25% for a 500 nm thin film, in
-addition to possessing low effective masses for both electrons and holes. Among
-the predicted high performers are nearly all the known commercial inorganic
-thin film PV materials and several previously unexplored candidates. The new
-candidates are drawn from a diverse set of chemical and structural families,
-including many chalcogenides and pnictides as well as antiperovskites,
-skutterudites, and semiconducting intermetallics. Carrier effective masses,
-SLME, corrected band gaps, and other relevant information for ~800 compounds are
-made available for further analyses via the Materials Project MPContribs
-Framework.
+We have screened ~33,000 non-magnetic insulators/semiconductors for which there was a
+computed bandstructure in the Materials Project for potential use as photovoltaic
+absorbers. Like many studies, we employ a "funnel" approach of increasingly stringent
+screening criteria that require increasingly expensive calculations. Below a summary of
+high-level parameters extracted from these data, all for ~800 compounds. Ultimately, the
+data we plan to share here are absorption coefficients (or full dielectric tensors),
+electronic densities-of-states (higher fidelity than the ones currently in the MP
+database), "corrected" bandgaps based on the method of Chan and Ceder (PRL 105, 196403).
 :end
 
 {urls}
