@@ -171,6 +171,13 @@ def unflatten(
 
     return base
 
+def get_cleaned_data(data):
+    return dict(
+        (k.rsplit('.', 1)[0] if k.endswith('.display') else k, v)
+        for k, v in nested_to_record(data, sep='.').items()
+        if not k.endswith('.value') and not k.endswith('.unit')
+    )
+
 class CardView(SwaggerView):
 
     def get(self, cid):
@@ -206,9 +213,8 @@ class CardView(SwaggerView):
         card_script += get_resource_as_string('templates/linkify-element.min.js')
         card_script += get_resource_as_string('templates/card.min.js')
         data = unflatten(dict(
-            (k.rsplit('.', 1)[0] if k.endswith('.display') else k, v)
-            for k, v in nested_to_record(contrib.content.data, sep='.').items()
-            if not k.endswith('.value') and not k.endswith('.unit')
+            (k, v) for k, v in get_cleaned_data(contrib.content.data).items()
+            if not k.startswith('modal')
         ))
         browser = get_browser()
         browser.execute_script(card_script, data)
@@ -222,6 +228,31 @@ class CardView(SwaggerView):
         return card
 
 
+class ModalView(SwaggerView):
+
+    def get(self, cid):
+        """Retrieve modal data for a single contribution.
+        ---
+        operationId: get_modal_data
+        parameters:
+            - name: cid
+              in: path
+              type: string
+              pattern: '^[a-f0-9]{24}$'
+              required: true
+              description: contribution ID (ObjectId)
+        responses:
+            200:
+                description: modal data as defined by contributor
+        """
+        ctx = {'cid': cid}
+        mask = ['project', 'identifier', 'content.data.modal']
+        contrib = Contributions.objects.only(*mask).get(id=cid)
+        data = contrib.content.data
+        if 'modal' not in data:
+            return {}
+        return unflatten(get_cleaned_data(data))
+
 # url_prefix added in register_blueprint
 multi_view = ContributionsView.as_view(ContributionsView.__name__)
 contributions.add_url_rule('/', view_func=multi_view, methods=['GET'])#, 'POST'])
@@ -232,3 +263,6 @@ contributions.add_url_rule('/<string:cid>', view_func=single_view,
 
 card_view = CardView.as_view(CardView.__name__)
 contributions.add_url_rule('/<string:cid>/card', view_func=card_view, methods=['GET'])
+
+modal_view = ModalView.as_view(ModalView.__name__)
+contributions.add_url_rule('/<string:cid>/modal', view_func=modal_view, methods=['GET'])

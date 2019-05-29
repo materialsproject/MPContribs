@@ -1,3 +1,4 @@
+import 'bootstrap';
 import Backbone from 'backbone';
 import Backgrid from 'backgrid';
 import 'backgrid-paginator';
@@ -66,6 +67,25 @@ window.render_table = function(props) {
             props.table['columns'][idx]['cell'] = ClickableCell;
         }
     }
+
+    Backbone.on('cellclicked', function(e) {
+        var row = $(e.currentTarget).parent();
+        var url = row.find("td:nth-child(2) > a").attr('href');
+        if (typeof url !== 'undefined') {
+            var cid = url.split('/').pop();
+            $.get({
+                url: window.api['host'] + 'contributions/' + cid + '/modal',
+                headers: window.api['headers']
+            }).done(function(response) {
+                if ('modal' in response) {
+                    $('#modal_render_json').empty();
+                    render_json({divid: 'modal_render_json', data: response['modal']});
+                    var modal = $('#modal').modal();
+                    modal.show();
+                }
+            });
+        }
+    });
 
     var rows = new Rows();
     rows.on('sync', function(e) { spinner_table.stop(); })
