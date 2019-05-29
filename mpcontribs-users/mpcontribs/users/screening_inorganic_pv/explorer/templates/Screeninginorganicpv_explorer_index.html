@@ -1,0 +1,55 @@
+{% extends "../../webtzite/templates/base/header_footer.html" %}
+{% load staticfiles %}
+
+{% block title %} Screening Inorganic PV {% endblock title %}
+
+{% block extra_css %}
+<link rel="stylesheet" href='{% static "js/components/bootstrap/dist/css/bootstrap.css" %}' charset="utf-8">
+<link rel="stylesheet" href='{% static "js/components/backgrid/lib/backgrid.css" %}' charset="utf-8">
+<link rel="stylesheet" href='{% static "js/components/backgrid-paginator/backgrid-paginator.css" %}' charset="utf-8">
+<link rel="stylesheet" href='{% static "js/components/backgrid-filter/backgrid-filter.css" %}' charset="utf-8">
+<link rel="stylesheet" href='{% static "js/components/backgrid-grouped-columns/backgrid-grouped-columns.css" %}' charset="utf-8">
+<link rel="stylesheet" href='{% static "js/components/json-human/css/json.human.css" %}' charset="utf-8">
+{% endblock extra_css %}
+
+{% block content %}
+<style>
+.backgrid { font-family: "symbola"; }
+.backgrid tbody tr:hover { background-color: #f9f9f9; }
+.backgrid .sortable { text-align: center; }
+.backgrid thead th button { display: inline; }
+.jh-root { font-family: "symbola"; }
+.jh-type-string { font-style: normal; }
+code { display: block; white-space: pre-wrap; }
+</style>
+
+<div class="container">
+    <div class="row">
+        <div class="col-md-12">
+            <h2>Screening Inorganic PV</h2>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-12">
+	    <h4>Mar 18  2018</h4>
+            <p><a href="https://pubs.acs.org/doi/10.1021/acs.chemmater.8b04542">Publication</a></p>
+	    <p>We have screened ~33,000 non-magnetic insulators/semiconductors
+		for which there was a computed bandstructure in the Materials Project for
+		potential use as photovoltaic absorbers. Like many studies, we employ a
+		"funnel" approach of increasingly stringent screening criteria that require
+		increasingly expensive calculations. Below a summary of high-level parameters extracted from
+		these data, all for ~800 compounds. Ultimately, the data we plan to
+		share here are absorption coefficients (or full dielectric tensors), electronic
+		densities-of-states (higher fidelity than the ones currently in the MP
+		database), "corrected" bandgaps based on the method of Chan and Ceder (Phys.
+		Rev. Lett. 105, 196403).
+            </p>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-12">
+            {{ table|safe }}
+        </div>
+    </div>
+</div>
+{% endblock %}
