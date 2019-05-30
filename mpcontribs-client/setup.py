@@ -7,13 +7,13 @@ with open(os.path.join(SETUP_PTH, 'requirements.txt')) as f:
     required = f.read().splitlines()
 
 setup(
-    name = 'mpcontribs-utils',
+    name = 'mpcontribs-client',
     version = datetime.datetime.today().strftime('%Y.%m.%d'),
-    description = "utility libraries for MPContribs",
+    description = "client library for MPContribs API",
     author = 'Patrick Huck',
     author_email = 'phuck@lbl.gov',
     url = 'https://mpcontribs.org',
-    packages = ['mpcontribs.io'],
+    #packages = ['mpcontribs.client'],
     install_requires = required,
     license = 'MIT',
     zip_safe=False,
