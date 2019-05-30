@@ -1,7 +1,7 @@
 import uuid, json
 import pandas as pd
 from IPython.display import display_html, HTML
-from mpcontribs.config import mp_level01_titles, mp_id_pattern
+from mpcontribs.io import mp_level01_titles, mp_id_pattern
 from mpcontribs.io.core.utils import nest_dict, clean_value
 from mpcontribs.io.core.recdict import RecursiveDict
 from urllib.parse import urlparse

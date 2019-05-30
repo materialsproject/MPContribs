@@ -1,4 +1,4 @@
-from mpcontribs.config import mp_level01_titles
+from mpcontribs.io import mp_level01_titles
 from mpcontribs.io.core.recdict import RecursiveDict
 from IPython.display import display_html
 

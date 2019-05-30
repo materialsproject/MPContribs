@@ -2,14 +2,16 @@ from __future__ import unicode_literals, print_function, absolute_import
 
 import json, os, socket, codecs, time, psutil
 import sys, warnings, multiprocessing
+from tempfile import gettempdir
 from flask import render_template, request, Response, Blueprint, current_app
 from flask import url_for, redirect, make_response, stream_with_context, jsonify
 from mpcontribs.utils import process_mpfile, submit_mpfile
-from mpcontribs.config import default_mpfile_path
 from mpcontribs.users_modules import *
 from webtzite import configure_settings
 from whichcraft import which
 from subprocess import call
+
+default_mpfile_path = os.path.join(gettempdir(), 'mpfile.txt')
 
 try:
     import SocketServer as socketserver

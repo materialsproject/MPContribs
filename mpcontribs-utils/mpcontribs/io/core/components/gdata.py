@@ -5,7 +5,7 @@ from plotly.io._utils import validate_coerce_fig_to_dict
 from plotly.offline.offline import _get_jconfig
 from plotly.utils import PlotlyJSONEncoder
 from IPython.display import display_html
-from mpcontribs.config import mp_level01_titles
+from mpcontribs.io import mp_level01_titles
 from mpcontribs.io.core.recdict import RecursiveDict
 from mpcontribs.io.core.components.tdata import Table
 

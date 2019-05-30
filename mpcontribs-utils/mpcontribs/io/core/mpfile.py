@@ -1,13 +1,16 @@
 from __future__ import unicode_literals, print_function
 import six, codecs, os
 from abc import ABCMeta
-from mpcontribs.config import mp_level01_titles, default_mpfile_path, replacements
+from tempfile import gettempdir
+from mpcontribs.io import replacements, mp_level01_titles
 from mpcontribs.io.core.recdict import RecursiveDict
 from mpcontribs.io.core.utils import nest_dict, get_composition_from_string
 from mpcontribs.io.core.components.hdata import HierarchicalData
 from mpcontribs.io.core.components.tdata import TabularData, Table
 from mpcontribs.io.core.components.gdata import GraphicalData
 from mpcontribs.io.core.components.sdata import StructuralData
+
+default_mpfile_path = os.path.join(gettempdir(), 'mpfile.txt')
 
 class MPFileCore(six.with_metaclass(ABCMeta, object)):
     """Abstract Base Class for representing a MP Contribution File"""

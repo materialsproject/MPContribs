@@ -1,7 +1,7 @@
 import uuid, json, os
 from collections import OrderedDict as _OrderedDict
 from collections import Mapping as _Mapping
-from mpcontribs.config import mp_level01_titles, replacements
+from mpcontribs.io import replacements, mp_level01_titles
 
 try:
     from propnet.core.quantity import Quantity

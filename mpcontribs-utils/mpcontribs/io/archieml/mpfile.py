@@ -1,6 +1,6 @@
 from __future__ import unicode_literals, print_function
 import archieml, textwrap
-from mpcontribs.config import mp_level01_titles, symprec, replacements
+from mpcontribs.io import replacements, mp_level01_titles
 from mpcontribs.io.core.mpfile import MPFileCore
 from mpcontribs.io.core.recdict import RecursiveDict, Quantity
 from mpcontribs.io.core.utils import nest_dict, normalize_root_level
@@ -102,7 +102,7 @@ class MPFile(MPFileCore):
                     lines.append('...')
             elif isinstance(value, Structure):
                 from pymatgen.io.cif import CifWriter
-                cif = CifWriter(value, symprec=symprec).__str__()
+                cif = CifWriter(value, symprec=1e-10).__str__()
                 lines.append(make_pair(
                     ''.join([replacements.get(c, c) for c in key]), cif+':end'
                 ))
