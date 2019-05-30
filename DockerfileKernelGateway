@@ -2,17 +2,22 @@ FROM jupyter/scipy-notebook:29a003bb3030
 EXPOSE 8888
 
 RUN pip install --upgrade numpy
-COPY mpcontribs-utils/requirements.txt requirements-utils.txt
-RUN pip install -r requirements-utils.txt
+COPY mpcontribs-io/requirements.txt requirements-io.txt
+COPY mpcontribs-client/requirements.txt requirements-client.txt
+RUN pip install -r requirements-io.txt && pip install -r requirements-client.txt
 
 USER root
-COPY mpcontribs-utils src/mpcontribs-utils
-RUN chown -R $NB_USER:users src/mpcontribs-utils
+COPY mpcontribs-io src/mpcontribs-io
+RUN chown -R $NB_USER:users src/mpcontribs-io
+COPY mpcontribs-client src/mpcontribs-client
+RUN chown -R $NB_USER:users src/mpcontribs-client
+
 COPY mpcontribs-api/kernel_imports.ipynb .
 RUN chown $NB_USER:users kernel_imports.ipynb
 
 ENV NODE_ENV production
 USER $NB_USER
-RUN cd src/mpcontribs-utils && pip install -e .
+RUN cd src/mpcontribs-io && pip install -e .
+RUN cd src/mpcontribs-client && pip install -e .
 
 CMD ["jupyter", "enterprisegateway", "--ip=0.0.0.0", "--port_retries=0", "--seed_uri='kernel_imports.ipynb'"]

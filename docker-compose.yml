@@ -13,7 +13,8 @@ services:
       - ./mpcontribs-explorer:/app/mpcontribs-explorer
       - ./mpcontribs-users:/app/mpcontribs-users
       - ./mpcontribs-webtzite:/app/mpcontribs-webtzite
-      - ./mpcontribs-utils:/app/mpcontribs-utils
+      - ./mpcontribs-io:/app/mpcontribs-io
+      - ./mpcontribs-client:/app/mpcontribs-client
     ports:
       - "8080:8080"
   api:
@@ -39,7 +40,8 @@ services:
       context: .
       dockerfile: DockerfileKernelGateway
     volumes:
-      - ./mpcontribs-utils:/src/mpcontribs-utils
+      - ./mpcontribs-io:/src/mpcontribs-io
+      - ./mpcontribs-client:/src/mpcontribs-client
     ports:
       - "8888:8888"
     environment:

@@ -17,7 +17,8 @@ RUN set -ex \
 
 RUN node -v && npm -v && git --version
 
-COPY mpcontribs-utils/requirements.txt requirements-utils.txt
+COPY mpcontribs-io/requirements.txt requirements-io.txt
+COPY mpcontribs-client/requirements.txt requirements-client.txt
 COPY mpcontribs-portal/requirements.txt requirements-portal.txt
 COPY mpcontribs-explorer/requirements.txt requirements-explorer.txt
 COPY mpcontribs-users/requirements.txt requirements-users.txt
@@ -48,8 +49,11 @@ COPY mpcontribs-webtzite/webtzite/package.json mpcontribs-webtzite/webtzite/
 COPY package.json .
 RUN npm install 2>&1
 
-COPY mpcontribs-utils mpcontribs-utils
-RUN cd mpcontribs-utils && /venv/bin/pip install -e .
+COPY mpcontribs-io mpcontribs-io
+RUN cd mpcontribs-io && /venv/bin/pip install -e .
+
+COPY mpcontribs-client mpcontribs-client
+RUN cd mpcontribs-client && /venv/bin/pip install -e .
 
 COPY mpcontribs-webtzite mpcontribs-webtzite
 RUN cd mpcontribs-webtzite && /venv/bin/pip install -e .
