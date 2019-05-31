@@ -1,14 +1,39 @@
 # docker pull squidfunk/mkdocs-material
 # docker run --rm -it -p 8000:8000 -v ${PWD}:/docs squidfunk/mkdocs-material
 # docker run --rm -it -v ~/.ssh/tschaume@mac14:/root/.ssh/id_rsa -v ${PWD}:/docs squidfunk/mkdocs-material gh-deploy
-site_name: MPContribs
+
+site_name: 'MPContribs'
+site_description: 'Contributed MP Materials Data'
+site_author: 'Patrick Huck'
+site_url: 'https://mpcontribs.org'
+
+repo_name: 'materialsproject/MPContribs'
+repo_url: 'https://github.com/materialsproject/MPContribs'
+
+copyright: 'Copyright &copy; 2019 Materials Project'
+
 theme:
     name: 'material'
+
 markdown_extensions:
-    - codehilite
+    - codehilite:
+        guess_lang: false
+    - toc:
+        permalink: true
+    - admonition
+    - pymdownx.superfences
 nav:
     - Home: index.md
     - API: api.md
 google_analytics:
     - 'UA-140392573-1'
     - 'auto'
+extra:
+  social:
+    - type: 'github'
+      link: 'https://github.com/materialsproject'
+    - type: 'twitter'
+      link: 'https://twitter.com/persson_group'
+    - type: 'linkedin'
+      link: 'https://linkedin.com/in/tschaume'
+
