@@ -273,6 +273,7 @@ Resources:
                 - IMAGE_URI="${REPOSITORY_URI}:${TAG}"
             build:
               commands:
+                - git fetch --tags
                 - docker build --tag "${IMAGE_URI}-portal" .
             post_build:
               commands:
