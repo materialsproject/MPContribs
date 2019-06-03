@@ -244,6 +244,8 @@ class ModalView(SwaggerView):
         responses:
             200:
                 description: modal data as defined by contributor
+                schema:
+                    type: object
         """
         ctx = {'cid': cid}
         mask = ['project', 'identifier', 'content.data.modal']
