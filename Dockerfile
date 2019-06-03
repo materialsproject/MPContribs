@@ -52,6 +52,8 @@ RUN npm install 2>&1
 COPY mpcontribs-io mpcontribs-io
 RUN cd mpcontribs-io && /venv/bin/pip install -e .
 
+ENV SETUPTOOLS_SCM_PRETEND_VERSION 1.5.2
+
 COPY mpcontribs-client mpcontribs-client
 RUN cd mpcontribs-client && /venv/bin/pip install -e .
 

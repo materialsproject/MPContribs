@@ -16,6 +16,7 @@ COPY mpcontribs-api/kernel_imports.ipynb .
 RUN chown $NB_USER:users kernel_imports.ipynb
 
 ENV NODE_ENV production
+ENV SETUPTOOLS_SCM_PRETEND_VERSION 1.5.2
 USER $NB_USER
 RUN cd src/mpcontribs-io && pip install -e .
 RUN cd src/mpcontribs-client && pip install -e .
