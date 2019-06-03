@@ -187,6 +187,7 @@ Resources:
                 - $(aws ecr get-login --no-include-email)
                 - TAG="$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | head -c 8)"
                 - IMAGE_URI="${REPOSITORY_URI}:${TAG}"
+                - SETUPTOOLS_SCM_PRETEND_VERSION="1.5.2"
             build:
               commands:
                 - docker build --tag "${IMAGE_URI}-kong" .
@@ -271,9 +272,9 @@ Resources:
                 - $(aws ecr get-login --no-include-email)
                 - TAG="$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | head -c 8)"
                 - IMAGE_URI="${REPOSITORY_URI}:${TAG}"
+                - SETUPTOOLS_SCM_PRETEND_VERSION="1.5.2"
             build:
               commands:
-                - git fetch --tags
                 - docker build --tag "${IMAGE_URI}-portal" .
             post_build:
               commands:
