@@ -360,6 +360,30 @@ client.contributions.get_card(cid='5a8638a4d4f1444134518527')
 
 #### Modal
 
+```python
+# retrieve modal data for specific contribution
+# - automatically used in pop-up modal on row-click of overview table
+client.contributions.get_modal_data(cid='5ac08be3d4f144332ce7b785')
+```
+
+!!! example "Example Response"
+    ```python
+    {'modal': {
+        'S': {
+            'p': {'ε₁': '722 μV/K', 'ε₂': '783 μV/K', 'ε₃': '806 μV/K'},
+            'n': {'ε₁': '-485 μV/K', 'ε₂': '-479 μV/K', 'ε₃': '-477 μV/K'}
+        },
+        'σ': {
+            'p': {'ε₁': '1.37e+15 (Ωms)⁻¹', 'ε₂': '4.83e+15 (Ωms)⁻¹', 'ε₃': '8.09e+15 (Ωms)⁻¹'},
+            'n': {'ε₁': '2.16e+16 (Ωms)⁻¹', 'ε₂': '2.60e+16 (Ωms)⁻¹', 'ε₃': '4.84e+16 (Ωms)⁻¹'}
+        },
+        'mₑᶜᵒⁿᵈ': {
+            'p': {'ε₁': '3.48 mₑ', 'ε₂': '5.84 mₑ', 'ε₃': '20.5 mₑ'},
+            'n': {'ε₁': '0.582 mₑ', 'ε₂': '1.08 mₑ', 'ε₃': '1.30 mₑ'}
+        }
+    }}
+    ```
+
 ## Tables
 
 ## Structures
