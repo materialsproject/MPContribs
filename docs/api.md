@@ -157,6 +157,10 @@ client.projects.get_table(project='dtu', sort_by='ΔE-QP.indirect', order='asc')
             'ΔE-QP.indirect [eV]': '3.11'
         }, ...]}
     ```
+    See [Backbone
+    Paginator](https://github.com/backbone-paginator/backbone.paginator#adapting-to-a-server-api)
+    for format.
+
 
 #### Graph
 
@@ -386,4 +390,190 @@ client.contributions.get_modal_data(cid='5ac08be3d4f144332ce7b785')
 
 ## Tables
 
+### Fields
+
+| field      | description                                                |
+| ---------- | ---------------------------------------------------------- |
+| id         | unique table ID                                            |
+| project    | short URL-compatible name                                  |
+| identifier | material ID (mp-id) or composition                         |
+| name       | table name (unique together with project & identifier)     |
+| cid        | contribution ID to which this table belongs                |
+| columns    | table header / column names                                |
+| data       | table rows (see [Pandas Docs](https://pandas.pydata.org/pandas-docs/version/0.23/generated/pandas.DataFrame.to_dict.html)) |
+
+### Operations
+
+#### Entry
+
+```python
+# retrieve a single table in Pandas DataFrame `split` format
+tid = '5cca3512e7004456f9b98866'
+client.tables.get_entry(tid=tid)
+
+# change number of rows returned per page and retrieve a specific page
+client.tables.get_entry(tid=tid, per_page=5, page=2)
+```
+
+!!! example "Example Response"
+    ```python
+    {
+        'id': '5cca3512e7004456f9b98866',
+        'project': 'carrier_transport',
+        'identifier': 'mp-27502',
+        'name': 'S(p)',
+        'cid': '5ac08be3d4f144332ce7b785',
+        'columns': [
+            'T [K]', '1e+16 cm⁻³ [μV/K]', '1e+17 cm⁻³ [μV/K]',
+            '1e+18 cm⁻³ [μV/K]', '1e+19 cm⁻³ [μV/K]', '1e+20 cm⁻³ [μV/K]'
+        ],
+        'data': [
+            ['100', '966.127', '767.656', '569.354', '372.197', '185.765'],
+            ['200', '1080.92', '882.440', '684.078', '486.307', '294.269'],
+            ...
+        ]
+    }
+    ```
+    See [Pandas
+    Docs](https://pandas.pydata.org/pandas-docs/version/0.23/generated/pandas.DataFrame.to_dict.html)
+    for more info on `split` format.
+
+#### Backgrid
+
+```python
+# retrieve paginated table in backgrid format (items = rows)
+cid, name = '5ac08be3d4f144332ce7b785', 'S(p)'
+client.tables.get_table(cid=cid, name=name)
+
+# change number of rows returned per page and retrieve a specific page
+client.tables.get_table(cid=cid, name=name, per_page=5, page=2)
+```
+
+!!! example "Example Response"
+	```python
+	{
+		'total_count': 13,
+		'total_pages': 0,
+		'page': 1,
+		'last_page': 0,
+		'per_page': 20,
+		'items': [{
+			'T [K]': '100',
+			'1e+16 cm⁻³ [μV/K]': '966.127',
+			'1e+17 cm⁻³ [μV/K]': '767.656', ...
+		}, ...]
+	}
+	```
+    See [Backbone
+    Paginator](https://github.com/backbone-paginator/backbone.paginator#adapting-to-a-server-api)
+    for format.
+
+#### Graph
+
+```python
+# retrieve a specific table for a contribution in Plotly format
+# - returns x-y-z if number of columns > 2
+project, identifier, name = 'carrier_transport', 'mp-27502', 'S(p)'
+client.tables.get_graph(project=project, identifier=identifier, name=name)
+
+# change number of rows returned per page and retrieve a specific page
+client.tables.get_graph(project=project, identifier=identifier, name=name,
+                        per_page=5, page=2)
+```
+
+!!! example "Example Response"
+    ```python
+    {
+        'x': ['1e+16', '1e+17', '1e+18', '1e+19', '1e+20'],
+        'y': ['100', '200', '300', '400', '500', '600', '700', '800', '900', ...],
+        'z': [
+            ['966.127', '767.656', '569.354', '372.197', '185.765'],
+            ['1080.92', '882.440', '684.078', '486.307', '294.269'], ...
+        ]
+    }
+    ```
+    See Plotly JSON [chart schema](https://help.plot.ly/json-chart-schema/).
+
 ## Structures
+
+### Fields
+
+| field      | description                                                |
+| ---------- | ---------------------------------------------------------- |
+| id         | unique structure ID                                        |
+| project    | short URL-compatible name                                  |
+| identifier | material ID (mp-id) or composition                         |
+| name       | structure name (unique together with project & identifier) |
+| cid        | contribution ID to which this structure belongs            |
+| lattice    | pymatgen [lattice](https://github.com/materialsproject/pymatgen/blob/master/pymatgen/core/lattice.py) |
+| sites      | list of pymatgen [sites](https://github.com/materialsproject/pymatgen/blob/master/pymatgen/core/sites.py) |
+
+
+### Operations
+
+#### Entry
+
+```python
+# retrieve single structure with ID `sid`
+client.structures.get_entry(sid='5cd0ad074fc19150f21ec775')
+```
+
+!!! example "Example Response"
+    ```python
+    {
+        'id': '5cd0ad074fc19150f21ec775',
+        'project': 'MnO2_phase_selection',
+        'identifier': 'mp-510408',
+        'name': 'MnO2',
+        'cid': '5a863936d4f1444134518540',
+        'lattice': {...},
+        'sites': [...]
+    }
+    ```
+    See [Pymatgen
+    Code](https://github.com/materialsproject/pymatgen/tree/master/pymatgen/core) for
+    format of `lattice` and `sites`.
+
+#### CIF
+
+```python
+# retrieve single structure with ID `sid` in CIF format
+client.structures.get_cif(sid='5cd0ad074fc19150f21ec775')
+```
+
+!!! example "Example Response"
+    ```
+    # generated using pymatgen
+    data_MnO2
+    _symmetry_space_group_name_H-M   Pm
+    _cell_length_a   4.38523545
+    _cell_length_b   2.85605817
+    _cell_length_c   4.38543880
+    _cell_angle_alpha   90.00000000
+    _cell_angle_beta   90.00002504
+    _cell_angle_gamma   90.00000000
+    _symmetry_Int_Tables_number   6
+    _chemical_formula_structural   MnO2
+    _chemical_formula_sum   'Mn2 O4'
+    _cell_volume   54.92537358
+    _cell_formula_units_Z   2
+    loop_
+     _symmetry_equiv_pos_site_id
+     _symmetry_equiv_pos_as_xyz
+      1  'x, y, z'
+      2  'x, -y, z'
+    loop_
+     _atom_site_type_symbol
+     _atom_site_label
+     _atom_site_symmetry_multiplicity
+     _atom_site_fract_x
+     _atom_site_fract_y
+     _atom_site_fract_z
+     _atom_site_occupancy
+      Mn  Mn1  1  0.000044  0.000000  0.999975  1.0
+      Mn  Mn2  1  0.500044  0.500000  0.500025  1.0
+      O  O3  1  0.195551  0.500000  0.195482  1.0
+      O  O4  1  0.304406  0.000000  0.695493  1.0
+      O  O5  1  0.695551  0.000000  0.304518  1.0
+      O  O6  1  0.804405  0.500000  0.804506  1.0
+    ```
