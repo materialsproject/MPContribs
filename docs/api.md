@@ -161,11 +161,28 @@ client.projects.get_table(project='dtu', sort_by='ΔE-QP.indirect', order='asc')
 #### Graph
 
 ```python
-# retrieve overview graph for a project
-client.projects.get_graph(project="dtu", columns=['C', 'ΔE-QP.indirect', 'ΔE-QP.direct'])
+# retrieve overview graph for a project (max. 200 data points per request)
+columns = ['C', 'ΔE-QP.indirect', 'ΔE-QP.direct']
+client.projects.get_graph(project='dtu', columns=columns)
+
+# change number of data points returned per page and retrieve a specific page
+client.projects.get_graph(project='dtu', per_page=5, page=10)
+
+# filter columns and values using a list of `column__operator:value` strings with
+# - column in dot notation, and
+# - operator in mongoengine format
+filters = ['C__gt:1', 'C__lt:3']
+client.projects.get_graph(project='dtu', columns=columns, filters=filters)
 ```
 
+See [mongoengine docs](http://docs.mongoengine.org/guide/querying.html#query-operators)
+for more info about query operators.
+
 !!! example "Example Response"
+    The resource will return a dictionary with the `x`, `y`, and `text` keys in the Plotly
+    JSON [chart schema](https://help.plot.ly/json-chart-schema/) for each column
+    requested. `x` contains the list of identifiers, `y` the values for the requested
+    column, and `text` the contribution ID.
     ```python
     [{
         'x': ['mp-1000', 'mp-10086', ...],
@@ -183,6 +200,165 @@ client.projects.get_graph(project="dtu", columns=['C', 'ΔE-QP.indirect', 'ΔE-Q
     ```
 
 ## Contributions
+
+### Fields
+
+| field       | description                                                |
+| ----------- | ---------------------------------------------------------- |
+| id                 | unique contribution ID                              |
+| project            | short URL-compatible name                           |
+| identifier         | material ID (mp-id) or composition                  |
+| collaborators      | list of collaborators/contributors                  |
+| content.data       | hierarchical free-form data                         |
+| content.tables     | list of references to [tables](#tables)             |
+| content.structures | list of references to [structures](#structures)     |
+
+### Operations
+
+#### Entries
+
+```python
+# retrieve paginated list of all contributions
+client.contributions.get_entries()
+
+# retrieve list of contributions for specific project(s)
+client.contributions.get_entries(project=['dtu', 'jarvis_dft'])
+
+# retrieve list of contributions for specific identifiers (mp-id, composition)
+client.contributions.get_entries(identifiers=['mp-2715'])
+
+# search for sub-string in identifiers
+client.contributions.get_entries(contains='mp-27')
+
+# change number of contributions returned per page and retrieve a specific page
+client.contributions.get_entries(per_page=5, page=10)
+
+# use mask to control which fields to retrieve
+# - `content.structures` and `content.tables` return references only
+mask = ['identifier', 'content.data.C']
+client.contributions.get_entries(projects=['dtu'], mask=mask)
+```
+
+!!! example "Example Response"
+    ```python
+    [{
+        'id': '5a862202d4f1443a18fab254',
+        'project': 'dtu',
+        'identifier': 'mp-2715',
+        'collaborators': None,
+        'content': None
+    }, {
+        'id': '5a8638a4d4f1444134518527',
+        'project': 'MnO2_phase_selection',
+        'identifier': 'mp-18767',
+        'collaborators': None,
+        'content': None
+    }
+    ```
+    See [Entry](#entry_1) documentation for `content` schema.
+
+#### Entry
+
+```python
+# retrieve specific contribution with ID `cid`
+client.contributions.get_entry(cid='5a8638a4d4f1444134518527')
+```
+
+!!! example "Example Response"
+    ```python
+    {
+        'id': '5a8638a4d4f1444134518527',
+        'project': 'MnO2_phase_selection',
+        'identifier': 'mp-18767',
+        'collaborators': [{'email': 'phuck@lbl.gov', 'name': 'Patrick Huck'}],
+        'content': {
+            'data': {
+                'ΔH': {'display': '-3.064 eV/mol', 'value': -3.064, 'unit': 'eV/mol'},
+                'formula': 'LiMnO2',
+                'phase': 'o-LiMnO2',
+                'GS?': 'Yes'
+            },
+            'structures': ['5cd0ad064fc19150f21ec762'],
+            'tables': None
+        }
+    }
+    ```
+    See [structures](#structures) and [tables](#tables) resources for their respective
+    schema.
+
+#### Card
+
+```python
+# retrieve embeddable HTML for contribution card
+client.contributions.get_card(cid='5a8638a4d4f1444134518527')
+```
+
+??? example "Example Response"
+    ```html
+    <div name="user_contribs">
+        <div class="panel panel-default" style="width: 97%; ...">
+            <div class="panel-heading" style="border-bottom: 1px solid transparent; ...">
+                <h4 class="panel-title" style="margin-top: 0; ...">
+                    <a href="/MnO2_phase_selection">MnO&#8322; Phase Selection</a>
+                    <a class="btn-xs btn-default pull-right" role="button"
+                       href="/explorer/5a8638a4d4f1444134518527" style="...">
+                       Details
+                   </a>
+                </h4>
+            </div>
+            <div class="panel-body" style="padding: 15px 15px 15px 0">
+                <div style="padding-top: 0px">
+                    <div class="well pull-right" style="float: right ! important; ...">
+                        <h5 style="margin: 5px;">
+                            D. Kitchaev
+                            <sup>
+                                <a href="https://doi.org/..." target="_blank">1</a>
+                            </sup>
+                            <a onclick="read_etal_5a8638a4d4f1444134518527()"
+                               id="read_etal_5a8638a4d4f1444134518527">et al.</a>
+                            <span id="etal_text_5a8638a4d4f1444134518527" hidden>
+                                S. Dacek<br>W. Sun<br>G. Ceder<br>
+                            </span>
+                        </h5>
+                    </div>
+                    <blockquote class="blockquote" style="font-size: 13px; padding: 0px 10px;">
+                        Framework stabilization in MnO&#8322;-derived phases ...
+                        <a onclick="read_more_5a8638a4d4f1444134518527()"
+                           id="read_more_5a8638a4d4f1444134518527">More &#187;</a>
+                        <span id="more_text_5a8638a4d4f1444134518527" hidden>
+                            The approach for DFT is SCAN-metaGGA ...
+                        </span>
+                    </blockquote>
+                </div>
+                <div class="col-md-12" style="padding-right: 0px;">
+                    <table class="jh-type-object jh-root" style="...">
+                        <tbody>
+                            <tr style="...">
+                                <th class="jh-key jh-object-key" style="...">GS?</th>
+                                <td class="jh-value jh-object-value" style="...">
+                                    <span class="jh-type-string" style="...">Yes</span>
+                                </td>
+                            </tr>
+                            ...
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <script>
+            function read_more_5a8638a4d4f1444134518527() {
+                document.getElementById("more_text_5a8638a4d4f1444134518527").style.display = "block";
+                document.getElementById("read_more_5a8638a4d4f1444134518527").style.display = "none";
+            };
+            function read_etal_5a8638a4d4f1444134518527() {
+                document.getElementById("etal_text_5a8638a4d4f1444134518527").style.display = "block";
+                document.getElementById("read_etal_5a8638a4d4f1444134518527").style.display = "none";
+            };
+        </script>
+    </div>
+    ```
+
+#### Modal
 
 ## Tables
 

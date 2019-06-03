@@ -22,6 +22,7 @@ markdown_extensions:
         permalink: true
     - admonition
     - pymdownx.superfences
+    - pymdownx.details
 nav:
     - Home: index.md
     - API: api.md
