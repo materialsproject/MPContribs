@@ -74,19 +74,6 @@ class BackgridTableView(SwaggerView):
               minimum: 2
               maximum: 20
               description: number of results to return per page
-            - name: q
-              in: query
-              type: string
-              description: substring to search for in formula
-            - name: order
-              in: query
-              type: string
-              description: sort ascending or descending
-              enum: [asc, desc]
-            - name: sort_by
-              in: query
-              type: string
-              description: column name to sort by
         responses:
             200:
                 description: Paginated table response in backgrid format (items = rows of table)
@@ -113,8 +100,8 @@ class BackgridTableView(SwaggerView):
         PER_PAGE_MAX = current_app.config['PER_PAGE_MAX']
         per_page = int(request.args.get('per_page', PER_PAGE_MAX))
         per_page = PER_PAGE_MAX if per_page > PER_PAGE_MAX else per_page
-        order = request.args.get('order')
-        sort_by = request.args.get('sort_by')
+        #order = request.args.get('order')
+        #sort_by = request.args.get('sort_by')
         table = Tables.objects.get(cid=cid, name=name)
         #if search is not None: # TODO search first column?
         #    objects = objects(content__data__formula__contains=search)
