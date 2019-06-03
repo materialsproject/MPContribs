@@ -7,7 +7,7 @@ math.import(require('../../../../../../node_modules/mathjs/lib/type/matrix/index
 math.import(require('../../../../../../node_modules/mathjs/lib/function/matrix/transpose'));
 
 var tid = '5cca3b57e7004456f9ba72cc';
-var api_url = window.api['host'] + 'tables/' + tid + '?mask=data,columns&per_page=200';
+var api_url = window.api['host'] + 'tables/' + tid + '?per_page=200';
 var graph = document.getElementById('graph');
 var spinner_plot = new Spinner({scale: 0.5});
 var target = document.getElementById('spinner_graph');

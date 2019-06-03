@@ -110,7 +110,7 @@ $.when.apply($, gets).done(function() {
             var tgets = $.map(response[0], function(contrib) {
                 var tid = contrib.content.tables[0];
                 return $.get({
-                    url: window.api['host'] + 'tables/' + tid + '?mask=identifier,data&per_page=200',
+                    url: window.api['host'] + 'tables/' + tid + '?per_page=200',
                     headers: window.api['headers']
                 });
             });

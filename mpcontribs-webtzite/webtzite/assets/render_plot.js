@@ -16,7 +16,7 @@ window.render_plot = function(props) {
         var target = document.getElementById('spinner_graph');
         spinner_plot.spin(target);
         $.get({
-            url: window.api['host'] + 'tables/' + props.tid + '?mask=data&per_page=200',
+            url: window.api['host'] + 'tables/' + props.tid + '?per_page=200',
             headers: window.api['headers']
         }).done(function(response) {
             var columns = math.transpose(response['data']);
