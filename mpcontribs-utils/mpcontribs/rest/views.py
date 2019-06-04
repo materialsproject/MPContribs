@@ -129,30 +129,6 @@ def submit_contribution(request, db_type=None, mdb=None):
     return {"valid_response": True, 'response': str(cid)}
 
 @mapi_func(supported_methods=["POST", "GET"], requires_api_key=True)
-def build_contribution(request, db_type=None, mdb=None):
-    """Builds a single contribution into according material/composition"""
-    try:
-        cid = ObjectId(request.POST['cid'])
-        flag = request.POST.get('flag')
-        if flag is None:
-            response = mdb.contrib_build_ad.build(
-                cid, api_key=request.user.api_key, endpoint=get_endpoint(request)
-            )
-        else:
-            try:
-                flag = bool(int(flag))
-            except ValueError:
-                if flag in ['True', 'False']:
-                    flag = True if flag == 'True' else False
-                else:
-                    raise ValueError('flag {} is not in boolean'.format(flag))
-            mdb.contrib_build_ad.set_build_flag(cid, flag)
-            response = 'build flag for {} set to {}'.format(cid, flag)
-    except Exception as ex:
-        raise ValueError('"REST Error: "{}"'.format(str(ex)))
-    return {"valid_response": True, 'response': response}
-
-@mapi_func(supported_methods=["POST", "GET"], requires_api_key=True)
 def query_contributions(request, db_type=None, mdb=None):
     """
     @api {post} /query?API_KEY=:api_key Query contributions
