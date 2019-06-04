@@ -1,6 +1,6 @@
 import os
 from bravado.client import SwaggerClient
-from bravado.requests_client import RequestsClient
+from bravado.fido_client import FidoClient
 from bravado.swagger_model import Loader
 
 NODE_ENV = os.environ.get('NODE_ENV')
@@ -20,7 +20,7 @@ def load_client(apikey=None):
             host = 'api:5000' if DEBUG else 'localhost:5000'
         protocol = 'https' if apikey else 'http'
         spec_url = f'{protocol}://{host}/apispec.json'
-        http_client = RequestsClient()
+        http_client = FidoClient()
         if apikey:
             http_client.set_api_key(
                 host, apikey, param_in='header', param_name='x-api-key'

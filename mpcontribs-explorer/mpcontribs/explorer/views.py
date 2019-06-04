@@ -7,6 +7,7 @@ from django.http import HttpResponse
 import nbformat
 from nbconvert import HTMLExporter
 from bs4 import BeautifulSoup
+from fido.exceptions import HTTPTimeoutError
 from mpcontribs.client import load_client
 
 def index(request):
@@ -54,8 +55,11 @@ def export_notebook(nb, cid):
 def contribution(request, cid):
     ctx = RequestContext(request)
     client = load_client()
-    nb = client.notebooks.get_entry(cid=cid).response().result
-    ctx['nb'], ctx['js'] = export_notebook(nb, cid)
+    try:
+        nb = client.notebooks.get_entry(cid=cid).response(timeout=2).result
+        ctx['nb'], ctx['js'] = export_notebook(nb, cid)
+    except HTTPTimeoutError:
+        ctx['alert'] = 'First build of detail page initiated. Automatic reload in 10s.'
     return render(request, "mpcontribs_explorer_contribution.html", ctx.flatten())
 
 def cif(request, sid):

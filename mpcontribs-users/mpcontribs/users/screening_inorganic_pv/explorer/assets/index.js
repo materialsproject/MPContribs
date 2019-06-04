@@ -8,7 +8,7 @@ spinner_plot.spin(target);
 var graph = document.getElementById('graph');
 var layout = {
     grid: {rows: 1, columns: 2, xgap: 0.1, subplots:[['xy','x2y']]},
-    margin: {l: 40, b: 40, t: 30, r: 0},
+    margin: {l: 40, b: 40, t: 30, r: 0}, hovermode: 'closest',
     showlegend: false, xaxis: {title: 'mᵉ [mₑ]'},
     xaxis2: {title: 'mʰ [mₑ]'}, yaxis: {title: 'SLME|1000nm [%]'},
 }
