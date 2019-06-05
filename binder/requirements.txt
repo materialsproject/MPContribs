@@ -1,2 +1,0 @@
-mpcontribs-client==1.5.4
-mpcontribs-io==1.5.4

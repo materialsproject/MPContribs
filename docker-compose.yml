@@ -1,6 +1,7 @@
 version: '3'
 
 services:
+
   web:
     build: .
     environment:
@@ -17,6 +18,7 @@ services:
       - ./mpcontribs-client:/app/mpcontribs-client
     ports:
       - "8080:8080"
+
   api:
     build: ./mpcontribs-api
     volumes:
@@ -27,6 +29,7 @@ services:
       - GATEWAY_HOST=kernel_gateway:8888
     ports:
       - "5000:5000"
+
   chrome:
     build:
         context: .
@@ -42,13 +45,18 @@ services:
     volumes:
       - ./mpcontribs-io:/src/mpcontribs-io
       - ./mpcontribs-client:/src/mpcontribs-client
-    ports:
-      - "8888:8888"
     environment:
       - KG_ALLOW_ORIGIN='*'
+
   docs:
     image: squidfunk/mkdocs-material
     volumes:
       - .:/docs
     ports:
       - "8000:8000"
+
+  binder:
+    build:
+        context: ./binder
+    ports:
+      - "8888:8888"
