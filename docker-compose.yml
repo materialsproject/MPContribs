@@ -57,6 +57,7 @@ services:
 
   binder:
     build:
-        context: ./binder
+      context: .
+      dockerfile: binder/Dockerfile
     ports:
       - "8888:8888"
