@@ -1,5 +1,5 @@
 import os
-from setuptools import setup, find_packages
+from setuptools import setup
 
 SETUP_PTH = os.path.dirname(os.path.abspath(__file__))
 with open(os.path.join(SETUP_PTH, 'requirements.txt')) as f:
@@ -16,7 +16,7 @@ setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     url = 'https://github.com/materialsproject/MPContribs/tree/master/mpcontribs-client',
-    packages = find_packages(),
+    packages = ['mpcontribs.client'],
     install_requires = required,
     license = 'MIT',
     zip_safe=False,
