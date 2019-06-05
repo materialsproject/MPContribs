@@ -61,6 +61,6 @@ def get_context(project, columns=None):
     ).response().result
     if data['items']:
         columns = list(data['items'][0].keys())
-        table = Table(data['items'], columns=columns)
-        ctx['table'] = table.render(project=project)
+        table = Table(data['items'], columns=columns, project=project)
+        ctx['table'] = table.render()
     return ctx

@@ -7,10 +7,13 @@ from mpcontribs.io.core.recdict import RecursiveDict
 from urllib.parse import urlparse
 
 class Table(pd.DataFrame):
-    def __init__(self, data, columns=None, index=None, cid=None, name=None):
+    def __init__(self, data, columns=None, index=None,
+                 cid=None, name=None, api_key=None, project=None):
         super(Table, self).__init__(data=data, index=index, columns=columns)
         self.cid = cid
         self.name = name
+        self.api_key = api_key
+        self.project = project
 
     def to_dict(self):
         from pandas import MultiIndex
@@ -104,7 +107,7 @@ class Table(pd.DataFrame):
 
         return table
 
-    def render(self, project=None, total_records=None):
+    def render(self, total_records=None):
         """use BackGrid JS library to render Pandas DataFrame"""
         # if project given, this will result in an overview table of contributions
         # TODO check for index column in df other than the default numbering
@@ -113,11 +116,12 @@ class Table(pd.DataFrame):
             total_records = self.shape[0]
         config = {"total_records": total_records}
         config['uuids'] = [str(uuid.uuid4()) for i in range(3)]
-        if project is None:
+        if self.project is None:
             config['name'] = self.name
             config['cid'] = self.cid
         else:
-            config['project'] = project
+            config['project'] = self.project
+        config['api_key'] = self.api_key
         jconfig = json.dumps(config)
         html = '<div id="{}"></div>'.format(config['uuids'][0])
         html += '<div id="{}" style="width:100%;"></div>'.format(config['uuids'][1])
