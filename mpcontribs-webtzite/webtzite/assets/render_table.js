@@ -26,6 +26,10 @@ window.render_table = function(props) {
         rows_opt["url"] = window.api['host'] + 'tables/' + config.cid + '/' + config.name;
     }
 
+    if ( !('headers' in window.api) ) {
+        window.api['headers'] = {'X-API-KEY': props.api_key};
+    }
+
     rows_opt["sync"] = function(method, model, options){
         options.beforeSend = function(xhr) {
             var target = document.getElementById('spinner_table');
