@@ -99,8 +99,16 @@ class ContributionsView(SwaggerView):
             query = construct_query(filters)
             objects = objects(**query)
 
-        entries = objects.paginate(page=page, per_page=per_page).items
-        return self.marshal(entries)
+        n = objects.count()
+        if not page%n and page > n/per_page:
+            return []
+
+        return [
+            unflatten(dict(
+                (k, v) for k, v in get_cleaned_data(self.marshal(entry)).items()
+            ))
+            for entry in objects.paginate(page=page, per_page=per_page).items
+        ]
 
 class ContributionView(SwaggerView):
 

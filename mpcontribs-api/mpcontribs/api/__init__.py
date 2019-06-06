@@ -33,8 +33,13 @@ def construct_query(filters):
             k, v = f.split(':')
             col, op = k.rsplit('__', 1)
             col = col.replace(".", "__")
-            key = f'content__data__{col}__value__{op}'
-            query[key] = float(v)
+            try:
+                val = float(v)
+                key = f'content__data__{col}__value__{op}'
+                query[key] = val
+            except:
+                key = f'content__data__{col}__{op}'
+                query[key] = v
     return query
 
 def create_app():
