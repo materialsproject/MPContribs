@@ -1,1 +1,1 @@
-var mpcontribs = require(['/custom/js/mpcontribs.var.js']);
+var mpcontribs = require(['custom/js/mpcontribs.var.js']);

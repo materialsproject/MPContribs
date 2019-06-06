@@ -14,6 +14,9 @@ COPY webpack-binder.config.js webpack.config.js
 COPY binder/binder.js .
 RUN npm run webpack 2>&1
 
-RUN mkdir /home/jovyan/.jupyter/custom
 COPY binder/custom.js /home/jovyan/.jupyter/custom/
-RUN mv -v /home/jovyan/dist /home/jovyan/.jupyter/custom/js
+RUN mkdir /home/jovyan/.jupyter/custom && \
+    mv -v /home/jovyan/dist /home/jovyan/.jupyter/custom/js
+
+RUN rm -v binder.js package-lock.json package.json webpack.config.js && \
+    rm -rv mpcontribs-webtzite node_modules
