@@ -1,5 +1,3 @@
-require("./node_modules/bootstrap/dist/css/bootstrap.min.css");
-require("./node_modules/bootstrap/dist/css/bootstrap-theme.min.css");
 require("./node_modules/json-human/css/json.human.css");
 require("./node_modules/backgrid/lib/backgrid.min.css");
 require("./node_modules/backgrid-paginator/backgrid-paginator.min.css");
