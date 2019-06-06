@@ -23,6 +23,20 @@ def get_resource_as_string(name, charset='utf-8'):
     with current_app.open_resource(name) as f:
         return f.read().decode(charset)
 
+# utility to use in views
+def construct_query(filters):
+    # C__gte:0.42,C__lte:2.10,ΔE-QP.direct__lte:11.3
+    # -> content__data__C__value__lte
+    query = {}
+    for f in filters:
+        if '__' in f and ':' in f:
+            k, v = f.split(':')
+            col, op = k.rsplit('__', 1)
+            col = col.replace(".", "__")
+            key = f'content__data__{col}__value__{op}'
+            query[key] = float(v)
+    return query
+
 def create_app():
     app = Flask(__name__)
     app.config.from_pyfile('config.py', silent=True)

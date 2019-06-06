@@ -4,6 +4,7 @@ from mongoengine.queryset.visitor import Q
 from flask import Blueprint, request, current_app
 from bson.decimal128 import Decimal128
 from pandas.io.json.normalize import nested_to_record
+from mpcontribs.api import construct_query
 from mpcontribs.api.core import SwaggerView
 from mpcontribs.api.projects.document import Projects
 from mpcontribs.api.contributions.document import Contributions
@@ -368,16 +369,7 @@ class GraphView(SwaggerView):
             objects = ContributionsDeref.objects(**query).only(*mask)
 
             if filters:
-                # C__gte:0.42,C__lte:2.10,ΔE-QP.direct__lte:11.3
-                # -> content__data__C__value__lte
-                query = {}
-                for f in filters:
-                    if '__' in f and ':' in f:
-                        k, v = f.split(':')
-                        col, op = k.rsplit('__', 1)
-                        col = col.replace(".", "__")
-                        key = f'content__data__{col}__value__{op}'
-                        query[key] = float(v)
+                query = construct_query(filters)
                 objects = objects(**query)
 
             data = [{'x': [], 'y': [], 'text': []} for col in columns]

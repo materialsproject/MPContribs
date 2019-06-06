@@ -9,7 +9,7 @@ from lxml import html
 from toronado import inline
 from typing import Any, Dict
 
-from mpcontribs.api import get_resource_as_string
+from mpcontribs.api import get_resource_as_string, construct_query
 from mpcontribs.api.core import SwaggerView
 from mpcontribs.api.projects.document import Projects
 from mpcontribs.api.contributions.document import Contributions
@@ -60,6 +60,15 @@ class ContributionsView(SwaggerView):
                   type: string
               default: ["project", "identifier"]
               description: comma-separated list of fields to return (MongoDB syntax)
+            - name: filters
+              in: query
+              type: array
+              items:
+                  type: string
+              description: list of `column__operator:value` filters \
+                      with `column` in dot notation and `operator` in mongoengine format \
+                      (http://docs.mongoengine.org/guide/querying.html#query-operators). \
+                      `column` needs to be a valid field in `content.data`.
         responses:
             200:
                 description: list of contributions
@@ -69,20 +78,27 @@ class ContributionsView(SwaggerView):
                         $ref: '#/definitions/ContributionsSchema'
         """
         mask = request.args.get('mask', 'project,identifier').split(',')
-        objects = Contributions.objects.only(*mask)
         projects = request.args.get('projects', '').split(',')
-        if projects and projects[0]:
-            objects = objects(project__in=projects)
         identifiers = request.args.get('identifiers', '').split(',')
-        if identifiers and identifiers[0]:
-            objects = objects(identifier__in=identifiers)
         contains = request.args.get('contains')
-        if contains:
-            objects = objects(identifier__icontains=contains)
+        filters = request.args.get('filters', '').split(',')
+
         page = int(request.args.get('page', 1))
         PER_PAGE_MAX = current_app.config['PER_PAGE_MAX']
         per_page = int(request.args.get('per_page', PER_PAGE_MAX))
         per_page = PER_PAGE_MAX if per_page > PER_PAGE_MAX else per_page
+
+        objects = Contributions.objects.only(*mask)
+        if projects and projects[0]:
+            objects = objects(project__in=projects)
+        if identifiers and identifiers[0]:
+            objects = objects(identifier__in=identifiers)
+        if contains:
+            objects = objects(identifier__icontains=contains)
+        if filters:
+            query = construct_query(filters)
+            objects = objects(**query)
+
         entries = objects.paginate(page=page, per_page=per_page).items
         return self.marshal(entries)
 
