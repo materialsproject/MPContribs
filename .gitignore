@@ -27,3 +27,5 @@ site/
 cloudformation/kong/
 */.eggs
 */dist
+mpcontribs-client/build/*
+mpcontribs-io/build/*
