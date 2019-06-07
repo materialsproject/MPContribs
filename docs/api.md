@@ -11,15 +11,17 @@ crystal structures. There are separate dedicated resource endpoints for
 contributions.
 
 !!! tip
-    Launch the Binder example notebook below to try out the MPContribs API in the cloud.
-    You can download the notebook afterwards for further use offline with the MPContribs
+    Click the badge below to launch an example notebook in BinderHub and use the
+    MPContribs API to retrieve the data you need. You can download the resulting data
+    and/or the entire notebook afterwards for use offline. Running the notebook(s) on your
+    own machine requires installation of the MPContribs
     [client](https://pypi.org/project/mpcontribs-client/) and
     [I/O](https://pypi.org/project/mpcontribs-io/) libraries. See the [Binder
     Dockerfile](https://github.com/materialsproject/MPContribs/blob/master/binder/Dockerfile)
     for guidance on how to integrate the MPContribs I/O library with Jupyter notebooks.  
     [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/materialsproject/MPContribs/master?filepath=work%2Findex.ipynb)
 
-To get started, install the python client library
+To get started on your own machine, install the python client library
 [mpcontribs-client](https://pypi.org/project/mpcontribs-client/) for the MPContribs API:
 
 ```
