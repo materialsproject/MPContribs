@@ -19,7 +19,7 @@ contributions.
     [I/O](https://pypi.org/project/mpcontribs-io/) libraries. See the [Binder
     Dockerfile](https://github.com/materialsproject/MPContribs/blob/master/binder/Dockerfile)
     for guidance on how to integrate the MPContribs I/O library with Jupyter notebooks.  
-    [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/materialsproject/MPContribs/master?filepath=work%2Findex.ipynb)
+    [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/materialsproject/MPContribs/master?filepath=index.ipynb)
 
 To get started on your own machine, install the python client library
 [mpcontribs-client](https://pypi.org/project/mpcontribs-client/) for the MPContribs API:
