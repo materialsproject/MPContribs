@@ -100,7 +100,7 @@ class ContributionsView(SwaggerView):
             objects = objects(**query)
 
         n = objects.count()
-        if not page%n and page > n/per_page:
+        if n < 1 or (not page%n and page > n/per_page):
             return []
 
         return [
