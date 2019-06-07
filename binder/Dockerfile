@@ -19,4 +19,15 @@ RUN mkdir /home/jovyan/.jupyter/custom && \
 COPY binder/custom.js /home/jovyan/.jupyter/custom/
 
 RUN rm -f binder.js package-lock.json package.json webpack.config.js
-RUn rm -rf node_modules
+RUN rm -rf node_modules
+
+USER root
+RUN rm -rf mpcontribs-webtzite
+
+#ENV NODE_ENV development
+#ENV SETUPTOOLS_SCM_PRETEND_VERSION 1.5.7
+#COPY mpcontribs-io /tmp/mpcontribs-io
+#RUN cd /tmp/mpcontribs-io && pip install --no-cache-dir -e .
+
+USER jovyan
+

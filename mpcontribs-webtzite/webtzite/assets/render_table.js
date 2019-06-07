@@ -27,7 +27,7 @@ window.render_table = function(props) {
     }
 
     if ( !('headers' in window.api) ) {
-        window.api['headers'] = {'X-API-KEY': props.api_key};
+        window.api['headers'] = {'X-API-KEY': config.api_key};
     }
 
     rows_opt["sync"] = function(method, model, options){
