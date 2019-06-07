@@ -173,8 +173,7 @@ client.projects.get_graph(project='dtu', columns=columns)
 client.projects.get_graph(project='dtu', per_page=5, page=10)
 
 # filter columns and values using a list of `column__operator:value` strings with
-# - column in dot notation, and
-# - operator in mongoengine format
+# column in dot notation and operator in mongoengine format
 filters = ['C__gt:1', 'C__lt:3']
 client.projects.get_graph(project='dtu', columns=columns, filters=filters)
 ```
@@ -241,6 +240,18 @@ client.contributions.get_entries(per_page=5, page=10)
 # - `content.structures` and `content.tables` return references only
 mask = ['identifier', 'content.data.C']
 client.contributions.get_entries(projects=['dtu'], mask=mask)
+
+# filter fields and values using a list of `field__operator:value` strings with
+# field in dot notation, and operator in mongoengine format.
+# - filters are implicitly AND
+# - only last filter kept for duplicate field/operator combinations
+fields = ['<S>', '<σ>', '<S²σ>']
+mask = [f'content.data.{field}' for field in fields]
+mask += ['content.data.formula', 'identifier']
+filters = ['formula__contains:Li3', '<σ>.p__lt:2e15', '<σ>.n__lt:2e15']
+client.contributions.get_entries(
+    projects=['carrier_transport'], filters=filters, mask=mask
+)
 ```
 
 !!! example "Example Response"
