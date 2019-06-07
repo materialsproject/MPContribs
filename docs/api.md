@@ -10,6 +10,10 @@ crystal structures. There are separate dedicated resource endpoints for
 [`tables`](#tables) and [`structures`](#structures) both of which are referenced in the
 contributions.
 
+!!! tip
+    Launch the Binder example notebook below to try out the MPContribs API in the cloud  
+    [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/materialsproject/MPContribs/master?filepath=work%2Findex.ipynb)
+
 To get started, install the python client library
 [mpcontribs-client](https://pypi.org/project/mpcontribs-client/) for the MPContribs API:
 
