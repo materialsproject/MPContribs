@@ -14,3 +14,13 @@ The [`card`](/api/#card) endpoint in the
 [contributions](https://api.mpcontribs.org/#/contributions) resource of the API provides
 embeddable code snippets. These are also used to render the cards in the materials details
 pages on MP, for instance.
+
+# Contribution Detail Pages
+
+!!! warning
+    Coming soon.
+
+# Default Landing Page Layout
+
+!!! warning
+    Coming soon.
