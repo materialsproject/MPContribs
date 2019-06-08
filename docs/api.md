@@ -319,7 +319,7 @@ client.contributions.get_entry(cid='5a8638a4d4f1444134518527')
 client.contributions.get_card(cid='5a8638a4d4f1444134518527')
 ```
 
-??? example "Example Response"
+!!! example "Example Response"
     ```html
     <div name="user_contribs">
         <div class="panel panel-default" style="width: 97%; ...">
