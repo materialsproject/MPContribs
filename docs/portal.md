@@ -1,5 +1,15 @@
 # Explore contributed data sets
 
+![Screenshot](portal.png)
+
+The MPContribs [Portal](https://portal.mpcontribs.org) contains an entry for every
+contributed dataset which links to the respective landing pages. Each entry also includes
+the project title, its authors, and a small preview icon. Project description and author
+list can be search for keywords to reduce the list of displayed entries. Browsing
+contributions across datasets/projects as well as materials can be done with the
+*Contribution Cards Explorer*. The key to authenticate against the MPContribs [API](/api)
+is shown on the user's dashboard.
+
 ## Contribution Cards Explorer
 
 ![Screenshot](explorer.png)
@@ -17,12 +27,15 @@ The [`card`](/api/#card) endpoint in the
 embeddable code snippets. These are also used to render the cards in the materials details
 pages on MP, for instance.
 
+## Dataset Landing Pages
+
+!!! warning
+    Under construction.
+
+![Screenshot](landing_page.png)
+
 ## Contribution Detail Pages
 
 !!! warning
     Coming soon.
 
-## Default Landing Page Layout
-
-!!! warning
-    Coming soon.
