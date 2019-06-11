@@ -40,6 +40,7 @@ nav:
     - Home: index.md
     - API: api.md
     - Portal: portal.md
+    - Ingester: ingester.md
 google_analytics:
     - 'UA-140392573-1'
     - 'auto'
