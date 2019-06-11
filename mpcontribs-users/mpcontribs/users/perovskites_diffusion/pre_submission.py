@@ -2,6 +2,7 @@ import tarfile, os
 from pandas import read_excel
 from mpcontribs.io.archieml.mpfile import MPFile
 from mpcontribs.io.core.recdict import RecursiveDict
+from mpcontribs.io.core.utils import clean_value
 
 project = 'perovskites_diffusion'
 
@@ -9,6 +10,13 @@ from pymongo import MongoClient
 client = MongoClient('mongodb+srv://'+os.environ['MPCONTRIBS_MONGO_HOST'])
 db = client['mpcontribs']
 print(db.contributions.count_documents({'project': project}))
+
+units = {
+    'emig': 'eV', 'bmag': 'Am²', 'unitvol': 'Å³', 'Kcr': 'Å', 'freevol': 'Å',
+    'opband': 'eV', 'evf': 'eV', 'bob': '°', 'ecoh': 'eV', 'bulkmod': 'kbar',
+    'efermi': 'eV', 'ehull': 'eV', 'aonn': 'Å', 'bonn': 'Å', 'aoarad': 'Å',
+    'bobrad': 'Å', 'kcaobo': 'Å'
+}
 
 def run(mpfile):
 
@@ -22,9 +30,8 @@ def run(mpfile):
 
     count, skipped, update = 0, 0, 0
     for index, row in df[1:].iterrows():
-        mpid = None
+        identifier = None
         data = RecursiveDict()
-        mpfile_single = MPFile()
 
         for col, value in row.iteritems():
             if col == 'level_0' or col == 'index':
@@ -38,35 +45,64 @@ def run(mpfile):
                 key = col.strip().lower()
 
             if key == 'pmgmatchid':
-                mpid = value.strip()
-                if mpid == 'None':
-                    mpid = None
+                identifier = value.strip()
+                if identifier == 'None':
+                    identifier = None
                 name = '_'.join(data['directory'].split('/')[1:])
                 contcar_path = 'bulk_CONTCARs/{}_CONTCAR'.format(
                     data['directory'].replace('/', '_')
                 )
                 contcar = contcars.extractfile(contcar_path)
-                mpid_match = mpfile_single.add_structure(
-                    contcar.read(), fmt='poscar',
-                    name=name, identifier=mpid
-                )
-                #if not mp_id_pattern.match(mpid_match):
-                #    print('skipping', name)
-                #    continue
-                mpid = mpid_match
+                try:
+                    if identifier == 'mp-34710':
+                        identifier = 'mp-24878'
+                    identifier_match = mpfile.add_structure(
+                        contcar.read().decode('utf8'), fmt='poscar',
+                        name=name, identifier=identifier
+                    )
+                except Exception as ex:
+                    print(ex)
+                    continue
+                if not identifier:
+                    identifier = identifier_match
             else:
-                data[key] = value
+                if isinstance(value, str):
+                    val = value.strip()
+                else:
+                    unit = units.get(key, '')
+                    val = clean_value(value, unit=unit)
+                if val != 'None':
+                    data[key] = val
 
-        if mpid is None:
-            continue
+        mpfile.add_hierarchical_data({'data': data}, identifier=identifier)
+        doc = {'identifier': identifier, 'project': project, 'content': {}}
+        doc['content']['data'] = mpfile.document[identifier]['data']
+        doc['collaborators'] = [{'name': 'Patrick Huck', 'email': 'phuck@lbl.gov'}]
+        r = db.contributions.insert_one(doc)
+        cid = r.inserted_id
+        print('cid:', cid)
 
-        mpfile_single.add_hierarchical_data({'data': data}, identifier=mpid)
+        sdct = mpfile.document[identifier]['structures'][name]
+        sdct.pop('@module')
+        sdct.pop('@class')
+        if sdct['charge'] is None:
+            sdct.pop('charge')
+        sdct['identifier'] = identifier
+        sdct['project'] = project
+        sdct['name'] = name
+        sdct['cid'] = cid
+        r = db.structures.insert_one(sdct)
+        print('sid:', r.inserted_id)
 
-        mpfile.concat(mpfile_single)
+        r = db.contributions.update_one(
+            {'_id': cid},
+            {'$set': {'content.structures': [r.inserted_id]}}
+        )
+        print(r.matched_count, r.modified_count)
 
-    mpfile.add_hierarchical_data({'abbreviations': abbreviations})
+    #mpfile.add_hierarchical_data({'abbreviations': abbreviations})
 
 mpfile = MPFile()
-mpfile.max_contribs = 1
+mpfile.max_contribs = 90
 run(mpfile)
-print(mpfile)
+#print(mpfile)
