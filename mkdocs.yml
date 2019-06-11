@@ -35,6 +35,7 @@ markdown_extensions:
         repo: MPContribs
     - pymdownx.mark
     - pymdownx.smartsymbols
+    - footnotes
 
 nav:
     - Home: index.md
