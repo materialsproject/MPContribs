@@ -5,7 +5,8 @@
 The MPContribs [Portal](https://portal.mpcontribs.org) contains an entry for every
 contributed dataset which links to the respective landing pages. Each entry also includes
 the project title, its authors, and a small preview icon. Project description and author
-list can be search for keywords to reduce the list of displayed entries. Browsing
+list can be search for keywords to reduce the list of displayed entries. Each
+project/dataset can contain many contributions for an MP material or composition. Browsing
 contributions across datasets/projects as well as materials can be done with the
 [Contribution Cards Explorer](#contribution-cards-explorer). The key to authenticate
 against the MPContribs [API](/api) is shown on the user's dashboard.
@@ -73,6 +74,27 @@ pages. An example can be found
 
 ## Contribution Detail Pages
 
-!!! warning
-    Coming soon.
+![Screenshot](detail_page.png)
+
+Each contribution in a dataset is assigned a unique identifier (see MongoDB
+[ObjectId](https://docs.mongodb.com/manual/reference/method/ObjectId/)) which can be used
+to access its *Contribution Details Page* rendering an interactive version of its full
+content. For instance, the above screenshot is a truncated version of the detail page at
+
+https://portal.mpcontribs.org/explorer/5ac08be3d4f144332ce7b785
+
+A contribution consists of three (optional) components: free-form hierarchical data,
+tabular data, and crystal structures. The detail page is a static version of a fully
+functional [Jupyter](https://jupyter.org/) notebook using the MPContribs [API
+Client](https://pypi.org/project/mpcontribs-client/) and
+[I/O](https://pypi.org/project/mpcontribs-io/) python libraries. It contains code showing
+how to interact with a contribution programmatically along with the resulting output. The
+navigation bar at the top provides links to jump to a respective component, toggle buttons
+to show/hide components, and a download button to retrieve the contribution in JSON
+format.
+
+Launch the Binder project below to explore example notebooks using the MPContribs API
+Client and I/O libraries.
+
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/materialsproject/MPContribs/master)
 
