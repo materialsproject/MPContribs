@@ -35,3 +35,7 @@ class CarrierTransportConfig(AppConfig):
 class ScreeningInorganicPvConfig(AppConfig):
     name = 'mpcontribs.users.screening_inorganic_pv.explorer'
     label = 'screening_inorganic_pv'
+
+class PerovskitesDiffusionConfig(AppConfig):
+    name = 'mpcontribs.users.perovskites_diffusion.explorer'
+    label = 'perovskites_diffusion'

@@ -14,4 +14,6 @@ urlpatterns = [
     url(r'dtu/', include('mpcontribs.users.dtu.explorer.urls')),
     url(r'carrier_transport/', include('mpcontribs.users.carrier_transport.explorer.urls')),
     url(r'screening_inorganic_pv/', include('mpcontribs.users.screening_inorganic_pv.explorer.urls')),
+    url(r'perovskites_diffusion/',
+        include('mpcontribs.users.perovskites_diffusion.explorer.urls')),
 ]
