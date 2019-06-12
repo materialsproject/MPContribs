@@ -51,7 +51,7 @@ class ContributionsView(SwaggerView):
               type: integer
               default: 20
               minimum: 2
-              maximum: 20
+              maximum: 200
               description: number of results to return per page
             - name: mask
               in: query
@@ -84,7 +84,7 @@ class ContributionsView(SwaggerView):
         filters = request.args.get('filters', '').split(',')
 
         page = int(request.args.get('page', 1))
-        PER_PAGE_MAX = current_app.config['PER_PAGE_MAX']
+        PER_PAGE_MAX = 200
         per_page = int(request.args.get('per_page', PER_PAGE_MAX))
         per_page = PER_PAGE_MAX if per_page > PER_PAGE_MAX else per_page
 

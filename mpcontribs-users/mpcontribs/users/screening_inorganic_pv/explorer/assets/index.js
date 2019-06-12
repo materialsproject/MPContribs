@@ -28,20 +28,40 @@ var gets = $.map(graph_columns, function(columns) {
 })
 
 $.when.apply($, gets).done(function() {
-    var data = [];
-    $.each(arguments, function(index, response) {
-        var r = response[0];
-        data.push({
-            x: r[0]['y'], y: r[1]['y'], text: r[1]['text'],
-            name: names[index], mode: 'markers', type: 'scatter',
-            marker: markers[index], xaxis: 'x'+(index+1), yaxis: 'y'
+    var gets_args = arguments;
+    var gets2 = $.map(gets_args, function(response) {
+        var identifiers = response[0][0]['x'];
+        return $.get({
+            url: window.api['host'] + 'contributions/', data: {
+                'projects': 'screening_inorganic_pv',
+                'identifiers': identifiers.join(','),
+                'per_page': identifiers.length,
+                'mask': 'content.data'
+            }, headers: window.api['headers']
         });
     });
-    Plotly.plot(graph, data, layout, {displayModeBar: true});
-    graph.on('plotly_click', function(d){
-        var cid = d.points[0].text;
-        var url = '/explorer/' + cid;
-        window.open(url, '_blank');
+    $.when.apply($, gets2).done(function() {
+        var data = [];
+        $.each(arguments, function(index, response) {
+            var r = gets_args[index][0];
+            var text = $.map(response[0], function(d) {
+                var cid = d['id'];
+                var s = cid + '<br>' + JSON.stringify(d['content']['data'], null, 2);
+                var s = s.replace(/"/g, '').replace(/,/g, '<br>');
+                return s.replace(/{/g, '<br>').replace(/}/g, '');
+            });
+            data.push({
+                x: r[0]['y'], y: r[1]['y'], text: text, hoverlabel: {'align': 'left'},
+                name: names[index], mode: 'markers', type: 'scatter',
+                marker: markers[index], xaxis: 'x'+(index+1), yaxis: 'y'
+            });
+        });
+        Plotly.plot(graph, data, layout, {displayModeBar: true});
+        graph.on('plotly_click', function(d){
+            var cid = d.points[0].text.split('<br>')[0];
+            var url = '/explorer/' + cid;
+            window.open(url, '_blank');
+        });
+        spinner_plot.stop();
     });
-    spinner_plot.stop();
 });

@@ -152,7 +152,7 @@ class PlotlyTableView(SwaggerView):
               type: integer
               default: 20
               minimum: 2
-              maximum: 20
+              maximum: 200
               description: number of results to return per page
         responses:
             200:
