@@ -5,12 +5,36 @@ var target = document.getElementById('spinner_graph');
 var spinner_plot = new Spinner({scale: 0.5});
 spinner_plot.spin(target);
 
+var SQMAX = 0.337; var MASSMAX = 1.5;
+var xmin = 0; var xmax = 1.65;
+var ymin = 0; var ymax = 0.37;
+
 var graph = document.getElementById('graph');
 var layout = {
     grid: {rows: 1, columns: 2, xgap: 0.1, subplots:[['xy','x2y']]},
-    margin: {l: 40, b: 40, t: 30, r: 0}, hovermode: 'closest',
-    showlegend: false, xaxis: {title: 'mᵉ [mₑ]'},
-    xaxis2: {title: 'mʰ [mₑ]'}, yaxis: {title: 'SLME|1000nm [%]'},
+    margin: {l: 80, b: 50, t: 50, r: 5}, hovermode: 'closest', showlegend: false,
+    xaxis: {
+        title: 'mᵉ [mₑ]', range: [xmin, xmax], linewidth: 3, linecolor: 'black',
+        showgrid: false, ticks: 'inside', tickwidth: 2, ticklen: 8, mirror: true
+    },
+    xaxis2: {
+        title: 'mʰ [mₑ]', range: [xmin, xmax], linewidth: 3, linecolor: 'black',
+        showgrid: false, ticks: 'inside', tickwidth: 2, ticklen: 8, mirror: 'all'
+    },
+    yaxis: {
+        title: 'SLME|1000nm', tickformat: '%', range: [ymin, ymax], linewidth: 3,
+        linecolor: 'black', showgrid: false, ticks: 'inside', tickwidth: 2,
+        ticklen: 8, mirror: 'all'
+    },
+    font: {family: 'Arial, sans-serif', size: 18},
+    annotations: [
+        {x: MASSMAX/2, y: SQMAX+0.01, xref: 'x1', text: '<b>S–Q limit</b>', showarrow: false, font: {color: '#960000'}},
+        {x: MASSMAX/2, y: SQMAX+0.01, xref: 'x2', text: '<b>S–Q limit</b>', showarrow: false, font: {color: '#960000'}},
+        {x: MASSMAX+0.05, y: SQMAX/2, xref: 'x1', text: '<b>effective mass screen</b>', showarrow: false, font: {color: '#005078'}, textangle: -90},
+        {x: MASSMAX+0.05, y: SQMAX/2, xref: 'x2', text: '<b>effective mass screen</b>', showarrow: false, font: {color: '#005078'}, textangle: -90},
+        {x: 0.25, y: 1.05, xref: 'paper', yref: 'paper', text: '<b>SLME vs. electron effective mass<b>', showarrow: false, xanchor: 'center', yanchor: 'middle'},
+        {x: 0.75, y: 1.05, xref: 'paper', yref: 'paper', text: '<b>SLME vs. hole effective mass<b>',     showarrow: false, xanchor: 'center', yanchor: 'middle'}
+	]
 }
 
 var graph_columns = [['mᵉ', 'SLME|1000nm'], ['mʰ', 'SLME|1000nm']];
@@ -55,6 +79,20 @@ $.when.apply($, gets).done(function() {
                 name: names[index], mode: 'markers', type: 'scatter',
                 marker: markers[index], xaxis: 'x'+(index+1), yaxis: 'y'
             });
+            data.push({
+                x: [xmin, xmax], y: [SQMAX, SQMAX],
+                name: 'SQ limit', mode: 'lines',
+                line: {color: '#960000', dash: 'dot'},
+                showlegend: false, hoverinfo: 'none',
+                xaxis: 'x'+(index+1), yaxis: 'y'
+            });
+            data.push({
+                x: [MASSMAX, MASSMAX], y: [ymin, ymax],
+                mode: 'lines', line: {color: '#005078', dash: 'dot'},
+                showlegend: false, hoverinfo: 'none',
+                xaxis: 'x'+(index+1), yaxis: 'y'
+            });
+
         });
         Plotly.plot(graph, data, layout, {displayModeBar: true});
         graph.on('plotly_click', function(d){
