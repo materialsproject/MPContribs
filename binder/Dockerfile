@@ -16,7 +16,7 @@ RUN npm run webpack 2>&1
 RUN mkdir /home/jovyan/.jupyter/custom && \
     mv -v /home/jovyan/work/dist /home/jovyan/.jupyter/custom/js
 COPY binder/custom.js /home/jovyan/.jupyter/custom/
-COPY binder/*.ipynb .
+COPY binder/*.ipynb /home/jovyan/work/
 
 USER root
 RUN chown -R ${NB_UID} ${HOME}/work
