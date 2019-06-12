@@ -4,11 +4,13 @@ import Backgrid from 'backgrid';
 import 'backgrid-paginator';
 import 'backgrid-filter';
 import 'backgrid-grouped-columns';
+import 'backgrid-columnmanager';
 import {Spinner} from 'spin.js';
 
 var spinner_table = new Spinner({scale: 0.5});
 
 window.render_table = function(props) {
+
     var config = props.config;
     var Row = Backbone.Model.extend({});
     var rows_opt = {
@@ -18,10 +20,10 @@ window.render_table = function(props) {
     };
 
     if (typeof config.project !== 'undefined') {
-        var columns = $.map(props.table['columns'].slice(3), function(col) {
+        var cols = $.map(props.table['columns'].slice(3), function(col) {
             return col['name'].split(' ')[0];
         })
-        rows_opt["url"] = window.api['host'] + 'projects/' + config.project + '/table?columns=' + columns.join(',');
+        rows_opt["url"] = window.api['host'] + 'projects/' + config.project + '/table?columns=' + cols.join(',');
     } else {
         rows_opt["url"] = window.api['host'] + 'tables/' + config.cid + '/' + config.name;
     }
@@ -94,10 +96,22 @@ window.render_table = function(props) {
     var rows = new Rows();
     rows.on('sync', function(e) { spinner_table.stop(); })
 
+    var columns = new Backgrid.Columns(props.table['columns']);
+    var colManager = new Backgrid.Extension.ColumnManager(columns, {
+        initialColumnsVisible: 12,
+        saveState: true,
+        loadStateOnInit: true
+    });
+    var colVisibilityControl = new Backgrid.Extension.ColumnManagerVisibilityControl({
+        columnManager: colManager
+    });
+
     var header = Backgrid.Extension.GroupedHeader;
-    var grid = new Backgrid.Grid({header: header, columns: props.table['columns'], collection: rows});
+    var grid = new Backgrid.Grid({header: header, columns: columns, collection: rows});
     var filter_props = {collection: rows, placeholder: "Search (hit <enter>)", name: "q"};
     var filter = new Backgrid.Extension.ServerSideFilter(filter_props);
+
+    $("#"+config.uuids[3]).append(colVisibilityControl.render().el);
     $('#'+config.uuids[1]).append(grid.render().el);
     $("#"+config.uuids[0]).append(filter.render().$el);
 

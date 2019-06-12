@@ -102,8 +102,6 @@ class Table(pd.DataFrame):
             })
             if len(col_split) > 1:
                 table['columns'][-1].update({'label': '.'.join(col_split[1:])})
-            if len(table['columns']) > 12:
-                table['columns'][-1]['renderable'] = 0
 
         return table
 
@@ -115,7 +113,7 @@ class Table(pd.DataFrame):
         if total_records is None:
             total_records = self.shape[0]
         config = {"total_records": total_records}
-        config['uuids'] = [str(uuid.uuid4()) for i in range(3)]
+        config['uuids'] = [str(uuid.uuid4()) for i in range(4)]
         if self.project is None:
             config['name'] = self.name
             config['cid'] = self.cid
@@ -123,7 +121,7 @@ class Table(pd.DataFrame):
             config['project'] = self.project
         config['api_key'] = self.api_key
         jconfig = json.dumps(config)
-        html = '<div id="{}"></div>'.format(config['uuids'][0])
+        html = '<div class="col-md-6" id="{}"></div><div class="pull-right" id="{}"></div>'.format(config['uuids'][0], config['uuids'][3])
         html += '<div id="{}" style="width:100%;"></div>'.format(config['uuids'][1])
         html += '<div id="{}"></div>'.format(config['uuids'][2])
         html += f'<script>render_table({{table: {jtable}, config: {jconfig}}})</script>'
