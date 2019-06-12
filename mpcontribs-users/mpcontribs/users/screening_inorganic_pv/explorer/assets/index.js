@@ -5,14 +5,14 @@ var target = document.getElementById('spinner_graph');
 var spinner_plot = new Spinner({scale: 0.5});
 spinner_plot.spin(target);
 
-var SQMAX = 0.337; var MASSMAX = 1.5;
+var SQMAX = 33.7; var MASSMAX = 1.5;
 var xmin = 0; var xmax = 1.65;
-var ymin = 0; var ymax = 0.37;
+var ymin = 0; var ymax = 37.0;
 
 var graph = document.getElementById('graph');
 var layout = {
-    grid: {rows: 1, columns: 2, xgap: 0.1, subplots:[['xy','x2y']]},
-    margin: {l: 80, b: 50, t: 50, r: 5}, hovermode: 'closest', showlegend: false,
+    grid: {rows: 1, columns: 2, xgap: 0.02, subplots:[['xy','x2y']]},
+    margin: {l: 60, b: 50, t: 50, r: 5}, hovermode: 'closest', showlegend: false,
     xaxis: {
         title: 'mᵉ [mₑ]', range: [xmin, xmax], linewidth: 3, linecolor: 'black',
         showgrid: false, ticks: 'inside', tickwidth: 2, ticklen: 8, mirror: true
@@ -22,14 +22,14 @@ var layout = {
         showgrid: false, ticks: 'inside', tickwidth: 2, ticklen: 8, mirror: 'all'
     },
     yaxis: {
-        title: 'SLME|1000nm', tickformat: '%', range: [ymin, ymax], linewidth: 3,
+        title: 'SLME|1000nm [%]', range: [ymin, ymax], linewidth: 3,
         linecolor: 'black', showgrid: false, ticks: 'inside', tickwidth: 2,
         ticklen: 8, mirror: 'all'
     },
     font: {family: 'Arial, sans-serif', size: 18},
     annotations: [
-        {x: MASSMAX/2, y: SQMAX+0.01, xref: 'x1', text: '<b>S–Q limit</b>', showarrow: false, font: {color: '#960000'}},
-        {x: MASSMAX/2, y: SQMAX+0.01, xref: 'x2', text: '<b>S–Q limit</b>', showarrow: false, font: {color: '#960000'}},
+        {x: MASSMAX/2, y: SQMAX+1, xref: 'x1', text: '<b>S–Q limit</b>', showarrow: false, font: {color: '#960000'}},
+        {x: MASSMAX/2, y: SQMAX+1, xref: 'x2', text: '<b>S–Q limit</b>', showarrow: false, font: {color: '#960000'}},
         {x: MASSMAX+0.05, y: SQMAX/2, xref: 'x1', text: '<b>effective mass screen</b>', showarrow: false, font: {color: '#005078'}, textangle: -90},
         {x: MASSMAX+0.05, y: SQMAX/2, xref: 'x2', text: '<b>effective mass screen</b>', showarrow: false, font: {color: '#005078'}, textangle: -90},
         {x: 0.25, y: 1.05, xref: 'paper', yref: 'paper', text: '<b>SLME vs. electron effective mass<b>', showarrow: false, xanchor: 'center', yanchor: 'middle'},
