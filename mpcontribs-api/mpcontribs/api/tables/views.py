@@ -27,7 +27,7 @@ class TableView(SwaggerView):
               type: integer
               default: 20
               minimum: 2
-              maximum: 200
+              maximum: 1000
               description: number of results to return per page
         responses:
             200:
@@ -37,11 +37,16 @@ class TableView(SwaggerView):
         """
         page = int(request.args.get('page', 1))
         per_page = int(request.args.get('per_page', 20))
-        PER_PAGE_MAX = 200 # different for number of table rows
+        PER_PAGE_MAX = 1000 # different for number of table rows
         per_page = PER_PAGE_MAX if per_page > PER_PAGE_MAX else per_page
         objects = Tables.objects.no_dereference()
         entry = objects.get(id=tid)
-        entry.data = entry.paginate_field('data', page, per_page=per_page).items
+        nrows = len(entry.data)
+        max_page = int(nrows/per_page) + bool(nrows%per_page)
+        if page > max_page:
+            entry.data = []
+        else:
+            entry.data = entry.paginate_field('data', page, per_page=per_page).items
         return self.marshal(entry)
 
 class BackgridTableView(SwaggerView):

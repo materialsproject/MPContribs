@@ -15,15 +15,38 @@ window.render_plot = function(props) {
     if (typeof props.tid !== 'undefined') {
         var target = document.getElementById('spinner_graph');
         spinner_plot.spin(target);
-        $.get({
-            url: window.api['host'] + 'tables/' + props.tid + '?per_page=200',
-            headers: window.api['headers']
-        }).done(function(response) {
-            var columns = math.transpose(response['data']);
-            for (var i = 1; i < columns.length; i++) {
-                var update = {x: [columns[0]], y: [columns[i]]};
-                Plotly.restyle(props.divid, update, [i-1]);
-            }
+        var gets = []; var nmax = 5;
+        for (var i = 0; i < nmax; i++) { // max 5 request = 5000 table rows
+            var page = i+1;
+            gets.push($.get({
+                url: window.api['host'] + 'tables/' + props.tid + '?per_page=1000&page=' + page,
+                headers: window.api['headers']
+            }));
+        }
+        $.when.apply($, gets).done(function() {
+            var gets_args = arguments;
+            var update = []; // list of traces
+            var ntraces = -1;
+            $.each(arguments, function(index, response) {
+                if ( 'data' in response[0] ) {
+                    var columns = math.transpose(response[0]['data']);
+                    if (ntraces < 0) { ntraces = columns.length; }
+                    if ( update.length == 0 ) { // init update
+                        for (var i = 1; i < columns.length; i++) {
+                            update.push({x: [[]], y: [[]]});
+                        }
+                    }
+                    for (var i = 1; i < columns.length; i++) {
+                        Array.prototype.push.apply(update[i-1]['x'][0], columns[0]);
+                        Array.prototype.push.apply(update[i-1]['y'][0], columns[i]);
+                    }
+                }
+                if ( index+1 == nmax ) { // update graph on last request
+                    for (var i = 1; i < ntraces; i++) {
+                        Plotly.restyle(props.divid, update[i-1], [i-1]);
+                    }
+                }
+            });
             spinner_plot.stop();
         });
     }
