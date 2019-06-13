@@ -11,4 +11,4 @@ def index(request):
         ctx.update(get_context(project))
     except Exception as ex:
         ctx['alert'] = str(ex)
-    return render(request, "explorer_index.html", ctx.flatten())
+    return render(request, "perovskites_diffusion_index.html", ctx.flatten())
