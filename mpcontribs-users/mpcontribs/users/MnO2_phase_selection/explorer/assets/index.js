@@ -21,7 +21,7 @@ $.get({
     url: api_url, data: {'columns': 'ΔH'}, headers: window.api['headers']
 }).done(function(response) {
     response[0]['type'] = 'bar';
-    Plotly.plot(graph, response, layout, {displayModeBar: true});
+    Plotly.plot(graph, response, layout, {displayModeBar: true, responsive: true});
     graph.on('plotly_click', function(data){
         var cid = data.points[0].text;
         var url = '/explorer/' + cid;

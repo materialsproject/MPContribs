@@ -11,6 +11,7 @@ math.import(require('../../../node_modules/mathjs/lib/type/matrix/index'));
 math.import(require('../../../node_modules/mathjs/lib/function/matrix/transpose'));
 
 window.render_plot = function(props) {
+    props.config['responsive'] = true;
     Plotly.newPlot(props.divid, props.data, props.layout, props.config);
     if (typeof props.tid !== 'undefined') {
         var target = document.getElementById('spinner_graph');

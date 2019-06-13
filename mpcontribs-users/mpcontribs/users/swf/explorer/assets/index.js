@@ -114,7 +114,7 @@ $.when.apply($, gets).done(function() {
             });
         }
     });
-    Plotly.plot(graph, data, layout, {displayModeBar: true});
+    Plotly.plot(graph, data, layout, {displayModeBar: true, responsive: true});
     graph.on('plotly_click', function(d){
         var cid = d.points[0].text;
         var url = '/explorer/' + cid;

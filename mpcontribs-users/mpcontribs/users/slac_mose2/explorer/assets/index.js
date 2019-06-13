@@ -54,7 +54,7 @@ $.get({
             showarrow: false, font: { size: 14, color: colors[i-1] }
         });
     }
-    Plotly.plot(graph, data, layout, {displayModeBar: false});
+    Plotly.plot(graph, data, layout, {displayModeBar: false, responsive: true});
     spinner_plot.stop();
 });
 
