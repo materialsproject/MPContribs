@@ -19,4 +19,6 @@ urlpatterns = [
     url(r'Screeninginorganicpv/', RedirectView.as_view(url='/screening_inorganic_pv', permanent=False)),
     url(r'perovskites_diffusion/', include('mpcontribs.users.perovskites_diffusion.explorer.urls')),
     url(r'transparent_conductors/', include('mpcontribs.users.transparent_conductors.explorer.urls')),
+    url(r'dilute_solute_diffusion/',
+        include('mpcontribs.users.dilute_solute_diffusion.explorer.urls')),
 ]

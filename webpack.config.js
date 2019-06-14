@@ -28,6 +28,7 @@ module.exports = {
     'screening_inorganic_pv': './mpcontribs-users/mpcontribs/users/screening_inorganic_pv/explorer/assets/index',
     'perovskites_diffusion': './mpcontribs-users/mpcontribs/users/perovskites_diffusion/explorer/assets/index',
     'transparent_conductors': './mpcontribs-users/mpcontribs/users/transparent_conductors/explorer/assets/index',
+    'dilute_solute_diffusion': './mpcontribs-users/mpcontribs/users/dilute_solute_diffusion/explorer/assets/index',
   },
   output: {
     path: path.resolve(__dirname, 'dist'),

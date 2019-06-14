@@ -43,3 +43,7 @@ class PerovskitesDiffusionConfig(AppConfig):
 class TransparentConductorsConfig(AppConfig):
     name = 'mpcontribs.users.transparent_conductors.explorer'
     label = 'transparent_conductors'
+
+class DiluteSoluteDiffusionConfig(AppConfig):
+    name = 'mpcontribs.users.dilute_solute_diffusion.explorer'
+    label = 'dilute_solute_diffusion'
