@@ -1,17 +1,14 @@
-# -*- coding: utf-8 -*-
-from __future__ import unicode_literals
-from django.shortcuts import render_to_response, redirect
-from django.core.urlresolvers import reverse
+import os
+from django.shortcuts import render
 from django.template import RequestContext
-from mpcontribs.rest.views import get_endpoint
-from mpcontribs.io.core.components import render_dataframe
-from mpcontribs.io.core.recdict import render_dict
+from mpcontribs.users.utils import get_context
+
+project = os.path.dirname(__file__).split(os.sep)[-2]
 
 def index(request):
     ctx = RequestContext(request)
-    if request.user.is_authenticated():
-        from webtzite.models import RegisteredUser
-        user = RegisteredUser.objects.get(username=request.user.username)
-    else:
-        return redirect('{}?next={}'.format(reverse('cas_ng_login'), request.path))
-    return render_to_response("transparent_conductors_explorer_index.html", ctx)
+    try:
+        ctx.update(get_context(project))
+    except Exception as ex:
+        ctx['alert'] = str(ex)
+    return render(request, "explorer_index.html", ctx.flatten())
