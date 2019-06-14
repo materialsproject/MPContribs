@@ -62,7 +62,8 @@ window.render_table = function(props) {
             props.table['columns'][idx]['formatter'] = _.extend({}, Backgrid.CellFormatter.prototype, {
                 fromRaw: function (rawValue, model) {
                     if (typeof rawValue === "undefined") { return ''; }
-                    var identifier = rawValue.split('/').pop().split('.')[0];
+                    var basename = rawValue.split('/').pop();
+                    var identifier = basename.endsWith('html') ? basename.split('.')[0] : basename;
                     if (objectid_regex.test(identifier)) {
                         return identifier.slice(-7);
                     };
