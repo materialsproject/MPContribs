@@ -49,14 +49,17 @@ from mpcontribs.io.core.components.tdata import Table
 def get_context(project, columns=None):
     ctx = {'project': project}
     client = load_client()
-    prov = client.projects.get_entry(project=project).response().result
-    for k in ['id', 'project', 'other']:
+    mask = ["title", "authors", "description", "urls", "other"]
+    prov = client.projects.get_entry(project=project, mask=mask).response().result
+    for k in ['id', 'project']:
         prov.pop(k)
     ctx['title'] = prov.pop('title')
     ctx['descriptions'] = prov['description'].strip().split('.', 1)
     authors = [a.strip() for a in prov['authors'].split(',') if a]
     ctx['authors'] = {'main': authors[0], 'etal': authors[1:]}
     ctx['urls'] = list(prov['urls'].values())
+    if prov['other']:
+        ctx['other'] = RecursiveDict(prov['other']).render()
     data = client.projects.get_table(
         project=project, columns=columns, per_page=3
     ).response().result

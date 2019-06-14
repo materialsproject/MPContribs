@@ -84,8 +84,10 @@ class ProjectView(SwaggerView):
                 schema:
                     $ref: '#/definitions/ProjectsSchema'
         """
-        mask_default = ','.join(['title', 'authors', 'description', 'urls'])
-        mask = request.args.get('mask', mask_default).split(',')
+        mask_default = ['title', 'authors', 'description', 'urls']
+        mask = request.args.get('mask', ','.join(mask_default)).split(',')
+        if not mask[0]:
+            mask = mask_default
         objects = Projects.objects.only(*mask)
         return self.marshal(objects.get(project=project))
 

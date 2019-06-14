@@ -24,7 +24,7 @@
     <div class="row">
         <div class="col-md-12">
             <h2>{{ title }}</h2>
-            <div style="padding-top: 0px">
+            <div style="padding-top: 0px; padding-bottom: 10px;">
                 <div class="well pull-right" style="padding: 5px 5px 5px 5px; margin-bottom: 2px; margin-left: 0px;">
                     <h5 style="margin: 5px;">
                         {{ authors.main }}
@@ -41,13 +41,17 @@
                         {% endif %}
                     </h5>
                 </div>
-                <blockquote class="blockquote" style="font-size: 13px; padding: 0px 10px;">
+                <blockquote class="blockquote" style="font-size: 14px; padding: 0px 10px;">
                     {{ descriptions.0 }}.
                     {% if descriptions.1 %}
                     <a name="read_more">More &raquo;</a>
                     <span name="read_more" hidden>{{ descriptions.1 }}</span>
                     {% endif %}
                 </blockquote>
+                {% if other %}
+                <a name="read_more">Other Info &raquo;</a>
+                <span name="read_more" hidden>{{ other|safe }}</span>
+                {% endif %}
             </div>
         </div>
     </div>
