@@ -40,7 +40,7 @@
         {% for lp in landing_pages %}
         <div class="col-md-4" id="{{ lp.project }}">
             <div class="panel panel-default">
-                <div class="panel-heading">
+                <div class="panel-heading" style="padding-bottom: 5px;">
                     <h4 class="panel-title">
                         {% if lp.url %}
                         <a href="{{ lp.url }}">{{ lp.title  }}</a>
