@@ -39,3 +39,7 @@ class ScreeningInorganicPvConfig(AppConfig):
 class PerovskitesDiffusionConfig(AppConfig):
     name = 'mpcontribs.users.perovskites_diffusion.explorer'
     label = 'perovskites_diffusion'
+
+class TransparentConductorsConfig(AppConfig):
+    name = 'mpcontribs.users.transparent_conductors.explorer'
+    label = 'transparent_conductors'

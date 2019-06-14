@@ -27,6 +27,7 @@ module.exports = {
     'carrier_transport': './mpcontribs-users/mpcontribs/users/carrier_transport/explorer/assets/index',
     'screening_inorganic_pv': './mpcontribs-users/mpcontribs/users/screening_inorganic_pv/explorer/assets/index',
     'perovskites_diffusion': './mpcontribs-users/mpcontribs/users/perovskites_diffusion/explorer/assets/index',
+    'transparent_conductors': './mpcontribs-users/mpcontribs/users/transparent_conductors/explorer/assets/index',
   },
   output: {
     path: path.resolve(__dirname, 'dist'),

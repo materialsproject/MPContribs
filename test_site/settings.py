@@ -33,6 +33,7 @@ INSTALLED_APPS.append('test_site.apps.AlsBeamlineConfig')
 INSTALLED_APPS.append('test_site.apps.DtuConfig')
 INSTALLED_APPS.append('test_site.apps.ScreeningInorganicPvConfig')
 INSTALLED_APPS.append('test_site.apps.PerovskitesDiffusionConfig')
+INSTALLED_APPS.append('test_site.apps.TransparentConductorsConfig')
 
 MIDDLEWARE = (
     'django.contrib.sessions.middleware.SessionMiddleware',
