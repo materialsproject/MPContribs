@@ -384,6 +384,52 @@ class GraphView(SwaggerView):
                     data[idx]['text'].append(str(obj.id))
             return data
 
+class ColumnsView(SwaggerView):
+
+    def get(self, project):
+        """Retrieve all possible columns for a project.
+        ---
+        operationId: get_columns
+        parameters:
+            - name: project
+              in: path
+              type: string
+              pattern: '^[a-zA-Z0-9_]{3,30}$'
+              required: true
+              description: project name/slug
+        responses:
+            200:
+                description: list of columns in dot notation
+                schema:
+                    type: array
+                    items:
+                        type: string
+        """
+        return sorted(list(Contributions.objects.aggregate(*[
+            {"$match": {"project": project}},
+            {"$project": {"akv": {"$objectToArray": "$content.data"}}},
+            {"$unwind": "$akv"},
+            {"$project": {"root": "$akv.k", "level2": {
+                "$switch": { "branches": [{
+                    "case": {"$eq": [{"$type":"$akv.v"}, "object"]},
+                    "then": {"$objectToArray":"$akv.v"}
+                }], "default": [{}]}
+            }}},
+            {"$unwind": "$level2"},
+            {"$project": {"column": {
+                "$switch": {
+                    "branches": [
+                        {"case": {"$eq": ["$level2", {}]}, "then": "$root"},
+                        {"case": {"$eq": ["$level2.k", "display"]}, "then": "$root"},
+                        {"case": {"$eq": ["$level2.k", "value"]}, "then": "$root"},
+                        {"case": {"$eq": ["$level2.k", "unit"]}, "then": "$root"},
+                    ],
+                    "default": {"$concat": ["$root", ".", "$level2.k"]}
+                }
+            }}},
+            {"$group": {"_id": None, "columns": {"$addToSet": "$column"}}}
+        ]))[0]['columns'])
+
 # url_prefix added in register_blueprint
 # also see http://flask.pocoo.org/docs/1.0/views/#method-views-for-apis
 multi_view = ProjectsView.as_view(ProjectsView.__name__)
@@ -398,3 +444,6 @@ projects.add_url_rule('/<string:project>/table', view_func=table_view, methods=[
 
 graph_view = GraphView.as_view(GraphView.__name__)
 projects.add_url_rule('/<string:project>/graph', view_func=graph_view, methods=['GET'])
+
+columns_view = ColumnsView.as_view(ColumnsView.__name__)
+projects.add_url_rule('/<string:project>/columns', view_func=columns_view, methods=['GET'])
