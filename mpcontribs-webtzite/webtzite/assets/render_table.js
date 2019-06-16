@@ -100,7 +100,7 @@ window.render_table = function(props) {
 
     var columns = new Backgrid.Columns(props.table['columns']);
     var colManager = new Backgrid.Extension.ColumnManager(columns, {
-        initialColumnsVisible: 12,
+        initialColumnsVisible: config.ncols,
         saveState: true,
         loadStateOnInit: true
     });

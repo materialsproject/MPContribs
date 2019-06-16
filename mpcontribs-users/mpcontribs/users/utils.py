@@ -60,12 +60,24 @@ def get_context(project, columns=None):
     ctx['urls'] = list(prov['urls'].values())
     if prov['other']:
         ctx['other'] = RecursiveDict(prov['other']).render()
+    all_columns = client.projects.get_columns(project=project).response().result
+    if columns:
+        ncols = len(columns) + 3
+        columns += [
+            col for col in all_columns
+            if col not in columns and col != 'formula'
+        ]
+    else:
+        ncols, columns = 12, list(all_columns)
     data = client.projects.get_table(
         project=project, columns=columns, per_page=3
     ).response().result
     if data['items']:
         columns = list(data['items'][0].keys())
-        table = Table(data['items'], columns=columns, project=project)
+        table = Table(
+            data['items'], columns=columns,
+            project=project, ncols=ncols
+        )
         ctx['table'] = table.render()
     return ctx
 

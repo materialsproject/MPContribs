@@ -8,12 +8,13 @@ from urllib.parse import urlparse
 
 class Table(pd.DataFrame):
     def __init__(self, data, columns=None, index=None,
-                 cid=None, name=None, api_key=None, project=None):
+                 cid=None, name=None, api_key=None, project=None, ncols=12):
         super(Table, self).__init__(data=data, index=index, columns=columns)
         self.cid = cid
         self.name = name
         self.api_key = api_key
         self.project = project
+        self.ncols = ncols
 
     def to_dict(self):
         from pandas import MultiIndex
@@ -120,6 +121,7 @@ class Table(pd.DataFrame):
         else:
             config['project'] = self.project
         config['api_key'] = self.api_key
+        config['ncols'] = self.ncols
         jconfig = json.dumps(config)
         html = '<div class="col-md-6" id="{}"></div><div class="pull-right" id="{}"></div>'.format(config['uuids'][0], config['uuids'][3])
         html += '<div id="{}" style="width:100%;"></div>'.format(config['uuids'][1])
