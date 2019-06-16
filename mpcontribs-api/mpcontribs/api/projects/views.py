@@ -406,6 +406,7 @@ class ColumnsView(SwaggerView):
                     items:
                         type: string
         """
+        columns = []
         objects = list(Contributions.objects.aggregate(*[
             {"$match": {"project": project}},
             {"$project": {"akv": {"$objectToArray": "$content.data"}}},
@@ -431,8 +432,19 @@ class ColumnsView(SwaggerView):
             {"$group": {"_id": None, "columns": {"$addToSet": "$column"}}}
         ]))
         if objects:
-            return sorted(objects[0]['columns'])
-        return []
+            columns += objects[0]['columns']
+
+        projects = sorted(project.split('_'))
+        names = Structures.objects(project=project).distinct("name");
+        if names:
+            if len(projects) == len(names):
+                for p, n in zip(projects, sorted(names)):
+                    if p == n.lower():
+                        columns.append(f'{n}.CIF')
+            else:
+                columns.append('CIF')
+
+        return sorted(columns)
 
 # url_prefix added in register_blueprint
 # also see http://flask.pocoo.org/docs/1.0/views/#method-views-for-apis
