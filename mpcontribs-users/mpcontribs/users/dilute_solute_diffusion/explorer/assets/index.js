@@ -1,3 +1,70 @@
+//for host in mpr.get_hosts():
+//    contrib = {}
+//    df = mpr.get_contributions(host)
+//    contrib['table'] = render_dataframe(df, webapp=True, paginate=False)
+//    contrib['formula'] = host
+//    contrib.update(mpr.get_table_info(host))
+//    contrib['short_cid'] = get_short_object_id(contrib['cid'])
+//    contribs.append(contrib)
+
+//    for col in df.columns:
+//        if col == 'El.':
+//            continue
+//        low, upp = min(df[col]), max(df[col])
+//        if col == 'Z':
+//            low -= 1
+//            upp += 1
+//        if col not in ranges:
+//            ranges[col] = [low, upp]
+//        else:
+//            if low < ranges[col][0]:
+//                ranges[col][0] = low
+//            if upp > ranges[col][1]:
+//                ranges[col][1] = upp
+
+//{% for contrib in contribs %}
+//<div class="col-md-6 col-sm-8 col-lg-4"
+//     name="panel{{contrib.formula}}"
+//     style="padding-left: 1px; padding-right: 1px; margin-bottom: 3px;">
+//    <div class="panel panel-default">
+//        <div class="panel-heading"
+//             role="tab" id="heading{{ forloop.counter0 }}"
+//                        style="padding-left: 5px; padding-right: 5px">
+//            <h4 class="panel-title">
+//                <a role="button"
+//                   data-toggle="collapse"
+//                   data-parent="#accordion"
+//                   href="#collapse{{ forloop.counter0 }}"
+//                   aria-expanded="true"
+//                   aria-controls="collapse{{ forloop.counter0 }}">
+//                    <span class="glyphicon glyphicon-chevron-right" aria-hidden="true"></span>
+//                    <span>{{ contrib.formula }}</span>
+//                </a>
+//                <a role="button"
+//                   class="btn btn-default btn-xs pull-right"
+//                   target="_blank"
+//                   style="position:relative;margin-left:5px;margin-top:-2px;"
+//                   href="/explorer/{{ contrib.cid }}">
+//                    #{{ contrib.short_cid }}
+//                </a>
+//                <a role="button"
+//                   class="btn btn-default btn-xs pull-right"
+//                   target="_blank"
+//                   style="position:relative;margin-top:-2px;"
+//                   href="https://materialsproject.org/materials/{{ contrib.mp_id }}">
+//                    {{ contrib.mp_id }}
+//                </a>
+//            </h4>
+//        </div>
+//        <div id="collapse{{ forloop.counter0 }}"
+//             class="panel-collapse collapse" role="tabpanel"
+//                                             name="host" aria-labelledby="heading{{ forloop.counter0 }}">
+//            <div id="table{{ forloop.counter0 }}">{{contrib.table|safe}}</div>
+//        </div>
+//    </div>
+//</div>
+//{% endfor %}
+
 //var selection = {};
 //var panels = $('div.col-md-6[name^=panel]');
 //$('div[id^=table] div:first-child').hide(); // hide search
