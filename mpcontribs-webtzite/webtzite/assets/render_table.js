@@ -63,7 +63,8 @@ window.render_table = function(props) {
                 fromRaw: function (rawValue, model) {
                     if (typeof rawValue === "undefined") { return ''; }
                     var basename = rawValue.split('/').pop();
-                    var identifier = basename.endsWith('html') ? basename.split('.')[0] : basename;
+                    var is_file = basename.endsWith('html') || basename.endsWith('cif');
+                    var identifier = is_file ? basename.split('.')[0] : basename;
                     if (objectid_regex.test(identifier)) {
                         return identifier.slice(-7);
                     };

@@ -9,7 +9,7 @@ def index(request):
     ctx = RequestContext(request)
     try:
         columns = ['phase', 'ΔH', 'ΔH|hyd', 'GS?', 'CIF']
-        ctx.update(get_context(project, columns))
+        ctx.update(get_context(project, columns=columns))
     except Exception as ex:
         ctx['alert'] = str(ex)
     return render(request, "explorer_index.html", ctx.flatten())

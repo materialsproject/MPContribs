@@ -237,6 +237,7 @@ class TableView(SwaggerView):
         columns = general_columns.copy()
         for col in user_columns:
             if 'CIF' in col:
+                columns.append(col)
                 continue
             q_unit = {f'content__data__{col.replace(".", "__")}__exists': True}
             unit_sample = objects(**q_unit).only(f'content.data.{col}.unit').first()
