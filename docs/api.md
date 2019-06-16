@@ -236,7 +236,7 @@ for more info about query operators.
 client.contributions.get_entries()
 
 # retrieve list of contributions for specific project(s)
-client.contributions.get_entries(project=['dtu', 'jarvis_dft'])
+client.contributions.get_entries(project=['dtu', 'jarvis_nus'])
 
 # retrieve list of contributions for specific identifiers (mp-id, composition)
 client.contributions.get_entries(identifiers=['mp-2715'])

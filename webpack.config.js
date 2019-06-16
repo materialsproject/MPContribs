@@ -18,7 +18,7 @@ module.exports = {
     'explorer': './mpcontribs-explorer/mpcontribs/explorer/assets/index',
     'explorer_contribution': './mpcontribs-explorer/mpcontribs/explorer/assets/contribution',
     'MnO2_phase_selection': './mpcontribs-users/mpcontribs/users/MnO2_phase_selection/explorer/assets/index',
-    'jarvis_dft': './mpcontribs-users/mpcontribs/users/jarvis_dft/explorer/assets/index',
+    'jarvis_nus': './mpcontribs-users/mpcontribs/users/jarvis_nus/explorer/assets/index',
     'defect_genome_pcfc_materials': './mpcontribs-users/mpcontribs/users/defect_genome_pcfc_materials/explorer/assets/index',
     'slac_mose2': './mpcontribs-users/mpcontribs/users/slac_mose2/explorer/assets/index',
     'swf': './mpcontribs-users/mpcontribs/users/swf/explorer/assets/index',

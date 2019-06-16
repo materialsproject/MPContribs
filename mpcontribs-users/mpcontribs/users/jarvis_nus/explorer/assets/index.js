@@ -9,7 +9,7 @@ Plotly.register([
     require('../../../../../../node_modules/plotly.js/lib/bar')
 ]);
 
-var api_url = window.api['host'] + 'projects/jarvis_dft/graph';
+var api_url = window.api['host'] + 'projects/jarvis_nus/graph';
 var graph = document.getElementById('graph');
 var layout = {
     margin: {t: 0, r: 0, l: 40, b: 25},

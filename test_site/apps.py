@@ -4,9 +4,9 @@ class Mno2PhaseSelectionExplorerConfig(AppConfig):
     name = 'mpcontribs.users.MnO2_phase_selection.explorer'
     label = 'MnO2_phase_selection'
 
-class JarvisDftExplorerConfig(AppConfig):
-    name = 'mpcontribs.users.jarvis_dft.explorer'
-    label = 'jarvis_dft'
+class JarvisNusExplorerConfig(AppConfig):
+    name = 'mpcontribs.users.jarvis_nus.explorer'
+    label = 'jarvis_nus'
 
 class DefectGenomePcfcMaterialsConfig(AppConfig):
     name = 'mpcontribs.users.defect_genome_pcfc_materials.explorer'

@@ -25,7 +25,7 @@ INSTALLED_APPS = [
 ]
 
 INSTALLED_APPS.append('test_site.apps.Mno2PhaseSelectionExplorerConfig')
-INSTALLED_APPS.append('test_site.apps.JarvisDftExplorerConfig')
+INSTALLED_APPS.append('test_site.apps.JarvisNusExplorerConfig')
 INSTALLED_APPS.append('test_site.apps.DefectGenomePcfcMaterialsConfig')
 INSTALLED_APPS.append('test_site.apps.SlacMose2Config')
 INSTALLED_APPS.append('test_site.apps.SwfConfig')

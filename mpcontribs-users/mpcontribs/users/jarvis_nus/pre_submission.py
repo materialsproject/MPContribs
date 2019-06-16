@@ -9,7 +9,7 @@ from mpcontribs.io.core.utils import clean_value, get_composition_from_string
 from pymongo import MongoClient
 client = MongoClient('mongodb+srv://'+os.environ['MPCONTRIBS_MONGO_HOST'])
 db = client['mpcontribs']
-print(db.contributions.count_documents({'project': 'jarvis_dft'}))
+print(db.contributions.count_documents({'project': 'jarvis_nus'}))
 
 #@duplicate_check
 def run(mpfile, **kwargs):
@@ -99,14 +99,14 @@ def run(mpfile, **kwargs):
 
         mpfile.add_hierarchical_data(nest_dict(data, ['data']), identifier=identifier)
         #r = db.contributions.update_one(
-        #    {'identifier': identifier, 'project': 'jarvis_dft'},
+        #    {'identifier': identifier, 'project': 'jarvis_nus'},
         #    {'$set': {'content.data': mpfile.document[identifier]['data']}},
         #    upsert=True
         #)
         #print(r.matched_count, r.modified_count, r.upserted_id)
 
         doc = db.contributions.find_one(
-            {'identifier': identifier, 'project': 'jarvis_dft'},
+            {'identifier': identifier, 'project': 'jarvis_nus'},
             {'_id': 1, 'content.structures': 1}
         )
         if 'structures' in doc['content']:
@@ -124,7 +124,7 @@ def run(mpfile, **kwargs):
                 if sdct['charge'] is None:
                     sdct.pop('charge')
                 sdct['identifier'] = identifier
-                sdct['project'] = 'jarvis_dft'
+                sdct['project'] = 'jarvis_nus'
                 sdct['name'] = project
                 sdct['cid'] = doc['_id']
                 r = db.structures.insert_one(sdct)
