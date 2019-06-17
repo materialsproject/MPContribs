@@ -26,6 +26,9 @@ window.render_table = function(props) {
         rows_opt["url"] = window.api['host'] + 'projects/' + config.project + '/table?columns=' + cols.join(',');
     } else {
         rows_opt["url"] = window.api['host'] + 'tables/' + config.cid + '/' + config.name;
+        if (typeof config.per_page !== 'undefined') {
+            rows_opt["url"] += '?per_page=' + config.per_page;
+        }
     }
 
     if ( !('headers' in window.api) ) {
