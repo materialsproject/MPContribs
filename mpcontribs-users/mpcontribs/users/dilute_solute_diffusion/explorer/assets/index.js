@@ -1,93 +1,47 @@
-//for host in mpr.get_hosts():
-//    contrib = {}
-//    df = mpr.get_contributions(host)
-//    contrib['table'] = render_dataframe(df, webapp=True, paginate=False)
-//    contrib['formula'] = host
-//    contrib.update(mpr.get_table_info(host))
-//    contrib['short_cid'] = get_short_object_id(contrib['cid'])
-//    contribs.append(contrib)
+import Plotly from 'plotly'; // plotly core only
+import {Spinner} from 'spin.js';
 
-//    for col in df.columns:
-//        if col == 'El.':
-//            continue
-//        low, upp = min(df[col]), max(df[col])
-//        if col == 'Z':
-//            low -= 1
-//            upp += 1
-//        if col not in ranges:
-//            ranges[col] = [low, upp]
-//        else:
-//            if low < ranges[col][0]:
-//                ranges[col][0] = low
-//            if upp > ranges[col][1]:
-//                ranges[col][1] = upp
+var target = document.getElementById('spinner_graph');
+var spinner_plot = new Spinner({scale: 0.5});
+spinner_plot.spin(target);
 
-//{% for contrib in contribs %}
-//<div class="col-md-6 col-sm-8 col-lg-4"
-//     name="panel{{contrib.formula}}"
-//     style="padding-left: 1px; padding-right: 1px; margin-bottom: 3px;">
-//    <div class="panel panel-default">
-//        <div class="panel-heading"
-//             role="tab" id="heading{{ forloop.counter0 }}"
-//                        style="padding-left: 5px; padding-right: 5px">
-//            <h4 class="panel-title">
-//                <a role="button"
-//                   data-toggle="collapse"
-//                   data-parent="#accordion"
-//                   href="#collapse{{ forloop.counter0 }}"
-//                   aria-expanded="true"
-//                   aria-controls="collapse{{ forloop.counter0 }}">
-//                    <span class="glyphicon glyphicon-chevron-right" aria-hidden="true"></span>
-//                    <span>{{ contrib.formula }}</span>
-//                </a>
-//                <a role="button"
-//                   class="btn btn-default btn-xs pull-right"
-//                   target="_blank"
-//                   style="position:relative;margin-left:5px;margin-top:-2px;"
-//                   href="/explorer/{{ contrib.cid }}">
-//                    #{{ contrib.short_cid }}
-//                </a>
-//                <a role="button"
-//                   class="btn btn-default btn-xs pull-right"
-//                   target="_blank"
-//                   style="position:relative;margin-top:-2px;"
-//                   href="https://materialsproject.org/materials/{{ contrib.mp_id }}">
-//                    {{ contrib.mp_id }}
-//                </a>
-//            </h4>
-//        </div>
-//        <div id="collapse{{ forloop.counter0 }}"
-//             class="panel-collapse collapse" role="tabpanel"
-//                                             name="host" aria-labelledby="heading{{ forloop.counter0 }}">
-//            <div id="table{{ forloop.counter0 }}">{{contrib.table|safe}}</div>
-//        </div>
-//    </div>
-//</div>
-//{% endfor %}
+var columns = $.map(['Solute', 'D₀ [cm²/s]', 'Q [eV]'], function(col) {
+    return {'name': col, 'cell': 'string', 'nesting': [], 'editable': 0};
+})
 
-//var selection = {};
-//var panels = $('div.col-md-6[name^=panel]');
-//$('div[id^=table] div:first-child').hide(); // hide search
-//
-//// turn chevron glyphicon on reveal/collapse
-//for (var c = 0; c < window.tables.length; ++c) {
-//    $('#collapse'+c).on('show.bs.collapse', function(){
-//        $(this).parent().find(".glyphicon-chevron-right")
-//            .removeClass("glyphicon-chevron-right").addClass("glyphicon-chevron-down");
-//    }).on('hide.bs.collapse', function(){
-//        $(this).parent().find(".glyphicon-chevron-down")
-//            .removeClass("glyphicon-chevron-down").addClass("glyphicon-chevron-right");
-//    });
-//}
-//
-//// init plotly data
+$.each($('div[id^=table_]'), function(idx, element) {
+    var cid = element.id.split('_')[1];
+    var config = {cid: cid, name: 'D₀_Q', per_page: 5, total_records: 20, ncols: columns.length};
+    config['uuids'] = $.map(['filter', 'grid', 'pagination', 'colmanage'], function(prefix) {
+        return prefix + '_' + cid;
+    });
+    render_table({table: {columns: columns}, config: config});
+});
+
+$('.backgrid-filter').hide(); // hide search
+$('.columnmanager-visibilitycontrol').hide(); // hide column manager
+
+var graph = document.getElementById('graph');
+//var ranges = {{ ranges|safe }};
+var layout = {
+    grid: {rows: 1, columns: 3, xgap: 0.02},
+    margin: {l: 60, b: 50, t: 50, r: 5},
+    hovermode: 'closest', showlegend: false,
+    xaxis: {title: '1000/T [K⁻¹]'},
+    yaxis: {title: 'diffusivity', type: 'log', exponentformat: "power"},
+    xaxis2: {title: 'Z'},//, range: ranges['Z']},
+    yaxis2: {title: 'D₀ [cm²/s]'},//, range: ranges['D₀ [cm²/s]']},
+    xaxis3: {title: 'Z'},//, range: ranges['Z']},
+    yaxis3: {title: 'Q [eV]'},//, range: ranges['Q [eV]']}
+};
+
+// var selection = {};
 //var data = {};
 //data['graphDif'] = []; data['graphD0'] = []; data['graphQ'] = [];
 //panels.each(function(index) {
 //    if (selection.length == 2) { return false; } // only show two hosts
 //    var host = $('.panel-heading .panel-title a span:nth-child(2)', this).text();
 //    if ( host === 'Al' || host === 'Cu' ) {
-//        $('div[name=host]', this).collapse('show');
 //        selection[index] = [];
 //        var rows = $('.panel-collapse table.backgrid tbody tr', this);
 //        data['graphD0'].push({x: [], y: [], name: host, connectgaps: true, mode: 'lines+markers'});
@@ -115,74 +69,8 @@
 //        }
 //    }
 //});
-//
-//// init plotly graphs
-//var margins = { l: 60, r: 5, b: 50, t: 30 };
-//var ranges = {{ ranges|safe }};
-//var layouts = {
-//    graphDif: {
-//        xaxis: {title: '1000/T [K⁻¹]'},
-//        yaxis: {title: 'diffusivity', type: 'log', exponentformat: "power"},
-//        margin: margins, showlegend: false
-//    },
-//    graphD0: {
-//        xaxis: {title: 'Z', range: ranges['Z']},
-//        yaxis: {title: 'D₀ [cm²/s]', range: ranges['D₀ [cm²/s]']},
-//        margin: margins, showlegend: false
-//    },
-//    graphQ: {
-//        xaxis: {title: 'Z', range: ranges['Z']},
-//        yaxis: {title: 'Q [eV]', range: ranges['Q [eV]']},
-//        margin: margins, showlegend: false
-//    }
-//};
-//Object.keys(data).forEach(function(key, index) {
-//    Plotly.newPlot(key, data[key], layouts[key], {displaylogo: false});
-//});
-//
-//// collapse function
-//var hosts = $('[name=host]');
-//function collapse_hosts(flag) {
-//    for (var j=0; j<hosts.length; j++) {
-//        //var visible = !$(hosts[j]).hasClass("collapse");
-//        var visible = $(hosts[j]).is(":visible");
-//        if (flag && visible) { $(hosts[j]).collapse('hide'); }
-//        else if (!flag && !visible) { $(hosts[j]).collapse('show'); }
-//    }
-//};
-//
-//// search field functionality
-//$("#searchclear").click(function(){
-//    $("#searchinput").val('');
-//    panels.each(function(index) {
-//        $('a[data-backgrid-action=clear]', this).trigger('click', function() {
-//            //$('div[name=host]', this).collapse('hide');
-//            console.log('hello');
-//            if (index in selection) {
-//                var rows = $('.panel-collapse table.backgrid tbody tr', this);
-//                selection[index].forEach(function(i) {
-//                    rows.eq(i).addClass('selected');
-//                });
-//            }
-//        });
-//    });
-//});
-//$("#searchinput").on('keyup paste', function(){
-//    var txt = $(this).val();
-//    var dash = txt.indexOf('-');
-//    if (dash === -1) { // no dash found -> search in solutes for all hosts
-//        $('.backgrid-filter input').val(txt).trigger('keydown');
-//        collapse_hosts(false);
-//    } else { // dash found -> filter/hide hosts
-//        var elems = txt.split('-');
-//        //$('div.col-md-6').not('[name=panel'+elems[0]+']').hide();
-//        //inputs.val('').trigger('keydown');
-//        //if (elems[1] != "") { // search specific host-solute combination
-//        //    inputs.val(elems[1]).trigger('keydown');
-//        //}
-//    }
-//});
-//
+
+
 //// contributions selection (row click)
 //var lastChecked = null;
 //Backbone.on('cellclicked', function(e) {
@@ -213,43 +101,41 @@
 ////}
 ////lastChecked = chbx;
 //});
-//
-//// clear all
-////    $("#clear_all").on("click", function() {
-////      var tracesD0 = [dummy_trace];
-////      var tracesQ = [dummy_trace];
-////      var tracesDif = [dummy_trace];
-////      var traceDif = { x: xvalsDif, y: yvalsDifNaN };
-////      for (var j=0; j<grids.length; j++) {
-////        var collection = grids[j].collection;
-////        var traceD0 = {
-////          x: [], y: [], name: collection.title,
-////          connectgaps: true, mode: 'lines+markers'
-////        };
-////        var traceQ = {
-////          x: [], y: [], name: collection.title,
-////          connectgaps: true, mode: 'lines+markers'
-////        };
-////        collection.each(function(model){
-////          tracesDif.push(traceDif);
-////          traceD0['x'].push(model.get('Z'));
-////          traceD0['y'].push(NaN);
-////          traceQ['x'].push(model.get('Z'));
-////          traceQ['y'].push(NaN);
-////        });
-////        tracesD0.push(traceD0);
-////        tracesQ.push(traceQ);
-////      }
-////      Plotly.newPlot('graphDif', tracesDif, layoutDif, options);
-////      Plotly.newPlot('graphD0', tracesD0, layoutD0, options);
-////      Plotly.newPlot('graphQ', tracesQ, layoutQ, options);
-////      for (var j=0; j<grids.length; j++) {
-////        var selectedModels = grids[j].getSelectedModels();
-////        for (var i = 0, l = selectedModels.length; i < l; i++) {
-////          var model = selectedModels[i];
-////          model.trigger("backgrid:select", model, false);
-////        }
-////      }
-////    })
-//
-//$('#spinner').spin(false);
+
+// clear all
+//    $("#clear_all").on("click", function() {
+//      var tracesD0 = [dummy_trace];
+//      var tracesQ = [dummy_trace];
+//      var tracesDif = [dummy_trace];
+//      var traceDif = { x: xvalsDif, y: yvalsDifNaN };
+//      for (var j=0; j<grids.length; j++) {
+//        var collection = grids[j].collection;
+//        var traceD0 = {
+//          x: [], y: [], name: collection.title,
+//          connectgaps: true, mode: 'lines+markers'
+//        };
+//        var traceQ = {
+//          x: [], y: [], name: collection.title,
+//          connectgaps: true, mode: 'lines+markers'
+//        };
+//        collection.each(function(model){
+//          tracesDif.push(traceDif);
+//          traceD0['x'].push(model.get('Z'));
+//          traceD0['y'].push(NaN);
+//          traceQ['x'].push(model.get('Z'));
+//          traceQ['y'].push(NaN);
+//        });
+//        tracesD0.push(traceD0);
+//        tracesQ.push(traceQ);
+//      }
+//      Plotly.newPlot('graphDif', tracesDif, layoutDif, options);
+//      Plotly.newPlot('graphD0', tracesD0, layoutD0, options);
+//      Plotly.newPlot('graphQ', tracesQ, layoutQ, options);
+//      for (var j=0; j<grids.length; j++) {
+//        var selectedModels = grids[j].getSelectedModels();
+//        for (var i = 0, l = selectedModels.length; i < l; i++) {
+//          var model = selectedModels[i];
+//          model.trigger("backgrid:select", model, false);
+//        }
+//      }
+//    })
