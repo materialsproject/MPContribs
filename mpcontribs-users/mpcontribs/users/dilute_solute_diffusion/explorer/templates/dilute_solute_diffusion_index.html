@@ -1,0 +1,52 @@
+{% extends "explorer_index.html" %}
+
+{% block extra_content %}
+<div class="row">
+    <div class="col-md-12">
+        <button id="clear_all" type="button" class="btn btn-primary btn-sm">Clear</button>
+    </div>
+</div>
+
+<div class="row" style="margin-top: 10px; margin-bottom: 20px;">
+    <div class="col-md-12">
+        <div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
+            {% for contrib in contribs %}
+            <div class="col-md-4"
+                 name="panel{{contrib.formula}}"
+                 style="padding-left: 1px; padding-right: 1px; margin-bottom: 3px;">
+                <div class="panel panel-default">
+                    <div class="panel-heading"
+                         role="tab" style="padding-left: 5px; padding-right: 5px">
+                        <h4 class="panel-title">
+                            {{ contrib.formula }}
+                            <a role="button"
+                               class="btn btn-default btn-xs pull-right"
+                               target="_blank"
+                               style="position:relative;margin-left:5px;margin-top:-2px;"
+                               href="/explorer/{{ contrib.id }}">
+                                #{{ contrib.short_cid }}
+                            </a>
+                            <a role="button"
+                               class="btn btn-default btn-xs pull-right"
+                               target="_blank"
+                               style="position:relative;margin-top:-2px;"
+                               href="https://materialsproject.org/materials/{{ contrib.identifier }}">
+                                {{ contrib.identifier }}
+                            </a>
+                        </h4>
+                    </div>
+                    <div class="panel-collapse" role="tabpanel" name="host">
+                        <div id="table_{{ contrib.id }}_{{ contrib.formula }}">
+                            <div id="filter_{{ contrib.id }}"></div>
+                            <div id="grid_{{ contrib.id }}"></div>
+                            <div id="pagination_{{ contrib.id }}"></div>
+                            <div id="colmanage_{{ contrib.id }}"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,75 +1,81 @@
 import Plotly from 'plotly'; // plotly core only
 import {Spinner} from 'spin.js';
 
+var graph = document.getElementById('graph');
 var target = document.getElementById('spinner_graph');
 var spinner_plot = new Spinner({scale: 0.5});
 spinner_plot.spin(target);
 
-var columns = $.map(['Solute', 'D₀ [cm²/s]', 'Q [eV]'], function(col) {
-    return {'name': col, 'cell': 'string', 'nesting': [], 'editable': 0};
-})
+var layout = {
+    grid: {rows: 1, columns: 3, pattern: 'independent'},
+    margin: {l: 60, b: 60, t: 30, r: 5}, hovermode: 'closest', showlegend: false,
+    xaxis: {title: '1000/T [K⁻¹]'},
+    yaxis: {title: 'diffusivity', type: 'log', exponentformat: "power"},
+    xaxis2: {title: 'Z'}, yaxis2: {title: 'D₀ [cm²/s]'},
+    xaxis3: {title: 'Z'}, yaxis3: {title: 'Q [eV]'}
+};
 
-$.each($('div[id^=table_]'), function(idx, element) {
-    var cid = element.id.split('_')[1];
+var columns = $.map(['Z', 'Solute', 'D₀ [cm²/s]', 'Q [eV]'], function(col) {
+    return {'name': col, 'cell': 'string', 'nesting': [], 'editable': 0};
+});
+
+var data = [];
+
+var tables = $('div[id^=table_]');
+console.log(tables.length);
+$.each(tables, function(index, element) {
+    var id_split = element.id.split('_');
+    var cid = id_split[1]; var host = id_split[2];
     var config = {cid: cid, name: 'D₀_Q', per_page: 5, total_records: 20, ncols: columns.length};
     config['uuids'] = $.map(['filter', 'grid', 'pagination', 'colmanage'], function(prefix) {
         return prefix + '_' + cid;
     });
-    render_table({table: {columns: columns}, config: config});
+    var grid = render_table({table: {columns: columns}, config: config});
+    if ( host === 'Al' || host === 'Cu' ) {
+        grid.collection.on('sync', function() {
+            data.push({ // D0
+                x: [], y: [], name: host, xaxis: 'x2', yaxis: 'y2',
+                connectgaps: true, mode: 'lines+markers'
+            });
+            data.push({ // Q
+                x: [], y: [], name: host, xaxis: 'x3', yaxis: 'y3',
+                connectgaps: true, mode: 'lines+markers'
+            });
+            var idx = data.length-2;
+            this.each(function(model) {
+                var Z = model.get('Z');
+                var solute = model.get('Solute');
+                var D0 = model.get("D₀ [cm²/s]");
+                var Q = model.get("Q [eV]");
+                data[idx].x.push(Z);
+                data[idx].y.push(D0);
+                data[idx+1].x.push(Z);
+                data[idx+1].y.push(Q);
+                var trace = {
+                    x: [], y: [], xaxis: 'x1', yaxis: 'y1',
+                    mode: 'lines', name: host+'-'+solute
+                };
+                for (var j=0; j<40; j++) {
+                    trace.x.push(j*0.1);
+                    trace.y.push(D0*Math.exp(-Q/0.08617*j*0.1));
+                }
+                data.push(trace);
+                //rows.eq(i).toggleClass('selected');
+            });
+            if (data.length == 14) {
+                Plotly.newPlot(graph, data, layout, {displayModeBar: true, responsive: true});
+                graph.on('plotly_click', function(d){
+                    var cid = d.points[0].text;
+                    var url = '/explorer/' + cid;
+                    window.open(url, '_blank');
+                });
+                $('.backgrid-filter').hide(); // hide search
+                $('.columnmanager-visibilitycontrol').hide(); // hide column manager
+                spinner_plot.stop();
+            }
+        });
+    }
 });
-
-$('.backgrid-filter').hide(); // hide search
-$('.columnmanager-visibilitycontrol').hide(); // hide column manager
-
-var graph = document.getElementById('graph');
-//var ranges = {{ ranges|safe }};
-var layout = {
-    grid: {rows: 1, columns: 3, xgap: 0.02},
-    margin: {l: 60, b: 50, t: 50, r: 5},
-    hovermode: 'closest', showlegend: false,
-    xaxis: {title: '1000/T [K⁻¹]'},
-    yaxis: {title: 'diffusivity', type: 'log', exponentformat: "power"},
-    xaxis2: {title: 'Z'},//, range: ranges['Z']},
-    yaxis2: {title: 'D₀ [cm²/s]'},//, range: ranges['D₀ [cm²/s]']},
-    xaxis3: {title: 'Z'},//, range: ranges['Z']},
-    yaxis3: {title: 'Q [eV]'},//, range: ranges['Q [eV]']}
-};
-
-// var selection = {};
-//var data = {};
-//data['graphDif'] = []; data['graphD0'] = []; data['graphQ'] = [];
-//panels.each(function(index) {
-//    if (selection.length == 2) { return false; } // only show two hosts
-//    var host = $('.panel-heading .panel-title a span:nth-child(2)', this).text();
-//    if ( host === 'Al' || host === 'Cu' ) {
-//        selection[index] = [];
-//        var rows = $('.panel-collapse table.backgrid tbody tr', this);
-//        data['graphD0'].push({x: [], y: [], name: host, connectgaps: true, mode: 'lines+markers'});
-//        data['graphQ'].push({x: [], y: [], name: host, connectgaps: true, mode: 'lines+markers'});
-//        var idx = data['graphD0'].length-1
-//        for (var i = 0; i < window.tables[index]["rows"].length; i++) {
-//            var row = window.tables[index]["rows"][i];
-//            var Z = row['Z'];
-//            if (Z > 20 && Z < 30) { // only show subset of solutes
-//                var D0 = row["D₀ [cm²/s]"];
-//                data['graphD0'][idx].x.push(Z);
-//                data['graphD0'][idx].y.push(D0);
-//                var Q = row["Q [eV]"];
-//                data['graphQ'][idx].x.push(Z);
-//                data['graphQ'][idx].y.push(Q);
-//                var trace = {x: [], y: [], mode: 'lines', name: host+'-'+row['El.']};
-//                for (var j=0; j<40; j++) {
-//                    trace.x.push(j*0.1);
-//                    trace.y.push(D0*Math.exp(-Q/0.08617*j*0.1));
-//                }
-//                data['graphDif'].push(trace);
-//                rows.eq(i).toggleClass('selected');
-//                selection[index].push(i);
-//            }
-//        }
-//    }
-//});
-
 
 //// contributions selection (row click)
 //var lastChecked = null;

@@ -15,7 +15,7 @@ spinner_plot.spin(target);
 
 var graph = document.getElementById('graph');
 var layout = {
-    grid: {rows: 1, columns: 2, xgap: 0.3, pattern: 'independent'},
+    grid: {rows: 1, columns: 3, xgap: 0.3, pattern: 'independent'},
     margin: {l: 60, b: 60, t: 30}, showlegend: false,
     xaxis: {title: 'σ [(Ωms)⁻¹]', exponentformat: "power", type: 'log'},
     yaxis: {title: 'S [μV/K]'},

@@ -123,4 +123,5 @@ window.render_table = function(props) {
     var paginator = new Backgrid.Extension.Paginator({collection: rows});
     $("#"+config.uuids[2]).append(paginator.render().$el);
     rows.fetch({reset: true});
+    return grid;
 }
