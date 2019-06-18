@@ -60,6 +60,8 @@ table provides a few important functionalities out of the box:
 * **CIF Files**: If structures are part of a contribution, a `CIF` column is added to the
     overview table containing a URL to download the structure in
     [CIF](https://en.wikipedia.org/wiki/Crystallographic_Information_File) format.
+* **Column Manager**: Table columns to be shown or hidden can be selected via simple
+    dropdown menu.
 
 [^1]: See [API Docs](/api) for details on contribution components.
 
