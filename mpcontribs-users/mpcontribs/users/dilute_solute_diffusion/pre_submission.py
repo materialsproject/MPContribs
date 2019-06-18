@@ -1,5 +1,5 @@
-import os, json, requests
-from pandas import read_excel, isnull, ExcelWriter
+import os, json, requests, sys
+from pandas import read_excel, isnull, ExcelWriter, Series
 from mpcontribs.io.core.recdict import RecursiveDict
 from mpcontribs.io.core.utils import clean_value, nest_dict
 from mpcontribs.io.archieml.mpfile import MPFile
@@ -11,6 +11,8 @@ from pymongo import MongoClient
 client = MongoClient('mongodb+srv://'+os.environ['MPCONTRIBS_MONGO_HOST'])
 db = client['mpcontribs']
 print(db.contributions.count_documents({'project': project}))
+
+z = json.load(open('z.json', 'r'))
 
 def run(mpfile, hosts=None, download=False):
     mpr = MPRester()
@@ -114,6 +116,10 @@ def run(mpfile, hosts=None, download=False):
         else:
             df_D0_Q = df[['Solute element name', 'Solute D0 [cm^2/s]', 'Solute Q [eV]']]
         df_D0_Q.columns = ['Solute', 'D₀ [cm²/s]', 'Q [eV]']
+        anums = [z[el] for el in df_D0_Q['Solute']]
+        df_D0_Q.insert(0, 'Z', Series(anums, index=df_D0_Q.index))
+        df_D0_Q.sort_values('Z', inplace=True)
+        df_D0_Q.reset_index(drop=True, inplace=True)
         mpfile.add_data_table(mpid, df_D0_Q, 'D₀_Q')
 
         if hdata['Host']['crystal_structure'] == 'BCC':
@@ -213,25 +219,34 @@ print(len(mpfile.ids))
 table_names = ['D₀_Q', 'hop_activation_barriers', 'hop_attempt_frequencies']
 
 for idx, (identifier, content) in enumerate(mpfile.document.items()):
-    doc = {'identifier': identifier, 'project': project, 'content': {}}
-    doc['content']['data'] = content['data']
-    doc['collaborators'] = [{'name': 'Patrick Huck', 'email': 'phuck@lbl.gov'}]
-    r = db.contributions.insert_one(doc)
-    cid = r.inserted_id
-    print(idx, ':', cid)
+    #doc = {'identifier': identifier, 'project': project, 'content': {}}
+    #doc['content']['data'] = content['data']
+    #doc['collaborators'] = [{'name': 'Patrick Huck', 'email': 'phuck@lbl.gov'}]
+    #r = db.contributions.insert_one(doc)
+    #cid = r.inserted_id
+    #print(idx, ':', cid)
 
-    tids = []
-    for name in table_names:
-        table = mpfile.document[identifier][name]
-        table.pop('@module')
-        table.pop('@class')
-        table['identifier'] = identifier
-        table['project'] = project
-        table['name'] = name
-        table['cid'] = cid
-        r = db.tables.insert_one(table)
-        tids.append(r.inserted_id)
+    #tids = []
+    #for name in table_names:
+    #    table = mpfile.document[identifier][name]
+    #    table.pop('@module')
+    #    table.pop('@class')
+    #    table['identifier'] = identifier
+    #    table['project'] = project
+    #    table['name'] = name
+    #    table['cid'] = cid
+    #    r = db.tables.insert_one(table)
+    #    tids.append(r.inserted_id)
 
-    print(tids)
-    query = {'identifier': identifier, 'project': project}
-    r = db.contributions.update_one(query, {'$set': {'content.tables': tids}})
+    #print(tids)
+    #query = {'identifier': identifier, 'project': project}
+    #r = db.contributions.update_one(query, {'$set': {'content.tables': tids}})
+
+    name = table_names[0]
+    query = {'identifier': identifier, 'project': project, 'name': name}
+    print(query)
+    table = mpfile.document[identifier][name]
+    r = db.tables.update_one(
+        query, {'$set': {'columns': table['columns'], 'data': table['data']}}
+    )
+    print(r.matched_count, r.modified_count)
