@@ -22,7 +22,6 @@ var columns = $.map(['Z', 'Solute', 'D₀ [cm²/s]', 'Q [eV]'], function(col) {
 var data = [];
 
 var tables = $('div[id^=table_]');
-console.log(tables.length);
 $.each(tables, function(index, element) {
     var id_split = element.id.split('_');
     var cid = id_split[1]; var host = id_split[2];
