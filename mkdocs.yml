@@ -41,6 +41,8 @@ nav:
     - Home: index.md
     - API: api.md
     - Portal: portal.md
+    - Landing Pages:
+        - RedoxThermoCSP: redox_thermo_csp/index.md
     - Ingester: ingester.md
 google_analytics:
     - 'UA-140392573-1'
