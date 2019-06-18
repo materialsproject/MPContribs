@@ -1,192 +1,107 @@
-    //<div class="row">
-    //    <div class="col-md-4">
-    //        <center>
-    //        <h4><b>Isotherm</b></h4>
-    //        </center>
-    //    </div>
-    //    <div class="col-md-4">
-    //        <center>
-    //        <h4><b>Isobar</b></h4>
-    //        </center>
-    //    </div>
-    //    <div class="col-md-4">
-    //        <center>
-    //        <h4><b>Isoredox</b></h4>
-    //        </center>
-    //    </div>
-    //</div>
-    //<div class="row" style="margin-top: 25px;">
-    //    <div class="col-md-1">
-    //        <b>Temperature:</b>
-    //    </div>
-    //    <div class="col-md-3">
-    //        <input id="temp_slider" type="text"
-    //        data-slider-min="500" data-slider-max="1800" data-slider-step="10"
-    //        data-slider-value="1000"/><b> K</b><br>
-    //    </div>
-    //    <div class="col-md-1">
-    //        <b>Pressure:</b>
-    //    </div>
-    //    <div class="col-md-3">
-    //        <input id="pressure_slider" type="text"
-    //        data-slider-min="-7" data-slider-max="4" data-slider-step="0.05"
-    //        data-slider-value="0"/><b> 10ⁿ bar</b><br>
-    //    </div>
-    //    <div class="col-md-1">
-    //        <b>Redox δ:</b>
-    //    </div>
-    //    <div class="col-md-3">
-    //        <input id="redox_slider" type="text"
-    //        data-slider-min="0" data-slider-max="0.5" data-slider-step="0.01"
-    //        data-slider-value="0.3"/><br>
-    //    </div>
-    //</div>
-    //<div class="row">
-    //    <div class="col-md-1">
-    //        <b>Range:</b>
-    //    </div>
-    //    <div class="col-md-3">
-    //        <input id="pressure_range" type="text" class="span2" value=""
-    //        data-slider-min="-7" data-slider-max="3" data-slider-step="0.05"
-    //        data-slider-value="[-5,1]"/><b> 10ⁿ bar</b>
-    //    </div>
-    //    <div class="col-md-1">
-    //        <b>Range:</b>
-    //    </div>
-    //    <div class="col-md-3">
-    //        <input id="temp_range" type="text" class="span2" value=""
-    //        data-slider-min="500" data-slider-max="1800" data-slider-step="10"
-    //        data-slider-value="[700,1400]"/><b> K</b>
-    //    </div>
-    //    <div class="col-md-1">
-    //        <b>Range:</b>
-    //    </div>
-    //    <div class="col-md-3">
-    //        <input id="redox_temp_range" type="text" class="span2" value=""
-    //        data-slider-min="500" data-slider-max="1800" data-slider-step="10"
-    //        data-slider-value="[700,1400]"/><b> K</b>
-    //    </div>
-    //</div>
-    //<br>
-    //<div class="row" style="margin-top: 10px;">
-    //    <div class="col-md-4">
-    //        <div id="spinner_isotherm" name="spinner"></div>
-    //        <div id=isotherm></div>
-    //    </div>
-    //    <div class="col-md-4">
-    //        <div id="spinner_isobar" name="spinner"></div>
-    //        <div id=isobar></div>
-    //    </div>
-    //    <div class="col-md-4">
-    //        <div id="spinner_isoredox" name="spinner"></div>
-    //        <div id=isoredox></div>
-    //    </div>
-    //</div>
-    //<hr>
-    //
-    //
-    //<div class="row">
-    //    <div class="col-md-4">
-    //        <center>
-    //        <h4><b>Enthalpy (dH)</b></h4>
-    //        </center>
-    //    </div>
-    //    <div class="col-md-4">
-    //        <center>
-    //        <h4><b>Entropy (dS)</b></h4>
-    //        </center>
-    //    </div>
-    //    <div class="col-md-4">
-    //        <center>
-    //        <h4><b>Ellingham</b></h4>
-    //        </center>
-    //    </div>
-    //</div>
-    //<div class="row" style="margin-top: 25px;">
-    //    <div class="col-md-1">
-    //        <b>Temperature (theo):</b>
-    //    </div>
-    //    <div class="col-md-3">
-    //        <br><input id="dH_temp_slider" type="text"
-    //        data-slider-min="100" data-slider-max="2000" data-slider-step="10"
-    //        data-slider-value="500"/><b> K</b><br>
-    //    </div>
-    //    <div class="col-md-1">
-    //        <b>Temperature (theo):</b>
-    //    </div>
-    //    <div class="col-md-3">
-    //        <br><input id="dS_temp_slider" type="text"
-    //        data-slider-min="100" data-slider-max="2000" data-slider-step="10"
-    //        data-slider-value="500"/><b> K</b><br>
-    //    </div>
-    //    <div class="col-md-1">
-    //        <b>Redox δ:</b>
-    //    </div>
-    //    <div class="col-md-3">
-    //        <input id="elling_redox_slider" type="text"
-    //        data-slider-min="0" data-slider-max="0.5" data-slider-step="0.01"
-    //        data-slider-value="0.3"/><br>
-    //    </div>
-    //</div>
-    //<div class="row">
-    //    <div class="col-md-1">
+import Plotly from 'plotly'; // plotly core only
+import {Spinner} from 'spin.js';
+import 'bootstrap-slider';
 
-    //    </div>
-    //    <div class="col-md-3">
-    //
-    //    </div>
-    //    <div class="col-md-1">
-    //
-    //    </div>
-    //    <div class="col-md-3">
-    //
-    //    </div>
-    //    <div class="col-md-1">
-    //        <b>Range:</b>
-    //    </div>
-    //    <div class="col-md-3">
-    //        <input id="elling_temp_range" type="text" class="span2" value=""
-    //        data-slider-min="200" data-slider-max="2000" data-slider-step="100"
-    //        data-slider-value="[400,1500]"/><b> K</b><br>
-    //    </div>
-    //</div>
-    //<div class="row">
-    //    <div class="col-md-1">
+var target = document.getElementById('spinner_graph');
+var spinner_plot = new Spinner({scale: 0.5});
+spinner_plot.spin(target);
 
-    //    </div>
-    //    <div class="col-md-3">
-    //
-    //    </div>
-    //    <div class="col-md-1">
-    //
-    //    </div>
-    //    <div class="col-md-3">
-    //
-    //    </div>
-    //    <div class="col-md-1">
-    //        <b>Isobar line:</b>
-    //    </div>
-    //    <div class="col-md-3">
-    //        <br><input id="elling_pressure_slider" type="text"
-    //        data-slider-min="-20" data-slider-max="10" data-slider-step="0.05"
-    //        data-slider-value="0"/><b> 10ⁿ bar</b><br>
-    //    </div>
-    //</div>
-    //<br>
-    //<div class="row" style="margin-top: 10px;">
-    //    <div class="col-md-4">
-    //        <div id="spinner_enthalpy_dH" name="spinner"></div>
-    //        <div id=enthalpy_dH></div>
-    //    </div>
-    //    <div class="col-md-4">
-    //        <div id="spinner_entropy_dS" name="spinner"></div>
-    //        <div id=entropy_dS></div>
-    //    </div>
-    //    <div class="col-md-4">
-    //        <div id="spinner_ellingham" name="spinner"></div>
-    //        <div id=ellingham></div>
-    //    </div>
-    //</div>
+var graph = document.getElementById('graph');
+var api_url = window.api['host'] + 'projects/redox_thermo_csp';
+var layout = {
+    margin: {l: 70, b: 50, t: 50, r: 5}, hovermode: 'closest', showlegend: false,
+};
+
+var sliders = {
+    temp_slider: {config: {tooltip: "always"}, updkey: "isotherm"},
+    pressure_range: {config: {tooltip_position: "bottom"}, updkey: "isotherm"},
+    pressure_slider: {config: {tooltip: "always"}, updkey: "isobar"},
+    temp_range: {config: {tooltip_position: "bottom"}, updkey: "isobar"},
+    redox_slider: {config: {tooltip: "always"}, updkey: "isoredox"},
+    redox_temp_range: {config: {tooltip_position: "bottom"}, updkey: "isoredox"},
+    dH_temp_slider: {config: {tooltip: "always"}, updkey: "enthalpy_dH"},
+    dS_temp_slider: {config: {tooltip: "always"}, updkey: "entropy_dS"},
+    elling_redox_slider: {config: {tooltip: "always"}, updkey: "ellingham"},
+    elling_temp_range: {config: {tooltip_position: "bottom"}, updkey: "ellingham"},
+    elling_pressure_slider: {config: {tooltip: "always", tooltip_position: "bottom"}, updkey: "ellingham"},
+}
+
+Object.keys(sliders).forEach(function(key, index) {
+    // configure sliders for isoplots
+    // update the respective isoplot if the respective value is changed
+    $('#'+key).slider(sliders[key]['config'])
+        .on('slideStop', function(ev) {
+            var k = ev.currentTarget.id;
+            $('input:text').slider('disable');
+            var updkey = sliders[k]['updkey'];
+            $("#spinner_"+updkey).spin();
+            send_request(updkey);
+        });
+});
+
+function send_request(updatekey) {
+    console.log(updatekey);
+    var cid = $('#cid').val();
+    // read slider/field values
+    if (updatekey === "isotherm") {
+        var payload = {
+            'iso': $('#temp_slider').attr('value'),
+            'rng': $('#pressure_range').attr('value')
+        }
+    } else if (updatekey === "isobar") {
+        var payload = {
+            'iso': $('#pressure_slider').attr('value'),
+            'rng': $('#temp_range').attr('value')
+        }
+    } else if (updatekey === "isoredox") {
+        var payload = {
+            'iso': $('#redox_slider').attr('value'),
+            'rng': $('#redox_temp_range').attr('value')
+        }
+    } else if (updatekey === "enthalpy_dH") {
+        var payload =  {'iso': $('#dH_temp_slider').attr('value')}
+    } else if (updatekey === "entropy_dS") {
+        var payload =  {'iso': $('#dS_temp_slider').attr('value')}
+    } else if (updatekey === "ellingham")  {
+        var payload = {
+            'del': $('#elling_redox_slider').attr('value'),
+            'rng': $('#elling_temp_range').attr('value'),
+            'iso': $('#elling_pressure_slider').attr('value')
+        }
+    }
+    console.log(payload);
+
+    //$.ajax({
+    //    type: 'POST',
+    //    url: '../rest/' + cid + '/' + updatekey,
+    //    data: JSON.stringify(payload),
+    //    dataType: "json",
+    //    contentType: "application/json; charset=utf-8",
+    //    success: function(data, textStatus, jqXHR) {
+    //        var r = data['response'];
+    //        showdata(r);
+    //        var div = document.getElementById(updatekey);
+    //        update_plots(div,r,updatekey);
+    //        $("#spinner_"+updatekey).spin(false);
+    //        $('input:text').slider('enable');
+    //    },
+    //    error: function(jqXHR, textStatus, errorThrown) {
+    //        console.log(errorThrown);
+    //    }
+    //});
+
+};
+
+// show default material SrFeOx
+var spinners = document.getElementsByName('spinner');
+var spinner_sliders = new Spinner({scale: 0.5});
+$.each(spinners, function(i, s) { spinner_sliders.spin(s); });
+$('input:text').slider('disable');
+$('#cid').val('5bb821a79225576aeda99475');
+var updatekeys = "isobar, isotherm, isoredox, ellingham, enthalpy_dH, entropy_dS"
+updatekeys.split(",").forEach(function(k) { send_request(k.trim()); });
+console.log('Done');
+
 //// update all isoplots if new material is selected
 //Backbone.on('cellclicked', function(er) {
 //    $("[name='spinner']").spin();
@@ -199,34 +114,8 @@
 //    $('#datatable').toggleClass('in', false);
 //    updatekeys.split(",").forEach(function(k) { send_request(k.trim()); });
 //});
-//
-//var sliders = {
-//    temp_slider: {config: {tooltip: "always"}, updkey: "isotherm"},
-//    pressure_range: {config: {tooltip_position: "bottom"}, updkey: "isotherm"},
-//    pressure_slider: {config: {tooltip: "always"}, updkey: "isobar"},
-//    temp_range: {config: {tooltip_position: "bottom"}, updkey: "isobar"},
-//    redox_slider: {config: {tooltip: "always"}, updkey: "isoredox"},
-//    redox_temp_range: {config: {tooltip_position: "bottom"}, updkey: "isoredox"},
-//    dH_temp_slider: {config: {tooltip: "always"}, updkey: "enthalpy_dH"},
-//    dS_temp_slider: {config: {tooltip: "always"}, updkey: "entropy_dS"},
-//    elling_redox_slider: {config: {tooltip: "always"}, updkey: "ellingham"},
-//    elling_temp_range: {config: {tooltip_position: "bottom"}, updkey: "ellingham"},
-//    elling_pressure_slider: {config: {tooltip: "always", tooltip_position: "bottom"}, updkey: "ellingham"},
-//}
-//Object.keys(sliders).forEach(function(key, index) {
-//    // configure sliders for isoplots
-//    // update the respective isoplot if the respective value is changed
-//    $('#'+key).slider(sliders[key]['config'])
-//        .on('slideStop', function(ev) {
-//            var k = ev.currentTarget.id;
-//            $('input:text').slider('disable');
-//            var updkey = sliders[k]['updkey'];
-//            $("#spinner_"+updkey).spin();
-//            send_request(updkey);
-//        });
-//});
-//
-//
+
+
 //// displays the currently selected material and data properties
 //function showdata(r) {
 //    var selected = r.slice(-1) + ''
@@ -329,74 +218,4 @@
 //        margin: {l: 80, r: 20, b: 60, t: 35}
 //    });
 //};
-//
-//function send_request(updatekey) {
-//
-//    var cid = $('#cid').val();
-//
-//    // read slider/field values
-//
-//    if (updatekey === "isotherm") {
-//        var payload = {
-//            'iso': $('#temp_slider').attr('value'),
-//            'rng': $('#pressure_range').attr('value')
-//        }
-//    }
-//    else if (updatekey === "isobar") {
-//        var payload = {
-//            'iso': $('#pressure_slider').attr('value'),
-//            'rng': $('#temp_range').attr('value')
-//        }
-//    }
-//    else if (updatekey === "isoredox") {
-//        var payload = {
-//            'iso': $('#redox_slider').attr('value'),
-//            'rng': $('#redox_temp_range').attr('value')
-//        }
-//    }
-//
-//    else if (updatekey === "enthalpy_dH") {
-//        var payload =  {'iso': $('#dH_temp_slider').attr('value')}
-//    }
-//
-//    else if (updatekey === "entropy_dS") {
-//        var payload =  {'iso': $('#dS_temp_slider').attr('value')}
-//    }
-//
-//    else if (updatekey === "ellingham")  {
-//        var payload = {
-//            'del': $('#elling_redox_slider').attr('value'),
-//            'rng': $('#elling_temp_range').attr('value'),
-//            'iso': $('#elling_pressure_slider').attr('value')
-//        }
-//    }
-//
-//    $.ajax({
-//        type: 'POST',
-//        url: '../rest/' + cid + '/' + updatekey,
-//        data: JSON.stringify(payload),
-//        dataType: "json",
-//        contentType: "application/json; charset=utf-8",
-//        success: function(data, textStatus, jqXHR) {
-//            // data['response'] = {'isotherm': {'x':, [...], 'y': [...]}, 'isobar': ...}
-//        var r = data['response'];
-//        showdata(r);
-//        var div = document.getElementById(updatekey);
-//        update_plots(div,r,updatekey);
-//        $("#spinner_"+updatekey).spin(false);
-//        $('input:text').slider('enable');
-//    },
-//        error: function(jqXHR, textStatus, errorThrown) {
-//            console.log(errorThrown);
-//        }
-//});
-//
-//};
-//
-//// show default material SrFeOx
-//$("[name='spinner']").spin();
-//$('input:text').slider('disable');
-//$('#cid').val('5bb821a79225576aeda99475');
-//var updatekeys = "isobar, isotherm, isoredox, ellingham, enthalpy_dH, entropy_dS"
-//updatekeys.split(",").forEach(function(k) { send_request(k.trim()); });
 //

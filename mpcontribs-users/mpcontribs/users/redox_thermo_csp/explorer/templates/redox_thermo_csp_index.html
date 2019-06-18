@@ -28,4 +28,187 @@
         </div>
     </div>
 </div>
+
+<div class="row">
+    <div class="col-md-4">
+        <center>
+            <h4><b>Isotherm</b></h4>
+        </center>
+    </div>
+    <div class="col-md-4">
+        <center>
+            <h4><b>Isobar</b></h4>
+        </center>
+    </div>
+    <div class="col-md-4">
+        <center>
+            <h4><b>Isoredox</b></h4>
+        </center>
+    </div>
+</div>
+<div class="row" style="margin-top: 25px;">
+    <div class="col-md-1">
+        <b>Temperature:</b>
+    </div>
+    <div class="col-md-3">
+        <input id="temp_slider" type="text"
+                                data-slider-min="500" data-slider-max="1800" data-slider-step="10"
+                                                                             data-slider-value="1000"/><b> K</b><br>
+    </div>
+    <div class="col-md-1">
+        <b>Pressure:</b>
+    </div>
+    <div class="col-md-3">
+        <input id="pressure_slider" type="text"
+                                    data-slider-min="-7" data-slider-max="4" data-slider-step="0.05"
+                                                                             data-slider-value="0"/><b> 10ⁿ bar</b><br>
+    </div>
+    <div class="col-md-1">
+        <b>Redox δ:</b>
+    </div>
+    <div class="col-md-3">
+        <input id="redox_slider" type="text"
+                                 data-slider-min="0" data-slider-max="0.5" data-slider-step="0.01"
+                                                                           data-slider-value="0.3"/><br>
+    </div>
+</div>
+<div class="row">
+    <div class="col-md-1">
+        <b>Range:</b>
+    </div>
+    <div class="col-md-3">
+        <input id="pressure_range" type="text" class="span2" value=""
+                                                             data-slider-min="-7" data-slider-max="3" data-slider-step="0.05"
+                                                                                                      data-slider-value="[-5,1]"/><b> 10ⁿ bar</b>
+    </div>
+    <div class="col-md-1">
+        <b>Range:</b>
+    </div>
+    <div class="col-md-3">
+        <input id="temp_range" type="text" class="span2" value=""
+                                                         data-slider-min="500" data-slider-max="1800" data-slider-step="10"
+                                                                                                      data-slider-value="[700,1400]"/><b> K</b>
+    </div>
+    <div class="col-md-1">
+        <b>Range:</b>
+    </div>
+    <div class="col-md-3">
+        <input id="redox_temp_range" type="text" class="span2" value=""
+                                                               data-slider-min="500" data-slider-max="1800" data-slider-step="10"
+                                                                                                            data-slider-value="[700,1400]"/><b> K</b>
+    </div>
+</div>
+<br>
+<div class="row" style="margin-top: 10px;">
+    <div class="col-md-4">
+        <div id="spinner_isotherm" name="spinner"></div>
+        <div id=isotherm></div>
+    </div>
+    <div class="col-md-4">
+        <div id="spinner_isobar" name="spinner"></div>
+        <div id=isobar></div>
+    </div>
+    <div class="col-md-4">
+        <div id="spinner_isoredox" name="spinner"></div>
+        <div id=isoredox></div>
+    </div>
+</div>
+<hr>
+
+
+<div class="row">
+    <div class="col-md-4">
+        <center>
+            <h4><b>Enthalpy (dH)</b></h4>
+        </center>
+    </div>
+    <div class="col-md-4">
+        <center>
+            <h4><b>Entropy (dS)</b></h4>
+        </center>
+    </div>
+    <div class="col-md-4">
+        <center>
+            <h4><b>Ellingham</b></h4>
+        </center>
+    </div>
+</div>
+<div class="row" style="margin-top: 25px;">
+    <div class="col-md-1">
+        <b>Temperature (theo):</b>
+    </div>
+    <div class="col-md-3">
+        <br><input id="dH_temp_slider" type="text"
+                                       data-slider-min="100" data-slider-max="2000" data-slider-step="10"
+                                                                                    data-slider-value="500"/><b> K</b><br>
+    </div>
+    <div class="col-md-1">
+        <b>Temperature (theo):</b>
+    </div>
+    <div class="col-md-3">
+        <br><input id="dS_temp_slider" type="text"
+                                       data-slider-min="100" data-slider-max="2000" data-slider-step="10"
+                                                                                    data-slider-value="500"/><b> K</b><br>
+    </div>
+    <div class="col-md-1">
+        <b>Redox δ:</b>
+    </div>
+    <div class="col-md-3">
+        <input id="elling_redox_slider" type="text"
+                                        data-slider-min="0" data-slider-max="0.5" data-slider-step="0.01"
+                                                                                  data-slider-value="0.3"/><br>
+    </div>
+</div>
+<div class="row">
+    <div class="col-md-1">
+
+    </div>
+    <div class="col-md-3">
+
+    </div>
+    <div class="col-md-1">
+
+    </div>
+    <div class="col-md-3">
+
+    </div>
+    <div class="col-md-1">
+        <b>Range:</b>
+    </div>
+    <div class="col-md-3">
+        <input id="elling_temp_range" type="text" class="span2" value=""
+                                                                data-slider-min="200" data-slider-max="2000" data-slider-step="100"
+                                                                                                             data-slider-value="[400,1500]"/><b> K</b><br>
+    </div>
+</div>
+<div class="row">
+    <div class="col-md-1"></div>
+    <div class="col-md-3"></div>
+    <div class="col-md-1"></div>
+    <div class="col-md-3"></div>
+    <div class="col-md-1"><b>Isobar line:</b></div>
+    <div class="col-md-3">
+        <br><input id="elling_pressure_slider"
+                   type="text"
+                   data-slider-min="-20"
+                   data-slider-max="10"
+                   data-slider-step="0.05"
+                   data-slider-value="0"/><b> 10ⁿ bar</b><br>
+    </div>
+</div>
+<br>
+<div class="row" style="margin-top: 10px;">
+    <div class="col-md-4">
+        <div id="spinner_enthalpy_dH" name="spinner"></div>
+        <div id=enthalpy_dH></div>
+    </div>
+    <div class="col-md-4">
+        <div id="spinner_entropy_dS" name="spinner"></div>
+        <div id=entropy_dS></div>
+    </div>
+    <div class="col-md-4">
+        <div id="spinner_ellingham" name="spinner"></div>
+        <div id=ellingham></div>
+    </div>
+</div>
 {% endblock %}
