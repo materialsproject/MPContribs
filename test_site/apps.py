@@ -47,3 +47,7 @@ class TransparentConductorsConfig(AppConfig):
 class DiluteSoluteDiffusionConfig(AppConfig):
     name = 'mpcontribs.users.dilute_solute_diffusion.explorer'
     label = 'dilute_solute_diffusion'
+
+class RedoxThermoCspConfig(AppConfig):
+    name = 'mpcontribs.users.redox_thermo_csp.explorer'
+    label = 'redox_thermo_csp'

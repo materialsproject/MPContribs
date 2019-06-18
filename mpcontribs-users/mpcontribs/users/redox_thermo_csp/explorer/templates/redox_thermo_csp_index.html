@@ -1,0 +1,31 @@
+{% extends "explorer_index.html" %}
+
+{% block extra_content %}
+<div class="row">
+    <div class="col-md-3">
+        <h4>Currently selected: </h4>
+        <h5>Experimental data available: </h4>
+        <h5>Elastic tensors available: </h4>
+        <h5>Theoretical data updated: </h4>
+    </div>
+    <div class="col-md-4">
+        <div id="spinner_main" name="spinner"></div>
+        <input type="hidden" id="cid">
+        <div id="selected_mat"></div>
+        <div id="selected_exp_mat"></div>
+        <div id="selected_elast"></div>
+        <div id="selected_updt"></div>
+    </div>
+    <div class="col-md-5">
+        <div class="well" style="padding: 5px 5px 5px 5px; margin-bottom: 2px; margin-left: 5px;">
+            <small>Click on a Contribution Identifier in the table to open a detail
+                page with graphs for ΔH/ΔS vs δ, and the raw data. To show isotherm,
+                isobar, and isoredox functions, click on a row in the table. Variables
+                and plot ranges can be adjusted with the sliders. All thermodynamic
+                quantities are given as per mol of O (monatomic oxygen). Please refer
+                to the <a href="../documentation/">documentation</a> for more detailed
+                information.</small>
+        </div>
+    </div>
+</div>
+{% endblock %}

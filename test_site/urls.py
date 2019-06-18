@@ -20,4 +20,5 @@ urlpatterns = [
     url(r'perovskites_diffusion/', include('mpcontribs.users.perovskites_diffusion.explorer.urls')),
     url(r'transparent_conductors/', include('mpcontribs.users.transparent_conductors.explorer.urls')),
     url(r'dilute_solute_diffusion/', include('mpcontribs.users.dilute_solute_diffusion.explorer.urls')),
+    url(r'redox_thermo_csp/', include('mpcontribs.users.redox_thermo_csp.explorer.urls')),
 ]

@@ -29,6 +29,7 @@ module.exports = {
     'perovskites_diffusion': './mpcontribs-users/mpcontribs/users/perovskites_diffusion/explorer/assets/index',
     'transparent_conductors': './mpcontribs-users/mpcontribs/users/transparent_conductors/explorer/assets/index',
     'dilute_solute_diffusion': './mpcontribs-users/mpcontribs/users/dilute_solute_diffusion/explorer/assets/index',
+    'redox_thermo_csp': './mpcontribs-users/mpcontribs/users/redox_thermo_csp/explorer/assets/index',
   },
   output: {
     path: path.resolve(__dirname, 'dist'),
