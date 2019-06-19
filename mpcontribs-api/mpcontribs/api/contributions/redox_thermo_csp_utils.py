@@ -7,8 +7,6 @@ from pymatgen.core.units import FloatWithUnit
 from pymatgen.analysis.elasticity import ElasticTensor
 import pymatgen.core.periodic_table as ptable
 
-mpr = MPRester()
-
 def redenth_act(compstr):
     """
     Finds redox enthalpies for a perovskite solid solution, both for the solid solution and for the endmembers
@@ -117,7 +115,8 @@ def find_theo_redenth(compstr):
     chem_sys = chem_sys + "O"
     chem_sys = chem_sys.split("-")
 
-    all_entries = mpr.get_entries_in_chemsys(chem_sys)
+    with MPRester() as mpr:
+        all_entries = mpr.get_entries_in_chemsys(chem_sys)
 
     # This method simply gets the lowest energy entry for all entries with the same composition.
     def get_most_stable_entry(formula):
@@ -331,7 +330,8 @@ def get_debye_temp(mpid):
     Credits: Joseph Montoya
     """
     pd.np.seterr(over="ignore") # ignore overflow in double scalars
-    data = mpr.get_data(mpid)[0]
+    with MPRester() as mpr:
+        data = mpr.get_data(mpid)[0]
     struct = Structure.from_str(data['cif'], fmt='cif')
     c_ij = ElasticTensor.from_voigt(data['elasticity']['elastic_tensor'])
     td = c_ij.debye_temperature(struct)
