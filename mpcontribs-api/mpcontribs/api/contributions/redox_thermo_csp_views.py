@@ -424,11 +424,10 @@ class IsographView(SwaggerView):
               description: contribution ID (ObjectId)
             - name: plot_type
               in: path
+              type: string
               required: true
-              schema:
-                  type: string
-                  enum: [isotherm, isobar, isoredox, enthalph_dH, entropy_dS, ellingham]
-              description: type of isograph (isotherm, isobar, isoredox, enthalph_dH, entropy_dS, ellingham)
+              enum: [isotherm, isobar, isoredox, enthalph_dH, entropy_dS, ellingham]
+              description: type of isograph
             - name: iso
               in: query
               type: number
