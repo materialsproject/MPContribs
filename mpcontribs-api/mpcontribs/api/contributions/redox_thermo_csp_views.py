@@ -366,6 +366,9 @@ def d_h_num_dev_calc(delta, dh_1, dh_2, temp, act):
         0.5 * d_h_num_dev_1(delta, dh_1, dh_2, temp, act))) / (
         (1 / (R * temp)) - (1 / (R * (temp + 0.01))))
 
+def isobar_line_elling(iso, x):
+    return -R*iso*x/2
+
 def init_isographs(cid, plot_type, payload):
     mask = ['identifier', 'content.data']
     contrib = Contributions.objects.only(*mask).get(id=cid)
@@ -421,9 +424,11 @@ class IsographView(SwaggerView):
               description: contribution ID (ObjectId)
             - name: plot_type
               in: path
-              type: string
               required: true
-              description: type of isograph
+              schema:
+                  type: string
+                  enum: [isotherm, isobar, isoredox, enthalph_dH, entropy_dS, ellingham]
+              description: type of isograph (isotherm, isobar, isoredox, enthalph_dH, entropy_dS, ellingham)
             - name: iso
               in: query
               type: number
@@ -437,6 +442,10 @@ class IsographView(SwaggerView):
               minItems: 2
               maxItems: 2
               description: comma-separated graph range
+            - name: del
+              in: query
+              type: number
+              description: delta value
         responses:
             200:
                 description: Isograph data as defined by contributor
@@ -451,11 +460,17 @@ class IsographView(SwaggerView):
         iso = float(request.args['iso'])
         payload = {"iso": iso, "rng": rng}
         pars, a, b, x_val = init_isographs(cid, plot_type, payload)
-        resiso, resiso_theo = [], []
+        if plot_type == "ellingham":
+            payload['iso'] = pd.np.log(10**payload['iso'])
+            delt = request.args.get('del')
+            if delt:
+                payload['del'] = float(delt)
+
+        resiso, resiso_theo, ellingiso = [], [], []
         if pars['experimental_data_available']:     # only execute this if experimental data is available
             for xv in x_val:                # calculate experimental data
                 try:
-                    if plot_type == "isobar" or plot_type == "isoredox":
+                    if plot_type in ["isobar", "isoredox", "ellingham"]:
                         s_th = s_th_o(xv)
                         args = (payload['iso'], xv, pars, s_th)
                     elif plot_type == "isotherm":
@@ -477,6 +492,11 @@ class IsographView(SwaggerView):
                     elif plot_type == "entropy_dS":
                         solutioniso = dh_ds(xv, args[-1], args[-2])[1]
                         resiso.append(solutioniso)
+                    elif plot_type == "ellingham":
+                        dh_ds_vals = dh_ds(payload["del"], args[-1], args[-2])
+                        solutioniso = (dh_ds_vals[0] - dh_ds_vals[1] * xv) / 1000.
+                        resiso.append(solutioniso)
+                        ellingiso.append(isobar_line_elling(args[0], xv) / 1000.)
                 except ValueError:          # if brentq function finds no zero point due to plot out of range
                     resiso.append(None)
 
@@ -491,10 +511,9 @@ class IsographView(SwaggerView):
         else:
             res_fit, res_interp = None, None    # don't plot any experimental data if it is not available
 
-
         try:                                # calculate theoretical data
             for xv in x_val[::4]: # use less data points for theoretical graphs to improve speed
-                if plot_type in ["isobar", "isoredox", "enthalpy_dH", "entropy_dS"]:
+                if plot_type in ["isobar", "isoredox", "enthalpy_dH", "entropy_dS", "ellingham"]:
                     args_theo = (payload['iso'], xv)
                 elif plot_type == "isotherm":
                     args_theo = (xv, payload['iso'])
@@ -524,17 +543,29 @@ class IsographView(SwaggerView):
                         act=pars["act_mat"], t_d_perov=pars['td_perov'], t_d_brownm=pars['td_brownm']
                     )
                     resiso_theo.append(solutioniso_theo)
+                elif plot_type == "ellingham":
+                    dh = d_h_num_dev_calc(
+                        delta=payload["del"], dh_1=pars['dh_min'], dh_2=pars['dh_max'], temp=xv, act=pars["act_mat"]
+                    )
+                    ds = d_s_fundamental(
+                        delta=payload["del"], dh_1=pars['dh_min'], dh_2=pars['dh_max'], temp=xv,
+                         act=pars["act_mat"], t_d_perov=pars['td_perov'], t_d_brownm=pars['td_brownm']
+                    )
+                    solutioniso_theo = (dh - ds * xv) / 1000.
+                    resiso_theo.append(solutioniso_theo)
         except ValueError: # if brentq function finds no zero point due to plot out of range
             resiso_theo.append(None)
 
-        if plot_type in ["isobar", "isoredox", "enthalpy_dH", "entropy_dS"]:
-            x = list(x_val)
-        else:
-            x = list(pd.np.exp(x_val))
+
+        x = list(pd.np.exp(x_val)) if plot_type == "isotherm" else list(x_val)
         x_theo = x[::4]
         x_exp = None
         if pars['experimental_data_available']:
             x_exp = x
+        elif plot_type == "ellingham":
+            x_exp = None
+            for xv in x_theo:
+                ellingiso.append(isobar_line_elling(payload["iso"], xv) / 1000.)
 
         y_min, y_max = 0, 0
         if plot_type == "enthalpy_dH":
@@ -553,92 +584,24 @@ class IsographView(SwaggerView):
             else:
                 y_max = max(pd.np.append(resiso, resiso_theo)) * 1.2
 
-        return [
+        response = [
             {'x': x_exp, 'y': res_fit, 'name': "exp_fit", 'line': {'color': 'rgb(5,103,166)', 'width': 2.5 }},
             {'x': x_exp, 'y': res_interp, 'name': "exp_interp", 'line': {'color': 'rgb(5,103,166)', 'width': 2.5, 'dash': 'dot' }},
             {'x': x_theo, 'y': resiso_theo, 'name': "theo", 'line': {'color': 'rgb(217,64,41)', 'width': 2.5}},
             [y_min, y_max],
             [pars['compstr_disp'], pars['compstr_exp'], pars['tens_avail'], pars["last_updated"]]
         ]
+        if plot_type == "ellingham":
+            response[-2] = {
+                'x': x_theo if x_exp is None else x_exp, 'y': ellingiso,
+                'name': 'isobar line', 'line': {'color': 'rgb(100,100,100)', 'width': 2.5}
+            }
+        return response
 
 
 isograph_view = IsographView.as_view(IsographView.__name__)
 
 
-#
-#    except Exception as ex:
-#        raise ValueError('"REST Error: "{}"'.format(str(ex)))
-#    return {"valid_response": True, 'response': response}
-#
-#@mapi_func(supported_methods=["POST", "GET"], requires_api_key=False)
-#def ellingham(request, cid, db_type=None, mdb=None):
-#    try:
-#        pars, _, _, response, payload, x_val = init_isographs(request=request, db_type=db_type, cid=cid, mdb=mdb)
-#        iso = pd.np.log(10**payload['iso'])
-#        delt =  float(payload['del'])
-#
-#        resiso, resiso_theo, ellingiso = [], [], []
-#        if pars['experimental_data_available']:     # only execute this if experimental data is available
-#            for xv in x_val:                # calculate experimental data
-#                try:
-#                    s_th = s_th_o(xv)
-#                    args = (iso, xv, pars, s_th)
-#                    solutioniso = (dh_ds(delt, args[-1], args[-2])[0] - dh_ds(delt, args[-1], args[-2])[1]*xv)/1000
-#                    resiso.append(solutioniso)
-#                    ellingiso_i = isobar_line_elling(args[0], xv)/1000
-#                    ellingiso.append(ellingiso_i)
-#                except ValueError:          # if brentq function finds no zero point due to plot out of range
-#                    resiso.append(None)
-#
-#            res_interp, res_fit = [], []
-#            for delta_val, res_i in zip(x_val, resiso):    # show interpolation
-#                if pars['delta_min'] < delta_val < pars['delta_max']:   # result within experimentally covered delta range
-#                    res_fit.append(res_i)
-#                    res_interp.append(None)
-#                else:                                   # result outside this range
-#                    res_fit.append(None)
-#                    res_interp.append(res_i)
-#        else:
-#            res_fit, res_interp = None, None    # don't plot any experimental data if it is not available
-#
-#        try:                                # calculate theoretical data
-#            for xv in x_val[::4]: # use less data points for theoretical graphs to improve speed
-#                dh = d_h_num_dev_calc(delta=delt, dh_1=pars['dh_min'], dh_2=pars['dh_max'], temp=xv, act=pars["act_mat"])
-#                ds = d_s_fundamental(delta=delt, dh_1=pars['dh_min'], dh_2=pars['dh_max'], temp=xv,
-#                     act=pars["act_mat"], t_d_perov=pars['td_perov'], t_d_brownm=pars['td_brownm'])
-#                solutioniso_theo = (dh - ds*xv)/1000
-#                resiso_theo.append(solutioniso_theo)
-#        except ValueError: # if brentq function finds no zero point due to plot out of range
-#            resiso_theo.append(None)
-#
-#        x = list(x_val)
-#        x_theo = x[::4]
-#        if pars['experimental_data_available']:
-#            x_exp = x
-#            response = [{'x': x_exp, 'y': res_fit, 'name': 'exp_fit', 'line': { 'color': 'rgb(5,103,166)', 'width': 2.5 }},
-#                    {'x': x_exp, 'y': res_interp, 'name': 'exp_interp', \
-#                    'line': { 'color': 'rgb(5,103,166)', 'width': 2.5, 'dash': 'dot' }},
-#                    {'x': x_theo, 'y': resiso_theo, 'name': 'theo', 'line': { 'color': 'rgb(217,64,41)', 'width': 2.5}},
-#                    {'x': x_exp, 'y': ellingiso, 'name': 'isobar line', 'line': { 'color': 'rgb(100,100,100)', 'width': 2.5}},\
-#                    [pars['compstr_disp'], pars['compstr_exp'], pars['tens_avail'], pars["last_updated"]]]
-#
-#        else:
-#            x_exp = None
-#            for xv in x_theo:
-#                ellingiso_i = isobar_line_elling(iso, xv)/1000
-#                ellingiso.append(ellingiso_i)
-#            response = [{'x': x_exp, 'y': res_fit, 'name': 'exp_fit', 'line': { 'color': 'rgb(5,103,166)', 'width': 2.5 }},
-#            {'x': x_exp, 'y': res_interp, 'name': 'exp_interp', \
-#            'line': { 'color': 'rgb(5,103,166)', 'width': 2.5, 'dash': 'dot' }},
-#            {'x': x_theo, 'y': resiso_theo, 'name': 'theo', 'line': { 'color': 'rgb(217,64,41)', 'width': 2.5}},
-#            {'x': x_theo, 'y': ellingiso, 'name': 'isobar line', 'line': { 'color': 'rgb(100,100,100)', 'width': 2.5}},\
-#            [pars['compstr_disp'], pars['compstr_exp'], pars['tens_avail'], pars["last_updated"]]]
-#
-#    except Exception as ex:
-#        raise ValueError('"REST Error: "{}"'.format(str(ex)))
-#    return {"valid_response": True, 'response': response}
-#
-#@mapi_func(supported_methods=["POST", "GET"], requires_api_key=False)
 #def energy_analysis(request, db_type=None, mdb=None):
 #    try:
 #        if request.method == 'GET':
