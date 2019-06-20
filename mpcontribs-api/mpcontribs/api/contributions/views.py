@@ -294,9 +294,9 @@ contributions.add_url_rule('/<string:cid>/card', view_func=card_view, methods=['
 modal_view = ModalView.as_view(ModalView.__name__)
 contributions.add_url_rule('/<string:cid>/modal', view_func=modal_view, methods=['GET'])
 
-from mpcontribs.api.contributions.redox_thermo_csp_views import isobar_view
-contributions.add_url_rule('/<string:cid>/redox_thermo_csp/isobar',
-                           view_func=isobar_view, methods=['GET'])
+from mpcontribs.api.contributions.redox_thermo_csp_views import isograph_view
+contributions.add_url_rule('/<string:cid>/redox_thermo_csp/<string:plot_type>',
+                           view_func=isograph_view, methods=['GET'])
 #    url(r'/<string:cid>/redox_thermo_csp/isotherm$', views.isotherm, name=name),
 #    url(r'/<string:cid>/redox_thermo_csp/isoredox$', views.isoredox, name=name),
 #    url(r'/<string:cid>/redox_thermo_csp/enthalpy_dH$', views.enthalpy_dH, name=name),
