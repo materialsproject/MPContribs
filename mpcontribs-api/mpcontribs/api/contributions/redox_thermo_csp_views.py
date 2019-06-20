@@ -342,6 +342,15 @@ def delta_fun(stho, temp, p_o2_l, dh, d_max):
     common *= pd.np.exp(-dh*d_max/(R*temp))
     return d_max * common / (1. + common)
 
+def funciso_redox(po2, delta, x, p, s_th):
+    dh, ds = dh_ds(delta, s_th, p)
+    return dh - x*ds + R*po2*x/2
+
+def funciso_redox_theo(po2, delta, x, p, t_d_perov, t_d_brownm, dh_min, dh_max, act):
+    dh = d_h_num_dev_calc(delta=delta, dh_1=dh_min, dh_2=dh_max, temp=x, act=act)
+    ds = d_s_fundamental(delta=delta, dh_1=dh_min, dh_2=dh_max, temp=x,
+    act=act, t_d_perov=t_d_perov, t_d_brownm=t_d_brownm)
+    return dh - x*ds + R*po2*x/2
 
 
 def init_isographs(cid, plot_type, payload):
@@ -404,7 +413,7 @@ class IsographView(SwaggerView):
               description: type of isograph
             - name: iso
               in: query
-              type: integer
+              type: number
               required: true
               description: iso value
             - name: rng
@@ -425,7 +434,7 @@ class IsographView(SwaggerView):
                         type: object
         """
         rng = list(map(int, request.args['rng'].split(',')))
-        iso = int(request.args['iso'])
+        iso = float(request.args['iso'])
         payload = {"iso": iso, "rng": rng}
         pars, a, b, x_val = init_isographs(cid, plot_type, payload)
 
@@ -433,14 +442,18 @@ class IsographView(SwaggerView):
         if pars['experimental_data_available']:     # only execute this if experimental data is available
             for xv in x_val:                # calculate experimental data
                 try:
-                    if plot_type == "isobar":
+                    if plot_type == "isobar" or plot_type == "isoredox":
                         s_th = s_th_o(xv)
                         args = (payload['iso'], xv, pars, s_th)
                     elif plot_type == "isotherm":
                         s_th = s_th_o(payload['iso'])
                         args = (xv, payload['iso'], pars, s_th)
-                    solutioniso = rootfind(a, b, args, funciso)
-                    resiso.append(solutioniso)
+                    if plot_type == "isoredox":
+                        solutioniso = brentq(funciso_redox, -300, 300, args=args)
+                        resiso.append(pd.np.exp(solutioniso))
+                    else:
+                        solutioniso = rootfind(a, b, args, funciso)
+                        resiso.append(solutioniso)
                 except ValueError:          # if brentq function finds no zero point due to plot out of range
                     resiso.append(None)
 
@@ -457,17 +470,30 @@ class IsographView(SwaggerView):
 
         try:                                # calculate theoretical data
             for xv in x_val[::4]: # use less data points for theoretical graphs to improve speed
-                args_theo = (payload['iso'], xv) if plot_type == "isobar" else (xv, payload['iso'])
+                if plot_type == "isobar" or plot_type == "isoredox":
+                    args_theo = (payload['iso'], xv)
+                else:
+                    args_theo = (xv, payload['iso'])
                 args_theo = args_theo + (
                     pars, pars['td_perov'], pars['td_brownm'],
                     pars["dh_min"], pars["dh_max"], pars["act_mat"]
                 )
-                solutioniso_theo = rootfind(a, b, args_theo, funciso_theo)
-                resiso_theo.append(solutioniso_theo)
+                if plot_type == "isoredox":
+                    try:
+                        solutioniso_theo = brentq(funciso_redox_theo, -300, 300, args=args_theo)
+                    except ValueError:
+                        solutioniso_theo = brentq(funciso_redox_theo, -100, 100, args=args_theo)
+                    resiso_theo.append(pd.np.exp(solutioniso_theo))
+                else:
+                    solutioniso_theo = rootfind(a, b, args_theo, funciso_theo)
+                    resiso_theo.append(solutioniso_theo)
         except ValueError: # if brentq function finds no zero point due to plot out of range
             resiso_theo.append(None)
 
-        x = list(x_val) if plot_type == "isobar" else list(pd.np.exp(x_val))
+        if plot_type == "isobar" or plot_type == "isoredox":
+            x = list(x_val)
+        else:
+            x = list(pd.np.exp(x_val))
         x_theo = x[::4]
         x_exp = None
         if pars['experimental_data_available']:
@@ -479,64 +505,10 @@ class IsographView(SwaggerView):
             [0,0], [pars['compstr_disp'], pars['compstr_exp'], pars['tens_avail'], pars["last_updated"]]
         ]
 
+
 isograph_view = IsographView.as_view(IsographView.__name__)
 
 
-#
-#@mapi_func(supported_methods=["POST", "GET"], requires_api_key=False)
-#def isoredox(request, cid, db_type=None, mdb=None):
-#    try:
-#        pars, a, b, response, payload, x_val = init_isographs(request=request, db_type=db_type, cid=cid, mdb=mdb)
-#        resiso, resiso_theo = [], []
-#
-#        if pars['experimental_data_available']:     # only execute this if experimental data is available
-#            for xv in x_val:                # calculate experimental data
-#                try:
-#                    s_th = s_th_o(xv)
-#                    args = (payload['iso'], xv, pars, s_th)
-#                    solutioniso = brentq(funciso_redox, -300, 300, args=args)
-#                    resiso.append(pd.np.exp(solutioniso))
-#                except ValueError:          # if brentq function finds no zero point due to plot out of range
-#                    resiso.append(None)
-#
-#            res_interp, res_fit = [], []
-#            for delta_val, res_i in zip(x_val, resiso):    # show interpolation
-#                if pars['delta_min'] < delta_val < pars['delta_max']:   # result within experimentally covered delta range
-#                    res_fit.append(res_i)
-#                    res_interp.append(None)
-#                else:                                   # result outside this range
-#                    res_fit.append(None)
-#                    res_interp.append(res_i)
-#        else:
-#            res_fit, res_interp = None, None    # don't plot any experimental data if it is not available
-#
-#        try:                                # calculate theoretical data
-#            for xv in x_val[::4]: # use less data points for theoretical graphs to improve speed
-#                args_theo = (payload['iso'], xv, pars, pars['td_perov'], pars['td_brownm'], \
-#                pars["dh_min"], pars["dh_max"], pars["act_mat"])
-#                try:
-#                    solutioniso_theo = brentq(funciso_redox_theo, -300, 300, args=args_theo)
-#                except ValueError:
-#                    solutioniso_theo = brentq(funciso_redox_theo, -100, 100, args=args_theo)
-#                resiso_theo.append(pd.np.exp(solutioniso_theo))
-#        except ValueError: # if brentq function finds no zero point due to plot out of range
-#            resiso_theo.append(None)
-#
-#        x = list(x_val)
-#        x_theo = x[::4]
-#        x_exp = None
-#        if pars['experimental_data_available']:
-#            x_exp = x
-#        response = [{'x': x_exp, 'y': res_fit, 'name': "exp_fit", 'line': { 'color': 'rgb(5,103,166)', 'width': 2.5 }},
-#                        {'x': x_exp, 'y': res_interp, 'name': "exp_interp", \
-#                        'line': { 'color': 'rgb(5,103,166)', 'width': 2.5, 'dash': 'dot' }},
-#                        {'x': x_theo, 'y': resiso_theo, 'name': "theo", 'line': { 'color': 'rgb(217,64,41)', 'width': 2.5}}, [0,0],\
-#                        [pars['compstr_disp'], pars['compstr_exp'], pars['tens_avail'], pars["last_updated"]]]
-#
-#    except Exception as ex:
-#        raise ValueError('"REST Error: "{}"'.format(str(ex)))
-#    return {"valid_response": True, 'response': response}
-#
 #@mapi_func(supported_methods=["POST", "GET"], requires_api_key=False)
 #def enthalpy_dH(request, cid, db_type=None, mdb=None):
 #    try:
