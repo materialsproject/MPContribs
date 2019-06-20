@@ -31,7 +31,7 @@ Object.keys(sliders).forEach(function(key, index) {
             var k = ev.currentTarget.id;
             $('input:text').slider('disable');
             var updkey = sliders[k]['updkey'];
-            $("#spinner_"+updkey).spin();
+            spinners["spinner_"+updkey].spin();
             send_request(updkey);
         });
 });
@@ -140,7 +140,6 @@ function update_plots(div, r, key) {
 };
 
 function send_request(updatekey) {
-    console.log(updatekey);
     var cid = $('#cid').val();
     // read slider/field values
     if (updatekey === "isotherm") {
@@ -179,7 +178,7 @@ function send_request(updatekey) {
         var div = document.getElementById(updatekey);
         update_plots(div,r,updatekey);
         spinners["spinner_"+updatekey].stop();
-        // $('input:text').slider('enable');
+        $('input:text').slider('enable');
     });
 };
 

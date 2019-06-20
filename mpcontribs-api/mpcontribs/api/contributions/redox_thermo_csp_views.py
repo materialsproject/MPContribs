@@ -438,7 +438,7 @@ class IsographView(SwaggerView):
               in: query
               type: array
               items:
-                  type: integer
+                  type: number
               minItems: 2
               maxItems: 2
               description: comma-separated graph range
@@ -456,7 +456,7 @@ class IsographView(SwaggerView):
         """
         rng = request.args.get('rng')
         if rng:
-            rng = list(map(int, rng.split(',')))
+            rng = list(map(float, rng.split(',')))
         iso = float(request.args['iso'])
         payload = {"iso": iso, "rng": rng}
         pars, a, b, x_val = init_isographs(cid, plot_type, payload)
