@@ -190,7 +190,7 @@ $.each(document.getElementsByName('spinner'), function(i, s) {
 });
 $('input:text').slider('disable');
 $('#cid').val('5bb821a79225576aeda99475');
-var updatekeys = "isobar, isotherm, isoredox";//, ellingham, enthalpy_dH, entropy_dS";
+var updatekeys = "isobar, isotherm, isoredox, enthalpy_dH";//, entropy_dS, ellingham";
 updatekeys.split(",").forEach(function(k) { send_request(k.trim()); });
 
 //// update all isoplots if new material is selected
