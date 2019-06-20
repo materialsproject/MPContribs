@@ -2,11 +2,7 @@ import Plotly from 'plotly'; // plotly core only
 import {Spinner} from 'spin.js';
 import 'bootstrap-slider';
 
-console.log("start");
-
-var target = document.getElementById('spinner_graph');
-var spinner_plot = new Spinner({scale: 0.5});
-spinner_plot.spin(target);
+var spinners = {};
 
 var graph = document.getElementById('graph');
 var layout = {
@@ -86,7 +82,7 @@ function showdata(r) {
     var selected_updt_form = r.slice(-1) + ''
     selected_updt_form = selected_updt_form.split(",").slice(-1);
     $('#selected_updt').html("<h5>" + selected_updt_form + "</h5>");
-    //$('#spinner_main').spin(false);
+    spinners["spinner_main"].stop();
 };
 
 // update plots depending on the keys
@@ -182,21 +178,21 @@ function send_request(updatekey) {
         showdata(r);
         var div = document.getElementById(updatekey);
         update_plots(div,r,updatekey);
-        // $("#spinner_"+updatekey).spin(false);
+        spinners["spinner_"+updatekey].stop();
         // $('input:text').slider('enable');
     });
 };
 
 // show default material SrFeOx
-var spinners = document.getElementsByName('spinner');
-var spinner_sliders = new Spinner({scale: 0.5});
-$.each(spinners, function(i, s) { spinner_sliders.spin(s); });
+$.each(document.getElementsByName('spinner'), function(i, s) {
+    spinners[s.id] = new Spinner({scale: 0.5});
+    spinners[s.id].spin(s);
+});
 $('input:text').slider('disable');
 $('#cid').val('5bb821a79225576aeda99475');
 var updatekeys = "isobar, isotherm, isoredox, ellingham, enthalpy_dH, entropy_dS";
 send_request("isobar");
 //updatekeys.split(",").forEach(function(k) { send_request(k.trim()); });
-console.log('Done');
 
 //// update all isoplots if new material is selected
 //Backbone.on('cellclicked', function(er) {
