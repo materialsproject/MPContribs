@@ -59,10 +59,10 @@ Resources:
           Cpu: !Ref 'ContainerCpu'
           Memory: !Ref 'ContainerMemory'
           Image: !Ref 'ImageUrl'
-          Ulimit:
-              Name: "nofile"
-              HardLimit: 4096
-              SoftLimit: 4096
+          Ulimits:
+              - Name: "nofile"
+                HardLimit: 4096
+                SoftLimit: 4096
           Environment:
             - Name: REGION
               Value: !Ref 'AWS::Region'
