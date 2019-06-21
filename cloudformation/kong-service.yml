@@ -48,10 +48,6 @@ Resources:
       Family: !Ref 'ServiceName'
       Cpu: !Ref 'ContainerCpu'
       Memory: !Ref 'ContainerMemory'
-      Ulimit:
-          Name: "nofile"
-          HardLimit: 4096
-          SoftLimit: 4096
       NetworkMode: awsvpc
       RequiresCompatibilities:
         - FARGATE
@@ -63,6 +59,10 @@ Resources:
           Cpu: !Ref 'ContainerCpu'
           Memory: !Ref 'ContainerMemory'
           Image: !Ref 'ImageUrl'
+          Ulimit:
+              Name: "nofile"
+              HardLimit: 4096
+              SoftLimit: 4096
           Environment:
             - Name: REGION
               Value: !Ref 'AWS::Region'
@@ -77,7 +77,7 @@ Resources:
             - Name: KONG_PG_DATABASE
               Value: kong
             - Name: KONG_PLUGINS
-              Value: oidc,oidc-consumer,key-auth,cors,request-size-limiting,bot-detection,rate-limiting,acl,response-ratelimiting
+              Value: oidc,oidc-consumer,key-auth,cors,request-size-limiting,bot-detection,rate-limiting,acl,response-ratelimiting,loggly
             - Name: KONG_PG_HOST
               Value:
                 Fn::ImportValue:
