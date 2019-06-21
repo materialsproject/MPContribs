@@ -48,6 +48,10 @@ Resources:
       Family: !Ref 'ServiceName'
       Cpu: !Ref 'ContainerCpu'
       Memory: !Ref 'ContainerMemory'
+      Ulimit:
+          Name: "nofile"
+          HardLimit: 4096
+          SoftLimit: 4096
       NetworkMode: awsvpc
       RequiresCompatibilities:
         - FARGATE
