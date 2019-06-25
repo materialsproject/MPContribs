@@ -1,3 +1,4 @@
+import 'select2';
 import Plotly from 'plotly'; // plotly core only
 import {Spinner} from 'spin.js';
 import 'bootstrap-slider';
@@ -8,6 +9,40 @@ var graph = document.getElementById('graph');
 var layout = {
     margin: {l: 70, b: 50, t: 50, r: 5}, hovermode: 'closest', showlegend: false,
 };
+
+$('#identifiers_list').select2({
+    ajax: {
+        url: window.api['host'] + 'contributions/',
+        headers: window.api['headers'],
+        delay: 400,
+        minimumInputLength: 2,
+        width: 'style',
+        data: function (params) {
+            var query = {
+                projects: "redox_thermo_csp",
+                mask: "identifier,content.data.formula"
+            };
+            if (typeof params.term !== 'undefined') {
+                if (params.term.startsWith('mp')) {
+                    query["contains"] = params.term;
+                } else {
+                    query["filters"] = "formula__contains:" + params.term;
+                }
+            }
+            return query
+        },
+        processResults: function (data) {
+            var results = [];
+            $.each(data, function(index, element) {
+                var formula = element["content"]["data"]["formula"];
+                var text = element["identifier"] + ' / ' + formula + ' / ' + element['id'];
+                var entry = {id: index, text: text};
+                results.push(entry);
+            });
+            return {results: results};
+        }
+    }
+});
 
 var sliders = {
     temp_slider: {config: {tooltip: "always"}, updkey: "isotherm"},
@@ -182,6 +217,18 @@ function send_request(updatekey) {
     });
 };
 
+$('#identifiers_list').on('change', function() {
+    $('input:text').slider('disable');
+    var cid = $(this).select2('data')[0].text.split(' / ')[2];
+    $('#cid').val(cid);
+    var updatekeys = "isobar,isotherm,isoredox,ellingham,enthalpy_dH,entropy_dS";
+    updatekeys.split(",").forEach(function(k) {
+        spinners["spinner_"+k].spin();
+        send_request(k);
+    });
+});
+
+
 // show default material SrFeOx
 $.each(document.getElementsByName('spinner'), function(i, s) {
     spinners[s.id] = new Spinner({scale: 0.5});
@@ -191,20 +238,3 @@ $('input:text').slider('disable');
 $('#cid').val('5bb821a79225576aeda99475');
 var updatekeys = "isobar, isotherm, isoredox, enthalpy_dH, entropy_dS, ellingham";
 updatekeys.split(",").forEach(function(k) { send_request(k.trim()); });
-
-//// update all isoplots if new material is selected
-//Backbone.on('cellclicked', function(er) {
-//    $("[name='spinner']").spin();
-//    $('input:text').slider('disable');
-//    var row = $(er.currentTarget).parent();
-//    var url = row.find("td:nth-child(2) > a").attr('href');
-//    var cid = url.split('/').pop();
-//    $('#cid').val(cid);
-//    var updatekeys = "isobar, isotherm, isoredox, ellingham, enthalpy_dH, entropy_dS"
-//    $('#datatable').toggleClass('in', false);
-//    updatekeys.split(",").forEach(function(k) { send_request(k.trim()); });
-//});
-
-
-//
-//

@@ -2,6 +2,13 @@
 
 {% block extra_content %}
 <div class="row">
+    <div class="col-md-7">
+        <label for="identifiers_list">Click to select material:</label>
+        <select id="identifiers_list" style="width: 100%;"></select>
+    </div>
+</div>
+
+<div class="row">
     <div class="col-md-3">
         <h4>Currently selected: </h4>
         <h5>Experimental data available: </h4>
@@ -20,7 +27,7 @@
         <div class="well" style="padding: 5px 5px 5px 5px; margin-bottom: 2px; margin-left: 5px;">
             <small>Click on a Contribution Identifier in the table to open a detail
                 page with graphs for ΔH/ΔS vs δ, and the raw data. To show isotherm,
-                isobar, and isoredox functions, click on a row in the table. Variables
+                isobar, and isoredox functions, use the dropdown menu. Variables
                 and plot ranges can be adjusted with the sliders. All thermodynamic
                 quantities are given as per mol of O (monatomic oxygen). Please refer
                 to the <a href="https://mpcontribs.org/redox_thermo_csp/">documentation</a>
