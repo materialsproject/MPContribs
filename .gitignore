@@ -29,3 +29,4 @@ cloudformation/kong/
 */dist
 mpcontribs-client/build/*
 mpcontribs-io/build/*
+mpcontribs-users/mpcontribs/users/bioi_defects/Data*
