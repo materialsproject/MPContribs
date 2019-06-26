@@ -51,3 +51,7 @@ class DiluteSoluteDiffusionConfig(AppConfig):
 class RedoxThermoCspConfig(AppConfig):
     name = 'mpcontribs.users.redox_thermo_csp.explorer'
     label = 'redox_thermo_csp'
+
+class BioiDefectsConfig(AppConfig):
+    name = 'mpcontribs.users.bioi_defects.explorer'
+    label = 'bioi_defects'

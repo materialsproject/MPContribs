@@ -36,6 +36,7 @@ INSTALLED_APPS.append('test_site.apps.PerovskitesDiffusionConfig')
 INSTALLED_APPS.append('test_site.apps.TransparentConductorsConfig')
 INSTALLED_APPS.append('test_site.apps.DiluteSoluteDiffusionConfig')
 INSTALLED_APPS.append('test_site.apps.RedoxThermoCspConfig')
+INSTALLED_APPS.append('test_site.apps.BioiDefectsConfig')
 
 MIDDLEWARE = (
     'django.contrib.sessions.middleware.SessionMiddleware',

@@ -20,7 +20,7 @@ def run(mpfile):
         with open(fn, 'r') as f:
             name = os.path.splitext(os.path.basename(fn))[0]
             body = '\n'.join(['\t'.join([xcol, ycol]), f.read()])
-            df = read_csv(body, sep='\t').sort_values(by=[xcol])
+            df = read_csv(body, sep='\t').apply(to_numeric, errors='coerce').sort_values(by=[xcol])
             if full_df is None:
                 full_df = df[xcol].to_frame()
 
@@ -37,7 +37,7 @@ def run(mpfile):
             temp = name[4:].split('CZnO', 1)[0]
             direction = 'fwd' if 'fwd' in name else 'rev'
             col = ycol.format(temp, direction)
-            full_df[col] = (to_numeric(df[ycol]) + offset).abs() * 1000. / 0.045
+            full_df[col] = (df[ycol] + offset).abs() * 1000. / 0.045
 
     mpfile.add_data_table(identifier, full_df, 'JV|dark')
 
