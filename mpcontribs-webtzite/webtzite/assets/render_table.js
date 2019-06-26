@@ -116,9 +116,13 @@ window.render_table = function(props) {
     var filter_props = {collection: rows, placeholder: "Search (hit <enter>)", name: "q"};
     var filter = new Backgrid.Extension.ServerSideFilter(filter_props);
 
-    $("#"+config.uuids[3]).append(colVisibilityControl.render().el);
+    if (typeof config.project !== 'undefined') {
+        $("#"+config.uuids[3]).append(colVisibilityControl.render().el);
+    }
     $('#'+config.uuids[1]).append(grid.render().el);
-    $("#"+config.uuids[0]).append(filter.render().$el);
+    if (typeof config.project !== 'undefined') {
+        $("#"+config.uuids[0]).append(filter.render().$el);
+    }
 
     var paginator = new Backgrid.Extension.Paginator({collection: rows});
     $("#"+config.uuids[2]).append(paginator.render().$el);
