@@ -1,6 +1,8 @@
 {% extends "explorer_index.html" %}
 
 {% block extra_content %}
+<h3>Isographs</h3>
+
 <div class="row">
     <div class="col-md-7">
         <label for="identifiers_list">Click to select material:</label>
@@ -218,4 +220,212 @@
         <div id=ellingham></div>
     </div>
 </div>
+
+<h3>Energy Analysis</h3>
+
+<div class="row">
+    <div class="col-md-12" style="padding-top: 0px">
+        <div class="well" style="padding: 5px 5px 5px 5px; margin-bottom: 2px; margin-left: 5px;">
+            Allows finding the ideal material for different thermochemical
+            applications. Please note that this is based on thermodynamics
+            of redox reactions. Not all materials shown here are necessarily
+            stable or can be synthesized. This tool allows a pre-selection
+            of materials. Please refer to the 
+            <a href="https://mpcontribs.org/redox_thermo_csp/">documentation</a>
+            for more detailed information.
+        </div>
+    </div>
+</div>
+
+<div class="row" style="padding-top: 10px;">
+    <div class="col-md-5">
+        <div class="col-md-4"><b>Data Source:</b></div>
+        <div class="col-md-8">
+            <label class="radio-inline">
+                <input type="radio" id="enal_data_source_exp" name="enal_data_source" value="Experimental">
+                Experimental
+            </label>
+            <label class="radio-inline">
+                <input type="radio" id="enal_data_source_theo" checked="checked" name="enal_data_source" value="Theoretical">
+                Theoretical
+            </label>
+        </div>
+    </div>
+    <div class="col-md-7">
+        <form class="form-horizontal">
+            <div class="form-group" style="margin-bottom: 0px;">
+                <label class="col-md-2 control-label" for="process" style="padding: 2px;"><b>Process Type:</b></label>
+                <div class="col-md-9">
+                    <select class="form-control" id="process">
+                        <option class="opt0" selected>Air Separation / Oxygen pumping / Oxygen storage</option>
+                        <option class="opt1">Water Splitting</option>
+                        <option class="opt2">CO2 Splitting</option>
+                    </select>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="row" style="padding-top: 10px;">
+    <div class="col-md-5">
+        <h5>Redox Conditions</h5>
+
+        <div class="row">
+            <div class="col-md-4">
+                <b>T<sub>ox</sub> (°C)</b>
+            </div>
+            <div class="wrapper col-md-8">
+                <div id="cT_ox_enera_air">
+                    <input id="T_ox_enera_air" type="text" />
+                </div>
+                <div id="cT_ox_enera_non_air">
+                    <input id="T_ox_enera_non_air" type="text" />
+                </div>
+            </div>
+        </div>
+
+        <div class="row" style="padding-top: 40px;">
+            <div class="col-md-4">
+                <div id="ox_type"></div>
+            </div>
+            <div class="wrapper col-md-8">
+                <div id="cp_ox_enera_air">
+                    <input id="p_ox_enera_air" type="text" />
+                </div>
+                <div id="cp_ox_enera_non_air">
+                    <input id="p_ox_enera_non_air" type="text" />
+                </div>
+            </div>
+        </div>
+
+        <div class="row" style="padding-top: 40px;">
+            <div class="col-md-4">
+                <b>T<sub>red</sub> (°C)</b>
+            </div>
+            <div class="wrapper col-md-8">
+                <div id="cT_red_enera_air">
+                    <input id="T_red_enera_air" type="text"
+                                                />
+                </div>
+                <div id="cT_red_enera_non_air">
+                    <input id="T_red_enera_non_air" type="text" />
+                </div>
+            </div>
+        </div>
+
+        <div class="row" style="padding-top: 40px;">
+            <div class="col-md-4">
+                <b>p(O<sub>2</sub>)<sub>red</sub> (bar)</b>
+            </div>
+            <div class="wrapper col-md-8">
+                <div id="cp_red_enera_air">
+                    <input id="p_red_enera_air" type="text" />
+                </div>
+                <div id="cp_red_enera_non_air">
+                    <input id="p_red_enera_non_air" type="text" />
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="col-md-7">
+        <h5>Process Conditions</h5>
+
+        <div class="row">
+            <div class="col-md-4">
+                <b>Heat rec. eff.  (&#x03B7<sub>hrec, solid</sub>)</b>
+            </div>
+            <div class="col-md-8">
+                <input id="h_rec_eff" type="text" />
+            </div>
+        </div>
+
+        <div class="row" style="padding-top: 15px;">
+            <form class="col-md-12 form-horizontal">
+                <div class="form-group">
+                    <div class="col-md-4">
+                        <b>Pumping energy (Q<sub>pump</sub>)</b>
+                    </div>
+                    <div class="col-md-3">
+                        <input id="pump_ener" type="text" value="0.0" placeholder="0.0" class="form-control">
+                    </div>
+                    <div class="col-md-5">
+                        <div class="checkbox">
+                            <b>kJ/kg of redox material or</b>
+                            <label>
+                                <input id="mech_env" type="checkbox" checked="checked" style="padding-top: 0px;"/>
+                                use mech. envelope (10⁻⁶ - 0.7 bar) 
+                                <a class="pull-right" target="_blank" style="padding-left: 3px;"
+                                                                      href="https://www.sciencedirect.com/science/article/pii/S0038092X16305552">
+                                    <i class="fa fa-book fa-sm"></i>
+                                </a>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <div class="row">
+            <div class="col-md-4">
+                <b>Water feed temp. (°C)</b><br>
+                (only for water splitting)
+            </div>
+            <div class="col-md-8">
+                <input id="w_feed_temp" type="text" disabled/>
+            </div>
+        </div>
+
+        <div class="row" style="padding-top: 30px;">
+            <div class="col-md-4">
+                <b>Steam h.rec.  (&#x03B7<sub>hrec, steam</sub>)</b><br>
+                (only for water splitting)
+            </div>
+            <div class="col-md-8">
+                <input id="steam_h_rec_eff" type="text" disabled />
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+<div class="row" style="padding-top: 40px;">
+    <form class="form-horizontal">
+        <div class="form-group">
+            <label class="col-md-2 control-label" for="disp_par" style="padding: 2px;">Display:</label>
+            <div class="col-md-4">
+                <select class="form-control" id="disp_par">
+                    <option>kJ/mol redox material</option>
+                    <option>kJ/kg redox material</option>
+                    <option>Wh/kg redox material</option>
+                    <option selected>kJ/mol of product</option>
+                    <option>kJ/L of product</option>
+                    <option>Wh/L of product</option>
+                    <option>Heat to fuel efficiency in % (only valid for Water Splitting)</option>
+                    <option>mol product per mol redox material</option>
+                    <option>L product per mol redox material</option>
+                    <option>g product per mol redox material</option>
+                    <option>Change in non-stoichiometry between T_ox and T_red</option>
+                    <option>Mass change between T_ox and T_red</option>
+                </select>
+            </div>
+            <label class="col-md-2 control-label" for="num_mat" style="padding: 2px;">Max # materials:</label>
+            <div class="col-md-3">
+                <input id="num_mat" type="text" />
+            </div>
+        </div>
+    </form>
+</div>
+
+<div class="row" style="padding-top: 25px;">
+    <div class="col-md-12">
+        <div name="spinner" id="spinner_energy_analysis"></div>
+        <div id=energy_analysis></div>
+    </div>
+</div>
+
+<h3>Materials</h3>
 {% endblock %}

@@ -9,6 +9,7 @@ from scipy.integrate import quad
 import pymatgen.core.periodic_table as ptable
 from mpcontribs.api.core import SwaggerView
 from mpcontribs.api.contributions.document import Contributions
+from mpcontribs.api.tables.document import Tables
 
 def split_comp(compstr):
     """
@@ -598,54 +599,138 @@ class IsographView(SwaggerView):
         return response
 
 
-isograph_view = IsographView.as_view(IsographView.__name__)
+class EnergyAnalysisView(SwaggerView):
 
+    def get(self, cid):
+        """Retrieve RedoxThermoCSP Energy Analysis data for a single contribution.
+        ---
+        operationId: get_redox_thermo_csp_energy
+        parameters:
+            - name: cid
+              in: path
+              type: string
+              pattern: '^[a-f0-9]{24}$'
+              required: true
+              description: contribution ID (ObjectId)
+            - name: data_source
+              in: query
+              type: string
+              default: Theoretical
+              description: data source
+            - name: process_type
+              in: query
+              type: string
+              default: Air Separation
+              description: process type
+            - name: t_ox
+              in: query
+              type: number
+              default: 350
+              description: oxidation temperature (°C)
+            - name: t_red
+              in: query
+              type: number
+              default: 600
+              description: reduction temperature (°C)
+            - name: p_ox
+              in: query
+              type: string
+              default: 1e-20
+              description: oxidation pressure (bar)
+            - name: p_red
+              in: query
+              type: string
+              default: 1e-08
+              description: reduction pressure (bar)
+            - name: h_rec
+              in: query
+              type: number
+              default: 0.6
+              description: heat recovery efficiency
+            - name: mech_env
+              in: query
+              type: boolean
+              default: True
+              description: use mechanical envelope
+            - name: cutoff
+              in: query
+              type: number
+              default: 25
+              description: max number of materials
+            - name: pump_ener
+              in: query
+              type: number
+              default: 0
+              description: pumping energy (kJ/kg)
+            - name: w_feed
+              in: query
+              type: number
+              default: 200
+              description: water feed temperature (°C)
+            - name: steam_h_rec
+              in: query
+              type: number
+              default: 0.8
+              description: steam heat recovery
+            - name: param_disp
+              in: query
+              type: string
+              default: kJ/L of product
+              description: parameter display
+        responses:
+            200:
+                description: Energy Analysis data as defined by contributor
+                schema:
+                    type: array
+                    items:
+                        type: object
+        """
+        # generate database ID
+        data_source = "Theo" if request.args['data_source'] == "Theoretical" else "Exp"
+        process = request.args['process_type']
+        if process == "Air Separation":
+            db_id = "AS_"
+        elif process == "Water Splitting":
+            db_id = "WS_"
+        else:
+            db_id = "CS_"
 
-#def energy_analysis(request, db_type=None, mdb=None):
-#    try:
-#        if request.method == 'GET':
-#            payload = {}
-#            payload['data_source'] = "Theoretical"
-#            payload['process_type'] = "Air separation / Oxygen pumping / Oxygen storage"
-#            payload['t_ox'] = 500.
-#            payload['t_red'] = 1000.
-#            payload['p_ox'] = 1e-6
-#            payload['p_red'] = 0.21
-#            payload['h_rec'] = 0.6
-#            payload['mech_env'] = True
-#            payload['cutoff'] = 25
-#            payload['pump_ener'] = "0.0"
-#            payload['w_feed'] = 200.
-#            payload['steam_h_rec'] = 0.8
-#            payload['param_disp'] = "kJ/L of product"
-#        elif request.method == 'POST':
-#            payload = json.loads(request.body)
-#        # parameters for the database ID
-#        payload['data_source'] = "Theo" if payload['data_source'] == "Theoretical" else "Exp"
-#        for k, v in payload.items():
-#            if not ((k == 'pump_ener') or (k == 'mech_env')):
-#                try:
-#                    payload[k] = float(v)
-#                except ValueError:
-#                    continue
-#        pump_ener = float(payload['pump_ener'].split("/")[0])
-#        cutoff = int(payload['cutoff']) # this sets the number of materials to display in the graph
-#        mech_env = bool(payload['mech_env'])
-#        if mech_env:
-#            pump_ener = -1
-#        param_disp = payload['param_disp']
-#
-#        # get the standardized results
-#        resdict = get_energy_data(mdb, **payload)
-#        response = [{"x": None, "y": None, "name": None, 'type': 'bar'} for i in range(4)]
-#
+        db_id += "{:.1f}_{:.1f}_{}_{}".format(*[
+            float(request.args.get(k)) for k in ['t_ox', 't_red', 'p_ox', 'p_red']
+        ]) + f"_{data_source}_20.0"
+
+        resdict = []
+        for a in ['stable', 'unstable']:
+            for b in ['O2-O', 'H2-H2', 'CO-CO']:
+                name = f'energy-analysis_{a}_{b}'
+                query = {'data': {'$elemMatch': {'0': db_id}}}
+                proj = {'data.$': 1, 'columns': 1}
+                objects = Tables.objects(__raw__=query).fields(**proj)
+                print(name, db_id, objects.count())
+                for obj in objects:
+                    keys = obj['columns'][1:]
+                    values = map(float, obj['data'][0][1:])
+                    dct = dict(zip(keys, values))
+                    dct['prodstr'], dct['prodstr_alt'] = b.split('-')
+                    dct['unstable'] = bool(a == 'unstable')
+                    #dct['compstr'] = obj['content']['data']['formula']
+                    resdict.append(dct)
+
+        return resdict
+        #response = [{"x": None, "y": None, "name": None, 'type': 'bar'} for i in range(4)]
+        #return response
+
 #        try: # calculate specific results on the fly
+#            #pump_ener = float(payload['pump_ener'].split("/")[0])
+#            if payload['mech_env'] == "true":
+#                pump_ener = -1
 #            results = enera(process=payload['process_type']).on_the_fly(resdict=resdict, pump_ener=pump_ener, w_feed=payload['w_feed'],\
 #            h_rec=payload['h_rec'], h_rec_steam=payload['steam_h_rec'], p_ox_wscs = payload['p_ox'])
 #
 #            prodstr = resdict[0]['prodstr']
 #            prodstr_alt = resdict[0]['prodstr_alt']
 #
+#            param_disp = payload['param_disp']
 #            if param_disp == "kJ/mol of product":
 #                param_disp = str("kJ/mol of " + prodstr_alt)
 #            elif param_disp == "kJ/L of product":
@@ -679,6 +764,7 @@ isograph_view = IsographView.as_view(IsographView.__name__)
 #                result.insert(rem_pos-1, to_remove)
 #
 #            result = [i for i in result if "inf" not in str(i[0])]      # this removes all inf values
+#            cutoff = int(payload['cutoff']) # this sets the number of materials to display in the graph
 #            result_part = result[:cutoff] if cutoff < len(result) else result
 #
 #
@@ -711,7 +797,6 @@ isograph_view = IsographView.as_view(IsographView.__name__)
 #
 #        except IndexError: # if the complete dict only shows inf, create empty graph
 #            pass
-#
-#    except Exception as ex:
-#        raise ValueError('"REST Error: "{}"'.format(str(ex)))
-#    return {"valid_response": True, 'response': response}
+
+isograph_view = IsographView.as_view(IsographView.__name__)
+energy_analysis_view = EnergyAnalysisView.as_view(EnergyAnalysisView.__name__)

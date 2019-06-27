@@ -295,12 +295,8 @@ contributions.add_url_rule('/<string:cid>/card', view_func=card_view, methods=['
 modal_view = ModalView.as_view(ModalView.__name__)
 contributions.add_url_rule('/<string:cid>/modal', view_func=modal_view, methods=['GET'])
 
-from mpcontribs.api.contributions.redox_thermo_csp_views import isograph_view
+from mpcontribs.api.contributions.redox_thermo_csp_views import isograph_view, energy_analysis_view
+contributions.add_url_rule('/<string:cid>/redox_thermo_csp/',
+                           view_func=energy_analysis_view, methods=['GET'])
 contributions.add_url_rule('/<string:cid>/redox_thermo_csp/<string:plot_type>',
                            view_func=isograph_view, methods=['GET'])
-#    url(r'/<string:cid>/redox_thermo_csp/isotherm$', views.isotherm, name=name),
-#    url(r'/<string:cid>/redox_thermo_csp/isoredox$', views.isoredox, name=name),
-#    url(r'/<string:cid>/redox_thermo_csp/enthalpy_dH$', views.enthalpy_dH, name=name),
-#    url(r'/<string:cid>/redox_thermo_csp/entropy_dS$', views.entropy_dS, name=name),
-#    url(r'/<string:cid>/redox_thermo_csp/ellingham$', views.ellingham, name=name),
-#    url(r'/redox_thermo_csp/energy_analysis$', views.energy_analysis, name=name),
