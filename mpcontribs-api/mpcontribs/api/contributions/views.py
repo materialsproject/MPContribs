@@ -12,7 +12,7 @@ from typing import Any, Dict
 from mpcontribs.api import get_resource_as_string, construct_query
 from mpcontribs.api.core import SwaggerView
 from mpcontribs.api.projects.document import Projects
-from mpcontribs.api.contributions.document import Contributions
+from mpcontribs.api.contributions.document import Contributions, Cards
 
 contributions = Blueprint("contributions", __name__)
 
@@ -222,36 +222,43 @@ class CardView(SwaggerView):
                 schema:
                     type: string
         """
-        ctx = {'cid': cid}
-        mask = ['project', 'identifier', 'content.data']
-        contrib = Contributions.objects.only(*mask).get(id=cid)
-        info = Projects.objects.get(project=contrib.project)
-        ctx['title'] = info.title
-        ctx['descriptions'] = info.description.strip().split('.', 1)
-        authors = [a.strip() for a in info.authors.split(',') if a]
-        ctx['authors'] = {'main': authors[0], 'etal': authors[1:]}
-        debug = current_app.config['DEBUG']
-        host = '' if debug else 'https://portal.mpcontribs.org'
-        ctx['landing_page'] = f'{host}/{contrib.project}'
-        ctx['more'] = f'{host}/explorer/{cid}'
-        ctx['urls'] = info.urls.values()
-        card_script = get_resource_as_string('templates/linkify.min.js')
-        card_script += get_resource_as_string('templates/linkify-element.min.js')
-        card_script += get_resource_as_string('templates/card.min.js')
-        data = unflatten(dict(
-            (k, v) for k, v in get_cleaned_data(contrib.content.data).items()
-            if not k.startswith('modal')
-        ))
-        browser = get_browser()
-        browser.execute_script(card_script, data)
-        bs = BeautifulSoup(browser.page_source, 'html.parser')
-        ctx['data'] = bs.body.table
-        browser.close()
-        rendered = html_minify(render_template('card.html', **ctx))
-        tree = html.fromstring(rendered)
-        inline(tree)
-        card = html.tostring(tree.body[0]).decode('utf-8')
-        return card
+        try:
+            card = Cards.objects.get(id=cid)
+        except DoesNotExist:
+            ctx = {'cid': cid}
+            mask = ['project', 'identifier', 'content.data']
+            contrib = Contributions.objects.only(*mask).get(id=cid)
+            info = Projects.objects.get(project=contrib.project)
+            ctx['title'] = info.title
+            ctx['descriptions'] = info.description.strip().split('.', 1)
+            authors = [a.strip() for a in info.authors.split(',') if a]
+            ctx['authors'] = {'main': authors[0], 'etal': authors[1:]}
+            debug = current_app.config['DEBUG']
+            host = '' if debug else 'https://portal.mpcontribs.org'
+            ctx['landing_page'] = f'{host}/{contrib.project}'
+            ctx['more'] = f'{host}/explorer/{cid}'
+            ctx['urls'] = info.urls.values()
+            card_script = get_resource_as_string('templates/linkify.min.js')
+            card_script += get_resource_as_string('templates/linkify-element.min.js')
+            card_script += get_resource_as_string('templates/card.min.js')
+            data = unflatten(dict(
+                (k, v) for k, v in get_cleaned_data(contrib.content.data).items()
+                if not k.startswith('modal')
+            ))
+            browser = get_browser()
+            browser.execute_script(card_script, data)
+            bs = BeautifulSoup(browser.page_source, 'html.parser')
+            ctx['data'] = bs.body.table
+            browser.close()
+            rendered = html_minify(render_template('card.html', **ctx))
+            tree = html.fromstring(rendered)
+            inline(tree)
+            card = Cards(html=html.tostring(tree.body[0]).decode('utf-8'))
+            card.id = cid # to link to the according contribution
+            card.save()
+
+        del card.id
+        return card.html
 
 
 class ModalView(SwaggerView):
