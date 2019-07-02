@@ -60,7 +60,7 @@
         <b>Temperature:</b>
     </div>
     <div class="col-md-3">
-        <input id="temp_slider" type="text"
+        <input name="iso_slider" id="temp_slider" type="text"
                                 data-slider-min="500" data-slider-max="1800" data-slider-step="10"
                                                                              data-slider-value="1000"/><b> K</b><br>
     </div>
@@ -68,7 +68,7 @@
         <b>Pressure:</b>
     </div>
     <div class="col-md-3">
-        <input id="pressure_slider" type="text"
+        <input name="iso_slider" id="pressure_slider" type="text"
                                     data-slider-min="-7" data-slider-max="4" data-slider-step="0.05"
                                                                              data-slider-value="0"/><b> 10ⁿ bar</b><br>
     </div>
@@ -76,7 +76,7 @@
         <b>Redox δ:</b>
     </div>
     <div class="col-md-3">
-        <input id="redox_slider" type="text"
+        <input name="iso_slider" id="redox_slider" type="text"
                                  data-slider-min="0" data-slider-max="0.5" data-slider-step="0.01"
                                                                            data-slider-value="0.3"/><br>
     </div>
@@ -86,7 +86,7 @@
         <b>Range:</b>
     </div>
     <div class="col-md-3">
-        <input id="pressure_range" type="text" class="span2" value=""
+        <input name="iso_slider" id="pressure_range" type="text" class="span2" value=""
                                                              data-slider-min="-7" data-slider-max="3" data-slider-step="0.05"
                                                                                                       data-slider-value="[-5,1]"/><b> 10ⁿ bar</b>
     </div>
@@ -94,7 +94,7 @@
         <b>Range:</b>
     </div>
     <div class="col-md-3">
-        <input id="temp_range" type="text" class="span2" value=""
+        <input name="iso_slider" id="temp_range" type="text" class="span2" value=""
                                                          data-slider-min="500" data-slider-max="1800" data-slider-step="10"
                                                                                                       data-slider-value="[700,1400]"/><b> K</b>
     </div>
@@ -102,7 +102,7 @@
         <b>Range:</b>
     </div>
     <div class="col-md-3">
-        <input id="redox_temp_range" type="text" class="span2" value=""
+        <input name="iso_slider" id="redox_temp_range" type="text" class="span2" value=""
                                                                data-slider-min="500" data-slider-max="1800" data-slider-step="10"
                                                                                                             data-slider-value="[700,1400]"/><b> K</b>
     </div>
@@ -147,7 +147,7 @@
         <b>Temperature (theo):</b>
     </div>
     <div class="col-md-3">
-        <br><input id="dH_temp_slider" type="text"
+        <br><input name="iso_slider" id="dH_temp_slider" type="text"
                                        data-slider-min="100" data-slider-max="2000" data-slider-step="10"
                                                                                     data-slider-value="500"/><b> K</b><br>
     </div>
@@ -155,7 +155,7 @@
         <b>Temperature (theo):</b>
     </div>
     <div class="col-md-3">
-        <br><input id="dS_temp_slider" type="text"
+        <br><input name="iso_slider" id="dS_temp_slider" type="text"
                                        data-slider-min="100" data-slider-max="2000" data-slider-step="10"
                                                                                     data-slider-value="500"/><b> K</b><br>
     </div>
@@ -163,7 +163,7 @@
         <b>Redox δ:</b>
     </div>
     <div class="col-md-3">
-        <input id="elling_redox_slider" type="text"
+        <input name="iso_slider" id="elling_redox_slider" type="text"
                                         data-slider-min="0" data-slider-max="0.5" data-slider-step="0.01"
                                                                                   data-slider-value="0.3"/><br>
     </div>
@@ -185,7 +185,7 @@
         <b>Range:</b>
     </div>
     <div class="col-md-3">
-        <input id="elling_temp_range" type="text" class="span2" value=""
+        <input name="iso_slider" id="elling_temp_range" type="text" class="span2" value=""
                                                                 data-slider-min="200" data-slider-max="2000" data-slider-step="100"
                                                                                                              data-slider-value="[400,1500]"/><b> K</b><br>
     </div>
@@ -197,7 +197,7 @@
     <div class="col-md-3"></div>
     <div class="col-md-1"><b>Isobar line:</b></div>
     <div class="col-md-3">
-        <br><input id="elling_pressure_slider"
+        <br><input name="iso_slider" id="elling_pressure_slider"
                    type="text"
                    data-slider-min="-20"
                    data-slider-max="10"
@@ -277,10 +277,10 @@
             </div>
             <div class="wrapper col-md-8">
                 <div id="cT_ox_enera_air">
-                    <input id="T_ox_enera_air" type="text" />
+                    <input name="energy_slider" id="T_ox_enera_air" type="text" />
                 </div>
                 <div id="cT_ox_enera_non_air">
-                    <input id="T_ox_enera_non_air" type="text" />
+                    <input name="energy_slider" id="T_ox_enera_non_air" type="text" />
                 </div>
             </div>
         </div>
@@ -291,10 +291,10 @@
             </div>
             <div class="wrapper col-md-8">
                 <div id="cp_ox_enera_air">
-                    <input id="p_ox_enera_air" type="text" />
+                    <input name="energy_slider" id="p_ox_enera_air" type="text" />
                 </div>
                 <div id="cp_ox_enera_non_air">
-                    <input id="p_ox_enera_non_air" type="text" />
+                    <input name="energy_slider" id="p_ox_enera_non_air" type="text" />
                 </div>
             </div>
         </div>
@@ -305,11 +305,11 @@
             </div>
             <div class="wrapper col-md-8">
                 <div id="cT_red_enera_air">
-                    <input id="T_red_enera_air" type="text"
+                    <input name="energy_slider" id="T_red_enera_air" type="text"
                                                 />
                 </div>
                 <div id="cT_red_enera_non_air">
-                    <input id="T_red_enera_non_air" type="text" />
+                    <input name="energy_slider" id="T_red_enera_non_air" type="text" />
                 </div>
             </div>
         </div>
@@ -320,10 +320,10 @@
             </div>
             <div class="wrapper col-md-8">
                 <div id="cp_red_enera_air">
-                    <input id="p_red_enera_air" type="text" />
+                    <input name="energy_slider" id="p_red_enera_air" type="text" />
                 </div>
                 <div id="cp_red_enera_non_air">
-                    <input id="p_red_enera_non_air" type="text" />
+                    <input name="energy_slider" id="p_red_enera_non_air" type="text" />
                 </div>
             </div>
         </div>
@@ -338,7 +338,7 @@
                 <b>Heat rec. eff.  (&#x03B7<sub>hrec, solid</sub>)</b>
             </div>
             <div class="col-md-8">
-                <input id="h_rec_eff" type="text" />
+                <input name="energy_slider" id="h_rec_eff" type="text" />
             </div>
         </div>
 
@@ -349,7 +349,7 @@
                         <b>Pumping energy (Q<sub>pump</sub>)</b>
                     </div>
                     <div class="col-md-3">
-                        <input id="pump_ener" type="text" value="0.0" placeholder="0.0" class="form-control">
+                        <input name="energy_slider" id="pump_ener" type="text" value="0.0" placeholder="0.0" class="form-control">
                     </div>
                     <div class="col-md-5">
                         <div class="checkbox">
@@ -374,7 +374,7 @@
                 (only for water splitting)
             </div>
             <div class="col-md-8">
-                <input id="w_feed_temp" type="text" disabled/>
+                <input name="energy_slider" id="w_feed_temp" type="text" disabled/>
             </div>
         </div>
 
@@ -384,7 +384,7 @@
                 (only for water splitting)
             </div>
             <div class="col-md-8">
-                <input id="steam_h_rec_eff" type="text" disabled />
+                <input name="energy_slider" id="steam_h_rec_eff" type="text" disabled />
             </div>
         </div>
 
@@ -414,7 +414,7 @@
             </div>
             <label class="col-md-2 control-label" for="num_mat" style="padding: 2px;">Max # materials:</label>
             <div class="col-md-3">
-                <input id="num_mat" type="text" />
+                <input name="energy_slider" id="num_mat" type="text" />
             </div>
         </div>
     </form>

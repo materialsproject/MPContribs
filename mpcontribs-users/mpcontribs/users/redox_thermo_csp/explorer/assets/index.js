@@ -65,7 +65,7 @@ Object.keys(sliders).forEach(function(key, index) {
     $('#'+key).slider(sliders[key]['config'])
         .on('slideStop', function(ev) {
             var k = ev.currentTarget.id;
-            //$('input:text').slider('disable');
+            $('input[name="iso_slider"]').slider('disable');
             var updkey = sliders[k]['updkey'];
             spinners["spinner_"+updkey].spin();
             send_request(updkey);
@@ -214,12 +214,12 @@ function send_request(updatekey) {
         var div = document.getElementById(updatekey);
         update_plots(div,r,updatekey);
         spinners["spinner_"+updatekey].stop();
-        //$('input:text').slider('enable');
+        $('input[name="iso_slider"]').slider('enable');
     });
 };
 
 $('#identifiers_list').on('change', function() {
-    $('input:text').slider('disable');
+    $('input[name="iso_slider"]').slider('disable');
     var cid = $(this).select2('data')[0].text.split(' / ')[2];
     $('#cid').val(cid);
     var updatekeys = "isobar,isotherm,isoredox,ellingham,enthalpy_dH,entropy_dS";
@@ -235,7 +235,7 @@ $.each(document.getElementsByName('spinner'), function(i, s) {
     spinners[s.id] = new Spinner({scale: 0.5});
     spinners[s.id].spin(s);
 });
-//$('input:text').slider('disable');
+$('input[name="iso_slider"]').slider('disable');
 $('#cid').val('5bb821a79225576aeda99475');
 var updatekeys = "isobar, isotherm, isoredox, enthalpy_dH, entropy_dS, ellingham";
 updatekeys.split(",").forEach(function(k) { send_request(k.trim()); });
