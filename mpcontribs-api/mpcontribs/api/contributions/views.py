@@ -234,9 +234,8 @@ class CardView(SwaggerView):
             authors = [a.strip() for a in info.authors.split(',') if a]
             ctx['authors'] = {'main': authors[0], 'etal': authors[1:]}
             debug = current_app.config['DEBUG']
-            host = '' if debug else 'https://portal.mpcontribs.org'
-            ctx['landing_page'] = f'{host}/{contrib.project}/'
-            ctx['more'] = f'{host}/explorer/{cid}'
+            ctx['landing_page'] = f'/{contrib.project}/'
+            ctx['more'] = f'/explorer/{cid}'
             ctx['urls'] = info.urls.values()
             card_script = get_resource_as_string('templates/linkify.min.js')
             card_script += get_resource_as_string('templates/linkify-element.min.js')
