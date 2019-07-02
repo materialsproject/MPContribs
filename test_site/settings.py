@@ -94,3 +94,9 @@ WEBPACK_LOADER = {
 
 if os.environ.get('DEPLOYMENT') == 'MATGEN':
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+def set_no_cache(headers, path, url):
+    headers['Cache-Control'] = 'no-cache, private'
+
+WHITENOISE_KEEP_ONLY_HASHED_FILES = True
+WHITENOISE_ADD_HEADERS_FUNCTION = set_no_cache
