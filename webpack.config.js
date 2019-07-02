@@ -52,15 +52,7 @@ module.exports = {
   ],
   optimization: {
     minimize: true,
-    splitChunks: {
-      maxInitialRequests: Infinity,
-      minSize: 0,
-      cacheGroups: {
-          default: false,
-          vendors: false,
-          vendor: { chunks: 'all', test: /node_modules/ }
-      }
-    }
+    splitChunks: { chunks: 'all' }
   },
   resolve: {
     modules: ['node_modules'],
