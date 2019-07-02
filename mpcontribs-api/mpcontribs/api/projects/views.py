@@ -284,6 +284,8 @@ class TableView(SwaggerView):
                         cell = f"{explorer}/{structures[0]['id']}.cif"
                 else:
                     cell = contrib.get(col+'.value', contrib.get(col, ''))
+                    if isinstance(cell, str) and cell.startswith('mp-'):
+                        cell = f"{mp_site}/{cell}"
                 row.append(str(cell))
 
             items.append(dict(zip(columns, row)))
