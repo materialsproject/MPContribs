@@ -157,8 +157,8 @@ def dh_ds(delta, s_th, p):
     fit_type = p['fit_type_entr']
     if fit_type == "Solid_Solution":
         ds_pars.append(p['act_mat'])
-        ds_pars.append([p['fit_param_fe'][c] for c in 'abcd'])
-        ds = entr_mixed(delta-p['fit_par_ent']['c'], *ds_pars)
+        ds_pars.append([p[f'fit_param_fe.{c}'] for c in 'abcd'])
+        ds = entr_mixed(delta-p[f'fit_par_ent.c'], *ds_pars)
     else:
         ds_pars.append(s_th)
         ds = entr_dilute_spec(delta-p['fit_par_ent.c'], *ds_pars)
