@@ -303,7 +303,7 @@ modal_view = ModalView.as_view(ModalView.__name__)
 contributions.add_url_rule('/<string:cid>/modal', view_func=modal_view, methods=['GET'])
 
 from mpcontribs.api.contributions.redox_thermo_csp_views import isograph_view, energy_analysis_view
-contributions.add_url_rule('/<string:cid>/redox_thermo_csp/',
+contributions.add_url_rule('/redox_thermo_csp_energy/',
                            view_func=energy_analysis_view, methods=['GET'])
 contributions.add_url_rule('/<string:cid>/redox_thermo_csp/<string:plot_type>',
                            view_func=isograph_view, methods=['GET'])
