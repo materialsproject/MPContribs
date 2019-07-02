@@ -1,8 +1,5 @@
 # Community Contributions to Materials Project
 
-!!! tip
-    Go to the [Portal](https://portal.mpcontribs.org) directly.
-
 The *MPContribs* platform enables the materials science community to contribute
 experimental and theoretical materials data to [Materials
 Project](https://materialsproject.org) (MP) and use MP's infrastructure to expose their
@@ -12,3 +9,8 @@ collectively maintains contributions to MP as annotations to existing MP materia
 subsequently disseminates them as preview cards on MP's materials details pages, in form
 of domain-specific interactive landing pages on its
 [portal](/portal), and programmatically through its [API](/api).
+
+**Projects available on the MPContribs Portal as of 2/7/2019:** (Click screenshot to visit portal)
+
+[![overview](overview.png)](https://portal.mpcontribs.org)
+
