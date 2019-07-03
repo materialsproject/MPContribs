@@ -75,8 +75,7 @@ Resources:
       TaskRoleArn: !Ref 'AppServiceRole'
       ContainerDefinitions:
         - Name: api
-          Cpu: 256
-          Memory: 512
+          MemoryReservation: 512
           Image: !Ref 'ImageUrlApi'
           Environment:
             - Name: MPCONTRIBS_MONGO_HOST
@@ -90,8 +89,7 @@ Resources:
               awslogs-region: !Ref 'AWS::Region'
               awslogs-stream-prefix: !Ref 'ServiceName'
         - Name: chrome
-          Cpu: 256
-          Memory: 512
+          MemoryReservation: 50
           Image: !Ref 'ImageUrlChrome'
           Environment:
             - Name: START_XVFB
@@ -105,8 +103,7 @@ Resources:
               awslogs-region: !Ref 'AWS::Region'
               awslogs-stream-prefix: !Ref 'ServiceName'
         - Name: gateway
-          Cpu: 256
-          Memory: 512
+          MemoryReservation: 50
           Image: !Ref 'ImageUrlGateway'
           Environment:
             - Name: KG_ALLOW_ORIGIN
@@ -120,8 +117,7 @@ Resources:
               awslogs-region: !Ref 'AWS::Region'
               awslogs-stream-prefix: !Ref 'ServiceName'
         - Name: portal
-          Cpu: 256
-          Memory: 512
+          MemoryReservation: 512
           Image: !Ref 'ImageUrlPortal'
           Environment:
             - Name: DEPLOYMENT
