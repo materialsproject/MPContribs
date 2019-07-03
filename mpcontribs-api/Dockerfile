@@ -26,7 +26,6 @@ RUN set -ex \
     && rm -rf /var/lib/apt/lists/*
 
 EXPOSE 5000
-ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 ENV FLASK_APP mpcontribs.api
 ENV FLASK_ENV production

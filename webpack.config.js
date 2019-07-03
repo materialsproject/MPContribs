@@ -12,12 +12,12 @@ module.exports = {
   entry: {
       'main': [
           path.resolve(__dirname, 'mpcontribs-webtzite/webtzite/assets/index'),
-          path.resolve(__dirname, 'mpcontribs-webtzite/webtzite/assets/render_json'),
-          path.resolve(__dirname, 'mpcontribs-webtzite/webtzite/assets/render_table'),
-          path.resolve(__dirname, 'mpcontribs-webtzite/webtzite/assets/render_plot'),
           path.resolve(__dirname, 'mpcontribs-webtzite/webtzite/assets/analytics'),
           path.resolve(__dirname, 'mpcontribs-portal/mpcontribs/portal/assets/index'),
           path.resolve(__dirname, 'mpcontribs-explorer/mpcontribs/explorer/assets/index'),
+          path.resolve(__dirname, 'mpcontribs-webtzite/webtzite/assets/render_json'),
+          path.resolve(__dirname, 'mpcontribs-webtzite/webtzite/assets/render_table'),
+          path.resolve(__dirname, 'mpcontribs-webtzite/webtzite/assets/render_plot'),
           path.resolve(__dirname, 'mpcontribs-explorer/mpcontribs/explorer/assets/contribution'),
       ]
   },
@@ -90,10 +90,12 @@ module.exports = {
       { test: /linkify-element/, loader: 'imports-loader?linkify' },
       //{ test: /waitfor/, loader: 'imports-loader?jquery' },
       //{ test: /sandbox/, loader: 'imports-loader?archieml' },
-      //{ test: /\.(jp(e*)g|png)$/, loader: 'url-loader', options: { limit: 1, name: '[name].[ext]' } },
       {
         test: /\.(gif|png|jpe?g)$/i,
-        use: ['file-loader', {loader: 'image-webpack-loader'}],
+        use: [
+            {loader: 'url-loader', options: {limit: 100000, name:'[name].[ext]', outputPath: 'assets' }},
+            {loader: 'image-webpack-loader'}
+        ],
       },
       {
         test: /\.(woff(2)?|ttf|eot|svg)(\?v=[0-9]\.[0-9]\.[0-9])?$/, loader: 'url-loader',

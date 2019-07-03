@@ -39,7 +39,6 @@ RUN set -ex \
     && rm -rf /var/lib/apt/lists/*
 
 EXPOSE 8080
-ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 
 WORKDIR /app

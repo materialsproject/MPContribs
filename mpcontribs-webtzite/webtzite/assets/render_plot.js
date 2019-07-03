@@ -16,8 +16,8 @@ window.render_plot = function(props) {
     if (typeof props.tid !== 'undefined') {
         var target = document.getElementById('spinner_graph');
         spinner_plot.spin(target);
-        var gets = []; var nmax = 5;
-        for (var i = 0; i < nmax; i++) { // max 5 request = 5000 table rows
+        var gets = []; var nmax = 1;
+        for (var i = 0; i < nmax; i++) { // max `nmax` request = nmax*1000 table rows
             var page = i+1;
             gets.push($.get({
                 url: window.api['host'] + 'tables/' + props.tid + '?per_page=1000&page=' + page,
