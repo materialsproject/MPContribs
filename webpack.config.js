@@ -10,27 +10,30 @@ console.log('devMode = ' + devMode)
 module.exports = {
   context: __dirname,
   entry: {
-    'main': './mpcontribs-webtzite/webtzite/assets/index',
-    'render_json': './mpcontribs-webtzite/webtzite/assets/render_json',
-    'render_table': './mpcontribs-webtzite/webtzite/assets/render_table',
-    'render_plot': './mpcontribs-webtzite/webtzite/assets/render_plot',
-    'portal': './mpcontribs-portal/mpcontribs/portal/assets/index',
-    'explorer': './mpcontribs-explorer/mpcontribs/explorer/assets/index',
-    'explorer_contribution': './mpcontribs-explorer/mpcontribs/explorer/assets/contribution',
-    'MnO2_phase_selection': './mpcontribs-users/mpcontribs/users/MnO2_phase_selection/explorer/assets/index',
-    'jarvis_nus': './mpcontribs-users/mpcontribs/users/jarvis_nus/explorer/assets/index',
-    'defect_genome_pcfc_materials': './mpcontribs-users/mpcontribs/users/defect_genome_pcfc_materials/explorer/assets/index',
-    'slac_mose2': './mpcontribs-users/mpcontribs/users/slac_mose2/explorer/assets/index',
-    'swf': './mpcontribs-users/mpcontribs/users/swf/explorer/assets/index',
-    'als_beamline': './mpcontribs-users/mpcontribs/users/als_beamline/explorer/assets/index',
-    'dtu': './mpcontribs-users/mpcontribs/users/dtu/explorer/assets/index',
-    'carrier_transport': './mpcontribs-users/mpcontribs/users/carrier_transport/explorer/assets/index',
-    'screening_inorganic_pv': './mpcontribs-users/mpcontribs/users/screening_inorganic_pv/explorer/assets/index',
-    'perovskites_diffusion': './mpcontribs-users/mpcontribs/users/perovskites_diffusion/explorer/assets/index',
-    'transparent_conductors': './mpcontribs-users/mpcontribs/users/transparent_conductors/explorer/assets/index',
-    'dilute_solute_diffusion': './mpcontribs-users/mpcontribs/users/dilute_solute_diffusion/explorer/assets/index',
-    'redox_thermo_csp': './mpcontribs-users/mpcontribs/users/redox_thermo_csp/explorer/assets/index',
-    'bioi_defects': './mpcontribs-users/mpcontribs/users/bioi_defects/explorer/assets/index',
+      'main': [
+          path.resolve(__dirname, 'mpcontribs-webtzite/webtzite/assets/index'),
+          path.resolve(__dirname, 'mpcontribs-webtzite/webtzite/assets/render_json'),
+          path.resolve(__dirname, 'mpcontribs-webtzite/webtzite/assets/render_table'),
+          path.resolve(__dirname, 'mpcontribs-webtzite/webtzite/assets/render_plot'),
+          path.resolve(__dirname, 'mpcontribs-webtzite/webtzite/assets/analytics'),
+          path.resolve(__dirname, 'mpcontribs-portal/mpcontribs/portal/assets/index'),
+          //path.resolve(__dirname, 'mpcontribs-explorer/mpcontribs/explorer/assets/index'),
+          //path.resolve(__dirname, 'mpcontribs-explorer/mpcontribs/explorer/assets/contribution'),
+          //path.resolve(__dirname, 'mpcontribs-users/mpcontribs/users/MnO2_phase_selection/explorer/assets/index'),
+          //path.resolve(__dirname, 'mpcontribs-users/mpcontribs/users/jarvis_nus/explorer/assets/index'),
+          //path.resolve(__dirname, 'mpcontribs-users/mpcontribs/users/defect_genome_pcfc_materials/explorer/assets/index'),
+          //path.resolve(__dirname, 'mpcontribs-users/mpcontribs/users/slac_mose2/explorer/assets/index'),
+          //path.resolve(__dirname, 'mpcontribs-users/mpcontribs/users/swf/explorer/assets/index'),
+          //path.resolve(__dirname, 'mpcontribs-users/mpcontribs/users/als_beamline/explorer/assets/index'),
+          //path.resolve(__dirname, 'mpcontribs-users/mpcontribs/users/dtu/explorer/assets/index'),
+          //path.resolve(__dirname, 'mpcontribs-users/mpcontribs/users/carrier_transport/explorer/assets/index'),
+          //path.resolve(__dirname, 'mpcontribs-users/mpcontribs/users/screening_inorganic_pv/explorer/assets/index'),
+          //path.resolve(__dirname, 'mpcontribs-users/mpcontribs/users/perovskites_diffusion/explorer/assets/index'),
+          //path.resolve(__dirname, 'mpcontribs-users/mpcontribs/users/transparent_conductors/explorer/assets/index'),
+          //path.resolve(__dirname, 'mpcontribs-users/mpcontribs/users/dilute_solute_diffusion/explorer/assets/index'),
+          //path.resolve(__dirname, 'mpcontribs-users/mpcontribs/users/redox_thermo_csp/explorer/assets/index'),
+          //path.resolve(__dirname, 'mpcontribs-users/mpcontribs/users/bioi_defects/explorer/assets/index'),
+      ]
   },
   output: {
     path: path.resolve(__dirname, 'dist'),
@@ -50,10 +53,7 @@ module.exports = {
     new webpack.HashedModuleIdsPlugin(),
     new CompressionPlugin({minRatio: 1})
   ],
-  optimization: {
-    minimize: true,
-    splitChunks: { chunks: 'all' }
-  },
+  optimization: { minimize: true },
   resolve: {
     modules: ['node_modules'],
     extensions: ['.js'],
@@ -63,7 +63,6 @@ module.exports = {
       "backbone": 'backbone/backbone',
       "backgrid": 'backgrid/lib/backgrid',
       "filestyle": 'bootstrap-filestyle/src/bootstrap-filestyle',
-      "chosen": 'chosen-js/chosen.jquery',
       "select2": 'select2/dist/js/select2',
       "toggle": 'bootstrap-toggle/js/bootstrap-toggle',
       "underscore": 'underscore/underscore',
@@ -93,7 +92,6 @@ module.exports = {
       { test: /backgrid/, loader: 'imports-loader?jquery,backbone' },
       { test: /bootstrap/, loader: 'imports-loader?jquery' },
       { test: /filestyle/, loader: 'imports-loader?bootstrap' },
-      { test: /chosen/, loader: 'imports-loader?jquery,bootstrap' },
       { test: /select2/, loader: 'imports-loader?jquery' },
       { test: /toggle/, loader: 'imports-loader?jquery,bootstrap' },
       { test: /backgrid-select-all/, loader: 'imports-loader?backgrid' },
@@ -108,14 +106,14 @@ module.exports = {
       //{ test: /sandbox/, loader: 'imports-loader?archieml' },
       //{ test: /\.(jp(e*)g|png)$/, loader: 'url-loader', options: { limit: 1, name: '[name].[ext]' } },
       {
-        test: /\.(gif|png|jpe?g|svg)$/i,
+        test: /\.(gif|png|jpe?g)$/i,
         use: ['file-loader', {loader: 'image-webpack-loader'}],
       },
-      { test: /\.css$/, loaders: ["style-loader","css-loader"] },
       {
         test: /\.(woff(2)?|ttf|eot|svg)(\?v=[0-9]\.[0-9]\.[0-9])?$/, loader: 'url-loader',
         options: { limit: 8192, name:'[name].[ext]', outputPath: 'assets' }
-      }
+      },
+      { test: /\.css$/, loaders: ["style-loader","css-loader"] }
     ]
   },
   mode : devMode ? 'development' : 'production'

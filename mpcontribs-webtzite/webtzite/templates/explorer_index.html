@@ -1,13 +1,6 @@
 {% extends "header_footer.html" %}
 {% load staticfiles %}
-{% load render_entrypoint from webpack_loader %}
-{% block footer %}
-{% render_entrypoint project 'js' %}
-{% endblock %}
-
 {% block content %}
-{% render_entrypoint 'render_json' 'js' %}
-{% render_entrypoint 'render_table' 'js' %}
 
 <div id="modal" class="modal fade"
      tabindex="-1" role="dialog" aria-labelledby="plan-info" aria-hidden="true">

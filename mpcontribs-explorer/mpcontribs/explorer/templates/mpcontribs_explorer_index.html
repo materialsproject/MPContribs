@@ -1,8 +1,5 @@
 {% extends "header_footer.html" %}
 {% load staticfiles %}
-{% load render_entrypoint from webpack_loader %}
-{% block extra_css %}{% render_entrypoint 'explorer' 'css' %}{% endblock %}
-{% block footer %}{% render_entrypoint 'explorer' 'js' %}{% endblock %}
 {% block title %}MPContribs Explorer{% endblock %}
 
 {% block content %}

@@ -1,12 +1,6 @@
 {% extends "header_footer.html" %}
 {% load staticfiles %}
-{% load render_entrypoint from webpack_loader %}
-{% block extra_css %}{% render_entrypoint 'explorer_contribution' 'css' %}{% endblock %}
 {% block footer %}
-{% render_entrypoint 'explorer_contribution' 'js' %}
-{% render_entrypoint 'render_json' 'js' %}
-{% render_entrypoint 'render_table' 'js' %}
-{% render_entrypoint 'render_plot' 'js' %}
 <script>{{ js|safe }}</script>
 {% endblock %}
 {% block title %}MPContribs Contribution Details Page{% endblock %}

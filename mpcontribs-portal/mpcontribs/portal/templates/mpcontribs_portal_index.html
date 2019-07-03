@@ -1,8 +1,5 @@
 {% extends "header_footer.html" %}
 {% load staticfiles %}
-{% load render_entrypoint from webpack_loader %}
-{% block extra_css %}{% render_entrypoint 'portal' 'css' %}{% endblock %}
-{% block footer %}{% render_entrypoint 'portal' 'js' %}{% endblock %}
 
 {% block content %}
 <div class="container" hidden>
@@ -23,8 +20,7 @@
                 </div>
                 <div class="panel-body" style="padding: 0px">
                     <div class="col-md-12" style="padding: 5px">
-                        <a href="{% url 'mpcontribs_explorer:index' %}">
-                            <img id="explorer_img" width=100% />
+                        <a id="explorer_img" href="{% url 'mpcontribs_explorer:index' %}">
                         </a>
                     </div>
                 </div>
@@ -53,8 +49,7 @@
                 <div class="panel-body" style="padding: 0px">
                     <div class="col-md-12" style="padding: 5px;">
                         {% if lp.url %}
-                        <a href="{{ lp.url }}">
-                            <img id="{{ lp.project }}_img" width=100% />
+                        <a id="{{ lp.project }}_img" href="{{ lp.url }}">
                         </a>
                         {% else %}
                         <ul>
