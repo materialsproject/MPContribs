@@ -2,16 +2,9 @@ import 'underscore';
 import Plotly from 'plotly'; // plotly core only
 import {Spinner} from 'spin.js';
 
-var target = document.getElementById('spinner_graph');
-var spinner_plot = new Spinner({scale: 0.5});
-spinner_plot.spin(target);
-
 Plotly.register([
     require('../../../../../../node_modules/plotly.js/lib/bar')
 ]);
-
-var api_url = window.api['host'] + 'projects/dtu/graph';
-var graph = document.getElementById('graph');
 
 var columns_ranges = {'C': [0, 4.2], 'ΔE-QP.indirect': [0.1, 16], 'ΔE-QP.direct': [0.1, 16.1]};
 var columns = Object.keys(columns_ranges);
@@ -42,48 +35,56 @@ var layout = {
     sliders: sliders
 };
 
-$.get({
-    url: api_url, data: {'columns': columns.join(',')},
-    headers: window.api['headers']
-}).done(function(response) {
-    $.each(response, function(idx, trace) {
-        trace['type'] = 'bar';
-        trace['name'] = columns[idx];
-    })
-    Plotly.plot(graph, response, layout, {displayModeBar: true, responsive: true});
-    graph.on('plotly_click', function(data){
-        var cid = data.points[0].text;
-        var url = '/explorer/' + cid;
-        window.open(url, '_blank');
-    });
-    graph.on('plotly_sliderend', function(data) {
-        var target = document.getElementById('spinner_graph');
-        spinner_plot.spin(target);
-        var filters = [];
-        $.each(sliders, function(idx, slider) {
-            var active = slider['active'];
-            var upper = idx%2;
-            if ((upper && active !== nsteps) || (!upper && active !== 0)) {
-                var col = slider['name'];
-                var op = upper ? 'lte' : 'gte';
-                var val = slider['steps'][active]['label'];
-                var filter = col + '__' + op + ':' + val;
-                filters.push(filter);
-            }
+$(document).ready(function () {
+    var target = document.getElementById('spinner_graph');
+    var spinner_plot = new Spinner({scale: 0.5});
+    spinner_plot.spin(target);
+    var api_url = window.api['host'] + 'projects/dtu/graph';
+    var graph = document.getElementById('graph');
+
+    $.get({
+        url: api_url, data: {'columns': columns.join(',')},
+        headers: window.api['headers']
+    }).done(function(response) {
+        $.each(response, function(idx, trace) {
+            trace['type'] = 'bar';
+            trace['name'] = columns[idx];
+        })
+        Plotly.plot(graph, response, layout, {displayModeBar: true, responsive: true});
+        graph.on('plotly_click', function(data){
+            var cid = data.points[0].text;
+            var url = '/explorer/' + cid;
+            window.open(url, '_blank');
         });
-        $.get({
-            url: api_url, data: {'columns': columns.join(','), 'filters': filters.join(',')},
-            headers: window.api['headers']
-        }).done(function(response) {
-            var graph = document.getElementById('graph');
-            $.each(response, function(idx, data) {
-                $.each(data, function(axis, array) {
-                    Plotly.restyle(graph, axis, [array], idx);
+        graph.on('plotly_sliderend', function(data) {
+            var target = document.getElementById('spinner_graph');
+            spinner_plot.spin(target);
+            var filters = [];
+            $.each(sliders, function(idx, slider) {
+                var active = slider['active'];
+                var upper = idx%2;
+                if ((upper && active !== nsteps) || (!upper && active !== 0)) {
+                    var col = slider['name'];
+                    var op = upper ? 'lte' : 'gte';
+                    var val = slider['steps'][active]['label'];
+                    var filter = col + '__' + op + ':' + val;
+                    filters.push(filter);
+                }
+            });
+            $.get({
+                url: api_url, data: {'columns': columns.join(','), 'filters': filters.join(',')},
+                headers: window.api['headers']
+            }).done(function(response) {
+                var graph = document.getElementById('graph');
+                $.each(response, function(idx, data) {
+                    $.each(data, function(axis, array) {
+                        Plotly.restyle(graph, axis, [array], idx);
+                    })
                 })
-            })
-            // TODO also update table?
-            spinner_plot.stop();
+                // TODO also update table?
+                spinner_plot.stop();
+            });
         });
+        spinner_plot.stop();
     });
-    spinner_plot.stop();
 });

@@ -11,40 +11,6 @@ var spinners = {};
 var layout = {
     margin: {l: 70, b: 50, t: 50, r: 5}, hovermode: 'closest', showlegend: false,
 };
-
-$('#identifiers_list').select2({
-    ajax: {
-        url: window.api['host'] + 'contributions/',
-        headers: window.api['headers'],
-        delay: 400,
-        minimumInputLength: 2,
-        width: 'style',
-        data: function (params) {
-            var query = { projects: "redox_thermo_csp",
-                mask: "identifier,content.data.formula"
-            };
-            if (typeof params.term !== 'undefined') {
-                if (params.term.startsWith('mp')) {
-                    query["contains"] = params.term;
-                } else {
-                    query["filters"] = "formula__contains:" + params.term;
-                }
-            }
-            return query
-        },
-        processResults: function (data) {
-            var results = [];
-            $.each(data, function(index, element) {
-                var formula = element["content"]["data"]["formula"];
-                var text = element["identifier"] + ' / ' + formula + ' / ' + element['id'];
-                var entry = {id: index, text: text};
-                results.push(entry);
-            });
-            return {results: results};
-        }
-    }
-});
-
 var sliders = {
     temp_slider: {config: {tooltip: "always"}, updkey: "isotherm"},
     pressure_range: {config: {tooltip_position: "bottom"}, updkey: "isotherm"},
@@ -58,19 +24,6 @@ var sliders = {
     elling_temp_range: {config: {tooltip_position: "bottom"}, updkey: "ellingham"},
     elling_pressure_slider: {config: {tooltip: "always", tooltip_position: "bottom"}, updkey: "ellingham"},
 }
-
-Object.keys(sliders).forEach(function(key, index) {
-    // configure sliders for isoplots
-    // update the respective isoplot if the respective value is changed
-    $('#'+key).slider(sliders[key]['config'])
-        .on('slideStop', function(ev) {
-            var k = ev.currentTarget.id;
-            $('input[name="iso_slider"]').slider('disable');
-            var updkey = sliders[k]['updkey'];
-            spinners["spinner_"+updkey].spin();
-            send_request(updkey);
-        });
-});
 
 // displays the currently selected material and data properties
 function showdata(r) {
@@ -218,42 +171,6 @@ function send_request(updatekey) {
     });
 };
 
-$('#identifiers_list').on('change', function() {
-    $('input[name="iso_slider"]').slider('disable');
-    var cid = $(this).select2('data')[0].text.split(' / ')[2];
-    $('#cid').val(cid);
-    var updatekeys = "isobar,isotherm,isoredox,ellingham,enthalpy_dH,entropy_dS";
-    updatekeys.split(",").forEach(function(k) {
-        spinners["spinner_"+k].spin();
-        send_request(k);
-    });
-});
-
-
-// show default material SrFeOx
-$.each(document.getElementsByName('spinner'), function(i, s) {
-    spinners[s.id] = new Spinner({scale: 0.5});
-    spinners[s.id].spin(s);
-});
-$('input[name="iso_slider"]').slider('disable');
-$('#cid').val('5bb821a79225576aeda99475');
-var updatekeys = "isobar, isotherm, isoredox, enthalpy_dH, entropy_dS, ellingham";
-updatekeys.split(",").forEach(function(k) { send_request(k.trim()); });
-
-// ENERGY ANALYSIS
-
-$('#disp_par').select2({});
-$('#process').select2({});
-$('#pump_ener').val("0.0");
-$('#disp_par').val("kJ/mol of product");
-document.getElementById("ox_type").value = "<b>p(O<sub>2</sub>)<sub>ox</sub> (bar)</b>";
-
-// update the energy analysis
-var selectors = ["input[type='radio']", "#process", "#disp_par", "#pump_ener", "input[type='checkbox']"]
-selectors.forEach(function(selector) {
-    $(selector).on('change', function(ev) { send_request_energy(); });
-});
-
 var hdrth = _.range(100).map(function(val) { return val/100.; });
 var slide_selectors = {
     'T_ox_enera_air': {
@@ -303,23 +220,6 @@ var slide_selectors = {
         tooltip: "always", tooltip_position: "bottom"
     }
 }
-Object.keys(slide_selectors).forEach(function(key, index) {
-    var config = slide_selectors[key];
-    var nticks = config['values'].length;
-    $.extend(config, {
-        min: 0, max: nticks-1, step: 1,
-        ticks: _.range(nticks),
-        formatter: function(val) { return config['values'][val]; }
-    });
-    $('#'+key).slider(config).on('slideStop', function(ev) { send_request_energy(); });
-});
-
-var ener_empty = "True";
-if (ener_empty === "True") {
-    // if the energy analysis has not been done yet, try to do it
-    send_request_energy();
-    ener_empty = "False";
-};
 
 function get_value(slider) {
     var index = $('#'+slider).attr('value');
@@ -426,3 +326,103 @@ function send_request_energy() {
     });
 };
 
+$(document).ready(function () {
+    $('#identifiers_list').select2({
+        ajax: {
+            url: window.api['host'] + 'contributions/',
+            headers: window.api['headers'],
+            delay: 400,
+            minimumInputLength: 2,
+            width: 'style',
+            data: function (params) {
+                var query = { projects: "redox_thermo_csp",
+                    mask: "identifier,content.data.formula"
+                };
+                if (typeof params.term !== 'undefined') {
+                    if (params.term.startsWith('mp')) {
+                        query["contains"] = params.term;
+                    } else {
+                        query["filters"] = "formula__contains:" + params.term;
+                    }
+                }
+                return query
+            },
+            processResults: function (data) {
+                var results = [];
+                $.each(data, function(index, element) {
+                    var formula = element["content"]["data"]["formula"];
+                    var text = element["identifier"] + ' / ' + formula + ' / ' + element['id'];
+                    var entry = {id: index, text: text};
+                    results.push(entry);
+                });
+                return {results: results};
+            }
+        }
+    });
+
+    Object.keys(sliders).forEach(function(key, index) {
+        // configure sliders for isoplots
+        // update the respective isoplot if the respective value is changed
+        $('#'+key).slider(sliders[key]['config'])
+            .on('slideStop', function(ev) {
+                var k = ev.currentTarget.id;
+                $('input[name="iso_slider"]').slider('disable');
+                var updkey = sliders[k]['updkey'];
+                spinners["spinner_"+updkey].spin();
+                send_request(updkey);
+            });
+    });
+
+    $('#identifiers_list').on('change', function() {
+        $('input[name="iso_slider"]').slider('disable');
+        var cid = $(this).select2('data')[0].text.split(' / ')[2];
+        $('#cid').val(cid);
+        var updatekeys = "isobar,isotherm,isoredox,ellingham,enthalpy_dH,entropy_dS";
+        updatekeys.split(",").forEach(function(k) {
+            spinners["spinner_"+k].spin();
+            send_request(k);
+        });
+    });
+
+    // show default material SrFeOx
+    $.each(document.getElementsByName('spinner'), function(i, s) {
+        spinners[s.id] = new Spinner({scale: 0.5});
+        spinners[s.id].spin(s);
+    });
+    $('input[name="iso_slider"]').slider('disable');
+    $('#cid').val('5bb821a79225576aeda99475');
+    var updatekeys = "isobar, isotherm, isoredox, enthalpy_dH, entropy_dS, ellingham";
+    updatekeys.split(",").forEach(function(k) { send_request(k.trim()); });
+
+    // ENERGY ANALYSIS
+
+    $('#disp_par').select2({});
+    $('#process').select2({});
+    $('#pump_ener').val("0.0");
+    $('#disp_par').val("kJ/mol of product");
+    document.getElementById("ox_type").value = "<b>p(O<sub>2</sub>)<sub>ox</sub> (bar)</b>";
+
+    // update the energy analysis
+    var selectors = ["input[type='radio']", "#process", "#disp_par", "#pump_ener", "input[type='checkbox']"]
+    selectors.forEach(function(selector) {
+        $(selector).on('change', function(ev) { send_request_energy(); });
+    });
+
+    Object.keys(slide_selectors).forEach(function(key, index) {
+        var config = slide_selectors[key];
+        var nticks = config['values'].length;
+        $.extend(config, {
+            min: 0, max: nticks-1, step: 1,
+            ticks: _.range(nticks),
+            formatter: function(val) { return config['values'][val]; }
+        });
+        $('#'+key).slider(config).on('slideStop', function(ev) { send_request_energy(); });
+    });
+
+    var ener_empty = "True";
+    if (ener_empty === "True") {
+        // if the energy analysis has not been done yet, try to do it
+        send_request_energy();
+        ener_empty = "False";
+    };
+});

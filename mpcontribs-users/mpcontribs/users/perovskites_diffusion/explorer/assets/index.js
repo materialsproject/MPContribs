@@ -1,12 +1,6 @@
 import Plotly from 'plotly'; // plotly core only
 import {Spinner} from 'spin.js';
 
-var target = document.getElementById('spinner_graph');
-var spinner_plot = new Spinner({scale: 0.5});
-spinner_plot.spin(target);
-
-var graph = document.getElementById('graph');
-var api_url = window.api['host'] + 'projects/perovskites_diffusion';
 var layout = {
     margin: {l: 70, b: 50, t: 50, r: 5}, hovermode: 'closest', showlegend: false,
 };
@@ -53,15 +47,23 @@ function plot() {
     });
 }
 
-$.get({
-    url: api_url, data: {'mask': 'other.abbreviations'},
-    headers: window.api['headers']
-}).done(function() {
-    var r = arguments[0]['other']['abbreviations'];
-    assignOptions(r, 'xChoose', 11);
-    assignOptions(r, 'yChoose', 10);
-    plot();
-});
+$(document).ready(function () {
+    var target = document.getElementById('spinner_graph');
+    var spinner_plot = new Spinner({scale: 0.5});
+    spinner_plot.spin(target);
+    var graph = document.getElementById('graph');
+    var api_url = window.api['host'] + 'projects/perovskites_diffusion';
 
-document.getElementById('xChoose').addEventListener('change', plot, false);
-document.getElementById('yChoose').addEventListener('change', plot, false);
+    $.get({
+        url: api_url, data: {'mask': 'other.abbreviations'},
+        headers: window.api['headers']
+    }).done(function() {
+        var r = arguments[0]['other']['abbreviations'];
+        assignOptions(r, 'xChoose', 11);
+        assignOptions(r, 'yChoose', 10);
+        plot();
+    });
+
+    document.getElementById('xChoose').addEventListener('change', plot, false);
+    document.getElementById('yChoose').addEventListener('change', plot, false);
+});

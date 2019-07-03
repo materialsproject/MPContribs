@@ -1,15 +1,10 @@
 import Plotly from 'plotly'; // plotly core only
 import {Spinner} from 'spin.js';
 
-var target = document.getElementById('spinner_graph');
-var spinner_plot = new Spinner({scale: 0.5});
-spinner_plot.spin(target);
-
 var SQMAX = 33.7; var MASSMAX = 1.5;
 var xmin = 0; var xmax = 1.65;
 var ymin = 0; var ymax = 37.0;
 
-var graph = document.getElementById('graph');
 var layout = {
     grid: {rows: 1, columns: 2, xgap: 0.02, subplots:[['xy','x2y']]},
     margin: {l: 60, b: 50, t: 50, r: 5}, hovermode: 'closest', showlegend: false,
@@ -43,73 +38,80 @@ var markers = [
     {color: '#538F71', size: 10, line: {width: 1, color: 'black'}},
 ]
 var names = ['SLME vs mᵉ', 'SLME vs mʰ']
-var api_url = window.api['host'] + 'projects/screening_inorganic_pv/graph';
 
-var gets = [];
-$.each(graph_columns, function(index, columns) {
-    for (var i=0; i<4; i++) { // retrieved all 800 materials
-        gets.push($.get({
-            url: api_url, data: {'columns': columns.join(','), 'page': i+1},
-            headers: window.api['headers']
-        }));
-    }
-});
+$(document).ready(function () {
+    var target = document.getElementById('spinner_graph');
+    var spinner_plot = new Spinner({scale: 0.5});
+    spinner_plot.spin(target);
+    var graph = document.getElementById('graph');
+    var api_url = window.api['host'] + 'projects/screening_inorganic_pv/graph';
 
-$.when.apply($, gets).done(function() {
-    var gets_args = arguments;
-    var gets2 = $.map(gets_args, function(response) {
-        var identifiers = response[0][0]['x'];
-        return $.get({
-            url: window.api['host'] + 'contributions/', data: {
-                'projects': 'screening_inorganic_pv',
-                'identifiers': identifiers.join(','),
-                'per_page': identifiers.length,
-                'mask': 'content.data'
-            }, headers: window.api['headers']
-        });
-    });
-    $.when.apply($, gets2).done(function() {
-        var data = []; var xvals = []; var yvals = []; var text = [];
-        $.each(arguments, function(index, response) {
-            var r = gets_args[index][0];
-            Array.prototype.push.apply(xvals, r[0]['y']);
-            Array.prototype.push.apply(yvals, r[1]['y']);
-            Array.prototype.push.apply(text, $.map(response[0], function(d) {
-                var cid = d['id'];
-                var s = cid + '<br>' + JSON.stringify(d['content']['data'], null, 2);
-                var s = s.replace(/"/g, '').replace(/,/g, '<br>');
-                return s.replace(/{/g, '<br>').replace(/}/g, '');
+    var gets = [];
+    $.each(graph_columns, function(index, columns) {
+        for (var i=0; i<4; i++) { // retrieved all 800 materials
+            gets.push($.get({
+                url: api_url, data: {'columns': columns.join(','), 'page': i+1},
+                headers: window.api['headers']
             }));
-            if ( !(Math.floor((index+1)%4)) ) {
-                var idx = Math.floor(index/4);
-                console.log(idx);
-                data.push({
-                    x: xvals, y: yvals, text: text, hoverlabel: {'align': 'left'},
-                    name: names[idx], mode: 'markers', type: 'scatter',
-                    marker: markers[idx], xaxis: 'x'+(idx+1), yaxis: 'y'
-                });
-                data.push({
-                    x: [xmin, xmax], y: [SQMAX, SQMAX],
-                    name: 'SQ limit', mode: 'lines',
-                    line: {color: '#960000', dash: 'dot'},
-                    showlegend: false, hoverinfo: 'none',
-                    xaxis: 'x'+(idx+1), yaxis: 'y'
-                });
-                data.push({
-                    x: [MASSMAX, MASSMAX], y: [ymin, ymax],
-                    mode: 'lines', line: {color: '#005078', dash: 'dot'},
-                    showlegend: false, hoverinfo: 'none',
-                    xaxis: 'x'+(idx+1), yaxis: 'y'
-                });
-                xvals = []; yvals = []; text = [];
-            }
+        }
+    });
+
+    $.when.apply($, gets).done(function() {
+        var gets_args = arguments;
+        var gets2 = $.map(gets_args, function(response) {
+            var identifiers = response[0][0]['x'];
+            return $.get({
+                url: window.api['host'] + 'contributions/', data: {
+                    'projects': 'screening_inorganic_pv',
+                    'identifiers': identifiers.join(','),
+                    'per_page': identifiers.length,
+                    'mask': 'content.data'
+                }, headers: window.api['headers']
+            });
         });
-        Plotly.plot(graph, data, layout, {displayModeBar: true, responsive: true});
-        graph.on('plotly_click', function(d){
-            var cid = d.points[0].text.split('<br>')[0];
-            var url = '/explorer/' + cid;
-            window.open(url, '_blank');
+        $.when.apply($, gets2).done(function() {
+            var data = []; var xvals = []; var yvals = []; var text = [];
+            $.each(arguments, function(index, response) {
+                var r = gets_args[index][0];
+                Array.prototype.push.apply(xvals, r[0]['y']);
+                Array.prototype.push.apply(yvals, r[1]['y']);
+                Array.prototype.push.apply(text, $.map(response[0], function(d) {
+                    var cid = d['id'];
+                    var s = cid + '<br>' + JSON.stringify(d['content']['data'], null, 2);
+                    var s = s.replace(/"/g, '').replace(/,/g, '<br>');
+                        return s.replace(/{/g, '<br>').replace(/}/g, '');
+                    }));
+                    if ( !(Math.floor((index+1)%4)) ) {
+                        var idx = Math.floor(index/4);
+                        console.log(idx);
+                        data.push({
+                            x: xvals, y: yvals, text: text, hoverlabel: {'align': 'left'},
+                            name: names[idx], mode: 'markers', type: 'scatter',
+                            marker: markers[idx], xaxis: 'x'+(idx+1), yaxis: 'y'
+                        });
+                        data.push({
+                            x: [xmin, xmax], y: [SQMAX, SQMAX],
+                            name: 'SQ limit', mode: 'lines',
+                            line: {color: '#960000', dash: 'dot'},
+                            showlegend: false, hoverinfo: 'none',
+                            xaxis: 'x'+(idx+1), yaxis: 'y'
+                        });
+                        data.push({
+                            x: [MASSMAX, MASSMAX], y: [ymin, ymax],
+                            mode: 'lines', line: {color: '#005078', dash: 'dot'},
+                            showlegend: false, hoverinfo: 'none',
+                            xaxis: 'x'+(idx+1), yaxis: 'y'
+                        });
+                        xvals = []; yvals = []; text = [];
+                    }
+            });
+                Plotly.plot(graph, data, layout, {displayModeBar: true, responsive: true});
+                graph.on('plotly_click', function(d){
+                    var cid = d.points[0].text.split('<br>')[0];
+                    var url = '/explorer/' + cid;
+                    window.open(url, '_blank');
+                });
+            spinner_plot.stop();
         });
-        spinner_plot.stop();
     });
 });
