@@ -88,6 +88,9 @@ class NotebookView(SwaggerView):
             nb = Notebooks.objects.get(id=cid)
             nb.restore()
         except DoesNotExist:
+            nb = Notebooks() # start entry to avoid rebuild on subsequent requests
+            nb.id = cid # to link to the according contribution
+            nb.save() # calls Notebooks.clean()
             contrib = Contributions.objects.no_dereference().get(id=cid)
             cells = [
                 nbf.new_code_cell(

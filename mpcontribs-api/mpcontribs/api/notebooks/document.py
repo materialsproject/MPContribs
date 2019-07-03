@@ -7,11 +7,11 @@ class Kernelspec(fields.EmbeddedDocument):
     language = fields.StringField()
 
 class CodemirrorMode(fields.EmbeddedDocument):
-    name = fields.StringField(required=True)
-    version = fields.IntField(required=True)
+    name = fields.StringField(required=True, default='ipython')
+    version = fields.IntField(required=True, default=3)
 
 class LanguageInfo(fields.EmbeddedDocument):
-    name = fields.StringField(required=True)
+    name = fields.StringField(required=True, default='python')
     file_extension = fields.StringField()
     mimetype = fields.StringField()
     nbconvert_exporter = fields.StringField()
@@ -29,19 +29,19 @@ class Metadata(fields.EmbeddedDocument):
     )
 
 class Cell(DynamicEmbeddedDocument):
-    cell_type = fields.StringField(required=True, help_text='cell type')
+    cell_type = fields.StringField(required=True, default='code', help_text='cell type')
     metadata = fields.DictField(help_text='cell metadata')
-    source = fields.StringField(required=True, help_text='source')
+    source = fields.StringField(required=True, default="print('hello')", help_text='source')
     outputs = fields.ListField(fields.DictField(), help_text='outputs')
     execution_count = fields.IntField(help_text='exec count')
 
 class Notebooks(Document):
-    nbformat = fields.IntField(required=True, help_text="nbformat version")
-    nbformat_minor = fields.IntField(required=True, help_text="nbformat minor version")
+    nbformat = fields.IntField(required=True, default=4, help_text="nbformat version")
+    nbformat_minor = fields.IntField(required=True, default=2, help_text="nbformat minor version")
     metadata = fields.EmbeddedDocumentField(
         Metadata, required=True, help_text='notebook metadata', default=Metadata
     )
-    cells = fields.EmbeddedDocumentListField(Cell, required=True, help_text='cells')
+    cells = fields.EmbeddedDocumentListField(Cell, required=True, default=[Cell()], help_text='cells')
     meta = {'collection': 'notebooks'}
 
     problem_key = 'application/vnd.plotly.v1+json'

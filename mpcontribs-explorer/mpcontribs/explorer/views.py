@@ -57,9 +57,11 @@ def contribution(request, cid):
     client = load_client()
     try:
         nb = client.notebooks.get_entry(cid=cid).response(timeout=2).result
+        if len(nb['cells']) < 2:
+            raise HTTPTimeoutError
         ctx['nb'], ctx['js'] = export_notebook(nb, cid)
     except HTTPTimeoutError:
-        ctx['alert'] = 'First build of detail page initiated. Automatic reload in 10s.'
+        ctx['alert'] = 'First build of detail page ongoing. Automatic reload in 10s.'
     return render(request, "mpcontribs_explorer_contribution.html", ctx.flatten())
 
 def cif(request, sid):
