@@ -32,6 +32,11 @@ $(document).ready(function () {
         $(this).css('display', 'none');
         $(this).next('span[name="read_more"]').css('display', 'block');
     });
+    if ($("#graph").length) {
+        var project = window.location.pathname;
+        import(/* webpackChunkName: "project" */ `../../../mpcontribs-users/mpcontribs/users${project}explorer/assets/index.js`)
+            .catch(function(err) { console.error(err); });
+    }
     $('header').show();
     $('.container').show();
     $('footer').show();

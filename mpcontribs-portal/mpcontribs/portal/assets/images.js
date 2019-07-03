@@ -19,10 +19,9 @@ function getImages() {
 }
 
 var imageNames = getImages();
-console.log(imageNames);
 $.each(imageNames, function(idx, name) {
     var selector = '#' + name.replace('./', '').replace('.jpg', '_img');
     var container = document.querySelector(selector);
-    generateImage(container, name);
+    if (container) { generateImage(container, name); }
 })
 

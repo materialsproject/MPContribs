@@ -19,18 +19,6 @@ module.exports = {
           path.resolve(__dirname, 'mpcontribs-portal/mpcontribs/portal/assets/index'),
           path.resolve(__dirname, 'mpcontribs-explorer/mpcontribs/explorer/assets/index'),
           path.resolve(__dirname, 'mpcontribs-explorer/mpcontribs/explorer/assets/contribution'),
-          path.resolve(__dirname, 'mpcontribs-users/mpcontribs/users/MnO2_phase_selection/explorer/assets/index'),
-          path.resolve(__dirname, 'mpcontribs-users/mpcontribs/users/jarvis_nus/explorer/assets/index'),
-          path.resolve(__dirname, 'mpcontribs-users/mpcontribs/users/slac_mose2/explorer/assets/index'),
-          path.resolve(__dirname, 'mpcontribs-users/mpcontribs/users/swf/explorer/assets/index'),
-          path.resolve(__dirname, 'mpcontribs-users/mpcontribs/users/als_beamline/explorer/assets/index'),
-          path.resolve(__dirname, 'mpcontribs-users/mpcontribs/users/dtu/explorer/assets/index'),
-          path.resolve(__dirname, 'mpcontribs-users/mpcontribs/users/carrier_transport/explorer/assets/index'),
-          path.resolve(__dirname, 'mpcontribs-users/mpcontribs/users/screening_inorganic_pv/explorer/assets/index'),
-          path.resolve(__dirname, 'mpcontribs-users/mpcontribs/users/perovskites_diffusion/explorer/assets/index'),
-          path.resolve(__dirname, 'mpcontribs-users/mpcontribs/users/dilute_solute_diffusion/explorer/assets/index'),
-          path.resolve(__dirname, 'mpcontribs-users/mpcontribs/users/redox_thermo_csp/explorer/assets/index'),
-          path.resolve(__dirname, 'mpcontribs-users/mpcontribs/users/bioi_defects/explorer/assets/index'),
       ]
   },
   output: {
@@ -78,7 +66,7 @@ module.exports = {
       "spin.js": 'spin.js/spin',
       "linkify": 'linkifyjs/lib/linkify',
       "linkify-element": 'linkifyjs/lib/linkify-element',
-      "mathjs": 'mathjs/core'
+      "mathjs": 'mathjs/core',
       //waitfor: 'jquery.waitFor',
       //thebe: 'main-built',
     }

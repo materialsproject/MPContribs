@@ -10,6 +10,7 @@ var api_url = window.api['host'] + 'projects/';
 $(document).ready(function () {
     import(
         /* webpackPrefetch: true */
+        /* webpackChunkName: "images" */
         './images'
     );
 
