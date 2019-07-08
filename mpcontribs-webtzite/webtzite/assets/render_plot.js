@@ -25,10 +25,10 @@ window.render_plot = function(props) {
             }));
         }
         $.when.apply($, gets).done(function() {
-            var gets_args = arguments;
+            var gets_args = (nmax < 2) ? [arguments] : arguments;
             var update = []; // list of traces
             var ntraces = -1;
-            $.each(arguments, function(index, response) {
+            $.each(gets_args, function(index, response) {
                 if ( 'data' in response[0] ) {
                     var columns = math.transpose(response[0]['data']);
                     if (ntraces < 0) { ntraces = columns.length; }
