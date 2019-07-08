@@ -1739,7 +1739,7 @@ class EnergyAnalysisView(SwaggerView):
                     dct['prodstr'], dct['prodstr_alt'] = b.split('-')
                     dct['unstable'] = bool(a == 'unstable')
                     dct['tid'] = obj['id']
-                    dct['cid'] = obj['cid']['$oid']
+                    dct['cid'] = str(obj['cid'])
                     resdict.append(dct)
 
         # look up formulae
