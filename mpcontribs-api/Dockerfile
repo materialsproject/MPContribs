@@ -34,4 +34,4 @@ WORKDIR /app
 COPY . .
 RUN /venv/bin/pip install -e .
 
-CMD ["/venv/bin/gunicorn", "-b", "0.0.0.0:5000", "-k", "gevent", "-w", "2", "--access-logfile", "-", "mpcontribs.api:create_app()"]
+CMD ["/venv/bin/gunicorn", "-b", "0.0.0.0:5000", "-k", "gevent", "-w", "2", "--access-logfile", "-", "--log-level", "debug", "--timeout", "15", "--graceful-timeout", "15", "mpcontribs.api:create_app()"]

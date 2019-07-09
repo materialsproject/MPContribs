@@ -81,4 +81,4 @@ RUN /venv/bin/python manage.py collectstatic --noinput
 COPY docker-entrypoint.sh .
 RUN chmod +x /app/docker-entrypoint.sh
 ENTRYPOINT ["/app/docker-entrypoint.sh"]
-CMD ["/venv/bin/gunicorn", "-b", "0.0.0.0:8080", "-k", "gevent", "-w", "2", "--access-logfile", "-", "test_site.wsgi:application"]
+CMD ["/venv/bin/gunicorn", "-b", "0.0.0.0:8080", "-k", "gevent", "-w", "2", "--access-logfile", "-", "--log-level", "debug", "--timeout", "15", "--graceful-timeout", "15", "test_site.wsgi:application"]
