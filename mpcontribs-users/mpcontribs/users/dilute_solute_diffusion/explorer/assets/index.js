@@ -60,15 +60,9 @@ $(document).ready(function () {
                         trace.y.push(D0*Math.exp(-Q/0.08617*j*0.1));
                     }
                     data.push(trace);
-                    //rows.eq(i).toggleClass('selected');
                 });
                 if (data.length == 14) {
                     Plotly.newPlot(graph, data, layout, {displayModeBar: true, responsive: true});
-                    graph.on('plotly_click', function(d){
-                        var cid = d.points[0].text;
-                        var url = '/explorer/' + cid;
-                        window.open(url, '_blank');
-                    });
                     $('.backgrid-filter').hide(); // hide search
                     $('.columnmanager-visibilitycontrol').hide(); // hide column manager
                     spinner_plot.stop();
@@ -76,73 +70,11 @@ $(document).ready(function () {
             });
         }
     });
+
+    $("#toggle_panels").on("click", function() {
+        $('.col-md-3').toggleClass('hidden');
+    });
+
+    $("#clear_all").on("click", function() {
+    });
 });
-
-//// contributions selection (row click)
-//var lastChecked = null;
-//Backbone.on('cellclicked', function(e) {
-//    var row = $(e.currentTarget).parent();
-//    row.toggleClass('selected');
-//    if ( row.hasClass('selected') ) {
-//        var values = row.children('td').map(function() {
-//            return this.innerHTML;
-//        }).get();
-//        //Plotly.addTraces('graphD0', {
-//        //    x: xvals, y: yvalsD0, name: formula,
-//        //    connectgaps: true, mode: 'lines+markers'
-//        //});
-//console.log(values);
-//} else {
-//    console.log('unselect');
-//}
-////var chbx = row.toggleClass('highlight').find(':checkbox');
-////chbx.prop('checked', !chbx.prop('checked')).change();
-////if(!lastChecked) { lastChecked = chbx; return; }
-////if(e.shiftKey) {
-////    var $chkboxes = row.parent().find(':checkbox');
-////    var start = $chkboxes.index(chbx);
-////    var end = $chkboxes.index(lastChecked);
-////    var checked = lastChecked.prop('checked');
-////    $chkboxes.slice(Math.min(start,end)+1, Math.max(start,end))
-////        .prop('checked', checked).change();
-////}
-////lastChecked = chbx;
-//});
-
-// clear all
-//    $("#clear_all").on("click", function() {
-//      var tracesD0 = [dummy_trace];
-//      var tracesQ = [dummy_trace];
-//      var tracesDif = [dummy_trace];
-//      var traceDif = { x: xvalsDif, y: yvalsDifNaN };
-//      for (var j=0; j<grids.length; j++) {
-//        var collection = grids[j].collection;
-//        var traceD0 = {
-//          x: [], y: [], name: collection.title,
-//          connectgaps: true, mode: 'lines+markers'
-//        };
-//        var traceQ = {
-//          x: [], y: [], name: collection.title,
-//          connectgaps: true, mode: 'lines+markers'
-//        };
-//        collection.each(function(model){
-//          tracesDif.push(traceDif);
-//          traceD0['x'].push(model.get('Z'));
-//          traceD0['y'].push(NaN);
-//          traceQ['x'].push(model.get('Z'));
-//          traceQ['y'].push(NaN);
-//        });
-//        tracesD0.push(traceD0);
-//        tracesQ.push(traceQ);
-//      }
-//      Plotly.newPlot('graphDif', tracesDif, layoutDif, options);
-//      Plotly.newPlot('graphD0', tracesD0, layoutD0, options);
-//      Plotly.newPlot('graphQ', tracesQ, layoutQ, options);
-//      for (var j=0; j<grids.length; j++) {
-//        var selectedModels = grids[j].getSelectedModels();
-//        for (var i = 0, l = selectedModels.length; i < l; i++) {
-//          var model = selectedModels[i];
-//          model.trigger("backgrid:select", model, false);
-//        }
-//      }
-//    })

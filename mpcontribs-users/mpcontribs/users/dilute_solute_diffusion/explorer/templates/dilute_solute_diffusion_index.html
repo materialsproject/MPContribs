@@ -1,17 +1,15 @@
 {% extends "explorer_index.html" %}
 
 {% block extra_content %}
-<div class="row">
-    <div class="col-md-12">
-        <button id="clear_all" type="button" class="btn btn-primary btn-sm">Clear</button>
-    </div>
-</div>
-
 <div class="row" style="margin-top: 10px; margin-bottom: 20px;">
     <div class="col-md-12">
+        <div class="col-md-6">
+            <button id="clear_all" type="button" class="btn btn-primary btn-sm">Clear</button>
+            <button id="toggle_panels" type="button" class="btn btn-primary btn-sm">Show/Hide Panels</button>
+        </div>
         <div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
             {% for contrib in contribs %}
-            <div class="col-md-4"
+            <div class="col-md-3"
                  name="panel{{contrib.formula}}"
                  style="padding-left: 1px; padding-right: 1px; margin-bottom: 3px;">
                 <div class="panel panel-default">
