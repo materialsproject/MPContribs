@@ -2,6 +2,10 @@
 
 set -ex
 
+pip install nbzip
+jupyter nbextension install --user --py nbzip
+jupyter nbextension enable --user --py nbzip
+
 export SETUPTOOLS_SCM_PRETEND_VERSION=1.6.0
 cd $HOME &&
     cd mpcontribs-client && pip install -e . && \
