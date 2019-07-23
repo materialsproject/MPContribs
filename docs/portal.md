@@ -98,5 +98,5 @@ format.
 Launch the Binder project below to explore example notebooks using the MPContribs API
 Client and I/O libraries.
 
-[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/materialsproject/MPContribs/master)
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/materialsproject/MPContribs/1.6.1)
 
