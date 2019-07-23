@@ -1,4 +1,3 @@
-import 'bootstrap';
 import Backbone from 'backbone';
 import Backgrid from 'backgrid';
 import 'backgrid-paginator';
