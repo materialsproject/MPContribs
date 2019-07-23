@@ -1,0 +1,17 @@
+#!/bin/bash
+
+set -ex
+
+export SETUPTOOLS_SCM_PRETEND_VERSION=1.6.0
+cd $HOME &&
+    cd mpcontribs-client && pip install -e . && \
+    cd ../mpcontribs-io && pip install -e . && \
+    cd .. && npm install && \
+    cp -v binder/binder.js . && \
+    cp -v webpack-binder.config.js webpack.config.js && \
+    npm run webpack && \
+    mkdir $HOME/.jupyter/custom && \
+    mv -v dist $HOME/.jupyter/custom/js && \
+    cp -v binder/custom.js $HOME/.jupyter/custom/
+
+cd $HOME/binder
