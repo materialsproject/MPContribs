@@ -7,11 +7,9 @@ cd $HOME &&
     cd mpcontribs-client && pip install -e . && \
     cd ../mpcontribs-io && pip install -e . && \
     cd .. && npm install && \
-    cp -v binder/binder.js . && \
-    cp -v webpack-binder.config.js webpack.config.js && \
+    mv -v binder/binder.js . && \
+    mv -v webpack-binder.config.js webpack.config.js && \
     npm run webpack && \
     mkdir $HOME/.jupyter/custom && \
     mv -v dist $HOME/.jupyter/custom/js && \
-    cp -v binder/custom.js $HOME/.jupyter/custom/
-
-cd $HOME/binder
+    mv -v binder/custom.js $HOME/.jupyter/custom/
