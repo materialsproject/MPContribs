@@ -3,13 +3,6 @@ from mongoengine import fields, DynamicEmbeddedDocument, CASCADE
 from mpcontribs.api.tables.document import Tables
 from mpcontribs.api.structures.document import Structures
 
-class Collaborator(fields.EmbeddedDocument):
-    name = fields.StringField(required=True)
-    email = fields.StringField(required=True)
-    # TODO hide email field?
-    # TODO use EmailField but "email format is not registered with bravado-core"
-    # https://bravado-core.readthedocs.io/en/stable/formats.html#formats
-
 class Contents(DynamicEmbeddedDocument):
     data = fields.DictField(
         required=True,
@@ -32,10 +25,6 @@ class Contributions(Document):
     identifier = fields.StringField(
         required=True, help_text="material/composition identifier"
     )
-    collaborators = fields.EmbeddedDocumentListField(
-        Collaborator, required=True,
-        help_text='list of collaborators (emails stripped)'
-    )
     content = fields.EmbeddedDocumentField(
         Contents, required=True,
         help_text='free-form content of the contribution'
@@ -46,5 +35,5 @@ class Contributions(Document):
     }
 
 class Cards(Document):
-    html = fields.StringField(required=True, help_text="embedable html code")
+    html = fields.StringField(required=True, help_text="embeddable html code")
     meta = {'collection': 'cards'}
