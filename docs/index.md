@@ -10,7 +10,10 @@ subsequently disseminates them as preview cards on MP's materials details pages,
 of domain-specific interactive landing pages on its
 [portal](/portal), and programmatically through its [API](/api).
 
-**Projects available on the MPContribs Portal as of July 2, 2019:** (Click screenshot to visit portal)
+<iframe width="560" height="315" src="https://www.youtube.com/embed/dLT-FolIn2I" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
+**Screenshot of projects available on the MPContribs Portal as of July 2, 2019:**  
+(Click to visit portal)
 
 [![overview](overview.png)](https://portal.mpcontribs.org)
 
