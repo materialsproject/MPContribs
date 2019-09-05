@@ -23,6 +23,9 @@ window.render_table = function(props) {
             return col['name'].split(' ')[0];
         })
         rows_opt["url"] = window.api['host'] + 'projects/' + config.project + '/table?columns=' + cols.join(',');
+        if (config.filters) {
+            rows_opt["url"] += '&filters=' + config.filters.join(',');
+        }
     } else {
         rows_opt["url"] = window.api['host'] + 'tables/' + config.cid + '/' + config.name;
         if (config.per_page) {
