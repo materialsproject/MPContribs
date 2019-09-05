@@ -19,5 +19,4 @@ cd $HOME/MPContribs &&
     npm run webpack && \
     mkdir -p $HOME/.jupyter/custom && \
     mv -v dist $HOME/.jupyter/custom/js && \
-    mv -v binder/custom.js $HOME/.jupyter/custom/ && \
-    mkdir binder/MPContribs && mv -v binder/*.ipynb binder/MPContribs/
+    mv -v binder/custom.js $HOME/.jupyter/custom/

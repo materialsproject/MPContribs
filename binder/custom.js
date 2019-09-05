@@ -4,7 +4,7 @@ define([
     'base/js/promises'
 ], function(Jupyter, promises) {
     promises.app_initialized.then(function(appname) {
-        if (appname === 'NotebookApp' && location.pathname.indexOf('MPContribs') !== -1) {
+        if (appname === 'NotebookApp') {
             var prefix = '';
             if ( location.pathname.startsWith('/user') ) {
                 var user = location.pathname.split('/')[2];
