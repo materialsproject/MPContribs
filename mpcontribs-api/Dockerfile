@@ -21,7 +21,6 @@ RUN set -ex \
     && python3.7 -m venv /venv \
     && /venv/bin/pip install -U pip \
     && /venv/bin/pip install --no-cache-dir -r /requirements.txt \
-    && /venv/bin/pip install --no-cache-dir -e "git+https://github.com/plotly/plotly.py#egg=plotly" \
     && apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false $BUILD_DEPS \
     && rm -rf /var/lib/apt/lists/*
 
