@@ -141,6 +141,15 @@ class TableView(SwaggerView):
               items:
                   type: string
               description: comma-separated list of column names to tabulate
+            - name: filters
+              in: query
+              type: array
+              items:
+                  type: string
+              description: list of `column__operator:value` filters \
+                      with `column` in dot notation and `operator` in mongoengine format \
+                      (http://docs.mongoengine.org/guide/querying.html#query-operators). \
+                      `column` needs to be a valid field in `content.data`.
             - name: page
               in: query
               type: integer
@@ -193,6 +202,7 @@ class TableView(SwaggerView):
         mp_site = 'https://materialsproject.org/materials'
         mask = ['content.data', 'content.structures', 'identifier']
         search = request.args.get('q')
+        filters = request.args.get('filters', '').split(',')
         page = int(request.args.get('page', 1))
         PER_PAGE_MAX = current_app.config['PER_PAGE_MAX']
         per_page = int(request.args.get('per_page', PER_PAGE_MAX))
@@ -261,6 +271,10 @@ class TableView(SwaggerView):
         order_sign = '-' if order == 'desc' else '+'
         order_by = f"{order_sign}{sort_by_key}"
         objects = objects.order_by(order_by)
+
+        if filters:
+            query = construct_query(filters)
+            objects = objects(**query)
 
         # generate table page
         items = []
