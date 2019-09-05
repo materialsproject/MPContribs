@@ -2,12 +2,15 @@
 
 set -ex
 
-pip install nbzip
+jupyter serverextension enable --py nbzip --sys-prefix
 jupyter nbextension install --user --py nbzip
 jupyter nbextension enable --user --py nbzip
 
+git config --global user.email "jovyan@materialsproject.org"
+
+git clone -b dev https://github.com/materialsproject/MPContribs.git
 export SETUPTOOLS_SCM_PRETEND_VERSION=1.6.0
-cd $HOME &&
+cd $HOME/MPContribs &&
     cd mpcontribs-client && pip install -e . && \
     cd ../mpcontribs-io && pip install -e . && \
     cd .. && npm install && \
