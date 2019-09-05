@@ -24,3 +24,4 @@ jupyter_enterprise_gateway @ git+https://github.com/jupyter/enterprise_gateway@v
 pandas==0.23.4
 pymatgen==2019.3.27
 gunicorn[gevent]>=19.9.0
+werkzeug>=0.15.3
