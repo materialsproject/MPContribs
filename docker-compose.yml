@@ -67,15 +67,8 @@ services:
     ports:
       - "8000:8000"
 
-  binder:
-    build:
-      context: .
-      dockerfile: binder/Dockerfile
-    ports:
-      - "8888:8888"
-
-  kong:
-      image: pgbi/kong-dashboard
-      ports:
-          - "1234:8080"
-      command: "start --kong-url ${KONG_URL}"
+  #kong:
+  #    image: pgbi/kong-dashboard
+  #    ports:
+  #        - "1234:8080"
+  #    command: "start --kong-url ${KONG_URL}"
