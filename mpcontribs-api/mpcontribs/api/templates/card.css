@@ -1,5 +1,5 @@
 div[name=user_contribs] .panel {
-    width: 97%; margin-bottom: 20px;
+    width: 100%; margin-bottom: 20px;
     background-color: #fff; border: 1px solid transparent;
     border-radius: 4px;
     box-shadow: 0 1px 1px rgba(0,0,0,.05);
@@ -9,7 +9,7 @@ div[name=user_contribs] .panel-default>.panel-heading {
     color: #333; background-color: #f5f5f5; border-color: #ddd;
 }
 div[name=user_contribs] .panel-heading {
-    padding: 10px 15px; border-bottom: 1px solid transparent;
+    padding: 5px 15px; border-bottom: 1px solid transparent;
     border-top-left-radius: 3px; border-top-right-radius: 3px;
 }
 div[name=user_contribs] .panel-title {
@@ -25,28 +25,6 @@ div[name=user_contribs] .panel-title > small > a,
 div[name=user_contribs] .panel-title > .small > a { color: inherit; }
 div[name=user_contribs] .pull-right { float: right !important; }
 div[name=user_contribs] .panel-body { padding: 15px; }
-div[name=user_contribs] .btn-default {
-    color: #333;
-    background-color: #fff;
-    border-color: #ccc;
-}
-div[name=user_contribs] .btn-default:focus, .btn-default.focus {
-    color: #333;
-    background-color: #e6e6e6;
-    border-color: #8c8c8c;
-}
-div[name=user_contribs] .btn-default:active,
-.btn-default.active,
-.open > .dropdown-toggle.btn-default {
-    color: #333;
-    background-color: #e6e6e6;
-    background-image: none;
-    border-color: #adadad;
-}
-div[name=user_contribs] .btn-default .badge {
-    color: #fff;
-    background-color: #333;
-}
 div[name=user_contribs] .well {
   min-height: 20px;
   padding: 19px;

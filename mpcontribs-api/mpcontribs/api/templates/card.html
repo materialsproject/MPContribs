@@ -2,30 +2,29 @@
 <div name="user_contribs">
     <div class="panel panel-default">
         <div class="panel-heading">
-            <h4 class="panel-title">
+            <h4>
                 <a href="{{ landing_page }}">{{ title }}</a>
-                <a class="btn-xs btn-default pull-right" role="button"
-                   href="{{ more }}">Details</a>
+                {% if urls %}
+                <sup>
+                {% for url in urls %}
+                <a href="{{ url }}" target="_blank">[{{ loop.index }}]</a>
+                {% endfor %}
+                </sup>
+                {% endif %}
+                <a class="pull-right" href="{{ more }}" style="font-size:15px">Details</a>
+                <h5>
+                    {{ authors.main }}
+                    {% if authors.etal %}
+                    <a onclick="read_etal_{{cid}}()" id="read_etal_{{cid}}">et al.</a>
+                    <span id="etal_text_{{cid}}" hidden>
+                        {% for author in authors.etal %}{{ author }}<br/>{% endfor %}
+                    </span>
+                    {% endif %}
+                </h5>
             </h4>
         </div>
         <div class="panel-body" style="padding-left: 0px">
             <div style="padding-top: 0px">
-                <div class="well pull-right" style="padding: 5px 5px 5px 5px; margin-bottom: 2px; margin-left: 0px;">
-                    <h5 style="margin: 5px;">
-                        {{ authors.main }}
-                        <sup>
-                            {% for url in urls %}
-                            <a href="{{ url }}" target="_blank">{{ loop.index }}</a>
-                            {% endfor %}
-                        </sup>
-                        {% if authors.etal %}
-                        <a onclick="read_etal_{{cid}}()" id="read_etal_{{cid}}">et al.</a>
-                        <span id="etal_text_{{cid}}" hidden>
-                            {% for author in authors.etal %}{{ author }}<br/>{% endfor %}
-                        </span>
-                        {% endif %}
-                    </h5>
-                </div>
                 <blockquote class="blockquote" style="font-size: 13px; padding: 0px 10px;">
                     {{ descriptions.0 }}.
                     {% if descriptions.1 %}
