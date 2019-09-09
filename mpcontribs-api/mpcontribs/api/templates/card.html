@@ -23,17 +23,15 @@
                 </h5>
             </h4>
         </div>
-        <div class="panel-body" style="padding-left: 0px">
-            <div style="padding-top: 0px">
-                <blockquote class="blockquote" style="font-size: 13px; padding: 0px 10px;">
-                    {{ descriptions.0 }}.
-                    {% if descriptions.1 %}
-                    <a onclick="read_more_{{cid}}()" id="read_more_{{cid}}">More &raquo;</a>
-                    <span id="more_text_{{cid}}" hidden>{{ descriptions.1 }}</span>
-                    {% endif %}
-                </blockquote>
+        <div class="panel-body">
+            <div style="font-size: 13px; padding: 5px;">
+                {{ descriptions.0 }}.
+                {% if descriptions.1 %}
+                <a onclick="read_more_{{cid}}()" id="read_more_{{cid}}">More &raquo;</a>
+                <span id="more_text_{{cid}}" hidden>{{ descriptions.1 }}</span>
+                {% endif %}
             </div>
-            <div class="col-md-12" style="padding-right: 0px;">{{ data|safe }}</div>
+            <div class="col-md-12" style="padding: 0px;">{{ data|safe }}</div>
         </div>
     </div>
     <script>
