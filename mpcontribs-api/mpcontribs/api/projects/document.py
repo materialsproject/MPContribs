@@ -6,8 +6,7 @@ from mongoengine import fields, DynamicEmbeddedDocument
 class Projects(Document):
     __project_regex__ = '^[a-zA-Z0-9_]+$'
     project = fields.StringField(
-        min_length=3, max_length=30, required=True, unique=True,
-        regex = __project_regex__,
+        min_length=3, max_length=30, regex=__project_regex__, primary_key=True,
         help_text="project name/slug (valid format: `{}`)".format(
             __project_regex__
         )
@@ -27,10 +26,4 @@ class Projects(Document):
         required=True, help_text='list of URLs for references'
     )
     other = fields.DictField(help_text='other information')
-    # TODO permissions MapField
-    # is required on POST but should never be returned on GET (write-only)
-    meta = {
-        'collection': 'projects', 'indexes': [{
-            'fields': ['$title', "$description", "$authors"],
-        }, 'project']
-    }
+    meta = {'collection': 'projects'}

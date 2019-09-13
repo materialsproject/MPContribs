@@ -4,6 +4,7 @@ from bson.decimal128 import Decimal128
 from flask import Flask, redirect, current_app
 from flask_marshmallow import Marshmallow
 from flask_mongoengine import MongoEngine
+from flask_mongorest import register_class
 from flask_log import Logging
 from flasgger import Swagger
 from flask_json import FlaskJSON
@@ -67,14 +68,16 @@ def create_app():
         module_path = '.'.join(['mpcontribs', 'api', collection, 'views'])
         try:
             module = import_module(module_path)
-        except ModuleNotFoundError:
-            logger.warning('API module {} not found!'.format(module_path))
+        except ModuleNotFoundError as ex:
+            logger.warning(f'API module {module_path}: {ex}')
             continue
         try:
             blueprint = getattr(module, collection)
             app.register_blueprint(blueprint, url_prefix='/'+collection)
+            klass = getattr(module, collection.capitalize() + 'View')
+            register_class(app, klass, name=collection)
         except AttributeError as ex:
-            logger.warning('Failed to register blueprint {}: {}'.format(
+            logger.warning('Failed to register {}: {}'.format(
                 module_path, collection, ex
             ))
 

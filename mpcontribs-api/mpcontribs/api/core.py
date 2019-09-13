@@ -6,6 +6,7 @@ from flask.views import MethodViewType
 from flasgger import SwaggerView as OriginalSwaggerView
 from marshmallow_mongoengine import ModelSchema
 from flask_mongoengine import BaseQuerySet
+from flask_mongorest.views import ResourceView
 from functools import wraps
 from flask_json import as_json, JsonError
 
@@ -24,7 +25,7 @@ class SwaggerViewType(MethodViewType):
     def __init__(cls, name, bases, d):
         super(SwaggerViewType, cls).__init__(name, bases, d)
         if not __name__ == cls.__module__:
-            # e.g.: cls.__module__ = mpcontribs.api.provenances.views
+            # e.g.: cls.__module__ = mpcontribs.api.projects.views
             views_path = cls.__module__.split('.')
             doc_path = '.'.join(views_path[:-1] + ['document'])
             doc_name = views_path[-2].capitalize()
@@ -37,7 +38,7 @@ class SwaggerViewType(MethodViewType):
             cls.definitions = {schema_name: cls.Schema}
             cls.tags = [views_path[-2]]
 
-class SwaggerView(OriginalSwaggerView, metaclass=SwaggerViewType):
+class SwaggerView(OriginalSwaggerView, ResourceView, metaclass=SwaggerViewType):
     """A class-based view defining a `marshal` method to run query results
     through the according marshmallow schema"""
     def marshal(self, entries):
