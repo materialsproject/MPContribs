@@ -28,14 +28,15 @@ class SwaggerViewType(MethodViewType):
             # e.g.: cls.__module__ = mpcontribs.api.projects.views
             views_path = cls.__module__.split('.')
             doc_path = '.'.join(views_path[:-1] + ['document'])
-            doc_name = views_path[-2].capitalize()
-            Model = getattr(import_module(doc_path), doc_name)
-            schema_name = doc_name + 'Schema'
-            cls.Schema = type(schema_name, (ModelSchema, object), {
-                'Meta': type('Meta', (object,), dict(model=Model, ordered=True))
+            cls.doc_name = views_path[-2].capitalize()
+            Model = getattr(import_module(doc_path), cls.doc_name)
+            cls.schema_name = cls.doc_name + 'Schema'
+            cls.Schema = type(cls.schema_name, (ModelSchema, object), {
+                'Meta': type('Meta', (object,), dict(
+                    model=Model, ordered=True, model_build_obj=False
+                ))
             })
-            cls.decorators = [as_json, catch_error]
-            cls.definitions = {schema_name: cls.Schema}
+            cls.definitions = {cls.schema_name: cls.Schema}
             cls.tags = [views_path[-2]]
 
 class SwaggerView(OriginalSwaggerView, ResourceView, metaclass=SwaggerViewType):

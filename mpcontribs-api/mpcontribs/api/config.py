@@ -12,6 +12,7 @@ MONGODB_SETTINGS = {
     ), 'connect': False, 'db': 'mpcontribs'
 }
 SWAGGER = {
+    'doc_dir': os.path.join(os.path.dirname(__file__), 'swagger'),
     "specs": [{
         "endpoint": 'apispec',
         "route": '/apispec.json',

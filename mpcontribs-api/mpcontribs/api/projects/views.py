@@ -29,14 +29,13 @@ class ProjectsResource(Resource):
     fields = ['project', 'title']
     allowed_ordering = ['project']
     paginate = False
-    # schema = ???
 
     def get_optional_fields(self):
         return ['authors', 'description', 'other', 'urls']
 
 class ProjectsView(SwaggerView):
     resource = ProjectsResource
-    methods = [Fetch, List] # TODO add Create, Update, BulkUpdate, Delete
+    methods = [List, Fetch, Create, Delete, Update, BulkUpdate]
 
 
 # ADDITIONAL VIEWS

@@ -1,4 +1,4 @@
-import logging, os
+import logging, os, yaml
 from importlib import import_module
 from bson.decimal128 import Decimal128
 from flask import Flask, redirect, current_app
@@ -71,14 +71,85 @@ def create_app():
         except ModuleNotFoundError as ex:
             logger.warning(f'API module {module_path}: {ex}')
             continue
-        try:
-            blueprint = getattr(module, collection)
-            app.register_blueprint(blueprint, url_prefix='/'+collection)
-            klass = getattr(module, collection.capitalize() + 'View')
-            register_class(app, klass, name=collection)
-        except AttributeError as ex:
-            logger.warning('Failed to register {}: {}'.format(
-                module_path, collection, ex
-            ))
+
+        #try:
+        blueprint = getattr(module, collection)
+        app.register_blueprint(blueprint, url_prefix='/'+collection)
+        klass = getattr(module, collection.capitalize() + 'View')
+        register_class(app, klass, name=collection)
+
+        # add schema and specs for flask-mongorest views
+        if getattr(klass, 'resource', None) is not None:
+            klass.resource.schema = klass.Schema
+
+            for rule in app.url_map.iter_rules():
+                endpoint = app.view_functions[rule.endpoint]
+                endpoint.view_class = klass
+                if collection in rule.endpoint:
+                    for verb in rule.methods.difference(('HEAD', 'OPTIONS')):
+                        print(rule, rule.endpoint, verb)
+                        key = "{}_{}".format(rule.endpoint, verb.lower())
+                        if key == f'{collection}_get':
+                            spec = { # FETCH
+                                'operationId': 'get_entry',
+                                'parameters': [{
+                                    'name': 'pk',
+                                    'in': 'path',
+                                    'type': 'string',
+                                    'description': f'primary key for {klass.doc_name[:-1]}'
+                                }],
+                                'responses': {
+                                    200: {
+                                        'description': f'single {klass.doc_name} entry',
+                                        'schema': {'$ref': f'#/definitions/{klass.schema_name}'}
+                                    }
+                                }
+                            }
+                        else:
+                            spec = {}
+
+                        with open(f'{app.config["SWAGGER"]["doc_dir"]}/{key}.yml', 'w') as f:
+                            yaml.dump(spec, f)
+
+        #except AttributeError as ex:
+        #    logger.warning('Failed to register {}: {}'.format(
+        #        module_path, collection, ex
+        #    ))
 
     return app
+
+
+
+            #if m.__name__ == 'List':
+            #    method.specs_dict = {
+            #        'operationId': 'get_entries',
+            #        'parameters': [{
+            #            'name': '_fields',
+            #            'in': 'query',
+            #            'type': 'array',
+            #            'items': {'type': 'string'},
+            #            'description': 'list of fields to include in response'
+            #        }, {
+            #            'name': '_order_by',
+            #            'in': 'query',
+            #            'type': 'string',
+            #            'description': 'field by which to order response'
+            #        }], # TODO _skip and _limit: utilize the built-in functions of mongodb
+            #        'responses': {
+            #            '200': {
+            #                'description': f'list of {doc_name}',
+            #                'schema': {
+            #                    'type': 'array',
+            #                    'items': {'$ref': f'#/definitions/{schema_name}'}
+            #                }
+            #            }
+            #        }
+            #    }
+            #    for fld, ops in cls.resource.filters.items():
+            #        for op in ops:
+            #            method.specs_dict['parameters'].append({
+            #                'name': f'{fld}__{op.op}',
+            #                'in': 'query',
+            #                'type': 'string',
+            #                'description': f'filter {fld} by {op.op}'
+            #            })
