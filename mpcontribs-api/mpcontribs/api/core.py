@@ -7,17 +7,6 @@ from flasgger import SwaggerView as OriginalSwaggerView
 from marshmallow_mongoengine import ModelSchema
 from flask_mongoengine import BaseQuerySet
 from flask_mongorest.views import ResourceView
-from functools import wraps
-from flask_json import as_json, JsonError
-
-def catch_error(f):
-    @wraps(f)
-    def reraise(*args, **kwargs):
-        try:
-            return f(*args, **kwargs)
-        except Exception as ex:
-            raise JsonError(error=str(ex))
-    return reraise
 
 # https://github.com/pallets/flask/blob/master/flask/views.py
 class SwaggerViewType(MethodViewType):

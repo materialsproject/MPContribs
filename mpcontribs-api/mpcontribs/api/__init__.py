@@ -7,7 +7,6 @@ from flask_mongoengine import MongoEngine
 from flask_mongorest import register_class
 from flask_log import Logging
 from flasgger import Swagger
-from flask_json import FlaskJSON
 
 for mod in ['matplotlib', 'toronado.cssutils', 'selenium.webdriver.remote.remote_connection']:
     log = logging.getLogger(mod)
@@ -51,12 +50,12 @@ def create_app():
         from flask_cors import CORS
         CORS(app) # enable for development (allow localhost)
 
-    json = FlaskJSON(app)
+    #json = FlaskJSON(app)
 
-    @json.encoder
-    def custom_encoder(o):
-        if isinstance(o, Decimal128):
-            return float(o.to_decimal())
+    #@json.encoder
+    #def custom_encoder(o):
+    #    if isinstance(o, Decimal128):
+    #        return float(o.to_decimal())
 
     Logging(app)
     Marshmallow(app)

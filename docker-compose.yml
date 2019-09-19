@@ -65,10 +65,10 @@ services:
     volumes:
       - .:/docs
     ports:
-      - "8000:8000"
+      - "8000:8081"
 
   #kong:
   #    image: pgbi/kong-dashboard
   #    ports:
-  #        - "1234:8080"
+  #        - "1234:8082"
   #    command: "start --kong-url ${KONG_URL}"

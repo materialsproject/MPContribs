@@ -30,3 +30,4 @@ cloudformation/kong/
 mpcontribs-client/build/*
 mpcontribs-io/build/*
 mpcontribs-users/mpcontribs/users/bioi_defects/Data*
+mpcontribs-api/mpcontribs/api/swagger/
