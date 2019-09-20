@@ -1,22 +1,7 @@
 test_name: test projects resource
 
 stages:
-    - name: DTU default
-      request:
-          url: http://localhost:5000/projects/dtu
-          method: GET
-      response:
-          status_code: 200
-          body:
-              title: "GLLB-SC Bandgaps"
-              authors: "I. Castelli, F. Hueser, M. Pandey, H. Li, K. Thygesen, B. Seger, A. Jain, K. Persson, G. Ceder, K. Jacobsen"
-              description: "Bandgaps calculated using GLLB-SC potential by Gritsenko, van Leeuwen, van Lenthe, and Baerends (GLLB), adapted by Kuisma et al to account for solids (-SC). The Kohn-Sham gap (ΔE-KS) most basically refers to the energy difference between the bottom of the conduction band and the top of the valence band. The Quasi-Particle gap (ΔE-QP) takes into account the derivative discontinuity (C) of the chemical potential and gives the bandgap as the difference between ionization potential and electron affinity."
-              urls:
-                  main: "https://doi.org/10.1002/aenm.201400915"
-                  PRA: "https://doi.org/10.1103/PhysRevA.51.1944"
-                  PRB: "https://doi.org/10.1103/PhysRevB.82.115106"
-              id: "dtu"
-    - name: DTU mask
+    - name: DTU project info and mask
       request:
           url: http://localhost:5000/projects/dtu?mask=title
           method: GET
@@ -25,7 +10,7 @@ stages:
           body:
               title: "GLLB-SC Bandgaps"
               id: "dtu"
-    - name: search and mask
+    - name: projects search and mask
       request:
           url: http://localhost:5000/projects/?search=defect&mask=title
           method: GET
@@ -50,3 +35,40 @@ stages:
               - ΔE-KS.indirect
               - ΔE-QP.direct
               - ΔE-QP.indirect
+    - name: DTU table
+      request:
+          url: http://localhost:5000/projects/dtu/table?columns=formula,%CE%94E-KS.direct&page=1&per_page=2&q=Na&order=asc&sort_by=%CE%94E-KS.direct%20%5BeV%5D
+          method: GET
+      response:
+          status_code: 200
+          body:
+              total_count: 242
+              total_pages: 122
+              page: 1
+              last_page: 122
+              per_page: 2
+              items:
+                  - identifier: "https://materialsproject.org/materials/mp-7433"
+                    id: "http://localhost:8080/explorer/5abd8ffad4f144494f2cf1b4"
+                    formula: "Cu2Na2Se2"
+                    "ΔE-KS.direct [eV]": "0.139"
+                  - identifier: "https://materialsproject.org/materials/mp-31593"
+                    id: "http://localhost:8080/explorer/5abd8ffad4f144494f2cf1b7"
+                    formula: "Co2Na8O8"
+                    "ΔE-KS.direct [eV]": "0.177"
+    - name: DTU graph
+      request:
+          url: http://localhost:5000/projects/dtu/graph?columns=%CE%94E-KS.direct&filters=%CE%94E-QP.direct__lt%3A0.2&page=1&per_page=2
+          method: GET
+      response:
+          status_code: 200
+          body:
+              - "x":
+                  - "mp-541234"
+                  - "mp-16238"
+                "y":
+                  - "0.129"
+                  - "0.177"
+                "text":
+                  - "5a862214d4f1443a18fab25b"
+                  - "5a862214d4f1443a18fab25c"
