@@ -386,6 +386,7 @@ class GraphView(SwaggerView):
                 f'content__data__{col.replace(".", "__")}__display__exists', True
             ) for col in columns))
             objects = ContributionsDeref.objects(**query).only(*mask)
+            objects = objects.order_by('_id')
 
             if filters:
                 query = construct_query(filters)
