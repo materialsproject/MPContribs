@@ -27,4 +27,5 @@ jobs:
       run: |
         cd mpcontribs-api
         pip install -e .
+        pip install pytest tavern
         pytest .
