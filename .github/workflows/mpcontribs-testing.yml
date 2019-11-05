@@ -1,4 +1,4 @@
-name: Pymatgen testing
+name: MPContribs testing
 
 on: [push, pull_request]
 
@@ -25,5 +25,6 @@ jobs:
         pip install -r mpcontribs-api/requirements.txt
     - name: Test with pytest
       run: |
+        cd mpcontribs-api
         pip install -e .
-        pytest mpcontribs-api
+        pytest .
