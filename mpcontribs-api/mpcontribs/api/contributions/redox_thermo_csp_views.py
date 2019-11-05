@@ -429,7 +429,7 @@ class IsographView(SwaggerView):
               in: path
               type: string
               required: true
-              enum: [isotherm, isobar, isoredox, enthalph_dH, entropy_dS, ellingham]
+              enum: [isotherm, isobar, isoredox, enthalpy_dH, entropy_dS, ellingham]
               description: type of isograph
             - name: iso
               in: query
