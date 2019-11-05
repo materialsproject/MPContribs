@@ -1,8 +1,6 @@
-from mongoengine.queryset import DoesNotExist
 from mongoengine.context_managers import no_dereference
 from mongoengine.queryset.visitor import Q
 from flask import Blueprint, request, current_app
-from bson.decimal128 import Decimal128
 from pandas.io.json.normalize import nested_to_record
 from mpcontribs.api import construct_query
 from mpcontribs.api.core import SwaggerView
@@ -11,6 +9,7 @@ from mpcontribs.api.contributions.document import Contributions
 from mpcontribs.api.structures.document import Structures
 
 projects = Blueprint("projects", __name__)
+
 
 class ProjectsView(SwaggerView):
 
@@ -100,11 +99,11 @@ class ProjectView(SwaggerView):
     def patch(self, project):
         """Partially update a project's provenance entry"""
         return NotImplemented()
-        schema = self.Schema(dump_only=('id', 'project')) # id/project read-only
+        schema = self.Schema(dump_only=('id', 'project'))  # id/project read-only
         schema.opts.model_build_obj = False
         payload = schema.load(request.json, partial=True)
         if payload.errors:
-            return payload.errors # TODO raise JsonError 400?
+            return payload.errors  # TODO raise JsonError 400?
         # set fields defined in model
         if 'urls' in payload.data:
             urls = payload.data.pop('urls')
@@ -115,12 +114,13 @@ class ProjectView(SwaggerView):
         for key, url in request.json.get('urls', {}).items():
             payload.data['urls__'+key] = url
         return payload.data
-        #Projects.objects(project=project).update(**payload.data)
+        # Projects.objects(project=project).update(**payload.data)
 
     def delete(self, project):
         """Delete a project's provenance entry"""
         # TODO should also delete all contributions
         return NotImplemented()
+
 
 class TableView(SwaggerView):
 
@@ -264,7 +264,7 @@ class TableView(SwaggerView):
             objects = objects(Q(identifier__contains=search) | Q(**kwargs))
         sort_by_key = sort_by
         if ' ' in sort_by and sort_by[-1] == ']':
-            sort_by = sort_by.split(' ')[0] # remove unit
+            sort_by = sort_by.split(' ')[0]  # remove unit
             sort_by_key = f'content.data.{sort_by}.value'
         elif sort_by in columns[2:]:
             sort_by_key = f'content.data.{sort_by}'
@@ -288,8 +288,8 @@ class TableView(SwaggerView):
                 cell = ''
                 if 'CIF' in col:
                     structures = doc['content']['structures']
-                    if '.' in col: # grouped columns
-                        sname = '.'.join(col.split('.')[:-1]) # remove CIF string from field name
+                    if '.' in col:  # grouped columns
+                        sname = '.'.join(col.split('.')[:-1])  # remove CIF string from field name
                         for d in structures:
                             if d['name'] == sname:
                                 cell = f"{explorer}/{d['id']}.cif"
@@ -306,13 +306,14 @@ class TableView(SwaggerView):
 
         total_count = objects.count()
         total_pages = int(total_count/per_page)
-        if total_pages%per_page:
+        if total_pages % per_page:
             total_pages += 1
 
         return {
             'total_count': total_count, 'total_pages': total_pages, 'page': page,
             'last_page': total_pages, 'per_page': per_page, 'items': items
         }
+
 
 class GraphView(SwaggerView):
 
@@ -402,6 +403,7 @@ class GraphView(SwaggerView):
                     data[idx]['text'].append(str(obj.id))
             return data
 
+
 class ColumnsView(SwaggerView):
 
     def get(self, project):
@@ -429,9 +431,9 @@ class ColumnsView(SwaggerView):
             {"$project": {"akv": {"$objectToArray": "$content.data"}}},
             {"$unwind": "$akv"},
             {"$project": {"root": "$akv.k", "level2": {
-                "$switch": { "branches": [{
-                    "case": {"$eq": [{"$type":"$akv.v"}, "object"]},
-                    "then": {"$objectToArray":"$akv.v"}
+                "$switch": {"branches": [{
+                    "case": {"$eq": [{"$type": "$akv.v"}, "object"]},
+                    "then": {"$objectToArray": "$akv.v"}
                 }], "default": [{}]}
             }}},
             {"$unwind": "$level2"},
@@ -452,7 +454,7 @@ class ColumnsView(SwaggerView):
             columns += objects[0]['columns']
 
         projects = sorted(project.split('_'))
-        names = Structures.objects(project=project).distinct("name");
+        names = Structures.objects(project=project).distinct("name")
         if names:
             if len(projects) == len(names):
                 for p, n in zip(projects, sorted(names)):
@@ -463,14 +465,14 @@ class ColumnsView(SwaggerView):
 
         return sorted(columns)
 
+
 # url_prefix added in register_blueprint
 # also see http://flask.pocoo.org/docs/1.0/views/#method-views-for-apis
 multi_view = ProjectsView.as_view(ProjectsView.__name__)
-projects.add_url_rule('/', view_func=multi_view, methods=['GET'])#, 'POST'])
+projects.add_url_rule('/', view_func=multi_view, methods=['GET'])  # , 'POST'])
 
 single_view = ProjectView.as_view(ProjectView.__name__)
-projects.add_url_rule('/<string:project>', view_func=single_view,
-                         methods=['GET'])#, 'PUT', 'PATCH', 'DELETE'])
+projects.add_url_rule('/<string:project>', view_func=single_view, methods=['GET'])  # , 'PUT', 'PATCH', 'DELETE'])
 
 table_view = TableView.as_view(TableView.__name__)
 projects.add_url_rule('/<string:project>/table', view_func=table_view, methods=['GET'])

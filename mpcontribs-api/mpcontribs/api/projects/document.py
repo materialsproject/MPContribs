@@ -1,13 +1,13 @@
 from flask_mongoengine import Document
-from mongoengine import fields, DynamicEmbeddedDocument
+from mongoengine import fields
+
 
 # DynamicDocument documents work in the same way as Document but any data /
 # attributes set to them will also be saved
 class Projects(Document):
     __project_regex__ = '^[a-zA-Z0-9_]+$'
     project = fields.StringField(
-        min_length=3, max_length=30, required=True, unique=True,
-        regex = __project_regex__,
+        min_length=3, max_length=30, required=True, unique=True, regex=__project_regex__,
         help_text="project name/slug (valid format: `{}`)".format(
             __project_regex__
         )

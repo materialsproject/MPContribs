@@ -1,4 +1,4 @@
-import os, requests
+import requests
 from flask import Blueprint
 from copy import deepcopy
 from mongoengine import DoesNotExist
@@ -11,6 +11,7 @@ from mpcontribs.api.notebooks.document import Notebooks
 from mpcontribs.api.contributions.document import Contributions
 
 notebooks = Blueprint("notebooks", __name__)
+
 
 class CustomGatewayClient(GatewayClient):
 
@@ -29,6 +30,7 @@ class CustomGatewayClient(GatewayClient):
                                format(response.status_code, response.content))
 
         return CustomKernelClient(self.http_api_endpoint, self.ws_api_endpoint, kernel_id, logger=self.log)
+
 
 class CustomKernelClient(KernelClient):
 
@@ -52,18 +54,20 @@ class CustomKernelClient(KernelClient):
                             continue
                     else:
                         self.log.debug(f"Unhandled response for msg_id: {msg_id} of msg_type: {msg_type}")
-                elif msg is None: # We timed out. If post idle, its ok, else make mention of it
+                elif msg is None:  # We timed out. If post idle, its ok, else make mention of it
                     if not post_idle:
-                        self.log.warning(f"Unexpected timeout occurred for msg_id: {msg_id} - no 'idle' status received!")
+                        self.log.warning(f"Unexpected timeout occurred for {msg_id} - no 'idle' status received!")
                     break
         except BaseException as b:
             self.log.debug(b)
 
         return response
 
+
 client = CustomGatewayClient()
 with open('kernel_imports.ipynb') as fh:
     seed_nb = read(fh, 4)
+
 
 class NotebookView(SwaggerView):
 
@@ -88,9 +92,9 @@ class NotebookView(SwaggerView):
             nb = Notebooks.objects.get(id=cid)
             nb.restore()
         except DoesNotExist:
-            nb = Notebooks() # start entry to avoid rebuild on subsequent requests
-            nb.id = cid # to link to the according contribution
-            nb.save() # calls Notebooks.clean()
+            nb = Notebooks()  # start entry to avoid rebuild on subsequent requests
+            nb.id = cid  # to link to the according contribution
+            nb.save()  # calls Notebooks.clean()
             contrib = Contributions.objects.no_dereference().get(id=cid)
             cells = [
                 nbf.new_code_cell(
@@ -144,24 +148,25 @@ class NotebookView(SwaggerView):
             nb = deepcopy(seed_nb)
             nb.cells += cells
             nb = Notebooks(**nb)
-            nb.id = cid # to link to the according contribution
-            nb.save() # calls Notebooks.clean()
+            nb.id = cid  # to link to the according contribution
+            nb.save()  # calls Notebooks.clean()
 
         del nb.id
         return nb
 
-    #def delete(self, project, cids):
-    #    for contrib in self.contributions.find({'_id': {'$in': cids}}):
-    #        identifier, cid = contrib['identifier'], contrib['_id']
-    #        coll = self.notebooks
-    #        key = '.'.join([project, str(cid)])
-    #        coll.update({}, {'$unset': {key: 1}}, multi=True)
-    #    # remove `project` field when no contributions remaining
-    #    for coll in [self.materials, self.compositions]:
-    #        for doc in coll.find({project: {'$exists': 1}}):
-    #            for d in doc.itervalues():
-    #                if not d:
-    #                    coll.update({'_id': doc['_id']}, {'$unset': {project: 1}})
+    # def delete(self, project, cids):
+    #     for contrib in self.contributions.find({'_id': {'$in': cids}}):
+    #         identifier, cid = contrib['identifier'], contrib['_id']
+    #         coll = self.notebooks
+    #         key = '.'.join([project, str(cid)])
+    #         coll.update({}, {'$unset': {key: 1}}, multi=True)
+    #     # remove `project` field when no contributions remaining
+    #     for coll in [self.materials, self.compositions]:
+    #         for doc in coll.find({project: {'$exists': 1}}):
+    #             for d in doc.itervalues():
+    #                 if not d:
+    #                     coll.update({'_id': doc['_id']}, {'$unset': {project: 1}})
+
 
 # url_prefix added in register_blueprint
 single_view = NotebookView.as_view(NotebookView.__name__)
