@@ -1,7 +1,7 @@
-import logging, os
+import logging
 from importlib import import_module
 from bson.decimal128 import Decimal128
-from flask import Flask, redirect, current_app
+from flask import Flask, current_app
 from flask_marshmallow import Marshmallow
 from flask_mongoengine import MongoEngine
 from flask_log import Logging
@@ -14,14 +14,17 @@ for mod in ['matplotlib', 'toronado.cssutils', 'selenium.webdriver.remote.remote
 
 logger = logging.getLogger('app')
 
+
 def get_collections(db):
     conn = db.app.extensions['mongoengine'][db]['conn']
     return conn.mpcontribs.list_collection_names()
+
 
 # http://flask.pocoo.org/snippets/77/
 def get_resource_as_string(name, charset='utf-8'):
     with current_app.open_resource(name) as f:
         return f.read().decode(charset)
+
 
 # utility to use in views
 def construct_query(filters):
@@ -37,10 +40,11 @@ def construct_query(filters):
                 val = float(v)
                 key = f'content__data__{col}__value__{op}'
                 query[key] = val
-            except:
+            except ValueError:
                 key = f'content__data__{col}__{op}'
                 query[key] = v
     return query
+
 
 def create_app():
     app = Flask(__name__)
@@ -48,7 +52,7 @@ def create_app():
     app.jinja_env.globals['get_resource_as_string'] = get_resource_as_string
     if app.config.get('DEBUG'):
         from flask_cors import CORS
-        CORS(app) # enable for development (allow localhost)
+        CORS(app)  # enable for development (allow localhost)
 
     json = FlaskJSON(app)
 
@@ -60,7 +64,7 @@ def create_app():
     Logging(app)
     Marshmallow(app)
     db = MongoEngine(app)
-    swagger = Swagger(app, template=app.config.get('TEMPLATE'))
+    Swagger(app, template=app.config.get('TEMPLATE'))
     collections = get_collections(db)
 
     for collection in collections:

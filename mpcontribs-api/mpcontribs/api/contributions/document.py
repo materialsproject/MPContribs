@@ -1,7 +1,8 @@
 from flask_mongoengine import Document
-from mongoengine import fields, DynamicEmbeddedDocument, CASCADE
+from mongoengine import fields, DynamicEmbeddedDocument
 from mpcontribs.api.tables.document import Tables
 from mpcontribs.api.structures.document import Structures
+
 
 class Contents(DynamicEmbeddedDocument):
     data = fields.DictField(
@@ -12,12 +13,13 @@ class Contents(DynamicEmbeddedDocument):
     tables = fields.ListField(fields.ReferenceField(Tables))
     # reverse_delete_rule=CASCADE not supported for EmbeddedDocuments
 
+
 # DynamicDocument documents work in the same way as Document but any data /
 # attributes set to them will also be saved
 class Contributions(Document):
     __project_regex__ = '^[a-zA-Z0-9_]+$'
     project = fields.StringField(
-        min_length=3, max_length=30, required=True, regex = __project_regex__,
+        min_length=3, max_length=30, required=True, regex=__project_regex__,
         help_text="project name/slug (valid format: `{}`)".format(
             __project_regex__
         )
@@ -33,6 +35,7 @@ class Contributions(Document):
         'collection': 'contributions',
         'indexes': ['identifier', 'project', {'fields': ['project', 'identifier']}]
     }
+
 
 class Cards(Document):
     html = fields.StringField(required=True, help_text="embeddable html code")

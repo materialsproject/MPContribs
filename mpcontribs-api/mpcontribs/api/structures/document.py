@@ -1,10 +1,11 @@
 from flask_mongoengine import Document
-from mongoengine import fields, DynamicEmbeddedDocument
+from mongoengine import fields
+
 
 class Structures(Document):
     __project_regex__ = '^[a-zA-Z0-9_]+$'
     project = fields.StringField(
-        min_length=3, max_length=30, required=True, regex = __project_regex__,
+        min_length=3, max_length=30, required=True, regex=__project_regex__,
         help_text=f"project name/slug (valid format: `{__project_regex__}`)"
     )
     identifier = fields.StringField(

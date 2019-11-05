@@ -13,8 +13,10 @@ from mpcontribs.api import get_resource_as_string, construct_query
 from mpcontribs.api.core import SwaggerView
 from mpcontribs.api.projects.document import Projects
 from mpcontribs.api.contributions.document import Contributions, Cards
+from mpcontribs.api.contributions.redox_thermo_csp_views import isograph_view, energy_analysis_view
 
 contributions = Blueprint("contributions", __name__)
+
 
 class ContributionsView(SwaggerView):
     # TODO http://docs.mongoengine.org/guide/querying.html#raw-queries
@@ -100,7 +102,7 @@ class ContributionsView(SwaggerView):
             objects = objects(**query)
 
         n = objects.count()
-        page_max = int(n/per_page) + bool(n%per_page)
+        page_max = int(n/per_page) + bool(n % per_page)
         if n < 1 or page > page_max:
             return []
 
@@ -110,6 +112,7 @@ class ContributionsView(SwaggerView):
             ))
             for entry in objects.paginate(page=page, per_page=per_page).items
         ]
+
 
 class ContributionView(SwaggerView):
 
@@ -133,6 +136,7 @@ class ContributionView(SwaggerView):
         entry = Contributions.objects.get(id=cid).select_related()
         return self.marshal(entry)
 
+
 def get_browser():
     if 'browser' not in g:
         options = webdriver.ChromeOptions()
@@ -148,6 +152,7 @@ def get_browser():
             options=options
         )
     return g.browser
+
 
 # https://stackoverflow.com/a/55545369
 def unflatten(
@@ -196,12 +201,14 @@ def unflatten(
 
     return base
 
+
 def get_cleaned_data(data):
     return dict(
         (k.rsplit('.', 1)[0] if k.endswith('.display') else k, v)
         for k, v in nested_to_record(data, sep='.').items()
         if not k.endswith('.value') and not k.endswith('.unit')
     )
+
 
 class CardView(SwaggerView):
 
@@ -233,7 +240,6 @@ class CardView(SwaggerView):
             ctx['descriptions'] = info.description.strip().split('.', 1)
             authors = [a.strip() for a in info.authors.split(',') if a]
             ctx['authors'] = {'main': authors[0], 'etal': authors[1:]}
-            debug = current_app.config['DEBUG']
             ctx['landing_page'] = f'/{contrib.project}/'
             ctx['more'] = f'/explorer/{cid}'
             ctx['urls'] = info.urls.values()
@@ -253,7 +259,7 @@ class CardView(SwaggerView):
             tree = html.fromstring(rendered)
             inline(tree)
             card = Cards(html=html.tostring(tree.body[0]).decode('utf-8'))
-            card.id = cid # to link to the according contribution
+            card.id = cid  # to link to the according contribution
             card.save()
 
         del card.id
@@ -279,7 +285,6 @@ class ModalView(SwaggerView):
                 schema:
                     type: object
         """
-        ctx = {'cid': cid}
         mask = ['project', 'identifier', 'content.data.modal']
         contrib = Contributions.objects.only(*mask).get(id=cid)
         data = contrib.content.data
@@ -287,13 +292,13 @@ class ModalView(SwaggerView):
             return {}
         return unflatten(get_cleaned_data(data))
 
+
 # url_prefix added in register_blueprint
 multi_view = ContributionsView.as_view(ContributionsView.__name__)
-contributions.add_url_rule('/', view_func=multi_view, methods=['GET'])#, 'POST'])
+contributions.add_url_rule('/', view_func=multi_view, methods=['GET'])  # , 'POST'])
 
 single_view = ContributionView.as_view(ContributionView.__name__)
-contributions.add_url_rule('/<string:cid>', view_func=single_view,
-                         methods=['GET'])#, 'PUT', 'PATCH', 'DELETE'])
+contributions.add_url_rule('/<string:cid>', view_func=single_view, methods=['GET'])  # , 'PUT', 'PATCH', 'DELETE'])
 
 card_view = CardView.as_view(CardView.__name__)
 contributions.add_url_rule('/<string:cid>/card', view_func=card_view, methods=['GET'])
@@ -301,7 +306,6 @@ contributions.add_url_rule('/<string:cid>/card', view_func=card_view, methods=['
 modal_view = ModalView.as_view(ModalView.__name__)
 contributions.add_url_rule('/<string:cid>/modal', view_func=modal_view, methods=['GET'])
 
-from mpcontribs.api.contributions.redox_thermo_csp_views import isograph_view, energy_analysis_view
 contributions.add_url_rule('/redox_thermo_csp_energy/',
                            view_func=energy_analysis_view, methods=['GET'])
 contributions.add_url_rule('/<string:cid>/redox_thermo_csp/<string:plot_type>',

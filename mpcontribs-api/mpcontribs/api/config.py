@@ -1,11 +1,12 @@
-import os, datetime
+import os
+import datetime
 
 PER_PAGE_MAX = 20
 DEBUG = bool(os.environ.get('FLASK_ENV') == 'development')
 JSON_SORT_KEYS = False
 JSON_ADD_STATUS = False
 FLASK_LOG_LEVEL = 'DEBUG' if DEBUG else 'WARNING'
-SECRET_KEY = b'super-secret' # reset in local prod config
+SECRET_KEY = b'super-secret'  # reset in local prod config
 MONGODB_SETTINGS = {
     'host': "mongodb+srv://{0}/mpcontribs?retryWrites=true".format(
         os.environ.get('MPCONTRIBS_MONGO_HOST', 'localhost')
@@ -34,7 +35,7 @@ TEMPLATE = {
     "info": {
         "title": "MPContribs API",
         "description": "Operations to retrieve materials data contributed to MP",
-        #"termsOfService": "http://me.com/terms",
+        # "termsOfService": "http://me.com/terms",
         "version": datetime.datetime.today().strftime('%Y.%m.%d'),
         "contact": {
             "name": "MPContribs",
