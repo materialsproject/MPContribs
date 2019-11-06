@@ -1,3 +1,5 @@
+"""configuration module for MPContribs Flask API"""
+
 import os
 import datetime
 

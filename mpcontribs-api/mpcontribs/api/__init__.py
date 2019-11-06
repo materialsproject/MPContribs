@@ -1,3 +1,5 @@
+"""Flask App for MPContribs API"""
+
 import logging
 from importlib import import_module
 from bson.decimal128 import Decimal128
@@ -16,20 +18,25 @@ logger = logging.getLogger('app')
 
 
 def get_collections(db):
+    """get list of collections in DB"""
     conn = db.app.extensions['mongoengine'][db]['conn']
     return conn.mpcontribs.list_collection_names()
 
 
-# http://flask.pocoo.org/snippets/77/
 def get_resource_as_string(name, charset='utf-8'):
+    """http://flask.pocoo.org/snippets/77/"""
     with current_app.open_resource(name) as f:
         return f.read().decode(charset)
 
 
 # utility to use in views
 def construct_query(filters):
-    # C__gte:0.42,C__lte:2.10,ΔE-QP.direct__lte:11.3
-    # -> content__data__C__value__lte
+    """constructs a mongoengine query from a list of filters
+
+    example:
+        C__gte:0.42,C__lte:2.10,ΔE-QP.direct__lte:11.3
+        -> content__data__C__value__lte
+    """
     query = {}
     for f in filters:
         if '__' in f and ':' in f:
@@ -47,6 +54,7 @@ def construct_query(filters):
 
 
 def create_app():
+    """create flask app"""
     app = Flask(__name__)
     app.config.from_pyfile('config.py', silent=True)
     app.jinja_env.globals['get_resource_as_string'] = get_resource_as_string
