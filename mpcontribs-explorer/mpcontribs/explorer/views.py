@@ -10,6 +10,7 @@ from bs4 import BeautifulSoup
 from fido.exceptions import HTTPTimeoutError
 from mpcontribs.client import load_client
 
+
 def index(request):
     ctx = RequestContext(request)
     try:
@@ -19,6 +20,7 @@ def index(request):
     except Exception as ex:
         ctx['alert'] = f'{ex}'
     return render(request, "mpcontribs_explorer_index.html", ctx.flatten())
+
 
 def export_notebook(nb, cid):
     nb = nbformat.from_dict(nb)
@@ -49,8 +51,9 @@ def export_notebook(nb, cid):
     script = []
     for s in soup.find_all('script'):
         script.append(s.text)
-        s.extract() # remove javascript
+        s.extract()  # remove javascript
     return soup.prettify(), '\n'.join(script)
+
 
 def contribution(request, cid):
     ctx = RequestContext(request)
@@ -64,12 +67,14 @@ def contribution(request, cid):
         ctx['alert'] = 'First build of detail page ongoing. Automatic reload in 10s.'
     return render(request, "mpcontribs_explorer_contribution.html", ctx.flatten())
 
+
 def cif(request, sid):
     client = load_client()
     cif = client.structures.get_cif(sid=sid).response().result
     if cif:
         return HttpResponse(cif, content_type='text/plain')
     return HttpResponse(status=404)
+
 
 def download_json(request, cid):
     client = load_client()

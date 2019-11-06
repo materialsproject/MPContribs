@@ -1,10 +1,10 @@
 """This module provides the views for the portal."""
 
-import os
 from django.shortcuts import render
 from django.template import RequestContext
 from django.urls import reverse
 from mpcontribs.client import load_client
+
 
 def index(request):
     ctx = RequestContext(request)
@@ -30,5 +30,5 @@ def index(request):
                 authors[1].strip().replace(', ', '<br/>'))
             prov_display += '</span>'
         entry['provenance'] = prov_display
-        ctx['landing_pages'].append(entry) # consider everything in DB released
+        ctx['landing_pages'].append(entry)  # consider everything in DB released
     return render(request, "mpcontribs_portal_index.html", ctx.flatten())
