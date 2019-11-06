@@ -1,13 +1,11 @@
 import os
 import flask_mongorest
-from mongoengine.queryset import DoesNotExist
 from mongoengine.context_managers import no_dereference
 from mongoengine.queryset.visitor import Q
 from flask import Blueprint, request, current_app
 from flask_mongorest.resources import Resource
 from flask_mongorest import operators as ops
-from flask_mongorest.methods import *
-from bson.decimal128 import Decimal128
+from flask_mongorest.methods import List, Fetch, Create, Delete, Update, BulkUpdate
 from pandas.io.json.normalize import nested_to_record
 from mpcontribs.api import construct_query
 from mpcontribs.api.core import SwaggerView
@@ -19,6 +17,7 @@ templates = os.path.join(
     os.path.dirname(flask_mongorest.__file__), 'templates'
 )
 projects = Blueprint("projects", __name__, template_folder=templates)
+
 
 class ProjectsResource(Resource):
     document = Projects
