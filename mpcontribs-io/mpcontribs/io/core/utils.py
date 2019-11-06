@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """module defines utility methods for MPContribs core.io library"""
 from __future__ import unicode_literals
-import collections
 from decimal import Decimal, DecimalException, InvalidOperation
 import six
 from mpcontribs.io import mp_id_pattern
@@ -10,6 +9,7 @@ try:
     from StringIO import StringIO
 except ImportError:
     from io import StringIO
+
 
 def get_short_object_id(cid):
     """return shortened contribution ID (ObjectId) for `cid`.
@@ -25,6 +25,7 @@ def get_short_object_id(cid):
         cid_short = str(cid)[:length]
     return cid_short
 
+
 def make_pair(key, value, sep=':'):
     """return string for `key`-`value` pair with separator `sep`.
 
@@ -39,19 +40,21 @@ def make_pair(key, value, sep=':'):
         value = unicode(value)
     return '{} '.format(sep).join([key, value])
 
-def nest_dict(dct, keys):
-    #"""nest `dct` under list of `keys`.
 
-    #>>> print nest_dict({'key': {'subkey': 'value'}}, ['a', 'b'])
-    #RecursiveDict([('a', RecursiveDict([('b', RecursiveDict([('key', RecursiveDict([('subkey', u'value')]))]))]))])
-    #"""
+def nest_dict(dct, keys):
+    # """nest `dct` under list of `keys`.
+
+    # >>> print nest_dict({'key': {'subkey': 'value'}}, ['a', 'b'])
+    # RecursiveDict([('a', RecursiveDict([('b', RecursiveDict([('key', RecursiveDict([('subkey', u'value')]))]))]))])
+    # """
     from mpcontribs.io.core.recdict import RecursiveDict
     nested_dict = dct
-    #nested_dict = RecursiveDict(dct)
-    #nested_dict.rec_update()
+    # nested_dict = RecursiveDict(dct)
+    # nested_dict.rec_update()
     for key in reversed(keys):
         nested_dict = RecursiveDict({key: nested_dict})
     return nested_dict
+
 
 def get_composition_from_string(comp_str):
     """validate and return composition from string `comp_str`."""
@@ -66,6 +69,7 @@ def get_composition_from_string(comp_str):
         for key, value in comp.as_dict().items()
     ])
 
+
 def normalize_root_level(title):
     """convert root-level title into conventional identifier; non-identifiers
     become part of shared (meta-)data. Returns: (is_general, title)"""
@@ -77,6 +81,7 @@ def normalize_root_level(title):
         if mp_id_pattern.match(title.lower()):
             return False, title.lower()
         return True, title
+
 
 def clean_value(value, unit='', convert_to_percent=False, max_dgts=3):
     """return clean value with maximum digits and optional unit and percent"""
@@ -96,6 +101,7 @@ def clean_value(value, unit='', convert_to_percent=False, max_dgts=3):
         val += ' {}'.format(unit)
     return val
 
+
 def strip_converter(text):
     """http://stackoverflow.com/questions/13385860"""
     try:
@@ -106,6 +112,7 @@ def strip_converter(text):
         return str(Decimal(val))
     except InvalidOperation:
         return text
+
 
 def read_csv(body, is_data_section=True, **kwargs):
     """run pandas.read_csv on (sub)section body"""

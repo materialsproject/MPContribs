@@ -2,6 +2,7 @@ from mpcontribs.io import mp_level01_titles
 from mpcontribs.io.core.recdict import RecursiveDict
 from IPython.display import display_html
 
+
 class Structures(RecursiveDict):
     """class to hold and display list of pymatgen structures for single mp-id"""
     def __init__(self, content):
@@ -18,6 +19,7 @@ class Structures(RecursiveDict):
                 display_html('<p>{}</p>'.format(
                     structure.__repr__().replace('\n', '<br>').replace(' ', '&nbsp;')
                 ), raw=True)
+
 
 class StructuralData(RecursiveDict):
     """class to hold and display all pymatgen structures in MPFile"""
