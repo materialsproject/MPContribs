@@ -1,0 +1,77 @@
+test_name: test notebooks resource
+
+stages:
+    - name: contribution notebook
+      request:
+          url: http://localhost:5000/notebooks/5a862202d4f1443a18fab254
+          method: GET
+      response:
+          status_code: 200
+          body:
+              nbformat: 4
+              nbformat_minor: 2
+              metadata:
+                kernelspec:
+                  name: python3
+                  display_name: Python 3
+                  language: python
+                language_info:
+                  name: python
+                  file_extension: ".py"
+                  mimetype: text/x-python
+                  nbconvert_exporter: python
+                  pygments_lexer: ipython3
+                  version: 3.7.3
+                  codemirror_mode:
+                    name: ipython
+                    version: 3
+              cells:
+              - cell_type: code
+                metadata: {}
+                source: |-
+                  # - table IDs `tid` are in `contrib['content']['tables']`
+                  # - set `per_page` query parameter to retrieve up to 200 rows at once (paginate for more)
+                  # - structure IDs `sid` are in `contrib['content']['structures']`
+                  from mpcontribs.client import load_client
+                  from mpcontribs.io.core.recdict import RecursiveDict
+                  from mpcontribs.io.core.components.hdata import HierarchicalData
+                  from mpcontribs.io.core.components.tdata import Table # DataFrame with Backgrid IPython Display
+                  from mpcontribs.io.core.components.gdata import Plot # Plotly interactive graph
+                  from pymatgen import Structure
+                outputs: []
+                execution_count: 1
+              - cell_type: code
+                metadata: {}
+                source: |-
+                  client = load_client() # provide apikey as argument to use api.mpcontribs.org
+                  contrib = client.contributions.get_entry(cid='5a862202d4f1443a18fab254').response().result
+                outputs: []
+              - cell_type: markdown
+                metadata: {}
+                source: "## Provenance Info"
+                outputs: []
+              - cell_type: code
+                metadata: {}
+                source: |-
+                  mask = ['title', 'authors', 'description', 'urls', 'other', 'project']
+                  prov = client.projects.get_entry(project=contrib['project'], mask=mask).response().result
+                  RecursiveDict(prov)
+                outputs:
+                - data:
+                    text/html: !raw '<div id="0fd0f705-f8ff-4b7d-991b-ca76b8f5efef" style="width:100%;"></div><script>render_json({divid: "0fd0f705-f8ff-4b7d-991b-ca76b8f5efef", data: {"project": "dtu", "title": "GLLB-SC Bandgaps", "authors": "I. Castelli, F. Hueser, M. Pandey, H. Li, K. Thygesen, B. Seger, A. Jain, K. Persson, G. Ceder, K. Jacobsen", "description": "Bandgaps calculated using GLLB-SC potential by Gritsenko, van Leeuwen, van Lenthe, and Baerends (GLLB), adapted by Kuisma et al to account for solids (-SC). The Kohn-Sham gap (\u0394E-KS) most basically refers to the energy difference between the bottom of the conduction band and the top of the valence band. The Quasi-Particle gap (\u0394E-QP) takes into account the derivative discontinuity (C) of the chemical potential and gives the bandgap as the difference between ionization potential and electron affinity.", "urls": {"main": "https://doi.org/10.1002/aenm.201400915", "PRA": "https://doi.org/10.1103/PhysRevA.51.1944", "PRB": "https://doi.org/10.1103/PhysRevB.82.115106"}, "id": "5cdb2591f72fc8ea319bc76f", "other": null}});</script>'
+                  metadata: {}
+                  transient: {}
+                  output_type: display_data
+              - cell_type: markdown
+                metadata: {}
+                source: "## Hierarchical Data for mp-2715"
+                outputs: []
+              - cell_type: code
+                metadata: {}
+                source: HierarchicalData(contrib['content'])
+                outputs:
+                - data:
+                    text/html: !raw '<div id="bee5dca9-c737-4f3e-8d75-5c964cb03a24" style="width:100%;"></div><script>render_json({divid: "bee5dca9-c737-4f3e-8d75-5c964cb03a24", data: {"data": {"\u0394E-KS": {"indirect": "0.0991 eV", "direct": "0.275 eV"}, "\u0394E-QP": {"indirect": "0.135 eV", "direct": "0.311 eV"}, "C": "0.0357 eV", "ICSD": "42613", "formula": "Co4As8"}}});</script>'
+                  metadata: {}
+                  transient: {}
+                  output_type: display_data

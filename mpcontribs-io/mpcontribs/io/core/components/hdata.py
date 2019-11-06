@@ -1,7 +1,7 @@
-from IPython.display import display_html
 from mpcontribs.io import mp_level01_titles
 from mpcontribs.io.core.recdict import RecursiveDict
 from mpcontribs.io.core.utils import nest_dict
+
 
 class HierarchicalData(RecursiveDict):
     """class to hold and display all hierarchical data in MPFile"""

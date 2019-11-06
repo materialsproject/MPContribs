@@ -1,10 +1,12 @@
-import uuid, json
+import uuid
+import json
 import pandas as pd
-from IPython.display import display_html, HTML
-from mpcontribs.io import mp_level01_titles, mp_id_pattern
-from mpcontribs.io.core.utils import nest_dict, clean_value
+from IPython.display import display_html, HTML, display
+from mpcontribs.io import mp_id_pattern
+from mpcontribs.io.core.utils import clean_value
 from mpcontribs.io.core.recdict import RecursiveDict
 from urllib.parse import urlparse
+
 
 class Table(pd.DataFrame):
     def __init__(self, data, columns=None, index=None,
@@ -53,7 +55,6 @@ class Table(pd.DataFrame):
     def to_backgrid_dict(self):
         """Backgrid-conform dict from DataFrame"""
         # shorten global import times by importing django here
-        import numpy as np
         from mpcontribs.io.core.utils import get_composition_from_string
         from pandas import MultiIndex
         import pymatgen.util as pmg_util
@@ -130,7 +131,8 @@ class Table(pd.DataFrame):
         config['ncols'] = self.ncols
         config['filters'] = self.filters
         jconfig = json.dumps(config)
-        html = '<div class="col-md-6" id="{}"></div><div class="pull-right" id="{}"></div>'.format(config['uuids'][0], config['uuids'][3])
+        html = '<div class="col-md-6" id="{}"></div>'.format(config['uuids'][0])
+        html += '<div class="pull-right" id="{}"></div>'.format(config['uuids'][3])
         html += '<div id="{}" style="width:100%;"></div>'.format(config['uuids'][1])
         html += '<div id="{}"></div>'.format(config['uuids'][2])
         html += f'<script>render_table({{table: {jtable}, config: {jconfig}}})</script>'
@@ -138,6 +140,7 @@ class Table(pd.DataFrame):
 
     def _ipython_display_(self):
         display(HTML(self.render()))
+
 
 class Tables(RecursiveDict):
     """class to hold and display multiple data tables"""
@@ -154,6 +157,7 @@ class Tables(RecursiveDict):
         for name, table in self.items():
             display_html('<h3>{}</h3>'.format(name), raw=True)
             display_html(table)
+
 
 class TabularData(RecursiveDict):
     """class to hold and display all tabular data of a MPFile"""

@@ -1,0 +1,87 @@
+test_name: test tables resource
+
+stages:
+    - name: single table in DataFrame format
+      request:
+          url: http://localhost:5000/tables/5cca3512e7004456f9b98867?page=1&per_page=2
+          method: GET
+      response:
+          status_code: 200
+          body:
+              project: carrier_transport
+              identifier: mp-27502
+              name: S(n)
+              cid: 5ac08be3d4f144332ce7b785
+              columns:
+              - T [K]
+              - 1e+16 cm⁻³ [μV/K]
+              - 1e+17 cm⁻³ [μV/K]
+              - 1e+18 cm⁻³ [μV/K]
+              - 1e+19 cm⁻³ [μV/K]
+              - 1e+20 cm⁻³ [μV/K]
+              data:
+              - - '100'
+                - "-733.286"
+                - "-535.075"
+                - "-338.206"
+                - "-156.799"
+                - "-41.4784"
+              - - '200'
+                - "-823.344"
+                - "-625.045"
+                - "-427.231"
+                - "-234.569"
+                - "-80.8270"
+              id: 5cca3512e7004456f9b98867
+    - name: specific table in Backgrid format
+      request:
+          url: http://localhost:5000/tables/5ac08be3d4f144332ce7b785/S(n)?page=1&per_page=2
+          method: GET
+      response:
+          status_code: 200
+          body:
+              total_count: 13
+              total_pages: 6
+              page: 1
+              last_page: 6
+              per_page: 2
+              items:
+              - T [K]: '100'
+                1e+16 cm⁻³ [μV/K]: "-733.286"
+                1e+17 cm⁻³ [μV/K]: "-535.075"
+                1e+18 cm⁻³ [μV/K]: "-338.206"
+                1e+19 cm⁻³ [μV/K]: "-156.799"
+                1e+20 cm⁻³ [μV/K]: "-41.4784"
+              - T [K]: '200'
+                1e+16 cm⁻³ [μV/K]: "-823.344"
+                1e+17 cm⁻³ [μV/K]: "-625.045"
+                1e+18 cm⁻³ [μV/K]: "-427.231"
+                1e+19 cm⁻³ [μV/K]: "-234.569"
+                1e+20 cm⁻³ [μV/K]: "-80.8270"
+    - name: specific table in Plotly format
+      request:
+          url: http://localhost:5000/tables/carrier_transport/mp-27502/S(n)?page=1&per_page=2
+          method: GET
+      response:
+          status_code: 200
+          body:
+              x:
+              - 1e+16
+              - 1e+17
+              - 1e+18
+              - 1e+19
+              - 1e+20
+              y:
+              - '100'
+              - '200'
+              z:
+              - - "-733.286"
+                - "-535.075"
+                - "-338.206"
+                - "-156.799"
+                - "-41.4784"
+              - - "-823.344"
+                - "-625.045"
+                - "-427.231"
+                - "-234.569"
+                - "-80.8270"

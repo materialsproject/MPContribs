@@ -1,5 +1,6 @@
 from flask_mongoengine import Document
-from mongoengine import fields, DynamicEmbeddedDocument
+from mongoengine import fields
+
 
 # DynamicDocument documents work in the same way as Document but any data /
 # attributes set to them will also be saved

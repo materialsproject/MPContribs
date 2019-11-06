@@ -1,18 +1,21 @@
-import re
-from requests import get
+"""Custom meta-class and MethodView for Swagger"""
+
 from importlib import import_module
-from flask import request
 from flask.views import MethodViewType
 from flasgger import SwaggerView as OriginalSwaggerView
 from marshmallow_mongoengine import ModelSchema
 from flask_mongoengine import BaseQuerySet
 from flask_mongorest.views import ResourceView
 
+
 # https://github.com/pallets/flask/blob/master/flask/views.py
 class SwaggerViewType(MethodViewType):
-    """Metaclass for `SwaggerView` ..."""
+    """Metaclass for `SwaggerView` defining custom attributes"""
+
     def __init__(cls, name, bases, d):
+        """initialize Schema, decorators, definitions, and tags"""
         super(SwaggerViewType, cls).__init__(name, bases, d)
+
         if not __name__ == cls.__module__:
             # e.g.: cls.__module__ = mpcontribs.api.projects.views
             views_path = cls.__module__.split('.')
@@ -28,9 +31,11 @@ class SwaggerViewType(MethodViewType):
             cls.definitions = {cls.schema_name: cls.Schema}
             cls.tags = [views_path[-2]]
 
+
 class SwaggerView(OriginalSwaggerView, ResourceView, metaclass=SwaggerViewType):
-    """A class-based view defining a `marshal` method to run query results
-    through the according marshmallow schema"""
+    """A class-based view defining additional methods"""
+
     def marshal(self, entries):
+        """run query results through the according marshmallow schema"""
         many = isinstance(entries, BaseQuerySet) or isinstance(entries, list)
         return self.Schema().dump(entries, many=many).data

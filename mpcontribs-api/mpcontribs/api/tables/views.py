@@ -4,6 +4,7 @@ from mpcontribs.api.tables.document import Tables
 
 tables = Blueprint("tables", __name__)
 
+
 class TableView(SwaggerView):
 
     def get(self, tid):
@@ -37,17 +38,18 @@ class TableView(SwaggerView):
         """
         page = int(request.args.get('page', 1))
         per_page = int(request.args.get('per_page', 20))
-        PER_PAGE_MAX = 1000 # different for number of table rows
+        PER_PAGE_MAX = 1000  # different for number of table rows
         per_page = PER_PAGE_MAX if per_page > PER_PAGE_MAX else per_page
         objects = Tables.objects.no_dereference()
         entry = objects.get(id=tid)
         nrows = len(entry.data)
-        max_page = int(nrows/per_page) + bool(nrows%per_page)
+        max_page = int(nrows/per_page) + bool(nrows % per_page)
         if page > max_page:
             entry.data = []
         else:
             entry.data = entry.paginate_field('data', page, per_page=per_page).items
         return self.marshal(entry)
+
 
 class BackgridTableView(SwaggerView):
 
@@ -100,16 +102,16 @@ class BackgridTableView(SwaggerView):
                             items:
                                 type: object
         """
-        search = request.args.get('q')
+        # search = request.args.get('q')
         page = int(request.args.get('page', 1))
         PER_PAGE_MAX = current_app.config['PER_PAGE_MAX']
         per_page = int(request.args.get('per_page', PER_PAGE_MAX))
         per_page = PER_PAGE_MAX if per_page > PER_PAGE_MAX else per_page
-        #order = request.args.get('order')
-        #sort_by = request.args.get('sort_by')
+        # order = request.args.get('order')
+        # sort_by = request.args.get('sort_by')
         table = Tables.objects.get(cid=cid, name=name)
-        #if search is not None: # TODO search first column?
-        #    objects = objects(content__data__formula__contains=search)
+        # if search is not None: # TODO search first column?
+        #     objects = objects(content__data__formula__contains=search)
         # TODO sorting
         items = [
             dict(zip(table.columns, row))
@@ -117,12 +119,13 @@ class BackgridTableView(SwaggerView):
         ]
         total_count = len(table.data)
         total_pages = int(total_count/per_page)
-        if total_pages%per_page:
+        if total_pages % per_page:
             total_pages += 1
         return {
             'total_count': total_count, 'total_pages': total_pages, 'page': page,
             'last_page': total_pages, 'per_page': per_page, 'items': items
         }
+
 
 class PlotlyTableView(SwaggerView):
 
@@ -182,7 +185,7 @@ class PlotlyTableView(SwaggerView):
         """
         page = int(request.args.get('page', 1))
         per_page = int(request.args.get('per_page', 20))
-        PER_PAGE_MAX = 200 # different for number of table rows
+        PER_PAGE_MAX = 200  # different for number of table rows
         per_page = PER_PAGE_MAX if per_page > PER_PAGE_MAX else per_page
         table = Tables.objects.get(project=project, identifier=identifier, name=name)
         x, y, z = [], [], []
@@ -200,9 +203,10 @@ class PlotlyTableView(SwaggerView):
 
         return {'x': x, 'y': y, 'z': z} if z else {'x': x, 'y': y}
 
+
 single_view = TableView.as_view(TableView.__name__)
 tables.add_url_rule('/<string:tid>', view_func=single_view,
-                    methods=['GET'])#, 'PUT', 'PATCH', 'DELETE'])
+                    methods=['GET'])  # , 'PUT', 'PATCH', 'DELETE'])
 
 table_view = BackgridTableView.as_view(BackgridTableView.__name__)
 tables.add_url_rule('/<string:cid>/<string:name>', view_func=table_view, methods=['GET'])

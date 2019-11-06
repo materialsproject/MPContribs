@@ -1,5 +1,7 @@
-from __future__ import unicode_literals, print_function
-import archieml, textwrap
+from __future__ import unicode_literals
+import six
+import archieml
+import textwrap
 from mpcontribs.io import replacements, mp_level01_titles
 from mpcontribs.io.core.mpfile import MPFileCore
 from mpcontribs.io.core.recdict import RecursiveDict, Quantity
@@ -7,6 +9,7 @@ from mpcontribs.io.core.utils import nest_dict, normalize_root_level
 from mpcontribs.io.core.utils import read_csv, make_pair
 from mpcontribs.io.core.components.tdata import Table
 from pandas import MultiIndex
+
 
 class MPFile(MPFileCore):
     """Object for representing a MP Contribution File in ArchieML format."""
@@ -40,8 +43,7 @@ class MPFile(MPFileCore):
             rdct.rec_update(nest_dict(value, keys))
 
             # reference to section to iterate or parse as CIF
-            section = rdct[mp_level01_titles[0]][root_key] \
-                    if is_general else rdct[root_key]
+            section = rdct[mp_level01_titles[0]][root_key] if is_general else rdct[root_key]
 
             # iterate to find CSV sections to parse
             # also parse propnet quantities
@@ -66,9 +68,8 @@ class MPFile(MPFileCore):
                             section.insert_default_plot_options(pd_obj, key)
                     elif Quantity is not None and isinstance(v, six.string_types) and ' ' in v:
                         quantity = Quantity.from_key_value(key, v)
-                        d = nest_dict(quantity.as_dict(), scope + [key]) # TODO quantity.symbol.name
+                        d = nest_dict(quantity.as_dict(), scope + [key])  # TODO quantity.symbol.name
                         section.rec_update(d, overwrite=True)
-
 
             # convert CIF strings into pymatgen structures
             if mp_level01_titles[3] in section:
@@ -86,7 +87,7 @@ class MPFile(MPFileCore):
     def get_string(self, df_head_only=False):
         from pymatgen import Structure
         lines, scope = [], []
-        for key,value in self.document.iterate():
+        for key, value in self.document.iterate():
             if isinstance(value, Table):
                 lines[-1] = lines[-1].replace('{', '[+').replace('}', ']')
                 header = any([isinstance(col, str) for col in value])
@@ -132,8 +133,7 @@ class MPFile(MPFileCore):
                 # insert key-value line
                 if value is not None:
                     val = str(value)
-                    value_lines = [val] if val.startswith('http') \
-                            else textwrap.wrap(val)
+                    value_lines = [val] if val.startswith('http') else textwrap.wrap(val)
                     if len(value_lines) > 1:
                         value_lines = [''] + value_lines + [':end']
                     lines.append(make_pair(
@@ -141,5 +141,6 @@ class MPFile(MPFileCore):
                         '\n'.join(value_lines)
                     ))
         return '\n'.join(lines) + '\n'
+
 
 MPFileCore.register(MPFile)

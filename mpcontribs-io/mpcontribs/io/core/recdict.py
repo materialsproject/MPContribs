@@ -1,4 +1,5 @@
-import uuid, json, os
+import uuid
+import json
 from collections import OrderedDict as _OrderedDict
 from collections import Mapping as _Mapping
 from mpcontribs.io import replacements, mp_level01_titles
@@ -8,16 +9,17 @@ try:
 except ImportError:
     Quantity = None
 
+
 class RecursiveDict(_OrderedDict):
     """extension of dict for internal representation of MPFile"""
 
     def rec_update(self, other=None, overwrite=False, replace_newlines=True):
         """https://gist.github.com/Xjs/114831"""
         # overwrite=False: don't overwrite existing unnested key
-        if other is None: # mode to force RecursiveDicts to be used
+        if other is None:  # mode to force RecursiveDicts to be used
             other = self
             overwrite = True
-        for key,value in other.items():
+        for key, value in other.items():
             if isinstance(key, str):
                 key = ''.join([replacements.get(c, c) for c in key])
             if key in self and \
@@ -50,11 +52,11 @@ class RecursiveDict(_OrderedDict):
                     from mpcontribs.io.core.components.tdata import Table
                     yield key, Table.from_dict(value)
                     continue
-                #if Quantity is not None and value.get('@class') == 'Quantity':
-                #    quantity = Quantity.from_dict(value)
-                #    yield key, quantity
-                #    continue
-                if 'display' in value and 'value' in value: # 'unit' is optional
+                # if Quantity is not None and value.get('@class') == 'Quantity':
+                #     quantity = Quantity.from_dict(value)
+                #     yield key, quantity
+                #     continue
+                if 'display' in value and 'value' in value:  # 'unit' is optional
                     yield (self.level, key), value['display']
                     continue
                 self.level += 1
@@ -97,7 +99,7 @@ class RecursiveDict(_OrderedDict):
         if mp_level01_titles[2] in self:
             self.rec_update(plots_dict)
         else:
-          self[mp_level01_titles[2]] = plots_dict[mp_level01_titles[2]]
+            self[mp_level01_titles[2]] = plots_dict[mp_level01_titles[2]]
 
     def render(self):
         """use JsonHuman library to render a dictionary"""

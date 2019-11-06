@@ -1,5 +1,7 @@
 from __future__ import unicode_literals, print_function
-import six, codecs, os
+import six
+import codecs
+import os
 from abc import ABCMeta
 from tempfile import gettempdir
 from mpcontribs.io import replacements, mp_level01_titles
@@ -12,6 +14,7 @@ from mpcontribs.io.core.components.sdata import StructuralData
 
 default_mpfile_path = os.path.join(gettempdir(), 'mpfile.txt')
 
+
 class MPFileCore(six.with_metaclass(ABCMeta, object)):
     """Abstract Base Class for representing a MP Contribution File"""
     def __init__(self, data=RecursiveDict()):
@@ -19,7 +22,7 @@ class MPFileCore(six.with_metaclass(ABCMeta, object)):
             self.document = RecursiveDict(data)
         else:
             raise ValueError('Need dict (or inherited class) to init MPFile.')
-        self.document.rec_update() # convert (most) OrderedDict's to RecursiveDict's
+        self.document.rec_update()  # convert (most) OrderedDict's to RecursiveDict's
         self.unique_mp_cat_ids = True
         self.max_contribs = 10
 
@@ -75,7 +78,7 @@ class MPFileCore(six.with_metaclass(ABCMeta, object)):
     @classmethod
     def from_contribution(cls, contrib):
         """construct MPFile from contribution (see rest.adapter.submit_contribution)"""
-        if not 'identifier' in contrib or not 'content' in contrib:
+        if 'identifier' not in contrib or 'content' not in contrib:
             raise ValueError('Dict not in contribution-style format')
         recdict = RecursiveDict({contrib['identifier']: contrib['content']})
         return cls.from_dict(recdict)
@@ -253,6 +256,7 @@ class MPFileCore(six.with_metaclass(ABCMeta, object)):
         return identifier
 
     def __repr__(self): return self.get_string(df_head_only=True)
+
     def __str__(self):
         return self.get_string(df_head_only=True)
 

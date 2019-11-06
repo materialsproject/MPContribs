@@ -1,0 +1,74 @@
+test_name: test projects resource
+
+stages:
+    - name: DTU project info and mask
+      request:
+          url: http://localhost:5000/projects/dtu?mask=title
+          method: GET
+      response:
+          status_code: 200
+          body:
+              title: "GLLB-SC Bandgaps"
+              id: "dtu"
+    - name: projects search and mask
+      request:
+          url: http://localhost:5000/projects/?search=defect&mask=title
+          method: GET
+      response:
+          status_code: 200
+          body:
+              - title: "Defect Genome PCFC"
+                id: "defect_genome_pcfc_materials"
+              - title: "Defect Physics of Air-Stable BiOI"
+                id: "bioi_defects"
+    - name: DTU columns
+      request:
+          url: http://localhost:5000/projects/dtu/columns
+          method: GET
+      response:
+          status_code: 200
+          body:
+              - C
+              - ICSD
+              - formula
+              - ΔE-KS.direct
+              - ΔE-KS.indirect
+              - ΔE-QP.direct
+              - ΔE-QP.indirect
+    - name: DTU table
+      request:
+          url: http://localhost:5000/projects/dtu/table?columns=formula,%CE%94E-KS.direct&page=1&per_page=2&q=Na&order=asc&sort_by=%CE%94E-KS.direct%20%5BeV%5D
+          method: GET
+      response:
+          status_code: 200
+          body:
+              total_count: 242
+              total_pages: 122
+              page: 1
+              last_page: 122
+              per_page: 2
+              items:
+                  - identifier: "https://materialsproject.org/materials/mp-7433"
+                    id: "http://localhost:8080/explorer/5abd8ffad4f144494f2cf1b4"
+                    formula: "Cu2Na2Se2"
+                    "ΔE-KS.direct [eV]": "0.139"
+                  - identifier: "https://materialsproject.org/materials/mp-31593"
+                    id: "http://localhost:8080/explorer/5abd8ffad4f144494f2cf1b7"
+                    formula: "Co2Na8O8"
+                    "ΔE-KS.direct [eV]": "0.177"
+    - name: DTU graph
+      request:
+          url: http://localhost:5000/projects/dtu/graph?columns=%CE%94E-KS.direct&filters=%CE%94E-QP.direct__lt%3A0.2&page=1&per_page=2
+          method: GET
+      response:
+          status_code: 200
+          body:
+              - "x":
+                  - "mp-15642"
+                  - "mp-32447"
+                "y":
+                  - "0.125"
+                  - "0.142"
+                "text":
+                  - "5a862206d4f1443a18fab255"
+                  - "5a86220dd4f1443a18fab257"

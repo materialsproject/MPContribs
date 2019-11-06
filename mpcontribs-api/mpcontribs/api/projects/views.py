@@ -1,4 +1,5 @@
-import os, flask_mongorest
+import os
+import flask_mongorest
 from mongoengine.queryset import DoesNotExist
 from mongoengine.context_managers import no_dereference
 from mongoengine.queryset.visitor import Q
@@ -33,12 +34,14 @@ class ProjectsResource(Resource):
     def get_optional_fields(self):
         return ['authors', 'description', 'other', 'urls']
 
+
 class ProjectsView(SwaggerView):
     resource = ProjectsResource
     methods = [List, Fetch, Create, Delete, Update, BulkUpdate]
 
 
 # ADDITIONAL VIEWS
+
 
 class TableView(SwaggerView):
 
@@ -182,7 +185,7 @@ class TableView(SwaggerView):
             objects = objects(Q(identifier__contains=search) | Q(**kwargs))
         sort_by_key = sort_by
         if ' ' in sort_by and sort_by[-1] == ']':
-            sort_by = sort_by.split(' ')[0] # remove unit
+            sort_by = sort_by.split(' ')[0]  # remove unit
             sort_by_key = f'content.data.{sort_by}.value'
         elif sort_by in columns[2:]:
             sort_by_key = f'content.data.{sort_by}'
@@ -206,8 +209,8 @@ class TableView(SwaggerView):
                 cell = ''
                 if 'CIF' in col:
                     structures = doc['content']['structures']
-                    if '.' in col: # grouped columns
-                        sname = '.'.join(col.split('.')[:-1]) # remove CIF string from field name
+                    if '.' in col:  # grouped columns
+                        sname = '.'.join(col.split('.')[:-1])  # remove CIF string from field name
                         for d in structures:
                             if d['name'] == sname:
                                 cell = f"{explorer}/{d['id']}.cif"
@@ -224,13 +227,14 @@ class TableView(SwaggerView):
 
         total_count = objects.count()
         total_pages = int(total_count/per_page)
-        if total_pages%per_page:
+        if total_pages % per_page:
             total_pages += 1
 
         return {
             'total_count': total_count, 'total_pages': total_pages, 'page': page,
             'last_page': total_pages, 'per_page': per_page, 'items': items
         }
+
 
 class GraphView(SwaggerView):
 
@@ -304,6 +308,7 @@ class GraphView(SwaggerView):
                 f'content__data__{col.replace(".", "__")}__display__exists', True
             ) for col in columns))
             objects = ContributionsDeref.objects(**query).only(*mask)
+            objects = objects.order_by('_id')
 
             if filters:
                 query = construct_query(filters)
@@ -318,6 +323,7 @@ class GraphView(SwaggerView):
                     data[idx]['y'].append(val.split(' ')[0])
                     data[idx]['text'].append(str(obj.id))
             return data
+
 
 class ColumnsView(SwaggerView):
 
@@ -346,9 +352,9 @@ class ColumnsView(SwaggerView):
             {"$project": {"akv": {"$objectToArray": "$content.data"}}},
             {"$unwind": "$akv"},
             {"$project": {"root": "$akv.k", "level2": {
-                "$switch": { "branches": [{
-                    "case": {"$eq": [{"$type":"$akv.v"}, "object"]},
-                    "then": {"$objectToArray":"$akv.v"}
+                "$switch": {"branches": [{
+                    "case": {"$eq": [{"$type": "$akv.v"}, "object"]},
+                    "then": {"$objectToArray": "$akv.v"}
                 }], "default": [{}]}
             }}},
             {"$unwind": "$level2"},
@@ -369,7 +375,7 @@ class ColumnsView(SwaggerView):
             columns += objects[0]['columns']
 
         projects = sorted(project.split('_'))
-        names = Structures.objects(project=project).distinct("name");
+        names = Structures.objects(project=project).distinct("name")
         if names:
             if len(projects) == len(names):
                 for p, n in zip(projects, sorted(names)):
@@ -380,6 +386,7 @@ class ColumnsView(SwaggerView):
 
         return sorted(columns)
 
+
 table_view = TableView.as_view(TableView.__name__)
 projects.add_url_rule('/<string:project>/table', view_func=table_view, methods=['GET'])
 
@@ -389,23 +396,22 @@ projects.add_url_rule('/<string:project>/graph', view_func=graph_view, methods=[
 columns_view = ColumnsView.as_view(ColumnsView.__name__)
 projects.add_url_rule('/<string:project>/columns', view_func=columns_view, methods=['GET'])
 
-#def patch(self, project):
-#    """Partially update a project's provenance entry"""
-#    return NotImplemented()
-#    schema = self.Schema(dump_only=('id', 'project')) # id/project read-only
-#    schema.opts.model_build_obj = False
-#    payload = schema.load(request.json, partial=True)
-#    if payload.errors:
-#        return payload.errors # TODO raise JsonError 400?
-#    # set fields defined in model
-#    if 'urls' in payload.data:
-#        urls = payload.data.pop('urls')
-#        payload.data.update(dict(
-#            ('urls__'+key, getattr(urls, key)) for key in urls
-#        ))
-#    # set dynamic fields for urls
-#    for key, url in request.json.get('urls', {}).items():
-#        payload.data['urls__'+key] = url
-#    return payload.data
-#    #Projects.objects(project=project).update(**payload.data)
-
+# def patch(self, project):
+#     """Partially update a project's provenance entry"""
+#     return NotImplemented()
+#     schema = self.Schema(dump_only=('id', 'project')) # id/project read-only
+#     schema.opts.model_build_obj = False
+#     payload = schema.load(request.json, partial=True)
+#     if payload.errors:
+#         return payload.errors # TODO raise JsonError 400?
+#     # set fields defined in model
+#     if 'urls' in payload.data:
+#         urls = payload.data.pop('urls')
+#         payload.data.update(dict(
+#             ('urls__'+key, getattr(urls, key)) for key in urls
+#         ))
+#     # set dynamic fields for urls
+#     for key, url in request.json.get('urls', {}).items():
+#         payload.data['urls__'+key] = url
+#     return payload.data
+#     #Projects.objects(project=project).update(**payload.data)

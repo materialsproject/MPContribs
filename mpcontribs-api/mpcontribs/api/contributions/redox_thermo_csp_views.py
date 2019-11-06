@@ -1,4 +1,6 @@
-import re, json, os, sys
+import re
+import json
+import os
 from flask import request
 import pandas as pd
 from pandas.io.json.normalize import nested_to_record
@@ -8,10 +10,10 @@ from scipy.constants import pi, R
 from scipy.integrate import quad
 import pymatgen.core.periodic_table as ptable
 from pymatgen.core.composition import Composition
-from pymatgen.core.units import FloatWithUnit
 from mpcontribs.api.core import SwaggerView
 from mpcontribs.api.contributions.document import Contributions
 from mpcontribs.api.tables.document import Tables
+
 
 def split_comp(compstr):
     """
@@ -29,14 +31,15 @@ def split_comp(compstr):
 
     for l in range(len(compstr_spl)):
         try:
-            if ptable.Element(compstr_spl[l]).is_alkaline or ptable.Element(
-                compstr_spl[l]).is_alkali or ptable.Element(compstr_spl[l]).is_rare_earth_metal:
+            if ptable.Element(compstr_spl[l]).is_alkaline \
+               or ptable.Element(compstr_spl[l]).is_alkali \
+               or ptable.Element(compstr_spl[l]).is_rare_earth_metal:
                 if am_1 is None:
                     am_1 = [compstr_spl[l], float(compstr_spl[l + 1])]
                 elif am_2 is None:
                     am_2 = [compstr_spl[l], float(compstr_spl[l + 1])]
-            if ptable.Element(compstr_spl[l]).is_transition_metal and not (
-                ptable.Element(compstr_spl[l]).is_rare_earth_metal):
+            if ptable.Element(compstr_spl[l]).is_transition_metal \
+               and not (ptable.Element(compstr_spl[l]).is_rare_earth_metal):
                 if tm_1 is None:
                     tm_1 = [compstr_spl[l], float(compstr_spl[l + 1])]
                 elif tm_2 is None:
@@ -46,6 +49,7 @@ def split_comp(compstr):
             pass
 
     return am_1, am_2, tm_1, tm_2
+
 
 def remove_comp_one(compstr):
     compspl = split_comp(compstr=compstr)
@@ -58,6 +62,7 @@ def remove_comp_one(compstr):
                 compstr_rem = compstr_rem + str(compspl[i][0])
     compstr_rem = compstr_rem + "Ox"
     return compstr_rem
+
 
 def add_comp_one(compstr):
     """
@@ -77,6 +82,7 @@ def add_comp_one(compstr):
 
     return samp_new
 
+
 def s_th_o(temp):
     # constants: Chase, NIST-JANAF Thermochemistry tables, Fourth Edition, 1998
     if temp < 700:
@@ -94,16 +100,18 @@ def s_th_o(temp):
     szero += shomdat[6]
     return 0.5 * szero
 
+
 def rootfind(a, b, args, funciso_here):
     solutioniso = 0
     try:
-        solutioniso = brentq(funciso_here, 0.01, 0.49, args=args) # works for most cases
-    except ValueError: # starting values a,b for cases where 0.01/0.49 are not sign changing
+        solutioniso = brentq(funciso_here, 0.01, 0.49, args=args)  # works for most cases
+    except ValueError:  # starting values a,b for cases where 0.01/0.49 are not sign changing
         try:
             solutioniso = brentq(funciso_here, a, b, args=args)
         except ValueError:
-            solutioniso = None # if no solution can be found
+            solutioniso = None  # if no solution can be found
     return solutioniso
+
 
 def enth_arctan(x, dh_max, dh_min, t, s):
     """
@@ -115,6 +123,7 @@ def enth_arctan(x, dh_max, dh_min, t, s):
     """
     return (((dh_max - dh_min) / pi) * (pd.np.arctan((x - t) * s) + (pi / 2))) + dh_min
 
+
 def entr_fe(x, fit_param_fe):
     """
     Calculates the entropy values for SrFeOx based on the fit parameters in fit_param_fe
@@ -122,6 +131,7 @@ def entr_fe(x, fit_param_fe):
     :return:                dS of SrFeOx at delta = x with delta_0 accounted for
     """
     return fit_param_fe[0]/2 + fit_param_fe[1] + (2*fit_param_fe[2]*R * (pd.np.log(0.5-x) - pd.np.log(x)))
+
 
 def entr_mixed(x, s, shift, delta_0, act_s1, fit_param_fe):
     """
@@ -136,6 +146,7 @@ def entr_mixed(x, s, shift, delta_0, act_s1, fit_param_fe):
     efe = entr_fe(x+delta_0, fit_param_fe)
     return ((act_s1*efe)/pi) * (pd.np.arctan((x-delta_0)*s)+pi/2) + (1-act_s1)*efe + shift
 
+
 def entr_dilute_spec(x, s_v, a, delta_0, s_th_o):
     """
     :param x:       Delta_delta, change in non-stoichiometric redox extent vs. a reference
@@ -147,6 +158,7 @@ def entr_dilute_spec(x, s_v, a, delta_0, s_th_o):
     :return:        fit function based on the model in Bulfin et. al., doi: 10.1039/C7TA00822H
     """
     return s_th_o + s_v + (2 * a * R * (pd.np.log(0.5 - (x + delta_0)) - pd.np.log(x + delta_0)))
+
 
 def dh_ds(delta, s_th, p):
     d_delta = delta - p['delta_0']
@@ -164,15 +176,19 @@ def dh_ds(delta, s_th, p):
         ds = entr_dilute_spec(delta-p['fit_par_ent.c'], *ds_pars)
     return dh, ds
 
+
 def funciso(delta, iso, x, p, s_th):
     dh, ds = dh_ds(delta, s_th, p)
     return dh - x*ds + R*iso*x/2
 
+
 def funciso_theo(delta, iso, x, p, t_d_perov, t_d_brownm, dh_min, dh_max, act):
     dh = d_h_num_dev_calc(delta=delta, dh_1=dh_min, dh_2=dh_max, temp=x, act=act)
-    ds = d_s_fundamental(delta=delta, dh_1=dh_min, dh_2=dh_max, temp=x,
-    act=act, t_d_perov=t_d_perov, t_d_brownm=t_d_brownm)
+    ds = d_s_fundamental(
+        delta=delta, dh_1=dh_min, dh_2=dh_max, temp=x, act=act, t_d_perov=t_d_perov, t_d_brownm=t_d_brownm
+    )
     return dh - x*ds + R*iso*x/2
+
 
 def d_h_num_dev_calc(delta, dh_1, dh_2, temp, act):
     """
@@ -187,6 +203,7 @@ def d_h_num_dev_calc(delta, dh_1, dh_2, temp, act):
     return -((0.5 * d_h_num_dev_0(delta, dh_1, dh_2, temp, act)) - (
         0.5 * d_h_num_dev_1(delta, dh_1, dh_2, temp, act))) / (
         (1 / (R * temp)) - (1 / (R * (temp + 0.01))))
+
 
 def d_s_fundamental(delta, dh_1, dh_2, temp, act, t_d_perov, t_d_brownm):
     """
@@ -205,6 +222,7 @@ def d_s_fundamental(delta, dh_1, dh_2, temp, act, t_d_perov, t_d_brownm):
     d_s = p_mol_ent_o + entr_con + entr_vib
     return d_s
 
+
 def d_h_num_dev_0(delta, dh_1, dh_2, temp, act):
     """
     Part of the numerical derivative calculation used to find dH as a function of delta and temperature
@@ -218,6 +236,7 @@ def d_h_num_dev_0(delta, dh_1, dh_2, temp, act):
     result_0 = p_o2_calc(delta, dh_1, dh_2, temp, act)
     return pd.np.log(result_0)
 
+
 def d_h_num_dev_1(delta, dh_1, dh_2, temp, act):
     """
     Part of the numerical derivative calculation used to find dH as a function of delta and temperature
@@ -230,6 +249,7 @@ def d_h_num_dev_1(delta, dh_1, dh_2, temp, act):
     """
     result_1 = p_o2_calc(delta, dh_1, dh_2, temp + 0.01, act)
     return pd.np.log(result_1)
+
 
 def entr_con_mixed(temp, p_o2_l, dh_1, dh_2, act):
     """
@@ -265,17 +285,18 @@ def entr_con_mixed(temp, p_o2_l, dh_1, dh_2, act):
     delta_2 = delta_fun(stho, temp, p_o2_l, dh_2, ((1 - act) / 2))
 
     if delta_1 > 0.:
-        entr_con_1 = (1 / delta_max_1) * (a / 2) * R * (pd.np.log(delta_max_1 - delta_1) - pd.np.log(delta_1)) * (
-        delta_1 / (delta_1 + delta_2))
+        entr_con_1 = (1 / delta_max_1) * (a / 2) * R * (pd.np.log(delta_max_1 - delta_1) - pd.np.log(delta_1)) \
+                * (delta_1 / (delta_1 + delta_2))
     else:
         entr_con_1 = 0.
     if delta_2 > 0.:
-        entr_con_2 = (1 / delta_max_2) * (a / 2) * R * (pd.np.log(delta_max_2 - delta_2) - pd.np.log(delta_2)) * (
-        delta_2 / (delta_1 + delta_2))
+        entr_con_2 = (1 / delta_max_2) * (a / 2) * R * (pd.np.log(delta_max_2 - delta_2) - pd.np.log(delta_2)) \
+                * (delta_2 / (delta_1 + delta_2))
     else:
         entr_con_2 = 0.
 
     return entr_con_1 + entr_con_2
+
 
 def vib_ent(temp, t_d_perov, t_d_brownm):
     """
@@ -289,8 +310,10 @@ def vib_ent(temp, t_d_perov, t_d_brownm):
     def s_int(temp, t_d):
         def d_y(temp, t_d):
             y = t_d / temp
+
             def integrand(x):
                 return x ** 3 / (pd.np.exp(x) - 1)
+
             if temp != 0:
                 integral_y = quad(integrand, 0, y)[0]
                 d = integral_y * (3 / (y ** 3))
@@ -307,6 +330,7 @@ def vib_ent(temp, t_d_perov, t_d_brownm):
     s_brownm = s_int(temp, t_d_brownm)
 
     return 2 * s_perov - (2 * s_brownm)
+
 
 def p_o2_calc(delta, dh_1, dh_2, temp, act):
     """
@@ -326,6 +350,7 @@ def p_o2_calc(delta, dh_1, dh_2, temp, act):
 
     return pd.np.exp(sol_p_o2_l)
 
+
 def delta_mix(temp, p_o2_l, dh_1, dh_2, act):
     """
     Calculates the total non-stoichiometry delta of a perovskite solid solution with two redox-active species
@@ -339,21 +364,26 @@ def delta_mix(temp, p_o2_l, dh_1, dh_2, act):
     return delta_fun(stho, temp, p_o2_l, dh_1, (act / 2)) + \
         + delta_fun(stho, temp, p_o2_l, dh_2, ((1 - act) / 2))
 
+
 def delta_fun(stho, temp, p_o2_l, dh, d_max):
     common = pd.np.exp(stho*d_max/R)
     common *= pd.np.exp(p_o2_l)**(-d_max/2.)
     common *= pd.np.exp(-dh*d_max/(R*temp))
     return d_max * common / (1. + common)
 
+
 def funciso_redox(po2, delta, x, p, s_th):
     dh, ds = dh_ds(delta, s_th, p)
     return dh - x*ds + R*po2*x/2
 
+
 def funciso_redox_theo(po2, delta, x, p, t_d_perov, t_d_brownm, dh_min, dh_max, act):
     dh = d_h_num_dev_calc(delta=delta, dh_1=dh_min, dh_2=dh_max, temp=x, act=act)
-    ds = d_s_fundamental(delta=delta, dh_1=dh_min, dh_2=dh_max, temp=x,
-    act=act, t_d_perov=t_d_perov, t_d_brownm=t_d_brownm)
+    ds = d_s_fundamental(
+        delta=delta, dh_1=dh_min, dh_2=dh_max, temp=x, act=act, t_d_perov=t_d_perov, t_d_brownm=t_d_brownm
+    )
     return dh - x*ds + R*po2*x/2
+
 
 def d_h_num_dev_calc(delta, dh_1, dh_2, temp, act):
     """
@@ -369,8 +399,10 @@ def d_h_num_dev_calc(delta, dh_1, dh_2, temp, act):
         0.5 * d_h_num_dev_1(delta, dh_1, dh_2, temp, act))) / (
         (1 / (R * temp)) - (1 / (R * (temp + 0.01))))
 
+
 def isobar_line_elling(iso, x):
     return -R*iso*x/2
+
 
 def init_isographs(cid, plot_type, payload):
     mask = ['identifier', 'content.data']
@@ -384,9 +416,9 @@ def init_isographs(cid, plot_type, payload):
             else:
                 data[k] = v
 
-    data['compstr_disp'] = remove_comp_one(data['formula']) # for user display
+    data['compstr_disp'] = remove_comp_one(data['formula'])  # for user display
     if data['compstr_disp'] == data['formula']:
-        data['formula'] = add_comp_one(data['formula'])     # compstr must contain '1' such as in "Sr1Fe1Ox"
+        data['formula'] = add_comp_one(data['formula'])  # compstr must contain '1' such as in "Sr1Fe1Ox"
     data['compstr_disp'] = [''.join(g) for _, g in groupby(str(data['compstr_disp']), str.isalpha)]
 
     data['experimental_data_available'] = data.get('fit_type_entr')
@@ -400,7 +432,7 @@ def init_isographs(cid, plot_type, payload):
     data['td_brownm'] = data["debye_temp.brownmillerite"]
     data['tens_avail'] = data["tensors_available"]
 
-    a, b = 1e-10, 0.5-1e-10 # limiting values for non-stoichiometry delta in brentq
+    a, b = 1e-10, 0.5-1e-10  # limiting values for non-stoichiometry delta in brentq
 
     if plot_type == "isotherm":                          # pressure on the x-axis
         x_val = pd.np.log(pd.np.logspace(payload['rng'][0], payload['rng'][1], num=100))
@@ -429,7 +461,7 @@ class IsographView(SwaggerView):
               in: path
               type: string
               required: true
-              enum: [isotherm, isobar, isoredox, enthalph_dH, entropy_dS, ellingham]
+              enum: [isotherm, isobar, isoredox, enthalpy_dH, entropy_dS, ellingham]
               description: type of isograph
             - name: iso
               in: query
@@ -504,7 +536,7 @@ class IsographView(SwaggerView):
 
             res_interp, res_fit = [], []
             for delta_val, res_i in zip(x_val, resiso):    # show interpolation
-                if pars['delta_min'] < delta_val < pars['delta_max']:   # result within experimentally covered delta range
+                if pars['delta_min'] < delta_val < pars['delta_max']:  # result within experimentally covered δ range
                     res_fit.append(res_i)
                     res_interp.append(None)
                 else:                                   # result outside this range
@@ -514,7 +546,7 @@ class IsographView(SwaggerView):
             res_fit, res_interp = None, None    # don't plot any experimental data if it is not available
 
         try:                                # calculate theoretical data
-            for xv in x_val[::4]: # use less data points for theoretical graphs to improve speed
+            for xv in x_val[::4]:  # use less data points for theoretical graphs to improve speed
                 if plot_type in ["isobar", "isoredox", "enthalpy_dH", "entropy_dS", "ellingham"]:
                     args_theo = (payload['iso'], xv)
                 elif plot_type == "isotherm":
@@ -551,13 +583,12 @@ class IsographView(SwaggerView):
                     )
                     ds = d_s_fundamental(
                         delta=payload["del"], dh_1=pars['dh_min'], dh_2=pars['dh_max'], temp=xv,
-                         act=pars["act_mat"], t_d_perov=pars['td_perov'], t_d_brownm=pars['td_brownm']
+                        act=pars["act_mat"], t_d_perov=pars['td_perov'], t_d_brownm=pars['td_brownm']
                     )
                     solutioniso_theo = (dh - ds * xv) / 1000.
                     resiso_theo.append(solutioniso_theo)
-        except ValueError: # if brentq function finds no zero point due to plot out of range
+        except ValueError:  # if brentq function finds no zero point due to plot out of range
             resiso_theo.append(None)
-
 
         x = list(pd.np.exp(x_val)) if plot_type == "isotherm" else list(x_val)
         x_theo = x[::4]
@@ -581,14 +612,15 @@ class IsographView(SwaggerView):
                 y_min = min(pd.np.append(resiso, resiso_theo)) * 0.8
         elif plot_type == "entropy_dS":
             y_min = -10             # limiting values for the plot
-            if max(pd.np.append(resiso, resiso_theo)) > 250 :
+            if max(pd.np.append(resiso, resiso_theo)) > 250:
                 y_max = 250
             else:
                 y_max = max(pd.np.append(resiso, resiso_theo)) * 1.2
 
         response = [
-            {'x': x_exp, 'y': res_fit, 'name': "exp_fit", 'line': {'color': 'rgb(5,103,166)', 'width': 2.5 }},
-            {'x': x_exp, 'y': res_interp, 'name': "exp_interp", 'line': {'color': 'rgb(5,103,166)', 'width': 2.5, 'dash': 'dot' }},
+            {'x': x_exp, 'y': res_fit, 'name': "exp_fit", 'line': {'color': 'rgb(5,103,166)', 'width': 2.5}},
+            {'x': x_exp, 'y': res_interp, 'name': "exp_interp",
+             'line': {'color': 'rgb(5,103,166)', 'width': 2.5, 'dash': 'dot'}},
             {'x': x_theo, 'y': resiso_theo, 'name': "theo", 'line': {'color': 'rgb(217,64,41)', 'width': 2.5}},
             [y_min, y_max],
             [pars['compstr_disp'], pars['compstr_exp'], pars['tens_avail'], pars["last_updated"]]
@@ -599,6 +631,7 @@ class IsographView(SwaggerView):
                 'name': 'isobar line', 'line': {'color': 'rgb(100,100,100)', 'width': 2.5}
             }
         return response
+
 
 class WaterSplitting:
     @staticmethod
@@ -647,6 +680,7 @@ class WaterSplitting:
         po2 = (WaterSplitting().k_water_splitting(temp) / h2_h2o) ** 2
 
         return po2
+
 
 class CO2Splitting:
     @staticmethod
@@ -701,6 +735,7 @@ class CO2Splitting:
 
         return po2
 
+
 class EnergyAnalysis:
     """
     Analyze the energy input for different redox cycles
@@ -737,8 +772,8 @@ class EnergyAnalysis:
             shomdat = [41.96126, 8.622053, -1.499780, 0.098119, -11.15764]
         temp_frac = temp / 1000
 
-        c_p_steam = shomdat[0] + (shomdat[1] * temp_frac) + (shomdat[2] * (temp_frac ** 2)) + (
-        shomdat[3] * (temp_frac ** 3)) + (shomdat[4] / (temp_frac ** 2))
+        c_p_steam = shomdat[0] + (shomdat[1] * temp_frac) + (shomdat[2] * (temp_frac ** 2))
+        c_p_steam += (shomdat[3] * (temp_frac ** 3)) + (shomdat[4] / (temp_frac ** 2))
 
         return c_p_steam
 
@@ -746,15 +781,17 @@ class EnergyAnalysis:
     def get_heat_capacity(temp, td):
         # credits to Dr. Joseph Montoya, LBNL
         t_ratio = temp / td
+
         def integrand(x):
             return (x ** 4 * pd.np.exp(x)) / (pd.np.exp(x) - 1) ** 2
+
         if isinstance(t_ratio, int) or isinstance(t_ratio, float):
             cv_p = 9 * R * (t_ratio ** 3) * quad(integrand, 0, t_ratio ** -1)[0]
         else:
             cv_p = []
             for i in range(len(t_ratio)):
                 cv_i = 9 * R * (t_ratio[i] ** 3) * quad(integrand, 0, t_ratio[i] ** -1)[0]
-                cv_p = np.append(cv_p, cv_i)
+                cv_p = pd.np.append(cv_p, cv_i)
         return cv_p * 5
 
     @staticmethod
@@ -808,8 +845,9 @@ class EnergyAnalysis:
                     # calculate the area under the step for each step
                     dq = 0
                     for i in range(len(delta_x0_x1)):
-                        cv_step = EnergyAnalysis().get_heat_capacity_mixed(temp_x0_x1[i], delta_x0_x1[i], td_p=t_d_perov,
-                        td_b=t_d_brownm)[1]
+                        cv_step = EnergyAnalysis().get_heat_capacity_mixed(
+                            temp_x0_x1[i], delta_x0_x1[i], td_p=t_d_perov, td_b=t_d_brownm
+                        )[1]
                         q_step = cv_step * del_temp
                         dq += q_step
                     dqs = pd.np.append(dqs, dq)
@@ -834,8 +872,9 @@ class EnergyAnalysis:
                 # calculate the area under the step for each step
                 dq = 0
                 for i in range(len(delta_x0_x1)):
-                    cv_step = EnergyAnalysis().get_heat_capacity_mixed(temp_x0_x1[i], delta_x0_x1[i], td_p=t_d_perov,
-                    td_b=t_d_brownm)[1]
+                    cv_step = EnergyAnalysis().get_heat_capacity_mixed(
+                        temp_x0_x1[i], delta_x0_x1[i], td_p=t_d_perov, td_b=t_d_brownm
+                    )[1]
                     q_step = cv_step * del_temp
                     dq += q_step
 
@@ -908,7 +947,8 @@ class EnergyAnalysis:
         # stepwise. The actual integral calculation would take too long, as each enthalpy value is calculated
         # numerically
 
-        # We are only considering the case of linear change of both pressure and temperature between reduction and oxidation here
+        # We are only considering the case of linear change of both pressure and temperature between reduction and
+        # oxidation here
         if celsius:
             tempval = pd.np.linspace(temp_1 + 273.15, temp_2 + 273.15, num=enth_steps)
         else:

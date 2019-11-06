@@ -1,14 +1,17 @@
 from flask_mongoengine import Document
 from mongoengine import fields, DynamicEmbeddedDocument
 
+
 class Kernelspec(fields.EmbeddedDocument):
     name = fields.StringField(required=True, default='python3')
     display_name = fields.StringField(required=True, default='Python 3')
     language = fields.StringField()
 
+
 class CodemirrorMode(fields.EmbeddedDocument):
     name = fields.StringField(required=True, default='ipython')
     version = fields.IntField(required=True, default=3)
+
 
 class LanguageInfo(fields.EmbeddedDocument):
     name = fields.StringField(required=True, default='python')
@@ -19,6 +22,7 @@ class LanguageInfo(fields.EmbeddedDocument):
     version = fields.StringField()
     codemirror_mode = fields.EmbeddedDocumentField(CodemirrorMode, help_text='codemirror')
 
+
 class Metadata(fields.EmbeddedDocument):
     kernelspec = fields.EmbeddedDocumentField(
         Kernelspec, required=True, help_text='kernelspec', default=Kernelspec
@@ -28,12 +32,14 @@ class Metadata(fields.EmbeddedDocument):
         default=LanguageInfo
     )
 
+
 class Cell(DynamicEmbeddedDocument):
     cell_type = fields.StringField(required=True, default='code', help_text='cell type')
     metadata = fields.DictField(help_text='cell metadata')
     source = fields.StringField(required=True, default="print('hello')", help_text='source')
     outputs = fields.ListField(fields.DictField(), help_text='outputs')
     execution_count = fields.IntField(help_text='exec count')
+
 
 class Notebooks(Document):
     nbformat = fields.IntField(required=True, default=4, help_text="nbformat version")
