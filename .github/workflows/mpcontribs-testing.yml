@@ -1,11 +1,20 @@
-name: MPContribs testing
+name: MPContribs Testing
 on: [push, pull_request]
 jobs:
   test:
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v1
     - name: build the stack
-      run: docker-compose up -d api
+      run: docker-compose build api
     - name: test
-      run: docker run --network container:api appropriate/curl -s --retry 10 --retry-connrefused http://localhost:5000/
+      run: |
+          docker run -d --name mpcontribs_api mpcontribs_api
+          docker run --network container:mpcontribs_api appropriate/curl -s --retry 10 --retry-connrefused http://localhost:5000/
+
+#pycodestyle mpcontribs-api
+#mypy mpcontribs-api/mpcontribs/api
+## stop the build if there are Python syntax errors or undefined names
+#flake8 --count --show-source --statistics mpcontribs-api
+## exit-zero treats all errors as warnings.
+#flake8 --count --exit-zero --max-complexity=25 --statistics mpcontribs-api
