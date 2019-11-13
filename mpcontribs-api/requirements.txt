@@ -27,7 +27,7 @@ more-itertools==7.0.0
 jupyter_enterprise_gateway @ git+https://github.com/jupyter/enterprise_gateway@v2.0.0rc1#egg=enterprise_gateway-2.0.0rc1
 pandas==0.23.4
 pymatgen==2019.3.27
-gunicorn[gevent]>=19.9.0
+gunicorn[gevent]==19.9.0
 werkzeug>=0.15.3
 plotly==3.10.0
 PyYAML==5.1.2
