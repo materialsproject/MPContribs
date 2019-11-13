@@ -6,15 +6,13 @@ jobs:
     steps:
     - uses: actions/checkout@v1
     - name: build the stack
-      run: docker-compose build api
+      run: |
+          docker-compose up -d api
+          docker-compose build test
     - name: test
       run: |
-          docker run -d --name mpcontribs_api mpcontribs_api
-          docker run --network container:mpcontribs_api appropriate/curl -s --retry 10 --retry-connrefused http://localhost:5000/
-
-#pycodestyle mpcontribs-api
-#mypy mpcontribs-api/mpcontribs/api
-## stop the build if there are Python syntax errors or undefined names
-#flake8 --count --show-source --statistics mpcontribs-api
-## exit-zero treats all errors as warnings.
-#flake8 --count --exit-zero --max-complexity=25 --statistics mpcontribs-api
+          docker run --network container:mpcontribs_api_1 appropriate/curl -s --retry 10 --retry-connrefused http://localhost:5000/
+          docker run --network container:mpcontribs_api_1 mpcontribs_test pytest mpcontribs/api/projects/tests/test_projects.tavern.yaml
+          docker run mpcontribs_test pycodestyle mpcontribs/api
+          docker run mpcontribs_test mypy mpcontribs/api
+          docker run mpcontribs_test flake8 --count --show-source --exit-zero --max-complexity=25 --statistics mpcontribs/api

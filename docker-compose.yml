@@ -60,6 +60,11 @@ services:
     environment:
       - KG_ALLOW_ORIGIN='*'
 
+  test:
+    build:
+      context: ./mpcontribs-api
+      dockerfile: DockerfileTest
+
   docs:
     image: squidfunk/mkdocs-material
     volumes:

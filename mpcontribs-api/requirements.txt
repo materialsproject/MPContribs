@@ -31,7 +31,3 @@ gunicorn[gevent]>=19.9.0
 werkzeug>=0.15.3
 plotly==3.10.0
 PyYAML==5.1.2
-pytest>=5.2.2
-pycodestyle>=2.5.0
-mypy>=0.740
-flake8>=3.7.9
