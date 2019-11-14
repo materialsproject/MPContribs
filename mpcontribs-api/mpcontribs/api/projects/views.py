@@ -37,13 +37,14 @@ class ProjectsResource(Resource):
 
 class ProjectsView(SwaggerView):
     resource = ProjectsResource
-    methods = [List, Fetch, Create, Delete, Update, BulkUpdate]
+    methods = [List, Fetch]#, Create, Delete, Update, BulkUpdate]
 
 
 # ADDITIONAL VIEWS
 
 
 class TableView(SwaggerView):
+    resource = ProjectsResource
 
     def get(self, project):
         """Retrieve a table of contributions for a project.
@@ -237,6 +238,7 @@ class TableView(SwaggerView):
 
 
 class GraphView(SwaggerView):
+    resource = ProjectsResource
 
     def get(self, project):
         """Retrieve overview graph for a project.
@@ -281,18 +283,21 @@ class GraphView(SwaggerView):
             200:
                 description: x-y-data in plotly format
                 schema:
-                    type: array
-                    items:
-                        type: object
-                        properties:
-                            x:
-                                type: array
-                                items:
-                                    type: number
-                            y:
-                                type: array
-                                items:
-                                    type: number
+                    type: object
+                    properties:
+                        data:
+                            type: array
+                            items:
+                                type: object
+                                properties:
+                                    x:
+                                        type: array
+                                        items:
+                                            type: number
+                                    y:
+                                        type: array
+                                        items:
+                                            type: number
         """
         mask = ['content.data', 'identifier']
         columns = request.args.get('columns').split(',')
@@ -322,10 +327,12 @@ class GraphView(SwaggerView):
                     data[idx]['x'].append(obj.identifier)
                     data[idx]['y'].append(val.split(' ')[0])
                     data[idx]['text'].append(str(obj.id))
-            return data
+
+            return {'data': data}
 
 
 class ColumnsView(SwaggerView):
+    resource = ProjectsResource
 
     def get(self, project):
         """Retrieve all possible columns for a project.
@@ -342,9 +349,12 @@ class ColumnsView(SwaggerView):
             200:
                 description: list of columns in dot notation
                 schema:
-                    type: array
-                    items:
-                        type: string
+                    type: object
+                    properties:
+                        data:
+                            type: array
+                            items:
+                                type: string
         """
         columns = []
         objects = list(Contributions.objects.aggregate(*[
@@ -384,7 +394,7 @@ class ColumnsView(SwaggerView):
             else:
                 columns.append('CIF')
 
-        return sorted(columns)
+        return {'data': sorted(columns)}
 
 
 table_view = TableView.as_view(TableView.__name__)
