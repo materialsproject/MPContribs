@@ -6,6 +6,8 @@ jobs:
     steps:
     - uses: actions/checkout@v1
     - name: build the stack
+      env:
+          MPCONTRIBS_MONGO_HOST: ${{ secrets.MPCONTRIBS_MONGO_HOST }}
       run: |
           docker-compose up -d api
           docker-compose build test
