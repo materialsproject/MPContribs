@@ -3,24 +3,25 @@ test_name: test projects resource
 stages:
     - name: DTU project info and mask
       request:
-          url: http://localhost:5000/projects/dtu?mask=title
+          url: http://localhost:5000/projects/dtu/?_fields=project,title
           method: GET
       response:
           status_code: 200
           body:
+              project: "dtu"
               title: "GLLB-SC Bandgaps"
-              id: "dtu"
     - name: projects search and mask
       request:
-          url: http://localhost:5000/projects/?search=defect&mask=title
+          url: http://localhost:5000/projects/?description__icontains=defect&_fields=project,title
           method: GET
       response:
           status_code: 200
           body:
-              - title: "Defect Genome PCFC"
-                id: "defect_genome_pcfc_materials"
-              - title: "Defect Physics of Air-Stable BiOI"
-                id: "bioi_defects"
+              data:
+                  - title: "Defect Genome PCFC"
+                    project: "defect_genome_pcfc_materials"
+                  - title: "Defect Physics of Air-Stable BiOI"
+                    project: "bioi_defects"
     - name: DTU columns
       request:
           url: http://localhost:5000/projects/dtu/columns
@@ -28,13 +29,14 @@ stages:
       response:
           status_code: 200
           body:
-              - C
-              - ICSD
-              - formula
-              - ΔE-KS.direct
-              - ΔE-KS.indirect
-              - ΔE-QP.direct
-              - ΔE-QP.indirect
+              data:
+                  - C
+                  - ICSD
+                  - formula
+                  - ΔE-KS.direct
+                  - ΔE-KS.indirect
+                  - ΔE-QP.direct
+                  - ΔE-QP.indirect
     - name: DTU table
       request:
           url: http://localhost:5000/projects/dtu/table?columns=formula,%CE%94E-KS.direct&page=1&per_page=2&q=Na&order=asc&sort_by=%CE%94E-KS.direct%20%5BeV%5D
@@ -63,12 +65,13 @@ stages:
       response:
           status_code: 200
           body:
-              - "x":
-                  - "mp-15642"
-                  - "mp-32447"
-                "y":
-                  - "0.125"
-                  - "0.142"
-                "text":
-                  - "5a862206d4f1443a18fab255"
-                  - "5a86220dd4f1443a18fab257"
+              data:
+                  - "x":
+                      - "mp-15642"
+                      - "mp-32447"
+                    "y":
+                      - "0.125"
+                      - "0.142"
+                    "text":
+                      - "5a862206d4f1443a18fab255"
+                      - "5a86220dd4f1443a18fab257"
