@@ -1,5 +1,6 @@
 """Flask App for MPContribs API"""
 
+import os
 import logging
 import yaml
 from importlib import import_module
@@ -94,34 +95,76 @@ def create_app():
         if getattr(klass, 'resource', None) is not None:
             klass.resource.schema = klass.Schema
 
-            for rule in app.url_map.iter_rules():
-                endpoint = app.view_functions[rule.endpoint]
-                endpoint.view_class = klass
-                if collection in rule.endpoint:
-                    for verb in rule.methods.difference(('HEAD', 'OPTIONS')):
-                        print(rule, rule.endpoint, verb)
-                        key = "{}_{}".format(rule.endpoint, verb.lower())
-                        if key == f'{collection}_get':
-                            spec = {  # FETCH
-                                'operationId': 'get_entry',
-                                'parameters': [{
-                                    'name': 'pk',
-                                    'in': 'path',
-                                    'type': 'string',
-                                    'description': f'primary key for {klass.doc_name[:-1]}'
-                                }],
-                                'responses': {
-                                    200: {
-                                        'description': f'single {klass.doc_name} entry',
-                                        'schema': {'$ref': f'#/definitions/{klass.schema_name}'}
+            dir_path = os.path.join(app.config["SWAGGER"]["doc_dir"], collection)
+            if not os.path.exists(dir_path):
+                os.makedirs(dir_path)
+
+            for method in klass.methods:
+                file_path = os.path.join(dir_path, method.__name__ + '.yml')
+                fields_param = {
+                    'name': '_fields',
+                    'in': 'query',
+                    'default': klass.resource.fields,
+                    'type': 'array',
+                    'items': {
+                        'type': 'string',
+                        'enum': klass.resource.fields + klass.resource.get_optional_fields() + ['_all']
+                    },
+                    'description': 'list of fields to include in response'
+                }
+
+                if method.__name__ == 'Fetch':
+                    spec = {
+                        'summary': f'Retrieve a single {collection} entry.',
+                        'operationId': 'get_entry',
+                        'parameters': [{
+                            'name': 'pk',
+                            'in': 'path',
+                            'type': 'string',
+                            'description': f'{collection[:-1]} (primary key)'
+                        }, fields_param],
+                        'responses': {
+                            200: {
+                                'description': f'single {collection} entry',
+                                'schema': {'$ref': f'#/definitions/{klass.schema_name}'}
+                            }
+                        }
+                    }
+                elif method.__name__ == 'List':
+                    filter_params = [{
+                        'name': f'{k}__{op.op}',
+                        'in': 'query',
+                        'type': 'string',
+                        'description': f'filter {k} via ${op.op}'
+                    } for k, v in klass.resource.filters.items() for op in v]
+                    spec = {
+                        'summary': f'Retrieve and filter {collection}.',
+                        'operationId': 'get_entries',
+                        'parameters': [fields_param, {
+                            'name': '_order_by',
+                            'in': 'query',
+                            'type': 'string',
+                            'enum': klass.resource.allowed_ordering,
+                            'description': f'order {collection}'
+                        }] + filter_params,
+                        'responses': {
+                            200: {
+                                'description': f'list of {collection}',
+                                'schema': {
+                                    'type': 'object',
+                                    'properties': {
+                                        'data': {
+                                            'type': 'array',
+                                            'items': {'$ref': f'#/definitions/{klass.schema_name}'}
+                                        }
                                     }
                                 }
                             }
-                        else:
-                            spec = {}
+                        }
+                    }
 
-                        with open(f'{app.config["SWAGGER"]["doc_dir"]}/{key}.yml', 'w') as f:
-                            yaml.dump(spec, f)
+                with open(file_path, 'w') as f:
+                    yaml.dump(spec, f)
 
         # except AttributeError as ex:
         #     logger.warning('Failed to register {}: {}'.format(

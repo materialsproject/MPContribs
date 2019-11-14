@@ -30,7 +30,8 @@ class ProjectsResource(Resource):
     allowed_ordering = ['project']
     paginate = False
 
-    def get_optional_fields(self):
+    @staticmethod
+    def get_optional_fields():
         return ['authors', 'description', 'other', 'urls']
 
 
