@@ -75,3 +75,33 @@ stages:
                     "text":
                       - "5a862206d4f1443a18fab255"
                       - "5a86220dd4f1443a18fab257"
+    - name: create a project
+      request:
+          url: http://localhost:5000/projects/
+          method: POST
+          json:
+              project: dmref
+              title: Quasiparticle GW BandStructure
+              authors: W. Lambrecht, S. Lyu, A.P. Jaroenjittichai
+              description: >-
+                  Band structure calculations were performed with the QSGW (quasiparticle self-consistent GW) approach
+                  using the codes described in https://www.questaal.org/ using the method described in PhysRev B76,
+                  165106 (2007) and PhysRevLett 96, 226402 (2006). The band structures use the 0.8Σ approximation,
+                  meaning 0.8 of the self-energy is included. See Phys. Rev. Materials 2, 013807 (2018) for
+                  justification.
+              urls:
+                  main: https://sites.google.com/a/case.edu/dmref/
+                  PRB: https://doi.org/10.1103/PhysRevB.76.165106
+                  PRL: https://doi.org/10.1103/PhysRevLett.96.226402
+                  PRM: https://doi.org/10.1103/PhysRevMaterials.2.013807
+      response:
+          status_code: 200
+          body:
+              project: dmref
+              title: Quasiparticle GW BandStructure
+    - name: delete a project
+      request:
+          url: http://localhost:5000/projects/dmref/
+          method: DELETE
+      response:
+          status_code: 200
