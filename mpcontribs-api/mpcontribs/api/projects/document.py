@@ -13,7 +13,7 @@ class Projects(Document):
         )
     )
     title = fields.StringField(
-        min_length=5, max_length=30, required=True, unique=True,
+        min_length=5, max_length=40, required=True, unique=True,
         help_text='(short) title for the project/dataset'
     )
     authors = fields.StringField(
