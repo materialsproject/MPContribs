@@ -114,7 +114,16 @@ stages:
                     project: "defect_genome_pcfc_materials"
                   - title: "Defect Physics of Air-Stable BiOI"
                     project: "bioi_defects"
-
+    - name: bulk update projects
+      request:
+          url: http://localhost:5000/projects/
+          method: PUT
+          json:
+              authors: P. Huck
+      response:
+          status_code: 200
+          body:
+              count: 3
 
 ---
 test_name: text additional projects views
