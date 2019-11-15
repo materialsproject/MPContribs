@@ -114,9 +114,10 @@ def create_app():
                     'description': 'list of fields to include in response'
                 }
 
+                spec = None
                 if method.__name__ == 'Fetch':
                     spec = {
-                        'summary': f'Retrieve a single {collection} entry.',
+                        'summary': f'Retrieve a {collection[:-1]}.',
                         'operationId': 'get_entry',
                         'parameters': [{
                             'name': 'pk',
@@ -163,9 +164,62 @@ def create_app():
                             }
                         }
                     }
+                elif method.__name__ == 'Create':
+                    spec = {
+                        'summary': f'Create a new {collection[:-1]}.',
+                        'operationId': 'create_entry',
+                        'parameters': [{
+                            'name': f'{collection[:-1]}',
+                            'in': 'body',
+                            'description': f'The object to use for {collection[:-1]} creation',
+                            'schema': {'$ref': f'#/definitions/{klass.schema_name}'}
+                        }],
+                        'responses': {
+                            200: {
+                                'description': f'{collection[:-1]} created',
+                                'schema': {'$ref': f'#/definitions/{klass.schema_name}'}
+                            }
+                        }
+                    }
+                elif method.__name__ == 'Update':
+                    spec = {
+                        'summary': f'Update a {collection[:-1]}.',
+                        'operationId': 'update_entry',
+                        'parameters': [{
+                            'name': 'pk',
+                            'in': 'path',
+                            'description': f'The {collection[:-1]} (primary key) to update',
+                            'type': 'string'
+                        }, {
+                            'name': f'{collection[:-1]}',
+                            'in': 'body',
+                            'description': f'The object to use for {collection[:-1]} update',
+                            'schema': {'$ref': f'#/definitions/{klass.schema_name}'}
+                        }],
+                        'responses': {
+                            200: {
+                                'description': f'{collection[:-1]} updated',
+                                'schema': {'$ref': f'#/definitions/{klass.schema_name}'}
+                            }
+                        }
+                    }
+                elif method.__name__ == 'Delete':
+                    spec = {
+                        'summary': f'Delete a {collection[:-1]}.',
+                        'operationId': 'delete_entry',
+                        'parameters': [{
+                            'name': 'pk',
+                            'in': 'path',
+                            'description': f'The {collection[:-1]} (primary key) to delete',
+                        }],
+                        'responses': {
+                            200: {'description': f'{collection[:-1]} deleted'}
+                        }
+                    }
 
-                with open(file_path, 'w') as f:
-                    yaml.dump(spec, f)
+                if spec:
+                    with open(file_path, 'w') as f:
+                        yaml.dump(spec, f)
 
         # except AttributeError as ex:
         #     logger.warning('Failed to register {}: {}'.format(
@@ -173,37 +227,3 @@ def create_app():
         #     ))
 
     return app
-
-    # if m.__name__ == 'List':
-    #     method.specs_dict = {
-    #         'operationId': 'get_entries',
-    #         'parameters': [{
-    #             'name': '_fields',
-    #             'in': 'query',
-    #             'type': 'array',
-    #             'items': {'type': 'string'},
-    #             'description': 'list of fields to include in response'
-    #         }, {
-    #             'name': '_order_by',
-    #             'in': 'query',
-    #             'type': 'string',
-    #             'description': 'field by which to order response'
-    #         }], # TODO _skip and _limit: utilize the built-in functions of mongodb
-    #         'responses': {
-    #             '200': {
-    #                 'description': f'list of {doc_name}',
-    #                 'schema': {
-    #                     'type': 'array',
-    #                     'items': {'$ref': f'#/definitions/{schema_name}'}
-    #                 }
-    #             }
-    #         }
-    #     }
-    #     for fld, ops in cls.resource.filters.items():
-    #         for op in ops:
-    #             method.specs_dict['parameters'].append({
-    #                 'name': f'{fld}__{op.op}',
-    #                 'in': 'query',
-    #                 'type': 'string',
-    #                 'description': f'filter {fld} by {op.op}'
-    #             })

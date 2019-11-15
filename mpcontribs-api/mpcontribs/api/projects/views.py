@@ -37,7 +37,7 @@ class ProjectsResource(Resource):
 
 class ProjectsView(SwaggerView):
     resource = ProjectsResource
-    methods = [List, Fetch]#, Create, Delete, Update, BulkUpdate]
+    methods = [List, Fetch, Create, Delete, Update, BulkUpdate]
 
 
 # ADDITIONAL VIEWS
