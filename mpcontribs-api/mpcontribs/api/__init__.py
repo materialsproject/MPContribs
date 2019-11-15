@@ -203,6 +203,26 @@ def create_app():
                             }
                         }
                     }
+                elif method.__name__ == 'BulkUpdate':
+                    spec = {
+                        'summary': f'Update {collection} in bulk.',
+                        'operationId': 'update_entries',
+                        'parameters': [{
+                            'name': f'{collection}',
+                            'in': 'body',
+                            'description': f'The object to use for {collection} bulk update',
+                            'schema': {'$ref': f'#/definitions/{klass.schema_name}'}
+                        }],
+                        'responses': {
+                            200: {
+                                'description': f'Number of {collection} updated',
+                                'schema': {
+                                    'type': 'object',
+                                    'properties': {'count': {'type': 'integer'}}
+                                }
+                            }
+                        }
+                    }
                 elif method.__name__ == 'Delete':
                     spec = {
                         'summary': f'Delete a {collection[:-1]}.',
