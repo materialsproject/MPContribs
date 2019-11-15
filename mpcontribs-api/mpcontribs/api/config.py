@@ -9,10 +9,11 @@ JSON_SORT_KEYS = False
 JSON_ADD_STATUS = False
 FLASK_LOG_LEVEL = 'DEBUG' if DEBUG else 'WARNING'
 SECRET_KEY = b'super-secret'  # reset in local prod config
+MPCONTRIBS_DB = 'mpcontribs-dev' if DEBUG else 'mpcontribs'
+MPCONTRIBS_MONGO_HOST = os.environ.get('MPCONTRIBS_MONGO_HOST', 'localhost')
 MONGODB_SETTINGS = {
-    'host': "mongodb+srv://{0}/mpcontribs?retryWrites=true".format(
-        os.environ.get('MPCONTRIBS_MONGO_HOST', 'localhost')
-    ), 'connect': False, 'db': 'mpcontribs'
+    'host': f"mongodb+srv://{MPCONTRIBS_MONGO_HOST}/{MPCONTRIBS_DB}?retryWrites=true",
+    'connect': False, 'db': MPCONTRIBS_DB
 }
 SWAGGER = {
     'doc_dir': os.path.join(os.path.dirname(__file__), 'swagger'),

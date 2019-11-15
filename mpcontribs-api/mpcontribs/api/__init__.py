@@ -22,8 +22,8 @@ logger = logging.getLogger('app')
 def get_collections(db):
     """get list of collections in DB"""
     conn = db.app.extensions['mongoengine'][db]['conn']
-    return ['projects']
-    # return conn.mpcontribs.list_collection_names()
+    dbname = db.app.config.get('MPCONTRIBS_DB')
+    return conn[dbname].list_collection_names()
 
 
 def get_resource_as_string(name, charset='utf-8'):
