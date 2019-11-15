@@ -385,21 +385,6 @@ def funciso_redox_theo(po2, delta, x, p, t_d_perov, t_d_brownm, dh_min, dh_max, 
     return dh - x*ds + R*po2*x/2
 
 
-def d_h_num_dev_calc(delta, dh_1, dh_2, temp, act):
-    """
-    Calculates dH using the numerical derivative with f(x0) + f(x0+h) / h
-    this function is split up in f(x0) and f(x0+h) for simplification and understanding
-    :param delta:   non-stoichiometry delta
-    :param dh_1:    reaction enthalpy of perovskite 1
-    :param dh_2:    reaction enthalpy of perovskite 2
-    :param temp:    temperature in K
-    :return:        enthalpy change dH
-    """
-    return -((0.5 * d_h_num_dev_0(delta, dh_1, dh_2, temp, act)) - (
-        0.5 * d_h_num_dev_1(delta, dh_1, dh_2, temp, act))) / (
-        (1 / (R * temp)) - (1 / (R * (temp + 0.01))))
-
-
 def isobar_line_elling(iso, x):
     return -R*iso*x/2
 
