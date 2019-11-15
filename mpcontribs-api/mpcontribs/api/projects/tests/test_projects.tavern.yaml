@@ -1,10 +1,99 @@
+---
 test_name: test projects resource
 
+marks:
+    - base
+
 stages:
+    - name: create DTU project
+      request:
+          url: http://localhost:5000/projects/
+          method: POST
+          json:
+              project: dtu
+              title: GLLB-SC Bandgaps
+              description: >-
+                  Bandgaps calculated using GLLB-SC potential by Gritsenko, van Leeuwen, van Lenthe, and Baerends
+                  (GLLB), adapted by Kuisma et al to account for solids (-SC). The Kohn-Sham gap (ΔE-KS) most basically
+                  refers to the energy difference between the bottom of the conduction band and the top of the valence
+                  band. The Quasi-Particle gap (ΔE-QP) takes into account the derivative discontinuity (C) of the
+                  chemical potential and gives the bandgap as the difference between ionization potential and electron
+                  affinity.
+              authors: I. Castelli, F. Hueser, M. Pandey, H. Li, K. Thygesen, B. Seger, A. Jain, K. Persson, G. Ceder, K. Jacobsen
+              urls:
+                  main: https://doi.org/10.1002/aenm.201400915
+                  PRA: https://doi.org/10.1103/PhysRevA.51.1944
+                  PRB: https://doi.org/10.1103/PhysRevB.82.115106
+      response:
+          status_code: 200
+          body:
+              project: dtu
+              title: GLLB-SC Bandgaps
+    - name: create PCFC project
+      request:
+          url: http://localhost:5000/projects/
+          method: POST
+          json:
+              project: defect_genome_pcfc_materials
+              title: Defect Genome PCFC
+              description: >-
+                  Defect Genome of Cubic Perovskites for Fuel Cell Applications. Employing computationally tractable ab
+                  initio models driven by highly scalable workflows, to study formation and interaction of various point
+                  defects (e.g., O vacancies, H interstitials, and Y substitutional dopant), in over 80 cubic
+                  perovskites, for potential proton-conducting ceramic fuel cell (PCFC) applications.
+              authors: J. Balachandran, L. Lin, J. Anchell, C. Bridges, P. Ganesh
+              urls:
+                  main: https://doi.org/10.1021/acs.jpcc.7b08716
+      response:
+          status_code: 200
+          body:
+              project: defect_genome_pcfc_materials
+              title: Defect Genome PCFC
+    - name: create BiOI project
+      request:
+          url: http://localhost:5000/projects/
+          method: POST
+          json:
+              project: bioi_defects
+              title: Defect Physics of Air-Stable BiOI
+              description: >-
+                  Strongly Enhanced Photovoltaic Performance and Defect Physics of Air-Stable Bismuth Oxyiodide (BiOI).
+                  Bismuth-based compounds have recently gained increasing attention as potentially non-toxic and
+                  defect-tolerant solar absorbers. However, many of the new materials recently investigated show limited
+                  photovoltaic performance. Herein, we explore in detail one such compound through theory and
+                  experiment, namely bismuth oxyiodide (BiOI). We grow BiOI thin films by chemical vapor transport and
+                  find them to maintain the same tetragonal phase in ambient air for at least 197 days. Our computations
+                  suggest BiOI to be tolerant to antisite and vacancy defects. We demonstrate an all-inorganic solar
+                  cell (ITO|NiOx|BiOI|ZnO|Al) with negligible hysteresis and up to 80% external quantum efficiency under
+                  select monochromatic excitation. The short-circuit current densities and power conversion efficiencies
+                  under AM 1.5G illumination are nearly double those of previously-reported BiOI solar cells, as well as
+                  other bismuth halide and chalcohalide photovoltaics recently explored by many groups. Through a
+                  detailed loss analysis using optical characterization, photoemission spectroscopy and device modeling,
+                  we provide direction for future improvements in efficiency. Our work demonstrates that BiOI,
+                  previously considered to be a poor photocatalyst, is promising for photovoltaics.
+              authors: >-
+                  R. Hoye, L. Lee, RC Kurchin, T. Huq, KHL Zhang, M. Sponseller, L. Nienhaus, RE Brandt, J. Jean, JA
+                  Polizzotti, A. Kursumovic, MG Bawendi, V. Bulovic, V. Stevanovic, T. Buonassisi, JL MacManus-Driscoll
+              urls:
+                  main: https://doi.org/10.1002/adma.201702176
+                  data: https://doi.org/10.17863/CAM.10792
+              other:
+                  J|SC: short-circuit current densities
+                  V|OC: open-circuit voltage
+                  FF: ??
+                  PCE: power conversion efficiency
+                  EQE: external quantum efficiency
+      response:
+          status_code: 200
+          body:
+              project: bioi_defects
+              title: Defect Physics of Air-Stable BiOI
     - name: DTU project info and mask
       request:
-          url: http://localhost:5000/projects/dtu/?_fields=project,title
+          url: http://localhost:5000/projects/dtu/
           method: GET
+          params:
+              _fields: project,title
       response:
           status_code: 200
           body:
@@ -12,8 +101,11 @@ stages:
               title: "GLLB-SC Bandgaps"
     - name: projects search and mask
       request:
-          url: http://localhost:5000/projects/?description__icontains=defect&_fields=project,title
+          url: http://localhost:5000/projects/
           method: GET
+          params:
+              description__icontains: defect
+              _fields: project,title
       response:
           status_code: 200
           body:
@@ -22,6 +114,15 @@ stages:
                     project: "defect_genome_pcfc_materials"
                   - title: "Defect Physics of Air-Stable BiOI"
                     project: "bioi_defects"
+
+
+---
+test_name: text additional projects views
+
+marks:
+    - extra
+
+stages:
     - name: DTU columns
       request:
           url: http://localhost:5000/projects/dtu/columns
@@ -75,33 +176,29 @@ stages:
                     "text":
                       - "5a862206d4f1443a18fab255"
                       - "5a86220dd4f1443a18fab257"
-    - name: create a project
+
+---
+test_name: clean up projects
+
+marks:
+    - base
+
+stages:
+    - name: delete DTU project
       request:
-          url: http://localhost:5000/projects/
-          method: POST
-          json:
-              project: dmref
-              title: Quasiparticle GW BandStructure
-              authors: W. Lambrecht, S. Lyu, A.P. Jaroenjittichai
-              description: >-
-                  Band structure calculations were performed with the QSGW (quasiparticle self-consistent GW) approach
-                  using the codes described in https://www.questaal.org/ using the method described in PhysRev B76,
-                  165106 (2007) and PhysRevLett 96, 226402 (2006). The band structures use the 0.8Σ approximation,
-                  meaning 0.8 of the self-energy is included. See Phys. Rev. Materials 2, 013807 (2018) for
-                  justification.
-              urls:
-                  main: https://sites.google.com/a/case.edu/dmref/
-                  PRB: https://doi.org/10.1103/PhysRevB.76.165106
-                  PRL: https://doi.org/10.1103/PhysRevLett.96.226402
-                  PRM: https://doi.org/10.1103/PhysRevMaterials.2.013807
+          url: http://localhost:5000/projects/dtu/
+          method: DELETE
       response:
           status_code: 200
-          body:
-              project: dmref
-              title: Quasiparticle GW BandStructure
-    - name: delete a project
+    - name: delete PCFC project
       request:
-          url: http://localhost:5000/projects/dmref/
+          url: http://localhost:5000/projects/defect_genome_pcfc_materials/
+          method: DELETE
+      response:
+          status_code: 200
+    - name: delete BiOI project
+      request:
+          url: http://localhost:5000/projects/bioi_defects/
           method: DELETE
       response:
           status_code: 200
