@@ -123,6 +123,7 @@ def create_app():
                             'name': 'pk',
                             'in': 'path',
                             'type': 'string',
+                            'required': True,
                             'description': f'{collection[:-1]} (primary key)'
                         }, fields_param],
                         'responses': {
@@ -188,8 +189,9 @@ def create_app():
                         'parameters': [{
                             'name': 'pk',
                             'in': 'path',
-                            'description': f'The {collection[:-1]} (primary key) to update',
-                            'type': 'string'
+                            'type': 'string',
+                            'required': True,
+                            'description': f'The {collection[:-1]} (primary key) to update'
                         }, {
                             'name': f'{collection[:-1]}',
                             'in': 'body',
@@ -230,7 +232,9 @@ def create_app():
                         'parameters': [{
                             'name': 'pk',
                             'in': 'path',
-                            'description': f'The {collection[:-1]} (primary key) to delete',
+                            'type': 'string',
+                            'required': True,
+                            'description': f'The {collection[:-1]} (primary key) to delete'
                         }],
                         'responses': {
                             200: {'description': f'{collection[:-1]} deleted'}
