@@ -15,8 +15,8 @@ def index(request):
     ctx = RequestContext(request)
     try:
         client = load_client()
-        resp = client.projects.get_entries(mask=['project']).response()
-        ctx['projects'] = [r['project'] for r in resp.result]
+        resp = client.projects.get_entries(_fields=['project']).response()
+        ctx['projects'] = [r['project'] for r in resp.result['data']]
     except Exception as ex:
         ctx['alert'] = f'{ex}'
     return render(request, "mpcontribs_explorer_index.html", ctx.flatten())

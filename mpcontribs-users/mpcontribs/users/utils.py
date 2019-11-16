@@ -50,9 +50,8 @@ def get_context(project, columns=None):
     ctx = {'project': project}
     client = load_client()
     mask = ["title", "authors", "description", "urls", "other"]
-    prov = client.projects.get_entry(project=project, mask=mask).response().result
-    for k in ['id', 'project']:
-        prov.pop(k)
+    prov = client.projects.get_entry(pk=project, _fields=mask).response().result
+    prov.pop('project')
     ctx['title'] = prov.pop('title')
     ctx['descriptions'] = prov['description'].strip().split('.', 1)
     authors = [a.strip() for a in prov['authors'].split(',') if a]
@@ -60,7 +59,9 @@ def get_context(project, columns=None):
     ctx['urls'] = list(prov['urls'].values())
     if prov['other']:
         ctx['other'] = RecursiveDict(prov['other']).render()
-    all_columns = client.projects.get_columns(project=project).response().result
+    all_columns = client.projects.get_columns(project=project).response().result['data']
+    if not all_columns:
+        raise ValueError(f'no contributions found for {project}!')
     if columns:
         ncols = len(columns) + 3
         columns += [

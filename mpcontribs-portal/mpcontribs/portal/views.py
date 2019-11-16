@@ -11,8 +11,8 @@ def index(request):
     ctx['landing_pages'] = []
     mask = ['project', 'title', 'authors']
     client = load_client()
-    provenances = client.projects.get_entries(mask=mask).response().result
-    for provenance in provenances:
+    provenances = client.projects.get_entries(_fields=mask).response().result
+    for provenance in provenances['data']:
         entry = {'project': provenance['project']}
         try:
             entry['url'] = reverse(provenance['project'] + ':index')

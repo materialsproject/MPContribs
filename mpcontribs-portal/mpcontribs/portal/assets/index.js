@@ -31,14 +31,14 @@ $(document).ready(function () {
                     $(".row.equal").find(".col-md-4").show();
                 }
                 var query = {
-                    search: params.term,
-                    mask: "project"
+                    description__icontains: params.term,
+                    _fields: "project"
                 };
                 return query;
             },
             processResults: function (data) {
                 var results = [];
-                $.each(data, function(index, element) {
+                $.each(data['data'], function(index, element) {
                     var entry = {id: index, text: element["project"]};
                     results.push(entry);
                 });
