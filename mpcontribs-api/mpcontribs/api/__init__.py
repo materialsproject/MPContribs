@@ -134,33 +134,56 @@ def create_app():
                         }
                     }
                 elif method.__name__ == 'List':
-                    filter_params = [{
-                        'name': f'{k}__{op.op}',
-                        'in': 'query',
-                        'type': 'string',
-                        'description': f'filter {k} via ${op.op}'
-                    } for k, v in klass.resource.filters.items() for op in v]
-                    spec = {
-                        'summary': f'Retrieve and filter {collection}.',
-                        'operationId': 'get_entries',
-                        'parameters': [fields_param, {
+                    params = [fields_param]
+
+                    if klass.resource.allowed_ordering:
+                        params.append({
                             'name': '_order_by',
                             'in': 'query',
                             'type': 'string',
                             'enum': klass.resource.allowed_ordering,
                             'description': f'order {collection}'
-                        }] + filter_params,
+                        })
+
+                    if klass.resource.filters:
+                        params += [{
+                            'name': k if op.op == 'exact' else f'{k}__{op.op}',
+                            'in': 'query',
+                            'type': 'string',
+                            'description': f'filter {k}' if op.op == 'exact' else f'filter {k} via ${op.op}'
+                        } for k, v in klass.resource.filters.items() for op in v]
+
+                    schema_props = {
+                        'data': {
+                            'type': 'array',
+                            'items': {'$ref': f'#/definitions/{klass.schema_name}'}
+                        }
+                    }
+                    if klass.resource.paginate:
+                        schema_props['has_more'] = {'type': 'boolean'}
+                        params.append({
+                            'name': '_skip',
+                            'in': 'query',
+                            'type': 'integer',
+                            'description': 'number of items to skip'
+                        })
+                        params.append({
+                            'name': '_limit',
+                            'in': 'query',
+                            'type': 'integer',
+                            'description': 'maximum number of items to return'
+                        })
+
+                    spec = {
+                        'summary': f'Retrieve and filter {collection}.',
+                        'operationId': 'get_entries',
+                        'parameters': params,
                         'responses': {
                             200: {
                                 'description': f'list of {collection}',
                                 'schema': {
                                     'type': 'object',
-                                    'properties': {
-                                        'data': {
-                                            'type': 'array',
-                                            'items': {'$ref': f'#/definitions/{klass.schema_name}'}
-                                        }
-                                    }
+                                    'properties': schema_props
                                 }
                             }
                         }
