@@ -1,3 +1,8 @@
+import os
+import flask_mongorest
+from flask_mongorest.resources import Resource
+from flask_mongorest import operators as ops
+from flask_mongorest.methods import List, Fetch, Create, Delete, Update, BulkUpdate
 from mongoengine.queryset import DoesNotExist
 from flask import Blueprint, request, current_app, render_template, g
 from selenium import webdriver
@@ -12,129 +17,52 @@ from typing import Any, Dict
 from mpcontribs.api import get_resource_as_string, construct_query
 from mpcontribs.api.core import SwaggerView
 from mpcontribs.api.projects.document import Projects
-from mpcontribs.api.contributions.document import Contributions, Cards
+from mpcontribs.api.contributions.document import Contributions, Contents, Cards
 from mpcontribs.api.contributions.redox_thermo_csp_views import isograph_view, energy_analysis_view
 
-contributions = Blueprint("contributions", __name__)
+templates = os.path.join(
+    os.path.dirname(flask_mongorest.__file__), 'templates'
+)
+contributions = Blueprint("contributions", __name__, template_folder=templates)
+
+
+class ContentsResource(Resource):
+    document = Contents
+
+
+class CardsResource(Resource):
+    document = Cards
+
+
+class ContributionsResource(Resource):
+    document = Contributions
+    related_resources = {'content': ContentsResource}
+    filters = {
+        'project': [ops.In, ops.Exact],
+        'identifier': [ops.In, ops.IContains],
+        'content__data__C__value': [ops.Gt]
+        #query = construct_query(filters) # TODO how to define filters on content?
+    }
+    fields = ['id', 'project', 'identifier']  # TODO return nested fields in content?
+    allowed_ordering = ['project', 'identifier']
+    paginate = True
+    default_limit = 20
+    max_limit = 200
+    bulk_update_limit = 100
+
+    @staticmethod
+    def get_optional_fields():
+        return ['content']
 
 
 class ContributionsView(SwaggerView):
-    # TODO http://docs.mongoengine.org/guide/querying.html#raw-queries
-
-    def get(self):
-        """Retrieve (and optionally filter) contributions.
-        ---
-        operationId: get_entries
-        parameters:
-            - name: projects
-              in: query
-              type: array
-              items:
-                  type: string
-              description: comma-separated list of projects
-            - name: identifiers
-              in: query
-              type: array
-              items:
-                  type: string
-              description: comma-separated list of identifiers
-            - name: contains
-              in: query
-              type: string
-              minLength: 3
-              description: substring to search for in identifiers
-            - name: page
-              in: query
-              type: integer
-              default: 1
-              description: page to retrieve (in batches of `per_page`)
-            - name: per_page
-              in: query
-              type: integer
-              default: 20
-              minimum: 2
-              maximum: 200
-              description: number of results to return per page
-            - name: mask
-              in: query
-              type: array
-              items:
-                  type: string
-              default: ["project", "identifier"]
-              description: comma-separated list of fields to return (MongoDB syntax)
-            - name: filters
-              in: query
-              type: array
-              items:
-                  type: string
-              description: list of `column__operator:value` filters \
-                      with `column` in dot notation and `operator` in mongoengine format \
-                      (http://docs.mongoengine.org/guide/querying.html#query-operators). \
-                      `column` needs to be a valid field in `content.data`.
-        responses:
-            200:
-                description: list of contributions
-                schema:
-                    type: array
-                    items:
-                        $ref: '#/definitions/ContributionsSchema'
-        """
-        mask = request.args.get('mask', 'project,identifier').split(',')
-        projects = request.args.get('projects', '').split(',')
-        identifiers = request.args.get('identifiers', '').split(',')
-        contains = request.args.get('contains')
-        filters = request.args.get('filters', '').split(',')
-
-        page = int(request.args.get('page', 1))
-        PER_PAGE_MAX = 200
-        per_page = int(request.args.get('per_page', PER_PAGE_MAX))
-        per_page = PER_PAGE_MAX if per_page > PER_PAGE_MAX else per_page
-
-        objects = Contributions.objects.only(*mask)
-        if projects and projects[0]:
-            objects = objects(project__in=projects)
-        if identifiers and identifiers[0]:
-            objects = objects(identifier__in=identifiers)
-        if contains:
-            objects = objects(identifier__icontains=contains)
-        if filters:
-            query = construct_query(filters)
-            objects = objects(**query)
-
-        n = objects.count()
-        page_max = int(n/per_page) + bool(n % per_page)
-        if n < 1 or page > page_max:
-            return []
-
-        return [
-            unflatten(dict(
-                (k, v) for k, v in get_cleaned_data(self.marshal(entry)).items()
-            ))
-            for entry in objects.paginate(page=page, per_page=per_page).items
-        ]
-
-
-class ContributionView(SwaggerView):
-
-    def get(self, cid):
-        """Retrieve single contribution.
-        ---
-        operationId: get_entry
-        parameters:
-            - name: cid
-              in: path
-              type: string
-              pattern: '^[a-f0-9]{24}$'
-              required: true
-              description: contribution ID (ObjectId)
-        responses:
-            200:
-                description: single contribution
-                schema:
-                    $ref: '#/definitions/ContributionsSchema'
-        """
-        entry = Contributions.objects.get(id=cid).select_related()
-        return self.marshal(entry)
+    resource = ContributionsResource
+    methods = [List, Fetch, Create, Delete, Update, BulkUpdate]
+    # TODO unpack display from dict
+    # https://github.com/tschaume/flask-mongorest/blob/9a04099daf9a93eefd6fd2ee906c29ffbb87789f/flask_mongorest/resources.py#L401
+    # unflatten(dict(
+    #     (k, v) for k, v in get_cleaned_data(<serialize_dict_field>).items()
+    # ))
 
 
 def get_browser():
@@ -292,13 +220,6 @@ class ModalView(SwaggerView):
             return {}
         return unflatten(get_cleaned_data(data))
 
-
-# url_prefix added in register_blueprint
-multi_view = ContributionsView.as_view(ContributionsView.__name__)
-contributions.add_url_rule('/', view_func=multi_view, methods=['GET'])  # , 'POST'])
-
-single_view = ContributionView.as_view(ContributionView.__name__)
-contributions.add_url_rule('/<string:cid>', view_func=single_view, methods=['GET'])  # , 'PUT', 'PATCH', 'DELETE'])
 
 card_view = CardView.as_view(CardView.__name__)
 contributions.add_url_rule('/<string:cid>/card', view_func=card_view, methods=['GET'])
