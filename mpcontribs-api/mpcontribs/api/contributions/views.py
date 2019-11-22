@@ -51,37 +51,6 @@ class ContributionsView(SwaggerView):
     # ))
 
 
-#class ModalView(SwaggerView):
-#    resource = ContributionsResource
-#
-#    def get(self, cid):
-#        """Retrieve modal data for a single contribution.
-#        ---
-#        operationId: get_modal_data
-#        parameters:
-#            - name: cid
-#              in: path
-#              type: string
-#              pattern: '^[a-f0-9]{24}$'
-#              required: true
-#              description: contribution ID (ObjectId)
-#        responses:
-#            200:
-#                description: modal data as defined by contributor
-#                schema:
-#                    type: object
-#        """
-#        mask = ['project', 'identifier', 'content.data.modal']
-#        contrib = Contributions.objects.only(*mask).get(id=cid)
-#        data = contrib.content.data
-#        if 'modal' not in data:
-#            return {}
-#        return unflatten(get_cleaned_data(data))
-#
-#
-#modal_view = ModalView.as_view(ModalView.__name__)
-#contributions.add_url_rule('/<string:cid>/modal', view_func=modal_view, methods=['GET'])
-
 contributions.add_url_rule('/redox_thermo_csp_energy/',
                            view_func=energy_analysis_view, methods=['GET'])
 contributions.add_url_rule('/<string:cid>/redox_thermo_csp/<string:plot_type>',
