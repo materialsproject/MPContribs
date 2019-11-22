@@ -88,6 +88,30 @@ stages:
           body:
               project: bioi_defects
               title: Defect Physics of Air-Stable BiOI
+    - name: create carrier transport project
+      request:
+          url: http://localhost:5000/projects/
+          method: POST
+          json:
+              project: carrier_transport
+              title: Carrier Transport
+              description: >-
+                  Ab-initio electronic transport database for inorganic materials. S is the Seebeck coefficient, σ the
+                  conductivity, and κₑ the electronic part of the thermal conductivity. The values reported are the
+                  maximum (minimum for κₑ) of the average of the eigenvalues of the respective tensors. The values of
+                  the doping and the temperature that give that maximum are also reported. mₑᶜᵒⁿᵈ is the conductivity
+                  effective mass. The values reported are the eigenvalues and their average at a doping level of 10¹⁸
+                  cm⁻³ and at a temperature of 300 K. All the properties are reported for both doping type (n and p).
+                  The properties that depend on the relaxation time are reported divided by the constant value τ
+                  used.
+              authors: F. Ricci, W. Chen, U. Aydemir, G. J. Snyder, G-M. Rignanese, A. Jain, G. Hautier
+              urls:
+                  main: https://doi.org/10.1038/sdata.2017.85
+      response:
+          status_code: 200
+          body:
+              project: carrier_transport
+              title: Carrier Transport
     - name: DTU project info and mask
       request:
           url: http://localhost:5000/projects/dtu/
@@ -114,19 +138,19 @@ stages:
                     project: "defect_genome_pcfc_materials"
                   - title: "Defect Physics of Air-Stable BiOI"
                     project: "bioi_defects"
-    - name: bulk update projects
-      request:
-          url: http://localhost:5000/projects/
-          method: PUT
-          json:
-              authors: P. Huck
-      response:
-          status_code: 200
-          body:
-              count: 3
+    #- name: bulk update projects
+    #  request:
+    #      url: http://localhost:5000/projects/
+    #      method: PUT
+    #      json:
+    #          authors: P. Huck
+    #  response:
+    #      status_code: 200
+    #      body:
+    #          count: 3
 
 ---
-test_name: text additional projects views
+test_name: test additional projects views
 
 marks:
     - extra
@@ -208,6 +232,12 @@ stages:
     - name: delete BiOI project
       request:
           url: http://localhost:5000/projects/bioi_defects/
+          method: DELETE
+      response:
+          status_code: 200
+    - name: delete carrier_transport project
+      request:
+          url: http://localhost:5000/projects/carrier_transport/
           method: DELETE
       response:
           status_code: 200

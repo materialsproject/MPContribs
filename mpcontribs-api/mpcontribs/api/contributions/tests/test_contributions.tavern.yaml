@@ -1,13 +1,11 @@
 test_name: test contributions resource
 
 stages:
-    - name: single contribution
+    - name: create contribution carrier_transport mp-27502
       request:
-          url: http://localhost:5000/contributions/5ac08be3d4f144332ce7b785
-          method: GET
-      response:
-          status_code: 200
-          body:
+          url: http://localhost:5000/contributions/
+          method: POST
+          json:
               project: carrier_transport
               identifier: mp-27502
               content:
@@ -147,21 +145,343 @@ stages:
                           display: 1.30 mₑ
                           value: 1.3
                           unit: mₑ
-                tables:
-                - 5cca3512e7004456f9b98866
-                - 5cca3512e7004456f9b98867
-                - 5cca3512e7004456f9b98868
-                - 5cca3512e7004456f9b98869
-                - 5cca3512e7004456f9b9886a
-                - 5cca3512e7004456f9b9886b
+                #tables:
+                #- 5cca3512e7004456f9b98866
+                #- 5cca3512e7004456f9b98867
+                #- 5cca3512e7004456f9b98868
+                #- 5cca3512e7004456f9b98869
+                #- 5cca3512e7004456f9b9886a
+                #- 5cca3512e7004456f9b9886b
               id: 5ac08be3d4f144332ce7b785
-    - name: card
+      response:
+          status_code: 200
+          body:
+              project: carrier_transport
+              identifier: mp-27502
+
+    - name: create contribution dtu mp-1000
       request:
-          url: http://localhost:5000/contributions/5ac08be3d4f144332ce7b785/card
+          url: http://localhost:5000/contributions/
+          method: POST
+          json:
+              id: 5abd8f7bd4f144494f2cece2
+              project: dtu
+              identifier: mp-1000
+              content:
+                data:
+                  ΔE-KS:
+                    indirect:
+                      display: 2.19 eV
+                      value: 2.19
+                      unit: eV
+                    direct:
+                      display: 2.52 eV
+                      value: 2.52
+                      unit: eV
+                  ΔE-QP:
+                    indirect:
+                      display: 3.37 eV
+                      value: 3.37
+                      unit: eV
+                    direct:
+                      display: 3.71 eV
+                      value: 3.71
+                      unit: eV
+                  C:
+                    display: 1.18 eV
+                    value: 1.18
+                    unit: eV
+                  ICSD:
+                    display: '616165'
+                    value: 616165
+                  formula: BaTe
+      response:
+          status_code: 200
+          body:
+              project: dtu
+              identifier: mp-1000
+
+    - name: create contribution dtu mp-10163
+      request:
+          url: http://localhost:5000/contributions/
+          method: POST
+          json:
+              id: 5abd9018d4f144494f2cf2e3
+              project: dtu
+              identifier: mp-10163
+              content:
+                data:
+                  ΔE-KS:
+                    indirect:
+                      display: 2.00 eV
+                      value: 2.00
+                      unit: eV
+                    direct:
+                      display: 2.09 eV
+                      value: 2.09
+                      unit: eV
+                  ΔE-QP:
+                    indirect:
+                      display: 2.91 eV
+                      value: 2.91
+                      unit: eV
+                    direct:
+                      display: 2.99 eV
+                      value: 2.99
+                      unit: eV
+                  C:
+                    display: 0.907 eV
+                    value: 0.907
+                    unit: eV
+                  ICSD:
+                    display: '44701'
+                    value: 44701
+                  formula: Al2Na2Te4
+      response:
+          status_code: 200
+          body:
+              project: dtu
+              identifier: mp-10163
+
+    - name: create contribution carrier_transport mp-10163
+      request:
+          url: http://localhost:5000/contributions/
+          method: POST
+          json:
+              id: 5ac0a768d4f1443de2674f19
+              project: carrier_transport
+              identifier: mp-10163
+              content:
+                data:
+                  temperature:
+                    display: 300 K
+                    value: 300
+                    unit: K
+                  doping_level:
+                    display: 1e+18 cm⁻³
+                    value: 1e+18
+                    unit: cm⁻³
+                  formula: NaAlTe2
+                  "<S>":
+                    p:
+                      display: 587 μV/K
+                      value: 587
+                      unit: μV/K
+                    n:
+                      display: "-334 μV/K"
+                      value: -334
+                      unit: μV/K
+                  "<σ>":
+                    n:
+                      display: 9.16e+16 (Ωms)⁻¹
+                      value: 9.16e+16
+                      unit: "(Ωms)⁻¹"
+                    p:
+                      display: 4.58e+16 (Ωms)⁻¹
+                      value: 4.58e+16
+                      unit: "(Ωms)⁻¹"
+                  "<S²σ>":
+                    p:
+                      display: 5.06e+13 μW/(cmK²s)
+                      value: 5.06e+13
+                      unit: μW/(cmK²s)
+                    n:
+                      display: 1.02e+14 μW/(cmK²s)
+                      value: 1.02e+14
+                      unit: μW/(cmK²s)
+                  volume:
+                    display: 237 Å³
+                    value: 237
+                    unit: Å³
+                  bandgap:
+                    display: 1.28 eV
+                    value: 1.28
+                    unit: eV
+                  "<mₑᶜᵒⁿᵈ>":
+                    n:
+                      display: 0.308 mₑ
+                      value: 0.308
+                      unit: mₑ
+                    p:
+                      display: 0.802 mₑ
+                      value: 0.802
+                      unit: mₑ
+                  modal:
+                    S:
+                      p:
+                        ε₁:
+                          display: 586 μV/K
+                          value: 586
+                          unit: μV/K
+                        ε₂:
+                          display: 587 μV/K
+                          value: 587
+                          unit: μV/K
+                        ε₃:
+                          display: 589 μV/K
+                          value: 589
+                          unit: μV/K
+                      n:
+                        ε₁:
+                          display: "-338 μV/K"
+                          value: -338
+                          unit: μV/K
+                        ε₂:
+                          display: "-332 μV/K"
+                          value: -332
+                          unit: μV/K
+                        ε₃:
+                          display: "-331 μV/K"
+                          value: -331
+                          unit: μV/K
+                    σ:
+                      p:
+                        ε₁:
+                          display: 1.94e+16 (Ωms)⁻¹
+                          value: 1.94e+16
+                          unit: "(Ωms)⁻¹"
+                        ε₂:
+                          display: 5.90e+16 (Ωms)⁻¹
+                          value: 5.90e+16
+                          unit: "(Ωms)⁻¹"
+                        ε₃:
+                          display: 5.91e+16 (Ωms)⁻¹
+                          value: 5.91e+16
+                          unit: "(Ωms)⁻¹"
+                      n:
+                        ε₁:
+                          display: 9.08e+16 (Ωms)⁻¹
+                          value: 9.08e+16
+                          unit: "(Ωms)⁻¹"
+                        ε₂:
+                          display: 9.15e+16 (Ωms)⁻¹
+                          value: 9.15e+16
+                          unit: "(Ωms)⁻¹"
+                        ε₃:
+                          display: 9.24e+16 (Ωms)⁻¹
+                          value: 9.24e+16
+                          unit: "(Ωms)⁻¹"
+                    mₑᶜᵒⁿᵈ:
+                      p:
+                        ε₁:
+                          display: 0.477 mₑ
+                          value: 0.477
+                          unit: mₑ
+                        ε₂:
+                          display: 0.477 mₑ
+                          value: 0.477
+                          unit: mₑ
+                        ε₃:
+                          display: 1.45 mₑ
+                          value: 1.45
+                          unit: mₑ
+                      n:
+                        ε₁:
+                          display: 0.305 mₑ
+                          value: 0.305
+                          unit: mₑ
+                        ε₂:
+                          display: 0.308 mₑ
+                          value: 0.308
+                          unit: mₑ
+                        ε₃:
+                          display: 0.310 mₑ
+                          value: 0.310
+                          unit: mₑ
+                extra_data:
+                  Sₑₓₜᵣ:
+                    p:
+                      value: 1.07e+3 μV/K
+                      temperature: 600 K
+                      doping: 1e+16 cm⁻³
+                    n:
+                      value: "-829 μV/K"
+                      temperature: 600 K
+                      doping: 1e+16 cm⁻³
+                  σₑₓₜᵣ:
+                    p:
+                      value: 4.69e+18 (Ωms)⁻¹
+                      temperature: 100 K
+                      doping: 1e+20 cm⁻³
+                    n:
+                      value: 7.58e+18 (Ωms)⁻¹
+                      temperature: 200 K
+                      doping: 1e+20 cm⁻³
+                  κₑ₋ₑₓₜᵣ:
+                    p:
+                      value: 9.52e+8 W/(mKs)
+                      temperature: 100 K
+                      doping: 1e+16 cm⁻³
+                    n:
+                      value: 1.92e+9 W/(mKs)
+                      temperature: 100 K
+                      doping: 1e+16 cm⁻³
+                #tables:
+                #- 5cca3800e7004456f9ba2eb0
+                #- 5cca3800e7004456f9ba2eb1
+                #- 5cca3800e7004456f9ba2eb2
+                #- 5cca3800e7004456f9ba2eb3
+                #- 5cca3800e7004456f9ba2eb4
+                #- 5cca3800e7004456f9ba2eb5
+
+      response:
+          status_code: 200
+          body:
+              project: carrier_transport
+              identifier: mp-10163
+
+    - name: get contribution
+      request:
+          url: http://localhost:5000/contributions/5ac08be3d4f144332ce7b785/
           method: GET
       response:
           status_code: 200
-          body: !raw "<div name=\"user_contribs\"> <div class=\"panel panel-default\" style=\"width: 100%; margin-bottom: 20px; background-color: #fff; border: 1px solid transparent; border-radius: 4px; box-shadow: 0 1px 1px rgba(0, 0, 0, 0.05); border-color: #ddd\"> <div class=\"panel-heading\" style=\"border-bottom: 1px solid transparent; border-top-left-radius: 3px; border-top-right-radius: 3px; color: #333; background-color: #f5f5f5; border-color: #ddd; padding: 5px 15px\"> <h4> <a href=\"/carrier_transport/\">Carrier Transport</a> <sup> <a href=\"https://doi.org/10.1038/sdata.2017.85\" target=\"_blank\">[1]</a> </sup> <a class=\"pull-right\" href=\"/explorer/5ac08be3d4f144332ce7b785\" style=\"float: right ! important; font-size: 15px\">Details</a> <h5> F. Ricci <a onclick=\"read_etal_5ac08be3d4f144332ce7b785()\" id=\"read_etal_5ac08be3d4f144332ce7b785\">et al.</a> <span id=\"etal_text_5ac08be3d4f144332ce7b785\" hidden> W. Chen<br>U. Aydemir<br>G. J. Snyder<br>G-M. Rignanese<br>A. Jain<br>G. Hautier<br> </span> </h5> </h4> </div> <div class=\"panel-body\" style=\"padding: 15px\"> <div style=\"font-size: 13px; padding: 5px;\"> Ab-initio electronic transport database for inorganic materials. <a onclick=\"read_more_5ac08be3d4f144332ce7b785()\" id=\"read_more_5ac08be3d4f144332ce7b785\">More &#187;</a> <span id=\"more_text_5ac08be3d4f144332ce7b785\" hidden> S is the Seebeck coefficient, &#963; the conductivity, and &#954;&#8337; the electronic part of the thermal conductivity. The values reported are the maximum (minimum for &#954;&#8337;) of the average of the eigenvalues of the respective tensors. The values of the doping and the temperature that give that maximum are also reported. m&#8337;&#7580;&#7506;&#8319;&#7496; is the conductivity effective mass. The values reported are the eigenvalues and their average at a doping level of 10&#185;&#8312; cm&#8315;&#179; and at a temperature of 300 K. All the properties are reported for both doping type (n and p). The properties that depend on the relaxation time are reported divided by the constant value &#964; used.</span> </div> <div class=\"col-md-12\" style=\"padding: 0px;\"><table class=\"jh-type-object jh-root\" style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; width: 100%; border-collapse: collapse; border: 1px solid #ccc; margin: 0.2em\"><tbody class=\"\"><tr style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; background-color: #f5f5f5; border: 1px solid #ddd; border-bottom: none\"><th class=\"jh-key jh-object-key\" style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; color: #444; vertical-align: top; text-align: left; margin: 0; padding: 0.2em\">&lt;S&gt;</th><td class=\"jh-value jh-object-value\" style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; border-left: 1px solid #ddd; margin: 0; padding: 0.2em\"><table class=\"jh-type-object\" style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; width: 100%; border-collapse: collapse\"><tbody class=\"\"><tr style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; background-color: #f5f5f5; border: 1px solid #ddd; border-bottom: none\"><th class=\"jh-key jh-object-key\" style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; color: #444; vertical-align: top; text-align: left; margin: 0; padding: 0.2em\">n</th><td class=\"jh-value jh-object-value\" style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; border-left: 1px solid #ddd; margin: 0; padding: 0.2em\"><span class=\"jh-type-string\" style=\"font-weight: normal; color: #6E6E6E\">-480 &#956;V/K</span></td></tr><tr style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; background-color: #fff; border: 1px solid #ddd; border-bottom: 1px solid #ddd\"><th class=\"jh-key jh-object-key\" style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; color: #444; vertical-align: top; text-align: left; margin: 0; padding: 0.2em\">p</th><td class=\"jh-value jh-object-value\" style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; border-left: 1px solid #ddd; margin: 0; padding: 0.2em\"><span class=\"jh-type-string\" style=\"font-weight: normal; color: #6E6E6E\">770 &#956;V/K</span></td></tr></tbody></table></td></tr><tr style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; background-color: #fff; border: 1px solid #ddd; border-bottom: none\"><th class=\"jh-key jh-object-key\" style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; color: #444; vertical-align: top; text-align: left; margin: 0; padding: 0.2em\">&lt;S&#178;&#963;&gt;</th><td class=\"jh-value jh-object-value\" style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; border-left: 1px solid #ddd; margin: 0; padding: 0.2em\"><table class=\"jh-type-object\" style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; width: 100%; border-collapse: collapse\"><tbody class=\"\"><tr style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; background-color: #f5f5f5; border: 1px solid #ddd; border-bottom: none\"><th class=\"jh-key jh-object-key\" style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; color: #444; vertical-align: top; text-align: left; margin: 0; padding: 0.2em\">n</th><td class=\"jh-value jh-object-value\" style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; border-left: 1px solid #ddd; margin: 0; padding: 0.2em\"><span class=\"jh-type-string\" style=\"font-weight: normal; color: #6E6E6E\">7.41e+13 &#956;W/(cmK&#178;s)</span></td></tr><tr style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; background-color: #fff; border: 1px solid #ddd; border-bottom: 1px solid #ddd\"><th class=\"jh-key jh-object-key\" style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; color: #444; vertical-align: top; text-align: left; margin: 0; padding: 0.2em\">p</th><td class=\"jh-value jh-object-value\" style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; border-left: 1px solid #ddd; margin: 0; padding: 0.2em\"><span class=\"jh-type-string\" style=\"font-weight: normal; color: #6E6E6E\">1.11e+13 &#956;W/(cmK&#178;s)</span></td></tr></tbody></table></td></tr><tr style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; background-color: #f5f5f5; border: 1px solid #ddd; border-bottom: none\"><th class=\"jh-key jh-object-key\" style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; color: #444; vertical-align: top; text-align: left; margin: 0; padding: 0.2em\">&lt;m&#8337;&#7580;&#7506;&#8319;&#7496;&gt;</th><td class=\"jh-value jh-object-value\" style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; border-left: 1px solid #ddd; margin: 0; padding: 0.2em\"><table class=\"jh-type-object\" style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; width: 100%; border-collapse: collapse\"><tbody class=\"\"><tr style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; background-color: #f5f5f5; border: 1px solid #ddd; border-bottom: none\"><th class=\"jh-key jh-object-key\" style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; color: #444; vertical-align: top; text-align: left; margin: 0; padding: 0.2em\">n</th><td class=\"jh-value jh-object-value\" style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; border-left: 1px solid #ddd; margin: 0; padding: 0.2em\"><span class=\"jh-type-string\" style=\"font-weight: normal; color: #6E6E6E\">0.990 m&#8337;</span></td></tr><tr style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; background-color: #fff; border: 1px solid #ddd; border-bottom: 1px solid #ddd\"><th class=\"jh-key jh-object-key\" style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; color: #444; vertical-align: top; text-align: left; margin: 0; padding: 0.2em\">p</th><td class=\"jh-value jh-object-value\" style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; border-left: 1px solid #ddd; margin: 0; padding: 0.2em\"><span class=\"jh-type-string\" style=\"font-weight: normal; color: #6E6E6E\">9.95 m&#8337;</span></td></tr></tbody></table></td></tr><tr style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; background-color: #fff; border: 1px solid #ddd; border-bottom: none\"><th class=\"jh-key jh-object-key\" style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; color: #444; vertical-align: top; text-align: left; margin: 0; padding: 0.2em\">&lt;&#963;&gt;</th><td class=\"jh-value jh-object-value\" style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; border-left: 1px solid #ddd; margin: 0; padding: 0.2em\"><table class=\"jh-type-object\" style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; width: 100%; border-collapse: collapse\"><tbody class=\"\"><tr style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; background-color: #f5f5f5; border: 1px solid #ddd; border-bottom: none\"><th class=\"jh-key jh-object-key\" style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; color: #444; vertical-align: top; text-align: left; margin: 0; padding: 0.2em\">n</th><td class=\"jh-value jh-object-value\" style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; border-left: 1px solid #ddd; margin: 0; padding: 0.2em\"><span class=\"jh-type-string\" style=\"font-weight: normal; color: #6E6E6E\">3.20e+16 (&#937;ms)&#8315;&#185;</span></td></tr><tr style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; background-color: #fff; border: 1px solid #ddd; border-bottom: 1px solid #ddd\"><th class=\"jh-key jh-object-key\" style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; color: #444; vertical-align: top; text-align: left; margin: 0; padding: 0.2em\">p</th><td class=\"jh-value jh-object-value\" style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; border-left: 1px solid #ddd; margin: 0; padding: 0.2em\"><span class=\"jh-type-string\" style=\"font-weight: normal; color: #6E6E6E\">4.77e+15 (&#937;ms)&#8315;&#185;</span></td></tr></tbody></table></td></tr><tr style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; background-color: #f5f5f5; border: 1px solid #ddd; border-bottom: none\"><th class=\"jh-key jh-object-key\" style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; color: #444; vertical-align: top; text-align: left; margin: 0; padding: 0.2em\">bandgap</th><td class=\"jh-value jh-object-value\" style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; border-left: 1px solid #ddd; margin: 0; padding: 0.2em\"><span class=\"jh-type-string\" style=\"font-weight: normal; color: #6E6E6E\">5.84 eV</span></td></tr><tr style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; background-color: #fff; border: 1px solid #ddd; border-bottom: none\"><th class=\"jh-key jh-object-key\" style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; color: #444; vertical-align: top; text-align: left; margin: 0; padding: 0.2em\">doping_level</th><td class=\"jh-value jh-object-value\" style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; border-left: 1px solid #ddd; margin: 0; padding: 0.2em\"><span class=\"jh-type-string\" style=\"font-weight: normal; color: #6E6E6E\">1e+18 cm&#8315;&#179;</span></td></tr><tr style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; background-color: #f5f5f5; border: 1px solid #ddd; border-bottom: none\"><th class=\"jh-key jh-object-key\" style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; color: #444; vertical-align: top; text-align: left; margin: 0; padding: 0.2em\">formula</th><td class=\"jh-value jh-object-value\" style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; border-left: 1px solid #ddd; margin: 0; padding: 0.2em\"><span class=\"jh-type-string\" style=\"font-weight: normal; color: #6E6E6E\">CNCl</span></td></tr><tr style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; background-color: #fff; border: 1px solid #ddd; border-bottom: none\"><th class=\"jh-key jh-object-key\" style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; color: #444; vertical-align: top; text-align: left; margin: 0; padding: 0.2em\">temperature</th><td class=\"jh-value jh-object-value\" style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; border-left: 1px solid #ddd; margin: 0; padding: 0.2em\"><span class=\"jh-type-string\" style=\"font-weight: normal; color: #6E6E6E\">300 K</span></td></tr><tr style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; background-color: #f5f5f5; border: 1px solid #ddd; border-bottom: 1px solid #ddd\"><th class=\"jh-key jh-object-key\" style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; color: #444; vertical-align: top; text-align: left; margin: 0; padding: 0.2em\">volume</th><td class=\"jh-value jh-object-value\" style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; border-left: 1px solid #ddd; margin: 0; padding: 0.2em\"><span class=\"jh-type-string\" style=\"font-weight: normal; color: #6E6E6E\">145 &#197;&#179;</span></td></tr></tbody></table></div> </div> </div> <script> function read_more_5ac08be3d4f144332ce7b785() { document.getElementById(\"more_text_5ac08be3d4f144332ce7b785\").style.display = \"block\"; document.getElementById(\"read_more_5ac08be3d4f144332ce7b785\").style.display = \"none\"; }; function read_etal_5ac08be3d4f144332ce7b785() { document.getElementById(\"etal_text_5ac08be3d4f144332ce7b785\").style.display = \"block\"; document.getElementById(\"read_etal_5ac08be3d4f144332ce7b785\").style.display = \"none\"; }; </script> </div>"
+          body:
+              project: carrier_transport
+              identifier: mp-27502
+
+    - name: query contributions using contains
+      request:
+          url: http://localhost:5000/contributions/
+          method: GET
+          params:
+              _fields: id,project,identifier,content.data.formula
+              identifier__icontains: mp-10
+              content__data__formula__contains: Al
+              _limit: 1
+      response:
+          status_code: 200
+          body:
+              data:
+                  - project: dtu
+                    identifier: mp-10163
+                    id: 5abd9018d4f144494f2cf2e3
+                    content:
+                      data:
+                        formula: Al2Na2Te4
+              has_more: true
+
+    - name: query contributions using identifiers
+      request:
+          url: http://localhost:5000/contributions/
+          method: GET
+          params:
+              _fields: id,project,identifier
+              identifier__in: mp-1000,mp-10163
+      response:
+          status_code: 200
+          body:
+              data:
+                  - project: dtu
+                    identifier: mp-1000
+                    id: 5abd8f7bd4f144494f2cece2
+                  - project: dtu
+                    identifier: mp-10163
+                    id: 5abd9018d4f144494f2cf2e3
+                  - project: carrier_transport
+                    identifier: mp-10163
+                    id: 5ac0a768d4f1443de2674f19
+              has_more: false
 
     - name: modal
       request:
@@ -198,48 +518,45 @@ stages:
                     ε₁: 0.582 mₑ
                     ε₂: 1.08 mₑ
                     ε₃: 1.30 mₑ
-    - name: query contributions using contains
-      request:
-          url: http://localhost:5000/contributions/?projects=dtu&identifiers=&contains=mp-10&page=1&per_page=3&mask=project,identifier,content.data.formula&filters=formula__contains%3ATe
-          method: GET
-      response:
-          status_code: 200
-          body:
-              - project: dtu
-                identifier: mp-1000
-                id: 5abd8f7bd4f144494f2cece2
-                content:
-                  data:
-                    formula: BaTe
-              - project: dtu
-                identifier: mp-10163
-                id: 5abd9018d4f144494f2cf2e3
-                content:
-                  data:
-                    formula: Al2Na2Te4
-              - project: dtu
-                identifier: mp-10288
-                id: 5abd8fb1d4f144494f2ceee5
-                content:
-                  data:
-                    formula: Cu4La4S4Te4
-    - name: query contributions using identifiers
-      request:
-          url: http://localhost:5000/contributions/?projects=&identifiers=mp-1000,mp-10163&page=1&per_page=20&mask=project,identifier&filters=
-          method: GET
-      response:
-          status_code: 200
-          body:
-              - project: dtu
-                identifier: mp-1000
-                id: 5abd8f7bd4f144494f2cece2
-              - project: dtu
-                identifier: mp-10163
-                id: 5abd9018d4f144494f2cf2e3
-              - project: carrier_transport
-                identifier: mp-10163
-                id: 5ac0a768d4f1443de2674f19
-              - project: screening_inorganic_pv
-                identifier: mp-10163
-                id: 5cef037211fb2a7cdef1b3bd
 
+    - name: card
+      request:
+          url: http://localhost:5000/contributions/5ac08be3d4f144332ce7b785/card
+          method: GET
+      response:
+          status_code: 200
+          body:
+              data: !raw "<div name=\"user_contribs\"> <div class=\"panel panel-default\" style=\"width: 100%; margin-bottom: 20px; background-color: #fff; border: 1px solid transparent; border-radius: 4px; box-shadow: 0 1px 1px rgba(0, 0, 0, 0.05); border-color: #ddd\"> <div class=\"panel-heading\" style=\"border-bottom: 1px solid transparent; border-top-left-radius: 3px; border-top-right-radius: 3px; color: #333; background-color: #f5f5f5; border-color: #ddd; padding: 5px 15px\"> <h4> <a href=\"/carrier_transport/\">Carrier Transport</a> <sup> <a href=\"https://doi.org/10.1038/sdata.2017.85\" target=\"_blank\">[1]</a> </sup> <a class=\"pull-right\" href=\"/explorer/5ac08be3d4f144332ce7b785\" style=\"float: right ! important; font-size: 15px\">Details</a> <h5> F. Ricci <a onclick=\"read_etal_5ac08be3d4f144332ce7b785()\" id=\"read_etal_5ac08be3d4f144332ce7b785\">et al.</a> <span id=\"etal_text_5ac08be3d4f144332ce7b785\" hidden> W. Chen<br>U. Aydemir<br>G. J. Snyder<br>G-M. Rignanese<br>A. Jain<br>G. Hautier<br> </span> </h5> </h4> </div> <div class=\"panel-body\" style=\"padding: 15px\"> <div style=\"font-size: 13px; padding: 5px;\"> Ab-initio electronic transport database for inorganic materials. <a onclick=\"read_more_5ac08be3d4f144332ce7b785()\" id=\"read_more_5ac08be3d4f144332ce7b785\">More &#187;</a> <span id=\"more_text_5ac08be3d4f144332ce7b785\" hidden> S is the Seebeck coefficient, &#963; the conductivity, and &#954;&#8337; the electronic part of the thermal conductivity. The values reported are the maximum (minimum for &#954;&#8337;) of the average of the eigenvalues of the respective tensors. The values of the doping and the temperature that give that maximum are also reported. m&#8337;&#7580;&#7506;&#8319;&#7496; is the conductivity effective mass. The values reported are the eigenvalues and their average at a doping level of 10&#185;&#8312; cm&#8315;&#179; and at a temperature of 300 K. All the properties are reported for both doping type (n and p). The properties that depend on the relaxation time are reported divided by the constant value &#964; used.</span> </div> <div class=\"col-md-12\" style=\"padding: 0px;\"><table class=\"jh-type-object jh-root\" style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; width: 100%; border-collapse: collapse; border: 1px solid #ccc; margin: 0.2em\"><tbody class=\"\"><tr style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; background-color: #f5f5f5; border: 1px solid #ddd; border-bottom: none\"><th class=\"jh-key jh-object-key\" style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; color: #444; vertical-align: top; text-align: left; margin: 0; padding: 0.2em\">&lt;S&gt;</th><td class=\"jh-value jh-object-value\" style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; border-left: 1px solid #ddd; margin: 0; padding: 0.2em\"><table class=\"jh-type-object\" style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; width: 100%; border-collapse: collapse\"><tbody class=\"\"><tr style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; background-color: #f5f5f5; border: 1px solid #ddd; border-bottom: none\"><th class=\"jh-key jh-object-key\" style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; color: #444; vertical-align: top; text-align: left; margin: 0; padding: 0.2em\">n</th><td class=\"jh-value jh-object-value\" style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; border-left: 1px solid #ddd; margin: 0; padding: 0.2em\"><span class=\"jh-type-string\" style=\"font-weight: normal; color: #6E6E6E\">-480 &#956;V/K</span></td></tr><tr style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; background-color: #fff; border: 1px solid #ddd; border-bottom: 1px solid #ddd\"><th class=\"jh-key jh-object-key\" style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; color: #444; vertical-align: top; text-align: left; margin: 0; padding: 0.2em\">p</th><td class=\"jh-value jh-object-value\" style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; border-left: 1px solid #ddd; margin: 0; padding: 0.2em\"><span class=\"jh-type-string\" style=\"font-weight: normal; color: #6E6E6E\">770 &#956;V/K</span></td></tr></tbody></table></td></tr><tr style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; background-color: #fff; border: 1px solid #ddd; border-bottom: none\"><th class=\"jh-key jh-object-key\" style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; color: #444; vertical-align: top; text-align: left; margin: 0; padding: 0.2em\">&lt;S&#178;&#963;&gt;</th><td class=\"jh-value jh-object-value\" style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; border-left: 1px solid #ddd; margin: 0; padding: 0.2em\"><table class=\"jh-type-object\" style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; width: 100%; border-collapse: collapse\"><tbody class=\"\"><tr style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; background-color: #f5f5f5; border: 1px solid #ddd; border-bottom: none\"><th class=\"jh-key jh-object-key\" style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; color: #444; vertical-align: top; text-align: left; margin: 0; padding: 0.2em\">n</th><td class=\"jh-value jh-object-value\" style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; border-left: 1px solid #ddd; margin: 0; padding: 0.2em\"><span class=\"jh-type-string\" style=\"font-weight: normal; color: #6E6E6E\">7.41e+13 &#956;W/(cmK&#178;s)</span></td></tr><tr style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; background-color: #fff; border: 1px solid #ddd; border-bottom: 1px solid #ddd\"><th class=\"jh-key jh-object-key\" style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; color: #444; vertical-align: top; text-align: left; margin: 0; padding: 0.2em\">p</th><td class=\"jh-value jh-object-value\" style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; border-left: 1px solid #ddd; margin: 0; padding: 0.2em\"><span class=\"jh-type-string\" style=\"font-weight: normal; color: #6E6E6E\">1.11e+13 &#956;W/(cmK&#178;s)</span></td></tr></tbody></table></td></tr><tr style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; background-color: #f5f5f5; border: 1px solid #ddd; border-bottom: none\"><th class=\"jh-key jh-object-key\" style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; color: #444; vertical-align: top; text-align: left; margin: 0; padding: 0.2em\">&lt;m&#8337;&#7580;&#7506;&#8319;&#7496;&gt;</th><td class=\"jh-value jh-object-value\" style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; border-left: 1px solid #ddd; margin: 0; padding: 0.2em\"><table class=\"jh-type-object\" style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; width: 100%; border-collapse: collapse\"><tbody class=\"\"><tr style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; background-color: #f5f5f5; border: 1px solid #ddd; border-bottom: none\"><th class=\"jh-key jh-object-key\" style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; color: #444; vertical-align: top; text-align: left; margin: 0; padding: 0.2em\">n</th><td class=\"jh-value jh-object-value\" style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; border-left: 1px solid #ddd; margin: 0; padding: 0.2em\"><span class=\"jh-type-string\" style=\"font-weight: normal; color: #6E6E6E\">0.990 m&#8337;</span></td></tr><tr style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; background-color: #fff; border: 1px solid #ddd; border-bottom: 1px solid #ddd\"><th class=\"jh-key jh-object-key\" style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; color: #444; vertical-align: top; text-align: left; margin: 0; padding: 0.2em\">p</th><td class=\"jh-value jh-object-value\" style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; border-left: 1px solid #ddd; margin: 0; padding: 0.2em\"><span class=\"jh-type-string\" style=\"font-weight: normal; color: #6E6E6E\">9.95 m&#8337;</span></td></tr></tbody></table></td></tr><tr style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; background-color: #fff; border: 1px solid #ddd; border-bottom: none\"><th class=\"jh-key jh-object-key\" style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; color: #444; vertical-align: top; text-align: left; margin: 0; padding: 0.2em\">&lt;&#963;&gt;</th><td class=\"jh-value jh-object-value\" style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; border-left: 1px solid #ddd; margin: 0; padding: 0.2em\"><table class=\"jh-type-object\" style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; width: 100%; border-collapse: collapse\"><tbody class=\"\"><tr style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; background-color: #f5f5f5; border: 1px solid #ddd; border-bottom: none\"><th class=\"jh-key jh-object-key\" style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; color: #444; vertical-align: top; text-align: left; margin: 0; padding: 0.2em\">n</th><td class=\"jh-value jh-object-value\" style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; border-left: 1px solid #ddd; margin: 0; padding: 0.2em\"><span class=\"jh-type-string\" style=\"font-weight: normal; color: #6E6E6E\">3.20e+16 (&#937;ms)&#8315;&#185;</span></td></tr><tr style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; background-color: #fff; border: 1px solid #ddd; border-bottom: 1px solid #ddd\"><th class=\"jh-key jh-object-key\" style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; color: #444; vertical-align: top; text-align: left; margin: 0; padding: 0.2em\">p</th><td class=\"jh-value jh-object-value\" style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; border-left: 1px solid #ddd; margin: 0; padding: 0.2em\"><span class=\"jh-type-string\" style=\"font-weight: normal; color: #6E6E6E\">4.77e+15 (&#937;ms)&#8315;&#185;</span></td></tr></tbody></table></td></tr><tr style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; background-color: #f5f5f5; border: 1px solid #ddd; border-bottom: none\"><th class=\"jh-key jh-object-key\" style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; color: #444; vertical-align: top; text-align: left; margin: 0; padding: 0.2em\">bandgap</th><td class=\"jh-value jh-object-value\" style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; border-left: 1px solid #ddd; margin: 0; padding: 0.2em\"><span class=\"jh-type-string\" style=\"font-weight: normal; color: #6E6E6E\">5.84 eV</span></td></tr><tr style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; background-color: #fff; border: 1px solid #ddd; border-bottom: none\"><th class=\"jh-key jh-object-key\" style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; color: #444; vertical-align: top; text-align: left; margin: 0; padding: 0.2em\">doping_level</th><td class=\"jh-value jh-object-value\" style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; border-left: 1px solid #ddd; margin: 0; padding: 0.2em\"><span class=\"jh-type-string\" style=\"font-weight: normal; color: #6E6E6E\">1e+18 cm&#8315;&#179;</span></td></tr><tr style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; background-color: #f5f5f5; border: 1px solid #ddd; border-bottom: none\"><th class=\"jh-key jh-object-key\" style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; color: #444; vertical-align: top; text-align: left; margin: 0; padding: 0.2em\">formula</th><td class=\"jh-value jh-object-value\" style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; border-left: 1px solid #ddd; margin: 0; padding: 0.2em\"><span class=\"jh-type-string\" style=\"font-weight: normal; color: #6E6E6E\">CNCl</span></td></tr><tr style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; background-color: #fff; border: 1px solid #ddd; border-bottom: none\"><th class=\"jh-key jh-object-key\" style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; color: #444; vertical-align: top; text-align: left; margin: 0; padding: 0.2em\">temperature</th><td class=\"jh-value jh-object-value\" style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; border-left: 1px solid #ddd; margin: 0; padding: 0.2em\"><span class=\"jh-type-string\" style=\"font-weight: normal; color: #6E6E6E\">300 K</span></td></tr><tr style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; background-color: #f5f5f5; border: 1px solid #ddd; border-bottom: 1px solid #ddd\"><th class=\"jh-key jh-object-key\" style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; color: #444; vertical-align: top; text-align: left; margin: 0; padding: 0.2em\">volume</th><td class=\"jh-value jh-object-value\" style=\"box-sizing: border-box; font-weight: normal; font-family: monospace; border-left: 1px solid #ddd; margin: 0; padding: 0.2em\"><span class=\"jh-type-string\" style=\"font-weight: normal; color: #6E6E6E\">145 &#197;&#179;</span></td></tr></tbody></table></div> </div> </div> <script> function read_more_5ac08be3d4f144332ce7b785() { document.getElementById(\"more_text_5ac08be3d4f144332ce7b785\").style.display = \"block\"; document.getElementById(\"read_more_5ac08be3d4f144332ce7b785\").style.display = \"none\"; }; function read_etal_5ac08be3d4f144332ce7b785() { document.getElementById(\"etal_text_5ac08be3d4f144332ce7b785\").style.display = \"block\"; document.getElementById(\"read_etal_5ac08be3d4f144332ce7b785\").style.display = \"none\"; }; </script> </div>"
+
+
+---
+test_name: clean up contributions
+
+marks:
+    - base
+
+stages:
+    - name: delete contribution carrier_transport mp-27502
+      request:
+          url: http://localhost:5000/contributions/5ac08be3d4f144332ce7b785/
+          method: DELETE
+      response:
+          status_code: 200
+    - name: delete contribution dtu mp-1000
+      request:
+          url: http://localhost:5000/contributions/5abd8f7bd4f144494f2cece2/
+          method: DELETE
+      response:
+          status_code: 200
+    - name: delete contribution dtu mp-10163
+      request:
+          url: http://localhost:5000/contributions/5abd9018d4f144494f2cf2e3/
+          method: DELETE
+      response:
+          status_code: 200
+    - name: delete contribution carrier_transport mp-10163
+      request:
+          url: http://localhost:5000/contributions/5ac0a768d4f1443de2674f19/
+          method: DELETE
+      response:
+          status_code: 200
