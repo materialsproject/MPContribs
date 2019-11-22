@@ -102,28 +102,33 @@ def create_app():
 
             for method in klass.methods:
                 file_path = os.path.join(dir_path, method.__name__ + '.yml')
-                fields_avail = klass.resource.fields + klass.resource.get_optional_fields() + ['_all']
-                fields_param = {
-                    'name': '_fields',
-                    'in': 'query',
-                    'default': klass.resource.fields,
-                    'type': 'array',
-                    'items': {'type': 'string'},
-                    'description': 'List of fields to include in response. Use dot-notation for nested subfields.'
-                }
+                fields_param = None
+                if klass.resource.fields is not None:
+                    fields_avail = klass.resource.fields + klass.resource.get_optional_fields() + ['_all']
+                    fields_param = {
+                        'name': '_fields',
+                        'in': 'query',
+                        'default': klass.resource.fields,
+                        'type': 'array',
+                        'items': {'type': 'string'},
+                        'description': 'List of fields to include in response. Use dot-notation for nested subfields.'
+                    }
 
                 spec = None
                 if method.__name__ == 'Fetch':
+                    params = [{
+                        'name': 'pk',
+                        'in': 'path',
+                        'type': 'string',
+                        'required': True,
+                        'description': f'{collection[:-1]} (primary key)'
+                    }]
+                    if fields_param is not None:
+                        params.append(fields_param)
                     spec = {
                         'summary': f'Retrieve a {collection[:-1]}.',
                         'operationId': 'get_entry',
-                        'parameters': [{
-                            'name': 'pk',
-                            'in': 'path',
-                            'type': 'string',
-                            'required': True,
-                            'description': f'{collection[:-1]} (primary key)'
-                        }, fields_param],
+                        'parameters': params,
                         'responses': {
                             200: {
                                 'description': f'single {collection} entry',
@@ -132,7 +137,7 @@ def create_app():
                         }
                     }
                 elif method.__name__ == 'List':
-                    params = [fields_param]
+                    params = [fields_param] if fields_param is not None else []
 
                     if klass.resource.allowed_ordering:
                         params.append({
