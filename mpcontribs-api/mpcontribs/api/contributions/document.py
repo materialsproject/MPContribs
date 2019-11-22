@@ -35,8 +35,3 @@ class Contributions(Document):
         'collection': 'contributions',
         'indexes': ['identifier', 'project', {'fields': ['project', 'identifier']}]
     }
-
-
-class Cards(Document):
-    html = fields.StringField(required=True, help_text="embeddable html code")
-    meta = {'collection': 'cards'}

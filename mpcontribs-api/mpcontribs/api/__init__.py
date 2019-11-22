@@ -11,6 +11,8 @@ from flask_mongoengine import MongoEngine
 from flask_mongorest import register_class
 from flask_log import Logging
 from flasgger import Swagger
+from pandas.io.json.normalize import nested_to_record
+from typing import Any, Dict
 
 for mod in ['matplotlib', 'toronado.cssutils', 'selenium.webdriver.remote.remote_connection']:
     log = logging.getLogger(mod)
@@ -54,6 +56,63 @@ def construct_query(filters):
                 key = f'content__data__{col}__{op}'
                 query[key] = v
     return query
+
+
+# https://stackoverflow.com/a/55545369
+def unflatten(
+    d: Dict[str, Any],
+    base: Dict[str, Any] = None,
+) -> Dict[str, Any]:
+    """Convert any keys containing dotted paths to nested dicts
+
+    >>> unflatten({'a': 12, 'b': 13, 'c': 14})  # no expansion
+    {'a': 12, 'b': 13, 'c': 14}
+
+    >>> unflatten({'a.b.c': 12})  # dotted path expansion
+    {'a': {'b': {'c': 12}}}
+
+    >>> unflatten({'a.b.c': 12, 'a': {'b.d': 13}})  # merging
+    {'a': {'b': {'c': 12, 'd': 13}}}
+
+    >>> unflatten({'a.b': 12, 'a': {'b': 13}})  # insertion-order overwrites
+    {'a': {'b': 13}}
+
+    >>> unflatten({'a': {}})  # insertion-order overwrites
+    {'a': {}}
+    """
+    if base is None:
+        base = {}
+
+    for key, value in d.items():
+        root = base
+
+        ###
+        # If a dotted path is encountered, create nested dicts for all but
+        # the last level, then change root to that last level, and key to
+        # the final key in the path. This allows one final setitem at the bottom
+        # of the loop.
+        if '.' in key:
+            *parts, key = key.split('.')
+
+            for part in parts:
+                root.setdefault(part, {})
+                root = root[part]
+
+        if isinstance(value, dict):
+            value = unflatten(value, root.get(key, {}))
+
+        root[key] = value
+
+    return base
+
+
+def get_cleaned_data(data):
+    return dict(
+        (k.rsplit('.', 1)[0] if k.endswith('.display') else k, v)
+        for k, v in nested_to_record(data, sep='.').items()
+        if not k.endswith('.value') and not k.endswith('.unit')
+    )
+
 
 
 def create_app():
