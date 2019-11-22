@@ -18,8 +18,8 @@ def index(request):
             entry['url'] = reverse(provenance['project'] + ':index')
         except:
             entry['contribs'] = client.contributions.get_entries(
-                projects=[provenance['project']], mask=['identifier'], per_page=2
-            ).response().result
+                project=provenance['project'], _limit=2
+            ).response().result['data']
         entry['title'] = provenance['title']
         authors = provenance['authors'].split(',', 1)
         prov_display = f'<br><span style="font-size: 13px;">{authors[0]}'

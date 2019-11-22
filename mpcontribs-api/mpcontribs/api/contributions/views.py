@@ -40,10 +40,11 @@ class ContributionsResource(Resource):
     filters = {
         'project': [ops.In, ops.Exact],
         'identifier': [ops.In, ops.IContains],
+        'content__data__formula': [ops.Contains],
         'content__data__C__value': [ops.Gt]
         #query = construct_query(filters) # TODO how to define filters on content?
     }
-    fields = ['id', 'project', 'identifier']  # TODO return nested fields in content?
+    fields = ['id', 'project', 'identifier']
     allowed_ordering = ['project', 'identifier']
     paginate = True
     default_limit = 20
@@ -139,6 +140,7 @@ def get_cleaned_data(data):
 
 
 class CardView(SwaggerView):
+    resource = ContributionsResource
 
     def get(self, cid):
         """Retrieve card for a single contribution.
@@ -163,7 +165,7 @@ class CardView(SwaggerView):
             ctx = {'cid': cid}
             mask = ['project', 'identifier', 'content.data']
             contrib = Contributions.objects.only(*mask).get(id=cid)
-            info = Projects.objects.get(project=contrib.project)
+            info = Projects.objects.get(pk=contrib.project)
             ctx['title'] = info.title
             ctx['descriptions'] = info.description.strip().split('.', 1)
             authors = [a.strip() for a in info.authors.split(',') if a]
@@ -191,10 +193,11 @@ class CardView(SwaggerView):
             card.save()
 
         del card.id
-        return card.html
+        return {'data': card.html}
 
 
 class ModalView(SwaggerView):
+    resource = ContributionsResource
 
     def get(self, cid):
         """Retrieve modal data for a single contribution.

@@ -102,16 +102,14 @@ def create_app():
 
             for method in klass.methods:
                 file_path = os.path.join(dir_path, method.__name__ + '.yml')
+                fields_avail = klass.resource.fields + klass.resource.get_optional_fields() + ['_all']
                 fields_param = {
                     'name': '_fields',
                     'in': 'query',
                     'default': klass.resource.fields,
                     'type': 'array',
-                    'items': {
-                        'type': 'string',
-                        'enum': klass.resource.fields + klass.resource.get_optional_fields() + ['_all']
-                    },
-                    'description': 'list of fields to include in response'
+                    'items': {'type': 'string'},
+                    'description': 'List of fields to include in response. Use dot-notation for nested subfields.'
                 }
 
                 spec = None
