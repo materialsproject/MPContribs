@@ -1,15 +1,14 @@
 test_name: test tables resource
 
 stages:
-    - name: single table in DataFrame format
+    - name: create table
       request:
-          url: http://localhost:5000/tables/5cca3512e7004456f9b98867?page=1&per_page=2
-          method: GET
-      response:
-          status_code: 200
-          body:
-              project: carrier_transport
+          url: http://localhost:5000/tables/
+          method: POST
+          json:
+              id: 5cca3512e7004456f9b98867
               identifier: mp-27502
+              project: carrier_transport
               name: S(n)
               cid: 5ac08be3d4f144332ce7b785
               columns:
@@ -32,56 +31,175 @@ stages:
                 - "-427.231"
                 - "-234.569"
                 - "-80.8270"
-              id: 5cca3512e7004456f9b98867
-    - name: specific table in Backgrid format
-      request:
-          url: http://localhost:5000/tables/5ac08be3d4f144332ce7b785/S(n)?page=1&per_page=2
-          method: GET
+              - - '300'
+                - "-876.472"
+                - "-678.146"
+                - "-480.064"
+                - "-284.919"
+                - "-115.429"
+              - - '400'
+                - "-916.750"
+                - "-718.415"
+                - "-520.238"
+                - "-324.187"
+                - "-148.014"
+              - - '500'
+                - "-952.159"
+                - "-753.819"
+                - "-555.602"
+                - "-359.153"
+                - "-179.702"
+              - - '600'
+                - "-985.312"
+                - "-786.971"
+                - "-588.728"
+                - "-392.025"
+                - "-210.071"
+              - - '700'
+                - "-1016.50"
+                - "-818.154"
+                - "-619.887"
+                - "-422.944"
+                - "-238.505"
+              - - '800'
+                - "-1045.42"
+                - "-847.069"
+                - "-648.777"
+                - "-451.588"
+                - "-264.718"
+              - - '900'
+                - "-1071.86"
+                - "-873.511"
+                - "-675.197"
+                - "-477.776"
+                - "-288.703"
+              - - '1000'
+                - "-1095.84"
+                - "-897.488"
+                - "-699.153"
+                - "-501.531"
+                - "-310.587"
+              - - '1100'
+                - "-1117.50"
+                - "-919.144"
+                - "-720.792"
+                - "-523.005"
+                - "-330.540"
+              - - '1200'
+                - "-1137.04"
+                - "-938.686"
+                - "-740.322"
+                - "-542.403"
+                - "-348.733"
+              - - '1300'
+                - "-1154.69"
+                - "-956.335"
+                - "-757.959"
+                - "-559.939"
+                - "-365.327"
       response:
           status_code: 200
           body:
-              total_count: 13
-              total_pages: 6
-              page: 1
-              last_page: 6
-              per_page: 2
-              items:
-              - T [K]: '100'
-                1e+16 cm⁻³ [μV/K]: "-733.286"
-                1e+17 cm⁻³ [μV/K]: "-535.075"
-                1e+18 cm⁻³ [μV/K]: "-338.206"
-                1e+19 cm⁻³ [μV/K]: "-156.799"
-                1e+20 cm⁻³ [μV/K]: "-41.4784"
-              - T [K]: '200'
-                1e+16 cm⁻³ [μV/K]: "-823.344"
-                1e+17 cm⁻³ [μV/K]: "-625.045"
-                1e+18 cm⁻³ [μV/K]: "-427.231"
-                1e+19 cm⁻³ [μV/K]: "-234.569"
-                1e+20 cm⁻³ [μV/K]: "-80.8270"
-    - name: specific table in Plotly format
+              project: carrier_transport
+              identifier: mp-27502
+              name: S(n)
+              cid: 5ac08be3d4f144332ce7b785
+
+    - name: update contribution with table info
       request:
-          url: http://localhost:5000/tables/carrier_transport/mp-27502/S(n)?page=1&per_page=2
-          method: GET
+          url: http://localhost:5000/contributions/5ac08be3d4f144332ce7b785/
+          method: PUT
+          json:
+              tables:
+                  - 5cca3512e7004456f9b98867
       response:
           status_code: 200
           body:
-              x:
-              - 1e+16
-              - 1e+17
-              - 1e+18
-              - 1e+19
-              - 1e+20
-              y:
-              - '100'
-              - '200'
-              z:
-              - - "-733.286"
-                - "-535.075"
-                - "-338.206"
-                - "-156.799"
-                - "-41.4784"
-              - - "-823.344"
-                - "-625.045"
-                - "-427.231"
-                - "-234.569"
-                - "-80.8270"
+              id: 5ac08be3d4f144332ce7b785
+              project: carrier_transport
+              identifier: mp-27502
+
+#    - name: single table in DataFrame format
+#      request:
+#          url: http://localhost:5000/tables/5cca3512e7004456f9b98867?page=1&per_page=2
+#          method: GET
+#      response:
+#          status_code: 200
+#          body:
+#              project: carrier_transport
+#              identifier: mp-27502
+#              name: S(n)
+#              cid: 5ac08be3d4f144332ce7b785
+#              columns:
+#              - T [K]
+#              - 1e+16 cm⁻³ [μV/K]
+#              - 1e+17 cm⁻³ [μV/K]
+#              - 1e+18 cm⁻³ [μV/K]
+#              - 1e+19 cm⁻³ [μV/K]
+#              - 1e+20 cm⁻³ [μV/K]
+#              data:
+#              - - '100'
+#                - "-733.286"
+#                - "-535.075"
+#                - "-338.206"
+#                - "-156.799"
+#                - "-41.4784"
+#              - - '200'
+#                - "-823.344"
+#                - "-625.045"
+#                - "-427.231"
+#                - "-234.569"
+#                - "-80.8270"
+#              id: 5cca3512e7004456f9b98867
+#    - name: specific table in Backgrid format
+#      request:
+#          url: http://localhost:5000/tables/5ac08be3d4f144332ce7b785/S(n)?page=1&per_page=2
+#          method: GET
+#      response:
+#          status_code: 200
+#          body:
+#              total_count: 13
+#              total_pages: 6
+#              page: 1
+#              last_page: 6
+#              per_page: 2
+#              items:
+#              - T [K]: '100'
+#                1e+16 cm⁻³ [μV/K]: "-733.286"
+#                1e+17 cm⁻³ [μV/K]: "-535.075"
+#                1e+18 cm⁻³ [μV/K]: "-338.206"
+#                1e+19 cm⁻³ [μV/K]: "-156.799"
+#                1e+20 cm⁻³ [μV/K]: "-41.4784"
+#              - T [K]: '200'
+#                1e+16 cm⁻³ [μV/K]: "-823.344"
+#                1e+17 cm⁻³ [μV/K]: "-625.045"
+#                1e+18 cm⁻³ [μV/K]: "-427.231"
+#                1e+19 cm⁻³ [μV/K]: "-234.569"
+#                1e+20 cm⁻³ [μV/K]: "-80.8270"
+#    - name: specific table in Plotly format
+#      request:
+#          url: http://localhost:5000/tables/carrier_transport/mp-27502/S(n)?page=1&per_page=2
+#          method: GET
+#      response:
+#          status_code: 200
+#          body:
+#              x:
+#              - 1e+16
+#              - 1e+17
+#              - 1e+18
+#              - 1e+19
+#              - 1e+20
+#              y:
+#              - '100'
+#              - '200'
+#              z:
+#              - - "-733.286"
+#                - "-535.075"
+#                - "-338.206"
+#                - "-156.799"
+#                - "-41.4784"
+#              - - "-823.344"
+#                - "-625.045"
+#                - "-427.231"
+#                - "-234.569"
+#                - "-80.8270"
