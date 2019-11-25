@@ -1,5 +1,5 @@
 from flask_mongoengine import Document
-from mongoengine import fields  # , DynamicEmbeddedDocument
+from mongoengine import fields
 
 
 class Tables(Document):

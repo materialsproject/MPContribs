@@ -6,8 +6,9 @@ from flask_mongorest.methods import List, Fetch, Create, Delete, Update, BulkUpd
 from flask import Blueprint
 
 from mpcontribs.api.core import SwaggerView
-from mpcontribs.api.contributions.document import Contributions, Contents
+from mpcontribs.api.contributions.document import Contributions
 from mpcontribs.api.contributions.redox_thermo_csp_views import isograph_view, energy_analysis_view
+from mpcontribs.api.tables.views import TablesResource
 
 templates = os.path.join(
     os.path.dirname(flask_mongorest.__file__), 'templates'
@@ -15,19 +16,17 @@ templates = os.path.join(
 contributions = Blueprint("contributions", __name__, template_folder=templates)
 
 
-class ContentsResource(Resource):
-    document = Contents
-
-
 class ContributionsResource(Resource):
     document = Contributions
-    related_resources = {'content': ContentsResource}
+    related_resources = {'tables': TablesResource}  # TODO structures
+    save_related_fields = ['tables']  # TODO structures
     filters = {
         'project': [ops.In, ops.Exact],
         'identifier': [ops.In, ops.IContains],
-        'content__data__formula': [ops.Contains],
-        'content__data__C__value': [ops.Gt]
-        #query = construct_query(filters) # TODO how to define filters on content?
+        'data__formula': [ops.Contains],
+        'data__C__value': [ops.Gt]
+        # query = construct_query(filters)  # TODO how to define filters on data?
+        # TODO also enable filters on tables and structures?
     }
     fields = ['id', 'project', 'identifier']
     allowed_ordering = ['project', 'identifier']
@@ -38,7 +37,7 @@ class ContributionsResource(Resource):
 
     @staticmethod
     def get_optional_fields():
-        return ['content']
+        return ['data', 'structures', 'tables']
 
 
 class ContributionsView(SwaggerView):
