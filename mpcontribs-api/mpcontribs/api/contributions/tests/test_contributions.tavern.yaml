@@ -1,14 +1,14 @@
 test_name: test contributions resource
 
 stages:
-    - name: create contribution carrier_transport mp-27502
+    - name: create test contribution
       request:
           url: http://localhost:5000/contributions/
           method: POST
           json:
-              id: 5ac08be3d4f144332ce7b785
-              project: carrier_transport
-              identifier: mp-27502
+              id: 5ddc7c0c1e37e6006a663476
+              project: test
+              identifier: mp-0000
               data:
                 temperature:
                   display: 300 K
@@ -37,379 +37,18 @@ stages:
                     display: 4.77e+15 (Ωms)⁻¹
                     value: 4770000000000000
                     unit: "(Ωms)⁻¹"
-                "<S²σ>":
-                  p:
-                    display: 1.11e+13 μW/(cmK²s)
-                    value: 11100000000000
-                    unit: μW/(cmK²s)
-                  n:
-                    display: 7.41e+13 μW/(cmK²s)
-                    value: 74100000000000
-                    unit: μW/(cmK²s)
-                volume:
-                  display: 145 Å³
-                  value: 145
-                  unit: Å³
-                bandgap:
-                  display: 5.84 eV
-                  value: 5.84
-                  unit: eV
-                "<mₑᶜᵒⁿᵈ>":
-                  n:
-                    display: 0.990 mₑ
-                    value: 0.99
-                    unit: mₑ
-                  p:
-                    display: 9.95 mₑ
-                    value: 9.95
-                    unit: mₑ
-                modal:
-                  S:
-                    p:
-                      ε₁:
-                        display: 722 μV/K
-                        value: 722
-                        unit: μV/K
-                      ε₂:
-                        display: 783 μV/K
-                        value: 783
-                        unit: μV/K
-                      ε₃:
-                        display: 806 μV/K
-                        value: 806
-                        unit: μV/K
-                    n:
-                      ε₁:
-                        display: "-485 μV/K"
-                        value: -485
-                        unit: μV/K
-                      ε₂:
-                        display: "-479 μV/K"
-                        value: -479
-                        unit: μV/K
-                      ε₃:
-                        display: "-477 μV/K"
-                        value: -477
-                        unit: μV/K
-                  σ:
-                    p:
-                      ε₁:
-                        display: 1.37e+15 (Ωms)⁻¹
-                        value: 1370000000000000
-                        unit: "(Ωms)⁻¹"
-                      ε₂:
-                        display: 4.83e+15 (Ωms)⁻¹
-                        value: 4830000000000000
-                        unit: "(Ωms)⁻¹"
-                      ε₃:
-                        display: 8.09e+15 (Ωms)⁻¹
-                        value: 8090000000000000
-                        unit: "(Ωms)⁻¹"
-                    n:
-                      ε₁:
-                        display: 2.16e+16 (Ωms)⁻¹
-                        value: 21600000000000000
-                        unit: "(Ωms)⁻¹"
-                      ε₂:
-                        display: 2.60e+16 (Ωms)⁻¹
-                        value: 26000000000000000
-                        unit: "(Ωms)⁻¹"
-                      ε₃:
-                        display: 4.84e+16 (Ωms)⁻¹
-                        value: 48400000000000000
-                        unit: "(Ωms)⁻¹"
-                  mₑᶜᵒⁿᵈ:
-                    p:
-                      ε₁:
-                        display: 3.48 mₑ
-                        value: 3.48
-                        unit: mₑ
-                      ε₂:
-                        display: 5.84 mₑ
-                        value: 5.84
-                        unit: mₑ
-                      ε₃:
-                        display: 20.5 mₑ
-                        value: 20.5
-                        unit: mₑ
-                    n:
-                      ε₁:
-                        display: 0.582 mₑ
-                        value: 0.582
-                        unit: mₑ
-                      ε₂:
-                        display: 1.08 mₑ
-                        value: 1.08
-                        unit: mₑ
-                      ε₃:
-                        display: 1.30 mₑ
-                        value: 1.3
-                        unit: mₑ
       response:
           status_code: 200
           body:
-              project: carrier_transport
-              identifier: mp-27502
+              project: test
+              identifier: mp-0000
 
-    - name: create contribution dtu mp-1000
+    - name: delete test contribution
       request:
-          url: http://localhost:5000/contributions/
-          method: POST
-          json:
-              id: 5abd8f7bd4f144494f2cece2
-              project: dtu
-              identifier: mp-1000
-              data:
-                ΔE-KS:
-                  indirect:
-                    display: 2.19 eV
-                    value: 2.19
-                    unit: eV
-                  direct:
-                    display: 2.52 eV
-                    value: 2.52
-                    unit: eV
-                ΔE-QP:
-                  indirect:
-                    display: 3.37 eV
-                    value: 3.37
-                    unit: eV
-                  direct:
-                    display: 3.71 eV
-                    value: 3.71
-                    unit: eV
-                C:
-                  display: 1.18 eV
-                  value: 1.18
-                  unit: eV
-                ICSD:
-                  display: '616165'
-                  value: 616165
-                formula: BaTe
+          url: http://localhost:5000/contributions/5ddc7c0c1e37e6006a663476/
+          method: DELETE
       response:
           status_code: 200
-          body:
-              project: dtu
-              identifier: mp-1000
-
-    - name: create contribution dtu mp-10163
-      request:
-          url: http://localhost:5000/contributions/
-          method: POST
-          json:
-              id: 5abd9018d4f144494f2cf2e3
-              project: dtu
-              identifier: mp-10163
-              data:
-                ΔE-KS:
-                  indirect:
-                    display: 2.00 eV
-                    value: 2.00
-                    unit: eV
-                  direct:
-                    display: 2.09 eV
-                    value: 2.09
-                    unit: eV
-                ΔE-QP:
-                  indirect:
-                    display: 2.91 eV
-                    value: 2.91
-                    unit: eV
-                  direct:
-                    display: 2.99 eV
-                    value: 2.99
-                    unit: eV
-                C:
-                  display: 0.907 eV
-                  value: 0.907
-                  unit: eV
-                ICSD:
-                  display: '44701'
-                  value: 44701
-                formula: Al2Na2Te4
-      response:
-          status_code: 200
-          body:
-              project: dtu
-              identifier: mp-10163
-
-    - name: create contribution carrier_transport mp-10163
-      request:
-          url: http://localhost:5000/contributions/
-          method: POST
-          json:
-              id: 5ac0a768d4f1443de2674f19
-              project: carrier_transport
-              identifier: mp-10163
-              data:
-                temperature:
-                  display: 300 K
-                  value: 300
-                  unit: K
-                doping_level:
-                  display: 1e+18 cm⁻³
-                  value: 1e+18
-                  unit: cm⁻³
-                formula: NaAlTe2
-                "<S>":
-                  p:
-                    display: 587 μV/K
-                    value: 587
-                    unit: μV/K
-                  n:
-                    display: "-334 μV/K"
-                    value: -334
-                    unit: μV/K
-                "<σ>":
-                  n:
-                    display: 9.16e+16 (Ωms)⁻¹
-                    value: 9.16e+16
-                    unit: "(Ωms)⁻¹"
-                  p:
-                    display: 4.58e+16 (Ωms)⁻¹
-                    value: 4.58e+16
-                    unit: "(Ωms)⁻¹"
-                "<S²σ>":
-                  p:
-                    display: 5.06e+13 μW/(cmK²s)
-                    value: 5.06e+13
-                    unit: μW/(cmK²s)
-                  n:
-                    display: 1.02e+14 μW/(cmK²s)
-                    value: 1.02e+14
-                    unit: μW/(cmK²s)
-                volume:
-                  display: 237 Å³
-                  value: 237
-                  unit: Å³
-                bandgap:
-                  display: 1.28 eV
-                  value: 1.28
-                  unit: eV
-                "<mₑᶜᵒⁿᵈ>":
-                  n:
-                    display: 0.308 mₑ
-                    value: 0.308
-                    unit: mₑ
-                  p:
-                    display: 0.802 mₑ
-                    value: 0.802
-                    unit: mₑ
-                modal:
-                  S:
-                    p:
-                      ε₁:
-                        display: 586 μV/K
-                        value: 586
-                        unit: μV/K
-                      ε₂:
-                        display: 587 μV/K
-                        value: 587
-                        unit: μV/K
-                      ε₃:
-                        display: 589 μV/K
-                        value: 589
-                        unit: μV/K
-                    n:
-                      ε₁:
-                        display: "-338 μV/K"
-                        value: -338
-                        unit: μV/K
-                      ε₂:
-                        display: "-332 μV/K"
-                        value: -332
-                        unit: μV/K
-                      ε₃:
-                        display: "-331 μV/K"
-                        value: -331
-                        unit: μV/K
-                  σ:
-                    p:
-                      ε₁:
-                        display: 1.94e+16 (Ωms)⁻¹
-                        value: 1.94e+16
-                        unit: "(Ωms)⁻¹"
-                      ε₂:
-                        display: 5.90e+16 (Ωms)⁻¹
-                        value: 5.90e+16
-                        unit: "(Ωms)⁻¹"
-                      ε₃:
-                        display: 5.91e+16 (Ωms)⁻¹
-                        value: 5.91e+16
-                        unit: "(Ωms)⁻¹"
-                    n:
-                      ε₁:
-                        display: 9.08e+16 (Ωms)⁻¹
-                        value: 9.08e+16
-                        unit: "(Ωms)⁻¹"
-                      ε₂:
-                        display: 9.15e+16 (Ωms)⁻¹
-                        value: 9.15e+16
-                        unit: "(Ωms)⁻¹"
-                      ε₃:
-                        display: 9.24e+16 (Ωms)⁻¹
-                        value: 9.24e+16
-                        unit: "(Ωms)⁻¹"
-                  mₑᶜᵒⁿᵈ:
-                    p:
-                      ε₁:
-                        display: 0.477 mₑ
-                        value: 0.477
-                        unit: mₑ
-                      ε₂:
-                        display: 0.477 mₑ
-                        value: 0.477
-                        unit: mₑ
-                      ε₃:
-                        display: 1.45 mₑ
-                        value: 1.45
-                        unit: mₑ
-                    n:
-                      ε₁:
-                        display: 0.305 mₑ
-                        value: 0.305
-                        unit: mₑ
-                      ε₂:
-                        display: 0.308 mₑ
-                        value: 0.308
-                        unit: mₑ
-                      ε₃:
-                        display: 0.310 mₑ
-                        value: 0.310
-                        unit: mₑ
-                extra_data:
-                  Sₑₓₜᵣ:
-                    p:
-                      value: 1.07e+3 μV/K
-                      temperature: 600 K
-                      doping: 1e+16 cm⁻³
-                    n:
-                      value: "-829 μV/K"
-                      temperature: 600 K
-                      doping: 1e+16 cm⁻³
-                  σₑₓₜᵣ:
-                    p:
-                      value: 4.69e+18 (Ωms)⁻¹
-                      temperature: 100 K
-                      doping: 1e+20 cm⁻³
-                    n:
-                      value: 7.58e+18 (Ωms)⁻¹
-                      temperature: 200 K
-                      doping: 1e+20 cm⁻³
-                  κₑ₋ₑₓₜᵣ:
-                    p:
-                      value: 9.52e+8 W/(mKs)
-                      temperature: 100 K
-                      doping: 1e+16 cm⁻³
-                    n:
-                      value: 1.92e+9 W/(mKs)
-                      temperature: 100 K
-                      doping: 1e+16 cm⁻³
-      response:
-          status_code: 200
-          body:
-              project: carrier_transport
-              identifier: mp-10163
 
     - name: get contribution
       request:
@@ -426,19 +65,24 @@ stages:
           url: http://localhost:5000/contributions/
           method: GET
           params:
-              _fields: id,project,identifier,data.formula
+              project: dtu
+              _fields: id,identifier,data.formula
               identifier__icontains: mp-10
-              data__formula__contains: Al
-              _limit: 1
+              data__formula__contains: Te4
+              _limit: 2
+              _order_by: identifier
       response:
           status_code: 200
           body:
               data:
-                  - project: dtu
-                    identifier: mp-10163
-                    id: 5abd9018d4f144494f2cf2e3
-                    data:
+                  - data:
                       formula: Al2Na2Te4
+                    id: 5abd9018d4f144494f2cf2e3
+                    identifier: mp-10163
+                  - data:
+                      formula: Cu4La4S4Te4
+                    id: 5abd8fb1d4f144494f2ceee5
+                    identifier: mp-10288
               has_more: true
 
     - name: query contributions using identifiers
@@ -452,15 +96,18 @@ stages:
           status_code: 200
           body:
               data:
-                  - project: dtu
+                  - id: 5abd8f7bd4f144494f2cece2
                     identifier: mp-1000
-                    id: 5abd8f7bd4f144494f2cece2
-                  - project: dtu
+                    project: dtu
+                  - id: 5abd9018d4f144494f2cf2e3
                     identifier: mp-10163
-                    id: 5abd9018d4f144494f2cf2e3
-                  - project: carrier_transport
+                    project: dtu
+                  - id: 5ac0a768d4f1443de2674f19
                     identifier: mp-10163
-                    id: 5ac0a768d4f1443de2674f19
+                    project: carrier_transport
+                  - id: 5cef037211fb2a7cdef1b3bd
+                    identifier: mp-10163
+                    project: screening_inorganic_pv
               has_more: false
 
 #    - name: modal
@@ -468,67 +115,36 @@ stages:
 #          url: http://localhost:5000/contributions/5ac08be3d4f144332ce7b785/
 #          method: GET
 #          params:
-#              _fields: content.data.modal
+#              _fields: data.modal
 #      response:
 #          status_code: 200
 #          body:
-#              content:
-#                  data:
-#                      modal:
-#                        S:
-#                          p:
-#                            ε₁: 722 μV/K
-#                            ε₂: 783 μV/K
-#                            ε₃: 806 μV/K
-#                          n:
-#                            ε₁: "-485 μV/K"
-#                            ε₂: "-479 μV/K"
-#                            ε₃: "-477 μV/K"
-#                        σ:
-#                          p:
-#                            ε₁: 1.37e+15 (Ωms)⁻¹
-#                            ε₂: 4.83e+15 (Ωms)⁻¹
-#                            ε₃: 8.09e+15 (Ωms)⁻¹
-#                          n:
-#                            ε₁: 2.16e+16 (Ωms)⁻¹
-#                            ε₂: 2.60e+16 (Ωms)⁻¹
-#                            ε₃: 4.84e+16 (Ωms)⁻¹
-#                        mₑᶜᵒⁿᵈ:
-#                          p:
-#                            ε₁: 3.48 mₑ
-#                            ε₂: 5.84 mₑ
-#                            ε₃: 20.5 mₑ
-#                          n:
-#                            ε₁: 0.582 mₑ
-#                            ε₂: 1.08 mₑ
-#                            ε₃: 1.30 mₑ
-
-
-#---
-#test_name: clean up contributions
-#
-#stages:
-#    - name: delete contribution carrier_transport mp-27502
-#      request:
-#          url: http://localhost:5000/contributions/5ac08be3d4f144332ce7b785/
-#          method: DELETE
-#      response:
-#          status_code: 200
-#    - name: delete contribution dtu mp-1000
-#      request:
-#          url: http://localhost:5000/contributions/5abd8f7bd4f144494f2cece2/
-#          method: DELETE
-#      response:
-#          status_code: 200
-#    - name: delete contribution dtu mp-10163
-#      request:
-#          url: http://localhost:5000/contributions/5abd9018d4f144494f2cf2e3/
-#          method: DELETE
-#      response:
-#          status_code: 200
-#    - name: delete contribution carrier_transport mp-10163
-#      request:
-#          url: http://localhost:5000/contributions/5ac0a768d4f1443de2674f19/
-#          method: DELETE
-#      response:
-#          status_code: 200
+#              data:
+#                  modal:
+#                    S:
+#                      p:
+#                        ε₁: 722 μV/K
+#                        ε₂: 783 μV/K
+#                        ε₃: 806 μV/K
+#                      n:
+#                        ε₁: "-485 μV/K"
+#                        ε₂: "-479 μV/K"
+#                        ε₃: "-477 μV/K"
+#                    σ:
+#                      p:
+#                        ε₁: 1.37e+15 (Ωms)⁻¹
+#                        ε₂: 4.83e+15 (Ωms)⁻¹
+#                        ε₃: 8.09e+15 (Ωms)⁻¹
+#                      n:
+#                        ε₁: 2.16e+16 (Ωms)⁻¹
+#                        ε₂: 2.60e+16 (Ωms)⁻¹
+#                        ε₃: 4.84e+16 (Ωms)⁻¹
+#                    mₑᶜᵒⁿᵈ:
+#                      p:
+#                        ε₁: 3.48 mₑ
+#                        ε₂: 5.84 mₑ
+#                        ε₃: 20.5 mₑ
+#                      n:
+#                        ε₁: 0.582 mₑ
+#                        ε₂: 1.08 mₑ
+#                        ε₃: 1.30 mₑ

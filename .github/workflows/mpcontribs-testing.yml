@@ -14,7 +14,8 @@ jobs:
     - name: test
       run: |
           docker run --network container:mpcontribs_api_1 appropriate/curl -s --retry 10 --retry-connrefused http://localhost:5000/
-          docker run --network container:mpcontribs_api_1 mpcontribs_test pytest mpcontribs/api/projects/tests/test_projects.tavern.yaml -m base
+          docker run --network container:mpcontribs_api_1 mpcontribs_test pytest mpcontribs/api/projects/tests/test_projects.tavern.yaml
+          docker run --network container:mpcontribs_api_1 mpcontribs_test pytest mpcontribs/api/contributions/tests/test_contributions.tavern.yaml
           docker run mpcontribs_test pycodestyle mpcontribs/api
           docker run mpcontribs_test mypy mpcontribs/api
           docker run mpcontribs_test flake8 --count --show-source --exit-zero --max-complexity=25 --statistics mpcontribs/api
