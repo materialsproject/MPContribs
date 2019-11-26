@@ -1,117 +1,31 @@
 ---
 test_name: test projects resource
 
-marks:
-    - base
-
 stages:
-    - name: create DTU project
+    - name: create test project
       request:
           url: http://localhost:5000/projects/
           method: POST
           json:
-              project: dtu
-              title: GLLB-SC Bandgaps
-              description: >-
-                  Bandgaps calculated using GLLB-SC potential by Gritsenko, van Leeuwen, van Lenthe, and Baerends
-                  (GLLB), adapted by Kuisma et al to account for solids (-SC). The Kohn-Sham gap (ΔE-KS) most basically
-                  refers to the energy difference between the bottom of the conduction band and the top of the valence
-                  band. The Quasi-Particle gap (ΔE-QP) takes into account the derivative discontinuity (C) of the
-                  chemical potential and gives the bandgap as the difference between ionization potential and electron
-                  affinity.
-              authors: I. Castelli, F. Hueser, M. Pandey, H. Li, K. Thygesen, B. Seger, A. Jain, K. Persson, G. Ceder, K. Jacobsen
+              project: test
+              title: Test Title
+              description: just a test project. Nothing to see here.
+              authors: P. Huck
               urls:
-                  main: https://doi.org/10.1002/aenm.201400915
-                  PRA: https://doi.org/10.1103/PhysRevA.51.1944
-                  PRB: https://doi.org/10.1103/PhysRevB.82.115106
+                  main: https://google.com
       response:
           status_code: 200
           body:
-              project: dtu
-              title: GLLB-SC Bandgaps
-    - name: create PCFC project
+              project: test
+              title: Test Title
+
+    - name: delete test project
       request:
-          url: http://localhost:5000/projects/
-          method: POST
-          json:
-              project: defect_genome_pcfc_materials
-              title: Defect Genome PCFC
-              description: >-
-                  Defect Genome of Cubic Perovskites for Fuel Cell Applications. Employing computationally tractable ab
-                  initio models driven by highly scalable workflows, to study formation and interaction of various point
-                  defects (e.g., O vacancies, H interstitials, and Y substitutional dopant), in over 80 cubic
-                  perovskites, for potential proton-conducting ceramic fuel cell (PCFC) applications.
-              authors: J. Balachandran, L. Lin, J. Anchell, C. Bridges, P. Ganesh
-              urls:
-                  main: https://doi.org/10.1021/acs.jpcc.7b08716
+          url: http://localhost:5000/projects/test/
+          method: DELETE
       response:
           status_code: 200
-          body:
-              project: defect_genome_pcfc_materials
-              title: Defect Genome PCFC
-    - name: create BiOI project
-      request:
-          url: http://localhost:5000/projects/
-          method: POST
-          json:
-              project: bioi_defects
-              title: Defect Physics of Air-Stable BiOI
-              description: >-
-                  Strongly Enhanced Photovoltaic Performance and Defect Physics of Air-Stable Bismuth Oxyiodide (BiOI).
-                  Bismuth-based compounds have recently gained increasing attention as potentially non-toxic and
-                  defect-tolerant solar absorbers. However, many of the new materials recently investigated show limited
-                  photovoltaic performance. Herein, we explore in detail one such compound through theory and
-                  experiment, namely bismuth oxyiodide (BiOI). We grow BiOI thin films by chemical vapor transport and
-                  find them to maintain the same tetragonal phase in ambient air for at least 197 days. Our computations
-                  suggest BiOI to be tolerant to antisite and vacancy defects. We demonstrate an all-inorganic solar
-                  cell (ITO|NiOx|BiOI|ZnO|Al) with negligible hysteresis and up to 80% external quantum efficiency under
-                  select monochromatic excitation. The short-circuit current densities and power conversion efficiencies
-                  under AM 1.5G illumination are nearly double those of previously-reported BiOI solar cells, as well as
-                  other bismuth halide and chalcohalide photovoltaics recently explored by many groups. Through a
-                  detailed loss analysis using optical characterization, photoemission spectroscopy and device modeling,
-                  we provide direction for future improvements in efficiency. Our work demonstrates that BiOI,
-                  previously considered to be a poor photocatalyst, is promising for photovoltaics.
-              authors: >-
-                  R. Hoye, L. Lee, RC Kurchin, T. Huq, KHL Zhang, M. Sponseller, L. Nienhaus, RE Brandt, J. Jean, JA
-                  Polizzotti, A. Kursumovic, MG Bawendi, V. Bulovic, V. Stevanovic, T. Buonassisi, JL MacManus-Driscoll
-              urls:
-                  main: https://doi.org/10.1002/adma.201702176
-                  data: https://doi.org/10.17863/CAM.10792
-              other:
-                  J|SC: short-circuit current densities
-                  V|OC: open-circuit voltage
-                  FF: ??
-                  PCE: power conversion efficiency
-                  EQE: external quantum efficiency
-      response:
-          status_code: 200
-          body:
-              project: bioi_defects
-              title: Defect Physics of Air-Stable BiOI
-    - name: create carrier transport project
-      request:
-          url: http://localhost:5000/projects/
-          method: POST
-          json:
-              project: carrier_transport
-              title: Carrier Transport
-              description: >-
-                  Ab-initio electronic transport database for inorganic materials. S is the Seebeck coefficient, σ the
-                  conductivity, and κₑ the electronic part of the thermal conductivity. The values reported are the
-                  maximum (minimum for κₑ) of the average of the eigenvalues of the respective tensors. The values of
-                  the doping and the temperature that give that maximum are also reported. mₑᶜᵒⁿᵈ is the conductivity
-                  effective mass. The values reported are the eigenvalues and their average at a doping level of 10¹⁸
-                  cm⁻³ and at a temperature of 300 K. All the properties are reported for both doping type (n and p).
-                  The properties that depend on the relaxation time are reported divided by the constant value τ
-                  used.
-              authors: F. Ricci, W. Chen, U. Aydemir, G. J. Snyder, G-M. Rignanese, A. Jain, G. Hautier
-              urls:
-                  main: https://doi.org/10.1038/sdata.2017.85
-      response:
-          status_code: 200
-          body:
-              project: carrier_transport
-              title: Carrier Transport
+
     - name: DTU project info and mask
       request:
           url: http://localhost:5000/projects/dtu/
@@ -123,6 +37,7 @@ stages:
           body:
               project: "dtu"
               title: "GLLB-SC Bandgaps"
+
     - name: projects search and mask
       request:
           url: http://localhost:5000/projects/
@@ -138,24 +53,7 @@ stages:
                     project: "defect_genome_pcfc_materials"
                   - title: "Defect Physics of Air-Stable BiOI"
                     project: "bioi_defects"
-    #- name: bulk update projects
-    #  request:
-    #      url: http://localhost:5000/projects/
-    #      method: PUT
-    #      json:
-    #          authors: P. Huck
-    #  response:
-    #      status_code: 200
-    #      body:
-    #          count: 3
 
----
-test_name: test additional projects views
-
-marks:
-    - extra
-
-stages:
     - name: DTU columns
       request:
           url: http://localhost:5000/projects/dtu/columns
@@ -171,10 +69,18 @@ stages:
                   - ΔE-KS.indirect
                   - ΔE-QP.direct
                   - ΔE-QP.indirect
+
     - name: DTU table
       request:
-          url: http://localhost:5000/projects/dtu/table?columns=formula,%CE%94E-KS.direct&page=1&per_page=2&q=Na&order=asc&sort_by=%CE%94E-KS.direct%20%5BeV%5D
+          url: http://localhost:5000/projects/dtu/table
           method: GET
+          params:
+              columns: formula,ΔE-KS.direct
+              page: 1
+              per_page: 2
+              q: Na
+              order: asc
+              sort_by: "ΔE-KS.direct [eV]"
       response:
           status_code: 200
           body:
@@ -192,10 +98,16 @@ stages:
                     id: "http://localhost:8080/explorer/5abd8ffad4f144494f2cf1b7"
                     formula: "Co2Na8O8"
                     "ΔE-KS.direct [eV]": "0.177"
+
     - name: DTU graph
       request:
-          url: http://localhost:5000/projects/dtu/graph?columns=%CE%94E-KS.direct&filters=%CE%94E-QP.direct__lt%3A0.2&page=1&per_page=2
+          url: http://localhost:5000/projects/dtu/graph
           method: GET
+          params:
+              columns: ΔE-KS.direct
+              filters: ΔE-QP.direct__lt:0.2
+              page: 1
+              per_page: 2
       response:
           status_code: 200
           body:
@@ -209,35 +121,3 @@ stages:
                     "text":
                       - "5a862206d4f1443a18fab255"
                       - "5a86220dd4f1443a18fab257"
-
----
-test_name: clean up projects
-
-marks:
-    - base
-
-stages:
-    - name: delete DTU project
-      request:
-          url: http://localhost:5000/projects/dtu/
-          method: DELETE
-      response:
-          status_code: 200
-    - name: delete PCFC project
-      request:
-          url: http://localhost:5000/projects/defect_genome_pcfc_materials/
-          method: DELETE
-      response:
-          status_code: 200
-    - name: delete BiOI project
-      request:
-          url: http://localhost:5000/projects/bioi_defects/
-          method: DELETE
-      response:
-          status_code: 200
-    - name: delete carrier_transport project
-      request:
-          url: http://localhost:5000/projects/carrier_transport/
-          method: DELETE
-      response:
-          status_code: 200
