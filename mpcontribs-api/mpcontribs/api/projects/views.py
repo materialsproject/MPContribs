@@ -1,5 +1,6 @@
 import os
 import flask_mongorest
+from dict_deep import deep_get
 from mongoengine.context_managers import no_dereference
 from mongoengine.queryset.visitor import Q
 from flask import Blueprint, request, current_app
@@ -71,7 +72,7 @@ class TableView(SwaggerView):
               description: list of `column__operator:value` filters \
                       with `column` in dot notation and `operator` in mongoengine format \
                       (http://docs.mongoengine.org/guide/querying.html#query-operators). \
-                      `column` needs to be a valid field in `content.data`.
+                      `column` needs to be a valid field in `data`.
             - name: page
               in: query
               type: integer
@@ -122,7 +123,7 @@ class TableView(SwaggerView):
         explorer = 'http://localhost:8080/explorer' if current_app.config['DEBUG'] \
             else 'https://portal.mpcontribs.org/explorer'
         mp_site = 'https://materialsproject.org/materials'
-        mask = ['content.data', 'content.structures', 'identifier']
+        mask = ['data', 'structures', 'identifier']
         search = request.args.get('q')
         filters = request.args.get('filters', '').split(',')
         page = int(request.args.get('page', 1))
@@ -136,7 +137,7 @@ class TableView(SwaggerView):
         objects = Contributions.objects(project=project).only(*mask)
 
         # default user_columns
-        sample = objects.first()['content']['data']
+        sample = objects.first()['data']
         data_keys = sorted(list(
             k.rsplit('.', 1)[0] if k.endswith('.display') else k
             for k, v in nested_to_record(sample, sep='.').items()
@@ -153,8 +154,8 @@ class TableView(SwaggerView):
         else:
             # test whether search key exists in all docs and is not a number/object
             search_key = data_keys[0].replace('.', '__')
-            q1 = {f'content__data__{search_key}__exists': False}
-            q2 = {f'content__data__{search_key}__type': 'object'}
+            q1 = {f'data__{search_key}__exists': False}
+            q2 = {f'data__{search_key}__type': 'object'}
             if objects(Q(**q1) | Q(**q2)).count() < 1:
                 general_columns.append(data_keys[0])
             else:
@@ -171,25 +172,27 @@ class TableView(SwaggerView):
             if 'CIF' in col:
                 columns.append(col)
                 continue
-            q_unit = {f'content__data__{col.replace(".", "__")}__exists': True}
-            unit_sample = objects(**q_unit).only(f'content.data.{col}.unit').first()
-            unit_sample_record = nested_to_record(unit_sample['content']['data'], sep='.')
-            unit = unit_sample_record.get(f'{col}.unit')
-            columns.append('{} [{}]'.format(col, unit) if unit else col)
+            q_unit = {f'data__{col.replace(".", "__")}__exists': True}
+            unit_sample = objects(**q_unit).only(f'data.{col}.unit').first()
+            try:
+                unit = deep_get(unit_sample, f'data.{col}.unit')
+                columns.append(f'{col} [{unit}]')
+            except KeyError:
+                columns.append(col)
 
         # search and sort
         if search is not None:
             kwargs = {
-                f'content__data__{general_columns[-1]}__exists': True,
-                f'content__data__{general_columns[-1]}__contains': search
+                f'data__{general_columns[-1]}__exists': True,
+                f'data__{general_columns[-1]}__contains': search
             }
             objects = objects(Q(identifier__contains=search) | Q(**kwargs))
         sort_by_key = sort_by
         if ' ' in sort_by and sort_by[-1] == ']':
             sort_by = sort_by.split(' ')[0]  # remove unit
-            sort_by_key = f'content.data.{sort_by}.value'
+            sort_by_key = f'data.{sort_by}.value'
         elif sort_by in columns[2:]:
-            sort_by_key = f'content.data.{sort_by}'
+            sort_by_key = f'data.{sort_by}'
         order_sign = '-' if order == 'desc' else '+'
         order_by = f"{order_sign}{sort_by_key}"
         objects = objects.order_by(order_by)
@@ -202,14 +205,14 @@ class TableView(SwaggerView):
         items = []
         for doc in objects.paginate(page=page, per_page=per_page).items:
             mp_id = doc['identifier']
-            contrib = nested_to_record(doc['content']['data'], sep='.')
+            contrib = nested_to_record(doc['data'], sep='.')
             search_value = contrib.get(general_columns[-1], mp_id).replace(' ', '')
             row = [f"{mp_site}/{mp_id}", f"{explorer}/{doc['id']}", search_value]
 
             for idx, col in enumerate(user_columns):
                 cell = ''
                 if 'CIF' in col:
-                    structures = doc['content']['structures']
+                    structures = doc['structures']
                     if '.' in col:  # grouped columns
                         sname = '.'.join(col.split('.')[:-1])  # remove CIF string from field name
                         for d in structures:
@@ -266,7 +269,7 @@ class GraphView(SwaggerView):
               description: list of `column__operator:value` filters \
                       with `column` in dot notation and `operator` in mongoengine format \
                       (http://docs.mongoengine.org/guide/querying.html#query-operators). \
-                      `column` needs to be a valid field in `content.data`.
+                      `column` needs to be a valid field in `data`.
             - name: page
               in: query
               type: integer
@@ -299,7 +302,7 @@ class GraphView(SwaggerView):
                                         items:
                                             type: number
         """
-        mask = ['content.data', 'identifier']
+        mask = ['data', 'identifier']
         columns = request.args.get('columns').split(',')
         filters = request.args.get('filters', '').split(',')
         page = int(request.args.get('page', 1))
@@ -307,10 +310,11 @@ class GraphView(SwaggerView):
         per_page = int(request.args.get('per_page', PER_PAGE_MAX))
         per_page = PER_PAGE_MAX if per_page > PER_PAGE_MAX else per_page
 
+        data = [{'x': [], 'y': [], 'text': []} for col in columns]
         with no_dereference(Contributions) as ContributionsDeref:
             query = {'project': project}
             query.update(dict((
-                f'content__data__{col.replace(".", "__")}__display__exists', True
+                f'data__{col.replace(".", "__")}__display__exists', True
             ) for col in columns))
             objects = ContributionsDeref.objects(**query).only(*mask)
             objects = objects.order_by('_id')
@@ -319,16 +323,14 @@ class GraphView(SwaggerView):
                 query = construct_query(filters)
                 objects = objects(**query)
 
-            data = [{'x': [], 'y': [], 'text': []} for col in columns]
             for obj in objects.paginate(page=page, per_page=per_page).items:
-                d = nested_to_record(obj['content']['data'], sep='.')
                 for idx, col in enumerate(columns):
-                    val = d[f'{col}.display']
+                    val = deep_get(obj, f'data.{col}.value')
                     data[idx]['x'].append(obj.identifier)
-                    data[idx]['y'].append(val.split(' ')[0])
+                    data[idx]['y'].append(val)
                     data[idx]['text'].append(str(obj.id))
 
-            return {'data': data}
+        return {'data': data}
 
 
 class ColumnsView(SwaggerView):
@@ -359,7 +361,7 @@ class ColumnsView(SwaggerView):
         columns = []
         objects = list(Contributions.objects.aggregate(*[
             {"$match": {"project": project}},
-            {"$project": {"akv": {"$objectToArray": "$content.data"}}},
+            {"$project": {"akv": {"$objectToArray": "$data"}}},
             {"$unwind": "$akv"},
             {"$project": {"root": "$akv.k", "level2": {
                 "$switch": {"branches": [{
@@ -405,23 +407,3 @@ projects.add_url_rule('/<string:project>/graph', view_func=graph_view, methods=[
 
 columns_view = ColumnsView.as_view(ColumnsView.__name__)
 projects.add_url_rule('/<string:project>/columns', view_func=columns_view, methods=['GET'])
-
-# def patch(self, project):
-#     """Partially update a project's provenance entry"""
-#     return NotImplemented()
-#     schema = self.Schema(dump_only=('id', 'project')) # id/project read-only
-#     schema.opts.model_build_obj = False
-#     payload = schema.load(request.json, partial=True)
-#     if payload.errors:
-#         return payload.errors # TODO raise JsonError 400?
-#     # set fields defined in model
-#     if 'urls' in payload.data:
-#         urls = payload.data.pop('urls')
-#         payload.data.update(dict(
-#             ('urls__'+key, getattr(urls, key)) for key in urls
-#         ))
-#     # set dynamic fields for urls
-#     for key, url in request.json.get('urls', {}).items():
-#         payload.data['urls__'+key] = url
-#     return payload.data
-#     #Projects.objects(project=project).update(**payload.data)

@@ -4,7 +4,6 @@ import os
 import logging
 import yaml
 from importlib import import_module
-# from bson.decimal128 import Decimal128
 from flask import Flask, current_app
 from flask_marshmallow import Marshmallow
 from flask_mongoengine import MongoEngine
@@ -40,7 +39,7 @@ def construct_query(filters):
 
     example:
         C__gte:0.42,C__lte:2.10,ΔE-QP.direct__lte:11.3
-        -> content__data__C__value__lte
+        -> data__C__value__lte
     """
     query = {}
     for f in filters:
@@ -50,10 +49,10 @@ def construct_query(filters):
             col = col.replace(".", "__")
             try:
                 val = float(v)
-                key = f'content__data__{col}__value__{op}'
+                key = f'data__{col}__value__{op}'
                 query[key] = val
             except ValueError:
-                key = f'content__data__{col}__{op}'
+                key = f'data__{col}__{op}'
                 query[key] = v
     return query
 
@@ -123,13 +122,6 @@ def create_app():
     if app.config.get('DEBUG'):
         from flask_cors import CORS
         CORS(app)  # enable for development (allow localhost)
-
-    # json = FlaskJSON(app)
-
-    # @json.encoder
-    # def custom_encoder(o):
-    #     if isinstance(o, Decimal128):
-    #         return float(o.to_decimal())
 
     Logging(app)
     Marshmallow(app)
