@@ -1,7 +1,8 @@
 import re
 import json
 import os
-from flask import request
+import flask_mongorest
+from flask import request, Blueprint
 import pandas as pd
 from pandas.io.json.normalize import nested_to_record
 from itertools import groupby
@@ -12,8 +13,13 @@ import pymatgen.core.periodic_table as ptable
 from pymatgen.core.composition import Composition
 from mpcontribs.api.core import SwaggerView
 from mpcontribs.api.contributions.document import Contributions
+from mpcontribs.api.contributions.views import ContributionsResource
 from mpcontribs.api.tables.document import Tables
 
+templates = os.path.join(
+    os.path.dirname(flask_mongorest.__file__), 'templates'
+)
+redox_thermo_csp = Blueprint("redox_thermo_csp", __name__, template_folder=templates)
 
 def split_comp(compstr):
     """
@@ -1869,5 +1875,5 @@ class EnergyAnalysisView(SwaggerView):
 
 isograph_view = IsographView.as_view(IsographView.__name__)
 energy_analysis_view = EnergyAnalysisView.as_view(EnergyAnalysisView.__name__)
-contributions.add_url_rule('/redox_thermo_csp_energy/', view_func=energy_analysis_view, methods=['GET'])
-contributions.add_url_rule('/<string:cid>/redox_thermo_csp/<string:plot_type>', view_func=isograph_view, methods=['GET'])
+redox_thermo_csp.add_url_rule('/energy/', view_func=energy_analysis_view, methods=['GET'])
+redox_thermo_csp.add_url_rule('/<string:cid>/<string:plot_type>', view_func=isograph_view, methods=['GET'])

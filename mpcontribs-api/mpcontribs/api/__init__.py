@@ -137,218 +137,228 @@ def create_app():
             logger.warning(f'API module {module_path}: {ex}')
             continue
 
-        # try:
+        try:
+            blueprint = getattr(module, collection)
+            app.register_blueprint(blueprint, url_prefix='/'+collection)
+            klass = getattr(module, collection.capitalize() + 'View')
+            register_class(app, klass, name=collection)
+
+            # add schema and specs for flask-mongorest views
+            if getattr(klass, 'resource', None) is not None:
+                klass.resource.schema = klass.Schema
+
+                dir_path = os.path.join(app.config["SWAGGER"]["doc_dir"], collection)
+                if not os.path.exists(dir_path):
+                    os.makedirs(dir_path)
+
+                for method in klass.methods:
+                    file_path = os.path.join(dir_path, method.__name__ + '.yml')
+                    fields_param = None
+                    if klass.resource.fields is not None:
+                        fields_avail = klass.resource.fields + klass.resource.get_optional_fields() + ['_all']
+                        description = f'List of fields to include in response ({fields_avail}).'
+                        description += ' Use dot-notation for nested subfields.'
+                        fields_param = {
+                            'name': '_fields',
+                            'in': 'query',
+                            'default': klass.resource.fields,
+                            'type': 'array',
+                            'items': {'type': 'string'},
+                            'description': description
+                        }
+
+                    field_pagination_params = []
+                    for field, limits in klass.resource.fields_to_paginate.items():
+                        field_pagination_params.append({
+                            'name': f'{field}_page',
+                            'in': 'query',
+                            'default': 1,
+                            'type': 'integer',
+                            'description': f'page to retrieve for {field} field'
+                        })
+                        field_pagination_params.append({
+                            'name': f'{field}_per_page',
+                            'in': 'query',
+                            'default': limits[0],
+                            'maximum': limits[1],
+                            'type': 'integer',
+                            'description': f'number of items to retrieve per page for {field} field'
+                        })
+
+                    spec = None
+                    if method.__name__ == 'Fetch':
+                        params = [{
+                            'name': 'pk',
+                            'in': 'path',
+                            'type': 'string',
+                            'required': True,
+                            'description': f'{collection[:-1]} (primary key)'
+                        }]
+                        if fields_param is not None:
+                            params.append(fields_param)
+                        if field_pagination_params:
+                            params += field_pagination_params
+                        spec = {
+                            'summary': f'Retrieve a {collection[:-1]}.',
+                            'operationId': 'get_entry',
+                            'parameters': params,
+                            'responses': {
+                                200: {
+                                    'description': f'single {collection} entry',
+                                    'schema': {'$ref': f'#/definitions/{klass.schema_name}'}
+                                }
+                            }
+                        }
+                    elif method.__name__ == 'List':
+                        params = [fields_param] if fields_param is not None else []
+                        if field_pagination_params:
+                            params += field_pagination_params
+
+                        if klass.resource.allowed_ordering:
+                            params.append({
+                                'name': '_order_by',
+                                'in': 'query',
+                                'type': 'string',
+                                'enum': klass.resource.allowed_ordering,
+                                'description': f'order {collection}'
+                            })
+
+                        if klass.resource.filters:
+                            params += [{
+                                'name': k if op.op == 'exact' else f'{k}__{op.op}',
+                                'in': 'query',
+                                'type': 'string',
+                                'description': f'filter {k}' if op.op == 'exact' else f'filter {k} via ${op.op}'
+                            } for k, v in klass.resource.filters.items() for op in v]
+
+                        schema_props = {
+                            'data': {
+                                'type': 'array',
+                                'items': {'$ref': f'#/definitions/{klass.schema_name}'}
+                            }
+                        }
+                        if klass.resource.paginate:
+                            schema_props['has_more'] = {'type': 'boolean'}
+                            params.append({
+                                'name': '_skip',
+                                'in': 'query',
+                                'type': 'integer',
+                                'description': 'number of items to skip'
+                            })
+                            params.append({
+                                'name': '_limit',
+                                'in': 'query',
+                                'type': 'integer',
+                                'description': 'maximum number of items to return'
+                            })
+
+                        spec = {
+                            'summary': f'Retrieve and filter {collection}.',
+                            'operationId': 'get_entries',
+                            'parameters': params,
+                            'responses': {
+                                200: {
+                                    'description': f'list of {collection}',
+                                    'schema': {
+                                        'type': 'object',
+                                        'properties': schema_props
+                                    }
+                                }
+                            }
+                        }
+                    elif method.__name__ == 'Create':
+                        spec = {
+                            'summary': f'Create a new {collection[:-1]}.',
+                            'operationId': 'create_entry',
+                            'parameters': [{
+                                'name': f'{collection[:-1]}',
+                                'in': 'body',
+                                'description': f'The object to use for {collection[:-1]} creation',
+                                'schema': {'$ref': f'#/definitions/{klass.schema_name}'}
+                            }],
+                            'responses': {
+                                200: {
+                                    'description': f'{collection[:-1]} created',
+                                    'schema': {'$ref': f'#/definitions/{klass.schema_name}'}
+                                }
+                            }
+                        }
+                    elif method.__name__ == 'Update':
+                        spec = {
+                            'summary': f'Update a {collection[:-1]}.',
+                            'operationId': 'update_entry',
+                            'parameters': [{
+                                'name': 'pk',
+                                'in': 'path',
+                                'type': 'string',
+                                'required': True,
+                                'description': f'The {collection[:-1]} (primary key) to update'
+                            }, {
+                                'name': f'{collection[:-1]}',
+                                'in': 'body',
+                                'description': f'The object to use for {collection[:-1]} update',
+                                'schema': {'$ref': f'#/definitions/{klass.schema_name}'}
+                            }],
+                            'responses': {
+                                200: {
+                                    'description': f'{collection[:-1]} updated',
+                                    'schema': {'$ref': f'#/definitions/{klass.schema_name}'}
+                                }
+                            }
+                        }
+                    elif method.__name__ == 'BulkUpdate':
+                        spec = {
+                            'summary': f'Update {collection} in bulk.',
+                            'operationId': 'update_entries',
+                            'parameters': [{
+                                'name': f'{collection}',
+                                'in': 'body',
+                                'description': f'The object to use for {collection} bulk update',
+                                'schema': {'$ref': f'#/definitions/{klass.schema_name}'}
+                            }],
+                            'responses': {
+                                200: {
+                                    'description': f'Number of {collection} updated',
+                                    'schema': {
+                                        'type': 'object',
+                                        'properties': {'count': {'type': 'integer'}}
+                                    }
+                                }
+                            }
+                        }
+                    elif method.__name__ == 'Delete':
+                        spec = {
+                            'summary': f'Delete a {collection[:-1]}.',
+                            'operationId': 'delete_entry',
+                            'parameters': [{
+                                'name': 'pk',
+                                'in': 'path',
+                                'type': 'string',
+                                'required': True,
+                                'description': f'The {collection[:-1]} (primary key) to delete'
+                            }],
+                            'responses': {
+                                200: {'description': f'{collection[:-1]} deleted'}
+                            }
+                        }
+
+                    if spec:
+                        with open(file_path, 'w') as f:
+                            yaml.dump(spec, f)
+
+        except AttributeError as ex:
+            logger.warning('Failed to register {}: {}'.format(
+                module_path, collection, ex
+            ))
+
+    # TODO discover user-contributed views automatically
+    collection = 'redox_thermo_csp'
+    module_path = '.'.join(['mpcontribs', 'api', collection, 'views'])
+    try:
+        module = import_module(module_path)
         blueprint = getattr(module, collection)
         app.register_blueprint(blueprint, url_prefix='/'+collection)
-        klass = getattr(module, collection.capitalize() + 'View')
-        register_class(app, klass, name=collection)
-
-        # add schema and specs for flask-mongorest views
-        if getattr(klass, 'resource', None) is not None:
-            klass.resource.schema = klass.Schema
-
-            dir_path = os.path.join(app.config["SWAGGER"]["doc_dir"], collection)
-            if not os.path.exists(dir_path):
-                os.makedirs(dir_path)
-
-            for method in klass.methods:
-                file_path = os.path.join(dir_path, method.__name__ + '.yml')
-                fields_param = None
-                if klass.resource.fields is not None:
-                    fields_avail = klass.resource.fields + klass.resource.get_optional_fields() + ['_all']
-                    description = f'List of fields to include in response ({fields_avail}).'
-                    description += ' Use dot-notation for nested subfields.'
-                    fields_param = {
-                        'name': '_fields',
-                        'in': 'query',
-                        'default': klass.resource.fields,
-                        'type': 'array',
-                        'items': {'type': 'string'},
-                        'description': description
-                    }
-
-                field_pagination_params = []
-                for field, limits in klass.resource.fields_to_paginate.items():
-                    field_pagination_params.append({
-                        'name': f'{field}_page',
-                        'in': 'query',
-                        'default': 1,
-                        'type': 'integer',
-                        'description': f'page to retrieve for {field} field'
-                    })
-                    field_pagination_params.append({
-                        'name': f'{field}_per_page',
-                        'in': 'query',
-                        'default': limits[0],
-                        'maximum': limits[1],
-                        'type': 'integer',
-                        'description': f'number of items to retrieve per page for {field} field'
-                    })
-
-                spec = None
-                if method.__name__ == 'Fetch':
-                    params = [{
-                        'name': 'pk',
-                        'in': 'path',
-                        'type': 'string',
-                        'required': True,
-                        'description': f'{collection[:-1]} (primary key)'
-                    }]
-                    if fields_param is not None:
-                        params.append(fields_param)
-                    if field_pagination_params:
-                        params += field_pagination_params
-                    spec = {
-                        'summary': f'Retrieve a {collection[:-1]}.',
-                        'operationId': 'get_entry',
-                        'parameters': params,
-                        'responses': {
-                            200: {
-                                'description': f'single {collection} entry',
-                                'schema': {'$ref': f'#/definitions/{klass.schema_name}'}
-                            }
-                        }
-                    }
-                elif method.__name__ == 'List':
-                    params = [fields_param] if fields_param is not None else []
-                    if field_pagination_params:
-                        params += field_pagination_params
-
-                    if klass.resource.allowed_ordering:
-                        params.append({
-                            'name': '_order_by',
-                            'in': 'query',
-                            'type': 'string',
-                            'enum': klass.resource.allowed_ordering,
-                            'description': f'order {collection}'
-                        })
-
-                    if klass.resource.filters:
-                        params += [{
-                            'name': k if op.op == 'exact' else f'{k}__{op.op}',
-                            'in': 'query',
-                            'type': 'string',
-                            'description': f'filter {k}' if op.op == 'exact' else f'filter {k} via ${op.op}'
-                        } for k, v in klass.resource.filters.items() for op in v]
-
-                    schema_props = {
-                        'data': {
-                            'type': 'array',
-                            'items': {'$ref': f'#/definitions/{klass.schema_name}'}
-                        }
-                    }
-                    if klass.resource.paginate:
-                        schema_props['has_more'] = {'type': 'boolean'}
-                        params.append({
-                            'name': '_skip',
-                            'in': 'query',
-                            'type': 'integer',
-                            'description': 'number of items to skip'
-                        })
-                        params.append({
-                            'name': '_limit',
-                            'in': 'query',
-                            'type': 'integer',
-                            'description': 'maximum number of items to return'
-                        })
-
-                    spec = {
-                        'summary': f'Retrieve and filter {collection}.',
-                        'operationId': 'get_entries',
-                        'parameters': params,
-                        'responses': {
-                            200: {
-                                'description': f'list of {collection}',
-                                'schema': {
-                                    'type': 'object',
-                                    'properties': schema_props
-                                }
-                            }
-                        }
-                    }
-                elif method.__name__ == 'Create':
-                    spec = {
-                        'summary': f'Create a new {collection[:-1]}.',
-                        'operationId': 'create_entry',
-                        'parameters': [{
-                            'name': f'{collection[:-1]}',
-                            'in': 'body',
-                            'description': f'The object to use for {collection[:-1]} creation',
-                            'schema': {'$ref': f'#/definitions/{klass.schema_name}'}
-                        }],
-                        'responses': {
-                            200: {
-                                'description': f'{collection[:-1]} created',
-                                'schema': {'$ref': f'#/definitions/{klass.schema_name}'}
-                            }
-                        }
-                    }
-                elif method.__name__ == 'Update':
-                    spec = {
-                        'summary': f'Update a {collection[:-1]}.',
-                        'operationId': 'update_entry',
-                        'parameters': [{
-                            'name': 'pk',
-                            'in': 'path',
-                            'type': 'string',
-                            'required': True,
-                            'description': f'The {collection[:-1]} (primary key) to update'
-                        }, {
-                            'name': f'{collection[:-1]}',
-                            'in': 'body',
-                            'description': f'The object to use for {collection[:-1]} update',
-                            'schema': {'$ref': f'#/definitions/{klass.schema_name}'}
-                        }],
-                        'responses': {
-                            200: {
-                                'description': f'{collection[:-1]} updated',
-                                'schema': {'$ref': f'#/definitions/{klass.schema_name}'}
-                            }
-                        }
-                    }
-                elif method.__name__ == 'BulkUpdate':
-                    spec = {
-                        'summary': f'Update {collection} in bulk.',
-                        'operationId': 'update_entries',
-                        'parameters': [{
-                            'name': f'{collection}',
-                            'in': 'body',
-                            'description': f'The object to use for {collection} bulk update',
-                            'schema': {'$ref': f'#/definitions/{klass.schema_name}'}
-                        }],
-                        'responses': {
-                            200: {
-                                'description': f'Number of {collection} updated',
-                                'schema': {
-                                    'type': 'object',
-                                    'properties': {'count': {'type': 'integer'}}
-                                }
-                            }
-                        }
-                    }
-                elif method.__name__ == 'Delete':
-                    spec = {
-                        'summary': f'Delete a {collection[:-1]}.',
-                        'operationId': 'delete_entry',
-                        'parameters': [{
-                            'name': 'pk',
-                            'in': 'path',
-                            'type': 'string',
-                            'required': True,
-                            'description': f'The {collection[:-1]} (primary key) to delete'
-                        }],
-                        'responses': {
-                            200: {'description': f'{collection[:-1]} deleted'}
-                        }
-                    }
-
-                if spec:
-                    with open(file_path, 'w') as f:
-                        yaml.dump(spec, f)
-
-        # except AttributeError as ex:
-        #     logger.warning('Failed to register {}: {}'.format(
-        #         module_path, collection, ex
-        #     ))
+    except ModuleNotFoundError as ex:
+        logger.warning(f'API module {module_path}: {ex}')
 
     return app
