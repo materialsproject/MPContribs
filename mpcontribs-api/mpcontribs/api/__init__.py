@@ -335,6 +335,7 @@ def create_app():
             klass = getattr(module, collection.capitalize() + 'View')
             register_class(app, klass, name=collection)
 
+            # TODO this should probably go into mpcontribs.api.core.SwaggerView
             # add schema and specs for flask-mongorest views
             if getattr(klass, 'resource', None) is not None:
                 klass.resource.schema = klass.Schema

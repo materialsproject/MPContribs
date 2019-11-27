@@ -2,7 +2,7 @@ import os
 import flask_mongorest
 from flask_mongorest.resources import Resource
 from flask_mongorest import operators as ops
-from flask_mongorest.methods import List, Fetch, Create, Delete, Update, BulkUpdate
+from flask_mongorest.methods import List, Fetch, Create, Delete, Update
 from flask import Blueprint
 
 from mpcontribs.api.core import SwaggerView
@@ -42,7 +42,7 @@ class ContributionsResource(Resource):
 
 class ContributionsView(SwaggerView):
     resource = ContributionsResource
-    methods = [List, Fetch, Create, Delete, Update, BulkUpdate]
+    methods = [List, Fetch, Create, Delete, Update]
     # TODO unpack display from dict
     # https://github.com/tschaume/flask-mongorest/blob/9a04099daf9a93eefd6fd2ee906c29ffbb87789f/flask_mongorest/resources.py#L401
     # unflatten(dict(

@@ -2,7 +2,7 @@ import os
 import flask_mongorest
 from flask_mongorest.resources import Resource
 from flask_mongorest import operators as ops
-from flask_mongorest.methods import List, Fetch, Create, Delete, Update, BulkUpdate
+from flask_mongorest.methods import List, Fetch, Create, Delete, Update
 from flask import Blueprint, request, current_app
 
 from mpcontribs.api.core import SwaggerView
@@ -37,7 +37,7 @@ class TablesResource(Resource):
 
 class TablesView(SwaggerView):
     resource = TablesResource
-    methods = [List, Fetch, Create, Delete, Update, BulkUpdate]
+    methods = [List, Fetch, Create, Delete, Update]
 
 
 class BackgridTableView(SwaggerView):

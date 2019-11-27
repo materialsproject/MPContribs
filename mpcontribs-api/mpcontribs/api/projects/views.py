@@ -6,7 +6,7 @@ from mongoengine.queryset.visitor import Q
 from flask import Blueprint, request, current_app
 from flask_mongorest.resources import Resource
 from flask_mongorest import operators as ops
-from flask_mongorest.methods import List, Fetch, Create, Delete, Update, BulkUpdate
+from flask_mongorest.methods import List, Fetch, Create, Delete, Update
 from pandas.io.json.normalize import nested_to_record
 from mpcontribs.api import construct_query
 from mpcontribs.api.core import SwaggerView
@@ -38,7 +38,7 @@ class ProjectsResource(Resource):
 
 class ProjectsView(SwaggerView):
     resource = ProjectsResource
-    methods = [List, Fetch, Create, Delete, Update, BulkUpdate]
+    methods = [List, Fetch, Create, Delete, Update]
 
 
 # ADDITIONAL VIEWS
