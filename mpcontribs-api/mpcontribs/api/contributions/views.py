@@ -8,6 +8,7 @@ from flask import Blueprint
 from mpcontribs.api.core import SwaggerView
 from mpcontribs.api.contributions.document import Contributions
 from mpcontribs.api.tables.views import TablesResource
+from mpcontribs.api.structures.views import StructuresResource
 
 templates = os.path.join(
     os.path.dirname(flask_mongorest.__file__), 'templates'
@@ -17,8 +18,8 @@ contributions = Blueprint("contributions", __name__, template_folder=templates)
 
 class ContributionsResource(Resource):
     document = Contributions
-    related_resources = {'tables': TablesResource}  # TODO structures
-    save_related_fields = ['tables']  # TODO structures
+    related_resources = {'tables': TablesResource, 'structures': StructuresResource}
+    save_related_fields = ['tables', 'structures']
     filters = {
         'project': [ops.In, ops.Exact],
         'identifier': [ops.In, ops.IContains],
