@@ -85,4 +85,3 @@ class CardsView(SwaggerView):
             card.save()
             resp = self._dispatch_request(*args, **kwargs)
         return resp
-

@@ -6,10 +6,10 @@ from importlib import import_module
 from flask.views import MethodViewType
 from flasgger import SwaggerView as OriginalSwaggerView
 from marshmallow_mongoengine import ModelSchema
-from flask_mongoengine import BaseQuerySet
 from flask_mongorest.views import ResourceView
 
 logger = logging.getLogger('app')
+
 
 # https://github.com/pallets/flask/blob/master/flask/views.py
 class SwaggerViewType(MethodViewType):
@@ -39,8 +39,3 @@ class SwaggerViewType(MethodViewType):
 
 class SwaggerView(OriginalSwaggerView, ResourceView, metaclass=SwaggerViewType):
     """A class-based view defining additional methods"""
-
-    def marshal(self, entries):
-        """run query results through the according marshmallow schema"""
-        many = isinstance(entries, BaseQuerySet) or isinstance(entries, list)
-        return self.Schema().dump(entries, many=many).data
