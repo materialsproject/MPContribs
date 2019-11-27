@@ -64,7 +64,7 @@ stages:
                   RecursiveDict(prov)
                 outputs:
                 - data:
-                    text/html: !raw '<div id="0fd0f705-f8ff-4b7d-991b-ca76b8f5efef" style="width:100%;"></div><script>render_json({divid: "0fd0f705-f8ff-4b7d-991b-ca76b8f5efef", data: {"project": "dtu", "title": "GLLB-SC Bandgaps", "authors": "I. Castelli, F. Hueser, M. Pandey, H. Li, K. Thygesen, B. Seger, A. Jain, K. Persson, G. Ceder, K. Jacobsen", "description": "Bandgaps calculated using GLLB-SC potential by Gritsenko, van Leeuwen, van Lenthe, and Baerends (GLLB), adapted by Kuisma et al to account for solids (-SC). The Kohn-Sham gap (\u0394E-KS) most basically refers to the energy difference between the bottom of the conduction band and the top of the valence band. The Quasi-Particle gap (\u0394E-QP) takes into account the derivative discontinuity (C) of the chemical potential and gives the bandgap as the difference between ionization potential and electron affinity.", "urls": {"main": "https://doi.org/10.1002/aenm.201400915", "PRA": "https://doi.org/10.1103/PhysRevA.51.1944", "PRB": "https://doi.org/10.1103/PhysRevB.82.115106"}, "id": "5cdb2591f72fc8ea319bc76f", "other": null}});</script>'
+                    text/html: !raw '<div id="52a9be6a635e5dc693835590f729f1bd" style="width:100%;"></div><script>render_json({divid: "52a9be6a635e5dc693835590f729f1bd", data: {"other": null, "urls": {"main": "https://doi.org/10.1002/aenm.201400915", "PRA": "https://doi.org/10.1103/PhysRevA.51.1944", "PRB": "https://doi.org/10.1103/PhysRevB.82.115106"}, "description": "Bandgaps calculated using GLLB-SC potential by Gritsenko, van Leeuwen, van Lenthe, and Baerends (GLLB), adapted by Kuisma et al to account for solids (-SC). The Kohn-Sham gap (\u0394E-KS) most basically refers to the energy difference between the bottom of the conduction band and the top of the valence band. The Quasi-Particle gap (\u0394E-QP) takes into account the derivative discontinuity (C) of the chemical potential and gives the bandgap as the difference between ionization potential and electron affinity.", "authors": "I. Castelli, F. Hueser, M. Pandey, H. Li, K. Thygesen, B. Seger, A. Jain, K. Persson, G. Ceder, K. Jacobsen", "title": "GLLB-SC Bandgaps", "project": "dtu"}});</script>'
                   metadata: {}
                   transient: {}
                   output_type: display_data
@@ -77,7 +77,7 @@ stages:
                 source: HierarchicalData(contrib)
                 outputs:
                 - data:
-                    text/html: !raw '<div id="bee5dca9-c737-4f3e-8d75-5c964cb03a24" style="width:100%;"></div><script>render_json({divid: "bee5dca9-c737-4f3e-8d75-5c964cb03a24", data: {"data": {"\u0394E-KS": {"indirect": "0.0991 eV", "direct": "0.275 eV"}, "\u0394E-QP": {"indirect": "0.135 eV", "direct": "0.311 eV"}, "C": "0.0357 eV", "ICSD": "42613", "formula": "Co4As8"}}});</script>'
+                    text/html: !raw '<div id="58d5ec610d7d49df647f88559ed86aa4" style="width:100%;"></div><script>render_json({divid: "58d5ec610d7d49df647f88559ed86aa4", data: {"data": {"\u0394E-KS": {"indirect": "0.0991 eV", "direct": "0.275 eV"}, "\u0394E-QP": {"indirect": "0.135 eV", "direct": "0.311 eV"}, "C": "0.0357 eV", "ICSD": "42613", "formula": "Co4As8"}, "id": "5a862202d4f1443a18fab254", "identifier": "mp-2715", "project": "dtu"}});</script>'
                   metadata: {}
                   transient: {}
                   output_type: display_data
