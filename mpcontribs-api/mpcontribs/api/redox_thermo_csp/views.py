@@ -396,10 +396,10 @@ def isobar_line_elling(iso, x):
 
 
 def init_isographs(cid, plot_type, payload):
-    mask = ['identifier', 'content.data']
+    mask = ['identifier', 'data']
     contrib = Contributions.objects.only(*mask).get(id=cid)
     data = {}
-    for k, v in nested_to_record(contrib.content.data, sep='.').items():
+    for k, v in nested_to_record(contrib.data, sep='.').items():
         if not k.endswith('.display') and not k.endswith('.unit'):
             if k.endswith('.value'):
                 kk = k.rsplit('.', 1)[0]
@@ -622,7 +622,7 @@ class IsographView(SwaggerView):
                 'x': x_theo if x_exp is None else x_exp, 'y': ellingiso,
                 'name': 'isobar line', 'line': {'color': 'rgb(100,100,100)', 'width': 2.5}
             }
-        return response
+        return {'data': response}
 
 
 class WaterSplitting:
@@ -1779,11 +1779,11 @@ class EnergyAnalysisView(SwaggerView):
 
         # look up formulae
         formulae = dict(
-            (str(obj['id']), obj.content.data['formula'])
+            (str(obj['id']), obj.data['formula'])
             for obj in Contributions.objects.no_dereference().filter(
                 project='redox_thermo_csp',
-                content__tables__in=[d.pop('tid') for d in resdict]
-            ).only('content.data.formula')
+                tables__in=[d.pop('tid') for d in resdict]
+            ).only('data.formula')
         )
         for dct in resdict:
             cid = dct.pop('cid')
@@ -1793,7 +1793,8 @@ class EnergyAnalysisView(SwaggerView):
         try: # calculate specific results on the fly
             #pump_ener = float(payload['pump_ener'].split("/")[0])
             pump_energy = float(request.args['pump_ener'])
-            if request.args['mech_env'] == "true":
+            mech_env = request.args['mech_env']
+            if mech_env == "true" or mech_env == "True" or (isinstance(mech_env, bool) and mech_env):
                 pump_ener = -1
             results = EnergyAnalysis(process=process).on_the_fly(
                 resdict=resdict, pump_ener=pump_ener,
@@ -1871,7 +1872,7 @@ class EnergyAnalysisView(SwaggerView):
         except IndexError: # if the complete dict only shows inf, create empty graph
             pass
 
-        return response
+        return {'data': response}
 
 isograph_view = IsographView.as_view(IsographView.__name__)
 energy_analysis_view = EnergyAnalysisView.as_view(EnergyAnalysisView.__name__)
