@@ -7,7 +7,6 @@ from flask import Blueprint
 
 from mpcontribs.api.core import SwaggerView
 from mpcontribs.api.contributions.document import Contributions
-from mpcontribs.api.contributions.redox_thermo_csp_views import isograph_view, energy_analysis_view
 from mpcontribs.api.tables.views import TablesResource
 
 templates = os.path.join(
@@ -48,9 +47,3 @@ class ContributionsView(SwaggerView):
     # unflatten(dict(
     #     (k, v) for k, v in get_cleaned_data(<serialize_dict_field>).items()
     # ))
-
-
-contributions.add_url_rule('/redox_thermo_csp_energy/',
-                           view_func=energy_analysis_view, methods=['GET'])
-contributions.add_url_rule('/<string:cid>/redox_thermo_csp/<string:plot_type>',
-                           view_func=isograph_view, methods=['GET'])

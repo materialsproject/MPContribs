@@ -430,6 +430,7 @@ def init_isographs(cid, plot_type, payload):
 
 
 class IsographView(SwaggerView):
+    resource = ContributionsResource
 
     def get(self, cid, plot_type):
         """Retrieve RedoxThermoCSP Isograph data for a single contribution.
@@ -1654,7 +1655,10 @@ class EnergyAnalysis:
                        }
 
         return dict_result
+
+
 class EnergyAnalysisView(SwaggerView):
+    resource = ContributionsResource
 
     def get(self):
         """Retrieve RedoxThermoCSP Energy Analysis data.
@@ -1863,6 +1867,7 @@ class EnergyAnalysisView(SwaggerView):
 
         return response
 
-
 isograph_view = IsographView.as_view(IsographView.__name__)
 energy_analysis_view = EnergyAnalysisView.as_view(EnergyAnalysisView.__name__)
+contributions.add_url_rule('/redox_thermo_csp_energy/', view_func=energy_analysis_view, methods=['GET'])
+contributions.add_url_rule('/<string:cid>/redox_thermo_csp/<string:plot_type>', view_func=isograph_view, methods=['GET'])
