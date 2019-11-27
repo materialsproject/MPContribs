@@ -1,36 +1,48 @@
+import os
+import flask_mongorest
+from flask_mongorest.resources import Resource
+from flask_mongorest import operators as ops
+from flask_mongorest.methods import List, Fetch, Create, Delete, Update, BulkUpdate
 from flask import Blueprint
 from pymatgen import Structure
 from pymatgen.io.cif import CifWriter
+
 from mpcontribs.api.core import SwaggerView
 from mpcontribs.api.structures.document import Structures
 
-structures = Blueprint("structures", __name__)
+templates = os.path.join(
+    os.path.dirname(flask_mongorest.__file__), 'templates'
+)
+structures = Blueprint("structures", __name__, template_folder=templates)
 
 
-class StructureView(SwaggerView):
+class StructuresResource(Resource):
+    document = Structures
+    filters = {
+        'project': [ops.In, ops.Exact],
+        'identifier': [ops.In, ops.Exact],
+        'name': [ops.Exact],
+        'cid': [ops.Exact]
+    }
+    fields = ['id', 'project', 'identifier', 'name', 'cid']
+    allowed_ordering = ['project', 'identifier']
+    paginate = True
+    default_limit = 10
+    max_limit = 20
+    bulk_update_limit = 100
 
-    def get(self, sid):
-        """Retrieve single structures in Pymatgen format.
-        ---
-        operationId: get_entry
-        parameters:
-            - name: sid
-              in: path
-              type: string
-              pattern: '^[a-f0-9]{24}$'
-              required: true
-              description: Structure ID (ObjectId)
-        responses:
-            200:
-                description: single structure
-                schema:
-                    $ref: '#/definitions/StructuresSchema'
-        """
-        entry = Structures.objects.no_dereference().get(id=sid)
-        return self.marshal(entry)
+    @staticmethod
+    def get_optional_fields():
+        return ['lattice', 'sites']
+
+
+class StructuresView(SwaggerView):
+    resource = StructuresResource
+    methods = [List, Fetch, Create, Delete, Update, BulkUpdate]
 
 
 class CifView(SwaggerView):
+    resource = StructuresResource
 
     def get(self, sid):
         """Retrieve structure for contribution in CIF format.
@@ -47,16 +59,15 @@ class CifView(SwaggerView):
             200:
                 description: structure in CIF format
                 schema:
-                    type: string
+                    type: object
+                    properties:
+                        cif:
+                            type: string
         """
         entry = Structures.objects.no_dereference().get(id=sid)
         structure = Structure.from_dict(entry.to_mongo())
-        return CifWriter(structure, symprec=1e-10).__str__()
+        return {'cif': CifWriter(structure, symprec=1e-10).__str__()}
 
-
-single_view = StructureView.as_view(StructureView.__name__)
-structures.add_url_rule('/<string:sid>', view_func=single_view,
-                        methods=['GET'])  # , 'PUT', 'PATCH', 'DELETE'])
 
 cif_view = CifView.as_view(CifView.__name__)
 structures.add_url_rule('/<string:sid>.cif', view_func=cif_view, methods=['GET'])

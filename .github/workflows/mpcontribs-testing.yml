@@ -18,6 +18,7 @@ jobs:
           docker run --network container:mpcontribs_api_1 mpcontribs_test pytest mpcontribs/api/contributions/tests/test_contributions.tavern.yaml
           docker run --network container:mpcontribs_api_1 mpcontribs_test pytest mpcontribs/api/tables/tests/test_tables.tavern.yaml
           docker run --network container:mpcontribs_api_1 mpcontribs_test pytest mpcontribs/api/cards/tests/test_cards.tavern.yaml
+          docker run --network container:mpcontribs_api_1 mpcontribs_test pytest mpcontribs/api/structures/tests/test_structures.tavern.yaml
           docker run --network container:mpcontribs_api_1 mpcontribs_test pytest mpcontribs/api/redox_thermo_csp/tests/test_redox_thermo_csp.tavern.yaml
           docker run mpcontribs_test pycodestyle mpcontribs/api
           docker run mpcontribs_test mypy mpcontribs/api
