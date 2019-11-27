@@ -352,9 +352,7 @@ def create_app():
                             yaml.dump(spec, f)
 
         except AttributeError as ex:
-            logger.warning('Failed to register {}: {}'.format(
-                module_path, collection, ex
-            ))
+            logger.warning(f'Failed to register {module_path}: {collection} {ex}')
 
     # TODO discover user-contributed views automatically
     collection = 'redox_thermo_csp'
