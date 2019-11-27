@@ -1,7 +1,7 @@
 import os
 import flask_mongorest
 from flask_mongorest.resources import Resource
-from flask_mongorest.methods import Fetch
+from flask_mongorest.methods import Fetch, Delete
 from flask_mongorest.views import mimerender, render_json, render_html
 from flask import Blueprint, current_app, render_template, g
 from selenium import webdriver
@@ -46,7 +46,7 @@ class CardsResource(Resource):
 
 class CardsView(SwaggerView):
     resource = CardsResource
-    methods = [Fetch]
+    methods = [Fetch, Delete]
 
     @mimerender(default='json', json=render_json, html=render_html)
     def dispatch_request(self, *args, **kwargs):
@@ -55,7 +55,7 @@ class CardsView(SwaggerView):
         if isinstance(resp, tuple) and resp[1] == '404 Not Found':
             cid = kwargs['pk']
             ctx = {'cid': cid}
-            mask = ['project', 'identifier', 'content.data']
+            mask = ['project', 'identifier', 'data']
             contrib = Contributions.objects.only(*mask).get(id=cid)
             info = Projects.objects.get(pk=contrib.project)
             ctx['title'] = info.title
@@ -69,7 +69,7 @@ class CardsView(SwaggerView):
             card_script += get_resource_as_string('templates/linkify-element.min.js')
             card_script += get_resource_as_string('templates/card.min.js')
             data = unflatten(dict(
-                (k, v) for k, v in get_cleaned_data(contrib.content.data).items()
+                (k, v) for k, v in get_cleaned_data(contrib.data).items()
                 if not k.startswith('modal')
             ))
             browser = get_browser()
