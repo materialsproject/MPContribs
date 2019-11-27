@@ -2,7 +2,7 @@ import os
 import requests
 import flask_mongorest
 from flask_mongorest.resources import Resource
-from flask_mongorest.methods import Fetch
+from flask_mongorest.methods import Fetch, Delete
 from flask import Blueprint
 from copy import deepcopy
 from mongoengine import DoesNotExist
@@ -82,7 +82,7 @@ class NotebooksResource(Resource):
 
 class NotebooksView(SwaggerView):
     resource = NotebooksResource
-    methods = [Fetch]
+    methods = [Fetch, Delete]
 
     def get(self, pk):
         try:
@@ -96,11 +96,11 @@ class NotebooksView(SwaggerView):
             cells = [
                 nbf.new_code_cell(
                     "client = load_client() # provide apikey as argument to use api.mpcontribs.org\n"
-                    f"contrib = client.contributions.get_entry(pk='{pk}', _fields='all').response().result"
+                    f"contrib = client.contributions.get_entry(pk='{pk}', _fields=['_all']).response().result"
                 ),
                 nbf.new_markdown_cell("## Provenance Info"),
                 nbf.new_code_cell(
-                    "prov = client.projects.get_entry(project=contrib['project'], _fields='_all').response().result\n"
+                    "prov = client.projects.get_entry(pk=contrib['project'], _fields=['_all']).response().result\n"
                     "RecursiveDict(prov)"
                 ),
                 nbf.new_markdown_cell(
@@ -111,28 +111,28 @@ class NotebooksView(SwaggerView):
                 )
             ]
 
-            tables = contrib['tables']
+            tables = [t["id"] for t in contrib['tables']]
             if tables:
                 cells.append(nbf.new_markdown_cell(
                     f"## Tabular Data for {contrib['identifier']}"
                 ))
                 for ref in tables:
                     cells.append(nbf.new_code_cell(
-                        f"table = client.tables.get_entry(pk='{ref.id}', _fields='_all').response().result # Pandas DataFrame format\n"
+                        f"table = client.tables.get_entry(pk='{ref}', _fields=['_all']).response().result # Pandas DataFrame format\n"
                         "Table.from_dict(table)"
                     ))
                     cells.append(nbf.new_code_cell(
                         "Plot.from_dict(table)"
                     ))
 
-            structures = contrib['structures']
+            structures = [s["id"] for s in contrib['structures']]
             if structures:
                 cells.append(nbf.new_markdown_cell(
                     f"## Pymatgen Structures for {contrib['identifier']}"
                 ))
                 for ref in structures:
                     cells.append(nbf.new_code_cell(
-                        f"Structure.from_dict(client.structures.get_entry(pk='{ref.id}', _fields='_all').response().result)"
+                        f"Structure.from_dict(client.structures.get_entry(pk='{ref}', _fields=['_all']).response().result)"
                     ))
 
             kernel = client.start_kernel()
