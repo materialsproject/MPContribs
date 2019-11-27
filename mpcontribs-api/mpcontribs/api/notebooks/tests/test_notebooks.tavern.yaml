@@ -1,9 +1,16 @@
 test_name: test notebooks resource
 
 stages:
-    - name: contribution notebook
+    - name: delete notebook
       request:
-          url: http://localhost:5000/notebooks/5a862202d4f1443a18fab254
+          url: http://localhost:5000/notebooks/5a862202d4f1443a18fab254/
+          method: DELETE
+      response:
+          status_code: 200
+
+    - name: get and create notebook
+      request:
+          url: http://localhost:5000/notebooks/5a862202d4f1443a18fab254/
           method: GET
       response:
           status_code: 200
@@ -29,9 +36,9 @@ stages:
               - cell_type: code
                 metadata: {}
                 source: |-
-                  # - table IDs `tid` are in `contrib['content']['tables']`
-                  # - set `per_page` query parameter to retrieve up to 200 rows at once (paginate for more)
-                  # - structure IDs `sid` are in `contrib['content']['structures']`
+                  # - table IDs `tid` are in `contrib['tables']`
+                  # - set `per_page` query parameter to retrieve up to 1000 rows at once (paginate for more)
+                  # - structure IDs `sid` are in `contrib['structures']`
                   from mpcontribs.client import load_client
                   from mpcontribs.io.core.recdict import RecursiveDict
                   from mpcontribs.io.core.components.hdata import HierarchicalData
@@ -44,7 +51,7 @@ stages:
                 metadata: {}
                 source: |-
                   client = load_client() # provide apikey as argument to use api.mpcontribs.org
-                  contrib = client.contributions.get_entry(cid='5a862202d4f1443a18fab254').response().result
+                  contrib = client.contributions.get_entry(pk='5a862202d4f1443a18fab254', _fields=['_all']).response().result
                 outputs: []
               - cell_type: markdown
                 metadata: {}
@@ -53,8 +60,7 @@ stages:
               - cell_type: code
                 metadata: {}
                 source: |-
-                  mask = ['title', 'authors', 'description', 'urls', 'other', 'project']
-                  prov = client.projects.get_entry(project=contrib['project'], mask=mask).response().result
+                  prov = client.projects.get_entry(pk=contrib['project'], _fields=['_all']).response().result
                   RecursiveDict(prov)
                 outputs:
                 - data:
@@ -68,7 +74,7 @@ stages:
                 outputs: []
               - cell_type: code
                 metadata: {}
-                source: HierarchicalData(contrib['content'])
+                source: HierarchicalData(contrib)
                 outputs:
                 - data:
                     text/html: !raw '<div id="bee5dca9-c737-4f3e-8d75-5c964cb03a24" style="width:100%;"></div><script>render_json({divid: "bee5dca9-c737-4f3e-8d75-5c964cb03a24", data: {"data": {"\u0394E-KS": {"indirect": "0.0991 eV", "direct": "0.275 eV"}, "\u0394E-QP": {"indirect": "0.135 eV", "direct": "0.311 eV"}, "C": "0.0357 eV", "ICSD": "42613", "formula": "Co4As8"}}});</script>'
