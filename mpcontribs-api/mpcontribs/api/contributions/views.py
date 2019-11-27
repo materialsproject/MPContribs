@@ -50,7 +50,7 @@ class ContributionsView(SwaggerView):
     # ))
 
 
-#contributions.add_url_rule('/redox_thermo_csp_energy/',
-#                           view_func=energy_analysis_view, methods=['GET'])
-#contributions.add_url_rule('/<string:cid>/redox_thermo_csp/<string:plot_type>',
-#                           view_func=isograph_view, methods=['GET'])
+contributions.add_url_rule('/redox_thermo_csp_energy/',
+                           view_func=energy_analysis_view, methods=['GET'])
+contributions.add_url_rule('/<string:cid>/redox_thermo_csp/<string:plot_type>',
+                           view_func=isograph_view, methods=['GET'])
