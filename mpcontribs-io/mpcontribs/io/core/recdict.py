@@ -1,4 +1,4 @@
-import uuid
+import hashlib
 import json
 from collections import OrderedDict as _OrderedDict
 from collections import Mapping as _Mapping
@@ -103,7 +103,10 @@ class RecursiveDict(_OrderedDict):
 
     def render(self):
         """use JsonHuman library to render a dictionary"""
-        jdata, divid = json.dumps(self).replace('\\n', ' '), str(uuid.uuid4())
+        jdata = json.dumps(self).replace('\\n', ' ')
+        m = hashlib.md5()
+        m.update(jdata.encode('utf-8'))
+        divid = m.hexdigest()
         html = f'<div id="{divid}" style="width:100%;"></div><script>'
         html += f'render_json({{divid: "{divid}", data: {jdata}}});</script>'
         return html
