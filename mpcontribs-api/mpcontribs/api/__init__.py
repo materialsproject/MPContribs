@@ -156,14 +156,34 @@ def create_app():
                 fields_param = None
                 if klass.resource.fields is not None:
                     fields_avail = klass.resource.fields + klass.resource.get_optional_fields() + ['_all']
+                    description = f'List of fields to include in response ({fields_avail}).'
+                    description += ' Use dot-notation for nested subfields.'
                     fields_param = {
                         'name': '_fields',
                         'in': 'query',
                         'default': klass.resource.fields,
                         'type': 'array',
                         'items': {'type': 'string'},
-                        'description': 'List of fields to include in response. Use dot-notation for nested subfields.'
+                        'description': description
                     }
+
+                field_pagination_params = []
+                for field, limits in klass.resource.fields_to_paginate.items():
+                    field_pagination_params.append({
+                        'name': f'{field}_page',
+                        'in': 'query',
+                        'default': 1,
+                        'type': 'integer',
+                        'description': f'page to retrieve for {field} field'
+                    })
+                    field_pagination_params.append({
+                        'name': f'{field}_per_page',
+                        'in': 'query',
+                        'default': limits[0],
+                        'maximum': limits[1],
+                        'type': 'integer',
+                        'description': f'number of items to retrieve per page for {field} field'
+                    })
 
                 spec = None
                 if method.__name__ == 'Fetch':
@@ -176,6 +196,8 @@ def create_app():
                     }]
                     if fields_param is not None:
                         params.append(fields_param)
+                    if field_pagination_params:
+                        params += field_pagination_params
                     spec = {
                         'summary': f'Retrieve a {collection[:-1]}.',
                         'operationId': 'get_entry',
@@ -189,6 +211,8 @@ def create_app():
                     }
                 elif method.__name__ == 'List':
                     params = [fields_param] if fields_param is not None else []
+                    if field_pagination_params:
+                        params += field_pagination_params
 
                     if klass.resource.allowed_ordering:
                         params.append({

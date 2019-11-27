@@ -25,9 +25,10 @@ class TablesResource(Resource):
     fields = ['id', 'project', 'identifier', 'name', 'cid']
     allowed_ordering = ['project', 'identifier']
     paginate = True
-    default_limit = 20
-    max_limit = 200
+    default_limit = 10
+    max_limit = 20
     bulk_update_limit = 100
+    fields_to_paginate = {'data': [20, 1000]}
 
     @staticmethod
     def get_optional_fields():
