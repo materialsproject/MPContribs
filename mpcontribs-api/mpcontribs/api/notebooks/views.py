@@ -1,4 +1,8 @@
+import os
 import requests
+import flask_mongorest
+from flask_mongorest.resources import Resource
+from flask_mongorest.methods import Fetch
 from flask import Blueprint
 from copy import deepcopy
 from mongoengine import DoesNotExist
@@ -10,7 +14,10 @@ from mpcontribs.api.core import SwaggerView
 from mpcontribs.api.notebooks.document import Notebooks
 from mpcontribs.api.contributions.document import Contributions
 
-notebooks = Blueprint("notebooks", __name__)
+templates = os.path.join(
+    os.path.dirname(flask_mongorest.__file__), 'templates'
+)
+notebooks = Blueprint("notebooks", __name__, template_folder=templates)
 
 
 class CustomGatewayClient(GatewayClient):
@@ -69,74 +76,63 @@ with open('kernel_imports.ipynb') as fh:
     seed_nb = read(fh, 4)
 
 
-class NotebookView(SwaggerView):
+class NotebooksResource(Resource):
+    document = Notebooks
 
-    def get(self, cid):
-        """Retrieve (and build) notebook for a single contribution [internal].
-        ---
-        operationId: get_entry
-        parameters:
-            - name: cid
-              in: path
-              type: string
-              pattern: '^[a-f0-9]{24}$'
-              required: true
-              description: contribution ID (ObjectId)
-        responses:
-            200:
-                description: single notebook
-                schema:
-                    $ref: '#/definitions/NotebooksSchema'
-        """
+
+class NotebooksView(SwaggerView):
+    resource = NotebooksResource
+    methods = [Fetch]
+
+    def get(self, pk):
         try:
-            nb = Notebooks.objects.get(id=cid)
+            nb = Notebooks.objects.get(id=pk)
             nb.restore()
         except DoesNotExist:
             nb = Notebooks()  # start entry to avoid rebuild on subsequent requests
-            nb.id = cid  # to link to the according contribution
+            nb.id = pk  # to link to the according contribution
             nb.save()  # calls Notebooks.clean()
-            contrib = Contributions.objects.no_dereference().get(id=cid)
+            contrib = Contributions.objects.no_dereference().get(id=pk)
             cells = [
                 nbf.new_code_cell(
                     "client = load_client() # provide apikey as argument to use api.mpcontribs.org\n"
-                    f"contrib = client.contributions.get_entry(cid='{cid}').response().result"
+                    f"contrib = client.contributions.get_entry(pk='{pk}', _fields='all').response().result"
                 ),
                 nbf.new_markdown_cell("## Provenance Info"),
                 nbf.new_code_cell(
-                    "mask = ['title', 'authors', 'description', 'urls', 'other', 'project']\n"
-                    "prov = client.projects.get_entry(project=contrib['project'], mask=mask).response().result\n"
+                    "prov = client.projects.get_entry(project=contrib['project'], _fields='_all').response().result\n"
                     "RecursiveDict(prov)"
                 ),
                 nbf.new_markdown_cell(
                     f"## Hierarchical Data for {contrib['identifier']}"
                 ),
                 nbf.new_code_cell(
-                    "HierarchicalData(contrib['content'])"
+                    "HierarchicalData(contrib)"
                 )
             ]
 
-            tables = contrib.content['tables']
+            tables = contrib['tables']
             if tables:
                 cells.append(nbf.new_markdown_cell(
                     f"## Tabular Data for {contrib['identifier']}"
                 ))
                 for ref in tables:
                     cells.append(nbf.new_code_cell(
-                        f"table = client.tables.get_entry(tid='{ref.id}').response().result # Pandas DataFrame format\n"
+                        f"table = client.tables.get_entry(pk='{ref.id}', _fields='_all').response().result # Pandas DataFrame format\n"
                         "Table.from_dict(table)"
                     ))
                     cells.append(nbf.new_code_cell(
                         "Plot.from_dict(table)"
                     ))
 
-            structures = contrib.content['structures']
+            structures = contrib['structures']
             if structures:
                 cells.append(nbf.new_markdown_cell(
                     f"## Pymatgen Structures for {contrib['identifier']}"
                 ))
                 for ref in structures:
                     cells.append(nbf.new_code_cell(
-                        f"Structure.from_dict(client.structures.get_entry(sid='{ref.id}').response().result)"
+                        f"Structure.from_dict(client.structures.get_entry(pk='{ref.id}', _fields='_all').response().result)"
                     ))
 
             kernel = client.start_kernel()
@@ -148,26 +144,8 @@ class NotebookView(SwaggerView):
             nb = deepcopy(seed_nb)
             nb.cells += cells
             nb = Notebooks(**nb)
-            nb.id = cid  # to link to the according contribution
+            nb.id = pk  # to link to the according contribution
             nb.save()  # calls Notebooks.clean()
 
         del nb.id
-        return nb
-
-    # def delete(self, project, cids):
-    #     for contrib in self.contributions.find({'_id': {'$in': cids}}):
-    #         identifier, cid = contrib['identifier'], contrib['_id']
-    #         coll = self.notebooks
-    #         key = '.'.join([project, str(cid)])
-    #         coll.update({}, {'$unset': {key: 1}}, multi=True)
-    #     # remove `project` field when no contributions remaining
-    #     for coll in [self.materials, self.compositions]:
-    #         for doc in coll.find({project: {'$exists': 1}}):
-    #             for d in doc.itervalues():
-    #                 if not d:
-    #                     coll.update({'_id': doc['_id']}, {'$unset': {project: 1}})
-
-
-# url_prefix added in register_blueprint
-single_view = NotebookView.as_view(NotebookView.__name__)
-notebooks.add_url_rule('/<string:cid>', view_func=single_view, methods=['GET'])
+        return nb.to_mongo()
