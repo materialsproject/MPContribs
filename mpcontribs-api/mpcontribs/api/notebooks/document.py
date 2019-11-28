@@ -42,13 +42,23 @@ class Cell(DynamicEmbeddedDocument):
 
 
 class Notebooks(Document):
+    __project_regex__ = '^[a-zA-Z0-9_]+$'
+    project = fields.StringField(
+        min_length=3, max_length=30, required=True, regex=__project_regex__,
+        help_text="project name/slug (valid format: `{}`)".format(
+            __project_regex__
+        )
+    )
+    is_public = fields.BooleanField(
+        required=True, default=False, help_text='public or private notebook'
+    )
     nbformat = fields.IntField(required=True, default=4, help_text="nbformat version")
     nbformat_minor = fields.IntField(required=True, default=2, help_text="nbformat minor version")
     metadata = fields.EmbeddedDocumentField(
         Metadata, required=True, help_text='notebook metadata', default=Metadata
     )
     cells = fields.EmbeddedDocumentListField(Cell, required=True, default=[Cell()], help_text='cells')
-    meta = {'collection': 'notebooks'}
+    meta = {'collection': 'notebooks', 'indexes': ['project', 'is_public']}
 
     problem_key = 'application/vnd.plotly.v1+json'
     escaped_key = problem_key.replace('.', '~dot~')

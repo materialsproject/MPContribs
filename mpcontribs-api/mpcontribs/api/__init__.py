@@ -146,14 +146,17 @@ def get_specs(klass, method, collection):
             'description': f'number of items to retrieve per page for {field} field'
         })
 
-    filter_params = None
+    filter_params = []
     if getattr(klass.resource, 'filters', None) is not None:
-        filter_params = [{
-            'name': k if op.op == 'exact' else f'{k}__{op.op}',
-            'in': 'query',
-            'type': op.typ,
-            'description': f'filter {k}' if op.op == 'exact' else f'filter {k} via ${op.op}'
-        } for k, v in klass.resource.filters.items() for op in v]
+        for k, v in klass.resource.filters.items():
+            for op in v:
+                filter_params.append({
+                    'name': k if op.op == 'exact' else f'{k}__{op.op}',
+                    'in': 'query', 'type': op.typ,
+                    'description': f'filter {k}' if op.op == 'exact' else f'filter {k} via ${op.op}'
+                })
+                if op.typ == 'array':
+                    filter_params[-1]['items'] = {'type': 'string'}
 
     spec = None
     if method.__name__ == 'Fetch':

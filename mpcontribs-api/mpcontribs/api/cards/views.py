@@ -48,10 +48,6 @@ class CardsView(SwaggerView):
     resource = CardsResource
     methods = [Fetch, Delete]
 
-    def has_delete_permission(self, request, obj):
-        # only admins can delete cards
-        return 'admin' in self.get_groups(request)
-
     @mimerender(default='json', json=render_json, html=render_html)
     def dispatch_request(self, *args, **kwargs):
         # generate card on demand
@@ -59,7 +55,7 @@ class CardsView(SwaggerView):
         if isinstance(resp, tuple) and resp[1] == '404 Not Found':
             cid = kwargs['pk']
             ctx = {'cid': cid}
-            mask = ['project', 'identifier', 'data']
+            mask = ['project', 'identifier', 'is_public', 'data']
             contrib = Contributions.objects.only(*mask).get(id=cid)
             info = Projects.objects.get(pk=contrib.project)
             ctx['title'] = info.title
@@ -84,8 +80,12 @@ class CardsView(SwaggerView):
             rendered = html_minify(render_template('card.html', **ctx))
             tree = html.fromstring(rendered)
             inline(tree)
-            card = Cards(html=html.tostring(tree.body[0]).decode('utf-8'))
-            card.id = cid  # to link to the according contribution
+            card = Cards(
+                id=cid,  # to link to the according contribution
+                is_public=contrib.is_public,  # in sync with contribution
+                project=contrib.project,
+                html=html.tostring(tree.body[0]).decode('utf-8')
+            )
             card.save()
             resp = self._dispatch_request(*args, **kwargs)
         return resp

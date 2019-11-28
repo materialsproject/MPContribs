@@ -84,19 +84,18 @@ class NotebooksView(SwaggerView):
     resource = NotebooksResource
     methods = [Fetch, Delete]
 
-    def has_delete_permission(self, request, obj):
-        # only admins can delete notebooks
-        return 'admin' in self.get_groups(request)
-
     def get(self, pk):
         try:
             nb = Notebooks.objects.get(id=pk)
             nb.restore()
         except DoesNotExist:
-            nb = Notebooks()  # start entry to avoid rebuild on subsequent requests
-            nb.id = pk  # to link to the according contribution
-            nb.save()  # calls Notebooks.clean()
             contrib = Contributions.objects.no_dereference().get(id=pk)
+            # start entry to avoid rebuild on subsequent requests
+            nb = Notebooks(
+                id=pk,  # to link to the according contribution
+                project=contrib.project, is_public=contrib.is_public
+            )
+            nb.save()  # calls Notebooks.clean()
             cells = [
                 nbf.new_code_cell(
                     "client = load_client() # provide apikey as argument to use api.mpcontribs.org\n"
@@ -147,8 +146,7 @@ class NotebooksView(SwaggerView):
 
             nb = deepcopy(seed_nb)
             nb.cells += cells
-            nb = Notebooks(**nb)
-            nb.id = pk  # to link to the according contribution
+            nb = Notebooks(id=pk, project=contrib.project, is_public=contrib.is_public, **nb)
             nb.save()  # calls Notebooks.clean()
 
         del nb.id
