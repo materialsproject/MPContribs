@@ -5,16 +5,20 @@ stages:
       request:
           url: http://localhost:5000/notebooks/5a862202d4f1443a18fab254/
           method: DELETE
+          headers:
+              X-Consumer-Groups: dtu
       response:
           status_code: 200
 
-    - name: get and create notebook
+    - name: create public notebook
       request:
           url: http://localhost:5000/notebooks/5a862202d4f1443a18fab254/
           method: GET
       response:
           status_code: 200
           body:
+              project: dtu
+              is_public: true
               nbformat: 4
               nbformat_minor: 2
               metadata:
@@ -64,7 +68,7 @@ stages:
                   RecursiveDict(prov)
                 outputs:
                 - data:
-                    text/html: !raw '<div id="52a9be6a635e5dc693835590f729f1bd" style="width:100%;"></div><script>render_json({divid: "52a9be6a635e5dc693835590f729f1bd", data: {"other": null, "urls": {"main": "https://doi.org/10.1002/aenm.201400915", "PRA": "https://doi.org/10.1103/PhysRevA.51.1944", "PRB": "https://doi.org/10.1103/PhysRevB.82.115106"}, "description": "Bandgaps calculated using GLLB-SC potential by Gritsenko, van Leeuwen, van Lenthe, and Baerends (GLLB), adapted by Kuisma et al to account for solids (-SC). The Kohn-Sham gap (\u0394E-KS) most basically refers to the energy difference between the bottom of the conduction band and the top of the valence band. The Quasi-Particle gap (\u0394E-QP) takes into account the derivative discontinuity (C) of the chemical potential and gives the bandgap as the difference between ionization potential and electron affinity.", "authors": "I. Castelli, F. Hueser, M. Pandey, H. Li, K. Thygesen, B. Seger, A. Jain, K. Persson, G. Ceder, K. Jacobsen", "title": "GLLB-SC Bandgaps", "project": "dtu"}});</script>'
+                    text/html: !raw '<div id="98ccd179fa324a75d8b9ad4d1a730643" style="width:100%;"></div><script>render_json({divid: "98ccd179fa324a75d8b9ad4d1a730643", data: {"urls": {"main": "https://doi.org/10.1002/aenm.201400915", "PRA": "https://doi.org/10.1103/PhysRevA.51.1944", "PRB": "https://doi.org/10.1103/PhysRevB.82.115106"}, "description": "Bandgaps calculated using GLLB-SC potential by Gritsenko, van Leeuwen, van Lenthe, and Baerends (GLLB), adapted by Kuisma et al to account for solids (-SC). The Kohn-Sham gap (\u0394E-KS) most basically refers to the energy difference between the bottom of the conduction band and the top of the valence band. The Quasi-Particle gap (\u0394E-QP) takes into account the derivative discontinuity (C) of the chemical potential and gives the bandgap as the difference between ionization potential and electron affinity.", "other": null, "authors": "I. Castelli, F. Hueser, M. Pandey, H. Li, K. Thygesen, B. Seger, A. Jain, K. Persson, G. Ceder, K. Jacobsen", "is_public": true, "project": "dtu", "title": "GLLB-SC Bandgaps"}});</script>'
                   metadata: {}
                   transient: {}
                   output_type: display_data
@@ -77,7 +81,7 @@ stages:
                 source: HierarchicalData(contrib)
                 outputs:
                 - data:
-                    text/html: !raw '<div id="58d5ec610d7d49df647f88559ed86aa4" style="width:100%;"></div><script>render_json({divid: "58d5ec610d7d49df647f88559ed86aa4", data: {"data": {"\u0394E-KS": {"indirect": "0.0991 eV", "direct": "0.275 eV"}, "\u0394E-QP": {"indirect": "0.135 eV", "direct": "0.311 eV"}, "C": "0.0357 eV", "ICSD": "42613", "formula": "Co4As8"}, "id": "5a862202d4f1443a18fab254", "identifier": "mp-2715", "project": "dtu"}});</script>'
+                    text/html: !raw '<div id="8dc48d6310f4bb27ec17ba84fbe6cb19" style="width:100%;"></div><script>render_json({divid: "8dc48d6310f4bb27ec17ba84fbe6cb19", data: {"data": {"\u0394E-KS": {"indirect": "0.0991 eV", "direct": "0.275 eV"}, "\u0394E-QP": {"indirect": "0.135 eV", "direct": "0.311 eV"}, "C": "0.0357 eV", "ICSD": "42613", "formula": "Co4As8"}, "identifier": "mp-2715", "is_public": true, "id": "5a862202d4f1443a18fab254", "project": "dtu"}});</script>'
                   metadata: {}
                   transient: {}
                   output_type: display_data
