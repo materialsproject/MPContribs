@@ -2,7 +2,7 @@ import os
 import flask_mongorest
 from flask_mongorest.resources import Resource
 from flask_mongorest import operators as ops
-from flask_mongorest.methods import List, Fetch, Create, Delete, Update
+from flask_mongorest.methods import List, Fetch, Create, Delete, Update, BulkUpdate
 from flask import Blueprint, request, current_app
 
 from mpcontribs.api.core import SwaggerView
@@ -18,11 +18,12 @@ class TablesResource(Resource):
     document = Tables
     filters = {
         'project': [ops.In, ops.Exact],
-        'identifier': [ops.In, ops.Exact],
-        'name': [ops.Exact],
-        'cid': [ops.Exact]
+        'identifier': [ops.In, ops.Contains, ops.Exact],
+        'name': [ops.Exact, ops.Contains],
+        'cid': [ops.Exact],
+        'is_public': [ops.Boolean]
     }
-    fields = ['id', 'project', 'identifier', 'name', 'cid']
+    fields = ['id', 'project', 'identifier', 'name', 'cid', 'is_public']
     allowed_ordering = ['project', 'identifier']
     paginate = True
     default_limit = 10
@@ -37,7 +38,7 @@ class TablesResource(Resource):
 
 class TablesView(SwaggerView):
     resource = TablesResource
-    methods = [List, Fetch, Create, Delete, Update]
+    methods = [List, Fetch, Create, Delete, Update, BulkUpdate]
 
 
 class BackgridTableView(SwaggerView):

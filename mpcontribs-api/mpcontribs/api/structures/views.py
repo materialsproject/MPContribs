@@ -2,7 +2,7 @@ import os
 import flask_mongorest
 from flask_mongorest.resources import Resource
 from flask_mongorest import operators as ops
-from flask_mongorest.methods import List, Fetch, Create, Delete, Update
+from flask_mongorest.methods import List, Fetch, Create, Delete, Update, BulkUpdate
 from flask import Blueprint
 from pymatgen import Structure
 from pymatgen.io.cif import CifWriter
@@ -20,11 +20,12 @@ class StructuresResource(Resource):
     document = Structures
     filters = {
         'project': [ops.In, ops.Exact],
-        'identifier': [ops.In, ops.Exact],
-        'name': [ops.Exact],
-        'cid': [ops.Exact]
+        'identifier': [ops.In, ops.Contains, ops.Exact],
+        'name': [ops.Exact, ops.Contains],
+        'cid': [ops.Exact],
+        'is_public': [ops.Boolean]
     }
-    fields = ['id', 'project', 'identifier', 'name', 'cid']
+    fields = ['id', 'project', 'identifier', 'name', 'cid', 'is_public']
     allowed_ordering = ['project', 'identifier']
     paginate = True
     default_limit = 10
@@ -38,14 +39,14 @@ class StructuresResource(Resource):
 
 class StructuresView(SwaggerView):
     resource = StructuresResource
-    methods = [List, Fetch, Create, Delete, Update]
+    methods = [List, Fetch, Create, Delete, Update, BulkUpdate]
 
 
 class CifView(SwaggerView):
     resource = StructuresResource
 
     def get(self, sid):
-        """Retrieve structure for contribution in CIF format.
+        """Retrieve structure in CIF format.
         ---
         operationId: get_cif
         parameters:

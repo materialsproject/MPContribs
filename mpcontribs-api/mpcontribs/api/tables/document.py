@@ -17,6 +17,9 @@ class Tables(Document):
     cid = fields.ObjectIdField(
         required=True, help_text="Contribution ID"
     )
+    is_public = fields.BooleanField(
+        required=True, default=False, help_text='public or private table'
+    )
     columns = fields.ListField(
         fields.StringField(), required=True, help_text="column names"
     )
@@ -27,7 +30,7 @@ class Tables(Document):
     config = fields.DictField(help_text="graph config")
     meta = {
         'collection': 'tables', 'indexes': [
-            'identifier', 'project', 'cid', 'name',
+            'identifier', 'project', 'cid', 'name', 'is_public',
             {'fields': ['cid', 'name'], 'unique': True},
             {'fields': ['identifier', 'project', 'name'], 'unique': True}
         ]

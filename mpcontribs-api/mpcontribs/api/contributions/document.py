@@ -15,10 +15,13 @@ class Contributions(Document):
     identifier = fields.StringField(
         required=True, help_text="material/composition identifier"
     )
+    is_public = fields.BooleanField(
+        required=True, default=False, help_text='public or private contribution'
+    )
     data = fields.DictField(help_text='free-form data to be shown in Contribution Card')
     structures = fields.ListField(fields.ReferenceField(Structures))
     tables = fields.ListField(fields.ReferenceField(Tables))
     meta = {
         'collection': 'contributions',
-        'indexes': ['identifier', 'project', {'fields': ['project', 'identifier']}]
+        'indexes': ['identifier', 'project', 'is_public', {'fields': ['project', 'identifier']}]
     }

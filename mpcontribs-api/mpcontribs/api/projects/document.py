@@ -12,6 +12,9 @@ class Projects(Document):
             __project_regex__
         )
     )
+    is_public = fields.BooleanField(
+        required=True, default=False, help_text='public or private project'
+    )
     title = fields.StringField(
         min_length=5, max_length=40, required=True, unique=True,
         help_text='(short) title for the project/dataset'

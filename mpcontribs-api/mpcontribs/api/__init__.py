@@ -146,6 +146,15 @@ def get_specs(klass, method, collection):
             'description': f'number of items to retrieve per page for {field} field'
         })
 
+    filter_params = None
+    if getattr(klass.resource, 'filters', None) is not None:
+        filter_params = [{
+            'name': k if op.op == 'exact' else f'{k}__{op.op}',
+            'in': 'query',
+            'type': op.typ,
+            'description': f'filter {k}' if op.op == 'exact' else f'filter {k} via ${op.op}'
+        } for k, v in klass.resource.filters.items() for op in v]
+
     spec = None
     if method.__name__ == 'Fetch':
         params = [{
@@ -184,13 +193,8 @@ def get_specs(klass, method, collection):
                 'description': f'order {collection}'
             })
 
-        if klass.resource.filters:
-            params += [{
-                'name': k if op.op == 'exact' else f'{k}__{op.op}',
-                'in': 'query',
-                'type': 'string',
-                'description': f'filter {k}' if op.op == 'exact' else f'filter {k} via ${op.op}'
-            } for k, v in klass.resource.filters.items() for op in v]
+        if filter_params:
+            params += filter_params
 
         schema_props = {
             'data': {
@@ -268,15 +272,18 @@ def get_specs(klass, method, collection):
             }
         }
     elif method.__name__ == 'BulkUpdate':
+        params = filter_params if filter_params else []
+        params.append({
+            'name': f'{collection}',
+            'in': 'body',
+            'description': f'The object to use for {collection} bulk update',
+            'schema': {'$ref': f'#/definitions/{klass.schema_name}'}
+        })
+
         spec = {
             'summary': f'Update {collection} in bulk.',
             'operationId': 'update_entries',
-            'parameters': [{
-                'name': f'{collection}',
-                'in': 'body',
-                'description': f'The object to use for {collection} bulk update',
-                'schema': {'$ref': f'#/definitions/{klass.schema_name}'}
-            }],
+            'parameters': params,
             'responses': {
                 200: {
                     'description': f'Number of {collection} updated',

@@ -17,13 +17,16 @@ class Structures(Document):
     cid = fields.ObjectIdField(
         required=True, help_text="Contribution ID"
     )
+    is_public = fields.BooleanField(
+        required=True, default=False, help_text='public or private structure'
+    )
     lattice = fields.DictField(required=True, help_text="lattice")
     sites = fields.ListField(
         fields.DictField(), required=True, help_text="sites"
     )
     meta = {
         'collection': 'structures', 'indexes': [
-            'identifier', 'project', 'cid', 'name',
+            'identifier', 'project', 'cid', 'name', 'is_public',
             {'fields': ['cid', 'name'], 'unique': True}
         ]
     }

@@ -27,7 +27,7 @@ class ProjectsResource(Resource):
         'description': [ops.IContains],
         'authors': [ops.IContains]
     }
-    fields = ['project', 'title']
+    fields = ['project', 'title', 'is_public']
     allowed_ordering = ['project']
     paginate = False
 
@@ -43,11 +43,6 @@ class ProjectsView(SwaggerView):
     def has_add_permission(self, request, obj):
         # only admins can add new projects
         return 'admin' in self.get_groups(request)
-
-    def has_change_permission(self, request, obj):
-        # only admins and project users can change projects
-        groups = self.get_groups(request)
-        return 'admin' in groups or obj.project in groups
 
     def has_delete_permission(self, request, obj):
         # only admins can delete projects

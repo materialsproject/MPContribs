@@ -7,6 +7,7 @@ from flask.views import MethodViewType
 from flasgger import SwaggerView as OriginalSwaggerView
 from marshmallow_mongoengine import ModelSchema
 from flask_mongorest.views import ResourceView
+from mongoengine.queryset.visitor import Q
 
 logger = logging.getLogger('app')
 
@@ -43,3 +44,23 @@ class SwaggerView(OriginalSwaggerView, ResourceView, metaclass=SwaggerViewType):
     def get_groups(self, request):
         groups = request.headers.get('X-Consumer-Groups')
         return [] if groups is None else groups.split(',')
+
+    def is_admin_or_project_user(self, request, obj):
+        groups = self.get_groups(request)
+        return 'admin' in groups or obj.project in groups
+
+    def has_read_permission(self, request, qs):
+        groups = self.get_groups(request)
+        if 'admin' in groups:
+            return qs  # admins can read all entries
+        # only read public and project entries
+        return qs.filter(Q(is_public=True) | Q(project__in=groups))
+
+    def has_add_permission(self, request, obj):
+        return self.is_admin_or_project_user(request, obj)
+
+    def has_change_permission(self, request, obj):
+        return self.is_admin_or_project_user(request, obj)
+
+    def has_delete_permission(self, request, obj):
+        return self.is_admin_or_project_user(request, obj)

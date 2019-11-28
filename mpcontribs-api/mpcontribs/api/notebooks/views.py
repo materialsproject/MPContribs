@@ -84,6 +84,10 @@ class NotebooksView(SwaggerView):
     resource = NotebooksResource
     methods = [Fetch, Delete]
 
+    def has_delete_permission(self, request, obj):
+        # only admins can delete notebooks
+        return 'admin' in self.get_groups(request)
+
     def get(self, pk):
         try:
             nb = Notebooks.objects.get(id=pk)

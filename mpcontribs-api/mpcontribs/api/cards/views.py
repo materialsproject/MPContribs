@@ -48,6 +48,10 @@ class CardsView(SwaggerView):
     resource = CardsResource
     methods = [Fetch, Delete]
 
+    def has_delete_permission(self, request, obj):
+        # only admins can delete cards
+        return 'admin' in self.get_groups(request)
+
     @mimerender(default='json', json=render_json, html=render_html)
     def dispatch_request(self, *args, **kwargs):
         # generate card on demand
