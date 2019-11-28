@@ -158,11 +158,11 @@ function send_request(updatekey) {
         }
     }
 
-    var api_url = window.api['host'] + 'contributions/' + cid + '/redox_thermo_csp/' + updatekey;
+    var api_url = window.api['host'] + 'redox_thermo_csp/' + cid + '/' + updatekey;
     $.get({
         url: api_url, data: payload, headers: window.api['headers']
     }).done(function() {
-        var r = arguments[0];
+        var r = arguments[0]['data'];
         showdata(r);
         var div = document.getElementById(updatekey);
         update_plots(div,r,updatekey);
@@ -300,11 +300,11 @@ function send_request_energy() {
         'cutoff': get_value('num_mat')
     };
 
-    var api_url = window.api['host'] + 'contributions/redox_thermo_csp_energy/';
+    var api_url = window.api['host'] + 'redox_thermo_csp/energy/';
     $.get({
         url: api_url, data: payload, headers: window.api['headers']
     }).done(function() {
-        var r = arguments[0];
+        var r = arguments[0]['data'];
         var div = document.getElementById(updatekey);
         var axis = {
             exponentformat: "E", tickfont: { size: 15 }, showline: "True",
@@ -335,21 +335,21 @@ $(document).ready(function () {
             minimumInputLength: 2,
             width: 'style',
             data: function (params) {
-                var query = { projects: "redox_thermo_csp",
-                    mask: "identifier,content.data.formula"
+                var query = { project: "redox_thermo_csp",
+                    _fields: "id,identifier,data.formula"
                 };
                 if (typeof params.term !== 'undefined') {
                     if (params.term.startsWith('mp')) {
-                        query["contains"] = params.term;
+                        query["identifier__contains"] = params.term;
                     } else {
-                        query["filters"] = "formula__contains:" + params.term;
+                        query["filters"] = "data__formula__contains:" + params.term;
                     }
                 }
                 return query
             },
             processResults: function (data) {
                 var results = [];
-                $.each(data, function(index, element) {
+                $.each(data['data'], function(index, element) {
                     var formula = element["data"]["formula"];
                     var text = element["identifier"] + ' / ' + formula + ' / ' + element['id'];
                     var entry = {id: index, text: text};

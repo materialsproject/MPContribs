@@ -35,7 +35,7 @@ $(document).ready(function () {
             },
             processResults: function (data) {
                 var results = [];
-                $.each(data, function(index, element) {
+                $.each(data['data'], function(index, element) {
                     var entry = {id: index, text: element["identifier"]};
                     results.push(entry);
                 });
@@ -48,23 +48,23 @@ $(document).ready(function () {
         spinner.spin(target);
         event.preventDefault(); // To prevent following the link (optional)
         var queries = [];
-        var query_tpl = {'mask': 'id', 'per_page': 2}; // limit to two entries per query
+        var query_tpl = {'_fields': 'id', '_limit': 2}; // limit to two entries per query
         $.each(["identifiers", "projects"], function(index, name) {
             var select_data = $('#'+name+'_list').select2('data');
             var selection = $.map(select_data, function(entry) { return entry['text']; });
             if (selection.length > 0) {
                 if (index === 0) { // identifiers selected
-                    query_tpl['identifiers'] = selection.join(",");
+                    query_tpl['identifier__in'] = selection.join(",");
                 } else if (index === 1) { // projects selected
                     $.each(selection, function(idx, project) {
                         var query = $.extend(true, {}, query_tpl); // deep copy
-                        query['projects'] = project;
+                        query['project'] = project;
                         queries.push(query);
                     })
                 }
             }
         });
-        if (queries.length === 0 && 'identifiers' in query_tpl) { queries.push(query_tpl); }
+        if (queries.length === 0 && 'identifier__in' in query_tpl) { queries.push(query_tpl); }
         var cids = $.map(queries, function(query) {
             return $.get({url: api_url, data: query, headers: window.api['headers']});
         });
@@ -75,9 +75,9 @@ $(document).ready(function () {
             var cards = [];
             if (args[0].length != 3) { args = [arguments]; } // only one project selected
             $.map(args, function(response) {
-                $.each(response[0], function (index, contrib) {
+                $.each(response[0]['data'], function (index, contrib) {
                     var ajax = $.get({
-                        url: api_url + contrib['id'] + '/card', headers: window.api['headers']
+                        url: window.api['host'] + 'cards/' + contrib['id'] + '/', headers: window.api['headers']
                     });
                     cards.push(ajax);
                 });
@@ -86,7 +86,7 @@ $(document).ready(function () {
                 $("#cards").empty();
                 var args = arguments;
                 if (!$.isArray(args[0])) { args = [arguments]; } // only one project selected
-                $.map(args, function(response) { $('#cards').append(response[0]); });
+                $.map(args, function(response) { $('#cards').append(response[0]['html']); });
                 $('div[name=user_contribs]').addClass('col-md-6');
                 spinner.stop();
             });
