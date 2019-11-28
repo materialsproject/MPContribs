@@ -20,7 +20,6 @@ RUN node -v && npm -v && git --version
 COPY mpcontribs-io/requirements.txt requirements-io.txt
 COPY mpcontribs-client/requirements.txt requirements-client.txt
 COPY mpcontribs-portal/requirements.txt requirements-portal.txt
-COPY mpcontribs-explorer/requirements.txt requirements-explorer.txt
 COPY mpcontribs-users/requirements.txt requirements-users.txt
 COPY mpcontribs-webtzite/requirements.txt requirements-webtzite.txt
 RUN cat requirements-*.txt > requirements.txt
@@ -64,9 +63,6 @@ RUN cd mpcontribs-portal && /venv/bin/pip install -e .
 
 COPY mpcontribs-users mpcontribs-users
 RUN cd mpcontribs-users && /venv/bin/pip install -e .
-
-COPY mpcontribs-explorer mpcontribs-explorer
-RUN cd mpcontribs-explorer && /venv/bin/pip install -e .
 
 COPY test_site test_site
 

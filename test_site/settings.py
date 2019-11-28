@@ -21,11 +21,10 @@ INSTALLED_APPS = [
     'webpack_loader',
     'webtzite',
     'mpcontribs.portal',
-    'mpcontribs.explorer',
 ]
 
-INSTALLED_APPS.append('test_site.apps.Mno2PhaseSelectionExplorerConfig')
-INSTALLED_APPS.append('test_site.apps.JarvisNusExplorerConfig')
+INSTALLED_APPS.append('test_site.apps.Mno2PhaseSelectionConfig')
+INSTALLED_APPS.append('test_site.apps.JarvisNusConfig')
 INSTALLED_APPS.append('test_site.apps.DefectGenomePcfcMaterialsConfig')
 INSTALLED_APPS.append('test_site.apps.SlacMose2Config')
 INSTALLED_APPS.append('test_site.apps.SwfConfig')

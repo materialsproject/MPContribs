@@ -128,8 +128,8 @@ class TableView(SwaggerView):
                                 type: object
         """
         # config and parameters
-        explorer = 'http://localhost:8080/explorer' if current_app.config['DEBUG'] \
-            else 'https://portal.mpcontribs.org/explorer'
+        portal = 'http://localhost:8080' if current_app.config['DEBUG'] \
+            else 'https://portal.mpcontribs.org'
         mp_site = 'https://materialsproject.org/materials'
         mask = ['data', 'structures', 'identifier']
         search = request.args.get('q')
@@ -215,7 +215,7 @@ class TableView(SwaggerView):
             mp_id = doc['identifier']
             contrib = nested_to_record(doc['data'], sep='.')
             search_value = contrib.get(general_columns[-1], mp_id).replace(' ', '')
-            row = [f"{mp_site}/{mp_id}", f"{explorer}/{doc['id']}", search_value]
+            row = [f"{mp_site}/{mp_id}", f"{portal}/{doc['id']}", search_value]
 
             for idx, col in enumerate(user_columns):
                 cell = ''
@@ -225,10 +225,10 @@ class TableView(SwaggerView):
                         sname = '.'.join(col.split('.')[:-1])  # remove CIF string from field name
                         for d in structures:
                             if d['name'] == sname:
-                                cell = f"{explorer}/{d['id']}.cif"
+                                cell = f"{portal}/{d['id']}.cif"
                                 break
                     elif structures:
-                        cell = f"{explorer}/{structures[0]['id']}.cif"
+                        cell = f"{portal}/{structures[0]['id']}.cif"
                 else:
                     cell = contrib.get(col+'.value', contrib.get(col, ''))
                     if isinstance(cell, str) and cell.startswith('mp-'):

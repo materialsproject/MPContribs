@@ -4,7 +4,6 @@ from django.views.generic.base import RedirectView
 urlpatterns = [
     url(r'', include('webtzite.urls')),
     url(r'', include('mpcontribs.portal.urls')),
-    url(r'explorer/', include('mpcontribs.explorer.urls')),
     url(r'MnO2_phase_selection/', include('mpcontribs.users.MnO2_phase_selection.explorer.urls')),
     url(r'jarvis_nus/', include('mpcontribs.users.jarvis_nus.explorer.urls')),
     url(r'defect_genome_pcfc_materials/', include('mpcontribs.users.defect_genome_pcfc_materials.explorer.urls')),

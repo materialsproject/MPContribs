@@ -167,7 +167,7 @@ def process_mpfile(path_or_mpfile, target=None, fmt='archieml', ids=None, projec
                         if idx < 5:
                             yield 'build ... '
                             url = target.build_contribution(cid)
-                            url = '/'.join([target.preamble.rsplit('/', 1)[0], 'explorer', url])
+                            url = '/'.join([target.preamble.rsplit('/', 1)[0], url])
                             yield ("OK. <a href='{}' class='btn btn-default btn-xs' " +
                                    "role='button' target='_blank'>View</a></br>").format(url)
                         else:

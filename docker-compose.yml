@@ -14,7 +14,6 @@ services:
     volumes:
       - ./test_site:/app/test_site
       - ./mpcontribs-portal:/app/mpcontribs-portal
-      - ./mpcontribs-explorer:/app/mpcontribs-explorer
       - ./mpcontribs-users:/app/mpcontribs-users
       - ./mpcontribs-webtzite:/app/mpcontribs-webtzite
       - ./mpcontribs-io:/app/mpcontribs-io

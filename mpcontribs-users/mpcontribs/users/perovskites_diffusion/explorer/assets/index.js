@@ -46,7 +46,7 @@ function plot() {
         Plotly.newPlot(graph, data, layout, {displayModeBar: true, responsive: true});
         graph.on('plotly_click', function(d){
             var cid = d.points[0].text;
-            var url = '/explorer/' + cid;
+            var url = '/' + cid;
             window.open(url, '_blank');
         });
         spinner_plot.stop();

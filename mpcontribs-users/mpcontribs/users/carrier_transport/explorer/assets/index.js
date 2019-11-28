@@ -65,7 +65,7 @@ $(document).ready(function () {
         graph.on('plotly_click', function(data){
             var cid = data.points[0].text;
             if (typeof cid !== 'undefined') {
-                var url = '/explorer/' + cid;
+                var url = '/' + cid;
                 window.open(url, '_blank');
             }
         });

@@ -124,11 +124,11 @@ stages:
               per_page: 2
               items:
                   - identifier: "https://materialsproject.org/materials/mp-7433"
-                    id: "http://localhost:8080/explorer/5abd8ffad4f144494f2cf1b4"
+                    id: "http://localhost:8080/5abd8ffad4f144494f2cf1b4"
                     formula: "Cu2Na2Se2"
                     "ΔE-KS.direct [eV]": "0.139"
                   - identifier: "https://materialsproject.org/materials/mp-31593"
-                    id: "http://localhost:8080/explorer/5abd8ffad4f144494f2cf1b7"
+                    id: "http://localhost:8080/5abd8ffad4f144494f2cf1b7"
                     formula: "Co2Na8O8"
                     "ΔE-KS.direct [eV]": "0.177"
 

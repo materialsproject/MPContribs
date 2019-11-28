@@ -1,2 +1,0 @@
-nbformat==4.4.0
-beautifulsoup4==4.7.1

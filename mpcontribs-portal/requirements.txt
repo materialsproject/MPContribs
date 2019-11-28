@@ -4,3 +4,5 @@ Django==2.2rc1
 django-extensions==2.1.5
 django-webpack4-loader==0.0.5
 gunicorn[gevent]==19.9.0
+nbformat==4.4.0
+beautifulsoup4==4.7.1

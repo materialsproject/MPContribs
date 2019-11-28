@@ -135,7 +135,7 @@ $(document).ready(function () {
         Plotly.plot(graph, data, layout, {displayModeBar: true, responsive: true});
         graph.on('plotly_click', function(d){
             var cid_or_mpid = d.points[0].text;
-            var url = '/explorer/';
+            var url = '/';
             if (cid_or_mpid.indexOf('mp-') !== -1) {
                 url = 'https://materialsproject.org/materials/';
             }

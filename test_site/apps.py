@@ -1,10 +1,10 @@
 from django.apps import AppConfig
 
-class Mno2PhaseSelectionExplorerConfig(AppConfig):
+class Mno2PhaseSelectionConfig(AppConfig):
     name = 'mpcontribs.users.MnO2_phase_selection.explorer'
     label = 'MnO2_phase_selection'
 
-class JarvisNusExplorerConfig(AppConfig):
+class JarvisNusConfig(AppConfig):
     name = 'mpcontribs.users.jarvis_nus.explorer'
     label = 'jarvis_nus'
 

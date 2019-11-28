@@ -63,7 +63,7 @@ class CardsView(SwaggerView):
             authors = [a.strip() for a in info.authors.split(',') if a]
             ctx['authors'] = {'main': authors[0], 'etal': authors[1:]}
             ctx['landing_page'] = f'/{contrib.project}/'
-            ctx['more'] = f'/explorer/{cid}'
+            ctx['more'] = f'/{cid}'
             ctx['urls'] = info.urls.values()
             card_script = get_resource_as_string('templates/linkify.min.js')
             card_script += get_resource_as_string('templates/linkify-element.min.js')
