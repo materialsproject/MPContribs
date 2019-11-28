@@ -39,3 +39,7 @@ class SwaggerViewType(MethodViewType):
 
 class SwaggerView(OriginalSwaggerView, ResourceView, metaclass=SwaggerViewType):
     """A class-based view defining additional methods"""
+
+    def get_groups(self, request):
+        groups = request.headers.get('X-Consumer-Groups')
+        return [] if groups is None else groups.split(',')
