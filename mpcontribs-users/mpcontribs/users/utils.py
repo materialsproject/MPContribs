@@ -61,7 +61,8 @@ def get_context(project, columns=None):
         ctx['other'] = RecursiveDict(prov['other']).render()
     all_columns = client.projects.get_columns(project=project).response().result['data']
     if not all_columns:
-        raise ValueError(f'no contributions found for {project}!')
+        ctx['table'] = ''
+        return ctx
     if columns:
         ncols = len(columns) + 3
         columns += [

@@ -64,14 +64,14 @@ $(document).ready(function () {
     })
 
     gets.push($.get({
-        url: window.api['host'] + 'contributions/?projects=als_beamline&mask=content.tables',
+        url: window.api['host'] + 'contributions/?project=als_beamline&_fields=tables',
         headers: window.api['headers']
     }))
 
     $.when.apply($, gets).done(function() {
         var data = [];
         $.each(arguments, function(index, response) {
-            var r = response[0];
+            var r = response[0]['data'];
             if (index < 4) {
                 data.push({
                     type: 'scatterternary', mode: 'lines',
@@ -108,10 +108,10 @@ $(document).ready(function () {
                     }
                 });
             } else {
-                var tgets = $.map(response[0], function(contrib) {
-                    var tid = contrib.content.tables[0];
+                var tgets = $.map(response[0]['data'], function(contrib) {
+                    var tid = contrib.tables[0]['id'];
                     return $.get({
-                        url: window.api['host'] + 'tables/' + tid + '?per_page=200',
+                        url: window.api['host'] + 'tables/' + tid + '/?_fields=_all&data_per_page=200',
                         headers: window.api['headers']
                     });
                 });

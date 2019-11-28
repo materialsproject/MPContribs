@@ -18,10 +18,11 @@ $(document).ready(function () {
     var spinner_plot = new Spinner({scale: 0.5});
     spinner_plot.spin(target);
     var graph = document.getElementById('graph');
-    var api_url = window.api['host'] + 'tables/5d12c8d57be0d62e9aca5d14';
+    var api_url = window.api['host'] + 'tables/5d12c8d57be0d62e9aca5d14/';
 
     $.get({
-        url: api_url, data: {'per_page': 50}, headers: window.api['headers']
+        url: api_url, data: {'_fields': '_all', 'data_per_page': 50},
+        headers: window.api['headers']
     }).done(function(response) {
         var columns = math.transpose(response['data']);
         var data = [];

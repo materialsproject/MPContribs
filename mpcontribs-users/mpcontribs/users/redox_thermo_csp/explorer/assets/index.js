@@ -350,7 +350,7 @@ $(document).ready(function () {
             processResults: function (data) {
                 var results = [];
                 $.each(data, function(index, element) {
-                    var formula = element["content"]["data"]["formula"];
+                    var formula = element["data"]["formula"];
                     var text = element["identifier"] + ' / ' + formula + ' / ' + element['id'];
                     var entry = {id: index, text: text};
                     results.push(entry);

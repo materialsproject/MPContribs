@@ -46,11 +46,11 @@ $(document).ready(function () {
         url: api_url, data: {'columns': columns.join(',')},
         headers: window.api['headers']
     }).done(function(response) {
-        $.each(response, function(idx, trace) {
+        $.each(response['data'], function(idx, trace) {
             trace['type'] = 'bar';
             trace['name'] = columns[idx];
         })
-        Plotly.plot(graph, response, layout, {displayModeBar: true, responsive: true});
+        Plotly.plot(graph, response['data'], layout, {displayModeBar: true, responsive: true});
         graph.on('plotly_click', function(data){
             var cid = data.points[0].text;
             var url = '/explorer/' + cid;
@@ -76,7 +76,7 @@ $(document).ready(function () {
                 headers: window.api['headers']
             }).done(function(response) {
                 var graph = document.getElementById('graph');
-                $.each(response, function(idx, data) {
+                $.each(response['data'], function(idx, data) {
                     $.each(data, function(axis, array) {
                         Plotly.restyle(graph, axis, [array], idx);
                     })

@@ -59,31 +59,30 @@ $(document).ready(function () {
     $.when.apply($, gets).done(function() {
         var gets_args = arguments;
         var gets2 = $.map(gets_args, function(response) {
-            var identifiers = response[0][0]['x'];
+            var identifiers = response[0]['data'][0]['x'];
             return $.get({
                 url: window.api['host'] + 'contributions/', data: {
-                    'projects': 'screening_inorganic_pv',
-                    'identifiers': identifiers.join(','),
-                    'per_page': identifiers.length,
-                    'mask': 'content.data'
+                    'project': 'screening_inorganic_pv',
+                    'identifier__in': identifiers.join(','),
+                    '_limit': identifiers.length,
+                    '_fields': 'id,identifier,data'
                 }, headers: window.api['headers']
             });
         });
         $.when.apply($, gets2).done(function() {
             var data = []; var xvals = []; var yvals = []; var text = [];
             $.each(arguments, function(index, response) {
-                var r = gets_args[index][0];
+                var r = gets_args[index][0]['data'];
                 Array.prototype.push.apply(xvals, r[0]['y']);
                 Array.prototype.push.apply(yvals, r[1]['y']);
-                Array.prototype.push.apply(text, $.map(response[0], function(d) {
-                    var cid = d['id'];
-                    var s = cid + '<br>' + JSON.stringify(d['content']['data'], null, 2);
+                Array.prototype.push.apply(text, $.map(response[0]['data'], function(d) {
+                    // TODO only show 'display' in hoverinfo
+                    var s = d['identifier'] + ' / ' + d['id'] + '<br>' + JSON.stringify(d['data'], null, 2);
                     var s = s.replace(/"/g, '').replace(/,/g, '<br>');
                         return s.replace(/{/g, '<br>').replace(/}/g, '');
                     }));
                     if ( !(Math.floor((index+1)%4)) ) {
                         var idx = Math.floor(index/4);
-                        console.log(idx);
                         data.push({
                             x: xvals, y: yvals, text: text, hoverlabel: {'align': 'left'},
                             name: names[idx], mode: 'markers', type: 'scatter',

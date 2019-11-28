@@ -26,11 +26,11 @@ $(document).ready(function () {
         url: api_url, data: {'columns': columns.join(',')},
         headers: window.api['headers']
     }).done(function(data) {
-        $.each(data, function(idx, trace) {
+        $.each(data['data'], function(idx, trace) {
             trace['type'] = 'bar';
             trace['name'] = columns[idx].split('.')[0];
         });
-        Plotly.plot(graph, data, layout, {displayModeBar: true, responsive: true});
+        Plotly.plot(graph, data['data'], layout, {displayModeBar: true, responsive: true});
         graph.on('plotly_click', function(d){
             var cid = d.points[0].text;
             var url = '/explorer/' + cid;

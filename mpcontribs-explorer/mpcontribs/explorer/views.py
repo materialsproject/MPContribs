@@ -59,7 +59,7 @@ def contribution(request, cid):
     ctx = RequestContext(request)
     client = load_client()
     try:
-        nb = client.notebooks.get_entry(cid=cid).response(timeout=2).result
+        nb = client.notebooks.get_entry(pk=cid).response(timeout=2).result
         if len(nb['cells']) < 2:
             raise HTTPTimeoutError
         ctx['nb'], ctx['js'] = export_notebook(nb, cid)
@@ -70,7 +70,7 @@ def contribution(request, cid):
 
 def cif(request, sid):
     client = load_client()
-    cif = client.structures.get_cif(sid=sid).response().result
+    cif = client.structures.get_cif(sid=sid).response().result['cif']
     if cif:
         return HttpResponse(cif, content_type='text/plain')
     return HttpResponse(status=404)
@@ -78,7 +78,7 @@ def cif(request, sid):
 
 def download_json(request, cid):
     client = load_client()
-    contrib = client.contributions.get_entry(cid=cid).response().result
+    contrib = client.contributions.get_entry(pk=cid).response().result
     if contrib:
         jcontrib = json.dumps(contrib)
         response = HttpResponse(jcontrib, content_type='application/json')

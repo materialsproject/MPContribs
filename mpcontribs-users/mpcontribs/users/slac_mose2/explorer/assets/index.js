@@ -12,11 +12,8 @@ $(document).ready(function () {
     spinner_plot.spin(target);
 
     var tid = '5cca3b57e7004456f9ba72cc';
-    var api_url = window.api['host'] + 'tables/' + tid + '?per_page=200';
+    var api_url = window.api['host'] + 'tables/' + tid + '/?_fields=_all&data_per_page=200';
     var graph = document.getElementById('graph');
-    var spinner_plot = new Spinner({scale: 0.5});
-    var target = document.getElementById('spinner_graph');
-    spinner_plot.spin(target);
 
     var layout = {
         height: 900, margin: { b: 20, t: 1, l: 1, r: 1 },

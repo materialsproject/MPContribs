@@ -5,7 +5,7 @@ var target = document.getElementById('spinner_graph');
 var spinner_plot = new Spinner({scale: 0.5});
 spinner_plot.spin(target);
 var graph = document.getElementById('graph');
-var api_url = window.api['host'] + 'projects/perovskites_diffusion';
+var api_url = window.api['host'] + 'projects/perovskites_diffusion/';
 
 var layout = {
     margin: {l: 70, b: 50, t: 50, r: 5}, hovermode: 'closest', showlegend: false,
@@ -31,10 +31,10 @@ function plot() {
     var columns = $.map(axes, function(ax) { return ax.value; });
     var titles = $.map(axes, function(ax) { return ax.options[ax.selectedIndex].text; });
     $.get({
-        url: api_url + '/graph', data: {'columns': columns.join(',')},
+        url: api_url + 'graph', data: {'columns': columns.join(',')},
         headers: window.api['headers']
     }).done(function() {
-        var r = arguments[0];
+        var r = arguments[0]['data'];
         var data = [{
             x : r[0]['y'], y : r[1]['y'], text : r[1]['text'],
             marker: {size: 10}, mode: 'markers'
@@ -54,7 +54,7 @@ function plot() {
 }
 
 $.get({
-    url: api_url, data: {'mask': 'other.abbreviations'},
+    url: api_url, data: {'_fields': 'other.abbreviations'},
     headers: window.api['headers']
 }).done(function() {
     var r = arguments[0]['other']['abbreviations'];

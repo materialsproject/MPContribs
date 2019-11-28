@@ -87,12 +87,12 @@ window.render_table = function(props) {
         if (typeof url !== 'undefined') {
             var cid = url.split('/').pop();
             $.get({
-                url: window.api['host'] + 'contributions/' + cid + '/modal',
+                url: window.api['host'] + 'contributions/' + cid + '/?_fields=data.modal',
                 headers: window.api['headers']
             }).done(function(response) {
-                if ('modal' in response) {
+                if ('modal' in response['data']) {
                     $('#modal_render_json').empty();
-                    render_json({divid: 'modal_render_json', data: response['modal']});
+                    render_json({divid: 'modal_render_json', data: response['data']['modal']});
                     var modal = $('#modal').modal();
                     modal.show();
                 }

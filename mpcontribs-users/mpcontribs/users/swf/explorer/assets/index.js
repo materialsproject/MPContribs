@@ -78,7 +78,7 @@ $(document).ready(function () {
     $.when.apply($, gets).done(function() {
         var data = [];
         $.each(arguments, function(index, response) {
-            var r = response[0];
+            var r = response[0]['data'];
             if (index < 2) {
                 data.push({
                     name: graph_columns[index][2],

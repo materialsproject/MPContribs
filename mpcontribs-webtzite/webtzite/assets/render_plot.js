@@ -20,7 +20,7 @@ window.render_plot = function(props) {
         for (var i = 0; i < nmax; i++) { // max `nmax` request = nmax*1000 table rows
             var page = i+1;
             gets.push($.get({
-                url: window.api['host'] + 'tables/' + props.tid + '?per_page=1000&page=' + page,
+                url: window.api['host'] + 'tables/' + props.tid + '/?_fields=_all&data_per_page=1000&data_page=' + page,
                 headers: window.api['headers']
             }));
         }

@@ -114,7 +114,7 @@ class NotebooksView(SwaggerView):
                 )
             ]
 
-            tables = [t["id"] for t in contrib['tables']]
+            tables = [t.id for t in contrib['tables']]
             if tables:
                 cells.append(nbf.new_markdown_cell(
                     f"## Tabular Data for {contrib['identifier']}"
@@ -128,7 +128,7 @@ class NotebooksView(SwaggerView):
                         "Plot.from_dict(table)"
                     ))
 
-            structures = [s["id"] for s in contrib['structures']]
+            structures = [s.id for s in contrib['structures']]
             if structures:
                 cells.append(nbf.new_markdown_cell(
                     f"## Pymatgen Structures for {contrib['identifier']}"

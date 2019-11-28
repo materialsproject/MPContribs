@@ -15,9 +15,9 @@ def index(request):
         client = load_client()
         ctx['contribs'] = []
         for contrib in client.contributions.get_entries(
-            projects=[project], mask=['identifier', 'content.data.formula']
-        ).response().result:
-            contrib['formula'] = contrib['content']['data'].pop('formula')
+            project=project, _fields=['id', 'identifier', 'data.formula']
+        ).response().result['data']:
+            contrib['formula'] = contrib['data'].pop('formula')
             contrib['short_cid'] = get_short_object_id(contrib['id'])
             ctx['contribs'].append(contrib)
     except Exception as ex:
