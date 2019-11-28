@@ -2,10 +2,30 @@
 test_name: test projects resource
 
 stages:
-    - name: create test project
+    - name: create test project unauthorized
       request:
           url: http://localhost:5000/projects/
           method: POST
+          headers:
+              X-Consumer-Groups: dtu
+          json:
+              project: test
+              title: Test Title
+              description: just a test project. Nothing to see here.
+              authors: P. Huck
+              urls:
+                  main: https://google.com
+      response:
+          status_code: 401
+          body:
+              error: Unauthorized
+
+    - name: create test project as admin
+      request:
+          url: http://localhost:5000/projects/
+          method: POST
+          headers:
+              X-Consumer-Groups: admin
           json:
               project: test
               title: Test Title
@@ -19,10 +39,23 @@ stages:
               project: test
               title: Test Title
 
-    - name: delete test project
+    - name: update test project as test user
+      request:
+          url: http://localhost:5000/projects/
+          method: PUT
+          headers:
+              X-Consumer-Groups: test
+          json:
+              title: Modified Test Title
+      response:
+          status_code: 405 # no body
+
+    - name: delete test project as admin
       request:
           url: http://localhost:5000/projects/test/
           method: DELETE
+          headers:
+              X-Consumer-Groups: admin
       response:
           status_code: 200
 

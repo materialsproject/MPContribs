@@ -5,6 +5,8 @@ stages:
       request:
           url: http://localhost:5000/contributions/
           method: POST
+          headers:
+              X-Consumer-Groups: test
           json:
               id: 5ddc7c0c1e37e6006a663476
               project: test
@@ -47,10 +49,12 @@ stages:
       request:
           url: http://localhost:5000/contributions/5ddc7c0c1e37e6006a663476/
           method: DELETE
+          headers:
+              X-Consumer-Groups: test
       response:
           status_code: 200
 
-    - name: get contribution
+    - name: get public contribution
       request:
           url: http://localhost:5000/contributions/5ac08be3d4f144332ce7b785/
           method: GET
@@ -60,14 +64,14 @@ stages:
               project: carrier_transport
               identifier: mp-27502
 
-    - name: query contributions using contains
+    - name: query public contributions using contains
       request:
           url: http://localhost:5000/contributions/
           method: GET
           params:
               project: dtu
               _fields: id,identifier,data.formula
-              identifier__icontains: mp-10
+              identifier__contains: mp-10
               data__formula__contains: Te4
               _limit: 2
               _order_by: identifier
@@ -85,7 +89,7 @@ stages:
                     identifier: mp-10288
               has_more: true
 
-    - name: query contributions using identifiers
+    - name: query public contributions using identifiers
       request:
           url: http://localhost:5000/contributions/
           method: GET

@@ -1,10 +1,12 @@
 test_name: test tables resource
 
 stages:
-    - name: create test contribution
+    - name: create private test contribution
       request:
           url: http://localhost:5000/contributions/
           method: POST
+          headers:
+              X-Consumer-Groups: test
           json:
               id: 5ddc7c0c1e37e6006a663476
               project: test
@@ -25,10 +27,12 @@ stages:
               project: test
               identifier: mp-0000
 
-    - name: create test table
+    - name: create private test table
       request:
           url: http://localhost:5000/tables/
           method: POST
+          headers:
+              X-Consumer-Groups: test
           json:
               id: 5dddb0af1e37e6000c57eb34
               identifier: mp-0000
@@ -75,10 +79,12 @@ stages:
               name: table_name
               cid: 5ddc7c0c1e37e6006a663476
 
-    - name: update contribution with table info
+    - name: update private contribution with table info
       request:
           url: http://localhost:5000/contributions/5ddc7c0c1e37e6006a663476/
           method: PUT
+          headers:
+              X-Consumer-Groups: test
           json:
               tables:
                   - 5dddb0af1e37e6000c57eb34
@@ -89,10 +95,23 @@ stages:
               project: test
               identifier: mp-0000
 
-    - name: delete test table
+    - name: delete private test table
       request:
           url: http://localhost:5000/tables/5dddb0af1e37e6000c57eb34/
           method: DELETE
+          headers:
+              X-Consumer-Groups: test
+      response:
+          status_code: 200
+
+    - name: publish test contribution
+      request:
+          url: http://localhost:5000/contributions/5ddc7c0c1e37e6006a663476/
+          method: PUT
+          headers:
+              X-Consumer-Groups: test
+          json:
+              is_public: true
       response:
           status_code: 200
 
@@ -100,10 +119,12 @@ stages:
       request:
           url: http://localhost:5000/contributions/5ddc7c0c1e37e6006a663476/
           method: DELETE
+          headers:
+              X-Consumer-Groups: test
       response:
           status_code: 200
 
-    - name: single table in DataFrame format
+    - name: single public table in DataFrame format
       request:
           url: http://localhost:5000/tables/5cca3512e7004456f9b98867/
           method: GET
@@ -118,6 +139,7 @@ stages:
               identifier: mp-27502
               name: S(n)
               cid: 5ac08be3d4f144332ce7b785
+              is_public: true
               config: null
               columns:
               - T [K]
@@ -140,7 +162,7 @@ stages:
                 - "-234.569"
                 - "-80.8270"
 
-    - name: specific table in Backgrid format
+    - name: specific public table in Backgrid format
       request:
           url: http://localhost:5000/tables/5ac08be3d4f144332ce7b785/S(n)
           method: GET
@@ -169,7 +191,7 @@ stages:
                 1e+19 cm⁻³ [μV/K]: "-234.569"
                 1e+20 cm⁻³ [μV/K]: "-80.8270"
 
-    - name: specific table in Plotly format
+    - name: specific public table in Plotly format
       request:
           url: http://localhost:5000/tables/carrier_transport/mp-27502/S(n)
           method: GET

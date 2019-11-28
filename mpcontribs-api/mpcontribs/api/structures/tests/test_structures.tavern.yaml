@@ -23,6 +23,7 @@ stages:
               identifier: mp-510408
               name: MnO2
               cid: 5a863936d4f1444134518540
+              is_public: true
               lattice:
                 a: 2.8560581700000003
                 c: 4.3854388
