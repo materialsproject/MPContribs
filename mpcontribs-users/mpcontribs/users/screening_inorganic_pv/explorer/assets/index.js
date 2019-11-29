@@ -106,7 +106,7 @@ $(document).ready(function () {
             });
                 Plotly.plot(graph, data, layout, {displayModeBar: true, responsive: true});
                 graph.on('plotly_click', function(d){
-                    var cid = d.points[0].text.split('<br>')[0];
+                    var cid = d.points[0].text.split('<br>')[0].split(' / ')[1];
                     var url = '/' + cid;
                     window.open(url, '_blank');
                 });

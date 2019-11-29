@@ -21,24 +21,22 @@
       </nav>
       {% endif %}
       <nav class="navbar navbar-inverse">
-        <div class="container-fluid">
+        <div class="container">
           <div class="navbar-header">
-            <a class="navbar-brand" href="/" style="padding: 5px;">
+            <a class="navbar-brand" href="/" style="padding: 6px;">
               <img id="logo">
             </a>
           </div>
-          <ul class="nav navbar-nav">
-            <li>
-              <a href="/" style="padding-top: 0px; padding-bottom: 0px;">
-                <h1 style="color: white; margin: 5px;">
-                  MPContribs Portal: Contributed Materials Data
-                </h1>
-              </a>
-            </li>
-          </ul>
-          <ul class="nav navbar-nav navbar-right">
+          <div class="col-md-3" style="padding-top: 9px; padding-bottom: 9px; margin-left: 30px;">
+              <select data-placeholder="Search or jump to projects ..." id="search" style="width: 100%;">
+                  <option></option>
+              </select>
+          </div>
+          <ul class="nav navbar-nav navbar-right" style="font-size: 16px; font-weight: bold;">
             <li><a href="https://mpcontribs.org">Docs</a></li>
-            <li><a href="https://gke.mybinder.org/v2/gh/materialsproject/MPContribs/1.6.4" target="_blank">BinderHub</a></li>
+            <li><a href="https://api.mpcontribs.org">API</a></li>
+            <li><a href="https://ingester.mpcontribs.org">Ingester</a></li>
+            <li><a href="https://gke.mybinder.org/v2/gh/materialsproject/MPContribs/1.6.4" target="_blank">MyBinder</a></li>
             {% block extra_items %}
             {% endblock extra_items %}
             <li><a href="{% url 'webtzite:dashboard' %}">Dashboard</a></li>

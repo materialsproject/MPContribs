@@ -28,6 +28,40 @@ if (api_key !== '') {
 $(document).ready(function () {
     document.getElementById("logo").src = img;
     $('#api_key_code').html(api_key_code);
+    $('#search').select2({
+        ajax: {
+            url: window.api['host'] + 'projects/',
+            headers: window.api['headers'],
+            delay: 400,
+            minimumInputLength: 3,
+            maximumSelectionLength: 3,
+            multiple: true,
+            width: 'style',
+            data: function (params) {
+                $(this).empty(); // clear selection/options
+                if (typeof params.term == 'undefined') {
+                    $(".row.equal").find(".col-md-3").show();
+                }
+                var query = {_fields: "project"};
+                if (params.term) { query['description__icontains'] = params.term; }
+                return query;
+            },
+            processResults: function (data) {
+                $(".row.equal").find(".col-md-3").hide();
+                var results = [];
+                $.each(data['data'], function(index, element) {
+                    var entry = {id: index, text: element["project"]};
+                    $('#'+element['project']).show();
+                    results.push(entry);
+                });
+                return {results: results};
+            }
+        }
+    });
+    $('#search').on('select2:select', function(ev) {
+        var project = ev.params.data["text"];
+        window.location.href = '/'+project+'/';
+    });
     $('a[name="read_more"]').on('click', function() {
         $(this).css('display', 'none');
         $(this).next('span[name="read_more"]').css('display', 'block');

@@ -3,40 +3,32 @@
 
 {% block content %}
 <div class="container" hidden>
-    <div class="row" style="margin-top: 20px">
-        <div class="col-md-4">
-            <blockquote class="blockquote" style="font-size: 14px; padding: 0px 10px;">
-                <p>The <a href="https://github.com/materialsproject/MPContribs">MPContribs Framework</a>
-                serves the purpose of collectively maintaining contributions to local and MP community
-                databases as annotations to existing MP materials. It subsequently disseminates them
-                on this portal through detail pages powered by Jupyter notebooks, and through landing pages
-                targeted to the project/contributor's needs.</p>
-            </blockquote>
+    {% if landing_pages %}
+    <div class="row myrow" style="margin: 0; padding: 15px; background-color: #e4e6e8;" id="explorer_form" hidden>
+        <div class="col-md-5">
+            <select id="projects_list" multiple="multiple">
+                {% for lp in landing_pages %}
+                <option value="{{ lp.project }}">{{ lp.project }}</option>
+                {% endfor %}
+            </select>
         </div>
-        <div class="col-md-4">
-            <div class="panel panel-default">
-                <div class="panel-heading">
-                    <h4 class="panel-title">
-                        <a href="{% url 'mpcontribs_explorer:index' %}">Contribution Cards Explorer</a>
-                    </h4>
-                </div>
-                <div class="panel-body" style="padding: 0px">
-                    <div class="col-md-12" style="padding: 5px">
-                        <a id="explorer_img" href="{% url 'mpcontribs_explorer:index' %}">
-                        </a>
-                    </div>
-                </div>
-            </div>
+        <div class="col-md-5">
+            <select id="identifiers_list" style="width: 100%;" multiple="multiple">
+            </select>
         </div>
-        <div class="col-md-4">
-            <label for="search">Type keywords to search projects below:</label>
-            <select id="search" style="width: 100%;" multiple="multiple"></select>
+        <div class="col-md-2">
+            <button class="btn btn-primary" type="submit" id="btnFind">Find</button>
+            <div id="spinner"></div>
         </div>
     </div>
-    {% if landing_pages %}
+
+    <div class="row" style="margin: 0 0 20px 0; padding: 10px; background-color: #e4e6e8;" id=cards>
+        <!-- cards dynamically added -->
+    </div>
+
     <div class="row equal">
         {% for lp in landing_pages %}
-        <div class="col-md-4" id="{{ lp.project }}">
+        <div class="col-md-3" id="{{ lp.project }}">
             <div class="panel panel-default">
                 <div class="panel-heading" style="padding-bottom: 5px;">
                     <h4 class="panel-title">
