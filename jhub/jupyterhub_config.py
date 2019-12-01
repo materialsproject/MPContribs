@@ -45,5 +45,5 @@ c.Spawner.debug = True
 #c.Spawner.mem_guarantee = None
 c.Spawner.mem_limit = '512M'
 c.Authenticator.admin_users = {'phuck@lbl.gov'}
-c.Authenticator.refresh_pre_spawn = True
+#c.Authenticator.refresh_pre_spawn = True # collides with Google OAuth redirect urls?
 c.Authenticator.username_pattern = '^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$'
