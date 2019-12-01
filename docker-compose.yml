@@ -2,93 +2,98 @@ version: '2.2'
 
 services:
 
-  web:
-    mem_limit: 1G
-    mem_reservation: 250m
-    cpus: 1
-    build: .
-    environment:
-      - NODE_ENV=development
-    depends_on:
-      - api
-    volumes:
-      - ./test_site:/app/test_site
-      - ./mpcontribs-portal:/app/mpcontribs-portal
-      - ./mpcontribs-users:/app/mpcontribs-users
-      - ./mpcontribs-webtzite:/app/mpcontribs-webtzite
-      - ./mpcontribs-io:/app/mpcontribs-io
-      - ./mpcontribs-client:/app/mpcontribs-client
-    ports:
-      - "8080:8080"
+    web:
+        mem_limit: 1G
+        mem_reservation: 250m
+        cpus: 1
+        build: .
+        environment:
+            - NODE_ENV=development
+        depends_on:
+            - api
+        volumes:
+            - ./test_site:/app/test_site
+            - ./mpcontribs-portal:/app/mpcontribs-portal
+            - ./mpcontribs-users:/app/mpcontribs-users
+            - ./mpcontribs-webtzite:/app/mpcontribs-webtzite
+            - ./mpcontribs-io:/app/mpcontribs-io
+            - ./mpcontribs-client:/app/mpcontribs-client
+        ports:
+            - "8080:8080"
 
-  api:
-    mem_limit: 1G
-    mem_reservation: 250m
-    cpus: 1
-    build: ./mpcontribs-api
-    volumes:
-      - ./mpcontribs-api:/app
-    environment:
-      - FLASK_ENV=development
-      - MPCONTRIBS_MONGO_HOST=$MPCONTRIBS_MONGO_HOST
-      - GATEWAY_HOST=kernel_gateway:8888
-    ports:
-      - "5000:5000"
+    api:
+        mem_limit: 1G
+        mem_reservation: 250m
+        cpus: 1
+        build: ./mpcontribs-api
+        volumes:
+            - ./mpcontribs-api:/app
+        environment:
+            - FLASK_ENV=development
+            - MPCONTRIBS_MONGO_HOST=$MPCONTRIBS_MONGO_HOST
+            - GATEWAY_HOST=kernel_gateway:8888
+        ports:
+            - "5000:5000"
 
-  chrome:
-    mem_limit: 1G
-    mem_reservation: 100m
-    cpus: 1
-    build:
-        context: .
-        dockerfile: DockerfileChrome
-    environment:
-        - START_XVFB=false
-    ports:
-      - "4444:4444"
+    chrome:
+        mem_limit: 1G
+        mem_reservation: 100m
+        cpus: 1
+        environment:
+            - START_XVFB=false
+        ports:
+            - "4444:4444"
+        build:
+            context: .
+            dockerfile: DockerfileChrome
 
-  kernel_gateway:
-    mem_limit: 1G
-    mem_reservation: 100m
-    cpus: 1
-    build:
-      context: .
-      dockerfile: DockerfileKernelGateway
-    volumes:
-      - ./mpcontribs-io:/src/mpcontribs-io
-      - ./mpcontribs-client:/src/mpcontribs-client
-    environment:
-      - KG_ALLOW_ORIGIN='*'
+    kernel_gateway:
+        mem_limit: 1G
+        mem_reservation: 100m
+        cpus: 1
+        volumes:
+            - ./mpcontribs-io:/src/mpcontribs-io
+            - ./mpcontribs-client:/src/mpcontribs-client
+        environment:
+            - KG_ALLOW_ORIGIN='*'
+        build:
+            context: .
+            dockerfile: DockerfileKernelGateway
 
-  test:
-    build:
-      context: ./mpcontribs-api
-      dockerfile: DockerfileTest
+    test:
+        build:
+            context: ./mpcontribs-api
+            dockerfile: DockerfileTest
 
-  docs:
-    image: squidfunk/mkdocs-material
-    volumes:
-      - .:/docs
-    ports:
-      - "8000:8081"
+    docs:
+        image: squidfunk/mkdocs-material
+        volumes:
+            - .:/docs
+        ports:
+            - "8000:8081"
 
-  kong:
-      image: pgbi/kong-dashboard
-      ports:
-          - "8080:8080"
-      environment:
-        - KONG_URL=$KONG_URL
-      command: "start --kong-url ${KONG_URL}"
+    kong:
+        image: pgbi/kong-dashboard
+        ports:
+            - "8080:8080"
+        environment:
+            - KONG_URL=$KONG_URL
+        command: "start --kong-url ${KONG_URL}"
 
-  # build image first:
-  # $ jupyter-repo2docker --user-name jovyan --user-id 1000 --image-name mpcontribs_r2d --no-run .
-  r2d:
-      image: mpcontribs_r2d
-      ports:
-          - "8888:8888"
-      environment:
-          - NODE_ENV=development
-      volumes:
-          - ./mpcontribs-io:/home/jovyan/mpcontribs-io
-          - ./mpcontribs-client:/home/jovyan/mpcontribs-client
-          - ./binder/notebooks:/home/jovyan/binder/notebooks
+    # build image first:
+    # $ jupyter-repo2docker --user-name jovyan --user-id 1000 --image-name mpcontribs_r2d --no-run .
+    r2d:
+        image: mpcontribs_r2d
+        ports:
+            - "8888:8888"
+        environment:
+            - NODE_ENV=development
+        volumes:
+            - ./mpcontribs-io:/home/jovyan/mpcontribs-io
+            - ./mpcontribs-client:/home/jovyan/mpcontribs-client
+            - ./binder/notebooks:/home/jovyan/binder/notebooks
+
+    jhub:
+        build: ./jhub
+        ports:
+            - "8000:8000"
