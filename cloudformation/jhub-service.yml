@@ -100,14 +100,13 @@ Resources:
               Value: !Ref 'SingleUserTaskDefinition'
             - Name: TASK_SECURITY_GROUPS
               Value:
-                - Fn::ImportValue:
-                    !Join [':', [!Ref 'EnvironmentName', 'JhubSecurityGroup']]
+                Fn::ImportValue:
+                  !Join [':', [!Ref 'EnvironmentName', 'JhubSecurityGroup']]
             - Name: TASK_SUBNETS
-              Value:
-                - Fn::ImportValue:
-                    !Join [':', [!Ref 'EnvironmentName', 'PrivateSubnetOne']]
-                - Fn::ImportValue:
-                    !Join [':', [!Ref 'EnvironmentName', 'PrivateSubnetTwo']]
+              Value: !Join [',', [
+                Fn::ImportValue: !Join [':', [!Ref 'EnvironmentName', 'PrivateSubnetOne']],
+                Fn::ImportValue: !Join [':', [!Ref 'EnvironmentName', 'PrivateSubnetTwo']]
+              ]]
           PortMappings:
             - ContainerPort: 8000
           LogConfiguration:
