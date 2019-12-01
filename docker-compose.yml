@@ -46,6 +46,7 @@ services:
         - START_XVFB=false
     ports:
       - "4444:4444"
+
   kernel_gateway:
     mem_limit: 1G
     mem_reservation: 100m
@@ -71,8 +72,23 @@ services:
     ports:
       - "8000:8081"
 
-  #kong:
-  #    image: pgbi/kong-dashboard
-  #    ports:
-  #        - "1234:8082"
-  #    command: "start --kong-url ${KONG_URL}"
+  kong:
+      image: pgbi/kong-dashboard
+      ports:
+          - "8080:8080"
+      environment:
+        - KONG_URL=$KONG_URL
+      command: "start --kong-url ${KONG_URL}"
+
+  # build image first:
+  # $ jupyter-repo2docker --user-name jovyan --user-id 1000 --image-name mpcontribs_r2d --no-run .
+  r2d:
+      image: mpcontribs_r2d
+      ports:
+          - "8888:8888"
+      environment:
+          - NODE_ENV=development
+      volumes:
+          - ./mpcontribs-io:/home/jovyan/mpcontribs-io
+          - ./mpcontribs-client:/home/jovyan/mpcontribs-client
+          - ./binder/notebooks:/home/jovyan/binder/notebooks

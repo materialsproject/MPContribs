@@ -2,6 +2,8 @@ const path = require("path");
 const webpack = require('webpack');
 const CleanWebpackPlugin = require("clean-webpack-plugin");
 const CompressionPlugin = require('compression-webpack-plugin');
+const devMode = process.env.NODE_ENV == 'development'
+console.log('devMode = ' + devMode)
 
 module.exports = {
   context: __dirname,
@@ -84,5 +86,5 @@ module.exports = {
       }
     ]
   },
-  mode : 'production'
+  mode : devMode ? 'development' : 'production'
 }

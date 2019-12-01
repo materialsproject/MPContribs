@@ -110,7 +110,7 @@ class NotebooksView(SwaggerView):
                     f"## Hierarchical Data for {contrib['identifier']}"
                 ),
                 nbf.new_code_cell(
-                    "HierarchicalData(contrib)"
+                    "HierarchicalData(contrib['data'])"
                 )
             ]
 

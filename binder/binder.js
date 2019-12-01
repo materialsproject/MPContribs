@@ -9,4 +9,5 @@ require("./mpcontribs-webtzite/webtzite/assets/render_json");
 require("./mpcontribs-webtzite/webtzite/assets/render_table");
 require("./mpcontribs-webtzite/webtzite/assets/render_plot");
 
-window.api = {'host': 'https://api.mpcontribs.org/'};
+const devMode = process.env.NODE_ENV == 'development';
+window.api = {'host': devMode ? 'http://localhost:5000/' : 'https://api.mpcontribs.org/'};
