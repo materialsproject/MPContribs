@@ -382,6 +382,93 @@ Resources:
       Name: !Sub ${AWS::StackName}-gateway
       ServiceRole: !Ref CodeBuildServiceRole
 
+  CodeBuildProjectJhub:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Artifacts:
+        Type: CODEPIPELINE
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: |
+          version: 0.2
+          phases:
+            pre_build:
+              commands:
+                - $(aws ecr get-login --no-include-email)
+                - TAG="$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | head -c 8)"
+                - IMAGE_URI="${REPOSITORY_URI}:${TAG}"
+            build:
+              commands:
+                - docker build --tag "${IMAGE_URI}-jhub" ./jhub
+            post_build:
+              commands:
+                - docker push "${IMAGE_URI}-jhub"
+                - printf '{"ImageUri":"%s"}' "${IMAGE_URI}-jhub" > build-jhub.json
+          artifacts:
+            files:
+                - build-jhub.json
+      Environment:
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/docker:17.09.0
+        Type: LINUX_CONTAINER
+        PrivilegedMode: true
+        EnvironmentVariables:
+          - Name: REPOSITORY_URI
+            Value: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${Repository}
+      Cache:
+        Type: LOCAL
+        Modes: # You can specify one or more cache mode,
+          - LOCAL_CUSTOM_CACHE
+          - LOCAL_DOCKER_LAYER_CACHE
+          - LOCAL_SOURCE_CACHE
+      Name: !Sub ${AWS::StackName}-jhub
+      ServiceRole: !Ref CodeBuildServiceRole
+
+  CodeBuildProjectR2d:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Artifacts:
+        Type: CODEPIPELINE
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: |
+          version: 0.2
+          phases:
+            install:
+              commands:
+                - pip install -U jupyter-repo2docker
+            pre_build:
+              commands:
+                - $(aws ecr get-login --no-include-email)
+                - TAG="$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | head -c 8)"
+                - IMAGE_URI="${REPOSITORY_URI}:${TAG}"
+            build:
+              commands:
+                - jupyter-repo2docker --user-name jovyan --user-id 1000 --image-name "${IMAGE_URI}-r2d" --no-run .
+            post_build:
+              commands:
+                - docker push "${IMAGE_URI}-r2d"
+                - printf '{"ImageUri":"%s"}' "${IMAGE_URI}-r2d" > build-r2d.json
+          artifacts:
+            files:
+                - build-r2d.json
+      Environment:
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/docker:17.09.0
+        Type: LINUX_CONTAINER
+        PrivilegedMode: true
+        EnvironmentVariables:
+          - Name: REPOSITORY_URI
+            Value: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${Repository}
+      Cache:
+        Type: LOCAL
+        Modes: # You can specify one or more cache mode,
+          - LOCAL_CUSTOM_CACHE
+          - LOCAL_DOCKER_LAYER_CACHE
+          - LOCAL_SOURCE_CACHE
+      Name: !Sub ${AWS::StackName}-r2d
+      ServiceRole: !Ref CodeBuildServiceRole
+
   # This pipeline defines the steps to build, deploy, and release the application
   Pipeline:
     Type: AWS::CodePipeline::Pipeline
@@ -521,6 +608,34 @@ Resources:
               OutputArtifacts:
                 - Name: BuildOutputPortal
               RunOrder: 1
+            - Name: BuildJhub
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Version: 1
+                Provider: CodeBuild
+              Configuration:
+                ProjectName: !Ref CodeBuildProjectJhub
+                PrimarySource: Source
+              InputArtifacts:
+                - Name: Source
+              OutputArtifacts:
+                - Name: BuildOutputJhub
+              RunOrder: 1
+            - Name: BuildR2d
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Version: 1
+                Provider: CodeBuild
+              Configuration:
+                ProjectName: !Ref CodeBuildProjectR2d
+                PrimarySource: Source
+              InputArtifacts:
+                - Name: Source
+              OutputArtifacts:
+                - Name: BuildOutputR2d
+              RunOrder: 1
 
         - Name: Deploy
           Actions:
@@ -585,6 +700,33 @@ Resources:
                 - Name: BuildOutputPortal
                 - Name: BuildOutputChrome
                 - Name: BuildOutputGateway
+
+            - Name: DeployJhub
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Version: 1
+                Provider: CloudFormation
+              Configuration:
+                ActionMode: CREATE_UPDATE
+                RoleArn: !GetAtt CloudFormationDeployRole.Arn
+                StackName: !Sub ${EnvironmentName}-JhubService
+                TemplatePath: Source::cloudformation/jhub-service.yml
+                Capabilities: CAPABILITY_IAM
+                ParameterOverrides: !Sub |
+                  {
+                    "EnvironmentName": "${EnvironmentName}",
+                    "ImageUrlJhub": {
+                      "Fn::GetParam" : ["BuildOutputJhub", "build-jhub.json", "ImageUri"]
+                    },
+                    "ImageUrlR2d": {
+                      "Fn::GetParam" : ["BuildOutputR2d", "build-r2d.json", "ImageUri"]
+                    }
+                  }
+              InputArtifacts:
+                - Name: Source
+                - Name: BuildOutputJhub
+                - Name: BuildOutputR2d
 
 Outputs:
   PipelineUrl:
