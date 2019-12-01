@@ -435,6 +435,9 @@ Resources:
           version: 0.2
           phases:
             install:
+              runtime-versions:
+                docker: 18
+                python: 3.7
               commands:
                 - pip install -U jupyter-repo2docker
             pre_build:
@@ -454,7 +457,7 @@ Resources:
                 - build-r2d.json
       Environment:
         ComputeType: BUILD_GENERAL1_SMALL
-        Image: aws/codebuild/docker:17.09.0
+        Image: aws/codebuild/standard:2.0
         Type: LINUX_CONTAINER
         PrivilegedMode: true
         EnvironmentVariables:
