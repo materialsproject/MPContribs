@@ -103,10 +103,11 @@ Resources:
                 Fn::ImportValue:
                   !Join [':', [!Ref 'EnvironmentName', 'JhubSecurityGroup']]
             - Name: TASK_SUBNETS
-              Value: !Join [',', [
-                Fn::ImportValue: !Join [':', [!Ref 'EnvironmentName', 'PrivateSubnetOne']],
-                Fn::ImportValue: !Join [':', [!Ref 'EnvironmentName', 'PrivateSubnetTwo']]
-              ]]
+              Value:
+                Fn::Join:
+                  - ","
+                  - - Fn::ImportValue: !Join [':', [!Ref 'EnvironmentName', 'PrivateSubnetOne']]
+                    - Fn::ImportValue: !Join [':', [!Ref 'EnvironmentName', 'PrivateSubnetTwo']]
           PortMappings:
             - ContainerPort: 8000
           LogConfiguration:
