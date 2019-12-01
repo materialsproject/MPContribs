@@ -73,12 +73,9 @@ services:
             - "8000:8081"
 
     kong:
-        image: pgbi/kong-dashboard
+        image: pantsel/konga:0.14.1
         ports:
-            - "8080:8080"
-        environment:
-            - KONG_URL=$KONG_URL
-        command: "start --kong-url ${KONG_URL}"
+            - "1337:1337"
 
     # build image first:
     # $ jupyter-repo2docker --user-name jovyan --user-id 1000 --image-name mpcontribs_r2d --no-run .
