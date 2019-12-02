@@ -56,7 +56,7 @@ Resources:
         Fn::ImportValue:
           !Join [':', [!Ref 'EnvironmentName', 'ECSTaskExecutionRole']]
       ContainerDefinitions:
-        - Name: gateway
+        - Name: kong
           MemoryReservation: 250
           Image: !Ref 'ImageUrlKong'
           Ulimits:
