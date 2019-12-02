@@ -10,19 +10,10 @@ Parameters:
     Type: String
     Default: kong
     Description: A name for the service
-  ImageUrl:
+  ImageUrlKong:
     Type: String
-    Default: nginx
-    Description: The url of a docker image that contains the application process that
-                 will handle the traffic for this service
-  ContainerCpu:
-    Type: Number
-    Default: 512
-    Description: How much CPU to give the container. 1024 is 1 CPU
-  ContainerMemory:
-    Type: Number
-    Default: 1024
-    Description: How much memory in megabytes to give the container
+  ImageUrlKonga:
+    Type: String
   DBPassword:
     Type: String
     Default: change-me
@@ -32,6 +23,16 @@ Parameters:
   CertificateArn:
     Type: String
     Description: ARN of the Amazon Certificate Manager SSL certificate to use for this app
+  KongaAdminUsername:
+    Type: String
+  KongaAdminEmail:
+    Type: String
+  KongaAdminFirstname:
+    Type: String
+  KongaAdminLastname:
+    Type: String
+  KongaAdminPassword:
+    Type: String
 
 Resources:
   # A log group for storing the container logs for this service
@@ -46,8 +47,8 @@ Resources:
     Type: AWS::ECS::TaskDefinition
     Properties:
       Family: !Ref 'ServiceName'
-      Cpu: !Ref 'ContainerCpu'
-      Memory: !Ref 'ContainerMemory'
+      Cpu: 512
+      Memory: 1024
       NetworkMode: awsvpc
       RequiresCompatibilities:
         - FARGATE
@@ -55,10 +56,9 @@ Resources:
         Fn::ImportValue:
           !Join [':', [!Ref 'EnvironmentName', 'ECSTaskExecutionRole']]
       ContainerDefinitions:
-        - Name: !Ref 'ServiceName'
-          Cpu: !Ref 'ContainerCpu'
-          Memory: !Ref 'ContainerMemory'
-          Image: !Ref 'ImageUrl'
+        - Name: kong
+          MemoryReservation: 250
+          Image: !Ref 'ImageUrlKong'
           Ulimits:
               - Name: "nofile"
                 HardLimit: 4096
@@ -101,6 +101,33 @@ Resources:
           PortMappings:
             - ContainerPort: 8000
             - ContainerPort: 8001
+          LogConfiguration:
+            LogDriver: 'awslogs'
+            Options:
+              awslogs-group: !Join ['-', [!Ref 'EnvironmentName', 'service', !Ref 'ServiceName']]
+              awslogs-region: !Ref 'AWS::Region'
+              awslogs-stream-prefix: !Ref 'ServiceName'
+        - Name: dashboard
+          Image: !Ref 'ImageUrlKonga'
+          Environment:
+            - Name: KONG_URL
+              Value: 'http://localhost:8001'
+            - Name: KONGA_ADMIN_USERNAME
+              Value: !Ref 'KongaAdminUsername'
+            - Name: KONGA_ADMIN_EMAIL
+              Value: !Ref 'KongaAdminEmail'
+            - Name: KONGA_ADMIN_FIRSTNAME
+              Value: !Ref 'KongaAdminFirstname'
+            - Name: KONGA_ADMIN_LASTNAME
+              Value: !Ref 'KongaAdminLastname'
+            - Name: KONGA_ADMIN_PASSWORD
+              Value: !Ref 'KongaAdminPassword'
+            - Name: KONGA_SEED_KONG_NODE_DATA_SOURCE_FILE
+              Value: /app/kong_node.data
+            - Name: KONGA_SEED_USER_DATA_SOURCE_FILE
+              Value: /app/userdb.data
+          PortMappings:
+            - ContainerPort: 1337
           LogConfiguration:
             LogDriver: 'awslogs'
             Options:

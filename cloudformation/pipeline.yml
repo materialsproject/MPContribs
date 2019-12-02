@@ -20,6 +20,15 @@ Parameters:
   GitHubUserKong:
     Type: String
     Default: materialsproject
+  GitHubRepoKonga:
+    Type: String
+    Default: konga
+  GitHubBranchKonga:
+    Type: String
+    Default: mpcontribs
+  GitHubUserKonga:
+    Type: String
+    Default: tschaume
   MongoHost:
     Type: String
     NoEcho: true
@@ -35,6 +44,18 @@ Parameters:
   CertificateArn:
     Type: String
     Description: ARN of the Amazon Certificate Manager SSL certificate to use for this app
+  KongaAdminUsername:
+    Type: String
+    MinLength: '5'
+  KongaAdminEmail:
+    Type: String
+  KongaAdminFirstname:
+    Type: String
+  KongaAdminLastname:
+    Type: String
+  KongaAdminPassword:
+    NoEcho: 'true'
+    Type: String
 
 Resources:
   # Create the ECR respository to hold built docker images
@@ -182,6 +203,9 @@ Resources:
         BuildSpec: |
           version: 0.2
           phases:
+            install:
+              runtime-versions:
+                docker: 18
             pre_build:
               commands:
                 - $(aws ecr get-login --no-include-email)
@@ -199,7 +223,7 @@ Resources:
                 - build-kong.json
       Environment:
         ComputeType: BUILD_GENERAL1_SMALL
-        Image: aws/codebuild/docker:17.09.0
+        Image: aws/codebuild/standard:2.0
         Type: LINUX_CONTAINER
         PrivilegedMode: true
         EnvironmentVariables:
@@ -214,6 +238,51 @@ Resources:
       Name: !Sub ${AWS::StackName}-kong
       ServiceRole: !Ref CodeBuildServiceRole
 
+  CodeBuildProjectKonga:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Artifacts:
+        Type: CODEPIPELINE
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: |
+          version: 0.2
+          phases:
+            install:
+              runtime-versions:
+                docker: 18
+            pre_build:
+              commands:
+                - $(aws ecr get-login --no-include-email)
+                - TAG="$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | head -c 8)"
+                - IMAGE_URI="${REPOSITORY_URI}:${TAG}"
+            build:
+              commands:
+                - docker build --tag "${IMAGE_URI}-konga" .
+            post_build:
+              commands:
+                - docker push "${IMAGE_URI}-konga"
+                - printf '{"ImageUri":"%s"}' "${IMAGE_URI}-konga" > build-konga.json
+          artifacts:
+            files:
+                - build-konga.json
+      Environment:
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/standard:2.0
+        Type: LINUX_CONTAINER
+        PrivilegedMode: true
+        EnvironmentVariables:
+          - Name: REPOSITORY_URI
+            Value: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${Repository}
+      Cache:
+        Type: LOCAL
+        Modes: # You can specify one or more cache mode,
+          - LOCAL_CUSTOM_CACHE
+          - LOCAL_DOCKER_LAYER_CACHE
+          - LOCAL_SOURCE_CACHE
+      Name: !Sub ${AWS::StackName}-konga
+      ServiceRole: !Ref CodeBuildServiceRole
+
   CodeBuildProjectApi:
     Type: AWS::CodeBuild::Project
     Properties:
@@ -224,6 +293,9 @@ Resources:
         BuildSpec: |
           version: 0.2
           phases:
+            install:
+              runtime-versions:
+                docker: 18
             pre_build:
               commands:
                 - $(aws ecr get-login --no-include-email)
@@ -241,7 +313,7 @@ Resources:
                 - build-api.json
       Environment:
         ComputeType: BUILD_GENERAL1_SMALL
-        Image: aws/codebuild/docker:17.09.0
+        Image: aws/codebuild/standard:2.0
         Type: LINUX_CONTAINER
         PrivilegedMode: true
         EnvironmentVariables:
@@ -266,6 +338,9 @@ Resources:
         BuildSpec: |
           version: 0.2
           phases:
+            install:
+              runtime-versions:
+                docker: 18
             pre_build:
               commands:
                 - $(aws ecr get-login --no-include-email)
@@ -283,7 +358,7 @@ Resources:
                 - build-portal.json
       Environment:
         ComputeType: BUILD_GENERAL1_SMALL
-        Image: aws/codebuild/docker:17.09.0
+        Image: aws/codebuild/standard:2.0
         Type: LINUX_CONTAINER
         PrivilegedMode: true
         EnvironmentVariables:
@@ -308,6 +383,9 @@ Resources:
         BuildSpec: |
           version: 0.2
           phases:
+            install:
+              runtime-versions:
+                docker: 18
             pre_build:
               commands:
                 - $(aws ecr get-login --no-include-email)
@@ -325,7 +403,7 @@ Resources:
                 - build-chrome.json
       Environment:
         ComputeType: BUILD_GENERAL1_SMALL
-        Image: aws/codebuild/docker:17.09.0
+        Image: aws/codebuild/standard:2.0
         Type: LINUX_CONTAINER
         PrivilegedMode: true
         EnvironmentVariables:
@@ -350,6 +428,9 @@ Resources:
         BuildSpec: |
           version: 0.2
           phases:
+            install:
+              runtime-versions:
+                docker: 18
             pre_build:
               commands:
                 - $(aws ecr get-login --no-include-email)
@@ -367,7 +448,7 @@ Resources:
                 - build-gateway.json
       Environment:
         ComputeType: BUILD_GENERAL1_SMALL
-        Image: aws/codebuild/docker:17.09.0
+        Image: aws/codebuild/standard:2.0
         Type: LINUX_CONTAINER
         PrivilegedMode: true
         EnvironmentVariables:
@@ -380,6 +461,99 @@ Resources:
           - LOCAL_DOCKER_LAYER_CACHE
           - LOCAL_SOURCE_CACHE
       Name: !Sub ${AWS::StackName}-gateway
+      ServiceRole: !Ref CodeBuildServiceRole
+
+  CodeBuildProjectJhub:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Artifacts:
+        Type: CODEPIPELINE
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: |
+          version: 0.2
+          phases:
+            install:
+              runtime-versions:
+                docker: 18
+            pre_build:
+              commands:
+                - $(aws ecr get-login --no-include-email)
+                - TAG="$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | head -c 8)"
+                - IMAGE_URI="${REPOSITORY_URI}:${TAG}"
+            build:
+              commands:
+                - docker build --tag "${IMAGE_URI}-jhub" ./jhub
+            post_build:
+              commands:
+                - docker push "${IMAGE_URI}-jhub"
+                - printf '{"ImageUri":"%s"}' "${IMAGE_URI}-jhub" > build-jhub.json
+          artifacts:
+            files:
+                - build-jhub.json
+      Environment:
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/standard:2.0
+        Type: LINUX_CONTAINER
+        PrivilegedMode: true
+        EnvironmentVariables:
+          - Name: REPOSITORY_URI
+            Value: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${Repository}
+      Cache:
+        Type: LOCAL
+        Modes: # You can specify one or more cache mode,
+          - LOCAL_CUSTOM_CACHE
+          - LOCAL_DOCKER_LAYER_CACHE
+          - LOCAL_SOURCE_CACHE
+      Name: !Sub ${AWS::StackName}-jhub
+      ServiceRole: !Ref CodeBuildServiceRole
+
+  CodeBuildProjectR2d:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Artifacts:
+        Type: CODEPIPELINE
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: |
+          version: 0.2
+          phases:
+            install:
+              runtime-versions:
+                docker: 18
+                python: 3.7
+              commands:
+                - pip install -U jupyter-repo2docker
+            pre_build:
+              commands:
+                - $(aws ecr get-login --no-include-email)
+                - TAG="$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | head -c 8)"
+                - IMAGE_URI="${REPOSITORY_URI}:${TAG}"
+            build:
+              commands:
+                - jupyter-repo2docker --user-name jovyan --user-id 1000 --image-name "${IMAGE_URI}-r2d" --no-run .
+            post_build:
+              commands:
+                - docker push "${IMAGE_URI}-r2d"
+                - printf '{"ImageUri":"%s"}' "${IMAGE_URI}-r2d" > build-r2d.json
+          artifacts:
+            files:
+                - build-r2d.json
+      Environment:
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/standard:2.0
+        Type: LINUX_CONTAINER
+        PrivilegedMode: true
+        EnvironmentVariables:
+          - Name: REPOSITORY_URI
+            Value: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${Repository}
+      Cache:
+        Type: LOCAL
+        Modes: # You can specify one or more cache mode,
+          - LOCAL_CUSTOM_CACHE
+          - LOCAL_DOCKER_LAYER_CACHE
+          - LOCAL_SOURCE_CACHE
+      Name: !Sub ${AWS::StackName}-r2d
       ServiceRole: !Ref CodeBuildServiceRole
 
   # This pipeline defines the steps to build, deploy, and release the application
@@ -408,7 +582,6 @@ Resources:
                 OAuthToken: !Ref GitHubToken
               OutputArtifacts:
                 - Name: Source
-              RunOrder: 1
             - Name: Kong
               ActionTypeId:
                 Category: Source
@@ -422,7 +595,19 @@ Resources:
                 OAuthToken: !Ref GitHubToken
               OutputArtifacts:
                 - Name: SourceKong
-              RunOrder: 1
+            - Name: Konga
+              ActionTypeId:
+                Category: Source
+                Owner: ThirdParty
+                Version: 1
+                Provider: GitHub
+              Configuration:
+                Owner: !Ref GitHubUserKonga
+                Repo: !Ref GitHubRepoKonga
+                Branch: !Ref GitHubBranchKonga
+                OAuthToken: !Ref GitHubToken
+              OutputArtifacts:
+                - Name: SourceKonga
 
         # Now we deploy the base resources: the cluster and VPC itself.
         - Name: BaseResources
@@ -464,7 +649,19 @@ Resources:
                 - Name: SourceKong
               OutputArtifacts:
                 - Name: BuildOutputKong
-              RunOrder: 1
+            - Name: BuildKonga
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Version: 1
+                Provider: CodeBuild
+              Configuration:
+                ProjectName: !Ref CodeBuildProjectKonga
+                PrimarySource: SourceKonga
+              InputArtifacts:
+                - Name: SourceKonga
+              OutputArtifacts:
+                - Name: BuildOutputKonga
             - Name: BuildChrome
               ActionTypeId:
                 Category: Build
@@ -478,7 +675,6 @@ Resources:
                 - Name: Source
               OutputArtifacts:
                 - Name: BuildOutputChrome
-              RunOrder: 1
             - Name: BuildGateway
               ActionTypeId:
                 Category: Build
@@ -492,7 +688,6 @@ Resources:
                 - Name: Source
               OutputArtifacts:
                 - Name: BuildOutputGateway
-              RunOrder: 1
             - Name: BuildApi
               ActionTypeId:
                 Category: Build
@@ -506,7 +701,6 @@ Resources:
                 - Name: Source
               OutputArtifacts:
                 - Name: BuildOutputApi
-              RunOrder: 1
             - Name: BuildPortal
               ActionTypeId:
                 Category: Build
@@ -520,7 +714,32 @@ Resources:
                 - Name: Source
               OutputArtifacts:
                 - Name: BuildOutputPortal
-              RunOrder: 1
+            - Name: BuildJhub
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Version: 1
+                Provider: CodeBuild
+              Configuration:
+                ProjectName: !Ref CodeBuildProjectJhub
+                PrimarySource: Source
+              InputArtifacts:
+                - Name: Source
+              OutputArtifacts:
+                - Name: BuildOutputJhub
+            - Name: BuildR2d
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Version: 1
+                Provider: CodeBuild
+              Configuration:
+                ProjectName: !Ref CodeBuildProjectR2d
+                PrimarySource: Source
+              InputArtifacts:
+                - Name: Source
+              OutputArtifacts:
+                - Name: BuildOutputR2d
 
         - Name: Deploy
           Actions:
@@ -541,14 +760,23 @@ Resources:
                     "EnvironmentName": "${EnvironmentName}",
                     "DBPassword": "${DBPassword}",
                     "CertificateArn": "${CertificateArn}",
-                    "ImageUrl": {
+                    "ImageUrlKong": {
                       "Fn::GetParam" : ["BuildOutputKong", "build-kong.json", "ImageUri"]
-                    }
+                    },
+                    "ImageUrlKonga": {
+                      "Fn::GetParam" : ["BuildOutputKonga", "build-konga.json", "ImageUri"]
+                    },
+                    "KongaAdminUsername": "${KongaAdminUsername}",
+                    "KongaAdminEmail": "${KongaAdminEmail}",
+                    "KongaAdminFirstname": "${KongaAdminFirstname}",
+                    "KongaAdminLastname": "${KongaAdminLastname}",
+                    "KongaAdminPassword": "${KongaAdminPassword}"
                   }
               InputArtifacts:
                 - Name: Source
                 - Name: BaseResources
                 - Name: BuildOutputKong
+                - Name: BuildOutputKonga
 
             - Name: DeployApp
               ActionTypeId:
@@ -585,6 +813,33 @@ Resources:
                 - Name: BuildOutputPortal
                 - Name: BuildOutputChrome
                 - Name: BuildOutputGateway
+
+            - Name: DeployJhub
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Version: 1
+                Provider: CloudFormation
+              Configuration:
+                ActionMode: CREATE_UPDATE
+                RoleArn: !GetAtt CloudFormationDeployRole.Arn
+                StackName: !Sub ${EnvironmentName}-JhubService
+                TemplatePath: Source::cloudformation/jhub-service.yml
+                Capabilities: CAPABILITY_IAM
+                ParameterOverrides: !Sub |
+                  {
+                    "EnvironmentName": "${EnvironmentName}",
+                    "ImageUrlJhub": {
+                      "Fn::GetParam" : ["BuildOutputJhub", "build-jhub.json", "ImageUri"]
+                    },
+                    "ImageUrlR2d": {
+                      "Fn::GetParam" : ["BuildOutputR2d", "build-r2d.json", "ImageUri"]
+                    }
+                  }
+              InputArtifacts:
+                - Name: Source
+                - Name: BuildOutputJhub
+                - Name: BuildOutputR2d
 
 Outputs:
   PipelineUrl:

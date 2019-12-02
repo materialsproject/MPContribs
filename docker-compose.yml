@@ -72,14 +72,6 @@ services:
         ports:
             - "8000:8081"
 
-    kong:
-        image: pgbi/kong-dashboard
-        ports:
-            - "8080:8080"
-        environment:
-            - KONG_URL=$KONG_URL
-        command: "start --kong-url ${KONG_URL}"
-
     # build image first:
     # $ jupyter-repo2docker --user-name jovyan --user-id 1000 --image-name mpcontribs_r2d --no-run .
     r2d:
@@ -95,5 +87,7 @@ services:
 
     jhub:
         build: ./jhub
+        volumes:
+            - /var/run/docker.sock:/var/run/docker.sock
         ports:
             - "8000:8000"

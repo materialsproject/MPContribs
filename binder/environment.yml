@@ -7,6 +7,7 @@ dependencies:
   - numpy
   - pip
   - jupyter>=1.0.0
+  - jupyterhub==1.0.0
   - pandas==0.23.4
   - matplotlib
   - pymatgen>=2019.7.30

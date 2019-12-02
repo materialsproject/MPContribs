@@ -127,6 +127,13 @@ Resources:
       GroupId: !Ref 'PublicSecurityGroup'
       IpProtocol: -1
       SourceSecurityGroupId: !Ref 'PrivateSecurityGroup'
+  PublicSecurityGroupIngressFromJhub:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      Description: Ingress from containers in JupyterHub security group
+      GroupId: !Ref 'PublicSecurityGroup'
+      IpProtocol: -1
+      SourceSecurityGroupId: !Ref 'JhubSecurityGroup'
 
   PrivateSecurityGroup:
     Type: AWS::EC2::SecurityGroup
@@ -149,6 +156,24 @@ Resources:
       GroupId: !Ref 'PrivateSecurityGroup'
       IpProtocol: -1
       SourceSecurityGroupId: !Ref 'PrivateSecurityGroup'
+
+  JhubSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Access to the private JupyterHub service
+      VpcId: !Ref 'VPC'
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 8000
+          ToPort: 8000
+          SourceSecurityGroupId: !Ref 'PublicSecurityGroup'
+  JhubSecurityGroupIngressFromSelf:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      Description: Ingress from other containers in the same security group
+      GroupId: !Ref 'JhubSecurityGroup'
+      IpProtocol: -1
+      SourceSecurityGroupId: !Ref 'JhubSecurityGroup'
 
   DBSecurityGroup:
     Type: AWS::EC2::SecurityGroup
@@ -204,6 +229,7 @@ Resources:
       SecurityGroupIds:
         - !Ref 'PublicSecurityGroup'
         - !Ref 'PrivateSecurityGroup'
+        - !Ref 'JhubSecurityGroup'
   S3Endpoint:
     Type: AWS::EC2::VPCEndpoint
     Properties:
@@ -228,6 +254,7 @@ Resources:
       SecurityGroupIds:
         - !Ref 'PublicSecurityGroup'
         - !Ref 'PrivateSecurityGroup'
+        - !Ref 'JhubSecurityGroup'
 
   ECSCluster:
     Type: AWS::ECS::Cluster
@@ -358,6 +385,11 @@ Outputs:
     Value: !Ref 'PrivateSecurityGroup'
     Export:
       Name: !Join [ ':', [ !Ref 'EnvironmentName', 'PrivateSecurityGroup' ] ]
+  JhubSecurityGroup:
+    Description: Private JupyterHub Security Group
+    Value: !Ref 'JhubSecurityGroup'
+    Export:
+      Name: !Join [ ':', [ !Ref 'EnvironmentName', 'JhubSecurityGroup' ] ]
   NetworkLoadBalancer:
     Description: Network Load Balancer for Kong
     Value: !Ref 'NetworkLoadBalancer'
