@@ -2,26 +2,20 @@ import os
 from jhub_remote_user_authenticator.remote_user_auth import RemoteUserAuthenticator
 from fargatespawner import FargateSpawner
 from fargatespawner import FargateSpawnerECSRoleAuthentication
+from jupyter_client.localinterfaces import public_ips
 
-#c.JupyterHub.base_url = '/'
-#c.JupyterHub.bind_url = 'http://:8000'
-
-RemoteUserAuthenticator.header_name = 'X_CONSUMER_USERNAME'
+RemoteUserAuthenticator.header_name = 'X-Consumer-Username'
 c.JupyterHub.authenticator_class = RemoteUserAuthenticator
-
-c.JupyterHub.cleanup_proxy = False
-c.JupyterHub.cleanup_servers = False
-#c.JupyterHub.reset_db = False # collides with cleanup_*?
-c.JupyterHub.active_server_limit = 10
-c.JupyterHub.concurrent_spawn_limit = 5
-
-#c.JupyterHub.db_url = 'sqlite:///jupyterhub.sqlite' # TODO
-#c.JupyterHub.hub_connect_ip = ''
-c.JupyterHub.logo_file = '/srv/jupyterhub/logo.png'
-c.JupyterHub.shutdown_on_logout = True
 
 #c.JupyterHub.spawner_class = 'dockerspawner.DockerSpawner'
 #c.DockerSpawner.image = 'mpcontribs_r2d'
+#c.DockerSpawner.cmd = ['jupyterhub-singleuser']
+#c.DockerSpawner.remove_containers = True
+#c.DockerSpawner.remove = True
+#c.DockerSpawner.debug = True
+##c.JupyterHub.bind_url = 'http://:8000'
+#c.JupyterHub.hub_ip = '0.0.0.0'  # listen on all interfaces
+#c.JupyterHub.hub_connect_ip = 'jhub'  # ip as seen on the docker network. Can also be a hostname.
 
 c.JupyterHub.spawner_class = FargateSpawner
 c.FargateSpawner.authentication_class = FargateSpawnerECSRoleAuthentication
@@ -37,6 +31,13 @@ c.FargateSpawner.notebook_port = 8888
 c.FargateSpawner.notebook_scheme = 'http'
 c.FargateSpawner.notebook_args = []
 
+c.JupyterHub.cleanup_proxy = False
+c.JupyterHub.cleanup_servers = False
+c.JupyterHub.active_server_limit = 10
+c.JupyterHub.concurrent_spawn_limit = 5
+#c.JupyterHub.db_url = 'sqlite:///jupyterhub.sqlite' # TODO
+c.JupyterHub.logo_file = '/srv/jupyterhub/logo.png'
+c.JupyterHub.shutdown_on_logout = True
 c.JupyterHub.upgrade_db = True
 c.Spawner.consecutive_failure_limit = 3
 #c.Spawner.cpu_guarantee = 0.25
@@ -45,5 +46,4 @@ c.Spawner.debug = True
 #c.Spawner.mem_guarantee = None
 c.Spawner.mem_limit = '512M'
 c.Authenticator.admin_users = {'phuck@lbl.gov'}
-#c.Authenticator.refresh_pre_spawn = True # collides with Google OAuth redirect urls?
 c.Authenticator.username_pattern = '^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$'
