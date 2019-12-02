@@ -134,13 +134,6 @@ Resources:
       GroupId: !Ref 'PublicSecurityGroup'
       IpProtocol: -1
       SourceSecurityGroupId: !Ref 'JhubSecurityGroup'
-  PublicSecurityGroupIngressFromKonga:
-    Type: AWS::EC2::SecurityGroupIngress
-    Properties:
-      Description: Ingress from containers in Konga security group
-      GroupId: !Ref 'PublicSecurityGroup'
-      IpProtocol: -1
-      SourceSecurityGroupId: !Ref 'KongaSecurityGroup'
 
   PrivateSecurityGroup:
     Type: AWS::EC2::SecurityGroup
@@ -181,17 +174,6 @@ Resources:
       GroupId: !Ref 'JhubSecurityGroup'
       IpProtocol: -1
       SourceSecurityGroupId: !Ref 'JhubSecurityGroup'
-
-  KongaSecurityGroup:
-    Type: AWS::EC2::SecurityGroup
-    Properties:
-      GroupDescription: Access to the private Konga service
-      VpcId: !Ref 'VPC'
-      SecurityGroupIngress:
-        - IpProtocol: tcp
-          FromPort: 1337
-          ToPort: 1337
-          SourceSecurityGroupId: !Ref 'PublicSecurityGroup'
 
   DBSecurityGroup:
     Type: AWS::EC2::SecurityGroup
@@ -273,7 +255,6 @@ Resources:
         - !Ref 'PublicSecurityGroup'
         - !Ref 'PrivateSecurityGroup'
         - !Ref 'JhubSecurityGroup'
-        - !Ref 'KongaSecurityGroup'
 
   ECSCluster:
     Type: AWS::ECS::Cluster
@@ -409,11 +390,6 @@ Outputs:
     Value: !Ref 'JhubSecurityGroup'
     Export:
       Name: !Join [ ':', [ !Ref 'EnvironmentName', 'JhubSecurityGroup' ] ]
-  KongaSecurityGroup:
-    Description: Private Konga Security Group
-    Value: !Ref 'KongaSecurityGroup'
-    Export:
-      Name: !Join [ ':', [ !Ref 'EnvironmentName', 'KongaSecurityGroup' ] ]
   NetworkLoadBalancer:
     Description: Network Load Balancer for Kong
     Value: !Ref 'NetworkLoadBalancer'
