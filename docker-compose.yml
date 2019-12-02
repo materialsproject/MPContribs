@@ -72,11 +72,6 @@ services:
         ports:
             - "8000:8081"
 
-    kong:
-        image: pantsel/konga:0.14.1
-        ports:
-            - "1337:1337"
-
     # build image first:
     # $ jupyter-repo2docker --user-name jovyan --user-id 1000 --image-name mpcontribs_r2d --no-run .
     r2d:
