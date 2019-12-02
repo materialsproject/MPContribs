@@ -111,7 +111,7 @@ Resources:
           Image: !Ref 'ImageUrlKonga'
           Environment:
             - Name: KONG_URL
-              Value: 'localhost:8001'
+              Value: 'http://localhost:8001'
             - Name: KONGA_ADMIN_USERNAME
               Value: !Ref 'KongaAdminUsername'
             - Name: KONGA_ADMIN_EMAIL

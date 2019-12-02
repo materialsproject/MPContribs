@@ -762,7 +762,7 @@ Resources:
                     "CertificateArn": "${CertificateArn}",
                     "ImageUrlKong": {
                       "Fn::GetParam" : ["BuildOutputKong", "build-kong.json", "ImageUri"]
-                    }
+                    },
                     "ImageUrlKonga": {
                       "Fn::GetParam" : ["BuildOutputKonga", "build-konga.json", "ImageUri"]
                     },
