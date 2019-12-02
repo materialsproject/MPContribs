@@ -776,6 +776,7 @@ Resources:
                 - Name: Source
                 - Name: BaseResources
                 - Name: BuildOutputKong
+                - Name: BuildOutputKonga
 
             - Name: DeployApp
               ActionTypeId:
