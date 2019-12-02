@@ -7,7 +7,8 @@
 ARG BASE_IMAGE=jupyterhub/jupyterhub
 ARG BASE_IMAGE_TAG=latest
 FROM "${BASE_IMAGE}:${BASE_IMAGE_TAG}"
-RUN pip install jhub_remote_user_authenticator fargatespawner dockerspawner
+RUN pip install jhub_remote_user_authenticator fargatespawner dockerspawner jupyter_client
+
 COPY logo.png /srv/jupyterhub/
 COPY jupyterhub_config.py /srv/jupyterhub/jupyterhub_config.py
 
