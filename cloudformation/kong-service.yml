@@ -123,9 +123,9 @@ Resources:
             - Name: KONGA_ADMIN_PASSWORD
               Value: !Ref 'KongaAdminPassword'
             - Name: KONGA_SEED_KONG_NODE_DATA_SOURCE_FILE
-              Value: /app/kongadata/kong_node.data
+              Value: /app/kong_node.data
             - Name: KONGA_SEED_USER_DATA_SOURCE_FILE
-              Value: /app/kongadata/userdb.data
+              Value: /app/userdb.data
           PortMappings:
             - ContainerPort: 1337
           LogConfiguration:
