@@ -4,7 +4,7 @@ import os
 import logging
 from importlib import import_module
 from flask.views import MethodViewType
-from flasgger import SwaggerView as OriginalSwaggerView
+from flasgger.marshmallow_apispec import SwaggerView as OriginalSwaggerView
 from marshmallow_mongoengine import ModelSchema
 from flask_mongorest.views import ResourceView
 from mongoengine.queryset.visitor import Q

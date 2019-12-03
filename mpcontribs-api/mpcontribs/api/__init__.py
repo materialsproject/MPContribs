@@ -9,7 +9,7 @@ from flask_marshmallow import Marshmallow
 from flask_mongoengine import MongoEngine
 from flask_mongorest import register_class
 from flask_log import Logging
-from flasgger import Swagger
+from flasgger.base import Swagger
 from pandas.io.json.normalize import nested_to_record
 from typing import Any, Dict
 
