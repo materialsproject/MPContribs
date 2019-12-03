@@ -121,7 +121,7 @@ class NotebooksView(SwaggerView):
                 ))
                 for ref in tables:
                     cells.append(nbf.new_code_cell(
-                        f"table = client.tables.get_entry(pk='{ref}', _fields=['_all']).response().result # Pandas DataFrame format\n"
+                        f"table = client.tables.get_entry(pk='{ref}', _fields=['_all']).response().result # DataFrame\n"
                         "Table.from_dict(table)"
                     ))
                     cells.append(nbf.new_code_cell(
@@ -135,7 +135,8 @@ class NotebooksView(SwaggerView):
                 ))
                 for ref in structures:
                     cells.append(nbf.new_code_cell(
-                        f"Structure.from_dict(client.structures.get_entry(pk='{ref}', _fields=['_all']).response().result)"
+                        f"structure = client.structures.get_entry(pk='{ref}', _fields=['_all']).response().result\n"
+                        f"Structure.from_dict(structure)"
                     ))
 
             kernel = client.start_kernel()
