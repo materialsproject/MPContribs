@@ -26,6 +26,9 @@ services:
         mem_reservation: 250m
         cpus: 1
         build: ./mpcontribs-api
+        depends_on:
+            - chrome
+            - kernel_gateway
         volumes:
             - ./mpcontribs-api:/app
         environment:
