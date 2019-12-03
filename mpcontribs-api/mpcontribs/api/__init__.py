@@ -114,6 +114,10 @@ def get_cleaned_data(data):
 
 
 def get_specs(klass, method, collection):
+    default_response = {
+        'description': 'Error',
+        'schema': {'type': 'object', 'properties': {'error': {'type': 'string'}}}
+    }
     fields_param = None
     if klass.resource.fields is not None:
         fields_avail = klass.resource.fields + klass.resource.get_optional_fields() + ['_all']
@@ -179,7 +183,7 @@ def get_specs(klass, method, collection):
                 200: {
                     'description': f'single {collection} entry',
                     'schema': {'$ref': f'#/definitions/{klass.schema_name}'}
-                }
+                }, 'default': default_response
             }
         }
     elif method.__name__ == 'List':
@@ -231,7 +235,7 @@ def get_specs(klass, method, collection):
                         'type': 'object',
                         'properties': schema_props
                     }
-                }
+                }, 'default': default_response
             }
         }
     elif method.__name__ == 'Create':
@@ -248,7 +252,7 @@ def get_specs(klass, method, collection):
                 200: {
                     'description': f'{collection[:-1]} created',
                     'schema': {'$ref': f'#/definitions/{klass.schema_name}'}
-                }
+                }, 'default': default_response
             }
         }
     elif method.__name__ == 'Update':
@@ -271,7 +275,7 @@ def get_specs(klass, method, collection):
                 200: {
                     'description': f'{collection[:-1]} updated',
                     'schema': {'$ref': f'#/definitions/{klass.schema_name}'}
-                }
+                }, 'default': default_response
             }
         }
     elif method.__name__ == 'BulkUpdate':
@@ -294,7 +298,7 @@ def get_specs(klass, method, collection):
                         'type': 'object',
                         'properties': {'count': {'type': 'integer'}}
                     }
-                }
+                }, 'default': default_response
             }
         }
     elif method.__name__ == 'Delete':
@@ -309,7 +313,8 @@ def get_specs(klass, method, collection):
                 'description': f'The {collection[:-1]} (primary key) to delete'
             }],
             'responses': {
-                200: {'description': f'{collection[:-1]} deleted'}
+                200: {'description': f'{collection[:-1]} deleted'},
+                'default': default_response
             }
         }
 
