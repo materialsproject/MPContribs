@@ -48,7 +48,7 @@
                         {% else %}
                         <ul>
                             {% for contrib in lp.contribs %}
-                            <li><a href="/explorer/{{ contrib.id }}">{{ contrib.identifier }}</a></li>
+                            <li><a href="/{{ contrib.id }}">{{ contrib.identifier }}</a></li>
                             {% endfor %}
                         </ul>
                         {% endif %}

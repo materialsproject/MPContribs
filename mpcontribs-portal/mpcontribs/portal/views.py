@@ -16,13 +16,6 @@ from mpcontribs.client import load_client
 
 def index(request):
     ctx = RequestContext(request)
-    #try:
-    #    client = load_client()
-    #    resp = client.projects.get_entries(_fields=['project']).response()
-    #    ctx['projects'] = [r['project'] for r in resp.result['data']]
-    #except Exception as ex:
-    #    ctx['alert'] = f'{ex}'
-    #return render(request, "mpcontribs_explorer_index.html", ctx.flatten())
     ctx['landing_pages'] = []
     mask = ['project', 'title', 'authors']
     client = load_client()
