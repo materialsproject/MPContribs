@@ -2,7 +2,7 @@ import os
 import flask_mongorest
 from flask_mongorest.resources import Resource
 from flask_mongorest import operators as ops
-from flask_mongorest.methods import List, Fetch, Delete
+from flask_mongorest.methods import Fetch
 from flask import Blueprint, current_app, render_template, g
 from selenium import webdriver
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
@@ -57,35 +57,33 @@ class CardsResource(Resource):
 
 class CardsView(SwaggerView):
     resource = CardsResource
-    methods = [List, Fetch, Delete]  # no create/update to disable arbitrary html content
+    # no create/update to disable arbitrary html content
+    # card deletion via contributions
+    methods = [Fetch]
 
     def get(self, **kwargs):
-        cid = kwargs.get('pk')
+        cid = kwargs['pk']  # only Fetch enabled
         try:
             ret = super().get(**kwargs)
         except DoesNotExist:
-            if cid:
-                card = None
-                try:
-                    card = Cards.objects.only('id').get(id=cid)
-                except DoesNotExist:  # Card has never been requested before
-                    print('generating empty card ...')
-                    # save an empty card
-                    mask = ['project', 'identifier', 'is_public']
-                    contrib = Contributions.objects.only(*mask).get(id=cid)
-                    card = Cards(
-                        id=cid,  # to link to the according contribution
-                        is_public=contrib.is_public,  # in sync with contribution
-                        project=contrib.project
-                    )
-                    card.save()
-                    return self.get(**kwargs)
+            card = None
+            try:
+                card = Cards.objects.only('id').get(id=cid)
+            except DoesNotExist:  # Card has never been requested before
+                print('generating empty card ...')
+                # save an empty card
+                mask = ['project', 'identifier', 'is_public']
+                contrib = Contributions.objects.only(*mask).get(id=cid)
+                card = Cards(
+                    id=cid,  # to link to the according contribution
+                    is_public=contrib.is_public,  # in sync with contribution
+                    project=contrib.project
+                )
+                card.save()
+                return self.get(**kwargs)
 
-                if card is not None:
-                    raise DoesNotExist(f'Card {card.id} exists but user not in project group')
-
-            else:
-                raise DoesNotExist('List Method')
+            if card is not None:
+                raise DoesNotExist(f'Card {card.id} exists but user not in project group')
 
         if not ret["html"]:
             # generate HTML content
