@@ -1,19 +1,12 @@
 test_name: test cards resource
 
 stages:
-    - name: delete card
-      request:
-          url: http://localhost:5000/cards/5ac08be3d4f144332ce7b785/
-          method: DELETE
-          headers:
-              X-Consumer-Groups: carrier_transport
-      response:
-          status_code: 200
-
-    - name: generate public card
+    - name: generate card
       request:
           url: http://localhost:5000/cards/5ac08be3d4f144332ce7b785/
           method: GET
+          headers:
+              X-Consumer-Groups: carrier_transport
       response:
           status_code: 200
           body:

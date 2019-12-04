@@ -47,7 +47,7 @@ class CardsResource(Resource):
         'project': [ops.In, ops.Exact],
         'is_public': [ops.Boolean]
     }
-    fields = ['project', 'is_public', 'html']
+    fields = ['id', 'project', 'is_public', 'html']
     allowed_ordering = ['project']
     paginate = True
     default_limit = 20
