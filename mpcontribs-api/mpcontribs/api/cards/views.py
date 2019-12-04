@@ -47,16 +47,12 @@ class CardsResource(Resource):
         'project': [ops.In, ops.Exact],
         'is_public': [ops.Boolean]
     }
-    fields = ['project', 'is_public']
+    fields = ['project', 'is_public', 'html']
     allowed_ordering = ['project']
     paginate = True
     default_limit = 20
     max_limit = 200
     bulk_update_limit = 100
-
-    @staticmethod
-    def get_optional_fields():
-        return ['html']
 
 
 class CardsView(SwaggerView):
@@ -91,11 +87,11 @@ class CardsView(SwaggerView):
             else:
                 raise DoesNotExist('List Method')
 
-        card = Cards.objects.get(id=cid)
-        if not card.html:
+        if not ret["html"]:
             # generate HTML content
             print('generating html...')
             ctx = {'cid': cid}
+            card = Cards.objects.get(id=cid)
             info = Projects.objects.get(pk=card.project)
             ctx['title'] = info.title
             ctx['descriptions'] = info.description.strip().split('.', 1)
