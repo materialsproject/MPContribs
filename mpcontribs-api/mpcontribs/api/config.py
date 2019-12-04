@@ -16,6 +16,8 @@ MONGODB_SETTINGS = {
     'connect': False, 'db': MPCONTRIBS_DB
 }
 SWAGGER = {
+    'hide_top_bar': True,
+    'doc_expansion': "none",
     'doc_dir': os.path.join(os.path.dirname(__file__), 'swagger'),
     "specs": [{
         "endpoint": 'apispec',
@@ -38,8 +40,8 @@ TEMPLATE = {
     "swagger": "2.0",
     "info": {
         "title": "MPContribs API",
-        "description": "Operations to retrieve materials data contributed to MP",
-        # "termsOfService": "http://me.com/terms",
+        "description": "Operations to retrieve materials data contributed to Materials Project",
+        "termsOfService": "https://materialsproject.org/terms",
         "version": datetime.datetime.today().strftime('%Y.%m.%d'),
         "contact": {
             "name": "MPContribs",
@@ -47,8 +49,8 @@ TEMPLATE = {
             "url": "https://mpcontribs.org",
         },
         "license": {
-            "name": "Apache 2.0",
-            "url": "https://www.apache.org/licenses/LICENSE-2.0.html"
+            "name": "Creative Commons Attribution 4.0 International License",
+            "url": "https://creativecommons.org/licenses/by/4.0/"
         }
     },
     "securityDefinitions": {
