@@ -13,5 +13,5 @@ class Cards(Document):
     is_public = fields.BooleanField(
         required=True, default=False, help_text='public or private card'
     )
-    html = fields.StringField(required=True, help_text="embeddable html code")
+    html = fields.StringField(required=True, default='', help_text="embeddable html code")
     meta = {'collection': 'cards', 'indexes': ['project', 'is_public']}

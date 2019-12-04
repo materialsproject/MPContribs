@@ -1,8 +1,8 @@
 import os
 import flask_mongorest
 from flask_mongorest.resources import Resource
-from flask_mongorest.methods import Fetch, Delete
-from flask_mongorest.views import mimerender, render_json, render_html
+from flask_mongorest import operators as ops
+from flask_mongorest.methods import List, Fetch, Delete
 from flask import Blueprint, current_app, render_template, g
 from selenium import webdriver
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
@@ -10,6 +10,7 @@ from bs4 import BeautifulSoup
 from css_html_js_minify import html_minify
 from lxml import html
 from toronado import inline
+from mongoengine.queryset import DoesNotExist
 
 from mpcontribs.api import get_resource_as_string, unflatten, get_cleaned_data
 from mpcontribs.api.core import SwaggerView
@@ -42,32 +43,71 @@ def get_browser():
 
 class CardsResource(Resource):
     document = Cards
+    filters = {
+        'project': [ops.In, ops.Exact],
+        'is_public': [ops.Boolean]
+    }
+    fields = ['project', 'is_public']
+    allowed_ordering = ['project']
+    paginate = True
+    default_limit = 20
+    max_limit = 200
+    bulk_update_limit = 100
+
+    @staticmethod
+    def get_optional_fields():
+        return ['html']
 
 
 class CardsView(SwaggerView):
     resource = CardsResource
-    methods = [Fetch, Delete]
+    methods = [List, Fetch, Delete]  # no create/update to disable arbitrary html content
 
-    @mimerender(default='json', json=render_json, html=render_html)
-    def dispatch_request(self, *args, **kwargs):
-        # generate card on demand
-        resp = self._dispatch_request(*args, **kwargs)
-        if isinstance(resp, tuple) and resp[1] == '404 Not Found':
-            cid = kwargs['pk']
+    def get(self, **kwargs):
+        cid = kwargs.get('pk')
+        try:
+            ret = super().get(**kwargs)
+        except DoesNotExist:
+            if cid:
+                card = None
+                try:
+                    card = Cards.objects.only('id').get(id=cid)
+                except DoesNotExist:  # Card has never been requested before
+                    print('generating empty card ...')
+                    # save an empty card
+                    mask = ['project', 'identifier', 'is_public']
+                    contrib = Contributions.objects.only(*mask).get(id=cid)
+                    card = Cards(
+                        id=cid,  # to link to the according contribution
+                        is_public=contrib.is_public,  # in sync with contribution
+                        project=contrib.project
+                    )
+                    card.save()
+                    return self.get(**kwargs)
+
+                if card is not None:
+                    raise DoesNotExist(f'Card {card.id} exists but user not in project group')
+
+            else:
+                raise DoesNotExist('List Method')
+
+        card = Cards.objects.get(id=cid)
+        if not card.html:
+            # generate HTML content
+            print('generating html...')
             ctx = {'cid': cid}
-            mask = ['project', 'identifier', 'is_public', 'data']
-            contrib = Contributions.objects.only(*mask).get(id=cid)
-            info = Projects.objects.get(pk=contrib.project)
+            info = Projects.objects.get(pk=card.project)
             ctx['title'] = info.title
             ctx['descriptions'] = info.description.strip().split('.', 1)
             authors = [a.strip() for a in info.authors.split(',') if a]
             ctx['authors'] = {'main': authors[0], 'etal': authors[1:]}
-            ctx['landing_page'] = f'/{contrib.project}/'
+            ctx['landing_page'] = f'/{card.project}/'
             ctx['more'] = f'/{cid}'
             ctx['urls'] = info.urls.values()
             card_script = get_resource_as_string('templates/linkify.min.js')
             card_script += get_resource_as_string('templates/linkify-element.min.js')
             card_script += get_resource_as_string('templates/card.min.js')
+            contrib = Contributions.objects.only('data').get(id=cid)
             data = unflatten(dict(
                 (k, v) for k, v in get_cleaned_data(contrib.data).items()
                 if not k.startswith('modal')
@@ -80,12 +120,8 @@ class CardsView(SwaggerView):
             rendered = html_minify(render_template('card.html', **ctx))
             tree = html.fromstring(rendered)
             inline(tree)
-            card = Cards(
-                id=cid,  # to link to the according contribution
-                is_public=contrib.is_public,  # in sync with contribution
-                project=contrib.project,
-                html=html.tostring(tree.body[0]).decode('utf-8')
-            )
+            card.html = html.tostring(tree.body[0]).decode('utf-8')
             card.save()
-            resp = self._dispatch_request(*args, **kwargs)
-        return resp
+            return self.get(**kwargs)
+
+        return ret

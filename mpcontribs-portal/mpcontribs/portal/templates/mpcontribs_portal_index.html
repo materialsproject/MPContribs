@@ -46,11 +46,13 @@
                         <a id="{{ lp.project }}_img" href="{{ lp.url }}">
                         </a>
                         {% else %}
-                        <ul>
+                        <div class="col-md-12" style="padding: 0px;">
                             {% for contrib in lp.contribs %}
-                            <li><a href="/{{ contrib.id }}">{{ contrib.identifier }}</a></li>
+                            <div class="col-md-6">
+                                <a href="/{{ contrib.id }}">{{ contrib.identifier }}</a>
+                            </div>
                             {% endfor %}
-                        </ul>
+                        </div>
                         {% endif %}
                     </div>
                 </div>

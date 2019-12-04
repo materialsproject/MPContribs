@@ -13,20 +13,26 @@ from django.urls import reverse
 
 from mpcontribs.client import load_client
 
+def get_client_kwargs(request):
+    name = 'X-Consumer-Groups'
+    key = f'HTTP_{name.upper().replace("-", "_")}'
+    value = request.META.get(key)
+    return {'_request_options': {"headers": {name: value}}} if value else {}
 
 def index(request):
     ctx = RequestContext(request)
     ctx['landing_pages'] = []
+    kwargs = get_client_kwargs(request)
     mask = ['project', 'title', 'authors']
-    client = load_client()
-    provenances = client.projects.get_entries(_fields=mask).response().result
+    client = load_client()  # sets/returns global variable
+    provenances = client.projects.get_entries(_fields=mask, **kwargs).response().result
     for provenance in provenances['data']:
         entry = {'project': provenance['project']}
         try:
             entry['url'] = reverse(provenance['project'] + ':index')
         except:
             entry['contribs'] = client.contributions.get_entries(
-                project=provenance['project'], _limit=2
+                project=provenance['project'], **kwargs  # default limit 20
             ).response().result['data']
         entry['title'] = provenance['title']
         authors = provenance['authors'].split(',', 1)
@@ -38,7 +44,7 @@ def index(request):
                 authors[1].strip().replace(', ', '<br/>'))
             prov_display += '</span>'
         entry['provenance'] = prov_display
-        ctx['landing_pages'].append(entry)  # consider everything in DB released
+        ctx['landing_pages'].append(entry)  # visibility governed by is_public flag and X-Consumer-Groups header
     return render(request, "mpcontribs_portal_index.html", ctx.flatten())
 
 
@@ -77,9 +83,10 @@ def export_notebook(nb, cid):
 
 def contribution(request, cid):
     ctx = RequestContext(request)
+    kwargs = get_client_kwargs(request)
     client = load_client()
     try:
-        nb = client.notebooks.get_entry(pk=cid).response(timeout=2).result
+        nb = client.notebooks.get_entry(pk=cid, **kwargs).response(timeout=2).result
         if len(nb['cells']) < 2:
             raise HTTPTimeoutError
         ctx['nb'], ctx['js'] = export_notebook(nb, cid)
