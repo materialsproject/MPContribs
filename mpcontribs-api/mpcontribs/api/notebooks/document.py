@@ -58,7 +58,7 @@ class Notebooks(Document):
     nbformat = IntField(default=4, help_text="nbformat version")
     nbformat_minor = IntField(default=2, help_text="nbformat minor version")
     metadata = DictField(Metadata(), help_text='notebook metadata')
-    cells = ListField(Cell(), max_length=10, help_text='cells')
+    cells = ListField(Cell(), max_length=30, help_text='cells')
     meta = {'collection': 'notebooks', 'indexes': ['project', 'is_public']}
 
     problem_key = 'application/vnd.plotly.v1+json'
@@ -73,7 +73,7 @@ class Notebooks(Document):
             new_key = self.problem_key
 
         for cell in self.cells:
-            for output in cell['outputs']:
+            for output in cell.get('outputs', []):
                 if old_key in output.get('data', {}):
                     output['data'][new_key] = output['data'].pop(old_key)
 

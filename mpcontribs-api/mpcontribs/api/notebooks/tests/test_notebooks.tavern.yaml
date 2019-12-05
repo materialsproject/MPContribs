@@ -1,15 +1,6 @@
 test_name: test notebooks resource
 
 stages:
-    - name: delete notebook
-      request:
-          url: http://localhost:5000/notebooks/5a862202d4f1443a18fab254/
-          method: DELETE
-          headers:
-              X-Consumer-Groups: dtu
-      response:
-          status_code: 200
-
     - name: create public notebook
       request:
           url: http://localhost:5000/notebooks/5a862202d4f1443a18fab254/
@@ -60,7 +51,6 @@ stages:
               - cell_type: markdown
                 metadata: {}
                 source: "## Provenance Info"
-                outputs: []
               - cell_type: code
                 metadata: {}
                 source: |-
@@ -68,20 +58,19 @@ stages:
                   RecursiveDict(prov)
                 outputs:
                 - data:
-                    text/html: !raw '<div id="496921f5f3873303e8c367b1fcd5db46" style="width:100%;"></div><script>render_json({divid: "496921f5f3873303e8c367b1fcd5db46", data: {"urls": {"main": "https://doi.org/10.1002/aenm.201400915", "PRA": "https://doi.org/10.1103/PhysRevA.51.1944", "PRB": "https://doi.org/10.1103/PhysRevB.82.115106"}, "description": "Bandgaps calculated using GLLB-SC potential by Gritsenko, van Leeuwen, van Lenthe, and Baerends (GLLB), adapted by Kuisma et al to account for solids (-SC). The Kohn-Sham gap (\u0394E-KS) most basically refers to the energy difference between the bottom of the conduction band and the top of the valence band. The Quasi-Particle gap (\u0394E-QP) takes into account the derivative discontinuity (C) of the chemical potential and gives the bandgap as the difference between ionization potential and electron affinity.", "other": null, "authors": "I. Castelli, F. Hueser, M. Pandey, H. Li, K. Thygesen, B. Seger, A. Jain, K. Persson, G. Ceder, K. Jacobsen", "is_public": true, "project": "dtu", "title": "GLLB-SC Bandgaps"}});</script>'
+                    text/html: !raw '<div id="e15f8da30241f05c1432380e81f3cb01" style="width:100%;"></div><script>render_json({divid: "e15f8da30241f05c1432380e81f3cb01", data: {"project": "dtu", "title": "GLLB-SC Bandgaps", "is_public": true, "authors": "I. Castelli, F. Hueser, M. Pandey, H. Li, K. Thygesen, B. Seger, A. Jain, K. Persson, G. Ceder, K. Jacobsen", "description": "Bandgaps calculated using GLLB-SC potential by Gritsenko, van Leeuwen, van Lenthe, and Baerends (GLLB), adapted by Kuisma et al to account for solids (-SC). The Kohn-Sham gap (\u0394E-KS) most basically refers to the energy difference between the bottom of the conduction band and the top of the valence band. The Quasi-Particle gap (\u0394E-QP) takes into account the derivative discontinuity (C) of the chemical potential and gives the bandgap as the difference between ionization potential and electron affinity.", "other": null, "urls": {"main": "https://doi.org/10.1002/aenm.201400915", "PRA": "https://doi.org/10.1103/PhysRevA.51.1944", "PRB": "https://doi.org/10.1103/PhysRevB.82.115106"}}});</script>'
                   metadata: {}
                   transient: {}
                   output_type: display_data
               - cell_type: markdown
                 metadata: {}
                 source: "## Hierarchical Data for mp-2715"
-                outputs: []
               - cell_type: code
                 metadata: {}
-                source: HierarchicalData(contrib)
+                source: HierarchicalData(contrib['data'])
                 outputs:
                 - data:
-                    text/html: !raw '<div id="8dc48d6310f4bb27ec17ba84fbe6cb19" style="width:100%;"></div><script>render_json({divid: "8dc48d6310f4bb27ec17ba84fbe6cb19", data: {"data": {"\u0394E-KS": {"indirect": "0.0991 eV", "direct": "0.275 eV"}, "\u0394E-QP": {"indirect": "0.135 eV", "direct": "0.311 eV"}, "C": "0.0357 eV", "ICSD": "42613", "formula": "Co4As8"}, "identifier": "mp-2715", "is_public": true, "id": "5a862202d4f1443a18fab254", "project": "dtu"}});</script>'
+                    text/html: !raw '<div id="ecd763b62feaa9224cfa6e032bb8ce80" style="width:100%;"></div><script>render_json({divid: "ecd763b62feaa9224cfa6e032bb8ce80", data: {"\u0394E-KS": {"indirect": "0.0991 eV", "direct": "0.275 eV"}, "\u0394E-QP": {"indirect": "0.135 eV", "direct": "0.311 eV"}, "C": "0.0357 eV", "ICSD": "42613", "formula": "Co4As8"}});</script>'
                   metadata: {}
                   transient: {}
                   output_type: display_data
