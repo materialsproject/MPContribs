@@ -7,7 +7,7 @@ from flask import Blueprint, request, current_app
 from flask_mongorest.resources import Resource
 from flask_mongorest import operators as ops
 from flask_mongorest.methods import List, Fetch, Create, Delete, Update
-from pandas.io.json.normalize import nested_to_record
+from pandas.io.json._normalize import nested_to_record
 from mpcontribs.api import construct_query
 from mpcontribs.api.core import SwaggerView
 from mpcontribs.api.projects.document import Projects

@@ -10,7 +10,7 @@ from flask_mongoengine import MongoEngine
 from flask_mongorest import register_class
 from flask_log import Logging
 from flasgger.base import Swagger
-from pandas.io.json.normalize import nested_to_record
+from pandas.io.json._normalize import nested_to_record
 from typing import Any, Dict
 
 for mod in ['matplotlib', 'toronado.cssutils', 'selenium.webdriver.remote.remote_connection']:

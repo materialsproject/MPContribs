@@ -4,7 +4,7 @@ import os
 import flask_mongorest
 from flask import request, Blueprint
 import pandas as pd
-from pandas.io.json.normalize import nested_to_record
+from pandas.io.json._normalize import nested_to_record
 from itertools import groupby
 from scipy.optimize import brentq
 from scipy.constants import pi, R
