@@ -1,2 +1,2 @@
-bravado[fido]>=10.4.1
-service_identity>=18.1.0
+bravado[fido]>=10.4.3
+service-identity>=18.1.0

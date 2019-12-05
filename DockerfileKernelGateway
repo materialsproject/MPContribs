@@ -1,11 +1,13 @@
-FROM jupyter/scipy-notebook:29a003bb3030
+FROM jupyter/scipy-notebook
 EXPOSE 8888
 
-RUN pip install --upgrade numpy
-RUN pip install -e git+https://github.com/jupyter/enterprise_gateway@v2.0.0rc1#egg=enterprise_gateway-2.0.0rc1
+COPY binder/environment.yml environment.yml
+RUN conda env update --file environment.yml --prune
+
 COPY mpcontribs-io/requirements.txt requirements-io.txt
 COPY mpcontribs-client/requirements.txt requirements-client.txt
-RUN pip install -r requirements-io.txt && pip install -r requirements-client.txt
+RUN pip install --upgrade -r requirements-client.txt
+RUN pip install --upgrade -r requirements-io.txt
 
 USER root
 COPY mpcontribs-io src/mpcontribs-io
@@ -19,9 +21,9 @@ RUN chown $NB_USER:users kernel_imports.ipynb
 ENV NODE_ENV production
 USER $NB_USER
 
-ENV SETUPTOOLS_SCM_PRETEND_VERSION 1.5.9
-RUN cd src/mpcontribs-io && pip install -e .
-ENV SETUPTOOLS_SCM_PRETEND_VERSION 1.5.7
-RUN cd src/mpcontribs-client && pip install -e .
+ENV SETUPTOOLS_SCM_PRETEND_VERSION dev
+RUN cd src/mpcontribs-io && pip install --upgrade -e .
+ENV SETUPTOOLS_SCM_PRETEND_VERSION dev
+RUN cd src/mpcontribs-client && pip install --upgrade -e .
 
 CMD ["jupyter", "enterprisegateway", "--ip=0.0.0.0", "--port_retries=0", "--seed_uri='kernel_imports.ipynb'"]
