@@ -1,61 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import division, unicode_literals
-import six, bson, os
-from importlib import import_module
-from bson.json_util import dumps, loads
-from webtzite.rester import MPResterBase, MPResterError
-
-class MPContribsRester(MPResterBase):
-    """convenience functions to interact with MPContribs REST interface"""
-    def __init__(self, api_key=None, endpoint=None, dbtype='mpcontribs_read', test_site=False):
-        if api_key is None:
-            api_key = os.environ.get('PMG_MAPI_KEY')
-        if endpoint is None:
-            endpoint = os.environ.get(
-                'PMG_MAPI_ENDPOINT', 'https://contribs.materialsproject.org/rest'
-            )
-        if test_site:
-            # override api_key and endpoint with test_site values
-            jpy_user = os.environ.get('JPY_USER')
-            if not jpy_user:
-                raise ValueError('Cannot connect to test_site outside MP JupyterHub!')
-            flaskproxy = 'https://jupyterhub.materialsproject.org/flaskproxy'
-            endpoint = '/'.join([flaskproxy, jpy_user, 'test_site/rest'])
-            import webtzite.configure_settings
-            import django
-            django.setup()
-            from webtzite.models import RegisteredUser
-            try:
-                u = RegisteredUser.objects.first()
-            except RegisteredUser.DoesNotExist:
-                login_url = '/'.join([flaskproxy, jpy_user, 'test_site'])
-                raise ValueError('Visit {} to get registered first!'.format(login_url))
-            api_key = u.api_key
-        super(MPContribsRester, self).__init__(
-          api_key=api_key, endpoint=endpoint
-        )
-        self.dbtype = dbtype
-
-    @property
-    def query(self):
-        return None
-
-    @property
-    def provenance_keys(self):
-        return ["title", "authors", "description", "urls"]
-        #raise NotImplementedError('Implement `provenance_keys` property in Rester!')
-
-    @property
-    def released(self):
-        return False
-
-    def _make_request(self, sub_url, payload=None, method="GET"):
-        from mpcontribs.io.core.recdict import RecursiveDict
-        return super(MPContribsRester, self)._make_request(
-          '/'.join([sub_url, self.dbtype]), payload=payload, method=method,
-          document_class=RecursiveDict
-        )
-
     def get_cid_url(self, doc):
         """infer URL for contribution detail page from MongoDB doc"""
         from mpcontribs.config import mp_id_pattern
@@ -88,9 +30,6 @@ class MPContribsRester(MPResterBase):
             criteria={'identifier': identifier}, projection={'content': 1}
         )
         return docs[0] if docs else None
-
-    def check_contributor(self):
-        return self._make_request('/check_contributor')
 
     def submit_contribution(self, filename_or_mpfile, fmt):
         """
