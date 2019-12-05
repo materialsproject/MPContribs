@@ -48,11 +48,6 @@ class CardsResource(Resource):
         'is_public': [ops.Boolean]
     }
     fields = ['id', 'project', 'is_public', 'html']
-    allowed_ordering = ['project']
-    paginate = True
-    default_limit = 20
-    max_limit = 200
-    bulk_update_limit = 100
 
 
 class CardsView(SwaggerView):
@@ -70,10 +65,8 @@ class CardsView(SwaggerView):
             try:
                 card = Cards.objects.only('id').get(id=cid)
             except DoesNotExist:  # Card has never been requested before
-                print('generating empty card ...')
                 # save an empty card
-                mask = ['project', 'identifier', 'is_public']
-                contrib = Contributions.objects.only(*mask).get(id=cid)
+                contrib = Contributions.objects.only('project', 'is_public').get(id=cid)
                 card = Cards(
                     id=cid,  # to link to the according contribution
                     is_public=contrib.is_public,  # in sync with contribution
@@ -87,7 +80,6 @@ class CardsView(SwaggerView):
 
         if not ret["html"]:
             # generate HTML content
-            print('generating html...')
             ctx = {'cid': cid}
             card = Cards.objects.get(id=cid)
             info = Projects.objects.get(pk=card.project)

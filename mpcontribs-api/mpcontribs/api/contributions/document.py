@@ -1,5 +1,5 @@
 from flask_mongoengine import Document
-from mongoengine import fields
+from mongoengine import fields, PULL
 from mpcontribs.api.tables.document import Tables
 from mpcontribs.api.structures.document import Structures
 
@@ -19,8 +19,12 @@ class Contributions(Document):
         required=True, default=False, help_text='public or private contribution'
     )
     data = fields.DictField(help_text='free-form data to be shown in Contribution Card')
-    structures = fields.ListField(fields.ReferenceField(Structures))
-    tables = fields.ListField(fields.ReferenceField(Tables))
+    structures = fields.ListField(fields.LazyReferenceField(
+        Structures, passthrough=True, reverse_delete_rule=PULL
+    ))
+    tables = fields.ListField(fields.LazyReferenceField(
+        Tables, passthrough=True, reverse_delete_rule=PULL
+    ))
     meta = {
         'collection': 'contributions',
         'indexes': ['identifier', 'project', 'is_public', {'fields': ['project', 'identifier']}]

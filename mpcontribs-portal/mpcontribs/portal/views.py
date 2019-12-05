@@ -97,7 +97,8 @@ def contribution(request, cid):
 
 def cif(request, sid):
     client = load_client()
-    cif = client.structures.get_cif(sid=sid).response().result['cif']
+    kwargs = get_client_kwargs(request)
+    cif = client.structures.get_entry(sid=sid, _fields=['cif'], **kwargs).response().result['cif']
     if cif:
         return HttpResponse(cif, content_type='text/plain')
     return HttpResponse(status=404)
@@ -105,7 +106,8 @@ def cif(request, sid):
 
 def download_json(request, cid):
     client = load_client()
-    contrib = client.contributions.get_entry(pk=cid).response().result
+    kwargs = get_client_kwargs(request)
+    contrib = client.contributions.get_entry(pk=cid, **kwargs).response().result
     if contrib:
         jcontrib = json.dumps(contrib)
         response = HttpResponse(jcontrib, content_type='application/json')

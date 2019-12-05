@@ -2,6 +2,7 @@ import os
 import flask_mongorest
 from flask_mongorest.resources import Resource
 from flask_mongorest import operators as ops
+from flask_mongorest.exceptions import UnknownFieldError
 from flask_mongorest.methods import List, Fetch, Create, Delete, Update, BulkUpdate
 from flask import Blueprint
 from pymatgen import Structure
@@ -34,41 +35,18 @@ class StructuresResource(Resource):
 
     @staticmethod
     def get_optional_fields():
-        return ['lattice', 'sites']
+        return ['lattice', 'sites', 'cif']
+
+    def value_for_field(self, obj, field):
+        # add cif key to response if requested
+        if field == 'cif':
+            s = Structures.objects.get(id=obj.id)
+            structure = Structure.from_dict(s.to_mongo())
+            return CifWriter(structure, symprec=1e-10).__str__()
+        else:
+            raise UnknownFieldError
 
 
 class StructuresView(SwaggerView):
     resource = StructuresResource
     methods = [List, Fetch, Create, Delete, Update, BulkUpdate]
-
-
-class CifView(SwaggerView):
-    resource = StructuresResource
-
-    def get(self, sid):
-        """Retrieve structure in CIF format.
-        ---
-        operationId: get_cif
-        parameters:
-            - name: sid
-              in: path
-              type: string
-              pattern: '^[a-f0-9]{24}$'
-              required: true
-              description: Structure ID (ObjectId)
-        responses:
-            200:
-                description: structure in CIF format
-                schema:
-                    type: object
-                    properties:
-                        cif:
-                            type: string
-        """
-        entry = Structures.objects.no_dereference().get(id=sid)
-        structure = Structure.from_dict(entry.to_mongo())
-        return {'cif': CifWriter(structure, symprec=1e-10).__str__()}
-
-
-cif_view = CifView.as_view(CifView.__name__)
-structures.add_url_rule('/<string:sid>.cif', view_func=cif_view, methods=['GET'])

@@ -2,7 +2,8 @@ import os
 import requests
 import flask_mongorest
 from flask_mongorest.resources import Resource
-from flask_mongorest.methods import Fetch, Delete
+from flask_mongorest.methods import Fetch
+from flask_mongorest import operators as ops
 from flask import Blueprint
 from copy import deepcopy
 from mongoengine import DoesNotExist
@@ -78,28 +79,51 @@ with open('kernel_imports.ipynb') as fh:
 
 class NotebooksResource(Resource):
     document = Notebooks
+    filters = {
+        'project': [ops.In, ops.Exact],
+        'is_public': [ops.Boolean]
+    }
+    fields = [
+        'id', 'project', 'is_public', 'nbformat',
+        'nbformat_minor', 'metadata', 'cells'
+    ]
 
 
 class NotebooksView(SwaggerView):
     resource = NotebooksResource
-    methods = [Fetch, Delete]
+    methods = [Fetch]
 
-    def get(self, pk):
+    def get(self, **kwargs):
+        cid = kwargs['pk']
         try:
-            nb = Notebooks.objects.get(id=pk)
-            nb.restore()
+            ret = super().get(**kwargs)
+            # nb.restore() ???
         except DoesNotExist:
-            contrib = Contributions.objects.no_dereference().get(id=pk)
-            # start entry to avoid rebuild on subsequent requests
-            nb = Notebooks(
-                id=pk,  # to link to the according contribution
-                project=contrib.project, is_public=contrib.is_public
-            )
-            nb.save()  # calls Notebooks.clean()
+            nb = None
+            try:
+                nb = Notebooks.objects.only('id').get(id=cid)
+            except DoesNotExist:
+                # save empty notebook, also start entry to avoid rebuild on subsequent requests
+                print('create empty notebook ...')
+                contrib = Contributions.objects.only('project', 'is_public').get(id=cid)
+                nb = Notebooks(
+                    id=cid,  # to link to the according contribution
+                    project=contrib.project, is_public=contrib.is_public
+                )
+                nb.save()  # calls Notebooks.clean()
+                return self.get(**kwargs)
+
+            if nb is not None:
+                raise DoesNotExist(f'Notebook {nb.id} exists but user not in project group')
+
+        if not ret["cells"]:
+            # generate notebook content
+            print('generating notebook ...')
+            contrib = Contributions.objects.get(id=cid)
             cells = [
                 nbf.new_code_cell(
                     "client = load_client() # provide apikey as argument to use api.mpcontribs.org\n"
-                    f"contrib = client.contributions.get_entry(pk='{pk}', _fields=['_all']).response().result"
+                    f"contrib = client.contributions.get_entry(pk='{cid}', _fields=['_all']).response().result"
                 ),
                 nbf.new_markdown_cell("## Provenance Info"),
                 nbf.new_code_cell(
@@ -142,13 +166,14 @@ class NotebooksView(SwaggerView):
             kernel = client.start_kernel()
             for cell in cells:
                 if cell.cell_type == 'code':
-                    cell.outputs = kernel.execute(cell.source)
+                    cell['outputs'] = kernel.execute(cell.source)
             client.shutdown_kernel(kernel)
 
-            nb = deepcopy(seed_nb)
-            nb.cells += cells
-            nb = Notebooks(id=pk, project=contrib.project, is_public=contrib.is_public, **nb)
+            doc = deepcopy(seed_nb)
+            doc['cells'] += cells
+            nb = Notebooks.objects.get(id=cid)
+            self.Schema().update(nb, doc)
             nb.save()  # calls Notebooks.clean()
+            return self.get(**kwargs)
 
-        del nb.id
-        return nb.to_mongo()
+        return ret
