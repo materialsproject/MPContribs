@@ -7,9 +7,10 @@ from flask_mongorest.methods import List, Fetch, Create, Delete, Update, BulkUpd
 from flask import Blueprint
 from pymatgen import Structure
 from pymatgen.io.cif import CifWriter
-
 from mpcontribs.api.core import SwaggerView
 from mpcontribs.api.structures.document import Structures
+from mpcontribs.api.projects.views import ProjectsResource
+from mpcontribs.api.contributions.views import ContributionsResource
 
 templates = os.path.join(
     os.path.dirname(flask_mongorest.__file__), 'templates'
@@ -19,15 +20,16 @@ structures = Blueprint("structures", __name__, template_folder=templates)
 
 class StructuresResource(Resource):
     document = Structures
+    related_resources = {'project': ProjectsResource, 'contribution': ContributionsResource}
+    save_related_fields = ['project', 'contribution']
     filters = {
         'project': [ops.In, ops.Exact],
-        'identifier': [ops.In, ops.Contains, ops.Exact],
-        'name': [ops.Exact, ops.Contains],
-        'cid': [ops.Exact],
-        'is_public': [ops.Boolean]
+        'contribution__identifier': [ops.In, ops.Contains, ops.Exact],
+        'contribution__is_public': [ops.Boolean],
+        'name': [ops.Exact, ops.Contains]
     }
-    fields = ['id', 'project', 'identifier', 'name', 'cid', 'is_public']
-    allowed_ordering = ['project', 'identifier']
+    fields = ['id', 'project', 'contribution', 'name']
+    allowed_ordering = ['name']
     paginate = True
     default_limit = 10
     max_limit = 20

@@ -11,10 +11,10 @@ stages:
           json:
               project: test
               title: Test Title
-              description: just a test project. Nothing to see here.
               authors: P. Huck
+              description: just a test project. Nothing to see here.
               urls:
-                  main: https://google.com
+                  main: https://materialsproject.org
       response:
           status_code: 401
           body:
@@ -29,10 +29,10 @@ stages:
           json:
               project: test
               title: Test Title
-              description: just a test project. Nothing to see here.
               authors: P. Huck
+              description: just a test project. Nothing to see here.
               urls:
-                  main: https://google.com
+                  main: https://materialsproject.org
       response:
           status_code: 200
           body:
@@ -89,12 +89,12 @@ stages:
 
     - name: DTU columns
       request:
-          url: http://localhost:5000/projects/dtu/columns
+          url: http://localhost:5000/projects/dtu/?_fields=columns
           method: GET
       response:
           status_code: 200
           body:
-              data:
+              columns:
                   - C
                   - ICSD
                   - formula

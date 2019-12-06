@@ -4,7 +4,6 @@ from flask_mongorest.resources import Resource
 from flask_mongorest import operators as ops
 from flask_mongorest.methods import List, Fetch, Create, Delete, Update, BulkUpdate
 from flask import Blueprint, request, current_app
-
 from mpcontribs.api.core import SwaggerView
 from mpcontribs.api.tables.document import Tables
 

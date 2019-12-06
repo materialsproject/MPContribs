@@ -1,32 +1,14 @@
 from flask_mongoengine import Document
-from mongoengine.fields import StringField, ObjectIdField, BooleanField, DictField, ListField
+from mongoengine import CASCADE
+from mongoengine.fields import StringField, DictField, ListField, LazyReferenceField
+from mpcontribs.api.projects.document import Projects
+from mpcontribs.api.contributions.document import Contributions
 
 
 class Structures(Document):
-    __project_regex__ = '^[a-zA-Z0-9_]+$'
-    project = StringField(
-        min_length=3, max_length=30, required=True, regex=__project_regex__,
-        help_text=f"project name/slug (valid format: `{__project_regex__}`)"
-    )
-    identifier = StringField(
-        required=True, help_text="material/composition identifier"
-    )
-    name = StringField(
-        required=True, unique_with='cid', help_text="table name"
-    )
-    cid = ObjectIdField(
-        required=True, help_text="Contribution ID"
-    )
-    is_public = BooleanField(
-        required=True, default=False, help_text='public or private structure'
-    )
+    project = LazyReferenceField(Projects, passthrough=True, reverse_delete_rule=CASCADE)
+    contribution = LazyReferenceField(Contributions, passthrough=True, reverse_delete_rule=CASCADE)
+    name = StringField(required=True, help_text="table name")
     lattice = DictField(required=True, help_text="lattice")
-    sites = ListField(
-        DictField(), required=True, help_text="sites"
-    )
-    meta = {
-        'collection': 'structures', 'indexes': [
-            'identifier', 'project', 'cid', 'name', 'is_public',
-            {'fields': ['cid', 'name'], 'unique': True}
-        ]
-    }
+    sites = ListField(DictField(), required=True, help_text="sites")
+    meta = {'collection': 'structures', 'indexes': ['name']}

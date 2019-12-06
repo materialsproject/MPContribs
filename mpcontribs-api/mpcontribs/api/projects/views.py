@@ -1,9 +1,9 @@
 import os
 import flask_mongorest
 from dict_deep import deep_get
-from mongoengine.context_managers import no_dereference
 from mongoengine.queryset.visitor import Q
 from flask import Blueprint, request, current_app
+from flask_mongorest.exceptions import UnknownFieldError
 from flask_mongorest.resources import Resource
 from flask_mongorest import operators as ops
 from flask_mongorest.methods import List, Fetch, Create, Delete, Update
@@ -27,13 +27,59 @@ class ProjectsResource(Resource):
         'description': [ops.IContains],
         'authors': [ops.IContains]
     }
-    fields = ['project', 'title', 'is_public']
-    allowed_ordering = ['project']
+    fields = ['project', 'is_public', 'title']
+    allowed_ordering = ['project', 'title', 'is_public']
     paginate = False
 
     @staticmethod
     def get_optional_fields():
-        return ['authors', 'description', 'other', 'urls']
+        return ['authors', 'description', 'urls', 'other', 'columns']
+
+    def value_for_field(self, obj, field):
+        # add columns key to response if requested
+        if field == 'columns':
+            columns = []
+            objects = list(Contributions.objects.aggregate(*[
+                {"$match": {"project": obj.id}},
+                {"$project": {"akv": {"$objectToArray": "$data"}}},
+                {"$unwind": "$akv"},
+                {"$project": {"root": "$akv.k", "level2": {
+                    "$switch": {"branches": [{
+                        "case": {"$eq": [{"$type": "$akv.v"}, "object"]},
+                        "then": {"$objectToArray": "$akv.v"}
+                    }], "default": [{}]}
+                }}},
+                {"$unwind": "$level2"},
+                {"$project": {"column": {
+                    "$switch": {
+                        "branches": [
+                            {"case": {"$eq": ["$level2", {}]}, "then": "$root"},
+                            {"case": {"$eq": ["$level2.k", "display"]}, "then": "$root"},
+                            {"case": {"$eq": ["$level2.k", "value"]}, "then": "$root"},
+                            {"case": {"$eq": ["$level2.k", "unit"]}, "then": "$root"},
+                        ],
+                        "default": {"$concat": ["$root", ".", "$level2.k"]}
+                    }
+                }}},
+                {"$group": {"_id": None, "columns": {"$addToSet": "$column"}}}
+            ]))
+            if objects:
+                columns += objects[0]['columns']
+
+            projects = sorted(obj.id.split('_'))
+            names = Structures.objects(project=obj.id).distinct("name")
+            if names:
+                if len(projects) == len(names):
+                    for p, n in zip(projects, sorted(names)):
+                        if p == n.lower():
+                            columns.append(f'{n}.CIF')
+                else:
+                    columns.append('CIF')
+
+            print(columns)
+            return sorted(columns)
+        else:
+            raise UnknownFieldError
 
 
 class ProjectsView(SwaggerView):
@@ -55,12 +101,12 @@ class ProjectsView(SwaggerView):
 class TableView(SwaggerView):
     resource = ProjectsResource
 
-    def get(self, project):
+    def get(self, pk):
         """Retrieve a table of contributions for a project.
         ---
         operationId: get_table
         parameters:
-            - name: project
+            - name: pk
               in: path
               type: string
               pattern: '^[a-zA-Z0-9_]{3,30}$'
@@ -131,7 +177,7 @@ class TableView(SwaggerView):
         portal = 'http://localhost:8080' if current_app.config['DEBUG'] \
             else 'https://portal.mpcontribs.org'
         mp_site = 'https://materialsproject.org/materials'
-        mask = ['data', 'structures', 'identifier']
+        mask = ['data', 'identifier']
         search = request.args.get('q')
         filters = request.args.get('filters', '').split(',')
         page = int(request.args.get('page', 1))
@@ -251,12 +297,12 @@ class TableView(SwaggerView):
 class GraphView(SwaggerView):
     resource = ProjectsResource
 
-    def get(self, project):
+    def get(self, pk):
         """Retrieve overview graph for a project.
         ---
         operationId: get_graph
         parameters:
-            - name: project
+            - name: pk
               in: path
               type: string
               pattern: '^[a-zA-Z0-9_]{3,30}$'
@@ -319,99 +365,29 @@ class GraphView(SwaggerView):
         per_page = PER_PAGE_MAX if per_page > PER_PAGE_MAX else per_page
 
         data = [{'x': [], 'y': [], 'text': []} for col in columns]
-        with no_dereference(Contributions) as ContributionsDeref:
-            query = {'project': project}
-            query.update(dict((
-                f'data__{col.replace(".", "__")}__display__exists', True
-            ) for col in columns))
-            objects = ContributionsDeref.objects(**query).only(*mask)
-            objects = objects.order_by('_id')
+        query = {'project': pk}
+        query.update(dict((
+            f'data__{col.replace(".", "__")}__display__exists', True
+        ) for col in columns))
+        objects = Contributions.objects(**query).only(*mask)
+        objects = objects.order_by('_id')
 
-            if filters:
-                query = construct_query(filters)
-                objects = objects(**query)
+        if filters:
+            query = construct_query(filters)
+            objects = objects(**query)
 
-            for obj in objects.paginate(page=page, per_page=per_page).items:
-                for idx, col in enumerate(columns):
-                    val = deep_get(obj, f'data.{col}.value')
-                    data[idx]['x'].append(obj.identifier)
-                    data[idx]['y'].append(val)
-                    data[idx]['text'].append(str(obj.id))
+        for obj in objects.paginate(page=page, per_page=per_page).items:
+            for idx, col in enumerate(columns):
+                val = deep_get(obj, f'data.{col}.value')
+                data[idx]['x'].append(obj.identifier)
+                data[idx]['y'].append(val)
+                data[idx]['text'].append(str(obj.id))
 
         return {'data': data}
 
 
-class ColumnsView(SwaggerView):
-    resource = ProjectsResource
-
-    def get(self, project):
-        """Retrieve all possible columns for a project.
-        ---
-        operationId: get_columns
-        parameters:
-            - name: project
-              in: path
-              type: string
-              pattern: '^[a-zA-Z0-9_]{3,30}$'
-              required: true
-              description: project name/slug
-        responses:
-            200:
-                description: list of columns in dot notation
-                schema:
-                    type: object
-                    properties:
-                        data:
-                            type: array
-                            items:
-                                type: string
-        """
-        columns = []
-        objects = list(Contributions.objects.aggregate(*[
-            {"$match": {"project": project}},
-            {"$project": {"akv": {"$objectToArray": "$data"}}},
-            {"$unwind": "$akv"},
-            {"$project": {"root": "$akv.k", "level2": {
-                "$switch": {"branches": [{
-                    "case": {"$eq": [{"$type": "$akv.v"}, "object"]},
-                    "then": {"$objectToArray": "$akv.v"}
-                }], "default": [{}]}
-            }}},
-            {"$unwind": "$level2"},
-            {"$project": {"column": {
-                "$switch": {
-                    "branches": [
-                        {"case": {"$eq": ["$level2", {}]}, "then": "$root"},
-                        {"case": {"$eq": ["$level2.k", "display"]}, "then": "$root"},
-                        {"case": {"$eq": ["$level2.k", "value"]}, "then": "$root"},
-                        {"case": {"$eq": ["$level2.k", "unit"]}, "then": "$root"},
-                    ],
-                    "default": {"$concat": ["$root", ".", "$level2.k"]}
-                }
-            }}},
-            {"$group": {"_id": None, "columns": {"$addToSet": "$column"}}}
-        ]))
-        if objects:
-            columns += objects[0]['columns']
-
-        projects = sorted(project.split('_'))
-        names = Structures.objects(project=project).distinct("name")
-        if names:
-            if len(projects) == len(names):
-                for p, n in zip(projects, sorted(names)):
-                    if p == n.lower():
-                        columns.append(f'{n}.CIF')
-            else:
-                columns.append('CIF')
-
-        return {'data': sorted(columns)}
-
-
 table_view = TableView.as_view(TableView.__name__)
-projects.add_url_rule('/<string:project>/table', view_func=table_view, methods=['GET'])
+projects.add_url_rule('/<string:pk>/table', view_func=table_view, methods=['GET'])
 
 graph_view = GraphView.as_view(GraphView.__name__)
-projects.add_url_rule('/<string:project>/graph', view_func=graph_view, methods=['GET'])
-
-columns_view = ColumnsView.as_view(ColumnsView.__name__)
-projects.add_url_rule('/<string:project>/columns', view_func=columns_view, methods=['GET'])
+projects.add_url_rule('/<string:pk>/graph', view_func=graph_view, methods=['GET'])

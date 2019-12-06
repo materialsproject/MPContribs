@@ -1,31 +1,12 @@
 from flask_mongoengine import Document
-from mongoengine import fields, PULL
-from mpcontribs.api.tables.document import Tables
-from mpcontribs.api.structures.document import Structures
+from mongoengine import CASCADE
+from mongoengine.fields import StringField, BooleanField, DictField, LazyReferenceField
+from mpcontribs.api.projects.document import Projects
 
 
 class Contributions(Document):
-    __project_regex__ = '^[a-zA-Z0-9_]+$'
-    project = fields.StringField(
-        min_length=3, max_length=30, required=True, regex=__project_regex__,
-        help_text="project name/slug (valid format: `{}`)".format(
-            __project_regex__
-        )
-    )
-    identifier = fields.StringField(
-        required=True, help_text="material/composition identifier"
-    )
-    is_public = fields.BooleanField(
-        required=True, default=False, help_text='public or private contribution'
-    )
-    data = fields.DictField(help_text='free-form data to be shown in Contribution Card')
-    structures = fields.ListField(fields.LazyReferenceField(
-        Structures, passthrough=True, reverse_delete_rule=PULL
-    ))
-    tables = fields.ListField(fields.LazyReferenceField(
-        Tables, passthrough=True, reverse_delete_rule=PULL
-    ))
-    meta = {
-        'collection': 'contributions',
-        'indexes': ['identifier', 'project', 'is_public', {'fields': ['project', 'identifier']}]
-    }
+    project = LazyReferenceField(Projects, passthrough=True, reverse_delete_rule=CASCADE)
+    identifier = StringField(required=True, help_text="material/composition identifier")
+    is_public = BooleanField(required=True, default=False, help_text='public/private contribution')
+    data = DictField(help_text='free-form data to be shown in Contribution Card')
+    meta = {'collection': 'contributions', 'indexes': ['identifier', 'is_public']}
