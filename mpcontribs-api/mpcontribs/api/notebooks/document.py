@@ -40,7 +40,7 @@ class Cell(DictField):
     cell_type = StringField(required=True, default='code', help_text='cell type')
     metadata = DictField(help_text='cell metadata')
     source = StringField(required=True, default="print('hello')", help_text='source')
-    outputs = ListField(DictField(), required=True, help_text='outputs', default=[DictField()])
+    outputs = ListField(DictField(), required=True, help_text='outputs', default=lambda: [DictField()])
     execution_count = IntField(help_text='exec count')
 
 
