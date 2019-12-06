@@ -39,7 +39,7 @@ class StructuresResource(Resource):
     }
     filters = {
         'project': [ops.In, ops.Exact],
-        'contribution': [ops.In, ops.Contains, ops.Exact],
+        'contribution': [ops.Exact],
         'is_public': [ops.Boolean],
         'name': [ops.Exact, ops.Contains]
     }

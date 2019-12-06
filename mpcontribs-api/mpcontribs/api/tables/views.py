@@ -6,6 +6,8 @@ from flask_mongorest.methods import List, Fetch, Create, Delete, Update, BulkUpd
 from flask import Blueprint, request, current_app
 from mpcontribs.api.core import SwaggerView
 from mpcontribs.api.tables.document import Tables
+from mpcontribs.api.projects.views import ProjectsResource
+from mpcontribs.api.contributions.views import ContributionsResource
 
 templates = os.path.join(
     os.path.dirname(flask_mongorest.__file__), 'templates'
@@ -15,15 +17,16 @@ tables = Blueprint("tables", __name__, template_folder=templates)
 
 class TablesResource(Resource):
     document = Tables
+    related_resources = {'project': ProjectsResource, 'contribution': ContributionsResource}
     filters = {
         'project': [ops.In, ops.Exact],
-        'identifier': [ops.In, ops.Contains, ops.Exact],
+        'contribution': [ops.Exact],
+        'is_public': [ops.Boolean],
         'name': [ops.Exact, ops.Contains],
-        'cid': [ops.Exact],
-        'is_public': [ops.Boolean]
+        'columns': [ops.IContains]
     }
-    fields = ['id', 'project', 'identifier', 'name', 'cid', 'is_public']
-    allowed_ordering = ['project', 'identifier']
+    fields = ['id', 'project', 'contribution', 'is_public', 'name', 'columns']
+    allowed_ordering = ['is_public', 'name']
     paginate = True
     default_limit = 10
     max_limit = 20
@@ -32,7 +35,7 @@ class TablesResource(Resource):
 
     @staticmethod
     def get_optional_fields():
-        return ['columns', 'data', 'config']
+        return ['data', 'config']
 
 
 class TablesView(SwaggerView):

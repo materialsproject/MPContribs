@@ -1,12 +1,31 @@
 test_name: test tables resource
 
 stages:
+    - name: create test project as admin
+      request:
+          url: http://localhost:5000/projects/
+          method: POST
+          headers:
+              X-Consumer-Groups: admin
+          json:
+              project: test
+              title: Test Title
+              authors: P. Huck
+              description: just a test project. Nothing to see here.
+              urls:
+                  main: https://materialsproject.org
+      response:
+          status_code: 200
+          body:
+              project: test
+              title: Test Title
+
     - name: create private test contribution
       request:
           url: http://localhost:5000/contributions/
           method: POST
           headers:
-              X-Consumer-Groups: test
+              X-Consumer-Groups: admin
           json:
               id: 5ddc7c0c1e37e6006a663476
               project: test
@@ -32,13 +51,12 @@ stages:
           url: http://localhost:5000/tables/
           method: POST
           headers:
-              X-Consumer-Groups: test
+              X-Consumer-Groups: admin
           json:
               id: 5dddb0af1e37e6000c57eb34
-              identifier: mp-0000
               project: test
               name: table_name
-              cid: 5ddc7c0c1e37e6006a663476
+              contribution: 5ddc7c0c1e37e6006a663476
               columns:
               - T [K]
               - 1e+16 cm⁻³ [μV/K]
@@ -75,32 +93,15 @@ stages:
           status_code: 200
           body:
               project: test
-              identifier: mp-0000
               name: table_name
-              cid: 5ddc7c0c1e37e6006a663476
-
-    - name: update private contribution with table info
-      request:
-          url: http://localhost:5000/contributions/5ddc7c0c1e37e6006a663476/
-          method: PUT
-          headers:
-              X-Consumer-Groups: test
-          json:
-              tables:
-                  - 5dddb0af1e37e6000c57eb34
-      response:
-          status_code: 200
-          body:
-              id: 5ddc7c0c1e37e6006a663476
-              project: test
-              identifier: mp-0000
+              contribution: 5ddc7c0c1e37e6006a663476
 
     - name: delete private test table
       request:
           url: http://localhost:5000/tables/5dddb0af1e37e6000c57eb34/
           method: DELETE
           headers:
-              X-Consumer-Groups: test
+              X-Consumer-Groups: admin
       response:
           status_code: 200
 
@@ -109,7 +110,7 @@ stages:
           url: http://localhost:5000/contributions/5ddc7c0c1e37e6006a663476/
           method: PUT
           headers:
-              X-Consumer-Groups: test
+              X-Consumer-Groups: admin
           json:
               is_public: true
       response:

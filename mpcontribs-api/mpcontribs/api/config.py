@@ -71,7 +71,10 @@ TEMPLATE = {
     }, {
         'name': 'tables', 'description': 'TODO'
     }, {
-        'name': 'structures', 'description': 'TODO'
+        'name': 'structures', 'description': 'are \
+        <a href="https://pymatgen.org/_modules/pymatgen/core/structure.html#Structure">pymatgen structures</a> which \
+        can be added to a contribution. Only admins or users on the project can create, update or delete structures, \
+        and while unpublished, retrieve or view them on the <a href="https://portal.mpcontribs.org">Portal</a>.'
     }, {
         'name': 'notebooks', 'description': 'TODO'
     }, {
