@@ -40,7 +40,7 @@ TEMPLATE = {
     "swagger": "2.0",
     "info": {
         "title": "MPContribs API",
-        "description": "Operations to retrieve materials data contributed to Materials Project",
+        "description": "Operations to contribute, update and retrieve materials data on Materials Project",
         "termsOfService": "https://materialsproject.org/terms",
         "version": datetime.datetime.today().strftime('%Y.%m.%d'),
         "contact": {
@@ -53,6 +53,30 @@ TEMPLATE = {
             "url": "https://creativecommons.org/licenses/by/4.0/"
         }
     },
+    'tags': [{
+        'name': 'projects', 'description': 'contain provenance information about contributed datasets. Admins can \
+        create and delete projects which also deletes all contributions including tables, structures, notebooks \
+        and cards for the project. Only users who have been added to a project can update its contents. While \
+        unpublished, only users on the project can retrieve its data or view it on the \
+        <a href="https://portal.mpcontribs.org">Portal</a>. Making a project public does not automatically publish all \
+        its contributions, tables, and structures. These are separately set to public individually or in bulk.'''
+    }, {
+        'name': 'contributions', 'description': 'contain simple hierarchical data which will show up on the MP details \
+        page for MP material(s). Tables (rows and columns) as well as structures can be added to a contribution. \
+        Each contribution uses `mp-id` or composition as identifier to associate its data \
+        with the according entries on MP. Only admins or users on the project can create, update or delete \
+        contributions, and while unpublished, retrieve its data or view it on the \
+        <a href="https://portal.mpcontribs.org">Portal</a>. Deletion of a contribution also removes associated tables, \
+        structure, notebooks, and cards.'
+    }, {
+        'name': 'tables', 'description': 'TODO'
+    }, {
+        'name': 'structures', 'description': 'TODO'
+    }, {
+        'name': 'notebooks', 'description': 'TODO'
+    }, {
+        'name': 'cards', 'description': 'TODO'
+    }],
     "securityDefinitions": {
         "ApiKeyAuth": {
             'description': 'MP API key to authorize requests',
