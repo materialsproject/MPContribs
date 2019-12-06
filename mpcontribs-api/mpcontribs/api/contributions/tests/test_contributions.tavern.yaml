@@ -1,12 +1,31 @@
 test_name: test contributions resource
 
 stages:
+    - name: create test project as admin
+      request:
+          url: http://localhost:5000/projects/
+          method: POST
+          headers:
+              X-Consumer-Groups: admin
+          json:
+              project: test
+              title: Test Title
+              authors: P. Huck
+              description: just a test project. Nothing to see here.
+              urls:
+                  main: https://materialsproject.org
+      response:
+          status_code: 200
+          body:
+              project: test
+              title: Test Title
+
     - name: create test contribution
       request:
           url: http://localhost:5000/contributions/
           method: POST
           headers:
-              X-Consumer-Groups: test
+              X-Consumer-Groups: admin
           json:
               id: 5ddc7c0c1e37e6006a663476
               project: test
@@ -44,15 +63,6 @@ stages:
           body:
               project: test
               identifier: mp-0000
-
-    - name: delete test contribution
-      request:
-          url: http://localhost:5000/contributions/5ddc7c0c1e37e6006a663476/
-          method: DELETE
-          headers:
-              X-Consumer-Groups: test
-      response:
-          status_code: 200
 
     - name: get public contribution
       request:
@@ -152,3 +162,13 @@ stages:
 #                        ε₁: 0.582 mₑ
 #                        ε₂: 1.08 mₑ
 #                        ε₃: 1.30 mₑ
+
+    - name: delete test project as admin
+      request:
+          url: http://localhost:5000/projects/test/
+          method: DELETE
+          headers:
+              X-Consumer-Groups: admin
+      response:
+          status_code: 200
+
