@@ -26,10 +26,11 @@ class StructuresResource(Resource):
         'project': [ops.In, ops.Exact],
         'contribution__identifier': [ops.In, ops.Contains, ops.Exact],
         'contribution__is_public': [ops.Boolean],
+        'is_public': [ops.Boolean],
         'name': [ops.Exact, ops.Contains]
     }
-    fields = ['id', 'project', 'contribution', 'name']
-    allowed_ordering = ['name']
+    fields = ['id', 'project', 'contribution', 'is_public', 'name']
+    allowed_ordering = ['is_public', 'name']
     paginate = True
     default_limit = 10
     max_limit = 20
