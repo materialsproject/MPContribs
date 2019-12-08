@@ -266,15 +266,12 @@ class TableView(SwaggerView):
             for idx, col in enumerate(user_columns):
                 cell = ''
                 if 'CIF' in col:
-                    structures = doc['structures']
                     if '.' in col:  # grouped columns
                         sname = '.'.join(col.split('.')[:-1])  # remove CIF string from field name
-                        for d in structures:
-                            if d['name'] == sname:
-                                cell = f"{portal}/{d['id']}.cif"
-                                break
-                    elif structures:
-                        cell = f"{portal}/{structures[0]['id']}.cif"
+                        structure = Structures.objects.only('id').get(contribution=doc['id'], name=sname)
+                    else:
+                        structure = Structures.objects.only('id').filter(contribution=doc['id']).first()
+                    cell = f"{portal}/{structure['id']}.cif"
                 else:
                     cell = contrib.get(col+'.value', contrib.get(col, ''))
                     if isinstance(cell, str) and cell.startswith('mp-'):

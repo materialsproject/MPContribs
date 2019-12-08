@@ -44,6 +44,4 @@ def get_context(request, project, columns=None):
             project=project, ncols=ncols
         )
         ctx['table'] = table.render()
-    print(ctx)
     return ctx
-

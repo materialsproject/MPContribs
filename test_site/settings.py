@@ -23,7 +23,6 @@ INSTALLED_APPS = [
     'mpcontribs.portal',
 ]
 
-INSTALLED_APPS.append('test_site.apps.Mno2PhaseSelectionConfig')
 INSTALLED_APPS.append('test_site.apps.JarvisNusConfig')
 INSTALLED_APPS.append('test_site.apps.SlacMose2Config')
 INSTALLED_APPS.append('test_site.apps.SwfConfig')

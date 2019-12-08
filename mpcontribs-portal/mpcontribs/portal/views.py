@@ -93,7 +93,7 @@ def contribution(request, cid):
 def cif(request, sid):
     client = load_client()
     kwargs = get_client_kwargs(request)
-    cif = client.structures.get_entry(sid=sid, _fields=['cif'], **kwargs).response().result['cif']
+    cif = client.structures.get_entry(pk=sid, _fields=['cif'], **kwargs).response().result['cif']
     if cif:
         return HttpResponse(cif, content_type='text/plain')
     return HttpResponse(status=404)
