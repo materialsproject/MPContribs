@@ -1,6 +1,7 @@
 from mpcontribs.client import load_client
 from mpcontribs.io.core.recdict import RecursiveDict
 from mpcontribs.io.core.components.tdata import Table
+from mpcontribs.io.core.utils import get_short_object_id
 
 def get_client_kwargs(request):
     name = 'X-Consumer-Groups'
@@ -12,6 +13,7 @@ def get_context(request, project, columns=None):
     ctx = {'project': project}
     kwargs = get_client_kwargs(request)
     client = load_client()
+
     mask = ["title", "authors", "description", "urls", "other", "columns"]
     prov = client.projects.get_entry(pk=project, _fields=mask, **kwargs).response().result
     prov.pop('project')
@@ -22,6 +24,15 @@ def get_context(request, project, columns=None):
     ctx['urls'] = list(prov['urls'].values())
     if prov['other']:
         ctx['other'] = RecursiveDict(prov['other']).render()
+
+    ctx['contribs'] = []
+    for contrib in client.contributions.get_entries(
+        project=project, _fields=['id', 'identifier', 'data.formula']
+    ).response().result['data']:
+        contrib['formula'] = contrib['data'].pop('formula')
+        contrib['short_cid'] = get_short_object_id(contrib['id'])
+        ctx['contribs'].append(contrib)
+
     all_columns = prov['columns']
     if not all_columns:
         ctx['table'] = ''

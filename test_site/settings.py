@@ -23,17 +23,6 @@ INSTALLED_APPS = [
     'mpcontribs.portal',
 ]
 
-INSTALLED_APPS.append('test_site.apps.SlacMose2Config')
-INSTALLED_APPS.append('test_site.apps.SwfConfig')
-INSTALLED_APPS.append('test_site.apps.AlsBeamlineConfig')
-INSTALLED_APPS.append('test_site.apps.DtuConfig')
-INSTALLED_APPS.append('test_site.apps.ScreeningInorganicPvConfig')
-INSTALLED_APPS.append('test_site.apps.PerovskitesDiffusionConfig')
-INSTALLED_APPS.append('test_site.apps.TransparentConductorsConfig')
-INSTALLED_APPS.append('test_site.apps.DiluteSoluteDiffusionConfig')
-INSTALLED_APPS.append('test_site.apps.RedoxThermoCspConfig')
-INSTALLED_APPS.append('test_site.apps.BioiDefectsConfig')
-
 MIDDLEWARE = (
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -44,10 +33,16 @@ MIDDLEWARE = (
 
 ROOT_URLCONF = 'test_site.urls'
 
+from mpcontribs import users as mpcontribs_users
+from glob import glob
+path_glob = os.path.abspath(os.path.join(
+    os.path.dirname(mpcontribs_users.__file__), '*', 'explorer', 'templates'
+))
+
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': glob(path_glob),
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
