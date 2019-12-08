@@ -189,7 +189,7 @@ class TableView(SwaggerView):
         sort_by = request.args.get('sort_by', 'identifier')
         general_columns = ['identifier', 'id']
         user_columns = request.args.get('columns', '').split(',')
-        objects = Contributions.objects(project=project).only(*mask)
+        objects = Contributions.objects(project=pk).only(*mask)
 
         # default user_columns
         sample = objects.first()['data']
