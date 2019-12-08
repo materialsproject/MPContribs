@@ -2,6 +2,7 @@ import os
 import flask_mongorest
 from dict_deep import deep_get
 from mongoengine.queryset.visitor import Q
+from mongoengine.queryset import DoesNotExist
 from flask import Blueprint, request, current_app
 from flask_mongorest.exceptions import UnknownFieldError
 from flask_mongorest.resources import Resource
@@ -266,12 +267,16 @@ class TableView(SwaggerView):
             for idx, col in enumerate(user_columns):
                 cell = ''
                 if 'CIF' in col:
-                    if '.' in col:  # grouped columns
-                        sname = '.'.join(col.split('.')[:-1])  # remove CIF string from field name
-                        structure = Structures.objects.only('id').get(contribution=doc['id'], name=sname)
-                    else:
-                        structure = Structures.objects.only('id').filter(contribution=doc['id']).first()
-                    cell = f"{portal}/{structure['id']}.cif"
+                    try:
+                        if '.' in col:  # grouped columns
+                            sname = '.'.join(col.split('.')[:-1])  # remove CIF string from field name
+                            print(doc['id'], sname)
+                            structure = Structures.objects.only('id').get(contribution=doc['id'], name=sname)
+                        else:
+                            structure = Structures.objects.only('id').filter(contribution=doc['id']).first()
+                        cell = f"{portal}/{structure['id']}.cif"
+                    except DoesNotExist:
+                        pass
                 else:
                     cell = contrib.get(col+'.value', contrib.get(col, ''))
                     if isinstance(cell, str) and cell.startswith('mp-'):

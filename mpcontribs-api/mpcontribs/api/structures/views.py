@@ -8,7 +8,7 @@ from flask import Blueprint
 from pymatgen import Structure
 from pymatgen.io.cif import CifWriter
 from mpcontribs.api.core import SwaggerView
-from mpcontribs.api.structures.document import Structures, Lattice, Site, Specie
+from mpcontribs.api.structures.document import Structures, Lattice, Site, Specie, Properties
 from mpcontribs.api.projects.views import ProjectsResource
 from mpcontribs.api.contributions.views import ContributionsResource
 
@@ -26,9 +26,13 @@ class SpecieResource(Resource):
     document = Specie
 
 
+class PropertiesResource(Resource):
+    document = Properties
+
+
 class SiteResource(Resource):
     document = Site
-    related_resources = {'species': SpecieResource}
+    related_resources = {'species': SpecieResource, 'properties': PropertiesResource}
 
 
 class StructuresResource(Resource):

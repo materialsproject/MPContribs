@@ -24,6 +24,10 @@ class Specie(EmbeddedDocument):
     element = StringField(required=True, help_text='element')
 
 
+class Properties(EmbeddedDocument):
+    magmom = FloatField(min_value=0, help_text='magnetic moment')
+
+
 class Site(EmbeddedDocument):
     abc = ListField(
         FloatField(min_value=0, required=True),
@@ -34,6 +38,7 @@ class Site(EmbeddedDocument):
     )
     label = StringField(required=True, help_text="site label")
     species = EmbeddedDocumentListField(Specie, required=True, help_text='species')
+    properties = EmbeddedDocumentField(Properties, help_text="other properties")
 
 
 class Structures(Document):

@@ -5,7 +5,6 @@ from webtzite import views
 urlpatterns = [
     url(r'', include('webtzite.urls')),
     url(r'', include('mpcontribs.portal.urls')),
-    url(r'jarvis_nus/', include('mpcontribs.users.jarvis_nus.explorer.urls')),
     url(r'slac_mose2/', include('mpcontribs.users.slac_mose2.explorer.urls')),
     url(r'swf/', include('mpcontribs.users.swf.explorer.urls')),
     url(r'fe-co-v/', RedirectView.as_view(url='/swf', permanent=False)),
