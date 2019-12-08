@@ -8,10 +8,6 @@ class JarvisNusConfig(AppConfig):
     name = 'mpcontribs.users.jarvis_nus.explorer'
     label = 'jarvis_nus'
 
-class DefectGenomePcfcMaterialsConfig(AppConfig):
-    name = 'mpcontribs.users.defect_genome_pcfc_materials.explorer'
-    label = 'defect_genome_pcfc_materials'
-
 class SlacMose2Config(AppConfig):
     name = 'mpcontribs.users.slac_mose2.explorer'
     label = 'slac_mose2'

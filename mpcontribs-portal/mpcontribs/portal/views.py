@@ -1,5 +1,6 @@
 """This module provides the views for the portal."""
 
+import os
 import json
 import nbformat
 from nbconvert import HTMLExporter
@@ -12,12 +13,7 @@ from django.http import HttpResponse
 from django.urls import reverse
 
 from mpcontribs.client import load_client
-
-def get_client_kwargs(request):
-    name = 'X-Consumer-Groups'
-    key = f'HTTP_{name.upper().replace("-", "_")}'
-    value = request.META.get(key)
-    return {'_request_options': {"headers": {name: value}}} if value else {}
+from webtzite import get_client_kwargs
 
 def index(request):
     ctx = RequestContext(request)
@@ -28,9 +24,8 @@ def index(request):
     provenances = client.projects.get_entries(_fields=mask, **kwargs).response().result
     for provenance in provenances['data']:
         entry = {'project': provenance['project']}
-        try:
-            entry['url'] = reverse(provenance['project'] + ':index')
-        except:
+        img_path = os.path.join(os.path.dirname(__file__), 'assets', 'images', provenance['project'] + '.jpg')
+        if not os.path.exists(img_path):
             entry['contribs'] = client.contributions.get_entries(
                 project=provenance['project'], **kwargs  # default limit 20
             ).response().result['data']

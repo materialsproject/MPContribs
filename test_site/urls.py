@@ -1,12 +1,12 @@
 from django.conf.urls import include, url
 from django.views.generic.base import RedirectView
+from webtzite import views
 
 urlpatterns = [
     url(r'', include('webtzite.urls')),
     url(r'', include('mpcontribs.portal.urls')),
     url(r'MnO2_phase_selection/', include('mpcontribs.users.MnO2_phase_selection.explorer.urls')),
     url(r'jarvis_nus/', include('mpcontribs.users.jarvis_nus.explorer.urls')),
-    url(r'defect_genome_pcfc_materials/', include('mpcontribs.users.defect_genome_pcfc_materials.explorer.urls')),
     url(r'slac_mose2/', include('mpcontribs.users.slac_mose2.explorer.urls')),
     url(r'swf/', include('mpcontribs.users.swf.explorer.urls')),
     url(r'fe-co-v/', RedirectView.as_view(url='/swf', permanent=False)),
@@ -23,4 +23,5 @@ urlpatterns = [
     url(r'dilute_solute_diffusion/', include('mpcontribs.users.dilute_solute_diffusion.explorer.urls')),
     url(r'redox_thermo_csp/', include('mpcontribs.users.redox_thermo_csp.explorer.urls')),
     url(r'bioi_defects/', include('mpcontribs.users.bioi_defects.explorer.urls')),
+    url(r'[a-z_]/', views.index)
 ]
