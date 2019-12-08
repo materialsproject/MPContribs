@@ -62,26 +62,31 @@ TEMPLATE = {
         its contributions, tables, and structures. These are separately set to public individually or in bulk.'''
     }, {
         'name': 'contributions', 'description': 'contain simple hierarchical data which will show up on the MP details \
-        page for MP material(s). Tables (rows and columns) as well as structures can be added to a contribution. \
-        Each contribution uses `mp-id` or composition as identifier to associate its data \
-        with the according entries on MP. Only admins or users on the project can create, update or delete \
-        contributions, and while unpublished, retrieve its data or view it on the \
-        <a href="https://portal.mpcontribs.org">Portal</a>. Deletion of a contribution also removes associated tables, \
-        structure, notebooks, and cards.'
+        page for MP material(s) - see cards below. Tables (rows and columns) as well as structures can be added to a \
+        contribution. Each contribution uses `mp-id` or composition as identifier to associate its data with the \
+        according entries on MP. Only admins or users on the project can create, update or delete contributions, and \
+        while unpublished, retrieve its data or view it on the <a href="https://portal.mpcontribs.org">Portal</a>. The \
+        same permission controls are in place for associated tables, structures, notebooks, and cards. These \
+        contribution components are deleted along with a contribution.'
     }, {
         'name': 'tables', 'description': 'are simple spreadsheet-type tables with columns and rows saved as Pandas \
         <a href="https://pandas.pydata.org/pandas-docs/stable/getting_started/dsintro.html#dataframe">DataFrames</a> \
-        which can be added to a contribution. Only admins or users on the project can create, update or delete tables, \
-        and while unpublished, retrieve or view them on the <a href="https://portal.mpcontribs.org">Portal</a>.'
+        which can be added to a contribution.'
     }, {
         'name': 'structures', 'description': 'are \
         <a href="https://pymatgen.org/_modules/pymatgen/core/structure.html#Structure">pymatgen structures</a> which \
-        can be added to a contribution. Only admins or users on the project can create, update or delete structures, \
-        and while unpublished, retrieve or view them on the <a href="https://portal.mpcontribs.org">Portal</a>.'
+        can be added to a contribution.'
     }, {
-        'name': 'notebooks', 'description': 'TODO'
+        'name': 'notebooks', 'description': 'are Jupyter \
+        <a href="https://jupyter-notebook.readthedocs.io/en/stable/notebook.html#notebook-documents">notebook</a> \
+        documents generated and saved on first request for every contribution. They form the basis for Contribution \
+        Details Pages on the <a href="https://portal.mpcontribs.org">Portal</a>.'
     }, {
-        'name': 'cards', 'description': 'TODO'
+        'name': 'cards', 'description': 'are pre-generated embeddable previews (HTML) for each contribution shown on \
+        the MP material details pages.'
+    }, {
+        'name': 'redox_thermo_csp', 'description': 'is a dedicated endpoint to retrieve data for the \
+        <a href="https://portal.mpcontribs.org/redox_thermo_csp/">RedoxThermoCSP</a> landing page.'
     }],
     "securityDefinitions": {
         "ApiKeyAuth": {

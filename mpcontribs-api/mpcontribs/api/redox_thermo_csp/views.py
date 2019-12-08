@@ -1874,6 +1874,7 @@ class EnergyAnalysisView(SwaggerView):
 
         return {'data': response}
 
+# TODO these views do not check group permissions!
 isograph_view = IsographView.as_view(IsographView.__name__)
 energy_analysis_view = EnergyAnalysisView.as_view(EnergyAnalysisView.__name__)
 redox_thermo_csp.add_url_rule('/energy/', view_func=energy_analysis_view, methods=['GET'])

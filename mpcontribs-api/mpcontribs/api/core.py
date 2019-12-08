@@ -236,28 +236,30 @@ class SwaggerViewType(MethodViewType):
             views_path = cls.__module__.split('.')
             doc_path = '.'.join(views_path[:-1] + ['document'])
             cls.tags = [views_path[-2]]
-            cls.doc_name = cls.tags[0].capitalize()
-            Model = getattr(import_module(doc_path), cls.doc_name)
-            cls.schema_name = cls.doc_name + 'Schema'
-            cls.Schema = type(cls.schema_name, (ModelSchema, object), {
-                'Meta': type('Meta', (object,), dict(
-                    model=Model, ordered=True, model_build_obj=False
-                ))
-            })
-            cls.definitions = {cls.schema_name: cls.Schema}
-            cls.resource.schema = cls.Schema
+            doc_filepath = doc_path.replace('.', os.sep) + '.py'
+            if os.path.exists(doc_filepath):
+                cls.doc_name = cls.tags[0].capitalize()
+                Model = getattr(import_module(doc_path), cls.doc_name)
+                cls.schema_name = cls.doc_name + 'Schema'
+                cls.Schema = type(cls.schema_name, (ModelSchema, object), {
+                    'Meta': type('Meta', (object,), dict(
+                        model=Model, ordered=True, model_build_obj=False
+                    ))
+                })
+                cls.definitions = {cls.schema_name: cls.Schema}
+                cls.resource.schema = cls.Schema
 
-            # write flask-mongorest swagger specs
-            for method in cls.methods:
-                spec = get_specs(cls, method, cls.tags[0])
-                if spec:
-                    dir_path = os.path.join(SWAGGER["doc_dir"], cls.tags[0])
-                    if not os.path.exists(dir_path):
-                        os.makedirs(dir_path)
+                # write flask-mongorest swagger specs
+                for method in cls.methods:
+                    spec = get_specs(cls, method, cls.tags[0])
+                    if spec:
+                        dir_path = os.path.join(SWAGGER["doc_dir"], cls.tags[0])
+                        if not os.path.exists(dir_path):
+                            os.makedirs(dir_path)
 
-                    file_path = os.path.join(dir_path, method.__name__ + '.yml')
-                    with open(file_path, 'w') as f:
-                        yaml.dump(spec, f)
+                        file_path = os.path.join(dir_path, method.__name__ + '.yml')
+                        with open(file_path, 'w') as f:
+                            yaml.dump(spec, f)
 
 
 class SwaggerView(OriginalSwaggerView, ResourceView, metaclass=SwaggerViewType):
