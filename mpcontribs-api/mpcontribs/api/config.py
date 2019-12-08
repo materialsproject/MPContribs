@@ -69,7 +69,10 @@ TEMPLATE = {
         <a href="https://portal.mpcontribs.org">Portal</a>. Deletion of a contribution also removes associated tables, \
         structure, notebooks, and cards.'
     }, {
-        'name': 'tables', 'description': 'TODO'
+        'name': 'tables', 'description': 'are simple spreadsheet-type tables with columns and rows saved as Pandas \
+        <a href="https://pandas.pydata.org/pandas-docs/stable/getting_started/dsintro.html#dataframe">DataFrames</a> \
+        which can be added to a contribution. Only admins or users on the project can create, update or delete tables, \
+        and while unpublished, retrieve or view them on the <a href="https://portal.mpcontribs.org">Portal</a>.'
     }, {
         'name': 'structures', 'description': 'are \
         <a href="https://pymatgen.org/_modules/pymatgen/core/structure.html#Structure">pymatgen structures</a> which \
