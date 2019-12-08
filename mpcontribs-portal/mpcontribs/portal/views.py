@@ -86,7 +86,7 @@ def contribution(request, cid):
             raise HTTPTimeoutError
         ctx['nb'], ctx['js'] = export_notebook(nb, cid)
     except HTTPTimeoutError:
-        ctx['alert'] = 'First build of detail page ongoing. Automatic reload in 10s.'
+        ctx['alert'] = 'First build of detail page ongoing. Automatic reload in 15s.'
     return render(request, "mpcontribs_portal_contribution.html", ctx.flatten())
 
 

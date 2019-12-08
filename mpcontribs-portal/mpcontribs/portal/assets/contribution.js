@@ -3,7 +3,7 @@ import 'toggle';
 
 $(document).ready(function () {
     if ( document.getElementById("alert") !== null ) {
-        window.setTimeout(function() { location.reload(); }, 10000);
+        window.setTimeout(function() { location.reload(); }, 15000);
     } else {
 
         $('.anchor-link').each(function(index, anchor) {

@@ -14,6 +14,8 @@ from tornado.escape import json_encode
 from mpcontribs.api.core import SwaggerView
 from mpcontribs.api.notebooks.document import Notebooks
 from mpcontribs.api.contributions.document import Contributions
+from mpcontribs.api.tables.document import Tables
+from mpcontribs.api.structures.document import Structures
 
 templates = os.path.join(
     os.path.dirname(flask_mongorest.__file__), 'templates'
@@ -108,7 +110,7 @@ class NotebooksView(SwaggerView):
                 contrib = Contributions.objects.only('project', 'is_public').get(id=cid)
                 nb = Notebooks(
                     id=cid,  # to link to the according contribution
-                    project=contrib.project, is_public=contrib.is_public
+                    project=contrib.project.id, is_public=contrib.is_public
                 )
                 nb.save()  # calls Notebooks.clean()
                 return self.get(**kwargs)
@@ -138,7 +140,7 @@ class NotebooksView(SwaggerView):
                 )
             ]
 
-            tables = [t.id for t in contrib['tables']]
+            tables = [t.id for t in Tables.objects.only('id').filter(contribution=cid)]
             if tables:
                 cells.append(nbf.new_markdown_cell(
                     f"## Tabular Data for {contrib['identifier']}"
@@ -152,7 +154,7 @@ class NotebooksView(SwaggerView):
                         "Plot.from_dict(table)"
                     ))
 
-            structures = [s.id for s in contrib['structures']]
+            structures = [s.id for s in Structures.objects.only('id').filter(contribution=cid)]
             if structures:
                 cells.append(nbf.new_markdown_cell(
                     f"## Pymatgen Structures for {contrib['identifier']}"
