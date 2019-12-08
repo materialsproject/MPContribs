@@ -77,7 +77,6 @@ class ProjectsResource(Resource):
                 else:
                     columns.append('CIF')
 
-            print(columns)
             return sorted(columns)
         else:
             raise UnknownFieldError

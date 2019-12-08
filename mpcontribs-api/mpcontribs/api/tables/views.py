@@ -45,7 +45,7 @@ class TablesResource(Resource):
         if field == 'total_rows':
             return total_rows
         elif field == 'total_pages':
-            per_page = int(self.params.get('data_per_page'))
+            per_page = int(self.params.get('data_per_page', self.fields_to_paginate['data'][0]))
             return int(total_rows/per_page) + bool(total_rows % per_page)
         else:
             raise UnknownFieldError
