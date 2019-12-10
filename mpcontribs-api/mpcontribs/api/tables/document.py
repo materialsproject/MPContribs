@@ -19,4 +19,6 @@ class Tables(Document):
     columns = ListField(StringField(), required=True, help_text="column names")
     data = ListField(ListField(StringField()), required=True, help_text="table rows")
     config = DictField(help_text="graph config")
-    meta = {'collection': 'tables', 'indexes': ['name', 'columns']}
+    meta = {'collection': 'tables', 'indexes': [
+        'project', 'contribution', 'is_public', 'name', 'columns'
+    ]}

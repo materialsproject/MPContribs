@@ -9,4 +9,4 @@ class Contributions(Document):
     identifier = StringField(required=True, help_text="material/composition identifier")
     is_public = BooleanField(required=True, default=False, help_text='public/private contribution')
     data = DictField(help_text='free-form data to be shown in Contribution Card')
-    meta = {'collection': 'contributions', 'indexes': ['identifier', 'is_public']}
+    meta = {'collection': 'contributions', 'indexes': ['project', 'identifier', 'is_public']}

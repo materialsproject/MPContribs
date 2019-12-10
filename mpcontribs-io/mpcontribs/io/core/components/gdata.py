@@ -38,16 +38,13 @@ pio.renderers.render_on_display = True
 
 class Plot(object):
     """class to hold and display single interactive graph/plot"""
-    def __init__(self, table, config=None, tid=None):
+    def __init__(self, table, config=None):
         self.table = table
         self.config = config or {}
-        self.tid = tid
 
     @classmethod
     def from_dict(cls, d):
-        return cls(
-            Table.from_dict(d), config=d.get('config'), tid=d['id']
-        )
+        return cls(Table.from_dict(d), config=d.get('config'))
 
     def get_figure(self):
         from pandas import MultiIndex
@@ -108,7 +105,7 @@ class Plot(object):
         renderers = ['jupyterlab']
         renderers.append('png' if static_fig else 'my_renderer')
         pio.renderers.default = '+'.join(renderers)
-        pio.show(fig, tid=self.tid)
+        pio.show(fig, tid=self.table.tid)
 
 
 class Plots(RecursiveDict):

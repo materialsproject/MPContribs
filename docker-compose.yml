@@ -87,6 +87,9 @@ services:
             - ./mpcontribs-io:/home/jovyan/mpcontribs-io
             - ./mpcontribs-client:/home/jovyan/mpcontribs-client
             - ./binder/notebooks:/home/jovyan/binder/notebooks
+            - ./webpack-binder.config.js:/home/jovyan/webpack.config.js
+            - ./binder/binder.js:/home/jovyan/binder.js
+            - ./mpcontribs-webtzite:/home/jovyan/mpcontribs-webtzite
 
     jhub:
         build: ./jhub

@@ -13,23 +13,22 @@ window.render_table = function(props) {
     var config = props.config;
     var Row = Backbone.Model.extend({});
     var rows_opt = {
-        model: Row, state: {
-            pageSize: 20, order: 1, sortKey: "identifier", totalRecords: config.total_records
-        }
+        model: Row, state: {pageSize: 20, totalRecords: config.total_records},
+        queryParams: {currentPage: 'data_page', pageSize: 'data_per_page'}
     };
 
-    if (typeof config.project !== 'undefined') {
+    if (typeof config.tid !== 'undefined') {
+        rows_opt["url"] = window.api['host'] + 'tables/' + config.tid + '/?_fields=_all';
+        if (config.per_page) {
+            rows_opt["url"] += '?data_per_page=' + config.per_page;
+        }
+    } else {
         var cols = $.map(props.table['columns'].slice(3), function(col) {
             return col['name'].split(' ')[0];
         })
         rows_opt["url"] = window.api['host'] + 'projects/' + config.project + '/table?columns=' + cols.join(',');
         if (config.filters) {
             rows_opt["url"] += '&filters=' + config.filters.join(',');
-        }
-    } else {
-        rows_opt["url"] = window.api['host'] + 'tables/' + config.cid + '/' + config.name;
-        if (config.per_page) {
-            rows_opt["url"] += '?per_page=' + config.per_page;
         }
     }
 
@@ -49,11 +48,23 @@ window.render_table = function(props) {
     }
     rows_opt["parseState"] = function (resp, queryParams, state, options) {
         return {
-            totalRecords: resp.total_count, totalPages: resp.total_pages,
-            currentPage: resp.page, lastPage: resp.last_page
+            totalRecords: resp.total_rows, totalPages: resp.total_pages,
+            lastPage: resp.total_pages
         };
     }
-    rows_opt["parseRecords"] = function (resp, options) { return resp.items; }
+    rows_opt["parseRecords"] = function (resp, options) {
+        console.log(resp)
+        var items = [];
+        for (var i = 0; i < resp.data.length; i++) {
+            var item = {};
+            for (var j = 0; j < resp.data[i].length; j++) {
+                var column = resp.columns[j];
+                item[column] = resp.data[i][j];
+            }
+            items.push(item);
+        }
+        return items;
+    }
 
     var Rows = Backbone.PageableCollection.extend(rows_opt);
     var ClickableCell = Backgrid.StringCell.extend({
@@ -63,6 +74,9 @@ window.render_table = function(props) {
 
     var objectid_regex = /^[a-f\d]{24}$/i;
     for (var idx in props.table['columns']) {
+        if (typeof config.tid !== 'undefined') { // switch of sorting for non-project tables
+            props.table['columns'][idx]['sortable'] = false;
+        }
         if (props.table['columns'][idx]['cell'] == 'uri') {
             props.table['columns'][idx]['formatter'] = _.extend({}, Backgrid.CellFormatter.prototype, {
                 fromRaw: function (rawValue, model) {

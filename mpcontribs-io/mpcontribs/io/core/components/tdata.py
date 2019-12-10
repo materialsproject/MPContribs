@@ -9,16 +9,14 @@ from urllib.parse import urlparse
 
 
 class Table(pd.DataFrame):
-    def __init__(self, data, columns=None, index=None,
-                 cid=None, name=None, api_key=None, project=None,
-                 ncols=12, per_page=None, filters=None):
+    def __init__(self, data, columns=None, index=None, api_key=None,
+                 ncols=12, per_page=None, filters=None, **kwargs):
         if columns is None:
             columns = list(data[0].keys())
         super(Table, self).__init__(data=data, index=index, columns=columns)
-        self.cid = cid
-        self.name = name
+        self.tid = kwargs.get('id')
         self.api_key = api_key
-        self.project = project
+        self.project = kwargs.get('project')
         self.ncols = ncols
         self.per_page = per_page
         self.filters = filters
@@ -40,13 +38,9 @@ class Table(pd.DataFrame):
         if 'index' in d:
             from pandas import MultiIndex
             index = MultiIndex.from_tuples(d['index'])
-        obj = cls(
-            d['data'], columns=d['columns'], index=index,
-            cid=d['cid'], name=d['name']
-        ) if 'cid' in d and 'name' in d else cls(
-            d['data'], columns=d['columns'], index=index
-        )
-        return obj
+        skip = {'data', 'columns', 'index'}
+        kwargs = dict((k, v) for k, v in d.items() if k not in skip)
+        return cls(d['data'], columns=d['columns'], index=index, **kwargs)
 
     @classmethod
     def from_items(cls, rdct, **kwargs):
@@ -121,9 +115,8 @@ class Table(pd.DataFrame):
             total_records = self.shape[0]
         config = {"total_records": total_records}
         config['uuids'] = [str(uuid.uuid4()) for i in range(4)]
-        if self.project is None:
-            config['name'] = self.name
-            config['cid'] = self.cid
+        if self.tid:
+            config['tid'] = self.tid
             config['per_page'] = self.per_page
         else:
             config['project'] = self.project
