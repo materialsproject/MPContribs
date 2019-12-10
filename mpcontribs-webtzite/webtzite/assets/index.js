@@ -63,13 +63,22 @@ $(document).ready(function () {
         window.location.href = '/'+project+'/';
     });
     $('a[name="read_more"]').on('click', function() {
-        $(this).css('display', 'none');
-        $(this).next('span[name="read_more"]').css('display', 'block');
+        $(this).hide();
+        var el = $(this).next('[name="read_more"]');
+        var data = el.data('renderjson');
+        if (data) { render_json({divid: el.attr('id'), data: data}); }
+        el.show();
     });
     if ($("#graph").length) {
         var project = window.location.pathname;
         import(/* webpackChunkName: "project" */ `../../../mpcontribs-users/mpcontribs/users${project}explorer/assets/index.js`)
             .catch(function(err) { console.error(err); });
+    }
+    if ($("#table").length) {
+        var table = {'columns': $('#table').data('columns')};
+        var config = {'project': $('#table').data('project'), 'ncols': 12};
+        config['uuids'] = ['table_filter', 'table', 'table_pagination', 'table_columns'];
+        render_table({table: table, config: config});
     }
     $('header').show();
     $('.container').show();

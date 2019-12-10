@@ -42,6 +42,10 @@
             <span name="read_more" hidden>{{ descriptions.1 }}</span>
             {% endif %}
             </p>
+            {% if other and other.strip != 'null' %}
+            <a name="read_more">Other Info &raquo;</a>
+            <div name="read_more" id=other style="width:100%;" data-renderjson='{{ other }}' hidden></div>
+            {% endif %}
         </div>
     </div>
     {% block extra_content %}
@@ -52,11 +56,16 @@
             <div id="graph" style="width: 100%;"></div>
         </div>
     </div>
+    {% if columns and columns.strip != 'null' %}
     <div class="row">
         <div class="col-md-12">
             <div id="spinner_table"></div>
-            {{ table|safe }}
+            <div class="col-md-6" id=table_filter></div>
+            <div class="pull-right" id=table_columns></div>
+            <div id=table style="width:100%;" data-columns='{{ columns }}' data-project='{{ project }}'></div>
+            <div id=table_pagination></div>
         </div>
     </div>
+    {% endif %}
 </div>
 {% endblock %}

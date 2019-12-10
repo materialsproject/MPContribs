@@ -7,28 +7,63 @@ import 'backgrid-columnmanager';
 import {Spinner} from 'spin.js';
 
 var spinner_table = new Spinner({scale: 0.5});
+const devMode = process.env.NODE_ENV == 'development';
+var portal = devMode ? 'http://localhost:8080' : 'https://portal.mpcontribs.org';
+var mp_site = 'https://materialsproject.org/materials';
 
 window.render_table = function(props) {
 
     var config = props.config;
     var Row = Backbone.Model.extend({});
-    var rows_opt = {
-        model: Row, state: {pageSize: 20, totalRecords: config.total_records},
-        queryParams: {currentPage: 'data_page', pageSize: 'data_per_page'}
-    };
+    var rows_opt = {model: Row, state: {pageSize: 20}};
 
     if (typeof config.tid !== 'undefined') {
         rows_opt["url"] = window.api['host'] + 'tables/' + config.tid + '/?_fields=_all';
         if (config.per_page) {
             rows_opt["url"] += '?data_per_page=' + config.per_page;
         }
+        rows_opt['queryParams'] = {currentPage: 'data_page', pageSize: 'data_per_page'}
+        rows_opt["parseRecords"] = function (resp, options) {
+            var items = [];
+            for (var i = 0; i < resp.data.length; i++) {
+                var item = {};
+                for (var j = 0; j < resp.data[i].length; j++) {
+                    var column = resp.columns[j];
+                    item[column] = resp.data[i][j];
+                }
+                items.push(item);
+            }
+            return items;
+        }
     } else {
-        var cols = $.map(props.table['columns'].slice(3), function(col) {
-            return col['name'].split(' ')[0];
-        })
-        rows_opt["url"] = window.api['host'] + 'projects/' + config.project + '/table?columns=' + cols.join(',');
-        if (config.filters) {
-            rows_opt["url"] += '&filters=' + config.filters.join(',');
+        rows_opt["url"] = window.api['host'] + 'contributions/?_fields=_all&project=' + config.project;
+        rows_opt["parseRecords"] = function (resp, options) {
+            return $.map(resp.data, function(doc) {
+                var item = {
+                    'identifier': [mp_site, doc.identifier].join('/'),
+                    'id': [portal, doc.id].join('/')
+                };
+                $.each(doc.data, function(col, val) {
+                    if ($.isPlainObject(val)) {
+                        item[col + ' [' + val.unit + ']'] = val.value;
+                    } else {
+                        var is_mp_id = val.startsWith('mp-') || val.startsWith('mvc-');
+                        item[col] = is_mp_id ? [mp_site, val].join('/') : val;
+                    }
+                    //    cell = ''
+                    //    if 'CIF' in col:
+                    //          structures = doc['structures']
+                    //          if '.' in col:  # grouped columns
+                    //              sname = '.'.join(col.split('.')[:-1])  # remove CIF string from field name
+                    //              for d in structures:
+                    //                  if d['name'] == sname:
+                    //                      cell = f"{portal}/{d['id']}.cif"
+                    //                      break
+                    //          elif structures:
+                    //              cell = f"{portal}/{structures[0]['id']}.cif"
+                });
+                return item;
+            });
         }
     }
 
@@ -48,22 +83,8 @@ window.render_table = function(props) {
     }
     rows_opt["parseState"] = function (resp, queryParams, state, options) {
         return {
-            totalRecords: resp.total_rows, totalPages: resp.total_pages,
-            lastPage: resp.total_pages
+            totalRecords: resp.total_rows, totalPages: resp.total_pages, lastPage: resp.total_pages
         };
-    }
-    rows_opt["parseRecords"] = function (resp, options) {
-        console.log(resp)
-        var items = [];
-        for (var i = 0; i < resp.data.length; i++) {
-            var item = {};
-            for (var j = 0; j < resp.data[i].length; j++) {
-                var column = resp.columns[j];
-                item[column] = resp.data[i][j];
-            }
-            items.push(item);
-        }
-        return items;
     }
 
     var Rows = Backbone.PageableCollection.extend(rows_opt);
@@ -74,7 +95,7 @@ window.render_table = function(props) {
 
     var objectid_regex = /^[a-f\d]{24}$/i;
     for (var idx in props.table['columns']) {
-        if (typeof config.tid !== 'undefined') { // switch of sorting for non-project tables
+        if (typeof config.tid !== 'undefined') { // switch off sorting for non-project tables
             props.table['columns'][idx]['sortable'] = false;
         }
         if (props.table['columns'][idx]['cell'] == 'uri') {

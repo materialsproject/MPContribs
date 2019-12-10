@@ -1,7 +1,6 @@
+import json
+from django.conf import settings
 from mpcontribs.client import load_client
-from mpcontribs.io.core.recdict import RecursiveDict
-from mpcontribs.io.core.components.tdata import Table
-from mpcontribs.io.core.utils import get_short_object_id
 
 def get_client_kwargs(request):
     name = 'X-Consumer-Groups'
@@ -9,50 +8,38 @@ def get_client_kwargs(request):
     value = request.META.get(key)
     return {'_request_options': {"headers": {name: value}}} if value else {}
 
-def get_context(request, project, columns=None):
+def get_context(request, project):
     ctx = {'project': project}
     kwargs = get_client_kwargs(request)
     client = load_client()
 
     mask = ["title", "authors", "description", "urls", "other", "columns"]
     prov = client.projects.get_entry(pk=project, _fields=mask, **kwargs).response().result
-    prov.pop('project')
+    ctx['project'] = project
     ctx['title'] = prov.pop('title')
     ctx['descriptions'] = prov['description'].strip().split('.', 1)
     authors = [a.strip() for a in prov['authors'].split(',') if a]
     ctx['authors'] = {'main': authors[0], 'etal': authors[1:]}
     ctx['urls'] = list(prov['urls'].values())
-    if prov['other']:
-        ctx['other'] = RecursiveDict(prov['other']).render()
+    ctx['other'] = json.dumps(prov.get('other'))
+    ctx['columns'] = json.dumps([
+        {'name': col, 'cell': 'uri', 'editable': 0}
+        for col in ['identifier', 'id']
+    ] + [
+        {'name': col, 'cell': 'string', 'editable': 0} # 'nesting': nesting,
+        for col in prov['columns']
+    ])
 
-    ctx['contribs'] = []
-    for contrib in client.contributions.get_entries(
-        project=project, _fields=['id', 'identifier', 'data.formula']
-    ).response().result['data']:
-        contrib['formula'] = contrib['data'].pop('formula')
-        contrib['short_cid'] = get_short_object_id(contrib['id'])
-        ctx['contribs'].append(contrib)
+    # TODO contribs key is only used in dilute_diffusion and should go through the table
+    #from mpcontribs.io.core.utils import get_short_object_id
+    #ctx['contribs'] = []
+    #for contrib in client.contributions.get_entries(
+    #    project=project, _fields=['id', 'identifier', 'data.formula']
+    #).response().result['data']:
+    #    formula = contrib.get('data', {}).get('formula')
+    #    if formula:
+    #        contrib['formula'] = formula
+    #        contrib['short_cid'] = get_short_object_id(contrib['id'])
+    #        ctx['contribs'].append(contrib)
 
-    all_columns = prov['columns']
-    if not all_columns:
-        ctx['table'] = ''
-        return ctx
-    if columns:
-        ncols = len(columns) + 3
-        columns += [
-            col for col in all_columns
-            if col not in columns and col != 'formula'
-        ]
-    else:
-        ncols, columns = 12, list(all_columns)
-    data = client.projects.get_table(
-        pk=project, columns=columns, per_page=3
-    ).response().result
-    if data['items']:
-        columns = list(data['items'][0].keys())
-        table = Table(
-            data['items'], columns=columns,
-            project=project, ncols=ncols
-        )
-        ctx['table'] = table.render()
     return ctx
