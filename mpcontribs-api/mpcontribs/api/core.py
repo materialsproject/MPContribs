@@ -113,6 +113,8 @@ def get_specs(klass, method, collection):
         }
         if klass.resource.paginate:
             schema_props['has_more'] = {'type': 'boolean'}
+            schema_props['total_count'] = {'type': 'integer'}
+            schema_props['total_pages'] = {'type': 'integer'}
             params.append({
                 'name': '_skip',
                 'in': 'query',
@@ -124,6 +126,18 @@ def get_specs(klass, method, collection):
                 'in': 'query',
                 'type': 'integer',
                 'description': 'maximum number of items to return'
+            })
+            params.append({
+                'name': 'page',
+                'in': 'query',
+                'type': 'integer',
+                'description': 'page number to return (in batches of `per_page/_limit`; alternative to `_skip`)'
+            })
+            params.append({
+                'name': 'per_page',
+                'in': 'query',
+                'type': 'integer',
+                'description': 'maximum number of items to return per page (same as `_limit`)'
             })
 
         spec = {
