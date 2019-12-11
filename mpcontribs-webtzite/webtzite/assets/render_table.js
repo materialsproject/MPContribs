@@ -174,7 +174,7 @@ window.render_table = function(props) {
     var columns_list = $('#columns_list');
     if (columns_list.length) {
         columns_list.on('select2:select', function (e) {
-            var column = e.params.data.text;
+            var column = e.params.data.text.replace(/\./g, '__');
             filter.name = column + '__contains';
             if (column !== 'identifier') { filter.name = 'data__' + filter.name; }
         });

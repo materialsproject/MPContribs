@@ -24,7 +24,7 @@ def get_context(request, project):
     ctx['other'] = json.dumps(prov.get('other'))
     ctx['columns'] = ['identifier', 'id'] + prov['columns']
     ctx['search_columns'] = ['identifier'] + [
-        col for col in prov['columns'] if not col.endswith(']') and col != 'CIF'
+        col for col in prov['columns'] if not col.endswith(']') and not col.endswith('CIF')
     ]
 
     # TODO contribs key is only used in dilute_diffusion and should go through the table

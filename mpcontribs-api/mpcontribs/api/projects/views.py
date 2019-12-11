@@ -69,14 +69,15 @@ class ProjectsResource(Resource):
 
             columns = []
             for col in objects[0]['columns']:
-                unit_field = f'data.{col}.unit'
-                unit_query = {f'data__{col.replace(".", "__")}__exists': True}
-                unit_sample = Contributions.objects.only(unit_field).filter(**unit_query).first()
-                try:
-                    unit = deep_get(unit_sample, unit_field)
-                    columns.append(f'{col} [{unit}]')
-                except KeyError:  # column doesn't have a unit
-                    columns.append(col)
+                if not col.startswith('modal.'):
+                    unit_field = f'data.{col}.unit'
+                    unit_query = {f'data__{col.replace(".", "__")}__exists': True}
+                    unit_sample = Contributions.objects.only(unit_field).filter(**unit_query).first()
+                    try:
+                        unit = deep_get(unit_sample, unit_field)
+                        columns.append(f'{col} [{unit}]')
+                    except KeyError:  # column doesn't have a unit
+                        columns.append(col)
 
             projects = sorted(obj.id.split('_'))
             names = Structures.objects(project=obj.id).distinct("name")
