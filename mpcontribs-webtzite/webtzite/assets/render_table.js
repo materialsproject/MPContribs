@@ -11,6 +11,21 @@ const devMode = process.env.NODE_ENV == 'development';
 var portal = devMode ? 'http://localhost:8080/' : 'https://portal.mpcontribs.org/';
 var mp_site = 'https://materialsproject.org/materials/';
 
+function get_label_cell(col, val) {
+    var label = col;
+    var cell = null;
+    if ($.type(val) === 'string') {
+        var is_mp_id = val.startsWith('mp-') || val.startsWith('mvc-');
+        cell = is_mp_id ? [mp_site, val].join('/') : val;
+    } else if (typeof val.unit !== 'undefined') {
+        label = col + ' [' + val.unit + ']';
+        cell = val.value;
+    } else if (typeof val.value !== 'undefined') {
+        cell = val.value;
+    }
+    return {'label': label, 'cell': cell}
+}
+
 window.render_table = function(props) {
 
     var config = props.config;
@@ -48,11 +63,17 @@ window.render_table = function(props) {
             return $.map(resp.data, function(doc) {
                 var item = {'identifier': mp_site + doc.identifier, 'id': portal + doc.id};
                 $.each(doc.data, function(col, val) {
-                    if ($.isPlainObject(val)) {
-                        item[col + ' [' + val.unit + ']'] = val.value;
-                    } else {
-                        var is_mp_id = val.startsWith('mp-') || val.startsWith('mvc-');
-                        item[col] = is_mp_id ? [mp_site, val].join('/') : val;
+                    var label_cell = get_label_cell(col, val);
+                    if (label_cell.cell) {
+                        item[label_cell.label] = label_cell.cell;
+                    } else if (! $.isEmptyObject(val)) { // only two levels
+                        $.each(val, function(col2, val2) {
+                            var label_cell2 = get_label_cell(col2, val2);
+                            if (label_cell2.cell) {
+                                var label = col + '.' + label_cell2.label;
+                                item[label] = label_cell2.cell;
+                            }
+                        });
                     }
                 });
                 var nr_structures = doc.structures.length;

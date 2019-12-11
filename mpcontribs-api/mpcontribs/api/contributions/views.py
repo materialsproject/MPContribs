@@ -50,9 +50,3 @@ class ContributionsResource(Resource):
 class ContributionsView(SwaggerView):
     resource = ContributionsResource
     methods = [List, Fetch, Create, Delete, Update, BulkUpdate]
-
-    # TODO unpack display from dict
-    # https://github.com/tschaume/flask-mongorest/blob/9a04099daf9a93eefd6fd2ee906c29ffbb87789f/flask_mongorest/resources.py#L401
-    # unflatten(dict(
-    #     (k, v) for k, v in get_cleaned_data(<serialize_dict_field>).items()
-    # ))

@@ -77,9 +77,12 @@ $(document).ready(function () {
     $('#columns_list').select2({width: '100%', minimumResultsForSearch: -1});
     if ($("#table").length) {
         var columns = $.map($('#table').data('columns').split(','), function(col) {
-            // TODO 'nesting': nesting,
-            var cell_type = ['identifier', 'id'].indexOf(col) >= 0 || col.endsWith('CIF') ? 'uri' : 'string';
-            return {'name': col, 'cell': cell_type, 'editable': 0}
+            var cell_type = col === 'identifier' || col.endsWith('id') || col.endsWith('CIF') ? 'uri' : 'string';
+            var col_split = col.split('.');
+            var nesting = col_split.length > 1 ? [col_split[0]] : [];
+            var col_dct =  {'name': col, 'cell': cell_type, 'editable': 0, 'nesting': nesting};
+            if (col_split.length > 1) { col_dct['label'] = col_split.slice(1).join('.'); }
+            return col_dct
         });
         var table = {'columns': columns};
         var config = {'project': $('#table').data('project'), 'ncols': 12};
