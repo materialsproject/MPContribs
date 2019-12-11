@@ -20,5 +20,7 @@ class Tables(Document):
     data = ListField(ListField(StringField()), required=True, help_text="table rows")
     config = DictField(help_text="graph config")
     meta = {'collection': 'tables', 'indexes': [
-        'project', 'contribution', 'is_public', 'name', 'columns'
+        'project', 'contribution', 'is_public', 'name', 'columns',
+        {'fields': ('project', 'contribution')},
+        {'fields': ('project', 'contribution', 'name'), 'unique': True}
     ]}

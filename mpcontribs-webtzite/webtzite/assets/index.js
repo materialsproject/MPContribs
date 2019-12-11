@@ -78,7 +78,7 @@ $(document).ready(function () {
     if ($("#table").length) {
         var columns = $.map($('#table').data('columns').split(','), function(col) {
             // TODO 'nesting': nesting,
-            var cell_type = ['identifier', 'id'].indexOf(col) >= 0 ? 'uri' : 'string';
+            var cell_type = ['identifier', 'id'].indexOf(col) >= 0 || col.endsWith('CIF') ? 'uri' : 'string';
             return {'name': col, 'cell': cell_type, 'editable': 0}
         });
         var table = {'columns': columns};

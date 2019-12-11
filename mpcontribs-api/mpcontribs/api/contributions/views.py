@@ -7,6 +7,8 @@ from flask_mongorest import operators as ops
 from flask_mongorest.methods import List, Fetch, Create, Delete, Update, BulkUpdate
 from mpcontribs.api.core import SwaggerView
 from mpcontribs.api.contributions.document import Contributions
+from mpcontribs.api.structures.document import Structures
+from mpcontribs.api.tables.document import Tables
 
 templates = os.path.join(
     os.path.dirname(flask_mongorest.__file__), 'templates'
@@ -31,8 +33,18 @@ class ContributionsResource(Resource):
 
     @staticmethod
     def get_optional_fields():
-        return ['data']
+        return ['data', 'structures', 'tables']
 
+    def value_for_field(self, obj, field):
+        # add structures and tables info to response if requested
+        if field == 'structures':
+            structures = Structures.objects.only('id', 'name').filter(project=obj.project, contribution=obj.id)
+            return [{'id': s.id, 'name': s.name} for s in structures]
+        elif field == 'tables':
+            tables = Tables.objects.only('id', 'name').filter(project=obj.project, contribution=obj.id)
+            return [{'id': t.id, 'name': t.name} for t in tables]
+        else:
+            raise UnknownFieldError
 
 class ContributionsView(SwaggerView):
     resource = ContributionsResource

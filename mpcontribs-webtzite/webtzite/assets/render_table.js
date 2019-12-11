@@ -8,8 +8,8 @@ import {Spinner} from 'spin.js';
 
 var spinner_table = new Spinner({scale: 0.5});
 const devMode = process.env.NODE_ENV == 'development';
-var portal = devMode ? 'http://localhost:8080' : 'https://portal.mpcontribs.org';
-var mp_site = 'https://materialsproject.org/materials';
+var portal = devMode ? 'http://localhost:8080/' : 'https://portal.mpcontribs.org/';
+var mp_site = 'https://materialsproject.org/materials/';
 
 window.render_table = function(props) {
 
@@ -39,17 +39,14 @@ window.render_table = function(props) {
             return items;
         }
     } else {
-        rows_opt["url"] = window.api['host'] + 'contributions/?_fields=_all&project=' + config.project;
-        rows_opt['queryParams'] = {q: null};
+        var fields = ['id', 'identifier', 'project', 'data', 'structures'].join(',');
+        rows_opt["url"] = window.api['host'] + 'contributions/?_fields=' + fields + '&project=' + config.project;
         rows_opt["parseState"] = function (resp, queryParams, state, options) {
             return {totalRecords: resp.total_count, totalPages: resp.total_pages, lastPage: resp.total_pages};
         }
         rows_opt["parseRecords"] = function (resp, options) {
             return $.map(resp.data, function(doc) {
-                var item = {
-                    'identifier': [mp_site, doc.identifier].join('/'),
-                    'id': [portal, doc.id].join('/')
-                };
+                var item = {'identifier': mp_site + doc.identifier, 'id': portal + doc.id};
                 $.each(doc.data, function(col, val) {
                     if ($.isPlainObject(val)) {
                         item[col + ' [' + val.unit + ']'] = val.value;
@@ -57,18 +54,15 @@ window.render_table = function(props) {
                         var is_mp_id = val.startsWith('mp-') || val.startsWith('mvc-');
                         item[col] = is_mp_id ? [mp_site, val].join('/') : val;
                     }
-                    //    cell = ''
-                    //    if 'CIF' in col:
-                    //          structures = doc['structures']
-                    //          if '.' in col:  # grouped columns
-                    //              sname = '.'.join(col.split('.')[:-1])  # remove CIF string from field name
-                    //              for d in structures:
-                    //                  if d['name'] == sname:
-                    //                      cell = f"{portal}/{d['id']}.cif"
-                    //                      break
-                    //          elif structures:
-                    //              cell = f"{portal}/{structures[0]['id']}.cif"
                 });
+                var nr_structures = doc.structures.length;
+                if (nr_structures === 1) {
+                    item['CIF'] = portal + doc.structures[0]['id'] + '.cif';
+                } else if (nr_structures > 1) {
+                    $.each(doc.structures, function(idx, s) {
+                        item[s.name + '.CIF'] = portal + s.id + '.cif';
+                    });
+                }
                 return item;
             });
         }
