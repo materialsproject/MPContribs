@@ -74,8 +74,14 @@ $(document).ready(function () {
         import(/* webpackChunkName: "project" */ `../../../mpcontribs-users/mpcontribs/users${project}explorer/assets/index.js`)
             .catch(function(err) { console.error(err); });
     }
+    $('#columns_list').select2({width: '100%', minimumResultsForSearch: -1});
     if ($("#table").length) {
-        var table = {'columns': $('#table').data('columns')};
+        var columns = $.map($('#table').data('columns').split(','), function(col) {
+            // TODO 'nesting': nesting,
+            var cell_type = ['identifier', 'id'].indexOf(col) >= 0 ? 'uri' : 'string';
+            return {'name': col, 'cell': cell_type, 'editable': 0}
+        });
+        var table = {'columns': columns};
         var config = {'project': $('#table').data('project'), 'ncols': 12};
         config['uuids'] = ['table_filter', 'table', 'table_pagination', 'table_columns'];
         render_table({table: table, config: config});

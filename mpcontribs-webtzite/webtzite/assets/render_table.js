@@ -22,7 +22,10 @@ window.render_table = function(props) {
         if (config.per_page) {
             rows_opt["url"] += '?data_per_page=' + config.per_page;
         }
-        rows_opt['queryParams'] = {currentPage: 'data_page', pageSize: 'data_per_page'}
+        rows_opt['queryParams'] = {currentPage: 'data_page', pageSize: 'data_per_page'};
+        rows_opt["parseState"] = function (resp, queryParams, state, options) {
+            return {totalRecords: resp.total_rows, totalPages: resp.total_pages, lastPage: resp.total_pages};
+        }
         rows_opt["parseRecords"] = function (resp, options) {
             var items = [];
             for (var i = 0; i < resp.data.length; i++) {
@@ -37,6 +40,10 @@ window.render_table = function(props) {
         }
     } else {
         rows_opt["url"] = window.api['host'] + 'contributions/?_fields=_all&project=' + config.project;
+        rows_opt['queryParams'] = {q: null};
+        rows_opt["parseState"] = function (resp, queryParams, state, options) {
+            return {totalRecords: resp.total_count, totalPages: resp.total_pages, lastPage: resp.total_pages};
+        }
         rows_opt["parseRecords"] = function (resp, options) {
             return $.map(resp.data, function(doc) {
                 var item = {
@@ -80,11 +87,6 @@ window.render_table = function(props) {
             });
         };
         return Backbone.sync(method, model, options);
-    }
-    rows_opt["parseState"] = function (resp, queryParams, state, options) {
-        return {
-            totalRecords: resp.total_rows, totalPages: resp.total_pages, lastPage: resp.total_pages
-        };
     }
 
     var Rows = Backbone.PageableCollection.extend(rows_opt);
@@ -150,8 +152,18 @@ window.render_table = function(props) {
 
     var header = Backgrid.Extension.GroupedHeader;
     var grid = new Backgrid.Grid({header: header, columns: columns, collection: rows});
-    var filter_props = {collection: rows, placeholder: "Search (hit <enter>)", name: "q"};
+    var filter_props = {collection: rows, placeholder: "Search (hit <enter>)"};
     var filter = new Backgrid.Extension.ServerSideFilter(filter_props);
+    filter.name = 'identifier__contains';
+
+    var columns_list = $('#columns_list');
+    if (columns_list.length) {
+        columns_list.on('select2:select', function (e) {
+            var column = e.params.data.text;
+            filter.name = column + '__contains';
+            if (column !== 'identifier') { filter.name = 'data__' + filter.name; }
+        });
+    }
 
     if (typeof config.project !== 'undefined') {
         $("#"+config.uuids[3]).append(colVisibilityControl.render().el);

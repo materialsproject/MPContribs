@@ -58,11 +58,20 @@
     </div>
     {% if columns and columns.strip != 'null' %}
     <div class="row">
-        <div class="col-md-12">
+        <div class="col-md-2">
+            <select id="columns_list">
+                {% for col in search_columns %}
+                <option value="{{ col }}">{{ col }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-6" id=table_filter></div>
+        <div class="pull-right" id=table_columns></div>
+    </div>
+    <div class="row">
+        <div class="dropdown col-md-12">
             <div id="spinner_table"></div>
-            <div class="col-md-6" id=table_filter></div>
-            <div class="pull-right" id=table_columns></div>
-            <div id=table style="width:100%;" data-columns='{{ columns }}' data-project='{{ project }}'></div>
+            <div id=table style="width:100%;" data-columns='{{ columns|join:"," }}' data-project='{{ project }}'></div>
             <div id=table_pagination></div>
         </div>
     </div>

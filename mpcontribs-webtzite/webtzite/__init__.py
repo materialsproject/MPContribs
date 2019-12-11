@@ -22,13 +22,10 @@ def get_context(request, project):
     ctx['authors'] = {'main': authors[0], 'etal': authors[1:]}
     ctx['urls'] = list(prov['urls'].values())
     ctx['other'] = json.dumps(prov.get('other'))
-    ctx['columns'] = json.dumps([
-        {'name': col, 'cell': 'uri', 'editable': 0}
-        for col in ['identifier', 'id']
-    ] + [
-        {'name': col, 'cell': 'string', 'editable': 0} # 'nesting': nesting,
-        for col in prov['columns']
-    ])
+    ctx['columns'] = ['identifier', 'id'] + prov['columns']
+    ctx['search_columns'] = ['identifier'] + [
+        col for col in prov['columns'] if not col.endswith(']') and col != 'CIF'
+    ]
 
     # TODO contribs key is only used in dilute_diffusion and should go through the table
     #from mpcontribs.io.core.utils import get_short_object_id

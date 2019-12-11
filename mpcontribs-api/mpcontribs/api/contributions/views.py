@@ -1,3 +1,4 @@
+import re
 import os
 import flask_mongorest
 from flask import Blueprint
@@ -19,9 +20,7 @@ class ContributionsResource(Resource):
         'project': [ops.In, ops.Exact],
         'identifier': [ops.In, ops.Contains, ops.Exact],
         'is_public': [ops.Boolean],
-        'data__formula': [ops.Contains],
-        'data__C__value': [ops.Gt]
-        # query = construct_query(filters)  # TODO how to define filters on data?
+        re.compile(r'^(data__)((?!__).)*$'): [ops.Contains]
     }
     fields = ['id', 'project', 'identifier', 'is_public']
     allowed_ordering = ['project', 'identifier', 'is_public']
