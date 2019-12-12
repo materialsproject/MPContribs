@@ -3,12 +3,10 @@ from mongoengine.fields import StringField, BooleanField, DictField, URLField, M
 
 
 class Projects(Document):
-    __project_regex__ = '^[a-zA-Z0-9_]+$'
+    __project_regex__ = '^[a-zA-Z0-9_]{3,}$'
     project = StringField(
         min_length=3, max_length=30, regex=__project_regex__, primary_key=True,
-        help_text="project name/slug (valid format: `{}`)".format(
-            __project_regex__
-        )
+        help_text=f"project name/slug (valid format: `{__project_regex__}`)"
     )
     is_public = BooleanField(required=True, default=False, help_text='public/private project')
     title = StringField(

@@ -26,6 +26,7 @@ class Specie(EmbeddedDocument):
 
 class Properties(EmbeddedDocument):
     magmom = FloatField(min_value=0, help_text='magnetic moment')
+    velocities = ListField(FloatField(min_value=0), max_length=3, help_text='velocities')
 
 
 class Site(EmbeddedDocument):

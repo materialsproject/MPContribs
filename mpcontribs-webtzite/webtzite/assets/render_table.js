@@ -76,10 +76,10 @@ window.render_table = function(props) {
                 });
                 var nr_structures = doc.structures.length;
                 if (nr_structures === 1) {
-                    item['CIF'] = portal + doc.structures[0]['id'] + '.cif';
+                    item['data__CIF'] = portal + doc.structures[0]['id'] + '.cif';
                 } else if (nr_structures > 1) {
                     $.each(doc.structures, function(idx, s) {
-                        item[s.name + '.CIF'] = portal + s.id + '.cif';
+                        item['data__' + s.name + '__CIF'] = portal + s.id + '.cif';
                     });
                 }
                 return item;

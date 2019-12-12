@@ -91,3 +91,5 @@ def set_no_cache(headers, path, url):
 
 WHITENOISE_KEEP_ONLY_HASHED_FILES = True
 WHITENOISE_ADD_HEADERS_FUNCTION = set_no_cache
+
+APPEND_SLASH = False

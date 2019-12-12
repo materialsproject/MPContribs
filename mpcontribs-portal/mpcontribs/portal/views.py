@@ -6,6 +6,8 @@ import nbformat
 from nbconvert import HTMLExporter
 from bs4 import BeautifulSoup
 from fido.exceptions import HTTPTimeoutError
+from pandas.io.json._normalize import nested_to_record
+from pandas import DataFrame
 
 from django.shortcuts import render
 from django.template import RequestContext
@@ -109,3 +111,28 @@ def download_json(request, cid):
         response['Content-Disposition'] = 'attachment; filename={}.json'.format(cid)
         return response
     return HttpResponse(status=404)
+
+def csv(request, project):
+    print(project)
+    client = load_client()
+    kwargs = get_client_kwargs(request)
+    contribs = client.contributions.get_entries(
+        project=project, _fields=['identifier', 'id', 'data'], **kwargs
+    ).response().result['data']  # first 20 only
+
+    data = []
+    for contrib in contribs:
+        data.append({})
+        for k, v in nested_to_record(contrib, sep='.').items():
+            if v is not None and not k.endswith('.value') and not k.endswith('.unit'):
+                vs = v.split(' ')
+                if k.endswith('.display') and len(vs) > 1:
+                    key = k.replace('data.', '').replace('.display', '') + f' [{vs[1]}]'
+                    data[-1][key] = vs[0]
+                else:
+                    data[-1][k] = v
+
+    df = DataFrame(data)
+    response = HttpResponse(df.to_csv(), content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename={}.csv'.format(project)
+    return response
