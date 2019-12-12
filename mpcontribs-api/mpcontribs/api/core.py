@@ -3,6 +3,7 @@
 import os
 import logging
 import yaml
+from typing import Pattern
 from importlib import import_module
 from flask.views import MethodViewType
 from flasgger.marshmallow_apispec import SwaggerView as OriginalSwaggerView
@@ -55,11 +56,12 @@ def get_specs(klass, method, collection):
     filter_params = []
     if getattr(klass.resource, 'filters', None) is not None:
         for k, v in klass.resource.filters.items():
+            label = k.pattern if isinstance(k, Pattern) else k
             for op in v:
                 filter_params.append({
-                    'name': k if op.op == 'exact' else f'{k}__{op.op}',
+                    'name': label if op.op == 'exact' else f'{label}__{op.op}',
                     'in': 'query', 'type': op.typ,
-                    'description': f'filter {k}' if op.op == 'exact' else f'filter {k} via ${op.op}'
+                    'description': f'filter {label}' if op.op == 'exact' else f'filter {label} via ${op.op}'
                 })
                 if op.typ == 'array':
                     filter_params[-1]['items'] = {'type': 'string'}
@@ -94,12 +96,15 @@ def get_specs(klass, method, collection):
             params += field_pagination_params
 
         if klass.resource.allowed_ordering:
+            allowed_ordering = [
+                o.pattern if isinstance(o, Pattern) else o
+                for o in klass.resource.allowed_ordering
+            ]
             params.append({
                 'name': '_order_by',
                 'in': 'query',
                 'type': 'string',
-                'enum': klass.resource.allowed_ordering,
-                'description': f'order {collection}'
+                'description': f'order {collection} via {allowed_ordering}'
             })
 
         if filter_params:

@@ -41,6 +41,7 @@ class ProjectsResource(Resource):
         if field == 'columns':
             objects = list(Contributions.objects.aggregate(*[
                 {"$match": {"project": obj.id}},
+                {"$limit": 999},
                 {"$project": {"akv": {"$objectToArray": "$data"}}},
                 {"$unwind": "$akv"},
                 {"$project": {"root": "$akv.k", "level2": {

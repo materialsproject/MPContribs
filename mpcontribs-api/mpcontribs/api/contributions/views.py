@@ -15,6 +15,7 @@ templates = os.path.join(
     os.path.dirname(flask_mongorest.__file__), 'templates'
 )
 contributions = Blueprint("contributions", __name__, template_folder=templates)
+exclude = r'[^$.\s_~`^&(){}[\]\\;\'"/]'
 
 
 class ContributionsResource(Resource):
@@ -23,10 +24,13 @@ class ContributionsResource(Resource):
         'project': [ops.In, ops.Exact],
         'identifier': [ops.In, ops.Contains, ops.Exact],
         'is_public': [ops.Boolean],
-        re.compile(r'^(data__)((?!__).)*$'): [ops.Contains]
+        re.compile(r'^data__((?!__).)*$'): [ops.Contains]
     }
     fields = ['id', 'project', 'identifier', 'is_public']
-    allowed_ordering = ['project', 'identifier', 'is_public']
+    allowed_ordering = [
+        'id', 'project', 'identifier', 'is_public',
+        re.compile(r'^data(__(' + exclude + ')+){1,3}$')
+    ]
     paginate = True
     default_limit = 20
     max_limit = 200

@@ -80,8 +80,13 @@ $(document).ready(function () {
             var cell_type = col === 'identifier' || col.endsWith('id') || col.endsWith('CIF') ? 'uri' : 'string';
             var col_split = col.split('.');
             var nesting = col_split.length > 1 ? [col_split[0]] : [];
-            var col_dct =  {'name': col, 'cell': cell_type, 'editable': 0, 'nesting': nesting};
+            var name = col.split(' ')[0]; // name determines order key
+            if (col !== 'identifier' && col !== 'id') { name = 'data__' + name.replace(/\./g, '__'); }
+            if (col.endsWith(']')) { name += '__value'; } // order by value
+            var col_dct =  {'name': name, 'cell': cell_type, 'editable': 0, 'nesting': nesting, sortType: 'toggle'};
+            if (col === 'id' || col.endsWith('CIF')) { col_dct['sortable'] = false; }
             if (col_split.length > 1) { col_dct['label'] = col_split.slice(1).join('.'); }
+            else { col_dct['label'] = col; }
             return col_dct
         });
         var table = {'columns': columns};

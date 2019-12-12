@@ -12,15 +12,13 @@ var portal = devMode ? 'http://localhost:8080/' : 'https://portal.mpcontribs.org
 var mp_site = 'https://materialsproject.org/materials/';
 
 function get_label_cell(col, val) {
-    var label = col;
+    var label = (col !== 'identifier' && col !== 'id' && !col.startsWith('data__')) ? 'data__' + col : col;
     var cell = null;
     if ($.type(val) === 'string') {
         var is_mp_id = val.startsWith('mp-') || val.startsWith('mvc-');
         cell = is_mp_id ? [mp_site, val].join('/') : val;
-    } else if (typeof val.unit !== 'undefined') {
-        label = col + ' [' + val.unit + ']';
-        cell = val.value;
     } else if (typeof val.value !== 'undefined') {
+        label += '__value'
         cell = val.value;
     }
     return {'label': label, 'cell': cell}
@@ -56,6 +54,7 @@ window.render_table = function(props) {
     } else {
         var fields = ['id', 'identifier', 'project', 'data', 'structures'].join(',');
         rows_opt["url"] = window.api['host'] + 'contributions/?_fields=' + fields + '&project=' + config.project;
+        rows_opt['queryParams'] = {sortKey: '_order_by'};
         rows_opt["parseState"] = function (resp, queryParams, state, options) {
             return {totalRecords: resp.total_count, totalPages: resp.total_pages, lastPage: resp.total_pages};
         }
@@ -68,10 +67,9 @@ window.render_table = function(props) {
                         item[label_cell.label] = label_cell.cell;
                     } else if (! $.isEmptyObject(val)) { // only two levels
                         $.each(val, function(col2, val2) {
-                            var label_cell2 = get_label_cell(col2, val2);
+                            var label_cell2 = get_label_cell(label_cell.label + '__' + col2, val2);
                             if (label_cell2.cell) {
-                                var label = col + '.' + label_cell2.label;
-                                item[label] = label_cell2.cell;
+                                item[label_cell2.label] = label_cell2.cell;
                             }
                         });
                     }
