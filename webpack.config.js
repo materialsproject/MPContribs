@@ -44,7 +44,7 @@ module.exports = {
     alias: {
       "jquery": 'jquery/src/jquery',
       "jquery-validation": 'jquery-validation/dist/jquery.validate',
-      "jquery-form": 'jquery-form/dist/jquery.form.min',
+      "jquery-form": 'jquery-form/src/jquery.form',
       "czmore": 'czMore/js/jquery.czMore-latest',
       "bootstrap": 'bootstrap/dist/js/bootstrap',
       "backbone": 'backbone/backbone',
@@ -62,7 +62,7 @@ module.exports = {
       "backgrid-grouped-columns": 'backgrid-grouped-columns/backgrid-grouped-columns',
       "backgrid-columnmanager": 'backgrid-columnmanager/src/Backgrid.ColumnManager',
       "bootstrap-slider": 'bootstrap-slider/src/js/bootstrap-slider',
-      "bootstrap-tokenfield": 'bootstrap-tokenfield/dist/bootstrap-tokenfield',
+      "bootstrap-tokenfield": 'bootstrap-tokenfield/js/bootstrap-tokenfield',
       "json.human": 'json-human/src/json.human',
       "js-cookie": 'js-cookie/src/js.cookie',
       "spin.js": 'spin.js/spin',

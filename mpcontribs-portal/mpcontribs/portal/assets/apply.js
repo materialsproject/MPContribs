@@ -7,19 +7,31 @@ import 'czmore';
 $('#authors').tokenfield({});
 
 function prepareRequest(formData, jqForm, options) {
-    $('.alert-success').hide();
-    $('.alert-danger').hide();
+    $('.alert-success').hide(); $('.alert-danger').hide();
     var start = 5;
     var nrefs = parseInt(formData.splice(start, 1)[0]['value']);
     if (nrefs < 1) {
         $('.alert-danger').html('Please add references.').show();
         return false;
     }
+    var urls = {name: 'urls', value: {}};
     for (var i = 0; i < nrefs; i++) {
         var key_url = formData.splice(start+i, 2);
-        formData.splice(start+i, 0, {'name': key_url[0]['value'], 'value': key_url[1]['value']});
+        urls['value'][key_url[0]['value']] = key_url[1]['value'];
     }
+    formData.push(urls);
     return true;
+}
+
+function processJson(data) { // 'data' is the json object returned from the server
+    // TODO success message not showing
+    $('.alert-success').hide(); $('.alert-danger').hide();
+    if (data.status === 200) {
+        $('.alert-success').html('<span class="glyphicon glyphicon-ok" aria-hidden="true"></span>').show();
+    } else {
+        $('.alert-danger').html(data.responseText).show();
+    }
+    console.log(data.responseJSON);
 }
 
 $.validator.addMethod("alphanumeric", function(value, element) {
@@ -50,19 +62,10 @@ $('#apply-form').validate({
         } else { error.insertAfter(element); }
     },
     submitHandler: function(form) { $(form).ajaxSubmit({
-        //target: '#output', // update with server response, use for ok message next to button
-        beforeSubmit: prepareRequest,
-        //success: processJson, // anything to do?
+        beforeSubmit: prepareRequest, success: processJson, error: processJson,
         url: window.api['host'] + 'projects/',
-        type: 'POST', dataType: 'json',
-        //clearForm: true, // after successful submit
-        //resetForm: true
-    }); },
-    //invalidHandler: function(event, validator) {
-    //    // 'this' refers to the form
-    //    var errors = validator.numberOfInvalids();
-    //    // TODO check default invalidHandler in code
-    //}
+        type: 'POST', dataType: 'json', requestFormat: 'json'
+    }); }
 });
 
 $("#czContainer").czMore({

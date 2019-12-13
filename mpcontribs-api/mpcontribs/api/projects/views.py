@@ -101,4 +101,4 @@ class ProjectsView(SwaggerView):
 
     def has_add_permission(self, request, obj):
         # limit the number of projects a user can own (unless admin)
-        return 'admin' in self.get_groups(request) or Projects.objects.count(owner=obj.owner) < 5
+        return 'admin' in self.get_groups(request) or Projects.objects(owner=obj.owner).count() < 3
