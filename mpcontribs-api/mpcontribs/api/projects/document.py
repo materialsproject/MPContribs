@@ -1,5 +1,5 @@
 from flask_mongoengine import Document
-from mongoengine.fields import StringField, BooleanField, DictField, URLField, MapField
+from mongoengine.fields import StringField, BooleanField, DictField, URLField, MapField, EmailField
 
 
 class Projects(Document):
@@ -22,4 +22,6 @@ class Projects(Document):
     )
     urls = MapField(URLField(), required=True, help_text='list of URLs for references')
     other = DictField(help_text='other information')
-    meta = {'collection': 'projects', 'indexes': ['is_public']}
+    owner = EmailField(required=True, help_text='owner / corresponding email')
+    is_approved = BooleanField(required=True, default=False, help_text='project approved?')
+    meta = {'collection': 'projects', 'indexes': ['is_public', 'owner', 'is_approved']}

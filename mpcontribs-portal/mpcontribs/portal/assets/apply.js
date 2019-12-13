@@ -1,9 +1,26 @@
 import 'bootstrap';
 import 'bootstrap-tokenfield';
+import 'jquery-form';
 import 'jquery-validation';
 import 'czmore';
 
 $('#authors').tokenfield({});
+
+function prepareRequest(formData, jqForm, options) {
+    $('.alert-success').hide();
+    $('.alert-danger').hide();
+    var start = 5;
+    var nrefs = parseInt(formData.splice(start, 1)[0]['value']);
+    if (nrefs < 1) {
+        $('.alert-danger').html('Please add references.').show();
+        return false;
+    }
+    for (var i = 0; i < nrefs; i++) {
+        var key_url = formData.splice(start+i, 2);
+        formData.splice(start+i, 0, {'name': key_url[0]['value'], 'value': key_url[1]['value']});
+    }
+    return true;
+}
 
 $.validator.addMethod("alphanumeric", function(value, element) {
     return this.optional(element) || /^[\w_]+$/i.test(value);
@@ -26,15 +43,26 @@ $('#apply-form').validate({
         $(element).nextAll('.glyphicon').removeClass('glyphicon-remove').addClass('glyphicon-ok');
         $(element).closest('.form-group').removeClass('has-error').addClass('has-success');
     },
-    errorElement: 'span',
-    errorClass: 'help-block',
+    errorElement: 'span', errorClass: 'help-block',
     errorPlacement: function(error, element) {
         if(element.parent('.input-group').length) {
             error.insertAfter(element.parent());
-        } else {
-            error.insertAfter(element);
-        }
-    }
+        } else { error.insertAfter(element); }
+    },
+    submitHandler: function(form) { $(form).ajaxSubmit({
+        //target: '#output', // update with server response, use for ok message next to button
+        beforeSubmit: prepareRequest,
+        //success: processJson, // anything to do?
+        url: window.api['host'] + 'projects/',
+        type: 'POST', dataType: 'json',
+        //clearForm: true, // after successful submit
+        //resetForm: true
+    }); },
+    //invalidHandler: function(event, validator) {
+    //    // 'this' refers to the form
+    //    var errors = validator.numberOfInvalids();
+    //    // TODO check default invalidHandler in code
+    //}
 });
 
 $("#czContainer").czMore({

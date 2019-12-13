@@ -44,6 +44,7 @@ module.exports = {
     alias: {
       "jquery": 'jquery/src/jquery',
       "jquery-validation": 'jquery-validation/dist/jquery.validate',
+      "jquery-form": 'jquery-form/dist/jquery.form.min',
       "czmore": 'czMore/js/jquery.czMore-latest',
       "bootstrap": 'bootstrap/dist/js/bootstrap',
       "backbone": 'backbone/backbone',
@@ -78,6 +79,8 @@ module.exports = {
       { test: /backbone/, loader: 'exports-loader?Backbone!imports-loader?underscore,jquery' },
       { test: /backgrid/, loader: 'imports-loader?jquery,backbone' },
       { test: /bootstrap/, loader: 'imports-loader?jquery' },
+      { test: /jquery-form/, loader: 'imports-loader?jquery' },
+      { test: /jquery-validation/, loader: 'imports-loader?jquery' },
       { test: /filestyle/, loader: 'imports-loader?bootstrap' },
       { test: /select2/, loader: 'imports-loader?jquery' },
       { test: /czmore/, loader: 'imports-loader?jquery' },

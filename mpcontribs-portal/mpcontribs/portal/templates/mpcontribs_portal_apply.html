@@ -9,24 +9,25 @@
 </style>
 <div class="container" id=apply>
     <div class="col-md-8">
-    <form class="form-horizontal" id=apply-form method=GET action="">
+    <form class="form-horizontal" id=apply-form>
         <div class="form-group">
             <label for="email" class="col-sm-2 control-label">Owner</label>
             <div class="col-sm-10">
-                <p class="form-control-static">{{request.META.HTTP_X_CONSUMER_USERNAME}}</p>
+                <input type="text" class="form-control" id="owner" name=owner
+                value="{{request.META.HTTP_X_CONSUMER_USERNAME}}" placeholder="{{request.META.HTTP_X_CONSUMER_USERNAME}}" readonly required>
             </div>
         </div>
         <div class="form-group has-feedback">
             <label for="project" class="col-sm-2 control-label">Project</label>
             <div class="col-sm-10">
-                <input type="text" class="form-control" id="project" name=project minlength=3 maxlength=30 placeholder="my_project" required>
+                <input type="text" class="form-control" id="project" name=project minlength=3 maxlength=30 placeholder="my_project" value="my_project" required>
                 <span class="glyphicon form-control-feedback" aria-hidden="true"></span>
             </div>
         </div>
         <div class="form-group has-feedback">
             <label for="title" class="col-sm-2 control-label">Title</label>
             <div class="col-sm-10">
-                <input type="text" class="form-control" id="title" name=title minlength=5 maxlength=40 placeholder="My Title" required>
+                <input type="text" class="form-control" id="title" name=title minlength=5 maxlength=40 placeholder="My Title" value="My Title" required>
                 <span class="glyphicon form-control-feedback" aria-hidden="true"></span>
             </div>
         </div>
@@ -41,7 +42,9 @@
             <label for="description" class="col-sm-2 control-label">Description</label>
             <div class="col-sm-10">
                 <textarea class="form-control" rows="3" id="description" name=description minlength=5 maxlength=1500
-                 placeholder='This first sentence will always be shown. Additional sentences are collapsed into a "More &raquo;" button.' required></textarea>
+                 placeholder='This first sentence will always be shown. Additional sentences are collapsed into a "More &raquo;" button.'
+                 value="Whatever. It. Takes." required>
+                </textarea>
                 <span class="glyphicon form-control-feedback" aria-hidden="true"></span>
             </div>
         </div>
@@ -52,11 +55,12 @@
                     <div id="first">
                         <div class="recordset row">
                             <div class="col-sm-3" style="padding-left: 0px;">
-                                <input type="text" class="form-control" id="key_1" name=key_1 minlength=3 maxlength=8 placeholder="PRL" required>
+                                <input type="text" class="form-control" id="ref_1_key" name=ref_1_key minlength=3 maxlength=8 placeholder="PRL" value="PRL" required>
                                 <span class="glyphicon form-control-feedback" aria-hidden="true"></span>
                             </div>
                             <div class="col-sm-8" style="padding-left: 0px;">
-                                <input type="text" class="form-control" id="url_1" name=url_1 minlength=7 maxlength=100 placeholder="https://materialsproject.org" required>
+                                <input type="text" class="form-control" id="ref_1_url" name=ref_1_url minlength=7 maxlength=100
+                                placeholder="https://materialsproject.org" value="https://materialsproject.org" required>
                                 <span class="glyphicon form-control-feedback" aria-hidden="true"></span>
                             </div>
                         </div>
@@ -66,7 +70,9 @@
         </div>
         <div class="form-group">
             <div class="col-sm-offset-2 col-sm-10">
-                <button type="submit" class="btn btn-default">Apply</button>
+                <button type="submit" class="btn btn-default col-sm-2">Apply</button>
+                <div class="alert alert-success col-sm-10" role="alert" hidden></div>
+                <div class="alert alert-danger col-sm-10" role="alert" hidden></div>
             </div>
         </div>
     </form>

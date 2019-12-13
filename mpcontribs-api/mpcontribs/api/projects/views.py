@@ -28,8 +28,8 @@ class ProjectsResource(Resource):
         'description': [ops.IContains],
         'authors': [ops.IContains]
     }
-    fields = ['project', 'is_public', 'title']
-    allowed_ordering = ['project', 'title', 'is_public']
+    fields = ['project', 'is_public', 'title', 'owner', 'is_approved']
+    allowed_ordering = ['project', 'is_public', 'title']
     paginate = False
 
     @staticmethod
@@ -100,9 +100,5 @@ class ProjectsView(SwaggerView):
     methods = [List, Fetch, Create, Delete, Update]
 
     def has_add_permission(self, request, obj):
-        # only admins can add new projects
-        return 'admin' in self.get_groups(request)
-
-    def has_delete_permission(self, request, obj):
-        # only admins can delete projects
-        return 'admin' in self.get_groups(request)
+        # limit the number of projects a user can own (unless admin)
+        return 'admin' in self.get_groups(request) or Projects.objects.count(owner=obj.owner) < 5
