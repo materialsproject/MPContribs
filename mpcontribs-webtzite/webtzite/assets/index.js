@@ -4,6 +4,8 @@ require("../../../node_modules/bootstrap/dist/css/bootstrap.min.css");
 require("../../../node_modules/bootstrap/dist/css/bootstrap-theme.min.css");
 require("../../../node_modules/bootstrap-slider/dist/css/bootstrap-slider.min.css");
 require("../../../node_modules/bootstrap-toggle/css/bootstrap-toggle.min.css");
+require("../../../node_modules/bootstrap-tokenfield/dist/css/bootstrap-tokenfield.min.css");
+require("../../../node_modules/bootstrap-tokenfield/dist/css/tokenfield-typeahead.min.css");
 require("../../../node_modules/json-human/css/json.human.css");
 require("../../../node_modules/select2/dist/css/select2.min.css");
 require("../../../node_modules/spin.js/spin.css");

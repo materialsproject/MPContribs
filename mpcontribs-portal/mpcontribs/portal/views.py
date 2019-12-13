@@ -135,3 +135,9 @@ def csv(request, project):
     response = HttpResponse(df.to_csv(), content_type='text/csv')
     response['Content-Disposition'] = 'attachment; filename={}.csv'.format(project)
     return response
+
+def apply(request):
+    ctx = RequestContext(request)
+    client = load_client()
+    kwargs = get_client_kwargs(request)
+    return render(request, "mpcontribs_portal_apply.html", ctx.flatten())

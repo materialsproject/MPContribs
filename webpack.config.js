@@ -43,6 +43,7 @@ module.exports = {
     extensions: ['.js'],
     alias: {
       "jquery": 'jquery/src/jquery',
+      "jquery-validation": 'jquery-validation/dist/jquery.validate',
       "bootstrap": 'bootstrap/dist/js/bootstrap',
       "backbone": 'backbone/backbone',
       "backgrid": 'backgrid/lib/backgrid',
@@ -59,6 +60,7 @@ module.exports = {
       "backgrid-grouped-columns": 'backgrid-grouped-columns/backgrid-grouped-columns',
       "backgrid-columnmanager": 'backgrid-columnmanager/src/Backgrid.ColumnManager',
       "bootstrap-slider": 'bootstrap-slider/src/js/bootstrap-slider',
+      "bootstrap-tokenfield": 'bootstrap-tokenfield/dist/bootstrap-tokenfield',
       "json.human": 'json-human/src/json.human',
       "js-cookie": 'js-cookie/src/js.cookie',
       "spin.js": 'spin.js/spin',
@@ -85,6 +87,7 @@ module.exports = {
       { test: /backgrid-grouped-columns/, loader: 'imports-loader?backgrid' },
       { test: /backgrid-columnmanager/, loader: 'imports-loader?backgrid' },
       { test: /bootstrap-slider/, loader: 'imports-loader?jquery,bootstrap' },
+      { test: /bootstrap-tokenfield/, loader: 'imports-loader?jquery,bootstrap' },
       { test: /linkify-element/, loader: 'imports-loader?linkify' },
       //{ test: /waitfor/, loader: 'imports-loader?jquery' },
       //{ test: /sandbox/, loader: 'imports-loader?archieml' },
