@@ -6,3 +6,6 @@
 	path = webtzite
 	url = https://github.com/materialsproject/webtzite.git
 	branch = master
+[submodule "mpcontribs-webtzite/webtzite/assets/czMore"]
+	path = mpcontribs-webtzite/webtzite/assets/czMore
+	url = https://github.com/cozeit/czMore.git
