@@ -14,6 +14,7 @@ services:
         volumes:
             - ./test_site:/app/test_site
             - ./webpack.config.js:/app/webpack.config.js
+            - ./package.json:/app/package.json
             - ./mpcontribs-portal:/app/mpcontribs-portal
             - ./mpcontribs-users:/app/mpcontribs-users
             - ./mpcontribs-webtzite:/app/mpcontribs-webtzite

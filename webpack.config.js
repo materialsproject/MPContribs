@@ -39,11 +39,12 @@ module.exports = {
   ],
   optimization: { minimize: true },
   resolve: {
-    modules: ['node_modules'],
+    modules: ['node_modules', 'mpcontribs-webtzite/webtzite/assets'],
     extensions: ['.js'],
     alias: {
       "jquery": 'jquery/src/jquery',
       "jquery-validation": 'jquery-validation/dist/jquery.validate',
+      "czmore": 'czMore/js/jquery.czMore-latest',
       "bootstrap": 'bootstrap/dist/js/bootstrap',
       "backbone": 'backbone/backbone',
       "backgrid": 'backgrid/lib/backgrid',
@@ -79,6 +80,7 @@ module.exports = {
       { test: /bootstrap/, loader: 'imports-loader?jquery' },
       { test: /filestyle/, loader: 'imports-loader?bootstrap' },
       { test: /select2/, loader: 'imports-loader?jquery' },
+      { test: /czmore/, loader: 'imports-loader?jquery' },
       { test: /toggle/, loader: 'imports-loader?jquery,bootstrap' },
       { test: /backgrid-select-all/, loader: 'imports-loader?backgrid' },
       { test: /backgrid-filter/, loader: 'imports-loader?backgrid' },

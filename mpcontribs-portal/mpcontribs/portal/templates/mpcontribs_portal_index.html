@@ -1,6 +1,9 @@
 {% extends "header_footer.html" %}
 
 {% block content %}
+<style>
+.panel:hover { box-shadow: 0 0 5px 5px rgba(0, 140, 186, 0.5); }
+</style>
 <div class="container" hidden>
     {% if landing_pages %}
     <div class="row myrow" style="margin: 0; padding: 15px; background-color: #e4e6e8;" id="explorer_form" hidden>
@@ -28,8 +31,8 @@
     <div class="row equal">
         {% for lp in landing_pages %}
         <div class="col-md-3" id="{{ lp.project }}">
-            <div class="panel panel-default">
-                <div class="panel-heading" style="padding-bottom: 5px;">
+            <div class="panel panel-default" style="border: 1px solid #000000; height: 95%;">
+                <div class="panel-heading" style="padding-bottom: 5px; border-color: #000">
                     <h4 class="panel-title">
                         <a href="{{ lp.project }}/">{{ lp.title  }}</a>
                         {% if "provenance" in lp %}{{ lp.provenance|safe }}{% endif %}

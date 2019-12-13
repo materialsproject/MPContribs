@@ -49,10 +49,6 @@ code { display: block; white-space: pre-wrap; }
 .custom { padding: 0.5em 0.8em 0.8em 2em; }
 * html a:hover { background: transparent; }
 .classic { background: #000000; color: #FFFFFF; }
-.panel { border: 2px solid #000000; }
-.panel-default { height: 95%; }
-.panel-default > .panel-heading { border-color: #000; padding: 10px 10px; }
-.panel:hover { box-shadow: 0 0 5px 5px rgba(0, 140, 186, 0.5); }
 .equal { display: flex; display: -webkit-flex; flex-wrap: wrap; }
 .myrow { font-size: 0; }
 .myrow > * { float: none; display: inline-block; font-size: 14px; }
