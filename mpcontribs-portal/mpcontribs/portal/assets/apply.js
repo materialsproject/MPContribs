@@ -20,18 +20,17 @@ function prepareRequest(formData, jqForm, options) {
         urls['value'][key_url[0]['value']] = key_url[1]['value'];
     }
     formData.push(urls);
+    // TODO collaborators emails
     return true;
 }
 
 function processJson(data) { // 'data' is the json object returned from the server
-    // TODO success message not showing
     $('.alert-success').hide(); $('.alert-danger').hide();
-    if (data.status === 200) {
+    if (typeof data.responseText == 'undefined') {
         $('.alert-success').html('<span class="glyphicon glyphicon-ok" aria-hidden="true"></span>').show();
     } else {
-        $('.alert-danger').html(data.responseText).show();
+        $('.alert-danger').html(data.responseJSON['error']).show();
     }
-    console.log(data.responseJSON);
 }
 
 $.validator.addMethod("alphanumeric", function(value, element) {
@@ -71,7 +70,9 @@ $('#apply-form').validate({
 $("#czContainer").czMore({
     max: 5, styleOverride: true,
     onAdd: function(index) {
-        $('.btnMinus').addClass('col-sm-1').html('<span class="glyphicon glyphicon-remove" aria-hidden="true"></span>');
+        $('.btnMinus').addClass('col-sm-1').css('padding-left', '0px')
+            .html('<span class="glyphicon glyphicon-remove" style="top: 8px;" aria-hidden="true"></span>');
     }
 });
-$('.btnPlus').html('<span class="glyphicon glyphicon-plus" style="top: 10px;" aria-hidden="true"></span>')
+$('.btnPlus').addClass('col-sm-1').css('padding-left', '0px')
+    .html('<span class="glyphicon glyphicon-plus" style="top: 5px;" aria-hidden="true"></span>').click();

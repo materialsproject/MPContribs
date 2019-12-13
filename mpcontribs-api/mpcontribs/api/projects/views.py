@@ -8,6 +8,7 @@ from flask_mongorest.exceptions import UnknownFieldError
 from flask_mongorest.resources import Resource
 from flask_mongorest import operators as ops
 from flask_mongorest.methods import List, Fetch, Create, Delete, Update
+from werkzeug.exceptions import Unauthorized
 from pandas.io.json._normalize import nested_to_record
 from mpcontribs.api import construct_query
 from mpcontribs.api.core import SwaggerView
@@ -101,4 +102,11 @@ class ProjectsView(SwaggerView):
 
     def has_add_permission(self, request, obj):
         # limit the number of projects a user can own (unless admin)
-        return 'admin' in self.get_groups(request) or Projects.objects(owner=obj.owner).count() < 3
+        if 'admin' in self.get_groups(request):
+            return True
+        # project already created at this point -> count-1 and revert
+        nr_projects = Projects.objects(owner=obj.owner).count() - 1
+        if nr_projects > 2:
+            Projects.objects(project=obj.project).delete()
+            raise Unauthorized(f'{obj.owner} already owns {nr_projects} projects.')
+        return True
