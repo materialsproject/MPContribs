@@ -88,7 +88,7 @@ def contribution(request, cid):
             raise HTTPTimeoutError
         ctx['nb'], ctx['js'] = export_notebook(nb, cid)
     except HTTPTimeoutError:
-        ctx['alert'] = 'First build of detail page ongoing. Automatic reload in 15s.'
+        ctx['alert'] = 'First build of detail page ongoing. Try reloading this page in 15s.'
     return render(request, "mpcontribs_portal_contribution.html", ctx.flatten())
 
 
@@ -113,7 +113,6 @@ def download_json(request, cid):
     return HttpResponse(status=404)
 
 def csv(request, project):
-    print(project)
     client = load_client()
     kwargs = get_client_kwargs(request)
     contribs = client.contributions.get_entries(

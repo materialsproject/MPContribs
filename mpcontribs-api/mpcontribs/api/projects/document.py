@@ -3,7 +3,7 @@ from mongoengine.fields import StringField, BooleanField, DictField, URLField, M
 
 
 class Projects(Document):
-    __project_regex__ = '^[a-zA-Z0-9_]{3,}$'
+    __project_regex__ = '^[a-zA-Z0-9_]{3,31}$'
     project = StringField(
         min_length=3, max_length=30, regex=__project_regex__, primary_key=True,
         help_text=f"project name/slug (valid format: `{__project_regex__}`)"

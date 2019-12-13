@@ -20,7 +20,7 @@ def get_context(request, project):
     ctx['descriptions'] = prov['description'].strip().split('.', 1)
     authors = [a.strip() for a in prov['authors'].split(',') if a]
     ctx['authors'] = {'main': authors[0], 'etal': authors[1:]}
-    ctx['urls'] = list(prov['urls'].values())
+    ctx['urls'] = prov['urls']
     ctx['other'] = json.dumps(prov.get('other'))
     ctx['columns'] = ['identifier', 'id'] + prov['columns']
     ctx['search_columns'] = ['identifier'] + [

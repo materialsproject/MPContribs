@@ -28,6 +28,7 @@ if (api_key !== '') {
 $(document).ready(function () {
     document.getElementById("logo").src = img;
     $('#api_key_code').html(api_key_code);
+
     $('#search').select2({
         ajax: {
             url: window.api['host'] + 'projects/',
@@ -62,39 +63,20 @@ $(document).ready(function () {
         var project = ev.params.data["text"];
         window.location.href = '/'+project+'/';
     });
-    $('a[name="read_more"]').on('click', function() {
-        $(this).hide();
-        var el = $(this).next('[name="read_more"]');
-        var data = el.data('renderjson');
-        if (data) { render_json({divid: el.attr('id'), data: data}); }
-        el.show();
-    });
-    if ($("#graph").length) {
-        var project = window.location.pathname;
-        import(/* webpackChunkName: "project" */ `../../../mpcontribs-users/mpcontribs/users${project}explorer/assets/index.js`)
-            .catch(function(err) { console.error(err); });
+
+    if ($("#landingpage").length) {
+        import(/* webpackChunkName: "landingpage" */ `./landingpage.js`).catch(function(err) { console.error(err); });
     }
-    $('#columns_list').select2({width: '100%', minimumResultsForSearch: -1});
-    if ($("#table").length) {
-        var columns = $.map($('#table').data('columns').split(','), function(col) {
-            var cell_type = col === 'identifier' || col.endsWith('id') || col.endsWith('CIF') ? 'uri' : 'string';
-            var col_split = col.split('.');
-            var nesting = col_split.length > 1 ? [col_split[0]] : [];
-            var name = col.split(' ')[0]; // name determines order key
-            if (col !== 'identifier' && col !== 'id') { name = 'data__' + name.replace(/\./g, '__'); }
-            if (col.endsWith(']')) { name += '__value'; } // order by value
-            var col_dct =  {'name': name, 'cell': cell_type, 'editable': 0, 'nesting': nesting, sortType: 'toggle'};
-            if (col === 'id' || col.endsWith('CIF')) { col_dct['sortable'] = false; }
-            if (col_split.length > 1) { col_dct['label'] = col_split.slice(1).join('.'); }
-            else { col_dct['label'] = col; }
-            return col_dct
-        });
-        var table = {'columns': columns};
-        var config = {'project': $('#table').data('project'), 'ncols': 12};
-        config['uuids'] = ['table_filter', 'table', 'table_pagination', 'table_columns'];
-        render_table({table: table, config: config});
+
+    if ($("#contribution").length) {
+        import(/* webpackChunkName: "contribution" */ `../../../mpcontribs-portal/mpcontribs/portal/assets/contribution.js`).catch(function(err) { console.error(err); });
     }
+
+    if ($("#apply").length) {
+        import(/* webpackChunkName: "apply" */ `../../../mpcontribs-portal/mpcontribs/portal/assets/apply.js`).catch(function(err) { console.error(err); });
+    }
+
     $('header').show();
     $('.container').show();
     $('footer').show();
-})
+});

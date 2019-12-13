@@ -14,7 +14,6 @@ module.exports = {
           path.resolve(__dirname, 'mpcontribs-webtzite/webtzite/assets/index'),
           path.resolve(__dirname, 'mpcontribs-webtzite/webtzite/assets/analytics'),
           path.resolve(__dirname, 'mpcontribs-portal/mpcontribs/portal/assets/index'),
-          path.resolve(__dirname, 'mpcontribs-portal/mpcontribs/portal/assets/contribution'),
           path.resolve(__dirname, 'mpcontribs-webtzite/webtzite/assets/render_json'),
           path.resolve(__dirname, 'mpcontribs-webtzite/webtzite/assets/render_table'),
           path.resolve(__dirname, 'mpcontribs-webtzite/webtzite/assets/render_plot'),

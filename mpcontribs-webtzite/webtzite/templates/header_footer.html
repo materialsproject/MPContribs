@@ -40,17 +40,20 @@
             {% block extra_items %}
             {% endblock extra_items %}
             <li><a href="{% url 'webtzite:dashboard' %}">Dashboard</a></li>
+            <li><a href="/apply" style="color: orange;">Apply</a></li>
           </ul>
         </div>
       </nav>
     </header>
     {% endblock header %}
     {% if alert %}
-    <div id=alert class="alert alert-warning alert-dismissible" role="alert">
-      <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-        <span aria-hidden="true">&times;</span>
-      </button>
-      {{ alert|safe }}
+    <div class="container">
+        <div id=alert class="alert alert-warning alert-dismissible" role="alert">
+          <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+          {{ alert|safe }}
+        </div>
     </div>
     {% else %}
     {% block content %}
