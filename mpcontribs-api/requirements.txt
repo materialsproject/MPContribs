@@ -29,3 +29,5 @@ werkzeug>=0.16.0
 plotly>=4.3.0
 PyYAML>=5.2
 dict-deep>=2.0.2
+blinker>=1.4
+itsdangerous>=1.1.0

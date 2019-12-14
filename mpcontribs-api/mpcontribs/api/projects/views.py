@@ -10,6 +10,7 @@ from flask_mongorest import operators as ops
 from flask_mongorest.methods import List, Fetch, Create, Delete, Update
 from werkzeug.exceptions import Unauthorized
 from pandas.io.json._normalize import nested_to_record
+from itsdangerous import BadSignature, SignatureExpired
 from mpcontribs.api import construct_query
 from mpcontribs.api.core import SwaggerView
 from mpcontribs.api.projects.document import Projects
@@ -110,3 +111,28 @@ class ProjectsView(SwaggerView):
             Projects.objects(project=obj.project).delete()
             raise Unauthorized(f'{obj.owner} already owns {nr_projects} projects.')
         return True
+
+
+@projects.route('/applications/<token>')
+def applications(token):
+    ts = current_app.config['USTS']
+    max_age = current_app.config['USTS_MAX_AGE']
+    try:
+        for action in ['approve', 'deny']:
+            #try:
+            owner, project = ts.loads(token, salt=f'{action}-project', max_age=max_age).split()
+            #except BadSignature:
+            #    print(action)
+            #    continue  # wrong salt/action
+    except SignatureExpired:
+        return f'Signatures of {project} for {owner} expired.'
+
+    obj = Projects.objects.get(project=project, owner=owner)  # TODO DoesNotExist possible?
+
+    if action == 'approve':
+        obj.is_approved = True
+        obj.save()  # post_save (created=False) sends notification when `is_approved` set
+    else:
+        obj.delete()  # post_delete signal sends notification
+
+    return f'{project} {action.replace("y", "ie")}d and {owner} notified.'
