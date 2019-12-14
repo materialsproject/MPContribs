@@ -118,16 +118,16 @@ def applications(token):
     ts = current_app.config['USTS']
     max_age = current_app.config['USTS_MAX_AGE']
     try:
-        for action in ['approve', 'deny']:
-            #try:
-            owner, project = ts.loads(token, salt=f'{action}-project', max_age=max_age).split()
-            #except BadSignature:
-            #    print(action)
-            #    continue  # wrong salt/action
+        owner, project, action = ts.loads(token, max_age=max_age)
     except SignatureExpired:
-        return f'Signatures of {project} for {owner} expired.'
+        return f'{action} signature for {owner} of {project} expired.'
 
-    obj = Projects.objects.get(project=project, owner=owner)  # TODO DoesNotExist possible?
+    past = f'{action.replace("y", "ie")}d'
+
+    try:
+        obj = Projects.objects.get(project=project, owner=owner, is_approved=False)
+    except DoesNotExist:
+        return f'{project} for {owner} already {past}'
 
     if action == 'approve':
         obj.is_approved = True
@@ -135,4 +135,4 @@ def applications(token):
     else:
         obj.delete()  # post_delete signal sends notification
 
-    return f'{project} {action.replace("y", "ie")}d and {owner} notified.'
+    return f'{project} {past} and {owner} notified.'

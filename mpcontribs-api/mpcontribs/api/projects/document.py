@@ -32,14 +32,17 @@ class Projects(Document):
     def post_save(cls, sender, document, **kwargs):
         admin_email = current_app.config['ADMIN_EMAIL']
         if kwargs.get('created'):
-            email_project = f'{document.owner} {document.project}'
             ts = current_app.config['USTS']
-            tokens = [ts.dumps(email_project, salt=f'{action}-project') for action in ['approve', 'deny']]
-            links = [url_for('projects.applications', token=t, _external=True) for t in tokens]
+            links = []
+            for action in ['approve', 'deny']:
+                email_project = [document.owner, document.project, action]
+                token = ts.dumps(email_project)
+                links.append(url_for('projects.applications', token=token, _external=True))
+
             subject = f'[MPContribs] New project "{document.project}"'
             hours = int(current_app.config['USTS_MAX_AGE'] / 3600)
             html = render_template(
-                'admin_email.html', doc=document.to_mongo(),
+                'admin_email.html', doc=document,
                 links=links, admin_email=admin_email, hours=hours
             )
             print(html)

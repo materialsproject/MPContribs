@@ -8,6 +8,10 @@ $('#authors').tokenfield({});
 
 function prepareRequest(formData, jqForm, options) {
     $('.alert-success').hide(); $('.alert-danger').hide();
+    if (formData[4]['value'].trim() === "") {
+        $('.alert-danger').html('Please add description.').show();
+        return false;
+    }
     var start = 5;
     var nrefs = parseInt(formData.splice(start, 1)[0]['value']);
     if (nrefs < 1) {

@@ -12,6 +12,7 @@ from flask_log import Logging
 from flasgger.base import Swagger
 from pandas.io.json._normalize import nested_to_record
 from typing import Any, Dict
+from itsdangerous import URLSafeTimedSerializer
 
 for mod in ['matplotlib', 'toronado.cssutils', 'selenium.webdriver.remote.remote_connection']:
     log = logging.getLogger(mod)
@@ -117,6 +118,7 @@ def create_app():
     """create flask app"""
     app = Flask(__name__)
     app.config.from_pyfile('config.py', silent=True)
+    app.config['USTS'] = URLSafeTimedSerializer(app.secret_key)
     app.jinja_env.globals['get_resource_as_string'] = get_resource_as_string
     if app.config.get('DEBUG'):
         from flask_cors import CORS

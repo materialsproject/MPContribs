@@ -2,16 +2,14 @@
 
 import os
 import datetime
-from itsdangerous import URLSafeTimedSerializer
 
 PER_PAGE_MAX = 20
 DEBUG = bool(os.environ.get('FLASK_ENV') == 'development')
 JSON_SORT_KEYS = False
 JSON_ADD_STATUS = False
 FLASK_LOG_LEVEL = 'DEBUG' if DEBUG else 'WARNING'
-SECRET_KEY = b'super-secret'  # TODO in local prod config
+SECRET_KEY = 'super-secret'  # TODO in local prod config
 ADMIN_EMAIL = 'phuck@lbl.gov'  # TODO environment variable
-USTS = URLSafeTimedSerializer(SECRET_KEY)
 USTS_MAX_AGE = 86400
 MPCONTRIBS_DB = 'mpcontribs-dev' if DEBUG else 'mpcontribs'
 MPCONTRIBS_MONGO_HOST = os.environ.get('MPCONTRIBS_MONGO_HOST', 'localhost')
