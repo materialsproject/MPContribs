@@ -9,6 +9,7 @@ from flask_marshmallow import Marshmallow
 from flask_mongoengine import MongoEngine
 from flask_mongorest import register_class
 from flask_log import Logging
+from flask_mail import Mail, Message
 from flasgger.base import Swagger
 from pandas.io.json._normalize import nested_to_record
 from typing import Any, Dict
@@ -19,7 +20,14 @@ for mod in ['matplotlib', 'toronado.cssutils', 'selenium.webdriver.remote.remote
     log.setLevel('INFO')
 
 logger = logging.getLogger('app')
+mail = Mail()
 
+def send_email(to, subject, template):
+    msg = Message(
+        subject, recipients=[to], html=template,
+        sender=current_app.config['MAIL_DEFAULT_SENDER']
+    )
+    mail.send(msg)
 
 def get_collections(db):
     """get list of collections in DB"""
@@ -124,6 +132,8 @@ def create_app():
         from flask_cors import CORS
         CORS(app)  # enable for development (allow localhost)
 
+
+    mail.init_app(app)
     Logging(app)
     Marshmallow(app)
     db = MongoEngine(app)

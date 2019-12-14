@@ -2,6 +2,7 @@ from flask import current_app, render_template, url_for
 from flask_mongoengine import Document
 from mongoengine.fields import StringField, BooleanField, DictField, URLField, MapField, EmailField
 from mongoengine import signals
+from mpcontribs.api import send_email
 
 
 class Projects(Document):
@@ -30,7 +31,7 @@ class Projects(Document):
 
     @classmethod
     def post_save(cls, sender, document, **kwargs):
-        admin_email = current_app.config['ADMIN_EMAIL']
+        admin_email = current_app.config['MAIL_DEFAULT_SENDER']
         if kwargs.get('created'):
             ts = current_app.config['USTS']
             links = []
@@ -45,23 +46,20 @@ class Projects(Document):
                 'admin_email.html', doc=document,
                 links=links, admin_email=admin_email, hours=hours
             )
-            print(html)
-            #send_email(admin_email, subject, html)  # TODO
+            send_email(admin_email, subject, html)
         else:
             set_keys = document._delta()[0].keys()
             if 'is_approved' in set_keys and document.is_approved:
                 subject = f'[MPContribs] Your project "{document.project}" has been approved'
                 html = render_template('owner_email.html', approved=True, admin_email=admin_email)
-                print(html)
-                #send_email(document.owner, subject, html)  # TODO
+                send_email(document.owner, subject, html)
 
     @classmethod
     def post_delete(cls, sender, document, **kwargs):
-        admin_email = current_app.config['ADMIN_EMAIL']
+        admin_email = current_app.config['MAIL_DEFAULT_SENDER']
         subject = f'[MPContribs] Your project "{document.project}" has been deleted'
         html = render_template('owner_email.html', approved=False, admin_email=admin_email)
-        print(html)
-        #send_email(document.owner, subject, html)  # TODO
+        send_email(document.owner, subject, html)
 
 signals.post_save.connect(Projects.post_save, sender=Projects)
 signals.post_delete.connect(Projects.post_delete, sender=Projects)

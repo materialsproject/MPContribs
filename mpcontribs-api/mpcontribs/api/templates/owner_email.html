@@ -1,0 +1,23 @@
+{% if approved %}
+<p>Please launch <a href="#TODO">this notebook</a> to start adding data to your (private) project.</p>
+{% else %}
+<p>Your project has been deleted. There are two reasons why this can happen:</p>
+<ul>
+    <li>
+        You (or admins in coordination with you) have deliberately deleted a project you owned that was previously
+        approved. No further action is required if this was intentional.
+    </li>
+    <li>
+        You applied for a new project on MPContribs but the request was denied. There are myriad possibilities for
+        reasons why we reached this decision and you should soon receive a follow-up email from an admin. We might
+        request more information, ask you to resubmit at a later point due to workload, or explain why MPContribs might
+        not be the right fit for your data. If you don't hear from us within a day or so, feel free to
+        <a href="mailto:{{admin_email}}">reach out</a> to us. Thanks!
+    </li>
+</ul>
+{% endif %}
+
+<p>
+--<br>
+Questions? Comments? Email {{admin_email}}
+</p>

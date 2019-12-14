@@ -122,12 +122,10 @@ def applications(token):
     except SignatureExpired:
         return f'{action} signature for {owner} of {project} expired.'
 
-    past = f'{action.replace("y", "ie")}d'
-
     try:
         obj = Projects.objects.get(project=project, owner=owner, is_approved=False)
     except DoesNotExist:
-        return f'{project} for {owner} already {past}'
+        return f'{project} for {owner} already approved or denied.'
 
     if action == 'approve':
         obj.is_approved = True
@@ -135,4 +133,4 @@ def applications(token):
     else:
         obj.delete()  # post_delete signal sends notification
 
-    return f'{project} {past} and {owner} notified.'
+    return f'{project} {action.replace("y", "ie")}d and {owner} notified.'

@@ -37,6 +37,8 @@ services:
             - FLASK_ENV=development
             - MPCONTRIBS_MONGO_HOST=$MPCONTRIBS_MONGO_HOST
             - GATEWAY_HOST=kernel_gateway:8888
+            - MPCONTRIBS_MAILGUN_USERNAME=$MPCONTRIBS_MAILGUN_USERNAME
+            - MPCONTRIBS_MAILGUN_PASSWORD=$MPCONTRIBS_MAILGUN_PASSWORD
         ports:
             - "5000:5000"
 

@@ -1,0 +1,25 @@
+<p>An application for a new MPContribs project has been submitted with the following information. Please
+<a href="{{links[0]}}">approve</a> or <a href="{{links[1]}}">deny</a> this request within {{hours}} hours or it will be
+deleted. A notification email with your decision will automatically be sent to the user.</p>
+
+<dl>
+    {% for k in doc %}
+    <dt>{{k}}</dt>
+    {% if k == 'urls' %}
+    <dd>
+        <dl>
+            {% for a in doc[k] %}
+            <dt>{{a}}</dt><dd>{{doc[k][a]}}</dd>
+            {% endfor %}
+        </dl>
+    </dd>
+    {% else %}
+    <dd>{{doc[k]}}</dd>
+    {% endif %}
+    {% endfor %}
+</dl>
+
+<p>
+--<br>
+Questions? Comments? Email {{admin_email}}
+</p>
