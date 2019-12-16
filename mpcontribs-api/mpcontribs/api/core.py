@@ -290,14 +290,17 @@ class SwaggerView(OriginalSwaggerView, ResourceView, metaclass=SwaggerViewType):
 
     def is_admin_or_project_user(self, request, obj):
         groups = self.get_groups(request)
-        return 'admin' in groups or obj.project in groups
+        is_approved = getattr(obj, 'is_approved', obj.project.is_approved)
+        return 'admin' in groups or (obj.project in groups and is_approved)
 
     def has_read_permission(self, request, qs):
         groups = self.get_groups(request)
         if 'admin' in groups:
             return qs  # admins can read all entries
-        # only read public and project entries
-        return qs.filter(Q(is_public=True) | Q(project__in=groups))
+        # only read public or approved project entries
+        print(request.path)
+        kwargs = {'is_approved': True} if request.path.startswith('/projects/') else {'project__is_approved': True}
+        return qs.filter(Q(is_public=True) | Q(project__in=groups, **kwargs))
 
     def has_add_permission(self, request, obj):
         return self.is_admin_or_project_user(request, obj)

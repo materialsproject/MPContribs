@@ -13,8 +13,7 @@ def get_context(request, project):
     kwargs = get_client_kwargs(request)
     client = load_client()
 
-    mask = ["title", "authors", "description", "urls", "other", "columns"]
-    prov = client.projects.get_entry(pk=project, _fields=mask, **kwargs).response().result
+    prov = client.projects.get_entry(pk=project, _fields=['_all'], **kwargs).response().result
     ctx['project'] = project
     ctx['title'] = prov.pop('title')
     ctx['descriptions'] = prov['description'].strip().split('.', 1)
