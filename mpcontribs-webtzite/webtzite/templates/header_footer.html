@@ -27,20 +27,56 @@
               <img id="logo">
             </a>
           </div>
-          <div class="col-md-3" style="padding-top: 9px; padding-bottom: 9px; margin-left: 30px;">
+          <div class="col-md-4" style="padding-top: 9px; padding-bottom: 9px; margin-left: 30px;">
               <select data-placeholder="Search or jump to projects ..." id="search" style="width: 100%;">
                   <option></option>
               </select>
           </div>
           <ul class="nav navbar-nav navbar-right" style="font-size: 16px; font-weight: bold;">
-            <li><a href="https://mpcontribs.org" target="_blank">Docs</a></li>
-            <li><a href="https://api.mpcontribs.org" target="_blank">API</a></li>
-            <li><a href="https://jhub.mpcontribs.org" target="_blank">JupyterHub</a></li>
-            <li><a href="https://ingester.mpcontribs.org/ingester" target="_blank">Ingester</a></li>
-            {% block extra_items %}
-            {% endblock extra_items %}
-            <li><a href="{% url 'webtzite:dashboard' %}">Dashboard</a></li>
-            <li><a href="/apply" style="color: orange;">Apply</a></li>
+              <!-- TODO The Littlest JupyterHub (TLJH) -->
+              <!-- TODO remove ingester domain, merge into portal -->
+              <!-- TODO reorganize: Start / Contribute (Jupyter Notebook, Ingester WebApp) / Retrieve -->
+              <li><a href="/apply" style="color: orange;">Apply</a></li>
+              <li class="dropdown">
+                  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+                      Contribute <span class="caret"></span>
+                  </a>
+                  <ul class="dropdown-menu">
+                      <li><a href="https://jhub.mpcontribs.org">Jupyter Notebook</a></li> <!-- TODO link to notebook -->
+                      <li><a href="/ingester">Ingester WebApp</a></li>
+                  </ul>
+              </li>
+              <li><a href="https://jhub.mpcontribs.org">Retrieve</a></li> <!-- TODO link to notebook -->
+              {% block extra_items %}
+              {% endblock extra_items %}
+              <li class="dropdown">
+                  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+                      <span class="glyphicon glyphicon-list" aria-hidden="true"></span> <span class="caret"></span>
+                  </a>
+                  <!-- TODO dropdown with profile info (email, button to copy apikey) -->
+                  <ul class="dropdown-menu">
+                      <li class="navbar-text" style="float: none; margin: 3px 15px 3px 20px;">
+                          <small>Signed in as</small><br>{{ request.META.HTTP_X_CONSUMER_USERNAME }}
+                      </li>
+                      <li role="separator" class="divider"></li>
+                      <li class="navbar-text" style="float: none; margin: 3px 15px 3px 20px;">
+                          <button id=api_key_btn type="button" class="btn btn-default btn-sm">
+                              <span class="glyphicon glyphicon-copy" aria-hidden="true"></span> Copy API Key
+                          </button>
+                      </li>
+                      <li role="separator" class="divider"></li>
+                      <li>
+                          <a href="https://mpcontribs.org" target="_blank">
+                              Documentation <span class="glyphicon glyphicon-new-window" aria-hidden="true"></span>
+                          </a>
+                      </li>
+                      <li>
+                          <a href="https://api.mpcontribs.org" target="_blank">
+                              RESTful API <span class="glyphicon glyphicon-new-window" aria-hidden="true"></span>
+                          </a>
+                      </li>
+                  </ul>
+              </li>
           </ul>
         </div>
       </nav>

@@ -54,6 +54,7 @@ module.exports = {
       "toggle": 'bootstrap-toggle/js/bootstrap-toggle',
       "underscore": 'underscore/underscore',
       "lunr": 'lunr.js/lunr',
+      "clipboard": "clipboard-polyfill/dist/clipboard-polyfill",
       "plotly": 'plotly.js/lib/core',
       "backgrid-select-all": 'backgrid-select-all/backgrid-select-all',
       "backgrid-filter": 'backgrid-filter/backgrid-filter',

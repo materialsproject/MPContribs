@@ -1,7 +1,7 @@
-import img from './logo.png'
+import img from './logo.png';
+import * as clipboard from "clipboard";
 
 require("../../../node_modules/bootstrap/dist/css/bootstrap.min.css");
-require("../../../node_modules/bootstrap/dist/css/bootstrap-theme.min.css");
 require("../../../node_modules/bootstrap-slider/dist/css/bootstrap-slider.min.css");
 require("../../../node_modules/bootstrap-toggle/css/bootstrap-toggle.min.css");
 require("../../../node_modules/bootstrap-tokenfield/dist/css/bootstrap-tokenfield.min.css");
@@ -29,7 +29,10 @@ if (api_key !== '') {
 
 $(document).ready(function () {
     document.getElementById("logo").src = img;
-    $('#api_key_code').html(api_key_code);
+
+    $('#api_key_btn').on('click', function() {
+        clipboard.writeText(api_key_code);
+    });
 
     $('#search').select2({
         ajax: {
