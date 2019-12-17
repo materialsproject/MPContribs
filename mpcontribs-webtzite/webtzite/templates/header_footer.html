@@ -55,12 +55,14 @@
                       <li class="navbar-text" style="float: none; margin: 3px 15px 3px 20px;">
                           <small>Signed in as</small><br><span style="white-space: nowrap;">{{ request.META.HTTP_X_CONSUMER_USERNAME }}</span>
                       </li>
+                      {% if request.META.HTTP_X_CONSUMER_CUSTOM_ID %}
                       <li role="separator" class="divider"></li>
                       <li class="navbar-text" style="float: none; margin: 3px 15px 3px 20px;">
                           <button id=api_key_btn type="button" class="btn btn-default btn-sm">
                               <span class="glyphicon glyphicon-copy" aria-hidden="true"></span> Copy API Key
                           </button>
                       </li>
+                      {% endif %}
                       <li role="separator" class="divider"></li>
                       <li>
                           <a id=docs_url target="_blank">
