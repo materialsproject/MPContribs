@@ -291,15 +291,28 @@ class SwaggerView(OriginalSwaggerView, ResourceView, metaclass=SwaggerViewType):
     def is_admin_or_project_user(self, request, obj):
         groups = self.get_groups(request)
         is_approved = getattr(obj, 'is_approved', obj.project.is_approved)
-        return 'admin' in groups or (obj.project in groups and is_approved)
+        owner = getattr(obj, 'owner', obj.project.owner)
+        username = request.headers.get('X-Consumer-Username')
+        return 'admin' in groups or (
+            (obj.project in groups or owner == username) and is_approved
+        )
 
     def has_read_permission(self, request, qs):
         groups = self.get_groups(request)
         if 'admin' in groups:
             return qs  # admins can read all entries
         # only read public or approved project entries
-        kwargs = {'is_approved': True} if request.path.startswith('/projects/') else {'project__is_approved': True}
-        return qs.filter(Q(is_public=True) | Q(project__in=groups, **kwargs))
+        is_projects = request.path.startswith('/projects/')
+        prefix = 'project__' if not is_projects else ''
+        qfilter = Q(is_public=True)
+        kwargs = {f'{prefix}is_approved': True}
+        if groups:
+            qfilter |= Q(project__in=groups, **kwargs)
+        username = request.headers.get('X-Consumer-Username')
+        if username:
+            kwargs.update({f'{prefix}owner': username})
+            qfilter |= Q(**kwargs)
+        return qs.filter(qfilter)
 
     def has_add_permission(self, request, obj):
         return self.is_admin_or_project_user(request, obj)

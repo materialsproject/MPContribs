@@ -3,10 +3,14 @@ from django.conf import settings
 from mpcontribs.client import load_client
 
 def get_client_kwargs(request):
-    name = 'X-Consumer-Groups'
-    key = f'HTTP_{name.upper().replace("-", "_")}'
-    value = request.META.get(key)
-    return {'_request_options': {"headers": {name: value}}} if value else {}
+    names = ['X-Consumer-Groups', 'X-Consumer-Username']
+    headers = {}
+    for name in names:
+        key = f'HTTP_{name.upper().replace("-", "_")}'
+        value = request.META.get(key)
+        if value is not None:
+            headers[name] = value
+    return {'_request_options': {"headers": headers}} if headers else {}
 
 def get_context(request, project):
     ctx = {'project': project}
@@ -20,11 +24,14 @@ def get_context(request, project):
     authors = [a.strip() for a in prov['authors'].split(',') if a]
     ctx['authors'] = {'main': authors[0], 'etal': authors[1:]}
     ctx['urls'] = prov['urls']
-    ctx['other'] = json.dumps(prov.get('other'))
-    ctx['columns'] = ['identifier', 'id'] + prov['columns']
-    ctx['search_columns'] = ['identifier'] + [
-        col for col in prov['columns'] if not col.endswith(']') and not col.endswith('CIF')
-    ]
+    other = prov.get('other', '')
+    if other:
+        ctx['other'] = json.dumps(other)
+    if prov['columns']:
+        ctx['columns'] = ['identifier', 'id'] + prov['columns']
+        ctx['search_columns'] = ['identifier'] + [
+            col for col in prov['columns'] if not col.endswith(']') and not col.endswith('CIF')
+        ]
 
     # TODO contribs key is only used in dilute_diffusion and should go through the table
     #from mpcontribs.io.core.utils import get_short_object_id
