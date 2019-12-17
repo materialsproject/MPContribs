@@ -40,11 +40,11 @@
                       Contribute <span class="caret"></span>
                   </a>
                   <ul class="dropdown-menu">
-                      <li><a href="http://localhost:8000/hub/user-redirect/git-pull?repo=https%3A%2F%2Fgithub.com%2Fmaterialsproject%2FMPContribs&branch=dev&subPath=binder/notebooks/contribute.ipynb&app=notebook ">Jupyter Notebook</a></li> <!-- TODO fix host -->
+                      <li><a id=contribute_url target=_blank>Jupyter Notebook <span class="glyphicon glyphicon-new-window" aria-hidden="true"></span></a></li>
                       <li><a href="/ingester">Ingester WebApp</a></li>
                   </ul>
               </li>
-              <li><a href="http://localhost:8000/hub/user-redirect/git-pull?repo=https%3A%2F%2Fgithub.com%2Fmaterialsproject%2FMPContribs&branch=dev&subPath=binder/notebooks/&app=notebook ">Retrieve</a></li> <!-- TODO fix host -->
+              <li><a id=retrieve_url target=_blank>Retrieve <span class="glyphicon glyphicon-new-window" aria-hidden="true"></span></a></li>
               {% block extra_items %}
               {% endblock extra_items %}
               <li class="dropdown">
@@ -63,12 +63,12 @@
                       </li>
                       <li role="separator" class="divider"></li>
                       <li>
-                          <a href="https://mpcontribs.org" target="_blank">
+                          <a id=docs_url target="_blank">
                               Documentation <span class="glyphicon glyphicon-new-window" aria-hidden="true"></span>
                           </a>
                       </li>
                       <li>
-                          <a href="https://api.mpcontribs.org" target="_blank">
+                          <a id=api_url target="_blank">
                               RESTful API <span class="glyphicon glyphicon-new-window" aria-hidden="true"></span>
                           </a>
                       </li>

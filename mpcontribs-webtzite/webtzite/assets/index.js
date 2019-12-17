@@ -29,6 +29,12 @@ if (api_key !== '') {
 
 $(document).ready(function () {
     document.getElementById("logo").src = img;
+    var nb_url = api_key !== '' ? 'https://jhub.mpcontribs.org' : 'http://localhost:8000';
+    nb_url += '/hub/user-redirect/git-pull?repo=https%3A%2F%2Fgithub.com%2Fmaterialsproject%2FMPContribs&branch=dev&app=notebook&subPath=binder/notebooks/';
+    document.getElementById("contribute_url").href = nb_url + 'contribute.ipynb';
+    document.getElementById("retrieve_url").href = nb_url + 'retrieve.ipynb';
+    document.getElementById("docs_url").href = api_key !== '' ? 'https://mpcontribs.org' : 'http://localhost:8081';
+    document.getElementById("api_url").href = window.api['host'];
 
     $('#api_key_btn').on('click', function() {
         clipboard.writeText(api_key_code);

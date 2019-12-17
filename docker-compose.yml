@@ -12,6 +12,7 @@ services:
         depends_on:
             - api
             - jhub
+            - docs
         volumes:
             - ./test_site:/app/test_site
             - ./webpack.config.js:/app/webpack.config.js
@@ -80,22 +81,6 @@ services:
         ports:
             - "8000:8081"
 
-    # build image first:
-    # $ jupyter-repo2docker --user-name jovyan --user-id 1000 --image-name mpcontribs_r2d --no-run .
-    r2d:
-        image: mpcontribs_r2d
-        ports:
-            - "8888:8888"
-        environment:
-            - NODE_ENV=development
-        volumes:
-            - ./mpcontribs-io:/home/jovyan/mpcontribs-io
-            - ./mpcontribs-client:/home/jovyan/mpcontribs-client
-            - ./binder/notebooks:/home/jovyan/binder/notebooks
-            - ./webpack-binder.config.js:/home/jovyan/webpack.config.js
-            - ./binder/binder.js:/home/jovyan/binder.js
-            - ./mpcontribs-webtzite:/home/jovyan/mpcontribs-webtzite
-
     jhub:
         build:
             context: .
@@ -107,5 +92,10 @@ services:
         volumes:
             - /var/run/docker.sock:/var/run/docker.sock
             - ./mpcontribs-client:/srv/jupyterhub/mpcontribs-client
+            #- ./mpcontribs-io:/home/jovyan/mpcontribs-io
+            #- ./binder/notebooks:/home/jovyan/binder/notebooks
+            #- ./webpack-binder.config.js:/home/jovyan/webpack.config.js
+            #- ./binder/binder.js:/home/jovyan/binder.js
+            #- ./mpcontribs-webtzite:/home/jovyan/mpcontribs-webtzite
         ports:
             - "8000:8000"
