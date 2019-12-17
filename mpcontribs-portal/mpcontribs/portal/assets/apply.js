@@ -3,10 +3,15 @@ import 'bootstrap-tokenfield';
 import 'jquery-form';
 import 'jquery-validation';
 import 'czmore';
+import {Spinner} from 'spin.js';
+
+var target = document.getElementById('spinner');
+var spinner = new Spinner({scale: 0.5});
 
 $('#authors').tokenfield({});
 
 function prepareRequest(formData, jqForm, options) {
+    spinner.spin(target);
     $('.alert-success').hide(); $('.alert-danger').hide();
     if (formData[4]['value'].trim() === "") {
         $('.alert-danger').html('Please add description.').show();
@@ -34,6 +39,7 @@ function processJson(data) { // 'data' is the json object returned from the serv
     } else {
         $('.alert-danger').html(data.responseJSON['error']).show();
     }
+    spinner.stop();
 }
 
 $.validator.addMethod("alphanumeric", function(value, element) {
