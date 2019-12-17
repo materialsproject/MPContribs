@@ -82,12 +82,12 @@ class CardsView(SwaggerView):
             # generate HTML content
             ctx = {'cid': cid}
             card = Cards.objects.get(id=cid)
-            info = Projects.objects.get(pk=card.project)
+            info = Projects.objects.get(pk=card.project.id)
             ctx['title'] = info.title
             ctx['descriptions'] = info.description.strip().split('.', 1)
             authors = [a.strip() for a in info.authors.split(',') if a]
             ctx['authors'] = {'main': authors[0], 'etal': authors[1:]}
-            ctx['landing_page'] = f'/{card.project}/'
+            ctx['landing_page'] = f'/{card.project.id}/'
             ctx['more'] = f'/{cid}'
             ctx['urls'] = info.urls.values()
             card_script = get_resource_as_string('templates/linkify.min.js')

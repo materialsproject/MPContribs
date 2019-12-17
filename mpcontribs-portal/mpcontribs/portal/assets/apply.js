@@ -24,7 +24,6 @@ function prepareRequest(formData, jqForm, options) {
         urls['value'][key_url[0]['value']] = key_url[1]['value'];
     }
     formData.push(urls);
-    // TODO collaborators emails
     return true;
 }
 

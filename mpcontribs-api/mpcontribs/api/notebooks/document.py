@@ -1,5 +1,7 @@
 from flask_mongoengine import Document
-from mongoengine.fields import DictField, StringField, IntField, BooleanField, ListField
+from mongoengine import CASCADE
+from mongoengine.fields import DictField, StringField, IntField, BooleanField, ListField, LazyReferenceField
+from mpcontribs.api.projects.document import Projects
 
 
 class Kernelspec(DictField):
@@ -45,12 +47,9 @@ class Cell(DictField):
 
 
 class Notebooks(Document):
-    __project_regex__ = '^[a-zA-Z0-9_]+$'
-    project = StringField(
-        min_length=3, max_length=30, required=True, regex=__project_regex__,
-        help_text="project name/slug (valid format: `{}`)".format(
-            __project_regex__
-        )
+    project = LazyReferenceField(
+        Projects, passthrough=True, reverse_delete_rule=CASCADE,
+        help_text="project this notebook belongs to"
     )
     is_public = BooleanField(
         required=True, default=False, help_text='public or private notebook'

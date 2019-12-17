@@ -1,17 +1,14 @@
 from flask_mongoengine import Document
-from mongoengine import fields
+from mongoengine import CASCADE
+from mongoengine.fields import LazyReferenceField, BooleanField, StringField
+from mpcontribs.api.projects.document import Projects
 
 
 class Cards(Document):
-    __project_regex__ = '^[a-zA-Z0-9_]+$'
-    project = fields.StringField(
-        min_length=3, max_length=30, required=True, regex=__project_regex__,
-        help_text="project name/slug (valid format: `{}`)".format(
-            __project_regex__
-        )
+    project = LazyReferenceField(
+        Projects, passthrough=True, reverse_delete_rule=CASCADE,
+        help_text="project this card belongs to"
     )
-    is_public = fields.BooleanField(
-        required=True, default=False, help_text='public or private card'
-    )
-    html = fields.StringField(required=True, default='', help_text="embeddable html code")
+    is_public = BooleanField(required=True, default=False, help_text='public or private card')
+    html = StringField(required=True, default='', help_text="embeddable html code")
     meta = {'collection': 'cards', 'indexes': ['project', 'is_public']}

@@ -298,7 +298,6 @@ class SwaggerView(OriginalSwaggerView, ResourceView, metaclass=SwaggerViewType):
         if 'admin' in groups:
             return qs  # admins can read all entries
         # only read public or approved project entries
-        print(request.path)
         kwargs = {'is_approved': True} if request.path.startswith('/projects/') else {'project__is_approved': True}
         return qs.filter(Q(is_public=True) | Q(project__in=groups, **kwargs))
 

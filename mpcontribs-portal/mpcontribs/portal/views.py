@@ -104,7 +104,7 @@ def cif(request, sid):
 def download_json(request, cid):
     client = load_client()
     kwargs = get_client_kwargs(request)
-    contrib = client.contributions.get_entry(pk=cid, **kwargs).response().result
+    contrib = client.contributions.get_entry(pk=cid, fields=['_all'], **kwargs).response().result
     if contrib:
         jcontrib = json.dumps(contrib)
         response = HttpResponse(jcontrib, content_type='application/json')
