@@ -33,7 +33,6 @@
               </select>
           </div>
           <ul class="nav navbar-nav navbar-right" style="font-size: 16px; font-weight: bold;">
-              <!-- TODO The Littlest JupyterHub (TLJH) -->
               <!-- TODO remove ingester domain, merge into portal -->
               <li><a href="/apply" style="color: orange;">Apply</a></li>
               <li class="dropdown">
@@ -41,11 +40,11 @@
                       Contribute <span class="caret"></span>
                   </a>
                   <ul class="dropdown-menu">
-                      <li><a href="https://jhub.mpcontribs.org">Jupyter Notebook</a></li> <!-- TODO link to notebook -->
+                      <li><a href="http://localhost:8000/hub/user-redirect/git-pull?repo=https%3A%2F%2Fgithub.com%2Fmaterialsproject%2FMPContribs&branch=dev&subPath=binder/notebooks/contribute.ipynb&app=notebook ">Jupyter Notebook</a></li> <!-- TODO fix host -->
                       <li><a href="/ingester">Ingester WebApp</a></li>
                   </ul>
               </li>
-              <li><a href="https://jhub.mpcontribs.org">Retrieve</a></li> <!-- TODO link to notebook -->
+              <li><a href="http://localhost:8000/hub/user-redirect/git-pull?repo=https%3A%2F%2Fgithub.com%2Fmaterialsproject%2FMPContribs&branch=dev&subPath=binder/notebooks/&app=notebook ">Retrieve</a></li> <!-- TODO fix host -->
               {% block extra_items %}
               {% endblock extra_items %}
               <li class="dropdown">

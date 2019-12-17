@@ -11,6 +11,7 @@ services:
             - NODE_ENV=development
         depends_on:
             - api
+            - jhub
         volumes:
             - ./test_site:/app/test_site
             - ./webpack.config.js:/app/webpack.config.js
@@ -96,8 +97,15 @@ services:
             - ./mpcontribs-webtzite:/home/jovyan/mpcontribs-webtzite
 
     jhub:
-        build: ./jhub
+        build:
+            context: .
+            dockerfile: DockerfileJhub
+        environment:
+            - NODE_ENV=development
+        depends_on:
+            - api
         volumes:
             - /var/run/docker.sock:/var/run/docker.sock
+            - ./mpcontribs-client:/srv/jupyterhub/mpcontribs-client
         ports:
             - "8000:8000"
