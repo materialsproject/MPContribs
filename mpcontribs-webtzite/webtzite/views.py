@@ -16,4 +16,4 @@ def index(request):
 
     templates = [f'{project}_index.html', 'explorer_index.html']
     template = select_template(templates)
-    return HttpResponse(template.render(ctx.flatten()))
+    return HttpResponse(template.render(ctx.flatten(), request))
