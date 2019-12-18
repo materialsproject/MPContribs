@@ -324,6 +324,12 @@ Resources:
                 # Allow the ECS tasks to upload logs to CloudWatch
                 - 'logs:CreateLogStream'
                 - 'logs:PutLogEvents'
+
+                # Allow the ECS tasks to start tasks (JHub)
+                - "ecs:RunTask"
+                - "ecs:StopTask"
+                - "ecs:DescribeTasks"
+                - "iam:PassRole"
               Resource: '*'
 
 # These are the values output by the CloudFormation template. Be careful
