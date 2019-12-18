@@ -12,12 +12,10 @@ ENV SETUPTOOLS_SCM_PRETEND_VERSION dev
 COPY mpcontribs-client mpcontribs-client
 RUN cd mpcontribs-client && pip install --upgrade -e .
 
-RUN pip install jhub_remote_user_authenticator notebook
-RUN pip install nbgitpuller nbzip
+RUN pip install jhub_remote_user_authenticator notebook nbgitpuller nbzip fargatespawner
 RUN jupyter serverextension enable --py nbzip --sys-prefix
 RUN jupyter nbextension install --user --py nbzip
 RUN jupyter nbextension enable --user --py nbzip
-
 
 #COPY logo.png /srv/jupyterhub/
 COPY jupyterhub_config.py /srv/jupyterhub/jupyterhub_config.py
