@@ -47,6 +47,17 @@ Resources:
             Resource:
               - "arn:aws:s3:::mpcontribs-sqlite/jupyterhub.sqlite"
               - "arn:aws:s3:::mpcontribs-sqlite"
+      - PolicyName: jhub-tasks
+        PolicyDocument:
+          Statement:
+          - Effect: Allow
+            Action:
+                - "ecs:RunTask"
+                - "ecs:StopTask"
+                - "ecs:DescribeTasks"
+                - "iam:PassRole"
+            Resource:
+                - "*"
 
   # The task definition. This is a simple metadata description of what
   # container to run, and what resource requirements it has.

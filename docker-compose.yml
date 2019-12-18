@@ -79,7 +79,7 @@ services:
         volumes:
             - .:/docs
         ports:
-            - "8000:8081"
+            - "8081:8000"
 
     jhub:
         build:
