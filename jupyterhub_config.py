@@ -37,15 +37,14 @@ c.JupyterHub.cleanup_proxy = False
 c.JupyterHub.cleanup_servers = False
 c.JupyterHub.active_server_limit = 10
 c.JupyterHub.concurrent_spawn_limit = 5
-#c.JupyterHub.db_url = 'sqlite:///jupyterhub.sqlite' # TODO
+#c.JupyterHub.db_url = 'sqlite:///jupyterhub.sqlite' # TODO https://github.com/uktrade/jupyters3
 #c.JupyterHub.logo_file = '/srv/jupyterhub/logo.png'
 c.JupyterHub.shutdown_on_logout = True
 c.JupyterHub.upgrade_db = True
 
 c.Spawner.consecutive_failure_limit = 3
-#c.Spawner.cpu_guarantee = 0.25
 c.Spawner.cpu_limit = 0.25
 c.Spawner.debug = True
-#c.Spawner.mem_guarantee = None
 c.Spawner.mem_limit = '512M'
 c.Spawner.env_keep.append('NODE_ENV')
+c.Spawner.start_timeout = 300
