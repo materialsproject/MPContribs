@@ -2,7 +2,7 @@ import json
 from django.conf import settings
 from mpcontribs.client import load_client
 
-def get_client_kwargs(request):
+def get_consumer(request):
     names = ['X-Consumer-Groups', 'X-Consumer-Username']
     headers = {}
     for name in names:
@@ -10,14 +10,13 @@ def get_client_kwargs(request):
         value = request.META.get(key)
         if value is not None:
             headers[name] = value
-    return {'_request_options': {"headers": headers}} if headers else {}
+    return headers
 
 def get_context(request, project):
-    ctx = {'project': project}
-    kwargs = get_client_kwargs(request)
-    client = load_client()
+    client = load_client(headers=get_consumer(request))
+    prov = client.projects.get_entry(pk=project, _fields=['_all']).response().result
 
-    prov = client.projects.get_entry(pk=project, _fields=['_all'], **kwargs).response().result
+    ctx = {'project': project}
     ctx['project'] = project
     ctx['title'] = prov.pop('title')
     ctx['descriptions'] = prov['description'].strip().split('.', 1)

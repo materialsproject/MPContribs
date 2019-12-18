@@ -15,21 +15,20 @@ from django.http import HttpResponse
 from django.urls import reverse
 
 from mpcontribs.client import load_client
-from webtzite import get_client_kwargs
+from webtzite import get_consumer
 
 def index(request):
     ctx = RequestContext(request)
     ctx['landing_pages'] = []
-    kwargs = get_client_kwargs(request)
     mask = ['project', 'title', 'authors']
-    client = load_client()  # sets/returns global variable
-    provenances = client.projects.get_entries(_fields=mask, **kwargs).response().result
+    client = load_client(headers=get_consumer(request))  # sets/returns global variable
+    provenances = client.projects.get_entries(_fields=mask).response().result
     for provenance in provenances['data']:
         entry = {'project': provenance['project']}
         img_path = os.path.join(os.path.dirname(__file__), 'assets', 'images', provenance['project'] + '.jpg')
         if not os.path.exists(img_path):
             entry['contribs'] = client.contributions.get_entries(
-                project=provenance['project'], **kwargs  # default limit 20
+                project=provenance['project'] # default limit 20
             ).response().result['data']
         entry['title'] = provenance['title']
         authors = provenance['authors'].split(',', 1)
@@ -80,10 +79,9 @@ def export_notebook(nb, cid):
 
 def contribution(request, cid):
     ctx = RequestContext(request)
-    kwargs = get_client_kwargs(request)
-    client = load_client()
+    client = load_client(headers=get_consumer(request))  # sets/returns global variable
     try:
-        nb = client.notebooks.get_entry(pk=cid, **kwargs).response(timeout=2).result
+        nb = client.notebooks.get_entry(pk=cid).response(timeout=2).result
         if len(nb['cells']) < 2:
             raise HTTPTimeoutError
         ctx['nb'], ctx['js'] = export_notebook(nb, cid)
@@ -93,18 +91,16 @@ def contribution(request, cid):
 
 
 def cif(request, sid):
-    client = load_client()
-    kwargs = get_client_kwargs(request)
-    cif = client.structures.get_entry(pk=sid, _fields=['cif'], **kwargs).response().result['cif']
+    client = load_client(headers=get_consumer(request))  # sets/returns global variable
+    cif = client.structures.get_entry(pk=sid, _fields=['cif']).response().result['cif']
     if cif:
         return HttpResponse(cif, content_type='text/plain')
     return HttpResponse(status=404)
 
 
 def download_json(request, cid):
-    client = load_client()
-    kwargs = get_client_kwargs(request)
-    contrib = client.contributions.get_entry(pk=cid, fields=['_all'], **kwargs).response().result
+    client = load_client(headers=get_consumer(request))  # sets/returns global variable
+    contrib = client.contributions.get_entry(pk=cid, fields=['_all']).response().result
     if contrib:
         jcontrib = json.dumps(contrib)
         response = HttpResponse(jcontrib, content_type='application/json')
@@ -113,10 +109,9 @@ def download_json(request, cid):
     return HttpResponse(status=404)
 
 def csv(request, project):
-    client = load_client()
-    kwargs = get_client_kwargs(request)
+    client = load_client(headers=get_consumer(request))  # sets/returns global variable
     contribs = client.contributions.get_entries(
-        project=project, _fields=['identifier', 'id', 'data'], **kwargs
+        project=project, _fields=['identifier', 'id', 'data']
     ).response().result['data']  # first 20 only
 
     data = []
