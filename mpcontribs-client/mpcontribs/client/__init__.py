@@ -29,8 +29,16 @@ class FidoClientGlobalHeaders(FidoClient):
 
 def load_client(apikey=None, headers=None):
     global client
+    force = False
 
-    if client is None:
+    if client is not None:
+        http_client = client.swagger_spec.http_client
+        force = bool(
+            (apikey and http_client.authenticator.api_key != apikey) or \
+            (headers is not None and http_client.headers != headers)
+        )
+
+    if force or client is None:
         # docker containers networking within docker-compose or Fargate task
         host = 'api.mpcontribs.org'
         if apikey is None:
