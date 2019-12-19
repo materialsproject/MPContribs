@@ -10,6 +10,7 @@ from flasgger.marshmallow_apispec import SwaggerView as OriginalSwaggerView
 from marshmallow_mongoengine import ModelSchema
 from flask_mongorest.views import ResourceView
 from mongoengine.queryset.visitor import Q
+from werkzeug.exceptions import Unauthorized
 from mpcontribs.api.config import SWAGGER
 
 logger = logging.getLogger('app')
@@ -321,7 +322,18 @@ class SwaggerView(OriginalSwaggerView, ResourceView, metaclass=SwaggerViewType):
         return qs.filter(qfilter)
 
     def has_add_permission(self, request, obj):
-        return self.is_admin_or_project_user(request, obj)
+        if not self.is_admin_or_project_user(request, obj):
+            return False
+
+        if hasattr(obj, 'identifier'):
+            # TODO add unique_identifiers field in Projects to disable duplicate check
+            nobjs = self.resource.document.objects(
+                project=obj.project.id, identifier=obj.identifier
+            ).count()
+            if nobjs > 0:
+                raise Unauthorized(f'{obj.identifier} already added for {obj.project.id}')
+
+        return True
 
     def has_change_permission(self, request, obj):
         return self.is_admin_or_project_user(request, obj)
