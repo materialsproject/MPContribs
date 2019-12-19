@@ -32,3 +32,5 @@ dict-deep>=2.0.2
 blinker>=1.4
 itsdangerous>=1.1.0
 Flask-Mail>=0.9.1
+fdict>=0.8.1
+pint>=0.9

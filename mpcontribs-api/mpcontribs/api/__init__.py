@@ -14,6 +14,11 @@ from flasgger.base import Swagger
 from pandas.io.json._normalize import nested_to_record
 from typing import Any, Dict
 from itsdangerous import URLSafeTimedSerializer
+from pint import UnitRegistry
+
+ureg = UnitRegistry(auto_reduce_dimensions=True)
+ureg.default_format = '~'
+Q_ = ureg.Quantity
 
 for mod in ['matplotlib', 'toronado.cssutils', 'selenium.webdriver.remote.remote_connection']:
     log = logging.getLogger(mod)
