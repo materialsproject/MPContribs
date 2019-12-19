@@ -8,6 +8,7 @@ from flask import Flask, current_app
 from flask_marshmallow import Marshmallow
 from flask_mongoengine import MongoEngine
 from flask_mongorest import register_class
+from flask_mongorest.exceptions import ValidationError
 from flask_log import Logging
 from flask_mail import Mail, Message
 from flasgger.base import Swagger
@@ -15,10 +16,14 @@ from pandas.io.json._normalize import nested_to_record
 from typing import Any, Dict
 from itsdangerous import URLSafeTimedSerializer
 from pint import UnitRegistry
+from fdict import fdict
+from string import punctuation
 
 ureg = UnitRegistry(auto_reduce_dimensions=True)
 ureg.default_format = '~'
 Q_ = ureg.Quantity
+delimiter, max_depth = '.', 2
+invalidChars = set(punctuation.replace('|', '').replace(delimiter, ''))
 
 for mod in ['matplotlib', 'toronado.cssutils', 'selenium.webdriver.remote.remote_connection']:
     log = logging.getLogger(mod)
@@ -26,6 +31,28 @@ for mod in ['matplotlib', 'toronado.cssutils', 'selenium.webdriver.remote.remote
 
 logger = logging.getLogger('app')
 mail = Mail()
+
+
+def validate_data(doc):
+    d = fdict(doc, delimiter=delimiter)
+
+    for key in list(d.keys()):
+        for char in key:
+            if char in invalidChars:
+                raise ValidationError({'error': f'invalid character {char} in {key}'})
+        nodes = key.split(delimiter)
+        if len(nodes) > max_depth:
+            raise ValidationError({'error': f'max nesting ({max_depth}) exceeded for {key}'})
+        value = str(d[key])
+        if ' ' in value or isinstance(d[key], (int, float)):
+            try:
+                q = Q_(value).to_compact()
+            except Exception as ex:
+                raise ValidationError({'error': str(ex)})
+            d[key] = {'display': str(q), 'value': q.magnitude, 'unit': format(q.units, '~')}
+
+    return d.to_dict_nested()
+
 
 def send_email(to, subject, template):
     msg = Message(

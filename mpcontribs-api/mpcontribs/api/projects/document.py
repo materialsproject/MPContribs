@@ -1,8 +1,9 @@
 from flask import current_app, render_template, url_for
 from flask_mongoengine import Document
+from flask_mongorest.exceptions import ValidationError
 from mongoengine.fields import StringField, BooleanField, DictField, URLField, MapField, EmailField
 from mongoengine import signals
-from mpcontribs.api import send_email
+from mpcontribs.api import send_email, validate_data, invalidChars
 
 
 class Projects(Document):
@@ -61,5 +62,20 @@ class Projects(Document):
         html = render_template('owner_email.html', approved=False, admin_email=admin_email)
         send_email(document.owner, subject, html)
 
+    @classmethod
+    def pre_save_post_validation(cls, sender, document, **kwargs):
+        document.other = validate_data(document.other)
+        if len(document.urls) > 5:
+            raise ValidationError({'error': f'too many URL references (max. 5)'})
+        for label in document.urls.keys():
+            len_label = len(label)
+            if len_label < 3 or len_label > 8:
+                raise ValidationError({'error': f'length of URL label {label} should be 3-8 characters'})
+            for char in label:
+                if char in invalidChars:
+                    raise ValidationError({'error': f'invalid character {char} in {label}'})
+
+
 signals.post_save.connect(Projects.post_save, sender=Projects)
 signals.post_delete.connect(Projects.post_delete, sender=Projects)
+signals.pre_save_post_validation.connect(Projects.pre_save_post_validation, sender=Projects)
