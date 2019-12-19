@@ -190,7 +190,7 @@ def get_specs(klass, method, collection):
                 'name': f'{collection[:-1]}',
                 'in': 'body',
                 'description': f'The object to use for {collection[:-1]} update',
-                'schema': {'$ref': f'#/definitions/{klass.schema_name}'}
+                'schema': {'type': 'object'}
             }],
             'responses': {
                 200: {
@@ -205,7 +205,7 @@ def get_specs(klass, method, collection):
             'name': f'{collection}',
             'in': 'body',
             'description': f'The object to use for {collection} bulk update',
-            'schema': {'$ref': f'#/definitions/{klass.schema_name}'}
+            'schema': {'type': 'object'}
         })
 
         spec = {
@@ -290,11 +290,12 @@ class SwaggerView(OriginalSwaggerView, ResourceView, metaclass=SwaggerViewType):
 
     def is_admin_or_project_user(self, request, obj):
         groups = self.get_groups(request)
-        is_approved = getattr(obj, 'is_approved', obj.project.is_approved)
-        owner = getattr(obj, 'owner', obj.project.owner)
+        is_approved = obj.is_approved if hasattr(obj, 'is_approved') else obj.project.is_approved
+        owner = obj.owner if hasattr(obj, 'owner') else obj.project.owner
+        project = obj.project.id if hasattr(obj.project, 'id') else obj.project
         username = request.headers.get('X-Consumer-Username')
         return 'admin' in groups or (
-            (obj.project in groups or owner == username) and is_approved
+            (project in groups or owner == username) and is_approved
         )
 
     def has_read_permission(self, request, qs):
@@ -302,16 +303,21 @@ class SwaggerView(OriginalSwaggerView, ResourceView, metaclass=SwaggerViewType):
         if 'admin' in groups:
             return qs  # admins can read all entries
         # only read public or approved project entries
-        is_projects = request.path.startswith('/projects/')
-        prefix = 'project__' if not is_projects else ''
-        qfilter = Q(is_public=True)
-        kwargs = {f'{prefix}is_approved': True}
-        if groups:
-            qfilter |= Q(project__in=groups, **kwargs)
         username = request.headers.get('X-Consumer-Username')
+        qfilter = Q(is_public=True)
+        if groups:
+            qfilter |= Q(project__in=groups, is_approved=True)
         if username:
-            kwargs.update({f'{prefix}owner': username})
-            qfilter |= Q(**kwargs)
+            qfilter |= Q(owner=username, is_approved=True)
+
+        if request.path.startswith('/projects/'):
+            return qs.filter(qfilter)
+
+        # project is LazyReferenceField
+        module = import_module('mpcontribs.api.projects.document')
+        Model = getattr(module, 'Projects')
+        projects = Model.objects.only('project').filter(qfilter)
+        qfilter = Q(is_public=True) | Q(project__in=projects)
         return qs.filter(qfilter)
 
     def has_add_permission(self, request, obj):
