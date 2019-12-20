@@ -1,5 +1,8 @@
 import os
 import fido
+from email.utils import formataddr, parseaddr
+from swagger_spec_validator.common import SwaggerValidationError
+from bravado_core.formatter import SwaggerFormat
 from bravado.client import SwaggerClient
 from bravado.requests_client import RequestsClient  # sync + api key
 from bravado.fido_client import FidoClient  # async
@@ -13,6 +16,19 @@ DEBUG = bool(
     (GATEWAY_HOST and 'localhost' not in GATEWAY_HOST)
 )
 client = None
+
+
+def validate_email(email_string):
+    try:
+        formataddr(parseaddr(email_string))
+    except Exception as ex:
+        raise SwaggerValidationError(f'E-mail {email_string} is invalid')
+
+
+email_format = SwaggerFormat(
+    format='email', to_wire=str, to_python=str,
+    validate=validate_email, description='e-mail address'
+)
 
 
 class FidoClientGlobalHeaders(FidoClient):
@@ -60,8 +76,10 @@ def load_client(apikey=None, headers=None):
         spec_dict['host'] = host
         spec_dict['schemes'] = [protocol]
         client = SwaggerClient.from_spec(
-            spec_dict, spec_url, http_client,
-            {'validate_responses': False, 'use_models': False}
+            spec_dict, spec_url, http_client, {
+                'validate_responses': False, 'use_models': False,
+                'include_missing_properties': False, 'formats': [email_format]
+            }
         )
 
     return client
