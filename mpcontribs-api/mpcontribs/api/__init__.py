@@ -23,7 +23,8 @@ ureg = UnitRegistry(auto_reduce_dimensions=True)
 ureg.default_format = '~'
 Q_ = ureg.Quantity
 delimiter, max_depth = '.', 2
-invalidChars = set(punctuation.replace('|', '').replace(delimiter, ''))
+invalidChars = set(punctuation.replace('|', ''))
+quantity_keys = ['display', 'value', 'unit']
 
 for mod in ['matplotlib', 'toronado.cssutils', 'selenium.webdriver.remote.remote_connection']:
     log = logging.getLogger(mod)
@@ -37,12 +38,20 @@ def validate_data(doc):
     d = fdict(doc, delimiter=delimiter)
 
     for key in list(d.keys()):
-        for char in key:
-            if char in invalidChars:
-                raise ValidationError({'error': f'invalid character {char} in {key}'})
         nodes = key.split(delimiter)
-        if len(nodes) > max_depth:
+        is_quantity_key = int(nodes[-1] in quantity_keys)
+
+        if len(nodes) > max_depth + is_quantity_key:
             raise ValidationError({'error': f'max nesting ({max_depth}) exceeded for {key}'})
+
+        if is_quantity_key:
+            continue
+
+        for node in nodes:
+            for char in node:
+                if char in invalidChars:
+                    raise ValidationError({'error': f'invalid character {char} in {node} ({key})'})
+
         value = str(d[key])
         if ' ' in value or isinstance(d[key], (int, float)):
             try:
