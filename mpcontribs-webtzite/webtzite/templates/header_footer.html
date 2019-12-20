@@ -90,11 +90,10 @@
           {{ alert|safe }}
         </div>
     </div>
-    {% else %}
+    {% endif %}
     {% block content %}
     <!-- Page Content-->
     {% endblock content %}
-    {% endif %}
     <footer hidden>
       <hr>
       <div class="pad-top row text-center">

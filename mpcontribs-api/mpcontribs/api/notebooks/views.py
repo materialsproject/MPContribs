@@ -26,9 +26,7 @@ notebooks = Blueprint("notebooks", __name__, template_folder=templates)
 class CustomGatewayClient(GatewayClient):
 
     def start_kernel(self):
-        json_data = {'name': 'python3', 'env': {
-            'KERNEL_GATEWAY_HOST': self.DEFAULT_GATEWAY_HOST
-        }}
+        json_data = {'name': 'python3', 'env': {'KERNEL_GATEWAY_HOST': self.DEFAULT_GATEWAY_HOST}}
         response = requests.post(self.http_api_endpoint, data=json_encode(json_data))
 
         if response.status_code == 201:
@@ -98,84 +96,82 @@ class NotebooksView(SwaggerView):
     def get(self, **kwargs):
         cid = kwargs['pk']
         try:
-            ret = super().get(**kwargs)
-            # nb.restore() ???
+            super().get(**kwargs)  # trigger DoesNotExist if necessary
+            nb = Notebooks.objects.get(id=cid)
+            if not nb.cells[-1]['outputs']:
+                kernel = client.start_kernel()
+                for idx, cell in enumerate(nb.cells):
+                    if cell['cell_type'] == 'code':
+                        print(f'executing cell {idx} ...')
+                        cell['outputs'] = kernel.execute(cell['source'])
+                client.shutdown_kernel(kernel)
+                nb.save()  # calls Notebooks.clean()
+            return super().get(**kwargs)
+
         except DoesNotExist:
             nb = None
             try:
                 nb = Notebooks.objects.only('id').get(id=cid)
             except DoesNotExist:
-                # save empty notebook, also start entry to avoid rebuild on subsequent requests
-                print('create empty notebook ...')
-                contrib = Contributions.objects.only('project', 'is_public').get(id=cid)
+                # create and save unexecuted notebook, also start entry to avoid rebuild on subsequent requests
+                print('create notebook with cells ...')
+                contrib = Contributions.objects.get(id=cid)
+                cells = [
+                    nbf.new_code_cell(
+                        "headers = { # just for local testing, kong+apikey will take care of headers\n"
+                        "\t'X-Consumer-Groups': 'my_project',\n"
+                        "\t'X-Consumer-Username': 'patrick@the-huck.com',\n"
+                        "}\n"
+                        "client = load_client(headers=headers) # provide apikey as argument to use api.mpcontribs.org\n"
+                        f"contrib = client.contributions.get_entry(pk='{cid}', _fields=['_all']).response().result"
+                    ),
+                    nbf.new_markdown_cell("## Provenance Info"),
+                    nbf.new_code_cell(
+                        "prov = client.projects.get_entry(pk=contrib['project'], _fields=['_all']).response().result\n"
+                        "RecursiveDict(prov)"
+                    ),
+                    nbf.new_markdown_cell(
+                        f"## Hierarchical Data for {contrib['identifier']}"
+                    ),
+                    nbf.new_code_cell(
+                        "HierarchicalData(contrib['data'])"
+                    )
+                ]
+
+                tables = [t.id for t in Tables.objects.only('id').filter(contribution=cid)]
+                if tables:
+                    cells.append(nbf.new_markdown_cell(
+                        f"## Tabular Data for {contrib['identifier']}"
+                    ))
+                    for ref in tables:
+                        cells.append(nbf.new_code_cell(
+                            f"table = client.tables.get_entry(pk='{ref}', _fields=['_all']).response().result # DataFrame\n"
+                            "Table.from_dict(table)"
+                        ))
+                        cells.append(nbf.new_code_cell(
+                            "Plot.from_dict(table)"
+                        ))
+
+                structures = [s.id for s in Structures.objects.only('id').filter(contribution=cid)]
+                if structures:
+                    cells.append(nbf.new_markdown_cell(
+                        f"## Pymatgen Structures for {contrib['identifier']}"
+                    ))
+                    for ref in structures:
+                        cells.append(nbf.new_code_cell(
+                            f"structure = client.structures.get_entry(pk='{ref}', _fields=['_all']).response().result\n"
+                            f"Structure.from_dict(structure)"
+                        ))
+
                 nb = Notebooks(
                     id=cid,  # to link to the according contribution
                     project=contrib.project.id, is_public=contrib.is_public
                 )
+                doc = deepcopy(seed_nb)
+                doc['cells'] += cells
+                self.Schema().update(nb, doc)
                 nb.save()  # calls Notebooks.clean()
-                return self.get(**kwargs)
+                return super().get(**kwargs)
 
             if nb is not None:
                 raise DoesNotExist(f'Notebook {nb.id} exists but user not in project group')
-
-        if not ret["cells"]:
-            # generate notebook content
-            print('generating notebook ...')
-            contrib = Contributions.objects.get(id=cid)
-            cells = [
-                nbf.new_code_cell(
-                    "client = load_client() # provide apikey as argument to use api.mpcontribs.org\n"
-                    f"contrib = client.contributions.get_entry(pk='{cid}', _fields=['_all']).response().result"
-                ),
-                nbf.new_markdown_cell("## Provenance Info"),
-                nbf.new_code_cell(
-                    "prov = client.projects.get_entry(pk=contrib['project'], _fields=['_all']).response().result\n"
-                    "RecursiveDict(prov)"
-                ),
-                nbf.new_markdown_cell(
-                    f"## Hierarchical Data for {contrib['identifier']}"
-                ),
-                nbf.new_code_cell(
-                    "HierarchicalData(contrib['data'])"
-                )
-            ]
-
-            tables = [t.id for t in Tables.objects.only('id').filter(contribution=cid)]
-            if tables:
-                cells.append(nbf.new_markdown_cell(
-                    f"## Tabular Data for {contrib['identifier']}"
-                ))
-                for ref in tables:
-                    cells.append(nbf.new_code_cell(
-                        f"table = client.tables.get_entry(pk='{ref}', _fields=['_all']).response().result # DataFrame\n"
-                        "Table.from_dict(table)"
-                    ))
-                    cells.append(nbf.new_code_cell(
-                        "Plot.from_dict(table)"
-                    ))
-
-            structures = [s.id for s in Structures.objects.only('id').filter(contribution=cid)]
-            if structures:
-                cells.append(nbf.new_markdown_cell(
-                    f"## Pymatgen Structures for {contrib['identifier']}"
-                ))
-                for ref in structures:
-                    cells.append(nbf.new_code_cell(
-                        f"structure = client.structures.get_entry(pk='{ref}', _fields=['_all']).response().result\n"
-                        f"Structure.from_dict(structure)"
-                    ))
-
-            kernel = client.start_kernel()
-            for cell in cells:
-                if cell.cell_type == 'code':
-                    cell['outputs'] = kernel.execute(cell.source)
-            client.shutdown_kernel(kernel)
-
-            doc = deepcopy(seed_nb)
-            doc['cells'] += cells
-            nb = Notebooks.objects.get(id=cid)
-            self.Schema().update(nb, doc)
-            nb.save()  # calls Notebooks.clean()
-            return self.get(**kwargs)
-
-        return ret
