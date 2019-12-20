@@ -54,6 +54,12 @@ class Projects(Document):
                 subject = f'[MPContribs] Your project "{document.project}" has been approved'
                 html = render_template('owner_email.html', approved=True, admin_email=admin_email)
                 send_email(document.owner, subject, html)
+            if set_keys:
+                # import here to avoid circular
+                from mpcontribs.api.notebooks.document import Notebooks
+                from mpcontribs.api.cards.document import Cards
+                Notebooks.objects(project=document.project).delete()
+                Cards.objects(project=document.project).delete()
 
     @classmethod
     def post_delete(cls, sender, document, **kwargs):
