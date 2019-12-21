@@ -115,6 +115,7 @@ class NotebooksView(SwaggerView):
                 # create and save unexecuted notebook, also start entry to avoid rebuild on subsequent requests
                 contrib = Contributions.objects.get(id=cid)
                 cells = [
+                    # TODO headers should not be shown in notebook
                     nbf.new_code_cell(
                         "headers = { # just for local testing, kong+apikey will take care of headers\n"
                         "\t'X-Consumer-Groups': 'my_project',\n"

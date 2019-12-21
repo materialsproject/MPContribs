@@ -61,6 +61,7 @@ def load_client(apikey=None, headers=None):
             host = 'api:5000' if DEBUG else 'localhost:5000'
 
         if apikey:
+            # TODO Kong forwards consumer headers when api-key used for auth
             http_client = RequestsClient()
             http_client.set_api_key(
                 host, apikey, param_in='header', param_name='x-api-key'

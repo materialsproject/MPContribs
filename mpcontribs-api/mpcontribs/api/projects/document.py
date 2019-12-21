@@ -19,6 +19,7 @@ class Projects(Document):
     )
     authors = StringField(
         required=True, help_text='comma-separated list of authors'
+        # TODO set regex to enforce format
     )
     description = StringField(
         min_length=5, max_length=1500, required=True,

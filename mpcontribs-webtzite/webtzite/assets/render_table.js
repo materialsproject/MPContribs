@@ -153,6 +153,7 @@ window.render_table = function(props) {
     var rows = new Rows();
     rows.on('sync', function(e) { spinner_table.stop(); })
 
+    // TODO column manager show full dotted fields
     var columns = new Backgrid.Columns(props.table['columns']);
     var colManager = new Backgrid.Extension.ColumnManager(columns, {
         initialColumnsVisible: config.ncols,
@@ -169,6 +170,7 @@ window.render_table = function(props) {
     var filter = new Backgrid.Extension.ServerSideFilter(filter_props);
     filter.name = 'identifier__contains';
 
+    // TODO filter disables when sorting
     var columns_list = $('#columns_list');
     if (columns_list.length) {
         columns_list.on('select2:select', function (e) {
@@ -188,6 +190,17 @@ window.render_table = function(props) {
 
     var paginator = new Backgrid.Extension.Paginator({collection: rows});
     $("#"+config.uuids[2]).append(paginator.render().$el);
+
     rows.fetch({reset: true});
     return grid;
 }
+
+// order -> TODO ascending, descending or default
+//if ' ' in sort_by and sort_by[-1] == ']':
+//    sort_by = sort_by.split(' ')[0]  # remove unit
+//    sort_by_key = f'data.{sort_by}.value'
+//elif sort_by in columns[2:]:
+//    sort_by_key = f'data.{sort_by}'
+//order_sign = '-' if order == 'desc' else '+'
+//order_by = f"{order_sign}{sort_by_key}"
+//objects = objects.order_by(order_by)

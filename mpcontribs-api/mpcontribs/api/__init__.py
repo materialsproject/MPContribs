@@ -58,6 +58,7 @@ def validate_data(doc):
                 q = Q_(value).to_compact()
             except Exception as ex:
                 raise ValidationError({'error': str(ex)})
+            # TODO keep percent as unit
             d[key] = {'display': str(q), 'value': q.magnitude, 'unit': format(q.units, '~')}
 
     return d.to_dict_nested()

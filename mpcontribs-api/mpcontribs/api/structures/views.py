@@ -53,6 +53,7 @@ class StructuresResource(Resource):
     default_limit = 10
     max_limit = 20
     bulk_update_limit = 100
+    # fields_to_paginate = {'sites': [20, 100]}  # TODO
 
     @staticmethod
     def get_optional_fields():

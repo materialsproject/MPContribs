@@ -30,6 +30,7 @@ $(document).ready(function () {
         $("#cards").empty();
     });
 
+    // TODO search formulae
     $('#identifiers_list').select2({
         placeholder: 'Search and select material(s) or composition(s) ...',
         ajax: {
