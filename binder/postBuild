@@ -20,4 +20,5 @@ cd $HOME &&
     npm run webpack && \
     mkdir -p $HOME/.jupyter/custom && \
     mv -v dist $HOME/.jupyter/custom/js && \
-    mv -v binder/custom.js $HOME/.jupyter/custom/
+    mv -v binder/custom.js $HOME/.jupyter/custom/ && \
+    npm cache clean --force

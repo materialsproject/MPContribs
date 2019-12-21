@@ -2,7 +2,7 @@ FROM jupyter/scipy-notebook
 EXPOSE 8888
 
 COPY binder/environment.yml environment.yml
-RUN conda env update --file environment.yml --prune
+RUN conda env update --file environment.yml && conda clean -afy
 
 COPY mpcontribs-io/requirements.txt requirements-io.txt
 COPY mpcontribs-client/requirements.txt requirements-client.txt

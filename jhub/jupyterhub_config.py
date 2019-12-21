@@ -8,7 +8,6 @@ c.JupyterHub.authenticator_class = RemoteUserLocalAuthenticator
 c.Authenticator.admin_users = {'phuck@lbl.gov'}
 c.Authenticator.username_pattern = '^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$'
 c.Authenticator.create_system_users = True
-c.Authenticator.delete_invalid_users = True
 c.Authenticator.add_user_cmd = ['adduser', '-q', '--gecos', '""', '--disabled-password', '--force-badname']
 
 NODE_ENV = os.environ.get('NODE_ENV')
@@ -17,7 +16,7 @@ if NODE_ENV == 'development':
     #c.JupyterHub.spawner_class = 'simplespawner.SimpleLocalProcessSpawner'
     #c.Spawner.args = ['--allow-root']
     c.JupyterHub.spawner_class = 'dockerspawner.DockerSpawner'
-    c.DockerSpawner.container_image = os.environ['DOCKER_NOTEBOOK_IMAGE']
+    c.DockerSpawner.image = os.environ['DOCKER_NOTEBOOK_IMAGE']
     spawn_cmd = os.environ.get('DOCKER_SPAWN_CMD', "start-singleuser.sh")
     c.DockerSpawner.extra_create_kwargs.update({'command': spawn_cmd})
     network_name = os.environ['DOCKER_NETWORK_NAME']
