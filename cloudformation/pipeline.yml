@@ -489,7 +489,7 @@ Resources:
                 - IMAGE_URI="${REPOSITORY_URI}:${TAG}"
             build:
               commands:
-                - docker build --tag "${IMAGE_URI}-jhub" -f DockerfileJhub .
+                - docker build --tag "${IMAGE_URI}-jhub" jhub
             post_build:
               commands:
                 - docker push "${IMAGE_URI}-jhub"
