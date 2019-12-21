@@ -349,7 +349,7 @@ Resources:
                 - git init
                 - git remote add origin https://github.com/materialsproject/MPContribs.git
                 - git fetch
-                - git checkout -t origin/master
+                - git checkout -tf origin/master
                 - git submodule init
                 - git submodule update --recursive
             build:
