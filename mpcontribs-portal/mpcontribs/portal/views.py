@@ -8,6 +8,7 @@ from bs4 import BeautifulSoup
 from fido.exceptions import HTTPTimeoutError
 from pandas.io.json._normalize import nested_to_record
 from pandas import DataFrame
+from hendrix.experience import crosstown_traffic, hey_joe
 
 from django.shortcuts import render
 from django.template import RequestContext
@@ -81,11 +82,16 @@ def contribution(request, cid):
     ctx = RequestContext(request)
     client = load_client(headers=get_consumer(request))  # sets/returns global variable
     nb = client.notebooks.get_entry(pk=cid).response().result  # generate notebook with cells
+
     if not nb['cells'][-1]['outputs']:
-        try:
-            nb = client.notebooks.get_entry(pk=cid).response(timeout=2).result  # execute cells
-        except HTTPTimeoutError:
-            ctx['alert'] = 'Detail page is building in the background. Please reload in 15s.'
+        dots = '<span class="loader__dot">.</span><span class="loader__dot">.</span><span class="loader__dot">.</span>'
+        ctx['alert'] = f'Detail page is building in the background {dots}'
+
+        @crosstown_traffic()
+        def execute_cells():
+            nb = client.notebooks.get_entry(pk=cid).response().result  # execute cells
+            hey_joe.broadcast(f'Done. Reloading page {dots}')
+
     ctx['nb'], ctx['js'] = export_notebook(nb, cid)
     return render(request, "mpcontribs_portal_contribution.html", ctx.flatten())
 

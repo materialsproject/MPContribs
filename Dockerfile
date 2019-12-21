@@ -38,6 +38,7 @@ RUN set -ex \
     && rm -rf /var/lib/apt/lists/*
 
 EXPOSE 8080
+EXPOSE 9000
 ENV PYTHONUNBUFFERED 1
 
 WORKDIR /app
@@ -77,4 +78,8 @@ RUN /venv/bin/python manage.py collectstatic --noinput
 COPY docker-entrypoint.sh .
 RUN chmod +x /app/docker-entrypoint.sh
 ENTRYPOINT ["/app/docker-entrypoint.sh"]
-CMD ["/venv/bin/gunicorn", "-b", "0.0.0.0:8080", "-k", "gevent", "-w", "2", "--access-logfile", "-", "--log-level", "debug", "--timeout", "15", "--graceful-timeout", "15", "test_site.wsgi:application"]
+
+COPY run_server.py .
+RUN chmod +x /app/run_server.py
+ENV PATH="/venv/bin:${PATH}"
+CMD ["python", "run_server.py"]

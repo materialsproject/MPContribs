@@ -2,6 +2,28 @@ import("./highlight.css");
 import 'toggle';
 
 $(document).ready(function () {
+
+    if ($('#alert').length) {
+        const socket = new WebSocket("ws://localhost:9000");
+        socket.binaryType = "arraybuffer";
+        socket.onopen = function () {
+            socket.send(JSON.stringify({'hx_subscribe': 'messages'}));
+            var isopen = true;
+        }
+        socket.addEventListener('message', function (event) {
+            console.log("Message from server ", event.data);
+            if (typeof event.data == "string" && event.data.startsWith('[')) {
+                var message = JSON.parse(event.data);
+                var div = document.getElementById('alert');
+                div.innerHTML = message[1];
+                window.location.reload();
+            }
+        });
+        socket.onerror = function (error) {
+            console.log(error.data);
+        }
+    }
+
     $('.anchor-link').each(function(index, anchor) {
         var href = $(anchor).attr('href');
         var text = href.substring(1).split('-').slice(0, 2).join(' ');
