@@ -102,7 +102,6 @@ class NotebooksView(SwaggerView):
                 kernel = client.start_kernel()
                 for idx, cell in enumerate(nb.cells):
                     if cell['cell_type'] == 'code':
-                        print(f'executing cell {idx} ...')
                         cell['outputs'] = kernel.execute(cell['source'])
                 client.shutdown_kernel(kernel)
                 nb.save()  # calls Notebooks.clean()
@@ -114,7 +113,6 @@ class NotebooksView(SwaggerView):
                 nb = Notebooks.objects.only('id').get(id=cid)
             except DoesNotExist:
                 # create and save unexecuted notebook, also start entry to avoid rebuild on subsequent requests
-                print('create notebook with cells ...')
                 contrib = Contributions.objects.get(id=cid)
                 cells = [
                     nbf.new_code_cell(
@@ -128,7 +126,7 @@ class NotebooksView(SwaggerView):
                     nbf.new_markdown_cell("## Provenance Info"),
                     nbf.new_code_cell(
                         "prov = client.projects.get_entry(pk=contrib['project'], _fields=['_all']).response().result\n"
-                        "RecursiveDict(prov)"
+                        "HierarchicalData(prov)"
                     ),
                     nbf.new_markdown_cell(
                         f"## Hierarchical Data for {contrib['identifier']}"

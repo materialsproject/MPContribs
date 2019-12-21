@@ -102,7 +102,7 @@ Resources:
           Image: !Ref 'ImageUrlJhub'
           Environment:
             - Name: TASK_ROLE_ARN
-              Value: !Ref 'JhubServiceRole'
+              Value: !GetAtt 'JhubServiceRole.Arn'
             - Name: TASK_CLUSTER_NAME
               Value:
                 Fn::ImportValue:
