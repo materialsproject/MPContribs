@@ -5,6 +5,8 @@ set -ex
 jupyter serverextension enable --py nbzip --sys-prefix
 jupyter nbextension install --user --py nbzip
 jupyter nbextension enable --user --py nbzip
+jupyter nbextensions_configurator enable --user
+jupyter nbextension enable --user skip-traceback/main  # TODO possibly incompatible
 
 git config --global user.email "jovyan@materialsproject.org"
 

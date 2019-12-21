@@ -84,20 +84,22 @@ services:
             - "8081:8000"
 
     jhub:
-        build:
-            context: .
-            dockerfile: DockerfileJhub
+        build: ./jhub
         environment:
             - NODE_ENV=development
+            - TASK_CLUSTER_NAME=$TASK_CLUSTER_NAME
+            - TASK_DEFINITION_ARN=$TASK_DEFINITION_ARN
+            - TASK_ROLE_ARN=$TASK_ROLE_ARN
+            - TASK_SECURITY_GROUPS=$TASK_SECURITY_GROUPS
+            - TASK_SUBNETS=$TASK_SUBNETS
+            - AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
+            - AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
+            - DOCKER_NETWORK_NAME=mpcontribs_default
+            - DOCKER_NOTEBOOK_IMAGE=mpcontribs-r2d
+            - DOCKER_NOTEBOOK_DIR=binder/notebooks
         depends_on:
             - api
         volumes:
-            - /var/run/docker.sock:/var/run/docker.sock
-            - ./mpcontribs-client:/srv/jupyterhub/mpcontribs-client
-            #- ./mpcontribs-io:/home/jovyan/mpcontribs-io
-            #- ./binder/notebooks:/home/jovyan/binder/notebooks
-            #- ./webpack-binder.config.js:/home/jovyan/webpack.config.js
-            #- ./binder/binder.js:/home/jovyan/binder.js
-            #- ./mpcontribs-webtzite:/home/jovyan/mpcontribs-webtzite
+            - /var/run/docker.sock:/var/run/docker.sock:rw
         ports:
             - "8000:8000"
