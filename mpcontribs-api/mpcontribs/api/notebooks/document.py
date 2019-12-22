@@ -49,7 +49,7 @@ class Cell(DictField):
 class Notebooks(Document):
     project = LazyReferenceField(
         Projects, passthrough=True, reverse_delete_rule=CASCADE,
-        help_text="project this notebook belongs to"
+        required=True, help_text="project this notebook belongs to"
     )
     is_public = BooleanField(
         required=True, default=False, help_text='public or private notebook'

@@ -8,11 +8,11 @@ from mpcontribs.api.contributions.document import Contributions
 class Tables(Document):
     project = LazyReferenceField(
         Projects, passthrough=True, reverse_delete_rule=CASCADE,
-        help_text="project this table belongs to"
+        required=True, help_text="project this table belongs to"
     )
     contribution = LazyReferenceField(
         Contributions, passthrough=True, reverse_delete_rule=CASCADE,
-        help_text="contribution this table belongs to"
+        required=True, help_text="contribution this table belongs to"
     )
     is_public = BooleanField(required=True, default=False, help_text='public/private table')
     name = StringField(required=True, help_text="table name")

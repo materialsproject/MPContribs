@@ -11,25 +11,31 @@ from urllib.parse import urlparse
 class Table(pd.DataFrame):
     def __init__(self, data, columns=None, index=None, api_key=None,
                  ncols=12, per_page=None, filters=None, **kwargs):
-        if columns is None:
+        if columns is None and isinstance(data, list):
             columns = list(data[0].keys())
         super(Table, self).__init__(data=data, index=index, columns=columns)
         self.tid = kwargs.get('id')
         self.api_key = api_key
         self.project = kwargs.get('project')
+        self.name = kwargs.get('name', 'Table')
+        self.cid = kwargs.get('contribution')
         self.ncols = ncols
         self.per_page = per_page
         self.filters = filters
 
     def to_dict(self):
         from pandas import MultiIndex
-        for col in self.columns:
-            self[col] = self[col].apply(lambda x: clean_value(x, max_dgts=6))
-        rdct = super(Table, self).to_dict(orient='split', into=RecursiveDict)
-        if not isinstance(self.index, MultiIndex):
+        df = self.copy()
+        if not df.index.empty and not isinstance(df.index, MultiIndex):
+            df = self.reset_index()
+        for col in df.columns:
+            df[col] = df[col].apply(lambda x: clean_value(x, max_dgts=6))
+        rdct = df.to_dict(orient='split', into=RecursiveDict)
+        if not isinstance(df.index, MultiIndex):
             rdct.pop('index')
-        rdct["@module"] = self.__class__.__module__
-        rdct["@class"] = self.__class__.__name__
+        rdct['project'] = self.project
+        rdct['contribution'] = self.cid
+        rdct['name'] = self.name
         return rdct
 
     @classmethod

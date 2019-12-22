@@ -8,7 +8,7 @@ from mpcontribs.api import validate_data
 
 
 class Contributions(Document):
-    project = LazyReferenceField(Projects, passthrough=True, reverse_delete_rule=CASCADE)
+    project = LazyReferenceField(Projects, required=True, passthrough=True, reverse_delete_rule=CASCADE)
     identifier = StringField(required=True, help_text="material/composition identifier")
     is_public = BooleanField(required=True, default=False, help_text='public/private contribution')
     data = DictField(help_text='free-form data to be shown in Contribution Card')

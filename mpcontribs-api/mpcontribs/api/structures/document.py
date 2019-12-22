@@ -45,11 +45,11 @@ class Site(EmbeddedDocument):
 class Structures(Document):
     project = LazyReferenceField(
         Projects, passthrough=True, reverse_delete_rule=CASCADE,
-        help_text="project this structure belongs to"
+        required=True, help_text="project this structure belongs to"
     )
     contribution = LazyReferenceField(
         Contributions, passthrough=True, reverse_delete_rule=CASCADE,
-        help_text="contribution this structure belongs to"
+        required=True, help_text="contribution this structure belongs to"
     )
     is_public = BooleanField(required=True, default=False, help_text='public/private structure')
     name = StringField(required=True, help_text="table name")
