@@ -32,6 +32,7 @@ if NODE_ENV == 'development':
     c.DockerSpawner.remove_containers = True
     c.DockerSpawner.debug = True
     c.DockerSpawner.host_ip = "0.0.0.0"
+    c.Spawner.env_keep.extend(['NODE_ENV', 'MAPI_KEY'])
     #c.JupyterHub.services = [
     #    {
     #        'name': 'cull_idle',
@@ -71,5 +72,4 @@ c.Spawner.consecutive_failure_limit = 3
 c.Spawner.cpu_limit = 0.25
 c.Spawner.debug = True
 c.Spawner.mem_limit = '512M'
-c.Spawner.env_keep.append('NODE_ENV')
 c.Spawner.start_timeout = 300

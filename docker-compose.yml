@@ -89,6 +89,7 @@ services:
             dockerfile: DockerfileJhub
         environment:
             - NODE_ENV=development
+            - MAPI_KEY=$MAPI_KEY
             - TASK_CLUSTER_NAME=$TASK_CLUSTER_NAME
             - TASK_DEFINITION_ARN=$TASK_DEFINITION_ARN
             - TASK_ROLE_ARN=$TASK_ROLE_ARN

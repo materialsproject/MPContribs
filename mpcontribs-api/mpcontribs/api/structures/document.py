@@ -56,6 +56,9 @@ class Structures(Document):
     lattice = EmbeddedDocumentField(Lattice, required=True, help_text="lattice")
     # TODO sites.0 and sites.label in _fields doesn't work yet -> deep_get?
     sites = EmbeddedDocumentListField(Site, required=True, help_text="sites")
+    charge = FloatField(null=True, help_text='charge')
+    klass = StringField(help_text="@class")
+    module = StringField(help_text="@module")
     meta = {'collection': 'structures', 'indexes': [
         'project', 'contribution', 'is_public', 'name',
         {'fields': ('project', 'contribution')},

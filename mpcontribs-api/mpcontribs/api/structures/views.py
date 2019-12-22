@@ -48,6 +48,7 @@ class StructuresResource(Resource):
         'name': [ops.Exact, ops.Contains]
     }
     fields = ['id', 'project', 'contribution', 'is_public', 'name']
+    rename_fields = {'klass': '@class', 'module': '@module'}
     allowed_ordering = ['is_public', 'name']
     paginate = True
     default_limit = 10
@@ -57,7 +58,7 @@ class StructuresResource(Resource):
 
     @staticmethod
     def get_optional_fields():
-        return ['lattice', 'sites', 'cif']
+        return ['lattice', 'sites', 'klass', 'module', 'charge', 'cif']
 
     def value_for_field(self, obj, field):
         # add cif key to response if requested
