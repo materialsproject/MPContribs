@@ -1,8 +1,9 @@
 from flask_mongoengine import Document
-from mongoengine import CASCADE
+from mongoengine import CASCADE, signals
 from mongoengine.fields import LazyReferenceField, StringField, ListField, DictField, BooleanField
 from mpcontribs.api.projects.document import Projects
 from mpcontribs.api.contributions.document import Contributions
+from mpcontribs.api.notebooks.document import Notebooks
 
 
 class Tables(Document):
@@ -24,3 +25,9 @@ class Tables(Document):
         {'fields': ('project', 'contribution')},
         {'fields': ('project', 'contribution', 'name'), 'unique': True}
     ]}
+
+    @classmethod
+    def post_save(cls, sender, document, **kwargs):
+        Notebooks.objects(pk=document.contribution.id).delete()
+
+signals.post_save.connect(Tables.post_save, sender=Tables)
