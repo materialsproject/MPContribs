@@ -21,13 +21,14 @@ if NODE_ENV == 'development':
     #c.Spawner.args = ['--allow-root']
     c.JupyterHub.spawner_class = 'repo2dockerspawner.Repo2DockerSpawner'
     c.Repo2DockerSpawner.repo = 'https://github.com/materialsproject/MPContribs'
-    c.Repo2DockerSpawner.http_timeout = 10 * 60
+    c.DockerSpawner.http_timeout = 10 * 60
     network_name = os.environ['DOCKER_NETWORK_NAME']
     c.DockerSpawner.use_internal_ip = True
     c.DockerSpawner.network_name = network_name
     c.DockerSpawner.extra_host_config = {'network_mode': network_name}
     notebook_dir = os.environ.get('DOCKER_NOTEBOOK_DIR') or '/home/jovyan/work'
-    c.Repo2DockerSpawner.notebook_dir = notebook_dir
+    c.DockerSpawner.notebook_dir = notebook_dir
+    c.DockerSpawner.volumes = {'mpcontribs_data-volume': notebook_dir}
     c.DockerSpawner.remove_containers = True
     c.DockerSpawner.debug = True
     c.DockerSpawner.host_ip = "0.0.0.0"

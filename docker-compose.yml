@@ -84,7 +84,9 @@ services:
             - "8081:8000"
 
     jhub:
-        build: ./jhub
+        build:
+            context: .
+            dockerfile: DockerfileJhub
         environment:
             - NODE_ENV=development
             - TASK_CLUSTER_NAME=$TASK_CLUSTER_NAME
@@ -95,10 +97,17 @@ services:
             - AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
             - AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
             - DOCKER_NETWORK_NAME=mpcontribs_default
-            - DOCKER_NOTEBOOK_DIR=/home/jovyan/binder/notebooks
+            - DOCKER_NOTEBOOK_DIR=/home/jovyan
         depends_on:
             - api
         volumes:
             - /var/run/docker.sock:/var/run/docker.sock:rw
         ports:
             - "8000:8000"
+
+volumes:
+  data-volume:
+      driver_opts:
+          type: none
+          device: $PWD
+          o: bind
