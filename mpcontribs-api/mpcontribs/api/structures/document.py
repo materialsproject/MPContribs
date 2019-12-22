@@ -1,9 +1,10 @@
 from flask_mongoengine import Document
-from mongoengine import EmbeddedDocument, CASCADE
+from mongoengine import EmbeddedDocument, CASCADE, signals
 from mongoengine.fields import StringField, LazyReferenceField, BooleanField, FloatField, IntField
 from mongoengine.fields import ListField, EmbeddedDocumentField, EmbeddedDocumentListField
 from mpcontribs.api.projects.document import Projects
 from mpcontribs.api.contributions.document import Contributions
+from mpcontribs.api.notebooks.document import Notebooks
 
 
 class Lattice(EmbeddedDocument):
@@ -64,3 +65,9 @@ class Structures(Document):
         {'fields': ('project', 'contribution')},
         {'fields': ('project', 'contribution', 'name'), 'unique': True}
     ]}
+
+    @classmethod
+    def post_save(cls, sender, document, **kwargs):
+        Notebooks.objects(pk=document.contribution.id).delete()
+
+signals.post_save.connect(Structures.post_save, sender=Structures)
