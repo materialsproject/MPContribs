@@ -9,6 +9,8 @@ RUN /opt/conda/bin/conda install --freeze-installed -y \
         jupyterhub-simplespawner \
         dockerspawner
 
+RUN /opt/conda/bin/pip install -e git+https://github.com/yuvipanda/repo2dockerspawner#egg=repo2dockerspawner
+
 COPY jupyterhub_config.py /srv/jupyterhub/jupyterhub_config.py
 COPY userlist /srv/jupyterhub/userlist
 

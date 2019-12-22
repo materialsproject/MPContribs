@@ -5,34 +5,39 @@ from fargatespawner import FargateSpawnerSecretAccessKeyAuthentication
 
 RemoteUserLocalAuthenticator.header_name = 'X-Consumer-Username'
 c.JupyterHub.authenticator_class = RemoteUserLocalAuthenticator
-c.Authenticator.admin_users = {'phuck@lbl.gov'}
 c.Authenticator.username_pattern = '^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$'
 c.Authenticator.create_system_users = True
 c.Authenticator.add_user_cmd = ['adduser', '-q', '--gecos', '""', '--disabled-password', '--force-badname']
+c.Authenticator.whitelist = whitelist = set()
+c.Authenticator.admin_users = admin = {'phuck@lbl.gov'}
 
 NODE_ENV = os.environ.get('NODE_ENV')
 
 if NODE_ENV == 'development':
+    c.NotebookApp.open_browser = False
+    c.JupyterHub.hub_ip = 'jhub'
+
     #c.JupyterHub.spawner_class = 'simplespawner.SimpleLocalProcessSpawner'
     #c.Spawner.args = ['--allow-root']
-    c.JupyterHub.spawner_class = 'dockerspawner.DockerSpawner'
-    c.DockerSpawner.image = os.environ['DOCKER_NOTEBOOK_IMAGE']
-    spawn_cmd = os.environ.get('DOCKER_SPAWN_CMD', "start-singleuser.sh")
-    c.DockerSpawner.extra_create_kwargs.update({'command': spawn_cmd})
+    c.JupyterHub.spawner_class = 'repo2dockerspawner.Repo2DockerSpawner'
+    c.Repo2DockerSpawner.repo = 'https://github.com/materialsproject/MPContribs'
+    c.Repo2DockerSpawner.http_timeout = 10 * 60
     network_name = os.environ['DOCKER_NETWORK_NAME']
     c.DockerSpawner.use_internal_ip = True
     c.DockerSpawner.network_name = network_name
     c.DockerSpawner.extra_host_config = {'network_mode': network_name}
     notebook_dir = os.environ.get('DOCKER_NOTEBOOK_DIR') or '/home/jovyan/work'
-    c.DockerSpawner.notebook_dir = notebook_dir
-    c.DockerSpawner.volumes = {'jupyterhub-user-{username}': notebook_dir}
+    c.Repo2DockerSpawner.notebook_dir = notebook_dir
     c.DockerSpawner.remove_containers = True
     c.DockerSpawner.debug = True
-    c.JupyterHub.hub_ip = 'jhub'
-    c.JupyterHub.hub_port = 8080
-    c.Authenticator.whitelist = whitelist = set()
-    c.Authenticator.admin_users = admin = set()
-    c.JupyterHub.admin_access = True
+    c.DockerSpawner.host_ip = "0.0.0.0"
+    #c.JupyterHub.services = [
+    #    {
+    #        'name': 'cull_idle',
+    #        'admin': True,
+    #        'command': 'python /srv/jupyterhub/cull_idle_servers.py --timeout=3600'.split(),
+    #    },
+    #]
 else:
     c.JupyterHub.spawner_class = FargateSpawner
     c.FargateSpawner.aws_region = 'us-east-1'
@@ -51,12 +56,13 @@ else:
     # c.FargateSpawnerSecretAccessKeyAuthentication.aws_access_key_id = os.environ['AWS_ACCESS_KEY_ID']
     # c.FargateSpawnerSecretAccessKeyAuthentication.aws_secret_access_key = os.environ['AWS_SECRET_ACCESS_KEY']
 
+c.JupyterHub.admin_access = True
+c.JupyterHub.default_url = '/hub/home'
 c.JupyterHub.cleanup_proxy = False
 c.JupyterHub.cleanup_servers = False
 c.JupyterHub.active_server_limit = 10
 c.JupyterHub.concurrent_spawn_limit = 5
 #c.JupyterHub.db_url = 'sqlite:///jupyterhub.sqlite' # TODO https://github.com/uktrade/jupyters3
-#c.JupyterHub.logo_file = '/srv/jupyterhub/logo.png'
 c.JupyterHub.shutdown_on_logout = True
 c.JupyterHub.upgrade_db = True
 

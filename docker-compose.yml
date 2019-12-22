@@ -95,8 +95,7 @@ services:
             - AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
             - AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
             - DOCKER_NETWORK_NAME=mpcontribs_default
-            - DOCKER_NOTEBOOK_IMAGE=mpcontribs-r2d
-            - DOCKER_NOTEBOOK_DIR=binder/notebooks
+            - DOCKER_NOTEBOOK_DIR=/home/jovyan/binder/notebooks
         depends_on:
             - api
         volumes:
