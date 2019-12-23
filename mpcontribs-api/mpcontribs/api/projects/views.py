@@ -72,25 +72,38 @@ class ProjectsResource(Resource):
 
             columns = []
             for col in objects[0]['columns']:
-                if not col.startswith('modal.'):
-                    unit_field = f'data.{col}.unit'
-                    unit_query = {f'data__{col.replace(".", "__")}__exists': True}
-                    unit_sample = Contributions.objects.only(unit_field).filter(**unit_query).first()
-                    try:
-                        unit = deep_get(unit_sample, unit_field)
-                        columns.append(f'{col} [{unit}]')
-                    except KeyError:  # column doesn't have a unit
-                        columns.append(col)
+                unit_field = f'data.{col}.unit'
+                unit_query = {f'data__{col.replace(".", "__")}__exists': True}
+                unit_sample = Contributions.objects.only(unit_field).filter(**unit_query).first()
+                try:
+                    unit = deep_get(unit_sample, unit_field)
+                    columns.append(f'{col} [{unit}]')
+                except KeyError:  # column doesn't have a unit
+                    columns.append(col)
 
-            projects = sorted(obj.id.split('_'))
-            names = Structures.objects(contribution__project=obj.id).distinct("name")
-            if names:
-                if len(projects) == len(names):
-                    for p, n in zip(projects, sorted(names)):
+            contributions = Contributions.objects.only('pk').filter(project=obj.id)
+            agg = list(Structures.objects.aggregate(*[
+                {'$match': {'contribution': {'$in': [c.pk for c in contributions]}}},
+                {'$group': {'_id': '$contribution', 'count': {'$sum': 1}, 'names': {'$addToSet': '$name'}}},
+                {'$sort': {'count': -1}}, {'$limit': 1}
+            ]))
+            if agg:
+                # check for structures linked to sub-projects
+                max_doc = agg[0]
+                projects = sorted(obj.id.split('_'))
+                if max_doc['count'] > 1 and len(projects) == max_doc['count']:
+                    for p, n in zip(projects, sorted(max_doc['names'])):
                         if p == n.lower():
                             columns.append(f'{n}.CIF')
+                            max_doc['names'].remove(n)
+                # add remaining structures
+                if len(max_doc['names']) > 1:
+                    for idx, name in enumerate(max_doc['names']):
+                        # TODO find better lable than numbering - needed for perovskites_diffusion?
+                        columns.append(f'#{idx+1} CIF')
                 else:
-                    columns.append('CIF')
+                    # name is irrelevant if only one structure per contrib
+                    columns.append(f'CIF')
 
             return sorted(columns)
         else:

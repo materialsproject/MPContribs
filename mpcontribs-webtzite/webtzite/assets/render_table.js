@@ -74,6 +74,8 @@ window.render_table = function(props) {
                         });
                     }
                 });
+
+                // TODO support multiple structures per contribution not linked to sub-projects
                 var nr_structures = doc.structures.length;
                 if (nr_structures === 1) {
                     item['data__CIF'] = portal + doc.structures[0]['id'] + '.cif';
@@ -82,6 +84,7 @@ window.render_table = function(props) {
                         item['data__' + s.name + '__CIF'] = portal + s.id + '.cif';
                     });
                 }
+
                 return item;
             });
         }
