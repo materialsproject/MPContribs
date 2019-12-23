@@ -134,24 +134,25 @@ window.render_table = function(props) {
         }
     }
 
-    Backbone.on('cellclicked', function(e) {
-        var row = $(e.currentTarget).parent();
-        var url = row.find("td:nth-child(2) > a").attr('href');
-        if (typeof url !== 'undefined') {
-            var cid = url.split('/').pop();
-            $.get({
-                url: window.api['host'] + 'contributions/' + cid + '/?_fields=data.modal',
-                headers: window.api['headers']
-            }).done(function(response) {
-                if (typeof response.data !== 'undefined' && 'modal' in response.data) {
-                    $('#modal_render_json').empty();
-                    render_json({divid: 'modal_render_json', data: response['data']['modal']});
-                    var modal = $('#modal').modal();
-                    modal.show();
-                }
-            });
-        }
-    });
+    // TODO cellclicked can be used for different functionality. Modal not needed after addition of ColumnManager
+    //Backbone.on('cellclicked', function(e) {
+    //    var row = $(e.currentTarget).parent();
+    //    var url = row.find("td:nth-child(2) > a").attr('href');
+    //    if (typeof url !== 'undefined') {
+    //        var cid = url.split('/').pop();
+    //        $.get({
+    //            url: window.api['host'] + 'contributions/' + cid + '/?_fields=data.modal',
+    //            headers: window.api['headers']
+    //        }).done(function(response) {
+    //            if (typeof response.data !== 'undefined' && 'modal' in response.data) {
+    //                $('#modal_render_json').empty();
+    //                render_json({divid: 'modal_render_json', data: response['data']['modal']});
+    //                var modal = $('#modal').modal();
+    //                modal.show();
+    //            }
+    //        });
+    //    }
+    //});
 
     var rows = new Rows();
     rows.on('sync', function(e) { spinner_table.stop(); })

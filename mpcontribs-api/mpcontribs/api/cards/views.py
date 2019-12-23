@@ -94,10 +94,8 @@ class CardsView(SwaggerView):
             card_script += get_resource_as_string('templates/linkify-element.min.js')
             card_script += get_resource_as_string('templates/card.min.js')
             contrib = Contributions.objects.only('data').get(id=cid)
-            data = unflatten(dict(
-                (k, v) for k, v in get_cleaned_data(contrib.data).items()
-                if not k.startswith('modal')
-            ))
+            # TODO use fdata instead of unflatten / get_cleaned_data
+            data = unflatten(dict((k, v) for k, v in get_cleaned_data(contrib.data).items()))
             browser = get_browser()
             browser.execute_script(card_script, data)
             bs = BeautifulSoup(browser.page_source, 'html.parser')
