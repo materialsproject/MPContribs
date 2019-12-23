@@ -67,19 +67,18 @@ class ProjectsResource(Resource):
                 {"$group": {"_id": None, "columns": {"$addToSet": "$column"}}}
             ]))
 
-            if not objects:
-                return []
-
             columns = []
-            for col in objects[0]['columns']:
-                unit_field = f'data.{col}.unit'
-                unit_query = {f'data__{col.replace(".", "__")}__exists': True}
-                unit_sample = Contributions.objects.only(unit_field).filter(**unit_query).first()
-                try:
-                    unit = deep_get(unit_sample, unit_field)
-                    columns.append(f'{col} [{unit}]')
-                except KeyError:  # column doesn't have a unit
-                    columns.append(col)
+
+            if objects:
+                for col in objects[0]['columns']:
+                    unit_field = f'data.{col}.unit'
+                    unit_query = {f'data__{col.replace(".", "__")}__exists': True}
+                    unit_sample = Contributions.objects.only(unit_field).filter(**unit_query).first()
+                    try:
+                        unit = deep_get(unit_sample, unit_field)
+                        columns.append(f'{col} [{unit}]')
+                    except KeyError:  # column doesn't have a unit
+                        columns.append(col)
 
             contributions = Contributions.objects.only('pk').filter(project=obj.id)
             agg = list(Structures.objects.aggregate(*[

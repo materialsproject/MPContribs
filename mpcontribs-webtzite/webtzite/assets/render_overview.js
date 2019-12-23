@@ -27,12 +27,14 @@ window.render_overview = function(project) {
             }
         });
 
+        if (t(column_groups).isEmptyObject) { spinner_plot.stop(); return; }
+
         // TODO replace with layouts from API -> https://plot.ly/javascript/layout-template/
         var units = Object.keys(column_groups);
         var nrows = Math.ceil(units.length / 2);
         var ncols = (units.length > 1) + 1;
         var layout = {
-            margin: {l: 30, t: 40, b: 30, r: 0}, barmode: 'group',
+            margin: {l: 30, t: 60, b: 30, r: 0}, barmode: 'group',
             legend: {orientation: 'h', x: 0, y: 1.1},
             grid: {rows: nrows, columns: ncols, pattern: 'independent'}
         };

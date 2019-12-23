@@ -1,12 +1,11 @@
 .backgrid { font-family: Consolas; }
 .backgrid tbody tr:hover { background-color: #f9f9f9; }
-.backgrid .sortable { text-align: center; }
+.backgrid .renderable { text-align: center; }
 .backgrid thead th button { display: inline; }
 .backgrid .string-cell { text-align: center; }
 .backgrid tbody tr:hover { background-color: #f9f9f9; }
 .backgrid tbody tr.selected { background-color: yellow; }
 .backgrid tbody tr { cursor: pointer; }
-.backgrid .sortable { text-align: center; }
 .backgrid thead th button { display: inline; }
 .backgrid thead th { font-weight: normal; }
 .backgrid-filter.form-search { margin:0px; }
