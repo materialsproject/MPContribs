@@ -1,6 +1,8 @@
 import json
 from django.conf import settings
 from mpcontribs.client import load_client
+from mpcontribs.io.core.components.hdata import HierarchicalData
+# TODO should not be needed if render_json.js took care of display/unit/value
 
 def get_consumer(request):
     names = ['X-Consumer-Groups', 'X-Consumer-Username']
@@ -25,7 +27,7 @@ def get_context(request, project):
     ctx['urls'] = prov['urls']
     other = prov.get('other', '')
     if other:
-        ctx['other'] = json.dumps(other)
+        ctx['other'] = json.dumps(HierarchicalData(other))
     if prov['columns']:
         ctx['columns'] = ['identifier', 'id'] + prov['columns']
         ctx['search_columns'] = ['identifier'] + [
