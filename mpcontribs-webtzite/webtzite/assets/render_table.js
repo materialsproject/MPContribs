@@ -29,6 +29,9 @@ window.render_table = function(props) {
     var config = props.config;
     var Row = Backbone.Model.extend({});
     var rows_opt = {model: Row, state: {pageSize: 20}};
+    var nr_structures = $.map(props.table['columns'], function(col) {
+        if (col['name'].endsWith('CIF')) { return col['name']; }
+    }).length
 
     if (typeof config.tid !== 'undefined') {
         rows_opt["url"] = window.api['host'] + 'tables/' + config.tid + '/?_fields=_all';
@@ -76,7 +79,6 @@ window.render_table = function(props) {
                 });
 
                 // TODO support multiple structures per contribution not linked to sub-projects
-                var nr_structures = doc.structures.length;
                 if (nr_structures === 1) {
                     item['data__CIF'] = portal + doc.structures[0]['id'] + '.cif';
                 } else if (nr_structures > 1) {

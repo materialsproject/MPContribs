@@ -97,11 +97,12 @@ class ProjectsResource(Resource):
                             columns.append(f'{n}.CIF')
                             max_doc['names'].remove(n)
                 # add remaining structures
-                if len(max_doc['names']) > 1:
+                remain = len(max_doc['names'])
+                if remain > 1:
                     for idx, name in enumerate(max_doc['names']):
                         # TODO find better lable than numbering - needed for perovskites_diffusion?
                         columns.append(f'#{idx+1} CIF')
-                else:
+                elif remain == 1:
                     # name is irrelevant if only one structure per contrib
                     columns.append(f'CIF')
 
