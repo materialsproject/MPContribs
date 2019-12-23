@@ -10,7 +10,7 @@ $(document).ready(function () {
     var spinner_plot = new Spinner({scale: 0.5});
     spinner_plot.spin(target);
 
-    var api_url = window.api['host'] + 'projects/MnO2_phase_selection/graph';
+    var api_url = window.api['host'] + 'contributions/';
     var graph = document.getElementById('graph');
     var layout = {
         margin: {l: 40, t: 0, b: 25, r: 0},
@@ -19,15 +19,18 @@ $(document).ready(function () {
     };
 
     $.get({
-        url: api_url, data: {'columns': 'ΔH'}, headers: window.api['headers']
+        url: api_url, headers: window.api['headers'], data: {
+            '_fields': 'identifier,id,data.ΔH.value', 'project': 'MnO2_phase_selection',
+            '_order_by': 'data__ΔH__value', '_limit': 80
+        }
     }).done(function(response) {
-        response['data'][0]['type'] = 'bar';
-        Plotly.plot(graph, response['data'], layout, {displayModeBar: true, responsive: true});
-        graph.on('plotly_click', function(data){
-            var cid = data.points[0].text;
-            var url = '/' + cid;
-            window.open(url, '_blank');
+        var data = {'x': [], 'y': [], 'text': [], 'type': 'bar'};
+        $.each(response['data'], function(idx, contrib) {
+            data['x'].push(contrib['identifier']);
+            data['y'].push(contrib['data']['ΔH']['value']);
+            data['text'].push(contrib['id']);
         });
+        Plotly.plot(graph, [data], layout, {displayModeBar: true, responsive: true});
         spinner_plot.stop();
     });
 });

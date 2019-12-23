@@ -28,8 +28,8 @@ if ($("#table").length) {
 }
 
 // TODO replace with layouts from API
-//if ($("#graph").length) {
-//    var project = window.location.pathname;
-//    import(/* webpackChunkName: "project" */ `../../../mpcontribs-users/mpcontribs/users${project}explorer/assets/index.js`)
-//        .catch(function(err) { console.error(err); });
-//}
+if ($("#graph").length) {
+    var project = window.location.pathname;
+    import(/* webpackChunkName: "project" */ `../../../mpcontribs-users/mpcontribs/users${project}explorer/assets/index.js`)
+        .catch(function(err) { console.error(err); });
+}
