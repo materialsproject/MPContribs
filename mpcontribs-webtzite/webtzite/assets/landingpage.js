@@ -6,6 +6,7 @@ $('a[name="read_more"]').on('click', function() {
     el.show();
 });
 
+var grid;
 if ($("#table").length) {
     $('#columns_list').select2({width: '100%', minimumResultsForSearch: -1});
     var columns = $.map($('#table').data('columns').split(','), function(col) {
@@ -24,12 +25,12 @@ if ($("#table").length) {
     var table = {'columns': columns};
     var config = {'project': $('#table').data('project'), 'ncols': 12};
     config['uuids'] = ['table_filter', 'table', 'table_pagination', 'table_columns'];
-    render_table({table: table, config: config});
+    grid = render_table({table: table, config: config});
 }
 
 if ($("#graph").length) {
     var pathname = window.location.pathname;
     var project = pathname.substring(1, pathname.length-1)
     import(/* webpackChunkName: "project" */ `../../../mpcontribs-users/mpcontribs/users${pathname}explorer/assets/index.js`)
-        .catch(function(err) { render_overview(project); });
+        .catch(function(err) { render_overview(project, grid); });
 }

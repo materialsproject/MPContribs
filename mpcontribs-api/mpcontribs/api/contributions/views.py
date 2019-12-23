@@ -24,7 +24,7 @@ class ContributionsResource(Resource):
         'project': [ops.In, ops.Exact],
         'identifier': [ops.In, ops.Contains, ops.Exact],
         'is_public': [ops.Boolean],
-        re.compile(r'^data__((?!__).)*$'): [ops.Contains]
+        re.compile(r'^data__((?!__).)*$'): [ops.Contains, ops.Gte, ops.Lte]
     }
     fields = ['id', 'project', 'identifier', 'is_public']
     allowed_ordering = [

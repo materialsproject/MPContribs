@@ -31,7 +31,7 @@ window.render_table = function(props) {
     var rows_opt = {model: Row, state: {pageSize: 20}};
     var nr_structures = $.map(props.table['columns'], function(col) {
         if (col['name'].endsWith('CIF')) { return col['name']; }
-    }).length
+    }).length;
 
     if (typeof config.tid !== 'undefined') {
         rows_opt["url"] = window.api['host'] + 'tables/' + config.tid + '/?_fields=_all';
@@ -59,6 +59,8 @@ window.render_table = function(props) {
         rows_opt["url"] = window.api['host'] + 'contributions/?_fields=' + fields + '&project=' + config.project;
         rows_opt['queryParams'] = {sortKey: '_order_by'};
         rows_opt["parseState"] = function (resp, queryParams, state, options) {
+            // TODO update plotly graph, make sure pagination and sorting works with filter applied
+            $('#total_count').html('<b>' + resp.total_count + ' total</b>');
             return {totalRecords: resp.total_count, totalPages: resp.total_pages, lastPage: resp.total_pages};
         }
         rows_opt["parseRecords"] = function (resp, options) {
