@@ -80,10 +80,7 @@ with open('kernel_imports.ipynb') as fh:
 class NotebooksResource(Resource):
     document = Notebooks
     filters = {'is_public': [ops.Boolean]}
-    fields = [
-        'contribution', 'is_public', 'nbformat',
-        'nbformat_minor', 'metadata', 'cells'
-    ]
+    fields = ['is_public', 'nbformat', 'nbformat_minor', 'metadata', 'cells']
 
 
 class NotebooksView(SwaggerView):

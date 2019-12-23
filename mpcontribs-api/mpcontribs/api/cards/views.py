@@ -43,11 +43,8 @@ def get_browser():
 
 class CardsResource(Resource):
     document = Cards
-    filters = {
-        'project': [ops.In, ops.Exact],
-        'is_public': [ops.Boolean]
-    }
-    fields = ['id', 'project', 'is_public', 'html']
+    filters = {'is_public': [ops.Boolean]}
+    fields = ['is_public', 'html']
 
 
 class CardsView(SwaggerView):
@@ -63,37 +60,36 @@ class CardsView(SwaggerView):
         except DoesNotExist:
             card = None
             try:
-                card = Cards.objects.only('id').get(id=cid)
+                card = Cards.objects.only('pk').get(pk=cid)
             except DoesNotExist:  # Card has never been requested before
                 # save an empty card
-                contrib = Contributions.objects.only('project', 'is_public').get(id=cid)
+                contrib = Contributions.objects.only('project', 'is_public').get(pk=cid)
                 card = Cards(
-                    id=cid,  # to link to the according contribution
+                    pk=cid,  # to link to the according contribution
                     is_public=contrib.is_public,  # in sync with contribution
-                    project=contrib.project
                 )
                 card.save()
                 return self.get(**kwargs)
 
             if card is not None:
-                raise DoesNotExist(f'Card {card.id} exists but user not in project group')
+                raise DoesNotExist(f'Card {card.pk} exists but user not in project group')
 
         if not ret["html"]:
             # generate HTML content
             ctx = {'cid': cid}
-            card = Cards.objects.get(id=cid)
-            info = Projects.objects.get(pk=card.project.id)
+            card = Cards.objects.get(pk=cid)
+            contrib = Contributions.objects.only('project', 'data').get(pk=cid)
+            info = Projects.objects.get(pk=contrib.project.id)
             ctx['title'] = info.title
             ctx['descriptions'] = info.description.strip().split('.', 1)
             authors = [a.strip() for a in info.authors.split(',') if a]
             ctx['authors'] = {'main': authors[0], 'etal': authors[1:]}
-            ctx['landing_page'] = f'/{card.project.id}/'
+            ctx['landing_page'] = f'/{contrib.project.id}/'
             ctx['more'] = f'/{cid}'
             ctx['urls'] = info.urls.values()
             card_script = get_resource_as_string('templates/linkify.min.js')
             card_script += get_resource_as_string('templates/linkify-element.min.js')
             card_script += get_resource_as_string('templates/card.min.js')
-            contrib = Contributions.objects.only('data').get(id=cid)
             # TODO use fdata instead of unflatten / get_cleaned_data
             data = unflatten(dict((k, v) for k, v in get_cleaned_data(contrib.data).items()))
             browser = get_browser()

@@ -9,7 +9,6 @@ from pymatgen import Structure
 from pymatgen.io.cif import CifWriter
 from mpcontribs.api.core import SwaggerView
 from mpcontribs.api.structures.document import Structures, Lattice, Site, Specie, Properties
-from mpcontribs.api.projects.views import ProjectsResource
 from mpcontribs.api.contributions.views import ContributionsResource
 
 templates = os.path.join(
@@ -38,16 +37,15 @@ class SiteResource(Resource):
 class StructuresResource(Resource):
     document = Structures
     related_resources = {
-        'project': ProjectsResource, 'contribution': ContributionsResource,
+        'contribution': ContributionsResource,
         'lattice': LatticeResource, 'sites': SiteResource
     }
     filters = {
-        'project': [ops.In, ops.Exact],
         'contribution': [ops.Exact],
         'is_public': [ops.Boolean],
         'name': [ops.Exact, ops.Contains]
     }
-    fields = ['id', 'project', 'contribution', 'is_public', 'name']
+    fields = ['id', 'contribution', 'is_public', 'name']
     rename_fields = {'klass': '@class', 'module': '@module'}
     allowed_ordering = ['is_public', 'name']
     paginate = True

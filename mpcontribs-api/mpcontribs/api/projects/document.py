@@ -57,10 +57,12 @@ class Projects(Document):
                 send_email(document.owner, subject, html)
             if set_keys:
                 # import here to avoid circular
+                from mpcontribs.api.contributions.document import Contributions
                 from mpcontribs.api.notebooks.document import Notebooks
                 from mpcontribs.api.cards.document import Cards
-                Notebooks.objects(contribution__project=document.project).delete()
-                Cards.objects(contribution__project=document.project).delete()
+                contributions = Contributions.objects.only('pk').filter(project=document.project)
+                Notebooks.objects(contribution__in=contributions).delete()
+                Cards.objects(contribution__in=contributions).delete()
 
     @classmethod
     def post_delete(cls, sender, document, **kwargs):

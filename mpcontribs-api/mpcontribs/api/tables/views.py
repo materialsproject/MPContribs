@@ -20,13 +20,12 @@ class TablesResource(Resource):
     document = Tables
     related_resources = {'project': ProjectsResource, 'contribution': ContributionsResource}
     filters = {
-        'project': [ops.In, ops.Exact],
         'contribution': [ops.Exact],
         'is_public': [ops.Boolean],
         'name': [ops.Exact, ops.Contains],
         'columns': [ops.IContains]
     }
-    fields = ['id', 'project', 'contribution', 'is_public', 'name', 'columns']
+    fields = ['id', 'contribution', 'is_public', 'name', 'columns']
     allowed_ordering = ['is_public', 'name']  # TODO data sorting
     paginate = True
     default_limit = 10
