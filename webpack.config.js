@@ -17,6 +17,7 @@ module.exports = {
           path.resolve(__dirname, 'mpcontribs-webtzite/webtzite/assets/render_json'),
           path.resolve(__dirname, 'mpcontribs-webtzite/webtzite/assets/render_table'),
           path.resolve(__dirname, 'mpcontribs-webtzite/webtzite/assets/render_plot'),
+          path.resolve(__dirname, 'mpcontribs-webtzite/webtzite/assets/render_overview'),
       ]
   },
   output: {
@@ -46,6 +47,7 @@ module.exports = {
       "jquery-validation": 'jquery-validation/dist/jquery.validate',
       "jquery-form": 'jquery-form/src/jquery.form',
       "czmore": 'czMore/js/jquery.czMore-latest',
+      "typy": 'typy/lib/index',
       "bootstrap": 'bootstrap/dist/js/bootstrap',
       "backbone": 'backbone/backbone',
       "backgrid": 'backgrid/lib/backgrid',

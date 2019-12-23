@@ -27,9 +27,9 @@ if ($("#table").length) {
     render_table({table: table, config: config});
 }
 
-// TODO replace with layouts from API
 if ($("#graph").length) {
-    var project = window.location.pathname;
-    import(/* webpackChunkName: "project" */ `../../../mpcontribs-users/mpcontribs/users${project}explorer/assets/index.js`)
-        .catch(function(err) { console.error(err); });
+    var pathname = window.location.pathname;
+    var project = pathname.substring(1, pathname.length-1)
+    import(/* webpackChunkName: "project" */ `../../../mpcontribs-users/mpcontribs/users${pathname}explorer/assets/index.js`)
+        .catch(function(err) { render_overview(project); });
 }
