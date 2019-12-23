@@ -2,7 +2,6 @@ from flask_mongoengine import Document
 from mongoengine import EmbeddedDocument, CASCADE, signals
 from mongoengine.fields import StringField, LazyReferenceField, BooleanField, FloatField, IntField
 from mongoengine.fields import ListField, EmbeddedDocumentField, EmbeddedDocumentListField
-from mpcontribs.api.projects.document import Projects
 from mpcontribs.api.contributions.document import Contributions
 from mpcontribs.api.notebooks.document import Notebooks
 
@@ -44,10 +43,6 @@ class Site(EmbeddedDocument):
 
 
 class Structures(Document):
-    project = LazyReferenceField(
-        Projects, passthrough=True, reverse_delete_rule=CASCADE,
-        required=True, help_text="project this structure belongs to"
-    )
     contribution = LazyReferenceField(
         Contributions, passthrough=True, reverse_delete_rule=CASCADE,
         required=True, help_text="contribution this structure belongs to"
@@ -61,9 +56,8 @@ class Structures(Document):
     klass = StringField(help_text="@class")
     module = StringField(help_text="@module")
     meta = {'collection': 'structures', 'indexes': [
-        'project', 'contribution', 'is_public', 'name',
-        {'fields': ('project', 'contribution')},
-        {'fields': ('project', 'contribution', 'name'), 'unique': True}
+        'contribution', 'is_public', 'name',
+        {'fields': ('contribution', 'name'), 'unique': True}
     ]}
 
     @classmethod

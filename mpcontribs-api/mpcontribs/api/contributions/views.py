@@ -43,10 +43,10 @@ class ContributionsResource(Resource):
     def value_for_field(self, obj, field):
         # add structures and tables info to response if requested
         if field == 'structures':
-            structures = Structures.objects.only('id', 'name').filter(project=obj.project, contribution=obj.id)
+            structures = Structures.objects.only('id', 'name').filter(contribution=obj.id)
             return [{'id': s.id, 'name': s.name} for s in structures]
         elif field == 'tables':
-            tables = Tables.objects.only('id', 'name').filter(project=obj.project, contribution=obj.id)
+            tables = Tables.objects.only('id', 'name').filter(contribution=obj.id)
             return [{'id': t.id, 'name': t.name} for t in tables]
         else:
             raise UnknownFieldError

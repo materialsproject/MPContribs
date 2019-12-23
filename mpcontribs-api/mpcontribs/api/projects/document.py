@@ -59,8 +59,8 @@ class Projects(Document):
                 # import here to avoid circular
                 from mpcontribs.api.notebooks.document import Notebooks
                 from mpcontribs.api.cards.document import Cards
-                Notebooks.objects(project=document.project).delete()
-                Cards.objects(project=document.project).delete()
+                Notebooks.objects(contribution__project=document.project).delete()
+                Cards.objects(contribution__project=document.project).delete()
 
     @classmethod
     def post_delete(cls, sender, document, **kwargs):

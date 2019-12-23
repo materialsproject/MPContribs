@@ -33,7 +33,6 @@ class Table(pd.DataFrame):
         rdct = df.to_dict(orient='split', into=RecursiveDict)
         if not isinstance(df.index, MultiIndex):
             rdct.pop('index')
-        rdct['project'] = self.project
         rdct['contribution'] = self.cid
         rdct['name'] = self.name
         return rdct

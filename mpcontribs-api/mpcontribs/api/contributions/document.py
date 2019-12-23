@@ -2,8 +2,6 @@ from flask_mongoengine import Document
 from mongoengine import CASCADE, signals
 from mongoengine.fields import StringField, BooleanField, DictField, LazyReferenceField
 from mpcontribs.api.projects.document import Projects
-from mpcontribs.api.notebooks.document import Notebooks
-from mpcontribs.api.cards.document import Cards
 from mpcontribs.api import validate_data
 
 
@@ -20,6 +18,9 @@ class Contributions(Document):
 
     @classmethod
     def post_save(cls, sender, document, **kwargs):
+        # avoid circular import
+        from mpcontribs.api.notebooks.document import Notebooks
+        from mpcontribs.api.cards.document import Cards
         Notebooks.objects(pk=document.id).delete()
         Cards.objects(pk=document.id).delete()
 

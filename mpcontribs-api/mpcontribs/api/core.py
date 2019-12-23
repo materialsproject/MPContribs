@@ -291,9 +291,20 @@ class SwaggerView(OriginalSwaggerView, ResourceView, metaclass=SwaggerViewType):
 
     def is_admin_or_project_user(self, request, obj):
         groups = self.get_groups(request)
-        is_approved = obj.is_approved if hasattr(obj, 'is_approved') else obj.project.is_approved
-        owner = obj.owner if hasattr(obj, 'owner') else obj.project.owner
-        project = obj.project.id if hasattr(obj.project, 'id') else obj.project
+
+        if hasattr(obj, 'is_approved'):
+            is_approved = obj.is_approved
+            owner = obj.owner
+            project = obj.project
+        elif hasattr(obj, 'project'):
+            is_approved = obj.project.is_approved
+            owner = obj.project.owner
+            project = obj.project.id
+        else:
+            is_approved = obj.contribution.project.is_approved
+            owner = obj.contribution.project.owner
+            project = obj.contribution.project.id
+
         username = request.headers.get('X-Consumer-Username')
         return 'admin' in groups or (
             (project in groups or owner == username) and is_approved
@@ -314,11 +325,18 @@ class SwaggerView(OriginalSwaggerView, ResourceView, metaclass=SwaggerViewType):
         if request.path.startswith('/projects/'):
             return qs.filter(qfilter)
 
-        # project is LazyReferenceField
+        # project or contribution are LazyReferenceFields (multiple queries)
         module = import_module('mpcontribs.api.projects.document')
-        Model = getattr(module, 'Projects')
-        projects = Model.objects.only('project').filter(qfilter)
+        Projects = getattr(module, 'Projects')
+        projects = Projects.objects.only('project').filter(qfilter)
         qfilter = Q(is_public=True) | Q(project__in=projects)
+
+        if not request.path.startswith('/contributions/'):
+            module = import_module('mpcontribs.api.contributions.document')
+            Contributions = getattr(module, 'Contributions')
+            contributions = Contributions.objects.only('id').filter(qfilter)
+            qfilter = Q(is_public=True) | Q(contribution__in=contributions)
+
         return qs.filter(qfilter)
 
     def has_add_permission(self, request, obj):

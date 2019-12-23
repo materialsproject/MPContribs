@@ -83,7 +83,7 @@ class ProjectsResource(Resource):
                         columns.append(col)
 
             projects = sorted(obj.id.split('_'))
-            names = Structures.objects(project=obj.id).distinct("name")
+            names = Structures.objects(contribution__project=obj.id).distinct("name")
             if names:
                 if len(projects) == len(names):
                     for p, n in zip(projects, sorted(names)):

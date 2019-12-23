@@ -79,12 +79,9 @@ with open('kernel_imports.ipynb') as fh:
 
 class NotebooksResource(Resource):
     document = Notebooks
-    filters = {
-        'project': [ops.In, ops.Exact],
-        'is_public': [ops.Boolean]
-    }
+    filters = {'is_public': [ops.Boolean]}
     fields = [
-        'id', 'project', 'is_public', 'nbformat',
+        'contribution', 'is_public', 'nbformat',
         'nbformat_minor', 'metadata', 'cells'
     ]
 
@@ -97,7 +94,7 @@ class NotebooksView(SwaggerView):
         cid = kwargs['pk']
         try:
             super().get(**kwargs)  # trigger DoesNotExist if necessary
-            nb = Notebooks.objects.get(id=cid)
+            nb = Notebooks.objects.get(pk=cid)
             if not nb.cells[-1]['outputs']:
                 kernel = client.start_kernel()
                 for idx, cell in enumerate(nb.cells):
@@ -110,7 +107,7 @@ class NotebooksView(SwaggerView):
         except DoesNotExist:
             nb = None
             try:
-                nb = Notebooks.objects.only('id').get(id=cid)
+                nb = Notebooks.objects.only('pk').get(pk=cid)
             except DoesNotExist:
                 # create and save unexecuted notebook, also start entry to avoid rebuild on subsequent requests
                 contrib = Contributions.objects.get(id=cid)
@@ -162,10 +159,7 @@ class NotebooksView(SwaggerView):
                             f"Structure.from_dict(structure)"
                         ))
 
-                nb = Notebooks(
-                    id=cid,  # to link to the according contribution
-                    project=contrib.project.id, is_public=contrib.is_public
-                )
+                nb = Notebooks(pk=cid, is_public=contrib.is_public)
                 doc = deepcopy(seed_nb)
                 doc['cells'] += cells
                 self.Schema().update(nb, doc)
