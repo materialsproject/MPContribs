@@ -29,10 +29,11 @@ def get_context(request, project):
     if other:
         ctx['other'] = json.dumps(HierarchicalData(other))
     if prov['columns']:
-        ctx['columns'] = ['identifier', 'id'] + prov['columns']
+        ctx['columns'] = ['identifier', 'id'] + list(prov['columns'].keys())
         ctx['search_columns'] = ['identifier'] + [
-            col for col in prov['columns'] if not col.endswith(']') and not col.endswith('CIF')
+            col for col in prov['columns'].keys() if not col.endswith(']') and not col.endswith('CIF')
         ]
+        ctx['ranges'] = json.dumps(prov['columns'])
 
     # TODO contribs key is only used in dilute_diffusion and should go through the table
     #from mpcontribs.io.core.utils import get_short_object_id

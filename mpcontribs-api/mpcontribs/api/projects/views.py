@@ -67,18 +67,27 @@ class ProjectsResource(Resource):
                 {"$group": {"_id": None, "columns": {"$addToSet": "$column"}}}
             ]))
 
-            columns = []
+            columns = {}
 
             if objects:
                 for col in objects[0]['columns']:
-                    unit_field = f'data.{col}.unit'
-                    unit_query = {f'data__{col.replace(".", "__")}__exists': True}
-                    unit_sample = Contributions.objects.only(unit_field).filter(**unit_query).first()
+                    value_field, unit_field = f'data.{col}.value', f'data.{col}.unit'
+                    unit_query = {'project': obj.id, f'data__{col.replace(".", "__")}__exists': True}
+                    unit_sample = Contributions.objects.only(unit_field).filter(**unit_query).limit(-1).first()
+                    min_max = list(Contributions.objects.aggregate(*[
+                        {"$match": {"project": obj.id, value_field: {'$exists': True}}},
+                        { "$group": {
+                            "_id": None, "max": {"$max": f"${value_field}"}, "min": {"$min": f"${value_field}"}
+                        }}
+                    ]))
+                    rng = None
+                    if min_max:
+                        rng = [min_max[0]['min'], min_max[0]['max']]
                     try:
                         unit = deep_get(unit_sample, unit_field)
-                        columns.append(f'{col} [{unit}]')
+                        columns[f'{col} [{unit}]'] = rng
                     except KeyError:  # column doesn't have a unit
-                        columns.append(col)
+                        columns[col] = rng
 
             contributions = Contributions.objects.only('pk').filter(project=obj.id)
             agg = list(Structures.objects.aggregate(*[
@@ -93,19 +102,19 @@ class ProjectsResource(Resource):
                 if max_doc['count'] > 1 and len(projects) == max_doc['count']:
                     for p, n in zip(projects, sorted(max_doc['names'])):
                         if p == n.lower():
-                            columns.append(f'{n}.CIF')
+                            columns[f'{n}.CIF'] = None
                             max_doc['names'].remove(n)
                 # add remaining structures
                 remain = len(max_doc['names'])
                 if remain > 1:
                     for idx, name in enumerate(max_doc['names']):
                         # TODO find better lable than numbering - needed for perovskites_diffusion?
-                        columns.append(f'#{idx+1} CIF')
+                        columns[f'#{idx+1} CIF'] = None
                 elif remain == 1:
                     # name is irrelevant if only one structure per contrib
-                    columns.append(f'CIF')
+                    columns[f'CIF'] = None
 
-            return sorted(columns)
+            return dict(sorted(columns.items(), key=lambda t: t[0]))
         else:
             raise UnknownFieldError
 
