@@ -111,11 +111,11 @@ class NotebooksView(SwaggerView):
                 cells = [
                     # TODO headers should not be shown in notebook
                     nbf.new_code_cell(
-                        "headers = { # just for local testing, kong+apikey will take care of headers\n"
-                        "\t'X-Consumer-Groups': 'my_project',\n"
-                        "\t'X-Consumer-Username': 'patrick@the-huck.com',\n"
+                        "headers = { # REMOVE! Just for local testing, kong+apikey will take care of headers\n"
+                        "\t'X-Consumer-Groups': 'admin',\n"
+                        "\t'X-Consumer-Username': 'phuck@lbl.gov',\n"
                         "}\n"
-                        "client = load_client(headers=headers) # provide apikey as argument to use api.mpcontribs.org\n"
+                        "client = load_client(headers=headers) # provide apikey as argument here!\n"
                         f"contrib = client.contributions.get_entry(pk='{cid}', _fields=['_all']).response().result"
                     ),
                     nbf.new_markdown_cell("## Provenance Info"),
