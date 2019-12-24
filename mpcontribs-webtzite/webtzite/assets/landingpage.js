@@ -8,7 +8,7 @@ $('a[name="read_more"]').on('click', function() {
 
 var grid;
 if ($("#table").length) {
-    $('#columns_list').select2({width: '100%', minimumResultsForSearch: -1});
+    $('#columns_list').select2({width: '100%', minimumResultsForSearch: -1, placeholder: 'Select column ...'});
     var columns = $.map($('#table').data('columns').split(','), function(col) {
         var cell_type = col === 'identifier' || col.endsWith('id') || col.endsWith('CIF') ? 'uri' : 'string';
         var col_split = col.split('.');

@@ -176,15 +176,15 @@ window.render_table = function(props) {
     var grid = new Backgrid.Grid({header: header, columns: columns, collection: rows});
     var filter_props = {collection: rows, placeholder: "Search (hit <enter>)"};
     var filter = new Backgrid.Extension.ServerSideFilter(filter_props);
-    filter.name = 'identifier__contains';
 
-    // TODO filter disables when sorting
     var columns_list = $('#columns_list');
     if (columns_list.length) {
         columns_list.on('select2:select', function (e) {
+            delete filter.collection.queryParams[filter.name];
             var column = e.params.data.text.replace(/\./g, '__');
-            filter.name = column + '__contains';
-            if (column !== 'identifier') { filter.name = 'data__' + filter.name; }
+            var name = column + '__contains';
+            if (column !== 'identifier') { name = 'data__' + name; }
+            filter.initialize({'name': name, 'value': null});
         });
     }
 
@@ -202,13 +202,3 @@ window.render_table = function(props) {
     rows.fetch({reset: true});
     return grid;
 }
-
-// order -> TODO ascending, descending or default
-//if ' ' in sort_by and sort_by[-1] == ']':
-//    sort_by = sort_by.split(' ')[0]  # remove unit
-//    sort_by_key = f'data.{sort_by}.value'
-//elif sort_by in columns[2:]:
-//    sort_by_key = f'data.{sort_by}'
-//order_sign = '-' if order == 'desc' else '+'
-//order_by = f"{order_sign}{sort_by_key}"
-//objects = objects.order_by(order_by)
