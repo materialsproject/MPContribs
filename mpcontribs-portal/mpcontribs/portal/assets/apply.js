@@ -71,7 +71,7 @@ $('#apply-form').validate({
     },
     submitHandler: function(form) { $(form).ajaxSubmit({
         beforeSubmit: prepareRequest, success: processJson, error: processJson,
-        url: window.api['host'] + 'projects/',
+        url: window.api['host'] + 'projects/', headers: window.api['headers'],
         type: 'POST', dataType: 'json', requestFormat: 'json'
     }); }
 });
