@@ -20,6 +20,7 @@ dependencies:
   - jupyter_nbextensions_configurator
   - pandas-datareader
   - plotly_express
+  - jupyter_enterprise_gateway
   - pip:
       - jhub_remote_user_authenticator
       - nbgitpuller
