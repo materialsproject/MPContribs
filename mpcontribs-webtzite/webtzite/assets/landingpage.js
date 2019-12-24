@@ -28,9 +28,15 @@ if ($("#table").length) {
     grid = render_table({table: table, config: config});
 }
 
-if ($("#graph").length) {
-    var pathname = window.location.pathname;
+var pathname = window.location.pathname;
+if ($("#graph").length && pathname !== '/redox_thermo_csp/') {
     var project = pathname.substring(1, pathname.length-1)
+    render_overview(project, grid);
+}
+
+if ($("#graph_custom").length && pathname === '/redox_thermo_csp/') {
     import(/* webpackChunkName: "project" */ `../../../mpcontribs-users/mpcontribs/users${pathname}explorer/assets/index.js`)
-        .catch(function(err) { render_overview(project, grid); });
+        .catch(function(err) { console.log(err); });
+} else {
+    $("#graph_custom").html('<b>Custom graphs will be back in early January 2020</b>');
 }

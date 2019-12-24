@@ -304,6 +304,7 @@ function send_request_energy() {
     $.get({
         url: api_url, data: payload, headers: window.api['headers']
     }).done(function() {
+        var updatekey = "energy_analysis";
         var r = arguments[0]['data'];
         var div = document.getElementById(updatekey);
         var axis = {

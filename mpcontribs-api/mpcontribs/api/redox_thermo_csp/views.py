@@ -1760,12 +1760,12 @@ class EnergyAnalysisView(SwaggerView):
         ]) + f"_{data_source}_20.0"
 
         resdict = []
-        proj = {'data.$': 1, 'columns': 1, 'cid': 1}
+        proj = {'data.$': 1, 'columns': 1, 'contribution': 1}
         for a in ['stable', 'unstable']:
             for b in ['O2-O', 'H2-H2', 'CO-CO']:
                 name = f'energy-analysis_{a}_{b}_{suffix}'
-                objects = Tables.objects.no_dereference().filter(
-                    project='redox_thermo_csp', name=name, data__match={'0': db_id}
+                objects = Tables.objects.filter(
+                    name=name, data__match={'0': db_id}
                 ).fields(**proj)
                 for obj in objects:
                     keys = obj['columns'][1:]
@@ -1774,20 +1774,9 @@ class EnergyAnalysisView(SwaggerView):
                     dct['prodstr'], dct['prodstr_alt'] = b.split('-')
                     dct['unstable'] = bool(a == 'unstable')
                     dct['tid'] = obj['id']
-                    dct['cid'] = str(obj['cid'])
+                    dct['cid'] = str(obj.contribution.id)
+                    dct['compstr'] = obj.contribution.data['formula']
                     resdict.append(dct)
-
-        # look up formulae
-        formulae = dict(
-            (str(obj['id']), obj.data['formula'])
-            for obj in Contributions.objects.no_dereference().filter(
-                project='redox_thermo_csp',
-                tables__in=[d.pop('tid') for d in resdict]
-            ).only('data.formula')
-        )
-        for dct in resdict:
-            cid = dct.pop('cid')
-            dct['compstr'] = formulae[cid]
 
         response = [{"x": None, "y": None, "name": None, 'type': 'bar'} for i in range(4)]
         try: # calculate specific results on the fly

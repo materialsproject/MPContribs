@@ -28,7 +28,6 @@ window.render_overview = function(project, grid) {
 
     if (t(column_groups).isEmptyObject) { spinner_plot.stop(); return; }
     var columns = [].concat.apply([], Object.values(column_groups));
-    console.log(columns);
 
     // TODO replace with layouts from API -> https://plot.ly/javascript/layout-template/
     var units = Object.keys(column_groups);
@@ -38,7 +37,6 @@ window.render_overview = function(project, grid) {
         margin: {l: 30, t: 60, b: 30, r: 10},
         barmode: 'group',
         legend: {orientation: 'h', x: 0, y: 1.1},
-        height: 450 + columns.length * 100,
         grid: {rows: nrows, columns: ncols, pattern: 'independent'}
     };
 
@@ -54,18 +52,22 @@ window.render_overview = function(project, grid) {
     $.each(columns, function(i, column) {
         var range = _.map(columns_ranges[column], Number);
         var interval = (range[1] - range[0]) / nsteps;
-        var steps = $.map(_.range(11), function(n) {
-            var step = range[0] + n*interval;
-            return {label: step.toFixed(2), method: 'skip'}
-        });
-        $.each(ops, function(j, op) {
-            layout['sliders'].push({
-                len: 0.45, steps: steps, pad: {t: 20, b: 20},
-                x: j*0.55, y: -i*0.2, active: j*nsteps, name: column,
-                currentvalue: {prefix: column+op}
+        if (interval > 0.) {
+            var steps = $.map(_.range(11), function(n) {
+                var step = range[0] + n*interval;
+                return {label: step.toFixed(2), method: 'skip'}
             });
-        })
+            $.each(ops, function(j, op) {
+                layout['sliders'].push({
+                    len: 0.45, steps: steps, pad: {t: 20, b: 20},
+                    x: j*0.55, y: -i*0.2, active: j*nsteps, name: column,
+                    currentvalue: {prefix: column+op}
+                });
+            })
+        }
     })
+
+    layout['height'] = 375 * nrows + layout['sliders'].length * 75;
 
     var fields = ['identifier', 'id'].concat(
         $.map(columns, function(col) { return 'data.' + col.split(' ')[0] + '.value'; })
