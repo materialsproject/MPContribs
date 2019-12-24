@@ -124,6 +124,7 @@ Resources:
               Value: 'MATGEN'
           PortMappings:
             - ContainerPort: 8080
+            - ContainerPort: 9000
           LogConfiguration:
             LogDriver: 'awslogs'
             Options:

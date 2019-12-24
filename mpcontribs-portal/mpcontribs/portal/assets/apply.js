@@ -34,7 +34,7 @@ function prepareRequest(formData, jqForm, options) {
 
 function processJson(data) { // 'data' is the json object returned from the server
     $('.alert-success').hide(); $('.alert-danger').hide();
-    if (typeof data.responseText == 'undefined') {
+    if (data.status == 200 && typeof data.responseText == 'undefined') {
         $('.alert-success').html('Thank you for submitting your project application. We will notify you per e-mail if/when your project has been accepted for dissemination via MPContribs. <span class="glyphicon glyphicon-ok" aria-hidden="true"></span>').show();
     } else {
         $('.alert-danger').html(data.responseJSON['error']).show();
