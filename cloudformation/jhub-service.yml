@@ -16,6 +16,12 @@ Parameters:
   ImageUrlR2d:
     Type: String
     Description: url for the MPContribs r2d docker image
+  AwsAccessKeyId:
+    NoEcho: 'true'
+    Type: String
+  AwsSecretAccessKey:
+    NoEcho: 'true'
+    Type: String
 
 Resources:
   # A log group for storing the container logs for this service
@@ -113,6 +119,10 @@ Resources:
               Value:
                 Fn::ImportValue:
                   !Join [':', [!Ref 'EnvironmentName', 'JhubSecurityGroup']]
+            - Name: AWS_ACCESS_KEY_ID
+              Value: !Ref 'AwsAccessKeyId'
+            - Name: AWS_SECRET_ACCESS_KEY
+              Value: !Ref 'AwsSecretAccessKey'
             - Name: TASK_SUBNETS
               Value:
                 Fn::Join:
@@ -121,6 +131,7 @@ Resources:
                     - Fn::ImportValue: !Join [':', [!Ref 'EnvironmentName', 'PrivateSubnetTwo']]
           PortMappings:
             - ContainerPort: 8000
+            - ContainerPort: 8081
           LogConfiguration:
             LogDriver: 'awslogs'
             Options:

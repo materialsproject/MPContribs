@@ -56,6 +56,12 @@ Parameters:
   KongaAdminPassword:
     NoEcho: 'true'
     Type: String
+  AwsAccessKeyId:
+    NoEcho: 'true'
+    Type: String
+  AwsSecretAccessKey:
+    NoEcho: 'true'
+    Type: String
 
 Resources:
   # Create the ECR respository to hold built docker images
@@ -840,7 +846,9 @@ Resources:
                     },
                     "ImageUrlR2d": {
                       "Fn::GetParam" : ["BuildOutputR2d", "build-r2d.json", "ImageUri"]
-                    }
+                    },
+                    "AwsAccessKeyId": "${AwsAccessKeyId}",
+                    "AwsSecretAccessKey": "${AwsSecretAccessKey}"
                   }
               InputArtifacts:
                 - Name: Source

@@ -53,10 +53,10 @@ else:
     c.FargateSpawner.notebook_port = 8888
     c.FargateSpawner.notebook_scheme = 'http'
     c.FargateSpawner.notebook_args = []
-    c.FargateSpawner.authentication_class = FargateSpawnerECSRoleAuthentication
-    # c.FargateSpawner.authentication_class = FargateSpawnerSecretAccessKeyAuthentication
-    # c.FargateSpawnerSecretAccessKeyAuthentication.aws_access_key_id = os.environ['AWS_ACCESS_KEY_ID']
-    # c.FargateSpawnerSecretAccessKeyAuthentication.aws_secret_access_key = os.environ['AWS_SECRET_ACCESS_KEY']
+    #c.FargateSpawner.authentication_class = FargateSpawnerECSRoleAuthentication
+    c.FargateSpawner.authentication_class = FargateSpawnerSecretAccessKeyAuthentication
+    c.FargateSpawnerSecretAccessKeyAuthentication.aws_access_key_id = os.environ['AWS_ACCESS_KEY_ID']
+    c.FargateSpawnerSecretAccessKeyAuthentication.aws_secret_access_key = os.environ['AWS_SECRET_ACCESS_KEY']
 
 c.JupyterHub.admin_access = True
 c.JupyterHub.default_url = '/hub/home'
