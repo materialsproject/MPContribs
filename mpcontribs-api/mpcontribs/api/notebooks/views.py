@@ -98,6 +98,7 @@ class NotebooksView(SwaggerView):
                     if cell['cell_type'] == 'code':
                         cell['outputs'] = kernel.execute(cell['source'])
                 client.shutdown_kernel(kernel)
+                nb.cells[1] = nbf.new_code_cell("client = load_client('<your-api-key-here>')")
                 nb.save()  # calls Notebooks.clean()
             return super().get(**kwargs)
 
@@ -109,13 +110,11 @@ class NotebooksView(SwaggerView):
                 # create and save unexecuted notebook, also start entry to avoid rebuild on subsequent requests
                 contrib = Contributions.objects.get(id=cid)
                 cells = [
-                    # TODO headers should not be shown in notebook
                     nbf.new_code_cell(
-                        "headers = { # REMOVE! Just for local testing, kong+apikey will take care of headers\n"
-                        "\t'X-Consumer-Groups': 'admin',\n"
-                        "\t'X-Consumer-Username': 'phuck@lbl.gov',\n"
-                        "}\n"
-                        "client = load_client(headers=headers) # provide apikey as argument here!\n"
+                        "headers = {'X-Consumer-Groups': 'admin', 'X-Consumer-Username': 'phuck@lbl.gov'}\n"
+                        "client = load_client(headers=headers)"
+                    ),
+                    nbf.new_code_cell(
                         f"contrib = client.contributions.get_entry(pk='{cid}', _fields=['_all']).response().result"
                     ),
                     nbf.new_markdown_cell("## Provenance Info"),
