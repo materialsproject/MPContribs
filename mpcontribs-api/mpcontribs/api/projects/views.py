@@ -26,9 +26,13 @@ projects = Blueprint("projects", __name__, template_folder=templates)
 class ProjectsResource(Resource):
     document = Projects
     filters = {
-        'title': [ops.IContains],
+        'project': [ops.Exact, ops.IContains],
+        'is_public': [ops.Boolean],
+        'title': [ops.Exact, ops.IContains],
+        'authors': [ops.IContains],
         'description': [ops.IContains],
-        'authors': [ops.IContains]
+        'owner': [ops.Exact],
+        'is_approved': [ops.Boolean]
     }
     fields = ['project', 'is_public', 'title', 'owner', 'is_approved']
     allowed_ordering = ['project', 'is_public', 'title']
