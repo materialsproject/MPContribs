@@ -14,8 +14,8 @@ MAIL_SERVER = 'smtp.mailgun.org'
 MAIL_PORT = 25 #587 #465
 MAIL_USE_TLS = False
 MAIL_USE_SSL = False
-MAIL_USERNAME = os.environ.get('MPCONTRIBS_MAILGUN_USERNAME')
-MAIL_PASSWORD = os.environ.get('MPCONTRIBS_MAILGUN_PASSWORD')
+MAIL_USERNAME = os.environ['MPCONTRIBS_MAILGUN_USERNAME']
+MAIL_PASSWORD = os.environ['MPCONTRIBS_MAILGUN_PASSWORD']
 MAIL_DEFAULT_SENDER = 'phuck@lbl.gov'  # TODO environment variable
 
 MPCONTRIBS_DB = 'mpcontribs-dev' if DEBUG else 'mpcontribs'

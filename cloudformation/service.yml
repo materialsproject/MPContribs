@@ -10,6 +10,10 @@ Parameters:
     Type: String
     Default: localhost
     Description: MongoDB host that the app connects to.
+  MailgunUsername:
+    Type: String
+  MailgunPassword:
+    Type: String
   ServiceName:
     Type: String
     Default: app
@@ -80,6 +84,10 @@ Resources:
           Environment:
             - Name: MPCONTRIBS_MONGO_HOST
               Value: !Ref 'MongoHost'
+            - Name: MPCONTRIBS_MAILGUN_USERNAME
+              Value: !Ref 'MailgunUsername'
+            - Name: MPCONTRIBS_MAILGUN_PASSWORD
+              Value: !Ref 'MailgunPassword'
           PortMappings:
             - ContainerPort: 5000
           LogConfiguration:

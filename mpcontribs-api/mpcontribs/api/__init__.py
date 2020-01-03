@@ -69,7 +69,9 @@ def send_email(to, subject, template):
         subject, recipients=[to], html=template,
         sender=current_app.config['MAIL_DEFAULT_SENDER']
     )
+    logger.warning(f'Send email {subject} to {to} ...')
     mail.send(msg)
+    logger.warning('... email sent.')
 
 def get_collections(db):
     """get list of collections in DB"""

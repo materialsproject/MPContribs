@@ -32,6 +32,12 @@ Parameters:
   MongoHost:
     Type: String
     NoEcho: true
+  MailgunUsername:
+    Type: String
+    NoEcho: true
+  MailgunPassword:
+    Type: String
+    NoEcho: true
   EnvironmentName:
     Type: String
     Default: prod
@@ -806,6 +812,8 @@ Resources:
                   {
                     "EnvironmentName": "${EnvironmentName}",
                     "MongoHost": "${MongoHost}",
+                    "MailgunUsername": "${MailgunUsername}",
+                    "MailgunPassword": "${MailgunPassword}",
                     "ImageUrlApi": {
                       "Fn::GetParam" : ["BuildOutputApi", "build-api.json", "ImageUri"]
                     },
