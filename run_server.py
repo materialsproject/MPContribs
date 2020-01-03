@@ -8,7 +8,7 @@ from hendrix.experience import hey_joe
 
 globalLogPublisher.addObserver(FileLogObserver(sys.stdout, lambda e: eventAsText(e) + "\n"))
 deployer = HendrixDeploy(options={'wsgi': portal_app, 'http_port': 8080, 'global-cache': True})
-kwargs = {} if settings.DEBUG else {'externalPort': 80}
+kwargs = {} if settings.DEBUG else {'externalPort': 443}
 ws_service = hey_joe.WebSocketService('localhost', 9000, **kwargs)
 deployer.add_non_tls_websocket_service(ws_service)
 deployer.run()
