@@ -16,15 +16,17 @@ require("../../../node_modules/backgrid-grouped-columns/backgrid-grouped-columns
 require("../../../node_modules/backgrid-columnmanager/lib/Backgrid.ColumnManager.css");
 require("./extra.css");
 
-window.api = {}
+window.api = {};
 var api_key = $('#api_key').val();
 if (api_key !== '') {
     window.api['host'] = 'https://api.mpcontribs.org/';
     var api_key_code = window.atob(api_key);
     window.api['headers'] = {'X-API-KEY': api_key_code};
+    window.ws = "wss://socket.mpcontribs.org";
 } else {
     window.api['host'] = 'http://localhost:5000/';
     window.api['headers'] = {};
+    window.ws = "ws://localhost:9000";
 }
 
 $(document).ready(function () {

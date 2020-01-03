@@ -4,7 +4,7 @@ import 'toggle';
 $(document).ready(function () {
 
     if ($('#alert').length) {
-        const socket = new WebSocket("ws://" + location.hostname + ":9000");
+        const socket = new WebSocket(window.ws);
         socket.binaryType = "arraybuffer";
         socket.onopen = function () {
             socket.send(JSON.stringify({'hx_subscribe': 'messages'}));
