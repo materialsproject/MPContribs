@@ -52,11 +52,11 @@ RUN { npm install && npm cache clean --force && npm cache verify; } 2>&1
 COPY webpack.config.js .
 COPY mpcontribs-webtzite mpcontribs-webtzite
 COPY mpcontribs-portal mpcontribs-portal
+COPY mpcontribs-users mpcontribs-users
 RUN npm run webpack 2>&1
 
 COPY mpcontribs-io mpcontribs-io
 COPY mpcontribs-client mpcontribs-client
-COPY mpcontribs-users mpcontribs-users
 COPY test_site test_site
 COPY manage.py .
 COPY docker-entrypoint.sh .
