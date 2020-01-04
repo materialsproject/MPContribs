@@ -1,29 +1,26 @@
 FROM jupyter/base-notebook
 EXPOSE 8888
+ENV SETUPTOOLS_SCM_PRETEND_VERSION dev
+ENV NODE_ENV production
 
 COPY binder/environment.yml environment.yml
 RUN conda env update --file environment.yml && conda clean -afy
 
 COPY mpcontribs-io/requirements.txt requirements-io.txt
 COPY mpcontribs-client/requirements.txt requirements-client.txt
-RUN pip install --upgrade -r requirements-client.txt
-RUN pip install --upgrade -r requirements-io.txt
+RUN cat requirements-*.txt > requirements.txt && pip install --upgrade --no-cache-dir -r requirements.txt
 
 USER root
 COPY mpcontribs-io src/mpcontribs-io
-RUN chown -R $NB_USER:users src/mpcontribs-io
 COPY mpcontribs-client src/mpcontribs-client
-RUN chown -R $NB_USER:users src/mpcontribs-client
-
 COPY mpcontribs-api/kernel_imports.ipynb .
-RUN chown $NB_USER:users kernel_imports.ipynb
+RUN chown -R $NB_USER:users src/mpcontribs-io && \
+        chown -R $NB_USER:users src/mpcontribs-client && \
+        chown $NB_USER:users kernel_imports.ipynb
 
-ENV NODE_ENV production
 USER $NB_USER
 
-ENV SETUPTOOLS_SCM_PRETEND_VERSION dev
-RUN cd src/mpcontribs-io && pip install --upgrade -e .
-ENV SETUPTOOLS_SCM_PRETEND_VERSION dev
-RUN cd src/mpcontribs-client && pip install --upgrade -e .
+RUN cd src/mpcontribs-io && pip install --upgrade --no-cache-dir -e . && \
+        cd ../mpcontribs-client && pip install --no-cache-dir --upgrade -e .
 
 CMD ["jupyter", "enterprisegateway", "--ip=0.0.0.0", "--port_retries=0", "--seed_uri='kernel_imports.ipynb'"]

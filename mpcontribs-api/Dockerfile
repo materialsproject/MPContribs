@@ -5,11 +5,14 @@ ENV FLASK_APP mpcontribs.api
 ENV FLASK_ENV production
 
 COPY environment.yml .
-RUN conda env update --file environment.yml --prune
+RUN conda env update --file environment.yml && \
+        find /opt/conda/ -follow -type f -name '*.a' -delete && \
+        find /opt/conda/ -follow -type f -name '*.js.map' -delete && \
+        /opt/conda/bin/conda clean -afy
 
 WORKDIR /app
 COPY . .
-RUN /opt/conda/bin/pip install --upgrade -e .
+RUN /opt/conda/bin/pip install --no-cache-dir --upgrade -e .
 #RUN cd marshmallow-mongoengine && /opt/conda/bin/pip install --upgrade -e .
 #RUN cd flask-mongorest && /opt/conda/bin/pip install --upgrade -e .
 #RUN cd flasgger && /opt/conda/bin/pip install --upgrade -e .
