@@ -16,7 +16,7 @@ $(document).ready(function () {
                 var message = JSON.parse(event.data);
                 var div = document.getElementById('alert');
                 div.innerHTML = message[1];
-                window.location.reload();
+                if ( message[1].startsWith('Done') ) { window.location.reload(); }
             }
         });
         socket.onerror = function (error) {

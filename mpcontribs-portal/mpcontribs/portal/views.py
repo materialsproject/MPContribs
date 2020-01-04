@@ -3,6 +3,7 @@
 import os
 import json
 import nbformat
+from time import sleep
 from nbconvert import HTMLExporter
 from bs4 import BeautifulSoup
 from fido.exceptions import HTTPTimeoutError
@@ -91,6 +92,14 @@ def contribution(request, cid):
         def execute_cells():
             nb = client.notebooks.get_entry(pk=cid).response().result  # execute cells
             hey_joe.broadcast(f'Done. Reloading page {dots}')
+
+        @crosstown_traffic()
+        def heartbeat():
+            interval = 15
+            for i in range(4):
+                sleep(interval)
+                hey_joe.broadcast(f'Still building after {(i+1)*interval} seconds {dots}')
+            hey_joe.broadcast(f'Giving up after {(i+1)*interval} seconds. Come back later.')
 
     ctx['nb'], ctx['js'] = export_notebook(nb, cid)
     return render(request, "mpcontribs_portal_contribution.html", ctx.flatten())
