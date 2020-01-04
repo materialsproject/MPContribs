@@ -4,7 +4,10 @@ ENV SETUPTOOLS_SCM_PRETEND_VERSION dev
 ENV NODE_ENV production
 
 COPY binder/environment.yml environment.yml
-RUN conda env update --file environment.yml && conda clean -afy
+RUN conda env update --file environment.yml && \
+        find /opt/conda/ -follow -type f -name '*.a' -delete && \
+        find /opt/conda/ -follow -type f -name '*.js.map' -delete && \
+        /opt/conda/bin/conda clean -afy
 
 COPY mpcontribs-io/requirements.txt requirements-io.txt
 COPY mpcontribs-client/requirements.txt requirements-client.txt
