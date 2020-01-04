@@ -1,4 +1,4 @@
-FROM jupyter/scipy-notebook
+FROM jupyter/base-notebook
 EXPOSE 8888
 
 COPY binder/environment.yml environment.yml
