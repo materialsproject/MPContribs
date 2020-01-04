@@ -17,6 +17,8 @@ MAIL_USE_SSL = False
 MAIL_USERNAME = os.environ['MPCONTRIBS_MAILGUN_USERNAME']
 MAIL_PASSWORD = os.environ['MPCONTRIBS_MAILGUN_PASSWORD']
 MAIL_DEFAULT_SENDER = 'phuck@lbl.gov'  # TODO environment variable
+MAIL_DEBUG = True
+#MAIL_SUPPRESS_SEND = True
 
 MPCONTRIBS_DB = 'mpcontribs-dev' if DEBUG else 'mpcontribs'
 MPCONTRIBS_MONGO_HOST = os.environ.get('MPCONTRIBS_MONGO_HOST', 'localhost')
