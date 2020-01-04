@@ -15,8 +15,6 @@ RUN set -ex \
     && apt-get install -y --no-install-recommends nodejs \
     && rm -rf /var/lib/apt/lists/*
 
-RUN node -v && npm -v && git --version
-
 COPY mpcontribs-io/requirements.txt requirements-io.txt
 COPY mpcontribs-client/requirements.txt requirements-client.txt
 COPY mpcontribs-portal/requirements.txt requirements-portal.txt
@@ -40,46 +38,37 @@ RUN set -ex \
 EXPOSE 8080
 EXPOSE 9000
 ENV PYTHONUNBUFFERED 1
+ENV SETUPTOOLS_SCM_PRETEND_VERSION dev
+ENV PATH="/venv/bin:${PATH}"
+ENV DJANGO_SETTINGS_MODULE=test_site.settings
 
 WORKDIR /app
 
 RUN mkdir -p mpcontribs-webtzite/webtzite
 COPY mpcontribs-webtzite/webtzite/package.json mpcontribs-webtzite/webtzite/
 COPY package.json .
-RUN npm install 2>&1
-
-ENV SETUPTOOLS_SCM_PRETEND_VERSION 1.5.9
-COPY mpcontribs-io mpcontribs-io
-RUN cd mpcontribs-io && /venv/bin/pip install -e .
-
-ENV SETUPTOOLS_SCM_PRETEND_VERSION 1.5.7
-COPY mpcontribs-client mpcontribs-client
-RUN cd mpcontribs-client && /venv/bin/pip install -e .
-
-COPY mpcontribs-webtzite mpcontribs-webtzite
-RUN cd mpcontribs-webtzite && /venv/bin/pip install -e .
-
-COPY mpcontribs-portal mpcontribs-portal
-RUN cd mpcontribs-portal && /venv/bin/pip install -e .
-
-COPY mpcontribs-users mpcontribs-users
-RUN cd mpcontribs-users && /venv/bin/pip install -e .
-
-COPY test_site test_site
+RUN { npm install && npm cache clean --force && npm cache verify; } 2>&1
 
 COPY webpack.config.js .
+COPY mpcontribs-webtzite mpcontribs-webtzite
+COPY mpcontribs-portal mpcontribs-portal
 RUN npm run webpack 2>&1
 
-ENV DJANGO_SETTINGS_MODULE=test_site.settings
-
+COPY mpcontribs-io mpcontribs-io
+COPY mpcontribs-client mpcontribs-client
+COPY mpcontribs-users mpcontribs-users
+COPY test_site test_site
 COPY manage.py .
-RUN /venv/bin/python manage.py collectstatic --noinput
-
 COPY docker-entrypoint.sh .
-RUN chmod +x /app/docker-entrypoint.sh
-ENTRYPOINT ["/app/docker-entrypoint.sh"]
-
 COPY run_server.py .
-RUN chmod +x /app/run_server.py
-ENV PATH="/venv/bin:${PATH}"
+
+RUN cd mpcontribs-io && /venv/bin/pip install --no-cache-dir -e . && \
+    cd ../mpcontribs-client && /venv/bin/pip install --no-cache-dir -e . && \
+    cd ../mpcontribs-webtzite && /venv/bin/pip install --no-cache-dir -e . && \
+    cd ../mpcontribs-portal && /venv/bin/pip install --no-cache-dir -e . && \
+    cd ../mpcontribs-users && /venv/bin/pip install --no-cache-dir -e . && \
+    cd /app && /venv/bin/python manage.py collectstatic --noinput && \
+    chmod +x /app/run_server.py && chmod +x /app/docker-entrypoint.sh
+
+ENTRYPOINT ["/app/docker-entrypoint.sh"]
 CMD ["python", "run_server.py"]
