@@ -157,8 +157,9 @@ def applications(token, action):
     actions = ['approve', 'deny']
     if action not in actions:
         response = f'<h3>{project}</h3><ul>'
+        scheme = 'http' if current_app.config['DEBUG'] else 'https'
         for a in actions:
-            u = url_for('projects.applications', token=token, action=a, _external=True)
+            u = url_for('projects.applications', token=token, action=a, _scheme=scheme, _external=True)
             response += f'<li><a href="{u}">{a}</a></li>'
         return response + '</ul>'
 

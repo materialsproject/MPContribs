@@ -39,7 +39,8 @@ class Projects(Document):
             ts = current_app.config['USTS']
             email_project = [document.owner, document.project]
             token = ts.dumps(email_project)
-            link = url_for('projects.applications', token=token, _external=True)
+            scheme = 'http' if current_app.config['DEBUG'] else 'https'
+            link = url_for('projects.applications', token=token, _scheme=scheme, _external=True)
             subject = f'New project "{document.project}"'
             hours = int(current_app.config['USTS_MAX_AGE'] / 3600)
             html = render_template('admin_email.html', doc=document, link=link, hours=hours)
