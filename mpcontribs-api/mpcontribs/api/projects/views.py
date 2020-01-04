@@ -3,7 +3,7 @@ import flask_mongorest
 from dict_deep import deep_get
 from mongoengine.queryset.visitor import Q
 from mongoengine.queryset import DoesNotExist
-from flask import Blueprint, request, current_app
+from flask import Blueprint, request, current_app, url_for
 from flask_mongorest.exceptions import UnknownFieldError
 from flask_mongorest.resources import Resource
 from flask_mongorest import operators as ops
@@ -139,19 +139,28 @@ class ProjectsView(SwaggerView):
         return True
 
 
-@projects.route('/applications/<token>')
-def applications(token):
+@projects.route('/applications/<token>', defaults={'action': None})
+@projects.route('/applications/<token>/<action>')
+def applications(token, action):
     ts = current_app.config['USTS']
     max_age = current_app.config['USTS_MAX_AGE']
     try:
-        owner, project, action = ts.loads(token, max_age=max_age)
+        owner, project = ts.loads(token, max_age=max_age)
     except SignatureExpired:
-        return f'{action} signature for {owner} of {project} expired.'
+        return f'signature for {owner} of {project} expired.'
 
     try:
         obj = Projects.objects.get(project=project, owner=owner, is_approved=False)
     except DoesNotExist:
         return f'{project} for {owner} already approved or denied.'
+
+    actions = ['approve', 'deny']
+    if action not in actions:
+        response = f'<h3>{project}</h3><ul>'
+        for a in actions:
+            u = url_for('projects.applications', token=token, action=a, _external=True)
+            response += f'<li><a href="{u}">{a}</a></li>'
+        return response + '</ul>'
 
     if action == 'approve':
         obj.is_approved = True

@@ -31,6 +31,6 @@ PyYAML>=5.2
 dict-deep>=3.1.1
 blinker>=1.4
 itsdangerous>=1.1.0
-Flask-Mail>=0.9.1
 fdict>=0.8.1
 pint>=0.9
+boto3>=1.10.46

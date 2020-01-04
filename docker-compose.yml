@@ -41,8 +41,10 @@ services:
             - FLASK_ENV=development
             - MPCONTRIBS_MONGO_HOST=$MPCONTRIBS_MONGO_HOST
             - GATEWAY_HOST=kernel_gateway:8888
-            - MPCONTRIBS_MAILGUN_USERNAME=$MPCONTRIBS_MAILGUN_USERNAME
-            - MPCONTRIBS_MAILGUN_PASSWORD=$MPCONTRIBS_MAILGUN_PASSWORD
+            - AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
+            - AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
+            - AWS_SNS_TOPIC_ARN=$AWS_SNS_TOPIC_ARN
+            - AWS_DEFAULT_REGION=us-east-1
         ports:
             - "5000:5000"
 

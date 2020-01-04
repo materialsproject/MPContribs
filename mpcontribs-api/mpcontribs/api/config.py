@@ -10,15 +10,8 @@ FLASK_LOG_LEVEL = 'DEBUG' if DEBUG else 'WARNING'
 SECRET_KEY = 'super-secret'  # TODO in local prod config
 
 USTS_MAX_AGE = 86400
-MAIL_SERVER = 'smtp.mailgun.org'
-MAIL_PORT = 25 #587 #465
-MAIL_USE_TLS = False
-MAIL_USE_SSL = False
-MAIL_USERNAME = os.environ['MPCONTRIBS_MAILGUN_USERNAME']
-MAIL_PASSWORD = os.environ['MPCONTRIBS_MAILGUN_PASSWORD']
 MAIL_DEFAULT_SENDER = 'phuck@lbl.gov'  # TODO environment variable
-MAIL_DEBUG = True
-#MAIL_SUPPRESS_SEND = True
+MAIL_TOPIC = os.environ['AWS_SNS_TOPIC_ARN']
 
 MPCONTRIBS_DB = 'mpcontribs-dev' if DEBUG else 'mpcontribs'
 MPCONTRIBS_MONGO_HOST = os.environ.get('MPCONTRIBS_MONGO_HOST', 'localhost')

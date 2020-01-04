@@ -234,6 +234,21 @@ Resources:
         - !Ref 'PublicSecurityGroup'
         - !Ref 'PrivateSecurityGroup'
         - !Ref 'JhubSecurityGroup'
+  SnsEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      VpcId: !Ref 'VPC'
+      ServiceName: !Sub 'com.amazonaws.${AWS::Region}.sns'
+      VpcEndpointType: Interface
+      PrivateDnsEnabled: true
+      SubnetIds:
+        - !Ref 'PublicSubnetOne'
+        - !Ref 'PublicSubnetTwo'
+        - !Ref 'PrivateSubnetOne'
+        - !Ref 'PrivateSubnetTwo'
+      SecurityGroupIds:
+        - !Ref 'PublicSecurityGroup'
+        - !Ref 'PrivateSecurityGroup'
   S3Endpoint:
     Type: AWS::EC2::VPCEndpoint
     Properties:

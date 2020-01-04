@@ -3,7 +3,7 @@ from flask_mongoengine import Document
 from flask_mongorest.exceptions import ValidationError
 from mongoengine.fields import StringField, BooleanField, DictField, URLField, MapField, EmailField
 from mongoengine import signals
-from mpcontribs.api import send_email, validate_data, invalidChars
+from mpcontribs.api import send_email, validate_data, invalidChars, sns_client
 
 
 class Projects(Document):
@@ -34,27 +34,27 @@ class Projects(Document):
     @classmethod
     def post_save(cls, sender, document, **kwargs):
         admin_email = current_app.config['MAIL_DEFAULT_SENDER']
+        admin_topic = current_app.config['MAIL_TOPIC']
         if kwargs.get('created'):
             ts = current_app.config['USTS']
-            links = []
-            for action in ['approve', 'deny']:
-                email_project = [document.owner, document.project, action]
-                token = ts.dumps(email_project)
-                links.append(url_for('projects.applications', token=token, _external=True))
-
-            subject = f'[MPContribs] New project "{document.project}"'
+            email_project = [document.owner, document.project]
+            token = ts.dumps(email_project)
+            link = url_for('projects.applications', token=token, _external=True)
+            subject = f'New project "{document.project}"'
             hours = int(current_app.config['USTS_MAX_AGE'] / 3600)
-            html = render_template(
-                'admin_email.html', doc=document,
-                links=links, admin_email=admin_email, hours=hours
+            html = render_template('admin_email.html', doc=document, link=link, hours=hours)
+            send_email(admin_topic, subject, html)
+            resp = sns_client.create_topic(
+                Name=f'mpcontribs_{document.project}', Attributes={'DisplayName': f'MPContribs {document.title}'}
             )
-            send_email(admin_email, subject, html)
+            sns_client.subscribe(TopicArn=resp['TopicArn'], Protocol='email', Endpoint=document.owner)
         else:
             set_keys = document._delta()[0].keys()
             if 'is_approved' in set_keys and document.is_approved:
-                subject = f'[MPContribs] Your project "{document.project}" has been approved'
+                subject = f'Your project "{document.project}" has been approved'
                 html = render_template('owner_email.html', approved=True, admin_email=admin_email)
-                send_email(document.owner, subject, html)
+                topic_arn = ':'.join(admin_topic.split(':')[:-1] + ['mpcontribs_' + document.project])
+                send_email(topic_arn, subject, html)
             if set_keys:
                 # import here to avoid circular
                 from mpcontribs.api.contributions.document import Contributions
@@ -67,9 +67,12 @@ class Projects(Document):
     @classmethod
     def post_delete(cls, sender, document, **kwargs):
         admin_email = current_app.config['MAIL_DEFAULT_SENDER']
-        subject = f'[MPContribs] Your project "{document.project}" has been deleted'
+        admin_topic = current_app.config['MAIL_TOPIC']
+        subject = f'Your project "{document.project}" has been deleted'
         html = render_template('owner_email.html', approved=False, admin_email=admin_email)
-        send_email(document.owner, subject, html)
+        topic_arn = ':'.join(admin_topic.split(':')[:-1] + ['mpcontribs_' + document.project])
+        send_email(topic_arn, subject, html)
+        sns_client.delete_topic(TopicArn=topic_arn)
 
     @classmethod
     def pre_save_post_validation(cls, sender, document, **kwargs):

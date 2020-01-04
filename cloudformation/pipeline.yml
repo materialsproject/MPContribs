@@ -68,6 +68,8 @@ Parameters:
   AwsSecretAccessKey:
     NoEcho: 'true'
     Type: String
+  SnsAdminTopicArn:
+    Type: String
 
 Resources:
   # Create the ECR respository to hold built docker images
@@ -812,8 +814,9 @@ Resources:
                   {
                     "EnvironmentName": "${EnvironmentName}",
                     "MongoHost": "${MongoHost}",
-                    "MailgunUsername": "${MailgunUsername}",
-                    "MailgunPassword": "${MailgunPassword}",
+                    "AwsAccessKeyId": "${AwsAccessKeyId}",
+                    "AwsSecretAccessKey": "${AwsSecretAccessKey}",
+                    "SnsAdminTopicArn": "${SnsAdminTopicArn}",
                     "ImageUrlApi": {
                       "Fn::GetParam" : ["BuildOutputApi", "build-api.json", "ImageUri"]
                     },

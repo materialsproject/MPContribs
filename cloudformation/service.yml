@@ -10,9 +10,11 @@ Parameters:
     Type: String
     Default: localhost
     Description: MongoDB host that the app connects to.
-  MailgunUsername:
+  AwsAccessKeyId:
     Type: String
-  MailgunPassword:
+  AwsSecretAccessKey:
+    Type: String
+  SnsAdminTopicArn:
     Type: String
   ServiceName:
     Type: String
@@ -84,10 +86,14 @@ Resources:
           Environment:
             - Name: MPCONTRIBS_MONGO_HOST
               Value: !Ref 'MongoHost'
-            - Name: MPCONTRIBS_MAILGUN_USERNAME
-              Value: !Ref 'MailgunUsername'
-            - Name: MPCONTRIBS_MAILGUN_PASSWORD
-              Value: !Ref 'MailgunPassword'
+            - Name: AWS_ACCESS_KEY_ID
+              Value: !Ref 'AwsAccessKeyId'
+            - Name: AWS_SECRET_ACCESS_KEY
+              Value: !Ref 'AwsSecretAccessKey'
+            - Name: AWS_SNS_TOPIC_ARN
+              Value: !Ref 'SnsAdminTopicArn'
+            - Name: AWS_DEFAULT_REGION
+              Value: !Ref 'AWS::Region'
           PortMappings:
             - ContainerPort: 5000
           LogConfiguration:

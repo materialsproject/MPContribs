@@ -3,6 +3,7 @@
 import os
 import logging
 import yaml
+import boto3
 from importlib import import_module
 from flask import Flask, current_app
 from flask_marshmallow import Marshmallow
@@ -10,7 +11,6 @@ from flask_mongoengine import MongoEngine
 from flask_mongorest import register_class
 from flask_mongorest.exceptions import ValidationError
 from flask_log import Logging
-from flask_mail import Mail, Message
 from flasgger.base import Swagger
 from pandas.io.json._normalize import nested_to_record
 from typing import Any, Dict
@@ -31,7 +31,7 @@ for mod in ['matplotlib', 'toronado.cssutils', 'selenium.webdriver.remote.remote
     log.setLevel('INFO')
 
 logger = logging.getLogger('app')
-mail = Mail()
+sns_client = boto3.client('sns')
 
 
 def validate_data(doc):
@@ -65,13 +65,7 @@ def validate_data(doc):
 
 
 def send_email(to, subject, template):
-    msg = Message(
-        subject, recipients=[to], html=template,
-        sender=current_app.config['MAIL_DEFAULT_SENDER']
-    )
-    logger.warning(f'Send email {subject} to {to} ...')
-    mail.send(msg)
-    logger.warning('... email sent.')
+    resp = sns_client.publish(TopicArn=to, Message=template, Subject=subject)
 
 def get_collections(db):
     """get list of collections in DB"""
@@ -172,12 +166,13 @@ def create_app():
     app.config.from_pyfile('config.py', silent=True)
     app.config['USTS'] = URLSafeTimedSerializer(app.secret_key)
     app.jinja_env.globals['get_resource_as_string'] = get_resource_as_string
+    app.jinja_env.lstrip_blocks = True
+    app.jinja_env.trim_blocks = True
     if app.config.get('DEBUG'):
         from flask_cors import CORS
         CORS(app)  # enable for development (allow localhost)
 
 
-    mail.init_app(app)
     Logging(app)
     Marshmallow(app)
     db = MongoEngine(app)
