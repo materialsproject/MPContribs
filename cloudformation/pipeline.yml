@@ -32,12 +32,6 @@ Parameters:
   MongoHost:
     Type: String
     NoEcho: true
-  MailgunUsername:
-    Type: String
-    NoEcho: true
-  MailgunPassword:
-    Type: String
-    NoEcho: true
   EnvironmentName:
     Type: String
     Default: prod
