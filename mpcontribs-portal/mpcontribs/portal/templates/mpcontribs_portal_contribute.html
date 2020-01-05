@@ -2,30 +2,37 @@
 {% block title %}Contribute Data{% endblock %}
 
 {% block content %}
+<style>
+.highlight > pre { background-color: #2f1e2e; }
+div.prompt { display: none; }
+a.anchor-link { display: none; }
+</style>
+
 <div id=contribute class="container">
 
     <div class="row" style="margin-bottom: 20px;">
-        <div class="col-md-10">
-            The following Jupyter Notebook demonstrates how to use the
-            <a href="https://pypi.org/project/mpcontribs-client/" target="_blank">mpcontribs-client</a>
-            python library to programmatically contribute data through the
-            <a name=api_url target="_blank">MPContribs API</a>. The
-            <a href="https://pypi.org/project/mpcontribs-io/" target="_blank">mpcontribs-io</a>
-            library can optionally be installed for better visualization of contributions and their
-            components. A web app for interactive data ingestion is
-            <a rel="popover">coming soon</a>.
-            For now, the easiest way to get started is to skip installation entirely and use the button on the right to
-            launch the notebook on our compute resources.
-        </div>
-        <div class="col-md-2 pull-right">
-            <a id=contribute_url class="btn btn-success" href="#" role="button" target=_blank>
-                <span class="glyphicon glyphicon-play" aria-hidden="true"></span> Launch
-            </a>
-        </div>
-    </div>
-
-    <div class="row">
-        <div class="col-md-12 bg-success">
+        <div class="col-md-12">
+            <div class="col-md-5 pull-right">
+                <div class="panel panel-info">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">Contribute Data to a Project</h3>
+                    </div>
+                    <div class="panel-body text-justify">
+                        <a id=contribute_url class="btn btn-danger pull-right" style="margin-left: 15px;" href="#" role="button" target=_blank>
+                            <span class="glyphicon glyphicon-play" aria-hidden="true"></span> Launch
+                        </a>
+                        This <a href="https://jupyter.org">Jupyter</a> notebook demonstrates how to use the
+                        <a href="https://pypi.org/project/mpcontribs-client/" target="_blank">mpcontribs-client</a>
+                        python library to programmatically contribute data through the
+                        <a name=api_url target="_blank">MPContribs API</a>. The
+                        <a href="https://pypi.org/project/mpcontribs-io/" target="_blank">mpcontribs-io</a>
+                        library can optionally be installed for better visualization of contributions and their
+                        components. A web app for interactive data ingestion is <a rel="popover">coming soon</a>. The
+                        easiest way to get started is to skip installation entirely and use the above button to launch the
+                        notebook on our compute resources.
+                    </div>
+                </div>
+            </div>
             {% include "contribute.html" %}
         </div>
     </div>
