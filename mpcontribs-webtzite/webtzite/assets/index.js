@@ -31,12 +31,8 @@ if (api_key !== '') {
 
 $(document).ready(function () {
     document.getElementById("logo").src = img;
-    var nb_url = api_key !== '' ? 'https://jhub.mpcontribs.org' : 'http://localhost:8000';
-    nb_url += '/hub/user-redirect/tree/binder/notebooks/';
-    document.getElementById("contribute_url").href = nb_url + 'contribute.ipynb';
-    document.getElementById("retrieve_url").href = nb_url;// + 'retrieve.ipynb';
     document.getElementById("docs_url").href = api_key !== '' ? 'https://mpcontribs.org' : 'http://localhost:8081';
-    document.getElementById("api_url").href = window.api['host'];
+    $('a[name="api_url"]').attr('href', window.api['host']);
 
     $('#api_key_btn').on('click', function() {
         clipboard.writeText(api_key_code);
@@ -87,6 +83,10 @@ $(document).ready(function () {
 
     if ($("#apply").length) {
         import(/* webpackChunkName: "apply" */ `../../../mpcontribs-portal/mpcontribs/portal/assets/apply.js`).catch(function(err) { console.error(err); });
+    }
+
+    if ($("#contribute").length) {
+        import(/* webpackChunkName: "contribute" */ `../../../mpcontribs-portal/mpcontribs/portal/assets/contribute.js`).catch(function(err) { console.error(err); });
     }
 
     $('header').show();

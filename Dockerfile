@@ -55,6 +55,9 @@ COPY mpcontribs-portal mpcontribs-portal
 COPY mpcontribs-users mpcontribs-users
 RUN npm run webpack 2>&1
 
+COPY binder/notebooks/contribute.ipynb .
+RUN jupyter nbconvert --to html --template basic --output-dir=mpcontribs-portal/mpcontribs/portal/templates contribute.ipynb
+
 COPY mpcontribs-io mpcontribs-io
 COPY mpcontribs-client mpcontribs-client
 COPY test_site test_site

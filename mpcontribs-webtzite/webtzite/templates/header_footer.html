@@ -33,18 +33,17 @@
               </select>
           </div>
           <ul class="nav navbar-nav navbar-right" style="font-size: 16px; font-weight: bold;">
-              <!-- TODO remove ingester domain, merge into portal -->
+              <!-- TODO merge ingester webapp into portal -->
               <li><a href="/apply" style="color: orange;">Apply</a></li>
               <li class="dropdown">
                   <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
-                      Contribute <span class="caret"></span>
+                      Use <span class="caret"></span>
                   </a>
                   <ul class="dropdown-menu">
-                      <li><a id=contribute_url target=_blank>Jupyter Notebook <span class="glyphicon glyphicon-new-window" aria-hidden="true"></span></a></li>
-                      <li><a href="/ingester">Ingester WebApp</a></li>
+                      <li><a href="/contribute">Contribute Data</a></li>
+                      <li><a href="#">Retrieve Data</a></li>
                   </ul>
               </li>
-              <li><a id=retrieve_url target=_blank>Retrieve <span class="glyphicon glyphicon-new-window" aria-hidden="true"></span></a></li>
               {% block extra_items %}
               {% endblock extra_items %}
               <li class="dropdown">
@@ -70,7 +69,7 @@
                           </a>
                       </li>
                       <li>
-                          <a id=api_url target="_blank">
+                          <a name=api_url target="_blank">
                               RESTful API <span class="glyphicon glyphicon-new-window" aria-hidden="true"></span>
                           </a>
                       </li>

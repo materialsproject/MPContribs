@@ -15,12 +15,12 @@ function generateImage(container, imageName) {
 }
 
 function getImages() {
-    return require.context('./images/', false, /\.(png|jpe?g)$/).keys();
+    return require.context('./images/', false, /\.(jpe?g)$/).keys();
 }
 
 var imageNames = getImages();
 $.each(imageNames, function(idx, name) {
-    var selector = '#' + name.replace('./', '').replace('.jpg', '_img').replace('.png', '_img');
+    var selector = '#' + name.replace('./', '').replace('.jpg', '_img');
     var container = document.querySelector(selector);
     if (container) { generateImage(container, name); }
 })
