@@ -55,9 +55,6 @@ COPY mpcontribs-portal mpcontribs-portal
 COPY mpcontribs-users mpcontribs-users
 RUN npm run webpack 2>&1
 
-COPY binder/notebooks/contribute.ipynb .
-RUN jupyter nbconvert --to html --template basic --output-dir=mpcontribs-portal/mpcontribs/portal/templates contribute.ipynb
-
 COPY mpcontribs-io mpcontribs-io
 COPY mpcontribs-client mpcontribs-client
 COPY test_site test_site
@@ -72,6 +69,15 @@ RUN cd mpcontribs-io && /venv/bin/pip install --no-cache-dir -e . && \
     cd ../mpcontribs-users && /venv/bin/pip install --no-cache-dir -e . && \
     cd /app && /venv/bin/python manage.py collectstatic --noinput && \
     chmod +x /app/run_server.py && chmod +x /app/docker-entrypoint.sh
+
+COPY binder/notebooks notebooks
+RUN /venv/bin/pip install --no-cache-dir jupyter_client ipykernel && /venv/bin/python -m ipykernel install --user
+# TODO replace load_client cell for api_key
+RUN out=mpcontribs-portal/mpcontribs/portal/templates && \
+    /venv/bin/jupyter nbconvert --to notebook --execute --inplace --allow-errors notebooks/contribute/get_started.ipynb && \
+    for i in `ls -1 notebooks/*/*.ipynb`; do \
+       /venv/bin/jupyter nbconvert --to html --template basic --output-dir=$out/`dirname $i` $i; \
+    done;
 
 ENTRYPOINT ["/app/docker-entrypoint.sh"]
 CMD ["python", "run_server.py"]

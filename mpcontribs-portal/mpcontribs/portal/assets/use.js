@@ -11,11 +11,13 @@ function lazyLoadImage(imageName, img) {
 }
 
 $(document).ready(function () {
+
     var api_key = $('#api_key').val();
     var nb_url = api_key !== '' ? 'https://jhub.mpcontribs.org' : 'http://localhost:8000';
     nb_url += '/hub/user-redirect/tree/binder/notebooks/';
-    document.getElementById("contribute_url").href = nb_url + 'contribute.ipynb';
-    //document.getElementById("retrieve_url").href = nb_url;// + 'retrieve.ipynb';
+    $('a[name=launch]').each(function() {
+        $(this).attr('href', nb_url + $(this).attr('id') + '.ipynb');
+    });
 
     $('a[rel=popover]').popover({
         html: true,
@@ -32,5 +34,12 @@ $(document).ready(function () {
                 return img;
             }
         }
+    });
+
+    $('a[name=nb_show]').click(function(e) {
+        $('a[name=nb_show]').removeClass('disabled');
+        e.preventDefault();
+        $('#nb_content').load('notebooks/' + $(this).html() + '.html');
+        $(this).addClass('disabled');
     });
 });

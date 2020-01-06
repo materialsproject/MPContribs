@@ -3,6 +3,7 @@
 import os
 import json
 import nbformat
+from glob import glob
 from time import sleep
 from nbconvert import HTMLExporter
 from bs4 import BeautifulSoup
@@ -15,6 +16,7 @@ from django.shortcuts import render
 from django.template import RequestContext
 from django.http import HttpResponse
 from django.urls import reverse
+from django.template.loaders.app_directories import get_app_template_dirs
 
 from mpcontribs.client import load_client
 from webtzite import get_consumer
@@ -149,3 +151,15 @@ def csv(request, project):
 def apply(request):
     ctx = RequestContext(request)
     return render(request, "mpcontribs_portal_apply.html", ctx.flatten())
+
+def use(request):
+    ctx = RequestContext(request)
+    template_dir = get_app_template_dirs('templates/notebooks')[0]
+    ctx['notebooks'] = [
+        p.split('/notebooks/')[-1].replace('.html', '')
+        for p in glob(os.path.join(template_dir, '*', '*.html'))
+    ]
+    return render(request, "mpcontribs_portal_use.html", ctx.flatten())
+
+def notebooks(request, nb):
+    return render(request, os.path.join('notebooks', nb + '.html'))

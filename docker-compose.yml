@@ -23,7 +23,7 @@ services:
             - ./mpcontribs-io:/app/mpcontribs-io
             - ./mpcontribs-client:/app/mpcontribs-client
             - ./run_server.py:/app/run_server.py
-            - ./binder/notebooks/contribute.ipynb:/app/contribute.ipynb
+            - ./binder/notebooks:/app/notebooks
         ports:
             - "8080:8080"
             - "9000:9000"

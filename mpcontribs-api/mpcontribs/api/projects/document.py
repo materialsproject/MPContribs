@@ -25,8 +25,8 @@ class Projects(Document):
         min_length=5, max_length=1500, required=True,
         help_text='brief description of the project'
     )
-    urls = MapField(URLField(), required=True, help_text='list of URLs for references')
-    other = DictField(help_text='other information')
+    urls = MapField(URLField(null=True), required=True, help_text='list of URLs for references')
+    other = DictField(help_text='other information', null=True)
     owner = EmailField(required=True, unique_with='project', help_text='owner / corresponding email')
     is_approved = BooleanField(required=True, default=False, help_text='project approved?')
     meta = {'collection': 'projects', 'indexes': ['is_public', 'owner', 'is_approved']}

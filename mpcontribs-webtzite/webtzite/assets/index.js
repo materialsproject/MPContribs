@@ -85,8 +85,8 @@ $(document).ready(function () {
         import(/* webpackChunkName: "apply" */ `../../../mpcontribs-portal/mpcontribs/portal/assets/apply.js`).catch(function(err) { console.error(err); });
     }
 
-    if ($("#contribute").length) {
-        import(/* webpackChunkName: "contribute" */ `../../../mpcontribs-portal/mpcontribs/portal/assets/contribute.js`).catch(function(err) { console.error(err); });
+    if ($("#use").length) {
+        import(/* webpackChunkName: "use" */ `../../../mpcontribs-portal/mpcontribs/portal/assets/use.js`).catch(function(err) { console.error(err); });
     }
 
     $('header').show();

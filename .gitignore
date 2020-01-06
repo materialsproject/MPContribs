@@ -37,4 +37,4 @@ mpcontribs-api/mpcontribs/api/swagger/
 .ipython/
 .jupyter/
 .local/
-mpcontribs-portal/mpcontribs/portal/templates/contribute.html
+mpcontribs-portal/mpcontribs/portal/templates/notebooks
