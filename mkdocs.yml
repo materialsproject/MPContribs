@@ -14,8 +14,8 @@ copyright: 'Copyright &copy; 2019 Materials Project'
 
 theme:
     name: 'material'
-    #feature:
-    #    tabs: true
+    feature:
+        tabs: true
 
 markdown_extensions:
     - codehilite:
@@ -39,11 +39,9 @@ markdown_extensions:
 
 nav:
     - Home: index.md
-    - API: api.md
-    - Portal: portal.md
-    - Landing Pages:
+    - Datasets:
+        - Overview: datasets.md
         - RedoxThermoCSP: redox_thermo_csp/index.md
-    - Ingester: ingester.md
 google_analytics:
     - 'UA-140392573-1'
     - 'auto'

@@ -80,11 +80,13 @@ services:
             dockerfile: DockerfileTest
 
     docs:
-        image: squidfunk/mkdocs-material
+        build:
+            context: .
+            dockerfile: DockerfileDocs
         volumes:
             - .:/docs
         ports:
-            - "8081:8000"
+            - "8081:8081"
 
     jhub:
         build:
