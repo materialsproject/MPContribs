@@ -113,14 +113,6 @@ Resources:
           FromPort: 8001
           ToPort: 8001
           CidrIp: 0.0.0.0/0
-        - IpProtocol: tcp
-          FromPort: 8005
-          ToPort: 8005
-          CidrIp: 0.0.0.0/0
-        - IpProtocol: tcp
-          FromPort: 8006
-          ToPort: 8006
-          CidrIp: 0.0.0.0/0
   PublicSecurityGroupIngressFromSelf:
     Type: AWS::EC2::SecurityGroupIngress
     Properties:
@@ -207,26 +199,6 @@ Resources:
         - !Ref 'PrivateSubnetTwo'
 
   PostgresDB:
-    Type: AWS::RDS::DBInstance
-    Properties:
-      Engine: postgres
-      DBName: kong
-      MasterUsername: kong
-      DBInstanceClass: db.t2.micro
-      AllocatedStorage: 5
-      MasterUserPassword: !Ref 'DBPassword'
-      DBSubnetGroupName: !Ref 'DBSubnetGroup'
-      PubliclyAccessible: false
-      EngineVersion: 9.6.8
-      DBSnapshotIdentifier: !Ref 'AWS::NoValue'
-      MultiAZ: false
-      StorageEncrypted: false
-      StorageType: gp2
-      VPCSecurityGroups:
-        - !Ref 'DBSecurityGroup'
-    DeletionPolicy: Snapshot
-
-  PostgresDBNew:
     Type: AWS::RDS::DBInstance
     Properties:
       Engine: postgres
@@ -440,11 +412,6 @@ Outputs:
     Value: !GetAtt 'PostgresDB.Endpoint.Address'
     Export:
       Name: !Join [ ':', [ !Ref 'EnvironmentName', 'DBAddress' ] ]
-  DBAddressNew:
-    Description: DB Address (upgrade Jan-2020 to Kong 1.4.2)
-    Value: !GetAtt 'PostgresDBNew.Endpoint.Address'
-    Export:
-      Name: !Join [ ':', [ !Ref 'EnvironmentName', 'DBAddressNew' ] ]
   PublicSecurityGroup:
     Description: Public Security Group
     Value: !Ref 'PublicSecurityGroup'

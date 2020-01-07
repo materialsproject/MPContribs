@@ -12,8 +12,6 @@ Parameters:
     Description: A name for the service
   ImageUrlKong:
     Type: String
-  ImageUrlKongNew:
-    Type: String
   ImageUrlKonga:
     Type: String
   DBPassword:
@@ -105,61 +103,6 @@ Resources:
           PortMappings:
             - ContainerPort: 8000
             - ContainerPort: 8001
-          LogConfiguration:
-            LogDriver: 'awslogs'
-            Options:
-              awslogs-group: !Join ['-', [!Ref 'EnvironmentName', 'service', !Ref 'ServiceName']]
-              awslogs-region: !Ref 'AWS::Region'
-              awslogs-stream-prefix: !Ref 'ServiceName'
-        - Name: kong_new
-          MemoryReservation: 250
-          Image: !Ref 'ImageUrlKongNew'
-          Ulimits:
-              - Name: "nofile"
-                HardLimit: 4096
-                SoftLimit: 4096
-          Environment:
-            - Name: REGION
-              Value: !Ref 'AWS::Region'
-            - Name: ENV_NAME
-              Value: !Ref 'EnvironmentName'
-            - Name: KONG_PROXY_LISTEN
-              Value: '0.0.0.0:8005'
-            - Name: KONG_ADMIN_LISTEN
-              Value: '0.0.0.0:8006'
-            - Name: KONG_DATABASE
-              Value: postgres
-            - Name: KONG_PG_USER
-              Value: kong
-            - Name: KONG_PG_DATABASE
-              Value: kong
-            - Name: KONG_PLUGINS
-              Value: oidc,oidc-consumer,key-auth,cors,request-size-limiting,bot-detection,rate-limiting,acl,response-ratelimiting,loggly
-            - Name: KONG_PG_HOST
-              Value:
-                Fn::ImportValue:
-                    !Join [':', [!Ref 'EnvironmentName', 'DBAddressNew']]
-            - Name: KONG_PG_PORT
-              Value: 5432
-            - Name: KONG_PG_PASSWORD
-              Value: !Ref 'DBPassword'
-            - Name: KONG_LOG_LEVEL
-              Value: debug
-            - Name: KONG_LUA_PACKAGE_PATH
-              Value: '/usr/local/oidc/?.lua;;'
-            - Name: KONG_ADMIN_ACCESS_LOG
-              Value: '/dev/stdout'
-            - Name: KONG_ADMIN_ERROR_LOG
-              Value: '/dev/stderr'
-            - Name: KONG_PROXY_ACCESS_LOG
-              Value: '/dev/stdout'
-            - Name: KONG_PROXY_ERROR_LOG
-              Value: '/dev/stderr'
-            - Name: KONG_NGINX_PROXY_PROXY_IGNORE_CLIENT_ABORT
-              Value: 'on'
-          PortMappings:
-            - ContainerPort: 8005
-            - ContainerPort: 8006
           LogConfiguration:
             LogDriver: 'awslogs'
             Options:
