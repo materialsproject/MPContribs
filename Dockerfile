@@ -61,17 +61,16 @@ COPY test_site test_site
 COPY manage.py .
 COPY docker-entrypoint.sh .
 COPY run_server.py .
+COPY binder/notebooks notebooks
 
-RUN cd mpcontribs-io && /venv/bin/pip install --no-cache-dir -e . && \
+RUN /venv/bin/python -m ipykernel install --user && \
+    cd mpcontribs-io && /venv/bin/pip install --no-cache-dir -e . && \
     cd ../mpcontribs-client && /venv/bin/pip install --no-cache-dir -e . && \
     cd ../mpcontribs-webtzite && /venv/bin/pip install --no-cache-dir -e . && \
     cd ../mpcontribs-portal && /venv/bin/pip install --no-cache-dir -e . && \
     cd ../mpcontribs-users && /venv/bin/pip install --no-cache-dir -e . && \
     cd /app && /venv/bin/python manage.py collectstatic --noinput && \
     chmod +x /app/run_server.py && chmod +x /app/docker-entrypoint.sh
-
-COPY binder/notebooks notebooks
-RUN /venv/bin/pip install --no-cache-dir jupyter_client ipykernel && /venv/bin/python -m ipykernel install --user
 
 ENTRYPOINT ["/app/docker-entrypoint.sh"]
 CMD ["python", "run_server.py"]
