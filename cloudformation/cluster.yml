@@ -19,30 +19,30 @@ Resources:
     Properties:
       EnableDnsSupport: true
       EnableDnsHostnames: true
-      CidrBlock: '10.0.0.0/16'
+      CidrBlock: '10.0.0.0/26'  # 10.0.0.0 - 10.0.0.63
   PublicSubnetOne:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref 'VPC'
-      CidrBlock: '10.0.8.0/24'
+      CidrBlock: '10.0.0.0/28'  # 10.0.0.0 - 10.0.0.15
       AvailabilityZone: !Join [ '', [!Ref 'AWS::Region', 'a']]
   PublicSubnetTwo:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref 'VPC'
-      CidrBlock: '10.0.9.0/24'
+      CidrBlock: '10.0.0.16/28'  # 10.0.0.16 - 10.0.0.31
       AvailabilityZone: !Join [ '', [!Ref 'AWS::Region', 'b']]
   PrivateSubnetOne:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref 'VPC'
-      CidrBlock: '10.0.10.0/24'
+      CidrBlock: '10.0.0.32/28'  # 10.0.0.32 - 10.0.0.47
       AvailabilityZone: !Join [ '', [!Ref 'AWS::Region', 'c']]
   PrivateSubnetTwo:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref 'VPC'
-      CidrBlock: '10.0.11.0/24'
+      CidrBlock: '10.0.0.48/28'  # 10.0.0.48 - 10.0.0.63
       AvailabilityZone: !Join [ '', [!Ref 'AWS::Region', 'd']]
 
   InternetGateway:
@@ -112,6 +112,14 @@ Resources:
         - IpProtocol: tcp
           FromPort: 8001
           ToPort: 8001
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 8005
+          ToPort: 8005
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 8006
+          ToPort: 8006
           CidrIp: 0.0.0.0/0
   PublicSecurityGroupIngressFromSelf:
     Type: AWS::EC2::SecurityGroupIngress
