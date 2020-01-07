@@ -32,6 +32,9 @@ Parameters:
   ImageUrlGateway:
     Type: String
     Description: url for the jupyter kernel/enterprise gateway docker image
+  MapiKey:
+    Type: String
+    Description: API key for MP to execute example notebooks
 
 Resources:
   # A log group for storing the container logs for this service
@@ -144,6 +147,8 @@ Resources:
           Environment:
             - Name: DEPLOYMENT
               Value: 'MATGEN'
+            - Name: MAPI_KEY
+              Value: !Ref 'MapiKey'
           PortMappings:
             - ContainerPort: 8080
             - ContainerPort: 9000

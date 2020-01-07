@@ -9,6 +9,7 @@ services:
         build: .
         environment:
             - NODE_ENV=development
+            - MAPI_KEY=$MAPI_KEY
         depends_on:
             - api
             - jhub
