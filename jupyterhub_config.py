@@ -50,6 +50,7 @@ else:
     c.FargateSpawner.task_definition_arn = os.environ['TASK_DEFINITION_ARN']
     c.FargateSpawner.task_security_groups = os.environ['TASK_SECURITY_GROUPS'].split(',')
     c.FargateSpawner.task_subnets = os.environ['TASK_SUBNETS'].split(',')
+    c.FargateSpawner.debug = True
     c.FargateSpawner.notebook_port = 8888
     c.FargateSpawner.notebook_scheme = 'http'
     c.FargateSpawner.notebook_args = []
