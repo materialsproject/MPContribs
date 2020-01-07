@@ -83,6 +83,11 @@ Resources:
         - Name: api
           MemoryReservation: 250
           Image: !Ref 'ImageUrlApi'
+          DependsOn:
+            - Condition: START
+              ContainerName: chrome
+            - Condition: START
+              ContainerName: gateway
           Environment:
             - Name: MPCONTRIBS_MONGO_HOST
               Value: !Ref 'MongoHost'
@@ -133,6 +138,9 @@ Resources:
         - Name: portal
           MemoryReservation: 250
           Image: !Ref 'ImageUrlPortal'
+          DependsOn:
+            - Condition: START
+              ContainerName: api
           Environment:
             - Name: DEPLOYMENT
               Value: 'MATGEN'

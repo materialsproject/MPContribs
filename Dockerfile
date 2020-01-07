@@ -72,13 +72,6 @@ RUN cd mpcontribs-io && /venv/bin/pip install --no-cache-dir -e . && \
 
 COPY binder/notebooks notebooks
 RUN /venv/bin/pip install --no-cache-dir jupyter_client ipykernel && /venv/bin/python -m ipykernel install --user
-# TODO replace load_client cell for api_key
-# TODO probably need to execute and convert notebooks on server start -> run_server.py
-RUN out=mpcontribs-portal/mpcontribs/portal/templates && \
-    #/venv/bin/jupyter nbconvert --to notebook --execute --inplace notebooks/contribute/get_started.ipynb && \
-    for i in `ls -1 notebooks/*/*.ipynb`; do \
-       /venv/bin/jupyter nbconvert --to html --template basic --output-dir=$out/`dirname $i` $i; \
-    done;
 
 ENTRYPOINT ["/app/docker-entrypoint.sh"]
 CMD ["python", "run_server.py"]
