@@ -16,6 +16,7 @@ Parameters:
   ImageUrlR2d:
     Type: String
     Description: url for the MPContribs r2d docker image
+    Default: 'mpcontribs-r2d'
   AwsAccessKeyId:
     NoEcho: 'true'
     Type: String

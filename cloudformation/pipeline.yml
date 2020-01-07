@@ -745,19 +745,19 @@ Resources:
                 - Name: Source
               OutputArtifacts:
                 - Name: BuildOutputJhub
-            - Name: BuildR2d
-              ActionTypeId:
-                Category: Build
-                Owner: AWS
-                Version: 1
-                Provider: CodeBuild
-              Configuration:
-                ProjectName: !Ref CodeBuildProjectR2d
-                PrimarySource: Source
-              InputArtifacts:
-                - Name: Source
-              OutputArtifacts:
-                - Name: BuildOutputR2d
+            #- Name: BuildR2d
+            #  ActionTypeId:
+            #    Category: Build
+            #    Owner: AWS
+            #    Version: 1
+            #    Provider: CodeBuild
+            #  Configuration:
+            #    ProjectName: !Ref CodeBuildProjectR2d
+            #    PrimarySource: Source
+            #  InputArtifacts:
+            #    - Name: Source
+            #  OutputArtifacts:
+            #    - Name: BuildOutputR2d
 
         - Name: Deploy
           Actions:
@@ -854,16 +854,16 @@ Resources:
                     "ImageUrlJhub": {
                       "Fn::GetParam" : ["BuildOutputJhub", "build-jhub.json", "ImageUri"]
                     },
-                    "ImageUrlR2d": {
-                      "Fn::GetParam" : ["BuildOutputR2d", "build-r2d.json", "ImageUri"]
-                    },
+                    #"ImageUrlR2d": {
+                    #  "Fn::GetParam" : ["BuildOutputR2d", "build-r2d.json", "ImageUri"]
+                    #},
                     "AwsAccessKeyId": "${AwsAccessKeyId}",
                     "AwsSecretAccessKey": "${AwsSecretAccessKey}"
                   }
               InputArtifacts:
                 - Name: Source
                 - Name: BuildOutputJhub
-                - Name: BuildOutputR2d
+                #- Name: BuildOutputR2d
 
 Outputs:
   PipelineUrl:
