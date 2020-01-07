@@ -218,6 +218,26 @@ Resources:
         - !Ref 'DBSecurityGroup'
     DeletionPolicy: Snapshot
 
+  PostgresDBNew:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      Engine: postgres
+      DBName: kong
+      MasterUsername: kong
+      DBInstanceClass: db.t2.micro
+      AllocatedStorage: 3
+      MasterUserPassword: !Ref 'DBPassword'
+      DBSubnetGroupName: !Ref 'DBSubnetGroup'
+      PubliclyAccessible: false
+      EngineVersion: 9.6.8
+      DBSnapshotIdentifier: !Ref 'AWS::NoValue'
+      MultiAZ: false
+      StorageEncrypted: false
+      StorageType: gp2
+      VPCSecurityGroups:
+        - !Ref 'DBSecurityGroup'
+    DeletionPolicy: Snapshot
+
   EcrEndpoint:
     Type: AWS::EC2::VPCEndpoint
     Properties:
@@ -412,6 +432,11 @@ Outputs:
     Value: !GetAtt 'PostgresDB.Endpoint.Address'
     Export:
       Name: !Join [ ':', [ !Ref 'EnvironmentName', 'DBAddress' ] ]
+  DBAddressNew:
+    Description: DB Address (upgrade Jan-2020 to Kong 1.4.2)
+    Value: !GetAtt 'PostgresDBNew.Endpoint.Address'
+    Export:
+      Name: !Join [ ':', [ !Ref 'EnvironmentName', 'DBAddressNew' ] ]
   PublicSecurityGroup:
     Description: Public Security Group
     Value: !Ref 'PublicSecurityGroup'
