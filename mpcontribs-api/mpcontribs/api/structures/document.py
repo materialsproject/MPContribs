@@ -11,7 +11,7 @@ class Lattice(EmbeddedDocument):
     b = FloatField(min_value=0, required=True, help_text='`b` lattice parameter')
     c = FloatField(min_value=0, required=True, help_text='`c` lattice parameter')
     matrix = ListField(ListField(
-        FloatField(min_value=0, required=True), max_length=3, required=True
+        FloatField(required=True), max_length=3, required=True
     ), max_length=3, required=True, help_text='lattice')
     volume = FloatField(min_value=0, required=True, help_text='volume')
     alpha = FloatField(min_value=0, required=True, help_text='alpha')
