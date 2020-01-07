@@ -12,16 +12,12 @@ its [portal](/portal), and programmatically through its [API](/api).
 
 ![Screenshot](portal.jpg)
 
-The [Portal](https://portal.mpcontribs.org) contains an entry for every
-contributed dataset which links to the respective landing pages. Each entry also includes
-the project title, its authors, and a small preview icon. Project description
-can be search for keywords to reduce the list of displayed entries. Each
-project/dataset can contain many contributions for an MP material or composition. Browsing
-contributions across datasets/projects as well as materials can be done with the
-[Contribution Cards Explorer](#contribution-cards-explorer).
-
-The key to authenticate
-against the MPContribs [API](/api) is shown on the user's dashboard.
+The [Portal](https://portal.mpcontribs.org) contains an entry for every contributed
+dataset which links to the respective landing pages. Each entry also includes the project
+title, its authors, and a small preview icon. Each project/dataset can contain many
+contributions for an MP material or composition. A dropdown menu is provided for quick
+access of project landing pages and includes a search box to filter project descriptions
+by keywords.
 
 ![Screenshot](explorer.jpg)
 
@@ -59,7 +55,7 @@ table provides a few important functionalities out of the box:
     ID or the composition as identifier to link a contribution to the according entries in
     the core MP database.
 * **Contribution Details Pages**: The second column links to the [Details
-    Page](#contribution-detail-page) for a contribution containing a rendered version of
+    Page](#contribution-detail-pages) for a contribution containing a rendered version of
     the full database entry.
 * **CIF Files**: If structures are part of a contribution, a `CIF` column is added to the
     overview table containing a URL to download the structure in
@@ -67,16 +63,13 @@ table provides a few important functionalities out of the box:
 * **Column Manager**: Table columns to be shown or hidden can be selected via simple
     dropdown menu.
 
-[^1]: See [API Docs](/api) for details on contribution components.
-
 An optional but powerful component of landing pages are interactive overview graphs. These
 graphs are under full control and responsibility of the domain expert contributing the
 dataset. In most cases, they represent an interactive version of the accompanying journal
 publication which allows interested readers to dig deeper into a dataset. We use the
 graphing library [Plotly](https://plot.ly/javascript/) which supports additional filter
 mechanisms and click events to link data points to their according contribution details
-pages. An example can be found
-[here](https://github.com/materialsproject/MPContribs/blob/master/mpcontribs-users/mpcontribs/users/dtu/explorer/assets/index.js).
+pages.
 
 ### Contribution Detail Pages
 
@@ -99,11 +92,6 @@ navigation bar at the top provides links to jump to a respective component, togg
 to show/hide components, and a download button to retrieve the contribution in JSON
 format.
 
-Launch the Binder project below to explore example notebooks using the MPContribs API
-Client and I/O libraries.
-
-[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/materialsproject/MPContribs/1.6.4)
-
 ## Contribute & Retrieve Data
 
 The [MPContribs API](https://api.mpcontribs.org) provides programmatic access to
@@ -116,27 +104,11 @@ crystal structures. There are separate dedicated resource endpoints for
 [`tables`](#tables) and [`structures`](#structures) both of which are referenced in the
 contributions.
 
-!!! tip
-    Click the badge below to launch an example notebook for a specific project in BinderHub and use the
-    MPContribs API to retrieve the data you need. You can download the resulting data
-    and/or the entire notebook afterwards for use offline. Running the notebook(s) on your
-    own machine requires installation of the MPContribs
-    [client](https://pypi.org/project/mpcontribs-client/) and
-    [I/O](https://pypi.org/project/mpcontribs-io/) libraries. See the [Binder
-    Dockerfile](https://github.com/materialsproject/MPContribs/blob/master/binder/Dockerfile)
-    for guidance on how to integrate the MPContribs I/O library with Jupyter notebooks.  
-    [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/materialsproject/MPContribs/1.6.4)
-
-To get started on your own machine, install the python client library
-[mpcontribs-client](https://pypi.org/project/mpcontribs-client/) for the MPContribs API.
+Visit the [usage page](https://portal.mpcontribs.org/use) on the portal to get started
+with the MPContribs API. It shows notebooks with example code that can be copied to
+execute on your own machine or launched in the browser on our own compute resources.
 Check out the [API Docs](https://api.mpcontribs.org) for more details about the available
-resources and operations shown below. The docs can also be used to try out the API in the
-browser.
-
-!!! note
-    Only the [operation methods](https://bravado.readthedocs.io/en/stable/requests_and_responses.html)
-    are shown in the following sections. You can make the actual request and access the
-    response via `response()` and `result`, respectively.
+resources shown below. The docs can also be used to try out the API in the browser.
 
 ### Projects
 
