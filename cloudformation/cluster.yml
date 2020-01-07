@@ -19,30 +19,30 @@ Resources:
     Properties:
       EnableDnsSupport: true
       EnableDnsHostnames: true
-      CidrBlock: '10.0.0.0/26'  # 10.0.0.0 - 10.0.0.63
+      CidrBlock: '10.0.0.0/22'
   PublicSubnetOne:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref 'VPC'
-      CidrBlock: '10.0.0.0/28'  # 10.0.0.0 - 10.0.0.15
+      CidrBlock: '10.0.0.0/28'
       AvailabilityZone: !Join [ '', [!Ref 'AWS::Region', 'a']]
   PublicSubnetTwo:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref 'VPC'
-      CidrBlock: '10.0.0.16/28'  # 10.0.0.16 - 10.0.0.31
+      CidrBlock: '10.0.1.0/28'
       AvailabilityZone: !Join [ '', [!Ref 'AWS::Region', 'b']]
   PrivateSubnetOne:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref 'VPC'
-      CidrBlock: '10.0.0.32/28'  # 10.0.0.32 - 10.0.0.47
+      CidrBlock: '10.0.2.0/28'
       AvailabilityZone: !Join [ '', [!Ref 'AWS::Region', 'c']]
   PrivateSubnetTwo:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref 'VPC'
-      CidrBlock: '10.0.0.48/28'  # 10.0.0.48 - 10.0.0.63
+      CidrBlock: '10.0.3.0/28'
       AvailabilityZone: !Join [ '', [!Ref 'AWS::Region', 'd']]
 
   InternetGateway:
