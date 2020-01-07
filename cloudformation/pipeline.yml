@@ -64,10 +64,6 @@ Parameters:
     Type: String
   SnsAdminTopicArn:
     Type: String
-  MapiKey:
-    NoEcho: 'true'
-    Type: String
-    Description: API key for MP to execute example notebooks
 
 Resources:
   # Create the ECR respository to hold built docker images
@@ -815,7 +811,6 @@ Resources:
                     "AwsAccessKeyId": "${AwsAccessKeyId}",
                     "AwsSecretAccessKey": "${AwsSecretAccessKey}",
                     "SnsAdminTopicArn": "${SnsAdminTopicArn}",
-                    "MapiKey": "${MapiKey}",
                     "ImageUrlApi": {
                       "Fn::GetParam" : ["BuildOutputApi", "build-api.json", "ImageUri"]
                     },
