@@ -111,6 +111,9 @@ Resources:
               awslogs-stream-prefix: !Ref 'ServiceName'
         - Name: dashboard
           Image: !Ref 'ImageUrlKonga'
+          DependsOn:
+            - Condition: START
+              ContainerName: kong
           Environment:
             - Name: KONG_URL
               Value: 'http://localhost:8001'
