@@ -87,7 +87,7 @@ Resources:
             - Name: KONG_PG_PASSWORD
               Value: !Ref 'DBPassword'
             - Name: KONG_LOG_LEVEL
-              Value: info
+              Value: debug
             - Name: KONG_LUA_PACKAGE_PATH
               Value: '/usr/local/oidc/?.lua;;'
             - Name: KONG_ADMIN_ACCESS_LOG
@@ -98,6 +98,8 @@ Resources:
               Value: '/dev/stdout'
             - Name: KONG_PROXY_ERROR_LOG
               Value: '/dev/stderr'
+            - Name: KONG_NGINX_PROXY_PROXY_IGNORE_CLIENT_ABORT
+              Value: 'on'
           PortMappings:
             - ContainerPort: 8000
             - ContainerPort: 8001
