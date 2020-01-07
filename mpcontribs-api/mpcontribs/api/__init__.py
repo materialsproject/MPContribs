@@ -1,8 +1,6 @@
 """Flask App for MPContribs API"""
 
-import os
 import logging
-import yaml
 import boto3
 from importlib import import_module
 from flask import Flask, current_app
@@ -65,7 +63,8 @@ def validate_data(doc):
 
 
 def send_email(to, subject, template):
-    resp = sns_client.publish(TopicArn=to, Message=template, Subject=subject)
+    sns_client.publish(TopicArn=to, Message=template, Subject=subject)
+
 
 def get_collections(db):
     """get list of collections in DB"""
@@ -168,10 +167,10 @@ def create_app():
     app.jinja_env.globals['get_resource_as_string'] = get_resource_as_string
     app.jinja_env.lstrip_blocks = True
     app.jinja_env.trim_blocks = True
+
     if app.config.get('DEBUG'):
         from flask_cors import CORS
         CORS(app)  # enable for development (allow localhost)
-
 
     Logging(app)
     Marshmallow(app)

@@ -1,17 +1,14 @@
 import os
 import flask_mongorest
 from dict_deep import deep_get
-from mongoengine.queryset.visitor import Q
 from mongoengine.queryset import DoesNotExist
-from flask import Blueprint, request, current_app, url_for
+from flask import Blueprint, current_app, url_for
 from flask_mongorest.exceptions import UnknownFieldError
 from flask_mongorest.resources import Resource
 from flask_mongorest import operators as ops
 from flask_mongorest.methods import List, Fetch, Create, Delete, Update
 from werkzeug.exceptions import Unauthorized
-from pandas.io.json._normalize import nested_to_record
-from itsdangerous import BadSignature, SignatureExpired
-from mpcontribs.api import construct_query
+from itsdangerous import SignatureExpired
 from mpcontribs.api.core import SwaggerView
 from mpcontribs.api.projects.document import Projects
 from mpcontribs.api.contributions.document import Contributions
@@ -80,7 +77,7 @@ class ProjectsResource(Resource):
                     unit_sample = Contributions.objects.only(unit_field).filter(**unit_query).limit(-1).first()
                     min_max = list(Contributions.objects.aggregate(*[
                         {"$match": {"project": obj.id, value_field: {'$exists': True}}},
-                        { "$group": {
+                        {"$group": {
                             "_id": None, "max": {"$max": f"${value_field}"}, "min": {"$min": f"${value_field}"}
                         }}
                     ]))

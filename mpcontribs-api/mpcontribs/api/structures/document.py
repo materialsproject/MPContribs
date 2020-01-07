@@ -64,4 +64,5 @@ class Structures(Document):
     def post_save(cls, sender, document, **kwargs):
         Notebooks.objects(pk=document.contribution.id).delete()
 
+
 signals.post_save.connect(Structures.post_save, sender=Structures)

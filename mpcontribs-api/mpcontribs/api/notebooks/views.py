@@ -137,7 +137,7 @@ class NotebooksView(SwaggerView):
                     ))
                     for ref in tables:
                         cells.append(nbf.new_code_cell(
-                            f"table = client.tables.get_entry(pk='{ref}', _fields=['_all']).response().result # DataFrame\n"
+                            f"table = client.tables.get_entry(pk='{ref}', _fields=['_all']).response().result\n"
                             "Table.from_dict(table)"
                         ))
                         cells.append(nbf.new_code_cell(

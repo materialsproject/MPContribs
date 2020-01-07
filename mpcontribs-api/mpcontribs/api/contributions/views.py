@@ -51,6 +51,7 @@ class ContributionsResource(Resource):
         else:
             raise UnknownFieldError
 
+
 class ContributionsView(SwaggerView):
     resource = ContributionsResource
     methods = [List, Fetch, Create, Delete, Update, BulkUpdate]

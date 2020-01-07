@@ -24,4 +24,5 @@ class Tables(Document):
     def post_save(cls, sender, document, **kwargs):
         Notebooks.objects(pk=document.contribution.id).delete()
 
+
 signals.post_save.connect(Tables.post_save, sender=Tables)
