@@ -38,7 +38,10 @@ markdown_extensions:
     - footnotes
 
 nav:
-    - Home: index.md
+    - Get Started:
+        - Introduction: index.md
+        - Explore Data: portal.md
+        - Contribute/Retrieve Data: api.md
     - Datasets:
         - Overview: datasets.md
         - RedoxThermoCSP: redox_thermo_csp/index.md
