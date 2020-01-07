@@ -791,6 +791,7 @@ Resources:
                 - Name: BaseResources
                 - Name: BuildOutputKong
                 - Name: BuildOutputKonga
+              RunOrder: 1
 
             - Name: DeployApp
               ActionTypeId:
@@ -830,6 +831,7 @@ Resources:
                 - Name: BuildOutputPortal
                 - Name: BuildOutputChrome
                 - Name: BuildOutputGateway
+              RunOrder: 2
 
             - Name: DeployJhub
               ActionTypeId:
@@ -856,6 +858,7 @@ Resources:
                 - Name: Source
                 - Name: BuildOutputJhub
                 #- Name: BuildOutputR2d
+              RunOrder: 2
 
 Outputs:
   PipelineUrl:
