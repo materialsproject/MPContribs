@@ -92,11 +92,17 @@ Resources:
               Value: '/usr/local/oidc/?.lua;;'
             - Name: KONG_ADMIN_ACCESS_LOG
               Value: '/dev/stdout'
+            - Name: KONG_ADMIN_ACC_LOGS
+              Value: '/dev/stdout'
             - Name: KONG_ADMIN_ERROR_LOG
               Value: '/dev/stderr'
             - Name: KONG_PROXY_ACCESS_LOG
               Value: '/dev/stdout'
             - Name: KONG_PROXY_ERROR_LOG
+              Value: '/dev/stderr'
+            - Name: KONG_NGINX_ACC_LOGS
+              Value: '/dev/stdout'
+            - Name: KONG_NGINX_ERR_LOGS
               Value: '/dev/stderr'
             - Name: KONG_NGINX_PROXY_PROXY_IGNORE_CLIENT_ABORT
               Value: 'on'
