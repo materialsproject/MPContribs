@@ -849,9 +849,6 @@ Resources:
                     "ImageUrlJhub": {
                       "Fn::GetParam" : ["BuildOutputJhub", "build-jhub.json", "ImageUri"]
                     },
-                    #"ImageUrlR2d": {
-                    #  "Fn::GetParam" : ["BuildOutputR2d", "build-r2d.json", "ImageUri"]
-                    #},
                     "AwsAccessKeyId": "${AwsAccessKeyId}",
                     "AwsSecretAccessKey": "${AwsSecretAccessKey}"
                   }
