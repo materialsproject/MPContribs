@@ -53,7 +53,8 @@ class Projects(Document):
             set_keys = document._delta()[0].keys()
             if 'is_approved' in set_keys and document.is_approved:
                 subject = f'Your project "{document.project}" has been approved'
-                html = render_template('owner_email.html', approved=True, admin_email=admin_email)
+                portal = 'http://localhost:8080' if current_app.config['DEBUG'] else 'https://portal.mpcontribs.org'
+                html = render_template('owner_email.html', approved=True, admin_email=admin_email, host=portal)
                 topic_arn = ':'.join(admin_topic.split(':')[:-1] + ['mpcontribs_' + document.project])
                 send_email(topic_arn, subject, html)
             if set_keys:
