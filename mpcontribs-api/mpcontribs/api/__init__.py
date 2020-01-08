@@ -176,7 +176,6 @@ def create_app():
     Marshmallow(app)
     db = MongoEngine(app)
     Swagger(app, template=app.config.get('TEMPLATE'))
-    logger.warning('get collections from MongoDB ...')
     collections = get_collections(db)
     logger.warning(collections)
 
@@ -193,6 +192,7 @@ def create_app():
             app.register_blueprint(blueprint, url_prefix='/'+collection)
             klass = getattr(module, collection.capitalize() + 'View')
             register_class(app, klass, name=collection)
+            logger.warning(f'{collection} registered')
         except AttributeError as ex:
             logger.warning(f'Failed to register {module_path}: {collection} {ex}')
 
@@ -203,7 +203,9 @@ def create_app():
         module = import_module(module_path)
         blueprint = getattr(module, collection)
         app.register_blueprint(blueprint, url_prefix='/'+collection)
+        logger.warning(f'{collection} registered')
     except ModuleNotFoundError as ex:
         logger.warning(f'API module {module_path}: {ex}')
 
+    logger.warning('app created.')
     return app
