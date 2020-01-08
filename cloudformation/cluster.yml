@@ -99,6 +99,18 @@ Resources:
         - !Ref 'PublicSubnetTwo'
       Type: network
 
+  NetworkLoadBalancerTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      HealthCheckIntervalSeconds: 30
+      HealthCheckPath: /
+      HealthCheckProtocol: HTTP
+      HealthCheckPort: 8001
+      Port: 8000
+      Protocol: TCP
+      TargetType: ip
+      VpcId: !Ref 'VPC'
+
   PublicSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -432,3 +444,8 @@ Outputs:
     Value: !Ref 'NetworkLoadBalancer'
     Export:
       Name: !Join [ ':', [ !Ref 'EnvironmentName', 'NetworkLoadBalancer' ] ]
+  NetworkLoadBalancerTargetGroup:
+    Description: Network Load Balancer Target Group for Kong
+    Value: !Ref 'NetworkLoadBalancerTargetGroup'
+    Export:
+      Name: !Join [ ':', [ !Ref 'EnvironmentName', 'NetworkLoadBalancerTargetGroup' ] ]

@@ -169,31 +169,18 @@ Resources:
       LoadBalancers:
         - ContainerName: !Ref 'ServiceName'
           ContainerPort: 8000
-          TargetGroupArn: !Ref 'NetworkLoadBalancerTargetGroup'
-
-  NetworkLoadBalancerTargetGroup:
-    Type: AWS::ElasticLoadBalancingV2::TargetGroup
-    Properties:
-      HealthCheckIntervalSeconds: 30
-      HealthCheckPath: /
-      HealthCheckProtocol: HTTP
-      HealthCheckPort: 8001
-      Port: 8000
-      Protocol: TCP
-      TargetType: ip
-      VpcId:
-        Fn::ImportValue:
-          !Join [':', [!Ref 'EnvironmentName', 'VPCId']]
-    DependsOn:
-      - Fn::ImportValue:
-          !Join [':', [!Ref 'EnvironmentName', 'NetworkLoadBalancer']]
+          TargetGroupArn:
+            Fn::ImportValue:
+              !Join [':', [!Ref 'EnvironmentName', 'NetworkLoadBalancerTargetGroup']]
 
   NetworkLoadBalancerListener:
     Type: AWS::ElasticLoadBalancingV2::Listener
     Properties:
       DefaultActions:
         - Type: forward
-          TargetGroupArn: !Ref NetworkLoadBalancerTargetGroup
+          TargetGroupArn:
+            Fn::ImportValue:
+              !Join [':', [!Ref 'EnvironmentName', 'NetworkLoadBalancerTargetGroup']]
       LoadBalancerArn:
         Fn::ImportValue:
           !Join [':', [!Ref 'EnvironmentName', 'NetworkLoadBalancer']]
