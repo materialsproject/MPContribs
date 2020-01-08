@@ -676,71 +676,71 @@ Resources:
                 - Name: SourceKonga
               OutputArtifacts:
                 - Name: BuildOutputKonga
-            - Name: BuildChrome
-              ActionTypeId:
-                Category: Build
-                Owner: AWS
-                Version: 1
-                Provider: CodeBuild
-              Configuration:
-                ProjectName: !Ref CodeBuildProjectChrome
-                PrimarySource: Source
-              InputArtifacts:
-                - Name: Source
-              OutputArtifacts:
-                - Name: BuildOutputChrome
-            - Name: BuildGateway
-              ActionTypeId:
-                Category: Build
-                Owner: AWS
-                Version: 1
-                Provider: CodeBuild
-              Configuration:
-                ProjectName: !Ref CodeBuildProjectGateway
-                PrimarySource: Source
-              InputArtifacts:
-                - Name: Source
-              OutputArtifacts:
-                - Name: BuildOutputGateway
-            - Name: BuildApi
-              ActionTypeId:
-                Category: Build
-                Owner: AWS
-                Version: 1
-                Provider: CodeBuild
-              Configuration:
-                ProjectName: !Ref CodeBuildProjectApi
-                PrimarySource: Source
-              InputArtifacts:
-                - Name: Source
-              OutputArtifacts:
-                - Name: BuildOutputApi
-            - Name: BuildPortal
-              ActionTypeId:
-                Category: Build
-                Owner: AWS
-                Version: 1
-                Provider: CodeBuild
-              Configuration:
-                ProjectName: !Ref CodeBuildProjectPortal
-                PrimarySource: Source
-              InputArtifacts:
-                - Name: Source
-              OutputArtifacts:
-                - Name: BuildOutputPortal
-            - Name: BuildJhub
-              ActionTypeId:
-                Category: Build
-                Owner: AWS
-                Version: 1
-                Provider: CodeBuild
-              Configuration:
-                ProjectName: !Ref CodeBuildProjectJhub
-                PrimarySource: Source
-              InputArtifacts:
-                - Name: Source
-              OutputArtifacts:
-                - Name: BuildOutputJhub
+            #- Name: BuildChrome
+            #  ActionTypeId:
+            #    Category: Build
+            #    Owner: AWS
+            #    Version: 1
+            #    Provider: CodeBuild
+            #  Configuration:
+            #    ProjectName: !Ref CodeBuildProjectChrome
+            #    PrimarySource: Source
+            #  InputArtifacts:
+            #    - Name: Source
+            #  OutputArtifacts:
+            #    - Name: BuildOutputChrome
+            #- Name: BuildGateway
+            #  ActionTypeId:
+            #    Category: Build
+            #    Owner: AWS
+            #    Version: 1
+            #    Provider: CodeBuild
+            #  Configuration:
+            #    ProjectName: !Ref CodeBuildProjectGateway
+            #    PrimarySource: Source
+            #  InputArtifacts:
+            #    - Name: Source
+            #  OutputArtifacts:
+            #    - Name: BuildOutputGateway
+            #- Name: BuildApi
+            #  ActionTypeId:
+            #    Category: Build
+            #    Owner: AWS
+            #    Version: 1
+            #    Provider: CodeBuild
+            #  Configuration:
+            #    ProjectName: !Ref CodeBuildProjectApi
+            #    PrimarySource: Source
+            #  InputArtifacts:
+            #    - Name: Source
+            #  OutputArtifacts:
+            #    - Name: BuildOutputApi
+            #- Name: BuildPortal
+            #  ActionTypeId:
+            #    Category: Build
+            #    Owner: AWS
+            #    Version: 1
+            #    Provider: CodeBuild
+            #  Configuration:
+            #    ProjectName: !Ref CodeBuildProjectPortal
+            #    PrimarySource: Source
+            #  InputArtifacts:
+            #    - Name: Source
+            #  OutputArtifacts:
+            #    - Name: BuildOutputPortal
+            #- Name: BuildJhub
+            #  ActionTypeId:
+            #    Category: Build
+            #    Owner: AWS
+            #    Version: 1
+            #    Provider: CodeBuild
+            #  Configuration:
+            #    ProjectName: !Ref CodeBuildProjectJhub
+            #    PrimarySource: Source
+            #  InputArtifacts:
+            #    - Name: Source
+            #  OutputArtifacts:
+            #    - Name: BuildOutputJhub
             #- Name: BuildR2d
             #  ActionTypeId:
             #    Category: Build
@@ -793,72 +793,72 @@ Resources:
                 - Name: BuildOutputKonga
               RunOrder: 1
 
-            - Name: DeployApp
-              ActionTypeId:
-                Category: Deploy
-                Owner: AWS
-                Version: 1
-                Provider: CloudFormation
-              Configuration:
-                ActionMode: CREATE_UPDATE
-                RoleArn: !GetAtt CloudFormationDeployRole.Arn
-                StackName: !Sub ${EnvironmentName}-AppService
-                TemplatePath: Source::cloudformation/service.yml
-                Capabilities: CAPABILITY_IAM
-                ParameterOverrides: !Sub |
-                  {
-                    "EnvironmentName": "${EnvironmentName}",
-                    "MongoHost": "${MongoHost}",
-                    "AwsAccessKeyId": "${AwsAccessKeyId}",
-                    "AwsSecretAccessKey": "${AwsSecretAccessKey}",
-                    "SnsAdminTopicArn": "${SnsAdminTopicArn}",
-                    "ImageUrlApi": {
-                      "Fn::GetParam" : ["BuildOutputApi", "build-api.json", "ImageUri"]
-                    },
-                    "ImageUrlPortal": {
-                      "Fn::GetParam" : ["BuildOutputPortal", "build-portal.json", "ImageUri"]
-                    },
-                    "ImageUrlChrome": {
-                      "Fn::GetParam" : ["BuildOutputChrome", "build-chrome.json", "ImageUri"]
-                    },
-                    "ImageUrlGateway": {
-                      "Fn::GetParam" : ["BuildOutputGateway", "build-gateway.json", "ImageUri"]
-                    }
-                  }
-              InputArtifacts:
-                - Name: Source
-                - Name: BuildOutputApi
-                - Name: BuildOutputPortal
-                - Name: BuildOutputChrome
-                - Name: BuildOutputGateway
-              RunOrder: 2
+            #- Name: DeployApp
+            #  ActionTypeId:
+            #    Category: Deploy
+            #    Owner: AWS
+            #    Version: 1
+            #    Provider: CloudFormation
+            #  Configuration:
+            #    ActionMode: CREATE_UPDATE
+            #    RoleArn: !GetAtt CloudFormationDeployRole.Arn
+            #    StackName: !Sub ${EnvironmentName}-AppService
+            #    TemplatePath: Source::cloudformation/service.yml
+            #    Capabilities: CAPABILITY_IAM
+            #    ParameterOverrides: !Sub |
+            #      {
+            #        "EnvironmentName": "${EnvironmentName}",
+            #        "MongoHost": "${MongoHost}",
+            #        "AwsAccessKeyId": "${AwsAccessKeyId}",
+            #        "AwsSecretAccessKey": "${AwsSecretAccessKey}",
+            #        "SnsAdminTopicArn": "${SnsAdminTopicArn}",
+            #        "ImageUrlApi": {
+            #          "Fn::GetParam" : ["BuildOutputApi", "build-api.json", "ImageUri"]
+            #        },
+            #        "ImageUrlPortal": {
+            #          "Fn::GetParam" : ["BuildOutputPortal", "build-portal.json", "ImageUri"]
+            #        },
+            #        "ImageUrlChrome": {
+            #          "Fn::GetParam" : ["BuildOutputChrome", "build-chrome.json", "ImageUri"]
+            #        },
+            #        "ImageUrlGateway": {
+            #          "Fn::GetParam" : ["BuildOutputGateway", "build-gateway.json", "ImageUri"]
+            #        }
+            #      }
+            #  InputArtifacts:
+            #    - Name: Source
+            #    - Name: BuildOutputApi
+            #    - Name: BuildOutputPortal
+            #    - Name: BuildOutputChrome
+            #    - Name: BuildOutputGateway
+            #  RunOrder: 2
 
-            - Name: DeployJhub
-              ActionTypeId:
-                Category: Deploy
-                Owner: AWS
-                Version: 1
-                Provider: CloudFormation
-              Configuration:
-                ActionMode: CREATE_UPDATE
-                RoleArn: !GetAtt CloudFormationDeployRole.Arn
-                StackName: !Sub ${EnvironmentName}-JhubService
-                TemplatePath: Source::cloudformation/jhub-service.yml
-                Capabilities: CAPABILITY_IAM
-                ParameterOverrides: !Sub |
-                  {
-                    "EnvironmentName": "${EnvironmentName}",
-                    "ImageUrlJhub": {
-                      "Fn::GetParam" : ["BuildOutputJhub", "build-jhub.json", "ImageUri"]
-                    },
-                    "AwsAccessKeyId": "${AwsAccessKeyId}",
-                    "AwsSecretAccessKey": "${AwsSecretAccessKey}"
-                  }
-              InputArtifacts:
-                - Name: Source
-                - Name: BuildOutputJhub
-                #- Name: BuildOutputR2d
-              RunOrder: 2
+            #- Name: DeployJhub
+            #  ActionTypeId:
+            #    Category: Deploy
+            #    Owner: AWS
+            #    Version: 1
+            #    Provider: CloudFormation
+            #  Configuration:
+            #    ActionMode: CREATE_UPDATE
+            #    RoleArn: !GetAtt CloudFormationDeployRole.Arn
+            #    StackName: !Sub ${EnvironmentName}-JhubService
+            #    TemplatePath: Source::cloudformation/jhub-service.yml
+            #    Capabilities: CAPABILITY_IAM
+            #    ParameterOverrides: !Sub |
+            #      {
+            #        "EnvironmentName": "${EnvironmentName}",
+            #        "ImageUrlJhub": {
+            #          "Fn::GetParam" : ["BuildOutputJhub", "build-jhub.json", "ImageUri"]
+            #        },
+            #        "AwsAccessKeyId": "${AwsAccessKeyId}",
+            #        "AwsSecretAccessKey": "${AwsSecretAccessKey}"
+            #      }
+            #  InputArtifacts:
+            #    - Name: Source
+            #    - Name: BuildOutputJhub
+            #    #- Name: BuildOutputR2d
+            #  RunOrder: 2
 
 Outputs:
   PipelineUrl:
