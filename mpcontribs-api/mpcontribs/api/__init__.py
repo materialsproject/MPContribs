@@ -176,7 +176,9 @@ def create_app():
     Marshmallow(app)
     db = MongoEngine(app)
     Swagger(app, template=app.config.get('TEMPLATE'))
+    logger.warning('get collections from MongoDB ...')
     collections = get_collections(db)
+    logger.warning(collections)
 
     for collection in collections:
         module_path = '.'.join(['mpcontribs', 'api', collection, 'views'])
