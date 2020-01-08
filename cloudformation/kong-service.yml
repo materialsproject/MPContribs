@@ -184,6 +184,9 @@ Resources:
       VpcId:
         Fn::ImportValue:
           !Join [':', [!Ref 'EnvironmentName', 'VPCId']]
+    DependsOn:
+      Fn::ImportValue:
+        !Join [':', [!Ref 'EnvironmentName', 'NetworkLoadBalancer']]
 
   NetworkLoadBalancerListener:
     Type: AWS::ElasticLoadBalancingV2::Listener
