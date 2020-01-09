@@ -7,4 +7,4 @@ client = load_client(api_key)
 dir(client) # show available resources
 ```
 
-See the [MPContribs Docs](https://mpcontribs.org/api) for specific usage and examples.
+See the [MPContribs Docs](https://mpcontribs.org) for specific usage and examples.
