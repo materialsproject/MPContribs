@@ -19,31 +19,37 @@ Resources:
     Properties:
       EnableDnsSupport: true
       EnableDnsHostnames: true
-      CidrBlock: '192.168.0.0/26'  # 192.168.0.0 - 192.168.0.63
+      CidrBlock: '192.168.0.0/24'  # 192.168.0.0 - 192.168.0.255
   PublicSubnetOne:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref 'VPC'
-      CidrBlock: '192.168.0.0/28'  # 192.168.0.0 - 192.168.0.15
+      CidrBlock: '192.168.0.0/26'  # 192.168.0.0 - 192.168.0.63
       AvailabilityZone: !Join [ '', [!Ref 'AWS::Region', 'a']]
   PublicSubnetTwo:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref 'VPC'
-      CidrBlock: '192.168.0.16/28'  # 192.168.0.16 - 192.168.0.31
+      CidrBlock: '192.168.0.64/26'  # 192.168.0.64 - 192.168.0.127
       AvailabilityZone: !Join [ '', [!Ref 'AWS::Region', 'b']]
   PrivateSubnetOne:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref 'VPC'
-      CidrBlock: '192.168.0.32/28'  # 192.168.0.32 - 192.168.0.47
+      CidrBlock: '192.168.0.128/26'  # 192.168.0.128 - 192.168.0.191
       AvailabilityZone: !Join [ '', [!Ref 'AWS::Region', 'c']]
+      Tags:
+        - Key: kubernetes.io/role/internal-elb
+          Value: 1
   PrivateSubnetTwo:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref 'VPC'
-      CidrBlock: '192.168.0.48/28'  # 192.168.0.48 - 192.168.0.63
+      CidrBlock: '192.168.0.192/26'  # 192.168.0.192 - 192.168.0.255
       AvailabilityZone: !Join [ '', [!Ref 'AWS::Region', 'd']]
+      Tags:
+        - Key: kubernetes.io/role/internal-elb
+          Value: 1
 
   InternetGateway:
     Type: AWS::EC2::InternetGateway
