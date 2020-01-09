@@ -185,14 +185,11 @@ Resources:
                   - "ecs:*"
                   - "elasticloadbalancing:*"
                   - "autoscaling:*"
-                  - "dynamodb:*"
-                  - "elasticache:*"
                   - "logs:*"
                   - "application-autoscaling:*"
                   - "cloudwatch:*"
                   - "route53:*"
                   - "rds:*"
-                  - "lambda:*"
                 Resource: "*"
 
   # While the build is in progress we need a place to store artifacts
@@ -728,32 +725,32 @@ Resources:
                 - Name: Source
               OutputArtifacts:
                 - Name: BuildOutputPortal
-            #- Name: BuildJhub
-            #  ActionTypeId:
-            #    Category: Build
-            #    Owner: AWS
-            #    Version: 1
-            #    Provider: CodeBuild
-            #  Configuration:
-            #    ProjectName: !Ref CodeBuildProjectJhub
-            #    PrimarySource: Source
-            #  InputArtifacts:
-            #    - Name: Source
-            #  OutputArtifacts:
-            #    - Name: BuildOutputJhub
-            #- Name: BuildR2d
-            #  ActionTypeId:
-            #    Category: Build
-            #    Owner: AWS
-            #    Version: 1
-            #    Provider: CodeBuild
-            #  Configuration:
-            #    ProjectName: !Ref CodeBuildProjectR2d
-            #    PrimarySource: Source
-            #  InputArtifacts:
-            #    - Name: Source
-            #  OutputArtifacts:
-            #    - Name: BuildOutputR2d
+            - Name: BuildJhub
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Version: 1
+                Provider: CodeBuild
+              Configuration:
+                ProjectName: !Ref CodeBuildProjectJhub
+                PrimarySource: Source
+              InputArtifacts:
+                - Name: Source
+              OutputArtifacts:
+                - Name: BuildOutputJhub
+            - Name: BuildR2d
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Version: 1
+                Provider: CodeBuild
+              Configuration:
+                ProjectName: !Ref CodeBuildProjectR2d
+                PrimarySource: Source
+              InputArtifacts:
+                - Name: Source
+              OutputArtifacts:
+                - Name: BuildOutputR2d
 
         - Name: Deploy
           Actions:
@@ -833,32 +830,33 @@ Resources:
                 - Name: BuildOutputGateway
               RunOrder: 2
 
-            #- Name: DeployJhub
-            #  ActionTypeId:
-            #    Category: Deploy
-            #    Owner: AWS
-            #    Version: 1
-            #    Provider: CloudFormation
-            #  Configuration:
-            #    ActionMode: CREATE_UPDATE
-            #    RoleArn: !GetAtt CloudFormationDeployRole.Arn
-            #    StackName: !Sub ${EnvironmentName}-JhubService
-            #    TemplatePath: Source::cloudformation/jhub-service.yml
-            #    Capabilities: CAPABILITY_IAM
-            #    ParameterOverrides: !Sub |
-            #      {
-            #        "EnvironmentName": "${EnvironmentName}",
-            #        "ImageUrlJhub": {
-            #          "Fn::GetParam" : ["BuildOutputJhub", "build-jhub.json", "ImageUri"]
-            #        },
-            #        "AwsAccessKeyId": "${AwsAccessKeyId}",
-            #        "AwsSecretAccessKey": "${AwsSecretAccessKey}"
-            #      }
-            #  InputArtifacts:
-            #    - Name: Source
-            #    - Name: BuildOutputJhub
-            #    #- Name: BuildOutputR2d
-            #  RunOrder: 2
+            - Name: DeployJhub
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Version: 1
+                Provider: CloudFormation
+              Configuration:
+                ActionMode: CREATE_UPDATE
+                RoleArn: !GetAtt CloudFormationDeployRole.Arn
+                StackName: !Sub ${EnvironmentName}-JhubService
+                TemplatePath: Source::cloudformation/jhub-service.yml
+                Capabilities: CAPABILITY_IAM
+                ParameterOverrides: !Sub |
+                  {
+                    "EnvironmentName": "${EnvironmentName}",
+                    "ImageUrlJhub": {
+                      "Fn::GetParam" : ["BuildOutputJhub", "build-jhub.json", "ImageUri"]
+                    },
+                    "CloudFormationDeployRoleArn": {
+                        "Fn::GetAtt": ["CloudFormationDeployRoleArn", "Arn"]
+                    }
+                  }
+              InputArtifacts:
+                - Name: Source
+                - Name: BuildOutputJhub
+                - Name: BuildOutputR2d
+              RunOrder: 2
 
 Outputs:
   PipelineUrl:

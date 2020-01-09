@@ -17,11 +17,7 @@ Parameters:
     Type: String
     Description: url for the MPContribs r2d docker image
     Default: 'mpcontribs-r2d'
-  AwsAccessKeyId:
-    NoEcho: 'true'
-    Type: String
-  AwsSecretAccessKey:
-    NoEcho: 'true'
+  CloudFormationDeployRoleArn:
     Type: String
 
 Resources:
@@ -80,7 +76,7 @@ Resources:
       ExecutionRoleArn:
         Fn::ImportValue:
           !Join [':', [!Ref 'EnvironmentName', 'ECSTaskExecutionRole']]
-      TaskRoleArn: !Ref 'JhubServiceRole'
+      TaskRoleArn: !Ref 'CloudFormationDeployRoleArn'
       ContainerDefinitions:
         - Name: singleuser
           Image: !Ref 'ImageUrlR2d'
@@ -120,10 +116,6 @@ Resources:
               Value:
                 Fn::ImportValue:
                   !Join [':', [!Ref 'EnvironmentName', 'JhubSecurityGroup']]
-            - Name: AWS_ACCESS_KEY_ID
-              Value: !Ref 'AwsAccessKeyId'
-            - Name: AWS_SECRET_ACCESS_KEY
-              Value: !Ref 'AwsSecretAccessKey'
             - Name: TASK_SUBNETS
               Value:
                 Fn::Join:
