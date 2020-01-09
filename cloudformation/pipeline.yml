@@ -849,7 +849,7 @@ Resources:
                       "Fn::GetParam" : ["BuildOutputJhub", "build-jhub.json", "ImageUri"]
                     },
                     "CloudFormationDeployRoleArn": {
-                        "Fn::GetAtt": ["CloudFormationDeployRoleArn", "Arn"]
+                        "Fn::GetAtt": ["CloudFormationDeployRole", "Arn"]
                     }
                   }
               InputArtifacts:
