@@ -20,18 +20,31 @@ Resources:
       EnableDnsSupport: true
       EnableDnsHostnames: true
       CidrBlock: '192.168.0.0/24'  # 192.168.0.0 - 192.168.0.255
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}/VPC'
   PublicSubnetOne:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref 'VPC'
       CidrBlock: '192.168.0.0/26'  # 192.168.0.0 - 192.168.0.63
       AvailabilityZone: !Join [ '', [!Ref 'AWS::Region', 'a']]
+      Tags:
+        - Key: kubernetes.io/role/elb
+          Value: '1'
+        - Key: Name
+          Value: !Sub '${AWS::StackName}/PublicSubnetOne'
   PublicSubnetTwo:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref 'VPC'
       CidrBlock: '192.168.0.64/26'  # 192.168.0.64 - 192.168.0.127
       AvailabilityZone: !Join [ '', [!Ref 'AWS::Region', 'b']]
+      Tags:
+        - Key: kubernetes.io/role/elb
+          Value: '1'
+        - Key: Name
+          Value: !Sub '${AWS::StackName}/PublicSubnetTwo'
   PrivateSubnetOne:
     Type: AWS::EC2::Subnet
     Properties:
@@ -40,7 +53,9 @@ Resources:
       AvailabilityZone: !Join [ '', [!Ref 'AWS::Region', 'c']]
       Tags:
         - Key: kubernetes.io/role/internal-elb
-          Value: 1
+          Value: '1'
+        - Key: Name
+          Value: !Sub '${AWS::StackName}/PrivateSubnetOne'
   PrivateSubnetTwo:
     Type: AWS::EC2::Subnet
     Properties:
@@ -49,11 +64,17 @@ Resources:
       AvailabilityZone: !Join [ '', [!Ref 'AWS::Region', 'd']]
       Tags:
         - Key: kubernetes.io/role/internal-elb
-          Value: 1
+          Value: '1'
+        - Key: Name
+          Value: !Sub '${AWS::StackName}/PrivateSubnetTwo'
 
   InternetGateway:
     Type: AWS::EC2::InternetGateway
-  GatewayAttachement:
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}/InternetGateway'
+  GatewayAttachment:
     Type: AWS::EC2::VPCGatewayAttachment
     Properties:
       VpcId: !Ref 'VPC'
@@ -63,9 +84,12 @@ Resources:
     Type: AWS::EC2::RouteTable
     Properties:
       VpcId: !Ref 'VPC'
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}/PublicRouteTable'
   PublicRoute:
     Type: AWS::EC2::Route
-    DependsOn: GatewayAttachement
+    DependsOn: GatewayAttachment
     Properties:
       RouteTableId: !Ref 'PublicRouteTable'
       DestinationCidrBlock: '0.0.0.0/0'
@@ -85,6 +109,9 @@ Resources:
     Type: AWS::EC2::RouteTable
     Properties:
       VpcId: !Ref 'VPC'
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}/PrivateRouteTable'
   PrivateSubnetOneRouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
@@ -145,13 +172,6 @@ Resources:
       GroupId: !Ref 'PublicSecurityGroup'
       IpProtocol: -1
       SourceSecurityGroupId: !Ref 'PrivateSecurityGroup'
-  PublicSecurityGroupIngressFromJhub:
-    Type: AWS::EC2::SecurityGroupIngress
-    Properties:
-      Description: Ingress from containers in JupyterHub security group
-      GroupId: !Ref 'PublicSecurityGroup'
-      IpProtocol: -1
-      SourceSecurityGroupId: !Ref 'JhubSecurityGroup'
 
   PrivateSecurityGroup:
     Type: AWS::EC2::SecurityGroup
@@ -179,23 +199,49 @@ Resources:
       IpProtocol: -1
       SourceSecurityGroupId: !Ref 'PrivateSecurityGroup'
 
-  JhubSecurityGroup:
-    Type: AWS::EC2::SecurityGroup
+  ControlPlaneSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
     Properties:
-      GroupDescription: Access to the private JupyterHub service
-      VpcId: !Ref 'VPC'
-      SecurityGroupIngress:
-        - IpProtocol: tcp
-          FromPort: 8000
-          ToPort: 8000
-          SourceSecurityGroupId: !Ref 'PublicSecurityGroup'
-  JhubSecurityGroupIngressFromSelf:
-    Type: AWS::EC2::SecurityGroupIngress
+      GroupDescription: Communication between the control plane and worker nodegroups
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}/ControlPlaneSecurityGroup'
+  ClusterSharedNodeSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
     Properties:
-      Description: Ingress from other containers in the same security group
-      GroupId: !Ref 'JhubSecurityGroup'
-      IpProtocol: -1
-      SourceSecurityGroupId: !Ref 'JhubSecurityGroup'
+      GroupDescription: Communication between all nodes in the cluster
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}/ClusterSharedNodeSecurityGroup'
+  IngressDefaultClusterToNodeSG:
+    Type: 'AWS::EC2::SecurityGroupIngress'
+    Properties:
+      Description: Allow managed and unmanaged nodes to communicate with each other (all ports)
+      FromPort: 0
+      GroupId: !Ref ClusterSharedNodeSecurityGroup
+      IpProtocol: '-1'
+      SourceSecurityGroupId: !GetAtt ControlPlane.ClusterSecurityGroupId
+      ToPort: 65535
+  IngressInterNodeGroupSG:
+    Type: 'AWS::EC2::SecurityGroupIngress'
+    Properties:
+      Description: Allow nodes to communicate with each other (all ports)
+      FromPort: 0
+      GroupId: !Ref ClusterSharedNodeSecurityGroup
+      IpProtocol: '-1'
+      SourceSecurityGroupId: !Ref ClusterSharedNodeSecurityGroup
+      ToPort: 65535
+  IngressNodeToDefaultClusterSG:
+    Type: 'AWS::EC2::SecurityGroupIngress'
+    Properties:
+      Description: Allow unmanaged nodes to communicate with control plane (all ports)
+      FromPort: 0
+      GroupId: !GetAtt ControlPlane.ClusterSecurityGroupId
+      IpProtocol: '-1'
+      SourceSecurityGroupId: !Ref ClusterSharedNodeSecurityGroup
+      ToPort: 65535
 
   DBSecurityGroup:
     Type: AWS::EC2::SecurityGroup
@@ -251,7 +297,7 @@ Resources:
       SecurityGroupIds:
         - !Ref 'PublicSecurityGroup'
         - !Ref 'PrivateSecurityGroup'
-        - !Ref 'JhubSecurityGroup'
+        - !Ref 'ControlPlaneSecurityGroup'
   SnsEndpoint:
     Type: AWS::EC2::VPCEndpoint
     Properties:
@@ -303,10 +349,25 @@ Resources:
       SecurityGroupIds:
         - !Ref 'PublicSecurityGroup'
         - !Ref 'PrivateSecurityGroup'
-        - !Ref 'JhubSecurityGroup'
+        - !Ref 'ControlPlaneSecurityGroup'
 
   ECSCluster:
     Type: AWS::ECS::Cluster
+
+  ControlPlane:
+    Type: 'AWS::EKS::Cluster'
+    Properties:
+      Name: JhubCluster
+      ResourcesVpcConfig:
+        SecurityGroupIds:
+          - !Ref ControlPlaneSecurityGroup
+        SubnetIds:
+          - !Ref PublicSubnetOne
+          - !Ref PublicSubnetTwo
+          - !Ref PrivateSubnetOne
+          - !Ref PrivateSubnetTwo
+      RoleArn: !GetAtt EKSRole.Arn
+      Version: '1.14'
 
   # This is an IAM role which authorizes ECS to manage resources on your
   # account on your behalf, such as updating your load balancer with the
@@ -369,17 +430,92 @@ Resources:
                 - 'ecr:BatchCheckLayerAvailability'
                 - 'ecr:GetDownloadUrlForLayer'
                 - 'ecr:BatchGetImage'
-
                 # Allow the ECS tasks to upload logs to CloudWatch
                 - 'logs:CreateLogStream'
                 - 'logs:PutLogEvents'
-
                 # Allow the ECS tasks to start tasks (JHub)
                 - "ecs:RunTask"
                 - "ecs:StopTask"
                 - "ecs:DescribeTasks"
                 - "iam:PassRole"
               Resource: '*'
+
+  EKSRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action:
+              - 'sts:AssumeRole'
+            Effect: Allow
+            Principal:
+              Service:
+                - eks.amazonaws.com
+                - eks-fargate-pods.amazonaws.com
+        Version: 2012-10-17
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/AmazonEKSServicePolicy'
+        - 'arn:aws:iam::aws:policy/AmazonEKSClusterPolicy'
+      Policies:
+        - PolicyName: !Sub '${AWS::StackName}-CloudWatchMetricsPolicy'
+          PolicyDocument:
+            Statement:
+              - Action:
+                  - 'cloudwatch:PutMetricData'
+                Effect: Allow
+                Resource: '*'
+            Version: 2012-10-17
+        - PolicyName: !Sub '${AWS::StackName}-NLBPolicy'
+          PolicyDocument:
+            Statement:
+              - Action:
+                  - 'elasticloadbalancing:*'
+                  - 'ec2:CreateSecurityGroup'
+                  - 'ec2:Describe*'
+                Effect: Allow
+                Resource: '*'
+            Version: 2012-10-17
+
+  FargatePodExecutionRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action:
+              - 'sts:AssumeRole'
+            Effect: Allow
+            Principal:
+              Service:
+                - eks.amazonaws.com
+                - eks-fargate-pods.amazonaws.com
+        Version: 2012-10-17
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/AmazonEKSFargatePodExecutionRolePolicy'
+
+  #NATGateway:
+  #  Type: 'AWS::EC2::NatGateway'
+  #  Properties:
+  #    AllocationId: !GetAtt NATIP.AllocationId
+  #    SubnetId: !Ref SubnetPublicUSEAST1C
+  #    Tags:
+  #      - Key: Name
+  #        Value: !Sub '${AWS::StackName}/NATGateway'
+  #NATIP:
+  #  Type: 'AWS::EC2::EIP'
+  #  Properties:
+  #    Domain: vpc
+  #NATPrivateSubnetRouteUSEAST1B:
+  #  Type: 'AWS::EC2::Route'
+  #  Properties:
+  #    DestinationCidrBlock: 0.0.0.0/0
+  #    NatGatewayId: !Ref NATGateway
+  #    RouteTableId: !Ref PrivateRouteTableUSEAST1B
+  #NATPrivateSubnetRouteUSEAST1C:
+  #  Type: 'AWS::EC2::Route'
+  #  Properties:
+  #    DestinationCidrBlock: 0.0.0.0/0
+  #    NatGatewayId: !Ref NATGateway
+  #    RouteTableId: !Ref PrivateRouteTableUSEAST1C
 
 # These are the values output by the CloudFormation template. Be careful
 # about changing any of them, because of them are exported with specific
@@ -440,11 +576,6 @@ Outputs:
     Value: !Ref 'PrivateSecurityGroup'
     Export:
       Name: !Join [ ':', [ !Ref 'EnvironmentName', 'PrivateSecurityGroup' ] ]
-  JhubSecurityGroup:
-    Description: Private JupyterHub Security Group
-    Value: !Ref 'JhubSecurityGroup'
-    Export:
-      Name: !Join [ ':', [ !Ref 'EnvironmentName', 'JhubSecurityGroup' ] ]
   NetworkLoadBalancer:
     Description: Network Load Balancer for Kong
     Value: !Ref 'NetworkLoadBalancer'
@@ -455,3 +586,38 @@ Outputs:
     Value: !Ref 'NetworkLoadBalancerTargetGroup'
     Export:
       Name: !Join [ ':', [ !Ref 'EnvironmentName', 'NetworkLoadBalancerTargetGroup' ] ]
+
+  ControlPlaneArn:
+    Export:
+      Name: !Sub '${AWS::StackName}::ControlPlaneArn'
+    Value: !GetAtt ControlPlane.Arn
+  ControlPlaneCertificateAuthorityData:
+    Value: !GetAtt ControlPlane.CertificateAuthorityData
+  ControlPlaneClusterSecurityGroupId:
+    Export:
+      Name: !Sub '${AWS::StackName}::ControlPlaneClusterSecurityGroupId'
+    Value: !GetAtt ControlPlane.ClusterSecurityGroupId
+  EKSClusterStackName:
+    Value: !Ref 'AWS::StackName'
+  ControlPlaneEndpoint:
+    Export:
+      Name: !Sub '${AWS::StackName}::ControlPlaneEndpoint'
+    Value: !GetAtt ControlPlane.Endpoint
+  FargatePodExecutionRoleArn:
+    Export:
+      Name: !Sub '${AWS::StackName}::FargatePodExecutionRoleArn'
+    Value: !GetAtt FargatePodExecutionRole.Arn
+  #FeatureNATMode:
+  #  Value: Single
+  ControlPlaneSecurityGroup:
+    Export:
+      Name: !Sub '${AWS::StackName}::ControlPlaneSecurityGroup'
+    Value: !Ref ControlPlaneSecurityGroup
+  EKSRoleArn:
+    Export:
+      Name: !Sub '${AWS::StackName}::EKSRoleArn'
+    Value: !GetAtt EKSRole.Arn
+  ClusterSharedNodeSecurityGroup:
+    Export:
+      Name: !Sub '${AWS::StackName}::ClusterSharedNodeSecurityGroup'
+    Value: !Ref ClusterSharedNodeSecurityGroup
