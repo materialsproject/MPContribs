@@ -3,10 +3,8 @@ Description: kong service
 Parameters:
   PipelineName:
     Type: String
-    Default: materialsproject
   EnvironmentName:
     Type: String
-    Default: production
     Description: A name for the environment that this cloudformation will be part of.
                  Used to locate other resources in the same environment.
   ServiceName:
@@ -19,7 +17,6 @@ Parameters:
     Type: String
   DBPassword:
     Type: String
-    Default: change-me
     Description: password for the Postgres DB
     NoEcho: 'true'
     MinLength: '8'

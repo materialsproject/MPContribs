@@ -49,7 +49,6 @@ Parameters:
     Default: '0'
     Description: number to control CIDR block for VPC (192.168.{NetworkNumber}.<256IPs>)
   DBPassword:
-    Default: changeit
     NoEcho: 'true'
     Description: The database admin account password
     Type: String
@@ -686,6 +685,7 @@ Resources:
                   {
                     "PipelineName": "${PipelineName}",
                     "EnvironmentName": "${EnvironmentName}",
+                    "NetworkNumber": "${NetworkNumber}",
                     "DBPassword": "${DBPassword}"
                   }
               InputArtifacts:
