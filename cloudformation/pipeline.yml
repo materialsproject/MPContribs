@@ -97,6 +97,8 @@ Resources:
             Principal:
               Service: codebuild.amazonaws.com
             Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/AmazonSSMReadOnlyAccess'
       Policies:
         - PolicyName: root
           PolicyDocument:
@@ -173,15 +175,13 @@ Resources:
                   - s3:GetObjectVersion
                   - s3:GetBucketVersioning
               # Allow codepipeline to build code builds
+              # Allow codepipeline to deploy cloudformation stacks
               - Resource: "*"
                 Effect: Allow
                 Action:
                   - codebuild:StartBuild
                   - codebuild:BatchGetBuilds
                   - iam:PassRole
-              # Allow codepipeline to deploy cloudformation stacks
-              - Effect: Allow
-                Action:
                   - cloudformation:CreateChangeSet
                   - cloudformation:CreateStack
                   - cloudformation:CreateUploadBucket
@@ -191,7 +191,6 @@ Resources:
                   - cloudformation:UpdateStack
                   - cloudformation:ValidateTemplate
                   - cloudformation:ExecuteChangeSet
-                Resource: "*"
 
   # CloudFormation deployment role. This role is passed by CodeBuild to
   # CloudFormation to use when setting up the application resources
@@ -569,6 +568,9 @@ Resources:
         Type: CODEPIPELINE
         BuildSpec: |
           version: 0.2
+          env:
+            parameter-store:
+              build_ssh_key: "build_ssh_key"
           phases:
             install:
               runtime-versions:
@@ -578,8 +580,15 @@ Resources:
                 - $(aws ecr get-login --no-include-email)
                 - TAG="$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | head -c 8)"
                 - IMAGE_URI="${REPOSITORY_URI}:${TAG}"
+                - mkdir -p ~/.ssh
+                - echo "$build_ssh_key" > ~/.ssh/id_rsa
+                - chmod 600 ~/.ssh/id_rsa
+                #- eval "$(ssh-agent -s)"
+                #- ssh-add ~/.ssh/id_rsa
+                - ssh-keygen -F github.com || ssh-keyscan github.com >> ~/.ssh/known_hosts
+                - git config --global url."git@github.com:".insteadOf "https://github.com/"
                 - git init
-                - git remote add origin https://github.com/materialsproject/mp_docker.git
+                - git remote add origin git@github.com:materialsproject/mp_docker.git
                 - git fetch
                 - git checkout -tf origin/aws
                 - git submodule init
