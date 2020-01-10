@@ -648,6 +648,19 @@ Resources:
                 OAuthToken: !Ref GitHubToken
               OutputArtifacts:
                 - Name: Source
+            - Name: MP
+              ActionTypeId:
+                Category: Source
+                Owner: ThirdParty
+                Version: 1
+                Provider: GitHub
+              Configuration:
+                Owner: !Ref GitHubUser
+                Repo: !Ref GitHubRepoMP
+                Branch: !Ref GitHubBranchMP
+                OAuthToken: !Ref GitHubToken
+              OutputArtifacts:
+                - Name: SourceMP
             - Name: Kong
               ActionTypeId:
                 Category: Source
@@ -790,9 +803,9 @@ Resources:
                 Provider: CodeBuild
               Configuration:
                 ProjectName: !Ref CodeBuildProjectMP
-                PrimarySource: Source
+                PrimarySource: SourceMP
               InputArtifacts:
-                - Name: Source
+                - Name: SourceMP
               OutputArtifacts:
                 - Name: BuildOutputMP
             #- Name: BuildR2d
