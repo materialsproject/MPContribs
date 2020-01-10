@@ -452,6 +452,7 @@ Resources:
               Service:
                 - eks.amazonaws.com
                 - eks-fargate-pods.amazonaws.com
+              AWS: !Sub arn:aws:iam::${AWS::AccountId}:user/Administrator
         Version: 2012-10-17
       ManagedPolicyArns:
         - 'arn:aws:iam::aws:policy/AmazonEKSServicePolicy'
