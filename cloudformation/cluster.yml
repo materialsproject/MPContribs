@@ -6,13 +6,10 @@ Parameters:
     Type: String
   EnvironmentName:
     Type: String
-    Description: A name for the environment that this cloudformation will be part of.
   NetworkNumber:
     Type: String
-    Description: number to control CIDR block for VPC (192.168.{NetworkNumber}.<256IPs>)
   DBPassword:
     NoEcho: 'true'
-    Description: The database admin account password
     Type: String
     MinLength: '8'
 
@@ -22,7 +19,7 @@ Resources:
     Properties:
       EnableDnsSupport: true
       EnableDnsHostnames: true
-      CidrBlock: !Sub '192.168.${NetworkNumber}.0/24'
+      CidrBlock: !Join [ '.', [ '192.168', !Ref 'NetworkNumber', '0/24' ] ]
       Tags:
         - Key: Name
           Value: !Sub '${AWS::StackName}/VPC'
@@ -30,7 +27,7 @@ Resources:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref 'VPC'
-      CidrBlock: !Sub '192.168.${NetworkNumber}.0/26'  # first 64 IPs
+      CidrBlock: !Join [ '.', [ '192.168', !Ref 'NetworkNumber', '0/26' ] ]
       AvailabilityZone: !Join [ '', [!Ref 'AWS::Region', 'a']]
       Tags:
         - Key: kubernetes.io/role/elb
@@ -41,7 +38,7 @@ Resources:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref 'VPC'
-      CidrBlock: !Sub '192.168.${NetworkNumber}.64/26'  # second 64 IPs
+      CidrBlock: !Join [ '.', [ '192.168', !Ref 'NetworkNumber', '64/26' ] ]
       AvailabilityZone: !Join [ '', [!Ref 'AWS::Region', 'b']]
       Tags:
         - Key: kubernetes.io/role/elb
@@ -52,7 +49,7 @@ Resources:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref 'VPC'
-      CidrBlock: !Sub '192.168.${NetworkNumber}.128/26'  # third 64 IPs
+      CidrBlock: !Join [ '.', [ '192.168', !Ref 'NetworkNumber', '128/26' ] ]
       AvailabilityZone: !Join [ '', [!Ref 'AWS::Region', 'c']]
       Tags:
         - Key: kubernetes.io/role/internal-elb
@@ -63,7 +60,7 @@ Resources:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref 'VPC'
-      CidrBlock: !Sub '192.168.${NetworkNumber}.192/26'  # four 64 IPs
+      CidrBlock: !Join [ '.', [ '192.168', !Ref 'NetworkNumber', '192/26' ] ]
       AvailabilityZone: !Join [ '', [!Ref 'AWS::Region', 'd']]
       Tags:
         - Key: kubernetes.io/role/internal-elb
