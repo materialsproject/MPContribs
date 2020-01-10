@@ -1,6 +1,9 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: kong service
 Parameters:
+  PipelineName:
+    Type: String
+    Default: materialsproject
   EnvironmentName:
     Type: String
     Default: production
@@ -39,7 +42,7 @@ Resources:
   LogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Join ['-', [!Ref 'EnvironmentName', 'service', !Ref 'ServiceName']]
+      LogGroupName: !Join ['-', [!Ref 'PipelineName', !Ref 'EnvironmentName', 'service', !Ref 'ServiceName']]
 
   # The task definition. This is a simple metadata description of what
   # container to run, and what resource requirements it has.
@@ -54,7 +57,7 @@ Resources:
         - FARGATE
       ExecutionRoleArn:
         Fn::ImportValue:
-          !Join [':', [!Ref 'EnvironmentName', 'ECSTaskExecutionRole']]
+          !Join [':', [!Ref 'PipelineName', !Ref 'EnvironmentName', 'ECSTaskExecutionRole']]
       ContainerDefinitions:
         - Name: kong
           MemoryReservation: 250
@@ -64,10 +67,6 @@ Resources:
                 HardLimit: 4096
                 SoftLimit: 4096
           Environment:
-            - Name: REGION
-              Value: !Ref 'AWS::Region'
-            - Name: ENV_NAME
-              Value: !Ref 'EnvironmentName'
             - Name: KONG_ADMIN_LISTEN
               Value: '0.0.0.0:8001'
             - Name: KONG_DATABASE
@@ -81,7 +80,7 @@ Resources:
             - Name: KONG_PG_HOST
               Value:
                 Fn::ImportValue:
-                    !Join [':', [!Ref 'EnvironmentName', 'DBAddress']]
+                    !Join [':', [!Ref 'PipelineName', !Ref 'EnvironmentName', 'DBAddress']]
             - Name: KONG_PG_PORT
               Value: 5432
             - Name: KONG_PG_PASSWORD
@@ -106,7 +105,7 @@ Resources:
           LogConfiguration:
             LogDriver: 'awslogs'
             Options:
-              awslogs-group: !Join ['-', [!Ref 'EnvironmentName', 'service', !Ref 'ServiceName']]
+              awslogs-group: !Join ['-', [!Ref 'PipelineName', !Ref 'EnvironmentName', 'service', !Ref 'ServiceName']]
               awslogs-region: !Ref 'AWS::Region'
               awslogs-stream-prefix: !Ref 'ServiceName'
         - Name: dashboard
@@ -136,7 +135,7 @@ Resources:
           LogConfiguration:
             LogDriver: 'awslogs'
             Options:
-              awslogs-group: !Join ['-', [!Ref 'EnvironmentName', 'service', !Ref 'ServiceName']]
+              awslogs-group: !Join ['-', [!Ref 'PipelineName', !Ref 'EnvironmentName', 'service', !Ref 'ServiceName']]
               awslogs-region: !Ref 'AWS::Region'
               awslogs-stream-prefix: !Ref 'ServiceName'
 
@@ -149,7 +148,7 @@ Resources:
       ServiceName: !Ref 'ServiceName'
       Cluster:
         Fn::ImportValue:
-          !Join [':', [!Ref 'EnvironmentName', 'ClusterName']]
+          !Join [':', [!Ref 'PipelineName', !Ref 'EnvironmentName', 'ClusterName']]
       LaunchType: FARGATE
       DeploymentConfiguration:
         MaximumPercent: 200
@@ -159,19 +158,19 @@ Resources:
           AssignPublicIp: ENABLED
           SecurityGroups:
             - Fn::ImportValue:
-                !Join [':', [!Ref 'EnvironmentName', 'PublicSecurityGroup']]
+                !Join [':', [!Ref 'PipelineName', !Ref 'EnvironmentName', 'PublicSecurityGroup']]
           Subnets:
             - Fn::ImportValue:
-                !Join [':', [!Ref 'EnvironmentName', 'PublicSubnetOne']]
+                !Join [':', [!Ref 'PipelineName', !Ref 'EnvironmentName', 'PublicSubnetOne']]
             - Fn::ImportValue:
-                !Join [':', [!Ref 'EnvironmentName', 'PublicSubnetTwo']]
+                !Join [':', [!Ref 'PipelineName', !Ref 'EnvironmentName', 'PublicSubnetTwo']]
       TaskDefinition: !Ref 'TaskDefinition'
       LoadBalancers:
         - ContainerName: !Ref 'ServiceName'
           ContainerPort: 8000
           TargetGroupArn:
             Fn::ImportValue:
-              !Join [':', [!Ref 'EnvironmentName', 'NetworkLoadBalancerTargetGroup']]
+              !Join [':', [!Ref 'PipelineName', !Ref 'EnvironmentName', 'NetworkLoadBalancerTargetGroup']]
 
   NetworkLoadBalancerListener:
     Type: AWS::ElasticLoadBalancingV2::Listener
@@ -180,10 +179,10 @@ Resources:
         - Type: forward
           TargetGroupArn:
             Fn::ImportValue:
-              !Join [':', [!Ref 'EnvironmentName', 'NetworkLoadBalancerTargetGroup']]
+              !Join [':', [!Ref 'PipelineName', !Ref 'EnvironmentName', 'NetworkLoadBalancerTargetGroup']]
       LoadBalancerArn:
         Fn::ImportValue:
-          !Join [':', [!Ref 'EnvironmentName', 'NetworkLoadBalancer']]
+          !Join [':', [!Ref 'PipelineName', !Ref 'EnvironmentName', 'NetworkLoadBalancer']]
       Port: 443
       Protocol: TLS
       Certificates:

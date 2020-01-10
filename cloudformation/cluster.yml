@@ -2,10 +2,17 @@ AWSTemplateFormatVersion: '2010-09-09'
 Description: The baseline resources used to create a Fargate environment
              to launch containerized applications in.
 Parameters:
+  PipelineName:
+    Type: String
+    Default: materialsproject
   EnvironmentName:
     Type: String
     Default: production
     Description: A name for the environment that this cloudformation will be part of.
+  NetworkNumber:
+    Type: Integer
+    Default: 0
+    Description: number to control CIDR block for VPC (192.168.{NetworkNumber}.<256IPs>)
   DBPassword:
     Default: changeit
     NoEcho: 'true'
@@ -19,7 +26,7 @@ Resources:
     Properties:
       EnableDnsSupport: true
       EnableDnsHostnames: true
-      CidrBlock: '192.168.0.0/24'  # 192.168.0.0 - 192.168.0.255
+      CidrBlock: !Sub '192.168.${NetworkNumber}.0/24'
       Tags:
         - Key: Name
           Value: !Sub '${AWS::StackName}/VPC'
@@ -27,7 +34,7 @@ Resources:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref 'VPC'
-      CidrBlock: '192.168.0.0/26'  # 192.168.0.0 - 192.168.0.63
+      CidrBlock: !Sub '192.168.${NetworkNumber}.0/26'  # first 64 IPs
       AvailabilityZone: !Join [ '', [!Ref 'AWS::Region', 'a']]
       Tags:
         - Key: kubernetes.io/role/elb
@@ -38,7 +45,7 @@ Resources:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref 'VPC'
-      CidrBlock: '192.168.0.64/26'  # 192.168.0.64 - 192.168.0.127
+      CidrBlock: !Sub '192.168.${NetworkNumber}.64/26'  # second 64 IPs
       AvailabilityZone: !Join [ '', [!Ref 'AWS::Region', 'b']]
       Tags:
         - Key: kubernetes.io/role/elb
@@ -49,7 +56,7 @@ Resources:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref 'VPC'
-      CidrBlock: '192.168.0.128/26'  # 192.168.0.128 - 192.168.0.191
+      CidrBlock: !Sub '192.168.${NetworkNumber}.128/26'  # third 64 IPs
       AvailabilityZone: !Join [ '', [!Ref 'AWS::Region', 'c']]
       Tags:
         - Key: kubernetes.io/role/internal-elb
@@ -60,7 +67,7 @@ Resources:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref 'VPC'
-      CidrBlock: '192.168.0.192/26'  # 192.168.0.192 - 192.168.0.255
+      CidrBlock: !Sub '192.168.${NetworkNumber}.192/26'  # four 64 IPs
       AvailabilityZone: !Join [ '', [!Ref 'AWS::Region', 'd']]
       Tags:
         - Key: kubernetes.io/role/internal-elb
@@ -526,67 +533,67 @@ Outputs:
     Description: The name of the ECS cluster
     Value: !Ref 'ECSCluster'
     Export:
-      Name: !Join [ ':', [ !Ref 'EnvironmentName', 'ClusterName' ] ]
+      Name: !Join [ ':', [ !Ref 'PipelineName', !Ref 'EnvironmentName', 'ClusterName' ] ]
   ECSRole:
     Description: The ARN of the ECS role
     Value: !GetAtt 'ECSRole.Arn'
     Export:
-      Name: !Join [ ':', [ !Ref 'EnvironmentName', 'ECSRole' ] ]
+      Name: !Join [ ':', [ !Ref 'PipelineName', !Ref 'EnvironmentName', 'ECSRole' ] ]
   ECSTaskExecutionRole:
     Description: The ARN of the ECS role
     Value: !GetAtt 'ECSTaskExecutionRole.Arn'
     Export:
-      Name: !Join [ ':', [ !Ref 'EnvironmentName', 'ECSTaskExecutionRole' ] ]
+      Name: !Join [ ':', [ !Ref 'PipelineName', !Ref 'EnvironmentName', 'ECSTaskExecutionRole' ] ]
   VPCId:
     Description: The ID of the VPC that this stack is deployed in
     Value: !Ref 'VPC'
     Export:
-      Name: !Join [ ':', [ !Ref 'EnvironmentName', 'VPCId' ] ]
+      Name: !Join [ ':', [ !Ref 'PipelineName', !Ref 'EnvironmentName', 'VPCId' ] ]
   PublicSubnetOne:
     Description: Public subnet 1
     Value: !Ref 'PublicSubnetOne'
     Export:
-      Name: !Join [ ':', [ !Ref 'EnvironmentName', 'PublicSubnetOne' ] ]
+      Name: !Join [ ':', [ !Ref 'PipelineName', !Ref 'EnvironmentName', 'PublicSubnetOne' ] ]
   PublicSubnetTwo:
     Description: Public subnet 2
     Value: !Ref 'PublicSubnetTwo'
     Export:
-      Name: !Join [ ':', [ !Ref 'EnvironmentName', 'PublicSubnetTwo' ] ]
+      Name: !Join [ ':', [ !Ref 'PipelineName', !Ref 'EnvironmentName', 'PublicSubnetTwo' ] ]
   PrivateSubnetOne:
     Description: Private subnet 1
     Value: !Ref 'PrivateSubnetOne'
     Export:
-      Name: !Join [ ':', [ !Ref 'EnvironmentName', 'PrivateSubnetOne' ] ]
+      Name: !Join [ ':', [ !Ref 'PipelineName', !Ref 'EnvironmentName', 'PrivateSubnetOne' ] ]
   PrivateSubnetTwo:
     Description: Private subnet 2
     Value: !Ref 'PrivateSubnetTwo'
     Export:
-      Name: !Join [ ':', [ !Ref 'EnvironmentName', 'PrivateSubnetTwo' ] ]
+      Name: !Join [ ':', [ !Ref 'PipelineName', !Ref 'EnvironmentName', 'PrivateSubnetTwo' ] ]
   DBAddress:
     Description: DB Address
     Value: !GetAtt 'PostgresDB.Endpoint.Address'
     Export:
-      Name: !Join [ ':', [ !Ref 'EnvironmentName', 'DBAddress' ] ]
+      Name: !Join [ ':', [ !Ref 'PipelineName', !Ref 'EnvironmentName', 'DBAddress' ] ]
   PublicSecurityGroup:
     Description: Public Security Group
     Value: !Ref 'PublicSecurityGroup'
     Export:
-      Name: !Join [ ':', [ !Ref 'EnvironmentName', 'PublicSecurityGroup' ] ]
+      Name: !Join [ ':', [ !Ref 'PipelineName', !Ref 'EnvironmentName', 'PublicSecurityGroup' ] ]
   PrivateSecurityGroup:
     Description: Private Security Group
     Value: !Ref 'PrivateSecurityGroup'
     Export:
-      Name: !Join [ ':', [ !Ref 'EnvironmentName', 'PrivateSecurityGroup' ] ]
+      Name: !Join [ ':', [ !Ref 'PipelineName', !Ref 'EnvironmentName', 'PrivateSecurityGroup' ] ]
   NetworkLoadBalancer:
     Description: Network Load Balancer for Kong
     Value: !Ref 'NetworkLoadBalancer'
     Export:
-      Name: !Join [ ':', [ !Ref 'EnvironmentName', 'NetworkLoadBalancer' ] ]
+      Name: !Join [ ':', [ !Ref 'PipelineName', !Ref 'EnvironmentName', 'NetworkLoadBalancer' ] ]
   NetworkLoadBalancerTargetGroup:
     Description: Network Load Balancer Target Group for Kong
     Value: !Ref 'NetworkLoadBalancerTargetGroup'
     Export:
-      Name: !Join [ ':', [ !Ref 'EnvironmentName', 'NetworkLoadBalancerTargetGroup' ] ]
+      Name: !Join [ ':', [ !Ref 'PipelineName', !Ref 'EnvironmentName', 'NetworkLoadBalancerTargetGroup' ] ]
 
   ControlPlaneArn:
     Export:

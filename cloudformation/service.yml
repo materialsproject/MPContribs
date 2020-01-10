@@ -1,6 +1,9 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: app service
 Parameters:
+  PipelineName:
+    Type: String
+    Default: materialsproject
   EnvironmentName:
     Type: String
     Default: production
@@ -38,7 +41,7 @@ Resources:
   LogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Join ['-', [!Ref 'EnvironmentName', 'service', !Ref 'ServiceName']]
+      LogGroupName: !Join ['-', [!Ref 'PipelineName', !Ref 'EnvironmentName', 'service', !Ref 'ServiceName']]
 
   # A role for the service so it can access the tables
   AppServiceRole:
@@ -77,7 +80,7 @@ Resources:
         - FARGATE
       ExecutionRoleArn:
         Fn::ImportValue:
-          !Join [':', [!Ref 'EnvironmentName', 'ECSTaskExecutionRole']]
+          !Join [':', [!Ref 'PipelineName', !Ref 'EnvironmentName', 'ECSTaskExecutionRole']]
       TaskRoleArn: !Ref 'AppServiceRole'
       ContainerDefinitions:
         - Name: api
@@ -104,7 +107,7 @@ Resources:
           LogConfiguration:
             LogDriver: 'awslogs'
             Options:
-              awslogs-group: !Join ['-', [!Ref 'EnvironmentName', 'service', !Ref 'ServiceName']]
+              awslogs-group: !Join ['-', [!Ref 'PipelineName', !Ref 'EnvironmentName', 'service', !Ref 'ServiceName']]
               awslogs-region: !Ref 'AWS::Region'
               awslogs-stream-prefix: !Ref 'ServiceName'
         - Name: chrome
@@ -118,7 +121,7 @@ Resources:
           LogConfiguration:
             LogDriver: 'awslogs'
             Options:
-              awslogs-group: !Join ['-', [!Ref 'EnvironmentName', 'service', !Ref 'ServiceName']]
+              awslogs-group: !Join ['-', [!Ref 'PipelineName', !Ref 'EnvironmentName', 'service', !Ref 'ServiceName']]
               awslogs-region: !Ref 'AWS::Region'
               awslogs-stream-prefix: !Ref 'ServiceName'
         - Name: gateway
@@ -132,7 +135,7 @@ Resources:
           LogConfiguration:
             LogDriver: 'awslogs'
             Options:
-              awslogs-group: !Join ['-', [!Ref 'EnvironmentName', 'service', !Ref 'ServiceName']]
+              awslogs-group: !Join ['-', [!Ref 'PipelineName', !Ref 'EnvironmentName', 'service', !Ref 'ServiceName']]
               awslogs-region: !Ref 'AWS::Region'
               awslogs-stream-prefix: !Ref 'ServiceName'
         - Name: portal
@@ -150,7 +153,7 @@ Resources:
           LogConfiguration:
             LogDriver: 'awslogs'
             Options:
-              awslogs-group: !Join ['-', [!Ref 'EnvironmentName', 'service', !Ref 'ServiceName']]
+              awslogs-group: !Join ['-', [!Ref 'PipelineName', !Ref 'EnvironmentName', 'service', !Ref 'ServiceName']]
               awslogs-region: !Ref 'AWS::Region'
               awslogs-stream-prefix: !Ref 'ServiceName'
 
@@ -163,17 +166,17 @@ Resources:
       ServiceName: !Ref 'ServiceName'
       Cluster:
         Fn::ImportValue:
-          !Join [':', [!Ref 'EnvironmentName', 'ClusterName']]
+          !Join [':', [!Ref 'PipelineName', !Ref 'EnvironmentName', 'ClusterName']]
       LaunchType: FARGATE
       DesiredCount: 2
       NetworkConfiguration:
         AwsvpcConfiguration:
           SecurityGroups:
             - Fn::ImportValue:
-                !Join [':', [!Ref 'EnvironmentName', 'PrivateSecurityGroup']]
+                !Join [':', [!Ref 'PipelineName', !Ref 'EnvironmentName', 'PrivateSecurityGroup']]
           Subnets:
             - Fn::ImportValue:
-                !Join [':', [!Ref 'EnvironmentName', 'PrivateSubnetOne']]
+                !Join [':', [!Ref 'PipelineName', !Ref 'EnvironmentName', 'PrivateSubnetOne']]
             - Fn::ImportValue:
-                !Join [':', [!Ref 'EnvironmentName', 'PrivateSubnetTwo']]
+                !Join [':', [!Ref 'PipelineName', !Ref 'EnvironmentName', 'PrivateSubnetTwo']]
       TaskDefinition: !Ref 'TaskDefinition'

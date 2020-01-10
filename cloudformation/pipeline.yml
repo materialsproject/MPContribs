@@ -38,9 +38,16 @@ Parameters:
   MongoHost:
     Type: String
     NoEcho: true
+  PipelineName:
+    Type: String
+    Default: materialsproject
   EnvironmentName:
     Type: String
     Default: prod
+  NetworkNumber:
+    Type: String
+    Default: '0'
+    Description: number to control CIDR block for VPC (192.168.{NetworkNumber}.<256IPs>)
   DBPassword:
     Default: changeit
     NoEcho: 'true'
@@ -610,6 +617,7 @@ Resources:
   Pipeline:
     Type: AWS::CodePipeline::Pipeline
     Properties:
+      Name: !Sub ${PipelineName}-${EnvironmentName}
       RoleArn: !GetAtt CodePipelineServiceRole.Arn
       ArtifactStore:
         Type: S3
@@ -671,11 +679,12 @@ Resources:
               Configuration:
                 ActionMode: CREATE_UPDATE
                 RoleArn: !GetAtt CloudFormationDeployRole.Arn
-                StackName: !Sub ${EnvironmentName}-BaseResources
+                StackName: !Sub ${PipelineName}-${EnvironmentName}-BaseResources
                 TemplatePath: Source::cloudformation/cluster.yml
                 Capabilities: CAPABILITY_IAM
                 ParameterOverrides: !Sub |
                   {
+                    "PipelineName": "${PipelineName}",
                     "EnvironmentName": "${EnvironmentName}",
                     "DBPassword": "${DBPassword}"
                   }
@@ -802,11 +811,12 @@ Resources:
               Configuration:
                 ActionMode: CREATE_UPDATE
                 RoleArn: !GetAtt CloudFormationDeployRole.Arn
-                StackName: !Sub ${EnvironmentName}-KongService
+                StackName: !Sub ${PipelineName}-${EnvironmentName}-KongService
                 TemplatePath: Source::cloudformation/kong-service.yml
                 Capabilities: CAPABILITY_IAM
                 ParameterOverrides: !Sub |
                   {
+                    "PipelineName": "${PipelineName}",
                     "EnvironmentName": "${EnvironmentName}",
                     "DBPassword": "${DBPassword}",
                     "CertificateArn": "${CertificateArn}",
@@ -838,11 +848,12 @@ Resources:
               Configuration:
                 ActionMode: CREATE_UPDATE
                 RoleArn: !GetAtt CloudFormationDeployRole.Arn
-                StackName: !Sub ${EnvironmentName}-AppService
+                StackName: !Sub ${PipelineName}-${EnvironmentName}-AppService
                 TemplatePath: Source::cloudformation/service.yml
                 Capabilities: CAPABILITY_IAM
                 ParameterOverrides: !Sub |
                   {
+                    "PipelineName": "${PipelineName}",
                     "EnvironmentName": "${EnvironmentName}",
                     "MongoHost": "${MongoHost}",
                     "AwsAccessKeyId": "${AwsAccessKeyId}",
