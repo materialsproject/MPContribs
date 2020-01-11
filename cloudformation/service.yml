@@ -26,9 +26,6 @@ Parameters:
   ImageUrlPortal:
     Type: String
     Description: url for the portal docker image
-  ImageUrlChrome:
-    Type: String
-    Description: url for the selenium chrome docker image
   ImageUrlGateway:
     Type: String
     Description: url for the jupyter kernel/enterprise gateway docker image
@@ -109,7 +106,7 @@ Resources:
               awslogs-stream-prefix: !Ref 'ServiceName'
         - Name: chrome
           MemoryReservation: 100
-          Image: !Ref 'ImageUrlChrome'
+          Image: selenium/standalone-chrome
           Environment:
             - Name: START_XVFB
               Value: false
