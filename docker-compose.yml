@@ -50,6 +50,7 @@ services:
             - "5000:5000"
 
     chrome:
+        image: selenium/standalone-chrome
         mem_limit: 1G
         mem_reservation: 100m
         cpus: 1
@@ -57,9 +58,6 @@ services:
             - START_XVFB=false
         ports:
             - "4444:4444"
-        build:
-            context: .
-            dockerfile: DockerfileChrome
 
     kernel_gateway:
         mem_limit: 1G
