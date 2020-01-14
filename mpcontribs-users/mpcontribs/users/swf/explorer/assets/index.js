@@ -15,12 +15,10 @@ function makeAxis(title, tickangle) {
 };
 
 $(document).ready(function () {
-    var target = document.getElementById('spinner_graph');
+    var graph = document.getElementById('graph_custom');
+    var target = document.getElementById('spinner_graph_custom');
     var spinner_plot = new Spinner({scale: 0.5});
     spinner_plot.spin(target);
-
-    var api_url = window.api['host'] + 'projects/swf/graph';
-    var graph = document.getElementById('graph');
 
     var layout = {
         hovermode: 'closest', height: 900,
@@ -68,12 +66,18 @@ $(document).ready(function () {
     ];
     var colorbars = [[0.45, 0.8], [1, 0.8], [0.25, 0.3], [0.625, 0.3], [1, 0.3]]
 
-    var gets = $.map(graph_columns, function(columns) {
-        return $.get({
-            url: api_url, data: {'columns': columns.join(',')},
-            headers: window.api['headers']
-        });
-    })
+    var fields = ['identifier', 'id'].concat(
+        $.map(['Fe', 'Co', 'V', 'thickness', 'Hc|MOKE', 'Hc|VSM', 'BH|max'], function(col) {
+            return 'data.' + col + '.value';
+        })
+    );
+    var gets = [
+        $.get({
+            url: window.api['host'] + 'contributions/', headers: window.api['headers'], data: {
+                '_fields': fields.join(','), 'project': project
+            }
+        })
+    ];
 
     $.when.apply($, gets).done(function() {
         var data = [];
