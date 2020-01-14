@@ -60,6 +60,7 @@ def index(request):
             prov_display += '</span>'
         entry['provenance'] = prov_display
         ctx['landing_pages'].append(entry)  # visibility governed by is_public flag and X-Consumer-Groups header
+        break
     return render(request, "mpcontribs_portal_index.html", ctx.flatten())
 
 

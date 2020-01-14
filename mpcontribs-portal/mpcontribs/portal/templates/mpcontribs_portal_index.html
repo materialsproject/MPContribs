@@ -83,15 +83,10 @@
     <div class="row equal" style="padding-top: 10px;">
         {% for lp in landing_pages %}
         <div class="col-md-3" id="{{ lp.project }}" style="padding: 10px 15px;">
-            <div class="panel panel-default" style="border: 1px solid #000000; height: 100%; margin: 0;">
-                <div class="panel-heading" style="padding-bottom: 5px; border-color: #000">
-                    <h4 class="panel-title">
-                        <a href="{{ lp.project }}/">{{ lp.title  }}</a>
-                        {% if "provenance" in lp %}{{ lp.provenance|safe }}{% endif %}
-                    </h4>
-                </div>
-                <div class="panel-body" style="padding: 0px">
-                    <div class="col-md-12" style="padding: 5px;">
+            <div id="make-3D-space">
+                <div id="product-card">
+                    <div id="product-front">
+                        <div class="shadow"></div>
                         {% if lp.contrib %}
                         <div class="col-md-12" style="padding: 0px;">
                             <div name=card-contrib id=card-contrib-{{forloop.counter}} data-contrib="{{ lp.contrib }}"></div>
@@ -99,6 +94,43 @@
                         {% else %}
                         <a id="{{ lp.project }}_img" href="{{ lp.project }}/"></a>
                         {% endif %}
+                        <div class="image_overlay"></div>
+                        <div id="view_details">View details</div>
+                        <div class="stats">
+                            <div class="stats-container">
+                                <h3><a href="{{ lp.project }}/">{{ lp.title  }}</a></h3>
+                                <p>{% if "provenance" in lp %}{{ lp.provenance|safe }}{% endif %}</p>
+                                <div class="product-options">
+                                    <a href="#">mp-11001</a>
+                                    description....
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="product-back">
+                        <div class="shadow"></div>
+                        <div id="carousel">
+                            <ul>
+                                <a id="{{ lp.project }}_img" href="{{ lp.project }}/"></a>
+                                <li><img src="https://s3-us-west-2.amazonaws.com/s.cdpn.io/245657/t-shirt-large.png" alt="" /></li>
+                                <li><img src="https://s3-us-west-2.amazonaws.com/s.cdpn.io/245657/t-shirt-large2.png" alt="" /></li>
+                                <li><img src="https://s3-us-west-2.amazonaws.com/s.cdpn.io/245657/t-shirt-large3.png" alt="" /></li>
+                            </ul>
+                            <div class="arrows-perspective">
+                                <div class="carouselPrev">
+                                    <div class="y"></div>
+                                    <div class="x"></div>
+                                </div>
+                                <div class="carouselNext">
+                                    <div class="y"></div>
+                                    <div class="x"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="flip-back">
+                            <div id="cy"></div>
+                            <div id="cx"></div>
+                        </div>
                     </div>
                 </div>
             </div>
