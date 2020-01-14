@@ -16,6 +16,7 @@ ALLOWED_HOSTS += ['10.0.{}.{}'.format(i,j) for i in [10, 11] for j in range(256)
 INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
+    'whitenoise.runserver_nostatic',
     'django.contrib.staticfiles',
     'django_extensions',
     'webpack_loader',
@@ -74,6 +75,7 @@ PROXY_URL_PREFIX = '/flaskproxy/{}'.format(JPY_USER) if JPY_USER else ''
 STATIC_URL = PROXY_URL_PREFIX + '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 STATICFILES_DIRS = (os.path.join(BASE_DIR, 'dist'),)
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 WEBPACK_LOADER = {
     'DEFAULT': {
@@ -83,13 +85,5 @@ WEBPACK_LOADER = {
     }
 }
 
-if os.environ.get('DEPLOYMENT') == 'MATGEN':
-    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-
-def set_no_cache(headers, path, url):
-    headers['Cache-Control'] = 'no-cache, private'
-
 WHITENOISE_KEEP_ONLY_HASHED_FILES = True
-WHITENOISE_ADD_HEADERS_FUNCTION = set_no_cache
-
 APPEND_SLASH = False

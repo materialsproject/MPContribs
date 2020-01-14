@@ -29,6 +29,9 @@ Parameters:
   ImageUrlGateway:
     Type: String
     Description: url for the jupyter kernel/enterprise gateway docker image
+  ImageUrlChrome:
+    Type: String
+    Description: url for the chrome docker image
 
 Resources:
   # A log group for storing the container logs for this service
@@ -138,9 +141,6 @@ Resources:
           DependsOn:
             - Condition: START
               ContainerName: api
-          Environment:
-            - Name: DEPLOYMENT
-              Value: 'MATGEN'
           PortMappings:
             - ContainerPort: 8080
             - ContainerPort: 9000

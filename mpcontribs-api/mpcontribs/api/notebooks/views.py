@@ -119,7 +119,8 @@ class NotebooksView(SwaggerView):
                     ),
                     nbf.new_markdown_cell("## Provenance Info"),
                     nbf.new_code_cell(
-                        "prov = client.projects.get_entry(pk=contrib['project'], _fields=['_all']).response().result\n"
+                        "fields = ['title', 'owner', 'authors', 'description', 'urls']\n"
+                        "prov = client.projects.get_entry(pk=contrib['project'], _fields=fields).response().result\n"
                         "HierarchicalData(prov)"
                     ),
                     nbf.new_markdown_cell(
