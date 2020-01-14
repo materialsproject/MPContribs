@@ -503,7 +503,7 @@ Resources:
             Value: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${Repository}
           - Name: EKS_CLUSTER_NAME
             Value: JhubCluster
-          - Name: EKS_KUBECTL_ROLE_ARN
+          - Name: EKS_KUBECTL_ROLE_ARN # TODO user/Administrator ??
             Value: !Sub arn:aws:iam::${AWS::AccountId}:role/EKSRole
       Cache:
         Type: LOCAL
