@@ -64,6 +64,8 @@ Parameters:
     Type: String
   SnsAdminTopicArn:
     Type: String
+  ImageUrlChrome:
+    Type: String
 
 Resources:
   # Create the ECR respository to hold built docker images
@@ -751,6 +753,7 @@ Resources:
                     "AwsAccessKeyId": "${AwsAccessKeyId}",
                     "AwsSecretAccessKey": "${AwsSecretAccessKey}",
                     "SnsAdminTopicArn": "${SnsAdminTopicArn}",
+                    "ImageUrlChrome": "${ImageUrlChrome}",
                     "ImageUrlApi": {
                       "Fn::GetParam" : ["BuildOutputApi", "build-api.json", "ImageUri"]
                     },

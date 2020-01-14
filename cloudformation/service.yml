@@ -29,6 +29,9 @@ Parameters:
   ImageUrlGateway:
     Type: String
     Description: url for the jupyter kernel/enterprise gateway docker image
+  ImageUrlChrome:
+    Type: String
+    Description: url for the chrome docker image
 
 Resources:
   # A log group for storing the container logs for this service
@@ -106,7 +109,7 @@ Resources:
               awslogs-stream-prefix: !Ref 'ServiceName'
         - Name: chrome
           MemoryReservation: 100
-          Image: selenium/standalone-chrome
+          Image: !Ref 'ImageUrlChrome'
           Environment:
             - Name: START_XVFB
               Value: false
