@@ -84,11 +84,9 @@ class ProjectsResource(Resource):
                     rng = None
                     if min_max:
                         rng = [min_max[0]['min'], min_max[0]['max']]
-                    try:
-                        unit = deep_get(unit_sample, unit_field)
-                        columns[f'{col} [{unit}]'] = rng
-                    except KeyError:  # column doesn't have a unit
-                        columns[col] = rng
+                    unit = deep_get(unit_sample, unit_field)
+                    key = col if unit is None else f'{col} [{unit}]'
+                    columns[key] = rng
 
             contributions = Contributions.objects.only('pk').filter(project=obj.id)
             agg = list(Structures.objects.aggregate(*[
