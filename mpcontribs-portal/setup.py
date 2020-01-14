@@ -14,7 +14,7 @@ setup(
     author='Patrick Huck',
     author_email='phuck@lbl.gov',
     url='https://portal.mpcontribs.org',
-    packages=['webtzite', 'mpcontribs.portal'],
+    packages=['webtzite', 'mpcontribs.portal', 'mpcontribs.users', 'site'],
     install_requires=required,
     license='MIT',
     zip_safe=False,
