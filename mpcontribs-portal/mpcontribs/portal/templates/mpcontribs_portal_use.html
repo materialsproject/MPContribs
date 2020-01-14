@@ -19,7 +19,7 @@ ul li { display: flex; align-items: center; justify-content: space-between; }
                     <h3 class="panel-title">Contribute and Retrieve Data for a Project</h3>
                 </div>
                 <div class="panel-body text-justify">
-                    <a name=launch id="contribute/get_started" class="btn btn-danger pull-right" style="margin-left: 15px;" role="button" target=_blank>
+                    <a name=launch id="contribute/get_started" class="btn btn-danger pull-right disabled" style="margin-left: 15px;" role="button" target=_blank>
                         <span class="glyphicon glyphicon-play" aria-hidden="true"></span> Launch
                     </a>
                     The <a href="https://jupyter.org">Jupyter</a> notebook shown below demonstrates how to use the
@@ -44,7 +44,7 @@ ul li { display: flex; align-items: center; justify-content: space-between; }
                         {% for nb in notebooks %}
                         <li>
                             <a class="btn btn-link" name=nb_show role="button" style="padding: 2px;">{{ nb }}</a>
-                            <a name=launch id={{ nb }} class="btn btn-xs btn-info" role="button" target=_blank>
+                            <a name=launch id={{ nb }} class="btn btn-xs btn-info disabled" role="button" target=_blank>
                                 <span class="glyphicon glyphicon-play" aria-hidden="true"></span> Launch
                             </a>
                         </li>
