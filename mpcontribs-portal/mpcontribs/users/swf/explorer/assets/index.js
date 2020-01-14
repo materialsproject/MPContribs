@@ -2,7 +2,7 @@ import Plotly from 'plotly'; // plotly core only
 import {Spinner} from 'spin.js';
 
 Plotly.register([
-    require('../../../../../../node_modules/plotly.js/lib/scatterternary')
+    require('../../../../../node_modules/plotly.js/lib/scatterternary')
 ]);
 
 function makeAxis(title, tickangle) {

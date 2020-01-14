@@ -78,15 +78,15 @@ $(document).ready(function () {
     }
 
     if ($("#contribution").length) {
-        import(/* webpackChunkName: "contribution" */ `../../../mpcontribs-portal/mpcontribs/portal/assets/contribution.js`).catch(function(err) { console.error(err); });
+        import(/* webpackChunkName: "contribution" */ `./contribution.js`).catch(function(err) { console.error(err); });
     }
 
     if ($("#apply").length) {
-        import(/* webpackChunkName: "apply" */ `../../../mpcontribs-portal/mpcontribs/portal/assets/apply.js`).catch(function(err) { console.error(err); });
+        import(/* webpackChunkName: "apply" */ `./apply.js`).catch(function(err) { console.error(err); });
     }
 
     if ($("#use").length) {
-        import(/* webpackChunkName: "use" */ `../../../mpcontribs-portal/mpcontribs/portal/assets/use.js`).catch(function(err) { console.error(err); });
+        import(/* webpackChunkName: "use" */ `./use.js`).catch(function(err) { console.error(err); });
     }
 
     $('header').show();

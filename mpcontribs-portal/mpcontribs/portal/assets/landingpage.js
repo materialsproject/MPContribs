@@ -35,7 +35,7 @@ if ($("#graph").length && pathname !== '/redox_thermo_csp/') {
 }
 
 if ($("#graph_custom").length && pathname === '/redox_thermo_csp/') {
-    import(/* webpackChunkName: "project" */ `../../../mpcontribs-users/mpcontribs/users${pathname}explorer/assets/index.js`)
+    import(/* webpackChunkName: "project" */ `../../users${pathname}explorer/assets/index.js`)
         .catch(function(err) { console.log(err); });
 } else {
     $("#graph_custom").html('<b>Custom graphs will be back in January 2020</b>');

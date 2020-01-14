@@ -2,28 +2,24 @@ version: '2.2'
 
 services:
 
-    web:
+    portal:
         mem_limit: 1G
         mem_reservation: 250m
         cpus: 1
-        build: .
+        build:
+            context: .
+            dockerfile: mpcontribs-portal/Dockerfile
         #command: python manage.py runserver 0.0.0.0:8080
         environment:
             - NODE_ENV=development
         depends_on:
             - api
-            - jhub
-            - docs
+            #- jhub
+            #- docs
         volumes:
-            - ./test_site:/app/test_site
-            - ./webpack.config.js:/app/webpack.config.js
-            - ./package.json:/app/package.json
             - ./mpcontribs-portal:/app/mpcontribs-portal
-            - ./mpcontribs-users:/app/mpcontribs-users
-            - ./mpcontribs-webtzite:/app/mpcontribs-webtzite
             - ./mpcontribs-io:/app/mpcontribs-io
             - ./mpcontribs-client:/app/mpcontribs-client
-            - ./run_server.py:/app/run_server.py
             - ./binder/notebooks:/app/notebooks
         ports:
             - "8080:8080"
@@ -71,19 +67,12 @@ services:
             - KG_ALLOW_ORIGIN='*'
         build:
             context: .
-            dockerfile: DockerfileKernelGateway
-
-    test:
-        build:
-            context: ./mpcontribs-api
-            dockerfile: DockerfileTest
+            dockerfile: binder/DockerfileKernelGateway
 
     docs:
-        build:
-            context: .
-            dockerfile: DockerfileDocs
+        build: ./docs
         volumes:
-            - .:/docs
+            - ./docs:/docs
         ports:
             - "8081:8081"
 
@@ -94,13 +83,6 @@ services:
         environment:
             - NODE_ENV=development
             - MAPI_KEY=$MAPI_KEY
-            - TASK_CLUSTER_NAME=$TASK_CLUSTER_NAME
-            - TASK_DEFINITION_ARN=$TASK_DEFINITION_ARN
-            - TASK_ROLE_ARN=$TASK_ROLE_ARN
-            - TASK_SECURITY_GROUPS=$TASK_SECURITY_GROUPS
-            - TASK_SUBNETS=$TASK_SUBNETS
-            - AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
-            - AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
             - DOCKER_NETWORK_NAME=mpcontribs_default
             - DOCKER_NOTEBOOK_DIR=/home/jovyan
         depends_on:

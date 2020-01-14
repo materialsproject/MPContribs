@@ -18,8 +18,6 @@ RUN set -ex \
 COPY mpcontribs-io/requirements.txt requirements-io.txt
 COPY mpcontribs-client/requirements.txt requirements-client.txt
 COPY mpcontribs-portal/requirements.txt requirements-portal.txt
-COPY mpcontribs-users/requirements.txt requirements-users.txt
-COPY mpcontribs-webtzite/requirements.txt requirements-webtzite.txt
 RUN cat requirements-*.txt > requirements.txt
 
 RUN set -ex \
@@ -40,37 +38,29 @@ EXPOSE 9000
 ENV PYTHONUNBUFFERED 1
 ENV SETUPTOOLS_SCM_PRETEND_VERSION dev
 ENV PATH="/venv/bin:${PATH}"
-ENV DJANGO_SETTINGS_MODULE=test_site.settings
 
 WORKDIR /app
 
-RUN mkdir -p mpcontribs-webtzite/webtzite
-COPY mpcontribs-webtzite/webtzite/package.json mpcontribs-webtzite/webtzite/
-COPY package.json .
+COPY mpcontribs-portal/package.json .
 RUN { npm install && npm cache clean --force && npm cache verify; } 2>&1
 
-COPY webpack.config.js .
-COPY mpcontribs-webtzite mpcontribs-webtzite
-COPY mpcontribs-portal mpcontribs-portal
-COPY mpcontribs-users mpcontribs-users
+COPY mpcontribs-portal/webpack.config.js .
+COPY mpcontribs-portal/mpcontribs/portal/assets ./mpcontribs/portal/assets
 RUN npm run webpack 2>&1
 
-COPY mpcontribs-io mpcontribs-io
-COPY mpcontribs-client mpcontribs-client
-COPY test_site test_site
-COPY manage.py .
-COPY docker-entrypoint.sh .
-COPY run_server.py .
-COPY binder/notebooks notebooks
+COPY mpcontribs-io /mpcontribs-io
+COPY mpcontribs-client /mpcontribs-client
 
-RUN /venv/bin/python -m ipykernel install --user && \
-    cd mpcontribs-io && /venv/bin/pip install --no-cache-dir -e . && \
-    cd ../mpcontribs-client && /venv/bin/pip install --no-cache-dir -e . && \
-    cd ../mpcontribs-webtzite && /venv/bin/pip install --no-cache-dir -e . && \
-    cd ../mpcontribs-portal && /venv/bin/pip install --no-cache-dir -e . && \
-    cd ../mpcontribs-users && /venv/bin/pip install --no-cache-dir -e . && \
-    cd /app && /venv/bin/python manage.py collectstatic --noinput && \
-    chmod +x /app/run_server.py && chmod +x /app/docker-entrypoint.sh
+RUN python -m ipykernel install --user && \
+    cd /mpcontribs-io && pip install --no-cache-dir -e . && \
+    cd /mpcontribs-client && pip install --no-cache-dir -e .
 
+ENV DJANGO_SETTINGS_FILE="settings.py"
+COPY mpcontribs-portal /app
+RUN pip install --no-cache-dir -e .
+RUN python manage.py collectstatic --noinput
+# && chmod +x run_server.py && chmod +x docker-entrypoint.sh
+
+COPY binder/notebooks /notebooks
 ENTRYPOINT ["/app/docker-entrypoint.sh"]
 CMD ["python", "run_server.py"]

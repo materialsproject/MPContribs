@@ -270,16 +270,16 @@ class SwaggerViewType(MethodViewType):
                 cls.resource.schema = cls.Schema
 
                 # write flask-mongorest swagger specs
-                for method in cls.methods:
-                    spec = get_specs(cls, method, cls.tags[0])
-                    if spec:
-                        dir_path = os.path.join(SWAGGER["doc_dir"], cls.tags[0])
-                        if not os.path.exists(dir_path):
+                if not os.path.exists(SWAGGER['doc_dir']):
+                    for method in cls.methods:
+                        spec = get_specs(cls, method, cls.tags[0])
+                        if spec:
+                            dir_path = os.path.join(SWAGGER["doc_dir"], cls.tags[0])
                             os.makedirs(dir_path)
-
-                        file_path = os.path.join(dir_path, method.__name__ + '.yml')
-                        with open(file_path, 'w') as f:
-                            yaml.dump(spec, f)
+                            file_path = os.path.join(dir_path, method.__name__ + '.yml')
+                            with open(file_path, 'w') as f:
+                                yaml.dump(spec, f)
+                                logger.warning(f'{cls.tags[0]}.{method} written to {file_path}')
 
 
 class SwaggerView(OriginalSwaggerView, ResourceView, metaclass=SwaggerViewType):

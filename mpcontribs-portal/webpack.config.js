@@ -11,13 +11,13 @@ module.exports = {
   context: __dirname,
   entry: {
       'main': [
-          path.resolve(__dirname, 'mpcontribs-webtzite/webtzite/assets/index'),
-          path.resolve(__dirname, 'mpcontribs-webtzite/webtzite/assets/analytics'),
-          path.resolve(__dirname, 'mpcontribs-portal/mpcontribs/portal/assets/index'),
-          path.resolve(__dirname, 'mpcontribs-webtzite/webtzite/assets/render_json'),
-          path.resolve(__dirname, 'mpcontribs-webtzite/webtzite/assets/render_table'),
-          path.resolve(__dirname, 'mpcontribs-webtzite/webtzite/assets/render_plot'),
-          path.resolve(__dirname, 'mpcontribs-webtzite/webtzite/assets/render_overview'),
+          path.resolve(__dirname, 'mpcontribs/portal/assets/webtzite-index'),
+          path.resolve(__dirname, 'mpcontribs/portal/assets/analytics'),
+          path.resolve(__dirname, 'mpcontribs/portal/assets/index'),
+          path.resolve(__dirname, 'mpcontribs/portal/assets/render_json'),
+          path.resolve(__dirname, 'mpcontribs/portal/assets/render_table'),
+          path.resolve(__dirname, 'mpcontribs/portal/assets/render_plot'),
+          path.resolve(__dirname, 'mpcontribs/portal/assets/render_overview'),
       ]
   },
   output: {
@@ -40,13 +40,13 @@ module.exports = {
   ],
   optimization: { minimize: true },
   resolve: {
-    modules: ['node_modules', 'mpcontribs-webtzite/webtzite/assets'],
+    modules: ['node_modules', 'mpcontribs/portal/assets'],
     extensions: ['.js'],
     alias: {
       "jquery": 'jquery/src/jquery',
       "jquery-validation": 'jquery-validation/dist/jquery.validate',
       "jquery-form": 'jquery-form/src/jquery.form',
-      "czmore": 'czMore/js/jquery.czMore-latest',
+      "czmore": 'jquery.czMore-latest',
       "typy": 'typy/lib/index',
       "bootstrap": 'bootstrap/dist/js/bootstrap',
       "backbone": 'backbone/backbone',

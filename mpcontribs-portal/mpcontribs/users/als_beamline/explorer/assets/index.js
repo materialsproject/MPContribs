@@ -3,12 +3,12 @@ import core from 'mathjs'; // mathjs core only
 import {Spinner} from 'spin.js';
 
 Plotly.register([
-    require('../../../../../../node_modules/plotly.js/lib/scatterternary')
+    require('../../../../../node_modules/plotly.js/lib/scatterternary')
 ]);
 
 const math = core.create();
-math.import(require('../../../../../../node_modules/mathjs/lib/type/matrix/index'));
-math.import(require('../../../../../../node_modules/mathjs/lib/function/matrix/transpose'));
+math.import(require('../../../../../node_modules/mathjs/lib/type/matrix/index'));
+math.import(require('../../../../../node_modules/mathjs/lib/function/matrix/transpose'));
 
 function makeAxis(title, tickangle) {
     return {

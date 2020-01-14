@@ -1,8 +1,9 @@
 import os
+from glob import glob
 from django.conf.global_settings import *
 from django_extensions.management.commands.generate_secret_key import get_random_secret_key
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 SECRET_KEY = get_random_secret_key()
 NODE_ENV = os.environ.get('NODE_ENV', 'production')
 DEBUG = bool(NODE_ENV == 'development')
@@ -20,7 +21,6 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django_extensions',
     'webpack_loader',
-    'webtzite',
     'mpcontribs.portal',
 ]
 
@@ -32,13 +32,9 @@ MIDDLEWARE = (
     'whitenoise.middleware.WhiteNoiseMiddleware',
 )
 
-ROOT_URLCONF = 'test_site.urls'
+ROOT_URLCONF = 'mpcontribs.portal.urls'
 
-from mpcontribs import users as mpcontribs_users
-from glob import glob
-path_glob = os.path.abspath(os.path.join(
-    os.path.dirname(mpcontribs_users.__file__), '*', 'explorer', 'templates'
-))
+path_glob = os.path.join(BASE_DIR, 'mpcontribs', 'users', '*', 'explorer', 'templates')
 
 TEMPLATES = [
     {
@@ -54,7 +50,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'test_site.wsgi.application'
+WSGI_APPLICATION = 'wsgi.application'
 
 DATABASES = {
     'default': {
@@ -70,9 +66,7 @@ USE_I18N = True
 USE_L10N = True
 USE_TZ = True
 
-JPY_USER = os.environ.get('JPY_USER')
-PROXY_URL_PREFIX = '/flaskproxy/{}'.format(JPY_USER) if JPY_USER else ''
-STATIC_URL = PROXY_URL_PREFIX + '/static/'
+STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 STATICFILES_DIRS = (os.path.join(BASE_DIR, 'dist'),)
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'

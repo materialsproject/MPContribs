@@ -1,5 +1,5 @@
 import sys
-from test_site.wsgi import application as portal_app
+from wsgi import application as portal_app
 from django.conf import settings
 from hendrix.deploy.base import HendrixDeploy
 from twisted.logger import globalLogPublisher, eventAsText, FileLogObserver

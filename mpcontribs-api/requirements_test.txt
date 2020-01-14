@@ -1,4 +1,0 @@
-tavern>=0.30.3
-pycodestyle>=2.5.0
-mypy>=0.740
-flake8>=3.7.9
