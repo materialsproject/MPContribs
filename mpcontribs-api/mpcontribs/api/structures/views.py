@@ -41,9 +41,10 @@ class StructuresResource(Resource):
         'lattice': LatticeResource, 'sites': SiteResource
     }
     filters = {
-        'contribution': [ops.Exact],
+        'id': [ops.In, ops.Exact],
+        'contribution': [ops.In, ops.Exact],
         'is_public': [ops.Boolean],
-        'name': [ops.Exact, ops.Contains]
+        'name': [ops.In, ops.Exact, ops.Contains]
     }
     fields = ['id', 'contribution', 'is_public', 'name']
     rename_fields = {'klass': '@class', 'module': '@module'}

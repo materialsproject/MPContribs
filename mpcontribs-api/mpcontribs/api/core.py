@@ -54,6 +54,28 @@ def get_specs(klass, method, collection):
             'description': f'number of items to retrieve per page for {field} field'
         })
 
+    limit_params = [{
+        'name': '_skip',
+        'in': 'query',
+        'type': 'integer',
+        'description': 'number of items to skip'
+    }, {
+        'name': '_limit',
+        'in': 'query',
+        'type': 'integer',
+        'description': 'maximum number of items to return'
+    }, {
+        'name': 'page',
+        'in': 'query',
+        'type': 'integer',
+        'description': 'page number to return (in batches of `per_page/_limit`; alternative to `_skip`)'
+    }, {
+        'name': 'per_page',
+        'in': 'query',
+        'type': 'integer',
+        'description': 'maximum number of items to return per page (same as `_limit`)'
+    }]
+
     filter_params = []
     if getattr(klass.resource, 'filters', None) is not None:
         for k, v in klass.resource.filters.items():
@@ -121,30 +143,7 @@ def get_specs(klass, method, collection):
             schema_props['has_more'] = {'type': 'boolean'}
             schema_props['total_count'] = {'type': 'integer'}
             schema_props['total_pages'] = {'type': 'integer'}
-            params.append({
-                'name': '_skip',
-                'in': 'query',
-                'type': 'integer',
-                'description': 'number of items to skip'
-            })
-            params.append({
-                'name': '_limit',
-                'in': 'query',
-                'type': 'integer',
-                'description': 'maximum number of items to return'
-            })
-            params.append({
-                'name': 'page',
-                'in': 'query',
-                'type': 'integer',
-                'description': 'page number to return (in batches of `per_page/_limit`; alternative to `_skip`)'
-            })
-            params.append({
-                'name': 'per_page',
-                'in': 'query',
-                'type': 'integer',
-                'description': 'maximum number of items to return per page (same as `_limit`)'
-            })
+            params += limit_params
 
         spec = {
             'summary': f'Retrieve and filter {collection}.',
@@ -202,6 +201,7 @@ def get_specs(klass, method, collection):
         }
     elif method_name == 'BulkUpdate':
         params = filter_params if filter_params else []
+        #params += limit_params  # TODO respect limits when updating multiple entries?
         params.append({
             'name': f'{collection}',
             'in': 'body',
@@ -270,16 +270,16 @@ class SwaggerViewType(MethodViewType):
                 cls.resource.schema = cls.Schema
 
                 # write flask-mongorest swagger specs
-                if not os.path.exists(SWAGGER['doc_dir']):
-                    for method in cls.methods:
-                        spec = get_specs(cls, method, cls.tags[0])
-                        if spec:
-                            dir_path = os.path.join(SWAGGER["doc_dir"], cls.tags[0])
-                            os.makedirs(dir_path)
-                            file_path = os.path.join(dir_path, method.__name__ + '.yml')
+                for method in cls.methods:
+                    spec = get_specs(cls, method, cls.tags[0])
+                    if spec:
+                        dir_path = os.path.join(SWAGGER["doc_dir"], cls.tags[0])
+                        file_path = os.path.join(dir_path, method.__name__ + '.yml')
+                        if not os.path.exists(file_path):
+                            os.makedirs(dir_path, exist_ok=True)
                             with open(file_path, 'w') as f:
                                 yaml.dump(spec, f)
-                                logger.warning(f'{cls.tags[0]}.{method} written to {file_path}')
+                                logger.warning(f'{cls.tags[0]}.{method.__name__} written to {file_path}')
 
 
 class SwaggerView(OriginalSwaggerView, ResourceView, metaclass=SwaggerViewType):

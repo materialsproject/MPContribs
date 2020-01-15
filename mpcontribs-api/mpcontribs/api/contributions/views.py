@@ -18,9 +18,11 @@ contributions = Blueprint("contributions", __name__, template_folder=templates)
 exclude = r'[^$.\s_~`^&(){}[\]\\;\'"/]'
 
 
+# TODO data__ regex doesn't work through bravado/swagger client
 class ContributionsResource(Resource):
     document = Contributions
     filters = {
+        'id': [ops.In, ops.Exact],
         'project': [ops.In, ops.Exact],
         'identifier': [ops.In, ops.Contains, ops.Exact],
         'formula': [ops.In, ops.Contains, ops.Exact],

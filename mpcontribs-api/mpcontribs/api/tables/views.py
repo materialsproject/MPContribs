@@ -20,9 +20,10 @@ class TablesResource(Resource):
     document = Tables
     related_resources = {'project': ProjectsResource, 'contribution': ContributionsResource}
     filters = {
-        'contribution': [ops.Exact],
+        'id': [ops.In, ops.Exact],
+        'contribution': [ops.In, ops.Exact],
         'is_public': [ops.Boolean],
-        'name': [ops.Exact, ops.Contains],
+        'name': [ops.In, ops.Exact, ops.Contains],
         'columns': [ops.IContains]
     }
     fields = ['id', 'contribution', 'is_public', 'name', 'columns']
