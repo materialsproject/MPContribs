@@ -163,6 +163,7 @@ def create_app():
     """create flask app"""
     app = Flask(__name__)
     app.config.from_pyfile('config.py', silent=True)
+    logger.warning('connection:', app.config['MONGODB_SETTINGS'])
     app.config['USTS'] = URLSafeTimedSerializer(app.secret_key)
     app.jinja_env.globals['get_resource_as_string'] = get_resource_as_string
     app.jinja_env.lstrip_blocks = True

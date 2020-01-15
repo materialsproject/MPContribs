@@ -32,6 +32,10 @@ Parameters:
   ImageUrlChrome:
     Type: String
     Description: url for the chrome docker image
+  FlaskEnv:
+    Type: String
+    Default: 'production'
+    Description: determines logging and db connection
 
 Resources:
   # A log group for storing the container logs for this service
@@ -91,6 +95,8 @@ Resources:
           Environment:
             - Name: MPCONTRIBS_MONGO_HOST
               Value: !Ref 'MongoHost'
+            - Name: FLASK_ENV
+              Value: !Ref 'FlaskEnv'
             - Name: AWS_ACCESS_KEY_ID
               Value: !Ref 'AwsAccessKeyId'
             - Name: AWS_SECRET_ACCESS_KEY

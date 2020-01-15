@@ -78,6 +78,10 @@ Parameters:
     Type: String
   ImageUrlChrome:
     Type: String
+  FlaskEnv:
+    Type: String
+    Default: 'production'
+    Description: determines logging and db connection
 
 
 Resources:
@@ -826,6 +830,7 @@ Resources:
                     "AwsSecretAccessKey": "${AwsSecretAccessKey}",
                     "SnsAdminTopicArn": "${SnsAdminTopicArn}",
                     "ImageUrlChrome": "${ImageUrlChrome}",
+                    "FlaskEnv": "${FlaskEnv}",
                     "ImageUrlApi": {
                       "Fn::GetParam" : ["BuildOutputApi", "build-api.json", "ImageUri"]
                     },
