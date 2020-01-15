@@ -16,8 +16,9 @@ class Contributions(Document):
     @classmethod
     def pre_save_post_validation(cls, sender, document, **kwargs):
         document.data = validate_data(document.data)
-        formulae = current_app.config['FORMULAE']
-        document.formula = formulae.get(document.identifier, document.identifier)
+        if hasattr(document, 'formula'):
+            formulae = current_app.config['FORMULAE']
+            document.formula = formulae.get(document.identifier, document.identifier)
 
     @classmethod
     def post_save(cls, sender, document, **kwargs):

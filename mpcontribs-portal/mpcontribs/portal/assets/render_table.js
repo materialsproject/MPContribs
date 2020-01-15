@@ -12,7 +12,7 @@ var portal = devMode ? 'http://localhost:8080/' : 'https://portal.mpcontribs.org
 var mp_site = 'https://materialsproject.org/materials/';
 
 function get_label_cell(col, val) {
-    var label = (col !== 'identifier' && col !== 'id' && !col.startsWith('data__')) ? 'data__' + col : col;
+    var label = (col !== 'identifier' && col !== 'id' && col !== 'formula' && !col.startsWith('data__')) ? 'data__' + col : col;
     var cell = null;
     if ($.type(val) === 'string') {
         var is_mp_id = val.startsWith('mp-') || val.startsWith('mvc-');
@@ -55,7 +55,7 @@ window.render_table = function(props) {
             return items;
         }
     } else {
-        var fields = ['id', 'identifier', 'project', 'data', 'structures'].join(',');
+        var fields = ['id', 'identifier', 'formula', 'project', 'data', 'structures'].join(',');
         rows_opt["url"] = window.api['host'] + 'contributions/?_fields=' + fields + '&project=' + config.project;
         rows_opt['queryParams'] = {sortKey: '_order_by'};
         rows_opt["parseState"] = function (resp, queryParams, state, options) {
@@ -65,7 +65,7 @@ window.render_table = function(props) {
         }
         rows_opt["parseRecords"] = function (resp, options) {
             return $.map(resp.data, function(doc) {
-                var item = {'identifier': mp_site + doc.identifier, 'id': portal + doc.id};
+                var item = {'identifier': mp_site + doc.identifier, 'id': portal + doc.id, 'formula': doc.formula};
                 $.each(doc.data, function(col, val) {
                     var label_cell = get_label_cell(col, val);
                     if (label_cell.cell) {
@@ -183,7 +183,7 @@ window.render_table = function(props) {
             delete filter.collection.queryParams[filter.name];
             var column = e.params.data.text.replace(/\./g, '__');
             var name = column + '__contains';
-            if (column !== 'identifier') { name = 'data__' + name; }
+            if (column !== 'identifier' && column !== 'formula') { name = 'data__' + name; }
             filter.initialize({'name': name, 'value': null});
         });
     }

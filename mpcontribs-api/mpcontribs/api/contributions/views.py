@@ -23,12 +23,13 @@ class ContributionsResource(Resource):
     filters = {
         'project': [ops.In, ops.Exact],
         'identifier': [ops.In, ops.Contains, ops.Exact],
+        'formula': [ops.In, ops.Contains, ops.Exact],
         'is_public': [ops.Boolean],
         re.compile(r'^data__((?!__).)*$'): [ops.Contains, ops.Gte, ops.Lte]
     }
     fields = ['id', 'project', 'identifier', 'formula', 'is_public']
     allowed_ordering = [
-        'id', 'project', 'identifier', 'is_public',
+        'id', 'project', 'identifier', 'formula', 'is_public',
         re.compile(r'^data(__(' + exclude + ')+){1,3}$')
     ]
     paginate = True

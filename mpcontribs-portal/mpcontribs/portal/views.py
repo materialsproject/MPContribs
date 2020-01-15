@@ -142,7 +142,7 @@ def download_json(request, cid):
 def csv(request, project):
     client = load_client(headers=get_consumer(request))  # sets/returns global variable
     contribs = client.contributions.get_entries(
-        project=project, _fields=['identifier', 'id', 'data']
+        project=project, _fields=['identifier', 'id', 'formula', 'data']
     ).response().result['data']  # first 20 only
 
     data = []
