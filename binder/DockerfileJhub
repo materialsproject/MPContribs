@@ -7,6 +7,6 @@ RUN /opt/conda/bin/conda install --freeze-installed -y nomkl ipywidgets && \
     find /opt/conda/ -follow -type f -name '*.js.map' -delete && \
     /opt/conda/bin/conda clean -afy
 
-COPY jupyterhub_config.py /srv/jupyterhub/jupyterhub_config.py
+COPY binder/jupyterhub_config.py /srv/jupyterhub/jupyterhub_config.py
 
 CMD ["jupyterhub", "-f", "/srv/jupyterhub/jupyterhub_config.py"]
