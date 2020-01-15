@@ -2,6 +2,10 @@
 
 import os
 import datetime
+import json
+
+with open(os.path.join(os.path.dirname(__file__), 'contributions', 'formulae.json')) as f:
+    FORMULAE = json.load(f)
 
 DEBUG = bool(os.environ.get('FLASK_ENV') == 'development')
 JSON_SORT_KEYS = False
@@ -9,7 +13,7 @@ JSON_ADD_STATUS = False
 FLASK_LOG_LEVEL = 'DEBUG' if DEBUG else 'WARNING'
 SECRET_KEY = 'super-secret'  # TODO in local prod config
 
-USTS_MAX_AGE = 86400
+USTS_MAX_AGE = 2.628e+6  # 1 month
 MAIL_DEFAULT_SENDER = 'phuck@lbl.gov'  # TODO environment variable
 MAIL_TOPIC = os.environ['AWS_SNS_TOPIC_ARN']
 
