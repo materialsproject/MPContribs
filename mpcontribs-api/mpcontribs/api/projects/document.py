@@ -14,8 +14,11 @@ class Projects(Document):
     )
     is_public = BooleanField(required=True, default=False, help_text='public/private project')
     title = StringField(
-        min_length=5, max_length=40, required=True, unique=True,
-        help_text='(short) title for the project/dataset'
+        min_length=5, max_length=30, required=True, unique=True,
+        help_text='short title for the project/dataset'
+    )
+    long_title = StringField(
+        min_length=5, max_length=55, help_text='optional full title for the project/dataset'
     )
     authors = StringField(
         required=True, help_text='comma-separated list of authors'

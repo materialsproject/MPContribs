@@ -25,7 +25,8 @@ class ProjectsResource(Resource):
     filters = {
         'project': [ops.Exact, ops.IContains],
         'is_public': [ops.Boolean],
-        'title': [ops.Exact, ops.IContains],
+        'title': [ops.IContains],
+        'long_title': [ops.IContains],
         'authors': [ops.IContains],
         'description': [ops.IContains],
         'owner': [ops.Exact],
@@ -37,7 +38,7 @@ class ProjectsResource(Resource):
 
     @staticmethod
     def get_optional_fields():
-        return ['authors', 'description', 'urls', 'other', 'columns']
+        return ['long_title', 'authors', 'description', 'urls', 'other', 'columns']
 
     def value_for_field(self, obj, field):
         # add columns key to response if requested
