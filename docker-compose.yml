@@ -36,6 +36,7 @@ services:
         volumes:
             - ./mpcontribs-api:/app
         environment:
+            - MAPI_KEY=$MAPI_KEY
             - FLASK_ENV=development
             - MPCONTRIBS_MONGO_HOST=$MPCONTRIBS_MONGO_HOST
             - GATEWAY_HOST=kernel_gateway:8888

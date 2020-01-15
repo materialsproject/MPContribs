@@ -27,3 +27,4 @@ mpcontribs-api/mpcontribs/api/swagger/
 .jupyter/
 .local/
 mpcontribs-portal/mpcontribs/portal/templates/notebooks
+formulae.json

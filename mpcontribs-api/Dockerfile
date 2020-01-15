@@ -17,4 +17,5 @@ RUN /opt/conda/bin/pip install --no-cache-dir --upgrade -e .
 #RUN cd flask-mongorest && /opt/conda/bin/pip install --upgrade -e .
 #RUN cd flasgger && /opt/conda/bin/pip install --upgrade -e .
 
-CMD ["gunicorn", "-b", "0.0.0.0:5000", "-k", "gevent", "-w", "2", "--access-logfile", "-", "--log-level", "debug", "mpcontribs.api:create_app()"]
+ENTRYPOINT ["/app/docker-entrypoint.sh"]
+CMD ["gunicorn", "-b", "0.0.0.0:5000", "-k", "gevent", "-w", "2", "--access-logfile", "-", "--log-level", "debug", "--reload", "mpcontribs.api:create_app()"]
