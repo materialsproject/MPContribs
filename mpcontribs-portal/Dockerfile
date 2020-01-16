@@ -34,7 +34,6 @@ RUN set -ex \
     && rm -rf /var/lib/apt/lists/*
 
 EXPOSE 8080
-EXPOSE 9000
 ENV PYTHONUNBUFFERED 1
 ENV SETUPTOOLS_SCM_PRETEND_VERSION dev
 ENV PATH="/venv/bin:${PATH}"
