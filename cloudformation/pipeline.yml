@@ -394,12 +394,6 @@ Resources:
                 - $(aws ecr get-login --no-include-email)
                 - TAG="$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | head -c 8)"
                 - IMAGE_URI="${REPOSITORY_URI}:${TAG}"
-                - git init
-                - git remote add origin https://github.com/materialsproject/MPContribs.git
-                - git fetch
-                - git checkout -tf origin/master
-                - git submodule init
-                - git submodule update --recursive
             build:
               commands:
                 - docker build --tag "${IMAGE_URI}-portal" -f mpcontribs-portal/Dockerfile .
