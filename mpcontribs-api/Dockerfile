@@ -17,5 +17,7 @@ RUN /opt/conda/bin/pip install --no-cache-dir --upgrade -e .
 #RUN cd flask-mongorest && /opt/conda/bin/pip install --upgrade -e .
 #RUN cd flasgger && /opt/conda/bin/pip install --upgrade -e .
 
-ENTRYPOINT ["/app/docker-entrypoint.sh"]
+ARG MAPI_KEY
+RUN /opt/conda/bin/python /app/mpcontribs/api/contributions/generate_formulae.py
+
 CMD ["gunicorn", "-b", "0.0.0.0:5000", "-k", "gevent", "-w", "2", "--access-logfile", "-", "--log-level", "debug", "--reload", "mpcontribs.api:create_app()"]

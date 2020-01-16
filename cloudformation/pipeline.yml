@@ -86,6 +86,9 @@ Parameters:
     Type: String
     Default: 'api.mpcontribs.org'
     Description: CNAME for the API
+  MapiKey:
+    Type: String
+    Description: API key for MPRester to build formulae lookup table
 
 
 Resources:
@@ -351,7 +354,7 @@ Resources:
                 - IMAGE_URI="${REPOSITORY_URI}:${TAG}"
             build:
               commands:
-                - docker build --tag "${IMAGE_URI}-api" mpcontribs-api
+                - docker build --tag "${IMAGE_URI}-api" --build-arg MAPI_KEY=${MAPI_KEY} mpcontribs-api
             post_build:
               commands:
                 - docker push "${IMAGE_URI}-api"
@@ -367,6 +370,8 @@ Resources:
         EnvironmentVariables:
           - Name: REPOSITORY_URI
             Value: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${Repository}
+          - Name: MAPI_KEY
+            Value: !Ref 'MapiKey'
       Cache:
         Type: LOCAL
         Modes: # You can specify one or more cache mode,
