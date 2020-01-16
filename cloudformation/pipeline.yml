@@ -82,6 +82,10 @@ Parameters:
     Type: String
     Default: 'production'
     Description: determines logging and db connection
+  ApiCname:
+    Type: String
+    Default: 'api.mpcontribs.org'
+    Description: CNAME for the API
 
 
 Resources:
@@ -831,6 +835,7 @@ Resources:
                     "SnsAdminTopicArn": "${SnsAdminTopicArn}",
                     "ImageUrlChrome": "${ImageUrlChrome}",
                     "FlaskEnv": "${FlaskEnv}",
+                    "ApiCname": "${ApiCname}",
                     "ImageUrlApi": {
                       "Fn::GetParam" : ["BuildOutputApi", "build-api.json", "ImageUri"]
                     },

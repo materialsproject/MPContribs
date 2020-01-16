@@ -36,6 +36,10 @@ Parameters:
     Type: String
     Default: 'production'
     Description: determines logging and db connection
+  ApiCname:
+    Type: String
+    Default: 'api.mpcontribs.org'
+    Description: CNAME for the API
 
 Resources:
   # A log group for storing the container logs for this service
@@ -97,6 +101,8 @@ Resources:
               Value: !Ref 'MongoHost'
             - Name: FLASK_ENV
               Value: !Ref 'FlaskEnv'
+            - Name: API_CNAME
+              Value: !Ref 'ApiCname'
             - Name: AWS_ACCESS_KEY_ID
               Value: !Ref 'AwsAccessKeyId'
             - Name: AWS_SECRET_ACCESS_KEY
@@ -115,7 +121,7 @@ Resources:
               awslogs-stream-prefix: !Ref 'ServiceName'
         - Name: chrome
           MemoryReservation: 100
-          Image: selenium/standalone-chrome
+          Image: !Ref 'ImageUrlChrome'
           Environment:
             - Name: START_XVFB
               Value: false
@@ -144,6 +150,9 @@ Resources:
         - Name: portal
           MemoryReservation: 250
           Image: !Ref 'ImageUrlPortal'
+          Environment:
+            - Name: API_CNAME
+              Value: !Ref 'ApiCname'
           DependsOn:
             - Condition: START
               ContainerName: api

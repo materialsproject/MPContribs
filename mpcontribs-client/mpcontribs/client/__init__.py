@@ -42,7 +42,7 @@ class FidoClientGlobalHeaders(FidoClient):
         return HttpFuture(future_adapter, self.response_adapter_class, operation, request_config)
 
 
-def load_client(apikey=None, headers=None):
+def load_client(apikey=None, headers=None, host='api.mpcontribs.org'):
     global client
     force = False
 
@@ -52,10 +52,8 @@ def load_client(apikey=None, headers=None):
 
     if force or client is None:
         # docker containers networking within docker-compose or Fargate task
-        host = 'api.mpcontribs.org'
         if apikey is None:
             host = 'api:5000' if DEBUG else 'localhost:5000'
-
         # - Kong forwards consumer headers when api-key used for auth
         # - forward consumer headers when connecting through localhost
         headers = {'x-api-key': apikey} if apikey else headers

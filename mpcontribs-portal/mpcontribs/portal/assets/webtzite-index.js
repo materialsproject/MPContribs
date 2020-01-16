@@ -19,7 +19,7 @@ require("./extra.css");
 window.api = {};
 var api_key = $('#api_key').val();
 if (api_key !== '') {
-    window.api['host'] = 'https://api.mpcontribs.org/';
+    window.api['host'] = 'https://' + process.env.API_CNAME;
     var api_key_code = window.atob(api_key);
     window.api['headers'] = {'X-API-KEY': api_key_code};
     window.ws = "wss://socket.mpcontribs.org";

@@ -8,6 +8,7 @@ with open(os.path.join(os.path.dirname(__file__), 'contributions', 'formulae.jso
     FORMULAE = json.load(f)
 
 DEBUG = bool(os.environ.get('FLASK_ENV') == 'development')
+API_CNAME = os.environ.get('API_CNAME')
 JSON_SORT_KEYS = False
 JSON_ADD_STATUS = False
 FLASK_LOG_LEVEL = 'DEBUG' if DEBUG else 'WARNING'
@@ -107,6 +108,6 @@ TEMPLATE = {
         }
     },
     "security": [{"ApiKeyAuth": []}],
-    "host": '0.0.0.0:5000' if DEBUG else "api.mpcontribs.org",
-    "schemes": ['http', 'https'] if DEBUG else ['https'],
+    "host": '0.0.0.0:5000' if DEBUG and API_CNAME is None else API_CNAME,
+    "schemes": ['http', 'https'] if DEBUG and API_CNAME is None else ['https'],
 }
