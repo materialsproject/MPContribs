@@ -158,7 +158,6 @@ Resources:
               ContainerName: api
           PortMappings:
             - ContainerPort: 8080
-            - ContainerPort: 9000
           LogConfiguration:
             LogDriver: 'awslogs'
             Options:
