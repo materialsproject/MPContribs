@@ -215,33 +215,34 @@ Resources:
       Tags:
         - Key: Name
           Value: !Sub '${AWS::StackName}/ClusterSharedNodeSecurityGroup'
-  IngressDefaultClusterToNodeSG:
-    Type: 'AWS::EC2::SecurityGroupIngress'
-    Properties:
-      Description: Allow managed and unmanaged nodes to communicate with each other (all ports)
-      FromPort: 0
-      GroupId: !Ref ClusterSharedNodeSecurityGroup
-      IpProtocol: '-1'
-      SourceSecurityGroupId: !GetAtt ControlPlane.ClusterSecurityGroupId
-      ToPort: 65535
-  IngressInterNodeGroupSG:
-    Type: 'AWS::EC2::SecurityGroupIngress'
-    Properties:
-      Description: Allow nodes to communicate with each other (all ports)
-      FromPort: 0
-      GroupId: !Ref ClusterSharedNodeSecurityGroup
-      IpProtocol: '-1'
-      SourceSecurityGroupId: !Ref ClusterSharedNodeSecurityGroup
-      ToPort: 65535
-  IngressNodeToDefaultClusterSG:
-    Type: 'AWS::EC2::SecurityGroupIngress'
-    Properties:
-      Description: Allow unmanaged nodes to communicate with control plane (all ports)
-      FromPort: 0
-      GroupId: !GetAtt ControlPlane.ClusterSecurityGroupId
-      IpProtocol: '-1'
-      SourceSecurityGroupId: !Ref ClusterSharedNodeSecurityGroup
-      ToPort: 65535
+
+  #IngressDefaultClusterToNodeSG:
+  #  Type: 'AWS::EC2::SecurityGroupIngress'
+  #  Properties:
+  #    Description: Allow managed and unmanaged nodes to communicate with each other (all ports)
+  #    FromPort: 0
+  #    GroupId: !Ref ClusterSharedNodeSecurityGroup
+  #    IpProtocol: '-1'
+  #    SourceSecurityGroupId: !GetAtt ControlPlane.ClusterSecurityGroupId
+  #    ToPort: 65535
+  #IngressInterNodeGroupSG:
+  #  Type: 'AWS::EC2::SecurityGroupIngress'
+  #  Properties:
+  #    Description: Allow nodes to communicate with each other (all ports)
+  #    FromPort: 0
+  #    GroupId: !Ref ClusterSharedNodeSecurityGroup
+  #    IpProtocol: '-1'
+  #    SourceSecurityGroupId: !Ref ClusterSharedNodeSecurityGroup
+  #    ToPort: 65535
+  #IngressNodeToDefaultClusterSG:
+  #  Type: 'AWS::EC2::SecurityGroupIngress'
+  #  Properties:
+  #    Description: Allow unmanaged nodes to communicate with control plane (all ports)
+  #    FromPort: 0
+  #    GroupId: !GetAtt ControlPlane.ClusterSecurityGroupId
+  #    IpProtocol: '-1'
+  #    SourceSecurityGroupId: !Ref ClusterSharedNodeSecurityGroup
+  #    ToPort: 65535
 
   DBSecurityGroup:
     Type: AWS::EC2::SecurityGroup
