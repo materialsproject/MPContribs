@@ -402,7 +402,7 @@ Resources:
                 - git submodule update --recursive
             build:
               commands:
-                - docker build --tag "${IMAGE_URI}-portal" .
+                - docker build --tag "${IMAGE_URI}-portal" -f mpcontribs-portal/Dockerfile .
             post_build:
               commands:
                 - docker push "${IMAGE_URI}-portal"
@@ -447,7 +447,7 @@ Resources:
                 - IMAGE_URI="${REPOSITORY_URI}:${TAG}"
             build:
               commands:
-                - docker build --tag "${IMAGE_URI}-gateway" -f DockerfileKernelGateway .
+                - docker build --tag "${IMAGE_URI}-gateway" -f binder/DockerfileKernelGateway .
             post_build:
               commands:
                 - docker push "${IMAGE_URI}-gateway"
