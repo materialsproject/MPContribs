@@ -4,7 +4,6 @@ from email.utils import formataddr, parseaddr
 from swagger_spec_validator.common import SwaggerValidationError
 from bravado_core.formatter import SwaggerFormat
 from bravado.client import SwaggerClient
-from bravado.requests_client import RequestsClient  # sync + api key
 from bravado.fido_client import FidoClient  # async
 from bravado.http_future import HttpFuture
 from bravado.swagger_model import Loader
