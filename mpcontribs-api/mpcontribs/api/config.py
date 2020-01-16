@@ -18,7 +18,7 @@ USTS_MAX_AGE = 2.628e+6  # 1 month
 MAIL_DEFAULT_SENDER = 'phuck@lbl.gov'  # TODO environment variable
 MAIL_TOPIC = os.environ['AWS_SNS_TOPIC_ARN']
 
-MPCONTRIBS_DB = 'mpcontribs-dev' if DEBUG else 'mpcontribs'
+MPCONTRIBS_DB = os.environ.get('MPCONTRIBS_DB_NAME', 'mpcontribs')
 MPCONTRIBS_MONGO_HOST = os.environ.get('MPCONTRIBS_MONGO_HOST', 'localhost')
 MONGODB_SETTINGS = {
     'host': f"mongodb+srv://{MPCONTRIBS_MONGO_HOST}/{MPCONTRIBS_DB}?retryWrites=true",

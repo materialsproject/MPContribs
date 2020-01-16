@@ -40,6 +40,10 @@ Parameters:
     Type: String
     Default: 'api.mpcontribs.org'
     Description: CNAME for the API
+  MpcontribsDbName:
+    Type: String
+    Default: 'mpcontribs'
+    Description: MPContribs DB name on Atlas (mongodb.com)
 
 Resources:
   # A log group for storing the container logs for this service
@@ -103,6 +107,8 @@ Resources:
               Value: !Ref 'FlaskEnv'
             - Name: API_CNAME
               Value: !Ref 'ApiCname'
+            - Name: MPCONTRIBS_DB_NAME
+              Value: !Ref 'MpcontribsDbName'
             - Name: AWS_ACCESS_KEY_ID
               Value: !Ref 'AwsAccessKeyId'
             - Name: AWS_SECRET_ACCESS_KEY

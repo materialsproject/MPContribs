@@ -23,7 +23,6 @@ services:
             - ./binder/notebooks:/app/notebooks
         ports:
             - "8080:8080"
-            - "9000:9000"
 
     api:
         mem_limit: 1G
@@ -36,7 +35,7 @@ services:
         volumes:
             - ./mpcontribs-api:/app
         environment:
-            - MAPI_KEY=$MAPI_KEY
+            - MPCONTRIBS_DB_NAME=mpcontribs-dev
             - FLASK_ENV=development
             - MPCONTRIBS_MONGO_HOST=$MPCONTRIBS_MONGO_HOST
             - GATEWAY_HOST=kernel_gateway:8888

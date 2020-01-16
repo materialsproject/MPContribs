@@ -90,6 +90,10 @@ Parameters:
     NoEcho: 'true'
     Type: String
     Description: API key for MPRester to build formulae lookup table
+  MpcontribsDbName:
+    Type: String
+    Default: 'mpcontribs'
+    Description: MPContribs DB name on Atlas (mongodb.com)
 
 
 Resources:
@@ -836,6 +840,7 @@ Resources:
                     "ImageUrlChrome": "${ImageUrlChrome}",
                     "FlaskEnv": "${FlaskEnv}",
                     "ApiCname": "${ApiCname}",
+                    "MpcontribsDbName": "${MpcontribsDbName}",
                     "ImageUrlApi": {
                       "Fn::GetParam" : ["BuildOutputApi", "build-api.json", "ImageUri"]
                     },
