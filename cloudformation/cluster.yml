@@ -139,7 +139,6 @@ Resources:
       HealthCheckPath: /
       HealthCheckProtocol: HTTP
       HealthCheckPort: 8000
-      HealthyThresholdCount: 2
       Port: 8000
       Protocol: TCP
       TargetType: ip
