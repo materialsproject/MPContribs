@@ -28,7 +28,10 @@ services:
         mem_limit: 1G
         mem_reservation: 250m
         cpus: 1
-        build: ./mpcontribs-api
+        build:
+            context: ./mpcontribs-api
+            args:
+                - MAPI_KEY=$MAPI_KEY
         depends_on:
             - chrome
             - kernel_gateway
