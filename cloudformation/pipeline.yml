@@ -87,6 +87,7 @@ Parameters:
     Default: 'api.mpcontribs.org'
     Description: CNAME for the API
   MapiKey:
+    NoEcho: 'true'
     Type: String
     Description: API key for MPRester to build formulae lookup table
 
