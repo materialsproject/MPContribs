@@ -152,7 +152,7 @@ Resources:
       DesiredCount: 1
       NetworkConfiguration:
         AwsvpcConfiguration:
-          #AssignPublicIp: ENABLED
+          AssignPublicIp: ENABLED
           SecurityGroups:
             - Fn::ImportValue:
                 !Join [':', [!Ref 'PipelineName', !Ref 'EnvironmentName', 'PublicSecurityGroup']]
