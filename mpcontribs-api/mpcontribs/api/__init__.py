@@ -32,6 +32,14 @@ logger = logging.getLogger('app')
 sns_client = boto3.client('sns')
 
 
+def is_float(s):
+    try:
+        float(s)
+    except ValueError:
+        return False
+    return True
+
+
 def validate_data(doc):
     d = fdict(doc, delimiter=delimiter)
 
@@ -51,7 +59,9 @@ def validate_data(doc):
                     raise ValidationError({'error': f'invalid character {char} in {node} ({key})'})
 
         value = str(d[key])
-        if ' ' in value or isinstance(d[key], (int, float)):
+        words = value.split()
+        try_quantity = bool(len(words) == 2 and is_float(words[0]))
+        if try_quantity or isinstance(d[key], (int, float)):
             try:
                 q = Q_(value).to_compact()
             except Exception as ex:
