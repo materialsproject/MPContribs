@@ -10,7 +10,7 @@ var grid;
 if ($("#table").length) {
     $('#columns_list').select2({width: '100%', minimumResultsForSearch: -1, placeholder: 'Select column ...'});
     var columns = $.map($('#table').data('columns').split(','), function(col) {
-        var cell_type = col === 'identifier' || col.endsWith('id') || col.endsWith('CIF') || col.endsWith('reference') ? 'uri' : 'string';
+        var cell_type = col === 'identifier' || col.endsWith('id') || col.endsWith('CIF') || col.endsWith('reference') || col.startsWith('references') ? 'uri' : 'string';
         var col_split = col.split('.');
         var nesting = col_split.length > 1 ? [col_split[0]] : [];
         var name = col.split(' ')[0]; // name determines order key
@@ -34,9 +34,8 @@ if ($("#graph").length && pathname !== '/redox_thermo_csp/') {
     render_overview(project, grid);
 }
 
-if ($("#graph_custom").length && pathname === '/redox_thermo_csp/') {
+if ($("#graph_custom").length) {
     import(/* webpackChunkName: "project" */ `../../users${pathname}explorer/assets/index.js`)
+        .then(function() {$("#graph_custom").html('<b>Custom graphs will be back in January 2020</b>');})
         .catch(function(err) { console.log(err); });
-} else {
-    $("#graph_custom").html('<b>Custom graphs will be back in January 2020</b>');
 }
