@@ -21,7 +21,7 @@ ureg = UnitRegistry(auto_reduce_dimensions=True)
 ureg.default_format = '~'
 Q_ = ureg.Quantity
 delimiter, max_depth = '.', 2
-invalidChars = set(punctuation.replace('|', ''))
+invalidChars = set(punctuation.replace('|', '').replace('*', ''))
 quantity_keys = ['display', 'value', 'unit']
 
 for mod in ['matplotlib', 'toronado.cssutils', 'selenium.webdriver.remote.remote_connection']:
