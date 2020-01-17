@@ -6,6 +6,7 @@ django-webpack4-loader>=0.0.5
 nbformat==4.4.0
 beautifulsoup4>=4.7.1
 hendrix>=3.2.5
+pychalk==1.1.0
 pyOpenSSL>=19.1.0
 jupyter_client>=5.3.4
 ipykernel>=5.1.3

@@ -58,8 +58,14 @@ ENV DJANGO_SETTINGS_FILE="settings.py"
 COPY mpcontribs-portal /app
 RUN pip install --no-cache-dir -e .
 RUN python manage.py collectstatic --noinput
-# && chmod +x run_server.py && chmod +x docker-entrypoint.sh
 
-COPY binder/notebooks /notebooks
+COPY binder/notebooks /app/notebooks
+# TODO replace load_client cell for api_key
+# TODO /venv/bin/jupyter nbconvert --to notebook --execute --inplace notebooks/contribute/get_started.ipynb
+RUN out=mpcontribs/portal/templates && \
+    for i in `ls -1 notebooks/*/*.ipynb`; do \
+        /venv/bin/jupyter nbconvert --to html --template basic --output-dir=$out/`dirname $i` $i 2>&1; \
+    done
+
 ENTRYPOINT ["/app/docker-entrypoint.sh"]
-CMD ["python", "run_server.py"]
+CMD ["hx", "start", "--wsgi=wsgi.py", "--loud", "--http_port=8080", "--dev"]
