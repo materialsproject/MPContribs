@@ -20,4 +20,4 @@ RUN /opt/conda/bin/pip install --no-cache-dir --upgrade -e .
 ARG MAPI_KEY
 RUN /opt/conda/bin/python /app/mpcontribs/api/contributions/generate_formulae.py 2>&1
 
-CMD ["gunicorn", "-b", "0.0.0.0:5000", "-k", "gevent", "-w", "2", "--access-logfile", "-", "--log-level", "debug", "--reload", "mpcontribs.api:create_app()"]
+CMD ["gunicorn", "-b", "0.0.0.0:5000", "-k", "gevent", "-w", "2", "--access-logfile", "-", "mpcontribs.api:create_app()"]

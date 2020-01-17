@@ -9,7 +9,7 @@ services:
         build:
             context: .
             dockerfile: mpcontribs-portal/Dockerfile
-        #command: python manage.py runserver 0.0.0.0:8080
+        command: gunicorn -b 0.0.0.0:8080 -k gevent -w 2 --access-logfile - --log-level debug --reload wsgi
         environment:
             - NODE_ENV=development
         depends_on:
@@ -32,6 +32,7 @@ services:
             context: ./mpcontribs-api
             args:
                 - MAPI_KEY=$MAPI_KEY
+        command: gunicorn -b 0.0.0.0:5000 -k gevent -w 2 --access-logfile - --log-level debug --reload mpcontribs.api:create_app()
         depends_on:
             - chrome
             - kernel_gateway
