@@ -17,9 +17,9 @@ services:
             - jhub
             #- docs
         volumes:
-            - ./mpcontribs-portal:/app/mpcontribs-portal
-            - ./mpcontribs-io:/app/mpcontribs-io
-            - ./mpcontribs-client:/app/mpcontribs-client
+            - ./mpcontribs-portal/mpcontribs:/app/mpcontribs
+            - ./mpcontribs-io:/mpcontribs-io
+            - ./mpcontribs-client:/mpcontribs-client
             - ./binder/notebooks:/app/notebooks
         ports:
             - "8080:8080"
