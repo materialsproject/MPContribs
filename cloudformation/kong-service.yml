@@ -64,8 +64,8 @@ Resources:
                 HardLimit: 4096
                 SoftLimit: 4096
           Environment:
-            #- Name: KONG_ADMIN_LISTEN
-            #  Value: '0.0.0.0:8001'
+            - Name: KONG_ADMIN_LISTEN
+              Value: '0.0.0.0:8001'
             - Name: KONG_DATABASE
               Value: postgres
             - Name: KONG_PG_USER
