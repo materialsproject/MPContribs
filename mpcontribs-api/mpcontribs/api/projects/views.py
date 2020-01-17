@@ -82,11 +82,11 @@ class ProjectsResource(Resource):
                             "_id": None, "max": {"$max": f"${value_field}"}, "min": {"$min": f"${value_field}"}
                         }}
                     ]))
-                    rng = None
-                    if min_max:
-                        rng = [min_max[0]['min'], min_max[0]['max']]
+                    rng = [min_max[0]['min'], min_max[0]['max']] if min_max else None
                     unit = deep_get(unit_sample, unit_field)
-                    key = col if unit is None else f'{col} [{unit}]'
+                    if min_max and unit is None:
+                        unit = ''  # catch missing unit field in data
+                    key = f'{col} [{unit}]' if min_max else col
                     columns[key] = rng
 
             contributions = Contributions.objects.only('pk').filter(project=obj.id)
