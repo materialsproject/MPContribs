@@ -60,11 +60,9 @@ RUN pip install --no-cache-dir -e .
 RUN python manage.py collectstatic --noinput
 
 COPY binder/notebooks /app/notebooks
-# TODO replace load_client cell for api_key
-# TODO /venv/bin/jupyter nbconvert --to notebook --execute --inplace notebooks/contribute/get_started.ipynb
 RUN out=mpcontribs/portal/templates && \
-    for i in `ls -1 notebooks/*/*.ipynb`; do \
-        /venv/bin/jupyter nbconvert --to html --template basic --output-dir=$out/`dirname $i` $i 2>&1; \
+    for i in `ls -1 notebooks/*.ipynb`; do \
+        /venv/bin/jupyter nbconvert --to html --template basic --output-dir=$out $i 2>&1; \
     done
 
 ENTRYPOINT ["/app/docker-entrypoint.sh"]

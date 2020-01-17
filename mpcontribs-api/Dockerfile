@@ -18,6 +18,8 @@ RUN /opt/conda/bin/pip install --no-cache-dir --upgrade -e .
 #RUN cd flasgger && /opt/conda/bin/pip install --upgrade -e .
 
 ARG MAPI_KEY
-RUN /opt/conda/bin/python /app/mpcontribs/api/contributions/generate_formulae.py 2>&1
+RUN if [ ! -e /app/mpcontribs/api/contributions/formulae.json ]; then \
+    /opt/conda/bin/python /app/mpcontribs/api/contributions/generate_formulae.py 2>&1; \
+    fi
 
 CMD ["gunicorn", "-b", "0.0.0.0:5000", "-k", "gevent", "-w", "2", "--access-logfile", "-", "mpcontribs.api:create_app()"]
