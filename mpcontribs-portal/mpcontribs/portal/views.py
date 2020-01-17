@@ -10,7 +10,6 @@ from bs4 import BeautifulSoup
 from fido.exceptions import HTTPTimeoutError
 from pandas.io.json._normalize import nested_to_record
 from pandas import DataFrame
-from hendrix.experience import crosstown_traffic, hey_joe
 
 from django.shortcuts import render
 from django.template import RequestContext
@@ -40,14 +39,14 @@ def index(request):
     ctx['landing_pages'] = []
     mask = ['project', 'title', 'authors']
     client = load_client(headers=get_consumer(request))  # sets/returns global variable
-    provenances = client.projects.get_entries(_fields=mask).response().result
+    provenances = client.projects.get_entries(_fields=mask).result()
     for provenance in provenances['data']:
         entry = {'project': provenance['project']}
         img_path = os.path.join(os.path.dirname(__file__), 'assets', 'images', provenance['project'] + '.jpg')
         if not os.path.exists(img_path):
             entry['contribs'] = client.contributions.get_entries(
                 project=provenance['project'] # default limit 20
-            ).response().result['data']
+            ).result()['data']
         entry['title'] = provenance['title']
         authors = provenance['authors'].split(',', 1)
         prov_display = f'<br><span style="font-size: 13px;">{authors[0]}'
@@ -98,24 +97,14 @@ def export_notebook(nb, cid):
 def contribution(request, cid):
     ctx = RequestContext(request)
     client = load_client(headers=get_consumer(request))  # sets/returns global variable
-    nb = client.notebooks.get_entry(pk=cid).response().result  # generate notebook with cells
+    nb = client.notebooks.get_entry(pk=cid).result()  # generate notebook with cells
 
     if not nb['cells'][-1]['outputs']:
-        dots = '<span class="loader__dot">.</span><span class="loader__dot">.</span><span class="loader__dot">.</span>'
-        ctx['alert'] = f'Detail page is building in the background {dots}'
-
-        @crosstown_traffic()
-        def execute_cells():
-            nb = client.notebooks.get_entry(pk=cid).response().result  # execute cells
-            hey_joe.broadcast(f'Done. Reloading page {dots}')
-
-        @crosstown_traffic()
-        def heartbeat():
-            interval = 15
-            for i in range(4):
-                sleep(interval)
-                hey_joe.broadcast(f'Still building after {(i+1)*interval} seconds {dots}')
-            hey_joe.broadcast(f'Giving up after {(i+1)*interval} seconds. Come back later.')
+        try:
+            nb = client.notebooks.get_entry(pk=cid).result(timeout=1)  # trigger cell execution
+        except HTTPTimeoutError as e:
+            dots = '<span class="loader__dot">.</span><span class="loader__dot">.</span><span class="loader__dot">.</span>'
+            ctx['alert'] = f'Detail page is building in the background {dots}'
 
     ctx['nb'], ctx['js'] = export_notebook(nb, cid)
     return render(request, "mpcontribs_portal_contribution.html", ctx.flatten())
@@ -123,7 +112,7 @@ def contribution(request, cid):
 
 def cif(request, sid):
     client = load_client(headers=get_consumer(request))  # sets/returns global variable
-    cif = client.structures.get_entry(pk=sid, _fields=['cif']).response().result['cif']
+    cif = client.structures.get_entry(pk=sid, _fields=['cif']).result()['cif']
     if cif:
         return HttpResponse(cif, content_type='text/plain')
     return HttpResponse(status=404)
@@ -131,7 +120,7 @@ def cif(request, sid):
 
 def download_json(request, cid):
     client = load_client(headers=get_consumer(request))  # sets/returns global variable
-    contrib = client.contributions.get_entry(pk=cid, fields=['_all']).response().result
+    contrib = client.contributions.get_entry(pk=cid, fields=['_all']).result()
     if contrib:
         jcontrib = json.dumps(contrib)
         response = HttpResponse(jcontrib, content_type='application/json')
@@ -143,7 +132,7 @@ def csv(request, project):
     client = load_client(headers=get_consumer(request))  # sets/returns global variable
     contribs = client.contributions.get_entries(
         project=project, _fields=['identifier', 'id', 'formula', 'data']
-    ).response().result['data']  # first 20 only
+    ).result()['data']  # first 20 only
 
     data = []
     for contrib in contribs:
