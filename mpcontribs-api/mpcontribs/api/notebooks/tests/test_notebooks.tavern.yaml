@@ -46,7 +46,7 @@ stages:
                 metadata: {}
                 source: |-
                   client = load_client() # provide apikey as argument to use api.mpcontribs.org
-                  contrib = client.contributions.get_entry(pk='5a862202d4f1443a18fab254', _fields=['_all']).response().result
+                  contrib = client.contributions.get_entry(pk='5a862202d4f1443a18fab254', _fields=['_all']).result()
                 outputs: []
               - cell_type: markdown
                 metadata: {}
@@ -54,7 +54,7 @@ stages:
               - cell_type: code
                 metadata: {}
                 source: |-
-                  prov = client.projects.get_entry(pk=contrib['project'], _fields=['_all']).response().result
+                  prov = client.projects.get_entry(pk=contrib['project'], _fields=['_all']).result()
                   RecursiveDict(prov)
                 outputs:
                 - data:

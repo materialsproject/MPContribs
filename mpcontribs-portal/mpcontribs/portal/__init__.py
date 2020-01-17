@@ -16,7 +16,7 @@ def get_consumer(request):
 
 def get_context(request, project):
     client = load_client(headers=get_consumer(request))
-    prov = client.projects.get_entry(pk=project, _fields=['_all']).response().result
+    prov = client.projects.get_entry(pk=project, _fields=['_all']).result()
 
     ctx = {'project': project}
     ctx['project'] = project
@@ -40,7 +40,7 @@ def get_context(request, project):
     #ctx['contribs'] = []
     #for contrib in client.contributions.get_entries(
     #    project=project, _fields=['id', 'identifier', 'data.formula']
-    #).response().result['data']:
+    #).result()['data']:
     #    formula = contrib.get('data', {}).get('formula')
     #    if formula:
     #        contrib['formula'] = formula
