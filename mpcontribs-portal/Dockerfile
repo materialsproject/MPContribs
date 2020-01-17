@@ -68,4 +68,4 @@ RUN out=mpcontribs/portal/templates && \
     done
 
 ENTRYPOINT ["/app/docker-entrypoint.sh"]
-CMD ["hx", "start", "--wsgi=wsgi.py", "--loud", "--http_port=8080", "--dev"]
+CMD ["python", "run_server.py"]
