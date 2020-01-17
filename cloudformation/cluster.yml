@@ -154,10 +154,10 @@ Resources:
           FromPort: 8000
           ToPort: 8000
           CidrIp: 0.0.0.0/0
-        #- IpProtocol: tcp
-        #  FromPort: 8001
-        #  ToPort: 8001
-        #  CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 8001
+          ToPort: 8001
+          CidrIp: 0.0.0.0/0
   PublicSecurityGroupIngressFromSelf:
     Type: AWS::EC2::SecurityGroupIngress
     Properties:
