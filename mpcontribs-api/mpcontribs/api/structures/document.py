@@ -50,7 +50,6 @@ class Structures(Document):
     is_public = BooleanField(required=True, default=False, help_text='public/private structure')
     name = StringField(required=True, help_text="table name")
     lattice = EmbeddedDocumentField(Lattice, required=True, help_text="lattice")
-    # TODO sites.0 and sites.label in _fields doesn't work yet -> deep_get?
     sites = EmbeddedDocumentListField(Site, required=True, help_text="sites")
     charge = FloatField(null=True, help_text='charge')
     klass = StringField(help_text="@class")
