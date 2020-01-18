@@ -12,9 +12,12 @@ $(document).ready(function () {
         /* webpackChunkName: "images" */
         './images'
     );
-
     $('.btn-link').tooltip();
+    $('div[name=card-contrib]').each(function() {
+        render_json({divid: $(this).attr('id'), data: $(this).data('contrib')});
+    });
 
+    // explorer form
     var target = document.getElementById('spinner');
     var spinner = new Spinner({scale: 0.5});
     var api_url = window.api['host'] + 'contributions/';

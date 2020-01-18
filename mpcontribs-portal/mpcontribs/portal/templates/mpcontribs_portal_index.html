@@ -40,13 +40,9 @@
                 </div>
                 <div class="panel-body" style="padding: 0px">
                     <div class="col-md-12" style="padding: 5px;">
-                        {% if lp.contribs %}
+                        {% if lp.contrib %}
                         <div class="col-md-12" style="padding: 0px;">
-                            {% for contrib in lp.contribs %}
-                            <div class="col-md-6">
-                                <a href="/{{ contrib.id }}">{{ contrib.identifier }}</a>
-                            </div>
-                            {% endfor %}
+                            <div name=card-contrib id=card-contrib-{{forloop.counter}} data-contrib="{{ lp.contrib }}"></div>
                         </div>
                         {% else %}
                         <a id="{{ lp.project }}_img" href="{{ lp.project }}/"></a>

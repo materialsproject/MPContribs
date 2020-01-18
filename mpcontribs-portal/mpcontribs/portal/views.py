@@ -8,8 +8,6 @@ from time import sleep
 from nbconvert import HTMLExporter
 from bs4 import BeautifulSoup
 from fido.exceptions import HTTPTimeoutError
-from pandas.io.json._normalize import nested_to_record
-from pandas import DataFrame
 
 from django.shortcuts import render
 from django.template import RequestContext
@@ -20,6 +18,7 @@ from django.template.loader import select_template
 
 from mpcontribs.client import load_client
 from mpcontribs.portal import get_consumer, get_context
+from mpcontribs.io.core.components.hdata import HierarchicalData
 
 def landingpage(request):
     ctx = RequestContext(request)
@@ -44,9 +43,12 @@ def index(request):
         entry = {'project': provenance['project']}
         img_path = os.path.join(os.path.dirname(__file__), 'assets', 'images', provenance['project'] + '.jpg')
         if not os.path.exists(img_path):
-            entry['contribs'] = client.contributions.get_entries(
-                project=provenance['project'] # default limit 20
+            contribs = client.contributions.get_entries(
+                project=provenance['project'], _limit=1, _fields=['_all']
             ).result()['data']
+            if contribs:
+                contribs[0]['data'] = HierarchicalData(contribs[0]['data'])
+                entry['contrib'] = json.dumps(contribs[0])
         entry['title'] = provenance['title']
         authors = provenance['authors'].split(',', 1)
         prov_display = f'<br><span style="font-size: 13px;">{authors[0]}'
@@ -129,6 +131,8 @@ def download_json(request, cid):
     return HttpResponse(status=404)
 
 def csv(request, project):
+    from pandas import DataFrame
+    from pandas.io.json._normalize import nested_to_record
     client = load_client(headers=get_consumer(request))  # sets/returns global variable
     contribs = client.contributions.get_entries(
         project=project, _fields=['identifier', 'id', 'formula', 'data']
