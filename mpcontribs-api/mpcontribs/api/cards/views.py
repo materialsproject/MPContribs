@@ -11,8 +11,9 @@ from css_html_js_minify import html_minify
 from lxml import html
 from toronado import inline
 from mongoengine.queryset import DoesNotExist
+from fdict import fdict
 
-from mpcontribs.api import get_resource_as_string, unflatten, get_cleaned_data
+from mpcontribs.api import get_resource_as_string, quantity_keys
 from mpcontribs.api.core import SwaggerView
 from mpcontribs.api.cards.document import Cards
 from mpcontribs.api.projects.document import Projects
@@ -90,8 +91,17 @@ class CardsView(SwaggerView):
             card_script = get_resource_as_string('templates/linkify.min.js')
             card_script += get_resource_as_string('templates/linkify-element.min.js')
             card_script += get_resource_as_string('templates/card.min.js')
-            # TODO use fdata instead of unflatten / get_cleaned_data
-            data = unflatten(dict((k, v) for k, v in get_cleaned_data(contrib.data).items()))
+
+            fd = fdict(contrib.data, delimiter='.')
+            ends = [f'.{qk}' for qk in quantity_keys]
+            for key in list(fd.keys()):
+                if any(key.endswith(e) for e in ends):
+                    value = fd.pop(key)
+                    if key.endswith(ends[0]):
+                        new_key = key.rsplit('.', 1)[0]  # drop .display
+                        fd[new_key] = value
+            data = fd.to_dict_nested()
+
             browser = get_browser()
             browser.execute_script(card_script, data)
             bs = BeautifulSoup(browser.page_source, 'html.parser')
