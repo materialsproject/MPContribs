@@ -93,7 +93,7 @@ Resources:
       TaskRoleArn: !Ref 'AppServiceRole'
       ContainerDefinitions:
         - Name: api
-          MemoryReservation: 250
+          MemoryReservation: 500
           Image: !Ref 'ImageUrlApi'
           DependsOn:
             - Condition: START
@@ -140,7 +140,7 @@ Resources:
               awslogs-region: !Ref 'AWS::Region'
               awslogs-stream-prefix: !Ref 'ServiceName'
         - Name: gateway
-          MemoryReservation: 100
+          MemoryReservation: 250
           Image: !Ref 'ImageUrlGateway'
           Environment:
             - Name: KG_ALLOW_ORIGIN
@@ -154,7 +154,7 @@ Resources:
               awslogs-region: !Ref 'AWS::Region'
               awslogs-stream-prefix: !Ref 'ServiceName'
         - Name: portal
-          MemoryReservation: 250
+          MemoryReservation: 350
           Image: !Ref 'ImageUrlPortal'
           Environment:
             - Name: API_CNAME
