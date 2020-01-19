@@ -6,6 +6,63 @@ window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
 ga('create', 'UA-140392573-2', 'auto');
 ga('send', 'pageview');
 
+var fields = ['formula', 'project', 'identifier'];
+
+function get_single_selection(field) {
+    var select = $('#'+field+'s_list').select2("data");
+    return $.map(select, function(sel) { return sel['text']; }).join(',');
+}
+
+function get_selection(field) {
+    return $.map(fields, function(f) {
+        if (f !== field) { return get_single_selection(f); }
+        else { return null; }
+    });
+}
+
+function get_query(selection) {
+    var query = {_limit: 10};
+    $.each(selection, function(idx, sel) {
+        if (sel !== null && sel !== '') { query[fields[idx] + '__in'] = sel; }
+    });
+    return query;
+}
+
+function getData(field) {
+    return function (params) {
+        var query = get_query(get_selection(field));
+        if (params.term) { query[field + '__contains'] = params.term; }
+        query['_fields'] = 'id,' + field;
+        return query;
+    }
+}
+
+function processResults(field) {
+    return function (data) {
+        var texts = new Set();
+        var results = $.map(data['data'], function(d) {
+            if (!texts.has(d[field])) {
+                texts.add(d[field]);
+                return {id: d['id'], text: d[field]};
+            }
+        });
+        return {results: results};
+    }
+}
+
+function get_ajax(field) {
+    // TODO fix query for projects when formula and/or identifier selected
+    var endpoint = (field == 'project') ? 'projects/' : 'contributions/'; // TODO doesn't work really
+    var api_url = window.api['host'] + endpoint;
+    return {
+        url: api_url, headers: window.api['headers'],
+        delay: 400, minimumInputLength: 2, maximumSelectionLength: 3,
+        multiple: true, width: 'style',
+        data: getData(field), processResults: processResults(field)
+    }
+}
+
+
 $(document).ready(function () {
     import(
         /* webpackPrefetch: true */
@@ -17,108 +74,47 @@ $(document).ready(function () {
         render_json({divid: $(this).attr('id'), data: $(this).data('contrib')});
     });
 
-    // explorer form
     var target = document.getElementById('spinner');
     var spinner = new Spinner({scale: 0.5});
-    var api_url = window.api['host'] + 'contributions/';
 
-    $('#projects_list').select2({
-        multiple: true, width: '100%', maximumSelectionLength: 3,
-        placeholder: 'Select project(s) ...'
+    // selects
+    $.each(fields, function(idx, field) {
+        $('#'+field+'s_list').select2({placeholder: 'Select '+field+'(s) ...', ajax: get_ajax(field)});
     });
-    $('#projects_list').on('change', function() {
-        $('#identifiers_list').val(null).trigger('change');
-    });
-    $('#projects_list').on('select2:unselect', function() {
-        $("#cards").empty();
-    });
-
-    // TODO search formulae
-    $('#identifiers_list').select2({
-        placeholder: 'Search and select material(s) or composition(s) ...',
-        ajax: {
-            url: api_url,
-            headers: window.api['headers'],
-            delay: 400,
-            minimumInputLength: 3,
-            maximumSelectionLength: 3,
-            multiple: true,
-            width: 'style',
-            data: function (params) {
-                var projects_select = $("#projects_list").select2("data");
-                var projects = $.map(projects_select, function(project) {
-                    return project['text'];
-                });
-                var query = {_limit: 5};
-                projects = projects.join(",");
-                if (projects) { query['project__in'] = projects; }
-                if (params.term) { query['identifier__contains'] = params.term; }
-                return query;
-            },
-            processResults: function (data) {
-                var results = [];
-                $.each(data['data'], function(index, element) {
-                    var entry = {id: index, text: element["identifier"]};
-                    results.push(entry);
-                });
-                return {results: results};
-            }
-        }
-    });
-    $('#identifiers_list').on('select2:unselect', function() {
-        $("#cards").empty();
-    });
-    $('.select2-selection__rendered').css({width: '100%'});
-    $('.select2-search').css({width: '75%'});
+    $('.select2-search').css({width: 'auto'});
     $('.select2-search__field').css({width: '100%'});
 
-    $('#btnFind').on('click', function(event) {
-        spinner.spin(target);
+    // find button
+    $('button[name=Search]').on('click', function(event) {
         event.preventDefault(); // To prevent following the link (optional)
-        var queries = [];
-        var query_tpl = {'_fields': 'id', '_limit': 2}; // limit to two entries per query
-        $.each(["identifiers", "projects"], function(index, name) {
-            var select_data = $('#'+name+'_list').select2('data');
-            var selection = $.map(select_data, function(entry) { return entry['text']; });
-            if (selection.length > 0) {
-                if (index === 0) { // identifiers selected
-                    query_tpl['identifier__in'] = selection.join(",");
-                } else if (index === 1) { // projects selected
-                    $.each(selection, function(idx, project) {
-                        var query = $.extend(true, {}, query_tpl); // deep copy
-                        query['project'] = project;
-                        queries.push(query);
-                    })
-                }
-            }
-        });
-        if (queries.length === 0 && 'identifier__in' in query_tpl) { queries.push(query_tpl); }
-        var cids = $.map(queries, function(query) {
-            return $.get({url: api_url, data: query, headers: window.api['headers']});
-        });
-        if (cids.length === 0) { spinner.stop(); alert('Please make a selection'); }
-        $.when.apply($, cids).done(function() {
-            var args = arguments;
-            if (args.length === 0) { return; }
-            var cards = [];
-            if (args[0].length != 3) { args = [arguments]; } // only one project selected
-            $.map(args, function(response) {
-                $.each(response[0]['data'], function (index, contrib) {
-                    var ajax = $.get({
-                        url: window.api['host'] + 'cards/' + contrib['id'] + '/', headers: window.api['headers']
+        var selection = $.map(fields, function(f) { return get_single_selection(f); });
+        var filtered_selection = selection.filter(function (el) { return el !== ''; });
+        if (filtered_selection.length === 0) { alert('Please make a selection'); }
+        else {
+            var query = get_query(selection)
+            query['_fields'] = 'id';
+            console.log(query);
+            var api_url = window.api['host'] + 'contributions/';
+            var btnId = $(this).attr('id');
+            $.get({
+                url: api_url, data: query, headers: window.api['headers']
+            }).done(function(response) {
+                console.log(response);
+                if (btnId.endsWith('Find')) {
+                    // TODO set count next to find button
+                    console.log(response['total_count']);
+                } else {
+                    // TODO list of links to contributions, clear old list
+                    spinner.spin(target);
+                    $("#cards").empty();
+                    var url = window.api['host'] + 'cards/' + response['data'][0]['id'] + '/';
+                    $.get({url: url, headers: window.api['headers']}).done(function(response) {
+                        $('#cards').append(response['html']);
+                        spinner.stop();
                     });
-                    cards.push(ajax);
-                });
+                }
             });
-            $.when.apply($, cards).done(function() {
-                $("#cards").empty();
-                var args = arguments;
-                if (!$.isArray(args[0])) { args = [arguments]; } // only one project selected
-                $.map(args, function(response) { $('#cards').append(response[0]['html']); });
-                $('div[name=user_contribs]').addClass('col-md-6');
-                spinner.stop();
-            });
-        });
+        }
     });
 
     $('#explorer_form').show();

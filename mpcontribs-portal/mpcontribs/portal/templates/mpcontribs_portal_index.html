@@ -6,29 +6,34 @@
 </style>
 <div class="container" hidden>
     {% if landing_pages %}
-    <div class="row myrow" style="margin: 0; padding: 15px; background-color: #e4e6e8;" id="explorer_form" hidden>
+    <div class="row" style="margin: 0; padding: 5px; background-color: #e4e6e8;" id="explorer_form" hidden>
         <div class="col-md-5">
-            <select id="projects_list" multiple="multiple">
-                {% for lp in landing_pages %}
-                <option value="{{ lp.project }}">{{ lp.project }}</option>
-                {% endfor %}
-            </select>
+            <div class="row" style="padding-bottom: 5px;">
+                <select id="formulas_list" style="width: 100%;" multiple="multiple"></select>
+            </div>
+            <div class="row" style="padding-bottom: 5px;">
+                <select id="projects_list" style="width: 100%;" multiple="multiple"></select>
+            </div>
+            <div class="row" style="padding-bottom: 5px;">
+                <select id="identifiers_list" style="width: 100%;" multiple="multiple"></select>
+            </div>
+            <div class="row" style="padding-bottom: 5px;">
+                <div id="spinner"></div>
+                <button class="btn btn-primary" type="submit" name=Search id="btnFind">Find</button>
+                <span id=count></span>
+                <button class="btn btn-primary pull-right" type="submit" name=Search id="btnShow">Show</button>
+            </div>
         </div>
-        <div class="col-md-5">
-            <select id="identifiers_list" style="width: 100%;" multiple="multiple">
-            </select>
+        <div id=cards class="col-md-5">
+            <!-- cards dynamically added -->
         </div>
         <div class="col-md-2">
-            <button class="btn btn-primary" type="submit" id="btnFind">Find</button>
-            <div id="spinner"></div>
+            <h5>More results:</h5>
         </div>
     </div>
 
-    <div class="row" style="margin: 0 0 20px 0; padding: 10px; background-color: #e4e6e8;" id=cards>
-        <!-- cards dynamically added -->
-    </div>
 
-    <div class="row equal">
+    <div class="row equal" style="padding-top: 10px;">
         {% for lp in landing_pages %}
         <div class="col-md-3" id="{{ lp.project }}">
             <div class="panel panel-default" style="border: 1px solid #000000; height: 95%;">

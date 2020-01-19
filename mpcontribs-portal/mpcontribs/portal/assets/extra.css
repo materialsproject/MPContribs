@@ -49,8 +49,4 @@ code { display: block; white-space: pre-wrap; }
 * html a:hover { background: transparent; }
 .classic { background: #000000; color: #FFFFFF; }
 .equal { display: flex; display: -webkit-flex; flex-wrap: wrap; }
-.myrow { font-size: 0; }
-.myrow > * { float: none; display: inline-block; font-size: 14px; }
-.myrow > *:last-child { vertical-align: bottom; }
-.myrow p:last-child { margin-bottom: 0; }
 div.columnmanager-dropdown-container { max-height: unset; }
