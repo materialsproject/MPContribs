@@ -100,6 +100,13 @@ def contribution(request, cid):
     ctx = RequestContext(request)
     client = load_client(headers=get_consumer(request))  # sets/returns global variable
     nb = client.notebooks.get_entry(pk=cid).result()  # generate notebook with cells
+    indexes = []
+    for idx, cell in enumerate(nb['cells']):
+        if cell['cell_type'] == 'code':
+            last_line = cell['source'].rsplit('\n', 1)[-1]
+            if not last_line.startswith('from') and ' = ' not in last_line:
+                indexes.append(idx)
+    ctx['indexes'] = json.dumps(indexes)
 
     if not nb['cells'][-1]['outputs']:
         try:
