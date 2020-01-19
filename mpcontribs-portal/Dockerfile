@@ -66,4 +66,4 @@ RUN out=mpcontribs/portal/templates && \
     done
 
 ENTRYPOINT ["/app/docker-entrypoint.sh"]
-CMD ["gunicorn", "-b", "0.0.0.0:8080", "-k", "gevent", "-w", "2", "--access-logfile", "-", "wsgi"]
+CMD ["gunicorn", "-b", "0.0.0.0:8080", "-k", "gevent", "-w", "4", "--access-logfile", "-", "wsgi"]

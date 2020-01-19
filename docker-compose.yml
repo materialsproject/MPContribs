@@ -9,12 +9,12 @@ services:
         build:
             context: .
             dockerfile: mpcontribs-portal/Dockerfile
-        command: gunicorn -b 0.0.0.0:8080 -k gevent --access-logfile - --log-level debug --reload wsgi
+        command: gunicorn -b 0.0.0.0:8080 -k gevent -w 2 --access-logfile - --log-level debug --reload wsgi
         environment:
             - NODE_ENV=development
         depends_on:
             - api
-            - jhub
+            #- jhub
             #- docs
         volumes:
             - ./mpcontribs-portal/mpcontribs:/app/mpcontribs
@@ -25,14 +25,14 @@ services:
             - "8080:8080"
 
     api:
-        mem_limit: 1G
-        mem_reservation: 250m
-        cpus: 1
+        cpus: 2
+        mem_limit: 4G
+        mem_reservation: 600m
         build:
             context: ./mpcontribs-api
             args:
                 - MAPI_KEY=$MAPI_KEY
-        command: gunicorn -b 0.0.0.0:5000 -k gevent --access-logfile - --log-level debug --reload mpcontribs.api:create_app()
+        command: gunicorn -b 0.0.0.0:5000 -k gevent -w 2 --access-logfile - --log-level debug --reload mpcontribs.api:create_app()
         depends_on:
             - chrome
             - kernel_gateway
@@ -81,6 +81,9 @@ services:
             - "8081:8081"
 
     jhub:
+        mem_limit: 1G
+        mem_reservation: 250m
+        cpus: 1
         build:
             context: .
             dockerfile: binder/DockerfileJhub
