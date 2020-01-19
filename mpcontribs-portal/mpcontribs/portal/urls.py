@@ -5,7 +5,7 @@ from mpcontribs.portal import views
 app_name = 'mpcontribs_portal'
 urlpatterns = [
     url(r'^$', views.index, name='index'),
-    # TODO healthcheck
+    url(r'^healthcheck/?$', views.healthcheck, name='healthcheck'),
     url(r'^apply/?$', views.apply, name='apply'),
     url(r'^use/?$', views.use, name='use'),
     url(r'^notebooks/(?P<nb>[a-z0-9_\/]{9,}).html$', views.notebooks, name='notebooks'),
