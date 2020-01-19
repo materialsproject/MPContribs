@@ -20,7 +20,8 @@ def get_context(request, project):
 
     ctx = {'project': project}
     ctx['project'] = project
-    ctx['title'] = prov['long_title'] if prov['long_title'] else prov['title']
+    long_title = prov.get('long_title')
+    ctx['title'] = long_title if long_title else prov['title']
     ctx['descriptions'] = prov['description'].strip().split('.', 1)
     authors = [a.strip() for a in prov['authors'].split(',') if a]
     ctx['authors'] = {'main': authors[0], 'etal': authors[1:]}
