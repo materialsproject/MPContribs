@@ -179,4 +179,4 @@ def notebooks(request, nb):
     return render(request, os.path.join('notebooks', nb + '.html'))
 
 def healthcheck(request):
-    return 'OK'
+    return HttpResponse('OK')
