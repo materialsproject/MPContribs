@@ -7,6 +7,7 @@ ga('create', 'UA-140392573-2', 'auto');
 ga('send', 'pageview');
 
 var fields = ['formula', 'project', 'identifier'];
+var spinner = new Spinner({scale: 0.5, color: 'white'});
 
 function get_single_selection(field) {
     var select = $('#'+field+'s_list').select2("data");
@@ -15,15 +16,14 @@ function get_single_selection(field) {
 
 function get_selection(field) {
     return $.map(fields, function(f) {
-        if (f !== field) { return get_single_selection(f); }
-        else { return null; }
+        return (f !== field) ? get_single_selection(f) : '';
     });
 }
 
 function get_query(selection) {
-    var query = {_limit: 10};
+    var query = {_limit: 7};
     $.each(selection, function(idx, sel) {
-        if (sel !== null && sel !== '') { query[fields[idx] + '__in'] = sel; }
+        if (sel !== '') { query[fields[idx] + '__in'] = sel; }
     });
     return query;
 }
@@ -43,7 +43,8 @@ function processResults(field) {
         var results = $.map(data['data'], function(d) {
             if (!texts.has(d[field])) {
                 texts.add(d[field]);
-                return {id: d['id'], text: d[field]};
+                var id = d.hasOwnProperty('id') ? d['id'] : d[field];
+                return {id: id, text: d[field]};
             }
         });
         return {results: results};
@@ -51,14 +52,57 @@ function processResults(field) {
 }
 
 function get_ajax(field) {
-    // TODO fix query for projects when formula and/or identifier selected
-    var endpoint = (field == 'project') ? 'projects/' : 'contributions/'; // TODO doesn't work really
+    var endpoint = (field == 'project') ? 'projects/' : 'contributions/';
     var api_url = window.api['host'] + endpoint;
     return {
         url: api_url, headers: window.api['headers'],
         delay: 400, minimumInputLength: 2, maximumSelectionLength: 3,
         multiple: true, width: 'style',
         data: getData(field), processResults: processResults(field)
+    }
+}
+
+function render_card(cid) {
+    var target = document.getElementById('spinner');
+    spinner.spin(target);
+    var url = window.api['host'] + 'cards/' + cid + '/';
+    $.get({url: url, headers: window.api['headers']}).done(function(response) {
+        $('#card').html(response['html']);
+        spinner.stop();
+    });
+}
+
+function search(event) {
+    event.preventDefault(); // To prevent following the link (optional)
+    var selection = $.map(fields, function(f) { return get_single_selection(f); });
+    var filtered_selection = selection.filter(function (el) { return el !== ''; });
+    if (filtered_selection.length === 0) { alert('Please make a selection'); }
+    else {
+        var query = get_query(selection)
+        var api_url = window.api['host'] + 'contributions/';
+        var btnId = $(this).attr('id');
+        if (btnId.endsWith('Show')) {
+            $.get({
+                url: api_url, data: query, headers: window.api['headers']
+            }).done(function(response) {
+                $('#count').html(response['total_count'] + ' result(s)');
+                $('#results').empty();
+                $.each(response['data'], function(i, d) {
+                    var btn = $('<a/>', {
+                        'class': "btn btn-link", 'role': 'button', 'style': "padding: 0", 'id': d['id'], 'text': d['id']
+                    });
+                    var info = $('<span/>', {text: ' (' + d['formula'] + ', ' + d['project'] + ', ' + d['identifier'] + ')'});
+                    var li = $('<li/>');
+                    btn.on('click', search);
+                    li.append(btn);
+                    li.append(info);
+                    $('#results').append(li);
+                });
+            });
+        } else {
+            $("#card").empty();
+            render_card(btnId);
+        }
     }
 }
 
@@ -74,9 +118,6 @@ $(document).ready(function () {
         render_json({divid: $(this).attr('id'), data: $(this).data('contrib')});
     });
 
-    var target = document.getElementById('spinner');
-    var spinner = new Spinner({scale: 0.5});
-
     // selects
     $.each(fields, function(idx, field) {
         $('#'+field+'s_list').select2({placeholder: 'Select '+field+'(s) ...', ajax: get_ajax(field)});
@@ -84,38 +125,9 @@ $(document).ready(function () {
     $('.select2-search').css({width: 'auto'});
     $('.select2-search__field').css({width: '100%'});
 
-    // find button
-    $('button[name=Search]').on('click', function(event) {
-        event.preventDefault(); // To prevent following the link (optional)
-        var selection = $.map(fields, function(f) { return get_single_selection(f); });
-        var filtered_selection = selection.filter(function (el) { return el !== ''; });
-        if (filtered_selection.length === 0) { alert('Please make a selection'); }
-        else {
-            var query = get_query(selection)
-            query['_fields'] = 'id';
-            console.log(query);
-            var api_url = window.api['host'] + 'contributions/';
-            var btnId = $(this).attr('id');
-            $.get({
-                url: api_url, data: query, headers: window.api['headers']
-            }).done(function(response) {
-                console.log(response);
-                if (btnId.endsWith('Find')) {
-                    // TODO set count next to find button
-                    console.log(response['total_count']);
-                } else {
-                    // TODO list of links to contributions, clear old list
-                    spinner.spin(target);
-                    $("#cards").empty();
-                    var url = window.api['host'] + 'cards/' + response['data'][0]['id'] + '/';
-                    $.get({url: url, headers: window.api['headers']}).done(function(response) {
-                        $('#cards').append(response['html']);
-                        spinner.stop();
-                    });
-                }
-            });
-        }
-    });
+    // bind button events and show example card
+    $('#btnShow').on('click', search);
+    render_card('5a862202d4f1443a18fab254');
 
     $('#explorer_form').show();
 });

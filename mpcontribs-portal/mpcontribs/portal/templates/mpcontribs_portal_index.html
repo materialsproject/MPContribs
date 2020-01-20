@@ -3,40 +3,87 @@
 {% block content %}
 <style>
 .panel:hover { box-shadow: 0 0 5px 5px rgba(0, 140, 186, 0.5); }
+.btn.btn-primary {
+    color: #393939; background-color: #99e4c0; border-color: #4f6c5e;
+}
+.btn.btn-primary.focus,
+.btn.btn-primary:focus {
+    color: #393939; background-color: #7ab197; border-color: #4f6c5e;
+    outline: none; box-shadow: none;
+}
+.btn.btn-primary:hover {
+    color: #393939; background-color: #7ab197; border-color: #4f6c5e;
+    outline: none; box-shadow: none;
+}
+.btn.btn-primary.active,
+.btn.btn-primary:active {
+    color: #393939; background-color: #7ab197; border-color: #4f6c5e;
+    outline: none;
+}
+.btn.btn-primary.active.focus,
+.btn.btn-primary.active:focus,
+.btn.btn-primary.active:hover,
+.btn.btn-primary:active.focus,
+.btn.btn-primary:active:focus,
+.btn.btn-primary:active:hover {
+    color: #393939; background-color: #7ab197; border-color: #4f6c5e;
+    outline: none; box-shadow: none;
+}
+.btn.btn-link { color: #99e4c0; }
+.btn.btn-link.focus,
+.btn.btn-link:focus {
+    color: #7ab197; outline: none; box-shadow: none;
+}
+.btn.btn-link:hover {
+    color: #7ab197; outline: none; box-shadow: none;
+}
+.btn.btn-link.active,
+.btn.btn-link:active {
+    color: #7ab197; outline: none;
+}
+.btn.btn-link.active.focus,
+.btn.btn-link.active:focus,
+.btn.btn-link.active:hover,
+.btn.btn-link:active.focus,
+.btn.btn-link:active:focus,
+.btn.btn-link:active:hover {
+    color: #7ab197; outline: none; box-shadow: none;
+}
+.list-unstyled { color: white; }
 </style>
 <div class="container" hidden>
     {% if landing_pages %}
-    <div class="row" style="margin: 0; padding: 5px; background-color: #e4e6e8;" id="explorer_form" hidden>
-        <div class="col-md-5">
-            <div class="row" style="padding-bottom: 5px;">
-                <select id="formulas_list" style="width: 100%;" multiple="multiple"></select>
-            </div>
-            <div class="row" style="padding-bottom: 5px;">
+    <div class="row" style="margin: 0; padding: 15px 15px 0px 15px; background-color: #393939; border-radius: 5px;" id="explorer_form" hidden>
+        <div class="col-md-6">
+            <div class="row" style="padding-bottom: 5px; margin-right: 0;">
                 <select id="projects_list" style="width: 100%;" multiple="multiple"></select>
             </div>
-            <div class="row" style="padding-bottom: 5px;">
+            <div class="row" style="padding-bottom: 5px; margin-right: 0;">
+                <select id="formulas_list" style="width: 100%;" multiple="multiple"></select>
+            </div>
+            <div class="row" style="padding-bottom: 5px; margin-right: 0;">
                 <select id="identifiers_list" style="width: 100%;" multiple="multiple"></select>
             </div>
-            <div class="row" style="padding-bottom: 5px;">
-                <div id="spinner"></div>
-                <button class="btn btn-primary" type="submit" name=Search id="btnFind">Find</button>
-                <span id=count></span>
-                <button class="btn btn-primary pull-right" type="submit" name=Search id="btnShow">Show</button>
+            <div class="row" style="padding-bottom: 5px; margin-right: 0;">
+                <a class="btn btn-primary" role=button id="btnShow">Show</a>
+                <span id=count class="pull-right" style="color: white;"></span>
+            </div>
+            <div class="row" style="padding-bottom: 5px; margin-right: 0;">
+                <ul class="list-unstyled" id=results></ul>
             </div>
         </div>
-        <div id=cards class="col-md-5">
-            <!-- cards dynamically added -->
-        </div>
-        <div class="col-md-2">
-            <h5>More results:</h5>
+        <div class="col-md-6" style="padding: 0;">
+            <div id="spinner"></div>
+            <div id=card>
+                <!-- card dynamically added -->
+            </div>
         </div>
     </div>
 
-
     <div class="row equal" style="padding-top: 10px;">
         {% for lp in landing_pages %}
-        <div class="col-md-3" id="{{ lp.project }}">
-            <div class="panel panel-default" style="border: 1px solid #000000; height: 95%;">
+        <div class="col-md-3" id="{{ lp.project }}" style="padding: 10px 15px;">
+            <div class="panel panel-default" style="border: 1px solid #000000; height: 100%; margin: 0;">
                 <div class="panel-heading" style="padding-bottom: 5px; border-color: #000">
                     <h4 class="panel-title">
                         <a href="{{ lp.project }}/">{{ lp.title  }}</a>

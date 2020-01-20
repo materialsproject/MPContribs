@@ -50,3 +50,4 @@ code { display: block; white-space: pre-wrap; }
 .classic { background: #000000; color: #FFFFFF; }
 .equal { display: flex; display: -webkit-flex; flex-wrap: wrap; }
 div.columnmanager-dropdown-container { max-height: unset; }
+.navbar-inverse { background-color: #393939; border-color: #393939; }
