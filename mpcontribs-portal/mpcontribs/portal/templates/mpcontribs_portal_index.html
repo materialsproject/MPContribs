@@ -2,53 +2,6 @@
 
 {% block content %}
 <style>
-.panel:hover { box-shadow: 0 0 5px 5px rgba(0, 140, 186, 0.5); }
-.btn.btn-primary {
-    color: #393939; background-color: #99e4c0; border-color: #4f6c5e;
-}
-.btn.btn-primary.focus,
-.btn.btn-primary:focus {
-    color: #393939; background-color: #7ab197; border-color: #4f6c5e;
-    outline: none; box-shadow: none;
-}
-.btn.btn-primary:hover {
-    color: #393939; background-color: #7ab197; border-color: #4f6c5e;
-    outline: none; box-shadow: none;
-}
-.btn.btn-primary.active,
-.btn.btn-primary:active {
-    color: #393939; background-color: #7ab197; border-color: #4f6c5e;
-    outline: none;
-}
-.btn.btn-primary.active.focus,
-.btn.btn-primary.active:focus,
-.btn.btn-primary.active:hover,
-.btn.btn-primary:active.focus,
-.btn.btn-primary:active:focus,
-.btn.btn-primary:active:hover {
-    color: #393939; background-color: #7ab197; border-color: #4f6c5e;
-    outline: none; box-shadow: none;
-}
-.btn.btn-link { color: #99e4c0; }
-.btn.btn-link.focus,
-.btn.btn-link:focus {
-    color: #7ab197; outline: none; box-shadow: none;
-}
-.btn.btn-link:hover {
-    color: #7ab197; outline: none; box-shadow: none;
-}
-.btn.btn-link.active,
-.btn.btn-link:active {
-    color: #7ab197; outline: none;
-}
-.btn.btn-link.active.focus,
-.btn.btn-link.active:focus,
-.btn.btn-link.active:hover,
-.btn.btn-link:active.focus,
-.btn.btn-link:active:focus,
-.btn.btn-link:active:hover {
-    color: #7ab197; outline: none; box-shadow: none;
-}
 .list-unstyled { color: white; }
 </style>
 <div class="container" hidden>
@@ -83,55 +36,41 @@
     <div class="row equal" style="padding-top: 10px;">
         {% for lp in landing_pages %}
         <div class="col-md-3" id="{{ lp.project }}" style="padding: 10px 15px;">
-            <div id="make-3D-space">
-                <div id="product-card">
-                    <div id="product-front">
-                        <div class="shadow"></div>
-                        {% if lp.contrib %}
-                        <div class="col-md-12" style="padding: 0px;">
-                            <div name=card-contrib id=card-contrib-{{forloop.counter}} data-contrib="{{ lp.contrib }}"></div>
-                        </div>
-                        {% else %}
-                        <a id="{{ lp.project }}_img" href="{{ lp.project }}/"></a>
-                        {% endif %}
-                        <div class="image_overlay"></div>
-                        <div id="view_details">View details</div>
-                        <div class="stats">
-                            <div class="stats-container">
-                                <h3><a href="{{ lp.project }}/">{{ lp.title  }}</a></h3>
-                                <p>{% if "provenance" in lp %}{{ lp.provenance|safe }}{% endif %}</p>
-                                <div class="product-options">
-                                    <a href="#">mp-11001</a>
-                                    description....
-                                </div>
-                            </div>
-                        </div>
+            <div class="card">
+                <div id={{lp.project}}_img style="padding: 3px;"></div>
+                {% if lp.is_public %}
+                <div class="date" title="public">
+                    <span class="glyphicon glyphicon-ok" aria-hidden="true"></span>
+                </div>
+                {% else %}
+                <div class="date" title="private">
+                    <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+                </div>
+                {% endif %}
+                <div class="data">
+                    <div class="content">
+                        <p class="author">
+                            {{ lp.authors.0 }}
+                            <button class="btn btn-sm btn-link"
+                               data-html="true" data-toggle="tooltip" data-placement="bottom" data-container="body"
+                               title="{{ lp.authors.1 }}" style="padding: 0px 0px 2px 5px;">
+                                et al.
+                            </button>
+                            <label for="show-menu-{{lp.project}}" class="pull-right" style="cursor: pointer">
+                                <span class="glyphicon glyphicon-option-horizontal" aria-hidden="true"></span>
+                            </label>
+                        </p>
+                        <a role=button class="btn btn-link" style="padding: 0;" href="{{ lp.project }}/">
+                            <h4 class="title" style="margin-top: 5px;">{{ lp.title }}</h4>
+                        </a>
+                        <p class="text">{{ lp.description }}</p>
                     </div>
-                    <div id="product-back">
-                        <div class="shadow"></div>
-                        <div id="carousel">
-                            <ul>
-                                <a id="{{ lp.project }}_img" href="{{ lp.project }}/"></a>
-                                <li><img src="https://s3-us-west-2.amazonaws.com/s.cdpn.io/245657/t-shirt-large.png" alt="" /></li>
-                                <li><img src="https://s3-us-west-2.amazonaws.com/s.cdpn.io/245657/t-shirt-large2.png" alt="" /></li>
-                                <li><img src="https://s3-us-west-2.amazonaws.com/s.cdpn.io/245657/t-shirt-large3.png" alt="" /></li>
-                            </ul>
-                            <div class="arrows-perspective">
-                                <div class="carouselPrev">
-                                    <div class="y"></div>
-                                    <div class="x"></div>
-                                </div>
-                                <div class="carouselNext">
-                                    <div class="y"></div>
-                                    <div class="x"></div>
-                                </div>
-                            </div>
-                        </div>
-                        <div id="flip-back">
-                            <div id="cy"></div>
-                            <div id="cx"></div>
-                        </div>
-                    </div>
+                    <input type="checkbox" id="show-menu-{{lp.project}}" />
+                    <ul class="menu-content list-inline">
+                        {% for l, u in lp.urls.items %}
+                        <li><a href="{{u}}" style="color: #393939; font-size: 12px; font-weight: bold">[{{l}}]</a></li>
+                        {% endfor %}
+                    </ul>
                 </div>
             </div>
         </div>
