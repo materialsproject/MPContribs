@@ -70,6 +70,8 @@ $(document).ready(function () {
         var project = ev.params.data["text"];
         window.location.href = '/'+project+'/';
     });
+    $('#search').on('select2:open', function(ev) { $("#explorer_form").hide(); });
+    $('#search').on('select2:close', function(ev) { $("#explorer_form").show(); });
 
     if ($("#landingpage").length) {
         import(/* webpackChunkName: "landingpage" */ `./landingpage.js`).catch(function(err) { console.error(err); });
