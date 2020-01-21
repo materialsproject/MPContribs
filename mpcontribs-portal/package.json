@@ -4,7 +4,7 @@
   "description": "",
   "private": true,
   "scripts": {
-    "webpack": "./node_modules/.bin/webpack"
+    "webpack": "./node_modules/.bin/webpack && if [ -e manage.py ]; then python manage.py collectstatic --no-input --clear && touch wsgi.py; fi"
   },
   "repository": {
     "type": "git",

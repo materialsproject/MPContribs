@@ -23,6 +23,7 @@ services:
         volumes:
             - ./mpcontribs-portal/mpcontribs:/app/mpcontribs
             - ./mpcontribs-portal/webpack.config.js:/app/webpack.config.js
+            - ./mpcontribs-portal/package.json:/app/package.json
             - ./mpcontribs-portal/wsgi.py:/app/wsgi.py
             - ./mpcontribs-portal/settings.py:/app/settings.py
             - ./mpcontribs-io:/mpcontribs-io
