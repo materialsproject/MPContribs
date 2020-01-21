@@ -25,7 +25,7 @@ window.api = {};
 var api_key = $('#api_key').val();
 if (api_key !== '') {
     console.log(process.env.API_CNAME);
-    window.api['host'] = 'https://' + process.env.API_CNAME;
+    window.api['host'] = 'https://' + process.env.API_CNAME + '/';
     var api_key_code = window.atob(api_key);
     window.api['headers'] = {'X-API-KEY': api_key_code};
 } else {
