@@ -19,19 +19,20 @@ ALLOWED_HOSTS += ['192.168.{}.{}'.format(i,j) for i in range(10) for j in range(
 INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
-    'whitenoise.runserver_nostatic',
     'django.contrib.staticfiles',
     'django_extensions',
     'webpack_loader',
-    'mpcontribs.portal',
+    'mpcontribs.portal'
 ]
+
+if DEBUG:
+    INSTALLED_APPS.append('whitenoise.runserver_nostatic')
 
 MIDDLEWARE = (
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',
 )
 
 ROOT_URLCONF = 'mpcontribs.portal.urls'
@@ -71,7 +72,6 @@ USE_TZ = True
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 STATICFILES_DIRS = (os.path.join(BASE_DIR, 'dist'),)
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 WEBPACK_LOADER = {
     'DEFAULT': {
@@ -81,5 +81,4 @@ WEBPACK_LOADER = {
     }
 }
 
-WHITENOISE_KEEP_ONLY_HASHED_FILES = True
 APPEND_SLASH = False
