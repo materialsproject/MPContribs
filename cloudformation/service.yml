@@ -159,8 +159,8 @@ Resources:
           Environment:
             - Name: API_CNAME
               Value: !Ref 'ApiCname'
-            - Name: NODE_ENV
-              Value: development
+            #- Name: NODE_ENV
+            #  Value: development
           DependsOn:
             - Condition: START
               ContainerName: api
