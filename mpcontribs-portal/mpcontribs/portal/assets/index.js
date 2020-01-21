@@ -1,130 +1,105 @@
-import 'bootstrap';
+import img from './logo.png';
+import * as clipboard from "clipboard";
 import 'select2';
-import {Spinner} from 'spin.js';
+
+require("../../../node_modules/bootstrap/dist/css/bootstrap.min.css");
+require("../../../node_modules/bootstrap-slider/dist/css/bootstrap-slider.min.css");
+require("../../../node_modules/bootstrap-toggle/css/bootstrap-toggle.min.css");
+require("../../../node_modules/bootstrap-tokenfield/dist/css/bootstrap-tokenfield.min.css");
+require("../../../node_modules/bootstrap-tokenfield/dist/css/tokenfield-typeahead.min.css");
+require("../../../node_modules/json-human/css/json.human.css");
+require("../../../node_modules/select2/dist/css/select2.min.css");
+require("../../../node_modules/spin.js/spin.css");
+require("../../../node_modules/backgrid/lib/backgrid.min.css");
+require("../../../node_modules/backgrid-paginator/backgrid-paginator.min.css");
+require("../../../node_modules/backgrid-filter/backgrid-filter.min.css");
+require("../../../node_modules/backgrid-grouped-columns/backgrid-grouped-columns.css");
+require("../../../node_modules/backgrid-columnmanager/lib/Backgrid.ColumnManager.css");
+require("./extra.css");
 
 window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
 ga('create', 'UA-140392573-2', 'auto');
 ga('send', 'pageview');
 
-var fields = ['formula', 'project', 'identifier'];
-var spinner = new Spinner({scale: 0.5, color: 'white'});
-
-function get_single_selection(field) {
-    var select = $('#'+field+'s_list').select2("data");
-    return $.map(select, function(sel) { return sel['text']; }).join(',');
+window.api = {};
+var api_key = $('#api_key').val();
+if (api_key !== '') {
+    console.log(process.env.API_CNAME);
+    window.api['host'] = 'https://' + process.env.API_CNAME;
+    var api_key_code = window.atob(api_key);
+    window.api['headers'] = {'X-API-KEY': api_key_code};
+} else {
+    window.api['host'] = 'http://localhost:5000/';
+    window.api['headers'] = {};
 }
-
-function get_selection(field) {
-    return $.map(fields, function(f) {
-        return (f !== field) ? get_single_selection(f) : '';
-    });
-}
-
-function get_query(selection) {
-    var query = {_limit: 7};
-    $.each(selection, function(idx, sel) {
-        if (sel !== '') { query[fields[idx] + '__in'] = sel; }
-    });
-    return query;
-}
-
-function getData(field) {
-    return function (params) {
-        var query = get_query(get_selection(field));
-        if (params.term) { query[field + '__contains'] = params.term; }
-        query['_fields'] = 'id,' + field;
-        return query;
-    }
-}
-
-function processResults(field) {
-    return function (data) {
-        var texts = new Set();
-        var results = $.map(data['data'], function(d) {
-            if (!texts.has(d[field])) {
-                texts.add(d[field]);
-                var id = d.hasOwnProperty('id') ? d['id'] : d[field];
-                return {id: id, text: d[field]};
-            }
-        });
-        return {results: results};
-    }
-}
-
-function get_ajax(field) {
-    var endpoint = (field == 'project') ? 'projects/' : 'contributions/';
-    var api_url = window.api['host'] + endpoint;
-    return {
-        url: api_url, headers: window.api['headers'],
-        delay: 400, minimumInputLength: 2, maximumSelectionLength: 3,
-        multiple: true, width: 'style',
-        data: getData(field), processResults: processResults(field)
-    }
-}
-
-function render_card(cid) {
-    var target = document.getElementById('spinner');
-    spinner.spin(target);
-    var url = window.api['host'] + 'cards/' + cid + '/';
-    $.get({url: url, headers: window.api['headers']}).done(function(response) {
-        $('#card').html(response['html']);
-        spinner.stop();
-    });
-}
-
-function search(event) {
-    event.preventDefault(); // To prevent following the link (optional)
-    var selection = $.map(fields, function(f) { return get_single_selection(f); });
-    var filtered_selection = selection.filter(function (el) { return el !== ''; });
-    if (filtered_selection.length === 0) { alert('Please make a selection'); }
-    else {
-        var query = get_query(selection)
-        var api_url = window.api['host'] + 'contributions/';
-        var btnId = $(this).attr('id');
-        if (btnId.endsWith('Show')) {
-            $.get({
-                url: api_url, data: query, headers: window.api['headers']
-            }).done(function(response) {
-                $('#count').html(response['total_count'] + ' result(s)');
-                $('#results').empty();
-                $.each(response['data'], function(i, d) {
-                    var btn = $('<a/>', {
-                        'class': "btn btn-link", 'role': 'button', 'style': "padding: 0", 'id': d['id'], 'text': d['id']
-                    });
-                    var info = $('<span/>', {text: ' (' + d['formula'] + ', ' + d['project'] + ', ' + d['identifier'] + ')'});
-                    var li = $('<li/>');
-                    btn.on('click', search);
-                    li.append(btn);
-                    li.append(info);
-                    $('#results').append(li);
-                });
-            });
-        } else {
-            $("#card").empty();
-            render_card(btnId);
-        }
-    }
-}
-
 
 $(document).ready(function () {
-    import(
-        /* webpackPrefetch: true */
-        /* webpackChunkName: "images" */
-        './images'
-    );
-    $('.btn-link').tooltip();
+    document.getElementById("logo").src = img;
+    document.getElementById("docs_url").href = api_key !== '' ? 'https://mpcontribs.org' : 'http://localhost:8081';
+    $('a[name="api_url"]').attr('href', window.api['host']);
 
-    // selects
-    $.each(fields, function(idx, field) {
-        $('#'+field+'s_list').select2({placeholder: 'Select '+field+'(s) ...', ajax: get_ajax(field)});
+    $('#api_key_btn').on('click', function() {
+        clipboard.writeText(api_key_code);
     });
-    $('.select2-search').css({width: 'auto'});
-    $('.select2-search__field').css({width: '100%'});
 
-    // bind button events and show example card
-    $('#btnShow').on('click', search);
-    render_card('5a862202d4f1443a18fab254');
+    $('#search').select2({
+        ajax: {
+            url: window.api['host'] + 'projects/',
+            headers: window.api['headers'],
+            delay: 400,
+            minimumInputLength: 3,
+            maximumSelectionLength: 3,
+            multiple: true,
+            width: 'style',
+            data: function (params) {
+                $(this).empty(); // clear selection/options
+                if (typeof params.term == 'undefined') {
+                    $(".row.equal").find(".col-md-3").show();
+                }
+                var query = {_fields: "project"};
+                if (params.term) { query['description__icontains'] = params.term; }
+                return query;
+            },
+            processResults: function (data) {
+                $(".row.equal").find(".col-md-3").hide();
+                var results = [];
+                $.each(data['data'], function(index, element) {
+                    var entry = {id: index, text: element["project"]};
+                    $('#'+element['project']).show();
+                    results.push(entry);
+                });
+                return {results: results};
+            }
+        }
+    });
+    $('#search').on('select2:select', function(ev) {
+        var project = ev.params.data["text"];
+        window.location.href = '/'+project+'/';
+    });
+    $('#search').on('select2:open', function(ev) { $("#explorer_form").hide(); });
+    $('#search').on('select2:close', function(ev) { $("#explorer_form").show(); });
 
-    $('#explorer_form').show();
+    if ($("#explorer_form").length) {
+        import(/* webpackChunkName: "home" */ `./home.js`).catch(function(err) { console.error(err); });
+    }
+
+    if ($("#landingpage").length) {
+        import(/* webpackChunkName: "landingpage" */ `./landingpage.js`).catch(function(err) { console.error(err); });
+    }
+
+    if ($("#contribution").length) {
+        import(/* webpackChunkName: "contribution" */ `./contribution.js`).catch(function(err) { console.error(err); });
+    }
+
+    if ($("#apply").length) {
+        import(/* webpackChunkName: "apply" */ `./apply.js`).catch(function(err) { console.error(err); });
+    }
+
+    if ($("#use").length) {
+        import(/* webpackChunkName: "use" */ `./use.js`).catch(function(err) { console.error(err); });
+    }
+
+    $('header').show();
+    $('.container').show();
+    $('footer').show();
 });

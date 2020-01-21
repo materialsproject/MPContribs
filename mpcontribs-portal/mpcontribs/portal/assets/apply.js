@@ -8,8 +8,6 @@ import {Spinner} from 'spin.js';
 var target = document.getElementById('spinner');
 var spinner = new Spinner({scale: 0.5});
 
-$('#authors').tokenfield({});
-
 function prepareRequest(formData, jqForm, options) {
     spinner.spin(target);
     $('.alert-success').hide(); $('.alert-danger').hide();
@@ -34,7 +32,6 @@ function prepareRequest(formData, jqForm, options) {
 
 function processJson(data) { // 'data' is the json object returned from the server
     $('.alert-success').hide(); $('.alert-danger').hide();
-    console.log(data);
     if (typeof data.responseJSON == 'undefined') {
         $('.alert-success').html('Thank you for submitting your project application. Please check your inbox for an e-mail asking you to subscribe for MPContribs notifications. Once your e-mail address is confirmed we will notify you if/when your project has been accepted for dissemination via MPContribs. <span class="glyphicon glyphicon-ok" aria-hidden="true"></span>').show();
     } else {
@@ -43,46 +40,50 @@ function processJson(data) { // 'data' is the json object returned from the serv
     spinner.stop();
 }
 
-$.validator.addMethod("alphanumeric", function(value, element) {
-    return this.optional(element) || /^[\w_]+$/i.test(value);
-}, "Please use letters, numbers, and underscores only.");
+$(document).ready(function () {
+    $('#authors').tokenfield({});
 
-$('#apply-form').validate({
-    rules: {
-        project: {alphanumeric: true},
-        url_1: {url: true, required: true},
-        url_2: {url: true},
-        url_3: {url: true},
-        url_4: {url: true},
-        url_5: {url: true}
-    },
-    highlight: function (element) {
-        $(element).nextAll('.glyphicon').removeClass('glyphicon-ok').addClass('glyphicon-remove');
-        $(element).closest('.form-group').removeClass('has-success').addClass('has-error');
-    },
-    unhighlight: function (element) {
-        $(element).nextAll('.glyphicon').removeClass('glyphicon-remove').addClass('glyphicon-ok');
-        $(element).closest('.form-group').removeClass('has-error').addClass('has-success');
-    },
-    errorElement: 'span', errorClass: 'help-block',
-    errorPlacement: function(error, element) {
-        if(element.parent('.input-group').length) {
-            error.insertAfter(element.parent());
-        } else { error.insertAfter(element); }
-    },
-    submitHandler: function(form) { $(form).ajaxSubmit({
-        beforeSubmit: prepareRequest, success: processJson, error: processJson,
-        url: window.api['host'] + 'projects/', headers: window.api['headers'],
-        type: 'POST', dataType: 'json', requestFormat: 'json'
-    }); }
-});
+    $.validator.addMethod("alphanumeric", function(value, element) {
+        return this.optional(element) || /^[\w_]+$/i.test(value);
+    }, "Please use letters, numbers, and underscores only.");
 
-$("#czContainer").czMore({
-    max: 5, styleOverride: true,
-    onAdd: function(index) {
-        $('.btnMinus').addClass('col-sm-1').css('padding-left', '0px')
-            .html('<span class="glyphicon glyphicon-remove" style="top: 8px;" aria-hidden="true"></span>');
-    }
+    $('#apply-form').validate({
+        rules: {
+            project: {alphanumeric: true},
+            url_1: {url: true, required: true},
+            url_2: {url: true},
+            url_3: {url: true},
+            url_4: {url: true},
+            url_5: {url: true}
+        },
+        highlight: function (element) {
+            $(element).nextAll('.glyphicon').removeClass('glyphicon-ok').addClass('glyphicon-remove');
+            $(element).closest('.form-group').removeClass('has-success').addClass('has-error');
+        },
+        unhighlight: function (element) {
+            $(element).nextAll('.glyphicon').removeClass('glyphicon-remove').addClass('glyphicon-ok');
+            $(element).closest('.form-group').removeClass('has-error').addClass('has-success');
+        },
+        errorElement: 'span', errorClass: 'help-block',
+        errorPlacement: function(error, element) {
+            if(element.parent('.input-group').length) {
+                error.insertAfter(element.parent());
+            } else { error.insertAfter(element); }
+        },
+        submitHandler: function(form) { $(form).ajaxSubmit({
+            beforeSubmit: prepareRequest, success: processJson, error: processJson,
+            url: window.api['host'] + 'projects/', headers: window.api['headers'],
+            type: 'POST', dataType: 'json', requestFormat: 'json'
+        }); }
+    });
+
+    $("#czContainer").czMore({
+        max: 5, styleOverride: true,
+        onAdd: function(index) {
+            $('.btnMinus').addClass('col-sm-1').css('padding-left', '0px')
+                .html('<span class="glyphicon glyphicon-remove" style="top: 8px;" aria-hidden="true"></span>');
+        }
+    });
+    $('.btnPlus').addClass('col-sm-1').css('padding-left', '0px')
+        .html('<span class="glyphicon glyphicon-plus" style="top: 5px;" aria-hidden="true"></span>').click();
 });
-$('.btnPlus').addClass('col-sm-1').css('padding-left', '0px')
-    .html('<span class="glyphicon glyphicon-plus" style="top: 5px;" aria-hidden="true"></span>').click();
