@@ -25,9 +25,6 @@ INSTALLED_APPS = [
     'mpcontribs.portal'
 ]
 
-if DEBUG:
-    INSTALLED_APPS.append('whitenoise.runserver_nostatic')
-
 MIDDLEWARE = (
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',

@@ -36,7 +36,8 @@ module.exports = {
       "window.jQuery": "jquery", jQuery:"jquery"
     }),
     new webpack.HashedModuleIdsPlugin(),
-    new CompressionPlugin({minRatio: 1})
+    new CompressionPlugin({minRatio: 1}),
+    new webpack.EnvironmentPlugin(['NODE_ENV', 'API_CNAME'])
   ],
   optimization: { minimize: true },
   resolve: {
@@ -102,7 +103,7 @@ module.exports = {
       {
         test: /\.(gif|png|jpe?g)$/i,
         use: [
-            {loader: 'url-loader', options: {limit: 100000, name:'[name].[ext]', outputPath: 'assets' }},
+            {loader: 'url-loader', options: {limit: 60000, name:'[name].[ext]', outputPath: 'assets' }},
             {loader: 'image-webpack-loader'}
         ],
       },

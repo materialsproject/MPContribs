@@ -359,7 +359,7 @@ Resources:
                 - IMAGE_URI="${REPOSITORY_URI}:${TAG}"
             build:
               commands:
-                - docker build --tag "${IMAGE_URI}-api" --build-arg MAPI_KEY=${MAPI_KEY} mpcontribs-api
+                - docker build --tag "${IMAGE_URI}-api" mpcontribs-api
             post_build:
               commands:
                 - docker push "${IMAGE_URI}-api"
@@ -406,7 +406,7 @@ Resources:
                 - IMAGE_URI="${REPOSITORY_URI}:${TAG}"
             build:
               commands:
-                - docker build --tag "${IMAGE_URI}-portal" -f mpcontribs-portal/Dockerfile .
+                - docker build --tag "${IMAGE_URI}-portal" --build-arg API_CNAME="${ApiCname}" --build-arg NODE_ENV="production" -f mpcontribs-portal/Dockerfile .
             post_build:
               commands:
                 - docker push "${IMAGE_URI}-portal"

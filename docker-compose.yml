@@ -9,15 +9,22 @@ services:
         build:
             context: .
             dockerfile: mpcontribs-portal/Dockerfile
+            args:
+                - NODE_ENV=development
+                - API_CNAME=localhost:5000
         command: gunicorn -b 0.0.0.0:8080 -k gevent -w 2 --access-logfile - --log-level debug --reload wsgi
         environment:
             - NODE_ENV=development
+            - API_CNAME=localhost:5000
         depends_on:
             - api
             #- jhub
             #- docs
         volumes:
             - ./mpcontribs-portal/mpcontribs:/app/mpcontribs
+            - ./mpcontribs-portal/webpack.config.js:/app/webpack.config.js
+            - ./mpcontribs-portal/wsgi.py:/app/wsgi.py
+            - ./mpcontribs-portal/settings.py:/app/settings.py
             - ./mpcontribs-io:/mpcontribs-io
             - ./mpcontribs-client:/mpcontribs-client
             - ./binder/notebooks:/app/notebooks
@@ -30,8 +37,6 @@ services:
         mem_reservation: 600m
         build:
             context: ./mpcontribs-api
-            args:
-                - MAPI_KEY=$MAPI_KEY
         command: gunicorn -b 0.0.0.0:5000 -k gevent -w 2 --access-logfile - --log-level debug --reload mpcontribs.api:create_app()
         depends_on:
             - chrome

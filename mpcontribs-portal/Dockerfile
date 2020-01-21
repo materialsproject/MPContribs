@@ -43,6 +43,9 @@ WORKDIR /app
 COPY mpcontribs-portal/package.json .
 RUN { npm install && npm cache clean --force && npm cache verify; } 2>&1
 
+ARG API_CNAME
+ARG NODE_ENV
+
 COPY mpcontribs-portal/webpack.config.js .
 COPY mpcontribs-portal/mpcontribs/portal/assets ./mpcontribs/portal/assets
 RUN npm run webpack 2>&1
