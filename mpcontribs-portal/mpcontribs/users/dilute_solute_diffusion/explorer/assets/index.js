@@ -1,5 +1,5 @@
 import Plotly from 'plotly'; // plotly core only
-import {Spinner} from 'spin.js';
+import {Spinner} from 'spin.js/spin';
 
 var layout = {
     grid: {rows: 1, columns: 3, pattern: 'independent'},

@@ -1,0 +1,80 @@
+{% extends "header_footer.html" %}
+
+{% block content %}
+<section class="section">
+    <div class="box has-background-dark" id="explorer_form" hidden>
+        <div class="columns">
+            <div class="column is-half">
+                <div class="columns is-multiline">
+                    <div class="column">
+                        <select id="projects_list" multiple="multiple"></select>
+                        <select id="formulas_list" multiple="multiple"></select>
+                        <select id="identifiers_list" multiple="multiple"></select>
+                    </div>
+                    <div class="column is-narrow">
+                        <a class="button is-primary is-small is-fullwidth is-right has-text-dark" id="btnShow">Show</a>
+                        <span class="has-text-right has-text-white" id=count></span>
+                    </div>
+                    <ul class="column is-full" id=results></ul>
+                </div>
+            </div>
+            <div class="column is-half">
+                <div id="spinner"></div>
+                <div id=card>
+                    <!-- card dynamically added -->
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+{% if landing_pages %}
+<section class="has-background-white-bis">
+
+        {% for lp in landing_pages %}
+        <div class="col-md-3" id="{{ lp.project }}">
+            <div class="card">
+                <div id={{lp.project}}_img></div>
+                {% if lp.is_public %}
+                <div class="date" title="public">
+                    <span class="glyphicon glyphicon-ok" aria-hidden="true"></span>
+                </div>
+                {% else %}
+                <div class="date" title="private">
+                    <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+                </div>
+                {% endif %}
+                <div class="data">
+                    <div class="content">
+                        <p class="author">
+                        {{ lp.authors.0 }}
+                        <button class="btn btn-sm btn-link"
+                                data-html="true" data-toggle="tooltip" data-placement="bottom" data-container="body"
+                                                                                               title="{{ lp.authors.1 }}">
+                            et al.
+                        </button>
+                        <label for="show-menu-{{lp.project}}" class="pull-right show-menu">
+                            <span class="glyphicon glyphicon-option-horizontal" aria-hidden="true"></span>
+                        </label>
+                        </p>
+                        <a role=button class="btn btn-link" href="{{ lp.project }}/">
+                            <h4 class="title">{{ lp.title }}</h4>
+                        </a>
+                        <p class="text">{{ lp.description }}</p>
+                    </div>
+                    <input type="checkbox" id="show-menu-{{lp.project}}" />
+                    <ul class="menu-content list-inline">
+                        {% for l, u in lp.urls.items %}
+                        <li><a href="{{u}}">[{{l}}]</a></li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}

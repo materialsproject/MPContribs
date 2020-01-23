@@ -1,9 +1,9 @@
-import("./highlight.css");
+import("css/highlight.css");
 
 function lazyLoadImage(imageName, img) {
     import(
         /* webpackMode: "lazy-once" */
-        './images/' + imageName.replace('./', '')
+        'images/' + imageName
     ).then(function(src) {
         img.src = src.default;
         img.style.width = "100%";

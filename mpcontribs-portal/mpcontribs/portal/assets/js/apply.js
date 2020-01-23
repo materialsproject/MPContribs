@@ -1,9 +1,8 @@
-import 'bootstrap';
-import 'bootstrap-tokenfield';
+import '~bootstrap-tokenfield/js/bootstrap-tokenfield'
 import 'jquery-form';
 import 'jquery-validation';
 import 'czmore';
-import {Spinner} from 'spin.js';
+import {Spinner} from 'spin.js/spin';
 
 var target = document.getElementById('spinner');
 var spinner = new Spinner({scale: 0.5});

@@ -1,6 +1,6 @@
 import 'underscore';
 import Plotly from 'plotly'; // plotly core only
-import {Spinner} from 'spin.js';
+import {Spinner} from 'spin.js/spin';
 import t from 'typy';
 
 Plotly.register([

@@ -1,4 +1,4 @@
-import JsonHuman from 'json.human';
+import JsonHuman from 'json-human/src/json.human';
 import linkifyElement from 'linkify-element';
 
 window.render_json = function(props) {

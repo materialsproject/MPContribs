@@ -1,5 +1,5 @@
 import Plotly from 'plotly'; // plotly core only
-import {Spinner} from 'spin.js';
+import {Spinner} from 'spin.js/spin';
 
 var SQMAX = 33.7; var MASSMAX = 1.5;
 var xmin = 0; var xmax = 1.65;

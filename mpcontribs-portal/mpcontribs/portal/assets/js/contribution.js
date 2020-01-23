@@ -1,4 +1,4 @@
-import("./highlight.css");
+import("css/highlight.css");
 import 'toggle';
 
 var dots = '<span class="loader__dot">.</span><span class="loader__dot">.</span><span class="loader__dot">.</span>';

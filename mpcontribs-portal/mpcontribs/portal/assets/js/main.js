@@ -1,21 +1,7 @@
-import img from './logo.png';
+import img from 'images/logo.png';
 import * as clipboard from "clipboard";
-import 'select2';
-
-require("../../../node_modules/bootstrap/dist/css/bootstrap.min.css");
-require("../../../node_modules/bootstrap-slider/dist/css/bootstrap-slider.min.css");
-require("../../../node_modules/bootstrap-toggle/css/bootstrap-toggle.min.css");
-require("../../../node_modules/bootstrap-tokenfield/dist/css/bootstrap-tokenfield.min.css");
-require("../../../node_modules/bootstrap-tokenfield/dist/css/tokenfield-typeahead.min.css");
-require("../../../node_modules/json-human/css/json.human.css");
-require("../../../node_modules/select2/dist/css/select2.min.css");
-require("../../../node_modules/spin.js/spin.css");
-require("../../../node_modules/backgrid/lib/backgrid.min.css");
-require("../../../node_modules/backgrid-paginator/backgrid-paginator.min.css");
-require("../../../node_modules/backgrid-filter/backgrid-filter.min.css");
-require("../../../node_modules/backgrid-grouped-columns/backgrid-grouped-columns.css");
-require("../../../node_modules/backgrid-columnmanager/lib/Backgrid.ColumnManager.css");
-require("./extra.css");
+import 'select2/dist/js/select2';
+require('css/main.scss');
 
 window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
 ga('create', 'UA-140392573-2', 'auto');
@@ -56,7 +42,7 @@ $(document).ready(function () {
                 if (typeof params.term == 'undefined') {
                     $(".row.equal").find(".col-md-3").show();
                 }
-                var query = {_fields: "project"};
+                var query = {_fields: "project,title"};
                 if (params.term) { query['description__icontains'] = params.term; }
                 return query;
             },
@@ -64,7 +50,7 @@ $(document).ready(function () {
                 $(".row.equal").find(".col-md-3").hide();
                 var results = [];
                 $.each(data['data'], function(index, element) {
-                    var entry = {id: index, text: element["project"]};
+                    var entry = {id: index, text: element['title'], value: element['project']};
                     $('#'+element['project']).show();
                     results.push(entry);
                 });
@@ -73,7 +59,7 @@ $(document).ready(function () {
         }
     });
     $('#search').on('select2:select', function(ev) {
-        var project = ev.params.data["text"];
+        var project = ev.params.data["value"];
         window.location.href = '/'+project+'/';
     });
     $('#search').on('select2:open', function(ev) { $("#explorer_form").hide(); });
@@ -99,6 +85,7 @@ $(document).ready(function () {
         import(/* webpackChunkName: "use" */ `./use.js`).catch(function(err) { console.error(err); });
     }
 
+    $('.select2').css({width: '100%'});
     $('header').show();
     $('.container').show();
     $('footer').show();

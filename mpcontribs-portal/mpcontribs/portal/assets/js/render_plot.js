@@ -1,14 +1,12 @@
 import Plotly from 'plotly'; // plotly core only
-import core from 'mathjs'; // mathjs core only
-import {Spinner} from 'spin.js';
+import {create, createTranspose} from 'mathjs';
+import {Spinner} from 'spin.js/spin';
 
 window.PLOTLYENV=window.PLOTLYENV || {};
 window.PLOTLYENV.BASE_URL='https://plot.ly';
 var spinner_plot = new Spinner({scale: 0.5});
 
-const math = core.create();
-math.import(require('../../../node_modules/mathjs/lib/type/matrix/index'));
-math.import(require('../../../node_modules/mathjs/lib/function/matrix/transpose'));
+const transpose = create(createTranspose);
 
 window.render_plot = function(props) {
     props.config['responsive'] = true;
@@ -30,7 +28,7 @@ window.render_plot = function(props) {
             var ntraces = -1;
             $.each(gets_args, function(index, response) {
                 if ( 'data' in response[0] ) {
-                    var columns = math.transpose(response[0]['data']);
+                    var columns = transpose(response[0]['data']);
                     if (ntraces < 0) { ntraces = columns.length; }
                     if ( update.length == 0 ) { // init update
                         for (var i = 1; i < columns.length; i++) {

@@ -1,5 +1,5 @@
 import Plotly from 'plotly'; // plotly core only
-import {Spinner} from 'spin.js';
+import {Spinner} from 'spin.js/spin';
 
 Plotly.register([
     require('../../../../../node_modules/plotly.js/lib/scatterternary')

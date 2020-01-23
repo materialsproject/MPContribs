@@ -1,7 +1,7 @@
 function lazyLoadImage(imageName, img) {
     import(
         /* webpackMode: "lazy-once" */
-        './images/' + imageName.replace('./', '')
+        '../images/' + imageName.replace('./', '')
     ).then(function(src) {
         img.src = src.default;
         img.style.width = "100%";
@@ -15,7 +15,7 @@ function generateImage(container, imageName) {
 }
 
 function getImages() {
-    return require.context('./images/', false, /\.(jpe?g)$/).keys();
+    return require.context('../images/', false, /\.(jpe?g)$/).keys();
 }
 
 var imageNames = getImages();
@@ -24,4 +24,3 @@ $.each(imageNames, function(idx, name) {
     var container = document.querySelector(selector);
     if (container) { generateImage(container, name); }
 })
-

@@ -1,6 +1,6 @@
 import Plotly from 'plotly'; // plotly core only
 import core from 'mathjs'; // mathjs core only
-import {Spinner} from 'spin.js';
+import {Spinner} from 'spin.js/spin';
 
 const math = core.create();
 math.import(require('../../../../../node_modules/mathjs/lib/type/matrix/index'));

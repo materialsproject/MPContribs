@@ -1,100 +1,93 @@
 {% load render_entrypoint from webpack_loader %}
 <!DOCTYPE html>
-<html>
+<html lang="en" class="has-navbar-fixed-top">
   <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>MPContribs Portal</title>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <input id="api_key" type="hidden" value="{{ request.META.HTTP_X_CONSUMER_CUSTOM_ID }}">
+    <script src="https://kit.fontawesome.com/4f92cc8510.js" crossorigin="anonymous"></script>
     {% block extra_css %}
     {% endblock extra_css %}
     {% render_entrypoint 'main' %}
   </head>
   <body>
-    {% block header %}
-    <header hidden>
-      {% if show_warning_banner %}
-      <nav class="navbar navbar-warning">
-        <center class="alert alert-warning">
-          <button type="button" class="close" data-dismiss="alert">&times;</button>
-          We are currently experiencing issues with the web site and are working to fix the situation.
-        </center>
-      </nav>
-      {% endif %}
-      <nav class="navbar navbar-inverse">
-        <div class="container">
-          <div class="navbar-header">
-            <a class="navbar-brand" href="/" style="padding: 6px;">
-              <img id="logo">
-            </a>
-          </div>
-          <div class="col-md-4" style="padding-top: 9px; padding-bottom: 9px; margin-left: 30px;">
-              <select data-placeholder="Search or jump to projects ..." id="search" style="width: 100%;">
-                  <option></option>
-              </select>
-          </div>
-          <ul class="nav navbar-nav navbar-right" style="font-size: 16px; font-weight: bold;">
-              <!-- TODO merge ingester webapp into portal -->
-              <li><a href="/apply" style="color: orange;">Apply</a></li>
-              <li><a href="/use">Use</a></li>
-              {% block extra_items %}
-              {% endblock extra_items %}
-              <li class="dropdown">
-                  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
-                      <span class="glyphicon glyphicon-list" aria-hidden="true"></span> <span class="caret"></span>
+      <header hidden>
+          <nav class="navbar is-fixed-top is-dark" role="navigation" aria-label="main navigation">
+              <div class="navbar-brand">
+                  <a class="navbar-item" href="/">
+                      <img id="logo">
                   </a>
-                  <ul class="dropdown-menu">
-                      <li class="navbar-text" style="float: none; margin: 3px 15px 3px 20px;">
-                          <small>Signed in as</small><br><span style="white-space: nowrap;">{{ request.META.HTTP_X_CONSUMER_USERNAME }}</span>
-                      </li>
-                      {% if request.META.HTTP_X_CONSUMER_CUSTOM_ID %}
-                      <li role="separator" class="divider"></li>
-                      <li class="navbar-text" style="float: none; margin: 3px 15px 3px 20px;">
-                          <button id=api_key_btn type="button" class="btn btn-default btn-sm">
-                              <span class="glyphicon glyphicon-copy" aria-hidden="true"></span> Copy API Key
-                          </button>
-                      </li>
-                      {% endif %}
-                      <li role="separator" class="divider"></li>
-                      <li>
-                          <a id=docs_url target="_blank">
-                              Documentation <span class="glyphicon glyphicon-new-window" aria-hidden="true"></span>
+                  <a role="button" class="navbar-burger burger" aria-label="menu" aria-expanded="false" data-target="navbarBasicExample">
+                      <span aria-hidden="true"></span>
+                      <span aria-hidden="true"></span>
+                      <span aria-hidden="true"></span>
+                  </a>
+              </div>
+              <div id="navbarBasicExample" class="navbar-menu">
+                  <div class="navbar-start">
+                      <div class="navbar-item">
+                          <select data-placeholder="Search or jump to projects ..." id="search">
+                              <option></option>
+                          </select>
+                      </div>
+                  </div>
+                  <div class="navbar-end">
+                      <!-- TODO merge ingester webapp into portal -->
+                      <a class="navbar-item" href="/apply">Apply</a>
+                      <a class="navbar-item" href="/use">Use</a>
+                      {% block extra_items %}
+                      {% endblock extra_items %}
+                      <div class="navbar-item has-dropdown is-hoverable">
+                          <a class="navbar-link is-arrowless">
+                              <span class="icon">
+                                  <i class="fas fa-ellipsis-v"></i>
+                              </span>
                           </a>
-                      </li>
-                      <li>
-                          <a name=api_url target="_blank">
-                              RESTful API <span class="glyphicon glyphicon-new-window" aria-hidden="true"></span>
-                          </a>
-                      </li>
-                  </ul>
-              </li>
-          </ul>
-        </div>
-      </nav>
-    </header>
-    {% endblock header %}
-    {% if alert %}
-    <div class="container">
-        <div id=alert class="alert alert-warning alert-dismissible" role="alert">
-          <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-            <span aria-hidden="true">&times;</span>
-          </button>
+                          <div class="navbar-dropdown is-right">
+                              <div class="navbar-item is-size-5">
+                                  {{ request.META.HTTP_X_CONSUMER_USERNAME }}
+                              </div>
+                              {% if request.META.HTTP_X_CONSUMER_CUSTOM_ID %}
+                              <hr class="navbar-divider">
+                              <a class="navbar-item">
+                                  <div class="button is-small" id=api_key_btn>
+                                      <i class="far fa-copy fa-fw"></i> Copy API Key
+                                  </div>
+                              </a>
+                              {% endif %}
+                              <hr class="navbar-divider">
+                              <a class="navbar-item" id=docs_url target="_blank">
+                                   <i class="fas fa-info fa-fw"></i> Documentation
+                              </a>
+                              <a class="navbar-item" name=api_url target="_blank">
+                                  <i class="fas fa-code fa-fw"></i> RESTful API
+                              </a>
+                          </div>
+                      </div>
+                  </div>
+              </div>
+          </nav>
+
+      </header>
+      {% if alert %}
+      <div id=alert class="notification is-danger">
           {{ alert|safe }}
-        </div>
-    </div>
-    {% endif %}
-    {% block content %}
-    <!-- Page Content-->
-    {% endblock content %}
-    <footer hidden>
-      <hr>
-      <div class="pad-top row text-center">
-        <small>
-          Supported by NSF LSDI Data Infrastructure Building Blocks program and
-          DOE BES <a href="https://materialsproject.org">Materials Project</a>.
-        </small>
       </div>
-      {% block footer %}
-      {% endblock footer %}
-    </footer>
+      {% endif %}
+      {% block content %}
+      <!-- Page Content-->
+      {% endblock content %}
+      <footer class="footer" hidden>
+          <div class="content has-text-centered">
+              <p class="is-size-7">
+                  Supported by NSF LSDI Data Infrastructure Building Blocks program and
+                  DOE BES <a href="https://materialsproject.org">Materials Project</a>.
+              </p>
+          </div>
+          {% block footer %}
+          {% endblock footer %}
+      </footer>
   </body>
 </html>

@@ -102,7 +102,7 @@ def contribution(request, cid):
             ctx['alert'] = f'Detail page is building in the background {dots}'
 
     ctx['nb'], ctx['js'] = export_notebook(nb, cid)
-    return render(request, "mpcontribs_portal_contribution.html", ctx.flatten())
+    return render(request, "contribution.html", ctx.flatten())
 
 
 def cif(request, sid):
@@ -150,7 +150,7 @@ def csv(request, project):
 
 def apply(request):
     ctx = RequestContext(request)
-    return render(request, "mpcontribs_portal_apply.html", ctx.flatten())
+    return render(request, "apply.html", ctx.flatten())
 
 def use(request):
     ctx = RequestContext(request)
@@ -159,7 +159,7 @@ def use(request):
         p.split('/notebooks/')[-1].replace('.html', '')
         for p in glob(os.path.join(template_dir, '*', '*.html'))
     ]
-    return render(request, "mpcontribs_portal_use.html", ctx.flatten())
+    return render(request, "use.html", ctx.flatten())
 
 def notebooks(request, nb):
     return render(request, os.path.join('notebooks', nb + '.html'))

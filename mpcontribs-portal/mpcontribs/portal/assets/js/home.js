@@ -1,6 +1,6 @@
-import 'bootstrap';
 import 'select2';
-import {Spinner} from 'spin.js';
+import {Spinner} from 'spin.js/spin';
+//import "css/home.css";
 
 var fields = ['formula', 'project', 'identifier'];
 var spinner = new Spinner({scale: 0.5, color: 'white'});
@@ -84,14 +84,19 @@ function search(event) {
                 $('#count').html(response['total_count'] + ' result(s)');
                 $('#results').empty();
                 $.each(response['data'], function(i, d) {
-                    var btn = $('<a/>', {
-                        'class': "btn btn-link", 'role': 'button', 'style': "padding: 0", 'id': d['id'], 'text': d['id']
-                    });
-                    var info = $('<span/>', {text: ' (' + d['formula'] + ', ' + d['project'] + ', ' + d['identifier'] + ')'});
                     var li = $('<li/>');
+                    var btn = $('<a/>', {'class': 'has-text-primary', 'id': d['id'], 'text': d['id'].slice(-7)});
                     btn.on('click', search);
                     li.append(btn);
+                    var info_text = ': ' + d['formula'] + ', ' + d['project'] + ', ';
+                    var mp = 'https://materialsproject.org/materials/'
+                    var identifier = d['identifier'];
+                    if (identifier.startsWith('m')) {
+                        identifier = $('<a/>', {'class': 'has-text-primary', href: mp + d['identifier'], text: d['identifier']});
+                    } else { info_text += identifier; }
+                    var info = $('<span/>', {text: info_text, 'class': 'has-text-white'});
                     li.append(info);
+                    li.append(identifier);
                     $('#results').append(li);
                 });
             });
@@ -115,6 +120,7 @@ $(document).ready(function () {
     $.each(fields, function(idx, field) {
         $('#'+field+'s_list').select2({placeholder: 'Select '+field+'(s) ...', ajax: get_ajax(field)});
     });
+    $('.select2').css({width: '100%'});
     $('.select2-search').css({width: 'auto'});
     $('.select2-search__field').css({width: '100%'});
 

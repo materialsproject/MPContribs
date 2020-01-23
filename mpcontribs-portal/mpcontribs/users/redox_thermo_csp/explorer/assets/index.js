@@ -1,6 +1,6 @@
 import 'select2';
 import Plotly from 'plotly'; // plotly core only
-import {Spinner} from 'spin.js';
+import {Spinner} from 'spin.js/spin';
 import 'bootstrap-slider';
 
 Plotly.register([

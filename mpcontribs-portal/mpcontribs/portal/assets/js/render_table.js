@@ -1,10 +1,10 @@
 import Backbone from 'backbone';
-import Backgrid from 'backgrid';
-import 'backgrid-paginator';
-import 'backgrid-filter';
-import 'backgrid-grouped-columns';
-import 'backgrid-columnmanager';
-import {Spinner} from 'spin.js';
+import Backgrid from 'backgrid/lib/backgrid';
+import 'backgrid-paginator/backgrid-paginator';
+import 'backgrid-filter/backgrid-filter';
+import 'backgrid-grouped-columns/backgrid-grouped-columns';
+import 'backgrid-columnmanager/src/Backgrid.ColumnManager';
+import {Spinner} from 'spin.js/spin';
 
 var spinner_table = new Spinner({scale: 0.5});
 const devMode = process.env.NODE_ENV == 'development';

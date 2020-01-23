@@ -1,5 +1,5 @@
 import Plotly from 'plotly'; // plotly core only
-import {Spinner} from 'spin.js';
+import {Spinner} from 'spin.js/spin';
 
 var target = document.getElementById('spinner_graph');
 var spinner_plot = new Spinner({scale: 0.5});
