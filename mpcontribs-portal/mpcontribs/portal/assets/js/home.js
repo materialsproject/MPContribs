@@ -1,13 +1,12 @@
 import 'select2';
 import {Spinner} from 'spin.js/spin';
-//import "css/home.css";
 
 var fields = ['formula', 'project', 'identifier'];
-var spinner = new Spinner({scale: 0.5, color: 'white'});
+var spinner = new Spinner({scale: 0.5});
 
 function get_single_selection(field) {
     var select = $('#'+field+'s_list').select2("data");
-    return $.map(select, function(sel) { return sel['text']; }).join(',');
+    return $.map(select, function(sel) { return sel['value']; }).join(',');
 }
 
 function get_selection(field) {
@@ -27,8 +26,18 @@ function get_query(selection) {
 function getData(field) {
     return function (params) {
         var query = get_query(get_selection(field));
-        if (params.term) { query[field + '__contains'] = params.term; }
-        query['_fields'] = 'id,' + field;
+        if (params.term) {
+            if (field == 'project') {
+                query['description__icontains'] = params.term;
+            } else {
+                query[field + '__contains'] = params.term;
+            }
+        }
+        if (field == 'project') {
+            query['_fields'] = 'id,title,project';
+        } else {
+            query['_fields'] = 'id,' + field;
+        }
         return query;
     }
 }
@@ -40,7 +49,8 @@ function processResults(field) {
             if (!texts.has(d[field])) {
                 texts.add(d[field]);
                 var id = d.hasOwnProperty('id') ? d['id'] : d[field];
-                return {id: id, text: d[field]};
+                var text = d.hasOwnProperty('title') ? d['title']: d[field];
+                return {id: id, text: text, value: d[field]};
             }
         });
         return {results: results};
@@ -81,32 +91,34 @@ function search(event) {
             $.get({
                 url: api_url, data: query, headers: window.api['headers']
             }).done(function(response) {
-                $('#count').html(response['total_count'] + ' result(s)');
+                $('#count').html(response['total_count']).parent().removeClass('is-hidden');
                 $('#results').empty();
                 $.each(response['data'], function(i, d) {
-                    var li = $('<li/>');
-                    var btn = $('<a/>', {'class': 'has-text-primary', 'id': d['id'], 'text': d['id'].slice(-7)});
-                    btn.on('click', search);
-                    li.append(btn);
-                    var info_text = ': ' + d['formula'] + ', ' + d['project'] + ', ';
+                    var cid_url = $('<a/>', {'id': d['id'], 'text': d['id'].slice(-7)});
+                    cid_url.on('click', search);
+                    var cid = $('<td/>', {html: cid_url});
+                    var formula = $('<td/>', {text: d['formula']});
+                    var project = $('<td/>', {text: d['project']});
                     var mp = 'https://materialsproject.org/materials/'
-                    var identifier = d['identifier'];
-                    if (identifier.startsWith('m')) {
-                        identifier = $('<a/>', {'class': 'has-text-primary', href: mp + d['identifier'], text: d['identifier']});
-                    } else { info_text += identifier; }
-                    var info = $('<span/>', {text: info_text, 'class': 'has-text-white'});
-                    li.append(info);
-                    li.append(identifier);
-                    $('#results').append(li);
+                    var mpid = d['identifier'];
+                    if (mpid.startsWith('m')) {
+                        mpid = $('<a/>', {href: mp + d['identifier'], text: d['identifier']});
+                    }
+                    var identifier = $('<td/>', {html: mpid});
+                    var tr = $('<tr/>');
+                    tr.append([cid, formula, project, identifier]);
+                    $('#results').append(tr);
                 });
             });
         } else {
-            $("#card").empty();
             render_card(btnId);
         }
     }
 }
 
+function animate() {
+    $(this).children('.is-overlay').toggleClass('is-hidden');
+}
 
 $(document).ready(function () {
     import(
@@ -114,9 +126,7 @@ $(document).ready(function () {
         /* webpackChunkName: "images" */
         './images'
     );
-    $('.btn-link').tooltip();
 
-    // selects
     $.each(fields, function(idx, field) {
         $('#'+field+'s_list').select2({placeholder: 'Select '+field+'(s) ...', ajax: get_ajax(field)});
     });
@@ -124,9 +134,24 @@ $(document).ready(function () {
     $('.select2-search').css({width: 'auto'});
     $('.select2-search__field').css({width: '100%'});
 
-    // bind button events and show example card
     $('#btnShow').on('click', search);
-    render_card('5a862202d4f1443a18fab254');
+    //render_card('5a862202d4f1443a18fab254'); // TODO pre-select CoAs2
 
-    $('#explorer_form').show();
+    $('#search-toggle').on('click', function() {
+        $('#browse-toggle').parent().removeClass('is-active');
+        $('#browse-container').addClass('is-hidden');
+        $('#search-container').removeClass('is-hidden');
+        $(this).parent().addClass('is-active');
+    });
+    $('#browse-toggle').on('click', function() {
+        $('#search-toggle').parent().removeClass('is-active');
+        $('#search-container').addClass('is-hidden');
+        $('#browse-container').removeClass('is-hidden');
+        $(this).parent().addClass('is-active');
+    });
+
+    $('.card').mouseenter(animate);
+    $('.card').mouseleave(animate);
+    $('.section').removeClass('is-hidden');
+    console.log('home loaded');
 });

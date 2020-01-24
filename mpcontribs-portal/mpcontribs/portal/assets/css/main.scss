@@ -12,32 +12,41 @@
 @import "~backgrid-columnmanager/lib/Backgrid.ColumnManager.css";
 
 $family-sans-serif: "Nunito", sans-serif;
-
-/*
-#393939
-#99e4c0
-#7ab197
-
-// Set your brand colors
-$purple: #8A4D76;
-$pink: #FA7C91;
-$brown: #757763;
-$beige-light: #D0D1CD;
-$beige-lighter: #EFF0EB;
-
-// Update Bulma's global variables
-$grey-dark: $brown;
-$grey-light: $beige-light;
-$primary: $purple;
-$link: $pink;
+$tooltip-background-opacity: 1;
 $widescreen-enabled: false;
 $fullhd-enabled: false;
-
-// Update some of Bulma's component variables
-$body-background-color: $beige-lighter;
 $control-border-width: 2px;
 $input-border-color: transparent;
 $input-shadow: none;
-*/
+
+$turquoise: #40E0D0;
+$nightrider: #333333;
+$eclipse: #393939;
+$dark: $eclipse;
+$primary: $turquoise;
+$link: $primary;
+$link-hover: #3ACFBC;
+
+$card-content-padding: 0.5rem;
+$card-background-color: $dark;
+$card-color: white;
+$card-media-margin: 0.5rem;
+$card-content-background-color: $dark;
+
+$box-color: white;
+$box-background-color: $dark;
+$box-padding: 0.75em;
+
+$navbar-background-color: $dark;
+$navbar-item-color: $link;
+$navbar-item-hover-background-color: $nightrider;
+$navbar-dropdown-background-color: $dark;
+$navbar-dropdown-item-hover-color: $nightrider;
 
 @import "~bulma/bulma";
+@import "~bulma-tooltip/src/sass/index";
+@import "select2";
+
+html { font-size: 14px; }
+figure, .card-content { border-radius: $radius-large; }
+figure { border: 4px solid white; }

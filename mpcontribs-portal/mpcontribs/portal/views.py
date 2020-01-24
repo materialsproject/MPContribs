@@ -40,13 +40,13 @@ def index(request):
     client = load_client(headers=get_consumer(request))  # sets/returns global variable
     entries = client.projects.get_entries(_fields=mask).result()['data']
     for entry in entries:
-        authors = entry['authors'].split(',', 1)
+        authors = entry['authors'].strip().split(',', 1)
         if len(authors) > 1:
-            authors[1] = authors[1].strip().replace(', ', '<br/>')
+            authors[1] = authors[1].strip()
         entry['authors'] = authors
-        entry['description'] = entry['description'].split('.', 1)[0]
+        entry['description'] = entry['description'].split('.', 1)[0] + '.'
         ctx['landing_pages'].append(entry)  # visibility governed by is_public flag and X-Consumer-Groups header
-    return render(request, "mpcontribs_portal_index.html", ctx.flatten())
+    return render(request, "home.html", ctx.flatten())
 
 
 def export_notebook(nb, cid):

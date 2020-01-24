@@ -62,8 +62,8 @@ $(document).ready(function () {
         var project = ev.params.data["value"];
         window.location.href = '/'+project+'/';
     });
-    $('#search').on('select2:open', function(ev) { $("#explorer_form").hide(); });
-    $('#search').on('select2:close', function(ev) { $("#explorer_form").show(); });
+
+    //$(this).empty(); // clear selection/options
 
     if ($("#explorer_form").length) {
         import(/* webpackChunkName: "home" */ `./home.js`).catch(function(err) { console.error(err); });

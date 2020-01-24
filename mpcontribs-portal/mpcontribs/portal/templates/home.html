@@ -1,80 +1,135 @@
 {% extends "header_footer.html" %}
 
 {% block content %}
-<section class="section">
-    <div class="box has-background-dark" id="explorer_form" hidden>
-        <div class="columns">
-            <div class="column is-half">
+<section class="section is-hidden">
+
+    <div class="tabs is-centered is-toggle is-toggle-rounded has-text-weight-semibold">
+        <ul>
+            <li class="is-active"><a id="browse-toggle">Browse</a></li>
+            <li><a id="search-toggle">Search</a></li>
+        </ul>
+    </div>
+
+    <div class="columns is-hidden" id="search-container">
+        <div class="column is-half">
+            <div class="box">
                 <div class="columns is-multiline">
-                    <div class="column">
-                        <select id="projects_list" multiple="multiple"></select>
-                        <select id="formulas_list" multiple="multiple"></select>
-                        <select id="identifiers_list" multiple="multiple"></select>
+                    <div class="column has-text-dark">
+                        <div class="field">
+                            <div class="control">
+                                <select id="projects_list" multiple="multiple"></select>
+                            </div>
+                        </div>
+                        <div class="field">
+                            <div class="control">
+                                <select id="formulas_list" multiple="multiple"></select>
+                            </div>
+                        </div>
+                        <div class="field">
+                            <div class="control">
+                                <select id="identifiers_list" multiple="multiple"></select>
+                            </div>
+                        </div>
                     </div>
                     <div class="column is-narrow">
-                        <a class="button is-primary is-small is-fullwidth is-right has-text-dark" id="btnShow">Show</a>
-                        <span class="has-text-right has-text-white" id=count></span>
+                        <div class="field">
+                            <div class="control">
+                                <button class="button is-primary is-fullwidth has-text-weight-semibold" id="btnShow">
+                                    Show
+                                </button>
+                            </div>
+                        </div>
+                        <div class="field is-grouped is-grouped-multiline">
+                            <div class="control">
+                                <div class="tags has-addons is-hidden">
+                                    <span class="tag is-black">results</span>
+                                    <span class="tag is-light" id=count></span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <ul class="column is-full" id=results></ul>
-                </div>
-            </div>
-            <div class="column is-half">
-                <div id="spinner"></div>
-                <div id=card>
-                    <!-- card dynamically added -->
+                    <div class="column is-full">
+                        <table class="table is-narrow has-background-dark has-text-white">
+                            <tbody id=results></tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
+        <div class="column is-half">
+            <div id="spinner"></div>
+            <div class="column is-full has-text-dark" id=card>
+                <!-- card dynamically added -->
+            </div>
+        </div>
     </div>
-</section>
 
-{% if landing_pages %}
-<section class="has-background-white-bis">
-
+    <div class="columns is-multiline" id="browse-container">
         {% for lp in landing_pages %}
-        <div class="col-md-3" id="{{ lp.project }}">
-            <div class="card">
-                <div id={{lp.project}}_img></div>
-                {% if lp.is_public %}
-                <div class="date" title="public">
-                    <span class="glyphicon glyphicon-ok" aria-hidden="true"></span>
-                </div>
-                {% else %}
-                <div class="date" title="private">
-                    <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
-                </div>
-                {% endif %}
-                <div class="data">
-                    <div class="content">
-                        <p class="author">
-                        {{ lp.authors.0 }}
-                        <button class="btn btn-sm btn-link"
-                                data-html="true" data-toggle="tooltip" data-placement="bottom" data-container="body"
-                                                                                               title="{{ lp.authors.1 }}">
-                            et al.
-                        </button>
-                        <label for="show-menu-{{lp.project}}" class="pull-right show-menu">
-                            <span class="glyphicon glyphicon-option-horizontal" aria-hidden="true"></span>
-                        </label>
-                        </p>
-                        <a role=button class="btn btn-link" href="{{ lp.project }}/">
-                            <h4 class="title">{{ lp.title }}</h4>
-                        </a>
-                        <p class="text">{{ lp.description }}</p>
+        <div class="column is-one-quarter" id="{{ lp.project }}">
+            <div class="box">
+                <div class="card">
+                    <div class="card-image">
+                        <figure class="image is-3by2" id={{lp.project}}_img></figure>
                     </div>
-                    <input type="checkbox" id="show-menu-{{lp.project}}" />
-                    <ul class="menu-content list-inline">
-                        {% for l, u in lp.urls.items %}
-                        <li><a href="{{u}}">[{{l}}]</a></li>
-                        {% endfor %}
-                    </ul>
+                    <div class="card-content">
+                        {{ lp.authors.0 }}
+                        {% if lp.authors.1 %}
+                        <span class="has-tooltip-top has-tooltip-multiline has-text-primary"
+                              data-tooltip="{{ lp.authors.1 }}">et al.</a>
+                        </span>
+                        {% endif %}
+                        {% if not lp.is_public %}
+                        <span class="icon is-pulled-right">
+                            <i class="far fa-eye-slash"></i>
+                        </span>
+                        {% endif %}
+                        <div class="title is-4 is-marginless">
+                            <a href="{{ lp.project }}/">
+                                {{ lp.title }}
+                            </a>
+                        </div>
+                    </div>
+                    <div class="card-content is-hidden is-overlay">
+                        <div class="columns">
+                            <div class="column full-width">
+                                {{ lp.authors.0 }}
+                                {% if lp.authors.1 %}
+                                <span class="has-tooltip-top has-tooltip-multiline has-text-primary"
+                                      data-tooltip="{{ lp.authors.1 }}">et al.</a>
+                                </span>
+                                {% endif %}
+                                {% if not lp.is_public %}
+                                <span class="icon is-pulled-right">
+                                    <i class="far fa-eye-slash"></i>
+                                </span>
+                                {% endif %}
+                                <div class="title is-4">
+                                    <a href="{{ lp.project }}/">
+                                        {{ lp.title }}
+                                    </a>
+                                </div>
+                                {% if lp.description %}
+                                <div class="container">{{ lp.description }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% if lp.urls %}
+                        <div class="columns is-gapless">
+                            {% for l, u in lp.urls.items %}
+                            <div class="column">
+                                <a href="{{u}}">{{l}}</a>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
                 </div>
             </div>
         </div>
         {% endfor %}
-
     </div>
-</div>
-{% endif %}
+
+</section>
 
 {% endblock %}

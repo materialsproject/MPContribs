@@ -14,12 +14,13 @@
   </head>
   <body>
       <header hidden>
-          <nav class="navbar is-fixed-top is-dark" role="navigation" aria-label="main navigation">
+          <nav class="navbar is-fixed-top has-background-dark is-spaced" role="navigation" aria-label="main navigation">
               <div class="navbar-brand">
                   <a class="navbar-item" href="/">
                       <img id="logo">
                   </a>
-                  <a role="button" class="navbar-burger burger" aria-label="menu" aria-expanded="false" data-target="navbarBasicExample">
+                  <a role="button" class="navbar-burger burger" aria-label="menu"
+                      aria-expanded="false" data-target="navbarBasicExample">
                       <span aria-hidden="true"></span>
                       <span aria-hidden="true"></span>
                       <span aria-hidden="true"></span>
@@ -41,28 +42,34 @@
                       {% endblock extra_items %}
                       <div class="navbar-item has-dropdown is-hoverable">
                           <a class="navbar-link is-arrowless">
-                              <span class="icon">
-                                  <i class="fas fa-ellipsis-v"></i>
-                              </span>
+                              <span class="icon"><i class="fas fa-ellipsis-v"></i></span>
                           </a>
                           <div class="navbar-dropdown is-right">
-                              <div class="navbar-item is-size-5">
-                                  {{ request.META.HTTP_X_CONSUMER_USERNAME }}
+                              <div class="navbar-item has-text-weight-semibold">
+                                  <div class="has-text-white">
+                                      <span class="icon"><i class="fas fa-user fa-fw"></i></span>
+                                      {{ request.META.HTTP_X_CONSUMER_USERNAME }}
+                                  </div>
                               </div>
                               {% if request.META.HTTP_X_CONSUMER_CUSTOM_ID %}
-                              <hr class="navbar-divider">
                               <a class="navbar-item">
                                   <div class="button is-small" id=api_key_btn>
-                                      <i class="far fa-copy fa-fw"></i> Copy API Key
+                                      <span class="icon"><i class="far fa-copy fa-fw"></i></span>
+                                      Copy API Key
                                   </div>
                               </a>
                               {% endif %}
-                              <hr class="navbar-divider">
                               <a class="navbar-item" id=docs_url target="_blank">
-                                   <i class="fas fa-info fa-fw"></i> Documentation
+                                  <div>
+                                      <span class="icon"><i class="fas fa-info fa-fw"></i></span>
+                                      Documentation
+                                  </div>
                               </a>
                               <a class="navbar-item" name=api_url target="_blank">
-                                  <i class="fas fa-code fa-fw"></i> RESTful API
+                                  <div>
+                                      <span class="icon"><i class="fas fa-code fa-fw"></i></span>
+                                      RESTful API
+                                  </div>
                               </a>
                           </div>
                       </div>
@@ -80,11 +87,9 @@
       <!-- Page Content-->
       {% endblock content %}
       <footer class="footer" hidden>
-          <div class="content has-text-centered">
-              <p class="is-size-7">
-                  Supported by NSF LSDI Data Infrastructure Building Blocks program and
-                  DOE BES <a href="https://materialsproject.org">Materials Project</a>.
-              </p>
+          <div class="content has-text-centered is-size-7">
+              Supported by NSF LSDI Data Infrastructure Building Blocks program and
+              DOE BES <a href="https://materialsproject.org">Materials Project</a>.
           </div>
           {% block footer %}
           {% endblock footer %}
