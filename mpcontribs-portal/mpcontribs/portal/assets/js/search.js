@@ -16,7 +16,7 @@ function get_selection(field) {
 }
 
 function get_query(selection) {
-    var query = {_limit: 7};
+    var query = {}; // _limit: 7
     $.each(selection, function(idx, sel) {
         if (sel !== '') { query[fields[idx] + '__in'] = sel; }
     });
@@ -69,14 +69,13 @@ function get_ajax(field) {
 }
 
 function render_card(cid) {
-    $("#card").empty(); // TODO move to close event?
+    $("#card").empty();
     var target = document.getElementById('spinner');
     spinner.spin(target);
     var url = window.api['host'] + 'cards/' + cid + '/';
     $.get({url: url, headers: window.api['headers']}).done(function(response) {
         $('#card').html(response['html']);
         spinner.stop();
-        $('#card').parent().toggleClass('is-hidden');
     });
 }
 
@@ -88,8 +87,7 @@ function search(event) {
     else {
         var query = get_query(selection)
         var api_url = window.api['host'] + 'contributions/';
-        var btnId = $(this).attr('id');
-        if (btnId.endsWith('Show')) {
+        if ($(this).is('select')) {
             $.get({
                 url: api_url, data: query, headers: window.api['headers']
             }).done(function(response) {
