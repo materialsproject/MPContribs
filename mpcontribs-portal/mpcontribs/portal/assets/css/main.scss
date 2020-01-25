@@ -19,35 +19,38 @@ $widescreen-enabled: false;
 $input-border-color: transparent;
 $input-shadow: none;
 
-$turquoise: #40E0D0;
-$nightrider: #333333;
-$eclipse: #393939;
-$dark: $eclipse;
-$primary: $turquoise;
-$link: $primary;
-$link-hover: #3ACFBC;
+$turquoise: #51bdb4; // primary
+$grey-darker: #2d3f50; // background
+$black-ter: #233140; // hover background
+$grey-light: #3acfbc; // link hover
+
+$link: $turquoise;
+$link-hover: $grey-light;
 
 $card-content-padding: 0.5rem;
-$card-background-color: $dark;
+$card-background-color: $grey-darker;
 $card-color: white;
 $card-media-margin: 0.5rem;
-$card-content-background-color: $dark;
+$card-content-background-color: $grey-darker;
 $card-shadow: none;
 
 $box-color: white;
-$box-background-color: $dark;
+$box-background-color: $grey-darker;
 $box-padding: 0.75em;
 
-$navbar-background-color: $dark;
+$navbar-background-color: $grey-darker;
 $navbar-item-color: $link;
-$navbar-item-hover-background-color: $nightrider;
-$navbar-dropdown-background-color: $dark;
-$navbar-dropdown-item-hover-color: $nightrider;
+$navbar-item-hover-color: $grey-light;
+$navbar-item-hover-background-color: $black-ter;
 
 $tabs-link-color: $link;
-$border: $primary;
+$tabs-link-hover-color: $grey-light;
+$tabs-toggle-link-hover-background-color: $black-ter;
+$tabs-toggle-link-active-color: $grey-darker;
+$border: $turquoise;
+
 $footer-padding: 0.5rem;
-$footer-background-color: $dark;
+$footer-background-color: $grey-darker;
 $footer-color: white;
 
 @import "~bulma/bulma";

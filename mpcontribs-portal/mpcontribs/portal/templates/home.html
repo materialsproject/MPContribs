@@ -34,9 +34,9 @@
                             <div class="column full-width">
                                 {{ lp.authors.0 }}
                                 {% if lp.authors.1 %}
-                                <span class="has-tooltip-top has-tooltip-multiline has-text-primary"
+                                <a class="has-tooltip-top has-tooltip-multiline"
                                       data-tooltip="{{ lp.authors.1 }}">et al.</a>
-                                </span>
+                                </a>
                                 {% endif %}
                                 {% if not lp.is_public %}
                                 <span class="icon is-pulled-right">

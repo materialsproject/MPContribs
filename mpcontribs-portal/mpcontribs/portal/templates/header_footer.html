@@ -52,14 +52,11 @@
                       </button>
                   </div>
                   {% endif %}
-                  <div class="navbar-item has-text-centered">
-                      <div class="has-text-weight-semibold has-text-white">
-                          <span class="has-tooltip-left has-text-primary"
-                              data-tooltip="{{ request.META.HTTP_X_CONSUMER_USERNAME }}">
-                              <span class="icon is-small"><i class="far fa-user"></i></span>
-                          </span>
-                      </div>
-                  </div>
+                  <a class="navbar-item has-text-weight-semibold has-tooltip-left has-text-centered"
+                     data-tooltip="{{ request.META.HTTP_X_CONSUMER_USERNAME }}">
+                      <span class="icon is-small"><i class="far fa-user"></i></span>
+                      <span class="is-hidden-desktop">{{ request.META.HTTP_X_CONSUMER_USERNAME }}</span>
+                  </a>
               </div>
           </div>
       </nav>
