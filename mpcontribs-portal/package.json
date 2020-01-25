@@ -19,7 +19,6 @@
   "dependencies": {
     "bulma": "^0.8.0",
     "bulma-tooltip": "^3.0.2",
-    "bulma-badge": "^3.0.1",
     "bulma-switch": "^2.0.0",
     "node-sass": "^4.13.1",
     "sass-loader": "^8.0.2",

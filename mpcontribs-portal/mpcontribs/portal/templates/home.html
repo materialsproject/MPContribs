@@ -1,76 +1,15 @@
 {% extends "header_footer.html" %}
 
 {% block content %}
-<section class="section is-hidden">
 
-    <div class="tabs is-centered is-toggle is-toggle-rounded has-text-weight-semibold">
-        <ul>
-            <li class="is-active"><a id="browse-toggle">Browse</a></li>
-            <li><a id="search-toggle">Search</a></li>
-        </ul>
-    </div>
-
-    <div class="columns is-hidden" id="search-container">
-        <div class="column is-half">
-            <div class="box">
-                <div class="columns is-multiline">
-                    <div class="column has-text-dark">
-                        <div class="field">
-                            <div class="control">
-                                <select id="projects_list" multiple="multiple"></select>
-                            </div>
-                        </div>
-                        <div class="field">
-                            <div class="control">
-                                <select id="formulas_list" multiple="multiple"></select>
-                            </div>
-                        </div>
-                        <div class="field">
-                            <div class="control">
-                                <select id="identifiers_list" multiple="multiple"></select>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="column is-narrow">
-                        <div class="field">
-                            <div class="control">
-                                <button class="button is-primary is-fullwidth has-text-weight-semibold" id="btnShow">
-                                    Show
-                                </button>
-                            </div>
-                        </div>
-                        <div class="field is-grouped is-grouped-multiline">
-                            <div class="control">
-                                <div class="tags has-addons is-hidden">
-                                    <span class="tag is-black">results</span>
-                                    <span class="tag is-light" id=count></span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="column is-full">
-                        <table class="table is-narrow has-background-dark has-text-white">
-                            <tbody id=results></tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="column is-half">
-            <div id="spinner"></div>
-            <div class="column is-full has-text-dark" id=card>
-                <!-- card dynamically added -->
-            </div>
-        </div>
-    </div>
-
-    <div class="columns is-multiline" id="browse-container">
+<section class="section is-hidden" id="browse-container">
+    <div class="columns is-multiline">
         {% for lp in landing_pages %}
-        <div class="column is-one-quarter" id="{{ lp.project }}">
+        <div class="column is-narrow is-flex" id="{{ lp.project }}" name=cards>
             <div class="box">
                 <div class="card">
                     <div class="card-image">
-                        <figure class="image is-3by2" id={{lp.project}}_img></figure>
+                        <figure class="image" id={{lp.project}}_img></figure>
                     </div>
                     <div class="card-content">
                         {{ lp.authors.0 }}
@@ -129,7 +68,165 @@
         </div>
         {% endfor %}
     </div>
+</section>
 
+<section class="section is-hidden" id="search-container">
+    <div class="columns">
+        <div class="column is-half">
+            <div class="box">
+                <div class="columns is-multiline">
+                    <div class="column has-text-dark">
+                        <div class="field">
+                            <div class="control">
+                                <select id="projects_list" multiple="multiple"></select>
+                            </div>
+                        </div>
+                        <div class="field">
+                            <div class="control">
+                                <select id="formulas_list" multiple="multiple"></select>
+                            </div>
+                        </div>
+                        <div class="field">
+                            <div class="control">
+                                <select id="identifiers_list" multiple="multiple"></select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="column is-narrow">
+                        <div class="field">
+                            <div class="control">
+                                <button class="button is-primary is-fullwidth has-text-weight-semibold" id="btnShow">
+                                    Show
+                                </button>
+                            </div>
+                        </div>
+                        <div class="field is-grouped is-grouped-multiline">
+                            <div class="control">
+                                <div class="tags has-addons is-hidden">
+                                    <span class="tag is-black">results</span>
+                                    <span class="tag is-light" id=count></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="column is-full">
+                        <table class="table is-narrow has-background-dark has-text-white">
+                            <tbody id=results></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="column is-half">
+            <div id="spinner"></div>
+            <div class="column is-full has-text-dark" id=card>
+                <!-- card dynamically added -->
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="section is-hidden" id="apply-container">
+    <div class="columns">
+        <div class="column">
+            apply
+        </div>
+    </div>
+    <!--
+        <div class="col-md-8">
+            <form class="form-horizontal" id=apply-form>
+                <div class="form-group">
+                    <label for="email" class="col-sm-2 control-label">Owner</label>
+                    <div class="col-sm-10">
+                        <input type="text" class="form-control" id="owner" name=owner
+                                                                value="{{request.META.HTTP_X_CONSUMER_USERNAME}}" placeholder="{{request.META.HTTP_X_CONSUMER_USERNAME}}" readonly required>
+                    </div>
+                </div>
+                <div class="form-group has-feedback">
+                    <label for="project" class="col-sm-2 control-label">Project</label>
+                    <div class="col-sm-10">
+                        <input type="text" class="form-control" id="project" name=project minlength=3 maxlength=30 placeholder="my_project" required>
+                        <span class="glyphicon form-control-feedback" aria-hidden="true"></span>
+                    </div>
+                </div>
+                <div class="form-group has-feedback">
+                    <label for="title" class="col-sm-2 control-label">Title</label>
+                    <div class="col-sm-10">
+                        <input type="text" class="form-control" id="title" name=title minlength=5 maxlength=40 placeholder="My Title" required>
+                        <span class="glyphicon form-control-feedback" aria-hidden="true"></span>
+                    </div>
+                </div>
+                <div class="form-group has-feedback">
+                    <label for="authors" class="col-sm-2 control-label">Authors</label>
+                    <div class="col-sm-10">
+                        <input type="text" class="form-control" id="authors" name=authors value="P. Huck / J. Doe, K. Persson" placeholder="Enter authors" required>
+                        <span class="glyphicon form-control-feedback" aria-hidden="true"></span>
+                    </div>
+                </div>
+                <div class="form-group has-feedback">
+                    <label for="description" class="col-sm-2 control-label">Description</label>
+                    <div class="col-sm-10">
+                        <textarea class="form-control" rows="3" id="description" name=description minlength=5 maxlength=1500
+                                                                placeholder='This first sentence will always be shown. Additional sentences are collapsed into a "More &raquo;" button.' required></textarea>
+                        <span class="glyphicon form-control-feedback" aria-hidden="true"></span>
+                    </div>
+                </div>
+                <div class="form-group has-feedback">
+                    <label for="urls" class="col-sm-2 control-label">References</label>
+                    <div class="col-sm-10">
+                        <div id="czContainer" class="col-sm-12">
+                            <div id="first">
+                                <div class="recordset row">
+                                    <div class="col-sm-3" style="padding-left: 0px;">
+                                        <input type="text" class="form-control" id="ref_1_key" name=ref_1_key minlength=3 maxlength=8 placeholder="NPA" required>
+                                        <span class="glyphicon form-control-feedback" aria-hidden="true"></span>
+                                    </div>
+                                    <div class="col-sm-8" style="padding-left: 0px;">
+                                        <input type="text" class="form-control" id="ref_1_url" name=ref_1_url minlength=7 maxlength=100
+                                                                                placeholder="https://doi.org/10.1016/j.nuclphysa.2014.09.090" required>
+                                        <span class="glyphicon form-control-feedback" aria-hidden="true"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-sm-offset-2 col-sm-10">
+                        <button type="submit" class="btn btn-primary col-sm-2">Apply</button>
+                        <div id="spinner"></div>
+                        <div class="alert alert-success col-sm-offset-1 col-sm-9" role="alert" hidden></div>
+                        <div class="alert alert-danger col-sm-offset-1 col-sm-9" role="alert" hidden></div>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <div class="col-md-4">
+            <div class="panel panel-info">
+                <div class="panel-heading">
+                    <h3 class="panel-title">Apply for a Project</h3>
+                </div>
+                <div class="panel-body text-justify">
+                    Fill out this form to apply for a project on MPContribs. Upon submission of your info an
+                    email will be sent to an admin to approve your request. If approved, you can start uploading data to
+                    your project which will appear on the project landing page. You can choose to add e-mails of MPContribs
+                    users who you'd like to be added to your project group as collaborators. Collaborators and
+                    owners have identical permissions but the number of projects an owner can create is limited. Your data
+                    will only be visible to you and your collaborators until you choose to make it public. Only public
+                    contributions will appear on the detail pages of <a href="https://materialsproject.org">Materials Project</a>.
+                </div>
+            </div>
+        </div>
+    </div>
+    -->
+</section>
+
+<section class="section is-hidden" id="work-container">
+    <div class="columns">
+        <div class="column">
+            work
+        </div>
+    </div>
 </section>
 
 {% endblock %}

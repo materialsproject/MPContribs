@@ -1,4 +1,4 @@
-import '~bootstrap-tokenfield/js/bootstrap-tokenfield'
+import 'bootstrap-tokenfield/js/bootstrap-tokenfield'
 import 'jquery-form';
 import 'jquery-validation';
 import 'czmore';

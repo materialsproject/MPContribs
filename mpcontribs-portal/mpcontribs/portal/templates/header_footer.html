@@ -13,80 +13,68 @@
     {% render_entrypoint 'main' %}
   </head>
   <body>
-      <header hidden>
-          <nav class="navbar is-fixed-top has-background-dark is-spaced" role="navigation" aria-label="main navigation">
-              <div class="navbar-brand">
-                  <a class="navbar-item" href="/">
-                      <img id="logo">
-                  </a>
-                  <a role="button" class="navbar-burger burger" aria-label="menu"
-                      aria-expanded="false" data-target="navbarBasicExample">
-                      <span aria-hidden="true"></span>
-                      <span aria-hidden="true"></span>
-                      <span aria-hidden="true"></span>
-                  </a>
+      <nav class="navbar is-fixed-top has-background-dark" role="navigation" aria-label="main navigation">
+          <div class="navbar-brand">
+              <a class="navbar-item has-text-centered" href="/"><img id="logo"></a>
+              <div class="navbar-burger" data-target="navbarBasicExample">
+                  <span></span>
+                  <span></span>
+                  <span></span>
               </div>
-              <div id="navbarBasicExample" class="navbar-menu">
-                  <div class="navbar-start">
-                      <div class="navbar-item">
-                          <select data-placeholder="Search or jump to projects ..." id="search">
-                              <option></option>
-                          </select>
-                      </div>
+          </div>
+          <div id="navbarBasicExample" class="navbar-menu">
+              <div class="navbar-start">
+                  <div class="navbar-item has-text-centered">
+                      <select data-placeholder="Search or jump to projects ..." id="jump">
+                          <option></option>
+                      </select>
                   </div>
-                  <div class="navbar-end">
-                      <!-- TODO merge ingester webapp into portal -->
-                      <a class="navbar-item" href="/apply">Apply</a>
-                      <a class="navbar-item" href="/use">Use</a>
-                      {% block extra_items %}
-                      {% endblock extra_items %}
-                      <div class="navbar-item has-dropdown is-hoverable">
-                          <a class="navbar-link is-arrowless">
-                              <span class="icon"><i class="fas fa-ellipsis-v"></i></span>
-                          </a>
-                          <div class="navbar-dropdown is-right">
-                              <div class="navbar-item has-text-weight-semibold">
-                                  <div class="has-text-white">
-                                      <span class="icon"><i class="fas fa-user fa-fw"></i></span>
-                                      {{ request.META.HTTP_X_CONSUMER_USERNAME }}
-                                  </div>
-                              </div>
-                              {% if request.META.HTTP_X_CONSUMER_CUSTOM_ID %}
-                              <a class="navbar-item">
-                                  <div class="button is-small" id=api_key_btn>
-                                      <span class="icon"><i class="far fa-copy fa-fw"></i></span>
-                                      Copy API Key
-                                  </div>
-                              </a>
-                              {% endif %}
-                              <a class="navbar-item" id=docs_url target="_blank">
-                                  <div>
-                                      <span class="icon"><i class="fas fa-info fa-fw"></i></span>
-                                      Documentation
-                                  </div>
-                              </a>
-                              <a class="navbar-item" name=api_url target="_blank">
-                                  <div>
-                                      <span class="icon"><i class="fas fa-code fa-fw"></i></span>
-                                      RESTful API
-                                  </div>
-                              </a>
-                          </div>
+                  <div class="navbar-item has-text-centered">
+                      <div class="tabs is-centered is-toggle is-toggle-rounded has-text-weight-semibold">
+                          <ul>
+                              <li class="is-active"><a id="browse-toggle">Browse</a></li>
+                              <li><a id="search-toggle">Search</a></li>
+                              <li><a id="apply-toggle">Apply</a></li>
+                              <li><a id="work-toggle">Work</a></li>
+                          </ul>
                       </div>
                   </div>
               </div>
-          </nav>
+              <div class="navbar-end">
+                  <!-- TODO merge ingester webapp into portal -->
+                  <a class="navbar-item has-text-centered" id=docs_url target="_blank">Docs</a>
+                  <a class="navbar-item has-text-centered" name=api_url target="_blank">API</a>
+                  {% if request.META.HTTP_X_CONSUMER_CUSTOM_ID %}
+                  <div class="navbar-item has-text-centered">
+                      <button class="button is-small is-outlined is-rounded is-primary" id=api_key_btn>
+                          <span class="icon is-small"><i class="far fa-copy"></i></span>
+                          <span>API Key</span>
+                      </button>
+                  </div>
+                  {% endif %}
+                  <div class="navbar-item has-text-centered">
+                      <div class="has-text-weight-semibold has-text-white">
+                          <span class="has-tooltip-left has-text-primary"
+                              data-tooltip="{{ request.META.HTTP_X_CONSUMER_USERNAME }}">
+                              <span class="icon is-small"><i class="far fa-user"></i></span>
+                          </span>
+                      </div>
+                  </div>
+              </div>
+          </div>
+      </nav>
 
-      </header>
       {% if alert %}
       <div id=alert class="notification is-danger">
           {{ alert|safe }}
       </div>
       {% endif %}
+
       {% block content %}
       <!-- Page Content-->
       {% endblock content %}
-      <footer class="footer" hidden>
+
+      <footer class="footer">
           <div class="content has-text-centered is-size-7">
               Supported by NSF LSDI Data Infrastructure Building Blocks program and
               DOE BES <a href="https://materialsproject.org">Materials Project</a>.

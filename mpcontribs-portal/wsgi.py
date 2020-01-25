@@ -9,7 +9,8 @@ if 'DJANGO_SETTINGS_MODULE' in os.environ:
 
 def immutable_file_test(path, url):
     # Match filename with 20 hex digits before the extension
-    return re.match(r'^.+\.[0-9a-f]{20}\..+$', url)
+    return re.match(r'^.+\.[0-9a-f]{20}\..+$', url) or \
+            re.match(r'^.+[0-9a-zA-Z_]{3,31}\.jpg$', url)
 
 django_settings_file.setup()
 application = get_wsgi_application()

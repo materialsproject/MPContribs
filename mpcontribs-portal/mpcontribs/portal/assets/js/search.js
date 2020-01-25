@@ -69,12 +69,14 @@ function get_ajax(field) {
 }
 
 function render_card(cid) {
+    $("#card").empty(); // TODO move to close event?
     var target = document.getElementById('spinner');
     spinner.spin(target);
     var url = window.api['host'] + 'cards/' + cid + '/';
     $.get({url: url, headers: window.api['headers']}).done(function(response) {
         $('#card').html(response['html']);
         spinner.stop();
+        $('#card').parent().toggleClass('is-hidden');
     });
 }
 
@@ -116,42 +118,13 @@ function search(event) {
     }
 }
 
-function animate() {
-    $(this).children('.is-overlay').toggleClass('is-hidden');
-}
-
 $(document).ready(function () {
-    import(
-        /* webpackPrefetch: true */
-        /* webpackChunkName: "images" */
-        './images'
-    );
-
     $.each(fields, function(idx, field) {
         $('#'+field+'s_list').select2({placeholder: 'Select '+field+'(s) ...', ajax: get_ajax(field)});
     });
+    $('#btnShow').on('click', search);
+    render_card('5a862202d4f1443a18fab254'); // TODO pre-select CoAs2
     $('.select2').css({width: '100%'});
     $('.select2-search').css({width: 'auto'});
     $('.select2-search__field').css({width: '100%'});
-
-    $('#btnShow').on('click', search);
-    //render_card('5a862202d4f1443a18fab254'); // TODO pre-select CoAs2
-
-    $('#search-toggle').on('click', function() {
-        $('#browse-toggle').parent().removeClass('is-active');
-        $('#browse-container').addClass('is-hidden');
-        $('#search-container').removeClass('is-hidden');
-        $(this).parent().addClass('is-active');
-    });
-    $('#browse-toggle').on('click', function() {
-        $('#search-toggle').parent().removeClass('is-active');
-        $('#search-container').addClass('is-hidden');
-        $('#browse-container').removeClass('is-hidden');
-        $(this).parent().addClass('is-active');
-    });
-
-    $('.card').mouseenter(animate);
-    $('.card').mouseleave(animate);
-    $('.section').removeClass('is-hidden');
-    console.log('home loaded');
 });
