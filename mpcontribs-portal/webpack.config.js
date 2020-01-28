@@ -98,6 +98,7 @@ module.exports = {
             { test: /backgrid/, loader: 'imports-loader?jquery,backbone' },
             { test: /jquery-form/, loader: 'imports-loader?jquery' },
             { test: /jquery-validation/, loader: 'imports-loader?jquery' },
+            { test: /jquery-simulate/, loader: 'imports-loader?jquery' },
             { test: /select2/, loader: 'imports-loader?jquery' },
             { test: /czmore/, loader: 'imports-loader?jquery' },
             { test: /backgrid-select-all/, loader: 'imports-loader?backgrid' },

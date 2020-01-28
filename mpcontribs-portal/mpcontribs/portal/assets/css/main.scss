@@ -56,6 +56,7 @@ $footer-color: white;
 
 @import "~bulma/bulma";
 @import "~bulma-tooltip/src/sass/index";
+@import "~bulma-extensions/bulma-checkradio/src/sass/index";
 @import "select2";
 
 figure, .card-content { border-radius: $radius-large; }

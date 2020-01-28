@@ -1,6 +1,7 @@
 import img from 'images/logo.png';
 import * as clipboard from "clipboard";
 import 'select2/dist/js/select2';
+import 'jquery-simulate/jquery.simulate';
 require('css/main.scss');
 
 window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
@@ -97,5 +98,11 @@ $(document).ready(function () {
         $(".navbar-menu").toggleClass("is-active");
     });
 
-    $('#browse-toggle').click();
+    // click the toggle based on location
+    if (window.location.hash) {
+        var selector = '#' + window.location.hash.split('-')[0].slice(1) + '-toggle';
+        $(selector).simulate('click');
+    } else {
+        $('#browse-toggle').click();
+    }
 });

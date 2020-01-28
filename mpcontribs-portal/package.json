@@ -19,7 +19,7 @@
   "dependencies": {
     "bulma": "^0.8.0",
     "bulma-tooltip": "^3.0.2",
-    "bulma-switch": "^2.0.0",
+    "bulma-extensions": "^6.2.7",
     "node-sass": "^4.13.1",
     "sass-loader": "^8.0.2",
     "webpack": "^4.41.5",
@@ -42,6 +42,7 @@
     "webpack-dev-server": "^3.10.1",
     "jquery": "^3.4.1",
     "jquery-validation": "^1.19.1",
+    "jquery-simulate": "^1.0.2",
     "underscore": "^1.9.2",
     "clipboard-polyfill": "^2.8.6",
     "select2": "^4.0.12",

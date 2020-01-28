@@ -94,11 +94,12 @@
                     </div>
                     <div class="column is-narrow">
                         <div class="field">
-                            <div class="control">
-                                <button class="button is-primary is-fullwidth has-text-weight-semibold" id="btnShow">
-                                    Show
-                                </button>
-                            </div>
+                            <input class="is-checkradio" id="has_structures" type="checkbox">
+                            <label for="has_structures">has structure(s)</label>
+                        </div>
+                        <div class="field">
+                            <input class="is-checkradio" id="has_tables" type="checkbox">
+                            <label for="has_tables">has table(s)</label>
                         </div>
                         <div class="field is-grouped is-grouped-multiline">
                             <div class="control">
@@ -106,6 +107,11 @@
                                     <span class="tag is-black">results</span>
                                     <span class="tag is-light" id=count></span>
                                 </div>
+                            </div>
+                        </div>
+                        <div class="field">
+                            <div class="control">
+                                <div id="spinner"></div>
                             </div>
                         </div>
                     </div>
@@ -118,7 +124,6 @@
             </div>
         </div>
         <div class="column is-half">
-            <div id="spinner"></div>
             <div class="column is-full has-text-dark" id=card>
                 <!-- card dynamically added -->
             </div>
