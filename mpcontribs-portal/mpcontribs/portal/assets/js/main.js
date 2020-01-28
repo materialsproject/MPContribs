@@ -42,17 +42,17 @@ $(document).ready(function () {
             multiple: true,
             width: 'style',
             data: function (params) {
-                if (typeof params.term == 'undefined') { $("div[name=cards]").show(); }
+                if (typeof params.term == 'undefined') { $("div[name=cards]").removeClass('is-hidden'); }
                 var query = {_fields: "project,title"};
                 if (params.term) { query['description__icontains'] = params.term; }
                 return query;
             },
             processResults: function (data) {
-                $("div[name=cards]").hide();
+                $("div[name=cards]").addClass('is-hidden');
                 var results = [];
                 $.each(data['data'], function(index, element) {
                     var entry = {id: index, text: element['title'], value: element['project']};
-                    $('#'+element['project']).show();
+                    $('#'+element['project']).removeClass('is-hidden');
                     results.push(entry);
                 });
                 return {results: results};

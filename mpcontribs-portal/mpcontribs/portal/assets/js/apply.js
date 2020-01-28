@@ -3,20 +3,17 @@ import 'jquery-validation';
 import 'czmore';
 import {Spinner} from 'spin.js/spin';
 
-var target = document.getElementById('spinner');
 var spinner = new Spinner({scale: 0.5});
 
 function prepareRequest(formData, jqForm, options) {
+    console.log(formData);
+    $('.notification').addClass('is-hidden');
+    var target = document.getElementById('spinner');
     spinner.spin(target);
-    $('.alert-success').hide(); $('.alert-danger').hide();
-    if (formData[4]['value'].trim() === "") {
-        $('.alert-danger').html('Please add description.').show();
-        return false;
-    }
-    var start = 5;
+    var start = 6;
     var nrefs = parseInt(formData.splice(start, 1)[0]['value']);
     if (nrefs < 1) {
-        $('.alert-danger').html('Please add references.').show();
+        $('.notification').html('Please add references.').removeClass('is-hidden');
         return false;
     }
     var urls = {name: 'urls', value: {}};
@@ -29,12 +26,19 @@ function prepareRequest(formData, jqForm, options) {
 }
 
 function processJson(data) { // 'data' is the json object returned from the server
-    $('.alert-success').hide(); $('.alert-danger').hide();
-    if (typeof data.responseJSON == 'undefined') {
-        $('.alert-success').html('Thank you for submitting your project application. Please check your inbox for an e-mail asking you to subscribe for MPContribs notifications. Once your e-mail address is confirmed we will notify you if/when your project has been accepted for dissemination via MPContribs. <span class="glyphicon glyphicon-ok" aria-hidden="true"></span>').show();
-    } else {
-        $('.alert-danger').html(data.responseJSON['error']).show();
-    }
+    console.log('success');
+    console.log(data);
+    var msg = `Thank you for submitting your project application. Please check your inbox for an
+    e-mail asking you to subscribe for MPContribs notifications. Once your e-mail address is
+    confirmed we will notify you if/when your project has been accepted for dissemination.`
+    $('.notification').html(msg).removeClass('is-danger').addClass('is-success').removeClass('is-hidden');
+    spinner.stop();
+}
+
+function processError(data) {
+    console.log('error');
+    console.log(data.responseText);
+    $('.notification').html(data.responseText).removeClass('is-danger').addClass('is-success').removeClass('is-hidden');
     spinner.stop();
 }
 
@@ -46,41 +50,24 @@ $(document).ready(function () {
 
     $('#apply-form').validate({
         rules: {
-            project: {alphanumeric: true},
-            url_1: {url: true, required: true},
-            url_2: {url: true},
-            url_3: {url: true},
-            url_4: {url: true},
-            url_5: {url: true}
+            project: {alphanumeric: true}, url_1: {url: true, required: true},
+            url_2: {url: true}, url_3: {url: true}, url_4: {url: true}, url_5: {url: true}
         },
         highlight: function (element) {
-            $(element).nextAll('.glyphicon').removeClass('glyphicon-ok').addClass('glyphicon-remove');
-            $(element).closest('.form-group').removeClass('has-success').addClass('has-error');
+            $(element).parent().children().removeClass('is-success').addClass('is-danger');
         },
         unhighlight: function (element) {
-            $(element).nextAll('.glyphicon').removeClass('glyphicon-remove').addClass('glyphicon-ok');
-            $(element).closest('.form-group').removeClass('has-error').addClass('has-success');
+            $(element).parent().children().removeClass('is-danger').addClass('is-success');
         },
-        errorElement: 'span', errorClass: 'help-block',
-        errorPlacement: function(error, element) {
-            if(element.parent('.input-group').length) {
-                error.insertAfter(element.parent());
-            } else { error.insertAfter(element); }
-        },
+        errorElement: 'p', errorClass: 'help',
+        errorPlacement: function(error, element) { element.parent().append(error); },
         submitHandler: function(form) { $(form).ajaxSubmit({
-            beforeSubmit: prepareRequest, success: processJson, error: processJson,
+            beforeSubmit: prepareRequest, success: processJson, error: processError,
             url: window.api['host'] + 'projects/', headers: window.api['headers'],
             type: 'POST', dataType: 'json', requestFormat: 'json'
         }); }
     });
 
-    $("#czContainer").czMore({
-        max: 5, styleOverride: true,
-        onAdd: function(index) {
-            $('.btnMinus').addClass('col-sm-1').css('padding-left', '0px')
-                .html('<span class="glyphicon glyphicon-remove" style="top: 8px;" aria-hidden="true"></span>');
-        }
-    });
-    $('.btnPlus').addClass('col-sm-1').css('padding-left', '0px')
-        .html('<span class="glyphicon glyphicon-plus" style="top: 5px;" aria-hidden="true"></span>').click();
+    $("#czContainer").czMore({max: 5, styleOverride: true});
+    //$('.btnPlus').click();
 });
