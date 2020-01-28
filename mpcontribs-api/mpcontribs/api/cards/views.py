@@ -87,7 +87,7 @@ class CardsView(SwaggerView):
                 browser.execute_script(card_script, data)
                 bs = BeautifulSoup(browser.page_source, 'html.parser')
                 ctx['data'] = bs.body.table
-                browser.close()
+                #browser.close()
                 rendered = html_minify(render_template('card.html', **ctx))
                 tree = html.fromstring(rendered)
                 inline(tree)
