@@ -2,7 +2,7 @@
 
 {% block content %}
 
-<section class="section is-hidden" id="browse-container">
+<section class="section is-hidden" id="browse">
     <div class="columns is-multiline">
         {% for lp in landing_pages %}
         <div class="column is-narrow is-flex" id="{{ lp.project }}" name=cards>
@@ -70,7 +70,7 @@
     </div>
 </section>
 
-<section class="section is-hidden" id="search-container">
+<section class="section is-hidden" id="search">
     <div class="columns">
         <div class="column is-half">
             <div class="box">
@@ -131,105 +131,175 @@
     </div>
 </section>
 
-<section class="section is-hidden" id="apply-container">
-    <div class="columns">
-        <div class="column">
-            apply
+<section class="section is-hidden" id="apply">
+    <article class="message is-dark">
+        <div class="message-body">
+            Fill out this form to apply for a project on MPContribs. Upon submission of your info an
+            email will be sent to an admin to approve your request. If approved, you can start uploading data to
+            your project which will appear on the project landing page. You can choose to add e-mails of MPContribs
+            users who you'd like to be added to your project group as collaborators. Collaborators and
+            owners have identical permissions but the number of projects an owner can create is limited. Your data
+            will only be visible to you and your collaborators until you choose to make it public. Only public
+            contributions will appear on the detail pages of <a href="https://materialsproject.org">Materials Project</a>.
         </div>
-    </div>
-    <!--
-        <div class="col-md-8">
-            <form class="form-horizontal" id=apply-form>
-                <div class="form-group">
-                    <label for="email" class="col-sm-2 control-label">Owner</label>
-                    <div class="col-sm-10">
-                        <input type="text" class="form-control" id="owner" name=owner
-                                                                value="{{request.META.HTTP_X_CONSUMER_USERNAME}}" placeholder="{{request.META.HTTP_X_CONSUMER_USERNAME}}" readonly required>
+    </article>
+    <form id=apply-form>
+        <div class="field is-horizontal">
+            <div class="field-label is-normal">
+                <label class="label">Authors</label>
+            </div>
+            <div class="field-body">
+                <div class="field">
+                    <div class="control">
+                        <input class="input is-static" type="text" id=owner name=owner
+                             value="{{request.META.HTTP_X_CONSUMER_USERNAME}}"
+                             placeholder="{{request.META.HTTP_X_CONSUMER_USERNAME}}"
+                             required>
                     </div>
                 </div>
-                <div class="form-group has-feedback">
-                    <label for="project" class="col-sm-2 control-label">Project</label>
-                    <div class="col-sm-10">
-                        <input type="text" class="form-control" id="project" name=project minlength=3 maxlength=30 placeholder="my_project" required>
-                        <span class="glyphicon form-control-feedback" aria-hidden="true"></span>
+                <div class="field">
+                    <div class="control has-icons-right">
+                        <input class="input" type="tags" id=authors
+                             name=authors value="P. Huck / J. Doe, K. Persson" placeholder="Enter authors" required>
+                        <span class="icon is-small is-right"><i class="fas fa-check"></i></span>
                     </div>
-                </div>
-                <div class="form-group has-feedback">
-                    <label for="title" class="col-sm-2 control-label">Title</label>
-                    <div class="col-sm-10">
-                        <input type="text" class="form-control" id="title" name=title minlength=5 maxlength=40 placeholder="My Title" required>
-                        <span class="glyphicon form-control-feedback" aria-hidden="true"></span>
-                    </div>
-                </div>
-                <div class="form-group has-feedback">
-                    <label for="authors" class="col-sm-2 control-label">Authors</label>
-                    <div class="col-sm-10">
-                        <input type="text" class="form-control" id="authors" name=authors value="P. Huck / J. Doe, K. Persson" placeholder="Enter authors" required>
-                        <span class="glyphicon form-control-feedback" aria-hidden="true"></span>
-                    </div>
-                </div>
-                <div class="form-group has-feedback">
-                    <label for="description" class="col-sm-2 control-label">Description</label>
-                    <div class="col-sm-10">
-                        <textarea class="form-control" rows="3" id="description" name=description minlength=5 maxlength=1500
-                                                                placeholder='This first sentence will always be shown. Additional sentences are collapsed into a "More &raquo;" button.' required></textarea>
-                        <span class="glyphicon form-control-feedback" aria-hidden="true"></span>
-                    </div>
-                </div>
-                <div class="form-group has-feedback">
-                    <label for="urls" class="col-sm-2 control-label">References</label>
-                    <div class="col-sm-10">
-                        <div id="czContainer" class="col-sm-12">
-                            <div id="first">
-                                <div class="recordset row">
-                                    <div class="col-sm-3" style="padding-left: 0px;">
-                                        <input type="text" class="form-control" id="ref_1_key" name=ref_1_key minlength=3 maxlength=8 placeholder="NPA" required>
-                                        <span class="glyphicon form-control-feedback" aria-hidden="true"></span>
-                                    </div>
-                                    <div class="col-sm-8" style="padding-left: 0px;">
-                                        <input type="text" class="form-control" id="ref_1_url" name=ref_1_url minlength=7 maxlength=100
-                                                                                placeholder="https://doi.org/10.1016/j.nuclphysa.2014.09.090" required>
-                                        <span class="glyphicon form-control-feedback" aria-hidden="true"></span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <div class="col-sm-offset-2 col-sm-10">
-                        <button type="submit" class="btn btn-primary col-sm-2">Apply</button>
-                        <div id="spinner"></div>
-                        <div class="alert alert-success col-sm-offset-1 col-sm-9" role="alert" hidden></div>
-                        <div class="alert alert-danger col-sm-offset-1 col-sm-9" role="alert" hidden></div>
-                    </div>
-                </div>
-            </form>
-        </div>
-        <div class="col-md-4">
-            <div class="panel panel-info">
-                <div class="panel-heading">
-                    <h3 class="panel-title">Apply for a Project</h3>
-                </div>
-                <div class="panel-body text-justify">
-                    Fill out this form to apply for a project on MPContribs. Upon submission of your info an
-                    email will be sent to an admin to approve your request. If approved, you can start uploading data to
-                    your project which will appear on the project landing page. You can choose to add e-mails of MPContribs
-                    users who you'd like to be added to your project group as collaborators. Collaborators and
-                    owners have identical permissions but the number of projects an owner can create is limited. Your data
-                    will only be visible to you and your collaborators until you choose to make it public. Only public
-                    contributions will appear on the detail pages of <a href="https://materialsproject.org">Materials Project</a>.
+                    <p class="help is-success">This username is available</p>
                 </div>
             </div>
         </div>
-    </div>
-    -->
+
+        <div class="field is-horizontal">
+            <div class="field-label is-normal">
+                <label class="label">Project</label>
+            </div>
+            <div class="field-body">
+                <div class="field">
+                    <div class="control has-icons-right">
+                        <input class="input" type="text" id=project name=project minlength=3 maxlength=30 placeholder="my_project" required>
+                        <span class="icon is-small is-right"><i class="fas fa-check"></i></span>
+                    </div>
+                    <p class="help is-success">This username is available</p>
+                </div>
+                <div class="field">
+                    <div class="control has-icons-right">
+                        <input type="text" class="input is-danger" id="title" name=title minlength=5 maxlength=30 placeholder="Short Title" required>
+                        <span class="icon is-small is-right"><i class="fas fa-exclamation-triangle"></i></span>
+                    </div>
+                    <p class="help is-danger">This email is invalid</p>
+                </div>
+                <div class="field">
+                    <div class="control has-icons-right">
+                        <input type="text" class="input is-danger" id="long_title" name=long_title minlength=5 maxlength=55 placeholder="Long Title" required>
+                        <span class="icon is-small is-right"><i class="fas fa-exclamation-triangle"></i></span>
+                    </div>
+                    <p class="help is-danger">This email is invalid</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="field is-horizontal">
+            <div class="field-label is-normal">
+                <label class="label">Description</label>
+            </div>
+            <div class="field-body">
+                <div class="field">
+                    <div class="control">
+                        <textarea class="textarea" rows="3" id="description" name=description minlength=5 maxlength=1500
+                                                            placeholder='This first sentence will always be shown. Additional sentences are collapsed into a "More &raquo;" button.' required>
+                        </textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="field is-horizontal">
+            <div class="field-label is-normal">
+                <label class="label">References</label>
+            </div>
+            <div class="field-body">
+                <!--
+                <div id="czContainer">
+                    <div id="first">
+                        <div class="recordset row">
+                -->
+                            <div class="field">
+                                <div class="control has-icons-right">
+                                    <input type="text" class="input is-danger" id="ref_1_key" name=ref_1_key minlength=3 maxlength=8 placeholder="PRL" required>
+                                </div>
+                            </div>
+                            <div class="field">
+                                <div class="control">
+                                    <input type="text" class="input" id="ref_1_url" name=ref_1_url minlength=7 maxlength=100
+                                                                     placeholder="https://doi.org/10.1016/j.nuclphysa.2014.09.090" required>
+                                </div>
+                            </div>
+                <!--
+                        </div>
+                    </div>
+                </div>
+                -->
+            </div>
+        </div>
+
+        <div class="field is-horizontal">
+            <div class="field-label">
+                <!-- Left empty for spacing -->
+            </div>
+            <div class="field-body">
+                <div class="field">
+                    <div class="control">
+                        <button type="submit" class="button is-link">Apply</button>
+                        <div id="spinner"></div>
+                        <div class="alert alert-success" role="alert" hidden></div>
+                        <div class="alert alert-danger" role="alert" hidden></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
 </section>
 
-<section class="section is-hidden" id="work-container">
+<section class="section is-hidden" id="work">
     <div class="columns">
         <div class="column">
-            work
+            <article class="message is-dark">
+                <div class="message-body">
+                    <!--
+                    <a name=launch id="contribute/get_started" class="btn btn-danger pull-right disabled" style="margin-left: 15px;" role="button" target=_blank>
+                        <span class="glyphicon glyphicon-play" aria-hidden="true"></span> Launch
+                    </a>
+                    -->
+                    The <a href="https://jupyter.org">Jupyter</a> notebook shown below demonstrates how to use the
+                    <a href="https://pypi.org/project/mpcontribs-client/" target="_blank">mpcontribs-client</a>
+                    python library to programmatically contribute data through the
+                    <a name=api_url target="_blank">MPContribs API</a>. The
+                    <a href="https://pypi.org/project/mpcontribs-io/" target="_blank">mpcontribs-io</a>
+                    library can optionally be installed for better visualization of contributions and their
+                    components. A web app for interactive data ingestion is <a rel="popover">coming soon</a>.
+                    <!--
+                    The
+                    easiest way to get started is to use the above button and launch the notebook on our compute
+                    resources. Explore and launch additional example notebooks via the file browser on the right.
+                    -->
+                </div>
+        </div>
+    </div>
+    <div class="column">
+        <ul class="list-unstyled" style="margin-bottom: 0;">
+            {% for nb in notebooks %}
+            <li>
+                <a class="btn btn-link" name=nb_show role="button" style="padding: 2px;">{{ nb }}</a>
+                <a name=launch id={{ nb }} class="btn btn-xs btn-info disabled" role="button" target=_blank>
+                    <span class="glyphicon glyphicon-play" aria-hidden="true"></span> Launch
+                </a>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <div class="columns">
+        <div id=nb_content class="column">
+            {% include "notebooks/contribute/get_started.html" %}
         </div>
     </div>
 </section>

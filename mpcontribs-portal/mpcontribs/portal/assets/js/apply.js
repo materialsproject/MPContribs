@@ -1,4 +1,3 @@
-import 'bootstrap-tokenfield/js/bootstrap-tokenfield'
 import 'jquery-form';
 import 'jquery-validation';
 import 'czmore';
@@ -40,7 +39,6 @@ function processJson(data) { // 'data' is the json object returned from the serv
 }
 
 $(document).ready(function () {
-    $('#authors').tokenfield({});
 
     $.validator.addMethod("alphanumeric", function(value, element) {
         return this.optional(element) || /^[\w_]+$/i.test(value);

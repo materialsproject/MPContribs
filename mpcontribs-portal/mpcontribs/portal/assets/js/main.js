@@ -2,6 +2,7 @@ import img from 'images/logo.png';
 import * as clipboard from "clipboard";
 import 'select2/dist/js/select2';
 import 'jquery-simulate/jquery.simulate';
+import * as bulmaTagsinput from 'bulma-extensions/bulma-tagsinput/dist/js/bulma-tagsinput';
 require('css/main.scss');
 
 window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
@@ -70,14 +71,16 @@ $(document).ready(function () {
             var li = $(this).parent();
             li.siblings().removeClass('is-active');
             $('section').addClass('is-hidden');
-            $('#' + toggle + '-container').removeClass('is-hidden');
+            $('#' + toggle).removeClass('is-hidden');
             $(this).parent().addClass('is-active');
             import(
                 /* webpackPrefetch: true */
                 /* webpackMode: "lazy-once" */
                 './' + toggle + '.js'
-            ).then(function() { console.log(toggle + ' imported'); })
-                .catch(function(err) { console.error(err); });
+            ).then(function() {
+                if (!$('.tagsinput').length) { bulmaTagsinput.attach('[type="tags"]'); }
+                console.log(toggle + ' imported');
+            }).catch(function(err) { console.error(err); });
         });
     });
 

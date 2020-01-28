@@ -1,5 +1,3 @@
-import("css/highlight.css");
-
 function lazyLoadImage(imageName, img) {
     import(
         /* webpackMode: "lazy-once" */

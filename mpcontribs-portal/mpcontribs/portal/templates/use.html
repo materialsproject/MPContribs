@@ -3,62 +3,9 @@
 
 {% block content %}
 <style>
-.highlight > pre { background-color: #2f1e2e; }
-div.prompt { display: none; }
-a.anchor-link { display: none; }
-ul li:hover { background: lightgray; }
-ul li { display: flex; align-items: center; justify-content: space-between; }
 </style>
 
 <div id=use class="container">
 
-    <div class="row" style="margin-bottom: 20px;">
-        <div class="col-md-6">
-            <div class="panel panel-info">
-                <div class="panel-heading">
-                    <h3 class="panel-title">Contribute and Retrieve Data for a Project</h3>
-                </div>
-                <div class="panel-body text-justify">
-                    <a name=launch id="contribute/get_started" class="btn btn-danger pull-right disabled" style="margin-left: 15px;" role="button" target=_blank>
-                        <span class="glyphicon glyphicon-play" aria-hidden="true"></span> Launch
-                    </a>
-                    The <a href="https://jupyter.org">Jupyter</a> notebook shown below demonstrates how to use the
-                    <a href="https://pypi.org/project/mpcontribs-client/" target="_blank">mpcontribs-client</a>
-                    python library to programmatically contribute data through the
-                    <a name=api_url target="_blank">MPContribs API</a>. The
-                    <a href="https://pypi.org/project/mpcontribs-io/" target="_blank">mpcontribs-io</a>
-                    library can optionally be installed for better visualization of contributions and their
-                    components. A web app for interactive data ingestion is <a rel="popover">coming soon</a>. The
-                    easiest way to get started is to use the above button and launch the notebook on our compute
-                    resources. Explore and launch additional example notebooks via the file browser on the right.
-                </div>
-            </div>
-        </div>
-        <div class="col-md-6">
-            <div class="panel panel-info">
-                <div class="panel-heading">
-                    <h3 class="panel-title">Browse and Launch other Example Notebooks</h3>
-                </div>
-                <div class="panel-body">
-                    <ul class="list-unstyled" style="margin-bottom: 0;">
-                        {% for nb in notebooks %}
-                        <li>
-                            <a class="btn btn-link" name=nb_show role="button" style="padding: 2px;">{{ nb }}</a>
-                            <a name=launch id={{ nb }} class="btn btn-xs btn-info disabled" role="button" target=_blank>
-                                <span class="glyphicon glyphicon-play" aria-hidden="true"></span> Launch
-                            </a>
-                        </li>
-                        {% endfor %}
-                    </ul>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="row">
-        <div id=nb_content class="col-md-12">
-            {% include "notebooks/contribute/get_started.html" %}
-        </div>
-    </div>
 </div>
 {% endblock content %}
