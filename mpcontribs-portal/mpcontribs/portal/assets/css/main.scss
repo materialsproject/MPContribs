@@ -55,11 +55,15 @@ $footer-color: white;
 @import "~bulma-tooltip/src/sass/index";
 @import "~bulma-extensions/bulma-checkradio/src/sass/index";
 @import "~bulma-extensions/bulma-tagsinput/src/sass/index";
+@import '~@creativebulma/bulma-collapsible/src/sass/index';
 @import "select2";
 @import "css/highlight";
 
 figure, .card-content { border-radius: $radius-large; }
 figure { border: 4px solid white; }
+
+#main-help { display: block; }
+.section { padding: 1.5em 1.5em; }
 
 .highlight > pre { background-color: #2f1e2e; }
 div.prompt { display: none; }

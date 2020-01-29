@@ -3,6 +3,13 @@
 {% block content %}
 
 <section class="section is-hidden" id="browse">
+    <div class="is-hidden" id="browse-help">
+        Hover over the cards below for more project information including descriptions and
+        references. Click on the project title to access its dataset landing page, or hover over "et
+        al." to reveal all authors. Use the above dropdown menu to quickly jump to specific
+        projects, or to search for keywords in their descriptions. The search will reduce the list
+        of projects shown below to those matching the keyword.
+    </div>
     <div class="columns is-multiline">
         {% for lp in landing_pages %}
         <div class="column is-narrow is-flex" id="{{ lp.project }}" name=cards>
@@ -71,6 +78,12 @@
 </section>
 
 <section class="section is-hidden" id="search">
+    <div class="is-hidden" id="search-help">
+        Explore contributions using this search form. A selection of project(s), formula(s), and/or
+        identifier(s) updates the results table with basic information about the matching
+        contributions. Click the contribution identifier to render its preview card as it is (or
+        will be) shown on the materials details pages of <a href="https://materialsproject.org">Materials Project</a>.
+    </div>
     <div class="columns">
         <div class="column is-half">
             <div class="box">
@@ -132,17 +145,15 @@
 </section>
 
 <section class="section is-hidden" id="apply">
-    <article class="message is-dark">
-        <div class="message-body">
-            Fill out this form to apply for a project on MPContribs. Upon submission of your info an
-            email will be sent to an admin to approve your request. If approved, you can start uploading data to
-            your project which will appear on the project landing page. You can choose to add e-mails of other MPContribs
-            users who you'd like to be added to your project group as collaborators. Collaborators and
-            owners have identical permissions but the number of projects an owner can create is limited. Your data
-            will only be visible to you and your collaborators until you choose to make it public. Only public
-            contributions will appear on the detail pages of <a href="https://materialsproject.org">Materials Project</a>.
-        </div>
-    </article>
+    <div class="is-hidden" id="apply-help">
+        Fill out this form to apply for a project on MPContribs. Upon submission of your info an
+        email will be sent to an admin to approve your request. If approved, you can start uploading data to
+        your project which will appear on the project landing page. You can choose to add e-mails of other MPContribs
+        users who you'd like to be added to your project group as collaborators. Collaborators and
+        owners have identical permissions but the number of projects an owner can create is limited. Your data
+        will only be visible to you and your collaborators until you choose to make it public. Only public
+        contributions will appear on the detail pages of <a href="https://materialsproject.org">Materials Project</a>.
+    </div>
     <form id=apply-form>
         <div class="field is-horizontal">
             <div class="field-label is-normal">
@@ -256,50 +267,25 @@
 </section>
 
 <section class="section is-hidden" id="work">
-    <div class="columns">
-        <div class="column">
-            <article class="message is-dark">
-                <div class="message-body">
-                    <!--
-                    <a name=launch id="contribute/get_started" class="btn btn-danger pull-right disabled" style="margin-left: 15px;" role="button" target=_blank>
-                        <span class="glyphicon glyphicon-play" aria-hidden="true"></span> Launch
-                    </a>
-                    -->
-                    The <a href="https://jupyter.org">Jupyter</a> notebook shown below demonstrates how to use the
-                    <a href="https://pypi.org/project/mpcontribs-client/" target="_blank">mpcontribs-client</a>
-                    python library to programmatically contribute data through the
-                    <a name=api_url target="_blank">MPContribs API</a>. The
-                    <a href="https://pypi.org/project/mpcontribs-io/" target="_blank">mpcontribs-io</a>
-                    library can optionally be installed for better visualization of contributions and their
-                    components. A web app for interactive data ingestion is <a rel="popover">coming soon</a>.
-                    <!--
-                    The
-                    easiest way to get started is to use the above button and launch the notebook on our compute
-                    resources. Explore and launch additional example notebooks via the file browser on the right.
-                    -->
-                </div>
-        </div>
-        <!--
-        <div class="column">
-            <ul class="list-unstyled" style="margin-bottom: 0;">
-                {% for nb in notebooks %}
-                <li>
-                    <a class="btn btn-link" name=nb_show role="button" style="padding: 2px;">{{ nb }}</a>
-                    <a name=launch id={{ nb }} class="btn btn-xs btn-info disabled" role="button" target=_blank>
-                        <span class="glyphicon glyphicon-play" aria-hidden="true"></span> Launch
-                    </a>
-                </li>
-                {% endfor %}
-            </ul>
-        </div>
-        -->
+    <!--
+    <a name=launch id="contribute/get_started" class="btn btn-danger pull-right disabled" style="margin-left: 15px;" role="button" target=_blank>
+        <span class="glyphicon glyphicon-play" aria-hidden="true"></span> Launch
+    </a>
+    -->
+    <div class="is-hidden" id="work-help">
+        The <a href="https://jupyter.org">Jupyter</a> notebook shown below demonstrates how to use the
+        <a href="https://pypi.org/project/mpcontribs-client/" target="_blank">mpcontribs-client</a>
+        python library to programmatically contribute data through the
+        <a name=api_url target="_blank">MPContribs API</a>. The
+        <a href="https://pypi.org/project/mpcontribs-io/" target="_blank">mpcontribs-io</a>
+        library can optionally be installed for better visualization of contributions and their
+        components. A web app for interactive data ingestion is <a rel="popover">coming soon</a>.
     </div>
-
-    <div class="columns">
-        <div id=nb_content class="column">
-            {% include "notebooks/contribute/get_started.html" %}
-        </div>
-    </div>
+    <!--
+    The
+    easiest way to get started is to use the above button and launch the notebook on our compute
+    resources. Explore and launch additional example notebooks via the file browser on the right.
+    -->
 </section>
 
 {% endblock %}

@@ -61,6 +61,27 @@
           </div>
       </nav>
 
+      <div class="columns">
+          <div class="column is-fullwidth">
+              <div class="dropdown is-hidden" id="main-help">
+                  <div class="dropdown-trigger">
+                      <button class="button is-primary is-light is-fullwidth" id=main-help-button
+                          aria-haspopup="true" aria-controls="main-help-menu">
+                          <span>Help</span>
+                          <span class="icon"><i class="fas fa-angle-down" aria-hidden="true"></i></span>
+                      </button>
+                  </div>
+                  <div class="dropdown-menu" role="menu" id=main-help-menu>
+                      <div class="dropdown-content">
+                          <div class="dropdown-item">
+                              <p id=main-help-text></p>
+                          </div>
+                      </div>
+                  </div>
+              </div>
+          </div>
+      </div>
+
       {% if alert %}
       <div id=alert class="notification is-danger">
           {{ alert|safe }}

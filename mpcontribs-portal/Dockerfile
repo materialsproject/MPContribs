@@ -62,7 +62,7 @@ COPY mpcontribs-portal /app
 RUN pip install --no-cache-dir -e .
 RUN python manage.py collectstatic --noinput
 
-COPY binder/notebooks /app/notebooks
+COPY binder/notebooks/*.ipynb /app/notebooks/
 RUN out=mpcontribs/portal/templates && \
     for i in `ls -1 notebooks/*.ipynb`; do \
         /venv/bin/jupyter nbconvert --to html --template basic --output-dir=$out $i 2>&1; \

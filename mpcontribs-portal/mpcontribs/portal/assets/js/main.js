@@ -3,6 +3,7 @@ import * as clipboard from "clipboard";
 import 'select2/dist/js/select2';
 import 'jquery-simulate/jquery.simulate';
 import * as bulmaTagsinput from 'bulma-extensions/bulma-tagsinput/dist/js/bulma-tagsinput';
+import bulmaCollapsible from '@creativebulma/bulma-collapsible/dist/js/bulma-collapsible.min';
 require('css/main.scss');
 
 window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
@@ -79,6 +80,17 @@ $(document).ready(function () {
                 './' + toggle + '.js'
             ).then(function() {
                 if (!$('.tagsinput').length) { bulmaTagsinput.attach('[type="tags"]'); }
+                bulmaCollapsible.attach('.is-collapsible');
+                $("#main-help-button").click(function () { $(".dropdown").toggleClass("is-active"); });
+                $("#main-help-button").blur(function () { $(".dropdown").removeClass("is-active"); });
+                if ($('#'+toggle+'-help').length) {
+                    var help = $('#'+toggle+'-help').html();
+                    $('#main-help-text').html(help);
+                    $('#main-help').removeClass('is-hidden');
+                } else {
+                    $('#main-help-text').html('');
+                    $('#main-help').addClass('is-hidden');
+                }
                 console.log(toggle + ' imported');
             }).catch(function(err) { console.error(err); });
         });

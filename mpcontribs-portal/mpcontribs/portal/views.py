@@ -148,19 +148,6 @@ def csv(request, project):
     response['Content-Disposition'] = 'attachment; filename={}.csv'.format(project)
     return response
 
-def apply(request):
-    ctx = RequestContext(request)
-    return render(request, "apply.html", ctx.flatten())
-
-def use(request):
-    ctx = RequestContext(request)
-    template_dir = get_app_template_dirs('templates/notebooks')[0]
-    ctx['notebooks'] = [
-        p.split('/notebooks/')[-1].replace('.html', '')
-        for p in glob(os.path.join(template_dir, '*', '*.html'))
-    ]
-    return render(request, "use.html", ctx.flatten())
-
 def notebooks(request, nb):
     return render(request, os.path.join('notebooks', nb + '.html'))
 
