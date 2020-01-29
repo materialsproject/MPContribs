@@ -15,10 +15,10 @@ module.exports = {
         'main': [
             path.resolve(__dirname, 'mpcontribs/portal/assets/js/analytics'),
             path.resolve(__dirname, 'mpcontribs/portal/assets/js/main'),
-            path.resolve(__dirname, 'mpcontribs/portal/assets/js/render_json'),
-            path.resolve(__dirname, 'mpcontribs/portal/assets/js/render_table'),
-            path.resolve(__dirname, 'mpcontribs/portal/assets/js/render_plot'),
-            path.resolve(__dirname, 'mpcontribs/portal/assets/js/render_overview'),
+            //path.resolve(__dirname, 'mpcontribs/portal/assets/js/render_json'),
+            //path.resolve(__dirname, 'mpcontribs/portal/assets/js/render_table'),
+            //path.resolve(__dirname, 'mpcontribs/portal/assets/js/render_plot'),
+            //path.resolve(__dirname, 'mpcontribs/portal/assets/js/render_overview'),
         ]
     },
     output: {
