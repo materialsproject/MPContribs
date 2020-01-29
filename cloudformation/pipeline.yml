@@ -35,6 +35,12 @@ Parameters:
   GitHubBranchMP:
     Type: String
     Default: aws
+  GitHubRepoMPApi:
+    Type: String
+    Default: api
+  GitHubBranchMPApi:
+    Type: String
+    Default: release
   MongoHost:
     Type: String
     NoEcho: true
@@ -591,6 +597,55 @@ Resources:
       Name: !Sub ${AWS::StackName}-mp
       ServiceRole: !Ref CodeBuildServiceRole
 
+  CodeBuildProjectMPApi:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Artifacts:
+        Type: CODEPIPELINE
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: |
+          version: 0.2
+          env:
+            parameter-store:
+              xas_store: "xas_store"
+          phases:
+            install:
+              runtime-versions:
+                docker: 18
+            pre_build:
+              commands:
+                - $(aws ecr get-login --no-include-email)
+                - TAG="$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | head -c 8)"
+                - IMAGE_URI="${REPOSITORY_URI}:${TAG}"
+                - echo "$xas_store" > ./xas_store.json
+            build:
+              commands:
+                - docker build --tag "${IMAGE_URI}-mpapi" .
+            post_build:
+              commands:
+                - docker push "${IMAGE_URI}-mpapi"
+                - printf '{"ImageUri":"%s"}' "${IMAGE_URI}-mpapi" > build-mpapi.json
+          artifacts:
+            files:
+                - build-mpapi.json
+      Environment:
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/standard:2.0
+        Type: LINUX_CONTAINER
+        PrivilegedMode: true
+        EnvironmentVariables:
+          - Name: REPOSITORY_URI
+            Value: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${Repository}
+      Cache:
+        Type: LOCAL
+        Modes: # You can specify one or more cache mode,
+          - LOCAL_CUSTOM_CACHE
+          - LOCAL_DOCKER_LAYER_CACHE
+          - LOCAL_SOURCE_CACHE
+      Name: !Sub ${AWS::StackName}-mpapi
+      ServiceRole: !Ref CodeBuildServiceRole
+
 
   # This pipeline defines the steps to build, deploy, and release the application
   Pipeline:
@@ -632,6 +687,19 @@ Resources:
                 OAuthToken: !Ref GitHubToken
               OutputArtifacts:
                 - Name: SourceMP
+            - Name: MPApi
+              ActionTypeId:
+                Category: Source
+                Owner: ThirdParty
+                Version: 1
+                Provider: GitHub
+              Configuration:
+                Owner: !Ref GitHubUser
+                Repo: !Ref GitHubRepoMPApi
+                Branch: !Ref GitHubBranchMPApi
+                OAuthToken: !Ref GitHubToken
+              OutputArtifacts:
+                - Name: SourceMPApi
             - Name: Kong
               ActionTypeId:
                 Category: Source
@@ -753,19 +821,32 @@ Resources:
                 - Name: Source
               OutputArtifacts:
                 - Name: BuildOutputPortal
-            - Name: BuildMP
+            - Name: BuildMPApi
               ActionTypeId:
                 Category: Build
                 Owner: AWS
                 Version: 1
                 Provider: CodeBuild
               Configuration:
-                ProjectName: !Ref CodeBuildProjectMP
-                PrimarySource: SourceMP
+                ProjectName: !Ref CodeBuildProjectMPApi
+                PrimarySource: SourceMPApi
               InputArtifacts:
-                - Name: SourceMP
+                - Name: SourceMPApi
               OutputArtifacts:
-                - Name: BuildOutputMP
+                - Name: BuildOutputMPApi
+            #- Name: BuildMP
+            #  ActionTypeId:
+            #    Category: Build
+            #    Owner: AWS
+            #    Version: 1
+            #    Provider: CodeBuild
+            #  Configuration:
+            #    ProjectName: !Ref CodeBuildProjectMP
+            #    PrimarySource: SourceMP
+            #  InputArtifacts:
+            #    - Name: SourceMP
+            #  OutputArtifacts:
+            #    - Name: BuildOutputMP
             #- Name: BuildR2d
             #  ActionTypeId:
             #    Category: Build
@@ -813,7 +894,6 @@ Resources:
                     "KongaAdminPassword": "${KongaAdminPassword}"
                   }
               InputArtifacts:
-                - Name: Source
                 - Name: BaseResources
                 - Name: BuildOutputKong
                 - Name: BuildOutputKonga
@@ -854,12 +934,32 @@ Resources:
                     }
                   }
               InputArtifacts:
-                - Name: Source
                 - Name: BuildOutputApi
                 - Name: BuildOutputPortal
                 - Name: BuildOutputGateway
               RunOrder: 2
 
+            - Name: DeployMP
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Version: 1
+                Provider: CloudFormation
+              Configuration:
+                ActionMode: CREATE_UPDATE
+                RoleArn: !GetAtt CloudFormationDeployRole.Arn
+                StackName: !Sub ${PipelineName}-${EnvironmentName}-MpService
+                TemplatePath: Source::cloudformation/mp-service.yml
+                Capabilities: CAPABILITY_IAM
+                ParameterOverrides: !Sub |
+                  {
+                    "PipelineName": "${PipelineName}",
+                    "EnvironmentName": "${EnvironmentName}",
+                    "ImageUrlApi": { "Fn::GetParam" : ["BuildOutputMPApi", "build-mpapi.json", "ImageUri"] }
+                  }
+              InputArtifacts:
+                - Name: BuildOutputMPApi
+              RunOrder: 2
 Outputs:
   PipelineUrl:
     Value: !Sub https://console.aws.amazon.com/codepipeline/home?region=${AWS::Region}#/view/${Pipeline}
