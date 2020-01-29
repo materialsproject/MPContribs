@@ -894,6 +894,7 @@ Resources:
                     "KongaAdminPassword": "${KongaAdminPassword}"
                   }
               InputArtifacts:
+                - Name: Source
                 - Name: BaseResources
                 - Name: BuildOutputKong
                 - Name: BuildOutputKonga
@@ -934,6 +935,7 @@ Resources:
                     }
                   }
               InputArtifacts:
+                - Name: Source
                 - Name: BuildOutputApi
                 - Name: BuildOutputPortal
                 - Name: BuildOutputGateway
@@ -958,6 +960,7 @@ Resources:
                     "ImageUrlApi": { "Fn::GetParam" : ["BuildOutputMPApi", "build-mpapi.json", "ImageUri"] }
                   }
               InputArtifacts:
+                - Name: Source
                 - Name: BuildOutputMPApi
               RunOrder: 2
 Outputs:
