@@ -1,0 +1,27 @@
+version: 1
+
+update_configs:
+
+  - package_manager: "python"
+    directory: "mpcontribs-io"
+    update_schedule: "monthly"
+  - package_manager: "python"
+    directory: "mpcontribs-api"
+    update_schedule: "monthly"
+  - package_manager: "python"
+    directory: "mpcontribs-client"
+    update_schedule: "monthly"
+  - package_manager: "python"
+    directory: "mpcontribs-portal"
+    update_schedule: "monthly"
+
+  - package_manager: "javascript"
+    directory: "mpcontribs-portal"
+    update_schedule: "monthly"
+
+  - package_manager: "docker"
+    directory: "mpcontribs-portal"
+    update_schedule: "monthly"
+  - package_manager: "docker"
+    directory: "mpcontribs-api"
+    update_schedule: "monthly"
