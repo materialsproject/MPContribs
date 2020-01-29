@@ -4,7 +4,7 @@ import {Spinner} from 'spin.js/spin';
 import t from 'typy';
 
 Plotly.register([
-    require('../../../node_modules/plotly.js/lib/bar')
+    require('../../../../node_modules/plotly.js/lib/bar')
 ]);
 
 window.render_overview = function(project, grid) {

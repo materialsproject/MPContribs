@@ -3,10 +3,10 @@ import core from 'mathjs'; // mathjs core only
 import {Spinner} from 'spin.js/spin';
 
 const math = core.create();
-math.import(require('../../../../../node_modules/mathjs/lib/function/arithmetic/log10.js'));
+math.import(require('../../../../../../node_modules/mathjs/lib/function/arithmetic/log10.js'));
 
 Plotly.register([
-    require('../../../../../node_modules/plotly.js/lib/heatmap')
+    require('../../../../../../node_modules/plotly.js/lib/heatmap')
 ]);
 
 var layout = {

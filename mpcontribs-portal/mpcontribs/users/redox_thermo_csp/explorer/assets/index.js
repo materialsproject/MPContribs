@@ -4,7 +4,7 @@ import {Spinner} from 'spin.js/spin';
 import 'bootstrap-slider';
 
 Plotly.register([
-    require('../../../../../node_modules/plotly.js/lib/bar')
+    require('../../../../../../node_modules/plotly.js/lib/bar')
 ]);
 
 var spinners = {};

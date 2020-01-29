@@ -17,22 +17,22 @@ $(document).ready(function () {
         $(this).attr('href', nb_url + $(this).attr('id') + '.ipynb');
     });
 
-    $('a[rel=popover]').popover({
-        html: true,
-        trigger: 'hover',
-        placement: 'bottom',
-        content: function() {
-            var img = document.getElementById('ingester_img');
-            if (typeof(img) != 'undefined' && img != null) { return img; }
-            else {
-                var img = document.createElement('img');
-                img.id = 'ingester_img';
-                this.appendChild(img);
-                lazyLoadImage('ingester.png', img);
-                return img;
-            }
-        }
-    });
+    //$('a[rel=popover]').popover({
+    //    html: true,
+    //    trigger: 'hover',
+    //    placement: 'bottom',
+    //    content: function() {
+    //        var img = document.getElementById('ingester_img');
+    //        if (typeof(img) != 'undefined' && img != null) { return img; }
+    //        else {
+    //            var img = document.createElement('img');
+    //            img.id = 'ingester_img';
+    //            this.appendChild(img);
+    //            lazyLoadImage('ingester.png', img);
+    //            return img;
+    //        }
+    //    }
+    //});
 
     $('a[name=nb_show]').click(function(e) {
         $('a[name=nb_show]').removeClass('disabled');
