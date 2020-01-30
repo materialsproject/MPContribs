@@ -13,7 +13,6 @@ from django.shortcuts import render
 from django.template import RequestContext
 from django.http import HttpResponse
 from django.urls import reverse
-from django.template.loaders.app_directories import get_app_template_dirs
 from django.template.loader import select_template
 
 from mpcontribs.client import load_client
