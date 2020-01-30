@@ -65,10 +65,17 @@ $(document).ready(function () {
         window.location.href = '/'+project+'/';
     });
 
+    // navbar burger for mobile
+    $(".navbar-burger").click(function() {
+        $(".navbar-burger").toggleClass("is-active");
+        $(".navbar-menu").toggleClass("is-active");
+    });
+
     // toggle nav
     $.each(['browse', 'search', 'apply', 'work'], function(idx, toggle) {
         var selector = '#' + toggle + '-toggle';
         $(selector).on('click', function() {
+            $('.navbar-burger.is-active').simulate('click');
             var li = $(this).parent();
             li.siblings().removeClass('is-active');
             $('section').addClass('is-hidden');
@@ -80,9 +87,7 @@ $(document).ready(function () {
                 './' + toggle + '.js'
             ).then(function() {
                 if (!$('.tagsinput').length) { bulmaTagsinput.attach('[type="tags"]'); }
-                bulmaCollapsible.attach('.is-collapsible');
-                $("#main-help-button").click(function () { $(".dropdown").toggleClass("is-active"); });
-                $("#main-help-button").blur(function () { $(".dropdown").removeClass("is-active"); });
+                //bulmaCollapsible.attach('.is-collapsible');
                 if ($('#'+toggle+'-help').length) {
                     var help = $('#'+toggle+'-help').html();
                     $('#main-help-text').html(help);
@@ -91,6 +96,8 @@ $(document).ready(function () {
                     $('#main-help-text').html('');
                     $('#main-help').addClass('is-hidden');
                 }
+                $("#main-help-button").click(function () { $(".dropdown").toggleClass("is-active"); });
+                $("#main-help-button").blur(function () { $(".dropdown").removeClass("is-active"); });
                 console.log(toggle + ' imported');
             }).catch(function(err) { console.error(err); });
         });
@@ -107,11 +114,6 @@ $(document).ready(function () {
     $('.select2').css({width: '100%'});
     $('.select2-search').css({width: 'auto'});
     $('.select2-search__field').css({width: '100%'});
-
-    $(".navbar-burger").click(function() {
-        $(".navbar-burger").toggleClass("is-active");
-        $(".navbar-menu").toggleClass("is-active");
-    });
 
     // click the toggle based on location
     if (window.location.hash) {

@@ -15,7 +15,7 @@
         <div class="column is-narrow is-flex" id="{{ lp.project }}" name=cards>
             <div class="box">
                 <div class="card">
-                    <div class="card-image">
+                    <div class="card-image is-hidden-touch">
                         <figure class="image" id={{lp.project}}_img></figure>
                     </div>
                     <div class="card-content">
@@ -36,7 +36,7 @@
                             </a>
                         </div>
                     </div>
-                    <div class="card-content is-hidden is-overlay">
+                    <div class="card-content is-hidden is-overlay is-hidden-touch">
                         <div class="columns">
                             <div class="column full-width">
                                 {{ lp.authors.0 }}
@@ -215,30 +215,27 @@
         </div>
 
         <div class="field is-horizontal">
-            <div class="field-label is-normal">
+            <div class="field-label is-normal" id=btnPlus>
                 <label class="label">References</label>
-                <span class="icon is-small"><i class="fas fa-plus btnPlus" id=btnPlus></i></span>
+                <a class="button btnPlus is-primary is-light is-small">
+                    <span class="icon"><i class="fas fa-plus"></i></span>
+                </a>
             </div>
-            <div class="field-body">
-                <div id="czContainer">
-                    <div id="first">
-                        <div class="recordset">
-                            <div class="field has-addons">
-                                <div class="control">
-                                    <input type="text" class="input" id="ref_1_key" name=ref_1_key minlength=3 maxlength=8 placeholder="Label" required>
-                                </div>
-                                <div class="control is-expanded">
-                                    <input type="text" class="input" id="ref_1_url" name=ref_1_url minlength=7 maxlength=100
-                                                                     placeholder="https://doi.org/10.1007/978-3-319-42913-7_60-1" required>
-                                </div>
-                                <div class="control">
-                                    <button class="button is-primary btnMinus">
-                                        <span class="icon is-small">
-                                            <i class="fas fa-minus"></i>
-                                        </span>
-                                    </button>
-                                </div>
-                            </div>
+            <div class="field-body" id="czContainer">
+                <div id="first">
+                    <div class="recordset field has-addons">
+                        <div class="control">
+                            <input type="text" class="input" id="ref_1_key" name=ref_1_key
+                                 minlength=3 maxlength=8 placeholder="Label" required>
+                        </div>
+                        <div class="control is-expanded">
+                            <input type="text" class="input is-fullwidth" id="ref_1_url" name=ref_1_url minlength=7 maxlength=100
+                                 placeholder="https://doi.org/10.1007/978-3-319-42913-7_60-1" required>
+                        </div>
+                        <div class="control" id=btnMinus>
+                            <a class="button btnMinus is-primary">
+                                <span class="icon"><i class="fas fa-times"></i></span>
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -252,13 +249,14 @@
             <div class="field-body">
                 <div class="field">
                     <div class="control">
-                        <button type="submit" class="button is-link">Apply</button>
+                        <button type="submit" class="button is-link" id=apply-button>Apply</button>
                     </div>
                 </div>
                 <div class="field">
                     <div class="control">
-                        <div id="spinner"></div>
-                        <div class="notification is-hidden is-light"></div>
+                        <article class="message is-hidden" id=apply-response>
+                            <div class="message-body"></div>
+                        </article>
                     </div>
                 </div>
             </div>

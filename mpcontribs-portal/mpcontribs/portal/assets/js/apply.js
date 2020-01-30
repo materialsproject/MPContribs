@@ -1,19 +1,15 @@
 import 'jquery-form';
 import 'jquery-validation';
 import 'czmore';
-import {Spinner} from 'spin.js/spin';
-
-var spinner = new Spinner({scale: 0.5});
 
 function prepareRequest(formData, jqForm, options) {
-    console.log(formData);
-    $('.notification').addClass('is-hidden');
-    var target = document.getElementById('spinner');
-    spinner.spin(target);
+    $('#apply-button').addClass('is-loading');
+    $('#apply-response').addClass('is-hidden');
     var start = 6;
     var nrefs = parseInt(formData.splice(start, 1)[0]['value']);
     if (nrefs < 1) {
-        $('.notification').html('Please add references.').removeClass('is-hidden');
+        $('#apply-response .message-body').html('Please add references.');
+        $('#apply-response').removeClass('is-hidden');
         return false;
     }
     var urls = {name: 'urls', value: {}};
@@ -26,20 +22,18 @@ function prepareRequest(formData, jqForm, options) {
 }
 
 function processJson(data) { // 'data' is the json object returned from the server
-    console.log('success');
-    console.log(data);
     var msg = `Thank you for submitting your project application. Please check your inbox for an
     e-mail asking you to subscribe for MPContribs notifications. Once your e-mail address is
     confirmed we will notify you if/when your project has been accepted for dissemination.`
-    $('.notification').html(msg).removeClass('is-danger').addClass('is-success').removeClass('is-hidden');
-    spinner.stop();
+    $('#apply-response .message-body').html(msg);
+    $('#apply-response').removeClass('is-danger').addClass('is-success').removeClass('is-hidden');
+    $('#apply-button').removeClass('is-loading');
 }
 
 function processError(data) {
-    console.log('error');
-    console.log(data.responseText);
-    $('.notification').html(data.responseText).removeClass('is-danger').addClass('is-success').removeClass('is-hidden');
-    spinner.stop();
+    $('#apply-response .message-body').html(data.responseText);
+    $('#apply-response').removeClass('is-success').addClass('is-danger').removeClass('is-hidden');
+    $('#apply-button').removeClass('is-loading');
 }
 
 $(document).ready(function () {
@@ -69,5 +63,5 @@ $(document).ready(function () {
     });
 
     $("#czContainer").czMore({max: 5, styleOverride: true});
-    //$('.btnPlus').click();
+    $('.btnPlus').click();
 });
