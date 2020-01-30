@@ -22,6 +22,10 @@ if (api_key !== '') {
     window.api['headers'] = {};
 }
 
+function clear_toggles() {
+    $('.navbar-start .navbar-item .tabs ul li').removeClass('is-active');
+}
+
 $(document).ready(function () {
     // logo, info, api-key
     document.getElementById("logo").src = img;
@@ -73,7 +77,8 @@ $(document).ready(function () {
     });
 
     // toggle nav
-    $.each(['browse', 'search', 'apply', 'work'], function(idx, toggle) {
+    var toggles = ['browse', 'search', 'apply', 'work'];
+    $.each(toggles, function(idx, toggle) {
         var selector = '#' + toggle + '-toggle';
         $(selector).on('click', function() {
             $('#api_key_text').html('API Key');
@@ -109,9 +114,16 @@ $(document).ready(function () {
     //    import(/* webpackChunkName: "landingpage" */ `./landingpage.js`).catch(function(err) { console.error(err); });
     //}
 
-    //if ($("#contribution").length) {
-    //    import(/* webpackChunkName: "contribution" */ `./contribution.js`).catch(function(err) { console.error(err); });
-    //}
+    if ($("#contribution").length) {
+        import(
+            /* webpackPrefetch: true */
+            /* webpackMode: "lazy" */
+            /* webpackChunkName: "contribution" */
+            `./contribution.js`
+        ).then(function() {
+            console.log('contribution imported.')
+        }).catch(function(err) { console.error(err); });
+    }
 
     $('.select2').css({width: '100%'});
     $('.select2-search').css({width: 'auto'});
@@ -119,9 +131,17 @@ $(document).ready(function () {
 
     // click the toggle based on location
     if (window.location.hash) {
-        var selector = '#' + window.location.hash.split('-')[0].slice(1) + '-toggle';
-        $(selector).simulate('click');
-    } else {
+        var toggle = window.location.hash.slice(1);
+        if ($.inArray(toggle, toggles) == -1) {
+            clear_toggles();
+        } else {
+            if (window.location.pathname !== '/') { window.location.href = '/'; }
+            var selector = '#' + toggle + '-toggle';
+            $(selector).simulate('click');
+        }
+    } else if (window.location.pathname === '/') {
         $('#browse-toggle').click();
+    } else {
+        clear_toggles();
     }
 });

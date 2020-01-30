@@ -117,14 +117,14 @@ class NotebooksView(SwaggerView):
                     nbf.new_code_cell(
                         f"contrib = client.contributions.get_entry(pk='{cid}', _fields=['_all']).result()"
                     ),
-                    nbf.new_markdown_cell("## Provenance Info"),
+                    nbf.new_markdown_cell("## Info"),
                     nbf.new_code_cell(
                         "fields = ['title', 'owner', 'authors', 'description', 'urls']\n"
                         "prov = client.projects.get_entry(pk=contrib['project'], _fields=fields).result()\n"
                         "HierarchicalData(prov)"
                     ),
                     nbf.new_markdown_cell(
-                        f"## Hierarchical Data for {contrib['identifier']}"
+                        f"## HData for {contrib['identifier']}"
                     ),
                     nbf.new_code_cell(
                         "HierarchicalData(contrib['data'])"
@@ -134,7 +134,7 @@ class NotebooksView(SwaggerView):
                 tables = [t.id for t in Tables.objects.only('id').filter(contribution=cid)]
                 if tables:
                     cells.append(nbf.new_markdown_cell(
-                        f"## Tabular Data for {contrib['identifier']}"
+                        f"## Tables for {contrib['identifier']}"
                     ))
                     for ref in tables:
                         cells.append(nbf.new_code_cell(
@@ -148,7 +148,7 @@ class NotebooksView(SwaggerView):
                 structures = [s.id for s in Structures.objects.only('id').filter(contribution=cid)]
                 if structures:
                     cells.append(nbf.new_markdown_cell(
-                        f"## Pymatgen Structures for {contrib['identifier']}"
+                        f"## Structures for {contrib['identifier']}"
                     ))
                     for ref in structures:
                         cells.append(nbf.new_code_cell(
