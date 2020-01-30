@@ -29,6 +29,7 @@ $(document).ready(function () {
     $('a[name="api_url"]').attr('href', window.api['host']);
     $('#api_key_btn').on('click', function() {
         clipboard.writeText(api_key_code);
+        $('#api_key_text').html('Copied!');
     });
 
     // quick nav
@@ -75,6 +76,7 @@ $(document).ready(function () {
     $.each(['browse', 'search', 'apply', 'work'], function(idx, toggle) {
         var selector = '#' + toggle + '-toggle';
         $(selector).on('click', function() {
+            $('#api_key_text').html('API Key');
             $('.navbar-burger.is-active').simulate('click');
             var li = $(this).parent();
             li.siblings().removeClass('is-active');
