@@ -73,7 +73,10 @@ def validate_data(doc):
 
 
 def send_email(to, subject, template):
-    sns_client.publish(TopicArn=to, Message=template, Subject=subject)
+    try:
+        sns_client.publish(TopicArn=to, Message=template, Subject=subject)
+    except Exception as ex:
+        raise ValidationError({'error': str(ex)})
 
 
 def get_collections(db):
