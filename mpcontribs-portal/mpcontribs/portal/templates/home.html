@@ -271,9 +271,9 @@
     </a>
     -->
     <div class="is-hidden" id="work-help">
-        The <a href="https://jupyter.org">Jupyter</a> notebook shown below demonstrates how to use the
+        The <a href="https://jupyter.org">Jupyter</a> notebooks shown below demonstrate how to use the
         <a href="https://pypi.org/project/mpcontribs-client/" target="_blank">mpcontribs-client</a>
-        python library to programmatically contribute data through the
+        python library to programmatically contribute, update and retrieve data through the
         <a name=api_url target="_blank">MPContribs API</a>. The
         <a href="https://pypi.org/project/mpcontribs-io/" target="_blank">mpcontribs-io</a>
         library can optionally be installed for better visualization of contributions and their
@@ -284,8 +284,19 @@
     easiest way to get started is to use the above button and launch the notebook on our compute
     resources. Explore and launch additional example notebooks via the file browser on the right.
     -->
-    <div id=nb_content class="column">
-        {% include "get_started.html" %}
+    <div class="columns">
+        <div class="column is-narrow">
+            <aside class="menu">
+                <ul class="menu-list">
+                {% for nb in notebooks %}
+                <li><a name=nb_show id={{nb}}>{{ nb }}</a></li>
+                {% endfor %}
+                </ul>
+            </aside>
+        </div>
+        <div class="column is-fullwidth">
+            <div id=nb_content class="column"></div>
+        </div>
     </div>
 </section>
 
