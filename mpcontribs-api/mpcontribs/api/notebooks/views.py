@@ -123,9 +123,7 @@ class NotebooksView(SwaggerView):
                         "prov = client.projects.get_entry(pk=contrib['project'], _fields=fields).result()\n"
                         "HierarchicalData(prov)"
                     ),
-                    nbf.new_markdown_cell(
-                        f"## HData for {contrib['identifier']}"
-                    ),
+                    nbf.new_markdown_cell("## HData"),
                     nbf.new_code_cell(
                         "HierarchicalData(contrib['data'])"
                     )
@@ -133,9 +131,7 @@ class NotebooksView(SwaggerView):
 
                 tables = [t.id for t in Tables.objects.only('id').filter(contribution=cid)]
                 if tables:
-                    cells.append(nbf.new_markdown_cell(
-                        f"## Tables for {contrib['identifier']}"
-                    ))
+                    cells.append(nbf.new_markdown_cell("## Tables"))
                     for ref in tables:
                         cells.append(nbf.new_code_cell(
                             f"table = client.tables.get_entry(pk='{ref}', _fields=['_all']).result()\n"
@@ -147,9 +143,7 @@ class NotebooksView(SwaggerView):
 
                 structures = [s.id for s in Structures.objects.only('id').filter(contribution=cid)]
                 if structures:
-                    cells.append(nbf.new_markdown_cell(
-                        f"## Structures for {contrib['identifier']}"
-                    ))
+                    cells.append(nbf.new_markdown_cell("## Structures"))
                     for ref in structures:
                         cells.append(nbf.new_code_cell(
                             f"structure = client.structures.get_entry(pk='{ref}', _fields=['_all']).result()\n"

@@ -63,10 +63,10 @@ RUN pip install --no-cache-dir -e .
 RUN python manage.py collectstatic --noinput
 
 COPY binder/notebooks/*.ipynb /app/notebooks/
-RUN out=mpcontribs/portal/templates/notebooks/ && mkdir $out && \
+RUN out=mpcontribs/portal/templates/notebooks/ && if [ ! -d $out ]; then mkdir $out; \
     for i in `ls -1 notebooks/*.ipynb`; do \
         /venv/bin/jupyter nbconvert --to html --template basic --output-dir=$out $i 2>&1; \
-    done
+    done; fi
 
 ENTRYPOINT ["/app/docker-entrypoint.sh"]
 CMD ["gunicorn", "-b", "0.0.0.0:8080", "-k", "gevent", "-w", "4", "--access-logfile", "-", "wsgi"]

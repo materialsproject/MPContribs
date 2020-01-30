@@ -22,10 +22,6 @@ if (api_key !== '') {
     window.api['headers'] = {};
 }
 
-function clear_toggles() {
-    $('.navbar-start .navbar-item .tabs ul li').removeClass('is-active');
-}
-
 $(document).ready(function () {
     // logo, info, api-key
     document.getElementById("logo").src = img;
@@ -129,19 +125,16 @@ $(document).ready(function () {
     $('.select2-search').css({width: 'auto'});
     $('.select2-search__field').css({width: '100%'});
 
-    // click the toggle based on location
-    if (window.location.hash) {
-        var toggle = window.location.hash.slice(1);
-        if ($.inArray(toggle, toggles) == -1) {
-            clear_toggles();
-        } else {
-            if (window.location.pathname !== '/') { window.location.href = '/'; }
+    // click the toggle based on location (for manual reloads or links including hash)
+    if (window.location.pathname === '/') {
+        if (window.location.hash) {
+            var toggle = window.location.hash.slice(1);
             var selector = '#' + toggle + '-toggle';
             $(selector).simulate('click');
+        } else  {
+            $('#browse-toggle').simulate('click');
         }
-    } else if (window.location.pathname === '/') {
-        $('#browse-toggle').click();
     } else {
-        clear_toggles();
+        $('.navbar-start .navbar-item .tabs ul li').removeClass('is-active');
     }
 });

@@ -1,12 +1,12 @@
 import Plotly from 'plotly'; // plotly core only
-import {create, createTranspose} from 'mathjs';
+import {create, transposeDependencies} from 'mathjs';
 import {Spinner} from 'spin.js/spin';
 
 window.PLOTLYENV=window.PLOTLYENV || {};
 window.PLOTLYENV.BASE_URL='https://plot.ly';
 var spinner_plot = new Spinner({scale: 0.5});
 
-const transpose = create(createTranspose);
+const {transpose} = create({transposeDependencies}, {});
 
 window.render_plot = function(props) {
     props.config['responsive'] = true;

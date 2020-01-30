@@ -46,11 +46,14 @@ $(document).ready(function () {
         var a = $('<a/>', {'href': href, 'text': text, 'class': 'button is-white'});
         var item = $('<div/>', {'class': 'level-item', 'html': a});
         $('#anchors').append(item);
-        $('#toggle_' + text).removeClass('is-hidden');
+        $('#item_' + text).removeClass('is-hidden');
+        if (text === 'Tables') { $('#item_Graphs').removeClass('is-hidden'); }
     });
 
     $('input[name=toggles]').change(function() {
-        var toggle = '[name=' + $(this).attr('id').split('_')[1] + ']';
+        var name = $(this).attr('id').split('_')[1];
+        var toggle = '[name=' + name + ']';
         $(toggle).toggleClass('is-hidden');
     });
+    $('#toggle_Code').click();
 });

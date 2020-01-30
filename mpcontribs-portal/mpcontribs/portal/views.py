@@ -69,13 +69,13 @@ def export_notebook(nb, cid):
             if script.startswith('render_json'):
                 div['name'] = 'HData'
             elif script.startswith('render_table'):
-                div['name'] = 'Table'
+                div['name'] = 'Tables'
             elif script.startswith('render_plot'):
-                div['name'] = 'Graph'
+                div['name'] = 'Graphs'
         else:
             pre = div.find('pre')
             if pre and pre.contents[0].startswith('Structure'):
-                div['name'] = 'Structure'
+                div['name'] = 'Structures'
     # name divs for toggling code_cells
     for div in soup.find_all('div', 'input'):
         div['name'] = 'Code'
@@ -90,6 +90,8 @@ def export_notebook(nb, cid):
 def contribution(request, cid):
     ctx = RequestContext(request)
     client = load_client(headers=get_consumer(request))  # sets/returns global variable
+    contrib = client.contributions.get_entry(pk=cid, _fields=['id', 'identifier']).result()
+    ctx['identifier'], ctx['cid'] = contrib['identifier'], contrib['id']
     nb = client.notebooks.get_entry(pk=cid).result()  # generate notebook with cells
     indexes = []
     for idx, cell in enumerate(nb['cells']):
