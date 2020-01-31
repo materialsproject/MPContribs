@@ -14,6 +14,9 @@ Parameters:
   ImageUrlApi:
     Type: String
     Description: url for the api docker image
+  ImageUrlWeb:
+    Type: String
+    Description: url for the web docker image
 
 Resources:
   # A log group for storing the container logs for this service
@@ -40,8 +43,8 @@ Resources:
     Type: AWS::ECS::TaskDefinition
     Properties:
       Family: !Ref 'ServiceName'
-      Cpu: 1024
-      Memory: 2048
+      Cpu: 2048
+      Memory: 4096
       NetworkMode: awsvpc
       RequiresCompatibilities:
         - FARGATE
@@ -55,6 +58,17 @@ Resources:
           Image: !Ref 'ImageUrlApi'
           PortMappings:
             - ContainerPort: 5001
+          LogConfiguration:
+            LogDriver: 'awslogs'
+            Options:
+              awslogs-group: !Join ['-', [!Ref 'PipelineName', !Ref 'EnvironmentName', 'service', !Ref 'ServiceName']]
+              awslogs-region: !Ref 'AWS::Region'
+              awslogs-stream-prefix: !Ref 'ServiceName'
+        - Name: web
+          MemoryReservation: 500
+          Image: !Ref 'ImageUrlWeb'
+          PortMappings:
+            - ContainerPort: 8081
           LogConfiguration:
             LogDriver: 'awslogs'
             Options:

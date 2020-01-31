@@ -41,6 +41,12 @@ Parameters:
   GitHubBranchMPApi:
     Type: String
     Default: release
+  GitHubRepoMPWeb:
+    Type: String
+    Default: web
+  GitHubBranchMPWeb:
+    Type: String
+    Default: release
   MongoHost:
     Type: String
     NoEcho: true
@@ -646,6 +652,67 @@ Resources:
       Name: !Sub ${AWS::StackName}-mpapi
       ServiceRole: !Ref CodeBuildServiceRole
 
+  CodeBuildProjectMPWeb:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Artifacts:
+        Type: CODEPIPELINE
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: |
+          version: 0.2
+          env:
+            parameter-store:
+              build_ssh_key: "build_ssh_key"
+          phases:
+            install:
+              runtime-versions:
+                docker: 18
+            pre_build:
+              commands:
+                - $(aws ecr get-login --no-include-email)
+                - TAG="$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | head -c 8)"
+                - IMAGE_URI="${REPOSITORY_URI}:${TAG}"
+                - mkdir -p ~/.ssh
+                - echo "$build_ssh_key" > ~/.ssh/id_rsa
+                - chmod 600 ~/.ssh/id_rsa
+                #- eval "$(ssh-agent -s)"
+                #- ssh-add ~/.ssh/id_rsa
+                - ssh-keygen -F github.com || ssh-keyscan github.com >> ~/.ssh/known_hosts
+                - git config --global url."git@github.com:".insteadOf "https://github.com/"
+                - git init
+                - git remote add origin git@github.com:materialsproject/web.git
+                - git fetch
+                - git checkout -tf origin/release
+                - git submodule init
+                - git submodule update --recursive
+            build:
+              commands:
+                - docker build --tag "${IMAGE_URI}-mpweb" .
+            post_build:
+              commands:
+                - docker push "${IMAGE_URI}-mpweb"
+                - printf '{"ImageUri":"%s"}' "${IMAGE_URI}-mpweb" > build-mpweb.json
+          artifacts:
+            files:
+                - build-mpweb.json
+      Environment:
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/standard:2.0
+        Type: LINUX_CONTAINER
+        PrivilegedMode: true
+        EnvironmentVariables:
+          - Name: REPOSITORY_URI
+            Value: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${Repository}
+      Cache:
+        Type: LOCAL
+        Modes: # You can specify one or more cache mode,
+          - LOCAL_CUSTOM_CACHE
+          - LOCAL_DOCKER_LAYER_CACHE
+          - LOCAL_SOURCE_CACHE
+      Name: !Sub ${AWS::StackName}-mpweb
+      ServiceRole: !Ref CodeBuildServiceRole
+
 
   # This pipeline defines the steps to build, deploy, and release the application
   Pipeline:
@@ -700,6 +767,19 @@ Resources:
                 OAuthToken: !Ref GitHubToken
               OutputArtifacts:
                 - Name: SourceMPApi
+            - Name: MPWeb
+              ActionTypeId:
+                Category: Source
+                Owner: ThirdParty
+                Version: 1
+                Provider: GitHub
+              Configuration:
+                Owner: !Ref GitHubUser
+                Repo: !Ref GitHubRepoMPWeb
+                Branch: !Ref GitHubBranchMPWeb
+                OAuthToken: !Ref GitHubToken
+              OutputArtifacts:
+                - Name: SourceMPWeb
             - Name: Kong
               ActionTypeId:
                 Category: Source
@@ -834,6 +914,19 @@ Resources:
                 - Name: SourceMPApi
               OutputArtifacts:
                 - Name: BuildOutputMPApi
+            - Name: BuildMPWeb
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Version: 1
+                Provider: CodeBuild
+              Configuration:
+                ProjectName: !Ref CodeBuildProjectMPWeb
+                PrimarySource: SourceMPWeb
+              InputArtifacts:
+                - Name: SourceMPWeb
+              OutputArtifacts:
+                - Name: BuildOutputMPWeb
             #- Name: BuildMP
             #  ActionTypeId:
             #    Category: Build
@@ -957,11 +1050,13 @@ Resources:
                   {
                     "PipelineName": "${PipelineName}",
                     "EnvironmentName": "${EnvironmentName}",
-                    "ImageUrlApi": { "Fn::GetParam" : ["BuildOutputMPApi", "build-mpapi.json", "ImageUri"] }
+                    "ImageUrlApi": { "Fn::GetParam" : ["BuildOutputMPApi", "build-mpapi.json", "ImageUri"] },
+                    "ImageUrlWeb": { "Fn::GetParam" : ["BuildOutputMPWeb", "build-mpweb.json", "ImageUri"] }
                   }
               InputArtifacts:
                 - Name: Source
                 - Name: BuildOutputMPApi
+                - Name: BuildOutputMPWeb
               RunOrder: 2
 Outputs:
   PipelineUrl:
