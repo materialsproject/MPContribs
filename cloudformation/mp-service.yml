@@ -67,6 +67,9 @@ Resources:
         - Name: web
           MemoryReservation: 500
           Image: !Ref 'ImageUrlWeb'
+          Environment:
+            - Name: MP_API_ENDPOINT
+              Value: http://localhost:5001/
           PortMappings:
             - ContainerPort: 8081
           LogConfiguration:
