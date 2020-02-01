@@ -77,9 +77,12 @@ function get_ajax(field, pk) {
 }
 
 function click_card(event) {
+    $(this).addClass('is-loading');
     event.preventDefault(); // To prevent following the link (optional)
     var cid = $(this).attr('id');
-    return render_card(cid);
+    var card = render_card(cid);
+    $(this).removeClass('is-loading');
+    return card;
 }
 
 function render_card(cid) {
@@ -116,7 +119,7 @@ function show_results(selection) {
         $('#results').empty();
         $.each(response['data'], function(i, d) {
             if (check_subresources(d)) {
-                var cid_url = $('<a/>', {'id': d['id'], 'text': d['id'].slice(-7)});
+                var cid_url = $('<a/>', {'id': d['id'], 'text': d['id'].slice(-7), 'class': 'has-loading'});
                 cid_url.on('click', click_card);
                 var cid = $('<td/>', {html: cid_url});
                 var formula = $('<td/>', {text: d['formula']});

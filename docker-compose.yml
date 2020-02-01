@@ -40,6 +40,7 @@ services:
             context: ./mpcontribs-api
         command: gunicorn -b 0.0.0.0:5000 -k gevent -w 2 --access-logfile - --log-level debug --reload mpcontribs.api:create_app()
         depends_on:
+            - redis
             - chrome
             - kernel_gateway
         volumes:
@@ -55,6 +56,11 @@ services:
             - AWS_DEFAULT_REGION=us-east-1
         ports:
             - "5000:5000"
+
+    redis:
+        image: redis:alpine
+        environment:
+            - ALLOW_EMPTY_PASSWORD=yes
 
     chrome:
         image: selenium/standalone-chrome

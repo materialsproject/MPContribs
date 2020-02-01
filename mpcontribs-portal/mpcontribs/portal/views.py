@@ -93,13 +93,7 @@ def contribution(request, cid):
     contrib = client.contributions.get_entry(pk=cid, _fields=['id', 'identifier']).result()
     ctx['identifier'], ctx['cid'] = contrib['identifier'], contrib['id']
     nb = client.notebooks.get_entry(pk=cid).result()  # generate notebook with cells
-    indexes = []
-    for idx, cell in enumerate(nb['cells']):
-        if cell['cell_type'] == 'code':
-            last_line = cell['source'].rsplit('\n', 1)[-1]
-            if not last_line.startswith('from') and ' = ' not in last_line:
-                indexes.append(idx)
-    ctx['indexes'] = json.dumps(indexes)
+    ctx['ncells'] = len(nb['cells'])
 
     if not nb['cells'][-1]['outputs']:
         try:

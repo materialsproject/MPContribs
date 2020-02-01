@@ -4,6 +4,7 @@ import flask_mongorest
 from flask_mongorest.resources import Resource
 from flask_mongorest.methods import Fetch
 from flask_mongorest import operators as ops
+from flask_sse import sse
 from flask import Blueprint
 from copy import deepcopy
 from mongoengine import DoesNotExist
@@ -97,9 +98,11 @@ class NotebooksView(SwaggerView):
                 for idx, cell in enumerate(nb.cells):
                     if cell['cell_type'] == 'code':
                         cell['outputs'] = kernel.execute(cell['source'])
+                        sse.publish({"message": idx}, type='greeting')
                 client.shutdown_kernel(kernel)
                 nb.cells[1] = nbf.new_code_cell("client = load_client('<your-api-key-here>')")
                 nb.save()  # calls Notebooks.clean()
+                sse.publish({"message": -1}, type='greeting')
             return super().get(**kwargs)
 
         except DoesNotExist:

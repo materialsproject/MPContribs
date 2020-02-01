@@ -9,6 +9,7 @@ from flask_mongoengine import MongoEngine
 from flask_mongorest import register_class
 from flask_mongorest.exceptions import ValidationError
 from flask_log import Logging
+from flask_sse import sse
 from flasgger.base import Swagger
 from pandas.io.json._normalize import nested_to_record
 from typing import Any, Dict
@@ -141,5 +142,6 @@ def create_app():
     except ModuleNotFoundError as ex:
         logger.warning(f'API module {module_path}: {ex}')
 
+    app.register_blueprint(sse, url_prefix='/stream')
     logger.warning('app created.')
     return app

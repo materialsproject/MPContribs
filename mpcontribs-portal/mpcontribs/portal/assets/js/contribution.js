@@ -1,42 +1,4 @@
-//import 'toggle';
-
-var dots = '<span class="loader__dot">.</span><span class="loader__dot">.</span><span class="loader__dot">.</span>';
-
-function poll() {
-    setTimeout(function() {
-        var cid = window.location.pathname.replace('/', '');
-        var indexes = $('#notebook').data('indexes');
-        var fields = $.map(indexes, function(el) { return 'cells.' + el + '.outputs'; });
-        console.log('poll notebook ' + cid);
-        $.get({
-            url: window.api['host'] + 'notebooks/' + cid + '/',
-            headers: window.api['headers'],
-            data: {'_fields': fields.join(',')}
-        }).done(function(response) {
-            var ncells = response['cells'].length;
-            var last_completed = -1;
-            for (var i = indexes.length-1; i >= 0; i--) {
-                var has_outputs = response['cells'][indexes[i]]['outputs'].length;
-                if (has_outputs) {
-                    last_completed = indexes[i];
-                    break;
-                }
-            }
-            console.log('last_completed: ' + last_completed)
-            if (last_completed != ncells-1) {
-                $('#alert').html('cell #' + last_completed + ' done ' + dots)
-                poll();
-            } else {
-                $('#alert').html('Detail page ready, reloading ' + dots);
-                window.location.reload();
-            }
-        });
-    }, 10000);
-}
-
 $(document).ready(function () {
-
-    //if ($('#alert').length) { poll(); }
 
     $('h2').addClass('title');
 
@@ -56,4 +18,22 @@ $(document).ready(function () {
         $(toggle).toggleClass('is-hidden');
     });
     $('#toggle_Code').click();
+
+    if ($('#alert').length) {
+        var dots = '<span class="loader__dot">.</span><span class="loader__dot">.</span><span class="loader__dot">.</span>';
+        var source = new EventSource(window.api['host'] + 'stream');
+        var ncells = $('#notebook').data('ncells');
+        source.addEventListener('greeting', function(event) {
+            var data = JSON.parse(event.data);
+            if (data.message < 0) {
+                $('#alert').html('Detail page ready, reloading ' + dots);
+                window.location.reload();
+            } else {
+                $('#alert').html('cell ' + data.message + ' of ' + ncells + ' done ' + dots);
+            }
+        }, false);
+        source.addEventListener('error', function(event) {
+            $('#alert').html("Failed to connect to event stream. Is Redis running?")
+        }, false);
+    }
 });
