@@ -117,6 +117,10 @@ Resources:
               Value: !Ref 'SnsAdminTopicArn'
             - Name: AWS_DEFAULT_REGION
               Value: !Ref 'AWS::Region'
+            - Name: REDIS_ADDRESS
+              Value:
+                Fn::ImportValue:
+                    !Join [':', [!Ref 'PipelineName', !Ref 'EnvironmentName', 'ElastiCacheAddress']]
           PortMappings:
             - ContainerPort: 5000
           LogConfiguration:

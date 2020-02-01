@@ -24,7 +24,7 @@ MONGODB_SETTINGS = {
     'host': f"mongodb+srv://{MPCONTRIBS_MONGO_HOST}/{MPCONTRIBS_DB}?retryWrites=true",
     'connect': False, 'db': MPCONTRIBS_DB
 }
-REDIS_URL = os.environ.get('REDIS_URL', 'redis://redis')
+REDIS_URL = 'redis://' + os.environ.get('REDIS_ADDRESS', 'redis')
 
 SWAGGER = {
     'hide_top_bar': True,
