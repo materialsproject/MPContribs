@@ -253,6 +253,7 @@ Resources:
                   - "rds:*"
                   - "kms:*"
                   - "eks:*"
+                  - "elasticache:*"
                 Resource: "*"
 
   # While the build is in progress we need a place to store artifacts

@@ -255,8 +255,12 @@ Resources:
       SecurityGroupIngress:
         - IpProtocol: tcp
           FromPort: 5432
-          ToPort: '5432'
+          ToPort: 5432
           SourceSecurityGroupId: !Ref 'PublicSecurityGroup'
+        - IpProtocol: tcp
+          FromPort: 6379
+          ToPort: 6379
+          SourceSecurityGroupId: !Ref 'PrivateSecurityGroup'
       VpcId: !Ref 'VPC'
 
   DBSubnetGroup:
@@ -286,6 +290,25 @@ Resources:
       VPCSecurityGroups:
         - !Ref 'DBSecurityGroup'
     DeletionPolicy: Snapshot
+
+  ElastiCacheSubnetGroup:
+    Type: AWS::ElastiCache::SubnetGroup
+    Properties:
+      Description: Cache Subnet Group
+      SubnetIds:
+        - !Ref 'PrivateSubnetOne'
+        - !Ref 'PrivateSubnetTwo'
+
+  ElastiCacheCluster:
+    Type: AWS::ElastiCache::CacheCluster
+    Properties:
+      AutoMinorVersionUpgrade: true
+      Engine: redis
+      CacheNodeType: cache.t2.micro
+      NumCacheNodes: 1
+      CacheSubnetGroupName: !Ref 'ElastiCacheSubnetGroup'
+      VpcSecurityGroupIds:
+        - !GetAtt DBSecurityGroup.GroupId
 
   EcrEndpoint:
     Type: AWS::EC2::VPCEndpoint
@@ -572,6 +595,11 @@ Outputs:
     Value: !GetAtt 'PostgresDB.Endpoint.Address'
     Export:
       Name: !Join [ ':', [ !Ref 'PipelineName', !Ref 'EnvironmentName', 'DBAddress' ] ]
+  ElastiCacheAddress:
+    Description: ElastiCache endpoint address
+    Value: !GetAtt ElastiCacheCluster.RedisEndpoint.Address
+    Export:
+      Name: !Join [ ':', [ !Ref 'PipelineName', !Ref 'EnvironmentName', 'ElastiCacheAddress' ] ]
   PublicSecurityGroup:
     Description: Public Security Group
     Value: !Ref 'PublicSecurityGroup'
