@@ -21,6 +21,7 @@ dependencies:
   - pandas-datareader
   - plotly_express
   - jupyter_enterprise_gateway
+  - ipykernel
   - pip:
       - jhub_remote_user_authenticator
       - nbgitpuller

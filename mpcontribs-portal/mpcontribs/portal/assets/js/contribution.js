@@ -21,15 +21,18 @@ $(document).ready(function () {
 
     if ($('#alert').length) {
         var dots = '<span class="loader__dot">.</span><span class="loader__dot">.</span><span class="loader__dot">.</span>';
-        var source = new EventSource(window.api['host'] + 'stream');
+        var cid = window.location.pathname.replace('/', '');
+        var source = new EventSource(window.api['host'] + 'stream?channel=' + cid);
         var ncells = $('#notebook').data('ncells');
-        source.addEventListener('greeting', function(event) {
+        source.addEventListener('notebook', function(event) {
             var data = JSON.parse(event.data);
-            if (data.message < 0) {
+            if (data.message === 0) {
                 $('#alert').html('Detail page ready, reloading ' + dots);
                 window.location.reload();
-            } else {
+            } else if (data.message >= 0) {
                 $('#alert').html('cell ' + data.message + ' of ' + ncells + ' done ' + dots);
+            } else {
+                $('#alert').html('Something went wrong.');
             }
         }, false);
         source.addEventListener('error', function(event) {

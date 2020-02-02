@@ -5,6 +5,7 @@ ENV NODE_ENV production
 
 COPY binder/environment.yml environment.yml
 RUN conda env update --file environment.yml && \
+        python -m ipykernel install --user && \
         find /opt/conda/ -follow -type f -name '*.a' -delete && \
         find /opt/conda/ -follow -type f -name '*.js.map' -delete && \
         /opt/conda/bin/conda clean -afy
@@ -26,4 +27,6 @@ USER $NB_USER
 RUN cd src/mpcontribs-io && pip install --upgrade --no-cache-dir -e . && \
         cd ../mpcontribs-client && pip install --no-cache-dir --upgrade -e .
 
+ENV GATEWAY_HOST=localhost:8888
+ENV KG_ENV_PROCESS_WHITELIST=GATEWAY_HOST
 CMD ["jupyter", "enterprisegateway", "--ip=0.0.0.0", "--port_retries=0", "--seed_uri='kernel_imports.ipynb'"]

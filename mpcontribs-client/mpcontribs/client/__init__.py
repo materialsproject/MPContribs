@@ -9,7 +9,7 @@ from bravado.http_future import HttpFuture
 from bravado.swagger_model import Loader
 
 NODE_ENV = os.environ.get('NODE_ENV')
-GATEWAY_HOST = os.getenv('KERNEL_GATEWAY_HOST')
+GATEWAY_HOST = os.environ.get('GATEWAY_HOST')
 DEBUG = bool(
     (NODE_ENV and NODE_ENV == 'development') or
     (GATEWAY_HOST and 'localhost' not in GATEWAY_HOST)

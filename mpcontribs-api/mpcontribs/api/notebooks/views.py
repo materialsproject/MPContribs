@@ -22,58 +22,7 @@ templates = os.path.join(
     os.path.dirname(flask_mongorest.__file__), 'templates'
 )
 notebooks = Blueprint("notebooks", __name__, template_folder=templates)
-
-
-class CustomGatewayClient(GatewayClient):
-
-    def start_kernel(self):
-        json_data = {'name': 'python3', 'env': {'KERNEL_GATEWAY_HOST': self.DEFAULT_GATEWAY_HOST}}
-        response = requests.post(self.http_api_endpoint, data=json_encode(json_data))
-
-        if response.status_code == 201:
-            json_data = response.json()
-            kernel_id = json_data.get("id")
-            self.log.info('Started kernel with id {}'.format(kernel_id))
-        else:
-            raise RuntimeError('Error starting kernel : {} response code \n {}'.
-                               format(response.status_code, response.content))
-
-        return CustomKernelClient(self.http_api_endpoint, self.ws_api_endpoint, kernel_id, logger=self.log)
-
-
-class CustomKernelClient(KernelClient):
-
-    def execute(self, code):
-        response = []
-        try:
-            msg_id = self._send_request(code)
-            post_idle = False
-            while True:
-                msg = self._get_response(msg_id, 60, post_idle)
-                if msg:
-                    msg_type, content = msg['msg_type'], msg['content']
-                    if msg_type == 'error' or (msg_type == 'execute_reply' and content['status'] == 'error'):
-                        self.log.error(f"{content['ename']}:{content['evalue']}:{content['traceback']}")
-                    elif msg_type == 'execute_result' or msg_type == 'display_data':
-                        content['output_type'] = msg_type
-                        response.append(content)
-                    elif msg_type == 'status':
-                        if content['execution_state'] == 'idle':
-                            post_idle = True
-                            continue
-                    else:
-                        self.log.debug(f"Unhandled response for msg_id: {msg_id} of msg_type: {msg_type}")
-                elif msg is None:  # We timed out. If post idle, its ok, else make mention of it
-                    if not post_idle:
-                        self.log.warning(f"Unexpected timeout occurred for {msg_id} - no 'idle' status received!")
-                    break
-        except BaseException as b:
-            self.log.debug(b)
-
-        return response
-
-
-client = CustomGatewayClient()
+client = GatewayClient()
 with open('kernel_imports.ipynb') as fh:
     seed_nb = read(fh, 4)
 
@@ -94,15 +43,21 @@ class NotebooksView(SwaggerView):
             super().get(**kwargs)  # trigger DoesNotExist if necessary
             nb = Notebooks.objects.get(pk=cid)
             if not nb.cells[-1]['outputs']:
-                kernel = client.start_kernel()
+                kernel = client.start_kernel('python3')
                 for idx, cell in enumerate(nb.cells):
                     if cell['cell_type'] == 'code':
                         cell['outputs'] = kernel.execute(cell['source'])
-                        sse.publish({"message": idx}, type='greeting')
+                        sse.publish({"message": idx+1}, type='notebook', channel=cid)
+                else:
+                    nb.cells[1] = nbf.new_code_cell("client = load_client('<your-api-key-here>')")
+                    try:
+                        nb.save()  # calls Notebooks.clean()
+                    except Exception as ex:
+                        print(ex)
+                        sse.publish({"message": -1}, type='notebook', channel=cid)
+                    finally:
+                        sse.publish({"message": 0}, type='notebook', channel=cid)
                 client.shutdown_kernel(kernel)
-                nb.cells[1] = nbf.new_code_cell("client = load_client('<your-api-key-here>')")
-                nb.save()  # calls Notebooks.clean()
-                sse.publish({"message": -1}, type='greeting')
             return super().get(**kwargs)
 
         except DoesNotExist:

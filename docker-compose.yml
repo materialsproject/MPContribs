@@ -81,6 +81,7 @@ services:
             - ./mpcontribs-client:/src/mpcontribs-client
         environment:
             - KG_ALLOW_ORIGIN='*'
+            - GATEWAY_HOST=kernel_gateway:8888
         build:
             context: .
             dockerfile: binder/DockerfileKernelGateway
