@@ -83,7 +83,7 @@ Resources:
             - Name: KONG_PG_PASSWORD
               Value: !Ref 'DBPassword'
             - Name: KONG_LOG_LEVEL
-              Value: debug
+              Value: notice
             - Name: KONG_LUA_PACKAGE_PATH
               Value: '/usr/local/oidc/?.lua;;'
             - Name: KONG_ADMIN_ACCESS_LOG
