@@ -106,9 +106,16 @@ $(document).ready(function () {
         });
     });
 
-    //if ($("#landingpage").length) {
-    //    import(/* webpackChunkName: "landingpage" */ `./landingpage.js`).catch(function(err) { console.error(err); });
-    //}
+    if ($("#landingpage").length) {
+        import(
+            /* webpackPrefetch: true */
+            /* webpackMode: "lazy" */
+            /* webpackChunkName: "landingpage" */
+            `./landingpage.js`
+        ).then(function() {
+            console.log('landingpage imported.')
+        }).catch(function(err) { console.error(err); });
+    }
 
     if ($("#contribution").length) {
         import(

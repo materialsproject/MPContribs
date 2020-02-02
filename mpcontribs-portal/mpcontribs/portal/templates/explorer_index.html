@@ -1,64 +1,52 @@
 {% extends "header_footer.html" %}
 
 {% block content %}
+<section class="section" id=landingpage>
 
-<div id="modal" class="modal fade"
-     tabindex="-1" role="dialog" aria-labelledby="plan-info" aria-hidden="true">
-    <div class="modal-dialog modal-full-screen">
-        <div class="modal-content">
-            <div class="modal-body">
-                <div id="modal_render_json"></div>
-            </div>
-        </div>
-    </div>
-</div>
+    <h2 class="title">
+        {{ title }}
+        {% if urls %}
+        <sup style="font-size: 50%; vertical-align: top;">
+        {% for k, v in urls.items %}
+        <a href="{{ v }}" target="_blank">[{{k}}]</a>
+        {% endfor %}
+        </sup>
+        {% endif %}
+        <span class="is-pulled-right" style="font-size: 14px;">
+            {{ authors.main }}
+            {% if authors.etal %}
+            <a name="read_more">et al.</a>
+            <span name="read_more" hidden>
+                {% for author in authors.etal %}{{ author }}<br/>{% endfor %}
+            </span>
+            {% endif %}
+        </span>
+    </h2>
+    <p>
+    {{ descriptions.0 }}.
+    {% if descriptions.1 %}
+    <a name="read_more">More &raquo;</a>
+    <span name="read_more" hidden>{{ descriptions.1 }}</span>
+    {% endif %}
+    </p>
+    {% if other and other.strip != 'null' %}
+    <a name="read_more">Other Info &raquo;</a>
+    <div name="read_more" id=other style="width:100%;" data-renderjson='{{ other }}' hidden></div>
+    {% endif %}
 
-<div class="container" hidden>
-    <div class="row" id="landingpage">
-        <div class="col-md-12">
-            <h2>
-                {{ title }}
-                {% if urls %}
-                <sup style="font-size: 50%; vertical-align: top;">
-                {% for k, v in urls.items %}
-                <a href="{{ v }}" target="_blank">[{{k}}]</a>
-                {% endfor %}
-                </sup>
-                {% endif %}
-                <span class="pull-right" style="font-size: 14px;">
-                    {{ authors.main }}
-                    {% if authors.etal %}
-                    <a name="read_more">et al.</a>
-                    <span name="read_more" hidden>
-                        {% for author in authors.etal %}{{ author }}<br/>{% endfor %}
-                    </span>
-                    {% endif %}
-                </span>
-            </h2>
-            <p>
-            {{ descriptions.0 }}.
-            {% if descriptions.1 %}
-            <a name="read_more">More &raquo;</a>
-            <span name="read_more" hidden>{{ descriptions.1 }}</span>
-            {% endif %}
-            </p>
-            {% if other and other.strip != 'null' %}
-            <a name="read_more">Other Info &raquo;</a>
-            <div name="read_more" id=other style="width:100%;" data-renderjson='{{ other }}' hidden></div>
-            {% endif %}
-        </div>
-    </div>
     {% block extra_content %}
     {% endblock extra_content %}
-    <div class="row">
-        <div class="col-md-12">
+
+    <div class="columns">
+        <div class="column is-fullwidth">
             <div id="spinner_graph_custom"></div>
             <div id="graph_custom" style="width: 100%;"></div>
         </div>
     </div>
+
     {% if columns and columns.strip != 'null' %}
-    <div class="row">
-        <div class="col-md-2">
+    <div class="columns">
+        <div class="column is-2">
             <select id="columns_list">
                 <option value=""></option>
                 {% for col in search_columns %}
@@ -66,23 +54,23 @@
                 {% endfor %}
             </select>
         </div>
-        <div class="col-md-6" id=table_filter></div>
-        <div class="col-md-2" id=total_count></div>
-        <div class="pull-right" id=table_columns></div>
+        <div class="column is-6" id=table_filter></div>
+        <div class="column is-2" id=total_count></div>
+        <div class="column is-pulled-right" id=table_columns></div>
     </div>
-    <div class="row">
-        <div class="dropdown col-md-12">
+    <div class="columns">
+        <div class="column is-fullwidth">
             <div id="spinner_table"></div>
             <div id=table style="width:100%;" data-columns='{{ columns|join:"," }}' data-project='{{ project }}'></div>
             <div id=table_pagination></div>
         </div>
     </div>
-    <div class="row">
-        <div class="col-md-12">
+    <div class="columns">
+        <div class="column is-fullwidth">
             <div id="spinner_graph"></div>
             <div id="graph" style="width: 100%;" data-ranges='{{ ranges }}'></div>
         </div>
     </div>
     {% endif %}
-</div>
+</section>
 {% endblock %}

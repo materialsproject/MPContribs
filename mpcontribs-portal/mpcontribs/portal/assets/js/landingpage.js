@@ -28,13 +28,15 @@ if ($("#table").length) {
     grid = render_table({table: table, config: config});
 }
 
-var project = window.location.pathname.split('/')[0].replace('/', '');
-if ($("#graph").length && project !== 'redox_thermo_csp') {
-    render_overview(project, grid);
-}
+//var project = window.location.pathname.split('/')[0].replace('/', '');
+//if ($("#graph").length && project !== 'redox_thermo_csp') {
+//    render_overview(project, grid);
+//}
+$("#graph").html('<b>Default graphs will be back soon</b>');
 
-if ($("#graph_custom").length) {
-    import(/* webpackChunkName: "project" */ `${project}/explorer/assets/index.js`)
-        .then(function() {$("#graph_custom").html('<b>Custom graphs will be back in January 2020</b>');})
-        .catch(function(err) { console.log(err); });
-}
+//if ($("#graph_custom").length) {
+//    import(/* webpackChunkName: "project" */ `${project}/explorer/assets/index.js`)
+//        .then(function() {$("#graph_custom").html('<b>Custom graphs will be back in January 2020</b>');})
+//        .catch(function(err) { console.log(err); });
+//}
+$("#graph_custom").html('<b>Custom graphs will be back soon</b>');
