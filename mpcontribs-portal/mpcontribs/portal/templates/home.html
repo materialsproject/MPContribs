@@ -162,16 +162,16 @@
             <div class="field-body">
                 <div class="field">
                     <div class="control">
-                        <input class="input is-static" type="text" id=owner name=owner
-                             value="{{request.META.HTTP_X_CONSUMER_USERNAME}}"
-                             placeholder="{{request.META.HTTP_X_CONSUMER_USERNAME}}"
-                             required>
+                        <input class="input" type="tags" id=authors
+                             name=authors value="P. Huck / J. Doe, K. Persson" placeholder="Enter authors" required>
                     </div>
                 </div>
                 <div class="field">
                     <div class="control">
-                        <input class="input" type="tags" id=authors
-                             name=authors value="P. Huck / J. Doe, K. Persson" placeholder="Enter authors" required>
+                        <input class="input is-static" type="text" id=owner name=owner
+                             value="{{request.META.HTTP_X_CONSUMER_USERNAME}}"
+                             placeholder="{{request.META.HTTP_X_CONSUMER_USERNAME}}"
+                             required>
                     </div>
                 </div>
             </div>
@@ -208,7 +208,7 @@
                 <div class="field">
                     <div class="control">
                         <textarea class="textarea" rows="3" id="description" name=description minlength=5 maxlength=1500
-                                placeholder='This first sentence will always be shown. Additional sentences are collapsed into a "More &raquo;" button.' required></textarea>
+                                placeholder='Add a description. The first sentence will always be shown. Additional sentences will be collapsed into a "More &raquo;" button.' required></textarea>
                     </div>
                 </div>
             </div>
