@@ -341,18 +341,6 @@ Resources:
       SecurityGroupIds:
         - !Ref 'PublicSecurityGroup'
         - !Ref 'PrivateSecurityGroup'
-  EcsEndpoint:
-    Type: AWS::EC2::VPCEndpoint
-    Properties:
-      VpcId: !Ref 'VPC'
-      ServiceName: !Sub 'com.amazonaws.${AWS::Region}.ecs'
-      VpcEndpointType: Interface
-      PrivateDnsEnabled: true
-      SubnetIds:
-        - !Ref 'PrivateSubnetOne'
-        - !Ref 'PrivateSubnetTwo'
-      SecurityGroupIds:
-        - !Ref 'PrivateSecurityGroup'
   S3Endpoint:
     Type: AWS::EC2::VPCEndpoint
     Properties:
