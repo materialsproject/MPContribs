@@ -1,12 +1,12 @@
 from flask_mongoengine import Document
-from mongoengine import EmbeddedDocument, CASCADE, signals
-from mongoengine.fields import StringField, LazyReferenceField, BooleanField, FloatField, IntField
-from mongoengine.fields import ListField, EmbeddedDocumentField, EmbeddedDocumentListField
+from mongoengine import CASCADE, signals
+from mongoengine.fields import StringField, LazyReferenceField, BooleanField
+from mongoengine.fields import FloatField, IntField, ListField, DictField
 from mpcontribs.api.contributions.document import Contributions
 from mpcontribs.api.notebooks.document import Notebooks
 
 
-class Lattice(EmbeddedDocument):
+class Lattice(DictField):
     a = FloatField(min_value=0, required=True, help_text='`a` lattice parameter')
     b = FloatField(min_value=0, required=True, help_text='`b` lattice parameter')
     c = FloatField(min_value=0, required=True, help_text='`c` lattice parameter')
@@ -19,17 +19,17 @@ class Lattice(EmbeddedDocument):
     gamma = FloatField(min_value=0, required=True, help_text='gamma')
 
 
-class Specie(EmbeddedDocument):
+class Specie(DictField):
     occu = IntField(min_value=0, required=True, help_text='occupancy')
     element = StringField(required=True, help_text='element')
 
 
-class Properties(EmbeddedDocument):
+class Properties(DictField):
     magmom = FloatField(min_value=0, help_text='magnetic moment')
     velocities = ListField(FloatField(min_value=0), max_length=3, help_text='velocities')
 
 
-class Site(EmbeddedDocument):
+class Site(DictField):
     abc = ListField(
         FloatField(min_value=0, required=True),
         max_length=3, required=True, help_text='lattice'
@@ -38,8 +38,8 @@ class Site(EmbeddedDocument):
         FloatField(required=True), max_length=3, required=True, help_text='lattice'
     )
     label = StringField(required=True, help_text="site label")
-    species = EmbeddedDocumentListField(Specie, required=True, help_text='species')
-    properties = EmbeddedDocumentField(Properties, help_text="other properties")
+    species = ListField(Specie(), required=True, help_text='species')
+    properties = DictField(Properties(), help_text="other properties")
 
 
 class Structures(Document):
@@ -49,8 +49,8 @@ class Structures(Document):
     )
     is_public = BooleanField(required=True, default=False, help_text='public/private structure')
     name = StringField(required=True, help_text="table name")
-    lattice = EmbeddedDocumentField(Lattice, required=True, help_text="lattice")
-    sites = EmbeddedDocumentListField(Site, required=True, help_text="sites")
+    lattice = DictField(Lattice(), required=True, help_text="lattice")
+    sites = ListField(Site(), required=True, help_text="sites")
     charge = FloatField(null=True, help_text='charge')
     klass = StringField(help_text="@class")
     module = StringField(help_text="@module")

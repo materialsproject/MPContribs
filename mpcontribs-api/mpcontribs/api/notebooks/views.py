@@ -50,8 +50,9 @@ class NotebooksView(SwaggerView):
                         if cell['cell_type'] == 'code':
                             output = kernel.execute(cell['source'])
                             if output:
+                                outtype = 'text/html' if output.startswith('<div') else 'text/plain'
                                 cell['outputs'].append({
-                                    'data': {'text/html': output},
+                                    'data': {outtype: output},
                                     'metadata': {}, 'transient': {},
                                     'output_type': 'display_data'
                                 })
@@ -93,25 +94,29 @@ class NotebooksView(SwaggerView):
                     )
                 ]
 
-                tables = [t.id for t in Tables.objects.only('id').filter(contribution=cid)]
+                tables = Tables.objects.only('id', 'name').filter(contribution=cid)
                 if tables:
                     cells.append(nbf.new_markdown_cell("## Tables"))
-                    for ref in tables:
+                    for table in tables:
+                        cells.append(nbf.new_markdown_cell(table.name))
                         cells.append(nbf.new_code_cell(
-                            f"table = client.tables.get_entry(pk='{ref}', _fields=['_all']).result()\n"
+                            f"table = client.tables.get_entry(pk='{table.id}', _fields=['_all']).result()\n"
                             "Table.from_dict(table)"
                         ))
                         cells.append(nbf.new_code_cell(
                             "Plot.from_dict(table)"
                         ))
 
-                structures = [s.id for s in Structures.objects.only('id').filter(contribution=cid)]
+                structures = Structures.objects.only('id', 'name').filter(contribution=cid)
                 if structures:
                     cells.append(nbf.new_markdown_cell("## Structures"))
-                    for ref in structures:
+                    for structure in structures:
+                        cells.append(nbf.new_markdown_cell(structure.name))
                         cells.append(nbf.new_code_cell(
-                            f"structure = client.structures.get_entry(pk='{ref}', _fields=['_all']).result()\n"
-                            f"Structure.from_dict(structure)"
+                            "structure = client.structures.get_entry(\n"
+                            f"\tpk='{structure.id}', _fields=['lattice', 'sites', 'charge']\n"
+                            ").result()\n"
+                            "Structure.from_dict(structure)"
                         ))
 
                 nb = Notebooks(pk=cid, is_public=contrib.is_public)
