@@ -42,22 +42,28 @@ class NotebooksView(SwaggerView):
         try:
             super().get(**kwargs)  # trigger DoesNotExist if necessary
             nb = Notebooks.objects.get(pk=cid)
-            if not nb.cells[-1]['outputs']:
-                kernel = client.start_kernel('python3')
-                for idx, cell in enumerate(nb.cells):
-                    if cell['cell_type'] == 'code':
-                        cell['outputs'] = kernel.execute(cell['source'])
-                        sse.publish({"message": idx+1}, type='notebook', channel=cid)
-                else:
+            try:
+                if not nb.cells[-1]['outputs']:
+                    kernel = client.start_kernel('python3')
+
+                    for idx, cell in enumerate(nb.cells):
+                        if cell['cell_type'] == 'code':
+                            output = kernel.execute(cell['source'])
+                            if output:
+                                cell['outputs'].append({
+                                    'data': {'text/html': output},
+                                    'metadata': {}, 'transient': {},
+                                    'output_type': 'display_data'
+                                })
+                            sse.publish({"message": idx+1}, type='notebook', channel=cid)
+
                     nb.cells[1] = nbf.new_code_cell("client = load_client('<your-api-key-here>')")
-                    try:
-                        nb.save()  # calls Notebooks.clean()
-                    except Exception as ex:
-                        print(ex)
-                        sse.publish({"message": -1}, type='notebook', channel=cid)
-                    finally:
-                        sse.publish({"message": 0}, type='notebook', channel=cid)
-                client.shutdown_kernel(kernel)
+                    nb.save()  # calls Notebooks.clean()
+                    sse.publish({"message": 0}, type='notebook', channel=cid)
+                    client.shutdown_kernel(kernel)
+            except Exception as ex:
+                print(ex)
+                sse.publish({"message": -1}, type='notebook', channel=cid)
             return super().get(**kwargs)
 
         except DoesNotExist:

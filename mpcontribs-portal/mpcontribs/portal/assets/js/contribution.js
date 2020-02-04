@@ -17,7 +17,7 @@ $(document).ready(function () {
         var toggle = '[name=' + name + ']';
         $(toggle).toggleClass('is-hidden');
     });
-    $('#toggle_Code').click();
+    if ($('.output_wrapper').length) { $('#toggle_Code').click(); }
 
     if ($('#alert').length) {
         var dots = '<span class="loader__dot">.</span><span class="loader__dot">.</span><span class="loader__dot">.</span>';

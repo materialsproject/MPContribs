@@ -1,6 +1,7 @@
 import json
 import uuid
 import pandas as pd
+import numpy as np
 import plotly.io as pio
 from plotly.io._utils import validate_coerce_fig_to_dict
 from plotly.offline.offline import _get_jconfig
@@ -72,14 +73,14 @@ class Plot(object):
             traces = []
             for axis in yaxes:
                 if 'ₑᵣᵣ' not in axis:
-                    tbl = self.table[[xaxis, axis]].replace('', pd.np.nan).dropna()
+                    tbl = self.table[[xaxis, axis]].replace('', np.nan).dropna()
                     traces.append(dict(
                         x=tbl[xaxis].tolist(), y=tbl[axis].tolist(), name=axis
                     ))
             for trace in traces:
                 err_axis = trace['name'] + 'ₑᵣᵣ'
                 if err_axis in yaxes:
-                    errors = self.table[err_axis].replace('', pd.np.nan).dropna()
+                    errors = self.table[err_axis].replace('', np.nan).dropna()
                     trace['error_y'] = dict(
                         type='data', array=errors, visible=True
                     )

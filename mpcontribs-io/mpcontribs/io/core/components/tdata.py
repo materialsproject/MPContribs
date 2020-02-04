@@ -137,7 +137,7 @@ class Table(pd.DataFrame):
         return html
 
     def _ipython_display_(self):
-        display(HTML(self.render()))
+        display_html(self.render(), raw=True)
 
 
 class Tables(RecursiveDict):
