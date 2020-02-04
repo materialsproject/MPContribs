@@ -26,6 +26,7 @@ if ($("#table").length) {
     var config = {'project': $('#table').data('project'), 'ncols': 12};
     config['uuids'] = ['table_filter', 'table', 'table_pagination', 'table_columns'];
     grid = render_table({table: table, config: config});
+    $('button').addClass('button');
 }
 
 //var project = window.location.pathname.split('/')[0].replace('/', '');
