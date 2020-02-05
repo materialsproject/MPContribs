@@ -67,6 +67,9 @@ Resources:
         - Name: web
           MemoryReservation: 500
           Image: !Ref 'ImageUrlWeb'
+          DependsOn:
+            - Condition: START
+              ContainerName: api
           Environment:
             - Name: MP_API_ENDPOINT
               Value: http://localhost:5001/
