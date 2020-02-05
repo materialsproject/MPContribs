@@ -8,9 +8,6 @@ Plotly.register([
 ]);
 
 var spinners = {};
-var layout = {
-    margin: {l: 70, b: 50, t: 50, r: 5}, hovermode: 'closest', showlegend: false,
-};
 var sliders = {
     temp_slider: {config: {tooltip: "always"}, updkey: "isotherm"},
     pressure_range: {config: {tooltip_position: "bottom"}, updkey: "isotherm"},
@@ -404,7 +401,7 @@ $(document).ready(function () {
     document.getElementById("ox_type").value = "<b>p(O<sub>2</sub>)<sub>ox</sub> (bar)</b>";
 
     // update the energy analysis
-    var selectors = ["input[type='radio']", "#process", "#disp_par", "#pump_ener", "input[type='checkbox']"]
+    var selectors = ["input[type='radio']", "#process", "#disp_par", "#pump_ener", "input[type='checkbox']"];
     selectors.forEach(function(selector) {
         $(selector).on('change', function(ev) { send_request_energy(); });
     });

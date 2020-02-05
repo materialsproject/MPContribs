@@ -1,6 +1,5 @@
 import json
 import uuid
-import pandas as pd
 import numpy as np
 import plotly.io as pio
 from plotly.io._utils import validate_coerce_fig_to_dict

@@ -1,5 +1,4 @@
 import os
-import requests
 import flask_mongorest
 from flask_mongorest.resources import Resource
 from flask_mongorest.methods import Fetch
@@ -10,8 +9,7 @@ from copy import deepcopy
 from mongoengine import DoesNotExist
 from nbformat import v4 as nbf
 from nbformat import read
-from enterprise_gateway.client.gateway_client import GatewayClient, KernelClient
-from tornado.escape import json_encode
+from enterprise_gateway.client.gateway_client import GatewayClient
 from mpcontribs.api.core import SwaggerView
 from mpcontribs.api.notebooks.document import Notebooks
 from mpcontribs.api.contributions.document import Contributions

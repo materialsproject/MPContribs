@@ -1,12 +1,12 @@
-function lazyLoadImage(imageName, img) {
-    import(
-        /* webpackMode: "lazy-once" */
-        'images/' + imageName
-    ).then(function(src) {
-        img.src = src.default;
-        img.style.width = "100%";
-    }).catch(function(err) { console.error(err); });
-}
+//function lazyLoadImage(imageName, img) {
+//    import(
+//        /* webpackMode: "lazy-once" */
+//        'images/' + imageName
+//    ).then(function(src) {
+//        img.src = src.default;
+//        img.style.width = "100%";
+//    }).catch(function(err) { console.error(err); });
+//}
 
 $(document).ready(function () {
 

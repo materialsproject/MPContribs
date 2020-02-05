@@ -64,7 +64,7 @@ $(document).ready(function () {
         ['Fe', 'Co', 'V', 'Hc|MOKE'],
         ['Fe', 'Co', 'V', 'Hc|VSM']
     ];
-    var colorbars = [[0.45, 0.8], [1, 0.8], [0.25, 0.3], [0.625, 0.3], [1, 0.3]]
+    var colorbars = [[0.45, 0.8], [1, 0.8], [0.25, 0.3], [0.625, 0.3], [1, 0.3]];
 
     var fields = ['identifier', 'id'].concat(
         $.map(['Fe', 'Co', 'V', 'thickness', 'Hc|MOKE', 'Hc|VSM', 'BH|max'], function(col) {

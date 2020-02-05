@@ -65,7 +65,7 @@ window.render_overview = function(project, grid) {
                 });
             })
         }
-    })
+    });
 
     layout['height'] = 375 * nrows + layout['sliders'].length * 75;
 

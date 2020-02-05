@@ -125,7 +125,6 @@
         var result, container, key, keyNode, valNode, len, childs, tr, value,
             isEmpty = true,
             isSpecial = false,
-            accum = [],
             type = getType(data);
 
         // Initialized & used only in case of objects & arrays
@@ -203,7 +202,7 @@
             }
 
             if (isSpecial) {
-                result = sn('span', STRING_CLASS_NAME, data.toString())
+                result = sn('span', STRING_CLASS_NAME, data.toString());
             } else if (isEmpty) {
                 result = sn("span", OBJ_EMPTY_CLASS_NAME, "(Empty Object)");
             } else {

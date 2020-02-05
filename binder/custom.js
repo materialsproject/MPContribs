@@ -11,7 +11,7 @@ define([
                 prefix = '/user/' + user;
             }
             console.log(prefix);
-            var mpcontribs = require([prefix + '/custom/js/mpcontribs.var.js']);
+            require([prefix + '/custom/js/mpcontribs.var.js']);
             console.log('MPContribs loaded.')
         }
     });

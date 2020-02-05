@@ -1035,8 +1035,8 @@ class EnergyAnalysis:
         t_1000 = t_ox / 1000
         hform = a*t_1000
         hform += 0.5*b*(t_1000**2)
-        hform += (1/3)*c*(t_1000**3)
-        hform += (1/4)*c*(t_1000**4)
+        hform += (1/3.)*c*(t_1000**3)
+        hform += (1/4.)*c*(t_1000**4)
         hform += -e/t_1000
         hform += f
 

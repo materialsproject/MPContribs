@@ -124,10 +124,13 @@ function show_results(selection) {
                 var cid = $('<td/>', {html: cid_url});
                 var formula = $('<td/>', {text: d['formula']});
                 var project = $('<td/>', {text: d['project']});
-                var mp = 'https://materialsproject.org/materials/'
+                var mp = 'https://materialsproject.org/materials/';
                 var mpid = d['identifier'];
                 if (mpid.startsWith('m')) {
-                    mpid = $('<a/>', {href: mp + d['identifier'], text: d['identifier'], target: '_blank'});
+                    mpid = $('<a/>', {
+                        href: mp + d['identifier'], text: d['identifier'],
+                        target: '_blank', rel: "noopener noreferrer"
+                    });
                 }
                 var identifier = $('<td/>', {html: mpid});
                 var tr = $('<tr/>');

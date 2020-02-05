@@ -44,7 +44,6 @@ MIT License, https://github.com/cozeit/czMore/blob/master/LICENSE.md
             obj.before(count);
             var recordset = obj.children("#first");
             obj.after(divPlus);
-            var set = recordset.children(".recordset").children().first();
             var btnPlus = obj.siblings("#btnPlus");
 
             if(!options.styleOverride) {

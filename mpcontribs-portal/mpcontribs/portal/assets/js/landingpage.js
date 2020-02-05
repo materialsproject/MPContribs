@@ -20,7 +20,7 @@ if ($("#table").length) {
         if (col === 'id' || col.endsWith('CIF')) { col_dct['sortable'] = false; }
         if (col_split.length > 1) { col_dct['label'] = col_split.slice(1).join('.'); }
         else { col_dct['label'] = col; }
-        return col_dct
+        return col_dct;
     });
     var table = {'columns': columns};
     var config = {'project': $('#table').data('project'), 'ncols': 12};
