@@ -20,21 +20,25 @@ $(document).ready(function () {
     if ($('.output_wrapper').length) { $('#toggle_Code').click(); }
 
     if ($('#alert').length) {
-        var dots = '<span class="loader__dot">.</span><span class="loader__dot">.</span><span class="loader__dot">.</span>';
         var cid = window.location.pathname.replace('/', '');
         var source = new EventSource(window.api['host'] + 'stream?channel=' + cid);
         var ncells = $('#notebook').data('ncells');
+        var pbar = $('<progress/>', {'class': 'progress', 'max': ncells});
+        $('#alert').append(pbar);
+
         source.addEventListener('notebook', function(event) {
             var data = JSON.parse(event.data);
             if (data.message === 0) {
+                var dots = '<span class="loader__dot">.</span><span class="loader__dot">.</span><span class="loader__dot">.</span>';
                 $('#alert').html('Detail page ready, reloading ' + dots);
                 window.location.reload();
             } else if (data.message >= 0) {
-                $('#alert').html('cell ' + data.message + ' of ' + ncells + ' done ' + dots);
+                pbar.attr('value', data.message);
             } else {
                 $('#alert').html('Something went wrong.');
             }
         }, false);
+
         source.addEventListener('error', function(event) {
             $('#alert').html("Failed to connect to event stream. Is Redis running?")
         }, false);
