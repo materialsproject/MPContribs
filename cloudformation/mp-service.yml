@@ -58,6 +58,9 @@ Resources:
           Image: !Ref 'ImageUrlApi'
           PortMappings:
             - ContainerPort: 5001
+          Environment:
+            - Name: NUM_WORKERS
+              Value: 2
           LogConfiguration:
             LogDriver: 'awslogs'
             Options:
@@ -73,6 +76,8 @@ Resources:
           Environment:
             - Name: MP_API_ENDPOINT
               Value: http://localhost:5001/
+            - Name: NUM_WORKERS
+              Value: 2
           PortMappings:
             - ContainerPort: 8081
           LogConfiguration:
