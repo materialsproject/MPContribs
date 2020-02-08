@@ -123,12 +123,17 @@ def get_specs(klass, method, collection):
                 o.pattern if isinstance(o, Pattern) else o
                 for o in klass.resource.allowed_ordering
             ]
-            params.append({
+            params += [{
                 'name': '_order_by',
                 'in': 'query',
                 'type': 'string',
                 'description': f'order {collection} via {allowed_ordering}'
-            })
+            }, {
+                'name': 'order',
+                'in': 'query',
+                'type': 'string',
+                'description': f'order {collection} *asc* or *desc*'
+            }]
 
         if filter_params:
             params += filter_params
