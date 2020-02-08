@@ -43,7 +43,7 @@ Resources:
     Type: AWS::ECS::TaskDefinition
     Properties:
       Family: !Ref 'ServiceName'
-      Cpu: 512
+      Cpu: 1024
       Memory: 2048
       NetworkMode: awsvpc
       RequiresCompatibilities:
