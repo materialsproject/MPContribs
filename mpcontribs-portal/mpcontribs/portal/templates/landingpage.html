@@ -41,22 +41,27 @@
         <div class="level-left">
             <div class="level-item">
                 <div class="field has-addons">
-                    <div class="control">
-                        <div class="select">
-                            <select>
+                    <p class="control">
+                        <span class="select">
+                            <select id=table_select>
                                 {% for col in search_columns %}
                                 <option>{{ col }}</option>
                                 {% endfor %}
                             </select>
-                        </div>
-                    </div>
-                    <div class="control">
-                        <div id=table_filter></div>
-                    </div>
+                        </span>
+                    </p>
+                    <p class="control">
+                        <input id=table_keyword class="input" type="text" placeholder="Keyword">
+                    </p>
+                    <p class="control">
+                        <a id=table_filter class="button is-primary">Filter</a>
+                    </p>
+                    <p class="control">
+                        <a id=table_delete class="button is-light is-warning">Reset</a>
+                    </p>
                 </div>
             </div>
         </div>
-        <div class="level-item" id=table_columns></div>
         <div class="level-right">
             <div class="level-item" id=total_count></div>
         </div>
