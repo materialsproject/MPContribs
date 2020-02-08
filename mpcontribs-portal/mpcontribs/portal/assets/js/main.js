@@ -3,6 +3,7 @@ import * as clipboard from "clipboard";
 import 'select2/dist/js/select2';
 import 'jquery-simulate/jquery.simulate';
 import '@fortawesome/fontawesome-free/js/all';
+import '@vizuaalog/bulmajs/dist/dropdown';
 import * as bulmaTagsinput from 'bulma-extensions/bulma-tagsinput/dist/js/bulma-tagsinput';
 //import bulmaCollapsible from '@creativebulma/bulma-collapsible/dist/js/bulma-collapsible.min';
 require('css/main.scss');
@@ -35,7 +36,6 @@ $(document).ready(function () {
 
     // quick nav
     $('#jump').select2({
-        allowClear: true,
         ajax: {
             url: window.api['host'] + 'projects/',
             headers: window.api['headers'],
@@ -100,8 +100,6 @@ $(document).ready(function () {
                     $('#main-help-text').html('');
                     $('#main-help').addClass('is-hidden');
                 }
-                $("#main-help-button").click(function () { $(".dropdown").toggleClass("is-active"); });
-                $("#main-help-button").blur(function () { $(".dropdown").removeClass("is-active"); });
                 console.log(toggle + ' imported');
             }).catch(function(err) { console.error(err); });
         });

@@ -5,6 +5,7 @@ const CompressionPlugin = require('compression-webpack-plugin');
 const TerserJSPlugin = require('terser-webpack-plugin');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const OptimizeCSSAssetsPlugin = require('optimize-css-assets-webpack-plugin');
+const LodashModuleReplacementPlugin = require('lodash-webpack-plugin');
 //const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
 const devMode = process.env.NODE_ENV == 'development'
 console.log('devMode = ' + devMode)
@@ -41,7 +42,8 @@ module.exports = {
         new MiniCssExtractPlugin({
             filename: "[name].[chunkhash].css",
             chunkFilename: '[name].[chunkhash].css'
-        })
+        }),
+        new LodashModuleReplacementPlugin({'paths': true})
     ],
     optimization: {
         minimizer: [new TerserJSPlugin({}), new OptimizeCSSAssetsPlugin({})],
@@ -94,6 +96,14 @@ module.exports = {
                 ]
             },
             { test: /\.css$/, loaders: [MiniCssExtractPlugin.loader, "css-loader"] },
+            {
+                test: /landingpage\.js$/, use: [{ // TODO babel for all: https://babeljs.io/docs/en/babel-plugin-syntax-dynamic-import/#installation
+                    loader: 'babel-loader', options: {
+                        'plugins': ['lodash'],
+                        'presets': [['env', { 'modules': false, 'targets': { 'node': 4 } }]]
+                    }
+                }]
+            },
             { test: /backbone/, loader: 'exports-loader?Backbone!imports-loader?underscore,jquery' },
             { test: /backgrid/, loader: 'imports-loader?jquery,backbone' },
             { test: /jquery-form/, loader: 'imports-loader?jquery' },

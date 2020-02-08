@@ -26,7 +26,7 @@ def landingpage(request):
     except Exception as ex:
         ctx['alert'] = str(ex)
 
-    templates = [f'{project}_index.html', 'explorer_index.html']
+    templates = [f'{project}_index.html', 'landingpage.html']
     template = select_template(templates)
     return HttpResponse(template.render(ctx.flatten(), request))
 

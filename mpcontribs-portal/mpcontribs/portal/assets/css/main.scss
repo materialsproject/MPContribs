@@ -9,6 +9,7 @@
 @import "~backgrid-grouped-columns/backgrid-grouped-columns.css";
 @import "~backgrid-columnmanager/lib/Backgrid.ColumnManager.css";
 @import "~@fortawesome/fontawesome-free/css/all.css";
+@import '~handsontable/dist/handsontable.full.css';
 
 $family-sans-serif: "Nunito", sans-serif;
 $tooltip-background-opacity: 1;
@@ -26,6 +27,7 @@ $link: $turquoise;
 $link-hover: $grey-light;
 $button-text-color: $grey-darker;
 $input-border-color: $old-grey-light;
+$button-border-color: $old-grey-light;
 $switch-background: $old-grey-light;
 
 $card-content-padding: 0.5rem;
@@ -53,6 +55,8 @@ $border: $turquoise;
 $footer-padding: 0.5rem;
 $footer-background-color: $grey-darker;
 $footer-color: white;
+
+$table-cell-border: 1px solid $old-grey-light;
 
 @import "~bulma/bulma";
 @import "~bulma/sass/utilities/mixins";
@@ -100,18 +104,14 @@ a.anchor-link { display: none; }
 .loader__dot:nth-child(2) { animation-delay: 250ms }
 .loader__dot:nth-child(3) { animation-delay: 500ms }
 
-.backgrid { font-family: Consolas; }
-.backgrid tbody tr:hover { background-color: #f9f9f9; }
+.backgrid tbody tr:hover { background-color: $old-grey-light; }
 .backgrid .renderable { text-align: center; }
 .backgrid thead th button { display: inline; }
 .backgrid .string-cell { text-align: center; }
-.backgrid tbody tr:hover { background-color: #f9f9f9; }
-.backgrid tbody tr.selected { background-color: yellow; }
-.backgrid tbody tr { cursor: pointer; }
-.backgrid thead th button { display: inline; }
-.backgrid thead th { font-weight: normal; }
-.backgrid-filter.form-search { margin:0px; }
+.backgrid tbody tr:hover { background-color: $old-grey-light; }
 div.columnmanager-dropdown-container { max-height: unset; }
 
 .jh-type-string { font-weight: normal; }
 h2 { padding: 15px; }
+
+.handsontable thead th .relative { text-align: center; }

@@ -23,8 +23,10 @@ def get_context(request, project):
     long_title = prov.get('long_title')
     ctx['title'] = long_title if long_title else prov['title']
     ctx['descriptions'] = prov['description'].strip().split('.', 1)
-    authors = [a.strip() for a in prov['authors'].split(',') if a]
-    ctx['authors'] = {'main': authors[0], 'etal': authors[1:]}
+    authors = prov['authors'].strip().split(',', 1)
+    ctx['authors'] = {'main': authors[0].strip()}
+    if len(authors) > 1:
+        ctx['authors']['etal'] = authors[1].strip()
     ctx['urls'] = prov['urls']
     other = prov.get('other', '')
     if other:

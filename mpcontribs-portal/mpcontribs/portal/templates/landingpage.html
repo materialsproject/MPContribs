@@ -1,0 +1,76 @@
+{% extends "header_footer.html" %}
+
+{% block content %}
+<section class="section" id=landingpage>
+
+    <div class="title">
+        {{ title }}
+        {% if urls %}
+        <sup style="font-size: 50%; vertical-align: top;">
+        {% for k, v in urls.items %}
+        <a href="{{ v }}" target="_blank" rel="noopener noreferrer">[{{k}}]</a>
+        {% endfor %}
+        </sup>
+        {% endif %}
+    </div>
+    <div class="subtitle">
+        {{ authors.main }}
+        {% if authors.etal %}
+        <a name="read_more">et al.</a>
+        <span name="read_more" hidden>, {{ authors.etal }}</span>
+        {% endif %}
+    </div>
+
+    <article class="message is-dark">
+        <div class="message-body">
+            {{ descriptions.0 }}.
+            {% if descriptions.1 %}
+            <a name="read_more">More &raquo;</a>
+            <span name="read_more" hidden>{{ descriptions.1 }}</span>
+            {% endif %}
+
+            {% if other and other.strip != 'null' %}
+            <a name="read_more">Other Info &raquo;</a>
+            <div name="read_more" id=other style="width:100%;" data-renderjson='{{ other }}' hidden></div>
+            {% endif %}
+        </div>
+    </article>
+
+    {% if columns and columns.strip != 'null' %}
+    <nav class="level box">
+        <div class="level-left">
+            <div class="level-item">
+                <div class="field has-addons">
+                    <div class="control">
+                        <div class="select">
+                            <select>
+                                {% for col in search_columns %}
+                                <option>{{ col }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="control">
+                        <div id=table_filter></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="level-item" id=table_columns></div>
+        <div class="level-right">
+            <div class="level-item" id=total_count></div>
+        </div>
+    </nav>
+    {% endif %}
+
+
+    {% if columns and columns.strip != 'null' %}
+    <div class="columns">
+        <div class="column is-fullwidth">
+            <div id=table data-columns='{{ columns|join:"," }}' data-project='{{ project }}'></div>
+        </div>
+    </div>
+    {% endif %}
+
+</section>
+{% endblock %}
