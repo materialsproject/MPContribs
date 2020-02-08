@@ -88,7 +88,12 @@ $table-cell-border: 1px solid $old-grey-light;
 figure { border: 4px solid white; }
 
 #main-help { display: block; }
-.section { padding: 1.5em 1.5em; }
+.section { padding: 0.25em 1.5em 3em 1.5em; }
+
+footer {
+  bottom: 0; left: 0; right: 0;
+  position: fixed; z-index: 200;
+}
 
 .highlight > pre { background-color: #2f1e2e; }
 pre { padding: 0.75rem; }
@@ -115,3 +120,4 @@ div.columnmanager-dropdown-container { max-height: unset; }
 h2 { padding: 15px; }
 
 .handsontable thead th .relative { text-align: center; }
+.navbar.is-fixed-top { z-index: 200; }

@@ -10,12 +10,11 @@ $('a[name="read_more"]').on('click', function() {
 });
 
 const url = window.api['host'] + 'contributions/';
-const fields = ['id', 'identifier', 'formula', 'data'].join(',');
+const fields = ['id', 'identifier', 'formula', 'data', 'structures'].join(',');
 const default_query = {_fields: fields, project: $('#table').data('project'), _skip: 0};
 var query = $.extend(true, {}, default_query);
 
 function get_data() {
-    console.log(query);
     return $.get({url: url, headers: window.api['headers'], data: query});
 }
 
@@ -32,13 +31,14 @@ function urlRenderer(instance, td, row, col, prop, value, cellProperties) {
     value = (value === null) ? '' : value;
     var basename = value.split('/').pop();
     if (value.startsWith('http://') || value.startsWith('https://')) {
-        console.log(value); // TODO
+        Handsontable.renderers.HtmlRenderer.apply(this, arguments);
+        make_url_cell(td, basename.split('.')[0], value);
+    } else if (basename.endsWith('.cif')) {
+        make_url_cell(td, basename.split('.')[0].slice(-7), '/' + basename);
     } else if (basename.startsWith('mp-') || basename.startsWith('mvc-')) {
         Handsontable.renderers.HtmlRenderer.apply(this, arguments);
         var href = 'https://materialsproject.org/materials/' + basename;
         make_url_cell(td, basename, href);
-    } else if (basename.endsWith('.html') || basename.endsWith('.cif')) {
-        console.log(basename.split('.')[0]); // TODO
     } else if (objectid_regex.test(basename)) {
         Handsontable.renderers.HtmlRenderer.apply(this, arguments);
         make_url_cell(td, basename.slice(-7), '/' + basename);
@@ -51,7 +51,27 @@ function load_data(dom) {
     get_data().done(function(response) {
         total_count = response.total_count;
         $('#total_count').html('<b>' + total_count + ' total</b>');
+        // TODO support multiple structures per contribution not linked to sub-projects
+        for (var i = 0; i < response.data.length; i++) {
+            var doc = response.data[i];
+            var nr_structures = doc.structures.length;
+            if (nr_structures === 1) {
+                doc.data.CIF = doc.structures[0]['id'] + '.cif';
+            } else if (nr_structures > 1) {
+                $.each(doc.structures, function(idx, s) {
+                    doc.data[s.name].CIF = s.id + '.cif';
+                });
+            }
+            delete doc.structures;
+        }
         dom.loadData(response.data);
+        if (total_count > 20) {
+            const plugin = dom.getPlugin('AutoRowSize');
+            plugin.calculateAllRowsHeight({from: 0, to: 1});
+            var height = plugin.getColumnHeaderHeight();
+            height += response.data.length * plugin.getRowHeight(1) - 10;
+            dom.updateSettings({height: height});
+        }
         $('#table_filter').removeClass('is-loading');
         $('#table_delete').removeClass('is-loading');
     });
@@ -71,10 +91,8 @@ var columns = $.map(headers, function(col) {
 
 const container = document.getElementById('table');
 const hot = new Handsontable(container, {
-    //data: response.data,
-    rowHeaders: true,
-    colHeaders: headers, columns: columns,
-    width: '100%', stretchH: 'all', height: 450,
+    rowHeaders: true, colHeaders: headers, columns: columns,
+    width: '100%', stretchH: 'all',
     preventOverflow: 'horizontal',
     licenseKey: 'non-commercial-and-evaluation',
     disableVisualSelection: true,
