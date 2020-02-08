@@ -23,10 +23,10 @@
 
     <article class="message is-dark">
         <div class="message-body">
-            {{ descriptions.0 }}.
+            {{ descriptions.0|safe }}.
             {% if descriptions.1 %}
             <a name="read_more">More &raquo;</a>
-            <span name="read_more" hidden>{{ descriptions.1 }}</span>
+            <span name="read_more" hidden>{{ descriptions.1|safe }}</span>
             {% endif %}
 
             {% if other and other.strip != 'null' %}
