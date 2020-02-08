@@ -28,7 +28,7 @@ var objectid_regex = /^[a-f\d]{24}$/i;
 var total_count;
 
 function urlRenderer(instance, td, row, col, prop, value, cellProperties) {
-    value = (value === null) ? '' : value;
+    value = (value === null || typeof value  === 'undefined') ? '' : String(value);
     var basename = value.split('/').pop();
     if (value.startsWith('http://') || value.startsWith('https://')) {
         Handsontable.renderers.HtmlRenderer.apply(this, arguments);

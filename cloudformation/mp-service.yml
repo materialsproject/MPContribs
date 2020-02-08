@@ -43,7 +43,7 @@ Resources:
     Type: AWS::ECS::TaskDefinition
     Properties:
       Family: !Ref 'ServiceName'
-      Cpu: 256
+      Cpu: 512
       Memory: 2048
       NetworkMode: awsvpc
       RequiresCompatibilities:
@@ -54,7 +54,7 @@ Resources:
       TaskRoleArn: !Ref 'MpServiceRole'
       ContainerDefinitions:
         - Name: api
-          MemoryReservation: 500
+          MemoryReservation: 200
           Image: !Ref 'ImageUrlApi'
           PortMappings:
             - ContainerPort: 5001
@@ -65,7 +65,7 @@ Resources:
               awslogs-region: !Ref 'AWS::Region'
               awslogs-stream-prefix: !Ref 'ServiceName'
         - Name: web
-          MemoryReservation: 500
+          MemoryReservation: 200
           Image: !Ref 'ImageUrlWeb'
           DependsOn:
             - Condition: START
