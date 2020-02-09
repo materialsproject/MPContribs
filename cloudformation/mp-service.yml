@@ -43,8 +43,8 @@ Resources:
     Type: AWS::ECS::TaskDefinition
     Properties:
       Family: !Ref 'ServiceName'
-      Cpu: 1024
-      Memory: 2048
+      Cpu: 2048
+      Memory: 4096
       NetworkMode: awsvpc
       RequiresCompatibilities:
         - FARGATE
@@ -54,13 +54,13 @@ Resources:
       TaskRoleArn: !Ref 'MpServiceRole'
       ContainerDefinitions:
         - Name: api
-          MemoryReservation: 200
+          MemoryReservation: 500
           Image: !Ref 'ImageUrlApi'
           PortMappings:
             - ContainerPort: 5001
           Environment:
             - Name: NUM_WORKERS
-              Value: 2
+              Value: 4
           LogConfiguration:
             LogDriver: 'awslogs'
             Options:
@@ -68,7 +68,7 @@ Resources:
               awslogs-region: !Ref 'AWS::Region'
               awslogs-stream-prefix: !Ref 'ServiceName'
         - Name: web
-          MemoryReservation: 200
+          MemoryReservation: 500
           Image: !Ref 'ImageUrlWeb'
           DependsOn:
             - Condition: START
@@ -77,7 +77,7 @@ Resources:
             - Name: MP_API_ENDPOINT
               Value: http://localhost:5001/
             - Name: NUM_WORKERS
-              Value: 2
+              Value: 4
           PortMappings:
             - ContainerPort: 8081
           LogConfiguration:
