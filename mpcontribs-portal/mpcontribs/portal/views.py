@@ -107,7 +107,9 @@ def cif(request, sid):
     client = load_client(headers=get_consumer(request))  # sets/returns global variable
     cif = client.structures.get_entry(pk=sid, _fields=['cif']).result()['cif']
     if cif:
-        return HttpResponse(cif, content_type='text/plain')
+        response = HttpResponse(cif, content_type='text/plain')
+        response['Content-Disposition'] = 'attachment; filename={}.cif'.format(sid)
+        return response
     return HttpResponse(status=404)
 
 
