@@ -8,7 +8,7 @@ from flask import Blueprint
 from pymatgen import Structure
 from pymatgen.io.cif import CifWriter
 from mpcontribs.api.core import SwaggerView
-from mpcontribs.api.structures.document import Structures, Lattice, Site, Specie, Properties
+from mpcontribs.api.structures.document import Structures
 from mpcontribs.api.contributions.views import ContributionsResource
 
 templates = os.path.join(
@@ -17,29 +17,9 @@ templates = os.path.join(
 structures = Blueprint("structures", __name__, template_folder=templates)
 
 
-class LatticeResource(Resource):
-    document = Lattice
-
-
-class SpecieResource(Resource):
-    document = Specie
-
-
-class PropertiesResource(Resource):
-    document = Properties
-
-
-class SiteResource(Resource):
-    document = Site
-    related_resources = {'species': SpecieResource, 'properties': PropertiesResource}
-
-
 class StructuresResource(Resource):
     document = Structures
-    related_resources = {
-        'contribution': ContributionsResource,
-        'lattice': LatticeResource, 'sites': SiteResource
-    }
+    related_resources = {'contribution': ContributionsResource}
     filters = {
         'id': [ops.In, ops.Exact],
         'contribution': [ops.In, ops.Exact],
