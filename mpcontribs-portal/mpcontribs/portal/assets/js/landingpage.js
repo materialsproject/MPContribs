@@ -159,7 +159,25 @@ $('#table_select').change(function(e) {
     $('#table_keyword').val('');
 });
 
-//var project = window.location.pathname.split('/')[0].replace('/', '');
+var download_button = document.getElementById('table_download');
+var exportPlugin = hot.getPlugin('exportFile');
+
+var project = window.location.pathname.split('/')[0].replace('/', '');
+download_button.addEventListener('click', function() {
+    $(this).addClass('is-loading');
+    exportPlugin.downloadFile('csv', {
+        bom: false,
+        columnDelimiter: ',',
+        columnHeaders: true,
+        fileExtension: 'csv',
+        filename: '[YYYY]-[MM]-[DD]',
+        mimeType: 'text/csv',
+        rowDelimiter: '\r\n',
+        rowHeaders: true
+    });
+    $(this).removeClass('is-loading');
+});
+
 //if ($("#graph").length && project !== 'redox_thermo_csp') {
 //    render_overview(project, grid);
 //}
