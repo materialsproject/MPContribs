@@ -12,20 +12,36 @@ $('a[name="read_more"]').on('click', function() {
 const url = window.api['host'] + 'contributions/';
 const fields = ['id', 'identifier', 'formula', 'data', 'structures'].join(',');
 const default_query = {_fields: fields, project: $('#table').data('project'), _skip: 0};
+const objectid_regex = /^[a-f\d]{24}$/i;
 var query = $.extend(true, {}, default_query);
+var total_count;
 
 function get_data() {
     return $.get({url: url, headers: window.api['headers'], data: query});
 }
 
-function make_url_cell(td, text, href) {
-    var url = $('<a/>', {href: href, text: text, target: '_blank'});
-    Handsontable.dom.empty(td);
-    $(td).append(url);
+function make_icon(icon) {
+    var span = $('<span/>', {'class': 'icon is-small'});
+    var i = $('<i/>', {'class': 'fas ' + icon});
+    $(span).append(i);
+    return span;
 }
 
-var objectid_regex = /^[a-f\d]{24}$/i;
-var total_count;
+function make_url_cell(td, text, href) {
+    var url = $('<a/>', {href: href, target: '_blank'});
+    Handsontable.dom.empty(td);
+    if (href.endsWith('.cif')) {
+        var span = make_icon('fa-cloud-download-alt');
+        $(url).append(span);
+    } else if (objectid_regex.test(href.slice(1))) {
+        var span = make_icon('fa-list-alt');
+        $(url).append(span);
+    } else {
+        $(url).text(text);
+    }
+    $(td).addClass('htCenter').addClass('htMiddle').append(url);
+}
+
 
 function urlRenderer(instance, td, row, col, prop, value, cellProperties) {
     value = (value === null || typeof value  === 'undefined') ? '' : String(value);
@@ -88,6 +104,7 @@ var columns = $.map(headers, function(col) {
     config.data = name;
     return config;
 });
+headers[1] = 'details'; // rename "id" column
 
 const container = document.getElementById('table');
 const hot = new Handsontable(container, {
