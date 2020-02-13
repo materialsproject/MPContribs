@@ -89,6 +89,24 @@ def get_specs(klass, method, collection):
                 if op.typ == 'array':
                     filter_params[-1]['items'] = {'type': 'string'}
 
+    order_params = []
+    if klass.resource.allowed_ordering:
+        allowed_ordering = [
+            o.pattern if isinstance(o, Pattern) else o
+            for o in klass.resource.allowed_ordering
+        ]
+        order_params = [{
+            'name': '_order_by',
+            'in': 'query',
+            'type': 'string',
+            'description': f'order {collection} via {allowed_ordering}'
+        }, {
+            'name': 'order',
+            'in': 'query',
+            'type': 'string',
+            'description': f'order {collection} *asc* or *desc*'
+        }]
+
     spec = None
     if method_name == 'Fetch':
         params = [{
@@ -100,8 +118,7 @@ def get_specs(klass, method, collection):
         }]
         if fields_param is not None:
             params.append(fields_param)
-        if field_pagination_params:
-            params += field_pagination_params
+        params += field_pagination_params
         spec = {
             'summary': f'Retrieve a {collection[:-1]}.',
             'operationId': 'get_entry',
@@ -113,31 +130,12 @@ def get_specs(klass, method, collection):
                 }, 'default': default_response
             }
         }
+
     elif method_name == 'List':
         params = [fields_param] if fields_param is not None else []
-        if field_pagination_params:
-            params += field_pagination_params
-
-        if klass.resource.allowed_ordering:
-            allowed_ordering = [
-                o.pattern if isinstance(o, Pattern) else o
-                for o in klass.resource.allowed_ordering
-            ]
-            params += [{
-                'name': '_order_by',
-                'in': 'query',
-                'type': 'string',
-                'description': f'order {collection} via {allowed_ordering}'
-            }, {
-                'name': 'order',
-                'in': 'query',
-                'type': 'string',
-                'description': f'order {collection} *asc* or *desc*'
-            }]
-
-        if filter_params:
-            params += filter_params
-
+        params += field_pagination_params
+        params += order_params
+        params += filter_params
         schema_props = {
             'data': {
                 'type': 'array',
@@ -149,7 +147,6 @@ def get_specs(klass, method, collection):
             schema_props['total_count'] = {'type': 'integer'}
             schema_props['total_pages'] = {'type': 'integer'}
             params += limit_params
-
         spec = {
             'summary': f'Retrieve and filter {collection}.',
             'operationId': 'get_entries',
@@ -164,6 +161,31 @@ def get_specs(klass, method, collection):
                 }, 'default': default_response
             }
         }
+
+    elif method_name == 'Download':
+        params = [fields_param] if fields_param is not None else []
+        params += order_params
+        params += filter_params
+        params.append({
+            'name': 'format',
+            'in': 'query',
+            'type': 'string',
+            'default': 'zip',
+            'description': f'download {collection} in different formats: zip'
+        })
+        spec = {
+            'summary': f'Filter and download {collection}.',
+            'operationId': 'download_entries',
+            'parameters': params,
+            'produces': ['application/zip'],
+            'responses': {
+                200: {
+                    'description': f'{collection} download',
+                    'schema': {'type': 'file'}
+                }, 'default': default_response
+            }
+        }
+
     elif method_name == 'Create':
         spec = {
             'summary': f'Create a new {collection[:-1]}.',
@@ -205,7 +227,7 @@ def get_specs(klass, method, collection):
             }
         }
     elif method_name == 'BulkUpdate':
-        params = filter_params if filter_params else []
+        params = filter_params
         #params += limit_params  # TODO respect limits when updating multiple entries?
         params.append({
             'name': f'{collection}',
