@@ -27,6 +27,11 @@ MONGODB_SETTINGS = {
 REDIS_URL = 'redis://' + os.environ.get('REDIS_ADDRESS', 'redis')
 
 SWAGGER = {
+    'swagger_ui_bundle_js': '//unpkg.com/swagger-ui-dist@3/swagger-ui-bundle.js',
+    'swagger_ui_standalone_preset_js': '//unpkg.com/swagger-ui-dist@3/swagger-ui-standalone-preset.js',
+    'jquery_js': '//unpkg.com/jquery@2.2.4/dist/jquery.min.js',
+    'swagger_ui_css': '//unpkg.com/swagger-ui-dist@3/swagger-ui.css',
+    'uiversion': 3,
     'hide_top_bar': True,
     'doc_expansion': "none",
     'doc_dir': os.path.join(os.path.dirname(__file__), 'swagger'),
