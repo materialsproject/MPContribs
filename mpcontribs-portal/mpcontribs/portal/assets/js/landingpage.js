@@ -9,9 +9,10 @@ $('a[name="read_more"]').on('click', function() {
     el.show();
 });
 
+const project = $('#table').data('project');
 const url = window.api['host'] + 'contributions/';
 const fields = ['id', 'identifier', 'formula', 'data', 'structures'].join(',');
-const default_query = {_fields: fields, project: $('#table').data('project'), _skip: 0};
+const default_query = {_fields: fields, project: project, _skip: 0};
 const objectid_regex = /^[a-f\d]{24}$/i;
 var query = $.extend(true, {}, default_query);
 var total_count;
@@ -21,7 +22,7 @@ function get_data() {
 }
 
 function make_icon(icon) {
-    var span = $('<span/>', {'class': 'icon is-small'});
+    var span = $('<span/>', {'class': 'icon'});
     var i = $('<i/>', {'class': 'fas ' + icon});
     $(span).append(i);
     return span;
@@ -63,23 +64,27 @@ function urlRenderer(instance, td, row, col, prop, value, cellProperties) {
     }
 }
 
+function process_data(data) {
+    for (var i = 0; i < data.length; i++) {
+        var doc = data[i];
+        var nr_structures = doc.structures.length;
+        if (nr_structures === 1) {
+            doc.data.CIF = doc.structures[0]['id'] + '.cif';
+        } else if (nr_structures > 1) {
+            $.each(doc.structures, function(idx, s) {
+                doc.data[s.name].CIF = s.id + '.cif';
+            });
+        }
+        delete doc.structures;
+    }
+}
+
 function load_data(dom) {
     get_data().done(function(response) {
         total_count = response.total_count;
         $('#total_count').html('<b>' + total_count + ' total</b>');
         // TODO support multiple structures per contribution not linked to sub-projects
-        for (var i = 0; i < response.data.length; i++) {
-            var doc = response.data[i];
-            var nr_structures = doc.structures.length;
-            if (nr_structures === 1) {
-                doc.data.CIF = doc.structures[0]['id'] + '.cif';
-            } else if (nr_structures > 1) {
-                $.each(doc.structures, function(idx, s) {
-                    doc.data[s.name].CIF = s.id + '.cif';
-                });
-            }
-            delete doc.structures;
-        }
+        process_data(response.data);
         dom.loadData(response.data);
         if (total_count > 20) {
             const plugin = dom.getPlugin('AutoRowSize');
@@ -108,12 +113,14 @@ headers[1] = 'details'; // rename "id" column
 
 const container = document.getElementById('table');
 const hot = new Handsontable(container, {
-    rowHeaders: true, colHeaders: headers, columns: columns,
+    colHeaders: headers, columns: columns,
+    hiddenColumns: {columns: [1]},
     width: '100%', stretchH: 'all',
     preventOverflow: 'horizontal',
     licenseKey: 'non-commercial-and-evaluation',
     disableVisualSelection: true,
     className: "htCenter htMiddle",
+    persistentState: true,
     columnSorting: true,
     beforeColumnSort: function(currentSortConfig, destinationSortConfigs) {
         const columnSortPlugin = this.getPlugin('columnSorting');
@@ -138,8 +145,19 @@ const hot = new Handsontable(container, {
                 ht.alter('insert_row', last, rlen);
                 var update = [];
                 for (var r = 0; r < rlen; r++) {
+                    var doc = response['data'][r];
                     for (var c = 0; c < columns.length; c++) {
-                        var v = get(response['data'][r], columns[c].data, '');
+                        var col = columns[c].data;
+                        var v = get(doc, col, '');
+                        if (v === '' && col.endsWith('CIF')) {
+                            var col_split = col.split('.');
+                            if (col_split.length == 2) {
+                                v = doc.structures[0]['id'] + '.cif';
+                            } else if (col_split.length == 3) {
+                                //doc.data[s.name].CIF = s.id + '.cif';
+                                console.log(col); // TODO
+                            }
+                        }
                         update.push([last+r, c, v]);
                     }
                 }
@@ -148,6 +166,18 @@ const hot = new Handsontable(container, {
         }
     }
     //collapsibleColumns: true,
+});
+
+
+hot.updateSettings({
+    rowHeaders: function(index) {
+        var cid = hot.getDataAtCell(index, 1);
+        var url = $('<a/>', {href: '/' + cid, target: '_blank', 'class': 'is-pulled-right'});
+        var icon = make_icon('fa-list-alt');
+        $(url).append(icon);
+        var span = $('<span/>', {'class': 'is-size-7', text: index+1});
+        return span.prop('outerHTML') + url.prop('outerHTML');
+    }
 });
 
 load_data(hot);
