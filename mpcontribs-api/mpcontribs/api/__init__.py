@@ -10,6 +10,7 @@ from flask_mongorest import register_class
 from flask_mongorest.exceptions import ValidationError
 from flask_log import Logging
 from flask_sse import sse
+from flask_compress import Compress
 from flasgger.base import Swagger
 from pandas.io.json._normalize import nested_to_record
 from typing import Any, Dict
@@ -107,6 +108,7 @@ def create_app():
         from flask_cors import CORS
         CORS(app)  # enable for development (allow localhost)
 
+    Compress(app)
     Logging(app)
     Marshmallow(app)
     db = MongoEngine(app)
