@@ -18,11 +18,13 @@ from itsdangerous import URLSafeTimedSerializer
 from pint import UnitRegistry
 from fdict import fdict
 from string import punctuation
+from decimal import Decimal
 
 ureg = UnitRegistry(auto_reduce_dimensions=True)
 ureg.default_format = '~'
 Q_ = ureg.Quantity
 delimiter, max_depth = '.', 2
+max_dgts = 7
 invalidChars = set(punctuation.replace('|', '').replace('*', ''))
 quantity_keys = ['display', 'value', 'unit']
 
@@ -65,7 +67,13 @@ def validate_data(doc):
         try_quantity = bool(len(words) == 2 and is_float(words[0]))
         if try_quantity or isinstance(d[key], (int, float)):
             try:
-                q = Q_(value).to_compact()
+                v = Decimal(words[0]).normalize()
+                dgts = -v.as_tuple().exponent
+                dgts = max_dgts if dgts > max_dgts else dgts
+                v = f'{v:.{dgts}f}'
+                if try_quantity:
+                    v += ' ' + words[1]
+                q = Q_(v).to_compact()
             except Exception as ex:
                 raise ValidationError({'error': str(ex)})
             # TODO keep percent as unit
