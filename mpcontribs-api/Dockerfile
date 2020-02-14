@@ -12,10 +12,11 @@ RUN conda env update --file environment.yml && \
 
 WORKDIR /app
 COPY . .
+RUN /opt/conda/bin/pip uninstall -y mimerender
 RUN /opt/conda/bin/pip install --no-cache-dir --upgrade -e .
 #RUN cd marshmallow-mongoengine && /opt/conda/bin/pip install --upgrade -e .
-#RUN cd flask-mongorest && /opt/conda/bin/pip install --upgrade -e .
 #RUN cd mimerender && /opt/conda/bin/pip install --upgrade -e .
+#RUN cd flask-mongorest && /opt/conda/bin/pip install --upgrade -e .
 #RUN cd flasgger && /opt/conda/bin/pip install --upgrade -e .
 
 ARG MAPI_KEY
