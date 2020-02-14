@@ -1,5 +1,7 @@
 import Handsontable from "handsontable";
 import get from "lodash/get";
+import countBy from "lodash/countBy";
+import identity from "lodash/identity";
 
 $('a[name="read_more"]').on('click', function() {
     $(this).hide();
@@ -10,14 +12,23 @@ $('a[name="read_more"]').on('click', function() {
 });
 
 const project = $('#table').data('project');
-const url = window.api['host'] + 'contributions/';
-const fields = ['id', 'identifier', 'formula', 'data', 'structures'].join(',');
-const default_query = {_fields: fields, project: project, _skip: 0};
 const objectid_regex = /^[a-f\d]{24}$/i;
+const headers = $('#table').data('columns').split(',');
+const columns = $.map(headers, function(col) {
+    var config = {readOnly: true};
+    var name = col.split(' ')[0];
+    if (col.endsWith(']')) { name += '.value'; }
+    config.data = name;
+    return config;
+});
+const fields = $.map(columns, function(conf) { return conf.data; });
+const default_query = {_fields: fields.join(','), project: project, _skip: 0};
+
 var query = $.extend(true, {}, default_query);
 var total_count;
 
 function get_data() {
+    const url = window.api['host'] + 'contributions/';
     return $.get({url: url, headers: window.api['headers'], data: query});
 }
 
@@ -43,39 +54,22 @@ function make_url_cell(td, text, href) {
     $(td).addClass('htCenter').addClass('htMiddle').append(url);
 }
 
-
 function urlRenderer(instance, td, row, col, prop, value, cellProperties) {
     value = (value === null || typeof value  === 'undefined') ? '' : String(value);
     var basename = value.split('/').pop();
     if (value.startsWith('http://') || value.startsWith('https://')) {
         Handsontable.renderers.HtmlRenderer.apply(this, arguments);
         make_url_cell(td, basename.split('.')[0], value);
-    } else if (basename.endsWith('.cif')) {
-        make_url_cell(td, basename.split('.')[0].slice(-7), '/' + basename);
     } else if (basename.startsWith('mp-') || basename.startsWith('mvc-')) {
         Handsontable.renderers.HtmlRenderer.apply(this, arguments);
         var href = 'https://materialsproject.org/materials/' + basename;
         make_url_cell(td, basename, href);
     } else if (objectid_regex.test(basename)) {
         Handsontable.renderers.HtmlRenderer.apply(this, arguments);
-        make_url_cell(td, basename.slice(-7), '/' + basename);
+        var ext = columns[col].data.startsWith('structures') ? '.cif' : ''
+        make_url_cell(td, basename.slice(-7), '/' + basename + ext);
     } else {
         Handsontable.renderers.TextRenderer.apply(this, arguments);
-    }
-}
-
-function process_data(data) {
-    for (var i = 0; i < data.length; i++) {
-        var doc = data[i];
-        var nr_structures = doc.structures.length;
-        if (nr_structures === 1) {
-            doc.data.CIF = doc.structures[0]['id'] + '.cif';
-        } else if (nr_structures > 1) {
-            $.each(doc.structures, function(idx, s) {
-                doc.data[s.name].CIF = s.id + '.cif';
-            });
-        }
-        delete doc.structures;
     }
 }
 
@@ -84,7 +78,6 @@ function load_data(dom) {
         total_count = response.total_count;
         $('#total_count').html('<b>' + total_count + ' total</b>');
         // TODO support multiple structures per contribution not linked to sub-projects
-        process_data(response.data);
         dom.loadData(response.data);
         if (total_count > 20) {
             const plugin = dom.getPlugin('AutoRowSize');
@@ -93,28 +86,48 @@ function load_data(dom) {
             height += response.data.length * plugin.getRowHeight(1) - 10;
             dom.updateSettings({height: height});
         }
+        $('a[name=table_download_item]').each(function(index) {
+            var download_url = window.api['host'] + 'contributions/gz/?';
+            download_url += $.param(query);
+            download_url += '&format=' + $(this).data('format');
+            //const full = $(this).data('full'); // TODO get structures
+            $(this).attr('href', download_url);
+        });
         $('#table_filter').removeClass('is-loading');
         $('#table_delete').removeClass('is-loading');
     });
 }
 
-var headers = $('#table').data('columns').split(',');
-var columns = $.map(headers, function(col) {
-    var config = {readOnly: true};
-    var name = col;
-    if (col !== 'id' && col !== 'identifier' && col !== 'formula') {
-        name = 'data.' + col.split(' ')[0];
-    }
-    if (col.endsWith(']')) { name += '.value'; }
-    config.data = name;
-    return config;
+$('a[name=table_download_item]').click(function() {
+    $('#table_download_dropdown').removeClass('is-active');
+})
+
+var nestedHeadersPrep = [];
+const levels = $.map(headers, function(h) { return h.split('.').length; })
+const depth = Math.max.apply(Math, levels);
+for (var i = 0; i < depth; i++) { nestedHeadersPrep.push([]); }
+$.each(headers, function(i, h) {
+    const hs = h.split('.');
+    const deep = hs.length;
+    for (var d = 0; d < depth-deep; d++) { nestedHeadersPrep[d].push('filler'); }
+    $.each(hs, function(j, l) { nestedHeadersPrep[j+depth-deep].push(l); });
 });
-headers[1] = 'details'; // rename "id" column
+var nestedHeaders = [];
+$.each(nestedHeadersPrep, function(r, row) {
+    // TODO BUG countBy's need to be consecutive!
+    const countby = countBy(row, identity);
+    const new_row = $.map(Object.keys(countby), function(label) {
+        return {label: label, colspan: countby[label]};
+    });
+    nestedHeaders.push(new_row);
+});
+console.log(nestedHeaders);
 
 const container = document.getElementById('table');
 const hot = new Handsontable(container, {
     colHeaders: headers, columns: columns,
     hiddenColumns: {columns: [1]},
+    nestedHeaders: nestedHeaders,
     width: '100%', stretchH: 'all',
     preventOverflow: 'horizontal',
     licenseKey: 'non-commercial-and-evaluation',
@@ -149,15 +162,6 @@ const hot = new Handsontable(container, {
                     for (var c = 0; c < columns.length; c++) {
                         var col = columns[c].data;
                         var v = get(doc, col, '');
-                        if (v === '' && col.endsWith('CIF')) {
-                            var col_split = col.split('.');
-                            if (col_split.length == 2) {
-                                v = doc.structures[0]['id'] + '.cif';
-                            } else if (col_split.length == 3) {
-                                //doc.data[s.name].CIF = s.id + '.cif';
-                                console.log(col); // TODO
-                            }
-                        }
                         update.push([last+r, c, v]);
                     }
                 }
@@ -187,8 +191,7 @@ $('#table_filter').click(function(e) {
     e.preventDefault();
     var kw = $('#table_keyword').val();
     var sel = $( "#table_select option:selected" ).text();
-    var key = (sel !== 'identifier' && sel !== 'formula') ? 'data__' + sel : sel;
-    key += '__contains';
+    var key = sel.replace(/\./g, '__') + '__contains';
     query[key] = kw;
     query['_skip'] = 0;
     load_data(hot);
@@ -204,25 +207,6 @@ $('#table_delete').click(function(e) {
 
 $('#table_select').change(function(e) {
     $('#table_keyword').val('');
-});
-
-var download_button = document.getElementById('table_download');
-var exportPlugin = hot.getPlugin('exportFile');
-
-var project = window.location.pathname.split('/')[0].replace('/', '');
-download_button.addEventListener('click', function() {
-    $(this).addClass('is-loading');
-    exportPlugin.downloadFile('csv', {
-        bom: false,
-        columnDelimiter: ',',
-        columnHeaders: true,
-        fileExtension: 'csv',
-        filename: '[YYYY]-[MM]-[DD]',
-        mimeType: 'text/csv',
-        rowDelimiter: '\r\n',
-        rowHeaders: true
-    });
-    $(this).removeClass('is-loading');
 });
 
 //if ($("#graph").length && project !== 'redox_thermo_csp') {

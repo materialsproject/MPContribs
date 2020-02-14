@@ -65,7 +65,23 @@
         <div class="level-right">
             <div class="level-item">
                 <p class="control">
-                    <a id=table_download class="button is-primary">Download</a>
+                <div id=table_download_dropdown class="dropdown">
+                    <div class="dropdown-trigger">
+                        <button id=table_download class="button is-primary" aria-haspopup="true" aria-controls="dropdown-menu">
+                            <span class="icon">
+                                <i class="fas fa-cloud-download-alt"></i>
+                            </span>
+                        </button>
+                    </div>
+                    <div class="dropdown-menu" id="dropdown-menu" role="menu">
+                        <div class="dropdown-content">
+                            <a name=table_download_item class="dropdown-item" href='#' data-format=json>minimal JSON</a>
+                            <a name=table_download_item class="dropdown-item" href='#' data-format=json data-full=1>full JSON</a>
+                            <hr class="dropdown-divider">
+                            <a name=table_download_item class="dropdown-item" href='#' data-format=csv>CSV</a>
+                        </div>
+                    </div>
+                </div>
                 </p>
             </div>
             <div class="level-item" id=total_count></div>
