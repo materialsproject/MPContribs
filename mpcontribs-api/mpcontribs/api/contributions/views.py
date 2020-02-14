@@ -46,9 +46,35 @@ class ContributionsResource(Resource):
 
     def value_for_field(self, obj, field):
         # add structures and tables info to response if requested
-        if field == 'structures':
-            structures = Structures.objects.only('id', 'name').filter(contribution=obj.id)
-            return [{'id': s.id, 'name': s.name} for s in structures]
+        if field.startswith('structures'):
+            field_split = field.split('.')
+            field_len = len(field_split)
+            if field_len > 2:
+                raise UnknownFieldError
+            elif field_len == 2:
+                if field_split[1] in Structures._fields:
+                    # TODO return structure subfields if nested fields requested
+                    # TODO find a way to not re-query structures for every subfield?
+                    return f'TODO requested {field_split[1]}'
+                else:
+                    # requested latest structure for label
+                    objects = Structures.objects.only('id')
+                    objects = objects.filter(contribution=obj.id, label=field_split[1])
+                    objects = objects.order_by('-id').limit(1)
+                    if not objects:
+                        raise UnknownFieldError
+                    return objects[0].id
+            elif field_len == 1:
+                # TODO return full structures if download requested, i.e. _fields=_all??
+                objects = Structures.objects.only('id', 'label')
+                objects = objects.filter(contribution=obj.id).order_by('-id')
+                value = {}
+                for s in objects:
+                    # only return newest structure for each label
+                    if not s.label in value:
+                        value[s.label] = s.id
+                return value
+
         elif field == 'tables':
             tables = Tables.objects.only('id', 'name').filter(contribution=obj.id)
             return [{'id': t.id, 'name': t.name} for t in tables]

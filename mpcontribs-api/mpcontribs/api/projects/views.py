@@ -87,33 +87,18 @@ class ProjectsResource(Resource):
                     unit = unit_sample.get(unit_field)
                     if min_max and unit is None:
                         unit = ''  # catch missing unit field in data
-                    key = f'{col} [{unit}]' if min_max else col
+                    key = f'data.{col} [{unit}]' if min_max else f'data.{col}'
                     columns[key] = rng
 
             contributions = Contributions.objects.only('pk').filter(project=obj.id)
             agg = list(Structures.objects.aggregate(*[
                 {'$match': {'contribution': {'$in': [c.pk for c in contributions]}}},
-                {'$group': {'_id': '$contribution', 'count': {'$sum': 1}, 'names': {'$addToSet': '$name'}}},
+                {'$group': {'_id': '$contribution', 'count': {'$sum': 1}, 'labels': {'$addToSet': '$label'}}},
                 {'$sort': {'count': -1}}, {'$limit': 1}
             ]))
             if agg:
-                # check for structures linked to sub-projects
-                max_doc = agg[0]
-                projects = sorted(obj.id.split('_'))
-                if max_doc['count'] > 1 and len(projects) == max_doc['count']:
-                    for p, n in zip(projects, sorted(max_doc['names'])):
-                        if p == n.lower():
-                            columns[f'{n}.CIF'] = None
-                            max_doc['names'].remove(n)
-                # add remaining structures
-                remain = len(max_doc['names'])
-                if remain > 1:
-                    for idx, name in enumerate(max_doc['names']):
-                        # TODO find better lable than numbering - needed for perovskites_diffusion?
-                        columns[f'#{idx+1} CIF'] = None
-                elif remain == 1:
-                    # name is irrelevant if only one structure per contrib
-                    columns[f'CIF'] = None
+                for label in agg[0]['labels']:
+                    columns[f'structures.{label}'] = None
 
             return dict(sorted(columns.items(), key=lambda t: t[0]))
         else:
