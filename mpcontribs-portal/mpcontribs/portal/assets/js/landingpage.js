@@ -1,7 +1,5 @@
 import Handsontable from "handsontable";
 import get from "lodash/get";
-import countBy from "lodash/countBy";
-import identity from "lodash/identity";
 
 $('a[name="read_more"]').on('click', function() {
     $(this).hide();
@@ -77,7 +75,6 @@ function load_data(dom) {
     get_data().done(function(response) {
         total_count = response.total_count;
         $('#total_count').html('<b>' + total_count + ' total</b>');
-        // TODO support multiple structures per contribution not linked to sub-projects
         dom.loadData(response.data);
         if (total_count > 20) {
             const plugin = dom.getPlugin('AutoRowSize');
@@ -109,19 +106,21 @@ for (var i = 0; i < depth; i++) { nestedHeadersPrep.push([]); }
 $.each(headers, function(i, h) {
     const hs = h.split('.');
     const deep = hs.length;
-    for (var d = 0; d < depth-deep; d++) { nestedHeadersPrep[d].push('filler'); }
+    for (var d = 0; d < depth-deep; d++) { nestedHeadersPrep[d].push(' '); }
     $.each(hs, function(j, l) { nestedHeadersPrep[j+depth-deep].push(l); });
 });
+
 var nestedHeaders = [];
 $.each(nestedHeadersPrep, function(r, row) {
-    // TODO BUG countBy's need to be consecutive!
-    const countby = countBy(row, identity);
-    const new_row = $.map(Object.keys(countby), function(label) {
-        return {label: label, colspan: countby[label]};
-    });
+    var new_row = []; var prev;
+    for (var i = 0; i < row.length; i++) {
+        if (!new_row.length || row[i] !== new_row[new_row.length-1]['label']) {
+            new_row.push({label: row[i], colspan: 0});
+        }
+        new_row[new_row.length-1]['colspan']++;
+    }
     nestedHeaders.push(new_row);
 });
-console.log(nestedHeaders);
 
 const container = document.getElementById('table');
 const hot = new Handsontable(container, {
