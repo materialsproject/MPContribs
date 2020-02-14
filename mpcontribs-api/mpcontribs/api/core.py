@@ -163,21 +163,28 @@ def get_specs(klass, method, collection):
         }
 
     elif method_name == 'Download':
-        params = [fields_param] if fields_param is not None else []
-        params += order_params
-        params += filter_params
-        params.append({
+        params = [{
+            'name': 'short_mime',
+            'in': 'path',
+            'type': 'string',
+            'required': True,
+            'description': f'MIME Download Type: gz',
+            'default': 'gz'
+        }, {
             'name': 'format',
             'in': 'query',
             'type': 'string',
-            'default': 'zip',
-            'description': f'download {collection} in different formats: zip'
-        })
+            'required': True,
+            'description': f'download {collection} in different formats: {klass.resource.download_formats}'
+        }]
+        params += [fields_param] if fields_param is not None else []
+        params += order_params
+        params += filter_params
         spec = {
             'summary': f'Filter and download {collection}.',
             'operationId': 'download_entries',
             'parameters': params,
-            'produces': ['application/zip'],
+            'produces': ['application/gzip'],
             'responses': {
                 200: {
                     'description': f'{collection} download',

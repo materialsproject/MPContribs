@@ -11,7 +11,7 @@ flask_mongorest @ git+https://github.com/tschaume/flask-mongorest@register_class
 marshmallow>=2.16.3
 marshmallow-mongoengine @ git+https://github.com/tschaume/marshmallow-mongoengine@mpcontribs#egg=marshmallow_mongoengine-0.30.0
 mongoengine>=0.16.3
-mimerender>=0.6.0
+mimerender @ git+https://github.com/tschaume/mimerender@mpcontribs#egg=mimerender-0.6.1
 pymongo>=3.7.2
 requests>=2.22.0
 selenium>=3.141.0

@@ -38,6 +38,7 @@ class ContributionsResource(Resource):
     default_limit = 20
     max_limit = 200
     bulk_update_limit = 100
+    download_formats = ['json', 'csv']
 
     @staticmethod
     def get_optional_fields():
