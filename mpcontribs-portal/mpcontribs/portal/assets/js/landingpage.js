@@ -84,7 +84,7 @@ function load_data(dom) {
             dom.updateSettings({height: height});
         }
         $('a[name=table_download_item]').each(function(index) {
-            var download_url = window.api['host'] + 'contributions/gz/?';
+            var download_url = window.api['host'] + 'contributions/download/gz/?';
             download_url += $.param(query);
             download_url += '&format=' + $(this).data('format');
             //const full = $(this).data('full'); // TODO get structures
