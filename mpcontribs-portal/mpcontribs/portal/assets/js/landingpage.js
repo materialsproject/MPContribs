@@ -85,10 +85,14 @@ function load_data(dom) {
         }
         $('a[name=table_download_item]').each(function(index) {
             var download_url = window.api['host'] + 'contributions/download/gz/?';
-            var download_query = $.extend(true, {}, query, window.api['headers']);
-            download_query['format'] = $(this).data('format');
+            const full = $(this).data('full');
+            const format = $(this).data('format');
+            var download_query = $.extend(
+                true, {format: format}, window.api['headers'], query
+            );
+            if (full && format == 'json') { download_query['_fields'] = '_all'; }
+            delete download_query['_skip'];
             download_url += $.param(download_query);
-            //const full = $(this).data('full'); // TODO get structures
             $(this).attr('href', download_url);
         });
         $('#table_filter').removeClass('is-loading');
