@@ -85,8 +85,9 @@ function load_data(dom) {
         }
         $('a[name=table_download_item]').each(function(index) {
             var download_url = window.api['host'] + 'contributions/download/gz/?';
-            download_url += $.param(query);
-            download_url += '&format=' + $(this).data('format');
+            var download_query = $.extend(true, {}, query, window.api['headers']);
+            download_query['format'] = $(this).data('format');
+            download_url += $.param(download_query);
             //const full = $(this).data('full'); // TODO get structures
             $(this).attr('href', download_url);
         });
