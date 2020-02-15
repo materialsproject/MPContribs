@@ -65,14 +65,22 @@ class ContributionsResource(Resource):
                         raise UnknownFieldError
                     return objects[0].id
             elif field_len == 1:
-                # TODO return full structures if download requested, i.e. _fields=_all??
-                objects = Structures.objects.only('id', 'label')
-                objects = objects.filter(contribution=obj.id).order_by('-id')
-                value = {}
+                # return full structures only if download requested
+                full = bool(self.view_method == Download and
+                            self.params.get('format') == 'json' and
+                            self.params.get('_fields') == '_all')
+                mask = ['id', 'lattice', 'sites', 'charge', 'klass', 'module'] if full else ['id', 'label']
+                objects = Structures.objects.only(*mask).filter(contribution=obj.id).order_by('-id')
+                if full:
+                    from mpcontribs.api.structures.views import StructuresResource
+                    sr = StructuresResource(view_method=Download)
+                value = [] if full else {}
                 for s in objects:
-                    # only return newest structure for each label
-                    if not s.label in value:
-                        value[s.label] = s.id
+                    if full:
+                        value.append(sr.serialize(s, fields=mask))
+                    else:  # only return newest structure for each label
+                        if not s.label in value:
+                            value[s.label] = s.id
                 return value
 
         elif field == 'tables':
