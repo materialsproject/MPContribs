@@ -21,7 +21,7 @@ from string import punctuation
 from decimal import Decimal
 
 ureg = UnitRegistry(auto_reduce_dimensions=True)
-ureg.default_format = '~'
+ureg.default_format = 'P~'
 Q_ = ureg.Quantity
 delimiter, max_depth = '.', 2
 max_dgts = 7
@@ -76,11 +76,11 @@ def validate_data(doc):
                     v = words[0]
                 if try_quantity:
                     v += ' ' + words[1]
-                q = Q_(v).to_compact()
+                q = Q_(v)#.to_compact()
             except Exception as ex:
                 raise ValidationError({'error': str(ex)})
             # TODO keep percent as unit
-            d[key] = {'display': str(q), 'value': q.magnitude, 'unit': format(q.units, '~')}
+            d[key] = {'display': str(q), 'value': q.magnitude, 'unit': str(q.units)}
 
     return d.to_dict_nested()
 
