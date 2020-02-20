@@ -91,10 +91,8 @@
 
 
     {% if columns and columns.strip != 'null' %}
-    <div class="columns">
-        <div class="column is-fullwidth">
-            <div id=table data-columns='{{ columns|join:"," }}' data-project='{{ project }}'></div>
-        </div>
+    <div class="box">
+        <div id=table data-columns='{{ columns|join:"," }}' data-project='{{ project }}'></div>
     </div>
     {% endif %}
 

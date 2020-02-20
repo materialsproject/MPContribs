@@ -21,6 +21,7 @@ const columns = $.map(headers, function(col) {
 });
 const fields = $.map(columns, function(conf) { return conf.data; });
 const default_query = {_fields: fields.join(','), project: project, _skip: 0};
+const rowHeight = 23;
 
 var query = $.extend(true, {}, default_query);
 var total_count;
@@ -77,10 +78,7 @@ function load_data(dom) {
         $('#total_count').html('<b>' + total_count + ' total</b>');
         dom.loadData(response.data);
         if (total_count > 20) {
-            const plugin = dom.getPlugin('AutoRowSize');
-            plugin.calculateAllRowsHeight({from: 0, to: 1});
-            var height = plugin.getColumnHeaderHeight();
-            height += response.data.length * plugin.getRowHeight(1) - 10;
+            const height = response.data.length * rowHeight;
             dom.updateSettings({height: height});
         }
         $('a[name=table_download_item]').each(function(index) {
@@ -132,7 +130,7 @@ const hot = new Handsontable(container, {
     colHeaders: headers, columns: columns,
     hiddenColumns: {columns: [1]},
     nestedHeaders: nestedHeaders,
-    width: '100%', stretchH: 'all',
+    width: '100%', stretchH: 'all', rowHeights: rowHeight,
     preventOverflow: 'horizontal',
     licenseKey: 'non-commercial-and-evaluation',
     disableVisualSelection: true,
