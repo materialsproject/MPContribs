@@ -69,8 +69,11 @@ def validate_data(doc):
             try:
                 v = Decimal(words[0]).normalize()
                 dgts = -v.as_tuple().exponent
-                dgts = max_dgts if dgts > max_dgts else dgts
-                v = f'{v:.{dgts}f}'
+                if dgts > 0:
+                    dgts = max_dgts if dgts > max_dgts else dgts
+                    v = f'{v:.{dgts}f}'
+                else:
+                    v = words[0]
                 if try_quantity:
                     v += ' ' + words[1]
                 q = Q_(v).to_compact()
