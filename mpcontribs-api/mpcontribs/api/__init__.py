@@ -25,7 +25,7 @@ ureg.default_format = 'P~'
 ureg.define('@alias electron_mass = mₑ')
 Q_ = ureg.Quantity
 delimiter, max_depth = '.', 2
-max_dgts = 7
+max_dgts = 6
 invalidChars = set(punctuation.replace('|', '').replace('*', ''))
 quantity_keys = ['display', 'value', 'unit']
 
@@ -70,8 +70,9 @@ def validate_data(doc):
             try:
                 q = Q_(value).to_compact()
                 v = Decimal(str(q.magnitude))
-                dgts = -v.as_tuple().exponent
-                if dgts > 0:
+                vt = v.as_tuple()
+                if vt.exponent < 0:
+                    dgts = len(vt.digits)
                     dgts = max_dgts if dgts > max_dgts else dgts
                     v = f'{v:.{dgts}g}'
                     if try_quantity:
