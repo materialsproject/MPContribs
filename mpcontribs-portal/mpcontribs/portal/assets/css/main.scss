@@ -56,6 +56,8 @@ $footer-padding: 0.5rem;
 $footer-background-color: $grey-darker;
 $footer-color: white;
 
+$checkradio-focus: none;
+
 @import "~bulma/bulma";
 @import "~bulma/sass/utilities/mixins";
 @import "~bulma-tooltip/src/sass/index";

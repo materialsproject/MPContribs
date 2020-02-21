@@ -9,16 +9,19 @@ $('a[name="read_more"]').on('click', function() {
     el.show();
 });
 
-const project = $('#table').data('project');
-const objectid_regex = /^[a-f\d]{24}$/i;
-const headers = $('#table').data('columns').split(',');
-const columns = $.map(headers, function(col) {
+
+function get_column_config(col) {
     var config = {readOnly: true};
     var name = col.split(' ')[0];
     if (col.endsWith(']')) { name += '.value'; }
     config.data = name;
     return config;
-});
+}
+
+const project = $('#table').data('project');
+const objectid_regex = /^[a-f\d]{24}$/i;
+const headers = $('#table').data('columns').split(',');
+const columns = $.map(headers, get_column_config);
 const fields = $.map(columns, function(conf) { return conf.data; });
 const default_query = {_fields: fields.join(','), project: project, _skip: 0};
 const rowHeight = 23;
@@ -72,6 +75,28 @@ function urlRenderer(instance, td, row, col, prop, value, cellProperties) {
     }
 }
 
+function set_download_urls() {
+    $('a[name=table_download_item]').each(function(index) {
+        var download_url = window.api['host'] + 'contributions/download/gz/?';
+        const full = $(this).data('full');
+        const format = $(this).data('format');
+        var download_query = $.extend(
+            true, {format: format}, window.api['headers'], query
+        );
+        if (full && format == 'json') {
+            download_query['_fields'] = '_all';
+        } else {
+            download_query['_fields'] = $("input[name=column_manager_item]:checked").map(function() {
+                var id_split = $(this).attr('id').split('_');
+                return get_column_config(id_split[3]).data;
+            }).get().join(',');
+        }
+        delete download_query['_skip'];
+        download_url += $.param(download_query);
+        $(this).attr('href', download_url);
+    });
+}
+
 function load_data(dom) {
     get_data().done(function(response) {
         total_count = response.total_count;
@@ -81,18 +106,7 @@ function load_data(dom) {
             const height = response.data.length * rowHeight;
             dom.updateSettings({height: height});
         }
-        $('a[name=table_download_item]').each(function(index) {
-            var download_url = window.api['host'] + 'contributions/download/gz/?';
-            const full = $(this).data('full');
-            const format = $(this).data('format');
-            var download_query = $.extend(
-                true, {format: format}, window.api['headers'], query
-            );
-            if (full && format == 'json') { download_query['_fields'] = '_all'; }
-            delete download_query['_skip'];
-            download_url += $.param(download_query);
-            $(this).attr('href', download_url);
-        });
+        set_download_urls();
         $('#table_filter').removeClass('is-loading');
         $('#table_delete').removeClass('is-loading');
     });
@@ -209,6 +223,18 @@ $('#table_delete').click(function(e) {
 
 $('#table_select').change(function(e) {
     $('#table_keyword').val('');
+});
+
+$('input[name=column_manager_item]').click(function() {
+    var n = $("input[name=column_manager_item]:checked").length;
+    $('#column_manager_button').text(n + ' Columns');
+    var plugin = hot.getPlugin('hiddenColumns');
+    var id_split = $(this).attr('id').split('_');
+    var col_idx = parseInt(id_split[id_split.length-1]);
+    if ($(this).prop("checked")) { plugin.showColumn(col_idx); }
+    else { plugin.hideColumn(col_idx); }
+    set_download_urls();
+    hot.render();
 });
 
 //if ($("#graph").length && project !== 'redox_thermo_csp') {
