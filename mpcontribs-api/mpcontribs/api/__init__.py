@@ -67,16 +67,14 @@ def validate_data(doc):
         try_quantity = bool(len(words) == 2 and is_float(words[0]))
         if try_quantity or isinstance(d[key], (int, float)):
             try:
-                v = Decimal(words[0]).normalize()
+                q = Q_(value).to_compact()
+                v = Decimal(str(q.magnitude))
                 dgts = -v.as_tuple().exponent
                 if dgts > 0:
                     dgts = max_dgts if dgts > max_dgts else dgts
-                    v = f'{v:.{dgts}f}'
-                else:
-                    v = words[0]
-                if try_quantity:
-                    v += ' ' + words[1]
-                q = Q_(v)#.to_compact()
+                    v = f'{v:.{dgts}g}'
+                    if try_quantity:
+                        q = Q_(f'{v} {q.units}')
             except Exception as ex:
                 raise ValidationError({'error': str(ex)})
             # TODO keep percent as unit
