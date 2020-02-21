@@ -22,6 +22,7 @@ from decimal import Decimal
 
 ureg = UnitRegistry(auto_reduce_dimensions=True)
 ureg.default_format = 'P~'
+ureg.define('@alias electron_mass = mₑ')
 Q_ = ureg.Quantity
 delimiter, max_depth = '.', 2
 max_dgts = 7
