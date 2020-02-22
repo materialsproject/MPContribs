@@ -45,7 +45,7 @@ def is_float(s):
     return True
 
 
-def validate_data(doc):
+def validate_data(doc, sender=None, project=None):
     d = fdict(doc, delimiter=delimiter)
 
     for key in list(d.keys()):
@@ -69,6 +69,13 @@ def validate_data(doc):
         if try_quantity or isinstance(d[key], (int, float)):
             try:
                 q = Q_(value).to_compact()
+                if sender:
+                    _key = key.replace('.', '__')
+                    query = {'project': project, f'data__{_key}__exists': True}
+                    sample = sender.objects.only(f'data.{key}.unit').filter(**query).first()
+                    if sample:
+                        sample_fdct = fdict(sample['data'], delimiter=delimiter)
+                        q.ito(sample_fdct[f'{key}.unit'])
                 v = Decimal(str(q.magnitude))
                 vt = v.as_tuple()
                 if vt.exponent < 0:
