@@ -143,7 +143,7 @@ const container = document.getElementById('table');
 const hot = new Handsontable(container, {
     colHeaders: headers, columns: columns,
     hiddenColumns: {columns: [1]},
-    nestedHeaders: nestedHeaders,
+    nestedHeaders: nestedHeaders, rowHeaderWidth: 60,
     width: '100%', stretchH: 'all', rowHeights: rowHeight,
     preventOverflow: 'horizontal',
     licenseKey: 'non-commercial-and-evaluation',
