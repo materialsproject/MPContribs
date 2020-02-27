@@ -95,9 +95,8 @@ function set_download_urls() {
         var download_query = $.extend(
             true, {format: format}, window.api['headers'], query
         );
-        if (full && format == 'json') {
-            download_query['_fields'] = '_all';
-        } else {
+        if (full) { download_query['_fields'] = '_all'; }
+        else {
             download_query['_fields'] = $("input[name=column_manager_item]:checked").map(function() {
                 var id_split = $(this).attr('id').split('_');
                 return get_column_config(id_split[3]).data;

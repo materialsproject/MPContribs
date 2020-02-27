@@ -36,3 +36,4 @@ boto3>=1.10.46
 fdict>=0.8.1
 dotty-dict>=1.2.1
 Flask-Compress>=1.4.0
+cherrypicker @ git+https://github.com/big-o/cherrypicker.git#egg=cherrypicker

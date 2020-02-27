@@ -1,5 +1,6 @@
 import re
 import os
+from collections import defaultdict
 import flask_mongorest
 from flask import Blueprint
 from flask_mongorest.resources import Resource
@@ -48,8 +49,12 @@ class ContributionsResource(Resource):
         # add structures and tables info to response if requested
         if field.startswith('structures'):
             from mpcontribs.api.structures.views import StructuresResource
+            sr = StructuresResource(view_method=self.view_method)
             field_split = field.split('.')
             field_len = len(field_split)
+            # return full structures only if download requested
+            full = bool(self.view_method == Download and
+                        self.params.get('_fields') == '_all')
             if field_len > 2:
                 raise UnknownFieldError
             elif field_len == 2:
@@ -64,24 +69,17 @@ class ContributionsResource(Resource):
                     objects = objects.filter(contribution=obj.id, label=field_split[1]).order_by('-id')
                     if not objects:
                         raise UnknownFieldError
-                    sr = StructuresResource(view_method=List)
                     return [sr.serialize(o, fields=mask) for o in objects]
             elif field_len == 1:
-                # return full structures only if download requested
-                full = bool(self.view_method == Download and
-                            self.params.get('format') == 'json' and
-                            self.params.get('_fields') == '_all')
-                mask = ['id', 'lattice', 'sites', 'charge', 'klass', 'module'] if full else ['id', 'label']
+                mask = ['id', 'label', 'name']
+                json_format = bool(self.params.get('format') == 'json')
+                if full and json_format:
+                    mask += ['lattice', 'sites', 'charge', 'klass', 'module']
                 objects = Structures.objects.only(*mask).filter(contribution=obj.id).order_by('-id')
-                if full:
-                    sr = StructuresResource(view_method=Download)
-                value = [] if full else {}
-                for s in objects:
-                    if full:
-                        value.append(sr.serialize(s, fields=mask))
-                    else:  # only return newest structure for each label
-                        if not s.label in value:
-                            value[s.label] = s.id
+                value = defaultdict(list)
+                for o in objects:
+                    s = sr.serialize(o, fields=mask)
+                    value[s.pop('label')].append(s if json_format else sr.value_for_field(o, 'cif'))
                 return value
 
         elif field == 'tables':

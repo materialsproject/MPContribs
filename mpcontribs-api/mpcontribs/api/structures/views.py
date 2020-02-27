@@ -43,7 +43,8 @@ class StructuresResource(Resource):
         # add cif key to response if requested
         if field == 'cif':
             s = Structures.objects.get(id=obj.id)
-            structure = Structure.from_dict(s.to_mongo())
+            fields = self.get_optional_fields()[:-1]
+            structure = Structure.from_dict(self.serialize(s, fields=fields))
             return CifWriter(structure, symprec=1e-10).__str__()
         else:
             raise UnknownFieldError
