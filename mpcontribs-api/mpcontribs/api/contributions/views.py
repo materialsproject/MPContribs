@@ -72,14 +72,14 @@ class ContributionsResource(Resource):
                     return [sr.serialize(o, fields=mask) for o in objects]
             elif field_len == 1:
                 mask = ['id', 'label', 'name']
-                json_format = bool(self.params.get('format') == 'json')
-                if full and json_format:
+                fmt = self.params.get('format')
+                if full and fmt == 'json':
                     mask += ['lattice', 'sites', 'charge', 'klass', 'module']
                 objects = Structures.objects.only(*mask).filter(contribution=obj.id).order_by('-id')
                 value = defaultdict(list)
                 for o in objects:
                     s = sr.serialize(o, fields=mask)
-                    value[s.pop('label')].append(s if json_format else sr.value_for_field(o, 'cif'))
+                    value[s.pop('label')].append(sr.value_for_field(o, 'cif') if fmt == 'csv' else s)
                 return value
 
         elif field == 'tables':
