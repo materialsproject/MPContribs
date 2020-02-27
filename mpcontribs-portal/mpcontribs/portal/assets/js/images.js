@@ -20,7 +20,7 @@ function getImages() {
 
 var imageNames = getImages();
 $.each(imageNames, function(idx, name) {
-    var selector = '#' + name.replace('./', '').replace('.jpg', '_img');
+    var selector = '#thumbnail_' + name.replace('./', '').replace('.jpg', '_img');
     var container = document.querySelector(selector);
     if (container) { generateImage(container, name); }
 })
