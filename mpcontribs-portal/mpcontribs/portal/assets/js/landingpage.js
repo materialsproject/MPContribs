@@ -35,43 +35,55 @@ function get_data() {
 }
 
 function make_icon(icon) {
-    var span = $('<span/>', {'class': 'icon'});
+    var span = $('<span/>', {'class': 'icon is-small'});
     var i = $('<i/>', {'class': 'fas ' + icon});
     $(span).append(i);
     return span;
 }
 
-function make_url_cell(td, text, href) {
-    var url = $('<a/>', {href: href, target: '_blank'});
-    Handsontable.dom.empty(td);
+function make_url(text, href) {
+    var url;
     if (href.endsWith('.cif')) {
-        var span = make_icon('fa-cloud-download-alt');
-        $(url).append(span);
-    } else if (objectid_regex.test(href.slice(1))) {
-        var span = make_icon('fa-list-alt');
-        $(url).append(span);
+        url = $('<a/>', {'class': 'tag is-link is-light', text: text, href: href});
     } else {
+        url = $('<a/>', {href: href, target: '_blank'});
         $(url).text(text);
     }
+    return url;
+}
+
+function make_url_cell(td, text, href) {
+    Handsontable.dom.empty(td);
+    var url = make_url(text, href);
     $(td).addClass('htCenter').addClass('htMiddle').append(url);
 }
 
 function urlRenderer(instance, td, row, col, prop, value, cellProperties) {
-    value = (value === null || typeof value  === 'undefined') ? '' : String(value);
-    var basename = value.split('/').pop();
-    if (value.startsWith('http://') || value.startsWith('https://')) {
+    if (Array.isArray(value)) {
         Handsontable.renderers.HtmlRenderer.apply(this, arguments);
-        make_url_cell(td, basename.split('.')[0], value);
-    } else if (basename.startsWith('mp-') || basename.startsWith('mvc-')) {
-        Handsontable.renderers.HtmlRenderer.apply(this, arguments);
-        var href = 'https://materialsproject.org/materials/' + basename;
-        make_url_cell(td, basename, href);
-    } else if (objectid_regex.test(basename)) {
-        Handsontable.renderers.HtmlRenderer.apply(this, arguments);
-        var ext = columns[col].data.startsWith('structures') ? '.cif' : ''
-        make_url_cell(td, basename.slice(-7), '/' + basename + ext);
+        Handsontable.dom.empty(td);
+        var tags = $('<div/>', {'class': 'tags'})
+        $.each(value, function(i, v) {
+            var tag = make_url(v['name'], '/' + v['id'] + '.cif');
+            $(tags).append(tag);
+        });
+        $(td).addClass('htCenter').addClass('htMiddle').append(tags);
     } else {
-        Handsontable.renderers.TextRenderer.apply(this, arguments);
+        value = (value === null || typeof value  === 'undefined') ? '' : String(value);
+        var basename = value.split('/').pop();
+        if (value.startsWith('http://') || value.startsWith('https://')) {
+            Handsontable.renderers.HtmlRenderer.apply(this, arguments);
+            make_url_cell(td, basename.split('.')[0], value);
+        } else if (basename.startsWith('mp-') || basename.startsWith('mvc-')) {
+            Handsontable.renderers.HtmlRenderer.apply(this, arguments);
+            var href = 'https://materialsproject.org/materials/' + basename;
+            make_url_cell(td, basename, href);
+        } else if (objectid_regex.test(basename)) {
+            Handsontable.renderers.HtmlRenderer.apply(this, arguments);
+            make_url_cell(td, basename.slice(-7), '/' + basename);
+        } else {
+            Handsontable.renderers.TextRenderer.apply(this, arguments);
+        }
     }
 }
 
@@ -143,7 +155,7 @@ const container = document.getElementById('table');
 const hot = new Handsontable(container, {
     colHeaders: headers, columns: columns,
     hiddenColumns: {columns: [1]},
-    nestedHeaders: nestedHeaders, rowHeaderWidth: 60,
+    nestedHeaders: nestedHeaders, //rowHeaderWidth: 75,
     width: '100%', stretchH: 'all', rowHeights: rowHeight,
     preventOverflow: 'horizontal',
     licenseKey: 'non-commercial-and-evaluation',
@@ -192,11 +204,8 @@ const hot = new Handsontable(container, {
 hot.updateSettings({
     rowHeaders: function(index) {
         var cid = hot.getDataAtCell(index, 1);
-        var url = $('<a/>', {href: '/' + cid, target: '_blank', 'class': 'is-pulled-right'});
-        var icon = make_icon('fa-list-alt');
-        $(url).append(icon);
-        var span = $('<span/>', {'class': 'is-size-7', text: index+1});
-        return span.prop('outerHTML') + url.prop('outerHTML');
+        var url = $('<a/>', {'class': 'is-primary', text: index+1, href: '/' + cid, target: '_blank'});
+        return url.prop('outerHTML');
     }
 });
 
