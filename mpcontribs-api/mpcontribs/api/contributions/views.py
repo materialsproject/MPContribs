@@ -47,6 +47,7 @@ class ContributionsResource(Resource):
     def value_for_field(self, obj, field):
         # add structures and tables info to response if requested
         if field.startswith('structures'):
+            from mpcontribs.api.structures.views import StructuresResource
             field_split = field.split('.')
             field_len = len(field_split)
             if field_len > 2:
@@ -57,13 +58,14 @@ class ContributionsResource(Resource):
                     # TODO find a way to not re-query structures for every subfield?
                     return f'TODO requested {field_split[1]}'
                 else:
-                    # requested latest structure for label
-                    objects = Structures.objects.only('id')
-                    objects = objects.filter(contribution=obj.id, label=field_split[1])
-                    objects = objects.order_by('-id').limit(1)
+                    # requested structure(s) for label
+                    mask = ['id', 'name']
+                    objects = Structures.objects.only(*mask)
+                    objects = objects.filter(contribution=obj.id, label=field_split[1]).order_by('-id')
                     if not objects:
                         raise UnknownFieldError
-                    return objects[0].id
+                    sr = StructuresResource(view_method=List)
+                    return [sr.serialize(o, fields=mask) for o in objects]
             elif field_len == 1:
                 # return full structures only if download requested
                 full = bool(self.view_method == Download and
@@ -72,7 +74,6 @@ class ContributionsResource(Resource):
                 mask = ['id', 'lattice', 'sites', 'charge', 'klass', 'module'] if full else ['id', 'label']
                 objects = Structures.objects.only(*mask).filter(contribution=obj.id).order_by('-id')
                 if full:
-                    from mpcontribs.api.structures.views import StructuresResource
                     sr = StructuresResource(view_method=Download)
                 value = [] if full else {}
                 for s in objects:
