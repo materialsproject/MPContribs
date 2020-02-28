@@ -98,7 +98,7 @@ function render_card(cid) {
 
 function check_subresources(d) {
     var subs = $.map(subresources, function(sub) {
-        if (d.hasOwnProperty(sub)) { return d[sub].length; }
+        if (d.hasOwnProperty(sub)) { return Object.keys(d[sub]).length; }
     });
     for (var s = 0; s < subs.length; s++) {
         if (!subs[s]) { return false; }
