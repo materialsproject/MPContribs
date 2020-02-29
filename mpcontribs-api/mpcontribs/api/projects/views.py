@@ -6,7 +6,7 @@ from flask import Blueprint, current_app, url_for
 from flask_mongorest.exceptions import UnknownFieldError
 from flask_mongorest.resources import Resource
 from flask_mongorest import operators as ops
-from flask_mongorest.methods import List, Fetch, Create, Delete, Update
+from flask_mongorest.methods import *
 from werkzeug.exceptions import Unauthorized
 from itsdangerous import SignatureExpired
 from mpcontribs.api.core import SwaggerView
@@ -107,7 +107,7 @@ class ProjectsResource(Resource):
 
 class ProjectsView(SwaggerView):
     resource = ProjectsResource
-    methods = [List, Fetch, Create, Delete, Update]
+    methods = [Fetch, Create, Delete, Update, BulkFetch]
 
     def has_add_permission(self, request, obj):
         # limit the number of projects a user can own (unless admin)

@@ -2,7 +2,7 @@ import os
 import flask_mongorest
 from flask_mongorest.resources import Resource
 from flask_mongorest import operators as ops
-from flask_mongorest.methods import List, Fetch, Create, Delete, Update, BulkUpdate
+from flask_mongorest.methods import *
 from flask_mongorest.exceptions import UnknownFieldError
 from flask import Blueprint
 from mpcontribs.api.core import SwaggerView
@@ -53,18 +53,4 @@ class TablesResource(Resource):
 
 class TablesView(SwaggerView):
     resource = TablesResource
-    methods = [List, Fetch, Create, Delete, Update, BulkUpdate]
-
-# REMOVE old graph view
-# x, y, z = [], [], []
-# if len(table.columns) > 2:
-#     for col in table.columns[1:]:
-#         x.append(col.split()[0])
-#     for row in rows:
-#         y.append(row[0])
-#         z.append(row[1:])
-# else:
-#     for row in rows:
-#         x.append(row[0])
-#         y.append(row[1])
-# return {'x': x, 'y': y, 'z': z} if z else {'x': x, 'y': y}
+    methods = [Fetch, BulkCreate, Delete, Update, BulkFetch, BulkUpdate]

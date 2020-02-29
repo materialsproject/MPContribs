@@ -5,7 +5,7 @@ import flask_mongorest
 from flask import Blueprint
 from flask_mongorest.resources import Resource
 from flask_mongorest import operators as ops
-from flask_mongorest.methods import List, Fetch, Create, Delete, Update, BulkUpdate, Download
+from flask_mongorest.methods import *
 from flask_mongorest.exceptions import UnknownFieldError
 from mpcontribs.api.core import SwaggerView
 from mpcontribs.api.contributions.document import Contributions
@@ -91,4 +91,4 @@ class ContributionsResource(Resource):
 
 class ContributionsView(SwaggerView):
     resource = ContributionsResource
-    methods = [List, Fetch, Download, Create, Delete, Update, BulkUpdate]
+    methods = [Fetch, Delete, Update, BulkFetch, BulkCreate, BulkUpdate, BulkDelete, Download]

@@ -3,7 +3,7 @@ import flask_mongorest
 from flask_mongorest.resources import Resource
 from flask_mongorest import operators as ops
 from flask_mongorest.exceptions import UnknownFieldError
-from flask_mongorest.methods import List, Fetch, Create, Delete, Update, BulkUpdate
+from flask_mongorest.methods import *
 from flask import Blueprint
 from pymatgen import Structure
 from pymatgen.io.cif import CifWriter
@@ -52,4 +52,4 @@ class StructuresResource(Resource):
 
 class StructuresView(SwaggerView):
     resource = StructuresResource
-    methods = [List, Fetch, Create, Delete, Update, BulkUpdate]
+    methods = [Fetch, BulkCreate, Delete, Update, BulkFetch, BulkUpdate]

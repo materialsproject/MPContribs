@@ -131,7 +131,7 @@ def get_specs(klass, method, collection):
             }
         }
 
-    elif method_name == 'List':
+    elif method_name == 'BulkFetch':
         params = [fields_param] if fields_param is not None else []
         params += field_pagination_params
         params += order_params
@@ -148,7 +148,7 @@ def get_specs(klass, method, collection):
             schema_props['total_pages'] = {'type': 'integer'}
             params += limit_params
         spec = {
-            'summary': f'Retrieve and filter {collection}.',
+            'summary': f'Filter and retrieve {collection}.',
             'operationId': 'get_entries',
             'parameters': params,
             'responses': {
@@ -210,6 +210,37 @@ def get_specs(klass, method, collection):
                 }, 'default': default_response
             }
         }
+
+    elif method_name == 'BulkCreate':
+        spec = {
+            'summary': f'Create new {collection[:-1]}(s).',
+            'operationId': 'create_entries',
+            'parameters': [{
+                'name': f'{collection}',
+                'in': 'body',
+                'description': f'The objects to use for {collection[:-1]} creation',
+                'schema': {
+                    'type': 'array',
+                    'items': {'$ref': f'#/definitions/{klass.schema_name}'}
+                }
+            }],
+            'responses': {
+                200: {
+                    'description': f'{collection} created',
+                    'schema': {
+                        'type': 'object',
+                        'properties': {
+                            'count': {'type': 'integer'},
+                            'data': {
+                                'type': 'array',
+                                'items': {'$ref': f'#/definitions/{klass.schema_name}'}
+                            }
+                        }
+                    }
+                }, 'default': default_response
+            }
+        }
+
     elif method_name == 'Update':
         spec = {
             'summary': f'Update a {collection[:-1]}.',
@@ -244,12 +275,29 @@ def get_specs(klass, method, collection):
         })
 
         spec = {
-            'summary': f'Update {collection} in bulk.',
+            'summary': f'Filter and update {collection}.',
             'operationId': 'update_entries',
             'parameters': params,
             'responses': {
                 200: {
                     'description': f'Number of {collection} updated',
+                    'schema': {
+                        'type': 'object',
+                        'properties': {'count': {'type': 'integer'}}
+                    }
+                }, 'default': default_response
+            }
+        }
+    elif method_name == 'BulkDelete':
+        params = filter_params
+        #params += limit_params  # TODO respect limits when updating multiple entries?
+        spec = {
+            'summary': f'Filter and delete {collection}.',
+            'operationId': 'delete_entries',
+            'parameters': params,
+            'responses': {
+                200: {
+                    'description': f'Number of {collection} deleted',
                     'schema': {
                         'type': 'object',
                         'properties': {'count': {'type': 'integer'}}
