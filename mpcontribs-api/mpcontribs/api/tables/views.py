@@ -31,7 +31,7 @@ class TablesResource(Resource):
     paginate = True
     default_limit = 10
     max_limit = 20
-    bulk_update_limit = 100
+    bulk_update_limit = 500
     fields_to_paginate = {'data': [20, 1000]}
 
     @staticmethod
