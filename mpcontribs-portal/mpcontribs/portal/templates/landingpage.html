@@ -65,16 +65,26 @@
         <div class="level-item">
             <p class="control">
             <div class="dropdown">
-                <div class="dropdown-trigger">
-                    <button id="column_manager_button" class="button is-primary" aria-haspopup="true" aria-controls="dropdown-menu">
-                        {{ columns|length }} Columns
-                    </button>
+                <div class="field has-addons is-centered">
+                    <div class="control">
+                        <a class="button is-light">
+                            <input class="is-checkradio" id="column_manager_select_all" type="checkbox" checked="checked">
+                            <label for="column_manager_select_all"><span id="column_manager_count">{{ columns|length }}</span> Columns</label>
+                        </a>
+                    </div>
+                    <div class="control">
+                        <a class="button is-primary dropdown-trigger" aria-haspopup="true" aria-controls="dropdown-menu">
+                            <span class="icon">
+                                <i class="fas fa-caret-down"></i>
+                            </span>
+                        </a>
+                    </div>
                 </div>
                 <div class="dropdown-menu" role="menu">
                     <div class="dropdown-content">
                         {% for col in columns %}
                         <a class="dropdown-item">
-                            {% if col == "id" %}
+                            {% if col in "id,identifier,formula" %}
                             <input class="is-checkradio" name="column_manager_item"
                                  id="column_manager_checkbox_{{col}}_{{forloop.counter0}}" type="checkbox" checked="checked" disabled="disabled">
                             {% else %}

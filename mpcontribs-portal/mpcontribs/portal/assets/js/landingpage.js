@@ -235,12 +235,41 @@ $('#table_select').change(function(e) {
 
 $('input[name=column_manager_item]').click(function() {
     var n = $("input[name=column_manager_item]:checked").length;
-    $('#column_manager_button').text(n + ' Columns');
+    $('#column_manager_count').text(n);
     var plugin = hot.getPlugin('hiddenColumns');
     var id_split = $(this).attr('id').split('_');
     var col_idx = parseInt(id_split[id_split.length-1]);
     if ($(this).prop("checked")) { plugin.showColumn(col_idx); }
     else { plugin.hideColumn(col_idx); }
+    set_download_urls();
+    hot.render();
+});
+
+$('#column_manager_select_all').click(function() {
+    var plugin = hot.getPlugin('hiddenColumns');
+    var items = $("input[name=column_manager_item]");
+    if ($(this).prop('checked')) {
+        var cols = [];
+        $(items).each(function(idx) {
+            if (!$(this).prop("checked") && !$(this).prop('disabled')) {
+                $(this).prop("checked", true);
+                cols.push(idx);
+            }
+        });
+        plugin.showColumns(cols);
+        $('#column_manager_count').text(items.length);
+    } else {
+        var cols = [];
+        $(items).each(function(idx) {
+            if ($(this).prop("checked") && !$(this).prop('disabled')) {
+                $(this).prop("checked", false);
+                cols.push(idx);
+            }
+        });
+        plugin.hideColumns(cols);
+        var n = $("input[name=column_manager_item]:disabled").length;
+        $('#column_manager_count').text(n);
+    }
     set_download_urls();
     hot.render();
 });
