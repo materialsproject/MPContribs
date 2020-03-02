@@ -12,7 +12,7 @@ RUN conda env update --file environment.yml && \
 
 COPY mpcontribs-io/requirements.txt requirements-io.txt
 COPY mpcontribs-client/requirements.txt requirements-client.txt
-RUN cat requirements-*.txt > requirements.txt && pip install --upgrade --no-cache-dir -r requirements.txt
+RUN cat requirements-*.txt > requirements.txt && pip install --no-cache-dir -r requirements.txt
 
 USER root
 COPY mpcontribs-io src/mpcontribs-io
@@ -24,8 +24,8 @@ RUN chown -R $NB_USER:users src/mpcontribs-io && \
 
 USER $NB_USER
 
-RUN cd src/mpcontribs-io && pip install --upgrade --no-cache-dir -e . && \
-        cd ../mpcontribs-client && pip install --no-cache-dir --upgrade -e .
+RUN cd src/mpcontribs-io && pip install --no-cache-dir -e . && \
+        cd ../mpcontribs-client && pip install --no-cache-dir -e .
 
 ENV GATEWAY_HOST=localhost:8888
 ENV KG_ENV_PROCESS_WHITELIST=GATEWAY_HOST

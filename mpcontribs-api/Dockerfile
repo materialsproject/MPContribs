@@ -13,11 +13,11 @@ RUN conda env update --file environment.yml && \
 WORKDIR /app
 COPY . .
 RUN /opt/conda/bin/pip uninstall -y mimerender
-RUN /opt/conda/bin/pip install --no-cache-dir --upgrade -e .
-#RUN cd marshmallow-mongoengine && /opt/conda/bin/pip install --upgrade -e .
-#RUN cd mimerender && /opt/conda/bin/pip install --upgrade -e .
-#RUN cd flask-mongorest && /opt/conda/bin/pip install --upgrade -e .
-#RUN cd flasgger && /opt/conda/bin/pip install --upgrade -e .
+RUN /opt/conda/bin/pip install --no-cache-dir -e .
+#RUN cd marshmallow-mongoengine && /opt/conda/bin/pip install -e .
+#RUN cd mimerender && /opt/conda/bin/pip install -e .
+#RUN cd flask-mongorest && /opt/conda/bin/pip install -e .
+#RUN cd flasgger && /opt/conda/bin/pip install -e .
 
 ARG MAPI_KEY
 RUN if [ ! -e /app/mpcontribs/api/contributions/formulae.json ]; then \
