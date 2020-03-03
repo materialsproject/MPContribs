@@ -266,14 +266,18 @@ def get_specs(klass, method, collection):
         }
     elif method_name == 'BulkUpdate':
         params = filter_params
-        #params += limit_params  # TODO respect limits when updating multiple entries?
         params.append({
             'name': f'{collection}',
             'in': 'body',
             'description': f'The object to use for {collection} bulk update',
             'schema': {'type': 'object'}
         })
-
+        schema_props = {'count': {'type': 'integer'}}
+        if klass.resource.paginate:
+            schema_props['has_more'] = {'type': 'boolean'}
+            schema_props['total_count'] = {'type': 'integer'}
+            schema_props['total_pages'] = {'type': 'integer'}
+            params += limit_params
         spec = {
             'summary': f'Filter and update {collection}.',
             'operationId': 'update_entries',
@@ -283,14 +287,20 @@ def get_specs(klass, method, collection):
                     'description': f'Number of {collection} updated',
                     'schema': {
                         'type': 'object',
-                        'properties': {'count': {'type': 'integer'}}
+                        'properties': schema_props
                     }
                 }, 'default': default_response
             }
         }
+
     elif method_name == 'BulkDelete':
         params = filter_params
-        #params += limit_params  # TODO respect limits when updating multiple entries?
+        schema_props = {'count': {'type': 'integer'}}
+        if klass.resource.paginate:
+            schema_props['has_more'] = {'type': 'boolean'}
+            schema_props['total_count'] = {'type': 'integer'}
+            schema_props['total_pages'] = {'type': 'integer'}
+            params += limit_params
         spec = {
             'summary': f'Filter and delete {collection}.',
             'operationId': 'delete_entries',
@@ -300,11 +310,12 @@ def get_specs(klass, method, collection):
                     'description': f'Number of {collection} deleted',
                     'schema': {
                         'type': 'object',
-                        'properties': {'count': {'type': 'integer'}}
+                        'properties': schema_props
                     }
                 }, 'default': default_response
             }
         }
+
     elif method_name == 'Delete':
         spec = {
             'summary': f'Delete a {collection[:-1]}.',

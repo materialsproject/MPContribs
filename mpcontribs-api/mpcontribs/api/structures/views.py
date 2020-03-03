@@ -31,8 +31,7 @@ class StructuresResource(Resource):
     allowed_ordering = ['is_public', 'name']
     paginate = True
     default_limit = 10
-    max_limit = 20
-    bulk_update_limit = 500
+    max_limit = 100
     # fields_to_paginate = {'sites': [20, 100]}  # TODO
 
     @staticmethod
