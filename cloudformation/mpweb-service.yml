@@ -9,14 +9,14 @@ Parameters:
                  Used to locate other resources in the same environment.
   ServiceName:
     Type: String
-    Default: mp
+    Default: mpweb
     Description: A name for the service
-  ImageUrlApi:
-    Type: String
-    Description: url for the api docker image
   ImageUrlWeb:
     Type: String
     Description: url for the web docker image
+  ImageUrlWebApi:
+    Type: String
+    Description: url for the api docker image
 
 Resources:
   # A log group for storing the container logs for this service
@@ -26,7 +26,7 @@ Resources:
       LogGroupName: !Join ['-', [!Ref 'PipelineName', !Ref 'EnvironmentName', 'service', !Ref 'ServiceName']]
 
   # A role for the service so it can access the tables
-  MpServiceRole:
+  MpWebServiceRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
@@ -51,11 +51,11 @@ Resources:
       ExecutionRoleArn:
         Fn::ImportValue:
           !Join [':', [!Ref 'PipelineName', !Ref 'EnvironmentName', 'ECSTaskExecutionRole']]
-      TaskRoleArn: !Ref 'MpServiceRole'
+      TaskRoleArn: !Ref 'MpWebServiceRole'
       ContainerDefinitions:
         - Name: api
           MemoryReservation: 500
-          Image: !Ref 'ImageUrlApi'
+          Image: !Ref 'ImageUrlWebApi'
           PortMappings:
             - ContainerPort: 5001
           Environment:

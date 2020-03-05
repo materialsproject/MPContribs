@@ -29,12 +29,6 @@ Parameters:
   GitHubUserKonga:
     Type: String
     Default: tschaume
-  GitHubRepoMP:
-    Type: String
-    Default: mp_docker
-  GitHubBranchMP:
-    Type: String
-    Default: aws
   GitHubRepoMPApi:
     Type: String
     Default: api
@@ -47,6 +41,12 @@ Parameters:
   GitHubBranchMPWeb:
     Type: String
     Default: release
+  GitHubRepoMPWebApi:
+    Type: String
+    Default: api
+  GitHubBranchMPWebApi:
+    Type: String
+    Default: web
   MongoHost:
     Type: String
     NoEcho: true
@@ -279,7 +279,7 @@ Resources:
               commands:
                 - $(aws ecr get-login --no-include-email)
                 - TAG="$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | head -c 8)"
-                - IMAGE_URI="${REPOSITORY_URI}:${TAG}"
+                - IMAGE_URI="${REPOSITORY_URI}:${PREFIX}-${TAG}"
             build:
               commands:
                 - docker build --tag "${IMAGE_URI}-kong" .
@@ -298,6 +298,8 @@ Resources:
         EnvironmentVariables:
           - Name: REPOSITORY_URI
             Value: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${Repository}
+          - Name: PREFIX
+            Value: !Sub ${PipelineName}-${EnvironmentName}
       Cache:
         Type: LOCAL
         Modes: # You can specify one or more cache mode,
@@ -324,7 +326,7 @@ Resources:
               commands:
                 - $(aws ecr get-login --no-include-email)
                 - TAG="$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | head -c 8)"
-                - IMAGE_URI="${REPOSITORY_URI}:${TAG}"
+                - IMAGE_URI="${REPOSITORY_URI}:${PREFIX}-${TAG}"
             build:
               commands:
                 - docker build --tag "${IMAGE_URI}-konga" .
@@ -343,6 +345,8 @@ Resources:
         EnvironmentVariables:
           - Name: REPOSITORY_URI
             Value: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${Repository}
+          - Name: PREFIX
+            Value: !Sub ${PipelineName}-${EnvironmentName}
       Cache:
         Type: LOCAL
         Modes: # You can specify one or more cache mode,
@@ -369,7 +373,7 @@ Resources:
               commands:
                 - $(aws ecr get-login --no-include-email)
                 - TAG="$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | head -c 8)"
-                - IMAGE_URI="${REPOSITORY_URI}:${TAG}"
+                - IMAGE_URI="${REPOSITORY_URI}:${PREFIX}-${TAG}"
             build:
               commands:
                 - docker build --tag "${IMAGE_URI}-api" --build-arg MAPI_KEY=${MAPI_KEY} mpcontribs-api
@@ -390,6 +394,8 @@ Resources:
             Value: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${Repository}
           - Name: MAPI_KEY
             Value: !Ref 'MapiKey'
+          - Name: PREFIX
+            Value: !Sub ${PipelineName}-${EnvironmentName}
       Cache:
         Type: LOCAL
         Modes: # You can specify one or more cache mode,
@@ -416,7 +422,7 @@ Resources:
               commands:
                 - $(aws ecr get-login --no-include-email)
                 - TAG="$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | head -c 8)"
-                - IMAGE_URI="${REPOSITORY_URI}:${TAG}"
+                - IMAGE_URI="${REPOSITORY_URI}:${PREFIX}-${TAG}"
             build:
               commands:
                 - docker build --tag "${IMAGE_URI}-portal" --build-arg API_CNAME="${API_CNAME}" --build-arg NODE_ENV="production" -f mpcontribs-portal/Dockerfile .
@@ -437,6 +443,8 @@ Resources:
             Value: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${Repository}
           - Name: API_CNAME
             Value: !Ref 'ApiCname'
+          - Name: PREFIX
+            Value: !Sub ${PipelineName}-${EnvironmentName}
       Cache:
         Type: LOCAL
         Modes: # You can specify one or more cache mode,
@@ -463,7 +471,7 @@ Resources:
               commands:
                 - $(aws ecr get-login --no-include-email)
                 - TAG="$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | head -c 8)"
-                - IMAGE_URI="${REPOSITORY_URI}:${TAG}"
+                - IMAGE_URI="${REPOSITORY_URI}:${PREFIX}-${TAG}"
             build:
               commands:
                 - docker build --tag "${IMAGE_URI}-gateway" -f binder/DockerfileKernelGateway .
@@ -482,6 +490,8 @@ Resources:
         EnvironmentVariables:
           - Name: REPOSITORY_URI
             Value: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${Repository}
+          - Name: PREFIX
+            Value: !Sub ${PipelineName}-${EnvironmentName}
       Cache:
         Type: LOCAL
         Modes: # You can specify one or more cache mode,
@@ -511,7 +521,7 @@ Resources:
               commands:
                 - $(aws ecr get-login --no-include-email)
                 - TAG="$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | head -c 8)"
-                - IMAGE_URI="${REPOSITORY_URI}:${TAG}"
+                - IMAGE_URI="${REPOSITORY_URI}:${PREFIX}-${TAG}"
             build:
               commands:
                 - jupyter-repo2docker --user-name jovyan --user-id 1000 --image-name "${IMAGE_URI}-r2d" --no-run .
@@ -534,6 +544,8 @@ Resources:
             Value: JhubCluster
           - Name: EKS_KUBECTL_ROLE_ARN # TODO user/Administrator ??
             Value: !Sub arn:aws:iam::${AWS::AccountId}:role/EKSRole
+          - Name: PREFIX
+            Value: !Sub ${PipelineName}-${EnvironmentName}
       Cache:
         Type: LOCAL
         Modes: # You can specify one or more cache mode,
@@ -541,67 +553,6 @@ Resources:
           - LOCAL_DOCKER_LAYER_CACHE
           - LOCAL_SOURCE_CACHE
       Name: !Sub ${AWS::StackName}-r2d
-      ServiceRole: !Ref CodeBuildServiceRole
-
-  CodeBuildProjectMP:
-    Type: AWS::CodeBuild::Project
-    Properties:
-      Artifacts:
-        Type: CODEPIPELINE
-      Source:
-        Type: CODEPIPELINE
-        BuildSpec: |
-          version: 0.2
-          env:
-            parameter-store:
-              build_ssh_key: "build_ssh_key"
-          phases:
-            install:
-              runtime-versions:
-                docker: 18
-            pre_build:
-              commands:
-                - $(aws ecr get-login --no-include-email)
-                - TAG="$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | head -c 8)"
-                - IMAGE_URI="${REPOSITORY_URI}:${TAG}"
-                - mkdir -p ~/.ssh
-                - echo "$build_ssh_key" > ~/.ssh/id_rsa
-                - chmod 600 ~/.ssh/id_rsa
-                #- eval "$(ssh-agent -s)"
-                #- ssh-add ~/.ssh/id_rsa
-                - ssh-keygen -F github.com || ssh-keyscan github.com >> ~/.ssh/known_hosts
-                - git config --global url."git@github.com:".insteadOf "https://github.com/"
-                - git init
-                - git remote add origin git@github.com:materialsproject/mp_docker.git
-                - git fetch
-                - git checkout -tf origin/aws
-                - git submodule init
-                - git submodule update --recursive
-            build:
-              commands:
-                - docker build --tag "${IMAGE_URI}-mp" .
-            post_build:
-              commands:
-                - docker push "${IMAGE_URI}-mp"
-                - printf '{"ImageUri":"%s"}' "${IMAGE_URI}-mp" > build-mp.json
-          artifacts:
-            files:
-                - build-mp.json
-      Environment:
-        ComputeType: BUILD_GENERAL1_SMALL
-        Image: aws/codebuild/standard:2.0
-        Type: LINUX_CONTAINER
-        PrivilegedMode: true
-        EnvironmentVariables:
-          - Name: REPOSITORY_URI
-            Value: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${Repository}
-      Cache:
-        Type: LOCAL
-        Modes: # You can specify one or more cache mode,
-          - LOCAL_CUSTOM_CACHE
-          - LOCAL_DOCKER_LAYER_CACHE
-          - LOCAL_SOURCE_CACHE
-      Name: !Sub ${AWS::StackName}-mp
       ServiceRole: !Ref CodeBuildServiceRole
 
   CodeBuildProjectMPApi:
@@ -624,7 +575,7 @@ Resources:
               commands:
                 - $(aws ecr get-login --no-include-email)
                 - TAG="$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | head -c 8)"
-                - IMAGE_URI="${REPOSITORY_URI}:${TAG}"
+                - IMAGE_URI="${REPOSITORY_URI}:${PREFIX}-${TAG}"
                 - echo "$xas_store" > ./xas_store.json
             build:
               commands:
@@ -644,6 +595,8 @@ Resources:
         EnvironmentVariables:
           - Name: REPOSITORY_URI
             Value: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${Repository}
+          - Name: PREFIX
+            Value: !Sub ${PipelineName}-${EnvironmentName}
       Cache:
         Type: LOCAL
         Modes: # You can specify one or more cache mode,
@@ -673,7 +626,7 @@ Resources:
               commands:
                 - $(aws ecr get-login --no-include-email)
                 - TAG="$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | head -c 8)"
-                - IMAGE_URI="${REPOSITORY_URI}:${TAG}"
+                - IMAGE_URI="${REPOSITORY_URI}:${PREFIX}-${TAG}"
                 - mkdir -p ~/.ssh
                 - echo "$build_ssh_key" > ~/.ssh/id_rsa
                 - chmod 600 ~/.ssh/id_rsa
@@ -686,7 +639,7 @@ Resources:
                 - git fetch
                 - git checkout -tf origin/release
                 - git submodule init
-                - git submodule update --recursive
+                - git submodule update --recursive  # TODO check api branch
             build:
               commands:
                 - docker build --tag "${IMAGE_URI}-mpweb" .
@@ -705,6 +658,8 @@ Resources:
         EnvironmentVariables:
           - Name: REPOSITORY_URI
             Value: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${Repository}
+          - Name: PREFIX
+            Value: !Sub ${PipelineName}-${EnvironmentName}
       Cache:
         Type: LOCAL
         Modes: # You can specify one or more cache mode,
@@ -712,6 +667,57 @@ Resources:
           - LOCAL_DOCKER_LAYER_CACHE
           - LOCAL_SOURCE_CACHE
       Name: !Sub ${AWS::StackName}-mpweb
+      ServiceRole: !Ref CodeBuildServiceRole
+
+  CodeBuildProjectMPWebApi:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Artifacts:
+        Type: CODEPIPELINE
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: |
+          version: 0.2
+          env:
+            parameter-store:
+              xas_store: "xas_store"
+          phases:
+            install:
+              runtime-versions:
+                docker: 18
+            pre_build:
+              commands:
+                - $(aws ecr get-login --no-include-email)
+                - TAG="$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | head -c 8)"
+                - IMAGE_URI="${REPOSITORY_URI}:${PREFIX}-${TAG}"
+                - echo "$xas_store" > ./xas_store.json
+            build:
+              commands:
+                - docker build --tag "${IMAGE_URI}-mpwebapi" --build-arg PORT=5002 .
+            post_build:
+              commands:
+                - docker push "${IMAGE_URI}-mpwebapi"
+                - printf '{"ImageUri":"%s"}' "${IMAGE_URI}-mpwebapi" > build-mpwebapi.json
+          artifacts:
+            files:
+                - build-mpwebapi.json
+      Environment:
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/standard:2.0
+        Type: LINUX_CONTAINER
+        PrivilegedMode: true
+        EnvironmentVariables:
+          - Name: REPOSITORY_URI
+            Value: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${Repository}
+          - Name: PREFIX
+            Value: !Sub ${PipelineName}-${EnvironmentName}
+      Cache:
+        Type: LOCAL
+        Modes: # You can specify one or more cache mode,
+          - LOCAL_CUSTOM_CACHE
+          - LOCAL_DOCKER_LAYER_CACHE
+          - LOCAL_SOURCE_CACHE
+      Name: !Sub ${AWS::StackName}-mpwebapi
       ServiceRole: !Ref CodeBuildServiceRole
 
 
@@ -742,19 +748,6 @@ Resources:
                 OAuthToken: !Ref GitHubToken
               OutputArtifacts:
                 - Name: Source
-            - Name: MP
-              ActionTypeId:
-                Category: Source
-                Owner: ThirdParty
-                Version: 1
-                Provider: GitHub
-              Configuration:
-                Owner: !Ref GitHubUser
-                Repo: !Ref GitHubRepoMP
-                Branch: !Ref GitHubBranchMP
-                OAuthToken: !Ref GitHubToken
-              OutputArtifacts:
-                - Name: SourceMP
             - Name: MPApi
               ActionTypeId:
                 Category: Source
@@ -781,6 +774,19 @@ Resources:
                 OAuthToken: !Ref GitHubToken
               OutputArtifacts:
                 - Name: SourceMPWeb
+            - Name: MPWebApi
+              ActionTypeId:
+                Category: Source
+                Owner: ThirdParty
+                Version: 1
+                Provider: GitHub
+              Configuration:
+                Owner: !Ref GitHubUser
+                Repo: !Ref GitHubRepoMPWebApi
+                Branch: !Ref GitHubBranchMPWebApi
+                OAuthToken: !Ref GitHubToken
+              OutputArtifacts:
+                - Name: SourceMPWebApi
             - Name: Kong
               ActionTypeId:
                 Category: Source
@@ -928,19 +934,19 @@ Resources:
                 - Name: SourceMPWeb
               OutputArtifacts:
                 - Name: BuildOutputMPWeb
-            #- Name: BuildMP
-            #  ActionTypeId:
-            #    Category: Build
-            #    Owner: AWS
-            #    Version: 1
-            #    Provider: CodeBuild
-            #  Configuration:
-            #    ProjectName: !Ref CodeBuildProjectMP
-            #    PrimarySource: SourceMP
-            #  InputArtifacts:
-            #    - Name: SourceMP
-            #  OutputArtifacts:
-            #    - Name: BuildOutputMP
+            - Name: BuildMPWebApi
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Version: 1
+                Provider: CodeBuild
+              Configuration:
+                ProjectName: !Ref CodeBuildProjectMPWebApi
+                PrimarySource: SourceMPWebApi
+              InputArtifacts:
+                - Name: SourceMPWebApi
+              OutputArtifacts:
+                - Name: BuildOutputMPWebApi
             #- Name: BuildR2d
             #  ActionTypeId:
             #    Category: Build
@@ -1035,7 +1041,7 @@ Resources:
                 - Name: BuildOutputGateway
               RunOrder: 2
 
-            - Name: DeployMP
+            - Name: DeployMPWeb
               ActionTypeId:
                 Category: Deploy
                 Owner: AWS
@@ -1044,20 +1050,43 @@ Resources:
               Configuration:
                 ActionMode: CREATE_UPDATE
                 RoleArn: !GetAtt CloudFormationDeployRole.Arn
-                StackName: !Sub ${PipelineName}-${EnvironmentName}-MpService
-                TemplatePath: Source::cloudformation/mp-service.yml
+                StackName: !Sub ${PipelineName}-${EnvironmentName}-MpWebService
+                TemplatePath: Source::cloudformation/mpweb-service.yml
                 Capabilities: CAPABILITY_IAM
                 ParameterOverrides: !Sub |
                   {
                     "PipelineName": "${PipelineName}",
                     "EnvironmentName": "${EnvironmentName}",
-                    "ImageUrlApi": { "Fn::GetParam" : ["BuildOutputMPApi", "build-mpapi.json", "ImageUri"] },
-                    "ImageUrlWeb": { "Fn::GetParam" : ["BuildOutputMPWeb", "build-mpweb.json", "ImageUri"] }
+                    "ImageUrlWeb": { "Fn::GetParam" : ["BuildOutputMPWeb", "build-mpweb.json", "ImageUri"] },
+                    "ImageUrlWebApi": { "Fn::GetParam" : ["BuildOutputMPWebApi", "build-mpwebapi.json", "ImageUri"] }
+                  }
+              InputArtifacts:
+                - Name: Source
+                - Name: BuildOutputMPWeb
+                - Name: BuildOutputMPWebApi
+              RunOrder: 2
+
+            - Name: DeployMPApi
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Version: 1
+                Provider: CloudFormation
+              Configuration:
+                ActionMode: CREATE_UPDATE
+                RoleArn: !GetAtt CloudFormationDeployRole.Arn
+                StackName: !Sub ${PipelineName}-${EnvironmentName}-MpApiService
+                TemplatePath: Source::cloudformation/mpapi-service.yml
+                Capabilities: CAPABILITY_IAM
+                ParameterOverrides: !Sub |
+                  {
+                    "PipelineName": "${PipelineName}",
+                    "EnvironmentName": "${EnvironmentName}",
+                    "ImageUrlApi": { "Fn::GetParam" : ["BuildOutputMPApi", "build-mpapi.json", "ImageUri"] }
                   }
               InputArtifacts:
                 - Name: Source
                 - Name: BuildOutputMPApi
-                - Name: BuildOutputMPWeb
               RunOrder: 2
 Outputs:
   PipelineUrl:
