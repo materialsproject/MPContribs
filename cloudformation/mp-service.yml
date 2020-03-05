@@ -77,7 +77,7 @@ Resources:
             - Name: MP_API_ENDPOINT
               Value: http://localhost:5001/
             - Name: NUM_WORKERS
-              Value: 4
+              Value: 2
           PortMappings:
             - ContainerPort: 8081
           LogConfiguration:
