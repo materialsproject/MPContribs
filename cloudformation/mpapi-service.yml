@@ -62,6 +62,8 @@ Resources:
               Value: 4
             - Name: MPCONTRIBS_MONGO_HOST
               Value: !Ref 'MongoHost'
+            - Name: PORT
+              Value: 5002
           LogConfiguration:
             LogDriver: 'awslogs'
             Options:
