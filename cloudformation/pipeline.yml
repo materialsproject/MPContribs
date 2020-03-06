@@ -1082,6 +1082,7 @@ Resources:
                   {
                     "PipelineName": "${PipelineName}",
                     "EnvironmentName": "${EnvironmentName}",
+                    "MongoHost": "${MongoHost}",
                     "ImageUrlApi": { "Fn::GetParam" : ["BuildOutputMPApi", "build-mpapi.json", "ImageUri"] }
                   }
               InputArtifacts:
