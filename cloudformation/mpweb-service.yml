@@ -17,6 +17,9 @@ Parameters:
   ImageUrlWebApi:
     Type: String
     Description: url for the api docker image
+  MongoHost:
+    Type: String
+    Description: MongoDB host that the app connects to.
 
 Resources:
   # A log group for storing the container logs for this service
@@ -61,6 +64,8 @@ Resources:
           Environment:
             - Name: NUM_WORKERS
               Value: 4
+            - Name: MPCONTRIBS_MONGO_HOST
+              Value: !Ref 'MongoHost'
           LogConfiguration:
             LogDriver: 'awslogs'
             Options:

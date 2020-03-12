@@ -29,12 +29,6 @@ Parameters:
   GitHubUserKonga:
     Type: String
     Default: tschaume
-  #GitHubRepoMPApi:
-  #  Type: String
-  #  Default: api
-  #GitHubBranchMPApi:
-  #  Type: String
-  #  Default: release
   GitHubRepoMPWeb:
     Type: String
     Default: web
@@ -46,7 +40,7 @@ Parameters:
     Default: api
   GitHubBranchMPWebApi:
     Type: String
-    Default: web
+    Default: release
   MongoHost:
     Type: String
     NoEcho: true
@@ -555,57 +549,6 @@ Resources:
       Name: !Sub ${AWS::StackName}-r2d
       ServiceRole: !Ref CodeBuildServiceRole
 
-  #CodeBuildProjectMPApi:
-  #  Type: AWS::CodeBuild::Project
-  #  Properties:
-  #    Artifacts:
-  #      Type: CODEPIPELINE
-  #    Source:
-  #      Type: CODEPIPELINE
-  #      BuildSpec: |
-  #        version: 0.2
-  #        env:
-  #          parameter-store:
-  #            xas_store: "xas_store"
-  #        phases:
-  #          install:
-  #            runtime-versions:
-  #              docker: 18
-  #          pre_build:
-  #            commands:
-  #              - $(aws ecr get-login --no-include-email)
-  #              - TAG="$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | head -c 8)"
-  #              - IMAGE_URI="${REPOSITORY_URI}:${PREFIX}-${TAG}"
-  #              - echo "$xas_store" > ./xas_store.json
-  #          build:
-  #            commands:
-  #              - docker build --tag "${IMAGE_URI}-mpapi" .
-  #          post_build:
-  #            commands:
-  #              - docker push "${IMAGE_URI}-mpapi"
-  #              - printf '{"ImageUri":"%s"}' "${IMAGE_URI}-mpapi" > build-mpapi.json
-  #        artifacts:
-  #          files:
-  #              - build-mpapi.json
-  #    Environment:
-  #      ComputeType: BUILD_GENERAL1_SMALL
-  #      Image: aws/codebuild/standard:2.0
-  #      Type: LINUX_CONTAINER
-  #      PrivilegedMode: true
-  #      EnvironmentVariables:
-  #        - Name: REPOSITORY_URI
-  #          Value: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${Repository}
-  #        - Name: PREFIX
-  #          Value: !Sub ${PipelineName}-${EnvironmentName}
-  #    Cache:
-  #      Type: LOCAL
-  #      Modes: # You can specify one or more cache mode,
-  #        - LOCAL_CUSTOM_CACHE
-  #        - LOCAL_DOCKER_LAYER_CACHE
-  #        - LOCAL_SOURCE_CACHE
-  #    Name: !Sub ${AWS::StackName}-mpapi
-  #    ServiceRole: !Ref CodeBuildServiceRole
-
   CodeBuildProjectMPWeb:
     Type: AWS::CodeBuild::Project
     Properties:
@@ -678,9 +621,6 @@ Resources:
         Type: CODEPIPELINE
         BuildSpec: |
           version: 0.2
-          env:
-            parameter-store:
-              xas_store: "xas_store"
           phases:
             install:
               runtime-versions:
@@ -690,10 +630,9 @@ Resources:
                 - $(aws ecr get-login --no-include-email)
                 - TAG="$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | head -c 8)"
                 - IMAGE_URI="${REPOSITORY_URI}:${PREFIX}-${TAG}"
-                - echo "$xas_store" > ./xas_store.json
             build:
               commands:
-                - docker build --tag "${IMAGE_URI}-mpwebapi" --build-arg PORT=5002 .
+                - docker build --tag "${IMAGE_URI}-mpwebapi" .
             post_build:
               commands:
                 - docker push "${IMAGE_URI}-mpwebapi"
@@ -748,19 +687,6 @@ Resources:
                 OAuthToken: !Ref GitHubToken
               OutputArtifacts:
                 - Name: Source
-            #- Name: MPApi
-            #  ActionTypeId:
-            #    Category: Source
-            #    Owner: ThirdParty
-            #    Version: 1
-            #    Provider: GitHub
-            #  Configuration:
-            #    Owner: !Ref GitHubUser
-            #    Repo: !Ref GitHubRepoMPApi
-            #    Branch: !Ref GitHubBranchMPApi
-            #    OAuthToken: !Ref GitHubToken
-            #  OutputArtifacts:
-            #    - Name: SourceMPApi
             - Name: MPWeb
               ActionTypeId:
                 Category: Source
@@ -908,19 +834,6 @@ Resources:
                 - Name: Source
               OutputArtifacts:
                 - Name: BuildOutputPortal
-            #- Name: BuildMPApi
-            #  ActionTypeId:
-            #    Category: Build
-            #    Owner: AWS
-            #    Version: 1
-            #    Provider: CodeBuild
-            #  Configuration:
-            #    ProjectName: !Ref CodeBuildProjectMPApi
-            #    PrimarySource: SourceMPApi
-            #  InputArtifacts:
-            #    - Name: SourceMPApi
-            #  OutputArtifacts:
-            #    - Name: BuildOutputMPApi
             - Name: BuildMPWeb
               ActionTypeId:
                 Category: Build
@@ -1057,6 +970,7 @@ Resources:
                   {
                     "PipelineName": "${PipelineName}",
                     "EnvironmentName": "${EnvironmentName}",
+                    "MongoHost": "${MongoHost}",
                     "ImageUrlWeb": { "Fn::GetParam" : ["BuildOutputMPWeb", "build-mpweb.json", "ImageUri"] },
                     "ImageUrlWebApi": { "Fn::GetParam" : ["BuildOutputMPWebApi", "build-mpwebapi.json", "ImageUri"] }
                   }
@@ -1066,29 +980,6 @@ Resources:
                 - Name: BuildOutputMPWebApi
               RunOrder: 2
 
-            #- Name: DeployMPApi
-            #  ActionTypeId:
-            #    Category: Deploy
-            #    Owner: AWS
-            #    Version: 1
-            #    Provider: CloudFormation
-            #  Configuration:
-            #    ActionMode: CREATE_UPDATE
-            #    RoleArn: !GetAtt CloudFormationDeployRole.Arn
-            #    StackName: !Sub ${PipelineName}-${EnvironmentName}-MpApiService
-            #    TemplatePath: Source::cloudformation/mpapi-service.yml
-            #    Capabilities: CAPABILITY_IAM
-            #    ParameterOverrides: !Sub |
-            #      {
-            #        "PipelineName": "${PipelineName}",
-            #        "EnvironmentName": "${EnvironmentName}",
-            #        "MongoHost": "${MongoHost}",
-            #        "ImageUrlApi": { "Fn::GetParam" : ["BuildOutputMPApi", "build-mpapi.json", "ImageUri"] }
-            #      }
-            #  InputArtifacts:
-            #    - Name: Source
-            #    - Name: BuildOutputMPApi
-            #  RunOrder: 2
 Outputs:
   PipelineUrl:
     Value: !Sub https://console.aws.amazon.com/codepipeline/home?region=${AWS::Region}#/view/${Pipeline}
