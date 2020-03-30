@@ -33,7 +33,6 @@ RUN set -ex \
     && apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false $BUILD_DEPS \
     && rm -rf /var/lib/apt/lists/*
 
-EXPOSE 8080
 ENV PYTHONUNBUFFERED 1
 ENV SETUPTOOLS_SCM_PRETEND_VERSION dev
 ENV PATH="/venv/bin:${PATH}"
@@ -43,8 +42,12 @@ WORKDIR /app
 COPY mpcontribs-portal/package.json .
 RUN { npm install && npm cache clean --force && npm cache verify; } 2>&1
 
-ARG API_CNAME
-ARG NODE_ENV
+ENV NODE_ENV production
+ENV API_CNAME api.mpcontribs.org
+ENV API_PORT 5000
+ENV PORTAL_PORT 8080
+ENV RELOAD ""
+ENV NWORKERS 4
 
 COPY mpcontribs-portal/webpack.config.js .
 COPY mpcontribs-portal/mpcontribs/portal/assets ./mpcontribs/portal/assets
@@ -69,4 +72,6 @@ RUN out=mpcontribs/portal/templates/notebooks/ && if [ ! -d $out ]; then mkdir $
     done; fi
 
 ENTRYPOINT ["/app/docker-entrypoint.sh"]
-CMD ["gunicorn", "-b", "0.0.0.0:8080", "-k", "gevent", "-w", "4", "--access-logfile", "-", "wsgi"]
+
+EXPOSE $PORTAL_PORT
+CMD gunicorn -b 0.0.0.0:$PORTAL_PORT -k gevent -w $NWORKERS --access-logfile - --log-level debug $RELOAD wsgi

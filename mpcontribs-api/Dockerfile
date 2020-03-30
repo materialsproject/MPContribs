@@ -3,8 +3,9 @@ FROM continuumio/miniconda3
 ENV PYTHONUNBUFFERED 1
 ENV FLASK_APP mpcontribs.api
 ENV FLASK_ENV production
-ENV PORT 5000
+ENV API_PORT 5000
 ENV NWORKERS 4
+ENV RELOAD ""
 
 COPY environment.yml .
 RUN conda update -n base conda && \
@@ -26,6 +27,5 @@ RUN if [ ! -e /app/mpcontribs/api/contributions/formulae.json ]; then \
     /opt/conda/bin/python /app/mpcontribs/api/contributions/generate_formulae.py 2>&1; \
     fi
 
-ENV RELOAD ""
-EXPOSE $PORT
-CMD gunicorn -b 0.0.0.0:$PORT -k gevent -w $NWORKERS --access-logfile - --log-level debug $RELOAD "mpcontribs.api:create_app()"
+EXPOSE $API_PORT
+CMD gunicorn -b 0.0.0.0:$API_PORT -k gevent -w $NWORKERS --access-logfile - --log-level debug $RELOAD "mpcontribs.api:create_app()"

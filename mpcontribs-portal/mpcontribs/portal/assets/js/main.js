@@ -20,7 +20,8 @@ if (api_key !== '') {
     var api_key_code = window.atob(api_key);
     window.api['headers'] = {'X-API-KEY': api_key_code};
 } else {
-    window.api['host'] = 'http://localhost:5000/';
+    console.log(process.env.API_PORT);
+    window.api['host'] = 'http://localhost:' + process.env.API_PORT + '/';
     window.api['headers'] = {};
 }
 

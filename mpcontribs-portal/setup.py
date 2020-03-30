@@ -13,7 +13,7 @@ setup(
     description='MPContribs Portal',
     author='Patrick Huck',
     author_email='phuck@lbl.gov',
-    url='https://portal.mpcontribs.org',
+    url='https://mpcontribs.org',
     packages=['mpcontribs.portal', 'mpcontribs.users'],
     install_requires=required,
     license='MIT',

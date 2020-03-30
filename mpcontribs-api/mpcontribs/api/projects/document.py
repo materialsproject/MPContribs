@@ -1,3 +1,4 @@
+import os
 from flask import current_app, render_template, url_for
 from flask_mongoengine import Document
 from flask_mongorest.exceptions import ValidationError
@@ -56,7 +57,10 @@ class Projects(Document):
             set_keys = document._delta()[0].keys()
             if 'is_approved' in set_keys and document.is_approved:
                 subject = f'Your project "{document.project}" has been approved'
-                portal = 'http://localhost:8080' if current_app.config['DEBUG'] else 'https://portal.mpcontribs.org'
+                if current_app.config['DEBUG']:
+                    portal = 'http://localhost:' + os.environ['API_PORT']
+                else:
+                    portal = 'https://' + os.environ['API_CNAME']
                 html = render_template('owner_email.html', approved=True, admin_email=admin_email, host=portal)
                 topic_arn = ':'.join(admin_topic.split(':')[:-1] + ['mpcontribs_' + document.project])
                 send_email(topic_arn, subject, html)

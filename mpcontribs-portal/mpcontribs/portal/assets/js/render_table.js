@@ -7,8 +7,6 @@ import 'backgrid-columnmanager/src/Backgrid.ColumnManager';
 import {Spinner} from 'spin.js/spin';
 
 var spinner_table = new Spinner({scale: 0.5});
-const devMode = process.env.NODE_ENV == 'development';
-var portal = devMode ? 'http://localhost:8080/' : 'https://portal.mpcontribs.org/';
 var mp_site = 'https://materialsproject.org/materials/';
 
 function get_label_cell(col, val) {
@@ -65,7 +63,7 @@ window.render_table = function(props) {
         }
         rows_opt["parseRecords"] = function (resp, options) {
             return $.map(resp.data, function(doc) {
-                var item = {'identifier': mp_site + doc.identifier, 'id': portal + doc.id, 'formula': doc.formula};
+                var item = {'identifier': mp_site + doc.identifier, 'id': '/' + doc.id, 'formula': doc.formula};
                 $.each(doc.data, function(col, val) {
                     var label_cell = get_label_cell(col, val);
                     if (label_cell.cell) {
@@ -82,10 +80,10 @@ window.render_table = function(props) {
 
                 // TODO support multiple structures per contribution not linked to sub-projects
                 if (nr_structures === 1) {
-                    item['data__CIF'] = portal + doc.structures[0]['id'] + '.cif';
+                    item['data__CIF'] = '/' + doc.structures[0]['id'] + '.cif';
                 } else if (nr_structures > 1) {
                     $.each(doc.structures, function(idx, s) {
-                        item['data__' + s.name + '__CIF'] = portal + s.id + '.cif';
+                        item['data__' + s.name + '__CIF'] = '/' + s.id + '.cif';
                     });
                 }
 

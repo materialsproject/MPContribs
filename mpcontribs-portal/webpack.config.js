@@ -38,7 +38,7 @@ module.exports = {
         }),
         new webpack.HashedModuleIdsPlugin(),
         new CompressionPlugin({minRatio: 1}),
-        new webpack.EnvironmentPlugin(['NODE_ENV', 'API_CNAME']),
+        new webpack.EnvironmentPlugin(['NODE_ENV', 'API_CNAME', 'API_PORT']),
         new MiniCssExtractPlugin({
             filename: "[name].[chunkhash].css",
             chunkFilename: '[name].[chunkhash].css'

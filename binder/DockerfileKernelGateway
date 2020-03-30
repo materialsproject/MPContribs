@@ -29,5 +29,5 @@ RUN cd src/mpcontribs-io && pip install --no-cache-dir -e . && \
     cd ../mpcontribs-client && pip install --no-cache-dir -e .
 
 ENV GATEWAY_HOST=localhost:8888
-ENV KG_ENV_PROCESS_WHITELIST=GATEWAY_HOST
+ENV KG_ENV_PROCESS_WHITELIST=GATEWAY_HOST,MPCONTRIBS_API_HOST
 CMD ["jupyter", "enterprisegateway", "--ip=0.0.0.0", "--port_retries=0", "--KernelGatewayApp.seed_uri='kernel_imports.ipynb'"]

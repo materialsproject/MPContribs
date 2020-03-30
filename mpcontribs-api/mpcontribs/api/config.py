@@ -9,8 +9,8 @@ with open(os.path.join(os.path.dirname(__file__), 'contributions', 'formulae.jso
 
 DEBUG = bool(os.environ.get('FLASK_ENV') == 'development')
 API_CNAME = os.environ.get('API_CNAME')
+API_PORT = os.environ.get('API_PORT')
 PORTAL_CNAME = os.environ.get('PORTAL_CNAME')
-PORT = os.environ.get('PORT')
 JSON_SORT_KEYS = False
 JSON_ADD_STATUS = False
 FLASK_LOG_LEVEL = 'DEBUG' if DEBUG else 'WARNING'
@@ -21,7 +21,7 @@ MAIL_DEFAULT_SENDER = 'phuck@lbl.gov'  # TODO environment variable
 MAIL_TOPIC = os.environ['AWS_SNS_TOPIC_ARN']
 
 MPCONTRIBS_DB = os.environ.get('MPCONTRIBS_DB_NAME', 'mpcontribs')
-MPCONTRIBS_MONGO_HOST = os.environ.get('MPCONTRIBS_MONGO_HOST', 'localhost')
+MPCONTRIBS_MONGO_HOST = os.environ.get('MPCONTRIBS_MONGO_HOST')
 MONGODB_SETTINGS = {
     'host': f"mongodb+srv://{MPCONTRIBS_MONGO_HOST}/{MPCONTRIBS_DB}?retryWrites=true",
     'connect': False, 'db': MPCONTRIBS_DB
@@ -114,13 +114,13 @@ TEMPLATE = {
         }
     },
     "security": [{"ApiKeyAuth": []}],
-    "host": f'0.0.0.0:{PORT}' if DEBUG and API_CNAME is None else API_CNAME,
-    "schemes": ['http', 'https'] if DEBUG and API_CNAME is None else ['https'],
+    "host": f'0.0.0.0:{API_PORT}' if DEBUG else API_CNAME,
+    "schemes": ['http', 'https'] if DEBUG else ['https'],
 }
 
 
 # only load redox_thermo_csp for main deployment
-if os.environ.get('PORT', '5000') == '5000':
+if os.environ.get('API_PORT', '5000') == '5000':
     TEMPLATE['tags'].append({
         'name': 'redox_thermo_csp', 'description': f'is a dedicated endpoint to retrieve data for the \
         <a href="https://{PORTAL_CNAME}/redox_thermo_csp/">RedoxThermoCSP</a> landing page.'

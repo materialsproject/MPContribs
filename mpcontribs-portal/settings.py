@@ -9,9 +9,9 @@ NODE_ENV = os.environ.get('NODE_ENV', 'production')
 DEBUG = bool(NODE_ENV == 'development')
 
 ALLOWED_HOSTS = [
-    'portal.mpcontribs.org', 'contribs.materialsproject.org', 'localhost',
-    'mpcontribs-portal.materialsproject.cloud', 'jupyterhub.materialsproject.org',
-    '127.0.0.1', '127.0.0.2', '0.0.0.0', 'docker.for.mac.localhost'
+    os.environ.get('PORTAL_CNAME', 'portal.mpcontribs.org'),
+    'contribs.materialsproject.org', 'jupyterhub.materialsproject.org',
+    'localhost', '127.0.0.1', '127.0.0.2', '0.0.0.0', 'docker.for.mac.localhost'
 ]
 ALLOWED_HOSTS += ['10.0.{}.{}'.format(i,j) for i in [10, 11] for j in range(256)]
 ALLOWED_HOSTS += ['192.168.{}.{}'.format(i,j) for i in range(10) for j in range(256)]
