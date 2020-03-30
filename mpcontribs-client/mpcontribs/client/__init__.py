@@ -10,6 +10,8 @@ from bravado.swagger_model import Loader
 
 NODE_ENV = os.environ.get('NODE_ENV')
 GATEWAY_HOST = os.environ.get('GATEWAY_HOST')
+API_CNAME = os.environ.get('API_CNAME', 'api.mpcontribs.org')
+PORT = os.environ.get('PORT', 5000)
 DEBUG = bool(
     (NODE_ENV and NODE_ENV == 'development') or
     (GATEWAY_HOST and 'localhost' not in GATEWAY_HOST)
@@ -42,7 +44,7 @@ class FidoClientGlobalHeaders(FidoClient):
         return HttpFuture(future_adapter, self.response_adapter_class, operation, request_config)
 
 
-def load_client(apikey=None, headers=None, host='api.mpcontribs.org'):
+def load_client(apikey=None, headers=None, host=API_CNAME):
     global client
     force = False
 
@@ -53,7 +55,7 @@ def load_client(apikey=None, headers=None, host='api.mpcontribs.org'):
     if force or client is None:
         # docker containers networking within docker-compose or Fargate task
         if apikey is None:
-            host = 'api:5000' if DEBUG else 'localhost:5000'
+            host = f'api:{PORT}' if DEBUG else f'localhost:{PORT}'
         # - Kong forwards consumer headers when api-key used for auth
         # - forward consumer headers when connecting through localhost
         headers = {'x-api-key': apikey} if apikey else headers
