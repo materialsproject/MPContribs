@@ -45,13 +45,17 @@ services:
         volumes:
             - ./mpcontribs-api:/app
         environment:
-            - FLASK_ENV=development
-            #- API_CNAME=api.mpcontribs.org #ml-api.materialsproject.cloud
-            - PORTAL_CNAME=portal.mpcontribs.org #ml.materialsproject.cloud
+            #- API_CNAME=api.mpcontribs.org
+            - PORTAL_CNAME=portal.mpcontribs.org
+            - MPCONTRIBS_DB_NAME=mpcontribs-dev
             - PORT=5000
+            #- API_CNAME=ml-api.materialsproject.cloud
+            #- PORTAL_CNAME=ml.materialsproject.cloud
+            #- MPCONTRIBS_DB_NAME=mpcontribs-ml
+            #- PORT=5002
+            - FLASK_ENV=development
             - NWORKERS=2
             - RELOAD=--reload
-            - MPCONTRIBS_DB_NAME=mpcontribs-dev #ml
             - MPCONTRIBS_MONGO_HOST=$MPCONTRIBS_MONGO_HOST
             - GATEWAY_HOST=kernel_gateway:8888
             - AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
@@ -60,6 +64,7 @@ services:
             - AWS_DEFAULT_REGION=us-east-1
         ports:
             - "5000:5000"
+            - "5002:5002"
 
     redis:
         image: redis:alpine

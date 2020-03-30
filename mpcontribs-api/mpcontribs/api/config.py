@@ -55,10 +55,11 @@ SWAGGER = {
     ])
 }
 
+API_NAME = API_CNAME.split('.', 1)[0].upper() if API_CNAME else "API"
 TEMPLATE = {
     "swagger": "2.0",
     "info": {
-        "title": "MPContribs API",
+        "title": f"MPContribs {API_NAME}",
         "description": "Operations to contribute, update and retrieve materials data on Materials Project",
         "termsOfService": "https://materialsproject.org/terms",
         "version": datetime.datetime.today().strftime('%Y.%m.%d'),
@@ -103,9 +104,6 @@ TEMPLATE = {
     }, {
         'name': 'cards', 'description': 'are pre-generated embeddable previews (HTML) for each contribution shown on \
         the MP material details pages.'
-    }, {
-        'name': 'redox_thermo_csp', 'description': f'is a dedicated endpoint to retrieve data for the \
-        <a href="https://{PORTAL_CNAME}/redox_thermo_csp/">RedoxThermoCSP</a> landing page.'  # TODO remove?
     }],
     "securityDefinitions": {
         "ApiKeyAuth": {
@@ -119,3 +117,11 @@ TEMPLATE = {
     "host": f'0.0.0.0:{PORT}' if DEBUG and API_CNAME is None else API_CNAME,
     "schemes": ['http', 'https'] if DEBUG and API_CNAME is None else ['https'],
 }
+
+
+# only load redox_thermo_csp for main deployment
+if os.environ.get('PORT', '5000') == '5000':
+    TEMPLATE['tags'].append({
+        'name': 'redox_thermo_csp', 'description': f'is a dedicated endpoint to retrieve data for the \
+        <a href="https://{PORTAL_CNAME}/redox_thermo_csp/">RedoxThermoCSP</a> landing page.'
+    })
