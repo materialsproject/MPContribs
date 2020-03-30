@@ -96,6 +96,7 @@ function render_card(cid) {
     });
 }
 
+// TODO check counts from structures/tables `total_count`
 function check_subresources(d) {
     var subs = $.map(subresources, function(sub) {
         if (d.hasOwnProperty(sub)) { return Object.keys(d[sub]).length; }
