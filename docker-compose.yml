@@ -33,12 +33,11 @@ services:
             - "8080:8080"
 
     api:
-        cpus: 2
-        mem_limit: 4G
+        cpus: 1
+        mem_limit: 1G
         mem_reservation: 600m
         build:
             context: ./mpcontribs-api
-        command: gunicorn -b 0.0.0.0:5000 -k gevent -w 2 --access-logfile - --log-level debug --reload mpcontribs.api:create_app()
         depends_on:
             - redis
             - chrome
@@ -46,8 +45,13 @@ services:
         volumes:
             - ./mpcontribs-api:/app
         environment:
-            - MPCONTRIBS_DB_NAME=mpcontribs-dev
             - FLASK_ENV=development
+            #- API_CNAME=api.mpcontribs.org #ml-api.materialsproject.cloud
+            - PORTAL_CNAME=portal.mpcontribs.org #ml.materialsproject.cloud
+            - PORT=5000
+            - NWORKERS=2
+            - RELOAD=--reload
+            - MPCONTRIBS_DB_NAME=mpcontribs-dev #ml
             - MPCONTRIBS_MONGO_HOST=$MPCONTRIBS_MONGO_HOST
             - GATEWAY_HOST=kernel_gateway:8888
             - AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID

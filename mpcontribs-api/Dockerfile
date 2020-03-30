@@ -1,19 +1,21 @@
 FROM continuumio/miniconda3
-EXPOSE 5000
+
 ENV PYTHONUNBUFFERED 1
 ENV FLASK_APP mpcontribs.api
 ENV FLASK_ENV production
+ENV PORT 5000
+ENV NWORKERS 4
 
 COPY environment.yml .
-RUN conda env update --file environment.yml && \
-        find /opt/conda/ -follow -type f -name '*.a' -delete && \
-        find /opt/conda/ -follow -type f -name '*.js.map' -delete && \
-        /opt/conda/bin/conda clean -afy
+RUN conda update -n base conda && \
+    conda env update --file environment.yml && \
+    find /opt/conda/ -follow -type f -name '*.a' -delete && \
+    find /opt/conda/ -follow -type f -name '*.js.map' -delete && \
+    /opt/conda/bin/conda clean -afy
 
 WORKDIR /app
 COPY . .
-RUN /opt/conda/bin/pip uninstall -y mimerender
-RUN /opt/conda/bin/pip install --no-cache-dir -e .
+RUN /opt/conda/bin/pip install --upgrade --no-cache-dir -e .
 #RUN cd marshmallow-mongoengine && /opt/conda/bin/pip install -e .
 #RUN cd mimerender && /opt/conda/bin/pip install -e .
 #RUN cd flask-mongorest && /opt/conda/bin/pip install -e .
@@ -24,4 +26,6 @@ RUN if [ ! -e /app/mpcontribs/api/contributions/formulae.json ]; then \
     /opt/conda/bin/python /app/mpcontribs/api/contributions/generate_formulae.py 2>&1; \
     fi
 
-CMD ["gunicorn", "-b", "0.0.0.0:5000", "-k", "gevent", "-w", "4", "--access-logfile", "-", "mpcontribs.api:create_app()"]
+ENV RELOAD ""
+EXPOSE $PORT
+CMD gunicorn -b 0.0.0.0:$PORT -k gevent -w $NWORKERS --access-logfile - --log-level debug $RELOAD "mpcontribs.api:create_app()"

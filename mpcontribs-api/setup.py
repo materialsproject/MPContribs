@@ -13,7 +13,7 @@ setup(
     description='API for community-contributed Materials Project data',
     author='Patrick Huck',
     author_email='phuck@lbl.gov',
-    url='https://' + os.environ.get('API_CNAME', 'api.mpcontribs.org'),
+    url='https://mpcontribs.org',
     packages=['mpcontribs.api'],
     install_requires=required,
     license='MIT',

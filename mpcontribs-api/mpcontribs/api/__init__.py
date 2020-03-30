@@ -1,7 +1,9 @@
 """Flask App for MPContribs API"""
 
+import os
 import logging
 import boto3
+
 from importlib import import_module
 from flask import Flask, current_app
 from flask_marshmallow import Marshmallow
@@ -133,8 +135,8 @@ def create_app():
     Marshmallow(app)
     db = MongoEngine(app)
     Swagger(app, template=app.config.get('TEMPLATE'))
-    collections = get_collections(db)
-    logger.warning(collections)
+    #collections = get_collections(db)  # hard-code to avoid pre-generating for new deployment
+    collections = ['projects', 'contributions', 'tables', 'structures', 'notebooks', 'cards']
 
     for collection in collections:
         module_path = '.'.join(['mpcontribs', 'api', collection, 'views'])
@@ -154,15 +156,17 @@ def create_app():
             logger.warning(f'Failed to register {module_path}: {collection} {ex}')
 
     # TODO discover user-contributed views automatically
-    collection = 'redox_thermo_csp'
-    module_path = '.'.join(['mpcontribs', 'api', collection, 'views'])
-    try:
-        module = import_module(module_path)
-        blueprint = getattr(module, collection)
-        app.register_blueprint(blueprint, url_prefix='/'+collection)
-        logger.warning(f'{collection} registered')
-    except ModuleNotFoundError as ex:
-        logger.warning(f'API module {module_path}: {ex}')
+    # only load for main deployment
+    if os.environ.get('PORT', '5000') == '5000':
+        collection = 'redox_thermo_csp'
+        module_path = '.'.join(['mpcontribs', 'api', collection, 'views'])
+        try:
+            module = import_module(module_path)
+            blueprint = getattr(module, collection)
+            app.register_blueprint(blueprint, url_prefix='/'+collection)
+            logger.warning(f'{collection} registered')
+        except ModuleNotFoundError as ex:
+            logger.warning(f'API module {module_path}: {ex}')
 
     app.register_blueprint(sse, url_prefix='/stream')
     logger.warning('app created.')

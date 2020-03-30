@@ -9,6 +9,8 @@ with open(os.path.join(os.path.dirname(__file__), 'contributions', 'formulae.jso
 
 DEBUG = bool(os.environ.get('FLASK_ENV') == 'development')
 API_CNAME = os.environ.get('API_CNAME')
+PORTAL_CNAME = os.environ.get('PORTAL_CNAME')
+PORT = os.environ.get('PORT')
 JSON_SORT_KEYS = False
 JSON_ADD_STATUS = False
 FLASK_LOG_LEVEL = 'DEBUG' if DEBUG else 'WARNING'
@@ -71,18 +73,18 @@ TEMPLATE = {
         }
     },
     'tags': [{
-        'name': 'projects', 'description': 'contain provenance information about contributed datasets. Admins can \
+        'name': 'projects', 'description': f'contain provenance information about contributed datasets. Admins can \
         create and delete projects which also deletes all contributions including tables, structures, notebooks \
         and cards for the project. Only users who have been added to a project can update its contents. While \
         unpublished, only users on the project can retrieve its data or view it on the \
-        <a href="https://portal.mpcontribs.org">Portal</a>. Making a project public does not automatically publish all \
+        <a href="https://{PORTAL_CNAME}">Portal</a>. Making a project public does not automatically publish all \
         its contributions, tables, and structures. These are separately set to public individually or in bulk.'''
     }, {
-        'name': 'contributions', 'description': 'contain simple hierarchical data which will show up on the MP details \
+        'name': 'contributions', 'description': f'contain simple hierarchical data which will show up on the MP details \
         page for MP material(s) - see cards below. Tables (rows and columns) as well as structures can be added to a \
         contribution. Each contribution uses `mp-id` or composition as identifier to associate its data with the \
         according entries on MP. Only admins or users on the project can create, update or delete contributions, and \
-        while unpublished, retrieve its data or view it on the <a href="https://portal.mpcontribs.org">Portal</a>. The \
+        while unpublished, retrieve its data or view it on the <a href="https://{PORTAL_CNAME}">Portal</a>. The \
         same permission controls are in place for associated tables, structures, notebooks, and cards. These \
         contribution components are deleted along with a contribution.'
     }, {
@@ -94,16 +96,16 @@ TEMPLATE = {
         <a href="https://pymatgen.org/_modules/pymatgen/core/structure.html#Structure">pymatgen structures</a> which \
         can be added to a contribution.'
     }, {
-        'name': 'notebooks', 'description': 'are Jupyter \
+        'name': 'notebooks', 'description': f'are Jupyter \
         <a href="https://jupyter-notebook.readthedocs.io/en/stable/notebook.html#notebook-documents">notebook</a> \
         documents generated and saved on first request for every contribution. They form the basis for Contribution \
-        Details Pages on the <a href="https://portal.mpcontribs.org">Portal</a>.'
+        Details Pages on the <a href="https://{PORTAL_CNAME}">Portal</a>.'
     }, {
         'name': 'cards', 'description': 'are pre-generated embeddable previews (HTML) for each contribution shown on \
         the MP material details pages.'
     }, {
-        'name': 'redox_thermo_csp', 'description': 'is a dedicated endpoint to retrieve data for the \
-        <a href="https://portal.mpcontribs.org/redox_thermo_csp/">RedoxThermoCSP</a> landing page.'
+        'name': 'redox_thermo_csp', 'description': f'is a dedicated endpoint to retrieve data for the \
+        <a href="https://{PORTAL_CNAME}/redox_thermo_csp/">RedoxThermoCSP</a> landing page.'  # TODO remove?
     }],
     "securityDefinitions": {
         "ApiKeyAuth": {
@@ -114,6 +116,6 @@ TEMPLATE = {
         }
     },
     "security": [{"ApiKeyAuth": []}],
-    "host": '0.0.0.0:5000' if DEBUG and API_CNAME is None else API_CNAME,
+    "host": f'0.0.0.0:{PORT}' if DEBUG and API_CNAME is None else API_CNAME,
     "schemes": ['http', 'https'] if DEBUG and API_CNAME is None else ['https'],
 }
