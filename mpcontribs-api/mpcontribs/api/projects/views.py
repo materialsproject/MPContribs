@@ -45,8 +45,10 @@ class ProjectsResource(Resource):
         if field == 'columns':
             objects = list(Contributions.objects.aggregate(*[
                 {"$match": {"project": obj.id}},
-                {"$limit": 999},
-                {"$project": {"akv": {"$objectToArray": "$data"}}},
+                # NOTE contributors need to make sure that all columns are
+                #      included in first 20 contributions
+                {"$limit": 20},
+                {"$project": {"_id": 0, "akv": {"$objectToArray": "$data"}}},
                 {"$unwind": "$akv"},
                 {"$project": {"root": "$akv.k", "level2": {
                     "$switch": {"branches": [{
@@ -65,30 +67,28 @@ class ProjectsResource(Resource):
                         ],
                         "default": {"$concat": ["$root", ".", "$level2.k"]}
                     }
-                }}},
-                {"$group": {"_id": None, "columns": {"$addToSet": "$column"}}}
+                }}}
             ]))
 
+            # neither $group nor set maintain order! Dicts are ordered in python 3.7+
             columns = {}
-
-            if objects:
-                for col in objects[0]['columns']:
-                    value_field, unit_field = f'data.{col}.value', f'data.{col}.unit'
-                    unit_query = {'project': obj.id, f'data__{col.replace(".", "__")}__exists': True}
-                    unit_contribs = Contributions.objects.only(unit_field).filter(**unit_query)
-                    unit_sample = Dotty(unit_contribs.limit(-1).first().to_mongo())
-                    min_max = list(Contributions.objects.aggregate(*[
-                        {"$match": {"project": obj.id, value_field: {'$exists': True}}},
-                        {"$group": {
-                            "_id": None, "max": {"$max": f"${value_field}"}, "min": {"$min": f"${value_field}"}
-                        }}
-                    ]))
-                    rng = [min_max[0]['min'], min_max[0]['max']] if min_max else None
-                    unit = unit_sample.get(unit_field)
-                    if min_max and unit is None:
-                        unit = ''  # catch missing unit field in data
-                    key = f'data.{col} [{unit}]' if min_max else f'data.{col}'
-                    columns[key] = rng
+            for col in list(dict.fromkeys(obj['column'] for obj in objects)):
+                value_field, unit_field = f'data.{col}.value', f'data.{col}.unit'
+                unit_query = {'project': obj.id, f'data__{col.replace(".", "__")}__exists': True}
+                unit_contribs = Contributions.objects.only(unit_field).filter(**unit_query)
+                unit_sample = Dotty(unit_contribs.limit(-1).first().to_mongo())
+                min_max = list(Contributions.objects.aggregate(*[
+                    {"$match": {"project": obj.id, value_field: {'$exists': True}}},
+                    {"$group": {
+                        "_id": None, "max": {"$max": f"${value_field}"}, "min": {"$min": f"${value_field}"}
+                    }}
+                ]))
+                rng = [min_max[0]['min'], min_max[0]['max']] if min_max else None
+                unit = unit_sample.get(unit_field)
+                if min_max and unit is None:
+                    unit = ''  # catch missing unit field in data
+                key = f'data.{col} [{unit}]' if min_max else f'data.{col}'
+                columns[key] = rng
 
             contributions = Contributions.objects.only('pk').filter(project=obj.id)
             agg = list(Structures.objects.aggregate(*[
@@ -100,7 +100,7 @@ class ProjectsResource(Resource):
                 for label in agg[0]['labels']:
                     columns[f'structures.{label}'] = None
 
-            return dict(sorted(columns.items(), key=lambda t: t[0]))
+            return columns
         else:
             raise UnknownFieldError
 
