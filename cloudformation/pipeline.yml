@@ -921,10 +921,10 @@ Resources:
                     "SnsAdminTopicArn": "${SnsAdminTopicArn}",
                     "ImageUrlChrome": "${ImageUrlChrome}",
                     "ApiCname": "api.mpcontribs.org",
-                    "ApiPort": 5000,
+                    "ApiPort": "5000",
                     "MpcontribsDbName": "mpcontribs-dev",
                     "PortalCname": "portal.mpcontribs.org",
-                    "PortalPort": 8080,
+                    "PortalPort": "8080",
                     "ImageUrlApi": {
                       "Fn::GetParam" : ["BuildOutputApi", "build-api.json", "ImageUri"]
                     },

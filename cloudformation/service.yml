@@ -37,8 +37,8 @@ Parameters:
     Default: 'api.mpcontribs.org'
     Description: CNAME for the API
   ApiPort:
-    Type: Number
-    Default: 5000
+    Type: String
+    Default: '5000'
     Description: Port for the API
   MpcontribsDbName:
     Type: String
@@ -49,8 +49,8 @@ Parameters:
     Default: 'portal.mpcontribs.org'
     Description: CNAME for the Portal
   PortalPort:
-    Type: Number
-    Default: 8080
+    Type: String
+    Default: '8080'
     Description: Port for the Portal
 
 Resources:
