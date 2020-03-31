@@ -163,6 +163,8 @@ Resources:
           Environment:
             - Name: KG_ALLOW_ORIGIN
               Value: '*'
+            - Name: MPCONTRIBS_API_HOST
+              Value: !Join [':', ['localhost', !Ref 'ApiPort']]
           PortMappings:
             - ContainerPort: 8888
           LogConfiguration:
