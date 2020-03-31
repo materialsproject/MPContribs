@@ -74,12 +74,11 @@ def landingpage(request):
 
 def index(request):
     ctx = RequestContext(request)
+    cname = os.environ['PORTAL_CNAME']
     template_dir = get_app_template_dirs('templates/notebooks')[0]
-    ctx['notebooks'] = [
-        p.split('/' + os.environ['PORTAL_CNAME'] + '/')[-1].replace('.html', '')
-        for p in glob(os.path.join(template_dir, os.environ['PORTAL_CNAME'], '*.html'))
-    ]
-    ctx['PORTAL_CNAME'] = os.environ['PORTAL_CNAME']
+    htmls = os.path.join(template_dir, cname, '*.html')
+    ctx['notebooks'] = [p.split('/' + cname + '/')[-1].replace('.html', '') for p in glob(htmls)]
+    ctx['PORTAL_CNAME'] = cname
     ctx['landing_pages'] = []
     mask = ['project', 'title', 'authors', 'is_public', 'description', 'urls']
     client = load_client(headers=get_consumer(request))  # sets/returns global variable
