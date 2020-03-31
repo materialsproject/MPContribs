@@ -18,9 +18,10 @@ function get_column_config(col) {
     return config;
 }
 
-const project = $('#table').data('project');
+const project = $('[name=table]').first().data('project');
+const table_id = 'table_' + project;
 const objectid_regex = /^[a-f\d]{24}$/i;
-const headers = $('#table').data('columns').split(',');
+const headers = $('#'+table_id).data('columns').split(',');
 const columns = $.map(headers, get_column_config);
 const fields = $.map(columns, function(conf) { return conf.data; });
 const default_query = {_fields: fields.join(','), project: project, _skip: 0};
@@ -150,7 +151,7 @@ $.each(nestedHeadersPrep, function(r, row) {
     nestedHeaders.push(new_row);
 });
 
-const container = document.getElementById('table');
+const container = document.getElementById(table_id);
 const hot = new Handsontable(container, {
     colHeaders: headers, columns: columns,
     hiddenColumns: {columns: [1]},
@@ -161,8 +162,8 @@ const hot = new Handsontable(container, {
     disableVisualSelection: true,
     className: "htCenter htMiddle",
     persistentState: true, columnSorting: true,
-    manualColumnMove: true, manualColumnResize: true,
-    collapsibleColumns: true,
+    //manualColumnMove: true,
+    manualColumnResize: true, collapsibleColumns: true,
     beforeColumnSort: function(currentSortConfig, destinationSortConfigs) {
         const columnSortPlugin = this.getPlugin('columnSorting');
         columnSortPlugin.setSortConfig(destinationSortConfigs);

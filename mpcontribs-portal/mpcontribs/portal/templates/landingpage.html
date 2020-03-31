@@ -130,7 +130,7 @@
 
     {% if columns and columns.strip != 'null' %}
     <div class="box">
-        <div id=table data-columns='{{ columns|join:"," }}' data-project='{{ project }}'></div>
+        <div name=table id=table_{{project}} data-columns='{{ columns|join:"," }}' data-project='{{ project }}'></div>
     </div>
     {% endif %}
 
