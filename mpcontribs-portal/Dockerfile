@@ -45,6 +45,7 @@ RUN { npm install && npm cache clean --force && npm cache verify; } 2>&1
 ENV NODE_ENV production
 ENV API_CNAME api.mpcontribs.org
 ENV API_PORT 5000
+ENV PORTAL_CNAME portal.mpcontribs.org
 ENV PORTAL_PORT 8080
 ENV RELOAD ""
 ENV NWORKERS 4
@@ -65,13 +66,10 @@ COPY mpcontribs-portal /app
 RUN pip install --no-cache-dir -e .
 RUN python manage.py collectstatic --noinput
 
-COPY binder/notebooks/*.ipynb /app/notebooks/
-RUN out=mpcontribs/portal/templates/notebooks/ && if [ ! -d $out ]; then mkdir $out; \
-    for i in `ls -1 notebooks/*.ipynb`; do \
-        /venv/bin/jupyter nbconvert --to html --template basic --output-dir=$out $i 2>&1; \
-    done; fi
+EXPOSE 8080 8082
+COPY binder/notebooks /app/notebooks
+RUN /app/notebooks/convert.sh
 
 ENTRYPOINT ["/app/docker-entrypoint.sh"]
 
-EXPOSE $PORTAL_PORT
 CMD gunicorn -b 0.0.0.0:$PORTAL_PORT -k gevent -w $NWORKERS --access-logfile - --log-level debug $RELOAD wsgi

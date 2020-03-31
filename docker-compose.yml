@@ -43,7 +43,6 @@ services:
             - ./mpcontribs-portal/settings.py:/app/settings.py
             - ./mpcontribs-io:/mpcontribs-io
             - ./mpcontribs-client:/mpcontribs-client
-            - ./binder/notebooks:/app/notebooks # TODO deployment subdir
         ports:
             - "8080:8080"
             - "8082:8082"

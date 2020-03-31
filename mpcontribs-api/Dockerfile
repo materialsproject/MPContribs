@@ -27,5 +27,5 @@ RUN if [ ! -e /app/mpcontribs/api/contributions/formulae.json ]; then \
     /opt/conda/bin/python /app/mpcontribs/api/contributions/generate_formulae.py 2>&1; \
     fi
 
-EXPOSE $API_PORT
+EXPOSE 5000 5002
 CMD gunicorn -b 0.0.0.0:$API_PORT -k gevent -w $NWORKERS --access-logfile - --log-level debug $RELOAD "mpcontribs.api:create_app()"
