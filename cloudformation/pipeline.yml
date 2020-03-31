@@ -942,6 +942,49 @@ Resources:
                 - Name: BuildOutputGateway
               RunOrder: 2
 
+            - Name: DeployAppML
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Version: 1
+                Provider: CloudFormation
+              Configuration:
+                ActionMode: CREATE_UPDATE
+                RoleArn: !GetAtt CloudFormationDeployRole.Arn
+                StackName: !Sub ${PipelineName}-${EnvironmentName}-AppMlService
+                TemplatePath: Source::cloudformation/service.yml
+                Capabilities: CAPABILITY_IAM
+                ParameterOverrides: !Sub |
+                  {
+                    "PipelineName": "${PipelineName}",
+                    "EnvironmentName": "${EnvironmentName}",
+                    "MongoHost": "${MongoHost}",
+                    "AwsAccessKeyId": "${AwsAccessKeyId}",
+                    "AwsSecretAccessKey": "${AwsSecretAccessKey}",
+                    "SnsAdminTopicArn": "${SnsAdminTopicArn}",
+                    "ImageUrlChrome": "${ImageUrlChrome}",
+                    "ApiCname": "ml-api.materialsproject.cloud",
+                    "ApiPort": "5002",
+                    "MpcontribsDbName": "mpcontribs-ml",
+                    "PortalCname": "ml.materialsproject.cloud",
+                    "PortalPort": "8082",
+                    "ImageUrlApi": {
+                      "Fn::GetParam" : ["BuildOutputApi", "build-api.json", "ImageUri"]
+                    },
+                    "ImageUrlPortal": {
+                      "Fn::GetParam" : ["BuildOutputPortal", "build-portal.json", "ImageUri"]
+                    },
+                    "ImageUrlGateway": {
+                      "Fn::GetParam" : ["BuildOutputGateway", "build-gateway.json", "ImageUri"]
+                    }
+                  }
+              InputArtifacts:
+                - Name: Source
+                - Name: BuildOutputApi
+                - Name: BuildOutputPortal
+                - Name: BuildOutputGateway
+              RunOrder: 2
+
             - Name: DeployMPWeb
               ActionTypeId:
                 Category: Deploy

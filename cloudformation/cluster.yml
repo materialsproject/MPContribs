@@ -188,6 +188,10 @@ Resources:
           ToPort: 8081
           SourceSecurityGroupId: !Ref 'PublicSecurityGroup'
         - IpProtocol: tcp
+          FromPort: 8082
+          ToPort: 8082
+          SourceSecurityGroupId: !Ref 'PublicSecurityGroup'
+        - IpProtocol: tcp
           FromPort: 5000
           ToPort: 5000
           SourceSecurityGroupId: !Ref 'PublicSecurityGroup'
