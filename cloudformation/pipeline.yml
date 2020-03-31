@@ -915,6 +915,7 @@ Resources:
                   {
                     "PipelineName": "${PipelineName}",
                     "EnvironmentName": "${EnvironmentName}",
+                    "ServiceName": "app",
                     "MongoHost": "${MongoHost}",
                     "AwsAccessKeyId": "${AwsAccessKeyId}",
                     "AwsSecretAccessKey": "${AwsSecretAccessKey}",
@@ -958,6 +959,7 @@ Resources:
                   {
                     "PipelineName": "${PipelineName}",
                     "EnvironmentName": "${EnvironmentName}",
+                    "ServiceName": "appML",
                     "MongoHost": "${MongoHost}",
                     "AwsAccessKeyId": "${AwsAccessKeyId}",
                     "AwsSecretAccessKey": "${AwsSecretAccessKey}",
