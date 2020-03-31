@@ -160,8 +160,9 @@ const hot = new Handsontable(container, {
     licenseKey: 'non-commercial-and-evaluation',
     disableVisualSelection: true,
     className: "htCenter htMiddle",
-    persistentState: true,
-    columnSorting: true,
+    persistentState: true, columnSorting: true,
+    manualColumnMove: true, manualColumnResize: true,
+    collapsibleColumns: true,
     beforeColumnSort: function(currentSortConfig, destinationSortConfigs) {
         const columnSortPlugin = this.getPlugin('columnSorting');
         columnSortPlugin.setSortConfig(destinationSortConfigs);
@@ -196,7 +197,6 @@ const hot = new Handsontable(container, {
             });
         }
     }
-    //collapsibleColumns: true,
 });
 
 
