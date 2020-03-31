@@ -84,22 +84,10 @@ Parameters:
     Type: String
   ImageUrlChrome:
     Type: String
-  FlaskEnv:
-    Type: String
-    Default: 'production'
-    Description: determines logging and db connection
-  ApiCname:
-    Type: String
-    Default: 'api.mpcontribs.org'
-    Description: CNAME for the API
   MapiKey:
     NoEcho: 'true'
     Type: String
     Description: API key for MPRester to build formulae lookup table
-  MpcontribsDbName:
-    Type: String
-    Default: 'mpcontribs'
-    Description: MPContribs DB name on Atlas (mongodb.com)
 
 
 Resources:
@@ -419,7 +407,7 @@ Resources:
                 - IMAGE_URI="${REPOSITORY_URI}:${PREFIX}-${TAG}"
             build:
               commands:
-                - docker build --tag "${IMAGE_URI}-portal" --build-arg API_CNAME="${API_CNAME}" --build-arg NODE_ENV="production" -f mpcontribs-portal/Dockerfile .
+                - docker build --tag "${IMAGE_URI}-portal" -f mpcontribs-portal/Dockerfile .
             post_build:
               commands:
                 - docker push "${IMAGE_URI}-portal"
@@ -435,8 +423,6 @@ Resources:
         EnvironmentVariables:
           - Name: REPOSITORY_URI
             Value: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${Repository}
-          - Name: API_CNAME
-            Value: !Ref 'ApiCname'
           - Name: PREFIX
             Value: !Sub ${PipelineName}-${EnvironmentName}
       Cache:
@@ -934,9 +920,11 @@ Resources:
                     "AwsSecretAccessKey": "${AwsSecretAccessKey}",
                     "SnsAdminTopicArn": "${SnsAdminTopicArn}",
                     "ImageUrlChrome": "${ImageUrlChrome}",
-                    "FlaskEnv": "${FlaskEnv}",
-                    "ApiCname": "${ApiCname}",
-                    "MpcontribsDbName": "${MpcontribsDbName}",
+                    "ApiCname": "api.mpcontribs.org",
+                    "ApiPort": 5000,
+                    "MpcontribsDbName": "mpcontribs-dev",
+                    "PortalCname": "portal.mpcontribs.org",
+                    "PortalPort": 8080,
                     "ImageUrlApi": {
                       "Fn::GetParam" : ["BuildOutputApi", "build-api.json", "ImageUri"]
                     },
