@@ -28,8 +28,14 @@ def get_consumer(request):
             headers[name] = value
     return headers
 
-def landingpage(request):
+def get_context(request):
     ctx = RequestContext(request)
+    ctx['API_CNAME'] = os.environ['API_CNAME']
+    ctx['API_PORT'] = os.environ['API_PORT']
+    return ctx
+
+def landingpage(request):
+    ctx = get_context(request)
     try:
         project = request.path.replace('/', '')
         client = load_client(headers=get_consumer(request))
@@ -73,7 +79,7 @@ def landingpage(request):
     return HttpResponse(template.render(ctx.flatten(), request))
 
 def index(request):
-    ctx = RequestContext(request)
+    ctx = get_context(request)
     cname = os.environ['PORTAL_CNAME']
     template_dir = get_app_template_dirs('templates/notebooks')[0]
     htmls = os.path.join(template_dir, cname, '*.html')
@@ -127,7 +133,7 @@ def export_notebook(nb, cid):
 
 
 def contribution(request, cid):
-    ctx = RequestContext(request)
+    ctx = get_context(request)
     client = load_client(headers=get_consumer(request))  # sets/returns global variable
     contrib = client.contributions.get_entry(pk=cid, _fields=['id', 'identifier']).result()
     ctx['identifier'], ctx['cid'] = contrib['identifier'], contrib['id']

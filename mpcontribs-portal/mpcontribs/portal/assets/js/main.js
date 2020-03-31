@@ -15,15 +15,14 @@ ga('send', 'pageview');
 window.api = {};
 var api_key = $('#api_key').val();
 if (api_key !== '') {
-    console.log(process.env.API_CNAME);
-    window.api['host'] = 'https://' + process.env.API_CNAME + '/';
+    window.api['host'] = 'https://' + $('#api_cname').val() + '/';
     var api_key_code = window.atob(api_key);
     window.api['headers'] = {'X-API-KEY': api_key_code};
 } else {
-    console.log(process.env.API_PORT);
-    window.api['host'] = 'http://localhost:' + process.env.API_PORT + '/';
+    window.api['host'] = 'http://localhost:' + $('#api_port').val() + '/';
     window.api['headers'] = {};
 }
+console.log(window.api);
 
 $(document).ready(function () {
     // logo, info, api-key
