@@ -3,7 +3,7 @@ whitenoise>=4.1.2
 Django>=2.2rc1
 django-extensions>=2.1.5
 django-webpack4-loader>=0.0.5
-nbformat==4.4.0
+nbformat==5.0.4
 beautifulsoup4>=4.7.1
 gunicorn[gevent]>=20.0.1
 pyOpenSSL>=19.1.0
