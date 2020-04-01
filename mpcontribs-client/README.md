@@ -1,3 +1,6 @@
+![PyPI](https://img.shields.io/pypi/v/mpcontribs-client?style=flat-square)
+![Libraries.io dependency status for latest release](https://img.shields.io/librariesio/release/pypi/mpcontribs-client?style=flat-square)
+
 Small, dynamic python client library to connect to [MPContribs](https://mpcontribs.org)
 APIs based on Yelp's [bravado](https://bravado.readthedocs.io).
 
