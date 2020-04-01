@@ -77,7 +77,7 @@ services:
             - ALLOW_EMPTY_PASSWORD=yes
 
     chrome:
-        image: selenium/standalone-chrome:3.141.59
+        build: mpcontribs-sidecar/chrome
         mem_limit: 1G
         mem_reservation: 100m
         cpus: 1
@@ -99,7 +99,7 @@ services:
             GATEWAY_HOST: kernel_gateway:8888
         build:
             context: .
-            dockerfile: binder/DockerfileKernelGateway
+            dockerfile: mpcontribs-sidecar/kernel_gateway/Dockerfile
 
 
     # OTHER
