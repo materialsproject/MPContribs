@@ -1,5 +1,5 @@
 # https://www.caktusgroup.com/blog/2017/03/14/production-ready-dockerfile-your-python-django-app/
-FROM python:3.7-slim
+FROM python:3.8.2-slim
 RUN set -ex \
     && RUN_DEPS=" \
         libpcre3 \
