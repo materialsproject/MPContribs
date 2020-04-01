@@ -82,8 +82,6 @@ Parameters:
     Type: String
   SnsAdminTopicArn:
     Type: String
-  ImageUrlChrome:
-    Type: String
   MapiKey:
     NoEcho: 'true'
     Type: String
@@ -454,7 +452,7 @@ Resources:
                 - IMAGE_URI="${REPOSITORY_URI}:${PREFIX}-${TAG}"
             build:
               commands:
-                - docker build --tag "${IMAGE_URI}-gateway" -f binder/DockerfileKernelGateway .
+                - docker build --tag "${IMAGE_URI}-gateway" -f mpcontribs-sidecars/kernel_gateway/Dockerfile .
             post_build:
               commands:
                 - docker push "${IMAGE_URI}-gateway"
@@ -479,6 +477,53 @@ Resources:
           - LOCAL_DOCKER_LAYER_CACHE
           - LOCAL_SOURCE_CACHE
       Name: !Sub ${AWS::StackName}-gateway
+      ServiceRole: !Ref CodeBuildServiceRole
+
+  CodeBuildProjectChrome:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Artifacts:
+        Type: CODEPIPELINE
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: |
+          version: 0.2
+          phases:
+            install:
+              runtime-versions:
+                docker: 18
+            pre_build:
+              commands:
+                - $(aws ecr get-login --no-include-email)
+                - TAG="$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | head -c 8)"
+                - IMAGE_URI="${REPOSITORY_URI}:${PREFIX}-${TAG}"
+            build:
+              commands:
+                - docker build --tag "${IMAGE_URI}-chrome" -f mpcontribs-sidecars/chrome/Dockerfile .
+            post_build:
+              commands:
+                - docker push "${IMAGE_URI}-chrome"
+                - printf '{"ImageUri":"%s"}' "${IMAGE_URI}-chrome" > build-chrome.json
+          artifacts:
+            files:
+                - build-chrome.json
+      Environment:
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/standard:2.0
+        Type: LINUX_CONTAINER
+        PrivilegedMode: true
+        EnvironmentVariables:
+          - Name: REPOSITORY_URI
+            Value: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${Repository}
+          - Name: PREFIX
+            Value: !Sub ${PipelineName}-${EnvironmentName}
+      Cache:
+        Type: LOCAL
+        Modes: # You can specify one or more cache mode,
+          - LOCAL_CUSTOM_CACHE
+          - LOCAL_DOCKER_LAYER_CACHE
+          - LOCAL_SOURCE_CACHE
+      Name: !Sub ${AWS::StackName}-chrome
       ServiceRole: !Ref CodeBuildServiceRole
 
   CodeBuildProjectR2d:
@@ -794,6 +839,19 @@ Resources:
                 - Name: Source
               OutputArtifacts:
                 - Name: BuildOutputGateway
+            - Name: BuildChrome
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Version: 1
+                Provider: CodeBuild
+              Configuration:
+                ProjectName: !Ref CodeBuildProjectChrome
+                PrimarySource: Source
+              InputArtifacts:
+                - Name: Source
+              OutputArtifacts:
+                - Name: BuildOutputChrome
             - Name: BuildApi
               ActionTypeId:
                 Category: Build
@@ -920,7 +978,6 @@ Resources:
                     "AwsAccessKeyId": "${AwsAccessKeyId}",
                     "AwsSecretAccessKey": "${AwsSecretAccessKey}",
                     "SnsAdminTopicArn": "${SnsAdminTopicArn}",
-                    "ImageUrlChrome": "${ImageUrlChrome}",
                     "ApiCname": "api.mpcontribs.org",
                     "ApiPort": "5000",
                     "MpcontribsDbName": "mpcontribs-dev",
@@ -934,6 +991,9 @@ Resources:
                     },
                     "ImageUrlGateway": {
                       "Fn::GetParam" : ["BuildOutputGateway", "build-gateway.json", "ImageUri"]
+                    },
+                    "ImageUrlChrome": {
+                      "Fn::GetParam" : ["BuildOutputChrome", "build-chrome.json", "ImageUri"]
                     }
                   }
               InputArtifacts:
@@ -941,6 +1001,7 @@ Resources:
                 - Name: BuildOutputApi
                 - Name: BuildOutputPortal
                 - Name: BuildOutputGateway
+                - Name: BuildOutputChrome
               RunOrder: 2
 
             - Name: DeployAppML
@@ -964,7 +1025,6 @@ Resources:
                     "AwsAccessKeyId": "${AwsAccessKeyId}",
                     "AwsSecretAccessKey": "${AwsSecretAccessKey}",
                     "SnsAdminTopicArn": "${SnsAdminTopicArn}",
-                    "ImageUrlChrome": "${ImageUrlChrome}",
                     "ApiCname": "ml-api.materialsproject.cloud",
                     "ApiPort": "5002",
                     "MpcontribsDbName": "mpcontribs-ml",
@@ -978,6 +1038,9 @@ Resources:
                     },
                     "ImageUrlGateway": {
                       "Fn::GetParam" : ["BuildOutputGateway", "build-gateway.json", "ImageUri"]
+                    },
+                    "ImageUrlChrome": {
+                      "Fn::GetParam" : ["BuildOutputChrome", "build-chrome.json", "ImageUri"]
                     }
                   }
               InputArtifacts:
@@ -985,6 +1048,7 @@ Resources:
                 - Name: BuildOutputApi
                 - Name: BuildOutputPortal
                 - Name: BuildOutputGateway
+                - Name: BuildOutputChrome
               RunOrder: 2
 
             - Name: DeployMPWeb
