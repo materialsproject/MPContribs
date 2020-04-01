@@ -77,7 +77,7 @@ services:
             - ALLOW_EMPTY_PASSWORD=yes
 
     chrome:
-        image: selenium/standalone-chrome
+        image: selenium/standalone-chrome:3.141.59
         mem_limit: 1G
         mem_reservation: 100m
         cpus: 1

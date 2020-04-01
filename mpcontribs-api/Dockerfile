@@ -1,4 +1,4 @@
-FROM continuumio/miniconda3
+FROM continuumio/miniconda3:4.8.2
 
 ENV PYTHONUNBUFFERED 1
 ENV FLASK_APP mpcontribs.api

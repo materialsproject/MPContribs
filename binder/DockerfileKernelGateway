@@ -1,4 +1,4 @@
-FROM jupyter/base-notebook
+FROM jupyter/base-notebook:dc9744740e12
 EXPOSE 8888
 ENV SETUPTOOLS_SCM_PRETEND_VERSION dev
 ENV NODE_ENV production
