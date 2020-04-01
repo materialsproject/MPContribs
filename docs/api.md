@@ -1,9 +1,9 @@
 !!! bug ""
-    **Visit the [application](https://portal.mpcontribs.org/apply) and
-    [usage](https://portal.mpcontribs.org/use) pages on the portal to apply for a project and
-    get started with the MPContribs API.** The usage page shows notebooks with example code
-    that can be copied to execute on your own machine or launched in the browser on MP's
-    compute resources.
+    **Visit the [apply](https://portal.mpcontribs.org/#apply) and
+    [work](https://portal.mpcontribs.org/#work) pages on the portal to apply for a project and
+    get started with the MPContribs API.** The work page provides notebooks with example code
+    that can be downloaded to execute on your own machine or launched in the browser on remote
+    compute resources (e.g. https://jupyter.nersc.gov).
 
 The [MPContribs API](https://api.mpcontribs.org) provides programmatic access to
 experimental and theoretical data contributed by the MP community. Project information is

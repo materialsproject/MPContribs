@@ -1,7 +1,0 @@
-FROM squidfunk/mkdocs-material
-
-EXPOSE 8081
-
-#RUN pip install mkdocs-img2fig-plugin
-
-CMD ["serve", "--dev-addr=0.0.0.0:8081"]
