@@ -1,7 +1,7 @@
 from flask_mongoengine import Document
 from mongoengine import CASCADE, signals
 from mongoengine.fields import StringField, LazyReferenceField, BooleanField
-from mongoengine.fields import FloatField, IntField, ListField, DictField
+from mongoengine.fields import FloatField, ListField, DictField
 from mpcontribs.api.contributions.document import Contributions
 from mpcontribs.api.notebooks.document import Notebooks
 

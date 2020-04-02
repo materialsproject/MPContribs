@@ -7,7 +7,6 @@ from flask import render_template, request, Response, Blueprint, current_app
 from flask import url_for, redirect, make_response, stream_with_context, jsonify
 from mpcontribs.utils import process_mpfile, submit_mpfile
 from mpcontribs.users_modules import *
-from webtzite import configure_settings
 from whichcraft import which
 from subprocess import call
 

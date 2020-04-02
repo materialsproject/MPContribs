@@ -133,7 +133,7 @@ def create_app():
     Compress(app)
     Logging(app)
     Marshmallow(app)
-    db = MongoEngine(app)
+    MongoEngine(app)
     Swagger(app, template=app.config.get('TEMPLATE'))
     #collections = get_collections(db)  # hard-code to avoid pre-generating for new deployment
     collections = ['projects', 'contributions', 'tables', 'structures', 'notebooks', 'cards']

@@ -1,6 +1,6 @@
 import os
 from jhub_remote_user_authenticator.remote_user_auth import RemoteUserLocalAuthenticator
-from fargatespawner import FargateSpawner, FargateSpawnerECSRoleAuthentication
+from fargatespawner import FargateSpawner#, FargateSpawnerECSRoleAuthentication
 from fargatespawner import FargateSpawnerSecretAccessKeyAuthentication
 
 RemoteUserLocalAuthenticator.header_name = 'X-Consumer-Username'

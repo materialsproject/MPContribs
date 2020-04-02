@@ -35,19 +35,12 @@ function get_data() {
     return $.get({url: url, headers: window.api['headers'], data: query});
 }
 
-function make_icon(icon) {
-    var span = $('<span/>', {'class': 'icon is-small'});
-    var i = $('<i/>', {'class': 'fas ' + icon});
-    $(span).append(i);
-    return span;
-}
-
 function make_url(text, href) {
     var url;
     if (href.endsWith('.cif')) {
         url = $('<a/>', {'class': 'tag is-link is-light', text: text, href: href});
     } else {
-        url = $('<a/>', {href: href, target: '_blank'});
+        url = $('<a/>', {href: href, target: '_blank', rel: "noopener noreferrer"});
         $(url).text(text);
     }
     return url;
@@ -63,7 +56,7 @@ function urlRenderer(instance, td, row, col, prop, value, cellProperties) {
     if (Array.isArray(value)) {
         Handsontable.renderers.HtmlRenderer.apply(this, arguments);
         Handsontable.dom.empty(td);
-        var tags = $('<div/>', {'class': 'tags'})
+        var tags = $('<div/>', {'class': 'tags'});
         $.each(value, function(i, v) {
             var tag = make_url(v['name'], '/' + v['id'] + '.cif');
             $(tags).append(tag);
@@ -126,10 +119,10 @@ function load_data(dom) {
 
 $('a[name=table_download_item]').click(function() {
     $('#table_download_dropdown').removeClass('is-active');
-})
+});
 
 var nestedHeadersPrep = [];
-const levels = $.map(headers, function(h) { return h.split('.').length; })
+const levels = $.map(headers, function(h) { return h.split('.').length; });
 const depth = Math.max.apply(Math, levels);
 for (var i = 0; i < depth; i++) { nestedHeadersPrep.push([]); }
 $.each(headers, function(i, h) {
@@ -141,7 +134,7 @@ $.each(headers, function(i, h) {
 
 var nestedHeaders = [];
 $.each(nestedHeadersPrep, function(r, row) {
-    var new_row = []; var prev;
+    var new_row = [];
     for (var i = 0; i < row.length; i++) {
         if (!new_row.length || row[i] !== new_row[new_row.length-1]['label']) {
             new_row.push({label: row[i], colspan: 0});
@@ -204,7 +197,10 @@ const hot = new Handsontable(container, {
 hot.updateSettings({
     rowHeaders: function(index) {
         var cid = hot.getDataAtCell(index, 1);
-        var url = $('<a/>', {'class': 'is-primary', text: index+1, href: '/' + cid, target: '_blank'});
+        var url = $('<a/>', {
+            'class': 'is-primary', text: index+1, href: '/' + cid,
+            target: '_blank', rel: "noopener noreferrer"
+        });
         return url.prop('outerHTML');
     }
 });
