@@ -7,7 +7,7 @@ from flask_sse import sse
 from flask import Blueprint
 from copy import deepcopy
 from mongoengine import DoesNotExist
-from nbformat import v4 as nbf
+from nbformat import v5 as nbf
 from nbformat import read
 from enterprise_gateway.client.gateway_client import GatewayClient
 from mpcontribs.api.core import SwaggerView
