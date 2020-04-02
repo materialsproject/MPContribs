@@ -1,5 +1,5 @@
-cryptography>=2.8
-fido[tls]>=4.2.2
-bravado[fido]>=10.4.3
-service-identity>=18.1.0
-pyOpenSSL>=19.1.0
+cryptography==2.8
+fido[tls]==4.2.2
+bravado[fido]==10.6.0
+service-identity==18.1.0
+pyOpenSSL==19.1.0

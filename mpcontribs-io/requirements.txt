@@ -1,5 +1,5 @@
-archieml>=0.3.4
-pandas>=0.25.3
-ipython>=7.10.1
-pymatgen>=2019.12.3
-plotly>=4.3.0
+archieml==0.3.4
+pandas==1.0.3
+ipython==7.13.0
+pymatgen==2020.1.28
+plotly==4.5.4
