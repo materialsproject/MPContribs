@@ -72,8 +72,8 @@ services:
         mem_reservation: 100m
         cpus: 1
         volumes:
-            - ./mpcontribs-io:/src/mpcontribs-io
-            - ./mpcontribs-client:/src/mpcontribs-client
+            - ./mpcontribs-io:/app/mpcontribs-io
+            - ./mpcontribs-client:/app/mpcontribs-client
         env_file:
             - ./deployments/$DEPLOYMENT.env
         environment:

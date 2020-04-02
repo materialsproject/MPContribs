@@ -5,6 +5,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends gcc git g++ && 
 ENV PATH /root/.local/bin:$PATH
 WORKDIR /app
 ENV PIP_FLAGS "--user --no-cache-dir --compile"
+COPY mpcontribs-sidecars/kernel_gateway/requirements.txt requirements-gateway.txt
 COPY mpcontribs-io/requirements.txt requirements-io.txt
 COPY mpcontribs-client/requirements.txt requirements-client.txt
 RUN cat requirements-*.txt > requirements.txt && \

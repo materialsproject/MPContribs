@@ -1,6 +1,6 @@
 blinker==1.4
 jupyterhub==1.1.0
 jupyterlab==2.0.1
-pycurl==7.43.0.5
-pyjwt==1.7.1
-pysocks==1.7.1
+#pycurl==7.43.0.5
+#pyjwt==1.7.1
+#pysocks==1.7.1
