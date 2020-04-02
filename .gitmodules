@@ -1,0 +1,3 @@
+[submodule "shrink-linalg"]
+	path = shrink-linalg
+	url = https://github.com/tschaume/shrink-linalg.git
