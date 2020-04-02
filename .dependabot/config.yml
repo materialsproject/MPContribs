@@ -2,35 +2,31 @@ version: 1
 
 update_configs:
 
+  # libraries (python)
   - package_manager: "python"
     directory: "mpcontribs-io"
     update_schedule: "weekly"
   - package_manager: "python"
-    directory: "mpcontribs-api"
-    update_schedule: "weekly"
-  - package_manager: "python"
     directory: "mpcontribs-client"
     update_schedule: "weekly"
-  - package_manager: "python"
-    directory: "mpcontribs-portal"
-    update_schedule: "weekly"
+
+  # services (python)
   - package_manager: "python"
     directory: "mpcontribs-sidecars/kernel_gateway"
     update_schedule: "weekly"
   - package_manager: "python"
-    directory: "shrink-linalg"
+    directory: "mpcontribs-api"
+    update_schedule: "weekly"
+  - package_manager: "python"
+    directory: "mpcontribs-portal"
     update_schedule: "weekly"
 
+  # services (javascript)
   - package_manager: "javascript"
     directory: "mpcontribs-portal"
     update_schedule: "weekly"
 
-  - package_manager: "docker"
-    directory: "mpcontribs-portal"
-    update_schedule: "weekly"
-  - package_manager: "docker"
-    directory: "mpcontribs-api"
-    update_schedule: "weekly"
+  # services (docker)
   - package_manager: "docker"
     directory: "mpcontribs-sidecars/kernel_gateway"
     update_schedule: "weekly"
@@ -38,5 +34,8 @@ update_configs:
     directory: "mpcontribs-sidecars/chrome"
     update_schedule: "weekly"
   - package_manager: "docker"
-    directory: "shrink-linalg"
+    directory: "mpcontribs-api"
+    update_schedule: "weekly"
+  - package_manager: "docker"
+    directory: "mpcontribs-portal"
     update_schedule: "weekly"
