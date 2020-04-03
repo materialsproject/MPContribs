@@ -14,11 +14,12 @@ setup(
     url='https://github.com/materialsproject/MPContribs/tree/master/mpcontribs-client',
     packages=['mpcontribs.client'],
     install_requires=[
-        'cryptography', 'fido[tls]', 'bravado[fido]', 'service-identity', 'pyOpenSSL'
+        'cryptography', 'fido[tls]', 'bravado[fido]', 'service-identity',
+        'pyOpenSSL', 'pyIsEmail'
     ],
     license='MIT',
     zip_safe=False,
     include_package_data=True,
     use_scm_version={"root": "..", "relative_to": __file__},
-    setup_requires=['setuptools_scm'],
+    setup_requires=['setuptools_scm']
 )

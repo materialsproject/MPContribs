@@ -1,7 +1,8 @@
 import os
 import fido
 
-from email.utils import formataddr, parseaddr
+from pyisemail import is_email
+from pyisemail.diagnosis import BaseDiagnosis
 from swagger_spec_validator.common import SwaggerValidationError
 from bravado_core.formatter import SwaggerFormat
 from bravado.client import SwaggerClient
@@ -10,15 +11,15 @@ from bravado.http_future import HttpFuture
 from bravado.swagger_model import Loader
 
 
-HOST = os.environ.get('MPCONTRIBS_API_HOST', 'api.mpcontribs.org')
+DEFAULT_HOST = 'api.mpcontribs.org'
+HOST = os.environ.get('MPCONTRIBS_API_HOST', DEFAULT_HOST)
 client = None
 
 
 def validate_email(email_string):
-    try:
-        formataddr(parseaddr(email_string))
-    except Exception as ex:
-        raise SwaggerValidationError(f'E-mail {email_string} is invalid')
+    d = is_email(email_string, diagnose=True)
+    if d > BaseDiagnosis.CATEGORIES["VALID"]:
+        raise SwaggerValidationError(f'{email_string} {d.message}')
 
 
 email_format = SwaggerFormat(
