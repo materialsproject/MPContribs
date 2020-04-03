@@ -5,7 +5,7 @@ function lazyLoadImage(imageName, img) {
     ).then(function(src) {
         img.src = src.default;
         img.style.width = "100%";
-    }).catch(function(err) { console.error(err); });
+    }).catch(function(err) { console.log(err); });
 }
 
 function generateImage(container, imageName) {

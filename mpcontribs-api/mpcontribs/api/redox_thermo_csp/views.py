@@ -16,10 +16,9 @@ from mpcontribs.api.contributions.document import Contributions
 from mpcontribs.api.contributions.views import ContributionsResource
 from mpcontribs.api.tables.document import Tables
 
-templates = os.path.join(
-    os.path.dirname(flask_mongorest.__file__), 'templates'
-)
+templates = os.path.join(os.path.dirname(flask_mongorest.__file__), "templates")
 redox_thermo_csp = Blueprint("redox_thermo_csp", __name__, template_folder=templates)
+
 
 def split_comp(compstr):
     """
@@ -33,19 +32,22 @@ def split_comp(compstr):
 
     am_1, am_2, tm_1, tm_2 = None, None, None, None
 
-    compstr_spl = [''.join(g) for _, g in groupby(str(compstr), str.isalpha)]
+    compstr_spl = ["".join(g) for _, g in groupby(str(compstr), str.isalpha)]
 
     for l in range(len(compstr_spl)):
         try:
-            if ptable.Element(compstr_spl[l]).is_alkaline \
-               or ptable.Element(compstr_spl[l]).is_alkali \
-               or ptable.Element(compstr_spl[l]).is_rare_earth_metal:
+            if (
+                ptable.Element(compstr_spl[l]).is_alkaline
+                or ptable.Element(compstr_spl[l]).is_alkali
+                or ptable.Element(compstr_spl[l]).is_rare_earth_metal
+            ):
                 if am_1 is None:
                     am_1 = [compstr_spl[l], float(compstr_spl[l + 1])]
                 elif am_2 is None:
                     am_2 = [compstr_spl[l], float(compstr_spl[l + 1])]
-            if ptable.Element(compstr_spl[l]).is_transition_metal \
-               and not (ptable.Element(compstr_spl[l]).is_rare_earth_metal):
+            if ptable.Element(compstr_spl[l]).is_transition_metal and not (
+                ptable.Element(compstr_spl[l]).is_rare_earth_metal
+            ):
                 if tm_1 is None:
                     tm_1 = [compstr_spl[l], float(compstr_spl[l + 1])]
                 elif tm_2 is None:
@@ -77,7 +79,7 @@ def add_comp_one(compstr):
     :return:         compositon with stoichiometries of 1 added
     """
     sample = re.sub(r"([A-Z])", r" \1", compstr).split()
-    sample = [''.join(g) for _, g in groupby(str(sample), str.isalpha)]
+    sample = ["".join(g) for _, g in groupby(str(sample), str.isalpha)]
     samp_new = ""
     for k in range(len(sample)):
         spl_samp = re.sub(r"([A-Z])", r" \1", sample[k]).split()
@@ -92,17 +94,41 @@ def add_comp_one(compstr):
 def s_th_o(temp):
     # constants: Chase, NIST-JANAF Thermochemistry tables, Fourth Edition, 1998
     if temp < 700:
-        shomdat = [31.32234, -20.23531, 57.86644, -36.50624, -0.007374, -8.903471, 246.7945]
+        shomdat = [
+            31.32234,
+            -20.23531,
+            57.86644,
+            -36.50624,
+            -0.007374,
+            -8.903471,
+            246.7945,
+        ]
     elif temp < 2000:
-        shomdat = [30.03235, 8.772972, -3.988133, 0.788313, -0.741599, -11.32468, 236.1663]
+        shomdat = [
+            30.03235,
+            8.772972,
+            -3.988133,
+            0.788313,
+            -0.741599,
+            -11.32468,
+            236.1663,
+        ]
     else:
-        shomdat = [20.91111, 10.72071, -2.020498, 0.146449, 9.245722, 5.337651, 237.6185]
-    temp_frac = temp / 1000.
+        shomdat = [
+            20.91111,
+            10.72071,
+            -2.020498,
+            0.146449,
+            9.245722,
+            5.337651,
+            237.6185,
+        ]
+    temp_frac = temp / 1000.0
     szero = shomdat[0] * pd.np.log(temp_frac)
     szero += shomdat[1] * temp_frac
-    szero += 0.5 * shomdat[2] * temp_frac**2
-    szero += shomdat[3]/3. * temp_frac**3
-    szero -= shomdat[4] / (2 * temp_frac**2)
+    szero += 0.5 * shomdat[2] * temp_frac ** 2
+    szero += shomdat[3] / 3.0 * temp_frac ** 3
+    szero -= shomdat[4] / (2 * temp_frac ** 2)
     szero += shomdat[6]
     return 0.5 * szero
 
@@ -110,7 +136,9 @@ def s_th_o(temp):
 def rootfind(a, b, args, funciso_here):
     solutioniso = 0
     try:
-        solutioniso = brentq(funciso_here, 0.01, 0.49, args=args)  # works for most cases
+        solutioniso = brentq(
+            funciso_here, 0.01, 0.49, args=args
+        )  # works for most cases
     except ValueError:  # starting values a,b for cases where 0.01/0.49 are not sign changing
         try:
             solutioniso = brentq(funciso_here, a, b, args=args)
@@ -136,7 +164,11 @@ def entr_fe(x, fit_param_fe):
     :param x:               absolute delta
     :return:                dS of SrFeOx at delta = x with delta_0 accounted for
     """
-    return fit_param_fe[0]/2 + fit_param_fe[1] + (2*fit_param_fe[2]*R * (pd.np.log(0.5-x) - pd.np.log(x)))
+    return (
+        fit_param_fe[0] / 2
+        + fit_param_fe[1]
+        + (2 * fit_param_fe[2] * R * (pd.np.log(0.5 - x) - pd.np.log(x)))
+    )
 
 
 def entr_mixed(x, s, shift, delta_0, act_s1, fit_param_fe):
@@ -149,8 +181,12 @@ def entr_mixed(x, s, shift, delta_0, act_s1, fit_param_fe):
     :param delta_0:         shift from absolute delta
     :return:                dS of solid solution at delta = x with delta_0
     """
-    efe = entr_fe(x+delta_0, fit_param_fe)
-    return ((act_s1*efe)/pi) * (pd.np.arctan((x-delta_0)*s)+pi/2) + (1-act_s1)*efe + shift
+    efe = entr_fe(x + delta_0, fit_param_fe)
+    return (
+        ((act_s1 * efe) / pi) * (pd.np.arctan((x - delta_0) * s) + pi / 2)
+        + (1 - act_s1) * efe
+        + shift
+    )
 
 
 def entr_dilute_spec(x, s_v, a, delta_0, s_th_o):
@@ -163,37 +199,47 @@ def entr_dilute_spec(x, s_v, a, delta_0, s_th_o):
     Delta = delta_0 + Delta_delta
     :return:        fit function based on the model in Bulfin et. al., doi: 10.1039/C7TA00822H
     """
-    return s_th_o + s_v + (2 * a * R * (pd.np.log(0.5 - (x + delta_0)) - pd.np.log(x + delta_0)))
+    return (
+        s_th_o
+        + s_v
+        + (2 * a * R * (pd.np.log(0.5 - (x + delta_0)) - pd.np.log(x + delta_0)))
+    )
 
 
 def dh_ds(delta, s_th, p):
-    d_delta = delta - p['delta_0']
-    dh_pars = [p[f'fit_param_enth.{c}'] for c in 'abcd']
-    dh = enth_arctan(d_delta, *(dh_pars)) * 1000.
-    ds_pars = [p[f'fit_par_ent.{c}'] for c in 'abc']
+    d_delta = delta - p["delta_0"]
+    dh_pars = [p[f"fit_param_enth.{c}"] for c in "abcd"]
+    dh = enth_arctan(d_delta, *(dh_pars)) * 1000.0
+    ds_pars = [p[f"fit_par_ent.{c}"] for c in "abc"]
     # distinguish two differnt entropy fits
-    fit_type = p['fit_type_entr']
+    fit_type = p["fit_type_entr"]
     if fit_type == "Solid_Solution":
-        ds_pars.append(p['act_mat'])
-        ds_pars.append([p[f'fit_param_fe.{c}'] for c in 'abcd'])
-        ds = entr_mixed(delta-p[f'fit_par_ent.c'], *ds_pars)
+        ds_pars.append(p["act_mat"])
+        ds_pars.append([p[f"fit_param_fe.{c}"] for c in "abcd"])
+        ds = entr_mixed(delta - p[f"fit_par_ent.c"], *ds_pars)
     else:
         ds_pars.append(s_th)
-        ds = entr_dilute_spec(delta-p['fit_par_ent.c'], *ds_pars)
+        ds = entr_dilute_spec(delta - p["fit_par_ent.c"], *ds_pars)
     return dh, ds
 
 
 def funciso(delta, iso, x, p, s_th):
     dh, ds = dh_ds(delta, s_th, p)
-    return dh - x*ds + R*iso*x/2
+    return dh - x * ds + R * iso * x / 2
 
 
 def funciso_theo(delta, iso, x, p, t_d_perov, t_d_brownm, dh_min, dh_max, act):
     dh = d_h_num_dev_calc(delta=delta, dh_1=dh_min, dh_2=dh_max, temp=x, act=act)
     ds = d_s_fundamental(
-        delta=delta, dh_1=dh_min, dh_2=dh_max, temp=x, act=act, t_d_perov=t_d_perov, t_d_brownm=t_d_brownm
+        delta=delta,
+        dh_1=dh_min,
+        dh_2=dh_max,
+        temp=x,
+        act=act,
+        t_d_perov=t_d_perov,
+        t_d_brownm=t_d_brownm,
     )
-    return dh - x*ds + R*iso*x/2
+    return dh - x * ds + R * iso * x / 2
 
 
 def d_h_num_dev_calc(delta, dh_1, dh_2, temp, act):
@@ -206,9 +252,10 @@ def d_h_num_dev_calc(delta, dh_1, dh_2, temp, act):
     :param temp:    temperature in K
     :return:        enthalpy change dH
     """
-    return -((0.5 * d_h_num_dev_0(delta, dh_1, dh_2, temp, act)) - (
-        0.5 * d_h_num_dev_1(delta, dh_1, dh_2, temp, act))) / (
-        (1 / (R * temp)) - (1 / (R * (temp + 0.01))))
+    return -(
+        (0.5 * d_h_num_dev_0(delta, dh_1, dh_2, temp, act))
+        - (0.5 * d_h_num_dev_1(delta, dh_1, dh_2, temp, act))
+    ) / ((1 / (R * temp)) - (1 / (R * (temp + 0.01))))
 
 
 def d_s_fundamental(delta, dh_1, dh_2, temp, act, t_d_perov, t_d_brownm):
@@ -220,7 +267,9 @@ def d_s_fundamental(delta, dh_1, dh_2, temp, act, t_d_perov, t_d_brownm):
     # partial molar entropy of oxygen release as a function of the temperature
     p_mol_ent_o = s_th_o(temp)
     # configurational entropy
-    p_o_2_l = pd.np.log(p_o2_calc(delta=delta, dh_1=dh_1, dh_2=dh_2, temp=temp, act=act))
+    p_o_2_l = pd.np.log(
+        p_o2_calc(delta=delta, dh_1=dh_1, dh_2=dh_2, temp=temp, act=act)
+    )
     entr_con = entr_con_mixed(temp=temp, p_o2_l=p_o_2_l, dh_1=dh_1, dh_2=dh_2, act=act)
     # vibrational entropy
     entr_vib = vib_ent(temp=temp, t_d_perov=t_d_perov, t_d_brownm=t_d_brownm)
@@ -278,28 +327,38 @@ def entr_con_mixed(temp, p_o2_l, dh_1, dh_2, act):
 
     # avoiding errors due to division by zero
     if act == 0:
-        delta_max_1 = 1E-10
+        delta_max_1 = 1e-10
     else:
         delta_max_1 = act * 0.5
 
     if act == 1:
-        delta_max_2 = 0.5 - 1E-10
+        delta_max_2 = 0.5 - 1e-10
     else:
         delta_max_2 = 0.5 - (act * 0.5)
 
     delta_1 = delta_fun(stho, temp, p_o2_l, dh_1, (act / 2))
     delta_2 = delta_fun(stho, temp, p_o2_l, dh_2, ((1 - act) / 2))
 
-    if delta_1 > 0.:
-        entr_con_1 = (1 / delta_max_1) * (a / 2) * R * (pd.np.log(delta_max_1 - delta_1) - pd.np.log(delta_1)) \
-                * (delta_1 / (delta_1 + delta_2))
+    if delta_1 > 0.0:
+        entr_con_1 = (
+            (1 / delta_max_1)
+            * (a / 2)
+            * R
+            * (pd.np.log(delta_max_1 - delta_1) - pd.np.log(delta_1))
+            * (delta_1 / (delta_1 + delta_2))
+        )
     else:
-        entr_con_1 = 0.
-    if delta_2 > 0.:
-        entr_con_2 = (1 / delta_max_2) * (a / 2) * R * (pd.np.log(delta_max_2 - delta_2) - pd.np.log(delta_2)) \
-                * (delta_2 / (delta_1 + delta_2))
+        entr_con_1 = 0.0
+    if delta_2 > 0.0:
+        entr_con_2 = (
+            (1 / delta_max_2)
+            * (a / 2)
+            * R
+            * (pd.np.log(delta_max_2 - delta_2) - pd.np.log(delta_2))
+            * (delta_2 / (delta_1 + delta_2))
+        )
     else:
-        entr_con_2 = 0.
+        entr_con_2 = 0.0
 
     return entr_con_1 + entr_con_2
 
@@ -347,8 +406,10 @@ def p_o2_calc(delta, dh_1, dh_2, temp, act):
     :param temp:    temperature in K
     :return:        p_O2 as absolute value
     """
+
     def fun_p_o2(p_o2):
         return delta_mix(temp, p_o2, dh_1, dh_2, act) - delta
+
     try:
         sol_p_o2_l = brentq(fun_p_o2, a=-100, b=100)
     except ValueError:
@@ -367,70 +428,83 @@ def delta_mix(temp, p_o2_l, dh_1, dh_2, act):
     :return:        total non-stoichiometry delta
     """
     stho = s_th_o(temp)
-    return delta_fun(stho, temp, p_o2_l, dh_1, (act / 2)) + \
-        + delta_fun(stho, temp, p_o2_l, dh_2, ((1 - act) / 2))
+    return delta_fun(stho, temp, p_o2_l, dh_1, (act / 2)) + +delta_fun(
+        stho, temp, p_o2_l, dh_2, ((1 - act) / 2)
+    )
 
 
 def delta_fun(stho, temp, p_o2_l, dh, d_max):
-    common = pd.np.exp(stho*d_max/R)
-    common *= pd.np.exp(p_o2_l)**(-d_max/2.)
-    common *= pd.np.exp(-dh*d_max/(R*temp))
-    return d_max * common / (1. + common)
+    common = pd.np.exp(stho * d_max / R)
+    common *= pd.np.exp(p_o2_l) ** (-d_max / 2.0)
+    common *= pd.np.exp(-dh * d_max / (R * temp))
+    return d_max * common / (1.0 + common)
 
 
 def funciso_redox(po2, delta, x, p, s_th):
     dh, ds = dh_ds(delta, s_th, p)
-    return dh - x*ds + R*po2*x/2
+    return dh - x * ds + R * po2 * x / 2
 
 
 def funciso_redox_theo(po2, delta, x, p, t_d_perov, t_d_brownm, dh_min, dh_max, act):
     dh = d_h_num_dev_calc(delta=delta, dh_1=dh_min, dh_2=dh_max, temp=x, act=act)
     ds = d_s_fundamental(
-        delta=delta, dh_1=dh_min, dh_2=dh_max, temp=x, act=act, t_d_perov=t_d_perov, t_d_brownm=t_d_brownm
+        delta=delta,
+        dh_1=dh_min,
+        dh_2=dh_max,
+        temp=x,
+        act=act,
+        t_d_perov=t_d_perov,
+        t_d_brownm=t_d_brownm,
     )
-    return dh - x*ds + R*po2*x/2
+    return dh - x * ds + R * po2 * x / 2
 
 
 def isobar_line_elling(iso, x):
-    return -R*iso*x/2
+    return -R * iso * x / 2
 
 
 def init_isographs(cid, plot_type, payload):
-    mask = ['identifier', 'data']
+    mask = ["identifier", "data"]
     contrib = Contributions.objects.only(*mask).get(id=cid)
     data = {}
-    for k, v in nested_to_record(contrib.data, sep='.').items():
-        if not k.endswith('.display') and not k.endswith('.unit'):
-            if k.endswith('.value'):
-                kk = k.rsplit('.', 1)[0]
+    for k, v in nested_to_record(contrib.data, sep=".").items():
+        if not k.endswith(".display") and not k.endswith(".unit"):
+            if k.endswith(".value"):
+                kk = k.rsplit(".", 1)[0]
                 data[kk] = float(v.to_decimal())
             else:
                 data[k] = v
 
-    data['compstr_disp'] = remove_comp_one(data['formula'])  # for user display
-    if data['compstr_disp'] == data['formula']:
-        data['formula'] = add_comp_one(data['formula'])  # compstr must contain '1' such as in "Sr1Fe1Ox"
-    data['compstr_disp'] = [''.join(g) for _, g in groupby(str(data['compstr_disp']), str.isalpha)]
+    data["compstr_disp"] = remove_comp_one(data["formula"])  # for user display
+    if data["compstr_disp"] == data["formula"]:
+        data["formula"] = add_comp_one(
+            data["formula"]
+        )  # compstr must contain '1' such as in "Sr1Fe1Ox"
+    data["compstr_disp"] = [
+        "".join(g) for _, g in groupby(str(data["compstr_disp"]), str.isalpha)
+    ]
 
-    data['experimental_data_available'] = data.get('fit_type_entr')
-    if data['experimental_data_available']:
-        data['compstr_exp'] = data['oxidized_phase.composition']
-        data['compstr_exp'] = [''.join(g) for _, g in groupby(str(data['compstr_exp']), str.isalpha)]
+    data["experimental_data_available"] = data.get("fit_type_entr")
+    if data["experimental_data_available"]:
+        data["compstr_exp"] = data["oxidized_phase.composition"]
+        data["compstr_exp"] = [
+            "".join(g) for _, g in groupby(str(data["compstr_exp"]), str.isalpha)
+        ]
     else:
-        data['compstr_exp'] = "n.a."
+        data["compstr_exp"] = "n.a."
 
-    data['td_perov'] = data["debye_temp.perovskite"]
-    data['td_brownm'] = data["debye_temp.brownmillerite"]
-    data['tens_avail'] = data["tensors_available"]
+    data["td_perov"] = data["debye_temp.perovskite"]
+    data["td_brownm"] = data["debye_temp.brownmillerite"]
+    data["tens_avail"] = data["tensors_available"]
 
-    a, b = 1e-10, 0.5-1e-10  # limiting values for non-stoichiometry delta in brentq
+    a, b = 1e-10, 0.5 - 1e-10  # limiting values for non-stoichiometry delta in brentq
 
-    if plot_type == "isotherm":                          # pressure on the x-axis
-        x_val = pd.np.log(pd.np.logspace(payload['rng'][0], payload['rng'][1], num=100))
-    elif not payload.get('rng'):   # dH or dS           # delta on the x-axis
+    if plot_type == "isotherm":  # pressure on the x-axis
+        x_val = pd.np.log(pd.np.logspace(payload["rng"][0], payload["rng"][1], num=100))
+    elif not payload.get("rng"):  # dH or dS           # delta on the x-axis
         x_val = pd.np.linspace(0.01, 0.49, num=100)
-    else:                                               # temperature on the x-axis
-        x_val = pd.np.linspace(payload['rng'][0], payload['rng'][1], num=100)
+    else:  # temperature on the x-axis
+        x_val = pd.np.linspace(payload["rng"][0], payload["rng"][1], num=100)
 
     return data, a, b, x_val
 
@@ -480,31 +554,33 @@ class IsographView(SwaggerView):
                     items:
                         type: object
         """
-        rng = request.args.get('rng')
+        rng = request.args.get("rng")
         if rng:
-            rng = list(map(float, rng.split(',')))
-        iso = float(request.args['iso'])
+            rng = list(map(float, rng.split(",")))
+        iso = float(request.args["iso"])
         payload = {"iso": iso, "rng": rng}
         pars, a, b, x_val = init_isographs(cid, plot_type, payload)
         if plot_type == "ellingham":
-            payload['iso'] = pd.np.log(10**payload['iso'])
-            delt = request.args.get('del')
+            payload["iso"] = pd.np.log(10 ** payload["iso"])
+            delt = request.args.get("del")
             if delt:
-                payload['del'] = float(delt)
+                payload["del"] = float(delt)
 
         resiso, resiso_theo, ellingiso = [], [], []
-        if pars['experimental_data_available']:     # only execute this if experimental data is available
-            for xv in x_val:                # calculate experimental data
+        if pars[
+            "experimental_data_available"
+        ]:  # only execute this if experimental data is available
+            for xv in x_val:  # calculate experimental data
                 try:
                     if plot_type in ["isobar", "isoredox", "ellingham"]:
                         s_th = s_th_o(xv)
-                        args = (payload['iso'], xv, pars, s_th)
+                        args = (payload["iso"], xv, pars, s_th)
                     elif plot_type == "isotherm":
-                        s_th = s_th_o(payload['iso'])
-                        args = (xv, payload['iso'], pars, s_th)
+                        s_th = s_th_o(payload["iso"])
+                        args = (xv, payload["iso"], pars, s_th)
                     elif plot_type == "enthalpy_dH" or plot_type == "entropy_dS":
-                        s_th = s_th_o(payload['iso'])
-                        args = (payload['iso'], xv, pars, s_th)
+                        s_th = s_th_o(payload["iso"])
+                        args = (payload["iso"], xv, pars, s_th)
 
                     if plot_type == "isoredox":
                         solutioniso = brentq(funciso_redox, -300, 300, args=args)
@@ -520,64 +596,105 @@ class IsographView(SwaggerView):
                         resiso.append(solutioniso)
                     elif plot_type == "ellingham":
                         dh_ds_vals = dh_ds(payload["del"], args[-1], args[-2])
-                        solutioniso = (dh_ds_vals[0] - dh_ds_vals[1] * xv) / 1000.
+                        solutioniso = (dh_ds_vals[0] - dh_ds_vals[1] * xv) / 1000.0
                         resiso.append(solutioniso)
-                        ellingiso.append(isobar_line_elling(args[0], xv) / 1000.)
-                except ValueError:          # if brentq function finds no zero point due to plot out of range
+                        ellingiso.append(isobar_line_elling(args[0], xv) / 1000.0)
+                except ValueError:  # if brentq function finds no zero point due to plot out of range
                     resiso.append(None)
 
             res_interp, res_fit = [], []
-            for delta_val, res_i in zip(x_val, resiso):    # show interpolation
-                if pars['delta_min'] < delta_val < pars['delta_max']:  # result within experimentally covered δ range
+            for delta_val, res_i in zip(x_val, resiso):  # show interpolation
+                if (
+                    pars["delta_min"] < delta_val < pars["delta_max"]
+                ):  # result within experimentally covered δ range
                     res_fit.append(res_i)
                     res_interp.append(None)
-                else:                                   # result outside this range
+                else:  # result outside this range
                     res_fit.append(None)
                     res_interp.append(res_i)
         else:
-            res_fit, res_interp = None, None    # don't plot any experimental data if it is not available
+            res_fit, res_interp = (
+                None,
+                None,
+            )  # don't plot any experimental data if it is not available
 
-        try:                                # calculate theoretical data
-            for xv in x_val[::4]:  # use less data points for theoretical graphs to improve speed
-                if plot_type in ["isobar", "isoredox", "enthalpy_dH", "entropy_dS", "ellingham"]:
-                    args_theo = (payload['iso'], xv)
+        try:  # calculate theoretical data
+            for xv in x_val[
+                ::4
+            ]:  # use less data points for theoretical graphs to improve speed
+                if plot_type in [
+                    "isobar",
+                    "isoredox",
+                    "enthalpy_dH",
+                    "entropy_dS",
+                    "ellingham",
+                ]:
+                    args_theo = (payload["iso"], xv)
                 elif plot_type == "isotherm":
-                    args_theo = (xv, payload['iso'])
+                    args_theo = (xv, payload["iso"])
                 args_theo = args_theo + (
-                    pars, pars['td_perov'], pars['td_brownm'],
-                    pars["dh_min"], pars["dh_max"], pars["act_mat"]
+                    pars,
+                    pars["td_perov"],
+                    pars["td_brownm"],
+                    pars["dh_min"],
+                    pars["dh_max"],
+                    pars["act_mat"],
                 )
 
                 if plot_type == "isoredox":
                     try:
-                        solutioniso_theo = brentq(funciso_redox_theo, -300, 300, args=args_theo)
+                        solutioniso_theo = brentq(
+                            funciso_redox_theo, -300, 300, args=args_theo
+                        )
                     except ValueError:
-                        solutioniso_theo = brentq(funciso_redox_theo, -100, 100, args=args_theo)
+                        solutioniso_theo = brentq(
+                            funciso_redox_theo, -100, 100, args=args_theo
+                        )
                     resiso_theo.append(pd.np.exp(solutioniso_theo))
                 elif plot_type == "isotherm" or plot_type == "isobar":
                     solutioniso_theo = rootfind(a, b, args_theo, funciso_theo)
                     resiso_theo.append(solutioniso_theo)
                 elif plot_type == "enthalpy_dH":
-                    solutioniso_theo = d_h_num_dev_calc(
-                        delta=xv, dh_1=pars["dh_min"], dh_2=pars["dh_max"],
-                        temp=payload['iso'], act=pars["act_mat"]
-                    ) / 1000.
+                    solutioniso_theo = (
+                        d_h_num_dev_calc(
+                            delta=xv,
+                            dh_1=pars["dh_min"],
+                            dh_2=pars["dh_max"],
+                            temp=payload["iso"],
+                            act=pars["act_mat"],
+                        )
+                        / 1000.0
+                    )
                     resiso_theo.append(solutioniso_theo)
                 elif plot_type == "entropy_dS":
                     solutioniso_theo = d_s_fundamental(
-                        delta=xv, dh_1=pars["dh_min"], dh_2=pars["dh_max"], temp=payload['iso'],
-                        act=pars["act_mat"], t_d_perov=pars['td_perov'], t_d_brownm=pars['td_brownm']
+                        delta=xv,
+                        dh_1=pars["dh_min"],
+                        dh_2=pars["dh_max"],
+                        temp=payload["iso"],
+                        act=pars["act_mat"],
+                        t_d_perov=pars["td_perov"],
+                        t_d_brownm=pars["td_brownm"],
                     )
                     resiso_theo.append(solutioniso_theo)
                 elif plot_type == "ellingham":
                     dh = d_h_num_dev_calc(
-                        delta=payload["del"], dh_1=pars['dh_min'], dh_2=pars['dh_max'], temp=xv, act=pars["act_mat"]
+                        delta=payload["del"],
+                        dh_1=pars["dh_min"],
+                        dh_2=pars["dh_max"],
+                        temp=xv,
+                        act=pars["act_mat"],
                     )
                     ds = d_s_fundamental(
-                        delta=payload["del"], dh_1=pars['dh_min'], dh_2=pars['dh_max'], temp=xv,
-                        act=pars["act_mat"], t_d_perov=pars['td_perov'], t_d_brownm=pars['td_brownm']
+                        delta=payload["del"],
+                        dh_1=pars["dh_min"],
+                        dh_2=pars["dh_max"],
+                        temp=xv,
+                        act=pars["act_mat"],
+                        t_d_perov=pars["td_perov"],
+                        t_d_brownm=pars["td_brownm"],
                     )
-                    solutioniso_theo = (dh - ds * xv) / 1000.
+                    solutioniso_theo = (dh - ds * xv) / 1000.0
                     resiso_theo.append(solutioniso_theo)
         except ValueError:  # if brentq function finds no zero point due to plot out of range
             resiso_theo.append(None)
@@ -585,44 +702,67 @@ class IsographView(SwaggerView):
         x = list(pd.np.exp(x_val)) if plot_type == "isotherm" else list(x_val)
         x_theo = x[::4]
         x_exp = None
-        if pars['experimental_data_available']:
+        if pars["experimental_data_available"]:
             x_exp = x
         elif plot_type == "ellingham":
             x_exp = None
             for xv in x_theo:
-                ellingiso.append(isobar_line_elling(payload["iso"], xv) / 1000.)
+                ellingiso.append(isobar_line_elling(payload["iso"], xv) / 1000.0)
 
         y_min, y_max = 0, 0
         if plot_type == "enthalpy_dH":
-            if max(pd.np.append(resiso, resiso_theo)) > (pars['dh_max'] * 0.0015):    # limiting values for the plot
-                y_max = pars['dh_max'] * 0.0015
+            if max(pd.np.append(resiso, resiso_theo)) > (
+                pars["dh_max"] * 0.0015
+            ):  # limiting values for the plot
+                y_max = pars["dh_max"] * 0.0015
             else:
-                y_max = max(pd.np.append(resiso, resiso_theo))*1.2
+                y_max = max(pd.np.append(resiso, resiso_theo)) * 1.2
             if min(pd.np.append(resiso, resiso_theo)) < -10:
                 y_min = -10
             else:
                 y_min = min(pd.np.append(resiso, resiso_theo)) * 0.8
         elif plot_type == "entropy_dS":
-            y_min = -10             # limiting values for the plot
+            y_min = -10  # limiting values for the plot
             if max(pd.np.append(resiso, resiso_theo)) > 250:
                 y_max = 250
             else:
                 y_max = max(pd.np.append(resiso, resiso_theo)) * 1.2
 
         response = [
-            {'x': x_exp, 'y': res_fit, 'name': "exp_fit", 'line': {'color': 'rgb(5,103,166)', 'width': 2.5}},
-            {'x': x_exp, 'y': res_interp, 'name': "exp_interp",
-             'line': {'color': 'rgb(5,103,166)', 'width': 2.5, 'dash': 'dot'}},
-            {'x': x_theo, 'y': resiso_theo, 'name': "theo", 'line': {'color': 'rgb(217,64,41)', 'width': 2.5}},
+            {
+                "x": x_exp,
+                "y": res_fit,
+                "name": "exp_fit",
+                "line": {"color": "rgb(5,103,166)", "width": 2.5},
+            },
+            {
+                "x": x_exp,
+                "y": res_interp,
+                "name": "exp_interp",
+                "line": {"color": "rgb(5,103,166)", "width": 2.5, "dash": "dot"},
+            },
+            {
+                "x": x_theo,
+                "y": resiso_theo,
+                "name": "theo",
+                "line": {"color": "rgb(217,64,41)", "width": 2.5},
+            },
             [y_min, y_max],
-            [pars['compstr_disp'], pars['compstr_exp'], pars['tens_avail'], pars["last_updated"]]
+            [
+                pars["compstr_disp"],
+                pars["compstr_exp"],
+                pars["tens_avail"],
+                pars["last_updated"],
+            ],
         ]
         if plot_type == "ellingham":
             response[-2] = {
-                'x': x_theo if x_exp is None else x_exp, 'y': ellingiso,
-                'name': 'isobar line', 'line': {'color': 'rgb(100,100,100)', 'width': 2.5}
+                "x": x_theo if x_exp is None else x_exp,
+                "y": ellingiso,
+                "name": "isobar line",
+                "line": {"color": "rgb(100,100,100)", "width": 2.5},
             }
-        return {'data': response}
+        return {"data": response}
 
 
 class WaterSplitting:
@@ -681,7 +821,7 @@ class CO2Splitting:
         Uses linear fits of data in Barin, Thermochemical Data of Pure Substances
         :return: dg_zero
         """
-        dg_zero_co2 = (temp ** 2) * 9.44E-7 - (0.0032113 * temp) - 393.523
+        dg_zero_co2 = (temp ** 2) * 9.44e-7 - (0.0032113 * temp) - 393.523
         dg_zero_co = -0.0876385 * temp - 111.908
 
         dg_zero = (-dg_zero_co2 + dg_zero_co) * 1000
@@ -747,8 +887,13 @@ class EnergyAnalysis:
 
         temp_frac = temp / 1000
 
-        c_p_water = shomdat[0] + (shomdat[1] * temp_frac) + (shomdat[2] * (temp_frac ** 2)) + (
-            shomdat[3] * (temp_frac ** 3)) + (shomdat[4] / (temp_frac ** 2))
+        c_p_water = (
+            shomdat[0]
+            + (shomdat[1] * temp_frac)
+            + (shomdat[2] * (temp_frac ** 2))
+            + (shomdat[3] * (temp_frac ** 3))
+            + (shomdat[4] / (temp_frac ** 2))
+        )
 
         return c_p_water
 
@@ -764,7 +909,9 @@ class EnergyAnalysis:
             shomdat = [41.96126, 8.622053, -1.499780, 0.098119, -11.15764]
         temp_frac = temp / 1000
 
-        c_p_steam = shomdat[0] + (shomdat[1] * temp_frac) + (shomdat[2] * (temp_frac ** 2))
+        c_p_steam = (
+            shomdat[0] + (shomdat[1] * temp_frac) + (shomdat[2] * (temp_frac ** 2))
+        )
         c_p_steam += (shomdat[3] * (temp_frac ** 3)) + (shomdat[4] / (temp_frac ** 2))
 
         return c_p_steam
@@ -782,7 +929,9 @@ class EnergyAnalysis:
         else:
             cv_p = []
             for i in range(len(t_ratio)):
-                cv_i = 9 * R * (t_ratio[i] ** 3) * quad(integrand, 0, t_ratio[i] ** -1)[0]
+                cv_i = (
+                    9 * R * (t_ratio[i] ** 3) * quad(integrand, 0, t_ratio[i] ** -1)[0]
+                )
                 cv_p = pd.np.append(cv_p, cv_i)
         return cv_p * 5
 
@@ -798,7 +947,9 @@ class EnergyAnalysis:
         return temp, cv_m
 
     @staticmethod
-    def heat_input_linear(temp_1, temp_2, delta_1, delta_2, t_d_perov, t_d_brownm, num=40):
+    def heat_input_linear(
+        temp_1, temp_2, delta_1, delta_2, t_d_perov, t_d_brownm, num=40
+    ):
         """
         Uses an approximation to calculate the integral c(T, delta)*T dT by splitting the interval into a number of
         slices with constant c
@@ -838,7 +989,10 @@ class EnergyAnalysis:
                     dq = 0
                     for i in range(len(delta_x0_x1)):
                         cv_step = EnergyAnalysis().get_heat_capacity_mixed(
-                            temp_x0_x1[i], delta_x0_x1[i], td_p=t_d_perov, td_b=t_d_brownm
+                            temp_x0_x1[i],
+                            delta_x0_x1[i],
+                            td_p=t_d_perov,
+                            td_b=t_d_brownm,
                         )[1]
                         q_step = cv_step * del_temp
                         dq += q_step
@@ -872,7 +1026,9 @@ class EnergyAnalysis:
 
         except TypeError:
             dq = None
-            raise ValueError("Elastic tensors or crystal structures not available for this set of materials.")
+            raise ValueError(
+                "Elastic tensors or crystal structures not available for this set of materials."
+            )
 
         return dq
 
@@ -928,8 +1084,19 @@ class EnergyAnalysis:
         return total_energy / 1000
 
     @staticmethod
-    def energy_integral_theo(enth_steps, celsius, temp_1, temp_2, compstr, dh_min, dh_max, t_d_perov, t_d_brownm,
-                             p_o_2_1, p_o_2_2):
+    def energy_integral_theo(
+        enth_steps,
+        celsius,
+        temp_1,
+        temp_2,
+        compstr,
+        dh_min,
+        dh_max,
+        t_d_perov,
+        t_d_brownm,
+        p_o_2_1,
+        p_o_2_2,
+    ):
         """
         Determines the chemical energy change using theoretical data. All variables explained in
         EnergyAnalysis.calc
@@ -946,19 +1113,32 @@ class EnergyAnalysis:
         else:
             tempval = pd.np.linspace(temp_1, temp_2, num=enth_steps)
 
-        p_val = pd.np.logspace(pd.np.log10(p_o_2_1), pd.np.log10(p_o_2_2), num=enth_steps)
+        p_val = pd.np.logspace(
+            pd.np.log10(p_o_2_1), pd.np.log10(p_o_2_2), num=enth_steps
+        )
         sample_spl = split_comp(compstr)
         act = find_active(mat_comp=sample_spl)[1]
 
         delta_vals = []
         for i in range(len(tempval)):
-            args_theo = (pd.np.log(p_val[i]), tempval[i], None, t_d_perov, t_d_brownm, dh_min, dh_max, act)
-            delta_val_i = rootfind(1e-10, 0.5-1e-10, args_theo, funciso_theo)
+            args_theo = (
+                pd.np.log(p_val[i]),
+                tempval[i],
+                None,
+                t_d_perov,
+                t_d_brownm,
+                dh_min,
+                dh_max,
+                act,
+            )
+            delta_val_i = rootfind(1e-10, 0.5 - 1e-10, args_theo, funciso_theo)
             delta_vals = pd.np.append(delta_vals, delta_val_i)
 
         dh_vals = []
         for i in range(len(tempval)):
-            dh_i = d_h_num_dev_calc(delta=delta_vals[i], dh_1=dh_min, dh_2=dh_max, temp=tempval[i], act=act)
+            dh_i = d_h_num_dev_calc(
+                delta=delta_vals[i], dh_1=dh_min, dh_2=dh_max, temp=tempval[i], act=act
+            )
             dh_vals = pd.np.append(dh_vals, dh_i)
 
         # calculate energy stepwise
@@ -985,8 +1165,8 @@ class EnergyAnalysis:
         :return: pump_ener_envelope:    mechanical energy required to pump one mol of O
         """
 
-        if (p_red < 1E-6) or (p_red > 0.7):
-            q_pump = float('inf') # mechanical envelope not applicable in this range
+        if (p_red < 1e-6) or (p_red > 0.7):
+            q_pump = float("inf")  # mechanical envelope not applicable in this range
         else:
             eff_sol = 0.4
 
@@ -999,9 +1179,15 @@ class EnergyAnalysis:
             p0 = 1e5
             p = p_red * p0
 
-            eff = a0 + a1*pd.np.log10(p/p0) + a2*(pd.np.log10(p/p0))**2 + a3*(pd.np.log10(p/p0))**3 + a4*(pd.np.log10(p/p0))**4
-            q_iso=R*temp*pd.np.log(p0/p)
-            q_pump=(q_iso/eff) / eff_sol
+            eff = (
+                a0
+                + a1 * pd.np.log10(p / p0)
+                + a2 * (pd.np.log10(p / p0)) ** 2
+                + a3 * (pd.np.log10(p / p0)) ** 3
+                + a4 * (pd.np.log10(p / p0)) ** 4
+            )
+            q_iso = R * temp * pd.np.log(p0 / p)
+            q_pump = (q_iso / eff) / eff_sol
             q_pump = q_pump / 2000
 
         return q_pump
@@ -1033,11 +1219,11 @@ class EnergyAnalysis:
             f = -272.1797
 
         t_1000 = t_ox / 1000
-        hform = a*t_1000
-        hform += 0.5*b*(t_1000**2)
-        hform += (1/3.)*c*(t_1000**3)
-        hform += (1/4.)*c*(t_1000**4)
-        hform += -e/t_1000
+        hform = a * t_1000
+        hform += 0.5 * b * (t_1000 ** 2)
+        hform += (1 / 3.0) * c * (t_1000 ** 3)
+        hform += (1 / 4.0) * c * (t_1000 ** 4)
+        hform += -e / t_1000
         hform += f
 
         return hform
@@ -1072,11 +1258,11 @@ class EnergyAnalysis:
             e = -6.447293
             f = -425.9186
 
-        hco2 = a*t_1000
-        hco2 += 0.5*b*(t_1000**2)
-        hco2 += (1/3)*c*(t_1000**3)
-        hco2 += (1/4)*c*(t_1000**4)
-        hco2 += -e/t_1000
+        hco2 = a * t_1000
+        hco2 += 0.5 * b * (t_1000 ** 2)
+        hco2 += (1 / 3) * c * (t_1000 ** 3)
+        hco2 += (1 / 4) * c * (t_1000 ** 4)
+        hco2 += -e / t_1000
         hco2 += f
 
         # CO
@@ -1096,20 +1282,30 @@ class EnergyAnalysis:
             e = -3.282780
             f = -127.8375
 
-        hco = a*t_1000
-        hco += 0.5*b*(t_1000**2)
-        hco += (1/3)*c*(t_1000**3)
-        hco += (1/4)*c*(t_1000**4)
-        hco += -e/t_1000
+        hco = a * t_1000
+        hco += 0.5 * b * (t_1000 ** 2)
+        hco += (1 / 3) * c * (t_1000 ** 3)
+        hco += (1 / 4) * c * (t_1000 ** 4)
+        hco += -e / t_1000
         hco += f
 
-        return hco2-hco
+        return hco2 - hco
 
-    def calc(self, p_ox, p_red, t_ox, t_red, data_origin="Exp", data_use="combined",
-             enth_steps=30, sample_ident=-1, celsius=True, from_file=True,
-             heat_cap=True,
-             heat_cap_approx=True
-             ):
+    def calc(
+        self,
+        p_ox,
+        p_red,
+        t_ox,
+        t_red,
+        data_origin="Exp",
+        data_use="combined",
+        enth_steps=30,
+        sample_ident=-1,
+        celsius=True,
+        from_file=True,
+        heat_cap=True,
+        heat_cap_approx=True,
+    ):
 
         """
         Performs an energy analysis using experimental data.
@@ -1163,7 +1359,7 @@ class EnergyAnalysis:
             temp_1_corr = t_ox
             temp_2_corr = t_red
 
-        if data_origin == "Exp": # currently not in use for updates of existing data
+        if data_origin == "Exp":  # currently not in use for updates of existing data
             # load experimental sample data from file
             path = os.path.abspath("")
             filepath = os.path.join(path, "exp_data.json")
@@ -1177,7 +1373,9 @@ class EnergyAnalysis:
             p_ox = CO2Splitting().get_po2(temp=temp_1_corr, co_co2=p_ox)
 
         # iterate over samples
-        if isinstance(sample_ident, collections.Sized) and not isinstance(sample_ident, str):
+        if isinstance(sample_ident, collections.Sized) and not isinstance(
+            sample_ident, str
+        ):
             no_range = range(len(sample_ident))
             sample = None
         else:
@@ -1194,20 +1392,48 @@ class EnergyAnalysis:
                     sample_ident = no_range
                 else:
                     if not from_file:
-                        filename = os.path.join(os.path.abspath('..'), "datafiles", "perovskite_theo_list.csv")
+                        filename = os.path.join(
+                            os.path.abspath(".."),
+                            "datafiles",
+                            "perovskite_theo_list.csv",
+                        )
                         if not os.path.exists(filename):
-                            raise ImportError("File 'perovskite_theo_list.csv' not found.")
+                            raise ImportError(
+                                "File 'perovskite_theo_list.csv' not found."
+                            )
                         fo = open(filename, "rb")
-                        sample_ident = pd.np.genfromtxt(fo, dtype='str', delimiter=",", skip_header=1)
+                        sample_ident = pd.np.genfromtxt(
+                            fo, dtype="str", delimiter=",", skip_header=1
+                        )
                         fo.close()
                     else:
                         sampledata = views.get_theo_data()
                         sample_ident = sampledata["compstr"]
                     no_range = range(len(sample_ident))
 
-        sample_l, chemical_energy_l, sensible_energy_l, mol_mass_ox_l, prodstr_alt_l = [], [], [], [], []
-        mol_prod_mol_red_l, t_ox_l, t_red_l, p_ox_l, p_red_l, compstr_l = [], [], [], [], [], []
-        delta_1_l, delta_2_l, mass_redox_l, prodstr_l, l_prod_kg_red_l, g_prod_kg_red_l = [], [], [], [], [], []
+        sample_l, chemical_energy_l, sensible_energy_l, mol_mass_ox_l, prodstr_alt_l = (
+            [],
+            [],
+            [],
+            [],
+            [],
+        )
+        mol_prod_mol_red_l, t_ox_l, t_red_l, p_ox_l, p_red_l, compstr_l = (
+            [],
+            [],
+            [],
+            [],
+            [],
+            [],
+        )
+        (
+            delta_1_l,
+            delta_2_l,
+            mass_redox_l,
+            prodstr_l,
+            l_prod_kg_red_l,
+            g_prod_kg_red_l,
+        ) = ([], [], [], [], [], [])
         for i in no_range:
             if not sample:
                 sample = sample_ident[i]
@@ -1224,48 +1450,61 @@ class EnergyAnalysis:
                     compstr_x = compstr.split("Ox")[0]
 
                     # this formats the parameters the same way we have them in views.py
-                    fit_param_enth = {"a": float(expdata["dH_max"][exp_index]),
-                                      "b": float(expdata["dH_min"][exp_index]),
-                                      "c": float(expdata["t"][exp_index]),
-                                      "d": float(expdata["s"][exp_index])}
+                    fit_param_enth = {
+                        "a": float(expdata["dH_max"][exp_index]),
+                        "b": float(expdata["dH_min"][exp_index]),
+                        "c": float(expdata["t"][exp_index]),
+                        "d": float(expdata["s"][exp_index]),
+                    }
                     fit_type_entr = str(expdata["fit type entropy"][exp_index])
                     if fit_type_entr == "Dilute_Species":
-                        fit_par_ent = {"a": float(expdata["entr_dil_s_v"][exp_index]),
-                                          "b": float(expdata["entr_dil_a"][exp_index]),
-                                          "c": float(expdata["delta_0"][exp_index])}
+                        fit_par_ent = {
+                            "a": float(expdata["entr_dil_s_v"][exp_index]),
+                            "b": float(expdata["entr_dil_a"][exp_index]),
+                            "c": float(expdata["delta_0"][exp_index]),
+                        }
                     else:
-                        fit_par_ent = {"a": float(expdata["entr_solid_sol_s"][exp_index]),
-                                          "b": float(expdata["entr_solid_sol_shift"][exp_index]),
-                                          "c": float(expdata["delta_0"][exp_index])}
+                        fit_par_ent = {
+                            "a": float(expdata["entr_solid_sol_s"][exp_index]),
+                            "b": float(expdata["entr_solid_sol_shift"][exp_index]),
+                            "c": float(expdata["delta_0"][exp_index]),
+                        }
                     theo_compstr = compstr
                     splitcomp = split_comp(compstr)
                     delta_0 = float(expdata["delta_0"][exp_index])
                     actf = find_active(mat_comp=splitcomp)[1]
                     act_mat = {"Material": float(actf)}
-                    fit_param_fe = {"a": 231.062,
-                                      "b": -24.3338,
-                                      "c": 0.839785,
-                                      "d": 0.219157}
-                    pars = { "fit_par_ent": fit_par_ent,
-                            "fit_param_enth": fit_param_enth,
-                            "fit_type_entr": fit_type_entr,
-                            "delta_0": delta_0,
-                            "fit_param_fe": fit_param_fe,
-                            "act_mat": act_mat
-                            }
+                    fit_param_fe = {
+                        "a": 231.062,
+                        "b": -24.3338,
+                        "c": 0.839785,
+                        "d": 0.219157,
+                    }
+                    pars = {
+                        "fit_par_ent": fit_par_ent,
+                        "fit_param_enth": fit_param_enth,
+                        "fit_type_entr": fit_type_entr,
+                        "delta_0": delta_0,
+                        "fit_param_fe": fit_param_fe,
+                        "act_mat": act_mat,
+                    }
 
                     args_1 = (pd.np.log(p_ox), temp_1_corr, pars, s_th_o(temp_1_corr))
                     args_2 = (pd.np.log(p_red), temp_2_corr, pars, s_th_o(temp_2_corr))
-                    delta_1 = rootfind(1e-10, 0.5-1e-10, args_1, funciso)
-                    delta_2 = rootfind(1e-10, 0.5-1e-10, args_2, funciso)
+                    delta_1 = rootfind(1e-10, 0.5 - 1e-10, args_1, funciso)
+                    delta_2 = rootfind(1e-10, 0.5 - 1e-10, args_2, funciso)
 
                     # use theoretical elastic tensors
                     sampledata = views.get_theo_data()
                     for z in range(len(sampledata["compstr"])):
-                        if (sampledata["compstr"][z]).split("O3")[0] == compstr.split("Ox")[0]:
+                        if (sampledata["compstr"][z]).split("O3")[0] == compstr.split(
+                            "Ox"
+                        )[0]:
                             index_debye = z
                     t_d_perov = float(sampledata["Debye temp perovskite"][index_debye])
-                    t_d_brownm = float(sampledata["Debye temp brownmillerite"][index_debye])
+                    t_d_brownm = float(
+                        sampledata["Debye temp brownmillerite"][index_debye]
+                    )
                 else:
                     # if composition does not contain ones as stoichiometries, add them
                     sample = add_comp_one(compstr=sample)
@@ -1273,7 +1512,9 @@ class EnergyAnalysis:
                         try:
                             red_active = redenth_act(sample)
                         except TypeError:
-                            raise ValueError("Enthalpy data not available for this material.")
+                            raise ValueError(
+                                "Enthalpy data not available for this material."
+                            )
                         h_min = red_active[1]
                         h_max = red_active[2]
                         act = red_active[3]
@@ -1285,22 +1526,43 @@ class EnergyAnalysis:
                     compstr_x = compstr.split("O")[0]
 
                     if not from_file or si_first != -1:
-                        try: # get Debye temperatures for vibrational entropy
+                        try:  # get Debye temperatures for vibrational entropy
                             mp_ids = get_mpids_comps_perov_brownm(compstr=compstr)
                             t_d_perov = get_debye_temp(mp_ids[0])
                             t_d_brownm = get_debye_temp(mp_ids[1])
-                        except Exception as e: # if no elastic tensors or no data for this material is available
-                            mp_ids = ("mp-510624", "mp-561589") # using data for SrFeOx if no data is available (close approximation)
+                        except Exception as e:  # if no elastic tensors or no data for this material is available
+                            mp_ids = (
+                                "mp-510624",
+                                "mp-561589",
+                            )  # using data for SrFeOx if no data is available (close approximation)
                             t_d_perov = get_debye_temp(mp_ids[0])
                             t_d_brownm = get_debye_temp(mp_ids[1])
                     else:
                         t_d_perov = float(sampledata["Debye temp perovskite"][i])
                         t_d_brownm = float(sampledata["Debye temp brownmillerite"][i])
 
-                    args_theo_1 = (pd.np.log(p_ox), temp_1_corr, None, t_d_perov, t_d_brownm, h_min, h_max, act)
-                    delta_1 = rootfind(1e-10, 0.5-1e-10, args_theo_1, funciso_theo)
-                    args_theo_2 = (pd.np.log(p_red), temp_2_corr, None, t_d_perov, t_d_brownm, h_min, h_max, act)
-                    delta_2 = rootfind(1e-10, 0.5-1e-10, args_theo_2, funciso_theo)
+                    args_theo_1 = (
+                        pd.np.log(p_ox),
+                        temp_1_corr,
+                        None,
+                        t_d_perov,
+                        t_d_brownm,
+                        h_min,
+                        h_max,
+                        act,
+                    )
+                    delta_1 = rootfind(1e-10, 0.5 - 1e-10, args_theo_1, funciso_theo)
+                    args_theo_2 = (
+                        pd.np.log(p_red),
+                        temp_2_corr,
+                        None,
+                        t_d_perov,
+                        t_d_brownm,
+                        h_min,
+                        h_max,
+                        act,
+                    )
+                    delta_2 = rootfind(1e-10, 0.5 - 1e-10, args_theo_2, funciso_theo)
 
                 # calculate the mass change in %
                 comp_ox = compstr_x + "O" + str(float(3 - delta_1))
@@ -1320,21 +1582,23 @@ class EnergyAnalysis:
                     prodstr = "CO"
                     prodstr_alt = prodstr
                 else:
-                    raise ValueError("Process must be either Air Separation, Water Splitting, or CO2 Splitting!")
+                    raise ValueError(
+                        "Process must be either Air Separation, Water Splitting, or CO2 Splitting!"
+                    )
 
                 # only continue if the user-designated reduction step actually leads to reduction
                 # if not, set result to infinite
                 if delta_2 < delta_1:
-                    ener_i = pd.np.ones(5) * float('inf')
-                    per_kg_redox = pd.np.ones(5) * float('inf')
-                    per_kg_wh_redox = pd.np.ones(5) * float('inf')
-                    kj_mol_prod = pd.np.ones(5) * float('inf')
-                    energy_l = pd.np.ones(5) * float('inf')
-                    energy_l_wh = pd.np.ones(5) * float('inf')
-                    efficiency = float('inf')
-                    mol_prod_mol_red = float('inf')
-                    l_prod_kg_red = float('inf')
-                    g_prod_kg_red = float('inf')
+                    ener_i = pd.np.ones(5) * float("inf")
+                    per_kg_redox = pd.np.ones(5) * float("inf")
+                    per_kg_wh_redox = pd.np.ones(5) * float("inf")
+                    kj_mol_prod = pd.np.ones(5) * float("inf")
+                    energy_l = pd.np.ones(5) * float("inf")
+                    energy_l_wh = pd.np.ones(5) * float("inf")
+                    efficiency = float("inf")
+                    mol_prod_mol_red = float("inf")
+                    l_prod_kg_red = float("inf")
+                    g_prod_kg_red = float("inf")
 
                 else:
                     # mol product per mol of redox material
@@ -1345,7 +1609,9 @@ class EnergyAnalysis:
                     if self.process == "Air Separation":
                         l_prod_kg_red = l_prod_kg_red * 0.5
                     # g product per kg redox material
-                    g_prod_kg_red = float(Composition(prodstr).weight) * (l_prod_kg_red / 24.465)
+                    g_prod_kg_red = float(Composition(prodstr).weight) * (
+                        l_prod_kg_red / 24.465
+                    )
 
                     if data_origin == "Exp":
                         d_delta = delta_0
@@ -1358,22 +1624,47 @@ class EnergyAnalysis:
                     # chemical energy
                     if data_origin == "Exp":
                         s_th_mean = (s_th_o(temp_1_corr) + s_th_o(temp_1_corr)) / 2
+
                         def dh_func_exp(d_delta_func):
                             return dh_ds(d_delta_func, s_th_mean, pars)[0]
+
                         energy_integral_dh = quad(dh_func_exp, d_delta_1, d_delta_2)[0]
                         if energy_integral_dh < 0:
-                            raise ValueError("negative chemical energy due to insuffiencent experimental data...skipping this sample")
+                            raise ValueError(
+                                "negative chemical energy due to insuffiencent experimental data...skipping this sample"
+                            )
                     else:
-                        energy_integral_dh = EnergyAnalysis(process=self.process).energy_integral_theo(
-                             celsius=celsius, compstr=compstr, dh_max=h_max,
-                            dh_min=h_min, enth_steps=enth_steps, p_o_2_1=p_ox, p_o_2_2=p_red, temp_1=t_ox, temp_2=t_red,
-                            t_d_perov=t_d_perov, t_d_brownm = t_d_brownm)
+                        energy_integral_dh = EnergyAnalysis(
+                            process=self.process
+                        ).energy_integral_theo(
+                            celsius=celsius,
+                            compstr=compstr,
+                            dh_max=h_max,
+                            dh_min=h_min,
+                            enth_steps=enth_steps,
+                            p_o_2_1=p_ox,
+                            p_o_2_2=p_red,
+                            temp_1=t_ox,
+                            temp_2=t_red,
+                            t_d_perov=t_d_perov,
+                            t_d_brownm=t_d_brownm,
+                        )
 
                     # sensible energy
                     energy_sensible = 0
                     if heat_cap:
-                        energy_sensible = EnergyAnalysis().heat_input_linear(temp_1=temp_1_corr, temp_2=temp_2_corr, delta_1=delta_1,
-                            delta_2=delta_2, t_d_perov=t_d_perov, t_d_brownm=t_d_brownm, num=40) / 1000
+                        energy_sensible = (
+                            EnergyAnalysis().heat_input_linear(
+                                temp_1=temp_1_corr,
+                                temp_2=temp_2_corr,
+                                delta_1=delta_1,
+                                delta_2=delta_2,
+                                t_d_perov=t_d_perov,
+                                t_d_brownm=t_d_brownm,
+                                num=40,
+                            )
+                            / 1000
+                        )
 
                 chemical_energy_l.append(energy_integral_dh)
                 sensible_energy_l.append(energy_sensible)
@@ -1395,28 +1686,41 @@ class EnergyAnalysis:
             # skip this sample if the sample number does not exist
             except Exception as e:
                 pass
-                #print("No data for sample " + str(sample) + " found!" + str(e))
+                # print("No data for sample " + str(sample) + " found!" + str(e))
             sample = None
 
-        resdict = { "Chemical Energy": chemical_energy_l,
-                    "Sensible Energy": sensible_energy_l,
-                    "mol_mass_ox": mol_mass_ox_l,
-                    "mol_prod_mol_red": mol_prod_mol_red_l,
-                    "T_ox": t_ox_l,
-                    "T_red": t_red_l,
-                    "p_ox": p_ox_l,
-                    "p_red": p_red_l,
-                    "compstr": compstr_l,
-                    "delta_1": delta_1_l,
-                    "delta_2": delta_2_l,
-                    "mass_redox": mass_redox_l,
-                    "prodstr": prodstr_l,
-                    "prodstr_alt": prodstr_alt_l,
-                    "l_prod_kg_red": l_prod_kg_red_l,
-                    "g_prod_kg_red": g_prod_kg_red_l}
+        resdict = {
+            "Chemical Energy": chemical_energy_l,
+            "Sensible Energy": sensible_energy_l,
+            "mol_mass_ox": mol_mass_ox_l,
+            "mol_prod_mol_red": mol_prod_mol_red_l,
+            "T_ox": t_ox_l,
+            "T_red": t_red_l,
+            "p_ox": p_ox_l,
+            "p_red": p_red_l,
+            "compstr": compstr_l,
+            "delta_1": delta_1_l,
+            "delta_2": delta_2_l,
+            "mass_redox": mass_redox_l,
+            "prodstr": prodstr_l,
+            "prodstr_alt": prodstr_alt_l,
+            "l_prod_kg_red": l_prod_kg_red_l,
+            "g_prod_kg_red": g_prod_kg_red_l,
+        }
         return resdict
 
-    def on_the_fly(self, resdict, pump_ener, w_feed, h_rec, h_rec_steam, celsius=True, h_val="high", p_ox_wscs=0, rem_unstable=True):
+    def on_the_fly(
+        self,
+        resdict,
+        pump_ener,
+        w_feed,
+        h_rec,
+        h_rec_steam,
+        celsius=True,
+        h_val="high",
+        p_ox_wscs=0,
+        rem_unstable=True,
+    ):
         """
         Allows to calculate the energy input for different conditions rather quickly, without having to re-calculate
         the time-intensive chemical and sensible energy every time again
@@ -1471,24 +1775,24 @@ class EnergyAnalysis:
         result_val_mass_change = pd.np.empty(2)
 
         for rd in resdict:
-            chemical_energy = rd['Chemical Energy']
-            energy_sensible = rd['Sensible Energy']
-            t_ox = rd['T_ox']
-            t_red = rd['T_red']
+            chemical_energy = rd["Chemical Energy"]
+            energy_sensible = rd["Sensible Energy"]
+            t_ox = rd["T_ox"]
+            t_red = rd["T_red"]
             t_mean = (t_ox + t_red) / 2
-            delta_1 = rd['delta_1']
-            delta_2 = rd['delta_2']
-            g_prod_kg_red = rd['g_prod_kg_red']
-            l_prod_kg_red = rd['l_prod_kg_red']
-            mass_redox_i = rd['mass_redox']
-            mol_mass_ox = rd['mol_mass_ox']
-            mol_prod_mol_red = rd['mol_prod_mol_red']
-            p_ox = rd['p_ox']
-            p_red = rd['p_red']
-            compstr = rd['compstr']
-            prodstr = rd['prodstr']
-            prodstr_alt = rd['prodstr_alt']
-            unstable = rd['unstable']
+            delta_1 = rd["delta_1"]
+            delta_2 = rd["delta_2"]
+            g_prod_kg_red = rd["g_prod_kg_red"]
+            l_prod_kg_red = rd["l_prod_kg_red"]
+            mass_redox_i = rd["mass_redox"]
+            mol_mass_ox = rd["mol_mass_ox"]
+            mol_prod_mol_red = rd["mol_prod_mol_red"]
+            p_ox = rd["p_ox"]
+            p_red = rd["p_red"]
+            compstr = rd["compstr"]
+            prodstr = rd["prodstr"]
+            prodstr_alt = rd["prodstr_alt"]
+            unstable = rd["unstable"]
 
             # chemical energy stored in products
             if self.process == "Water Splitting":
@@ -1498,9 +1802,9 @@ class EnergyAnalysis:
             else:
                 dh_wscs = 0
 
-            energy_integral_dh = chemical_energy - ( (chemical_energy + dh_wscs) * h_rec )
+            energy_integral_dh = chemical_energy - ((chemical_energy + dh_wscs) * h_rec)
 
-            if len(resdict) < 50: # for experimental data: convert J/mol to kJ/mol
+            if len(resdict) < 50:  # for experimental data: convert J/mol to kJ/mol
                 energy_integral_dh = energy_integral_dh / 1000
                 # wscs does not matter, as no water splitting / co2 splitting is considered for exp data
 
@@ -1515,20 +1819,33 @@ class EnergyAnalysis:
 
             # steam generation
             if self.process == "Water Splitting" and h_rec_steam != 1:
-                energy_steam = mol_prod_mol_red * EnergyAnalysis().energy_steam_generation(temp_1=w_feed,
-                temp_2=((t_ox+t_red)*0.5)-273.15,
-                h_2_h2o=p_ox_wscs,
-                celsius=celsius,
-                h_rec=h_rec_steam)
+                energy_steam = mol_prod_mol_red * EnergyAnalysis().energy_steam_generation(
+                    temp_1=w_feed,
+                    temp_2=((t_ox + t_red) * 0.5) - 273.15,
+                    h_2_h2o=p_ox_wscs,
+                    celsius=celsius,
+                    h_rec=h_rec_steam,
+                )
             else:
                 energy_steam = 0
 
             # total energy
-            energy_total = energy_integral_dh  + energy_sensible * (1 - h_rec) + energy_pumping + energy_steam
+            energy_total = (
+                energy_integral_dh
+                + energy_sensible * (1 - h_rec)
+                + energy_pumping
+                + energy_steam
+            )
 
-            ener_i = pd.np.array([energy_total, energy_integral_dh, energy_sensible * (1 - h_rec),
-            energy_pumping,
-            energy_steam])
+            ener_i = pd.np.array(
+                [
+                    energy_total,
+                    energy_integral_dh,
+                    energy_sensible * (1 - h_rec),
+                    energy_pumping,
+                    energy_steam,
+                ]
+            )
 
             # kJ/kg of redox material
             per_kg_redox = (ener_i / mol_mass_ox) * 1000
@@ -1557,108 +1874,143 @@ class EnergyAnalysis:
                 # convert kJ/mol H2 to MJ/kg H2 -> divide by 2.016
                 efficiency = (h_v / (kj_mol_prod[0] / 2.016)) * 100
             else:
-                efficiency = float('-inf')
+                efficiency = float("-inf")
 
             delta_redox_i = float(delta_2 - delta_1)
             mass_change_i = float(mass_redox_i)
             compdisp = remove_comp_one(compstr=compstr)
 
-            invalid_val = False # remove data of unstable compounds
+            invalid_val = False  # remove data of unstable compounds
             if rem_unstable and unstable:
                 invalid_val = True
 
             # append new values to result and add compositions
-            if (ener_i[0] < 0) or invalid_val: # sort out negative values, heat input is always positive
-                ener_i[0] = float('inf')
+            if (
+                ener_i[0] < 0
+            ) or invalid_val:  # sort out negative values, heat input is always positive
+                ener_i[0] = float("inf")
             res_i = pd.np.append(ener_i, compdisp)
             result_val_ener_i = pd.np.vstack((result_val_ener_i, res_i))
 
             if per_kg_redox[0] < 0 or invalid_val:
-                per_kg_redox[0] = float('inf')
+                per_kg_redox[0] = float("inf")
             res_i = pd.np.append(per_kg_redox, compdisp)
             result_val_per_kg_redox = pd.np.vstack((result_val_per_kg_redox, res_i))
 
             if per_kg_wh_redox[0] < 0 or invalid_val:
-                per_kg_wh_redox[0] = float('inf')
+                per_kg_wh_redox[0] = float("inf")
             res_i = pd.np.append(per_kg_wh_redox, compdisp)
-            result_val_per_kg_wh_redox = pd.np.vstack((result_val_per_kg_wh_redox, res_i))
+            result_val_per_kg_wh_redox = pd.np.vstack(
+                (result_val_per_kg_wh_redox, res_i)
+            )
 
             if kj_mol_prod[0] < 0 or invalid_val:
-                kj_mol_prod[0] = float('inf')
+                kj_mol_prod[0] = float("inf")
             res_i = pd.np.append(kj_mol_prod, compdisp)
-            result_val_per_kj_mol_prod = pd.np.vstack((result_val_per_kj_mol_prod, res_i))
+            result_val_per_kj_mol_prod = pd.np.vstack(
+                (result_val_per_kj_mol_prod, res_i)
+            )
 
             if energy_l[0] < 0 or invalid_val:
-                energy_l[0] = float('inf')
+                energy_l[0] = float("inf")
             res_i = pd.np.append(energy_l, compdisp)
             result_val_per_energy_l = pd.np.vstack((result_val_per_energy_l, res_i))
 
             if energy_l_wh[0] < 0 or invalid_val:
-                energy_l_wh[0] = float('inf')
+                energy_l_wh[0] = float("inf")
             res_i = pd.np.append(energy_l_wh, compdisp)
-            result_val_per_energy_l_wh = pd.np.vstack((result_val_per_energy_l_wh, res_i))
+            result_val_per_energy_l_wh = pd.np.vstack(
+                (result_val_per_energy_l_wh, res_i)
+            )
 
             if efficiency < 0 or invalid_val:
-                efficiency = float('-inf')
+                efficiency = float("-inf")
             res_i = pd.np.append(efficiency, compdisp)
             result_val_efficiency = pd.np.vstack((result_val_efficiency, res_i))
 
             if mol_prod_mol_red < 0 or invalid_val:
-                mol_prod_mol_red = float('-inf')
+                mol_prod_mol_red = float("-inf")
             res_i = pd.np.append(mol_prod_mol_red, compdisp)
-            result_val_mol_prod_mol_red = pd.np.vstack((result_val_mol_prod_mol_red, res_i))
+            result_val_mol_prod_mol_red = pd.np.vstack(
+                (result_val_mol_prod_mol_red, res_i)
+            )
 
             if l_prod_kg_red < 0 or invalid_val:
-                l_prod_kg_red = float('-inf')
+                l_prod_kg_red = float("-inf")
             res_i = pd.np.append(l_prod_kg_red, compdisp)
             result_val_l_prod_kg_red = pd.np.vstack((result_val_l_prod_kg_red, res_i))
 
             if g_prod_kg_red < 0 or invalid_val:
-                g_prod_kg_red = float('-inf')
+                g_prod_kg_red = float("-inf")
             res_i = pd.np.append(g_prod_kg_red, compdisp)
             result_val_g_prod_kg_red = pd.np.vstack((result_val_g_prod_kg_red, res_i))
 
             if delta_redox_i < 0 or invalid_val:
-                delta_redox_i = float('-inf')
+                delta_redox_i = float("-inf")
             res_i = pd.np.append(delta_redox_i, compdisp)
             result_val_delta_redox = pd.np.vstack((result_val_delta_redox, res_i))
 
             if mass_change_i < 0 or invalid_val:
-                mass_change_i = float('-inf')
+                mass_change_i = float("-inf")
             res_i = pd.np.append(mass_change_i, compdisp)
             result_val_mass_change = pd.np.vstack((result_val_mass_change, res_i))
 
         # sort results
         result_val_ener_i = sorted(result_val_ener_i[1:], key=lambda x: float(x[0]))
-        result_val_per_kg_redox = sorted(result_val_per_kg_redox[1:], key=lambda x: float(x[0]))
-        result_val_per_kg_wh_redox = sorted(result_val_per_kg_wh_redox[1:], key=lambda x: float(x[0]))
-        result_val_per_kj_mol_prod = sorted(result_val_per_kj_mol_prod[1:], key=lambda x: float(x[0]))
-        result_val_per_energy_l = sorted(result_val_per_energy_l[1:], key=lambda x: float(x[0]))
-        result_val_per_energy_l_wh = sorted(result_val_per_energy_l_wh[1:], key=lambda x: float(x[0]))
+        result_val_per_kg_redox = sorted(
+            result_val_per_kg_redox[1:], key=lambda x: float(x[0])
+        )
+        result_val_per_kg_wh_redox = sorted(
+            result_val_per_kg_wh_redox[1:], key=lambda x: float(x[0])
+        )
+        result_val_per_kj_mol_prod = sorted(
+            result_val_per_kj_mol_prod[1:], key=lambda x: float(x[0])
+        )
+        result_val_per_energy_l = sorted(
+            result_val_per_energy_l[1:], key=lambda x: float(x[0])
+        )
+        result_val_per_energy_l_wh = sorted(
+            result_val_per_energy_l_wh[1:], key=lambda x: float(x[0])
+        )
         if self.process == "Water Splitting":
-            result_val_efficiency = sorted(result_val_efficiency[1:], key=lambda x: float(x[0]), reverse=True)
+            result_val_efficiency = sorted(
+                result_val_efficiency[1:], key=lambda x: float(x[0]), reverse=True
+            )
         else:
             result_val_efficiency = result_val_efficiency[1:]
-        result_val_mol_prod_mol_red = sorted(result_val_mol_prod_mol_red[1:], key=lambda x: float(x[0]), reverse=True)
-        result_val_l_prod_kg_red = sorted(result_val_l_prod_kg_red[1:], key=lambda x: float(x[0]), reverse=True)
-        result_val_g_prod_kg_red = sorted(result_val_g_prod_kg_red[1:], key=lambda x: float(x[0]), reverse=True)
-        result_val_delta_redox = sorted(result_val_delta_redox[1:], key=lambda x: float(x[0]), reverse=True)
-        result_val_mass_change = sorted(result_val_mass_change[1:], key=lambda x: float(x[0]), reverse=True)
+        result_val_mol_prod_mol_red = sorted(
+            result_val_mol_prod_mol_red[1:], key=lambda x: float(x[0]), reverse=True
+        )
+        result_val_l_prod_kg_red = sorted(
+            result_val_l_prod_kg_red[1:], key=lambda x: float(x[0]), reverse=True
+        )
+        result_val_g_prod_kg_red = sorted(
+            result_val_g_prod_kg_red[1:], key=lambda x: float(x[0]), reverse=True
+        )
+        result_val_delta_redox = sorted(
+            result_val_delta_redox[1:], key=lambda x: float(x[0]), reverse=True
+        )
+        result_val_mass_change = sorted(
+            result_val_mass_change[1:], key=lambda x: float(x[0]), reverse=True
+        )
 
         # create dictionary with results
-        dict_result = {"kJ/mol redox material": result_val_ener_i,
-                       "kJ/kg redox material": result_val_per_kg_redox,
-                       "Wh/kg redox material": result_val_per_kg_wh_redox,
-                       str("kJ/mol of " + prodstr_alt): result_val_per_kj_mol_prod,
-                       str("kJ/L of " + prodstr): result_val_per_energy_l,
-                       str("Wh/L of " + prodstr): result_val_per_energy_l_wh,
-                       "Heat to fuel efficiency in % (only valid for Water Splitting)": result_val_efficiency,
-                       str("mol " + prodstr_alt + " per mol redox material"): result_val_mol_prod_mol_red,
-                       str("L " + prodstr + " per mol redox material"): result_val_l_prod_kg_red,
-                       str("g " + prodstr + " per mol redox material"): result_val_g_prod_kg_red,
-                       "Change in non-stoichiometry between T_ox and T_red": result_val_delta_redox,
-                       "Mass change between T_ox and T_red": result_val_mass_change
-                       }
+        dict_result = {
+            "kJ/mol redox material": result_val_ener_i,
+            "kJ/kg redox material": result_val_per_kg_redox,
+            "Wh/kg redox material": result_val_per_kg_wh_redox,
+            str("kJ/mol of " + prodstr_alt): result_val_per_kj_mol_prod,
+            str("kJ/L of " + prodstr): result_val_per_energy_l,
+            str("Wh/L of " + prodstr): result_val_per_energy_l_wh,
+            "Heat to fuel efficiency in % (only valid for Water Splitting)": result_val_efficiency,
+            str(
+                "mol " + prodstr_alt + " per mol redox material"
+            ): result_val_mol_prod_mol_red,
+            str("L " + prodstr + " per mol redox material"): result_val_l_prod_kg_red,
+            str("g " + prodstr + " per mol redox material"): result_val_g_prod_kg_red,
+            "Change in non-stoichiometry between T_ox and T_red": result_val_delta_redox,
+            "Mass change between T_ox and T_red": result_val_mass_change,
+        }
 
         return dict_result
 
@@ -1745,8 +2097,8 @@ class EnergyAnalysisView(SwaggerView):
                         type: object
         """
         # generate database ID
-        data_source = "Theo" if request.args['data_source'] == "Theoretical" else "Exp"
-        process = request.args['process_type']
+        data_source = "Theo" if request.args["data_source"] == "Theoretical" else "Exp"
+        process = request.args["process_type"]
         if process == "Air Separation":
             db_id = "AS_"
         elif process == "Water Splitting":
@@ -1754,47 +2106,60 @@ class EnergyAnalysisView(SwaggerView):
         else:
             db_id = "CS_"
 
-        suffix = db_id + request.args['t_ox']
-        db_id += "{:.1f}_{:.1f}_{}_{}".format(*[
-            float(request.args.get(k)) for k in ['t_ox', 't_red', 'p_ox', 'p_red']
-        ]) + f"_{data_source}_20.0"
+        suffix = db_id + request.args["t_ox"]
+        db_id += (
+            "{:.1f}_{:.1f}_{}_{}".format(
+                *[
+                    float(request.args.get(k))
+                    for k in ["t_ox", "t_red", "p_ox", "p_red"]
+                ]
+            )
+            + f"_{data_source}_20.0"
+        )
 
         resdict = []
-        proj = {'data.$': 1, 'columns': 1, 'contribution': 1}
-        for a in ['stable', 'unstable']:
-            for b in ['O2-O', 'H2-H2', 'CO-CO']:
-                name = f'energy-analysis_{a}_{b}_{suffix}'
+        proj = {"data.$": 1, "columns": 1, "contribution": 1}
+        for a in ["stable", "unstable"]:
+            for b in ["O2-O", "H2-H2", "CO-CO"]:
+                name = f"energy-analysis_{a}_{b}_{suffix}"
                 objects = Tables.objects.filter(
-                    name=name, data__match={'0': db_id}
+                    name=name, data__match={"0": db_id}
                 ).fields(**proj)
                 for obj in objects:
-                    keys = obj['columns'][1:]
-                    values = map(float, obj['data'][0][1:])
+                    keys = obj["columns"][1:]
+                    values = map(float, obj["data"][0][1:])
                     dct = dict(zip(keys, values))
-                    dct['prodstr'], dct['prodstr_alt'] = b.split('-')
-                    dct['unstable'] = bool(a == 'unstable')
-                    dct['tid'] = obj['id']
-                    dct['cid'] = str(obj.contribution.id)
-                    dct['compstr'] = obj.contribution.data['formula']
+                    dct["prodstr"], dct["prodstr_alt"] = b.split("-")
+                    dct["unstable"] = bool(a == "unstable")
+                    dct["tid"] = obj["id"]
+                    dct["cid"] = str(obj.contribution.id)
+                    dct["compstr"] = obj.contribution.data["formula"]
                     resdict.append(dct)
 
-        response = [{"x": None, "y": None, "name": None, 'type': 'bar'} for i in range(4)]
-        try: # calculate specific results on the fly
-            #pump_ener = float(payload['pump_ener'].split("/")[0])
-            pump_energy = float(request.args['pump_ener'])
-            mech_env = request.args['mech_env']
-            if mech_env == "true" or mech_env == "True" or (isinstance(mech_env, bool) and mech_env):
+        response = [
+            {"x": None, "y": None, "name": None, "type": "bar"} for i in range(4)
+        ]
+        try:  # calculate specific results on the fly
+            # pump_ener = float(payload['pump_ener'].split("/")[0])
+            pump_energy = float(request.args["pump_ener"])
+            mech_env = request.args["mech_env"]
+            if (
+                mech_env == "true"
+                or mech_env == "True"
+                or (isinstance(mech_env, bool) and mech_env)
+            ):
                 pump_ener = -1
             results = EnergyAnalysis(process=process).on_the_fly(
-                resdict=resdict, pump_ener=pump_ener,
-                w_feed=float(request.args['w_feed']),
-                h_rec=float(request.args['h_rec']),
-                h_rec_steam=float(request.args['steam_h_rec']),
-                p_ox_wscs=float(request.args['p_ox'])
+                resdict=resdict,
+                pump_ener=pump_ener,
+                w_feed=float(request.args["w_feed"]),
+                h_rec=float(request.args["h_rec"]),
+                h_rec_steam=float(request.args["steam_h_rec"]),
+                p_ox_wscs=float(request.args["p_ox"]),
             )
-            prodstr = resdict[0]['prodstr']
-            prodstr_alt = resdict[0]['prodstr_alt']
-            param_disp = request.args['param_disp']
+            prodstr = resdict[0]["prodstr"]
+            prodstr_alt = resdict[0]["prodstr_alt"]
+            param_disp = request.args["param_disp"]
             if param_disp == "kJ/mol of product":
                 param_disp = str("kJ/mol of " + prodstr_alt)
             elif param_disp == "kJ/L of product":
@@ -1809,62 +2174,112 @@ class EnergyAnalysisView(SwaggerView):
                 param_disp = str("g " + prodstr + " per mol redox material")
             result = results[param_disp]
 
-            commonname = param_disp + ", \nT(ox)= " + request.args['t_ox'] + " °C, T(red) = " + request.args['t_red']
-            if request.args['process_type'] == "Air Separation":
-                titlestr = commonname + " °C, p(ox)= " + request.args['p_ox'] + " bar, p(red) = " + request.args['p_red'] + " bar"
-            elif request.args['process_type'] == "CO2 Splitting":
-                titlestr = commonname + " °C, pCO/pCO2(ox)= " + request.args['p_ox'] + ", p(red) = " + request.args['p_red'] + " bar"
+            commonname = (
+                param_disp
+                + ", \nT(ox)= "
+                + request.args["t_ox"]
+                + " °C, T(red) = "
+                + request.args["t_red"]
+            )
+            if request.args["process_type"] == "Air Separation":
+                titlestr = (
+                    commonname
+                    + " °C, p(ox)= "
+                    + request.args["p_ox"]
+                    + " bar, p(red) = "
+                    + request.args["p_red"]
+                    + " bar"
+                )
+            elif request.args["process_type"] == "CO2 Splitting":
+                titlestr = (
+                    commonname
+                    + " °C, pCO/pCO2(ox)= "
+                    + request.args["p_ox"]
+                    + ", p(red) = "
+                    + request.args["p_red"]
+                    + " bar"
+                )
             else:  # Water Splitting
-                titlestr = commonname + " °C, pH2/pH2O(ox)= " + request.args['p_ox'] + ", p(red) = " + request.args['p_red'] + " bar"
+                titlestr = (
+                    commonname
+                    + " °C, pH2/pH2O(ox)= "
+                    + request.args["p_ox"]
+                    + ", p(red) = "
+                    + request.args["p_red"]
+                    + " bar"
+                )
 
             # remove duplicates (if any)
             rem_pos = -1
             for elem in range(len(result)):
-                if elem > 0 and (result[elem][-1] == result[elem-1][-1]):
+                if elem > 0 and (result[elem][-1] == result[elem - 1][-1]):
                     to_remove = result[elem]
                     rem_pos = elem
             if rem_pos > -1:
                 result = [i for i in result if str(i) != str(to_remove)]
-                result.insert(rem_pos-1, to_remove)
+                result.insert(rem_pos - 1, to_remove)
 
-            result = [i for i in result if "inf" not in str(i[0])]      # this removes all inf values
-            cutoff = int(request.args['cutoff']) # this sets the number of materials to display in the graph
+            result = [
+                i for i in result if "inf" not in str(i[0])
+            ]  # this removes all inf values
+            cutoff = int(
+                request.args["cutoff"]
+            )  # this sets the number of materials to display in the graph
             result_part = result[:cutoff] if cutoff < len(result) else result
 
-            if len(result_part[0]) == 2:            # output if only one y-value per material is displayed
-                response[0]['x'] = [i[-1] for i in result_part]
-                response[0]['y'] = pd.np.array([i[0] for i in result_part]).astype(float).tolist()
-                response[0]['name'] = param_disp
+            if (
+                len(result_part[0]) == 2
+            ):  # output if only one y-value per material is displayed
+                response[0]["x"] = [i[-1] for i in result_part]
+                response[0]["y"] = (
+                    pd.np.array([i[0] for i in result_part]).astype(float).tolist()
+                )
+                response[0]["name"] = param_disp
                 if "non-stoichiometry" in param_disp:
-                    response[0]['name'] = name_0.split("between")[0] + " (Δδ)" #otherwise would be too long for y-axis label
+                    response[0]["name"] = (
+                        name_0.split("between")[0] + " (Δδ)"
+                    )  # otherwise would be too long for y-axis label
                 if "Mass change" in param_disp:
-                    response[0]['name'] = "mass change (%)"
+                    response[0]["name"] = "mass change (%)"
                 if "Heat to fuel efficiency" in param_disp:
-                    response[0]['name'] = "Heat to fuel efficiency (%)"
+                    response[0]["name"] = "Heat to fuel efficiency (%)"
 
-            else:                                  # display multiple values (such as chemical energy, sensible energy, ...)
-                response[0]['x'] = [i[-1] for i in result_part]
-                response[0]['y'] = pd.np.array([i[1] for i in result_part]).astype(float).tolist()
-                response[0]['name'] = "Chemical Energy"
-                response[1]['x'] = [i[-1] for i in result_part]
-                response[1]['y'] = pd.np.array([i[2] for i in result_part]).astype(float).tolist()
-                response[1]['name'] = "Sensible Energy"
-                response[2]['x'] = [i[-1] for i in result_part]
-                response[2]['y'] = pd.np.array([i[3] for i in result_part]).astype(float).tolist()
-                response[2]['name'] = "Pumping Energy"
-                if request.args['process_type'] == "Water Splitting":
-                    response[3]['x'] = [i[-1] for i in result_part]
-                    response[3]['y'] = pd.np.array([i[4] for i in result_part]).astype(float).tolist()
-                    response[3]['name'] = "Steam Generation"
-            response[0].update({'title': titlestr, 'yaxis_title': param_disp})
+            else:  # display multiple values (such as chemical energy, sensible energy, ...)
+                response[0]["x"] = [i[-1] for i in result_part]
+                response[0]["y"] = (
+                    pd.np.array([i[1] for i in result_part]).astype(float).tolist()
+                )
+                response[0]["name"] = "Chemical Energy"
+                response[1]["x"] = [i[-1] for i in result_part]
+                response[1]["y"] = (
+                    pd.np.array([i[2] for i in result_part]).astype(float).tolist()
+                )
+                response[1]["name"] = "Sensible Energy"
+                response[2]["x"] = [i[-1] for i in result_part]
+                response[2]["y"] = (
+                    pd.np.array([i[3] for i in result_part]).astype(float).tolist()
+                )
+                response[2]["name"] = "Pumping Energy"
+                if request.args["process_type"] == "Water Splitting":
+                    response[3]["x"] = [i[-1] for i in result_part]
+                    response[3]["y"] = (
+                        pd.np.array([i[4] for i in result_part]).astype(float).tolist()
+                    )
+                    response[3]["name"] = "Steam Generation"
+            response[0].update({"title": titlestr, "yaxis_title": param_disp})
 
-        except IndexError: # if the complete dict only shows inf, create empty graph
+        except IndexError:  # if the complete dict only shows inf, create empty graph
             pass
 
-        return {'data': response}
+        return {"data": response}
+
 
 # TODO these views do not check group permissions!
 isograph_view = IsographView.as_view(IsographView.__name__)
 energy_analysis_view = EnergyAnalysisView.as_view(EnergyAnalysisView.__name__)
-redox_thermo_csp.add_url_rule('/energy/', view_func=energy_analysis_view, methods=['GET'])
-redox_thermo_csp.add_url_rule('/<string:cid>/<string:plot_type>', view_func=isograph_view, methods=['GET'])
+redox_thermo_csp.add_url_rule(
+    "/energy/", view_func=energy_analysis_view, methods=["GET"]
+)
+redox_thermo_csp.add_url_rule(
+    "/<string:cid>/<string:plot_type>", view_func=isograph_view, methods=["GET"]
+)

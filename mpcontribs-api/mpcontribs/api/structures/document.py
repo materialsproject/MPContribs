@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from flask_mongoengine import Document
 from mongoengine import CASCADE, signals
 from mongoengine.fields import StringField, LazyReferenceField, BooleanField
@@ -8,20 +9,26 @@ from mpcontribs.api.notebooks.document import Notebooks
 
 class Structures(Document):
     contribution = LazyReferenceField(
-        Contributions, passthrough=True, reverse_delete_rule=CASCADE,
-        required=True, help_text="contribution this structure belongs to"
+        Contributions,
+        passthrough=True,
+        reverse_delete_rule=CASCADE,
+        required=True,
+        help_text="contribution this structure belongs to",
     )
-    is_public = BooleanField(required=True, default=False, help_text='public/private structure')
+    is_public = BooleanField(
+        required=True, default=False, help_text="public/private structure"
+    )
     name = StringField(required=True, help_text="structure name")
     label = StringField(required=True, help_text="structure label")
     lattice = DictField(required=True, help_text="lattice")
     sites = ListField(DictField(), required=True, help_text="sites")
-    charge = FloatField(null=True, help_text='charge')
+    charge = FloatField(null=True, help_text="charge")
     klass = StringField(help_text="@class")
     module = StringField(help_text="@module")
-    meta = {'collection': 'structures', 'indexes': [
-        'contribution', 'is_public', 'label'
-    ]}
+    meta = {
+        "collection": "structures",
+        "indexes": ["contribution", "is_public", "label"],
+    }
 
     @classmethod
     def post_save(cls, sender, document, **kwargs):

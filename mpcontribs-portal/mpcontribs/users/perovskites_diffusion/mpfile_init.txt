@@ -25,5 +25,3 @@ this database.
 
 {urls}
 main: https://doi.org/10.1016/j.ssi.2016.09.007
-
-

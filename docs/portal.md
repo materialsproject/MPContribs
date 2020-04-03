@@ -79,5 +79,3 @@ how to interact with a contribution programmatically along with the resulting ou
 navigation bar at the top provides links to jump to a respective component, toggle buttons
 to show/hide components, and a download button to retrieve the contribution in JSON
 format.
-
-

@@ -3837,4 +3837,3 @@ composition: SrCaTiMnO6
 {mp-1076384.data.reduced_phase}
 closest_MP: mp-1099877
 composition: SrCaTiMnO5
-

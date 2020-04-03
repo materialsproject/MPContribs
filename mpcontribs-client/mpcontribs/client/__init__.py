@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import os
 import fido
 
@@ -11,20 +12,23 @@ from bravado.http_future import HttpFuture
 from bravado.swagger_model import Loader
 
 
-DEFAULT_HOST = 'api.mpcontribs.org'
-HOST = os.environ.get('MPCONTRIBS_API_HOST', DEFAULT_HOST)
+DEFAULT_HOST = "api.mpcontribs.org"
+HOST = os.environ.get("MPCONTRIBS_API_HOST", DEFAULT_HOST)
 client = None
 
 
 def validate_email(email_string):
     d = is_email(email_string, diagnose=True)
     if d > BaseDiagnosis.CATEGORIES["VALID"]:
-        raise SwaggerValidationError(f'{email_string} {d.message}')
+        raise SwaggerValidationError(f"{email_string} {d.message}")
 
 
 email_format = SwaggerFormat(
-    format='email', to_wire=str, to_python=str,
-    validate=validate_email, description='e-mail address'
+    format="email",
+    to_wire=str,
+    to_python=str,
+    validate=validate_email,
+    description="e-mail address",
 )
 
 
@@ -35,9 +39,11 @@ class FidoClientGlobalHeaders(FidoClient):
 
     def request(self, request_params, operation=None, request_config=None):
         request_for_twisted = self.prepare_request_for_twisted(request_params)
-        request_for_twisted['headers'].update(self.headers)
+        request_for_twisted["headers"].update(self.headers)
         future_adapter = self.future_adapter_class(fido.fetch(**request_for_twisted))
-        return HttpFuture(future_adapter, self.response_adapter_class, operation, request_config)
+        return HttpFuture(
+            future_adapter, self.response_adapter_class, operation, request_config
+        )
 
 
 def load_client(apikey=None, headers=None, host=HOST):
@@ -51,19 +57,24 @@ def load_client(apikey=None, headers=None, host=HOST):
     if force or client is None:
         # - Kong forwards consumer headers when api-key used for auth
         # - forward consumer headers when connecting through localhost
-        headers = {'x-api-key': apikey} if apikey else headers
+        headers = {"x-api-key": apikey} if apikey else headers
         http_client = FidoClientGlobalHeaders(headers=headers)
         loader = Loader(http_client)
-        protocol = 'https' if apikey else 'http'
-        spec_url = f'{protocol}://{host}/apispec.json'
+        protocol = "https" if apikey else "http"
+        spec_url = f"{protocol}://{host}/apispec.json"
         spec_dict = loader.load_spec(spec_url)
-        spec_dict['host'] = host
-        spec_dict['schemes'] = [protocol]
+        spec_dict["host"] = host
+        spec_dict["schemes"] = [protocol]
         client = SwaggerClient.from_spec(
-            spec_dict, spec_url, http_client, {
-                'validate_responses': False, 'use_models': False,
-                'include_missing_properties': False, 'formats': [email_format]
-            }
+            spec_dict,
+            spec_url,
+            http_client,
+            {
+                "validate_responses": False,
+                "use_models": False,
+                "include_missing_properties": False,
+                "formats": [email_format],
+            },
         )
 
     return client

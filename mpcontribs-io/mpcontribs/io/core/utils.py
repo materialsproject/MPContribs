@@ -21,12 +21,12 @@ def get_short_object_id(cid):
     """
     length = 7
     cid_short = str(cid)[-length:]
-    if cid_short == '0'*length:
+    if cid_short == "0" * length:
         cid_short = str(cid)[:length]
     return cid_short
 
 
-def make_pair(key, value, sep=':'):
+def make_pair(key, value, sep=":"):
     """return string for `key`-`value` pair with separator `sep`.
 
     >>> make_pair('Phase', 'Hollandite')
@@ -38,7 +38,7 @@ def make_pair(key, value, sep=':'):
     """
     if not isinstance(value, six.string_types):
         value = unicode(value)
-    return '{} '.format(sep).join([key, value])
+    return "{} ".format(sep).join([key, value])
 
 
 def nest_dict(dct, keys):
@@ -48,6 +48,7 @@ def nest_dict(dct, keys):
     # RecursiveDict([('a', RecursiveDict([('b', RecursiveDict([('key', RecursiveDict([('subkey', u'value')]))]))]))])
     # """
     from mpcontribs.io.core.recdict import RecursiveDict
+
     nested_dict = dct
     # nested_dict = RecursiveDict(dct)
     # nested_dict.rec_update()
@@ -59,21 +60,25 @@ def nest_dict(dct, keys):
 def get_composition_from_string(comp_str):
     """validate and return composition from string `comp_str`."""
     from pymatgen import Composition, Element
+
     comp = Composition(comp_str)
     for element in comp.elements:
         Element(element)
     formula = comp.get_integer_formula_and_factor()[0]
     comp = Composition(formula)
-    return ''.join([
-        '{}{}'.format(key, int(value) if value > 1 else '')
-        for key, value in comp.as_dict().items()
-    ])
+    return "".join(
+        [
+            "{}{}".format(key, int(value) if value > 1 else "")
+            for key, value in comp.as_dict().items()
+        ]
+    )
 
 
 def normalize_root_level(title):
     """convert root-level title into conventional identifier; non-identifiers
     become part of shared (meta-)data. Returns: (is_general, title)"""
     from pymatgen.core.composition import CompositionError
+
     try:
         composition = get_composition_from_string(title)
         return False, composition
@@ -83,7 +88,7 @@ def normalize_root_level(title):
         return True, title
 
 
-def clean_value(value, unit='', convert_to_percent=False, max_dgts=3):
+def clean_value(value, unit="", convert_to_percent=False, max_dgts=3):
     """return clean value with maximum digits and optional unit and percent"""
     dgts = max_dgts
     value = str(value) if not isinstance(value, six.string_types) else value
@@ -94,11 +99,11 @@ def clean_value(value, unit='', convert_to_percent=False, max_dgts=3):
     except DecimalException:
         return value
     if convert_to_percent:
-        value = Decimal(value) * Decimal('100')
-        unit = '%'
-    val = '{{:.{}g}}'.format(dgts).format(value)
+        value = Decimal(value) * Decimal("100")
+        unit = "%"
+    val = "{{:.{}g}}".format(dgts).format(value)
     if unit:
-        val += ' {}'.format(unit)
+        val += " {}".format(unit)
     return val
 
 
@@ -107,7 +112,7 @@ def strip_converter(text):
     try:
         text = text.strip()
         if not text:
-            return ''
+            return ""
         val = clean_value(text, max_dgts=6)
         return str(Decimal(val))
     except InvalidOperation:
@@ -116,35 +121,42 @@ def strip_converter(text):
 
 def read_csv(body, is_data_section=True, **kwargs):
     """run pandas.read_csv on (sub)section body"""
-    csv_comment_char = '#'
+    csv_comment_char = "#"
     import pandas
+
     body = body.strip()
     if not body:
         return None
     from mpcontribs.io.core.components.tdata import Table
+
     if is_data_section:
         cur_line = 1
         while 1:
-            body_split = body.split('\n', cur_line)
-            first_line = body_split[cur_line-1].strip()
+            body_split = body.split("\n", cur_line)
+            first_line = body_split[cur_line - 1].strip()
             cur_line += 1
             if first_line and not first_line.startswith(csv_comment_char):
                 break
-        sep = kwargs.get('sep', ',')
-        options = {'sep': sep, 'header': 0}
+        sep = kwargs.get("sep", ",")
+        options = {"sep": sep, "header": 0}
         header = [col.strip() for col in first_line.split(sep)]
-        body = '\n'.join([sep.join(header), body_split[1]])
-        if first_line.startswith('level_'):
-            options.update({'index_col': [0, 1]})
+        body = "\n".join([sep.join(header), body_split[1]])
+        if first_line.startswith("level_"):
+            options.update({"index_col": [0, 1]})
         ncols = len(header)
     else:
-        options = {'sep': ':', 'header': None, 'index_col': 0}
+        options = {"sep": ":", "header": None, "index_col": 0}
         ncols = 2
     options.update(**kwargs)
     converters = dict((col, strip_converter) for col in range(ncols))
-    return Table(pandas.read_csv(
-        StringIO(body), comment=csv_comment_char,
-        skipinitialspace=True, squeeze=True,
-        converters=converters, encoding='utf8',
-        **options
-    ).dropna(how='all'))
+    return Table(
+        pandas.read_csv(
+            StringIO(body),
+            comment=csv_comment_char,
+            skipinitialspace=True,
+            squeeze=True,
+            converters=converters,
+            encoding="utf8",
+            **options
+        ).dropna(how="all")
+    )

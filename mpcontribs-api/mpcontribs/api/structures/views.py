@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import os
 import flask_mongorest
 from flask_mongorest.resources import Resource
@@ -11,24 +12,22 @@ from mpcontribs.api.core import SwaggerView
 from mpcontribs.api.structures.document import Structures
 from mpcontribs.api.contributions.views import ContributionsResource
 
-templates = os.path.join(
-    os.path.dirname(flask_mongorest.__file__), 'templates'
-)
+templates = os.path.join(os.path.dirname(flask_mongorest.__file__), "templates")
 structures = Blueprint("structures", __name__, template_folder=templates)
 
 
 class StructuresResource(Resource):
     document = Structures
-    related_resources = {'contribution': ContributionsResource}
+    related_resources = {"contribution": ContributionsResource}
     filters = {
-        'id': [ops.In, ops.Exact],
-        'contribution': [ops.In, ops.Exact],
-        'is_public': [ops.Boolean],
-        'name': [ops.In, ops.Exact, ops.Contains]
+        "id": [ops.In, ops.Exact],
+        "contribution": [ops.In, ops.Exact],
+        "is_public": [ops.Boolean],
+        "name": [ops.In, ops.Exact, ops.Contains],
     }
-    fields = ['id', 'contribution', 'is_public', 'name']
-    rename_fields = {'klass': '@class', 'module': '@module'}
-    allowed_ordering = ['is_public', 'name']
+    fields = ["id", "contribution", "is_public", "name"]
+    rename_fields = {"klass": "@class", "module": "@module"}
+    allowed_ordering = ["is_public", "name"]
     paginate = True
     default_limit = 10
     max_limit = 100
@@ -36,11 +35,11 @@ class StructuresResource(Resource):
 
     @staticmethod
     def get_optional_fields():
-        return ['lattice', 'sites', 'klass', 'module', 'charge', 'cif']
+        return ["lattice", "sites", "klass", "module", "charge", "cif"]
 
     def value_for_field(self, obj, field):
         # add cif key to response if requested
-        if field == 'cif':
+        if field == "cif":
             s = Structures.objects.get(id=obj.id)
             fields = self.get_optional_fields()[:-1]
             structure = Structure.from_dict(self.serialize(s, fields=fields))

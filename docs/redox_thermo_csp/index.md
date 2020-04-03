@@ -19,7 +19,7 @@ perovskites may be used for two-step thermochemical oxygen storage, pumping, or 
 separation.  Moreover, some of them can be used for water splitting or CO<sub>2</sub>
 splitting, allowing the generation of solar fuels. Our approach is based upon creating
 **solid solutions of perovskites** to tune their thermodynamic properties. These solid
-solutions, denoted by  
+solutions, denoted by
 
 (A</sup>'</sup><sub>x</sub>A</sup>''</sup><sub>1-x</sub>)<sup>(6-n)+</sup>(M</sup>'</sup><sub>y</sub>M</sup>''</sup><sub>1-y</sub>)<sup>(n-2δ)+</sup>O<sub>3-δ</sub>
 

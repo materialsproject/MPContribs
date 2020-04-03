@@ -1,13 +1,13 @@
 import pandas as pd
 
+
 def treat_xmcd(scan_groups, scan_params, process_dict):
     # Handels only a single scan now. Splitting into groups is done before (alpha)
     xmcd_frame = pd.DataFrame()
-    xmcd_data = process_xmcd(
-        scan_groups, scan_params, process_dict
-    )
+    xmcd_data = process_xmcd(scan_groups, scan_params, process_dict)
     xmcd_frame = pd.concat([xmcd_frame, xmcd_data])
     return xmcd_frame
+
 
 def process_xmcd(xmcd_data, scan_params, process_dict):
     # all the processing routines which are specified in the MPFile which serves
@@ -18,18 +18,23 @@ def process_xmcd(xmcd_data, scan_params, process_dict):
         try:
             process = process_dict[str(process_call)]
         except KeyError:
-            raise KeyError("Process '{}' not found! Available: '{}'".format(
-                process_call, "' '".join(process_dict.keys())
-            ))
+            raise KeyError(
+                "Process '{}' not found! Available: '{}'".format(
+                    process_call, "' '".join(process_dict.keys())
+                )
+            )
         # get the paremeters from the file. Maybe that should be done by
         # function which recognizes and parses numbers?
         process_parameters = scan_params[process_call]
         # The return values and the xmcd_data for each step. The XMCD Data is
         # the input for the next step, but the return values are saved into the
         # process results.
-        xmcd_data, return_values = process(xmcd_data, scan_params, process_parameters, process_no)
+        xmcd_data, return_values = process(
+            xmcd_data, scan_params, process_parameters, process_no
+        )
         save_return_values(scan_params, process_no, return_values)
     return xmcd_data
+
 
 def save_return_values(scanparams, process_no, return_values):
     """Saves return values in the scanparams so that they can be saved into the output file"""

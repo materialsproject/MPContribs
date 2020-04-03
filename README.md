@@ -1,4 +1,3 @@
-![GitHub tag (latest SemVer)](https://img.shields.io/github/v/tag/materialsproject/MPContribs?style=flat-square)
 ![LGTM Alerts](https://img.shields.io/lgtm/alerts/github/materialsproject/MPContribs?style=flat-square)
 ![Website](https://img.shields.io/website?down_color=red&down_message=down&label=API&style=flat-square&up_color=green&up_message=up&url=https%3A%2F%2Fapi.mpcontribs.org)
 ![GitHub commit activity](https://img.shields.io/github/commit-activity/m/materialsproject/MPContribs?style=flat-square)

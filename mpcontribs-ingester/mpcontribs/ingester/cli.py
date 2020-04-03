@@ -10,62 +10,83 @@ from mpcontribs.users_modules import add_all_dash_apps
 from test_site.wsgi import application as django_app
 from test_site.settings import PROXY_URL_PREFIX, STATIC_URL, STATIC_ROOT
 
+
 class CustomTemplate(string.Template):
-    delimiter = '$$'
+    delimiter = "$$"
+
 
 def cli():
     parser = argparse.ArgumentParser(
-        description='Command Line Interface for MPContribs WebUI',
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+        description="Command Line Interface for MPContribs WebUI",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    parser.add_argument('--sbx', help='ArchieML Sandbox Content')
-    parser.add_argument('--debug', action='store_true', help='run in debug mode')
-    parser.add_argument('--start-jupyter', action='store_true', help='start Jupyter server')
-    parser.add_argument('--start-mongodb', action='store_true', help='start MongoDB server')
-    jpy_base_url = os.environ.get('JPY_BASE_URL')
-    if os.environ.get('DEPLOYMENT') == 'MATGEN':
-        default_jupyter_url = 'https://jupyterhub.materialsproject.org' + jpy_base_url
+    parser.add_argument("--sbx", help="ArchieML Sandbox Content")
+    parser.add_argument("--debug", action="store_true", help="run in debug mode")
+    parser.add_argument(
+        "--start-jupyter", action="store_true", help="start Jupyter server"
+    )
+    parser.add_argument(
+        "--start-mongodb", action="store_true", help="start MongoDB server"
+    )
+    jpy_base_url = os.environ.get("JPY_BASE_URL")
+    if os.environ.get("DEPLOYMENT") == "MATGEN":
+        default_jupyter_url = "https://jupyterhub.materialsproject.org" + jpy_base_url
     else:
-        default_jupyter_url = 'http://localhost:'
-        default_jupyter_url += '8000'+jpy_base_url if jpy_base_url else '8888'
-    parser.add_argument('--jupyter-url', metavar='URL', dest='jupyter_url',
-                        default=default_jupyter_url, help='Jupyter URL')
+        default_jupyter_url = "http://localhost:"
+        default_jupyter_url += "8000" + jpy_base_url if jpy_base_url else "8888"
+    parser.add_argument(
+        "--jupyter-url",
+        metavar="URL",
+        dest="jupyter_url",
+        default=default_jupyter_url,
+        help="Jupyter URL",
+    )
     args = parser.parse_args()
 
     if args.start_mongodb:
-        dbpath = os.path.join('/', 'data', 'db')
+        dbpath = os.path.join("/", "data", "db")
         if not os.path.exists(dbpath):
-            dbpath = os.path.join(os.getcwd(), 'db')
+            dbpath = os.path.join(os.getcwd(), "db")
             if not os.path.exists(dbpath):
                 os.makedirs(dbpath)
 
-    jpy_user = os.environ.get('JPY_USER')
-    custom_js = '/home/jovyan/work/MPContribs/notebooks/profile/custom/custom.js'
+    jpy_user = os.environ.get("JPY_USER")
+    custom_js = "/home/jovyan/work/MPContribs/notebooks/profile/custom/custom.js"
     if jpy_user is not None and not os.path.exists(custom_js):
-        with open('{}_template'.format(custom_js), 'r') as f:
+        with open("{}_template".format(custom_js), "r") as f:
             fstr = f.read()
             template = CustomTemplate(fstr)
-            text = template.substitute({'JPY_USER': jpy_user})
-            with open(custom_js, 'w') as f2:
+            text = template.substitute({"JPY_USER": jpy_user})
+            with open(custom_js, "w") as f2:
                 f2.write(text)
 
     app = Flask(__name__)
     app.debug = args.debug
-    app.config['SANDBOX_CONTENT'] = args.sbx
-    app.config['START_JUPYTER'] = args.start_jupyter
-    app.config['START_MONGODB'] = args.start_mongodb
-    app.config['JUPYTER_URL'] = args.jupyter_url
+    app.config["SANDBOX_CONTENT"] = args.sbx
+    app.config["START_JUPYTER"] = args.start_jupyter
+    app.config["START_MONGODB"] = args.start_mongodb
+    app.config["JUPYTER_URL"] = args.jupyter_url
     app.register_blueprint(main_bp, url_prefix=PROXY_URL_PREFIX)
-    app.register_blueprint(ingester_bp, url_prefix=PROXY_URL_PREFIX + '/ingester')
+    app.register_blueprint(ingester_bp, url_prefix=PROXY_URL_PREFIX + "/ingester")
     try:
         app = add_all_dash_apps(app)
     except ImportError:
-        print('Dash not installed.')
-    application = DispatcherMiddleware(app, {PROXY_URL_PREFIX + '/test_site': django_app})
+        print("Dash not installed.")
+    application = DispatcherMiddleware(
+        app, {PROXY_URL_PREFIX + "/test_site": django_app}
+    )
     application = SharedDataMiddleware(application, {STATIC_URL[:-1]: STATIC_ROOT})
 
-    run_simple('0.0.0.0', 5000, application, use_reloader=args.debug, #ssl_context='adhoc',
-               use_debugger=args.debug, use_evalex=args.debug, threaded=True)
+    run_simple(
+        "0.0.0.0",
+        5000,
+        application,
+        use_reloader=args.debug,  # ssl_context='adhoc',
+        use_debugger=args.debug,
+        use_evalex=args.debug,
+        threaded=True,
+    )
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     cli()
