@@ -1,4 +1,3 @@
-import os
 from setuptools import setup
 
 with open("README.md", "r") as fh:
@@ -14,8 +13,7 @@ setup(
     url='https://github.com/materialsproject/MPContribs/tree/master/mpcontribs-client',
     packages=['mpcontribs.client'],
     install_requires=[
-        'cryptography', 'fido[tls]', 'bravado[fido]', 'service-identity',
-        'pyOpenSSL', 'pyIsEmail'
+        'cryptography', 'fido[tls]', 'bravado[fido]', 'service-identity', 'pyOpenSSL', 'pyIsEmail'
     ],
     license='MIT',
     zip_safe=False,
