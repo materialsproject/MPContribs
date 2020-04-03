@@ -2,8 +2,8 @@
 import hashlib
 import json
 from collections import OrderedDict as _OrderedDict
-from collections import Mapping as _Mapping
-from mpcontribs.io import replacements, mp_level01_titles
+from collections.abc import Mapping as _Mapping
+from mpcontribs.io.core import replacements, mp_level01_titles
 
 # try:
 #    from propnet.core.quantity import Quantity

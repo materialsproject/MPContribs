@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from mpcontribs.io import mp_level01_titles
+from mpcontribs.io.core import mp_level01_titles
 from mpcontribs.io.core.recdict import RecursiveDict
 from mpcontribs.io.core.utils import nest_dict
 

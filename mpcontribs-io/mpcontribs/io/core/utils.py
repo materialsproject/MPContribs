@@ -3,7 +3,7 @@
 from __future__ import unicode_literals
 from decimal import Decimal, DecimalException, InvalidOperation
 import six
-from mpcontribs.io import mp_id_pattern
+from mpcontribs.io.core import mp_id_pattern
 
 try:
     from StringIO import StringIO
@@ -37,7 +37,7 @@ def make_pair(key, value, sep=":"):
     u'k: 2.3'
     """
     if not isinstance(value, six.string_types):
-        value = unicode(value)
+        value = str(value)
     return "{} ".format(sep).join([key, value])
 
 

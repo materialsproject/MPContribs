@@ -5,7 +5,7 @@ import codecs
 import os
 from abc import ABCMeta
 from tempfile import gettempdir
-from mpcontribs.io import replacements, mp_level01_titles
+from mpcontribs.io.core import replacements, mp_level01_titles
 from mpcontribs.io.core.recdict import RecursiveDict
 from mpcontribs.io.core.utils import nest_dict, get_composition_from_string
 from mpcontribs.io.core.components.hdata import HierarchicalData

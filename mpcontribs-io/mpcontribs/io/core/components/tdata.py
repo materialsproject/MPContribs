@@ -3,7 +3,7 @@ import uuid
 import json
 import pandas as pd
 from IPython.display import display_html
-from mpcontribs.io import mp_id_pattern
+from mpcontribs.io.core import mp_id_pattern
 from mpcontribs.io.core.utils import clean_value
 from mpcontribs.io.core.recdict import RecursiveDict
 from urllib.parse import urlparse
@@ -112,7 +112,7 @@ class Table(pd.DataFrame):
                                 if not all([result.scheme, result.netloc, result.path]):
                                     break
                                 is_url_column = True
-                            except Exception as e:
+                            except Exception:
                                 break
 
                 cell_type = "uri" if is_url_column else "string"

@@ -1,15 +1,20 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 import six
-import archieml
 import textwrap
-from mpcontribs.io import replacements, mp_level01_titles
+
+from archieml import loads
+from pandas import MultiIndex
+
+from mpcontribs.io.core import replacements, mp_level01_titles
 from mpcontribs.io.core.mpfile import MPFileCore
-from mpcontribs.io.core.recdict import RecursiveDict, Quantity
+from mpcontribs.io.core.recdict import RecursiveDict
 from mpcontribs.io.core.utils import nest_dict, normalize_root_level
 from mpcontribs.io.core.utils import read_csv, make_pair
 from mpcontribs.io.core.components.tdata import Table
-from pandas import MultiIndex
+
+
+Quantity = None  # TODO
 
 
 class MPFile(MPFileCore):
@@ -18,7 +23,7 @@ class MPFile(MPFileCore):
     @staticmethod
     def from_string(data):
         # use archieml-python parse to import data
-        rdct = RecursiveDict(archieml.loads(data))
+        rdct = RecursiveDict(loads(data))
         rdct.rec_update()
 
         # post-process internal representation of file contents
