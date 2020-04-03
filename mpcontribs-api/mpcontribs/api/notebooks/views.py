@@ -8,8 +8,7 @@ from flask_sse import sse
 from flask import Blueprint
 from copy import deepcopy
 from mongoengine import DoesNotExist
-from nbformat import v5 as nbf
-from nbformat import read
+from nbformat import v4 as nbf
 from enterprise_gateway.client.gateway_client import GatewayClient
 from mpcontribs.api.core import SwaggerView
 from mpcontribs.api.notebooks.document import Notebooks
@@ -17,11 +16,24 @@ from mpcontribs.api.contributions.document import Contributions
 from mpcontribs.api.tables.document import Tables
 from mpcontribs.api.structures.document import Structures
 
+
 templates = os.path.join(os.path.dirname(flask_mongorest.__file__), "templates")
 notebooks = Blueprint("notebooks", __name__, template_folder=templates)
 client = GatewayClient()
-with open("kernel_imports.ipynb") as fh:
-    seed_nb = read(fh, 4)
+seed_nb = nbf.new_notebook()
+seed_nb["cells"] = [
+    nbf.new_code_cell(
+        "\n".join(
+            [
+                "from mpcontribs.client import load_client",
+                "from mpcontribs.io.core.components.hdata import HierarchicalData",
+                "from mpcontribs.io.core.components.tdata import Table # DataFrame with Backgrid IPython Display",
+                "from mpcontribs.io.core.components.gdata import Plot # Plotly interactive graph",
+                "from pymatgen import Structure",
+            ]
+        )
+    )
+]
 
 
 class NotebooksResource(Resource):
