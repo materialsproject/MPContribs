@@ -14,7 +14,7 @@ setup(
     long_description_content_type="text/markdown",
     url="https://github.com/materialsproject/MPContribs/tree/master/mpcontribs-io",
     packages=["mpcontribs.io.core", "mpcontribs.io.archie"],
-    install_requires=["archieml", "ipython", "pandas", "plotly", "pymatgen",],
+    install_requires=["archieml", "ipython", "pandas", "plotly", "pymatgen"],
     license="MIT",
     zip_safe=False,
     include_package_data=True,
