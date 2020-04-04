@@ -22,7 +22,7 @@ update_configs:
 
   # services (python)
   - package_manager: "python"
-    directory: "mpcontribs-sidecars/kernel_gateway"
+    directory: "mpcontribs-sidecars/builder"
     update_schedule: "weekly"
     target_branch: "dev"
     automerged_updates:
@@ -59,6 +59,14 @@ update_configs:
   # services (docker)
   - package_manager: "docker"
     directory: "mpcontribs-sidecars/kernel_gateway"
+    update_schedule: "weekly"
+    target_branch: "dev"
+    automerged_updates:
+        - match:
+            dependency_type: "all"
+            update_type: "all"
+  - package_manager: "docker"
+    directory: "mpcontribs-sidecars/builder"
     update_schedule: "weekly"
     target_branch: "dev"
     automerged_updates:
