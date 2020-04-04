@@ -1,0 +1,1 @@
+- [2.2.1](https://github.com/materialsproject/MPContribs/blob/2.2.1/mpcontribs-sidecars/builder/Dockerfile): blinker-1.4 • jupyter_enterprise_gateway-2.1.0 • jupyterhub-1.1.0 • jupyterlab-2.0.1 • mpcontribs-client-2.2.0 • mpcontribs-io-2.2.0
