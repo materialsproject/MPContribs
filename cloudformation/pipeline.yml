@@ -88,6 +88,12 @@ Parameters:
     Description: API key for MPRester to build formulae lookup table
 
 
+Metadata:
+  cfn-lint:
+    config:
+      ignore_checks:
+      - E3030
+
 Resources:
   # Create the ECR respository to hold built docker images
   Repository:
@@ -405,7 +411,7 @@ Resources:
                 - IMAGE_URI="${REPOSITORY_URI}:${PREFIX}-${TAG}"
             build:
               commands:
-                - docker build --tag "${IMAGE_URI}-portal" -f mpcontribs-portal/Dockerfile .
+                - docker build --tag "${IMAGE_URI}-portal" mpcontribs-portal
             post_build:
               commands:
                 - docker push "${IMAGE_URI}-portal"
@@ -452,7 +458,7 @@ Resources:
                 - IMAGE_URI="${REPOSITORY_URI}:${PREFIX}-${TAG}"
             build:
               commands:
-                - docker build --tag "${IMAGE_URI}-gateway" -f mpcontribs-sidecars/kernel_gateway/Dockerfile .
+                - docker build --tag "${IMAGE_URI}-gateway" mpcontribs-sidecars/kernel_gateway
             post_build:
               commands:
                 - docker push "${IMAGE_URI}-gateway"
@@ -499,7 +505,7 @@ Resources:
                 - IMAGE_URI="${REPOSITORY_URI}:${PREFIX}-${TAG}"
             build:
               commands:
-                - docker build --tag "${IMAGE_URI}-chrome" -f mpcontribs-sidecars/chrome/Dockerfile .
+                - docker build --tag "${IMAGE_URI}-chrome" mpcontribs-sidecars/chrome
             post_build:
               commands:
                 - docker push "${IMAGE_URI}-chrome"
@@ -709,7 +715,7 @@ Resources:
               ActionTypeId:
                 Category: Source
                 Owner: ThirdParty
-                Version: 1
+                Version: '1'
                 Provider: GitHub
               Configuration:
                 Owner: !Ref GitHubUser
@@ -722,7 +728,7 @@ Resources:
               ActionTypeId:
                 Category: Source
                 Owner: ThirdParty
-                Version: 1
+                Version: '1'
                 Provider: GitHub
               Configuration:
                 Owner: !Ref GitHubUser
@@ -735,7 +741,7 @@ Resources:
               ActionTypeId:
                 Category: Source
                 Owner: ThirdParty
-                Version: 1
+                Version: '1'
                 Provider: GitHub
               Configuration:
                 Owner: !Ref GitHubUser
@@ -748,7 +754,7 @@ Resources:
               ActionTypeId:
                 Category: Source
                 Owner: ThirdParty
-                Version: 1
+                Version: '1'
                 Provider: GitHub
               Configuration:
                 Owner: !Ref GitHubUserKong
@@ -761,7 +767,7 @@ Resources:
               ActionTypeId:
                 Category: Source
                 Owner: ThirdParty
-                Version: 1
+                Version: '1'
                 Provider: GitHub
               Configuration:
                 Owner: !Ref GitHubUserKonga
@@ -778,7 +784,7 @@ Resources:
               ActionTypeId:
                 Category: Deploy
                 Owner: AWS
-                Version: 1
+                Version: '1'
                 Provider: CloudFormation
               Configuration:
                 ActionMode: CREATE_UPDATE
@@ -804,7 +810,7 @@ Resources:
               ActionTypeId:
                 Category: Build
                 Owner: AWS
-                Version: 1
+                Version: '1'
                 Provider: CodeBuild
               Configuration:
                 ProjectName: !Ref CodeBuildProjectKong
@@ -817,7 +823,7 @@ Resources:
               ActionTypeId:
                 Category: Build
                 Owner: AWS
-                Version: 1
+                Version: '1'
                 Provider: CodeBuild
               Configuration:
                 ProjectName: !Ref CodeBuildProjectKonga
@@ -830,7 +836,7 @@ Resources:
               ActionTypeId:
                 Category: Build
                 Owner: AWS
-                Version: 1
+                Version: '1'
                 Provider: CodeBuild
               Configuration:
                 ProjectName: !Ref CodeBuildProjectGateway
@@ -843,7 +849,7 @@ Resources:
               ActionTypeId:
                 Category: Build
                 Owner: AWS
-                Version: 1
+                Version: '1'
                 Provider: CodeBuild
               Configuration:
                 ProjectName: !Ref CodeBuildProjectChrome
@@ -856,7 +862,7 @@ Resources:
               ActionTypeId:
                 Category: Build
                 Owner: AWS
-                Version: 1
+                Version: '1'
                 Provider: CodeBuild
               Configuration:
                 ProjectName: !Ref CodeBuildProjectApi
@@ -869,7 +875,7 @@ Resources:
               ActionTypeId:
                 Category: Build
                 Owner: AWS
-                Version: 1
+                Version: '1'
                 Provider: CodeBuild
               Configuration:
                 ProjectName: !Ref CodeBuildProjectPortal
@@ -882,7 +888,7 @@ Resources:
               ActionTypeId:
                 Category: Build
                 Owner: AWS
-                Version: 1
+                Version: '1'
                 Provider: CodeBuild
               Configuration:
                 ProjectName: !Ref CodeBuildProjectMPWeb
@@ -895,7 +901,7 @@ Resources:
               ActionTypeId:
                 Category: Build
                 Owner: AWS
-                Version: 1
+                Version: '1'
                 Provider: CodeBuild
               Configuration:
                 ProjectName: !Ref CodeBuildProjectMPWebApi
@@ -908,7 +914,7 @@ Resources:
             #  ActionTypeId:
             #    Category: Build
             #    Owner: AWS
-            #    Version: 1
+            #    Version: '1'
             #    Provider: CodeBuild
             #  Configuration:
             #    ProjectName: !Ref CodeBuildProjectR2d
@@ -924,7 +930,7 @@ Resources:
               ActionTypeId:
                 Category: Deploy
                 Owner: AWS
-                Version: 1
+                Version: '1'
                 Provider: CloudFormation
               Configuration:
                 ActionMode: CREATE_UPDATE
@@ -961,7 +967,7 @@ Resources:
               ActionTypeId:
                 Category: Deploy
                 Owner: AWS
-                Version: 1
+                Version: '1'
                 Provider: CloudFormation
               Configuration:
                 ActionMode: CREATE_UPDATE
@@ -1008,7 +1014,7 @@ Resources:
               ActionTypeId:
                 Category: Deploy
                 Owner: AWS
-                Version: 1
+                Version: '1'
                 Provider: CloudFormation
               Configuration:
                 ActionMode: CREATE_UPDATE
@@ -1055,7 +1061,7 @@ Resources:
               ActionTypeId:
                 Category: Deploy
                 Owner: AWS
-                Version: 1
+                Version: '1'
                 Provider: CloudFormation
               Configuration:
                 ActionMode: CREATE_UPDATE
