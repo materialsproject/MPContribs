@@ -18,6 +18,12 @@ repos:
           - id: forbid-new-submodules
           - id: requirements-txt-fixer
 
+    - repo: https://github.com/awslabs/cfn-python-lint
+      rev: v0.15.0
+      hooks:
+          - id: cfn-python-lint
+            files: cloudformation/.*\.(json|yml|yaml)$
+
     #- repo: https://gitlab.com/pycqa/flake8
     #  rev: 3.7.9
     #  hooks:
