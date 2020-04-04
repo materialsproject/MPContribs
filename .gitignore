@@ -29,3 +29,4 @@ mpcontribs-api/mpcontribs/api/swagger/
 .local/
 mpcontribs-portal/mpcontribs/portal/templates/notebooks
 formulae.json
+coverage.xml

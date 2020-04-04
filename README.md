@@ -1,4 +1,5 @@
 ![LGTM Alerts](https://img.shields.io/lgtm/alerts/github/materialsproject/MPContribs?style=flat-square)
+[![codecov](https://codecov.io/gh/materialsproject/MPContribs/branch/master/graph/badge.svg)](https://codecov.io/gh/materialsproject/MPContribs)
 ![Website](https://img.shields.io/website?down_color=red&down_message=down&label=API&style=flat-square&up_color=green&up_message=up&url=https%3A%2F%2Fapi.mpcontribs.org)
 ![GitHub commit activity](https://img.shields.io/github/commit-activity/m/materialsproject/MPContribs?style=flat-square)
 ![GitHub last commit](https://img.shields.io/github/last-commit/materialsproject/MPContribs?style=flat-square)

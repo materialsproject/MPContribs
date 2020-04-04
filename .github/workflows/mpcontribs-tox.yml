@@ -20,7 +20,23 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install tox tox-gh-actions
+
     - name: Test client with tox
       run: cd mpcontribs-client && tox
+    - name: Upload client coverage to Codecov
+      uses: codecov/codecov-action@v1
+      with:
+        file: ./mpcontribs-client/coverage.xml
+        flags: client
+        name: codecov-mpcontribs
+        fail_ci_if_error: true
+
     - name: Test io with tox
       run: cd mpcontribs-io && tox
+    - name: Upload io coverage to Codecov
+      uses: codecov/codecov-action@v1
+      with:
+        file: ./mpcontribs-io/coverage.xml
+        flags: io
+        name: codecov-mpcontribs
+        fail_ci_if_error: true
