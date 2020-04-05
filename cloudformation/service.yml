@@ -220,7 +220,7 @@ Resources:
               awslogs-stream-prefix: !Ref 'ServiceName'
         - Name: xray
           MemoryReservation: 100
-          Image: !Ref 'ImageUrlXray'
+          Image: !Join ['', [!Ref 'AWS::AccountId', '.dkr.ecr.', !Ref 'AWS::Region', '.amazonaws.com/', !Ref 'ImageUrlXray']]
           Environment:
             - Name: API_CNAME
               Value: !Ref 'ApiCname'

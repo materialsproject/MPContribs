@@ -426,7 +426,8 @@ Resources:
         PrivilegedMode: true
         EnvironmentVariables:
           - Name: REPOSITORY_URI
-            Value: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${Repository}
+            #Value: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${Repository}
+            Value: !Sub ${Repository}
           - Name: PREFIX
             Value: !Sub ${PipelineName}-${EnvironmentName}
       Cache:
@@ -1037,33 +1038,23 @@ Resources:
                 Capabilities: CAPABILITY_IAM
                 ParameterOverrides: !Sub |
                   {
-                    "PipelineName": "${PipelineName}",
-                    "EnvironmentName": "${EnvironmentName}",
                     "ServiceName": "app",
-                    "MongoHost": "${MongoHost}",
-                    "AwsAccessKeyId": "${AwsAccessKeyId}",
-                    "AwsSecretAccessKey": "${AwsSecretAccessKey}",
-                    "SnsAdminTopicArn": "${SnsAdminTopicArn}",
                     "ApiCname": "api.mpcontribs.org",
                     "ApiPort": "5000",
                     "MpcontribsDbName": "mpcontribs-dev",
                     "PortalCname": "portal.mpcontribs.org",
                     "PortalPort": "8080",
-                    "ImageUrlApi": {
-                      "Fn::GetParam" : ["BuildOutputApi", "build-api.json", "ImageUri"]
-                    },
-                    "ImageUrlXray": {
-                      "Fn::GetParam" : ["BuildOutputXray", "build-xray.json", "ImageUri"]
-                    },
-                    "ImageUrlPortal": {
-                      "Fn::GetParam" : ["BuildOutputPortal", "build-portal.json", "ImageUri"]
-                    },
-                    "ImageUrlGateway": {
-                      "Fn::GetParam" : ["BuildOutputGateway", "build-gateway.json", "ImageUri"]
-                    },
-                    "ImageUrlChrome": {
-                      "Fn::GetParam" : ["BuildOutputChrome", "build-chrome.json", "ImageUri"]
-                    }
+                    "PipelineName": "${PipelineName}",
+                    "EnvironmentName": "${EnvironmentName}",
+                    "MongoHost": "${MongoHost}",
+                    "AwsAccessKeyId": "${AwsAccessKeyId}",
+                    "AwsSecretAccessKey": "${AwsSecretAccessKey}",
+                    "SnsAdminTopicArn": "${SnsAdminTopicArn}",
+                    "ImageUrlApi": {"Fn::GetParam": ["BuildOutputApi", "build-api.json", "ImageUri"]},
+                    "ImageUrlXray": {"Fn::GetParam": ["BuildOutputXray", "build-xray.json", "ImageUri"]},
+                    "ImageUrlPortal": {"Fn::GetParam": ["BuildOutputPortal", "build-portal.json", "ImageUri"]},
+                    "ImageUrlGateway": {"Fn::GetParam": ["BuildOutputGateway", "build-gateway.json", "ImageUri"]},
+                    "ImageUrlChrome": {"Fn::GetParam": ["BuildOutputChrome", "build-chrome.json", "ImageUri"]}
                   }
               InputArtifacts:
                 - Name: Source
@@ -1088,33 +1079,23 @@ Resources:
                 Capabilities: CAPABILITY_IAM
                 ParameterOverrides: !Sub |
                   {
-                    "PipelineName": "${PipelineName}",
-                    "EnvironmentName": "${EnvironmentName}",
                     "ServiceName": "appML",
-                    "MongoHost": "${MongoHost}",
-                    "AwsAccessKeyId": "${AwsAccessKeyId}",
-                    "AwsSecretAccessKey": "${AwsSecretAccessKey}",
-                    "SnsAdminTopicArn": "${SnsAdminTopicArn}",
                     "ApiCname": "ml-api.materialsproject.cloud",
                     "ApiPort": "5002",
                     "MpcontribsDbName": "mpcontribs-ml",
                     "PortalCname": "ml.materialsproject.cloud",
                     "PortalPort": "8082",
-                    "ImageUrlApi": {
-                      "Fn::GetParam" : ["BuildOutputApi", "build-api.json", "ImageUri"]
-                    },
-                    "ImageUrlXray": {
-                      "Fn::GetParam" : ["BuildOutputXray", "build-xray.json", "ImageUri"]
-                    },
-                    "ImageUrlPortal": {
-                      "Fn::GetParam" : ["BuildOutputPortal", "build-portal.json", "ImageUri"]
-                    },
-                    "ImageUrlGateway": {
-                      "Fn::GetParam" : ["BuildOutputGateway", "build-gateway.json", "ImageUri"]
-                    },
-                    "ImageUrlChrome": {
-                      "Fn::GetParam" : ["BuildOutputChrome", "build-chrome.json", "ImageUri"]
-                    }
+                    "PipelineName": "${PipelineName}",
+                    "EnvironmentName": "${EnvironmentName}",
+                    "MongoHost": "${MongoHost}",
+                    "AwsAccessKeyId": "${AwsAccessKeyId}",
+                    "AwsSecretAccessKey": "${AwsSecretAccessKey}",
+                    "SnsAdminTopicArn": "${SnsAdminTopicArn}",
+                    "ImageUrlApi": {"Fn::GetParam": ["BuildOutputApi", "build-api.json", "ImageUri"]},
+                    "ImageUrlXray": {"Fn::GetParam": ["BuildOutputXray", "build-xray.json", "ImageUri"]},
+                    "ImageUrlPortal": {"Fn::GetParam": ["BuildOutputPortal", "build-portal.json", "ImageUri"]},
+                    "ImageUrlGateway": {"Fn::GetParam": ["BuildOutputGateway", "build-gateway.json", "ImageUri"]},
+                    "ImageUrlChrome": {"Fn::GetParam": ["BuildOutputChrome", "build-chrome.json", "ImageUri"]}
                   }
               InputArtifacts:
                 - Name: Source
