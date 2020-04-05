@@ -136,10 +136,10 @@ def create_app():
     app.jinja_env.globals["get_resource_as_string"] = get_resource_as_string
     app.jinja_env.lstrip_blocks = True
     app.jinja_env.trim_blocks = True
-    xray_recorder.configure(
-        service="mpcontribs-api", dynamic_naming=os.environ["API_CNAME"]
-    )
-    XRayMiddleware(app, xray_recorder)
+    # xray_recorder.configure(
+    #    service="mpcontribs-api", dynamic_naming=os.environ["API_CNAME"]
+    # )
+    # XRayMiddleware(app, xray_recorder)
 
     if app.config.get("DEBUG"):
         from flask_cors import CORS

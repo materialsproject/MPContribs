@@ -30,12 +30,12 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "django_extensions",
     "webpack_loader",
-    "aws_xray_sdk.ext.django",
+    # "aws_xray_sdk.ext.django",
     "mpcontribs.portal",
 ]
 
 MIDDLEWARE = (
-    "aws_xray_sdk.ext.django.middleware.XRayMiddleware",
+    # "aws_xray_sdk.ext.django.middleware.XRayMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
