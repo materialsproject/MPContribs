@@ -23,6 +23,9 @@ Parameters:
   ImageUrlApi:
     Type: String
     Description: url for the api docker image
+  ImageUrlXray:
+    Type: String
+    Description: url for the xray-daemon docker image
   ImageUrlPortal:
     Type: String
     Description: url for the portal docker image
@@ -83,6 +86,15 @@ Resources:
             Resource:
               - "arn:aws:s3:::mpcontribs-sqlite/db.sqlite3"
               - "arn:aws:s3:::mpcontribs-sqlite"
+      - PolicyName: xray
+        PolicyDocument:
+          Statement:
+          - Effect: Allow
+            Action:
+              - "xray:PutTraceSegments"
+              - "xray:PutTelemetryRecords"
+            Resource:
+              - "*"
 
   # The task definition. This is a simple metadata description of what
   # container to run, and what resource requirements it has.
@@ -108,6 +120,8 @@ Resources:
               ContainerName: chrome
             - Condition: START
               ContainerName: gateway
+            - Condition: START
+              ContainerName: xray
           Environment:
             - Name: MPCONTRIBS_API_HOST
               Value: !Join [':', ['localhost', !Ref 'ApiPort']]
@@ -130,6 +144,8 @@ Resources:
             - Name: AWS_SNS_TOPIC_ARN
               Value: !Ref 'SnsAdminTopicArn'
             - Name: AWS_DEFAULT_REGION
+              Value: !Ref 'AWS::Region'
+            - Name: AWS_REGION
               Value: !Ref 'AWS::Region'
             - Name: REDIS_ADDRESS
               Value:
@@ -189,11 +205,33 @@ Resources:
               Value: !Ref 'PortalCname'
             - Name: PORTAL_PORT
               Value: !Ref 'PortalPort'
+            - Name: AWS_REGION
+              Value: !Ref 'AWS::Region'
           DependsOn:
             - Condition: START
               ContainerName: api
           PortMappings:
             - ContainerPort: !Ref 'PortalPort'
+          LogConfiguration:
+            LogDriver: 'awslogs'
+            Options:
+              awslogs-group: !Join ['-', [!Ref 'PipelineName', !Ref 'EnvironmentName', 'service', !Ref 'ServiceName']]
+              awslogs-region: !Ref 'AWS::Region'
+              awslogs-stream-prefix: !Ref 'ServiceName'
+        - Name: xray
+          MemoryReservation: 100
+          Image: !Ref 'ImageUrlXray'
+          Environment:
+            - Name: API_CNAME
+              Value: !Ref 'ApiCname'
+            - Name: API_PORT
+              Value: !Ref 'ApiPort'
+            - Name: PORTAL_CNAME
+              Value: !Ref 'PortalCname'
+            - Name: PORTAL_PORT
+              Value: !Ref 'PortalPort'
+            - Name: AWS_REGION
+              Value: !Ref 'AWS::Region'
           LogConfiguration:
             LogDriver: 'awslogs'
             Options:
