@@ -408,14 +408,14 @@ Resources:
               commands:
                 - $(aws ecr get-login --no-include-email)
                 - TAG="$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | head -c 8)"
-                - IMAGE_URI="${REPOSITORY_URI}:${PREFIX}-${TAG}"
+                - IMAGE_URI="${ECR_URI}/${REPOSITORY}:${PREFIX}-${TAG}"
             build:
               commands:
                 - docker build --tag "${IMAGE_URI}-xray" mpcontribs-sidecars/xray-daemon
             post_build:
               commands:
                 - docker push "${IMAGE_URI}-xray"
-                - printf '{"ImageUri":"%s"}' "${IMAGE_URI}-xray" > build-xray.json
+                - printf '{"ImageUri":"%s"}' "${REPOSITORY}:${PREFIX}-${TAG}-xray" > build-xray.json
           artifacts:
             files:
                 - build-xray.json
@@ -425,8 +425,9 @@ Resources:
         Type: LINUX_CONTAINER
         PrivilegedMode: true
         EnvironmentVariables:
-          - Name: REPOSITORY_URI
-            #Value: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${Repository}
+          - Name: ECR_URI
+            Value: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com
+          - Name: REPOSITORY
             Value: !Sub ${Repository}
           - Name: PREFIX
             Value: !Sub ${PipelineName}-${EnvironmentName}
