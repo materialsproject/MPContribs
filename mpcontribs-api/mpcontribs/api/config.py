@@ -26,9 +26,11 @@ MAIL_TOPIC = os.environ["AWS_SNS_TOPIC_ARN"]
 MPCONTRIBS_DB = os.environ.get("MPCONTRIBS_DB_NAME", "mpcontribs")
 MPCONTRIBS_MONGO_HOST = os.environ.get("MPCONTRIBS_MONGO_HOST")
 MONGODB_SETTINGS = {
-    "host": f"mongodb+srv://{MPCONTRIBS_MONGO_HOST}/{MPCONTRIBS_DB}?retryWrites=true",
+    # Changed in version 3.9: retryWrites now defaults to True.
+    "host": f"mongodb+srv://{MPCONTRIBS_MONGO_HOST}/{MPCONTRIBS_DB}",
     "connect": False,
     "db": MPCONTRIBS_DB,
+    "compressors": ["snappy", "zstd", "zlib"],
 }
 REDIS_URL = "redis://" + os.environ.get("REDIS_ADDRESS", "redis")
 

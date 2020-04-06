@@ -1,7 +1,7 @@
 FROM phuck/python:3.8.2-slim-v1.0 as base
 
 FROM base as builder
-RUN apt-get update && apt-get install -y --no-install-recommends gcc git g++ && apt-get clean
+RUN apt-get update && apt-get install -y --no-install-recommends gcc git g++ libsnappy-dev && apt-get clean
 ENV PATH /root/.local/bin:$PATH
 WORKDIR /app
 ENV PIP_FLAGS "--user --no-cache-dir --compile"
@@ -22,6 +22,7 @@ RUN if [ ! -e /app/mpcontribs/api/contributions/formulae.json ]; then \
 FROM base
 COPY --from=builder /root/.local/lib/python3.8/site-packages /root/.local/lib/python3.8/site-packages
 COPY --from=builder /root/.local/bin /root/.local/bin
+COPY --from=builder /usr/lib/x86_64-linux-gnu/libsnappy* /usr/lib/x86_64-linux-gnu/
 COPY --from=builder /app/mpcontribs/api /app/mpcontribs/api
 WORKDIR /app
 ENV PATH=/root/.local/bin:$PATH

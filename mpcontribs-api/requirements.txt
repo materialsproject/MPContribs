@@ -26,5 +26,7 @@ pint==0.11
 plotly==4.6.0
 pymatgen==2020.4.2
 pyopenssl==19.1.0
+python-snappy==0.5.4
 selenium==3.141.0
 toronado==0.0.11
+zstandard==0.13.0
