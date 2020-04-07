@@ -7,11 +7,12 @@ if [ "$#" -ne 1 ]; then
 fi
 
 tag=$1
-url=https://github.com/materialsproject/MPContribs/blob/$tag/mpcontribs-sidecars/builder/Dockerfile
+tag_dh="$tag-dh"
+url=https://github.com/materialsproject/MPContribs/blob/$tag_dh/mpcontribs-sidecars/builder/Dockerfile
 reqs=`sed 's/==/-/g' requirements.txt | tr '\n' ' ' | xargs | sed 's/ / • /g'`
 echo "- [$tag]($url): $reqs" >> README.md
 git add README.md
-git commit -m "$tag"
-git tag $tag
+git commit -m "bump mpcontribs-sidecars/builder to $tag"
+git tag $tag_dh
 git push
 git push --tags
