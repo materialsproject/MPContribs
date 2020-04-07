@@ -1,5 +1,5 @@
 FROM phuck/python:3.8.2-slim-v1.0 as base
-FROM phuck/mpcontribs:latest as builder
+FROM phuck/mpcontribs:2.2.2 as builder
 FROM node:13.12.0-slim as node
 
 FROM node as webpack-deps

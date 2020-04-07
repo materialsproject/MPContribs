@@ -1,5 +1,5 @@
 FROM phuck/python:3.8.2-slim-v1.0 as base
-FROM phuck/mpcontribs:latest as builder
+FROM phuck/mpcontribs:2.2.2 as builder
 
 FROM base
 COPY --from=builder /root/.local/lib/python3.8/site-packages /root/.local/lib/python3.8/site-packages
