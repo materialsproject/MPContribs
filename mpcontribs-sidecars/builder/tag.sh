@@ -7,7 +7,7 @@ if [ "$#" -ne 1 ]; then
 fi
 
 tag=$1
-tag_dh="$tag-dh"
+tag_dh="$tag+dh"
 url=https://github.com/materialsproject/MPContribs/blob/$tag_dh/mpcontribs-sidecars/builder/Dockerfile
 reqs=`sed 's/==/-/g' requirements.txt | tr '\n' ' ' | xargs | sed 's/ / • /g'`
 echo "- [$tag]($url): $reqs" >> README.md
