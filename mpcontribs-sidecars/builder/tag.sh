@@ -14,5 +14,3 @@ echo "- [$tag]($url): $reqs" >> README.md
 git add README.md
 git commit -m "bump mpcontribs-sidecars/builder to $tag"
 git tag $tag_dh
-git push
-git push --tags
