@@ -457,6 +457,8 @@ Resources:
                 # Allow the ECS tasks to upload logs to CloudWatch
                 - 'logs:CreateLogStream'
                 - 'logs:PutLogEvents'
+                - "xray:PutTraceSegments"
+                - "xray:PutTelemetryRecords"
                 # Allow the ECS tasks to start tasks (JHub)
                 - "ecs:RunTask"
                 - "ecs:StopTask"

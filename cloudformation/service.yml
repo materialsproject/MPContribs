@@ -86,15 +86,6 @@ Resources:
             Resource:
               - "arn:aws:s3:::mpcontribs-sqlite/db.sqlite3"
               - "arn:aws:s3:::mpcontribs-sqlite"
-      - PolicyName: xray
-        PolicyDocument:
-          Statement:
-          - Effect: Allow
-            Action:
-              - "xray:PutTraceSegments"
-              - "xray:PutTelemetryRecords"
-            Resource:
-              - "*"
 
   # The task definition. This is a simple metadata description of what
   # container to run, and what resource requirements it has.
