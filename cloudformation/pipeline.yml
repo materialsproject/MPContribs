@@ -531,14 +531,14 @@ Resources:
               commands:
                 - $(aws ecr get-login --no-include-email)
                 - TAG="$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | head -c 8)"
-                - IMAGE_URI="${REPOSITORY_URI}:${PREFIX}-${TAG}"
+                - IMAGE_URI="${ECR_URI}/${REPOSITORY}:${PREFIX}-${TAG}"
             build:
               commands:
                 - docker build --tag "${IMAGE_URI}-gateway" mpcontribs-sidecars/kernel_gateway
             post_build:
               commands:
                 - docker push "${IMAGE_URI}-gateway"
-                - printf '{"ImageUri":"%s"}' "${IMAGE_URI}-gateway" > build-gateway.json
+                - printf '{"ImageUri":"%s"}' "${REPOSITORY}:${PREFIX}-${TAG}-gateway" > build-gateway.json
           artifacts:
             files:
                 - build-gateway.json
@@ -548,8 +548,10 @@ Resources:
         Type: LINUX_CONTAINER
         PrivilegedMode: true
         EnvironmentVariables:
-          - Name: REPOSITORY_URI
-            Value: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${Repository}
+          - Name: ECR_URI
+            Value: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com
+          - Name: REPOSITORY
+            Value: !Sub ${Repository}
           - Name: PREFIX
             Value: !Sub ${PipelineName}-${EnvironmentName}
       Cache:
@@ -578,14 +580,14 @@ Resources:
               commands:
                 - $(aws ecr get-login --no-include-email)
                 - TAG="$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | head -c 8)"
-                - IMAGE_URI="${REPOSITORY_URI}:${PREFIX}-${TAG}"
+                - IMAGE_URI="${ECR_URI}/${REPOSITORY}:${PREFIX}-${TAG}"
             build:
               commands:
                 - docker build --tag "${IMAGE_URI}-chrome" mpcontribs-sidecars/chrome
             post_build:
               commands:
                 - docker push "${IMAGE_URI}-chrome"
-                - printf '{"ImageUri":"%s"}' "${IMAGE_URI}-chrome" > build-chrome.json
+                - printf '{"ImageUri":"%s"}' "${REPOSITORY}:${PREFIX}-${TAG}-chrome" > build-chrome.json
           artifacts:
             files:
                 - build-chrome.json
@@ -595,8 +597,10 @@ Resources:
         Type: LINUX_CONTAINER
         PrivilegedMode: true
         EnvironmentVariables:
-          - Name: REPOSITORY_URI
-            Value: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${Repository}
+          - Name: ECR_URI
+            Value: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com
+          - Name: REPOSITORY
+            Value: !Sub ${Repository}
           - Name: PREFIX
             Value: !Sub ${PipelineName}-${EnvironmentName}
       Cache:
@@ -606,60 +610,6 @@ Resources:
           - LOCAL_DOCKER_LAYER_CACHE
           - LOCAL_SOURCE_CACHE
       Name: !Sub ${AWS::StackName}-chrome
-      ServiceRole: !Ref CodeBuildServiceRole
-
-  CodeBuildProjectR2d:
-    Type: AWS::CodeBuild::Project
-    Properties:
-      Artifacts:
-        Type: CODEPIPELINE
-      Source:
-        Type: CODEPIPELINE
-        BuildSpec: |
-          version: 0.2
-          phases:
-            install:
-              runtime-versions:
-                docker: 18
-                python: 3.7
-              commands:
-                - pip install -U jupyter-repo2docker
-            pre_build:
-              commands:
-                - $(aws ecr get-login --no-include-email)
-                - TAG="$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | head -c 8)"
-                - IMAGE_URI="${REPOSITORY_URI}:${PREFIX}-${TAG}"
-            build:
-              commands:
-                - jupyter-repo2docker --user-name jovyan --user-id 1000 --image-name "${IMAGE_URI}-r2d" --no-run .
-            post_build:
-              commands:
-                - docker push "${IMAGE_URI}-r2d"
-                - printf '{"ImageUri":"%s"}' "${IMAGE_URI}-r2d" > build-r2d.json
-          artifacts:
-            files:
-                - build-r2d.json
-      Environment:
-        ComputeType: BUILD_GENERAL1_SMALL
-        Image: aws/codebuild/standard:2.0
-        Type: LINUX_CONTAINER
-        PrivilegedMode: true
-        EnvironmentVariables:
-          - Name: REPOSITORY_URI
-            Value: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${Repository}
-          - Name: EKS_CLUSTER_NAME
-            Value: JhubCluster
-          - Name: EKS_KUBECTL_ROLE_ARN # TODO user/Administrator ??
-            Value: !Sub arn:aws:iam::${AWS::AccountId}:role/EKSRole
-          - Name: PREFIX
-            Value: !Sub ${PipelineName}-${EnvironmentName}
-      Cache:
-        Type: LOCAL
-        Modes: # You can specify one or more cache mode,
-          - LOCAL_CUSTOM_CACHE
-          - LOCAL_DOCKER_LAYER_CACHE
-          - LOCAL_SOURCE_CACHE
-      Name: !Sub ${AWS::StackName}-r2d
       ServiceRole: !Ref CodeBuildServiceRole
 
   CodeBuildProjectMPWeb:
@@ -999,19 +949,6 @@ Resources:
                 - Name: SourceMPWebApi
               OutputArtifacts:
                 - Name: BuildOutputMPWebApi
-            #- Name: BuildR2d
-            #  ActionTypeId:
-            #    Category: Build
-            #    Owner: AWS
-            #    Version: '1'
-            #    Provider: CodeBuild
-            #  Configuration:
-            #    ProjectName: !Ref CodeBuildProjectR2d
-            #    PrimarySource: Source
-            #  InputArtifacts:
-            #    - Name: Source
-            #  OutputArtifacts:
-            #    - Name: BuildOutputR2d
 
         - Name: Deploy
           Actions:
@@ -1033,12 +970,8 @@ Resources:
                     "EnvironmentName": "${EnvironmentName}",
                     "DBPassword": "${DBPassword}",
                     "CertificateArn": "${CertificateArn}",
-                    "ImageUrlKong": {
-                      "Fn::GetParam" : ["BuildOutputKong", "build-kong.json", "ImageUri"]
-                    },
-                    "ImageUrlKonga": {
-                      "Fn::GetParam" : ["BuildOutputKonga", "build-konga.json", "ImageUri"]
-                    },
+                    "ImageUrlKong": {"Fn::GetParam" : ["BuildOutputKong", "build-kong.json", "ImageUri"]},
+                    "ImageUrlKonga": {"Fn::GetParam" : ["BuildOutputKonga", "build-konga.json", "ImageUri"]},
                     "KongaAdminUsername": "${KongaAdminUsername}",
                     "KongaAdminEmail": "${KongaAdminEmail}",
                     "KongaAdminFirstname": "${KongaAdminFirstname}",

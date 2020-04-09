@@ -158,7 +158,7 @@ Resources:
               awslogs-stream-prefix: !Ref 'ServiceName'
         - Name: chrome
           MemoryReservation: 100
-          Image: !Ref 'ImageUrlChrome'
+          Image: !Join ['', [!Ref 'AWS::AccountId', '.dkr.ecr.', !Ref 'AWS::Region', '.amazonaws.com/', !Ref 'ImageUrlChrome']]
           Environment:
             - Name: START_XVFB
               Value: false
@@ -176,7 +176,7 @@ Resources:
               awslogs-stream-prefix: !Ref 'ServiceName'
         - Name: gateway
           MemoryReservation: 250
-          Image: !Ref 'ImageUrlGateway'
+          Image: !Join ['', [!Ref 'AWS::AccountId', '.dkr.ecr.', !Ref 'AWS::Region', '.amazonaws.com/', !Ref 'ImageUrlGateway']]
           Environment:
             - Name: KG_ALLOW_ORIGIN
               Value: '*'
