@@ -1,6 +1,12 @@
 # -*- coding: utf-8 -*-
 from setuptools import setup
 
+
+def local_version(version):
+    # https://github.com/pypa/setuptools_scm/issues/342
+    return ""
+
+
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
@@ -24,6 +30,10 @@ setup(
     license="MIT",
     zip_safe=False,
     include_package_data=True,
-    use_scm_version={"root": "..", "relative_to": __file__},
+    use_scm_version={
+        "root": "..",
+        "relative_to": __file__,
+        "local_scheme": local_version,
+    },
     setup_requires=["setuptools_scm"],
 )
