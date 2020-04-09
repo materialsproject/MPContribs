@@ -263,7 +263,7 @@ Resources:
             - Name: DD_RECEIVER_PORT
               Value: 8126
             - Name: DD_DD_URL
-              Value: pvtlink.agent.datadoghq.com
+              Value: https://pvtlink.agent.datadoghq.com
           LogConfiguration:
             LogDriver: 'awslogs'
             Options:
