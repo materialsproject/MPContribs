@@ -87,7 +87,7 @@ update_configs:
             dependency_type: "all"
             update_type: "all"
   - package_manager: "docker"
-    directory: "mpcontribs-sidecars/xray-daemon"
+    directory: "mpcontribs-sidecars/datadog-agent"
     update_schedule: "weekly"
     automerged_updates:
         - match:
