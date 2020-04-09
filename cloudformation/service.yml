@@ -23,19 +23,19 @@ Parameters:
     Type: String
     Default: app
     Description: A name for the service
-  ImageUrlApi:
+  ImgApi:
     Type: String
     Description: url for the api docker image
-  ImageUrlDatadog:
+  ImgDatadog:
     Type: String
     Description: url for the datadog-agent docker image
-  ImageUrlPortal:
+  ImgPortal:
     Type: String
     Description: url for the portal docker image
-  ImageUrlGateway:
+  ImgGateway:
     Type: String
     Description: url for the jupyter kernel/enterprise gateway docker image
-  ImageUrlChrome:
+  ImgChrome:
     Type: String
     Description: url for the chrome docker image
   ApiCname:
@@ -113,7 +113,7 @@ Resources:
           Image: !Join ['', [
             !Ref 'AWS::AccountId', '.dkr.ecr.', !Ref 'AWS::Region', '.amazonaws.com/',
             !Ref 'Repository', ':', !Ref 'PipelineName', '-', !Ref 'EnvironmentName', '-',
-            !Ref 'ImageUrlApi'
+            !Ref 'ImgApi'
           ]]
           DependsOn:
             - Condition: START
@@ -168,7 +168,7 @@ Resources:
           Image: !Join ['', [
             !Ref 'AWS::AccountId', '.dkr.ecr.', !Ref 'AWS::Region', '.amazonaws.com/',
             !Ref 'Repository', ':', !Ref 'PipelineName', '-', !Ref 'EnvironmentName', '-',
-            !Ref 'ImageUrlChrome'
+            !Ref 'ImgChrome'
           ]]
           Environment:
             - Name: START_XVFB
@@ -190,7 +190,7 @@ Resources:
           Image: !Join ['', [
             !Ref 'AWS::AccountId', '.dkr.ecr.', !Ref 'AWS::Region', '.amazonaws.com/',
             !Ref 'Repository', ':', !Ref 'PipelineName', '-', !Ref 'EnvironmentName', '-',
-            !Ref 'ImageUrlGateway'
+            !Ref 'ImgGateway'
           ]]
           Environment:
             - Name: KG_ALLOW_ORIGIN
@@ -214,7 +214,7 @@ Resources:
           Image: !Join ['', [
             !Ref 'AWS::AccountId', '.dkr.ecr.', !Ref 'AWS::Region', '.amazonaws.com/',
             !Ref 'Repository', ':', !Ref 'PipelineName', '-', !Ref 'EnvironmentName', '-',
-            !Ref 'ImageUrlPortal'
+            !Ref 'ImgPortal'
           ]]
           Environment:
             - Name: NODE_ENV
@@ -251,7 +251,7 @@ Resources:
           Image: !Join ['', [
             !Ref 'AWS::AccountId', '.dkr.ecr.', !Ref 'AWS::Region', '.amazonaws.com/',
             !Ref 'Repository', ':', !Ref 'PipelineName', '-', !Ref 'EnvironmentName', '-',
-            !Ref 'ImageUrlDatadog'
+            !Ref 'ImgDatadog'
           ]]
           Environment:
             - Name: DD_API_KEY
