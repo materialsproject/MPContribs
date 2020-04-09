@@ -22,7 +22,8 @@ jobs:
       run: |
         cd mpcontribs-client
         tox
-        python setup.py sdist bdist_wheel
+        python setup.py sdist --dist-dir ../dist
+        python setup.py bdist_wheel --dist-dir ../dist
 
     - name: Upload client coverage to Codecov
       uses: codecov/codecov-action@v1
@@ -36,7 +37,8 @@ jobs:
       run: |
         cd mpcontribs-io
         tox
-        python setup.py sdist bdist_wheel
+        python setup.py sdist --dist-dir ../dist
+        python setup.py bdist_wheel --dist-dir ../dist
 
     - name: Upload io coverage to Codecov
       uses: codecov/codecov-action@v1
@@ -46,13 +48,13 @@ jobs:
         name: codecov-mpcontribs
         fail_ci_if_error: true
 
-    - name: Publish distribution 📦 to Test PyPI
+    - name: Publish distribution 📦s to Test PyPI
       uses: pypa/gh-action-pypi-publish@master
       with:
         password: ${{ secrets.test_pypi_password }}
         repository_url: https://test.pypi.org/legacy/
 
-    - name: Publish distribution 📦 to PyPI
+    - name: Publish distribution 📦s to PyPI
       if: startsWith(github.event.ref, 'refs/tags')
       uses: pypa/gh-action-pypi-publish@master
       with:
