@@ -7,6 +7,9 @@ Parameters:
     Type: String
     Description: A name for the environment that this cloudformation will be part of.
                  Used to locate other resources in the same environment.
+  Repository:
+    Type: String
+    Description: ECR repository name
   MongoHost:
     Type: String
     Description: MongoDB host that the app connects to.
@@ -107,7 +110,11 @@ Resources:
       ContainerDefinitions:
         - Name: api
           MemoryReservation: 500
-          Image: !Join ['', [!Ref 'AWS::AccountId', '.dkr.ecr.', !Ref 'AWS::Region', '.amazonaws.com/', !Ref 'ImageUrlApi']]
+          Image: !Join ['', [
+            !Ref 'AWS::AccountId', '.dkr.ecr.', !Ref 'AWS::Region', '.amazonaws.com/',
+            !Ref 'Repository', ':', !Ref 'PipelineName', '-', !Ref 'EnvironmentName', '-',
+            !Ref 'ImageUrlApi'
+          ]]
           DependsOn:
             - Condition: START
               ContainerName: chrome
@@ -158,7 +165,11 @@ Resources:
               awslogs-stream-prefix: !Ref 'ServiceName'
         - Name: chrome
           MemoryReservation: 100
-          Image: !Join ['', [!Ref 'AWS::AccountId', '.dkr.ecr.', !Ref 'AWS::Region', '.amazonaws.com/', !Ref 'ImageUrlChrome']]
+          Image: !Join ['', [
+            !Ref 'AWS::AccountId', '.dkr.ecr.', !Ref 'AWS::Region', '.amazonaws.com/',
+            !Ref 'Repository', ':', !Ref 'PipelineName', '-', !Ref 'EnvironmentName', '-',
+            !Ref 'ImageUrlChrome'
+          ]]
           Environment:
             - Name: START_XVFB
               Value: false
@@ -176,7 +187,11 @@ Resources:
               awslogs-stream-prefix: !Ref 'ServiceName'
         - Name: gateway
           MemoryReservation: 250
-          Image: !Join ['', [!Ref 'AWS::AccountId', '.dkr.ecr.', !Ref 'AWS::Region', '.amazonaws.com/', !Ref 'ImageUrlGateway']]
+          Image: !Join ['', [
+            !Ref 'AWS::AccountId', '.dkr.ecr.', !Ref 'AWS::Region', '.amazonaws.com/',
+            !Ref 'Repository', ':', !Ref 'PipelineName', '-', !Ref 'EnvironmentName', '-',
+            !Ref 'ImageUrlGateway'
+          ]]
           Environment:
             - Name: KG_ALLOW_ORIGIN
               Value: '*'
@@ -196,7 +211,11 @@ Resources:
               awslogs-stream-prefix: !Ref 'ServiceName'
         - Name: portal
           MemoryReservation: 350
-          Image: !Join ['', [!Ref 'AWS::AccountId', '.dkr.ecr.', !Ref 'AWS::Region', '.amazonaws.com/', !Ref 'ImageUrlPortal']]
+          Image: !Join ['', [
+            !Ref 'AWS::AccountId', '.dkr.ecr.', !Ref 'AWS::Region', '.amazonaws.com/',
+            !Ref 'Repository', ':', !Ref 'PipelineName', '-', !Ref 'EnvironmentName', '-',
+            !Ref 'ImageUrlPortal'
+          ]]
           Environment:
             - Name: NODE_ENV
               Value: production
@@ -229,7 +248,11 @@ Resources:
               awslogs-stream-prefix: !Ref 'ServiceName'
         - Name: datadog-agent
           MemoryReservation: 50
-          Image: !Join ['', [!Ref 'AWS::AccountId', '.dkr.ecr.', !Ref 'AWS::Region', '.amazonaws.com/', !Ref 'ImageUrlDatadog']]
+          Image: !Join ['', [
+            !Ref 'AWS::AccountId', '.dkr.ecr.', !Ref 'AWS::Region', '.amazonaws.com/',
+            !Ref 'Repository', ':', !Ref 'PipelineName', '-', !Ref 'EnvironmentName', '-',
+            !Ref 'ImageUrlDatadog'
+          ]]
           Environment:
             - Name: DD_API_KEY
               Value: !Ref 'DdApiKey'

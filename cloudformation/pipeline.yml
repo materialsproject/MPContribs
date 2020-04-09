@@ -389,7 +389,7 @@ Resources:
             post_build:
               commands:
                 - docker push "${IMAGE_URI}-api"
-                - printf '{"ImageUri":"%s"}' "${REPOSITORY}:${PREFIX}-${TAG}-api" > build-api.json
+                - printf '{"ImageUri":"%s"}' "${TAG}-api" > build-api.json
           artifacts:
             files:
                 - build-api.json
@@ -440,7 +440,7 @@ Resources:
             post_build:
               commands:
                 - docker push "${IMAGE_URI}-datadog"
-                - printf '{"ImageUri":"%s"}' "${REPOSITORY}:${PREFIX}-${TAG}-datadog" > build-datadog.json
+                - printf '{"ImageUri":"%s"}' "${TAG}-datadog" > build-datadog.json
           artifacts:
             files:
                 - build-datadog.json
@@ -489,7 +489,7 @@ Resources:
             post_build:
               commands:
                 - docker push "${IMAGE_URI}-portal"
-                - printf '{"ImageUri":"%s"}' "${REPOSITORY}:${PREFIX}-${TAG}-portal" > build-portal.json
+                - printf '{"ImageUri":"%s"}' "${TAG}-portal" > build-portal.json
           artifacts:
             files:
                 - build-portal.json
@@ -538,7 +538,7 @@ Resources:
             post_build:
               commands:
                 - docker push "${IMAGE_URI}-gateway"
-                - printf '{"ImageUri":"%s"}' "${REPOSITORY}:${PREFIX}-${TAG}-gateway" > build-gateway.json
+                - printf '{"ImageUri":"%s"}' "${TAG}-gateway" > build-gateway.json
           artifacts:
             files:
                 - build-gateway.json
@@ -587,7 +587,7 @@ Resources:
             post_build:
               commands:
                 - docker push "${IMAGE_URI}-chrome"
-                - printf '{"ImageUri":"%s"}' "${REPOSITORY}:${PREFIX}-${TAG}-chrome" > build-chrome.json
+                - printf '{"ImageUri":"%s"}' "${TAG}-chrome" > build-chrome.json
           artifacts:
             files:
                 - build-chrome.json
@@ -1012,6 +1012,7 @@ Resources:
                     "AwsSecretAccessKey": "${AwsSecretAccessKey}",
                     "SnsAdminTopicArn": "${SnsAdminTopicArn}",
                     "DdApiKey": "${DdApiKey}",
+                    "Repository": "${Repository}",
                     "ImageUrlApi": {"Fn::GetParam": ["BuildOutputApi", "build-api.json", "ImageUri"]},
                     "ImageUrlDatadog": {"Fn::GetParam": ["BuildOutputDatadog", "build-datadog.json", "ImageUri"]},
                     "ImageUrlPortal": {"Fn::GetParam": ["BuildOutputPortal", "build-portal.json", "ImageUri"]},
@@ -1054,6 +1055,7 @@ Resources:
                     "AwsSecretAccessKey": "${AwsSecretAccessKey}",
                     "SnsAdminTopicArn": "${SnsAdminTopicArn}",
                     "DdApiKey": "${DdApiKey}",
+                    "Repository": "${Repository}",
                     "ImageUrlApi": {"Fn::GetParam": ["BuildOutputApi", "build-api.json", "ImageUri"]},
                     "ImageUrlDatadog": {"Fn::GetParam": ["BuildOutputDatadog", "build-datadog.json", "ImageUri"]},
                     "ImageUrlPortal": {"Fn::GetParam": ["BuildOutputPortal", "build-portal.json", "ImageUri"]},
