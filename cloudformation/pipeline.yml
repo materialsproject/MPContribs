@@ -382,14 +382,14 @@ Resources:
               commands:
                 - $(aws ecr get-login --no-include-email)
                 - TAG="$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | head -c 8)"
-                - IMAGE_URI="${REPOSITORY_URI}:${PREFIX}-${TAG}"
+                - IMAGE_URI="${ECR_URI}/${REPOSITORY}:${PREFIX}-${TAG}"
             build:
               commands:
                 - docker build --tag "${IMAGE_URI}-api" --build-arg MAPI_KEY=${MAPI_KEY} mpcontribs-api
             post_build:
               commands:
                 - docker push "${IMAGE_URI}-api"
-                - printf '{"ImageUri":"%s"}' "${IMAGE_URI}-api" > build-api.json
+                - printf '{"ImageUri":"%s"}' "${REPOSITORY}:${PREFIX}-${TAG}-api" > build-api.json
           artifacts:
             files:
                 - build-api.json
@@ -399,8 +399,10 @@ Resources:
         Type: LINUX_CONTAINER
         PrivilegedMode: true
         EnvironmentVariables:
-          - Name: REPOSITORY_URI
-            Value: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${Repository}
+          - Name: ECR_URI
+            Value: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com
+          - Name: REPOSITORY
+            Value: !Sub ${Repository}
           - Name: MAPI_KEY
             Value: !Ref 'MapiKey'
           - Name: PREFIX

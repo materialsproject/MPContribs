@@ -107,7 +107,7 @@ Resources:
       ContainerDefinitions:
         - Name: api
           MemoryReservation: 500
-          Image: !Ref 'ImageUrlApi'
+          Image: !Join ['', [!Ref 'AWS::AccountId', '.dkr.ecr.', !Ref 'AWS::Region', '.amazonaws.com/', !Ref 'ImageUrlApi']]
           DependsOn:
             - Condition: START
               ContainerName: chrome
