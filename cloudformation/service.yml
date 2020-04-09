@@ -258,6 +258,8 @@ Resources:
               Value: !Ref 'DdApiKey'
             - Name: DD_APM_ENABLED
               Value: true
+            - Name: DD_PROCESS_AGENT_ENABLED
+              Value: false
             - Name: ECS_FARGATE
               Value: true
             - Name: DD_RECEIVER_PORT
