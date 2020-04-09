@@ -23,9 +23,9 @@ Parameters:
   ImageUrlApi:
     Type: String
     Description: url for the api docker image
-  ImageUrlXray:
+  ImageUrlDatadog:
     Type: String
-    Description: url for the xray-daemon docker image
+    Description: url for the datadog-agent docker image
   ImageUrlPortal:
     Type: String
     Description: url for the portal docker image
@@ -55,6 +55,8 @@ Parameters:
     Type: String
     Default: '8080'
     Description: Port for the Portal
+  DdApiKey:
+    Type: String
 
 Resources:
   # A log group for storing the container logs for this service
@@ -112,7 +114,7 @@ Resources:
             - Condition: START
               ContainerName: gateway
             - Condition: START
-              ContainerName: xray
+              ContainerName: datadog
           Environment:
             - Name: MPCONTRIBS_API_HOST
               Value: !Join [':', ['localhost', !Ref 'ApiPort']]
@@ -142,6 +144,10 @@ Resources:
               Value:
                 Fn::ImportValue:
                     !Join [':', [!Ref 'PipelineName', !Ref 'EnvironmentName', 'ElastiCacheAddress']]
+            - Name: DD_TRACE_AGENT_PORT
+              Value: 8126
+            - Name: DD_TRACE_AGENT_HOSTNAME
+              Value: localhost
           PortMappings:
             - ContainerPort: !Ref 'ApiPort'
           LogConfiguration:
@@ -156,6 +162,10 @@ Resources:
           Environment:
             - Name: START_XVFB
               Value: false
+            - Name: DD_TRACE_AGENT_PORT
+              Value: 8126
+            - Name: DD_TRACE_AGENT_HOSTNAME
+              Value: localhost
           PortMappings:
             - ContainerPort: 4444
           LogConfiguration:
@@ -172,6 +182,10 @@ Resources:
               Value: '*'
             - Name: MPCONTRIBS_API_HOST
               Value: !Join [':', ['localhost', !Ref 'ApiPort']]
+            - Name: DD_TRACE_AGENT_PORT
+              Value: 8126
+            - Name: DD_TRACE_AGENT_HOSTNAME
+              Value: localhost
           PortMappings:
             - ContainerPort: 8888
           LogConfiguration:
@@ -198,6 +212,10 @@ Resources:
               Value: !Ref 'PortalPort'
             - Name: AWS_REGION
               Value: !Ref 'AWS::Region'
+            - Name: DD_TRACE_AGENT_PORT
+              Value: 8126
+            - Name: DD_TRACE_AGENT_HOSTNAME
+              Value: localhost
           DependsOn:
             - Condition: START
               ContainerName: api
@@ -209,20 +227,20 @@ Resources:
               awslogs-group: !Join ['-', [!Ref 'PipelineName', !Ref 'EnvironmentName', 'service', !Ref 'ServiceName']]
               awslogs-region: !Ref 'AWS::Region'
               awslogs-stream-prefix: !Ref 'ServiceName'
-        - Name: xray
-          MemoryReservation: 100
-          Image: !Join ['', [!Ref 'AWS::AccountId', '.dkr.ecr.', !Ref 'AWS::Region', '.amazonaws.com/', !Ref 'ImageUrlXray']]
+        - Name: datadog-agent
+          MemoryReservation: 50
+          Image: !Join ['', [!Ref 'AWS::AccountId', '.dkr.ecr.', !Ref 'AWS::Region', '.amazonaws.com/', !Ref 'ImageUrlDatadog']]
           Environment:
-            - Name: API_CNAME
-              Value: !Ref 'ApiCname'
-            - Name: API_PORT
-              Value: !Ref 'ApiPort'
-            - Name: PORTAL_CNAME
-              Value: !Ref 'PortalCname'
-            - Name: PORTAL_PORT
-              Value: !Ref 'PortalPort'
-            - Name: AWS_REGION
-              Value: !Ref 'AWS::Region'
+            - Name: DD_API_KEY
+              Value: !Ref 'DdApiKey'
+            - Name: DD_APM_ENABLED
+              Value: true
+            - Name: ECS_FARGATE
+              Value: true
+            - Name: DD_RECEIVER_PORT
+              Value: 8126
+            - Name: DD_DD_URL
+              Value: pvtlink.agent.datadoghq.com
           LogConfiguration:
             LogDriver: 'awslogs'
             Options:

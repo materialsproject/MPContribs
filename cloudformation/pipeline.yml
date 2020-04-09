@@ -86,6 +86,14 @@ Parameters:
     NoEcho: 'true'
     Type: String
     Description: API key for MPRester to build formulae lookup table
+  DdApiKey:
+    NoEcho: 'true'
+    Type: String
+    Description: DataDog API Key
+  DdAppKey:
+    NoEcho: 'true'
+    Type: String
+    Description: DataDog APP Key
 
 
 Metadata:
@@ -93,6 +101,7 @@ Metadata:
     config:
       ignore_checks:
       - E3030
+      - E3001
 
 Resources:
   # Create the ECR respository to hold built docker images
@@ -247,6 +256,20 @@ Resources:
     Type: AWS::S3::Bucket
     DeletionPolicy: Retain
 
+  # Datadog Integration
+  # https://docs.datadoghq.com/integrations/amazon_web_services/?tab=allpermissions#setup
+  DatadogAWSIntegrationResource:
+    Type: 'Datadog::Integrations::AWS'
+    Properties:
+      AccountID: !Sub ${AWS::AccountId}
+      RoleName: DatadogAWSIntegrationRole
+      HostTags:
+        - !Sub "pipeline:${PipelineName}"
+        - !Sub "env:${EnvironmentName}"
+      DatadogCredentials:
+        ApiKey: !Sub ${DdApiKey}
+        ApplicationKey: !Sub ${DdAppKey}
+
   # This is the definition of how to build the code in the repository
   CodeBuildProjectKong:
     Type: AWS::CodeBuild::Project
@@ -391,7 +414,7 @@ Resources:
       Name: !Sub ${AWS::StackName}-api
       ServiceRole: !Ref CodeBuildServiceRole
 
-  CodeBuildProjectXray:
+  CodeBuildProjectDatadog:
     Type: AWS::CodeBuild::Project
     Properties:
       Artifacts:
@@ -411,14 +434,14 @@ Resources:
                 - IMAGE_URI="${ECR_URI}/${REPOSITORY}:${PREFIX}-${TAG}"
             build:
               commands:
-                - docker build --tag "${IMAGE_URI}-xray" mpcontribs-sidecars/xray-daemon
+                - docker build --tag "${IMAGE_URI}-datadog" mpcontribs-sidecars/datadog-agent
             post_build:
               commands:
-                - docker push "${IMAGE_URI}-xray"
-                - printf '{"ImageUri":"%s"}' "${REPOSITORY}:${PREFIX}-${TAG}-xray" > build-xray.json
+                - docker push "${IMAGE_URI}-datadog"
+                - printf '{"ImageUri":"%s"}' "${REPOSITORY}:${PREFIX}-${TAG}-datadog" > build-datadog.json
           artifacts:
             files:
-                - build-xray.json
+                - build-datadog.json
       Environment:
         ComputeType: BUILD_GENERAL1_SMALL
         Image: aws/codebuild/standard:2.0
@@ -437,7 +460,7 @@ Resources:
           - LOCAL_CUSTOM_CACHE
           - LOCAL_DOCKER_LAYER_CACHE
           - LOCAL_SOURCE_CACHE
-      Name: !Sub ${AWS::StackName}-xray
+      Name: !Sub ${AWS::StackName}-datadog
       ServiceRole: !Ref CodeBuildServiceRole
 
   CodeBuildProjectPortal:
@@ -920,19 +943,19 @@ Resources:
                 - Name: Source
               OutputArtifacts:
                 - Name: BuildOutputApi
-            - Name: BuildXray
+            - Name: BuildDatadog
               ActionTypeId:
                 Category: Build
                 Owner: AWS
                 Version: '1'
                 Provider: CodeBuild
               Configuration:
-                ProjectName: !Ref CodeBuildProjectXray
+                ProjectName: !Ref CodeBuildProjectDatadog
                 PrimarySource: Source
               InputArtifacts:
                 - Name: Source
               OutputArtifacts:
-                - Name: BuildOutputXray
+                - Name: BuildOutputDatadog
             - Name: BuildPortal
               ActionTypeId:
                 Category: Build
@@ -1051,8 +1074,9 @@ Resources:
                     "AwsAccessKeyId": "${AwsAccessKeyId}",
                     "AwsSecretAccessKey": "${AwsSecretAccessKey}",
                     "SnsAdminTopicArn": "${SnsAdminTopicArn}",
+                    "DdApiKey": "${DdApiKey}",
                     "ImageUrlApi": {"Fn::GetParam": ["BuildOutputApi", "build-api.json", "ImageUri"]},
-                    "ImageUrlXray": {"Fn::GetParam": ["BuildOutputXray", "build-xray.json", "ImageUri"]},
+                    "ImageUrlDatadog": {"Fn::GetParam": ["BuildOutputDatadog", "build-datadog.json", "ImageUri"]},
                     "ImageUrlPortal": {"Fn::GetParam": ["BuildOutputPortal", "build-portal.json", "ImageUri"]},
                     "ImageUrlGateway": {"Fn::GetParam": ["BuildOutputGateway", "build-gateway.json", "ImageUri"]},
                     "ImageUrlChrome": {"Fn::GetParam": ["BuildOutputChrome", "build-chrome.json", "ImageUri"]}
@@ -1060,7 +1084,7 @@ Resources:
               InputArtifacts:
                 - Name: Source
                 - Name: BuildOutputApi
-                - Name: BuildOutputXray
+                - Name: BuildOutputDatadog
                 - Name: BuildOutputPortal
                 - Name: BuildOutputGateway
                 - Name: BuildOutputChrome
@@ -1092,8 +1116,9 @@ Resources:
                     "AwsAccessKeyId": "${AwsAccessKeyId}",
                     "AwsSecretAccessKey": "${AwsSecretAccessKey}",
                     "SnsAdminTopicArn": "${SnsAdminTopicArn}",
+                    "DdApiKey": "${DdApiKey}",
                     "ImageUrlApi": {"Fn::GetParam": ["BuildOutputApi", "build-api.json", "ImageUri"]},
-                    "ImageUrlXray": {"Fn::GetParam": ["BuildOutputXray", "build-xray.json", "ImageUri"]},
+                    "ImageUrlDatadog": {"Fn::GetParam": ["BuildOutputDatadog", "build-datadog.json", "ImageUri"]},
                     "ImageUrlPortal": {"Fn::GetParam": ["BuildOutputPortal", "build-portal.json", "ImageUri"]},
                     "ImageUrlGateway": {"Fn::GetParam": ["BuildOutputGateway", "build-gateway.json", "ImageUri"]},
                     "ImageUrlChrome": {"Fn::GetParam": ["BuildOutputChrome", "build-chrome.json", "ImageUri"]}
@@ -1101,7 +1126,7 @@ Resources:
               InputArtifacts:
                 - Name: Source
                 - Name: BuildOutputApi
-                - Name: BuildOutputXray
+                - Name: BuildOutputDatadog
                 - Name: BuildOutputPortal
                 - Name: BuildOutputGateway
                 - Name: BuildOutputChrome

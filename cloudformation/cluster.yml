@@ -374,6 +374,24 @@ Resources:
         - !Ref 'PublicSecurityGroup'
         - !Ref 'PrivateSecurityGroup'
         - !Ref 'ControlPlaneSecurityGroup'
+  DatadogEndpoint:
+    # Note: If you want to forward logs to Datadog through this VPC endpoint, the security group
+    # must accept inbound and outbound traffic on port 443.
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      VpcId: !Ref 'VPC'
+      ServiceName: com.amazonaws.vpce.us-east-1.vpce-svc-056576c12b36056ca
+      VpcEndpointType: Interface
+      PrivateDnsEnabled: true
+      SubnetIds:
+        - !Ref 'PublicSubnetOne'
+        - !Ref 'PublicSubnetTwo'
+        - !Ref 'PrivateSubnetOne'
+        - !Ref 'PrivateSubnetTwo'
+      SecurityGroupIds:
+        - !Ref 'PublicSecurityGroup'
+        - !Ref 'PrivateSecurityGroup'
+        - !Ref 'ControlPlaneSecurityGroup'
 
   ECSCluster:
     Type: AWS::ECS::Cluster
@@ -457,8 +475,6 @@ Resources:
                 # Allow the ECS tasks to upload logs to CloudWatch
                 - 'logs:CreateLogStream'
                 - 'logs:PutLogEvents'
-                - "xray:PutTraceSegments"
-                - "xray:PutTelemetryRecords"
                 # Allow the ECS tasks to start tasks (JHub)
                 - "ecs:RunTask"
                 - "ecs:StopTask"
