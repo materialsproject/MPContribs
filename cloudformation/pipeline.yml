@@ -94,6 +94,14 @@ Parameters:
     NoEcho: 'true'
     Type: String
     Description: DataDog APP Key
+  DdAcctId:
+    NoEcho: 'true'
+    Type: String
+    Description: DataDog's AWS Account ID
+  DdExtId:
+    NoEcho: 'true'
+    Type: String
+    Description: DataDog External ID
 
 
 Metadata:
@@ -258,11 +266,53 @@ Resources:
 
   # Datadog Integration
   # https://docs.datadoghq.com/integrations/amazon_web_services/?tab=allpermissions#setup
+  DatadogAWSIntegrationRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Path: /
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action: sts:AssumeRole
+            Principal:
+              AWS: !Sub ${DdAcctId}
+            Condition:
+              StringEquals:
+                sts:ExternalId: !Sub ${DdExtId}
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/AmazonEC2ReadOnlyAccess'
+        - 'arn:aws:iam::aws:policy/CloudWatchReadOnlyAccess'
+      Policies:
+        - PolicyName: root
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Resource: '*'
+                Effect: Allow
+                Action:
+                  - budgets:ViewBudget
+                  - ecs:Describe*
+                  - ecs:List*
+                  - elasticache:Describe*
+                  - elasticache:List*
+                  - rds:Describe*
+                  - rds:List*
+                  - route53:List*
+                  - s3:GetBucketLogging
+                  - s3:GetBucketLocation
+                  - s3:GetBucketNotification
+                  - s3:GetBucketTagging
+                  - s3:ListAllMyBuckets
+                  - s3:PutBucketNotification
+                  - sns:List*
+                  - sns:Publish
+
   DatadogAWSIntegrationResource:
     Type: 'Datadog::Integrations::AWS'
     Properties:
       AccountID: !Sub ${AWS::AccountId}
-      RoleName: DatadogAWSIntegrationRole
+      RoleName: !Ref DatadogAWSIntegrationRole
       HostTags:
         - !Sub "pipeline:${PipelineName}"
         - !Sub "env:${EnvironmentName}"
