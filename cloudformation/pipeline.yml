@@ -482,14 +482,14 @@ Resources:
               commands:
                 - $(aws ecr get-login --no-include-email)
                 - TAG="$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | head -c 8)"
-                - IMAGE_URI="${REPOSITORY_URI}:${PREFIX}-${TAG}"
+                - IMAGE_URI="${ECR_URI}/${REPOSITORY}:${PREFIX}-${TAG}"
             build:
               commands:
                 - docker build --tag "${IMAGE_URI}-portal" mpcontribs-portal
             post_build:
               commands:
                 - docker push "${IMAGE_URI}-portal"
-                - printf '{"ImageUri":"%s"}' "${IMAGE_URI}-portal" > build-portal.json
+                - printf '{"ImageUri":"%s"}' "${REPOSITORY}:${PREFIX}-${TAG}-portal" > build-portal.json
           artifacts:
             files:
                 - build-portal.json
@@ -499,8 +499,10 @@ Resources:
         Type: LINUX_CONTAINER
         PrivilegedMode: true
         EnvironmentVariables:
-          - Name: REPOSITORY_URI
-            Value: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${Repository}
+          - Name: ECR_URI
+            Value: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com
+          - Name: REPOSITORY
+            Value: !Sub ${Repository}
           - Name: PREFIX
             Value: !Sub ${PipelineName}-${EnvironmentName}
       Cache:
