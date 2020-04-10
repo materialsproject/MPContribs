@@ -797,7 +797,7 @@ Resources:
                 - Name: BuildOutputKonga
               RunOrder: 1
 
-            - Name: DeployApp
+            - Name: DeployMPContribs
               ActionTypeId:
                 Category: Deploy
                 Owner: AWS
@@ -806,12 +806,12 @@ Resources:
               Configuration:
                 ActionMode: CREATE_UPDATE
                 RoleArn: !GetAtt CloudFormationDeployRole.Arn
-                StackName: !Sub ${PipelineName}-${EnvironmentName}-AppService
+                StackName: !Sub ${PipelineName}-${EnvironmentName}-MPContribsService
                 TemplatePath: Source::cloudformation/service.yml
                 Capabilities: CAPABILITY_IAM
                 ParameterOverrides: !Sub |
                   {
-                    "ServiceName": "app",
+                    "ServiceName": "MPContribs",
                     "ApiCname": "api.mpcontribs.org",
                     "ApiPort": "5000",
                     "MpcontribsDbName": "mpcontribs-dev",
@@ -832,7 +832,7 @@ Resources:
                 - Name: BuildOutputMPContribs
               RunOrder: 2
 
-            - Name: DeployAppML
+            - Name: DeployMPContribsML
               ActionTypeId:
                 Category: Deploy
                 Owner: AWS
@@ -841,12 +841,12 @@ Resources:
               Configuration:
                 ActionMode: CREATE_UPDATE
                 RoleArn: !GetAtt CloudFormationDeployRole.Arn
-                StackName: !Sub ${PipelineName}-${EnvironmentName}-AppMlService
+                StackName: !Sub ${PipelineName}-${EnvironmentName}-MPContribsMlService
                 TemplatePath: Source::cloudformation/service.yml
                 Capabilities: CAPABILITY_IAM
                 ParameterOverrides: !Sub |
                   {
-                    "ServiceName": "appML",
+                    "ServiceName": "MPContribsML",
                     "ApiCname": "ml-api.materialsproject.cloud",
                     "ApiPort": "5002",
                     "MpcontribsDbName": "mpcontribs-ml",
