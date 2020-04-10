@@ -278,8 +278,10 @@ Resources:
               Value: !Ref 'DdApiKey'
             - Name: DD_APM_ENABLED
               Value: true
+            - Name: DD_SYSTEM_PROBE_ENABLED
+              Value: true
             - Name: DD_PROCESS_AGENT_ENABLED
-              Value: false
+              Value: true
             - Name: ECS_FARGATE
               Value: true
             - Name: DD_DOGSTATSD_NON_LOCAL_TRAFFIC
@@ -290,6 +292,10 @@ Resources:
               Value: 8126
             - Name: DD_DD_URL
               Value: https://pvtlink.agent.datadoghq.com
+            - Name: DD_LOGS_CONFIG_USE_HTTP
+              Value: true
+            - Name: DD_LOGS_CONFIG_LOGS_DD_URL
+              Value: "pvtlink.logs.datadoghq.com:443"
           LogConfiguration:
             LogDriver: 'awslogs'
             Options:
