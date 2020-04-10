@@ -115,6 +115,11 @@ Resources:
             !Ref 'Repository', ':', !Ref 'PipelineName', '-', !Ref 'EnvironmentName', '-',
             !Ref 'ImgApi'
           ]]
+          DockerLabels:
+            my.custom.label.service: !Join ['-', [!Ref 'PipelineName', !Ref 'EnvironmentName', !Ref 'ServiceName']]
+            com.datadoghq.ad.instances: [{"host": "%%host%%", "port": !Ref 'ApiPort'}]
+            com.datadoghq.ad.check_names: ["ecs_fargate"]
+            com.datadoghq.ad.init_configs: [{}]
           DependsOn:
             - Condition: START
               ContainerName: chrome
@@ -170,6 +175,11 @@ Resources:
             !Ref 'Repository', ':', !Ref 'PipelineName', '-', !Ref 'EnvironmentName', '-',
             !Ref 'ImgChrome'
           ]]
+          DockerLabels:
+            my.custom.label.service: !Join ['-', [!Ref 'PipelineName', !Ref 'EnvironmentName', !Ref 'ServiceName']]
+            com.datadoghq.ad.instances: [{"host": "%%host%%", "port": 4444}]
+            com.datadoghq.ad.check_names: ["ecs_fargate"]
+            com.datadoghq.ad.init_configs: [{}]
           Environment:
             - Name: START_XVFB
               Value: false
@@ -192,6 +202,11 @@ Resources:
             !Ref 'Repository', ':', !Ref 'PipelineName', '-', !Ref 'EnvironmentName', '-',
             !Ref 'ImgGateway'
           ]]
+          DockerLabels:
+            my.custom.label.service: !Join ['-', [!Ref 'PipelineName', !Ref 'EnvironmentName', !Ref 'ServiceName']]
+            com.datadoghq.ad.instances: [{"host": "%%host%%", "port": 8888}]
+            com.datadoghq.ad.check_names: ["ecs_fargate"]
+            com.datadoghq.ad.init_configs: [{}]
           Environment:
             - Name: KG_ALLOW_ORIGIN
               Value: '*'
@@ -216,6 +231,11 @@ Resources:
             !Ref 'Repository', ':', !Ref 'PipelineName', '-', !Ref 'EnvironmentName', '-',
             !Ref 'ImgPortal'
           ]]
+          DockerLabels:
+            my.custom.label.service: !Join ['-', [!Ref 'PipelineName', !Ref 'EnvironmentName', !Ref 'ServiceName']]
+            com.datadoghq.ad.instances: [{"host": "%%host%%", "port": !Ref 'PortalPort'}]
+            com.datadoghq.ad.check_names: ["ecs_fargate"]
+            com.datadoghq.ad.init_configs: [{}]
           Environment:
             - Name: NODE_ENV
               Value: production
@@ -262,6 +282,10 @@ Resources:
               Value: false
             - Name: ECS_FARGATE
               Value: true
+            - Name: DD_DOGSTATSD_NON_LOCAL_TRAFFIC
+              Value: true
+            - Name: DD_DOCKER_LABELS_AS_TAGS
+              Value: "{\"my.custom.label.service\":\"service\"}"
             - Name: DD_RECEIVER_PORT
               Value: 8126
             - Name: DD_DD_URL
