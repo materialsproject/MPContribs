@@ -318,6 +318,15 @@ Resources:
       VpcSecurityGroupIds:
         - !GetAtt DBSecurityGroup.GroupId
 
+  S3Endpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      VpcId: !Ref 'VPC'
+      ServiceName: !Sub 'com.amazonaws.${AWS::Region}.s3'
+      VpcEndpointType: Gateway
+      RouteTableIds:
+        - !Ref 'PublicRouteTable'
+        - !Ref 'PrivateRouteTable'
   EcrEndpoint:
     Type: AWS::EC2::VPCEndpoint
     Properties:
@@ -333,12 +342,11 @@ Resources:
       SecurityGroupIds:
         - !Ref 'PublicSecurityGroup'
         - !Ref 'PrivateSecurityGroup'
-        - !Ref 'ControlPlaneSecurityGroup'
-  SnsEndpoint:
+  EcrApiEndpoint:
     Type: AWS::EC2::VPCEndpoint
     Properties:
       VpcId: !Ref 'VPC'
-      ServiceName: !Sub 'com.amazonaws.${AWS::Region}.sns'
+      ServiceName: !Sub 'com.amazonaws.${AWS::Region}.ecr.api'
       VpcEndpointType: Interface
       PrivateDnsEnabled: true
       SubnetIds:
@@ -349,15 +357,18 @@ Resources:
       SecurityGroupIds:
         - !Ref 'PublicSecurityGroup'
         - !Ref 'PrivateSecurityGroup'
-  S3Endpoint:
+  SnsEndpoint:
     Type: AWS::EC2::VPCEndpoint
     Properties:
       VpcId: !Ref 'VPC'
-      ServiceName: !Sub 'com.amazonaws.${AWS::Region}.s3'
-      VpcEndpointType: Gateway
-      RouteTableIds:
-        - !Ref 'PublicRouteTable'
-        - !Ref 'PrivateRouteTable'
+      ServiceName: !Sub 'com.amazonaws.${AWS::Region}.sns'
+      VpcEndpointType: Interface
+      PrivateDnsEnabled: true
+      SubnetIds:
+        - !Ref 'PrivateSubnetOne'
+        - !Ref 'PrivateSubnetTwo'
+      SecurityGroupIds:
+        - !Ref 'PrivateSecurityGroup'
   LogsEndpoint:
     Type: AWS::EC2::VPCEndpoint
     Properties:
@@ -373,10 +384,7 @@ Resources:
       SecurityGroupIds:
         - !Ref 'PublicSecurityGroup'
         - !Ref 'PrivateSecurityGroup'
-        - !Ref 'ControlPlaneSecurityGroup'
   DatadogEndpoint:
-    # Note: If you want to forward logs to Datadog through this VPC endpoint, the security group
-    # must accept inbound and outbound traffic on port 443.
     Type: AWS::EC2::VPCEndpoint
     Properties:
       VpcId: !Ref 'VPC'
@@ -391,7 +399,6 @@ Resources:
       SecurityGroupIds:
         - !Ref 'PublicSecurityGroup'
         - !Ref 'PrivateSecurityGroup'
-        - !Ref 'ControlPlaneSecurityGroup'
 
   ECSCluster:
     Type: AWS::ECS::Cluster
