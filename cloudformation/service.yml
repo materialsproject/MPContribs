@@ -68,7 +68,7 @@ Resources:
           Action: ['sts:AssumeRole']
       Path: /
       Policies:
-      - PolicyName: app-policy
+      - PolicyName: app-sqlite
         PolicyDocument:
           Statement:
           - Effect: Allow
@@ -76,12 +76,9 @@ Resources:
               - "s3:PutObject"
               - "s3:GetObject"
               - "s3:ListBucket"
-              - "ecr:BatchCheckLayerAvailability"
-              - "ecr:BatchGetImage"
-              - "ecr:GetDownloadUrlForLayer"
-              - "ecr:GetAuthorizationToken"
             Resource:
-              - "*"
+              - "arn:aws:s3:::mpcontribs-sqlite/db.sqlite3"
+              - "arn:aws:s3:::mpcontribs-sqlite"
 
   # The task definition. This is a simple metadata description of what
   # container to run, and what resource requirements it has.
