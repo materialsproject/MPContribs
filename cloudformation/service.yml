@@ -23,21 +23,9 @@ Parameters:
     Type: String
     Default: app
     Description: A name for the service
-  ImgApi:
+  Tag:
     Type: String
-    Description: url for the api docker image
-  ImgDatadog:
-    Type: String
-    Description: url for the datadog-agent docker image
-  ImgPortal:
-    Type: String
-    Description: url for the portal docker image
-  ImgGateway:
-    Type: String
-    Description: url for the jupyter kernel/enterprise gateway docker image
-  ImgChrome:
-    Type: String
-    Description: url for the chrome docker image
+    Description: short git tag used for image builds
   ApiCname:
     Type: String
     Default: 'api.mpcontribs.org'
@@ -113,7 +101,7 @@ Resources:
           Image: !Join ['', [
             !Ref 'AWS::AccountId', '.dkr.ecr.', !Ref 'AWS::Region', '.amazonaws.com/',
             !Ref 'Repository', ':', !Ref 'PipelineName', '-', !Ref 'EnvironmentName', '-',
-            !Ref 'ImgApi'
+            !Ref 'Tag', '-api'
           ]]
           DockerLabels:
             my.custom.label.service: !Join ['-', [
@@ -176,7 +164,7 @@ Resources:
           Image: !Join ['', [
             !Ref 'AWS::AccountId', '.dkr.ecr.', !Ref 'AWS::Region', '.amazonaws.com/',
             !Ref 'Repository', ':', !Ref 'PipelineName', '-', !Ref 'EnvironmentName', '-',
-            !Ref 'ImgChrome'
+            !Ref 'Tag', '-chrome'
           ]]
           DockerLabels:
             my.custom.label.service: !Join ['-', [
@@ -206,7 +194,7 @@ Resources:
           Image: !Join ['', [
             !Ref 'AWS::AccountId', '.dkr.ecr.', !Ref 'AWS::Region', '.amazonaws.com/',
             !Ref 'Repository', ':', !Ref 'PipelineName', '-', !Ref 'EnvironmentName', '-',
-            !Ref 'ImgGateway'
+            !Ref 'Tag', '-gateway'
           ]]
           DockerLabels:
             my.custom.label.service: !Join ['-', [
@@ -238,7 +226,7 @@ Resources:
           Image: !Join ['', [
             !Ref 'AWS::AccountId', '.dkr.ecr.', !Ref 'AWS::Region', '.amazonaws.com/',
             !Ref 'Repository', ':', !Ref 'PipelineName', '-', !Ref 'EnvironmentName', '-',
-            !Ref 'ImgPortal'
+            !Ref 'Tag', '-portal'
           ]]
           DockerLabels:
             my.custom.label.service: !Join ['-', [
@@ -283,7 +271,7 @@ Resources:
           Image: !Join ['', [
             !Ref 'AWS::AccountId', '.dkr.ecr.', !Ref 'AWS::Region', '.amazonaws.com/',
             !Ref 'Repository', ':', !Ref 'PipelineName', '-', !Ref 'EnvironmentName', '-',
-            !Ref 'ImgDatadog'
+            !Ref 'Tag', '-datadog'
           ]]
           Environment:
             - Name: DD_API_KEY
