@@ -1,4 +1,4 @@
-aws-xray-sdk==2.4.3
+aws-xray-sdk==2.5.0
 beautifulsoup4==4.9.0
 Django==3.0.5
 django-extensions==2.2.9
