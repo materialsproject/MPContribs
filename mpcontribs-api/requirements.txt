@@ -6,7 +6,7 @@ blinker==1.4
 boto3==1.12.41
 cherrypicker @ git+https://github.com/big-o/cherrypicker.git#egg=cherrypicker
 css-html-js-minify==2.5.5
-dict-deep==4.1.1
+dict-deep==4.1.2
 dnspython==1.16.0
 dotty-dict==1.2.1
 fdict==0.8.1
