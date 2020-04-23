@@ -415,107 +415,7 @@ Resources:
       Name: !Sub ${AWS::StackName}-konga
       ServiceRole: !Ref CodeBuildServiceRole
 
-  CodeBuildProjectApi:
-    Type: AWS::CodeBuild::Project
-    Properties:
-      Artifacts:
-        Type: CODEPIPELINE
-      Source:
-        Type: CODEPIPELINE
-        BuildSpec: |
-          version: 0.2
-          phases:
-            install:
-              runtime-versions:
-                docker: 18
-            pre_build:
-              commands:
-                - $(aws ecr get-login --no-include-email)
-                - TAG="$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | head -c 8)"
-                - IMAGE_URI="${ECR_URI}/${REPOSITORY}:${PREFIX}-${TAG}"
-            build:
-              commands:
-                - docker build --tag "${IMAGE_URI}-api" --build-arg MAPI_KEY=${MAPI_KEY} mpcontribs-api
-            post_build:
-              commands:
-                - docker push "${IMAGE_URI}-api"
-                - printf '{"ImageUri":"%s"}' "${TAG}-api" > api.json
-          artifacts:
-            files:
-                - api.json
-      Environment:
-        ComputeType: BUILD_GENERAL1_SMALL
-        Image: aws/codebuild/standard:2.0
-        Type: LINUX_CONTAINER
-        PrivilegedMode: true
-        EnvironmentVariables:
-          - Name: ECR_URI
-            Value: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com
-          - Name: REPOSITORY
-            Value: !Sub ${Repository}
-          - Name: MAPI_KEY
-            Value: !Ref 'MapiKey'
-          - Name: PREFIX
-            Value: !Sub ${PipelineName}-${EnvironmentName}
-      Cache:
-        Type: LOCAL
-        Modes: # You can specify one or more cache mode,
-          - LOCAL_CUSTOM_CACHE
-          - LOCAL_DOCKER_LAYER_CACHE
-          - LOCAL_SOURCE_CACHE
-      Name: !Sub ${AWS::StackName}-api
-      ServiceRole: !Ref CodeBuildServiceRole
-
-  CodeBuildProjectDatadog:
-    Type: AWS::CodeBuild::Project
-    Properties:
-      Artifacts:
-        Type: CODEPIPELINE
-      Source:
-        Type: CODEPIPELINE
-        BuildSpec: |
-          version: 0.2
-          phases:
-            install:
-              runtime-versions:
-                docker: 18
-            pre_build:
-              commands:
-                - $(aws ecr get-login --no-include-email)
-                - TAG="$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | head -c 8)"
-                - IMAGE_URI="${ECR_URI}/${REPOSITORY}:${PREFIX}-${TAG}"
-            build:
-              commands:
-                - docker build --tag "${IMAGE_URI}-datadog" mpcontribs-sidecars/datadog-agent
-            post_build:
-              commands:
-                - docker push "${IMAGE_URI}-datadog"
-                - printf '{"ImageUri":"%s"}' "${TAG}-datadog" > datadog.json
-          artifacts:
-            files:
-                - datadog.json
-      Environment:
-        ComputeType: BUILD_GENERAL1_SMALL
-        Image: aws/codebuild/standard:2.0
-        Type: LINUX_CONTAINER
-        PrivilegedMode: true
-        EnvironmentVariables:
-          - Name: ECR_URI
-            Value: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com
-          - Name: REPOSITORY
-            Value: !Sub ${Repository}
-          - Name: PREFIX
-            Value: !Sub ${PipelineName}-${EnvironmentName}
-      Cache:
-        Type: LOCAL
-        Modes: # You can specify one or more cache mode,
-          - LOCAL_CUSTOM_CACHE
-          - LOCAL_DOCKER_LAYER_CACHE
-          - LOCAL_SOURCE_CACHE
-      Name: !Sub ${AWS::StackName}-datadog
-      ServiceRole: !Ref CodeBuildServiceRole
-
-  CodeBuildProjectPortal:
+  CodeBuildProjectMPContribs:
     Type: AWS::CodeBuild::Project
     Properties:
       Artifacts:
@@ -536,113 +436,23 @@ Resources:
             build:
               commands:
                 - docker build --tag "${IMAGE_URI}-portal" mpcontribs-portal
+                - docker build --tag "${IMAGE_URI}-api" --build-arg MAPI_KEY=${MAPI_KEY} mpcontribs-api
+                - docker build --tag "${IMAGE_URI}-gateway" mpcontribs-sidecars/kernel_gateway
+                - docker build --tag "${IMAGE_URI}-chrome" mpcontribs-sidecars/chrome
+                - docker build --tag "${IMAGE_URI}-datadog" mpcontribs-sidecars/datadog-agent
             post_build:
               commands:
                 - docker push "${IMAGE_URI}-portal"
-                - printf '{"ImageUri":"%s"}' "${TAG}-portal" > portal.json
-          artifacts:
-            files:
-                - portal.json
-      Environment:
-        ComputeType: BUILD_GENERAL1_SMALL
-        Image: aws/codebuild/standard:2.0
-        Type: LINUX_CONTAINER
-        PrivilegedMode: true
-        EnvironmentVariables:
-          - Name: ECR_URI
-            Value: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com
-          - Name: REPOSITORY
-            Value: !Sub ${Repository}
-          - Name: PREFIX
-            Value: !Sub ${PipelineName}-${EnvironmentName}
-      Cache:
-        Type: LOCAL
-        Modes: # You can specify one or more cache mode,
-          - LOCAL_CUSTOM_CACHE
-          - LOCAL_DOCKER_LAYER_CACHE
-          - LOCAL_SOURCE_CACHE
-      Name: !Sub ${AWS::StackName}-portal
-      ServiceRole: !Ref CodeBuildServiceRole
-
-  CodeBuildProjectGateway:
-    Type: AWS::CodeBuild::Project
-    Properties:
-      Artifacts:
-        Type: CODEPIPELINE
-      Source:
-        Type: CODEPIPELINE
-        BuildSpec: |
-          version: 0.2
-          phases:
-            install:
-              runtime-versions:
-                docker: 18
-            pre_build:
-              commands:
-                - $(aws ecr get-login --no-include-email)
-                - TAG="$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | head -c 8)"
-                - IMAGE_URI="${ECR_URI}/${REPOSITORY}:${PREFIX}-${TAG}"
-            build:
-              commands:
-                - docker build --tag "${IMAGE_URI}-gateway" mpcontribs-sidecars/kernel_gateway
-            post_build:
-              commands:
+                - docker push "${IMAGE_URI}-api"
                 - docker push "${IMAGE_URI}-gateway"
-                - printf '{"ImageUri":"%s"}' "${TAG}-gateway" > gateway.json
-          artifacts:
-            files:
-                - gateway.json
-      Environment:
-        ComputeType: BUILD_GENERAL1_SMALL
-        Image: aws/codebuild/standard:2.0
-        Type: LINUX_CONTAINER
-        PrivilegedMode: true
-        EnvironmentVariables:
-          - Name: ECR_URI
-            Value: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com
-          - Name: REPOSITORY
-            Value: !Sub ${Repository}
-          - Name: PREFIX
-            Value: !Sub ${PipelineName}-${EnvironmentName}
-      Cache:
-        Type: LOCAL
-        Modes: # You can specify one or more cache mode,
-          - LOCAL_CUSTOM_CACHE
-          - LOCAL_DOCKER_LAYER_CACHE
-          - LOCAL_SOURCE_CACHE
-      Name: !Sub ${AWS::StackName}-gateway
-      ServiceRole: !Ref CodeBuildServiceRole
-
-  CodeBuildProjectChrome:
-    Type: AWS::CodeBuild::Project
-    Properties:
-      Artifacts:
-        Type: CODEPIPELINE
-      Source:
-        Type: CODEPIPELINE
-        BuildSpec: |
-          version: 0.2
-          phases:
-            install:
-              runtime-versions:
-                docker: 18
-            pre_build:
-              commands:
-                - $(aws ecr get-login --no-include-email)
-                - TAG="$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | head -c 8)"
-                - IMAGE_URI="${ECR_URI}/${REPOSITORY}:${PREFIX}-${TAG}"
-            build:
-              commands:
-                - docker build --tag "${IMAGE_URI}-chrome" mpcontribs-sidecars/chrome
-            post_build:
-              commands:
                 - docker push "${IMAGE_URI}-chrome"
-                - printf '{"ImageUri":"%s"}' "${TAG}-chrome" > chrome.json
+                - docker push "${IMAGE_URI}-datadog"
+                - printf '{"Tag":"%s"}' "${TAG}" > tag.json
           artifacts:
             files:
-                - chrome.json
+                - tag.json
       Environment:
-        ComputeType: BUILD_GENERAL1_SMALL
+        ComputeType: BUILD_GENERAL1_MEDIUM
         Image: aws/codebuild/standard:2.0
         Type: LINUX_CONTAINER
         PrivilegedMode: true
@@ -653,13 +463,15 @@ Resources:
             Value: !Sub ${Repository}
           - Name: PREFIX
             Value: !Sub ${PipelineName}-${EnvironmentName}
+          - Name: MAPI_KEY
+            Value: !Ref 'MapiKey'
       Cache:
         Type: LOCAL
         Modes: # You can specify one or more cache mode,
           - LOCAL_CUSTOM_CACHE
           - LOCAL_DOCKER_LAYER_CACHE
           - LOCAL_SOURCE_CACHE
-      Name: !Sub ${AWS::StackName}-chrome
+      Name: !Sub ${AWS::StackName}-MPContribs
       ServiceRole: !Ref CodeBuildServiceRole
 
   CodeBuildProjectMPWeb:
@@ -707,7 +519,7 @@ Resources:
             files:
                 - build-mpweb.json
       Environment:
-        ComputeType: BUILD_GENERAL1_SMALL
+        ComputeType: BUILD_GENERAL1_MEDIUM
         Image: aws/codebuild/standard:2.0
         Type: LINUX_CONTAINER
         PrivilegedMode: true
@@ -754,7 +566,7 @@ Resources:
             files:
                 - build-mpwebapi.json
       Environment:
-        ComputeType: BUILD_GENERAL1_SMALL
+        ComputeType: BUILD_GENERAL1_MEDIUM
         Image: aws/codebuild/standard:2.0
         Type: LINUX_CONTAINER
         PrivilegedMode: true
@@ -908,71 +720,21 @@ Resources:
                 - Name: SourceKonga
               OutputArtifacts:
                 - Name: BuildOutputKonga
-            - Name: BuildGateway
+
+            - Name: BuildMPContribs
               ActionTypeId:
                 Category: Build
                 Owner: AWS
                 Version: '1'
                 Provider: CodeBuild
               Configuration:
-                ProjectName: !Ref CodeBuildProjectGateway
+                ProjectName: !Ref CodeBuildProjectMPContribs
                 PrimarySource: Source
               InputArtifacts:
                 - Name: Source
               OutputArtifacts:
-                - Name: BOGateway
-            - Name: BuildChrome
-              ActionTypeId:
-                Category: Build
-                Owner: AWS
-                Version: '1'
-                Provider: CodeBuild
-              Configuration:
-                ProjectName: !Ref CodeBuildProjectChrome
-                PrimarySource: Source
-              InputArtifacts:
-                - Name: Source
-              OutputArtifacts:
-                - Name: BOChrome
-            - Name: BuildApi
-              ActionTypeId:
-                Category: Build
-                Owner: AWS
-                Version: '1'
-                Provider: CodeBuild
-              Configuration:
-                ProjectName: !Ref CodeBuildProjectApi
-                PrimarySource: Source
-              InputArtifacts:
-                - Name: Source
-              OutputArtifacts:
-                - Name: BOApi
-            - Name: BuildDatadog
-              ActionTypeId:
-                Category: Build
-                Owner: AWS
-                Version: '1'
-                Provider: CodeBuild
-              Configuration:
-                ProjectName: !Ref CodeBuildProjectDatadog
-                PrimarySource: Source
-              InputArtifacts:
-                - Name: Source
-              OutputArtifacts:
-                - Name: BODatadog
-            - Name: BuildPortal
-              ActionTypeId:
-                Category: Build
-                Owner: AWS
-                Version: '1'
-                Provider: CodeBuild
-              Configuration:
-                ProjectName: !Ref CodeBuildProjectPortal
-                PrimarySource: Source
-              InputArtifacts:
-                - Name: Source
-              OutputArtifacts:
-                - Name: BOPortal
+                - Name: BuildOutputMPContribs
+
             - Name: BuildMPWeb
               ActionTypeId:
                 Category: Build
@@ -1035,7 +797,7 @@ Resources:
                 - Name: BuildOutputKonga
               RunOrder: 1
 
-            - Name: DeployApp
+            - Name: DeployMPContribs
               ActionTypeId:
                 Category: Deploy
                 Owner: AWS
@@ -1044,12 +806,12 @@ Resources:
               Configuration:
                 ActionMode: CREATE_UPDATE
                 RoleArn: !GetAtt CloudFormationDeployRole.Arn
-                StackName: !Sub ${PipelineName}-${EnvironmentName}-AppService
+                StackName: !Sub ${PipelineName}-${EnvironmentName}-MPContribsService
                 TemplatePath: Source::cloudformation/service.yml
                 Capabilities: CAPABILITY_IAM
                 ParameterOverrides: !Sub |
                   {
-                    "ServiceName": "app",
+                    "ServiceName": "MPContribs",
                     "ApiCname": "api.mpcontribs.org",
                     "ApiPort": "5000",
                     "MpcontribsDbName": "mpcontribs-dev",
@@ -1063,22 +825,14 @@ Resources:
                     "SnsAdminTopicArn": "${SnsAdminTopicArn}",
                     "DdApiKey": "${DdApiKey}",
                     "Repository": "${Repository}",
-                    "ImgApi": {"Fn::GetParam": ["BOApi", "api.json", "ImageUri"]},
-                    "ImgDatadog": {"Fn::GetParam": ["BODatadog", "datadog.json", "ImageUri"]},
-                    "ImgPortal": {"Fn::GetParam": ["BOPortal", "portal.json", "ImageUri"]},
-                    "ImgGateway": {"Fn::GetParam": ["BOGateway", "gateway.json", "ImageUri"]},
-                    "ImgChrome": {"Fn::GetParam": ["BOChrome", "chrome.json", "ImageUri"]}
+                    "Tag": {"Fn::GetParam": ["BuildOutputMPContribs", "tag.json", "Tag"]}
                   }
               InputArtifacts:
                 - Name: Source
-                - Name: BOApi
-                - Name: BODatadog
-                - Name: BOPortal
-                - Name: BOGateway
-                - Name: BOChrome
+                - Name: BuildOutputMPContribs
               RunOrder: 2
 
-            - Name: DeployAppML
+            - Name: DeployMPContribsML
               ActionTypeId:
                 Category: Deploy
                 Owner: AWS
@@ -1087,12 +841,12 @@ Resources:
               Configuration:
                 ActionMode: CREATE_UPDATE
                 RoleArn: !GetAtt CloudFormationDeployRole.Arn
-                StackName: !Sub ${PipelineName}-${EnvironmentName}-AppMlService
+                StackName: !Sub ${PipelineName}-${EnvironmentName}-MPContribsMlService
                 TemplatePath: Source::cloudformation/service.yml
                 Capabilities: CAPABILITY_IAM
                 ParameterOverrides: !Sub |
                   {
-                    "ServiceName": "appML",
+                    "ServiceName": "MPContribsML",
                     "ApiCname": "ml-api.materialsproject.cloud",
                     "ApiPort": "5002",
                     "MpcontribsDbName": "mpcontribs-ml",
@@ -1106,19 +860,11 @@ Resources:
                     "SnsAdminTopicArn": "${SnsAdminTopicArn}",
                     "DdApiKey": "${DdApiKey}",
                     "Repository": "${Repository}",
-                    "ImgApi": {"Fn::GetParam": ["BOApi", "api.json", "ImageUri"]},
-                    "ImgDatadog": {"Fn::GetParam": ["BODatadog", "datadog.json", "ImageUri"]},
-                    "ImgPortal": {"Fn::GetParam": ["BOPortal", "portal.json", "ImageUri"]},
-                    "ImgGateway": {"Fn::GetParam": ["BOGateway", "gateway.json", "ImageUri"]},
-                    "ImgChrome": {"Fn::GetParam": ["BOChrome", "chrome.json", "ImageUri"]}
+                    "Tag": {"Fn::GetParam": ["BuildOutputMPContribs", "tag.json", "Tag"]}
                   }
               InputArtifacts:
                 - Name: Source
-                - Name: BOApi
-                - Name: BODatadog
-                - Name: BOPortal
-                - Name: BOGateway
-                - Name: BOChrome
+                - Name: BuildOutputMPContribs
               RunOrder: 2
 
             - Name: DeployMPWeb

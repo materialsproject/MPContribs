@@ -23,21 +23,9 @@ Parameters:
     Type: String
     Default: app
     Description: A name for the service
-  ImgApi:
+  Tag:
     Type: String
-    Description: url for the api docker image
-  ImgDatadog:
-    Type: String
-    Description: url for the datadog-agent docker image
-  ImgPortal:
-    Type: String
-    Description: url for the portal docker image
-  ImgGateway:
-    Type: String
-    Description: url for the jupyter kernel/enterprise gateway docker image
-  ImgChrome:
-    Type: String
-    Description: url for the chrome docker image
+    Description: short git tag used for image builds
   ApiCname:
     Type: String
     Default: 'api.mpcontribs.org'
@@ -113,13 +101,16 @@ Resources:
           Image: !Join ['', [
             !Ref 'AWS::AccountId', '.dkr.ecr.', !Ref 'AWS::Region', '.amazonaws.com/',
             !Ref 'Repository', ':', !Ref 'PipelineName', '-', !Ref 'EnvironmentName', '-',
-            !Ref 'ImgApi'
+            !Ref 'Tag', '-api'
           ]]
           DockerLabels:
-            my.custom.label.service: !Join ['-', [!Ref 'PipelineName', !Ref 'EnvironmentName', !Ref 'ServiceName']]
-            com.datadoghq.ad.instances: [{"host": "%%host%%", "port": !Ref 'ApiPort'}]
-            com.datadoghq.ad.check_names: ["ecs_fargate"]
-            com.datadoghq.ad.init_configs: [{}]
+            my.custom.label.service: !Join ['-', [
+              !Ref 'PipelineName', !Ref 'EnvironmentName', !Ref 'ServiceName'
+            ]]
+            com.datadoghq.ad.instances: !Sub |
+              [{"host": "%%host%%", "port": "${ApiPort}"}]
+            com.datadoghq.ad.check_names: "[\"ecs_fargate\"]"
+            com.datadoghq.ad.init_configs: "[{}]"
           DependsOn:
             - Condition: START
               ContainerName: chrome
@@ -173,13 +164,16 @@ Resources:
           Image: !Join ['', [
             !Ref 'AWS::AccountId', '.dkr.ecr.', !Ref 'AWS::Region', '.amazonaws.com/',
             !Ref 'Repository', ':', !Ref 'PipelineName', '-', !Ref 'EnvironmentName', '-',
-            !Ref 'ImgChrome'
+            !Ref 'Tag', '-chrome'
           ]]
           DockerLabels:
-            my.custom.label.service: !Join ['-', [!Ref 'PipelineName', !Ref 'EnvironmentName', !Ref 'ServiceName']]
-            com.datadoghq.ad.instances: [{"host": "%%host%%", "port": 4444}]
-            com.datadoghq.ad.check_names: ["ecs_fargate"]
-            com.datadoghq.ad.init_configs: [{}]
+            my.custom.label.service: !Join ['-', [
+              !Ref 'PipelineName', !Ref 'EnvironmentName', !Ref 'ServiceName'
+            ]]
+            com.datadoghq.ad.instances: !Sub |
+              [{"host": "%%host%%", "port": "${ApiPort}"}]
+            com.datadoghq.ad.check_names: "[\"ecs_fargate\"]"
+            com.datadoghq.ad.init_configs: "[{}]"
           Environment:
             - Name: START_XVFB
               Value: false
@@ -200,13 +194,16 @@ Resources:
           Image: !Join ['', [
             !Ref 'AWS::AccountId', '.dkr.ecr.', !Ref 'AWS::Region', '.amazonaws.com/',
             !Ref 'Repository', ':', !Ref 'PipelineName', '-', !Ref 'EnvironmentName', '-',
-            !Ref 'ImgGateway'
+            !Ref 'Tag', '-gateway'
           ]]
           DockerLabels:
-            my.custom.label.service: !Join ['-', [!Ref 'PipelineName', !Ref 'EnvironmentName', !Ref 'ServiceName']]
-            com.datadoghq.ad.instances: [{"host": "%%host%%", "port": 8888}]
-            com.datadoghq.ad.check_names: ["ecs_fargate"]
-            com.datadoghq.ad.init_configs: [{}]
+            my.custom.label.service: !Join ['-', [
+              !Ref 'PipelineName', !Ref 'EnvironmentName', !Ref 'ServiceName'
+            ]]
+            com.datadoghq.ad.instances: !Sub |
+              [{"host": "%%host%%", "port": "${ApiPort}"}]
+            com.datadoghq.ad.check_names: "[\"ecs_fargate\"]"
+            com.datadoghq.ad.init_configs: "[{}]"
           Environment:
             - Name: KG_ALLOW_ORIGIN
               Value: '*'
@@ -229,13 +226,16 @@ Resources:
           Image: !Join ['', [
             !Ref 'AWS::AccountId', '.dkr.ecr.', !Ref 'AWS::Region', '.amazonaws.com/',
             !Ref 'Repository', ':', !Ref 'PipelineName', '-', !Ref 'EnvironmentName', '-',
-            !Ref 'ImgPortal'
+            !Ref 'Tag', '-portal'
           ]]
           DockerLabels:
-            my.custom.label.service: !Join ['-', [!Ref 'PipelineName', !Ref 'EnvironmentName', !Ref 'ServiceName']]
-            com.datadoghq.ad.instances: [{"host": "%%host%%", "port": !Ref 'PortalPort'}]
-            com.datadoghq.ad.check_names: ["ecs_fargate"]
-            com.datadoghq.ad.init_configs: [{}]
+            my.custom.label.service: !Join ['-', [
+              !Ref 'PipelineName', !Ref 'EnvironmentName', !Ref 'ServiceName'
+            ]]
+            com.datadoghq.ad.instances: !Sub |
+              [{"host": "%%host%%", "port": "${ApiPort}"}]
+            com.datadoghq.ad.check_names: "[\"ecs_fargate\"]"
+            com.datadoghq.ad.init_configs: "[{}]"
           Environment:
             - Name: NODE_ENV
               Value: production
@@ -271,15 +271,17 @@ Resources:
           Image: !Join ['', [
             !Ref 'AWS::AccountId', '.dkr.ecr.', !Ref 'AWS::Region', '.amazonaws.com/',
             !Ref 'Repository', ':', !Ref 'PipelineName', '-', !Ref 'EnvironmentName', '-',
-            !Ref 'ImgDatadog'
+            !Ref 'Tag', '-datadog'
           ]]
           Environment:
             - Name: DD_API_KEY
               Value: !Ref 'DdApiKey'
             - Name: DD_APM_ENABLED
               Value: true
+            - Name: DD_SYSTEM_PROBE_ENABLED
+              Value: true
             - Name: DD_PROCESS_AGENT_ENABLED
-              Value: false
+              Value: true
             - Name: ECS_FARGATE
               Value: true
             - Name: DD_DOGSTATSD_NON_LOCAL_TRAFFIC
@@ -290,6 +292,10 @@ Resources:
               Value: 8126
             - Name: DD_DD_URL
               Value: https://pvtlink.agent.datadoghq.com
+            - Name: DD_LOGS_CONFIG_USE_HTTP
+              Value: true
+            - Name: DD_LOGS_CONFIG_LOGS_DD_URL
+              Value: "pvtlink.logs.datadoghq.com:443"
           LogConfiguration:
             LogDriver: 'awslogs'
             Options:
@@ -308,6 +314,7 @@ Resources:
         Fn::ImportValue:
           !Join [':', [!Ref 'PipelineName', !Ref 'EnvironmentName', 'ClusterName']]
       LaunchType: FARGATE
+      PlatformVersion: 1.4.0
       DesiredCount: 2
       NetworkConfiguration:
         AwsvpcConfiguration:
