@@ -92,9 +92,9 @@ class Projects(Document):
             if "is_approved" in set_keys and document.is_approved:
                 subject = f'Your project "{document.project}" has been approved'
                 if current_app.config["DEBUG"]:
-                    portal = "http://localhost:" + os.environ["API_PORT"]
+                    portal = "http://localhost:" + os.environ["PORTAL_PORT"]
                 else:
-                    portal = "https://" + os.environ["API_CNAME"]
+                    portal = "https://" + os.environ["PORTAL_CNAME"]
                 html = render_template(
                     "owner_email.html",
                     approved=True,
