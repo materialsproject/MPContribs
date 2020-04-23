@@ -36,6 +36,7 @@ def get_context(request):
     ctx = RequestContext(request)
     ctx["API_CNAME"] = os.environ["API_CNAME"]
     ctx["API_PORT"] = os.environ["API_PORT"]
+    ctx["TRADEMARK"] = os.environ.get("TRADEMARK", "")
     return ctx
 
 
