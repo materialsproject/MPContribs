@@ -4,75 +4,47 @@
 
 <section class="section is-hidden" id="browse">
     <div class="is-hidden" id="browse-help">
-        Hover over the cards below for more project information including descriptions and
-        references. Click on the project title to access its dataset landing page, or hover over "et
-        al." to reveal all authors. Use the above dropdown menu to quickly jump to specific
-        projects, or to search for keywords in their descriptions. The search will reduce the list
-        of projects shown below to those matching the keyword.
+        Use the above dropdown menu to quickly jump to specific projects, or to search for keywords in their
+        descriptions. The search will reduce the list of projects shown below to those matching the keyword.
     </div>
-    <div class="columns is-multiline">
         {% for lp in landing_pages %}
-        <div class="column is-narrow is-flex" id="{{ lp.project }}" name=cards>
-            <div class="box">
-                <div class="card">
-                    <div class="card-image is-hidden-touch">
-                        <figure class="image" id=thumbnail_{{lp.project}}_img></figure>
-                    </div>
-                    <div class="card-content">
-                        {{ lp.authors.0 }}
-                        {% if lp.authors.1 %}
-                        <span class="has-tooltip-top has-tooltip-multiline has-text-primary"
-                              data-tooltip="{{ lp.authors.1 }}">et al.</a>
-                        </span>
-                        {% endif %}
-                        {% if not lp.is_public %}
-                        <span class="icon is-pulled-right">
-                            <i class="far fa-eye-slash"></i>
-                        </span>
-                        {% endif %}
-                        <div class="title is-4 is-marginless">
-                            <a href="{{ lp.project }}/">
-                                {{ lp.title }}
-                            </a>
-                        </div>
-                    </div>
-                    <div class="card-content is-hidden is-overlay is-hidden-touch">
-                        <div class="columns">
-                            <div class="column full-width">
-                                {{ lp.authors.0 }}
-                                {% if lp.authors.1 %}
-                                <a class="has-tooltip-top has-tooltip-multiline"
-                                      data-tooltip="{{ lp.authors.1 }}">et al.</a>
-                                </a>
-                                {% endif %}
-                                {% if not lp.is_public %}
-                                <span class="icon is-pulled-right">
-                                    <i class="far fa-eye-slash"></i>
-                                </span>
-                                {% endif %}
-                                <div class="title is-4">
-                                    <a href="{{ lp.project }}/">
-                                        {{ lp.title }}
-                                    </a>
-                                </div>
-                                {% if lp.description %}
-                                <div class="container">{{ lp.description }}</div>
-                                {% endif %}
-                            </div>
-                        </div>
-                        {% if lp.urls %}
-                        <div class="columns is-gapless">
-                            {% for l, u in lp.urls.items %}
-                            <div class="column">
-                                <a href="{{u}}">{{l}}</a>
-                            </div>
-                            {% endfor %}
-                        </div>
-                        {% endif %}
-                    </div>
+        <article class="media box" id="{{ lp.project }}" name=cards>
+            <figure class="media-left image is-hidden-touch" id=thumbnail_{{lp.project}}_img></figure>
+            <div class="media-content">
+                {% if lp.urls %}
+                <nav class="breadcrumb has-bullet-separator is-size-6 is-marginless">
+                    <ul>
+                        {% for l, u in lp.urls.items %}
+                        <li><a href="{{u}}">{{l}}</a></li>
+                        {% endfor %}
+                    </ul>
+                </nav>
+                {% endif %}
+                <div class="content is-size-6 is-marginless">
+                    {{ lp.authors.0 }}
+                    {% if lp.authors.1 %}
+                    <a class="has-tooltip-top has-tooltip-multiline"
+                          data-tooltip="{{ lp.authors.1 }}">et al.</a>
+                    </a>
+                    {% endif %}
+                    {% if not lp.is_public %}
+                    <span class="icon is-pulled-right">
+                        <i class="far fa-eye-slash"></i>
+                    </span>
                 </div>
+                {% endif %}
+                <details>
+                    <summary>
+                        <a class="is-size-4 has-text-weight-semibold" href="{{ lp.project }}/">
+                            {{ lp.title }}
+                        </a>
+                    </summary>
+                    <p class="is-size-6">{{ lp.description }}</p>
+                </details>
             </div>
-        </div>
+            <div class="media-right">
+            </div>
+        </article>
         {% endfor %}
     </div>
 </section>

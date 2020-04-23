@@ -2,5 +2,5 @@
 
 while IFS= read -r jpg
 do
-    convert "$jpg""[275>]" "$jpg"
+    convert "$jpg""[150>]" "$jpg"
 done < "$1"

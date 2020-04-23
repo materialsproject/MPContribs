@@ -45,13 +45,13 @@ $(document).ready(function () {
             multiple: true,
             width: 'style',
             data: function (params) {
-                if (typeof params.term == 'undefined') { $("div[name=cards]").removeClass('is-hidden'); }
+                if (typeof params.term == 'undefined') { $("[name=cards]").removeClass('is-hidden'); }
                 var query = {_fields: "project,title"};
                 if (params.term) { query['description__icontains'] = params.term; }
                 return query;
             },
             processResults: function (data) {
-                $("div[name=cards]").addClass('is-hidden');
+                $("[name=cards]").addClass('is-hidden');
                 var results = [];
                 $.each(data['data'], function(index, element) {
                     var entry = {id: index, text: element['title'], value: element['project']};
