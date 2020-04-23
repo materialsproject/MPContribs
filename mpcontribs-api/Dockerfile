@@ -33,5 +33,5 @@ ENV API_PORT 5000
 ENV NWORKERS 4
 ENV RELOAD ""
 
-EXPOSE 5000 5002
+EXPOSE 5000 5002 5003
 CMD gunicorn -b 0.0.0.0:$API_PORT -k gevent -w $NWORKERS --access-logfile - --log-level debug $RELOAD "mpcontribs.api:create_app()"

@@ -851,6 +851,42 @@ Resources:
                     "MpcontribsDbName": "mpcontribs-ml",
                     "PortalCname": "ml.materialsproject.cloud",
                     "PortalPort": "8082",
+                    "Trademark": "ML",
+                    "PipelineName": "${PipelineName}",
+                    "EnvironmentName": "${EnvironmentName}",
+                    "MongoHost": "${MongoHost}",
+                    "AwsAccessKeyId": "${AwsAccessKeyId}",
+                    "AwsSecretAccessKey": "${AwsSecretAccessKey}",
+                    "SnsAdminTopicArn": "${SnsAdminTopicArn}",
+                    "Repository": "${Repository}",
+                    "Tag": {"Fn::GetParam": ["BuildOutputMPContribs", "tag.json", "Tag"]}
+                  }
+              InputArtifacts:
+                - Name: Source
+                - Name: BuildOutputMPContribs
+              RunOrder: 2
+
+            - Name: DeployMPContribsLS
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Version: '1'
+                Provider: CloudFormation
+              Configuration:
+                ActionMode: CREATE_UPDATE
+                RoleArn: !GetAtt CloudFormationDeployRole.Arn
+                StackName: !Sub ${PipelineName}-${EnvironmentName}-MPContribsLsService
+                TemplatePath: Source::cloudformation/service.yml
+                Capabilities: CAPABILITY_IAM
+                ParameterOverrides: !Sub |
+                  {
+                    "ServiceName": "MPContribsLS",
+                    "ApiCname": "lightsources-api.materialsproject.cloud",
+                    "ApiPort": "5003",
+                    "MpcontribsDbName": "mpcontribs-ls",
+                    "PortalCname": "lightsources.materialsproject.cloud",
+                    "PortalPort": "8083",
+                    "Trademark": "LS",
                     "PipelineName": "${PipelineName}",
                     "EnvironmentName": "${EnvironmentName}",
                     "MongoHost": "${MongoHost}",

@@ -46,6 +46,8 @@ Parameters:
     Type: String
     Default: '8080'
     Description: Port for the Portal
+  Trademark:
+    Type: String
   #DdApiKey:
   #  Type: String
 
@@ -249,6 +251,8 @@ Resources:
               Value: !Ref 'PortalCname'
             - Name: PORTAL_PORT
               Value: !Ref 'PortalPort'
+            - Name: TRADEMARK
+              Value: !Ref 'Trademark'
             - Name: AWS_REGION
               Value: !Ref 'AWS::Region'
             - Name: DD_TRACE_AGENT_PORT

@@ -52,7 +52,7 @@ ENV PORTAL_CNAME portal.mpcontribs.org
 ENV PORTAL_PORT 8080
 ENV RELOAD ""
 ENV NWORKERS 4
-EXPOSE 8080 8082
+EXPOSE 8080 8082 8083
 COPY wsgi.py .
 COPY settings.py .
 COPY docker-entrypoint.sh .
