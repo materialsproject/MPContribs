@@ -823,7 +823,7 @@ Resources:
                     "AwsAccessKeyId": "${AwsAccessKeyId}",
                     "AwsSecretAccessKey": "${AwsSecretAccessKey}",
                     "SnsAdminTopicArn": "${SnsAdminTopicArn}",
-                    "DdApiKey": "${DdApiKey}",
+                    #"DdApiKey": "${DdApiKey}",
                     "Repository": "${Repository}",
                     "Tag": {"Fn::GetParam": ["BuildOutputMPContribs", "tag.json", "Tag"]}
                   }
@@ -858,7 +858,7 @@ Resources:
                     "AwsAccessKeyId": "${AwsAccessKeyId}",
                     "AwsSecretAccessKey": "${AwsSecretAccessKey}",
                     "SnsAdminTopicArn": "${SnsAdminTopicArn}",
-                    "DdApiKey": "${DdApiKey}",
+                    #"DdApiKey": "${DdApiKey}",
                     "Repository": "${Repository}",
                     "Tag": {"Fn::GetParam": ["BuildOutputMPContribs", "tag.json", "Tag"]}
                   }

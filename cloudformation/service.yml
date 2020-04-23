@@ -46,8 +46,8 @@ Parameters:
     Type: String
     Default: '8080'
     Description: Port for the Portal
-  DdApiKey:
-    Type: String
+  #DdApiKey:
+  #  Type: String
 
 Resources:
   # A log group for storing the container logs for this service
@@ -116,8 +116,8 @@ Resources:
               ContainerName: chrome
             - Condition: START
               ContainerName: gateway
-            - Condition: START
-              ContainerName: datadog
+            #- Condition: START
+            #  ContainerName: datadog
           Environment:
             - Name: MPCONTRIBS_API_HOST
               Value: !Join [':', ['localhost', !Ref 'ApiPort']]
@@ -266,42 +266,42 @@ Resources:
               awslogs-group: !Join ['-', [!Ref 'PipelineName', !Ref 'EnvironmentName', 'service', !Ref 'ServiceName']]
               awslogs-region: !Ref 'AWS::Region'
               awslogs-stream-prefix: !Ref 'ServiceName'
-        - Name: datadog
-          MemoryReservation: 50
-          Image: !Join ['', [
-            !Ref 'AWS::AccountId', '.dkr.ecr.', !Ref 'AWS::Region', '.amazonaws.com/',
-            !Ref 'Repository', ':', !Ref 'PipelineName', '-', !Ref 'EnvironmentName', '-',
-            !Ref 'Tag', '-datadog'
-          ]]
-          Environment:
-            - Name: DD_API_KEY
-              Value: !Ref 'DdApiKey'
-            - Name: DD_APM_ENABLED
-              Value: true
-            - Name: DD_SYSTEM_PROBE_ENABLED
-              Value: true
-            - Name: DD_PROCESS_AGENT_ENABLED
-              Value: true
-            - Name: ECS_FARGATE
-              Value: true
-            - Name: DD_DOGSTATSD_NON_LOCAL_TRAFFIC
-              Value: true
-            - Name: DD_DOCKER_LABELS_AS_TAGS
-              Value: "{\"my.custom.label.service\":\"service\"}"
-            - Name: DD_RECEIVER_PORT
-              Value: 8126
-            - Name: DD_DD_URL
-              Value: https://pvtlink.agent.datadoghq.com
-            - Name: DD_LOGS_CONFIG_USE_HTTP
-              Value: true
-            - Name: DD_LOGS_CONFIG_LOGS_DD_URL
-              Value: "pvtlink.logs.datadoghq.com:443"
-          LogConfiguration:
-            LogDriver: 'awslogs'
-            Options:
-              awslogs-group: !Join ['-', [!Ref 'PipelineName', !Ref 'EnvironmentName', 'service', !Ref 'ServiceName']]
-              awslogs-region: !Ref 'AWS::Region'
-              awslogs-stream-prefix: !Ref 'ServiceName'
+        #- Name: datadog
+        #  MemoryReservation: 50
+        #  Image: !Join ['', [
+        #    !Ref 'AWS::AccountId', '.dkr.ecr.', !Ref 'AWS::Region', '.amazonaws.com/',
+        #    !Ref 'Repository', ':', !Ref 'PipelineName', '-', !Ref 'EnvironmentName', '-',
+        #    !Ref 'Tag', '-datadog'
+        #  ]]
+        #  Environment:
+        #    - Name: DD_API_KEY
+        #      Value: !Ref 'DdApiKey'
+        #    - Name: DD_APM_ENABLED
+        #      Value: true
+        #    - Name: DD_SYSTEM_PROBE_ENABLED
+        #      Value: true
+        #    - Name: DD_PROCESS_AGENT_ENABLED
+        #      Value: true
+        #    - Name: ECS_FARGATE
+        #      Value: true
+        #    - Name: DD_DOGSTATSD_NON_LOCAL_TRAFFIC
+        #      Value: true
+        #    - Name: DD_DOCKER_LABELS_AS_TAGS
+        #      Value: "{\"my.custom.label.service\":\"service\"}"
+        #    - Name: DD_RECEIVER_PORT
+        #      Value: 8126
+        #    - Name: DD_DD_URL
+        #      Value: https://pvtlink.agent.datadoghq.com
+        #    - Name: DD_LOGS_CONFIG_USE_HTTP
+        #      Value: true
+        #    - Name: DD_LOGS_CONFIG_LOGS_DD_URL
+        #      Value: "pvtlink.logs.datadoghq.com:443"
+        #  LogConfiguration:
+        #    LogDriver: 'awslogs'
+        #    Options:
+        #      awslogs-group: !Join ['-', [!Ref 'PipelineName', !Ref 'EnvironmentName', 'service', !Ref 'ServiceName']]
+        #      awslogs-region: !Ref 'AWS::Region'
+        #      awslogs-stream-prefix: !Ref 'ServiceName'
 
   # The service. The service is a resource which allows you to run multiple
   # copies of a type of task, and gather up their logs and metrics, as well

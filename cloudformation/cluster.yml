@@ -384,21 +384,21 @@ Resources:
       SecurityGroupIds:
         - !Ref 'PublicSecurityGroup'
         - !Ref 'PrivateSecurityGroup'
-  DatadogEndpoint:
-    Type: AWS::EC2::VPCEndpoint
-    Properties:
-      VpcId: !Ref 'VPC'
-      ServiceName: com.amazonaws.vpce.us-east-1.vpce-svc-056576c12b36056ca
-      VpcEndpointType: Interface
-      PrivateDnsEnabled: true
-      SubnetIds:
-        - !Ref 'PublicSubnetOne'
-        - !Ref 'PublicSubnetTwo'
-        - !Ref 'PrivateSubnetOne'
-        - !Ref 'PrivateSubnetTwo'
-      SecurityGroupIds:
-        - !Ref 'PublicSecurityGroup'
-        - !Ref 'PrivateSecurityGroup'
+  #DatadogEndpoint:
+  #  Type: AWS::EC2::VPCEndpoint
+  #  Properties:
+  #    VpcId: !Ref 'VPC'
+  #    ServiceName: com.amazonaws.vpce.us-east-1.vpce-svc-056576c12b36056ca
+  #    VpcEndpointType: Interface
+  #    PrivateDnsEnabled: true
+  #    SubnetIds:
+  #      - !Ref 'PublicSubnetOne'
+  #      - !Ref 'PublicSubnetTwo'
+  #      - !Ref 'PrivateSubnetOne'
+  #      - !Ref 'PrivateSubnetTwo'
+  #    SecurityGroupIds:
+  #      - !Ref 'PublicSecurityGroup'
+  #      - !Ref 'PrivateSecurityGroup'
 
   ECSCluster:
     Type: AWS::ECS::Cluster
