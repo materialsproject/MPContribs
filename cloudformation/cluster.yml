@@ -192,6 +192,10 @@ Resources:
           ToPort: 8082
           SourceSecurityGroupId: !Ref 'PublicSecurityGroup'
         - IpProtocol: tcp
+          FromPort: 8083
+          ToPort: 8083
+          SourceSecurityGroupId: !Ref 'PublicSecurityGroup'
+        - IpProtocol: tcp
           FromPort: 5000
           ToPort: 5000
           SourceSecurityGroupId: !Ref 'PublicSecurityGroup'
@@ -202,6 +206,10 @@ Resources:
         - IpProtocol: tcp
           FromPort: 5002
           ToPort: 5002
+          SourceSecurityGroupId: !Ref 'PublicSecurityGroup'
+        - IpProtocol: tcp
+          FromPort: 5003
+          ToPort: 5003
           SourceSecurityGroupId: !Ref 'PublicSecurityGroup'
   PrivateSecurityGroupIngressFromSelf:
     Type: AWS::EC2::SecurityGroupIngress
