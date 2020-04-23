@@ -48,6 +48,7 @@ Parameters:
     Description: Port for the Portal
   Trademark:
     Type: String
+    Default: ''
   #DdApiKey:
   #  Type: String
 
