@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: app service
+Description: MPContribs Services
 Parameters:
   PipelineName:
     Type: String
