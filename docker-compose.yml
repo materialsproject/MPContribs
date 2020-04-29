@@ -33,7 +33,9 @@ services:
             - redis
             - chrome
             - kernel_gateway
-            - xray
+            #- xray
+            #- mongo
+            #- datadog
         volumes:
             - ./mpcontribs-api:/app
         env_file:
@@ -41,6 +43,7 @@ services:
         environment:
             FLASK_ENV: development
             MPCONTRIBS_MONGO_HOST: $MPCONTRIBS_MONGO_HOST
+            #MPCONTRIBS_MONGO_HOST: mongo
             GATEWAY_HOST: kernel_gateway:8888
             AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID
             AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY
@@ -49,11 +52,30 @@ services:
         ports:
             - "5000:5000"
             - "5002:5002"
+            - "5003:5003"
 
     redis:
         image: redis:alpine
         environment:
             - ALLOW_EMPTY_PASSWORD=yes
+
+    mongo:
+        image: mongo:bionic
+        ports:
+            - "27017:27017"
+
+    datadog:
+      build: mpcontribs-sidecars/datadog-agent
+      depends_on:
+        - redis
+      environment:
+        - DD_API_KEY=$DD_API_KEY
+      volumes:
+        - /var/run/docker.sock:/var/run/docker.sock:ro
+        - /proc/:/host/proc/:ro
+        - /sys/fs/cgroup/:/host/sys/fs/cgroup:ro
+      ports:
+        - "8125:8125/udp"
 
     chrome:
         build: mpcontribs-sidecars/chrome
