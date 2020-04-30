@@ -27,6 +27,10 @@ ureg = UnitRegistry(auto_reduce_dimensions=True)
 ureg.default_format = "P~"
 ureg.define("@alias electron_mass = mₑ")
 ureg.define("@alias bohr_magneton = μᵇ")
+ureg.define("fraction = [] = frac")
+ureg.define("percent = 1e-2 frac = pct")
+ureg.define("ppm = 1e-6 fraction")
+ureg.define("ppb = 1e-9 fraction")
 ureg.define("atom = 1")
 Q_ = ureg.Quantity
 delimiter, max_depth = ".", 2
