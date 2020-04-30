@@ -9,7 +9,7 @@ from nbconvert import HTMLExporter
 from bs4 import BeautifulSoup
 from fido.exceptions import HTTPTimeoutError
 
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.template import RequestContext
 from django.http import HttpResponse
 from django.template.loaders.app_directories import get_app_template_dirs
@@ -19,6 +19,8 @@ from mpcontribs.client import load_client
 from mpcontribs.io.core.components.hdata import HierarchicalData
 
 # TODO should not be needed if render_json.js took care of display/unit/value
+
+S3_DOWNLOAD_URL = "https://mpcontribs-downloads.s3.amazonaws.com/"
 
 
 def get_consumer(request):
@@ -217,6 +219,14 @@ def csv(request, project):
     response = HttpResponse(df.to_csv(), content_type="text/csv")
     response["Content-Disposition"] = "attachment; filename={}.csv".format(project)
     return response
+
+
+def download(request, project):
+    cname = os.environ["PORTAL_CNAME"]
+    s3obj = f"{S3_DOWNLOAD_URL}{cname}/{project}.json.gz"
+    return redirect(s3obj)
+    # TODO check if exists, generate if not, progressbar...
+    # return HttpResponse(status=404)
 
 
 def notebooks(request, nb):
