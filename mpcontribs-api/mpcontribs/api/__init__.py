@@ -17,25 +17,36 @@ from flask_compress import Compress
 from flasgger.base import Swagger
 from itsdangerous import URLSafeTimedSerializer
 from pint import UnitRegistry
+from pint.unit import UnitDefinition
+from pint.converters import ScaleConverter
 from fdict import fdict
 from string import punctuation
 from decimal import Decimal
 from aws_xray_sdk.core import xray_recorder
 from aws_xray_sdk.ext.flask.middleware import XRayMiddleware
 
-ureg = UnitRegistry(auto_reduce_dimensions=True)
+
+ureg = UnitRegistry(
+    preprocessors=[
+        lambda s: s.replace("%%", " permille "),
+        lambda s: s.replace("%", " percent "),
+    ]
+)
 ureg.default_format = "P~"
-ureg.define("@alias electron_mass = mₑ")
-ureg.define("@alias bohr_magneton = μᵇ")
-ureg.define("fraction = [] = frac")
-ureg.define("percent = 1e-2 frac = pct")
-ureg.define("ppm = 1e-6 fraction")
-ureg.define("ppb = 1e-9 fraction")
+
+ureg.define(UnitDefinition("percent", "%", (), ScaleConverter(0.01)))
+ureg.define(UnitDefinition("permille", "%%", (), ScaleConverter(0.001)))
+ureg.define(UnitDefinition("ppm", "ppm", (), ScaleConverter(1e-6)))
+ureg.define(UnitDefinition("ppb", "ppb", (), ScaleConverter(1e-9)))
 ureg.define("atom = 1")
+ureg.define("bohr_magneton = e * hbar / (2 * m_e) = µᵇ = µ_B = mu_B")
+ureg.define("electron_mass = 9.1093837015e-31 kg = mₑ = m_e")
+
 Q_ = ureg.Quantity
 delimiter, max_depth = ".", 2
 max_dgts = 6
 invalidChars = set(punctuation.replace("|", "").replace("*", ""))
+invalidChars.add(" ")
 quantity_keys = ["display", "value", "unit"]
 
 for mod in [
@@ -62,6 +73,7 @@ def validate_data(doc, sender=None, project=None):
     d = fdict(doc, delimiter=delimiter)
 
     for key in list(d.keys()):
+        key = key.strip()
         nodes = key.split(delimiter)
         is_quantity_key = int(nodes[-1] in quantity_keys)
 
@@ -77,7 +89,7 @@ def validate_data(doc, sender=None, project=None):
             for char in node:
                 if char in invalidChars:
                     raise ValidationError(
-                        {"error": f"invalid character {char} in {node} ({key})"}
+                        {"error": f"invalid character '{char}' in {node} ({key})"}
                     )
 
         value = str(d[key])
@@ -86,6 +98,8 @@ def validate_data(doc, sender=None, project=None):
         if try_quantity or isinstance(d[key], (int, float)):
             try:
                 q = Q_(value).to_compact()
+                if not q.check(0):
+                    q.ito_reduced_units()
                 if sender:
                     _key = key.replace(".", "__")
                     query = {"project": project, f"data__{_key}__exists": True}
@@ -105,7 +119,6 @@ def validate_data(doc, sender=None, project=None):
                         q = Q_(f"{v} {q.units}")
             except Exception as ex:
                 raise ValidationError({"error": str(ex)})
-            # TODO keep percent as unit
             d[key] = {"display": str(q), "value": q.magnitude, "unit": str(q.units)}
 
     return d.to_dict_nested()

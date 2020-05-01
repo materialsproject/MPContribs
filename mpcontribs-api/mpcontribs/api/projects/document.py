@@ -145,7 +145,7 @@ class Projects(Document):
             for char in label:
                 if char in invalidChars:
                     raise ValidationError(
-                        {"error": f"invalid character {char} in {label}"}
+                        {"error": f"invalid character '{char}' in {label}"}
                     )
 
 
