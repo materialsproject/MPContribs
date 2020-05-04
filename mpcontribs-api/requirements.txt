@@ -3,7 +3,7 @@ asn1crypto==1.3.0
 aws-xray-sdk==2.5.0
 beautifulsoup4==4.9.0
 blinker==1.4
-boto3==1.12.46
+boto3==1.13.1
 cherrypicker @ git+https://github.com/big-o/cherrypicker.git#egg=cherrypicker
 css-html-js-minify==2.5.5
 dict-deep==4.1.2
@@ -18,13 +18,13 @@ flask-marshmallow==0.12.0
 flask-mongorest @ git+https://github.com/tschaume/flask-mongorest@register_class#egg=flask_mongorest-0.3.1
 flask-sse==0.2.1
 gunicorn[gevent]==20.0.4
-jupyter-enterprise-gateway==2.1.0
+jupyter-enterprise-gateway==2.1.1
 marshmallow-mongoengine @ git+https://github.com/tschaume/marshmallow-mongoengine@mpcontribs#egg=marshmallow_mongoengine-0.30.0
 mimerender @ git+https://github.com/tschaume/mimerender@mpcontribs#egg=mimerender-0.6.1
 more-itertools==8.2.0
 pint==0.11
 plotly==4.6.0
-pymatgen==2020.4.2
+pymatgen==2020.4.29
 pyopenssl==19.1.0
 python-snappy==0.5.4
 selenium==3.141.0
