@@ -1,6 +1,6 @@
 FROM phuck/python:3.8.2-slim-v1.0 as base
 FROM phuck/mpcontribs:2.2.2 as builder
-FROM node:13.13.0-slim as node
+FROM node:14.1.0-slim as node
 
 FROM node as webpack-deps
 RUN apt-get update && apt-get install -y --no-install-recommends git && apt-get clean
