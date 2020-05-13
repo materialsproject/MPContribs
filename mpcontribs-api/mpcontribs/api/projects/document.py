@@ -60,7 +60,13 @@ class Projects(Document):
     is_approved = BooleanField(
         required=True, default=False, help_text="project approved?"
     )
-    meta = {"collection": "projects", "indexes": ["is_public", "owner", "is_approved"]}
+    unique_identifiers = BooleanField(
+        required=True, default=True, help_text="identifiers unique?"
+    )
+    meta = {
+        "collection": "projects",
+        "indexes": ["is_public", "owner", "is_approved", "unique_identifiers"],
+    }
 
     @classmethod
     def post_save(cls, sender, document, **kwargs):

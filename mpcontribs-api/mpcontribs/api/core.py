@@ -481,12 +481,10 @@ class SwaggerView(OriginalSwaggerView, ResourceView, metaclass=SwaggerViewType):
         if not self.is_admin_or_project_user(request, obj):
             return False
 
-        if hasattr(obj, "identifier"):
-            # TODO add unique_identifiers field in Projects to disable duplicate check
-            nobjs = self.resource.document.objects(
+        if hasattr(obj, "identifier") and obj.project.unique_identifiers:
+            if self.resource.document.objects(
                 project=obj.project.id, identifier=obj.identifier
-            ).count()
-            if nobjs > 0:
+            ).count():
                 raise Unauthorized(
                     f"{obj.identifier} already added for {obj.project.id}"
                 )

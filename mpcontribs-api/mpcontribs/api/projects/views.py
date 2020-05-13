@@ -30,8 +30,16 @@ class ProjectsResource(Resource):
         "description": [ops.IContains],
         "owner": [ops.Exact, ops.In],
         "is_approved": [ops.Boolean],
+        "unique_identifiers": [ops.Boolean],
     }
-    fields = ["project", "is_public", "title", "owner", "is_approved"]
+    fields = [
+        "project",
+        "is_public",
+        "title",
+        "owner",
+        "is_approved",
+        "unique_identifiers",
+    ]
     allowed_ordering = ["project", "is_public", "title"]
     paginate = False
 
