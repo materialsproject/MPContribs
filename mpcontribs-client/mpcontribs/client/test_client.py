@@ -33,7 +33,7 @@ def test_load_client():
     kwargs = {"apikey": "1234", "headers": {"a": "b"}, "host": "api.example.com"}
     spec = load_client(**kwargs).swagger_spec
     assert spec.http_client.headers == {"x-api-key": "1234"}
-    assert spec.origin_url == f"https://api.example.com/apispec.json"
+    assert spec.origin_url == "https://api.example.com/apispec.json"
     assert spec.spec_dict["host"] == "api.example.com"
     assert spec.spec_dict["schemes"] == ["https"]
     assert spec.user_defined_formats["email"] == email_format
