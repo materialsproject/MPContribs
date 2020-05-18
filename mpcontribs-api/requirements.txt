@@ -1,7 +1,7 @@
 apispec==3.3.0
 asn1crypto==1.3.0
 aws-xray-sdk==2.5.0
-beautifulsoup4==4.9.0
+beautifulsoup4==4.9.1
 blinker==1.4
 boto3==1.13.9
 cherrypicker @ git+https://github.com/big-o/cherrypicker.git#egg=cherrypicker
