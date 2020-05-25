@@ -1,4 +1,4 @@
-bravado[fido]==10.6.0
+bravado[fido]==10.6.1
 cryptography==2.9.2
 fido[tls]==4.2.2
 pyIsEmail==1.3.2
