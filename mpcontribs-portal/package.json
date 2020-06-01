@@ -20,7 +20,7 @@
     "bulma": "^0.8.0",
     "bulma-tooltip": "^3.0.2",
     "bulma-extensions": "^6.2.7",
-    "@vizuaalog/bulmajs": "^0.10.3",
+    "@vizuaalog/bulmajs": "^0.11.0",
     "@creativebulma/bulma-collapsible": "^1.0.4",
     "@fortawesome/fontawesome-free": "^5.12.0",
     "handsontable": "^7.3.0",
