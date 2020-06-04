@@ -1,0 +1,86 @@
+version: 2
+updates:
+- package-ecosystem: docker
+  directory: "/mpcontribs-sidecars/datadog-agent"
+  schedule:
+    interval: weekly
+    time: '08:00'
+    timezone: US/Pacific
+  open-pull-requests-limit: 10
+- package-ecosystem: docker
+  directory: "/mpcontribs-sidecars/kernel_gateway"
+  schedule:
+    interval: weekly
+    time: '08:00'
+    timezone: US/Pacific
+  open-pull-requests-limit: 10
+- package-ecosystem: npm
+  directory: "/mpcontribs-portal"
+  schedule:
+    interval: weekly
+    time: '08:00'
+    timezone: US/Pacific
+  open-pull-requests-limit: 10
+- package-ecosystem: pip
+  directory: "/mpcontribs-portal"
+  schedule:
+    interval: weekly
+    time: '08:00'
+    timezone: US/Pacific
+  open-pull-requests-limit: 10
+- package-ecosystem: pip
+  directory: "/mpcontribs-io"
+  schedule:
+    interval: weekly
+    time: '08:00'
+    timezone: US/Pacific
+  open-pull-requests-limit: 10
+- package-ecosystem: docker
+  directory: "/mpcontribs-sidecars/builder"
+  schedule:
+    interval: weekly
+    time: '08:00'
+    timezone: US/Pacific
+  open-pull-requests-limit: 10
+- package-ecosystem: pip
+  directory: "/mpcontribs-sidecars/builder"
+  schedule:
+    interval: weekly
+    time: '08:00'
+    timezone: US/Pacific
+  open-pull-requests-limit: 10
+- package-ecosystem: docker
+  directory: "/mpcontribs-portal"
+  schedule:
+    interval: weekly
+    time: '08:00'
+    timezone: US/Pacific
+  open-pull-requests-limit: 10
+- package-ecosystem: docker
+  directory: "/mpcontribs-api"
+  schedule:
+    interval: weekly
+    time: '08:00'
+    timezone: US/Pacific
+  open-pull-requests-limit: 10
+- package-ecosystem: pip
+  directory: "/mpcontribs-api"
+  schedule:
+    interval: weekly
+    time: '08:00'
+    timezone: US/Pacific
+  open-pull-requests-limit: 10
+- package-ecosystem: docker
+  directory: "/mpcontribs-sidecars/chrome"
+  schedule:
+    interval: weekly
+    time: '08:00'
+    timezone: US/Pacific
+  open-pull-requests-limit: 10
+- package-ecosystem: pip
+  directory: "/mpcontribs-client"
+  schedule:
+    interval: weekly
+    time: '08:00'
+    timezone: US/Pacific
+  open-pull-requests-limit: 10
