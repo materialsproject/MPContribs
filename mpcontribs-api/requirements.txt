@@ -17,6 +17,7 @@ flask-log==0.1.0
 flask-marshmallow==0.12.0
 flask-mongorest @ git+https://github.com/tschaume/flask-mongorest@register_class#egg=flask_mongorest-0.3.1
 flask-sse==0.2.1
+glom==20.5.0
 gunicorn[gevent]==20.0.4
 jupyter-enterprise-gateway==2.1.1
 marshmallow-mongoengine @ git+https://github.com/tschaume/marshmallow-mongoengine@mpcontribs#egg=marshmallow_mongoengine-0.30.0

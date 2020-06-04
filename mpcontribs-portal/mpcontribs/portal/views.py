@@ -20,7 +20,8 @@ from mpcontribs.io.core.components.hdata import HierarchicalData
 
 # TODO should not be needed if render_json.js took care of display/unit/value
 
-S3_DOWNLOAD_URL = "https://mpcontribs-downloads.s3.amazonaws.com/"
+S3_DOWNLOADS_BUCKET = os.environ.get("S3_DOWNLOADS_BUCKET", "mpcontribs-downloads")
+S3_DOWNLOAD_URL = f"https://{S3_DOWNLOADS_BUCKET}.s3.amazonaws.com/"
 
 
 def get_consumer(request):
