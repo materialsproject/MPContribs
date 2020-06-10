@@ -123,6 +123,42 @@ Resources:
       SubnetId: !Ref PrivateSubnetTwo
       RouteTableId: !Ref PrivateRouteTable
 
+  VirtualGateway:
+    Type: 'AWS::EC2::VPNGateway'
+    Properties:
+      Type: ipsec.1
+  VirtualGatewayAttachment:
+    Type: 'AWS::EC2::VPCGatewayAttachment'
+    Properties:
+      VpcId: !Ref 'VPC'
+      VpnGatewayId: !Ref 'VirtualGateway'
+  VpnGatewayRoutePropagation:
+    Type: AWS::EC2::VPNGatewayRoutePropagation
+    DependsOn:
+      - 'VirtualGatewayAttachment'
+    Properties:
+      RouteTableIds:
+        - !Ref PrivateRouteTable
+      VpnGatewayId: !Ref 'VirtualGateway'
+  #CustomerGateway:
+  #  Type: 'AWS::EC2::CustomerGateway'
+  #  Properties:
+  #    Type: ipsec.1
+  #    IpAddress: !Ref HomeIP
+  #    BgpAsn: '65011'
+  #VpnConnection:
+  #  Type: 'AWS::EC2::VPNConnection'
+  #  Properties:
+  #    Type: ipsec.1
+  #    #StaticRoutesOnly: 'true'
+  #    VpnGatewayId: !Ref 'VirtualGateway'
+  #    CustomerGatewayId: !Ref 'CustomerGateway'
+  #VpnConnectionRoute:
+  #  Type: 'AWS::EC2::VPNConnectionRoute'
+  #  Properties:
+  #    VpnConnectionId: !Ref 'VpnConnection'
+  #    DestinationCidrBlock: 192.168.2.0/24
+
   NetworkLoadBalancer:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
     Properties:
