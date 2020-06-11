@@ -144,7 +144,7 @@ def export_notebook(nb, cid):
     # separate script
     script = []
     for s in soup.find_all("script"):
-        script.append(s.text)
+        script.append(s.string)
         s.extract()  # remove javascript
     return soup.prettify(), "\n".join(script)
 
