@@ -57,7 +57,7 @@ Resources:
       TaskRoleArn: !Ref 'MpWebServiceRole'
       ContainerDefinitions:
         - Name: api
-          MemoryReservation: 500
+          MemoryReservation: 290
           Image: !Ref 'ImageUrlWebApi'
           PortMappings:
             - ContainerPort: 5001
