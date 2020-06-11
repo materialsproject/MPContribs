@@ -100,7 +100,7 @@ Resources:
       TaskRoleArn: !Ref 'AppServiceRole'
       ContainerDefinitions:
         - Name: api
-          MemoryReservation: 500
+          MemoryReservation: 600
           Image: !Join ['', [
             !Ref 'AWS::AccountId', '.dkr.ecr.', !Ref 'AWS::Region', '.amazonaws.com/',
             !Ref 'Repository', ':', !Ref 'PipelineName', '-', !Ref 'EnvironmentName', '-',
@@ -163,7 +163,7 @@ Resources:
               awslogs-region: !Ref 'AWS::Region'
               awslogs-stream-prefix: !Ref 'ServiceName'
         - Name: chrome
-          MemoryReservation: 100
+          MemoryReservation: 70
           Image: !Join ['', [
             !Ref 'AWS::AccountId', '.dkr.ecr.', !Ref 'AWS::Region', '.amazonaws.com/',
             !Ref 'Repository', ':', !Ref 'PipelineName', '-', !Ref 'EnvironmentName', '-',
@@ -193,7 +193,7 @@ Resources:
               awslogs-region: !Ref 'AWS::Region'
               awslogs-stream-prefix: !Ref 'ServiceName'
         - Name: gateway
-          MemoryReservation: 250
+          MemoryReservation: 50
           Image: !Join ['', [
             !Ref 'AWS::AccountId', '.dkr.ecr.', !Ref 'AWS::Region', '.amazonaws.com/',
             !Ref 'Repository', ':', !Ref 'PipelineName', '-', !Ref 'EnvironmentName', '-',
@@ -225,7 +225,7 @@ Resources:
               awslogs-region: !Ref 'AWS::Region'
               awslogs-stream-prefix: !Ref 'ServiceName'
         - Name: portal
-          MemoryReservation: 350
+          MemoryReservation: 80
           Image: !Join ['', [
             !Ref 'AWS::AccountId', '.dkr.ecr.', !Ref 'AWS::Region', '.amazonaws.com/',
             !Ref 'Repository', ':', !Ref 'PipelineName', '-', !Ref 'EnvironmentName', '-',

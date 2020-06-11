@@ -3,9 +3,9 @@ version: '2.2'
 services:
 
     portal:
-        cpus: 1
-        mem_limit: 1G
-        mem_reservation: 250m
+        cpus: 2
+        mem_limit: 3280m
+        mem_reservation: 80m
         build: ./mpcontribs-portal
         env_file:
             - ./deployments/$DEPLOYMENT.env
@@ -24,8 +24,8 @@ services:
             - "8083:8083"
 
     api:
-        cpus: 1
-        mem_limit: 1G
+        cpus: 2
+        mem_limit: 3800m
         mem_reservation: 600m
         build:
             context: ./mpcontribs-api
@@ -79,18 +79,18 @@ services:
 
     chrome:
         build: mpcontribs-sidecars/chrome
-        mem_limit: 1G
-        mem_reservation: 100m
-        cpus: 1
+        cpus: 2
+        mem_limit: 3270m
+        mem_reservation: 70m
         environment:
             - START_XVFB=false
         ports:
             - "4444:4444"
 
     kernel_gateway:
-        mem_limit: 1G
-        mem_reservation: 100m
-        cpus: 1
+        cpus: 2
+        mem_limit: 3250m
+        mem_reservation: 50m
         env_file:
             - ./deployments/$DEPLOYMENT.env
         environment:
