@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 from flask import current_app
-from flask_mongoengine import Document
+from flask_mongoengine import DynamicDocument
 from mongoengine import CASCADE, signals
 from mongoengine.fields import StringField, BooleanField, DictField, LazyReferenceField
 from mpcontribs.api.projects.document import Projects
 from mpcontribs.api import validate_data
 
 
-class Contributions(Document):
+class Contributions(DynamicDocument):
     project = LazyReferenceField(
         Projects, required=True, passthrough=True, reverse_delete_rule=CASCADE
     )
@@ -39,6 +39,7 @@ class Contributions(Document):
 
         Notebooks.objects(pk=document.id).delete()
         Cards.objects(pk=document.id).delete()
+        Projects.objects(pk=document.project.id).update(unset__columns=True)
 
 
 signals.pre_save_post_validation.connect(

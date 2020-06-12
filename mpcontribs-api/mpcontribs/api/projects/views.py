@@ -118,7 +118,7 @@ class ProjectsResource(Resource):
 
             # neither $group nor set maintain order! Dicts are ordered in python 3.7+
             columns = {}
-            for col in list(dict.fromkeys(obj["column"] for obj in objects)):
+            for col in list(dict.fromkeys(o["column"] for o in objects)):
                 value_field, unit_field = f"data.{col}.value", f"data.{col}.unit"
                 unit_query = {
                     "project": obj.id,
@@ -179,6 +179,7 @@ class ProjectsResource(Resource):
                 for label in agg[0]["labels"]:
                     columns[f"structures.{label}"] = None
 
+            obj.update(set__columns=columns)  # save for look-up on subsequent requests
             return columns
         else:
             raise UnknownFieldError

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import os
 from flask import current_app, render_template, url_for
-from flask_mongoengine import Document
+from flask_mongoengine import DynamicDocument
 from flask_mongorest.exceptions import ValidationError
 from mongoengine.fields import (
     StringField,
@@ -15,7 +15,7 @@ from mongoengine import signals
 from mpcontribs.api import send_email, validate_data, invalidChars, sns_client
 
 
-class Projects(Document):
+class Projects(DynamicDocument):
     __project_regex__ = "^[a-zA-Z0-9_]{3,31}$"
     project = StringField(
         min_length=3,
