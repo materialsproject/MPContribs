@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from flask_mongoengine import Document
+from flask_mongoengine import DynamicDocument
 from mongoengine import CASCADE, signals
 from mongoengine.fields import StringField, LazyReferenceField, BooleanField
 from mongoengine.fields import FloatField, ListField, DictField
@@ -7,7 +7,7 @@ from mpcontribs.api.contributions.document import Contributions
 from mpcontribs.api.notebooks.document import Notebooks
 
 
-class Structures(Document):
+class Structures(DynamicDocument):
     contribution = LazyReferenceField(
         Contributions,
         passthrough=True,
@@ -33,6 +33,7 @@ class Structures(Document):
     @classmethod
     def post_save(cls, sender, document, **kwargs):
         Notebooks.objects(pk=document.contribution.id).delete()
+        document.update(unset__cif=True)
 
 
 signals.post_save.connect(Structures.post_save, sender=Structures)

@@ -41,15 +41,19 @@ class TablesResource(Resource):
 
     def value_for_field(self, obj, field):
         # add total_rows and total_pages keys for Backgrid
+        # NOTE get table with full data field to determine totals
         table = Tables.objects.only("data").get(id=obj.id)
         total_rows = len(table.data)
         if field == "total_rows":
+            obj.update(set__total_rows=total_rows)
             return total_rows
         elif field == "total_pages":
             per_page = int(
                 self.params.get("data_per_page", self.fields_to_paginate["data"][0])
             )
-            return int(total_rows / per_page) + bool(total_rows % per_page)
+            total_pages = int(total_rows / per_page) + bool(total_rows % per_page)
+            obj.update(set__total_pages=total_pages)
+            return total_pages
         else:
             raise UnknownFieldError
 

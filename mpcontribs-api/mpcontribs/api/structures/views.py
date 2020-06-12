@@ -40,10 +40,13 @@ class StructuresResource(Resource):
     def value_for_field(self, obj, field):
         # add cif key to response if requested
         if field == "cif":
+            # make sure to have full structure object available
             s = Structures.objects.get(id=obj.id)
             fields = self.get_optional_fields()[:-1]
             structure = Structure.from_dict(self.serialize(s, fields=fields))
-            return CifWriter(structure, symprec=1e-10).__str__()
+            cif = CifWriter(structure, symprec=1e-10).__str__()
+            s.update(set__cif=cif)
+            return cif
         else:
             raise UnknownFieldError
 
