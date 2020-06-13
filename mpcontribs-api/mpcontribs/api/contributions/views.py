@@ -59,40 +59,30 @@ class ContributionsResource(Resource):
             full = bool(
                 self.view_method == Download and self.params.get("_fields") == "_all"
             )
+            mask = ["id", "label", "name"]
+            fmt = self.params.get("format")
+            if full and fmt == "json":
+                mask += ["lattice", "sites", "charge", "klass", "module"]
+
             if field_len > 2:
                 raise UnknownFieldError
-            elif field_len == 2:
-                if field_split[1] in Structures._fields:
-                    # TODO return structure subfields if nested fields requested
-                    # TODO find a way to not re-query structures for every subfield?
-                    return f"TODO requested {field_split[1]}"
-                else:
-                    # requested structure(s) for label
-                    mask = ["id", "name"]
-                    objects = Structures.objects.only(*mask)
-                    objects = objects.filter(
-                        contribution=obj.id, label=field_split[1]
-                    ).order_by("-id")
-                    if not objects:
-                        raise UnknownFieldError
-                    return [sr.serialize(o, fields=mask) for o in objects]
-            elif field_len == 1:
-                mask = ["id", "label", "name"]
-                fmt = self.params.get("format")
-                if full and fmt == "json":
-                    mask += ["lattice", "sites", "charge", "klass", "module"]
-                objects = (
-                    Structures.objects.only(*mask)
-                    .filter(contribution=obj.id)
-                    .order_by("-id")
-                )
-                value = defaultdict(list)
+            else:
+                kwargs = dict(contribution=obj.id)
+                if field_len == 2:
+                    # requested structure(s) for specific label
+                    kwargs["label"] = field_split[1]
+
+                objects = Structures.objects.only(*mask)
+                objects = objects.filter(**kwargs).order_by("-id")
+                result = defaultdict(list)
                 for o in objects:
                     s = sr.serialize(o, fields=mask)
-                    value[s.pop("label")].append(
+                    result[s.pop("label")].append(
                         sr.value_for_field(o, "cif") if fmt == "csv" else s
                     )
-                return value
+                ret = result if field_len == 1 else list(result.values())[0]
+                obj.update(**{f"set__{field.replace('.', '__')}": ret})
+                return ret
 
         elif field == "tables":
             tables = Tables.objects.only("id", "name").filter(contribution=obj.id)

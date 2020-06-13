@@ -33,13 +33,22 @@ class Contributions(DynamicDocument):
 
     @classmethod
     def post_save(cls, sender, document, **kwargs):
-        # avoid circular import
-        from mpcontribs.api.notebooks.document import Notebooks
-        from mpcontribs.api.cards.document import Cards
+        # TODO unset and rebuild columns key in Project for updated (nested) keys only
+        set_root_keys = set(k.split(".", 1)[0] for k in document._delta()[0].keys())
+        nbs = Notebooks.objects(pk=document.id)
+        cards = Cards.objects(pk=document.id)
+        if not set_root_keys or set_root_keys == {"is_public"}:
+            nbs.update(set__is_public=document.is_public)
+            cards.update(set__is_public=document.is_public)
+        else:
+            # avoid circular import
+            from mpcontribs.api.notebooks.document import Notebooks
+            from mpcontribs.api.cards.document import Cards
 
-        Notebooks.objects(pk=document.id).delete()
-        Cards.objects(pk=document.id).delete()
-        Projects.objects(pk=document.project.id).update(unset__columns=True)
+            nbs.delete()
+            cards.delete()
+            if "data" in set_root_keys:
+                Projects.objects(pk=document.project.id).update(unset__columns=True)
 
 
 signals.pre_save_post_validation.connect(

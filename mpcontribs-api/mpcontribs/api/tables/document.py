@@ -40,8 +40,14 @@ class Tables(DynamicDocument):
 
     @classmethod
     def post_save(cls, sender, document, **kwargs):
-        Notebooks.objects(pk=document.contribution.id).delete()
-        document.update(unset__total_rows=True, unset__total_pages=True)
+        set_root_keys = set(k.split(".", 1)[0] for k in document._delta()[0].keys())
+        nbs = Notebooks.objects(pk=document.contribution.id)
+        if not set_root_keys or set_root_keys == {"is_public"}:
+            nbs.update(set__is_public=document.is_public)
+        else:
+            nbs.delete()
+            if "data" in set_root_keys:
+                document.update(unset__total_rows=True, unset__total_pages=True)
 
 
 signals.post_save.connect(Tables.post_save, sender=Tables)

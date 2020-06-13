@@ -32,8 +32,15 @@ class Structures(DynamicDocument):
 
     @classmethod
     def post_save(cls, sender, document, **kwargs):
-        Notebooks.objects(pk=document.contribution.id).delete()
-        document.update(unset__cif=True)
+        set_root_keys = set(k.split(".", 1)[0] for k in document._delta()[0].keys())
+        cid = document.contribution.id
+        nbs = Notebooks.objects(pk=cid)
+        if not set_root_keys or set_root_keys == {"is_public"}:
+            nbs.update(set__is_public=document.is_public)
+        else:
+            nbs.delete()
+            document.update(unset__cif=True)
+            Contributions.objects(pk=cid).update(unset__structures=True)
 
 
 signals.post_save.connect(Structures.post_save, sender=Structures)
