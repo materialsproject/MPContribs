@@ -30,4 +30,4 @@ pyopenssl==19.1.0
 python-snappy==0.5.4
 selenium==3.141.0
 toronado==0.0.11
-zstandard==0.13.0
+zstandard==0.14.0
