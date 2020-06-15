@@ -13,4 +13,4 @@ nbformat==5.0.6
 pandas-datareader==0.8.1
 pymongo==3.10.1
 scipy==1.4.1
-whitenoise==5.0.1
+whitenoise==5.1.0
