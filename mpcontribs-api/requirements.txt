@@ -22,7 +22,7 @@ gunicorn[gevent]==20.0.4
 jupyter-enterprise-gateway==2.1.1
 marshmallow-mongoengine @ git+https://github.com/tschaume/marshmallow-mongoengine@mpcontribs#egg=marshmallow_mongoengine-0.30.0
 mimerender @ git+https://github.com/tschaume/mimerender@mpcontribs#egg=mimerender-0.6.1
-more-itertools==8.3.0
+more-itertools==8.4.0
 pint==0.12
 plotly==4.8.1
 pymatgen==2020.6.8
