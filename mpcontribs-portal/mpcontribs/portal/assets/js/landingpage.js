@@ -1,5 +1,6 @@
 import Handsontable from "handsontable";
 import get from "lodash/get";
+import sha1 from "js-sha1";
 
 $('a[name="read_more"]').on('click', function() {
     $(this).hide();
@@ -106,6 +107,7 @@ function load_data(dom) {
     get_data().done(function(response) {
         total_count = response.total_count;
         $('#total_count').html('<b>' + total_count + ' total</b>');
+        $('#total_count').data('count', total_count);
         dom.loadData(response.data);
         if (total_count > 20) {
             const height = response.data.length * rowHeight;
@@ -117,8 +119,36 @@ function load_data(dom) {
     });
 }
 
-$('a[name=table_download_item]').click(function() {
+$('a[name=table_download_item]').click(function(e) {
     $('#table_download_dropdown').removeClass('is-active');
+    var notification_id = "download_notification";
+    var notification = document.getElementById(notification_id);
+    if (!$(notification).length) {
+        notification = $('<div/>', {
+            'class': 'notification is-warning', 'id': notification_id
+        });
+    }
+    $(notification).html('Preparing download ');
+    $(notification).append(new Array(4).join('<span class="loader__dot">.</span>'));
+    var cnt = $('#total_count').data('count');
+    var pbar = $('<progress/>', {'class': 'progress', 'max': cnt});
+    $(notification).append(pbar);
+    $("#landingpage").prepend(notification);
+    var channel = sha1(decodeURIComponent($(this).attr('href')));
+    var source = new EventSource(window.api['host'] + 'stream?channel=' + channel);
+    source.addEventListener('download', function(event) {
+        var data = JSON.parse(event.data);
+        if (data.message === 0) {
+            $(notification).html('Download ready.');
+        } else if (data.message >= 0) {
+            pbar.attr('value', data.message);
+        } else {
+            $(notification).html('Something went wrong.');
+        }
+    }, false);
+    source.addEventListener('error', function(event) {
+        $(notification).html("Failed to connect to event stream. Is Redis running?")
+    }, false);
 });
 
 var nestedHeadersPrep = [];

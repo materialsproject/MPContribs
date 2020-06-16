@@ -7,46 +7,45 @@
         Use the above dropdown menu to quickly jump to specific projects, or to search for keywords in their
         descriptions. The search will reduce the list of projects shown below to those matching the keyword.
     </div>
-        {% for lp in landing_pages %}
-        <article class="media box" id="{{ lp.project }}" name=cards>
-            <figure class="media-left image is-hidden-touch" id=thumbnail_{{lp.project}}_img></figure>
-            <div class="media-content">
-                {% if lp.urls %}
-                <nav class="breadcrumb has-bullet-separator is-size-6 is-marginless">
-                    <ul>
-                        {% for l, u in lp.urls.items %}
-                        <li><a href="{{u}}">{{l}}</a></li>
-                        {% endfor %}
-                    </ul>
-                </nav>
+    {% for lp in landing_pages %}
+    <article class="media box" id="{{ lp.project }}" name=cards>
+        <figure class="media-left image is-hidden-touch" id=thumbnail_{{lp.project}}_img></figure>
+        <div class="media-content">
+            {% if lp.urls %}
+            <nav class="breadcrumb has-bullet-separator is-size-6 is-marginless">
+                <ul>
+                    {% for l, u in lp.urls.items %}
+                    <li><a href="{{u}}">{{l}}</a></li>
+                    {% endfor %}
+                </ul>
+            </nav>
+            {% endif %}
+            <div class="content is-size-6 is-marginless">
+                {{ lp.authors.0 }}
+                {% if lp.authors.1 %}
+                <a class="has-tooltip-top has-tooltip-multiline"
+                      data-tooltip="{{ lp.authors.1 }}">et al.</a>
+                </a>
                 {% endif %}
-                <div class="content is-size-6 is-marginless">
-                    {{ lp.authors.0 }}
-                    {% if lp.authors.1 %}
-                    <a class="has-tooltip-top has-tooltip-multiline"
-                          data-tooltip="{{ lp.authors.1 }}">et al.</a>
+                {% if not lp.is_public %}
+                <span class="icon is-pulled-right">
+                    <i class="far fa-eye-slash"></i>
+                </span>
+            </div>
+            {% endif %}
+            <details>
+                <summary>
+                    <a class="is-size-4 has-text-weight-semibold" href="{{ lp.project }}/">
+                        {{ lp.title }}
                     </a>
-                    {% endif %}
-                    {% if not lp.is_public %}
-                    <span class="icon is-pulled-right">
-                        <i class="far fa-eye-slash"></i>
-                    </span>
-                </div>
-                {% endif %}
-                <details>
-                    <summary>
-                        <a class="is-size-4 has-text-weight-semibold" href="{{ lp.project }}/">
-                            {{ lp.title }}
-                        </a>
-                    </summary>
-                    <p class="is-size-6">{{ lp.description }}</p>
-                </details>
-            </div>
-            <div class="media-right">
-            </div>
-        </article>
-        {% endfor %}
-    </div>
+                </summary>
+                <p class="is-size-6">{{ lp.description }}</p>
+            </details>
+        </div>
+        <div class="media-right">
+        </div>
+    </article>
+    {% endfor %}
 </section>
 
 <section class="section is-hidden" id="search">

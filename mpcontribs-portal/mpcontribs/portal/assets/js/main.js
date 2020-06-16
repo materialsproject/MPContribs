@@ -140,7 +140,14 @@ $(document).ready(function () {
         } else  {
             $('#browse-toggle').simulate('click');
         }
+        $("html, body").animate({ scrollTop: 0 }, 1);
     } else {
         $('.navbar-start .navbar-item .tabs ul li').removeClass('is-active');
     }
+
+    // close all dropdowns on body click
+    $('body').click(function(e) {
+        var dropdowns = $(".dropdown");
+        dropdowns.not(dropdowns.has(e.target)).removeClass('is-active');
+    });
 });
