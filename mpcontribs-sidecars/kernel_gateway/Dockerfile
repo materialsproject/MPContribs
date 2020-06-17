@@ -1,9 +1,14 @@
-FROM phuck/python:3.8.2-slim-v1.0 as base
-FROM phuck/mpcontribs:2.2.2 as builder
+FROM materialsproject/devops:python-3.83.3 as base
+FROM materialsproject/devops:jupyter-3.83.3 as jupyter
+
+FROM jupyter as python-deps
+COPY requirements.txt .
+ENV PIP_FLAGS "--user --no-cache-dir --compile"
+RUN pip install $PIP_FLAGS -r requirements.txt
 
 FROM base
-COPY --from=builder /root/.local/lib/python3.8/site-packages /root/.local/lib/python3.8/site-packages
-COPY --from=builder /root/.local/bin /root/.local/bin
+COPY --from=python-deps /root/.local/lib/python3.8/site-packages /root/.local/lib/python3.8/site-packages
+COPY --from=python-deps /root/.local/bin /root/.local/bin
 
 WORKDIR /app
 ENV PATH=/root/.local/bin:$PATH

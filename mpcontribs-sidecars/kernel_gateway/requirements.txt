@@ -1,0 +1,2 @@
+mpcontribs-client==2.2.2
+mpcontribs-io==2.2.2

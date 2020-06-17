@@ -14,6 +14,13 @@ updates:
     time: '08:00'
     timezone: US/Pacific
   open-pull-requests-limit: 10
+- package-ecosystem: pip
+  directory: "/mpcontribs-sidecars/kernel_gateway"
+  schedule:
+    interval: weekly
+    time: '08:00'
+    timezone: US/Pacific
+  open-pull-requests-limit: 10
 - package-ecosystem: npm
   directory: "/mpcontribs-portal"
   schedule:
@@ -30,20 +37,6 @@ updates:
   open-pull-requests-limit: 10
 - package-ecosystem: pip
   directory: "/mpcontribs-io"
-  schedule:
-    interval: weekly
-    time: '08:00'
-    timezone: US/Pacific
-  open-pull-requests-limit: 10
-- package-ecosystem: docker
-  directory: "/mpcontribs-sidecars/builder"
-  schedule:
-    interval: weekly
-    time: '08:00'
-    timezone: US/Pacific
-  open-pull-requests-limit: 10
-- package-ecosystem: pip
-  directory: "/mpcontribs-sidecars/builder"
   schedule:
     interval: weekly
     time: '08:00'

@@ -1,5 +1,5 @@
-FROM phuck/python:3.8.2-slim-v1.0 as base
-FROM phuck/mpcontribs:2.2.2 as builder
+FROM materialsproject/devops:python-3.83.3 as base
+FROM materialsproject/devops:jupyter-3.83.3 as jupyter
 FROM node:14.4.0-slim as node
 
 FROM node as webpack-deps
@@ -17,8 +17,9 @@ COPY webpack.config.js .
 COPY mpcontribs/portal/assets ./mpcontribs/portal/assets
 RUN ./node_modules/.bin/webpack
 
-FROM builder as python-deps
+FROM jupyter as python-deps
 COPY requirements.txt .
+ENV PIP_FLAGS "--user --no-cache-dir --compile"
 RUN pip install $PIP_FLAGS -r requirements.txt
 
 FROM base as python-builds
