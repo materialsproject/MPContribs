@@ -4,7 +4,7 @@ import flask_mongorest
 from flask_mongorest.resources import Resource
 from flask_mongorest import operators as ops
 from flask_mongorest.methods import Fetch
-from flask import Blueprint, current_app, render_template, g
+from flask import Blueprint, current_app, render_template, g, request
 from selenium import webdriver
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 from bs4 import BeautifulSoup
@@ -55,9 +55,11 @@ class CardsView(SwaggerView):
 
     def get(self, **kwargs):
         cid = kwargs["pk"]  # only Fetch enabled
+        qfilter = lambda qs: self.has_read_permission(request, qs.clone())
         try:
-            card = super().get(**kwargs)  # trigger DoesNotExist if necessary
-            if not card["html"]:
+            # trigger DoesNotExist if necessary (due to permissions or non-existence)
+            card = self._resource.get_object(cid, qfilter=qfilter)
+            if not card.html:
                 contrib = Contributions.objects.only("project", "data").get(pk=cid)
                 info = Projects.objects.get(pk=contrib.project.id)
                 ctx = {"cid": cid}
@@ -95,7 +97,7 @@ class CardsView(SwaggerView):
                 card = Cards.objects.get(pk=cid)
                 card.html = html.tostring(tree.body[0]).decode("utf-8")
                 card.save()
-            return super().get(**kwargs)
+            return self._resource.serialize(card, params=request.args)
 
         except DoesNotExist:
             card = None

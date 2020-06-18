@@ -5,7 +5,7 @@ from flask_mongorest.resources import Resource
 from flask_mongorest.methods import Fetch
 from flask_mongorest import operators as ops
 from flask_sse import sse
-from flask import Blueprint
+from flask import Blueprint, request
 from copy import deepcopy
 from mongoengine import DoesNotExist
 from nbformat import v4 as nbf
@@ -48,9 +48,10 @@ class NotebooksView(SwaggerView):
 
     def get(self, **kwargs):
         cid = kwargs["pk"]
+        qfilter = lambda qs: self.has_read_permission(request, qs.clone())
         try:
-            super().get(**kwargs)  # trigger DoesNotExist if necessary
-            nb = Notebooks.objects.get(pk=cid)
+            # trigger DoesNotExist if necessary (due to permissions or non-existence)
+            nb = self._resource.get_object(cid, qfilter=qfilter)
             try:
                 if not nb.cells[-1]["outputs"]:
                     kernel = client.start_kernel("python3")
@@ -85,7 +86,7 @@ class NotebooksView(SwaggerView):
             except Exception as ex:
                 print(ex)
                 sse.publish({"message": -1}, type="notebook", channel=cid)
-            return super().get(**kwargs)
+            return self._resource.serialize(nb, params=request.args)
 
         except DoesNotExist:
             nb = None
@@ -146,7 +147,7 @@ class NotebooksView(SwaggerView):
                 doc["cells"] += cells
                 self.Schema().update(nb, doc)
                 nb.save()  # calls Notebooks.clean()
-                return super().get(**kwargs)
+                return self.get(**kwargs)
 
             if nb is not None:
                 raise DoesNotExist(
