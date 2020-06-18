@@ -146,6 +146,8 @@ Resources:
               Value: !Ref 'AWS::Region'
             - Name: AWS_REGION
               Value: !Ref 'AWS::Region'
+            - Name: S3_DOWNLOADS_BUCKET
+              Value: mpcontribs-downloads
             - Name: REDIS_ADDRESS
               Value:
                 Fn::ImportValue:
