@@ -9,10 +9,10 @@ COPY requirements.txt .
 RUN pip install $PIP_FLAGS -r requirements.txt
 COPY . .
 RUN pip install $PIP_FLAGS -e .
-#RUN cd marshmallow-mongoengine && pip install --user -e .
-#RUN cd mimerender && pip install --user -e .
-#RUN cd flask-mongorest && pip install --user -e .
-#RUN cd flasgger && pip install --user -e .
+#RUN cd marshmallow-mongoengine && pip install $PIP_FLAGS -e .
+#RUN cd mimerender && pip install $PIP_FLAGS -e .
+#RUN cd flask-mongorest && pip install $PIP_FLAGS -e .
+#RUN cd flasgger && pip install $PIP_FLAGS -e .
 
 ARG MAPI_KEY
 RUN if [ ! -e /app/mpcontribs/api/contributions/formulae.json ]; then \
