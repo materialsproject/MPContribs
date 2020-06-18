@@ -86,6 +86,7 @@ class NotebooksView(SwaggerView):
             except Exception as ex:
                 print(ex)
                 sse.publish({"message": -1}, type="notebook", channel=cid)
+
             return self._resource.serialize(nb, params=request.args)
 
         except DoesNotExist:
@@ -147,7 +148,7 @@ class NotebooksView(SwaggerView):
                 doc["cells"] += cells
                 self.Schema().update(nb, doc)
                 nb.save()  # calls Notebooks.clean()
-                return self.get(**kwargs)
+                return self._resource.serialize(nb, params=request.args)
 
             if nb is not None:
                 raise DoesNotExist(
