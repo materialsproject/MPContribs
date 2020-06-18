@@ -10,3 +10,8 @@ as preview cards on MP's [materials details
 pages](https://materialsproject.org/materials/mp-22987/#user-contribs), in form of
 domain-specific interactive landing pages on its [portal](https://portal.mpcontribs.org),
 and programmatically through its [API](https://api.mpcontribs.org).
+
+MPContribs deployments dedicated to datasets for
+[Machine Learning](https://ml.materialsproject.org) and from
+[DOE Light Sources](https://lightsources.materialsproject.org)
+are currently being built up.
