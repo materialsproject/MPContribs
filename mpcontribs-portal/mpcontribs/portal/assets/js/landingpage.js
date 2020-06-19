@@ -125,21 +125,22 @@ $('a[name=table_download_item]').click(function(e) {
     var notification = document.getElementById(notification_id);
     if (!$(notification).length) {
         notification = $('<div/>', {
-            'class': 'notification is-warning', 'id': notification_id
+            'class': 'notification is-warning is-hidden', 'id': notification_id
         });
+        $("#landingpage").prepend(notification);
     }
     $(notification).html('Preparing download ');
     $(notification).append(new Array(4).join('<span class="loader__dot">.</span>'));
     var cnt = $('#total_count').data('count');
     var pbar = $('<progress/>', {'class': 'progress', 'max': cnt});
     $(notification).append(pbar);
-    $("#landingpage").prepend(notification);
+    $(notification).removeClass('is-hidden');
     var channel = sha1(decodeURIComponent($(this).attr('href')));
     var source = new EventSource(window.api['host'] + 'stream?channel=' + channel);
     source.addEventListener('download', function(event) {
         var data = JSON.parse(event.data);
         if (data.message === 0) {
-            $(notification).html('Download ready.');
+            $(notification).addClass('is-hidden');
         } else if (data.message >= 0) {
             pbar.attr('value', data.message);
         } else {
