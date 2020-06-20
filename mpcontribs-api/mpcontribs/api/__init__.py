@@ -15,6 +15,7 @@ from flask_log import Logging
 from flask_sse import sse
 from flask_compress import Compress
 from flasgger.base import Swagger
+from marshmallow.utils import get_value
 from itsdangerous import URLSafeTimedSerializer
 from pint import UnitRegistry
 from pint.unit import UnitDefinition
@@ -107,8 +108,7 @@ def validate_data(doc, sender=None, project=None):
                         sender.objects.only(f"data.{key}.unit").filter(**query).first()
                     )
                     if sample:
-                        sample_fdct = fdict(sample["data"], delimiter=delimiter)
-                        q.ito(sample_fdct[f"{key}.unit"])
+                        q.ito(get_value(sample["data"], f"{key}.unit"))
                 v = Decimal(str(q.magnitude))
                 vt = v.as_tuple()
                 if vt.exponent < 0:

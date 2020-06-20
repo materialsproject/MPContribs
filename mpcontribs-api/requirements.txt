@@ -8,7 +8,6 @@ cherrypicker @ git+https://github.com/big-o/cherrypicker.git#egg=cherrypicker
 css-html-js-minify==2.5.5
 dict-deep==4.1.2
 dnspython==1.16.0
-dotty-dict==1.2.1
 fdict==0.8.1
 flasgger @ git+https://github.com/tschaume/flasgger@flask_mongorest#egg=flasgger-0.9.4
 flask-compress==1.5.0

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import os
 import flask_mongorest
-from dotty_dict import Dotty
+from marshmallow.utils import get_value
 from mongoengine.queryset import DoesNotExist
 from flask import Blueprint, current_app, url_for
 from flask_mongorest.exceptions import UnknownFieldError
@@ -127,7 +127,7 @@ class ProjectsResource(Resource):
                 unit_contribs = Contributions.objects.only(unit_field).filter(
                     **unit_query
                 )
-                unit_sample = Dotty(unit_contribs.limit(-1).first().to_mongo())
+                unit_sample = unit_contribs.limit(-1).first()
                 min_max = list(
                     Contributions.objects.aggregate(
                         *[
@@ -148,7 +148,7 @@ class ProjectsResource(Resource):
                     )
                 )
                 rng = [min_max[0]["min"], min_max[0]["max"]] if min_max else None
-                unit = unit_sample.get(unit_field)
+                unit = get_value(unit_sample, unit_field)
                 if min_max and unit is None:
                     unit = ""  # catch missing unit field in data
                 key = f"data.{col} [{unit}]" if min_max else f"data.{col}"
