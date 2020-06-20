@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
+from datetime import datetime
 from flask import current_app
 from flask_mongoengine import DynamicDocument
 from mongoengine import CASCADE, signals
-from mongoengine.fields import StringField, BooleanField, DictField, LazyReferenceField
+from mongoengine.fields import StringField, BooleanField, DictField
+from mongoengine.fields import LazyReferenceField, DateTimeField
 from mpcontribs.api.projects.document import Projects
 from mpcontribs.api import validate_data
 
@@ -17,9 +19,12 @@ class Contributions(DynamicDocument):
         required=True, default=False, help_text="public/private contribution"
     )
     data = DictField(help_text="free-form data to be shown in Contribution Card")
+    last_modified = DateTimeField(
+        required=True, default=datetime.utcnow, help_text="time of last modification"
+    )
     meta = {
         "collection": "contributions",
-        "indexes": ["project", "identifier", "formula", "is_public"],
+        "indexes": ["project", "identifier", "formula", "is_public", "last_modified"],
     }
 
     @classmethod
@@ -31,8 +36,14 @@ class Contributions(DynamicDocument):
             formulae = current_app.config["FORMULAE"]
             document.formula = formulae.get(document.identifier, document.identifier)
 
+        document.last_modified = datetime.utcnow()
+
     @classmethod
     def post_save(cls, sender, document, **kwargs):
+        # avoid circular import
+        from mpcontribs.api.notebooks.document import Notebooks
+        from mpcontribs.api.cards.document import Cards
+
         # TODO unset and rebuild columns key in Project for updated (nested) keys only
         set_root_keys = set(k.split(".", 1)[0] for k in document._delta()[0].keys())
         nbs = Notebooks.objects(pk=document.id)
@@ -41,10 +52,6 @@ class Contributions(DynamicDocument):
             nbs.update(set__is_public=document.is_public)
             cards.update(set__is_public=document.is_public)
         else:
-            # avoid circular import
-            from mpcontribs.api.notebooks.document import Notebooks
-            from mpcontribs.api.cards.document import Cards
-
             nbs.delete()
             cards.delete()
             if "data" in set_root_keys:
