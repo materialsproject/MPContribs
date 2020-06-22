@@ -1,5 +1,5 @@
-FROM materialsproject/devops:python-3.83.3 as base
-FROM materialsproject/devops:jupyter-3.83.3 as jupyter
+FROM materialsproject/devops:python-3.83.4 as base
+FROM materialsproject/devops:python-3.83.4 as jupyter
 
 FROM jupyter as python-deps
 COPY requirements.txt .
