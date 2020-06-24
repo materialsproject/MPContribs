@@ -4,7 +4,7 @@ services:
 
     portal:
         cpus: 2
-        mem_limit: 3280m
+        mem_limit: 2880m
         mem_reservation: 80m
         build: ./mpcontribs-portal
         env_file:
@@ -25,7 +25,7 @@ services:
 
     api:
         cpus: 2
-        mem_limit: 3800m
+        mem_limit: 3400m
         mem_reservation: 600m
         build:
             context: ./mpcontribs-api
@@ -54,6 +54,38 @@ services:
             - "5002:5002"
             - "5003:5003"
 
+    chrome:
+        build: mpcontribs-sidecars/chrome
+        cpus: 2
+        mem_limit: 2870m
+        mem_reservation: 70m
+        environment:
+            - START_XVFB=false
+        ports:
+            - "4444:4444"
+
+    kernel_gateway:
+        cpus: 2
+        mem_limit: 2850m
+        mem_reservation: 50m
+        depends_on:
+            - orca
+        env_file:
+            - ./deployments/$DEPLOYMENT.env
+        environment:
+            KG_ALLOW_ORIGIN: '*'
+            GATEWAY_HOST: kernel_gateway:8888
+        build: ./mpcontribs-sidecars/kernel_gateway
+
+    orca:
+        cpus: 2
+        mem_limit: 3300m
+        mem_reservation: 500m
+        build: ./mpcontribs-sidecars/orca
+        ports:
+            - "9091:9091"
+
+    # OTHER
     redis:
         image: redis:alpine
         environment:
@@ -77,43 +109,6 @@ services:
       ports:
         - "8125:8125/udp"
 
-    chrome:
-        build: mpcontribs-sidecars/chrome
-        cpus: 2
-        mem_limit: 3270m
-        mem_reservation: 70m
-        environment:
-            - START_XVFB=false
-        ports:
-            - "4444:4444"
-
-    kernel_gateway:
-        cpus: 2
-        mem_limit: 3250m
-        mem_reservation: 50m
-        env_file:
-            - ./deployments/$DEPLOYMENT.env
-        environment:
-            KG_ALLOW_ORIGIN: '*'
-            GATEWAY_HOST: kernel_gateway:8888
-        build: ./mpcontribs-sidecars/kernel_gateway
-
-    xray:
-        mem_limit: 1G
-        mem_reservation: 100m
-        cpus: 1
-        env_file:
-            - ./deployments/$DEPLOYMENT.env
-        # run in local mode to prevent it from trying to read EC2 instance metadata
-        command: -o
-        volumes:
-            - ~/.aws/:/root/.aws/:ro
-        build: ./mpcontribs-sidecars/xray-daemon
-        # port mapping only needed to use daemon from local machine
-        ports:
-            - "2000:2000/udp"
-
-    # OTHER
     docs:
         image: squidfunk/mkdocs-material
         command: serve --dev-addr=0.0.0.0:8081

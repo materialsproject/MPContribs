@@ -30,12 +30,10 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "django_extensions",
     "webpack_loader",
-    # "aws_xray_sdk.ext.django",
     "mpcontribs.portal",
 ]
 
 MIDDLEWARE = (
-    # "aws_xray_sdk.ext.django.middleware.XRayMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
@@ -89,9 +87,3 @@ WEBPACK_LOADER = {
 }
 
 APPEND_SLASH = False
-
-XRAY_RECORDER = {
-    "AWS_XRAY_CONTEXT_MISSING": "LOG_ERROR",
-    "AWS_XRAY_TRACING_NAME": "mpcontribs-portal",
-    "DYNAMIC_NAMING": os.environ.get("PORTAL_CNAME"),
-}
