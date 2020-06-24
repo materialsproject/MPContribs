@@ -17,7 +17,6 @@ module.exports = {
             path.resolve(__dirname, 'mpcontribs/portal/assets/js/analytics'),
             path.resolve(__dirname, 'mpcontribs/portal/assets/js/main'),
             path.resolve(__dirname, 'mpcontribs/portal/assets/js/render_json'),
-            path.resolve(__dirname, 'mpcontribs/portal/assets/js/render_table'),
             path.resolve(__dirname, 'mpcontribs/portal/assets/js/render_plot'),
             //path.resolve(__dirname, 'mpcontribs/portal/assets/js/render_overview'),
         ]
@@ -61,13 +60,10 @@ module.exports = {
             "jquery-form": 'jquery-form/src/jquery.form',
             "czmore": 'js/jquery.czMore-latest',
             "typy": 'typy/lib/index',
-            "backbone": 'backbone/backbone',
             "underscore": 'underscore/underscore',
             "lunr": 'lunr.js/lunr',
             "clipboard": "clipboard-polyfill/dist/clipboard-polyfill",
             "plotly": 'plotly.js/lib/core',
-            "backgrid-select-all": 'backgrid-select-all/backgrid-select-all',
-            "backbone.paginator": 'backbone.paginator/lib/backbone.paginator',
             "js-cookie": 'js-cookie/src/js.cookie',
             "linkify": 'linkifyjs/lib/linkify',
             "linkify-element": 'linkifyjs/lib/linkify-element',
@@ -96,27 +92,56 @@ module.exports = {
             },
             { test: /\.css$/, loaders: [MiniCssExtractPlugin.loader, "css-loader"] },
             {
-                test: /landingpage\.js$/, use: [{ // TODO babel for all: https://babeljs.io/docs/en/babel-plugin-syntax-dynamic-import/#installation
+                test: /landingpage\.js$/, use: [{
+                    // TODO babel for all: https://babeljs.io/docs/en/babel-plugin-syntax-dynamic-import/#installation
                     loader: 'babel-loader', options: {
                         'plugins': ['lodash'],
                         'presets': [['env', { 'modules': false, 'targets': { 'node': 4 } }]]
                     }
                 }]
             },
-            { test: /backbone/, loader: 'exports-loader?Backbone!imports-loader?underscore,jquery' },
-            { test: /backgrid/, loader: 'imports-loader?jquery,backbone' },
-            { test: /jquery-form/, loader: 'imports-loader?jquery' },
-            { test: /jquery-validation/, loader: 'imports-loader?jquery' },
-            { test: /jquery-simulate/, loader: 'imports-loader?jquery' },
-            { test: /select2/, loader: 'imports-loader?jquery' },
-            { test: /czmore/, loader: 'imports-loader?jquery' },
-            { test: /backgrid-select-all/, loader: 'imports-loader?backgrid' },
-            { test: /backgrid-filter/, loader: 'imports-loader?backgrid' },
-            { test: /backbone.paginator/, loader: 'imports-loader?backbone' },
-            { test: /backgrid-paginator/, loader: 'imports-loader?backgrid,backbone.paginator' },
-            { test: /backgrid-grouped-columns/, loader: 'imports-loader?backgrid' },
-            { test: /backgrid-columnmanager/, loader: 'imports-loader?backgrid' },
-            { test: /linkify-element/, loader: 'imports-loader?linkify' }
+            {
+                test: /jquery-form/,
+                use: [{
+                    loader: 'imports-loader',
+                    options: { imports: ['default jquery $'] }
+                }]
+            },
+            {
+                test: /jquery-validation/,
+                use: [{
+                    loader: 'imports-loader',
+                    options: { imports: ['default jquery $'] }
+                }]
+            },
+            {
+                test: /jquery-simulate/,
+                use: [{
+                    loader: 'imports-loader',
+                    options: { imports: ['default jquery $'] }
+                }]
+            },
+            {
+                test: /select2/,
+                use: [{
+                    loader: 'imports-loader',
+                    options: { imports: ['default jquery $'] }
+                }]
+            },
+            {
+                test: /czmore/,
+                use: [{
+                    loader: 'imports-loader',
+                    options: { imports: ['default jquery $'] }
+                }]
+            },
+            {
+                test: /linkify-element/,
+                use: [{
+                    loader: 'imports-loader',
+                    options: { imports: ['side-effects linkify'] }
+                }]
+            }
         ]
     },
     mode : devMode ? 'development' : 'production'
