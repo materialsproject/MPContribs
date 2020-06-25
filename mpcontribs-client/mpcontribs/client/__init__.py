@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import os
 import fido
+import warnings
 
 from pyisemail import is_email
 from pyisemail.diagnosis import BaseDiagnosis
@@ -16,6 +17,9 @@ from bravado_core.spec import Spec
 
 DEFAULT_HOST = "api.mpcontribs.org"
 HOST = os.environ.get("MPCONTRIBS_API_HOST", DEFAULT_HOST)
+
+warnings.formatwarning = lambda msg, *args, **kwargs: f"{msg}\n"
+warnings.filterwarnings("default", category=DeprecationWarning, module=__name__)
 
 
 def validate_email(email_string):
@@ -45,6 +49,12 @@ class FidoClientGlobalHeaders(FidoClient):
         return HttpFuture(
             future_adapter, self.response_adapter_class, operation, request_config
         )
+
+
+def load_client(apikey=None, headers=None, host=HOST):
+    warnings.warn(
+        "load_client(...) is deprecated, use Client(...) instead", DeprecationWarning
+    )
 
 
 class Client(SwaggerClient):
