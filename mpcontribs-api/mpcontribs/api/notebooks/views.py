@@ -98,8 +98,7 @@ class NotebooksView(SwaggerView):
                 contrib = Contributions.objects.get(id=cid)
                 cells = [
                     nbf.new_code_cell(
-                        "headers = {'X-Consumer-Groups': 'admin', 'X-Consumer-Username': 'phuck@lbl.gov'}\n"
-                        "client = load_client(headers=headers)"
+                        "client = Client(headers={'X-Consumer-Groups': 'admin'})"
                     ),
                     nbf.new_code_cell(
                         f"contrib = client.contributions.get_entry(pk='{cid}', _fields=['_all']).result()"

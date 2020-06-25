@@ -34,7 +34,7 @@ stages:
                   # - table IDs `tid` are in `contrib['tables']`
                   # - set `per_page` query parameter to retrieve up to 1000 rows at once (paginate for more)
                   # - structure IDs `sid` are in `contrib['structures']`
-                  from mpcontribs.client import load_client
+                  from mpcontribs.client import Client
                   from mpcontribs.io.core.recdict import RecursiveDict
                   from mpcontribs.io.core.components.hdata import HierarchicalData
                   from mpcontribs.io.core.components.tdata import Table # DataFrame with Backgrid IPython Display
@@ -45,7 +45,7 @@ stages:
               - cell_type: code
                 metadata: {}
                 source: |-
-                  client = load_client() # provide apikey as argument to use api.mpcontribs.org
+                  client = Client() # provide apikey as argument to use api.mpcontribs.org
                   contrib = client.contributions.get_entry(pk='5a862202d4f1443a18fab254', _fields=['_all']).result()
                 outputs: []
               - cell_type: markdown

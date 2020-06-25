@@ -2,7 +2,7 @@
 import pytest
 
 from unittest.mock import patch, MagicMock
-from mpcontribs.client import validate_email, load_client, DEFAULT_HOST, email_format
+from mpcontribs.client import validate_email, Client, DEFAULT_HOST, email_format
 from swagger_spec_validator.common import SwaggerValidationError
 
 
@@ -22,23 +22,23 @@ def test_validate_email():
         }
     ),
 )
-def test_load_client():
+def test_Client():
     kwargs = {}
-    spec = load_client(**kwargs).swagger_spec
+    spec = Client(**kwargs).swagger_spec
     assert spec.http_client.headers == {}
     assert spec.origin_url == f"http://{DEFAULT_HOST}/apispec.json"
     assert spec.spec_dict["host"] == DEFAULT_HOST
     assert spec.spec_dict["schemes"] == ["http"]
     assert spec.user_defined_formats["email"] == email_format
     kwargs = {"apikey": "1234", "headers": {"a": "b"}, "host": "api.example.com"}
-    spec = load_client(**kwargs).swagger_spec
+    spec = Client(**kwargs).swagger_spec
     assert spec.http_client.headers == {"x-api-key": "1234"}
     assert spec.origin_url == "https://api.example.com/apispec.json"
     assert spec.spec_dict["host"] == "api.example.com"
     assert spec.spec_dict["schemes"] == ["https"]
     assert spec.user_defined_formats["email"] == email_format
     kwargs = {"headers": {"a": "b"}}
-    spec = load_client(**kwargs).swagger_spec
+    spec = Client(**kwargs).swagger_spec
     assert spec.http_client.headers == {"a": "b"}
     assert spec.origin_url == f"http://{DEFAULT_HOST}/apispec.json"
     assert spec.spec_dict["host"] == DEFAULT_HOST

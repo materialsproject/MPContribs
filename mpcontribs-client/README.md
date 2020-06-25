@@ -5,8 +5,8 @@ Small, dynamic python client library to connect to [MPContribs](https://mpcontri
 APIs based on Yelp's [bravado](https://bravado.readthedocs.io).
 
 ```python
-from mpcontribs.client import load_client
-client = load_client('your-api-key-here')
+from mpcontribs.client import Client
+client = Client('your-api-key-here')
 dir(client) # show available resources
 ```
 
@@ -15,5 +15,5 @@ By default, the client connects to https://api.mpcontribs.org. The `host` argume
 APIs:
 
 ```python
-client = load_client('your-api-key-here', host='ml.materialsproject.cloud')
+client = Client('your-api-key-here', host='ml.materialsproject.cloud')
 ```

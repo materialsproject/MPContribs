@@ -15,10 +15,7 @@ from django.http import HttpResponse
 from django.template.loaders.app_directories import get_app_template_dirs
 from django.template.loader import select_template
 
-from mpcontribs.client import load_client
-from mpcontribs.io.core.components.hdata import HierarchicalData
-
-# TODO should not be needed if render_json.js took care of display/unit/value
+from mpcontribs.client import Client
 
 S3_DOWNLOADS_BUCKET = os.environ.get("S3_DOWNLOADS_BUCKET", "mpcontribs-downloads")
 S3_DOWNLOAD_URL = f"https://{S3_DOWNLOADS_BUCKET}.s3.amazonaws.com/"
@@ -47,7 +44,7 @@ def landingpage(request):
     ctx = get_context(request)
     try:
         project = request.path.replace("/", "")
-        client = load_client(headers=get_consumer(request))
+        client = Client(headers=get_consumer(request))
         prov = client.projects.get_entry(pk=project, _fields=["_all"]).result()
         ctx["project"] = project
         long_title = prov.get("long_title")
@@ -102,7 +99,7 @@ def index(request):
     ctx["PORTAL_CNAME"] = cname
     ctx["landing_pages"] = []
     mask = ["project", "title", "authors", "is_public", "description", "urls"]
-    client = load_client(headers=get_consumer(request))  # sets/returns global variable
+    client = Client(headers=get_consumer(request))  # sets/returns global variable
     entries = client.projects.get_entries(_fields=mask).result()["data"]
     for entry in entries:
         authors = entry["authors"].strip().split(",", 1)
@@ -151,7 +148,7 @@ def export_notebook(nb, cid):
 
 def contribution(request, cid):
     ctx = get_context(request)
-    client = load_client(headers=get_consumer(request))  # sets/returns global variable
+    client = Client(headers=get_consumer(request))  # sets/returns global variable
     contrib = client.contributions.get_entry(
         pk=cid, _fields=["id", "identifier"]
     ).result()
@@ -173,7 +170,7 @@ def contribution(request, cid):
 
 
 def cif(request, sid):
-    client = load_client(headers=get_consumer(request))  # sets/returns global variable
+    client = Client(headers=get_consumer(request))  # sets/returns global variable
     cif = client.structures.get_entry(pk=sid, _fields=["cif"]).result()["cif"]
     if cif:
         response = HttpResponse(cif, content_type="text/plain")
@@ -183,7 +180,7 @@ def cif(request, sid):
 
 
 def download_json(request, cid):
-    client = load_client(headers=get_consumer(request))  # sets/returns global variable
+    client = Client(headers=get_consumer(request))  # sets/returns global variable
     contrib = client.contributions.get_entry(pk=cid, fields=["_all"]).result()
     if contrib:
         jcontrib = json.dumps(contrib)
@@ -197,7 +194,7 @@ def csv(request, project):
     from pandas import DataFrame
     from pandas.io.json._normalize import nested_to_record
 
-    client = load_client(headers=get_consumer(request))  # sets/returns global variable
+    client = Client(headers=get_consumer(request))  # sets/returns global variable
     contribs = client.contributions.get_entries(
         project=project, _fields=["identifier", "id", "formula", "data"]
     ).result()[
