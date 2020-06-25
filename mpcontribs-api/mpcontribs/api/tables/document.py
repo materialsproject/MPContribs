@@ -47,7 +47,7 @@ class Tables(DynamicDocument):
         else:
             nbs.delete()
             if "data" in set_root_keys:
-                document.update(unset__total_rows=True, unset__total_pages=True)
+                document.update(unset__total_data_rows=True)
 
 
 signals.post_save.connect(Tables.post_save, sender=Tables)

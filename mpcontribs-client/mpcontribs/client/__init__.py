@@ -2,6 +2,7 @@
 import os
 import fido
 import warnings
+import pandas as pd
 
 from pyisemail import is_email
 from pyisemail.diagnosis import BaseDiagnosis
@@ -18,6 +19,7 @@ from bravado_core.spec import Spec
 DEFAULT_HOST = "api.mpcontribs.org"
 HOST = os.environ.get("MPCONTRIBS_API_HOST", DEFAULT_HOST)
 
+pd.options.plotting.backend = "plotly"
 warnings.formatwarning = lambda msg, *args, **kwargs: f"{msg}\n"
 warnings.filterwarnings("default", category=DeprecationWarning, module=__name__)
 
@@ -104,3 +106,24 @@ class Client(SwaggerClient):
             super().__init__(
                 swagger_spec, also_return_response=bravado_config.also_return_response
             )
+
+    def get_table(self, tid):
+        """Convenience function to get full Pandas DataFrame for a table."""
+        page, pages = 1, None
+        table = {"data": []}
+
+        while pages is None or page <= pages:
+            res = self.tables.get_entry(
+                pk=tid, _fields=["_all"], data_page=page, data_per_page=1000
+            ).result()
+
+            if "columns" not in table:
+                pages = res["total_data_pages"]
+                table["columns"] = res["columns"]
+
+            table["data"].extend(res["data"])
+            page += 1
+
+        return pd.DataFrame.from_records(
+            table["data"], columns=table["columns"], index=table["columns"][0]
+        )

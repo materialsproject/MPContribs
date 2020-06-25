@@ -37,23 +37,30 @@ class TablesResource(Resource):
 
     @staticmethod
     def get_optional_fields():
-        return ["data", "config", "total_rows", "total_pages"]
+        return ["data", "config", "total_data_rows", "total_data_pages"]
 
     def value_for_field(self, obj, field):
-        # add total_rows and total_pages keys for Backgrid
-        # NOTE get table with full data field to determine totals
-        table = Tables.objects.only("data").get(id=obj.id)
-        total_rows = len(table.data)
-        if field == "total_rows":
-            obj.update(set__total_rows=total_rows)
-            return total_rows
-        elif field == "total_pages":
-            per_page = int(
-                self.params.get("data_per_page", self.fields_to_paginate["data"][0])
-            )
-            total_pages = int(total_rows / per_page) + bool(total_rows % per_page)
-            obj.update(set__total_pages=total_pages)
-            return total_pages
+        # add total_data_rows and total_data_pages keys
+        if field == "total_data_rows":
+            # NOTE get table with full data field to determine totals
+            table = Tables.objects.only("data").get(id=obj.id)
+            total_data_rows = len(table.data)
+            obj.update(set__total_data_rows=total_data_rows)
+            return total_data_rows
+        elif field == "total_data_pages":
+            per_page_default = self.fields_to_paginate["data"][0]
+            per_page = int(self.params.get("data_per_page", per_page_default))
+            if hasattr(obj, "total_data_rows"):
+                total_data_rows = obj.total_data_rows
+            else:
+                table = Tables.objects.only("total_data_rows").get(id=obj.id)
+                if hasattr(table, "total_data_rows"):
+                    total_data_rows = table.total_data_rows
+                else:
+                    total_data_rows = self.value_for_field(obj, "total_data_rows")
+            total_data_pages = int(total_data_rows / per_page)
+            total_data_pages += bool(total_data_rows % per_page)
+            return total_data_pages
         else:
             raise UnknownFieldError
 
