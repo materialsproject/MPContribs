@@ -1,39 +1,106 @@
 # -*- coding: utf-8 -*-
 import os
+import asyncio
+import dateparser
 import flask_mongorest
-from flask_mongorest.resources import Resource
-from flask_mongorest.methods import Fetch
-from flask_mongorest import operators as ops
+
 from flask_sse import sse
 from flask import Blueprint, request
+from flask_mongorest.methods import Fetch
+from flask_mongorest import operators as ops
+from flask_mongorest.resources import Resource
+
+from uuid import uuid4
 from copy import deepcopy
-from mongoengine import DoesNotExist
 from nbformat import v4 as nbf
-from enterprise_gateway.client.gateway_client import GatewayClient
+from notebook.utils import run_sync, url_path_join
+from mongoengine import DoesNotExist
+from tornado.httpclient import HTTPRequest
+from tornado.websocket import websocket_connect
+from notebook.gateway.managers import GatewayKernelManager, GatewayClient
+from tornado.platform.asyncio import AnyThreadEventLoopPolicy
+from tornado.escape import json_encode, json_decode, url_escape
+
 from mpcontribs.api.core import SwaggerView
-from mpcontribs.api.notebooks.document import Notebooks
-from mpcontribs.api.contributions.document import Contributions
 from mpcontribs.api.tables.document import Tables
+from mpcontribs.api.notebooks.document import Notebooks
 from mpcontribs.api.structures.document import Structures
+from mpcontribs.api.contributions.document import Contributions
 
 
+asyncio.set_event_loop_policy(AnyThreadEventLoopPolicy())
 templates = os.path.join(os.path.dirname(flask_mongorest.__file__), "templates")
 notebooks = Blueprint("notebooks", __name__, template_folder=templates)
-client = GatewayClient()
+manager = GatewayKernelManager()
 seed_nb = nbf.new_notebook()
 seed_nb["cells"] = [
     nbf.new_code_cell(
         "\n".join(
             [
-                "from mpcontribs.client import load_client",
-                "from mpcontribs.io.core.components.hdata import HierarchicalData",
-                "from mpcontribs.io.core.components.tdata import Table # DataFrame with Backgrid IPython Display",
-                "from mpcontribs.io.core.components.gdata import Plot # Plotly interactive graph",
+                "from mpcontribs.client import Client",
                 "from pymatgen import Structure",
+                "import pandas as pd",
+                'pd.options.plotting.backend = "plotly"',
             ]
         )
     )
 ]
+
+
+def connect_kernel():
+    # TODO check status busy/idle
+    run_sync(manager.list_kernels())
+    kernels = {
+        kernel_id: dateparser.parse(kernel["last_activity"])
+        for kernel_id, kernel in manager._kernels.items()
+    }
+    kernel_id = url_escape(sorted(kernels, key=kernels.get)[0])
+    client = GatewayClient.instance()
+    url = url_path_join(client.ws_url, client.kernels_endpoint, kernel_id, "channels")
+    ws_req = HTTPRequest(url=url)
+    return run_sync(websocket_connect(ws_req))
+
+
+def execute(ws, cid, code):
+    ws.write_message(
+        json_encode(
+            {
+                "header": {
+                    "username": cid,
+                    "version": "5.3",
+                    "session": "",
+                    "msg_id": uuid4().hex,
+                    "msg_type": "execute_request",
+                },
+                "parent_header": {},
+                "channel": "shell",
+                "content": {
+                    "code": code,
+                    "silent": False,
+                    "store_history": False,
+                    "user_expressions": {},
+                    "allow_stdin": False,
+                    "stop_on_error": True,
+                },
+                "metadata": {},
+                "buffers": {},
+            }
+        )
+    )
+
+    outputs, status = [], None
+    while status is None or status == "busy":
+        msg = run_sync(ws.read_message())
+        msg = json_decode(msg)
+        msg_type = msg["msg_type"]
+        if msg_type == "status":
+            status = msg["content"]["execution_state"]
+        elif msg_type == "stream" or msg_type == "display_data":
+            output = msg["content"]
+            output["output_type"] = msg_type
+            outputs.append(output)
+
+    return outputs
 
 
 class NotebooksResource(Resource):
@@ -54,35 +121,20 @@ class NotebooksView(SwaggerView):
             nb = self._resource.get_object(cid, qfilter=qfilter)
             try:
                 if not nb.cells[-1]["outputs"]:
-                    kernel = client.start_kernel("python3")
-
+                    ws = connect_kernel()
                     for idx, cell in enumerate(nb.cells):
                         if cell["cell_type"] == "code":
-                            output = kernel.execute(cell["source"])
-                            if output:
-                                outtype = (
-                                    "text/html"
-                                    if output.startswith("<div")
-                                    else "text/plain"
-                                )
-                                cell["outputs"].append(
-                                    {
-                                        "data": {outtype: output},
-                                        "metadata": {},
-                                        "transient": {},
-                                        "output_type": "display_data",
-                                    }
-                                )
+                            cell["outputs"] = execute(ws, cid, cell["source"])
                             sse.publish(
                                 {"message": idx + 1}, type="notebook", channel=cid
                             )
 
+                    ws.close()
                     nb.cells[1] = nbf.new_code_cell(
-                        "client = load_client('<your-api-key-here>')"
+                        "client = Client('<your-api-key-here>')"
                     )
                     nb.save()  # calls Notebooks.clean()
                     sse.publish({"message": 0}, type="notebook", channel=cid)
-                    client.shutdown_kernel(kernel)
             except Exception as ex:
                 print(ex)
                 sse.publish({"message": -1}, type="notebook", channel=cid)
@@ -98,38 +150,28 @@ class NotebooksView(SwaggerView):
                 contrib = Contributions.objects.get(id=cid)
                 cells = [
                     nbf.new_code_cell(
-                        "client = Client(headers={'X-Consumer-Groups': 'admin'})"
+                        'client = Client(headers={"X-Consumer-Groups": "admin"})'
                     ),
+                    nbf.new_markdown_cell("## Project"),
                     nbf.new_code_cell(
-                        f"contrib = client.contributions.get_entry(pk='{cid}', _fields=['_all']).result()"
+                        f'client.get_project("{contrib.project.pk}").pretty()'
                     ),
-                    nbf.new_markdown_cell("## Info"),
-                    nbf.new_code_cell(
-                        "fields = ['title', 'owner', 'authors', 'description', 'urls']\n"
-                        "prov = client.projects.get_entry(pk=contrib['project'], _fields=fields).result()\n"
-                        "HierarchicalData(prov)"
-                    ),
-                    nbf.new_markdown_cell("## HData"),
-                    nbf.new_code_cell("HierarchicalData(contrib['data'])"),
+                    nbf.new_markdown_cell("## Contribution"),
+                    nbf.new_code_cell(f'client.get_contribution("{cid}").pretty()'),
                 ]
 
-                tables = Tables.objects.only("id", "name").filter(contribution=cid)
-                if tables:
+                if contrib.tables:
                     cells.append(nbf.new_markdown_cell("## Tables"))
-                    for table in tables:
-                        cells.append(nbf.new_markdown_cell(table.name))
-                        cells.append(
-                            nbf.new_code_cell(
-                                f"table = client.tables.get_entry(pk='{table.id}', _fields=['_all']).result()\n"
-                                "Table.from_dict(table)"
+                    for label, tables in contrib.tables.items():
+                        cells.append(nbf.new_markdown_cell(f"### {label}"))
+                        for table in tables:
+                            tid, name = table["id"], table["name"]
+                            cells.append(nbf.new_markdown_cell(f"#### {name}"))
+                            cells.append(
+                                nbf.new_code_cell(f'client.get_table("{tid}").plot()')
                             )
-                        )
-                        cells.append(nbf.new_code_cell("Plot.from_dict(table)"))
 
-                structures = Structures.objects.only("id", "name").filter(
-                    contribution=cid
-                )
-                if structures:
+                if contrib.structures:
                     cells.append(nbf.new_markdown_cell("## Structures"))
                     for structure in structures:
                         cells.append(nbf.new_markdown_cell(structure.name))

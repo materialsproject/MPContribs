@@ -87,8 +87,9 @@ TEMPLATE = {
     "tags": [
         {
             "name": "projects",
-            "description": f'contain provenance information about contributed datasets. Admins can \
-        create and delete projects which also deletes all contributions including tables, structures, notebooks \
+            "description": f'contain provenance information about contributed datasets. Apply for a project \
+        <a href="https://portal.mpcontribs.org/#apply">here</a> to get started. \
+        Deleting projects will also delete all contributions including tables, structures, notebooks \
         and cards for the project. Only users who have been added to a project can update its contents. While \
         unpublished, only users on the project can retrieve its data or view it on the \
         <a href="https://{PORTAL_CNAME}">Portal</a>. Making a project public does not automatically publish all \

@@ -2,15 +2,17 @@
 import nbformat as nbf
 
 nb = nbf.v4.new_notebook()
-nb["cells"] = [
+nb.metadata.kernelspec = {"name": "python3", "display_name": "Python 3"}
+nb.cells = [
     nbf.v4.new_code_cell(
         "\n".join(
             [
-                "from mpcontribs.client import load_client",
-                "from mpcontribs.io.core.components.hdata import HierarchicalData",
-                "from mpcontribs.io.core.components.tdata import Table # DataFrame with Backgrid IPython Display",
-                "from mpcontribs.io.core.components.gdata import Plot # Plotly interactive graph",
+                "import os",
+                "import plotly.io as pio",
+                "import pandas as pd",
+                "from mpcontribs.client import Client",
                 "from pymatgen import Structure",
+                'pio.orca.config.server_url = os.environ.get("ORCA_HOST", "localhost:9091")',
             ]
         )
     )

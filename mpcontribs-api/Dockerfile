@@ -1,9 +1,10 @@
 FROM materialsproject/devops:python-3.83.4 as base
 
 FROM base as builder
-RUN apt-get update && apt-get install -y --no-install-recommends gcc git g++ libsnappy-dev && apt-get clean
+RUN apt-get update && apt-get install -y --no-install-recommends gcc git g++ libsnappy-dev npm && apt-get clean
 ENV PATH /root/.local/bin:$PATH
 WORKDIR /app
+RUN npm install -g bower
 ENV PIP_FLAGS "--user --no-cache-dir --compile"
 COPY requirements.txt .
 RUN pip install $PIP_FLAGS -r requirements.txt
@@ -32,6 +33,7 @@ ENV FLASK_ENV production
 ENV API_PORT 5000
 ENV NWORKERS 4
 ENV RELOAD ""
+ENV JUPYTER_GATEWAY_URL http://localhost:8888
 
 EXPOSE 5000 5002 5003
 CMD gunicorn -b 0.0.0.0:$API_PORT -k gevent -w $NWORKERS --access-logfile - --log-level debug $RELOAD "mpcontribs.api:create_app()"

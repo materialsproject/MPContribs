@@ -52,6 +52,7 @@ for mod in [
     "matplotlib",
     "toronado.cssutils",
     "selenium.webdriver.remote.remote_connection",
+    "botocore",
 ]:
     log = logging.getLogger(mod)
     log.setLevel("INFO")

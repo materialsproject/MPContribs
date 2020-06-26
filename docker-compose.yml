@@ -44,7 +44,7 @@ services:
             FLASK_ENV: development
             MPCONTRIBS_MONGO_HOST: $MPCONTRIBS_MONGO_HOST
             #MPCONTRIBS_MONGO_HOST: mongo
-            GATEWAY_HOST: kernel_gateway:8888
+            JUPYTER_GATEWAY_URL: http://kernel_gateway:8888
             AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID
             AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY
             AWS_SNS_TOPIC_ARN: $AWS_SNS_TOPIC_ARN
@@ -74,8 +74,9 @@ services:
             - ./deployments/$DEPLOYMENT.env
         environment:
             KG_ALLOW_ORIGIN: '*'
-            GATEWAY_HOST: kernel_gateway:8888
         build: ./mpcontribs-sidecars/kernel_gateway
+        ports:
+            - "8888:8888"
 
     orca:
         cpus: 2
