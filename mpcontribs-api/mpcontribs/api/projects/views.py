@@ -140,19 +140,23 @@ class ProjectsResource(Resource):
                             {
                                 "$group": {
                                     "_id": None,
-                                    "max": {"$max": f"${value_field}"},
                                     "min": {"$min": f"${value_field}"},
+                                    "max": {"$max": f"${value_field}"},
                                 }
                             },
                         ]
                     )
                 )
-                rng = [min_max[0]["min"], min_max[0]["max"]] if min_max else None
                 unit = get_value(unit_sample, unit_field)
-                if min_max and unit is None:
-                    unit = ""  # catch missing unit field in data
-                key = f"data.{col} [{unit}]" if min_max else f"data.{col}"
-                columns[key] = rng
+                if min_max:
+                    key = f"data.{col} [{unit}]"
+                    # catch missing unit field in data
+                    unit = "" if unit is None else unit
+                    min_max[0].pop("_id")
+                    columns[key] = min_max[0]
+                else:
+                    key = f"data.{col}"
+                    columns[key] = {"min": None, "max": None}
 
             contributions = Contributions.objects.only("pk").filter(project=obj.id)
             agg = list(
