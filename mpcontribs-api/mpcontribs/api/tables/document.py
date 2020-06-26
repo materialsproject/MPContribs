@@ -24,30 +24,27 @@ class Tables(DynamicDocument):
         required=True, default=False, help_text="public/private table"
     )
     name = StringField(required=True, help_text="table name")
+    label = StringField(required=True, help_text="table label")
     columns = ListField(StringField(), required=True, help_text="column names")
     data = ListField(ListField(StringField()), required=True, help_text="table rows")
     config = DictField(help_text="graph config")
     meta = {
         "collection": "tables",
-        "indexes": [
-            "contribution",
-            "is_public",
-            "name",
-            "columns",
-            {"fields": ("contribution", "name"), "unique": True},
-        ],
+        "indexes": ["contribution", "is_public", "name", "label", "columns"],
     }
 
     @classmethod
     def post_save(cls, sender, document, **kwargs):
         set_root_keys = set(k.split(".", 1)[0] for k in document._delta()[0].keys())
-        nbs = Notebooks.objects(pk=document.contribution.id)
+        cid = document.contribution.id
+        nbs = Notebooks.objects(pk=cid)
         if not set_root_keys or set_root_keys == {"is_public"}:
             nbs.update(set__is_public=document.is_public)
         else:
             nbs.delete()
             if "data" in set_root_keys:
                 document.update(unset__total_data_rows=True)
+            Contributions.objects(pk=cid).update(unset__tables=True)
 
 
 signals.post_save.connect(Tables.post_save, sender=Tables)

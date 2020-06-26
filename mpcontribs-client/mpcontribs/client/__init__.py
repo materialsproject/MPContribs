@@ -76,6 +76,7 @@ def load_client(apikey=None, headers=None, host=HOST):
     )
 
 
+# TODO data__ regex doesn't work through bravado/swagger client
 class Client(SwaggerClient):
     """client to connect to MPContribs API
 

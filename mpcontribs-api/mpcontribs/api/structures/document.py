@@ -27,7 +27,7 @@ class Structures(DynamicDocument):
     module = StringField(help_text="@module")
     meta = {
         "collection": "structures",
-        "indexes": ["contribution", "is_public", "label"],
+        "indexes": ["contribution", "is_public", "name", "label"],
     }
 
     @classmethod

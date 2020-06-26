@@ -18,7 +18,6 @@ contributions = Blueprint("contributions", __name__, template_folder=templates)
 exclude = r'[^$.\s_~`^&(){}[\]\\;\'"/]'
 
 
-# TODO data__ regex doesn't work through bravado/swagger client
 class ContributionsResource(Resource):
     document = Contributions
     filters = {
@@ -50,47 +49,49 @@ class ContributionsResource(Resource):
         return ["data", "structures", "tables"]
 
     def value_for_field(self, obj, field):
-        # add structures and tables info to response if requested
-        if field.startswith("structures"):
-            from mpcontribs.api.structures.views import StructuresResource
+        if not field.startswith("structures") and not field.startswith("tables"):
+            raise UnknownFieldError
 
-            sr = StructuresResource(view_method=self.view_method)
-            field_split = field.split(".")
-            field_len = len(field_split)
-            # return full structures only if download requested
-            full = bool(
-                self.view_method == Download and self.params.get("_fields") == "_all"
-            )
-            mask = ["id", "label", "name"]
-            fmt = self.params.get("format")
+        field_split = field.split(".")
+        field_len = len(field_split)
+        if field_len > 2:
+            raise UnknownFieldError
+
+        # add structures and tables info to response if requested
+        from mpcontribs.api.structures.views import StructuresResource
+        from mpcontribs.api.tables.views import TablesResource
+
+        mask = ["id", "label", "name"]
+        # return full structures/tables only if download requested
+        full = bool(
+            self.view_method == Download and self.params.get("_fields") == "_all"
+        )
+        fmt = self.params.get("format")
+        kwargs = dict(contribution=obj.id)
+        if field_len == 2:
+            # requested structure/table(s) for specific label
+            kwargs["label"] = field_split[1]
+
+        if field.startswith("structures"):
+            res = StructuresResource(view_method=self.view_method)
             if full and fmt == "json":
                 mask += ["lattice", "sites", "charge", "klass", "module"]
-
-            if field_len > 2:
-                raise UnknownFieldError
-            else:
-                kwargs = dict(contribution=obj.id)
-                if field_len == 2:
-                    # requested structure(s) for specific label
-                    kwargs["label"] = field_split[1]
-
-                objects = Structures.objects.only(*mask)
-                objects = objects.filter(**kwargs).order_by("-id")
-                result = defaultdict(list)
-                for o in objects:
-                    s = sr.serialize(o, fields=mask)
-                    result[s.pop("label")].append(
-                        sr.value_for_field(o, "cif") if fmt == "csv" else s
-                    )
-                ret = result if field_len == 1 else list(result.values())[0]
-                obj.update(**{f"set__{field.replace('.', '__')}": ret})
-                return ret
-
-        elif field == "tables":
-            tables = Tables.objects.only("id", "name").filter(contribution=obj.id)
-            return [{"id": t.id, "name": t.name} for t in tables]
+            objects = Structures.objects.only(*mask)
         else:
-            raise UnknownFieldError
+            res = TablesResource(view_method=self.view_method)
+            # TODO adjust mask for full json format
+            objects = Tables.objects.only(*mask)
+
+        objects = objects.filter(**kwargs).order_by("-id")
+        result = defaultdict(list)
+        for o in objects:
+            os = res.serialize(o, fields=mask)
+            # TODO res.value_for_field(o, "cif") if fmt == "csv" and field.startswith("structures")
+            result[os.pop("label")].append(os)
+
+        ret = result if field_len == 1 else list(result.values())[0]
+        obj.update(**{f"set__{field.replace('.', '__')}": ret})
+        return ret
 
 
 class ContributionsView(SwaggerView):
