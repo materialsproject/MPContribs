@@ -14,11 +14,15 @@ from bravado.http_future import HttpFuture
 from bravado.swagger_model import Loader
 from bravado.config import bravado_config_from_config_dict
 from bravado_core.spec import Spec
+from json2html import Json2Html
+from IPython.display import display, HTML
+from boltons.iterutils import remap
 
 
 DEFAULT_HOST = "api.mpcontribs.org"
 HOST = os.environ.get("MPCONTRIBS_API_HOST", DEFAULT_HOST)
 
+j2h = Json2Html()
 pd.options.plotting.backend = "plotly"
 warnings.formatwarning = lambda msg, *args, **kwargs: f"{msg}\n"
 warnings.filterwarnings("default", category=DeprecationWarning, module=__name__)
@@ -50,6 +54,19 @@ class FidoClientGlobalHeaders(FidoClient):
         future_adapter = self.future_adapter_class(fido.fetch(**request_for_twisted))
         return HttpFuture(
             future_adapter, self.response_adapter_class, operation, request_config
+        )
+
+
+def visit(path, key, value):
+    if isinstance(value, dict) and "display" in value:
+        return key, value["display"]
+    return key not in ["value", "unit"]
+
+
+class Dict(dict):
+    def pretty(self, attrs=None):
+        return display(
+            HTML(j2h.convert(json=remap(self, visit=visit), table_attributes=attrs))
         )
 
 
@@ -106,6 +123,14 @@ class Client(SwaggerClient):
             super().__init__(
                 swagger_spec, also_return_response=bravado_config.also_return_response
             )
+
+    def get_project(self, project):
+        """Convenience function to get full project entry and display as HTML table"""
+        return Dict(self.projects.get_entry(pk=project, _fields=["_all"]).result())
+
+    def get_contribution(self, cid):
+        """Convenience function to get full contribution entry and display as HTML table"""
+        return Dict(self.contributions.get_entry(pk=cid, _fields=["_all"]).result())
 
     def get_table(self, tid):
         """Convenience function to get full Pandas DataFrame for a table."""
