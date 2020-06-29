@@ -1,5 +1,5 @@
 archieml==0.3.4
-ipython==7.15.0
+ipython==7.16.1
 pandas==1.0.5
 plotly==4.8.1
 pymatgen==2020.6.8
