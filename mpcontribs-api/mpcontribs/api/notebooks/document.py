@@ -65,8 +65,8 @@ class Notebooks(Document):
     is_public = BooleanField(
         required=True, default=False, help_text="public or private notebook"
     )
-    nbformat = IntField(default=5, help_text="nbformat version")
-    nbformat_minor = IntField(default=0, help_text="nbformat minor version")
+    nbformat = IntField(default=4, help_text="nbformat version")
+    nbformat_minor = IntField(default=4, help_text="nbformat minor version")
     metadata = DictField(Metadata(), help_text="notebook metadata")
     cells = ListField(Cell(), max_length=30, help_text="cells")
     meta = {"collection": "notebooks", "indexes": ["is_public"]}

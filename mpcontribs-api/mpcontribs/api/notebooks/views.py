@@ -96,7 +96,10 @@ def execute(ws, cid, code):
         if msg_type == "status":
             status = msg["content"]["execution_state"]
         elif msg_type == "stream" or msg_type == "display_data":
+            # display_data required fields: "output_type", "data", "metadata"
+            # stream required fields: "output_type", "name", "text"
             output = msg["content"]
+            output.pop("transient", None)
             output["output_type"] = msg_type
             outputs.append(output)
 
