@@ -15,6 +15,14 @@ from mongoengine import signals
 from mpcontribs.api import send_email, validate_data, invalidChars, sns_client
 
 
+class NullURLField(URLField):
+    def validate(self, value):
+        if value == "":
+            self.error("URL can't be empty string.")
+        elif value is not None:
+            super().validate(value)
+
+
 class Projects(DynamicDocument):
     __project_regex__ = "^[a-zA-Z0-9_]{3,31}$"
     project = StringField(
@@ -51,7 +59,9 @@ class Projects(DynamicDocument):
         help_text="brief description of the project",
     )
     urls = MapField(
-        URLField(null=True), required=True, help_text="list of URLs for references"
+        NullURLField(null=True),
+        required=True,
+        help_text="list of URLs for references (minimum one URL required)",
     )
     other = DictField(help_text="other information", null=True)
     owner = EmailField(
