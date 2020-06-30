@@ -64,7 +64,7 @@ def visit(path, key, value):
 
 
 class Dict(dict):
-    def pretty(self, attrs=""):
+    def pretty(self, attrs='class="table"'):
         return display(
             HTML(j2h.convert(json=remap(self, visit=visit), table_attributes=attrs))
         )
