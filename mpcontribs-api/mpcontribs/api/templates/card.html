@@ -4,9 +4,9 @@
             <h4>
                 <a href="{{ landing_page }}">{{ title }}</a>
                 {% if urls %}
-                <sup>
-                {% for url in urls %}
-                <a href="{{ url }}" target="_blank">[{{ loop.index }}]</a>
+                <sup style="font-size: 50%; vertical-align: top;">
+                {% for k, v in urls.items() %}
+                <a href="{{ v }}" target="_blank" rel="noopener noreferrer">[{{k}}]</a>
                 {% endfor %}
                 </sup>
                 {% endif %}
