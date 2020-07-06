@@ -31,7 +31,7 @@ services:
             context: ./mpcontribs-api
         depends_on:
             - redis
-            - chrome
+            - orca
             - kernel_gateway
             #- xray
             #- mongo
@@ -53,16 +53,6 @@ services:
             - "5000:5000"
             - "5002:5002"
             - "5003:5003"
-
-    chrome:
-        build: mpcontribs-sidecars/chrome
-        cpus: 2
-        mem_limit: 2870m
-        mem_reservation: 70m
-        environment:
-            - START_XVFB=false
-        ports:
-            - "4444:4444"
 
     kernel_gateway:
         cpus: 2
