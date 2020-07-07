@@ -30,8 +30,10 @@
             {% endif %}
 
             {% if other and other.strip != 'null' %}
-            <a name="read_more">Other Info &raquo;</a>
-            <div name="read_more" id=other style="width:100%;" data-renderjson='{{ other }}' hidden></div>
+            &nbsp;<a name="read_more">Other Info &raquo;</a>
+            <div name="read_more" id=other style="width:100%;" hidden>
+                {{ other|safe }}
+            </div>
             {% endif %}
         </div>
     </article>

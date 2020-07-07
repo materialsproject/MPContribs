@@ -8,6 +8,8 @@ from glob import glob
 from nbconvert import HTMLExporter
 from bs4 import BeautifulSoup
 from fido.exceptions import HTTPTimeoutError
+from json2html import Json2Html
+from boltons.iterutils import remap
 
 from django.shortcuts import render, redirect
 from django.template import RequestContext
@@ -19,6 +21,13 @@ from mpcontribs.client import Client
 
 S3_DOWNLOADS_BUCKET = os.environ.get("S3_DOWNLOADS_BUCKET", "mpcontribs-downloads")
 S3_DOWNLOAD_URL = f"https://{S3_DOWNLOADS_BUCKET}.s3.amazonaws.com/"
+j2h = Json2Html()
+
+
+def visit(path, key, value):
+    if isinstance(value, dict) and "display" in value:
+        return key, value["display"]
+    return key not in ["value", "unit"]
 
 
 def get_consumer(request):
@@ -57,7 +66,10 @@ def landingpage(request):
         ctx["urls"] = prov["urls"]
         other = prov.get("other", "")
         if other:
-            ctx["other"] = json.dumps(HierarchicalData(other))
+            ctx["other"] = j2h.convert(
+                json=remap(other, visit=visit),
+                table_attributes='class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth"',
+            )
         if prov["columns"]:
             ctx["columns"] = ["identifier", "id", "formula"] + list(
                 prov["columns"].keys()
@@ -69,17 +81,6 @@ def landingpage(request):
             ]
             ctx["ranges"] = json.dumps(prov["columns"])
 
-        # TODO contribs key is only used in dilute_diffusion and should go through the table
-        # from mpcontribs.io.core.utils import get_short_object_id
-        # ctx['contribs'] = []
-        # for contrib in client.contributions.get_entries(
-        #    project=project, _fields=['id', 'identifier', 'data.formula']
-        # ).result()['data']:
-        #    formula = contrib.get('data', {}).get('formula')
-        #    if formula:
-        #        contrib['formula'] = formula
-        #        contrib['short_cid'] = get_short_object_id(contrib['id'])
-        #        ctx['contribs'].append(contrib)
     except Exception as ex:
         ctx["alert"] = str(ex)
 

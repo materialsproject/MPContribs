@@ -3,11 +3,7 @@ import get from "lodash/get";
 import sha1 from "js-sha1";
 
 $('a[name="read_more"]').on('click', function() {
-    $(this).hide();
-    var el = $(this).next('[name="read_more"]');
-    var data = el.data('renderjson');
-    if (data) { render_json({divid: el.attr('id'), data: data}); }
-    el.show();
+    $(this).hide().next('[name="read_more"]').show();
 });
 
 
