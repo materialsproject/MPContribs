@@ -32,18 +32,7 @@ templates = os.path.join(os.path.dirname(flask_mongorest.__file__), "templates")
 notebooks = Blueprint("notebooks", __name__, template_folder=templates)
 manager = GatewayKernelManager()
 seed_nb = nbf.new_notebook()
-seed_nb["cells"] = [
-    nbf.new_code_cell(
-        "\n".join(
-            [
-                "from mpcontribs.client import Client",
-                "from pymatgen import Structure",
-                "import pandas as pd",
-                'pd.options.plotting.backend = "plotly"',
-            ]
-        )
-    )
-]
+seed_nb["cells"] = [nbf.new_code_cell("from mpcontribs.client import Client")]
 
 
 def connect_kernel():
