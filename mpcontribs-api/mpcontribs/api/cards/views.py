@@ -32,6 +32,10 @@ class CardsResource(Resource):
     filters = {"is_public": [ops.Boolean]}
     fields = ["is_public", "html"]
 
+    @staticmethod
+    def get_optional_fields():
+        return ["bulma"]
+
 
 class CardsView(SwaggerView):
     resource = CardsResource
@@ -45,7 +49,7 @@ class CardsView(SwaggerView):
         try:
             # trigger DoesNotExist if necessary (due to permissions or non-existence)
             card = self._resource.get_object(cid, qfilter=qfilter)
-            if not card.html:
+            if not card.html or not card.bulma:
                 contrib = Contributions.objects.only("project", "data").get(pk=cid)
                 info = Projects.objects.get(pk=contrib.project.id)
                 ctx = info.to_mongo()
@@ -57,14 +61,11 @@ class CardsView(SwaggerView):
                 ctx["more"] = f"/{cid}"
                 data = contrib.to_mongo().get("data", {})
                 ctx["data"] = j2h.convert(
-                    json=remap(data, visit=visit), table_attributes='class="table"'
+                    json=remap(data, visit=visit),
+                    table_attributes='class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth"',
                 )
-                # TODO make html a DictField with bootstrap/bulma/... keys
-                # NOTE holding off until switch to new MP website for MP detail pages
-                card.html = html_minify(
-                    render_template("card.html", **ctx)
-                )  # bootstrap
-                # TODO card.html_bulma
+                card.html = html_minify(render_template("card.html", **ctx))
+                card.bulma = html_minify(render_template("card_bulma.html", **ctx))
                 card.save()
             return self._resource.serialize(card, params=request.args)
 

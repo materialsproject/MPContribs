@@ -16,5 +16,10 @@ class Cards(Document):
     is_public = BooleanField(
         required=True, default=False, help_text="public or private card"
     )
-    html = StringField(required=True, default="", help_text="embeddable html code")
+    html = StringField(
+        required=True, default="", help_text="embeddable html code (bootstrap)"
+    )
+    bulma = StringField(
+        required=True, default="", help_text="embeddable html code (bulma)"
+    )
     meta = {"collection": "cards", "indexes": ["is_public"]}

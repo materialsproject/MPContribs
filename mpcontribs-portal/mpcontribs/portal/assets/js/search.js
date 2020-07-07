@@ -90,8 +90,11 @@ function render_card(cid) {
     var target = document.getElementById('spinner');
     spinner.spin(target);
     var url = window.api['host'] + 'cards/' + cid + '/';
-    return $.get({url: url, headers: window.api['headers']}).done(function(response) {
-        $('#card').html(response['html']);
+    return $.get({
+        url: url, data: {"_fields": "bulma"},
+        headers: window.api['headers']
+    }).done(function(response) {
+        $('#card').html(response['bulma']);
         spinner.stop();
     });
 }
