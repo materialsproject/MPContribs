@@ -118,33 +118,7 @@ def export_notebook(nb, cid):
     nb = nbformat.from_dict(nb)
     html_exporter = HTMLExporter()
     html_exporter.template_file = "basic"
-    body = html_exporter.from_notebook_node(nb)[0]
-    soup = BeautifulSoup(body, "html.parser")
-    # mark cells with special name for toggling, and
-    # TODO make element id's unique by appending cid (for ingester)
-    for div in soup.find_all("div", "output_wrapper"):
-        script = div.find("script")
-        if script:
-            script = script.contents[0]
-            if script.startswith("render_json"):
-                div["name"] = "HData"
-            elif script.startswith("render_table"):
-                div["name"] = "Tables"
-            elif script.startswith("render_plot"):
-                div["name"] = "Graphs"
-        else:
-            pre = div.find("pre")
-            if pre and pre.contents[0].startswith("Structure"):
-                div["name"] = "Structures"
-    # name divs for toggling code_cells
-    for div in soup.find_all("div", "input"):
-        div["name"] = "Code"
-    # separate script
-    script = []
-    for s in soup.find_all("script"):
-        script.append(s.string)
-        s.extract()  # remove javascript
-    return soup.prettify(), "\n".join(script)
+    return html_exporter.from_notebook_node(nb)
 
 
 def contribution(request, cid):

@@ -25,7 +25,6 @@ from mpcontribs.api.core import SwaggerView
 from mpcontribs.api.tables.document import Tables
 from mpcontribs.api.notebooks.document import Notebooks
 from mpcontribs.api.structures.document import Structures
-from mpcontribs.api.contributions.document import Contributions
 
 
 asyncio.set_event_loop_policy(AnyThreadEventLoopPolicy())
@@ -150,7 +149,11 @@ class NotebooksView(SwaggerView):
                 nb = Notebooks.objects.only("pk").get(pk=cid)
             except DoesNotExist:
                 # create and save unexecuted notebook, also start entry to avoid rebuild on subsequent requests
-                contrib = Contributions.objects.get(id=cid)
+                from mpcontribs.api.contributions.views import ContributionsResource
+
+                res = ContributionsResource()
+                res._params = {"_fields": "_all"}
+                contrib = res.get_object(cid, qfilter=qfilter)
                 cells = [
                     nbf.new_code_cell(
                         'client = Client(headers={"X-Consumer-Groups": "admin"})'
@@ -165,27 +168,21 @@ class NotebooksView(SwaggerView):
 
                 if contrib.tables:
                     cells.append(nbf.new_markdown_cell("## Tables"))
-                    for label, tables in contrib.tables.items():
-                        cells.append(nbf.new_markdown_cell(f"### {label}"))
+                    for _, tables in contrib.tables.items():
                         for table in tables:
-                            tid, name = table["id"], table["name"]
-                            cells.append(nbf.new_markdown_cell(f"#### {name}"))
+                            tid = table["id"]
                             cells.append(
                                 nbf.new_code_cell(f'client.get_table("{tid}").plot()')
                             )
 
                 if contrib.structures:
                     cells.append(nbf.new_markdown_cell("## Structures"))
-                    for structure in structures:
-                        cells.append(nbf.new_markdown_cell(structure.name))
-                        cells.append(
-                            nbf.new_code_cell(
-                                "structure = client.structures.get_entry(\n"
-                                f"\tpk='{structure.id}', _fields=['lattice', 'sites', 'charge']\n"
-                                ").result()\n"
-                                "Structure.from_dict(structure)"
+                    for _, structures in contrib.structures.items():
+                        for structure in structures:
+                            sid = structure["id"]
+                            cells.append(
+                                nbf.new_code_cell(f'client.get_structure("{sid}")')
                             )
-                        )
 
                 nb = Notebooks(pk=cid, is_public=contrib.is_public)
                 doc = deepcopy(seed_nb)

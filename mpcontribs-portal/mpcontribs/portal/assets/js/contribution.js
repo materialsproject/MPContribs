@@ -9,15 +9,7 @@ $(document).ready(function () {
         var item = $('<div/>', {'class': 'level-item', 'html': a});
         $('#anchors').append(item);
         $('#item_' + text).removeClass('is-hidden');
-        if (text === 'Tables') { $('#item_Graphs').removeClass('is-hidden'); }
     });
-
-    $('input[name=toggles]').change(function() {
-        var name = $(this).attr('id').split('_')[1];
-        var toggle = '[name=' + name + ']';
-        $(toggle).toggleClass('is-hidden');
-    });
-    if ($('.output_wrapper').length) { $('#toggle_Code').click(); }
 
     if ($('#alert').length) {
         var cid = window.location.pathname.replace('/', '');
