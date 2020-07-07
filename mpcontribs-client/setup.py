@@ -29,6 +29,7 @@ setup(
         "pandas",
         "plotly",
         "pyIsEmail",
+        "pymatgen",
         "pyOpenSSL",
         "service-identity",
     ],

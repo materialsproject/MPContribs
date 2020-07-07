@@ -17,6 +17,7 @@ from bravado_core.spec import Spec
 from json2html import Json2Html
 from IPython.display import display, HTML
 from boltons.iterutils import remap
+from pymatgen import Structure
 
 
 DEFAULT_HOST = "api.mpcontribs.org"
@@ -152,4 +153,12 @@ class Client(SwaggerClient):
 
         return pd.DataFrame.from_records(
             table["data"], columns=table["columns"], index=table["columns"][0]
+        )
+
+    def get_structure(self, sid):
+        """Convenience function to get pymatgen structure."""
+        return Structure.from_dict(
+            self.structures.get_entry(
+                pk=sid, _fields=["lattice", "sites", "charge"]
+            ).result()
         )

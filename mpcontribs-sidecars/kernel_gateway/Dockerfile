@@ -8,9 +8,6 @@ ENV PIP_FLAGS "--user --no-cache-dir --compile"
 COPY requirements.txt .
 RUN pip install $PIP_FLAGS -r requirements.txt && \
     python -m ipykernel install --user
-#ENV SETUPTOOLS_SCM_PRETEND_VERSION=3.0.0
-#RUN git clone https://github.com/materialsproject/MPContribs.git && \
-#        cd MPContribs/mpcontribs-client && pip install $PIP_FLAGS .
 
 FROM base
 COPY --from=python-deps /root/.local/lib/python3.8/site-packages /root/.local/lib/python3.8/site-packages
