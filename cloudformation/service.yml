@@ -116,7 +116,7 @@ Resources:
             com.datadoghq.ad.init_configs: "[{}]"
           DependsOn:
             - Condition: START
-              ContainerName: chrome
+              ContainerName: orca
             - Condition: START
               ContainerName: gateway
             #- Condition: START
@@ -164,12 +164,12 @@ Resources:
               awslogs-group: !Join ['-', [!Ref 'PipelineName', !Ref 'EnvironmentName', 'service', !Ref 'ServiceName']]
               awslogs-region: !Ref 'AWS::Region'
               awslogs-stream-prefix: !Ref 'ServiceName'
-        - Name: chrome
-          MemoryReservation: 70
+        - Name: orca
+          MemoryReservation: 500
           Image: !Join ['', [
             !Ref 'AWS::AccountId', '.dkr.ecr.', !Ref 'AWS::Region', '.amazonaws.com/',
             !Ref 'Repository', ':', !Ref 'PipelineName', '-', !Ref 'EnvironmentName', '-',
-            !Ref 'Tag', '-chrome'
+            !Ref 'Tag', '-orca'
           ]]
           DockerLabels:
             my.custom.label.service: !Join ['-', [

@@ -438,14 +438,14 @@ Resources:
                 - docker build --tag "${IMAGE_URI}-portal" mpcontribs-portal
                 - docker build --tag "${IMAGE_URI}-api" --build-arg MAPI_KEY=${MAPI_KEY} mpcontribs-api
                 - docker build --tag "${IMAGE_URI}-gateway" mpcontribs-sidecars/kernel_gateway
-                - docker build --tag "${IMAGE_URI}-chrome" mpcontribs-sidecars/chrome
+                - docker build --tag "${IMAGE_URI}-orca" mpcontribs-sidecars/orca
                 - docker build --tag "${IMAGE_URI}-datadog" mpcontribs-sidecars/datadog-agent
             post_build:
               commands:
                 - docker push "${IMAGE_URI}-portal"
                 - docker push "${IMAGE_URI}-api"
                 - docker push "${IMAGE_URI}-gateway"
-                - docker push "${IMAGE_URI}-chrome"
+                - docker push "${IMAGE_URI}-orca"
                 - docker push "${IMAGE_URI}-datadog"
                 - printf '{"Tag":"%s"}' "${TAG}" > tag.json
           artifacts:
