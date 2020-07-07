@@ -77,6 +77,14 @@ def validate_data(doc, sender=None, project=None):
         nodes = key.split(delimiter)
         is_quantity_key = int(nodes[-1] in quantity_keys)
 
+        # TODO raise error if quantity_keys used in nodes
+        # NOTE below doesn't work on second update
+        # reserved_keys = set(nodes).intersection(quantity_keys)
+        # if reserved_keys:
+        #    raise ValidationError(
+        #        {"error": f"Key `{reserved_keys.pop()}` is reserved."}
+        #    )
+
         if len(nodes) > max_depth + is_quantity_key:
             raise ValidationError(
                 {"error": f"max nesting ({max_depth}) exceeded for {key}"}
