@@ -124,9 +124,7 @@ def export_notebook(nb, cid):
 def contribution(request, cid):
     ctx = get_context(request)
     client = Client(headers=get_consumer(request))  # sets/returns global variable
-    contrib = client.contributions.get_entry(
-        pk=cid, _fields=["id", "identifier"]
-    ).result()
+    contrib = client.contributions.get_entry(pk=cid, _fields=["_all"]).result()
     ctx["identifier"], ctx["cid"] = contrib["identifier"], contrib["id"]
     nb = client.notebooks.get_entry(pk=cid).result()  # generate notebook with cells
     ctx["ncells"] = len(nb["cells"])
