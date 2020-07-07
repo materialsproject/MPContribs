@@ -35,13 +35,6 @@ updates:
     time: '08:00'
     timezone: US/Pacific
   open-pull-requests-limit: 10
-- package-ecosystem: pip
-  directory: "/mpcontribs-io"
-  schedule:
-    interval: weekly
-    time: '08:00'
-    timezone: US/Pacific
-  open-pull-requests-limit: 10
 - package-ecosystem: docker
   directory: "/mpcontribs-portal"
   schedule:
@@ -64,7 +57,7 @@ updates:
     timezone: US/Pacific
   open-pull-requests-limit: 10
 - package-ecosystem: docker
-  directory: "/mpcontribs-sidecars/chrome"
+  directory: "/mpcontribs-sidecars/orca"
   schedule:
     interval: weekly
     time: '08:00'
