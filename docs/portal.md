@@ -1,4 +1,4 @@
-![Screenshot](portal.jpg)
+![Screenshot](portal.png)
 
 The [Portal](https://portal.mpcontribs.org) contains an entry for every contributed
 dataset which links to the respective landing pages. Each entry also includes the project
@@ -7,7 +7,7 @@ contributions for an MP material or composition. A dropdown menu is provided for
 access of project landing pages and includes a search box to filter project descriptions
 by keywords.
 
-![Screenshot](explorer.jpg)
+![Screenshot](explorer.png)
 
 Search and preview of contributions across all materials and projects. When projects
 and/or material identifiers are requested, a preview card is generated and displayed for
