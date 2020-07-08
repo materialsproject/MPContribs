@@ -58,8 +58,8 @@ services:
         cpus: 2
         mem_limit: 2850m
         mem_reservation: 50m
-          #depends_on:
-          #- orca
+          depends_on:
+            - orca
         env_file:
             - ./deployments/$DEPLOYMENT.env
         environment:
@@ -68,13 +68,13 @@ services:
         ports:
             - "8888:8888"
 
-              # orca:
-              #     cpus: 2
-              #     mem_limit: 3300m
-              #     mem_reservation: 500m
-              #     build: ./mpcontribs-sidecars/orca
-              #     ports:
-              #         - "9091:9091"
+    orca:
+        cpus: 2
+        mem_limit: 3300m
+        mem_reservation: 500m
+        build: ./mpcontribs-sidecars/orca
+        ports:
+            - "9091:9091"
 
     # OTHER
     redis:
