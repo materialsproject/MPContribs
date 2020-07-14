@@ -30,11 +30,10 @@
           </div>
           <div id="navbarBasicExample" class="navbar-menu">
               <div class="navbar-start">
-                  <div class="navbar-item has-text-centered">
-                      <select id="jump"
-                              data-placeholder="Search or jump to projects ..."
-                              data-intro="Use this dropdown menu to quickly jump to specific projects, or to search for keywords in their descriptions. The search will reduce the list of projects shown on the <i>Browse</i> tab to those matching the keyword."
-                              data-step="1">
+                  <div class="navbar-item has-text-centered"
+                       data-intro="Use this dropdown menu to quickly jump to specific projects, or to search for keywords in their descriptions. The search will reduce the list of projects shown on the <i>Browse</i> tab to those matching the keyword."
+                       data-step="1">
+                      <select id="jump" data-placeholder="Search or jump to projects ...">
                           <option></option>
                       </select>
                   </div>
@@ -50,8 +49,12 @@
                                   data-step="3">
                                   <a id="search-toggle" href="/#search">Search</a>
                               </li>
-                              <li><a id="apply-toggle" href="/#apply">Apply</a></li>
-                              <li><a id="work-toggle" href="/#work">Work</a></li>
+                              <li data-intro="Apply for your own project."
+                                  data-step="4">
+                                  <a id="apply-toggle" href="/#apply">Apply</a></li>
+                              <li data-intro="Explore code examples from other projects."
+                                  data-step="5">
+                                  <a id="work-toggle" href="/#work">Work</a></li>
                           </ul>
                       </div>
                   </div>
@@ -63,7 +66,7 @@
                           <span class="icon"><i class="fas fa-chevron-circle-down"></i></span>
                       </a>
                       <div class="navbar-dropdown is-right has-background-light">
-                          <p class="navbar-item has-text-weight-semibold">
+                          <p class="navbar-item has-text-weight-semibold has-text-dark">
                               <span class="icon"><i class="far fa-user"></i></span>
                               <span>{{ request.META.HTTP_X_CONSUMER_USERNAME }}</span>
                           </p>

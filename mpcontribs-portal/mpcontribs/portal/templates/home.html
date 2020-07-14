@@ -3,21 +3,6 @@
 {% block content %}
 
 <section class="section is-hidden" id="browse">
-    <nav class="level">
-        <div class="level-left">
-            <button class="button is-outlined is-rounded is-primary" id=take_the_tour>
-                <span class="icon is-small"><i class="fas fa-play"></i></span>
-                <span>Take the Tour</span>
-                <!-- TODO multi-page tour -->
-            </button>
-        </div>
-        <div class="level-item has-text-centered">
-        </div>
-        <div class="level-right">
-            <!-- TODO use for leaderboard sorting -->
-        </div>
-    </nav>
-
     {% for lp in landing_pages %}
     <div class="modal" id=thumbnail_{{lp.project}}_modal>
         <div class="modal-background" name=thumbnail_close></div>
@@ -32,12 +17,12 @@
     <article class="media box" id="{{ lp.project }}" name=cards>
         <a name=thumbnail id=thumbnail_{{lp.project}}>
             <figure name=thumbnail_{{lp.project}}_img
-                    class="media-left image is-hidden-touch is-128x128">
+                    class="media-left image is-hidden-touch is-128x128 is-clipped">
             </figure>
         </a>
         <div class="media-content">
             {% if lp.urls %}
-            <nav class="breadcrumb has-bullet-separator is-size-6 is-marginless">
+            <nav class="breadcrumb has-bullet-separator is-size-7 is-marginless">
                 <ul>
                     {% for l, u in lp.urls.items %}
                     <li><a href="{{u}}">{{l}}</a></li>
@@ -68,18 +53,25 @@
             </details>
         </div>
         <div class="media-right">
+            <!-- TODO leaderboard numbers/table -->
+            <!-- TODO download button -->
         </div>
     </article>
     {% endfor %}
 </section>
 
 <section class="section is-hidden" id="search">
-    <div class="is-hidden" id="search-help">
-        Explore contributions using this search form. A selection of project(s), formula(s), and/or
-        identifier(s) updates the results table with basic information about the matching
-        contributions. Click the contribution identifier to render its preview card as it is (or
-        will be) shown on the materials details pages of <a href="https://materialsproject.org">Materials Project</a>.
-    </div>
+    <article class="message is-dark">
+        <div class="message-header">
+            <p>Search Contributions</p>
+        </div>
+        <div class="message-body has-text-justified">
+            Select project(s), formula(s), and/or identifier(s) to update the results table with
+            basic information about the matching contributions. Click the contribution identifier
+            (left-most column) to render its preview card as it appears on the materials details
+            pages of <a href="https://materialsproject.org">Materials Project</a>.
+        </div>
+    </article>
     <div class="columns">
         <div class="column is-half">
             <div class="box">
@@ -124,7 +116,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="column is-full">
+                    <div class="column is-full table-container">
                         <table class="table is-narrow has-background-dark has-text-white">
                             <tbody id=results></tbody>
                         </table>
@@ -141,15 +133,22 @@
 </section>
 
 <section class="section is-hidden" id="apply">
-    <div class="is-hidden" id="apply-help">
-        Fill out this form to apply for a project on MPContribs. Upon submission of your info an
-        email will be sent to an admin to approve your request. If approved, you can start uploading data to
-        your project which will appear on the project landing page. You can choose to add e-mails of other MPContribs
-        users who you'd like to be added to your project group as collaborators. Collaborators and
-        owners have identical permissions but the number of projects an owner can create is limited. Your data
-        will only be visible to you and your collaborators until you choose to make it public. Only public
-        contributions will appear on the detail pages of <a href="https://materialsproject.org">Materials Project</a>.
-    </div>
+    <article class="message is-dark">
+        <div class="message-header">
+            <p>Project Application</p>
+        </div>
+        <div class="message-body has-text-justified">
+            Fill out this form to apply for your own project on MPContribs. Upon submission of your
+            information an email will be sent to an admin to approve your request. If approved, you can
+            start uploading data to your project which will appear on the project landing page. You
+            can choose to add e-mails of other MPContribs users who you'd like to be added to your
+            project group as collaborators. Collaborators and owners have identical permissions but
+            the number of projects an owner can create is limited. Your data will only be visible
+            to you and your collaborators until you choose to make it public. Only public
+            contributions will appear on the detail pages of
+            <a href="https://materialsproject.org">Materials Project</a>.
+        </div>
+    </article>
     <form id=apply-form>
         <div class="field is-horizontal">
             <div class="field-label is-normal">
@@ -261,51 +260,39 @@
 </section>
 
 <section class="section is-hidden" id="work">
-    <!--
-    <a name=launch id="contribute/get_started" class="btn btn-danger pull-right disabled" style="margin-left: 15px;" role="button" target=_blank>
-        <span class="glyphicon glyphicon-play" aria-hidden="true"></span> Launch
-    </a>
-    -->
-    <div class="is-hidden" id="work-help">
-        The <a href="https://jupyter.org">Jupyter</a> notebooks shown below demonstrate how to use the
-        <a href="https://pypi.org/project/mpcontribs-client/" target="_blank">mpcontribs-client</a>
-        python library to programmatically contribute, update and retrieve data through the
-        <a name=api_url target="_blank">MPContribs API</a>. A web app for interactive data
-        ingestion is coming soon. Send pull requests against
-        <a href="https://github.com/materialsproject/MPContribs/tree/master/mpcontribs-portal/notebooks/{{PORTAL_CNAME}}">MPContribs</a> to add/update notebooks here.
-    </div>
-    <!--
-    The
-    easiest way to get started is to use the above button and launch the notebook on our compute
-    resources. Explore and launch additional example notebooks via the file browser on the right.
-    -->
-    <div class="columns">
-        <div class="column is-narrow">
-            <aside class="menu">
-                <ul class="menu-list">
+    <article class="message is-dark">
+        <div class="message-header">
+            <p>Notebook Examples</p>
+        </div>
+        <div class="message-body has-text-justified">
+            The <a href="https://jupyter.org">Jupyter</a> notebooks shown below demonstrate how to
+            use the <a href="https://pypi.org/project/mpcontribs-client/" target="_blank">mpcontribs-client</a>
+            python library to programmatically contribute, update and retrieve data through the
+            <a name=api_url target="_blank">MPContribs API</a>. A web app for interactive data
+            ingestion is coming soon. Send pull requests against
+            <a href="https://github.com/materialsproject/MPContribs/tree/master/mpcontribs-portal/notebooks/{{PORTAL_CNAME}}">this
+            directory</a> to add/update notebooks here.
+        </div>
+    </article>
+
+    <div class="dropdown is-hoverable">
+        <div class="dropdown-trigger">
+            <button class="button" aria-haspopup="true" aria-controls="dropdown-notebooks">
+                <span>Choose Example Notebook</span>
+                <span class="icon is-small">
+                    <i class="fas fa-angle-down" aria-hidden="true"></i>
+                </span>
+            </button>
+        </div>
+        <div class="dropdown-menu" id="dropdown-notebooks" role="menu">
+            <div class="dropdown-content">
                 {% for nb in notebooks %}
-                <li>
-                    <div class="columns is-gapless">
-                        <div class="column is-narrow">
-                            <a href="https://github.com/materialsproject/MPContribs/tree/master/binder/notebooks/{{PORTAL_CNAME}}/{{nb}}.ipynb">
-                                <span class="icon is-small">
-                                    <i class="fas fa-cloud-download-alt"></i>
-                                </span>
-                            </a>
-                        </div>
-                        <div class="column">
-                            <a name=nb_show id={{nb}}>{{nb}}</a>
-                        </div>
-                    </div>
-                </li>
+                <a name=nb_show id={{nb}} class="dropdown-item">{{nb}}</a>
                 {% endfor %}
-                </ul>
-            </aside>
-        </div>
-        <div class="column is-fullwidth">
-            <div id=nb_content class="column"></div>
+            </div>
         </div>
     </div>
+    <div id=nb_content class="column is-fullwidth"></div>
 </section>
 
 {% endblock %}

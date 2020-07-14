@@ -3,16 +3,17 @@
 {% block content %}
 <section class="section" id=landingpage>
 
-    <div class="title">
-        {{ title }}
-        {% if urls %}
-        <sup style="font-size: 50%; vertical-align: top;">
-        {% for k, v in urls.items %}
-        <a href="{{ v }}" target="_blank" rel="noopener noreferrer">[{{k}}]</a>
-        {% endfor %}
-        </sup>
-        {% endif %}
-    </div>
+    {% if urls %}
+    <nav class="breadcrumb has-bullet-separator is-size-7 is-marginless">
+        <ul>
+            {% for l, u in urls.items %}
+            <li><a href="{{u}}" target="_blank" rel="noopener noreferrer">{{l}}</a></li>
+            {% endfor %}
+        </ul>
+    </nav>
+    {% endif %}
+
+    <div class="title">{{ title }}</div>
     <div class="subtitle">
         {{ authors.main }}
         {% if authors.etal %}

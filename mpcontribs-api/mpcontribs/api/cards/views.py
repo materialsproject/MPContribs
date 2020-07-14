@@ -62,7 +62,7 @@ class CardsView(SwaggerView):
                 data = contrib.to_mongo().get("data", {})
                 ctx["data"] = j2h.convert(
                     json=remap(data, visit=visit),
-                    table_attributes='class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth"',
+                    table_attributes='class="table is-narrow is-fullwidth has-background-light"',
                 )
                 card.html = html_minify(render_template("card.html", **ctx))
                 card.bulma = html_minify(render_template("card_bulma.html", **ctx))

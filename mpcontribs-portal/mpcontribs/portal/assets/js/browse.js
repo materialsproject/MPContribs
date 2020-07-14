@@ -15,13 +15,13 @@ $(document).ready(function () {
     $('[name=thumbnail]').on('click', function(e) {
         e.preventDefault();
         var selector = '#' + $(this).attr("id") + "_modal";
+        window.scrollTo(0, 0);
         $(selector).addClass("is-active");
         $("html").addClass("is-clipped");
     });
 
     $('[name=thumbnail_close]').on('click', function(e) {
         e.preventDefault();
-        window.scrollTo(0, 0);
         $(this).parent().removeClass("is-active");
         $('html').removeClass("is-clipped");
     });

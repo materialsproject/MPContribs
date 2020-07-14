@@ -1,17 +1,19 @@
 <div name="user_contribs">
-    <div class="card">
+    <div class="card has-background-light">
         <div class="card-content">
+            {% if urls %}
+            <nav class="breadcrumb has-bullet-separator is-size-7 is-marginless">
+                <ul>
+                    {% for l, u in urls.items() %}
+                    <li><a href="{{u}}" target="_blank" rel="noopener noreferrer">{{l}}</a></li>
+                    {% endfor %}
+                </ul>
+            </nav>
+            {% endif %}
             <div class="content is-marginless">
                 <a href="{{ landing_page }}" class="is-primary is-size-4">
                     {{ title }}
                 </a>
-                {% if urls %}
-                <sup style="vertical-align: top;">
-                    {% for k, v in urls.items() %}
-                    <a href="{{ v }}" target="_blank" rel="noopener noreferrer">[{{k}}]</a>
-                    {% endfor %}
-                </sup>
-                {% endif %}
                 <a href="{{ more }}" class="is-pulled-right">
                     <span class="icon">
                         <i class="fas fa-info-circle"></i>
@@ -34,7 +36,7 @@
                 <span id="more_text_{{cid}}" hidden>{{ descriptions.1 }}</span>
                 {% endif %}
             </div>
-            <div class="content is-size-7">
+            <div class="content is-size-7 table-container">
                 {{ data|safe }}
             </div>
         </div>

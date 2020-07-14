@@ -144,6 +144,7 @@ $(document).ready(function () {
 
     $("#help").click(function() {
         // TODO use toggle name to decide which help/tour to show
-        introJs().start();
+        introJs().setOption("showStepNumbers", false)
+            .setOption("overlayOpacity", 0.2).start();
     });
 });
