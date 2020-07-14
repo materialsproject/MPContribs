@@ -21,7 +21,6 @@
     "bulma-tooltip": "^3.0.2",
     "bulma-extensions": "^6.2.7",
     "@vizuaalog/bulmajs": "^0.11.0",
-    "@creativebulma/bulma-collapsible": "^1.0.4",
     "@fortawesome/fontawesome-free": "^5.12.0",
     "handsontable": "^7.3.0",
     "node-sass": "^4.13.1",
@@ -34,7 +33,6 @@
     "terser-webpack-plugin": "^3.0.0",
     "optimize-css-assets-webpack-plugin": "^5.0.3",
     "file-loader": "^6.0.0",
-    "image-webpack-loader": "^6.0.0",
     "clean-webpack-plugin": "^3.0.0",
     "compression-webpack-plugin": "^4.0.0",
     "imports-loader": "^1.0.0",
@@ -58,13 +56,12 @@
     "select2": "^4.0.12",
     "jquery-form": "github:tschaume/form#master",
     "requirejs": "^2.3.6",
-    "linkifyjs": "^2.1.8",
-    "json-human": "github:marianoguerra/json.human.js#0.1.1",
     "plotly.js": "^1.52.1",
     "spin.js": "^4.1.0",
     "mathjs": "^7.0.0",
     "typy": "^3.3.0",
     "ion-rangeslider": "^2.3.1",
-    "js-sha1": "^0.6.0"
+    "js-sha1": "^0.6.0",
+    "intro.js": "^2.9.3"
   }
 }

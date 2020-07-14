@@ -63,8 +63,6 @@ module.exports = {
             "clipboard": "clipboard-polyfill/dist/clipboard-polyfill",
             "plotly": 'plotly.js/lib/core',
             "js-cookie": 'js-cookie/src/js.cookie',
-            "linkify": 'linkifyjs/lib/linkify',
-            "linkify-element": 'linkifyjs/lib/linkify-element',
             "mathjs": 'mathjs/dist/math',
         }
     },
@@ -72,24 +70,25 @@ module.exports = {
         rules: [
             {
                 test: /\.(gif|png|jpe?g)$/i,
-                use: [
-                    {loader: 'url-loader', options: {limit: 8192, name:'[name].[ext]', outputPath: 'assets'}},
-                    {loader: 'image-webpack-loader'}
-                ],
-            },
-            {
+                use: [{
+                    loader: 'url-loader', options: {
+                        limit: 8192, name:'[name].[ext]', outputPath: 'assets'
+                    }
+                }]
+            }, {
                 test: /\.(woff(2)?|ttf|eot|svg)(\?v=[0-9]\.[0-9]\.[0-9])?$/, loader: 'url-loader',
                 options: { limit: 8192, name:'[name].[ext]', outputPath: 'assets' }
-            },
-            {
+            }, {
                 test: /\.scss$/,
                 use: [
                     MiniCssExtractPlugin.loader, {loader: 'css-loader'},
                     {loader: 'sass-loader', options: {sourceMap: true}}
                 ]
-            },
-            { test: /\.css$/, loaders: [MiniCssExtractPlugin.loader, "css-loader"] },
-            {
+            }, {
+                test: /\.css$/, loaders: [
+                    MiniCssExtractPlugin.loader, "css-loader"
+                ]
+            }, {
                 test: /landingpage\.js$/, use: [{
                     // TODO babel for all: https://babeljs.io/docs/en/babel-plugin-syntax-dynamic-import/#installation
                     loader: 'babel-loader', options: {
@@ -97,47 +96,35 @@ module.exports = {
                         'presets': [['env', { 'modules': false, 'targets': { 'node': 4 } }]]
                     }
                 }]
-            },
-            {
+            }, {
                 test: /jquery-form/,
                 use: [{
                     loader: 'imports-loader',
                     options: { imports: ['default jquery $'] }
                 }]
-            },
-            {
+            }, {
                 test: /jquery-validation/,
                 use: [{
                     loader: 'imports-loader',
                     options: { imports: ['default jquery $'] }
                 }]
-            },
-            {
+            }, {
                 test: /jquery-simulate/,
                 use: [{
                     loader: 'imports-loader',
                     options: { imports: ['default jquery $'] }
                 }]
-            },
-            {
+            }, {
                 test: /select2/,
                 use: [{
                     loader: 'imports-loader',
                     options: { imports: ['default jquery $'] }
                 }]
-            },
-            {
+            }, {
                 test: /czmore/,
                 use: [{
                     loader: 'imports-loader',
                     options: { imports: ['default jquery $'] }
-                }]
-            },
-            {
-                test: /linkify-element/,
-                use: [{
-                    loader: 'imports-loader',
-                    options: { imports: ['side-effects linkify'] }
                 }]
             }
         ]

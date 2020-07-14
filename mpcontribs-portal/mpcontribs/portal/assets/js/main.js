@@ -1,11 +1,11 @@
-import img from 'images/logo.png';
+import logo from 'images/logo.png';
 import * as clipboard from "clipboard";
 import 'select2/dist/js/select2';
 import 'jquery-simulate/jquery.simulate';
 import '@fortawesome/fontawesome-free/js/all';
 import '@vizuaalog/bulmajs/dist/dropdown';
+import introJs from 'intro.js/intro';
 import * as bulmaTagsinput from 'bulma-extensions/bulma-tagsinput/dist/js/bulma-tagsinput';
-//import bulmaCollapsible from '@creativebulma/bulma-collapsible/dist/js/bulma-collapsible.min';
 require('css/main.scss');
 
 window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
@@ -26,7 +26,7 @@ console.log(window.api);
 
 $(document).ready(function () {
     // logo, info, api-key
-    document.getElementById("logo").src = img;
+    document.getElementById("logo").src = logo;
     document.getElementById("docs_url").href = api_key !== '' ? 'https://mpcontribs.org' : 'http://localhost:8081';
     $('a[name="api_url"]').attr('href', window.api['host']);
     $('#api_key_btn').on('click', function() {
@@ -91,15 +91,6 @@ $(document).ready(function () {
                 './' + toggle + '.js'
             ).then(function() {
                 if (!$('.tagsinput').length) { bulmaTagsinput.attach('[type="tags"]'); }
-                //bulmaCollapsible.attach('.is-collapsible');
-                if ($('#'+toggle+'-help').length) {
-                    var help = $('#'+toggle+'-help').html();
-                    $('#main-help-text').html(help);
-                    $('#main-help').removeClass('is-hidden');
-                } else {
-                    $('#main-help-text').html('');
-                    $('#main-help').addClass('is-hidden');
-                }
                 console.log(toggle + ' imported');
             }).catch(function(err) { console.error(err); });
         });
@@ -149,5 +140,10 @@ $(document).ready(function () {
     $('body').click(function(e) {
         var dropdowns = $(".dropdown");
         dropdowns.not(dropdowns.has(e.target)).removeClass('is-active');
+    });
+
+    $("#help").click(function() {
+        // TODO use toggle name to decide which help/tour to show
+        introJs().start();
     });
 });

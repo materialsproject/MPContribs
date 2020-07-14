@@ -1,10 +1,10 @@
 @charset "utf-8";
 @import url('https://fonts.googleapis.com/css?family=Nunito:400,700');
 @import "~select2/dist/css/select2.min.css";
-@import "~json-human/css/json.human.css";
 @import "~spin.js/spin.css";
 @import "~@fortawesome/fontawesome-free/css/all.css";
 @import '~handsontable/dist/handsontable.full.css';
+@import "~intro.js/introjs.css";
 
 $family-sans-serif: "Nunito", sans-serif;
 $tooltip-background-opacity: 1;
@@ -24,13 +24,6 @@ $button-text-color: $grey-darker;
 $input-border-color: $old-grey-light;
 $button-border-color: $old-grey-light;
 $switch-background: $old-grey-light;
-
-$card-content-padding: 0.5rem;
-$card-background-color: $grey-darker;
-$card-color: white;
-$card-media-margin: 0.5rem;
-$card-content-background-color: $grey-darker;
-$card-shadow: none;
 
 $box-color: white;
 $box-background-color: $grey-darker;
@@ -59,7 +52,6 @@ $checkradio-focus: none;
 @import "~bulma-extensions/bulma-checkradio/src/sass/index";
 @import "~bulma-extensions/bulma-tagsinput/src/sass/index";
 @import "~bulma-extensions/bulma-switch/src/sass/index";
-@import '~@creativebulma/bulma-collapsible/src/sass/index';
 @import "select2";
 @import "css/highlight";
 
@@ -80,9 +72,6 @@ $checkradio-focus: none;
     }
 }
 
-#main-help { display: block; }
-.section { padding: 0.25em 1.5em 3em 1.5em; }
-
 footer {
   bottom: 0; left: 0; right: 0;
   position: fixed; z-index: 200;
@@ -102,7 +91,6 @@ a.anchor-link { display: none; }
 .loader__dot:nth-child(2) { animation-delay: 250ms }
 .loader__dot:nth-child(3) { animation-delay: 500ms }
 
-.jh-type-string { font-weight: normal; }
 h2 { padding: 15px; }
 
 .handsontable thead th .relative { text-align: center; }

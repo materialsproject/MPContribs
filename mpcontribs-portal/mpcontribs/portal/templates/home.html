@@ -3,13 +3,38 @@
 {% block content %}
 
 <section class="section is-hidden" id="browse">
-    <div class="is-hidden" id="browse-help">
-        Use the above dropdown menu to quickly jump to specific projects, or to search for keywords in their
-        descriptions. The search will reduce the list of projects shown below to those matching the keyword.
-    </div>
+    <nav class="level">
+        <div class="level-left">
+            <button class="button is-outlined is-rounded is-primary" id=take_the_tour>
+                <span class="icon is-small"><i class="fas fa-play"></i></span>
+                <span>Take the Tour</span>
+                <!-- TODO multi-page tour -->
+            </button>
+        </div>
+        <div class="level-item has-text-centered">
+        </div>
+        <div class="level-right">
+            <!-- TODO use for leaderboard sorting -->
+        </div>
+    </nav>
+
     {% for lp in landing_pages %}
+    <div class="modal" id=thumbnail_{{lp.project}}_modal>
+        <div class="modal-background" name=thumbnail_close></div>
+        <div class="modal-content">
+            <p class="image" name=thumbnail_{{lp.project}}_img></p>
+        </div>
+        <button class="modal-close is-large"
+                aria-label="close"
+                name=thumbnail_close>
+        </button>
+    </div>
     <article class="media box" id="{{ lp.project }}" name=cards>
-        <figure class="media-left image is-hidden-touch" id=thumbnail_{{lp.project}}_img></figure>
+        <a name=thumbnail id=thumbnail_{{lp.project}}>
+            <figure name=thumbnail_{{lp.project}}_img
+                    class="media-left image is-hidden-touch is-128x128">
+            </figure>
+        </a>
         <div class="media-content">
             {% if lp.urls %}
             <nav class="breadcrumb has-bullet-separator is-size-6 is-marginless">

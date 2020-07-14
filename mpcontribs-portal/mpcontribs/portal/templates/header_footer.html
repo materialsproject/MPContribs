@@ -31,15 +31,25 @@
           <div id="navbarBasicExample" class="navbar-menu">
               <div class="navbar-start">
                   <div class="navbar-item has-text-centered">
-                      <select data-placeholder="Search or jump to projects ..." id="jump">
+                      <select id="jump"
+                              data-placeholder="Search or jump to projects ..."
+                              data-intro="Use this dropdown menu to quickly jump to specific projects, or to search for keywords in their descriptions. The search will reduce the list of projects shown on the <i>Browse</i> tab to those matching the keyword."
+                              data-step="1">
                           <option></option>
                       </select>
                   </div>
                   <div class="navbar-item has-text-centered">
-                      <div class="tabs is-centered is-toggle is-toggle-rounded has-text-weight-semibold">
+                      <div class="tabs is-toggle is-toggle-rounded has-text-weight-semibold">
                           <ul>
-                              <li class="is-active"><a id="browse-toggle" href="/#browse">Browse</a></li>
-                              <li><a id="search-toggle" href="/#search">Search</a></li>
+                              <li class="is-active"
+                                  data-intro="Browse a list of all available projects."
+                                  data-step="2">
+                                  <a id="browse-toggle" href="/#browse">Browse</a>
+                              </li>
+                              <li data-intro="Search contributions and render their cards."
+                                  data-step="3">
+                                  <a id="search-toggle" href="/#search">Search</a>
+                              </li>
                               <li><a id="apply-toggle" href="/#apply">Apply</a></li>
                               <li><a id="work-toggle" href="/#work">Work</a></li>
                           </ul>
@@ -47,46 +57,42 @@
                   </div>
               </div>
               <div class="navbar-end">
-                  <!-- TODO merge ingester webapp into portal -->
-                  <a class="navbar-item has-text-centered" id=docs_url target="_blank">Docs</a>
-                  <a class="navbar-item has-text-centered" name=api_url target="_blank">API</a>
-                  {% if request.META.HTTP_X_CONSUMER_CUSTOM_ID %}
-                  <div class="navbar-item has-text-centered">
-                      <button class="button is-small is-outlined is-rounded is-primary" id=api_key_btn>
-                          <span class="icon is-small"><i class="far fa-copy"></i></span>
-                          <span id=api_key_text>API Key</span>
-                      </button>
-                  </div>
-                  {% endif %}
-                  <a class="navbar-item has-text-weight-semibold has-tooltip-left has-text-centered"
-                     data-tooltip="{{ request.META.HTTP_X_CONSUMER_USERNAME }}">
-                      <span class="icon is-small"><i class="far fa-user"></i></span>
-                      <span class="is-hidden-desktop">{{ request.META.HTTP_X_CONSUMER_USERNAME }}</span>
-                  </a>
-              </div>
-          </div>
-      </nav>
-
-      <div class="columns">
-          <div class="column is-fullwidth">
-              <div class="dropdown is-hidden" id="main-help">
-                  <div class="dropdown-trigger">
-                      <button class="button is-primary is-light is-fullwidth" id=main-help-button
-                          aria-haspopup="true" aria-controls="main-help-menu">
-                          <span>Help</span>
-                          <span class="icon"><i class="fas fa-angle-down" aria-hidden="true"></i></span>
-                      </button>
-                  </div>
-                  <div class="dropdown-menu" role="menu" id=main-help-menu>
-                      <div class="dropdown-content">
-                          <div class="dropdown-item">
-                              <p id=main-help-text></p>
+                  <div class="navbar-item has-dropdown is-hoverable">
+                      <a class="navbar-link">
+                          <span>More</span>
+                          <span class="icon"><i class="fas fa-chevron-circle-down"></i></span>
+                      </a>
+                      <div class="navbar-dropdown is-right has-background-light">
+                          <p class="navbar-item has-text-weight-semibold">
+                              <span class="icon"><i class="far fa-user"></i></span>
+                              <span>{{ request.META.HTTP_X_CONSUMER_USERNAME }}</span>
+                          </p>
+                          {% if request.META.HTTP_X_CONSUMER_CUSTOM_ID %}
+                          <div class="navbar-item has-text-weight-semibold">
+                              <button id=api_key_btn class="button is-small is-outlined">
+                                  <span class="icon is-small"><i class="fas fa-key"></i></span>
+                                  <span id=api_key_text>API Key</span>
+                              </button>
                           </div>
+                          {% endif %}
+                          <a class="navbar-item" id=help>
+                              <span class="icon"><i class="fas fa-question"></i></span>
+                              <span>Tour this page</span>
+                          </a>
+                          <a class="navbar-item" id=docs_url target="_blank">
+                              <span class="icon"><i class="fab fa-readme"></i></span>
+                              <span>Documentation</span>
+                          </a>
+                          <a class="navbar-item" name=api_url target="_blank">
+                              <span class="icon"><i class="fas fa-laptop-code"></i></span>
+                              <span>RESTful API</span>
+                          </a>
+                          <!-- TODO merge ingester webapp into portal -->
                       </div>
                   </div>
               </div>
           </div>
-      </div>
+      </nav>
 
       {% if alert %}
       <div id=alert class="notification is-warning">
