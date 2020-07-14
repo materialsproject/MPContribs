@@ -28,3 +28,4 @@ mpcontribs-api/mpcontribs/api/swagger
 
 mpcontribs-portal/mpcontribs/users/qmcdb
 mpcontribs-portal/mpcontribs/portal/templates/notebooks
+mpcontribs-portal/notebooks/*/data/*
