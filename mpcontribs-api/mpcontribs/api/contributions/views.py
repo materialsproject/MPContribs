@@ -62,11 +62,6 @@ class ContributionsResource(Resource):
         from mpcontribs.api.tables.views import TablesResource
 
         mask = ["id", "label", "name"]
-        # return full structures/tables only if download requested
-        full = bool(
-            self.view_method == Download and self.params.get("_fields") == "_all"
-        )
-        fmt = self.params.get("format")
         kwargs = dict(contribution=obj.id)
         if field_len == 2:
             # requested structure/table(s) for specific label
@@ -74,19 +69,15 @@ class ContributionsResource(Resource):
 
         if field.startswith("structures"):
             res = StructuresResource(view_method=self.view_method)
-            if full and fmt == "json":
-                mask += ["lattice", "sites", "charge", "klass", "module"]
             objects = Structures.objects.only(*mask)
         else:
             res = TablesResource(view_method=self.view_method)
-            # TODO adjust mask for full json format
             objects = Tables.objects.only(*mask)
 
         objects = objects.filter(**kwargs).order_by("-id")
         result = defaultdict(list)
         for o in objects:
             os = res.serialize(o, fields=mask)
-            # TODO res.value_for_field(o, "cif") if fmt == "csv" and field.startswith("structures")
             result[os.pop("label")].append(os)
 
         ret = result if field_len == 1 else list(result.values())[0]

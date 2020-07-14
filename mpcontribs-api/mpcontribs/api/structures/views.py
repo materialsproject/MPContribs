@@ -25,7 +25,7 @@ class StructuresResource(Resource):
         "is_public": [ops.Boolean],
         "name": [ops.In, ops.Exact, ops.Contains],
     }
-    fields = ["id", "contribution", "is_public", "name"]
+    fields = ["id", "contribution", "is_public", "name", "label"]
     rename_fields = {"klass": "@class", "module": "@module"}
     allowed_ordering = ["is_public", "name"]
     paginate = True

@@ -100,7 +100,7 @@ def index(request):
     ctx["PORTAL_CNAME"] = cname
     ctx["landing_pages"] = []
     mask = ["project", "title", "authors", "is_public", "description", "urls"]
-    client = Client(headers=get_consumer(request))  # sets/returns global variable
+    client = Client(headers=get_consumer(request))
     entries = client.projects.get_entries(_fields=mask).result()["data"]
     for entry in entries:
         authors = entry["authors"].strip().split(",", 1)
@@ -108,9 +108,8 @@ def index(request):
             authors[1] = authors[1].strip()
         entry["authors"] = authors
         entry["description"] = entry["description"].split(".", 1)[0] + "."
-        ctx["landing_pages"].append(
-            entry
-        )  # visibility governed by is_public flag and X-Consumer-Groups header
+        # visibility governed by is_public flag and X-Consumer-Groups header
+        ctx["landing_pages"].append(entry)
     return render(request, "home.html", ctx.flatten())
 
 
@@ -123,7 +122,7 @@ def export_notebook(nb, cid):
 
 def contribution(request, cid):
     ctx = get_context(request)
-    client = Client(headers=get_consumer(request))  # sets/returns global variable
+    client = Client(headers=get_consumer(request))
     contrib = client.contributions.get_entry(pk=cid, _fields=["_all"]).result()
     ctx["identifier"], ctx["cid"] = contrib["identifier"], contrib["id"]
     nb = client.notebooks.get_entry(pk=cid).result()  # generate notebook with cells
@@ -143,7 +142,7 @@ def contribution(request, cid):
 
 
 def cif(request, sid):
-    client = Client(headers=get_consumer(request))  # sets/returns global variable
+    client = Client(headers=get_consumer(request))
     cif = client.structures.get_entry(pk=sid, _fields=["cif"]).result()["cif"]
     if cif:
         response = HttpResponse(cif, content_type="text/plain")

@@ -28,7 +28,7 @@ class TablesResource(Resource):
         "name": [ops.In, ops.Exact, ops.Contains],
         "columns": [ops.IContains],
     }
-    fields = ["id", "contribution", "is_public", "name", "columns"]
+    fields = ["id", "contribution", "is_public", "name", "label", "columns"]
     allowed_ordering = ["is_public", "name"]  # TODO data sorting
     paginate = True
     default_limit = 10
