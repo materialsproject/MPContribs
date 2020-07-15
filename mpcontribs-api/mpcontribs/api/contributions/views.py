@@ -26,6 +26,7 @@ from mpcontribs.api.core import SwaggerView
 from mpcontribs.api.contributions.document import Contributions
 from mpcontribs.api.structures.views import StructuresResource
 from mpcontribs.api.tables.views import TablesResource
+from mpcontribs.api.notebooks.views import NotebooksResource
 
 templates = os.path.join(os.path.dirname(flask_mongorest.__file__), "templates")
 contributions = Blueprint("contributions", __name__, template_folder=templates)
@@ -41,8 +42,12 @@ def visit(path, key, value):
 
 class ContributionsResource(Resource):
     document = Contributions
-    related_resources = {"structures": StructuresResource, "tables": TablesResource}
-    save_related_fields = ["structures", "tables"]
+    related_resources = {
+        "structures": StructuresResource,
+        "tables": TablesResource,
+        "notebook": NotebooksResource,
+    }
+    save_related_fields = ["structures", "tables", "notebook"]
     filters = {
         "id": [ops.In, ops.Exact],
         "project": [ops.In, ops.Exact],
@@ -69,7 +74,7 @@ class ContributionsResource(Resource):
 
     @staticmethod
     def get_optional_fields():
-        return ["data", "structures", "tables"]
+        return ["data", "structures", "tables", "notebook"]
 
     def value_for_field(self, obj, field):
         if field.startswith("card_"):

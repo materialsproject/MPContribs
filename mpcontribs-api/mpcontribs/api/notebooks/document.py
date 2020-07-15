@@ -1,15 +1,6 @@
 # -*- coding: utf-8 -*-
 from flask_mongoengine import Document
-from mongoengine import CASCADE
-from mongoengine.fields import (
-    DictField,
-    StringField,
-    IntField,
-    BooleanField,
-    ListField,
-    LazyReferenceField,
-)
-from mpcontribs.api.contributions.document import Contributions
+from mongoengine.fields import DictField, StringField, IntField, ListField
 
 
 class Kernelspec(DictField):
@@ -55,21 +46,11 @@ class Cell(DictField):
 
 
 class Notebooks(Document):
-    contribution = LazyReferenceField(
-        Contributions,
-        passthrough=True,
-        reverse_delete_rule=CASCADE,
-        primary_key=True,
-        help_text="contribution this table belongs to",
-    )
-    is_public = BooleanField(
-        required=True, default=False, help_text="public or private notebook"
-    )
     nbformat = IntField(default=4, help_text="nbformat version")
     nbformat_minor = IntField(default=4, help_text="nbformat minor version")
     metadata = DictField(Metadata(), help_text="notebook metadata")
     cells = ListField(Cell(), max_length=30, help_text="cells")
-    meta = {"collection": "notebooks", "indexes": ["is_public"]}
+    meta = {"collection": "notebooks"}
 
     problem_key = "application/vnd.plotly.v1+json"
     escaped_key = problem_key.replace(".", "~dot~")
