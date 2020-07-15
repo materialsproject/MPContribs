@@ -98,13 +98,12 @@ TEMPLATE = {
         },
         {
             "name": "contributions",
-            "description": f'contain simple hierarchical data which will show up on the MP details \
-        page for MP material(s) - see cards below. Tables (rows and columns) as well as structures can be added to a \
+            "description": f'contain simple hierarchical data which will show up as cards on the MP details \
+        page for MP material(s). Tables (rows and columns) as well as structures can be added to a \
         contribution. Each contribution uses `mp-id` or composition as identifier to associate its data with the \
         according entries on MP. Only admins or users on the project can create, update or delete contributions, and \
-        while unpublished, retrieve its data or view it on the <a href="https://{PORTAL_CNAME}">Portal</a>. The \
-        same permission controls are in place for associated tables, structures, notebooks, and cards. These \
-        contribution components are deleted along with a contribution.',
+        while unpublished, retrieve its data or view it on the <a href="https://{PORTAL_CNAME}">Portal</a>. \
+        Contribution components (tables and structures) are deleted along with a contribution.',
         },
         {
             "name": "tables",
@@ -122,13 +121,8 @@ TEMPLATE = {
             "name": "notebooks",
             "description": f'are Jupyter \
         <a href="https://jupyter-notebook.readthedocs.io/en/stable/notebook.html#notebook-documents">notebook</a> \
-        documents generated and saved on first request for every contribution. They form the basis for Contribution \
+        documents generated and saved when a contribution is saved. They form the basis for Contribution \
         Details Pages on the <a href="https://{PORTAL_CNAME}">Portal</a>.',
-        },
-        {
-            "name": "cards",
-            "description": "are pre-generated embeddable previews (HTML) for each contribution shown on \
-        the MP material details pages.",
         },
     ],
     "securityDefinitions": {
