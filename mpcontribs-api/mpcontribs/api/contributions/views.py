@@ -10,8 +10,8 @@ from flask_mongorest.methods import *
 from flask_mongorest.exceptions import UnknownFieldError
 from mpcontribs.api.core import SwaggerView
 from mpcontribs.api.contributions.document import Contributions
-from mpcontribs.api.structures.document import Structures
-from mpcontribs.api.tables.document import Tables
+from mpcontribs.api.structures.views import StructuresResource
+from mpcontribs.api.tables.views import TablesResource
 
 templates = os.path.join(os.path.dirname(flask_mongorest.__file__), "templates")
 contributions = Blueprint("contributions", __name__, template_folder=templates)
@@ -20,6 +20,8 @@ exclude = r'[^$.\s_~`^&(){}[\]\\;\'"/]'
 
 class ContributionsResource(Resource):
     document = Contributions
+    related_resources = {"structures": StructuresResource, "tables": TablesResource}
+    save_related_fields = ["structures", "tables"]
     filters = {
         "id": [ops.In, ops.Exact],
         "project": [ops.In, ops.Exact],
@@ -47,42 +49,6 @@ class ContributionsResource(Resource):
     @staticmethod
     def get_optional_fields():
         return ["data", "structures", "tables"]
-
-    def value_for_field(self, obj, field):
-        if not field.startswith("structures") and not field.startswith("tables"):
-            raise UnknownFieldError
-
-        field_split = field.split(".")
-        field_len = len(field_split)
-        if field_len > 2:
-            raise UnknownFieldError
-
-        # add structures and tables info to response if requested
-        from mpcontribs.api.structures.views import StructuresResource
-        from mpcontribs.api.tables.views import TablesResource
-
-        mask = ["id", "label", "name"]
-        kwargs = dict(contribution=obj.id)
-        if field_len == 2:
-            # requested structure/table(s) for specific label
-            kwargs["label"] = field_split[1]
-
-        if field.startswith("structures"):
-            res = StructuresResource(view_method=self.view_method)
-            objects = Structures.objects.only(*mask)
-        else:
-            res = TablesResource(view_method=self.view_method)
-            objects = Tables.objects.only(*mask)
-
-        objects = objects.filter(**kwargs).order_by("-id")
-        result = defaultdict(list)
-        for o in objects:
-            os = res.serialize(o, fields=mask)
-            result[os.pop("label")].append(os)
-
-        ret = result if field_len == 1 else list(result.values())[0]
-        obj.update(**{f"set__{field.replace('.', '__')}": ret})
-        return ret
 
 
 class ContributionsView(SwaggerView):

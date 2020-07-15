@@ -1,46 +1,34 @@
 # -*- coding: utf-8 -*-
-from flask_mongoengine import DynamicDocument
-from mongoengine import CASCADE, signals
-from mongoengine.fields import StringField, LazyReferenceField, BooleanField
-from mongoengine.fields import FloatField, ListField, DictField
-from mpcontribs.api.contributions.document import Contributions
-from mpcontribs.api.notebooks.document import Notebooks
+import json
+from hashlib import md5
+from flask_mongoengine import Document
+from mongoengine import signals
+from mongoengine.fields import StringField, FloatField, ListField, DictField
+from pymatgen import Structure
+from pymatgen.io.cif import CifWriter
 
 
-class Structures(DynamicDocument):
-    contribution = LazyReferenceField(
-        Contributions,
-        passthrough=True,
-        reverse_delete_rule=CASCADE,
-        required=True,
-        help_text="contribution this structure belongs to",
-    )
-    is_public = BooleanField(
-        required=True, default=False, help_text="public/private structure"
-    )
-    name = StringField(required=True, help_text="structure name")
-    label = StringField(required=True, help_text="structure label")
+class Structures(Document):
+    name = StringField(required=True, help_text="name")
     lattice = DictField(required=True, help_text="lattice")
     sites = ListField(DictField(), required=True, help_text="sites")
     charge = FloatField(null=True, help_text="charge")
-    klass = StringField(help_text="@class")
-    module = StringField(help_text="@module")
-    meta = {
-        "collection": "structures",
-        "indexes": ["contribution", "is_public", "name", "label"],
-    }
+    md5 = StringField(regex=r"^[a-z0-9]{32}$", unique=True, help_text="md5 sum")
+    cif = StringField(help_text="CIF string")
+    meta = {"collection": "structures", "indexes": ["name", "md5"]}
 
     @classmethod
-    def post_save(cls, sender, document, **kwargs):
-        set_root_keys = set(k.split(".", 1)[0] for k in document._delta()[0].keys())
-        cid = document.contribution.id
-        nbs = Notebooks.objects(pk=cid)
-        if not set_root_keys or set_root_keys == {"is_public"}:
-            nbs.update(set__is_public=document.is_public)
-        else:
-            nbs.delete()
-            document.update(unset__cif=True)
-            Contributions.objects(pk=cid).update(unset__structures=True)
+    def pre_save_post_validation(cls, sender, document, **kwargs):
+        from mpcontribs.api.structures.views import StructuresResource
+
+        resource = StructuresResource()
+        d = resource.serialize(document, fields=["lattice", "sites", "charge"])
+        s = json.dumps(d, sort_keys=True).encode("utf-8")
+        document.md5 = md5(s).hexdigest()
+        structure = Structure.from_dict(d)
+        document.cif = CifWriter(structure, symprec=1e-10).__str__()
 
 
-signals.post_save.connect(Structures.post_save, sender=Structures)
+signals.pre_save_post_validation.connect(
+    Structures.pre_save_post_validation, sender=Structures
+)

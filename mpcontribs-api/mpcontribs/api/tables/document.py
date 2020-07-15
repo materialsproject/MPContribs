@@ -1,50 +1,28 @@
 # -*- coding: utf-8 -*-
-from flask_mongoengine import DynamicDocument
-from mongoengine import CASCADE, signals
-from mongoengine.fields import (
-    LazyReferenceField,
-    StringField,
-    ListField,
-    DictField,
-    BooleanField,
-)
-from mpcontribs.api.contributions.document import Contributions
-from mpcontribs.api.notebooks.document import Notebooks
+import json
+from hashlib import md5
+from flask_mongoengine import Document
+from mongoengine import signals
+from mongoengine.fields import StringField, ListField, IntField
 
 
-class Tables(DynamicDocument):
-    contribution = LazyReferenceField(
-        Contributions,
-        passthrough=True,
-        reverse_delete_rule=CASCADE,
-        required=True,
-        help_text="contribution this table belongs to",
-    )
-    is_public = BooleanField(
-        required=True, default=False, help_text="public/private table"
-    )
-    name = StringField(required=True, help_text="table name")
-    label = StringField(required=True, help_text="table label")
+class Tables(Document):
+    name = StringField(required=True, help_text="name")
     columns = ListField(StringField(), required=True, help_text="column names")
     data = ListField(ListField(StringField()), required=True, help_text="table rows")
-    config = DictField(help_text="graph config")
-    meta = {
-        "collection": "tables",
-        "indexes": ["contribution", "is_public", "name", "label", "columns"],
-    }
+    md5 = StringField(regex=r"^[a-z0-9]{32}$", unique=True, help_text="md5 sum")
+    total_data_rows = IntField(help_text="total number of rows")
+    meta = {"collection": "tables", "indexes": ["name", "columns", "md5"]}
 
     @classmethod
-    def post_save(cls, sender, document, **kwargs):
-        set_root_keys = set(k.split(".", 1)[0] for k in document._delta()[0].keys())
-        cid = document.contribution.id
-        nbs = Notebooks.objects(pk=cid)
-        if not set_root_keys or set_root_keys == {"is_public"}:
-            nbs.update(set__is_public=document.is_public)
-        else:
-            nbs.delete()
-            if "data" in set_root_keys:
-                document.update(unset__total_data_rows=True)
-            Contributions.objects(pk=cid).update(unset__tables=True)
+    def pre_save_post_validation(cls, sender, document, **kwargs):
+        from mpcontribs.api.tables.views import TablesResource
+
+        resource = TablesResource()
+        d = resource.serialize(document, fields=["columns", "data"])
+        s = json.dumps(d, sort_keys=True).encode("utf-8")
+        document.md5 = md5(s).hexdigest()
+        document.total_data_rows = len(document.data)
 
 
-signals.post_save.connect(Tables.post_save, sender=Tables)
+signals.pre_save_post_validation.connect(Tables.pre_save_post_validation, sender=Tables)

@@ -429,6 +429,8 @@ class SwaggerView(OriginalSwaggerView, ResourceView, metaclass=SwaggerViewType):
 
     def is_admin_or_project_user(self, request, obj):
         groups = self.get_groups(request)
+        if "admin" in groups:
+            return True
 
         if hasattr(obj, "is_approved"):
             is_approved = obj.is_approved
@@ -439,14 +441,10 @@ class SwaggerView(OriginalSwaggerView, ResourceView, metaclass=SwaggerViewType):
             owner = obj.project.owner
             project = obj.project.id
         else:
-            is_approved = obj.contribution.project.is_approved
-            owner = obj.contribution.project.owner
-            project = obj.contribution.project.id
+            raise Unauthorized(f"Unable to authorize {obj}")
 
         username = request.headers.get("X-Consumer-Username")
-        return "admin" in groups or (
-            (project in groups or owner == username) and is_approved
-        )
+        return (project in groups or owner == username) and is_approved
 
     def has_read_permission(self, request, qs):
         groups = self.get_groups(request)

@@ -1,15 +1,23 @@
 # -*- coding: utf-8 -*-
 from datetime import datetime
 from flask import current_app
-from flask_mongoengine import DynamicDocument
+from flask_mongoengine import Document
 from mongoengine import CASCADE, signals
 from mongoengine.fields import StringField, BooleanField, DictField
-from mongoengine.fields import LazyReferenceField, DateTimeField
-from mpcontribs.api.projects.document import Projects
+from mongoengine.fields import (
+    LazyReferenceField,
+    DateTimeField,
+    ListField,
+    ReferenceField,
+)
+
 from mpcontribs.api import validate_data
+from mpcontribs.api.projects.document import Projects
+from mpcontribs.api.structures.document import Structures
+from mpcontribs.api.tables.document import Tables
 
 
-class Contributions(DynamicDocument):
+class Contributions(Document):
     project = LazyReferenceField(
         Projects, required=True, passthrough=True, reverse_delete_rule=CASCADE
     )
@@ -18,10 +26,14 @@ class Contributions(DynamicDocument):
     is_public = BooleanField(
         required=True, default=False, help_text="public/private contribution"
     )
-    data = DictField(help_text="free-form data to be shown in Contribution Card")
+    data = DictField(
+        default={}, help_text="free-form data to be shown in Contribution Card"
+    )
     last_modified = DateTimeField(
         required=True, default=datetime.utcnow, help_text="time of last modification"
     )
+    structures = ListField(ReferenceField(Structures), default=[])
+    tables = ListField(ReferenceField(Tables), default=[])
     meta = {
         "collection": "contributions",
         "indexes": ["project", "identifier", "formula", "is_public", "last_modified"],
