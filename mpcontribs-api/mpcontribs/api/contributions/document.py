@@ -26,9 +26,7 @@ class Contributions(Document):
     is_public = BooleanField(
         required=True, default=False, help_text="public/private contribution"
     )
-    data = DictField(
-        default={}, help_text="free-form data to be shown in Contribution Card"
-    )
+    data = DictField(default={}, help_text="simple free-form data")
     last_modified = DateTimeField(
         required=True, default=datetime.utcnow, help_text="time of last modification"
     )
@@ -54,18 +52,14 @@ class Contributions(Document):
     def post_save(cls, sender, document, **kwargs):
         # avoid circular import
         from mpcontribs.api.notebooks.document import Notebooks
-        from mpcontribs.api.cards.document import Cards
 
         # TODO unset and rebuild columns key in Project for updated (nested) keys only
         set_root_keys = set(k.split(".", 1)[0] for k in document._delta()[0].keys())
         nbs = Notebooks.objects(pk=document.id)
-        cards = Cards.objects(pk=document.id)
         if not set_root_keys or set_root_keys == {"is_public"}:
             nbs.update(set__is_public=document.is_public)
-            cards.update(set__is_public=document.is_public)
         else:
             nbs.delete()
-            cards.delete()
             if "data" in set_root_keys:
                 Projects.objects(pk=document.project.id).update(unset__columns=True)
 

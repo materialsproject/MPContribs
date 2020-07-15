@@ -125,13 +125,11 @@ class Projects(DynamicDocument):
                 # import here to avoid circular
                 from mpcontribs.api.contributions.document import Contributions
                 from mpcontribs.api.notebooks.document import Notebooks
-                from mpcontribs.api.cards.document import Cards
 
                 contributions = Contributions.objects.only("pk").filter(
                     project=document.project
                 )
                 Notebooks.objects(contribution__in=contributions).delete()
-                Cards.objects(contribution__in=contributions).delete()
 
     @classmethod
     def post_delete(cls, sender, document, **kwargs):

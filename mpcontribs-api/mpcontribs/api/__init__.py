@@ -171,14 +171,14 @@ def create_app():
     Marshmallow(app)
     MongoEngine(app)
     Swagger(app, template=app.config.get("TEMPLATE"))
-    # collections = get_collections(db)  # hard-code to avoid pre-generating for new deployment
+    # NOTE: hard-code to avoid pre-generating for new deployment
+    # collections = get_collections(db)
     collections = [
         "projects",
         "contributions",
         "tables",
         "structures",
         "notebooks",
-        "cards",
     ]
 
     for collection in collections:
