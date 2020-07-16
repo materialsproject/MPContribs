@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from fdict import fdict
 from datetime import datetime
 from nbformat import v4 as nbf
 from copy import deepcopy
@@ -13,9 +14,9 @@ from mongoengine.fields import (
     ReferenceField,
 )
 
-from mpcontribs.api import validate_data
+from mpcontribs.api import validate_data, delimiter, quantity_keys
 from mpcontribs.api.notebooks import connect_kernel, execute
-from mpcontribs.api.projects.document import Projects
+from mpcontribs.api.projects.document import Projects, Column
 from mpcontribs.api.structures.document import Structures
 from mpcontribs.api.tables.document import Tables
 from mpcontribs.api.notebooks.document import Notebooks
@@ -58,13 +59,45 @@ class Contributions(Document):
 
     @classmethod
     def post_save(cls, sender, document, **kwargs):
-        # TODO build columns for project on each save
-        # TODO move over from value_for_field
-        # i.e. compare column ranges being added to existing ranges
-        # set_root_keys = set(k.split(".", 1)[0] for k in document._delta()[0].keys())
-        # if "data" in set_root_keys:
-        #    # TODO document.project.update(...)?
-        #    Projects.objects(pk=document.project.id).update(unset__columns=True)
+        # set columns field for project
+        flat_data = fdict(document.data, delimiter=delimiter)
+
+        updated_columns = set()
+        for column in document.project.columns:
+            value = flat_data.get(column.name)
+            if isinstance(value, dict) and value:
+                column.unit = value.get("unit")
+                val = value["value"]
+                if not isinstance(val, str):
+                    if val < column.min:
+                        column.min = val
+                    elif val > column.max:
+                        column.max = val
+
+                column.save()
+                updated_columns.add(column.name)
+
+        new_columns = set()
+        for key in flat_data:
+            key = key.strip()
+            nodes = key.split(delimiter)
+            is_quantity_key = bool(nodes[-1] in quantity_keys)
+            name = delimiter.join(nodes[:-1]) if is_quantity_key else key
+            if name not in updated_columns:
+                new_columns.add(name)
+
+        for name in new_columns:
+            value = flat_data[name]
+            column = {"name": name}
+            if isinstance(value, dict):
+                column["unit"] = value.get("unit")
+                column["min"] = column["max"] = value["value"]
+
+            document.project.columns.create(**column)
+
+        for name in ["structures", "tables"]:
+            if getattr(document, name):
+                document.project.columns.create(name=name)
 
         # generate notebook for this contribution
         cells = [

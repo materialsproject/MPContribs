@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 import os
 from flask import current_app, render_template, url_for
-from flask_mongoengine import DynamicDocument
+from flask_mongoengine import Document
+from mongoengine import EmbeddedDocument
 from flask_mongorest.exceptions import ValidationError
 from mongoengine.fields import (
     StringField,
@@ -10,6 +11,8 @@ from mongoengine.fields import (
     URLField,
     MapField,
     EmailField,
+    FloatField,
+    EmbeddedDocumentListField,
 )
 from mongoengine import signals
 from mpcontribs.api import send_email, validate_data, invalidChars, sns_client
@@ -23,7 +26,14 @@ class NullURLField(URLField):
             super().validate(value)
 
 
-class Projects(DynamicDocument):
+class Column(EmbeddedDocument):
+    name = StringField(required=True, help_text="column name in dot-notation")
+    unit = StringField(required=True, null=True, default=None, help_text="column unit")
+    min = FloatField(required=True, null=True, default=None, help_text="column minimum")
+    max = FloatField(required=True, null=True, default=None, help_text="column maximum")
+
+
+class Projects(Document):
     __project_regex__ = "^[a-zA-Z0-9_]{3,31}$"
     project = StringField(
         min_length=3,
@@ -73,9 +83,10 @@ class Projects(DynamicDocument):
     unique_identifiers = BooleanField(
         required=True, default=True, help_text="identifiers unique?"
     )
+    columns = EmbeddedDocumentListField(Column)
     meta = {
         "collection": "projects",
-        "indexes": ["is_public", "owner", "is_approved", "unique_identifiers"],
+        "indexes": ["is_public", "title", "owner", "is_approved", "unique_identifiers"],
     }
 
     @classmethod

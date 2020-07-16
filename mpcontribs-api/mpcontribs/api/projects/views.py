@@ -7,7 +7,7 @@ from flask import Blueprint, current_app, url_for
 from flask_mongorest.exceptions import UnknownFieldError
 from flask_mongorest.resources import Resource
 from flask_mongorest import operators as ops
-from flask_mongorest.methods import *
+from flask_mongorest.methods import Fetch, Create, Delete, Update, BulkFetch
 from werkzeug.exceptions import Unauthorized
 from itsdangerous import SignatureExpired
 from mpcontribs.api.core import SwaggerView
@@ -47,147 +47,6 @@ class ProjectsResource(Resource):
     def get_optional_fields():
         return ["long_title", "authors", "description", "urls", "other", "columns"]
 
-    def value_for_field(self, obj, field):
-        # add columns key to response if requested
-        if field == "columns":
-            objects = list(
-                Contributions.objects.aggregate(
-                    *[
-                        {"$match": {"project": obj.id}},
-                        # NOTE contributors need to make sure that all columns are
-                        #      included in first 20 contributions
-                        {"$limit": 20},
-                        {"$project": {"_id": 0, "akv": {"$objectToArray": "$data"}}},
-                        {"$unwind": "$akv"},
-                        {
-                            "$project": {
-                                "root": "$akv.k",
-                                "level2": {
-                                    "$switch": {
-                                        "branches": [
-                                            {
-                                                "case": {
-                                                    "$eq": [
-                                                        {"$type": "$akv.v"},
-                                                        "object",
-                                                    ]
-                                                },
-                                                "then": {"$objectToArray": "$akv.v"},
-                                            }
-                                        ],
-                                        "default": [{}],
-                                    }
-                                },
-                            }
-                        },
-                        {"$unwind": "$level2"},
-                        {
-                            "$project": {
-                                "column": {
-                                    "$switch": {
-                                        "branches": [
-                                            {
-                                                "case": {"$eq": ["$level2", {}]},
-                                                "then": "$root",
-                                            },
-                                            {
-                                                "case": {
-                                                    "$eq": ["$level2.k", "display"]
-                                                },
-                                                "then": "$root",
-                                            },
-                                            {
-                                                "case": {"$eq": ["$level2.k", "value"]},
-                                                "then": "$root",
-                                            },
-                                            {
-                                                "case": {"$eq": ["$level2.k", "unit"]},
-                                                "then": "$root",
-                                            },
-                                        ],
-                                        "default": {
-                                            "$concat": ["$root", ".", "$level2.k"]
-                                        },
-                                    }
-                                }
-                            }
-                        },
-                    ]
-                )
-            )
-
-            # neither $group nor set maintain order! Dicts are ordered in python 3.7+
-            columns = {}
-            for col in list(dict.fromkeys(o["column"] for o in objects)):
-                value_field, unit_field = f"data.{col}.value", f"data.{col}.unit"
-                unit_query = {
-                    "project": obj.id,
-                    f'data__{col.replace(".", "__")}__exists': True,
-                }
-                unit_contribs = Contributions.objects.only(unit_field).filter(
-                    **unit_query
-                )
-                unit_sample = unit_contribs.limit(-1).first()
-                min_max = list(
-                    Contributions.objects.aggregate(
-                        *[
-                            {
-                                "$match": {
-                                    "project": obj.id,
-                                    value_field: {"$exists": True},
-                                }
-                            },
-                            {
-                                "$group": {
-                                    "_id": None,
-                                    "min": {"$min": f"${value_field}"},
-                                    "max": {"$max": f"${value_field}"},
-                                }
-                            },
-                        ]
-                    )
-                )
-                unit = get_value(unit_sample, unit_field)
-                if min_max:
-                    key = f"data.{col} [{unit}]"
-                    # catch missing unit field in data
-                    unit = "" if unit is None else unit
-                    min_max[0].pop("_id")
-                    columns[key] = min_max[0]
-                else:
-                    key = f"data.{col}"
-                    columns[key] = {"min": None, "max": None}
-
-            contributions = Contributions.objects.only("pk").filter(project=obj.id)
-            agg = list(
-                Structures.objects.aggregate(
-                    *[
-                        {
-                            "$match": {
-                                "contribution": {"$in": [c.pk for c in contributions]}
-                            }
-                        },
-                        {
-                            "$group": {
-                                "_id": "$contribution",
-                                "count": {"$sum": 1},
-                                "labels": {"$addToSet": "$label"},
-                            }
-                        },
-                        {"$sort": {"count": -1}},
-                        {"$limit": 1},
-                    ]
-                )
-            )
-            if agg:
-                for label in agg[0]["labels"]:
-                    columns[f"structures.{label}"] = None
-
-            obj.update(set__columns=columns)  # save for look-up on subsequent requests
-            return columns
-        else:
-            raise UnknownFieldError
-
 
 class ProjectsView(SwaggerView):
     resource = ProjectsResource
@@ -200,7 +59,7 @@ class ProjectsView(SwaggerView):
             return True
 
         # is_approved can only be set by an admin
-        if "admin" not in groups and obj.is_approved:
+        if obj.is_approved:
             raise Unauthorized(f"Only admins can set `is_approved=True`")
 
         # project already created at this point -> count-1 and revert
@@ -208,6 +67,7 @@ class ProjectsView(SwaggerView):
         if nr_projects > 2:
             Projects.objects(project=obj.project).delete()
             raise Unauthorized(f"{obj.owner} already owns {nr_projects} projects.")
+
         return True
 
 
