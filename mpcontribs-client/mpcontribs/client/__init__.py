@@ -22,9 +22,10 @@ from pymatgen import Structure
 
 DEFAULT_HOST = "api.mpcontribs.org"
 HOST = os.environ.get("MPCONTRIBS_API_HOST", DEFAULT_HOST)
-BULMA = "is-bordered is-striped is-narrow is-hoverable is-fullwidth"
+BULMA = "is-narrow is-fullwidth has-background-light"
 
 j2h = Json2Html()
+quantity_keys = {"display", "value", "unit"}
 pd.options.plotting.backend = "plotly"
 warnings.formatwarning = lambda msg, *args, **kwargs: f"{msg}\n"
 warnings.filterwarnings("default", category=DeprecationWarning, module=__name__)
@@ -60,9 +61,9 @@ class FidoClientGlobalHeaders(FidoClient):
 
 
 def visit(path, key, value):
-    if isinstance(value, dict) and "display" in value:
+    if isinstance(value, dict) and quantity_keys == set(value.keys()):
         return key, value["display"]
-    return key not in ["value", "unit"]
+    return True
 
 
 class Dict(dict):
