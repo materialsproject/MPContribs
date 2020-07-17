@@ -138,15 +138,6 @@ class Projects(Document):
                     admin_topic.split(":")[:-1] + ["mpcontribs_" + document.name]
                 )
                 send_email(topic_arn, subject, html)
-            if set_keys:
-                # import here to avoid circular
-                from mpcontribs.api.contributions.document import Contributions
-                from mpcontribs.api.notebooks.document import Notebooks
-
-                contributions = Contributions.objects.only("pk").filter(
-                    project=document.project
-                )
-                Notebooks.objects(contribution__in=contributions).delete()
 
     @classmethod
     def post_delete(cls, sender, document, **kwargs):

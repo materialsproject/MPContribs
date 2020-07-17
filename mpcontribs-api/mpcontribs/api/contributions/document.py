@@ -55,7 +55,6 @@ def make_quantities(path, key, value):
     return key, value
 
 
-# TODO in flask-mongorest: also get all ReferenceFields when download requested
 class Contributions(Document):
     project = LazyReferenceField(
         "Projects", required=True, passthrough=True, reverse_delete_rule=CASCADE
@@ -71,6 +70,7 @@ class Contributions(Document):
     last_modified = DateTimeField(
         required=True, default=datetime.utcnow, help_text="time of last modification"
     )
+    # TODO in flask-mongorest: also get all ReferenceFields when download requested
     structures = ListField(ReferenceField("Structures"), default=[])
     tables = ListField(ReferenceField("Tables"), default=[])
     notebook = ReferenceField("Notebooks")
@@ -163,11 +163,6 @@ class Contributions(Document):
             nbf.new_code_cell(
                 'client = Client(headers={"X-Consumer-Groups": "admin"})'
             ),
-            nbf.new_markdown_cell("## Project"),
-            nbf.new_code_cell(
-                f'client.get_project("{document.project.name}").pretty()'
-            ),
-            nbf.new_markdown_cell("## Contribution"),
             nbf.new_code_cell(f'client.get_contribution("{document.id}").pretty()'),
         ]
 
@@ -199,10 +194,20 @@ class Contributions(Document):
 
     @classmethod
     def pre_delete(cls, sender, document, **kwargs):
-        # TODO use post_delete?
-        # TODO document.notebook.get().delete()?
-        print(document.notebook)
-        raise ValueError("stop")
+        document.reload()
+        if document.notebook is not None:
+            print("delete notbook", document.notebook.id)
+            document.notebook.delete()
+
+        for structure in document.structures:
+            print("delete structure", structure.id)
+            structure.delete()
+
+        for table in document.tables:
+            print("delete table", table.id)
+            table.delete()
+
+        # TODO update project columns
 
 
 signals.pre_save_post_validation.connect(
