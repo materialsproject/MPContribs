@@ -3,7 +3,7 @@ import os
 import yaml
 from flask import current_app, render_template, url_for
 from flask_mongoengine import Document
-from mongoengine import EmbeddedDocument
+from mongoengine import EmbeddedDocument, signals
 from mongoengine.fields import (
     StringField,
     BooleanField,
@@ -13,7 +13,6 @@ from mongoengine.fields import (
     FloatField,
     EmbeddedDocumentListField,
 )
-from mongoengine import signals
 from mpcontribs.api import send_email, sns_client, valid_key, valid_dict
 
 
@@ -26,7 +25,7 @@ class NullURLField(URLField):
 
 
 class Column(EmbeddedDocument):
-    name = StringField(required=True, help_text="column name in dot-notation")
+    path = StringField(required=True, help_text="column path in dot-notation")
     unit = StringField(null=True, help_text="column unit")
     min = FloatField(null=True, help_text="column minimum")
     max = FloatField(null=True, help_text="column maximum")

@@ -46,7 +46,7 @@ delimiter, max_depth = ".", 3
 max_dgts = 6
 invalidChars = set(punctuation.replace("|", "").replace("*", ""))
 invalidChars.add(" ")
-quantity_keys = ["display", "value", "unit"]
+quantity_keys = {"display", "value", "unit"}
 
 for mod in [
     "matplotlib",

@@ -13,8 +13,6 @@ from boltons.iterutils import remap
 from decimal import Decimal
 
 from mpcontribs.api import enter, valid_dict, Q_, max_dgts, quantity_keys, delimiter
-from mpcontribs.api.projects.document import Column
-from mpcontribs.api.notebooks.document import Notebooks
 from mpcontribs.api.notebooks import connect_kernel, execute
 
 seed_nb = nbf.new_notebook()
@@ -78,17 +76,27 @@ class Contributions(Document):
     notebook = ReferenceField("Notebooks")
     meta = {
         "collection": "contributions",
-        "indexes": ["project", "identifier", "formula", "is_public", "last_modified"],
+        "indexes": [
+            "project",
+            "identifier",
+            "formula",
+            "is_public",
+            "last_modified",
+            {"fields": [(r"data.$**", 1)]},
+        ],
     }
 
     @classmethod
     def pre_save_post_validation(cls, sender, document, **kwargs):
+        from mpcontribs.api.projects.document import Column
+
         # set formula field
         if hasattr(document, "formula"):
             formulae = current_app.config["FORMULAE"]
             document.formula = formulae.get(document.identifier, document.identifier)
 
         # run data through Pint Quantities and save as dicts
+        # TODO set maximum number of columns
         document.data = remap(document.data, visit=make_quantities, enter=enter)
 
         # project is LazyReferenceField
@@ -96,13 +104,13 @@ class Contributions(Document):
 
         # set columns field for project
         def update_columns(path, key, value):
+            path = delimiter.join(["data"] + list(path) + [key])
             if isinstance(value, dict) and set(quantity_keys) == set(value.keys()):
-                name = delimiter.join(["data"] + list(path) + [key])
-                print(name, value)
                 try:
-                    column = project.columns.get(name=name)
+                    column = project.columns.get(path=path)
                     q = Q_(value["display"])
                     if column.unit != value["unit"]:
+                        # TODO catch dimensionality error
                         q.ito(column.unit)
 
                     # TODO min/max wrong if same contribution updated (add contribution RefField?)
@@ -113,35 +121,41 @@ class Contributions(Document):
                         column.max = val
 
                 except DoesNotExist:
-                    column = Column(name=name, unit=value["unit"])
+                    column = Column(path=path, unit=value["unit"])
                     column.min = column.max = value["value"]
-                    print(name, column)
                     project.columns.append(column)
+
+            elif isinstance(value, str) and key not in quantity_keys:
+                column = Column(path=path)
+                project.columns.append(column)
 
             return True
 
-        print("update_columns...")
         remap(document.data, visit=update_columns, enter=enter)
 
         # TODO catch if no structures/tables available anymore
-        for name in ["structures", "tables"]:
-            if getattr(document, name):
+        for path in ["structures", "tables"]:
+            if getattr(document, path):
                 try:
-                    column = project.columns.get(name=name)
+                    column = project.columns.get(path=path)
                 except DoesNotExist:
-                    column = Column(name=name)
+                    column = Column(path=path)
                     project.columns.append(column)
 
         project.save()
-        return  # TODO remove
+        document.last_modified = datetime.utcnow()
 
         # generate notebook for this contribution
+        from mpcontribs.api.notebooks.document import Notebooks
+
         cells = [
             nbf.new_code_cell(
                 'client = Client(headers={"X-Consumer-Groups": "admin"})'
             ),
             nbf.new_markdown_cell("## Project"),
-            nbf.new_code_cell(f'client.get_project("{project.name}").pretty()'),
+            nbf.new_code_cell(
+                f'client.get_project("{document.project.name}").pretty()'
+            ),
             nbf.new_markdown_cell("## Contribution"),
             nbf.new_code_cell(f'client.get_contribution("{document.id}").pretty()'),
         ]
@@ -160,21 +174,22 @@ class Contributions(Document):
                     nbf.new_code_cell(f'client.get_structure("{structure.id}")')
                 )
 
-        # TODO execute notebook
-        # ws = connect_kernel()
-        # for cell in cells:
-        #     if cell["cell_type"] == "code":
-        #         cell["outputs"] = execute(ws, str(document.id), cell["source"])
+        ws = connect_kernel()
+        for cell in cells:
+            if cell["cell_type"] == "code":
+                cell["outputs"] = execute(ws, str(document.id), cell["source"])
 
-        # ws.close()
-        cells[1] = nbf.new_code_cell("client = Client('<your-api-key-here>')")
+        ws.close()
+        cells[0] = nbf.new_code_cell("client = Client('<your-api-key-here>')")
         doc = deepcopy(seed_nb)
         doc["cells"] += cells
         nb = Notebooks(**doc)
         nb.save()
-        document.notebook = nb
+        if document.notebook is not None:
+            document.notebook.delete()
 
-        document.last_modified = datetime.utcnow()
+        document.notebook = nb
+        # TODO how to not trigger pre_save again?
 
     @classmethod
     def pre_delete(cls, sender, document, **kwargs):
