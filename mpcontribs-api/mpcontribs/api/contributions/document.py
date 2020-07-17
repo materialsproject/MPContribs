@@ -88,6 +88,9 @@ class Contributions(Document):
 
     @classmethod
     def pre_save_post_validation(cls, sender, document, **kwargs):
+        if kwargs.get("skip"):
+            return
+
         from mpcontribs.api.projects.document import Column
 
         # set formula field
@@ -145,8 +148,16 @@ class Contributions(Document):
         project.save()
         document.last_modified = datetime.utcnow()
 
+    @classmethod
+    def post_save(cls, sender, document, **kwargs):
+        if kwargs.get("skip"):
+            return
+
         # generate notebook for this contribution
         from mpcontribs.api.notebooks.document import Notebooks
+
+        if document.notebook is not None:
+            document.notebook.delete()
 
         cells = [
             nbf.new_code_cell(
@@ -183,13 +194,8 @@ class Contributions(Document):
         cells[0] = nbf.new_code_cell("client = Client('<your-api-key-here>')")
         doc = deepcopy(seed_nb)
         doc["cells"] += cells
-        nb = Notebooks(**doc)
-        nb.save()
-        if document.notebook is not None:
-            document.notebook.delete()
-
-        document.notebook = nb
-        # TODO how to not trigger pre_save again?
+        document.notebook = Notebooks(**doc).save()
+        document.save(signal_kwargs={"skip": True})
 
     @classmethod
     def pre_delete(cls, sender, document, **kwargs):
@@ -202,4 +208,5 @@ class Contributions(Document):
 signals.pre_save_post_validation.connect(
     Contributions.pre_save_post_validation, sender=Contributions
 )
+signals.post_save.connect(Contributions.post_save, sender=Contributions)
 signals.pre_delete.connect(Contributions.pre_delete, sender=Contributions)
