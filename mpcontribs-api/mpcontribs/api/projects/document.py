@@ -16,19 +16,11 @@ from mongoengine.fields import (
 from mpcontribs.api import send_email, sns_client, valid_key, valid_dict
 
 
-class NullURLField(URLField):
-    def validate(self, value):
-        if value == "":
-            self.error("URL can't be empty string.")
-        elif value is not None:
-            super().validate(value)
-
-
 class Column(EmbeddedDocument):
     path = StringField(required=True, help_text="column path in dot-notation")
-    unit = StringField(null=True, help_text="column unit")
-    min = FloatField(null=True, help_text="column minimum")
-    max = FloatField(null=True, help_text="column maximum")
+    unit = StringField(required=True, default="NaN", help_text="column unit")
+    min = FloatField(required=True, default=float("nan"), help_text="column minimum")
+    max = FloatField(required=True, default=float("nan"), help_text="column maximum")
 
 
 class Reference(EmbeddedDocument):
@@ -39,7 +31,7 @@ class Reference(EmbeddedDocument):
         help_text="label",
         validation=valid_key,
     )
-    url = NullURLField(required=True, null=True, help_text="URL")
+    url = URLField(required=True, help_text="URL")
 
 
 class Projects(Document):
