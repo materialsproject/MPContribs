@@ -1,19 +1,15 @@
 # -*- coding: utf-8 -*-
 import os
 import flask_mongorest
-from marshmallow.utils import get_value
 from mongoengine.queryset import DoesNotExist
 from flask import Blueprint, current_app, url_for
-from flask_mongorest.exceptions import UnknownFieldError
 from flask_mongorest.resources import Resource
 from flask_mongorest import operators as ops
 from flask_mongorest.methods import Fetch, Create, Delete, Update, BulkFetch
 from werkzeug.exceptions import Unauthorized
 from itsdangerous import SignatureExpired
 from mpcontribs.api.core import SwaggerView
-from mpcontribs.api.projects.document import Projects, Column
-from mpcontribs.api.contributions.document import Contributions
-from mpcontribs.api.structures.document import Structures
+from mpcontribs.api.projects.document import Projects, Column, Reference
 
 templates = os.path.join(os.path.dirname(flask_mongorest.__file__), "templates")
 projects = Blueprint("projects", __name__, template_folder=templates)
@@ -23,9 +19,13 @@ class ColumnResource(Resource):
     document = Column
 
 
+class ReferenceResource(Resource):
+    document = Reference
+
+
 class ProjectsResource(Resource):
     document = Projects
-    related_resources = {"columns": ColumnResource}
+    related_resources = {"columns": ColumnResource, "references": ReferenceResource}
     filters = {
         "name": [ops.In, ops.Exact, ops.IContains],
         "is_public": [ops.Boolean],
@@ -50,7 +50,14 @@ class ProjectsResource(Resource):
 
     @staticmethod
     def get_optional_fields():
-        return ["long_title", "authors", "description", "urls", "other", "columns"]
+        return [
+            "long_title",
+            "authors",
+            "description",
+            "references",
+            "other",
+            "columns",
+        ]
 
 
 class ProjectsView(SwaggerView):

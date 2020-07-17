@@ -82,11 +82,13 @@ class ContributionsResource(Resource):
             if fmt not in ["bootstrap", "bulma"]:
                 raise UnknownFieldError
 
+            project = obj.project.fetch()
             ctx = {"cid", str(obj.id)}
-            ctx["descriptions"] = obj.project.description.strip().split(".", 1)
-            authors = [a.strip() for a in obj.project.authors.split(",") if a]
+            ctx["references"] = project.references
+            ctx["descriptions"] = project.description.strip().split(".", 1)
+            authors = [a.strip() for a in project.authors.split(",") if a]
             ctx["authors"] = {"main": authors[0], "etal": authors[1:]}
-            ctx["landing_page"] = f"/{obj.project.id}/"
+            ctx["landing_page"] = f"/{project.id}/"
             ctx["more"] = f"/{obj.id}"
             ctx["data"] = j2h.convert(
                 json=remap(obj.data, visit=visit),

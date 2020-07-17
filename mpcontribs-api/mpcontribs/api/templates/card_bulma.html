@@ -1,11 +1,11 @@
 <div name="user_contribs">
     <div class="card has-background-light">
         <div class="card-content">
-            {% if urls %}
+            {% if references %}
             <nav class="breadcrumb has-bullet-separator is-size-7 is-marginless">
                 <ul>
-                    {% for l, u in urls.items() %}
-                    <li><a href="{{u}}" target="_blank" rel="noopener noreferrer">{{l}}</a></li>
+                    {% for ref in references %}
+                    <li><a href="{{ref.url}}" target="_blank" rel="noopener noreferrer">{{ref.label}}</a></li>
                     {% endfor %}
                 </ul>
             </nav>

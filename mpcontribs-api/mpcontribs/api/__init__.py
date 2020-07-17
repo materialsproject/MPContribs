@@ -67,19 +67,21 @@ def enter(path, key, value):
     return default_enter(path, key, value)
 
 
+def valid_key(key):
+    for char in key:
+        if char in invalidChars:
+            raise ValidationError(f"invalid character {char} in {key}")
+
+
 def visit(path, key, value):
     if key.startswith(" ") or key.endswith(" "):
         raise ValidationError(f"Strip whitespace in {key}")
 
     dot_path = delimiter.join(list(path) + [key])
-
     if len(path) + 1 > max_depth + int(key in quantity_keys):
         raise ValidationError(f"max nesting ({max_depth}) exceeded for {dot_path}")
 
-    for char in key:
-        if char in invalidChars:
-            raise ValidationError(f"invalid character {char} in {dot_path}")
-
+    valid_key(key)
     return True
 
 

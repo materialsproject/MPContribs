@@ -1,15 +1,6 @@
 An application for a new MPContribs project has been submitted with the following information:
 
-{% for k in doc %}
-{% if k == 'urls' %}
-{{k}}:
-{% for a in doc[k] %}
-    {{a}}: {{doc[k][a]}}
-{% endfor %}
-{% else %}
-{{k}}: {{doc[k]}}
-{% endif %}
-{% endfor %}
+{{doc}}
 
 Please use the link below to approve or deny this request within {{hours}} hours or it will be deleted. A notification
 email with your decision will automatically be sent to the user.

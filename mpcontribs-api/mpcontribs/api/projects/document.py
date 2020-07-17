@@ -1,39 +1,20 @@
 # -*- coding: utf-8 -*-
 import os
+import yaml
 from flask import current_app, render_template, url_for
 from flask_mongoengine import Document
-from mongoengine import EmbeddedDocument, ValidationError
+from mongoengine import EmbeddedDocument
 from mongoengine.fields import (
     StringField,
     BooleanField,
     DictField,
     URLField,
-    MapField,
     EmailField,
     FloatField,
     EmbeddedDocumentListField,
 )
 from mongoengine import signals
-from mpcontribs.api import send_email, sns_client, invalidChars, valid_dict
-
-
-def valid_urls(urls):
-    nurls = sum(1 for v in urls.values() if v is not None)
-    if nurls > 5 or len(urls) > 5:
-        raise ValidationError("too many URL references (max. 5)")
-
-    if nurls < 1:
-        raise ValidationError("at least one URL required")
-
-    for label in urls.keys():
-        len_label = len(label)
-        if len_label < 3 or len_label > 8:
-            raise ValidationError(
-                f"length of URL label {label} should be 3-8 characters"
-            )
-        for char in label:
-            if char in invalidChars:
-                raise ValidationError(f"invalid character '{char}' in {label}")
+from mpcontribs.api import send_email, sns_client, valid_key, valid_dict
 
 
 class NullURLField(URLField):
@@ -49,6 +30,17 @@ class Column(EmbeddedDocument):
     unit = StringField(null=True, help_text="column unit")
     min = FloatField(null=True, help_text="column minimum")
     max = FloatField(null=True, help_text="column maximum")
+
+
+class Reference(EmbeddedDocument):
+    label = StringField(
+        required=True,
+        min_length=3,
+        max_length=8,
+        help_text="label",
+        validation=valid_key,
+    )
+    url = NullURLField(required=True, null=True, help_text="URL")
 
 
 class Projects(Document):
@@ -86,11 +78,12 @@ class Projects(Document):
         required=True,
         help_text="brief description of the project",
     )
-    urls = MapField(
-        NullURLField(null=True),
+    references = EmbeddedDocumentListField(
+        Reference,
         required=True,
-        validation=valid_urls,
-        help_text="list of URLs for references (minimum one URL required)",
+        min_length=1,
+        max_length=5,
+        help_text="list of references",
     )
     other = DictField(validation=valid_dict, null=True, help_text="other information")
     owner = EmailField(
@@ -122,8 +115,11 @@ class Projects(Document):
             )
             subject = f'New project "{document.name}"'
             hours = int(current_app.config["USTS_MAX_AGE"] / 3600)
+            doc_yaml = yaml.dump(
+                document.to_mongo().to_dict(), indent=4, sort_keys=False
+            )
             html = render_template(
-                "admin_email.html", doc=document, link=link, hours=hours
+                "admin_email.html", doc=doc_yaml, link=link, hours=hours
             )
             send_email(admin_topic, subject, html)
             resp = sns_client.create_topic(

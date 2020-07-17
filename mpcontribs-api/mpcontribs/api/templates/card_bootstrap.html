@@ -3,10 +3,10 @@
         <div class="panel-heading">
             <h4>
                 <a href="{{ landing_page }}">{{ title }}</a>
-                {% if urls %}
+                {% if references %}
                 <sup style="font-size: 50%; vertical-align: top;">
-                {% for k, v in urls.items() %}
-                <a href="{{ v }}" target="_blank" rel="noopener noreferrer">[{{k}}]</a>
+                {% for ref in references %}
+                <a href="{{ ref.url }}" target="_blank" rel="noopener noreferrer">[{{ref.label}}]</a>
                 {% endfor %}
                 </sup>
                 {% endif %}
