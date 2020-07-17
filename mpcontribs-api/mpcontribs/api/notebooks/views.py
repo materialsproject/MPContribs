@@ -3,6 +3,7 @@ import os
 import flask_mongorest
 
 from flask import Blueprint
+from flask_mongorest import operators as ops
 from flask_mongorest.methods import Fetch, BulkFetch
 from flask_mongorest.resources import Resource
 
@@ -15,7 +16,12 @@ notebooks = Blueprint("notebooks", __name__, template_folder=templates)
 
 class NotebooksResource(Resource):
     document = Notebooks
-    fields = ["nbformat", "nbformat_minor", "metadata", "cells"]
+    filters = {"id": [ops.In, ops.Exact]}
+    fields = ["id", "nbformat", "nbformat_minor", "metadata", "cells"]
+    allowed_ordering = ["name"]
+    paginate = True
+    default_limit = 10
+    max_limit = 100
 
 
 class NotebooksView(SwaggerView):

@@ -11,7 +11,7 @@ from flask_mongorest.methods import Fetch, Create, Delete, Update, BulkFetch
 from werkzeug.exceptions import Unauthorized
 from itsdangerous import SignatureExpired
 from mpcontribs.api.core import SwaggerView
-from mpcontribs.api.projects.document import Projects
+from mpcontribs.api.projects.document import Projects, Column
 from mpcontribs.api.contributions.document import Contributions
 from mpcontribs.api.structures.document import Structures
 
@@ -19,10 +19,15 @@ templates = os.path.join(os.path.dirname(flask_mongorest.__file__), "templates")
 projects = Blueprint("projects", __name__, template_folder=templates)
 
 
+class ColumnResource(Resource):
+    document = Column
+
+
 class ProjectsResource(Resource):
     document = Projects
+    related_resources = {"columns": ColumnResource}
     filters = {
-        "project": [ops.In, ops.Exact, ops.IContains],
+        "name": [ops.In, ops.Exact, ops.IContains],
         "is_public": [ops.Boolean],
         "title": [ops.IContains],
         "long_title": [ops.IContains],
@@ -33,14 +38,14 @@ class ProjectsResource(Resource):
         "unique_identifiers": [ops.Boolean],
     }
     fields = [
-        "project",
+        "name",
         "is_public",
         "title",
         "owner",
         "is_approved",
         "unique_identifiers",
     ]
-    allowed_ordering = ["project", "is_public", "title"]
+    allowed_ordering = ["name", "is_public", "title"]
     paginate = False
 
     @staticmethod
@@ -65,7 +70,7 @@ class ProjectsView(SwaggerView):
         # project already created at this point -> count-1 and revert
         nr_projects = Projects.objects(owner=obj.owner).count() - 1
         if nr_projects > 2:
-            Projects.objects(project=obj.project).delete()
+            Projects.objects(name=obj.name).delete()
             raise Unauthorized(f"{obj.owner} already owns {nr_projects} projects.")
 
         return True
@@ -82,7 +87,7 @@ def applications(token, action):
         return f"signature for {owner} of {project} expired."
 
     try:
-        obj = Projects.objects.get(project=project, owner=owner, is_approved=False)
+        obj = Projects.objects.get(name=project, owner=owner, is_approved=False)
     except DoesNotExist:
         return f"{project} for {owner} already approved or denied."
 

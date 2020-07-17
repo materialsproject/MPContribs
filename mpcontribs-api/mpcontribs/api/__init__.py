@@ -10,19 +10,19 @@ from flask import Flask, current_app
 from flask_marshmallow import Marshmallow
 from flask_mongoengine import MongoEngine
 from flask_mongorest import register_class
-from flask_mongorest.exceptions import ValidationError
 from flask_log import Logging
 from flask_sse import sse
 from flask_compress import Compress
 from flasgger.base import Swagger
-from marshmallow.utils import get_value
+
+from mongoengine import ValidationError
+from mongoengine.base.datastructures import BaseDict
 from itsdangerous import URLSafeTimedSerializer
 from pint import UnitRegistry
 from pint.unit import UnitDefinition
 from pint.converters import ScaleConverter
-from fdict import fdict
 from string import punctuation
-from decimal import Decimal
+from boltons.iterutils import remap, default_enter
 
 
 ureg = UnitRegistry(
@@ -42,7 +42,7 @@ ureg.define("bohr_magneton = e * hbar / (2 * m_e) = µᵇ = µ_B = mu_B")
 ureg.define("electron_mass = 9.1093837015e-31 kg = mₑ = m_e")
 
 Q_ = ureg.Quantity
-delimiter, max_depth = ".", 2
+delimiter, max_depth = ".", 3
 max_dgts = 6
 invalidChars = set(punctuation.replace("|", "").replace("*", ""))
 invalidChars.add(" ")
@@ -61,81 +61,34 @@ logger = logging.getLogger("app")
 sns_client = boto3.client("sns")
 
 
-def is_float(s):
-    try:
-        float(s)
-    except ValueError:
-        return False
+def enter(path, key, value):
+    if isinstance(value, BaseDict):
+        return dict(), value.items()
+    return default_enter(path, key, value)
+
+
+def visit(path, key, value):
+    if key.startswith(" ") or key.endswith(" "):
+        raise ValidationError(f"Strip whitespace in {key}")
+
+    dot_path = delimiter.join(list(path) + [key])
+
+    if len(path) + 1 > max_depth + int(key in quantity_keys):
+        raise ValidationError(f"max nesting ({max_depth}) exceeded for {dot_path}")
+
+    for char in key:
+        if char in invalidChars:
+            raise ValidationError(f"invalid character {char} in {dot_path}")
+
     return True
 
 
-def validate_data(doc, sender=None, project=None):
-    d = fdict(doc, delimiter=delimiter)
-
-    for key in list(d.keys()):
-        key = key.strip()
-        nodes = key.split(delimiter)
-        is_quantity_key = int(nodes[-1] in quantity_keys)
-
-        # TODO raise error if quantity_keys used in nodes
-        # NOTE below doesn't work on second update
-        # reserved_keys = set(nodes).intersection(quantity_keys)
-        # if reserved_keys:
-        #    raise ValidationError(
-        #        {"error": f"Key `{reserved_keys.pop()}` is reserved."}
-        #    )
-
-        if len(nodes) > max_depth + is_quantity_key:
-            raise ValidationError(
-                {"error": f"max nesting ({max_depth}) exceeded for {key}"}
-            )
-
-        if is_quantity_key:
-            continue
-
-        for node in nodes:
-            for char in node:
-                if char in invalidChars:
-                    raise ValidationError(
-                        {"error": f"invalid character '{char}' in {node} ({key})"}
-                    )
-
-        value = str(d[key])
-        words = value.split()
-        try_quantity = bool(len(words) == 2 and is_float(words[0]))
-        if try_quantity or isinstance(d[key], (int, float)):
-            try:
-                q = Q_(value).to_compact()
-                if not q.check(0):
-                    q.ito_reduced_units()
-                if sender:
-                    _key = key.replace(".", "__")
-                    query = {"project": project, f"data__{_key}__exists": True}
-                    sample = (
-                        sender.objects.only(f"data.{key}.unit").filter(**query).first()
-                    )
-                    if sample:
-                        q.ito(get_value(sample["data"], f"{key}.unit"))
-                v = Decimal(str(q.magnitude))
-                vt = v.as_tuple()
-                if vt.exponent < 0:
-                    dgts = len(vt.digits)
-                    dgts = max_dgts if dgts > max_dgts else dgts
-                    v = f"{v:.{dgts}g}"
-                    if try_quantity:
-                        q = Q_(f"{v} {q.units}")
-            except Exception as ex:
-                raise ValidationError({"error": str(ex)})
-            d[key] = {"display": str(q), "value": q.magnitude, "unit": str(q.units)}
-
-    return d.to_dict_nested()
+def valid_dict(dct):
+    remap(dct, visit=visit, enter=enter)
 
 
 def send_email(to, subject, template):
-    try:
-        sns_client.publish(TopicArn=to, Message=template, Subject=subject)
-    except Exception as ex:
-        raise ValidationError({"error": str(ex)})
+    sns_client.publish(TopicArn=to, Message=template, Subject=subject)
 
 
 def get_collections(db):

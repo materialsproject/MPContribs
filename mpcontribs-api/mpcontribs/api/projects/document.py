@@ -2,8 +2,7 @@
 import os
 from flask import current_app, render_template, url_for
 from flask_mongoengine import Document
-from mongoengine import EmbeddedDocument
-from flask_mongorest.exceptions import ValidationError
+from mongoengine import EmbeddedDocument, ValidationError
 from mongoengine.fields import (
     StringField,
     BooleanField,
@@ -15,7 +14,26 @@ from mongoengine.fields import (
     EmbeddedDocumentListField,
 )
 from mongoengine import signals
-from mpcontribs.api import send_email, validate_data, invalidChars, sns_client
+from mpcontribs.api import send_email, sns_client, invalidChars, valid_dict
+
+
+def valid_urls(urls):
+    nurls = sum(1 for v in urls.values() if v is not None)
+    if nurls > 5 or len(urls) > 5:
+        raise ValidationError("too many URL references (max. 5)")
+
+    if nurls < 1:
+        raise ValidationError("at least one URL required")
+
+    for label in urls.keys():
+        len_label = len(label)
+        if len_label < 3 or len_label > 8:
+            raise ValidationError(
+                f"length of URL label {label} should be 3-8 characters"
+            )
+        for char in label:
+            if char in invalidChars:
+                raise ValidationError(f"invalid character '{char}' in {label}")
 
 
 class NullURLField(URLField):
@@ -28,14 +46,14 @@ class NullURLField(URLField):
 
 class Column(EmbeddedDocument):
     name = StringField(required=True, help_text="column name in dot-notation")
-    unit = StringField(required=True, null=True, default=None, help_text="column unit")
-    min = FloatField(required=True, null=True, default=None, help_text="column minimum")
-    max = FloatField(required=True, null=True, default=None, help_text="column maximum")
+    unit = StringField(null=True, help_text="column unit")
+    min = FloatField(null=True, help_text="column minimum")
+    max = FloatField(null=True, help_text="column maximum")
 
 
 class Projects(Document):
     __project_regex__ = "^[a-zA-Z0-9_]{3,31}$"
-    project = StringField(
+    name = StringField(
         min_length=3,
         max_length=30,
         regex=__project_regex__,
@@ -71,11 +89,12 @@ class Projects(Document):
     urls = MapField(
         NullURLField(null=True),
         required=True,
+        validation=valid_urls,
         help_text="list of URLs for references (minimum one URL required)",
     )
-    other = DictField(help_text="other information", null=True)
+    other = DictField(validation=valid_dict, null=True, help_text="other information")
     owner = EmailField(
-        required=True, unique_with="project", help_text="owner / corresponding email"
+        required=True, unique_with="name", help_text="owner / corresponding email"
     )
     is_approved = BooleanField(
         required=True, default=False, help_text="project approved?"
@@ -95,20 +114,20 @@ class Projects(Document):
         admin_topic = current_app.config["MAIL_TOPIC"]
         if kwargs.get("created"):
             ts = current_app.config["USTS"]
-            email_project = [document.owner, document.project]
+            email_project = [document.owner, document.name]
             token = ts.dumps(email_project)
             scheme = "http" if current_app.config["DEBUG"] else "https"
             link = url_for(
                 "projects.applications", token=token, _scheme=scheme, _external=True
             )
-            subject = f'New project "{document.project}"'
+            subject = f'New project "{document.name}"'
             hours = int(current_app.config["USTS_MAX_AGE"] / 3600)
             html = render_template(
                 "admin_email.html", doc=document, link=link, hours=hours
             )
             send_email(admin_topic, subject, html)
             resp = sns_client.create_topic(
-                Name=f"mpcontribs_{document.project}",
+                Name=f"mpcontribs_{document.name}",
                 Attributes={"DisplayName": f"MPContribs {document.title}"},
             )
             sns_client.subscribe(
@@ -117,7 +136,7 @@ class Projects(Document):
         else:
             set_keys = document._delta()[0].keys()
             if "is_approved" in set_keys and document.is_approved:
-                subject = f'Your project "{document.project}" has been approved'
+                subject = f'Your project "{document.name}" has been approved'
                 if current_app.config["DEBUG"]:
                     portal = "http://localhost:" + os.environ["PORTAL_PORT"]
                 else:
@@ -129,7 +148,7 @@ class Projects(Document):
                     host=portal,
                 )
                 topic_arn = ":".join(
-                    admin_topic.split(":")[:-1] + ["mpcontribs_" + document.project]
+                    admin_topic.split(":")[:-1] + ["mpcontribs_" + document.name]
                 )
                 send_email(topic_arn, subject, html)
             if set_keys:
@@ -146,36 +165,16 @@ class Projects(Document):
     def post_delete(cls, sender, document, **kwargs):
         admin_email = current_app.config["MAIL_DEFAULT_SENDER"]
         admin_topic = current_app.config["MAIL_TOPIC"]
-        subject = f'Your project "{document.project}" has been deleted'
+        subject = f'Your project "{document.name}" has been deleted'
         html = render_template(
             "owner_email.html", approved=False, admin_email=admin_email
         )
         topic_arn = ":".join(
-            admin_topic.split(":")[:-1] + ["mpcontribs_" + document.project]
+            admin_topic.split(":")[:-1] + ["mpcontribs_" + document.name]
         )
         send_email(topic_arn, subject, html)
         sns_client.delete_topic(TopicArn=topic_arn)
 
-    @classmethod
-    def pre_save_post_validation(cls, sender, document, **kwargs):
-        document.other = validate_data(document.other)
-        if len(document.urls) > 5:
-            raise ValidationError({"error": f"too many URL references (max. 5)"})
-        for label in document.urls.keys():
-            len_label = len(label)
-            if len_label < 3 or len_label > 8:
-                raise ValidationError(
-                    {"error": f"length of URL label {label} should be 3-8 characters"}
-                )
-            for char in label:
-                if char in invalidChars:
-                    raise ValidationError(
-                        {"error": f"invalid character '{char}' in {label}"}
-                    )
-
 
 signals.post_save.connect(Projects.post_save, sender=Projects)
 signals.post_delete.connect(Projects.post_delete, sender=Projects)
-signals.pre_save_post_validation.connect(
-    Projects.pre_save_post_validation, sender=Projects
-)
