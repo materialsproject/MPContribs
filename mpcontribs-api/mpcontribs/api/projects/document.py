@@ -18,9 +18,9 @@ from mpcontribs.api import send_email, sns_client, valid_key, valid_dict
 
 class Column(EmbeddedDocument):
     path = StringField(required=True, help_text="column path in dot-notation")
-    unit = StringField(required=True, default="NaN", help_text="column unit")
     min = FloatField(required=True, default=float("nan"), help_text="column minimum")
     max = FloatField(required=True, default=float("nan"), help_text="column maximum")
+    unit = StringField(required=True, default="NaN", help_text="column unit")
 
 
 class Reference(EmbeddedDocument):

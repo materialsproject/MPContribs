@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import operator
 from math import isnan
 from datetime import datetime
 from nbformat import v4 as nbf
@@ -11,7 +10,7 @@ from mongoengine.queryset import DoesNotExist
 from mongoengine.fields import StringField, BooleanField, DictField
 from mongoengine.fields import LazyReferenceField, ReferenceField
 from mongoengine.fields import DateTimeField, ListField
-from marshmallow.utils import get_value
+from marshmallow.utils import get_value, _Missing
 from boltons.iterutils import remap
 from decimal import Decimal
 from pint.errors import DimensionalityError
@@ -31,65 +30,15 @@ def is_float(s):
     return True
 
 
-def make_quantities(path, key, value):
-    if key not in quantity_keys and isinstance(value, (str, int, float)):
-        str_value = str(value)
-        words = str_value.split()
-        try_quantity = bool(len(words) == 2 and is_float(words[0]))
-
-        if try_quantity or is_float(value):
-            q = Q_(str_value).to_compact()
-
-            if not q.check(0):
-                q.ito_reduced_units()
-
-            v = Decimal(str(q.magnitude))
-            vt = v.as_tuple()
-
-            if vt.exponent < 0:
-                dgts = len(vt.digits)
-                dgts = max_dgts if dgts > max_dgts else dgts
-                v = f"{v:.{dgts}g}"
-
-                if try_quantity:
-                    q = Q_(f"{v} {q.units}")
-
-            value = {"display": str(q), "value": q.magnitude, "unit": str(q.units)}
-
-    return key, value
-
-
-def set_min_max(sender, column, val=None):
-    # NOTE val is set to incoming value if column (previous min/max) exists
-    # can't filter for project when using wildcard index data.$**
+def get_min_max(sender, path):
+    # NOTE can't filter for project when using wildcard index data.$**
     # https://docs.mongodb.com/manual/core/index-wildcard/#wildcard-index-query-sort-support
-    field = f"{column.path}{delimiter}value"
+    field = f"{path}{delimiter}value"
     qs = sender.objects.only(field).order_by(field)
-    ndocs = qs.count()
-
-    if val is None:
-        values = [get_value(doc, field) for doc in qs]
-
-    for typ in ["min", "max"]:
-        if val is None:
-            if ndocs < 1:
-                # just deleted last contribution with this column
-                print("column delete?")
-                break
-
-            # just deleted a contribution -> reset column with new min/max
-            val = values[0] if typ == "min" else values[-1]
-
-        comp = getattr(operator, "lt" if typ == "min" else "gt")
-        if ndocs == 1:
-            # updating the only contribution
-            setattr(column, typ, val)
-        else:
-            current = getattr(column, typ)
-            if comp(val, current):
-                print(f"set {column} {typ}: {val} {comp} {current}")
-                setattr(column, typ, val)
-                break
+    values = [get_value(doc, field) for doc in qs]
+    values = [v for v in values if not isinstance(v, _Missing)]
+    print("values", path, values)
+    return (values[0], values[-1]) if len(values) else (None, None)
 
 
 class Contributions(Document):
@@ -101,11 +50,11 @@ class Contributions(Document):
     is_public = BooleanField(
         required=True, default=False, help_text="public/private contribution"
     )
-    data = DictField(
-        default={}, validation=valid_dict, help_text="simple free-form data"
-    )
     last_modified = DateTimeField(
         required=True, default=datetime.utcnow, help_text="time of last modification"
+    )
+    data = DictField(
+        default={}, validation=valid_dict, help_text="simple free-form data"
     )
     # TODO in flask-mongorest: also get all ReferenceFields when download requested
     structures = ListField(ReferenceField("Structures"), default=list)
@@ -128,16 +77,70 @@ class Contributions(Document):
         if kwargs.get("skip"):
             return
 
-        from mpcontribs.api.projects.document import Column
-
         # set formula field
         if hasattr(document, "formula"):
             formulae = current_app.config["FORMULAE"]
             document.formula = formulae.get(document.identifier, document.identifier)
 
+        # project is LazyReferenceField
+        project = document.project.fetch()
+
         # run data through Pint Quantities and save as dicts
         # TODO set maximum number of columns
+        def make_quantities(path, key, value):
+            if key not in quantity_keys and isinstance(value, (str, int, float)):
+                str_value = str(value)
+                words = str_value.split()
+                try_quantity = bool(len(words) == 2 and is_float(words[0]))
+
+                if try_quantity or is_float(value):
+                    field = delimiter.join(["data"] + list(path) + [key])
+                    q = Q_(str_value).to_compact()
+
+                    if not q.check(0):
+                        q.ito_reduced_units()
+
+                    # ensure that the same units are used across contributions
+                    try:
+                        column = project.columns.get(path=field)
+                        if column.unit != str(q.units):
+                            q.ito(column.unit)
+                    except DoesNotExist:
+                        pass  # column doesn't exist yet (generated in post_save)
+                    except DimensionalityError:
+                        raise ValueError(
+                            f"Can't convert [{q.units}] to [{column.unit}]!"
+                        )
+
+                    v = Decimal(str(q.magnitude))
+                    vt = v.as_tuple()
+
+                    if vt.exponent < 0:
+                        dgts = len(vt.digits)
+                        dgts = max_dgts if dgts > max_dgts else dgts
+                        v = f"{v:.{dgts}g}"
+
+                        if try_quantity:
+                            q = Q_(f"{v} {q.units}")
+
+                    value = {
+                        "display": str(q),
+                        "value": q.magnitude,
+                        "unit": str(q.units),
+                    }
+
+            return key, value
+
         document.data = remap(document.data, visit=make_quantities, enter=enter)
+
+    @classmethod
+    def post_save(cls, sender, document, **kwargs):
+        if kwargs.get("skip"):
+            return
+
+        # avoid circular imports
+        from mpcontribs.api.projects.document import Column
+        from mpcontribs.api.notebooks.document import Notebooks
 
         # project is LazyReferenceField
         project = document.project.fetch()
@@ -149,31 +152,19 @@ class Contributions(Document):
             is_text = bool(
                 not is_quantity and isinstance(value, str) and key not in quantity_keys
             )
-
             if is_quantity or is_text:
                 try:
                     column = project.columns.get(path=path)
-
                     if is_quantity:
-                        q = Q_(value["display"])
-                        # ensure that the same units are used across contributions
-                        if column.unit != value["unit"]:
-                            try:
-                                q.ito(column.unit)
-                            except DimensionalityError:
-                                raise ValueError(
-                                    f"Can't convert {q.units} to {column.unit}!"
-                                )
-
-                        set_min_max(sender, column, val=q.magnitude)
+                        column.min, column.max = get_min_max(sender, path)
 
                 except DoesNotExist:
                     column = Column(path=path)
-
                     if is_quantity:
                         column.unit = value["unit"]
                         column.min = column.max = value["value"]
 
+                    print("append", column.path)
                     project.columns.append(column)
 
             return True
@@ -193,18 +184,9 @@ class Contributions(Document):
                     column = Column(path=path)
                     project.columns.append(column)
 
-        # save columns in project and set last modified
         project.save()
-        document.last_modified = datetime.utcnow()
-
-    @classmethod
-    def post_save(cls, sender, document, **kwargs):
-        if kwargs.get("skip"):
-            return
 
         # generate notebook for this contribution
-        from mpcontribs.api.notebooks.document import Notebooks
-
         if document.notebook is not None:
             document.notebook.delete()
 
@@ -239,6 +221,7 @@ class Contributions(Document):
         doc = deepcopy(seed_nb)
         doc["cells"] += cells
         document.notebook = Notebooks(**doc).save()
+        document.last_modified = datetime.utcnow()
         document.save(signal_kwargs={"skip": True})
 
     @classmethod
@@ -262,12 +245,15 @@ class Contributions(Document):
     def post_delete(cls, sender, document, **kwargs):
         # reset columns field for project
         project = document.project.fetch()
-        columns = list(project.columns)
 
-        for idx, column in enumerate(columns):
-            print("reset", column.path)
+        for column in list(project.columns):
             if not isnan(column.min) and not isnan(column.max):
-                set_min_max(sender, column)
+                column.min, column.max = get_min_max(sender, column.path)
+                print("min_max", column.min, column.max)
+                if column.min is None and column.max is None:
+                    # just deleted last contribution with this column
+                    print("pop", column.path)
+                    project.update(pull__columns__path=column.path)
             else:
                 # use wildcard index if available -> single field query
                 qs = sender.objects.only(column.path)
@@ -276,8 +262,8 @@ class Contributions(Document):
                     qs = qs.filter(**{field: True})
 
                 if qs.count() < 1:
-                    print(f"pop {column.path}")
-                    project.columns.pop(idx)
+                    print("pop", column.path)
+                    project.update(pull__columns__path=column.path)
 
         project.save()
 
