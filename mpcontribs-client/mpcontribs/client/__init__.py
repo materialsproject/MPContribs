@@ -134,7 +134,11 @@ class Client(SwaggerClient):
 
     def get_contribution(self, cid):
         """Convenience function to get full contribution entry and display as HTML table"""
-        return Dict(self.contributions.get_entry(pk=cid, _fields=["_all"]).result())
+        fields = list(
+            self.swagger_spec.definitions.get("ContributionsSchema")._properties.keys()
+        )
+        fields.remove("notebook")
+        return Dict(self.contributions.get_entry(pk=cid, _fields=fields).result())
 
     def get_table(self, tid):
         """Convenience function to get full Pandas DataFrame for a table."""
