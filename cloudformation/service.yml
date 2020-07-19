@@ -21,34 +21,11 @@ Parameters:
     Type: String
   ServiceName:
     Type: String
-    Default: app
+    Default: MPContribs
     Description: A name for the service
   Tag:
     Type: String
     Description: short git tag used for image builds
-  ApiCname:
-    Type: String
-    Default: 'api.mpcontribs.org'
-    Description: CNAME for the API
-  ApiPort:
-    Type: String
-    Default: '5000'
-    Description: Port for the API
-  MpcontribsDbName:
-    Type: String
-    Default: 'mpcontribs'
-    Description: MPContribs DB name on Atlas (mongodb.com)
-  PortalCname:
-    Type: String
-    Default: 'portal.mpcontribs.org'
-    Description: CNAME for the Portal
-  PortalPort:
-    Type: String
-    Default: '8080'
-    Description: Port for the Portal
-  Trademark:
-    Type: String
-    Default: ''
   #DdApiKey:
   #  Type: String
 
@@ -89,8 +66,8 @@ Resources:
     Type: AWS::ECS::TaskDefinition
     Properties:
       Family: !Ref 'ServiceName'
-      Cpu: 2048
-      Memory: 4096
+      Cpu: 4096
+      Memory: 8192
       NetworkMode: awsvpc
       RequiresCompatibilities:
         - FARGATE
@@ -100,7 +77,7 @@ Resources:
       TaskRoleArn: !Ref 'AppServiceRole'
       ContainerDefinitions:
         - Name: api
-          MemoryReservation: 600
+          MemoryReservation: 250
           Image: !Join ['', [
             !Ref 'AWS::AccountId', '.dkr.ecr.', !Ref 'AWS::Region', '.amazonaws.com/',
             !Ref 'Repository', ':', !Ref 'PipelineName', '-', !Ref 'EnvironmentName', '-',
@@ -110,8 +87,7 @@ Resources:
             my.custom.label.service: !Join ['-', [
               !Ref 'PipelineName', !Ref 'EnvironmentName', !Ref 'ServiceName'
             ]]
-            com.datadoghq.ad.instances: !Sub |
-              [{"host": "%%host%%", "port": "${ApiPort}"}]
+            com.datadoghq.ad.instances: [{"host": "%%host%%", "port": "5000"}]
             com.datadoghq.ad.check_names: "[\"ecs_fargate\"]"
             com.datadoghq.ad.init_configs: "[{}]"
           DependsOn:
@@ -123,19 +99,19 @@ Resources:
             #  ContainerName: datadog
           Environment:
             - Name: MPCONTRIBS_API_HOST
-              Value: !Join [':', ['localhost', !Ref 'ApiPort']]
+              Value: "localhost:5000"
+            - Name: API_CNAME
+              Value: "api.mpcontribs.org"
+            - Name: API_PORT
+              Value: "5000"
+            - Name: PORTAL_CNAME
+              Value: "portal.mpcontribs.org"
+            - Name: PORTAL_PORT
+              Value: "8080"
+            - Name: MPCONTRIBS_DB_NAME
+              Value: "mpcontribs"
             - Name: MPCONTRIBS_MONGO_HOST
               Value: !Ref 'MongoHost'
-            - Name: API_CNAME
-              Value: !Ref 'ApiCname'
-            - Name: API_PORT
-              Value: !Ref 'ApiPort'
-            - Name: PORTAL_CNAME
-              Value: !Ref 'PortalCname'
-            - Name: PORTAL_PORT
-              Value: !Ref 'PortalPort'
-            - Name: MPCONTRIBS_DB_NAME
-              Value: !Ref 'MpcontribsDbName'
             - Name: AWS_ACCESS_KEY_ID
               Value: !Ref 'AwsAccessKeyId'
             - Name: AWS_SECRET_ACCESS_KEY
@@ -157,7 +133,306 @@ Resources:
             - Name: DD_TRACE_AGENT_HOSTNAME
               Value: localhost
           PortMappings:
-            - ContainerPort: !Ref 'ApiPort'
+            - ContainerPort: 5000
+          LogConfiguration:
+            LogDriver: 'awslogs'
+            Options:
+              awslogs-group: !Join ['-', [!Ref 'PipelineName', !Ref 'EnvironmentName', 'service', !Ref 'ServiceName']]
+              awslogs-region: !Ref 'AWS::Region'
+              awslogs-stream-prefix: !Ref 'ServiceName'
+        - Name: api-ml
+          MemoryReservation: 250
+          Image: !Join ['', [
+            !Ref 'AWS::AccountId', '.dkr.ecr.', !Ref 'AWS::Region', '.amazonaws.com/',
+            !Ref 'Repository', ':', !Ref 'PipelineName', '-', !Ref 'EnvironmentName', '-',
+            !Ref 'Tag', '-api'
+          ]]
+          DependsOn:
+            - Condition: START
+              ContainerName: orca
+            - Condition: START
+              ContainerName: gateway
+          Environment:
+            - Name: MPCONTRIBS_API_HOST
+              Value: "localhost:5002"
+            - Name: API_CNAME
+              Value: "ml-api.materialsproject.cloud"
+            - Name: API_PORT
+              Value: "5002"
+            - Name: PORTAL_CNAME
+              Value: "ml.materialsproject.cloud"
+            - Name: PORTAL_PORT
+              Value: "8082"
+            - Name: MPCONTRIBS_DB_NAME
+              Value: "mpcontribs-ml"
+            - Name: TRADEMARK
+              Value: "ML"
+            - Name: MPCONTRIBS_MONGO_HOST
+              Value: !Ref 'MongoHost'
+            - Name: AWS_ACCESS_KEY_ID
+              Value: !Ref 'AwsAccessKeyId'
+            - Name: AWS_SECRET_ACCESS_KEY
+              Value: !Ref 'AwsSecretAccessKey'
+            - Name: AWS_SNS_TOPIC_ARN
+              Value: !Ref 'SnsAdminTopicArn'
+            - Name: AWS_DEFAULT_REGION
+              Value: !Ref 'AWS::Region'
+            - Name: AWS_REGION
+              Value: !Ref 'AWS::Region'
+            - Name: S3_DOWNLOADS_BUCKET
+              Value: mpcontribs-downloads
+            - Name: REDIS_ADDRESS
+              Value:
+                Fn::ImportValue:
+                    !Join [':', [!Ref 'PipelineName', !Ref 'EnvironmentName', 'ElastiCacheAddress']]
+          PortMappings:
+            - ContainerPort: 5002
+          LogConfiguration:
+            LogDriver: 'awslogs'
+            Options:
+              awslogs-group: !Join ['-', [!Ref 'PipelineName', !Ref 'EnvironmentName', 'service', !Ref 'ServiceName']]
+              awslogs-region: !Ref 'AWS::Region'
+              awslogs-stream-prefix: !Ref 'ServiceName'
+        - Name: api-ls
+          MemoryReservation: 250
+          Image: !Join ['', [
+            !Ref 'AWS::AccountId', '.dkr.ecr.', !Ref 'AWS::Region', '.amazonaws.com/',
+            !Ref 'Repository', ':', !Ref 'PipelineName', '-', !Ref 'EnvironmentName', '-',
+            !Ref 'Tag', '-api'
+          ]]
+          DependsOn:
+            - Condition: START
+              ContainerName: orca
+            - Condition: START
+              ContainerName: gateway
+          Environment:
+            - Name: MPCONTRIBS_API_HOST
+              Value: "localhost:5003"
+            - Name: API_CNAME
+              Value: "lightsources-api.materialsproject.cloud"
+            - Name: API_PORT
+              Value: "5003"
+            - Name: PORTAL_CNAME
+              Value: "lightsources.materialsproject.cloud"
+            - Name: PORTAL_PORT
+              Value: "8083"
+            - Name: MPCONTRIBS_DB_NAME
+              Value: "mpcontribs-ls"
+            - Name: TRADEMARK
+              Value: "LS"
+            - Name: MPCONTRIBS_MONGO_HOST
+              Value: !Ref 'MongoHost'
+            - Name: AWS_ACCESS_KEY_ID
+              Value: !Ref 'AwsAccessKeyId'
+            - Name: AWS_SECRET_ACCESS_KEY
+              Value: !Ref 'AwsSecretAccessKey'
+            - Name: AWS_SNS_TOPIC_ARN
+              Value: !Ref 'SnsAdminTopicArn'
+            - Name: AWS_DEFAULT_REGION
+              Value: !Ref 'AWS::Region'
+            - Name: AWS_REGION
+              Value: !Ref 'AWS::Region'
+            - Name: S3_DOWNLOADS_BUCKET
+              Value: mpcontribs-downloads
+            - Name: REDIS_ADDRESS
+              Value:
+                Fn::ImportValue:
+                    !Join [':', [!Ref 'PipelineName', !Ref 'EnvironmentName', 'ElastiCacheAddress']]
+          PortMappings:
+            - ContainerPort: 5003
+          LogConfiguration:
+            LogDriver: 'awslogs'
+            Options:
+              awslogs-group: !Join ['-', [!Ref 'PipelineName', !Ref 'EnvironmentName', 'service', !Ref 'ServiceName']]
+              awslogs-region: !Ref 'AWS::Region'
+              awslogs-stream-prefix: !Ref 'ServiceName'
+        - Name: api-dev
+          MemoryReservation: 250
+          Image: !Join ['', [
+            !Ref 'AWS::AccountId', '.dkr.ecr.', !Ref 'AWS::Region', '.amazonaws.com/',
+            !Ref 'Repository', ':', !Ref 'PipelineName', '-', !Ref 'EnvironmentName', '-',
+            !Ref 'Tag', '-api'
+          ]]
+          DependsOn:
+            - Condition: START
+              ContainerName: orca
+            - Condition: START
+              ContainerName: gateway
+          Environment:
+            - Name: MPCONTRIBS_API_HOST
+              Value: "localhost:5004"
+            - Name: API_CNAME
+              Value: "dev-api.mpcontribs.org"
+            - Name: API_PORT
+              Value: "5004"
+            - Name: PORTAL_CNAME
+              Value: "dev-portal.mpcontribs.org"
+            - Name: PORTAL_PORT
+              Value: "8084"
+            - Name: MPCONTRIBS_DB_NAME
+              Value: "mpcontribs-dev"
+            - Name: TRADEMARK
+              Value: "DEV"
+            - Name: MPCONTRIBS_MONGO_HOST
+              Value: !Ref 'MongoHost'
+            - Name: AWS_ACCESS_KEY_ID
+              Value: !Ref 'AwsAccessKeyId'
+            - Name: AWS_SECRET_ACCESS_KEY
+              Value: !Ref 'AwsSecretAccessKey'
+            - Name: AWS_SNS_TOPIC_ARN
+              Value: !Ref 'SnsAdminTopicArn'
+            - Name: AWS_DEFAULT_REGION
+              Value: !Ref 'AWS::Region'
+            - Name: AWS_REGION
+              Value: !Ref 'AWS::Region'
+            - Name: S3_DOWNLOADS_BUCKET
+              Value: mpcontribs-downloads
+            - Name: REDIS_ADDRESS
+              Value:
+                Fn::ImportValue:
+                    !Join [':', [!Ref 'PipelineName', !Ref 'EnvironmentName', 'ElastiCacheAddress']]
+          PortMappings:
+            - ContainerPort: 5004
+          LogConfiguration:
+            LogDriver: 'awslogs'
+            Options:
+              awslogs-group: !Join ['-', [!Ref 'PipelineName', !Ref 'EnvironmentName', 'service', !Ref 'ServiceName']]
+              awslogs-region: !Ref 'AWS::Region'
+              awslogs-stream-prefix: !Ref 'ServiceName'
+        - Name: portal
+          MemoryReservation: 70
+          Image: !Join ['', [
+            !Ref 'AWS::AccountId', '.dkr.ecr.', !Ref 'AWS::Region', '.amazonaws.com/',
+            !Ref 'Repository', ':', !Ref 'PipelineName', '-', !Ref 'EnvironmentName', '-',
+            !Ref 'Tag', '-portal'
+          ]]
+          Environment:
+            - Name: NODE_ENV
+              Value: production
+            - Name: MPCONTRIBS_API_HOST
+              Value: "localhost:5000"
+            - Name: API_CNAME
+              Value: "api.mpcontribs.org"
+            - Name: API_PORT
+              Value: "5000"
+            - Name: PORTAL_CNAME
+              Value: "portal.mpcontribs.org"
+            - Name: PORTAL_PORT
+              Value: "8080"
+            - Name: TRADEMARK
+              Value: ""
+            - Name: AWS_REGION
+              Value: !Ref 'AWS::Region'
+          DependsOn:
+            - Condition: START
+              ContainerName: api
+          PortMappings:
+            - ContainerPort: 8080
+          LogConfiguration:
+            LogDriver: 'awslogs'
+            Options:
+              awslogs-group: !Join ['-', [!Ref 'PipelineName', !Ref 'EnvironmentName', 'service', !Ref 'ServiceName']]
+              awslogs-region: !Ref 'AWS::Region'
+              awslogs-stream-prefix: !Ref 'ServiceName'
+        - Name: portal-ml
+          MemoryReservation: 70
+          Image: !Join ['', [
+            !Ref 'AWS::AccountId', '.dkr.ecr.', !Ref 'AWS::Region', '.amazonaws.com/',
+            !Ref 'Repository', ':', !Ref 'PipelineName', '-', !Ref 'EnvironmentName', '-',
+            !Ref 'Tag', '-portal'
+          ]]
+          Environment:
+            - Name: NODE_ENV
+              Value: production
+            - Name: MPCONTRIBS_API_HOST
+              Value: "localhost:5002"
+            - Name: API_CNAME
+              Value: "ml-api.materialsproject.cloud"
+            - Name: API_PORT
+              Value: "5002"
+            - Name: PORTAL_CNAME
+              Value: "ml.materialsproject.cloud"
+            - Name: PORTAL_PORT
+              Value: "8082"
+            - Name: TRADEMARK
+              Value: "ML"
+            - Name: AWS_REGION
+              Value: !Ref 'AWS::Region'
+          DependsOn:
+            - Condition: START
+              ContainerName: api
+          PortMappings:
+            - ContainerPort: 8082
+          LogConfiguration:
+            LogDriver: 'awslogs'
+            Options:
+              awslogs-group: !Join ['-', [!Ref 'PipelineName', !Ref 'EnvironmentName', 'service', !Ref 'ServiceName']]
+              awslogs-region: !Ref 'AWS::Region'
+              awslogs-stream-prefix: !Ref 'ServiceName'
+        - Name: portal-ls
+          MemoryReservation: 70
+          Image: !Join ['', [
+            !Ref 'AWS::AccountId', '.dkr.ecr.', !Ref 'AWS::Region', '.amazonaws.com/',
+            !Ref 'Repository', ':', !Ref 'PipelineName', '-', !Ref 'EnvironmentName', '-',
+            !Ref 'Tag', '-portal'
+          ]]
+          Environment:
+            - Name: NODE_ENV
+              Value: production
+            - Name: MPCONTRIBS_API_HOST
+              Value: "localhost:5003"
+            - Name: API_CNAME
+              Value: "lightsources-api.materialsproject.cloud"
+            - Name: API_PORT
+              Value: "5003"
+            - Name: PORTAL_CNAME
+              Value: "lightsources.materialsproject.cloud"
+            - Name: PORTAL_PORT
+              Value: "8083"
+            - Name: TRADEMARK
+              Value: "LS"
+            - Name: AWS_REGION
+              Value: !Ref 'AWS::Region'
+          DependsOn:
+            - Condition: START
+              ContainerName: api
+          PortMappings:
+            - ContainerPort: 8083
+          LogConfiguration:
+            LogDriver: 'awslogs'
+            Options:
+              awslogs-group: !Join ['-', [!Ref 'PipelineName', !Ref 'EnvironmentName', 'service', !Ref 'ServiceName']]
+              awslogs-region: !Ref 'AWS::Region'
+              awslogs-stream-prefix: !Ref 'ServiceName'
+        - Name: portal-dev
+          MemoryReservation: 70
+          Image: !Join ['', [
+            !Ref 'AWS::AccountId', '.dkr.ecr.', !Ref 'AWS::Region', '.amazonaws.com/',
+            !Ref 'Repository', ':', !Ref 'PipelineName', '-', !Ref 'EnvironmentName', '-',
+            !Ref 'Tag', '-portal'
+          ]]
+          Environment:
+            - Name: NODE_ENV
+              Value: production
+            - Name: MPCONTRIBS_API_HOST
+              Value: "localhost:5004"
+            - Name: API_CNAME
+              Value: "dev-api.mpcontribs.org"
+            - Name: API_PORT
+              Value: "5004"
+            - Name: PORTAL_CNAME
+              Value: "dev-portal.mpcontribs.org"
+            - Name: PORTAL_PORT
+              Value: "8084"
+            - Name: TRADEMARK
+              Value: "DEV"
+            - Name: AWS_REGION
+              Value: !Ref 'AWS::Region'
+          DependsOn:
+            - Condition: START
+              ContainerName: api-dev
+          PortMappings:
+            - ContainerPort: 8084
           LogConfiguration:
             LogDriver: 'awslogs'
             Options:
@@ -165,27 +440,15 @@ Resources:
               awslogs-region: !Ref 'AWS::Region'
               awslogs-stream-prefix: !Ref 'ServiceName'
         - Name: orca
-          MemoryReservation: 500
+          MemoryReservation: 250
           Image: !Join ['', [
             !Ref 'AWS::AccountId', '.dkr.ecr.', !Ref 'AWS::Region', '.amazonaws.com/',
             !Ref 'Repository', ':', !Ref 'PipelineName', '-', !Ref 'EnvironmentName', '-',
             !Ref 'Tag', '-orca'
           ]]
-          DockerLabels:
-            my.custom.label.service: !Join ['-', [
-              !Ref 'PipelineName', !Ref 'EnvironmentName', !Ref 'ServiceName'
-            ]]
-            com.datadoghq.ad.instances: !Sub |
-              [{"host": "%%host%%", "port": "${ApiPort}"}]
-            com.datadoghq.ad.check_names: "[\"ecs_fargate\"]"
-            com.datadoghq.ad.init_configs: "[{}]"
           Environment:
             - Name: START_XVFB
               Value: false
-            - Name: DD_TRACE_AGENT_PORT
-              Value: 8126
-            - Name: DD_TRACE_AGENT_HOSTNAME
-              Value: localhost
           PortMappings:
             - ContainerPort: 4444
           LogConfiguration:
@@ -195,78 +458,17 @@ Resources:
               awslogs-region: !Ref 'AWS::Region'
               awslogs-stream-prefix: !Ref 'ServiceName'
         - Name: gateway
-          MemoryReservation: 50
+          MemoryReservation: 40
           Image: !Join ['', [
             !Ref 'AWS::AccountId', '.dkr.ecr.', !Ref 'AWS::Region', '.amazonaws.com/',
             !Ref 'Repository', ':', !Ref 'PipelineName', '-', !Ref 'EnvironmentName', '-',
             !Ref 'Tag', '-gateway'
           ]]
-          DockerLabels:
-            my.custom.label.service: !Join ['-', [
-              !Ref 'PipelineName', !Ref 'EnvironmentName', !Ref 'ServiceName'
-            ]]
-            com.datadoghq.ad.instances: !Sub |
-              [{"host": "%%host%%", "port": "${ApiPort}"}]
-            com.datadoghq.ad.check_names: "[\"ecs_fargate\"]"
-            com.datadoghq.ad.init_configs: "[{}]"
           Environment:
             - Name: KG_ALLOW_ORIGIN
               Value: '*'
-            - Name: MPCONTRIBS_API_HOST
-              Value: !Join [':', ['localhost', !Ref 'ApiPort']]
-            - Name: DD_TRACE_AGENT_PORT
-              Value: 8126
-            - Name: DD_TRACE_AGENT_HOSTNAME
-              Value: localhost
           PortMappings:
             - ContainerPort: 8888
-          LogConfiguration:
-            LogDriver: 'awslogs'
-            Options:
-              awslogs-group: !Join ['-', [!Ref 'PipelineName', !Ref 'EnvironmentName', 'service', !Ref 'ServiceName']]
-              awslogs-region: !Ref 'AWS::Region'
-              awslogs-stream-prefix: !Ref 'ServiceName'
-        - Name: portal
-          MemoryReservation: 80
-          Image: !Join ['', [
-            !Ref 'AWS::AccountId', '.dkr.ecr.', !Ref 'AWS::Region', '.amazonaws.com/',
-            !Ref 'Repository', ':', !Ref 'PipelineName', '-', !Ref 'EnvironmentName', '-',
-            !Ref 'Tag', '-portal'
-          ]]
-          DockerLabels:
-            my.custom.label.service: !Join ['-', [
-              !Ref 'PipelineName', !Ref 'EnvironmentName', !Ref 'ServiceName'
-            ]]
-            com.datadoghq.ad.instances: !Sub |
-              [{"host": "%%host%%", "port": "${ApiPort}"}]
-            com.datadoghq.ad.check_names: "[\"ecs_fargate\"]"
-            com.datadoghq.ad.init_configs: "[{}]"
-          Environment:
-            - Name: NODE_ENV
-              Value: production
-            - Name: MPCONTRIBS_API_HOST
-              Value: !Join [':', ['localhost', !Ref 'ApiPort']]
-            - Name: API_CNAME
-              Value: !Ref 'ApiCname'
-            - Name: API_PORT
-              Value: !Ref 'ApiPort'
-            - Name: PORTAL_CNAME
-              Value: !Ref 'PortalCname'
-            - Name: PORTAL_PORT
-              Value: !Ref 'PortalPort'
-            - Name: TRADEMARK
-              Value: !Ref 'Trademark'
-            - Name: AWS_REGION
-              Value: !Ref 'AWS::Region'
-            - Name: DD_TRACE_AGENT_PORT
-              Value: 8126
-            - Name: DD_TRACE_AGENT_HOSTNAME
-              Value: localhost
-          DependsOn:
-            - Condition: START
-              ContainerName: api
-          PortMappings:
-            - ContainerPort: !Ref 'PortalPort'
           LogConfiguration:
             LogDriver: 'awslogs'
             Options:

@@ -1,57 +1,103 @@
 version: '2.2'
 
+x-portal-volumes: &portal-volumes
+    - ./mpcontribs-portal/mpcontribs:/app/mpcontribs
+    - /app/mpcontribs/portal/templates/notebooks/
+    - ./mpcontribs-portal/webpack.config.js:/app/webpack.config.js
+    - ./mpcontribs-portal/package.json:/app/package.json
+    - ./mpcontribs-portal/wsgi.py:/app/wsgi.py
+    - ./mpcontribs-portal/settings.py:/app/settings.py
+
+x-dev-env: &dev-env
+    FLASK_ENV: development
+    MPCONTRIBS_MONGO_HOST: $MPCONTRIBS_MONGO_HOST
+    #MPCONTRIBS_MONGO_HOST: mongo
+    JUPYTER_GATEWAY_URL: http://kernel_gateway:8888
+    AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID
+    AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY
+    AWS_SNS_TOPIC_ARN: $AWS_SNS_TOPIC_ARN
+    AWS_DEFAULT_REGION: us-east-1
+
 services:
 
     portal:
-        cpus: 2
-        mem_limit: 2880m
-        mem_reservation: 80m
         build: ./mpcontribs-portal
         env_file:
-            - ./deployments/$DEPLOYMENT.env
+            - ./deployments/mpcontribs.org.env
         depends_on:
             - api
-        volumes:
-            - ./mpcontribs-portal/mpcontribs:/app/mpcontribs
-            - /app/mpcontribs/portal/templates/notebooks/
-            - ./mpcontribs-portal/webpack.config.js:/app/webpack.config.js
-            - ./mpcontribs-portal/package.json:/app/package.json
-            - ./mpcontribs-portal/wsgi.py:/app/wsgi.py
-            - ./mpcontribs-portal/settings.py:/app/settings.py
+        volumes: *portal-volumes
         ports:
             - "8080:8080"
+
+    portal-ml:
+        build: ./mpcontribs-portal
+        env_file:
+            - ./deployments/ml.materialsproject.cloud.env
+        depends_on:
+            - api-ml
+        volumes: *portal-volumes
+        ports:
             - "8082:8082"
+
+    portal-ls:
+        build: ./mpcontribs-portal
+        env_file:
+            - ./deployments/lightsources.materialsproject.cloud.env
+        depends_on:
+            - api-ls
+        volumes: *portal-volumes
+        ports:
             - "8083:8083"
 
     api:
-        cpus: 2
-        mem_limit: 3400m
-        mem_reservation: 600m
         build:
             context: ./mpcontribs-api
         depends_on:
             - redis
             - orca
             - kernel_gateway
-            #- xray
-            #- mongo
             #- datadog
         volumes:
             - ./mpcontribs-api:/app
         env_file:
-            - ./deployments/$DEPLOYMENT.env
-        environment:
-            FLASK_ENV: development
-            MPCONTRIBS_MONGO_HOST: $MPCONTRIBS_MONGO_HOST
-            #MPCONTRIBS_MONGO_HOST: mongo
-            JUPYTER_GATEWAY_URL: http://kernel_gateway:8888
-            AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID
-            AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY
-            AWS_SNS_TOPIC_ARN: $AWS_SNS_TOPIC_ARN
-            AWS_DEFAULT_REGION: us-east-1
+            - ./deployments/mpcontribs.org.env
+        environment: *dev-env
         ports:
             - "5000:5000"
+
+    api-ml:
+        build:
+            context: ./mpcontribs-api
+        depends_on:
+            - portal
+            - redis
+            - orca
+            - kernel_gateway
+            #- datadog
+        volumes:
+            - ./mpcontribs-api:/app
+        env_file:
+            - ./deployments/ml.materialsproject.cloud.env
+        environment: *dev-env
+        ports:
             - "5002:5002"
+
+    api-ls:
+        build:
+            context: ./mpcontribs-api
+        depends_on:
+            - portal-ml
+            - redis
+            - orca
+            - kernel_gateway
+            #- datadog
+        volumes:
+            - ./mpcontribs-api:/app
+        env_file:
+            - ./deployments/lightsources.materialsproject.cloud.env
+        environment: *dev-env
+        ports:
             - "5003:5003"
 
     kernel_gateway:
@@ -60,21 +106,15 @@ services:
         mem_reservation: 50m
         depends_on:
           - orca
-        env_file:
-            - ./deployments/$DEPLOYMENT.env
         environment:
             KG_ALLOW_ORIGIN: '*'
         build: ./mpcontribs-sidecars/kernel_gateway
-        ports:
-            - "8888:8888"
 
     orca:
         cpus: 2
         mem_limit: 3300m
         mem_reservation: 500m
         build: ./mpcontribs-sidecars/orca
-        ports:
-            - "9091:9091"
 
     # OTHER
     redis:
