@@ -46,8 +46,8 @@ Resources:
     Type: AWS::ECS::TaskDefinition
     Properties:
       Family: !Ref 'ServiceName'
-      Cpu: 2048
-      Memory: 4096
+      Cpu: 4096
+      Memory: 8192
       NetworkMode: awsvpc
       RequiresCompatibilities:
         - FARGATE
