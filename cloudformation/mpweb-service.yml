@@ -82,7 +82,7 @@ Resources:
             - Name: MP_API_ENDPOINT
               Value: http://localhost:5001/
             - Name: NUM_WORKERS
-              Value: 2
+              Value: 4
           PortMappings:
             - ContainerPort: 8081
           LogConfiguration:
@@ -103,6 +103,7 @@ Resources:
         Fn::ImportValue:
           !Join [':', [!Ref 'PipelineName', !Ref 'EnvironmentName', 'ClusterName']]
       LaunchType: FARGATE
+      PlatformVersion: 1.4.0
       DesiredCount: 2
       NetworkConfiguration:
         AwsvpcConfiguration:

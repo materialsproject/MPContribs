@@ -47,8 +47,8 @@ Resources:
     Type: AWS::ECS::TaskDefinition
     Properties:
       Family: !Ref 'ServiceName'
-      Cpu: 512
-      Memory: 1024
+      Cpu: 1024
+      Memory: 2048
       NetworkMode: awsvpc
       RequiresCompatibilities:
         - FARGATE
@@ -106,6 +106,7 @@ Resources:
               awslogs-region: !Ref 'AWS::Region'
               awslogs-stream-prefix: !Ref 'ServiceName'
         - Name: dashboard
+          MemoryReservation: 250
           Image: !Ref 'ImageUrlKonga'
           DependsOn:
             - Condition: START
@@ -147,9 +148,10 @@ Resources:
         Fn::ImportValue:
           !Join [':', [!Ref 'PipelineName', !Ref 'EnvironmentName', 'ClusterName']]
       LaunchType: FARGATE
+      PlatformVersion: 1.4.0
       DeploymentConfiguration:
         MaximumPercent: 200
-      DesiredCount: 1
+      DesiredCount: 2
       NetworkConfiguration:
         AwsvpcConfiguration:
           AssignPublicIp: ENABLED
