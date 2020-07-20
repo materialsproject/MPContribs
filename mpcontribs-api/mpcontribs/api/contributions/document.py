@@ -34,7 +34,9 @@ def get_min_max(sender, path):
     # NOTE can't filter for project when using wildcard index data.$**
     # https://docs.mongodb.com/manual/core/index-wildcard/#wildcard-index-query-sort-support
     field = f"{path}{delimiter}value"
-    qs = sender.objects.only(field).order_by(field)
+    key = f"{field}__type".replace(delimiter, "__")
+    q = {key: "number"}  # NOTE need a query to trigger wildcard IXSCAN
+    qs = sender.objects(**q).only(field).order_by(field)
     values = [get_value(doc, field) for doc in qs]
     values = [v for v in values if not isinstance(v, _Missing)]
     print("values", path, values)
