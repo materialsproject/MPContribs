@@ -4,6 +4,7 @@ import fido
 import warnings
 import pandas as pd
 
+from urllib.parse import urlparse
 from pyisemail import is_email
 from pyisemail.diagnosis import BaseDiagnosis
 from swagger_spec_validator.common import SwaggerValidationError
@@ -43,6 +44,17 @@ email_format = SwaggerFormat(
     to_python=str,
     validate=validate_email,
     description="e-mail address",
+)
+
+
+def validate_url(url_string, qualifying=("scheme", "netloc")):
+    tokens = urlparse(url_string)
+    if not all([getattr(tokens, qual_attr) for qual_attr in qualifying]):
+        raise SwaggerValidationError(f"{url_string} invalid")
+
+
+url_format = SwaggerFormat(
+    format="url", to_wire=str, to_python=str, validate=validate_url, description="URL",
 )
 
 
@@ -116,7 +128,7 @@ class Client(SwaggerClient):
                 "validate_responses": False,
                 "use_models": False,
                 "include_missing_properties": False,
-                "formats": [email_format],
+                "formats": [email_format, url_format],
             }
             bravado_config = bravado_config_from_config_dict(config)
             for key in set(bravado_config._fields).intersection(set(config)):
