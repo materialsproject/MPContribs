@@ -58,6 +58,12 @@ url_format = SwaggerFormat(
 )
 
 
+def chunks(l, n=250):
+    n = max(1, n)
+    for i in range(0, len(l), n):
+        yield l[i : i + n]
+
+
 class FidoClientGlobalHeaders(FidoClient):
     def __init__(self, headers=None):
         super().__init__()
@@ -190,5 +196,14 @@ class Client(SwaggerClient):
             ).result()
             total += resp["count"]
             has_more = resp["has_more"]
+
+        return total
+
+    def submit_contributions(self, contributions):
+        """Convenience function to submit a list of contributions"""
+        total = 0
+        for contribs in chunks(contributions):
+            resp = self.contributions.create_entries(contributions=contribs).result()
+            total += resp["count"]
 
         return total
