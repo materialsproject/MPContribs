@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import os
 from math import isnan
 from datetime import datetime
 from nbformat import v4 as nbf
@@ -20,6 +21,7 @@ from mpcontribs.api.notebooks import connect_kernel, execute
 
 seed_nb = nbf.new_notebook()
 seed_nb["cells"] = [nbf.new_code_cell("from mpcontribs.client import Client")]
+MPCONTRIBS_API_HOST = os.environ.get("MPCONTRIBS_API_HOST", "localhost:5000")
 
 
 def is_float(s):
@@ -39,7 +41,6 @@ def get_min_max(sender, path):
     qs = sender.objects(**q).only(field).order_by(field)
     values = [get_value(doc, field) for doc in qs]
     values = [v for v in values if not isinstance(v, _Missing)]
-    print("values", path, values)
     return (values[0], values[-1]) if len(values) else (None, None)
 
 
@@ -166,27 +167,21 @@ class Contributions(Document):
                         column.unit = value["unit"]
                         column.min = column.max = value["value"]
 
-                    print("append", column.path)
                     project.columns.append(column)
 
             return True
 
         # run update_columns over document data
         remap(document.data, visit=update_columns, enter=enter)
+        project.save()
 
         # add/remove columns for other components
         for path in ["structures", "tables"]:
-            has_component = bool(getattr(document, path))
             try:
-                column = project.columns.get(path=path)
-                if not has_component:
-                    project.update(pull__columns__path=path)
+                project.columns.get(path=path)
             except DoesNotExist:
-                if has_component:
-                    column = Column(path=path)
-                    project.columns.append(column)
-
-        project.save()
+                if getattr(document, path):
+                    project.update(push__columns=Column(path=path))
 
         # generate notebook for this contribution
         if document.notebook is not None:
@@ -194,7 +189,10 @@ class Contributions(Document):
 
         cells = [
             nbf.new_code_cell(
-                'client = Client(headers={"X-Consumer-Groups": "admin"})'
+                "client = Client(\n"
+                '\theaders={"X-Consumer-Groups": "admin"},\n'
+                f'\thost="{MPCONTRIBS_API_HOST}"\n'
+                ")"
             ),
             nbf.new_code_cell(f'client.get_contribution("{document.id}").pretty()'),
         ]
@@ -232,15 +230,12 @@ class Contributions(Document):
 
         # remove reference documents
         if document.notebook is not None:
-            print("delete notebook", document.notebook.id)
             document.notebook.delete()
 
         for structure in document.structures:
-            print("delete structure", structure.id)
             structure.delete()
 
         for table in document.tables:
-            print("delete table", table.id)
             table.delete()
 
     @classmethod
@@ -251,23 +246,16 @@ class Contributions(Document):
         for column in list(project.columns):
             if not isnan(column.min) and not isnan(column.max):
                 column.min, column.max = get_min_max(sender, column.path)
-                print("min_max", column.min, column.max)
-                if column.min is None and column.max is None:
+                if isnan(column.min) and isnan(column.max):
                     # just deleted last contribution with this column
-                    print("pop", column.path)
                     project.update(pull__columns__path=column.path)
             else:
                 # use wildcard index if available -> single field query
-                qs = sender.objects.only(column.path)
-                if column.path in ["structures", "tables"]:
-                    field = column.path.replace(delimiter, "__") + "__exists"
-                    qs = qs.filter(**{field: True})
+                field = column.path.replace(delimiter, "__") + "__type"
+                qs = sender.objects(**{field: "string"}).only(column.path)
 
                 if qs.count() < 1:
-                    print("pop", column.path)
                     project.update(pull__columns__path=column.path)
-
-        project.save()
 
 
 signals.pre_save_post_validation.connect(
