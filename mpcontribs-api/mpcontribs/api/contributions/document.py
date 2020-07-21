@@ -89,7 +89,6 @@ class Contributions(Document):
         project = document.project.fetch()
 
         # run data through Pint Quantities and save as dicts
-        # TODO set maximum number of columns
         def make_quantities(path, key, value):
             if key not in quantity_keys and isinstance(value, (str, int, float)):
                 str_value = str(value)
@@ -160,6 +159,7 @@ class Contributions(Document):
                     column = project.columns.get(path=path)
                     if is_quantity:
                         column.min, column.max = get_min_max(sender, path)
+                        project.save().reload("columns")
 
                 except DoesNotExist:
                     column = Column(path=path)
@@ -167,13 +167,16 @@ class Contributions(Document):
                         column.unit = value["unit"]
                         column.min = column.max = value["value"]
 
-                    project.columns.append(column)
+                    project.modify(push__columns=column)
+
+                ncolumns = len(project.columns)
+                if ncolumns > 50:
+                    raise ValueError("Reached maximum number of columns (50)!")
 
             return True
 
         # run update_columns over document data
         remap(document.data, visit=update_columns, enter=enter)
-        project.save()
 
         # add/remove columns for other components
         for path in ["structures", "tables"]:
@@ -226,7 +229,7 @@ class Contributions(Document):
 
     @classmethod
     def pre_delete(cls, sender, document, **kwargs):
-        document.reload()
+        document.reload("notebook", "structures", "tables")
 
         # remove reference documents
         if document.notebook is not None:
