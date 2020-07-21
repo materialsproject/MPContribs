@@ -180,3 +180,15 @@ class Client(SwaggerClient):
                 pk=sid, _fields=["lattice", "sites", "charge"]
             ).result()
         )
+
+    def delete_contributions(self, project):
+        """Convenience function to remove all contributions for a project"""
+        has_more, total = True, 0
+        while has_more:
+            resp = self.contributions.delete_entries(
+                project=project, _limit=250
+            ).result()
+            total += resp["count"]
+            has_more = resp["has_more"]
+
+        return total
