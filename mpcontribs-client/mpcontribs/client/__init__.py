@@ -4,6 +4,7 @@ import fido
 import warnings
 import pandas as pd
 
+from copy import deepcopy
 from urllib.parse import urlparse
 from pyisemail import is_email
 from pyisemail.diagnosis import BaseDiagnosis
@@ -97,7 +98,6 @@ def load_client(apikey=None, headers=None, host=HOST):
     )
 
 
-# TODO data__ regex doesn't work through bravado/swagger client
 class Client(SwaggerClient):
     """client to connect to MPContribs API
 
@@ -122,29 +122,74 @@ class Client(SwaggerClient):
             self.headers is not None
             and self.swagger_spec.http_client.headers != self.headers
         ):
-            http_client = FidoClientGlobalHeaders(headers=self.headers)
-            loader = Loader(http_client)
-            protocol = "https" if self.apikey else "http"
-            origin_url = f"{protocol}://{self.host}/apispec.json"
-            spec_dict = loader.load_spec(origin_url)
-            spec_dict["host"] = self.host
-            spec_dict["schemes"] = [protocol]
+            self.load()
 
-            config = {
-                "validate_responses": False,
-                "use_models": False,
-                "include_missing_properties": False,
-                "formats": [email_format, url_format],
-            }
-            bravado_config = bravado_config_from_config_dict(config)
-            for key in set(bravado_config._fields).intersection(set(config)):
-                del config[key]
-            config["bravado"] = bravado_config
+    def load(self):
+        http_client = FidoClientGlobalHeaders(headers=self.headers)
+        loader = Loader(http_client)
+        protocol = "https" if self.apikey else "http"
+        origin_url = f"{protocol}://{self.host}/apispec.json"
+        spec_dict = loader.load_spec(origin_url)
+        spec_dict["host"] = self.host
+        spec_dict["schemes"] = [protocol]
 
-            swagger_spec = Spec.from_dict(spec_dict, origin_url, http_client, config)
-            super().__init__(
-                swagger_spec, also_return_response=bravado_config.also_return_response
-            )
+        config = {
+            "validate_responses": False,
+            "use_models": False,
+            "include_missing_properties": False,
+            "formats": [email_format, url_format],
+        }
+        bravado_config = bravado_config_from_config_dict(config)
+        for key in set(bravado_config._fields).intersection(set(config)):
+            del config[key]
+        config["bravado"] = bravado_config
+
+        swagger_spec = Spec.from_dict(spec_dict, origin_url, http_client, config)
+        super().__init__(
+            swagger_spec, also_return_response=bravado_config.also_return_response
+        )
+
+        # expand regex-based query parameters for `data` columns
+        resp = self.projects.get_entries(_fields=["columns"]).result()
+        columns = {"text": [], "number": []}
+        for project in resp["data"]:
+            for column in project["columns"]:
+                if column["path"].startswith("data."):
+                    col = column["path"].replace(".", "__")
+                    if column["unit"] == "NaN":
+                        columns["text"].append(col)
+                    else:
+                        col = f"{col}__value"
+                        columns["number"].append(col)
+
+        operators = {"text": ["contains"], "number": ["gte", "lte"]}
+        for path, d in spec_dict["paths"].items():
+            for verb in ["get", "put", "post", "delete"]:
+                if verb in d:
+                    old_params = deepcopy(d[verb].pop("parameters"))
+                    new_params = []
+
+                    while old_params:
+                        param = old_params.pop()
+                        if param["name"].startswith("^data__"):
+                            op = param["name"].rsplit("__", 1)[1]
+                            for typ, ops in operators.items():
+                                if op in ops:
+                                    for column in columns[typ]:
+                                        new_param = deepcopy(param)
+                                        new_param["name"] = f"{column}__{op}"
+                                        desc = f"filter {column} via ${op}"
+                                        new_param["description"] = desc
+                                        new_params.append(new_param)
+                        else:
+                            new_params.append(param)
+
+                    d[verb]["parameters"] = new_params
+
+        swagger_spec = Spec.from_dict(spec_dict, origin_url, http_client, config)
+        super().__init__(
+            swagger_spec, also_return_response=bravado_config.also_return_response
+        )
 
     def get_project(self, project):
         """Convenience function to get full project entry and display as HTML table"""
