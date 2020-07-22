@@ -70,7 +70,6 @@ services:
         build:
             context: ./mpcontribs-api
         depends_on:
-            - portal
             - redis
             - orca
             - kernel_gateway
@@ -87,7 +86,6 @@ services:
         build:
             context: ./mpcontribs-api
         depends_on:
-            - portal-ml
             - redis
             - orca
             - kernel_gateway
