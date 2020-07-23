@@ -245,9 +245,11 @@ class Client(SwaggerClient):
         resp = self.contributions.get_entries(
             project=project, _fields=["id"], _limit=1
         ).result()
+        ncontribs = resp["total_count"]
         has_more, limit = True, 250
 
-        with tqdm(total=resp["total_count"]) as pbar:
+        print(f"Delete {ncontribs} contributions ...")
+        with tqdm(total=ncontribs) as pbar:
             while has_more:
                 resp = self.contributions.delete_entries(
                     project=project, _limit=limit
@@ -258,13 +260,33 @@ class Client(SwaggerClient):
     def submit_contributions(self, contributions, ignore=False):
         """Convenience function to submit a list of contributions"""
         # prepare structures/tables
-        md5s = set()
+        existing, md5s = set(), set()
         contribs = deepcopy(contributions)
         ncontribs = len(contribs)
+        name = contribs[0]["project"]
+        resp = self.projects.get_entry(pk=name, _fields=["unique_identifiers"]).result()
 
-        print(f"Preparing {ncontribs} contributions ...")
+        if resp["unique_identifiers"]:
+            print(f"Get existing contributions ...")
+            with tqdm(total=ncontribs) as pbar:
+                has_more = True
+                while has_more:
+                    skip = len(existing)
+                    resp = self.contributions.get_entries(
+                        project=name, _skip=skip, _limit=250, _fields=["identifier"]
+                    ).result()
+                    existing |= set(c["identifier"] for c in resp["data"])
+                    has_more = resp["has_more"]
+                    pbar.update(250)
+
+            print(len(existing), "contributions already uploaded.")
+
+        print(f"Prepare {ncontribs} contributions ...")
         with tqdm(total=ncontribs) as pbar:
-            for contrib in tqdm(contribs):
+            for contrib in contribs:
+                if contrib["identifier"] in existing:
+                    continue
+
                 # TODO prepare tables
                 structures = contrib.pop("structures", [])
                 contrib["structures"] = []
@@ -300,8 +322,7 @@ class Client(SwaggerClient):
 
                 pbar.update(1)
 
-        # submit
-        print(f"Submitting {ncontribs} contributions ...")
+        print(f"Submit {ncontribs} contributions ...")
         with tqdm(total=ncontribs) as pbar:
             for chunk in chunks(contribs):
                 resp = self.contributions.create_entries(contributions=chunk).result()
