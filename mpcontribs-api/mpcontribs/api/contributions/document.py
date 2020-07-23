@@ -5,7 +5,7 @@ from datetime import datetime
 from nbformat import v4 as nbf
 from copy import deepcopy
 from flask import current_app
-from flask_mongoengine import Document
+from flask_mongoengine import DynamicDocument
 from mongoengine import CASCADE, signals
 from mongoengine.queryset import DoesNotExist
 from mongoengine.fields import StringField, BooleanField, DictField
@@ -44,7 +44,7 @@ def get_min_max(sender, path):
     return (values[0], values[-1]) if len(values) else (None, None)
 
 
-class Contributions(Document):
+class Contributions(DynamicDocument):
     project = LazyReferenceField(
         "Projects", required=True, passthrough=True, reverse_delete_rule=CASCADE
     )

@@ -37,7 +37,7 @@ function getData(field) {
             }
         }
         if (field == 'project') {
-            query['_fields'] = 'id,title,project';
+            query['_fields'] = 'id,title,name';
         } else {
             query['_fields'] = 'id,' + field;
         }
@@ -52,6 +52,7 @@ function processResult(d, field) {
 }
 
 function processResults(field) {
+    field = field == "project" ? "name" : field;
     return function (data) {
         var texts = new Set();
         var results = $.map(data['data'], function(d) {
@@ -89,12 +90,12 @@ function render_card(cid) {
     $("#card").empty();
     var target = document.getElementById('spinner');
     spinner.spin(target);
-    var url = window.api['host'] + 'cards/' + cid + '/';
+    var url = window.api['host'] + 'contributions/' + cid + '/';
     return $.get({
-        url: url, data: {"_fields": "bulma"},
+        url: url, data: {"_fields": "card_bulma"},
         headers: window.api['headers']
     }).done(function(response) {
-        $('#card').html(response['bulma']);
+        $('#card').html(response['card_bulma']);
         spinner.stop();
     });
 }

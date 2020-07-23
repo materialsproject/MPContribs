@@ -3,11 +3,11 @@
 {% block content %}
 <section class="section" id=landingpage>
 
-    {% if urls %}
+    {% if references %}
     <nav class="breadcrumb has-bullet-separator is-size-7 is-marginless">
         <ul>
-            {% for l, u in urls.items %}
-            <li><a href="{{u}}" target="_blank" rel="noopener noreferrer">{{l}}</a></li>
+            {% for ref in references %}
+            <li><a href="{{ref.url}}" target="_blank" rel="noopener noreferrer">{{ref.label}}</a></li>
             {% endfor %}
         </ul>
     </nav>
@@ -133,7 +133,7 @@
 
     {% if columns and columns.strip != 'null' %}
     <div class="box">
-        <div name=table id=table_{{project}} data-columns='{{ columns|join:"," }}' data-project='{{ project }}'></div>
+        <div name=table id=table_{{name}} data-columns='{{ columns|join:"," }}' data-project='{{ name }}'></div>
     </div>
     {% endif %}
 

@@ -55,7 +55,7 @@ def landingpage(request):
         project = request.path.replace("/", "")
         client = Client(headers=get_consumer(request))
         prov = client.projects.get_entry(pk=project, _fields=["_all"]).result()
-        ctx["project"] = project
+        ctx["name"] = project
         long_title = prov.get("long_title")
         ctx["title"] = long_title if long_title else prov["title"]
         ctx["descriptions"] = prov["description"].strip().split(".", 1)
@@ -63,23 +63,32 @@ def landingpage(request):
         ctx["authors"] = {"main": authors[0].strip()}
         if len(authors) > 1:
             ctx["authors"]["etal"] = authors[1].strip()
-        ctx["urls"] = prov["urls"]
+        ctx["references"] = prov["references"]
         other = prov.get("other", "")
         if other:
             ctx["other"] = j2h.convert(
                 json=remap(other, visit=visit),
-                table_attributes='class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth"',
+                table_attributes='class="table is-narrow is-fullwidth has-background-light"',
             )
         if prov["columns"]:
-            ctx["columns"] = ["identifier", "id", "formula"] + list(
-                prov["columns"].keys()
-            )
-            ctx["search_columns"] = ["identifier", "formula"] + [
-                col
-                for col in prov["columns"].keys()
-                if not col.endswith("]") and not col.startswith("structures")
+            ctx["columns"] = ["identifier", "id", "formula"] + [
+                col["path"]
+                if col["unit"] == "NaN"
+                else f'{col["path"]} [{col["unit"]}]'
+                for col in prov["columns"]
             ]
-            ctx["ranges"] = json.dumps(prov["columns"])
+            ctx["search_columns"] = ["identifier", "formula"] + [
+                col["path"]
+                for col in prov["columns"]
+                if col["unit"] == "NaN" and col["path"] not in ["structures", "tables"]
+            ]
+            ctx["ranges"] = json.dumps(
+                {
+                    f'{col["path"]} [{col["unit"]}]': [col["min"], col["max"]]
+                    for col in prov["columns"]
+                    if col["unit"] != "NaN"
+                }
+            )
 
     except Exception as ex:
         ctx["alert"] = str(ex)
@@ -99,7 +108,7 @@ def index(request):
     ]
     ctx["PORTAL_CNAME"] = cname
     ctx["landing_pages"] = []
-    mask = ["project", "title", "authors", "is_public", "description", "urls"]
+    mask = ["name", "title", "authors", "is_public", "description", "references"]
     client = Client(headers=get_consumer(request))
     entries = client.projects.get_entries(_fields=mask).result()["data"]
     for entry in entries:
@@ -123,21 +132,11 @@ def export_notebook(nb, cid):
 def contribution(request, cid):
     ctx = get_context(request)
     client = Client(headers=get_consumer(request))
-    contrib = client.contributions.get_entry(pk=cid, _fields=["_all"]).result()
-    ctx["identifier"], ctx["cid"] = contrib["identifier"], contrib["id"]
-    nb = client.notebooks.get_entry(pk=cid).result()  # generate notebook with cells
-    ctx["ncells"] = len(nb["cells"])
-
-    if not nb["cells"][-1]["outputs"]:
-        try:
-            nb = client.notebooks.get_entry(pk=cid).result(
-                timeout=1
-            )  # trigger cell execution
-        except HTTPTimeoutError as e:
-            dots = '<span class="loader__dot">.</span><span class="loader__dot">.</span><span class="loader__dot">.</span>'
-            ctx["alert"] = f"Detail page is building in the background {dots}"
-
-    ctx["nb"], ctx["js"] = export_notebook(nb, cid)
+    contrib = client.contributions.get_entry(
+        pk=cid, _fields=["identifier", "notebook"]
+    ).result()
+    ctx["identifier"], ctx["cid"] = contrib["identifier"], cid
+    ctx["nb"], _ = export_notebook(contrib["notebook"], cid)
     return render(request, "contribution.html", ctx.flatten())
 
 

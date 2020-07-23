@@ -46,7 +46,7 @@ $(document).ready(function () {
             width: 'style',
             data: function (params) {
                 if (typeof params.term == 'undefined') { $("[name=cards]").removeClass('is-hidden'); }
-                var query = {_fields: "project,title"};
+                var query = {_fields: "name,title"};
                 if (params.term) { query['description__icontains'] = params.term; }
                 return query;
             },
@@ -54,8 +54,8 @@ $(document).ready(function () {
                 $("[name=cards]").addClass('is-hidden');
                 var results = [];
                 $.each(data['data'], function(index, element) {
-                    var entry = {id: index, text: element['title'], value: element['project']};
-                    $('#'+element['project']).removeClass('is-hidden');
+                    var entry = {id: index, text: element['title'], value: element['name']};
+                    $('#'+element['name']).removeClass('is-hidden');
                     results.push(entry);
                 });
                 return {results: results};

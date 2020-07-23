@@ -22,6 +22,7 @@ from flask_mongorest.methods import (
 )
 from flask_mongorest.exceptions import UnknownFieldError
 
+from mpcontribs.api import enter, quantity_keys
 from mpcontribs.api.core import SwaggerView
 from mpcontribs.api.contributions.document import Contributions
 from mpcontribs.api.structures.views import StructuresResource
@@ -35,9 +36,9 @@ j2h = Json2Html()
 
 
 def visit(path, key, value):
-    if isinstance(value, dict) and "display" in value:
+    if isinstance(value, dict) and quantity_keys == set(value.keys()):
         return key, value["display"]
-    return key not in ["value", "unit"]
+    return True
 
 
 class ContributionsResource(Resource):
@@ -74,7 +75,14 @@ class ContributionsResource(Resource):
 
     @staticmethod
     def get_optional_fields():
-        return ["data", "structures", "tables", "notebook"]
+        return [
+            "data",
+            "structures",
+            "tables",
+            "notebook",
+            "card_bootstrap",
+            "card_bulma",
+        ]
 
     def value_for_field(self, obj, field):
         if field.startswith("card_"):
@@ -82,8 +90,11 @@ class ContributionsResource(Resource):
             if fmt not in ["bootstrap", "bulma"]:
                 raise UnknownFieldError
 
+            if obj.project is None:
+                obj.reload("id", "project", "data")
+
             project = obj.project.fetch()
-            ctx = {"cid", str(obj.id)}
+            ctx = {"cid": str(obj.id)}
             ctx["references"] = project.references
             ctx["descriptions"] = project.description.strip().split(".", 1)
             authors = [a.strip() for a in project.authors.split(",") if a]
@@ -91,7 +102,7 @@ class ContributionsResource(Resource):
             ctx["landing_page"] = f"/{project.id}/"
             ctx["more"] = f"/{obj.id}"
             ctx["data"] = j2h.convert(
-                json=remap(obj.data, visit=visit),
+                json=remap(obj.data, visit=visit, enter=enter),
                 table_attributes='class="table is-narrow is-fullwidth has-background-light"',
             )
             return html_minify(render_template(f"card_{fmt}.html", **ctx))

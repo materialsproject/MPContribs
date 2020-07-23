@@ -12,10 +12,13 @@ function prepareRequest(formData, jqForm, options) {
         $('#apply-response').removeClass('is-hidden');
         return false;
     }
-    var urls = {name: 'urls', value: {}};
+    var urls = {name: 'references', value: []};
     for (var i = 0; i < nrefs; i++) {
         var key_url = formData.splice(start+i, 2);
-        urls['value'][key_url[0]['value']] = key_url[1]['value'];
+        urls['value'].push({
+            "label": key_url[0]['value'],
+            "url": key_url[1]['value']
+        })
     }
     formData.push(urls);
     return true;
@@ -44,7 +47,7 @@ $(document).ready(function () {
 
     $('#apply-form').validate({
         rules: {
-            project: {alphanumeric: true}, url_1: {url: true, required: true},
+            name: {alphanumeric: true}, url_1: {url: true, required: true},
             url_2: {url: true}, url_3: {url: true}, url_4: {url: true}, url_5: {url: true}
         },
         highlight: function (element) {

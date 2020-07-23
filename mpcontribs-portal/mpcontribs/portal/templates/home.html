@@ -4,28 +4,28 @@
 
 <section class="section is-hidden" id="browse">
     {% for lp in landing_pages %}
-    <div class="modal" id=thumbnail_{{lp.project}}_modal>
+    <div class="modal" id=thumbnail_{{lp.name}}_modal>
         <div class="modal-background" name=thumbnail_close></div>
         <div class="modal-content">
-            <p class="image" name=thumbnail_{{lp.project}}_img></p>
+            <p class="image" name=thumbnail_{{lp.name}}_img></p>
         </div>
         <button class="modal-close is-large"
                 aria-label="close"
                 name=thumbnail_close>
         </button>
     </div>
-    <article class="media box" id="{{ lp.project }}" name=cards>
-        <a name=thumbnail id=thumbnail_{{lp.project}}>
-            <figure name=thumbnail_{{lp.project}}_img
+    <article class="media box" id="{{ lp.name }}" name=cards>
+        <a name=thumbnail id=thumbnail_{{lp.name}}>
+            <figure name=thumbnail_{{lp.name}}_img
                     class="media-left image is-hidden-touch is-128x128 is-clipped">
             </figure>
         </a>
         <div class="media-content">
-            {% if lp.urls %}
+            {% if lp.references %}
             <nav class="breadcrumb has-bullet-separator is-size-7 is-marginless">
                 <ul>
-                    {% for l, u in lp.urls.items %}
-                    <li><a href="{{u}}">{{l}}</a></li>
+                    {% for ref in lp.references %}
+                    <li><a href="{{ref.url}}">{{ref.label}}</a></li>
                     {% endfor %}
                 </ul>
             </nav>
@@ -45,7 +45,7 @@
             {% endif %}
             <details>
                 <summary>
-                    <a class="is-size-4 has-text-weight-semibold" href="{{ lp.project }}/">
+                    <a class="is-size-4 has-text-weight-semibold" href="{{ lp.name }}/">
                         {{ lp.title }}
                     </a>
                 </summary>
@@ -179,7 +179,7 @@
             <div class="field-body">
                 <div class="field">
                     <div class="control">
-                        <input class="input" type="text" id=project name=project minlength=3 maxlength=30 placeholder="my_project" required>
+                        <input class="input" type="text" id=name name=name minlength=3 maxlength=30 placeholder="my_project" required>
                     </div>
                 </div>
                 <div class="field">
