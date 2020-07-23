@@ -435,11 +435,11 @@ class SwaggerView(OriginalSwaggerView, ResourceView, metaclass=SwaggerViewType):
         if hasattr(obj, "is_approved"):
             is_approved = obj.is_approved
             owner = obj.owner
-            project = obj.project
+            project = obj.name
         elif hasattr(obj, "project"):
             is_approved = obj.project.is_approved
             owner = obj.project.owner
-            project = obj.project.id
+            project = obj.project.name
         else:
             raise Unauthorized(f"Unable to authorize {obj}")
 
@@ -448,30 +448,30 @@ class SwaggerView(OriginalSwaggerView, ResourceView, metaclass=SwaggerViewType):
 
     def has_read_permission(self, request, qs):
         groups = self.get_groups(request)
+        username = request.headers.get("X-Consumer-Username")
+
         if "admin" in groups:
             return qs  # admins can read all entries
-        # only read public or approved project entries
-        username = request.headers.get("X-Consumer-Username")
-        qfilter = Q(is_public=True)
-        if groups:
-            qfilter |= Q(project__in=groups, is_approved=True)
-        if username:
-            qfilter |= Q(owner=username, is_approved=True)
 
         if request.path.startswith("/projects/"):
-            return qs.filter(qfilter)
+            # only read public or approved project entries
+            qfilter = Q(is_public=True)
+            if groups:
+                qfilter |= Q(name__in=groups, is_approved=True)
+            if username:
+                qfilter |= Q(owner=username, is_approved=True)
 
-        # project or contribution are LazyReferenceFields (multiple queries)
-        module = import_module("mpcontribs.api.projects.document")
-        Projects = getattr(module, "Projects")
-        projects = Projects.objects.only("project").filter(qfilter)
-        qfilter = Q(is_public=True) | Q(project__in=projects)
-
-        if not request.path.startswith("/contributions/"):
-            module = import_module("mpcontribs.api.contributions.document")
-            Contributions = getattr(module, "Contributions")
-            contributions = Contributions.objects.only("id").filter(qfilter)
-            qfilter = Q(is_public=True) | Q(contribution__in=contributions)
+        else:
+            # project is LazyReferenceFields (multiple queries)
+            qfilter = Q()
+            if groups:
+                qfilter |= Q(name__in=groups, is_approved=True)
+            if username:
+                qfilter |= Q(owner=username, is_approved=True)
+            module = import_module("mpcontribs.api.projects.document")
+            Projects = getattr(module, "Projects")
+            projects = Projects.objects.only("name").filter(qfilter)
+            qfilter = Q(is_public=True) | Q(project__in=projects)
 
         return qs.filter(qfilter)
 
