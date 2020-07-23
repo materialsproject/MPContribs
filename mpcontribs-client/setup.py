@@ -32,6 +32,7 @@ setup(
         "pymatgen",
         "pyOpenSSL",
         "service-identity",
+        "tqdm",
     ],
     license="MIT",
     zip_safe=False,

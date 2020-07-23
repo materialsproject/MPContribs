@@ -1,9 +1,12 @@
 # -*- coding: utf-8 -*-
 import os
+import json
 import fido
 import warnings
 import pandas as pd
 
+from tqdm import tqdm
+from hashlib import md5
 from copy import deepcopy
 from urllib.parse import urlparse
 from pyisemail import is_email
@@ -31,6 +34,11 @@ quantity_keys = {"display", "value", "unit"}
 pd.options.plotting.backend = "plotly"
 warnings.formatwarning = lambda msg, *args, **kwargs: f"{msg}\n"
 warnings.filterwarnings("default", category=DeprecationWarning, module=__name__)
+
+
+def get_md5(d):
+    s = json.dumps(d, sort_keys=True).encode("utf-8")
+    return md5(s).hexdigest()
 
 
 def validate_email(email_string):
@@ -234,21 +242,60 @@ class Client(SwaggerClient):
 
     def delete_contributions(self, project):
         """Convenience function to remove all contributions for a project"""
-        has_more, total = True, 0
-        while has_more:
-            resp = self.contributions.delete_entries(
-                project=project, _limit=250
-            ).result()
-            total += resp["count"]
-            has_more = resp["has_more"]
+        resp = self.contributions.get_entries(
+            project=project, _fields=["id"], _limit=1
+        ).result()
+        has_more, limit = True, 250
 
-        return total
+        with tqdm(total=resp["total_count"]) as pbar:
+            while has_more:
+                resp = self.contributions.delete_entries(
+                    project=project, _limit=limit
+                ).result()
+                has_more = resp["has_more"]
+                pbar.update(resp["count"])
 
-    def submit_contributions(self, contributions):
+    def submit_contributions(self, contributions, ignore=False):
         """Convenience function to submit a list of contributions"""
-        total = 0
-        for contribs in chunks(contributions):
-            resp = self.contributions.create_entries(contributions=contribs).result()
-            total += resp["count"]
+        # prepare structures/tables
+        md5s = set()
+        contribs = deepcopy(contributions)
+        for contrib in tqdm(contribs):
+            # TODO prepare tables
+            structures = contrib.pop("structures", [])
+            contrib["structures"] = []
+            nstruc = len(structures)
+            for structure in structures:
+                if not isinstance(structure, Structure):
+                    raise ValueError("Only accepting pymatgen Structures!")
 
-        return total
+                sdct = structure.as_dict()
+                del sdct["@module"]
+                del sdct["@class"]
+                digest = get_md5(sdct)
+                comp = structure.composition.get_integer_formula_and_factor()[0]
+                sdct["name"] = f"{comp}-{nstruc}"
+                msg = f"Duplicate structure {sdct['name']}!"
+
+                if digest in md5s:
+                    print(msg)
+                    if not ignore:
+                        raise ValueError(msg)
+
+                md5s.add(digest)
+                resp = self.structures.get_entries(
+                    md5=digest, _fields=["id"], _limit=1
+                ).result()
+
+                if not resp["data"]:
+                    contrib["structures"].append(sdct)
+                else:
+                    print(msg)
+                    if not ignore:
+                        raise ValueError(msg)
+
+        # submit
+        with tqdm(total=len(contribs)) as pbar:
+            for chunk in chunks(contribs):
+                resp = self.contributions.create_entries(contributions=chunk).result()
+                pbar.update(resp["count"])
