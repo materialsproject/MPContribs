@@ -5,7 +5,7 @@ import fido
 import warnings
 import pandas as pd
 
-from tqdm import tqdm
+from tqdm.notebook import tqdm
 from hashlib import md5
 from copy import deepcopy
 from urllib.parse import urlparse
@@ -260,42 +260,49 @@ class Client(SwaggerClient):
         # prepare structures/tables
         md5s = set()
         contribs = deepcopy(contributions)
-        for contrib in tqdm(contribs):
-            # TODO prepare tables
-            structures = contrib.pop("structures", [])
-            contrib["structures"] = []
-            nstruc = len(structures)
-            for structure in structures:
-                if not isinstance(structure, Structure):
-                    raise ValueError("Only accepting pymatgen Structures!")
+        ncontribs = len(contribs)
 
-                sdct = structure.as_dict()
-                del sdct["@module"]
-                del sdct["@class"]
-                digest = get_md5(sdct)
-                comp = structure.composition.get_integer_formula_and_factor()[0]
-                sdct["name"] = f"{comp}-{nstruc}"
-                msg = f"Duplicate structure {sdct['name']}!"
+        print(f"Preparing {ncontribs} contributions ...")
+        with tqdm(total=ncontribs) as pbar:
+            for contrib in tqdm(contribs):
+                # TODO prepare tables
+                structures = contrib.pop("structures", [])
+                contrib["structures"] = []
+                nstruc = len(structures)
+                for structure in structures:
+                    if not isinstance(structure, Structure):
+                        raise ValueError("Only accepting pymatgen Structures!")
 
-                if digest in md5s:
-                    print(msg)
-                    if not ignore:
-                        raise ValueError(msg)
+                    sdct = structure.as_dict()
+                    del sdct["@module"]
+                    del sdct["@class"]
+                    digest = get_md5(sdct)
+                    comp = structure.composition.get_integer_formula_and_factor()[0]
+                    sdct["name"] = f"{comp}-{nstruc}"
+                    msg = f"Duplicate structure {sdct['name']}!"
 
-                md5s.add(digest)
-                resp = self.structures.get_entries(
-                    md5=digest, _fields=["id"], _limit=1
-                ).result()
+                    if digest not in md5s:
+                        md5s.add(digest)
+                        resp = self.structures.get_entries(
+                            md5=digest, _fields=["id"], _limit=1
+                        ).result()
 
-                if not resp["data"]:
-                    contrib["structures"].append(sdct)
-                else:
-                    print(msg)
-                    if not ignore:
-                        raise ValueError(msg)
+                        if resp["data"]:
+                            print(msg)
+                            if not ignore:
+                                raise ValueError(msg)
+                        else:
+                            contrib["structures"].append(sdct)
+                    else:
+                        print(msg)
+                        if not ignore:
+                            raise ValueError(msg)
+
+                pbar.update(1)
 
         # submit
-        with tqdm(total=len(contribs)) as pbar:
+        print(f"Submitting {ncontribs} contributions ...")
+        with tqdm(total=ncontribs) as pbar:
             for chunk in chunks(contribs):
                 resp = self.contributions.create_entries(contributions=chunk).result()
                 pbar.update(resp["count"])
