@@ -5,7 +5,11 @@ import fido
 import warnings
 import pandas as pd
 
-from tqdm.notebook import tqdm
+try:
+    from tqdm.notebook import tqdm
+except ImportError:
+    from tqdm import tqdm
+
 from hashlib import md5
 from copy import deepcopy
 from urllib.parse import urlparse
