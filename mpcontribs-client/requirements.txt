@@ -5,7 +5,7 @@ fido[tls]==4.2.2
 ipython==7.16.1
 json2html==1.3.0
 pandas==1.0.5
-plotly==4.8.2
+plotly==4.9.0
 pyIsEmail==1.3.2
 pymatgen==2020.7.18
 pyOpenSSL==19.1.0
