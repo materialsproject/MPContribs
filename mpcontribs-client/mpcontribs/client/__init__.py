@@ -214,22 +214,17 @@ class Client(SwaggerClient):
     def get_table(self, tid):
         """Convenience function to get full Pandas DataFrame for a table."""
         table = {"data": []}
-        resp = self.tables.get_entry(
-            pk=tid, _fields=["total_data_rows", "columns"], data_per_page=1
-        ).result()
-        table["columns"] = resp["columns"]
         page, pages = 1, None
 
-        with tqdm(total=resp["total_data_rows"]) as pbar:
-            while pages is None or page <= pages:
-                resp = self.tables.get_entry(
-                    pk=tid, _fields=["_all"], data_page=page, data_per_page=1000
-                ).result()
-                table["data"].extend(resp["data"])
-                if pages is None:
-                    pages = resp["total_data_pages"]
-                page += 1
-                pbar.update(len(resp["data"]))
+        while pages is None or page <= pages:
+            resp = self.tables.get_entry(
+                pk=tid, _fields=["_all"], data_page=page, data_per_page=1000
+            ).result()
+            table["data"].extend(resp["data"])
+            if pages is None:
+                pages = resp["total_data_pages"]
+                table["columns"] = resp["columns"]
+            page += 1
 
         return pd.DataFrame.from_records(
             table["data"], columns=table["columns"], index=table["columns"][0]
@@ -259,6 +254,8 @@ class Client(SwaggerClient):
                 ).result()
                 has_more = resp["has_more"]
                 pbar.update(resp["count"])
+
+        self.load()
 
     def submit_contributions(self, contributions, ignore=False):
         """Convenience function to submit a list of contributions"""
@@ -330,3 +327,5 @@ class Client(SwaggerClient):
             for chunk in chunks(contribs):
                 resp = self.contributions.create_entries(contributions=chunk).result()
                 pbar.update(resp["count"])
+
+        self.load()
