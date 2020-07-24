@@ -250,59 +250,6 @@ Resources:
               awslogs-group: !Join ['-', [!Ref 'PipelineName', !Ref 'EnvironmentName', 'service', !Ref 'ServiceName']]
               awslogs-region: !Ref 'AWS::Region'
               awslogs-stream-prefix: !Ref 'ServiceName'
-        - Name: api-dev
-          MemoryReservation: 250
-          Image: !Join ['', [
-            !Ref 'AWS::AccountId', '.dkr.ecr.', !Ref 'AWS::Region', '.amazonaws.com/',
-            !Ref 'Repository', ':', !Ref 'PipelineName', '-', !Ref 'EnvironmentName', '-',
-            !Ref 'Tag', '-api'
-          ]]
-          DependsOn:
-            - Condition: START
-              ContainerName: orca
-            - Condition: START
-              ContainerName: gateway
-          Environment:
-            - Name: MPCONTRIBS_API_HOST
-              Value: "localhost:5004"
-            - Name: API_CNAME
-              Value: "dev-api.mpcontribs.org"
-            - Name: API_PORT
-              Value: "5004"
-            - Name: PORTAL_CNAME
-              Value: "dev-portal.mpcontribs.org"
-            - Name: PORTAL_PORT
-              Value: "8084"
-            - Name: MPCONTRIBS_DB_NAME
-              Value: "mpcontribs-dev"
-            - Name: TRADEMARK
-              Value: "DEV"
-            - Name: MPCONTRIBS_MONGO_HOST
-              Value: !Ref 'MongoHost'
-            - Name: AWS_ACCESS_KEY_ID
-              Value: !Ref 'AwsAccessKeyId'
-            - Name: AWS_SECRET_ACCESS_KEY
-              Value: !Ref 'AwsSecretAccessKey'
-            - Name: AWS_SNS_TOPIC_ARN
-              Value: !Ref 'SnsAdminTopicArn'
-            - Name: AWS_DEFAULT_REGION
-              Value: !Ref 'AWS::Region'
-            - Name: AWS_REGION
-              Value: !Ref 'AWS::Region'
-            - Name: S3_DOWNLOADS_BUCKET
-              Value: mpcontribs-downloads
-            - Name: REDIS_ADDRESS
-              Value:
-                Fn::ImportValue:
-                    !Join [':', [!Ref 'PipelineName', !Ref 'EnvironmentName', 'ElastiCacheAddress']]
-          PortMappings:
-            - ContainerPort: 5004
-          LogConfiguration:
-            LogDriver: 'awslogs'
-            Options:
-              awslogs-group: !Join ['-', [!Ref 'PipelineName', !Ref 'EnvironmentName', 'service', !Ref 'ServiceName']]
-              awslogs-region: !Ref 'AWS::Region'
-              awslogs-stream-prefix: !Ref 'ServiceName'
         - Name: portal
           MemoryReservation: 70
           Image: !Join ['', [
@@ -406,41 +353,6 @@ Resources:
               ContainerName: api
           PortMappings:
             - ContainerPort: 8083
-          LogConfiguration:
-            LogDriver: 'awslogs'
-            Options:
-              awslogs-group: !Join ['-', [!Ref 'PipelineName', !Ref 'EnvironmentName', 'service', !Ref 'ServiceName']]
-              awslogs-region: !Ref 'AWS::Region'
-              awslogs-stream-prefix: !Ref 'ServiceName'
-        - Name: portal-dev
-          MemoryReservation: 70
-          Image: !Join ['', [
-            !Ref 'AWS::AccountId', '.dkr.ecr.', !Ref 'AWS::Region', '.amazonaws.com/',
-            !Ref 'Repository', ':', !Ref 'PipelineName', '-', !Ref 'EnvironmentName', '-',
-            !Ref 'Tag', '-portal'
-          ]]
-          Environment:
-            - Name: NODE_ENV
-              Value: production
-            - Name: MPCONTRIBS_API_HOST
-              Value: "localhost:5004"
-            - Name: API_CNAME
-              Value: "dev-api.mpcontribs.org"
-            - Name: API_PORT
-              Value: "5004"
-            - Name: PORTAL_CNAME
-              Value: "dev-portal.mpcontribs.org"
-            - Name: PORTAL_PORT
-              Value: "8084"
-            - Name: TRADEMARK
-              Value: "DEV"
-            - Name: AWS_REGION
-              Value: !Ref 'AWS::Region'
-          DependsOn:
-            - Condition: START
-              ContainerName: api-dev
-          PortMappings:
-            - ContainerPort: 8084
           LogConfiguration:
             LogDriver: 'awslogs'
             Options:
