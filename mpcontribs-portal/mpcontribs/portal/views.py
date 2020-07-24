@@ -2,11 +2,13 @@
 """This module provides the views for the portal."""
 
 import os
+import gzip
 import json
 import nbformat
 from glob import glob
 from nbconvert import HTMLExporter
 from bs4 import BeautifulSoup
+from bravado.exception import HTTPNotFound
 from fido.exceptions import HTTPTimeoutError
 from json2html import Json2Html
 from boltons.iterutils import remap
@@ -143,53 +145,37 @@ def contribution(request, cid):
     return render(request, "contribution.html", ctx.flatten())
 
 
-def cif(request, sid):
+def download_component(request, oid):
     client = Client(headers=get_consumer(request))
-    cif = client.structures.get_entry(pk=sid, _fields=["cif"]).result()["cif"]
-    if cif:
-        response = HttpResponse(cif, content_type="text/plain")
-        response["Content-Disposition"] = "attachment; filename={}.cif".format(sid)
+    try:
+        resp = client.structures.get_entry(pk=oid, _fields=["cif"]).result()
+        content = resp["cif"]
+        ext = "cif"
+    except HTTPNotFound:
+        try:
+            resp = client.get_table(oid)
+            content = resp.to_csv()
+            ext = "csv"
+        except HTTPNotFound:
+            return HttpResponse(status=404)
+
+    if content:
+        content = gzip.compress(bytes(content, "utf-8"))
+        response = HttpResponse(content, content_type="application/gzip")
+        response["Content-Disposition"] = f"attachment; filename={oid}.{ext}.gz"
         return response
+
     return HttpResponse(status=404)
 
 
-def download_json(request, cid):
-    client = Client(headers=get_consumer(request))  # sets/returns global variable
-    contrib = client.contributions.get_entry(pk=cid, fields=["_all"]).result()
-    if contrib:
-        jcontrib = json.dumps(contrib)
-        response = HttpResponse(jcontrib, content_type="application/json")
-        response["Content-Disposition"] = "attachment; filename={}.json".format(cid)
-        return response
-    return HttpResponse(status=404)
-
-
-def csv(request, project):
-    from pandas import DataFrame
-    from pandas.io.json._normalize import nested_to_record
-
-    client = Client(headers=get_consumer(request))  # sets/returns global variable
-    contribs = client.contributions.get_entries(
-        project=project, _fields=["identifier", "id", "formula", "data"]
-    ).result()[
-        "data"
-    ]  # first 20 only
-
-    data = []
-    for contrib in contribs:
-        data.append({})
-        for k, v in nested_to_record(contrib, sep=".").items():
-            if v is not None and not k.endswith(".value") and not k.endswith(".unit"):
-                vs = v.split(" ")
-                if k.endswith(".display") and len(vs) > 1:
-                    key = k.replace("data.", "").replace(".display", "") + f" [{vs[1]}]"
-                    data[-1][key] = vs[0]
-                else:
-                    data[-1][k] = v
-
-    df = DataFrame(data)
-    response = HttpResponse(df.to_csv(), content_type="text/csv")
-    response["Content-Disposition"] = "attachment; filename={}.csv".format(project)
+def download_contribution(request, cid):
+    client = Client(headers=get_consumer(request))
+    data = client.contributions.download_entries(
+        short_mime="gz", format="json", _fields=["_all"], id=cid
+    ).result()
+    filename = request.path[1:]
+    response = HttpResponse(data, content_type="application/gzip")
+    response["Content-Disposition"] = f"attachment; filename={filename}"
     return response
 
 

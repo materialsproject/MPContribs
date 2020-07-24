@@ -34,7 +34,7 @@ function get_data() {
 
 function make_url(text, href) {
     var url;
-    if (href.endsWith('.cif')) {
+    if (href.startsWith('/component/')) {
         url = $('<a/>', {'class': 'tag is-link is-light', text: text, href: href});
     } else {
         url = $('<a/>', {href: href, target: '_blank', rel: "noopener noreferrer"});
@@ -55,7 +55,7 @@ function urlRenderer(instance, td, row, col, prop, value, cellProperties) {
         Handsontable.dom.empty(td);
         var tags = $('<div/>', {'class': 'tags'});
         $.each(value, function(i, v) {
-            var tag = make_url(v['name'], '/' + v['id'] + '.cif');
+            var tag = make_url(v['name'], '/component/' + v['id']);
             $(tags).append(tag);
         });
         $(td).addClass('htCenter').addClass('htMiddle').append(tags);

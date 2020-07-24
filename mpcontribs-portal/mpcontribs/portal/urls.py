@@ -12,11 +12,20 @@ urlpatterns = [
         views.notebooks,
         name="notebooks",
     ),
-    url(r"^(?P<project>[a-zA-Z0-9_]{3,}).csv$", views.csv, name="csv"),
-    url(r"^(?P<project>[a-zA-Z0-9_]{3,}).json.gz$", views.download, name="download"),
     url(r"^(?P<cid>[a-f\d]{24})/?$", views.contribution, name="contribution"),
-    url(r"^(?P<sid>[a-f\d]{24}).cif$", views.cif, name="cif"),
-    url(r"^(?P<cid>[a-f\d]{24}).json$", views.download_json, name="json"),
+    # downloads
+    url(
+        r"^component/(?P<oid>[a-f\d]{24})$",
+        views.download_component,
+        name="download_component",
+    ),
+    # url(r"^(?P<project>[a-zA-Z0-9_]{3,}).(?P<fmt>[a-z]{3})$", views.download_project,
+    #    name="download_project"),
+    url(
+        r"^(?P<cid>[a-f\d]{24}).json.gz$",
+        views.download_contribution,
+        name="download_contribution",
+    ),
     # redirects
     url(r"^fe-co-v/?$", RedirectView.as_view(url="/swf/", permanent=False)),
     url(r"^fe-co-v/dataset-01/?$", RedirectView.as_view(url="/swf/", permanent=False)),
