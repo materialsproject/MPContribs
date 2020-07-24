@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 import json
 from hashlib import md5
-from flask_mongoengine import Document
+from flask_mongoengine import DynamicDocument
 from mongoengine import signals
 from mongoengine.fields import StringField, ListField, IntField
 
 
-class Tables(Document):
+class Tables(DynamicDocument):
     name = StringField(required=True, help_text="name")
     columns = ListField(StringField(), required=True, help_text="column names")
     data = ListField(ListField(StringField()), required=True, help_text="table rows")

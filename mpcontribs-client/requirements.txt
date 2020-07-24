@@ -7,7 +7,7 @@ json2html==1.3.0
 pandas==1.0.5
 plotly==4.8.2
 pyIsEmail==1.3.2
-pymatgen==2020.7.10
+pymatgen==2020.7.18
 pyOpenSSL==19.1.0
 service-identity==18.1.0
 tqdm==4.48.0

@@ -213,20 +213,23 @@ class Client(SwaggerClient):
 
     def get_table(self, tid):
         """Convenience function to get full Pandas DataFrame for a table."""
-        page, pages = 1, None
         table = {"data": []}
+        resp = self.tables.get_entry(
+            pk=tid, _fields=["total_data_rows", "columns"], data_per_page=1
+        ).result()
+        table["columns"] = resp["columns"]
+        page, pages = 1, None
 
-        while pages is None or page <= pages:
-            res = self.tables.get_entry(
-                pk=tid, _fields=["_all"], data_page=page, data_per_page=1000
-            ).result()
-
-            if "columns" not in table:
-                pages = res["total_data_pages"]
-                table["columns"] = res["columns"]
-
-            table["data"].extend(res["data"])
-            page += 1
+        with tqdm(total=resp["total_data_rows"]) as pbar:
+            while pages is None or page <= pages:
+                resp = self.tables.get_entry(
+                    pk=tid, _fields=["_all"], data_page=page, data_per_page=1000
+                ).result()
+                table["data"].extend(resp["data"])
+                if pages is None:
+                    pages = resp["total_data_pages"]
+                page += 1
+                pbar.update(len(resp["data"]))
 
         return pd.DataFrame.from_records(
             table["data"], columns=table["columns"], index=table["columns"][0]

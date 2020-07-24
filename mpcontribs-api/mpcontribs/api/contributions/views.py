@@ -66,7 +66,7 @@ class ContributionsResource(Resource):
         "formula",
         "is_public",
         "last_modified",
-        re.compile(r"^data(__(" + exclude + ")+){1,3}$"),
+        re.compile(r"^data(__(" + exclude + ")+){1,4}$"),
     ]
     paginate = True
     default_limit = 20
