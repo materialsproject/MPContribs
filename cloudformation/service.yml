@@ -109,7 +109,7 @@ Resources:
             - Name: PORTAL_PORT
               Value: "8080"
             - Name: MPCONTRIBS_DB_NAME
-              Value: "mpcontribs"
+              Value: "mpcontribs-dev"
             - Name: MPCONTRIBS_MONGO_HOST
               Value: !Ref 'MongoHost'
             - Name: AWS_ACCESS_KEY_ID
