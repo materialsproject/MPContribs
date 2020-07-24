@@ -167,6 +167,8 @@ Resources:
               Value: "mpcontribs-ml"
             - Name: TRADEMARK
               Value: "ML"
+            - Name: NWORKERS
+              Value: 2
             - Name: MPCONTRIBS_MONGO_HOST
               Value: !Ref 'MongoHost'
             - Name: AWS_ACCESS_KEY_ID
@@ -220,6 +222,8 @@ Resources:
               Value: "mpcontribs-ls"
             - Name: TRADEMARK
               Value: "LS"
+            - Name: NWORKERS
+              Value: 2
             - Name: MPCONTRIBS_MONGO_HOST
               Value: !Ref 'MongoHost'
             - Name: AWS_ACCESS_KEY_ID
@@ -356,6 +360,8 @@ Resources:
               Value: "8082"
             - Name: TRADEMARK
               Value: "ML"
+            - Name: NWORKERS
+              Value: 2
             - Name: AWS_REGION
               Value: !Ref 'AWS::Region'
           DependsOn:
@@ -391,6 +397,8 @@ Resources:
               Value: "8083"
             - Name: TRADEMARK
               Value: "LS"
+            - Name: NWORKERS
+              Value: 2
             - Name: AWS_REGION
               Value: !Ref 'AWS::Region'
           DependsOn:
