@@ -165,7 +165,7 @@ Resources:
                 !Join [':', [!Ref 'PipelineName', !Ref 'EnvironmentName', 'PublicSubnetTwo']]
       TaskDefinition: !Ref 'TaskDefinition'
       LoadBalancers:
-        - ContainerName: !Ref 'ServiceName'
+        - ContainerName: kong
           ContainerPort: 8000
           TargetGroupArn:
             Fn::ImportValue:
