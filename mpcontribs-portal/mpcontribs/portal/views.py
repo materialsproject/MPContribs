@@ -135,8 +135,11 @@ def contribution(request, cid):
     contrib = client.contributions.get_entry(
         pk=cid, _fields=["identifier", "notebook"]
     ).result()
+    nb = client.notebooks.get_entry(
+        pk=contrib["notebook"]["id"], _fields=["_all"]
+    ).result()
     ctx["identifier"], ctx["cid"] = contrib["identifier"], cid
-    ctx["nb"], _ = export_notebook(contrib["notebook"], cid)
+    ctx["nb"], _ = export_notebook(nb, cid)
     return render(request, "contribution.html", ctx.flatten())
 
 

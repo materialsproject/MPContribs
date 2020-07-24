@@ -17,11 +17,15 @@ notebooks = Blueprint("notebooks", __name__, template_folder=templates)
 class NotebooksResource(Resource):
     document = Notebooks
     filters = {"id": [ops.In, ops.Exact]}
-    fields = ["id", "nbformat", "nbformat_minor", "metadata", "cells"]
+    fields = ["id"]
     allowed_ordering = ["name"]
     paginate = True
     default_limit = 10
     max_limit = 100
+
+    @staticmethod
+    def get_optional_fields():
+        return ["nbformat", "nbformat_minor", "metadata", "cells"]
 
 
 class NotebooksView(SwaggerView):

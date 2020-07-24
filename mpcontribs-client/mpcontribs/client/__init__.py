@@ -207,8 +207,7 @@ class Client(SwaggerClient):
         """Convenience function to get full contribution entry and display as HTML table"""
         fields = list(
             self.swagger_spec.definitions.get("ContributionsSchema")._properties.keys()
-        )
-        fields.remove("notebook")
+        )  # don't return dynamic fields (card_*)
         return Dict(self.contributions.get_entry(pk=cid, _fields=fields).result())
 
     def get_table(self, tid):
