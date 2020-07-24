@@ -149,9 +149,7 @@ Resources:
           ]]
           DependsOn:
             - Condition: START
-              ContainerName: orca
-            - Condition: START
-              ContainerName: gateway
+              ContainerName: api
           Environment:
             - Name: MPCONTRIBS_API_HOST
               Value: "localhost:5002"
@@ -204,9 +202,7 @@ Resources:
           ]]
           DependsOn:
             - Condition: START
-              ContainerName: orca
-            - Condition: START
-              ContainerName: gateway
+              ContainerName: api
           Environment:
             - Name: MPCONTRIBS_API_HOST
               Value: "localhost:5003"
@@ -313,7 +309,7 @@ Resources:
               Value: !Ref 'AWS::Region'
           DependsOn:
             - Condition: START
-              ContainerName: api
+              ContainerName: api-ml
           PortMappings:
             - ContainerPort: 8082
           LogConfiguration:
@@ -350,7 +346,7 @@ Resources:
               Value: !Ref 'AWS::Region'
           DependsOn:
             - Condition: START
-              ContainerName: api
+              ContainerName: api-ls
           PortMappings:
             - ContainerPort: 8083
           LogConfiguration:
