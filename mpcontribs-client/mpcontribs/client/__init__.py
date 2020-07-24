@@ -263,11 +263,14 @@ class Client(SwaggerClient):
         contribs = deepcopy(contributions)
         ncontribs = len(contribs)
         name = contribs[0]["project"]
-        resp = self.projects.get_entry(pk=name, _fields=["unique_identifiers"]).result()
 
-        if resp["unique_identifiers"]:
-            print(f"Get existing contributions ...")
-            with tqdm(total=ncontribs) as pbar:
+        with tqdm(total=ncontribs) as pbar:
+            resp = self.projects.get_entry(
+                pk=name, _fields=["unique_identifiers"]
+            ).result()
+
+            if resp["unique_identifiers"]:
+                pbar.set_description("Get existing contribution(s)")
                 has_more = True
                 while has_more:
                     skip = len(existing)
@@ -278,51 +281,75 @@ class Client(SwaggerClient):
                     has_more = resp["has_more"]
                     pbar.update(250)
 
-            print(len(existing), "contributions already uploaded.")
+                if existing:
+                    print(len(existing), "contributions already uploaded.")
 
-        print(f"Prepare {ncontribs} contributions ...")
-        with tqdm(total=ncontribs) as pbar:
+                pbar.refresh()
+                pbar.reset()
+
+            pbar.set_description(f"Prepare {ncontribs} contribution(s)")
             for contrib in contribs:
                 if contrib["identifier"] in existing:
                     continue
 
-                # TODO prepare tables
-                structures = contrib.pop("structures", [])
-                contrib["structures"] = []
-                nstruc = len(structures)
-                for structure in structures:
-                    if not isinstance(structure, Structure):
-                        raise ValueError("Only accepting pymatgen Structures!")
+                for component in ["structures", "tables"]:
+                    comp_list = contrib.pop(component, [])
+                    contrib[component] = []
+                    for idx, element in enumerate(comp_list):
+                        is_structure = isinstance(element, Structure)
+                        if component == "structures" and not is_structure:
+                            raise ValueError("Only accepting pymatgen Structure!")
+                        elif component == "tables" and not isinstance(
+                            element, pd.DataFrame
+                        ):
+                            raise ValueError("Only accepting pandas DataFrame!")
 
-                    sdct = structure.as_dict()
-                    del sdct["@module"]
-                    del sdct["@class"]
-                    digest = get_md5(sdct)
-                    comp = structure.composition.get_integer_formula_and_factor()[0]
-                    sdct["name"] = f"{comp}-{nstruc}"
-                    msg = f"Duplicate structure {sdct['name']}!"
+                        if is_structure:
+                            dct = element.as_dict()
+                            del dct["@module"]
+                            del dct["@class"]
+                        else:
+                            for col in element.columns:
+                                element[col] = element[col].astype(str)
+                            dct = element.to_dict(orient="split")
+                            del dct["index"]
 
-                    if digest not in md5s:
-                        md5s.add(digest)
-                        resp = self.structures.get_entries(
-                            md5=digest, _fields=["id"], _limit=1
-                        ).result()
+                        digest = get_md5(dct)
 
-                        if resp["data"]:
+                        if is_structure:
+                            c = component.composition
+                            comp = c.get_integer_formula_and_factor()
+                            dct["name"] = f"{comp[0]}-{idx}"
+                        else:
+                            name = element.index.name
+                            dct["name"] = name if name else f"table-{idx}"
+
+                        msg = f"Duplicate: {dct['name']}!"
+
+                        if digest not in md5s:
+                            md5s.add(digest)
+                            resource = getattr(self, component)
+                            resp = resource.get_entries(
+                                md5=digest, _fields=["id"], _limit=1
+                            ).result()
+
+                            if resp["data"]:
+                                print(msg)
+                                if not ignore:
+                                    raise ValueError(msg)
+                            else:
+                                contrib[component].append(dct)
+                        else:
                             print(msg)
                             if not ignore:
                                 raise ValueError(msg)
-                        else:
-                            contrib["structures"].append(sdct)
-                    else:
-                        print(msg)
-                        if not ignore:
-                            raise ValueError(msg)
 
                 pbar.update(1)
 
-        print(f"Submit {ncontribs} contributions ...")
-        with tqdm(total=ncontribs) as pbar:
+            pbar.refresh()
+            pbar.reset()
+            pbar.set_description(f"Submit {ncontribs} contribution(s)")
+
             for chunk in chunks(contribs):
                 resp = self.contributions.create_entries(contributions=chunk).result()
                 pbar.update(resp["count"])
