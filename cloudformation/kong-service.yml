@@ -9,7 +9,7 @@ Parameters:
                  Used to locate other resources in the same environment.
   ServiceName:
     Type: String
-    Default: kong
+    Default: kong-gateway
     Description: A name for the service
   ImageUrlKong:
     Type: String
