@@ -106,6 +106,7 @@ services:
           - orca
         environment:
             KG_ALLOW_ORIGIN: '*'
+            ORCA_HOST: 'orca:9091'
         build: ./mpcontribs-sidecars/kernel_gateway
 
     orca:
