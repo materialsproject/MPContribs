@@ -67,10 +67,11 @@ url_format = SwaggerFormat(
 )
 
 
-def chunks(l, n=250):
+def chunks(lst, n=250):
     n = max(1, n)
-    for i in range(0, len(l), n):
-        yield l[i : i + n]
+    for i in range(0, len(lst), n):
+        to = i + n
+        yield lst[i:to]
 
 
 class FidoClientGlobalHeaders(FidoClient):
@@ -158,7 +159,12 @@ class Client(SwaggerClient):
         )
 
         # expand regex-based query parameters for `data` columns
-        resp = self.projects.get_entries(_fields=["columns"]).result()
+        try:
+            resp = self.projects.get_entries(_fields=["columns"]).result()
+        except AttributeError:
+            # skip in tests
+            return
+
         columns = {"text": [], "number": []}
         for project in resp["data"]:
             for column in project["columns"]:
