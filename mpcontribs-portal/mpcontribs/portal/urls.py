@@ -19,8 +19,12 @@ urlpatterns = [
         views.download_component,
         name="download_component",
     ),
-    # url(r"^(?P<project>[a-zA-Z0-9_]{3,}).(?P<fmt>[a-z]{3})$", views.download_project,
-    #    name="download_project"),
+    # TODO .(?P<fmt>[a-z]{3})
+    url(
+        r"^(?P<project>[a-zA-Z0-9_]{3,}).json.gz$",
+        views.download_project,
+        name="download_project",
+    ),
     url(
         r"^(?P<cid>[a-f\d]{24}).json.gz$",
         views.download_contribution,

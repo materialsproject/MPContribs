@@ -179,12 +179,31 @@ def download_contribution(request, cid):
     return response
 
 
-def download(request, project):
-    cname = os.environ["PORTAL_CNAME"]
-    s3obj = f"{S3_DOWNLOAD_URL}{cname}/{project}.json.gz"
-    return redirect(s3obj)
-    # TODO check if exists, generate if not, progressbar...
-    # return HttpResponse(status=404)
+def download_project(request, project):
+    # NOTE/TODO separate original uploads for ML deployment
+    if os.environ["TRADEMARK"] == "ML":
+        cname = os.environ["PORTAL_CNAME"]
+        s3obj = f"{S3_DOWNLOAD_URL}{cname}/{project}.json.gz"
+        return redirect(s3obj)
+
+    return HttpResponse(status=404)
+
+    # if fmt not in ["json", "csv"]:
+    # client = Client(headers=get_consumer(request))
+    # return client.contributions.download_entries(
+    #    short_mime="gz", format=fmt, _fields=["_all"], project=project
+    # ).result()
+
+    # ctx["ncells"] = len(nb["cells"])
+
+    # if not nb["cells"][-1]["outputs"]:
+    #    try:
+    #        nb = client.notebooks.get_entry(pk=cid).result(
+    #            timeout=1
+    #        )  # trigger cell execution
+    #    except HTTPTimeoutError as e:
+    #        dots = '<span class="loader__dot">.</span><span class="loader__dot">.</span><span class="loader__dot">.</span>'
+    #        ctx["alert"] = f"Detail page is building in the background {dots}"
 
 
 def notebooks(request, nb):
