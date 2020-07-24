@@ -83,13 +83,13 @@ Resources:
             !Ref 'Repository', ':', !Ref 'PipelineName', '-', !Ref 'EnvironmentName', '-',
             !Ref 'Tag', '-api'
           ]]
-          DockerLabels:
-            my.custom.label.service: !Join ['-', [
-              !Ref 'PipelineName', !Ref 'EnvironmentName', !Ref 'ServiceName'
-            ]]
-            com.datadoghq.ad.instances: [{"host": "%%host%%", "port": "5000"}]
-            com.datadoghq.ad.check_names: "[\"ecs_fargate\"]"
-            com.datadoghq.ad.init_configs: "[{}]"
+          #DockerLabels:
+          #  my.custom.label.service: !Join ['-', [
+          #    !Ref 'PipelineName', !Ref 'EnvironmentName', !Ref 'ServiceName'
+          #  ]]
+          #  com.datadoghq.ad.instances: [{"host": "%%host%%", "port": "5000"}]
+          #  com.datadoghq.ad.check_names: "[\"ecs_fargate\"]"
+          #  com.datadoghq.ad.init_configs: "[{}]"
           DependsOn:
             - Condition: START
               ContainerName: orca

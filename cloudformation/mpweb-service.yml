@@ -9,7 +9,7 @@ Parameters:
                  Used to locate other resources in the same environment.
   ServiceName:
     Type: String
-    Default: mpweb
+    Default: mp-nextgen
     Description: A name for the service
   ImageUrlWeb:
     Type: String
