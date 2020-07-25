@@ -331,9 +331,6 @@ Resources:
         BuildSpec: |
           version: 0.2
           phases:
-            install:
-              runtime-versions:
-                docker: 18
             pre_build:
               commands:
                 - $(aws ecr get-login --no-include-email)
@@ -378,9 +375,6 @@ Resources:
         BuildSpec: |
           version: 0.2
           phases:
-            install:
-              runtime-versions:
-                docker: 18
             pre_build:
               commands:
                 - $(aws ecr get-login --no-include-email)
@@ -425,9 +419,6 @@ Resources:
         BuildSpec: |
           version: 0.2
           phases:
-            install:
-              runtime-versions:
-                docker: 18
             pre_build:
               commands:
                 - $(aws ecr get-login --no-include-email)
@@ -487,9 +478,6 @@ Resources:
             parameter-store:
               build_ssh_key: "build_ssh_key"
           phases:
-            install:
-              runtime-versions:
-                docker: 18
             pre_build:
               commands:
                 - $(aws ecr get-login --no-include-email)
@@ -547,9 +535,6 @@ Resources:
         BuildSpec: |
           version: 0.2
           phases:
-            install:
-              runtime-versions:
-                docker: 18
             pre_build:
               commands:
                 - $(aws ecr get-login --no-include-email)
