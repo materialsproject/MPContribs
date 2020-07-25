@@ -6,14 +6,15 @@ APIs based on Yelp's [bravado](https://bravado.readthedocs.io).
 
 ```python
 from mpcontribs.client import Client
-client = Client('your-api-key-here')
+client = Client()
 dir(client) # show available resources
 ```
 
-By default, the client connects to https://api.mpcontribs.org. The `host` argument or the
-`MPCONTRIBS_API_HOST` environment variable can be set to connect to other MPContribs-style
-APIs:
+By default, the client connects to https://api.mpcontribs.org and uses the environment variable
+`MPCONTRIBS_API_KEY` to set the API key. The key can alternatively be set explicitly via the
+`apikey` argument to the constructor. The `host` argument or the `MPCONTRIBS_API_HOST`
+environment variable can be set to connect to other MPContribs-style APIs:
 
 ```python
-client = Client('your-api-key-here', host='ml.materialsproject.cloud')
+client = Client(host='ml.materialsproject.cloud')
 ```
