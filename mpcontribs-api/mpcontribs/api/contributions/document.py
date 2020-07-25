@@ -161,10 +161,9 @@ class Contributions(DynamicDocument):
                         v = value["value"]
                         if v > column.max:
                             column.max = v
+                            project.save().reload("columns")
                         elif v < column.min:
                             column.min = v
-
-                        if v > column.max or v < column.min:
                             project.save().reload("columns")
 
                 except DoesNotExist:
