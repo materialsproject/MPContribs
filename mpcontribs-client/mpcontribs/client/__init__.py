@@ -255,8 +255,8 @@ class Client(SwaggerClient):
         ncontribs = resp["total_count"]
         has_more, limit = True, 250
 
-        print(f"Delete {ncontribs} contributions ...")
         with tqdm(total=ncontribs) as pbar:
+            pbar.set_description(f"Delete {ncontribs} contribution(s)")
             while has_more:
                 resp = self.contributions.delete_entries(
                     project=project, _limit=limit
@@ -266,15 +266,13 @@ class Client(SwaggerClient):
 
         self.load()
 
-    def submit_contributions(self, contributions, ignore=False):
+    def submit_contributions(self, contributions, ignore=False, limit=200):
         """Convenience function to submit a list of contributions"""
         # prepare structures/tables
         existing, md5s = set(), set()
-        contribs = deepcopy(contributions)
-        ncontribs = len(contribs)
-        name = contribs[0]["project"]
+        name = contributions[0]["project"]
 
-        with tqdm(total=ncontribs) as pbar:
+        with tqdm(total=len(contributions)) as pbar:
             resp = self.projects.get_entry(
                 pk=name, _fields=["unique_identifiers"]
             ).result()
@@ -285,26 +283,29 @@ class Client(SwaggerClient):
                 while has_more:
                     skip = len(existing)
                     resp = self.contributions.get_entries(
-                        project=name, _skip=skip, _limit=250, _fields=["identifier"]
+                        project=name, _skip=skip, _limit=limit, _fields=["identifier"]
                     ).result()
                     existing |= set(c["identifier"] for c in resp["data"])
                     has_more = resp["has_more"]
-                    pbar.update(250)
+                    pbar.update(limit)
 
                 if existing:
-                    print(len(existing), "contributions already uploaded.")
+                    print(len(existing), "contributions already submitted.")
 
                 pbar.refresh()
                 pbar.reset()
 
-            pbar.set_description(f"Prepare {ncontribs} contribution(s)")
-            for contrib in contribs:
+            contribs = []
+            pbar.set_description(f"Prepare contribution(s)")
+            for contrib in contributions:
                 if contrib["identifier"] in existing:
                     continue
 
+                contribs.append(deepcopy(contrib))
+
                 for component in ["structures", "tables"]:
-                    comp_list = contrib.pop(component, [])
-                    contrib[component] = []
+                    comp_list = contribs[-1].pop(component, [])
+                    contribs[-1][component] = []
                     for idx, element in enumerate(comp_list):
                         is_structure = isinstance(element, Structure)
                         if component == "structures" and not is_structure:
@@ -348,7 +349,7 @@ class Client(SwaggerClient):
                                 if not ignore:
                                     raise ValueError(msg)
                             else:
-                                contrib[component].append(dct)
+                                contribs[-1][component].append(dct)
                         else:
                             print(msg)
                             if not ignore:
@@ -357,10 +358,11 @@ class Client(SwaggerClient):
                 pbar.update(1)
 
             pbar.refresh()
-            pbar.reset()
+            ncontribs = len(contribs)
+            pbar.reset(total=ncontribs)
             pbar.set_description(f"Submit {ncontribs} contribution(s)")
 
-            for chunk in chunks(contribs):
+            for chunk in chunks(contribs, n=limit):
                 resp = self.contributions.create_entries(contributions=chunk).result()
                 pbar.update(resp["count"])
 
