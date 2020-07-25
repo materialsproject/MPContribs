@@ -158,8 +158,14 @@ class Contributions(DynamicDocument):
                 try:
                     column = project.columns.get(path=path)
                     if is_quantity:
-                        column.min, column.max = get_min_max(sender, path)
-                        project.save().reload("columns")
+                        v = value["value"]
+                        if v > column.max:
+                            column.max = v
+                        elif v < column.min:
+                            column.min = v
+
+                        if v > column.max or v < column.min:
+                            project.save().reload("columns")
 
                 except DoesNotExist:
                     column = Column(path=path)
