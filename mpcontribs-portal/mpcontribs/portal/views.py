@@ -7,9 +7,7 @@ import json
 import nbformat
 from glob import glob
 from nbconvert import HTMLExporter
-from bs4 import BeautifulSoup
 from bravado.exception import HTTPNotFound
-from fido.exceptions import HTTPTimeoutError
 from json2html import Json2Html
 from boltons.iterutils import remap
 
@@ -43,6 +41,10 @@ def get_consumer(request):
     return headers
 
 
+def client_kwargs(request):
+    return {"headers": get_consumer(request)}
+
+
 def get_context(request):
     ctx = RequestContext(request)
     ctx["API_CNAME"] = os.environ["API_CNAME"]
@@ -55,7 +57,7 @@ def landingpage(request):
     ctx = get_context(request)
     try:
         project = request.path.replace("/", "")
-        client = Client(headers=get_consumer(request))
+        client = Client(**client_kwargs(request))
         prov = client.projects.get_entry(pk=project, _fields=["_all"]).result()
         ctx["name"] = project
         long_title = prov.get("long_title")
@@ -111,7 +113,7 @@ def index(request):
     ctx["PORTAL_CNAME"] = cname
     ctx["landing_pages"] = []
     mask = ["name", "title", "authors", "is_public", "description", "references"]
-    client = Client(headers=get_consumer(request))
+    client = Client(**client_kwargs(request))
     entries = client.projects.get_entries(_fields=mask).result()["data"]
     for entry in entries:
         authors = entry["authors"].strip().split(",", 1)
@@ -133,7 +135,7 @@ def export_notebook(nb, cid):
 
 def contribution(request, cid):
     ctx = get_context(request)
-    client = Client(headers=get_consumer(request))
+    client = Client(**client_kwargs(request))
     contrib = client.contributions.get_entry(
         pk=cid, _fields=["identifier", "notebook"]
     ).result()
@@ -146,7 +148,7 @@ def contribution(request, cid):
 
 
 def download_component(request, oid):
-    client = Client(headers=get_consumer(request))
+    client = Client(**client_kwargs(request))
     try:
         resp = client.structures.get_entry(pk=oid, _fields=["cif"]).result()
         content = resp["cif"]
@@ -169,7 +171,7 @@ def download_component(request, oid):
 
 
 def download_contribution(request, cid):
-    client = Client(headers=get_consumer(request))
+    client = Client(**client_kwargs(request))
     data = client.contributions.download_entries(
         short_mime="gz", format="json", _fields=["_all"], id=cid
     ).result()
@@ -189,7 +191,7 @@ def download_project(request, project):
     return HttpResponse(status=404)
 
     # if fmt not in ["json", "csv"]:
-    # client = Client(headers=get_consumer(request))
+    # client = Client(**client_kwargs(request))
     # return client.contributions.download_entries(
     #    short_mime="gz", format=fmt, _fields=["_all"], project=project
     # ).result()
