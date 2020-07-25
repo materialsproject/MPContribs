@@ -130,13 +130,8 @@ class Client(SwaggerClient):
         if not host:
             host = os.environ.get("MPCONTRIBS_API_HOST", DEFAULT_HOST)
 
-        is_localhost = host.startswith("localhost") or host.startswith("127.")
-
         if not apikey:
             apikey = os.environ.get("MPCONTRIBS_API_KEY")
-
-        if not apikey and not is_localhost:
-            raise ValueError("API key required!")
 
         self.apikey = apikey
         self.headers = {"x-api-key": apikey} if apikey else headers
@@ -310,6 +305,7 @@ class Client(SwaggerClient):
             pbar.set_description("Prepare contribution(s)")
             for contrib in contributions:
                 if contrib["identifier"] in existing:
+                    pbar.update(1)
                     continue
 
                 contribs.append(deepcopy(contrib))
