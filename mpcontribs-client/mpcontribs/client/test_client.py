@@ -23,24 +23,27 @@ def test_validate_email():
     ),
 )
 def test_Client():
-    kwargs = {}
+    with pytest.raises(ValueError):
+        spec = Client().swagger_spec
+
+    kwargs = {"host": "127.0.0.1"}
     spec = Client(**kwargs).swagger_spec
     assert spec.http_client.headers == {}
-    assert spec.origin_url == f"http://{DEFAULT_HOST}/apispec.json"
-    assert spec.spec_dict["host"] == DEFAULT_HOST
+    assert spec.origin_url == "http://127.0.0.1/apispec.json"
+    assert spec.spec_dict["host"] == "127.0.0.1"
     assert spec.spec_dict["schemes"] == ["http"]
     assert spec.user_defined_formats["email"] == email_format
-    kwargs = {"apikey": "1234", "headers": {"a": "b"}, "host": "api.example.com"}
+    kwargs = {"apikey": "1234", "headers": {"a": "b"}}
     spec = Client(**kwargs).swagger_spec
     assert spec.http_client.headers == {"x-api-key": "1234"}
-    assert spec.origin_url == "https://api.example.com/apispec.json"
-    assert spec.spec_dict["host"] == "api.example.com"
+    assert spec.origin_url == f"https://{DEFAULT_HOST}/apispec.json"
+    assert spec.spec_dict["host"] == DEFAULT_HOST
     assert spec.spec_dict["schemes"] == ["https"]
     assert spec.user_defined_formats["email"] == email_format
-    kwargs = {"headers": {"a": "b"}}
+    kwargs = {"headers": {"a": "b"}, "host": "localhost:5000"}
     spec = Client(**kwargs).swagger_spec
     assert spec.http_client.headers == {"a": "b"}
-    assert spec.origin_url == f"http://{DEFAULT_HOST}/apispec.json"
-    assert spec.spec_dict["host"] == DEFAULT_HOST
+    assert spec.origin_url == "http://localhost:5000/apispec.json"
+    assert spec.spec_dict["host"] == "localhost:5000"
     assert spec.spec_dict["schemes"] == ["http"]
     assert spec.user_defined_formats["email"] == email_format

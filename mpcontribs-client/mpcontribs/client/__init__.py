@@ -307,7 +307,7 @@ class Client(SwaggerClient):
                 pbar.reset()
 
             contribs = []
-            pbar.set_description(f"Prepare contribution(s)")
+            pbar.set_description("Prepare contribution(s)")
             for contrib in contributions:
                 if contrib["identifier"] in existing:
                     continue
