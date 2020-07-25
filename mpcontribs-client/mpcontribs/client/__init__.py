@@ -339,7 +339,7 @@ class Client(SwaggerClient):
                         digest = get_md5(dct)
 
                         if is_structure:
-                            c = component.composition
+                            c = element.composition
                             comp = c.get_integer_formula_and_factor()
                             dct["name"] = f"{comp[0]}-{idx}"
                         else:
