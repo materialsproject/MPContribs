@@ -30,7 +30,6 @@ from pymatgen import Structure
 
 
 DEFAULT_HOST = "api.mpcontribs.org"
-HOST = os.environ.get("MPCONTRIBS_API_HOST", DEFAULT_HOST)
 BULMA = "is-narrow is-fullwidth has-background-light"
 
 j2h = Json2Html()
@@ -105,7 +104,7 @@ class Dict(dict):
         )
 
 
-def load_client(apikey=None, headers=None, host=HOST):
+def load_client(apikey=None, headers=None, host=None):
     warnings.warn(
         "load_client(...) is deprecated, use Client(...) instead", DeprecationWarning
     )
@@ -123,10 +122,22 @@ class Client(SwaggerClient):
 
     _shared_state = {}
 
-    def __init__(self, apikey=None, headers=None, host=HOST):
+    def __init__(self, apikey=None, headers=None, host=None):
         # - Kong forwards consumer headers when api-key used for auth
         # - forward consumer headers when connecting through localhost
         self.__dict__ = self._shared_state
+
+        if not host:
+            host = os.environ.get("MPCONTRIBS_API_HOST", DEFAULT_HOST)
+
+        is_localhost = host.startswith("localhost") or host.startswith("127.")
+
+        if not apikey:
+            apikey = os.environ.get("MPCONTRIBS_API_KEY")
+
+        if not apikey and not is_localhost:
+            raise ValueError("API key required!")
+
         self.apikey = apikey
         self.headers = {"x-api-key": apikey} if apikey else headers
         self.host = host
