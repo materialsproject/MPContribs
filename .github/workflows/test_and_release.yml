@@ -32,6 +32,8 @@ jobs:
         tox
         python setup.py sdist --dist-dir ../dist
         python setup.py bdist_wheel --dist-dir ../dist
+      env:
+        MPCONTRIBS_API_KEY: ${{ secrets.MPCONTRIBS_API_KEY }}
 
     - name: Upload client coverage to Codecov
       uses: codecov/codecov-action@v1
