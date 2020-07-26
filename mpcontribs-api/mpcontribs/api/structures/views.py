@@ -20,7 +20,7 @@ class StructuresResource(Resource):
         "name": [ops.In, ops.Exact, ops.Contains],
         "md5": [ops.In, ops.Exact],
     }
-    fields = ["id", "name"]
+    fields = ["id", "name", "md5"]
     allowed_ordering = ["name"]
     paginate = True
     default_limit = 10
@@ -28,7 +28,7 @@ class StructuresResource(Resource):
 
     @staticmethod
     def get_optional_fields():
-        return ["lattice", "sites", "charge", "md5", "cif"]
+        return ["lattice", "sites", "charge", "cif"]
 
 
 class StructuresView(SwaggerView):

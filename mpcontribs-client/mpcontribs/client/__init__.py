@@ -133,6 +133,10 @@ class Client(SwaggerClient):
         if not apikey:
             apikey = os.environ.get("MPCONTRIBS_API_KEY")
 
+        if apikey and headers is not None:
+            apikey = None
+            warnings.warn("headers set => ignoring apikey!")
+
         self.apikey = apikey
         self.headers = {"x-api-key": apikey} if apikey else headers
         self.host = host
@@ -262,7 +266,7 @@ class Client(SwaggerClient):
         has_more, limit = True, 250
 
         with tqdm(total=ncontribs) as pbar:
-            pbar.set_description(f"Delete {ncontribs} contribution(s)")
+            pbar.set_description("Delete contribution(s)")
             while has_more:
                 resp = self.contributions.delete_entries(
                     project=project, _limit=limit
@@ -270,49 +274,71 @@ class Client(SwaggerClient):
                 has_more = resp["has_more"]
                 pbar.update(resp["count"])
 
-        self.load()
+            if resp["count"]:
+                self.load()
 
-    def submit_contributions(self, contributions, ignore=False, limit=200):
+    def submit_contributions(
+        self, contributions, skip_dupe_check=False, ignore_dupes=False, limit=200
+    ):
         """Convenience function to submit a list of contributions"""
         # prepare structures/tables
-        existing, md5s = set(), set()
-        name = contributions[0]["project"]
-
         with tqdm(total=len(contributions)) as pbar:
-            resp = self.projects.get_entry(
-                pk=name, _fields=["unique_identifiers"]
-            ).result()
+            existing = {"identifiers": set(), "structures": set(), "tables": set()}
+            unique_identifiers = True
 
-            if resp["unique_identifiers"]:
+            if not skip_dupe_check:
+                name = contributions[0]["project"]
+                resp = self.projects.get_entry(
+                    pk=name, _fields=["unique_identifiers"]
+                ).result()
+                unique_identifiers = resp["unique_identifiers"]
+
                 pbar.set_description("Get existing contribution(s)")
-                has_more = True
+                has_more, page, per_page = True, 1, 250
+
                 while has_more:
-                    skip = len(existing)
                     resp = self.contributions.get_entries(
-                        project=name, _skip=skip, _limit=limit, _fields=["identifier"]
+                        project=name,
+                        page=page,
+                        per_page=per_page,
+                        _fields=["identifier", "structures", "tables"],
                     ).result()
-                    existing |= set(c["identifier"] for c in resp["data"])
+
+                    for contrib in resp["data"]:
+                        existing["identifiers"].add(contrib["identifier"])
+
+                        for component in ["structures", "tables"]:
+                            md5s = set(d["md5"] for d in contrib[component])
+                            existing[component] |= md5s
+
                     has_more = resp["has_more"]
-                    pbar.update(limit)
+                    pbar.update(page * per_page)
+                    page += 1
 
                 if existing:
                     print(len(existing), "contributions already submitted.")
 
                 pbar.refresh()
-                pbar.reset()
 
             contribs = []
+            digests = {"structures": set(), "tables": set()}
             pbar.set_description("Prepare contribution(s)")
+
             for contrib in contributions:
-                if contrib["identifier"] in existing:
+
+                if (
+                    unique_identifiers
+                    and contrib["identifier"] in existing["identifiers"]
+                ):
                     pbar.update(1)
                     continue
 
                 contribs.append(deepcopy(contrib))
 
-                for component in ["structures", "tables"]:
+                for component in digests.keys():
                     comp_list = contribs[-1].pop(component, [])
                     contribs[-1][component] = []
+
                     for idx, element in enumerate(comp_list):
                         is_structure = isinstance(element, Structure)
                         if component == "structures" and not is_structure:
@@ -326,6 +352,9 @@ class Client(SwaggerClient):
                             dct = element.as_dict()
                             del dct["@module"]
                             del dct["@class"]
+
+                            if not dct.get("charge"):
+                                del dct["charge"]
                         else:
                             for col in element.columns:
                                 element[col] = element[col].astype(str)
@@ -342,35 +371,29 @@ class Client(SwaggerClient):
                             name = element.index.name
                             dct["name"] = name if name else f"table-{idx}"
 
-                        msg = f"Duplicate: {dct['name']}!"
+                        dupe = (
+                            digest in digests[component]
+                            or digest in existing[component]
+                        )
 
-                        if digest not in md5s:
-                            md5s.add(digest)
-                            resource = getattr(self, component)
-                            resp = resource.get_entries(
-                                md5=digest, _fields=["id"], _limit=1
-                            ).result()
+                        if not ignore_dupes and dupe:
+                            msg = f"Duplicate: {dct['name']}!"
+                            raise ValueError(msg)
 
-                            if resp["data"]:
-                                print(msg)
-                                if not ignore:
-                                    raise ValueError(msg)
-                            else:
-                                contribs[-1][component].append(dct)
-                        else:
-                            print(msg)
-                            if not ignore:
-                                raise ValueError(msg)
+                        if not dupe:
+                            digests[component].add(digest)
+                            contribs[-1][component].append(dct)
 
                 pbar.update(1)
 
             pbar.refresh()
             ncontribs = len(contribs)
             pbar.reset(total=ncontribs)
-            pbar.set_description(f"Submit {ncontribs} contribution(s)")
+            pbar.set_description("Submit contribution(s)")
 
             for chunk in chunks(contribs, n=limit):
                 resp = self.contributions.create_entries(contributions=chunk).result()
                 pbar.update(resp["count"])
 
-        self.load()
+            if resp["count"]:
+                self.load()

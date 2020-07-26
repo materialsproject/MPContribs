@@ -22,7 +22,7 @@ class TablesResource(Resource):
         "columns": [ops.IContains],
         "md5": [ops.In, ops.Exact],
     }
-    fields = ["id", "name"]
+    fields = ["id", "name", "md5"]
     allowed_ordering = ["name"]
     paginate = True
     default_limit = 10
@@ -31,7 +31,7 @@ class TablesResource(Resource):
 
     @staticmethod
     def get_optional_fields():
-        return ["columns", "data", "md5", "total_data_rows", "total_data_pages"]
+        return ["columns", "data", "total_data_rows", "total_data_pages"]
 
     def value_for_field(self, obj, field):
         if field == "total_data_pages":
