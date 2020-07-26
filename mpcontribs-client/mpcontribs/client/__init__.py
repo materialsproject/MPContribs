@@ -263,19 +263,21 @@ class Client(SwaggerClient):
             project=project, _fields=["id"], _limit=1
         ).result()
         ncontribs = resp["total_count"]
-        has_more, limit = True, 250
 
-        with tqdm(total=ncontribs) as pbar:
-            pbar.set_description("Delete contribution(s)")
-            while has_more:
-                resp = self.contributions.delete_entries(
-                    project=project, _limit=limit
-                ).result()
-                has_more = resp["has_more"]
-                pbar.update(resp["count"])
+        if ncontribs:
+            has_more, limit = True, 250
 
-            if resp["count"]:
-                self.load()
+            with tqdm(total=ncontribs) as pbar:
+                pbar.set_description("Delete contribution(s)")
+                while has_more:
+                    resp = self.contributions.delete_entries(
+                        project=project, _limit=limit
+                    ).result()
+                    has_more = resp["has_more"]
+                    pbar.update(resp["count"])
+
+                if resp["count"]:
+                    self.load()
 
     def submit_contributions(
         self, contributions, skip_dupe_check=False, ignore_dupes=False, limit=200
@@ -388,14 +390,18 @@ class Client(SwaggerClient):
 
                 pbar.update(1)
 
-            pbar.refresh()
             ncontribs = len(contribs)
-            pbar.reset(total=ncontribs)
-            pbar.set_description("Submit contribution(s)")
 
-            for chunk in chunks(contribs, n=limit):
-                resp = self.contributions.create_entries(contributions=chunk).result()
-                pbar.update(resp["count"])
+            if ncontribs:
+                pbar.refresh()
+                pbar.reset(total=ncontribs)
+                pbar.set_description("Submit contribution(s)")
 
-            if resp["count"]:
-                self.load()
+                for chunk in chunks(contribs, n=limit):
+                    resp = self.contributions.create_entries(
+                        contributions=chunk
+                    ).result()
+                    pbar.update(resp["count"])
+
+                if resp["count"]:
+                    self.load()
