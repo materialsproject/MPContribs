@@ -60,8 +60,8 @@ class Contributions(DynamicDocument):
         default={}, validation=valid_dict, help_text="simple free-form data"
     )
     # TODO in flask-mongorest: also get all ReferenceFields when download requested
-    structures = ListField(ReferenceField("Structures"), default=list)
-    tables = ListField(ReferenceField("Tables"), default=list)
+    structures = ListField(ReferenceField("Structures"), default=list, max_length=10)
+    tables = ListField(ReferenceField("Tables"), default=list, max_length=10)
     notebook = ReferenceField("Notebooks")
     meta = {
         "collection": "contributions",
