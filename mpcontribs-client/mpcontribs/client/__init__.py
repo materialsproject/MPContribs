@@ -315,8 +315,10 @@ class Client(SwaggerClient):
                     pbar.update(page * per_page)
                     page += 1
 
-                if existing:
-                    print(len(existing), "contributions already submitted.")
+                if existing["identifiers"]:
+                    print(
+                        len(existing["identifiers"]), "contributions already submitted."
+                    )
 
                 pbar.refresh()
 
