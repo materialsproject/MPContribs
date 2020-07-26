@@ -23,9 +23,6 @@ def test_validate_email():
     ),
 )
 def test_Client():
-    with pytest.raises(ValueError):
-        spec = Client().swagger_spec
-
     kwargs = {"host": "127.0.0.1"}
     spec = Client(**kwargs).swagger_spec
     assert spec.http_client.headers == {}
@@ -33,7 +30,7 @@ def test_Client():
     assert spec.spec_dict["host"] == "127.0.0.1"
     assert spec.spec_dict["schemes"] == ["http"]
     assert spec.user_defined_formats["email"] == email_format
-    kwargs = {"apikey": "1234", "headers": {"a": "b"}}
+    kwargs = {"apikey": "1234"}
     spec = Client(**kwargs).swagger_spec
     assert spec.http_client.headers == {"x-api-key": "1234"}
     assert spec.origin_url == f"https://{DEFAULT_HOST}/apispec.json"
