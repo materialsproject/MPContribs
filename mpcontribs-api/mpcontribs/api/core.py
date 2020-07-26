@@ -461,7 +461,9 @@ class SwaggerView(OriginalSwaggerView, ResourceView, metaclass=SwaggerViewType):
             if username:
                 qfilter |= Q(owner=username, is_approved=True)
 
-        else:
+            return qs.filter(qfilter)
+
+        elif request.path.startswith("/contributions/"):
             # project is LazyReferenceFields (multiple queries)
             qfilter = Q()
             if groups:
@@ -472,8 +474,9 @@ class SwaggerView(OriginalSwaggerView, ResourceView, metaclass=SwaggerViewType):
             Projects = getattr(module, "Projects")
             projects = Projects.objects.only("name").filter(qfilter)
             qfilter = Q(is_public=True) | Q(project__in=projects)
+            return qs.filter(qfilter)
 
-        return qs.filter(qfilter)
+        return qs
 
     def has_add_permission(self, request, obj):
         if not self.is_admin_or_project_user(request, obj):
