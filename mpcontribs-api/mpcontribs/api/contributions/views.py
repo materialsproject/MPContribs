@@ -94,13 +94,16 @@ class ContributionsResource(Resource):
                 obj.reload("id", "project", "data")
 
             project = obj.project.fetch()
-            ctx = {"cid": str(obj.id)}
-            ctx["references"] = project.references
+            ctx = {
+                "cid": str(obj.id),
+                "title": project.title,
+                "references": project.references,
+                "landing_page": f"/{project.id}/",
+                "more": f"/{obj.id}",
+            }
             ctx["descriptions"] = project.description.strip().split(".", 1)
             authors = [a.strip() for a in project.authors.split(",") if a]
             ctx["authors"] = {"main": authors[0], "etal": authors[1:]}
-            ctx["landing_page"] = f"/{project.id}/"
-            ctx["more"] = f"/{obj.id}"
             ctx["data"] = j2h.convert(
                 json=remap(obj.data, visit=visit, enter=enter),
                 table_attributes='class="table is-narrow is-fullwidth has-background-light"',
