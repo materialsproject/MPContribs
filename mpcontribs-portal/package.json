@@ -52,7 +52,7 @@
     "babel-plugin-lodash": "^3.3.4",
     "babel-preset-env": "^1.7.0",
     "lodash": "^4.17.15",
-    "clipboard-polyfill": "^3.0.0",
+    "clipboard-polyfill": "^2.8.6",
     "select2": "^4.0.12",
     "jquery-form": "github:tschaume/form#master",
     "requirejs": "^2.3.6",
