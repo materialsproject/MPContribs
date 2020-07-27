@@ -195,7 +195,7 @@ class Client(SwaggerClient):
             for verb in ["get", "put", "post", "delete"]:
                 if verb in d:
                     old_params = deepcopy(d[verb].pop("parameters"))
-                    new_params = []
+                    new_params, param_names = [], set()
 
                     while old_params:
                         param = old_params.pop()
@@ -205,10 +205,13 @@ class Client(SwaggerClient):
                                 if op in ops:
                                     for column in columns[typ]:
                                         new_param = deepcopy(param)
-                                        new_param["name"] = f"{column}__{op}"
-                                        desc = f"filter {column} via ${op}"
-                                        new_param["description"] = desc
-                                        new_params.append(new_param)
+                                        param_name = f"{column}__{op}"
+                                        if param_name not in param_names:
+                                            new_param["name"] = param_name
+                                            desc = f"filter {column} via ${op}"
+                                            new_param["description"] = desc
+                                            new_params.append(new_param)
+                                            param_names.add(param_name)
                         else:
                             new_params.append(param)
 
