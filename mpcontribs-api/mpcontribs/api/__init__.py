@@ -44,7 +44,7 @@ ureg.define("electron_mass = 9.1093837015e-31 kg = mₑ = m_e")
 Q_ = ureg.Quantity
 delimiter, max_depth = ".", 3
 max_dgts = 6
-invalidChars = set(punctuation.replace("|", "").replace("*", ""))
+invalidChars = set(punctuation.replace("*", ""))
 invalidChars.add(" ")
 quantity_keys = {"display", "value", "unit"}
 
