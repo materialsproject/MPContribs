@@ -151,7 +151,7 @@ Resources:
       PlatformVersion: 1.4.0
       DeploymentConfiguration:
         MaximumPercent: 200
-      DesiredCount: 2
+      DesiredCount: 1
       NetworkConfiguration:
         AwsvpcConfiguration:
           AssignPublicIp: ENABLED
