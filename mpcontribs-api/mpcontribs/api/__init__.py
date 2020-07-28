@@ -153,18 +153,19 @@ def create_app():
         except AttributeError as ex:
             logger.warning(f"Failed to register {module_path}: {collection} {ex}")
 
-    # TODO discover user-contributed views automatically
-    # only load for main deployment
-    if os.environ.get("API_PORT", "5000") == "5000":
-        collection = "redox_thermo_csp"
-        module_path = ".".join(["mpcontribs", "api", collection, "views"])
-        try:
-            module = import_module(module_path)
-            blueprint = getattr(module, collection)
-            app.register_blueprint(blueprint, url_prefix="/" + collection)
-            logger.warning(f"{collection} registered")
-        except ModuleNotFoundError as ex:
-            logger.warning(f"API module {module_path}: {ex}")
+    ## TODO discover user-contributed views automatically
+    ## TODO revive redox_thermo_csp again
+    ## only load for main deployment
+    # if os.environ.get("API_PORT", "5000") == "5000":
+    #    collection = "redox_thermo_csp"
+    #    module_path = ".".join(["mpcontribs", "api", collection, "views"])
+    #    try:
+    #        module = import_module(module_path)
+    #        blueprint = getattr(module, collection)
+    #        app.register_blueprint(blueprint, url_prefix="/" + collection)
+    #        logger.warning(f"{collection} registered")
+    #    except ModuleNotFoundError as ex:
+    #        logger.warning(f"API module {module_path}: {ex}")
 
     app.register_blueprint(sse, url_prefix="/stream")
     # TODO add healthcheck view/url
