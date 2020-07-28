@@ -172,11 +172,20 @@ def download_component(request, oid):
 
 def download_contribution(request, cid):
     client = Client(**client_kwargs(request))
-    data = client.contributions.download_entries(
-        short_mime="gz", format="json", _fields=["_all"], id=cid
+    resp = client.contributions.get_entry(pk=cid, _fields=["project"]).result()
+    resp = client.projects.get_entry(pk=resp["project"], _fields=["columns"]).result()
+    fields = ["project", "identifier", "formula", "is_public", "last_modified"]
+    fields += [
+        column["path"] + ".display"
+        for column in resp["columns"]
+        if column["path"].startswith("data.")
+    ]
+    fields += ["structures", "tables"]
+    resp = client.contributions.download_entries(
+        id=cid, short_mime="gz", format="json", _fields=fields
     ).result()
     filename = request.path[1:]
-    response = HttpResponse(data, content_type="application/gzip")
+    response = HttpResponse(resp, content_type="application/gzip")
     response["Content-Disposition"] = f"attachment; filename={filename}"
     return response
 
