@@ -260,7 +260,7 @@ class Client(SwaggerClient):
             ).result()
         )
 
-    def delete_contributions(self, project):
+    def delete_contributions(self, project, limit=200):
         """Convenience function to remove all contributions for a project"""
         resp = self.contributions.get_entries(
             project=project, _fields=["id"], _limit=1
@@ -268,7 +268,7 @@ class Client(SwaggerClient):
         ncontribs = resp["total_count"]
 
         if ncontribs:
-            has_more, limit = True, 250
+            has_more = True
 
             with tqdm(total=ncontribs) as pbar:
                 pbar.set_description("Delete contribution(s)")
