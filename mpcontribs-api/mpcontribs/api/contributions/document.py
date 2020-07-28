@@ -262,7 +262,7 @@ class Contributions(DynamicDocument):
                 field = column.path.replace(delimiter, "__") + "__type"
                 qs = sender.objects(**{field: "string"}).only(column.path)
 
-                if qs.count() < 1:
+                if qs.count() < 1 or qs.filter(project__name=project.name).count() < 1:
                     project.update(pull__columns__path=column.path)
 
 

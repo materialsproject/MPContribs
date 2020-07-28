@@ -288,7 +288,12 @@ class Client(SwaggerClient):
         """Convenience function to submit a list of contributions"""
         # prepare structures/tables
         with tqdm(total=len(contributions)) as pbar:
-            existing = {"identifiers": set(), "structures": set(), "tables": set()}
+            existing = {
+                "ids": set(),
+                "identifiers": set(),
+                "structures": set(),
+                "tables": set(),
+            }
             unique_identifiers = True
 
             if not skip_dupe_check:
@@ -306,10 +311,11 @@ class Client(SwaggerClient):
                         project=name,
                         page=page,
                         per_page=per_page,
-                        _fields=["identifier", "structures", "tables"],
+                        _fields=["id", "identifier", "structures", "tables"],
                     ).result()
 
                     for contrib in resp["data"]:
+                        existing["ids"].add(contrib["id"])
                         existing["identifiers"].add(contrib["identifier"])
 
                         for component in ["structures", "tables"]:
@@ -320,10 +326,14 @@ class Client(SwaggerClient):
                     pbar.update(page * per_page)
                     page += 1
 
-                if existing["identifiers"]:
-                    print(
-                        len(existing["identifiers"]), "contributions already submitted."
-                    )
+                nexisting = 0
+                if unique_identifiers and existing["identifiers"]:
+                    nexisting = len(existing["identifiers"])
+                elif existing["ids"]:
+                    nexisting = len(existing["ids"])
+
+                if nexisting:
+                    print(f"{nexisting} contributions already submitted.")
 
                 pbar.refresh()
 
