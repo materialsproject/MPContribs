@@ -247,6 +247,9 @@ class Contributions(DynamicDocument):
 
     @classmethod
     def post_delete(cls, sender, document, **kwargs):
+        if kwargs.get("skip"):
+            return
+
         # reset columns field for project
         project = document.project.fetch()
 
