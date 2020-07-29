@@ -80,19 +80,15 @@ function urlRenderer(instance, td, row, col, prop, value, cellProperties) {
 
 function set_download_urls() {
     $('a[name=table_download_item]').each(function(index) {
-        var download_url = window.api['host'] + 'contributions/download/gz/?';
-        const full = $(this).data('full');
+        var download_url = '/download/?';
         const format = $(this).data('format');
         var download_query = $.extend(
             true, {format: format}, window.api['headers'], query
         );
-        if (full) { download_query['_fields'] = '_all'; }
-        else {
-            download_query['_fields'] = $("input[name=column_manager_item]:checked").map(function() {
-                var id_split = $(this).attr('id').split('_');
-                return get_column_config(id_split[3]).data;
-            }).get().join(',');
-        }
+        download_query['_fields'] = $("input[name=column_manager_item]:checked").map(function() {
+            var id_split = $(this).attr('id').split('_');
+            return get_column_config(id_split[3]).data;
+        }).get().join(',');
         delete download_query['_skip'];
         download_url += $.param(download_query);
         $(this).attr('href', download_url);
@@ -117,35 +113,41 @@ function load_data(dom) {
 
 $('a[name=table_download_item]').click(function(e) {
     $('#table_download_dropdown').removeClass('is-active');
-    var notification_id = "download_notification";
-    var notification = document.getElementById(notification_id);
-    if (!$(notification).length) {
-        notification = $('<div/>', {
-            'class': 'notification is-warning is-hidden', 'id': notification_id
-        });
-        $("#landingpage").prepend(notification);
-    }
-    $(notification).html('Preparing download ');
-    $(notification).append(new Array(4).join('<span class="loader__dot">.</span>'));
     var cnt = $('#total_count').data('count');
-    var pbar = $('<progress/>', {'class': 'progress', 'max': cnt});
-    $(notification).append(pbar);
-    $(notification).removeClass('is-hidden');
-    var channel = sha1(decodeURIComponent($(this).attr('href')));
-    var source = new EventSource(window.api['host'] + 'stream?channel=' + channel);
-    source.addEventListener('download', function(event) {
-        var data = JSON.parse(event.data);
-        if (data.message === 0) {
-            $(notification).addClass('is-hidden');
-        } else if (data.message >= 0) {
-            pbar.attr('value', data.message);
-        } else {
-            $(notification).html('Something went wrong.');
+    if (cnt > 1000) {
+        e.preventDefault();
+        var notification_id = "download_notification";
+        var notification = document.getElementById(notification_id);
+        if (!$(notification).length) {
+            notification = $('<div/>', {
+                'class': 'notification is-warning is-hidden', 'id': notification_id
+            });
+            $("#landingpage").prepend(notification);
         }
-    }, false);
-    source.addEventListener('error', function(event) {
-        $(notification).html("Failed to connect to event stream. Is Redis running?")
-    }, false);
+        $(notification).html('Please filter number of contributions to less than 1000.')
+    } else if (!$(notification).length) {
+        $(notification).addClass('is-hidden');
+    }
+    //$(notification).html('Preparing download ');
+    //$(notification).append(new Array(4).join('<span class="loader__dot">.</span>'));
+    //var pbar = $('<progress/>', {'class': 'progress', 'max': cnt});
+    //$(notification).append(pbar);
+    //$(notification).removeClass('is-hidden');
+    //var channel = sha1(decodeURIComponent($(this).attr('href')));
+    //var source = new EventSource(window.api['host'] + 'stream?channel=' + channel);
+    //source.addEventListener('download', function(event) {
+    //    var data = JSON.parse(event.data);
+    //    if (data.message === 0) {
+    //        $(notification).addClass('is-hidden');
+    //    } else if (data.message >= 0) {
+    //        pbar.attr('value', data.message);
+    //    } else {
+    //        $(notification).html('Something went wrong.');
+    //    }
+    //}, false);
+    //source.addEventListener('error', function(event) {
+    //    $(notification).html("Failed to connect to event stream. Is Redis running?")
+    //}, false);
 });
 
 var nestedHeadersPrep = [];
@@ -234,6 +236,18 @@ hot.updateSettings({
 
 load_data(hot);
 
+function toggle_columns(doms) {
+    var plugin = hot.getPlugin('hiddenColumns');
+    $(doms).each(function(idx, dom) {
+        var id_split = $(dom).attr('id').split('_');
+        var col_idx = parseInt(id_split[id_split.length-1]);
+        if ($(dom).prop("checked")) { plugin.showColumn(col_idx); }
+        else { plugin.hideColumn(col_idx); }
+    })
+    set_download_urls();
+    hot.render();
+}
+
 $('#table_filter').click(function(e) {
     $(this).addClass('is-loading');
     e.preventDefault();
@@ -242,6 +256,7 @@ $('#table_filter').click(function(e) {
     var key = sel.replace(/\./g, '__') + '__contains';
     query[key] = kw;
     query['_skip'] = 0;
+    toggle_columns("input[name=column_manager_item]:checked");
     load_data(hot);
 });
 
@@ -250,6 +265,7 @@ $('#table_delete').click(function(e) {
     e.preventDefault();
     $('#table_keyword').val('');
     query = $.extend(true, {}, default_query);
+    toggle_columns("input[name=column_manager_item]:checked");
     load_data(hot);
 });
 
@@ -260,13 +276,7 @@ $('#table_select').change(function(e) {
 $('input[name=column_manager_item]').click(function() {
     var n = $("input[name=column_manager_item]:checked").length;
     $('#column_manager_count').text(n);
-    var plugin = hot.getPlugin('hiddenColumns');
-    var id_split = $(this).attr('id').split('_');
-    var col_idx = parseInt(id_split[id_split.length-1]);
-    if ($(this).prop("checked")) { plugin.showColumn(col_idx); }
-    else { plugin.hideColumn(col_idx); }
-    set_download_urls();
-    hot.render();
+    toggle_columns(this);
 });
 
 $('#column_manager_select_all').click(function() {

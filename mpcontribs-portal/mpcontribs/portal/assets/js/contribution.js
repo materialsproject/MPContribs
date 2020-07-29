@@ -10,29 +10,4 @@ $(document).ready(function () {
         $('#anchors').append(item);
         $('#item_' + text).removeClass('is-hidden');
     });
-
-    if ($('#alert').length) {
-        var cid = window.location.pathname.replace('/', '');
-        var source = new EventSource(window.api['host'] + 'stream?channel=' + cid);
-        var ncells = $('#notebook').data('ncells');
-        var pbar = $('<progress/>', {'class': 'progress', 'max': ncells});
-        $('#alert').append(pbar);
-
-        source.addEventListener('notebook', function(event) {
-            var data = JSON.parse(event.data);
-            if (data.message === 0) {
-                var dots = '<span class="loader__dot">.</span><span class="loader__dot">.</span><span class="loader__dot">.</span>';
-                $('#alert').html('Detail page ready, reloading ' + dots);
-                window.location.reload();
-            } else if (data.message >= 0) {
-                pbar.attr('value', data.message);
-            } else {
-                $('#alert').html('Something went wrong.');
-            }
-        }, false);
-
-        source.addEventListener('error', function(event) {
-            $('#alert').html("Failed to connect to event stream. Is Redis running?")
-        }, false);
-    }
 });

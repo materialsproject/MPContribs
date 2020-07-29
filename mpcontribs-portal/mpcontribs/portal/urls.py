@@ -14,6 +14,7 @@ urlpatterns = [
     ),
     url(r"^(?P<cid>[a-f\d]{24})/?$", views.contribution, name="contribution"),
     # downloads
+    url(r"^download/?$", views.download, name="download"),
     url(
         r"^component/(?P<oid>[a-f\d]{24})$",
         views.download_component,
@@ -24,8 +25,7 @@ urlpatterns = [
         views.download_contribution,
         name="download_contribution",
     ),
-    # TODO .(?P<fmt>[a-z]{3})
-    url(
+    url(  # TODO extend to non-ML and csv
         r"^(?P<project>[a-zA-Z0-9_]{3,}).json.gz$",
         views.download_project,
         name="download_project",
@@ -46,5 +46,5 @@ urlpatterns = [
         RedirectView.as_view(url="/screening_inorganic_pv/", permanent=False),
     ),
     # default view
-    url(r"^[a-zA-Z0-9_]{3,}/?$", views.landingpage),
+    url(r"^(?P<project>[a-zA-Z0-9_]{3,})/?$", views.landingpage, name="landingpage"),
 ]

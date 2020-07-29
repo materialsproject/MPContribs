@@ -5,6 +5,7 @@ import os
 import gzip
 import json
 import nbformat
+from copy import deepcopy
 from glob import glob
 from nbconvert import HTMLExporter
 from bravado.exception import HTTPNotFound
@@ -53,10 +54,9 @@ def get_context(request):
     return ctx
 
 
-def landingpage(request):
+def landingpage(request, project):
     ctx = get_context(request)
     try:
-        project = request.path.replace("/", "")
         client = Client(**client_kwargs(request))
         prov = client.projects.get_entry(pk=project, _fields=["_all"]).result()
         ctx["name"] = project
@@ -191,7 +191,7 @@ def download_contribution(request, cid):
 
 
 def download_project(request, project):
-    # NOTE/TODO separate original uploads for ML deployment
+    # NOTE separate original uploads for ML deployment
     if os.environ["TRADEMARK"] == "ML":
         cname = os.environ["PORTAL_CNAME"]
         s3obj = f"{S3_DOWNLOAD_URL}{cname}/{project}.json.gz"
@@ -199,22 +199,37 @@ def download_project(request, project):
 
     return HttpResponse(status=404)
 
-    # if fmt not in ["json", "csv"]:
-    # client = Client(**client_kwargs(request))
-    # return client.contributions.download_entries(
-    #    short_mime="gz", format=fmt, _fields=["_all"], project=project
-    # ).result()
 
-    # ctx["ncells"] = len(nb["cells"])
+def download(request):
+    if not request.GET:
+        return HttpResponse(status=404)
 
-    # if not nb["cells"][-1]["outputs"]:
-    #    try:
-    #        nb = client.notebooks.get_entry(pk=cid).result(
-    #            timeout=1
-    #        )  # trigger cell execution
-    #    except HTTPTimeoutError as e:
-    #        dots = '<span class="loader__dot">.</span><span class="loader__dot">.</span><span class="loader__dot">.</span>'
-    #        ctx["alert"] = f"Detail page is building in the background {dots}"
+    if "project" not in request.GET:
+        return HttpResponse(status=404)
+
+    client = Client(**client_kwargs(request))
+    params = deepcopy(request.GET)
+    fmt = params.pop("format")[0]
+    fields = params.pop("_fields")[0].split(",")
+
+    kwargs = {"fields": ["id"]}
+    for k, v in params.items():
+        kwargs[k] = v
+
+    resp = client.contributions.get_entries(**kwargs).result()
+
+    if resp["total_count"] > 1000:
+        return HttpResponse(status=404)
+
+    kwargs = {"_fields": fields, "format": fmt, "short_mime": "gz"}
+    for k, v in params.items():
+        kwargs[k] = v
+
+    resp = client.contributions.download_entries(**kwargs).result()
+    filename = f'{kwargs["project"]}.{fmt}.gz'
+    response = HttpResponse(resp, content_type="application/gzip")
+    response["Content-Disposition"] = f"attachment; filename={filename}"
+    return response
 
 
 def notebooks(request, nb):
