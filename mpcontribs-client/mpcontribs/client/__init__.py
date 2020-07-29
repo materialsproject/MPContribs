@@ -140,6 +140,8 @@ class Client(SwaggerClient):
         self.apikey = apikey
         self.headers = {"x-api-key": apikey} if apikey else headers
         self.host = host
+        self.protocol = "https" if self.apikey else "http"
+        self.url = f"{self.protocol}://{self.host}"
 
         if "swagger_spec" not in self.__dict__ or (
             self.headers is not None
@@ -150,11 +152,10 @@ class Client(SwaggerClient):
     def load(self):
         http_client = FidoClientGlobalHeaders(headers=self.headers)
         loader = Loader(http_client)
-        protocol = "https" if self.apikey else "http"
-        origin_url = f"{protocol}://{self.host}/apispec.json"
+        origin_url = f"{self.url}/apispec.json"
         spec_dict = loader.load_spec(origin_url)
         spec_dict["host"] = self.host
-        spec_dict["schemes"] = [protocol]
+        spec_dict["schemes"] = [self.protocol]
 
         config = {
             "validate_responses": False,
@@ -260,16 +261,15 @@ class Client(SwaggerClient):
             ).result()
         )
 
-    def delete_contributions(self, project, limit=200):
+    def delete_contributions(self, project, per_page=100):
         """Convenience function to remove all contributions for a project"""
         resp = self.contributions.get_entries(
-            project=project, _fields=["id"], _limit=1
+            project=project, per_page=per_page, _fields=["id"]
         ).result()
+        cids = [d["id"] for d in resp["data"]]  # in first page
         ncontribs = resp["total_count"]
 
-        if ncontribs:
-            has_more = True
-
+        if cids:
             with tqdm(total=ncontribs) as pbar:
                 pbar.set_description("Delete contribution(s)")
                 while has_more:
@@ -283,7 +283,7 @@ class Client(SwaggerClient):
                     self.load()
 
     def submit_contributions(
-        self, contributions, skip_dupe_check=False, ignore_dupes=False, limit=200
+        self, contributions, skip_dupe_check=False, ignore_dupes=False, per_page=100
     ):
         """Convenience function to submit a list of contributions"""
         # prepare structures/tables
@@ -295,6 +295,7 @@ class Client(SwaggerClient):
                 "tables": set(),
             }
             unique_identifiers = True
+            endpoint = f"{self.url}/contributions/"
 
             if not skip_dupe_check:
                 name = contributions[0]["project"]
