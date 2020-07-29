@@ -99,9 +99,6 @@ services:
             - "5003:5003"
 
     kernel_gateway:
-        cpus: 2
-        mem_limit: 2850m
-        mem_reservation: 50m
         depends_on:
           - orca
         environment:
@@ -110,9 +107,6 @@ services:
         build: ./mpcontribs-sidecars/kernel_gateway
 
     orca:
-        cpus: 2
-        mem_limit: 3300m
-        mem_reservation: 500m
         build: ./mpcontribs-sidecars/orca
 
     # OTHER
@@ -148,9 +142,6 @@ services:
             - "8081:8081"
 
     jhub:
-        mem_limit: 1G
-        mem_reservation: 250m
-        cpus: 1
         build:
             context: .
             dockerfile: binder/DockerfileJhub
