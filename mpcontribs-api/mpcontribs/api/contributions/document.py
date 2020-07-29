@@ -139,10 +139,6 @@ class Contributions(DynamicDocument):
         if kwargs.get("skip"):
             return
 
-        # avoid circular imports
-        from mpcontribs.api.projects.document import Column
-        from mpcontribs.api.notebooks.document import Notebooks
-
         # project is LazyReferenceField
         project = document.project.fetch()
 
@@ -154,25 +150,25 @@ class Contributions(DynamicDocument):
                 not is_quantity and isinstance(value, str) and key not in quantity_keys
             )
             if is_quantity or is_text:
+                project.reload("columns")
                 try:
                     column = project.columns.get(path=path)
                     if is_quantity:
                         v = value["value"]
                         if v > column.max:
                             column.max = v
-                            project.save().reload("columns")
                         elif v < column.min:
                             column.min = v
-                            project.save().reload("columns")
 
                 except DoesNotExist:
-                    column = Column(path=path)
+                    column = {"path": path}
                     if is_quantity:
-                        column.unit = value["unit"]
-                        column.min = column.max = value["value"]
+                        column["unit"] = value["unit"]
+                        column["min"] = column["max"] = value["value"]
 
-                    project.modify(push__columns=column)
+                    project.columns.create(**column)
 
+                project.save().reload("columns")
                 ncolumns = len(project.columns)
                 if ncolumns > 50:
                     raise ValueError("Reached maximum number of columns (50)!")
@@ -188,7 +184,8 @@ class Contributions(DynamicDocument):
                 project.columns.get(path=path)
             except DoesNotExist:
                 if getattr(document, path):
-                    project.update(push__columns=Column(path=path))
+                    project.columns.create(path=path)
+                    project.save().reload("columns")
 
         # generate notebook for this contribution
         if document.notebook is not None:
@@ -227,6 +224,10 @@ class Contributions(DynamicDocument):
         cells[0] = nbf.new_code_cell("client = Client('<your-api-key-here>')")
         doc = deepcopy(seed_nb)
         doc["cells"] += cells
+
+        # avoid circular imports
+        from mpcontribs.api.notebooks.document import Notebooks
+
         document.notebook = Notebooks(**doc).save()
         document.last_modified = datetime.utcnow()
         document.save(signal_kwargs={"skip": True})
