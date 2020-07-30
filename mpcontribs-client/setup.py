@@ -33,6 +33,7 @@ setup(
         "pyOpenSSL",
         "service-identity",
         "tqdm",
+        "requests-futures",
     ],
     license="MIT",
     zip_safe=False,
