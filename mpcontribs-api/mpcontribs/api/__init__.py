@@ -56,6 +56,8 @@ for mod in [
     "toronado.cssutils",
     "selenium.webdriver.remote.remote_connection",
     "botocore",
+    "websockets.protocol",
+    "asyncio",
 ]:
     log = logging.getLogger(mod)
     log.setLevel("INFO")
