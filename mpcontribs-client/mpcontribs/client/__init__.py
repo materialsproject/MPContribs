@@ -27,6 +27,8 @@ from json2html import Json2Html
 from IPython.display import display, HTML
 from boltons.iterutils import remap
 from pymatgen import Structure
+from concurrent.futures import as_completed
+from requests_futures.sessions import FuturesSession
 
 
 DEFAULT_HOST = "api.mpcontribs.org"
@@ -271,16 +273,56 @@ class Client(SwaggerClient):
 
         if cids:
             with tqdm(total=ncontribs) as pbar:
-                pbar.set_description("Delete contribution(s)")
-                while has_more:
-                    resp = self.contributions.delete_entries(
-                        project=project, _limit=limit
-                    ).result()
-                    has_more = resp["has_more"]
-                    pbar.update(resp["count"])
+                with FuturesSession(max_workers=10) as session:
+                    # bravado future unfortunately doesn't work with concurrent.futures
+                    pbar.set_description("Get contribution IDs")
+                    endpoint = f"{self.url}/contributions/"
+                    pages = resp["total_pages"]
+                    futures = [
+                        session.get(
+                            endpoint,
+                            headers=self.headers,
+                            params={
+                                "project": project,
+                                "_fields": "id",
+                                "page": page,
+                                "per_page": per_page,
+                            },
+                        )
+                        for page in range(2, pages + 1)
+                    ]
 
-                if resp["count"]:
-                    self.load()
+                    for future in as_completed(futures):
+                        resp = future.result().json()
+                        cids += [d["id"] for d in resp["data"]]
+                        pbar.update(len(resp["data"]))
+
+                    pbar.refresh()
+                    pbar.set_description("Delete contribution(s)")
+                    futures = [
+                        session.delete(
+                            endpoint,
+                            headers=self.headers,
+                            params={
+                                "project": project,
+                                "id__in": ",".join(chunk),
+                                "per_page": per_page,
+                            },
+                        )
+                        for chunk in chunks(cids, n=per_page)
+                    ]
+
+                    resp = None
+                    for future in as_completed(futures):
+                        resp = future.result().json()
+                        if "count" in resp:
+                            pbar.update(resp["count"])
+                        else:
+                            warnings.error(resp)
+                            break
+
+                    if resp and resp["count"]:
+                        self.load()
 
     def submit_contributions(
         self, contributions, skip_dupe_check=False, ignore_dupes=False, per_page=100
@@ -305,27 +347,39 @@ class Client(SwaggerClient):
                 unique_identifiers = resp["unique_identifiers"]
 
                 pbar.set_description("Get existing contribution(s)")
-                has_more, page, per_page = True, 1, 250
+                resp = self.contributions.get_entries(
+                    project=name, per_page=per_page, _fields=["id"],
+                ).result()
+                pages = resp["total_pages"]
 
-                while has_more:
-                    resp = self.contributions.get_entries(
-                        project=name,
-                        page=page,
-                        per_page=per_page,
-                        _fields=["id", "identifier", "structures", "tables"],
-                    ).result()
+                with FuturesSession(max_workers=10) as session:
+                    # bravado future unfortunately doesn't work with concurrent.futures
+                    futures = [
+                        session.get(
+                            endpoint,
+                            headers=self.headers,
+                            params={
+                                "project": name,
+                                "page": page + 1,
+                                "per_page": per_page,
+                                "_fields": "id,identifier,structures,tables",
+                            },
+                        )
+                        for page in range(pages)
+                    ]
 
-                    for contrib in resp["data"]:
-                        existing["ids"].add(contrib["id"])
-                        existing["identifiers"].add(contrib["identifier"])
+                    for future in as_completed(futures):
+                        resp = future.result().json()
 
-                        for component in ["structures", "tables"]:
-                            md5s = set(d["md5"] for d in contrib[component])
-                            existing[component] |= md5s
+                        for contrib in resp["data"]:
+                            existing["ids"].add(contrib["id"])
+                            existing["identifiers"].add(contrib["identifier"])
 
-                    has_more = resp["has_more"]
-                    pbar.update(page * per_page)
-                    page += 1
+                            for component in ["structures", "tables"]:
+                                md5s = set(d["md5"] for d in contrib[component])
+                                existing[component] |= md5s
+
+                            pbar.update(1)
 
                 nexisting = 0
                 if unique_identifiers and existing["identifiers"]:
@@ -410,12 +464,28 @@ class Client(SwaggerClient):
                 pbar.refresh()
                 pbar.reset(total=ncontribs)
                 pbar.set_description("Submit contribution(s)")
+                resp = None
 
-                for chunk in chunks(contribs, n=limit):
-                    resp = self.contributions.create_entries(
-                        contributions=chunk
-                    ).result()
-                    pbar.update(resp["count"])
+                with FuturesSession(max_workers=10) as session:
+                    # bravado future unfortunately doesn't work with concurrent.futures
+                    headers = {"Content-Type": "application/json"}
+                    headers.update(self.headers)
+                    futures = [
+                        session.post(
+                            endpoint,
+                            headers=headers,
+                            data=json.dumps(chunk).encode("utf-8"),
+                        )
+                        for chunk in chunks(contribs, n=per_page)
+                    ]
 
-                if resp["count"]:
-                    self.load()
+                    for future in as_completed(futures):
+                        resp = future.result().json()
+                        if "count" in resp:
+                            pbar.update(resp["count"])
+                        else:
+                            warnings.error(resp)
+                            break
+
+                    if resp and resp["count"]:
+                        self.load()
