@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 import os
+import asyncio
+import nest_asyncio
 from math import isnan
 from datetime import datetime
 from nbformat import v4 as nbf
@@ -17,8 +19,9 @@ from decimal import Decimal
 from pint.errors import DimensionalityError
 
 from mpcontribs.api import enter, valid_dict, Q_, max_dgts, quantity_keys, delimiter
-from mpcontribs.api.notebooks import connect_kernel, execute
+from mpcontribs.api.notebooks import execute_cells
 
+nest_asyncio.apply()
 seed_nb = nbf.new_notebook()
 seed_nb["cells"] = [nbf.new_code_cell("from mpcontribs.client import Client")]
 MPCONTRIBS_API_HOST = os.environ.get("MPCONTRIBS_API_HOST", "localhost:5000")
@@ -215,13 +218,21 @@ class Contributions(DynamicDocument):
                     nbf.new_code_cell(f'client.get_structure("{structure.id}")')
                 )
 
-        ws = connect_kernel()
-        for cell in cells:
-            if cell["cell_type"] == "code":
-                cell["outputs"] = execute(ws, str(document.id), cell["source"])
+        loop = asyncio.new_event_loop()
+        task = loop.create_task(execute_cells(str(document.id), cells, loop=loop))
+        outputs = loop.run_until_complete(task)
 
-        ws.close()
-        cells[0] = nbf.new_code_cell("client = Client('<your-api-key-here>')")
+        for task in asyncio.all_tasks(loop=loop):
+            print(f"Cancelling {task}")
+            task.cancel()
+            outputs = loop.run_until_complete(task)
+
+        loop.close()
+
+        for idx, output in outputs.items():
+            cells[idx]["outputs"] = output
+
+        cells[0] = nbf.new_code_cell("client = Client()")
         doc = deepcopy(seed_nb)
         doc["cells"] += cells
 
