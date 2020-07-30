@@ -21,6 +21,7 @@ marshmallow-mongoengine @ git+https://github.com/tschaume/marshmallow-mongoengin
 mimerender @ git+https://github.com/tschaume/mimerender@mpcontribs#egg=mimerender-0.6.1
 more-itertools==8.4.0
 nbformat==5.0.7
+nest-asyncio==1.4.0
 notebook @ git+https://github.com/jupyter/notebook@6.1.0rc1#egg=notebook-6.1.0rc1
 pint==0.14
 pymatgen==2020.7.18
