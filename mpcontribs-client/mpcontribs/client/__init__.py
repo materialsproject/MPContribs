@@ -274,7 +274,7 @@ class Client(SwaggerClient):
                 pbar.set_description("Delete contribution(s)")
                 while has_more:
                     resp = self.contributions.delete_entries(
-                        project=project, _limit=limit
+                        project=project, per_page=per_page
                     ).result()
                     has_more = resp["has_more"]
                     pbar.update(resp["count"])
@@ -411,7 +411,7 @@ class Client(SwaggerClient):
                 pbar.reset(total=ncontribs)
                 pbar.set_description("Submit contribution(s)")
 
-                for chunk in chunks(contribs, n=limit):
+                for chunk in chunks(contribs, n=per_page):
                     resp = self.contributions.create_entries(
                         contributions=chunk
                     ).result()
