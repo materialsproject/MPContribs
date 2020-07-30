@@ -170,19 +170,3 @@ Resources:
           TargetGroupArn:
             Fn::ImportValue:
               !Join [':', [!Ref 'PipelineName', !Ref 'EnvironmentName', 'NetworkLoadBalancerTargetGroup']]
-
-  NetworkLoadBalancerListener:
-    Type: AWS::ElasticLoadBalancingV2::Listener
-    Properties:
-      DefaultActions:
-        - Type: forward
-          TargetGroupArn:
-            Fn::ImportValue:
-              !Join [':', [!Ref 'PipelineName', !Ref 'EnvironmentName', 'NetworkLoadBalancerTargetGroup']]
-      LoadBalancerArn:
-        Fn::ImportValue:
-          !Join [':', [!Ref 'PipelineName', !Ref 'EnvironmentName', 'NetworkLoadBalancer']]
-      Port: 443
-      Protocol: TLS
-      Certificates:
-        - CertificateArn: !Ref 'CertificateArn'
