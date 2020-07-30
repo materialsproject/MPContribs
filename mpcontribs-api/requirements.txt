@@ -29,4 +29,5 @@ pyopenssl==19.1.0
 python-snappy==0.5.4
 selenium==3.141.0
 unflatten==0.1
+websocket_client==0.57.0
 zstandard==0.14.0

@@ -317,11 +317,10 @@ class Client(SwaggerClient):
                         resp = future.result().json()
                         if "count" in resp:
                             pbar.update(resp["count"])
-                        else:
-                            warnings.error(resp)
-                            break
+                        elif "error" in resp:
+                            warnings.warn(resp["error"])
 
-                    if resp and resp["count"]:
+                    if resp and resp.get("count"):
                         self.load()
 
     def submit_contributions(
@@ -483,9 +482,8 @@ class Client(SwaggerClient):
                         resp = future.result().json()
                         if "count" in resp:
                             pbar.update(resp["count"])
-                        else:
-                            warnings.error(resp)
-                            break
+                        elif "error" in resp:
+                            warnings.warn(resp["error"])
 
-                    if resp and resp["count"]:
+                    if resp and resp.get("count"):
                         self.load()
