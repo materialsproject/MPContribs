@@ -11,4 +11,4 @@ pymatgen==2020.7.18
 pyOpenSSL==19.1.0
 requests-futures==1.0.0
 service-identity==18.1.0
-tqdm==4.48.1
+tqdm==4.48.2
