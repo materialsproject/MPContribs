@@ -45,7 +45,7 @@ ureg.define("bohr_magneton = e * hbar / (2 * m_e) = µᵇ = µ_B = mu_B")
 ureg.define("electron_mass = 9.1093837015e-31 kg = mₑ = m_e")
 
 Q_ = ureg.Quantity
-delimiter, max_depth = ".", 3
+delimiter, max_depth = ".", 4
 max_dgts = 6
 invalidChars = set(punctuation.replace("*", ""))
 invalidChars.add(" ")
