@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
 from glob import glob
-from django.conf.global_settings import *
 from django_extensions.management.commands.generate_secret_key import (
     get_random_secret_key,
 )
