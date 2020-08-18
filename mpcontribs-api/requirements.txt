@@ -1,8 +1,8 @@
 apispec==3.3.1
 asn1crypto==1.4.0
 blinker==1.4
-boltons==20.2.0
-boto3==1.14.40
+boltons==20.2.1
+boto3==1.14.43
 cherrypicker @ git+https://github.com/big-o/cherrypicker.git#egg=cherrypicker
 css-html-js-minify==2.5.5
 dateparser==0.7.6
