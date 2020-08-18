@@ -1,4 +1,4 @@
-boltons==20.2.0
+boltons==20.2.1
 bravado[fido]==10.6.2
 cryptography==3.0
 fido[tls]==4.2.2
