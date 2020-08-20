@@ -3,7 +3,7 @@ import get from "lodash/get";
 import sha1 from "js-sha1";
 
 $('a[name="read_more"]').on('click', function() {
-    $(this).hide().next('[name="read_more"]').show();
+    $(this).hide().siblings('[name="read_more"]').removeClass("is-hidden").show();
 });
 
 

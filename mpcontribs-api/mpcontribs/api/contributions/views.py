@@ -97,7 +97,7 @@ class ContributionsResource(Resource):
             ctx = {
                 "cid": str(obj.id),
                 "title": project.title,
-                "references": project.references,
+                "references": project.references[:5],
                 "landing_page": f"/{project.id}/",
                 "more": f"/{obj.id}",
             }
