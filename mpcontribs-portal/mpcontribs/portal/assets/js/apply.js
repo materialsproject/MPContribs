@@ -6,7 +6,8 @@ function prepareRequest(formData, jqForm, options) {
     $('#apply-button').addClass('is-loading');
     $('#apply-response').addClass('is-hidden');
     var start = 6;
-    var nrefs = parseInt(formData.splice(start, 1)[0]['value']);
+    var nrefs_str = formData.splice(start, 1)[0]['value'];
+    var nrefs = parseInt(nrefs_str);
     if (nrefs < 1) {
         $('#apply-response .message-body').html('Please add references.');
         $('#apply-response').removeClass('is-hidden');
@@ -14,7 +15,7 @@ function prepareRequest(formData, jqForm, options) {
     }
     var urls = {name: 'references', value: []};
     for (var i = 0; i < nrefs; i++) {
-        var key_url = formData.splice(start+i, 2);
+        var key_url = formData.splice(start, 2);
         urls['value'].push({
             "label": key_url[0]['value'],
             "url": key_url[1]['value']
