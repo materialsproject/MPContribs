@@ -147,132 +147,152 @@
             to you and your collaborators until you choose to make it public. Only public
             contributions will appear on the detail pages of
             <a href="https://materialsproject.org">Materials Project</a>.
-
-            Guidance and validation:
-
-            <ul>
-                <li>
-                    Add multiple authors by hitting enter. The preferred format is "FirstInitial.
-                    LastName". Only the first author entered here will always be shown and the
-                    remaining authors will be wrapped into an expandable "et al." link.
-                </li>
-                <li>
-                    The first field in "Project" is a short (3-30 characters) URL-safe name. Please
-                    only use lower-case and alpha-numeric characters separated by underscores. The
-                    other two fields in "Project" are short title (5-30 characters) and long title
-                    (5-55 characters).
-                </li>
-            </ul>
         </div>
     </article>
-    <form id=apply-form>
-        <div class="field is-horizontal">
-            <div class="field-label is-normal">
-                <label class="label">Authors</label>
-            </div>
-            <div class="field-body">
-                <div class="field">
-                    <div class="control">
-                        <input class="input" type="tags" id=authors
-                             name=authors value="P. Huck / J. Doe, K. Persson" placeholder="Enter authors" required>
-                    </div>
-                </div>
-                <div class="field">
-                    <div class="control">
-                        <input class="input is-static" type="text" id=owner name=owner
-                             value="{{request.META.HTTP_X_CONSUMER_USERNAME}}"
-                             placeholder="{{request.META.HTTP_X_CONSUMER_USERNAME}}"
-                             required>
-                    </div>
-                </div>
-            </div>
+    <div class="columns">
+        <div class="column is-3">
+            <div class="subtitle is-size-6">Guidance and validation</div>
+            <details>
+                <summary>Authors</summary>
+                <p class="is-size-7">Add multiple authors by hitting enter. The preferred format is
+                <code>FirstInitial. LastName</code>. Only the first author will always be shown and
+                the remaining authors will be wrapped into an expandable <code>et al.</code> link.
+                If multiple first authors are needed, separate them by a slash (<code>/</code>).
+                The email address for the owner/submitter is automatically pre-filled.</p>
+            </details>
+            <details>
+                <summary>Project</summary>
+                <p class="is-size-7">The first field in <code>Project</code> is a short (3-30 characters) URL-safe
+                name.  Please only use lower-case and alpha-numeric characters separated by
+                underscores.  The other two fields in <code>Project</code> are short title (5-30
+                characters) and long title (5-55 characters).</p>
+            </details>
+            <details>
+                <summary>Description</summary>
+                <p class="is-size-7">The <code>Description</code> field contains a brief paragraph using 5-1500
+                characters to describe the project. The first sentence will always be shown and the
+                remaining sentences will be wrapped into an expandable <code>More</code> link.</p>
+            </details>
+            <details>
+                <summary>References</summary>
+                <p class="is-size-7"><code>References</code> is a list of label/URL pairs to point to additional
+                resources for the project (papers, websites etc.). Labels are preferred to be short
+                form like journal abbreviations (e.g. PRL, Nature). Please try to use DOIs as URLs
+                whenever possible in the form of <code>https://doi.org/...</code>. At least one
+                reference is required.</p>
+            </details>
         </div>
-
-        <div class="field is-horizontal">
-            <div class="field-label is-normal">
-                <label class="label">Project</label>
-            </div>
-            <div class="field-body">
-                <div class="field">
-                    <div class="control">
-                        <input class="input" type="text" id=name name=name minlength=3 maxlength=30 placeholder="my_project" required>
+        <div class="column">
+            <form id=apply-form>
+                <div class="field is-horizontal">
+                    <div class="field-label is-normal">
+                        <label class="label">Authors</label>
                     </div>
-                </div>
-                <div class="field">
-                    <div class="control">
-                        <input type="text" class="input" id="title" name=title minlength=5 maxlength=30 placeholder="Short Title" required>
-                    </div>
-                </div>
-                <div class="field">
-                    <div class="control">
-                        <input type="text" class="input" id="long_title" name=long_title minlength=5 maxlength=55 placeholder="Long Title" required>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="field is-horizontal">
-            <div class="field-label is-normal">
-                <label class="label">Description</label>
-            </div>
-            <div class="field-body">
-                <div class="field">
-                    <div class="control">
-                        <textarea class="textarea" rows="3" id="description" name=description minlength=5 maxlength=1500
-                                placeholder='Add a description. The first sentence will always be shown. Additional sentences will be collapsed into a "More &raquo;" button.' required></textarea>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="field is-horizontal">
-            <div class="field-label is-normal" id=btnPlus>
-                <label class="label">References</label>
-                <a class="button btnPlus is-primary is-light is-small">
-                    <span class="icon"><i class="fas fa-plus"></i></span>
-                </a>
-            </div>
-            <div class="field-body" id="czContainer">
-                <div id="first">
-                    <div class="recordset field has-addons">
-                        <div class="control">
-                            <input type="text" class="input" id="ref_1_key" name=ref_1_key
-                                 minlength=3 maxlength=8 placeholder="Label" required>
+                    <div class="field-body">
+                        <div class="field">
+                            <div class="control">
+                                <input class="input" type="tags" id=authors
+                                     name=authors value="P. Huck / J. Doe, K. Persson" placeholder="Enter authors" required>
+                            </div>
                         </div>
-                        <div class="control is-expanded">
-                            <input type="text" class="input is-fullwidth" id="ref_1_url" name=ref_1_url minlength=7 maxlength=100
-                                 placeholder="https://doi.org/10.1007/978-3-319-42913-7_60-1" required>
-                        </div>
-                        <div class="control" id=btnMinus>
-                            <a class="button btnMinus is-primary">
-                                <span class="icon"><i class="fas fa-times"></i></span>
-                            </a>
+                        <div class="field">
+                            <div class="control">
+                                <input class="input is-static" type="text" id=owner name=owner
+                                     value="{{request.META.HTTP_X_CONSUMER_USERNAME}}"
+                                     placeholder="{{request.META.HTTP_X_CONSUMER_USERNAME}}"
+                                     required>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
 
-        <div class="field is-horizontal">
-            <div class="field-label">
-                <!-- Left empty for spacing -->
-            </div>
-            <div class="field-body">
-                <div class="field">
-                    <div class="control">
-                        <button type="submit" class="button is-link" id=apply-button>Apply</button>
+                <div class="field is-horizontal">
+                    <div class="field-label is-normal">
+                        <label class="label">Project</label>
+                    </div>
+                    <div class="field-body">
+                        <div class="field">
+                            <div class="control">
+                                <input class="input" type="text" id=name name=name minlength=3 maxlength=30 placeholder="my_project" required>
+                            </div>
+                        </div>
+                        <div class="field">
+                            <div class="control">
+                                <input type="text" class="input" id="title" name=title minlength=5 maxlength=30 placeholder="Short Title" required>
+                            </div>
+                        </div>
+                        <div class="field">
+                            <div class="control">
+                                <input type="text" class="input" id="long_title" name=long_title minlength=5 maxlength=55 placeholder="Long Title" required>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <div class="field">
-                    <div class="control">
-                        <article class="message is-hidden" id=apply-response>
-                            <div class="message-body"></div>
-                        </article>
+
+                <div class="field is-horizontal">
+                    <div class="field-label is-normal">
+                        <label class="label">Description</label>
+                    </div>
+                    <div class="field-body">
+                        <div class="field">
+                            <div class="control">
+                                <textarea class="textarea" rows="3" id="description" name=description minlength=5 maxlength=1500
+                                        placeholder='Add a description. The first sentence will always be shown. Additional sentences will be collapsed into a "More &raquo;" button.' required></textarea>
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </div>
+
+                <div class="field is-horizontal">
+                    <div class="field-label is-normal" id=btnPlus>
+                        <label class="label">References</label>
+                        <a class="button btnPlus is-primary is-light is-small">
+                            <span class="icon"><i class="fas fa-plus"></i></span>
+                        </a>
+                    </div>
+                    <div class="field-body" id="czContainer">
+                        <div id="first">
+                            <div class="recordset field has-addons">
+                                <div class="control">
+                                    <input type="text" class="input" id="ref_1_key" name=ref_1_key
+                                         minlength=3 maxlength=8 placeholder="Label" required>
+                                </div>
+                                <div class="control is-expanded">
+                                    <input type="text" class="input is-fullwidth" id="ref_1_url" name=ref_1_url minlength=7 maxlength=100
+                                         placeholder="https://doi.org/10.1007/978-3-319-42913-7_60-1" required>
+                                </div>
+                                <div class="control" id=btnMinus>
+                                    <a class="button btnMinus is-primary">
+                                        <span class="icon"><i class="fas fa-times"></i></span>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="field is-horizontal">
+                    <div class="field-label">
+                        <!-- Left empty for spacing -->
+                    </div>
+                    <div class="field-body">
+                        <div class="field">
+                            <div class="control">
+                                <button type="submit" class="button is-link" id=apply-button>Apply</button>
+                            </div>
+                        </div>
+                        <div class="field">
+                            <div class="control">
+                                <article class="message is-hidden" id=apply-response>
+                                    <div class="message-body"></div>
+                                </article>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
         </div>
-    </form>
+    </div>
 </section>
 
 <section class="section is-hidden" id="work">
