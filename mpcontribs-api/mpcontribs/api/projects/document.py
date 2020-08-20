@@ -27,7 +27,7 @@ class Reference(EmbeddedDocument):
     label = StringField(
         required=True,
         min_length=3,
-        max_length=8,
+        max_length=20,
         help_text="label",
         validation=valid_key,
     )
@@ -73,7 +73,7 @@ class Projects(Document):
         Reference,
         required=True,
         min_length=1,
-        max_length=5,
+        max_length=20,
         help_text="list of references",
     )
     other = DictField(validation=valid_dict, null=True, help_text="other information")

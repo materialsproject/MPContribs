@@ -9,6 +9,13 @@
             {% for ref in references %}
             <li><a href="{{ref.url}}" target="_blank" rel="noopener noreferrer">{{ref.label}}</a></li>
             {% endfor %}
+            {% if more_references %}
+            <li></li>
+            <a name="read_more">[+]</a>
+            {% for ref in more_references %}
+            <li name="read_more" class="is-hidden"><a href="{{ref.url}}">{{ref.label}}</a></li>
+            {% endfor %}
+            {% endif %}
         </ul>
     </nav>
     {% endif %}

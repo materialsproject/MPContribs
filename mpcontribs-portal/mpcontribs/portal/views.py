@@ -67,7 +67,8 @@ def landingpage(request, project):
         ctx["authors"] = {"main": authors[0].strip()}
         if len(authors) > 1:
             ctx["authors"]["etal"] = authors[1].strip()
-        ctx["references"] = prov["references"]
+        ctx["references"] = prov["references"][:5]
+        ctx["more_references"] = prov["references"][5:]
         other = prov.get("other", "")
         if other:
             ctx["other"] = j2h.convert(
