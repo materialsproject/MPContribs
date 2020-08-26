@@ -52,7 +52,7 @@ class Contributions(DynamicDocument):
         "Projects", required=True, passthrough=True, reverse_delete_rule=CASCADE
     )
     identifier = StringField(required=True, help_text="material/composition identifier")
-    formula = StringField(help_text="formula (set dynamically)")
+    formula = StringField(help_text="formula (set dynamically if not provided)")
     is_public = BooleanField(
         required=True, default=False, help_text="public/private contribution"
     )
@@ -83,7 +83,7 @@ class Contributions(DynamicDocument):
             return
 
         # set formula field
-        if hasattr(document, "formula"):
+        if hasattr(document, "formula") and not document.formula:
             formulae = current_app.config["FORMULAE"]
             document.formula = formulae.get(document.identifier, document.identifier)
 
