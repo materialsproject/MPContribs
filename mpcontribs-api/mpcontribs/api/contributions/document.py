@@ -18,13 +18,14 @@ from boltons.iterutils import remap
 from decimal import Decimal
 from pint.errors import DimensionalityError
 
-from mpcontribs.api import enter, valid_dict, Q_, max_dgts, quantity_keys, delimiter
+from mpcontribs.api import enter, valid_dict, Q_, max_dgts, delimiter
 from mpcontribs.api.notebooks import execute_cells
 
 nest_asyncio.apply()
 seed_nb = nbf.new_notebook()
 seed_nb["cells"] = [nbf.new_code_cell("from mpcontribs.client import Client")]
 MPCONTRIBS_API_HOST = os.environ.get("MPCONTRIBS_API_HOST", "localhost:5000")
+quantity_keys = {"display", "value", "unit"}
 
 
 def is_float(s):
@@ -97,6 +98,9 @@ class Contributions(DynamicDocument):
                 words = str_value.split()
                 try_quantity = bool(len(words) == 2 and is_float(words[0]))
 
+                if try_quantity and isnan(float(words[0])):
+                    return False  # silently ignore "nan"
+
                 if try_quantity or is_float(value):
                     field = delimiter.join(["data"] + list(path) + [key])
                     q = Q_(str_value).to_compact()
@@ -148,7 +152,8 @@ class Contributions(DynamicDocument):
         # set columns field for project
         def update_columns(path, key, value):
             path = delimiter.join(["data"] + list(path) + [key])
-            is_quantity = isinstance(value, dict) and quantity_keys == set(value.keys())
+            has_quantity_keys = quantity_keys.issubset(value.keys())
+            is_quantity = isinstance(value, dict) and has_quantity_keys
             is_text = bool(
                 not is_quantity and isinstance(value, str) and key not in quantity_keys
             )

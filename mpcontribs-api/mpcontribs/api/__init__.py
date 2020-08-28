@@ -49,7 +49,6 @@ delimiter, max_depth = ".", 4
 max_dgts = 6
 invalidChars = set(punctuation.replace("*", ""))
 invalidChars.add(" ")
-quantity_keys = {"display", "value", "unit"}
 
 for mod in [
     "matplotlib",
@@ -69,6 +68,10 @@ sns_client = boto3.client("sns")
 def enter(path, key, value):
     if isinstance(value, BaseDict):
         return dict(), value.items()
+    elif isinstance(value, list):
+        dot_path = delimiter.join(list(path) + [key])
+        raise ValidationError(f"lists not allowed ({dot_path})!")
+
     return default_enter(path, key, value)
 
 
@@ -79,15 +82,14 @@ def valid_key(key):
 
 
 def visit(path, key, value):
-    if key.startswith(" ") or key.endswith(" "):
-        raise ValidationError(f"Strip whitespace in {key}")
+    key = key.strip()
 
-    dot_path = delimiter.join(list(path) + [key])
-    if len(path) + 1 > max_depth + int(key in quantity_keys):
+    if len(path) + 1 > max_depth:
+        dot_path = delimiter.join(list(path) + [key])
         raise ValidationError(f"max nesting ({max_depth}) exceeded for {dot_path}")
 
     valid_key(key)
-    return True
+    return key, value
 
 
 def valid_dict(dct):

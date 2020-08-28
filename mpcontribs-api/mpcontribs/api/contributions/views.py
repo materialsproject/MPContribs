@@ -22,7 +22,7 @@ from flask_mongorest.methods import (
 )
 from flask_mongorest.exceptions import UnknownFieldError
 
-from mpcontribs.api import enter, quantity_keys
+from mpcontribs.api import enter
 from mpcontribs.api.core import SwaggerView
 from mpcontribs.api.contributions.document import Contributions
 from mpcontribs.api.structures.views import StructuresResource
@@ -36,7 +36,7 @@ j2h = Json2Html()
 
 
 def visit(path, key, value):
-    if isinstance(value, dict) and quantity_keys == set(value.keys()):
+    if isinstance(value, dict) and "display" in value:
         return key, value["display"]
     return True
 
