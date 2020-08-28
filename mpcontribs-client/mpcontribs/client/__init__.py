@@ -35,7 +35,6 @@ DEFAULT_HOST = "api.mpcontribs.org"
 BULMA = "is-narrow is-fullwidth has-background-light"
 
 j2h = Json2Html()
-quantity_keys = {"display", "value", "unit"}
 pd.options.plotting.backend = "plotly"
 warnings.formatwarning = lambda msg, *args, **kwargs: f"{msg}\n"
 warnings.filterwarnings("default", category=DeprecationWarning, module=__name__)
@@ -94,7 +93,7 @@ class FidoClientGlobalHeaders(FidoClient):
 
 
 def visit(path, key, value):
-    if isinstance(value, dict) and quantity_keys == set(value.keys()):
+    if isinstance(value, dict) and "display" in value:
         return key, value["display"]
     return True
 
