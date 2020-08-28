@@ -160,7 +160,7 @@ class Contributions(DynamicDocument):
                         v = value["value"]
                         if isnan(column.max) or v > column.max:
                             column.max = v
-                        elif isnan(column.min) or v < column.min:
+                        if isnan(column.min) or v < column.min:
                             column.min = v
 
                 except DoesNotExist:
