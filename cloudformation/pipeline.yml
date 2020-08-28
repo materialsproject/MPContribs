@@ -82,10 +82,6 @@ Parameters:
     Type: String
   SnsAdminTopicArn:
     Type: String
-  MapiKey:
-    NoEcho: 'true'
-    Type: String
-    Description: API key for MPRester to build formulae lookup table
   DdApiKey:
     NoEcho: 'true'
     Type: String
@@ -427,7 +423,7 @@ Resources:
             build:
               commands:
                 - docker build --tag "${IMAGE_URI}-portal" mpcontribs-portal
-                - docker build --tag "${IMAGE_URI}-api" --build-arg MAPI_KEY=${MAPI_KEY} mpcontribs-api
+                - docker build --tag "${IMAGE_URI}-api" mpcontribs-api
                 - docker build --tag "${IMAGE_URI}-gateway" mpcontribs-sidecars/kernel_gateway
                 - docker build --tag "${IMAGE_URI}-orca" mpcontribs-sidecars/orca
                 - docker build --tag "${IMAGE_URI}-datadog" mpcontribs-sidecars/datadog-agent
@@ -454,8 +450,6 @@ Resources:
             Value: !Sub ${Repository}
           - Name: PREFIX
             Value: !Sub ${PipelineName}-${EnvironmentName}
-          - Name: MAPI_KEY
-            Value: !Ref 'MapiKey'
       Cache:
         Type: LOCAL
         Modes: # You can specify one or more cache mode,

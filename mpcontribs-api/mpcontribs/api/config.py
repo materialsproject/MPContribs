@@ -4,10 +4,13 @@
 import os
 import datetime
 import json
+import gzip
 
-with open(
-    os.path.join(os.path.dirname(__file__), "contributions", "formulae.json")
-) as f:
+formulae_path = os.path.join(
+    os.path.dirname(__file__), "contributions", "formulae.json.gz"
+)
+
+with gzip.open(formulae_path) as f:
     FORMULAE = json.load(f)
 
 DEBUG = bool(os.environ.get("FLASK_ENV") == "development")
