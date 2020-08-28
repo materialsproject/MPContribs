@@ -15,11 +15,6 @@ RUN pip install $PIP_FLAGS -e .
 #RUN cd flask-mongorest && pip install $PIP_FLAGS -e .
 #RUN cd flasgger && pip install $PIP_FLAGS -e .
 
-ARG MAPI_KEY
-RUN if [ ! -e /app/mpcontribs/api/contributions/formulae.json ]; then \
-        python /app/mpcontribs/api/contributions/generate_formulae.py 2>&1; \
-    fi
-
 FROM base
 COPY --from=builder /root/.local/lib/python3.8/site-packages /root/.local/lib/python3.8/site-packages
 COPY --from=builder /root/.local/bin /root/.local/bin
