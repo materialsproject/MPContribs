@@ -158,9 +158,9 @@ class Contributions(DynamicDocument):
                     column = project.columns.get(path=path)
                     if is_quantity:
                         v = value["value"]
-                        if v > column.max:
+                        if isnan(column.max) or v > column.max:
                             column.max = v
-                        elif v < column.min:
+                        elif isnan(column.min) or v < column.min:
                             column.min = v
 
                 except DoesNotExist:
