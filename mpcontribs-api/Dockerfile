@@ -1,7 +1,7 @@
 FROM materialsproject/devops:python-3.85.5 as base
 
 FROM base as builder
-RUN apt-get update && apt-get install -y --no-install-recommends gcc git g++ libsnappy-dev npm && apt-get clean
+RUN apt-get update && apt-get install -y --no-install-recommends gcc git g++ libsnappy-dev npm wget && apt-get clean
 ENV PATH /root/.local/bin:$PATH
 WORKDIR /app
 RUN npm install -g bower
@@ -14,6 +14,8 @@ RUN pip install $PIP_FLAGS -e .
 #RUN cd mimerender && pip install $PIP_FLAGS -e .
 #RUN cd flask-mongorest && pip install $PIP_FLAGS -e .
 #RUN cd flasgger && pip install $PIP_FLAGS -e .
+RUN wget -q https://raw.githubusercontent.com/vishnubob/wait-for-it/master/wait-for-it.sh && \
+    chmod +x wait-for-it.sh && mv wait-for-it.sh /root/.local/bin/
 
 FROM base
 COPY --from=builder /root/.local/lib/python3.8/site-packages /root/.local/lib/python3.8/site-packages
@@ -29,6 +31,9 @@ ENV API_PORT 5000
 ENV NWORKERS 3
 ENV RELOAD ""
 ENV JUPYTER_GATEWAY_URL http://localhost:8888
+ENV JUPYTER_GATEWAY_HOST localhost:8888
 
 EXPOSE 5000 5002 5003
-CMD gunicorn -b 0.0.0.0:$API_PORT -k gevent -w $NWORKERS --access-logfile - --log-level debug $RELOAD "mpcontribs.api:create_app()"
+COPY start.sh .
+
+CMD wait-for-it.sh $JUPYTER_GATEWAY_HOST -s -t 60 -- ./start.sh

@@ -2,12 +2,14 @@ FROM materialsproject/devops:python-3.85.5 as base
 MAINTAINER Patrick Huck (tschaume)
 
 FROM base as python-deps
-RUN apt-get update && apt-get install -y --no-install-recommends gcc git g++ && apt-get clean
+RUN apt-get update && apt-get install -y --no-install-recommends gcc git g++ wget && apt-get clean
 ENV PATH /root/.local/bin:$PATH
 ENV PIP_FLAGS "--user --no-cache-dir --compile"
 COPY requirements.txt .
 RUN pip install $PIP_FLAGS -r requirements.txt && \
     python -m ipykernel install --user
+RUN wget -q https://raw.githubusercontent.com/vishnubob/wait-for-it/master/wait-for-it.sh && \
+    chmod +x wait-for-it.sh && mv wait-for-it.sh /root/.local/bin/
 
 FROM base
 COPY --from=python-deps /root/.local/lib/python3.8/site-packages /root/.local/lib/python3.8/site-packages
@@ -32,4 +34,5 @@ ENV KG_LIST_KERNELS=True
 EXPOSE 8888
 COPY make_seed.py .
 RUN python make_seed.py
-CMD ["jupyter", "kernelgateway"]
+
+CMD wait-for-it.sh $ORCA_HOST -s -t 60 -- jupyter kernelgateway
