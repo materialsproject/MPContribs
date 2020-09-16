@@ -1,12 +1,16 @@
 # -*- coding: utf-8 -*-
 import os
+import json
 import asyncio
 import nest_asyncio
+
+from hashlib import md5
 from math import isnan
 from datetime import datetime
 from nbformat import v4 as nbf
 from copy import deepcopy
 from flask import current_app
+from importlib import import_module
 from flask_mongoengine import DynamicDocument
 from mongoengine import CASCADE, signals
 from mongoengine.queryset import DoesNotExist
@@ -77,6 +81,27 @@ class Contributions(DynamicDocument):
             {"fields": [(r"data.$**", 1)]},
         ],
     }
+
+    @classmethod
+    def post_init(cls, sender, document, **kwargs):
+        # replace existing structures/tables with according ObjectIds
+        for component in ["structures", "tables"]:
+            lst = getattr(document, component)
+            if lst and lst[0].id is None:  # id is None for incoming POST
+                dmodule = import_module(f"mpcontribs.api.{component}.document")
+                klass = component.capitalize()
+                Docs = getattr(dmodule, klass)
+                vmodule = import_module(f"mpcontribs.api.{component}.views")
+                Resource = getattr(vmodule, f"{klass}Resource")
+                resource = Resource()
+                for i, o in enumerate(lst):
+                    d = resource.serialize(o, fields=["lattice", "sites", "charge"])
+                    s = json.dumps(d, sort_keys=True).encode("utf-8")
+                    digest = md5(s).hexdigest()
+                    obj = Docs.objects(md5=digest).only("id").first()
+                    if obj:
+                        obj.reload()
+                        lst[i] = obj
 
     @classmethod
     def pre_save_post_validation(cls, sender, document, **kwargs):
@@ -256,11 +281,12 @@ class Contributions(DynamicDocument):
         if document.notebook is not None:
             document.notebook.delete()
 
-        for structure in document.structures:
-            structure.delete()
-
-        for table in document.tables:
-            table.delete()
+        for component in ["structures", "tables"]:
+            # check if other contributions exist before deletion!
+            for obj in getattr(document, component):
+                q = {component: obj.id}
+                if sender.objects(**q).count() < 2:
+                    obj.delete()
 
     @classmethod
     def post_delete(cls, sender, document, **kwargs):
@@ -285,6 +311,7 @@ class Contributions(DynamicDocument):
                     project.update(pull__columns__path=column.path)
 
 
+signals.post_init.connect(Contributions.post_init, sender=Contributions)
 signals.pre_save_post_validation.connect(
     Contributions.pre_save_post_validation, sender=Contributions
 )
