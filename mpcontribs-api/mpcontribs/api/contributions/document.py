@@ -20,24 +20,53 @@ from mongoengine.fields import DateTimeField, ListField
 from marshmallow.utils import get_value, _Missing
 from boltons.iterutils import remap
 from decimal import Decimal
+from pint import UnitRegistry
+from pint.unit import UnitDefinition
+from pint.converters import ScaleConverter
 from pint.errors import DimensionalityError
+from uncertainties import ufloat_fromstr
+from uncertainties.core import Variable
 
-from mpcontribs.api import enter, valid_dict, Q_, max_dgts, delimiter
+from mpcontribs.api import enter, valid_dict, delimiter
 from mpcontribs.api.notebooks import execute_cells
 
 nest_asyncio.apply()
 seed_nb = nbf.new_notebook()
 seed_nb["cells"] = [nbf.new_code_cell("from mpcontribs.client import Client")]
 MPCONTRIBS_API_HOST = os.environ.get("MPCONTRIBS_API_HOST", "localhost:5000")
-quantity_keys = {"display", "value", "unit"}
+quantity_keys = {"display", "value", "error", "unit"}
+max_dgts = 6
+
+ureg = UnitRegistry(
+    autoconvert_offset_to_baseunit=True,
+    preprocessors=[
+        lambda s: s.replace("%%", " permille "),
+        lambda s: s.replace("%", " percent "),
+    ],
+)
+ureg.default_format = "P~"
+
+ureg.define(UnitDefinition("percent", "%", (), ScaleConverter(0.01)))
+ureg.define(UnitDefinition("permille", "%%", (), ScaleConverter(0.001)))
+ureg.define(UnitDefinition("ppm", "ppm", (), ScaleConverter(1e-6)))
+ureg.define(UnitDefinition("ppb", "ppb", (), ScaleConverter(1e-9)))
+ureg.define("atom = 1")
+ureg.define("bohr_magneton = e * hbar / (2 * m_e) = µᵇ = µ_B = mu_B")
+ureg.define("electron_mass = 9.1093837015e-31 kg = mₑ = m_e")
 
 
-def is_float(s):
+def get_quantity(s):
+    parts = s.split()
+
+    ufloat_fromstr(parts[0])
+
     try:
-        float(s)
+        return float(s)
     except ValueError:
-        return False
-    return True
+        try:
+            return ufloat_fromstr(s)
+        except ValueError:
+            return None
 
 
 def get_min_max(sender, path):
@@ -120,15 +149,19 @@ class Contributions(DynamicDocument):
         def make_quantities(path, key, value):
             if key not in quantity_keys and isinstance(value, (str, int, float)):
                 str_value = str(value)
-                words = str_value.split()
-                try_quantity = bool(len(words) == 2 and is_float(words[0]))
+                if str_value.count(" ") > 1:
+                    return key, value
+
+                q = get_quantity(str_value)
+                isinstance(q, ureg.Quantity)
+                isinstance(q, ureg.Measurement)
 
                 if try_quantity and isnan(float(words[0])):
                     return False  # silently ignore "nan"
 
-                if try_quantity or is_float(value):
+                if try_quantity:
                     field = delimiter.join(["data"] + list(path) + [key])
-                    q = Q_(str_value).to_compact()
+                    q = ureg.Quantity(str_value).to_compact()
 
                     if not q.check(0):
                         q.ito_reduced_units()
@@ -154,7 +187,7 @@ class Contributions(DynamicDocument):
                         v = f"{v:.{dgts}g}"
 
                         if try_quantity:
-                            q = Q_(f"{v} {q.units}")
+                            q = ureg.Quantity(f"{v} {q.units}")
 
                     value = {
                         "display": str(q),

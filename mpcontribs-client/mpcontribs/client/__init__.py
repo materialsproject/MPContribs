@@ -414,6 +414,7 @@ class Client(SwaggerClient):
             digests = {"structures": set(), "tables": set()}
             pbar.set_description("Prepare contribution(s)")
 
+            # TODO parallelize?
             for contrib in contributions:
 
                 if (
