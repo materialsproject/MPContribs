@@ -347,6 +347,10 @@ Resources:
         Image: aws/codebuild/standard:4.0
         Type: LINUX_CONTAINER
         PrivilegedMode: true
+        ImagePullCredentialsType: SERVICE_ROLE
+        RegistryCredential:
+          Credential: dockerhub
+          CredentialProvider: SECRETS_MANAGER
         EnvironmentVariables:
           - Name: REPOSITORY_URI
             Value: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${Repository}
@@ -391,6 +395,10 @@ Resources:
         Image: aws/codebuild/standard:4.0
         Type: LINUX_CONTAINER
         PrivilegedMode: true
+        ImagePullCredentialsType: SERVICE_ROLE
+        RegistryCredential:
+          Credential: dockerhub
+          CredentialProvider: SECRETS_MANAGER
         EnvironmentVariables:
           - Name: REPOSITORY_URI
             Value: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${Repository}
@@ -443,6 +451,10 @@ Resources:
         Image: aws/codebuild/standard:4.0
         Type: LINUX_CONTAINER
         PrivilegedMode: true
+        ImagePullCredentialsType: SERVICE_ROLE
+        RegistryCredential:
+          Credential: dockerhub
+          CredentialProvider: SECRETS_MANAGER
         EnvironmentVariables:
           - Name: ECR_URI
             Value: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com
@@ -505,6 +517,10 @@ Resources:
         Image: aws/codebuild/standard:4.0
         Type: LINUX_CONTAINER
         PrivilegedMode: true
+        ImagePullCredentialsType: SERVICE_ROLE
+        RegistryCredential:
+          Credential: dockerhub
+          CredentialProvider: SECRETS_MANAGER
         EnvironmentVariables:
           - Name: REPOSITORY_URI
             Value: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${Repository}
@@ -549,6 +565,10 @@ Resources:
         Image: aws/codebuild/standard:4.0
         Type: LINUX_CONTAINER
         PrivilegedMode: true
+        ImagePullCredentialsType: SERVICE_ROLE
+        RegistryCredential:
+          Credential: dockerhub
+          CredentialProvider: SECRETS_MANAGER
         EnvironmentVariables:
           - Name: REPOSITORY_URI
             Value: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${Repository}
