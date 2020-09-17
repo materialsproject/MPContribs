@@ -56,15 +56,21 @@ ureg.define("electron_mass = 9.1093837015e-31 kg = mₑ = m_e")
 
 
 def get_quantity(s):
-    parts = s.split()
-
-    ufloat_fromstr(parts[0])
-
     try:
         return float(s)
     except ValueError:
+        # 5, 5 eV, 5+/-1 eV, 5(1) eV
+        parts = s.split()
+
+        # set uncertainty to nan if not provided
         try:
-            return ufloat_fromstr(s)
+            float(parts[0])
+        except ValueError:
+            parts[0] += "(nan)"
+
+        try:
+            parts[0] = ufloat_fromstr(parts[0])
+            return ureg.Measurement(*parts)
         except ValueError:
             return None
 
@@ -147,55 +153,58 @@ class Contributions(DynamicDocument):
 
         # run data through Pint Quantities and save as dicts
         def make_quantities(path, key, value):
-            if key not in quantity_keys and isinstance(value, (str, int, float)):
-                str_value = str(value)
-                if str_value.count(" ") > 1:
-                    return key, value
+            if key in quantity_keys or not isinstance(value, (str, int, float)):
+                return key, value
 
-                q = get_quantity(str_value)
-                isinstance(q, ureg.Quantity)
-                isinstance(q, ureg.Measurement)
+            str_value = str(value)
+            if str_value.count(" ") > 1:
+                return key, value
 
-                if try_quantity and isnan(float(words[0])):
-                    return False  # silently ignore "nan"
+            q = get_quantity(str_value)
 
-                if try_quantity:
-                    field = delimiter.join(["data"] + list(path) + [key])
-                    q = ureg.Quantity(str_value).to_compact()
+            # silently ignore "nan"
+            if isnan(q.nominal_value):
+                return False
 
-                    if not q.check(0):
-                        q.ito_reduced_units()
+            # try compact representation
+            qq = q.value.to_compact()
+            if qq.units != q.value.units:
+                q = ureg.Measurement(qq, q.error.to(qq.units))
 
-                    # ensure that the same units are used across contributions
-                    try:
-                        column = project.columns.get(path=field)
-                        if column.unit != str(q.units):
-                            q.ito(column.unit)
-                    except DoesNotExist:
-                        pass  # column doesn't exist yet (generated in post_save)
-                    except DimensionalityError:
-                        raise ValueError(
-                            f"Can't convert [{q.units}] to [{column.unit}]!"
-                        )
+            # reduce dimensionality if possible
+            if not q.check(0):
+                q.ito_reduced_units()
 
-                    v = Decimal(str(q.magnitude))
-                    vt = v.as_tuple()
+            # ensure that the same units are used across contributions
+            field = delimiter.join(["data"] + list(path) + [key])
+            try:
+                column = project.columns.get(path=field)
+                if column.unit != str(q.units):
+                    q.ito(column.unit)
+            except DoesNotExist:
+                pass  # column doesn't exist yet (generated in post_save)
+            except DimensionalityError:
+                raise ValueError(f"Can't convert [{q.units}] to [{column.unit}]!")
 
-                    if vt.exponent < 0:
-                        dgts = len(vt.digits)
-                        dgts = max_dgts if dgts > max_dgts else dgts
-                        v = f"{v:.{dgts}g}"
+            v = Decimal(str(q.magnitude))
+            vt = v.as_tuple()
 
-                        if try_quantity:
-                            q = ureg.Quantity(f"{v} {q.units}")
+            if vt.exponent < 0:
+                dgts = len(vt.digits)
+                dgts = max_dgts if dgts > max_dgts else dgts
+                # TODO max_dgts for errors
+                v = f"{v:.{dgts}g}"
+                q = get_quantity(f"{v} {q.units}")
 
-                    value = {
-                        "display": str(q),
-                        "value": q.magnitude,
-                        "unit": str(q.units),
-                    }
-
-            return key, value
+            return (
+                key,
+                {
+                    "display": str(q),
+                    "value": q.magnitude,
+                    "error": q.error,
+                    "unit": str(q.units),
+                },
+            )
 
         document.data = remap(document.data, visit=make_quantities, enter=enter)
 
