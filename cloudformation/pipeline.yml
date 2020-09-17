@@ -329,6 +329,7 @@ Resources:
           phases:
             pre_build:
               commands:
+                - echo $DOCKERHUB_PASSWORD | docker login --username $DOCKERHUB_USERNAME --password-stdin
                 - $(aws ecr get-login --no-include-email)
                 - TAG="$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | head -c 8)"
                 - IMAGE_URI="${REPOSITORY_URI}:${PREFIX}-${TAG}"
@@ -347,15 +348,17 @@ Resources:
         Image: aws/codebuild/standard:4.0
         Type: LINUX_CONTAINER
         PrivilegedMode: true
-        ImagePullCredentialsType: SERVICE_ROLE
-        RegistryCredential:
-          Credential: dockerhub
-          CredentialProvider: SECRETS_MANAGER
         EnvironmentVariables:
           - Name: REPOSITORY_URI
             Value: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${Repository}
           - Name: PREFIX
             Value: !Sub ${PipelineName}-${EnvironmentName}
+          - Name: DOCKERHUB_USERNAME
+            Value: dockerhub:username
+            Type: SECRETS_MANAGER
+          - Name: DOCKERHUB_PASSWORD
+            Value: dockerhub:password
+            Type: SECRETS_MANAGER
       Cache:
         Type: LOCAL
         Modes: # You can specify one or more cache mode,
@@ -377,6 +380,7 @@ Resources:
           phases:
             pre_build:
               commands:
+                - echo $DOCKERHUB_PASSWORD | docker login --username $DOCKERHUB_USERNAME --password-stdin
                 - $(aws ecr get-login --no-include-email)
                 - TAG="$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | head -c 8)"
                 - IMAGE_URI="${REPOSITORY_URI}:${PREFIX}-${TAG}"
@@ -395,15 +399,17 @@ Resources:
         Image: aws/codebuild/standard:4.0
         Type: LINUX_CONTAINER
         PrivilegedMode: true
-        ImagePullCredentialsType: SERVICE_ROLE
-        RegistryCredential:
-          Credential: dockerhub
-          CredentialProvider: SECRETS_MANAGER
         EnvironmentVariables:
           - Name: REPOSITORY_URI
             Value: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${Repository}
           - Name: PREFIX
             Value: !Sub ${PipelineName}-${EnvironmentName}
+          - Name: DOCKERHUB_USERNAME
+            Value: dockerhub:username
+            Type: SECRETS_MANAGER
+          - Name: DOCKERHUB_PASSWORD
+            Value: dockerhub:password
+            Type: SECRETS_MANAGER
       Cache:
         Type: LOCAL
         Modes: # You can specify one or more cache mode,
@@ -425,6 +431,7 @@ Resources:
           phases:
             pre_build:
               commands:
+                - echo $DOCKERHUB_PASSWORD | docker login --username $DOCKERHUB_USERNAME --password-stdin
                 - $(aws ecr get-login --no-include-email)
                 - TAG="$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | head -c 8)"
                 - IMAGE_URI="${ECR_URI}/${REPOSITORY}:${PREFIX}-${TAG}"
@@ -451,10 +458,6 @@ Resources:
         Image: aws/codebuild/standard:4.0
         Type: LINUX_CONTAINER
         PrivilegedMode: true
-        ImagePullCredentialsType: SERVICE_ROLE
-        RegistryCredential:
-          Credential: dockerhub
-          CredentialProvider: SECRETS_MANAGER
         EnvironmentVariables:
           - Name: ECR_URI
             Value: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com
@@ -462,6 +465,12 @@ Resources:
             Value: !Sub ${Repository}
           - Name: PREFIX
             Value: !Sub ${PipelineName}-${EnvironmentName}
+          - Name: DOCKERHUB_USERNAME
+            Value: dockerhub:username
+            Type: SECRETS_MANAGER
+          - Name: DOCKERHUB_PASSWORD
+            Value: dockerhub:password
+            Type: SECRETS_MANAGER
       Cache:
         Type: LOCAL
         Modes: # You can specify one or more cache mode,
@@ -486,6 +495,7 @@ Resources:
           phases:
             pre_build:
               commands:
+                - echo $DOCKERHUB_PASSWORD | docker login --username $DOCKERHUB_USERNAME --password-stdin
                 - $(aws ecr get-login --no-include-email)
                 - TAG="$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | head -c 8)"
                 - IMAGE_URI="${REPOSITORY_URI}:${PREFIX}-${TAG}"
@@ -517,15 +527,17 @@ Resources:
         Image: aws/codebuild/standard:4.0
         Type: LINUX_CONTAINER
         PrivilegedMode: true
-        ImagePullCredentialsType: SERVICE_ROLE
-        RegistryCredential:
-          Credential: dockerhub
-          CredentialProvider: SECRETS_MANAGER
         EnvironmentVariables:
           - Name: REPOSITORY_URI
             Value: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${Repository}
           - Name: PREFIX
             Value: !Sub ${PipelineName}-${EnvironmentName}
+          - Name: DOCKERHUB_USERNAME
+            Value: dockerhub:username
+            Type: SECRETS_MANAGER
+          - Name: DOCKERHUB_PASSWORD
+            Value: dockerhub:password
+            Type: SECRETS_MANAGER
       Cache:
         Type: LOCAL
         Modes: # You can specify one or more cache mode,
@@ -547,6 +559,7 @@ Resources:
           phases:
             pre_build:
               commands:
+                - echo $DOCKERHUB_PASSWORD | docker login --username $DOCKERHUB_USERNAME --password-stdin
                 - $(aws ecr get-login --no-include-email)
                 - TAG="$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | head -c 8)"
                 - IMAGE_URI="${REPOSITORY_URI}:${PREFIX}-${TAG}"
@@ -565,15 +578,17 @@ Resources:
         Image: aws/codebuild/standard:4.0
         Type: LINUX_CONTAINER
         PrivilegedMode: true
-        ImagePullCredentialsType: SERVICE_ROLE
-        RegistryCredential:
-          Credential: dockerhub
-          CredentialProvider: SECRETS_MANAGER
         EnvironmentVariables:
           - Name: REPOSITORY_URI
             Value: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${Repository}
           - Name: PREFIX
             Value: !Sub ${PipelineName}-${EnvironmentName}
+          - Name: DOCKERHUB_USERNAME
+            Value: dockerhub:username
+            Type: SECRETS_MANAGER
+          - Name: DOCKERHUB_PASSWORD
+            Value: dockerhub:password
+            Type: SECRETS_MANAGER
       Cache:
         Type: LOCAL
         Modes: # You can specify one or more cache mode,
