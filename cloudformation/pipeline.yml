@@ -326,6 +326,10 @@ Resources:
         Type: CODEPIPELINE
         BuildSpec: |
           version: 0.2
+          env:
+            secrets-manager:
+              DOCKERHUB_USERNAME: dockerhub:username
+              DOCKERHUB_PASSWORD: dockerhub:password
           phases:
             pre_build:
               commands:
@@ -353,12 +357,6 @@ Resources:
             Value: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${Repository}
           - Name: PREFIX
             Value: !Sub ${PipelineName}-${EnvironmentName}
-          - Name: DOCKERHUB_USERNAME
-            Value: dockerhub:username
-            Type: SECRETS_MANAGER
-          - Name: DOCKERHUB_PASSWORD
-            Value: dockerhub:password
-            Type: SECRETS_MANAGER
       Cache:
         Type: LOCAL
         Modes: # You can specify one or more cache mode,
@@ -377,6 +375,10 @@ Resources:
         Type: CODEPIPELINE
         BuildSpec: |
           version: 0.2
+          env:
+            secrets-manager:
+              DOCKERHUB_USERNAME: dockerhub:username
+              DOCKERHUB_PASSWORD: dockerhub:password
           phases:
             pre_build:
               commands:
@@ -404,12 +406,6 @@ Resources:
             Value: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${Repository}
           - Name: PREFIX
             Value: !Sub ${PipelineName}-${EnvironmentName}
-          - Name: DOCKERHUB_USERNAME
-            Value: dockerhub:username
-            Type: SECRETS_MANAGER
-          - Name: DOCKERHUB_PASSWORD
-            Value: dockerhub:password
-            Type: SECRETS_MANAGER
       Cache:
         Type: LOCAL
         Modes: # You can specify one or more cache mode,
@@ -428,6 +424,10 @@ Resources:
         Type: CODEPIPELINE
         BuildSpec: |
           version: 0.2
+          env:
+            secrets-manager:
+              DOCKERHUB_USERNAME: dockerhub:username
+              DOCKERHUB_PASSWORD: dockerhub:password
           phases:
             pre_build:
               commands:
@@ -465,12 +465,6 @@ Resources:
             Value: !Sub ${Repository}
           - Name: PREFIX
             Value: !Sub ${PipelineName}-${EnvironmentName}
-          - Name: DOCKERHUB_USERNAME
-            Value: dockerhub:username
-            Type: SECRETS_MANAGER
-          - Name: DOCKERHUB_PASSWORD
-            Value: dockerhub:password
-            Type: SECRETS_MANAGER
       Cache:
         Type: LOCAL
         Modes: # You can specify one or more cache mode,
@@ -492,6 +486,9 @@ Resources:
           env:
             parameter-store:
               build_ssh_key: "build_ssh_key"
+            secrets-manager:
+              DOCKERHUB_USERNAME: dockerhub:username
+              DOCKERHUB_PASSWORD: dockerhub:password
           phases:
             pre_build:
               commands:
@@ -532,12 +529,6 @@ Resources:
             Value: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${Repository}
           - Name: PREFIX
             Value: !Sub ${PipelineName}-${EnvironmentName}
-          - Name: DOCKERHUB_USERNAME
-            Value: dockerhub:username
-            Type: SECRETS_MANAGER
-          - Name: DOCKERHUB_PASSWORD
-            Value: dockerhub:password
-            Type: SECRETS_MANAGER
       Cache:
         Type: LOCAL
         Modes: # You can specify one or more cache mode,
@@ -556,6 +547,10 @@ Resources:
         Type: CODEPIPELINE
         BuildSpec: |
           version: 0.2
+          env:
+            secrets-manager:
+              DOCKERHUB_USERNAME: dockerhub:username
+              DOCKERHUB_PASSWORD: dockerhub:password
           phases:
             pre_build:
               commands:
@@ -583,12 +578,6 @@ Resources:
             Value: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${Repository}
           - Name: PREFIX
             Value: !Sub ${PipelineName}-${EnvironmentName}
-          - Name: DOCKERHUB_USERNAME
-            Value: dockerhub:username
-            Type: SECRETS_MANAGER
-          - Name: DOCKERHUB_PASSWORD
-            Value: dockerhub:password
-            Type: SECRETS_MANAGER
       Cache:
         Type: LOCAL
         Modes: # You can specify one or more cache mode,
