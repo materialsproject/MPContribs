@@ -133,14 +133,6 @@ Resources:
           PolicyDocument:
             Version: 2012-10-17
             Statement:
-              - Resource: !Sub arn:aws:iam::${AWS::AccountId}:role/EKSRole
-                Effect: Allow
-                Action:
-                  - sts:AssumeRole
-              - Resource: '*'
-                Effect: Allow
-                Action:
-                  - eks:Describe*
               - Resource: "*"
                 Effect: Allow
                 Action:
@@ -148,6 +140,15 @@ Resources:
                   - logs:CreateLogStream
                   - logs:PutLogEvents
                   - ecr:GetAuthorizationToken
+                  - ec2:CreateNetworkInterface
+                  - ec2:DescribeDhcpOptions
+                  - ec2:DescribeNetworkInterfaces
+                  - ec2:DeleteNetworkInterface
+                  - ec2:DescribeSubnets
+                  - ec2:DescribeSecurityGroups
+                  - ec2:DescribeVpcs
+                  - ec2:CreateNetworkInterfacePermission
+                  - secretsmanager:GetSecretValue
               - Resource: !Sub arn:aws:s3:::${ArtifactBucket}/*
                 Effect: Allow
                 Action:
@@ -164,17 +165,6 @@ Resources:
                   - ecr:InitiateLayerUpload
                   - ecr:UploadLayerPart
                   - ecr:CompleteLayerUpload
-              - Resource: '*'
-                Effect: Allow
-                Action:
-                  - ec2:CreateNetworkInterface
-                  - ec2:DescribeDhcpOptions
-                  - ec2:DescribeNetworkInterfaces
-                  - ec2:DeleteNetworkInterface
-                  - ec2:DescribeSubnets
-                  - ec2:DescribeSecurityGroups
-                  - ec2:DescribeVpcs
-                  - ec2:CreateNetworkInterfacePermission
 
   # Role used to give CodePipeline to release a build.
   CodePipelineServiceRole:
@@ -326,9 +316,14 @@ Resources:
         Type: CODEPIPELINE
         BuildSpec: |
           version: 0.2
+          env:
+            secrets-manager:
+              DOCKERHUB_USERNAME: dockerhub:username
+              DOCKERHUB_PASSWORD: dockerhub:password
           phases:
             pre_build:
               commands:
+                - echo $DOCKERHUB_PASSWORD | docker login --username $DOCKERHUB_USERNAME --password-stdin
                 - $(aws ecr get-login --no-include-email)
                 - TAG="$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | head -c 8)"
                 - IMAGE_URI="${REPOSITORY_URI}:${PREFIX}-${TAG}"
@@ -347,10 +342,6 @@ Resources:
         Image: aws/codebuild/standard:4.0
         Type: LINUX_CONTAINER
         PrivilegedMode: true
-        ImagePullCredentialsType: SERVICE_ROLE
-        RegistryCredential:
-          Credential: dockerhub
-          CredentialProvider: SECRETS_MANAGER
         EnvironmentVariables:
           - Name: REPOSITORY_URI
             Value: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${Repository}
@@ -374,9 +365,14 @@ Resources:
         Type: CODEPIPELINE
         BuildSpec: |
           version: 0.2
+          env:
+            secrets-manager:
+              DOCKERHUB_USERNAME: dockerhub:username
+              DOCKERHUB_PASSWORD: dockerhub:password
           phases:
             pre_build:
               commands:
+                - echo $DOCKERHUB_PASSWORD | docker login --username $DOCKERHUB_USERNAME --password-stdin
                 - $(aws ecr get-login --no-include-email)
                 - TAG="$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | head -c 8)"
                 - IMAGE_URI="${REPOSITORY_URI}:${PREFIX}-${TAG}"
@@ -395,10 +391,6 @@ Resources:
         Image: aws/codebuild/standard:4.0
         Type: LINUX_CONTAINER
         PrivilegedMode: true
-        ImagePullCredentialsType: SERVICE_ROLE
-        RegistryCredential:
-          Credential: dockerhub
-          CredentialProvider: SECRETS_MANAGER
         EnvironmentVariables:
           - Name: REPOSITORY_URI
             Value: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${Repository}
@@ -422,9 +414,14 @@ Resources:
         Type: CODEPIPELINE
         BuildSpec: |
           version: 0.2
+          env:
+            secrets-manager:
+              DOCKERHUB_USERNAME: dockerhub:username
+              DOCKERHUB_PASSWORD: dockerhub:password
           phases:
             pre_build:
               commands:
+                - echo $DOCKERHUB_PASSWORD | docker login --username $DOCKERHUB_USERNAME --password-stdin
                 - $(aws ecr get-login --no-include-email)
                 - TAG="$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | head -c 8)"
                 - IMAGE_URI="${ECR_URI}/${REPOSITORY}:${PREFIX}-${TAG}"
@@ -451,10 +448,6 @@ Resources:
         Image: aws/codebuild/standard:4.0
         Type: LINUX_CONTAINER
         PrivilegedMode: true
-        ImagePullCredentialsType: SERVICE_ROLE
-        RegistryCredential:
-          Credential: dockerhub
-          CredentialProvider: SECRETS_MANAGER
         EnvironmentVariables:
           - Name: ECR_URI
             Value: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com
@@ -483,9 +476,13 @@ Resources:
           env:
             parameter-store:
               build_ssh_key: "build_ssh_key"
+            secrets-manager:
+              DOCKERHUB_USERNAME: dockerhub:username
+              DOCKERHUB_PASSWORD: dockerhub:password
           phases:
             pre_build:
               commands:
+                - echo $DOCKERHUB_PASSWORD | docker login --username $DOCKERHUB_USERNAME --password-stdin
                 - $(aws ecr get-login --no-include-email)
                 - TAG="$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | head -c 8)"
                 - IMAGE_URI="${REPOSITORY_URI}:${PREFIX}-${TAG}"
@@ -517,10 +514,6 @@ Resources:
         Image: aws/codebuild/standard:4.0
         Type: LINUX_CONTAINER
         PrivilegedMode: true
-        ImagePullCredentialsType: SERVICE_ROLE
-        RegistryCredential:
-          Credential: dockerhub
-          CredentialProvider: SECRETS_MANAGER
         EnvironmentVariables:
           - Name: REPOSITORY_URI
             Value: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${Repository}
@@ -544,9 +537,14 @@ Resources:
         Type: CODEPIPELINE
         BuildSpec: |
           version: 0.2
+          env:
+            secrets-manager:
+              DOCKERHUB_USERNAME: dockerhub:username
+              DOCKERHUB_PASSWORD: dockerhub:password
           phases:
             pre_build:
               commands:
+                - echo $DOCKERHUB_PASSWORD | docker login --username $DOCKERHUB_USERNAME --password-stdin
                 - $(aws ecr get-login --no-include-email)
                 - TAG="$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | head -c 8)"
                 - IMAGE_URI="${REPOSITORY_URI}:${PREFIX}-${TAG}"
@@ -565,10 +563,6 @@ Resources:
         Image: aws/codebuild/standard:4.0
         Type: LINUX_CONTAINER
         PrivilegedMode: true
-        ImagePullCredentialsType: SERVICE_ROLE
-        RegistryCredential:
-          Credential: dockerhub
-          CredentialProvider: SECRETS_MANAGER
         EnvironmentVariables:
           - Name: REPOSITORY_URI
             Value: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${Repository}
@@ -841,6 +835,8 @@ Resources:
                     "PipelineName": "${PipelineName}",
                     "EnvironmentName": "${EnvironmentName}",
                     "MongoHost": "${MongoHost}",
+                    "AwsAccessKeyId": "${AwsAccessKeyId}",
+                    "AwsSecretAccessKey": "${AwsSecretAccessKey}",
                     "ImageUrlWeb": { "Fn::GetParam" : ["BuildOutputMPWeb", "build-mpweb.json", "ImageUri"] },
                     "ImageUrlWebApi": { "Fn::GetParam" : ["BuildOutputMPWebApi", "build-mpwebapi.json", "ImageUri"] }
                   }

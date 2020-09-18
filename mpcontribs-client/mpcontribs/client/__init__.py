@@ -292,9 +292,17 @@ class Client(SwaggerClient):
                     ]
 
                     for future in as_completed(futures):
-                        resp = future.result().json()
-                        cids += [d["id"] for d in resp["data"]]
-                        pbar.update(len(resp["data"]))
+                        response = future.result()
+                        status = response.status_code
+                        if status in [200, 400, 401, 404]:
+                            resp = response.json()
+                            if status == 200:
+                                cids += [d["id"] for d in resp["data"]]
+                                pbar.update(len(resp["data"]))
+                            else:
+                                warnings.warn(resp["error"])
+                        else:
+                            warnings.warn(response.content.decode("utf-8"))
 
                     pbar.refresh()
                     pbar.set_description("Delete contribution(s)")
@@ -313,11 +321,16 @@ class Client(SwaggerClient):
 
                     resp = None
                     for future in as_completed(futures):
-                        resp = future.result().json()
-                        if "count" in resp:
-                            pbar.update(resp["count"])
-                        elif "error" in resp:
-                            warnings.warn(resp["error"])
+                        response = future.result()
+                        status = response.status_code
+                        if status in [200, 400, 401, 404]:
+                            resp = response.json()
+                            if status == 200:
+                                pbar.update(resp["count"])
+                            else:
+                                warnings.warn(resp["error"])
+                        else:
+                            warnings.warn(response.content.decode("utf-8"))
 
                     if resp and resp.get("count"):
                         self.load()
@@ -367,17 +380,24 @@ class Client(SwaggerClient):
                     ]
 
                     for future in as_completed(futures):
-                        resp = future.result().json()
+                        response = future.result()
+                        status = response.status_code
+                        if status in [200, 400, 401, 404]:
+                            resp = response.json()
+                            if status == 200:
+                                for contrib in resp["data"]:
+                                    existing["ids"].add(contrib["id"])
+                                    existing["identifiers"].add(contrib["identifier"])
 
-                        for contrib in resp["data"]:
-                            existing["ids"].add(contrib["id"])
-                            existing["identifiers"].add(contrib["identifier"])
+                                    for component in ["structures", "tables"]:
+                                        md5s = set(d["md5"] for d in contrib[component])
+                                        existing[component] |= md5s
 
-                            for component in ["structures", "tables"]:
-                                md5s = set(d["md5"] for d in contrib[component])
-                                existing[component] |= md5s
-
-                            pbar.update(1)
+                                    pbar.update(1)
+                            else:
+                                warnings.warn(resp["error"])
+                        else:
+                            warnings.warn(response.content.decode("utf-8"))
 
                 nexisting = 0
                 if unique_identifiers and existing["identifiers"]:
@@ -394,6 +414,7 @@ class Client(SwaggerClient):
             digests = {"structures": set(), "tables": set()}
             pbar.set_description("Prepare contribution(s)")
 
+            # TODO parallelize?
             for contrib in contributions:
 
                 if (
@@ -478,11 +499,16 @@ class Client(SwaggerClient):
                     ]
 
                     for future in as_completed(futures):
-                        resp = future.result().json()
-                        if "count" in resp:
-                            pbar.update(resp["count"])
-                        elif "error" in resp:
-                            warnings.warn(resp["error"])
+                        response = future.result()
+                        status = response.status_code
+                        if status in [201, 400, 401, 404]:
+                            resp = response.json()
+                            if status == 201:
+                                pbar.update(resp["count"])
+                            else:
+                                warnings.warn(resp["error"])
+                        else:
+                            warnings.warn(response.content.decode("utf-8"))
 
                     if resp and resp.get("count"):
                         self.load()

@@ -15,7 +15,9 @@ RUN pip install $PIP_FLAGS -e .
 #RUN cd flask-mongorest && pip install $PIP_FLAGS -e .
 #RUN cd flasgger && pip install $PIP_FLAGS -e .
 RUN wget -q https://raw.githubusercontent.com/vishnubob/wait-for-it/master/wait-for-it.sh && \
-    chmod +x wait-for-it.sh && mv wait-for-it.sh /root/.local/bin/
+    chmod +x wait-for-it.sh && mv wait-for-it.sh /root/.local/bin/ && \
+    wget -q https://github.com/materialsproject/MPContribs/blob/master/mpcontribs-api/mpcontribs/api/contributions/formulae.json.gz?raw=true \
+    -O mpcontribs/api/contributions/formulae.json.gz
 
 FROM base
 COPY --from=builder /root/.local/lib/python3.8/site-packages /root/.local/lib/python3.8/site-packages

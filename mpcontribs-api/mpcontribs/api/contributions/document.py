@@ -11,6 +11,7 @@ from nbformat import v4 as nbf
 from copy import deepcopy
 from flask import current_app
 from importlib import import_module
+from fastnumbers import isfloat
 from flask_mongoengine import DynamicDocument
 from mongoengine import CASCADE, signals
 from mongoengine.queryset import DoesNotExist
@@ -20,24 +21,61 @@ from mongoengine.fields import DateTimeField, ListField
 from marshmallow.utils import get_value, _Missing
 from boltons.iterutils import remap
 from decimal import Decimal
+from pint import UnitRegistry
+from pint.unit import UnitDefinition
+from pint.converters import ScaleConverter
 from pint.errors import DimensionalityError
+from uncertainties import ufloat_fromstr
 
-from mpcontribs.api import enter, valid_dict, Q_, max_dgts, delimiter
+from mpcontribs.api import enter, valid_dict, delimiter
 from mpcontribs.api.notebooks import execute_cells
 
 nest_asyncio.apply()
 seed_nb = nbf.new_notebook()
 seed_nb["cells"] = [nbf.new_code_cell("from mpcontribs.client import Client")]
 MPCONTRIBS_API_HOST = os.environ.get("MPCONTRIBS_API_HOST", "localhost:5000")
-quantity_keys = {"display", "value", "unit"}
+quantity_keys = {"display", "value", "error", "unit"}
+max_dgts = 6
+
+ureg = UnitRegistry(
+    autoconvert_offset_to_baseunit=True,
+    preprocessors=[
+        lambda s: s.replace("%%", " permille "),
+        lambda s: s.replace("%", " percent "),
+    ],
+)
+ureg.default_format = "P~"
+
+ureg.define(UnitDefinition("percent", "%", (), ScaleConverter(0.01)))
+ureg.define(UnitDefinition("permille", "%%", (), ScaleConverter(0.001)))
+ureg.define(UnitDefinition("ppm", "ppm", (), ScaleConverter(1e-6)))
+ureg.define(UnitDefinition("ppb", "ppb", (), ScaleConverter(1e-9)))
+ureg.define("atom = 1")
+ureg.define("bohr_magneton = e * hbar / (2 * m_e) = µᵇ = µ_B = mu_B")
+ureg.define("electron_mass = 9.1093837015e-31 kg = mₑ = m_e")
 
 
-def is_float(s):
+def new_error_units(measurement, quantity):
+    if quantity.units == measurement.value.units:
+        return measurement
+
+    error = measurement.error.to(quantity.units)
+    return ureg.Measurement(quantity, error)
+
+
+def get_quantity(s):
+    # 5, 5 eV, 5+/-1 eV, 5(1) eV
+    # set uncertainty to nan if not provided
+    parts = s.split()
+    parts += [None] * (2 - len(parts))
+    if isfloat(parts[0]):
+        parts[0] += "(nan)"
+
     try:
-        float(s)
+        parts[0] = ufloat_fromstr(parts[0])
+        return ureg.Measurement(*parts)
     except ValueError:
-        return False
-    return True
+        return None
 
 
 def get_min_max(sender, path):
@@ -118,50 +156,63 @@ class Contributions(DynamicDocument):
 
         # run data through Pint Quantities and save as dicts
         def make_quantities(path, key, value):
-            if key not in quantity_keys and isinstance(value, (str, int, float)):
-                str_value = str(value)
-                words = str_value.split()
-                try_quantity = bool(len(words) == 2 and is_float(words[0]))
+            if key in quantity_keys or not isinstance(value, (str, int, float)):
+                return key, value
 
-                if try_quantity and isnan(float(words[0])):
-                    return False  # silently ignore "nan"
+            str_value = str(value)
+            if str_value.count(" ") > 1:
+                return key, value
 
-                if try_quantity or is_float(value):
-                    field = delimiter.join(["data"] + list(path) + [key])
-                    q = Q_(str_value).to_compact()
+            q = get_quantity(str_value)
+            if not q:
+                return key, value
 
-                    if not q.check(0):
-                        q.ito_reduced_units()
+            # silently ignore "nan"
+            if isnan(q.nominal_value):
+                return False
 
-                    # ensure that the same units are used across contributions
-                    try:
-                        column = project.columns.get(path=field)
-                        if column.unit != str(q.units):
-                            q.ito(column.unit)
-                    except DoesNotExist:
-                        pass  # column doesn't exist yet (generated in post_save)
-                    except DimensionalityError:
-                        raise ValueError(
-                            f"Can't convert [{q.units}] to [{column.unit}]!"
-                        )
+            # try compact representation
+            qq = q.value.to_compact()
+            q = new_error_units(q, qq)
 
-                    v = Decimal(str(q.magnitude))
-                    vt = v.as_tuple()
+            # reduce dimensionality if possible
+            if not q.check(0):
+                qq = q.value.to_reduced_units()
+                q = new_error_units(q, qq)
 
-                    if vt.exponent < 0:
-                        dgts = len(vt.digits)
-                        dgts = max_dgts if dgts > max_dgts else dgts
-                        v = f"{v:.{dgts}g}"
+            # ensure that the same units are used across contributions
+            field = delimiter.join(["data"] + list(path) + [key])
+            try:
+                column = project.columns.get(path=field)
+                if column.unit != str(q.value.units):
+                    qq = q.value.to(column.unit)
+                    q = new_error_units(q, qq)
+            except DoesNotExist:
+                pass  # column doesn't exist yet (generated in post_save)
+            except DimensionalityError:
+                raise ValueError(f"Can't convert [{q.units}] to [{column.unit}]!")
 
-                        if try_quantity:
-                            q = Q_(f"{v} {q.units}")
+            v = Decimal(str(q.nominal_value))
+            vt = v.as_tuple()
 
-                    value = {
-                        "display": str(q),
-                        "value": q.magnitude,
-                        "unit": str(q.units),
-                    }
+            if vt.exponent < 0:
+                dgts = len(vt.digits)
+                dgts = max_dgts if dgts > max_dgts else dgts
+                s = f"{v:.{dgts}g}"
+                if not isnan(q.std_dev):
+                    s += f"+/-{q.std_dev:.{dgts}g}"
 
+                s += f" {q.units}"
+                q = get_quantity(s)
+
+            # return new value dict
+            display = str(q.value) if isnan(q.std_dev) else str(q)
+            value = {
+                "display": display,
+                "value": q.nominal_value,
+                "error": q.std_dev,
+                "unit": str(q.units),
+            }
             return key, value
 
         document.data = remap(document.data, visit=make_quantities, enter=enter)
@@ -177,8 +228,9 @@ class Contributions(DynamicDocument):
         # set columns field for project
         def update_columns(path, key, value):
             path = delimiter.join(["data"] + list(path) + [key])
-            has_quantity_keys = quantity_keys.issubset(value.keys())
-            is_quantity = isinstance(value, dict) and has_quantity_keys
+            is_quantity = isinstance(value, dict) and quantity_keys.issubset(
+                value.keys()
+            )
             is_text = bool(
                 not is_quantity and isinstance(value, str) and key not in quantity_keys
             )
