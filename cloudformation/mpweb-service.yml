@@ -83,6 +83,10 @@ Resources:
               Value: http://localhost:5001/
             - Name: NUM_WORKERS
               Value: 4
+            - Name: MP_REDIS_ADDRESS
+              Value:
+                Fn::ImportValue:
+                    !Join [':', [!Ref 'PipelineName', !Ref 'EnvironmentName', 'ElastiCacheAddress']]
           PortMappings:
             - ContainerPort: 8081
           LogConfiguration:
