@@ -835,6 +835,8 @@ Resources:
                     "PipelineName": "${PipelineName}",
                     "EnvironmentName": "${EnvironmentName}",
                     "MongoHost": "${MongoHost}",
+                    "AwsAccessKeyId": "${AwsAccessKeyId}",
+                    "AwsSecretAccessKey": "${AwsSecretAccessKey}",
                     "ImageUrlWeb": { "Fn::GetParam" : ["BuildOutputMPWeb", "build-mpweb.json", "ImageUri"] },
                     "ImageUrlWebApi": { "Fn::GetParam" : ["BuildOutputMPWebApi", "build-mpwebapi.json", "ImageUri"] }
                   }
