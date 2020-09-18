@@ -420,6 +420,18 @@ class SwaggerViewType(MethodViewType):
                                 )
 
 
+def accessible_projects(username, groups):
+    # only allow to read public approved projects, or
+    # approved projects the user owns or is group member for
+    qfilter = Q(is_public=True)
+    if username:
+        qfilter |= Q(owner=username)
+    if groups:
+        qfilter |= Q(name__in=groups)
+
+    return Q(is_approved=True) & qfilter
+
+
 class SwaggerView(OriginalSwaggerView, ResourceView, metaclass=SwaggerViewType):
     """A class-based view defining additional methods"""
 
@@ -448,31 +460,20 @@ class SwaggerView(OriginalSwaggerView, ResourceView, metaclass=SwaggerViewType):
 
     def has_read_permission(self, request, qs):
         groups = self.get_groups(request)
-        username = request.headers.get("X-Consumer-Username")
-
         if "admin" in groups:
             return qs  # admins can read all entries
 
+        username = request.headers.get("X-Consumer-Username")
+        qfilter = accessible_projects(username, groups)
+
         if request.path.startswith("/projects/"):
-            # only read public or approved project entries
-            qfilter = Q(is_public=True)
-            if groups:
-                qfilter |= Q(name__in=groups, is_approved=True)
-            if username:
-                qfilter |= Q(owner=username, is_approved=True)
-
             return qs.filter(qfilter)
-
         elif request.path.startswith("/contributions/"):
             # project is LazyReferenceFields (multiple queries)
-            qfilter = Q()
-            if groups:
-                qfilter |= Q(name__in=groups, is_approved=True)
-            if username:
-                qfilter |= Q(owner=username, is_approved=True)
             module = import_module("mpcontribs.api.projects.document")
             Projects = getattr(module, "Projects")
             projects = Projects.objects.only("name").filter(qfilter)
+            # now filter contributions (TODO check if project__in is needed)
             qfilter = Q(is_public=True) | Q(project__in=projects)
             return qs.filter(qfilter)
 
