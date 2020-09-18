@@ -177,8 +177,9 @@ class Contributions(DynamicDocument):
         # set columns field for project
         def update_columns(path, key, value):
             path = delimiter.join(["data"] + list(path) + [key])
-            has_quantity_keys = quantity_keys.issubset(value.keys())
-            is_quantity = isinstance(value, dict) and has_quantity_keys
+            is_quantity = isinstance(value, dict) and quantity_keys.issubset(
+                value.keys()
+            )
             is_text = bool(
                 not is_quantity and isinstance(value, str) and key not in quantity_keys
             )
