@@ -20,6 +20,10 @@ Parameters:
   MongoHost:
     Type: String
     Description: MongoDB host that the app connects to.
+  AwsAccessKeyId:
+    Type: String
+  AwsSecretAccessKey:
+    Type: String
 
 Resources:
   # A log group for storing the container logs for this service
@@ -66,6 +70,10 @@ Resources:
               Value: 4
             - Name: MPCONTRIBS_MONGO_HOST
               Value: !Ref 'MongoHost'
+            - Name: AWS_ACCESS_KEY_ID
+              Value: !Ref 'AwsAccessKeyId'
+            - Name: AWS_SECRET_ACCESS_KEY
+              Value: !Ref 'AwsSecretAccessKey'
           LogConfiguration:
             LogDriver: 'awslogs'
             Options:
