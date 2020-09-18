@@ -11,6 +11,7 @@ from nbformat import v4 as nbf
 from copy import deepcopy
 from flask import current_app
 from importlib import import_module
+from fastnumbers import isfloat
 from flask_mongoengine import DynamicDocument
 from mongoengine import CASCADE, signals
 from mongoengine.queryset import DoesNotExist
@@ -25,7 +26,6 @@ from pint.unit import UnitDefinition
 from pint.converters import ScaleConverter
 from pint.errors import DimensionalityError
 from uncertainties import ufloat_fromstr
-from uncertainties.core import Variable
 
 from mpcontribs.api import enter, valid_dict, delimiter
 from mpcontribs.api.notebooks import execute_cells
@@ -55,24 +55,27 @@ ureg.define("bohr_magneton = e * hbar / (2 * m_e) = µᵇ = µ_B = mu_B")
 ureg.define("electron_mass = 9.1093837015e-31 kg = mₑ = m_e")
 
 
+def new_error_units(measurement, quantity):
+    if quantity.units == measurement.value.units:
+        return measurement
+
+    error = measurement.error.to(quantity.units)
+    return ureg.Measurement(quantity, error)
+
+
 def get_quantity(s):
+    # 5, 5 eV, 5+/-1 eV, 5(1) eV
+    # set uncertainty to nan if not provided
+    parts = s.split()
+    parts += [None] * (2 - len(parts))
+    if isfloat(parts[0]):
+        parts[0] += "(nan)"
+
     try:
-        return float(s)
+        parts[0] = ufloat_fromstr(parts[0])
+        return ureg.Measurement(*parts)
     except ValueError:
-        # 5, 5 eV, 5+/-1 eV, 5(1) eV
-        parts = s.split()
-
-        # set uncertainty to nan if not provided
-        try:
-            float(parts[0])
-        except ValueError:
-            parts[0] += "(nan)"
-
-        try:
-            parts[0] = ufloat_fromstr(parts[0])
-            return ureg.Measurement(*parts)
-        except ValueError:
-            return None
+        return None
 
 
 def get_min_max(sender, path):
@@ -161,6 +164,8 @@ class Contributions(DynamicDocument):
                 return key, value
 
             q = get_quantity(str_value)
+            if not q:
+                return key, value
 
             # silently ignore "nan"
             if isnan(q.nominal_value):
@@ -168,43 +173,47 @@ class Contributions(DynamicDocument):
 
             # try compact representation
             qq = q.value.to_compact()
-            if qq.units != q.value.units:
-                q = ureg.Measurement(qq, q.error.to(qq.units))
+            q = new_error_units(q, qq)
 
             # reduce dimensionality if possible
             if not q.check(0):
-                q.ito_reduced_units()
+                qq = q.value.to_reduced_units()
+                q = new_error_units(q, qq)
 
             # ensure that the same units are used across contributions
             field = delimiter.join(["data"] + list(path) + [key])
             try:
                 column = project.columns.get(path=field)
-                if column.unit != str(q.units):
-                    q.ito(column.unit)
+                if column.unit != str(q.value.units):
+                    qq = q.value.to(column.unit)
+                    q = new_error_units(q, qq)
             except DoesNotExist:
                 pass  # column doesn't exist yet (generated in post_save)
             except DimensionalityError:
                 raise ValueError(f"Can't convert [{q.units}] to [{column.unit}]!")
 
-            v = Decimal(str(q.magnitude))
+            v = Decimal(str(q.nominal_value))
             vt = v.as_tuple()
 
             if vt.exponent < 0:
                 dgts = len(vt.digits)
                 dgts = max_dgts if dgts > max_dgts else dgts
-                # TODO max_dgts for errors
-                v = f"{v:.{dgts}g}"
-                q = get_quantity(f"{v} {q.units}")
+                s = f"{v:.{dgts}g}"
+                if not isnan(q.std_dev):
+                    s += f"+/-{q.std_dev:.{dgts}g}"
 
-            return (
-                key,
-                {
-                    "display": str(q),
-                    "value": q.magnitude,
-                    "error": q.error,
-                    "unit": str(q.units),
-                },
-            )
+                s += f" {q.units}"
+                q = get_quantity(s)
+
+            # return new value dict
+            display = str(q.value) if isnan(q.std_dev) else str(q)
+            value = {
+                "display": display,
+                "value": q.nominal_value,
+                "error": q.std_dev,
+                "unit": str(q.units),
+            }
+            return key, value
 
         document.data = remap(document.data, visit=make_quantities, enter=enter)
 
