@@ -294,7 +294,7 @@ class Client(SwaggerClient):
                     for future in as_completed(futures):
                         response = future.result()
                         status = response.status_code
-                        if status in [200, 400, 401, 404]:
+                        if status in [200, 400, 401, 404, 500]:
                             resp = response.json()
                             if status == 200:
                                 cids += [d["id"] for d in resp["data"]]
@@ -323,7 +323,7 @@ class Client(SwaggerClient):
                     for future in as_completed(futures):
                         response = future.result()
                         status = response.status_code
-                        if status in [200, 400, 401, 404]:
+                        if status in [200, 400, 401, 404, 500]:
                             resp = response.json()
                             if status == 200:
                                 pbar.update(resp["count"])
@@ -382,7 +382,7 @@ class Client(SwaggerClient):
                     for future in as_completed(futures):
                         response = future.result()
                         status = response.status_code
-                        if status in [200, 400, 401, 404]:
+                        if status in [200, 400, 401, 404, 500]:
                             resp = response.json()
                             if status == 200:
                                 for contrib in resp["data"]:
@@ -501,7 +501,7 @@ class Client(SwaggerClient):
                     for future in as_completed(futures):
                         response = future.result()
                         status = response.status_code
-                        if status in [201, 400, 401, 404]:
+                        if status in [201, 400, 401, 404, 500]:
                             resp = response.json()
                             if status == 201:
                                 pbar.update(resp["count"])
