@@ -74,6 +74,8 @@ Resources:
               Value: !Ref 'AwsAccessKeyId'
             - Name: AWS_SECRET_ACCESS_KEY
               Value: !Ref 'AwsSecretAccessKey'
+            - Name: DB_VERSION
+              Value: "2020_09_08"
           LogConfiguration:
             LogDriver: 'awslogs'
             Options:
