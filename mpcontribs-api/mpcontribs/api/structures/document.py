@@ -26,7 +26,14 @@ class Structures(Document):
         s = json.dumps(d, sort_keys=True).encode("utf-8")
         document.md5 = md5(s).hexdigest()
         structure = Structure.from_dict(d)
-        document.cif = CifWriter(structure, symprec=1e-10).__str__()
+
+        try:
+            writer = CifWriter(structure, symprec=1e-10)
+        except TypeError:
+            # save CIF string without symmetry information
+            writer = CifWriter(structure)
+
+        document.cif = writer.__str__()
 
 
 signals.pre_save_post_validation.connect(
