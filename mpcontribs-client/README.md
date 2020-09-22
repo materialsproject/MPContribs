@@ -16,5 +16,5 @@ By default, the client connects to https://api.mpcontribs.org and uses the envir
 environment variable can be set to connect to other MPContribs-style APIs:
 
 ```python
-client = Client(host='ml.materialsproject.cloud')
+client = Client(host='ml-api.materialsproject.cloud')
 ```
