@@ -14,6 +14,7 @@ from hashlib import md5
 from copy import deepcopy
 from urllib.parse import urlparse
 from pyisemail import is_email
+from ratelimit import limits, sleep_and_retry
 from pyisemail.diagnosis import BaseDiagnosis
 from swagger_spec_validator.common import SwaggerValidationError
 from bravado_core.formatter import SwaggerFormat
@@ -265,7 +266,7 @@ class Client(SwaggerClient):
     def delete_contributions(self, project, per_page=100):
         """Convenience function to remove all contributions for a project"""
         resp = self.contributions.get_entries(
-            project=project, per_page=per_page, _fields=["id"]
+            project=project, per_page=250, _fields=["id"]
         ).result()
         cids = [d["id"] for d in resp["data"]]  # in first page
         ncontribs = resp["total_count"]
@@ -285,7 +286,7 @@ class Client(SwaggerClient):
                                 "project": project,
                                 "_fields": "id",
                                 "page": page,
-                                "per_page": per_page,
+                                "per_page": 250,
                             },
                         )
                         for page in range(2, pages + 1)
@@ -340,7 +341,7 @@ class Client(SwaggerClient):
     ):
         """Convenience function to submit a list of contributions"""
         # prepare structures/tables
-        with tqdm(total=len(contributions)) as pbar:
+        with tqdm() as pbar:
             existing = {
                 "ids": set(),
                 "identifiers": set(),
@@ -359,25 +360,28 @@ class Client(SwaggerClient):
 
                 pbar.set_description("Get existing contribution(s)")
                 resp = self.contributions.get_entries(
-                    project=name, per_page=per_page, _fields=["id"],
+                    project=name, per_page=250, _fields=["id"],
                 ).result()
+                pbar.reset(total=resp["total_count"])
                 pages = resp["total_pages"]
+
+                @sleep_and_retry
+                @limits(calls=175, period=60)
+                def get_future(page):
+                    return session.get(
+                        endpoint,
+                        headers=self.headers,
+                        params={
+                            "project": name,
+                            "page": page + 1,
+                            "per_page": 250,
+                            "_fields": "id,identifier,structures,tables",
+                        },
+                    )
 
                 with FuturesSession(max_workers=10) as session:
                     # bravado future unfortunately doesn't work with concurrent.futures
-                    futures = [
-                        session.get(
-                            endpoint,
-                            headers=self.headers,
-                            params={
-                                "project": name,
-                                "page": page + 1,
-                                "per_page": per_page,
-                                "_fields": "id,identifier,structures,tables",
-                            },
-                        )
-                        for page in range(pages)
-                    ]
+                    futures = [get_future(page) for page in range(pages)]
 
                     for future in as_completed(futures):
                         response = future.result()
@@ -413,6 +417,7 @@ class Client(SwaggerClient):
             contribs = []
             digests = {"structures": set(), "tables": set()}
             pbar.set_description("Prepare contribution(s)")
+            pbar.reset(total=len(contributions))
 
             # TODO parallelize?
             for contrib in contributions:
@@ -483,19 +488,23 @@ class Client(SwaggerClient):
                 pbar.refresh()
                 pbar.reset(total=ncontribs)
                 pbar.set_description("Submit contribution(s)")
+                headers = {"Content-Type": "application/json"}
+                headers.update(self.headers)
                 resp = None
+
+                @sleep_and_retry
+                @limits(calls=175, period=60)
+                def post_future(chunk):
+                    return session.post(
+                        endpoint,
+                        headers=headers,
+                        data=json.dumps(chunk).encode("utf-8"),
+                    )
 
                 with FuturesSession(max_workers=10) as session:
                     # bravado future unfortunately doesn't work with concurrent.futures
-                    headers = {"Content-Type": "application/json"}
-                    headers.update(self.headers)
                     futures = [
-                        session.post(
-                            endpoint,
-                            headers=headers,
-                            data=json.dumps(chunk).encode("utf-8"),
-                        )
-                        for chunk in chunks(contribs, n=per_page)
+                        post_future(chunk) for chunk in chunks(contribs, n=per_page)
                     ]
 
                     for future in as_completed(futures):
