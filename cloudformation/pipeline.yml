@@ -512,6 +512,7 @@ Resources:
           artifacts:
             files:
                 - build-mpweb.json
+                - build-mpoptimade.json
       Environment:
         ComputeType: BUILD_GENERAL1_MEDIUM
         Image: aws/codebuild/standard:4.0
