@@ -269,13 +269,13 @@ class Client(SwaggerClient):
             project=project, per_page=250, _fields=["id"]
         ).result()
         cids = [d["id"] for d in resp["data"]]  # in first page
-        ncontribs = resp["total_count"]
 
         if cids:
-            with tqdm(total=ncontribs) as pbar:
+            with tqdm() as pbar:
                 with FuturesSession(max_workers=10) as session:
                     # bravado future unfortunately doesn't work with concurrent.futures
                     pbar.set_description("Get contribution IDs")
+                    pbar.reset(total=resp["total_count"])
                     endpoint = f"{self.url}/contributions/"
                     pages = resp["total_pages"]
                     futures = [
@@ -307,6 +307,7 @@ class Client(SwaggerClient):
 
                     pbar.refresh()
                     pbar.set_description("Delete contribution(s)")
+                    pbar.reset(total=len(cids))
                     futures = [
                         session.delete(
                             endpoint,
