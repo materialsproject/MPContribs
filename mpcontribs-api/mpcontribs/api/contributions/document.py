@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
 import os
 import json
-import asyncio
-import nest_asyncio
 
+from time import sleep
 from hashlib import md5
 from math import isnan
 from datetime import datetime
@@ -28,15 +27,22 @@ from pint.errors import DimensionalityError
 from uncertainties import ufloat_fromstr
 
 from mpcontribs.api import enter, valid_dict, delimiter
-from mpcontribs.api.notebooks import execute_cells
+from mpcontribs.api.notebooks import run_cells
 
-nest_asyncio.apply()
-seed_nb = nbf.new_notebook()
-seed_nb["cells"] = [nbf.new_code_cell("from mpcontribs.client import Client")]
 MPCONTRIBS_API_HOST = os.environ.get("MPCONTRIBS_API_HOST", "localhost:5000")
+seed_nb = nbf.new_notebook()
+seed_nb["cells"] = [
+    nbf.new_code_cell("from mpcontribs.client import Client"),
+    nbf.new_code_cell(
+        "client = Client(\n"
+        '\theaders={"X-Consumer-Groups": "admin"},\n'
+        f'\thost="{MPCONTRIBS_API_HOST}"\n'
+        ")"
+    ),
+]
+
 quantity_keys = {"display", "value", "error", "unit"}
 max_dgts = 6
-
 ureg = UnitRegistry(
     autoconvert_offset_to_baseunit=True,
     preprocessors=[
@@ -90,6 +96,23 @@ def get_min_max(sender, path):
     return (values[0], values[-1]) if len(values) else (None, None)
 
 
+def execute_cells(cid, cells):
+    ntries = 0
+    while ntries < 5:
+        for kernel_id, running_cid in current_app.kernels.items():
+            if running_cid is None:
+                current_app.kernels[kernel_id] = cid
+                outputs = run_cells(kernel_id, cid, cells)
+                current_app.kernels[kernel_id] = None
+                return outputs
+            else:
+                print(f"{kernel_id} busy with {running_cid}")
+        else:
+            print("WAITING for a kernel to become available")
+            sleep(5)
+            ntries += 1
+
+
 class Contributions(DynamicDocument):
     project = LazyReferenceField(
         "Projects", required=True, passthrough=True, reverse_delete_rule=CASCADE
@@ -117,6 +140,8 @@ class Contributions(DynamicDocument):
             "is_public",
             "last_modified",
             {"fields": [(r"data.$**", 1)]},
+            "structures",
+            "tables",
         ],
     }
 
@@ -277,12 +302,6 @@ class Contributions(DynamicDocument):
             document.notebook.delete()
 
         cells = [
-            nbf.new_code_cell(
-                "client = Client(\n"
-                '\theaders={"X-Consumer-Groups": "admin"},\n'
-                f'\thost="{MPCONTRIBS_API_HOST}"\n'
-                ")"
-            ),
             nbf.new_code_cell(f'client.get_contribution("{document.id}").pretty()'),
         ]
 
@@ -300,22 +319,16 @@ class Contributions(DynamicDocument):
                     nbf.new_code_cell(f'client.get_structure("{structure.id}")')
                 )
 
-        loop = asyncio.new_event_loop()
-        task = loop.create_task(execute_cells(str(document.id), cells, loop=loop))
-        outputs = loop.run_until_complete(task)
-
-        for task in asyncio.all_tasks(loop=loop):
-            print(f"Cancelling {task}")
-            task.cancel()
-            outputs = loop.run_until_complete(task)
-
-        loop.close()
+        cid = str(document.id)
+        outputs = execute_cells(cid, cells)
+        if not outputs:
+            raise ValueError(f"notebook generation for {cid} failed!")
 
         for idx, output in outputs.items():
             cells[idx]["outputs"] = output
 
-        cells[0] = nbf.new_code_cell("client = Client()")
         doc = deepcopy(seed_nb)
+        doc["cells"][1] = nbf.new_code_cell("client = Client()")
         doc["cells"] += cells
 
         # avoid circular imports

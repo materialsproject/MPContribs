@@ -7,6 +7,7 @@ monkey.patch_all()
 import os
 import logging
 import boto3
+import requests
 
 from importlib import import_module
 from flask import Flask, current_app
@@ -23,6 +24,8 @@ from mongoengine.base.datastructures import BaseDict
 from itsdangerous import URLSafeTimedSerializer
 from string import punctuation
 from boltons.iterutils import remap, default_enter
+from notebook.utils import url_path_join
+from notebook.gateway.managers import GatewayClient
 
 
 delimiter, max_depth = ".", 4
@@ -92,6 +95,14 @@ def get_resource_as_string(name, charset="utf-8"):
         return f.read().decode(charset)
 
 
+def get_kernels():
+    """retrieve list of kernels from KernelGateway service"""
+    gw_client = GatewayClient.instance()
+    base_endpoint = url_path_join(gw_client.url, gw_client.kernels_endpoint)
+    kernels = requests.get(base_endpoint).json()
+    return {kernel["id"]: None for kernel in kernels}
+
+
 def create_app():
     """create flask app"""
     app = Flask(__name__)
@@ -112,6 +123,8 @@ def create_app():
     Marshmallow(app)
     MongoEngine(app)
     Swagger(app, template=app.config.get("TEMPLATE"))
+    setattr(app, "kernels", get_kernels())
+
     # NOTE: hard-code to avoid pre-generating for new deployment
     # collections = get_collections(db)
     collections = [

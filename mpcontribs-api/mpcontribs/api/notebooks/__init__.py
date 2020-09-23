@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-import asyncio
-import requests
 from uuid import uuid4
 from tornado.escape import json_encode, json_decode, url_escape
 from websocket import create_connection
@@ -9,6 +7,7 @@ from notebook.gateway.managers import GatewayClient
 
 
 def run_cells(kernel_id, cid, cells):
+    print(f"running {cid} on {kernel_id}")
     gw_client = GatewayClient.instance()
     url = url_path_join(
         gw_client.ws_url, gw_client.kernels_endpoint, url_escape(kernel_id), "channels",
@@ -63,22 +62,3 @@ def run_cells(kernel_id, cid, cells):
 
     ws.close()
     return outputs
-
-
-async def execute_cells(cid, cells, loop=None):
-    gw_client = GatewayClient.instance()
-    base_endpoint = url_path_join(gw_client.url, gw_client.kernels_endpoint)
-    response = await loop.run_in_executor(None, requests.get, base_endpoint)
-    kernels = response.json()
-
-    while 1:
-        for kernel in kernels:
-            if kernel["execution_state"] == "idle":
-                kernel_id = kernel["id"]
-                print(f"{kernel_id} AVAILABLE")
-                return await loop.run_in_executor(
-                    None, run_cells, kernel_id, cid, cells
-                )
-        else:
-            print("WAITING for kernel")
-            await asyncio.sleep(5, loop=loop)
