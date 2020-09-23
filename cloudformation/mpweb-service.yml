@@ -117,9 +117,7 @@ Resources:
             - Name: NUM_WORKERS
               Value: 4
             - Name: OPTIMADE_MONGO_URI
-              Value:
-                Fn::ImportValue:
-                  !Join ['', ['mongodb+srv://', !Ref 'MongoHost']]
+              Value: !Join ['', ['mongodb+srv://', !Ref 'MongoHost']]
           LogConfiguration:
             LogDriver: 'awslogs'
             Options:
