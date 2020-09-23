@@ -1,4 +1,4 @@
-FROM quay.io/plotly/orca:159486a94fa49ba68a7a56e84af8a862911f0f31
+FROM quay.io/plotly/orca:a47c8b9ab8c1c3bbb957c340da220441de21b871
 
 ENV BUILD_DIR "/var/www/image-exporter/build"
 ENV PLOTLYJS_ARG "--plotlyJS $BUILD_DIR/plotly-bundle.js"
