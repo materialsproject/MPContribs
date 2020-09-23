@@ -34,6 +34,7 @@ setup(
         "service-identity",
         "tqdm",
         "requests-futures",
+        "ratelimit",
     ],
     license="MIT",
     zip_safe=False,
