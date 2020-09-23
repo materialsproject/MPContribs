@@ -502,10 +502,13 @@ Resources:
             build:
               commands:
                 - docker build --tag "${IMAGE_URI}-mpweb" .
+                - docker build --tag "${IMAGE_URI}-mpoptimade" optimade
             post_build:
               commands:
                 - docker push "${IMAGE_URI}-mpweb"
                 - printf '{"ImageUri":"%s"}' "${IMAGE_URI}-mpweb" > build-mpweb.json
+                - docker push "${IMAGE_URI}-mpoptimade"
+                - printf '{"ImageUri":"%s"}' "${IMAGE_URI}-mpoptimade" > build-mpoptimade.json
           artifacts:
             files:
                 - build-mpweb.json
@@ -838,7 +841,8 @@ Resources:
                     "AwsAccessKeyId": "${AwsAccessKeyId}",
                     "AwsSecretAccessKey": "${AwsSecretAccessKey}",
                     "ImageUrlWeb": { "Fn::GetParam" : ["BuildOutputMPWeb", "build-mpweb.json", "ImageUri"] },
-                    "ImageUrlWebApi": { "Fn::GetParam" : ["BuildOutputMPWebApi", "build-mpwebapi.json", "ImageUri"] }
+                    "ImageUrlWebApi": { "Fn::GetParam" : ["BuildOutputMPWebApi", "build-mpwebapi.json", "ImageUri"] },
+                    "ImageUrlOptimade": { "Fn::GetParam" : ["BuildOutputMPWeb", "build-mpoptimade.json", "ImageUri"] }
                   }
               InputArtifacts:
                 - Name: Source

@@ -17,6 +17,9 @@ Parameters:
   ImageUrlWebApi:
     Type: String
     Description: url for the api docker image
+  ImageUrlOptimade:
+    Type: String
+    Description: url for the api docker image
   MongoHost:
     Type: String
     Description: MongoDB host that the app connects to.
@@ -99,6 +102,24 @@ Resources:
                     !Join [':', [!Ref 'PipelineName', !Ref 'EnvironmentName', 'ElastiCacheAddress']]
           PortMappings:
             - ContainerPort: 8081
+          LogConfiguration:
+            LogDriver: 'awslogs'
+            Options:
+              awslogs-group: !Join ['-', [!Ref 'PipelineName', !Ref 'EnvironmentName', 'service', !Ref 'ServiceName']]
+              awslogs-region: !Ref 'AWS::Region'
+              awslogs-stream-prefix: !Ref 'ServiceName'
+        - Name: optimade
+          MemoryReservation: 100
+          Image: !Ref 'ImageUrlOptimade'
+          PortMappings:
+            - ContainerPort: 5004
+          Environment:
+            - Name: NUM_WORKERS
+              Value: 4
+            - Name: OPTIMADE_MONGO_URI
+              Value:
+                Fn::ImportValue:
+                  !Join ['', ['mongodb+srv://', !Ref 'MongoHost']]
           LogConfiguration:
             LogDriver: 'awslogs'
             Options:
