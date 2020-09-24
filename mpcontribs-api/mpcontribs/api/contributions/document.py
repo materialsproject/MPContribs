@@ -33,12 +33,7 @@ MPCONTRIBS_API_HOST = os.environ.get("MPCONTRIBS_API_HOST", "localhost:5000")
 seed_nb = nbf.new_notebook()
 seed_nb["cells"] = [
     nbf.new_code_cell("from mpcontribs.client import Client"),
-    nbf.new_code_cell(
-        "client = Client(\n"
-        '\theaders={"X-Consumer-Groups": "admin"},\n'
-        f'\thost="{MPCONTRIBS_API_HOST}"\n'
-        ")"
-    ),
+    nbf.new_code_cell("client = Client()"),
 ]
 
 quantity_keys = {"display", "value", "error", "unit"}
@@ -302,6 +297,19 @@ class Contributions(DynamicDocument):
             document.notebook.delete()
 
         cells = [
+            # define client only once in kernel
+            # avoids API calls for regex expansion for query parameters
+            nbf.new_code_cell(
+                "\n".join(
+                    [
+                        "if 'client' not in locals():",
+                        "\tclient = Client(",
+                        '\t\theaders={"X-Consumer-Groups": "admin"},',
+                        f'\t\thost="{MPCONTRIBS_API_HOST}"',
+                        "\t)",
+                    ]
+                )
+            ),
             nbf.new_code_cell(f'client.get_contribution("{document.id}").pretty()'),
         ]
 
@@ -328,8 +336,7 @@ class Contributions(DynamicDocument):
             cells[idx]["outputs"] = output
 
         doc = deepcopy(seed_nb)
-        doc["cells"][1] = nbf.new_code_cell("client = Client()")
-        doc["cells"] += cells
+        doc["cells"] += cells[1:]  # skip localhost Client
 
         # avoid circular imports
         from mpcontribs.api.notebooks.document import Notebooks
