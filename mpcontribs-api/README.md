@@ -1,2 +1,3 @@
 - https://api.mpcontribs.org
-- https://ml-api.materialsproject.cloud
+- https://ml-api.materialsproject.org
+- https://lightsources-api.materialsproject.org

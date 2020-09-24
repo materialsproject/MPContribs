@@ -154,11 +154,11 @@ Resources:
             - Name: MPCONTRIBS_API_HOST
               Value: "localhost:5002"
             - Name: API_CNAME
-              Value: "ml-api.materialsproject.cloud"
+              Value: "ml-api.materialsproject.org"
             - Name: API_PORT
               Value: "5002"
             - Name: PORTAL_CNAME
-              Value: "ml.materialsproject.cloud"
+              Value: "ml.materialsproject.org"
             - Name: PORTAL_PORT
               Value: "8082"
             - Name: MPCONTRIBS_DB_NAME
@@ -207,11 +207,11 @@ Resources:
             - Name: MPCONTRIBS_API_HOST
               Value: "localhost:5003"
             - Name: API_CNAME
-              Value: "lightsources-api.materialsproject.cloud"
+              Value: "lightsources-api.materialsproject.org"
             - Name: API_PORT
               Value: "5003"
             - Name: PORTAL_CNAME
-              Value: "lightsources.materialsproject.cloud"
+              Value: "lightsources.materialsproject.org"
             - Name: PORTAL_PORT
               Value: "8083"
             - Name: MPCONTRIBS_DB_NAME
@@ -294,11 +294,11 @@ Resources:
             - Name: MPCONTRIBS_API_HOST
               Value: "localhost:5002"
             - Name: API_CNAME
-              Value: "ml-api.materialsproject.cloud"
+              Value: "ml-api.materialsproject.org"
             - Name: API_PORT
               Value: "5002"
             - Name: PORTAL_CNAME
-              Value: "ml.materialsproject.cloud"
+              Value: "ml.materialsproject.org"
             - Name: PORTAL_PORT
               Value: "8082"
             - Name: TRADEMARK
@@ -331,11 +331,11 @@ Resources:
             - Name: MPCONTRIBS_API_HOST
               Value: "localhost:5003"
             - Name: API_CNAME
-              Value: "lightsources-api.materialsproject.cloud"
+              Value: "lightsources-api.materialsproject.org"
             - Name: API_PORT
               Value: "5003"
             - Name: PORTAL_CNAME
-              Value: "lightsources.materialsproject.cloud"
+              Value: "lightsources.materialsproject.org"
             - Name: PORTAL_PORT
               Value: "8083"
             - Name: TRADEMARK

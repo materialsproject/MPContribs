@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 LOG_KVRH = {
     "name": "log_kvrh",
     "data_file": "matbench_log_kvrh.json.gz",
@@ -27,7 +28,7 @@ JDFT2D = {
     "data_file": "matbench_jdft2d.json.gz",
     "target": "exfoliation_en",
     "clf_pos_label": None,
-    "unit": "meV/atom"
+    "unit": "meV/atom",
 }
 
 MP_GAP = {
@@ -35,7 +36,7 @@ MP_GAP = {
     "data_file": "matbench_mp_gap.json.gz",
     "target": "gap pbe",
     "clf_pos_label": None,
-    "unit": "eV"
+    "unit": "eV",
 }
 
 MP_IS_METAL = {
@@ -43,7 +44,7 @@ MP_IS_METAL = {
     "data_file": "matbench_mp_is_metal.json.gz",
     "target": "is_metal",
     "clf_pos_label": True,
-    "unit": None
+    "unit": None,
 }
 
 MP_E_FORM = {
@@ -51,7 +52,7 @@ MP_E_FORM = {
     "data_file": "matbench_mp_e_form.json.gz",
     "target": "e_form",
     "clf_pos_label": None,
-    "unit": "eV/atom"
+    "unit": "eV/atom",
 }
 
 PEROVSKITES = {
@@ -59,7 +60,7 @@ PEROVSKITES = {
     "data_file": "matbench_perovskites.json.gz",
     "target": "e_form",
     "clf_pos_label": None,
-    "unit": "eV"
+    "unit": "eV",
 }
 
 GLASS = {
@@ -67,7 +68,7 @@ GLASS = {
     "data_file": "matbench_glass.json.gz",
     "target": "gfa",
     "clf_pos_label": True,
-    "unit": None
+    "unit": None,
 }
 
 EXPT_IS_METAL = {
@@ -75,7 +76,7 @@ EXPT_IS_METAL = {
     "data_file": "matbench_expt_is_metal.json.gz",
     "target": "is_metal",
     "clf_pos_label": True,
-    "unit": None
+    "unit": None,
 }
 
 EXPT_GAP = {
@@ -83,7 +84,7 @@ EXPT_GAP = {
     "data_file": "matbench_expt_gap.json.gz",
     "target": "gap expt",
     "clf_pos_label": None,
-    "unit": "eV"
+    "unit": "eV",
 }
 
 PHONONS = {
@@ -91,7 +92,7 @@ PHONONS = {
     "data_file": "matbench_phonons.json.gz",
     "target": "last phdos peak",
     "clf_pos_label": None,
-    "unit": "cm^-1"
+    "unit": "cm^-1",
 }
 
 STEELS = {
@@ -99,7 +100,7 @@ STEELS = {
     "data_file": "matbench_steels.json.gz",
     "target": "yield strength",
     "clf_pos_label": None,
-    "unit": "MPa"
+    "unit": "MPa",
 }
 
 BENCHMARK_DEBUG_SET = [JDFT2D, PHONONS, EXPT_IS_METAL, STEELS]
@@ -128,7 +129,7 @@ HAS_STRUCTURE = [
     MP_IS_METAL,
     MP_E_FORM,
     PEROVSKITES,
-    PHONONS
+    PHONONS,
 ]
 
 BENCHMARK_DICT = {ds["name"]: ds for ds in BENCHMARK_FULL_SET}

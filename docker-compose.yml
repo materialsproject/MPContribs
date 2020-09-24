@@ -34,7 +34,7 @@ services:
     portal-ml:
         build: ./mpcontribs-portal
         env_file:
-            - ./deployments/ml.materialsproject.cloud.env
+            - ./deployments/ml.materialsproject.org.env
         depends_on:
             - api-ml
         volumes: *portal-volumes
@@ -44,7 +44,7 @@ services:
     portal-ls:
         build: ./mpcontribs-portal
         env_file:
-            - ./deployments/lightsources.materialsproject.cloud.env
+            - ./deployments/lightsources.materialsproject.org.env
         depends_on:
             - api-ls
         volumes: *portal-volumes
@@ -78,7 +78,7 @@ services:
         volumes:
             - ./mpcontribs-api:/app
         env_file:
-            - ./deployments/ml.materialsproject.cloud.env
+            - ./deployments/ml.materialsproject.org.env
         environment: *dev-env
         ports:
             - "5002:5002"
@@ -94,7 +94,7 @@ services:
         volumes:
             - ./mpcontribs-api:/app
         env_file:
-            - ./deployments/lightsources.materialsproject.cloud.env
+            - ./deployments/lightsources.materialsproject.org.env
         environment: *dev-env
         ports:
             - "5003:5003"

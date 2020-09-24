@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import wget, json, os, math
 from string import capwords
 from pybtex.database import parse_string
@@ -15,24 +16,33 @@ import pprint
 
 from matminer.datasets import load_dataset
 
-from matbench_config import DIELECTRIC, JDFT2D, PEROVSKITES, STEELS, BENCHMARK_FULL_SET, BENCHMARK_DICT, HAS_STRUCTURE
+from matbench_config import (
+    DIELECTRIC,
+    JDFT2D,
+    PEROVSKITES,
+    STEELS,
+    BENCHMARK_FULL_SET,
+    BENCHMARK_DICT,
+    HAS_STRUCTURE,
+)
 
 
 pybtex.errors.set_strict_mode(False)
 api_key = os.environ["MPCONTRIBS_API_KEY"]
-client = Client(api_key, host='ml-api.materialsproject.cloud')
+client = Client(api_key, host="ml-api.materialsproject.org")
 mprester = MPRester()
 
 
 # client.get_project("matbench_steels").pretty()
 
 
-fn = 'dataset_metadata.json'
+fn = "dataset_metadata.json"
 if not os.path.exists(fn):
-    wget.download(f'https://raw.githubusercontent.com/hackingmaterials/matminer/master/matminer/datasets/{fn}')
-metadata = json.load(open(fn, 'r'))
+    wget.download(
+        f"https://raw.githubusercontent.com/hackingmaterials/matminer/master/matminer/datasets/{fn}"
+    )
+metadata = json.load(open(fn, "r"))
 metadata = {k: d for k, d in metadata.items() if "matbench" in k}
-
 
 
 # Creating new projects
@@ -93,9 +103,6 @@ metadata = {k: d for k, d in metadata.items() if "matbench" in k}
 #             ex)  # TODO should use get_entry to check existence -> use update_entry if project exists
 
 
-
-
-
 # Map of canonical yet non-mpcontribs-compatible tagret nams to compatible (unicode, no punctuation) target names
 target_map = {
     "yield strength": "σᵧ",
@@ -139,8 +146,6 @@ target_map = {
 #         }).result())
 
 
-
-
 # Entering all contributions to projects
 ########################################
 
@@ -160,7 +165,14 @@ target_map = {
 # perovskites....
 
 
-for ds in ["dielectric", "phonons", "mp_gap", "mp_is_metal", "perovskites", "mp_e_form"]:
+for ds in [
+    "dielectric",
+    "phonons",
+    "mp_gap",
+    "mp_is_metal",
+    "perovskites",
+    "mp_e_form",
+]:
 
     ds_config = BENCHMARK_DICT[ds]
 
@@ -169,7 +181,6 @@ for ds in ["dielectric", "phonons", "mp_gap", "mp_is_metal", "perovskites", "mp_
     df = load_dataset(name)
     target = ds_config["target"]
     unit = f" {ds_config['unit']}" if ds_config["unit"] else ""
-
 
     # print(f"Updating 'other' column entries of {name} with unicode.")
     # print(client.projects.update_entry(pk=name, project={
@@ -180,22 +191,18 @@ for ds in ["dielectric", "phonons", "mp_gap", "mp_is_metal", "perovskites", "mp_
     #     }
     # }).result())
 
-
-
     # print(f"Deleting contributions of {name}")
     # client.delete_contributions(name)
-
 
     print(f"Assembling and uploading contributions for {name}")
     structure_filename = "/Users/ardunn/Downloads/outfile.cif"
     contributions = []
     id_prefix = df.shape[0]
 
-
     id_n_zeros = math.floor(math.log(df.shape[0], 10)) + 1
     for i, row in tqdm.tqdm(enumerate(df.iterrows())):
         entry = row[1]
-        contrib = {'project': name, 'is_public': True}
+        contrib = {"project": name, "is_public": True}
 
         if "structure" in entry.index:
             structures = []
