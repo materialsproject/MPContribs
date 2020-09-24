@@ -59,6 +59,9 @@ def run_cells(kernel_id, cid, cells):
                     output.pop("transient", None)
                     output["output_type"] = msg_type
                     outputs[idx].append(output)
+                elif msg_type == "error":
+                    tb = msg["content"]["traceback"]
+                    raise ValueError(tb)
 
     ws.close()
     return outputs
