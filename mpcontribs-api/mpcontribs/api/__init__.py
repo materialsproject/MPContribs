@@ -1,9 +1,5 @@
 # -*- coding: utf-8 -*-
 """Flask App for MPContribs API"""
-from gevent import monkey
-
-monkey.patch_all()
-
 import os
 import logging
 import boto3
