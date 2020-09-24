@@ -6,6 +6,7 @@ from mpcontribs.portal import views
 app_name = "mpcontribs_portal"
 urlpatterns = [
     url(r"^$", views.index, name="index"),
+    url(r"^public/?$", views.public, name="public"),
     url(r"^healthcheck/?$", views.healthcheck, name="healthcheck"),
     url(
         r"^notebooks/(?P<nb>[A-Za-z0-9_\/]{3,}).html$",

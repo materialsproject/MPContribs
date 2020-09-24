@@ -103,18 +103,30 @@ def landingpage(request, project):
     return HttpResponse(template.render(ctx.flatten(), request))
 
 
-def index(request):
+def public(request):
     ctx = get_context(request)
     cname = os.environ["PORTAL_CNAME"]
+    ctx["PORTAL_CNAME"] = cname
+    return render(request, "header_footer.html", ctx.flatten())
+
+
+def index(request):
+    kwargs = client_kwargs(request)
+    if not kwargs["headers"]:  # not logged in
+        return redirect("/public/")
+
+    ctx = get_context(request)
+    cname = os.environ["PORTAL_CNAME"]
+    ctx["PORTAL_CNAME"] = cname
     template_dir = get_app_template_dirs("templates/notebooks")[0]
     htmls = os.path.join(template_dir, cname, "*.html")
     ctx["notebooks"] = [
         p.split("/" + cname + "/")[-1].replace(".html", "") for p in glob(htmls)
     ]
-    ctx["PORTAL_CNAME"] = cname
+
     ctx["landing_pages"] = []
     mask = ["name", "title", "authors", "is_public", "description", "references"]
-    client = Client(**client_kwargs(request))
+    client = Client(**kwargs)
     entries = client.projects.get_entries(_fields=mask).result()["data"]
     for entry in entries:
         authors = entry["authors"].strip().split(",", 1)
