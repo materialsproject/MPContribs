@@ -38,32 +38,27 @@
                           <option></option>
                       </select>
                   </div>
+                  {% endif %}
                   <div class="navbar-item has-text-centered">
                       <div class="tabs is-toggle is-toggle-rounded has-text-weight-semibold">
                           <ul>
-                              <li class="is-active"
-                                  data-intro="Browse a list of all available projects."
+                              <li data-intro="Browse a list of all available projects."
                                   data-step="2">
-                                  <a id="browse-toggle" href="/#browse">Browse</a>
+                                  <a id="browse-toggle" href="/browse">Browse</a>
                               </li>
                               <li data-intro="Search contributions and render their cards."
                                   data-step="3">
-                                  <a id="search-toggle" href="/#search">Search</a>
+                                  <a id="search-toggle" href="/search">Search</a>
                               </li>
                               <li data-intro="Apply for your own project."
                                   data-step="4">
-                                  <a id="apply-toggle" href="/#apply">Apply</a></li>
+                                  <a id="apply-toggle" href="/apply">Apply</a></li>
                               <li data-intro="Explore code examples from other projects."
                                   data-step="5">
-                                  <a id="work-toggle" href="/#work">Work</a></li>
+                                  <a id="work-toggle" href="/work">Work</a></li>
                           </ul>
                       </div>
                   </div>
-                  {% else %}
-                  <div class="navbar-item has-text-centered">
-                      <a class="button" href="/">Login</a>
-                  </div>
-                  {% endif %}
               </div>
               <div class="navbar-end">
                   <div class="navbar-item has-dropdown is-hoverable">

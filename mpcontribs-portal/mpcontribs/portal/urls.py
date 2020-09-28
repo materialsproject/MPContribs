@@ -1,51 +1,46 @@
 # -*- coding: utf-8 -*-
 from django.conf.urls import url
-from django.views.generic.base import RedirectView
 from mpcontribs.portal import views
 
 app_name = "mpcontribs_portal"
 urlpatterns = [
+    # public
     url(r"^$", views.index, name="index"),
-    url(r"^public/?$", views.public, name="public"),
+    url(r"^work/?$", views.work, name="work"),
     url(r"^healthcheck/?$", views.healthcheck, name="healthcheck"),
     url(
         r"^notebooks/(?P<nb>[A-Za-z0-9_\/]{3,}).html$",
         views.notebooks,
         name="notebooks",
     ),
-    url(r"^(?P<cid>[a-f\d]{24})/?$", views.contribution, name="contribution"),
-    # downloads
-    url(r"^download/?$", views.download, name="download"),
+    # protected
+    url(r"^browse/?$", views.browse, name="browse"),
+    url(r"^search/?$", views.search, name="search"),
+    url(r"^apply/?$", views.apply, name="apply"),
     url(
-        r"^component/(?P<oid>[a-f\d]{24})$",
+        r"^projects/(?P<project>[a-zA-Z0-9_]{3,}).json.gz$",
+        views.download_project,
+        name="download_project",
+    ),
+    url(
+        r"^projects/(?P<project>[a-zA-Z0-9_]{3,})/?$",
+        views.landingpage,
+        name="landingpage",
+    ),
+    url(r"^contributions/download/?$", views.download, name="download"),
+    url(
+        r"^contributions/component/(?P<oid>[a-f\d]{24})$",
         views.download_component,
         name="download_component",
     ),
     url(
-        r"^(?P<cid>[a-f\d]{24}).json.gz$",
+        r"^contributions/(?P<cid>[a-f\d]{24}).json.gz$",
         views.download_contribution,
         name="download_contribution",
     ),
-    url(  # TODO extend to non-ML and csv
-        r"^(?P<project>[a-zA-Z0-9_]{3,}).json.gz$",
-        views.download_project,
-        name="download_project",
-    ),
-    # redirects
-    url(r"^fe-co-v/?$", RedirectView.as_view(url="/swf/", permanent=False)),
-    url(r"^fe-co-v/dataset-01/?$", RedirectView.as_view(url="/swf/", permanent=False)),
     url(
-        r"^boltztrap/?$",
-        RedirectView.as_view(url="/carrier_transport/", permanent=True),
+        r"^contributions/(?P<cid>[a-f\d]{24})/?$",
+        views.contribution,
+        name="contribution",
     ),
-    url(
-        r"^Screeninginorganicpv/?$",
-        RedirectView.as_view(url="/screening_inorganic_pv/", permanent=False),
-    ),
-    url(
-        r"^ScreeningInorganicPV/?$",
-        RedirectView.as_view(url="/screening_inorganic_pv/", permanent=False),
-    ),
-    # default view
-    url(r"^(?P<project>[a-zA-Z0-9_]{3,})/?$", views.landingpage, name="landingpage"),
 ]

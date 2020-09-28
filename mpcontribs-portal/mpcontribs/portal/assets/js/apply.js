@@ -1,6 +1,7 @@
 import 'jquery-form';
 import 'jquery-validation';
 import 'czmore';
+import * as bulmaTagsinput from 'bulma-extensions/bulma-tagsinput/dist/js/bulma-tagsinput';
 
 function prepareRequest(formData, jqForm, options) {
     $('#apply-button').addClass('is-loading');
@@ -41,6 +42,10 @@ function processError(data) {
 }
 
 $(document).ready(function () {
+    bulmaTagsinput.attach('[type="tags"]');
+    var li = $('#apply-toggle').parent();
+    li.siblings().removeClass('is-active');
+    li.addClass('is-active');
 
     $.validator.addMethod("alphanumeric", function(value, element) {
         return this.optional(element) || /^[\w_]+$/i.test(value);

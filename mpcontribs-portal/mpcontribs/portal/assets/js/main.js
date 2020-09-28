@@ -1,11 +1,9 @@
 import logo from 'images/logo.png';
 import * as clipboard from "clipboard";
 import 'select2/dist/js/select2';
-import 'jquery-simulate/jquery.simulate';
 import '@fortawesome/fontawesome-free/js/all';
 import '@vizuaalog/bulmajs/dist/dropdown';
 import introJs from 'intro.js/intro';
-import * as bulmaTagsinput from 'bulma-extensions/bulma-tagsinput/dist/js/bulma-tagsinput';
 require('css/main.scss');
 
 window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
@@ -64,7 +62,7 @@ $(document).ready(function () {
     });
     $('#jump').on('select2:select', function(ev) {
         var project = ev.params.data["value"];
-        window.location.href = '/'+project+'/';
+        window.location.href = '/projects/'+project+'/';
     });
 
     // navbar burger for mobile
@@ -73,68 +71,9 @@ $(document).ready(function () {
         $(".navbar-menu").toggleClass("is-active");
     });
 
-    // toggle nav
-    var toggles = ['browse', 'search', 'apply', 'work'];
-    $.each(toggles, function(idx, toggle) {
-        var selector = '#' + toggle + '-toggle';
-        $(selector).on('click', function() {
-            $('#api_key_text').html('API Key');
-            $('.navbar-burger.is-active').simulate('click');
-            var li = $(this).parent();
-            li.siblings().removeClass('is-active');
-            $('section').addClass('is-hidden');
-            $('#' + toggle).removeClass('is-hidden');
-            $(this).parent().addClass('is-active');
-            import(
-                /* webpackPrefetch: true */
-                /* webpackMode: "lazy-once" */
-                './' + toggle + '.js'
-            ).then(function() {
-                if (!$('.tagsinput').length) { bulmaTagsinput.attach('[type="tags"]'); }
-                console.log(toggle + ' imported');
-            }).catch(function(err) { console.error(err); });
-        });
-    });
-
-    if ($("#landingpage").length) {
-        import(
-            /* webpackPrefetch: true */
-            /* webpackMode: "lazy" */
-            /* webpackChunkName: "landingpage" */
-            `./landingpage.js`
-        ).then(function() {
-            console.log('landingpage imported.')
-        }).catch(function(err) { console.error(err); });
-    }
-
-    if ($("#contribution").length) {
-        import(
-            /* webpackPrefetch: true */
-            /* webpackMode: "lazy" */
-            /* webpackChunkName: "contribution" */
-            `./contribution.js`
-        ).then(function() {
-            console.log('contribution imported.')
-        }).catch(function(err) { console.error(err); });
-    }
-
     $('.select2').css({width: '100%'});
     $('.select2-search').css({width: 'auto'});
     $('.select2-search__field').css({width: '100%'});
-
-    // click the toggle based on location (for manual reloads or links including hash)
-    if (window.location.pathname === '/') {
-        if (window.location.hash) {
-            var toggle = window.location.hash.slice(1);
-            var selector = '#' + toggle + '-toggle';
-            $(selector).simulate('click');
-        } else  {
-            $('#browse-toggle').simulate('click');
-        }
-        $("html, body").animate({ scrollTop: 0 }, 1);
-    } else {
-        $('.navbar-start .navbar-item .tabs ul li').removeClass('is-active');
-    }
 
     // close all dropdowns on body click
     $('body').click(function(e) {

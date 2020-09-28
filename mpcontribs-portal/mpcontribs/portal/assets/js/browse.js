@@ -1,4 +1,8 @@
 $(document).ready(function () {
+    var li = $('#browse-toggle').parent();
+    li.siblings().removeClass('is-active');
+    li.addClass('is-active');
+
     var imageNames = require.context('../images/', false, /\.(png)$/).keys();
 
     $.each(imageNames, function(idx, name) {

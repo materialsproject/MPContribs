@@ -34,7 +34,7 @@ function get_data() {
 
 function make_url(text, href) {
     var url;
-    if (href.startsWith('/component/')) {
+    if (href.startsWith('/contributions/component/')) {
         url = $('<a/>', {'class': 'tag is-link is-light', text: text, href: href});
     } else {
         url = $('<a/>', {href: href, target: '_blank', rel: "noopener noreferrer"});
@@ -55,7 +55,7 @@ function urlRenderer(instance, td, row, col, prop, value, cellProperties) {
         Handsontable.dom.empty(td);
         var tags = $('<div/>', {'class': 'tags'});
         $.each(value, function(i, v) {
-            var tag = make_url(v['name'], '/component/' + v['id']);
+            var tag = make_url(v['name'], '/contributions/component/' + v['id']);
             $(tags).append(tag);
         });
         $(td).addClass('htCenter').addClass('htMiddle').append(tags);
@@ -71,7 +71,7 @@ function urlRenderer(instance, td, row, col, prop, value, cellProperties) {
             make_url_cell(td, basename, href);
         } else if (objectid_regex.test(basename)) {
             Handsontable.renderers.HtmlRenderer.apply(this, arguments);
-            make_url_cell(td, basename.slice(-7), '/' + basename);
+            make_url_cell(td, basename.slice(-7), '/contributions/' + basename);
         } else {
             Handsontable.renderers.TextRenderer.apply(this, arguments);
         }
@@ -80,7 +80,7 @@ function urlRenderer(instance, td, row, col, prop, value, cellProperties) {
 
 function set_download_urls() {
     $('a[name=table_download_item]').each(function(index) {
-        var download_url = '/download/?';
+        var download_url = '/contributions/download/?';
         const format = $(this).data('format');
         var download_query = $.extend(
             true, {format: format}, window.api['headers'], query
@@ -227,7 +227,7 @@ hot.updateSettings({
     rowHeaders: function(index) {
         var cid = hot.getDataAtCell(index, 1);
         var url = $('<a/>', {
-            'class': 'is-primary', text: index+1, href: '/' + cid,
+            'class': 'is-primary', text: index+1, href: '/contributions/' + cid,
             target: '_blank', rel: "noopener noreferrer"
         });
         return url.prop('outerHTML');

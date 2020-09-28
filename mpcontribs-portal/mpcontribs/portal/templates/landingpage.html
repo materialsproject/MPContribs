@@ -1,4 +1,5 @@
 {% extends "header_footer.html" %}
+{% load render_bundle from webpack_loader %}
 
 {% block content %}
 <section class="section" id=landingpage>
@@ -142,4 +143,8 @@
     {% endif %}
 
 </section>
+{% endblock %}
+
+{% block footer %}
+{% render_bundle 'landingpage' %}
 {% endblock %}

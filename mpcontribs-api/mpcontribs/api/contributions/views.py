@@ -98,8 +98,8 @@ class ContributionsResource(Resource):
                 "cid": str(obj.id),
                 "title": project.title,
                 "references": project.references[:5],
-                "landing_page": f"/{project.id}/",
-                "more": f"/{obj.id}",
+                "landing_page": f"/projects/{project.id}/",
+                "more": f"/contributions/{obj.id}",
             }
             ctx["descriptions"] = project.description.strip().split(".", 1)
             authors = [a.strip() for a in project.authors.split(",") if a]

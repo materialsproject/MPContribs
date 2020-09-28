@@ -1,0 +1,82 @@
+{% extends "header_footer.html" %}
+{% load render_bundle from webpack_loader %}
+
+{% block content %}
+
+<section class="section" id="search">
+    <article class="message is-dark">
+        <div class="message-header">
+            <p>Search Contributions</p>
+        </div>
+        <div class="message-body has-text-justified">
+            Select project(s), formula(s), and/or identifier(s) to update the results table with
+            basic information about the matching contributions. Click the contribution identifier
+            (left-most column) to render its preview card as it appears on the materials details
+            pages of <a href="https://materialsproject.org">Materials Project</a>.
+        </div>
+    </article>
+    <div class="columns">
+        <div class="column is-half">
+            <div class="box">
+                <div class="columns is-multiline">
+                    <div class="column has-text-dark">
+                        <div class="field">
+                            <div class="control">
+                                <select id="projects_list" multiple="multiple"></select>
+                            </div>
+                        </div>
+                        <div class="field">
+                            <div class="control">
+                                <select id="formulas_list" multiple="multiple"></select>
+                            </div>
+                        </div>
+                        <div class="field">
+                            <div class="control">
+                                <select id="identifiers_list" multiple="multiple"></select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="column is-narrow">
+                        <div class="field">
+                            <input class="is-checkradio" id="has_structures" type="checkbox">
+                            <label for="has_structures">has structure(s)</label>
+                        </div>
+                        <div class="field">
+                            <input class="is-checkradio" id="has_tables" type="checkbox">
+                            <label for="has_tables">has table(s)</label>
+                        </div>
+                        <div class="field is-grouped is-grouped-multiline">
+                            <div class="control">
+                                <div class="tags has-addons">
+                                    <span class="tag is-black">results</span>
+                                    <span class="tag is-light" id=count></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="field">
+                            <div class="control">
+                                <div id="spinner"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="column is-full table-container">
+                        <table class="table is-narrow has-background-dark has-text-white">
+                            <tbody id=results></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="column is-half">
+            <div class="column is-full has-text-dark" id=card>
+                <!-- card dynamically added -->
+            </div>
+        </div>
+    </div>
+</section>
+
+{% endblock %}
+
+{% block footer %}
+{% render_bundle 'search' %}
+{% endblock %}

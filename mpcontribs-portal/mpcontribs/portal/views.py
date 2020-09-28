@@ -51,6 +51,7 @@ def get_context(request):
     ctx["API_CNAME"] = os.environ["API_CNAME"]
     ctx["API_PORT"] = os.environ["API_PORT"]
     ctx["TRADEMARK"] = os.environ.get("TRADEMARK", "")
+    ctx["PORTAL_CNAME"] = os.environ["PORTAL_CNAME"]
     return ctx
 
 
@@ -103,30 +104,37 @@ def landingpage(request, project):
     return HttpResponse(template.render(ctx.flatten(), request))
 
 
-def public(request):
-    ctx = get_context(request)
-    cname = os.environ["PORTAL_CNAME"]
-    ctx["PORTAL_CNAME"] = cname
-    return render(request, "header_footer.html", ctx.flatten())
-
-
 def index(request):
-    kwargs = client_kwargs(request)
-    if not kwargs["headers"]:  # not logged in
-        return redirect("/public/")
-
     ctx = get_context(request)
-    cname = os.environ["PORTAL_CNAME"]
-    ctx["PORTAL_CNAME"] = cname
-    template_dir = get_app_template_dirs("templates/notebooks")[0]
-    htmls = os.path.join(template_dir, cname, "*.html")
-    ctx["notebooks"] = [
-        p.split("/" + cname + "/")[-1].replace(".html", "") for p in glob(htmls)
-    ]
+    return render(request, "index.html", ctx.flatten())
 
+
+def work(request):
+    ctx = get_context(request)
+    template_dir = get_app_template_dirs("templates/notebooks")[0]
+    htmls = os.path.join(template_dir, ctx["PORTAL_CNAME"], "*.html")
+    ctx["notebooks"] = [
+        p.split("/" + ctx["PORTAL_CNAME"] + "/")[-1].replace(".html", "")
+        for p in glob(htmls)
+    ]
+    return render(request, "work.html", ctx.flatten())
+
+
+def search(request):
+    ctx = get_context(request)
+    return render(request, "search.html", ctx.flatten())
+
+
+def apply(request):
+    ctx = get_context(request)
+    return render(request, "apply.html", ctx.flatten())
+
+
+def browse(request):
+    ctx = get_context(request)
     ctx["landing_pages"] = []
     mask = ["name", "title", "authors", "is_public", "description", "references"]
-    client = Client(**kwargs)
+    client = Client(**client_kwargs(request))
     entries = client.projects.get_entries(_fields=mask).result()["data"]
     for entry in entries:
         authors = entry["authors"].strip().split(",", 1)
@@ -136,7 +144,7 @@ def index(request):
         entry["description"] = entry["description"].split(".", 1)[0] + "."
         # visibility governed by is_public flag and X-Consumer-Groups header
         ctx["landing_pages"].append(entry)
-    return render(request, "home.html", ctx.flatten())
+    return render(request, "browse.html", ctx.flatten())
 
 
 def export_notebook(nb, cid):

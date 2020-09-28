@@ -158,6 +158,10 @@ function search(event) {
 }
 
 $(document).ready(function () {
+    var li = $('#search-toggle').parent();
+    li.siblings().removeClass('is-active');
+    li.addClass('is-active');
+
     $.each(fields, function(idx, field) {
         $('#'+field+'s_list').select2({
             placeholder: 'Select '+field+'(s) ...',
