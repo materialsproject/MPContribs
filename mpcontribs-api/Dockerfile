@@ -1,4 +1,4 @@
-FROM materialsproject/devops:python-3.85.6 as base
+FROM materialsproject/devops:python-3.86.0 as base
 
 FROM base as builder
 RUN apt-get update && apt-get install -y --no-install-recommends gcc git g++ libsnappy-dev npm wget && apt-get clean
