@@ -55,18 +55,6 @@ SWAGGER = {
         }
     ],
     "specs_route": "/",
-    "head_text": "\n".join(
-        [
-            "<!-- Global site tag (gtag.js) - Google Analytics -->",
-            '<script async src= "https://www.googletagmanager.com/gtag/js?id=UA-140392573-3"></script>',
-            "<script>",
-            "window.dataLayer = window.dataLayer || [];",
-            "function gtag(){dataLayer.push(arguments);}",
-            "gtag('js', new Date());",
-            "gtag('config', 'UA-140392573-3');",
-            "</script>",
-        ]
-    ),
 }
 
 API_NAME = API_CNAME.split(".", 1)[0].upper() if API_CNAME else "API"

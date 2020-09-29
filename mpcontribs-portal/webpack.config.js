@@ -13,17 +13,14 @@ console.log('devMode = ' + devMode)
 module.exports = {
     context: __dirname,
     entry: {
-        'main': [
-            path.resolve(__dirname, 'mpcontribs/portal/assets/js/analytics'),
-            path.resolve(__dirname, 'mpcontribs/portal/assets/js/main'),
-            //path.resolve(__dirname, 'mpcontribs/portal/assets/js/render_overview'),
-        ],
+        'main': path.resolve(__dirname, 'mpcontribs/portal/assets/js/main'),
         'browse': path.resolve(__dirname, 'mpcontribs/portal/assets/js/browse'),
         'search': path.resolve(__dirname, 'mpcontribs/portal/assets/js/search'),
         'apply': path.resolve(__dirname, 'mpcontribs/portal/assets/js/apply'),
         'work': path.resolve(__dirname, 'mpcontribs/portal/assets/js/work'),
         'landingpage': path.resolve(__dirname, 'mpcontribs/portal/assets/js/landingpage'),
         'contribution': path.resolve(__dirname, 'mpcontribs/portal/assets/js/contribution'),
+        //path.resolve(__dirname, 'mpcontribs/portal/assets/js/render_overview'),
     },
     output: {
         path: path.resolve(__dirname, 'dist'),
