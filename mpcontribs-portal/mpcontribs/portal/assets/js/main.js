@@ -6,10 +6,6 @@ import '@vizuaalog/bulmajs/dist/dropdown';
 import introJs from 'intro.js/intro';
 require('css/main.scss');
 
-window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
-ga('create', 'UA-140392573-2', 'auto');
-ga('send', 'pageview');
-
 window.api = {};
 var api_key = $('#api_key').val();
 if (api_key !== '') {
