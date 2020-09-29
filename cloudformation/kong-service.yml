@@ -73,7 +73,7 @@ Resources:
             - Name: KONG_PG_DATABASE
               Value: kong
             - Name: KONG_PLUGINS
-              Value: oidc,oidc-consumer,key-auth,cors,request-size-limiting,bot-detection,rate-limiting,acl,response-ratelimiting,loggly,kong-response-size-limiting,request-termination,response-transformer,request-transformer,kong-log-google
+              Value: oidc,oidc-consumer,key-auth,cors,request-size-limiting,bot-detection,rate-limiting,acl,response-ratelimiting,loggly,kong-response-size-limiting,request-termination,response-transformer,request-transformer,log-google
             - Name: KONG_PG_HOST
               Value:
                 Fn::ImportValue:
