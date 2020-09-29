@@ -32,6 +32,7 @@ from concurrent.futures import as_completed
 from requests_futures.sessions import FuturesSession
 
 
+MAX_WORKERS = 5
 DEFAULT_HOST = "api.mpcontribs.org"
 BULMA = "is-narrow is-fullwidth has-background-light"
 
@@ -272,7 +273,7 @@ class Client(SwaggerClient):
 
         if cids:
             with tqdm() as pbar:
-                with FuturesSession(max_workers=10) as session:
+                with FuturesSession(max_workers=MAX_WORKERS) as session:
                     # bravado future unfortunately doesn't work with concurrent.futures
                     pbar.set_description("Get contribution IDs")
                     pbar.reset(total=resp["total_count"])
@@ -380,7 +381,7 @@ class Client(SwaggerClient):
                         },
                     )
 
-                with FuturesSession(max_workers=10) as session:
+                with FuturesSession(max_workers=MAX_WORKERS) as session:
                     # bravado future unfortunately doesn't work with concurrent.futures
                     futures = [get_future(page) for page in range(pages)]
 
@@ -502,7 +503,7 @@ class Client(SwaggerClient):
                         data=json.dumps(chunk).encode("utf-8"),
                     )
 
-                with FuturesSession(max_workers=10) as session:
+                with FuturesSession(max_workers=MAX_WORKERS) as session:
                     # bravado future unfortunately doesn't work with concurrent.futures
                     futures = [
                         post_future(chunk) for chunk in chunks(contribs, n=per_page)
