@@ -30,15 +30,6 @@
           </div>
           <div id="navbarBasicExample" class="navbar-menu">
               <div class="navbar-start">
-                  {% if request.META.HTTP_X_CONSUMER_USERNAME %}
-                  <div class="navbar-item has-text-centered"
-                       data-intro="Use this dropdown menu to quickly jump to specific projects, or to search for keywords in their descriptions. The search will reduce the list of projects shown on the <i>Browse</i> tab to those matching the keyword."
-                       data-step="1">
-                      <select id="jump" data-placeholder="Search or jump to projects ...">
-                          <option></option>
-                      </select>
-                  </div>
-                  {% endif %}
                   <div class="navbar-item has-text-centered">
                       <div class="tabs is-toggle is-toggle-rounded has-text-weight-semibold">
                           <ul>
@@ -59,7 +50,17 @@
                           </ul>
                       </div>
                   </div>
+                  {% if request.META.HTTP_X_CONSUMER_USERNAME %}
+                  <div class="navbar-item has-text-centered"
+                       data-intro="Use this dropdown menu to quickly jump to specific projects, or to search for keywords in their descriptions. The search will reduce the list of projects shown on the <i>Browse</i> tab to those matching the keyword."
+                       data-step="1">
+                      <select id="jump" data-placeholder="Search or jump to projects ...">
+                          <option></option>
+                      </select>
+                  </div>
+                  {% endif %}
               </div>
+              {% if request.META.HTTP_X_CONSUMER_USERNAME %}
               <div class="navbar-end">
                   <div class="navbar-item has-dropdown is-hoverable">
                       <a class="navbar-link">
@@ -67,12 +68,10 @@
                           <span class="icon"><i class="fas fa-chevron-circle-down"></i></span>
                       </a>
                       <div class="navbar-dropdown is-right has-background-light">
-                          {% if request.META.HTTP_X_CONSUMER_USERNAME %}
                           <p class="navbar-item has-text-weight-semibold has-text-dark">
                               <span class="icon"><i class="far fa-user"></i></span>
                               <span>{{ request.META.HTTP_X_CONSUMER_USERNAME }}</span>
                           </p>
-                          {% endif %}
                           {% if request.META.HTTP_X_CONSUMER_CUSTOM_ID %}
                           <div class="navbar-item has-text-weight-semibold">
                               <button id=api_key_btn class="button is-small is-outlined">
@@ -97,6 +96,7 @@
                       </div>
                   </div>
               </div>
+              {% endif %}
           </div>
       </nav>
 

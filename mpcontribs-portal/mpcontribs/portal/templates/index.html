@@ -3,26 +3,34 @@
 {% block content %}
 
 <section class="section" id="index">
-    <article class="message is-dark">
-        <div class="message-header">
-            <p>Community Contributions to Materials Project</p>
+    <div class="columns">
+        <div class="column">
+            <article class="message is-dark">
+                <div class="message-header">
+                    <p>Community Contributions to Materials Project</p>
+                </div>
+                <div class="message-body has-text-justified">
+                    <b>MPContribs</b> enables materials researchers to contribute experimental and
+                    theoretical materials data to <a href=https://materialsproject.org>Materials
+                    Project</a> (MP). Data on MPContribs is collectively maintained as annotations
+                    to existing MP materials and automatically exposed to over 130,000 MP users.
+                    MPContribs disseminates contributions as preview cards on MP's <a
+                    href=https://materialsproject.org/materials/mp-22987/#user-contribs>materials
+                    details pages</a>, in form of domain-specific interactive landing pages on this
+                    portal, and programmatically through its RESTful API. See the
+                    <a href=https://mpcontribs.org>documentation</a> for more info.
+                </div>
+            </article>
         </div>
-        <div class="message-body has-text-justified">
-            <b>MPContribs</b> enables materials researchers to contribute experimental and
-            theoretical materials data to <a href=https://materialsproject.org>Materials
-            Project</a> (MP). Data on MPContribs is collectively maintained as annotations to
-            existing MP materials and automatically exposed to over 130,000 MP users. MPContribs
-            disseminates contributions as preview cards on MP's
-            <a href=https://materialsproject.org/materials/mp-22987/#user-contribs>materials details
-            pages</a>, in form of domain-specific interactive landing pages on this portal, and
-            programmatically through its <a name=api_url>API</a>.
+        <div class="column">
+            <figure class="image is-16by9">
+                <iframe src="https://www.youtube.com/embed/cHMRL7QKCVk"
+                        class="has-ratio" width="560" height="315" frameborder="0"
+               allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen>
+                </iframe>
+            </figure>
         </div>
-    </article>
-
-    <iframe width="560" height="315" src="https://www.youtube.com/embed/cHMRL7QKCVk"
-        frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope;
-        picture-in-picture" allowfullscreen></iframe>
-
+    </div>
 </section>
 
 {% endblock %}
