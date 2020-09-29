@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from django.conf.urls import url
+from django.views.generic.base import RedirectView
 from mpcontribs.portal import views
 
 app_name = "mpcontribs_portal"
@@ -42,5 +43,10 @@ urlpatterns = [
         r"^contributions/(?P<cid>[a-f\d]{24})/?$",
         views.contribution,
         name="contribution",
+    ),
+    # redirect
+    url(
+        r"^(?P<project>[a-zA-Z0-9_]{3,31})/?$",
+        RedirectView.as_view(pattern_name="landingpage", permanent=False),
     ),
 ]
