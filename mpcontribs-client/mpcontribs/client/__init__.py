@@ -32,7 +32,7 @@ from concurrent.futures import as_completed
 from requests_futures.sessions import FuturesSession
 
 
-MAX_WORKERS = 5
+MAX_WORKERS = 10
 DEFAULT_HOST = "api.mpcontribs.org"
 BULMA = "is-narrow is-fullwidth has-background-light"
 
@@ -264,8 +264,12 @@ class Client(SwaggerClient):
             ).result()
         )
 
-    def delete_contributions(self, project, per_page=100):
+    def delete_contributions(self, project, per_page=100, max_workers=MAX_WORKERS):
         """Convenience function to remove all contributions for a project"""
+        if max_workers > MAX_WORKERS:
+            max_workers = MAX_WORKERS
+            warnings.warn(f"max_workers reset to max {MAX_WORKERS}")
+
         resp = self.contributions.get_entries(
             project=project, per_page=250, _fields=["id"]
         ).result()
@@ -306,6 +310,7 @@ class Client(SwaggerClient):
                         else:
                             warnings.warn(response.content.decode("utf-8"))
 
+                with FuturesSession(max_workers=max_workers) as session:
                     pbar.refresh()
                     pbar.set_description("Delete contribution(s)")
                     pbar.reset(total=len(cids))
@@ -339,9 +344,18 @@ class Client(SwaggerClient):
                         self.load()
 
     def submit_contributions(
-        self, contributions, skip_dupe_check=False, ignore_dupes=False, per_page=100
+        self,
+        contributions,
+        skip_dupe_check=False,
+        ignore_dupes=False,
+        per_page=100,
+        max_workers=MAX_WORKERS,
     ):
         """Convenience function to submit a list of contributions"""
+        if max_workers > MAX_WORKERS:
+            max_workers = MAX_WORKERS
+            warnings.warn(f"max_workers reset to max {MAX_WORKERS}")
+
         # prepare structures/tables
         with tqdm() as pbar:
             existing = {
@@ -503,7 +517,7 @@ class Client(SwaggerClient):
                         data=json.dumps(chunk).encode("utf-8"),
                     )
 
-                with FuturesSession(max_workers=MAX_WORKERS) as session:
+                with FuturesSession(max_workers=max_workers) as session:
                     # bravado future unfortunately doesn't work with concurrent.futures
                     futures = [
                         post_future(chunk) for chunk in chunks(contribs, n=per_page)
@@ -516,6 +530,8 @@ class Client(SwaggerClient):
                             resp = response.json()
                             if status == 201:
                                 pbar.update(resp["count"])
+                                if "warning" in resp:
+                                    warnings.warn(resp["warning"])
                             else:
                                 warnings.warn(resp["error"])
                         else:
