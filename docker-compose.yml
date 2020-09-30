@@ -18,6 +18,7 @@ x-dev-env: &dev-env
     AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY
     AWS_SNS_TOPIC_ARN: $AWS_SNS_TOPIC_ARN
     AWS_DEFAULT_REGION: us-east-1
+    MAIL_DEFAULT_SENDER: contribs@materialsproject.org
 
 services:
 

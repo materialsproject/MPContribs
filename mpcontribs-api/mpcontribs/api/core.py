@@ -4,6 +4,7 @@
 import os
 import logging
 import yaml
+from flask import current_app
 from typing import Pattern
 from importlib import import_module
 from flask.views import MethodViewType
@@ -427,7 +428,7 @@ def accessible_projects(username, groups):
     if username:
         qfilter |= Q(owner=username)
     if groups:
-        qfilter |= Q(name__in=groups)
+        qfilter |= Q(name__in=list(groups))
 
     return Q(is_approved=True) & qfilter
 
@@ -437,11 +438,15 @@ class SwaggerView(OriginalSwaggerView, ResourceView, metaclass=SwaggerViewType):
 
     def get_groups(self, request):
         groups = request.headers.get("X-Consumer-Groups")
-        return [] if groups is None else groups.split(",")
+        return set() if groups is None else set(groups.split(","))
+
+    def is_admin(self, groups):
+        cname = current_app.config["PORTAL_CNAME"]
+        return "admin" in groups or f"admin_{cname}" in groups
 
     def is_admin_or_project_user(self, request, obj):
         groups = self.get_groups(request)
-        if "admin" in groups:
+        if self.is_admin(groups):
             return True
 
         if hasattr(obj, "is_approved"):
@@ -460,7 +465,7 @@ class SwaggerView(OriginalSwaggerView, ResourceView, metaclass=SwaggerViewType):
 
     def has_read_permission(self, request, qs):
         groups = self.get_groups(request)
-        if "admin" in groups:
+        if self.is_admin(groups):
             return qs  # admins can read all entries
 
         username = request.headers.get("X-Consumer-Username")

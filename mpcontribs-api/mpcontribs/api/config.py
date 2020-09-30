@@ -23,7 +23,7 @@ FLASK_LOG_LEVEL = "DEBUG" if DEBUG else "WARNING"
 SECRET_KEY = "super-secret"  # TODO in local prod config
 
 USTS_MAX_AGE = 2.628e6  # 1 month
-MAIL_DEFAULT_SENDER = "phuck@lbl.gov"  # TODO environment variable
+MAIL_DEFAULT_SENDER = os.environ["MAIL_DEFAULT_SENDER"]
 MAIL_TOPIC = os.environ["AWS_SNS_TOPIC_ARN"]
 
 MPCONTRIBS_DB = os.environ.get("MPCONTRIBS_DB_NAME", "mpcontribs")

@@ -67,7 +67,7 @@ class ProjectsView(SwaggerView):
     def has_add_permission(self, request, obj):
         # limit the number of projects a user can own (unless admin)
         groups = self.get_groups(request)
-        if "admin" in groups:
+        if self.is_admin(groups):
             return True
 
         # is_approved can only be set by an admin

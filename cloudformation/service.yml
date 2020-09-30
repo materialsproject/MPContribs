@@ -98,6 +98,8 @@ Resources:
             #- Condition: START
             #  ContainerName: datadog
           Environment:
+            - Name: MAIL_DEFAULT_SENDER
+              Value: "contribs@materialsproject.org"
             - Name: MPCONTRIBS_API_HOST
               Value: "localhost:5000"
             - Name: API_CNAME
@@ -151,6 +153,8 @@ Resources:
             - Condition: START
               ContainerName: api
           Environment:
+            - Name: MAIL_DEFAULT_SENDER
+              Value: "contribs@materialsproject.org"
             - Name: MPCONTRIBS_API_HOST
               Value: "localhost:5002"
             - Name: API_CNAME
@@ -204,6 +208,8 @@ Resources:
             - Condition: START
               ContainerName: api
           Environment:
+            - Name: MAIL_DEFAULT_SENDER
+              Value: "contribs@materialsproject.org"
             - Name: MPCONTRIBS_API_HOST
               Value: "localhost:5003"
             - Name: API_CNAME
