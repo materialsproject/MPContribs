@@ -14,15 +14,15 @@ urlpatterns = [
         views.notebooks,
         name="notebooks",
     ),
-    # protected
-    url(r"^browse/?$", views.browse, name="browse"),
-    url(r"^search/?$", views.search, name="search"),
-    url(r"^apply/?$", views.apply, name="apply"),
     url(
         r"^projects/(?P<project>[a-zA-Z0-9_]{3,}).json.gz$",
         views.download_project,
         name="download_project",
     ),
+    # protected
+    url(r"^browse/?$", views.browse, name="browse"),
+    url(r"^search/?$", views.search, name="search"),
+    url(r"^apply/?$", views.apply, name="apply"),
     url(
         r"^projects/(?P<project>[a-zA-Z0-9_]{3,})/?$",
         views.landingpage,
