@@ -14,6 +14,7 @@ from hashlib import md5
 from copy import deepcopy
 from urllib.parse import urlparse
 from pyisemail import is_email
+from collections import defaultdict
 from ratelimit import limits, sleep_and_retry
 from pyisemail.diagnosis import BaseDiagnosis
 from swagger_spec_validator.common import SwaggerValidationError
@@ -264,7 +265,7 @@ class Client(SwaggerClient):
             ).result()
         )
 
-    def delete_contributions(self, project, per_page=100, max_workers=MAX_WORKERS):
+    def delete_contributions(self, project, per_page=100, max_workers=5):
         """Convenience function to remove all contributions for a project"""
         if max_workers > MAX_WORKERS:
             max_workers = MAX_WORKERS
@@ -343,103 +344,100 @@ class Client(SwaggerClient):
                     if resp and resp.get("count"):
                         self.load()
 
+    def get_contributions(self, name):
+        """get list of existing contributions"""
+        with tqdm() as pbar:
+            ret = defaultdict(set)
+            pbar.set_description("Get existing contribution(s)")
+            resp = self.projects.get_entry(
+                pk=name, _fields=["unique_identifiers"]
+            ).result()
+            ret["unique_identifiers"] = resp["unique_identifiers"]
+
+            resp = self.contributions.get_entries(
+                project=name, per_page=250, _fields=["id"],
+            ).result()
+            pbar.reset(total=resp["total_count"])
+            pages = resp["total_pages"]
+
+            @sleep_and_retry
+            @limits(calls=175, period=60)
+            def get_future(page):
+                return session.get(
+                    f"{self.url}/contributions/",
+                    headers=self.headers,
+                    params={
+                        "project": name,
+                        "page": page + 1,
+                        "per_page": 250,
+                        "_fields": "id,identifier,structures,tables",
+                    },
+                )
+
+            with FuturesSession(max_workers=MAX_WORKERS) as session:
+                # bravado future unfortunately doesn't work with concurrent.futures
+                futures = [get_future(page) for page in range(pages)]
+
+                for future in as_completed(futures):
+                    response = future.result()
+                    status = response.status_code
+                    if status in [200, 400, 401, 404, 500]:
+                        resp = response.json()
+                        if status == 200:
+                            for contrib in resp["data"]:
+                                ret["ids"].add(contrib["id"])
+                                ret["identifiers"].add(contrib["identifier"])
+
+                                for component in ["structures", "tables"]:
+                                    md5s = set(d["md5"] for d in contrib[component])
+                                    ret[component] |= md5s
+
+                                pbar.update(1)
+                        else:
+                            warnings.warn(resp["error"])
+                    else:
+                        warnings.warn(response.content.decode("utf-8"))
+
+            nexisting = 0
+            if ret["unique_identifiers"] and ret["identifiers"]:
+                nexisting = len(ret["identifiers"])
+            elif ret["ids"]:
+                nexisting = len(ret["ids"])
+
+            return ret
+
     def submit_contributions(
         self,
         contributions,
         skip_dupe_check=False,
         ignore_dupes=False,
         per_page=100,
-        max_workers=MAX_WORKERS,
+        max_workers=3,
     ):
         """Convenience function to submit a list of contributions"""
         if max_workers > MAX_WORKERS:
             max_workers = MAX_WORKERS
             warnings.warn(f"max_workers reset to max {MAX_WORKERS}")
 
-        # prepare structures/tables
+        # get existing contributions
+        existing = defaultdict(set)
+        existing["unique_identifiers"] = True
+
+        if not skip_dupe_check:
+            project_name = contributions[0]["project"]
+            existing = self.get_contributions(project_name)
+
         with tqdm() as pbar:
-            existing = {
-                "ids": set(),
-                "identifiers": set(),
-                "structures": set(),
-                "tables": set(),
-            }
-            unique_identifiers = True
-            endpoint = f"{self.url}/contributions/"
-
-            if not skip_dupe_check:
-                name = contributions[0]["project"]
-                resp = self.projects.get_entry(
-                    pk=name, _fields=["unique_identifiers"]
-                ).result()
-                unique_identifiers = resp["unique_identifiers"]
-
-                pbar.set_description("Get existing contribution(s)")
-                resp = self.contributions.get_entries(
-                    project=name, per_page=250, _fields=["id"],
-                ).result()
-                pbar.reset(total=resp["total_count"])
-                pages = resp["total_pages"]
-
-                @sleep_and_retry
-                @limits(calls=175, period=60)
-                def get_future(page):
-                    return session.get(
-                        endpoint,
-                        headers=self.headers,
-                        params={
-                            "project": name,
-                            "page": page + 1,
-                            "per_page": 250,
-                            "_fields": "id,identifier,structures,tables",
-                        },
-                    )
-
-                with FuturesSession(max_workers=MAX_WORKERS) as session:
-                    # bravado future unfortunately doesn't work with concurrent.futures
-                    futures = [get_future(page) for page in range(pages)]
-
-                    for future in as_completed(futures):
-                        response = future.result()
-                        status = response.status_code
-                        if status in [200, 400, 401, 404, 500]:
-                            resp = response.json()
-                            if status == 200:
-                                for contrib in resp["data"]:
-                                    existing["ids"].add(contrib["id"])
-                                    existing["identifiers"].add(contrib["identifier"])
-
-                                    for component in ["structures", "tables"]:
-                                        md5s = set(d["md5"] for d in contrib[component])
-                                        existing[component] |= md5s
-
-                                    pbar.update(1)
-                            else:
-                                warnings.warn(resp["error"])
-                        else:
-                            warnings.warn(response.content.decode("utf-8"))
-
-                nexisting = 0
-                if unique_identifiers and existing["identifiers"]:
-                    nexisting = len(existing["identifiers"])
-                elif existing["ids"]:
-                    nexisting = len(existing["ids"])
-
-                if nexisting:
-                    print(f"{nexisting} contributions already submitted.")
-
-                pbar.refresh()
-
+            # prepare contributions
             contribs = []
-            digests = {"structures": set(), "tables": set()}
+            digests = defaultdict(set)
             pbar.set_description("Prepare contribution(s)")
             pbar.reset(total=len(contributions))
 
             # TODO parallelize?
             for contrib in contributions:
-
                 if (
-                    unique_identifiers
+                    existing["unique_identifiers"]
                     and contrib["identifier"] in existing["identifiers"]
                 ):
                     pbar.update(1)
@@ -447,7 +445,7 @@ class Client(SwaggerClient):
 
                 contribs.append(deepcopy(contrib))
 
-                for component in digests.keys():
+                for component in ["structures", "tables"]:
                     comp_list = contribs[-1].pop(component, [])
                     contribs[-1][component] = []
 
@@ -498,44 +496,63 @@ class Client(SwaggerClient):
 
                 pbar.update(1)
 
-            ncontribs = len(contribs)
-
-            if ncontribs:
-                pbar.refresh()
-                pbar.reset(total=ncontribs)
-                pbar.set_description("Submit contribution(s)")
-                headers = {"Content-Type": "application/json"}
-                headers.update(self.headers)
-                resp = None
-
-                @sleep_and_retry
-                @limits(calls=175, period=60)
-                def post_future(chunk):
-                    return session.post(
-                        endpoint,
-                        headers=headers,
-                        data=json.dumps(chunk).encode("utf-8"),
-                    )
-
+            # submit contributions
+            if contribs:
                 with FuturesSession(max_workers=max_workers) as session:
                     # bravado future unfortunately doesn't work with concurrent.futures
-                    futures = [
-                        post_future(chunk) for chunk in chunks(contribs, n=per_page)
-                    ]
+                    headers = {"Content-Type": "application/json"}
+                    headers.update(self.headers)
 
-                    for future in as_completed(futures):
-                        response = future.result()
-                        status = response.status_code
-                        if status in [201, 400, 401, 404, 500]:
-                            resp = response.json()
-                            if status == 201:
-                                pbar.update(resp["count"])
-                                if "warning" in resp:
-                                    warnings.warn(resp["warning"])
+                    @sleep_and_retry
+                    @limits(calls=175, period=60)
+                    def post_future(chunk):
+                        return session.post(
+                            f"{self.url}/contributions/",
+                            headers=headers,
+                            data=json.dumps(chunk).encode("utf-8"),
+                        )
+
+                    while contribs:
+                        pbar.refresh()
+                        ncontribs = len(contribs)
+                        pbar.reset(total=ncontribs)
+                        pbar.set_description("Prepare request(s)")
+                        futures = []
+
+                        for chunk in chunks(contribs, n=per_page):
+                            futures.append(post_future(chunk))
+                            pbar.update(len(chunk))
+
+                        pbar.refresh()
+                        pbar.reset(total=ncontribs)
+                        pbar.set_description("Submit contribution(s)")
+                        resp, retry = None, False
+
+                        for future in as_completed(futures):
+                            response = future.result()
+                            status = response.status_code
+                            if status in [201, 400, 401, 404, 500]:
+                                resp = response.json()
+                                if status == 201:
+                                    pbar.update(resp["count"])
+                                    if "warning" in resp:
+                                        print(resp["warning"])
+                                        retry = True
+                                else:
+                                    warnings.warn(resp["error"])
                             else:
-                                warnings.warn(resp["error"])
-                        else:
-                            warnings.warn(response.content.decode("utf-8"))
+                                warnings.warn(response.content.decode("utf-8"))
+
+                        if not retry or not existing["unique_identifiers"]:
+                            break
+
+                        pbar.set_description("Retrying contribution(s)")
+                        existing = self.get_contributions(project_name)
+                        contribs = [
+                            c
+                            for c in contribs
+                            if c["identifier"] not in existing["identifiers"]
+                        ]
 
                     if resp and resp.get("count"):
                         self.load()
