@@ -37,6 +37,7 @@ from requests_futures.sessions import FuturesSession
 MAX_WORKERS = 10
 DEFAULT_HOST = "api.mpcontribs.org"
 BULMA = "is-narrow is-fullwidth has-background-light"
+STATUS_CODES = {200, 201, 400, 401, 404, 500, 502, 503, 504}
 
 j2h = Json2Html()
 pd.options.plotting.backend = "plotly"
@@ -140,7 +141,7 @@ class Client(SwaggerClient):
 
         if apikey and headers is not None:
             apikey = None
-            warnings.warn("headers set => ignoring apikey!")
+            print("headers set => ignoring apikey!")
 
         self.apikey = apikey
         self.headers = {"x-api-key": apikey} if apikey else headers
@@ -270,7 +271,7 @@ class Client(SwaggerClient):
         """Convenience function to remove all contributions for a project"""
         if max_workers > MAX_WORKERS:
             max_workers = MAX_WORKERS
-            warnings.warn(f"max_workers reset to max {MAX_WORKERS}")
+            print(f"max_workers reset to max {MAX_WORKERS}")
 
         resp = self.contributions.get_entries(
             project=project, per_page=250, _fields=["id"]
@@ -302,7 +303,7 @@ class Client(SwaggerClient):
                     for future in as_completed(futures):
                         response = future.result()
                         status = response.status_code
-                        if status in [200, 400, 401, 404, 500]:
+                        if status in STATUS_CODES:
                             resp = response.json()
                             if status == 200:
                                 cids += [d["id"] for d in resp["data"]]
@@ -333,7 +334,7 @@ class Client(SwaggerClient):
                     for future in as_completed(futures):
                         response = future.result()
                         status = response.status_code
-                        if status in [200, 400, 401, 404, 500]:
+                        if status in STATUS_CODES:
                             resp = response.json()
                             if status == 200:
                                 pbar.update(resp["count"])
@@ -382,7 +383,7 @@ class Client(SwaggerClient):
                 for future in as_completed(futures):
                     response = future.result()
                     status = response.status_code
-                    if status in [200, 400, 401, 404, 500]:
+                    if status in STATUS_CODES:
                         resp = response.json()
                         if status == 200:
                             for contrib in resp["data"]:
@@ -413,7 +414,7 @@ class Client(SwaggerClient):
         tic = time.perf_counter()
         if max_workers > MAX_WORKERS:
             max_workers = MAX_WORKERS
-            warnings.warn(f"max_workers reset to max {MAX_WORKERS}")
+            print(f"max_workers reset to max {MAX_WORKERS}")
 
         # get existing contributions
         existing = defaultdict(set)
@@ -527,13 +528,16 @@ class Client(SwaggerClient):
                         for future in as_completed(futures):
                             response = future.result()
                             status = response.status_code
-                            if status in [201, 400, 401, 404, 500]:
+                            if status in STATUS_CODES:
                                 resp = response.json()
                                 if status == 201:
                                     pbar.update(resp["count"])
                                     if "warning" in resp:
                                         print(resp["warning"])
                                         retry = True
+                                elif status in {502, 503, 504}:
+                                    print("Server unavailable or timeout")
+                                    retry = True
                                 else:
                                     warnings.warn(resp["error"])
                             else:
