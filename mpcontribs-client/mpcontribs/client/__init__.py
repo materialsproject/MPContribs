@@ -2,6 +2,7 @@
 import os
 import json
 import fido
+import time
 import warnings
 import pandas as pd
 
@@ -279,7 +280,7 @@ class Client(SwaggerClient):
         if cids:
             with tqdm() as pbar:
                 with FuturesSession(max_workers=MAX_WORKERS) as session:
-                    # bravado future unfortunately doesn't work with concurrent.futures
+                    # bravado future doesn't work with concurrent.futures
                     pbar.set_description("Get contribution IDs")
                     pbar.reset(total=resp["total_count"])
                     endpoint = f"{self.url}/contributions/"
@@ -375,7 +376,7 @@ class Client(SwaggerClient):
                 )
 
             with FuturesSession(max_workers=MAX_WORKERS) as session:
-                # bravado future unfortunately doesn't work with concurrent.futures
+                # bravado future doesn't work with concurrent.futures
                 futures = [get_future(page) for page in range(pages)]
 
                 for future in as_completed(futures):
@@ -398,12 +399,6 @@ class Client(SwaggerClient):
                     else:
                         warnings.warn(response.content.decode("utf-8"))
 
-            nexisting = 0
-            if ret["unique_identifiers"] and ret["identifiers"]:
-                nexisting = len(ret["identifiers"])
-            elif ret["ids"]:
-                nexisting = len(ret["ids"])
-
             return ret
 
     def submit_contributions(
@@ -415,6 +410,7 @@ class Client(SwaggerClient):
         max_workers=3,
     ):
         """Convenience function to submit a list of contributions"""
+        tic = time.perf_counter()
         if max_workers > MAX_WORKERS:
             max_workers = MAX_WORKERS
             warnings.warn(f"max_workers reset to max {MAX_WORKERS}")
@@ -499,7 +495,7 @@ class Client(SwaggerClient):
             # submit contributions
             if contribs:
                 with FuturesSession(max_workers=max_workers) as session:
-                    # bravado future unfortunately doesn't work with concurrent.futures
+                    # bravado future doesn't work with concurrent.futures
                     headers = {"Content-Type": "application/json"}
                     headers.update(self.headers)
 
@@ -556,3 +552,7 @@ class Client(SwaggerClient):
 
                     if resp and resp.get("count"):
                         self.load()
+
+        toc = time.perf_counter()
+        dt = (toc - tic) / 60
+        print(f"It took {dt:.1f}min to submit {len(contributions)} contributions.")
