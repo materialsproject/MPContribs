@@ -37,7 +37,7 @@ from requests_futures.sessions import FuturesSession
 MAX_WORKERS = 10
 DEFAULT_HOST = "api.mpcontribs.org"
 BULMA = "is-narrow is-fullwidth has-background-light"
-STATUS_CODES = {200, 201, 400, 401, 404, 500, 502, 503, 504}
+STATUS_CODES = {200, 201, 400, 401, 404, 500, 502, 504}
 
 j2h = Json2Html()
 pd.options.plotting.backend = "plotly"
@@ -499,6 +499,7 @@ class Client(SwaggerClient):
                     # bravado future doesn't work with concurrent.futures
                     headers = {"Content-Type": "application/json"}
                     headers.update(self.headers)
+                    count = 0
 
                     @sleep_and_retry
                     @limits(calls=175, period=60)
@@ -532,14 +533,18 @@ class Client(SwaggerClient):
                                 resp = response.json()
                                 if status == 201:
                                     pbar.update(resp["count"])
+                                    count += resp["count"]
                                     if "warning" in resp:
                                         print(resp["warning"])
                                         retry = True
-                                elif status in {502, 503, 504}:
-                                    print("Server unavailable or timeout")
+                                elif status in {502, 504}:
+                                    print("Server unavailable")
                                     retry = True
                                 else:
                                     warnings.warn(resp["error"])
+                            elif status == 503:
+                                print("Server timeout")
+                                retry = True
                             else:
                                 warnings.warn(response.content.decode("utf-8"))
 
@@ -559,4 +564,4 @@ class Client(SwaggerClient):
 
         toc = time.perf_counter()
         dt = (toc - tic) / 60
-        print(f"It took {dt:.1f}min to submit {len(contributions)} contributions.")
+        print(f"It took {dt:.1f}min to submit {count} contributions.")
