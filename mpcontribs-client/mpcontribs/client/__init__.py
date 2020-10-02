@@ -307,16 +307,25 @@ class Client(SwaggerClient):
         dt = (toc - tic) / 60
         print(f"It took {dt:.1f}min to delete {total} contributions.")
 
+    @sleep_and_retry
+    @limits(calls=175, period=60)
+    def get_unique_identifiers_flag(self, name):
+        return self.projects.get_entry(
+            pk=name, _fields=["unique_identifiers"]
+        ).result()["unique_identifiers"]
+
+    @sleep_and_retry
+    @limits(calls=175, period=60)
+    def get_total_pages(self, name, per_page):
+        return self.contributions.get_entries(
+            project=name, per_page=per_page, _fields=["id"],
+        ).result()["total_pages"]
+
     def get_contributions(self, name):
         """get list of existing contributions"""
         ret = defaultdict(set)
-        resp = self.projects.get_entry(pk=name, _fields=["unique_identifiers"]).result()
-        ret["unique_identifiers"] = resp["unique_identifiers"]
-
-        resp = self.contributions.get_entries(
-            project=name, per_page=250, _fields=["id"],
-        ).result()
-        pages = resp["total_pages"]
+        ret["unique_identifiers"] = self.get_unique_identifiers_flag(name)
+        pages = self.get_total_pages(name, 250)
 
         @sleep_and_retry
         @limits(calls=175, period=60)
