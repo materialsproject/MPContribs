@@ -152,7 +152,6 @@ class Client(SwaggerClient):
         self.host = host
         self.protocol = "https" if self.apikey else "http"
         self.url = f"{self.protocol}://{self.host}"
-        self._pbar = None
 
         if "swagger_spec" not in self.__dict__ or (
             self.headers is not None
@@ -275,22 +274,17 @@ class Client(SwaggerClient):
     def delete_contributions(self, project, per_page=100, max_workers=5):
         """Convenience function to remove all contributions for a project"""
         tic = time.perf_counter()
-        if not self._pbar:
-            self._pbar = tqdm()
 
         if max_workers > MAX_WORKERS:
             max_workers = MAX_WORKERS
             print(f"max_workers reset to max {MAX_WORKERS}")
 
         cids = self.get_contributions(project)["ids"]
+        total = len(cids)
 
         if cids:
             with FuturesSession(max_workers=max_workers) as session:
                 while cids:
-                    self._pbar.refresh()
-                    self._pbar.set_description("Delete contribution(s)")
-                    self._pbar.reset(total=len(cids))
-
                     futures = [
                         session.delete(
                             f"{self.url}/contributions/",
@@ -304,30 +298,24 @@ class Client(SwaggerClient):
                         for chunk in chunks(cids, n=per_page)
                     ]
 
-                    self._run_futures(futures)
+                    self._run_futures(futures, total=len(cids))
                     cids = self.get_contributions(project)["ids"]
 
                 self.load()
 
         toc = time.perf_counter()
         dt = (toc - tic) / 60
-        print(f"It took {dt:.1f}min to delete {self._pbar.__n} contributions.")
-        self._pbar.close()
+        print(f"It took {dt:.1f}min to delete {total} contributions.")
 
     def get_contributions(self, name):
         """get list of existing contributions"""
-        if not self._pbar:
-            self._pbar = tqdm()
-
         ret = defaultdict(set)
-        self._pbar.set_description("Get existing contribution(s)")
         resp = self.projects.get_entry(pk=name, _fields=["unique_identifiers"]).result()
         ret["unique_identifiers"] = resp["unique_identifiers"]
 
         resp = self.contributions.get_entries(
             project=name, per_page=250, _fields=["id"],
         ).result()
-        self._pbar.reset(total=resp["total_count"])
         pages = resp["total_pages"]
 
         @sleep_and_retry
@@ -351,7 +339,7 @@ class Client(SwaggerClient):
             futures = [get_future(page + 1) for page in range(pages)]
 
             while futures:
-                responses, _ = self._run_futures(futures)
+                responses = self._run_futures(futures)
 
                 for resp in responses.values():
                     for contrib in resp["data"]:
@@ -368,7 +356,6 @@ class Client(SwaggerClient):
                     if future.track_id not in responses.keys()
                 ]
 
-        self._pbar.close()
         return ret
 
     def submit_contributions(
@@ -381,14 +368,13 @@ class Client(SwaggerClient):
     ):
         """Convenience function to submit a list of contributions"""
         tic = time.perf_counter()
-        if not self._pbar:
-            self._pbar = tqdm()
 
         if max_workers > MAX_WORKERS:
             max_workers = MAX_WORKERS
             print(f"max_workers reset to max {MAX_WORKERS}")
 
         # get existing contributions
+        print("get existing contributions ...")
         existing = defaultdict(set)
         existing["unique_identifiers"] = True
 
@@ -397,18 +383,16 @@ class Client(SwaggerClient):
             existing = self.get_contributions(project_name)
 
         # prepare contributions
+        print("prepare contributions ...")
         contribs = []
         digests = defaultdict(set)
-        self._pbar.set_description("Prepare contribution(s)")
-        self._pbar.reset(total=len(contributions))
 
         # TODO parallelize?
-        for contrib in contributions:
+        for contrib in tqdm(contributions, leave=False):
             if (
                 existing["unique_identifiers"]
                 and contrib["identifier"] in existing["identifiers"]
             ):
-                self._pbar.update(1)
                 continue
 
             contribs.append(deepcopy(contrib))
@@ -459,12 +443,12 @@ class Client(SwaggerClient):
                         digests[component].add(digest)
                         contribs[-1][component].append(dct)
 
-            self._pbar.update(1)
-
         # submit contributions
         if contribs:
+            print("submit contributions ...")
             with FuturesSession(max_workers=max_workers) as session:
                 # bravado future doesn't work with concurrent.futures
+                ncontribs = len(contribs)
                 headers = {"Content-Type": "application/json"}
                 headers.update(self.headers)
 
@@ -478,21 +462,12 @@ class Client(SwaggerClient):
                     )
 
                 while contribs:
-                    self._pbar.refresh()
-                    ncontribs = len(contribs)
-                    self._pbar.reset(total=ncontribs)
-                    self._pbar.set_description("Prepare request(s)")
-                    futures = []
+                    futures = [
+                        post_future(chunk)
+                        for chunk in chunks(contribs, n=per_page)
+                    ]
 
-                    for chunk in chunks(contribs, n=per_page):
-                        futures.append(post_future(chunk))
-                        self._pbar.update(len(chunk))
-
-                    self._pbar.refresh()
-                    self._pbar.reset(total=ncontribs)
-                    self._pbar.set_description("Submit contribution(s)")
-
-                    self._run_futures(futures)
+                    self._run_futures(futures, total=len(contribs))
 
                     if existing["unique_identifiers"]:
                         existing = self.get_contributions(project_name)
@@ -503,32 +478,36 @@ class Client(SwaggerClient):
                         ]
 
                 self.load()
+                toc = time.perf_counter()
+                dt = (toc - tic) / 60
+                print(f"It took {dt:.1f}min to submit {ncontribs} contributions.")
+        else:
+            print("Nothing to submit.")
 
-        toc = time.perf_counter()
-        dt = (toc - tic) / 60
-        print(f"It took {dt:.1f}min to submit {self._pbar.__n} contributions.")
-        self._pbar.close()
-
-    def _run_futures(self, futures):
+    def _run_futures(self, futures, total=None):
         """helper to run futures/requests"""
         responses = {}
 
-        for future in as_completed(futures):
-            response = future.result()
-            status = response.status_code
+        with tqdm(leave=False, total=total if total else len(futures)) as pbar:
+            for future in as_completed(futures):
+                response = future.result()
+                status = response.status_code
 
-            if status in {200, 201, 400, 401, 404, 500, 502}:
-                resp = response.json()
-                if status in {200, 201}:
-                    cnt = len(resp["data"]) if "data" in resp else resp["count"]
-                    self._pbar.update(cnt)
-                    if hasattr(future, "track_id"):
-                        responses[future.track_id] = resp
-                    if "warning" in resp:
-                        print(resp["warning"])
-                elif status != 502:
-                    warnings.warn(resp["error"])
-            elif status not in {503, 504}:
-                warnings.warn(response.content.decode("utf-8"))
+                if status in {200, 201, 400, 401, 404, 500, 502}:
+                    resp = response.json()
+                    if status in {200, 201}:
+                        if total:
+                            cnt = len(resp["data"]) if "data" in resp else resp["count"]
+                        else:
+                            cnt = 1
+                        pbar.update(cnt)
+                        if hasattr(future, "track_id"):
+                            responses[future.track_id] = resp
+                        if "warning" in resp:
+                            print(resp["warning"])
+                    elif status != 502:
+                        warnings.warn(resp["error"])
+                elif status not in {503, 504}:
+                    warnings.warn(response.content.decode("utf-8"))
 
         return responses
