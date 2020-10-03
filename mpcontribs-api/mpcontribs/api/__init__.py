@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 """Flask App for MPContribs API"""
-import os
 import logging
 import boto3
 import requests
@@ -99,6 +98,10 @@ def get_kernels():
     return {kernel["id"]: None for kernel in kernels}
 
 
+def healthcheck():
+    return "OK"
+
+
 def create_app():
     """create flask app"""
     app = Flask(__name__)
@@ -163,6 +166,6 @@ def create_app():
     #        logger.warning(f"API module {module_path}: {ex}")
 
     app.register_blueprint(sse, url_prefix="/stream")
-    # TODO add healthcheck view/url
+    app.add_url_rule("/healthcheck", view_func=healthcheck)
     logger.warning("app created.")
     return app
