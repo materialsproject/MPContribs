@@ -2,6 +2,7 @@
 {% load render_bundle from webpack_loader %}
 
 {% block content %}
+{% if identifier %}
 <section class="section" id=contribution>
     <nav class="level">
         <div class="level-left" id=anchors>
@@ -20,6 +21,7 @@
         {{ nb|safe }}
     </div>
 </section>
+{% endif %}
 {% endblock content %}
 
 {% block footer %}

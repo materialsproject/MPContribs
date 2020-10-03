@@ -160,11 +160,13 @@ def contribution(request, cid):
     contrib = client.contributions.get_entry(
         pk=cid, _fields=["identifier", "notebook"]
     ).result()
-    nb = client.notebooks.get_entry(
-        pk=contrib["notebook"]["id"], _fields=["_all"]
-    ).result()
-    ctx["identifier"], ctx["cid"] = contrib["identifier"], cid
-    ctx["nb"], _ = export_notebook(nb, cid)
+    if "notebook" in contrib:
+        nid = contrib["notebook"]["id"]
+        nb = client.notebooks.get_entry(pk=nid, _fields=["_all"]).result()
+        ctx["identifier"], ctx["cid"] = contrib["identifier"], cid
+        ctx["nb"], _ = export_notebook(nb, cid)
+    else:
+        ctx["alert"] = f"Notebook for {cid} not built, yet. Come back later."
     return render(request, "contribution.html", ctx.flatten())
 
 
