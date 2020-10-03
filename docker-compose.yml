@@ -59,6 +59,7 @@ services:
             - redis
             - orca
             - kernel_gateway
+            - supercronic
             #- datadog
         volumes:
             - ./mpcontribs-api:/app
@@ -75,6 +76,7 @@ services:
             - redis
             - orca
             - kernel_gateway
+            - supercronic
             #- datadog
         volumes:
             - ./mpcontribs-api:/app
@@ -91,6 +93,7 @@ services:
             - redis
             - orca
             - kernel_gateway
+            - supercronic
             #- datadog
         volumes:
             - ./mpcontribs-api:/app
@@ -110,6 +113,11 @@ services:
 
     orca:
         build: ./mpcontribs-sidecars/orca
+
+    supercronic:
+        build: ./mpcontribs-sidecars/supercronic
+        environment:
+          API_HOSTS: "api:5000 api-ml:5002 api-ls:5003"
 
     # OTHER
     redis:
