@@ -1,8 +1,8 @@
-apispec==3.3.2
+apispec==4.0.0
 asn1crypto==1.4.0
 blinker==1.4
 boltons==20.2.1
-boto3==1.15.6
+boto3==1.15.11
 cherrypicker @ git+https://github.com/big-o/cherrypicker.git#egg=cherrypicker
 css-html-js-minify==2.5.5
 dateparser==0.7.6
@@ -10,7 +10,7 @@ dnspython==2.0.0
 fastnumbers==3.0.0
 fdict==0.8.1
 flasgger @ git+https://github.com/tschaume/flasgger@flask_mongorest#egg=flasgger-0.9.5
-flask-compress==1.5.0
+flask-compress==1.6.0
 flask-cors==3.0.9
 flask-log==0.1.0
 flask-marshmallow==0.14.0
