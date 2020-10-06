@@ -1,13 +1,9 @@
 # -*- coding: utf-8 -*-
-import os
 import json
 
-from time import sleep
 from hashlib import md5
 from math import isnan
 from datetime import datetime
-from nbformat import v4 as nbf
-from copy import deepcopy
 from flask import current_app
 from importlib import import_module
 from fastnumbers import isfloat
@@ -27,14 +23,6 @@ from pint.errors import DimensionalityError
 from uncertainties import ufloat_fromstr
 
 from mpcontribs.api import enter, valid_dict, delimiter
-from mpcontribs.api.notebooks import run_cells
-
-MPCONTRIBS_API_HOST = os.environ.get("MPCONTRIBS_API_HOST", "localhost:5000")
-seed_nb = nbf.new_notebook()
-seed_nb["cells"] = [
-    nbf.new_code_cell("from mpcontribs.client import Client"),
-    nbf.new_code_cell("client = Client()"),
-]
 
 quantity_keys = {"display", "value", "error", "unit"}
 max_dgts = 6
@@ -91,23 +79,6 @@ def get_min_max(sender, path):
     return (values[0], values[-1]) if len(values) else (None, None)
 
 
-def execute_cells(cid, cells):
-    ntries = 0
-    while ntries < 5:
-        for kernel_id, running_cid in current_app.kernels.items():
-            if running_cid is None:
-                current_app.kernels[kernel_id] = cid
-                outputs = run_cells(kernel_id, cid, cells)
-                current_app.kernels[kernel_id] = None
-                return outputs
-            else:
-                print(f"{kernel_id} busy with {running_cid}")
-        else:
-            print("WAITING for a kernel to become available")
-            sleep(5)
-            ntries += 1
-
-
 class Contributions(DynamicDocument):
     project = LazyReferenceField(
         "Projects", required=True, passthrough=True, reverse_delete_rule=CASCADE
@@ -137,6 +108,7 @@ class Contributions(DynamicDocument):
             {"fields": [(r"data.$**", 1)]},
             "structures",
             "tables",
+            "notebook",
         ],
     }
 
@@ -292,58 +264,7 @@ class Contributions(DynamicDocument):
                     project.columns.create(path=path)
                     project.save().reload("columns")
 
-        # generate notebook for this contribution
-        if document.notebook is not None:
-            document.notebook.delete()
-
-        cells = [
-            # define client only once in kernel
-            # avoids API calls for regex expansion for query parameters
-            nbf.new_code_cell(
-                "\n".join(
-                    [
-                        "if 'client' not in locals():",
-                        "\tclient = Client(",
-                        '\t\theaders={"X-Consumer-Groups": "admin"},',
-                        f'\t\thost="{MPCONTRIBS_API_HOST}"',
-                        "\t)",
-                    ]
-                )
-            ),
-            nbf.new_code_cell(f'client.get_contribution("{document.id}").pretty()'),
-        ]
-
-        if document.tables:
-            cells.append(nbf.new_markdown_cell("## Tables"))
-            for table in document.tables:
-                cells.append(
-                    nbf.new_code_cell(f'client.get_table("{table.id}").plot()')
-                )
-
-        if document.structures:
-            cells.append(nbf.new_markdown_cell("## Structures"))
-            for structure in document.structures:
-                cells.append(
-                    nbf.new_code_cell(f'client.get_structure("{structure.id}")')
-                )
-
-        cid = str(document.id)
-        outputs = execute_cells(cid, cells)
-        if not outputs:
-            raise ValueError(f"notebook generation for {cid} failed!")
-
-        for idx, output in outputs.items():
-            cells[idx]["outputs"] = output
-
-        doc = deepcopy(seed_nb)
-        doc["cells"] += cells[1:]  # skip localhost Client
-
-        # avoid circular imports
-        from mpcontribs.api.notebooks.document import Notebooks
-
-        document.notebook = Notebooks(**doc).save()
         document.last_modified = datetime.utcnow()
-        document.save(signal_kwargs={"skip": True})
 
     @classmethod
     def pre_delete(cls, sender, document, **kwargs):

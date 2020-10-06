@@ -2,11 +2,11 @@
 
 t='*/1 * * * *'
 e='notebooks/build'
+c=0
 
 for host in $API_HOSTS; do
-    echo "$t curl -s $host/$e" >> crontab
-    echo "$t sleep 5; curl -s $host/$e" >> crontab
-    echo "$t sleep 10; curl -s $host/$e" >> crontab
+    echo "$t sleep $((c*5)); curl -s $host/$e" >> crontab
+    let c++
 done
 
 cat crontab
