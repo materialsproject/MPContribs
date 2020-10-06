@@ -478,9 +478,10 @@ class SwaggerView(OriginalSwaggerView, ResourceView, metaclass=SwaggerViewType):
             module = import_module("mpcontribs.api.projects.document")
             Projects = getattr(module, "Projects")
             projects = Projects.objects.only("name").filter(qfilter)
-            # now filter contributions (TODO check if project__in is needed)
-            qfilter = Q(is_public=True) | Q(project__in=projects)
-            return qs.filter(qfilter)
+            # now filter contributions
+            if all(p.name != qs._query["project"] for p in projects):
+                qfilter = Q(is_public=True) | Q(project__in=projects)
+                return qs.filter(qfilter)
 
         return qs
 
