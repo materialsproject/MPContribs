@@ -432,6 +432,7 @@ Resources:
                 - docker build --tag "${IMAGE_URI}-gateway" mpcontribs-sidecars/kernel_gateway
                 - docker build --tag "${IMAGE_URI}-orca" mpcontribs-sidecars/orca
                 - docker build --tag "${IMAGE_URI}-datadog" mpcontribs-sidecars/datadog-agent
+                - docker build --tag "${IMAGE_URI}-supercronic" mpcontribs-sidecars/supercronic
             post_build:
               commands:
                 - docker push "${IMAGE_URI}-portal"
@@ -439,6 +440,7 @@ Resources:
                 - docker push "${IMAGE_URI}-gateway"
                 - docker push "${IMAGE_URI}-orca"
                 - docker push "${IMAGE_URI}-datadog"
+                - docker push "${IMAGE_URI}-supercronic"
                 - printf '{"Tag":"%s"}' "${TAG}" > tag.json
           artifacts:
             files:
