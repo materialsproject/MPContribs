@@ -479,7 +479,8 @@ class SwaggerView(OriginalSwaggerView, ResourceView, metaclass=SwaggerViewType):
             Projects = getattr(module, "Projects")
             projects = Projects.objects.only("name").filter(qfilter)
             # now filter contributions
-            if all(p.name != qs._query["project"] for p in projects):
+            q = qs._query
+            if "project" in q and all(p.name != q["project"] for p in projects):
                 qfilter = Q(is_public=True) | Q(project__in=projects)
                 return qs.filter(qfilter)
 
