@@ -303,6 +303,8 @@ class Client(SwaggerClient):
 
                 self.load()
 
+        # reset columns to be save (sometimes not all are reset BUGFIX?)
+        client.projects.update_entry(pk=project, project={"columns": []}).result()
         toc = time.perf_counter()
         dt = (toc - tic) / 60
         print(f"It took {dt:.1f}min to delete {total} contributions.")
@@ -472,8 +474,7 @@ class Client(SwaggerClient):
 
                 while contribs:
                     futures = [
-                        post_future(chunk)
-                        for chunk in chunks(contribs, n=per_page)
+                        post_future(chunk) for chunk in chunks(contribs, n=per_page)
                     ]
 
                     self._run_futures(futures, total=len(contribs))
