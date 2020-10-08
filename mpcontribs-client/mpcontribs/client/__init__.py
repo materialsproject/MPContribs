@@ -386,9 +386,9 @@ class Client(SwaggerClient):
         print("get existing contributions ...")
         existing = defaultdict(set)
         existing["unique_identifiers"] = True
+        project_name = contributions[0]["project"]
 
         if not skip_dupe_check:
-            project_name = contributions[0]["project"]
             existing = self.get_contributions(project_name)
 
         # prepare contributions
