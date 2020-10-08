@@ -5,6 +5,8 @@ import os
 import gzip
 import json
 import nbformat
+import requests
+
 from copy import deepcopy
 from glob import glob
 from nbconvert import HTMLExporter
@@ -160,13 +162,23 @@ def contribution(request, cid):
     contrib = client.contributions.get_entry(
         pk=cid, _fields=["identifier", "notebook"]
     ).result()
-    if "notebook" in contrib:
-        nid = contrib["notebook"]["id"]
-        nb = client.notebooks.get_entry(pk=nid, _fields=["_all"]).result()
-        ctx["identifier"], ctx["cid"] = contrib["identifier"], cid
-        ctx["nb"], _ = export_notebook(nb, cid)
-    else:
-        ctx["alert"] = f"Notebook for {cid} not built, yet. Come back later."
+
+    if "notebook" not in contrib:
+        print("get notebook ...")
+        url = f"{client.url}/notebooks/build"
+        r = requests.get(url, params={"cids": cid})
+        if r.status_code == requests.codes.ok:
+            contrib = client.contributions.get_entry(
+                pk=cid, _fields=["identifier", "notebook"]
+            ).result()
+        else:
+            ctx["alert"] = f"Notebook build failed with status {r.status}"
+            return render(request, "contribution.html", ctx.flatten())
+
+    nid = contrib["notebook"]["id"]
+    nb = client.notebooks.get_entry(pk=nid, _fields=["_all"]).result()
+    ctx["identifier"], ctx["cid"] = contrib["identifier"], cid
+    ctx["nb"], _ = export_notebook(nb, cid)
     return render(request, "contribution.html", ctx.flatten())
 
 
