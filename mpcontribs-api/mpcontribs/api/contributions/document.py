@@ -63,7 +63,7 @@ def get_quantity(s):
     parts = s.split()
     parts += [None] * (2 - len(parts))
     if isfloat(parts[0]):
-        parts[0] += "(nan)"
+        parts[0] += "+/-nan"
 
     try:
         parts[0] = ufloat_fromstr(parts[0])
