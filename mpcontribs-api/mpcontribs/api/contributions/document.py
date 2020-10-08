@@ -43,6 +43,11 @@ ureg.define("atom = 1")
 ureg.define("bohr_magneton = e * hbar / (2 * m_e) = µᵇ = µ_B = mu_B")
 ureg.define("electron_mass = 9.1093837015e-31 kg = mₑ = m_e")
 
+COMPONENTS = {
+    "structures": ["lattice", "sites", "charge"],
+    "tables": ["columns", "data"],
+}
+
 
 def new_error_units(measurement, quantity):
     if quantity.units == measurement.value.units:
@@ -106,16 +111,15 @@ class Contributions(DynamicDocument):
             "is_public",
             "last_modified",
             {"fields": [(r"data.$**", 1)]},
-            "structures",
-            "tables",
             "notebook",
-        ],
+        ]
+        + list(COMPONENTS.keys()),
     }
 
     @classmethod
     def post_init(cls, sender, document, **kwargs):
         # replace existing structures/tables with according ObjectIds
-        for component in ["structures", "tables"]:
+        for component, fields in COMPONENTS.items():
             lst = getattr(document, component)
             if lst and lst[0].id is None:  # id is None for incoming POST
                 dmodule = import_module(f"mpcontribs.api.{component}.document")
@@ -125,7 +129,7 @@ class Contributions(DynamicDocument):
                 Resource = getattr(vmodule, f"{klass}Resource")
                 resource = Resource()
                 for i, o in enumerate(lst):
-                    d = resource.serialize(o, fields=["lattice", "sites", "charge"])
+                    d = resource.serialize(o, fields=fields)
                     s = json.dumps(d, sort_keys=True).encode("utf-8")
                     digest = md5(s).hexdigest()
                     obj = Docs.objects(md5=digest).only("id").first()
@@ -256,7 +260,7 @@ class Contributions(DynamicDocument):
         remap(document.data, visit=update_columns, enter=enter)
 
         # add/remove columns for other components
-        for path in ["structures", "tables"]:
+        for path in COMPONENTS.keys():
             try:
                 project.columns.get(path=path)
             except DoesNotExist:
@@ -268,13 +272,14 @@ class Contributions(DynamicDocument):
 
     @classmethod
     def pre_delete(cls, sender, document, **kwargs):
-        document.reload("notebook", "structures", "tables")
+        args = ["notebook"] + list(COMPONENTS.keys())
+        document.reload(*args)
 
         # remove reference documents
         if document.notebook is not None:
             document.notebook.delete()
 
-        for component in ["structures", "tables"]:
+        for component in COMPONENTS.keys():
             # check if other contributions exist before deletion!
             for obj in getattr(document, component):
                 q = {component: obj.id}
