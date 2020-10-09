@@ -271,6 +271,22 @@ class Client(SwaggerClient):
             ).result()
         )
 
+    def init_columns(self, project, columns):
+        """initialize columns to set their order and desired units"""
+        self.projects.update_entry(pk=project, project={"columns": []}).result()
+        cols = []
+
+        for path, unit in columns.items():
+            col = {"path": f"data.{path}"}
+            if unit:
+                col["unit"] = unit
+
+            cols.append(col)
+
+        return self.projects.update_entry(
+            pk=project, project={"columns": cols}
+        ).result()
+
     def delete_contributions(self, project, per_page=100, max_workers=5):
         """Convenience function to remove all contributions for a project"""
         tic = time.perf_counter()
