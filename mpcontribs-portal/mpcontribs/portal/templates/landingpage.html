@@ -39,8 +39,7 @@
             {% endif %}
 
             {% if other and other.strip != 'null' %}
-            &nbsp;<a name="read_more">Other Info &raquo;</a>
-            <div name="read_more" class="table-container" id=other style="width:100%;" hidden>
+            <div class="table-container" id=other style="width:100%;">
                 {{ other|safe }}
             </div>
             {% endif %}
