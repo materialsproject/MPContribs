@@ -99,3 +99,5 @@ h2 { padding: 15px; }
 a.dropdown-item { padding-right: 1rem; }
 .input, .select select, .textarea { color: grey; }
 table { white-space: nowrap; }
+
+.dropdown-content { max-height: 13em; overflow: auto; }
