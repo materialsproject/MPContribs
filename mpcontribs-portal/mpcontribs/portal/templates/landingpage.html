@@ -32,12 +32,13 @@
 
     <article class="message is-dark">
         <div class="message-body">
-            {{ descriptions.0|safe }}.
-            {% if descriptions.1 %}
-            <a name="read_more">More &raquo;</a>
-            <span name="read_more" hidden>{{ descriptions.1|safe }}</span>
-            {% endif %}
-
+            <div class="content">
+                {{ descriptions.0|safe }}.
+                {% if descriptions.1 %}
+                <a name="read_more">More &raquo;</a>
+                <span name="read_more" hidden>{{ descriptions.1|safe }}</span>
+                {% endif %}
+            </div>
             {% if other and other.strip != 'null' %}
             <div class="table-container" id=other style="width:100%;">
                 {{ other|safe }}
