@@ -172,7 +172,7 @@ def contribution(request, cid):
                 pk=cid, _fields=["identifier", "notebook"]
             ).result()
         else:
-            ctx["alert"] = f"Notebook build failed with status {r.status}"
+            ctx["alert"] = f"Notebook build failed with status {r.status_code}"
             return render(request, "contribution.html", ctx.flatten())
 
     nid = contrib["notebook"]["id"]
