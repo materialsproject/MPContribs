@@ -101,7 +101,14 @@ def build():
             cells.append(nbf.new_markdown_cell("## Tables"))
             for table in document.tables:
                 cells.append(
-                    nbf.new_code_cell(f'client.get_table("{table.id}").plot()')
+                    nbf.new_code_cell(
+                        "\n".join(
+                            [
+                                f'df = client.get_table("{table.id}")',
+                                "df.plot(**df.attrs)",
+                            ]
+                        )
+                    )
                 )
 
         if document.structures:

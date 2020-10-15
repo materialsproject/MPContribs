@@ -8,14 +8,24 @@ from flask_mongorest.exceptions import UnknownFieldError
 from flask import Blueprint
 
 from mpcontribs.api.core import SwaggerView
-from mpcontribs.api.tables.document import Tables
+from mpcontribs.api.tables.document import Tables, Attributes, Labels
 
 templates = os.path.join(os.path.dirname(flask_mongorest.__file__), "templates")
 tables = Blueprint("tables", __name__, template_folder=templates)
 
 
+class LabelsResource(Resource):
+    document = Labels
+
+
+class AttributesResource(Resource):
+    document = Attributes
+    related_resources = {"labels": LabelsResource}
+
+
 class TablesResource(Resource):
     document = Tables
+    related_resources = {"attrs": AttributesResource}
     filters = {
         "id": [ops.In, ops.Exact],
         "name": [ops.In, ops.Exact, ops.Contains],
@@ -31,7 +41,14 @@ class TablesResource(Resource):
 
     @staticmethod
     def get_optional_fields():
-        return ["columns", "data", "total_data_rows", "total_data_pages"]
+        return [
+            "attrs",
+            "index",
+            "columns",
+            "data",
+            "total_data_rows",
+            "total_data_pages",
+        ]
 
     def value_for_field(self, obj, field):
         if field == "total_data_pages":

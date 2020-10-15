@@ -45,7 +45,7 @@ ureg.define("electron_mass = 9.1093837015e-31 kg = mₑ = m_e")
 
 COMPONENTS = {
     "structures": ["lattice", "sites", "charge"],
-    "tables": ["columns", "data"],
+    "tables": ["index", "columns", "data"],
 }
 
 
@@ -70,6 +70,25 @@ def get_quantity(s):
         return ureg.Measurement(*parts)
     except ValueError:
         return None
+
+
+def truncate_digits(q):
+    v = Decimal(str(q.nominal_value))
+    vt = v.as_tuple()
+
+    if vt.exponent >= 0:
+        return q
+
+    dgts = len(vt.digits)
+    dgts = max_dgts if dgts > max_dgts else dgts
+    s = f"{v:.{dgts}g}"
+    if not isnan(q.std_dev):
+        s += f"+/-{q.std_dev:.{dgts}g}"
+
+    if q.units:
+        s += f" {q.units}"
+
+    return get_quantity(s)
 
 
 def get_min_max(sender, path):
@@ -188,18 +207,8 @@ class Contributions(DynamicDocument):
             except DimensionalityError:
                 raise ValueError(f"Can't convert [{q.units}] to [{column.unit}]!")
 
-            v = Decimal(str(q.nominal_value))
-            vt = v.as_tuple()
-
-            if vt.exponent < 0:
-                dgts = len(vt.digits)
-                dgts = max_dgts if dgts > max_dgts else dgts
-                s = f"{v:.{dgts}g}"
-                if not isnan(q.std_dev):
-                    s += f"+/-{q.std_dev:.{dgts}g}"
-
-                s += f" {q.units}"
-                q = get_quantity(s)
+            # significant digits
+            q = truncate_digits(q)
 
             # return new value dict
             display = str(q.value) if isnan(q.std_dev) else str(q)
