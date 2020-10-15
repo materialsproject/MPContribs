@@ -13,6 +13,7 @@ nb.cells = [
                 "from mpcontribs.client import Client",
                 "from pymatgen import Structure",
                 'pio.orca.config.server_url = os.environ.get("ORCA_HOST", "localhost:9091")',
+                'pio.templates.default = "simple_white"',
             ]
         )
     )
