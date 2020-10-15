@@ -5,6 +5,7 @@ import fido
 import time
 import warnings
 import pandas as pd
+import plotly.io as pio
 
 try:
     from tqdm.notebook import tqdm
@@ -40,6 +41,7 @@ BULMA = "is-narrow is-fullwidth has-background-light"
 
 j2h = Json2Html()
 pd.options.plotting.backend = "plotly"
+pio.templates.default = "simple_white"
 warnings.formatwarning = lambda msg, *args, **kwargs: f"{msg}\n"
 warnings.filterwarnings("default", category=DeprecationWarning, module=__name__)
 
@@ -256,12 +258,23 @@ class Client(SwaggerClient):
             table["data"].extend(resp["data"])
             if pages is None:
                 pages = resp["total_data_pages"]
+                table["attrs"] = resp["attrs"]
+                table["index"] = resp["index"]
                 table["columns"] = resp["columns"]
             page += 1
 
-        return pd.DataFrame.from_records(
-            table["data"], columns=table["columns"], index=table["columns"][0]
+        df = pd.DataFrame.from_records(
+            table["data"], columns=table["columns"], index=table["index"]
         )
+        df.attrs = table["attrs"]
+        labels = table["attrs"].get("labels", {})
+
+        if "index" in labels:
+            df.index.name = labels["index"]
+        if "variable" in labels:
+            df.columns.name = labels["variable"]
+
+        return df
 
     def get_structure(self, sid):
         """Convenience function to get pymatgen structure."""
@@ -413,6 +426,14 @@ class Client(SwaggerClient):
         print("prepare contributions ...")
         contribs = []
         digests = defaultdict(set)
+        components = {"structures", "tables"}
+        fields = [
+            comp
+            for comp in self.swagger_spec.definitions.get(
+                "ContributionsSchema"
+            )._properties.keys()
+            if comp not in components
+        ]
 
         # TODO parallelize?
         for contrib in tqdm(contributions, leave=False):
@@ -422,13 +443,12 @@ class Client(SwaggerClient):
             ):
                 continue
 
-            contribs.append(deepcopy(contrib))
+            contribs.append({k: deepcopy(contrib[k]) for k in fields if k in contrib})
 
-            for component in ["structures", "tables"]:
-                comp_list = contribs[-1].pop(component, [])
+            for component in components:
                 contribs[-1][component] = []
 
-                for idx, element in enumerate(comp_list):
+                for idx, element in enumerate(contrib.get(component, [])):
                     is_structure = isinstance(element, Structure)
                     if component == "structures" and not is_structure:
                         raise ValueError("Only accepting pymatgen Structure!")
@@ -445,10 +465,10 @@ class Client(SwaggerClient):
                         if not dct.get("charge"):
                             del dct["charge"]
                     else:
+                        element.index = element.index.astype(str)
                         for col in element.columns:
                             element[col] = element[col].astype(str)
                         dct = element.to_dict(orient="split")
-                        del dct["index"]
 
                     digest = get_md5(dct)
 
@@ -457,8 +477,18 @@ class Client(SwaggerClient):
                         comp = c.get_integer_formula_and_factor()
                         dct["name"] = f"{comp[0]}-{idx}"
                     else:
-                        name = element.index.name
-                        dct["name"] = name if name else f"table-{idx}"
+                        dct["name"] = element.attrs.get("name", f"table-{idx}")
+                        title = element.attrs.get("title", dct["name"])
+                        labels = element.attrs.get("labels", {})
+                        index = element.index.name
+                        variable = element.columns.name
+
+                        if index and "index" not in labels:
+                            labels["index"] = index
+                        if variable and "variable" not in labels:
+                            labels["variable"] = variable
+
+                        dct["attrs"] = {"title": title, "labels": labels}
 
                     dupe = digest in digests[component] or digest in existing[component]
 
