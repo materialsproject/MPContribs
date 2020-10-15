@@ -33,7 +33,7 @@ ureg = UnitRegistry(
         lambda s: s.replace("%", " percent "),
     ],
 )
-ureg.default_format = "P~"
+ureg.default_format = ",P~"
 
 ureg.define(UnitDefinition("percent", "%", (), ScaleConverter(0.01)))
 ureg.define(UnitDefinition("permille", "%%", (), ScaleConverter(0.001)))
