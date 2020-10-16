@@ -21,7 +21,7 @@ console.log(window.api);
 $(document).ready(function () {
     // logo, info, api-key
     document.getElementById("logo").src = logo;
-    document.getElementById("docs_url").href = api_key !== '' ? 'https://mpcontribs.org' : 'http://localhost:8081';
+    $("#docs_url").attr("href", api_key !== '' ? 'https://mpcontribs.org' : 'http://localhost:8081');
     $('a[name="api_url"]').attr('href', window.api['host']);
     $('#api_key_btn').on('click', function() {
         clipboard.writeText(api_key_code);

@@ -33,13 +33,8 @@ function get_data() {
 }
 
 function make_url(text, href) {
-    var url;
-    if (href.startsWith('/contributions/component/')) {
-        url = $('<a/>', {'class': 'tag is-link is-light', text: text, href: href});
-    } else {
-        url = $('<a/>', {href: href, target: '_blank', rel: "noopener noreferrer"});
-        $(url).text(text);
-    }
+    var url = $('<a/>', {href: href, target: '_blank', rel: "noopener noreferrer"});
+    $(url).text(text);
     return url;
 }
 
@@ -53,12 +48,22 @@ function urlRenderer(instance, td, row, col, prop, value, cellProperties) {
     if (Array.isArray(value)) {
         Handsontable.renderers.HtmlRenderer.apply(this, arguments);
         Handsontable.dom.empty(td);
-        var tags = $('<div/>', {'class': 'tags'});
+        var field = $('<div/>', {'class': 'field is-grouped'});
         $.each(value, function(i, v) {
-            var tag = make_url(v['name'], '/contributions/component/' + v['id']);
-            $(tags).append(tag);
+            var control = $('<div/>', {'class': 'control'});
+            var tags = $('<div/>', {'class': 'tags has-addons'});
+            var href = '/contributions/component/' + v['id'];
+            var tag1 = $('<a/>', {'class': 'tag is-link is-light', text: v['name']}); // TODO view modal
+            var tag2 = $('<a/>', {'class': 'tag', href: href});
+            var span = $('<span/>', {'class': 'icon'});
+            var icon = $('<i/>', {'class': 'fas fa-download'});
+            $(span).append(icon);
+            $(tag2).append(span);
+            $(tags).append(tag1, tag2);
+            $(control).append(tags);
+            $(field).append(control);
         });
-        $(td).addClass('htCenter').addClass('htMiddle').append(tags);
+        $(td).addClass('htCenter').addClass('htMiddle').append(field);
     } else {
         value = (value === null || typeof value  === 'undefined') ? '' : String(value);
         var basename = value.split('/').pop();

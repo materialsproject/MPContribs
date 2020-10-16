@@ -40,9 +40,12 @@
                 {% endif %}
             </div>
             {% if other and other.strip != 'null' %}
-            <div class="table-container" id=other style="width:100%;">
-                {{ other|safe }}
-            </div>
+            <details>
+                <summary>Other Info</summary>
+                <div class="table-container" id=other style="width:100%;">
+                    {{ other|safe }}
+                </div>
+            </details>
             {% endif %}
         </div>
     </article>

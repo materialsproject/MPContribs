@@ -164,7 +164,6 @@ def contribution(request, cid):
     ).result()
 
     if "notebook" not in contrib:
-        print("get notebook ...")
         url = f"{client.url}/notebooks/build"
         r = requests.get(url, params={"cids": cid})
         if r.status_code == requests.codes.ok:
