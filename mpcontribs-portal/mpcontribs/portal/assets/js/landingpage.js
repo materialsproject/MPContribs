@@ -76,7 +76,16 @@ function urlRenderer(instance, td, row, col, prop, value, cellProperties) {
             make_url_cell(td, basename, href);
         } else if (objectid_regex.test(basename)) {
             Handsontable.renderers.HtmlRenderer.apply(this, arguments);
-            make_url_cell(td, basename.slice(-7), '/contributions/' + basename);
+            Handsontable.dom.empty(td);
+            var href = '/contributions/' + basename;
+            var tag = $('<a/>', {'class': 'tag is-link is-light', href: href});
+            var span = $('<span/>', {text: basename.slice(-7)});
+            var span_icon = $('<span/>', {'class': 'icon'});
+            var icon = $('<i/>', {'class': 'fas fa-file-alt'});
+            $(span_icon).append(icon);
+            $(tag).append(span_icon);
+            $(tag).append(span);
+            $(td).addClass('htCenter').addClass('htMiddle').append(tag);
         } else {
             Handsontable.renderers.TextRenderer.apply(this, arguments);
         }
@@ -180,9 +189,8 @@ $.each(nestedHeadersPrep, function(r, row) {
 
 const container = document.getElementById(table_id);
 const hot = new Handsontable(container, {
-    colHeaders: headers, columns: columns,
-    hiddenColumns: {columns: [1]},
-    nestedHeaders: nestedHeaders, //rowHeaderWidth: 75,
+    colHeaders: headers, columns: columns, rowHeaders: false,
+    hiddenColumns: true, nestedHeaders: nestedHeaders, //rowHeaderWidth: 75,
     width: '100%', stretchH: 'all', rowHeights: rowHeight,
     preventOverflow: 'horizontal',
     licenseKey: 'non-commercial-and-evaluation',
@@ -224,18 +232,6 @@ const hot = new Handsontable(container, {
                 ht.setDataAtCell(update);
             });
         }
-    }
-});
-
-
-hot.updateSettings({
-    rowHeaders: function(index) {
-        var cid = hot.getDataAtCell(index, 1);
-        var url = $('<a/>', {
-            'class': 'is-primary', text: index+1, href: '/contributions/' + cid,
-            target: '_blank', rel: "noopener noreferrer"
-        });
-        return url.prop('outerHTML');
     }
 });
 
