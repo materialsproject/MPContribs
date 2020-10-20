@@ -1,6 +1,16 @@
 # -*- coding: utf-8 -*-
+import boto3
+import hashlib
+
+from io import BytesIO
+from mongoengine import signals
+from base64 import b64decode, b64encode
 from flask_mongoengine import Document
 from mongoengine.fields import DictField, StringField, IntField, ListField
+
+BUCKET = "mpcontribs-images"
+S3_DOWNLOAD_URL = f"https://{BUCKET}.s3.amazonaws.com"
+s3_client = boto3.client("s3")
 
 
 class Kernelspec(DictField):
@@ -55,6 +65,11 @@ class Notebooks(Document):
     problem_key = "application/vnd.plotly.v1+json"
     escaped_key = problem_key.replace(".", "~dot~")
 
+    @classmethod
+    def post_init(cls, sender, document, **kwargs):
+        if document.id:
+            document.transform(incoming=False)
+
     def transform(self, incoming=True):
         if incoming:
             old_key = self.problem_key
@@ -65,11 +80,29 @@ class Notebooks(Document):
 
         for cell in self.cells:
             for output in cell.get("outputs", []):
-                if old_key in output.get("data", {}):
+                data = output.get("data", {})
+                if old_key in data:
                     output["data"][new_key] = output["data"].pop(old_key)
+
+                if "image/png" in data:
+                    if incoming:
+                        contents = data.pop("image/png")  # base64 encoded
+                        key = hashlib.sha1(contents.encode("utf-8")).hexdigest()
+                        s3_client.put_object(
+                            Bucket=BUCKET,
+                            Key=key,
+                            ContentType="image/png",
+                            Body=b64decode(contents),
+                        )
+                        data["image/png"] = key
+                    else:
+                        key = data.pop("image/png")
+                        retr = s3_client.get_object(Bucket=BUCKET, Key=key)
+                        gzip_buffer = BytesIO(retr["Body"].read())
+                        data["image/png"] = b64encode(gzip_buffer.getvalue()).decode()
 
     def clean(self):
         self.transform()
 
-    def restore(self):
-        self.transform(incoming=False)
+
+signals.post_init.connect(Notebooks.post_init, sender=Notebooks)
