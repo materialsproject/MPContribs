@@ -4,8 +4,9 @@ import logging
 import boto3
 import requests
 
+from base64 import b64decode
 from importlib import import_module
-from flask import Flask, current_app
+from flask import Flask, current_app, request
 from flask_marshmallow import Marshmallow
 from flask_mongoengine import MongoEngine
 from flask_mongorest import register_class
@@ -102,6 +103,15 @@ def healthcheck():
     return "OK"
 
 
+def login():
+    custom_id = request.headers.get("X-Consumer-Custom-Id", "")
+    return {
+        "username": request.headers.get("X-Consumer-Username"),
+        "apikey": b64decode(custom_id).decode(),
+        "groups": request.headers.get("X-Consumer-Groups"),
+    }
+
+
 def create_app():
     """create flask app"""
     app = Flask(__name__)
@@ -167,5 +177,6 @@ def create_app():
 
     app.register_blueprint(sse, url_prefix="/stream")
     app.add_url_rule("/healthcheck", view_func=healthcheck)
+    app.add_url_rule("/login", view_func=login)
     logger.warning("app created.")
     return app
