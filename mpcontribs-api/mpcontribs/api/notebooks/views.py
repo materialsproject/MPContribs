@@ -9,6 +9,7 @@ from flask import Blueprint, request, current_app
 from flask_mongorest import operators as ops
 from flask_mongorest.methods import Fetch, BulkFetch
 from flask_mongorest.resources import Resource
+from mongoengine.context_managers import no_dereference
 
 from mpcontribs.api.core import SwaggerView
 from mpcontribs.api.contributions.document import Contributions
@@ -64,73 +65,86 @@ def execute_cells(cid, cells):
 
 @notebooks.route("/build")
 def build():
-    # TODO clean up dangling notebooks?
-    max_docs = NotebooksResource.max_limit
-    cids = request.args.get("cids", "").split(",")[:max_docs]
+    with no_dereference(Contributions) as Contribs:
 
-    if cids[0]:
-        documents = Contributions.objects(id__in=cids)
-    else:
-        documents = Contributions.objects(notebook__exists=False)[:max_docs]
+        # remove dangling notebooks
+        max_docs = 5000
+        contribs = Contribs.objects(notebook__exists=True).only("notebook")
+        nids = [contrib.notebook.id for contrib in contribs]
+        nbs = Notebooks.objects(id__nin=nids).only("id")
+        nbs_total = nbs.count()
+        nbs[:max_docs].delete()
+        nbs_count = nbs_total if nbs_total < max_docs else max_docs
 
-    total = documents.count()
-    count = 0
+        # build missing notebooks
+        max_docs = NotebooksResource.max_limit
+        cids = request.args.get("cids", "").split(",")[:max_docs]
 
-    for document in documents:
-        if document.notebook is not None:
-            document.notebook.delete()
+        if cids[0]:
+            documents = Contribs.objects(id__in=cids)
+        else:
+            documents = Contribs.objects(notebook__exists=False)[:max_docs]
 
-        cells = [
-            # define client only once in kernel
-            # avoids API calls for regex expansion for query parameters
-            nbf.new_code_cell(
-                "\n".join(
-                    [
-                        "if 'client' not in locals():",
-                        "\tclient = Client(",
-                        '\t\theaders={"X-Consumer-Groups": "admin"},',
-                        f'\t\thost="{MPCONTRIBS_API_HOST}"',
-                        "\t)",
-                    ]
-                )
-            ),
-            nbf.new_code_cell(f'client.get_contribution("{document.id}").pretty()'),
-        ]
+        total = documents.count()
+        count = 0
 
-        if document.tables:
-            cells.append(nbf.new_markdown_cell("## Tables"))
-            for table in document.tables:
-                cells.append(
-                    nbf.new_code_cell(
-                        "\n".join(
-                            [
-                                f'df = client.get_table("{table.id}")',
-                                "df.plot(**df.attrs)",
-                            ]
+        for document in documents:
+            if document.notebook is not None:
+                # NOTE document.notebook.delete() doesn't trigger pre_delete signal?
+                nb = Notebooks.objects.get(id=document.notebook.id)
+                nb.delete()
+
+            cells = [
+                # define client only once in kernel
+                # avoids API calls for regex expansion for query parameters
+                nbf.new_code_cell(
+                    "\n".join(
+                        [
+                            "if 'client' not in locals():",
+                            "\tclient = Client(",
+                            '\t\theaders={"X-Consumer-Groups": "admin"},',
+                            f'\t\thost="{MPCONTRIBS_API_HOST}"',
+                            "\t)",
+                        ]
+                    )
+                ),
+                nbf.new_code_cell(f'client.get_contribution("{document.id}").pretty()'),
+            ]
+
+            if document.tables:
+                cells.append(nbf.new_markdown_cell("## Tables"))
+                for table in document.tables:
+                    cells.append(
+                        nbf.new_code_cell(
+                            "\n".join(
+                                [
+                                    f'df = client.get_table("{table.id}")',
+                                    "df.plot(**df.attrs)",
+                                ]
+                            )
                         )
                     )
-                )
 
-        if document.structures:
-            cells.append(nbf.new_markdown_cell("## Structures"))
-            for structure in document.structures:
-                cells.append(
-                    nbf.new_code_cell(f'client.get_structure("{structure.id}")')
-                )
+            if document.structures:
+                cells.append(nbf.new_markdown_cell("## Structures"))
+                for structure in document.structures:
+                    cells.append(
+                        nbf.new_code_cell(f'client.get_structure("{structure.id}")')
+                    )
 
-        cid = str(document.id)
-        outputs = execute_cells(cid, cells)
-        if not outputs:
-            raise ValueError(f"notebook generation for {cid} failed!")
+            cid = str(document.id)
+            outputs = execute_cells(cid, cells)
+            if not outputs:
+                raise ValueError(f"notebook generation for {cid} failed!")
 
-        for idx, output in outputs.items():
-            cells[idx]["outputs"] = output
+            for idx, output in outputs.items():
+                cells[idx]["outputs"] = output
 
-        doc = deepcopy(seed_nb)
-        doc["cells"] += cells[1:]  # skip localhost Client
+            doc = deepcopy(seed_nb)
+            doc["cells"] += cells[1:]  # skip localhost Client
 
-        document.notebook = Notebooks(**doc).save()
-        document.save(signal_kwargs={"skip": True})
-        count += 1
+            document.notebook = Notebooks(**doc).save()
+            document.save(signal_kwargs={"skip": True})
+            count += 1
 
-    return f"{count}/{total} notebooks built"
+        return f"{count}/{total} notebooks built & {nbs_count}/{nbs_total} notebooks deleted"

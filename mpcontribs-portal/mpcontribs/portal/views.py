@@ -174,7 +174,7 @@ def contribution(request, cid):
             ctx["alert"] = f"Notebook build failed with status {r.status_code}"
             return render(request, "contribution.html", ctx.flatten())
 
-    nid = contrib["notebook"]["id"]
+    nid = contrib["notebook"]
     nb = client.notebooks.get_entry(pk=nid, _fields=["_all"]).result()
     ctx["identifier"], ctx["cid"] = contrib["identifier"], cid
     ctx["nb"], _ = export_notebook(nb, cid)

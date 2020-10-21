@@ -120,7 +120,7 @@ class Contributions(DynamicDocument):
     )
     structures = ListField(ReferenceField("Structures"), default=list, max_length=10)
     tables = ListField(ReferenceField("Tables"), default=list, max_length=10)
-    notebook = ReferenceField("Notebooks")
+    notebook = LazyReferenceField("Notebooks", passthrough=True)
     meta = {
         "collection": "contributions",
         "indexes": [
