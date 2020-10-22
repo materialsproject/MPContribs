@@ -68,13 +68,15 @@ def build():
     with no_dereference(Contributions) as Contribs:
 
         # remove dangling notebooks
-        max_docs = 5000
-        contribs = Contribs.objects(notebook__exists=True).only("notebook")
-        nids = [contrib.notebook.id for contrib in contribs]
-        nbs = Notebooks.objects(id__nin=nids).only("id")
-        nbs_total = nbs.count()
-        nbs[:max_docs].delete()
-        nbs_count = nbs_total if nbs_total < max_docs else max_docs
+        nbs_total, nbs_count = -1, -1
+        if Contribs.objects.count() < Notebooks.objects.count():
+            max_docs = 2500
+            contribs = Contribs.objects(notebook__exists=True).only("notebook")
+            nids = [contrib.notebook.id for contrib in contribs]
+            nbs = Notebooks.objects(id__nin=nids).only("id")
+            nbs_total = nbs.count()
+            nbs[:max_docs].delete()
+            nbs_count = nbs_total if nbs_total < max_docs else max_docs
 
         # build missing notebooks
         max_docs = NotebooksResource.max_limit
