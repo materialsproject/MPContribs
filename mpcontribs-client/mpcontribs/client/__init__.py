@@ -244,6 +244,7 @@ class Client(SwaggerClient):
         fields = list(
             self.swagger_spec.definitions.get("ContributionsSchema")._properties.keys()
         )  # don't return dynamic fields (card_*)
+        fields.remove("notebook")
         return Dict(self.contributions.get_entry(pk=cid, _fields=fields).result())
 
     def get_table(self, tid):
