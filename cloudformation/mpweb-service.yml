@@ -70,7 +70,7 @@ Resources:
             - ContainerPort: 5001
           Environment:
             - Name: NUM_WORKERS
-              Value: 4
+              Value: 3
             - Name: MPCONTRIBS_MONGO_HOST
               Value: !Ref 'MongoHost'
             - Name: AWS_ACCESS_KEY_ID
@@ -94,8 +94,6 @@ Resources:
           Environment:
             - Name: MP_API_ENDPOINT
               Value: http://localhost:5001/
-            - Name: NUM_WORKERS
-              Value: 4
             - Name: MP_REDIS_ADDRESS
               Value:
                 Fn::ImportValue:
@@ -115,7 +113,7 @@ Resources:
             - ContainerPort: 5004
           Environment:
             - Name: NUM_WORKERS
-              Value: 4
+              Value: 2
             - Name: OPTIMADE_MONGO_URI
               Value: !Join ['', ['mongodb+srv://', !Ref 'MongoHost']]
           LogConfiguration:
