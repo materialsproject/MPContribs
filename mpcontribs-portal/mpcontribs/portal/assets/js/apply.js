@@ -27,7 +27,7 @@ function prepareRequest(formData, jqForm, options) {
 }
 
 function processJson(data) { // 'data' is the json object returned from the server
-    var msg = `Thank you for submitting your project application. Please check your inbox for an
+    var msg = `Thank you for submitting your project application. Please check your inbox (and spam) for an
     e-mail asking you to subscribe for MPContribs notifications. Once your e-mail address is
     confirmed we will notify you if/when your project has been accepted for dissemination.`
     $('#apply-response .message-body').html(msg);
