@@ -33,6 +33,8 @@ Parameters:
     Type: String
   KongaAdminPassword:
     Type: String
+  KongSessionSecret:
+    Type: String
 
 Resources:
   # A log group for storing the container logs for this service
@@ -96,6 +98,8 @@ Resources:
               Value: '/dev/stderr'
             - Name: KONG_NGINX_PROXY_PROXY_IGNORE_CLIENT_ABORT
               Value: 'on'
+            - Name: KONG_NGINX_PROXY_SET
+              Value: !Join [' ', ['$$session_secret', !Ref 'KongSessionSecret']]
           PortMappings:
             - ContainerPort: 8000
             - ContainerPort: 8001

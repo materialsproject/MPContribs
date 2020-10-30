@@ -74,6 +74,9 @@ Parameters:
   KongaAdminPassword:
     NoEcho: 'true'
     Type: String
+  KongSessionSecret:
+    NoEcho: 'true'
+    Type: String
   AwsAccessKeyId:
     NoEcho: 'true'
     Type: String
@@ -787,7 +790,8 @@ Resources:
                     "KongaAdminEmail": "${KongaAdminEmail}",
                     "KongaAdminFirstname": "${KongaAdminFirstname}",
                     "KongaAdminLastname": "${KongaAdminLastname}",
-                    "KongaAdminPassword": "${KongaAdminPassword}"
+                    "KongaAdminPassword": "${KongaAdminPassword}",
+                    "KongSessionSecret": "${KongSessionSecret}"
                   }
               InputArtifacts:
                 - Name: Source
