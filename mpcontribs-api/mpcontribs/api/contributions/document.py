@@ -286,7 +286,9 @@ class Contributions(DynamicDocument):
 
         # remove reference documents
         if document.notebook is not None:
-            document.notebook.delete()
+            from mpcontribs.api.notebooks.document import Notebooks
+
+            Notebooks.objects(id=document.notebook.id).delete()
 
         for component in COMPONENTS.keys():
             # check if other contributions exist before deletion!
