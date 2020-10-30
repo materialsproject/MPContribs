@@ -448,8 +448,10 @@ class Client(SwaggerClient):
 
             for component in components:
                 contribs[-1][component] = []
+                elements = contrib.get(component, [])
+                nr_elements = len(elements)
 
-                for idx, element in enumerate(contrib.get(component, [])):
+                for idx, element in enumerate(elements):
                     is_structure = isinstance(element, Structure)
                     if component == "structures" and not is_structure:
                         raise ValueError("Only accepting pymatgen Structure!")
@@ -476,9 +478,10 @@ class Client(SwaggerClient):
                     if is_structure:
                         c = element.composition
                         comp = c.get_integer_formula_and_factor()
-                        dct["name"] = f"{comp[0]}-{idx}"
+                        dct["name"] = f"{comp[0]}-{idx}" if nr_elements > 1 else comp[0]
                     else:
-                        dct["name"] = element.attrs.get("name", f"table-{idx}")
+                        name = f"table-{idx}" if nr_elements > 1 else "table"
+                        dct["name"] = element.attrs.get("name", name)
                         title = element.attrs.get("title", dct["name"])
                         labels = element.attrs.get("labels", {})
                         index = element.index.name
