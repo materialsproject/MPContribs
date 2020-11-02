@@ -22,6 +22,7 @@ from string import punctuation
 from boltons.iterutils import remap, default_enter
 from notebook.utils import url_path_join
 from notebook.gateway.managers import GatewayClient
+from requests.exceptions import ConnectionError
 
 
 delimiter, max_depth = ".", 4
@@ -95,7 +96,14 @@ def get_kernels():
     """retrieve list of kernels from KernelGateway service"""
     gw_client = GatewayClient.instance()
     base_endpoint = url_path_join(gw_client.url, gw_client.kernels_endpoint)
-    kernels = requests.get(base_endpoint).json()
+
+    try:
+        r = requests.get(base_endpoint)
+    except ConnectionError:
+        print("WARNING: Kernel Gateway NOT AVAILABLE")
+        return None
+
+    kernels = r.json()
     return {kernel["id"]: None for kernel in kernels}
 
 
