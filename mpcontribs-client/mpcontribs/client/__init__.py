@@ -449,7 +449,7 @@ class Client(SwaggerClient):
             for component in components:
                 contribs[-1][component] = []
                 elements = contrib.get(component, [])
-                nr_elements = len(elements)
+                nelems = len(elements)
 
                 for idx, element in enumerate(elements):
                     is_structure = isinstance(element, Structure)
@@ -476,11 +476,13 @@ class Client(SwaggerClient):
                     digest = get_md5(dct)
 
                     if is_structure:
-                        c = element.composition
-                        comp = c.get_integer_formula_and_factor()
-                        dct["name"] = f"{comp[0]}-{idx}" if nr_elements > 1 else comp[0]
+                        dct["name"] = getattr(element, "name", None)
+                        if not dct["name"]:
+                            c = element.composition
+                            comp = c.get_integer_formula_and_factor()
+                            dct["name"] = f"{comp[0]}-{idx}" if nelems > 1 else comp[0]
                     else:
-                        name = f"table-{idx}" if nr_elements > 1 else "table"
+                        name = f"table-{idx}" if nelems > 1 else "table"
                         dct["name"] = element.attrs.get("name", name)
                         title = element.attrs.get("title", dct["name"])
                         labels = element.attrs.get("labels", {})
