@@ -536,6 +536,11 @@ class Client(SwaggerClient):
                             for c in contribs
                             if c["identifier"] not in existing["identifiers"]
                         ]
+                    else:
+                        contribs = []
+                        print(
+                            "unique_identifiers=False: Resubmit failed contributions manually."
+                        )
 
                 self.load()
                 toc = time.perf_counter()
