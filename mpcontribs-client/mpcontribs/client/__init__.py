@@ -292,7 +292,7 @@ class Client(SwaggerClient):
 
         for path, unit in columns.items():
             col = {"path": f"data.{path}"}
-            if unit:
+            if unit is not None:
                 col["unit"] = unit
 
             cols.append(col)
