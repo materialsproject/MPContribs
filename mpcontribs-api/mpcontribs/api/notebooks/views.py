@@ -67,16 +67,27 @@ def execute_cells(cid, cells):
 def build():
     with no_dereference(Contributions) as Contribs:
 
-        # remove dangling notebooks
+        # remove dangling and unset missing notebooks
         nbs_total, nbs_count = -1, -1
-        if Contribs.objects.count() < Notebooks.objects.count():
-            max_docs = 2500
+        ctrbs_cnt = Contribs.objects._cursor.collection.estimated_document_count()
+        nbs_cnt = Notebooks.objects._cursor.collection.estimated_document_count()
+
+        if ctrbs_cnt != nbs_cnt:
             contribs = Contribs.objects(notebook__exists=True).only("notebook")
             nids = [contrib.notebook.id for contrib in contribs]
-            nbs = Notebooks.objects(id__nin=nids).only("id")
-            nbs_total = nbs.count()
-            nbs[:max_docs].delete()
-            nbs_count = nbs_total if nbs_total < max_docs else max_docs
+            if len(nids) < nbs_cnt:
+                nbs = Notebooks.objects(id__nin=nids).only("id")
+                nbs_total = nbs.count()
+                max_docs = 2500
+                nbs[:max_docs].delete()
+                nbs_count = nbs_total if nbs_total < max_docs else max_docs
+            else:
+                missing_nids = set(nids) - set(Notebooks.objects.distinct("id"))
+                if missing_nids:
+                    upd_contribs = Contribs.objects(notebook__in=list(missing_nids))
+                    nupd_total = upd_contribs.count()
+                    nupd = upd_contribs.update(unset__notebook="")
+                    print(f"unset notebooks for {nupd}/{nupd_total} contributions")
 
         # build missing notebooks
         max_docs = NotebooksResource.max_limit
