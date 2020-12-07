@@ -31,4 +31,4 @@ selenium==3.141.0
 uncertainties==3.1.5
 unflatten==0.1
 websocket_client==0.57.0
-zstandard==0.14.0
+zstandard==0.14.1
