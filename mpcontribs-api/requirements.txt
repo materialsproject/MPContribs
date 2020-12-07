@@ -2,7 +2,7 @@ apispec==4.0.0
 asn1crypto==1.4.0
 blinker==1.4
 boltons==20.2.1
-boto3==1.16.25
+boto3==1.16.30
 cherrypicker @ git+https://github.com/big-o/cherrypicker.git#egg=cherrypicker
 css-html-js-minify==2.5.5
 dateparser==1.0.0
@@ -24,11 +24,11 @@ more-itertools==8.6.0
 nbformat==5.0.8
 notebook @ git+https://github.com/jupyter/notebook@6.1.0rc1#egg=notebook-6.1.0rc1
 pint==0.16.1
-pymatgen==2020.11.11
+pymatgen==2020.12.3
 pyopenssl==20.0.0
 python-snappy==0.5.4
 selenium==3.141.0
 uncertainties==3.1.5
 unflatten==0.1
 websocket_client==0.57.0
-zstandard==0.14.0
+zstandard==0.14.1
