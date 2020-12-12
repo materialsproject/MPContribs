@@ -115,7 +115,7 @@ def build():
                         [
                             "if 'client' not in locals():",
                             "\tclient = Client(",
-                            '\t\theaders={"X-Consumer-Groups": "admin"},',
+                            '\t\theaders={"X-Authenticated-Groups": "admin"},',
                             f'\t\thost="{MPCONTRIBS_API_HOST}"',
                             "\t)",
                         ]

@@ -4,7 +4,6 @@ import logging
 import boto3
 import requests
 
-from base64 import b64decode
 from importlib import import_module
 from flask import Flask, current_app, request
 from flask_marshmallow import Marshmallow
@@ -112,11 +111,10 @@ def healthcheck():
 
 
 def login():
-    custom_id = request.headers.get("X-Consumer-Custom-Id", "")
     return {
         "username": request.headers.get("X-Consumer-Username"),
-        "apikey": b64decode(custom_id).decode(),
-        "groups": request.headers.get("X-Consumer-Groups"),
+        "apikey": request.headers.get("X-Consumer-Custom-Id"),
+        "groups": request.headers.get("X-Authenticated-Groups"),
     }
 
 

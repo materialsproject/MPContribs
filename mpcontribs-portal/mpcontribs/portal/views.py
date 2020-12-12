@@ -34,7 +34,7 @@ def visit(path, key, value):
 
 
 def get_consumer(request):
-    names = ["X-Consumer-Groups", "X-Consumer-Username"]
+    names = ["X-Authenticated-Groups", "X-Consumer-Username"]
     headers = {}
     for name in names:
         key = f'HTTP_{name.upper().replace("-", "_")}'
@@ -144,7 +144,7 @@ def browse(request):
             authors[1] = authors[1].strip()
         entry["authors"] = authors
         entry["description"] = entry["description"].split(".", 1)[0] + "."
-        # visibility governed by is_public flag and X-Consumer-Groups header
+        # visibility governed by is_public flag and X-Authenticated-Groups header
         ctx["landing_pages"].append(entry)
     return render(request, "browse.html", ctx.flatten())
 

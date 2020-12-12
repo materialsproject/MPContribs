@@ -10,8 +10,7 @@ window.api = {};
 var api_key = $('#api_key').val();
 if (api_key !== '') {
     window.api['host'] = 'https://' + $('#api_cname').val() + '/';
-    var api_key_code = window.atob(api_key);
-    window.api['headers'] = {'X-API-KEY': api_key_code};
+    window.api['headers'] = {'X-API-KEY': api_key};
 } else {
     window.api['host'] = 'http://localhost:' + $('#api_port').val() + '/';
     window.api['headers'] = {};
@@ -24,7 +23,7 @@ $(document).ready(function () {
     $("#docs_url").attr("href", api_key !== '' ? 'https://mpcontribs.org' : 'http://localhost:8081');
     $('a[name="api_url"]').attr('href', window.api['host']);
     $('#api_key_btn').on('click', function() {
-        clipboard.writeText(api_key_code);
+        clipboard.writeText(api_key);
         $('#api_key_text').html('Copied!');
     });
 
