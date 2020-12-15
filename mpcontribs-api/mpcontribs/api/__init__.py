@@ -111,10 +111,12 @@ def healthcheck():
 
 
 def login():
+    groups = request.headers.get("X-Authenticated-Groups", "").split(",")
+    groups += request.headers.get("X-Consumer-Groups", "").split(",")
     return {
         "username": request.headers.get("X-Consumer-Username"),
         "apikey": request.headers.get("X-Consumer-Custom-Id"),
-        "groups": request.headers.get("X-Authenticated-Groups"),
+        "groups": ",".join(set(groups)),
     }
 
 

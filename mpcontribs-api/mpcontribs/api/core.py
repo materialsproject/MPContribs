@@ -437,8 +437,9 @@ class SwaggerView(OriginalSwaggerView, ResourceView, metaclass=SwaggerViewType):
     """A class-based view defining additional methods"""
 
     def get_groups(self, request):
-        groups = request.headers.get("X-Authenticated-Groups")
-        return set() if groups is None else set(groups.split(","))
+        groups = request.headers.get("X-Authenticated-Groups", "").split(",")
+        groups += request.headers.get("X-Consumer-Groups", "").split(",")
+        return set(groups)
 
     def is_admin(self, groups):
         cname = current_app.config["PORTAL_CNAME"]
