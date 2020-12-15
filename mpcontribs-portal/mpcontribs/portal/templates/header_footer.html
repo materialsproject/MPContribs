@@ -50,7 +50,7 @@
                           </ul>
                       </div>
                   </div>
-                  {% if request.META.HTTP_X_CONSUMER_USERNAME %}
+                  {% if not request.META.HTTP_X_ANONYMOUS_CONSUMER %}
                   <div class="navbar-item has-text-centered"
                        data-intro="Use this dropdown menu to quickly jump to specific projects, or to search for keywords in their descriptions. The search will reduce the list of projects shown on the <i>Browse</i> tab to those matching the keyword."
                        data-step="1">
@@ -60,19 +60,22 @@
                   </div>
                   {% endif %}
               </div>
-              {% if request.META.HTTP_X_CONSUMER_USERNAME %}
               <div class="navbar-end">
+                  {% if request.META.HTTP_X_ANONYMOUS_CONSUMER %}
+                  <!-- TODO adjust href for development -->
+                  <a class="navbar-item" href="https://oauth.materialsproject.org">Login</a>
+                  {% else %}
                   <div class="navbar-item has-dropdown is-hoverable">
                       <a class="navbar-link">
                           <span>More</span>
                           <span class="icon"><i class="fas fa-chevron-circle-down"></i></span>
                       </a>
                       <div class="navbar-dropdown is-right has-background-light">
-                          <p class="navbar-item has-text-weight-semibold has-text-dark">
+                          <!-- TODO adjust href for development -->
+                          <a class="navbar-item" href="https://oauth.materialsproject.org/profile">
                               <span class="icon"><i class="far fa-user"></i></span>
                               <span>{{ request.META.HTTP_X_CONSUMER_USERNAME }}</span>
-                          </p>
-                          {% if request.META.HTTP_X_CONSUMER_CUSTOM_ID %}
+                          </a>
                           <div class="navbar-item has-text-weight-semibold">
                               <button id=api_key_btn class="button is-small is-outlined">
                                   <span class="icon is-small"><i class="fas fa-key"></i></span>
@@ -83,7 +86,6 @@
                               <span class="icon"><i class="fas fa-question"></i></span>
                               <span>Tour this page</span>
                           </a>
-                          {% endif %}
                           <a class="navbar-item" id=docs_url target="_blank">
                               <span class="icon"><i class="fab fa-readme"></i></span>
                               <span>Documentation</span>
@@ -95,8 +97,8 @@
                           <!-- TODO merge ingester webapp into portal -->
                       </div>
                   </div>
+                  {% endif %}
               </div>
-              {% endif %}
           </div>
       </nav>
 
