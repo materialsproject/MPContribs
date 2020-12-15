@@ -1,6 +1,6 @@
 ![Screenshot](portal.png)
 
-The [Portal](https://portal.mpcontribs.org) contains an entry for every contributed
+The [Portal](https://contribs.materialsproject.org) contains an entry for every contributed
 dataset which links to the respective landing pages. Each entry also includes the project
 title, its authors, and a small preview icon. Each project/dataset can contain many
 contributions for an MP material or composition. A dropdown menu is provided for quick
@@ -68,7 +68,7 @@ Each contribution in a dataset is assigned a unique identifier (see MongoDB
 to access its *Contribution Details Page* rendering an interactive version of its full
 content. For instance, the above screenshot is a truncated version of the detail page at
 
-https://portal.mpcontribs.org/5ac08be3d4f144332ce7b785
+https://contribs.materialsproject.org/5ac08be3d4f144332ce7b785
 
 A contribution consists of three (optional) components: free-form hierarchical data,
 tabular data, and crystal structures. The detail page is a static version of a fully

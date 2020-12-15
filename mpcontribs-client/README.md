@@ -10,7 +10,7 @@ client = Client()
 dir(client) # show available resources
 ```
 
-By default, the client connects to https://api.mpcontribs.org and uses the environment variable
+By default, the client connects to https://contribs-api.materialsproject.org and uses the environment variable
 `MPCONTRIBS_API_KEY` to set the API key. The key can alternatively be set explicitly via the
 `apikey` argument to the constructor. The `host` argument or the `MPCONTRIBS_API_HOST`
 environment variable can be set to connect to other MPContribs-style APIs:

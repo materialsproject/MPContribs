@@ -51,9 +51,9 @@ WORKDIR /app
 ENV PATH=/root/.local/bin:$PATH
 ENV DJANGO_SETTINGS_FILE="settings.py"
 ENV PYTHONUNBUFFERED 1
-ENV API_CNAME api.mpcontribs.org
+ENV API_CNAME contribs-api.materialsproject.org
 ENV API_PORT 5000
-ENV PORTAL_CNAME portal.mpcontribs.org
+ENV PORTAL_CNAME contribs.materialsproject.org
 ENV PORTAL_PORT 8080
 ENV RELOAD ""
 ENV NWORKERS 3

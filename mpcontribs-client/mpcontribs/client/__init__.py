@@ -36,7 +36,7 @@ from requests_futures.sessions import FuturesSession
 
 
 MAX_WORKERS = 10
-DEFAULT_HOST = "api.mpcontribs.org"
+DEFAULT_HOST = "contribs-api.materialsproject.org"
 BULMA = "is-narrow is-fullwidth has-background-light"
 
 j2h = Json2Html()

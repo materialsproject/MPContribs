@@ -1,7 +1,7 @@
 # RedoxThermoCSP
 
 Documentation for the `RedoxThermoCSP` [landing
-page](https://portal.mpcontribs.org/redox_thermo_csp/).
+page](https://contribs.materialsproject.org/redox_thermo_csp/).
 
 ## Introduction
 

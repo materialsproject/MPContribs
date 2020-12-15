@@ -1,10 +1,10 @@
-**Visit the [apply](https://portal.mpcontribs.org/#apply) and
-[work](https://portal.mpcontribs.org/#work) pages on the portal to apply for a project and
+**Visit the [apply](https://contribs.materialsproject.org/#apply) and
+[work](https://contribs.materialsproject.org/#work) pages on the portal to apply for a project and
 get started with the MPContribs API.** The work page provides notebooks with example code
 that can be downloaded to execute on your own machine or launched in the browser on remote
 compute resources (e.g. https://jupyter.nersc.gov).
 
-The [MPContribs API](https://api.mpcontribs.org) provides programmatic access to
+The [MPContribs API](https://contribs-api.materialsproject.org) provides programmatic access to
 experimental and theoretical data contributed by the MP community. Project information is
 retrievable through the [`projects`](#projects) resource, and the corresponding
 contributed data through the [`contributions`](#contributions) resource. Each project can
@@ -13,7 +13,7 @@ consists of three (optional) components: free-form hierarchical data, tabular da
 crystal structures. There are separate dedicated resource endpoints for
 [`tables`](#tables) and [`structures`](#structures). Descriptions of fields available in
 MPContribs resources are shown below.  Check out the [API
-Docs](https://api.mpcontribs.org) for more details and to try out the API in the browser.
+Docs](https://contribs-api.materialsproject.org) for more details and to try out the API in the browser.
 
 ### Projects
 
@@ -32,7 +32,7 @@ Docs](https://api.mpcontribs.org) for more details and to try out the API in the
 | unique_identifiers | whether identifiers in contributions are unique     |
 
 - the `name` field will also be used in the unique URL to the landing page, i.e.
-  `https://portal.mpcontribs.org/<name>`
+  `https://contribs.materialsproject.org/<name>`
 - If you need to unset/delete a field from `other`, set it to None
 
 

@@ -25,7 +25,7 @@ services:
     portal:
         build: ./mpcontribs-portal
         env_file:
-            - ./deployments/mpcontribs.org.env
+            - ./deployments/contribs.materialsproject.org.env
         depends_on:
             - api
         volumes: *portal-volumes
@@ -64,7 +64,7 @@ services:
         volumes:
             - ./mpcontribs-api:/app
         env_file:
-            - ./deployments/mpcontribs.org.env
+            - ./deployments/contribs.materialsproject.org.env
         environment: *dev-env
         ports:
             - "5000:5000"

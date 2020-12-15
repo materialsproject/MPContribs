@@ -11,7 +11,7 @@ NODE_ENV = os.environ.get("NODE_ENV", "production")
 DEBUG = bool(NODE_ENV == "development")
 
 ALLOWED_HOSTS = [
-    os.environ.get("PORTAL_CNAME", "portal.mpcontribs.org"),
+    os.environ.get("PORTAL_CNAME", "contribs.materialsproject.org"),
     "contribs.materialsproject.org",
     "jupyterhub.materialsproject.org",
     "localhost",
