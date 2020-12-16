@@ -72,10 +72,16 @@
                       </a>
                       <div class="navbar-dropdown is-right has-background-light">
                           <!-- TODO adjust href for development -->
-                          <a class="navbar-item" href="https://oauth.materialsproject.org/profile">
+                          <a class="navbar-item" href="https://oauth.materialsproject.org">
                               <span class="icon"><i class="far fa-user"></i></span>
                               <span>{{ request.META.HTTP_X_CONSUMER_USERNAME }}</span>
                           </a>
+                          {% if request.META.HTTP_X_AUTHENTICATED_GROUPS %}
+                          <p class="navbar-item">
+                              <span class="icon"><i class="fas fa-users"></i></span>
+                              <span>{{ request.META.HTTP_X_AUTHENTICATED_GROUPS }}</span>
+                          </p>
+                          {% endif %}
                           <div class="navbar-item has-text-weight-semibold">
                               <button id=api_key_btn class="button is-small is-outlined">
                                   <span class="icon is-small"><i class="fas fa-key"></i></span>
@@ -95,6 +101,12 @@
                               <span>RESTful API</span>
                           </a>
                           <!-- TODO merge ingester webapp into portal -->
+                          <div class="navbar-item has-text-weight-semibold">
+                              <a class="button is-small is-outlined" href="/?logout">
+                                  <span class="icon is-small"><i class="fas fa-sign-out-alt"></i></span>
+                                  <span>Logout</span>
+                              </a>
+                          </div>
                       </div>
                   </div>
                   {% endif %}
