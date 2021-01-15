@@ -20,12 +20,6 @@ dist
 static
 node_modules
 
-mpcontribs-api/flasgger
-mpcontribs-api/flask-mongorest
-mpcontribs-api/marshmallow-mongoengine
-mpcontribs-api/mimerender
-mpcontribs-api/mpcontribs/api/swagger
-
 mpcontribs-portal/mpcontribs/users/qmcdb
 mpcontribs-portal/mpcontribs/portal/templates/notebooks
 mpcontribs-portal/notebooks/*/data/*

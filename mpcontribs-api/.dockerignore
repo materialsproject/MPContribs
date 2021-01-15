@@ -1,0 +1,16 @@
+.git*
+
+**/.git*
+**/*.egg-info
+**/*.pyc
+**/__pycache__
+**/docs
+**/example*
+**/test*
+**/.tox
+**/.eggs
+
+mpcontribs/api/swagger
+mpcontribs/api/contributions/formulae.json.gz
+marshmallow-mongoengine/db
+mimerender/debian
