@@ -1,36 +1,6 @@
 version: '2.2'
 
-x-portal-volumes: &portal-volumes
-    - ./mpcontribs-portal/mpcontribs:/app/mpcontribs
-    - /app/mpcontribs/portal/templates/notebooks/
-    - ./mpcontribs-portal/webpack.config.js:/app/webpack.config.js
-    - ./mpcontribs-portal/package.json:/app/package.json
-    - ./mpcontribs-portal/wsgi.py:/app/wsgi.py
-    - ./mpcontribs-portal/settings.py:/app/settings.py
-
-x-dev-env: &dev-env
-    FLASK_ENV: development
-    MPCONTRIBS_MONGO_HOST: $MPCONTRIBS_MONGO_HOST
-    #MPCONTRIBS_MONGO_HOST: mongo
-    JUPYTER_GATEWAY_URL: http://kernel_gateway:8888
-    JUPYTER_GATEWAY_HOST: kernel_gateway:8888
-    AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID
-    AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY
-    AWS_SNS_TOPIC_ARN: $AWS_SNS_TOPIC_ARN
-    AWS_DEFAULT_REGION: us-east-1
-    MAIL_DEFAULT_SENDER: contribs@materialsproject.org
-
 services:
-
-    portal:
-        build: ./mpcontribs-portal
-        env_file:
-            - ./deployments/contribs.materialsproject.org.env
-        depends_on:
-            - api
-        volumes: *portal-volumes
-        ports:
-            - "8080:8080"
 
     portal-ml:
         build: ./mpcontribs-portal
@@ -52,22 +22,6 @@ services:
         ports:
             - "8083:8083"
 
-    api:
-        build:
-            context: ./mpcontribs-api
-        depends_on:
-            - redis
-            - orca
-            - kernel_gateway
-            - supercronic
-            #- datadog
-        volumes:
-            - ./mpcontribs-api:/app
-        env_file:
-            - ./deployments/contribs.materialsproject.org.env
-        environment: *dev-env
-        ports:
-            - "5000:5000"
 
     api-ml:
         build:
@@ -103,66 +57,24 @@ services:
         ports:
             - "5003:5003"
 
-    kernel_gateway:
-        depends_on:
-          - orca
-        environment:
-            KG_ALLOW_ORIGIN: '*'
-            ORCA_HOST: 'orca:9091'
-        build: ./mpcontribs-sidecars/kernel_gateway
+  contribs-docs:
+    image: squidfunk/mkdocs-material:4.6.3
+    command: serve --dev-addr=0.0.0.0:8081
+    volumes:
+        - .:/docs
+    ports:
+        - "8081:8081"
 
-    orca:
-        build: ./mpcontribs-sidecars/orca
 
-    supercronic:
-        build: ./mpcontribs-sidecars/supercronic
-        environment:
-          API_HOSTS: "api:5000 api-ml:5002 api-ls:5003"
-
-    # OTHER
-    redis:
-        image: redis:alpine
-        environment:
-            - ALLOW_EMPTY_PASSWORD=yes
-
-    mongo:
-        image: mongo:bionic
-        ports:
-            - "27017:27017"
-
-    datadog:
-      build: mpcontribs-sidecars/datadog-agent
-      depends_on:
-        - redis
-      environment:
-        - DD_API_KEY=$DD_API_KEY
-      volumes:
-        - /var/run/docker.sock:/var/run/docker.sock:ro
-        - /proc/:/host/proc/:ro
-        - /sys/fs/cgroup/:/host/sys/fs/cgroup:ro
-      ports:
-        - "8125:8125/udp"
-
-    docs:
-        image: squidfunk/mkdocs-material:4.6.3
-        command: serve --dev-addr=0.0.0.0:8081
-        volumes:
-            - .:/docs
-        ports:
-            - "8081:8081"
-
-    jhub:
-        build:
-            context: .
-            dockerfile: binder/DockerfileJhub
-        environment:
-            - NODE_ENV=development
-            - MAPI_KEY=$MAPI_KEY
-            - DOCKER_NETWORK_NAME=mpcontribs_default
-            - DOCKER_NOTEBOOK_DIR=/home/jovyan
-        depends_on:
-            - api
-        volumes:
-            - /var/run/docker.sock:/var/run/docker.sock:rw
-        ports:
-            - "8000:8000"
+  datadog:
+    build: ./MPContribs/mpcontribs-sidecars/datadog-agent
+    depends_on:
+      - redis
+    environment:
+      - DD_API_KEY=$DD_API_KEY
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /proc/:/host/proc/:ro
+      - /sys/fs/cgroup/:/host/sys/fs/cgroup:ro
+    ports:
+      - "8125:8125/udp"
