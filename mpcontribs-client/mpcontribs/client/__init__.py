@@ -339,6 +339,7 @@ class Client(SwaggerClient):
         dt = (toc - tic) / 60
         print(f"It took {dt:.1f}min to delete {total} contributions.")
 
+    # TODO ratelimit support in bravado (wrapped around get_entry..., monkey-patch?)
     @sleep_and_retry
     @limits(calls=175, period=60)
     def get_unique_identifiers_flag(self, name):

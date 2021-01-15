@@ -66,6 +66,7 @@ def execute_cells(cid, cells):
 @notebooks.route("/build")
 def build():
     with no_dereference(Contributions) as Contribs:
+        # TODO get a random max_docs slice to avoid collisions in parallel Fargate tasks
 
         # remove dangling and unset missing notebooks
         nbs_total, nbs_count = -1, -1
