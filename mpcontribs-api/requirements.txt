@@ -3,7 +3,7 @@ asn1crypto==1.4.0
 blinker==1.4
 boltons==20.2.1
 boto3==1.16.52
-cherrypicker @ git+https://github.com/big-o/cherrypicker.git#egg=cherrypicker
+cherrypicker==0.3.1
 css-html-js-minify==2.5.5
 dateparser==1.0.0
 dnspython==2.1.0
@@ -22,7 +22,7 @@ marshmallow-mongoengine @ git+https://github.com/tschaume/marshmallow-mongoengin
 mimerender @ git+https://github.com/tschaume/mimerender@mpcontribs#egg=mimerender-0.6.1
 more-itertools==8.6.0
 nbformat==5.0.8
-notebook @ git+https://github.com/jupyter/notebook@6.1.0rc1#egg=notebook-6.1.0rc1
+notebook==6.2.0
 pint==0.16.1
 pymatgen==2020.12.31
 pyopenssl==20.0.1
