@@ -18,17 +18,14 @@ jobs:
         python-version: ['3.7', '3.8', '3.9']
     steps:
     - uses: actions/checkout@v2
-
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python-version }}
-
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install tox tox-gh-actions setuptools wheel
-
     - name: Test client with tox and build distribution
       run: |
         cd mpcontribs-client
@@ -36,14 +33,10 @@ jobs:
         python setup.py sdist --dist-dir ../dist
         python setup.py bdist_wheel --dist-dir ../dist
 
-    - name: Upload client coverage to Codecov
-      uses: codecov/codecov-action@v1
-      with:
-        file: ./mpcontribs-client/coverage.xml
-        flags: client
-        name: codecov-mpcontribs
-        fail_ci_if_error: true
-
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
     - name: Publish distribution 📦s to Test PyPI
       uses: pypa/gh-action-pypi-publish@master
       with:
@@ -56,19 +49,3 @@ jobs:
       uses: pypa/gh-action-pypi-publish@master
       with:
         password: ${{ secrets.pypi_password }}
-
-    # API Testing (TODO mock and update responses)
-    #- name: Build the stack
-    #  env:
-    #      MPCONTRIBS_MONGO_HOST: ${{ secrets.MPCONTRIBS_MONGO_HOST }}
-    #  run: docker-compose up -d api chrome kernel_gateway
-    #- name: Test API Responses
-    #  run: |
-    #      docker run --network container:mpcontribs_api_1 appropriate/curl -s --retry 10 --retry-connrefused http://localhost:5000/
-    #      docker run --network container:mpcontribs_api_1 mpcontribs_test pytest mpcontribs/api/projects/tests/test_projects.tavern.yaml
-    #      docker run --network container:mpcontribs_api_1 mpcontribs_test pytest mpcontribs/api/contributions/tests/test_contributions.tavern.yaml
-    #      docker run --network container:mpcontribs_api_1 mpcontribs_test pytest mpcontribs/api/tables/tests/test_tables.tavern.yaml
-    #      docker run --network container:mpcontribs_api_1 mpcontribs_test pytest mpcontribs/api/cards/tests/test_cards.tavern.yaml
-    #      docker run --network container:mpcontribs_api_1 mpcontribs_test pytest mpcontribs/api/structures/tests/test_structures.tavern.yaml
-    #      docker run --network container:mpcontribs_api_1 mpcontribs_test pytest mpcontribs/api/redox_thermo_csp/tests/test_redox_thermo_csp.tavern.yaml
-    #      docker run --network container:mpcontribs_api_1 mpcontribs_test pytest mpcontribs/api/notebooks/tests/test_notebooks.tavern.yaml # TODO dict order
