@@ -9,6 +9,7 @@ from typing import Pattern
 from importlib import import_module
 from flask.views import MethodViewType
 from flasgger.marshmallow_apispec import SwaggerView as OriginalSwaggerView
+from flasgger.marshmallow_apispec import schema2jsonschema
 from marshmallow_mongoengine import ModelSchema
 from flask_mongorest.views import ResourceView
 from mongoengine.queryset.visitor import Q
@@ -375,6 +376,7 @@ def get_specs(klass, method, collection):
 
 
 # https://github.com/pallets/flask/blob/master/flask/views.py
+# TODO FYI https://github.com/flasgger/flasgger/pull/396
 class SwaggerViewType(MethodViewType):
     """Metaclass for `SwaggerView` defining custom attributes"""
 
@@ -403,7 +405,7 @@ class SwaggerViewType(MethodViewType):
                         )
                     },
                 )
-                cls.definitions = {cls.schema_name: cls.Schema}
+                cls.definitions = {cls.schema_name: schema2jsonschema(cls.Schema)}
                 cls.resource.schema = cls.Schema
 
                 # write flask-mongorest swagger specs
