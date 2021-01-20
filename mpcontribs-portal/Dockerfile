@@ -27,7 +27,7 @@ RUN wget -q https://raw.githubusercontent.com/vishnubob/wait-for-it/master/wait-
     chmod +x wait-for-it.sh && mv wait-for-it.sh /root/.local/bin/
 
 FROM base as python-builds
-COPY --from=python-deps /root/.local/lib/python3.8/site-packages /root/.local/lib/python3.8/site-packages
+COPY --from=python-deps /root/.local/lib/python3.9/site-packages /root/.local/lib/python3.9/site-packages
 COPY --from=python-deps /root/.local/bin /root/.local/bin
 WORKDIR /app
 COPY --from=webpack /app/dist dist
@@ -42,7 +42,7 @@ COPY notebooks notebooks
 RUN ./notebooks/convert.sh ./notebooks ./mpcontribs/portal/templates/notebooks/
 
 FROM base
-COPY --from=python-builds /root/.local/lib/python3.8/site-packages /root/.local/lib/python3.8/site-packages
+COPY --from=python-builds /root/.local/lib/python3.9/site-packages /root/.local/lib/python3.9/site-packages
 COPY --from=python-builds /root/.local/bin /root/.local/bin
 COPY --from=python-builds /app/static /app/static
 COPY --from=python-builds /app/mpcontribs /app/mpcontribs
