@@ -63,7 +63,6 @@ module.exports = {
             "typy": 'typy/lib/index',
             "underscore": 'underscore/underscore',
             "lunr": 'lunr.js/lunr',
-            "clipboard": "clipboard-polyfill/dist/clipboard-polyfill",
             "plotly": 'plotly.js/lib/core',
             "js-cookie": 'js-cookie/src/js.cookie',
             //mathjs": 'mathjs/dist/math',

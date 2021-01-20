@@ -1,5 +1,4 @@
 import logo from 'images/logo.png';
-import * as clipboard from "clipboard";
 import 'select2/dist/js/select2';
 import '@fortawesome/fontawesome-free/js/all';
 import '@vizuaalog/bulmajs/dist/dropdown';
@@ -22,10 +21,6 @@ $(document).ready(function () {
     document.getElementById("logo").src = logo;
     $("#docs_url").attr("href", api_key !== '' ? 'https://mpcontribs.org' : 'http://localhost:8081');
     $('a[name="api_url"]').attr('href', window.api['host']);
-    $('#api_key_btn').on('click', function() {
-        clipboard.writeText(api_key);
-        $('#api_key_text').html('Copied!');
-    });
 
     // quick nav
     $('#jump').select2({
