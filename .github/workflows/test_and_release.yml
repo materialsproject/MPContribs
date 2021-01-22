@@ -6,9 +6,13 @@ on:
       - master
     tags:
       - "*.*.*"
+    paths:
+      - mpcontribs-client/**
   pull_request:
     branches:
       - master
+    paths:
+      - mpcontribs-client/**
 
 jobs:
   build:
