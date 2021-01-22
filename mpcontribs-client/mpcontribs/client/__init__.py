@@ -405,10 +405,20 @@ class Client(SwaggerClient):
         contributions,
         skip_dupe_check=False,
         ignore_dupes=False,
+        retry=False,
         per_page=100,
         max_workers=3,
     ):
-        """Convenience function to submit a list of contributions"""
+        """Convenience function to submit a list of contributions
+
+        Args:
+            contributions (list): list of contribution dicts to submit
+            skip_dupe_check (bool): skip check for duplicates of identifiers and components
+            ignore_dupes (bool): force duplicate components to be submitted
+            retry (bool): keep trying until all contributions successfully submitted
+            per_page (int): number of contributions to submit in each chunk/request
+            max_workers (int): number of parallel requests to use to submit chunk
+        """
         tic = time.perf_counter()
 
         if max_workers > MAX_WORKERS:
@@ -532,7 +542,7 @@ class Client(SwaggerClient):
 
                     self._run_futures(futures, total=len(contribs))
 
-                    if existing["unique_identifiers"]:
+                    if existing["unique_identifiers"] and retry:
                         existing = self.get_contributions(project_name)
                         contribs = [
                             c
@@ -540,10 +550,9 @@ class Client(SwaggerClient):
                             if c["identifier"] not in existing["identifiers"]
                         ]
                     else:
-                        contribs = []
-                        print(
-                            "unique_identifiers=False: Resubmit failed contributions manually."
-                        )
+                        contribs = []  # abort retrying
+                        if not existing["unique_identifiers"] and retry:
+                            print("Please resubmit failed contributions manually.")
 
                 self.load()
                 toc = time.perf_counter()
