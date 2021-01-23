@@ -247,8 +247,27 @@ class Client(SwaggerClient):
         fields.remove("notebook")
         return Dict(self.contributions.get_entry(pk=cid, _fields=fields).result())
 
-    def get_table(self, tid):
-        """Convenience function to get full Pandas DataFrame for a table."""
+    def get_table(self, tid_or_md5):
+        """Convenience function to get full Pandas DataFrame for a table.
+
+        Args:
+            tid_or_md5 (str): ObjectId or MD5 hash digest for table
+
+        Returns:
+            pd.DataFrame: pandas DataFrame containing table data
+        """
+        str_len = len(tid_or_md5)
+        if str_len not in {24, 32}:
+            raise ValueError(f"'{tid_or_md5}' is not a valid table id or md5 hash digest!")
+
+        if str_len == 32:
+            tables = self.tables.get_entries(md5=tid_or_md5, _fields=["id"]).result()
+            if not tables:
+                raise ValueError(f"table for md5 '{tid_or_md5}' not found!")
+            tid = tables["data"][0]["id"]
+        else:
+            tid = tid_or_md5
+
         table = {"data": []}
         page, pages = 1, None
 
