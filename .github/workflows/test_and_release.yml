@@ -15,11 +15,14 @@ on:
       - mpcontribs-client/**
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
+  test:
+    name: ${{ matrix.client-package }} (${{ matrix.os }}/py${{ matrix.python-version }})
+    runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
-        python-version: ['3.7', '3.8', '3.9']
+        os: ['windows-latest', 'ubuntu-latest', 'macos-latest']
+        python-version: ['3.6', '3.7', '3.8', '3.9']
     steps:
     - uses: actions/checkout@v2
     - name: Set up Python
@@ -30,15 +33,15 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install tox tox-gh-actions setuptools wheel
-    - name: Test client with tox and build distribution
+    - name: Test client with tox
+      env:
+        MPCONTRIBS_API_KEY: ${{ secrets.MPCONTRIBS_API_KEY }}
       run: |
         cd mpcontribs-client
         tox
-        python setup.py sdist --dist-dir ../dist
-        python setup.py bdist_wheel --dist-dir ../dist
 
   publish:
-    needs: build
+    needs: test
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
