@@ -1,6 +1,6 @@
 blinker==1.4
 jupyter-kernel-gateway==2.4.3
-mpcontribs-client==3.7.6
+mpcontribs-client==3.7.7
 plotly==4.14.3
 psutil==5.8.0
 pymatgen==2020.12.31
