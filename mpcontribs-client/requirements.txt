@@ -1,5 +1,5 @@
 boltons==20.2.1
-bravado[fido]==11.0.2
+bravado[fido] @ git+https://github.com/tschaume/bravado#egg=bravado-11.0.2
 cryptography==3.3.1
 fido[tls]==4.2.2
 ipython==7.19.0
