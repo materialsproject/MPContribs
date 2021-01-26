@@ -1,5 +1,5 @@
 boltons==20.2.1
-bravado[fido] @ git+https://github.com/tschaume/bravado#egg=bravado-11.0.2
+bravado[fido] @ git+https://github.com/tschaume/bravado@aa04da50ba6cacfaa0c356eceb30160f44571f97#egg=bravado-11.0.2
 cryptography==3.3.1
 fido[tls]==4.2.2
 ipython==7.19.0
@@ -12,4 +12,5 @@ pyOpenSSL==20.0.1
 ratelimit==2.2.1
 requests-futures==1.0.0
 service-identity==18.1.0
+twisted @ git+https://github.com/twisted/twisted@09b96850c2ebcb635f448ed3f9bbf5f157be3693#egg=twisted-20.3.0
 tqdm==4.56.0
