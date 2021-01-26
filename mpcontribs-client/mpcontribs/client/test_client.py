@@ -45,5 +45,6 @@ def test_Client():
     assert spec.spec_dict["schemes"] == ["http"]
     assert spec.user_defined_formats["email"] == email_format
 
+
 def test_Client_Live():
     Client()
