@@ -99,6 +99,10 @@ module.exports = {
                     }
                 }]
             }, {
+                test: /\.mjs$/,
+                include: /node_modules/,
+                type: "javascript/auto"
+            }, {
                 test: /jquery-form/,
                 use: [{
                     loader: 'imports-loader',
