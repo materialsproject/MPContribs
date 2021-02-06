@@ -38,6 +38,7 @@ from requests_futures.sessions import FuturesSession
 MAX_WORKERS = 10
 DEFAULT_HOST = "contribs-api.materialsproject.org"
 BULMA = "is-narrow is-fullwidth has-background-light"
+PROVIDERS = {"github", "google", "facebook", "microsoft", "amazon"}
 
 j2h = Json2Html()
 pd.options.plotting.backend = "plotly"
@@ -52,9 +53,16 @@ def get_md5(d):
 
 
 def validate_email(email_string):
-    d = is_email(email_string, diagnose=True)
+    if ":" not in email_string:
+        raise SwaggerValidationError(f"{email_string} not of format <provider>:<email>.")
+
+    provider, email = email_string.split(":")
+    if provider not in PROVIDERS:
+        raise SwaggerValidationError(f"{provider} is not a valid provider.")
+
+    d = is_email(email, diagnose=True)
     if d > BaseDiagnosis.CATEGORIES["VALID"]:
-        raise SwaggerValidationError(f"{email_string} {d.message}")
+        raise SwaggerValidationError(f"{email} {d.message}")
 
 
 email_format = SwaggerFormat(
@@ -62,7 +70,7 @@ email_format = SwaggerFormat(
     to_wire=str,
     to_python=str,
     validate=validate_email,
-    description="e-mail address",
+    description="e-mail address including provider",
 )
 
 
