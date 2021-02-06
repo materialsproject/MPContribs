@@ -4,9 +4,7 @@ const BundleTracker = require('webpack4-bundle-tracker');
 const CompressionPlugin = require('compression-webpack-plugin');
 const TerserJSPlugin = require('terser-webpack-plugin');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
-const OptimizeCSSAssetsPlugin = require('optimize-css-assets-webpack-plugin');
 const LodashModuleReplacementPlugin = require('lodash-webpack-plugin');
-//const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
 const devMode = process.env.NODE_ENV == 'development'
 console.log('devMode = ' + devMode)
 
@@ -23,20 +21,18 @@ module.exports = {
         //path.resolve(__dirname, 'mpcontribs/portal/assets/js/render_overview'),
     },
     output: {
-        path: path.resolve(__dirname, 'dist'),
         filename: "[name].[chunkhash].js",
         chunkFilename: '[name].[chunkhash].js',
         crossOriginLoading: "anonymous",
-        publicPath: '/static/'
+        publicPath: '/static/',
+        assetModuleFilename: 'assets/[name][ext]'
     },
     plugins: [
-        //new BundleAnalyzerPlugin(),
         new BundleTracker({filename: './webpack-stats.json'}),
         new webpack.ProvidePlugin({
             _: "underscore", $: "jquery", jquery: "jquery",
             "window.jQuery": "jquery", jQuery: "jquery"
         }),
-        new webpack.HashedModuleIdsPlugin(),
         new CompressionPlugin({minRatio: 1}),
         new MiniCssExtractPlugin({
             filename: "[name].[chunkhash].css",
@@ -45,8 +41,9 @@ module.exports = {
         new LodashModuleReplacementPlugin({'paths': true})
     ],
     optimization: {
-        minimizer: [new TerserJSPlugin({}), new OptimizeCSSAssetsPlugin({})],
-        minimize: true
+        minimizer: [new TerserJSPlugin({})],
+        minimize: true,
+        moduleIds: "deterministic"
     },
     resolve: {
         modules: [
@@ -71,15 +68,9 @@ module.exports = {
     module: {
         rules: [
             {
-                test: /\.(gif|png|jpe?g)$/i,
-                use: [{
-                    loader: 'url-loader', options: {
-                        limit: 8192, name:'[name].[ext]', outputPath: 'assets'
-                    }
-                }]
+                test: /\.(gif|png|jpe?g)$/i, type: 'asset'
             }, {
-                test: /\.(woff(2)?|ttf|eot|svg)(\?v=[0-9]\.[0-9]\.[0-9])?$/, loader: 'url-loader',
-                options: { limit: 8192, name:'[name].[ext]', outputPath: 'assets' }
+                test: /\.(woff(2)?|ttf|eot|svg)(\?v=[0-9]\.[0-9]\.[0-9])?$/, type: 'asset'
             }, {
                 test: /\.scss$/,
                 use: [
@@ -87,15 +78,13 @@ module.exports = {
                     {loader: 'sass-loader', options: {sourceMap: true}}
                 ]
             }, {
-                test: /\.css$/, loaders: [
-                    MiniCssExtractPlugin.loader, "css-loader"
-                ]
+                test: /\.css$/,
+                use: [MiniCssExtractPlugin.loader, {loader: "css-loader"}]
             }, {
                 test: /landingpage\.js$/, use: [{
                     // TODO babel for all: https://babeljs.io/docs/en/babel-plugin-syntax-dynamic-import/#installation
                     loader: 'babel-loader', options: {
-                        'plugins': ['lodash'],
-                        'presets': [['env', { 'modules': false, 'targets': { 'node': 4 } }]]
+                        'plugins': ['lodash'], 'presets': ['@babel/preset-env']
                     }
                 }]
             }, {

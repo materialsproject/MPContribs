@@ -14,7 +14,7 @@ WORKDIR /app
 COPY --from=webpack-deps /app/node_modules ./node_modules
 COPY webpack.config.js .
 COPY mpcontribs/portal/assets ./mpcontribs/portal/assets
-RUN ./node_modules/.bin/webpack
+RUN node --trace-deprecation node_modules/webpack/bin/webpack.js
 
 FROM base as python-deps
 RUN apt-get update && apt-get install -y --no-install-recommends gcc git g++ wget && apt-get clean

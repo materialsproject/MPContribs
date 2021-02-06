@@ -1,9 +1,7 @@
 import 'select2';
-import {Spinner} from 'spin.js/spin';
 
 var fields = ['formula', 'project', 'identifier'];
 var subresources = ['structures', 'tables'];
-var spinner = new Spinner({scale: 0.5, color: 'white'});
 
 function get_single_selection(field) {
     var select = $('#'+field+'s_list').select2("data");
@@ -88,15 +86,12 @@ function click_card(event) {
 
 function render_card(cid) {
     $("#card").empty();
-    var target = document.getElementById('spinner');
-    spinner.spin(target);
     var url = window.api['host'] + 'contributions/' + cid + '/';
     return $.get({
         url: url, data: {"_fields": "card_bulma"},
         headers: window.api['headers']
     }).done(function(response) {
         $('#card').html(response['card_bulma']);
-        spinner.stop();
     });
 }
 
@@ -112,8 +107,6 @@ function check_subresources(d) {
 }
 
 function show_results(selection) {
-    var target = document.getElementById('spinner');
-    spinner.spin(target);
     var query = get_query(selection)
     var api_url = window.api['host'] + 'contributions/';
     return $.get({
@@ -142,7 +135,6 @@ function show_results(selection) {
                 $('#results').append(tr);
             }
         });
-        spinner.stop();
     });
 }
 
