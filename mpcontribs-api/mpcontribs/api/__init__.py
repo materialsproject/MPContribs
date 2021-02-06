@@ -110,7 +110,7 @@ def healthcheck():
     return "OK"
 
 
-def login():
+def get_consumer():
     groups = request.headers.get("X-Authenticated-Groups", "").split(",")
     groups += request.headers.get("X-Consumer-Groups", "").split(",")
     return {
@@ -184,6 +184,5 @@ def create_app():
 
     app.register_blueprint(sse, url_prefix="/stream")
     app.add_url_rule("/healthcheck", view_func=healthcheck)
-    app.add_url_rule("/login", view_func=login)
     logger.warning("app created.")
     return app
