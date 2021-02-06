@@ -19,6 +19,7 @@ ALLOWED_HOSTS = [
     "127.0.0.2",
     "0.0.0.0",
     "docker.for.mac.localhost",
+    "contribs-web"
 ]
 ALLOWED_HOSTS += ["10.0.{}.{}".format(i, j) for i in [10, 11] for j in range(256)]
 ALLOWED_HOSTS += ["192.168.{}.{}".format(i, j) for i in range(10) for j in range(256)]
@@ -86,3 +87,4 @@ WEBPACK_LOADER = {
 }
 
 APPEND_SLASH = False
+SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
