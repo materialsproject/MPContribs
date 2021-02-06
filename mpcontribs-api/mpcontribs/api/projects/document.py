@@ -117,8 +117,9 @@ class Projects(Document):
                 Name=f"mpcontribs_{document.name}",
                 Attributes={"DisplayName": f"MPContribs {document.title}"},
             )
+            endpoint = document.owner.split(":", 1)[1]
             sns_client.subscribe(
-                TopicArn=resp["TopicArn"], Protocol="email", Endpoint=document.owner
+                TopicArn=resp["TopicArn"], Protocol="email", Endpoint=endpoint
             )
         else:
             set_keys = document._delta()[0].keys()
