@@ -61,31 +61,35 @@
               </div>
               <div class="navbar-end">
                   {% if request.META.HTTP_X_ANONYMOUS_CONSUMER %}
-                  <!-- TODO adjust href for development -->
-                  <a class="navbar-item" href="https://oauth.materialsproject.org">Login</a>
+                  <a class="navbar-item" href="{{ OAUTH_URL }}">Login</a>
                   {% else %}
                   <div class="navbar-item has-dropdown is-hoverable">
                       <a class="navbar-link">
                           <span>More</span>
-                          <span class="icon"><i class="fas fa-chevron-circle-down"></i></span>
                       </a>
                       <div class="navbar-dropdown is-right has-background-light">
-                          <!-- TODO adjust href for development -->
-                          <a class="navbar-item" href="https://oauth.materialsproject.org" target="_blank">
+                          <a class="navbar-item" href="{{ OAUTH_URL }}" target="_blank">
                               <span class="icon"><i class="far fa-user"></i></span>
                               <span>{{ request.META.HTTP_X_CONSUMER_USERNAME }}</span>
                           </a>
+                          {% if request.META.HTTP_X_CONSUMER_CUSTOM_ID %}
+                          <p class="navbar-item">
+                              <span class="icon"><i class="fas fa-key"></i></span>
+                              <code>{{ request.META.HTTP_X_CONSUMER_CUSTOM_ID }}</code>
+                          </p>
+                          {% endif %}
                           {% if request.META.HTTP_X_AUTHENTICATED_GROUPS %}
                           <p class="navbar-item">
                               <span class="icon"><i class="fas fa-users"></i></span>
-                              <span>{{ request.META.HTTP_X_AUTHENTICATED_GROUPS }}</span>
+                              <span class="is-family-code">{{ request.META.HTTP_X_AUTHENTICATED_GROUPS }}</span>
                           </p>
                           {% endif %}
                           <a class="navbar-item" id=help>
                               <span class="icon"><i class="fas fa-question"></i></span>
                               <span>Tour this page</span>
                           </a>
-                          <a class="navbar-item" id=docs_url target="_blank">
+                          <!-- TODO link to local docs in dev -->
+                          <a class="navbar-item" id=docs_url target="_blank" href="https://mpcontribs.org">
                               <span class="icon"><i class="fab fa-readme"></i></span>
                               <span>Documentation</span>
                           </a>

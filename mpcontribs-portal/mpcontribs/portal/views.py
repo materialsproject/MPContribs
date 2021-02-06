@@ -53,6 +53,9 @@ def get_context(request):
     ctx["API_CNAME"] = os.environ["API_CNAME"]
     ctx["TRADEMARK"] = os.environ.get("TRADEMARK", "")
     ctx["PORTAL_CNAME"] = os.environ["PORTAL_CNAME"]
+    localhost = ctx["PORTAL_CNAME"].startswith("localhost.")
+    ctx["OAUTH_URL"] = "http://localhost." if localhost else "https://"
+    ctx["OAUTH_URL"] += "oauth.materialsproject.org"
     return ctx
 
 
