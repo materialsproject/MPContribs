@@ -96,11 +96,11 @@ class Projects(Document):
     def post_save(cls, sender, document, **kwargs):
         admin_email = current_app.config["MAIL_DEFAULT_SENDER"]
         admin_topic = current_app.config["MAIL_TOPIC"]
+        scheme = "http" if current_app.config["DEBUG"] else "https"
         if kwargs.get("created"):
             ts = current_app.config["USTS"]
             email_project = [document.owner, document.name]
             token = ts.dumps(email_project)
-            scheme = "http" if current_app.config["DEBUG"] else "https"
             link = url_for(
                 "projects.applications", token=token, _scheme=scheme, _external=True
             )
@@ -124,10 +124,7 @@ class Projects(Document):
             set_keys = document._delta()[0].keys()
             if "is_approved" in set_keys and document.is_approved:
                 subject = f'Your project "{document.name}" has been approved'
-                if current_app.config["DEBUG"]:
-                    portal = "http://localhost:" + os.environ["PORTAL_PORT"]
-                else:
-                    portal = "https://" + os.environ["PORTAL_CNAME"]
+                portal = f"{scheme}://{os.environ['PORTAL_CNAME']}"
                 html = render_template(
                     "owner_email.html",
                     approved=True,

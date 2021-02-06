@@ -5,21 +5,20 @@ import '@vizuaalog/bulmajs/dist/dropdown';
 import introJs from 'intro.js/intro';
 require('css/main.scss');
 
-window.api = {};
+// NOTE send request to Kong Admin API to retrieve API key?
 var api_key = $('#api_key').val();
-if (api_key !== '') {
-    window.api['host'] = 'https://' + $('#api_cname').val() + '/';
-    window.api['headers'] = {'X-API-KEY': api_key};
-} else {
-    window.api['host'] = 'http://localhost:' + $('#api_port').val() + '/';
-    window.api['headers'] = {};
-}
+var api_cname = $('#api_cname').val();
+var scheme = api_cname.startsWith("localhost.") ? "http" : "https"
+
+window.api = {
+    host: scheme + "://" + api_cname + "/",
+    headers: {'X-API-KEY': api_key}
+};
 console.log(window.api);
 
 $(document).ready(function () {
     // logo, info, api-key
     document.getElementById("logo").src = logo;
-    $("#docs_url").attr("href", api_key !== '' ? 'https://mpcontribs.org' : 'http://localhost:8081');
     $('a[name="api_url"]').attr('href', window.api['host']);
 
     // quick nav

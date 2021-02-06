@@ -51,7 +51,6 @@ def client_kwargs(request):
 def get_context(request):
     ctx = RequestContext(request)
     ctx["API_CNAME"] = os.environ["API_CNAME"]
-    ctx["API_PORT"] = os.environ["API_PORT"]
     ctx["TRADEMARK"] = os.environ.get("TRADEMARK", "")
     ctx["PORTAL_CNAME"] = os.environ["PORTAL_CNAME"]
     return ctx
@@ -114,9 +113,10 @@ def index(request):
 def work(request):
     ctx = get_context(request)
     template_dir = get_app_template_dirs("templates/notebooks")[0]
-    htmls = os.path.join(template_dir, ctx["PORTAL_CNAME"], "*.html")
+    subdir = ctx["PORTAL_CNAME"].replace("localhost.", "")
+    htmls = os.path.join(template_dir, subdir, "*.html")
     ctx["notebooks"] = [
-        p.split("/" + ctx["PORTAL_CNAME"] + "/")[-1].replace(".html", "")
+        p.split("/" + subdir + "/")[-1].replace(".html", "")
         for p in glob(htmls)
     ]
     return render(request, "work.html", ctx.flatten())
@@ -267,9 +267,8 @@ def download(request):
 
 
 def notebooks(request, nb):
-    return render(
-        request, os.path.join("notebooks", os.environ["PORTAL_CNAME"], nb + ".html")
-    )
+    subdir = os.environ["PORTAL_CNAME"].replace("localhost.", "")
+    return render(request, os.path.join("notebooks", subdir, nb + ".html"))
 
 
 def healthcheck(request):

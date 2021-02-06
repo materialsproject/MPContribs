@@ -13,14 +13,14 @@ formulae_path = os.path.join(
 with gzip.open(formulae_path) as f:
     FORMULAE = json.load(f)
 
-DEBUG = bool(os.environ.get("FLASK_ENV") == "development")
 API_CNAME = os.environ.get("API_CNAME")
-API_PORT = os.environ.get("API_PORT")
+DEBUG = bool(API_CNAME.startswith("localhost"))
 PORTAL_CNAME = os.environ.get("PORTAL_CNAME")
 JSON_SORT_KEYS = False
 JSON_ADD_STATUS = False
 FLASK_LOG_LEVEL = "DEBUG" if DEBUG else "WARNING"
 SECRET_KEY = "super-secret"  # TODO in local prod config
+SCHEMES = ["http"] if DEBUG else ["https"]
 
 USTS_MAX_AGE = 2.628e6  # 1 month
 MAIL_DEFAULT_SENDER = os.environ.get("MAIL_DEFAULT_SENDER")
@@ -57,17 +57,16 @@ SWAGGER = {
     "specs_route": "/",
 }
 
-API_NAME = API_CNAME.split(".", 1)[0].upper() if API_CNAME else "API"
 TEMPLATE = {
     "swagger": "2.0",
     "info": {
-        "title": f"MPContribs {API_NAME}",
+        "title": API_CNAME.rsplit(".", 2)[0].replace("-", " ").upper(),
         "description": "Operations to contribute, update and retrieve materials data on Materials Project",
         "termsOfService": "https://materialsproject.org/terms",
         "version": datetime.datetime.today().strftime("%Y.%m.%d"),
         "contact": {
             "name": "MPContribs",
-            "email": "phuck@lbl.gov",
+            "email": "contribs@materialsproject.org",
             "url": "https://mpcontribs.org",
         },
         "license": {
@@ -83,7 +82,7 @@ TEMPLATE = {
         Deleting projects will also delete all contributions including tables, structures, notebooks \
         and cards for the project. Only users who have been added to a project can update its contents. While \
         unpublished, only users on the project can retrieve its data or view it on the \
-        <a href="https://{PORTAL_CNAME}">Portal</a>. Making a project public does not automatically publish all \
+        <a href="{SCHEMES[0]}://{PORTAL_CNAME}">Portal</a>. Making a project public does not automatically publish all \
         its contributions, tables, and structures. These are separately set to public individually or in bulk.'
             "",
         },
@@ -93,7 +92,7 @@ TEMPLATE = {
         page for MP material(s). Tables (rows and columns) as well as structures can be added to a \
         contribution. Each contribution uses `mp-id` or composition as identifier to associate its data with the \
         according entries on MP. Only admins or users on the project can create, update or delete contributions, and \
-        while unpublished, retrieve its data or view it on the <a href="https://{PORTAL_CNAME}">Portal</a>. \
+        while unpublished, retrieve its data or view it on the <a href="{SCHEMES[0]}://{PORTAL_CNAME}">Portal</a>. \
         Contribution components (tables and structures) are deleted along with a contribution.',
         },
         {
@@ -113,7 +112,7 @@ TEMPLATE = {
             "description": f'are Jupyter \
         <a href="https://jupyter-notebook.readthedocs.io/en/stable/notebook.html#notebook-documents">notebook</a> \
         documents generated and saved when a contribution is saved. They form the basis for Contribution \
-        Details Pages on the <a href="https://{PORTAL_CNAME}">Portal</a>.',
+        Details Pages on the <a href="[SCHEMES[0]]://{PORTAL_CNAME}">Portal</a>.',
         },
     ],
     "securityDefinitions": {
@@ -125,17 +124,16 @@ TEMPLATE = {
         }
     },
     "security": [{"ApiKeyAuth": []}],
-    "host": f"0.0.0.0:{API_PORT}" if DEBUG else API_CNAME,
-    "schemes": ["http", "https"] if DEBUG else ["https"],
+    "host": API_CNAME,
+    "schemes": SCHEMES,
 }
 
 
-# only load redox_thermo_csp for main deployment
-if os.environ.get("API_PORT", "5000") == "5000":
-    TEMPLATE["tags"].append(
-        {
-            "name": "redox_thermo_csp",
-            "description": f'is a dedicated endpoint to retrieve data for the \
-        <a href="https://{PORTAL_CNAME}/redox_thermo_csp/">RedoxThermoCSP</a> landing page.',
-        }
-    )
+# TODO only load redox_thermo_csp for main deployment
+# TEMPLATE["tags"].append(
+#     {
+#         "name": "redox_thermo_csp",
+#         "description": f'is a dedicated endpoint to retrieve data for the \
+#     <a href="{SCHEMES[0]}://{PORTAL_CNAME}/redox_thermo_csp/">RedoxThermoCSP</a> landing page.',
+#     }
+# )

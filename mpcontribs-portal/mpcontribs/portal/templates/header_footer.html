@@ -8,7 +8,6 @@
     <title>MPContribs</title>
     <input id="api_key" type="hidden" value="{{ request.META.HTTP_X_CONSUMER_CUSTOM_ID }}">
     <input id="api_cname" type="hidden" value="{{ API_CNAME }}">
-    <input id="api_port" type="hidden" value="{{ API_PORT }}">
     {% block extra_css %}
     {% endblock extra_css %}
     {% render_entrypoint 'main' %}

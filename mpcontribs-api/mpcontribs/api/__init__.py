@@ -171,8 +171,7 @@ def create_app():
 
     ## TODO discover user-contributed views automatically
     ## TODO revive redox_thermo_csp again
-    ## only load for main deployment
-    # if os.environ.get("API_PORT", "5000") == "5000":
+    ## TODO only load for main deployment
     #    collection = "redox_thermo_csp"
     #    module_path = ".".join(["mpcontribs", "api", collection, "views"])
     #    try:
