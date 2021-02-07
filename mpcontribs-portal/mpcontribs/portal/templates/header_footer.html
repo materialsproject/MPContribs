@@ -49,7 +49,6 @@
                           </ul>
                       </div>
                   </div>
-                  {% if not request.META.HTTP_X_ANONYMOUS_CONSUMER %}
                   <div class="navbar-item has-text-centered"
                        data-intro="Use this dropdown menu to quickly jump to specific projects, or to search for keywords in their descriptions. The search will reduce the list of projects shown on the <i>Browse</i> tab to those matching the keyword."
                        data-step="1">
@@ -57,21 +56,18 @@
                           <option></option>
                       </select>
                   </div>
-                  {% endif %}
               </div>
               <div class="navbar-end">
-                  {% if request.META.HTTP_X_ANONYMOUS_CONSUMER %}
-                  <a class="navbar-item" href="{{ OAUTH_URL }}">Login</a>
-                  {% else %}
+                  <a class="navbar-item" href="{{ OAUTH_URL }}">
+                      {% if request.META.HTTP_X_ANONYMOUS_CONSUMER %}
+                      Login
+                      {% else %}
+                      Profile
+                      {% endif %}
+                  </a>
                   <div class="navbar-item has-dropdown is-hoverable">
-                      <a class="navbar-link">
-                          <span>More</span>
-                      </a>
+                      <a class="navbar-link"></a>
                       <div class="navbar-dropdown is-right has-background-light">
-                          <a class="navbar-item" href="{{ OAUTH_URL }}">
-                              <span class="icon"><i class="far fa-user"></i></span>
-                              <span>{{ request.META.HTTP_X_CONSUMER_USERNAME }}</span>
-                          </a>
                           <a class="navbar-item" id=help>
                               <span class="icon"><i class="fas fa-question"></i></span>
                               <span>Tour this page</span>
@@ -88,7 +84,6 @@
                           <!-- TODO merge ingester webapp into portal -->
                       </div>
                   </div>
-                  {% endif %}
               </div>
           </div>
       </nav>
