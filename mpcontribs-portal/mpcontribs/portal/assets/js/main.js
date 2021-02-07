@@ -14,7 +14,6 @@ window.api = {
     host: scheme + "://" + api_cname + "/",
     headers: {'X-API-KEY': api_key}
 };
-console.log(window.api);
 
 $(document).ready(function () {
     // logo, info, api-key
