@@ -160,7 +160,7 @@ class Client(SwaggerClient):
         self.apikey = apikey
         self.headers = {"x-api-key": apikey} if apikey else headers
         self.host = host
-        self.protocol = "http" if host.startswith("localhost") else "https"
+        self.protocol = "http" if ":" in host else "https"
         self.url = f"{self.protocol}://{self.host}"
 
         if "swagger_spec" not in self.__dict__ or (
