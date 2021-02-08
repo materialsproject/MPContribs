@@ -441,7 +441,7 @@ class SwaggerView(OriginalSwaggerView, ResourceView, metaclass=SwaggerViewType):
     def get_groups(self, request):
         groups = request.headers.get("X-Authenticated-Groups", "").split(",")
         groups += request.headers.get("X-Consumer-Groups", "").split(",")
-        return set(groups)
+        return set(g for g in groups if g)
 
     def is_admin(self, groups):
         cname = current_app.config["PORTAL_CNAME"]
