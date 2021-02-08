@@ -443,11 +443,18 @@ class SwaggerView(OriginalSwaggerView, ResourceView, metaclass=SwaggerViewType):
         groups += request.headers.get("X-Consumer-Groups", "").split(",")
         return set(g for g in groups if g)
 
+    def is_anonymous(self, request):
+        is_anonymous = request.headers.get("X-Anonymous-Consumer", False)
+        return is_anonymous
+
     def is_admin(self, groups):
         cname = current_app.config["PORTAL_CNAME"]
         return "admin" in groups or f"admin_{cname}" in groups
 
     def is_admin_or_project_user(self, request, obj):
+        if self.is_anonymous(request):
+            return False
+
         groups = self.get_groups(request)
         if self.is_admin(groups):
             return True
@@ -471,6 +478,13 @@ class SwaggerView(OriginalSwaggerView, ResourceView, metaclass=SwaggerViewType):
         if self.is_admin(groups):
             return qs  # admins can read all entries
 
+        if self.is_anonymous(request):
+            # anonymous can only read public projects (no contributions)
+            if not request.path.startswith("/projects/"):
+                return False
+
+            return qs.filter(is_public=True)
+
         username = request.headers.get("X-Consumer-Username")
         qfilter = accessible_projects(username, groups)
 
@@ -487,7 +501,7 @@ class SwaggerView(OriginalSwaggerView, ResourceView, metaclass=SwaggerViewType):
                 qfilter = Q(is_public=True) | Q(project__in=projects)
                 return qs.filter(qfilter)
 
-        return qs
+        return qs  # TODO should this be more restrictive?
 
     def has_add_permission(self, request, obj):
         if not self.is_admin_or_project_user(request, obj):

@@ -34,7 +34,10 @@ def visit(path, key, value):
 
 
 def get_consumer(request):
-    names = ["X-Authenticated-Groups", "X-Consumer-Groups", "X-Consumer-Username"]
+    names = [
+        "X-Authenticated-Groups", "X-Consumer-Groups",
+        "X-Consumer-Username", "X-Anonymous-Consumer"
+    ]
     headers = {}
     for name in names:
         key = f'HTTP_{name.upper().replace("-", "_")}'
