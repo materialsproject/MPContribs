@@ -7,9 +7,10 @@ from swagger_spec_validator.common import SwaggerValidationError
 
 
 def test_validate_email():
-    validate_email("phuck@lbl.gov")
+    validate_email("google:phuck@lbl.gov")
     with pytest.raises(SwaggerValidationError):
         validate_email("not-an-email!")
+        validate_email("fake:info@example.com")
 
 
 @patch(
@@ -23,11 +24,11 @@ def test_validate_email():
     ),
 )
 def test_Client():
-    kwargs = {"host": "127.0.0.1"}
+    kwargs = {"host": "localhost"}
     spec = Client(**kwargs).swagger_spec
     assert spec.http_client.headers == {}
-    assert spec.origin_url == "http://127.0.0.1/apispec.json"
-    assert spec.spec_dict["host"] == "127.0.0.1"
+    assert spec.origin_url == "http://localhost/apispec.json"
+    assert spec.spec_dict["host"] == "localhost"
     assert spec.spec_dict["schemes"] == ["http"]
     assert spec.user_defined_formats["email"] == email_format
     kwargs = {"apikey": "1234"}

@@ -15,6 +15,25 @@ from mongoengine.fields import (
 )
 from mpcontribs.api import send_email, sns_client, valid_key, valid_dict
 
+PROVIDERS = {"github", "google", "facebook", "microsoft", "amazon"}
+
+
+class ProviderEmailField(EmailField):
+    """Field to validate usernames of format <provider>:<email>"""
+
+    def validate(self, value):
+        if ":" not in value:
+            self.error(self.error_msg % value)
+
+        provider, email = value.split(":")
+
+        if provider not in PROVIDERS:
+            self.error(
+                "{} {}".format(self.error_msg % value, "(invalid provider)")
+            )
+
+        super().validate(email)
+
 
 class Column(EmbeddedDocument):
     path = StringField(required=True, help_text="column path in dot-notation")
@@ -77,7 +96,7 @@ class Projects(Document):
         help_text="list of references",
     )
     other = DictField(validation=valid_dict, null=True, help_text="other information")
-    owner = EmailField(
+    owner = ProviderEmailField(
         required=True, unique_with="name", help_text="owner / corresponding email"
     )
     is_approved = BooleanField(
