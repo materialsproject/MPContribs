@@ -44,7 +44,13 @@ urlpatterns = [
         views.contribution,
         name="contribution",
     ),
-    # redirect
+    # redirects
+    url(r"^boltztrap/?$", RedirectView.as_view(url="/projects/carrier_transport")),
+    url(r"^(?i)fe-co-v/?$", RedirectView.as_view(url="/projects/swf")),
+    url(
+        r"^(?i)screeninginorganicpv/?$",
+        RedirectView.as_view(url="/projects/screening_inorganic_pv")
+    ),
     url(
         r"^(?P<project>[a-zA-Z0-9_]{3,31})/?$",
         RedirectView.as_view(pattern_name="landingpage", permanent=False),
