@@ -2,7 +2,7 @@
 {% load render_bundle from webpack_loader %}
 
 {% block content %}
-{% if identifier %}
+{% if identifier and not request.META.HTTP_X_ANONYMOUS_CONSUMER %}
 <section class="section" id=contribution>
     <nav class="level">
         <div class="level-left" id=anchors>

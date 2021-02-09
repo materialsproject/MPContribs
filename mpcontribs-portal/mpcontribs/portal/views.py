@@ -180,8 +180,15 @@ def export_notebook(nb, cid):
 
 
 def contribution(request, cid):
+    ckwargs = client_kwargs(request)
+    headers = ckwargs.get("headers", {})
     ctx = get_context(request)
-    client = Client(**client_kwargs(request))
+
+    if headers.get("X-Anonymous-Consumer", False):
+        ctx["alert"] = "Please log in to view contribution."
+        return render(request, "contribution.html", ctx.flatten())
+
+    client = Client(**ckwargs)
     contrib = client.contributions.get_entry(
         pk=cid, _fields=["identifier", "notebook"]
     ).result()
@@ -205,7 +212,12 @@ def contribution(request, cid):
 
 
 def download_component(request, oid):
-    client = Client(**client_kwargs(request))
+    ckwargs = client_kwargs(request)
+    headers = ckwargs.get("headers", {})
+    if headers.get("X-Anonymous-Consumer", False):
+        return HttpResponse("Please log in to download contribution component.", status=403)
+
+    client = Client(**ckwargs)
     try:
         resp = client.structures.get_entry(pk=oid, _fields=["cif"]).result()
         content = resp["cif"]
@@ -216,7 +228,7 @@ def download_component(request, oid):
             content = resp.to_csv()
             ext = "csv"
         except HTTPNotFound:
-            return HttpResponse(status=404)
+            return HttpResponse(f"Component with ObjectId {oid} not found.", status=404)
 
     if content:
         content = gzip.compress(bytes(content, "utf-8"))
@@ -228,7 +240,12 @@ def download_component(request, oid):
 
 
 def download_contribution(request, cid):
-    client = Client(**client_kwargs(request))
+    ckwargs = client_kwargs(request)
+    headers = ckwargs.get("headers", {})
+    if headers.get("X-Anonymous-Consumer", False):
+        return HttpResponse("Please log in to download contribution.", status=403)
+
+    client = Client(**ckwargs)
     resp = client.contributions.get_entry(pk=cid, _fields=["project"]).result()
     resp = client.projects.get_entry(pk=resp["project"], _fields=["columns"]).result()
     fields = ["project", "identifier", "formula", "is_public", "last_modified"]
