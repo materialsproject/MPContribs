@@ -142,7 +142,6 @@ function search(event) {
     event.preventDefault(); // To prevent following the link (optional)
     var selection = $.map(fields, function(f) { return get_single_selection(f); });
     var filtered_selection = selection.filter(function (el) { return el !== ''; });
-    if (filtered_selection.length === 0) { console.log('no selection made'); return; }
     $('input:checkbox').each(function(idx, chbx) {
         selection.push(chbx.checked);
     });
@@ -162,7 +161,7 @@ $(document).ready(function () {
     });
     $('select').on('change', search);
     $('input:checkbox').on('change', search);
-    show_results(['', '', 'mp-2715']).done(function() {
+    show_results(['', '', '']).done(function() {
         var cid = $('#results').find('tr:first td:first a')[0].id;
         render_card(cid);
     });

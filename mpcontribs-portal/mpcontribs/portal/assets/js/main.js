@@ -5,15 +5,12 @@ import '@vizuaalog/bulmajs/dist/dropdown';
 import introJs from 'intro.js/intro';
 require('css/main.scss');
 
-// NOTE send request to Kong Admin API to retrieve API key?
 var api_key = $('#api_key').val();
 var api_cname = $('#api_cname').val();
 var scheme = api_cname.startsWith("localhost.") ? "http" : "https"
 
-window.api = {
-    host: scheme + "://" + api_cname + "/",
-    headers: {'X-API-KEY': api_key}
-};
+window.api = {host: scheme + "://" + api_cname + "/"};
+if (api_key !== '') { window.api['headers'] = {'X-API-KEY': api_key}; }
 
 $(document).ready(function () {
     // logo, info, api-key

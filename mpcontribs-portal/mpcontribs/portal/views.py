@@ -129,12 +129,22 @@ def work(request):
 
 
 def search(request):
+    headers = client_kwargs(request).get("headers", {})
     ctx = get_context(request)
+
+    if headers.get("X-Anonymous-Consumer", False):
+        ctx["alert"] = "Please log in to search contributions."
+
     return render(request, "search.html", ctx.flatten())
 
 
 def apply(request):
+    headers = client_kwargs(request).get("headers", {})
     ctx = get_context(request)
+
+    if headers.get("X-Anonymous-Consumer", False):
+        ctx["alert"] = "Please log in to apply for a project."
+
     return render(request, "apply.html", ctx.flatten())
 
 

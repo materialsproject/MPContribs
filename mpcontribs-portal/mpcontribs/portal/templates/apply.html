@@ -20,6 +20,7 @@
             <a href="https://materialsproject.org">Materials Project</a>.
         </div>
     </article>
+    {% if not request.META.HTTP_X_ANONYMOUS_CONSUMER %}
     <div class="columns">
         <div class="column is-3">
             <div class="subtitle is-size-6">Guidance and validation</div>
@@ -164,6 +165,7 @@
             </form>
         </div>
     </div>
+    {% endif %}
 </section>
 
 {% endblock %}

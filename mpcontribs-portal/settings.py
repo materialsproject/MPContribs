@@ -87,4 +87,4 @@ WEBPACK_LOADER = {
 }
 
 APPEND_SLASH = False
-SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
+SECURE_REFERRER_POLICY = "unsafe-url"

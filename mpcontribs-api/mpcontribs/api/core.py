@@ -481,7 +481,7 @@ class SwaggerView(OriginalSwaggerView, ResourceView, metaclass=SwaggerViewType):
         if self.is_anonymous(request):
             # anonymous can only read public projects (no contributions)
             if not request.path.startswith("/projects/"):
-                return False
+                return qs.none()
 
             return qs.filter(is_public=True)
 
@@ -501,7 +501,9 @@ class SwaggerView(OriginalSwaggerView, ResourceView, metaclass=SwaggerViewType):
                 qfilter = Q(is_public=True) | Q(project__in=projects)
                 return qs.filter(qfilter)
 
-        return qs  # TODO should this be more restrictive?
+            return qs
+
+        return qs.none()
 
     def has_add_permission(self, request, obj):
         if not self.is_admin_or_project_user(request, obj):
