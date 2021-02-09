@@ -128,10 +128,11 @@ function load_data(dom) {
 $('a[name=table_download_item]').click(function(e) {
     $('#table_download_dropdown').removeClass('is-active');
     var cnt = $('#total_count').data('count');
+    var notification_id = "download_notification";
+    var notification = document.getElementById(notification_id);
+    if ($(notification).length) { $(notification).addClass('is-hidden'); }
     if (cnt > 1000) {
         e.preventDefault();
-        var notification_id = "download_notification";
-        var notification = document.getElementById(notification_id);
         if (!$(notification).length) {
             notification = $('<div/>', {
                 'class': 'notification is-warning is-hidden', 'id': notification_id
@@ -139,8 +140,7 @@ $('a[name=table_download_item]').click(function(e) {
             $("#landingpage").prepend(notification);
         }
         $(notification).html('Please filter number of contributions to less than 1000.')
-    } else if (!$(notification).length) {
-        $(notification).addClass('is-hidden');
+        $(notification).removeClass('is-hidden');
     }
     //$(notification).html('Preparing download ');
     //$(notification).append(new Array(4).join('<span class="loader__dot">.</span>'));
