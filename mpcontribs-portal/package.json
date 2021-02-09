@@ -35,7 +35,7 @@
     "intro.js": "^3.2.1",
     "ion-rangeslider": "^2.3.1",
     "jquery": "^3.5.1",
-    "jquery-form": "github:tschaume/form#master",
+    "jquery-form": "tschaume/form",
     "jquery-simulate": "^1.0.2",
     "jquery-validation": "^1.19.3",
     "js-sha1": "^0.6.0",

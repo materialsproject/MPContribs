@@ -2,11 +2,16 @@ FROM materialsproject/devops:python-3.91.2 as base
 FROM node:15.8.0-slim as node
 
 FROM node as webpack-deps
-RUN apt-get update && apt-get install -y --no-install-recommends git && apt-get clean
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git curl gnupg ca-certificates apt-transport-https \
+    && apt-get clean
+RUN curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add -
+RUN echo "deb https://dl.yarnpkg.com/debian/ stable main" | tee /etc/apt/sources.list.d/yarn.list
+RUN apt-get update && apt-get install -y --no-install-recommends yarn
 ENV NODE_ENV production
 WORKDIR /app
 COPY package.json .
-RUN npm install && npm prune --production
+RUN yarn install --production
 
 FROM node as webpack
 ENV NODE_ENV production
