@@ -13,6 +13,7 @@ from nbconvert import HTMLExporter
 from bravado.exception import HTTPNotFound
 from json2html import Json2Html
 from boltons.iterutils import remap
+from fastnumbers import fast_real
 
 from django.shortcuts import render, redirect
 from django.template import RequestContext
@@ -63,9 +64,15 @@ def get_context(request):
 
 
 def landingpage(request, project):
+    ckwargs = client_kwargs(request)
+    headers = ckwargs.get("headers", {})
     ctx = get_context(request)
+
+    if headers.get("X-Anonymous-Consumer", False):
+        ctx["alert"] = "Please log in to browse and filter contributions."
+
     try:
-        client = Client(**client_kwargs(request))
+        client = Client(**ckwargs)
         prov = client.projects.get_entry(pk=project, _fields=["_all"]).result()
         ctx["name"] = project
         long_title = prov.get("long_title")
@@ -252,24 +259,32 @@ def download_project(request, project):
 
 def download(request):
     if not request.GET:
-        return HttpResponse(status=404)
+        return HttpResponse("Only GET requests allowed.", status=405)
 
-    if "project" not in request.GET:
-        return HttpResponse(status=404)
+    ckwargs = client_kwargs(request)
+    headers = ckwargs.get("headers", {})
+    if headers.get("X-Anonymous-Consumer", False):
+        return HttpResponse("Please log in to download contributions.", status=403)
 
-    client = Client(**client_kwargs(request))
+    required_params = {"project", "format", "_fields"}
+    if not required_params.issubset(request.GET.keys()):
+        return HttpResponse("Missing parameters.", status=400)
+
+    client = Client(**ckwargs)
     params = deepcopy(request.GET)
     fmt = params.pop("format")[0]
     fields = params.pop("_fields")[0].split(",")
 
     kwargs = {"fields": ["id"]}
     for k, v in params.items():
-        kwargs[k] = v
+        kwargs[k] = fast_real(v)
 
     resp = client.contributions.get_entries(**kwargs).result()
 
-    if resp["total_count"] > 1000:
-        return HttpResponse(status=404)
+    if resp["total_count"] < 1:
+        return HttpResponse("No contributions found.", status=404)
+    elif resp["total_count"] > 1000:
+        return HttpResponse("Please limit query to less than 1000 contributions.", status=403)
 
     kwargs = {"_fields": fields, "format": fmt, "short_mime": "gz"}
     for k, v in params.items():

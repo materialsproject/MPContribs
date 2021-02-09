@@ -50,6 +50,7 @@
         </div>
     </article>
 
+    {% if not request.META.HTTP_X_ANONYMOUS_CONSUMER %}
     {% if columns and columns.strip != 'null' %}
     <nav class="level box">
         <div class="level-left">
@@ -144,6 +145,7 @@
     <div class="box">
         <div name=table id=table_{{name}} data-columns='{{ columns|join:"," }}' data-project='{{ name }}'></div>
     </div>
+    {% endif %}
     {% endif %}
 
 </section>
