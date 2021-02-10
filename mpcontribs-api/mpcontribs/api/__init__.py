@@ -106,10 +106,6 @@ def get_kernels():
     return {kernel["id"]: None for kernel in kernels}
 
 
-def healthcheck():
-    return "OK"
-
-
 def get_consumer():
     groups = request.headers.get("X-Authenticated-Groups", "").split(",")
     groups += request.headers.get("X-Consumer-Groups", "").split(",")
@@ -181,6 +177,12 @@ def create_app():
     #        logger.warning(f"{collection} registered")
     #    except ModuleNotFoundError as ex:
     #        logger.warning(f"API module {module_path}: {ex}")
+
+    def healthcheck():
+        if not app.kernels:
+            return "KERNEL GATEWAY NOT AVAILABLE", 500
+
+        return "OK"
 
     app.register_blueprint(sse, url_prefix="/stream")
     app.add_url_rule("/healthcheck", view_func=healthcheck)
