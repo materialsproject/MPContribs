@@ -15,7 +15,7 @@ urlpatterns = [
         name="notebooks",
     ),
     url(
-        r"^projects/(?P<project>[a-zA-Z0-9_]{3,}).json.gz$",
+        r"^projects/(?P<project>[a-zA-Z0-9_]{3,31}).json.gz$",
         views.download_project,
         name="download_project",
     ),
@@ -46,9 +46,10 @@ urlpatterns = [
     ),
     # redirects
     url(r"^boltztrap/?$", RedirectView.as_view(url="/projects/carrier_transport")),
-    url(r"^(?i)fe-co-v/?$", RedirectView.as_view(url="/projects/swf")),
+    url(r"^fe-co-v/?$", RedirectView.as_view(url="/projects/swf")),
+    url(r"^Fe-Co-V/?$", RedirectView.as_view(url="/projects/swf")),
     url(
-        r"^(?i)screeninginorganicpv/?$",
+        r"^ScreeningInorganicPV/?$",
         RedirectView.as_view(url="/projects/screening_inorganic_pv")
     ),
     url(
