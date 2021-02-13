@@ -125,8 +125,9 @@ def create_app():
     app.jinja_env.globals["get_resource_as_string"] = get_resource_as_string
     app.jinja_env.lstrip_blocks = True
     app.jinja_env.trim_blocks = True
+    DEBUG = app.config.get("DEBUG")
 
-    if app.config.get("DEBUG"):
+    if DEBUG:
         from flask_cors import CORS
 
         CORS(app)  # enable for development (allow localhost)
@@ -179,7 +180,7 @@ def create_app():
     #        logger.warning(f"API module {module_path}: {ex}")
 
     def healthcheck():
-        if not app.kernels:
+        if not DEBUG and not app.kernels:
             return "KERNEL GATEWAY NOT AVAILABLE", 500
 
         return "OK"
