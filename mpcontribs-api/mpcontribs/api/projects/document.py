@@ -3,6 +3,11 @@ import os
 import yaml
 from flask import current_app, render_template, url_for
 from flask_mongoengine import Document
+from marshmallow import ValidationError
+from marshmallow.fields import String
+from marshmallow.validate import Email as EmailValidator
+from marshmallow_mongoengine.conversion import params
+from marshmallow_mongoengine.conversion.fields import register_field
 from mongoengine import EmbeddedDocument, signals
 from mongoengine.fields import (
     StringField,
@@ -22,10 +27,10 @@ class ProviderEmailField(EmailField):
     """Field to validate usernames of format <provider>:<email>"""
 
     def validate(self, value):
-        if ":" not in value:
+        if value.count(":") != 1:
             self.error(self.error_msg % value)
 
-        provider, email = value.split(":")
+        provider, email = value.split(":", 1)
 
         if provider not in PROVIDERS:
             self.error(
@@ -33,6 +38,29 @@ class ProviderEmailField(EmailField):
             )
 
         super().validate(email)
+
+
+class ProviderEmailValidator(EmailValidator):
+    def __call__(self, value):
+        message = self._format_error(value)
+
+        if value.count(":") != 1:
+            raise ValidationError(message)
+
+        provider, email = value.split(":", 1)
+
+        if provider not in PROVIDERS:
+            raise ValidationError(message)
+
+        email = super().__call__(email)
+        return value
+
+
+class ProviderEmail(String):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        validator = ProviderEmailValidator(error="Not a valid MP username ({input}).")
+        self.validators.insert(0, validator)
 
 
 class Column(EmbeddedDocument):
@@ -171,5 +199,6 @@ class Projects(Document):
         sns_client.delete_topic(TopicArn=topic_arn)
 
 
+register_field(ProviderEmailField, ProviderEmail, available_params=(params.LengthParam,))
 signals.post_save.connect(Projects.post_save, sender=Projects)
 signals.post_delete.connect(Projects.post_delete, sender=Projects)
