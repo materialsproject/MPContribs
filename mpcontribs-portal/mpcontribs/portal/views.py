@@ -189,9 +189,12 @@ def contribution(request, cid):
         return render(request, "contribution.html", ctx.flatten())
 
     client = Client(**ckwargs)
-    contrib = client.contributions.get_entry(
-        pk=cid, _fields=["identifier", "notebook"]
-    ).result()
+    try:
+        contrib = client.contributions.get_entry(
+            pk=cid, _fields=["identifier", "notebook"]
+        ).result()
+    except HTTPNotFound:
+        return HttpResponse(f"Contribution {cid} not found.", status=404)
 
     if "notebook" not in contrib:
         url = f"{client.url}/notebooks/build"
@@ -205,7 +208,11 @@ def contribution(request, cid):
             return render(request, "contribution.html", ctx.flatten())
 
     nid = contrib["notebook"]
-    nb = client.notebooks.get_entry(pk=nid, _fields=["_all"]).result()
+    try:
+        nb = client.notebooks.get_entry(pk=nid, _fields=["_all"]).result()
+    except HTTPNotFound:
+        return HttpResponse(f"Notebook {nid} not found.", status=404)
+
     ctx["identifier"], ctx["cid"] = contrib["identifier"], cid
     ctx["nb"], _ = export_notebook(nb, cid)
     return render(request, "contribution.html", ctx.flatten())
