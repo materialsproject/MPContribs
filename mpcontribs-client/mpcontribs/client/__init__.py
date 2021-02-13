@@ -53,10 +53,10 @@ def get_md5(d):
 
 
 def validate_email(email_string):
-    if ":" not in email_string:
+    if email_string.count(":") != 1:
         raise SwaggerValidationError(f"{email_string} not of format <provider>:<email>.")
 
-    provider, email = email_string.split(":")
+    provider, email = email_string.split(":", 1)
     if provider not in PROVIDERS:
         raise SwaggerValidationError(f"{provider} is not a valid provider.")
 
