@@ -59,7 +59,7 @@ def get_context(request):
     ctx["PORTAL_CNAME"] = os.environ["PORTAL_CNAME"]
     localhost = ctx["PORTAL_CNAME"].startswith("localhost.")
     ctx["OAUTH_URL"] = "http://localhost." if localhost else "https://"
-    ctx["OAUTH_URL"] += "oauth.materialsproject.org"
+    ctx["OAUTH_URL"] += "profile.materialsproject.org"
     return ctx
 
 
