@@ -423,18 +423,6 @@ class SwaggerViewType(MethodViewType):
                                 )
 
 
-def accessible_projects(username, groups):
-    # only allow to read public approved projects, or
-    # approved projects the user owns or is group member for
-    qfilter = Q(is_public=True)
-    if username:
-        qfilter |= Q(owner=username)
-    if groups:
-        qfilter |= Q(name__in=list(groups))
-
-    return Q(is_approved=True) & qfilter
-
-
 class SwaggerView(OriginalSwaggerView, ResourceView, metaclass=SwaggerViewType):
     """A class-based view defining additional methods"""
 
@@ -444,8 +432,10 @@ class SwaggerView(OriginalSwaggerView, ResourceView, metaclass=SwaggerViewType):
         return set(g for g in groups if g)
 
     def is_anonymous(self, request):
-        is_anonymous = request.headers.get("X-Anonymous-Consumer", False)
-        return is_anonymous
+        if not request.headers.get("X-Consumer-Username", ""):
+            return True
+
+        return request.headers.get("X-Anonymous-Consumer", False)
 
     def is_admin(self, groups):
         cname = current_app.config["PORTAL_CNAME"]
@@ -479,31 +469,47 @@ class SwaggerView(OriginalSwaggerView, ResourceView, metaclass=SwaggerViewType):
             return qs  # admins can read all entries
 
         if self.is_anonymous(request):
-            # anonymous can only read public projects (no contributions)
+            # anonymous can only read public approved projects (no contributions)
             if not request.path.startswith("/projects/"):
                 return qs.none()
 
-            return qs.filter(is_public=True)
+            return qs.filter(is_public=True, is_approved=True)
 
         username = request.headers.get("X-Consumer-Username")
-        qfilter = accessible_projects(username, groups)
 
         if request.path.startswith("/projects/"):
-            return qs.filter(qfilter)
+            # all public and non-public but accessible projects
+            qfilter = Q(is_public=True) | Q(owner=username)
+            if groups:
+                qfilter |= Q(name__in=list(groups))
+
+            return qs.filter(Q(is_approved=True) & qfilter)
+
         elif request.path.startswith("/contributions/"):
             # project is LazyReferenceFields (multiple queries)
             module = import_module("mpcontribs.api.projects.document")
             Projects = getattr(module, "Projects")
-            projects = Projects.objects.only("name").filter(qfilter)
-            # now filter contributions
+            projects = Projects.objects.only("name", "owner", "is_public")
+
+            # contributions are set private/public independent from projects
+            # - private contributions in a public project are only accessible to owner/group
+            # - any contributions in a private project are only accessible to owner/group
             q = qs._query
-            if "project" in q and all(p.name != q["project"] for p in projects):
-                qfilter = Q(is_public=True) | Q(project__in=projects)
-                return qs.filter(qfilter)
+            if "project" in q:
+                project = projects.filter(name=q["project"])
+                if project.owner != username and project.name not in groups:
+                    return qs.filter(is_public=True) if project.is_public else qs.none()
+            elif "project__in" in q:
+            else:
+                # all
 
-            return qs
 
-        return qs.none()
+        # Allowing any non-anonymous user access to endpoints for tables/structures/notebooks.
+        # These components can thus technically be accessed without permission for the according
+        # contribution. However, this would require knowledge of the respective ObjectIds which are
+        # not knowable without access to the contribution (security by obscurity). This could be
+        # considered a feature for people who'd want to share public links with collaborators.
+        return qs
 
     def has_add_permission(self, request, obj):
         if not self.is_admin_or_project_user(request, obj):
