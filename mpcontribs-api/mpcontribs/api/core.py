@@ -489,20 +489,40 @@ class SwaggerView(OriginalSwaggerView, ResourceView, metaclass=SwaggerViewType):
             # project is LazyReferenceFields (multiple queries)
             module = import_module("mpcontribs.api.projects.document")
             Projects = getattr(module, "Projects")
-            projects = Projects.objects.only("name", "owner", "is_public")
+            projects = Projects.objects.only("name", "owner", "is_public", "is_approved")
 
             # contributions are set private/public independent from projects
             # - private contributions in a public project are only accessible to owner/group
             # - any contributions in a private project are only accessible to owner/group
             q = qs._query
-            if "project" in q:
-                project = projects.filter(name=q["project"])
-                if project.owner != username and project.name not in groups:
-                    return qs.filter(is_public=True) if project.is_public else qs.none()
-            elif "project__in" in q:
-            else:
-                # all
+            if "project" in q and isinstance(q["project"], str):
+                project = projects.get(name=q["project"])
+                if not project.is_approved:
+                    return qs.none()
 
+                if project.owner == username or project.name in groups:
+                    return qs
+                elif project.is_public:
+                    return qs.filter(is_public=True)
+                else:
+                    return qs.none()
+
+            else:
+                qfilter = Q()  # reduced query
+                if "project" in q and "$in" in q["project"]:
+                    names = q.pop("project").pop("$in")
+                    projects = projects.filter(name__in=names)
+
+                for project in projects:
+                    if not project.is_approved:
+                        continue
+
+                    if project.owner == username or project.name in groups:
+                        qfilter |= Q(project=project.name)
+                    elif project.is_public:
+                        qfilter |= Q(project=project.name, is_public=True)
+
+                return qs.filter(qfilter)
 
         # Allowing any non-anonymous user access to endpoints for tables/structures/notebooks.
         # These components can thus technically be accessed without permission for the according
