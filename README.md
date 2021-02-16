@@ -6,7 +6,7 @@
 ![Swagger Validator](https://img.shields.io/swagger/valid/3.0?specUrl=https%3A%2F%2Fcontribs-api.materialsproject.org%2Fapispec.json&style=flat-square)
 ![GitHub](https://img.shields.io/github/license/materialsproject/MPContribs?style=flat-square)
 
-| [Documentation](https://mpcontribs.org) | [Portal](https://contribs.materialsproject.org) | [API](https://contribs-api.materialsproject.org) |
+| [Documentation](https://docs.mpcontribs.org) | [Portal](https://contribs.materialsproject.org) | [API](https://contribs-api.materialsproject.org) |
 |-----------------------------------------|-----------------------------------------|-----------------------------------|
 
 [![social preview](docs/MPContribsGithubSocial.png)](https://contribs.materialsproject.org)

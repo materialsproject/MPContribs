@@ -5,7 +5,7 @@
 site_name: 'MPContribs'
 site_description: 'Contributed MP Materials Data'
 site_author: 'Patrick Huck'
-site_url: 'https://mpcontribs.org'
+site_url: 'https://docs.mpcontribs.org'
 
 repo_name: 'materialsproject/MPContribs'
 repo_url: 'https://github.com/materialsproject/MPContribs'
