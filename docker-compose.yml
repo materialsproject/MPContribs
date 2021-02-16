@@ -57,13 +57,6 @@ services:
         ports:
             - "5003:5003"
 
-  contribs-docs:
-    image: squidfunk/mkdocs-material:4.6.3
-    command: serve --dev-addr=0.0.0.0:8081
-    volumes:
-        - .:/docs
-    ports:
-        - "8081:8081"
 
 
   datadog:
