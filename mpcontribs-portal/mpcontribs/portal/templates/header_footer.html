@@ -66,13 +66,6 @@
                   </div>
               </div>
               <div class="navbar-end">
-                  <a class="navbar-item" id=help>
-                      <span class="icon"><i class="fas fa-question"></i></span>
-                  </a>
-                  <a class="navbar-item" name=api_url target="_blank">
-                      <span class="icon"><i class="fas fa-code"></i></span>
-                  </a>
-                  <!-- TODO merge ingester webapp into portal -->
                   {% if request.META.HTTP_X_ANONYMOUS_CONSUMER %}
                   <a class="navbar-item" href="{{ OAUTH_URL }}">Login</a>
                   {% else %}
@@ -95,6 +88,15 @@
                               <span class="is-family-code">{{ request.META.HTTP_X_AUTHENTICATED_GROUPS }}</span>
                           </p>
                           {% endif %}
+                          <a class="navbar-item" id=help>
+                              <span class="icon"><i class="fas fa-question"></i></span>
+                              <span>Tour the page</span>
+                          </a>
+                          <a class="navbar-item" name=api_url target="_blank">
+                              <span class="icon"><i class="fas fa-code"></i></span>
+                              <span>RESTful API</span>
+                          </a>
+                          <!-- TODO merge ingester webapp into portal -->
                           <a class="navbar-item" href="{{ OAUTH_URL }}/logout">
                               <span class="icon"><i class="fas fa-sign-out-alt"></i></span>
                               <span>Logout</span>
