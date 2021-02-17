@@ -66,27 +66,42 @@
                   </div>
               </div>
               <div class="navbar-end">
-                  <a class="navbar-item" href="{{ OAUTH_URL }}">
-                      {% if request.META.HTTP_X_ANONYMOUS_CONSUMER %}
-                      Login
-                      {% else %}
-                      Profile
-                      {% endif %}
+                  <a class="navbar-item" id=help>
+                      <span class="icon"><i class="fas fa-question"></i></span>
                   </a>
+                  <a class="navbar-item" name=api_url target="_blank">
+                      <span class="icon"><i class="fas fa-code"></i></span>
+                  </a>
+                  <!-- TODO merge ingester webapp into portal -->
+                  {% if request.META.HTTP_X_ANONYMOUS_CONSUMER %}
+                  <a class="navbar-item" href="{{ OAUTH_URL }}">Login</a>
+                  {% else %}
                   <div class="navbar-item has-dropdown is-hoverable">
-                      <a class="navbar-link"></a>
+                      <a class="navbar-link">
+                          <span class="icon"><i class="fas fa-user-check"></i></span>
+                      </a>
                       <div class="navbar-dropdown is-right has-background-light">
-                          <a class="navbar-item" id=help>
-                              <span class="icon"><i class="fas fa-question"></i></span>
-                              <span>Tour this page</span>
+                          <p class="navbar-item has-text-dark">
+                          <span class="icon"><i class="far fa-user"></i></span>
+                          <span>{{ request.META.HTTP_X_CONSUMER_USERNAME }}</span>
+                          </p>
+                          <p class="navbar-item has-text-dark">
+                              <span class="icon"><i class="fas fa-key"></i></span>
+                              <code>{{ request.META.HTTP_X_CONSUMER_CUSTOM_ID }}</code>
+                          </p>
+                          {% if request.META.HTTP_X_AUTHENTICATED_GROUPS %}
+                          <p class="navbar-item has-text-dark">
+                              <span class="icon"><i class="fas fa-users"></i></span>
+                              <span class="is-family-code">{{ request.META.HTTP_X_AUTHENTICATED_GROUPS }}</span>
+                          </p>
+                          {% endif %}
+                          <a class="navbar-item" href="{{ OAUTH_URL }}/logout">
+                              <span class="icon"><i class="fas fa-sign-out-alt"></i></span>
+                              <span>Logout</span>
                           </a>
-                          <a class="navbar-item" name=api_url target="_blank">
-                              <span class="icon"><i class="fas fa-laptop-code"></i></span>
-                              <span>RESTful API</span>
-                          </a>
-                          <!-- TODO merge ingester webapp into portal -->
                       </div>
                   </div>
+                  {% endif %}
               </div>
           </div>
       </nav>
@@ -102,7 +117,7 @@
       {% endblock content %}
 
       <footer class="footer">
-          <div class="content has-text-centered is-size-7">
+          <div class="content has-text-centered is-size-7" style="margin-bottom: 0px">
               Supported by NSF LSDI Data Infrastructure Building Blocks program and
               DOE BES <a href="https://materialsproject.org">Materials Project</a>.
           </div>
