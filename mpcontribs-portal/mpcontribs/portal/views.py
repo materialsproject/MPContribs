@@ -69,7 +69,9 @@ def landingpage(request, project):
     ctx = get_context(request)
 
     if headers.get("X-Anonymous-Consumer", False):
-        ctx["alert"] = "Please log in to browse and filter contributions."
+        ctx["alert"] = f"""
+        Please <a href=\"{ctx['OAUTH_URL']}\">log in</a> to browse and filter contributions.
+        """.strip()
 
     try:
         client = Client(**ckwargs)
@@ -140,7 +142,9 @@ def search(request):
     ctx = get_context(request)
 
     if headers.get("X-Anonymous-Consumer", False):
-        ctx["alert"] = "Please log in to search contributions."
+        ctx["alert"] = """
+        Please <a href=\"{ctx['OAUTH_URL']}\">log in</a> to search contributions.
+        """.strip()
 
     return render(request, "search.html", ctx.flatten())
 
@@ -150,7 +154,9 @@ def apply(request):
     ctx = get_context(request)
 
     if headers.get("X-Anonymous-Consumer", False):
-        ctx["alert"] = "Please log in to apply for a project."
+        ctx["alert"] = """
+        Please <a href=\"{ctx['OAUTH_URL']}\">log in</a> to apply for a project.
+        """.strip()
 
     return render(request, "apply.html", ctx.flatten())
 
@@ -185,7 +191,9 @@ def contribution(request, cid):
     ctx = get_context(request)
 
     if headers.get("X-Anonymous-Consumer", False):
-        ctx["alert"] = "Please log in to view contribution."
+        ctx["alert"] = """
+        Please <a href=\"{ctx['OAUTH_URL']}\">log in</a> to view contribution.
+        """.strip()
         return render(request, "contribution.html", ctx.flatten())
 
     client = Client(**ckwargs)
@@ -222,7 +230,10 @@ def download_component(request, oid):
     ckwargs = client_kwargs(request)
     headers = ckwargs.get("headers", {})
     if headers.get("X-Anonymous-Consumer", False):
-        return HttpResponse("Please log in to download contribution component.", status=403)
+        msg = """
+        Please <a href=\"{ctx['OAUTH_URL']}\">log in</a> to download contribution component.
+        """.strip()
+        return HttpResponse(msg, status=403)
 
     client = Client(**ckwargs)
     try:
@@ -250,7 +261,10 @@ def download_contribution(request, cid):
     ckwargs = client_kwargs(request)
     headers = ckwargs.get("headers", {})
     if headers.get("X-Anonymous-Consumer", False):
-        return HttpResponse("Please log in to download contribution.", status=403)
+        msg = """
+        Please <a href=\"{ctx['OAUTH_URL']}\">log in</a> to download contribution.
+        """.strip()
+        return HttpResponse(msg, status=403)
 
     client = Client(**ckwargs)
     resp = client.contributions.get_entry(pk=cid, _fields=["project"]).result()
@@ -288,7 +302,10 @@ def download(request):
     ckwargs = client_kwargs(request)
     headers = ckwargs.get("headers", {})
     if headers.get("X-Anonymous-Consumer", False):
-        return HttpResponse("Please log in to download contributions.", status=403)
+        msg = """
+        Please <a href=\"{ctx['OAUTH_URL']}\">log in</a> to download contribution.
+        """.strip()
+        return HttpResponse(msg, status=403)
 
     required_params = {"project", "format", "_fields"}
     if not required_params.issubset(request.GET.keys()):
