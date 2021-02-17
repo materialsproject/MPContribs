@@ -8,7 +8,8 @@ urlpatterns = [
     # public
     #url(r"^$", views.index, name="index"),
     url(r"^$", RedirectView.as_view(pattern_name="browse")),
-    url(r"^work/?$", views.work, name="work"),
+    url(r"^code/?$", views.work, name="work"),
+    url(r"^work/?$", RedirectView.as_view(pattern_name="work")),
     url(r"^healthcheck/?$", views.healthcheck, name="healthcheck"),
     url(
         r"^notebooks/(?P<nb>[A-Za-z0-9_\/]{3,}).html$",
@@ -23,7 +24,8 @@ urlpatterns = [
     # protected
     url(r"^browse/?$", views.browse, name="browse"),
     url(r"^search/?$", views.search, name="search"),
-    url(r"^apply/?$", views.apply, name="apply"),
+    url(r"^contribute/?$", views.apply, name="apply"),
+    url(r"^apply/?$", RedirectView.as_view(pattern_name="apply")),
     url(
         r"^projects/(?P<project>[a-zA-Z0-9_]{3,})/?$",
         views.landingpage,
