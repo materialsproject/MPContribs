@@ -2,7 +2,7 @@ apispec==4.3.0
 asn1crypto==1.4.0
 blinker==1.4
 boltons==20.2.1
-boto3==1.17.7
+boto3==1.17.12
 cherrypicker==0.3.1
 css-html-js-minify==2.5.5
 dateparser==1.0.0
@@ -10,7 +10,7 @@ dnspython==2.1.0
 fastnumbers==3.1.0
 fdict==0.8.1
 flasgger @ git+https://github.com/flasgger/flasgger#egg=flasgger-0.9.5
-flask-compress==1.8.0
+flask-compress==1.9.0
 flask-cors==3.0.10
 flask-log==0.1.0
 flask-marshmallow==0.14.0
@@ -24,7 +24,7 @@ more-itertools==8.7.0
 nbformat==5.1.2
 notebook==6.2.0
 pint==0.16.1
-pymatgen==2021.2.14
+pymatgen==2021.2.16
 pyopenssl==20.0.1
 python-snappy==0.6.0
 selenium==3.141.0
