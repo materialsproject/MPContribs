@@ -2,7 +2,7 @@ boltons==20.2.1
 bravado[fido] @ git+https://github.com/tschaume/bravado@aa04da50ba6cacfaa0c356eceb30160f44571f97#egg=bravado-11.0.2
 cryptography==3.4.6
 fido[tls]==4.2.2
-ipython==7.20.0
+ipython==7.21.0
 json2html==1.3.0
 pandas==1.2.2
 plotly==4.14.3
@@ -13,4 +13,4 @@ ratelimit==2.2.1
 requests-futures==1.0.0
 service-identity==18.1.0
 twisted @ git+https://github.com/twisted/twisted@09b96850c2ebcb635f448ed3f9bbf5f157be3693#egg=twisted-20.3.0
-tqdm==4.57.0
+tqdm==4.58.0

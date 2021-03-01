@@ -2,7 +2,7 @@ apispec==4.3.0
 asn1crypto==1.4.0
 blinker==1.4
 boltons==20.2.1
-boto3==1.17.13
+boto3==1.17.17
 cherrypicker==0.3.1
 css-html-js-minify==2.5.5
 dateparser==1.0.0
@@ -31,4 +31,4 @@ selenium==3.141.0
 uncertainties==3.1.5
 unflatten==0.1
 websocket_client==0.57.0
-zstandard==0.15.1
+zstandard==0.15.2
