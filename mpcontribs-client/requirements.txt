@@ -13,4 +13,4 @@ ratelimit==2.2.1
 requests-futures==1.0.0
 service-identity==18.1.0
 twisted @ git+https://github.com/twisted/twisted@09b96850c2ebcb635f448ed3f9bbf5f157be3693#egg=twisted-20.3.0
-tqdm==4.58.0
+tqdm==4.59.0
