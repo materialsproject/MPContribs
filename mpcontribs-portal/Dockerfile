@@ -1,5 +1,5 @@
 FROM materialsproject/devops:python-3.92.0 as base
-FROM node:15.10.0-slim as node
+FROM node:15.11.0-slim as node
 
 FROM node as webpack-deps
 RUN apt-get update && apt-get install -y --no-install-recommends \
