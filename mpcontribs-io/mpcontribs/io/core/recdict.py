@@ -45,7 +45,7 @@ class RecursiveDict(_OrderedDict):
             value = d[key]
             if isinstance(value, _Mapping):
                 if value.get("@class") == "Structure":
-                    from pymatgen import Structure
+                    from pymatgen.core import Structure
 
                     yield key, Structure.from_dict(value)
                     continue

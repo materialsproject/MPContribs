@@ -11,7 +11,7 @@ nb.cells = [
                 "import plotly.io as pio",
                 "import pandas as pd",
                 "from mpcontribs.client import Client",
-                "from pymatgen import Structure",
+                "from pymatgen.core import Structure",
                 'pio.orca.config.server_url = os.environ.get("ORCA_HOST", "localhost:9091")',
                 'pio.templates.default = "simple_white"',
             ]

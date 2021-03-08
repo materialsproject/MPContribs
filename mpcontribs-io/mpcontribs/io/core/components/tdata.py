@@ -178,7 +178,7 @@ class TabularData(RecursiveDict):
 
     def __init__(self, document):
         super(TabularData, self).__init__()
-        from pymatgen import Structure
+        from pymatgen.core import Structure
 
         scope = []
         for key, value in document.iterate():

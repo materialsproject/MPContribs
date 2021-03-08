@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import os
 import json
-from pymatgen import MPRester
+from pymatgen.ext.matproj import MPRester
 
 data = {}
 

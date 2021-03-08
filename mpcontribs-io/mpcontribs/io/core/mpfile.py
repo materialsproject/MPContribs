@@ -214,7 +214,8 @@ class MPFileCore(six.with_metaclass(ABCMeta, object)):
 
     def add_structure(self, source, name=None, identifier=None, fmt=None):
         """add a structure to the mpfile"""
-        from pymatgen import Structure, MPRester
+        from pymatgen.core import Structure
+        from pymatgen.ext.matproj import MPRester
 
         if isinstance(source, Structure):
             structure = source

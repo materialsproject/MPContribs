@@ -59,7 +59,7 @@ def nest_dict(dct, keys):
 
 def get_composition_from_string(comp_str):
     """validate and return composition from string `comp_str`."""
-    from pymatgen import Composition, Element
+    from pymatgen.core import Composition, Element
 
     comp = Composition(comp_str)
     for element in comp.elements:

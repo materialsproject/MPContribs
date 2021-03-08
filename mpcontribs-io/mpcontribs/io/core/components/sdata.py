@@ -8,7 +8,7 @@ class Structures(RecursiveDict):
     """class to hold and display list of pymatgen structures for single mp-id"""
 
     def __init__(self, content):
-        from pymatgen import Structure
+        from pymatgen.core import Structure
 
         super(Structures, self).__init__(
             (key, Structure.from_dict(struc))

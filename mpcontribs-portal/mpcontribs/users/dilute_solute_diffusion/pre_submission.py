@@ -3,7 +3,7 @@ from pandas import read_excel, isnull, ExcelWriter, Series
 from mpcontribs.io.core.recdict import RecursiveDict
 from mpcontribs.io.core.utils import clean_value, nest_dict
 from mpcontribs.io.archieml.mpfile import MPFile
-from pymatgen import MPRester
+from pymatgen.ext.matproj import MPRester
 
 project = "dilute_solute_diffusion"
 

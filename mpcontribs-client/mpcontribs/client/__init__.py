@@ -30,7 +30,7 @@ from bravado_core.spec import Spec
 from json2html import Json2Html
 from IPython.display import display, HTML
 from boltons.iterutils import remap
-from pymatgen import Structure
+from pymatgen.core import Structure
 from concurrent.futures import as_completed
 from requests_futures.sessions import FuturesSession
 

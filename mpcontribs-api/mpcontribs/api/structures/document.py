@@ -4,7 +4,7 @@ from hashlib import md5
 from flask_mongoengine import Document
 from mongoengine import signals
 from mongoengine.fields import StringField, FloatField, ListField, DictField
-from pymatgen import Structure
+from pymatgen.core import Structure
 from pymatgen.io.cif import CifWriter
 
 

@@ -100,7 +100,7 @@ class MPFile(MPFileCore):
         return MPFile.from_dict(rdct)
 
     def get_string(self, df_head_only=False):
-        from pymatgen import Structure
+        from pymatgen.core import Structure
 
         lines, scope = [], []
         for key, value in self.document.iterate():
