@@ -39,6 +39,8 @@ MAX_WORKERS = 10
 DEFAULT_HOST = "contribs-api.materialsproject.org"
 BULMA = "is-narrow is-fullwidth has-background-light"
 PROVIDERS = {"github", "google", "facebook", "microsoft", "amazon"}
+VALID_URLS = {f"http://{h}:5000" for h in ["localhost", "contribs-api"]}
+VALID_URLS |= {f"https://{n}-api.materialsproject.org" for n in ["contribs", "lightsources", "ml"]}
 
 j2h = Json2Html()
 pd.options.plotting.backend = "plotly"
@@ -160,12 +162,14 @@ class Client(SwaggerClient):
         self.apikey = apikey
         self.headers = {"x-api-key": apikey} if apikey else headers
         self.host = host
-        self.protocol = "http" if host.startswith("localhost") else "https"
+        self.protocol = "https" if host.endswith(".materialsproject.org") else "http"
         self.url = f"{self.protocol}://{self.host}"
 
+        if self.url not in VALID_URLS:
+            raise ValueError(f"{self.url} not a valid URL (one of {VALID_URLS})")
+
         if "swagger_spec" not in self.__dict__ or (
-            self.headers is not None
-            and self.swagger_spec.http_client.headers != self.headers
+            self.swagger_spec.http_client.headers != self.headers
         ):
             self.load()
 
