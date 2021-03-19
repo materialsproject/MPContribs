@@ -22,7 +22,9 @@ client = Client(host='ml-api.materialsproject.org')
 **Troubleshooting**
 
 ```
-twisted.web._newclient.ResponseNeverReceived: [<twisted.python.failure.Failure OpenSSL.SSL.Error: [('SSL routines', 'tls_process_server_certificate', 'certificate verify failed')]>]
+twisted.web._newclient.ResponseNeverReceived:
+[<twisted.python.failure.Failure OpenSSL.SSL.Error:
+[('SSL routines', 'tls_process_server_certificate', 'certificate verify failed')]>]
 ```
 
 Set the environment variable `SSL_CERT_FILE` to `$(python -m certifi)`.
