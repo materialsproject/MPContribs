@@ -38,6 +38,7 @@ jobs:
         MPCONTRIBS_API_KEY: ${{ secrets.MPCONTRIBS_API_KEY }}
       run: |
         cd mpcontribs-client
+        export SSL_CERT_FILE=$(python -m certifi)
         tox
 
   publish:
