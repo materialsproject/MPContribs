@@ -142,7 +142,7 @@ def search(request):
     ctx = get_context(request)
 
     if headers.get("X-Anonymous-Consumer", False):
-        ctx["alert"] = """
+        ctx["alert"] = f"""
         Please <a href=\"{ctx['OAUTH_URL']}\">log in</a> to search contributions.
         """.strip()
 
@@ -154,7 +154,7 @@ def apply(request):
     ctx = get_context(request)
 
     if headers.get("X-Anonymous-Consumer", False):
-        ctx["alert"] = """
+        ctx["alert"] = f"""
         Please <a href=\"{ctx['OAUTH_URL']}\">log in</a> to apply for a project.
         """.strip()
 
@@ -191,7 +191,7 @@ def contribution(request, cid):
     ctx = get_context(request)
 
     if headers.get("X-Anonymous-Consumer", False):
-        ctx["alert"] = """
+        ctx["alert"] = f"""
         Please <a href=\"{ctx['OAUTH_URL']}\">log in</a> to view contribution.
         """.strip()
         return render(request, "contribution.html", ctx.flatten())
@@ -230,7 +230,7 @@ def download_component(request, oid):
     ckwargs = client_kwargs(request)
     headers = ckwargs.get("headers", {})
     if headers.get("X-Anonymous-Consumer", False):
-        msg = """
+        msg = f"""
         Please <a href=\"{ctx['OAUTH_URL']}\">log in</a> to download contribution component.
         """.strip()
         return HttpResponse(msg, status=403)
@@ -261,7 +261,7 @@ def download_contribution(request, cid):
     ckwargs = client_kwargs(request)
     headers = ckwargs.get("headers", {})
     if headers.get("X-Anonymous-Consumer", False):
-        msg = """
+        msg = f"""
         Please <a href=\"{ctx['OAUTH_URL']}\">log in</a> to download contribution.
         """.strip()
         return HttpResponse(msg, status=403)
@@ -302,7 +302,7 @@ def download(request):
     ckwargs = client_kwargs(request)
     headers = ckwargs.get("headers", {})
     if headers.get("X-Anonymous-Consumer", False):
-        msg = """
+        msg = f"""
         Please <a href=\"{ctx['OAUTH_URL']}\">log in</a> to download contribution.
         """.strip()
         return HttpResponse(msg, status=403)
