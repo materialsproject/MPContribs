@@ -39,7 +39,7 @@ MAX_WORKERS = 10
 DEFAULT_HOST = "contribs-api.materialsproject.org"
 BULMA = "is-narrow is-fullwidth has-background-light"
 PROVIDERS = {"github", "google", "facebook", "microsoft", "amazon"}
-VALID_URLS = {f"http://{h}:5000" for h in ["localhost", "contribs-api"]}
+VALID_URLS = {f"http://{h}:{p}" for h in ["localhost", "contribs-api"] for p in [5000, 5002, 5003]}
 VALID_URLS |= {f"https://{n}-api.materialsproject.org" for n in ["contribs", "lightsources", "ml"]}
 
 j2h = Json2Html()
