@@ -41,6 +41,7 @@ BULMA = "is-narrow is-fullwidth has-background-light"
 PROVIDERS = {"github", "google", "facebook", "microsoft", "amazon"}
 VALID_URLS = {f"http://{h}:{p}" for h in ["localhost", "contribs-api"] for p in [5000, 5002, 5003]}
 VALID_URLS |= {f"https://{n}-api.materialsproject.org" for n in ["contribs", "lightsources", "ml"]}
+VALID_URLS |= {f"http://localhost.{n}-api.materialsproject.org" for n in ["contribs", "lightsources", "ml"]}
 
 j2h = Json2Html()
 pd.options.plotting.backend = "plotly"
@@ -162,7 +163,8 @@ class Client(SwaggerClient):
         self.apikey = apikey
         self.headers = {"x-api-key": apikey} if apikey else headers
         self.host = host
-        self.protocol = "https" if host.endswith(".materialsproject.org") else "http"
+        ssl = host.endswith(".materialsproject.org") and not host.startswith("localhost.")
+        self.protocol = "https" if ssl else "http"
         self.url = f"{self.protocol}://{self.host}"
 
         if self.url not in VALID_URLS:
