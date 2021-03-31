@@ -145,6 +145,7 @@ def create_app():
         "projects",
         "contributions",
         "tables",
+        "attachments",
         "structures",
         "notebooks",
     ]

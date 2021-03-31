@@ -46,6 +46,7 @@ ureg.define("electron_mass = 9.1093837015e-31 kg = mₑ = m_e")
 COMPONENTS = {
     "structures": ["lattice", "sites", "charge"],
     "tables": ["index", "columns", "data"],
+    "attachments": ["mime", "content"],
 }
 
 
@@ -120,6 +121,7 @@ class Contributions(DynamicDocument):
     )
     structures = ListField(ReferenceField("Structures"), default=list, max_length=10)
     tables = ListField(ReferenceField("Tables"), default=list, max_length=10)
+    attachments = ListField(ReferenceField("Attachments"), default=list, max_length=10)
     notebook = LazyReferenceField("Notebooks", passthrough=True)
     meta = {
         "collection": "contributions",
@@ -137,7 +139,7 @@ class Contributions(DynamicDocument):
 
     @classmethod
     def post_init(cls, sender, document, **kwargs):
-        # replace existing structures/tables with according ObjectIds
+        # replace existing components with according ObjectIds
         for component, fields in COMPONENTS.items():
             lst = getattr(document, component)
             if lst and lst[0].id is None:  # id is None for incoming POST

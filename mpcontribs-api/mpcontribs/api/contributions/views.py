@@ -27,6 +27,7 @@ from mpcontribs.api.core import SwaggerView
 from mpcontribs.api.contributions.document import Contributions
 from mpcontribs.api.structures.views import StructuresResource
 from mpcontribs.api.tables.views import TablesResource
+from mpcontribs.api.attachments.views import AttachmentsResource
 from mpcontribs.api.notebooks.views import NotebooksResource
 
 templates = os.path.join(os.path.dirname(flask_mongorest.__file__), "templates")
@@ -46,9 +47,10 @@ class ContributionsResource(Resource):
     related_resources = {
         "structures": StructuresResource,
         "tables": TablesResource,
+        "attachments": AttachmentsResource,
         "notebook": NotebooksResource,
     }
-    save_related_fields = ["structures", "tables", "notebook"]
+    save_related_fields = ["structures", "tables", "attachments", "notebook"]
     filters = {
         "id": [ops.In, ops.Exact],
         "project": [ops.In, ops.Exact],
@@ -79,6 +81,7 @@ class ContributionsResource(Resource):
             "data",
             "structures",
             "tables",
+            "attachments",
             "notebook",
             "card_bootstrap",
             "card_bulma",
