@@ -13,7 +13,10 @@ except ImportError:
     from tqdm import tqdm
 
 from hashlib import md5
+from pathlib import Path
 from copy import deepcopy
+from filetype import guess
+from base64 import b64encode
 from urllib.parse import urlparse
 from pyisemail import is_email
 from collections import defaultdict
@@ -33,15 +36,22 @@ from boltons.iterutils import remap
 from pymatgen.core import Structure
 from concurrent.futures import as_completed
 from requests_futures.sessions import FuturesSession
+from filetype.types.archive import Gz
+from filetype.types.image import Jpeg, Png, Gif, Tiff
 
 
 MAX_WORKERS = 10
+MAX_ELEMS = 10
+MAX_BYTES = 200 * 1024
 DEFAULT_HOST = "contribs-api.materialsproject.org"
 BULMA = "is-narrow is-fullwidth has-background-light"
 PROVIDERS = {"github", "google", "facebook", "microsoft", "amazon"}
+COMPONENTS = {"structures", "tables", "attachments"}
 VALID_URLS = {f"http://{h}:{p}" for h in ["localhost", "contribs-api"] for p in [5000, 5002, 5003]}
 VALID_URLS |= {f"https://{n}-api.materialsproject.org" for n in ["contribs", "lightsources", "ml"]}
 VALID_URLS |= {f"http://localhost.{n}-api.materialsproject.org" for n in ["contribs", "lightsources", "ml"]}
+SUPPORTED_FILETYPES = (Gz, Jpeg, Png, Gif, Tiff)
+SUPPORTED_MIMES = [t().mime for t in SUPPORTED_FILETYPES]
 
 j2h = Json2Html()
 pd.options.plotting.backend = "plotly"
@@ -392,6 +402,7 @@ class Client(SwaggerClient):
         ret = defaultdict(set)
         ret["unique_identifiers"] = self.get_unique_identifiers_flag(name)
         pages = self.get_total_pages(name, 250)
+        id_fields = {"id", "identifier"}
 
         @sleep_and_retry
         @limits(calls=175, period=60)
@@ -403,7 +414,7 @@ class Client(SwaggerClient):
                     "project": name,
                     "page": page,
                     "per_page": 250,
-                    "_fields": "id,identifier,structures,tables",
+                    "_fields": ",".join(id_fields | COMPONENTS)
                 },
             )
             setattr(future, "track_id", page)
@@ -421,7 +432,7 @@ class Client(SwaggerClient):
                         ret["ids"].add(contrib["id"])
                         ret["identifiers"].add(contrib["identifier"])
 
-                        for component in ["structures", "tables"]:
+                        for component in COMPONENTS:
                             md5s = set(d["md5"] for d in contrib[component])
                             ret[component] |= md5s
 
@@ -471,13 +482,12 @@ class Client(SwaggerClient):
         print("prepare contributions ...")
         contribs = []
         digests = defaultdict(set)
-        components = {"structures", "tables"}
         fields = [
             comp
             for comp in self.swagger_spec.definitions.get(
                 "ContributionsSchema"
             )._properties.keys()
-            if comp not in components
+            if comp not in COMPONENTS
         ]
 
         # TODO parallelize?
@@ -490,19 +500,24 @@ class Client(SwaggerClient):
 
             contribs.append({k: deepcopy(contrib[k]) for k in fields if k in contrib})
 
-            for component in components:
+            for component in COMPONENTS:
                 contribs[-1][component] = []
                 elements = contrib.get(component, [])
                 nelems = len(elements)
 
+                if nelems > MAX_ELEMS:
+                    raise ValueError(f"Too many {component} ({nelems} > {MAX_ELEMS})!")
+
                 for idx, element in enumerate(elements):
                     is_structure = isinstance(element, Structure)
+                    is_table = isinstance(element, pd.DataFrame)
+                    is_attachment = isinstance(element, Path)
                     if component == "structures" and not is_structure:
-                        raise ValueError("Only accepting pymatgen Structure!")
-                    elif component == "tables" and not isinstance(
-                        element, pd.DataFrame
-                    ):
-                        raise ValueError("Only accepting pandas DataFrame!")
+                        raise ValueError(f"Only accepting pymatgen Structure for {component}!")
+                    elif component == "tables" and not is_table:
+                        raise ValueError(f"Only accepting pandas DataFrame for {component}!")
+                    elif component == "attachments" and not is_attachment:
+                        raise ValueError(f"Only accepting pathlib.Path for {component}!")
 
                     if is_structure:
                         dct = element.as_dict()
@@ -511,11 +526,29 @@ class Client(SwaggerClient):
 
                         if not dct.get("charge"):
                             del dct["charge"]
-                    else:
+                    elif is_table:
                         element.index = element.index.astype(str)
                         for col in element.columns:
                             element[col] = element[col].astype(str)
                         dct = element.to_dict(orient="split")
+                    elif is_attachment:
+                        kind = guess(str(element))
+
+                        if not isinstance(kind, SUPPORTED_FILETYPES):
+                            raise ValueError(
+                                f"Attachment {element.name} not supported. Please use one of {SUPPORTED_MIMES}!"
+                            )
+
+                        content = element.read_bytes()
+                        size = len(content)
+
+                        if size > MAX_BYTES:
+                            raise ValueError(f"Attachment {element.name} too large ({size} > {MAX_BYTES})!")
+
+                        dct = {
+                            "mime": kind.mime,
+                            "content": b64encode(content).decode("utf-8")
+                        }
 
                     digest = get_md5(dct)
 
@@ -525,7 +558,7 @@ class Client(SwaggerClient):
                             c = element.composition
                             comp = c.get_integer_formula_and_factor()
                             dct["name"] = f"{comp[0]}-{idx}" if nelems > 1 else comp[0]
-                    else:
+                    elif is_table:
                         name = f"table-{idx}" if nelems > 1 else "table"
                         dct["name"] = element.attrs.get("name", name)
                         title = element.attrs.get("title", dct["name"])
@@ -539,6 +572,8 @@ class Client(SwaggerClient):
                             labels["variable"] = variable
 
                         dct["attrs"] = {"title": title, "labels": labels}
+                    elif is_attachment:
+                        dct["name"] = element.name
 
                     dupe = digest in digests[component] or digest in existing[component]
 
@@ -549,6 +584,7 @@ class Client(SwaggerClient):
                     if not dupe:
                         digests[component].add(digest)
                         contribs[-1][component].append(dct)
+
 
         # submit contributions
         if contribs:
