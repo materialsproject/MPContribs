@@ -16,7 +16,7 @@ from hashlib import md5
 from pathlib import Path
 from copy import deepcopy
 from filetype import guess
-from base64 import b64encode
+from base64 import b64encode, b64decode
 from urllib.parse import urlparse
 from pyisemail import is_email
 from collections import defaultdict
@@ -31,7 +31,7 @@ from bravado.swagger_model import Loader
 from bravado.config import bravado_config_from_config_dict
 from bravado_core.spec import Spec
 from json2html import Json2Html
-from IPython.display import display, HTML
+from IPython.display import display, HTML, Image, FileLink
 from boltons.iterutils import remap
 from pymatgen.core import Structure
 from concurrent.futures import as_completed
@@ -135,6 +135,17 @@ class Dict(dict):
         return display(
             HTML(j2h.convert(json=remap(self, visit=visit), table_attributes=attrs))
         )
+
+
+class Attachment(dict):
+    def pretty(self):
+        content = b64decode(self["content"], validate=True)
+
+        if self["mime"].startswith("image/"):
+            return Image(content)
+
+        Path(self["name"]).write_bytes(content)
+        return FileLink(self["name"])
 
 
 def load_client(apikey=None, headers=None, host=None):
@@ -327,6 +338,31 @@ class Client(SwaggerClient):
                 pk=sid, _fields=["lattice", "sites", "charge"]
             ).result()
         )
+
+    def get_attachment(self, aid_or_md5):
+        """Convenience function to get attachment.
+
+        Args:
+            aid_or_md5 (str): ObjectId or MD5 hash digest for attachment
+
+        Returns:
+            pd.DataFrame: pandas DataFrame containing table data
+        """
+        str_len = len(aid_or_md5)
+        if str_len not in {24, 32}:
+            raise ValueError(f"'{aid_or_md5}' is not a valid attachment id or md5 hash digest!")
+
+        if str_len == 32:
+            attachments = self.attachments.get_entries(
+                md5=aid_or_md5, _fields=["id"]
+            ).result()
+            if not attachments:
+                raise ValueError(f"attachment for md5 '{aid_or_md5}' not found!")
+            aid = attachments["data"][0]["id"]
+        else:
+            aid = aid_or_md5
+
+        return Attachment(self.attachments.get_entry(pk=aid, _fields=["_all"]).result())
 
     def init_columns(self, project, columns):
         """initialize columns to set their order and desired units"""
