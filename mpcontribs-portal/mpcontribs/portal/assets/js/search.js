@@ -1,7 +1,7 @@
 import 'select2';
 
 var fields = ['formula', 'project', 'identifier'];
-var subresources = ['structures', 'tables'];
+var subresources = ['structures', 'tables', 'attachments'];
 
 function get_single_selection(field) {
     var select = $('#'+field+'s_list').select2("data");
