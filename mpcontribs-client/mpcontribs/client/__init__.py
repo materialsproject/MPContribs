@@ -49,7 +49,9 @@ PROVIDERS = {"github", "google", "facebook", "microsoft", "amazon"}
 COMPONENTS = {"structures", "tables", "attachments"}
 VALID_URLS = {f"http://{h}:{p}" for h in ["localhost", "contribs-api"] for p in [5000, 5002, 5003]}
 VALID_URLS |= {f"https://{n}-api.materialsproject.org" for n in ["contribs", "lightsources", "ml"]}
-VALID_URLS |= {f"http://localhost.{n}-api.materialsproject.org" for n in ["contribs", "lightsources", "ml"]}
+VALID_URLS |= {
+    f"http://localhost.{n}-api.materialsproject.org" for n in ["contribs", "lightsources", "ml"]
+}
 SUPPORTED_FILETYPES = (Gz, Jpeg, Png, Gif, Tiff)
 SUPPORTED_MIMES = [t().mime for t in SUPPORTED_FILETYPES]
 
@@ -572,14 +574,14 @@ class Client(SwaggerClient):
 
                         if not isinstance(kind, SUPPORTED_FILETYPES):
                             raise ValueError(
-                                f"Attachment {element.name} not supported. Please use one of {SUPPORTED_MIMES}!"
+                                f"{element.name} not supported. Use one of {SUPPORTED_MIMES}!"
                             )
 
                         content = element.read_bytes()
                         size = len(content)
 
                         if size > MAX_BYTES:
-                            raise ValueError(f"Attachment {element.name} too large ({size} > {MAX_BYTES})!")
+                            raise ValueError(f"{element.name} too large ({size} > {MAX_BYTES})!")
 
                         dct = {
                             "mime": kind.mime,
@@ -620,7 +622,6 @@ class Client(SwaggerClient):
                     if not dupe:
                         digests[component].add(digest)
                         contribs[-1][component].append(dct)
-
 
         # submit contributions
         if contribs:
