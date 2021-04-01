@@ -49,7 +49,7 @@ class Attachments(DynamicDocument):
 
         # b64 decode
         try:
-            content = b64decode(document.content)
+            content = b64decode(document.content, validate=True)
         except binascii.Error:
             raise ValidationError(f"Attachment {document.name} not base64 encoded!")
 
