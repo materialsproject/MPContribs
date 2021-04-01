@@ -30,8 +30,12 @@ class Attachments(DynamicDocument):
 
     @classmethod
     def post_init(cls, sender, document, **kwargs):
-        if document.id:
-            # TODO object should only be retrieved if content requested
+        if document.id and document.content:
+            if not document.md5:
+                # TODO AttributeError: _changed_fields
+                # document.reload("md5")
+                raise ValueError("Please also request md5 field to retrieve attachment content!")
+
             retr = s3_client.get_object(Bucket=BUCKET, Key=document.md5)
             document.content = b64encode(retr["Body"].read()).decode("utf-8")
 
@@ -63,14 +67,14 @@ class Attachments(DynamicDocument):
         s = json.dumps(d, sort_keys=True).encode("utf-8")
         document.md5 = md5(s).hexdigest()
 
-        # save to S3 and delete content
+        # save to S3 and unset content
         s3_client.put_object(
             Bucket=BUCKET,
             Key=document.md5,
             ContentType=document.mime,
             Body=content,
         )
-        del document.content
+        document.content = size  # set to something useful to distinguish in post_init
 
 
 signals.post_init.connect(Attachments.post_init, sender=Attachments)
