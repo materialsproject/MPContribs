@@ -9,18 +9,22 @@ from flask_mongoengine import DynamicDocument
 from mongoengine import signals
 from mongoengine.fields import StringField
 from mongoengine import ValidationError
+from filetype.types.archive import Gz
+from filetype.types.image import Jpeg, Png, Gif, Tiff
 
 MAX_BYTES = 200 * 1024
 BUCKET = "mpcontribs-attachments"
 S3_ATTACHMENTS_URL = f"https://{BUCKET}.s3.amazonaws.com"
+SUPPORTED_FILETYPES = (Gz, Jpeg, Png, Gif, Tiff)
+SUPPORTED_MIMES = [t().mime for t in SUPPORTED_FILETYPES]
+
 s3_client = boto3.client("s3")
 
 
 class Attachments(DynamicDocument):
     name = StringField(required=True, help_text="file name")
     md5 = StringField(regex=r"^[a-z0-9]{32}$", unique=True, help_text="md5 sum")
-    # TODO list of accepted mime types
-    mime = StringField(required=True, help_text="attachment mime type")
+    mime = StringField(required=True, choices=SUPPORTED_MIMES, help_text="attachment mime type")
     content = StringField(required=True, help_text="base64-encoded attachment content")
     meta = {"collection": "attachments", "indexes": ["name", "mime", "md5"]}
 
