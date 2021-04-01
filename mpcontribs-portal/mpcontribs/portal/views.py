@@ -14,6 +14,7 @@ from bravado.exception import HTTPNotFound
 from json2html import Json2Html
 from boltons.iterutils import remap
 from fastnumbers import fast_real
+from base64 import b64decode
 
 from django.shortcuts import render, redirect
 from django.template import RequestContext
@@ -25,6 +26,7 @@ from mpcontribs.client import Client
 
 S3_DOWNLOADS_BUCKET = os.environ.get("S3_DOWNLOADS_BUCKET", "mpcontribs-downloads")
 S3_DOWNLOAD_URL = f"https://{S3_DOWNLOADS_BUCKET}.s3.amazonaws.com/"
+COMPONENTS = {"structures", "tables", "attachments"}
 j2h = Json2Html()
 
 
@@ -102,7 +104,7 @@ def landingpage(request, project):
             ctx["search_columns"] = ["identifier", "formula"] + [
                 col["path"]
                 for col in prov["columns"]
-                if col["unit"] == "NaN" and col["path"] not in ["structures", "tables"]
+                if col["unit"] == "NaN" and col["path"] not in COMPONENTS
             ]
             ctx["ranges"] = json.dumps(
                 {
@@ -235,23 +237,35 @@ def download_component(request, oid):
         """.strip()
         return HttpResponse(msg, status=403)
 
+    content = None
     client = Client(**ckwargs)
     try:
-        resp = client.structures.get_entry(pk=oid, _fields=["cif"]).result()
-        content = resp["cif"]
-        ext = "cif"
+        resp = client.structures.get_entry(pk=oid, _fields=["name", "cif"]).result()
+        name = resp["name"]
+        content = gzip.compress(bytes(resp["cif"], "utf-8"))
+        content_type = "application/gzip"
+        filename = f"{oid}_{name}.cif.gz"
     except HTTPNotFound:
         try:
             resp = client.get_table(oid)
-            content = resp.to_csv()
-            ext = "csv"
+            content = gzip.compress(bytes(resp.to_csv(), "utf-8"))
+            resp = client.tables.get_entry(pk=oid, _fields=["name"]).result()
+            name = resp["name"]
+            content_type = "application/gzip"
+            filename = f"{oid}_{name}.csv.gz"
         except HTTPNotFound:
-            return HttpResponse(f"Component with ObjectId {oid} not found.", status=404)
+            try:
+                resp = client.attachments.get_entry(pk=oid, _fields=["_all"]).result()
+                name = resp["name"]
+                content = b64decode(resp["content"], validate=True)
+                content_type = resp["mime"]
+                filename = f"{oid}_{name}"
+            except HTTPNotFound:
+                return HttpResponse(f"Component with ObjectId {oid} not found.", status=404)
 
     if content:
-        content = gzip.compress(bytes(content, "utf-8"))
-        response = HttpResponse(content, content_type="application/gzip")
-        response["Content-Disposition"] = f"attachment; filename={oid}.{ext}.gz"
+        response = HttpResponse(content, content_type=content_type)
+        response["Content-Disposition"] = f"attachment; filename={filename}"
         return response
 
     return HttpResponse(status=404)
@@ -275,7 +289,7 @@ def download_contribution(request, cid):
         for column in resp["columns"]
         if column["path"].startswith("data.")
     ]
-    fields += ["structures", "tables"]
+    fields += list(COMPONENTS)
     resp = client.contributions.download_entries(
         id=cid, short_mime="gz", format="json", _fields=fields
     ).result()
