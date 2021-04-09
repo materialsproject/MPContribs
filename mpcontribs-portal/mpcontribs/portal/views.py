@@ -4,9 +4,11 @@
 import os
 import gzip
 import json
+import boto3
 import nbformat
 import requests
 
+from io import BytesIO
 from copy import deepcopy
 from glob import glob
 from nbconvert import HTMLExporter
@@ -15,6 +17,7 @@ from json2html import Json2Html
 from boltons.iterutils import remap
 from fastnumbers import fast_real
 from base64 import b64decode
+from botocore.errorfactory import ClientError
 
 from django.shortcuts import render, redirect
 from django.template import RequestContext
@@ -24,10 +27,10 @@ from django.template.loader import select_template
 
 from mpcontribs.client import Client
 
-S3_DOWNLOADS_BUCKET = os.environ.get("S3_DOWNLOADS_BUCKET", "mpcontribs-downloads")
-S3_DOWNLOAD_URL = f"https://{S3_DOWNLOADS_BUCKET}.s3.amazonaws.com/"
+BUCKET = os.environ.get("S3_DOWNLOADS_BUCKET", "mpcontribs-downloads")
 COMPONENTS = {"structures", "tables", "attachments"}
 j2h = Json2Html()
+s3_client = boto3.client('s3')
 
 
 def visit(path, key, value):
@@ -301,12 +304,17 @@ def download_contribution(request, cid):
 
 def download_project(request, project):
     # NOTE separate original uploads for ML deployment
-    if os.environ["TRADEMARK"] == "ML":
-        cname = os.environ["PORTAL_CNAME"]
-        s3obj = f"{S3_DOWNLOAD_URL}{cname}/{project}.json.gz"
-        return redirect(s3obj)
+    # TODO enable choice to download full dataset ("manual/with_components/{project}.json.gz")
+    subdir = "raw" if os.environ.get("TRADEMARK") == "ML" else "without_components"
+    cname = os.environ["PORTAL_CNAME"]
+    key = f"{cname}/manual/{subdir}/{project}.json.gz"
 
-    return HttpResponse(status=404)
+    try:
+        retr = s3_client.get_object(Bucket=BUCKET, Key=key)
+        buffer = BytesIO(retr['Body'].read())
+        return HttpResponse(buffer, content_type="application/gzip")
+    except ClientError:
+        return HttpResponse(status=404)
 
 
 def download(request):
