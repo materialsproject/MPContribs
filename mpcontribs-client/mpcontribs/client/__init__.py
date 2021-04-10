@@ -160,12 +160,17 @@ def load_client(apikey=None, headers=None, host=None):
 class Client(SwaggerClient):
     """client to connect to MPContribs API
 
-    We only want to load the swagger spec from the remote server when needed and not everytime the
-    client is initialized. Hence using the Borg design nonpattern (instead of Singleton): Since the
-    __dict__ of any instance can be re-bound, Borg rebinds it in its __init__ to a class-attribute
-    dictionary. Now, any reference or binding of an instance attribute will actually affect all
-    instances equally.
+    Typical usage:
+        - set environment variable MPCONTRIBS_API_KEY to the API key from your MP profile
+        - import and init:
+          >>> from mpcontribs.client import Client
+          >>> client = Client()
     """
+    # We only want to load the swagger spec from the remote server when needed and not
+    # everytime the client is initialized. Hence using the Borg design nonpattern (instead
+    # of Singleton): Since the __dict__ of any instance can be re-bound, Borg rebinds it
+    # in its __init__ to a class-attribute dictionary. Now, any reference or binding of an
+    # instance attribute will actually affect all instances equally.
 
     _shared_state = {}
 
@@ -368,7 +373,35 @@ class Client(SwaggerClient):
         return Attachment(self.attachments.get_entry(pk=aid, _fields=["_all"]).result())
 
     def init_columns(self, project, columns):
-        """initialize columns to set their order and desired units"""
+        """initialize columns for a project to set their order and desired units
+
+        Be aware that this function resets/overwrites the `columns` field in a project.
+        The `columns` field also tracks the minima and maxima of each `data` field as
+        contributions are submitted. This function should thus be executed before
+        submitting contributions, or all contributions for a project should be deleted to
+        ensure clean initialization of all columns. If columns are not initialized using
+        this function, `submit_contributions` will respect the order of columns as they
+        are submitted and will auto-determine suitable units based on the first
+        contribution containing a respective data column.
+
+        The `columns` argument is a dictionary which maps the data field names to its
+        units. Use `None` to indicate that a field doesn't have a unit. Nested fields are
+        indicated using a dot (".") in the data field name. Example:
+
+        >>> client.init_columns("sandbox", {"a": None, "b.c": "eV", "b.d": "mm"})
+
+        This example will result in column headers on the project landing page of the form
+
+
+        |      |      data       |
+        | data |        b        |
+        |   a  | c [eV] | d [mm] |
+
+
+        Args:
+            project (str): name of the project for which to initialize data columns
+            columns (dict): dictionary mapping data column to its unit (use None as value)
+        """
         self.projects.update_entry(pk=project, project={"columns": []}).result()
         # sort to avoid "overlapping columns" error in handsontable's NestedHeaders
         sorted_columns = flatten(unflatten(columns, splitter="dot"), reducer="dot")
