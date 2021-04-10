@@ -1,5 +1,6 @@
 import Handsontable from "handsontable";
 import get from "lodash/get";
+import set from "lodash/set";
 import sha1 from "js-sha1";
 
 $('a[name="read_more"]').on('click', function() {
@@ -20,7 +21,13 @@ const table_id = 'table_' + project;
 const objectid_regex = /^[a-f\d]{24}$/i;
 const headers = $('#'+table_id).data('columns').split(',');
 const columns = $.map(headers, get_column_config);
-const fields = $.map(columns, function(conf) { return conf.data; });
+const fields = columns.flatMap((conf) => {
+    var ret = [conf.data];
+    if (conf.data.endsWith('.value')) {
+        ret.push(conf.data.replace(/\.value/g, '.error'))
+    }
+    return ret;
+});
 const default_query = {_fields: fields.join(','), project: project, _skip: 0};
 const rowHeight = 23;
 
@@ -29,7 +36,7 @@ var total_count;
 
 function get_data() {
     const url = window.api['host'] + 'contributions/';
-    return $.get({url: url, headers: window.api['headers'], data: query});
+    return $.get({dataType: "json", url: url, headers: window.api['headers'], data: query});
 }
 
 function make_url(text, href) {
@@ -114,6 +121,20 @@ function load_data(dom) {
         total_count = response.total_count;
         $('#total_count').html('<b>' + total_count + ' total</b>');
         $('#total_count').data('count', total_count);
+        var rlen = response.data.length;
+        for (var r = 0; r < rlen; r++) {
+            var doc = response['data'][r];
+            for (var c = 0; c < columns.length; c++) {
+                var col = columns[c].data;
+                if (col.endsWith('.value')) {
+                    var v = get(doc, col, '');
+                    if (v) {
+                        var e = get(doc, col.replace(/\.value/g, '.error'), '');
+                        if (e) { set(doc, col, v + "±" + e); }
+                    }
+                }
+            }
+        }
         dom.loadData(response.data);
         if (total_count > 20) {
             const height = response.data.length * rowHeight;
@@ -226,6 +247,10 @@ const hot = new Handsontable(container, {
                     for (var c = 0; c < columns.length; c++) {
                         var col = columns[c].data;
                         var v = get(doc, col, '');
+                        if (v && col.endsWith('.value')) {
+                            var e = get(doc, col.replace(/\.value/g, '.error'), '');
+                            if (e) { v += "±" + e; }
+                        }
                         update.push([last+r, c, v]);
                     }
                 }
