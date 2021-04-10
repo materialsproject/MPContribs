@@ -418,8 +418,18 @@ class Client(SwaggerClient):
             pk=project, project={"columns": cols}
         ).result()
 
-    def delete_contributions(self, project, per_page=100, max_workers=5):
-        """Convenience function to remove all contributions for a project"""
+    def delete_contributions(self, project, per_page=100, max_workers=5, retry=False):
+        """Remove all contributions for a project
+
+        Note: This also resets the columns field for a project. It might have to be
+        re-initialized via `client.init_columns()` again.`
+
+        Args:
+            project (str): name of the project for which to delete contributions
+            per_page (int): number of contributions to delete per request
+            max_workers (int): maximum number of parallel requests to send at a time
+            retry (bool): if True, retry deletion of failed contributions until done
+        """
         tic = time.perf_counter()
 
         if max_workers > MAX_WORKERS:
@@ -428,6 +438,8 @@ class Client(SwaggerClient):
 
         cids = self.get_contributions(project)["ids"]
         total = len(cids)
+        # reset columns to be save (sometimes not all are reset BUGFIX?)
+        self.projects.update_entry(pk=project, project={"columns": []}).result()
 
         if cids:
             with FuturesSession(max_workers=max_workers) as session:
@@ -448,13 +460,21 @@ class Client(SwaggerClient):
                     self._run_futures(futures, total=len(cids))
                     cids = self.get_contributions(project)["ids"]
 
+                    if not retry:
+                        break
+
                 self.load()
 
-        # reset columns to be save (sometimes not all are reset BUGFIX?)
-        self.projects.update_entry(pk=project, project={"columns": []}).result()
-        toc = time.perf_counter()
-        dt = (toc - tic) / 60
-        print(f"It took {dt:.1f}min to delete {total} contributions.")
+            toc = time.perf_counter()
+            dt = (toc - tic) / 60
+
+            if cids:
+                print(f"There were errors and {len(cids)} contributions are left to delete!")
+            else:
+                print(f"It took {dt:.1f}min to delete {total} contributions.")
+        else:
+            print(f"There aren't any contributions to delete for {project}")
+
 
     # TODO ratelimit support in bravado (wrapped around get_entry..., monkey-patch?)
     @sleep_and_retry
@@ -518,6 +538,15 @@ class Client(SwaggerClient):
 
         return ret
 
+    def get_number_contributions(self, **query):
+        """Retrieve total number of contributions for query
+
+        See `client.contributions.get_entries()` for keyword arguments used in query.
+        """
+        return self.contributions.get_entries(
+            _fields=["id"], _limit=1, **query
+        ).result()["total_count"]
+
     def submit_contributions(
         self,
         contributions,
@@ -529,6 +558,21 @@ class Client(SwaggerClient):
     ):
         """Convenience function to submit a list of contributions
 
+        Example for a single contribution dictionary:
+
+        {
+            "project": "sandbox",
+            "identifier": "mp-4",
+            "data": {
+                "a": "3 eV",
+                "b": {"c": "hello", "d": 3},
+                "d.e.f": "nest via dot-notation"
+            },
+            "structures": [<pymatgen Structure>, ...],
+            "tables": [<pandas DataFrame>, ...],
+            "attachments": [<pathlib.Path>, ...]
+        }
+
         Args:
             contributions (list): list of contribution dicts to submit
             skip_dupe_check (bool): skip check for duplicates of identifiers and components
@@ -537,6 +581,10 @@ class Client(SwaggerClient):
             per_page (int): number of contributions to submit in each chunk/request
             max_workers (int): number of parallel requests to use to submit chunk
         """
+        if not contributions or not isinstance(contributions, list):
+            print("Please provide list of contributions to submit.")
+            return
+
         tic = time.perf_counter()
 
         if max_workers > MAX_WORKERS:
@@ -544,18 +592,22 @@ class Client(SwaggerClient):
             print(f"max_workers reset to max {MAX_WORKERS}")
 
         # get existing contributions
-        print("get existing contributions ...")
         existing = defaultdict(set)
         existing["unique_identifiers"] = True
-        project_name = contributions[0]["project"]
+        project_names = list(set(c["project"] for c in contributions))
+        initial_total = self.get_number_contributions(project__in=project_names)
 
         if not skip_dupe_check:
-            existing = self.get_contributions(project_name)
+            print("get existing contributions ...")
+            existing = {
+                project_name: self.get_contributions(project_name)
+                for project_name in project_names
+            }
 
         # prepare contributions
         print("prepare contributions ...")
-        contribs = []
-        digests = defaultdict(set)
+        contribs = defaultdict(list)
+        digests = {project_name: defaultdict(set) for project_name in project_names}
         fields = [
             comp
             for comp in self.swagger_spec.definitions.get(
@@ -564,18 +616,24 @@ class Client(SwaggerClient):
             if comp not in COMPONENTS
         ]
 
-        # TODO parallelize?
         for contrib in tqdm(contributions, leave=False):
+            project_name = contrib["project"]
             if (
-                existing["unique_identifiers"]
-                and contrib["identifier"] in existing["identifiers"]
+                existing[project_name]["unique_identifiers"]
+                and contrib["identifier"] in existing[project_name]["identifiers"]
             ):
                 continue
 
-            contribs.append({k: deepcopy(contrib[k]) for k in fields if k in contrib})
+            contribs[project_name].append({
+                k: deepcopy(
+                    unflatten(contrib[k], splitter="dot")
+                    if k == "data" else contrib[k]
+                )
+                for k in fields if k in contrib
+            })
 
             for component in COMPONENTS:
-                contribs[-1][component] = []
+                contribs[project_name][-1][component] = []
                 elements = contrib.get(component, [])
                 nelems = len(elements)
 
@@ -649,22 +707,25 @@ class Client(SwaggerClient):
                     elif is_attachment:
                         dct["name"] = element.name
 
-                    dupe = digest in digests[component] or digest in existing[component]
+                    dupe = bool(
+                        digest in digests[project_name][component] or
+                        digest in existing[project_name][component]
+                    )
 
                     if not ignore_dupes and dupe:
-                        msg = f"Duplicate: {dct['name']}!"
+                        msg = f"Duplicate in {project_name}: {contrib['identifier']} {dct['name']}!"
                         raise ValueError(msg)
 
                     if not dupe:
-                        digests[component].add(digest)
-                        contribs[-1][component].append(dct)
+                        digests[project_name][component].add(digest)
+                        contribs[project_name][-1][component].append(dct)
 
         # submit contributions
         if contribs:
             print("submit contributions ...")
             with FuturesSession(max_workers=max_workers) as session:
                 # bravado future doesn't work with concurrent.futures
-                ncontribs = len(contribs)
+                total = 0
                 headers = {"Content-Type": "application/json"}
                 headers.update(self.headers)
 
@@ -677,29 +738,40 @@ class Client(SwaggerClient):
                         data=json.dumps(chunk).encode("utf-8"),
                     )
 
-                while contribs:
-                    futures = [
-                        post_future(chunk) for chunk in chunks(contribs, n=per_page)
-                    ]
+                for project_name in project_names:
+                    ncontribs = len(contribs[project_name])
+                    total += ncontribs
 
-                    self._run_futures(futures, total=len(contribs))
-
-                    if existing["unique_identifiers"] and retry:
-                        existing = self.get_contributions(project_name)
-                        contribs = [
-                            c
-                            for c in contribs
-                            if c["identifier"] not in existing["identifiers"]
+                    while contribs[project_name]:
+                        futures = [
+                            post_future(chunk) for chunk in chunks(
+                                contribs[project_name], n=per_page
+                            )
                         ]
-                    else:
-                        contribs = []  # abort retrying
-                        if not existing["unique_identifiers"] and retry:
-                            print("Please resubmit failed contributions manually.")
+
+                        self._run_futures(futures, total=ncontribs)
+
+                        if existing[project_name]["unique_identifiers"] and retry:
+                            existing[project_name] = self.get_contributions(project_name)
+                            contribs[project_name] = [
+                                c for c in contribs[project_name]
+                                if c["identifier"] not in existing[project_name]["identifiers"]
+                            ]
+                        else:
+                            contribs[project_name] = []  # abort retrying
+                            if not existing[project_name]["unique_identifiers"] and retry:
+                                print("Please resubmit failed contributions manually.")
 
                 self.load()
+                final_total = self.get_number_contributions(project__in=project_names)
+                submitted_total = final_total - initial_total
                 toc = time.perf_counter()
                 dt = (toc - tic) / 60
-                print(f"It took {dt:.1f}min to submit {ncontribs} contributions.")
+                print(f"It took {dt:.1f}min to submit {submitted_total} contributions.")
+
+                if submitted_total < total:
+                    failed_total = total - submitted_total
+                    print(f"{failed_total} contributions failed to submit. Check errors/warnings.")
         else:
             print("Nothing to submit.")
 
