@@ -16,6 +16,7 @@ from hashlib import md5
 from pathlib import Path
 from copy import deepcopy
 from filetype import guess
+from flatten_dict import flatten, unflatten
 from base64 import b64encode, b64decode
 from urllib.parse import urlparse
 from pyisemail import is_email
@@ -369,9 +370,11 @@ class Client(SwaggerClient):
     def init_columns(self, project, columns):
         """initialize columns to set their order and desired units"""
         self.projects.update_entry(pk=project, project={"columns": []}).result()
+        # sort to avoid "overlapping columns" error in handsontable's NestedHeaders
+        sorted_columns = flatten(unflatten(columns, splitter="dot"), reducer="dot")
         cols = []
 
-        for path, unit in columns.items():
+        for path, unit in sorted_columns.items():
             col = {"path": f"data.{path}"}
             if unit is not None:
                 col["unit"] = unit
