@@ -12,6 +12,8 @@ from mongoengine import ValidationError
 from filetype.types.archive import Gz
 from filetype.types.image import Jpeg, Png, Gif, Tiff
 
+from mpcontribs.api.config import API_CNAME
+
 MAX_BYTES = 200 * 1024
 BUCKET = "mpcontribs-attachments"
 S3_ATTACHMENTS_URL = f"https://{BUCKET}.s3.amazonaws.com"
@@ -19,6 +21,10 @@ SUPPORTED_FILETYPES = (Gz, Jpeg, Png, Gif, Tiff)
 SUPPORTED_MIMES = [t().mime for t in SUPPORTED_FILETYPES]
 
 s3_client = boto3.client("s3")
+
+
+def get_key(md5):
+    return f"{API_CNAME}/{md5}"
 
 
 class Attachments(DynamicDocument):
@@ -36,12 +42,12 @@ class Attachments(DynamicDocument):
                 # document.reload("md5")
                 raise ValueError("Please also request md5 field to retrieve attachment content!")
 
-            retr = s3_client.get_object(Bucket=BUCKET, Key=document.md5)
+            retr = s3_client.get_object(Bucket=BUCKET, Key=get_key(document.md5))
             document.content = b64encode(retr["Body"].read()).decode("utf-8")
 
     @classmethod
     def pre_delete(cls, sender, document, **kwargs):
-        s3_client.delete_object(Bucket=BUCKET, Key=document.md5)
+        s3_client.delete_object(Bucket=BUCKET, Key=get_key(document.md5))
 
     @classmethod
     def pre_save_post_validation(cls, sender, document, **kwargs):
@@ -70,7 +76,7 @@ class Attachments(DynamicDocument):
         # save to S3 and unset content
         s3_client.put_object(
             Bucket=BUCKET,
-            Key=document.md5,
+            Key=get_key(document.md5),
             ContentType=document.mime,
             Body=content,
         )
