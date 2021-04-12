@@ -15,4 +15,4 @@ ratelimit==2.2.1
 requests-futures==1.0.0
 service-identity==18.1.0
 twisted==21.2.0
-tqdm==4.59.0
+tqdm==4.60.0
