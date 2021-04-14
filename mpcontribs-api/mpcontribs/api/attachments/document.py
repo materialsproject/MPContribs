@@ -83,6 +83,7 @@ class Attachments(DynamicDocument):
             Bucket=BUCKET,
             Key=get_key(document.md5),
             ContentType=document.mime,
+            Metadata={"name": document.name},
             Body=content,
         )
         document.content = size  # set to something useful to distinguish in post_init
