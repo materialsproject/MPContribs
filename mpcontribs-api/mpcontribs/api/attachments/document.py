@@ -4,6 +4,7 @@ import boto3
 import binascii
 
 from hashlib import md5
+from flask import request
 from base64 import b64decode, b64encode
 from flask_mongoengine import DynamicDocument
 from mongoengine import signals
@@ -36,14 +37,18 @@ class Attachments(DynamicDocument):
 
     @classmethod
     def post_init(cls, sender, document, **kwargs):
-        if document.id and document.content:
-            if not document.md5:
-                # TODO AttributeError: _changed_fields
-                # document.reload("md5")
-                raise ValueError("Please also request md5 field to retrieve attachment content!")
+        if document.id and document._data.get("content"):
+            from mpcontribs.api.attachments.views import AttachmentsResource
+            res = AttachmentsResource()
+            requested_fields = res.get_requested_fields(params=request.args)
 
-            retr = s3_client.get_object(Bucket=BUCKET, Key=get_key(document.md5))
-            document.content = b64encode(retr["Body"].read()).decode("utf-8")
+            if "content" in requested_fields:
+                if not document.md5:
+                    # document.reload("md5")  # TODO AttributeError: _changed_fields
+                    raise ValueError("Please also request md5 field to retrieve attachment content!")
+
+                retr = s3_client.get_object(Bucket=BUCKET, Key=get_key(document.md5))
+                document.content = b64encode(retr["Body"].read()).decode("utf-8")
 
     @classmethod
     def pre_delete(cls, sender, document, **kwargs):

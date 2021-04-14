@@ -141,7 +141,7 @@ class Contributions(DynamicDocument):
     def post_init(cls, sender, document, **kwargs):
         # replace existing components with according ObjectIds
         for component, fields in COMPONENTS.items():
-            lst = getattr(document, component)
+            lst = document._data.get(component)
             if lst and lst[0].id is None:  # id is None for incoming POST
                 dmodule = import_module(f"mpcontribs.api.{component}.document")
                 klass = component.capitalize()
