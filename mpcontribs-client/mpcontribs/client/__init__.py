@@ -171,6 +171,7 @@ class Client(SwaggerClient):
     # of Singleton): Since the __dict__ of any instance can be re-bound, Borg rebinds it
     # in its __init__ to a class-attribute dictionary. Now, any reference or binding of an
     # instance attribute will actually affect all instances equally.
+    # TODO ratelimit support in bravado (wrapped around get_entry..., monkey-patch?)
 
     _shared_state = {}
 
@@ -475,8 +476,6 @@ class Client(SwaggerClient):
         else:
             print(f"There aren't any contributions to delete for {project}")
 
-
-    # TODO ratelimit support in bravado (wrapped around get_entry..., monkey-patch?)
     @sleep_and_retry
     @limits(calls=175, period=60)
     def get_unique_identifiers_flag(self, name):
@@ -713,7 +712,7 @@ class Client(SwaggerClient):
                     )
 
                     if not ignore_dupes and dupe:
-                        msg = f"Duplicate in {project_name}: {contrib['identifier']} {dct['name']}!"
+                        msg = f"Duplicate in {project_name}: {contrib['identifier']} {dct['name']}"
                         raise ValueError(msg)
 
                     if not dupe:
