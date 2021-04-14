@@ -797,7 +797,7 @@ class Client(SwaggerClient):
                         if "warning" in resp:
                             print(resp["warning"])
                     elif status != 502:
-                        print(resp["error"][:200] + "...")
+                        print(resp["error"][:10000] + "...")
                 elif status not in {503, 504}:
                     print("ERROR", response.content.decode("utf-8"))
 
