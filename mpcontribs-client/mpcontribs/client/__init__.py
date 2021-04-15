@@ -386,17 +386,18 @@ class Client(SwaggerClient):
         contribution containing a respective data column.
 
         The `columns` argument is a dictionary which maps the data field names to its
-        units. Use `None` to indicate that a field doesn't have a unit. Nested fields are
-        indicated using a dot (".") in the data field name. Example:
+        units. Use `None` to indicate that a field doesn't have a unit. The unit for a
+        dimensionless quantity is an empty string (""). Nested fields are indicated using
+        a dot (".") in the data field name. Example:
 
-        >>> client.init_columns("sandbox", {"a": None, "b.c": "eV", "b.d": "mm"})
+        >>> client.init_columns("sandbox", {"a": None, "b.c": "eV", "b.d": "mm", "e": ""})
 
         This example will result in column headers on the project landing page of the form
 
 
-        |      |      data       |
-        | data |        b        |
-        |   a  | c [eV] | d [mm] |
+        |      |      data       |      |
+        | data |        b        | data |
+        |   a  | c [eV] | d [mm] | e [] |
 
 
         Args:
