@@ -119,6 +119,8 @@ def build():
                             '\t\theaders={"X-Authenticated-Groups": "admin"},',
                             f'\t\thost="{MPCONTRIBS_API_HOST}"',
                             "\t)",
+                            "print(client.get_number_contributions())",
+                            # return something. See while loop in `run_cells`
                         ]
                     )
                 ),
@@ -147,7 +149,11 @@ def build():
                     )
 
             cid = str(document.id)
-            outputs = execute_cells(cid, cells)
+            try:
+                outputs = execute_cells(cid, cells)
+            except Exception as e:
+                raise ValueError(f"notebook generation for {cid} failed: {e}")
+
             if not outputs:
                 raise ValueError(f"notebook generation for {cid} failed!")
 

@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from uuid import uuid4
 from tornado.escape import json_encode, json_decode, url_escape
 from websocket import create_connection
 from notebook.utils import url_path_join
@@ -24,7 +23,7 @@ def run_cells(kernel_id, cid, cells):
                             "username": cid,
                             "version": "5.3",
                             "session": "",
-                            "msg_id": uuid4().hex,
+                            "msg_id": f"{cid}-{idx}",
                             "msg_type": "execute_request",
                         },
                         "parent_header": {},
@@ -45,7 +44,7 @@ def run_cells(kernel_id, cid, cells):
 
             outputs[idx] = []
             status = None
-            while status is None or status == "busy":
+            while status is None or status == "busy" or not len(outputs[idx]):
                 msg = ws.recv()
                 msg = json_decode(msg)
                 msg_type = msg["msg_type"]
@@ -58,7 +57,8 @@ def run_cells(kernel_id, cid, cells):
                     output = msg["content"]
                     output.pop("transient", None)
                     output["output_type"] = msg_type
-                    outputs[idx].append(output)
+                    msg_idx = msg["parent_header"]["msg_id"].split("-", 1)[1]
+                    outputs[int(msg_idx)].append(output)
                 elif msg_type == "error":
                     tb = msg["content"]["traceback"]
                     raise ValueError(tb)
