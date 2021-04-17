@@ -29,6 +29,7 @@ setup(
         "ipython",
         "json2html",
         "pandas",
+        "pint",
         "plotly",
         "pyIsEmail",
         "pymatgen",

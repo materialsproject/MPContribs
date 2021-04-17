@@ -39,6 +39,9 @@ from concurrent.futures import as_completed
 from requests_futures.sessions import FuturesSession
 from filetype.types.archive import Gz
 from filetype.types.image import Jpeg, Png, Gif, Tiff
+from pint import UnitRegistry
+from pint.unit import UnitDefinition
+from pint.converters import ScaleConverter
 
 
 MAX_WORKERS = 10
@@ -61,6 +64,21 @@ pd.options.plotting.backend = "plotly"
 pio.templates.default = "simple_white"
 warnings.formatwarning = lambda msg, *args, **kwargs: f"{msg}\n"
 warnings.filterwarnings("default", category=DeprecationWarning, module=__name__)
+
+ureg = UnitRegistry(
+    autoconvert_offset_to_baseunit=True,
+    preprocessors=[
+        lambda s: s.replace("%%", " permille "),
+        lambda s: s.replace("%", " percent "),
+    ],
+)
+ureg.define(UnitDefinition("percent", "%", (), ScaleConverter(0.01)))
+ureg.define(UnitDefinition("permille", "%%", (), ScaleConverter(0.001)))
+ureg.define(UnitDefinition("ppm", "ppm", (), ScaleConverter(1e-6)))
+ureg.define(UnitDefinition("ppb", "ppb", (), ScaleConverter(1e-9)))
+ureg.define("atom = 1")
+ureg.define("bohr_magneton = e * hbar / (2 * m_e) = µᵇ = µ_B = mu_B")
+ureg.define("electron_mass = 9.1093837015e-31 kg = mₑ = m_e")
 
 
 def get_md5(d):
@@ -404,9 +422,45 @@ class Client(SwaggerClient):
             project (str): name of the project for which to initialize data columns
             columns (dict): dictionary mapping data column to its unit (use None as value)
         """
-        self.projects.update_entry(pk=project, project={"columns": []}).result()
+        if not isinstance(project, str):
+            return {"error": "`project` argument must be a string!"}
+
+        if not isinstance(columns, dict):
+            return {"error": "`columns` argument must be a dict!"}
+
+        existing_columns = set()
+        for k, v in columns.items():
+            nesting = k.count(".")
+            if nesting > 4:
+                return {"error": f"Nesting too deep for {k}"}
+
+            for col in existing_columns:
+                if col.startswith(k):
+                    return {"error": f"duplicate definition of {k} in {col}!"}
+
+                for n in range(1, nesting+1):
+                    if k.rsplit(".", n)[0] == col:
+                        return {"error": f"Ancestor of {k} already defined in {col}!"}
+
+            is_valid_string = isinstance(v, str) and v.lower() != "nan"
+            if not is_valid_string and v is not None:
+                return {"error": f"Unit '{v}' for {k} invalid (use `None` or a non-NaN string)!"}
+
+            if v != "" and v not in ureg:
+                return {"error": f"Unit '{v}' for {k} invalid!"}
+
+            existing_columns.add(k)
+
+        resp = self.projects.get_entries(_fields=["name"]).result()
+        valid_projects = {p["name"] for p in resp["data"]}
+
+        if project not in valid_projects:
+            return {"error": f"{project} doesn't exist or you don't have access!"}
+
         # sort to avoid "overlapping columns" error in handsontable's NestedHeaders
         sorted_columns = flatten(unflatten(columns, splitter="dot"), reducer="dot")
+
+        self.projects.update_entry(pk=project, project={"columns": []}).result()
         cols = []
 
         for path, unit in sorted_columns.items():
