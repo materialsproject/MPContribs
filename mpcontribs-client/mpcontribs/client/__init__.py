@@ -39,9 +39,10 @@ from concurrent.futures import as_completed
 from requests_futures.sessions import FuturesSession
 from filetype.types.archive import Gz
 from filetype.types.image import Jpeg, Png, Gif, Tiff
-from pint import UnitRegistry
+from pint import UnitRegistry, Quantity
 from pint.unit import UnitDefinition
 from pint.converters import ScaleConverter
+from pint.errors import DimensionalityError
 
 
 MAX_WORKERS = 10
@@ -394,14 +395,15 @@ class Client(SwaggerClient):
     def init_columns(self, project, columns):
         """initialize columns for a project to set their order and desired units
 
-        Be aware that this function resets/overwrites the `columns` field in a project.
-        The `columns` field also tracks the minima and maxima of each `data` field as
+        The `columns` field tracks the minima and maxima of each `data` field as
         contributions are submitted. This function should thus be executed before
         submitting contributions, or all contributions for a project should be deleted to
         ensure clean initialization of all columns. If columns are not initialized using
         this function, `submit_contributions` will respect the order of columns as they
         are submitted and will auto-determine suitable units based on the first
-        contribution containing a respective data column.
+        contribution containing a respective data column. `init_columns` can be used at
+        any point to reset the order of columns, though. Previously determined `min/max`
+        values for the affected data fields will be respected.
 
         The `columns` argument is a dictionary which maps the data field names to its
         units. Use `None` to indicate that a field doesn't have a unit. The unit for a
@@ -430,6 +432,10 @@ class Client(SwaggerClient):
 
         existing_columns = set()
         for k, v in columns.items():
+            if k in COMPONENTS:
+                existing_columns.add(k)
+                continue
+
             nesting = k.count(".")
             if nesting > 4:
                 return {"error": f"Nesting too deep for {k}"}
@@ -460,18 +466,53 @@ class Client(SwaggerClient):
         # sort to avoid "overlapping columns" error in handsontable's NestedHeaders
         sorted_columns = flatten(unflatten(columns, splitter="dot"), reducer="dot")
 
-        self.projects.update_entry(pk=project, project={"columns": []}).result()
-        cols = []
+        # reconcile with existing columns
+        resp = self.projects.get_entry(pk=project, _fields=["columns"]).result()
+        existing_columns, new_columns = {}, []
+
+        for col in resp["columns"]:
+            path = col.pop("path")
+            existing_columns[path] = col
 
         for path, unit in sorted_columns.items():
-            col = {"path": f"data.{path}"}
+            if path in COMPONENTS:
+                new_columns.append({"path": path})
+                continue
+
+            full_path = f"data.{path}"
+            new_column = {"path": full_path}
+            existing_column = existing_columns.get(full_path)
+
             if unit is not None:
-                col["unit"] = unit
+                new_column["unit"] = unit
 
-            cols.append(col)
+            if existing_column:
+                for k in ["min", "max"]:
+                    v = existing_column.get(k)
+                    if v:
+                        new_column[k] = v
 
+                # NOTE if existing_unit == "NaN":
+                #   it was set by omitting "unit" in new_column
+                new_unit = new_column.get("unit", "NaN")
+                existing_unit = existing_column.get("unit")
+                if existing_unit != new_unit:
+                    try:
+                        Quantity(existing_unit).to(new_unit)
+                    except DimensionalityError:
+                        return {
+                            "error": f"Can't convert {existing_unit} to {new_unit} for {path}"
+                        }
+
+                    # TODO scale contributions to new unit
+                    return {"error": "Changing units not supported yet. Please resubmit"
+                            " contributions or update accordingly."}
+
+            new_columns.append(new_column)
+
+        self.projects.update_entry(pk=project, project={"columns": []}).result()
         return self.projects.update_entry(
-            pk=project, project={"columns": cols}
+            pk=project, project={"columns": new_columns}
         ).result()
 
     def delete_contributions(self, project, per_page=100, max_workers=5, retry=False):
