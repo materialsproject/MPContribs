@@ -207,7 +207,9 @@ class Contributions(DynamicDocument):
             except DoesNotExist:
                 pass  # column doesn't exist yet (generated in post_save)
             except DimensionalityError:
-                raise ValueError(f"Can't convert [{q.units}] to [{column.unit}]!")
+                raise ValueError(
+                    f"Can't convert [{q.units}] to [{column.unit}] for {field}!"
+                )
 
             # significant digits
             q = truncate_digits(q)
