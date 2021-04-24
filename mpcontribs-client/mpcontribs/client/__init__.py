@@ -668,6 +668,11 @@ class Client(SwaggerClient):
             "attachments": [<pathlib.Path>, ...]
         }
 
+        This function can also be used to update contributions by including the respective
+        contribution `id`s in the above dictionary and only including fields that need
+        updating. Set list entries to `None` for components that are to be left untouched
+        during an update.
+
         Args:
             contributions (list): list of contribution dicts to submit
             skip_dupe_check (bool): skip check for duplicates of identifiers and components
@@ -689,7 +694,24 @@ class Client(SwaggerClient):
         # get existing contributions
         existing = defaultdict(set)
         existing["unique_identifiers"] = True
-        project_names = list(set(c["project"] for c in contributions))
+
+        project_names = set()
+        collect_ids = []
+        for idx, c in enumerate(contributions):
+            if "id" in c:
+                collect_ids.append(c["id"])
+            elif "project" in c:
+                project_names.add(c["project"])
+            else:
+                print(f"Fields `project` or `id` missing for contribution #{idx}!")
+                return
+
+        resp = self.contributions.get_entries(
+            id__in=collect_ids, _fields=["id", "project"]
+        ).result()
+        id2project = {c["id"]: c["project"] for c in resp["data"]}
+        project_names |= set(id2project.values())
+        project_names = list(project_names)
         initial_total = self.get_number_contributions(project__in=project_names)
 
         if not skip_dupe_check:
@@ -712,9 +734,10 @@ class Client(SwaggerClient):
         ]
 
         for contrib in tqdm(contributions, leave=False):
-            project_name = contrib["project"]
+            update = "id" in contrib
+            project_name = id2project[contrib["id"]] if update else contrib["project"]
             if (
-                existing[project_name]["unique_identifiers"]
+                not update and existing[project_name]["unique_identifiers"]
                 and contrib["identifier"] in existing[project_name]["identifiers"]
             ):
                 continue
@@ -728,14 +751,22 @@ class Client(SwaggerClient):
             })
 
             for component in COMPONENTS:
-                contribs[project_name][-1][component] = []
                 elements = contrib.get(component, [])
                 nelems = len(elements)
 
                 if nelems > MAX_ELEMS:
                     raise ValueError(f"Too many {component} ({nelems} > {MAX_ELEMS})!")
 
+                if update and not nelems:
+                    continue  # nothing to update for this component
+
+                contribs[project_name][-1][component] = []
+
                 for idx, element in enumerate(elements):
+                    if update and element is None:
+                        contribs[project_name][-1][component].append(None)
+                        continue
+
                     is_structure = isinstance(element, Structure)
                     is_table = isinstance(element, pd.DataFrame)
                     is_attachment = isinstance(element, Path)
@@ -833,16 +864,30 @@ class Client(SwaggerClient):
                         data=json.dumps(chunk).encode("utf-8"),
                     )
 
+                def put_future(cdct):
+                    pk = cdct.pop("id")
+                    return session.put(
+                        f"{self.url}/contributions/{pk}/",
+                        headers=headers,
+                        data=json.dumps(cdct).encode("utf-8"),
+                    )
+
                 for project_name in project_names:
                     ncontribs = len(contribs[project_name])
                     total += ncontribs
 
                     while contribs[project_name]:
-                        futures = [
-                            post_future(chunk) for chunk in chunks(
-                                contribs[project_name], n=per_page
-                            )
-                        ]
+                        futures = []
+                        for chunk in chunks(contribs[project_name], n=per_page):
+                            post_chunk = []
+                            for c in chunk:
+                                if "id" in c:
+                                    futures.append(put_future(c))
+                                else:
+                                    post_chunk.append(c)
+
+                            if post_chunk:
+                                futures.append(post_future(post_chunk))
 
                         self._run_futures(futures, total=ncontribs)
 
@@ -882,8 +927,10 @@ class Client(SwaggerClient):
                 if status in {200, 201, 400, 401, 404, 500, 502}:
                     resp = response.json()
                     if status in {200, 201}:
-                        if total:
-                            cnt = len(resp["data"]) if "data" in resp else resp["count"]
+                        if total and "data" in resp:
+                            cnt = len(resp["data"])
+                        elif total and "count" in resp:
+                            cnt = resp["count"]
                         else:
                             cnt = 1
                         pbar.update(cnt)
