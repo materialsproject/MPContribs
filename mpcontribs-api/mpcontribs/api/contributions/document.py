@@ -119,9 +119,15 @@ class Contributions(DynamicDocument):
     data = DictField(
         default={}, validation=valid_dict, help_text="simple free-form data"
     )
-    structures = ListField(ReferenceField("Structures"), default=list, max_length=10)
-    tables = ListField(ReferenceField("Tables", null=True), default=list, max_length=10)
-    attachments = ListField(ReferenceField("Attachments"), default=list, max_length=10)
+    structures = ListField(
+        ReferenceField("Structures", null=True), default=list, max_length=10
+    )
+    tables = ListField(
+        ReferenceField("Tables", null=True), default=list, max_length=10
+    )
+    attachments = ListField(
+        ReferenceField("Attachments", null=True), default=list, max_length=10
+    )
     notebook = LazyReferenceField("Notebooks", passthrough=True)
     meta = {
         "collection": "contributions",
