@@ -109,6 +109,9 @@ def get_specs(klass, method, collection):
                 )
                 if op.typ == "array":
                     filter_params[-1]["items"] = {"type": "string"}
+                if hasattr(op, "fmt"):
+                    filter_params[-1]["format"] = op.fmt
+
 
     order_params = []
     if klass.resource.allowed_ordering:

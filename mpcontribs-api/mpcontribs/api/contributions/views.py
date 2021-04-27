@@ -57,7 +57,7 @@ class ContributionsResource(Resource):
         "identifier": [ops.In, ops.Contains, ops.Exact],
         "formula": [ops.In, ops.Contains, ops.Exact],
         "is_public": [ops.Boolean],
-        "last_modified": [ops.Gte, ops.Lte],
+        "last_modified": [ops.After, ops.Before],
         re.compile(r"^data__((?!__).)*$"): [ops.Contains, ops.Gte, ops.Lte],
     }
     fields = ["id", "project", "identifier", "formula", "is_public", "last_modified"]
