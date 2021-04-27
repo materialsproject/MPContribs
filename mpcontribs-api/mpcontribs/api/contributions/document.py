@@ -225,6 +225,7 @@ class Contributions(DynamicDocument):
             return key, value
 
         document.data = remap(document.data, visit=make_quantities, enter=enter)
+        document.last_modified = datetime.utcnow()
 
     @classmethod
     def post_save(cls, sender, document, **kwargs):
@@ -280,8 +281,6 @@ class Contributions(DynamicDocument):
                 if getattr(document, path):
                     project.columns.create(path=path)
                     project.save().reload("columns")
-
-        document.last_modified = datetime.utcnow()
 
     @classmethod
     def pre_delete(cls, sender, document, **kwargs):
