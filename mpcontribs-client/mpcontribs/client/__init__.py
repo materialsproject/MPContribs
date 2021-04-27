@@ -43,7 +43,7 @@ from pint import UnitRegistry, Quantity
 from pint.unit import UnitDefinition
 from pint.converters import ScaleConverter
 from pint.errors import DimensionalityError
-
+from datetime import datetime
 
 MAX_WORKERS = 10
 MAX_ELEMS = 10
@@ -875,6 +875,7 @@ class Client(SwaggerClient):
                 for project_name in project_names:
                     ncontribs = len(contribs[project_name])
                     total += ncontribs
+                    start = datetime.utcnow()
 
                     while contribs[project_name]:
                         futures = []
@@ -902,16 +903,14 @@ class Client(SwaggerClient):
                             if not existing[project_name]["unique_identifiers"] and retry:
                                 print("Please resubmit failed contributions manually.")
 
-                self.load()
-                final_total = self.get_number_contributions(project__in=project_names)
-                submitted_total = final_total - initial_total
+                end = datetime.utcnow()
+                updated_total = self.get_number_contributions(
+                    project__in=project_names, last_modified__gt=start, last_modified__lt=end
+                )
                 toc = time.perf_counter()
                 dt = (toc - tic) / 60
-                print(f"It took {dt:.1f}min to submit {submitted_total} contributions.")
-
-                if submitted_total < total:
-                    failed_total = total - submitted_total
-                    print(f"{failed_total} contributions failed to submit. Check errors/warnings.")
+                self.load()
+                print(f"It took {dt:.1f}min to submit {updated_total} contributions.")
         else:
             print("Nothing to submit.")
 
