@@ -21,6 +21,7 @@ from pint.unit import UnitDefinition
 from pint.converters import ScaleConverter
 from pint.errors import DimensionalityError
 from uncertainties import ufloat_fromstr
+from collections import defaultdict
 
 from mpcontribs.api import enter, valid_dict, delimiter
 
@@ -48,6 +49,18 @@ COMPONENTS = {
     "tables": ["index", "columns", "data"],
     "attachments": ["mime", "content"],
 }
+
+
+def format_cell(cell):
+    if cell.count(" ") > 1:
+        return cell
+
+    q = get_quantity(cell)
+    if not q:
+        return cell
+
+    q = truncate_digits(q)
+    return str(q.value) if isnan(q.std_dev) else str(q)
 
 
 def new_error_units(measurement, quantity):
@@ -104,6 +117,19 @@ def get_min_max(sender, path):
     return (values[0], values[-1]) if len(values) else (None, None)
 
 
+def get_resource(component):
+    klass = component.capitalize()
+    vmodule = import_module(f"mpcontribs.api.{component}.views")
+    Resource = getattr(vmodule, f"{klass}Resource")
+    return Resource()
+
+
+def get_md5(resource, obj, fields):
+    d = resource.serialize(obj, fields=fields)
+    s = json.dumps(d, sort_keys=True).encode("utf-8")
+    return md5(s).hexdigest()
+
+
 class Contributions(DynamicDocument):
     project = LazyReferenceField(
         "Projects", required=True, passthrough=True, reverse_delete_rule=CASCADE
@@ -149,20 +175,12 @@ class Contributions(DynamicDocument):
         for component, fields in COMPONENTS.items():
             lst = document._data.get(component)
             if lst and lst[0].id is None:  # id is None for incoming POST
-                dmodule = import_module(f"mpcontribs.api.{component}.document")
-                klass = component.capitalize()
-                Docs = getattr(dmodule, klass)
-                vmodule = import_module(f"mpcontribs.api.{component}.views")
-                Resource = getattr(vmodule, f"{klass}Resource")
-                resource = Resource()
+                resource = get_resource(component)
                 for i, o in enumerate(lst):
-                    d = resource.serialize(o, fields=fields)
-                    s = json.dumps(d, sort_keys=True).encode("utf-8")
-                    digest = md5(s).hexdigest()
-                    obj = Docs.objects(md5=digest).only("id").first()
+                    digest = get_md5(resource, o, fields)
+                    obj = resource.document.objects(md5=digest).only("id").first()
                     if obj:
-                        obj.reload()
-                        lst[i] = obj
+                        lst[i] = obj.to_dbref()
 
     @classmethod
     def pre_save_post_validation(cls, sender, document, **kwargs):
@@ -292,19 +310,24 @@ class Contributions(DynamicDocument):
     def pre_delete(cls, sender, document, **kwargs):
         args = ["notebook"] + list(COMPONENTS.keys())
         document.reload(*args)
+        deleted = defaultdict(list)
+
+        for component in COMPONENTS.keys():
+            # check if other contributions exist before deletion!
+            for idx, obj in enumerate(getattr(document, component)):
+                q = {component: obj.id}
+                if sender.objects(**q).count() < 2:
+                    obj.delete()
+                    deleted[component].append(idx)
 
         # remove reference documents
         if document.notebook is not None:
             from mpcontribs.api.notebooks.document import Notebooks
 
-            Notebooks.objects(id=document.notebook.id).delete()
+            nid = document.notebook.id
+            nb = Notebooks.objects(id=nid).first()
+            nb.delete(signal_kwargs=deleted)
 
-        for component in COMPONENTS.keys():
-            # check if other contributions exist before deletion!
-            for obj in getattr(document, component):
-                q = {component: obj.id}
-                if sender.objects(**q).count() < 2:
-                    obj.delete()
 
     @classmethod
     def post_delete(cls, sender, document, **kwargs):

@@ -14,6 +14,7 @@ from filetype.types.archive import Gz
 from filetype.types.image import Jpeg, Png, Gif, Tiff
 
 from mpcontribs.api.config import API_CNAME
+from mpcontribs.api.contributions.document import get_resource, get_md5, COMPONENTS
 
 MAX_BYTES = 200 * 1024
 BUCKET = "mpcontribs-attachments"
@@ -38,8 +39,7 @@ class Attachments(DynamicDocument):
     @classmethod
     def post_init(cls, sender, document, **kwargs):
         if document.id and document._data.get("content"):
-            from mpcontribs.api.attachments.views import AttachmentsResource
-            res = AttachmentsResource()
+            res = get_resource("attachments")
             requested_fields = res.get_requested_fields(params=request.args)
 
             if "content" in requested_fields:
@@ -56,7 +56,8 @@ class Attachments(DynamicDocument):
 
     @classmethod
     def pre_save_post_validation(cls, sender, document, **kwargs):
-        from mpcontribs.api.attachments.views import AttachmentsResource
+        if document.md5:
+            return  # attachment already cross-referenced to existing one
 
         # b64 decode
         try:
@@ -73,10 +74,8 @@ class Attachments(DynamicDocument):
             )
 
         # md5
-        resource = AttachmentsResource()
-        d = resource.serialize(document, fields=["mime", "content"])
-        s = json.dumps(d, sort_keys=True).encode("utf-8")
-        document.md5 = md5(s).hexdigest()
+        resource = get_resource("attachments")
+        document.md5 = get_md5(resource, document, COMPONENTS["attachments"])
 
         # save to S3 and unset content
         s3_client.put_object(

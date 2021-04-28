@@ -72,12 +72,18 @@ class Notebooks(Document):
 
     @classmethod
     def pre_delete(cls, sender, document, **kwargs):
+        idx = 0
+        deleted = kwargs.get("tables", [])
+
         for cell in document.cells:
             for output in cell.get("outputs", []):
                 contents = output.get("data", {}).get("image/png")
                 if contents:
-                    key = hashlib.sha1(contents.encode("utf-8")).hexdigest()
-                    s3_client.delete_object(Bucket=BUCKET, Key=key)
+                    if idx in deleted:
+                        key = hashlib.sha1(contents.encode("utf-8")).hexdigest()
+                        s3_client.delete_object(Bucket=BUCKET, Key=key)
+
+                    idx += 1
 
     def transform(self, incoming=True):
         if incoming:
