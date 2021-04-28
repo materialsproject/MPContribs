@@ -715,7 +715,6 @@ class Client(SwaggerClient):
             project_names |= set(id2project.values())
 
         project_names = list(project_names)
-        initial_total = self.get_number_contributions(project__in=project_names)
 
         if not skip_dupe_check:
             print("get existing contributions ...")
