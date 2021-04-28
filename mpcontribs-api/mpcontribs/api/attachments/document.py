@@ -86,7 +86,7 @@ class Attachments(DynamicDocument):
             Metadata={"name": document.name},
             Body=content,
         )
-        document.content = size  # set to something useful to distinguish in post_init
+        document.content = str(size)  # set to something useful to distinguish in post_init
 
 
 signals.post_init.connect(Attachments.post_init, sender=Attachments)
