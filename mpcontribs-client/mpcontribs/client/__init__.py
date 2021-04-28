@@ -845,9 +845,8 @@ class Client(SwaggerClient):
                         msg = f"Duplicate in {project_name}: {contrib['identifier']} {dct['name']}"
                         raise ValueError(msg)
 
-                    if not dupe:
-                        digests[project_name][component].add(digest)
-                        contribs[project_name][-1][component].append(dct)
+                    digests[project_name][component].add(digest)
+                    contribs[project_name][-1][component].append(dct)
 
         # submit contributions
         if contribs:
