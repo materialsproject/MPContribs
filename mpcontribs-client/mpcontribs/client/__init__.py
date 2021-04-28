@@ -706,11 +706,14 @@ class Client(SwaggerClient):
                 print(f"Fields `project` or `id` missing for contribution #{idx}!")
                 return
 
-        resp = self.contributions.get_entries(
-            id__in=collect_ids, _fields=["id", "project"]
-        ).result()
-        id2project = {c["id"]: c["project"] for c in resp["data"]}
-        project_names |= set(id2project.values())
+        id2project = {}
+        if collect_ids:
+            resp = self.contributions.get_entries(
+                id__in=collect_ids, _fields=["id", "project"]
+            ).result()
+            id2project = {c["id"]: c["project"] for c in resp["data"]}
+            project_names |= set(id2project.values())
+
         project_names = list(project_names)
         initial_total = self.get_number_contributions(project__in=project_names)
 
