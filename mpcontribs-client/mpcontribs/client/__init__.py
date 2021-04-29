@@ -153,21 +153,35 @@ def visit(path, key, value):
 
 
 class Dict(dict):
-    def pretty(self, attrs=f'class="table {BULMA}"'):
+    def display(self, attrs=f'class="table {BULMA}"'):
         return display(
             HTML(j2h.convert(json=remap(self, visit=visit), table_attributes=attrs))
         )
 
 
+class Table(pd.DataFrame):
+    def display(self):
+        return self.plot(**self.attrs)
+
+
 class Attachment(dict):
-    def pretty(self):
-        content = b64decode(self["content"], validate=True)
+    def decode(self):
+        return b64decode(self["content"], validate=True)
+
+    def display(self):
+        content = self.decode()
 
         if self["mime"].startswith("image/"):
             return Image(content)
 
         Path(self["name"]).write_bytes(content)
         return FileLink(self["name"])
+
+    def info(self):
+        fields = ["id", "name", "mime", "md5"]
+        info = Dict((k, v) for k, v in self.items() if k in fields)
+        info["size"] = len(self.decode())
+        return info.display()
 
 
 def load_client(apikey=None, headers=None, host=None):
@@ -357,7 +371,7 @@ class Client(SwaggerClient):
         if "variable" in labels:
             df.columns.name = labels["variable"]
 
-        return df
+        return Table(df)
 
     def get_structure(self, sid):
         """Convenience function to get pymatgen structure."""
