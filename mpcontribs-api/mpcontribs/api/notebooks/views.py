@@ -124,21 +124,14 @@ def build():
                         ]
                     )
                 ),
-                nbf.new_code_cell(f'client.get_contribution("{document.id}").pretty()'),
+                nbf.new_code_cell(f'client.get_contribution("{document.id}").display()'),
             ]
 
             if document.tables:
                 cells.append(nbf.new_markdown_cell("## Tables"))
                 for table in document.tables:
                     cells.append(
-                        nbf.new_code_cell(
-                            "\n".join(
-                                [
-                                    f'df = client.get_table("{table.id}")',
-                                    "df.plot(**df.attrs)",
-                                ]
-                            )
-                        )
+                        nbf.new_code_cell(f'client.get_table("{table.id}").display()')
                     )
 
             if document.structures:
@@ -146,6 +139,13 @@ def build():
                 for structure in document.structures:
                     cells.append(
                         nbf.new_code_cell(f'client.get_structure("{structure.id}")')
+                    )
+
+            if document.attachments:
+                cells.append(nbf.new_markdown_cell("## Attachments"))
+                for attachment in document.attachments:
+                    cells.append(
+                        nbf.new_code_cell(f'client.get_attachment("{attachment.id}").info()')
                     )
 
             cid = str(document.id)
