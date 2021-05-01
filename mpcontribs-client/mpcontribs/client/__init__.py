@@ -62,6 +62,7 @@ SUPPORTED_MIMES = [t().mime for t in SUPPORTED_FILETYPES]
 
 j2h = Json2Html()
 pd.options.plotting.backend = "plotly"
+pd.set_option('mode.use_inf_as_na', True)
 pio.templates.default = "simple_white"
 warnings.formatwarning = lambda msg, *args, **kwargs: f"{msg}\n"
 warnings.filterwarnings("default", category=DeprecationWarning, module=__name__)
@@ -362,7 +363,8 @@ class Client(SwaggerClient):
 
         df = pd.DataFrame.from_records(
             table["data"], columns=table["columns"], index=table["index"]
-        )
+        ).apply(pd.to_numeric, errors="ignore")
+        df.index = pd.to_numeric(df.index, errors="ignore")
         df.attrs = table["attrs"]
         labels = table["attrs"].get("labels", {})
 
@@ -801,6 +803,7 @@ class Client(SwaggerClient):
                         if not dct.get("charge"):
                             del dct["charge"]
                     elif is_table:
+                        element.fillna('', inplace=True)
                         element.index = element.index.astype(str)
                         for col in element.columns:
                             element[col] = element[col].astype(str)
