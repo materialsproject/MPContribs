@@ -52,15 +52,16 @@ COMPONENTS = {
 
 
 def format_cell(cell):
-    if cell.count(" ") > 1:
+    cell = cell.strip()
+    if not cell or cell.count(" ") > 1:
         return cell
 
     q = get_quantity(cell)
-    if not q:
+    if not q or isnan(q.nominal_value):
         return cell
 
     q = truncate_digits(q)
-    return str(q.value) if isnan(q.std_dev) else str(q)
+    return str(q.nominal_value) if isnan(q.std_dev) else str(q)
 
 
 def new_error_units(measurement, quantity):
