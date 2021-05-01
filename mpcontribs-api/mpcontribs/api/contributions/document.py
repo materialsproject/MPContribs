@@ -87,6 +87,9 @@ def get_quantity(s):
 
 
 def truncate_digits(q):
+    if isnan(q.nominal_value):
+        return q
+
     v = Decimal(str(q.nominal_value))
     vt = v.as_tuple()
 
