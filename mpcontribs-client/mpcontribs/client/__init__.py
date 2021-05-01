@@ -365,7 +365,6 @@ class Client(SwaggerClient):
             table["data"], columns=table["columns"], index=table["index"]
         ).apply(pd.to_numeric, errors="ignore")
         df.index = pd.to_numeric(df.index, errors="ignore")
-        df.attrs = table["attrs"]
         labels = table["attrs"].get("labels", {})
 
         if "index" in labels:
@@ -373,7 +372,9 @@ class Client(SwaggerClient):
         if "variable" in labels:
             df.columns.name = labels["variable"]
 
-        return Table(df)
+        ret = Table(df)
+        ret.attrs = table["attrs"]
+        return ret
 
     def get_structure(self, sid):
         """Convenience function to get pymatgen structure."""
