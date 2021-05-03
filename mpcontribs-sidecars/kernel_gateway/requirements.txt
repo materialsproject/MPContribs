@@ -3,4 +3,4 @@ jupyter-kernel-gateway==2.5.0
 mpcontribs-client==3.9.6
 plotly==4.14.3
 psutil==5.8.0
-pymatgen==2022.0.6
+pymatgen==2022.0.7
