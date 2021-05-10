@@ -14,6 +14,6 @@ pymatgen==2022.0.7
 pyOpenSSL==20.0.1
 ratelimit==2.2.1
 requests-futures==1.0.0
-service-identity==18.1.0
+service-identity==21.1.0
 twisted==21.2.0
 tqdm==4.60.0
