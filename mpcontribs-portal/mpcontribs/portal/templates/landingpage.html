@@ -5,33 +5,40 @@
 <section class="section" id=landingpage>
 
     {% if references %}
-    <nav class="breadcrumb has-bullet-separator is-size-7 is-marginless">
-        <ul>
-            {% for ref in references %}
-            <li><a href="{{ref.url}}" target="_blank" rel="noopener noreferrer">{{ref.label}}</a></li>
-            {% endfor %}
-            {% if more_references %}
-            <li></li>
-            <a name="read_more">[+]</a>
-            {% for ref in more_references %}
-            <li name="read_more" class="is-hidden"><a href="{{ref.url}}">{{ref.label}}</a></li>
-            {% endfor %}
-            {% endif %}
-        </ul>
-    </nav>
+        <div class="breadcrumb has-bullet-separator is-marginless is-small" style="display: flex;">
+            <label style="padding-right: 9px;">Reference(s):</label>
+            <ul>
+                {% for ref in references %}
+                <li><a href="{{ref.url}}" target="_blank" rel="noopener noreferrer">{{ref.label}}</a></li>
+                {% endfor %}
+                {% if more_references %}
+                <li></li>
+                <a name="read_more">[+]</a>
+                {% for ref in more_references %}
+                <li name="read_more" class="is-hidden"><a href="{{ref.url}}">{{ref.label}}</a></li>
+                {% endfor %}
+                {% endif %}
+            </ul>
+        </div>
     {% endif %}
 
+    {% if title %}
     <div class="title">{{ title }}</div>
+    {% endif %}
+    {% if authors %}
     <div class="subtitle">
-        {{ authors.main }}
+        <span>{{ authors.main }}</span>
         {% if authors.etal %}
         <a name="read_more">et al.</a>
         <span name="read_more" hidden>, {{ authors.etal }}</span>
         {% endif %}
     </div>
+    {% endif %}
 
+    {% if descriptions or other %}
     <article class="message is-dark">
         <div class="message-body">
+            {% if descriptions %}
             <div class="content">
                 {{ descriptions.0|safe }}.
                 {% if descriptions.1 %}
@@ -39,6 +46,7 @@
                 <span name="read_more" hidden>{{ descriptions.1|safe }}</span>
                 {% endif %}
             </div>
+            {% endif %}
             {% if other and other.strip != 'null' %}
             <details>
                 <summary>Other Info</summary>
@@ -49,6 +57,7 @@
             {% endif %}
         </div>
     </article>
+    {% endif %}
 
     {% if not request.META.HTTP_X_ANONYMOUS_CONSUMER %}
     {% if columns and columns.strip != 'null' %}

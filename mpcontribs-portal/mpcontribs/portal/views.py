@@ -72,8 +72,9 @@ def landingpage(request, project):
     ckwargs = client_kwargs(request)
     headers = ckwargs.get("headers", {})
     ctx = get_context(request)
+    not_logged_in = headers.get("X-Anonymous-Consumer", False)
 
-    if headers.get("X-Anonymous-Consumer", False):
+    if not_logged_in:
         ctx["alert"] = f"""
         Please <a href=\"{ctx['OAUTH_URL']}\">log in</a> to browse and filter contributions.
         """.strip()
@@ -116,7 +117,12 @@ def landingpage(request, project):
                     if col["unit"] != "NaN"
                 }
             )
-
+    except HTTPNotFound:
+        msg = f"Project '{project}' not found or access denied!"
+        if not_logged_in:
+            ctx["alert"] += f" {msg}"
+        else:
+            ctx["alert"] = msg
     except Exception as ex:
         ctx["alert"] = str(ex)
 
