@@ -85,7 +85,12 @@ function urlRenderer(instance, td, row, col, prop, value, cellProperties) {
             Handsontable.renderers.HtmlRenderer.apply(this, arguments);
             Handsontable.dom.empty(td);
             var href = '/contributions/' + basename;
-            var tag = $('<a/>', {'class': 'tag is-link is-light', href: href});
+            var tag;
+            if (prop === "id") {
+                tag = $('<a/>', {'class': 'tag is-link is-light', href: href});
+            } else {
+                tag = $('<p/>', {'class': 'tag is-light'});
+            }
             var span = $('<span/>', {text: basename.slice(-7)});
             var span_icon = $('<span/>', {'class': 'icon'});
             var icon = $('<i/>', {'class': 'fas fa-file-alt'});
