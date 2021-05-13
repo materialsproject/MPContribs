@@ -34,7 +34,7 @@ from bravado_core.spec import Spec
 from json2html import Json2Html
 from IPython.display import display, HTML, Image, FileLink
 from boltons.iterutils import remap
-from pymatgen.core import Structure
+from pymatgen.core import Structure as PmgStructure
 from concurrent.futures import as_completed
 from requests_futures.sessions import FuturesSession
 from filetype.types.archive import Gz
@@ -786,7 +786,7 @@ class Client(SwaggerClient):
                         contribs[project_name][-1][component].append(None)
                         continue
 
-                    is_structure = isinstance(element, Structure)
+                    is_structure = isinstance(element, PmgStructure)
                     is_table = isinstance(element, pd.DataFrame)
                     is_attachment = isinstance(element, Path)
                     if component == "structures" and not is_structure:
