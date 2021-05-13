@@ -154,6 +154,7 @@ def visit(path, key, value):
 
 
 class Dict(dict):
+    """custom dictionary to display itself as Bulma table"""
     def display(self, attrs=f'class="table {BULMA}"'):
         return display(
             HTML(j2h.convert(json=remap(self, visit=visit), table_attributes=attrs))
@@ -341,7 +342,7 @@ class Client(SwaggerClient):
         return Dict(self.projects.get_entry(pk=project, _fields=["_all"]).result())
 
     def get_contribution(self, cid):
-        """Convenience function to get full contribution entry and display as HTML table"""
+        """Convenience function to get full contribution entry"""
         fields = list(
             self.swagger_spec.definitions.get("ContributionsSchema")._properties.keys()
         )  # don't return dynamic fields (card_*)
