@@ -164,25 +164,48 @@ class Table(pd.DataFrame):
     def display(self):
         return self.plot(**self.attrs)
 
+    def info(self):
+        info = Dict((k, v) for k, v in self.attrs.items())
+        info["columns"] = ", ".join(self.columns)
+        info["nrows"] = len(self.index)
+        return info
+
+
+class Structure(PmgStructure):
+    def display(self):
+        return self  # TODO use static image from crystal toolkit?
+
+    def info(self):
+        info = Dict((k, v) for k, v in self.attrs.items())
+        info["formula"] = self.composition.formula
+        info["reduced_formula"] = self.composition.reduced_formula
+        info["nsites"] = len(self)
+        return info
+
 
 class Attachment(dict):
     def decode(self):
         return b64decode(self["content"], validate=True)
 
-    def display(self):
+    def write(self, outdir=None):
+        outdir = outdir or "."
+        path = Path(outdir) / self["name"]
         content = self.decode()
+        path.write_bytes(content)
 
+    def display(self, outdir=None):
         if self["mime"].startswith("image/"):
+            content = self.decode()
             return Image(content)
 
-        Path(self["name"]).write_bytes(content)
+        self.write(outdir=outdir)
         return FileLink(self["name"])
 
     def info(self):
         fields = ["id", "name", "mime", "md5"]
         info = Dict((k, v) for k, v in self.items() if k in fields)
         info["size"] = len(self.decode())
-        return info.display()
+        return info
 
 
 def load_client(apikey=None, headers=None, host=None):
@@ -356,9 +379,12 @@ class Client(SwaggerClient):
             table["data"].extend(resp["data"])
             if pages is None:
                 pages = resp["total_data_pages"]
-                table["attrs"] = resp["attrs"]
                 table["index"] = resp["index"]
                 table["columns"] = resp["columns"]
+                table["attrs"] = resp.get("attrs", {})
+                for field in ["id", "name", "md5"]:
+                    table["attrs"][field] = resp[field]
+
             page += 1
 
         df = pd.DataFrame.from_records(
@@ -376,13 +402,37 @@ class Client(SwaggerClient):
         ret.attrs = table["attrs"]
         return ret
 
-    def get_structure(self, sid):
-        """Convenience function to get pymatgen structure."""
-        return Structure.from_dict(
-            self.structures.get_entry(
-                pk=sid, _fields=["lattice", "sites", "charge"]
-            ).result()
-        )
+    def get_structure(self, sid_or_md5):
+        """Convenience function to get pymatgen structure
+
+        Args:
+            sid_or_md5 (str): ObjectId or MD5 hash digest for structure
+
+        Returns:
+            pymatgen.Structure: pymatgen Structure
+        """
+        str_len = len(sid_or_md5)
+        if str_len not in {24, 32}:
+            raise ValueError(f"'{sid_or_md5}' is not a valid structure id or md5 hash digest!")
+
+        if str_len == 32:
+            structures = self.structures.get_entries(md5=sid_or_md5, _fields=["id"]).result()
+            if not structures:
+                raise ValueError(f"structure for md5 '{sid_or_md5}' not found!")
+            sid = structures["data"][0]["id"]
+        else:
+            sid = sid_or_md5
+
+        fields = list(
+            self.swagger_spec.definitions.get("StructuresSchema")._properties.keys()
+        )  # don't return dynamic fields (cif)
+        resp = self.structures.get_entry(pk=sid, _fields=fields).result()
+        ret = Structure.from_dict(resp)
+        ret.attrs = {
+            field: resp[field]
+            for field in ["id", "name", "md5"]
+        }
+        return ret
 
     def get_attachment(self, aid_or_md5):
         """Convenience function to get attachment.
