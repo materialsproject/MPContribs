@@ -3,6 +3,13 @@
 
 {% block content %}
 <section class="section" id=landingpage>
+    <div id="component-modal" class="modal">
+        <div class="modal-background"></div>
+        <div class="modal-content">
+            <!-- dynamically add component preview -->
+        </div>
+        <button class="modal-close is-large" aria-label="close"></button>
+    </div>
 
     {% if references %}
         <div class="breadcrumb has-bullet-separator is-marginless is-small" style="display: flex;">

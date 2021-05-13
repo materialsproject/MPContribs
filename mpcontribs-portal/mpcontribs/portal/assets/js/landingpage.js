@@ -59,8 +59,17 @@ function urlRenderer(instance, td, row, col, prop, value, cellProperties) {
         $.each(value, function(i, v) {
             var control = $('<div/>', {'class': 'control'});
             var tags = $('<div/>', {'class': 'tags has-addons'});
+            var tag1 = $('<a/>', {'class': 'tag is-link is-light', text: v['name']});
+            tag1.click(function(e) {
+                var url = '/contributions/show_component/' + v['id'];
+                $.get({url: url}).done(function(response) {
+                    var modal = $("#component-modal");
+                    var content = modal.children(".modal-content").first();
+                    content.html(response);
+                    modal.addClass("is-active");
+                });
+            });
             var href = '/contributions/component/' + v['id'];
-            var tag1 = $('<a/>', {'class': 'tag is-link is-light', text: v['name']}); // TODO view modal
             var tag2 = $('<a/>', {'class': 'tag', href: href});
             var span = $('<span/>', {'class': 'icon'});
             var icon = $('<i/>', {'class': 'fas fa-download'});
@@ -337,6 +346,10 @@ $('#column_manager_select_all').click(function() {
     }
     set_download_urls();
     hot.render();
+});
+
+$('.modal-close').click(function() {
+    $(this).parent().removeClass('is-active');
 });
 
 //if ($("#graph").length && project !== 'redox_thermo_csp') {

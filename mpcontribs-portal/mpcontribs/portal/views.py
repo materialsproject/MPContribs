@@ -16,7 +16,6 @@ from bravado.exception import HTTPNotFound
 from json2html import Json2Html
 from boltons.iterutils import remap
 from fastnumbers import fast_real
-from base64 import b64decode
 from botocore.errorfactory import ClientError
 
 from django.shortcuts import render, redirect
@@ -237,10 +236,40 @@ def contribution(request, cid):
     return render(request, "contribution.html", ctx.flatten())
 
 
+def show_component(request, oid):
+    ckwargs = client_kwargs(request)
+    headers = ckwargs.get("headers", {})
+    if headers.get("X-Anonymous-Consumer", False):
+        ctx = get_context(request)
+        msg = f"""
+        Please <a href=\"{ctx['OAUTH_URL']}\">log in</a> to show contribution component.
+        """.strip()
+        return HttpResponse(msg, status=403)
+
+    resp = None
+    client = Client(**ckwargs)
+    try:
+        resp = client.get_structure(oid)
+    except HTTPNotFound:
+        try:
+            resp = client.get_table(oid)
+        except HTTPNotFound:
+            try:
+                resp = client.get_attachment(oid)
+            except HTTPNotFound:
+                return HttpResponse(f"Component with ObjectId {oid} not found.", status=404)
+
+    if resp is not None:
+        return HttpResponse(resp.info().display())
+
+    return HttpResponse(status=404)
+
+
 def download_component(request, oid):
     ckwargs = client_kwargs(request)
     headers = ckwargs.get("headers", {})
     if headers.get("X-Anonymous-Consumer", False):
+        ctx = get_context(request)
         msg = f"""
         Please <a href=\"{ctx['OAUTH_URL']}\">log in</a> to download contribution component.
         """.strip()
@@ -284,6 +313,7 @@ def download_contribution(request, cid):
     ckwargs = client_kwargs(request)
     headers = ckwargs.get("headers", {})
     if headers.get("X-Anonymous-Consumer", False):
+        ctx = get_context(request)
         msg = f"""
         Please <a href=\"{ctx['OAUTH_URL']}\">log in</a> to download contribution.
         """.strip()
@@ -330,6 +360,7 @@ def download(request):
     ckwargs = client_kwargs(request)
     headers = ckwargs.get("headers", {})
     if headers.get("X-Anonymous-Consumer", False):
+        ctx = get_context(request)
         msg = f"""
         Please <a href=\"{ctx['OAUTH_URL']}\">log in</a> to download contribution.
         """.strip()

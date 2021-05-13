@@ -38,6 +38,11 @@ urlpatterns = [
         name="download_component",
     ),
     url(
+        r"^contributions/show_component/(?P<oid>[a-f\d]{24})$",
+        views.show_component,
+        name="show_component",
+    ),
+    url(
         r"^contributions/(?P<cid>[a-f\d]{24}).json.gz$",
         views.download_contribution,
         name="download_contribution",
