@@ -264,9 +264,9 @@ def download_component(request, oid):
             filename = f"{oid}_{name}.csv.gz"
         except HTTPNotFound:
             try:
-                resp = client.attachments.get_entry(pk=oid, _fields=["_all"]).result()
+                resp = client.get_attachment(oid)
                 name = resp["name"]
-                content = b64decode(resp["content"], validate=True)
+                content = resp.decode()
                 content_type = resp["mime"]
                 filename = f"{oid}_{name}"
             except HTTPNotFound:

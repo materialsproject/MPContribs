@@ -124,28 +124,40 @@ def build():
                         ]
                     )
                 ),
-                nbf.new_code_cell(f'client.get_contribution("{document.id}").display()'),
+                nbf.new_code_cell("\n".join([
+                    f'c = client.get_contribution("{document.id}")',
+                    'c.display()'
+                ])),
             ]
 
             if document.tables:
                 cells.append(nbf.new_markdown_cell("## Tables"))
                 for table in document.tables:
                     cells.append(
-                        nbf.new_code_cell(f'client.get_table("{table.id}").display()')
+                        nbf.new_code_cell("\n".join([
+                            f't = client.get_table("{table.id}")',
+                            't.display()'
+                        ]))
                     )
 
             if document.structures:
                 cells.append(nbf.new_markdown_cell("## Structures"))
                 for structure in document.structures:
                     cells.append(
-                        nbf.new_code_cell(f'client.get_structure("{structure.id}")')
+                        nbf.new_code_cell("\n".join([
+                            f's = client.get_structure("{structure.id}")',
+                            's.display()'
+                        ]))
                     )
 
             if document.attachments:
                 cells.append(nbf.new_markdown_cell("## Attachments"))
                 for attachment in document.attachments:
                     cells.append(
-                        nbf.new_code_cell(f'client.get_attachment("{attachment.id}").info()')
+                        nbf.new_code_cell("\n".join([
+                            f'a = client.get_attachment("{attachment.id}")',
+                            'a.info()'
+                        ]))
                     )
 
             cid = str(document.id)
