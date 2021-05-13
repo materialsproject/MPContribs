@@ -8,11 +8,7 @@ import warnings
 import pandas as pd
 import plotly.io as pio
 
-try:
-    from tqdm.notebook import tqdm
-except ImportError:
-    from tqdm import tqdm
-
+from tqdm.auto import tqdm
 from hashlib import md5
 from pathlib import Path
 from copy import deepcopy
