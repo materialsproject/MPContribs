@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import sys
 import os
 import json
 import fido
@@ -153,12 +154,19 @@ def visit(path, key, value):
     return True
 
 
+def in_ipython():
+    ipython = sys.modules['IPython'].get_ipython()
+    return ipython is not None and 'IPKernelApp' in ipython.config
+
+
 class Dict(dict):
     """custom dictionary to display itself as Bulma table"""
     def display(self, attrs=f'class="table {BULMA}"'):
-        return display(
-            HTML(j2h.convert(json=remap(self, visit=visit), table_attributes=attrs))
-        )
+        html = j2h.convert(json=remap(self, visit=visit), table_attributes=attrs)
+        if in_ipython():
+            return display(HTML(html))
+
+        return html
 
 
 class Table(pd.DataFrame):
@@ -195,12 +203,15 @@ class Attachment(dict):
         path.write_bytes(content)
 
     def display(self, outdir=None):
-        if self["mime"].startswith("image/"):
-            content = self.decode()
-            return Image(content)
+        if in_ipython():
+            if self["mime"].startswith("image/"):
+                content = self.decode()
+                return Image(content)
 
-        self.write(outdir=outdir)
-        return FileLink(self["name"])
+            self.write(outdir=outdir)
+            return FileLink(self["name"])
+
+        return self.info().display()
 
     def info(self):
         fields = ["id", "name", "mime", "md5"]
