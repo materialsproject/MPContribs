@@ -912,7 +912,9 @@ class Client(SwaggerClient):
                             size = len(content)
 
                             if size > MAX_BYTES:
-                                raise ValueError(f"{element.name} too large ({size} > {MAX_BYTES})!")
+                                raise ValueError(
+                                    f"{element.name} too large ({size} > {MAX_BYTES})!"
+                                )
 
                             dct = {
                                 "mime": kind.mime,
