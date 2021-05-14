@@ -4,10 +4,12 @@ import os
 import json
 import fido
 import time
+import gzip
 import warnings
 import pandas as pd
 import plotly.io as pio
 
+from typing import Union
 from tqdm.auto import tqdm
 from hashlib import md5
 from pathlib import Path
@@ -189,31 +191,59 @@ class Structure(PmgStructure):
 
 
 class Attachment(dict):
-    def decode(self):
+    """Class to handle attachments"""
+    def decode(self) -> str:
         return b64decode(self["content"], validate=True)
 
-    def write(self, outdir=None):
+    def write(self, outdir: Union[str, Path] = None) -> Path:
         outdir = outdir or "."
-        path = Path(outdir) / self["name"]
+        path = Path(outdir) / self.name
         content = self.decode()
         path.write_bytes(content)
+        return path
 
-    def display(self, outdir=None):
+    def display(self, outdir: Union[str, Path] = None):
         if in_ipython():
             if self["mime"].startswith("image/"):
                 content = self.decode()
                 return Image(content)
 
             self.write(outdir=outdir)
-            return FileLink(self["name"])
+            return FileLink(self.name)
 
         return self.info().display()
 
-    def info(self):
+    def info(self) -> Dict:
         fields = ["id", "name", "mime", "md5"]
         info = Dict((k, v) for k, v in self.items() if k in fields)
         info["size"] = len(self.decode())
         return info
+
+    @property
+    def name(self) -> str:
+        return self["name"]
+
+    @classmethod
+    def from_data(cls, name: str, data: Union[list, dict]):
+        """Construct attachment from data dict or list
+
+        Args:
+            name (str): name for the attachment
+            data (list,dict): JSON-serializable data to go into the attachment
+        """
+        filename = name + ".json.gz"
+        data_json = json.dumps(data, indent=4).encode("utf-8")
+        content = gzip.compress(data_json)
+        size = len(content)
+
+        if size > MAX_BYTES:
+            raise ValueError(f"{name} too large ({size} > {MAX_BYTES})!")
+
+        return cls(
+            name=filename,
+            mime="application/gzip",
+            content=b64encode(content).decode("utf-8")
+        )
 
 
 def load_client(apikey=None, headers=None, host=None):
@@ -846,13 +876,15 @@ class Client(SwaggerClient):
 
                     is_structure = isinstance(element, PmgStructure)
                     is_table = isinstance(element, pd.DataFrame)
-                    is_attachment = isinstance(element, Path)
+                    is_attachment = isinstance(element, Path) or isinstance(element, Attachment)
                     if component == "structures" and not is_structure:
-                        raise ValueError(f"Only accepting pymatgen Structure for {component}!")
+                        raise ValueError(f"Use pymatgen Structure for {component}!")
                     elif component == "tables" and not is_table:
-                        raise ValueError(f"Only accepting pandas DataFrame for {component}!")
+                        raise ValueError(f"Use pandas DataFrame for {component}!")
                     elif component == "attachments" and not is_attachment:
-                        raise ValueError(f"Only accepting pathlib.Path for {component}!")
+                        raise ValueError(
+                            f"Use pathlib.Path or mpcontribs.client.Attachment for {component}!"
+                        )
 
                     if is_structure:
                         dct = element.as_dict()
@@ -868,23 +900,26 @@ class Client(SwaggerClient):
                             element[col] = element[col].astype(str)
                         dct = element.to_dict(orient="split")
                     elif is_attachment:
-                        kind = guess(str(element))
+                        if isinstance(element, Path):
+                            kind = guess(str(element))
 
-                        if not isinstance(kind, SUPPORTED_FILETYPES):
-                            raise ValueError(
-                                f"{element.name} not supported. Use one of {SUPPORTED_MIMES}!"
-                            )
+                            if not isinstance(kind, SUPPORTED_FILETYPES):
+                                raise ValueError(
+                                    f"{element.name} not supported. Use one of {SUPPORTED_MIMES}!"
+                                )
 
-                        content = element.read_bytes()
-                        size = len(content)
+                            content = element.read_bytes()
+                            size = len(content)
 
-                        if size > MAX_BYTES:
-                            raise ValueError(f"{element.name} too large ({size} > {MAX_BYTES})!")
+                            if size > MAX_BYTES:
+                                raise ValueError(f"{element.name} too large ({size} > {MAX_BYTES})!")
 
-                        dct = {
-                            "mime": kind.mime,
-                            "content": b64encode(content).decode("utf-8")
-                        }
+                            dct = {
+                                "mime": kind.mime,
+                                "content": b64encode(content).decode("utf-8")
+                            }
+                        else:
+                            dct = {k: element[k] for k in ["mime", "content"]}
 
                     digest = get_md5(dct)
 
