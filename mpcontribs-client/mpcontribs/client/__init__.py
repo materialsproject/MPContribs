@@ -427,9 +427,7 @@ class Client(SwaggerClient):
         Args:
             cid (str): contribution ObjectID
         """
-        fields = list(
-            self.swagger_spec.definitions.get("ContributionsSchema")._properties.keys()
-        )  # don't return dynamic fields (card_*)
+        fields = list(self.get_model("ContributionsSchema")._properties.keys())
         fields.remove("notebook")
         return Dict(self.contributions.get_entry(pk=cid, _fields=fields).result())
 
@@ -502,9 +500,7 @@ class Client(SwaggerClient):
         else:
             sid = sid_or_md5
 
-        fields = list(
-            self.swagger_spec.definitions.get("StructuresSchema")._properties.keys()
-        )  # don't return dynamic fields (cif)
+        fields = list(self.get_model("StructuresSchema")._properties.keys())
         resp = self.structures.get_entry(pk=sid, _fields=fields).result()
         ret = Structure.from_dict(resp)
         ret.attrs = {
@@ -889,9 +885,7 @@ class Client(SwaggerClient):
         digests = {project_name: defaultdict(set) for project_name in project_names}
         fields = [
             comp
-            for comp in self.swagger_spec.definitions.get(
-                "ContributionsSchema"
-            )._properties.keys()
+            for comp in self.get_model("ContributionsSchema")._properties.keys()
             if comp not in COMPONENTS
         ]
 
