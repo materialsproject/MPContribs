@@ -9,7 +9,7 @@ import warnings
 import pandas as pd
 import plotly.io as pio
 
-from typing import Union
+from typing import Union, Type
 from tqdm.auto import tqdm
 from hashlib import md5
 from pathlib import Path
@@ -152,26 +152,37 @@ def visit(path, key, value):
     return True
 
 
-def in_ipython():
+def _in_ipython():
     ipython = sys.modules['IPython'].get_ipython()
     return ipython is not None and 'IPKernelApp' in ipython.config
 
 
 class Dict(dict):
-    """custom dictionary to display itself as Bulma table"""
-    def display(self, attrs=f'class="table {BULMA}"'):
+    """Custom dictionary to display itself as HTML table with Bulma CSS"""
+    def display(self, attrs: str = f'class="table {BULMA}"'):
+        """Nice table display of dictionary
+
+        Args:
+            attrs (str): table attributes to forward to Json2Html.convert
+        """
         html = j2h.convert(json=remap(self, visit=visit), table_attributes=attrs)
-        if in_ipython():
+        if _in_ipython():
             return display(HTML(html))
 
         return html
 
 
 class Table(pd.DataFrame):
+    """Wrapper class around pandas.DataFrame to provide display() and info()"""
     def display(self):
-        return self.plot(**self.attrs)
+        """Display a plotly graph for the table if in IPython/Jupyter"""
+        if _in_ipython():
+            return self.plot(**self.attrs)
 
-    def info(self):
+        return self
+
+    def info(self) -> Type[Dict]:
+        """Show summary info for table"""
         info = Dict((k, v) for k, v in self.attrs.items())
         info["columns"] = ", ".join(self.columns)
         info["nrows"] = len(self.index)
@@ -179,10 +190,12 @@ class Table(pd.DataFrame):
 
 
 class Structure(PmgStructure):
+    """Wrapper class around pymatgen.Structure to provide display() and info()"""
     def display(self):
         return self  # TODO use static image from crystal toolkit?
 
-    def info(self):
+    def info(self) -> Type[Dict]:
+        """Show summary info for structure"""
         info = Dict((k, v) for k, v in self.attrs.items())
         info["formula"] = self.composition.formula
         info["reduced_formula"] = self.composition.reduced_formula
@@ -191,11 +204,17 @@ class Structure(PmgStructure):
 
 
 class Attachment(dict):
-    """Class to handle attachments"""
+    """Wrapper class around dict to handle attachments"""
     def decode(self) -> str:
+        """Decode base64-encoded content of attachment"""
         return b64decode(self["content"], validate=True)
 
     def write(self, outdir: Union[str, Path] = None) -> Path:
+        """Write attachment to file using its name
+
+        Args:
+            outdir (str,Path): existing directory to which to write file
+        """
         outdir = outdir or "."
         path = Path(outdir) / self.name
         content = self.decode()
@@ -203,7 +222,12 @@ class Attachment(dict):
         return path
 
     def display(self, outdir: Union[str, Path] = None):
-        if in_ipython():
+        """Display Image/FileLink for attachment if in IPython/Jupyter
+
+        Args:
+            outdir (str,Path): existing directory to which to write file
+        """
+        if _in_ipython():
             if self["mime"].startswith("image/"):
                 content = self.decode()
                 return Image(content)
@@ -214,6 +238,7 @@ class Attachment(dict):
         return self.info().display()
 
     def info(self) -> Dict:
+        """Show summary info for attachment"""
         fields = ["id", "name", "mime", "md5"]
         info = Dict((k, v) for k, v in self.items() if k in fields)
         info["size"] = len(self.decode())
@@ -221,6 +246,7 @@ class Attachment(dict):
 
     @property
     def name(self) -> str:
+        """name of the attachment (used in filename)"""
         return self["name"]
 
     @classmethod
@@ -270,7 +296,14 @@ class Client(SwaggerClient):
 
     _shared_state = {}
 
-    def __init__(self, apikey=None, headers=None, host=None):
+    def __init__(self, apikey: str = None, headers: dict = None, host: str = None):
+        """Initialize the client - only reloads API spec from server as needed
+
+        Args:
+            apikey (str): API key - can also be set via MPCONTRIBS_API_KEY env var
+            headers (dict): custom headers for localhost connections - ignored if API key set
+            host (str): host address to connect to - can also be set via MPCONTRIBS_API_HOST
+        """
         # - Kong forwards consumer headers when api-key used for auth
         # - forward consumer headers when connecting through localhost
         self.__dict__ = self._shared_state
@@ -298,9 +331,9 @@ class Client(SwaggerClient):
         if "swagger_spec" not in self.__dict__ or (
             self.swagger_spec.http_client.headers != self.headers
         ):
-            self.load()
+            self._load()
 
-    def load(self):
+    def _load(self):
         http_client = FidoClientGlobalHeaders(headers=self.headers)
         loader = Loader(http_client)
         origin_url = f"{self.url}/apispec.json"
@@ -374,26 +407,37 @@ class Client(SwaggerClient):
             swagger_spec, also_return_response=bravado_config.also_return_response
         )
 
-    def get_project(self, project):
-        """Convenience function to get full project entry and display as HTML table"""
-        return Dict(self.projects.get_entry(pk=project, _fields=["_all"]).result())
+    def __dir__(self):
+        members = set(self.swagger_spec.resources.keys())
+        members |= set(k for k in self.__dict__.keys() if not k.startswith("_"))
+        members |= set(k for k in dir(self.__class__) if not k.startswith("_"))
+        return members
 
-    def get_contribution(self, cid):
-        """Convenience function to get full contribution entry"""
+    def get_project(self, name: str) -> Type[Dict]:
+        """Retrieve full project entry
+
+        Args:
+            name (str): name of the project
+        """
+        return Dict(self.projects.get_entry(pk=name, _fields=["_all"]).result())
+
+    def get_contribution(self, cid: str) -> Type[Dict]:
+        """Retrieve full contribution entry
+
+        Args:
+            cid (str): contribution ObjectID
+        """
         fields = list(
             self.swagger_spec.definitions.get("ContributionsSchema")._properties.keys()
         )  # don't return dynamic fields (card_*)
         fields.remove("notebook")
         return Dict(self.contributions.get_entry(pk=cid, _fields=fields).result())
 
-    def get_table(self, tid_or_md5):
-        """Convenience function to get full Pandas DataFrame for a table.
+    def get_table(self, tid_or_md5: str) -> Type[Table]:
+        """Retrieve full Pandas DataFrame for a table
 
         Args:
             tid_or_md5 (str): ObjectId or MD5 hash digest for table
-
-        Returns:
-            pd.DataFrame: pandas DataFrame containing table data
         """
         str_len = len(tid_or_md5)
         if str_len not in {24, 32}:
@@ -440,14 +484,11 @@ class Client(SwaggerClient):
         ret.attrs = table["attrs"]
         return ret
 
-    def get_structure(self, sid_or_md5):
-        """Convenience function to get pymatgen structure
+    def get_structure(self, sid_or_md5: str) -> Type[Structure]:
+        """Retrieve pymatgen structure
 
         Args:
             sid_or_md5 (str): ObjectId or MD5 hash digest for structure
-
-        Returns:
-            pymatgen.Structure: pymatgen Structure
         """
         str_len = len(sid_or_md5)
         if str_len not in {24, 32}:
@@ -472,14 +513,11 @@ class Client(SwaggerClient):
         }
         return ret
 
-    def get_attachment(self, aid_or_md5):
-        """Convenience function to get attachment.
+    def get_attachment(self, aid_or_md5: str) -> Type[Attachment]:
+        """Retrieve an attachment
 
         Args:
             aid_or_md5 (str): ObjectId or MD5 hash digest for attachment
-
-        Returns:
-            pd.DataFrame: pandas DataFrame containing table data
         """
         str_len = len(aid_or_md5)
         if str_len not in {24, 32}:
@@ -497,7 +535,7 @@ class Client(SwaggerClient):
 
         return Attachment(self.attachments.get_entry(pk=aid, _fields=["_all"]).result())
 
-    def init_columns(self, project, columns):
+    def init_columns(self, name: str, columns: dict) -> dict:
         """initialize columns for a project to set their order and desired units
 
         The `columns` field tracks the minima and maxima of each `data` field as
@@ -526,11 +564,11 @@ class Client(SwaggerClient):
 
 
         Args:
-            project (str): name of the project for which to initialize data columns
-            columns (dict): dictionary mapping data column to its unit (use None as value)
+            name (str): name of the project for which to initialize data columns
+            columns (dict): dictionary mapping data column to its unit
         """
-        if not isinstance(project, str):
-            return {"error": "`project` argument must be a string!"}
+        if not isinstance(name, str):
+            return {"error": "`name` argument must be a string!"}
 
         if not isinstance(columns, dict):
             return {"error": "`columns` argument must be a dict!"}
@@ -565,14 +603,14 @@ class Client(SwaggerClient):
         resp = self.projects.get_entries(_fields=["name"]).result()
         valid_projects = {p["name"] for p in resp["data"]}
 
-        if project not in valid_projects:
+        if name not in valid_projects:
             return {"error": f"{project} doesn't exist or you don't have access!"}
 
         # sort to avoid "overlapping columns" error in handsontable's NestedHeaders
         sorted_columns = flatten(unflatten(columns, splitter="dot"), reducer="dot")
 
         # reconcile with existing columns
-        resp = self.projects.get_entry(pk=project, _fields=["columns"]).result()
+        resp = self.projects.get_entry(pk=name, _fields=["columns"]).result()
         existing_columns, new_columns = {}, []
 
         for col in resp["columns"]:
@@ -615,19 +653,21 @@ class Client(SwaggerClient):
 
             new_columns.append(new_column)
 
-        self.projects.update_entry(pk=project, project={"columns": []}).result()
+        self.projects.update_entry(pk=name, project={"columns": []}).result()
         return self.projects.update_entry(
-            pk=project, project={"columns": new_columns}
+            pk=name, project={"columns": new_columns}
         ).result()
 
-    def delete_contributions(self, project, per_page=100, max_workers=5, retry=False):
+    def delete_contributions(
+        self, name: str, per_page: int = 100, max_workers: int = 5, retry: bool = False
+    ):
         """Remove all contributions for a project
 
         Note: This also resets the columns field for a project. It might have to be
-        re-initialized via `client.init_columns()` again.`
+        re-initialized via `client.init_columns()`.
 
         Args:
-            project (str): name of the project for which to delete contributions
+            name (str): name of the project for which to delete contributions
             per_page (int): number of contributions to delete per request
             max_workers (int): maximum number of parallel requests to send at a time
             retry (bool): if True, retry deletion of failed contributions until done
@@ -638,10 +678,10 @@ class Client(SwaggerClient):
             max_workers = MAX_WORKERS
             print(f"max_workers reset to max {MAX_WORKERS}")
 
-        cids = self.get_contributions(project)["ids"]
+        cids = self.get_contributions(name)["ids"]
         total = len(cids)
         # reset columns to be save (sometimes not all are reset BUGFIX?)
-        self.projects.update_entry(pk=project, project={"columns": []}).result()
+        self.projects.update_entry(pk=name, project={"columns": []}).result()
 
         if cids:
             with FuturesSession(max_workers=max_workers) as session:
@@ -651,7 +691,7 @@ class Client(SwaggerClient):
                             f"{self.url}/contributions/",
                             headers=self.headers,
                             params={
-                                "project": project,
+                                "project": name,
                                 "id__in": ",".join(chunk),
                                 "per_page": per_page,
                             },
@@ -660,12 +700,12 @@ class Client(SwaggerClient):
                     ]
 
                     self._run_futures(futures, total=len(cids))
-                    cids = self.get_contributions(project)["ids"]
+                    cids = self.get_contributions(name)["ids"]
 
                     if not retry:
                         break
 
-                self.load()
+                self._load()
 
             toc = time.perf_counter()
             dt = (toc - tic) / 60
@@ -675,24 +715,39 @@ class Client(SwaggerClient):
             else:
                 print(f"It took {dt:.1f}min to delete {total} contributions.")
         else:
-            print(f"There aren't any contributions to delete for {project}")
+            print(f"There aren't any contributions to delete for {name}")
 
     @sleep_and_retry
     @limits(calls=175, period=60)
-    def get_unique_identifiers_flag(self, name):
+    def get_unique_identifiers_flag(self, name: str) -> bool:
+        """Retrieve value of `unique_identifiers` flag for a project
+
+        Args:
+            name (str): name of the project
+        """
         return self.projects.get_entry(
             pk=name, _fields=["unique_identifiers"]
         ).result()["unique_identifiers"]
 
     @sleep_and_retry
     @limits(calls=175, period=60)
-    def get_total_pages(self, name, per_page):
+    def get_total_pages(self, name: str, per_page: int) -> int:
+        """Retrieve total number of pages for contributions in a project
+
+        Args:
+            name (str): name of the project
+            per_page (int): number of contributions per page
+        """
         return self.contributions.get_entries(
             project=name, per_page=per_page, _fields=["id"],
         ).result()["total_pages"]
 
-    def get_contributions(self, name):
-        """get list of existing contributions"""
+    def get_contributions(self, name: str) -> dict:
+        """Retrieve a list of existing contributions and their components for a project
+
+        Args:
+            name (str): name of the project
+        """
         ret = defaultdict(set)
         ret["unique_identifiers"] = self.get_unique_identifiers_flag(name)
         pages = self.get_total_pages(name, 250)
@@ -738,7 +793,7 @@ class Client(SwaggerClient):
 
         return ret
 
-    def get_number_contributions(self, **query):
+    def get_number_contributions(self, **query) -> int:
         """Retrieve total number of contributions for query
 
         See `client.contributions.get_entries()` for keyword arguments used in query.
@@ -749,14 +804,14 @@ class Client(SwaggerClient):
 
     def submit_contributions(
         self,
-        contributions,
-        skip_dupe_check=False,
-        ignore_dupes=False,
-        retry=False,
-        per_page=100,
-        max_workers=3,
+        contributions: list,
+        skip_dupe_check: bool = False,
+        ignore_dupes: bool = False,
+        retry: bool = False,
+        per_page: int = 100,
+        max_workers: int = 3,
     ):
-        """Convenience function to submit a list of contributions
+        """Submit a list of contributions
 
         Example for a single contribution dictionary:
 
@@ -770,7 +825,7 @@ class Client(SwaggerClient):
             },
             "structures": [<pymatgen Structure>, ...],
             "tables": [<pandas DataFrame>, ...],
-            "attachments": [<pathlib.Path>, ...]
+            "attachments": [<pathlib.Path>, <mpcontribs.client.Attachment>, ...]
         }
 
         This function can also be used to update contributions by including the respective
@@ -1023,7 +1078,7 @@ class Client(SwaggerClient):
                 )
                 toc = time.perf_counter()
                 dt = (toc - tic) / 60
-                self.load()
+                self._load()
                 print(f"It took {dt:.1f}min to submit {updated_total} contributions.")
         else:
             print("Nothing to submit.")
