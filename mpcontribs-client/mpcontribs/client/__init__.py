@@ -615,7 +615,7 @@ class Client(SwaggerClient):
         valid_projects = {p["name"] for p in resp["data"]}
 
         if name not in valid_projects:
-            return {"error": f"{project} doesn't exist or you don't have access!"}
+            return {"error": f"{name} doesn't exist or you don't have access!"}
 
         # sort to avoid "overlapping columns" error in handsontable's NestedHeaders
         sorted_columns = flatten(unflatten(columns, splitter="dot"), reducer="dot")
