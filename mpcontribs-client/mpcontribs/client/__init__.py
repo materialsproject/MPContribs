@@ -23,6 +23,7 @@ from collections import defaultdict
 from ratelimit import limits, sleep_and_retry
 from pyisemail.diagnosis import BaseDiagnosis
 from swagger_spec_validator.common import SwaggerValidationError
+from jsonschema.exceptions import ValidationError
 from bravado_core.formatter import SwaggerFormat
 from bravado.client import SwaggerClient
 from bravado.fido_client import FidoClient  # async
@@ -30,6 +31,8 @@ from bravado.http_future import HttpFuture
 from bravado.swagger_model import Loader
 from bravado.config import bravado_config_from_config_dict
 from bravado_core.spec import Spec
+from bravado.exception import HTTPNotFound
+from bravado_core.validate import validate_object
 from json2html import Json2Html
 from IPython.display import display, HTML, Image, FileLink
 from boltons.iterutils import remap
@@ -413,6 +416,18 @@ class Client(SwaggerClient):
         members |= set(k for k in dir(self.__class__) if not k.startswith("_"))
         return members
 
+    def _is_valid_payload(self, model: str, data: dict):
+        model_spec = deepcopy(self.get_model(f"{model}sSchema")._model_spec)
+        model_spec.pop("required")
+        model_spec['additionalProperties'] = False
+
+        try:
+            validate_object(self.swagger_spec, model_spec, data)
+        except ValidationError as ex:
+            return str(ex)
+
+        return True
+
     def get_project(self, name: str) -> Type[Dict]:
         """Retrieve full project entry
 
@@ -591,7 +606,7 @@ class Client(SwaggerClient):
             if not is_valid_string and v is not None:
                 return {"error": f"Unit '{v}' for {k} invalid (use `None` or a non-NaN string)!"}
 
-            if v != "" and v not in ureg:
+            if v != "" and v is not None and v not in ureg:
                 return {"error": f"Unit '{v}' for {k} invalid!"}
 
             existing_columns.add(k)
@@ -649,10 +664,13 @@ class Client(SwaggerClient):
 
             new_columns.append(new_column)
 
+        payload = {"columns": new_columns}
+        valid = self._is_valid_payload("Project", payload)
+        if not valid:
+            return {"error": valid}
+
         self.projects.update_entry(pk=name, project={"columns": []}).result()
-        return self.projects.update_entry(
-            pk=name, project={"columns": new_columns}
-        ).result()
+        return self.projects.update_entry(pk=name, project=payload).result()
 
     def delete_contributions(
         self, name: str, per_page: int = 100, max_workers: int = 5, retry: bool = False
@@ -789,6 +807,37 @@ class Client(SwaggerClient):
 
         return ret
 
+    def update_contributions(self, name: str, data: dict, query: dict = None) -> dict:
+        """Apply the same update to all contributions in a project (matching query)
+
+        See `client.contributions.get_entries()` for keyword arguments used in query.
+
+        Args:
+            name (str): name of the project
+            data (dict): update to apply on every matching contribution
+            query (dict): optional query to select contributions
+        """
+        if not data:
+            return "Nothing to update."
+
+        valid = self._is_valid_payload("Contribution", data)
+        if not valid:
+            return {"error": valid}
+
+        query = query or {}
+        query["project"] = name
+        has_more = True
+        updated = 0
+
+        while has_more:
+            resp = self.contributions.update_entries(
+                contributions=data, _limit=250, **query
+            ).result()
+            has_more = resp["has_more"]
+            updated += resp["count"]
+
+        print(f"Updated {updated} contributions.")
+
     def get_number_contributions(self, **query) -> int:
         """Retrieve total number of contributions for query
 
@@ -797,6 +846,29 @@ class Client(SwaggerClient):
         return self.contributions.get_entries(
             _fields=["id"], _limit=1, **query
         ).result()["total_count"]
+
+    def publish(self, name: str, recursive: bool = False) -> dict:
+        """Publish a project and optionally its contributions
+
+        Args:
+            name (str): name of the project
+            recursive (bool): also publish according contributions?
+        """
+        try:
+            resp = self.projects.get_entry(pk=name, _fields=["is_public"]).result()
+        except HTTPNotFound:
+            return {"error": f"project `{name}` not found or access denied!"}
+
+        is_public = resp["is_public"]
+
+        if not recursive and is_public:
+            return {"warning": f"project `{name}` already public (recursive=False)."}
+
+        if not is_public:
+            self.projects.update_entry(pk=name, project={"is_public": True}).result()
+
+        if recursive:
+            self.update_contributions(name, {"is_public": True}, {"is_public": False})
 
     def submit_contributions(
         self,
@@ -850,17 +922,26 @@ class Client(SwaggerClient):
         # get existing contributions
         existing = defaultdict(set)
         existing["unique_identifiers"] = True
-
         project_names = set()
         collect_ids = []
+        require_one_of = {"data"} | COMPONENTS
+
         for idx, c in enumerate(contributions):
-            if "id" in c:
+            has_keys = require_one_of & c.keys()
+            if not has_keys:
+                return {"error": f"Nothing to submit for contribution #{idx}!"}
+            elif not all(c[k] for k in has_keys):
+                for k in has_keys:
+                    if not c[k]:
+                        return {"error": f"Empty `{k}` for contribution #{idx}!"}
+            elif "id" in c:
                 collect_ids.append(c["id"])
-            elif "project" in c:
+            elif "project" in c and "identifier" in c:
                 project_names.add(c["project"])
             else:
-                print(f"Fields `project` or `id` missing for contribution #{idx}!")
-                return
+                return {
+                    "error": f"Provide `project` & `identifier`, or `id` for contribution #{idx}!"
+                }
 
         id2project = {}
         if collect_ids:
@@ -1008,6 +1089,10 @@ class Client(SwaggerClient):
 
                     digests[project_name][component].add(digest)
                     contribs[project_name][-1][component].append(dct)
+
+                valid = self._is_valid_payload("Contribution", contribs[project_name][-1])
+                if not valid:
+                    return {"error": f"{contrib['identifier']} invalid: {valid}!"}
 
         # submit contributions
         if contribs:
