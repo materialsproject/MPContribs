@@ -9,6 +9,7 @@ from marshmallow.validate import Email as EmailValidator
 from marshmallow_mongoengine.conversion import params
 from marshmallow_mongoengine.conversion.fields import register_field
 from mongoengine import EmbeddedDocument, signals
+from mongoengine.queryset.manager import queryset_manager
 from mongoengine.fields import (
     StringField,
     BooleanField,
@@ -138,6 +139,12 @@ class Projects(Document):
         "collection": "projects",
         "indexes": ["is_public", "title", "owner", "is_approved", "unique_identifiers"],
     }
+
+    @queryset_manager
+    def objects(doc_cls, queryset):
+        return queryset.only(
+            "name", "is_public", "title", "owner", "is_approved", "unique_identifiers"
+        )
 
     @classmethod
     def post_save(cls, sender, document, **kwargs):

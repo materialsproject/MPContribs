@@ -4,6 +4,7 @@ from hashlib import md5
 from flask_mongoengine import Document
 from mongoengine import signals
 from mongoengine.fields import StringField, FloatField, ListField, DictField
+from mongoengine.queryset.manager import queryset_manager
 from pymatgen.core import Structure
 from pymatgen.io.cif import CifWriter
 
@@ -16,6 +17,10 @@ class Structures(Document):
     md5 = StringField(regex=r"^[a-z0-9]{32}$", unique=True, help_text="md5 sum")
     cif = StringField(help_text="CIF string")
     meta = {"collection": "structures", "indexes": ["name", "md5"]}
+
+    @queryset_manager
+    def objects(doc_cls, queryset):
+        return queryset.only("name", "md5")
 
     @classmethod
     def pre_save_post_validation(cls, sender, document, **kwargs):

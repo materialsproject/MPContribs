@@ -5,6 +5,7 @@ from hashlib import md5
 from flask_mongoengine import DynamicDocument
 from mongoengine import signals, EmbeddedDocument
 from mongoengine.fields import StringField, ListField, IntField, EmbeddedDocumentField
+from mongoengine.queryset.manager import queryset_manager
 
 from mpcontribs.api.contributions.document import format_cell, get_resource, get_md5, COMPONENTS
 
@@ -29,6 +30,10 @@ class Tables(DynamicDocument):
     md5 = StringField(regex=r"^[a-z0-9]{32}$", unique=True, help_text="md5 sum")
     total_data_rows = IntField(help_text="total number of rows")
     meta = {"collection": "tables", "indexes": ["name", "columns", "md5"]}
+
+    @queryset_manager
+    def objects(doc_cls, queryset):
+        return queryset.only("name", "md5")
 
     @classmethod
     def post_init(cls, sender, document, **kwargs):

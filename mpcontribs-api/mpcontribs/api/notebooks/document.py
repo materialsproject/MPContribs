@@ -7,6 +7,7 @@ from mongoengine import signals
 from base64 import b64decode, b64encode
 from flask_mongoengine import Document
 from mongoengine.fields import DictField, StringField, IntField, ListField
+from mongoengine.queryset.manager import queryset_manager
 
 BUCKET = "mpcontribs-images"
 S3_DOWNLOAD_URL = f"https://{BUCKET}.s3.amazonaws.com"
@@ -64,6 +65,10 @@ class Notebooks(Document):
 
     problem_key = "application/vnd.plotly.v1+json"
     escaped_key = problem_key.replace(".", "~dot~")
+
+    @queryset_manager
+    def objects(doc_cls, queryset):
+        return queryset.only("nbformat", "nbformat_minor")
 
     @classmethod
     def post_init(cls, sender, document, **kwargs):

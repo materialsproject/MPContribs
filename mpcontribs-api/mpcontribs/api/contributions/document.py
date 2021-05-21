@@ -10,6 +10,7 @@ from fastnumbers import isfloat
 from flask_mongoengine import DynamicDocument
 from mongoengine import CASCADE, signals
 from mongoengine.queryset import DoesNotExist
+from mongoengine.queryset.manager import queryset_manager
 from mongoengine.fields import StringField, BooleanField, DictField
 from mongoengine.fields import LazyReferenceField, ReferenceField
 from mongoengine.fields import DateTimeField, ListField
@@ -158,7 +159,7 @@ class Contributions(DynamicDocument):
     attachments = ListField(
         ReferenceField("Attachments", null=True), default=list, max_length=10
     )
-    notebook = LazyReferenceField("Notebooks", passthrough=True)
+    notebook = ReferenceField("Notebooks")
     meta = {
         "collection": "contributions",
         "indexes": [
@@ -172,6 +173,12 @@ class Contributions(DynamicDocument):
         ]
         + list(COMPONENTS.keys()),
     }
+
+    @queryset_manager
+    def objects(doc_cls, queryset):
+        return queryset.no_dereference().only(
+            "project", "identifier", "formula", "is_public", "last_modified"
+        )
 
     @classmethod
     def post_init(cls, sender, document, **kwargs):

@@ -7,9 +7,9 @@ from hashlib import md5
 from flask import request
 from base64 import b64decode, b64encode
 from flask_mongoengine import DynamicDocument
-from mongoengine import signals
+from mongoengine import signals, ValidationError
 from mongoengine.fields import StringField
-from mongoengine import ValidationError
+from mongoengine.queryset.manager import queryset_manager
 from filetype.types.archive import Gz
 from filetype.types.image import Jpeg, Png, Gif, Tiff
 
@@ -35,6 +35,10 @@ class Attachments(DynamicDocument):
     mime = StringField(required=True, choices=SUPPORTED_MIMES, help_text="attachment mime type")
     content = StringField(required=True, help_text="base64-encoded attachment content")
     meta = {"collection": "attachments", "indexes": ["name", "mime", "md5"]}
+
+    @queryset_manager
+    def objects(doc_cls, queryset):
+        return queryset.only("name", "md5", "mime")
 
     @classmethod
     def post_init(cls, sender, document, **kwargs):

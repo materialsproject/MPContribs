@@ -30,7 +30,7 @@ seed_nb["cells"] = [
 class NotebooksResource(Resource):
     document = Notebooks
     filters = {"id": [ops.In, ops.Exact]}
-    fields = ["id"]
+    fields = ["id", "nbformat", "nbformat_minor"]
     allowed_ordering = ["name"]
     paginate = True
     default_limit = 10
