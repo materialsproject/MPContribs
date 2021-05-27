@@ -11,6 +11,8 @@ import requests
 from io import BytesIO
 from copy import deepcopy
 from glob import glob
+from pathlib import Path
+from shutil import make_archive, rmtree
 from nbconvert import HTMLExporter
 from bravado.exception import HTTPNotFound
 from json2html import Json2Html
@@ -319,22 +321,15 @@ def download_contribution(request, cid):
         """.strip()
         return HttpResponse(msg, status=403)
 
+    tmpdir = Path("/tmp")
     client = Client(**ckwargs)
-    resp = client.contributions.get_entry(pk=cid, _fields=["project"]).result()
-    resp = client.projects.get_entry(pk=resp["project"], _fields=["columns"]).result()
-    fields = ["project", "identifier", "formula", "is_public", "last_modified"]
-    fields += [
-        column["path"] + ".display"
-        for column in resp["columns"]
-        if column["path"].startswith("data.")
-    ]
-    fields += list(COMPONENTS)
-    resp = client.contributions.download_entries(
-        id=cid, short_mime="gz", format="json", _fields=fields
-    ).result()
-    filename = request.path[1:]
-    response = HttpResponse(resp, content_type="application/gzip")
-    response["Content-Disposition"] = f"attachment; filename={filename}"
+    outdir = client.download_contribution(cid, outdir=tmpdir, include=list(COMPONENTS))
+    zipfile = Path(make_archive(tmpdir / cid, "zip", outdir))
+    resp = zipfile.read_bytes()
+    rmtree(outdir)
+    os.remove(zipfile)
+    response = HttpResponse(resp, content_type="application/zip")
+    response["Content-Disposition"] = f"attachment; filename={cid}.zip"
     return response
 
 
