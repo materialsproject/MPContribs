@@ -1165,27 +1165,35 @@ class Client(SwaggerClient):
         self,
         cid: str,
         outdir: Union[str, Path] = "mpcontribs-downloads",
-        overwrite: bool = False
+        overwrite: bool = False,
+        include: list = []
     ) -> Path:
-        """Download a single contribution as tar of .json.gz file(s)
+        """Download a single contribution as .json.gz file(s)
 
         Args:
             cid: contribution ObjectId
             outdir: optional existing output directory
             overwrite: force re-download of existing contribution/components
+            include: components to include in download
         """
         outdir = Path(outdir) or Path(".")
         outdir.mkdir(parents=True, exist_ok=True)
+        if any(x for x in include if x not in COMPONENTS):
+            print(f"`include` must be subset of {COMPONENTS}!")
+            return
 
-        contrib = self.contributions.get_entry(
-            pk=cid, _fields=["project"] + COMPONENTS
-        ).result()
-        proj = self.projects.get_entry(pk=contrib["project"], _fields=["columns"]).result()
-        components = [
-            column["path"]
-            for column in proj["columns"]
-            if column["path"].split(".", 1)[0] in COMPONENTS
-        ]
+        include = set(x for x in include if x in COMPONENTS)
+        fields = ["project"] + list(include)
+        contrib = self.contributions.get_entry(pk=cid, _fields=fields).result()
+        components = []
+
+        if include:
+            proj = self.projects.get_entry(pk=contrib["project"], _fields=["columns"]).result()
+            for column in proj["columns"]:
+                path = column["path"]
+                if path.split(".", 1)[0] in include:
+                    components.append(path)
+
         model = self.get_model("ContributionsSchema")
         fields = list(k for k in model._properties.keys() if k not in COMPONENTS) + components
 
