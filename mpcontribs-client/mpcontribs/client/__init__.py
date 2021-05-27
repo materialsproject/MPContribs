@@ -53,7 +53,7 @@ MAX_BYTES = 200 * 1024
 DEFAULT_HOST = "contribs-api.materialsproject.org"
 BULMA = "is-narrow is-fullwidth has-background-light"
 PROVIDERS = {"github", "google", "facebook", "microsoft", "amazon"}
-COMPONENTS = {"structures", "tables", "attachments"}
+COMPONENTS = ["structures", "tables", "attachments"]  # using list to maintain order
 VALID_URLS = {f"http://{h}:{p}" for h in ["localhost", "contribs-api"] for p in [5000, 5002, 5003]}
 VALID_URLS |= {f"https://{n}-api.materialsproject.org" for n in ["contribs", "lightsources", "ml"]}
 VALID_URLS |= {
@@ -443,7 +443,6 @@ class Client(SwaggerClient):
             cid (str): contribution ObjectID
         """
         fields = list(self.get_model("ContributionsSchema")._properties.keys())
-        fields.remove("notebook")
         return Dict(self.contributions.get_entry(pk=cid, _fields=fields).result())
 
     def get_table(self, tid_or_md5: str) -> Type[Table]:
@@ -765,7 +764,7 @@ class Client(SwaggerClient):
         ret = defaultdict(set)
         ret["unique_identifiers"] = self.get_unique_identifiers_flag(name)
         pages = self.get_total_pages(name, 250)
-        id_fields = {"id", "identifier"}
+        id_fields = ["id", "identifier"]
 
         @sleep_and_retry
         @limits(calls=175, period=60)
@@ -777,7 +776,7 @@ class Client(SwaggerClient):
                     "project": name,
                     "page": page,
                     "per_page": 250,
-                    "_fields": ",".join(id_fields | COMPONENTS)
+                    "_fields": ",".join(id_fields + COMPONENTS)
                 },
             )
             setattr(future, "track_id", page)
@@ -924,7 +923,7 @@ class Client(SwaggerClient):
         existing["unique_identifiers"] = True
         project_names = set()
         collect_ids = []
-        require_one_of = {"data"} | COMPONENTS
+        require_one_of = {"data"} | set(COMPONENTS)
 
         for idx, c in enumerate(contributions):
             has_keys = require_one_of & c.keys()
@@ -1161,6 +1160,61 @@ class Client(SwaggerClient):
                 print(f"It took {dt:.1f}min to submit {updated_total} contributions.")
         else:
             print("Nothing to submit.")
+
+    def download_contribution(
+        self,
+        cid: str,
+        outdir: Union[str, Path] = "mpcontribs-downloads",
+        overwrite: bool = False
+    ) -> Path:
+        """Download a single contribution as tar of .json.gz file(s)
+
+        Args:
+            cid: contribution ObjectId
+            outdir: optional existing output directory
+            overwrite: force re-download of existing contribution/components
+        """
+        outdir = Path(outdir) or Path(".")
+        outdir.mkdir(parents=True, exist_ok=True)
+
+        contrib = self.contributions.get_entry(
+            pk=cid, _fields=["project"] + COMPONENTS
+        ).result()
+        proj = self.projects.get_entry(pk=contrib["project"], _fields=["columns"]).result()
+        components = [
+            column["path"]
+            for column in proj["columns"]
+            if column["path"].split(".", 1)[0] in COMPONENTS
+        ]
+        model = self.get_model("ContributionsSchema")
+        fields = list(k for k in model._properties.keys() if k not in COMPONENTS) + components
+
+        # download contribution
+        subdir = outdir / cid
+        subdir.mkdir(exist_ok=True)
+        path = subdir / "contribution.json.gz"
+
+        if not path.exists() or overwrite:
+            content = self.contributions.download_entries(
+                id=cid, short_mime="gz", format="json", _fields=fields
+            ).result()
+            path.write_bytes(content)
+            print(path)
+
+        # download components
+        for component in components:
+            path = subdir / f"{component}.json.gz"
+            if not path.exists() or overwrite:
+                ids = [x["id"] for x in contrib[component]]
+                model = self.get_model(f"{component.capitalize()}Schema")
+                fields = list(model._properties.keys())
+                content = getattr(self, component).download_entries(
+                    id__in=ids, short_mime="gz", format="json", _fields=fields
+                ).result()
+                path.write_bytes(content)
+                print(path)
+
+        return subdir
 
     def _run_futures(self, futures, total=None):
         """helper to run futures/requests"""
