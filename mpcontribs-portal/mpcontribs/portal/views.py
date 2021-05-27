@@ -225,7 +225,7 @@ def contribution(request, cid):
             ctx["alert"] = f"Notebook build failed with status {r.status_code}"
             return render(request, "contribution.html", ctx.flatten())
 
-    nid = contrib["notebook"]
+    nid = contrib["notebook"]["id"]
     try:
         nb = client.notebooks.get_entry(pk=nid, _fields=["_all"]).result()
     except HTTPNotFound:
