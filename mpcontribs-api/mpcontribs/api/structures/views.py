@@ -3,7 +3,7 @@ import os
 import flask_mongorest
 from flask_mongorest.resources import Resource
 from flask_mongorest import operators as ops
-from flask_mongorest.methods import Fetch, BulkFetch
+from flask_mongorest.methods import Fetch, BulkFetch, Download
 from flask import Blueprint
 
 from mpcontribs.api.core import SwaggerView
@@ -25,6 +25,7 @@ class StructuresResource(Resource):
     paginate = True
     default_limit = 10
     max_limit = 100
+    download_formats = ["json"]
 
     @staticmethod
     def get_optional_fields():
@@ -33,4 +34,4 @@ class StructuresResource(Resource):
 
 class StructuresView(SwaggerView):
     resource = StructuresResource
-    methods = [Fetch, BulkFetch]
+    methods = [Fetch, BulkFetch, Download]

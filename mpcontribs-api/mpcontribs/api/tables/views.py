@@ -3,7 +3,7 @@ import os
 import flask_mongorest
 from flask_mongorest.resources import Resource
 from flask_mongorest import operators as ops
-from flask_mongorest.methods import Fetch, BulkFetch
+from flask_mongorest.methods import Fetch, BulkFetch, Download
 from flask_mongorest.exceptions import UnknownFieldError
 from flask import Blueprint
 
@@ -38,6 +38,7 @@ class TablesResource(Resource):
     default_limit = 10
     max_limit = 100
     fields_to_paginate = {"data": [20, 1000]}
+    download_formats = ["json"]
 
     @staticmethod
     def get_optional_fields():
@@ -63,4 +64,4 @@ class TablesResource(Resource):
 
 class TablesView(SwaggerView):
     resource = TablesResource
-    methods = [Fetch, BulkFetch]
+    methods = [Fetch, BulkFetch, Download]
