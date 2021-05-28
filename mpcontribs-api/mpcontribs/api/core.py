@@ -19,6 +19,42 @@ from mpcontribs.api.config import SWAGGER
 logger = logging.getLogger("app")
 
 
+def get_limit_params(resource, method):
+    default = resource.default_limit
+    bulk = {"BulkUpdate", "BulkDelete"}
+    maximum = resource.max_limit if method in bulk else resource.bulk_update_limit
+    return [
+        {
+            "name": "_skip",
+            "in": "query",
+            "type": "integer",
+            "description": "number of items to skip",
+        },
+        {
+            "name": "_limit",
+            "in": "query",
+            "type": "integer",
+            "default": default,
+            "maximum": maximum,
+            "description": "maximum number of items to return",
+        },
+        {
+            "name": "page",
+            "in": "query",
+            "type": "integer",
+            "description": "page number to return (in batches of `per_page/_limit`; alternative to `_skip`)",
+        },
+        {
+            "name": "per_page",
+            "in": "query",
+            "type": "integer",
+            "default": default,
+            "maximum": maximum,
+            "description": "maximum number of items to return per page (same as `_limit`)",
+        },
+    ]
+
+
 def get_specs(klass, method, collection):
     method_name = (
         method.__name__ if getattr(method, "__name__", None) is not None else method
@@ -64,33 +100,6 @@ def get_specs(klass, method, collection):
                 "description": f"number of items to retrieve per page for {field} field",
             }
         )
-
-    limit_params = [
-        {
-            "name": "_skip",
-            "in": "query",
-            "type": "integer",
-            "description": "number of items to skip",
-        },
-        {
-            "name": "_limit",
-            "in": "query",
-            "type": "integer",
-            "description": "maximum number of items to return",
-        },
-        {
-            "name": "page",
-            "in": "query",
-            "type": "integer",
-            "description": "page number to return (in batches of `per_page/_limit`; alternative to `_skip`)",
-        },
-        {
-            "name": "per_page",
-            "in": "query",
-            "type": "integer",
-            "description": "maximum number of items to return per page (same as `_limit`)",
-        },
-    ]
 
     filter_params = []
     if getattr(klass.resource, "filters", None) is not None:
@@ -176,7 +185,7 @@ def get_specs(klass, method, collection):
             schema_props["has_more"] = {"type": "boolean"}
             schema_props["total_count"] = {"type": "integer"}
             schema_props["total_pages"] = {"type": "integer"}
-            params += limit_params
+            params += get_limit_params(klass.resource, method_name)
         spec = {
             "summary": f"Filter and retrieve {collection}.",
             "operationId": "get_entries",
@@ -321,7 +330,7 @@ def get_specs(klass, method, collection):
             schema_props["has_more"] = {"type": "boolean"}
             schema_props["total_count"] = {"type": "integer"}
             schema_props["total_pages"] = {"type": "integer"}
-            params += limit_params
+            params += get_limit_params(klass.resource, method_name)
         spec = {
             "summary": f"Filter and update {collection}.",
             "operationId": "update_entries",
@@ -342,7 +351,7 @@ def get_specs(klass, method, collection):
             schema_props["has_more"] = {"type": "boolean"}
             schema_props["total_count"] = {"type": "integer"}
             schema_props["total_pages"] = {"type": "integer"}
-            params += limit_params
+            params += get_limit_params(klass.resource, method_name)
         spec = {
             "summary": f"Filter and delete {collection}.",
             "operationId": "delete_entries",

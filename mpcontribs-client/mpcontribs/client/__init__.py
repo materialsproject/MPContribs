@@ -429,6 +429,14 @@ class Client(SwaggerClient):
 
         return True
 
+    def _get_per_page_max(self, op: str = "get") -> int:
+        resource = self.swagger_spec.resources["contributions"]
+        param = resource[f"{op}_entries"].params["per_page"]
+        return param.param_spec["maximum"]
+
+    def _get_per_page(self, per_page: int, op: str = "get") -> int:
+        return min(self._get_per_page_max(op=op), per_page)
+
     def get_project_names() -> list:
         """Retrieve list of project names."""
         resp = self.projects.get_entries(_fields=["name"]).result()
@@ -469,12 +477,14 @@ class Client(SwaggerClient):
         else:
             tid = tid_or_md5
 
+        op = self.swagger_spec.resources["tables"].get_entries
+        per_page = op.params["data_per_page"].param_spec["maximum"]
         table = {"data": []}
         page, pages = 1, None
 
         while pages is None or page <= pages:
             resp = self.tables.get_entry(
-                pk=tid, _fields=["_all"], data_page=page, data_per_page=1000
+                pk=tid, _fields=["_all"], data_page=page, data_per_page=per_page
             ).result()
             table["data"].extend(resp["data"])
             if pages is None:
@@ -701,6 +711,7 @@ class Client(SwaggerClient):
         total = len(cids)
         # reset columns to be save (sometimes not all are reset BUGFIX?)
         self.projects.update_entry(pk=name, project={"columns": []}).result()
+        per_page = self._get_per_page(per_page, op="delete")
 
         if cids:
             with FuturesSession(max_workers=max_workers) as session:
@@ -745,10 +756,11 @@ class Client(SwaggerClient):
 
         Args:
             query (dict): query to select contributions
-            per_page (int): number of contributions per page
+            per_page (int): number of contributions per page to calculate correct #pages
         """
         query = query or {}
         [query.pop(k, None) for k in ["per_page", "_fields"]]
+        per_page = self._get_per_page(per_page)
         result = self.contributions.get_entries(
             per_page=per_page, _fields=["id"], **query
         ).result()
@@ -776,7 +788,7 @@ class Client(SwaggerClient):
             print(f"`include` must be subset of {COMPONENTS}!")
             return
 
-        ret, per_page = {}, 250
+        ret, per_page = {}, self._get_per_page_max()
         query = query or {}
         [query.pop(k, None) for k in ["page", "per_page", "_fields"]]
         _, pages = self.get_totals(query=query, per_page=per_page)
@@ -937,6 +949,7 @@ class Client(SwaggerClient):
         project_names = set()
         collect_ids = []
         require_one_of = {"data"} | set(COMPONENTS)
+        per_page = self._get_per_page(per_page)
 
         for idx, c in enumerate(contributions):
             has_keys = require_one_of & c.keys()
