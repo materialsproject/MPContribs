@@ -47,7 +47,7 @@ from pint.converters import ScaleConverter
 from pint.errors import DimensionalityError
 from datetime import datetime
 
-MAX_WORKERS = 10
+MAX_WORKERS = 7
 MAX_ELEMS = 10
 MAX_BYTES = 200 * 1024
 DEFAULT_HOST = "contribs-api.materialsproject.org"
@@ -686,9 +686,7 @@ class Client(SwaggerClient):
         self.projects.update_entry(pk=name, project={"columns": []}).result()
         return self.projects.update_entry(pk=name, project=payload).result()
 
-    def delete_contributions(
-        self, name: str, per_page: int = 100, max_workers: int = 5, retry: bool = False
-    ):
+    def delete_contributions(self, name: str, per_page: int = 100, retry: bool = False):
         """Remove all contributions for a project
 
         Note: This also resets the columns field for a project. It might have to be
@@ -697,15 +695,9 @@ class Client(SwaggerClient):
         Args:
             name (str): name of the project for which to delete contributions
             per_page (int): number of contributions to delete per request
-            max_workers (int): maximum number of parallel requests to send at a time
             retry (bool): if True, retry deletion of failed contributions until done
         """
         tic = time.perf_counter()
-
-        if max_workers > MAX_WORKERS:
-            max_workers = MAX_WORKERS
-            print(f"max_workers reset to max {MAX_WORKERS}")
-
         query = dict(project=name)
         cids = self.get_all_ids(query=query).get(name, {}).get("ids", [])
         total = len(cids)
@@ -714,7 +706,7 @@ class Client(SwaggerClient):
         per_page = self._get_per_page(per_page, op="delete")
 
         if cids:
-            with FuturesSession(max_workers=max_workers) as session:
+            with FuturesSession(max_workers=MAX_WORKERS) as session:
                 while cids:
                     futures = [
                         session.delete(
@@ -903,7 +895,6 @@ class Client(SwaggerClient):
         ignore_dupes: bool = False,
         retry: bool = False,
         per_page: int = 100,
-        max_workers: int = 3,
     ):
         """Submit a list of contributions
 
@@ -932,19 +923,13 @@ class Client(SwaggerClient):
             ignore_dupes (bool): force duplicate components to be submitted
             retry (bool): keep trying until all contributions successfully submitted
             per_page (int): number of contributions to submit in each chunk/request
-            max_workers (int): number of parallel requests to use to submit chunk
         """
         if not contributions or not isinstance(contributions, list):
             print("Please provide list of contributions to submit.")
             return
 
-        tic = time.perf_counter()
-
-        if max_workers > MAX_WORKERS:
-            max_workers = MAX_WORKERS
-            print(f"max_workers reset to max {MAX_WORKERS}")
-
         # get existing contributions
+        tic = time.perf_counter()
         existing = defaultdict(set)
         project_names = set()
         collect_ids = []
@@ -1125,7 +1110,7 @@ class Client(SwaggerClient):
         # submit contributions
         if contribs:
             print("submit contributions ...")
-            with FuturesSession(max_workers=max_workers) as session:
+            with FuturesSession(max_workers=MAX_WORKERS) as session:
                 # bravado future doesn't work with concurrent.futures
                 total = 0
                 headers = {"Content-Type": "application/json"}
