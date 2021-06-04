@@ -220,6 +220,8 @@ def get_specs(klass, method, collection):
         params += [fields_param] if fields_param is not None else []
         params += order_params
         params += filter_params
+        if klass.resource.paginate:
+            params += get_limit_params(klass.resource, method_name)
         spec = {
             "summary": f"Filter and download {collection}.",
             "operationId": "download_entries",

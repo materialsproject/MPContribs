@@ -8,8 +8,10 @@ import gzip
 import warnings
 import pandas as pd
 import plotly.io as pio
+import itertools
 
-from typing import Union, Type
+from bson.objectid import ObjectId
+from typing import Union, Type, List
 from tqdm.auto import tqdm
 from hashlib import md5
 from pathlib import Path
@@ -134,6 +136,15 @@ def chunks(lst, n=250):
     for i in range(0, len(lst), n):
         to = i + n
         yield lst[i:to]
+
+# https://stackoverflow.com/a/8991553
+def grouper(n, iterable):
+    it = iter(iterable)
+    while True:
+        chunk = tuple(itertools.islice(it, n))
+        if not chunk:
+            return
+        yield chunk
 
 
 class FidoClientGlobalHeaders(FidoClient):
@@ -297,6 +308,7 @@ class Client(SwaggerClient):
     # in its __init__ to a class-attribute dictionary. Now, any reference or binding of an
     # instance attribute will actually affect all instances equally.
     # TODO ratelimit support in bravado (wrapped around get_entry..., monkey-patch?)
+    # NOTE bravado future doesn't work with concurrent.futures
 
     _shared_state = {}
 
@@ -324,6 +336,7 @@ class Client(SwaggerClient):
 
         self.apikey = apikey
         self.headers = {"x-api-key": apikey} if apikey else headers
+        self.headers["Content-Type"] = "application/json"
         self.host = host
         ssl = host.endswith(".materialsproject.org") and not host.startswith("localhost.")
         self.protocol = "https" if ssl else "http"
@@ -429,15 +442,18 @@ class Client(SwaggerClient):
 
         return True
 
-    def _get_per_page_max(self, op: str = "get") -> int:
-        resource = self.swagger_spec.resources["contributions"]
-        param = resource[f"{op}_entries"].params["per_page"]
+    def _get_per_page_max(self, op: str = "get", resource: str = "contributions") -> int:
+        resource = self.swagger_spec.resources[resource]
+        param = getattr(resource, f"{op}_entries").params["per_page"]
         return param.param_spec["maximum"]
 
-    def _get_per_page(self, per_page: int, op: str = "get") -> int:
-        return min(self._get_per_page_max(op=op), per_page)
+    def _get_per_page(
+        self, per_page: int, op: str = "get", resource: str = "contributions"
+    ) -> int:
+        per_page_max = self._get_per_page_max(op=op, resource=resource)
+        return min(per_page_max, per_page)
 
-    def get_project_names() -> list:
+    def get_project_names() -> List[str]:
         """Retrieve list of project names."""
         resp = self.projects.get_entries(_fields=["name"]).result()
         return [p["name"] for p in resp["data"]]
@@ -758,7 +774,7 @@ class Client(SwaggerClient):
         ).result()
         return result["total_count"], result["total_pages"]
 
-    def get_all_ids(self, query: dict, include: list = None) -> dict:
+    def get_all_ids(self, query: dict, include: List[str] = None) -> dict:
         """Retrieve a list of existing contribution and component ObjectIds
 
         Args:
@@ -804,7 +820,6 @@ class Client(SwaggerClient):
                 setattr(future, "track_id", page)
                 return future
 
-            # bravado future doesn't work with concurrent.futures
             futures = [get_future(page + 1) for page in range(pages)]
 
             while futures:
@@ -891,7 +906,7 @@ class Client(SwaggerClient):
 
     def submit_contributions(
         self,
-        contributions: list,
+        contributions: List[dict],
         ignore_dupes: bool = False,
         retry: bool = False,
         per_page: int = 100,
@@ -1111,17 +1126,14 @@ class Client(SwaggerClient):
         if contribs:
             print("submit contributions ...")
             with FuturesSession(max_workers=MAX_WORKERS) as session:
-                # bravado future doesn't work with concurrent.futures
                 total = 0
-                headers = {"Content-Type": "application/json"}
-                headers.update(self.headers)
 
                 @sleep_and_retry
                 @limits(calls=175, period=60)
                 def post_future(chunk):
                     return session.post(
                         f"{self.url}/contributions/",
-                        headers=headers,
+                        headers=self.headers,
                         data=json.dumps(chunk).encode("utf-8"),
                     )
 
@@ -1129,7 +1141,7 @@ class Client(SwaggerClient):
                     pk = cdct.pop("id")
                     return session.put(
                         f"{self.url}/contributions/{pk}/",
-                        headers=headers,
+                        headers=self.headers,
                         data=json.dumps(cdct).encode("utf-8"),
                     )
 
@@ -1182,10 +1194,10 @@ class Client(SwaggerClient):
 
     def download_contributions(
         self,
-        ids: list,
+        ids: List[str],
         outdir: Union[str, Path] = DEFAULT_DOWNLOAD_DIR,
         overwrite: bool = False,
-        include: list = None
+        include: List[str] = None
     ) -> Path:
         """Download a list of contributions as .json.gz file(s)
 
@@ -1219,7 +1231,7 @@ class Client(SwaggerClient):
 
     def download_structures(
         self,
-        ids: list,
+        ids: List[str],
         outdir: Union[str, Path] = DEFAULT_DOWNLOAD_DIR,
         overwrite: bool = False
     ) -> Path:
@@ -1239,7 +1251,7 @@ class Client(SwaggerClient):
 
     def download_tables(
         self,
-        ids: list,
+        ids: List[str],
         outdir: Union[str, Path] = DEFAULT_DOWNLOAD_DIR,
         overwrite: bool = False
     ) -> Path:
@@ -1259,7 +1271,7 @@ class Client(SwaggerClient):
 
     def download_attachments(
         self,
-        ids: list,
+        ids: List[str],
         outdir: Union[str, Path] = DEFAULT_DOWNLOAD_DIR,
         overwrite: bool = False
     ) -> Path:
@@ -1280,7 +1292,7 @@ class Client(SwaggerClient):
     def _download_resource(
         self,
         resource: str,
-        ids: list,
+        ids: List[str],
         outdir: Union[str, Path] = DEFAULT_DOWNLOAD_DIR,
         overwrite: bool = False
     ) -> Path:
@@ -1295,27 +1307,47 @@ class Client(SwaggerClient):
         Returns:
             path to output file
         """
-        # TODO chunk ids and paginate
         resources = ["contributions"] + COMPONENTS
         if resource not in resources:
             print(f"`resource` must be one of {resources}!")
             return
 
+        oids = sorted(ObjectId(i) for i in ids if ObjectId.is_valid(i))
         outdir = Path(outdir) or Path(".")
         subdir = outdir / resource
         subdir.mkdir(parents=True, exist_ok=True)
-        digest = get_md5({"ids": ids})
-        path = subdir / f"{digest}.json.gz"
+        model = self.get_model(f"{resource.capitalize()}Schema")
+        fields = list(model._properties.keys())
+        per_page = self._get_per_page_max(op="download", resource=resource)
+        chunked_oids = grouper(per_page, map(str, oids))
+        paths, futures = [], []
 
-        if not path.exists() or overwrite:
-            model = self.get_model(f"{resource.capitalize()}Schema")
-            fields = list(model._properties.keys())
-            content = getattr(self, resource).download_entries(
-                id__in=ids, short_mime="gz", format="json", _fields=fields
-            ).result()
-            path.write_bytes(content)
+        with FuturesSession(max_workers=MAX_WORKERS) as session:
+            for chunk in chunked_oids:
+                digest = get_md5({"ids": chunk})
+                path = subdir / f"{digest}.json.gz"
 
-        return path
+                if not path.exists() or overwrite:
+                    future = session.get(
+                        f"{self.url}/{resource}/download/gz/",
+                        headers=self.headers,
+                        params={
+                            "format": "json",
+                            "id__in": ",".join(chunk),
+                            "_fields": ",".join(fields),
+                        },
+                    )
+                    setattr(future, "track_id", path)
+                    futures.append(future)
+
+            if futures:
+                responses = self._run_futures(futures)
+
+                for path, resp in responses.items():
+                    path.write_bytes(resp)
+                    paths.append(path)
+
+        return paths
 
 
     def _run_futures(self, futures, total=None):
@@ -1328,7 +1360,9 @@ class Client(SwaggerClient):
                 status = response.status_code
 
                 if status in {200, 201, 400, 401, 404, 500, 502}:
-                    resp = response.json()
+                    content_type = response.headers['content-type']
+                    isgz = content_type == "application/gzip"
+                    resp = response.content if isgz else response.json()
                     if status in {200, 201}:
                         if total and "data" in resp:
                             cnt = len(resp["data"])
@@ -1339,7 +1373,7 @@ class Client(SwaggerClient):
                         pbar.update(cnt)
                         if hasattr(future, "track_id"):
                             responses[future.track_id] = resp
-                        if "warning" in resp:
+                        if not isgz and "warning" in resp:
                             print(resp["warning"])
                     elif status != 502:
                         print(resp["error"][:10000] + "...")
