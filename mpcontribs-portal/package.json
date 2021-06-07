@@ -30,7 +30,7 @@
     "compression-webpack-plugin": "^8.0.0",
     "core-js": "^3.6.4",
     "css-loader": "^5.0.1",
-    "handsontable": "^8.3.0",
+    "handsontable": "^9.0.0",
     "imports-loader": "^3.0.0",
     "intro.js": "^3.2.1",
     "ion-rangeslider": "^2.3.1",
