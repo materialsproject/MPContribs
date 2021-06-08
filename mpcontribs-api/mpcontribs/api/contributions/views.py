@@ -72,7 +72,7 @@ class ContributionsResource(Resource):
     ]
     paginate = True
     default_limit = 20
-    max_limit = 250
+    max_limit = 100
     bulk_update_limit = 250
     download_formats = ["json", "csv"]
 

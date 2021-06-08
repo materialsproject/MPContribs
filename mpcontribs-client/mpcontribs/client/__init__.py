@@ -126,7 +126,7 @@ url_format = SwaggerFormat(
 )
 
 
-def chunks(lst, n=250):
+def chunks(lst, n):
     if isinstance(lst, set):
         lst = list(lst)
     elif not isinstance(lst, list):
@@ -734,7 +734,7 @@ class Client(SwaggerClient):
                                 "per_page": per_page,
                             },
                         )
-                        for chunk in chunks(cids, n=per_page)
+                        for chunk in chunks(cids, per_page)
                     ]
 
                     self._run_futures(futures, total=len(cids))
@@ -785,9 +785,18 @@ class Client(SwaggerClient):
             {"<project-name>": {
                 "ids": {<set of contributions IDs>},
                 "identifiers": {<set of contribution identifiers>},
-                "structures": {<set of structure IDs>},
-                "tables": {<set of table IDs>},
-                "attachments": {<set of attachment IDs>},
+                "structures": {
+                    "ids": {<set of structure IDs>},
+                    "md5s": {<set of structure md5s>}
+                },
+                "tables": {
+                    "ids": {<set of tables IDs>},
+                    "md5s": {<set of tables md5s>}
+                },
+                "attachments": {
+                    "ids": {<set of attachments IDs>},
+                    "md5s": {<set of attachments md5s>}
+                },
             }, ...}
         """
         include = include or []
@@ -837,10 +846,11 @@ class Client(SwaggerClient):
                         for component in components:
                             if component in contrib:
                                 if component not in ret[project]:
-                                    ret[project][component] = set()
+                                    ret[project][component] = {"ids": set(), "md5s": set()}
 
-                                md5s = set(d["md5"] for d in contrib[component])
-                                ret[project][component] |= md5s
+                                for d in contrib[component]:
+                                    for k in ["id", "md5"]:
+                                        ret[project][component][f"{k}s"].add(d[k])
 
                 futures = [
                     future
@@ -867,6 +877,7 @@ class Client(SwaggerClient):
         if not valid:
             return {"error": valid}
 
+        per_page = self._get_per_page_max(op="update")
         query = query or {}
         query["project"] = name
         has_more = True
@@ -874,7 +885,7 @@ class Client(SwaggerClient):
 
         while has_more:
             resp = self.contributions.update_entries(
-                contributions=data, _limit=250, **query
+                contributions=data, per_page=per_page, **query
             ).result()
             has_more = resp["has_more"]
             updated += resp["count"]
@@ -1108,7 +1119,7 @@ class Client(SwaggerClient):
 
                     dupe = bool(
                         digest in digests[project_name][component] or
-                        digest in existing[project_name][component]
+                        digest in existing[project_name][component]["md5s"]
                     )
 
                     if not ignore_dupes and dupe:
@@ -1152,7 +1163,7 @@ class Client(SwaggerClient):
 
                     while contribs[project_name]:
                         futures = []
-                        for chunk in chunks(contribs[project_name], n=per_page):
+                        for chunk in chunks(contribs[project_name], per_page):
                             post_chunk = []
                             for c in chunk:
                                 if "id" in c:
@@ -1194,7 +1205,7 @@ class Client(SwaggerClient):
 
     def download_contributions(
         self,
-        ids: List[str],
+        query: dict = None,
         outdir: Union[str, Path] = DEFAULT_DOWNLOAD_DIR,
         overwrite: bool = False,
         include: List[str] = None
@@ -1202,11 +1213,12 @@ class Client(SwaggerClient):
         """Download a list of contributions as .json.gz file(s)
 
         Args:
-            ids: list of contribution ObjectIds
+            query: query to select contributions
             outdir: optional output directory
             overwrite: force re-download
             include: components to include in downloads
         """
+        query = query or {}
         include = include or []
         outdir = Path(outdir) or Path(".")
         outdir.mkdir(parents=True, exist_ok=True)
@@ -1215,19 +1227,27 @@ class Client(SwaggerClient):
             print(f"`include` must be subset of {COMPONENTS}!")
             return
 
-        all_ids = self.get_all_ids(query=dict(id__in=ids), include=components)
+        all_ids = self.get_all_ids(query=query, include=components)
 
         for name, values in all_ids.items():
             cids = list(values["ids"])
-            print(name, self._download_resource(
+            paths = self._download_resource(
                 resource="contributions", ids=cids, outdir=outdir, overwrite=overwrite
-            ))
+            )
+            if paths:
+                print(f"Downloaded {len(cids)} contributions for '{name}' in {len(paths)} files.")
+            else:
+                print(f"No new contributions to download for '{name}'.")
 
             for component in components:
-                ids = list(values[component])
-                print(name, self._download_resource(
+                ids = list(values[component]["ids"])
+                paths = self._download_resource(
                     resource=component, ids=ids, outdir=outdir, overwrite=overwrite
-                ))
+                )
+                if paths:
+                    print(f"Downloaded {len(cids)} {component} for '{name}' in {len(paths)} files.")
+                else:
+                    print(f"No new {component} to download for '{name}'.")
 
     def download_structures(
         self,
@@ -1243,7 +1263,7 @@ class Client(SwaggerClient):
             overwrite: force re-download
 
         Returns:
-            path of output file
+            paths of output files
         """
         return self._download_resource(
             resource="structures", ids=ids, outdir=outdir, overwrite=overwrite
@@ -1263,7 +1283,7 @@ class Client(SwaggerClient):
             overwrite: force re-download
 
         Returns:
-            path of output file
+            paths of output files
         """
         return self._download_resource(
             resource="tables", ids=ids, outdir=outdir, overwrite=overwrite
@@ -1283,7 +1303,7 @@ class Client(SwaggerClient):
             overwrite: force re-download
 
         Returns:
-            path of output file
+            paths of output files
         """
         return self._download_resource(
             resource="attachments", ids=ids, outdir=outdir, overwrite=overwrite
@@ -1305,7 +1325,7 @@ class Client(SwaggerClient):
             overwrite: force re-download
 
         Returns:
-            path to output file
+            paths of output files
         """
         resources = ["contributions"] + COMPONENTS
         if resource not in resources:

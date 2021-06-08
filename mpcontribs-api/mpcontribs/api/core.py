@@ -22,7 +22,7 @@ logger = logging.getLogger("app")
 def get_limit_params(resource, method):
     default = resource.default_limit
     bulk = {"BulkUpdate", "BulkDelete"}
-    maximum = resource.max_limit if method in bulk else resource.bulk_update_limit
+    maximum = resource.bulk_update_limit if method in bulk else resource.max_limit
     return [
         {
             "name": "_skip",
