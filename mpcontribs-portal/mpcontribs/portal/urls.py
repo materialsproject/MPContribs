@@ -12,12 +12,12 @@ urlpatterns = [
     url(r"^work/?$", RedirectView.as_view(pattern_name="work")),
     url(r"^healthcheck/?$", views.healthcheck, name="healthcheck"),
     url(
-        r"^notebooks/(?P<nb>[A-Za-z0-9_\/]{3,}).html$",
+        r"^notebooks/(?P<nb>[A-Za-z0-9_\/]{3,})\.html$",
         views.notebooks,
         name="notebooks",
     ),
     url(
-        r"^projects/(?P<project>[a-zA-Z0-9_]{3,31}).json.gz$",
+        r"^projects/(?P<project>[a-zA-Z0-9_]{3,31})\.(?P<extension>json\.gz|zip)$",
         views.download_project,
         name="download_project",
     ),

@@ -322,8 +322,11 @@ def download_contribution(request, cid):
         return HttpResponse(msg, status=403)
 
     tmpdir = Path("/tmp")
+    outdir = tmpdir / "download"
     client = Client(**ckwargs)
-    outdir = client.download_contribution(cid, outdir=tmpdir, include=list(COMPONENTS))
+    client.download_contributions(
+        query={"id": cid}, outdir=outdir, include=list(COMPONENTS)
+    )
     zipfile = Path(make_archive(tmpdir / cid, "zip", outdir))
     resp = zipfile.read_bytes()
     rmtree(outdir)
@@ -333,25 +336,70 @@ def download_contribution(request, cid):
     return response
 
 
-def download_project(request, project):
-    # NOTE separate original uploads for ML deployment
-    # TODO enable choice to download full dataset ("manual/with_components/{project}.json.gz")
-    subdir = "raw" if os.environ.get("TRADEMARK") == "ML" else "without_components"
+def download_project(request, project, extension):
     cname = os.environ["PORTAL_CNAME"]
-    key = f"{cname}/manual/{subdir}/{project}.json.gz"
 
-    try:
-        retr = s3_client.get_object(Bucket=BUCKET, Key=key)
-        buffer = BytesIO(retr['Body'].read())
-        return HttpResponse(buffer, content_type="application/gzip")
-    except ClientError:
-        return HttpResponse(status=404)
+    if extension == "zip":
+        # TODO need to remove zipfile in S3 bucket on API update/save signal
+        include = request.GET.get("include", "").split(",")
+        ckwargs = client_kwargs(request)
+        client = Client(**ckwargs)
+        info = client.projects.get_entry(pk=project, _fields=["columns"]).result()
+        avail_components = set()
+
+        for column in info["columns"]:
+            path = column["path"]
+            if not path.startswith("data.") and path in COMPONENTS:
+                avail_components.add(path)
+
+        include = list(set(include) & avail_components)
+        suffix = "-".join(include)
+        fn = f"{project}_{suffix}" if suffix else project
+        tmpdir = Path("/tmp")
+        outdir = tmpdir / fn
+        zipfile = outdir.with_suffix(".zip")
+        key = f"{cname}/{fn}.zip"
+
+        try:
+            retr = s3_client.get_object(Bucket=BUCKET, Key=key)
+            resp = BytesIO(retr['Body'].read())
+        except ClientError:
+            dkwargs = dict(query={"project": project}, outdir=outdir)
+
+            if include:
+                dkwargs["include"] = include
+
+            client.download_contributions(**dkwargs)
+            make_archive(outdir, "zip", outdir)
+            resp = zipfile.read_bytes()
+            s3_client.put_object(
+                Bucket=BUCKET, Key=key, Body=resp,
+                ContentType="application/zip"
+            )
+            rmtree(outdir)
+            os.remove(zipfile)
+
+        response = HttpResponse(resp, content_type="application/zip")
+        response["Content-Disposition"] = f"attachment; filename={fn}.zip"
+
+    elif extension == "json.gz":
+        subdir = "raw" if os.environ.get("TRADEMARK") == "ML" else "without_components"
+        key = f"{cname}/manual/{subdir}/{project}.json.gz"
+
+        try:
+            retr = s3_client.get_object(Bucket=BUCKET, Key=key)
+            buffer = BytesIO(retr['Body'].read())
+            response = HttpResponse(buffer, content_type="application/gzip")
+        except ClientError:
+            response = HttpResponse(status=404)
+
+    else:
+        response = HttpResponse(f"Invalid extension {extension}!", status=400)
+
+    return response
 
 
 def download(request):
-    if not request.GET:
-        return HttpResponse("Only GET requests allowed.", status=405)
-
     ckwargs = client_kwargs(request)
     headers = ckwargs.get("headers", {})
     if headers.get("X-Anonymous-Consumer", False):
