@@ -26,7 +26,9 @@ def test_validate_email():
 def test_Client():
     kwargs = {"apikey": "1234"}
     spec = Client(**kwargs).swagger_spec
-    assert spec.http_client.headers == {"x-api-key": "1234"}
+    assert spec.http_client.headers == {
+        "Content-Type": "application/json", "x-api-key": "1234"
+    }
     assert spec.origin_url == f"https://{DEFAULT_HOST}/apispec.json"
     assert spec.spec_dict["host"] == DEFAULT_HOST
     assert spec.spec_dict["schemes"] == ["https"]
@@ -34,7 +36,9 @@ def test_Client():
 
     kwargs = {"headers": {"a": "b"}, "host": "localhost:5000"}
     spec = Client(**kwargs).swagger_spec
-    assert spec.http_client.headers == {"a": "b"}
+    assert spec.http_client.headers == {
+        "Content-Type": "application/json", "a": "b"
+    }
     assert spec.origin_url == "http://localhost:5000/apispec.json"
     assert spec.spec_dict["host"] == "localhost:5000"
     assert spec.spec_dict["schemes"] == ["http"]
@@ -42,7 +46,7 @@ def test_Client():
 
     kwargs = {"host": "contribs-api:5000"}
     spec = Client(**kwargs).swagger_spec
-    assert spec.http_client.headers == {}
+    assert spec.http_client.headers == {"Content-Type": "application/json"}
     assert spec.origin_url == "http://contribs-api:5000/apispec.json"
     assert spec.spec_dict["host"] == "contribs-api:5000"
     assert spec.spec_dict["schemes"] == ["http"]
@@ -50,7 +54,7 @@ def test_Client():
 
     kwargs = {"host": "ml-api.materialsproject.org"}
     spec = Client(**kwargs).swagger_spec
-    assert spec.http_client.headers == {}
+    assert spec.http_client.headers == {"Content-Type": "application/json"}
     assert spec.origin_url == "https://ml-api.materialsproject.org/apispec.json"
     assert spec.spec_dict["host"] == "ml-api.materialsproject.org"
     assert spec.spec_dict["schemes"] == ["https"]
