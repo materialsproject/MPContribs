@@ -137,6 +137,7 @@ def chunks(lst, n):
         to = i + n
         yield lst[i:to]
 
+
 # https://stackoverflow.com/a/8991553
 def grouper(n, iterable):
     it = iter(iterable)
@@ -335,7 +336,8 @@ class Client(SwaggerClient):
             print("headers set => ignoring apikey!")
 
         self.apikey = apikey
-        self.headers = {"x-api-key": apikey} if apikey else headers
+        self.headers = headers or {}
+        self.headers = {"x-api-key": apikey} if apikey else self.headers
         self.headers["Content-Type"] = "application/json"
         self.host = host
         ssl = host.endswith(".materialsproject.org") and not host.startswith("localhost.")
@@ -453,7 +455,7 @@ class Client(SwaggerClient):
         per_page_max = self._get_per_page_max(op=op, resource=resource)
         return min(per_page_max, per_page)
 
-    def get_project_names() -> List[str]:
+    def get_project_names(self) -> List[str]:
         """Retrieve list of project names."""
         resp = self.projects.get_entries(_fields=["name"]).result()
         return [p["name"] for p in resp["data"]]
@@ -1245,7 +1247,9 @@ class Client(SwaggerClient):
                     resource=component, ids=ids, outdir=outdir, overwrite=overwrite
                 )
                 if paths:
-                    print(f"Downloaded {len(cids)} {component} for '{name}' in {len(paths)} files.")
+                    print(
+                        f"Downloaded {len(cids)} {component} for '{name}' in {len(paths)} files."
+                    )
                 else:
                     print(f"No new {component} to download for '{name}'.")
 
@@ -1368,7 +1372,6 @@ class Client(SwaggerClient):
                     paths.append(path)
 
         return paths
-
 
     def _run_futures(self, futures, total=None):
         """helper to run futures/requests"""
