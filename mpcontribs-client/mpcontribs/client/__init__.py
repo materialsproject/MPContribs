@@ -349,6 +349,8 @@ class Client(SwaggerClient):
 
         if "swagger_spec" not in self.__dict__ or (
             self.swagger_spec.http_client.headers != self.headers
+        ) or (
+            self.swagger_spec.spec_dict["host"] != self.host
         ):
             self._load()
 
