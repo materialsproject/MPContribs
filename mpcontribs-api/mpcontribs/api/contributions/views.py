@@ -94,10 +94,14 @@ class ContributionsResource(Resource):
             if fmt not in ["bootstrap", "bulma"]:
                 raise UnknownFieldError
 
-            if obj.project is None:
+            if obj.project is None or not obj.data:
+                # try data reload to account for custom queryset manager
                 obj.reload("id", "project", "data")
 
-            project = obj.project.fetch()
+            # obj.project is LazyReference & Projects uses custom queryset manager
+            project = obj.project.document_type.objects.only(
+                "title", "references", "description", "authors"
+            ).get(pk=obj.project.pk)
             ctx = {
                 "cid": str(obj.id),
                 "title": project.title,
