@@ -26,7 +26,7 @@ from django.http import HttpResponse
 from django.template.loaders.app_directories import get_app_template_dirs
 from django.template.loader import select_template
 
-from mpcontribs.client import Client
+from mpcontribs.client import Client, get_md5
 
 BUCKET = os.environ.get("S3_DOWNLOADS_BUCKET", "mpcontribs-downloads")
 COMPONENTS = {"structures", "tables", "attachments"}
@@ -337,8 +337,6 @@ def download_contribution(request, cid):
 
 
 def download_project(request, project, extension):
-    cname = os.environ["PORTAL_CNAME"]
-
     if extension == "zip":
         # TODO need to remove zipfile in S3 bucket on API update/save signal
         include = request.GET.get("include", "").split(",")
@@ -353,37 +351,11 @@ def download_project(request, project, extension):
                 avail_components.add(path)
 
         include = list(set(include) & avail_components)
-        suffix = "-".join(include)
-        fn = f"{project}_{suffix}" if suffix else project
-        tmpdir = Path("/tmp")
-        outdir = tmpdir / fn
-        zipfile = outdir.with_suffix(".zip")
-        key = f"{cname}/{fn}.zip"
-
-        try:
-            retr = s3_client.get_object(Bucket=BUCKET, Key=key)
-            resp = BytesIO(retr['Body'].read())
-        except ClientError:
-            dkwargs = dict(query={"project": project}, outdir=outdir)
-
-            if include:
-                dkwargs["include"] = include
-
-            client.download_contributions(**dkwargs)
-            make_archive(outdir, "zip", outdir)
-            resp = zipfile.read_bytes()
-            s3_client.put_object(
-                Bucket=BUCKET, Key=key, Body=resp,
-                ContentType="application/zip"
-            )
-            rmtree(outdir)
-            os.remove(zipfile)
-
-        response = HttpResponse(resp, content_type="application/zip")
-        response["Content-Disposition"] = f"attachment; filename={fn}.zip"
+        response = _zip_download(client, {"project": project}, include)
 
     elif extension == "json.gz":
         subdir = "raw" if os.environ.get("TRADEMARK") == "ML" else "without_components"
+        cname = os.environ["PORTAL_CNAME"]
         key = f"{cname}/manual/{subdir}/{project}.json.gz"
 
         try:
@@ -396,6 +368,49 @@ def download_project(request, project, extension):
     else:
         response = HttpResponse(f"Invalid extension {extension}!", status=400)
 
+    return response
+
+
+def _zip_download(client, query: dict, include: list):
+    project = query.pop("project", None)
+    if project is None:
+        return HttpResponse("Missing project.", status=400)
+
+    fn_parts = [project]
+    if include:
+        fn_parts.append("-".join(include))
+    if query:
+        fn_parts.append(get_md5(query))
+
+    fn = "_".join(fn_parts)
+    tmpdir = Path("/tmp")
+    outdir = tmpdir / fn
+    zipfile = outdir.with_suffix(".zip")
+    cname = os.environ["PORTAL_CNAME"]
+    key = f"{cname}/{fn}.zip"
+    filename = os.path.basename(key)
+
+    try:
+        retr = s3_client.get_object(Bucket=BUCKET, Key=key)
+        resp = BytesIO(retr['Body'].read())
+    except ClientError:
+        dkwargs = dict(query=query, outdir=outdir)
+
+        if include:
+            dkwargs["include"] = include
+
+        client.download_contributions(**dkwargs)  # TODO CSV format
+        make_archive(outdir, "zip", outdir)
+        resp = zipfile.read_bytes()
+        s3_client.put_object(
+            Bucket=BUCKET, Key=key, Body=resp,
+            ContentType="application/zip"
+        )
+        rmtree(outdir)
+        os.remove(zipfile)
+
+    response = HttpResponse(resp, content_type="application/zip")
+    response["Content-Disposition"] = f"attachment; filename={filename}"
     return response
 
 
@@ -415,29 +430,24 @@ def download(request):
 
     client = Client(**ckwargs)
     params = deepcopy(request.GET)
-    fmt = params.pop("format")[0]
+    fmt = params.pop("format")[0]  # TODO CSV format
     fields = params.pop("_fields")[0].split(",")
+    params.pop("X-API-KEY", None)  # client already initialized through headers
+    query = {k: v for k, v in params.items()}
+    total_count, _ = client.get_totals(query=query)
 
-    kwargs = {"fields": ["id"]}
-    for k, v in params.items():
-        kwargs[k] = fast_real(v)
-
-    resp = client.contributions.get_entries(**kwargs).result()
-
-    if resp["total_count"] < 1:
+    if total_count < 1:
         return HttpResponse("No contributions found.", status=404)
-    elif resp["total_count"] > 1000:
-        return HttpResponse("Please limit query to less than 1000 contributions.", status=403)
+    elif total_count > 10000:
+        return HttpResponse(
+            "Please limit query to less than 10000 contributions or download project in full.",
+            status=403
+        )
 
-    kwargs = {"_fields": fields, "format": fmt, "short_mime": "gz"}
-    for k, v in params.items():
-        kwargs[k] = v
-
-    resp = client.contributions.download_entries(**kwargs).result()
-    filename = f'{kwargs["project"]}.{fmt}.gz'
-    response = HttpResponse(resp, content_type="application/gzip")
-    response["Content-Disposition"] = f"attachment; filename={filename}"
-    return response
+    # ignore data.* in fields and reconcile components in fields with include
+    components = {f for f in fields if not f.startswith("data.")}
+    include = list(COMPONENTS & components)
+    return _zip_download(client, query, include)
 
 
 def notebooks(request, nb):
