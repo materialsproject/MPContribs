@@ -11,36 +11,46 @@
         <button class="modal-close is-large" aria-label="close"></button>
     </div>
 
-    {% if references %}
-        <div class="breadcrumb has-bullet-separator is-marginless is-small" style="display: flex;">
-            <label style="padding-right: 9px;">Reference(s):</label>
-            <ul>
-                {% for ref in references %}
-                <li><a href="{{ref.url}}" target="_blank" rel="noopener noreferrer">{{ref.label}}</a></li>
-                {% endfor %}
-                {% if more_references %}
-                <li></li>
-                <a name="read_more">[+]</a>
-                {% for ref in more_references %}
-                <li name="read_more" class="is-hidden"><a href="{{ref.url}}">{{ref.label}}</a></li>
-                {% endfor %}
-                {% endif %}
-            </ul>
-        </div>
-    {% endif %}
+    <div class="columns">
+        <div class="column">
+            {% if references %}
+                <div class="breadcrumb has-bullet-separator is-marginless is-small" style="display: flex;">
+                    <label style="padding-right: 9px;">Reference(s):</label>
+                    <ul>
+                        {% for ref in references %}
+                        <li><a href="{{ref.url}}" target="_blank" rel="noopener noreferrer">{{ref.label}}</a></li>
+                        {% endfor %}
+                        {% if more_references %}
+                        <li></li>
+                        <a name="read_more">[+]</a>
+                        {% for ref in more_references %}
+                        <li name="read_more" class="is-hidden"><a href="{{ref.url}}">{{ref.label}}</a></li>
+                        {% endfor %}
+                        {% endif %}
+                    </ul>
+                </div>
+            {% endif %}
 
-    {% if title %}
-    <div class="title">{{ title }}</div>
-    {% endif %}
-    {% if authors %}
-    <div class="subtitle">
-        <span>{{ authors.main }}</span>
-        {% if authors.etal %}
-        <a name="read_more">et al.</a>
-        <span name="read_more" hidden>, {{ authors.etal }}</span>
-        {% endif %}
+            {% if title %}
+            <div class="title">{{ title }}</div>
+            {% endif %}
+            {% if authors %}
+            <div class="subtitle">
+                <span>{{ authors.main }}</span>
+                {% if authors.etal %}
+                <a name="read_more">et al.</a>
+                <span name="read_more" hidden>, {{ authors.etal }}</span>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+        <div class="column">
+            <a class="button is-primary is-pulled-right"
+               href="{{ request.path }}.zip?include=structures,tables,attachments">
+                Download
+            </a>
+        </div>
     </div>
-    {% endif %}
 
     {% if descriptions or other %}
     <article class="message is-dark">
