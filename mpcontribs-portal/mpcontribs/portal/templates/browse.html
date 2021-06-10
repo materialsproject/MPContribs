@@ -23,6 +23,7 @@
         </div>
     </article>
 
+    {% if landing_pages %}
     {% for lp in landing_pages %}
     <div class="modal" id=thumbnail_{{lp.name}}_modal>
         <div class="modal-background" name=thumbnail_close></div>
@@ -34,50 +35,60 @@
                 name=thumbnail_close>
         </button>
     </div>
-    <article class="media box" id="{{ lp.name }}" name=cards>
-        <a name=thumbnail id=thumbnail_{{lp.name}}>
-            <figure name=thumbnail_{{lp.name}}_img
-                    class="media-left image is-hidden-touch is-128x128 is-clipped">
-            </figure>
-        </a>
-        <div class="media-content">
-            {% if lp.references %}
-            <nav class="breadcrumb has-bullet-separator is-size-7 is-marginless">
-                <ul>
-                    {% for ref in lp.references %}
-                    <li><a href="{{ref.url}}">{{ref.label}}</a></li>
-                    {% endfor %}
-                </ul>
-            </nav>
-            {% endif %}
-            <div class="content is-size-6 is-marginless">
-                {{ lp.authors.0 }}
-                {% if lp.authors.1 %}
-                <a class="has-tooltip-top has-tooltip-multiline"
-                      data-tooltip="{{ lp.authors.1 }}">et al.</a>
-                </a>
-                {% endif %}
-                {% if not lp.is_public %}
-                <span class="icon is-pulled-right">
-                    <i class="far fa-eye-slash"></i>
-                </span>
-            </div>
-            {% endif %}
-            <details>
-                <summary>
-                    <a class="is-size-4 has-text-weight-semibold" href="projects/{{ lp.name }}/">
-                        {{ lp.title }}
-                    </a>
-                </summary>
-                <p class="is-size-6">{{ lp.description }}</p>
-            </details>
-        </div>
-        <div class="media-right">
-            <!-- TODO leaderboard numbers/table -->
-            <!-- TODO download button -->
-        </div>
-    </article>
     {% endfor %}
+
+    <div class="columns is-multiline">
+        {% for lp in landing_pages %}
+        <div class="column is-half" id="{{ lp.name }}" name=cards>
+        <article class="media box">
+            <a name=thumbnail id=thumbnail_{{lp.name}}>
+                <figure name=thumbnail_{{lp.name}}_img
+                        class="media-left image is-hidden-touch is-128x128 is-clipped">
+                </figure>
+            </a>
+            <div class="media-content">
+                {% if lp.references %}
+                <nav class="breadcrumb has-bullet-separator is-size-7 is-marginless">
+                    <ul>
+                        {% for ref in lp.references %}
+                        <li><a href="{{ref.url}}">{{ref.label}}</a></li>
+                        {% endfor %}
+                    </ul>
+                </nav>
+                {% endif %}
+                <div class="content is-size-6 is-marginless">
+                    {{ lp.authors.0 }}
+                    {% if lp.authors.1 %}
+                    <a class="has-tooltip-top has-tooltip-multiline"
+                          data-tooltip="{{ lp.authors.1 }}">et al.</a>
+                    </a>
+                    {% endif %}
+                    {% if not lp.is_public %}
+                    <span class="icon is-pulled-right">
+                        <i class="far fa-eye-slash"></i>
+                    </span>
+                </div>
+                {% endif %}
+                <details class="content">
+                    <summary>
+                        <a class="is-size-4 has-text-weight-semibold" href="projects/{{ lp.name }}/">
+                            {{ lp.title }}
+                        </a>
+                    </summary>
+                    <p class="is-size-6">{{ lp.description }}</p>
+                </details>
+                <a class="content button is-small is-outlined is-primary is-rounded"
+                   href="projects/{{ lp.name }}.zip?include=structures,tables,attachments">
+                    download
+                </a>
+                </nav>
+            </div>
+            <!-- TODO leaderboard numbers/table -->
+        </article>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
 </section>
 {% endblock %}
 
