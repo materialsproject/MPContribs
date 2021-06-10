@@ -372,14 +372,13 @@ def download_project(request, project, extension):
 
 
 def _zip_download(client, query: dict, include: list):
-    project = query.pop("project", None)
-    if project is None:
+    if "project" not in query:
         return HttpResponse("Missing project.", status=400)
 
-    fn_parts = [project]
+    fn_parts = [query["project"]]
     if include:
         fn_parts.append("-".join(include))
-    if query:
+    if [k for k in query.keys() if k != "project"]:
         fn_parts.append(get_md5(query))
 
     fn = "_".join(fn_parts)
