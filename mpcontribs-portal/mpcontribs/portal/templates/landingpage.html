@@ -44,12 +44,14 @@
             </div>
             {% endif %}
         </div>
+        {% if not request.META.HTTP_X_ANONYMOUS_CONSUMER %}
         <div class="column">
             <a class="button is-primary is-pulled-right"
-               href="{{ request.path }}.zip?include=structures,tables,attachments">
+               href="/{{ request_path }}.zip?include=structures,tables,attachments">
                 Download
             </a>
         </div>
+        {% endif %}
     </div>
 
     {% if descriptions or other %}
@@ -106,7 +108,7 @@
         <div class="level-item">
             <p class="control">
             <div class="dropdown">
-                <div class="field has-addons is-centered">
+                <div class="field has-addons is-centered is-marginless">
                     <div class="control">
                         <a class="button is-light">
                             <input class="is-checkradio" id="column_manager_select_all" type="checkbox" checked="checked">
@@ -168,9 +170,9 @@
 
 
     {% if columns and columns.strip != 'null' %}
-    <div class="box">
-        <div name=table id=table_{{name}} data-columns='{{ columns|join:"," }}' data-project='{{ name }}'></div>
-    </div>
+    <div name=table id=table_{{name}}
+        data-columns='{{ columns|join:"," }}' data-project='{{ name }}'
+        style="visibility: hidden;"></div>
     {% endif %}
     {% endif %}
 

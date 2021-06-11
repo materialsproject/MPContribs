@@ -35,6 +35,7 @@ var query = $.extend(true, {}, default_query);
 var total_count;
 
 function get_data() {
+    $('#table_filter').addClass('is-loading');
     const url = window.api['host'] + 'contributions/';
     return $.get({dataType: "json", url: url, headers: window.api['headers'], data: query});
 }
@@ -157,6 +158,7 @@ function load_data(dom) {
         set_download_urls();
         $('#table_filter').removeClass('is-loading');
         $('#table_delete').removeClass('is-loading');
+        $('[name=table]').first().css("visibility", "visible");
     });
 }
 
@@ -166,7 +168,7 @@ $('a[name=table_download_item]').click(function(e) {
     var notification_id = "download_notification";
     var notification = document.getElementById(notification_id);
     if ($(notification).length) { $(notification).addClass('is-hidden'); }
-    if (cnt > 1000) {
+    if (cnt > 10000) {
         e.preventDefault();
         if (!$(notification).length) {
             notification = $('<div/>', {
@@ -174,29 +176,9 @@ $('a[name=table_download_item]').click(function(e) {
             });
             $("#landingpage").prepend(notification);
         }
-        $(notification).html('Please filter number of contributions to less than 1000.')
+        $(notification).html('Please filter number of contributions to less than 10000.')
         $(notification).removeClass('is-hidden');
     }
-    //$(notification).html('Preparing download ');
-    //$(notification).append(new Array(4).join('<span class="loader__dot">.</span>'));
-    //var pbar = $('<progress/>', {'class': 'progress', 'max': cnt});
-    //$(notification).append(pbar);
-    //$(notification).removeClass('is-hidden');
-    //var channel = sha1(decodeURIComponent($(this).attr('href')));
-    //var source = new EventSource(window.api['host'] + 'stream?channel=' + channel);
-    //source.addEventListener('download', function(event) {
-    //    var data = JSON.parse(event.data);
-    //    if (data.message === 0) {
-    //        $(notification).addClass('is-hidden');
-    //    } else if (data.message >= 0) {
-    //        pbar.attr('value', data.message);
-    //    } else {
-    //        $(notification).html('Something went wrong.');
-    //    }
-    //}, false);
-    //source.addEventListener('error', function(event) {
-    //    $(notification).html("Failed to connect to event stream. Is Redis running?")
-    //}, false);
 });
 
 var nestedHeadersPrep = [];
@@ -269,6 +251,7 @@ const hot = new Handsontable(container, {
                     }
                 }
                 ht.setDataAtCell(update);
+                $('#table_filter').removeClass('is-loading');
             });
         }
     }
@@ -289,15 +272,17 @@ function toggle_columns(doms) {
 }
 
 $('#table_filter').click(function(e) {
-    $(this).addClass('is-loading');
-    e.preventDefault();
     var kw = $('#table_keyword').val();
-    var sel = $( "#table_select option:selected" ).text();
-    var key = sel.replace(/\./g, '__') + '__contains';
-    query[key] = kw;
-    query['_skip'] = 0;
-    toggle_columns("input[name=column_manager_item]:checked");
-    load_data(hot);
+    if (kw) {
+        $(this).addClass('is-loading');
+        e.preventDefault();
+        var sel = $( "#table_select option:selected" ).text();
+        var key = sel.replace(/\./g, '__') + '__contains';
+        query[key] = kw;
+        query['_skip'] = 0;
+        toggle_columns("input[name=column_manager_item]:checked");
+        load_data(hot);
+    }
 });
 
 $('#table_delete').click(function(e) {

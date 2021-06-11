@@ -81,6 +81,7 @@ def landingpage(request, project):
         """.strip()
 
     try:
+        ctx["request_path"] = request.path.strip("/")
         client = Client(**ckwargs)
         prov = client.projects.get_entry(pk=project, _fields=["_all"]).result()
         ctx["name"] = project
