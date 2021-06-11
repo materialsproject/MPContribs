@@ -53,6 +53,9 @@ class TablesResource(Resource):
 
     def value_for_field(self, obj, field):
         if field == "total_data_pages":
+            if obj.total_data_rows is None:
+                return None
+
             per_page_default = self.fields_to_paginate["data"][0]
             per_page = int(self.params.get("data_per_page", per_page_default))
             total_data_pages = int(obj.total_data_rows / per_page)
