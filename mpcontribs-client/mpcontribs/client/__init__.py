@@ -1045,7 +1045,7 @@ class Client(SwaggerClient):
 
         id2project = {}
         if collect_ids:
-            resp = self.get_all_ids( # TODO catch URI too long
+            resp = self.get_all_ids(
                 query=dict(id__in=collect_ids), timeout=timeout
             )
             project_names |= set(resp.keys())
@@ -1244,7 +1244,8 @@ class Client(SwaggerClient):
 
                         if existing[project_name]["unique_identifiers"] and retry:
                             existing[project_name] = self.get_all_ids(
-                                query=dict(project=project_name), include=COMPONENTS, timeout=timeout
+                                query=dict(project=project_name), include=COMPONENTS,
+                                timeout=timeout
                             ).get(project_name, {"identifiers": set()})
                             existing[project_name]["unique_identifiers"] = self.projects.get_entry(
                                 pk=project_name, _fields=["unique_identifiers"]
