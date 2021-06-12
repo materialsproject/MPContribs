@@ -321,6 +321,32 @@ def load_client(apikey=None, headers=None, host=None):
     )
 
 
+def _run_futures(futures, total: int = 0, timeout: int = -1):
+    """helper to run futures/requests"""
+    start = time.perf_counter()
+    total_set = total > 0
+    total = total if total_set else len(futures)
+    responses = {}
+
+    with tqdm(leave=False, total=total) as pbar:
+        for future in as_completed(futures):
+            if not future.cancelled():
+                response = future.result()
+                cnt = response.count if total_set and hasattr(response, "count") else 1
+                pbar.update(cnt)
+
+                if hasattr(future, "track_id") and hasattr(response, "result"):
+                    responses[future.track_id] = response.result
+
+                elapsed = time.perf_counter() - start
+
+                if timeout > 0 and elapsed > timeout:
+                    for future in futures:
+                        future.cancel()
+
+    return responses
+
+
 class Client(SwaggerClient):
     """client to connect to MPContribs API
 
@@ -732,7 +758,9 @@ class Client(SwaggerClient):
         self.projects.update_entry(pk=name, project={"columns": []}).result()
         return self.projects.update_entry(pk=name, project=payload).result()
 
-    def delete_contributions(self, name: str, per_page: int = 100, retry: bool = False):
+    def delete_contributions(
+            self, name: str, per_page: int = 100, retry: bool = False, timeout: int = -1
+    ):
         """Remove all contributions for a project
 
         Note: This also resets the columns field for a project. It might have to be
@@ -742,10 +770,11 @@ class Client(SwaggerClient):
             name (str): name of the project for which to delete contributions
             per_page (int): number of contributions to delete per request
             retry (bool): if True, retry deletion of failed contributions until done
+            timeout (int): cancel remaining requests if timeout exceeded (in seconds)
         """
         tic = time.perf_counter()
         query = dict(project=name)
-        cids = self.get_all_ids(query=query).get(name, {}).get("ids", [])
+        cids = self.get_all_ids(query=query, timeout=timeout).get(name, {}).get("ids", [])
         total = len(cids)
         # reset columns to be save (sometimes not all are reset BUGFIX?)
         self.projects.update_entry(pk=name, project={"columns": []}).result()
@@ -767,8 +796,10 @@ class Client(SwaggerClient):
                         for chunk in chunks(cids, per_page)
                     ]
 
-                    self._run_futures(futures, total=len(cids))
-                    cids = self.get_all_ids(query=query).get(name, {}).get("ids", [])
+                    _run_futures(futures, total=len(cids), timeout=timeout)
+                    cids = self.get_all_ids(
+                        query=query, timeout=timeout
+                    ).get(name, {}).get("ids", [])
 
                     if not retry:
                         break
@@ -793,6 +824,9 @@ class Client(SwaggerClient):
         Args:
             query (dict): query to select contributions
             per_page (int): number of contributions per page to calculate correct #pages
+
+        Returns:
+            tuple of total counts and pages
         """
         query = query or {}
         [query.pop(k, None) for k in ["per_page", "_fields"]]
@@ -802,12 +836,15 @@ class Client(SwaggerClient):
         ).result()
         return result["total_count"], result["total_pages"]
 
-    def get_all_ids(self, query: dict, include: List[str] = None) -> dict:
+    def get_all_ids(
+        self, query: dict, include: List[str] = None, timeout: int = -1
+    ) -> dict:
         """Retrieve a list of existing contribution and component ObjectIds
 
         Args:
             query (dict): query to select contributions
             include (list): components to include in response
+            timeout (int): cancel remaining requests if timeout exceeded (in seconds)
 
         Returns:
             {"<project-name>": {
@@ -858,7 +895,7 @@ class Client(SwaggerClient):
             futures = [get_future(page + 1) for page in range(pages)]
 
             while futures:
-                responses = self._run_futures(futures)
+                responses = _run_futures(futures, timeout=timeout)
 
                 for resp in responses.values():
                     for contrib in resp["data"]:
@@ -879,9 +916,8 @@ class Client(SwaggerClient):
                                         ret[project][component][f"{k}s"].add(d[k])
 
                 futures = [
-                    future
-                    for future in futures
-                    if future.track_id not in responses.keys()
+                    future for future in futures
+                    if not future.cancelled() and future.track_id not in responses.keys()
                 ]
 
         return ret
@@ -947,6 +983,7 @@ class Client(SwaggerClient):
         ignore_dupes: bool = False,
         retry: bool = False,
         per_page: int = 100,
+        timeout: int = -1
     ):
         """Submit a list of contributions
 
@@ -975,6 +1012,7 @@ class Client(SwaggerClient):
             ignore_dupes (bool): force duplicate components to be submitted
             retry (bool): keep trying until all contributions successfully submitted
             per_page (int): number of contributions to submit in each chunk/request
+            timeout (int): cancel remaining requests if timeout exceeded (in seconds)
         """
         if not contributions or not isinstance(contributions, list):
             print("Please provide list of contributions to submit.")
@@ -1007,7 +1045,9 @@ class Client(SwaggerClient):
 
         id2project = {}
         if collect_ids:
-            resp = self.get_all_ids(query=dict(id__in=collect_ids))
+            resp = self.get_all_ids( # TODO catch URI too long
+                query=dict(id__in=collect_ids), timeout=timeout
+            )
             project_names |= set(resp.keys())
 
             for project_name, values in resp.items():
@@ -1016,7 +1056,9 @@ class Client(SwaggerClient):
 
         print("get existing contributions ...")
         project_names = list(project_names)
-        existing = self.get_all_ids(query=dict(project__in=project_names), include=COMPONENTS)
+        existing = self.get_all_ids(
+            query=dict(project__in=project_names), include=COMPONENTS, timeout=timeout
+        )
         resp = self.projects.get_entries(
             name__in=project_names, _fields=["name", "unique_identifiers"]
         ).result()
@@ -1198,11 +1240,11 @@ class Client(SwaggerClient):
                             if post_chunk:
                                 futures.append(post_future(post_chunk))
 
-                        self._run_futures(futures, total=ncontribs)
+                        _run_futures(futures, total=ncontribs, timeout=timeout)
 
                         if existing[project_name]["unique_identifiers"] and retry:
                             existing[project_name] = self.get_all_ids(
-                                query=dict(project=project_name), include=COMPONENTS
+                                query=dict(project=project_name), include=COMPONENTS, timeout=timeout
                             ).get(project_name, {"identifiers": set()})
                             existing[project_name]["unique_identifiers"] = self.projects.get_entry(
                                 pk=project_name, _fields=["unique_identifiers"]
@@ -1232,8 +1274,9 @@ class Client(SwaggerClient):
         query: dict = None,
         outdir: Union[str, Path] = DEFAULT_DOWNLOAD_DIR,
         overwrite: bool = False,
-        include: List[str] = None
-    ) -> Path:
+        include: List[str] = None,
+        timeout: int = -1
+    ) -> int:
         """Download a list of contributions as .json.gz file(s)
 
         Args:
@@ -1241,6 +1284,10 @@ class Client(SwaggerClient):
             outdir: optional output directory
             overwrite: force re-download
             include: components to include in downloads
+            timeout: cancel remaining requests if timeout exceeded (in seconds)
+
+        Returns:
+            Number of new downloads written to disk.
         """
         query = query or {}
         include = include or []
@@ -1251,35 +1298,45 @@ class Client(SwaggerClient):
             print(f"`include` must be subset of {COMPONENTS}!")
             return
 
-        all_ids = self.get_all_ids(query=query, include=components)
+        all_ids = self.get_all_ids(query=query, include=components, timeout=timeout)
+        ndownloads = 0
 
         for name, values in all_ids.items():
             cids = list(values["ids"])
-            paths = self._download_resource(
-                resource="contributions", ids=cids, outdir=outdir, overwrite=overwrite
+            paths, per_page = self._download_resource(
+                resource="contributions", ids=cids,
+                outdir=outdir, overwrite=overwrite, timeout=timeout
             )
             if paths:
-                print(f"Downloaded {len(cids)} contributions for '{name}' in {len(paths)} files.")
+                npaths = len(paths)
+                ndownloads += npaths
+                nobjs = npaths * per_page
+                print(f"Downloaded {nobjs} contributions for '{name}' in {npaths} file(s).")
             else:
                 print(f"No new contributions to download for '{name}'.")
 
             for component in components:
                 ids = list(values[component]["ids"])
-                paths = self._download_resource(
-                    resource=component, ids=ids, outdir=outdir, overwrite=overwrite
+                paths, per_page = self._download_resource(
+                    resource=component, ids=ids,
+                    outdir=outdir, overwrite=overwrite, timeout=timeout
                 )
                 if paths:
-                    print(
-                        f"Downloaded {len(cids)} {component} for '{name}' in {len(paths)} files."
-                    )
+                    npaths = len(paths)
+                    ndownloads += npaths
+                    nobjs = npaths * per_page
+                    print(f"Downloaded {nobjs} {component} for '{name}' in {npaths} file(s).")
                 else:
                     print(f"No new {component} to download for '{name}'.")
+
+        return ndownloads
 
     def download_structures(
         self,
         ids: List[str],
         outdir: Union[str, Path] = DEFAULT_DOWNLOAD_DIR,
-        overwrite: bool = False
+        overwrite: bool = False,
+        timeout: int = -1
     ) -> Path:
         """Download a list of structures as a .json.gz file
 
@@ -1287,19 +1344,21 @@ class Client(SwaggerClient):
             ids: list of structure ObjectIds
             outdir: optional output directory
             overwrite: force re-download
+            timeout: cancel remaining requests if timeout exceeded (in seconds)
 
         Returns:
             paths of output files
         """
         return self._download_resource(
-            resource="structures", ids=ids, outdir=outdir, overwrite=overwrite
+            resource="structures", ids=ids, outdir=outdir, overwrite=overwrite, timeout=timeout
         )
 
     def download_tables(
         self,
         ids: List[str],
         outdir: Union[str, Path] = DEFAULT_DOWNLOAD_DIR,
-        overwrite: bool = False
+        overwrite: bool = False,
+        timeout: int = -1
     ) -> Path:
         """Download a list of tables as a .json.gz file
 
@@ -1307,19 +1366,21 @@ class Client(SwaggerClient):
             ids: list of table ObjectIds
             outdir: optional output directory
             overwrite: force re-download
+            timeout: cancel remaining requests if timeout exceeded (in seconds)
 
         Returns:
             paths of output files
         """
         return self._download_resource(
-            resource="tables", ids=ids, outdir=outdir, overwrite=overwrite
+            resource="tables", ids=ids, outdir=outdir, overwrite=overwrite, timeout=timeout
         )
 
     def download_attachments(
         self,
         ids: List[str],
         outdir: Union[str, Path] = DEFAULT_DOWNLOAD_DIR,
-        overwrite: bool = False
+        overwrite: bool = False,
+        timeout: int = -1
     ) -> Path:
         """Download a list of attachments as a .json.gz file
 
@@ -1327,12 +1388,13 @@ class Client(SwaggerClient):
             ids: list of attachment ObjectIds
             outdir: optional output directory
             overwrite: force re-download
+            timeout: cancel remaining requests if timeout exceeded (in seconds)
 
         Returns:
             paths of output files
         """
         return self._download_resource(
-            resource="attachments", ids=ids, outdir=outdir, overwrite=overwrite
+            resource="attachments", ids=ids, outdir=outdir, overwrite=overwrite, timeout=timeout
         )
 
     def _download_resource(
@@ -1340,7 +1402,8 @@ class Client(SwaggerClient):
         resource: str,
         ids: List[str],
         outdir: Union[str, Path] = DEFAULT_DOWNLOAD_DIR,
-        overwrite: bool = False
+        overwrite: bool = False,
+        timeout: int = -1
     ) -> Path:
         """Helper to download a list of resources as .json.gz file
 
@@ -1349,9 +1412,10 @@ class Client(SwaggerClient):
             ids: list of resource ObjectIds
             outdir: optional output directory
             overwrite: force re-download
+            timeout: cancel remaining requests if timeout exceeded (in seconds)
 
         Returns:
-            paths of output files
+            tuple (paths of output files, objects per path / per_page)
         """
         resources = ["contributions"] + COMPONENTS
         if resource not in resources:
@@ -1387,42 +1451,10 @@ class Client(SwaggerClient):
                     futures.append(future)
 
             if futures:
-                responses = self._run_futures(futures)
+                responses = _run_futures(futures, timeout=timeout)
 
                 for path, resp in responses.items():
                     path.write_bytes(resp)
                     paths.append(path)
 
-        return paths
-
-    def _run_futures(self, futures, total=None):
-        """helper to run futures/requests"""
-        responses = {}
-
-        with tqdm(leave=False, total=total if total else len(futures)) as pbar:
-            for future in as_completed(futures):
-                response = future.result()
-                status = response.status_code
-
-                if status in {200, 201, 400, 401, 404, 500, 502}:
-                    content_type = response.headers['content-type']
-                    isgz = content_type == "application/gzip"
-                    resp = response.content if isgz else response.json()
-                    if status in {200, 201}:
-                        if total and "data" in resp:
-                            cnt = len(resp["data"])
-                        elif total and "count" in resp:
-                            cnt = resp["count"]
-                        else:
-                            cnt = 1
-                        pbar.update(cnt)
-                        if hasattr(future, "track_id"):
-                            responses[future.track_id] = resp
-                        if not isgz and "warning" in resp:
-                            print(resp["warning"])
-                    elif status != 502:
-                        print(resp["error"][:10000] + "...")
-                elif status not in {503, 504}:
-                    print("ERROR", response.content.decode("utf-8"))
-
-        return responses
+        return paths, per_page
