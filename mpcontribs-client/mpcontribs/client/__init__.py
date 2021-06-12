@@ -22,7 +22,6 @@ from base64 import b64encode, b64decode
 from urllib.parse import urlparse
 from pyisemail import is_email
 from collections import defaultdict
-from ratelimit import limits, sleep_and_retry
 from pyisemail.diagnosis import BaseDiagnosis
 from swagger_spec_validator.common import SwaggerValidationError
 from jsonschema.exceptions import ValidationError
@@ -308,7 +307,6 @@ class Client(SwaggerClient):
     # of Singleton): Since the __dict__ of any instance can be re-bound, Borg rebinds it
     # in its __init__ to a class-attribute dictionary. Now, any reference or binding of an
     # instance attribute will actually affect all instances equally.
-    # TODO ratelimit support in bravado (wrapped around get_entry..., monkey-patch?)
     # NOTE bravado future doesn't work with concurrent.futures
 
     _shared_state = {}
@@ -759,8 +757,6 @@ class Client(SwaggerClient):
         else:
             print(f"There aren't any contributions to delete for {name}")
 
-    @sleep_and_retry
-    @limits(calls=175, period=60)
     def get_totals(self, query: dict = None, per_page: int = 1) -> tuple:
         """Retrieve total count and pages for contributions matching query
 
@@ -824,8 +820,6 @@ class Client(SwaggerClient):
 
         with FuturesSession(max_workers=MAX_WORKERS) as session:
 
-            @sleep_and_retry
-            @limits(calls=175, period=60)
             def get_future(page):
                 params = {"page": page, "per_page": per_page, "_fields": fields}
                 params.update(query)
@@ -1143,8 +1137,6 @@ class Client(SwaggerClient):
             with FuturesSession(max_workers=MAX_WORKERS) as session:
                 total = 0
 
-                @sleep_and_retry
-                @limits(calls=175, period=60)
                 def post_future(chunk):
                     return session.post(
                         f"{self.url}/contributions/",
