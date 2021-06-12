@@ -35,7 +35,6 @@ setup(
         "pyIsEmail",
         "pymatgen",
         "pyOpenSSL",
-        "ratelimit",
         "requests-futures",
         "service-identity",
         "twisted",
