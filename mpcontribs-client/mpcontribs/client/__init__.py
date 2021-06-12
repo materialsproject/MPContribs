@@ -48,7 +48,7 @@ from pint.converters import ScaleConverter
 from pint.errors import DimensionalityError
 from datetime import datetime
 
-MAX_WORKERS = 7
+MAX_WORKERS = 10
 MAX_ELEMS = 10
 MAX_BYTES = 200 * 1024
 DEFAULT_HOST = "contribs-api.materialsproject.org"
@@ -145,6 +145,34 @@ def grouper(n, iterable):
         if not chunk:
             return
         yield chunk
+
+
+def get_session():
+    s = FuturesSession(max_workers=MAX_WORKERS)
+    s.hooks['response'].append(_response_hook)
+    return s
+
+
+def _response_hook(resp, *args, **kwargs):
+    content_type = resp.headers['content-type']
+    if content_type == "application/json":
+        result = resp.json()
+
+        if "data" in result and isinstance(result["data"], list):
+            resp.result = result
+            resp.count = len(result["data"])
+        elif "count" in result and isinstance(result["count"], int):
+            resp.count = result["count"]
+
+        if "warning" in result:
+            print("WARNING", result["warning"])
+        elif "error" in result and isinstance(result["error"], str):
+            print("ERROR", result["error"][:10000] + "...")
+
+    elif content_type == "application/gzip":
+        resp.result = resp.content
+    else:
+        print("ERROR", resp.content.decode("utf-8"))
 
 
 class FidoClientGlobalHeaders(FidoClient):
@@ -724,7 +752,7 @@ class Client(SwaggerClient):
         per_page = self._get_per_page(per_page, op="delete")
 
         if cids:
-            with FuturesSession(max_workers=MAX_WORKERS) as session:
+            with get_session() as session:
                 while cids:
                     futures = [
                         session.delete(
@@ -818,7 +846,7 @@ class Client(SwaggerClient):
             if isinstance(v, list):
                 query[k] = ",".join(v)
 
-        with FuturesSession(max_workers=MAX_WORKERS) as session:
+        with get_session() as session:
 
             def get_future(page):
                 params = {"page": page, "per_page": per_page, "_fields": fields}
@@ -1134,7 +1162,7 @@ class Client(SwaggerClient):
         # submit contributions
         if contribs:
             print("submit contributions ...")
-            with FuturesSession(max_workers=MAX_WORKERS) as session:
+            with get_session() as session:
                 total = 0
 
                 def post_future(chunk):
@@ -1340,7 +1368,7 @@ class Client(SwaggerClient):
         chunked_oids = grouper(per_page, map(str, oids))
         paths, futures = [], []
 
-        with FuturesSession(max_workers=MAX_WORKERS) as session:
+        with get_session() as session:
             for chunk in chunked_oids:
                 digest = get_md5({"ids": chunk})
                 path = subdir / f"{digest}.json.gz"
