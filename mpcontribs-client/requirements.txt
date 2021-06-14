@@ -16,4 +16,4 @@ pyOpenSSL==20.0.1
 requests-futures==1.0.0
 service-identity==21.1.0
 twisted==21.2.0
-tqdm==4.61.0
+tqdm==4.61.1
