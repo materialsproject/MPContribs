@@ -46,10 +46,32 @@
         </div>
         {% if not request.META.HTTP_X_ANONYMOUS_CONSUMER %}
         <div class="column">
-            <a class="button is-primary is-pulled-right"
-               href="/{{ request_path }}.zip?include=structures,tables,attachments">
-                Download
-            </a>
+            <div class="dropdown is-pulled-right">
+                <div class="dropdown-trigger">
+                    <button class="button is-primary" aria-haspopup="true" aria-controls="dropdown-menu2">
+                        <span>Download</span>
+                        <span class="icon is-small">
+                            <i class="fas fa-angle-down" aria-hidden="true"></i>
+                        </span>
+                    </button>
+                </div>
+                <div class="dropdown-menu" id="dropdown-menu2" role="menu">
+                    <div class="dropdown-content">
+                        {% for component in components %}
+                        <div class="dropdown-item" style="white-space: nowrap;">
+                            <input type="checkbox" name=include id="with_{{component}}" value="{{component}}">
+                            <label for="with_{{component}}"><span>with {{component}}</span></label>
+                        </div>
+                        {% endfor %}
+                        <div class="dropdown-item" style="white-space: nowrap;">
+                            <a class="button is-primary is-light is-small" name=download id=download_json data-format=json>JSON</a>
+                            <a class="button is-primary is-light is-small" name=download id=download_csv data-format=csv>CSV</a>
+                            <span class="tag is-hidden" id=download_progress></span>
+                            <a class="button is-danger is-light is-small is-hidden" id=get_download>Click to download</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
         {% endif %}
     </div>
@@ -82,7 +104,18 @@
     {% if columns and columns.strip != 'null' %}
     <nav class="level box">
         <div class="level-left">
-            <div class="level-item">
+            <div class="level-item has-text-centered">
+                <div>
+                    <p class="heading is-marginless">Contributions</p>
+                    <p class="subtitle has-text-light" id=total_count></p>
+                    <a name=table_download_item class="tag is-primary is-light" data-format=json>JSON</a>
+                    <a name=table_download_item class="tag is-primary is-light" data-format=csv>CSV</a>
+                </div>
+            </div>
+        </div>
+        <div class="level-item has-text-centered">
+            <div>
+                <p class="heading">Filter Contributions</p>
                 <div class="field has-addons">
                     <p class="control">
                         <span class="select">
@@ -105,74 +138,56 @@
                 </div>
             </div>
         </div>
-        <div class="level-item">
-            <p class="control">
-            <div class="dropdown">
-                <div class="field has-addons is-centered is-marginless">
-                    <div class="control">
-                        <a class="button is-light">
-                            <input class="is-checkradio" id="column_manager_select_all" type="checkbox" checked="checked">
-                            <label for="column_manager_select_all"><span id="column_manager_count">{{ columns|length }}</span> Columns</label>
-                        </a>
-                    </div>
-                    <div class="control">
-                        <a class="button is-primary dropdown-trigger" aria-haspopup="true" aria-controls="dropdown-menu">
-                            <span class="icon">
-                                <i class="fas fa-caret-down"></i>
-                            </span>
-                        </a>
-                    </div>
-                </div>
-                <div class="dropdown-menu" role="menu">
-                    <div class="dropdown-content">
-                        {% for col in columns %}
-                        <a class="dropdown-item">
-                            {% if col in "id,identifier,formula" %}
-                            <input class="is-checkradio" name="column_manager_item"
-                                 id="column_manager_checkbox_{{col}}_{{forloop.counter0}}" type="checkbox" checked="checked" disabled="disabled">
-                            {% else %}
-                            <input class="is-checkradio" name="column_manager_item"
-                                 id="column_manager_checkbox_{{col}}_{{forloop.counter0}}" type="checkbox" checked="checked">
-                            {% endif %}
-                            <label for="column_manager_checkbox_{{col}}_{{forloop.counter0}}">{{col}}</label>
-                        </a>
-                        {% endfor %}
-                    </div>
-                </div>
-            </div>
-            </p>
-        </div>
+        <!-- TODO add "copy Query" to clipboard button -->
         <div class="level-right">
             <div class="level-item">
-                <p class="control">
-                <div id=table_download_dropdown class="dropdown">
-                    <div class="dropdown-trigger">
-                        <button id=table_download class="button is-primary" aria-haspopup="true" aria-controls="dropdown-menu">
-                            <span class="icon">
-                                <i class="fas fa-cloud-download-alt"></i>
-                            </span>
-                        </button>
-                    </div>
-                    <div class="dropdown-menu" id="dropdown-menu" role="menu">
-                        <div class="dropdown-content">
-                            <a name=table_download_item class="dropdown-item" href='#' data-format=json>JSON</a>
-                            <a name=table_download_item class="dropdown-item" href='#' data-format=csv>CSV</a>
-                            <!-- TODO add "copy Query" to clipboard button -->
+                <div>
+                    <p class="heading has-text-centered">Select Columns</p>
+                    <p class="control">
+                    <div class="dropdown">
+                        <div class="field has-addons is-centered is-marginless">
+                            <div class="control">
+                                <a class="button is-light">
+                                    <input class="is-checkradio" id="column_manager_select_all" type="checkbox" checked="checked">
+                                    <label for="column_manager_select_all"><span id="column_manager_count">{{ columns|length }}</span> Columns</label>
+                                </a>
+                            </div>
+                            <div class="control">
+                                <a class="button is-primary dropdown-trigger" aria-haspopup="true" aria-controls="dropdown-menu">
+                                    <span class="icon">
+                                        <i class="fas fa-caret-down"></i>
+                                    </span>
+                                </a>
+                            </div>
+                        </div>
+                        <div class="dropdown-menu" role="menu">
+                            <div class="dropdown-content">
+                                {% for col in columns %}
+                                <a class="dropdown-item">
+                                    {% if col in "id,identifier,formula" %}
+                                    <input class="is-checkradio" name="column_manager_item"
+                                         id="column_manager_checkbox_{{col}}_{{forloop.counter0}}" type="checkbox" checked="checked" disabled="disabled">
+                                    {% else %}
+                                    <input class="is-checkradio" name="column_manager_item"
+                                         id="column_manager_checkbox_{{col}}_{{forloop.counter0}}" type="checkbox" checked="checked">
+                                    {% endif %}
+                                    <label for="column_manager_checkbox_{{col}}_{{forloop.counter0}}">{{col}}</label>
+                                </a>
+                                {% endfor %}
+                            </div>
                         </div>
                     </div>
+                    </p>
                 </div>
-                </p>
             </div>
-            <div class="level-item" id=total_count></div>
         </div>
     </nav>
     {% endif %}
 
 
     {% if columns and columns.strip != 'null' %}
-    <div name=table id=table_{{name}}
-        data-columns='{{ columns|join:"," }}' data-project='{{ name }}'
-        style="visibility: hidden;"></div>
+    <div name=table id=table_{{name}} class="is-invisible"
+        data-columns='{{ columns|join:"," }}' data-project='{{ name }}'></div>
     {% endif %}
     {% endif %}
 

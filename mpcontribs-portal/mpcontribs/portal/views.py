@@ -22,12 +22,13 @@ from botocore.errorfactory import ClientError
 
 from django.shortcuts import render, redirect
 from django.template import RequestContext
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.template.loaders.app_directories import get_app_template_dirs
 from django.template.loader import select_template
 
 from mpcontribs.client import Client, get_md5
 
+CNAME = os.environ.get("PORTAL_CNAME", "contribs.materialsproject.org")
 BUCKET = os.environ.get("S3_DOWNLOADS_BUCKET", "mpcontribs-downloads")
 COMPONENTS = {"structures", "tables", "attachments"}
 j2h = Json2Html()
@@ -80,10 +81,17 @@ def landingpage(request, project):
         Please <a href=\"{ctx['OAUTH_URL']}\">log in</a> to browse and filter contributions.
         """.strip()
 
+    client = Client(**ckwargs)
+
     try:
-        ctx["request_path"] = request.path.strip("/")
-        client = Client(**ckwargs)
         prov = client.projects.get_entry(pk=project, _fields=["_all"]).result()
+    except HTTPNotFound:
+        msg = f"Project '{project}' not found or access denied!"
+        if not_logged_in:
+            ctx["alert"] += f" {msg}"
+        else:
+            ctx["alert"] = msg
+    else:
         ctx["name"] = project
         long_title = prov.get("long_title")
         ctx["title"] = long_title if long_title else prov["title"]
@@ -112,6 +120,9 @@ def landingpage(request, project):
                 for col in prov["columns"]
                 if col["unit"] == "NaN" and col["path"] not in COMPONENTS
             ]
+            ctx["components"] = [
+                col["path"] for col in prov["columns"] if col["path"] in COMPONENTS
+            ]
             ctx["ranges"] = json.dumps(
                 {
                     f'{col["path"]} [{col["unit"]}]': [col["min"], col["max"]]
@@ -119,14 +130,6 @@ def landingpage(request, project):
                     if col["unit"] != "NaN"
                 }
             )
-    except HTTPNotFound:
-        msg = f"Project '{project}' not found or access denied!"
-        if not_logged_in:
-            ctx["alert"] += f" {msg}"
-        else:
-            ctx["alert"] = msg
-    except Exception as ex:
-        ctx["alert"] = str(ex)
 
     templates = [f"{project}_index.html", "landingpage.html"]
     template = select_template(templates)
@@ -337,81 +340,86 @@ def download_contribution(request, cid):
     return response
 
 
-def download_project(request, project, extension):
-    if extension == "zip":
-        # TODO need to remove zipfile in S3 bucket on API update/save signal
-        include = request.GET.get("include", "").split(",")
-        ckwargs = client_kwargs(request)
-        client = Client(**ckwargs)
-        info = client.projects.get_entry(pk=project, _fields=["columns"]).result()
-        avail_components = set()
-
-        for column in info["columns"]:
-            path = column["path"]
-            if not path.startswith("data.") and path in COMPONENTS:
-                avail_components.add(path)
-
-        include = list(set(include) & avail_components)
-        response = _zip_download(client, {"project": project}, include)
-
-    elif extension == "json.gz":
-        subdir = "raw" if os.environ.get("TRADEMARK") == "ML" else "without_components"
-        cname = os.environ["PORTAL_CNAME"]
-        key = f"{cname}/manual/{subdir}/{project}.json.gz"
-
-        try:
-            retr = s3_client.get_object(Bucket=BUCKET, Key=key)
-            buffer = BytesIO(retr['Body'].read())
-            response = HttpResponse(buffer, content_type="application/gzip")
-        except ClientError:
-            response = HttpResponse(status=404)
-
-    else:
-        response = HttpResponse(f"Invalid extension {extension}!", status=400)
-
-    return response
-
-
-def _zip_download(client, query: dict, include: list):
-    if "project" not in query:
-        return HttpResponse("Missing project.", status=400)
-
+def _get_filename(query, include):
     fn_parts = [query["project"]]
     if include:
         fn_parts.append("-".join(include))
     if [k for k in query.keys() if k != "project"]:
         fn_parts.append(get_md5(query))
 
-    fn = "_".join(fn_parts)
-    tmpdir = Path("/tmp")
-    outdir = tmpdir / fn
-    zipfile = outdir.with_suffix(".zip")
-    cname = os.environ["PORTAL_CNAME"]
-    key = f"{cname}/{fn}.zip"
-    filename = os.path.basename(key)
+    return "_".join(fn_parts)
 
+
+def _get_download(key, content_type="application/zip"):
     try:
         retr = s3_client.get_object(Bucket=BUCKET, Key=key)
-        resp = BytesIO(retr['Body'].read())
+        resp = retr['Body'].read()
     except ClientError:
-        dkwargs = dict(query=query, outdir=outdir)
+        return HttpResponse(f"Download {key} not available", status=404)
 
-        if include:
-            dkwargs["include"] = include
-
-        client.download_contributions(**dkwargs)  # TODO CSV format
-        make_archive(outdir, "zip", outdir)
-        resp = zipfile.read_bytes()
-        s3_client.put_object(
-            Bucket=BUCKET, Key=key, Body=resp,
-            ContentType="application/zip"
-        )
-        rmtree(outdir)
-        os.remove(zipfile)
-
-    response = HttpResponse(resp, content_type="application/zip")
+    filename = os.path.basename(key)
+    response = HttpResponse(BytesIO(resp), content_type=content_type)
     response["Content-Disposition"] = f"attachment; filename={filename}"
+    response["Content-Length"] = len(resp)
     return response
+
+
+def _reconcile_include(request, project: str, fields: list):
+    ckwargs = client_kwargs(request)
+    client = Client(**ckwargs)
+    info = client.projects.get_entry(pk=project, _fields=["columns"]).result()
+    avail_components = set()
+
+    for column in info["columns"]:
+        path = column["path"]
+        if not path.startswith("data.") and path in COMPONENTS:
+            avail_components.add(path)
+
+    return list(set(fields) & avail_components)
+
+
+def _get_fields_from_params(params):
+    for k in ["_fields", "include"]:
+        if k in params:
+            v = params.pop(k)[0]
+            if v:
+                return v.split(",")
+
+    return []
+
+
+def _get_query_include_format(request):
+    params = deepcopy(request.GET)
+    fmt = params.pop("format", ["json"])[0]
+    fields = _get_fields_from_params(params)
+    params.pop("X-API-KEY", None)  # client already initialized through headers
+    query = {k: v for k, v in params.items()}
+    include = _reconcile_include(request, query["project"], fields)
+    return query, include, fmt
+
+
+def _get_download_key(query: dict, include: list, fmt: str = "json"):
+    fn = _get_filename(query, include)
+    return f"{CNAME}/{fn}_{fmt}.zip"
+
+
+def download_project(request, project: str, extension: str):
+    if extension == "zip":
+        # TODO need to remove zipfile in S3 bucket on API update/save signal
+        query = {"project": project}
+        fields = _get_fields_from_params(request.GET)
+        include = _reconcile_include(request, project, fields)
+        fmt = request.GET.get("format", "json")
+        key = _get_download_key(query, include, fmt=fmt)
+        content_type = "application/zip"
+    elif extension == "json.gz":
+        subdir = "raw" if os.environ.get("TRADEMARK") == "ML" else "without_components"
+        key = f"{CNAME}/manual/{subdir}/{project}.json.gz"
+        content_type = "application/gzip"
+    else:
+        return HttpResponse(f"Invalid extension {extension}!", status=400)
+
+    return _get_download(key, content_type=content_type)
 
 
 def download(request):
@@ -420,34 +428,87 @@ def download(request):
     if headers.get("X-Anonymous-Consumer", False):
         ctx = get_context(request)
         msg = f"""
-        Please <a href=\"{ctx['OAUTH_URL']}\">log in</a> to download contribution.
+        Please <a href=\"{ctx['OAUTH_URL']}\">log in</a> to download contributions.
         """.strip()
         return HttpResponse(msg, status=403)
 
-    required_params = {"project", "format", "_fields"}
-    if not required_params.issubset(request.GET.keys()):
-        return HttpResponse("Missing parameters.", status=400)
+    project = request.GET.get("project")
+    if not project:
+        return HttpResponse("Missing project parameter.", status=404)
 
-    client = Client(**ckwargs)
-    params = deepcopy(request.GET)
-    fmt = params.pop("format")[0]  # TODO CSV format
-    fields = params.pop("_fields")[0].split(",")
-    params.pop("X-API-KEY", None)  # client already initialized through headers
-    query = {k: v for k, v in params.items()}
-    total_count, _ = client.get_totals(query=query)
+    query, include, fmt = _get_query_include_format(request)
+    key = _get_download_key(query, include, fmt=fmt)
+    return _get_download(key)
 
-    if total_count < 1:
-        return HttpResponse("No contributions found.", status=404)
-    elif total_count > 10000:
-        return HttpResponse(
-            "Please limit query to less than 10000 contributions or download project in full.",
-            status=403
+
+def create_download(request):
+    ckwargs = client_kwargs(request)
+    headers = ckwargs.get("headers", {})
+    if headers.get("X-Anonymous-Consumer", False):
+        return JsonResponse({"error": "Permission denied."}, status=403)
+
+    project = request.GET.get("project")
+    if not project:
+        return JsonResponse({"error": "Missing project parameter."})
+
+    query, include, fmt = _get_query_include_format(request)
+    key = _get_download_key(query, include, fmt=fmt)
+
+    try:
+        s3_client.head_object(Bucket=BUCKET, Key=key)
+    except ClientError:
+        client = Client(**ckwargs)
+        all_ids = client.get_all_ids(
+            query=query, include=include, timeout=15
+        ).get(project)
+        if not all_ids:
+            return JsonResponse({"error": "No results for query."})
+
+        ncontribs = len(all_ids["ids"])
+        per_page, _ = client._get_per_page_default_max(op="download")
+        total_count, total_pages = client.get_totals(query=query, per_page=per_page)
+        print(ncontribs, per_page, total_count, total_pages)
+
+        if ncontribs < total_count:
+            # timeout reached -> use API/client
+            return JsonResponse({
+                "error": "Too many contributions matching query. Use API/client."
+            })
+
+        all_files = total_pages  # for contributions
+        for component in include:
+            ncomp = len(all_ids[component]["ids"])
+            per_page, _ = client._get_per_page_default_max(
+                op="download", resource=component
+            )
+            all_files += int(ncomp / per_page) + bool(ncomp % per_page)
+
+        print(all_files)
+
+        fn = _get_filename(query, include)
+        tmpdir = Path("/tmp")
+        outdir = tmpdir / fn
+        existing_files = sum(len(files) for _, _, files in os.walk(outdir))
+        ndownloads = client.download_contributions(
+            query=query, include=include, outdir=outdir, timeout=40
+        ) # TODO CSV format
+        total_files = existing_files + ndownloads
+        print(existing_files, ndownloads, total_files)
+
+        if total_files < all_files:
+            return JsonResponse({"progress": total_files/all_files})
+
+        make_archive(outdir, "zip", outdir)
+        zipfile = outdir.with_suffix(".zip")
+        resp = zipfile.read_bytes()
+        s3_client.put_object(
+            Bucket=BUCKET, Key=key, Body=resp,
+            ContentType="application/zip"
         )
+        rmtree(outdir)
+        os.remove(zipfile)
 
-    # ignore data.* in fields and reconcile components in fields with include
-    components = {f for f in fields if not f.startswith("data.")}
-    include = list(COMPONENTS & components)
-    return _zip_download(client, query, include)
+    return JsonResponse({"progress": 1})
 
 
 def notebooks(request, nb):

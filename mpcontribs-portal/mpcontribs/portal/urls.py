@@ -31,7 +31,12 @@ urlpatterns = [
         views.landingpage,
         name="landingpage",
     ),
-    url(r"^contributions/download/?$", views.download, name="download"),
+    url(r"^contributions/download/get/?$", views.download, name="download"),
+    url(
+        r"^contributions/download/create/?$",
+        views.create_download,
+        name="create_download"
+    ),
     url(
         r"^contributions/component/(?P<oid>[a-f\d]{24})$",
         views.download_component,

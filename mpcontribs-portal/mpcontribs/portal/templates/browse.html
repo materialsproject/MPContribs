@@ -63,12 +63,7 @@
                           data-tooltip="{{ lp.authors.1 }}">et al.</a>
                     </a>
                     {% endif %}
-                    {% if not lp.is_public %}
-                    <span class="icon is-pulled-right">
-                        <i class="far fa-eye-slash"></i>
-                    </span>
                 </div>
-                {% endif %}
                 <details class="content">
                     <summary>
                         <a class="is-size-4 has-text-weight-semibold" href="projects/{{ lp.name }}/">
@@ -77,13 +72,19 @@
                     </summary>
                     <p class="is-size-6">{{ lp.description }}</p>
                 </details>
-                <a class="content button is-small is-outlined is-primary is-rounded"
-                   href="projects/{{ lp.name }}.zip?include=structures,tables,attachments">
-                    download
+                {% if not lp.is_public %}
+                <span class="tag is-light is-danger">private</span>
+                {% endif %}
+                <a class="tag is-light is-primary"
+                   href="projects/{{ lp.name }}.zip?format=json&include=structures,tables,attachments">
+                    JSON
+                </a>
+                <a class="tag is-light is-primary"
+                   href="projects/{{ lp.name }}.zip?format=csv&include=structures,tables,attachments">
+                    CSV
                 </a>
                 </nav>
             </div>
-            <!-- TODO leaderboard numbers/table -->
         </article>
         </div>
         {% endfor %}

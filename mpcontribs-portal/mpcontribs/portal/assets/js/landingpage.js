@@ -19,7 +19,8 @@ function get_column_config(col) {
 const project = $('[name=table]').first().data('project');
 const table_id = 'table_' + project;
 const objectid_regex = /^[a-f\d]{24}$/i;
-const headers = $('#'+table_id).data('columns').split(',');
+const data_cols = $('#'+table_id).data('columns');
+const headers = data_cols ? data_cols.split(',') : [];
 const columns = $.map(headers, get_column_config);
 const fields = columns.flatMap((conf) => {
     var ret = [conf.data];
@@ -28,7 +29,10 @@ const fields = columns.flatMap((conf) => {
     }
     return ret;
 });
-const default_query = {_fields: fields.join(','), project: project, _skip: 0};
+const default_limit = 20;
+const default_query = {
+    _fields: fields.join(','), project: project, _skip: 0, _limit: default_limit
+};
 const rowHeight = 23;
 
 var query = $.extend(true, {}, default_query);
@@ -37,7 +41,10 @@ var total_count;
 function get_data() {
     $('#table_filter').addClass('is-loading');
     const url = window.api['host'] + 'contributions/';
-    return $.get({dataType: "json", url: url, headers: window.api['headers'], data: query});
+    return $.get({
+        contentType: "json", dataType: "json", url: url, headers:
+        window.api['headers'], data: query
+    });
 }
 
 function make_url(text, href) {
@@ -134,7 +141,7 @@ function set_download_urls() {
 function load_data(dom) {
     get_data().done(function(response) {
         total_count = response.total_count;
-        $('#total_count').html('<b>' + total_count + ' total</b>');
+        $('#total_count').html('<b>' + total_count + '</b>');
         $('#total_count').data('count', total_count);
         var rlen = response.data.length;
         for (var r = 0; r < rlen; r++) {
@@ -151,14 +158,14 @@ function load_data(dom) {
             }
         }
         dom.loadData(response.data);
-        if (total_count > 20) {
+        if (total_count > default_limit) {
             const height = response.data.length * rowHeight;
             dom.updateSettings({height: height});
         }
         set_download_urls();
         $('#table_filter').removeClass('is-loading');
         $('#table_delete').removeClass('is-loading');
-        $('[name=table]').first().css("visibility", "visible");
+        $('[name=table]').first().removeClass("is-invisible");
     });
 }
 
@@ -205,59 +212,61 @@ $.each(nestedHeadersPrep, function(r, row) {
 });
 
 const container = document.getElementById(table_id);
-const hot = new Handsontable(container, {
-    colHeaders: headers, columns: columns, rowHeaders: false,
-    hiddenColumns: true, nestedHeaders: nestedHeaders, //rowHeaderWidth: 75,
-    width: '100%', stretchH: 'all', rowHeights: rowHeight,
-    preventOverflow: 'horizontal',
-    licenseKey: 'non-commercial-and-evaluation',
-    disableVisualSelection: true,
-    className: "htCenter htMiddle",
-    persistentState: true, columnSorting: true,
-    //manualColumnMove: true,
-    manualColumnResize: true, collapsibleColumns: true,
-    beforeColumnSort: function(currentSortConfig, destinationSortConfigs) {
-        const columnSortPlugin = this.getPlugin('columnSorting');
-        columnSortPlugin.setSortConfig(destinationSortConfigs);
-        const num = destinationSortConfigs[0].column;
-        query['_order_by'] = columns[num].data.replace(/\./g, '__');
-        query['order'] = destinationSortConfigs[0].sortOrder;
-        query['_skip'] = 0;
-        load_data(this);
-        return false; // block default sort
-    },
-    cells: function (row, col) { return {renderer: urlRenderer}; },
-    afterScrollVertically: function() {
-        const plugin = this.getPlugin('AutoRowSize');
-        const last = plugin.getLastVisibleRow() + 1;
-        const nrows = this.countRows();
-        if (last === nrows && last > query._skip && last < total_count) {
-            const ht = this;
-            query['_skip'] = last;
-            get_data().done(function(response) {
-                var rlen = response.data.length;
-                ht.alter('insert_row', last, rlen);
-                var update = [];
-                for (var r = 0; r < rlen; r++) {
-                    var doc = response['data'][r];
-                    for (var c = 0; c < columns.length; c++) {
-                        var col = columns[c].data;
-                        var v = get(doc, col, '');
-                        if (v && col.endsWith('.value')) {
-                            var e = get(doc, col.replace(/\.value/g, '.error'), '');
-                            if (e) { v += "±" + e; }
+if (container) {
+    const hot = new Handsontable(container, {
+        colHeaders: headers, columns: columns, rowHeaders: false,
+        hiddenColumns: true, nestedHeaders: nestedHeaders, //rowHeaderWidth: 75,
+        width: '100%', stretchH: 'all', rowHeights: rowHeight,
+        preventOverflow: 'horizontal',
+        licenseKey: 'non-commercial-and-evaluation',
+        disableVisualSelection: true,
+        className: "htCenter htMiddle",
+        persistentState: true, columnSorting: true,
+        //manualColumnMove: true,
+        manualColumnResize: true, collapsibleColumns: true,
+        beforeColumnSort: function(currentSortConfig, destinationSortConfigs) {
+            const columnSortPlugin = this.getPlugin('columnSorting');
+            columnSortPlugin.setSortConfig(destinationSortConfigs);
+            const num = destinationSortConfigs[0].column;
+            query['_order_by'] = columns[num].data.replace(/\./g, '__');
+            query['order'] = destinationSortConfigs[0].sortOrder;
+            query['_skip'] = 0;
+            load_data(this);
+            return false; // block default sort
+        },
+        cells: function (row, col) { return {renderer: urlRenderer}; },
+        afterScrollVertically: function() {
+            const plugin = this.getPlugin('AutoRowSize');
+            const last = plugin.getLastVisibleRow() + 1;
+            const nrows = this.countRows();
+            if (last === nrows && last > query._skip && last < total_count) {
+                const ht = this;
+                query['_skip'] = last;
+                get_data().done(function(response) {
+                    var rlen = response.data.length;
+                    ht.alter('insert_row', last, rlen);
+                    var update = [];
+                    for (var r = 0; r < rlen; r++) {
+                        var doc = response['data'][r];
+                        for (var c = 0; c < columns.length; c++) {
+                            var col = columns[c].data;
+                            var v = get(doc, col, '');
+                            if (v && col.endsWith('.value')) {
+                                var e = get(doc, col.replace(/\.value/g, '.error'), '');
+                                if (e) { v += "±" + e; }
+                            }
+                            update.push([last+r, c, v]);
                         }
-                        update.push([last+r, c, v]);
                     }
-                }
-                ht.setDataAtCell(update);
-                $('#table_filter').removeClass('is-loading');
-            });
+                    ht.setDataAtCell(update);
+                    $('#table_filter').removeClass('is-loading');
+                });
+            }
         }
-    }
-});
+    });
 
-load_data(hot);
+    load_data(hot);
+}
 
 function toggle_columns(doms) {
     var plugin = hot.getPlugin('hiddenColumns');
@@ -335,6 +344,40 @@ $('#column_manager_select_all').click(function() {
 
 $('.modal-close').click(function() {
     $(this).parent().removeClass('is-active');
+});
+
+function prep_download(query) {
+    const url = "/contributions/download/create";
+    $.get({
+        contentType: "json", dataType: "json", url: url, data: query
+    }).done(function(response) {
+        console.log(response);
+        if ("error" in response) {
+            alert(response["error"]);
+        } else if (response["progress"] < 1) {
+            const progress = (response["progress"] * 100).toFixed(0);
+            $("#download_progress").text(progress + "%");
+            prep_download(query);
+        } else {
+            const href = "/contributions/download/get?" + $.param(query);
+            $("#get_download").attr("href", href).removeClass("is-hidden");
+        }
+    });
+}
+
+$('a[name="download"]').click(function(e) {
+    $('a[name="download"]').addClass("is-hidden");
+    $(this).addClass('is-loading').removeClass("is-hidden");
+    $("#download_progress").text("0%").removeClass("is-hidden");
+    const fmt = $(this).data('format');
+    const include = $('input[name="include"]:checked').map(function() {
+        return $(this).val();
+    }).get().join(',');
+    var query = {"format": fmt, "project": project};
+    if (include) { query["include"] = include; }
+    prep_download(query);
+    $(this).removeClass('is-loading');//.addClass("is-hidden");
+    //$("#download_progress").addClass("is-hidden");
 });
 
 //if ($("#graph").length && project !== 'redox_thermo_csp') {
