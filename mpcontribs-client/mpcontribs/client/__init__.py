@@ -1291,6 +1291,7 @@ class Client(SwaggerClient):
         Returns:
             Number of new downloads written to disk.
         """
+        start = time.perf_counter()
         query = query or {}
         include = include or []
         outdir = Path(outdir) or Path(".")
@@ -1304,6 +1305,11 @@ class Client(SwaggerClient):
         ndownloads = 0
 
         for name, values in all_ids.items():
+            timeout -= time.perf_counter() - start
+            if timeout < 1:
+                return ndownloads
+
+            start = time.perf_counter()
             cids = list(values["ids"])
             paths, per_page = self._download_resource(
                 resource="contributions", ids=cids,
@@ -1318,6 +1324,11 @@ class Client(SwaggerClient):
                 print(f"No new contributions to download for '{name}'.")
 
             for component in components:
+                timeout -= time.perf_counter() - start
+                if timeout < 1:
+                    return ndownloads
+
+                start = time.perf_counter()
                 ids = list(values[component]["ids"])
                 paths, per_page = self._download_resource(
                     resource=component, ids=ids,
