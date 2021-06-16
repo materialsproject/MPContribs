@@ -498,15 +498,15 @@ class Client(SwaggerClient):
 
         return True
 
-    def _get_per_page_max(self, op: str = "get", resource: str = "contributions") -> int:
+    def _get_per_page_default_max(self, op: str = "get", resource: str = "contributions") -> int:
         resource = self.swagger_spec.resources[resource]
-        param = getattr(resource, f"{op}_entries").params["per_page"]
-        return param.param_spec["maximum"]
+        param_spec = getattr(resource, f"{op}_entries").params["per_page"].param_spec
+        return param_spec["default"], param_spec["maximum"]
 
     def _get_per_page(
         self, per_page: int, op: str = "get", resource: str = "contributions"
     ) -> int:
-        per_page_max = self._get_per_page_max(op=op, resource=resource)
+        _, per_page_max = self._get_per_page_default_max(op=op, resource=resource)
         return min(per_page_max, per_page)
 
     def get_project_names(self) -> List[str]:
@@ -870,7 +870,8 @@ class Client(SwaggerClient):
             print(f"`include` must be subset of {COMPONENTS}!")
             return
 
-        ret, per_page = {}, self._get_per_page_max()
+        ret = {}
+        _, per_page = self._get_per_page_default_max()
         query = query or {}
         [query.pop(k, None) for k in ["page", "per_page", "_fields"]]
         _, pages = self.get_totals(query=query, per_page=per_page)
@@ -939,7 +940,7 @@ class Client(SwaggerClient):
         if not valid:
             return {"error": valid}
 
-        per_page = self._get_per_page_max(op="update")
+        _, per_page = self._get_per_page_default_max(op="update")
         query = query or {}
         query["project"] = name
         has_more = True
@@ -1429,7 +1430,8 @@ class Client(SwaggerClient):
         subdir.mkdir(parents=True, exist_ok=True)
         model = self.get_model(f"{resource.capitalize()}Schema")
         fields = list(model._properties.keys())
-        per_page = self._get_per_page_max(op="download", resource=resource)
+        # NOTE use default per_page to avoid "URL too long" error
+        per_page, _ = self._get_per_page_default_max(op="download", resource=resource)
         chunked_oids = grouper(per_page, map(str, oids))
         paths, futures = [], []
 
