@@ -108,8 +108,6 @@
                 <div>
                     <p class="heading is-marginless">Contributions</p>
                     <p class="subtitle has-text-light" id=total_count></p>
-                    <a name=table_download_item class="tag is-primary is-light" data-format=json>JSON</a>
-                    <a name=table_download_item class="tag is-primary is-light" data-format=csv>CSV</a>
                 </div>
             </div>
         </div>
@@ -138,46 +136,55 @@
                 </div>
             </div>
         </div>
-        <!-- TODO add "copy Query" to clipboard button -->
-        <div class="level-right">
-            <div class="level-item">
-                <div>
-                    <p class="heading has-text-centered">Select Columns</p>
-                    <p class="control">
-                    <div class="dropdown">
-                        <div class="field has-addons is-centered is-marginless">
-                            <div class="control">
-                                <a class="button is-light">
-                                    <input class="is-checkradio" id="column_manager_select_all" type="checkbox" checked="checked">
-                                    <label for="column_manager_select_all"><span id="column_manager_count">{{ columns|length }}</span> Columns</label>
-                                </a>
-                            </div>
-                            <div class="control">
-                                <a class="button is-primary dropdown-trigger" aria-haspopup="true" aria-controls="dropdown-menu">
-                                    <span class="icon">
-                                        <i class="fas fa-caret-down"></i>
-                                    </span>
-                                </a>
-                            </div>
+        <div class="level-item">
+            <div>
+                <p class="heading has-text-centered">Select Columns</p>
+                <p class="control">
+                <div class="dropdown">
+                    <div class="field has-addons is-centered is-marginless">
+                        <div class="control">
+                            <a class="button is-light">
+                                <input class="is-checkradio" id="column_manager_select_all" type="checkbox" checked="checked">
+                                <label for="column_manager_select_all"><span id="column_manager_count">{{ columns|length }}</span> Columns</label>
+                            </a>
                         </div>
-                        <div class="dropdown-menu" role="menu">
-                            <div class="dropdown-content">
-                                {% for col in columns %}
-                                <a class="dropdown-item">
-                                    {% if col in "id,identifier,formula" %}
-                                    <input class="is-checkradio" name="column_manager_item"
-                                         id="column_manager_checkbox_{{col}}_{{forloop.counter0}}" type="checkbox" checked="checked" disabled="disabled">
-                                    {% else %}
-                                    <input class="is-checkradio" name="column_manager_item"
-                                         id="column_manager_checkbox_{{col}}_{{forloop.counter0}}" type="checkbox" checked="checked">
-                                    {% endif %}
-                                    <label for="column_manager_checkbox_{{col}}_{{forloop.counter0}}">{{col}}</label>
-                                </a>
-                                {% endfor %}
-                            </div>
+                        <div class="control">
+                            <a class="button is-primary dropdown-trigger" aria-haspopup="true" aria-controls="dropdown-menu">
+                                <span class="icon">
+                                    <i class="fas fa-caret-down"></i>
+                                </span>
+                            </a>
                         </div>
                     </div>
-                    </p>
+                    <div class="dropdown-menu" role="menu">
+                        <div class="dropdown-content">
+                            {% for col in columns %}
+                            <a class="dropdown-item">
+                                {% if col in "id,identifier,formula" %}
+                                <input class="is-checkradio" name="column_manager_item"
+                                     id="column_manager_checkbox_{{col}}_{{forloop.counter0}}" type="checkbox" checked="checked" disabled="disabled">
+                                {% else %}
+                                <input class="is-checkradio" name="column_manager_item"
+                                     id="column_manager_checkbox_{{col}}_{{forloop.counter0}}" type="checkbox" checked="checked">
+                                {% endif %}
+                                <label for="column_manager_checkbox_{{col}}_{{forloop.counter0}}">{{col}}</label>
+                            </a>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                </p>
+            </div>
+        </div>
+        <div class="level-right">
+            <!-- TODO add "copy Query" to clipboard button -->
+            <div class="level-item">
+                <div>
+                    <p class="heading has-text-centered">Download</p>
+                    <a name=table_download id=table_download_json class="button is-primary is-light is-small" data-format=json>JSON</a>
+                    <a name=table_download id=table_download_csv class="button is-primary is-light is-small" data-format=csv>CSV</a>
+                    <span class="tag is-hidden" id=table_download_progress></span>
+                    <a class="button is-danger is-light is-hidden is-small" id=table_get_download>Click to download</a>
                 </div>
             </div>
         </div>

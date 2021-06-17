@@ -121,23 +121,6 @@ function urlRenderer(instance, td, row, col, prop, value, cellProperties) {
     }
 }
 
-function set_download_urls() {
-    $('a[name=table_download_item]').each(function(index) {
-        var download_url = '/contributions/download/?';
-        const format = $(this).data('format');
-        var download_query = $.extend(
-            true, {format: format}, window.api['headers'], query
-        );
-        download_query['_fields'] = $("input[name=column_manager_item]:checked").map(function() {
-            var id_split = $(this).attr('id').split('_');
-            return get_column_config(id_split[3]).data;
-        }).get().join(',');
-        delete download_query['_skip'];
-        download_url += $.param(download_query);
-        $(this).attr('href', download_url);
-    });
-}
-
 function load_data(dom) {
     get_data().done(function(response) {
         total_count = response.total_count;
@@ -162,31 +145,11 @@ function load_data(dom) {
             const height = response.data.length * rowHeight;
             dom.updateSettings({height: height});
         }
-        set_download_urls();
         $('#table_filter').removeClass('is-loading');
         $('#table_delete').removeClass('is-loading');
         $('[name=table]').first().removeClass("is-invisible");
     });
 }
-
-$('a[name=table_download_item]').click(function(e) {
-    $('#table_download_dropdown').removeClass('is-active');
-    var cnt = $('#total_count').data('count');
-    var notification_id = "download_notification";
-    var notification = document.getElementById(notification_id);
-    if ($(notification).length) { $(notification).addClass('is-hidden'); }
-    if (cnt > 10000) {
-        e.preventDefault();
-        if (!$(notification).length) {
-            notification = $('<div/>', {
-                'class': 'notification is-warning is-hidden', 'id': notification_id
-            });
-            $("#landingpage").prepend(notification);
-        }
-        $(notification).html('Please filter number of contributions to less than 10000.')
-        $(notification).removeClass('is-hidden');
-    }
-});
 
 var nestedHeadersPrep = [];
 const levels = $.map(headers, function(h) { return h.split('.').length; });
@@ -211,9 +174,10 @@ $.each(nestedHeadersPrep, function(r, row) {
     nestedHeaders.push(new_row);
 });
 
+var hot;
 const container = document.getElementById(table_id);
 if (container) {
-    const hot = new Handsontable(container, {
+    hot = new Handsontable(container, {
         colHeaders: headers, columns: columns, rowHeaders: false,
         hiddenColumns: true, nestedHeaders: nestedHeaders, //rowHeaderWidth: 75,
         width: '100%', stretchH: 'all', rowHeights: rowHeight,
@@ -276,11 +240,11 @@ function toggle_columns(doms) {
         if ($(dom).prop("checked")) { plugin.showColumn(col_idx); }
         else { plugin.hideColumn(col_idx); }
     })
-    set_download_urls();
     hot.render();
 }
 
 $('#table_filter').click(function(e) {
+    reset_table_download();
     var kw = $('#table_keyword').val();
     if (kw) {
         $(this).addClass('is-loading');
@@ -295,6 +259,7 @@ $('#table_filter').click(function(e) {
 });
 
 $('#table_delete').click(function(e) {
+    reset_table_download();
     $(this).addClass('is-loading');
     e.preventDefault();
     $('#table_keyword').val('');
@@ -304,16 +269,19 @@ $('#table_delete').click(function(e) {
 });
 
 $('#table_select').change(function(e) {
+    reset_table_download();
     $('#table_keyword').val('');
 });
 
 $('input[name=column_manager_item]').click(function() {
+    reset_table_download();
     var n = $("input[name=column_manager_item]:checked").length;
     $('#column_manager_count').text(n);
     toggle_columns(this);
 });
 
 $('#column_manager_select_all').click(function() {
+    reset_table_download();
     var plugin = hot.getPlugin('hiddenColumns');
     var items = $("input[name=column_manager_item]");
     if ($(this).prop('checked')) {
@@ -338,7 +306,6 @@ $('#column_manager_select_all').click(function() {
         var n = $("input[name=column_manager_item]:disabled").length;
         $('#column_manager_count').text(n);
     }
-    set_download_urls();
     hot.render();
 });
 
@@ -346,24 +313,23 @@ $('.modal-close').click(function() {
     $(this).parent().removeClass('is-active');
 });
 
-function prep_download(query) {
+function prep_download(query, prefix) {
     const url = "/contributions/download/create";
     $.get({
         contentType: "json", dataType: "json", url: url, data: query
     }).done(function(response) {
-        console.log(response);
         if ("error" in response) {
             alert(response["error"]);
         } else if (response["progress"] < 1) {
             const progress = (response["progress"] * 100).toFixed(0);
-            $("#download_progress").text(progress + "%");
-            prep_download(query);
+            $("#" + prefix + "download_progress").text(progress + "%");
+            prep_download(query, prefix);
         } else {
             const href = "/contributions/download/get?" + $.param(query);
-            $("#get_download").attr("href", href).removeClass("is-hidden");
+            $("#" + prefix + "get_download").attr("href", href).removeClass("is-hidden");
             const fmt = query["format"];
-            $("#download_"+fmt).removeClass('is-loading').addClass("is-hidden");
-            $("#download_progress").addClass("is-hidden");
+            $("#" + prefix + "download_" + fmt).removeClass('is-loading').addClass("is-hidden");
+            $("#" + prefix + "download_progress").addClass("is-hidden");
         }
     });
 }
@@ -376,16 +342,42 @@ $('a[name="download"]').click(function(e) {
     const include = $('input[name="include"]:checked').map(function() {
         return $(this).val();
     }).get().join(',');
-    var query = {"format": fmt, "project": project};
-    if (include) { query["include"] = include; }
-    prep_download(query);
+    var download_query = {"format": fmt, "project": project};
+    if (include) { download_query["include"] = include; }
+    prep_download(download_query, "");
 });
 
-$('input[name="include"]').click(function() {
+function reset_download() {
     $('a[name="download"]').removeClass("is-hidden");
     $("#download_progress").addClass("is-hidden");
     $("#get_download").addClass("is-hidden");
+}
+
+$('input[name="include"]').click(function() { reset_download(); });
+$('#get_download').click(function() { reset_download(); });
+
+function reset_table_download() {
+    $('a[name="table_download"]').removeClass("is-hidden");
+    $("#table_download_progress").addClass("is-hidden");
+    $("#table_get_download").addClass("is-hidden");
+}
+
+$('a[name=table_download]').click(function(e) {
+    $('a[name="table_download"]').addClass("is-hidden");
+    $(this).addClass('is-loading').removeClass("is-hidden");
+    $("#table_download_progress").text("0%").removeClass("is-hidden");
+    const fmt = $(this).data('format');
+    var download_query = $.extend(true, {format: fmt}, query);
+    download_query['_fields'] = $("input[name=column_manager_item]:checked").map(function() {
+        var id_split = $(this).attr('id').split('_');
+        return get_column_config(id_split[3]).data;
+    }).get().join(',');
+    delete download_query['_skip'];
+    delete download_query['_limit'];
+    prep_download(download_query, "table_");
 });
+
+$("#table_get_download").click(function() { reset_table_download(); });
 
 //if ($("#graph").length && project !== 'redox_thermo_csp') {
 //    render_overview(project, grid);
