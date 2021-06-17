@@ -467,7 +467,6 @@ def create_download(request):
         ncontribs = len(all_ids["ids"])
         per_page, _ = client._get_per_page_default_max(op="download")
         total_count, total_pages = client.get_totals(query=query, per_page=per_page)
-        print(ncontribs, per_page, total_count, total_pages)
 
         if ncontribs < total_count:
             # timeout reached -> use API/client
@@ -483,8 +482,6 @@ def create_download(request):
             )
             all_files += int(ncomp / per_page) + bool(ncomp % per_page)
 
-        print(all_files)
-
         fn = _get_filename(query, include)
         tmpdir = Path("/tmp")
         outdir = tmpdir / fn
@@ -493,7 +490,6 @@ def create_download(request):
             query=query, include=include, outdir=outdir, timeout=40
         ) # TODO CSV format
         total_files = existing_files + ndownloads
-        print(existing_files, ndownloads, total_files)
 
         if total_files < all_files:
             return JsonResponse({"progress": total_files/all_files})

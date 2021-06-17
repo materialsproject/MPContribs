@@ -361,6 +361,9 @@ function prep_download(query) {
         } else {
             const href = "/contributions/download/get?" + $.param(query);
             $("#get_download").attr("href", href).removeClass("is-hidden");
+            const fmt = query["format"];
+            $("#download_"+fmt).removeClass('is-loading').addClass("is-hidden");
+            $("#download_progress").addClass("is-hidden");
         }
     });
 }
@@ -376,8 +379,12 @@ $('a[name="download"]').click(function(e) {
     var query = {"format": fmt, "project": project};
     if (include) { query["include"] = include; }
     prep_download(query);
-    $(this).removeClass('is-loading');//.addClass("is-hidden");
-    //$("#download_progress").addClass("is-hidden");
+});
+
+$('input[name="include"]').click(function() {
+    $('a[name="download"]').removeClass("is-hidden");
+    $("#download_progress").addClass("is-hidden");
+    $("#get_download").addClass("is-hidden");
 });
 
 //if ($("#graph").length && project !== 'redox_thermo_csp') {
