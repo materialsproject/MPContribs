@@ -72,18 +72,20 @@
                     </summary>
                     <p class="is-size-6">{{ lp.description }}</p>
                 </details>
-                {% if not lp.is_public %}
-                <span class="tag is-light is-danger">private</span>
+                {% if not request.META.HTTP_X_ANONYMOUS_CONSUMER %}
+                <a name=download id=download_{{lp.name}}_json
+                    class="button is-primary is-light is-small"
+                    data-format=json data-project={{lp.name}}>JSON</a>
+                <a name=download id=download_{{lp.name}}_csv
+                    class="button is-primary is-light is-small"
+                    data-format=csv data-project={{lp.name}}>CSV</a>
+                <span class="tag is-hidden" id=download_{{lp.name}}_progress></span>
+                <a name=get_download id=get_download_{{lp.name}} data-project={{lp.name}}
+                    class="button is-danger is-light is-hidden is-small">Click to download</a>
                 {% endif %}
-                <a class="tag is-light is-primary"
-                   href="projects/{{ lp.name }}.zip?format=json&include=structures,tables,attachments">
-                    JSON
-                </a>
-                <a class="tag is-light is-primary"
-                   href="projects/{{ lp.name }}.zip?format=csv&include=structures,tables,attachments">
-                    CSV
-                </a>
-                </nav>
+                {% if not lp.is_public %}
+                <span class="tag is-light is-danger is-pulled-right">private</span>
+                {% endif %}
             </div>
         </article>
         </div>
