@@ -25,7 +25,7 @@ class StructuresResource(Resource):
     paginate = True
     default_limit = 10
     max_limit = 100
-    download_formats = ["json"]
+    download_formats = ["json", "csv"]
 
     @staticmethod
     def get_optional_fields():

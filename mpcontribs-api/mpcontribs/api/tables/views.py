@@ -38,7 +38,7 @@ class TablesResource(Resource):
     default_limit = 10
     max_limit = 100
     fields_to_paginate = {"data": [20, 1000]}
-    download_formats = ["json"]
+    download_formats = ["json", "csv"]
 
     @staticmethod
     def get_optional_fields():
