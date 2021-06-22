@@ -1322,8 +1322,7 @@ class Client(SwaggerClient):
             if paths:
                 npaths = len(paths)
                 ndownloads += npaths
-                nobjs = npaths * per_page
-                print(f"Downloaded {nobjs} contributions for '{name}' in {npaths} file(s).")
+                print(f"Downloaded {len(cids)} contributions for '{name}' in {npaths} file(s).")
             else:
                 print(f"No new contributions to download for '{name}'.")
 
@@ -1343,8 +1342,7 @@ class Client(SwaggerClient):
                 if paths:
                     npaths = len(paths)
                     ndownloads += npaths
-                    nobjs = npaths * per_page
-                    print(f"Downloaded {nobjs} {component} for '{name}' in {npaths} file(s).")
+                    print(f"Downloaded {len(ids)} {component} for '{name}' in {npaths} file(s).")
                 else:
                     print(f"No new {component} to download for '{name}'.")
 
