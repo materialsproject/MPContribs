@@ -388,29 +388,31 @@ def _get_fields_from_params(params):
     return []
 
 
-def _get_query_include_format(request):
+def _get_query_include(request):
     params = deepcopy(request.GET)
     fmt = params.pop("format", ["json"])[0]
     fields = _get_fields_from_params(params)
     params.pop("X-API-KEY", None)  # client already initialized through headers
     query = {k: v for k, v in params.items()}
+    query["format"] = fmt
     include = _reconcile_include(request, query["project"], fields)
-    return query, include, fmt
+    return query, include
 
 
-def _get_download_key(query: dict, include: list, fmt: str = "json"):
+def _get_download_key(query: dict, include: list):
     fn = _get_filename(query, include)
+    fmt = query.get("format", "json")
     return f"{CNAME}/{fn}_{fmt}.zip"
 
 
 def download_project(request, project: str, extension: str):
     if extension == "zip":
         # TODO need to remove zipfile in S3 bucket on API update/save signal
-        query = {"project": project}
+        fmt = request.GET.get("format", "json")
+        query = {"project": project, "format": fmt}
         fields = _get_fields_from_params(request.GET)
         include = _reconcile_include(request, project, fields)
-        fmt = request.GET.get("format", "json")
-        key = _get_download_key(query, include, fmt=fmt)
+        key = _get_download_key(query, include)
         content_type = "application/zip"
     elif extension == "json.gz":
         subdir = "raw" if os.environ.get("TRADEMARK") == "ML" else "without_components"
@@ -436,8 +438,8 @@ def download(request):
     if not project:
         return HttpResponse("Missing project parameter.", status=404)
 
-    query, include, fmt = _get_query_include_format(request)
-    key = _get_download_key(query, include, fmt=fmt)
+    query, include = _get_query_include(request)
+    key = _get_download_key(query, include)
     return _get_download(key)
 
 
@@ -451,8 +453,8 @@ def create_download(request):
     if not project:
         return JsonResponse({"error": "Missing project parameter."})
 
-    query, include, fmt = _get_query_include_format(request)
-    key = _get_download_key(query, include, fmt=fmt)
+    query, include = _get_query_include(request)
+    key = _get_download_key(query, include)
 
     try:
         s3_client.head_object(Bucket=BUCKET, Key=key)
@@ -488,7 +490,7 @@ def create_download(request):
         existing_files = sum(len(files) for _, _, files in os.walk(outdir))
         ndownloads = client.download_contributions(
             query=query, include=include, outdir=outdir, timeout=40
-        ) # TODO CSV format
+        )
         total_files = existing_files + ndownloads
 
         if total_files < all_files:

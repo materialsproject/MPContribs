@@ -829,7 +829,8 @@ class Client(SwaggerClient):
             tuple of total counts and pages
         """
         query = query or {}
-        [query.pop(k, None) for k in ["per_page", "_fields"]]
+        skip_keys = {"per_page", "_fields", "format"}
+        query = {k: v for k, v in query.items() if k not in skip_keys}
         per_page = self._get_per_page(per_page)
         result = self.contributions.get_entries(
             per_page=per_page, _fields=["id"], **query
@@ -1302,6 +1303,7 @@ class Client(SwaggerClient):
             return
 
         all_ids = self.get_all_ids(query=query, include=components, timeout=timeout)
+        fmt = query.get("format", "json")
         ndownloads = 0
 
         for name, values in all_ids.items():
@@ -1312,7 +1314,7 @@ class Client(SwaggerClient):
             start = time.perf_counter()
             cids = list(values["ids"])
             paths, per_page = self._download_resource(
-                resource="contributions", ids=cids,
+                resource="contributions", ids=cids, fmt=fmt,
                 outdir=outdir, overwrite=overwrite, timeout=timeout
             )
             if paths:
@@ -1331,7 +1333,7 @@ class Client(SwaggerClient):
                 start = time.perf_counter()
                 ids = list(values[component]["ids"])
                 paths, per_page = self._download_resource(
-                    resource=component, ids=ids,
+                    resource=component, ids=ids, fmt=fmt,
                     outdir=outdir, overwrite=overwrite, timeout=timeout
                 )
                 if paths:
@@ -1349,7 +1351,8 @@ class Client(SwaggerClient):
         ids: List[str],
         outdir: Union[str, Path] = DEFAULT_DOWNLOAD_DIR,
         overwrite: bool = False,
-        timeout: int = -1
+        timeout: int = -1,
+        fmt: str = "json"
     ) -> Path:
         """Download a list of structures as a .json.gz file
 
@@ -1358,12 +1361,14 @@ class Client(SwaggerClient):
             outdir: optional output directory
             overwrite: force re-download
             timeout: cancel remaining requests if timeout exceeded (in seconds)
+            fmt: download format - "json" or "csv"
 
         Returns:
             paths of output files
         """
         return self._download_resource(
-            resource="structures", ids=ids, outdir=outdir, overwrite=overwrite, timeout=timeout
+            resource="structures", ids=ids, fmt=fmt,
+            outdir=outdir, overwrite=overwrite, timeout=timeout
         )
 
     def download_tables(
@@ -1371,7 +1376,8 @@ class Client(SwaggerClient):
         ids: List[str],
         outdir: Union[str, Path] = DEFAULT_DOWNLOAD_DIR,
         overwrite: bool = False,
-        timeout: int = -1
+        timeout: int = -1,
+        fmt: str = "json"
     ) -> Path:
         """Download a list of tables as a .json.gz file
 
@@ -1380,12 +1386,14 @@ class Client(SwaggerClient):
             outdir: optional output directory
             overwrite: force re-download
             timeout: cancel remaining requests if timeout exceeded (in seconds)
+            fmt: download format - "json" or "csv"
 
         Returns:
             paths of output files
         """
         return self._download_resource(
-            resource="tables", ids=ids, outdir=outdir, overwrite=overwrite, timeout=timeout
+            resource="tables", ids=ids, fmt=fmt,
+            outdir=outdir, overwrite=overwrite, timeout=timeout
         )
 
     def download_attachments(
@@ -1393,7 +1401,8 @@ class Client(SwaggerClient):
         ids: List[str],
         outdir: Union[str, Path] = DEFAULT_DOWNLOAD_DIR,
         overwrite: bool = False,
-        timeout: int = -1
+        timeout: int = -1,
+        fmt: str = "json"
     ) -> Path:
         """Download a list of attachments as a .json.gz file
 
@@ -1402,12 +1411,14 @@ class Client(SwaggerClient):
             outdir: optional output directory
             overwrite: force re-download
             timeout: cancel remaining requests if timeout exceeded (in seconds)
+            fmt: download format - "json" or "csv"
 
         Returns:
             paths of output files
         """
         return self._download_resource(
-            resource="attachments", ids=ids, outdir=outdir, overwrite=overwrite, timeout=timeout
+            resource="attachments", ids=ids, fmt=fmt,
+            outdir=outdir, overwrite=overwrite, timeout=timeout
         )
 
     def _download_resource(
@@ -1416,7 +1427,8 @@ class Client(SwaggerClient):
         ids: List[str],
         outdir: Union[str, Path] = DEFAULT_DOWNLOAD_DIR,
         overwrite: bool = False,
-        timeout: int = -1
+        timeout: int = -1,
+        fmt: str = "json"
     ) -> Path:
         """Helper to download a list of resources as .json.gz file
 
@@ -1426,6 +1438,7 @@ class Client(SwaggerClient):
             outdir: optional output directory
             overwrite: force re-download
             timeout: cancel remaining requests if timeout exceeded (in seconds)
+            fmt: download format - "json" or "csv"
 
         Returns:
             tuple (paths of output files, objects per path / per_page)
@@ -1433,6 +1446,11 @@ class Client(SwaggerClient):
         resources = ["contributions"] + COMPONENTS
         if resource not in resources:
             print(f"`resource` must be one of {resources}!")
+            return
+
+        formats = {"json", "csv"}
+        if fmt not in formats:
+            print(f"`fmt` must be one of {formats}!")
             return
 
         oids = sorted(ObjectId(i) for i in ids if ObjectId.is_valid(i))
@@ -1449,14 +1467,14 @@ class Client(SwaggerClient):
         with get_session() as session:
             for chunk in chunked_oids:
                 digest = get_md5({"ids": chunk})
-                path = subdir / f"{digest}.json.gz"
+                path = subdir / f"{digest}.{fmt}.gz"
 
                 if not path.exists() or overwrite:
                     future = session.get(
                         f"{self.url}/{resource}/download/gz/",
                         headers=self.headers,
                         params={
-                            "format": "json",
+                            "format": fmt,
                             "id__in": ",".join(chunk),
                             "_fields": ",".join(fields),
                         },
