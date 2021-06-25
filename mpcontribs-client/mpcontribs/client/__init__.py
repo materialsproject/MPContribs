@@ -1022,7 +1022,6 @@ class Client(SwaggerClient):
 
         # get existing contributions
         tic = time.perf_counter()
-        existing = defaultdict(set)
         project_names = set()
         collect_ids = []
         require_one_of = {"data"} | set(COMPONENTS)
@@ -1058,16 +1057,17 @@ class Client(SwaggerClient):
 
         print("get existing contributions ...")
         project_names = list(project_names)
-        existing = self.get_all_ids(
+        unique_identifiers = {}
+        existing = defaultdict(dict, self.get_all_ids(
             query=dict(project__in=project_names), include=COMPONENTS, timeout=timeout
-        )
+        ))
         resp = self.projects.get_entries(
             name__in=project_names, _fields=["name", "unique_identifiers"]
         ).result()
 
         for project in resp["data"]:
             project_name = project["name"]
-            existing[project_name]["unique_identifiers"] = project["unique_identifiers"]
+            unique_identifiers[project_name] = project["unique_identifiers"]
 
         # prepare contributions
         print("prepare contributions ...")
@@ -1083,8 +1083,8 @@ class Client(SwaggerClient):
             update = "id" in contrib
             project_name = id2project[contrib["id"]] if update else contrib["project"]
             if (
-                not update and existing[project_name]["unique_identifiers"]
-                and contrib["identifier"] in existing[project_name]["identifiers"]
+                not update and unique_identifiers[project_name]
+                and contrib["identifier"] in existing[project_name].get("identifiers", {})
             ):
                 continue
 
@@ -1244,12 +1244,12 @@ class Client(SwaggerClient):
 
                         _run_futures(futures, total=ncontribs, timeout=timeout)
 
-                        if existing[project_name]["unique_identifiers"] and retry:
+                        if unique_identifiers[project_name] and retry:
                             existing[project_name] = self.get_all_ids(
                                 query=dict(project=project_name), include=COMPONENTS,
                                 timeout=timeout
                             ).get(project_name, {"identifiers": set()})
-                            existing[project_name]["unique_identifiers"] = self.projects.get_entry(
+                            unique_identifiers[project_name] = self.projects.get_entry(
                                 pk=project_name, _fields=["unique_identifiers"]
                             ).result()["unique_identifiers"]
                             contribs[project_name] = [
@@ -1258,7 +1258,7 @@ class Client(SwaggerClient):
                             ]
                         else:
                             contribs[project_name] = []  # abort retrying
-                            if not existing[project_name]["unique_identifiers"] and retry:
+                            if not unique_identifiers[project_name] and retry:
                                 print("Please resubmit failed contributions manually.")
 
                 end = datetime.utcnow()
