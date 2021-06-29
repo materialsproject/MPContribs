@@ -12,8 +12,5 @@ outdir=$2
 
 for d in `ls -1d $indir/*/`; do
     name=`basename $d`
-    for i in `ls -1 $d*.ipynb`; do
-        echo $i
-        jupyter nbconvert --to html --template basic --output-dir=$outdir$name $i
-    done
+    jupyter nbconvert --to html --template basic --output-dir=$outdir$name $i `ls $d*.ipynb`
 done
