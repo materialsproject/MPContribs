@@ -203,8 +203,8 @@ class Contributions(DynamicDocument):
             formulae = current_app.config["FORMULAE"]
             document.formula = formulae.get(document.identifier, document.identifier)
 
-        # project is LazyReferenceField
-        project = document.project.fetch()
+        # project is LazyReferenceField & load columns due to custom queryset manager
+        project = document.project.fetch().reload("columns")
 
         # run data through Pint Quantities and save as dicts
         def make_quantities(path, key, value):
@@ -267,8 +267,9 @@ class Contributions(DynamicDocument):
         if kwargs.get("skip"):
             return
 
-        # project is LazyReferenceField
+        # project is LazyReferenceField; account for custom query manager
         project = document.project.fetch()
+        project.reload(*project._fields)
 
         # set columns field for project
         def update_columns(path, key, value):
