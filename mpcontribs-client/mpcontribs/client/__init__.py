@@ -1189,7 +1189,7 @@ class Client(SwaggerClient):
 
                     dupe = bool(
                         digest in digests[project_name][component] or
-                        digest in existing[project_name][component]["md5s"]
+                        digest in existing[project_name].get(component, {}).get("md5s", set())
                     )
 
                     if not ignore_dupes and dupe:
