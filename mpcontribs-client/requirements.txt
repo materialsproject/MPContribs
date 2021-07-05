@@ -7,7 +7,7 @@ filetype==1.0.7
 flatten-dict==0.4.0
 ipython==7.25.0
 json2html==1.3.0
-pandas==1.2.5
+pandas==1.3.0
 pint==0.17
 plotly==5.0.0
 pyIsEmail==1.3.2
