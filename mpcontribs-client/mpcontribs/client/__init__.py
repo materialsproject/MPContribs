@@ -581,7 +581,8 @@ class Client(SwaggerClient):
             df.columns.name = labels["variable"]
 
         ret = Table(df)
-        ret.attrs = table["attrs"]
+        attrs_keys = self.get_model("TablesSchema")._properties["attrs"]["properties"].keys()
+        ret.attrs = {k: v for k, v in table["attrs"].items() if k in attrs_keys}
         return ret
 
     def get_structure(self, sid_or_md5: str) -> Type[Structure]:
