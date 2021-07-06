@@ -4,7 +4,7 @@ FROM base as builder
 RUN apt-get update && apt-get install -y --no-install-recommends gcc git g++ libsnappy-dev wget && apt-get clean
 ENV PATH /root/.local/bin:$PATH
 WORKDIR /app
-ENV PIP_FLAGS "--user --no-cache-dir --compile"
+ENV PIP_FLAGS "--user --no-cache-dir --compile --use-feature=in-tree-build"
 COPY requirements.txt .
 RUN pip install $PIP_FLAGS -r requirements.txt
 COPY . .
