@@ -10,8 +10,6 @@ ENV MORE_PIP_FLAGS=$MORE_PIP_FLAGS
 COPY requirements.txt .
 RUN pip install $PIP_FLAGS $MORE_PIP_FLAGS -r requirements.txt && \
     python -m ipykernel install --user
-RUN wget -q https://raw.githubusercontent.com/vishnubob/wait-for-it/master/wait-for-it.sh && \
-    chmod +x wait-for-it.sh && mv wait-for-it.sh /root/.local/bin/
 
 FROM base
 COPY --from=python-deps /root/.local/lib/python3.9/site-packages /root/.local/lib/python3.9/site-packages
@@ -22,8 +20,7 @@ ENV PATH=/root/.local/bin:$PATH
 ENV PYTHONUNBUFFERED 1
 ENV NODE_ENV production
 ENV PLOTLY_RENDERER=png
-ENV ORCA_HOST=localhost:9091
-ENV KG_ENV_PROCESS_WHITELIST=PLOTLY_RENDERER,ORCA_HOST
+ENV KG_ENV_PROCESS_WHITELIST=PLOTLY_RENDERER
 ENV KG_IP=0.0.0.0
 ENV KG_PORT_RETRIES=0
 ENV KG_MAX_KERNELS=10
@@ -37,4 +34,4 @@ EXPOSE 8888
 COPY make_seed.py .
 RUN python make_seed.py
 
-CMD wait-for-it.sh $ORCA_HOST -s -t 60 -- jupyter kernelgateway
+CMD jupyter kernelgateway
