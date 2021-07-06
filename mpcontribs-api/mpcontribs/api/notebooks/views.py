@@ -93,11 +93,14 @@ def build():
         # build missing notebooks
         max_docs = NotebooksResource.max_limit
         cids = request.args.get("cids", "").split(",")[:max_docs]
+        contribs_objects = Contribs.objects.only(
+            "id", "tables", "structures", "attachments", "notebook"
+        )
 
         if cids[0]:
-            documents = Contribs.objects(id__in=cids)
+            documents = contribs_objects(id__in=cids)
         else:
-            documents = Contribs.objects(notebook__exists=False)[:max_docs]
+            documents = contribs_objects(notebook__exists=False)[:max_docs]
 
         total = documents.count()
         count = 0
@@ -119,7 +122,7 @@ def build():
                             '\t\theaders={"X-Authenticated-Groups": "admin"},',
                             f'\t\thost="{MPCONTRIBS_API_HOST}"',
                             "\t)",
-                            "print(client.get_number_contributions())",
+                            "print(client.get_totals())",
                             # return something. See while loop in `run_cells`
                         ]
                     )
@@ -164,10 +167,10 @@ def build():
             try:
                 outputs = execute_cells(cid, cells)
             except Exception as e:
-                raise ValueError(f"notebook generation for {cid} failed: {e}")
+                return f"notebook generation for {cid} failed: {e}", 500
 
             if not outputs:
-                raise ValueError(f"notebook generation for {cid} failed!")
+                return f"notebook generation for {cid} failed!", 500
 
             for idx, output in outputs.items():
                 cells[idx]["outputs"] = output
