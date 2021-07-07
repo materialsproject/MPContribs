@@ -28,7 +28,6 @@ services:
             context: ./mpcontribs-api
         depends_on:
             - redis
-            - orca
             - kernel_gateway
             - supercronic
             #- datadog
@@ -45,7 +44,6 @@ services:
             context: ./mpcontribs-api
         depends_on:
             - redis
-            - orca
             - kernel_gateway
             - supercronic
             #- datadog
