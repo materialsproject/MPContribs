@@ -220,7 +220,10 @@ class Table(pd.DataFrame):
     def display(self):
         """Display a plotly graph for the table if in IPython/Jupyter"""
         if _in_ipython():
-            return self.plot(**self.attrs)
+            try:
+                return self.plot(**self.attrs)
+            except Exception as e:
+                print(f"Can't display table: {e}")
 
         return self
 
