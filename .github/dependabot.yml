@@ -57,7 +57,7 @@ updates:
     timezone: US/Pacific
   open-pull-requests-limit: 10
 - package-ecosystem: docker
-  directory: "/mpcontribs-sidecars/orca"
+  directory: "/mpcontribs-sidecars/supercronic"
   schedule:
     interval: weekly
     time: '08:00'
