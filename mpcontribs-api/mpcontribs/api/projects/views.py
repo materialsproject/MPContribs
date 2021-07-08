@@ -117,6 +117,7 @@ def applications(token, action):
         return response + "</ul>"
 
     if action == "approve":
+        obj.reload(*obj._fields.keys())
         obj.is_approved = True
         obj.save()  # post_save (created=False) sends notification when `is_approved` set
     else:
