@@ -1,6 +1,6 @@
-**Visit the [apply](https://contribs.materialsproject.org/#apply) and
-[work](https://contribs.materialsproject.org/#work) pages on the portal to apply for a project and
-get started with the MPContribs API.** The work page provides notebooks with example code
+**Visit the [apply](https://contribs.materialsproject.org/contribute) and
+[code](https://contribs.materialsproject.org/code) pages on the portal to apply for a project and
+get started with the MPContribs API.** The code page provides notebooks with example code
 that can be downloaded to execute on your own machine or launched in the browser on remote
 compute resources (e.g. https://jupyter.nersc.gov).
 
