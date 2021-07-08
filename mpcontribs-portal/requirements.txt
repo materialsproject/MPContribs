@@ -2,7 +2,7 @@ boltons==21.0.0
 boto3==1.17.106
 Django==3.2.5
 django-extensions==3.1.3
-django-settings-file==2.4.0
+django-settings-file==2.4.1
 django-webpack4-loader==0.0.5
 fastnumbers==3.1.0
 gunicorn[gevent]==20.1.0
