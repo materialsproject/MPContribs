@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
+import time
 import flask_mongorest
 
 from time import sleep
@@ -65,31 +66,10 @@ def execute_cells(cid, cells):
 
 @notebooks.route("/build")
 def build():
+    remaining_time = 25
+    start = time.perf_counter()
+
     with no_dereference(Contributions) as Contribs:
-        # TODO get a random max_docs slice to avoid collisions in parallel Fargate tasks
-
-        # remove dangling and unset missing notebooks
-        nbs_total, nbs_count = -1, -1
-        ctrbs_cnt = Contribs.objects._cursor.collection.estimated_document_count()
-        nbs_cnt = Notebooks.objects._cursor.collection.estimated_document_count()
-
-        if ctrbs_cnt != nbs_cnt:
-            contribs = Contribs.objects(notebook__exists=True).only("notebook")
-            nids = [contrib.notebook.id for contrib in contribs]
-            if len(nids) < nbs_cnt:
-                nbs = Notebooks.objects(id__nin=nids).only("id")
-                nbs_total = nbs.count()
-                max_docs = 2500
-                nbs[:max_docs].delete()
-                nbs_count = nbs_total if nbs_total < max_docs else max_docs
-            else:
-                missing_nids = set(nids) - set(Notebooks.objects.distinct("id"))
-                if missing_nids:
-                    upd_contribs = Contribs.objects(notebook__in=list(missing_nids))
-                    nupd_total = upd_contribs.count()
-                    nupd = upd_contribs.update(unset__notebook="")
-                    print(f"unset notebooks for {nupd}/{nupd_total} contributions")
-
         # build missing notebooks
         max_docs = NotebooksResource.max_limit
         cids = request.args.get("cids", "").split(",")[:max_docs]
@@ -106,10 +86,21 @@ def build():
         count = 0
 
         for document in documents:
+            if cids[0]:
+                stop = time.perf_counter()
+                remaining_time -= stop - start
+                print("remaining_time", remaining_time)
+
+                if remaining_time < 0:
+                    return f"{count}/{total} notebooks built"
+
+                start = time.perf_counter()
+
             if document.notebook is not None:
                 # NOTE document.notebook.delete() doesn't trigger pre_delete signal?
                 nb = Notebooks.objects.get(id=document.notebook.id)
                 nb.delete()
+                print(f"Notebook {document.notebook.id} deleted.")
 
             cells = [
                 # define client only once in kernel
@@ -181,5 +172,30 @@ def build():
             document.notebook = Notebooks(**doc).save()
             document.save(signal_kwargs={"skip": True})
             count += 1
+
+        if cids[0]:
+            return f"{count}/{total} notebooks built"
+
+        # remove dangling and unset missing notebooks
+        nbs_total, nbs_count = -1, -1
+        ctrbs_cnt = Contribs.objects._cursor.collection.estimated_document_count()
+        nbs_cnt = Notebooks.objects._cursor.collection.estimated_document_count()
+
+        if ctrbs_cnt != nbs_cnt:
+            contribs = Contribs.objects(notebook__exists=True).only("notebook")
+            nids = [contrib.notebook.id for contrib in contribs]
+            if len(nids) < nbs_cnt:
+                nbs = Notebooks.objects(id__nin=nids).only("id")
+                nbs_total = nbs.count()
+                max_docs = 2500
+                nbs[:max_docs].delete()
+                nbs_count = nbs_total if nbs_total < max_docs else max_docs
+            else:
+                missing_nids = set(nids) - set(Notebooks.objects.distinct("id"))
+                if missing_nids:
+                    upd_contribs = Contribs.objects(notebook__in=list(missing_nids))
+                    nupd_total = upd_contribs.count()
+                    nupd = upd_contribs.update(unset__notebook="")
+                    print(f"unset notebooks for {nupd}/{nupd_total} contributions")
 
         return f"{count}/{total} notebooks built & {nbs_count}/{nbs_total} notebooks deleted"
