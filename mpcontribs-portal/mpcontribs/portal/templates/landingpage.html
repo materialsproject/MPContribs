@@ -45,6 +45,7 @@
             {% endif %}
         </div>
         {% if not request.META.HTTP_X_ANONYMOUS_CONSUMER %}
+        {% if columns and columns.strip != 'null' %}
         <div class="column">
             <div class="dropdown is-pulled-right">
                 <div class="dropdown-trigger">
@@ -73,6 +74,7 @@
                 </div>
             </div>
         </div>
+        {% endif %}
         {% endif %}
     </div>
 
