@@ -11,6 +11,7 @@ from flask_mongorest import operators as ops
 from flask_mongorest.methods import Fetch, BulkFetch
 from flask_mongorest.resources import Resource
 from mongoengine.context_managers import no_dereference
+from mongoengine.errors import DoesNotExist
 
 from mpcontribs.api.core import SwaggerView
 from mpcontribs.api.projects.document import Projects
@@ -76,7 +77,7 @@ def build():
         cids = request.args.get("cids", "").split(",")[:max_docs]
         projects = request.args.get("projects", "").split(",")
 
-        if not projects:
+        if not projects[0]:
             projects = [p["name"] for p in Projects.objects.only("name")]
 
         contribs_objects = Contribs.objects(project__in=projects).only(
@@ -107,6 +108,7 @@ def build():
                 try:
                     nb = Notebooks.objects.get(id=document.notebook.id)
                     nb.delete()
+                    document.update(unset__notebook="")
                     print(f"Notebook {document.notebook.id} deleted.")
                 except DoesNotExist:
                     pass
