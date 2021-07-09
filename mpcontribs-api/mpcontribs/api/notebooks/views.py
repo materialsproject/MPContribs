@@ -13,6 +13,7 @@ from flask_mongorest.resources import Resource
 from mongoengine.context_managers import no_dereference
 
 from mpcontribs.api.core import SwaggerView
+from mpcontribs.api.projects.document import Projects
 from mpcontribs.api.contributions.document import Contributions
 from mpcontribs.api.notebooks.document import Notebooks
 from mpcontribs.api.notebooks import run_cells
@@ -73,7 +74,12 @@ def build():
         # build missing notebooks
         max_docs = NotebooksResource.max_limit
         cids = request.args.get("cids", "").split(",")[:max_docs]
-        contribs_objects = Contribs.objects.only(
+        projects = request.args.get("projects", "").split(",")
+
+        if not projects:
+            projects = [p["name"] for p in Projects.objects.only("name")]
+
+        contribs_objects = Contribs.objects(project__in=projects).only(
             "id", "tables", "structures", "attachments", "notebook"
         )
 
@@ -98,9 +104,12 @@ def build():
 
             if document.notebook is not None:
                 # NOTE document.notebook.delete() doesn't trigger pre_delete signal?
-                nb = Notebooks.objects.get(id=document.notebook.id)
-                nb.delete()
-                print(f"Notebook {document.notebook.id} deleted.")
+                try:
+                    nb = Notebooks.objects.get(id=document.notebook.id)
+                    nb.delete()
+                    print(f"Notebook {document.notebook.id} deleted.")
+                except DoesNotExist:
+                    pass
 
             cells = [
                 # define client only once in kernel
@@ -181,16 +190,18 @@ def build():
         ctrbs_cnt = Contribs.objects._cursor.collection.estimated_document_count()
         nbs_cnt = Notebooks.objects._cursor.collection.estimated_document_count()
 
-        if ctrbs_cnt != nbs_cnt:
-            contribs = Contribs.objects(notebook__exists=True).only("notebook")
-            nids = [contrib.notebook.id for contrib in contribs]
+        if ctrbs_cnt != nbs_cnt and not Contribs.objects(notebook__exists=False):
+            print("Count mismatch but all notebook DBRefs set -> CLEANUP")
+            nids = [contrib.notebook.id for contrib in Contribs.objects.only("notebook")]
             if len(nids) < nbs_cnt:
+                print("Delete dangling notebooks ...")
                 nbs = Notebooks.objects(id__nin=nids).only("id")
                 nbs_total = nbs.count()
                 max_docs = 2500
                 nbs[:max_docs].delete()
                 nbs_count = nbs_total if nbs_total < max_docs else max_docs
             else:
+                print("Unset missing notebooks ...")
                 missing_nids = set(nids) - set(Notebooks.objects.distinct("id"))
                 if missing_nids:
                     upd_contribs = Contribs.objects(notebook__in=list(missing_nids))
