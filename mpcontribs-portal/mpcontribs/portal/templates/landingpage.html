@@ -44,8 +44,7 @@
             </div>
             {% endif %}
         </div>
-        {% if not request.META.HTTP_X_ANONYMOUS_CONSUMER %}
-        {% if columns and columns.strip != 'null' %}
+        {% if not request.META.HTTP_X_ANONYMOUS_CONSUMER and columns and columns.strip != 'null' %}
         <div class="column">
             <div class="dropdown is-pulled-right">
                 <div class="dropdown-trigger">
@@ -74,7 +73,6 @@
                 </div>
             </div>
         </div>
-        {% endif %}
         {% endif %}
     </div>
 
@@ -191,12 +189,10 @@
             </div>
         </div>
     </nav>
-    {% endif %}
-
-
-    {% if columns and columns.strip != 'null' %}
     <div name=table id=table_{{name}} class="is-invisible"
         data-columns='{{ columns|join:"," }}' data-project='{{ name }}'></div>
+    {% else %}
+    <div class="notification is-warning is-marginless">Data not available.</div>
     {% endif %}
     {% endif %}
 
