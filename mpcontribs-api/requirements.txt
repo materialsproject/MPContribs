@@ -2,7 +2,7 @@ apispec==4.7.1
 asn1crypto==1.4.0
 blinker==1.4
 boltons==21.0.0
-boto3==1.17.108
+boto3==1.17.109
 css-html-js-minify==2.5.5
 dateparser==1.0.0
 dnspython==2.1.0
@@ -28,7 +28,7 @@ pymatgen==2022.0.10
 pyopenssl==20.0.1
 python-snappy==0.6.0
 selenium==3.141.0
-uncertainties==3.1.5
+uncertainties==3.1.6
 unflatten==0.1
 websocket_client==1.1.0
 zstandard==0.15.2
