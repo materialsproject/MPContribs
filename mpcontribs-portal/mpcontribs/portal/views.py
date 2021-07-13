@@ -96,6 +96,7 @@ def landingpage(request, project):
             ctx["alert"] = msg
     else:
         ctx["name"] = project
+        ctx["owner"] = prov["owner"].split(":", 1)[-1]
         long_title = prov.get("long_title")
         ctx["title"] = long_title if long_title else prov["title"]
         ctx["descriptions"] = prov["description"].strip().split(".", 1)

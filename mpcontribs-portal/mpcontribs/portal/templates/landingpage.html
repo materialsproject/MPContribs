@@ -194,32 +194,47 @@
     {% else %}
     <article class="message is-primary">
         <div class="message-header">
-            <p>Data not available. Quick start:</p>
+            <p>Data not available yet</p>
         </div>
         <div class="message-body">
-        <pre class="has-background-dark is-marginless">
-        <code class="language-python">
-        # pip install mpcontribs-client
-        from mpcontribs.client import Client
-        client = Client(
-            host="{{API_CNAME}}",
-            apikey="{{ request.META.HTTP_X_CONSUMER_CUSTOM_ID }}"
-        )
-        contributions = [{
-            "project": "{{name}}",
-            "identifier": "mp-4",
-            "data": {
-                "a": "3 eV",
-                "b": {"c": "hello", "d": 3},
-                "d.e.f": "nest via dot-notation"
-            },
-            "structures": [`pymatgen.core.Structure`, ...],
-            "tables": [`pandas.DataFrame`, ...],
-            "attachments": [`pathlib.Path`, `mpcontribs.client.Attachment`, ...]
-        }]
-        client.submit_contributions(contributions)
-        </code>
-        </pre>
+            <div class="content">
+                <ul>
+                    <li>
+                        If you are the owner or a member of this project, use the
+                        <a href="https://pypi.org/project/mpcontribs-client/">MPContribs python client</a>
+                        and the code snippet below to add data to this project. Full examples for other
+                        projects can be found
+                        <a href="https://github.com/materialsproject/MPContribs/tree/master/mpcontribs-portal/notebooks">
+                            on GitHub
+                        </a>.
+                    </li>
+                    <li>
+                        If you don't have permissions to manage the data in this project, feel free
+                        to reach out to the
+                        <a href="mailto:{{owner}}">owner</a> or
+                        <a href="mailto:contribs.materialsproject.org">Materials Project</a>
+                        for an update about the availability of this dataset.
+                    </li>
+                </ul>
+            </div>
+<pre class="has-background-dark is-marginless"><code class="language-python">from mpcontribs.client import Client
+client = Client(
+    host="{{API_CNAME}}",
+    apikey="{{ request.META.HTTP_X_CONSUMER_CUSTOM_ID }}"
+)
+contributions = [{
+    "project": "{{name}}",
+    "identifier": "mp-4",
+    "data": {
+        "a": "3 eV",
+        "b": {"c": "hello", "d": 3},
+        "d.e.f": "nest via dot-notation"
+    },
+    "structures": [`pymatgen.core.Structure`, ...],
+    "tables": [`pandas.DataFrame`, ...],
+    "attachments": [`pathlib.Path`, `mpcontribs.client.Attachment`, ...]
+}]
+client.submit_contributions(contributions)</code></pre>
         </div>
     </article>
     {% endif %}
