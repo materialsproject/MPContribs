@@ -2,7 +2,7 @@ apispec==4.7.1
 asn1crypto==1.4.0
 blinker==1.4
 boltons==21.0.0
-boto3==1.17.109
+boto3==1.17.111
 css-html-js-minify==2.5.5
 dateparser==1.0.0
 dnspython==2.1.0
