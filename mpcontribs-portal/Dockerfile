@@ -47,8 +47,6 @@ ENV DJANGO_SETTINGS_FILE="settings.py"
 COPY . .
 RUN pip install $PIP_FLAGS $MORE_PIP_FLAGS .
 RUN python manage.py collectstatic --noinput
-COPY notebooks notebooks
-RUN ./notebooks/convert.sh ./notebooks ./mpcontribs/portal/templates/notebooks/
 
 FROM base
 COPY --from=python-builds /root/.local/lib/python3.9/site-packages /root/.local/lib/python3.9/site-packages

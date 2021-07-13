@@ -1,5 +1,13 @@
+import hljs from "highlight-core";
+import python from "highlight-languages";
+
 $(document).ready(function () {
 
+    hljs.registerLanguage('python', python);
+    hljs.highlightAll();
+    $('div.input, pre, .hljs').addClass('has-background-dark');
+    $('div.input').css("height", "100%");
+    $('pre').addClass('is-paddingless');
     $('h2').addClass('title');
 
     $('.anchor-link').each(function(index, anchor) {

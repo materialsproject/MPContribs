@@ -185,6 +185,7 @@ class Projects(Document):
                     approved=True,
                     admin_email=admin_email,
                     host=portal,
+                    project=document.name
                 )
                 topic_arn = ":".join(
                     admin_topic.split(":")[:-1] + ["mpcontribs_" + document.name]

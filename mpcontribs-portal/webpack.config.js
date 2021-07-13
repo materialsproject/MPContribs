@@ -15,7 +15,6 @@ module.exports = {
         'browse': path.resolve(__dirname, 'mpcontribs/portal/assets/js/browse'),
         'search': path.resolve(__dirname, 'mpcontribs/portal/assets/js/search'),
         'apply': path.resolve(__dirname, 'mpcontribs/portal/assets/js/apply'),
-        'work': path.resolve(__dirname, 'mpcontribs/portal/assets/js/work'),
         'landingpage': path.resolve(__dirname, 'mpcontribs/portal/assets/js/landingpage'),
         'contribution': path.resolve(__dirname, 'mpcontribs/portal/assets/js/contribution'),
         //path.resolve(__dirname, 'mpcontribs/portal/assets/js/render_overview'),
@@ -62,6 +61,8 @@ module.exports = {
             "lunr": 'lunr.js/lunr',
             "plotly": 'plotly.js/lib/core',
             "js-cookie": 'js-cookie/src/js.cookie',
+            "highlight-core": "highlight.js/lib/core",
+            "highlight-languages": "highlight.js/lib/languages/python"
             //mathjs": 'mathjs/dist/math',
         }
     },

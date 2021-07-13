@@ -8,8 +8,6 @@ urlpatterns = [
     # public
     #url(r"^$", views.index, name="index"),
     url(r"^$", RedirectView.as_view(pattern_name="browse")),
-    url(r"^code/?$", views.work, name="work"),
-    url(r"^work/?$", RedirectView.as_view(pattern_name="work")),
     url(r"^healthcheck/?$", views.healthcheck, name="healthcheck"),
     url(
         r"^notebooks/(?P<nb>[A-Za-z0-9_\/]{3,})\.html$",

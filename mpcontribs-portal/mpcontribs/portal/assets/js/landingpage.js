@@ -2,6 +2,11 @@ import Handsontable from "handsontable";
 import get from "lodash/get";
 import set from "lodash/set";
 import sha1 from "js-sha1";
+import hljs from "highlight-core";
+import python from "highlight-languages";
+
+hljs.registerLanguage('python', python);
+hljs.highlightAll();
 
 $('a[name="read_more"]').on('click', function() {
     $(this).hide().siblings('[name="read_more"]').removeClass("is-hidden").show();

@@ -192,7 +192,36 @@
     <div name=table id=table_{{name}} class="is-invisible"
         data-columns='{{ columns|join:"," }}' data-project='{{ name }}'></div>
     {% else %}
-    <div class="notification is-warning is-marginless">Data not available.</div>
+    <article class="message is-primary">
+        <div class="message-header">
+            <p>Data not available. Quick start:</p>
+        </div>
+        <div class="message-body">
+        <pre class="has-background-dark is-marginless">
+        <code class="language-python">
+        # pip install mpcontribs-client
+        from mpcontribs.client import Client
+        client = Client(
+            host="{{API_CNAME}}",
+            apikey="{{ request.META.HTTP_X_CONSUMER_CUSTOM_ID }}"
+        )
+        contributions = [{
+            "project": "{{name}}",
+            "identifier": "mp-4",
+            "data": {
+                "a": "3 eV",
+                "b": {"c": "hello", "d": 3},
+                "d.e.f": "nest via dot-notation"
+            },
+            "structures": [`pymatgen.core.Structure`, ...],
+            "tables": [`pandas.DataFrame`, ...],
+            "attachments": [`pathlib.Path`, `mpcontribs.client.Attachment`, ...]
+        }]
+        client.submit_contributions(contributions)
+        </code>
+        </pre>
+        </div>
+    </article>
     {% endif %}
     {% endif %}
 

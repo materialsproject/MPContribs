@@ -19,6 +19,9 @@ from json2html import Json2Html
 from boltons.iterutils import remap
 from fastnumbers import fast_real
 from botocore.errorfactory import ClientError
+from pygments import highlight
+from pygments.formatters import HtmlFormatter
+from pygments.lexers.special import TextLexer
 
 from django.shortcuts import render, redirect
 from django.template import RequestContext
@@ -141,18 +144,6 @@ def index(request):
     return render(request, "index.html", ctx.flatten())
 
 
-def work(request):
-    ctx = get_context(request)
-    template_dir = get_app_template_dirs("templates/notebooks")[0]
-    subdir = ctx["PORTAL_CNAME"].replace("localhost.", "")
-    htmls = os.path.join(template_dir, subdir, "*.html")
-    ctx["notebooks"] = [
-        p.split("/" + subdir + "/")[-1].replace(".html", "")
-        for p in glob(htmls)
-    ]
-    return render(request, "work.html", ctx.flatten())
-
-
 def search(request):
     headers = client_kwargs(request).get("headers", {})
     ctx = get_context(request)
@@ -194,10 +185,17 @@ def browse(request):
     return render(request, "browse.html", ctx.flatten())
 
 
+def highlight_code(source, language="python", metadata=None):
+    lexer = TextLexer()
+    output_formatter = HtmlFormatter(wrapcode=True)
+    return highlight(source, lexer, output_formatter)
+
+
 def export_notebook(nb, cid):
     nb = nbformat.from_dict(nb)
     html_exporter = HTMLExporter()
     html_exporter.template_file = "basic"
+    html_exporter.filters["highlight_code"] = highlight_code
     return html_exporter.from_notebook_node(nb)
 
 

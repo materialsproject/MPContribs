@@ -51,8 +51,8 @@ $checkradio-focus: none;
 @import "~bulma-extensions/bulma-checkradio/src/sass/index";
 @import "~bulma-extensions/bulma-tagsinput/src/sass/index";
 @import "~bulma-extensions/bulma-switch/src/sass/index";
+@import "~highlight.js/styles/stackoverflow-dark";
 @import "select2";
-@import "css/highlight";
 
 .has-loading {
     &.is-loading {
@@ -76,11 +76,8 @@ footer {
   position: fixed; z-index: 200;
 }
 
-.highlight > pre { background-color: #2f1e2e; }
-pre { padding: 0.75rem; }
 div.prompt { display: none; }
 a.anchor-link { display: none; }
-.cell .input { line-height: 1em; height: auto; display: block; border: 0; }
 
 #czContainer { display: block; }
 .recordset { padding-bottom: 0.5em; margin-right: 0.75rem; }
