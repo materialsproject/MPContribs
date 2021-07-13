@@ -172,15 +172,16 @@ def apply(request):
 def browse(request):
     ctx = get_context(request)
     ctx["landing_pages"] = []
-    mask = ["name", "title", "authors", "is_public", "description", "references"]
     client = Client(**client_kwargs(request))
-    entries = client.projects.get_entries(_fields=mask).result()["data"]
+    entries = client.projects.get_entries(_fields=["_all"]).result()["data"]
     for entry in entries:
         authors = entry["authors"].strip().split(",", 1)
         if len(authors) > 1:
             authors[1] = authors[1].strip()
         entry["authors"] = authors
         entry["description"] = entry["description"].split(".", 1)[0] + "."
+        entry["has_data"] = bool(entry.pop("columns"))
+        entry["owner"] = entry["owner"].split(":", 1)[-1]
         # visibility governed by is_public flag and X-Authenticated-Groups header
         ctx["landing_pages"].append(entry)
     return render(request, "browse.html", ctx.flatten())
