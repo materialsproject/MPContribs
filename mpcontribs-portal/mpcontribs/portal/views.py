@@ -453,13 +453,24 @@ def create_download(request):
     if not project:
         return JsonResponse({"error": "Missing project parameter."})
 
+    client = Client(**ckwargs)
     query, include = _get_query_include(request)
     key = _get_download_key(query, include)
+    per_page, _ = client._get_per_page_default_max(op="download")
+    total_count, total_pages = client.get_totals(query=query, per_page=per_page)
+
+    if total_count < 1:
+        return JsonResponse({"error": "No results for query."})
+
+    last_modified = client.contributions.get_entries(
+        order="desc", _order_by="last_modified",
+        _fields=["last_modified"], _limit=1,
+        **{k: v for k, v in query.items() if k != "format"}
+    ).result()["data"][0]["last_modified"]
 
     try:
-        s3_client.head_object(Bucket=BUCKET, Key=key)
+        s3_client.head_object(Bucket=BUCKET, Key=key, IfModifiedSince=last_modified)
     except ClientError:
-        client = Client(**ckwargs)
         all_ids = client.get_all_ids(
             query=query, include=include, timeout=15
         ).get(project)
@@ -467,8 +478,6 @@ def create_download(request):
             return JsonResponse({"error": "No results for query."})
 
         ncontribs = len(all_ids["ids"])
-        per_page, _ = client._get_per_page_default_max(op="download")
-        total_count, total_pages = client.get_totals(query=query, per_page=per_page)
 
         if ncontribs < total_count:
             # timeout reached -> use API/client
