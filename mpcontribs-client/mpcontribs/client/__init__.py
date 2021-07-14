@@ -42,7 +42,7 @@ from concurrent.futures import as_completed
 from requests_futures.sessions import FuturesSession
 from filetype.types.archive import Gz
 from filetype.types.image import Jpeg, Png, Gif, Tiff
-from pint import UnitRegistry, Quantity
+from pint import UnitRegistry
 from pint.unit import UnitDefinition
 from pint.converters import ScaleConverter
 from pint.errors import DimensionalityError
@@ -686,7 +686,7 @@ class Client(SwaggerClient):
                 return {"error": f"Nesting too deep for {k}"}
 
             for col in existing_columns:
-                if col.startswith(k):
+                if nesting and col.startswith(k):
                     return {"error": f"duplicate definition of {k} in {col}!"}
 
                 for n in range(1, nesting+1):
@@ -742,7 +742,7 @@ class Client(SwaggerClient):
                 existing_unit = existing_column.get("unit")
                 if existing_unit != new_unit:
                     try:
-                        Quantity(existing_unit).to(new_unit)
+                        ureg.Quantity(existing_unit).to(new_unit)
                     except DimensionalityError:
                         return {
                             "error": f"Can't convert {existing_unit} to {new_unit} for {path}"
