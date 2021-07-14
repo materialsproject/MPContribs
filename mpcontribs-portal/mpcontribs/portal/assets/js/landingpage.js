@@ -98,7 +98,16 @@ function urlRenderer(instance, td, row, col, prop, value, cellProperties) {
         var basename = value.split('/').pop();
         if (value.startsWith('http://') || value.startsWith('https://')) {
             Handsontable.renderers.HtmlRenderer.apply(this, arguments);
-            make_url_cell(td, basename.split('.')[0], value);
+            Handsontable.dom.empty(td);
+            const url = new URL(value);
+            var tag = $('<a/>', {'class': 'tag is-link is-light', href: value, target: "_blank"});
+            var span = $('<span/>', {text: url.hostname});
+            var span_icon = $('<span/>', {'class': 'icon'});
+            var icon = $('<i/>', {'class': 'fas fa-external-link-alt'});
+            $(span_icon).append(icon);
+            $(tag).append(span_icon);
+            $(tag).append(span);
+            $(td).addClass('htCenter').addClass('htMiddle').append(tag);
         } else if (basename.startsWith('mp-') || basename.startsWith('mvc-')) {
             Handsontable.renderers.HtmlRenderer.apply(this, arguments);
             var href = 'https://materialsproject.org/materials/' + basename;
