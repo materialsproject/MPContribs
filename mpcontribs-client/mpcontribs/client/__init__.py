@@ -842,7 +842,11 @@ class Client(SwaggerClient):
         return result["total_count"], result["total_pages"]
 
     def get_all_ids(
-        self, query: dict, include: List[str] = None, timeout: int = -1
+        self,
+        query: dict,
+        include: List[str] = None,
+        timeout: int = -1,
+        data_id_field: str = None,
     ) -> dict:
         """Retrieve a list of existing contribution and component ObjectIds
 
@@ -850,6 +854,7 @@ class Client(SwaggerClient):
             query (dict): query to select contributions
             include (list): components to include in response
             timeout (int): cancel remaining requests if timeout exceeded (in seconds)
+            data_id_field (str): extra field in `data` to include as ID field
 
         Returns:
             {"<project-name>": {
@@ -881,6 +886,10 @@ class Client(SwaggerClient):
         [query.pop(k, None) for k in ["page", "per_page", "_fields"]]
         _, pages = self.get_totals(query=query, per_page=per_page)
         id_fields = {"project", "id", "identifier"}
+
+        if data_id_field:
+            id_fields.add(f"data.{data_id_field}")
+
         fields = ",".join(id_fields | components)
         url = f"{self.url}/contributions/"
 
@@ -907,10 +916,18 @@ class Client(SwaggerClient):
                     for contrib in resp["data"]:
                         project = contrib["project"]
                         if project not in ret:
-                            ret[project] = {k: set() for k in ["ids", "identifiers"]}
+                            id_keys = ["ids", "identifiers"]
+                            if data_id_field:
+                                id_field = f"{data_id_field}_set"
+                                id_keys.append(id_field)
+
+                            ret[project] = {k: set() for k in id_keys}
 
                         ret[project]["ids"].add(contrib["id"])
                         ret[project]["identifiers"].add(contrib["identifier"])
+
+                        if data_id_field:
+                            ret[project][id_field].add(contrib["data"][data_id_field])
 
                         for component in components:
                             if component in contrib:
