@@ -36,6 +36,12 @@
             {% endif %}
             {% if authors %}
             <div class="subtitle">
+                <a class="tag is-link is-light"
+                   href="mailto:{{owner}}?cc=contribs@materialsproject.org&subject=MPContribs Inquiry about {{name}}">
+                    <span class="icon is-small">
+                        <i class="fas fa-envelope"></i>
+                    </span>
+                </a>
                 <span>{{ authors.main }}</span>
                 {% if authors.etal %}
                 <a name="read_more">et al.</a>
@@ -204,16 +210,13 @@
                         <a href="https://pypi.org/project/mpcontribs-client/">MPContribs python client</a>
                         and the code snippet below to add data to this project. Full examples for other
                         projects can be found
-                        <a href="https://github.com/materialsproject/MPContribs/tree/master/mpcontribs-portal/notebooks">
-                            on GitHub
-                        </a>.
+                        <a href="https://github.com/materialsproject/MPContribs/tree/master/mpcontribs-portal/notebooks">on GitHub</a>.
                     </li>
                     <li>
                         If you don't have permissions to manage the data in this project, feel free
                         to reach out to the
-                        <a href="mailto:{{owner}}">owner</a> or
-                        <a href="mailto:contribs.materialsproject.org">Materials Project</a>
-                        for an update about the availability of this dataset.
+                        <a href="mailto:{{owner}}?cc=contribs@materialsproject.org&subject=MPContribs Member Request for {{name}}">owner</a>
+                        to become a member of the <code>{{name}}</code> group.
                     </li>
                 </ul>
             </div>
