@@ -5,9 +5,9 @@ $(document).ready(function () {
 
     hljs.registerLanguage('python', python);
     hljs.highlightAll();
-    $('div.input, pre, .hljs').addClass('has-background-dark');
+    $('div.input, .hljs').addClass('has-background-dark');
     $('div.input').css("height", "100%");
-    $('pre').addClass('is-paddingless');
+    $('div.highlight > pre').addClass('is-paddingless').addClass('has-background-dark');
     $('h2').addClass('title');
 
     $('.anchor-link').each(function(index, anchor) {
