@@ -841,37 +841,77 @@ class Client(SwaggerClient):
         ).result()
         return result["total_count"], result["total_pages"]
 
+    def get_unique_identifiers_flags(self, projects: list = None) -> dict:
+        """Retrieve values for `unique_identifiers` flags for a list of projects
+
+        Args:
+            projects (list): list of project names - return all if not set
+
+        Returns:
+            {"<project-name>": True|False, ...}
+        """
+        unique_identifiers = {}
+        query = {"name__in": projects} if projects else {}
+        resp = self.projects.get_entries(
+            _fields=["name", "unique_identifiers"], **query
+        ).result()
+
+        for project in resp["data"]:
+            project_name = project["name"]
+            unique_identifiers[project_name] = project["unique_identifiers"]
+
+        return unique_identifiers
+
     def get_all_ids(
         self,
         query: dict,
         include: List[str] = None,
         timeout: int = -1,
-        data_id_field: str = None,
+        data_id_fields: dict = None,
+        fmt: str = "sets",
     ) -> dict:
-        """Retrieve a list of existing contribution and component ObjectIds
+        """Retrieve a list of existing contribution and component (Object)IDs
 
         Args:
             query (dict): query to select contributions
             include (list): components to include in response
             timeout (int): cancel remaining requests if timeout exceeded (in seconds)
-            data_id_field (str): extra field in `data` to include as ID field
+            data_id_fields (dict): map of project to extra field in `data` to include as ID field
+            fmt (str): return `sets` of identifiers or `map` (see below)
 
         Returns:
             {"<project-name>": {
+                # if fmt == "sets":
                 "ids": {<set of contributions IDs>},
                 "identifiers": {<set of contribution identifiers>},
-                "structures": {
-                    "ids": {<set of structure IDs>},
-                    "md5s": {<set of structure md5s>}
+                "<data_id_field>_set": {<set of data_id_field values>},
+                "structures|tables|attachments": {
+                    "ids": {<set of structure|table|attachment IDs>},
+                    "md5s": {<set of structure|table|attachment md5s>}
                 },
-                "tables": {
-                    "ids": {<set of tables IDs>},
-                    "md5s": {<set of tables md5s>}
-                },
-                "attachments": {
-                    "ids": {<set of attachments IDs>},
-                    "md5s": {<set of attachments md5s>}
-                },
+                # if fmt == "map" and unique_identifiers=True
+                "<identifier>": {
+                    "id": "<contribution ID>",
+                    "<data_id_field>": "<data_id_field value>",
+                    "structures|tables|attachments": {
+                        "<name>": {
+                            "id": "<structure|table|attachment ID>",
+                            "md5": "<structure|table|attachment md5>"
+                        }, ...
+                    }
+                }
+                # if fmt == "map" and unique_identifiers=False (data_id_field required)
+                "<identifier>": {
+                    "<data_id_field value>": {
+                        "id": "<contribution ID>",
+                        "structures|tables|attachments": {
+                            "<name>": {
+                                "id": "<structure|table|attachment ID>",
+                                "md5": "<structure|table|attachment md5>"
+                            }, ...
+                        }
+                    }, ...
+                }
             }, ...}
         """
         include = include or []
@@ -880,6 +920,17 @@ class Client(SwaggerClient):
             print(f"`include` must be subset of {COMPONENTS}!")
             return
 
+        fmts = {"sets", "map"}
+        if fmt not in fmts:
+            print(f"`fmt` must be subset of {fmts}!")
+            return
+
+        unique_identifiers = self.get_unique_identifiers_flags()
+        data_id_fields = {
+            k: v for k, v in data_id_fields.items()
+            if k in unique_identifiers and isinstance(v, str)
+        } if data_id_fields else {}
+
         ret = {}
         _, per_page = self._get_per_page_default_max()
         query = query or {}
@@ -887,8 +938,11 @@ class Client(SwaggerClient):
         _, pages = self.get_totals(query=query, per_page=per_page)
         id_fields = {"project", "id", "identifier"}
 
-        if data_id_field:
-            id_fields.add(f"data.{data_id_field}")
+        if data_id_fields:
+            id_fields.update(
+                f"data.{data_id_field}"
+                for data_id_field in data_id_fields.values()
+            )
 
         fields = ",".join(id_fields | components)
         url = f"{self.url}/contributions/"
@@ -915,28 +969,63 @@ class Client(SwaggerClient):
                 for resp in responses.values():
                     for contrib in resp["data"]:
                         project = contrib["project"]
-                        if project not in ret:
-                            id_keys = ["ids", "identifiers"]
+                        data_id_field = data_id_fields.get(project)
+
+                        if fmt == "sets":
+                            if project not in ret:
+                                id_keys = ["ids", "identifiers"]
+                                if data_id_field:
+                                    id_field = f"{data_id_field}_set"
+                                    id_keys.append(id_field)
+
+                                ret[project] = {k: set() for k in id_keys}
+
+                            ret[project]["ids"].add(contrib["id"])
+                            ret[project]["identifiers"].add(contrib["identifier"])
+
                             if data_id_field:
-                                id_field = f"{data_id_field}_set"
-                                id_keys.append(id_field)
+                                ret[project][id_field].add(contrib["data"][data_id_field])
 
-                            ret[project] = {k: set() for k in id_keys}
+                            for component in components:
+                                if component in contrib:
+                                    if component not in ret[project]:
+                                        ret[project][component] = {"ids": set(), "md5s": set()}
 
-                        ret[project]["ids"].add(contrib["id"])
-                        ret[project]["identifiers"].add(contrib["identifier"])
+                                    for d in contrib[component]:
+                                        for k in ["id", "md5"]:
+                                            ret[project][component][f"{k}s"].add(d[k])
 
-                        if data_id_field:
-                            ret[project][id_field].add(contrib["data"][data_id_field])
+                        elif fmt == "map":
+                            identifier = contrib["identifier"]
+                            data_id_field_value = contrib.get("data", {}).get(data_id_field)
 
-                        for component in components:
-                            if component in contrib:
-                                if component not in ret[project]:
-                                    ret[project][component] = {"ids": set(), "md5s": set()}
+                            if project not in ret:
+                                ret[project] = {}
 
-                                for d in contrib[component]:
-                                    for k in ["id", "md5"]:
-                                        ret[project][component][f"{k}s"].add(d[k])
+                            if unique_identifiers[project]:
+                                ret[project][identifier] = {"id": contrib["id"]}
+
+                                if data_id_field and data_id_field_value:
+                                    ret[project][identifier][data_id_field] = data_id_field_value
+
+                                for component in components:
+                                    if component in contrib:
+                                        ret[project][identifier][component] = {
+                                            d["name"]: {"id": d["id"], "md5": d["md5"]}
+                                            for d in contrib[component]
+                                        }
+
+                            elif data_id_field and data_id_field_value:
+                                ret[project][identifier] = {
+                                    data_id_field_value: {"id": contrib["id"]}
+                                }
+
+                                for component in components:
+                                    if component in contrib:
+                                        ret[project][identifier][data_id_field_value][component] = {
+                                            d["name"]: {"id": d["id"], "md5": d["md5"]}
+                                            for d in contrib[component]
+                                        }
 
                 futures = [
                     future for future in futures
@@ -1078,17 +1167,10 @@ class Client(SwaggerClient):
 
         print("get existing contributions ...")
         project_names = list(project_names)
-        unique_identifiers = {}
+        unique_identifiers = self.get_unique_identifiers_flags(projects=project_names)
         existing = defaultdict(dict, self.get_all_ids(
             query=dict(project__in=project_names), include=COMPONENTS, timeout=timeout
         ))
-        resp = self.projects.get_entries(
-            name__in=project_names, _fields=["name", "unique_identifiers"]
-        ).result()
-
-        for project in resp["data"]:
-            project_name = project["name"]
-            unique_identifiers[project_name] = project["unique_identifiers"]
 
         # prepare contributions
         print("prepare contributions ...")
