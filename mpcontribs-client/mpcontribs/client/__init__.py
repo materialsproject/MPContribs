@@ -520,12 +520,12 @@ class Client(SwaggerClient):
         return min(per_page_max, per_page)
 
     def _split_query(
-            self,
-            query: dict,
-            op: str = "get",
-            resource: str = "contributions",
-            pages: int = -1,
-        ) -> List[dict]:
+        self,
+        query: dict,
+        op: str = "get",
+        resource: str = "contributions",
+        pages: int = -1,
+    ) -> List[dict]:
         """Avoid URI too long errors"""
         _, per_page = self._get_per_page_default_max(op=op, resource=resource)
         query["per_page"] = per_page
@@ -876,12 +876,12 @@ class Client(SwaggerClient):
             print(f"There aren't any contributions to delete for {name}")
 
     def get_totals(
-            self,
-            query: dict = None,
-            timeout: int = -1,
-            resource: str = "contributions",
-            op: str = "get"
-        ) -> tuple:
+        self,
+        query: dict = None,
+        timeout: int = -1,
+        resource: str = "contributions",
+        op: str = "get"
+    ) -> tuple:
         """Retrieve total count and pages for resource entries matching query
 
         Args:
