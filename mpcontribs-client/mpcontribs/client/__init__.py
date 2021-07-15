@@ -451,7 +451,7 @@ class Client(SwaggerClient):
                         col = f"{col}__value"
                         columns["number"].append(col)
 
-        operators = {"text": ["contains"], "number": ["gte", "lte"]}
+        operators = {"text": ["exact", "contains"], "number": ["gte", "lte"]}
         for path, d in spec_dict["paths"].items():
             for verb in ["get", "put", "post", "delete"]:
                 if verb in d:

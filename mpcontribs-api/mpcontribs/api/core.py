@@ -104,16 +104,22 @@ def get_specs(klass, method, collection):
     filter_params = []
     if getattr(klass.resource, "filters", None) is not None:
         for k, v in klass.resource.filters.items():
-            label = k.pattern if isinstance(k, Pattern) else k
+            is_pattern = isinstance(k, Pattern)
+            label = k.pattern if is_pattern else k
             for op in v:
+                if op.op == "exact" and not is_pattern:
+                    name = label
+                    description = f"filter {label}"
+                else:
+                    name = f"{label}__{op.op}"
+                    description = f"filter {label} via ${op.op}"
+
                 filter_params.append(
                     {
-                        "name": label if op.op == "exact" else f"{label}__{op.op}",
+                        "name": name,
                         "in": "query",
                         "type": op.typ,
-                        "description": f"filter {label}"
-                        if op.op == "exact"
-                        else f"filter {label} via ${op.op}",
+                        "description": description,
                     }
                 )
                 if op.typ == "array":
