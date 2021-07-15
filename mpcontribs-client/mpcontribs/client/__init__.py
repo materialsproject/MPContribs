@@ -1236,12 +1236,15 @@ class Client(SwaggerClient):
                 for cid in values["ids"]:
                     id2project[cid] = project_name
 
-        print("get existing contributions ...")
+        existing = defaultdict(dict)
         project_names = list(project_names)
-        unique_identifiers = self.get_unique_identifiers_flags(projects=project_names)
-        existing = defaultdict(dict, self.get_all_ids(
-            query=dict(project__in=project_names), include=COMPONENTS, timeout=timeout
-        ))
+
+        if len(collect_ids) != len(contributions):
+            print("get existing contributions ...")
+            unique_identifiers = self.get_unique_identifiers_flags(projects=project_names)
+            existing = defaultdict(dict, self.get_all_ids(
+                query=dict(project__in=project_names), include=COMPONENTS, timeout=timeout
+            ))
 
         # prepare contributions
         print("prepare contributions ...")
