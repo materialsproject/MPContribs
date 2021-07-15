@@ -1491,7 +1491,7 @@ class Client(SwaggerClient):
                 start = time.perf_counter()
 
             cids = list(values["ids"])
-            paths, per_page = self._download_resource(
+            paths = self._download_resource(
                 resource="contributions", ids=cids, fmt=fmt,
                 outdir=outdir, overwrite=overwrite, timeout=timeout
             )
@@ -1511,7 +1511,7 @@ class Client(SwaggerClient):
                     start = time.perf_counter()
 
                 ids = list(values[component]["ids"])
-                paths, per_page = self._download_resource(
+                paths = self._download_resource(
                     resource=component, ids=ids, fmt=fmt,
                     outdir=outdir, overwrite=overwrite, timeout=timeout
                 )
@@ -1660,4 +1660,4 @@ class Client(SwaggerClient):
                 path.write_bytes(resp)
                 paths.append(path)
 
-        return paths, per_page
+        return paths
