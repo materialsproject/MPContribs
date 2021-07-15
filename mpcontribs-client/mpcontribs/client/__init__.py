@@ -398,6 +398,7 @@ class Client(SwaggerClient):
         ssl = host.endswith(".materialsproject.org") and not host.startswith("localhost.")
         self.protocol = "https" if ssl else "http"
         self.url = f"{self.protocol}://{self.host}"
+        self.session = get_session()
 
         if self.url not in VALID_URLS:
             raise ValueError(f"{self.url} not a valid URL (one of {VALID_URLS})")
@@ -408,6 +409,12 @@ class Client(SwaggerClient):
             self.swagger_spec.spec_dict["host"] != self.host
         ):
             self._load()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        return self.session.close()
 
     def _load(self):
         http_client = FidoClientGlobalHeaders(headers=self.headers)
@@ -511,6 +518,56 @@ class Client(SwaggerClient):
     ) -> int:
         _, per_page_max = self._get_per_page_default_max(op=op, resource=resource)
         return min(per_page_max, per_page)
+
+    def _split_query(
+            self,
+            query: dict,
+            op: str = "get",
+            resource: str = "contributions",
+            pages: int = -1,
+        ) -> List[dict]:
+        """Avoid URI too long errors"""
+        _, per_page = self._get_per_page_default_max(op=op, resource=resource)
+        query["per_page"] = per_page
+        nr_params_to_split = sum(
+            len(v) > per_page for v in query.values() if isinstance(v, list)
+        )
+        if nr_params_to_split > 1:
+            raise NotImplementedError(
+                f"More than one list in query with length > {per_page} not supported!"
+            )
+
+        queries = []
+
+        for k, v in query.items():
+            if isinstance(v, list):
+                for chunk in grouper(per_page, v):
+                    queries.append({k: list(chunk)})
+
+        if not queries:
+            queries = [query]
+
+        if len(queries) == 1 and pages and pages > 0:
+            queries = []
+            for page in range(1, pages+1):
+                queries.append(deepcopy(query))
+                queries[-1]["page"] = page
+
+        for q in queries:
+            for k, v in query.items():
+                if k in q and isinstance(v, list):
+                    q[k] = ",".join(v)
+                else:
+                    q[k] = v
+
+        return queries
+
+    def _get_future(self, track_id, params, rel_url: str = "contributions"):
+        future = self.session.get(
+            f"{self.url}/{rel_url}/", headers=self.headers, params=params
+        )
+        setattr(future, "track_id", track_id)
+        return future
 
     def get_project_names(self) -> List[str]:
         """Retrieve list of project names."""
@@ -785,31 +842,29 @@ class Client(SwaggerClient):
         per_page = self._get_per_page(per_page, op="delete")
 
         if cids:
-            with get_session() as session:
-                while cids:
-                    futures = [
-                        session.delete(
-                            f"{self.url}/contributions/",
-                            headers=self.headers,
-                            params={
-                                "project": name,
-                                "id__in": ",".join(chunk),
-                                "per_page": per_page,
-                            },
-                        )
-                        for chunk in chunks(cids, per_page)
-                    ]
+            while cids:
+                futures = [
+                    self.session.delete(
+                        f"{self.url}/contributions/",
+                        headers=self.headers,
+                        params={
+                            "project": name,
+                            "id__in": ",".join(chunk),
+                            "per_page": per_page,
+                        },
+                    )
+                    for chunk in chunks(cids, per_page)
+                ]
 
-                    _run_futures(futures, total=len(cids), timeout=timeout)
-                    cids = self.get_all_ids(
-                        query=query, timeout=timeout
-                    ).get(name, {}).get("ids", [])
+                _run_futures(futures, total=len(cids), timeout=timeout)
+                cids = self.get_all_ids(
+                    query=query, timeout=timeout
+                ).get(name, {}).get("ids", [])
 
-                    if not retry:
-                        break
+                if not retry:
+                    break
 
-                self._load()
-
+            self._load()
             toc = time.perf_counter()
             dt = (toc - tic) / 60
 
@@ -820,25 +875,49 @@ class Client(SwaggerClient):
         else:
             print(f"There aren't any contributions to delete for {name}")
 
-    def get_totals(self, query: dict = None, per_page: int = 1) -> tuple:
-        """Retrieve total count and pages for contributions matching query
-
-        See `client.contributions.get_entries()` for query.
+    def get_totals(
+            self,
+            query: dict = None,
+            timeout: int = -1,
+            resource: str = "contributions",
+            op: str = "get"
+        ) -> tuple:
+        """Retrieve total count and pages for resource entries matching query
 
         Args:
-            query (dict): query to select contributions
-            per_page (int): number of contributions per page to calculate correct #pages
+            query (dict): query to select resource entries
+            timeout (int): cancel remaining requests if timeout exceeded (in seconds)
+            op (str): operation to calculate total pages for, one of
+                      ("get", "create", "update", "delete", "download")
 
         Returns:
             tuple of total counts and pages
         """
+        ops = {"get", "create", "update", "delete", "download"}
+        if op not in ops:
+            print(f"`op` has to be one of {ops}")
+            return
+
         query = query or {}
         skip_keys = {"per_page", "_fields", "format"}
         query = {k: v for k, v in query.items() if k not in skip_keys}
-        per_page = self._get_per_page(per_page)
-        result = self.contributions.get_entries(
-            per_page=per_page, _fields=["id"], **query
-        ).result()
+        query["_fields"] = ["_id"]
+        queries = self._split_query(query, resource=resource, op=op)  # don't paginate
+        result = {"total_count": 0, "total_pages": 0}
+        futures = [self._get_future(i, q, rel_url=resource) for i, q in enumerate(queries)]
+
+        while futures:
+            responses = _run_futures(futures, timeout=timeout)
+
+            for resp in responses.values():
+                for k in result:
+                    result[k] += resp[k]
+
+            futures = [
+                future for future in futures
+                if not future.cancelled() and future.track_id not in responses.keys()
+            ]
+
         return result["total_count"], result["total_pages"]
 
     def get_unique_identifiers_flags(self, projects: list = None) -> dict:
@@ -869,6 +948,7 @@ class Client(SwaggerClient):
         timeout: int = -1,
         data_id_fields: dict = None,
         fmt: str = "sets",
+        op: str = "get",
     ) -> dict:
         """Retrieve a list of existing contribution and component (Object)IDs
 
@@ -878,6 +958,8 @@ class Client(SwaggerClient):
             timeout (int): cancel remaining requests if timeout exceeded (in seconds)
             data_id_fields (dict): map of project to extra field in `data` to include as ID field
             fmt (str): return `sets` of identifiers or `map` (see below)
+            op (str): operation to calculate total pages for, one of
+                      ("get", "create", "update", "delete", "download")
 
         Returns:
             {"<project-name>": {
@@ -925,6 +1007,11 @@ class Client(SwaggerClient):
             print(f"`fmt` must be subset of {fmts}!")
             return
 
+        ops = {"get", "create", "update", "delete", "download"}
+        if op not in ops:
+            print(f"`op` has to be one of {ops}")
+            return
+
         unique_identifiers = self.get_unique_identifiers_flags()
         data_id_fields = {
             k: v for k, v in data_id_fields.items()
@@ -932,10 +1019,8 @@ class Client(SwaggerClient):
         } if data_id_fields else {}
 
         ret = {}
-        _, per_page = self._get_per_page_default_max()
         query = query or {}
         [query.pop(k, None) for k in ["page", "per_page", "_fields"]]
-        _, pages = self.get_totals(query=query, per_page=per_page)
         id_fields = {"project", "id", "identifier"}
 
         if data_id_fields:
@@ -944,93 +1029,79 @@ class Client(SwaggerClient):
                 for data_id_field in data_id_fields.values()
             )
 
-        fields = ",".join(id_fields | components)
-        url = f"{self.url}/contributions/"
+        query["_fields"] = list(id_fields | components)
+        _, total_pages = self.get_totals(query=query, timeout=timeout)
+        queries = self._split_query(query, op=op, pages=total_pages)
+        futures = [self._get_future(i, q) for i, q in enumerate(queries)]
 
-        # convert lists in query to comma-separated
-        for k, v in query.items():
-            if isinstance(v, list):
-                query[k] = ",".join(v)
+        while futures:
+            responses = _run_futures(futures, timeout=timeout)
 
-        with get_session() as session:
+            for resp in responses.values():
+                for contrib in resp["data"]:
+                    project = contrib["project"]
+                    data_id_field = data_id_fields.get(project)
 
-            def get_future(page):
-                params = {"page": page, "per_page": per_page, "_fields": fields}
-                params.update(query)
-                future = session.get(url, headers=self.headers, params=params)
-                setattr(future, "track_id", page)
-                return future
-
-            futures = [get_future(page + 1) for page in range(pages)]
-
-            while futures:
-                responses = _run_futures(futures, timeout=timeout)
-
-                for resp in responses.values():
-                    for contrib in resp["data"]:
-                        project = contrib["project"]
-                        data_id_field = data_id_fields.get(project)
-
-                        if fmt == "sets":
-                            if project not in ret:
-                                id_keys = ["ids", "identifiers"]
-                                if data_id_field:
-                                    id_field = f"{data_id_field}_set"
-                                    id_keys.append(id_field)
-
-                                ret[project] = {k: set() for k in id_keys}
-
-                            ret[project]["ids"].add(contrib["id"])
-                            ret[project]["identifiers"].add(contrib["identifier"])
-
+                    if fmt == "sets":
+                        if project not in ret:
+                            id_keys = ["ids", "identifiers"]
                             if data_id_field:
-                                ret[project][id_field].add(contrib["data"][data_id_field])
+                                id_field = f"{data_id_field}_set"
+                                id_keys.append(id_field)
+
+                            ret[project] = {k: set() for k in id_keys}
+
+                        ret[project]["ids"].add(contrib["id"])
+                        ret[project]["identifiers"].add(contrib["identifier"])
+
+                        if data_id_field:
+                            ret[project][id_field].add(contrib["data"][data_id_field])
+
+                        for component in components:
+                            if component in contrib:
+                                if component not in ret[project]:
+                                    ret[project][component] = {"ids": set(), "md5s": set()}
+
+                                for d in contrib[component]:
+                                    for k in ["id", "md5"]:
+                                        ret[project][component][f"{k}s"].add(d[k])
+
+                    elif fmt == "map":
+                        identifier = contrib["identifier"]
+                        data_id_field_val = contrib.get("data", {}).get(data_id_field)
+
+                        if project not in ret:
+                            ret[project] = {}
+
+                        if unique_identifiers[project]:
+                            ret[project][identifier] = {"id": contrib["id"]}
+
+                            if data_id_field and data_id_field_val:
+                                ret[project][identifier][data_id_field] = data_id_field_val
 
                             for component in components:
                                 if component in contrib:
-                                    if component not in ret[project]:
-                                        ret[project][component] = {"ids": set(), "md5s": set()}
+                                    ret[project][identifier][component] = {
+                                        d["name"]: {"id": d["id"], "md5": d["md5"]}
+                                        for d in contrib[component]
+                                    }
 
-                                    for d in contrib[component]:
-                                        for k in ["id", "md5"]:
-                                            ret[project][component][f"{k}s"].add(d[k])
+                        elif data_id_field and data_id_field_val:
+                            ret[project][identifier] = {
+                                data_id_field_val: {"id": contrib["id"]}
+                            }
 
-                        elif fmt == "map":
-                            identifier = contrib["identifier"]
-                            data_id_field_val = contrib.get("data", {}).get(data_id_field)
+                            for component in components:
+                                if component in contrib:
+                                    ret[project][identifier][data_id_field_val][component] = {
+                                        d["name"]: {"id": d["id"], "md5": d["md5"]}
+                                        for d in contrib[component]
+                                    }
 
-                            if project not in ret:
-                                ret[project] = {}
-
-                            if unique_identifiers[project]:
-                                ret[project][identifier] = {"id": contrib["id"]}
-
-                                if data_id_field and data_id_field_val:
-                                    ret[project][identifier][data_id_field] = data_id_field_val
-
-                                for component in components:
-                                    if component in contrib:
-                                        ret[project][identifier][component] = {
-                                            d["name"]: {"id": d["id"], "md5": d["md5"]}
-                                            for d in contrib[component]
-                                        }
-
-                            elif data_id_field and data_id_field_val:
-                                ret[project][identifier] = {
-                                    data_id_field_val: {"id": contrib["id"]}
-                                }
-
-                                for component in components:
-                                    if component in contrib:
-                                        ret[project][identifier][data_id_field_val][component] = {
-                                            d["name"]: {"id": d["id"], "md5": d["md5"]}
-                                            for d in contrib[component]
-                                        }
-
-                futures = [
-                    future for future in futures
-                    if not future.cancelled() and future.track_id not in responses.keys()
-                ]
+            futures = [
+                future for future in futures
+                if not future.cancelled() and future.track_id not in responses.keys()
+            ]
 
         return ret
 
@@ -1309,69 +1380,68 @@ class Client(SwaggerClient):
         # submit contributions
         if contribs:
             print("submit contributions ...")
-            with get_session() as session:
-                total = 0
+            total = 0
 
-                def post_future(chunk):
-                    return session.post(
-                        f"{self.url}/contributions/",
-                        headers=self.headers,
-                        data=json.dumps(chunk).encode("utf-8"),
-                    )
+            def post_future(chunk):
+                return self.session.post(
+                    f"{self.url}/contributions/",
+                    headers=self.headers,
+                    data=json.dumps(chunk).encode("utf-8"),
+                )
 
-                def put_future(cdct):
-                    pk = cdct.pop("id")
-                    return session.put(
-                        f"{self.url}/contributions/{pk}/",
-                        headers=self.headers,
-                        data=json.dumps(cdct).encode("utf-8"),
-                    )
+            def put_future(cdct):
+                pk = cdct.pop("id")
+                return self.session.put(
+                    f"{self.url}/contributions/{pk}/",
+                    headers=self.headers,
+                    data=json.dumps(cdct).encode("utf-8"),
+                )
 
-                for project_name in project_names:
-                    ncontribs = len(contribs[project_name])
-                    total += ncontribs
-                    start = datetime.utcnow()
+            for project_name in project_names:
+                ncontribs = len(contribs[project_name])
+                total += ncontribs
+                start = datetime.utcnow()
 
-                    while contribs[project_name]:
-                        futures = []
-                        for chunk in chunks(contribs[project_name], per_page):
-                            post_chunk = []
-                            for c in chunk:
-                                if "id" in c:
-                                    futures.append(put_future(c))
-                                else:
-                                    post_chunk.append(c)
+                while contribs[project_name]:
+                    futures = []
+                    for chunk in chunks(contribs[project_name], per_page):
+                        post_chunk = []
+                        for c in chunk:
+                            if "id" in c:
+                                futures.append(put_future(c))
+                            else:
+                                post_chunk.append(c)
 
-                            if post_chunk:
-                                futures.append(post_future(post_chunk))
+                        if post_chunk:
+                            futures.append(post_future(post_chunk))
 
-                        _run_futures(futures, total=ncontribs, timeout=timeout)
+                    _run_futures(futures, total=ncontribs, timeout=timeout)
 
-                        if unique_identifiers[project_name] and retry:
-                            existing[project_name] = self.get_all_ids(
-                                query=dict(project=project_name), include=COMPONENTS,
-                                timeout=timeout
-                            ).get(project_name, {"identifiers": set()})
-                            unique_identifiers[project_name] = self.projects.get_entry(
-                                pk=project_name, _fields=["unique_identifiers"]
-                            ).result()["unique_identifiers"]
-                            contribs[project_name] = [
-                                c for c in contribs[project_name]
-                                if c["identifier"] not in existing[project_name]["identifiers"]
-                            ]
-                        else:
-                            contribs[project_name] = []  # abort retrying
-                            if not unique_identifiers[project_name] and retry:
-                                print("Please resubmit failed contributions manually.")
+                    if retry and unique_identifiers[project_name]:
+                        existing[project_name] = self.get_all_ids(
+                            query=dict(project=project_name), include=COMPONENTS,
+                            timeout=timeout
+                        ).get(project_name, {"identifiers": set()})
+                        unique_identifiers[project_name] = self.projects.get_entry(
+                            pk=project_name, _fields=["unique_identifiers"]
+                        ).result()["unique_identifiers"]
+                        contribs[project_name] = [
+                            c for c in contribs[project_name]
+                            if c["identifier"] not in existing[project_name]["identifiers"]
+                        ]
+                    else:
+                        contribs[project_name] = []  # abort retrying
+                        if retry and not unique_identifiers[project_name]:
+                            print("Please resubmit failed contributions manually.")
 
-                end = datetime.utcnow()
-                updated_total, _ = self.get_totals(query=dict(
-                    project__in=project_names, last_modified__gt=start, last_modified__lt=end
-                ))
-                toc = time.perf_counter()
-                dt = (toc - tic) / 60
-                self._load()
-                print(f"It took {dt:.1f}min to submit {updated_total} contributions.")
+            end = datetime.utcnow()
+            updated_total, _ = self.get_totals(query=dict(
+                project__in=project_names, last_modified__gt=start, last_modified__lt=end
+            ), timeout=timeout)
+            toc = time.perf_counter()
+            dt = (toc - tic) / 60
+            self._load()
+            print(f"It took {dt:.1f}min to submit {updated_total} contributions.")
         else:
             print("Nothing to submit.")
 
@@ -1558,40 +1628,33 @@ class Client(SwaggerClient):
             print(f"`fmt` must be one of {formats}!")
             return
 
-        oids = sorted(ObjectId(i) for i in ids if ObjectId.is_valid(i))
+        oids = sorted(i for i in ids if ObjectId.is_valid(i))
         outdir = Path(outdir) or Path(".")
         subdir = outdir / resource
         subdir.mkdir(parents=True, exist_ok=True)
         model = self.get_model(f"{resource.capitalize()}Schema")
         fields = list(model._properties.keys())
-        # NOTE use default per_page to avoid "URL too long" error
-        per_page, _ = self._get_per_page_default_max(op="download", resource=resource)
-        chunked_oids = grouper(per_page, map(str, oids))
+        query = {"format": fmt, "_fields": fields, "id__in": oids}
+        _, total_pages = self.get_totals(
+            query=query, resource=resource, op="download", timeout=timeout
+        )
+        queries = self._split_query(query, resource=resource, op="download", pages=total_pages)
         paths, futures = [], []
 
-        with get_session() as session:
-            for chunk in chunked_oids:
-                digest = get_md5({"ids": chunk})
-                path = subdir / f"{digest}.{fmt}.gz"
+        for query in queries:
+            digest = get_md5({"ids": query["id__in"].split(",")})
+            path = subdir / f"{digest}.{fmt}.gz"
 
-                if not path.exists() or overwrite:
-                    future = session.get(
-                        f"{self.url}/{resource}/download/gz/",
-                        headers=self.headers,
-                        params={
-                            "format": fmt,
-                            "id__in": ",".join(chunk),
-                            "_fields": ",".join(fields),
-                        },
-                    )
-                    setattr(future, "track_id", path)
-                    futures.append(future)
+            if not path.exists() or overwrite:
+                futures.append(self._get_future(
+                    path, query, rel_url=f"{resource}/download/gz"
+                ))
 
-            if futures:
-                responses = _run_futures(futures, timeout=timeout)
+        if futures:
+            responses = _run_futures(futures, timeout=timeout)
 
-                for path, resp in responses.items():
-                    path.write_bytes(resp)
-                    paths.append(path)
+            for path, resp in responses.items():
+                path.write_bytes(resp)
+                paths.append(path)
 
         return paths, per_page
