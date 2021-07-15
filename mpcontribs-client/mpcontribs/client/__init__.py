@@ -997,7 +997,7 @@ class Client(SwaggerClient):
 
                         elif fmt == "map":
                             identifier = contrib["identifier"]
-                            data_id_field_value = contrib.get("data", {}).get(data_id_field)
+                            data_id_field_val = contrib.get("data", {}).get(data_id_field)
 
                             if project not in ret:
                                 ret[project] = {}
@@ -1005,8 +1005,8 @@ class Client(SwaggerClient):
                             if unique_identifiers[project]:
                                 ret[project][identifier] = {"id": contrib["id"]}
 
-                                if data_id_field and data_id_field_value:
-                                    ret[project][identifier][data_id_field] = data_id_field_value
+                                if data_id_field and data_id_field_val:
+                                    ret[project][identifier][data_id_field] = data_id_field_val
 
                                 for component in components:
                                     if component in contrib:
@@ -1015,14 +1015,14 @@ class Client(SwaggerClient):
                                             for d in contrib[component]
                                         }
 
-                            elif data_id_field and data_id_field_value:
+                            elif data_id_field and data_id_field_val:
                                 ret[project][identifier] = {
-                                    data_id_field_value: {"id": contrib["id"]}
+                                    data_id_field_val: {"id": contrib["id"]}
                                 }
 
                                 for component in components:
                                     if component in contrib:
-                                        ret[project][identifier][data_id_field_value][component] = {
+                                        ret[project][identifier][data_id_field_val][component] = {
                                             d["name"]: {"id": d["id"], "md5": d["md5"]}
                                             for d in contrib[component]
                                         }
