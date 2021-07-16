@@ -67,4 +67,4 @@ def test_Client():
 
 def test_Client_Live():
     with Client() as client:
-        print(client.url)
+        assert client.url == f"https://{DEFAULT_HOST}"
