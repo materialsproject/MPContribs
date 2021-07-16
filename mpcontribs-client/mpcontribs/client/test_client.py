@@ -66,4 +66,5 @@ def test_Client():
 
 
 def test_Client_Live():
-    Client()
+    with Client() as client:
+        print(client.url)
