@@ -4,7 +4,7 @@ bson==0.5.10
 cryptography==3.4.7
 fido[tls]==4.2.2
 filetype==1.0.7
-flatten-dict==0.4.0
+flatten-dict==0.4.1
 ipython==7.25.0
 json2html==1.3.0
 pandas==1.3.0
