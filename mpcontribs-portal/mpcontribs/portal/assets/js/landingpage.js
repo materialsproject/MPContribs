@@ -100,7 +100,10 @@ function urlRenderer(instance, td, row, col, prop, value, cellProperties) {
             Handsontable.renderers.HtmlRenderer.apply(this, arguments);
             Handsontable.dom.empty(td);
             const url = new URL(value);
-            var tag = $('<a/>', {'class': 'tag is-link is-light', href: value, target: "_blank"});
+            var tag = $('<a/>', {
+                'class': 'tag is-link is-light', href: value,
+                target: "_blank", rel: "noopener noreferrer"
+            });
             var span = $('<span/>', {text: url.hostname});
             var span_icon = $('<span/>', {'class': 'icon'});
             var icon = $('<i/>', {'class': 'fas fa-external-link-alt'});
