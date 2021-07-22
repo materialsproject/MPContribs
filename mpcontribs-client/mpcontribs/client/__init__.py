@@ -384,9 +384,9 @@ class Client(SwaggerClient):
         """Initialize the client - only reloads API spec from server as needed
 
         Args:
-            apikey (str): API key - can also be set via MPCONTRIBS_API_KEY env var
-            headers (dict): custom headers for localhost connections - ignored if API key set
-            host (str): host address to connect to - can also be set via MPCONTRIBS_API_HOST
+            apikey (str): API key (or use MPCONTRIBS_API_KEY env var) - ignored if headers set
+            headers (dict): custom headers for localhost connections
+            host (str): host address to connect to (or use MPCONTRIBS_API_HOST env var)
         """
         # - Kong forwards consumer headers when api-key used for auth
         # - forward consumer headers when connecting through localhost
