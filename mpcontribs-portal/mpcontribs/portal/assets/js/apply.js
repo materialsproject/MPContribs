@@ -1,7 +1,7 @@
 import 'jquery-form';
 import 'jquery-validation';
 import 'czmore';
-import * as bulmaTagsinput from 'bulma-extensions/bulma-tagsinput/dist/js/bulma-tagsinput';
+import * as bulmaTagsinput from 'bulma-tagsinput/dist/js/bulma-tagsinput';
 
 function prepareRequest(formData, jqForm, options) {
     $('#apply-button').addClass('is-loading');

@@ -48,9 +48,8 @@ $checkradio-focus: none;
 @import "~bulma/bulma";
 @import "~bulma/sass/utilities/mixins";
 @import "~bulma-tooltip/src/sass/index";
-@import "~bulma-extensions/bulma-checkradio/src/sass/index";
-@import "~bulma-extensions/bulma-tagsinput/src/sass/index";
-@import "~bulma-extensions/bulma-switch/src/sass/index";
+@import "~bulma-checkradio/src/sass/index";
+@import "~bulma-tagsinput/src/sass/index";
 @import "~highlight.js/styles/stackoverflow-dark";
 @import "select2";
 

@@ -55,7 +55,7 @@ module.exports = {
             "jquery": 'jquery/src/jquery',
             "jquery-validation": 'jquery-validation/dist/jquery.validate',
             "jquery-form": 'jquery-form/src/jquery.form',
-            "czmore": 'js/jquery.czMore-latest',
+            "czmore": 'czmore/js/jquery.czMore-latest',
             "typy": 'typy/lib/index',
             "underscore": 'underscore/underscore',
             "lunr": 'lunr.js/lunr',
