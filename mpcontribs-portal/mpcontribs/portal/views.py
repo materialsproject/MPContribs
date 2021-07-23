@@ -84,10 +84,9 @@ def landingpage(request, project):
         Please <a href=\"{ctx['OAUTH_URL']}\">log in</a> to browse and filter contributions.
         """.strip()
 
-    client = Client(**ckwargs)
-
     try:
-        prov = client.projects.get_entry(pk=project, _fields=["_all"]).result()
+        with Client(**ckwargs) as client:
+            prov = client.projects.get_entry(pk=project, _fields=["_all"]).result()
     except HTTPNotFound:
         msg = f"Project '{project}' not found or access denied!"
         if not_logged_in:
@@ -172,8 +171,11 @@ def apply(request):
 def browse(request):
     ctx = get_context(request)
     ctx["landing_pages"] = []
-    client = Client(**client_kwargs(request))
-    entries = client.projects.get_entries(_fields=["_all"]).result()["data"]
+    ckwargs = client_kwargs(request)
+
+    with Client(**ckwargs) as client:
+        entries = client.projects.get_entries(_fields=["_all"]).result()["data"]
+
     for entry in entries:
         authors = entry["authors"].strip().split(",", 1)
         if len(authors) > 1:
@@ -212,39 +214,42 @@ def contribution(request, cid):
         """.strip()
         return render(request, "contribution.html", ctx.flatten())
 
-    client = Client(**ckwargs)
-    try:
-        contrib = client.contributions.get_entry(
-            pk=cid, _fields=["identifier", "notebook"]
-        ).result()
-    except HTTPNotFound:
-        return HttpResponse(f"Contribution {cid} not found.", status=404)
-
-    if "notebook" not in contrib:
-        url = f"{client.url}/notebooks/build"
-        r = requests.get(url, params={"cids": cid})
-        if r.status_code == requests.codes.ok:
+    with Client(**ckwargs) as client:
+        try:
             contrib = client.contributions.get_entry(
                 pk=cid, _fields=["identifier", "notebook"]
             ).result()
-        else:
-            ctx["alert"] = f"Notebook build failed with status {r.status_code}"
-            return render(request, "contribution.html", ctx.flatten())
+        except HTTPNotFound:
+            return HttpResponse(f"Contribution {cid} not found.", status=404)
 
-    nid = contrib["notebook"]["id"]
-    try:
-        nb = client.notebooks.get_entry(pk=nid, _fields=["_all"]).result()
-    except HTTPNotFound:
-        return HttpResponse(f"Notebook {nid} not found.", status=404)
+        if "notebook" not in contrib:
+            url = f"{client.url}/notebooks/build"
+            r = requests.get(url, params={"cids": cid})
+            if r.status_code == requests.codes.ok:
+                contrib = client.contributions.get_entry(
+                    pk=cid, _fields=["identifier", "notebook"]
+                ).result()
+            else:
+                ctx["alert"] = f"Notebook build failed with status {r.status_code}"
+                return render(request, "contribution.html", ctx.flatten())
 
-    ctx["identifier"], ctx["cid"] = contrib["identifier"], cid
-    ctx["nb"], _ = export_notebook(nb, cid)
+        nid = contrib["notebook"]["id"]
+        try:
+            nb = client.notebooks.get_entry(pk=nid, _fields=["_all"]).result()
+        except HTTPNotFound:
+            return HttpResponse(f"Notebook {nid} not found.", status=404)
+
+        ctx["identifier"], ctx["cid"] = contrib["identifier"], cid
+        ctx["nb"], _ = export_notebook(nb, cid)
+
     return render(request, "contribution.html", ctx.flatten())
 
 
 def show_component(request, oid):
     ckwargs = client_kwargs(request)
     headers = ckwargs.get("headers", {})
+    resp = None
+
     if headers.get("X-Anonymous-Consumer", False):
         ctx = get_context(request)
         msg = f"""
@@ -252,18 +257,17 @@ def show_component(request, oid):
         """.strip()
         return HttpResponse(msg, status=403)
 
-    resp = None
-    client = Client(**ckwargs)
-    try:
-        resp = client.get_structure(oid)
-    except HTTPNotFound:
+    with Client(**ckwargs) as client:
         try:
-            resp = client.get_table(oid)
+            resp = client.get_structure(oid)
         except HTTPNotFound:
             try:
-                resp = client.get_attachment(oid)
+                resp = client.get_table(oid)
             except HTTPNotFound:
-                return HttpResponse(f"Component with ObjectId {oid} not found.", status=404)
+                try:
+                    resp = client.get_attachment(oid)
+                except HTTPNotFound:
+                    return HttpResponse(f"Component with ObjectId {oid} not found.", status=404)
 
     if resp is not None:
         return HttpResponse(resp.info().display())
@@ -274,6 +278,8 @@ def show_component(request, oid):
 def download_component(request, oid):
     ckwargs = client_kwargs(request)
     headers = ckwargs.get("headers", {})
+    content = None
+
     if headers.get("X-Anonymous-Consumer", False):
         ctx = get_context(request)
         msg = f"""
@@ -281,31 +287,30 @@ def download_component(request, oid):
         """.strip()
         return HttpResponse(msg, status=403)
 
-    content = None
-    client = Client(**ckwargs)
-    try:
-        resp = client.structures.get_entry(pk=oid, _fields=["name", "cif"]).result()
-        name = resp["name"]
-        content = gzip.compress(bytes(resp["cif"], "utf-8"))
-        content_type = "application/gzip"
-        filename = f"{oid}_{name}.cif.gz"
-    except HTTPNotFound:
+    with Client(**ckwargs) as client:
         try:
-            resp = client.get_table(oid)
-            content = gzip.compress(bytes(resp.to_csv(), "utf-8"))
-            resp = client.tables.get_entry(pk=oid, _fields=["name"]).result()
+            resp = client.structures.get_entry(pk=oid, _fields=["name", "cif"]).result()
             name = resp["name"]
+            content = gzip.compress(bytes(resp["cif"], "utf-8"))
             content_type = "application/gzip"
-            filename = f"{oid}_{name}.csv.gz"
+            filename = f"{oid}_{name}.cif.gz"
         except HTTPNotFound:
             try:
-                resp = client.get_attachment(oid)
+                resp = client.get_table(oid)
+                content = gzip.compress(bytes(resp.to_csv(), "utf-8"))
+                resp = client.tables.get_entry(pk=oid, _fields=["name"]).result()
                 name = resp["name"]
-                content = resp.decode()
-                content_type = resp["mime"]
-                filename = f"{oid}_{name}"
+                content_type = "application/gzip"
+                filename = f"{oid}_{name}.csv.gz"
             except HTTPNotFound:
-                return HttpResponse(f"Component with ObjectId {oid} not found.", status=404)
+                try:
+                    resp = client.get_attachment(oid)
+                    name = resp["name"]
+                    content = resp.decode()
+                    content_type = resp["mime"]
+                    filename = f"{oid}_{name}"
+                except HTTPNotFound:
+                    return HttpResponse(f"Component with ObjectId {oid} not found.", status=404)
 
     if content:
         response = HttpResponse(content, content_type=content_type)
@@ -327,10 +332,12 @@ def download_contribution(request, cid):
 
     tmpdir = Path("/tmp")
     outdir = tmpdir / "download"
-    client = Client(**ckwargs)
-    client.download_contributions(
-        query={"id": cid}, outdir=outdir, include=list(COMPONENTS)
-    )
+
+    with Client(**ckwargs) as client:
+        client.download_contributions(
+            query={"id": cid}, outdir=outdir, include=list(COMPONENTS)
+        )
+
     zipfile = Path(make_archive(tmpdir / cid, "zip", outdir))
     resp = zipfile.read_bytes()
     rmtree(outdir)
@@ -366,9 +373,10 @@ def _get_download(key, content_type="application/zip"):
 
 def _reconcile_include(request, project: str, fields: list):
     ckwargs = client_kwargs(request)
-    client = Client(**ckwargs)
-    info = client.projects.get_entry(pk=project, _fields=["columns"]).result()
     avail_components = set()
+
+    with Client(**ckwargs) as client:
+        info = client.projects.get_entry(pk=project, _fields=["columns"]).result()
 
     for column in info["columns"]:
         path = column["path"]
@@ -453,66 +461,67 @@ def create_download(request):
     if not project:
         return JsonResponse({"error": "Missing project parameter."})
 
-    client = Client(**ckwargs)
     query, include = _get_query_include(request)
     key = _get_download_key(query, include)
-    total_count, total_pages = client.get_totals(query=query, op="download")
 
-    if total_count < 1:
-        return JsonResponse({"error": "No results for query."})
+    with Client(**ckwargs) as client:
+        total_count, total_pages = client.get_totals(query=query, op="download")
 
-    last_modified = client.contributions.get_entries(
-        order="desc", _order_by="last_modified",
-        _fields=["last_modified"], _limit=1,
-        **{k: v for k, v in query.items() if k != "format"}
-    ).result()["data"][0]["last_modified"]
-
-    try:
-        s3_client.head_object(Bucket=BUCKET, Key=key, IfModifiedSince=last_modified)
-    except ClientError:
-        all_ids = client.get_all_ids(
-            query=query, include=include, timeout=15
-        ).get(project)
-        if not all_ids:
+        if total_count < 1:
             return JsonResponse({"error": "No results for query."})
 
-        ncontribs = len(all_ids["ids"])
+        last_modified = client.contributions.get_entries(
+            order="desc", _order_by="last_modified",
+            _fields=["last_modified"], _limit=1,
+            **{k: v for k, v in query.items() if k != "format"}
+        ).result()["data"][0]["last_modified"]
 
-        if ncontribs < total_count:
-            # timeout reached -> use API/client
-            return JsonResponse({
-                "error": "Too many contributions matching query. Use API/client."
-            })
+        try:
+            s3_client.head_object(Bucket=BUCKET, Key=key, IfModifiedSince=last_modified)
+        except ClientError:
+            all_ids = client.get_all_ids(
+                query=query, include=include, timeout=20
+            ).get(project)
+            if not all_ids:
+                return JsonResponse({"error": "No results for query."})
 
-        all_files = total_pages  # for contributions
-        for component in include:
-            ncomp = len(all_ids[component]["ids"])
-            per_page, _ = client._get_per_page_default_max(
-                op="download", resource=component
+            ncontribs = len(all_ids["ids"])
+
+            if ncontribs < total_count:
+                # timeout reached -> use API/client
+                return JsonResponse({
+                    "error": "Too many contributions matching query. Use API/client."
+                })
+
+            all_files = total_pages  # for contributions
+            for component in include:
+                ncomp = len(all_ids[component]["ids"])
+                per_page, _ = client._get_per_page_default_max(
+                    op="download", resource=component
+                )
+                all_files += int(ncomp / per_page) + bool(ncomp % per_page)
+
+            fn = _get_filename(query, include)
+            tmpdir = Path("/tmp")
+            outdir = tmpdir / fn
+            existing_files = sum(len(files) for _, _, files in os.walk(outdir))
+            ndownloads = client.download_contributions(
+                query=query, include=include, outdir=outdir, timeout=30
             )
-            all_files += int(ncomp / per_page) + bool(ncomp % per_page)
+            total_files = existing_files + ndownloads
 
-        fn = _get_filename(query, include)
-        tmpdir = Path("/tmp")
-        outdir = tmpdir / fn
-        existing_files = sum(len(files) for _, _, files in os.walk(outdir))
-        ndownloads = client.download_contributions(
-            query=query, include=include, outdir=outdir, timeout=40
-        )
-        total_files = existing_files + ndownloads
+            if total_files < all_files:
+                return JsonResponse({"progress": total_files/all_files})
 
-        if total_files < all_files:
-            return JsonResponse({"progress": total_files/all_files})
-
-        make_archive(outdir, "zip", outdir)
-        zipfile = outdir.with_suffix(".zip")
-        resp = zipfile.read_bytes()
-        s3_client.put_object(
-            Bucket=BUCKET, Key=key, Body=resp,
-            ContentType="application/zip"
-        )
-        rmtree(outdir)
-        os.remove(zipfile)
+            make_archive(outdir, "zip", outdir)
+            zipfile = outdir.with_suffix(".zip")
+            resp = zipfile.read_bytes()
+            s3_client.put_object(
+                Bucket=BUCKET, Key=key, Body=resp,
+                ContentType="application/zip"
+            )
+            rmtree(outdir)
+            os.remove(zipfile)
 
     return JsonResponse({"progress": 1})
 

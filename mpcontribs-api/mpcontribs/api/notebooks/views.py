@@ -28,7 +28,7 @@ MPCONTRIBS_API_HOST = os.environ.get("MPCONTRIBS_API_HOST", "localhost:5000")
 seed_nb = nbf.new_notebook()
 seed_nb["cells"] = [
     nbf.new_code_cell("from mpcontribs.client import Client"),
-    nbf.new_code_cell("client = Client()"),
+    nbf.new_code_cell("client = Client()  # use with statement to auto-close session"),
 ]
 
 
@@ -162,6 +162,8 @@ def build():
                             'a.info()'
                         ]))
                     )
+
+            cells.append(nbf.new_code_cell("client.session.close()"))
 
             cid = str(document.id)
             try:
