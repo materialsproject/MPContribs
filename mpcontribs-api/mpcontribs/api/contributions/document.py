@@ -320,9 +320,8 @@ class Contributions(DynamicDocument):
 
     @classmethod
     def pre_delete(cls, sender, document, **kwargs):
-        args = ["notebook"] + list(COMPONENTS.keys())
+        args = list(COMPONENTS.keys())
         document.reload(*args)
-        deleted = defaultdict(list)
 
         for component in COMPONENTS.keys():
             # check if other contributions exist before deletion!
@@ -330,16 +329,6 @@ class Contributions(DynamicDocument):
                 q = {component: obj.id}
                 if sender.objects(**q).count() < 2:
                     obj.delete()
-                    deleted[component].append(idx)
-
-        # remove reference documents
-        if document.notebook is not None:
-            from mpcontribs.api.notebooks.document import Notebooks
-
-            nid = document.notebook.id
-            nb = Notebooks.objects(id=nid).first()
-            nb.delete(signal_kwargs=deleted)
-
 
     @classmethod
     def post_delete(cls, sender, document, **kwargs):

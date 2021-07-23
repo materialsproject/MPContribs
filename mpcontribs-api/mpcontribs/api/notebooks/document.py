@@ -75,21 +75,6 @@ class Notebooks(Document):
         if document.id:
             document.transform(incoming=False)
 
-    @classmethod
-    def pre_delete(cls, sender, document, **kwargs):
-        idx = 0
-        deleted = kwargs.get("tables", [])
-
-        for cell in document.cells:
-            for output in cell.get("outputs", []):
-                contents = output.get("data", {}).get("image/png")
-                if contents:
-                    if idx in deleted:
-                        key = hashlib.sha1(contents.encode("utf-8")).hexdigest()
-                        s3_client.delete_object(Bucket=BUCKET, Key=key)
-
-                    idx += 1
-
     def transform(self, incoming=True):
         if incoming:
             old_key = self.problem_key
@@ -126,4 +111,3 @@ class Notebooks(Document):
 
 
 signals.post_init.connect(Notebooks.post_init, sender=Notebooks)
-signals.pre_delete.connect(Notebooks.pre_delete, sender=Notebooks)
