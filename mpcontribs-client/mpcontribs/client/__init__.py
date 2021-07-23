@@ -127,18 +127,6 @@ url_format = SwaggerFormat(
 )
 
 
-def chunks(lst, n):
-    if isinstance(lst, set):
-        lst = list(lst)
-    elif not isinstance(lst, list):
-        raise ValueError("chunks needs list or set as input")
-
-    n = max(1, n)
-    for i in range(0, len(lst), n):
-        to = i + n
-        yield lst[i:to]
-
-
 # https://stackoverflow.com/a/8991553
 def grouper(n, iterable):
     it = iter(iterable)
@@ -861,8 +849,7 @@ class Client(SwaggerClient):
                             "id__in": ",".join(chunk),
                             "per_page": per_page,
                         },
-                    )
-                    for chunk in chunks(cids, per_page)
+                    ) for chunk in grouper(per_page, cids)
                 ]
 
                 _run_futures(futures, total=len(cids), timeout=timeout)
@@ -1416,7 +1403,7 @@ class Client(SwaggerClient):
 
                 while contribs[project_name]:
                     futures = []
-                    for chunk in chunks(contribs[project_name], per_page):
+                    for chunk in grouper(per_page, contribs[project_name]):
                         post_chunk = []
                         for c in chunk:
                             if "id" in c:
