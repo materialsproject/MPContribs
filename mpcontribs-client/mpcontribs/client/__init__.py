@@ -525,7 +525,8 @@ class Client(SwaggerClient):
         pages: int = -1,
     ) -> List[dict]:
         """Avoid URI too long errors"""
-        _, per_page = self._get_per_page_default_max(op=op, resource=resource)
+        pp_default, pp_max = self._get_per_page_default_max(op=op, resource=resource)
+        per_page = pp_default if "id__in" in query else pp_max
         query["per_page"] = per_page
         nr_params_to_split = sum(
             len(v) > per_page for v in query.values() if isinstance(v, list)
@@ -538,7 +539,7 @@ class Client(SwaggerClient):
         queries = []
 
         for k, v in query.items():
-            if isinstance(v, list):
+            if isinstance(v, list) and len(v) > per_page:
                 for chunk in grouper(per_page, v):
                     queries.append({k: list(chunk)})
 
@@ -552,11 +553,15 @@ class Client(SwaggerClient):
                 queries[-1]["page"] = page
 
         for q in queries:
+            # copy over missing parameters
             for k, v in query.items():
-                if k in q and isinstance(v, list):
-                    q[k] = ",".join(v)
-                else:
+                if k not in q:
                     q[k] = v
+
+            # comma-separated lists
+            for k, v in q.items():
+                if isinstance(v, list):
+                    q[k] = ",".join(v)
 
         return queries
 
