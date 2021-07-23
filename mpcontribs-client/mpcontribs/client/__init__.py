@@ -1203,9 +1203,7 @@ class Client(SwaggerClient):
 
         id2project = {}
         if collect_ids:
-            resp = self.get_all_ids(
-                query=dict(id__in=collect_ids), timeout=timeout
-            )
+            resp = self.get_all_ids(dict(id__in=collect_ids), timeout=timeout)
             project_names |= set(resp.keys())
 
             for project_name, values in resp.items():
@@ -1219,7 +1217,7 @@ class Client(SwaggerClient):
             print("get existing contributions ...")
             unique_identifiers = self.get_unique_identifiers_flags(projects=project_names)
             existing = defaultdict(dict, self.get_all_ids(
-                query=dict(project__in=project_names), include=COMPONENTS, timeout=timeout
+                dict(project__in=project_names), include=COMPONENTS, timeout=timeout
             ))
 
         # prepare contributions
@@ -1401,8 +1399,7 @@ class Client(SwaggerClient):
 
                     if retry and unique_identifiers[project_name]:
                         existing[project_name] = self.get_all_ids(
-                            query=dict(project=project_name), include=COMPONENTS,
-                            timeout=timeout
+                            dict(project=project_name), include=COMPONENTS, timeout=timeout
                         ).get(project_name, {"identifiers": set()})
                         unique_identifiers[project_name] = self.projects.get_entry(
                             pk=project_name, _fields=["unique_identifiers"]
@@ -1457,7 +1454,7 @@ class Client(SwaggerClient):
             print(f"`include` must be subset of {COMPONENTS}!")
             return
 
-        all_ids = self.get_all_ids(query=query, include=components, timeout=timeout)
+        all_ids = self.get_all_ids(query, include=components, timeout=timeout)
         fmt = query.get("format", "json")
         ndownloads = 0
 
