@@ -5,7 +5,9 @@ import flask_mongorest
 
 from time import sleep
 from copy import deepcopy
+from bson import ObjectId
 from nbformat import v4 as nbf
+from urllib.parse import urlparse
 from flask import Blueprint, request, current_app
 from flask_mongorest import operators as ops
 from flask_mongorest.methods import Fetch, BulkFetch
@@ -68,43 +70,39 @@ def execute_cells(cid, cells):
 
 @notebooks.route("/build")
 def build():
-    remaining_time = 25
     start = time.perf_counter()
 
     with no_dereference(Contributions) as Contribs:
-        # build missing notebooks
-        max_docs = NotebooksResource.max_limit
-        cids = request.args.get("cids", "").split(",")[:max_docs]
+        cids = request.args.get("cids", "").split(",")
         projects = request.args.get("projects", "").split(",")
+        port = urlparse(request.url).port
+        remaining_time = 295 if port else 25
 
         if not projects[0]:
             projects = [p["name"] for p in Projects.objects.only("name")]
 
         contribs_objects = Contribs.objects(project__in=projects).only(
-            "id", "tables", "structures", "attachments", "notebook"
-        )
-
-        if cids[0]:
-            documents = contribs_objects(id__in=cids)
-        else:
-            documents = contribs_objects(notebook__exists=False)[:max_docs]
-
+            "id", "last_modified", "tables", "structures", "attachments", "notebook"
+        ).order_by("-last_modified")
+        documents = contribs_objects(id__in=cids) if cids[0] else contribs_objects
         total = documents.count()
         count = 0
 
         for document in documents:
-            if cids[0]:
-                stop = time.perf_counter()
-                remaining_time -= stop - start
-                print("remaining_time", remaining_time)
+            stop = time.perf_counter()
+            remaining_time -= stop - start
 
-                if remaining_time < 0:
-                    return f"{count}/{total} notebooks built"
+            if remaining_time < 0:
+                return f"{count}/{total} notebooks built"
 
-                start = time.perf_counter()
+            start = time.perf_counter()
+            nid = ObjectId(document.notebook.id)
+            gen_time = nid.generation_time.replace(tzinfo=None)
+
+            if gen_time > document.last_modified:
+                continue
 
             if document.notebook is not None:
-                # NOTE document.notebook.delete() doesn't trigger pre_delete signal?
                 try:
                     nb = Notebooks.objects.get(id=document.notebook.id)
                     nb.delete()
@@ -184,31 +182,25 @@ def build():
             document.save(signal_kwargs={"skip": True})
             count += 1
 
-        if cids[0]:
-            return f"{count}/{total} notebooks built"
+        return f"{count}/{total} notebooks built"
 
         # remove dangling and unset missing notebooks
-        nbs_total, nbs_count = -1, -1
-        ctrbs_cnt = Contribs.objects._cursor.collection.estimated_document_count()
-        nbs_cnt = Notebooks.objects._cursor.collection.estimated_document_count()
+        #    print("Count mismatch but all notebook DBRefs set -> CLEANUP")
+        #    nids = [contrib.notebook.id for contrib in Contribs.objects.only("notebook")]
+        #    if len(nids) < nbs_cnt:
+        #        print("Delete dangling notebooks ...")
+        #        nbs = Notebooks.objects(id__nin=nids).only("id")
+        #        nbs_total = nbs.count()
+        #        max_docs = 2500
+        #        nbs[:max_docs].delete()
+        #        nbs_count = nbs_total if nbs_total < max_docs else max_docs
+        #    else:
+        #        print("Unset missing notebooks ...")
+        #        missing_nids = set(nids) - set(Notebooks.objects.distinct("id"))
+        #        if missing_nids:
+        #            upd_contribs = Contribs.objects(notebook__in=list(missing_nids))
+        #            nupd_total = upd_contribs.count()
+        #            nupd = upd_contribs.update(unset__notebook="")
+        #            print(f"unset notebooks for {nupd}/{nupd_total} contributions")
 
-        if ctrbs_cnt != nbs_cnt and not Contribs.objects(notebook__exists=False):
-            print("Count mismatch but all notebook DBRefs set -> CLEANUP")
-            nids = [contrib.notebook.id for contrib in Contribs.objects.only("notebook")]
-            if len(nids) < nbs_cnt:
-                print("Delete dangling notebooks ...")
-                nbs = Notebooks.objects(id__nin=nids).only("id")
-                nbs_total = nbs.count()
-                max_docs = 2500
-                nbs[:max_docs].delete()
-                nbs_count = nbs_total if nbs_total < max_docs else max_docs
-            else:
-                print("Unset missing notebooks ...")
-                missing_nids = set(nids) - set(Notebooks.objects.distinct("id"))
-                if missing_nids:
-                    upd_contribs = Contribs.objects(notebook__in=list(missing_nids))
-                    nupd_total = upd_contribs.count()
-                    nupd = upd_contribs.update(unset__notebook="")
-                    print(f"unset notebooks for {nupd}/{nupd_total} contributions")
-
-        return f"{count}/{total} notebooks built & {nbs_count}/{nbs_total} notebooks deleted"
+        # return f"{count}/{total} notebooks built & {nbs_count}/{nbs_total} notebooks deleted"
