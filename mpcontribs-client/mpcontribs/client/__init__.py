@@ -339,8 +339,9 @@ def _run_futures(futures, total: int = 0, timeout: int = -1):
                     responses[future.track_id] = response.result
 
                 elapsed = time.perf_counter() - start
+                timed_out =  timeout > 0 and elapsed > timeout
 
-                if timeout > 0 and elapsed > timeout:
+                if timed_out or not response.ok:
                     for future in futures:
                         future.cancel()
 
@@ -901,18 +902,11 @@ class Client(SwaggerClient):
         queries = self._split_query(query, resource=resource, op=op)  # don't paginate
         result = {"total_count": 0, "total_pages": 0}
         futures = [self._get_future(i, q, rel_url=resource) for i, q in enumerate(queries)]
+        responses = _run_futures(futures, timeout=timeout)
 
-        while futures:
-            responses = _run_futures(futures, timeout=timeout)
-
-            for resp in responses.values():
-                for k in result:
-                    result[k] += resp[k]
-
-            futures = [
-                future for future in futures
-                if not future.cancelled() and future.track_id not in responses.keys()
-            ]
+        for resp in responses.values():
+            for k in result:
+                result[k] += resp[k]
 
         return result["total_count"], result["total_pages"]
 
@@ -1029,75 +1023,68 @@ class Client(SwaggerClient):
         _, total_pages = self.get_totals(query=query, timeout=timeout)
         queries = self._split_query(query, op=op, pages=total_pages)
         futures = [self._get_future(i, q) for i, q in enumerate(queries)]
+        responses = _run_futures(futures, timeout=timeout)
 
-        while futures:
-            responses = _run_futures(futures, timeout=timeout)
+        for resp in responses.values():
+            for contrib in resp["data"]:
+                project = contrib["project"]
+                data_id_field = data_id_fields.get(project)
 
-            for resp in responses.values():
-                for contrib in resp["data"]:
-                    project = contrib["project"]
-                    data_id_field = data_id_fields.get(project)
-
-                    if fmt == "sets":
-                        if project not in ret:
-                            id_keys = ["ids", "identifiers"]
-                            if data_id_field:
-                                id_field = f"{data_id_field}_set"
-                                id_keys.append(id_field)
-
-                            ret[project] = {k: set() for k in id_keys}
-
-                        ret[project]["ids"].add(contrib["id"])
-                        ret[project]["identifiers"].add(contrib["identifier"])
-
+                if fmt == "sets":
+                    if project not in ret:
+                        id_keys = ["ids", "identifiers"]
                         if data_id_field:
-                            ret[project][id_field].add(contrib["data"][data_id_field])
+                            id_field = f"{data_id_field}_set"
+                            id_keys.append(id_field)
+
+                        ret[project] = {k: set() for k in id_keys}
+
+                    ret[project]["ids"].add(contrib["id"])
+                    ret[project]["identifiers"].add(contrib["identifier"])
+
+                    if data_id_field:
+                        ret[project][id_field].add(contrib["data"][data_id_field])
+
+                    for component in components:
+                        if component in contrib:
+                            if component not in ret[project]:
+                                ret[project][component] = {"ids": set(), "md5s": set()}
+
+                            for d in contrib[component]:
+                                for k in ["id", "md5"]:
+                                    ret[project][component][f"{k}s"].add(d[k])
+
+                elif fmt == "map":
+                    identifier = contrib["identifier"]
+                    data_id_field_val = contrib.get("data", {}).get(data_id_field)
+
+                    if project not in ret:
+                        ret[project] = {}
+
+                    if unique_identifiers[project]:
+                        ret[project][identifier] = {"id": contrib["id"]}
+
+                        if data_id_field and data_id_field_val:
+                            ret[project][identifier][data_id_field] = data_id_field_val
 
                         for component in components:
                             if component in contrib:
-                                if component not in ret[project]:
-                                    ret[project][component] = {"ids": set(), "md5s": set()}
+                                ret[project][identifier][component] = {
+                                    d["name"]: {"id": d["id"], "md5": d["md5"]}
+                                    for d in contrib[component]
+                                }
 
-                                for d in contrib[component]:
-                                    for k in ["id", "md5"]:
-                                        ret[project][component][f"{k}s"].add(d[k])
+                    elif data_id_field and data_id_field_val:
+                        ret[project][identifier] = {
+                            data_id_field_val: {"id": contrib["id"]}
+                        }
 
-                    elif fmt == "map":
-                        identifier = contrib["identifier"]
-                        data_id_field_val = contrib.get("data", {}).get(data_id_field)
-
-                        if project not in ret:
-                            ret[project] = {}
-
-                        if unique_identifiers[project]:
-                            ret[project][identifier] = {"id": contrib["id"]}
-
-                            if data_id_field and data_id_field_val:
-                                ret[project][identifier][data_id_field] = data_id_field_val
-
-                            for component in components:
-                                if component in contrib:
-                                    ret[project][identifier][component] = {
-                                        d["name"]: {"id": d["id"], "md5": d["md5"]}
-                                        for d in contrib[component]
-                                    }
-
-                        elif data_id_field and data_id_field_val:
-                            ret[project][identifier] = {
-                                data_id_field_val: {"id": contrib["id"]}
-                            }
-
-                            for component in components:
-                                if component in contrib:
-                                    ret[project][identifier][data_id_field_val][component] = {
-                                        d["name"]: {"id": d["id"], "md5": d["md5"]}
-                                        for d in contrib[component]
-                                    }
-
-            futures = [
-                future for future in futures
-                if not future.cancelled() and future.track_id not in responses.keys()
-            ]
+                        for component in components:
+                            if component in contrib:
+                                ret[project][identifier][data_id_field_val][component] = {
+                                    d["name"]: {"id": d["id"], "md5": d["md5"]}
+                                    for d in contrib[component]
+                                }
 
         return ret
 
