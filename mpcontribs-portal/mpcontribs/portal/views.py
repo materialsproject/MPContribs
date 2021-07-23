@@ -456,8 +456,7 @@ def create_download(request):
     client = Client(**ckwargs)
     query, include = _get_query_include(request)
     key = _get_download_key(query, include)
-    per_page, _ = client._get_per_page_default_max(op="download")
-    total_count, total_pages = client.get_totals(query=query, per_page=per_page)
+    total_count, total_pages = client.get_totals(query=query, op="download")
 
     if total_count < 1:
         return JsonResponse({"error": "No results for query."})
