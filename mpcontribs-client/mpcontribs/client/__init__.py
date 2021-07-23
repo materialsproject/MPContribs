@@ -1141,7 +1141,7 @@ class Client(SwaggerClient):
         contributions: List[dict],
         ignore_dupes: bool = False,
         retry: bool = False,
-        per_page: int = 100,
+        per_request: int = 100,
         timeout: int = -1
     ):
         """Submit a list of contributions
@@ -1170,7 +1170,7 @@ class Client(SwaggerClient):
             contributions (list): list of contribution dicts to submit
             ignore_dupes (bool): force duplicate components to be submitted
             retry (bool): keep trying until all contributions successfully submitted
-            per_page (int): number of contributions to submit in each chunk/request
+            per_request (int): number of contributions to submit per request
             timeout (int): cancel remaining requests if timeout exceeded (in seconds)
         """
         if not contributions or not isinstance(contributions, list):
@@ -1182,7 +1182,7 @@ class Client(SwaggerClient):
         project_names = set()
         collect_ids = []
         require_one_of = {"data"} | set(COMPONENTS)
-        per_page = self._get_per_page(per_page)
+        per_page = self._get_per_page(per_request)
 
         for idx, c in enumerate(contributions):
             has_keys = require_one_of & c.keys()
