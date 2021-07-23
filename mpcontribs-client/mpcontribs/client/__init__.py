@@ -339,7 +339,7 @@ def _run_futures(futures, total: int = 0, timeout: int = -1):
                     responses[future.track_id] = response.result
 
                 elapsed = time.perf_counter() - start
-                timed_out =  timeout > 0 and elapsed > timeout
+                timed_out = timeout > 0 and elapsed > timeout
 
                 if timed_out or not response.ok:
                     for future in futures:
