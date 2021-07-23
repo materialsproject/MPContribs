@@ -75,6 +75,7 @@ def build():
     with no_dereference(Contributions) as Contribs:
         cids = request.args.get("cids", "").split(",")
         projects = request.args.get("projects", "").split(",")
+        force = bool(request.args.get("force", 0))
         port = urlparse(request.url).port
         remaining_time = 295 if port else 25
 
@@ -99,7 +100,7 @@ def build():
             nid = ObjectId(document.notebook.id)
             gen_time = nid.generation_time.replace(tzinfo=None)
 
-            if gen_time > document.last_modified:
+            if not force and gen_time > document.last_modified:
                 continue
 
             if document.notebook is not None:
