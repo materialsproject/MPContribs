@@ -40,7 +40,6 @@ from boltons.iterutils import remap
 from pymatgen.core import Structure as PmgStructure
 from concurrent.futures import as_completed
 from requests_futures.sessions import FuturesSession
-from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 from filetype.types.archive import Gz
 from filetype.types.image import Jpeg, Png, Gif, Tiff
@@ -151,17 +150,15 @@ def grouper(n, iterable):
 
 
 def get_session():
-    s = FuturesSession(max_workers=MAX_WORKERS)
-    s.hooks['response'].append(_response_hook)
-    adapter = HTTPAdapter(max_retries=Retry(
+    adapter_kwargs = dict(max_retries=Retry(
         total=RETRIES,
         read=RETRIES,
         connect=RETRIES,
         respect_retry_after_header=True,
-        status_forcelist=[429],
+        status_forcelist=[429],  # rate limit
     ))
-    s.mount('http://', adapter)
-    s.mount('https://', adapter)
+    s = FuturesSession(max_workers=MAX_WORKERS, adapter_kwargs=adapter_kwargs)
+    s.hooks['response'].append(_response_hook)
     return s
 
 
