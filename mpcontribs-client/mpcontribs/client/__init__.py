@@ -566,6 +566,9 @@ class Client(SwaggerClient):
         return queries
 
     def _get_future(self, track_id, params, rel_url: str = "contributions"):
+        if self.session and self.session.executor._shutdown:
+            raise ValueError("Session closed. Use `with` statement.")
+
         future = self.session.get(
             f"{self.url}/{rel_url}/", headers=self.headers, params=params
         )
@@ -845,6 +848,9 @@ class Client(SwaggerClient):
         per_page = self._get_per_page(per_page, op="delete")
 
         if cids:
+            if self.session and self.session.executor._shutdown:
+                raise ValueError("Session closed. Use `with` statement.")
+
             while cids:
                 futures = [
                     self.session.delete(
@@ -1370,6 +1376,9 @@ class Client(SwaggerClient):
 
         # submit contributions
         if contribs:
+            if self.session and self.session.executor._shutdown:
+                raise ValueError("Session closed. Use `with` statement.")
+
             print("submit contributions ...")
             total = 0
 
