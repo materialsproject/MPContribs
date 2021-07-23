@@ -565,11 +565,17 @@ class Client(SwaggerClient):
 
         return queries
 
-    def _get_future(self, track_id, params, rel_url: str = "contributions"):
+    def _get_future(
+        self,
+        track_id,
+        params: dict,
+        rel_url: str = "contributions",
+        op: str = "get"
+    ):
         if self.session and self.session.executor._shutdown:
             raise ValueError("Session closed. Use `with` statement.")
 
-        future = self.session.get(
+        future = getattr(self.session, op)(
             f"{self.url}/{rel_url}/", headers=self.headers, params=params
         )
         setattr(future, "track_id", track_id)
@@ -825,9 +831,7 @@ class Client(SwaggerClient):
         self.projects.update_entry(pk=name, project={"columns": []}).result()
         return self.projects.update_entry(pk=name, project=payload).result()
 
-    def delete_contributions(
-            self, name: str, per_page: int = 100, retry: bool = False, timeout: int = -1
-    ):
+    def delete_contributions(self, name: str):
         """Remove all contributions for a project
 
         Note: This also resets the columns field for a project. It might have to be
@@ -835,53 +839,31 @@ class Client(SwaggerClient):
 
         Args:
             name (str): name of the project for which to delete contributions
-            per_page (int): number of contributions to delete per request
-            retry (bool): if True, retry deletion of failed contributions until done
-            timeout (int): cancel remaining requests if timeout exceeded (in seconds)
         """
         tic = time.perf_counter()
-        query = dict(project=name)
-        cids = self.get_all_ids(query=query, timeout=timeout).get(name, {}).get("ids", [])
-        total = len(cids)
         # reset columns to be save (sometimes not all are reset BUGFIX?)
         self.projects.update_entry(pk=name, project={"columns": []}).result()
-        per_page = self._get_per_page(per_page, op="delete")
+        cids = self.get_all_ids(dict(project=name)).get(name, {}).get("ids", [])
 
-        if cids:
-            if self.session and self.session.executor._shutdown:
-                raise ValueError("Session closed. Use `with` statement.")
-
-            while cids:
-                futures = [
-                    self.session.delete(
-                        f"{self.url}/contributions/",
-                        headers=self.headers,
-                        params={
-                            "project": name,
-                            "id__in": ",".join(chunk),
-                            "per_page": per_page,
-                        },
-                    ) for chunk in grouper(per_page, cids)
-                ]
-
-                _run_futures(futures, total=len(cids), timeout=timeout)
-                cids = self.get_all_ids(
-                    query=query, timeout=timeout
-                ).get(name, {}).get("ids", [])
-
-                if not retry:
-                    break
-
-            self._load()
-            toc = time.perf_counter()
-            dt = (toc - tic) / 60
-
-            if cids:
-                print(f"There were errors and {len(cids)} contributions are left to delete!")
-            else:
-                print(f"It took {dt:.1f}min to delete {total} contributions.")
-        else:
+        if not cids:
             print(f"There aren't any contributions to delete for {name}")
+            return
+
+        total = len(cids)
+        query = {"id__in": cids}
+        _, total_pages = self.get_totals(query=query)
+        queries = self._split_query(query, op="delete", pages=total_pages)
+        futures = [self._get_future(i, q, op="delete") for i, q in enumerate(queries)]
+        _run_futures(futures, total=total)
+        left, _ = self.get_totals(query=dict(project=name))
+        deleted = total - left
+        self._load()
+        toc = time.perf_counter()
+        dt = (toc - tic) / 60
+        print(f"It took {dt:.1f}min to delete {deleted} contributions.")
+
+        if left:
+            print(f"There were errors and {left} contributions are left to delete!")
 
     def get_totals(
         self,
