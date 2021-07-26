@@ -68,6 +68,10 @@ def execute_cells(cid, cells):
             ntries += 1
 
 
+def _gentime(oid):
+    return ObjectId(oid).generation_time.replace(tzinfo=None)
+
+
 @notebooks.route("/build")
 def build():
     start = time.perf_counter()
@@ -86,7 +90,6 @@ def build():
             "id", "last_modified", "tables", "structures", "attachments", "notebook"
         ).order_by("-last_modified")
         documents = contribs_objects(id__in=cids) if cids[0] else contribs_objects
-        total = documents.count()
         count = 0
 
         for document in documents:
@@ -94,16 +97,15 @@ def build():
             remaining_time -= stop - start
 
             if remaining_time < 0:
-                return f"{count}/{total} notebooks built"
+                return f"{count} notebooks built"
 
             start = time.perf_counter()
-            nid = ObjectId(document.notebook.id)
-            gen_time = nid.generation_time.replace(tzinfo=None)
 
-            if not force and gen_time > document.last_modified:
+            if not force and document.notebook and \
+                    _gentime(document.notebook.id) > document.last_modified:
                 continue
 
-            if document.notebook is not None:
+            if document.notebook:
                 try:
                     nb = Notebooks.objects.get(id=document.notebook.id)
                     nb.delete()
@@ -183,7 +185,7 @@ def build():
             document.save(signal_kwargs={"skip": True})
             count += 1
 
-        return f"{count}/{total} notebooks built"
+        return f"{count} notebooks built"
 
         # remove dangling and unset missing notebooks
         #    print("Count mismatch but all notebook DBRefs set -> CLEANUP")
