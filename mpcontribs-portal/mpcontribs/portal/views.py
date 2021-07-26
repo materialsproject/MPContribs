@@ -12,6 +12,7 @@ from io import BytesIO
 from copy import deepcopy
 from glob import glob
 from pathlib import Path
+from bson import ObjectId
 from shutil import make_archive, rmtree
 from nbconvert import HTMLExporter
 from bravado.exception import HTTPNotFound
@@ -36,6 +37,10 @@ BUCKET = os.environ.get("S3_DOWNLOADS_BUCKET", "mpcontribs-downloads")
 COMPONENTS = {"structures", "tables", "attachments"}
 j2h = Json2Html()
 s3_client = boto3.client('s3')
+
+
+def _gentime(oid):
+    return ObjectId(oid).generation_time.replace(tzinfo=None)
 
 
 def visit(path, key, value):
@@ -217,12 +222,14 @@ def contribution(request, cid):
     with Client(**ckwargs) as client:
         try:
             contrib = client.contributions.get_entry(
-                pk=cid, _fields=["identifier", "notebook"]
+                pk=cid, _fields=["identifier", "last_modified", "notebook"]
             ).result()
         except HTTPNotFound:
             return HttpResponse(f"Contribution {cid} not found.", status=404)
 
-        if "notebook" not in contrib:
+        if "notebook" not in contrib or \
+                _gentime(contrib["notebook"]["id"]) < contrib["last_modified"]:
+
             url = f"{client.url}/notebooks/build"
             r = requests.get(url, params={"cids": cid})
             if r.status_code == requests.codes.ok:
