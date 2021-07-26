@@ -4,4 +4,4 @@ kaleido==0.2.1
 mpcontribs-client==3.12.0
 plotly==5.1.0
 psutil==5.8.0
-pymatgen==2022.0.10
+pymatgen==2022.0.11
