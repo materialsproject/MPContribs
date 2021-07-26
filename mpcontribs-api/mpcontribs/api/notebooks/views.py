@@ -164,8 +164,6 @@ def build():
                         ]))
                     )
 
-            cells.append(nbf.new_code_cell("client.session.close()"))
-
             cid = str(document.id)
             try:
                 outputs = execute_cells(cid, cells)
