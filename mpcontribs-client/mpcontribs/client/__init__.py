@@ -57,11 +57,12 @@ DEFAULT_HOST = "contribs-api.materialsproject.org"
 BULMA = "is-narrow is-fullwidth has-background-light"
 PROVIDERS = {"github", "google", "facebook", "microsoft", "amazon"}
 COMPONENTS = ["structures", "tables", "attachments"]  # using list to maintain order
-VALID_URLS = {f"http://{h}:{p}" for h in ["localhost", "contribs-api"] for p in [5000, 5002, 5003]}
-VALID_URLS |= {f"https://{n}-api.materialsproject.org" for n in ["contribs", "lightsources", "ml"]}
-VALID_URLS |= {
-    f"http://localhost.{n}-api.materialsproject.org" for n in ["contribs", "lightsources", "ml"]
-}
+SUBDOMAINS = ["contribs", "lightsources", "ml"]
+LOCAL_STACK = {"contribs-api": 5000, "contribs-ml-api": 5002, "contribs-lightsources-api": 5003}
+VALID_URLS = {f"http://localhost:{p}" for p in LOCAL_STACK.values()}  # AWS Fargate Task
+VALID_URLS |= {f"http://{h}:{p}" for h, p in LOCAL_STACK.items()}  # local docker-compose stack
+VALID_URLS |= {f"https://{n}-api.materialsproject.org" for n in SUBDOMAINS}
+VALID_URLS |= {f"http://localhost.{n}-api.materialsproject.org" for n in SUBDOMAINS}
 SUPPORTED_FILETYPES = (Gz, Jpeg, Png, Gif, Tiff)
 SUPPORTED_MIMES = [t().mime for t in SUPPORTED_FILETYPES]
 DEFAULT_DOWNLOAD_DIR = Path.home() / "mpcontribs-downloads"
