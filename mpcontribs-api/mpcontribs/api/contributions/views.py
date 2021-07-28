@@ -58,9 +58,12 @@ class ContributionsResource(Resource):
         "formula": [ops.In, ops.Contains, ops.Exact],
         "is_public": [ops.Boolean],
         "last_modified": [ops.After, ops.Before],
+        "needs_build": [ops.Boolean],
         re.compile(r"^data__((?!__).)*$"): [ops.Exact, ops.Contains, ops.Gte, ops.Lte],
     }
-    fields = ["id", "project", "identifier", "formula", "is_public", "last_modified"]
+    fields = [
+        "id", "project", "identifier", "formula", "is_public", "last_modified", "needs_build"
+    ]
     allowed_ordering = [
         "id",
         "project",
@@ -68,6 +71,7 @@ class ContributionsResource(Resource):
         "formula",
         "is_public",
         "last_modified",
+        "needs_build",
         re.compile(r"^data(__(" + exclude + ")+){1,4}$"),
     ]
     paginate = True

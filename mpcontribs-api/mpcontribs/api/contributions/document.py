@@ -147,6 +147,7 @@ class Contributions(DynamicDocument):
     last_modified = DateTimeField(
         required=True, default=datetime.utcnow, help_text="time of last modification"
     )
+    needs_build = BooleanField(default=True, help_text="needs notebook build?")
     data = DictField(
         default={}, validation=valid_dict, help_text="simple free-form data"
     )
@@ -168,6 +169,7 @@ class Contributions(DynamicDocument):
             "formula",
             "is_public",
             "last_modified",
+            "needs_build",
             {"fields": [(r"data.$**", 1)]},
             "notebook",
         ]
@@ -177,7 +179,7 @@ class Contributions(DynamicDocument):
     @queryset_manager
     def objects(doc_cls, queryset):
         return queryset.no_dereference().only(
-            "project", "identifier", "formula", "is_public", "last_modified"
+            "project", "identifier", "formula", "is_public", "last_modified", "needs_build"
         )
 
     @classmethod
@@ -261,6 +263,7 @@ class Contributions(DynamicDocument):
 
         document.data = remap(document.data, visit=make_quantities, enter=enter)
         document.last_modified = datetime.utcnow()
+        document.needs_build = True
 
     @classmethod
     def post_save(cls, sender, document, **kwargs):

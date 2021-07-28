@@ -602,6 +602,7 @@ class Client(SwaggerClient):
             cid (str): contribution ObjectID
         """
         fields = list(self.get_model("ContributionsSchema")._properties.keys())
+        fields.remove("needs_build")  # internal field
         return Dict(self.contributions.get_entry(pk=cid, _fields=fields).result())
 
     def get_table(self, tid_or_md5: str) -> Type[Table]:
@@ -1230,6 +1231,7 @@ class Client(SwaggerClient):
             for comp in self.get_model("ContributionsSchema")._properties.keys()
             if comp not in COMPONENTS
         ]
+        fields.remove("needs_build")  # internal field
 
         for contrib in tqdm(contributions, leave=False):
             update = "id" in contrib

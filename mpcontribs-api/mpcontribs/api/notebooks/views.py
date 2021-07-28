@@ -5,7 +5,6 @@ import flask_mongorest
 
 from time import sleep
 from copy import deepcopy
-from bson import ObjectId
 from nbformat import v4 as nbf
 from flask import Blueprint, request, current_app
 from flask_mongorest import operators as ops
@@ -13,6 +12,7 @@ from flask_mongorest.methods import Fetch, BulkFetch
 from flask_mongorest.resources import Resource
 from mongoengine.context_managers import no_dereference
 from mongoengine.errors import DoesNotExist
+from mongoengine.queryset.visitor import Q
 
 from mpcontribs.api.core import SwaggerView
 from mpcontribs.api.projects.document import Projects
@@ -67,10 +67,6 @@ def execute_cells(cid, cells):
             ntries += 1
 
 
-def _gentime(oid):
-    return ObjectId(oid).generation_time.replace(tzinfo=None)
-
-
 @notebooks.route("/build")
 def build():
     start = time.perf_counter()
@@ -78,12 +74,26 @@ def build():
     with no_dereference(Contributions) as Contribs:
         cids = request.args.get("cids", "").split(",")
         projects = request.args.get("projects", "").split(",")
+
+        if cids[0] and projects[0]:
+            return "ERROR: Only one of `cids` or `projects` parameters allowed!"
+
         force = bool(request.args.get("force", 0))
+        limit = NotebooksResource.max_limit
         remaining_time = 25
-        query = {"project__in": projects} if projects[0] else {}
-        mask = ["id", "last_modified", "notebook"]
-        contribs_objects = Contribs.objects(**query).only(*mask).order_by("-last_modified")
-        documents = contribs_objects(id__in=cids) if cids[0] else contribs_objects
+        mask = ["id", "needs_build", "notebook"]
+        query = Q()
+
+        if projects[0]:
+            query &= Q(project__in=projects)
+        elif cids[0]:
+            query &= Q(id__in=cids)
+
+        if not force:
+            query &= Q(needs_build=True) | Q(needs_build__exists=False)
+
+        documents = Contribs.objects(query).only(*mask).limit(limit)
+        total = documents.count()
         count = 0
 
         for idx, document in enumerate(documents):
@@ -91,12 +101,12 @@ def build():
             remaining_time -= stop - start
 
             if remaining_time < 0:
-                return f"TIMEOUT (idx={idx}): {count} notebooks built"
+                return f"TIMEOUT (idx={idx}): {count}/{total} notebooks built"
 
             start = time.perf_counter()
 
             if not force and document.notebook and \
-                    _gentime(document.notebook.id) > document.last_modified:
+                    not getattr(document, "needs_build", True):
                 continue
 
             if document.notebook:
@@ -179,10 +189,11 @@ def build():
             doc["cells"] += cells[1:]  # skip localhost Client
 
             document.notebook = Notebooks(**doc).save()
+            document.needs_build = False
             document.save(signal_kwargs={"skip": True})
             count += 1
 
-        return f"ALL DONE: {count} notebooks built"
+        return f"ALL DONE: {count}/{total} notebooks built"
 
         # remove dangling and unset missing notebooks
         #    print("Count mismatch but all notebook DBRefs set -> CLEANUP")
