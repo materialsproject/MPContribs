@@ -7,7 +7,6 @@ from time import sleep
 from copy import deepcopy
 from bson import ObjectId
 from nbformat import v4 as nbf
-from urllib.parse import urlparse
 from flask import Blueprint, request, current_app
 from flask_mongorest import operators as ops
 from flask_mongorest.methods import Fetch, BulkFetch
@@ -80,24 +79,19 @@ def build():
         cids = request.args.get("cids", "").split(",")
         projects = request.args.get("projects", "").split(",")
         force = bool(request.args.get("force", 0))
-        port = urlparse(request.url).port
-        remaining_time = 295 if port else 25
-
-        if not projects[0]:
-            projects = [p["name"] for p in Projects.objects.only("name")]
-
-        contribs_objects = Contribs.objects(project__in=projects).only(
-            "id", "last_modified", "tables", "structures", "attachments", "notebook"
-        ).order_by("-last_modified")
+        remaining_time = 25
+        query = {"project__in": projects} if projects[0] else {}
+        mask = ["id", "last_modified", "notebook"]
+        contribs_objects = Contribs.objects(**query).only(*mask).order_by("-last_modified")
         documents = contribs_objects(id__in=cids) if cids[0] else contribs_objects
         count = 0
 
-        for document in documents:
+        for idx, document in enumerate(documents):
             stop = time.perf_counter()
             remaining_time -= stop - start
 
             if remaining_time < 0:
-                return f"{count} notebooks built"
+                return f"TIMEOUT (idx={idx}): {count} notebooks built"
 
             start = time.perf_counter()
 
@@ -113,6 +107,10 @@ def build():
                     print(f"Notebook {document.notebook.id} deleted.")
                 except DoesNotExist:
                     pass
+
+            cid = str(document.id)
+            print(f"prep notebook for {cid} ...")
+            document.reload("tables", "structures", "attachments")
 
             cells = [
                 # define client only once in kernel
@@ -166,7 +164,6 @@ def build():
                         ]))
                     )
 
-            cid = str(document.id)
             try:
                 outputs = execute_cells(cid, cells)
             except Exception as e:
@@ -185,7 +182,7 @@ def build():
             document.save(signal_kwargs={"skip": True})
             count += 1
 
-        return f"{count} notebooks built"
+        return f"ALL DONE: {count} notebooks built"
 
         # remove dangling and unset missing notebooks
         #    print("Count mismatch but all notebook DBRefs set -> CLEANUP")
