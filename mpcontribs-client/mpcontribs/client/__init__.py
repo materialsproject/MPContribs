@@ -52,7 +52,7 @@ from datetime import datetime
 RETRIES = 3
 MAX_WORKERS = 10
 MAX_ELEMS = 10
-MAX_BYTES = 200 * 1024
+MAX_BYTES = 1200 * 1024
 DEFAULT_HOST = "contribs-api.materialsproject.org"
 BULMA = "is-narrow is-fullwidth has-background-light"
 PROVIDERS = {"github", "google", "facebook", "microsoft", "amazon"}

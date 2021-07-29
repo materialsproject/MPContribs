@@ -16,7 +16,7 @@ from filetype.types.image import Jpeg, Png, Gif, Tiff
 from mpcontribs.api.config import API_CNAME
 from mpcontribs.api.contributions.document import get_resource, get_md5, COMPONENTS
 
-MAX_BYTES = 200 * 1024
+MAX_BYTES = 1200 * 1024
 BUCKET = "mpcontribs-attachments"
 S3_ATTACHMENTS_URL = f"https://{BUCKET}.s3.amazonaws.com"
 SUPPORTED_FILETYPES = (Gz, Jpeg, Png, Gif, Tiff)
