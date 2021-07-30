@@ -5,4 +5,8 @@ authors:
   given-names: "Patrick"
   orcid: "https://orcid.org/0000-0001-8237-2227"
 title: "MPContribs"
+version: 3.12.1
+doi: 10.1109/eScience.2015.75
+date-released: 2021-06-27
+license: MIT
 url: "https://github.com/materialsproject/MPContribs"
