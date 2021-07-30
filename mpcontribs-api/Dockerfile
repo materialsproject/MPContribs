@@ -40,6 +40,6 @@ ENV REDIS_ADDRESS redis
 
 EXPOSE 5000 5002 5003
 COPY start.sh .
-COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+COPY supervisord.conf .
 
 CMD ["/usr/bin/supervisord", "-c", "supervisord.conf"]
