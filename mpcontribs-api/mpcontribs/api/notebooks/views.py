@@ -17,6 +17,7 @@ from mongoengine.context_managers import no_dereference
 from mongoengine.errors import DoesNotExist
 from mongoengine.queryset.visitor import Q
 
+from mpcontribs.api.config import API_CNAME
 from mpcontribs.api.core import SwaggerView
 from mpcontribs.api.projects.document import Projects
 from mpcontribs.api.contributions.document import Contributions
@@ -30,7 +31,7 @@ MPCONTRIBS_API_HOST = os.environ.get("MPCONTRIBS_API_HOST", "localhost:5000")
 seed_nb = nbf.new_notebook()
 seed_nb["cells"] = [
     nbf.new_code_cell("from mpcontribs.client import Client"),
-    nbf.new_code_cell("client = Client()  # use with statement to auto-close session"),
+    nbf.new_code_cell(f'client = Client(host="{API_CNAME}")'),
 ]
 
 rq = RQ()
@@ -215,6 +216,11 @@ def make(projects=None, cids=None, force=False):
                             'a.info()'
                         ]))
                     )
+
+            nbf.new_code_cell("\n".join([
+                "client.session.close()",
+                "print('SESSION CLOSED')"
+            ]))
 
             try:
                 outputs = execute_cells(cid, cells)
