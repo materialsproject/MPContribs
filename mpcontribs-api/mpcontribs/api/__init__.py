@@ -94,6 +94,7 @@ def get_resource_as_string(name, charset="utf-8"):
 
 def get_kernels():
     """retrieve list of kernels from KernelGateway service"""
+    nkernels = 3  # reserve 3 kernels for this deployment
     idx = int(os.environ.get("DEPLOYMENT"))
     gw_client = GatewayClient.instance()
     base_endpoint = url_path_join(gw_client.url, gw_client.kernels_endpoint)
@@ -105,6 +106,10 @@ def get_kernels():
         return None
 
     kernels = r.json()
+    if len(kernels) < nkernels * (idx + 1):
+        logger.error("NOT ENOUGH KERNELS AVAILABLE")
+        return None
+
     return {kernel["id"]: None for kernel in kernels[idx:idx+3]}
 
 
