@@ -168,19 +168,15 @@ def make(projects=None, cids=None, force=False):
             cells = [
                 # define client only once in kernel
                 # avoids API calls for regex expansion for query parameters
-                nbf.new_code_cell(
-                    "\n".join(
-                        [
-                            "if 'client' not in locals():",
-                            "\tclient = Client(",
-                            '\t\theaders={"X-Authenticated-Groups": "admin"},',
-                            f'\t\thost="{MPCONTRIBS_API_HOST}"',
-                            "\t)",
-                            "print(client.get_totals())",
-                            # return something. See while loop in `run_cells`
-                        ]
-                    )
-                ),
+                nbf.new_code_cell("\n".join([
+                    "if 'client' not in locals():",
+                    "\tclient = Client(",
+                    '\t\theaders={"X-Authenticated-Groups": "admin"},',
+                    f'\t\thost="{MPCONTRIBS_API_HOST}"',
+                    "\t)",
+                    "print(client.get_totals())",
+                    # return something. See while loop in `run_cells`
+                ])),
                 nbf.new_code_cell("\n".join([
                     f'c = client.get_contribution("{document.id}")',
                     'c.display()'

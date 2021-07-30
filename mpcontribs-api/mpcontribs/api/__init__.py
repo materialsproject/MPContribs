@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """Flask App for MPContribs API"""
+import os
 import logging
 import boto3
 import requests
@@ -93,6 +94,7 @@ def get_resource_as_string(name, charset="utf-8"):
 
 def get_kernels():
     """retrieve list of kernels from KernelGateway service"""
+    idx = int(os.environ.get("DEPLOYMENT"))
     gw_client = GatewayClient.instance()
     base_endpoint = url_path_join(gw_client.url, gw_client.kernels_endpoint)
 
@@ -103,7 +105,7 @@ def get_kernels():
         return None
 
     kernels = r.json()
-    return {kernel["id"]: None for kernel in kernels}
+    return {kernel["id"]: None for kernel in kernels[idx:idx+3]}
 
 
 def get_consumer():
