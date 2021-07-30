@@ -36,8 +36,11 @@ MONGODB_SETTINGS = {
     "compressors": ["snappy", "zstd", "zlib"],
 }
 REDIS_URL = RQ_REDIS_URL = "redis://" + os.environ.get("REDIS_ADDRESS", "redis")
-RQ_QUEUES = ["notebooks"]
-RQ_SCHEDULER_QUEUE = "notebooks"
+QUEUE_NAME = f"notebooks_{API_CNAME}"
+RQ_QUEUES = [QUEUE_NAME]
+RQ_SCHEDULER_QUEUE = QUEUE_NAME
+RQ_SCHEDULER_CLASS = "mpcontribs.api.notebooks.views.NotebooksScheduler"
+
 
 SWAGGER = {
     "swagger_ui_bundle_js": "//unpkg.com/swagger-ui-dist@3/swagger-ui-bundle.js",

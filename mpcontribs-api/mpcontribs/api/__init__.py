@@ -174,9 +174,13 @@ def create_app():
         except AttributeError as ex:
             logger.error(f"Failed to register {module_path}: {collection} {ex}")
 
-    from mpcontribs.api.notebooks.views import rq, make
-    rq.init_app(app)
-    make.cron('*/3 * * * *', 'auto-notebooks-build')
+    if app.kernels:
+        from mpcontribs.api.notebooks.views import rq, make
+        rq.init_app(app)
+        cname = app.config["API_CNAME"]
+        cron_name = f"auto-notebooks-build_{cname}"
+        make.cron('*/3 * * * *', cron_name)
+        logger.info(f"cronjob {cron_name} added.")
 
     def healthcheck():
         if not DEBUG and not app.kernels:

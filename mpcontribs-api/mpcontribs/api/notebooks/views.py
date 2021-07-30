@@ -5,6 +5,7 @@ import flask_mongorest
 
 from rq import get_current_job
 from rq.job import Job
+from rq_scheduler import Scheduler
 from time import sleep
 from copy import deepcopy
 from nbformat import v4 as nbf
@@ -17,7 +18,7 @@ from mongoengine.context_managers import no_dereference
 from mongoengine.errors import DoesNotExist
 from mongoengine.queryset.visitor import Q
 
-from mpcontribs.api.config import API_CNAME
+from mpcontribs.api.config import API_CNAME, QUEUE_NAME
 from mpcontribs.api.core import SwaggerView
 from mpcontribs.api.projects.document import Projects
 from mpcontribs.api.contributions.document import Contributions
@@ -35,6 +36,13 @@ seed_nb["cells"] = [
 ]
 
 rq = RQ()
+
+
+class NotebooksScheduler(Scheduler):
+    redis_scheduler_namespace_prefix = f'rq:scheduler_instance:{API_CNAME}:'
+    scheduler_key = f'rq:scheduler:{API_CNAME}'
+    scheduler_lock_key = f'rq:scheduler_lock:{API_CNAME}'
+    scheduled_jobs_key = f'rq:scheduler:scheduled_jobs:{API_CNAME}'
 
 
 class NotebooksResource(Resource):
@@ -109,7 +117,7 @@ def result(job_id):
     return jsonify(job.result)
 
 
-@rq.job('notebooks')
+@rq.job(QUEUE_NAME)
 def make(projects=None, cids=None, force=False):
     """build the notebook / details page"""
     start = time.perf_counter()
