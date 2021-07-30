@@ -102,7 +102,7 @@ def get_kernels():
     try:
         r = requests.get(base_endpoint)
     except ConnectionError:
-        print("WARNING: Kernel Gateway NOT AVAILABLE")
+        logger.warning("Kernel Gateway NOT AVAILABLE")
         return None
 
     kernels = r.json()
@@ -127,7 +127,7 @@ def create_app():
     """create flask app"""
     app = Flask(__name__)
     app.config.from_pyfile("config.py", silent=True)
-    logger.warning("database: " + app.config["MPCONTRIBS_DB"])
+    logger.info("database: " + app.config["MPCONTRIBS_DB"])
     app.config["USTS"] = URLSafeTimedSerializer(app.secret_key)
     app.jinja_env.globals["get_resource_as_string"] = get_resource_as_string
     app.jinja_env.lstrip_blocks = True
@@ -162,7 +162,7 @@ def create_app():
         try:
             module = import_module(module_path)
         except ModuleNotFoundError as ex:
-            logger.warning(f"API module {module_path}: {ex}")
+            logger.error(f"API module {module_path}: {ex}")
             continue
 
         try:
@@ -170,9 +170,9 @@ def create_app():
             app.register_blueprint(blueprint, url_prefix="/" + collection)
             klass = getattr(module, collection.capitalize() + "View")
             register_class(app, klass, name=collection)
-            logger.warning(f"{collection} registered")
+            logger.info(f"{collection} registered")
         except AttributeError as ex:
-            logger.warning(f"Failed to register {module_path}: {collection} {ex}")
+            logger.error(f"Failed to register {module_path}: {collection} {ex}")
 
     from mpcontribs.api.notebooks.views import rq, make
     rq.init_app(app)
@@ -186,5 +186,5 @@ def create_app():
 
     app.register_blueprint(sse, url_prefix="/stream")
     app.add_url_rule("/healthcheck", view_func=healthcheck)
-    logger.warning("app created.")
+    logger.info("app created.")
     return app

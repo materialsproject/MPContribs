@@ -18,7 +18,7 @@ DEBUG = bool(API_CNAME.startswith("localhost"))
 PORTAL_CNAME = os.environ.get("PORTAL_CNAME")
 JSON_SORT_KEYS = False
 JSON_ADD_STATUS = False
-FLASK_LOG_LEVEL = "DEBUG" if DEBUG else "WARNING"
+FLASK_LOG_LEVEL = "DEBUG" if DEBUG else "INFO"
 SECRET_KEY = "super-secret"  # TODO in local prod config
 SCHEMES = ["http"] if DEBUG else ["https"]
 
