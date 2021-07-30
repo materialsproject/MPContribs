@@ -18,7 +18,7 @@ from mongoengine.context_managers import no_dereference
 from mongoengine.errors import DoesNotExist
 from mongoengine.queryset.visitor import Q
 
-from mpcontribs.api.config import API_CNAME, QUEUE_NAME
+from mpcontribs.api.config import API_CNAME, QUEUE_NAME, CRON_JOB_ID
 from mpcontribs.api.core import SwaggerView
 from mpcontribs.api.projects.document import Projects
 from mpcontribs.api.contributions.document import Contributions
@@ -101,6 +101,7 @@ def build():
     return job.id
 
 
+@notebooks.route('/result', defaults={'job_id': f"cron-{CRON_JOB_ID}"})
 @notebooks.route("/result/<job_id>")
 def result(job_id):
     try:

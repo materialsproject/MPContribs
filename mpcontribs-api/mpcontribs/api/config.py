@@ -40,7 +40,7 @@ QUEUE_NAME = f"notebooks_{API_CNAME}"
 RQ_QUEUES = [QUEUE_NAME]
 RQ_SCHEDULER_QUEUE = QUEUE_NAME
 RQ_SCHEDULER_CLASS = "mpcontribs.api.notebooks.views.NotebooksScheduler"
-
+CRON_JOB_ID = f"auto-notebooks-build_{API_CNAME}"
 
 SWAGGER = {
     "swagger_ui_bundle_js": "//unpkg.com/swagger-ui-dist@3/swagger-ui-bundle.js",

@@ -177,10 +177,9 @@ def create_app():
     if app.kernels:
         from mpcontribs.api.notebooks.views import rq, make
         rq.init_app(app)
-        cname = app.config["API_CNAME"]
-        cron_name = f"auto-notebooks-build_{cname}"
-        make.cron('*/3 * * * *', cron_name)
-        logger.info(f"cronjob {cron_name} added.")
+        cron_job_id = app.config["CRON_JOB_ID"]
+        make.cron('*/3 * * * *', cron_job_id)
+        logger.info(f"cronjob {cron_job_id} added.")
 
     def healthcheck():
         if not DEBUG and not app.kernels:
