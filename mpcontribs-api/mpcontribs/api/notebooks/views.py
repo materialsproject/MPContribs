@@ -3,10 +3,13 @@ import os
 import time
 import flask_mongorest
 
+from rq import get_current_job
+from rq.job import Job
 from time import sleep
 from copy import deepcopy
 from nbformat import v4 as nbf
-from flask import Blueprint, request, current_app
+from flask_rq2 import RQ
+from flask import Blueprint, request, current_app, abort, jsonify
 from flask_mongorest import operators as ops
 from flask_mongorest.methods import Fetch, BulkFetch
 from flask_mongorest.resources import Resource
@@ -29,6 +32,8 @@ seed_nb["cells"] = [
     nbf.new_code_cell("from mpcontribs.client import Client"),
     nbf.new_code_cell("client = Client()  # use with statement to auto-close session"),
 ]
+
+rq = RQ()
 
 
 class NotebooksResource(Resource):
@@ -69,30 +74,66 @@ def execute_cells(cid, cells):
 
 @notebooks.route("/build")
 def build():
+    cids = request.args.get("cids")
+    projects = request.args.get("projects")
+    force = bool(request.args.get("force", 0))
+    kwargs = dict(force=force)
+
+    if projects:
+        kwargs["projects"] = projects.split(",")
+
+    if cids:
+        kwargs["cids"] = cids.split(",")
+
+    if len(kwargs.get("cids", [])) == 1:
+        return jsonify(make(**kwargs))
+
+    job = make.queue(**kwargs)
+    return job.id
+
+
+@notebooks.route("/result/<job_id>")
+def result(job_id):
+    try:
+        job = Job.fetch(job_id, connection=rq.connection)
+    except Exception as exception:
+        abort(404, description=exception)
+
+    if not job.is_finished:
+        return job.get_status()
+    elif not job.result:
+        description = f"No result for job_id {job.id} (exc: {job.exc_info})."
+        abort(404, description=description)
+
+    return jsonify(job.result)
+
+
+@rq.job('notebooks')
+def make(projects=None, cids=None, force=False):
+    """build the notebook / details page"""
     start = time.perf_counter()
+    remaining_time = rq.default_timeout - 5
+    mask = ["id", "needs_build", "notebook"]
+    query = Q()
+
+    if projects:
+        query &= Q(project__in=projects)
+    if cids:
+        query &= Q(id__in=cids)
+    if not force:
+        query &= Q(needs_build=True) | Q(needs_build__exists=False)
+
+    job = get_current_job()
+    ret = {"input": {"projects": projects, "cids": cids, "force": force}}
+    if job:
+        ret["job"] = {
+            "id": job.id,
+            "enqueued_at": job.enqueued_at.isoformat(),
+            "started_at": job.started_at.isoformat()
+        }
 
     with no_dereference(Contributions) as Contribs:
-        cids = request.args.get("cids", "").split(",")
-        projects = request.args.get("projects", "").split(",")
-
-        if cids[0] and projects[0]:
-            return "ERROR: Only one of `cids` or `projects` parameters allowed!"
-
-        force = bool(request.args.get("force", 0))
-        limit = NotebooksResource.max_limit
-        remaining_time = 25
-        mask = ["id", "needs_build", "notebook"]
-        query = Q()
-
-        if projects[0]:
-            query &= Q(project__in=projects)
-        elif cids[0]:
-            query &= Q(id__in=cids)
-
-        if not force:
-            query &= Q(needs_build=True) | Q(needs_build__exists=False)
-
-        documents = Contribs.objects(query).only(*mask).limit(limit)
+        documents = Contribs.objects(query).only(*mask)
         total = documents.count()
         count = 0
 
@@ -101,7 +142,8 @@ def build():
             remaining_time -= stop - start
 
             if remaining_time < 0:
-                return f"TIMEOUT (idx={idx}): {count}/{total} notebooks built"
+                ret["result"] = {"status": "TIMEOUT", "count": count, "total": total}
+                return ret
 
             start = time.perf_counter()
 
@@ -177,10 +219,12 @@ def build():
             try:
                 outputs = execute_cells(cid, cells)
             except Exception as e:
-                return f"notebook generation for {cid} failed: {e}", 500
+                ret["result"] = {"status": "ERROR", "cid": cid, "count": count, "total": total}
+                return ret
 
             if not outputs:
-                return f"notebook generation for {cid} failed!", 500
+                ret["result"] = {"status": "ERROR", "cid": cid, "count": count, "total": total}
+                return ret
 
             for idx, output in outputs.items():
                 cells[idx]["outputs"] = output
@@ -193,25 +237,6 @@ def build():
             document.save(signal_kwargs={"skip": True})
             count += 1
 
-        return f"ALL DONE: {count}/{total} notebooks built"
+        ret["result"] = {"status": "COMPLETED", "count": count, "total": total}
 
-        # remove dangling and unset missing notebooks
-        #    print("Count mismatch but all notebook DBRefs set -> CLEANUP")
-        #    nids = [contrib.notebook.id for contrib in Contribs.objects.only("notebook")]
-        #    if len(nids) < nbs_cnt:
-        #        print("Delete dangling notebooks ...")
-        #        nbs = Notebooks.objects(id__nin=nids).only("id")
-        #        nbs_total = nbs.count()
-        #        max_docs = 2500
-        #        nbs[:max_docs].delete()
-        #        nbs_count = nbs_total if nbs_total < max_docs else max_docs
-        #    else:
-        #        print("Unset missing notebooks ...")
-        #        missing_nids = set(nids) - set(Notebooks.objects.distinct("id"))
-        #        if missing_nids:
-        #            upd_contribs = Contribs.objects(notebook__in=list(missing_nids))
-        #            nupd_total = upd_contribs.count()
-        #            nupd = upd_contribs.update(unset__notebook="")
-        #            print(f"unset notebooks for {nupd}/{nupd_total} contributions")
-
-        # return f"{count}/{total} notebooks built & {nbs_count}/{nbs_total} notebooks deleted"
+    return ret

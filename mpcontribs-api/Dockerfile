@@ -22,6 +22,9 @@ COPY --from=builder /root/.local/lib/python3.9/site-packages /root/.local/lib/py
 COPY --from=builder /root/.local/bin /root/.local/bin
 COPY --from=builder /usr/lib/x86_64-linux-gnu/libsnappy* /usr/lib/x86_64-linux-gnu/
 COPY --from=builder /app/mpcontribs/api /app/mpcontribs/api
+RUN apt-get update && apt-get install -y --no-install-recommends supervisor && apt-get clean
+RUN mkdir -p /var/log/supervisor
+
 WORKDIR /app
 ENV PATH=/root/.local/bin:$PATH
 ENV PYTHONUNBUFFERED 1
@@ -32,8 +35,10 @@ ENV NWORKERS 3
 ENV RELOAD ""
 ENV JUPYTER_GATEWAY_URL http://localhost:8888
 ENV JUPYTER_GATEWAY_HOST localhost:8888
+ENV REDIS_ADDRESS redis
 
 EXPOSE 5000 5002 5003
 COPY start.sh .
+COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
-CMD wait-for-it.sh $JUPYTER_GATEWAY_HOST -t 60 -- ./start.sh
+CMD ["/usr/bin/supervisord", "-c", "supervisord.conf"]

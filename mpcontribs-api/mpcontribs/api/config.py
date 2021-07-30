@@ -35,7 +35,9 @@ MONGODB_SETTINGS = {
     "db": MPCONTRIBS_DB,
     "compressors": ["snappy", "zstd", "zlib"],
 }
-REDIS_URL = "redis://" + os.environ.get("REDIS_ADDRESS", "redis")
+REDIS_URL = RQ_REDIS_URL = "redis://" + os.environ.get("REDIS_ADDRESS", "redis")
+RQ_QUEUES = ["notebooks"]
+RQ_SCHEDULER_QUEUE = "notebooks"
 
 SWAGGER = {
     "swagger_ui_bundle_js": "//unpkg.com/swagger-ui-dist@3/swagger-ui-bundle.js",
@@ -132,13 +134,3 @@ TEMPLATE = {
     "host": API_CNAME,
     "schemes": SCHEMES,
 }
-
-
-# TODO only load redox_thermo_csp for main deployment
-# TEMPLATE["tags"].append(
-#     {
-#         "name": "redox_thermo_csp",
-#         "description": f'is a dedicated endpoint to retrieve data for the \
-#     <a href="{SCHEMES[0]}://{PORTAL_CNAME}/redox_thermo_csp/">RedoxThermoCSP</a> landing page.',
-#     }
-# )
