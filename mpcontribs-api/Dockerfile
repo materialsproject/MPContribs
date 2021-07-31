@@ -26,17 +26,19 @@ RUN apt-get update && apt-get install -y --no-install-recommends supervisor && a
 RUN mkdir -p /var/log/supervisor
 
 WORKDIR /app
-ENV PATH=/root/.local/bin:$PATH
-ENV PYTHONUNBUFFERED 1
-ENV FLASK_APP mpcontribs.api
-ENV FLASK_ENV production
-ENV API_PORT 5000
-ENV DEPLOYMENT 0
-ENV NWORKERS 3
-ENV RELOAD ""
-ENV JUPYTER_GATEWAY_URL http://localhost:8888
-ENV JUPYTER_GATEWAY_HOST localhost:8888
-ENV REDIS_ADDRESS redis
+ENV PATH=/root/.local/bin:$PATH \
+    PYTHONUNBUFFERED=1 \
+    FLASK_APP=mpcontribs.api \
+    FLASK_ENV=production \
+    API_PORT=5000 \
+    DEPLOYMENT=0 \
+    NWORKERS=3 \
+    RELOAD="" \
+    JUPYTER_GATEWAY_URL=http://localhost:8888 \
+    JUPYTER_GATEWAY_HOST=localhost:8888 \
+    REDIS_ADDRESS=redis \
+    MAX_REQUESTS=100000 \
+    MAX_REQUESTS_JITTER=10000
 
 EXPOSE 5000 5002 5003
 COPY start.sh .

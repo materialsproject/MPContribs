@@ -55,15 +55,17 @@ COPY --from=python-builds /app/static /app/static
 COPY --from=python-builds /app/mpcontribs /app/mpcontribs
 COPY --from=webpack /app/webpack-stats.json /app/webpack-stats.json
 WORKDIR /app
-ENV PATH=/root/.local/bin:$PATH
-ENV DJANGO_SETTINGS_FILE="settings.py"
-ENV PYTHONUNBUFFERED 1
-ENV API_CNAME contribs-api.materialsproject.org
-ENV API_PORT 5000
-ENV PORTAL_CNAME contribs.materialsproject.org
-ENV PORTAL_PORT 8080
-ENV RELOAD ""
-ENV NWORKERS 3
+ENV PATH=/root/.local/bin:$PATH \
+    DJANGO_SETTINGS_FILE="settings.py" \
+    PYTHONUNBUFFERED=1 \
+    API_CNAME=contribs-api.materialsproject.org \
+    API_PORT=5000 \
+    PORTAL_CNAME=contribs.materialsproject.org \
+    PORTAL_PORT=8080 \
+    RELOAD="" \
+    NWORKERS=3 \
+    MAX_REQUESTS=100000 \
+    MAX_REQUESTS_JITTER=10000
 EXPOSE 8080 8082 8083
 COPY wsgi.py .
 COPY settings.py .
