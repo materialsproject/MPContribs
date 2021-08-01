@@ -190,12 +190,15 @@ def create_app():
 
     app.register_blueprint(sse, url_prefix="/stream")
     app.add_url_rule("/healthcheck", view_func=healthcheck)
-    dashboard.config.init_from(file="dashboard.cfg")
-    dashboard.config.version = app.config["VERSION"]
-    dashboard.config.table_prefix = app.config["MONITORING_TABLE_PREFIX"]
-    db_password = os.environ["POSTGRES_DB_PASSWORD"]
-    db_host = os.environ["POSTGRES_DB_HOST"]
-    dashboard.config.database_name = f"postgresql://kong:{db_password}@{db_host}/kong"
-    dashboard.bind(app)
+
+    if DEBUG:
+        dashboard.config.init_from(file="dashboard.cfg")
+        dashboard.config.version = app.config["VERSION"]
+        dashboard.config.table_prefix = app.config["MONITORING_TABLE_PREFIX"]
+        db_password = os.environ["POSTGRES_DB_PASSWORD"]
+        db_host = os.environ["POSTGRES_DB_HOST"]
+        dashboard.config.database_name = f"postgresql://kong:{db_password}@{db_host}/kong"
+        dashboard.bind(app)
+
     logger.info("app created.")
     return app
