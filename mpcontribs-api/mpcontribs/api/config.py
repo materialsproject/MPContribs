@@ -13,6 +13,7 @@ formulae_path = os.path.join(
 with gzip.open(formulae_path) as f:
     FORMULAE = json.load(f)
 
+VERSION = datetime.datetime.today().strftime("%Y.%m.%d")
 API_CNAME = os.environ.get("API_CNAME")
 DEBUG = bool(API_CNAME.startswith("localhost"))
 PORTAL_CNAME = os.environ.get("PORTAL_CNAME")
@@ -41,6 +42,7 @@ RQ_QUEUES = [QUEUE_NAME]
 RQ_SCHEDULER_QUEUE = QUEUE_NAME
 RQ_SCHEDULER_CLASS = "mpcontribs.api.notebooks.views.NotebooksScheduler"
 CRON_JOB_ID = f"auto-notebooks-build_{API_CNAME}"
+MONITORING_TABLE_PREFIX = f"fmd_{API_CNAME}"
 
 SWAGGER = {
     "swagger_ui_bundle_js": "//unpkg.com/swagger-ui-dist@3/swagger-ui-bundle.js",
@@ -68,7 +70,7 @@ TEMPLATE = {
         "title": API_CNAME.rsplit(".", 2)[0].replace("-", " ").upper(),
         "description": "Operations to contribute, update and retrieve materials data on Materials Project",
         "termsOfService": "https://materialsproject.org/terms",
-        "version": datetime.datetime.today().strftime("%Y.%m.%d"),
+        "version": VERSION,
         "contact": {
             "name": "MPContribs",
             "email": "contribs@materialsproject.org",

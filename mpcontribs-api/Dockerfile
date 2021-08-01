@@ -1,4 +1,5 @@
 FROM materialsproject/devops:python-3.96.2 as base
+RUN apt-get update && apt-get install -y --no-install-recommends supervisor libpq-dev && apt-get clean
 
 FROM base as builder
 RUN apt-get update && apt-get install -y --no-install-recommends gcc git g++ libsnappy-dev wget && apt-get clean
@@ -22,7 +23,6 @@ COPY --from=builder /root/.local/lib/python3.9/site-packages /root/.local/lib/py
 COPY --from=builder /root/.local/bin /root/.local/bin
 COPY --from=builder /usr/lib/x86_64-linux-gnu/libsnappy* /usr/lib/x86_64-linux-gnu/
 COPY --from=builder /app/mpcontribs/api /app/mpcontribs/api
-RUN apt-get update && apt-get install -y --no-install-recommends supervisor && apt-get clean
 RUN mkdir -p /var/log/supervisor
 
 WORKDIR /app
