@@ -7,6 +7,7 @@ import requests
 import flask_monitoringdashboard as dashboard
 
 from importlib import import_module
+from dozer import Dozer
 from flask import Flask, current_app, request
 from flask_marshmallow import Marshmallow
 from flask_mongoengine import MongoEngine
@@ -199,6 +200,7 @@ def create_app():
         db_host = os.environ["POSTGRES_DB_HOST"]
         dashboard.config.database_name = f"postgresql://kong:{db_password}@{db_host}/kong"
         dashboard.bind(app)
+        app.wsgi_app = Dozer(app.wsgi_app)
 
     logger.info("app created.")
     return app
