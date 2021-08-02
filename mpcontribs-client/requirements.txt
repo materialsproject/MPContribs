@@ -15,5 +15,5 @@ pymatgen==2022.0.11
 pyOpenSSL==20.0.1
 requests-futures==1.0.0
 service-identity==21.1.0
-twisted==21.2.0
+twisted==21.7.0
 tqdm==4.61.2
