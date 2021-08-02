@@ -230,11 +230,15 @@ def make(projects=None, cids=None, force=False):
             try:
                 outputs = execute_cells(cid, cells)
             except Exception as e:
-                ret["result"] = {"status": "ERROR", "cid": cid, "count": count, "total": total}
+                ret["result"] = {
+                    "status": "ERROR", "cid": cid, "count": count, "total": total, "exc": str(e)
+                }
                 return ret
 
             if not outputs:
-                ret["result"] = {"status": "ERROR", "cid": cid, "count": count, "total": total}
+                ret["result"] = {
+                    "status": "ERROR", "cid": cid, "count": count, "total": total, "exc": str(e)
+                }
                 return ret
 
             for idx, output in outputs.items():
