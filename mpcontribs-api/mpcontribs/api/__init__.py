@@ -199,7 +199,9 @@ def create_app():
     db_host = os.environ["POSTGRES_DB_HOST"]
     dashboard.config.database_name = f"postgresql://kong:{db_password}@{db_host}/kong"
     dashboard.bind(app)
-    app.wsgi_app = Dozer(app.wsgi_app)
+
+    if os.environ["NWORKERS"] == 1:
+        app.wsgi_app = Dozer(app.wsgi_app)
 
     logger.info("app created.")
     return app
