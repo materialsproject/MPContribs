@@ -2,12 +2,12 @@
 from uuid import uuid1
 from flask import current_app
 from tornado.escape import json_encode, json_decode
+from mpcontribs.api import create_kernel_connection
 
 
 def run_cells(kernel_id, cid, cells):
     print(f"running {cid} on {kernel_id}")
-    ws = current_app.kernels[kernel_id]["ws"]
-    ws.ping()
+    ws = create_kernel_connection(kernel_id)
     outputs = {}
 
     for idx, cell in enumerate(cells):
@@ -59,4 +59,5 @@ def run_cells(kernel_id, cid, cells):
                     tb = msg["content"]["traceback"]
                     raise ValueError(tb)
 
+    ws.close()
     return outputs

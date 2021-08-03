@@ -69,14 +69,19 @@ class NotebooksView(SwaggerView):
 def execute_cells(cid, cells):
     ntries = 0
     while ntries < 5:
-        for kernel_id, config in current_app.kernels.items():
-            if config["cid"] is None:
-                current_app.kernels[kernel_id]["cid"] = cid
-                outputs = run_cells(kernel_id, cid, cells)
-                current_app.kernels[kernel_id]["cid"] = None
+        for kernel_id, running_cid in current_app.kernels.items():
+            if running_cid is None:
+                current_app.kernels[kernel_id] = cid
+                try:
+                    outputs = run_cells(kernel_id, cid, cells)
+                except:
+                    current_app.kernels[kernel_id] = None
+                    raise
+
+                current_app.kernels[kernel_id] = None
                 return outputs
             else:
-                print(f"{kernel_id} busy with {config['cid']}")
+                print(f"{kernel_id} busy with {running_cid}")
         else:
             print("WAITING for a kernel to become available")
             sleep(5)

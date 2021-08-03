@@ -105,6 +105,11 @@ def get_kernel_endpoint(kernel_id=None, ws=False):
     return base_endpoint
 
 
+def create_kernel_connection(kernel_id):
+    url = get_kernel_endpoint(kernel_id, ws=True) + "/channels"
+    return create_connection(url, skip_utf8_validation=True)
+
+
 def get_kernels():
     """retrieve list of kernels from KernelGateway service"""
     try:
@@ -113,7 +118,6 @@ def get_kernels():
         logger.warning("Kernel Gateway NOT AVAILABLE")
         return None
 
-    kernels = {}
     response = r.json()
     nkernels = 3  # reserve 3 kernels for each deployment
     idx = int(os.environ.get("DEPLOYMENT"))
@@ -122,13 +126,7 @@ def get_kernels():
         logger.error("NOT ENOUGH KERNELS AVAILABLE")
         return None
 
-    for kernel in response[idx:idx+3]:
-        kernel_id = kernel["id"]
-        kernels[kernel_id] = {"cid": None}
-        url = get_kernel_endpoint(kernel_id, ws=True) + "/channels"
-        kernels[kernel_id]["ws"] = create_connection(url, skip_utf8_validation=True)
-
-    return kernels
+    return {kernel["id"]: None for kernel in response[idx:idx+3]}
 
 
 def get_consumer():
