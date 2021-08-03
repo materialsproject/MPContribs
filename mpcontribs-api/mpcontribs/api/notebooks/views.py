@@ -196,7 +196,7 @@ def make(projects=None, cids=None, force=False):
 
             cid = str(document.id)
             print(f"prep notebook for {cid} ...")
-            document.reload()
+            document.reload("tables", "structures", "attachments")
 
             cells = [
                 # define client only once in kernel
@@ -273,9 +273,8 @@ def make(projects=None, cids=None, force=False):
             doc["cells"] += cells[1:]  # skip localhost Client
 
             try:
-                document.notebook = Notebooks(**doc).save()
-                document.needs_build = False
-                document.save(signal_kwargs={"skip": True})
+                nb = Notebooks(**doc).save()
+                document.update(notebook=nb, needs_build=False)
             except Exception as e:
                 if job:
                     restart_kernels()
