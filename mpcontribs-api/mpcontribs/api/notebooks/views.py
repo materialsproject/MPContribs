@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import os
 import time
+import requests
 import flask_mongorest
 
 from rq import get_current_job
@@ -18,6 +19,7 @@ from mongoengine.context_managers import no_dereference
 from mongoengine.errors import DoesNotExist
 from mongoengine.queryset.visitor import Q
 
+from mpcontribs.api import get_kernel_endpoint
 from mpcontribs.api.config import API_CNAME, QUEUE_NAME, CRON_JOB_ID
 from mpcontribs.api.core import SwaggerView
 from mpcontribs.api.projects.document import Projects
@@ -67,14 +69,14 @@ class NotebooksView(SwaggerView):
 def execute_cells(cid, cells):
     ntries = 0
     while ntries < 5:
-        for kernel_id, running_cid in current_app.kernels.items():
-            if running_cid is None:
-                current_app.kernels[kernel_id] = cid
+        for kernel_id, config in current_app.kernels.items():
+            if config["cid"] is None:
+                current_app.kernels[kernel_id]["cid"] = cid
                 outputs = run_cells(kernel_id, cid, cells)
-                current_app.kernels[kernel_id] = None
+                current_app.kernels[kernel_id]["cid"] = None
                 return outputs
             else:
-                print(f"{kernel_id} busy with {running_cid}")
+                print(f"{kernel_id} busy with {config['cid']}")
         else:
             print("WAITING for a kernel to become available")
             sleep(5)
@@ -99,6 +101,20 @@ def build():
 
     job = make.queue(**kwargs)
     return job.id
+
+
+def restart_kernels():
+    """use to avoid run-away memory"""
+    kernel_ids = [k for k, v in current_app.kernels.items() if v["cid"] is None]
+
+    for kernel_id in kernel_ids:
+        kernel_url = get_kernel_endpoint(kernel_id) + "/restart"
+        r = requests.post(kernel_url, json={})
+        cells = [nbf.new_code_cell("\n".join([
+            "from mpcontribs.client import Client",
+            "print('client imported')"
+        ]))]
+        run_cells(kernel_id, "import-client", cells)
 
 
 @notebooks.route('/result', defaults={'job_id': f"cron-{CRON_JOB_ID}"})
@@ -152,6 +168,9 @@ def make(projects=None, cids=None, force=False):
             remaining_time -= stop - start
 
             if remaining_time < 0:
+                if job:
+                    restart_kernels()
+
                 ret["result"] = {"status": "TIMEOUT", "count": count, "total": total}
                 return ret
 
@@ -172,7 +191,7 @@ def make(projects=None, cids=None, force=False):
 
             cid = str(document.id)
             print(f"prep notebook for {cid} ...")
-            document.reload("tables", "structures", "attachments")
+            document.reload()
 
             cells = [
                 # define client only once in kernel
@@ -222,22 +241,23 @@ def make(projects=None, cids=None, force=False):
                         ]))
                     )
 
-            nbf.new_code_cell("\n".join([
-                "client.session.close()",
-                "print('SESSION CLOSED')"
-            ]))
-
             try:
                 outputs = execute_cells(cid, cells)
             except Exception as e:
+                if job:
+                    restart_kernels()
+
                 ret["result"] = {
                     "status": "ERROR", "cid": cid, "count": count, "total": total, "exc": str(e)
                 }
                 return ret
 
             if not outputs:
+                if job:
+                    restart_kernels()
+
                 ret["result"] = {
-                    "status": "ERROR", "cid": cid, "count": count, "total": total, "exc": str(e)
+                    "status": "ERROR: NO OUTPUTS", "cid": cid, "count": count, "total": total
                 }
                 return ret
 
@@ -247,10 +267,23 @@ def make(projects=None, cids=None, force=False):
             doc = deepcopy(seed_nb)
             doc["cells"] += cells[1:]  # skip localhost Client
 
-            document.notebook = Notebooks(**doc).save()
-            document.needs_build = False
-            document.save(signal_kwargs={"skip": True})
+            try:
+                document.notebook = Notebooks(**doc).save()
+                document.needs_build = False
+                document.save(signal_kwargs={"skip": True})
+            except Exception as e:
+                if job:
+                    restart_kernels()
+
+                ret["result"] = {
+                    "status": "ERROR", "cid": cid, "count": count, "total": total, "exc": str(e)
+                }
+                return ret
+
             count += 1
+
+        if job:
+            restart_kernels()
 
         ret["result"] = {"status": "COMPLETED", "count": count, "total": total}
 

@@ -7,7 +7,7 @@ import requests
 import flask_monitoringdashboard as dashboard
 
 from importlib import import_module
-from dozer import Dozer
+from websocket import create_connection
 from flask import Flask, current_app, request
 from flask_marshmallow import Marshmallow
 from flask_mongoengine import MongoEngine
@@ -94,25 +94,41 @@ def get_resource_as_string(name, charset="utf-8"):
         return f.read().decode(charset)
 
 
+def get_kernel_endpoint(kernel_id=None, ws=False):
+    gw_client = GatewayClient.instance()
+    base_url = gw_client.ws_url if ws else gw_client.url
+    base_endpoint = url_path_join(base_url, gw_client.kernels_endpoint)
+
+    if isinstance(kernel_id, str) and kernel_id:
+        return url_path_join(base_endpoint, kernel_id)
+
+    return base_endpoint
+
+
 def get_kernels():
     """retrieve list of kernels from KernelGateway service"""
-    nkernels = 3  # reserve 3 kernels for this deployment
-    idx = int(os.environ.get("DEPLOYMENT"))
-    gw_client = GatewayClient.instance()
-    base_endpoint = url_path_join(gw_client.url, gw_client.kernels_endpoint)
-
     try:
-        r = requests.get(base_endpoint)
+        r = requests.get(get_kernel_endpoint())
     except ConnectionError:
         logger.warning("Kernel Gateway NOT AVAILABLE")
         return None
 
-    kernels = r.json()
-    if len(kernels) < nkernels * (idx + 1):
+    kernels = {}
+    response = r.json()
+    nkernels = 3  # reserve 3 kernels for each deployment
+    idx = int(os.environ.get("DEPLOYMENT"))
+
+    if len(response) < nkernels * (idx + 1):
         logger.error("NOT ENOUGH KERNELS AVAILABLE")
         return None
 
-    return {kernel["id"]: None for kernel in kernels[idx:idx+3]}
+    for kernel in response[idx:idx+3]:
+        kernel_id = kernel["id"]
+        kernels[kernel_id] = {"cid": None}
+        url = get_kernel_endpoint(kernel_id, ws=True) + "/channels"
+        kernels[kernel_id]["ws"] = create_connection(url, skip_utf8_validation=True)
+
+    return kernels
 
 
 def get_consumer():
@@ -199,9 +215,6 @@ def create_app():
     db_host = os.environ["POSTGRES_DB_HOST"]
     dashboard.config.database_name = f"postgresql://kong:{db_password}@{db_host}/kong"
     dashboard.bind(app)
-
-    if os.environ["NWORKERS"] == 1:
-        app.wsgi_app = Dozer(app.wsgi_app)
 
     logger.info("app created.")
     return app

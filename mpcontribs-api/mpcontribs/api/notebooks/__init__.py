@@ -1,19 +1,14 @@
 # -*- coding: utf-8 -*-
-import os
-from tornado.escape import json_encode, json_decode, url_escape
-from websocket import create_connection
-from notebook.utils import url_path_join
-from notebook.gateway.managers import GatewayClient
+from uuid import uuid1
+from flask import current_app
+from tornado.escape import json_encode, json_decode
 
 
 def run_cells(kernel_id, cid, cells):
     print(f"running {cid} on {kernel_id}")
-    gw_client = GatewayClient.instance()
-    url = url_path_join(
-        gw_client.ws_url, gw_client.kernels_endpoint, url_escape(kernel_id), "channels",
-    )
+    ws = current_app.kernels[kernel_id]["ws"]
+    ws.ping()
     outputs = {}
-    ws = create_connection(url)
 
     for idx, cell in enumerate(cells):
         if cell["cell_type"] == "code":
@@ -24,7 +19,7 @@ def run_cells(kernel_id, cid, cells):
                             "username": cid,
                             "version": "5.3",
                             "session": "",
-                            "msg_id": f"{cid}-{idx}-{os.getpid()}",
+                            "msg_id": f"{cid}-{idx}-{uuid1()}",
                             "msg_type": "execute_request",
                         },
                         "parent_header": {},
@@ -38,7 +33,7 @@ def run_cells(kernel_id, cid, cells):
                             "stop_on_error": True,
                         },
                         "metadata": {},
-                        "buffers": {},
+                        "buffers": [],
                     }
                 )
             )
@@ -64,5 +59,4 @@ def run_cells(kernel_id, cid, cells):
                     tb = msg["content"]["traceback"]
                     raise ValueError(tb)
 
-    ws.close()
     return outputs
