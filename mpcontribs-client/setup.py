@@ -22,7 +22,6 @@ setup(
     install_requires=[
         "boltons",
         "bravado[fido]",
-        "pybson",
         "cryptography",
         "fido[tls]",
         "filetype",
@@ -34,6 +33,7 @@ setup(
         "plotly",
         "pyIsEmail",
         "pymatgen",
+        "pymongo",
         "pyOpenSSL",
         "requests-futures",
         "service-identity",
