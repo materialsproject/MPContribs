@@ -163,132 +163,131 @@ def make(projects=None, cids=None, force=False):
             "started_at": job.started_at.isoformat()
         }
 
-    with no_dereference(Contributions) as Contribs:
-        documents = Contribs.objects(query).only(*mask)
-        total = documents.count()
-        count = 0
+    exclude = list(Contributions._fields.keys())
+    documents = Contributions.objects(query).exclude(*exclude).only(*mask)
+    total = documents.count()
+    count = 0
 
-        for idx, document in enumerate(documents):
-            stop = time.perf_counter()
-            remaining_time -= stop - start
+    for idx, document in enumerate(documents):
+        stop = time.perf_counter()
+        remaining_time -= stop - start
 
-            if remaining_time < 0:
-                if job:
-                    restart_kernels()
+        if remaining_time < 0:
+            if job:
+                restart_kernels()
 
-                ret["result"] = {"status": "TIMEOUT", "count": count, "total": total}
-                return ret
+            ret["result"] = {"status": "TIMEOUT", "count": count, "total": total}
+            return ret
 
-            start = time.perf_counter()
+        start = time.perf_counter()
 
-            if not force and document.notebook and \
-                    not getattr(document, "needs_build", True):
-                continue
+        if not force and document.notebook and \
+                not getattr(document, "needs_build", True):
+            continue
 
-            if document.notebook:
-                try:
-                    nb = Notebooks.objects.get(id=document.notebook.id)
-                    nb.delete()
-                    document.update(unset__notebook="")
-                    print(f"Notebook {document.notebook.id} deleted.")
-                except DoesNotExist:
-                    pass
-
-            cid = str(document.id)
-            print(f"prep notebook for {cid} ...")
-            document.reload("tables", "structures", "attachments")
-
-            cells = [
-                # define client only once in kernel
-                # avoids API calls for regex expansion for query parameters
-                nbf.new_code_cell("\n".join([
-                    "if 'client' not in locals():",
-                    "\tclient = Client(",
-                    '\t\theaders={"X-Authenticated-Groups": "admin"},',
-                    f'\t\thost="{MPCONTRIBS_API_HOST}"',
-                    "\t)",
-                    "print(client.get_totals())",
-                    # return something. See while loop in `run_cells`
-                ])),
-                nbf.new_code_cell("\n".join([
-                    f'c = client.get_contribution("{document.id}")',
-                    'c.display()'
-                ])),
-            ]
-
-            if document.tables:
-                cells.append(nbf.new_markdown_cell("## Tables"))
-                for table in document.tables:
-                    cells.append(
-                        nbf.new_code_cell("\n".join([
-                            f't = client.get_table("{table.id}")',
-                            't.display()'
-                        ]))
-                    )
-
-            if document.structures:
-                cells.append(nbf.new_markdown_cell("## Structures"))
-                for structure in document.structures:
-                    cells.append(
-                        nbf.new_code_cell("\n".join([
-                            f's = client.get_structure("{structure.id}")',
-                            's.display()'
-                        ]))
-                    )
-
-            if document.attachments:
-                cells.append(nbf.new_markdown_cell("## Attachments"))
-                for attachment in document.attachments:
-                    cells.append(
-                        nbf.new_code_cell("\n".join([
-                            f'a = client.get_attachment("{attachment.id}")',
-                            'a.info()'
-                        ]))
-                    )
-
+        if document.notebook:
             try:
-                outputs = execute_cells(cid, cells)
-            except Exception as e:
-                if job:
-                    restart_kernels()
+                nb = Notebooks.objects.get(id=document.notebook.id)
+                nb.delete()
+                document.update(unset__notebook="")
+                print(f"Notebook {document.notebook.id} deleted.")
+            except DoesNotExist:
+                pass
 
-                ret["result"] = {
-                    "status": "ERROR", "cid": cid, "count": count, "total": total, "exc": str(e)
-                }
-                return ret
+        cid = str(document.id)
+        print(f"prep notebook for {cid} ...")
+        document.reload("tables", "structures", "attachments")
 
-            if not outputs:
-                if job:
-                    restart_kernels()
+        cells = [
+            # define client only once in kernel
+            # avoids API calls for regex expansion for query parameters
+            nbf.new_code_cell("\n".join([
+                "if 'client' not in locals():",
+                "\tclient = Client(",
+                '\t\theaders={"X-Authenticated-Groups": "admin"},',
+                f'\t\thost="{MPCONTRIBS_API_HOST}"',
+                "\t)",
+                "print(client.get_totals())",
+                # return something. See while loop in `run_cells`
+            ])),
+            nbf.new_code_cell("\n".join([
+                f'c = client.get_contribution("{document.id}")',
+                'c.display()'
+            ])),
+        ]
 
-                ret["result"] = {
-                    "status": "ERROR: NO OUTPUTS", "cid": cid, "count": count, "total": total
-                }
-                return ret
+        if document.tables:
+            cells.append(nbf.new_markdown_cell("## Tables"))
+            for table in document.tables:
+                cells.append(
+                    nbf.new_code_cell("\n".join([
+                        f't = client.get_table("{table.id}")',
+                        't.display()'
+                    ]))
+                )
 
-            for idx, output in outputs.items():
-                cells[idx]["outputs"] = output
+        if document.structures:
+            cells.append(nbf.new_markdown_cell("## Structures"))
+            for structure in document.structures:
+                cells.append(
+                    nbf.new_code_cell("\n".join([
+                        f's = client.get_structure("{structure.id}")',
+                        's.display()'
+                    ]))
+                )
 
-            doc = deepcopy(seed_nb)
-            doc["cells"] += cells[1:]  # skip localhost Client
+        if document.attachments:
+            cells.append(nbf.new_markdown_cell("## Attachments"))
+            for attachment in document.attachments:
+                cells.append(
+                    nbf.new_code_cell("\n".join([
+                        f'a = client.get_attachment("{attachment.id}")',
+                        'a.info()'
+                    ]))
+                )
 
-            try:
-                nb = Notebooks(**doc).save()
-                document.update(notebook=nb, needs_build=False)
-            except Exception as e:
-                if job:
-                    restart_kernels()
+        try:
+            outputs = execute_cells(cid, cells)
+        except Exception as e:
+            if job:
+                restart_kernels()
 
-                ret["result"] = {
-                    "status": "ERROR", "cid": cid, "count": count, "total": total, "exc": str(e)
-                }
-                return ret
+            ret["result"] = {
+                "status": "ERROR", "cid": cid, "count": count, "total": total, "exc": str(e)
+            }
+            return ret
 
-            count += 1
+        if not outputs:
+            if job:
+                restart_kernels()
 
-        if job:
-            restart_kernels()
+            ret["result"] = {
+                "status": "ERROR: NO OUTPUTS", "cid": cid, "count": count, "total": total
+            }
+            return ret
 
-        ret["result"] = {"status": "COMPLETED", "count": count, "total": total}
+        for idx, output in outputs.items():
+            cells[idx]["outputs"] = output
 
+        doc = deepcopy(seed_nb)
+        doc["cells"] += cells[1:]  # skip localhost Client
+
+        try:
+            nb = Notebooks(**doc).save()
+            document.update(notebook=nb, needs_build=False)
+        except Exception as e:
+            if job:
+                restart_kernels()
+
+            ret["result"] = {
+                "status": "ERROR", "cid": cid, "count": count, "total": total, "exc": str(e)
+            }
+            return ret
+
+        count += 1
+
+    if job:
+        restart_kernels()
+
+    ret["result"] = {"status": "COMPLETED", "count": count, "total": total}
     return ret

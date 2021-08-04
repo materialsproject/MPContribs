@@ -102,9 +102,10 @@ class ContributionsResource(Resource):
                 obj.reload("id", "project", "data")
 
             # obj.project is LazyReference & Projects uses custom queryset manager
-            project = obj.project.document_type.objects.only(
-                "title", "references", "description", "authors"
-            ).get(pk=obj.project.pk)
+            DocType = obj.project.document_type
+            exclude = list(DocType._fields.keys())
+            only = ["title", "references", "description", "authors"]
+            project = DocType.objects.exclude(*exclude).only(*only).with_id(obj.project.pk)
             ctx = {
                 "cid": str(obj.id),
                 "title": project.title,

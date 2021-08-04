@@ -9,12 +9,11 @@ from importlib import import_module
 from fastnumbers import isfloat
 from flask_mongoengine import DynamicDocument
 from mongoengine import CASCADE, signals
-from mongoengine.queryset import DoesNotExist
 from mongoengine.queryset.manager import queryset_manager
 from mongoengine.fields import StringField, BooleanField, DictField
 from mongoengine.fields import LazyReferenceField, ReferenceField
 from mongoengine.fields import DateTimeField, ListField
-from marshmallow.utils import get_value, _Missing
+from marshmallow.utils import get_value
 from boltons.iterutils import remap
 from decimal import Decimal
 from pint import UnitRegistry
@@ -110,16 +109,23 @@ def truncate_digits(q):
     return get_quantity(s)
 
 
-def get_min_max(sender, path):
-    # NOTE can't filter for project when using wildcard index data.$**
-    # https://docs.mongodb.com/manual/core/index-wildcard/#wildcard-index-query-sort-support
+def get_min_max(sender, path, project_name):
+    # https://docs.mongodb.com/manual/core/index-wildcard/
+    # NOTE need a query to trigger wildcard IXSCAN
+    # NOTE can't filter for `project` when using wildcard index on `data`
+    # NOTE `project` field in wildcardProjection for wildcard index on all fields
+    # NOTE reset `only` in custom queryset manager via `exclude`
     field = f"{path}{delimiter}value"
     key = f"{field}__type".replace(delimiter, "__")
-    q = {key: "number"}  # NOTE need a query to trigger wildcard IXSCAN
-    qs = sender.objects(**q).only(field).order_by(field)
-    values = [get_value(doc, field) for doc in qs]
-    values = [v for v in values if not isinstance(v, _Missing)]
-    return (values[0], values[-1]) if len(values) else (None, None)
+    q = {key: "number"}
+    exclude = list(sender._fields.keys())
+    qs = sender.objects(**q).exclude(*exclude).only(field, "project").order_by(field)
+    docs = [doc for doc in qs if doc.project.pk == project_name]
+
+    if not docs:
+        return None, None
+
+    return get_value(docs[0], field), get_value(docs[-1], field)
 
 
 def get_resource(component):
@@ -164,16 +170,11 @@ class Contributions(DynamicDocument):
     meta = {
         "collection": "contributions",
         "indexes": [
-            "project",
-            "identifier",
-            "formula",
-            "is_public",
-            "last_modified",
-            "needs_build",
-            {"fields": [(r"data.$**", 1)]},
-            "notebook",
-        ]
-        + list(COMPONENTS.keys()),
+            "project", "identifier", "formula", "is_public", "last_modified",
+            "needs_build", "notebook", {"fields": [(r"data.$**", 1)]},
+            # can only use wildcardProjection option with wildcard index on all document fields
+            {"fields": [(r"$**", 1)], "wildcardProjection" : {"project": 1}},
+        ] + list(COMPONENTS.keys()),
     }
 
     @queryset_manager
@@ -191,15 +192,14 @@ class Contributions(DynamicDocument):
                 resource = get_resource(component)
                 for i, o in enumerate(lst):
                     digest = get_md5(resource, o, fields)
-                    obj = resource.document.objects(md5=digest).only("id").first()
+                    objs = resource.document.objects(md5=digest)
+                    exclude = list(resource.document._fields.keys())
+                    obj = objs.exclude(*exclude).only("id").first()
                     if obj:
                         lst[i] = obj.to_dbref()
 
     @classmethod
     def pre_save_post_validation(cls, sender, document, **kwargs):
-        if kwargs.get("skip"):
-            return
-
         # set formula field
         if hasattr(document, "formula") and not document.formula:
             formulae = current_app.config["FORMULAE"]
@@ -207,6 +207,7 @@ class Contributions(DynamicDocument):
 
         # project is LazyReferenceField & load columns due to custom queryset manager
         project = document.project.fetch().reload("columns")
+        columns = {col.path: col for col in project.columns}
 
         # run data through Pint Quantities and save as dicts
         def make_quantities(path, key, value):
@@ -236,17 +237,16 @@ class Contributions(DynamicDocument):
 
             # ensure that the same units are used across contributions
             field = delimiter.join(["data"] + list(path) + [key])
-            try:
-                column = project.columns.get(path=field)
-                if column.unit != str(q.value.units):
-                    qq = q.value.to(column.unit)
-                    q = new_error_units(q, qq)
-            except DoesNotExist:
-                pass  # column doesn't exist yet (generated in post_save)
-            except DimensionalityError:
-                raise ValueError(
-                    f"Can't convert [{q.units}] to [{column.unit}] for {field}!"
-                )
+            if field in columns:
+                column = columns[field]
+                if column.unit != "NaN" and column.unit != str(q.value.units):
+                    try:
+                        qq = q.value.to(column.unit)
+                        q = new_error_units(q, qq)
+                    except DimensionalityError:
+                        raise ValueError(
+                            f"Can't convert [{q.units}] to [{column.unit}] for {field}!"
+                        )
 
             # significant digits
             q = truncate_digits(q)
@@ -270,9 +270,11 @@ class Contributions(DynamicDocument):
         if kwargs.get("skip"):
             return
 
+        from mpcontribs.api.projects.document import Column
+
         # project is LazyReferenceField; account for custom query manager
-        project = document.project.fetch()
-        project.reload(*project._fields)
+        project = document.project.fetch().reload("columns")
+        columns = {col.path: col for col in project.columns}
 
         # set columns field for project
         def update_columns(path, key, value):
@@ -284,26 +286,18 @@ class Contributions(DynamicDocument):
                 not is_quantity and isinstance(value, str) and key not in quantity_keys
             )
             if is_quantity or is_text:
-                project.reload("columns")
-                try:
-                    column = project.columns.get(path=path)
+                if path not in columns:
+                    columns[path] = Column(path=path)
+
                     if is_quantity:
-                        v = value["value"]
-                        if isnan(column.max) or v > column.max:
-                            column.max = v
-                        if isnan(column.min) or v < column.min:
-                            column.min = v
+                        columns[path].unit = value["unit"]
 
-                except DoesNotExist:
-                    column = {"path": path}
-                    if is_quantity:
-                        column["unit"] = value["unit"]
-                        column["min"] = column["max"] = value["value"]
+                if is_quantity:
+                    columns[path].min, columns[path].max = get_min_max(
+                        sender, path, project.name
+                    )
 
-                    project.columns.create(**column)
-
-                project.save().reload("columns")
-                ncolumns = len(project.columns)
+                ncolumns = len(columns)
                 if ncolumns > 50:
                     raise ValueError("Reached maximum number of columns (50)!")
 
@@ -314,12 +308,10 @@ class Contributions(DynamicDocument):
 
         # add/remove columns for other components
         for path in COMPONENTS.keys():
-            try:
-                project.columns.get(path=path)
-            except DoesNotExist:
-                if getattr(document, path):
-                    project.columns.create(path=path)
-                    project.save().reload("columns")
+            if path not in columns and getattr(document, path):
+                columns[path] = Column(path=path)
+
+        project.update(columns=columns.values())
 
     @classmethod
     def pre_delete(cls, sender, document, **kwargs):
@@ -339,21 +331,27 @@ class Contributions(DynamicDocument):
             return
 
         # reset columns field for project
-        project = document.project.fetch()
+        project = document.project.fetch().reload("columns")
+        columns = {col.path: col for col in project.columns}
 
-        for column in list(project.columns):
+        for path, column in columns.items():
             if not isnan(column.min) and not isnan(column.max):
-                column.min, column.max = get_min_max(sender, column.path)
+                column.min, column.max = get_min_max(sender, path, project.name)
                 if isnan(column.min) and isnan(column.max):
                     # just deleted last contribution with this column
-                    project.update(pull__columns__path=column.path)
+                    columns.pop(path)
             else:
                 # use wildcard index if available -> single field query
-                field = column.path.replace(delimiter, "__") + "__type"
-                qs = sender.objects(**{field: "string"}).only(column.path)
+                # NOTE reset `only` in custom queryset manager via `exclude`
+                exclude = list(sender._fields.keys())
+                field = path.replace(delimiter, "__") + "__type"
+                q = {field: "string"}
+                qs = sender.objects(**q).exclude(*exclude).only(path, "project")
 
-                if qs.count() < 1 or qs.filter(project__name=project.name).count() < 1:
-                    project.update(pull__columns__path=column.path)
+                if qs.count() < 1 or sum(1 for d in qs if d.project.pk == project.name) < 1:
+                    columns.pop(path)
+
+        project.update(columns=columns.values())
 
 
 signals.post_init.connect(Contributions.post_init, sender=Contributions)

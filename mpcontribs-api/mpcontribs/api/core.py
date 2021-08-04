@@ -509,7 +509,9 @@ class SwaggerView(OriginalSwaggerView, ResourceView, metaclass=SwaggerViewType):
             # project is LazyReferenceFields (multiple queries)
             module = import_module("mpcontribs.api.projects.document")
             Projects = getattr(module, "Projects")
-            projects = Projects.objects.only("name", "owner", "is_public", "is_approved")
+            exclude = list(Projects._fields.keys())
+            only = ["name", "owner", "is_public", "is_approved"]
+            projects = Projects.objects.exclude(*exclude).only(*only)
 
             # contributions are set private/public independent from projects
             # - private contributions in a public project are only accessible to owner/group

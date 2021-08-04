@@ -47,9 +47,8 @@ class ProjectsResource(Resource):
     ]
     allowed_ordering = ["name", "is_public", "title"]
     paginate = True
-    default_limit = 40
-    max_limit = 100
-    bulk_update_limit = 250
+    default_limit = 100
+    max_limit = 500
 
     @staticmethod
     def get_optional_fields():
