@@ -22,7 +22,7 @@ setup(
     install_requires=[
         "boltons",
         "bravado[fido]",
-        "bson",
+        "pybson",
         "cryptography",
         "fido[tls]",
         "filetype",
