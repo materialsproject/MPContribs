@@ -845,7 +845,7 @@ class Client(SwaggerClient):
         tic = time.perf_counter()
         # reset columns to be save (sometimes not all are reset BUGFIX?)
         self.projects.update_entry(pk=name, project={"columns": []}).result()
-        cids = self.get_all_ids(dict(project=name)).get(name, {}).get("ids", [])
+        cids = list(self.get_all_ids(dict(project=name)).get(name, {}).get("ids", set()))
 
         if not cids:
             print(f"There aren't any contributions to delete for {name}")
