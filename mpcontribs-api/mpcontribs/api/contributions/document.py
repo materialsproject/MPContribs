@@ -3,6 +3,7 @@ import json
 
 from hashlib import md5
 from math import isnan
+from copy import deepcopy
 from datetime import datetime
 from flask import current_app
 from importlib import import_module
@@ -270,10 +271,11 @@ class Contributions(DynamicDocument):
         if kwargs.get("skip"):
             return
 
-        from mpcontribs.api.projects.document import Column
+        from mpcontribs.api.projects.document import Column, MAX_COLUMNS
 
         # project is LazyReferenceField; account for custom query manager
         project = document.project.fetch().reload("columns")
+        columns_copy = deepcopy(project.columns)
         columns = {col.path: col for col in project.columns}
 
         # set columns field for project
@@ -298,8 +300,8 @@ class Contributions(DynamicDocument):
                     )
 
                 ncolumns = len(columns)
-                if ncolumns > 50:
-                    raise ValueError("Reached maximum number of columns (50)!")
+                if ncolumns > MAX_COLUMNS:
+                    raise ValueError(f"Reached maximum number of columns ({MAX_COLUMNS})!")
 
             return True
 
@@ -311,7 +313,10 @@ class Contributions(DynamicDocument):
             if path not in columns and getattr(document, path):
                 columns[path] = Column(path=path)
 
-        project.update(columns=columns.values())
+        # only update columns if needed and unchanged in DB
+        new_columns = columns.values()
+        if columns_copy != new_columns and columns_copy == project.reload("columns").columns:
+            project.update(columns=new_columns)
 
     @classmethod
     def pre_delete(cls, sender, document, **kwargs):
@@ -332,6 +337,7 @@ class Contributions(DynamicDocument):
 
         # reset columns field for project
         project = document.project.fetch().reload("columns")
+        columns_copy = deepcopy(project.columns)
         columns = {col.path: col for col in project.columns}
 
         for path, column in columns.items():
@@ -351,7 +357,10 @@ class Contributions(DynamicDocument):
                 if qs.count() < 1 or sum(1 for d in qs if d.project.pk == project.name) < 1:
                     columns.pop(path)
 
-        project.update(columns=columns.values())
+        # only update columns if needed and unchanged in DB
+        new_columns = columns.values()
+        if columns_copy != new_columns and columns_copy == project.reload("columns").columns:
+            project.update(columns=new_columns)
 
 
 signals.post_init.connect(Contributions.post_init, sender=Contributions)

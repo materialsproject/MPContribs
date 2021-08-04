@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 import os
 import yaml
+
+from math import isnan
 from flask import current_app, render_template, url_for
 from flask_mongoengine import Document
 from marshmallow import ValidationError
@@ -22,6 +24,7 @@ from mongoengine.fields import (
 from mpcontribs.api import send_email, sns_client, valid_key, valid_dict
 
 PROVIDERS = {"github", "google", "facebook", "microsoft", "amazon"}
+MAX_COLUMNS = 50
 
 
 class ProviderEmailField(EmailField):
@@ -64,11 +67,20 @@ class ProviderEmail(String):
         self.validators.insert(0, validator)
 
 
+def dict_wo_nans(d):
+    return {k: v for k, v in d.items() if k in ["min", "max"] and not isnan(v)}
+
+
 class Column(EmbeddedDocument):
     path = StringField(required=True, help_text="column path in dot-notation")
     min = FloatField(required=True, default=float("nan"), help_text="column minimum")
     max = FloatField(required=True, default=float("nan"), help_text="column maximum")
     unit = StringField(required=True, default="NaN", help_text="column unit")
+
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            return dict_wo_nans(self._data) == dict_wo_nans(other._data)
+        return False
 
 
 class Reference(EmbeddedDocument):
@@ -134,7 +146,7 @@ class Projects(Document):
     unique_identifiers = BooleanField(
         required=True, default=True, help_text="identifiers unique?"
     )
-    columns = EmbeddedDocumentListField(Column)
+    columns = EmbeddedDocumentListField(Column, max_length=MAX_COLUMNS)
     meta = {
         "collection": "projects",
         "indexes": ["is_public", "title", "owner", "is_approved", "unique_identifiers"],
