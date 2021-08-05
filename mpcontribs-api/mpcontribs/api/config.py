@@ -36,7 +36,8 @@ MONGODB_SETTINGS = {
     "db": MPCONTRIBS_DB,
     "compressors": ["snappy", "zstd", "zlib"],
 }
-REDIS_URL = RQ_REDIS_URL = "redis://" + os.environ.get("REDIS_ADDRESS", "redis")
+REDIS_ADDRESS = os.environ.get("REDIS_ADDRESS", "redis")
+REDIS_URL = RQ_REDIS_URL = RQ_DASHBOARD_REDIS_URL = f"redis://{REDIS_ADDRESS}"
 QUEUE_NAME = f"notebooks_{API_CNAME}"
 RQ_QUEUES = [QUEUE_NAME]
 RQ_SCHEDULER_QUEUE = QUEUE_NAME

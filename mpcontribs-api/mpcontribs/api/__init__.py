@@ -4,6 +4,7 @@ import os
 import logging
 import boto3
 import requests
+import rq_dashboard
 import flask_monitoringdashboard as dashboard
 
 from importlib import import_module
@@ -213,6 +214,8 @@ def create_app():
     db_host = os.environ["POSTGRES_DB_HOST"]
     dashboard.config.database_name = f"postgresql://kong:{db_password}@{db_host}/kong"
     dashboard.bind(app)
+
+    app.register_blueprint(rq_dashboard.blueprint, url_prefix="/rq")
 
     logger.info("app created.")
     return app
