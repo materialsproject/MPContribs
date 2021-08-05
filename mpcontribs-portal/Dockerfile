@@ -63,7 +63,7 @@ ENV PATH=/root/.local/bin:$PATH \
     PORTAL_CNAME=contribs.materialsproject.org \
     PORTAL_PORT=8080 \
     RELOAD="" \
-    NWORKERS=3 \
+    NWORKERS=2 \
     MAX_REQUESTS=100000 \
     MAX_REQUESTS_JITTER=10000
 EXPOSE 8080 8082 8083
