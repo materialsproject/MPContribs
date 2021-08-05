@@ -722,9 +722,12 @@ class Client(SwaggerClient):
         values for the affected data fields will be respected.
 
         The `columns` argument is a dictionary which maps the data field names to its
-        units. Use `None` to indicate that a field doesn't have a unit. The unit for a
-        dimensionless quantity is an empty string (""). Nested fields are indicated using
-        a dot (".") in the data field name. Example:
+        units. Use `None` to indicate that a field is not a quantity (plain string). The
+        unit for a dimensionless quantity is an empty string (""). Percent (`%`) and
+        permille (`%%`) are considered units. Nested fields are indicated using a dot
+        (".") in the data field name.
+
+        Example:
 
         >>> client.init_columns("sandbox", {"a": None, "b.c": "eV", "b.d": "mm", "e": ""})
 
