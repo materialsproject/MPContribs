@@ -18,9 +18,9 @@ class AttachmentsResource(Resource):
     document = Attachments
     filters = {
         "id": [ops.In, ops.Exact],
-        "name": [ops.In, ops.Exact, ops.Contains],
-        "mime": [ops.In, ops.Exact, ops.Contains],
         "md5": [ops.In, ops.Exact],
+        "name": ops.STRINGS,
+        "mime": ops.STRINGS,
     }
     fields = ["id", "name", "mime", "md5"]
     allowed_ordering = ["name", "mime"]

@@ -53,13 +53,16 @@ class ContributionsResource(Resource):
     save_related_fields = ["structures", "tables", "attachments", "notebook"]
     filters = {
         "id": [ops.In, ops.Exact],
-        "project": [ops.In, ops.Exact],
-        "identifier": [ops.In, ops.Contains, ops.Exact],
-        "formula": [ops.In, ops.Contains, ops.Exact],
+        "project": ops.STRINGS,
+        "identifier": ops.STRINGS,
+        "formula": ops.STRINGS,
         "is_public": [ops.Boolean],
-        "last_modified": [ops.After, ops.Before],
+        "last_modified": ops.DATES,
         "needs_build": [ops.Boolean],
-        re.compile(r"^data__((?!__).)*$"): [ops.Exact, ops.Contains, ops.Gte, ops.Lte],
+        re.compile(r"^data__((?!__).)*$"): ops.ALL,
+        "structures": [ops.Size],
+        "tables": [ops.Size],
+        "attachments": [ops.Size]
     }
     fields = [
         "id", "project", "identifier", "formula", "is_public", "last_modified", "needs_build"

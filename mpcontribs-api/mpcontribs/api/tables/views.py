@@ -28,9 +28,9 @@ class TablesResource(Resource):
     related_resources = {"attrs": AttributesResource}
     filters = {
         "id": [ops.In, ops.Exact],
-        "name": [ops.In, ops.Exact, ops.Contains],
-        "columns": [ops.IContains],
         "md5": [ops.In, ops.Exact],
+        "name": ops.STRINGS,
+        "columns": [ops.Size]
     }
     fields = ["id", "name", "md5"]
     allowed_ordering = ["name"]

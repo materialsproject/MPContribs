@@ -17,8 +17,9 @@ class StructuresResource(Resource):
     document = Structures
     filters = {
         "id": [ops.In, ops.Exact],
-        "name": [ops.In, ops.Exact, ops.Contains],
         "md5": [ops.In, ops.Exact],
+        "name": ops.STRINGS,
+        "sites": [ops.Size]
     }
     fields = ["id", "name", "md5"]
     allowed_ordering = ["name"]

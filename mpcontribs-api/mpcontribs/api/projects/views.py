@@ -36,15 +36,16 @@ class ProjectsResource(Resource):
         "stats": StatsResource,
     }
     filters = {
-        "name": [ops.In, ops.Exact, ops.IContains],
+        "name": ops.STRINGS,
         "is_public": [ops.Boolean],
-        "title": [ops.IContains],
-        "long_title": [ops.IContains],
-        "authors": [ops.IContains],
-        "description": [ops.IContains],
-        "owner": [ops.Exact, ops.In],
+        "title": ops.LONG_STRINGS,
+        "long_title": ops.LONG_STRINGS,
+        "authors": ops.LONG_STRINGS,
+        "description": ops.LONG_STRINGS,
+        "owner": ops.STRINGS,
         "is_approved": [ops.Boolean],
         "unique_identifiers": [ops.Boolean],
+        "columns": [ops.Size],
     }
     fields = [
         "name",
