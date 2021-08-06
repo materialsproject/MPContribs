@@ -44,6 +44,7 @@ RQ_SCHEDULER_QUEUE = QUEUE_NAME
 RQ_SCHEDULER_CLASS = "mpcontribs.api.notebooks.views.NotebooksScheduler"
 CRON_JOB_ID = f"auto-notebooks-build_{API_CNAME}"
 MONITORING_TABLE_PREFIX = f"fmd_{API_CNAME}"
+DOC_DIR = os.path.join(os.path.dirname(__file__), "swagger")
 
 SWAGGER = {
     "swagger_ui_bundle_js": "//unpkg.com/swagger-ui-dist@3/swagger-ui-bundle.js",
@@ -53,7 +54,7 @@ SWAGGER = {
     "uiversion": 3,
     "hide_top_bar": True,
     "doc_expansion": "none",
-    "doc_dir": os.path.join(os.path.dirname(__file__), "swagger"),
+    "doc_dir": DOC_DIR,
     "specs": [
         {
             "endpoint": "apispec",
