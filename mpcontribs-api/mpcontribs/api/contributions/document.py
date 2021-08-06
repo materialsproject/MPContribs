@@ -212,13 +212,22 @@ class Contributions(DynamicDocument):
 
         # run data through Pint Quantities and save as dicts
         def make_quantities(path, key, value):
+            key = key.strip()
             if key in quantity_keys or not isinstance(value, (str, int, float)):
                 return key, value
 
-            str_value = str(value)
+            # can't be a quantity if contains 2+ spaces
+            str_value = str(value).strip()
             if str_value.count(" ") > 1:
                 return key, value
 
+            # don't parse if column.unit indicates string type
+            field = delimiter.join(["data"] + list(path) + [key])
+            if field in columns:
+                if columns[field].unit == "NaN":
+                    return key, str_value
+
+            # parse as quantity
             q = get_quantity(str_value)
             if not q:
                 return key, value
@@ -237,10 +246,9 @@ class Contributions(DynamicDocument):
                 q = new_error_units(q, qq)
 
             # ensure that the same units are used across contributions
-            field = delimiter.join(["data"] + list(path) + [key])
             if field in columns:
                 column = columns[field]
-                if column.unit != "NaN" and column.unit != str(q.value.units):
+                if column.unit != str(q.value.units):
                     try:
                         qq = q.value.to(column.unit)
                         q = new_error_units(q, qq)
