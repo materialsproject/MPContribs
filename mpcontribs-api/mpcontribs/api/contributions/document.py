@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 import json
+import itertools
 
 from hashlib import md5
-from math import isnan
+from math import isnan, ceil
 from copy import deepcopy
 from datetime import datetime
 from flask import current_app
@@ -23,6 +24,7 @@ from pint.converters import ScaleConverter
 from pint.errors import DimensionalityError
 from uncertainties import ufloat_fromstr
 from collections import defaultdict
+from pymongo.errors import OperationFailure
 
 from mpcontribs.api import enter, valid_dict, delimiter
 
@@ -50,6 +52,15 @@ COMPONENTS = {
     "tables": ["index", "columns", "data"],
     "attachments": ["mime", "content"],
 }
+
+
+def grouper(n, iterable):
+    it = iter(iterable)
+    while True:
+        chunk = tuple(itertools.islice(it, n))
+        if not chunk:
+            return
+        yield chunk
 
 
 def format_cell(cell):
@@ -337,9 +348,35 @@ class Contributions(DynamicDocument):
         stats_kwargs = {"columns": len(new_columns), "contributions": qs.count()}
 
         for component in COMPONENTS.keys():
-            filter_kwargs = {f"{component}__exists": True, f"{component}__not__size": 0}
-            freqs = qs.filter(**filter_kwargs).item_frequencies(component)
-            stats_kwargs[component] = len(freqs)
+            # split by last_modified to avoid exceeding 16MB limit on item_frequencies
+            number_groups = 1
+            cqs = qs.filter(**{f"{component}__exists": True, f"{component}__not__size": 0})
+
+            if cqs.count() == 0:
+                continue
+
+            try:
+                last_modifieds = cqs.distinct("last_modified")  # TODO might exceed 16MB limit
+            except OperationFailure:
+                print("COULD NOT UPDATE STATS FOR", project.name, component)
+                continue
+
+            while True:
+                ids = set()
+                group_size = ceil(len(last_modifieds) / number_groups)
+
+                try:
+                    for g in grouper(group_size, last_modifieds):
+                        filter_kwargs = dict(last_modified__gte=g[0], last_modified__lte=g[-1])
+                        ids |= cqs.filter(**filter_kwargs).item_frequencies(component).keys()
+                except OperationFailure:
+                    number_groups *= 2
+                except Exception as e:
+                    print("COULD NOT UPDATE STATS FOR", project.name, component, e)
+                    break
+                else:
+                    stats_kwargs[component] = len(ids)
+                    break
 
         stats = Stats(**stats_kwargs)
         project.update(stats=stats)
