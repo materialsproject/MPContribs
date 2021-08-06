@@ -4,6 +4,8 @@
 import os
 import logging
 import yaml
+
+from copy import deepcopy
 from flask import current_app
 from typing import Pattern
 from importlib import import_module
@@ -111,7 +113,8 @@ def get_specs(klass, method, collection):
                     name = label
                     description = f"filter {label}"
                 else:
-                    name = f"{label}__{op.op}"
+                    suffix = op.suf if hasattr(op, "suf") else op.op
+                    name = f"{label}__{suffix}"
                     description = f"filter {label} via ${op.op}"
 
                 filter_params.append(
@@ -127,6 +130,15 @@ def get_specs(klass, method, collection):
                 if hasattr(op, "fmt"):
                     filter_params[-1]["format"] = op.fmt
 
+                if op.allow_negation:
+                    suffix = "not__"
+                    suffix += op.suf if hasattr(op, "suf") else op.op
+                    name = f"{label}__{suffix}"
+                    description = f"filter {label} via ${op.op}"
+                    param = deepcopy(filter_params[-1])
+                    param["name"] = name
+                    param["description"] = description
+                    filter_params.append(param)
 
     order_params = []
     if klass.resource.allowed_ordering:
