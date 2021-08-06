@@ -281,6 +281,7 @@ class Contributions(DynamicDocument):
 
         from mpcontribs.api.projects.document import Column, MAX_COLUMNS
 
+        # NOTE columns update below only works for single-project bulk updates
         # project is LazyReferenceField; account for custom query manager
         project = document.project.fetch().reload("columns")
         columns_copy = deepcopy(project.columns)
@@ -321,10 +322,27 @@ class Contributions(DynamicDocument):
             if path not in columns and getattr(document, path):
                 columns[path] = Column(path=path)
 
+        cls.update_project(sender, project, columns_copy, columns.values())
+
+    @classmethod
+    def update_project(cls, sender, project, old_columns, new_columns):
+        from mpcontribs.api.projects.document import Stats
+
         # only update columns if needed and unchanged in DB
-        new_columns = columns.values()
-        if columns_copy != new_columns and columns_copy == project.reload("columns").columns:
+        if old_columns != new_columns and old_columns == project.reload("columns").columns:
             project.update(columns=new_columns)
+
+        # update stats in project
+        qs = sender.objects(project=project.name)
+        stats_kwargs = {"columns": len(new_columns), "contributions": qs.count()}
+
+        for component in COMPONENTS.keys():
+            filter_kwargs = {f"{component}__exists": True, f"{component}__not__size": 0}
+            freqs = qs.filter(**filter_kwargs).item_frequencies(component)
+            stats_kwargs[component] = len(freqs)
+
+        stats = Stats(**stats_kwargs)
+        project.update(stats=stats)
 
     @classmethod
     def pre_delete(cls, sender, document, **kwargs):
@@ -365,10 +383,7 @@ class Contributions(DynamicDocument):
                 if qs.count() < 1 or sum(1 for d in qs if d.project.pk == project.name) < 1:
                     columns.pop(path)
 
-        # only update columns if needed and unchanged in DB
-        new_columns = columns.values()
-        if columns_copy != new_columns and columns_copy == project.reload("columns").columns:
-            project.update(columns=new_columns)
+        cls.update_project(sender, project, columns_copy, columns.values())
 
 
 signals.post_init.connect(Contributions.post_init, sender=Contributions)

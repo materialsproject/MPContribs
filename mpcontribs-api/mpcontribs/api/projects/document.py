@@ -13,13 +13,8 @@ from marshmallow_mongoengine.conversion.fields import register_field
 from mongoengine import EmbeddedDocument, signals
 from mongoengine.queryset.manager import queryset_manager
 from mongoengine.fields import (
-    StringField,
-    BooleanField,
-    DictField,
-    URLField,
-    EmailField,
-    FloatField,
-    EmbeddedDocumentListField,
+    StringField, BooleanField, DictField, URLField, EmailField,
+    FloatField, IntField, EmbeddedDocumentListField, EmbeddedDocumentField
 )
 from mpcontribs.api import send_email, sns_client, valid_key, valid_dict
 
@@ -94,6 +89,14 @@ class Reference(EmbeddedDocument):
     url = URLField(required=True, help_text="URL")
 
 
+class Stats(EmbeddedDocument):
+    columns = IntField(required=True, default=0, help_text="#columns")
+    contributions = IntField(required=True, default=0, help_text="#contributions")
+    tables = IntField(required=True, default=0, help_text="#tables")
+    structures = IntField(required=True, default=0, help_text="#structures")
+    attachments = IntField(required=True, default=0, help_text="#attachments")
+
+
 class Projects(Document):
     __project_regex__ = "^[a-zA-Z0-9_]{3,31}$"
     name = StringField(
@@ -147,6 +150,7 @@ class Projects(Document):
         required=True, default=True, help_text="identifiers unique?"
     )
     columns = EmbeddedDocumentListField(Column, max_length=MAX_COLUMNS)
+    stats = EmbeddedDocumentField(Stats)
     meta = {
         "collection": "projects",
         "indexes": ["is_public", "title", "owner", "is_approved", "unique_identifiers"],
@@ -163,6 +167,7 @@ class Projects(Document):
         admin_email = current_app.config["MAIL_DEFAULT_SENDER"]
         admin_topic = current_app.config["MAIL_TOPIC"]
         scheme = "http" if current_app.config["DEBUG"] else "https"
+
         if kwargs.get("created"):
             ts = current_app.config["USTS"]
             email_project = [document.owner, document.name]
@@ -189,6 +194,7 @@ class Projects(Document):
             )
         else:
             set_keys = document._delta()[0].keys()
+
             if "is_approved" in set_keys and document.is_approved:
                 subject = f'Your project "{document.name}" has been approved'
                 portal = f"{scheme}://{os.environ['PORTAL_CNAME']}"
@@ -203,6 +209,10 @@ class Projects(Document):
                     admin_topic.split(":")[:-1] + ["mpcontribs_" + document.name]
                 )
                 send_email(topic_arn, subject, html)
+
+            if "columns" in set_keys:
+                document.update(stats__columns=document.columns.count())
+
 
     @classmethod
     def post_delete(cls, sender, document, **kwargs):

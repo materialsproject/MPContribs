@@ -9,7 +9,7 @@ from flask_mongorest.methods import Fetch, Create, Delete, Update, BulkFetch
 from werkzeug.exceptions import Unauthorized
 from itsdangerous import SignatureExpired
 from mpcontribs.api.core import SwaggerView
-from mpcontribs.api.projects.document import Projects, Column, Reference
+from mpcontribs.api.projects.document import Projects, Column, Reference, Stats
 
 templates = os.path.join(os.path.dirname(flask_mongorest.__file__), "templates")
 projects = Blueprint("projects", __name__, template_folder=templates)
@@ -23,9 +23,18 @@ class ReferenceResource(Resource):
     document = Reference
 
 
+class StatsResource(Resource):
+    document = Stats
+    # TODO filters, fields?
+
+
 class ProjectsResource(Resource):
     document = Projects
-    related_resources = {"columns": ColumnResource, "references": ReferenceResource}
+    related_resources = {
+        "columns": ColumnResource,
+        "references": ReferenceResource,
+        "stats": StatsResource,
+    }
     filters = {
         "name": [ops.In, ops.Exact, ops.IContains],
         "is_public": [ops.Boolean],
@@ -59,6 +68,7 @@ class ProjectsResource(Resource):
             "references",
             "other",
             "columns",
+            "stats",
         ]
 
 
