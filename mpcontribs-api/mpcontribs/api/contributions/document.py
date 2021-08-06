@@ -156,7 +156,7 @@ class Contributions(DynamicDocument):
     )
     needs_build = BooleanField(default=True, help_text="needs notebook build?")
     data = DictField(
-        default={}, validation=valid_dict, help_text="simple free-form data"
+        default=dict, validation=valid_dict, help_text="simple free-form data"
     )
     structures = ListField(
         ReferenceField("Structures", null=True), default=list, max_length=10
