@@ -169,23 +169,39 @@ def apply(request):
 
 
 def browse(request):
+    # NOTE visibility governed by is_public flag and X-Authenticated-Groups header
     ctx = get_context(request)
-    ctx["landing_pages"] = []
+    stats_keys = ["columns", "contributions", "structures", "tables", "attachments"]
+    simple_table = []
     ckwargs = client_kwargs(request)
 
     with Client(**ckwargs) as client:
-        entries = client.projects.get_entries(_fields=["_all"]).result()["data"]
+        entries = client.projects.get_entries(
+            _fields=["name", "title", "is_public", "authors", "owner", "stats"],
+            _sort="-stats.contributions"
+        ).result()["data"]
 
-    for entry in entries:
-        authors = entry["authors"].strip().split(",", 1)
-        if len(authors) > 1:
-            authors[1] = authors[1].strip()
-        entry["authors"] = authors
-        entry["description"] = entry["description"].split(".", 1)[0] + "."
-        entry["has_data"] = bool(entry.pop("columns"))
-        entry["owner"] = entry["owner"].split(":", 1)[-1]
-        # visibility governed by is_public flag and X-Authenticated-Groups header
-        ctx["landing_pages"].append(entry)
+        for entry in entries:
+            author = entry.pop("authors").strip().split(",", 1)[0][:20]
+            owner = entry["owner"].split(":", 1)[-1]
+            href = f"/projects/{entry['name']}"
+
+            row = {
+                "title": f"<a href='{href}'>{entry['title']}</a>",
+                "public": entry["is_public"],
+                "author": f"<a href='mailto:{owner},contribs@materialsproject.org'>{author}</a>."
+            }
+
+            for k in stats_keys:
+                row[k] = entry["stats"][k]
+
+            simple_table.append(row)
+
+        # TODO simple table just for testing
+        ctx["simple_table"] = j2h.convert(
+            json=simple_table,
+            table_attributes='class="table is-narrow is-fullwidth has-background-light"',
+        )
     return render(request, "browse.html", ctx.flatten())
 
 

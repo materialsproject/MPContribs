@@ -13,75 +13,36 @@
             MPContribs is collectively maintained as annotations to existing MP materials and
             automatically exposed to over 190,000 MP users. MPContribs disseminates contributions as
             preview cards on MP's
-            <a href=https://materialsproject.org/materials/mp-22987/#user-contribs>materials details pages</a>,
-            in the form of domain-specific interactive landing pages on its portal, and
-            programmatically through a
-            <a href="https://pypi.org/project/mpcontribs-client/">python client</a>
+            <a href=https://next-gen.materialsproject.org/materials/mp-22987>materials details pages</a>,
+            in the form of domain-specific interactive landing pages on this portal, and
+            programmatically through a <a href="https://pypi.org/project/mpcontribs-client/">python client</a>
             for its <a href="https://contribs-api.materialsproject.org">API</a>.
-            MPContribs deployments dedicated to datasets for
-            <a href="https://ml.materialsproject.org">Machine Learning</a> and from
-            <a href="https://lightsources.materialsproject.org">DOE Light Sources</a>
-            are currently being built up.
         </div>
     </article>
 
-    {% if landing_pages %}
-    <div class="columns is-multiline">
-        {% for lp in landing_pages %}
-        <div class="column is-half" id="{{ lp.name }}" name=cards>
-        <article class="media box">
-            <div class="media-content">
-                {% if lp.references %}
-                <nav class="breadcrumb has-bullet-separator is-size-7 is-marginless">
-                    <ul>
-                        {% for ref in lp.references %}
-                        <li><a href="{{ref.url}}">{{ref.label}}</a></li>
-                        {% endfor %}
-                    </ul>
-                </nav>
-                {% endif %}
-                <div class="content is-size-6 is-marginless">
-                    {{ lp.authors.0 }}
-                    {% if lp.authors.1 %}
-                    <a class="has-tooltip-top has-tooltip-multiline"
-                          data-tooltip="{{ lp.authors.1 }}">et al.</a>
-                    </a>
-                    {% endif %}
-                </div>
-                <details class="content">
-                    <summary>
-                        <a class="is-size-4 has-text-weight-semibold" href="projects/{{ lp.name }}/">
-                            {{ lp.title }}
-                        </a>
-                    </summary>
-                    <p class="is-size-6">{{ lp.description }}</p>
-                </details>
-                {% if not request.META.HTTP_X_ANONYMOUS_CONSUMER %}
-                {% if lp.has_data %}
-                <a name=download id=download_{{lp.name}}_json
-                    class="button is-primary is-light is-small"
-                    data-format=json data-project={{lp.name}}>JSON</a>
-                <a name=download id=download_{{lp.name}}_csv
-                    class="button is-primary is-light is-small"
-                    data-format=csv data-project={{lp.name}}>CSV</a>
-                <span class="tag is-hidden" id=download_{{lp.name}}_progress></span>
-                <a name=get_download id=get_download_{{lp.name}} data-project={{lp.name}}
-                    class="button is-danger is-light is-hidden is-small">Click to download</a>
-                {% else %}
-                <span class="notification is-warning p-1 is-light is-size-7">
-                    Data not available yet. Contact <a href="mailto:{{lp.owner}},contribs@materialsproject.org">us</a>.
-                </span>
-                {% endif %}
-                {% endif %}
-                {% if not lp.is_public %}
-                <span class="tag is-light is-danger is-pulled-right">private</span>
-                {% endif %}
-            </div>
-        </article>
-        </div>
-        {% endfor %}
+    <!--
+    {% if not request.META.HTTP_X_ANONYMOUS_CONSUMER %}
+    {% if lp.total %}
+    <span class="tag">{{ lp.total }}</span>
+    <a name=download id=download_{{lp.name}}_json
+        class="button is-primary is-light is-small"
+        data-format=json data-project={{lp.name}}>JSON</a>
+    <a name=download id=download_{{lp.name}}_csv
+        class="button is-primary is-light is-small"
+        data-format=csv data-project={{lp.name}}>CSV</a>
+    <span class="tag is-hidden" id=download_{{lp.name}}_progress></span>
+    <a name=get_download id=get_download_{{lp.name}} data-project={{lp.name}}
+        class="button is-danger is-light is-hidden is-small">Click to download</a>
+    {% else %}
+    <span class="notification is-warning p-1 is-light is-size-7">
+        Data not available yet. Contact <a href="mailto:{{lp.owner}},contribs@materialsproject.org">us</a>.
+    </span>
+    {% endif %}
     </div>
     {% endif %}
+    -->
+
+    {% if simple_table %}{{ simple_table|safe }}{% endif %}
 </section>
 {% endblock %}
 
