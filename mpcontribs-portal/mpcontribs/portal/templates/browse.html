@@ -26,28 +26,10 @@
     </article>
 
     {% if landing_pages %}
-    {% for lp in landing_pages %}
-    <div class="modal" id=thumbnail_{{lp.name}}_modal>
-        <div class="modal-background" name=thumbnail_close></div>
-        <div class="modal-content">
-            <p class="image" name=thumbnail_{{lp.name}}_img></p>
-        </div>
-        <button class="modal-close is-large"
-                aria-label="close"
-                name=thumbnail_close>
-        </button>
-    </div>
-    {% endfor %}
-
     <div class="columns is-multiline">
         {% for lp in landing_pages %}
         <div class="column is-half" id="{{ lp.name }}" name=cards>
         <article class="media box">
-            <a name=thumbnail id=thumbnail_{{lp.name}}>
-                <figure name=thumbnail_{{lp.name}}_img
-                        class="media-left image is-hidden-touch is-128x128 is-clipped">
-                </figure>
-            </a>
             <div class="media-content">
                 {% if lp.references %}
                 <nav class="breadcrumb has-bullet-separator is-size-7 is-marginless">
