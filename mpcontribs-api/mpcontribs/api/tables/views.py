@@ -31,7 +31,11 @@ class TablesResource(Resource):
         "id": [ops.In, ops.Exact],
         "md5": [ops.In, ops.Exact],
         "name": FILTERS["STRINGS"],
-        "columns": [ops.Size]
+        "columns": [ops.Size],
+        "attrs__title": FILTERS["STRINGS"],
+        "attrs__labels__index": FILTERS["STRINGS"],
+        "attrs__labels__value": FILTERS["STRINGS"],
+        "attrs__labels__variable": FILTERS["STRINGS"],
     }
     fields = ["id", "name", "md5"]
     allowed_ordering = ["name"]

@@ -29,7 +29,10 @@ class Tables(DynamicDocument):
     data = ListField(ListField(StringField()), required=True, help_text="table rows")
     md5 = StringField(regex=r"^[a-z0-9]{32}$", unique=True, help_text="md5 sum")
     total_data_rows = IntField(help_text="total number of rows")
-    meta = {"collection": "tables", "indexes": ["name", "columns", "md5"]}
+    meta = {"collection": "tables", "indexes": [
+        "name", "columns", "md5", "attrs.title",
+        "attrs.labels.index", "attrs.labels.value", "attrs.labels.variable"
+    ]}
 
     @queryset_manager
     def objects(doc_cls, queryset):
