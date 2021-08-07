@@ -6,6 +6,7 @@ import boto3
 import requests
 import rq_dashboard
 import flask_monitoringdashboard as dashboard
+import flask_mongorest.operators as ops
 
 from importlib import import_module
 from websocket import create_connection
@@ -45,6 +46,20 @@ for mod in [
 
 logger = logging.getLogger("app")
 sns_client = boto3.client("sns")
+
+# NOTE not including Size below (special for arrays)
+FILTERS = {
+    "LONG_STRINGS": [
+        ops.Contains, ops.IContains,
+        ops.Startswith, ops.IStartswith,
+        ops.Endswith, ops.IEndswith
+    ],
+    "NUMBERS": [ops.Lt, ops.Lte, ops.Gt, ops.Gte, ops.Range],
+    "DATES": [ops.Before, ops.After],
+    "OTHERS": [ops.Boolean, ops.Exists],
+}
+FILTERS["STRINGS"] = [ops.In, ops.Exact, ops.IExact, ops.Ne] + FILTERS["LONG_STRINGS"]
+FILTERS["ALL"] = FILTERS["STRINGS"] + FILTERS["NUMBERS"] + FILTERS["DATES"] + FILTERS["OTHERS"]
 
 
 def enter(path, key, value):

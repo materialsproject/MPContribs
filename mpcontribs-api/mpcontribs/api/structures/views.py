@@ -6,6 +6,7 @@ from flask_mongorest import operators as ops
 from flask_mongorest.methods import Fetch, BulkFetch, Download
 from flask import Blueprint
 
+from mpcontribs.api import FILTERS
 from mpcontribs.api.core import SwaggerView
 from mpcontribs.api.structures.document import Structures
 
@@ -18,7 +19,7 @@ class StructuresResource(Resource):
     filters = {
         "id": [ops.In, ops.Exact],
         "md5": [ops.In, ops.Exact],
-        "name": ops.STRINGS,
+        "name": FILTERS["STRINGS"],
         "sites": [ops.Size]
     }
     fields = ["id", "name", "md5"]

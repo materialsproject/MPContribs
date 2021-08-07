@@ -7,6 +7,7 @@ from flask_mongorest.methods import Fetch, BulkFetch, Download
 from flask_mongorest.exceptions import UnknownFieldError
 from flask import Blueprint
 
+from mpcontribs.api import FILTERS
 from mpcontribs.api.core import SwaggerView
 from mpcontribs.api.tables.document import Tables, Attributes, Labels
 
@@ -29,7 +30,7 @@ class TablesResource(Resource):
     filters = {
         "id": [ops.In, ops.Exact],
         "md5": [ops.In, ops.Exact],
-        "name": ops.STRINGS,
+        "name": FILTERS["STRINGS"],
         "columns": [ops.Size]
     }
     fields = ["id", "name", "md5"]

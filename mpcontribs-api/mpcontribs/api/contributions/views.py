@@ -11,18 +11,11 @@ from flask import Blueprint, render_template
 from flask_mongorest.resources import Resource
 from flask_mongorest import operators as ops
 from flask_mongorest.methods import (
-    Fetch,
-    Delete,
-    Update,
-    BulkFetch,
-    BulkCreate,
-    BulkUpdate,
-    BulkDelete,
-    Download,
+    Fetch, Delete, Update, BulkFetch, BulkCreate, BulkUpdate, BulkDelete, Download,
 )
 from flask_mongorest.exceptions import UnknownFieldError
 
-from mpcontribs.api import enter
+from mpcontribs.api import enter, FILTERS
 from mpcontribs.api.core import SwaggerView
 from mpcontribs.api.contributions.document import Contributions
 from mpcontribs.api.structures.views import StructuresResource
@@ -53,13 +46,13 @@ class ContributionsResource(Resource):
     save_related_fields = ["structures", "tables", "attachments", "notebook"]
     filters = {
         "id": [ops.In, ops.Exact],
-        "project": ops.STRINGS,
-        "identifier": ops.STRINGS,
-        "formula": ops.STRINGS,
+        "project": FILTERS["STRINGS"],
+        "identifier": FILTERS["STRINGS"],
+        "formula": FILTERS["STRINGS"],
         "is_public": [ops.Boolean],
-        "last_modified": ops.DATES,
+        "last_modified": FILTERS["DATES"],
         "needs_build": [ops.Boolean],
-        re.compile(r"^data__((?!__).)*$"): ops.ALL,
+        re.compile(r"^data__((?!__).)*$"): FILTERS["ALL"],
         "structures": [ops.Size],
         "tables": [ops.Size],
         "attachments": [ops.Size]

@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import os
 import flask_mongorest
+
 from mongoengine.queryset import DoesNotExist
 from flask import Blueprint, current_app, url_for
 from flask_mongorest.resources import Resource
@@ -8,6 +9,8 @@ from flask_mongorest import operators as ops
 from flask_mongorest.methods import Fetch, Create, Delete, Update, BulkFetch
 from werkzeug.exceptions import Unauthorized
 from itsdangerous import SignatureExpired
+
+from mpcontribs.api import FILTERS
 from mpcontribs.api.core import SwaggerView
 from mpcontribs.api.projects.document import Projects, Column, Reference, Stats
 
@@ -25,7 +28,13 @@ class ReferenceResource(Resource):
 
 class StatsResource(Resource):
     document = Stats
-    # TODO filters, fields?
+    filters = {
+        "columns": FILTERS["NUMBERS"],
+        "contributions": FILTERS["NUMBERS"],
+        "tables": FILTERS["NUMBERS"],
+        "structures": FILTERS["NUMBERS"],
+        "attachments": FILTERS["NUMBERS"],
+    }
 
 
 class ProjectsResource(Resource):
@@ -36,13 +45,13 @@ class ProjectsResource(Resource):
         "stats": StatsResource,
     }
     filters = {
-        "name": ops.STRINGS,
+        "name": FILTERS["STRINGS"],
         "is_public": [ops.Boolean],
-        "title": ops.LONG_STRINGS,
-        "long_title": ops.LONG_STRINGS,
-        "authors": ops.LONG_STRINGS,
-        "description": ops.LONG_STRINGS,
-        "owner": ops.STRINGS,
+        "title": FILTERS["LONG_STRINGS"],
+        "long_title": FILTERS["LONG_STRINGS"],
+        "authors": FILTERS["LONG_STRINGS"],
+        "description": FILTERS["LONG_STRINGS"],
+        "owner": FILTERS["LONG_STRINGS"],
         "is_approved": [ops.Boolean],
         "unique_identifiers": [ops.Boolean],
         "columns": [ops.Size],

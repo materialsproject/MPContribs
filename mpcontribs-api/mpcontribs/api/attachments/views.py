@@ -7,6 +7,7 @@ from flask_mongorest.methods import Fetch, BulkFetch, Download
 from flask_mongorest.exceptions import UnknownFieldError
 from flask import Blueprint
 
+from mpcontribs.api import FILTERS
 from mpcontribs.api.core import SwaggerView
 from mpcontribs.api.attachments.document import Attachments
 
@@ -19,8 +20,8 @@ class AttachmentsResource(Resource):
     filters = {
         "id": [ops.In, ops.Exact],
         "md5": [ops.In, ops.Exact],
-        "name": ops.STRINGS,
-        "mime": ops.STRINGS,
+        "name": FILTERS["STRINGS"],
+        "mime": FILTERS["STRINGS"],
     }
     fields = ["id", "name", "mime", "md5"]
     allowed_ordering = ["name", "mime"]
