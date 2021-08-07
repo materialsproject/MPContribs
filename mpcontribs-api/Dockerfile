@@ -1,21 +1,22 @@
 FROM materialsproject/devops:python-3.96.3 as base
 RUN apt-get update && apt-get install -y --no-install-recommends supervisor libpq-dev && apt-get clean
+WORKDIR /app
 
 FROM base as builder
 RUN apt-get update && apt-get install -y --no-install-recommends gcc git g++ libsnappy-dev wget && apt-get clean
 ENV PATH /root/.local/bin:$PATH
-WORKDIR /app
 ENV PIP_FLAGS "--user --no-cache-dir --compile --use-feature=in-tree-build"
 COPY requirements.txt .
 RUN pip install $PIP_FLAGS -r requirements.txt
 COPY setup.py .
 COPY mpcontribs mpcontribs
 RUN pip install $PIP_FLAGS -e .
-#COPY marshmallow-mongoengine
+#ENV SETUPTOOLS_SCM_PRETEND_VERSION dev
+#COPY marshmallow-mongoengine marshmallow-mongoengine
 #RUN cd marshmallow-mongoengine && pip install $PIP_FLAGS -e .
-#COPY mimerender .
+#COPY mimerender mimerender
 #RUN cd mimerender && pip install $PIP_FLAGS -e .
-#COPY flask-mongorest .
+#COPY flask-mongorest flask-mongorest
 #RUN cd flask-mongorest && pip install $PIP_FLAGS -e .
 RUN wget -q https://raw.githubusercontent.com/vishnubob/wait-for-it/master/wait-for-it.sh && \
     chmod +x wait-for-it.sh && mv wait-for-it.sh /root/.local/bin/ && \
@@ -29,7 +30,6 @@ COPY --from=builder /usr/lib/x86_64-linux-gnu/libsnappy* /usr/lib/x86_64-linux-g
 COPY --from=builder /app/mpcontribs/api /app/mpcontribs/api
 RUN mkdir -p /var/log/supervisor
 
-WORKDIR /app
 ENV PATH=/root/.local/bin:$PATH \
     PYTHONUNBUFFERED=1 \
     FLASK_APP=mpcontribs.api \
