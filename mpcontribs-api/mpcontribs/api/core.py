@@ -57,9 +57,48 @@ def get_limit_params(resource, method):
     ]
 
 
+def get_filter_params(name, filters):
+    filter_params = []
+    is_pattern = isinstance(name, Pattern)
+    label = name.pattern if is_pattern else name
+    for op in filters:
+        if op.op == "exact" and not is_pattern:
+            name = label
+            description = f"filter {label}"
+        else:
+            suffix = op.suf if hasattr(op, "suf") else op.op
+            name = f"{label}__{suffix}"
+            description = f"filter {label} via ${op.op}"
+
+        filter_params.append(
+            {
+                "name": name,
+                "in": "query",
+                "type": op.typ,
+                "description": description,
+            }
+        )
+        if op.typ == "array":
+            filter_params[-1]["items"] = {"type": "string"}
+        if hasattr(op, "fmt"):
+            filter_params[-1]["format"] = op.fmt
+
+        if op.allow_negation:
+            suffix = "not__"
+            suffix += op.suf if hasattr(op, "suf") else op.op
+            name = f"{label}__{suffix}"
+            description = f"filter {label} via ${op.op}"
+            param = deepcopy(filter_params[-1])
+            param["name"] = name
+            param["description"] = description
+            filter_params.append(param)
+
+    return filter_params
+
+
 def get_specs(klass, method, collection):
     method_name = (
-        method.__name__ if getattr(method, "__name__", None) is not None else method
+        method.__name__ if hasattr(method, "__name__") else method
     )
     default_response = {
         "description": "Error",
@@ -104,41 +143,9 @@ def get_specs(klass, method, collection):
         )
 
     filter_params = []
-    if getattr(klass.resource, "filters", None) is not None:
+    if hasattr(klass.resource, "filters"):
         for k, v in klass.resource.filters.items():
-            is_pattern = isinstance(k, Pattern)
-            label = k.pattern if is_pattern else k
-            for op in v:
-                if op.op == "exact" and not is_pattern:
-                    name = label
-                    description = f"filter {label}"
-                else:
-                    suffix = op.suf if hasattr(op, "suf") else op.op
-                    name = f"{label}__{suffix}"
-                    description = f"filter {label} via ${op.op}"
-
-                filter_params.append(
-                    {
-                        "name": name,
-                        "in": "query",
-                        "type": op.typ,
-                        "description": description,
-                    }
-                )
-                if op.typ == "array":
-                    filter_params[-1]["items"] = {"type": "string"}
-                if hasattr(op, "fmt"):
-                    filter_params[-1]["format"] = op.fmt
-
-                if op.allow_negation:
-                    suffix = "not__"
-                    suffix += op.suf if hasattr(op, "suf") else op.op
-                    name = f"{label}__{suffix}"
-                    description = f"filter {label} via ${op.op}"
-                    param = deepcopy(filter_params[-1])
-                    param["name"] = name
-                    param["description"] = description
-                    filter_params.append(param)
+            filter_params += get_filter_params(k, v)
 
     order_params = []
     if klass.resource.allowed_ordering:
@@ -216,7 +223,7 @@ def get_specs(klass, method, collection):
                 "in": "path",
                 "type": "string",
                 "required": True,
-                "description": f"MIME Download Type: gz",
+                "description": "MIME Download Type: gz",
                 "default": "gz",
             },
             {
