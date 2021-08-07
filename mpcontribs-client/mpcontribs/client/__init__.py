@@ -10,6 +10,7 @@ import pandas as pd
 import plotly.io as pio
 import itertools
 
+from bravado_core.param import Param
 from bson.objectid import ObjectId
 from typing import Union, Type, List
 from tqdm.auto import tqdm
@@ -446,48 +447,41 @@ class Client(SwaggerClient):
             # skip in tests
             return
 
-        columns = {"text": [], "number": []}
+        columns = {"string": [], "number": []}
+
         for project in resp["data"]:
             for column in project["columns"]:
                 if column["path"].startswith("data."):
                     col = column["path"].replace(".", "__")
                     if column["unit"] == "NaN":
-                        columns["text"].append(col)
+                        columns["string"].append(col)
                     else:
                         col = f"{col}__value"
                         columns["number"].append(col)
 
-        operators = {"text": ["exact", "contains"], "number": ["gte", "lte"]}
-        for path, d in spec_dict["paths"].items():
-            for verb in ["get", "put", "post", "delete"]:
-                if verb in d:
-                    old_params = deepcopy(d[verb].pop("parameters"))
-                    new_params, param_names = [], set()
+        params_loaded = 0
+        resource = self.swagger_spec.resources["contributions"]
 
-                    while old_params:
-                        param = old_params.pop()
-                        if param["name"].startswith("^data__"):
-                            op = param["name"].rsplit("__", 1)[1]
-                            for typ, ops in operators.items():
-                                if op in ops:
-                                    for column in columns[typ]:
-                                        new_param = deepcopy(param)
-                                        param_name = f"{column}__{op}"
-                                        if param_name not in param_names:
-                                            new_param["name"] = param_name
-                                            desc = f"filter {column} via ${op}"
-                                            new_param["description"] = desc
-                                            new_params.append(new_param)
-                                            param_names.add(param_name)
-                        else:
-                            new_params.append(param)
+        for operation_id, operation in resource.operations.items():
+            for pn in list(operation.params.keys()):
+                if pn.startswith("data_"):
+                    param = operation.params.pop(pn)
+                    op = param.name.rsplit('$__', 1)[-1]
+                    typ = param.param_spec.get("type")
+                    key = "number" if typ == "number" else "string"
 
-                    d[verb]["parameters"] = new_params
+                    for column in columns[key]:
+                        param_name = f"{column}__{op}"
+                        param_spec = deepcopy(param.param_spec)
+                        param_spec["name"] = param_name
+                        param_spec.pop("description")
+                        operation.params[param_name] = Param(
+                            self.swagger_spec, operation, param_spec
+                        )
+                        params_loaded += 1
 
-        swagger_spec = Spec.from_dict(spec_dict, origin_url, http_client, config)
-        super().__init__(
-            swagger_spec, also_return_response=bravado_config.also_return_response
-        )
+        print(f"(Re-)loaded {params_loaded} query parameters for `data`.")
+
 
     def __dir__(self):
         members = set(self.swagger_spec.resources.keys())
