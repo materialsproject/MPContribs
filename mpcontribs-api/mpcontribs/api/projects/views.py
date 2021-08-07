@@ -28,13 +28,6 @@ class ReferenceResource(Resource):
 
 class StatsResource(Resource):
     document = Stats
-    filters = {
-        "columns": FILTERS["NUMBERS"],
-        "contributions": FILTERS["NUMBERS"],
-        "tables": FILTERS["NUMBERS"],
-        "structures": FILTERS["NUMBERS"],
-        "attachments": FILTERS["NUMBERS"],
-    }
 
 
 class ProjectsResource(Resource):
@@ -55,6 +48,11 @@ class ProjectsResource(Resource):
         "is_approved": [ops.Boolean],
         "unique_identifiers": [ops.Boolean],
         "columns": [ops.Size],
+        "stats__columns": FILTERS["NUMBERS"],
+        "stats__contributions": FILTERS["NUMBERS"],
+        "stats__tables": FILTERS["NUMBERS"],
+        "stats__structures": FILTERS["NUMBERS"],
+        "stats__attachments": FILTERS["NUMBERS"],
     }
     fields = [
         "name",
