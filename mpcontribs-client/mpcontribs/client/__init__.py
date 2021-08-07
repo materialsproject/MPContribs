@@ -459,7 +459,6 @@ class Client(SwaggerClient):
                         col = f"{col}__value"
                         columns["number"].append(col)
 
-        params_loaded = 0
         resource = self.swagger_spec.resources["contributions"]
 
         for operation_id, operation in resource.operations.items():
@@ -478,10 +477,6 @@ class Client(SwaggerClient):
                         operation.params[param_name] = Param(
                             self.swagger_spec, operation, param_spec
                         )
-                        params_loaded += 1
-
-        print(f"(Re-)loaded {params_loaded} query parameters for `data`.")
-
 
     def __dir__(self):
         members = set(self.swagger_spec.resources.keys())
