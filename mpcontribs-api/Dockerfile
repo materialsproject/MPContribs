@@ -8,10 +8,14 @@ WORKDIR /app
 ENV PIP_FLAGS "--user --no-cache-dir --compile --use-feature=in-tree-build"
 COPY requirements.txt .
 RUN pip install $PIP_FLAGS -r requirements.txt
-COPY . .
+COPY setup.py .
+COPY mpcontribs mpcontribs
 RUN pip install $PIP_FLAGS -e .
+#COPY marshmallow-mongoengine
 #RUN cd marshmallow-mongoengine && pip install $PIP_FLAGS -e .
+#COPY mimerender .
 #RUN cd mimerender && pip install $PIP_FLAGS -e .
+#COPY flask-mongorest .
 #RUN cd flask-mongorest && pip install $PIP_FLAGS -e .
 RUN wget -q https://raw.githubusercontent.com/vishnubob/wait-for-it/master/wait-for-it.sh && \
     chmod +x wait-for-it.sh && mv wait-for-it.sh /root/.local/bin/ && \
