@@ -471,8 +471,7 @@ def create_download(request):
             return JsonResponse({"error": "No results for query."})
 
         last_modified = client.contributions.get_entries(
-            order="desc", _order_by="last_modified",
-            _fields=["last_modified"], _limit=1,
+            _sort="-last_modified", _fields=["last_modified"], _limit=1,
             **{k: v for k, v in query.items() if k != "format"}
         ).result()["data"][0]["last_modified"]
 

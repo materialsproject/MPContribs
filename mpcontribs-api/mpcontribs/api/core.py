@@ -146,20 +146,12 @@ def get_specs(klass, method, collection):
             o.pattern if isinstance(o, Pattern) else o
             for o in klass.resource.allowed_ordering
         ]
-        order_params = [
-            {
-                "name": "_order_by",
-                "in": "query",
-                "type": "string",
-                "description": f"order {collection} via {allowed_ordering}",
-            },
-            {
-                "name": "order",
-                "in": "query",
-                "type": "string",
-                "description": f"order {collection} *asc* or *desc*",
-            },
-        ]
+        order_params = [{
+            "name": "_sort",
+            "in": "query",
+            "type": "string",
+            "description": f"sort {collection} via {allowed_ordering}. Prepend +/- for asc/desc.",
+        }]
 
     spec = None
     if method_name == "Fetch":

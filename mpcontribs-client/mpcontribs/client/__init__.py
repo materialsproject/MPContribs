@@ -1415,7 +1415,7 @@ class Client(SwaggerClient):
 
             end = datetime.utcnow()
             updated_total, _ = self.get_totals(query=dict(
-                project__in=project_names, last_modified__gt=start, last_modified__lt=end
+                project__in=project_names, last_modified__after=start, last_modified__before=end
             ), timeout=timeout)
             toc = time.perf_counter()
             dt = (toc - tic) / 60
