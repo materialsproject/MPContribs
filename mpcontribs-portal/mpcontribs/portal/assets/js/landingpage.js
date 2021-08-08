@@ -34,7 +34,7 @@ const fields = columns.flatMap((conf) => {
     }
     return ret;
 });
-const default_limit = 20;
+const default_limit = 30;
 const default_query = {
     _fields: fields.join(','), project: project, _skip: 0, _limit: default_limit
 };
@@ -198,12 +198,9 @@ if (container) {
         colHeaders: headers, columns: columns, rowHeaders: false,
         hiddenColumns: true, nestedHeaders: nestedHeaders, //rowHeaderWidth: 75,
         width: '100%', stretchH: 'all', rowHeights: rowHeight,
-        preventOverflow: 'horizontal',
+        preventOverflow: 'horizontal', disableVisualSelection: true,
         licenseKey: 'non-commercial-and-evaluation',
-        disableVisualSelection: true,
-        className: "htCenter htMiddle",
-        persistentState: true, columnSorting: true,
-        //manualColumnMove: true,
+        className: "htCenter htMiddle", columnSorting: true,
         manualColumnResize: true, collapsibleColumns: true,
         beforeColumnSort: function(currentSortConfig, destinationSortConfigs) {
             const columnSortPlugin = this.getPlugin('columnSorting');
@@ -268,18 +265,17 @@ function toggle_columns(doms) {
 }
 
 $('#table_filter').on('click', function(e) {
+    e.preventDefault();
+    $(this).addClass('is-loading');
     reset_table_download();
     var kw = $('#table_keyword').val();
-    if (kw) {
-        $(this).addClass('is-loading');
-        e.preventDefault();
-        var sel = $( "#table_select option:selected" ).text();
-        var key = sel.replace(/\./g, '__') + '__contains';
-        query[key] = kw;
-        query['_skip'] = 0;
-        toggle_columns("input[name=column_manager_item]:checked");
-        load_data(hot);
-    }
+    var sel = $( "#table_select option:selected" ).text();
+    var key = sel.replace(/\./g, '__') + '__contains';
+    if (kw) { query[key] = kw; }
+    else { delete query[key]; }
+    query['_skip'] = 0;
+    toggle_columns("input[name=column_manager_item]:checked");
+    load_data(hot);
 });
 
 $('#table_keyword').keypress(function(e) {
@@ -406,6 +402,12 @@ $('a[name=table_download]').click(function(e) {
 });
 
 $("#table_get_download").click(function() { reset_table_download(); });
+
+$("#toggle_collapse").change(function() {
+    const collapse = hot.getPlugin("collapsibleColumns");
+    if (this.checked) { collapse.collapseAll(); }
+    else { collapse.expandAll(); }
+});
 
 //if ($("#graph").length && project !== 'redox_thermo_csp') {
 //    render_overview(project, grid);

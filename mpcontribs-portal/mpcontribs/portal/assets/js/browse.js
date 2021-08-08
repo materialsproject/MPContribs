@@ -20,13 +20,11 @@ var hot;
 var nrows;
 
 for (var c = 0; c < main_columns.length; c++) {
-    columns.push({"type": "text", "renderer": "html"});
+    columns.push({type: "text", renderer: "html", readOnly: true});
 }
 
 for (var c = 0; c < stats_columns.length; c++) {
-    columns.push({
-        "type": "numeric", "renderer": "numeric", readOnly: true
-    });
+    columns.push({type: "numeric", renderer: "numeric", readOnly: true});
     columnSummary.push({
         destinationRow: 0,
         destinationColumn: c + main_columns.length,
@@ -50,7 +48,7 @@ $.get({
         var owner = doc["owner"].split(":")[1];
         var mailto = 'mailto:' + owner + ',contribs@materialsproject.org';
         var at = '<a href="' + mailto + '">';
-        at += '<span class="icon-text"><span class="icon"><i class="fas fa-at"></i></span><span>';
+        at += '<span class="icon-text"><span class="icon"><i class="fas fa-envelope"></i></span><span>';
         at += author + '</span></span></a>';
         d.push(at);
         for (var c = 0; c < stats_columns.length; c++) {

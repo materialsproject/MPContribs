@@ -108,12 +108,12 @@
 
     {% if not request.META.HTTP_X_ANONYMOUS_CONSUMER %}
     {% if columns and columns.strip != 'null' %}
-    <nav class="level box">
+    <nav class="level">
         <div class="level-left">
             <div class="level-item has-text-centered">
                 <div>
-                    <p class="heading is-marginless">Contributions</p>
-                    <p class="subtitle has-text-light" id=total_count></p>
+                    <p class="heading">Count</p>
+                    <p class="subtitle" id=total_count></p>
                 </div>
             </div>
         </div>
@@ -144,7 +144,13 @@
         </div>
         <div class="level-item">
             <div>
-                <p class="heading has-text-centered">Select Columns</p>
+                <p class="heading has-text-centered is-marginless">Select Columns</p>
+                <p class="control">
+                <div class="is-marginless has-text-centered">
+                    <input type="checkbox" id=toggle_collapse>
+                    <label for=toggle_collapse style="vertical-align: 3px;"><span class="is-size-7">collapse all</span></label>
+                </div>
+                </p>
                 <p class="control">
                 <div class="dropdown">
                     <div class="field has-addons is-centered is-marginless">
