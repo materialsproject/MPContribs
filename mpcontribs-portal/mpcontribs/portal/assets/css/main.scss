@@ -103,3 +103,5 @@ pre code.hljs { padding: 0px;  }
     flex-direction: column;
     justify-content: center;
 }
+
+tr.htHover:hover td { background-color: $old-grey-light; }
