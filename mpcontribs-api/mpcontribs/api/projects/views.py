@@ -3,7 +3,7 @@ import os
 import flask_mongorest
 
 from mongoengine.queryset import DoesNotExist
-from flask import Blueprint, current_app, url_for
+from flask import Blueprint, current_app, url_for, jsonify, abort, request
 from flask_mongorest.resources import Resource
 from flask_mongorest import operators as ops
 from flask_mongorest.methods import Fetch, Create, Delete, Update, BulkFetch
@@ -84,9 +84,9 @@ class ProjectsView(SwaggerView):
     resource = ProjectsResource
     methods = [Fetch, Create, Delete, Update, BulkFetch]
 
-    def has_add_permission(self, request, obj):
+    def has_add_permission(self, req, obj):
         # limit the number of projects a user can own (unless admin)
-        groups = self.get_groups(request)
+        groups = self.get_groups(req)
         if self.is_admin(groups):
             return True
 
@@ -141,3 +141,19 @@ def applications(token, action):
         obj.delete()  # post_delete signal sends notification
 
     return f'{project} {action.replace("y", "ie")}d and {owner} notified.'
+
+
+@projects.route("/search")
+def search():
+    term = request.args.get("term")
+    if not term:
+        abort(404, description="Missing search term.")
+
+    pipeline = [{
+        "$search": {
+            "index": "mpcontribs-dev-project-search",
+            "text": {"path": {"wildcard": "*"}, "query": term}
+        }
+    }, {"$project": {"_id": 1}}]
+    result = [p["_id"] for p in Projects.objects().aggregate(pipeline)]
+    return jsonify(result)
