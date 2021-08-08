@@ -245,8 +245,15 @@ if (container) {
             }
         }
     });
-
     load_data(hot);
+    hot.addHook('afterOnCellMouseOver', function(e, coords, TD) {
+        var row = coords["row"];
+        if (row > 0) { $(TD).parent().addClass("htHover"); }
+    });
+    hot.addHook('afterOnCellMouseOut', function(e, coords, TD) {
+        var row = coords["row"];
+        if (row > 0) { $(TD).parent().removeClass("htHover"); }
+    });
 }
 
 function toggle_columns(doms) {
