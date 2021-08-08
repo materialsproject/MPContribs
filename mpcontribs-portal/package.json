@@ -35,7 +35,6 @@
     "handsontable": "^9.0.0",
     "highlight.js": "^11.1.0",
     "imports-loader": "^3.0.0",
-    "intro.js": "^4.0.0",
     "ion-rangeslider": "^2.3.1",
     "jquery": "^3.5.1",
     "jquery-form": "tschaume/form",
