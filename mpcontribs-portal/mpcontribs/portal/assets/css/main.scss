@@ -3,7 +3,6 @@
 @import "~select2/dist/css/select2.min.css";
 @import "~@fortawesome/fontawesome-free/css/all.css";
 @import '~handsontable/dist/handsontable.full.css';
-@import "~intro.js/introjs.css";
 
 $family-sans-serif: "Nunito", sans-serif;
 $tooltip-background-opacity: 1;
@@ -98,3 +97,9 @@ table { white-space: nowrap; }
 .dropdown-content { max-height: 13em; overflow: auto; }
 #component-modal { z-index: 300; }
 pre code.hljs { padding: 0px;  }
+
+.navbar-item.center {
+    flex-grow: 1;
+    flex-direction: column;
+    justify-content: center;
+}

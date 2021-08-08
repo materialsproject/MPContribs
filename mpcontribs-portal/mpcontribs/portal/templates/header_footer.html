@@ -28,44 +28,20 @@
               </div>
           </div>
           <div id="navbarBasicExample" class="navbar-menu">
-              <div class="navbar-start">
-                  <div class="navbar-item has-text-centered">
-                      <div class="tabs is-toggle is-toggle-rounded has-text-weight-semibold">
-                          <ul>
-                              <li data-intro="Browse a list of all available projects."
-                                  data-step="2">
-                                  <a id="browse-toggle" href="/browse">Browse</a>
-                              </li>
-                              <li data-intro="Search contributions and render their cards."
-                                  data-step="3">
-                                  <a id="search-toggle" href="/search">Search</a>
-                              </li>
-                              <li data-intro="Apply for your own project."
-                                  data-step="4">
-                                  <a id="apply-toggle" href="/contribute">Contribute</a>
-                              </li>
-                              <li>
-                                  <!-- TODO link to local docs in dev -->
-                                  <a id=docs_url target="_blank" href="https://docs.mpcontribs.org">
-                                      Docs
-                                  </a>
-                              </li>
-                          </ul>
-                      </div>
-                  </div>
-                  <div class="navbar-item has-text-centered"
-                       data-intro="Use this dropdown menu to quickly jump to specific projects, or to search for keywords in their descriptions. The search will reduce the list of projects shown on the <i>Browse</i> tab to those matching the keyword."
-                       data-step="1">
-                      <select id="jump" data-placeholder="Search or jump to projects ...">
-                          <option></option>
-                      </select>
+              <div class="navbar-item has-text-centered center">
+                  <div class="tabs is-toggle is-toggle-rounded has-text-weight-semibold">
+                      <ul>
+                          <li><a id="browse-toggle" href="/browse">Browse</a></li>
+                          <li><a id="search-toggle" href="/search">Search</a></li>
+                          <li><a id="apply-toggle" href="/contribute">Contribute</a></li>
+                      </ul>
                   </div>
               </div>
               <div class="navbar-end">
                   {% if request.META.HTTP_X_ANONYMOUS_CONSUMER %}
                   <a class="navbar-item" href="{{ OAUTH_URL }}">Login</a>
                   {% else %}
-                  <div class="navbar-item has-dropdown is-hoverable">
+                  <div class="navbar-item has-dropdown">
                       <a class="navbar-link">
                           <span class="icon"><i class="fas fa-user-check"></i></span>
                       </a>
@@ -84,9 +60,10 @@
                               <span class="is-family-code">{{ request.META.HTTP_X_AUTHENTICATED_GROUPS }}</span>
                           </p>
                           {% endif %}
-                          <a class="navbar-item" id=help>
-                              <span class="icon"><i class="fas fa-question"></i></span>
-                              <span>Tour the page</span>
+                          <!-- TODO link to local docs in dev -->
+                          <a class="navbar-item" id=docs_url href="https://docs.mpcontribs.org" target="_blank">
+                              <span class="icon"><i class="fas fa-book"></i></span>
+                              <span>Documentation</span>
                           </a>
                           <a class="navbar-item" name=api_url target="_blank">
                               <span class="icon"><i class="fas fa-code"></i></span>
