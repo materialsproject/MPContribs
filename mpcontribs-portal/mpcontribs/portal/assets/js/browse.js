@@ -16,6 +16,8 @@ const query = {
 }
 var columnSummary = [];
 var columns = [];
+var hot;
+var nrows;
 
 for (var c = 0; c < main_columns.length; c++) {
     columns.push({"type": "text", "renderer": "html"});
@@ -58,13 +60,15 @@ $.get({
         data.push(d);
     }
     data.push([]);
-    const hot = new Handsontable(container, {
+    nrows = data.length;
+    hot = new Handsontable(container, {
         data,
         colHeaders: colHeaders,
         columns: columns,
         columnSummary: columnSummary,
         dropdownMenu: ['filter_by_condition', 'filter_action_bar'],
         filters: true,
+        hiddenRows: {indicators: true, rows: []},
         rowHeaders: false,
         width: '100%',
         stretchH: 'all',
@@ -86,14 +90,41 @@ $.get({
 });
 
 $('#table_filter').on('click', function(e) {
-    var kw = $('#search_term').val();
-    if (kw) {
+    e.preventDefault();
+    var term = $('#search_term').val();
+    const hiddenRows = hot.getPlugin('hiddenRows');
+    const hidden = hiddenRows.getHiddenRows();
+    if (hidden) {
+        hiddenRows.showRows(hidden);
+        if (!term) { hot.render(); }
+    }
+    if (term) {
         $(this).addClass('is-loading');
-        e.preventDefault();
-        // TODO
+        $.get({
+            contentType: "json", dataType: "json",
+            url: url + "search", headers: window.api['headers'],
+            data: {term: term}
+        }).done(function(response) {
+            const search = hot.getPlugin('search');
+            var show = []
+            for (var i = 0; i < response.length; i++) {
+                // TODO does this work when filters activated?
+                const queryResult = search.query(response[i]);
+                if (queryResult[0]) {
+                    show.push(queryResult[0].row);
+                }
+            }
+            var hide = [];
+            for (var i = 0; i < nrows; i++) {
+                if (!show.includes(i)) { hide.push(i); }
+            }
+            hiddenRows.hideRows(hide);
+            hot.render();
+            $("#table_filter").removeClass('is-loading');
+        });
     }
 });
 
-$('#table_keyword').keypress(function(e) {
+$('#search_term').keypress(function(e) {
     if (e.which == 13) { $('#table_filter').click(); }
 });
