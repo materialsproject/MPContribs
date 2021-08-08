@@ -25,9 +25,6 @@ $(document).ready(function () {
     $(".navbar-item.has-dropdown").click(function() {
         $(this).toggleClass("is-active");
     });
-    $('body').click(function(e) {
-        $(".navbar-item.has-dropdown").removeClass('is-active');
-    });
 
     // close all dropdowns on body click
     $('body').click(function(e) {

@@ -260,7 +260,7 @@ function toggle_columns(doms) {
     hot.render();
 }
 
-$('#table_filter').click(function(e) {
+$('#table_filter').on('click', function(e) {
     reset_table_download();
     var kw = $('#table_keyword').val();
     if (kw) {
@@ -273,6 +273,10 @@ $('#table_filter').click(function(e) {
         toggle_columns("input[name=column_manager_item]:checked");
         load_data(hot);
     }
+});
+
+$('#table_keyword').keypress(function(e) {
+    if (e.which == 13) { $('#table_filter').click(); }
 });
 
 $('#table_delete').click(function(e) {

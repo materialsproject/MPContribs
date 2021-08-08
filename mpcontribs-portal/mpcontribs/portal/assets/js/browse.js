@@ -1,55 +1,9 @@
 import Handsontable from "handsontable";
 
+$("#table_filter").addClass('is-loading');
 var li = $('#browse-toggle').parent();
 li.siblings().removeClass('is-active');
 li.addClass('is-active');
-
-function prep_download(query) {
-    const url = "/contributions/download/create";
-    const project = query["project"];
-    $.get({
-        contentType: "json", dataType: "json", url: url, data: query
-    }).done(function(response) {
-        if ("error" in response) {
-            alert(response["error"]);
-        } else if (response["progress"] < 1) {
-            const progress = (response["progress"] * 100).toFixed(0);
-            $("#download_" + project + "_progress").text(progress + "%");
-            prep_download(query);
-        } else {
-            const href = "/contributions/download/get?" + $.param(query);
-            const fmt = query["format"];
-            const prefix = "#download_" + project + "_";
-            $("#get_download_" + project).attr("href", href).removeClass("is-hidden");
-            $(prefix + fmt).removeClass('is-loading').addClass("is-hidden");
-            $(prefix + "progress").addClass("is-hidden");
-        }
-    });
-}
-
-$('a[name="download"]').click(function(e) {
-    const project = $(this).data('project');
-    const fmt = $(this).data('format');
-    var hide_id = "#download_" + project;
-    if (fmt === "json") { hide_id += "_csv" } else { hide_id += "_json"; }
-    $(hide_id).addClass("is-hidden");
-    $(this).addClass('is-loading');
-    $("#download_" + project + "_progress").text("0%").removeClass("is-hidden");
-    var download_query = {
-        "format": fmt, "project": project,
-        "include": "structures,tables,attachments"
-    };
-    prep_download(download_query);
-});
-
-$('a[name="get_download"]').click(function() {
-    const project = $(this).data('project');
-    const prefix = "#download_" + project + "_";
-    $(prefix + "json").removeClass("is-hidden");
-    $(prefix + "csv").removeClass("is-hidden");
-    $(prefix + "progress").addClass("is-hidden");
-    $(this).addClass("is-hidden");
-});
 
 const main_columns = ["title", "public", "author"];
 const stats_columns = ["columns", "contributions", "structures", "tables", "attachments"];
@@ -89,9 +43,7 @@ $.get({
         var doc = response['data'][r];
         var d = ["<a class='has-text-weight-bold' href='/projects/"];
         d[0] += doc["name"] + "'>" + doc["title"] + "</a>";
-        var symbol = doc["is_public"] ? "check" : "times";
-        var is_public = '<i class="fas fa-' + symbol +'"></i>';
-        d.push(is_public);
+        d.push(doc["is_public"] ? "Yes" : "No");
         var author = doc["authors"].split(",")[0].substring(0,30);
         var owner = doc["owner"].split(":")[1];
         var mailto = 'mailto:' + owner + ',contribs@materialsproject.org';
@@ -106,12 +58,13 @@ $.get({
         data.push(d);
     }
     data.push([]);
-    console.log(data);
     const hot = new Handsontable(container, {
         data,
         colHeaders: colHeaders,
         columns: columns,
         columnSummary: columnSummary,
+        dropdownMenu: ['filter_by_condition', 'filter_action_bar'],
+        filters: true,
         rowHeaders: false,
         width: '100%',
         stretchH: 'all',
@@ -125,10 +78,22 @@ $.get({
         var row = coords["row"];
         if (row > 0) { $(TD).parent().addClass("htHover"); }
     });
-
     hot.addHook('afterOnCellMouseOut', function(e, coords, TD) {
         var row = coords["row"];
         if (row > 0) { $(TD).parent().removeClass("htHover"); }
     });
+    $("#table_filter").removeClass('is-loading');
+});
 
+$('#table_filter').on('click', function(e) {
+    var kw = $('#search_term').val();
+    if (kw) {
+        $(this).addClass('is-loading');
+        e.preventDefault();
+        // TODO
+    }
+});
+
+$('#table_keyword').keypress(function(e) {
+    if (e.which == 13) { $('#table_filter').click(); }
 });

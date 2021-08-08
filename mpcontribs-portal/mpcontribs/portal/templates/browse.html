@@ -3,6 +3,23 @@
 
 {% block content %}
 <section class="section" id="browse">
+    <nav class="level">
+        <div class="level-left">
+            <div class="level-item has-text-centered">
+                <div>
+                    <div class="field has-addons">
+                        <p class="control">
+                        <input id=search_term class="input" type="text" placeholder="Enter Keyword">
+                        </p>
+                        <p class="control">
+                        <a id=table_filter class="button is-primary">Filter</a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
     <div id=main_table></div>
 </section>
 {% endblock %}
