@@ -1079,6 +1079,7 @@ class Client(SwaggerClient):
         """Apply the same update to all contributions in a project (matching query)
 
         See `client.contributions.get_entries()` for keyword arguments used in query.
+        NOTE: Still needs to be parallelized - could be slow.
 
         Args:
             name (str): name of the project
@@ -1109,6 +1110,8 @@ class Client(SwaggerClient):
 
     def publish(self, name: str, recursive: bool = False) -> dict:
         """Publish a project and optionally its contributions
+
+        NOTE: Still needs to be parallelized - recursive update slow and incomplete.
 
         Args:
             name (str): name of the project
