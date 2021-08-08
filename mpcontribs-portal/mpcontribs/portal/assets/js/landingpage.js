@@ -202,12 +202,15 @@ if (container) {
         licenseKey: 'non-commercial-and-evaluation',
         className: "htCenter htMiddle", columnSorting: true,
         manualColumnResize: true, collapsibleColumns: true,
-        beforeColumnSort: function(currentSortConfig, destinationSortConfigs) {
+        observeDOMVisibility: false,
+        beforeColumnSort: function(currentSortConfig, destinationSortConfigs, sortPossible) {
             const columnSortPlugin = this.getPlugin('columnSorting');
             columnSortPlugin.setSortConfig(destinationSortConfigs);
             const num = destinationSortConfigs[0].column;
-            query['_order_by'] = columns[num].data.replace(/\./g, '__');
-            query['order'] = destinationSortConfigs[0].sortOrder;
+            const order = destinationSortConfigs[0].sortOrder;
+            const sign = order === "asc" ? "+": "-";
+            const column = columns[num].data.replace(/\./g, '__');
+            query['_sort'] = sign + column;
             query['_skip'] = 0;
             load_data(this);
             return false; // block default sort
