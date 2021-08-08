@@ -456,7 +456,7 @@ def create_download(request):
 
         last_modified = client.contributions.get_entries(
             _sort="-last_modified", _fields=["last_modified"], _limit=1,
-            **{k: v for k, v in query.items() if k != "format"}
+            **{k: v for k, v in query.items() if k not in {"format", "_sort"}}
         ).result()["data"][0]["last_modified"]
 
         try:
