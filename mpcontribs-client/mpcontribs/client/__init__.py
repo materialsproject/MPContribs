@@ -340,8 +340,12 @@ def _run_futures(futures, total: int = 0, timeout: int = -1):
                 cnt = response.count if total_set and hasattr(response, "count") else 1
                 pbar.update(cnt)
 
-                if hasattr(future, "track_id") and hasattr(response, "result"):
-                    responses[future.track_id] = response.result
+                if hasattr(future, "track_id"):
+                    tid = future.track_id
+                    if hasattr(response, "result"):
+                        responses[tid] = response.result
+                    elif hasattr(response, "count"):
+                        responses[tid] = {"count": response.count}
 
                 elapsed = time.perf_counter() - start
                 timed_out = timeout > 0 and elapsed > timeout
@@ -563,13 +567,22 @@ class Client(SwaggerClient):
         track_id,
         params: dict,
         rel_url: str = "contributions",
-        op: str = "get"
+        op: str = "get",
+        data: dict = None
     ):
         if self.session and self.session.executor._shutdown:
             raise ValueError("Session closed. Use `with` statement.")
 
-        future = getattr(self.session, op)(
-            f"{self.url}/{rel_url}/", headers=self.headers, params=params
+        rname = rel_url.split("/", 1)[0]
+        resource = self.swagger_spec.resources[rname]
+        method = getattr(resource, f"{op}_entries").http_method
+        kwargs = dict(headers=self.headers, params=params)
+
+        if method == "put" and data:
+            kwargs["data"] = json.dumps(data).encode("utf-8")
+
+        future = getattr(self.session, method)(
+            f"{self.url}/{rel_url}/", **kwargs
         )
         setattr(future, "track_id", track_id)
         return future
@@ -1078,63 +1091,141 @@ class Client(SwaggerClient):
 
         return ret
 
-    def update_contributions(self, name: str, data: dict, query: dict = None) -> dict:
+    def update_contributions(
+        self,
+        name: str,
+        data: dict,
+        query: dict = None,
+        timeout: int = -1
+    ) -> dict:
         """Apply the same update to all contributions in a project (matching query)
 
         See `client.contributions.get_entries()` for keyword arguments used in query.
-        NOTE: Still needs to be parallelized - could be slow.
 
         Args:
             name (str): name of the project
             data (dict): update to apply on every matching contribution
             query (dict): optional query to select contributions
+            timeout (int): cancel remaining requests if timeout exceeded (in seconds)
         """
         if not data:
             return "Nothing to update."
 
+        tic = time.perf_counter()
         valid = self._is_valid_payload("Contribution", data)
         if not valid:
             return {"error": valid}
 
-        _, per_page = self._get_per_page_default_max(op="update")
         query = query or {}
         query["project"] = name
-        has_more = True
-        updated = 0
+        cids = list(self.get_all_ids(query).get(name, {}).get("ids", set()))
 
-        while has_more:
-            resp = self.contributions.update_entries(
-                contributions=data, per_page=per_page, **query
-            ).result()
-            has_more = resp["has_more"]
-            updated += resp["count"]
+        if not cids:
+            print(f"There aren't any contributions to update for {name}")
+            return
 
-        print(f"Updated {updated} contributions.")
+        # get current list of data columns to decide if swagger reload is needed
+        resp = self.projects.get_entry(pk=name, _fields=["columns"]).result()
+        old_paths = set(c["path"] for c in resp["columns"])
 
-    def publish(self, name: str, recursive: bool = False) -> dict:
+        total = len(cids)
+        cids_query = {"id__in": cids}
+        _, total_pages = self.get_totals(query=cids_query)
+        queries = self._split_query(cids_query, op="update", pages=total_pages)
+        futures = [
+            self._get_future(i, q, op="update", data=data)
+            for i, q in enumerate(queries)
+        ]
+        responses = _run_futures(futures, total=total, timeout=timeout)
+        updated = sum(resp["count"] for _, resp in responses.items())
+
+        if updated:
+            resp = self.projects.get_entry(pk=name, _fields=["columns"]).result()
+            new_paths = set(c["path"] for c in resp["columns"])
+
+            if new_paths != old_paths:
+                self._load()
+
+        toc = time.perf_counter()
+        return {"updated": updated, "total": total, "seconds_elapsed": toc - tic}
+
+    def make_public(
+        self,
+        name: str,
+        query: dict = None,
+        recursive: bool = False,
+        timeout: int = -1
+    ) -> dict:
         """Publish a project and optionally its contributions
-
-        NOTE: Still needs to be parallelized - recursive update slow and incomplete.
 
         Args:
             name (str): name of the project
+            query (dict): optional query to select contributions
             recursive (bool): also publish according contributions?
+        """
+        return self._set_is_public(
+            True, name, query=query, recursive=recursive, timeout=timeout
+        )
+
+    def make_private(
+        self,
+        name: str,
+        query: dict = None,
+        recursive: bool = False,
+        timeout: int = -1
+    ) -> dict:
+        """Make a project and optionally its contributions private
+
+        Args:
+            name (str): name of the project
+            query (dict): optional query to select contributions
+            recursive (bool): also make according contributions private?
+        """
+        return self._set_is_public(
+            False, name, query=query, recursive=recursive, timeout=timeout
+        )
+
+    def _set_is_public(
+        self,
+        is_public: bool,
+        name: str,
+        query: dict = None,
+        recursive: bool = False,
+        timeout: int = -1
+    ) -> dict:
+        """Set the `is_public` flag for a project and optionally its contributions
+
+        Args:
+            is_public (bool): target value for `is_public` flag
+            name (str): name of the project
+            query (dict): optional query to select contributions
+            recursive (bool): also set `is_public` for according contributions?
+            timeout (int): cancel remaining requests if timeout exceeded (in seconds)
         """
         try:
             resp = self.projects.get_entry(pk=name, _fields=["is_public"]).result()
         except HTTPNotFound:
             return {"error": f"project `{name}` not found or access denied!"}
 
-        is_public = resp["is_public"]
+        if not recursive and resp["is_public"] == is_public:
+            return {"warning": f"`is_public` already set to {is_public} for `{name}`."}
 
-        if not recursive and is_public:
-            return {"warning": f"project `{name}` already public (recursive=False)."}
+        ret = {}
 
-        if not is_public:
-            self.projects.update_entry(pk=name, project={"is_public": True}).result()
+        if resp["is_public"] != is_public:
+            resp = self.projects.update_entry(
+                pk=name, project={"is_public": is_public}
+            ).result()
+            ret["published"] = resp["is_public"] == is_public
 
         if recursive:
-            self.update_contributions(name, {"is_public": True}, {"is_public": False})
+            query = query or {}
+            query["is_public"] = not is_public
+            ret["contributions"] = self.update_contributions(
+                name, {"is_public": is_public}, query=query, timeout=timeout
+            )
+
+        return ret
 
     def submit_contributions(
         self,
