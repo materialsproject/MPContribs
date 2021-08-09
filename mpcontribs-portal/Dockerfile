@@ -66,7 +66,7 @@ ENV PATH=/root/.local/bin:$PATH \
     NWORKERS=2 \
     MAX_REQUESTS=100000 \
     MAX_REQUESTS_JITTER=10000
-EXPOSE 8080 8082 8083
+EXPOSE 8080 8082 8083 8085
 COPY wsgi.py .
 COPY settings.py .
 COPY docker-entrypoint.sh .
