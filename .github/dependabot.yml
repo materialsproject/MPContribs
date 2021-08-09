@@ -56,13 +56,6 @@ updates:
     time: '08:00'
     timezone: US/Pacific
   open-pull-requests-limit: 10
-- package-ecosystem: docker
-  directory: "/mpcontribs-sidecars/supercronic"
-  schedule:
-    interval: weekly
-    time: '08:00'
-    timezone: US/Pacific
-  open-pull-requests-limit: 10
 - package-ecosystem: pip
   directory: "/mpcontribs-client"
   schedule:
