@@ -3,7 +3,7 @@ bravado[fido] @ git+https://github.com/tschaume/bravado@9ce06f2df7118e16af4a3d3f
 cryptography==3.4.7
 fido[tls]==4.2.2
 filetype==1.0.7
-flatten-dict==0.4.1
+flatten-dict==0.4.2
 ipython==7.26.0
 json2html==1.3.0
 pandas==1.3.1
