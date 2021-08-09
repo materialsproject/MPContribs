@@ -160,7 +160,7 @@ class Contributions(DynamicDocument):
     identifier = StringField(required=True, help_text="material/composition identifier")
     formula = StringField(help_text="formula (set dynamically if not provided)")
     is_public = BooleanField(
-        required=True, default=False, help_text="public/private contribution"
+        required=True, default=True, help_text="public/private contribution"
     )
     last_modified = DateTimeField(
         required=True, default=datetime.utcnow, help_text="time of last modification"
