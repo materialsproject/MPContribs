@@ -1,8 +1,5 @@
 @charset "utf-8";
 @import url('https://fonts.googleapis.com/css?family=Nunito:400,700');
-@import "~select2/dist/css/select2.min.css";
-@import "~@fortawesome/fontawesome-free/css/all.css";
-@import '~handsontable/dist/handsontable.full.css';
 
 $family-sans-serif: "Nunito", sans-serif;
 $tooltip-background-opacity: 1;
@@ -48,9 +45,10 @@ $checkradio-focus: none;
 @import "~bulma/sass/utilities/mixins";
 @import "~bulma-tooltip/src/sass/index";
 @import "~bulma-checkradio/src/sass/index";
-@import "~bulma-tagsinput/src/sass/index";
 @import "~highlight.js/styles/stackoverflow-dark";
-@import "select2";
+@import "~select2/src/scss/core";
+@import "~@fortawesome/fontawesome-free/scss/fontawesome";
+@import "~handsontable/dist/handsontable.full.css";
 
 .has-loading {
     &.is-loading {
@@ -105,3 +103,5 @@ pre code.hljs { padding: 0px;  }
 }
 
 tr.htHover:hover td { background-color: $old-grey-light; }
+
+span.dotted { border-bottom: 1px dotted $grey-darker; }

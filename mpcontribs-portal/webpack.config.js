@@ -47,20 +47,17 @@ module.exports = {
     resolve: {
         modules: [
             path.resolve(__dirname, 'mpcontribs/portal/assets'),
-            path.resolve(__dirname, 'mpcontribs/users'),
             path.resolve(__dirname, 'node_modules')
         ],
         extensions: ['.js'],
         alias: {
             "jquery": 'jquery/src/jquery',
-            "jquery-validation": 'jquery-validation/dist/jquery.validate',
-            "jquery-form": 'jquery-form/src/jquery.form',
-            "czmore": 'czmore/js/jquery.czMore-latest',
             "typy": 'typy/lib/index',
             "underscore": 'underscore/underscore',
             "lunr": 'lunr.js/lunr',
             "plotly": 'plotly.js/lib/core',
             "js-cookie": 'js-cookie/src/js.cookie',
+            "parsley": "parsleyjs/src/parsley",
             "highlight-core": "highlight.js/lib/core",
             "highlight-languages": "highlight.js/lib/languages/python"
             //mathjs": 'mathjs/dist/math',
@@ -92,36 +89,6 @@ module.exports = {
                 test: /\.mjs$/,
                 include: /node_modules/,
                 type: "javascript/auto"
-            }, {
-                test: /jquery-form/,
-                use: [{
-                    loader: 'imports-loader',
-                    options: { imports: ['default jquery $'] }
-                }]
-            }, {
-                test: /jquery-validation/,
-                use: [{
-                    loader: 'imports-loader',
-                    options: { imports: ['default jquery $'] }
-                }]
-            }, {
-                test: /jquery-simulate/,
-                use: [{
-                    loader: 'imports-loader',
-                    options: { imports: ['default jquery $'] }
-                }]
-            }, {
-                test: /select2/,
-                use: [{
-                    loader: 'imports-loader',
-                    options: { imports: ['default jquery $'] }
-                }]
-            }, {
-                test: /czmore/,
-                use: [{
-                    loader: 'imports-loader',
-                    options: { imports: ['default jquery $'] }
-                }]
             }
         ]
     },

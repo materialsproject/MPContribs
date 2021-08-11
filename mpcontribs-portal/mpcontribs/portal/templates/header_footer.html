@@ -21,62 +21,64 @@
                       <sup>{{ TRADEMARK }}</sup>
                   </p>
               </a>
-              <div class="navbar-burger" data-target="navbarBasicExample">
-                  <span></span>
-                  <span></span>
-                  <span></span>
-              </div>
+              <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" data-target="navbarBasicExample">
+                  <span aria-hidden="true"></span>
+                  <span aria-hidden="true"></span>
+                  <span aria-hidden="true"></span>
+              </a>
           </div>
           <div id="navbarBasicExample" class="navbar-menu">
-              <div class="navbar-item has-text-centered center">
-                  <div class="tabs is-toggle is-toggle-rounded has-text-weight-semibold">
-                      <ul>
-                          <li><a id="browse-toggle" href="/browse">Browse</a></li>
-                          <li><a id="search-toggle" href="/search">Search</a></li>
-                          <li><a id="apply-toggle" href="/contribute">Contribute</a></li>
-                      </ul>
-                  </div>
-              </div>
+              <a class="navbar-item" id="browse-toggle" href="/">Browse</a>
+              <a class="navbar-item" id="search-toggle" href="/search">Search</a>
               <div class="navbar-end">
-                  {% if request.META.HTTP_X_ANONYMOUS_CONSUMER %}
-                  <a class="navbar-item" href="{{ OAUTH_URL }}">Login</a>
-                  {% else %}
-                  <div class="navbar-item has-dropdown">
-                      <a class="navbar-link">
-                          <span class="icon"><i class="fas fa-user-check"></i></span>
-                      </a>
-                      <div class="navbar-dropdown is-right has-background-light">
-                          <p class="navbar-item has-text-dark">
-                          <span class="icon"><i class="far fa-user"></i></span>
-                          <span>{{ request.META.HTTP_X_CONSUMER_USERNAME }}</span>
-                          </p>
-                          <p class="navbar-item has-text-dark">
-                              <span class="icon"><i class="fas fa-key"></i></span>
-                              <code>{{ request.META.HTTP_X_CONSUMER_CUSTOM_ID }}</code>
-                          </p>
-                          {% if request.META.HTTP_X_AUTHENTICATED_GROUPS %}
-                          <p class="navbar-item has-text-dark">
-                              <span class="icon"><i class="fas fa-users"></i></span>
-                              <span class="is-family-code">{{ request.META.HTTP_X_AUTHENTICATED_GROUPS }}</span>
-                          </p>
+                  <div class="navbar-item">
+                      <div class="buttons">
+                          <a class="button is-primary" href="/contribute">
+                              <strong>Contribute</strong>
+                          </a>
+                          {% if request.META.HTTP_X_ANONYMOUS_CONSUMER %}
+                          <a class="button is-primary is-light" href="{{ OAUTH_URL }}">
+                              Log in
+                          </a>
+                          {% else %}
+                          <div class="navbar-item has-dropdown">
+                              <a class="navbar-link">
+                                  <span class="icon"><i class="fas fa-user"></i></span>
+                              </a>
+                              <div class="navbar-dropdown is-right has-background-light">
+                                  <p class="navbar-item has-text-dark">
+                                  <span class="icon"><i class="far fa-user"></i></span>
+                                  <span>{{ request.META.HTTP_X_CONSUMER_USERNAME }}</span>
+                                  </p>
+                                  <p class="navbar-item has-text-dark">
+                                      <span class="icon"><i class="fas fa-key"></i></span>
+                                      <code>{{ request.META.HTTP_X_CONSUMER_CUSTOM_ID }}</code>
+                                  </p>
+                                  {% if request.META.HTTP_X_AUTHENTICATED_GROUPS %}
+                                  <p class="navbar-item has-text-dark">
+                                      <span class="icon"><i class="fas fa-users"></i></span>
+                                      <span class="is-family-code">{{ request.META.HTTP_X_AUTHENTICATED_GROUPS }}</span>
+                                  </p>
+                                  {% endif %}
+                                  <!-- TODO link to local docs in dev -->
+                                  <a class="navbar-item" id=docs_url href="https://docs.mpcontribs.org" target="_blank">
+                                      <span class="icon"><i class="fas fa-book"></i></span>
+                                      <span>Documentation</span>
+                                  </a>
+                                  <a class="navbar-item" name=api_url target="_blank">
+                                      <span class="icon"><i class="fas fa-code"></i></span>
+                                      <span>RESTful API</span>
+                                  </a>
+                                  <!-- TODO merge ingester webapp into portal -->
+                                  <a class="navbar-item" href="{{ OAUTH_URL }}/logout">
+                                      <span class="icon"><i class="fas fa-sign-out-alt"></i></span>
+                                      <span>Logout</span>
+                                  </a>
+                              </div>
+                          </div>
                           {% endif %}
-                          <!-- TODO link to local docs in dev -->
-                          <a class="navbar-item" id=docs_url href="https://docs.mpcontribs.org" target="_blank">
-                              <span class="icon"><i class="fas fa-book"></i></span>
-                              <span>Documentation</span>
-                          </a>
-                          <a class="navbar-item" name=api_url target="_blank">
-                              <span class="icon"><i class="fas fa-code"></i></span>
-                              <span>RESTful API</span>
-                          </a>
-                          <!-- TODO merge ingester webapp into portal -->
-                          <a class="navbar-item" href="{{ OAUTH_URL }}/logout">
-                              <span class="icon"><i class="fas fa-sign-out-alt"></i></span>
-                              <span>Logout</span>
-                          </a>
                       </div>
                   </div>
-                  {% endif %}
               </div>
           </div>
       </nav>

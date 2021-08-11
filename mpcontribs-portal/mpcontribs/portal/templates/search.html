@@ -2,19 +2,19 @@
 {% load render_bundle from webpack_loader %}
 
 {% block content %}
-
-<section class="section" id="search">
-    <article class="message is-dark">
-        <div class="message-header">
-            <p>Search Contributions</p>
-        </div>
-        <div class="message-body has-text-justified">
-            Select project(s), formula(s), and/or identifier(s) to update the results table with
-            basic information about the matching contributions. Click the contribution identifier
-            (left-most column) to render its preview card as it appears on the materials details
-            pages of <a href="https://materialsproject.org">Materials Project</a>.
-        </div>
-    </article>
+<section class="section">
+    <div class="title">
+        Search Contributions
+        <span class="has-tooltip-multiline has-tooltip-left is-pulled-right"
+               data-tooltip="Select project(s), formula(s), and/or identifier(s) to update the
+                             results table with basic information about the matching contributions.
+                             Click the contribution identifier (left-most column) to render a
+                             preview card.">
+            <span class="icon">
+                <i class="far fa-question-circle"></i>
+            </span>
+        </span>
+    </div>
     <div class="columns">
         <div class="column is-half">
             <div class="box">
@@ -72,7 +72,7 @@
             </div>
         </div>
         <div class="column is-half">
-            <div class="column is-full has-text-dark" id=card>
+            <div class="column is-full has-text-dark is-paddingless" id=card>
                 <!-- card dynamically added -->
             </div>
         </div>

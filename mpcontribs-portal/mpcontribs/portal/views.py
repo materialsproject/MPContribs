@@ -141,7 +141,7 @@ def landingpage(request, project):
 
 def index(request):
     ctx = get_context(request)
-    return render(request, "index.html", ctx.flatten())
+    return render(request, "browse.html", ctx.flatten())
 
 
 def search(request):
@@ -166,11 +166,6 @@ def apply(request):
         """.strip()
 
     return render(request, "apply.html", ctx.flatten())
-
-
-def browse(request):
-    ctx = get_context(request)
-    return render(request, "browse.html", ctx.flatten())
 
 
 def highlight_code(source, language="python", metadata=None):

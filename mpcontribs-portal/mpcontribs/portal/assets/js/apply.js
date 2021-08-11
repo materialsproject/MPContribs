@@ -1,76 +1,46 @@
-import 'jquery-form';
-import 'jquery-validation';
-import 'czmore';
-import * as bulmaTagsinput from 'bulma-tagsinput/dist/js/bulma-tagsinput';
+import "parsley";
 
-function prepareRequest(formData, jqForm, options) {
-    $('#apply-button').addClass('is-loading');
-    $('#apply-response').addClass('is-hidden');
-    var start = 6;
-    var nrefs_str = formData.splice(start, 1)[0]['value'];
-    var nrefs = parseInt(nrefs_str);
-    if (nrefs < 1) {
-        $('#apply-response .message-body').html('Please add references.');
-        $('#apply-response').removeClass('is-hidden');
-        return false;
-    }
-    var urls = {name: 'references', value: []};
-    for (var i = 0; i < nrefs; i++) {
-        var key_url = formData.splice(start, 2);
-        urls['value'].push({
-            "label": key_url[0]['value'],
-            "url": key_url[1]['value']
-        })
-    }
-    formData.push(urls);
-    return true;
-}
+const form = $("#apply-form");
 
-function processJson(data) { // 'data' is the json object returned from the server
-    var msg = `Thank you for submitting your project application. Please check your inbox (and spam) for an
-    e-mail asking you to subscribe for MPContribs notifications. Once your e-mail address is
-    confirmed we will notify you if/when your project has been accepted for dissemination.`
-    $('#apply-response .message-body').html(msg);
-    $('#apply-response').removeClass('is-danger').addClass('is-success').removeClass('is-hidden');
-    $('#apply-button').removeClass('is-loading');
-}
-
-function processError(data) {
-    $('#apply-response .message-body').html(data.responseText);
-    $('#apply-response').removeClass('is-success').addClass('is-danger').removeClass('is-hidden');
-    $('#apply-button').removeClass('is-loading');
-}
-
-$(document).ready(function () {
-    bulmaTagsinput.attach('[type="tags"]');
-    var li = $('#apply-toggle').parent();
-    li.siblings().removeClass('is-active');
-    li.addClass('is-active');
-
-    $.validator.addMethod("alphanumeric", function(value, element) {
-        return this.optional(element) || /^[\w_]+$/i.test(value);
-    }, "Please use letters, numbers, and underscores only.");
-
-    $('#apply-form').validate({
-        rules: {
-            name: {alphanumeric: true}, url_1: {url: true, required: true},
-            url_2: {url: true}, url_3: {url: true}, url_4: {url: true}, url_5: {url: true}
-        },
-        highlight: function (element) {
-            $(element).parent().children().removeClass('is-success').addClass('is-danger');
-        },
-        unhighlight: function (element) {
-            $(element).parent().children().removeClass('is-danger').addClass('is-success');
-        },
-        errorElement: 'p', errorClass: 'help',
-        errorPlacement: function(error, element) { element.parent().append(error); },
-        submitHandler: function(form) { $(form).ajaxSubmit({
-            beforeSubmit: prepareRequest, success: processJson, error: processError,
-            url: window.api['host'] + 'projects/', headers: window.api['headers'],
-            type: 'POST', dataType: 'json', requestFormat: 'json'
-        }); }
+if (form.length) {
+    form.parsley({
+        errorClass: "is-danger", successClass: "is-primary",
+        errorsWrapper: '<ul class="parsley-errors-list is-size-7"></ul>'
     });
-
-    $("#czContainer").czMore({max: 5, styleOverride: true});
-    $('.btnPlus').click();
-});
+    form.on("submit", function(e) {
+        e.preventDefault();
+        $('#apply-button').addClass('is-loading');
+        $('#apply-response').addClass('is-hidden');
+        var data = Object.fromEntries(new FormData(e.target).entries());
+        data["owner"] = $("#owner").val();
+        data["references"] = [
+            {"label": data["ref_label"], "url": data["ref_url"]}
+        ]
+        delete data["ref_label"];
+        delete data["ref_url"];
+        $.post({
+            url: window.api['host'] + 'projects/',
+            headers: window.api['headers'],
+            data: JSON.stringify(data),
+            dataType: "json", contentType: 'application/json',
+            success: function(response) {
+                var msg = `Thank you for submitting your project application. Please check your
+                inbox (and spam) for an e-mail asking you to subscribe for MPContribs
+                notifications. Once your e-mail address is confirmed we will notify you if/when
+                your project has been accepted for dissemination.`;
+                $('#apply-response .message-body').html(msg);
+                $('#apply-response').removeClass('is-danger').addClass('is-success').removeClass('is-hidden');
+                $('#apply-button').removeClass('is-loading');
+            },
+            error: function(response) {
+                var msg;
+                if (response.responseJSON) { msg = response.responseJSON["error"]; }
+                else { msg = response.responseText; }
+                $('#apply-response .message-body').html(msg);
+                $('#apply-response').removeClass('is-success').addClass('is-danger').removeClass('is-hidden');
+                $('#apply-button').removeClass('is-loading');
+            }
+        });
+        return false;
+    });
+}
