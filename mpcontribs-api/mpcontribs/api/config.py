@@ -76,7 +76,7 @@ TEMPLATE = {
         "contact": {
             "name": "MPContribs",
             "email": "contribs@materialsproject.org",
-            "url": "https://docs.mpcontribs.org",
+            "url": "https://mpcontribs.org",
         },
         "license": {
             "name": "Creative Commons Attribution 4.0 International License",

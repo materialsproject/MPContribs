@@ -150,7 +150,7 @@ class Projects(Document):
         required=True, default=True, help_text="identifiers unique?"
     )
     columns = EmbeddedDocumentListField(Column, max_length=MAX_COLUMNS)
-    stats = EmbeddedDocumentField(Stats)
+    stats = EmbeddedDocumentField(Stats, required=True, default=Stats)
     meta = {
         "collection": "projects",
         "indexes": ["is_public", "title", "owner", "is_approved", "unique_identifiers"],
@@ -220,7 +220,8 @@ class Projects(Document):
         admin_topic = current_app.config["MAIL_TOPIC"]
         subject = f'Your project "{document.name}" has been deleted'
         html = render_template(
-            "owner_email.html", approved=False, admin_email=admin_email
+            "owner_email.html", approved=False,
+            admin_email=admin_email, project=document.name
         )
         topic_arn = ":".join(
             admin_topic.split(":")[:-1] + ["mpcontribs_" + document.name]
