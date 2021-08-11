@@ -119,7 +119,7 @@ def restart_kernels():
             "from mpcontribs.client import Client",
             "print('client imported')"
         ]))]
-        run_cells(kernel_id, "import-client", cells)
+        run_cells(kernel_id, "import_client", cells)
 
 
 @notebooks.route('/result', defaults={'job_id': f"cron-{CRON_JOB_ID}"})
