@@ -110,7 +110,7 @@ def build():
 
 def restart_kernels():
     """use to avoid run-away memory"""
-    kernel_ids = [k for k, v in current_app.kernels.items() if v["cid"] is None]
+    kernel_ids = [k for k, v in current_app.kernels.items() if v is None]
 
     for kernel_id in kernel_ids:
         kernel_url = get_kernel_endpoint(kernel_id) + "/restart"
