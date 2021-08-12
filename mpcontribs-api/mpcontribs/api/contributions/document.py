@@ -403,7 +403,9 @@ class Contributions(DynamicDocument):
         columns_copy = deepcopy(project.columns)
         columns = {col.path: col for col in project.columns}
 
-        for path, column in columns.items():
+        for path in list(columns.keys()):
+            column = columns[path]
+
             if not isnan(column.min) and not isnan(column.max):
                 column.min, column.max = get_min_max(sender, path, project.name)
                 if isnan(column.min) and isnan(column.max):
