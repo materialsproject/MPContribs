@@ -39,7 +39,7 @@ $.get({
     if (rlen < 1) {
         $("<div/>", {
             class: "notification is-warning is-marginless",
-            html: "No public projects available. Please log in to view accessible projects."
+            html: "No public projects available."
         }).insertAfter(".navbar.is-fixed-top");
     } else {
         for (var r = 0; r < rlen; r++) {
