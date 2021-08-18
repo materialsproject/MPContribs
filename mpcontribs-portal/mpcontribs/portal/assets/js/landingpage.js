@@ -182,12 +182,40 @@ $.each(headers, function(i, h) {
 var nestedHeaders = [];
 $.each(nestedHeadersPrep, function(r, row) {
     var new_row = [];
+    var parent_row = null;
+
     for (var i = 0; i < row.length; i++) {
-        if (!new_row.length || row[i] !== new_row[new_row.length-1]['label']) {
-            new_row.push({label: row[i], colspan: 0});
+        var new_col = {label: row[i], colspan: 0};
+
+        if (!new_row.length) {
+            new_row.push(new_col);
+        } else if (!nestedHeaders.length) {
+            const cur_col = new_row[new_row.length-1];
+            if (row[i] !== cur_col['label']) {
+                new_row.push(new_col);
+            }
+        } else {
+            const cur_col = new_row[new_row.length-1];
+            if (row[i] !== cur_col['label']) {
+                new_row.push(new_col);
+            } else {
+                if (parent_row === null) {
+                    parent_row = nestedHeaders[nestedHeaders.length-1];
+                }
+                var par_colspan = 0;
+                for (var j = 0; j < parent_row.length; j++) {
+                    if (i - par_colspan < parent_row[j]["colspan"]) { break; }
+                    par_colspan = parent_row[j]["colspan"];
+                }
+                if (cur_col["colspan"] === par_colspan) {
+                    new_row.push(new_col);
+                }
+            }
         }
+
         new_row[new_row.length-1]['colspan']++;
     }
+
     nestedHeaders.push(new_row);
 });
 
