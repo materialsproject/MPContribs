@@ -202,13 +202,16 @@ $.each(nestedHeadersPrep, function(r, row) {
                 if (parent_row === null) {
                     parent_row = nestedHeaders[nestedHeaders.length-1];
                 }
-                var par_colspan = 0;
+                var colspan_offset = 0;
                 for (var j = 0; j < parent_row.length; j++) {
-                    if (i - par_colspan < parent_row[j]["colspan"]) { break; }
-                    par_colspan = parent_row[j]["colspan"];
-                }
-                if (cur_col["colspan"] === par_colspan) {
-                    new_row.push(new_col);
+                    const par_colspan = parent_row[j]["colspan"];
+                    if (i - colspan_offset < par_colspan) {
+                        if (i == colspan_offset) {
+                            new_row.push(new_col);
+                        }
+                        break;
+                    }
+                    colspan_offset += par_colspan;
                 }
             }
         }
