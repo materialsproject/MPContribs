@@ -124,7 +124,7 @@ class Projects(Document):
     authors = StringField(
         required=True,
         help_text="comma-separated list of authors"
-        # TODO set regex to enforce format
+        # TODO change to EmbeddedDocumentListField
     )
     description = StringField(
         min_length=5,

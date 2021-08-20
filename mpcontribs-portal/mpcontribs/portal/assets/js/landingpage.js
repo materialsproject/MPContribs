@@ -157,11 +157,17 @@ function load_data(dom) {
                 }
             }
         }
+        // TODO loadData clears plugins/meta caches
         dom.loadData(response.data);
         if (total_count > default_limit) {
             const height = response.data.length * rowHeight;
             dom.updateSettings({height: height});
         }
+        //console.log($(hot).get(0).scrollWidth);
+        //console.log($(hot).width());
+        // TODO only collapseAll if table horizontal scroll
+        //const collapse = hot.getPlugin("collapsibleColumns");
+        //collapse.collapseAll();
         $('#table_filter').removeClass('is-loading');
         $('#table_delete').removeClass('is-loading');
         $('[name=table]').first().removeClass("is-invisible");
@@ -440,7 +446,7 @@ $("#table_get_download").click(function() { reset_table_download(); });
 $("#toggle_collapse").change(function() {
     const collapse = hot.getPlugin("collapsibleColumns");
     if (this.checked) { collapse.collapseAll(); }
-    else { collapse.expandAll(); }
+    else { collapse.expandAll(); } // TODO
 });
 
 //if ($("#graph").length && project !== 'redox_thermo_csp') {

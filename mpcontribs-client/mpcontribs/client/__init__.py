@@ -143,6 +143,7 @@ def grouper(n, iterable):
 
 
 def get_session():
+    # TODO add Bad Gateway 502?
     adapter_kwargs = dict(max_retries=Retry(
         total=RETRIES,
         read=RETRIES,
@@ -1436,6 +1437,7 @@ class Client(SwaggerClient):
                     )
 
                     if not ignore_dupes and dupe:
+                        # TODO add matching duplicate info to msg
                         msg = f"Duplicate in {project_name}: {contrib['identifier']} {dct['name']}"
                         raise ValueError(msg)
 

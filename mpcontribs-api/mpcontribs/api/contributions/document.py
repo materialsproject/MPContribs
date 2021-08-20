@@ -287,6 +287,7 @@ class Contributions(DynamicDocument):
 
     @classmethod
     def post_save(cls, sender, document, **kwargs):
+        # TODO only parts of this need to run on PUT/update
         if kwargs.get("skip"):
             return
 
