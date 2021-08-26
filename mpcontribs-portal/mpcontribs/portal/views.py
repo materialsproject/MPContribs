@@ -7,6 +7,7 @@ import json
 import boto3
 import nbformat
 import requests
+import urllib
 
 from io import BytesIO
 from copy import deepcopy
@@ -31,7 +32,6 @@ from django.template.loader import select_template
 
 from mpcontribs.client import Client, get_md5
 
-CNAME = os.environ.get("PORTAL_CNAME", "contribs.materialsproject.org")
 BUCKET = os.environ.get("S3_DOWNLOADS_BUCKET", "mpcontribs-downloads")
 COMPONENTS = {"structures", "tables", "attachments"}
 j2h = Json2Html()
@@ -64,12 +64,31 @@ def client_kwargs(request):
 
 def get_context(request):
     ctx = RequestContext(request)
-    ctx["API_CNAME"] = os.environ["API_CNAME"]
+    parsed_url = urllib.parse.urlparse(request.build_absolute_uri())
     ctx["TRADEMARK"] = os.environ.get("TRADEMARK", "")
-    ctx["PORTAL_CNAME"] = os.environ["PORTAL_CNAME"]
-    localhost = ctx["PORTAL_CNAME"].startswith("localhost.")
-    ctx["OAUTH_URL"] = "http://localhost." if localhost else "https://"
-    ctx["OAUTH_URL"] += "profile.materialsproject.org"
+    ctx["PORTAL_CNAME"] = parsed_url.netloc
+
+    is_localhost = parsed_url.netloc.startswith("localhost.")
+    parts = parsed_url.netloc.split(".")
+    subdomain_index = 1 if is_localhost else 0
+    subdomain = parts[subdomain_index]
+    preview_suffix = "-preview"
+    is_preview = subdomain.endswith(preview_suffix)
+    api_subdomain = subdomain.replace(preview_suffix, "")
+    api_subdomain += "-api"
+
+    if is_preview:
+        api_subdomain += preview_suffix
+
+    new_parts = ["localhost"] if is_localhost else []
+    new_parts.append(api_subdomain)
+    new_parts += parts[subdomain_index+1:]
+    ctx["API_CNAME"] = ".".join(new_parts)
+
+    scheme = "http" if is_localhost else "https"
+    netloc = "localhost." if is_localhost else ""
+    netloc += "profile.materialsproject.org"
+    ctx["OAUTH_URL"] = f"{scheme}://{netloc}"
     return ctx
 
 
@@ -386,24 +405,26 @@ def _get_query_include(request):
     return query, include
 
 
-def _get_download_key(query: dict, include: list):
+def _get_download_key(query: dict, include: list, cname: str):
     fn = _get_filename(query, include)
     fmt = query.get("format", "json")
-    return f"{CNAME}/{fn}_{fmt}.zip"
+    return f"{cname}/{fn}_{fmt}.zip"
 
 
 def download_project(request, project: str, extension: str):
+    ctx = get_context(request)
+    cname = ctx["PORTAL_CNAME"]
     if extension == "zip":
         # TODO need to remove zipfile in S3 bucket on API update/save signal
         fmt = request.GET.get("format", "json")
         query = {"project": project, "format": fmt}
         fields = _get_fields_from_params(request.GET)
         include = _reconcile_include(request, project, fields)
-        key = _get_download_key(query, include)
+        key = _get_download_key(query, include, cname)
         content_type = "application/zip"
     elif extension == "json.gz":
         subdir = "raw" if os.environ.get("TRADEMARK") == "ML" else "without_components"
-        key = f"{CNAME}/manual/{subdir}/{project}.json.gz"
+        key = f"{cname}/manual/{subdir}/{project}.json.gz"
         content_type = "application/gzip"
     else:
         return HttpResponse(f"Invalid extension {extension}!", status=400)
@@ -425,8 +446,10 @@ def download(request):
     if not project:
         return HttpResponse("Missing project parameter.", status=404)
 
+    ctx = get_context(request)
+    cname = ctx["PORTAL_CNAME"]
     query, include = _get_query_include(request)
-    key = _get_download_key(query, include)
+    key = _get_download_key(query, include, cname)
     return _get_download(key)
 
 
@@ -440,8 +463,10 @@ def create_download(request):
     if not project:
         return JsonResponse({"error": "Missing project parameter."})
 
+    ctx = get_context(request)
+    cname = ctx["PORTAL_CNAME"]
     query, include = _get_query_include(request)
-    key = _get_download_key(query, include)
+    key = _get_download_key(query, include, cname)
 
     with Client(**ckwargs) as client:
         total_count, total_pages = client.get_totals(query=query, op="download")
@@ -505,7 +530,8 @@ def create_download(request):
 
 
 def notebooks(request, nb):
-    subdir = os.environ["PORTAL_CNAME"].replace("localhost.", "")
+    ctx = get_context(request)
+    subdir = ctx["PORTAL_CNAME"].replace("localhost.", "")
     return render(request, os.path.join("notebooks", subdir, nb + ".html"))
 
 

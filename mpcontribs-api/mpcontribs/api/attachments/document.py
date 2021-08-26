@@ -4,7 +4,7 @@ import boto3
 import binascii
 
 from hashlib import md5
-from flask import request
+from flask import request, g
 from base64 import b64decode, b64encode
 from flask_mongoengine import DynamicDocument
 from mongoengine import signals, ValidationError
@@ -13,7 +13,6 @@ from mongoengine.queryset.manager import queryset_manager
 from filetype.types.archive import Gz
 from filetype.types.image import Jpeg, Png, Gif, Tiff
 
-from mpcontribs.api.config import API_CNAME
 from mpcontribs.api.contributions.document import get_resource, get_md5, COMPONENTS
 
 MAX_BYTES = 1200 * 1024
@@ -26,7 +25,7 @@ s3_client = boto3.client("s3")
 
 
 def get_key(md5):
-    return f"{API_CNAME}/{md5}"
+    return f"{g.cname}/{md5}"
 
 
 class Attachments(DynamicDocument):

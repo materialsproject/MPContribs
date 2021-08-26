@@ -14,14 +14,9 @@ with gzip.open(formulae_path) as f:
     FORMULAE = json.load(f)
 
 VERSION = datetime.datetime.today().strftime("%Y.%m.%d")
-API_CNAME = os.environ.get("API_CNAME")
-DEBUG = bool(API_CNAME.startswith("localhost"))
-PORTAL_CNAME = os.environ.get("PORTAL_CNAME")
 JSON_SORT_KEYS = False
 JSON_ADD_STATUS = False
-FLASK_LOG_LEVEL = "DEBUG" if DEBUG else "INFO"
 SECRET_KEY = "super-secret"  # TODO in local prod config
-SCHEMES = ["http"] if DEBUG else ["https"]
 
 USTS_MAX_AGE = 2.628e6  # 1 month
 MAIL_DEFAULT_SENDER = os.environ.get("MAIL_DEFAULT_SENDER")
@@ -38,12 +33,6 @@ MONGODB_SETTINGS = {
 }
 REDIS_ADDRESS = os.environ.get("REDIS_ADDRESS", "redis")
 REDIS_URL = RQ_REDIS_URL = RQ_DASHBOARD_REDIS_URL = f"redis://{REDIS_ADDRESS}"
-QUEUE_NAME = f"notebooks_{API_CNAME}"
-RQ_QUEUES = [QUEUE_NAME]
-RQ_SCHEDULER_QUEUE = QUEUE_NAME
-RQ_SCHEDULER_CLASS = "mpcontribs.api.notebooks.views.NotebooksScheduler"
-CRON_JOB_ID = f"auto-notebooks-build_{API_CNAME}"
-MONITORING_TABLE_PREFIX = f"fmd_{API_CNAME}"
 DOC_DIR = os.path.join(os.path.dirname(__file__), "swagger")
 
 SWAGGER = {
@@ -69,7 +58,7 @@ SWAGGER = {
 TEMPLATE = {
     "swagger": "2.0",
     "info": {
-        "title": API_CNAME.rsplit(".", 2)[0].replace("-", " ").upper(),
+        "title": "MPContribs API",
         "description": "Operations to contribute, update and retrieve materials data on Materials Project",
         "termsOfService": "https://materialsproject.org/terms",
         "version": VERSION,
@@ -86,12 +75,11 @@ TEMPLATE = {
     "tags": [
         {
             "name": "projects",
-            "description": f'contain provenance information about contributed datasets. Apply for a project \
-        <a href="https://contribs.materialsproject.org/#apply">here</a> to get started. \
+            "description": f'contain provenance information about contributed datasets. \
         Deleting projects will also delete all contributions including tables, structures, attachments, notebooks \
         and cards for the project. Only users who have been added to a project can update its contents. While \
         unpublished, only users on the project can retrieve its data or view it on the \
-        <a href="{SCHEMES[0]}://{PORTAL_CNAME}">Portal</a>. Making a project public does not automatically publish all \
+        Portal. Making a project public does not automatically publish all \
         its contributions, tables, attachments, and structures. These are separately set to public individually or in bulk.'
             "",
         },
@@ -101,7 +89,7 @@ TEMPLATE = {
         page for MP material(s). Tables (rows and columns), structures, and attachments can be added to a \
         contribution. Each contribution uses `mp-id` or composition as identifier to associate its data with the \
         according entries on MP. Only admins or users on the project can create, update or delete contributions, and \
-        while unpublished, retrieve its data or view it on the <a href="{SCHEMES[0]}://{PORTAL_CNAME}">Portal</a>. \
+        while unpublished, retrieve its data or view it on the Portal. \
         Contribution components (tables,  structures, and attachments) are deleted along with a contribution.',
         },
         {
@@ -126,7 +114,7 @@ TEMPLATE = {
             "description": f'are Jupyter \
         <a href="https://jupyter-notebook.readthedocs.io/en/stable/notebook.html#notebook-documents">notebook</a> \
         documents generated and saved when a contribution is saved. They form the basis for Contribution \
-        Details Pages on the <a href="[SCHEMES[0]]://{PORTAL_CNAME}">Portal</a>.',
+        Details Pages on the Portal.',
         },
     ],
     "securityDefinitions": {
@@ -138,6 +126,4 @@ TEMPLATE = {
         }
     },
     "security": [{"ApiKeyAuth": []}],
-    "host": API_CNAME,
-    "schemes": SCHEMES,
 }

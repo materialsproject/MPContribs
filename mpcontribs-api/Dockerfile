@@ -40,12 +40,14 @@ ENV PATH=/root/.local/bin:$PATH \
     RELOAD="" \
     JUPYTER_GATEWAY_URL=http://localhost:8888 \
     JUPYTER_GATEWAY_HOST=localhost:8888 \
+    MPCONTRIBS_API_HOST=localhost:5000 \
     REDIS_ADDRESS=redis \
     MAX_REQUESTS=100000 \
     MAX_REQUESTS_JITTER=10000
 
 EXPOSE 5000 5002 5003 5005
 COPY start.sh .
+COPY main.sh .
 COPY supervisord.conf .
 
 CMD ["/usr/bin/supervisord", "-c", "supervisord.conf"]

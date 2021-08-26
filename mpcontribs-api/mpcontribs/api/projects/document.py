@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 import os
 import yaml
+import urllib
 
 from math import isnan
-from flask import current_app, render_template, url_for
+from flask import current_app, render_template, url_for, request
 from flask_mongoengine import Document
 from marshmallow import ValidationError
 from marshmallow.fields import String
@@ -197,7 +198,8 @@ class Projects(Document):
 
             if "is_approved" in set_keys and document.is_approved:
                 subject = f'Your project "{document.name}" has been approved'
-                portal = f"{scheme}://{os.environ['PORTAL_CNAME']}"
+                netloc = urllib.parse.urlparse(request.url).netloc.replace("-api", "")
+                portal = f"{scheme}://{netloc}"
                 html = render_template(
                     "owner_email.html",
                     approved=True,

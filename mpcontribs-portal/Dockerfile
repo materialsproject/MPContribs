@@ -58,9 +58,7 @@ WORKDIR /app
 ENV PATH=/root/.local/bin:$PATH \
     DJANGO_SETTINGS_FILE="settings.py" \
     PYTHONUNBUFFERED=1 \
-    API_CNAME=contribs-api.materialsproject.org \
     API_PORT=5000 \
-    PORTAL_CNAME=contribs.materialsproject.org \
     PORTAL_PORT=8080 \
     RELOAD="" \
     NWORKERS=2 \

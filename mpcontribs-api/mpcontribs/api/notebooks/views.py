@@ -8,10 +8,9 @@ from rq import get_current_job
 from rq.job import Job
 from rq_scheduler import Scheduler
 from time import sleep
-from copy import deepcopy
 from nbformat import v4 as nbf
 from flask_rq2 import RQ
-from flask import Blueprint, request, current_app, abort, jsonify
+from flask import Blueprint, request, abort, jsonify, current_app, g
 from flask_mongorest import operators as ops
 from flask_mongorest.methods import Fetch, BulkFetch
 from flask_mongorest.resources import Resource
@@ -20,31 +19,30 @@ from mongoengine.errors import DoesNotExist
 from mongoengine.queryset.visitor import Q
 
 from mpcontribs.api import get_kernel_endpoint
-from mpcontribs.api.config import API_CNAME, QUEUE_NAME, CRON_JOB_ID
 from mpcontribs.api.core import SwaggerView
 from mpcontribs.api.projects.document import Projects
 from mpcontribs.api.contributions.document import Contributions
 from mpcontribs.api.notebooks.document import Notebooks
 from mpcontribs.api.notebooks import run_cells
 
+
 templates = os.path.join(os.path.dirname(flask_mongorest.__file__), "templates")
 notebooks = Blueprint("notebooks", __name__, template_folder=templates)
 
-MPCONTRIBS_API_HOST = os.environ.get("MPCONTRIBS_API_HOST", "localhost:5000")
-seed_nb = nbf.new_notebook()
-seed_nb["cells"] = [
-    nbf.new_code_cell("from mpcontribs.client import Client"),
-    nbf.new_code_cell(f'client = Client(host="{API_CNAME}")'),
-]
+MPCONTRIBS_API_HOST = os.environ["MPCONTRIBS_API_HOST"]
 
 rq = RQ()
+rq.default_queue = f"notebooks_{MPCONTRIBS_API_HOST}"
+rq.queues = [rq.default_queue]
+rq.scheduler_queue = rq.default_queue
+rq.scheduler_class = "mpcontribs.api.notebooks.views.NotebooksScheduler"
 
 
 class NotebooksScheduler(Scheduler):
-    redis_scheduler_namespace_prefix = f'rq:scheduler_instance:{API_CNAME}:'
-    scheduler_key = f'rq:scheduler:{API_CNAME}'
-    scheduler_lock_key = f'rq:scheduler_lock:{API_CNAME}'
-    scheduled_jobs_key = f'rq:scheduler:scheduled_jobs:{API_CNAME}'
+    redis_scheduler_namespace_prefix = f'rq:scheduler_instance:{MPCONTRIBS_API_HOST}:'
+    scheduler_key = f'rq:scheduler:{MPCONTRIBS_API_HOST}'
+    scheduler_lock_key = f'rq:scheduler_lock:{MPCONTRIBS_API_HOST}'
+    scheduled_jobs_key = f'rq:scheduler:scheduled_jobs:{MPCONTRIBS_API_HOST}'
 
 
 class NotebooksResource(Resource):
@@ -90,6 +88,9 @@ def execute_cells(cid, cells):
 
 @notebooks.route("/build")
 def build():
+    if not current_app.kernels:
+        abort(404, description="No kernels available.")
+
     cids = request.args.get("cids")
     projects = request.args.get("projects")
     force = bool(request.args.get("force", 0))
@@ -122,9 +123,15 @@ def restart_kernels():
         run_cells(kernel_id, "import_client", cells)
 
 
-@notebooks.route('/result', defaults={'job_id': f"cron-{CRON_JOB_ID}"})
+@notebooks.route('/result', defaults={'job_id': None})
 @notebooks.route("/result/<job_id>")
 def result(job_id):
+    if not current_app.kernels:
+        abort(404, description="No kernels available.")
+
+    if not job_id:
+        job_id = f"cron-{current_app.cron_job_id}"
+
     try:
         job = Job.fetch(job_id, connection=rq.connection)
     except Exception as exception:
@@ -139,7 +146,7 @@ def result(job_id):
     return jsonify(job.result)
 
 
-@rq.job(QUEUE_NAME)
+@rq.job()
 def make(projects=None, cids=None, force=False):
     """build the notebook / details page"""
     start = time.perf_counter()
@@ -269,7 +276,11 @@ def make(projects=None, cids=None, force=False):
         for idx, output in outputs.items():
             cells[idx]["outputs"] = output
 
-        doc = deepcopy(seed_nb)
+        doc = nbf.new_notebook()
+        doc["cells"] = [
+            nbf.new_code_cell("from mpcontribs.client import Client"),
+            nbf.new_code_cell(f'client = Client(host="{g.cname}")'),
+        ]
         doc["cells"] += cells[1:]  # skip localhost Client
 
         try:
@@ -286,7 +297,7 @@ def make(projects=None, cids=None, force=False):
 
         count += 1
 
-    if job:
+    if total and job:
         restart_kernels()
 
     ret["result"] = {"status": "COMPLETED", "count": count, "total": total}

@@ -3,6 +3,7 @@
 import os
 import logging
 import boto3
+import urllib
 import requests
 import rq_dashboard
 import flask_monitoringdashboard as dashboard
@@ -10,7 +11,7 @@ import flask_mongorest.operators as ops
 
 from importlib import import_module
 from websocket import create_connection
-from flask import Flask, current_app, request
+from flask import Flask, current_app, request, g
 from flask_marshmallow import Marshmallow
 from flask_mongoengine import MongoEngine
 from flask_mongorest import register_class
@@ -164,9 +165,10 @@ def create_app():
     app.jinja_env.globals["get_resource_as_string"] = get_resource_as_string
     app.jinja_env.lstrip_blocks = True
     app.jinja_env.trim_blocks = True
-    DEBUG = app.config.get("DEBUG")
+    app.config["TEMPLATE"]["schemes"] = ["http"] if app.debug else ["https"]
+    MPCONTRIBS_API_HOST = os.environ["MPCONTRIBS_API_HOST"]
 
-    if DEBUG:
+    if app.debug:
         from flask_cors import CORS
 
         CORS(app)  # enable for development (allow localhost)
@@ -209,9 +211,9 @@ def create_app():
     if app.kernels:
         from mpcontribs.api.notebooks.views import rq, make
         rq.init_app(app)
-        cron_job_id = app.config["CRON_JOB_ID"]
-        make.cron('*/3 * * * *', cron_job_id)
-        logger.info(f"cronjob {cron_job_id} added.")
+        setattr(app, "cron_job_id", f"auto-notebooks-build_{MPCONTRIBS_API_HOST}")
+        make.cron('*/3 * * * *', app.cron_job_id)
+        print(f"CRONJOB {app.cron_job_id} added.")
 
     def healthcheck():
         if not DEBUG and not app.kernels:
@@ -221,16 +223,19 @@ def create_app():
 
     app.register_blueprint(sse, url_prefix="/stream")
     app.add_url_rule("/healthcheck", view_func=healthcheck)
+    app.register_blueprint(rq_dashboard.blueprint, url_prefix="/rq")
 
     dashboard.config.init_from(file="dashboard.cfg")
     dashboard.config.version = app.config["VERSION"]
-    dashboard.config.table_prefix = app.config["MONITORING_TABLE_PREFIX"]
+    dashboard.config.table_prefix = f"fmd_{MPCONTRIBS_API_HOST}"
     db_password = os.environ["POSTGRES_DB_PASSWORD"]
     db_host = os.environ["POSTGRES_DB_HOST"]
     dashboard.config.database_name = f"postgresql://kong:{db_password}@{db_host}/kong"
     dashboard.bind(app)
 
-    app.register_blueprint(rq_dashboard.blueprint, url_prefix="/rq")
+    @app.before_first_request
+    def before_first_request_func():
+        g.cname = urllib.parse.urlparse(request.url).netloc
 
     logger.info("app created.")
     return app
