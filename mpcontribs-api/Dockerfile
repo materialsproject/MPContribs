@@ -49,5 +49,6 @@ EXPOSE 5000 5002 5003 5005
 COPY start.sh .
 COPY main.sh .
 COPY supervisord.conf .
+RUN chmod +x main.sh start.sh
 
 CMD ["/usr/bin/supervisord", "-c", "supervisord.conf"]
