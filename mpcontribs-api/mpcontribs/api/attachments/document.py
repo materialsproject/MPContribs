@@ -4,7 +4,7 @@ import boto3
 import binascii
 
 from hashlib import md5
-from flask import request, g
+from flask import request, current_app
 from base64 import b64decode, b64encode
 from flask_mongoengine import DynamicDocument
 from mongoengine import signals, ValidationError
@@ -25,7 +25,7 @@ s3_client = boto3.client("s3")
 
 
 def get_key(md5):
-    return f"{g.cname}/{md5}"
+    return f"{current_app.cname}/{md5}"
 
 
 class Attachments(DynamicDocument):

@@ -235,7 +235,8 @@ def create_app():
 
     @app.before_first_request
     def before_first_request_func():
-        g.cname = urllib.parse.urlparse(request.url).netloc
+        current_app.cname = urllib.parse.urlparse(request.url).netloc
+        print("CNAME", current_app.cname)
 
     logger.info("app created.")
     return app

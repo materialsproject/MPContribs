@@ -10,7 +10,7 @@ from rq_scheduler import Scheduler
 from time import sleep
 from nbformat import v4 as nbf
 from flask_rq2 import RQ
-from flask import Blueprint, request, abort, jsonify, current_app, g
+from flask import Blueprint, request, abort, jsonify, current_app
 from flask_mongorest import operators as ops
 from flask_mongorest.methods import Fetch, BulkFetch
 from flask_mongorest.resources import Resource
@@ -279,7 +279,7 @@ def make(projects=None, cids=None, force=False):
         doc = nbf.new_notebook()
         doc["cells"] = [
             nbf.new_code_cell("from mpcontribs.client import Client"),
-            nbf.new_code_cell(f'client = Client(host="{g.cname}")'),
+            nbf.new_code_cell(f'client = Client(host="{current_app.cname}")'),
         ]
         doc["cells"] += cells[1:]  # skip localhost Client
 
