@@ -11,7 +11,7 @@ if [ -z "${METADATA_URI}" ]; then
 else
     # in AWS Fargate with potentially multiple tasks
     echo "PINGING ${METADATA_URI}"
-    http ${METADATA_URI}
+    curl ${METADATA_URI} | python -m json.tool
     supervisorctl start worker
     supervisorctl start scheduler
 fi
