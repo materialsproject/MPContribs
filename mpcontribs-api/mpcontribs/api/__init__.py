@@ -235,7 +235,8 @@ def create_app():
 
     @app.before_first_request
     def before_first_request_func():
-        current_app.cname = urllib.parse.urlparse(request.url).netloc
+        # NOTE treating preview tasks the same as production (seamless blue/green)
+        current_app.cname = urllib.parse.urlparse(request.url).netloc.replace("-preview", "")
         print("CNAME", current_app.cname)
 
     logger.info("app created.")
