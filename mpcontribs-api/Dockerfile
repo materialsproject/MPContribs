@@ -1,5 +1,5 @@
 FROM materialsproject/devops:python-3.96.4 as base
-RUN apt-get update && apt-get install -y --no-install-recommends supervisor libpq-dev && apt-get clean
+RUN apt-get update && apt-get install -y --no-install-recommends supervisor libpq-dev httpie && apt-get clean
 WORKDIR /app
 
 FROM base as builder
