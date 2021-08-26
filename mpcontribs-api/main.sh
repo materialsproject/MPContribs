@@ -1,11 +1,17 @@
 #!/bin/bash
 
 supervisorctl start api
-# TODO only start worker/scheduler on first AWS task/container?
 
-if [ ! -z ${ECS_CONTAINER_METADATA_URI_V4} ]; then
-    http ${ECS_CONTAINER_METADATA_URI_V4}
+echo "METADATA URI: ${METADATA_URI}"
+
+if [ -z ${METADATA_URI} ]; then
+    # in docker-compose stack with one task
+    supervisorctl start worker
+    supervisorctl start scheduler
+else
+    # in AWS Fargate with potentially multiple tasks
+    http ${METADATA_URI}
+    supervisorctl start worker
+    supervisorctl start scheduler
 fi
 
-supervisorctl start worker
-supervisorctl start scheduler
