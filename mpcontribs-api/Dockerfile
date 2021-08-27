@@ -1,5 +1,5 @@
 FROM materialsproject/devops:python-3.96.4 as base
-RUN apt-get update && apt-get install -y --no-install-recommends supervisor libpq-dev curl && apt-get clean
+RUN apt-get update && apt-get install -y --no-install-recommends supervisor libpq-dev && apt-get clean
 WORKDIR /app
 
 FROM base as builder
@@ -43,12 +43,13 @@ ENV PATH=/root/.local/bin:$PATH \
     MPCONTRIBS_API_HOST=localhost:5000 \
     REDIS_ADDRESS=redis \
     MAX_REQUESTS=100000 \
-    MAX_REQUESTS_JITTER=10000
+    MAX_REQUESTS_JITTER=10000 \
+    ECS_CONTAINER_METADATA_URI_V4=""
 
 EXPOSE 5000 5002 5003 5005
 COPY start.sh .
-COPY main.sh .
+COPY main.py .
 COPY supervisord.conf .
-RUN chmod +x main.sh start.sh
+RUN chmod +x main.py start.sh
 
 CMD ["/usr/bin/supervisord", "-c", "supervisord.conf"]
