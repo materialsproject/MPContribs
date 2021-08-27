@@ -33,6 +33,8 @@ from requests.exceptions import ConnectionError
 delimiter, max_depth = ".", 4
 invalidChars = set(punctuation.replace("*", ""))
 invalidChars.add(" ")
+is_gunicorn = "gunicorn" in os.environ.get("SERVER_SOFTWARE", "")
+
 
 for mod in [
     "matplotlib",
@@ -207,9 +209,6 @@ def create_app():
             logger.info(f"{collection} registered")
         except AttributeError as ex:
             logger.error(f"Failed to register {module_path}: {collection} {ex}")
-
-    # only load/register what's needed when run as part of `flask rq worker/scheduler` (not gunicorn)
-    is_gunicorn = "gunicorn" in os.environ.get("SERVER_SOFTWARE", "")
 
     if app.kernels:
         from mpcontribs.api.notebooks.views import rq, make

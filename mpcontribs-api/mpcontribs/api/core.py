@@ -17,6 +17,7 @@ from flask_mongorest.views import ResourceView
 from mongoengine.queryset.visitor import Q
 from werkzeug.exceptions import Unauthorized
 from mpcontribs.api.config import DOC_DIR
+from mpcontribs.api import is_gunicorn
 
 logger = logging.getLogger("app")
 
@@ -448,11 +449,12 @@ class SwaggerViewType(MethodViewType):
                         if not os.path.exists(file_path):
                             os.makedirs(dir_path, exist_ok=True)
 
-                        with open(file_path, "w") as f:
-                            yaml.dump(spec, f)
-                            logger.warning(
-                                f"{cls.tags[0]}.{method.__name__} written to {file_path}"
-                            )
+                        if is_gunicorn:
+                            with open(file_path, "w") as f:
+                                yaml.dump(spec, f)
+                                logger.warning(
+                                    f"{cls.tags[0]}.{method.__name__} written to {file_path}"
+                                )
 
 
 class SwaggerView(OriginalSwaggerView, ResourceView, metaclass=SwaggerViewType):
