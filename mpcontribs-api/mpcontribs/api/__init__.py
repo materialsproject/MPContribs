@@ -208,12 +208,17 @@ def create_app():
         except AttributeError as ex:
             logger.error(f"Failed to register {module_path}: {collection} {ex}")
 
+    # only load/register what's needed when run as part of `flask rq worker/scheduler` (not gunicorn)
+    is_gunicorn = "gunicorn" in os.environ.get("SERVER_SOFTWARE", "")
+
     if app.kernels:
         from mpcontribs.api.notebooks.views import rq, make
         rq.init_app(app)
-        setattr(app, "cron_job_id", f"auto-notebooks-build_{MPCONTRIBS_API_HOST}")
-        make.cron('*/3 * * * *', app.cron_job_id)
-        print(f"CRONJOB {app.cron_job_id} added.")
+
+        if is_gunicorn:
+            setattr(app, "cron_job_id", f"auto-notebooks-build_{MPCONTRIBS_API_HOST}")
+            make.cron('*/3 * * * *', app.cron_job_id)
+            print(f"CRONJOB {app.cron_job_id} added.")
 
     def healthcheck():
         if not DEBUG and not app.kernels:
@@ -221,17 +226,18 @@ def create_app():
 
         return "OK"
 
-    app.register_blueprint(sse, url_prefix="/stream")
-    app.add_url_rule("/healthcheck", view_func=healthcheck)
-    app.register_blueprint(rq_dashboard.blueprint, url_prefix="/rq")
+    if is_gunicorn:
+        app.register_blueprint(sse, url_prefix="/stream")
+        app.add_url_rule("/healthcheck", view_func=healthcheck)
+        app.register_blueprint(rq_dashboard.blueprint, url_prefix="/rq")
 
-    dashboard.config.init_from(file="dashboard.cfg")
-    dashboard.config.version = app.config["VERSION"]
-    dashboard.config.table_prefix = f"fmd_{MPCONTRIBS_API_HOST}"
-    db_password = os.environ["POSTGRES_DB_PASSWORD"]
-    db_host = os.environ["POSTGRES_DB_HOST"]
-    dashboard.config.database_name = f"postgresql://kong:{db_password}@{db_host}/kong"
-    dashboard.bind(app)
+        dashboard.config.init_from(file="dashboard.cfg")
+        dashboard.config.version = app.config["VERSION"]
+        dashboard.config.table_prefix = f"fmd_{MPCONTRIBS_API_HOST}"
+        db_password = os.environ["POSTGRES_DB_PASSWORD"]
+        db_host = os.environ["POSTGRES_DB_HOST"]
+        dashboard.config.database_name = f"postgresql://kong:{db_password}@{db_host}/kong"
+        dashboard.bind(app)
 
     @app.before_first_request
     def before_first_request_func():
