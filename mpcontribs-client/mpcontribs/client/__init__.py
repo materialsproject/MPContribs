@@ -481,7 +481,7 @@ class Client(SwaggerClient):
                         param_name = f"{column}__{op}"
                         param_spec = deepcopy(param.param_spec)
                         param_spec["name"] = param_name
-                        param_spec.pop("description")
+                        param_spec.pop("description", None)
                         operation.params[param_name] = Param(
                             self.swagger_spec, operation, param_spec
                         )
