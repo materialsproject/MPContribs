@@ -32,7 +32,7 @@ if metadata_uri:
     tasks = client.list_tasks(cluster=cluster, family=family).get("taskArns", [])
     print("TASKS", tasks)
     # TODO check version of each task
-    start_rq = not tasks
+    start_rq = len(tasks) == 1  # this task included in metadata response
 
 if start_rq:
     for program in ["worker", "scheduler"]:
