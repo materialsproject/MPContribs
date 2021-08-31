@@ -65,7 +65,10 @@ LOCAL_STACK = {
 }
 VALID_URLS = {f"http://localhost:{p}" for p in LOCAL_STACK.values()}  # AWS Fargate Task
 VALID_URLS |= {f"http://{h}:{p}" for h, p in LOCAL_STACK.items()}  # local docker-compose stack
-VALID_URLS |= {f"https://{n}-api.materialsproject.org" for n in SUBDOMAINS}
+VALID_URLS |= {
+    f"https://{n}-api{m}.materialsproject.org"
+    for n in SUBDOMAINS for m in ["", "-preview"]
+}
 VALID_URLS |= {f"http://localhost.{n}-api.materialsproject.org" for n in SUBDOMAINS}
 SUPPORTED_FILETYPES = (Gz, Jpeg, Png, Gif, Tiff)
 SUPPORTED_MIMES = [t().mime for t in SUPPORTED_FILETYPES]
