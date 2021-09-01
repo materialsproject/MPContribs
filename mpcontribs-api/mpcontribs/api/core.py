@@ -6,7 +6,6 @@ import logging
 import yaml
 
 from copy import deepcopy
-from flask import current_app
 from typing import Pattern
 from importlib import import_module
 from flask.views import MethodViewType
@@ -472,7 +471,8 @@ class SwaggerView(OriginalSwaggerView, ResourceView, metaclass=SwaggerViewType):
         return request.headers.get("X-Anonymous-Consumer", False)
 
     def is_admin(self, groups):
-        return "admin" in groups or f"admin_{current_app.cname}" in groups
+        admin_group = os.environ.get("ADMIN_GROUP", "admin")
+        return admin_group in groups
 
     def is_admin_or_project_user(self, request, obj):
         if self.is_anonymous(request):

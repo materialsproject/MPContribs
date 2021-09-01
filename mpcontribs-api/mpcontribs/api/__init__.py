@@ -238,11 +238,5 @@ def create_app():
         dashboard.config.database_name = f"postgresql://kong:{db_password}@{db_host}/kong"
         dashboard.bind(app)
 
-    @app.before_first_request
-    def before_first_request_func():
-        # NOTE treating preview tasks the same as production (seamless blue/green)
-        current_app.cname = urllib.parse.urlparse(request.url).netloc.replace("-preview", "")
-        print("CNAME", current_app.cname)
-
     logger.info("app created.")
     return app

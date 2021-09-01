@@ -279,7 +279,7 @@ def make(projects=None, cids=None, force=False):
         doc = nbf.new_notebook()
         doc["cells"] = [
             nbf.new_code_cell("from mpcontribs.client import Client"),
-            nbf.new_code_cell(f'client = Client(host="{current_app.cname}")'),
+            nbf.new_code_cell(f'client = Client()'),
         ]
         doc["cells"] += cells[1:]  # skip localhost Client
 

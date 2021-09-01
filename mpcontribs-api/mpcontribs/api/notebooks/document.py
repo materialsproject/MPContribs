@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import os
 import boto3
 import hashlib
 
@@ -9,7 +10,7 @@ from flask_mongoengine import Document
 from mongoengine.fields import DictField, StringField, IntField, ListField
 from mongoengine.queryset.manager import queryset_manager
 
-BUCKET = "mpcontribs-images"
+BUCKET = os.environ.get("S3_IMAGES_BUCKET", "mpcontribs-images")
 S3_DOWNLOAD_URL = f"https://{BUCKET}.s3.amazonaws.com"
 s3_client = boto3.client("s3")
 

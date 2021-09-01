@@ -66,8 +66,6 @@ def get_context(request):
     ctx = RequestContext(request)
     parsed_url = urllib.parse.urlparse(request.build_absolute_uri())
     ctx["TRADEMARK"] = os.environ.get("TRADEMARK", "")
-    ctx["PORTAL_CNAME"] = parsed_url.netloc
-
     is_localhost = parsed_url.netloc.startswith("localhost.")
     parts = parsed_url.netloc.split(".")
     subdomain_index = 1 if is_localhost else 0
@@ -405,26 +403,25 @@ def _get_query_include(request):
     return query, include
 
 
-def _get_download_key(query: dict, include: list, cname: str):
+def _get_download_key(query: dict, include: list):
     fn = _get_filename(query, include)
     fmt = query.get("format", "json")
-    return f"{cname}/{fn}_{fmt}.zip"
+    return f"{fn}_{fmt}.zip"
 
 
 def download_project(request, project: str, extension: str):
     ctx = get_context(request)
-    cname = ctx["PORTAL_CNAME"]
     if extension == "zip":
         # TODO need to remove zipfile in S3 bucket on API update/save signal
         fmt = request.GET.get("format", "json")
         query = {"project": project, "format": fmt}
         fields = _get_fields_from_params(request.GET)
         include = _reconcile_include(request, project, fields)
-        key = _get_download_key(query, include, cname)
+        key = _get_download_key(query, include)
         content_type = "application/zip"
     elif extension == "json.gz":
         subdir = "raw" if os.environ.get("TRADEMARK") == "ML" else "without_components"
-        key = f"{cname}/manual/{subdir}/{project}.json.gz"
+        key = f"manual/{subdir}/{project}.json.gz"
         content_type = "application/gzip"
     else:
         return HttpResponse(f"Invalid extension {extension}!", status=400)
@@ -447,9 +444,8 @@ def download(request):
         return HttpResponse("Missing project parameter.", status=404)
 
     ctx = get_context(request)
-    cname = ctx["PORTAL_CNAME"]
     query, include = _get_query_include(request)
-    key = _get_download_key(query, include, cname)
+    key = _get_download_key(query, include)
     return _get_download(key)
 
 
@@ -464,9 +460,8 @@ def create_download(request):
         return JsonResponse({"error": "Missing project parameter."})
 
     ctx = get_context(request)
-    cname = ctx["PORTAL_CNAME"]
     query, include = _get_query_include(request)
-    key = _get_download_key(query, include, cname)
+    key = _get_download_key(query, include)
 
     with Client(**ckwargs) as client:
         total_count, total_pages = client.get_totals(query=query, op="download")
