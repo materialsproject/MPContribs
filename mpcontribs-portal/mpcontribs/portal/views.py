@@ -220,8 +220,13 @@ def contribution(request, cid):
 
         if "notebook" not in contrib or contrib.get("needs_build", True):
             url = f"{client.url}/notebooks/build"
-            r = requests.get(url, params={"cids": cid})
+            r = requests.get(url, params={"cids": cid, "force": True})
             if r.status_code == requests.codes.ok:
+                status = r.json().get("result", {}).get("status")
+                if status != "COMPLETED":
+                    ctx["alert"] = f"Notebook build failed with status {status}"
+                    return render(request, "contribution.html", ctx.flatten())
+
                 contrib = client.contributions.get_entry(
                     pk=cid, _fields=["identifier", "notebook"]
                 ).result()
