@@ -529,11 +529,5 @@ def create_download(request):
     return JsonResponse({"progress": 1})
 
 
-def notebooks(request, nb):
-    ctx = get_context(request)
-    subdir = ctx["PORTAL_CNAME"].replace("localhost.", "")
-    return render(request, os.path.join("notebooks", subdir, nb + ".html"))
-
-
 def healthcheck(request):
     return HttpResponse("OK")

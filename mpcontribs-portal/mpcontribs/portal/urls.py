@@ -10,11 +10,6 @@ urlpatterns = [
     url(r"^browse/?$", RedirectView.as_view(pattern_name="index")),
     url(r"^healthcheck/?$", views.healthcheck, name="healthcheck"),
     url(
-        r"^notebooks/(?P<nb>[A-Za-z0-9_\/]{3,})\.html$",
-        views.notebooks,
-        name="notebooks",
-    ),
-    url(
         r"^projects/(?P<project>[a-zA-Z0-9_]{3,31})\.(?P<extension>json\.gz|zip)$",
         views.download_project,
         name="download_project",
