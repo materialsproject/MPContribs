@@ -30,6 +30,7 @@ templates = os.path.join(os.path.dirname(flask_mongorest.__file__), "templates")
 notebooks = Blueprint("notebooks", __name__, template_folder=templates)
 
 MPCONTRIBS_API_HOST = os.environ["MPCONTRIBS_API_HOST"]
+ADMIN_GROUP = os.environ.get("ADMIN_GROUP", "admin")
 
 rq = RQ()
 rq.default_queue = f"notebooks_{MPCONTRIBS_API_HOST}"
@@ -211,7 +212,7 @@ def make(projects=None, cids=None, force=False):
             nbf.new_code_cell("\n".join([
                 "if 'client' not in locals():",
                 "\tclient = Client(",
-                '\t\theaders={"X-Authenticated-Groups": "admin"},',
+                f'\t\theaders={{"X-Authenticated-Groups": "{ADMIN_GROUP}"}},',
                 f'\t\thost="{MPCONTRIBS_API_HOST}"',
                 "\t)",
                 "print(client.get_totals())",
