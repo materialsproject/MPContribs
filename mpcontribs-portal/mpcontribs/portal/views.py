@@ -417,7 +417,6 @@ def _get_download_key(query: dict, include: list):
 def download_project(request, project: str, extension: str):
     ctx = get_context(request)
     if extension == "zip":
-        # TODO need to remove zipfile in S3 bucket on API update/save signal
         fmt = request.GET.get("format", "json")
         query = {"project": project, "format": fmt}
         fields = _get_fields_from_params(request.GET)
@@ -464,67 +463,71 @@ def create_download(request):
     if not project:
         return JsonResponse({"error": "Missing project parameter."})
 
-    ctx = get_context(request)
     query, include = _get_query_include(request)
-    key = _get_download_key(query, include)
 
     with Client(**ckwargs) as client:
-        total_count, total_pages = client.get_totals(query=query, op="download")
+        return make_download(client, query, include, timeout=20)
 
-        if total_count < 1:
+
+def make_download(client, query, include, timeout=-1):
+    key = _get_download_key(query, include)
+    total_count, total_pages = client.get_totals(query=query, op="download")
+
+    if total_count < 1:
+        return JsonResponse({"error": "No results for query."})
+
+    last_modified = client.contributions.get_entries(
+        _sort="-last_modified", _fields=["last_modified"], _limit=1,
+        **{k: v for k, v in query.items() if k not in {"format", "_sort"}}
+    ).result()["data"][0]["last_modified"]
+
+    try:
+        s3_client.head_object(Bucket=BUCKET, Key=key, IfModifiedSince=last_modified)
+    except ClientError:
+        all_ids = client.get_all_ids(
+            query=query, include=include, timeout=timeout
+        ).get(query["project"])
+        if not all_ids:
             return JsonResponse({"error": "No results for query."})
 
-        last_modified = client.contributions.get_entries(
-            _sort="-last_modified", _fields=["last_modified"], _limit=1,
-            **{k: v for k, v in query.items() if k not in {"format", "_sort"}}
-        ).result()["data"][0]["last_modified"]
+        ncontribs = len(all_ids["ids"])
 
-        try:
-            s3_client.head_object(Bucket=BUCKET, Key=key, IfModifiedSince=last_modified)
-        except ClientError:
-            all_ids = client.get_all_ids(
-                query=query, include=include, timeout=20
-            ).get(project)
-            if not all_ids:
-                return JsonResponse({"error": "No results for query."})
+        if ncontribs < total_count:
+            # timeout reached -> use API/client
+            return JsonResponse({
+                "error": "Too many contributions matching query. Use API/client."
+            })
 
-            ncontribs = len(all_ids["ids"])
-
-            if ncontribs < total_count:
-                # timeout reached -> use API/client
-                return JsonResponse({
-                    "error": "Too many contributions matching query. Use API/client."
-                })
-
-            all_files = total_pages  # for contributions
-            for component in include:
-                ncomp = len(all_ids[component]["ids"])
-                per_page, _ = client._get_per_page_default_max(
-                    op="download", resource=component
-                )
-                all_files += int(ncomp / per_page) + bool(ncomp % per_page)
-
-            fn = _get_filename(query, include)
-            tmpdir = Path("/tmp")
-            outdir = tmpdir / fn
-            existing_files = sum(len(files) for _, _, files in os.walk(outdir))
-            ndownloads = client.download_contributions(
-                query=query, include=include, outdir=outdir, timeout=30
+        all_files = total_pages  # for contributions
+        for component in include:
+            ncomp = len(all_ids[component]["ids"])
+            per_page, _ = client._get_per_page_default_max(
+                op="download", resource=component
             )
-            total_files = existing_files + ndownloads
+            all_files += int(ncomp / per_page) + bool(ncomp % per_page)
 
-            if total_files < all_files:
-                return JsonResponse({"progress": total_files/all_files})
+        fn = _get_filename(query, include)
+        tmpdir = Path("/tmp")
+        outdir = tmpdir / fn
+        existing_files = sum(len(files) for _, _, files in os.walk(outdir))
+        remaining_timeout = 50 - timeout if timeout > 0 else -1
+        ndownloads = client.download_contributions(
+            query=query, include=include, outdir=outdir, timeout=remaining_timeout
+        )
+        total_files = existing_files + ndownloads
 
-            make_archive(outdir, "zip", outdir)
-            zipfile = outdir.with_suffix(".zip")
-            resp = zipfile.read_bytes()
-            s3_client.put_object(
-                Bucket=BUCKET, Key=key, Body=resp,
-                ContentType="application/zip"
-            )
-            rmtree(outdir)
-            os.remove(zipfile)
+        if total_files < all_files:
+            return JsonResponse({"progress": total_files/all_files})
+
+        make_archive(outdir, "zip", outdir)
+        zipfile = outdir.with_suffix(".zip")
+        resp = zipfile.read_bytes()
+        s3_client.put_object(
+            Bucket=BUCKET, Key=key, Body=resp,
+            ContentType="application/zip"
+        )
+        rmtree(outdir)
+        os.remove(zipfile)
 
     return JsonResponse({"progress": 1})
 
