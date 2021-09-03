@@ -220,7 +220,7 @@ def create_app():
             print(f"CRONJOB {app.cron_job_id} added.")
 
     def healthcheck():
-        if not DEBUG and not app.kernels:
+        if not app.debug and not app.kernels:
             return "KERNEL GATEWAY NOT AVAILABLE", 500
 
         return "OK"
