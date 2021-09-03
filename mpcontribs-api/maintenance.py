@@ -1,5 +1,3 @@
-# make sure correct units are indicated in project.columns before running this
-
 from boltons.iterutils import remap
 from mongoengine.queryset.visitor import Q
 
@@ -15,6 +13,7 @@ def visit(path, key, value):
 
 
 def fix_units(name):
+    # make sure correct units are indicated in project.columns before running this
     fields = list(Contributions._fields.keys())
     project = Projects.objects.with_id(name).reload("columns")
     query = Q()
@@ -33,15 +32,15 @@ def fix_units(name):
         contrib.data = remap(contrib.data, visit=visit, enter=enter)  # pull out display
         contrib.save(signal_kwargs={"skip": True})  # reparse display with intended unit
 
-        if idx and not idx%100:
+        if idx and not idx%250:
             print(idx)
 
     if num:
         print("post_save ...")
         Contributions.post_save(Contributions, contrib)
 
-    print("DONE")
 
 # additional maintenance functions
-# TODO clean notebooks
+# TODO generate JSON/CSV project downloads
+# TODO clean dangling notebooks
 # TODO update_projects/stats
