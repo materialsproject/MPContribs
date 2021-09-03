@@ -50,6 +50,7 @@ EXPOSE 5000 5002 5003 5005
 COPY start.sh .
 COPY main.py .
 COPY supervisord.conf .
+COPY maintenance.py .
 RUN chmod +x main.py start.sh
 
 CMD ["/usr/bin/supervisord", "-c", "supervisord.conf"]
