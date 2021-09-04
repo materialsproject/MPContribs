@@ -70,5 +70,6 @@ COPY settings.py .
 COPY docker-entrypoint.sh .
 COPY manage.py .
 COPY start.sh .
+COPY maintenance.py .
 ENTRYPOINT ["/app/docker-entrypoint.sh"]
 CMD wait-for-it.sh $MPCONTRIBS_API_HOST -s -t 60 -- ./start.sh

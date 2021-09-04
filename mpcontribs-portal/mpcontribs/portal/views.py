@@ -469,16 +469,20 @@ def create_download(request):
         return make_download(client, query, include, timeout=20)
 
 
-def make_download(client, query, include, timeout=-1):
+def make_download(client, query, include=None, timeout=-1):
+    include = include or []
     key = _get_download_key(query, include)
     total_count, total_pages = client.get_totals(query=query, op="download")
 
     if total_count < 1:
         return JsonResponse({"error": "No results for query."})
 
+    kwargs = {
+        k: v for k, v in query.items()
+        if k not in {"format", "_sort", "_fields", "_limit", "per_page"}
+    }
     last_modified = client.contributions.get_entries(
-        _sort="-last_modified", _fields=["last_modified"], _limit=1,
-        **{k: v for k, v in query.items() if k not in {"format", "_sort"}}
+        _sort="-last_modified", _fields=["last_modified"], _limit=1, **kwargs
     ).result()["data"][0]["last_modified"]
 
     try:
