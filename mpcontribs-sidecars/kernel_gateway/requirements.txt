@@ -1,6 +1,6 @@
 blinker==1.4
 ipywidgets==7.6.3
-jupyter-client==7.0.2
+jupyter-client==7.0.3
 jupyter-kernel-gateway==2.5.1
 kaleido==0.2.1
 mpcontribs-client==3.13.2
