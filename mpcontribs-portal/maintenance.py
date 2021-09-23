@@ -9,10 +9,11 @@ FORMATS = ["json", "csv"]
 HEADERS = {"X-Authenticated-Groups": os.environ["ADMIN_GROUP"]}
 
 
-def generate_downloads():
+def generate_downloads(names=None):
+    q = {"name__in": names} if names else {}
     client = Client(host=os.environ["MPCONTRIBS_API_HOST"], headers=HEADERS)
     projects = client.projects.get_entries(
-        _fields=["name", "stats"]
+        _fields=["name", "stats"], **q
     ).result().get("data", [])
     skip = {"columns", "contributions"}
     print("PROJECTS", len(projects))
