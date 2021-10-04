@@ -28,6 +28,7 @@ setup(
         "flatten-dict",
         "ipython",
         "json2html",
+        "jsonschema<4.0",
         "pandas",
         "pint",
         "plotly",
