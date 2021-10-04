@@ -3,7 +3,7 @@ asn1crypto==1.4.0
 blinker==1.4
 boltons==21.0.0
 css-html-js-minify==2.5.5
-dateparser==1.0.0
+dateparser==1.1.0
 dnspython==2.1.0
 filetype==1.0.8
 flasgger @ git+https://github.com/flasgger/flasgger#egg=flasgger-0.9.5
