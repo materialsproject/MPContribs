@@ -905,7 +905,7 @@ class Client(SwaggerClient):
         query = query or {}
         skip_keys = {"per_page", "_fields", "format"}
         query = {k: v for k, v in query.items() if k not in skip_keys}
-        query["_fields"] = ["_id"]
+        query["_fields"] = ["id"]
         queries = self._split_query(query, resource=resource, op=op)  # don't paginate
         result = {"total_count": 0, "total_pages": 0}
         futures = [self._get_future(i, q, rel_url=resource) for i, q in enumerate(queries)]
