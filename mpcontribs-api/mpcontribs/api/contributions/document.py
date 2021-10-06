@@ -15,7 +15,6 @@ from mongoengine.queryset.manager import queryset_manager
 from mongoengine.fields import StringField, BooleanField, DictField
 from mongoengine.fields import LazyReferenceField, ReferenceField
 from mongoengine.fields import DateTimeField, ListField
-from marshmallow.utils import get_value
 from boltons.iterutils import remap
 from decimal import Decimal
 from pint import UnitRegistry
@@ -122,22 +121,20 @@ def truncate_digits(q):
 
 
 def get_min_max(sender, path, project_name):
-    # https://docs.mongodb.com/manual/core/index-wildcard/
-    # NOTE need a query to trigger wildcard IXSCAN
-    # NOTE can't filter for `project` when using wildcard index on `data`
-    # NOTE `project` field in wildcardProjection for wildcard index on all fields
-    # NOTE reset `only` in custom queryset manager via `exclude`
     field = f"{path}{delimiter}value"
-    key = f"{field}__type".replace(delimiter, "__")
-    q = {key: "number"}
-    exclude = list(sender._fields.keys())
-    qs = sender.objects(**q).exclude(*exclude).only(field, "project").order_by(field)
-    docs = [doc for doc in qs if doc.project.pk == project_name]
+    result = list(sender.objects.aggregate([
+        {"$match": {"project": project_name, field: {"$exists": 1}}},
+        {"$group": {
+            "_id": None,
+            "min": {"$min": f"${field}"},
+            "max": {"$max": f"${field}"},
+        }}
+    ]))
 
-    if not docs:
+    if not result:
         return None, None
 
-    return get_value(docs[0], field), get_value(docs[-1], field)
+    return result[0]["min"], result[0]["max"]
 
 
 def get_resource(component):
