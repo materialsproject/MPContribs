@@ -178,7 +178,7 @@ def _response_hook(resp, *args, **kwargs):
     elif content_type == "application/gzip":
         resp.result = resp.content
     else:
-        print("ERROR", resp.content.decode("utf-8"))
+        print("ERROR", resp.status_code)
 
 
 class FidoClientGlobalHeaders(FidoClient):
