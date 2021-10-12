@@ -1476,7 +1476,6 @@ class Client(SwaggerClient):
             for project_name in project_names:
                 ncontribs = len(contribs[project_name])
                 total += ncontribs
-                start = datetime.utcnow()
 
                 while contribs[project_name]:
                     futures = []
@@ -1491,28 +1490,28 @@ class Client(SwaggerClient):
                         if post_chunk:
                             futures.append(post_future(post_chunk))
 
-                    _run_futures(futures, total=ncontribs, timeout=timeout)
+                    responses = _run_futures(futures, total=ncontribs, timeout=timeout, desc="Submit")
+                    processed = sum(r.count for r in responses.values())
+                    total_processed += processed
+                    print("PROCESSED", processed)
 
-                    if retry and unique_identifiers[project_name]:
-                        existing[project_name] = self.get_all_ids(
-                            dict(project=project_name), include=COMPONENTS, timeout=timeout
-                        ).get(project_name, {"identifiers": set()})
-                        unique_identifiers[project_name] = self.projects.get_entry(
-                            pk=project_name, _fields=["unique_identifiers"]
-                        ).result()["unique_identifiers"]
-                        contribs[project_name] = [
-                            c for c in contribs[project_name]
-                            if c["identifier"] not in existing[project_name]["identifiers"]
-                        ]
-                    else:
-                        contribs[project_name] = []  # abort retrying
-                        if retry and not unique_identifiers[project_name]:
-                            print("Please resubmit failed contributions manually.")
+                    if processed != ncontribs:
+                        if retry and unique_identifiers[project_name]:
+                            existing[project_name] = self.get_all_ids(
+                                dict(project=project_name), include=COMPONENTS, timeout=timeout
+                            ).get(project_name, {"identifiers": set()})
+                            unique_identifiers[project_name] = self.projects.get_entry(
+                                pk=project_name, _fields=["unique_identifiers"]
+                            ).result()["unique_identifiers"]
+                            contribs[project_name] = [
+                                c for c in contribs[project_name]
+                                if c["identifier"] not in existing[project_name]["identifiers"]
+                            ]
+                        else:
+                            contribs[project_name] = []  # abort retrying
+                            if retry and not unique_identifiers[project_name]:
+                                print("Please resubmit failed contributions manually.")
 
-            end = datetime.utcnow()
-            updated_total, _ = self.get_totals(query=dict(
-                project__in=project_names, last_modified__after=start, last_modified__before=end
-            ), timeout=timeout)
             toc = time.perf_counter()
             dt = (toc - tic) / 60
             self._load()
