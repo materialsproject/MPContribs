@@ -51,7 +51,7 @@ from pint.errors import DimensionalityError
 from datetime import datetime
 
 RETRIES = 3
-MAX_WORKERS = 10
+MAX_WORKERS = 8
 MAX_ELEMS = 10
 MAX_BYTES = 1200 * 1024
 DEFAULT_HOST = "contribs-api.materialsproject.org"
@@ -145,7 +145,7 @@ def grouper(n, iterable):
         yield chunk
 
 
-def get_session():
+def get_session(max_workers=MAX_WORKERS):
     # TODO add Bad Gateway 502?
     adapter_kwargs = dict(max_retries=Retry(
         total=RETRIES,
@@ -154,7 +154,7 @@ def get_session():
         respect_retry_after_header=True,
         status_forcelist=[429],  # rate limit
     ))
-    s = FuturesSession(max_workers=MAX_WORKERS, adapter_kwargs=adapter_kwargs)
+    s = FuturesSession(max_workers=max_workers, adapter_kwargs=adapter_kwargs)
     s.hooks['response'].append(_response_hook)
     return s
 
@@ -330,14 +330,14 @@ def load_client(apikey=None, headers=None, host=None):
     )
 
 
-def _run_futures(futures, total: int = 0, timeout: int = -1):
+def _run_futures(futures, total: int = 0, timeout: int = -1, desc=None):
     """helper to run futures/requests"""
     start = time.perf_counter()
     total_set = total > 0
     total = total if total_set else len(futures)
     responses = {}
 
-    with tqdm(leave=False, total=total) as pbar:
+    with tqdm(total=total, desc=desc) as pbar:
         for future in as_completed(futures):
             if not future.cancelled():
                 response = future.result()
@@ -909,7 +909,7 @@ class Client(SwaggerClient):
         queries = self._split_query(query, resource=resource, op=op)  # don't paginate
         result = {"total_count": 0, "total_pages": 0}
         futures = [self._get_future(i, q, rel_url=resource) for i, q in enumerate(queries)]
-        responses = _run_futures(futures, timeout=timeout)
+        responses = _run_futures(futures, timeout=timeout, desc="Totals")
 
         for resp in responses.values():
             for k in result:
@@ -1030,7 +1030,7 @@ class Client(SwaggerClient):
         _, total_pages = self.get_totals(query=query, timeout=timeout)
         queries = self._split_query(query, op=op, pages=total_pages)
         futures = [self._get_future(i, q) for i, q in enumerate(queries)]
-        responses = _run_futures(futures, timeout=timeout)
+        responses = _run_futures(futures, timeout=timeout, desc="Identifiers")
 
         for resp in responses.values():
             for contrib in resp["data"]:
@@ -1309,14 +1309,12 @@ class Client(SwaggerClient):
         project_names = list(project_names)
 
         if len(collect_ids) != len(contributions):
-            print("get existing contributions ...")
             unique_identifiers = self.get_unique_identifiers_flags(projects=project_names)
             existing = defaultdict(dict, self.get_all_ids(
                 dict(project__in=project_names), include=COMPONENTS, timeout=timeout
             ))
 
         # prepare contributions
-        print("prepare contributions ...")
         contribs = defaultdict(list)
         digests = {project_name: defaultdict(set) for project_name in project_names}
         fields = [
@@ -1326,7 +1324,7 @@ class Client(SwaggerClient):
         ]
         fields.remove("needs_build")  # internal field
 
-        for contrib in tqdm(contributions, leave=False):
+        for contrib in tqdm(contributions, desc="Prepare"):
             update = "id" in contrib
             project_name = id2project[contrib["id"]] if update else contrib["project"]
             if (
@@ -1456,8 +1454,9 @@ class Client(SwaggerClient):
             if self.session and self.session.executor._shutdown:
                 raise ValueError("Session closed. Use `with` statement.")
 
-            print("submit contributions ...")
-            total = 0
+            total, total_processed = 0, 0
+            self.session.close()
+            self.session = get_session(max_workers=2)
 
             def post_future(chunk):
                 return self.session.post(
@@ -1517,7 +1516,9 @@ class Client(SwaggerClient):
             toc = time.perf_counter()
             dt = (toc - tic) / 60
             self._load()
-            print(f"It took {dt:.1f}min to submit {updated_total} contributions.")
+            self.session.close()
+            self.session = get_session()
+            print(f"It took {dt:.1f}min to submit {total_processed}/{total} contributions.")
         else:
             print("Nothing to submit.")
 
