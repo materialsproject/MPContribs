@@ -261,6 +261,14 @@ class Attachment(dict):
         """Decode base64-encoded content of attachment"""
         return b64decode(self["content"], validate=True)
 
+    def unpack(self) -> str:
+        unpacked = self.decode()
+
+        if self["mime"] == "application/gzip":
+            unpacked = gzip.decompress(unpacked).decode("utf-8")
+
+        return unpacked
+
     def write(self, outdir: Union[str, Path] = None) -> Path:
         """Write attachment to file using its name
 
