@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import sys
 import os
-import json
+import ujson
 import fido
 import time
 import gzip
@@ -98,7 +98,7 @@ ureg.define("electron_mass = 9.1093837015e-31 kg = mₑ = m_e")
 
 
 def get_md5(d):
-    s = json.dumps(d, sort_keys=True).encode("utf-8")
+    s = ujson.dumps(d, sort_keys=True).encode("utf-8")
     return md5(s).hexdigest()
 
 
@@ -310,7 +310,7 @@ class Attachment(dict):
             data (list,dict): JSON-serializable data to go into the attachment
         """
         filename = name + ".json.gz"
-        data_json = json.dumps(data, indent=4).encode("utf-8")
+        data_json = ujson.dumps(data, indent=4).encode("utf-8")
         content = gzip.compress(data_json)
         size = len(content)
 
@@ -583,7 +583,7 @@ class Client(SwaggerClient):
         kwargs = dict(headers=self.headers, params=params)
 
         if method == "put" and data:
-            kwargs["data"] = json.dumps(data).encode("utf-8")
+            kwargs["data"] = ujson.dumps(data).encode("utf-8")
 
         future = getattr(self.session, method)(
             f"{self.url}/{rel_url}/", **kwargs
@@ -1463,7 +1463,7 @@ class Client(SwaggerClient):
                 return self.session.post(
                     f"{self.url}/contributions/",
                     headers=self.headers,
-                    data=json.dumps(chunk).encode("utf-8"),
+                    data=ujson.dumps(chunk).encode("utf-8"),
                 )
 
             def put_future(cdct):
@@ -1471,7 +1471,7 @@ class Client(SwaggerClient):
                 return self.session.put(
                     f"{self.url}/contributions/{pk}/",
                     headers=self.headers,
-                    data=json.dumps(cdct).encode("utf-8"),
+                    data=ujson.dumps(cdct).encode("utf-8"),
                 )
 
             for project_name in project_names:

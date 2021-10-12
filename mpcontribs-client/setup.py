@@ -40,6 +40,7 @@ setup(
         "service-identity",
         "twisted",
         "tqdm",
+        "ujson",
     ],
     license="MIT",
     zip_safe=False,
