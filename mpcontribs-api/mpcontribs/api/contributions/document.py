@@ -120,21 +120,19 @@ def truncate_digits(q):
     return get_quantity(s)
 
 
-def get_min_max(sender, path, project_name):
-    field = f"{path}{delimiter}value"
-    result = list(sender.objects.aggregate([
-        {"$match": {"project": project_name, field: {"$exists": 1}}},
-        {"$group": {
-            "_id": None,
-            "min": {"$min": f"${field}"},
-            "max": {"$max": f"${field}"},
-        }}
-    ]))
+def get_min_max(sender, paths, project_name):
+    group = {"_id": None}
 
-    if not result:
-        return None, None
+    for path in paths:
+        field = f"{path}{delimiter}value"
+        for k in ["min", "max"]:
+            clean_path = path.replace(delimiter, "__")
+            key = f"{clean_path}__{k}"
+            group[key] = {f"${k}": f"${field}"}
 
-    return result[0]["min"], result[0]["max"]
+    pipeline = [{"$match": {"project": project_name}}, {"$group": group}]
+    result = list(sender.objects.aggregate(pipeline))
+    return None if not result else result[0]
 
 
 def get_resource(component):
@@ -288,6 +286,11 @@ class Contributions(DynamicDocument):
         if kwargs.get("skip"):
             return
 
+        remaining_time = kwargs.get("remaining_time")
+        if remaining_time is not None and remaining_time < 5:
+            print("NOT ENOUGH TIME LEFT FOR POST_SAVE!")
+            return
+
         from mpcontribs.api.projects.document import Column, MAX_COLUMNS
 
         # NOTE columns update below only works for single-project bulk updates
@@ -295,6 +298,7 @@ class Contributions(DynamicDocument):
         project = document.project.fetch().reload("columns")
         columns_copy = deepcopy(project.columns)
         columns = {col.path: col for col in project.columns}
+        min_max_paths = []
 
         # set columns field for project
         def update_columns(path, key, value):
@@ -313,9 +317,7 @@ class Contributions(DynamicDocument):
                         columns[path].unit = value["unit"]
 
                 if is_quantity:
-                    columns[path].min, columns[path].max = get_min_max(
-                        sender, path, project.name
-                    )
+                    min_max_paths.append(path)
 
                 ncolumns = len(columns)
                 if ncolumns > MAX_COLUMNS:
@@ -325,6 +327,16 @@ class Contributions(DynamicDocument):
 
         # run update_columns over document data
         remap(document.data, visit=update_columns, enter=enter)
+
+        # get and set min/max for all paths
+        min_max = get_min_max(sender, min_max_paths, project.name)
+
+        for clean_path in min_max_paths:
+            for k in ["min", "max"]:
+                path = clean_path.replace("__", delimiter)
+                m = min_max.get(f"{path}__{k}")
+                if m is not None:
+                    setattr(columns[path], k, m)
 
         # add/remove columns for other components
         for path in COMPONENTS.keys():
@@ -342,39 +354,22 @@ class Contributions(DynamicDocument):
             project.update(columns=new_columns)
 
         # update stats in project
-        qs = sender.objects(project=project.name)
-        stats_kwargs = {"columns": len(new_columns), "contributions": qs.count()}
+        ncontribs = sender.objects(project=project.name).count()
+        stats_kwargs = {"columns": len(new_columns), "contributions": ncontribs}
 
         for component in COMPONENTS.keys():
-            # split by last_modified to avoid exceeding 16MB limit on item_frequencies
-            number_groups = 1
-            cqs = qs.filter(**{f"{component}__exists": True, f"{component}__not__size": 0})
-
-            if cqs.count() == 0:
-                continue
-
-            try:
-                last_modifieds = cqs.distinct("last_modified")  # TODO might exceed 16MB limit
-            except OperationFailure:
-                print("COULD NOT UPDATE STATS FOR", project.name, component)
-                continue
-
-            while True:
-                ids = set()
-                group_size = ceil(len(last_modifieds) / number_groups)
-
-                try:
-                    for g in grouper(group_size, last_modifieds):
-                        filter_kwargs = dict(last_modified__gte=g[0], last_modified__lte=g[-1])
-                        ids |= cqs.filter(**filter_kwargs).item_frequencies(component).keys()
-                except OperationFailure:
-                    number_groups *= 2
-                except Exception as e:
-                    print("COULD NOT UPDATE STATS FOR", project.name, component, e)
-                    break
-                else:
-                    stats_kwargs[component] = len(ids)
-                    break
+            pipeline = [
+                {"$match": {
+                    "project": project.name,
+                    component: {
+                        "$exists": True,
+                        "$not": {"$size": 0}
+                    }
+                }},
+                {"$count": "count"}
+            ]
+            result = list(sender.objects.aggregate(pipeline))
+            stats_kwargs[component] = result[0]["count"] if result else 0
 
         stats = Stats(**stats_kwargs)
         project.update(stats=stats)
@@ -396,29 +391,42 @@ class Contributions(DynamicDocument):
         if kwargs.get("skip"):
             return
 
+        remaining_time = kwargs.get("remaining_time")
+        if remaining_time is not None and remaining_time < 5:
+            print("NOT ENOUGH TIME LEFT FOR POST_DELETE!")
+            return
+
         # reset columns field for project
         project = document.project.fetch().reload("columns")
         columns_copy = deepcopy(project.columns)
         columns = {col.path: col for col in project.columns}
+        min_max_paths = []
 
         for path in list(columns.keys()):
             column = columns[path]
 
             if not isnan(column.min) and not isnan(column.max):
-                column.min, column.max = get_min_max(sender, path, project.name)
-                if isnan(column.min) and isnan(column.max):
+                min_max_paths.append(path)
+            else:
+                result = list(sender.objects.aggregate([
+                    {"$match": {"project": project.name, path: {"$exists": True}}},
+                    {"$count": "count"}
+                ]))
+                if result and result[0]["count"] < 1:
+                    columns.pop(path)
+
+        # get and set min/max for all paths
+        min_max = get_min_max(sender, min_max_paths, project.name)
+
+        for clean_path in min_max_paths:
+            path = clean_path.replace("__", delimiter)
+            column = columns[path]
+
+            for k in ["min", "max"]:
+                if min_max.get(f"{path}__{k}") is None:
                     # just deleted last contribution with this column
                     columns.pop(path)
-            else:
-                # use wildcard index if available -> single field query
-                # NOTE reset `only` in custom queryset manager via `exclude`
-                exclude = list(sender._fields.keys())
-                field = path.replace(delimiter, "__") + "__type"
-                q = {field: "string"}
-                qs = sender.objects(**q).exclude(*exclude).only(path, "project")
-
-                if qs.count() < 1 or sum(1 for d in qs if d.project.pk == project.name) < 1:
-                    columns.pop(path)
+                    break
 
         cls.update_project(sender, project, columns_copy, columns.values())
 

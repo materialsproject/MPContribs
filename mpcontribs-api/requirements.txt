@@ -11,7 +11,7 @@ flask-compress==1.10.1
 flask-cors==3.0.10
 flask-log==0.1.0
 flask-marshmallow==0.14.0
-flask-mongorest-mpcontribs==1.0.3
+flask-mongorest-mpcontribs==1.1.0
 Flask-MonitoringDashboard @ git+https://github.com/flask-dashboard/Flask-MonitoringDashboard@development#egg=flask_monitoringdashboard-3.1.1
 Flask-RQ2==18.3
 gunicorn[gevent]==20.1.0
