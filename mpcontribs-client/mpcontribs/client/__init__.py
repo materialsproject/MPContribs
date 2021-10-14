@@ -1450,7 +1450,7 @@ class Client(SwaggerClient):
 
                     dupe = bool(
                         digest in digests[project_name][component] or
-                        digest in existing.get(project_name, {}).get(component, {}).get("md5s", set())
+                        digest in existing.get(project_name, {}).get(component, {}).get("md5s", [])
                     )
 
                     if not ignore_dupes and dupe:
@@ -1520,26 +1520,30 @@ class Client(SwaggerClient):
                                 futures.append(post_future(idx, payload))
                             else:
                                 print(
-                                    f"SKIPPED {project_name}/{idx}: too large - reduce per_request."
+                                    f"SKIPPED {project_name}/{idx}: too large, reduce per_request"
                                 )
 
                     if not futures:
                         break  # nothing to do
 
-                    responses = _run_futures(futures, total=ncontribs, timeout=timeout, desc="Submit")
+                    responses = _run_futures(
+                        futures, total=ncontribs, timeout=timeout, desc="Submit"
+                    )
                     processed = sum(r["count"] for r in responses.values())
                     total_processed += processed
 
-                    if processed != ncontribs and retry and retries < RETRIES and unique_identifiers.get(project_name):
+                    if processed != ncontribs and retry and retries < RETRIES and \
+                            unique_identifiers.get(project_name):
                         existing[project_name] = self.get_all_ids(
                             dict(project=project_name), include=COMPONENTS, timeout=timeout
                         ).get(project_name, {"identifiers": set()})
                         unique_identifiers[project_name] = self.projects.get_entry(
                             pk=project_name, _fields=["unique_identifiers"]
                         ).result()["unique_identifiers"]
+                        existing_identifiers = existing.get(project_name, {}).get("identifiers", [])
                         contribs[project_name] = [
                             c for c in contribs[project_name]
-                            if c["identifier"] not in existing.get(project_name, {}).get("identifiers", set())
+                            if c["identifier"] not in existing_identifiers
                         ]
                         retries += 1
                     else:
@@ -1548,7 +1552,9 @@ class Client(SwaggerClient):
                             if retries >= RETRIES:
                                 print(f"{project_name}: Tried {RETRIES} times - abort.")
                             elif not unique_identifiers.get(project_name):
-                                print(f"{project_name}: Please resubmit failed contributions manually.")
+                                print(
+                                    f"{project_name}: Please resubmit failed contributions manually"
+                                )
 
             toc = time.perf_counter()
             dt = (toc - tic) / 60
