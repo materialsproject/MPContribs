@@ -1540,10 +1540,10 @@ class Client(SwaggerClient):
                         unique_identifiers[project_name] = self.projects.get_entry(
                             pk=project_name, _fields=["unique_identifiers"]
                         ).result()["unique_identifiers"]
-                        existing_identifiers = existing.get(project_name, {}).get("identifiers", [])
+                        existing_ids = existing.get(project_name, {}).get("identifiers", [])
                         contribs[project_name] = [
                             c for c in contribs[project_name]
-                            if c["identifier"] not in existing_identifiers
+                            if c["identifier"] not in existing_ids
                         ]
                         retries += 1
                     else:
@@ -1553,7 +1553,7 @@ class Client(SwaggerClient):
                                 print(f"{project_name}: Tried {RETRIES} times - abort.")
                             elif not unique_identifiers.get(project_name):
                                 print(
-                                    f"{project_name}: Please resubmit failed contributions manually"
+                                    f"{project_name}: resubmit failed contributions manually"
                                 )
 
             toc = time.perf_counter()
