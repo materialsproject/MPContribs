@@ -48,7 +48,6 @@ from pint import UnitRegistry
 from pint.unit import UnitDefinition
 from pint.converters import ScaleConverter
 from pint.errors import DimensionalityError
-from datetime import datetime
 
 RETRIES = 3
 MAX_WORKERS = 8
