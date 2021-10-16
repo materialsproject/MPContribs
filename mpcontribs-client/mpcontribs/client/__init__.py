@@ -857,19 +857,26 @@ class Client(SwaggerClient):
         self.projects.update_entry(pk=name, project={"columns": []}).result()
         return self.projects.update_entry(pk=name, project=payload).result()
 
-    def delete_contributions(self, name: str):
-        """Remove all contributions for a project
+    def delete_contributions(
+        self,
+        name: str,
+        query: dict = None,
+        timeout: int = -1
+    ):
+        """Remove all contributions for a project and query
 
         Note: This also resets the columns field for a project. It might have to be
         re-initialized via `client.init_columns()`.
 
         Args:
             name (str): name of the project for which to delete contributions
+            query (dict): optional query to select contributions
+            timeout (int): cancel remaining requests if timeout exceeded (in seconds)
         """
         tic = time.perf_counter()
-        # reset columns to be save (sometimes not all are reset BUGFIX?)
-        self.projects.update_entry(pk=name, project={"columns": []}).result()
-        cids = list(self.get_all_ids(dict(project=name)).get(name, {}).get("ids", set()))
+        query = query or {}
+        query["project"] = name
+        cids = list(self.get_all_ids(query).get(name, {}).get("ids", set()))
 
         if not cids:
             print(f"There aren't any contributions to delete for {name}")
@@ -880,8 +887,8 @@ class Client(SwaggerClient):
         _, total_pages = self.get_totals(query=query)
         queries = self._split_query(query, op="delete", pages=total_pages)
         futures = [self._get_future(i, q, op="delete") for i, q in enumerate(queries)]
-        _run_futures(futures, total=total)
-        left, _ = self.get_totals(query=dict(project=name))
+        _run_futures(futures, total=total, timeout=timeout)
+        left, _ = self.get_totals(query=query)
         deleted = total - left
         self._load()
         toc = time.perf_counter()
