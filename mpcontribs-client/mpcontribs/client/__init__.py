@@ -1478,7 +1478,7 @@ class Client(SwaggerClient):
 
             total, total_processed = 0, 0
             self.session.close()
-            self.session = get_session(max_workers=2)
+            self.session = get_session(max_workers=4)
 
             def post_future(track_id, payload):
                 future = self.session.post(
