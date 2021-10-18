@@ -39,7 +39,6 @@ is_gunicorn = "gunicorn" in os.environ.get("SERVER_SOFTWARE", "")
 for mod in [
     "matplotlib",
     "toronado.cssutils",
-    "selenium.webdriver.remote.remote_connection",
     "botocore",
     "websockets.protocol",
     "asyncio",
