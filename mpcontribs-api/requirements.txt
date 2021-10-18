@@ -29,4 +29,4 @@ rq-scheduler==0.11.0
 supervisor==4.2.2
 uncertainties==3.1.6
 websocket_client==1.2.1
-zstandard==0.15.2
+zstandard==0.16.0
