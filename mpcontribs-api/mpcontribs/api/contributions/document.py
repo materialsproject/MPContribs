@@ -309,7 +309,7 @@ class Contributions(DynamicDocument):
             is_text = bool(
                 not is_quantity and isinstance(value, str) and key not in quantity_keys
             )
-            if is_quantity or is_text:
+            if is_quantity or is_text or isinstance(value, bool):
                 if path not in columns:
                     columns[path] = Column(path=path)
 
