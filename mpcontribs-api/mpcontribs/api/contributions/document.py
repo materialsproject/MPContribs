@@ -326,6 +326,9 @@ class Contributions(DynamicDocument):
             return True
 
         # run update_columns over document data
+        if not document.data:
+            document.reload("data")
+
         remap(document.data, visit=update_columns, enter=enter)
 
         # get and set min/max for all paths
@@ -333,10 +336,10 @@ class Contributions(DynamicDocument):
 
         for clean_path in min_max_paths:
             for k in ["min", "max"]:
-                path = clean_path.replace("__", delimiter)
+                path = clean_path.replace(delimiter, "__")
                 m = min_max.get(f"{path}__{k}")
                 if m is not None:
-                    setattr(columns[path], k, m)
+                    setattr(columns[clean_path], k, m)
 
         # add/remove columns for other components
         for path in COMPONENTS.keys():
@@ -419,13 +422,13 @@ class Contributions(DynamicDocument):
         min_max = get_min_max(sender, min_max_paths, project.name)
 
         for clean_path in min_max_paths:
-            path = clean_path.replace("__", delimiter)
-            column = columns[path]
+            path = clean_path.replace(delimiter, "__")
+            column = columns[clean_path]
 
             for k in ["min", "max"]:
                 if min_max.get(f"{path}__{k}") is None:
                     # just deleted last contribution with this column
-                    columns.pop(path)
+                    columns.pop(clean_path)
                     break
 
         cls.update_project(sender, project, columns_copy, columns.values())
