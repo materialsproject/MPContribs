@@ -1300,7 +1300,6 @@ class Client(SwaggerClient):
         require_one_of = {"data"} | set(COMPONENTS)
         per_page = self._get_per_page(per_request)
 
-
         for idx, contrib in enumerate(contributions):
             c = contributions[idx] = unflatten(contrib, splitter="dot")
             has_keys = require_one_of & c.keys()
