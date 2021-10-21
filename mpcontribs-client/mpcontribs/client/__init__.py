@@ -1300,7 +1300,9 @@ class Client(SwaggerClient):
         require_one_of = {"data"} | set(COMPONENTS)
         per_page = self._get_per_page(per_request)
 
-        for idx, c in enumerate(contributions):
+
+        for idx, contrib in enumerate(contributions):
+            c = contributions[idx] = unflatten(contrib, splitter="dot")
             has_keys = require_one_of & c.keys()
             if not has_keys:
                 return {"error": f"Nothing to submit for contribution #{idx}!"}
@@ -1356,10 +1358,7 @@ class Client(SwaggerClient):
                 continue
 
             contribs[project_name].append({
-                k: deepcopy(
-                    unflatten(contrib[k], splitter="dot")
-                    if k == "data" else contrib[k]
-                )
+                k: deepcopy(contrib[k])
                 for k in fields if k in contrib
             })
 
@@ -1510,6 +1509,11 @@ class Client(SwaggerClient):
                         for c in chunk:
                             if "id" in c:
                                 pk = c.pop("id")
+                                if not c:
+                                    print(
+                                        f"SKIPPED update of {project_name}/{pk}: empty."
+                                    )
+
                                 payload = ujson.dumps(c).encode("utf-8")
                                 if len(payload) < MAX_PAYLOAD:
                                     futures.append(put_future(pk, payload))
