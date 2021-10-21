@@ -121,6 +121,9 @@ def truncate_digits(q):
 
 
 def get_min_max(sender, paths, project_name):
+    if not paths:
+        return None
+
     group = {"_id": None}
 
     for path in paths:
@@ -162,7 +165,8 @@ class Contributions(DynamicDocument):
     )
     needs_build = BooleanField(default=True, help_text="needs notebook build?")
     data = DictField(
-        default=dict, validation=valid_dict, help_text="simple free-form data"
+        default=dict, validation=valid_dict, pullout_key="display",
+        help_text="simple free-form data",
     )
     structures = ListField(
         ReferenceField("Structures", null=True), default=list, max_length=10
@@ -282,7 +286,6 @@ class Contributions(DynamicDocument):
 
     @classmethod
     def post_save(cls, sender, document, **kwargs):
-        # TODO only parts of this need to run on PUT/update
         if kwargs.get("skip"):
             return
 
@@ -299,6 +302,8 @@ class Contributions(DynamicDocument):
         columns_copy = deepcopy(project.columns)
         columns = {col.path: col for col in project.columns}
         min_max_paths = []
+        created = kwargs.get("created", False)
+        dirty_fields = kwargs.get("dirty_fields", [])
 
         # set columns field for project
         def update_columns(path, key, value):
@@ -317,7 +322,8 @@ class Contributions(DynamicDocument):
                         columns[path].unit = value["unit"]
 
                 if is_quantity:
-                    min_max_paths.append(path)
+                    if created or path in dirty_fields:
+                        min_max_paths.append(path)
 
                 ncolumns = len(columns)
                 if ncolumns > MAX_COLUMNS:
