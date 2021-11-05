@@ -3,5 +3,5 @@ ipywidgets==7.6.5
 jupyter-client==7.0.6
 jupyter-kernel-gateway==2.5.1
 kaleido==0.2.1
-mpcontribs-client==3.14.2
+mpcontribs-client==3.14.3
 psutil==5.8.0
