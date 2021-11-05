@@ -16,6 +16,7 @@ pymongo==3.12.1
 pyOpenSSL==21.0.0
 requests-futures==1.0.0
 service-identity==21.1.0
+swagger-spec-validator<2.7.4
 twisted==21.7.0
 tqdm==4.62.3
 ujson==4.2.0
