@@ -1127,6 +1127,63 @@ class Client(SwaggerClient):
 
         return ret
 
+    def query_contributions(
+        self,
+        query: dict = None,
+        fields: list = None,
+        sort: str = None,
+        paginate: bool = False,
+        timeout: int = -1
+    ) -> List[dict]:
+        """Query contributions
+
+        See `client.contributions.get_entries()` for keyword arguments used in query.
+
+        Args:
+            query (dict): optional query to select contributions
+            fields (list): list of fields to include in response
+            sort (str): field to sort by; prepend +/- for asc/desc order
+            paginate (bool): paginate through all results
+            timeout (int): cancel remaining requests if timeout exceeded (in seconds)
+
+        Returns:
+            List of contributions
+        """
+        query = query or {}
+
+        if self.project and "project" not in query:
+            query["project"] = self.project
+
+        if paginate:
+            cids = []
+
+            for v in self.get_all_ids(query).values():
+                cids_project = v.get("ids")
+                if cids_project:
+                    cids.extend(cids_project)
+
+            if not cids:
+                return {"error": "No contributions match the query."}
+
+            total = len(cids)
+            cids_query = {"id__in": cids, "_fields": fields, "_sort": sort}
+            _, total_pages = self.get_totals(query=cids_query)
+            queries = self._split_query(cids_query, pages=total_pages)
+            futures = [self._get_future(i, q) for i, q in enumerate(queries)]
+            responses = _run_futures(futures, total=total, timeout=timeout)
+            ret = {"total_count": 0, "data": []}
+
+            for resp in responses.values():
+                result = resp["result"]
+                ret["data"].extend(result["data"])
+                ret["total_count"] += result["total_count"]
+        else:
+            ret = self.contributions.get_entries(
+                _fields=fields, _sort=sort, **query
+            ).result()
+
+        return ret
+
     def update_contributions(
         self,
         data: dict,
