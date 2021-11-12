@@ -1,1 +1,1 @@
-FROM datadog/agent:7.31.1
+FROM datadog/agent:7.32.0
