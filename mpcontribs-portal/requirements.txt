@@ -6,7 +6,7 @@ django-settings-file==2.7.0
 django-webpack4-loader==0.0.5
 fastnumbers==3.2.1
 gunicorn[gevent]==20.1.0
-ipykernel==6.5.0
+ipykernel==6.5.1
 json2html==1.3.0
 monty==2021.8.17
 mpcontribs-client==4.0.0
