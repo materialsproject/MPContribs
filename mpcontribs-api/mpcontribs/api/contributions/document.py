@@ -3,8 +3,7 @@ import json
 import itertools
 
 from hashlib import md5
-from math import isnan, ceil
-from copy import deepcopy
+from math import isnan
 from datetime import datetime
 from flask import current_app
 from importlib import import_module
@@ -22,8 +21,6 @@ from pint.unit import UnitDefinition
 from pint.converters import ScaleConverter
 from pint.errors import DimensionalityError
 from uncertainties import ufloat_fromstr
-from collections import defaultdict
-from pymongo.errors import OperationFailure
 
 from mpcontribs.api import enter, valid_dict, delimiter
 
@@ -118,24 +115,6 @@ def truncate_digits(q):
         s += f" {q.units}"
 
     return get_quantity(s)
-
-
-def get_min_max(sender, paths, project_name):
-    if not paths:
-        return None
-
-    group = {"_id": None}
-
-    for path in paths:
-        field = f"{path}{delimiter}value"
-        for k in ["min", "max"]:
-            clean_path = path.replace(delimiter, "__")
-            key = f"{clean_path}__{k}"
-            group[key] = {f"${k}": f"${field}"}
-
-    pipeline = [{"$match": {"project": project_name}}, {"$group": group}]
-    result = list(sender.objects.aggregate(pipeline))
-    return None if not result else result[0]
 
 
 def get_resource(component):
@@ -285,105 +264,6 @@ class Contributions(DynamicDocument):
         document.needs_build = True
 
     @classmethod
-    def post_save(cls, sender, document, **kwargs):
-        if kwargs.get("skip"):
-            return
-
-        remaining_time = kwargs.get("remaining_time")
-        if remaining_time is not None and remaining_time < 5:
-            print("NOT ENOUGH TIME LEFT FOR POST_SAVE!")
-            return
-
-        from mpcontribs.api.projects.document import Column, MAX_COLUMNS
-
-        # NOTE columns update below only works for single-project bulk updates
-        # project is LazyReferenceField; account for custom query manager
-        project = document.project.fetch().reload("columns")
-        columns_copy = deepcopy(project.columns)
-        columns = {col.path: col for col in project.columns}
-        min_max_paths = []
-        created = kwargs.get("created", False)
-        dirty_fields = kwargs.get("dirty_fields", [])
-
-        # set columns field for project
-        def update_columns(path, key, value):
-            path = delimiter.join(["data"] + list(path) + [key])
-            is_quantity = isinstance(value, dict) and quantity_keys.issubset(
-                value.keys()
-            )
-            is_text = bool(
-                not is_quantity and isinstance(value, str) and key not in quantity_keys
-            )
-            if is_quantity or is_text or isinstance(value, bool):
-                if path not in columns:
-                    columns[path] = Column(path=path)
-
-                    if is_quantity:
-                        columns[path].unit = value["unit"]
-
-                if is_quantity:
-                    if created or path in dirty_fields:
-                        min_max_paths.append(path)
-
-                ncolumns = len(columns)
-                if ncolumns > MAX_COLUMNS:
-                    raise ValueError(f"Reached maximum number of columns ({MAX_COLUMNS})!")
-
-            return True
-
-        # run update_columns over document data
-        if not document.data:
-            document.reload("data")
-
-        remap(document.data, visit=update_columns, enter=enter)
-
-        # get and set min/max for all paths
-        min_max = get_min_max(sender, min_max_paths, project.name)
-
-        for clean_path in min_max_paths:
-            for k in ["min", "max"]:
-                path = clean_path.replace(delimiter, "__")
-                m = min_max.get(f"{path}__{k}")
-                if m is not None:
-                    setattr(columns[clean_path], k, m)
-
-        # add/remove columns for other components
-        for path in COMPONENTS.keys():
-            if path not in columns and getattr(document, path):
-                columns[path] = Column(path=path)
-
-        cls.update_project(sender, project, columns_copy, columns.values())
-
-    @classmethod
-    def update_project(cls, sender, project, old_columns, new_columns):
-        from mpcontribs.api.projects.document import Stats
-
-        # only update columns if needed and unchanged in DB
-        if old_columns != new_columns and old_columns == project.reload("columns").columns:
-            project.update(columns=new_columns)
-
-        # update stats in project
-        ncontribs = sender.objects(project=project.name).count()
-        stats_kwargs = {"columns": len(new_columns), "contributions": ncontribs}
-
-        for component in COMPONENTS.keys():
-            pipeline = [
-                {"$match": {
-                    "project": project.name,
-                    component: {
-                        "$exists": True,
-                        "$not": {"$size": 0}
-                    }
-                }},
-                {"$count": "count"}
-            ]
-            result = list(sender.objects.aggregate(pipeline))
-            stats_kwargs[component] = result[0]["count"] if result else 0
-
-        stats = Stats(**stats_kwargs)
-        project.update(stats=stats)
-
-    @classmethod
     def pre_delete(cls, sender, document, **kwargs):
         args = list(COMPONENTS.keys())
         document.reload(*args)
@@ -395,55 +275,9 @@ class Contributions(DynamicDocument):
                 if sender.objects(**q).count() < 2:
                     obj.delete()
 
-    @classmethod
-    def post_delete(cls, sender, document, **kwargs):
-        if kwargs.get("skip"):
-            return
-
-        remaining_time = kwargs.get("remaining_time")
-        if remaining_time is not None and remaining_time < 5:
-            print("NOT ENOUGH TIME LEFT FOR POST_DELETE!")
-            return
-
-        # reset columns field for project
-        project = document.project.fetch().reload("columns")
-        columns_copy = deepcopy(project.columns)
-        columns = {col.path: col for col in project.columns}
-        min_max_paths = []
-
-        for path in list(columns.keys()):
-            column = columns[path]
-
-            if not isnan(column.min) and not isnan(column.max):
-                min_max_paths.append(path)
-            else:
-                result = list(sender.objects.aggregate([
-                    {"$match": {"project": project.name, path: {"$exists": True}}},
-                    {"$count": "count"}
-                ]))
-                if result and result[0]["count"] < 1:
-                    columns.pop(path)
-
-        # get and set min/max for all paths
-        min_max = get_min_max(sender, min_max_paths, project.name)
-
-        for clean_path in min_max_paths:
-            path = clean_path.replace(delimiter, "__")
-            column = columns[clean_path]
-
-            for k in ["min", "max"]:
-                if min_max.get(f"{path}__{k}") is None:
-                    # just deleted last contribution with this column
-                    columns.pop(clean_path)
-                    break
-
-        cls.update_project(sender, project, columns_copy, columns.values())
-
 
 signals.post_init.connect(Contributions.post_init, sender=Contributions)
 signals.pre_save_post_validation.connect(
     Contributions.pre_save_post_validation, sender=Contributions
 )
-signals.post_save.connect(Contributions.post_save, sender=Contributions)
 signals.pre_delete.connect(Contributions.pre_delete, sender=Contributions)
-signals.post_delete.connect(Contributions.post_delete, sender=Contributions)
