@@ -17,7 +17,7 @@ from mongoengine.fields import (
     StringField, BooleanField, DictField, URLField, EmailField,
     FloatField, IntField, EmbeddedDocumentListField, EmbeddedDocumentField
 )
-from mpcontribs.api import send_email, sns_client, valid_key, valid_dict
+from mpcontribs.api import send_email, sns_client, valid_key, valid_dict, delimiter
 
 PROVIDERS = {"github", "google", "facebook", "microsoft", "amazon"}
 MAX_COLUMNS = 50
@@ -213,8 +213,73 @@ class Projects(Document):
                 send_email(topic_arn, subject, html)
 
             if "columns" in set_keys:
-                document.update(stats__columns=document.columns.count())
+                from mpcontribs.api.contributions.document import Contributions, COMPONENTS
 
+                columns = {col.path: col for col in document.columns}
+                min_max_paths = []
+
+                # set columns field for project
+                    if is_quantity or is_text or isinstance(value, bool):
+                        if path not in columns:
+                            columns[path] = Column(path=path)
+
+                            if is_quantity:
+                                columns[path].unit = value["unit"]
+
+                        if is_quantity:
+                            min_max_paths.append(path)
+
+                        ncolumns = len(columns)
+                        if ncolumns > MAX_COLUMNS:
+                            raise ValueError(f"Reached maximum number of columns ({MAX_COLUMNS})!")
+
+
+                # get and set min/max for all paths
+                group = {"_id": None}
+
+                for path in paths:
+                    field = f"{path}{delimiter}value"
+                    for k in ["min", "max"]:
+                        clean_path = path.replace(delimiter, "__")
+                        key = f"{clean_path}__{k}"
+                        group[key] = {f"${k}": f"${field}"}
+
+                pipeline = [{"$match": {"project": project_name}}, {"$group": group}]
+                result = list(Contributions.objects.aggregate(pipeline))
+                min_max = None if not result else result[0]
+
+                for clean_path in min_max_paths:
+                    for k in ["min", "max"]:
+                        path = clean_path.replace(delimiter, "__")
+                        m = min_max.get(f"{path}__{k}")
+                        if m is not None:
+                            setattr(columns[clean_path], k, m)
+
+                # add/remove columns for other components
+                for path in COMPONENTS.keys():
+                    if path not in columns and getattr(document, path):
+                        columns[path] = Column(path=path)
+
+                # update stats
+                ncontribs = Contributions.objects(project=project.name).count()
+                stats_kwargs = {"columns": len(columns), "contributions": ncontribs}
+
+                for component in COMPONENTS.keys():
+                    pipeline = [
+                        {"$match": {
+                            "project": project.name,
+                            component: {
+                                "$exists": True,
+                                "$not": {"$size": 0}
+                            }
+                        }},
+                        {"$count": "count"}
+                    ]
+                    result = list(Contributions.objects.aggregate(pipeline))
+                    stats_kwargs[component] = result[0]["count"] if result else 0
+
+                stats = Stats(**stats_kwargs)
+                document.update(stats=stats)
 
     @classmethod
     def post_delete(cls, sender, document, **kwargs):
@@ -230,6 +295,53 @@ class Projects(Document):
         )
         send_email(topic_arn, subject, html)
         sns_client.delete_topic(TopicArn=topic_arn)
+
+    # TODO from contributions signals
+    @classmethod
+    def post_delete(cls, sender, document, **kwargs):
+        if kwargs.get("skip"):
+            return
+
+        remaining_time = kwargs.get("remaining_time")
+        if remaining_time is not None and remaining_time < 5:
+            print("NOT ENOUGH TIME LEFT FOR POST_DELETE!")
+            return
+
+        # reset columns field for project
+        project = document.project.fetch().reload("columns")
+        columns_copy = deepcopy(project.columns)
+        columns = {col.path: col for col in project.columns}
+        min_max_paths = []
+
+        for path in list(columns.keys()):
+            column = columns[path]
+
+            if not isnan(column.min) and not isnan(column.max):
+                min_max_paths.append(path)
+            else:
+                result = list(sender.objects.aggregate([
+                    {"$match": {"project": project.name, path: {"$exists": True}}},
+                    {"$count": "count"}
+                ]))
+                if result and result[0]["count"] < 1:
+                    columns.pop(path)
+
+        # get and set min/max for all paths
+        min_max = get_min_max(sender, min_max_paths, project.name)
+
+        for clean_path in min_max_paths:
+            path = clean_path.replace(delimiter, "__")
+            column = columns[clean_path]
+
+            for k in ["min", "max"]:
+                if min_max.get(f"{path}__{k}") is None:
+                    # just deleted last contribution with this column
+                    columns.pop(clean_path)
+                    break
+
+        cls.update_project(sender, project, columns_copy, columns.values())
+
+
 
 
 register_field(ProviderEmailField, ProviderEmail, available_params=(params.LengthParam,))
