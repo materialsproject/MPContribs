@@ -12,6 +12,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name="mpcontribs-client",
+    python_requires=">=3.8",
     author="Patrick Huck",
     author_email="phuck@lbl.gov",
     description="client library for MPContribs API",
