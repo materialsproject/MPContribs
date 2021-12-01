@@ -10,7 +10,9 @@ import pandas as pd
 import plotly.io as pio
 import itertools
 import functools
+import requests
 
+from requests.exceptions import RequestException
 from bravado_core.param import Param
 from bson.objectid import ObjectId
 from typing import Union, Type, List
@@ -75,6 +77,9 @@ VALID_URLS |= {f"http://localhost.{n}-api.materialsproject.org" for n in SUBDOMA
 SUPPORTED_FILETYPES = (Gz, Jpeg, Png, Gif, Tiff)
 SUPPORTED_MIMES = [t().mime for t in SUPPORTED_FILETYPES]
 DEFAULT_DOWNLOAD_DIR = Path.home() / "mpcontribs-downloads"
+EMPTY_SPEC_DICT = {
+    "swagger": "2.0", "paths": {}, "info": {"title": "Swagger", "version": "0.0"},
+}
 
 j2h = Json2Html()
 pd.options.plotting.backend = "plotly"
@@ -380,13 +385,21 @@ def _load(protocol, host, headers_json, project):
         spec_dict = ujson.loads(apispec.read_bytes())
         print(f"Specs for {origin_url} re-loaded from {apispec}.")
     else:
-        loader = Loader(http_client)
-        spec_dict = loader.load_spec(origin_url)
+        try:
+            if requests.options(f"{url}/healthcheck").status_code == 200:
+                loader = Loader(http_client)
+                spec_dict = loader.load_spec(origin_url)
 
-        with apispec.open("w") as f:
-            ujson.dump(spec_dict, f)
+                with apispec.open("w") as f:
+                    ujson.dump(spec_dict, f)
 
-        print(f"Specs for {origin_url} saved as {apispec}.")
+                print(f"Specs for {origin_url} saved as {apispec}.")
+            else:
+                spec_dict = EMPTY_SPEC_DICT
+                print(f"Specs not loaded: Healthcheck for {url} failed!")
+        except RequestException:
+            spec_dict = EMPTY_SPEC_DICT
+            print(f"Specs not loaded: Could not connect to {url}!")
 
     spec_dict["host"] = host
     spec_dict["schemes"] = [protocol]
@@ -401,8 +414,10 @@ def _load(protocol, host, headers_json, project):
     for key in set(bravado_config._fields).intersection(set(config)):
         del config[key]
     config["bravado"] = bravado_config
-
     swagger_spec = Spec.from_dict(spec_dict, origin_url, http_client, config)
+
+    if not spec_dict["paths"]:
+        return swagger_spec
 
     # expand regex-based query parameters for `data` columns
     session = get_session()
@@ -416,7 +431,7 @@ def _load(protocol, host, headers_json, project):
     session.close()
 
     if not resp or not resp["data"]:
-        return swagger_spec  # skip in tests
+        return swagger_spec
 
     if project and not resp["data"]:
         raise ValueError(f"{project} doesn't exist, or access denied!")
