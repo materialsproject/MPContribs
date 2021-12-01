@@ -9,6 +9,7 @@ import warnings
 import pandas as pd
 import plotly.io as pio
 import itertools
+import functools
 
 from bravado_core.param import Param
 from bson.objectid import ObjectId
@@ -19,7 +20,7 @@ from pathlib import Path
 from copy import deepcopy
 from filetype import guess
 from flatten_dict import flatten, unflatten
-from base64 import b64encode, b64decode
+from base64 import b64encode, b64decode, urlsafe_b64encode
 from urllib.parse import urlparse
 from pyisemail import is_email
 from collections import defaultdict
@@ -335,12 +336,6 @@ class Attachment(dict):
         )
 
 
-def load_client(apikey=None, headers=None, host=None):
-    warnings.warn(
-        "load_client(...) is deprecated, use Client(...) instead", DeprecationWarning
-    )
-
-
 def _run_futures(futures, total: int = 0, timeout: int = -1, desc=None):
     """helper to run futures/requests"""
     start = time.perf_counter()
@@ -373,6 +368,95 @@ def _run_futures(futures, total: int = 0, timeout: int = -1, desc=None):
     return responses
 
 
+@functools.lru_cache
+def _load(protocol, host, headers_json, project):
+    headers = ujson.loads(headers_json)
+    http_client = FidoClientGlobalHeaders(headers=headers)
+    url = f"{protocol}://{host}"
+    origin_url = f"{url}/apispec.json"
+    apispec = Path(urlsafe_b64encode(origin_url.encode('utf-8')).decode('utf-8'))
+
+    if apispec.exists():
+        spec_dict = ujson.loads(apispec.read_bytes())
+        print(f"Specs for {origin_url} re-loaded from {apispec}.")
+    else:
+        loader = Loader(http_client)
+        spec_dict = loader.load_spec(origin_url)
+
+        with apispec.open("w") as f:
+            ujson.dump(spec_dict, f)
+
+        print(f"Specs for {origin_url} saved as {apispec}.")
+
+    spec_dict["host"] = host
+    spec_dict["schemes"] = [protocol]
+
+    config = {
+        "validate_responses": False,
+        "use_models": False,
+        "include_missing_properties": False,
+        "formats": [email_format, url_format],
+    }
+    bravado_config = bravado_config_from_config_dict(config)
+    for key in set(bravado_config._fields).intersection(set(config)):
+        del config[key]
+    config["bravado"] = bravado_config
+
+    swagger_spec = Spec.from_dict(spec_dict, origin_url, http_client, config)
+
+    # expand regex-based query parameters for `data` columns
+    # TODO how to skip in tests?
+    try:
+        session = get_session()
+        query = {"name": project} if project else {}
+        query["_fields"] = ["columns"]
+        kwargs = dict(headers=headers, params=query)
+        future = session.get(f"{url}/projects/", **kwargs)
+        track_id = "get_columns"
+        setattr(future, "track_id", track_id)
+        resp = _run_futures([future]).get(track_id, {}).get("result")
+        session.close()
+    except AttributeError:
+        # skip in tests
+        return
+
+    if project and not resp["data"]:
+        raise ValueError(f"{project} doesn't exist, or access denied!")
+
+    columns = {"string": [], "number": []}
+
+    for proj in resp["data"]:
+        for column in proj["columns"]:
+            if column["path"].startswith("data."):
+                col = column["path"].replace(".", "__")
+                if column["unit"] == "NaN":
+                    columns["string"].append(col)
+                else:
+                    col = f"{col}__value"
+                    columns["number"].append(col)
+
+    resource = swagger_spec.resources["contributions"]
+
+    for operation_id, operation in resource.operations.items():
+        for pn in list(operation.params.keys()):
+            if pn.startswith("data_"):
+                param = operation.params.pop(pn)
+                op = param.name.rsplit('$__', 1)[-1]
+                typ = param.param_spec.get("type")
+                key = "number" if typ == "number" else "string"
+
+                for column in columns[key]:
+                    param_name = f"{column}__{op}"
+                    param_spec = deepcopy(param.param_spec)
+                    param_spec["name"] = param_name
+                    param_spec.pop("description", None)
+                    operation.params[param_name] = Param(
+                        swagger_spec, operation, param_spec
+                    )
+
+    return swagger_spec
+
+
 class Client(SwaggerClient):
     """client to connect to MPContribs API
 
@@ -382,13 +466,8 @@ class Client(SwaggerClient):
           >>> from mpcontribs.client import Client
           >>> client = Client()
     """
-    # We only want to load the swagger spec from the remote server when needed and not
-    # everytime the client is initialized. Hence using the Borg design nonpattern (instead
-    # of Singleton): Since the __dict__ of any instance can be re-bound, Borg rebinds it
-    # in its __init__ to a class-attribute dictionary. Now, any reference or binding of an
-    # instance attribute will actually affect all instances equally.
+    # Borg: https://www.oreilly.com/library/view/python-cookbook/0596001673/ch05s23.html
     # NOTE bravado future doesn't work with concurrent.futures
-
     _shared_state = {}
 
     def __init__(
@@ -424,24 +503,20 @@ class Client(SwaggerClient):
         self.headers = headers or {}
         self.headers = {"x-api-key": apikey} if apikey else self.headers
         self.headers["Content-Type"] = "application/json"
+        self.headers_json = ujson.dumps(self.headers, sort_keys=True)
         self.host = host
         ssl = host.endswith(".materialsproject.org") and not host.startswith("localhost.")
         self.protocol = "https" if ssl else "http"
         self.url = f"{self.protocol}://{self.host}"
-        self.session = get_session()
+        self.project = project
 
         if self.url not in VALID_URLS:
             raise ValueError(f"{self.url} not a valid URL (one of {VALID_URLS})")
 
-        if "swagger_spec" not in self.__dict__ or (
-            self.swagger_spec.http_client.headers != self.headers
-        ) or (
-            self.swagger_spec.spec_dict["host"] != self.host
-        ) or (
-            "project" not in self.__dict__ or self.project != project
-        ):
-            self.project = project
-            self._load()
+        if not "session" in self.__dict__:
+            self.session = get_session()
+
+        super().__init__(self.cached_swagger_spec)
 
     def __enter__(self):
         return self
@@ -449,71 +524,9 @@ class Client(SwaggerClient):
     def __exit__(self, exc_type, exc_val, exc_tb):
         return self.session.close()
 
-    def _load(self):
-        http_client = FidoClientGlobalHeaders(headers=self.headers)
-        loader = Loader(http_client)
-        origin_url = f"{self.url}/apispec.json"
-        spec_dict = loader.load_spec(origin_url)
-        spec_dict["host"] = self.host
-        spec_dict["schemes"] = [self.protocol]
-
-        config = {
-            "validate_responses": False,
-            "use_models": False,
-            "include_missing_properties": False,
-            "formats": [email_format, url_format],
-        }
-        bravado_config = bravado_config_from_config_dict(config)
-        for key in set(bravado_config._fields).intersection(set(config)):
-            del config[key]
-        config["bravado"] = bravado_config
-
-        swagger_spec = Spec.from_dict(spec_dict, origin_url, http_client, config)
-        super().__init__(
-            swagger_spec, also_return_response=bravado_config.also_return_response
-        )
-
-        # expand regex-based query parameters for `data` columns
-        try:
-            query = {"name": self.project} if self.project else {}
-            resp = self.projects.get_entries(_fields=["columns"], **query).result()
-        except AttributeError:
-            # skip in tests
-            return
-
-        if self.project and not resp["data"]:
-            raise ValueError(f"{self.project} doesn't exist, or access denied!")
-
-        columns = {"string": [], "number": []}
-
-        for project in resp["data"]:
-            for column in project["columns"]:
-                if column["path"].startswith("data."):
-                    col = column["path"].replace(".", "__")
-                    if column["unit"] == "NaN":
-                        columns["string"].append(col)
-                    else:
-                        col = f"{col}__value"
-                        columns["number"].append(col)
-
-        resource = self.swagger_spec.resources["contributions"]
-
-        for operation_id, operation in resource.operations.items():
-            for pn in list(operation.params.keys()):
-                if pn.startswith("data_"):
-                    param = operation.params.pop(pn)
-                    op = param.name.rsplit('$__', 1)[-1]
-                    typ = param.param_spec.get("type")
-                    key = "number" if typ == "number" else "string"
-
-                    for column in columns[key]:
-                        param_name = f"{column}__{op}"
-                        param_spec = deepcopy(param.param_spec)
-                        param_spec["name"] = param_name
-                        param_spec.pop("description", None)
-                        operation.params[param_name] = Param(
-                            self.swagger_spec, operation, param_spec
-                        )
+    @property
+    def cached_swagger_spec(self):
+        return _load(self.protocol, self.host, self.headers_json, self.project)
 
     def __dir__(self):
         members = set(self.swagger_spec.resources.keys())
@@ -892,7 +905,7 @@ class Client(SwaggerClient):
         _run_futures(futures, total=total, timeout=timeout)
         left, _ = self.get_totals(query=query)
         deleted = total - left
-        self._load()
+        _load.cache_clear()
         toc = time.perf_counter()
         dt = (toc - tic) / 60
         print(f"It took {dt:.1f}min to delete {deleted} contributions.")
@@ -1242,7 +1255,7 @@ class Client(SwaggerClient):
             new_paths = set(c["path"] for c in resp["columns"])
 
             if new_paths != old_paths:
-                self._load()
+                _load.cache_clear()
 
         toc = time.perf_counter()
         return {"updated": updated, "total": total, "seconds_elapsed": toc - tic}
@@ -1642,7 +1655,7 @@ class Client(SwaggerClient):
 
             toc = time.perf_counter()
             dt = (toc - tic) / 60
-            self._load()
+            _load.cache_clear()
             self.session.close()
             self.session = get_session()
             print(f"It took {dt:.1f}min to submit {total_processed}/{total} contributions.")
