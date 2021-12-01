@@ -513,7 +513,7 @@ class Client(SwaggerClient):
         if self.url not in VALID_URLS:
             raise ValueError(f"{self.url} not a valid URL (one of {VALID_URLS})")
 
-        if not "session" in self.__dict__:
+        if "session" not in self.__dict__:
             self.session = get_session()
 
         super().__init__(self.cached_swagger_spec)
