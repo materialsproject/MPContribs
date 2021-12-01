@@ -415,7 +415,6 @@ def _load(protocol, host, headers_json, project):
     resp = _run_futures([future], timeout=3).get(track_id, {}).get("result")
     session.close()
 
-    print(resp)
     if not resp or not resp["data"]:
         return swagger_spec  # skip in tests
 

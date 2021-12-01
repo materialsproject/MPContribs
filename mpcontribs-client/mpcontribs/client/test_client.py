@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import pytest
 
-from unittest.mock import patch, MagicMock
 from mpcontribs.client import validate_email, Client, DEFAULT_HOST, email_format
 from swagger_spec_validator.common import SwaggerValidationError
 
@@ -13,16 +12,6 @@ def test_validate_email():
         validate_email("fake:info@example.com")
 
 
-@patch(
-    "bravado.swagger_model.Loader.load_spec",
-    new=MagicMock(
-        return_value={
-            "swagger": "2.0",
-            "paths": {},
-            "info": {"title": "Swagger", "version": "0.0"},
-        }
-    ),
-)
 def test_Client():
     kwargs = {"apikey": "1234"}
     spec = Client(**kwargs).swagger_spec
