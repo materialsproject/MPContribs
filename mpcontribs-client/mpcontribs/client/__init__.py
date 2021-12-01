@@ -405,20 +405,19 @@ def _load(protocol, host, headers_json, project):
     swagger_spec = Spec.from_dict(spec_dict, origin_url, http_client, config)
 
     # expand regex-based query parameters for `data` columns
-    # TODO how to skip in tests?
-    try:
-        session = get_session()
-        query = {"name": project} if project else {}
-        query["_fields"] = ["columns"]
-        kwargs = dict(headers=headers, params=query)
-        future = session.get(f"{url}/projects/", **kwargs)
-        track_id = "get_columns"
-        setattr(future, "track_id", track_id)
-        resp = _run_futures([future]).get(track_id, {}).get("result")
-        session.close()
-    except AttributeError:
-        # skip in tests
-        return
+    session = get_session()
+    query = {"name": project} if project else {}
+    query["_fields"] = ["columns"]
+    kwargs = dict(headers=headers, params=query)
+    future = session.get(f"{url}/projects/", **kwargs)
+    track_id = "get_columns"
+    setattr(future, "track_id", track_id)
+    resp = _run_futures([future], timeout=3).get(track_id, {}).get("result")
+    session.close()
+
+    print(resp)
+    if not resp or not resp["data"]:
+        return swagger_spec  # skip in tests
 
     if project and not resp["data"]:
         raise ValueError(f"{project} doesn't exist, or access denied!")
