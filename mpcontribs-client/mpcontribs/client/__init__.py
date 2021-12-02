@@ -547,6 +547,10 @@ class Client(SwaggerClient):
         members |= set(k for k in dir(self.__class__) if not k.startswith("_"))
         return members
 
+    def _reinit(self):
+        _load.cache_clear()
+        super().__init__(self.cached_swagger_spec)
+
     def _is_valid_payload(self, model: str, data: dict):
         model_spec = deepcopy(self.get_model(f"{model}sSchema")._model_spec)
         model_spec.pop("required")
@@ -918,7 +922,7 @@ class Client(SwaggerClient):
         _run_futures(futures, total=total, timeout=timeout)
         left, _ = self.get_totals(query=query)
         deleted = total - left
-        _load.cache_clear()
+        self._reinit()
         toc = time.perf_counter()
         dt = (toc - tic) / 60
         print(f"It took {dt:.1f}min to delete {deleted} contributions.")
@@ -1268,7 +1272,7 @@ class Client(SwaggerClient):
             new_paths = set(c["path"] for c in resp["columns"])
 
             if new_paths != old_paths:
-                _load.cache_clear()
+                self._reinit()
 
         toc = time.perf_counter()
         return {"updated": updated, "total": total, "seconds_elapsed": toc - tic}
@@ -1668,7 +1672,7 @@ class Client(SwaggerClient):
 
             toc = time.perf_counter()
             dt = (toc - tic) / 60
-            _load.cache_clear()
+            self._reinit()
             self.session.close()
             self.session = get_session()
             print(f"It took {dt:.1f}min to submit {total_processed}/{total} contributions.")
