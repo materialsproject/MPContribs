@@ -901,7 +901,7 @@ class Client(SwaggerClient):
             query (dict): optional query to select contributions
             timeout (int): cancel remaining requests if timeout exceeded (in seconds)
         """
-        if not self.project or not query or "project" not in query:
+        if not self.project and (not query or "project" not in query):
             print("initialize client with project, or include project in query!")
             return
 
