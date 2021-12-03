@@ -654,6 +654,9 @@ class Client(SwaggerClient):
             name (str): name of the project
         """
         name = self.project or name
+        if not name:
+            return {"error": "initialize client with project or set `name` argument!"}
+
         return Dict(self.projects.get_entry(pk=name, _fields=["_all"]).result())
 
     def get_contribution(self, cid: str) -> Type[Dict]:
@@ -894,9 +897,6 @@ class Client(SwaggerClient):
     def delete_contributions(self, query: dict = None, timeout: int = -1):
         """Remove all contributions for a query
 
-        Note: This also resets the columns field for a project. It might have to be
-        re-initialized via `client.init_columns()`.
-
         Args:
             query (dict): optional query to select contributions
             timeout (int): cancel remaining requests if timeout exceeded (in seconds)
@@ -907,11 +907,14 @@ class Client(SwaggerClient):
 
         tic = time.perf_counter()
         query = query or {}
-        query["project"] = self.project
-        cids = list(self.get_all_ids(query).get(self.project, {}).get("ids", set()))
+
+        if self.project:
+            query["project"] = self.project
+
+        cids = list(self.get_all_ids(query).get(query["project"], {}).get("ids", set()))
 
         if not cids:
-            print(f"There aren't any contributions to delete for {self.project}")
+            print(f"There aren't any contributions to delete for {query['project']}")
             return
 
         total = len(cids)
@@ -929,6 +932,8 @@ class Client(SwaggerClient):
 
         if left:
             print(f"There were errors and {left} contributions are left to delete!")
+        else:
+            self.init_columns({})
 
     def get_totals(
         self,
@@ -1239,7 +1244,7 @@ class Client(SwaggerClient):
 
         query = query or {}
 
-        if not self.project or not query or "project" not in query:
+        if not self.project and (not query or "project" not in query):
             return {"error": "initialize client with project, or include project in query!"}
 
         if "project" in query and self.project != query["project"]:
@@ -1324,22 +1329,25 @@ class Client(SwaggerClient):
             recursive (bool): also set `is_public` for according contributions?
             timeout (int): cancel remaining requests if timeout exceeded (in seconds)
         """
-        if not self.project or not query or "project" not in query:
+        if not self.project and (not query or "project" not in query):
             return {"error": "initialize client with project, or include project in query!"}
 
+        if self.project:
+            query["project"] = self.project
+
         try:
-            resp = self.projects.get_entry(pk=self.project, _fields=["is_public"]).result()
+            resp = self.projects.get_entry(pk=query["project"], _fields=["is_public"]).result()
         except HTTPNotFound:
-            return {"error": f"project `{self.project}` not found or access denied!"}
+            return {"error": f"project `{query['project']}` not found or access denied!"}
 
         if not recursive and resp["is_public"] == is_public:
-            return {"warning": f"`is_public` already set to {is_public} for `{self.project}`."}
+            return {"warning": f"`is_public` already set to {is_public} for `{query['project']}`."}
 
         ret = {}
 
         if resp["is_public"] != is_public:
             resp = self.projects.update_entry(
-                pk=self.project, project={"is_public": is_public}
+                pk=query["project"], project={"is_public": is_public}
             ).result()
             ret["published"] = resp["is_public"] == is_public
 
