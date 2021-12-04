@@ -834,7 +834,9 @@ class Client(SwaggerClient):
 
                 is_valid_string = isinstance(v, str) and v.lower() != "nan"
                 if not is_valid_string and v is not None:
-                    return {"error": f"Unit '{v}' for {k} invalid (use `None` or a non-NaN string)!"}
+                    return {
+                        "error": f"Unit '{v}' for {k} invalid (use `None` or a non-NaN string)!"
+                    }
 
                 if v != "" and v is not None and v not in ureg:
                     return {"error": f"Unit '{v}' for {k} invalid!"}
