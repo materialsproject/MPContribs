@@ -772,18 +772,17 @@ class Client(SwaggerClient):
 
         return Attachment(self.attachments.get_entry(pk=aid, _fields=["_all"]).result())
 
-    def init_columns(self, columns: dict) -> dict:
+    def init_columns(self, columns: dict = None) -> dict:
         """initialize columns for a project to set their order and desired units
 
-        The `columns` field tracks the minima and maxima of each `data` field as
-        contributions are submitted. This function should thus be executed before
-        submitting contributions, or all contributions for a project should be deleted to
-        ensure clean initialization of all columns. If columns are not initialized using
-        this function, `submit_contributions` will respect the order of columns as they
-        are submitted and will auto-determine suitable units based on the first
-        contribution containing a respective data column. `init_columns` can be used at
-        any point to reset the order of columns, though. Previously determined `min/max`
-        values for the affected data fields will be respected.
+        The `columns` field of a project tracks the minima and maxima of each `data` field
+        in its contributions. If columns are not initialized before submission using this
+        function, `submit_contributions` will respect the order of columns as they are
+        submitted and will try to auto-determine suitable units.
+
+        `init_columns` can be used at any point to reset the order of columns. Omitting
+        the `columns` argument will re-initialize columns based on the `data` fields of
+        all submitted contributions.
 
         The `columns` argument is a dictionary which maps the data field names to its
         units. Use `None` to indicate that a field is not a quantity (plain string). The
@@ -806,92 +805,89 @@ class Client(SwaggerClient):
         Args:
             columns (dict): dictionary mapping data column to its unit
         """
-        if not isinstance(columns, dict):
-            return {"error": "`columns` argument must be a dict!"}
-
         if not self.project:
             return {"error": "initialize client with project argument!"}
 
-        existing_columns = set()
-        for k, v in columns.items():
-            if k in COMPONENTS:
-                existing_columns.add(k)
-                continue
+        columns = columns or {}
+        new_columns = []
 
-            nesting = k.count(".")
-            if nesting > 4:
-                return {"error": f"Nesting too deep for {k}"}
+        if columns:
+            # check columns input
+            scanned_columns = set()
 
-            for col in existing_columns:
-                if nesting and col.startswith(k):
-                    return {"error": f"duplicate definition of {k} in {col}!"}
+            for k, v in columns.items():
+                if k in COMPONENTS:
+                    scanned_columns.add(k)
+                    continue
 
-                for n in range(1, nesting+1):
-                    if k.rsplit(".", n)[0] == col:
-                        return {"error": f"Ancestor of {k} already defined in {col}!"}
+                nesting = k.count(".")
+                if nesting > 4:
+                    return {"error": f"Nesting too deep for {k}"}
 
-            is_valid_string = isinstance(v, str) and v.lower() != "nan"
-            if not is_valid_string and v is not None:
-                return {"error": f"Unit '{v}' for {k} invalid (use `None` or a non-NaN string)!"}
+                for col in scanned_columns:
+                    if nesting and col.startswith(k):
+                        return {"error": f"duplicate definition of {k} in {col}!"}
 
-            if v != "" and v is not None and v not in ureg:
-                return {"error": f"Unit '{v}' for {k} invalid!"}
+                    for n in range(1, nesting+1):
+                        if k.rsplit(".", n)[0] == col:
+                            return {"error": f"Ancestor of {k} already defined in {col}!"}
 
-            existing_columns.add(k)
+                is_valid_string = isinstance(v, str) and v.lower() != "nan"
+                if not is_valid_string and v is not None:
+                    return {"error": f"Unit '{v}' for {k} invalid (use `None` or a non-NaN string)!"}
 
-        # sort to avoid "overlapping columns" error in handsontable's NestedHeaders
-        sorted_columns = flatten(unflatten(columns, splitter="dot"), reducer="dot")
+                if v != "" and v is not None and v not in ureg:
+                    return {"error": f"Unit '{v}' for {k} invalid!"}
 
-        # reconcile with existing columns
-        resp = self.projects.get_entry(pk=self.project, _fields=["columns"]).result()
-        existing_columns, new_columns = {}, []
+                scanned_columns.add(k)
 
-        for col in resp["columns"]:
-            path = col.pop("path")
-            existing_columns[path] = col
+            # sort to avoid "overlapping columns" error in handsontable's NestedHeaders
+            sorted_columns = flatten(unflatten(columns, splitter="dot"), reducer="dot")
 
-        for path, unit in sorted_columns.items():
-            if path in COMPONENTS:
-                new_columns.append({"path": path})
-                continue
+            # reconcile with existing columns
+            resp = self.projects.get_entry(pk=self.project, _fields=["columns"]).result()
+            existing_columns = {}
 
-            full_path = f"data.{path}"
-            new_column = {"path": full_path}
-            existing_column = existing_columns.get(full_path)
+            for col in resp["columns"]:
+                path = col.pop("path")
+                existing_columns[path] = col
 
-            if unit is not None:
-                new_column["unit"] = unit
+            for path, unit in sorted_columns.items():
+                if path in COMPONENTS:
+                    new_columns.append({"path": path})
+                    continue
 
-            if existing_column:
-                for k in ["min", "max"]:
-                    v = existing_column.get(k)
-                    if v:
-                        new_column[k] = v
+                full_path = f"data.{path}"
+                new_column = {"path": full_path}
+                existing_column = existing_columns.get(full_path)
 
-                # NOTE if existing_unit == "NaN":
-                #   it was set by omitting "unit" in new_column
-                new_unit = new_column.get("unit", "NaN")
-                existing_unit = existing_column.get("unit")
-                if existing_unit != new_unit:
-                    try:
-                        ureg.Quantity(existing_unit).to(new_unit)
-                    except DimensionalityError:
-                        return {
-                            "error": f"Can't convert {existing_unit} to {new_unit} for {path}"
-                        }
+                if unit is not None:
+                    new_column["unit"] = unit
 
-                    # TODO scale contributions to new unit
-                    return {"error": "Changing units not supported yet. Please resubmit"
-                            " contributions or update accordingly."}
+                if existing_column:
+                    # NOTE if existing_unit == "NaN":
+                    #   it was set by omitting "unit" in new_column
+                    new_unit = new_column.get("unit", "NaN")
+                    existing_unit = existing_column.get("unit")
+                    if existing_unit != new_unit:
+                        try:
+                            ureg.Quantity(existing_unit).to(new_unit)
+                        except DimensionalityError:
+                            return {
+                                "error": f"Can't convert {existing_unit} to {new_unit} for {path}"
+                            }
 
-            new_columns.append(new_column)
+                        # TODO scale contributions to new unit
+                        return {"error": "Changing units not supported yet. Please resubmit"
+                                " contributions or update accordingly."}
+
+                new_columns.append(new_column)
 
         payload = {"columns": new_columns}
         valid = self._is_valid_payload("Project", payload)
         if not valid:
             return {"error": valid}
 
-        self.projects.update_entry(pk=self.project, project={"columns": []}).result()
         return self.projects.update_entry(pk=self.project, project=payload).result()
 
     def delete_contributions(self, query: dict = None, timeout: int = -1):
