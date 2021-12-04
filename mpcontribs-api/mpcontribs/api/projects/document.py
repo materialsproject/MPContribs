@@ -4,6 +4,9 @@ import yaml
 import urllib
 
 from math import isnan
+from pathlib import Path
+from flatten_dict import flatten
+from boltons.iterutils import remap
 from flask import current_app, render_template, url_for, request
 from flask_mongoengine import Document
 from marshmallow import ValidationError
@@ -17,10 +20,21 @@ from mongoengine.fields import (
     StringField, BooleanField, DictField, URLField, EmailField,
     FloatField, IntField, EmbeddedDocumentListField, EmbeddedDocumentField
 )
-from mpcontribs.api import send_email, sns_client, valid_key, valid_dict, delimiter
+from mpcontribs.api import send_email, sns_client, valid_key, valid_dict, delimiter, enter
 
 PROVIDERS = {"github", "google", "facebook", "microsoft", "amazon"}
 MAX_COLUMNS = 50
+
+
+def visit(path, key, value):
+    from mpcontribs.api.contributions.document import quantity_keys
+    # pull out units
+    if isinstance(value, dict) and "unit" in value:
+        return key, value["unit"]
+    elif isinstance(value, str) and key not in quantity_keys:
+        return key, None
+
+    return True
 
 
 class ProviderEmailField(EmailField):
@@ -212,41 +226,56 @@ class Projects(Document):
                 )
                 send_email(topic_arn, subject, html)
 
-            if "columns" in delta_set or "columns" in delta_unset:
-                # document.columns has been updated as intended by the user
+            if "columns" in delta_set or "columns" in delta_unset or (
+                not delta_set and not delta_unset
+            ):
                 from mpcontribs.api.contributions.document import Contributions, COMPONENTS
 
-                ncolumns = len(document.columns)
-                if ncolumns > MAX_COLUMNS:
-                    raise ValueError(f"Reached maximum number of columns ({MAX_COLUMNS})!")
+                columns = {}
+                ncontribs = Contributions.objects(project=document.id).count()
 
-                # set min/max for all number columns
-                columns = {col.path: col for col in document.columns}
-
-                if document.columns:
-                    min_max_paths = [col["path"] for col in document.columns if col["unit"] != "NaN"]
-                    group = {"_id": None}
-
-                    for path in min_max_paths:
-                        field = f"{path}{delimiter}value"
-                        for k in ["min", "max"]:
-                            clean_path = path.replace(delimiter, "__")
-                            key = f"{clean_path}__{k}"
-                            group[key] = {f"${k}": f"${field}"}
-
+                if "columns" in delta_set:
+                    # document.columns updated by the user as intended
+                    for col in document.columns:
+                        columns[col.path] = col
+                elif "columns" in delta_unset or ncontribs:
+                    # document.columns unset by user to reinit all columns from DB
+                    # -> get paths and units across all contributions from DB
+                    group = {"_id": "$project", "merged": {"$mergeObjects": "$data"}}
                     pipeline = [{"$match": {"project": document.id}}, {"$group": group}]
                     result = list(Contributions.objects.aggregate(pipeline))
-                    min_max = {} if not result else result[0]
+                    merged = {} if not result else result[0]["merged"]
+                    flat = flatten(remap(merged, visit=visit, enter=enter), reducer="dot")
 
-                    for clean_path in min_max_paths:
-                        for k in ["min", "max"]:
-                            path = clean_path.replace(delimiter, "__")
-                            m = min_max.get(f"{path}__{k}")
-                            if m is not None:
-                                setattr(columns[clean_path], k, m)
+                    for k, v in flat.items():
+                        path = f"data.{k}"
+                        columns[path] = Column(path=path)
+                        if v is not None:
+                            columns[path].unit = v
+
+                # set min/max for all number columns
+                min_max_paths = [path for path, col in columns.items() if col["unit"] != "NaN"]
+                group = {"_id": None}
+
+                for path in min_max_paths:
+                    field = f"{path}{delimiter}value"
+                    for k in ["min", "max"]:
+                        clean_path = path.replace(delimiter, "__")
+                        key = f"{clean_path}__{k}"
+                        group[key] = {f"${k}": f"${field}"}
+
+                pipeline = [{"$match": {"project": document.id}}, {"$group": group}]
+                result = list(Contributions.objects.aggregate(pipeline))
+                min_max = {} if not result else result[0]
+
+                for clean_path in min_max_paths:
+                    for k in ["min", "max"]:
+                        path = clean_path.replace(delimiter, "__")
+                        m = min_max.get(f"{path}__{k}")
+                        if m is not None:
+                            setattr(columns[clean_path], k, m)
 
                 # update stats
-                ncontribs = Contributions.objects(project=document.id).count()
                 stats_kwargs = {"columns": len(columns), "contributions": ncontribs}
 
                 for component in COMPONENTS.keys():
@@ -261,7 +290,12 @@ class Projects(Document):
                         {"$count": "count"}
                     ]
                     result = list(Contributions.objects.aggregate(pipeline))
-                    stats_kwargs[component] = result[0]["count"] if result else 0
+
+                    if result:
+                        stats_kwargs[component] = result[0]["count"]
+                        columns[component] = Column(path=component)
+                    else:
+                        stats_kwargs[component] = 0
 
                 stats = Stats(**stats_kwargs)
                 document.update(stats=stats, columns=columns.values())
