@@ -921,6 +921,7 @@ class Client(SwaggerClient):
         _run_futures(futures, total=total, timeout=timeout)
         left, _ = self.get_totals(query=query)
         deleted = total - left
+        self.init_columns()
         self._reinit()
         toc = time.perf_counter()
         dt = (toc - tic) / 60
@@ -928,8 +929,6 @@ class Client(SwaggerClient):
 
         if left:
             print(f"There were errors and {left} contributions are left to delete!")
-        else:
-            self.init_columns({})
 
     def get_totals(
         self,
@@ -1273,6 +1272,7 @@ class Client(SwaggerClient):
             new_paths = set(c["path"] for c in resp["columns"])
 
             if new_paths != old_paths:
+                self.init_columns()
                 self._reinit()
 
         toc = time.perf_counter()
@@ -1676,6 +1676,7 @@ class Client(SwaggerClient):
 
             toc = time.perf_counter()
             dt = (toc - tic) / 60
+            self.init_columns()
             self._reinit()
             self.session.close()
             self.session = get_session()
