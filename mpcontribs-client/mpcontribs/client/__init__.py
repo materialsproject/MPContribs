@@ -1647,7 +1647,7 @@ class Client(SwaggerClient):
                     responses = _run_futures(
                         futures, total=ncontribs, timeout=timeout, desc="Submit"
                     )
-                    processed = sum(r["count"] for r in responses.values())
+                    processed = sum(r.get("count", 0) for r in responses.values())
                     total_processed += processed
 
                     if processed != ncontribs and retry and retries < RETRIES and \
