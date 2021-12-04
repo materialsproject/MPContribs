@@ -1,11 +1,10 @@
 # -*- coding: utf-8 -*-
 import os
-import json
 import boto3
 import binascii
 
 from hashlib import md5
-from flask import request, current_app
+from flask import request
 from base64 import b64decode, b64encode
 from flask_mongoengine import DynamicDocument
 from mongoengine import signals, ValidationError

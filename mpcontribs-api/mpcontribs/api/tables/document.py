@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-import json
-from math import isnan
 from hashlib import md5
 from flask_mongoengine import DynamicDocument
 from mongoengine import signals, EmbeddedDocument

@@ -10,7 +10,7 @@ const container = document.getElementById("main_table");
 const query = {
     _fields: "name,title,is_public,authors,owner,stats",
     _sort: "-stats.contributions"
-}
+};
 var columnSummary = [];
 var columns = [];
 var hot;
