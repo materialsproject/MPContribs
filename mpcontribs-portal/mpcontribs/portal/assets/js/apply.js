@@ -15,7 +15,7 @@ if (form.length) {
         data["owner"] = $("#owner").val();
         data["references"] = [
             {"label": data["ref_label"], "url": data["ref_url"]}
-        ]
+        ];
         delete data["ref_label"];
         delete data["ref_url"];
         $.post({

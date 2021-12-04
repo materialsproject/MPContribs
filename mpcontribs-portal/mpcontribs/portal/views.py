@@ -11,23 +11,20 @@ import urllib
 
 from io import BytesIO
 from copy import deepcopy
-from glob import glob
 from pathlib import Path
 from shutil import make_archive, rmtree
 from nbconvert import HTMLExporter
 from bravado.exception import HTTPNotFound
 from json2html import Json2Html
 from boltons.iterutils import remap
-from fastnumbers import fast_real
 from botocore.errorfactory import ClientError
 from pygments import highlight
 from pygments.formatters import HtmlFormatter
 from pygments.lexers.special import TextLexer
 
-from django.shortcuts import render, redirect
+from django.shortcuts import render
 from django.template import RequestContext
 from django.http import HttpResponse, JsonResponse
-from django.template.loaders.app_directories import get_app_template_dirs
 from django.template.loader import select_template
 
 from mpcontribs.client import Client, get_md5
@@ -415,7 +412,6 @@ def _get_download_key(query: dict, include: list):
 
 
 def download_project(request, project: str, extension: str):
-    ctx = get_context(request)
     if extension == "zip":
         fmt = request.GET.get("format", "json")
         query = {"project": project, "format": fmt}
@@ -447,7 +443,6 @@ def download(request):
     if not project:
         return HttpResponse("Missing project parameter.", status=404)
 
-    ctx = get_context(request)
     query, include = _get_query_include(request)
     key = _get_download_key(query, include)
     return _get_download(key)

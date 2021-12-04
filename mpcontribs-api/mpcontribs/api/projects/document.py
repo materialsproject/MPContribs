@@ -1,10 +1,8 @@
 # -*- coding: utf-8 -*-
-import os
 import yaml
 import urllib
 
 from math import isnan
-from pathlib import Path
 from flatten_dict import flatten
 from boltons.iterutils import remap
 from flask import current_app, render_template, url_for, request
@@ -66,7 +64,7 @@ class ProviderEmailValidator(EmailValidator):
         if provider not in PROVIDERS:
             raise ValidationError(message)
 
-        email = super().__call__(email)
+        super().__call__(email)
         return value
 
 

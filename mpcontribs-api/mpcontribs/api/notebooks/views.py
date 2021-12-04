@@ -14,13 +14,11 @@ from flask import Blueprint, request, abort, jsonify, current_app
 from flask_mongorest import operators as ops
 from flask_mongorest.methods import Fetch, BulkFetch
 from flask_mongorest.resources import Resource
-from mongoengine.context_managers import no_dereference
 from mongoengine.errors import DoesNotExist
 from mongoengine.queryset.visitor import Q
 
 from mpcontribs.api import get_kernel_endpoint
 from mpcontribs.api.core import SwaggerView
-from mpcontribs.api.projects.document import Projects
 from mpcontribs.api.contributions.document import Contributions
 from mpcontribs.api.notebooks.document import Notebooks
 from mpcontribs.api.notebooks import run_cells
@@ -81,10 +79,10 @@ def execute_cells(cid, cells):
                 return outputs
             else:
                 print(f"{kernel_id} busy with {running_cid}")
-        else:
-            print("WAITING for a kernel to become available")
-            sleep(5)
-            ntries += 1
+
+        print("WAITING for a kernel to become available")
+        sleep(5)
+        ntries += 1
 
 
 @notebooks.route("/build")
@@ -116,7 +114,7 @@ def restart_kernels():
 
     for kernel_id in kernel_ids:
         kernel_url = get_kernel_endpoint(kernel_id) + "/restart"
-        r = requests.post(kernel_url, json={})
+        requests.post(kernel_url, json={})
         cells = [nbf.new_code_cell("\n".join([
             "from mpcontribs.client import Client",
             "print('client imported')"

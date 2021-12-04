@@ -367,8 +367,8 @@ def _run_futures(futures, total: int = 0, timeout: int = -1, desc=None):
                 timed_out = timeout > 0 and elapsed > timeout
 
                 if timed_out or not response.ok:
-                    for future in futures:
-                        future.cancel()
+                    for fut in futures:
+                        fut.cancel()
 
     return responses
 

@@ -63,9 +63,8 @@ function processResults(field) {
     }
 }
 
-function get_ajax(field, pk) {
+function get_ajax(field) {
     var endpoint = (field == 'project') ? 'projects/' : 'contributions/';
-    if (pk !== null) { endpoint += pk + '/'; }
     var api_url = window.api['host'] + endpoint;
     return {
         url: api_url, headers: window.api['headers'],
@@ -141,7 +140,6 @@ function show_results(selection) {
 function search(event) {
     event.preventDefault(); // To prevent following the link (optional)
     var selection = $.map(fields, function(f) { return get_single_selection(f); });
-    var filtered_selection = selection.filter(function (el) { return el !== ''; });
     $('input:checkbox').each(function(idx, chbx) {
         selection.push(chbx.checked);
     });
@@ -152,7 +150,7 @@ $(document).ready(function () {
     $.each(fields, function(idx, field) {
         $('#'+field+'s_list').select2({
             placeholder: 'Select '+field+'(s) ...',
-            ajax: get_ajax(field, null)
+            ajax: get_ajax(field)
         });
     });
     $('select').on('change', search);

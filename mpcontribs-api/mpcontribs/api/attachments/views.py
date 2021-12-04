@@ -4,7 +4,6 @@ import flask_mongorest
 from flask_mongorest.resources import Resource
 from flask_mongorest import operators as ops
 from flask_mongorest.methods import Fetch, BulkFetch, Download
-from flask_mongorest.exceptions import UnknownFieldError
 from flask import Blueprint
 
 from mpcontribs.api import FILTERS
