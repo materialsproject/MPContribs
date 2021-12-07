@@ -29,7 +29,7 @@ def visit(path, key, value):
     # pull out units
     if isinstance(value, dict) and "unit" in value:
         return key, value["unit"]
-    elif isinstance(value, str) and key not in quantity_keys:
+    elif isinstance(value, (str, bool)) and key not in quantity_keys:
         return key, None
 
     return True
