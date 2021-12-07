@@ -1330,6 +1330,8 @@ class Client(SwaggerClient):
         if not self.project and (not query or "project" not in query):
             return {"error": "initialize client with project, or include project in query!"}
 
+        query = query or {}
+
         if self.project:
             query["project"] = self.project
 
