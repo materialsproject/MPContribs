@@ -26,7 +26,7 @@ pyopenssl==21.0.0
 python-snappy==0.6.0
 rq-dashboard==0.6.1
 rq-scheduler==0.11.0
-supervisor==4.2.2
+supervisor==4.2.4
 uncertainties==3.1.6
 websocket_client==1.2.3
 zstandard==0.16.0
