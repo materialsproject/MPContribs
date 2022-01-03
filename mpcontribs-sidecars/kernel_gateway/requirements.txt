@@ -4,4 +4,4 @@ jupyter-client==7.1.0
 jupyter-kernel-gateway==2.5.1
 kaleido==0.2.1
 mpcontribs-client==4.2.1
-psutil==5.8.0
+psutil==5.9.0
