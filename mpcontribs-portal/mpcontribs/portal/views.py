@@ -217,21 +217,43 @@ def contribution(request, cid):
     except HTTPNotFound:
         return HttpResponse(f"Contribution {cid} not found.", status=404)
 
-    if "notebook" not in contrib or contrib.get("needs_build", True):
-        url = f"{client.url}/notebooks/build"
-        r = requests.get(url, params={"cids": cid, "force": True})
-        if r.status_code == requests.codes.ok:
-            status = r.json().get("result", {}).get("status")
-            if status != "COMPLETED":
-                ctx["alert"] = f"Notebook build failed with status {status}"
-                return render(request, "contribution.html", ctx.flatten())
+    return HttpResponse("New contribution detail pages to be implemented", status=501)
 
+
+def notebook(request, cid):
+    ckwargs = client_kwargs(request)
+    headers = ckwargs.get("headers", {})
+    ctx = get_context(request)
+
+    if headers.get("X-Anonymous-Consumer", False):
+        ctx["alert"] = f"""
+        Please <a href=\"{ctx['OAUTH_URL']}\">log in</a> to view contribution.
+        """.strip()
+        return render(request, "notebook.html", ctx.flatten())
+
+    with Client(**ckwargs) as client:
+        try:
             contrib = client.contributions.get_entry(
-                pk=cid, _fields=["identifier", "notebook"]
+                pk=cid, _fields=["identifier", "needs_build", "notebook"]
             ).result()
-        else:
-            ctx["alert"] = f"Notebook build failed with status {r.status_code}"
-            return render(request, "contribution.html", ctx.flatten())
+        except HTTPNotFound:
+            return HttpResponse(f"Contribution {cid} not found.", status=404)
+
+        if "notebook" not in contrib or contrib.get("needs_build", True):
+            url = f"{client.url}/notebooks/build"
+            r = requests.get(url, params={"cids": cid, "force": True})
+            if r.status_code == requests.codes.ok:
+                status = r.json().get("result", {}).get("status")
+                if status != "COMPLETED":
+                    ctx["alert"] = f"Notebook build failed with status {status}"
+                    return render(request, "notebook.html", ctx.flatten())
+
+                contrib = client.contributions.get_entry(
+                    pk=cid, _fields=["identifier", "notebook"]
+                ).result()
+            else:
+                ctx["alert"] = f"Notebook build failed with status {r.status_code}"
+                return render(request, "notebook.html", ctx.flatten())
 
     nid = contrib["notebook"]["id"]
     try:
@@ -242,7 +264,7 @@ def contribution(request, cid):
     ctx["identifier"], ctx["cid"] = contrib["identifier"], cid
     ctx["nb"], _ = export_notebook(nb, cid)
 
-    return render(request, "contribution.html", ctx.flatten())
+    return render(request, "notebook.html", ctx.flatten())
 
 
 def show_component(request, oid):
