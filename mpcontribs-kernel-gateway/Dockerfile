@@ -34,4 +34,4 @@ EXPOSE 8888
 COPY make_seed.py .
 RUN python make_seed.py
 
-CMD jupyter kernelgateway
+CMD ddtrace-run jupyter kernelgateway
