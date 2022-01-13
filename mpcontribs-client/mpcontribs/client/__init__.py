@@ -51,6 +51,7 @@ from pint import UnitRegistry
 from pint.unit import UnitDefinition
 from pint.converters import ScaleConverter
 from pint.errors import DimensionalityError
+from tempfile import gettempdir
 
 RETRIES = 3
 MAX_WORKERS = 8
@@ -379,7 +380,8 @@ def _load(protocol, host, headers_json, project):
     http_client = FidoClientGlobalHeaders(headers=headers)
     url = f"{protocol}://{host}"
     origin_url = f"{url}/apispec.json"
-    apispec = Path(urlsafe_b64encode(origin_url.encode('utf-8')).decode('utf-8'))
+    fn = urlsafe_b64encode(origin_url.encode('utf-8')).decode('utf-8')
+    apispec = Path(gettempdir()) / fn
 
     if apispec.exists():
         spec_dict = ujson.loads(apispec.read_bytes())
