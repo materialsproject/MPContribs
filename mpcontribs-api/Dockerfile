@@ -51,6 +51,7 @@ COPY start.sh .
 COPY main.py .
 COPY supervisord.conf .
 COPY maintenance.py .
+COPY gunicorn.conf.py .
 RUN chmod +x main.py start.sh
 
 CMD ["/usr/bin/supervisord", "-c", "supervisord.conf"]
