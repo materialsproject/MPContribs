@@ -10,6 +10,8 @@ ENV MORE_PIP_FLAGS=$MORE_PIP_FLAGS
 COPY requirements.txt .
 RUN pip install $PIP_FLAGS $MORE_PIP_FLAGS -r requirements.txt && \
     python -m ipykernel install --user
+RUN wget -q https://raw.githubusercontent.com/vishnubob/wait-for-it/master/wait-for-it.sh && \
+    chmod +x wait-for-it.sh && mv wait-for-it.sh /root/.local/bin/
 
 FROM base
 COPY --from=python-deps /root/.local/lib/python3.9/site-packages /root/.local/lib/python3.9/site-packages
@@ -34,4 +36,4 @@ EXPOSE 8888
 COPY make_seed.py .
 RUN python make_seed.py
 
-CMD ddtrace-run jupyter kernelgateway
+CMD wait-for-it.sh $DD_TRACE_HOST -s -t 60 -- ddtrace-run jupyter kernelgateway
