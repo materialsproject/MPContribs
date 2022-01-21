@@ -64,12 +64,8 @@ BULMA = "is-narrow is-fullwidth has-background-light"
 PROVIDERS = {"github", "google", "facebook", "microsoft", "amazon"}
 COMPONENTS = ["structures", "tables", "attachments"]  # using list to maintain order
 SUBDOMAINS = ["contribs", "lightsources", "ml", "workshop-contribs"]
-LOCAL_STACK = {
-    "contribs-api": 5000, "workshop-contribs-api": 5005,
-    "contribs-ml-api": 5002, "contribs-lightsources-api": 5003,
-}
-VALID_URLS = {f"http://localhost:{p}" for p in LOCAL_STACK.values()}  # AWS Fargate Task
-VALID_URLS |= {f"http://{h}:{p}" for h, p in LOCAL_STACK.items()}  # local docker-compose stack
+PORTS = [5000, 5002, 5003, 5005]
+VALID_URLS = {f"http://{h}:{p}" for p in PORTS for h in ["localhost", "contribs-apis"]}
 VALID_URLS |= {
     f"https://{n}-api{m}.materialsproject.org"
     for n in SUBDOMAINS for m in ["", "-preview"]
