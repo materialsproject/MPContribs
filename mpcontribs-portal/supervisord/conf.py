@@ -2,13 +2,29 @@ import os
 from jinja2 import Environment, FileSystemLoader
 
 DIR = os.path.abspath(os.path.dirname(__file__))
+PRODUCTION = int(os.environ.get("PRODUCTION", "1"))
 
-deployments = [
-    entry.name.split(".")[0]
-    for entry in os.scandir(os.environ["ENV_FILES"])
-    if entry.is_file()
-]
+deployments = {}
+
+for deployment in os.environ.get("DEPLOYMENTS", "ml:5002").split(","):
+    name, s3, tm, portal_port = deployment.split(":")
+    api_port = 5000 + int(portal_port) % 8080
+    deployments[name] = {
+        "api_port": api_port,
+        "portal_port": portal_port,
+        "s3": s3,
+        "tm": tm.upper()
+    }
+
+kwargs = {
+    "deployments": deployments,
+    "nworkers": 2 if PRODUCTION else 1,
+    "reload": "" if PRODUCTION else "--reload",
+    "node_env": "production" if PRODUCTION else "development",
+    "dd_agent_host": "localhost" if PRODUCTION else "datadog",
+    "mpcontribs_api_host": "localhost" if PRODUCTION else "contribs-apis",
+}
 
 env = Environment(loader=FileSystemLoader(DIR))
 template = env.get_template("supervisord.conf.jinja")
-template.stream(deployments=deployments).dump("supervisord.conf")
+template.stream(**kwargs).dump("supervisord.conf")

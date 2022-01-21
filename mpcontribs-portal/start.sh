@@ -1,9 +1,5 @@
 #!/bin/bash
 
-set -a
-source $ENV_FILE
-env
-
 python manage.py migrate --noinput
 wait-for-it.sh $MPCONTRIBS_API_HOST -s -t 60 -- gunicorn -c gunicorn.conf.py \
     -b 0.0.0.0:$PORTAL_PORT -k gevent -w $NWORKERS \

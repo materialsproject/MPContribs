@@ -54,7 +54,6 @@ COPY --from=python-builds /root/.local/bin /root/.local/bin
 COPY --from=python-builds /app/static /app/static
 COPY --from=python-builds /app/mpcontribs /app/mpcontribs
 COPY --from=python-builds /app/supervisord /app/supervisord
-COPY --from=python-builds /app/envs /app/envs
 COPY --from=webpack /app/webpack-stats.json /app/webpack-stats.json
 
 RUN apt-get update && apt-get install -y --no-install-recommends supervisor && apt-get clean
