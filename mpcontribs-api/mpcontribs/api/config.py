@@ -33,7 +33,7 @@ MONGODB_SETTINGS = {
 }
 REDIS_ADDRESS = os.environ.get("REDIS_ADDRESS", "redis")
 REDIS_URL = RQ_REDIS_URL = RQ_DASHBOARD_REDIS_URL = f"redis://{REDIS_ADDRESS}"
-DOC_DIR = os.path.join(os.path.dirname(__file__), "swagger")
+DOC_DIR = os.path.join(os.path.dirname(__file__), f"swagger-{MPCONTRIBS_DB}")
 
 SWAGGER = {
     "swagger_ui_bundle_js": "//unpkg.com/swagger-ui-dist@3/swagger-ui-bundle.js",

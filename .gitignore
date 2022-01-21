@@ -22,10 +22,11 @@ cloudformation/kong/
 */dist
 mpcontribs-client/build/*
 mpcontribs-io/build/*
-mpcontribs-api/mpcontribs/api/swagger/
+mpcontribs-api/mpcontribs/api/swagger*/
 .cache/
 .ipython/
 .jupyter/
 .local/
 mpcontribs-portal/mpcontribs/portal/templates/notebooks
 coverage.xml
+mpcontribs-api/supervisord.conf

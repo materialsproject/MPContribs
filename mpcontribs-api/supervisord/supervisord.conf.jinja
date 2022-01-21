@@ -7,14 +7,31 @@ environment=
     MPCONTRIBS_MONGO_HOST="%(ENV_MPCONTRIBS_MONGO_HOST)s",
     AWS_ACCESS_KEY_ID="%(ENV_AWS_ACCESS_KEY_ID)s",
     AWS_SECRET_ACCESS_KEY="%(ENV_AWS_SECRET_ACCESS_KEY)s",
-    AWS_SNS_TOPIC_ARN="%(ENV_AWS_SNS_TOPIC_ARN)s"
+    AWS_SNS_TOPIC_ARN="%(ENV_AWS_SNS_TOPIC_ARN)s",
+    METADATA_URI="%(ENV_ECS_CONTAINER_METADATA_URI_V4)s",
+    REDIS_ADDRESS="%(ENV_REDIS_ADDRESS)s",
+    AWS_REGION="us-east-1",
+    AWS_DEFAULT_REGION="us-east-1",
+    MAIL_DEFAULT_SENDER="contribs@materialsproject.org",
+    DD_PROFILING_ENABLED="false",
+    DD_LOGS_INJECTION="true",
+    DD_PATCH_MODULES="aioredis:false,aredis:false,boto:false,bottle:false,cassandra:false,consul:false,django:false,algoliasearch:false,grpc:false,httpx:false,mysql:false,mysqldb:false,pymysql:false,mariadb:false,pylibmc:false,pymemcache:false",
+    FLASK_APP="mpcontribs.api",
+    PYTHONUNBUFFERED=1,
+    MAX_REQUESTS=100000,
+    MAX_REQUESTS_JITTER=10000,
+    NWORKERS={{ nworkers }},
+    RELOAD="{{ reload }}",
+    NODE_ENV="{{ node_env }}",
+    FLASK_ENV="{{ flask_env }}",
+    FLASK_LOG_LEVEL="{{ flask_log_level }}",
+    JUPYTER_GATEWAY_URL="{{ jupyter_gateway_url }}",
+    JUPYTER_GATEWAY_HOST="{{ jupyter_gateway_host }}",
+    DD_AGENT_HOST="{{ dd_agent_host }}"
 
 [program:main]
 command=./main.py
 directory=/app
-environment=
-    METADATA_URI="%(ENV_ECS_CONTAINER_METADATA_URI_V4)s",
-    AWS_DEFAULT_REGION="us-east-1"
 stdout_logfile=/dev/fd/1
 stdout_logfile_maxbytes=0
 stderr_logfile=/dev/fd/2
@@ -29,13 +46,15 @@ supervisor.rpcinterface_factory=supervisor.rpcinterface:make_main_rpcinterface
 [supervisorctl]
 serverurl=unix:///var/run/supervisor.sock
 
+{% set names = deployments.keys() %}
+
 [group:apis]
-programs={{ deployments|join('-api,') }}-api
+programs={{ names|join('-api,') }}-api
 
 [group:rq]
-programs={{ deployments|join('-worker,') }}-worker,{{ deployments|join('-scheduler,') }}-scheduler
+programs={{ names|join('-worker,') }}-worker,{{ names|join('-scheduler,') }}-scheduler
 
-{% for deployment in deployments %}
+{% for deployment, cfg in deployments.items() %}
 {% set defaults %}
 directory=/app
 autostart=false
@@ -47,7 +66,16 @@ stdout_logfile_maxbytes=0
 stderr_logfile=/dev/fd/2
 stderr_logfile_maxbytes=0
 environment=
-    ENV_FILE="%(ENV_ENV_FILES)s/{{ deployment }}.env",
+    DEPLOYMENT={{ loop.index0 }},
+    API_PORT={{ cfg.api_port }},
+    PORTAL_PORT={{ cfg.portal_port }},
+    MPCONTRIBS_API_HOST="{{ mpcontribs_api_host }}:{{ cfg.api_port }}",
+    MPCONTRIBS_DB_NAME="mpcontribs-{{ cfg.db }}",
+    TRADEMARK="{{ cfg.tm }}",
+    S3_DOWNLOADS_BUCKET="mpcontribs-downloads-{{ cfg.s3 }}",
+    S3_ATTACHMENTS_BUCKET="mpcontribs-attachments-{{ cfg.s3 }}",
+    S3_IMAGES_BUCKET="mpcontribs-images-{{ cfg.s3 }}",
+    ADMIN_GROUP="admin_{{ deployment }}.materialsproject.org"
 {% endset %}
 
 [program:{{ deployment }}-worker]
