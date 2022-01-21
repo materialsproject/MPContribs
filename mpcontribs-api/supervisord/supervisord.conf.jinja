@@ -1,0 +1,66 @@
+[supervisord]
+nodaemon=true
+user=root
+logfile=/tmp/supervisord.log
+pidfile=/tmp/supervisord.pid
+environment=
+    MPCONTRIBS_MONGO_HOST="%(ENV_MPCONTRIBS_MONGO_HOST)s",
+    AWS_ACCESS_KEY_ID="%(ENV_AWS_ACCESS_KEY_ID)s",
+    AWS_SECRET_ACCESS_KEY="%(ENV_AWS_SECRET_ACCESS_KEY)s",
+    AWS_SNS_TOPIC_ARN="%(ENV_AWS_SNS_TOPIC_ARN)s"
+
+[program:main]
+command=./main.py
+directory=/app
+environment=
+    METADATA_URI="%(ENV_ECS_CONTAINER_METADATA_URI_V4)s",
+    AWS_DEFAULT_REGION="us-east-1"
+stdout_logfile=/dev/fd/1
+stdout_logfile_maxbytes=0
+stderr_logfile=/dev/fd/2
+stderr_logfile_maxbytes=0
+
+[unix_http_server]
+file=/var/run/supervisor.sock
+
+[rpcinterface:supervisor]
+supervisor.rpcinterface_factory=supervisor.rpcinterface:make_main_rpcinterface
+
+[supervisorctl]
+serverurl=unix:///var/run/supervisor.sock
+
+[group:apis]
+programs={{ deployments|join('-api,') }}-api
+
+[group:rq]
+programs={{ deployments|join('-worker,') }}-worker,{{ deployments|join('-scheduler,') }}-scheduler
+
+{% for deployment in deployments %}
+{% set defaults %}
+directory=/app
+autostart=false
+autorestart=false
+stopsignal=TERM
+exitcodes=124
+stdout_logfile=/dev/fd/1
+stdout_logfile_maxbytes=0
+stderr_logfile=/dev/fd/2
+stderr_logfile_maxbytes=0
+environment=
+    ENV_FILE="%(ENV_ENV_FILES)s/{{ deployment }}.env",
+{% endset %}
+
+[program:{{ deployment }}-worker]
+command=./scripts/start_rq.sh worker
+numprocs=1
+{{ defaults }}
+
+[program:{{ deployment }}-scheduler]
+command=./scripts/start_rq.sh scheduler
+numprocs=1
+{{ defaults }}
+
+[program:{{ deployment }}-api]
+command=./scripts/start.sh
+{{ defaults }}
+{% endfor %}

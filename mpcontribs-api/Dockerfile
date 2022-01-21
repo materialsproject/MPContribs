@@ -29,29 +29,16 @@ COPY --from=builder /root/.local/bin /root/.local/bin
 COPY --from=builder /usr/lib/x86_64-linux-gnu/libsnappy* /usr/lib/x86_64-linux-gnu/
 COPY --from=builder /app/mpcontribs/api /app/mpcontribs/api
 RUN mkdir -p /var/log/supervisor
+ENV PATH=/root/.local/bin:$PATH
 
-ENV PATH=/root/.local/bin:$PATH \
-    PYTHONUNBUFFERED=1 \
-    FLASK_APP=mpcontribs.api \
-    FLASK_ENV=production \
-    API_PORT=5000 \
-    DEPLOYMENT=0 \
-    NWORKERS=2 \
-    RELOAD="" \
-    JUPYTER_GATEWAY_URL=http://localhost:8888 \
-    JUPYTER_GATEWAY_HOST=localhost:8888 \
-    MPCONTRIBS_API_HOST=localhost:5000 \
-    REDIS_ADDRESS=redis \
-    MAX_REQUESTS=100000 \
-    MAX_REQUESTS_JITTER=10000 \
-    ECS_CONTAINER_METADATA_URI_V4=""
-
-EXPOSE 5000 5002 5003 5005
-COPY start.sh .
+COPY supervisord supervisord
+COPY scripts scripts
 COPY main.py .
-COPY supervisord.conf .
 COPY maintenance.py .
 COPY gunicorn.conf.py .
-RUN chmod +x main.py start.sh
+COPY docker-entrypoint.sh .
+RUN chmod +x main.py scripts/start.sh scripts/start_rq.sh
 
+EXPOSE 5000 5002 5003 5005
+ENTRYPOINT ["/app/docker-entrypoint.sh"]
 CMD ["/usr/bin/supervisord", "-c", "supervisord.conf"]

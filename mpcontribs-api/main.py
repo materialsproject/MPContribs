@@ -15,7 +15,7 @@ def start(program):
     c = Controller(options)
     c.onecmd(" ".join(options.args))
 
-start("api")
+start("apis:*")
 
 metadata_uri = os.environ.get("METADATA_URI", "")
 start_rq = True
@@ -41,5 +41,4 @@ if metadata_uri:
     print(f"TASKS {ntasks}/{len(tasks)} -> START RQ {start_rq}")
 
 if start_rq:
-    for program in ["worker", "scheduler"]:
-        start(program)
+    start("rq:*")
