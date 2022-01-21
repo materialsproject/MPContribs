@@ -53,18 +53,15 @@ COPY --from=python-builds /root/.local/lib/python3.9/site-packages /root/.local/
 COPY --from=python-builds /root/.local/bin /root/.local/bin
 COPY --from=python-builds /app/static /app/static
 COPY --from=python-builds /app/mpcontribs /app/mpcontribs
+COPY --from=python-builds /app/supervisord /app/supervisord
+COPY --from=python-builds /app/envs /app/envs
 COPY --from=webpack /app/webpack-stats.json /app/webpack-stats.json
+
+RUN apt-get update && apt-get install -y --no-install-recommends supervisor && apt-get clean
 WORKDIR /app
-ENV PATH=/root/.local/bin:$PATH \
-    DJANGO_SETTINGS_FILE="settings.py" \
-    PYTHONUNBUFFERED=1 \
-    API_PORT=5000 \
-    PORTAL_PORT=8080 \
-    RELOAD="" \
-    NWORKERS=2 \
-    MAX_REQUESTS=100000 \
-    MAX_REQUESTS_JITTER=10000
-EXPOSE 8080 8082 8083 8085
+RUN mkdir -p /var/log/supervisor
+ENV PATH=/root/.local/bin:$PATH
+
 COPY wsgi.py .
 COPY settings.py .
 COPY docker-entrypoint.sh .
@@ -72,5 +69,7 @@ COPY manage.py .
 COPY start.sh .
 COPY maintenance.py .
 COPY gunicorn.conf.py .
+
+EXPOSE 8080 8082 8083 8085
 ENTRYPOINT ["/app/docker-entrypoint.sh"]
-CMD wait-for-it.sh $MPCONTRIBS_API_HOST -s -t 60 -- ./start.sh
+CMD ["/usr/bin/supervisord", "-c", "supervisord.conf"]

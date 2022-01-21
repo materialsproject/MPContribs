@@ -57,11 +57,12 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = "wsgi.application"
+PROCESS_NAME = os.environ.get("SUPERVISOR_PROCESS_NAME", "default")
 
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
-        "NAME": os.path.join(BASE_DIR, "db.sqlite3"),
+        "NAME": os.path.join(BASE_DIR, f"{PROCESS_NAME}.sqlite3"),
     }
 }
 

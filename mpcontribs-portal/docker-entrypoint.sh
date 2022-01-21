@@ -1,6 +1,6 @@
 #!/bin/sh
 set -e
 
-python manage.py migrate --noinput
+python supervisord/conf.py
 
 exec "$@"

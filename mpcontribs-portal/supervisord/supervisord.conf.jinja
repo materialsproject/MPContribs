@@ -1,0 +1,36 @@
+[supervisord]
+nodaemon=true
+user=root
+logfile=/tmp/supervisord.log
+pidfile=/tmp/supervisord.pid
+environment=
+    AWS_ACCESS_KEY_ID="%(ENV_AWS_ACCESS_KEY_ID)s",
+    AWS_SECRET_ACCESS_KEY="%(ENV_AWS_SECRET_ACCESS_KEY)s"
+
+[unix_http_server]
+file=/var/run/supervisor.sock
+
+[rpcinterface:supervisor]
+supervisor.rpcinterface_factory=supervisor.rpcinterface:make_main_rpcinterface
+
+[supervisorctl]
+serverurl=unix:///var/run/supervisor.sock
+
+[group:portals]
+programs={{ deployments|join('-portal,') }}-portal
+
+{% for deployment in deployments %}
+[program:{{ deployment }}-portal]
+command=./start.sh
+directory=/app
+autostart=true
+autorestart=false
+stopsignal=TERM
+exitcodes=124
+stdout_logfile=/dev/fd/1
+stdout_logfile_maxbytes=0
+stderr_logfile=/dev/fd/2
+stderr_logfile_maxbytes=0
+environment=
+    ENV_FILE="%(ENV_ENV_FILES)s/{{ deployment }}.env",
+{% endfor %}
