@@ -35,11 +35,6 @@ def fix_units(name):
         if idx and not idx%250:
             print(idx)
 
-    if num:
-        print("post_save ...")
-        Contributions.post_save(Contributions, contrib)
-
-
 # additional maintenance functions
 # TODO generate JSON/CSV project downloads
 # TODO clean dangling notebooks
