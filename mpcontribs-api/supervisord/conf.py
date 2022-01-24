@@ -3,6 +3,7 @@ from jinja2 import Environment, FileSystemLoader
 
 DIR = os.path.abspath(os.path.dirname(__file__))
 PRODUCTION = int(os.environ.get("PRODUCTION", "1"))
+KG_PORT = 10100
 
 deployments = {}
 
@@ -24,7 +25,7 @@ kwargs = {
     "reload": "" if PRODUCTION else "--reload",
     "node_env": "production" if PRODUCTION else "development",
     "flask_log_level": "INFO" if PRODUCTION else "DEBUG",
-    "jupyter_gateway_host": "localhost:8888" if PRODUCTION else "kernel-gateway:8888",
+    "jupyter_gateway_host": f"localhost:{KG_PORT}" if PRODUCTION else f"kernel-gateway:{KG_PORT}",
     "dd_agent_host": "localhost" if PRODUCTION else "datadog",
     "mpcontribs_api_host": "localhost" if PRODUCTION else "contribs-apis",
 }

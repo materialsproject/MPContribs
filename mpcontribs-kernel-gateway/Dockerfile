@@ -31,8 +31,9 @@ ENV KG_SEED_URI=/app/kernel_imports.ipynb
 ENV KG_FORCE_KERNEL_NAME=python3
 ENV KG_DEFAULT_KERNEL_NAME=python3
 ENV KG_LIST_KERNELS=True
+ENV KG_PORT=10100
 
-EXPOSE 8888
+EXPOSE 10100
 COPY make_seed.py .
 RUN python make_seed.py
 
