@@ -1,8 +1,8 @@
 blinker==1.4
-ddtrace==0.57.1
+ddtrace==0.57.2
 ipywidgets==7.6.5
-jupyter-client==7.1.0
+jupyter-client==7.1.2
 jupyter-kernel-gateway==2.5.1
-kaleido==0.2.1
+kaleido==0.2.1.post1
 mpcontribs-client==4.2.3
 psutil==5.9.0
