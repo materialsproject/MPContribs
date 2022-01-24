@@ -18,6 +18,7 @@ for deployment in os.environ.get("DEPLOYMENTS", "ml:5002").split(","):
     }
 
 kwargs = {
+    "production": PRODUCTION,
     "deployments": deployments,
     "nworkers": 2 if PRODUCTION else 1,
     "reload": "" if PRODUCTION else "--reload",
