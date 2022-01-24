@@ -28,6 +28,7 @@ COPY --from=builder /root/.local/lib/python3.9/site-packages /root/.local/lib/py
 COPY --from=builder /root/.local/bin /root/.local/bin
 COPY --from=builder /usr/lib/x86_64-linux-gnu/libsnappy* /usr/lib/x86_64-linux-gnu/
 COPY --from=builder /app/mpcontribs/api /app/mpcontribs/api
+WORKDIR /app
 RUN mkdir -p /var/log/supervisor
 ENV PATH=/root/.local/bin:$PATH
 
@@ -37,7 +38,7 @@ COPY main.py .
 COPY maintenance.py .
 COPY gunicorn.conf.py .
 COPY docker-entrypoint.sh .
-RUN chmod +x main.py scripts/start.sh scripts/start_rq.sh
+RUN chmod +x main.py scripts/start.sh scripts/start_rq.sh docker-entrypoint.sh
 
 EXPOSE 5000 5002 5003 5005
 ENTRYPOINT ["/app/docker-entrypoint.sh"]
