@@ -225,14 +225,14 @@ class Contributions(DynamicDocument):
             if isnan(q.nominal_value):
                 return False
 
-            # try compact representation
-            qq = q.value.to_compact()
-            q = new_error_units(q, qq)
+            ## try compact representation
+            #qq = q.value.to_compact()
+            #q = new_error_units(q, qq)
 
-            # reduce dimensionality if possible
-            if not q.check(0):
-                qq = q.value.to_reduced_units()
-                q = new_error_units(q, qq)
+            ## reduce dimensionality if possible
+            #if not q.check(0):
+            #    qq = q.value.to_reduced_units()
+            #    q = new_error_units(q, qq)
 
             # ensure that the same units are used across contributions
             if field in columns:
