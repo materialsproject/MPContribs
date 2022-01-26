@@ -24,6 +24,7 @@ kwargs = {
     "node_env": "production" if PRODUCTION else "development",
     "dd_agent_host": "localhost" if PRODUCTION else "datadog",
     "mpcontribs_api_host": "localhost" if PRODUCTION else "contribs-apis",
+    "log_level": "INFO" if PRODUCTION else "DEBUG",
 }
 
 env = Environment(loader=FileSystemLoader(DIR))

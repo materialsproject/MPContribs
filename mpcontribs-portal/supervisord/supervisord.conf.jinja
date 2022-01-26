@@ -18,6 +18,7 @@ environment=
     RELOAD="{{ reload }}",
     NODE_ENV="{{ node_env }}",
     DD_AGENT_HOST="{{ dd_agent_host }}",
+    DD_LOG_LEVEL="{{ log_level }}",
     DJANGO_SETTINGS_FILE="settings.py"
 
 [unix_http_server]
@@ -39,6 +40,7 @@ programs={{ names|join('-portal,') }}-portal
 {% for deployment, cfg in deployments.items() %}
 [program:{{ deployment }}-portal]
 command=./start.sh
+priority={{ loop.index * 100 }}
 directory=/app
 autostart=true
 autorestart=false

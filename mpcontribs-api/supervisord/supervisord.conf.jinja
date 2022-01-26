@@ -27,6 +27,7 @@ environment=
     NODE_ENV="{{ node_env }}",
     FLASK_ENV="{{ flask_env }}",
     FLASK_LOG_LEVEL="{{ flask_log_level }}",
+    DD_LOG_LEVEL="{{ flask_log_level }}",
     JUPYTER_GATEWAY_URL="{{ jupyter_gateway_url }}",
     JUPYTER_GATEWAY_HOST="{{ jupyter_gateway_host }}",
     DD_AGENT_HOST="{{ dd_agent_host }}"
@@ -60,9 +61,10 @@ programs={{ names|join('-worker,') }}-worker,{{ names|join('-scheduler,') }}-sch
 
 {% for deployment, cfg in deployments.items() %}
 {% set defaults %}
+priority={{ loop.index * 100 }}
 directory=/app
 autostart=false
-autorestart=false
+autorestart=true
 stopsignal=TERM
 exitcodes=124
 stdout_logfile=/dev/fd/1
