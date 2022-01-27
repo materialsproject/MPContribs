@@ -40,6 +40,6 @@ COPY gunicorn.conf.py .
 COPY docker-entrypoint.sh .
 RUN chmod +x main.py scripts/start.sh scripts/start_rq.sh docker-entrypoint.sh
 
-EXPOSE 5000 5002 5003 5005
+EXPOSE 10000 10002 10003 10005
 ENTRYPOINT ["/app/docker-entrypoint.sh"]
 CMD ["/usr/bin/supervisord", "-c", "supervisord.conf"]

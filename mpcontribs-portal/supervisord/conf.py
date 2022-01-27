@@ -6,9 +6,9 @@ PRODUCTION = int(os.environ.get("PRODUCTION", "1"))
 
 deployments = {}
 
-for deployment in os.environ.get("DEPLOYMENTS", "ml:5002").split(","):
+for deployment in os.environ.get("DEPLOYMENTS", "ml:10002").split(","):
     name, s3, tm, portal_port = deployment.split(":")
-    api_port = 5000 + int(portal_port) % 8080
+    api_port = 10000 + int(portal_port) % 8080
     deployments[name] = {
         "api_port": api_port,
         "portal_port": portal_port,
