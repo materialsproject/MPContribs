@@ -1,7 +1,7 @@
 #!/bin/bash
 
 zzz=$(($DEPLOYMENT*60))
-echo "waiting for $zzz seconds before start..."
+echo "$SUPERVISOR_PROCESS_NAME: waiting for $zzz seconds before start..."
 sleep $zzz
 
 exec python manage.py migrate --noinput
