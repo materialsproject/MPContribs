@@ -1,8 +1,6 @@
 #!/bin/bash
 
-set -e
-
-zzz=$(($DEPLOYMENT*5))
+zzz=$(($DEPLOYMENT*60))
 echo "waiting for $zzz seconds before start..."
 sleep $zzz
 
