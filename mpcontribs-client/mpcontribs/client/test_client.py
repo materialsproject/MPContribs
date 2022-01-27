@@ -23,21 +23,21 @@ def test_Client():
     assert spec.spec_dict["schemes"] == ["https"]
     assert spec.user_defined_formats["email"] == email_format
 
-    kwargs = {"headers": {"a": "b"}, "host": "localhost:5000"}
+    kwargs = {"headers": {"a": "b"}, "host": "localhost:10000"}
     spec = Client(**kwargs).swagger_spec
     assert spec.http_client.headers == {
         "Content-Type": "application/json", "a": "b"
     }
-    assert spec.origin_url == "http://localhost:5000/apispec.json"
-    assert spec.spec_dict["host"] == "localhost:5000"
+    assert spec.origin_url == "http://localhost:10000/apispec.json"
+    assert spec.spec_dict["host"] == "localhost:10000"
     assert spec.spec_dict["schemes"] == ["http"]
     assert spec.user_defined_formats["email"] == email_format
 
-    kwargs = {"host": "contribs-apis:5000"}
+    kwargs = {"host": "contribs-apis:10000"}
     spec = Client(**kwargs).swagger_spec
     assert spec.http_client.headers == {"Content-Type": "application/json"}
-    assert spec.origin_url == "http://contribs-apis:5000/apispec.json"
-    assert spec.spec_dict["host"] == "contribs-apis:5000"
+    assert spec.origin_url == "http://contribs-apis:10000/apispec.json"
+    assert spec.spec_dict["host"] == "contribs-apis:10000"
     assert spec.spec_dict["schemes"] == ["http"]
     assert spec.user_defined_formats["email"] == email_format
 
