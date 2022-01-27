@@ -64,7 +64,7 @@ BULMA = "is-narrow is-fullwidth has-background-light"
 PROVIDERS = {"github", "google", "facebook", "microsoft", "amazon"}
 COMPONENTS = ["structures", "tables", "attachments"]  # using list to maintain order
 SUBDOMAINS = ["contribs", "lightsources", "ml", "workshop-contribs"]
-PORTS = [5000, 5002, 5003, 5005]
+PORTS = [5000, 5002, 5003, 5005, 10000, 10002, 10003, 10005]
 VALID_URLS = {f"http://{h}:{p}" for p in PORTS for h in ["localhost", "contribs-apis"]}
 VALID_URLS |= {
     f"https://{n}-api{m}.materialsproject.org"
