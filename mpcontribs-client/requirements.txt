@@ -13,7 +13,7 @@ plotly==5.5.0
 pyIsEmail==1.4.0
 pymatgen==2022.1.24
 pymongo==4.0.1
-pyOpenSSL==21.0.0
+pyOpenSSL==22.0.0
 requests-futures==1.0.0
 service-identity==21.1.0
 swagger-spec-validator<2.7.4
