@@ -42,6 +42,8 @@ for mod in [
     "botocore",
     "websockets.protocol",
     "asyncio",
+    "ddtrace.internal.runtime.runtime_metrics",
+    "ddtrace.profiling.scheduler",
 ]:
     log = logging.getLogger(mod)
     log.setLevel("INFO")
