@@ -10,7 +10,6 @@ environment=
     {% endif %}
     DD_PROFILING_ENABLED="true",
     DD_LOGS_INJECTION="true",
-    DD_PATCH_MODULES="aioredis:false,aredis:false,boto:false,bottle:false,cassandra:false,consul:false,django:false,algoliasearch:false,grpc:false,httpx:false,mysql:false,mysqldb:false,pymysql:false,mariadb:false,pylibmc:false,pymemcache:false",
     PYTHONUNBUFFERED=1,
     MAX_REQUESTS=100000,
     MAX_REQUESTS_JITTER=10000,
@@ -19,6 +18,8 @@ environment=
     NODE_ENV="{{ node_env }}",
     DD_AGENT_HOST="{{ dd_agent_host }}",
     DD_LOG_LEVEL="{{ log_level }}",
+    DD_GEVENT_PATCH_ALL="true",
+    DD_TRACE_SAMPLE_RATE="1",
     DJANGO_SETTINGS_FILE="settings.py"
 
 [unix_http_server]

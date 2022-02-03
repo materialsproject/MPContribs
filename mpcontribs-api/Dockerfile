@@ -36,7 +36,6 @@ COPY supervisord supervisord
 COPY scripts scripts
 COPY main.py .
 COPY maintenance.py .
-COPY gunicorn.conf.py .
 COPY docker-entrypoint.sh .
 RUN chmod +x main.py scripts/start.sh scripts/start_rq.sh docker-entrypoint.sh
 

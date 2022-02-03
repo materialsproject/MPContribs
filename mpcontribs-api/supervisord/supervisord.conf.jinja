@@ -17,7 +17,6 @@ environment=
     MAIL_DEFAULT_SENDER="contribs@materialsproject.org",
     DD_PROFILING_ENABLED="true",
     DD_LOGS_INJECTION="true",
-    DD_PATCH_MODULES="aioredis:false,aredis:false,boto:false,bottle:false,cassandra:false,consul:false,django:false,algoliasearch:false,grpc:false,httpx:false,mysql:false,mysqldb:false,pymysql:false,mariadb:false,pylibmc:false,pymemcache:false,rediscluster:false",
     FLASK_APP="mpcontribs.api",
     PYTHONUNBUFFERED=1,
     MAX_REQUESTS=100000,
@@ -30,7 +29,9 @@ environment=
     DD_LOG_LEVEL="{{ flask_log_level }}",
     JUPYTER_GATEWAY_URL="{{ jupyter_gateway_url }}",
     JUPYTER_GATEWAY_HOST="{{ jupyter_gateway_host }}",
-    DD_AGENT_HOST="{{ dd_agent_host }}"
+    DD_AGENT_HOST="{{ dd_agent_host }}",
+    DD_GEVENT_PATCH_ALL="true",
+    DD_TRACE_SAMPLE_RATE="1"
 
 [program:main]
 command=./main.py

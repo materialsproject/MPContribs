@@ -67,7 +67,6 @@ COPY docker-entrypoint.sh .
 COPY manage.py .
 COPY start.sh .
 COPY maintenance.py .
-COPY gunicorn.conf.py .
 
 EXPOSE 8080 8082 8083 8085
 ENTRYPOINT ["/app/docker-entrypoint.sh"]
