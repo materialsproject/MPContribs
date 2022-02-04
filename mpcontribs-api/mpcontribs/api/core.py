@@ -18,7 +18,7 @@ from werkzeug.exceptions import Unauthorized
 from mpcontribs.api.config import DOC_DIR
 from mpcontribs.api import is_gunicorn
 
-logger = logging.getLogger("app")
+logger = logging.getLogger(__name__)
 
 
 def get_limit_params(resource, method):
@@ -451,7 +451,7 @@ class SwaggerViewType(MethodViewType):
                         if is_gunicorn:
                             with open(file_path, "w") as f:
                                 yaml.dump(spec, f)
-                                logger.warning(
+                                logger.debug(
                                     f"{cls.tags[0]}.{method.__name__} written to {file_path}"
                                 )
 

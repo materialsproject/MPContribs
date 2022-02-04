@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 """Flask App for MPContribs API"""
 import os
-import logging
 import boto3
 import urllib
+import logging
 import requests
-import rq_dashboard
+#import rq_dashboard
 #import flask_monitoringdashboard as dashboard
 import flask_mongorest.operators as ops
 
@@ -15,7 +15,6 @@ from flask import Flask, current_app, request, g
 from flask_marshmallow import Marshmallow
 from flask_mongoengine import MongoEngine
 from flask_mongorest import register_class
-from flask_log import Logging
 from flask_sse import sse
 from flask_compress import Compress
 from flasgger.base import Swagger
@@ -34,21 +33,7 @@ delimiter, max_depth = ".", 4
 invalidChars = set(punctuation.replace("*", ""))
 invalidChars.add(" ")
 is_gunicorn = "gunicorn" in os.environ.get("SERVER_SOFTWARE", "")
-
-
-for mod in [
-    "matplotlib",
-    "toronado.cssutils",
-    "botocore",
-    "websockets.protocol",
-    "asyncio",
-    "ddtrace.internal.runtime.runtime_metrics",
-    "ddtrace.profiling.scheduler",
-]:
-    log = logging.getLogger(mod)
-    log.setLevel("INFO")
-
-logger = logging.getLogger("app")
+logger = logging.getLogger(__name__)
 sns_client = boto3.client("sns")
 
 # NOTE not including Size below (special for arrays)
@@ -132,6 +117,7 @@ def create_kernel_connection(kernel_id):
 
 def get_kernels():
     """retrieve list of kernels from KernelGateway service"""
+
     try:
         r = requests.get(get_kernel_endpoint())
     except ConnectionError:
@@ -177,7 +163,6 @@ def create_app():
         CORS(app)  # enable for development (allow localhost)
 
     Compress(app)
-    Logging(app)
     Marshmallow(app)
     MongoEngine(app)
     Swagger(app, template=app.config.get("TEMPLATE"))
@@ -229,7 +214,7 @@ def create_app():
     if is_gunicorn:
         app.register_blueprint(sse, url_prefix="/stream")
         app.add_url_rule("/healthcheck", view_func=healthcheck)
-        app.register_blueprint(rq_dashboard.blueprint, url_prefix="/rq")
+        #app.register_blueprint(rq_dashboard.blueprint, url_prefix="/rq")
 
         #dashboard.config.init_from(file="dashboard.cfg")
         #dashboard.config.version = app.config["VERSION"]
