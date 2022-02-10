@@ -1755,7 +1755,9 @@ class Client(SwaggerClient):
             if paths:
                 npaths = len(paths)
                 ndownloads += npaths
-                logger.info(f"Downloaded {len(cids)} contributions for '{name}' in {npaths} file(s).")
+                logger.info(
+                    f"Downloaded {len(cids)} contributions for '{name}' in {npaths} file(s)."
+                )
             else:
                 logger.info(f"No new contributions to download for '{name}'.")
 
@@ -1775,7 +1777,9 @@ class Client(SwaggerClient):
                 if paths:
                     npaths = len(paths)
                     ndownloads += npaths
-                    logger.info(f"Downloaded {len(ids)} {component} for '{name}' in {npaths} file(s).")
+                    logger.info(
+                        f"Downloaded {len(ids)} {component} for '{name}' in {npaths} file(s)."
+                    )
                 else:
                     logger.info(f"No new {component} to download for '{name}'.")
 
