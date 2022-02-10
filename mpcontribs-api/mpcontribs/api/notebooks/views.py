@@ -17,13 +17,14 @@ from flask_mongorest.resources import Resource
 from mongoengine.errors import DoesNotExist
 from mongoengine.queryset.visitor import Q
 
-from mpcontribs.api import get_kernel_endpoint
+from mpcontribs.api import get_kernel_endpoint, get_logger
 from mpcontribs.api.core import SwaggerView
 from mpcontribs.api.contributions.document import Contributions
 from mpcontribs.api.notebooks.document import Notebooks
 from mpcontribs.api.notebooks import run_cells
 
 
+logger = get_logger(__name__)
 templates = os.path.join(os.path.dirname(flask_mongorest.__file__), "templates")
 notebooks = Blueprint("notebooks", __name__, template_folder=templates)
 
@@ -78,9 +79,9 @@ def execute_cells(cid, cells):
                 current_app.kernels[kernel_id] = None
                 return outputs
             else:
-                print(f"{kernel_id} busy with {running_cid}")
+                logger.warning(f"{kernel_id} busy with {running_cid}")
 
-        print("WAITING for a kernel to become available")
+        logger.warning("WAITING for a kernel to become available")
         sleep(5)
         ntries += 1
 
@@ -196,12 +197,12 @@ def make(projects=None, cids=None, force=False):
                 nb = Notebooks.objects.get(id=document.notebook.id)
                 nb.delete()
                 document.update(unset__notebook="")
-                print(f"Notebook {document.notebook.id} deleted.")
+                logger.debug(f"Notebook {document.notebook.id} deleted.")
             except DoesNotExist:
                 pass
 
         cid = str(document.id)
-        print(f"prep notebook for {cid} ...")
+        logger.debug(f"prep notebook for {cid} ...")
         document.reload("tables", "structures", "attachments")
 
         cells = [

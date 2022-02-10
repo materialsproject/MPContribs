@@ -219,7 +219,7 @@ def create_app():
         if is_gunicorn:
             setattr(app, "cron_job_id", f"auto-notebooks-build_{MPCONTRIBS_API_HOST}")
             make.cron('*/3 * * * *', app.cron_job_id)
-            print(f"CRONJOB {app.cron_job_id} added.")
+            logger.info(f"CRONJOB {app.cron_job_id} added.")
 
     def healthcheck():
         if not app.debug and not app.kernels:
