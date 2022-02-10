@@ -20,7 +20,7 @@ kwargs = {
     "production": PRODUCTION,
     "deployments": deployments,
     "nworkers": 2 if PRODUCTION else 1,
-    "reload": "" if PRODUCTION else "--reload",
+    "reload": int(not PRODUCTION),
     "node_env": "production" if PRODUCTION else "development",
     "dd_agent_host": "localhost" if PRODUCTION else "datadog",
     "mpcontribs_api_host": "localhost" if PRODUCTION else "contribs-apis",

@@ -67,6 +67,12 @@ COPY docker-entrypoint.sh .
 COPY manage.py .
 COPY start.sh .
 COPY maintenance.py .
+COPY gunicorn.conf.py .
+
+ENV DD_SERVICE contribs-portals
+ENV DD_ENV prod
+ENV DD_VERSION dev
+LABEL com.datadoghq.ad.logs='[{"source": "gunicorn", "service": "contribs-portals"}]'
 
 EXPOSE 8080 8082 8083 8085
 ENTRYPOINT ["/app/docker-entrypoint.sh"]
