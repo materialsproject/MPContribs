@@ -33,7 +33,6 @@ delimiter, max_depth = ".", 4
 invalidChars = set(punctuation.replace("*", ""))
 invalidChars.add(" ")
 is_gunicorn = "gunicorn" in os.environ.get("SERVER_SOFTWARE", "")
-logger = logging.getLogger(__name__)
 sns_client = boto3.client("sns")
 
 # NOTE not including Size below (special for arrays)
@@ -49,6 +48,24 @@ FILTERS = {
 }
 FILTERS["STRINGS"] = [ops.In, ops.Exact, ops.IExact, ops.Ne] + FILTERS["LONG_STRINGS"]
 FILTERS["ALL"] = FILTERS["STRINGS"] + FILTERS["NUMBERS"] + FILTERS["DATES"] + FILTERS["OTHERS"]
+
+
+class CustomLoggerAdapter(logging.LoggerAdapter):
+    def process(self, msg, kwargs):
+        prefix = self.extra.get('prefix')
+        return f"[{prefix}] {msg}" if prefix else msg, kwargs
+
+
+def get_logger(name):
+    logger = logging.getLogger(name)
+    process = os.environ.get("SUPERVISOR_PROCESS_NAME")
+    group = os.environ.get("SUPERVISOR_GROUP_NAME")
+    cfg = {"prefix": f"{group}/{process}"} if process and group else {}
+    logger.setLevel("DEBUG" if os.environ.get("FLASK_ENV") == "development" else "INFO")
+    return CustomLoggerAdapter(logger, cfg)
+
+
+logger = get_logger(__name__)
 
 
 def enter(path, key, value):
@@ -117,7 +134,6 @@ def create_kernel_connection(kernel_id):
 
 def get_kernels():
     """retrieve list of kernels from KernelGateway service"""
-
     try:
         r = requests.get(get_kernel_endpoint())
     except ConnectionError:
@@ -149,13 +165,13 @@ def create_app():
     """create flask app"""
     app = Flask(__name__)
     app.config.from_pyfile("config.py", silent=True)
-    logger.info("database: " + app.config["MPCONTRIBS_DB"])
     app.config["USTS"] = URLSafeTimedSerializer(app.secret_key)
     app.jinja_env.globals["get_resource_as_string"] = get_resource_as_string
     app.jinja_env.lstrip_blocks = True
     app.jinja_env.trim_blocks = True
     app.config["TEMPLATE"]["schemes"] = ["http"] if app.debug else ["https"]
     MPCONTRIBS_API_HOST = os.environ["MPCONTRIBS_API_HOST"]
+    logger.info("database: " + app.config["MPCONTRIBS_DB"])
 
     if app.debug:
         from flask_cors import CORS

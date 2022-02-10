@@ -37,7 +37,13 @@ COPY scripts scripts
 COPY main.py .
 COPY maintenance.py .
 COPY docker-entrypoint.sh .
+COPY gunicorn.conf.py .
 RUN chmod +x main.py scripts/start.sh scripts/start_rq.sh docker-entrypoint.sh
+
+ENV DD_SERVICE contribs-apis
+ENV DD_ENV prod
+ENV DD_VERSION dev
+LABEL com.datadoghq.ad.logs='[{"source": "gunicorn", "service": "contribs-apis"}]'
 
 EXPOSE 10000 10002 10003 10005
 ENTRYPOINT ["/app/docker-entrypoint.sh"]

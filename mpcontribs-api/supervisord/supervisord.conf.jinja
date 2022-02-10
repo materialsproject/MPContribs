@@ -22,7 +22,7 @@ environment=
     MAX_REQUESTS=100000,
     MAX_REQUESTS_JITTER=10000,
     NWORKERS={{ nworkers }},
-    RELOAD="{{ reload }}",
+    RELOAD={{ reload }},
     NODE_ENV="{{ node_env }}",
     FLASK_ENV="{{ flask_env }}",
     FLASK_LOG_LEVEL="{{ flask_log_level }}",
@@ -34,7 +34,7 @@ environment=
     DD_TRACE_SAMPLE_RATE="1"
 
 [program:main]
-command=./main.py
+command=ddtrace-run ./main.py
 directory=/app
 stdout_logfile=/dev/fd/1
 stdout_logfile_maxbytes=0

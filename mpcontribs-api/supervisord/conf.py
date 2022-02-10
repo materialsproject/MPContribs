@@ -22,7 +22,7 @@ kwargs = {
     "production": PRODUCTION,
     "deployments": deployments,
     "nworkers": 2 if PRODUCTION else 1,
-    "reload": "" if PRODUCTION else "--reload",
+    "reload": int(not PRODUCTION),
     "node_env": "production" if PRODUCTION else "development",
     "flask_log_level": "INFO" if PRODUCTION else "DEBUG",
     "jupyter_gateway_host": f"localhost:{KG_PORT}" if PRODUCTION else f"kernel-gateway:{KG_PORT}",

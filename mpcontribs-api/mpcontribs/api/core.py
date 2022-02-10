@@ -16,9 +16,9 @@ from flask_mongorest.views import ResourceView
 from mongoengine.queryset.visitor import Q
 from werkzeug.exceptions import Unauthorized
 from mpcontribs.api.config import DOC_DIR
-from mpcontribs.api import is_gunicorn
+from mpcontribs.api import is_gunicorn, get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 def get_limit_params(resource, method):
