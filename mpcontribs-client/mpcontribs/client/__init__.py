@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import io
 import sys
 import os
 import ujson
@@ -101,6 +102,18 @@ ureg.define("atom = 1")
 ureg.define("bohr_magneton = e * hbar / (2 * m_e) = µᵇ = µ_B = mu_B")
 ureg.define("electron_mass = 9.1093837015e-31 kg = mₑ = m_e")
 
+development = os.environ.get("NODE_ENV") == "development"
+log_level = logging.DEBUG if development else logging.INFO
+
+
+class LogFilter(logging.Filter):
+    def __init__(self, level, *args, **kwargs):
+        self.level = level
+        super(LogFilter, self).__init__(*args, **kwargs)
+
+    def filter(self, record):
+        return record.levelno < self.level
+
 
 class CustomLoggerAdapter(logging.LoggerAdapter):
     def process(self, msg, kwargs):
@@ -108,16 +121,39 @@ class CustomLoggerAdapter(logging.LoggerAdapter):
         return f"[{prefix}] {msg}" if prefix else msg, kwargs
 
 
+class TqdmToLogger(io.StringIO):
+    logger = None
+    level = None
+    buf = ''
+
+    def __init__(self, logger, level=None):
+        super(TqdmToLogger, self).__init__()
+        self.logger = logger
+        self.level = level or logging.INFO
+
+    def write(self, buf):
+        self.buf = buf.strip('\r\n\t ')
+
+    def flush(self):
+        self.logger.log(self.level, self.buf)
+
+
 def get_logger(name):
     logger = logging.getLogger(name)
     process = os.environ.get("SUPERVISOR_PROCESS_NAME")
     group = os.environ.get("SUPERVISOR_GROUP_NAME")
     cfg = {"prefix": f"{group}/{process}"} if process and group else {}
-    logger.setLevel("DEBUG" if os.environ.get("NODE_ENV") == "development" else "INFO")
+    info_handler = logging.StreamHandler(sys.stdout)
+    error_handler = logging.StreamHandler(sys.stderr)
+    info_handler.addFilter(LogFilter(logging.WARNING))
+    error_handler.setLevel(max(logging.DEBUG, logging.WARNING))
+    logger.handlers = [info_handler, error_handler]
+    logger.setLevel(log_level)
     return CustomLoggerAdapter(logger, cfg)
 
 
 logger = get_logger(__name__)
+tqdm_out = TqdmToLogger(logger, level=log_level)
 
 
 def get_md5(d):
@@ -364,7 +400,7 @@ def _run_futures(futures, total: int = 0, timeout: int = -1, desc=None):
     total = total if total_set else len(futures)
     responses = {}
 
-    with tqdm(total=total, desc=desc) as pbar:
+    with tqdm(total=total, desc=desc, file=tqdm_out) as pbar:
         for future in as_completed(futures):
             if not future.cancelled():
                 response = future.result()
