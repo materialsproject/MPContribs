@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import io
 import sys
 import os
 import ujson
@@ -53,7 +54,6 @@ from pint.unit import UnitDefinition
 from pint.converters import ScaleConverter
 from pint.errors import DimensionalityError
 from tempfile import gettempdir
-from tqdm.contrib.logging import logging_redirect_tqdm
 
 RETRIES = 3
 MAX_WORKERS = 8
@@ -102,7 +102,8 @@ ureg.define("atom = 1")
 ureg.define("bohr_magneton = e * hbar / (2 * m_e) = µᵇ = µ_B = mu_B")
 ureg.define("electron_mass = 9.1093837015e-31 kg = mₑ = m_e")
 
-log_level = "DEBUG" if os.environ.get("NODE_ENV") == "development" else "INFO"
+development = os.environ.get("NODE_ENV") == "development"
+log_level = logging.DEBUG if development else logging.INFO
 
 
 class LogFilter(logging.Filter):
@@ -117,6 +118,23 @@ class CustomLoggerAdapter(logging.LoggerAdapter):
     def process(self, msg, kwargs):
         prefix = self.extra.get('prefix')
         return f"[{prefix}] {msg}" if prefix else msg, kwargs
+
+
+class TqdmToLogger(io.StringIO):
+    logger = None
+    level = None
+    buf = ''
+
+    def __init__(self, logger, level=None):
+        super(TqdmToLogger, self).__init__()
+        self.logger = logger
+        self.level = level or logging.INFO
+
+    def write(self, buf):
+        self.buf = buf.strip('\r\n\t ')
+
+    def flush(self):
+        self.logger.log(self.level, self.buf)
 
 
 def get_logger(name):
@@ -134,6 +152,7 @@ def get_logger(name):
 
 
 logger = get_logger(__name__)
+tqdm_out = TqdmToLogger(logger, level=log_level)
 
 
 def get_md5(d):
@@ -380,7 +399,7 @@ def _run_futures(futures, total: int = 0, timeout: int = -1, desc=None):
     total = total if total_set else len(futures)
     responses = {}
 
-    with tqdm(total=total, desc=desc) as pbar:
+    with tqdm(total=total, desc=desc, file=tqdm_out) as pbar:
         for future in as_completed(futures):
             if not future.cancelled():
                 response = future.result()
