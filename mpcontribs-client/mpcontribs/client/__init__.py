@@ -53,6 +53,7 @@ from pint.unit import UnitDefinition
 from pint.converters import ScaleConverter
 from pint.errors import DimensionalityError
 from tempfile import gettempdir
+from tqdm.contrib.logging import logging_redirect_tqdm
 
 RETRIES = 3
 MAX_WORKERS = 8
@@ -101,6 +102,16 @@ ureg.define("atom = 1")
 ureg.define("bohr_magneton = e * hbar / (2 * m_e) = µᵇ = µ_B = mu_B")
 ureg.define("electron_mass = 9.1093837015e-31 kg = mₑ = m_e")
 
+log_level = "DEBUG" if os.environ.get("NODE_ENV") == "development" else "INFO"
+
+
+class LogFilter(logging.Filter):
+    def __init__(self, level):
+        self.level = level
+
+    def filter(self, record):
+        return record.levelno < self.level
+
 
 class CustomLoggerAdapter(logging.LoggerAdapter):
     def process(self, msg, kwargs):
@@ -113,7 +124,12 @@ def get_logger(name):
     process = os.environ.get("SUPERVISOR_PROCESS_NAME")
     group = os.environ.get("SUPERVISOR_GROUP_NAME")
     cfg = {"prefix": f"{group}/{process}"} if process and group else {}
-    logger.setLevel("DEBUG" if os.environ.get("NODE_ENV") == "development" else "INFO")
+    info_handler = logging.StreamHandler(sys.stdout)
+    error_handler = logging.StreamHandler(sys.stderr)
+    info_handler.addFilter(LogFilter(logging.WARNING))
+    error_handler.setLevel(max(logging.DEBUG, logging.WARNING))
+    logger.handlers = [info_handler, error_handler]
+    logger.setLevel(log_level)
     return CustomLoggerAdapter(logger, cfg)
 
 
