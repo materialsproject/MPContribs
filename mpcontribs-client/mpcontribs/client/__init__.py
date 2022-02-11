@@ -107,8 +107,9 @@ log_level = logging.DEBUG if development else logging.INFO
 
 
 class LogFilter(logging.Filter):
-    def __init__(self, level):
+    def __init__(self, level, *args, **kwargs):
         self.level = level
+        super(LogFilter, self).__init__(*args, **kwargs)
 
     def filter(self, record):
         return record.levelno < self.level
