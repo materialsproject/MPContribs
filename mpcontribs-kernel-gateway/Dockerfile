@@ -35,6 +35,12 @@ ENV KG_PORT=10100
 
 EXPOSE 10100
 COPY make_seed.py .
-RUN python make_seed.py
+COPY start.sh .
+RUN python make_seed.py && chmod +x start.sh
 
-CMD wait-for-it.sh $DD_TRACE_HOST -s -t 60 -- ddtrace-run jupyter kernelgateway
+ENV DD_SERVICE contribs-kernel-gateway
+ENV DD_ENV prod
+ENV DD_VERSION dev
+LABEL com.datadoghq.ad.logs='[{"source": "gunicorn", "service": "contribs-kernel-gateway"}]'
+
+CMD ./start.sh
