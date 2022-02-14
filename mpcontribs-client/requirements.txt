@@ -9,7 +9,7 @@ json2html==1.3.0
 jsonschema<4.0
 pandas==1.4.0
 pint==0.18
-plotly==5.5.0
+plotly==5.6.0
 pyIsEmail==1.4.0
 pymatgen==2022.2.7
 pymongo==4.0.1
