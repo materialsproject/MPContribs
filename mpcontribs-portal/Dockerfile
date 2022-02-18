@@ -71,7 +71,8 @@ COPY gunicorn.conf.py .
 
 ENV DD_SERVICE contribs-portals
 ENV DD_ENV prod
-ENV DD_VERSION dev
+ARG VERSION
+ENV DD_VERSION $VERSION
 LABEL com.datadoghq.ad.logs='[{"source": "gunicorn", "service": "contribs-portals"}]'
 
 EXPOSE 8080 8082 8083 8085

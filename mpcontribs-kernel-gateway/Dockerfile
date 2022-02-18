@@ -40,7 +40,8 @@ RUN python make_seed.py && chmod +x start.sh
 
 ENV DD_SERVICE contribs-kernel-gateway
 ENV DD_ENV prod
-ENV DD_VERSION dev
+ARG VERSION
+ENV DD_VERSION $VERSION
 LABEL com.datadoghq.ad.logs='[{"source": "gunicorn", "service": "contribs-kernel-gateway"}]'
 
 CMD ./start.sh
