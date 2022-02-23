@@ -103,6 +103,7 @@ class Notebooks(Document):
                         data["image/png"] = key
                     elif len(data["image/png"]) == 40:
                         key = data.pop("image/png")
+                        # TODO catch key doesn't exist
                         retr = s3_client.get_object(Bucket=BUCKET, Key=key)
                         gzip_buffer = BytesIO(retr["Body"].read())
                         data["image/png"] = b64encode(gzip_buffer.getvalue()).decode()
