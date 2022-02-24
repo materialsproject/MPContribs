@@ -102,8 +102,8 @@ ureg.define("atom = 1")
 ureg.define("bohr_magneton = e * hbar / (2 * m_e) = µᵇ = µ_B = mu_B")
 ureg.define("electron_mass = 9.1093837015e-31 kg = mₑ = m_e")
 
-development = os.environ.get("NODE_ENV") == "development"
-log_level = logging.DEBUG if development else logging.INFO
+LOG_LEVEL = os.environ.get("MPCONTRIBS_CLIENT_LOG_LEVEL", "INFO")
+log_level = getattr(logging, LOG_LEVEL.upper())
 
 
 class LogFilter(logging.Filter):
@@ -436,7 +436,7 @@ def _load(protocol, host, headers_json, project):
 
     if apispec.exists():
         spec_dict = ujson.loads(apispec.read_bytes())
-        logger.info(f"Specs for {origin_url} re-loaded from {apispec}.")
+        logger.debug(f"Specs for {origin_url} re-loaded from {apispec}.")
     else:
         try:
             if requests.options(f"{url}/healthcheck").status_code == 200:
@@ -446,7 +446,7 @@ def _load(protocol, host, headers_json, project):
                 with apispec.open("w") as f:
                     ujson.dump(spec_dict, f)
 
-                logger.info(f"Specs for {origin_url} saved as {apispec}.")
+                logger.debug(f"Specs for {origin_url} saved as {apispec}.")
             else:
                 spec_dict = EMPTY_SPEC_DICT
                 logger.error(f"Specs not loaded: Healthcheck for {url} failed!")
@@ -563,7 +563,7 @@ class Client(SwaggerClient):
 
         if apikey and headers is not None:
             apikey = None
-            logger.info("headers set => ignoring apikey!")
+            logger.debug("headers set => ignoring apikey!")
 
         self.apikey = apikey
         self.headers = headers or {}
