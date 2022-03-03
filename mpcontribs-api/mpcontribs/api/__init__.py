@@ -222,6 +222,8 @@ def create_app():
             logger.info(f"CRONJOB {app.cron_job_id} added.")
 
     def healthcheck():
+        # TODO run mpcontribs-api in next-gen task on different port so this won't be needed
+        # spams logs with expected 500 errors
         if not app.debug and not app.kernels:
             return "KERNEL GATEWAY NOT AVAILABLE", 500
 
