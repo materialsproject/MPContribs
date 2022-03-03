@@ -76,9 +76,6 @@ VALID_URLS |= {f"http://localhost.{n}-api.materialsproject.org" for n in SUBDOMA
 SUPPORTED_FILETYPES = (Gz, Jpeg, Png, Gif, Tiff)
 SUPPORTED_MIMES = [t().mime for t in SUPPORTED_FILETYPES]
 DEFAULT_DOWNLOAD_DIR = Path.home() / "mpcontribs-downloads"
-EMPTY_SPEC_DICT = {
-    "swagger": "2.0", "paths": {}, "info": {"title": "Swagger", "version": "0.0"},
-}
 
 j2h = Json2Html()
 pd.options.plotting.backend = "plotly"
@@ -238,7 +235,7 @@ def _response_hook(resp, *args, **kwargs):
         resp.result = resp.content
         resp.count = 1
     else:
-        logger.error(resp.status_code)
+        logger.error(f"request failed with status {resp.status_code}!")
         resp.count = 0
 
 
@@ -393,14 +390,16 @@ class Attachment(dict):
         )
 
 
-def _run_futures(futures, total: int = 0, timeout: int = -1, desc=None):
+def _run_futures(futures, total: int = 0, timeout: int = -1, desc=None, disable=False):
     """helper to run futures/requests"""
     start = time.perf_counter()
     total_set = total > 0
     total = total if total_set else len(futures)
     responses = {}
 
-    with tqdm(total=total, desc=desc, file=tqdm_out) as pbar:
+    with tqdm(
+        total=total, desc=desc, file=tqdm_out, miniters=1, delay=5, disable=disable
+    ) as pbar:
         for future in as_completed(futures):
             if not future.cancelled():
                 response = future.result()
@@ -433,26 +432,37 @@ def _load(protocol, host, headers_json, project):
     origin_url = f"{url}/apispec.json"
     fn = urlsafe_b64encode(origin_url.encode('utf-8')).decode('utf-8')
     apispec = Path(gettempdir()) / fn
+    spec_dict = None
 
     if apispec.exists():
         spec_dict = ujson.loads(apispec.read_bytes())
         logger.debug(f"Specs for {origin_url} re-loaded from {apispec}.")
     else:
-        try:
-            if requests.options(f"{url}/healthcheck").status_code == 200:
-                loader = Loader(http_client)
-                spec_dict = loader.load_spec(origin_url)
+        retries, max_retries = 0, 3
+        while retries < max_retries:
+            try:
+                if requests.options(f"{url}/healthcheck").status_code == 200:
+                    loader = Loader(http_client)
+                    spec_dict = loader.load_spec(origin_url)
 
-                with apispec.open("w") as f:
-                    ujson.dump(spec_dict, f)
+                    with apispec.open("w") as f:
+                        ujson.dump(spec_dict, f)
 
-                logger.debug(f"Specs for {origin_url} saved as {apispec}.")
-            else:
-                spec_dict = EMPTY_SPEC_DICT
-                logger.error(f"Specs not loaded: Healthcheck for {url} failed!")
-        except RequestException:
-            spec_dict = EMPTY_SPEC_DICT
-            logger.error(f"Specs not loaded: Could not connect to {url}!")
+                    logger.debug(f"Specs for {origin_url} saved as {apispec}.")
+                    break
+                else:
+                    retries += 1
+                    logger.warning(
+                        f"Specs not loaded: Healthcheck for {url} failed! Waiting 60s ..."
+                    )
+                    time.sleep(60)
+            except RequestException:
+                retries += 1
+                logger.warning(f"Specs not loaded: Could not connect to {url}! Waiting 60s ...")
+                time.sleep(60)
+
+    if not spec_dict:
+        raise ValueError(f"Could not load specs from {url}!")  # not cached
 
     spec_dict["host"] = host
     spec_dict["schemes"] = [protocol]
@@ -480,11 +490,11 @@ def _load(protocol, host, headers_json, project):
     future = session.get(f"{url}/projects/", **kwargs)
     track_id = "get_columns"
     setattr(future, "track_id", track_id)
-    resp = _run_futures([future], timeout=3).get(track_id, {}).get("result")
+    resp = _run_futures([future], timeout=3, disable=True).get(track_id, {}).get("result")
     session.close()
 
     if not resp or not resp["data"]:
-        return swagger_spec
+        raise ValueError(f"Failed to load projects for query {query}!")
 
     if project and not resp["data"]:
         raise ValueError(f"{project} doesn't exist, or access denied!")
