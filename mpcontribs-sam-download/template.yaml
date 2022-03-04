@@ -1,0 +1,34 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+
+Globals:
+  Function:
+    Handler: app.lambda_handler
+    Runtime: python3.9
+    MemorySize: 1024
+    Timeout: 900
+    VpcConfig:
+      SecurityGroupIds:
+        - sg-0c15eb3bae6647d91
+      SubnetIds:
+        - subnet-064fe19cf24399bf4
+        - subnet-037dc2c4a90f16ddb
+    Architectures:
+      - x86_64
+
+Resources:
+  MPContribsMakeDownloadFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: make_download/
+      Environment:
+        Variables:
+          MPCONTRIBS_CLIENT_LOG_LEVEL: DEBUG
+
+Outputs:
+  MPContribsMakeDownloadFunction:
+    Description: "MPContribsMakeDownloadFunction Lambda Function ARN"
+    Value: !GetAtt MPContribsMakeDownloadFunction.Arn
+  MPContribsMakeDownloadFunctionIamRole:
+    Description: "Implicit IAM Role created for MPContribsMakeDownloadFunction"
+    Value: !GetAtt MPContribsMakeDownloadFunctionRole.Arn

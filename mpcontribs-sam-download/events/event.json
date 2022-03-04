@@ -1,0 +1,11 @@
+{
+    "filename": "lambda-sandbox-test",
+    "bucket": "mpcontribs-downloads",
+    "host": "contribs-apis:10000",
+    "headers": {
+        "X-Consumer-Username": "google:phuck@lbl.gov",
+        "X-Authenticated-Groups": "admin"
+    },
+    "query": {"project": "sandbox", "format": "json"},
+    "include": []
+}

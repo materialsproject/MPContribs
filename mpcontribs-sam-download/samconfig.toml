@@ -1,0 +1,11 @@
+version = 0.1
+[default]
+[default.deploy]
+[default.deploy.parameters]
+stack_name = "mpcontribs-sam-download"
+s3_bucket = "aws-sam-cli-managed-default-samclisourcebucket-1s64twonjniyf"
+s3_prefix = "mpcontribs-sam-download"
+region = "us-east-1"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM"
+image_repositories = []
