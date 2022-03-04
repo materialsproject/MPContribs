@@ -441,8 +441,8 @@ def _load(protocol, host, headers_json, project):
         retries, max_retries = 0, 3
         while retries < max_retries:
             try:
-                if 'unittest' in sys.modules or \
-                   requests.options(f"{url}/healthcheck").status_code == 200:
+                is_mock_test = 'unittest' in sys.modules and protocol == "http"
+                if is_mock_test or requests.options(f"{url}/healthcheck").status_code == 200:
                     loader = Loader(http_client)
                     spec_dict = loader.load_spec(origin_url)
 
