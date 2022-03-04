@@ -99,8 +99,8 @@ def landingpage(request, project):
         """.strip()
 
     try:
-        with Client(**ckwargs) as client:
-            prov = client.projects.get_entry(pk=project, _fields=["_all"]).result()
+        client = Client(**ckwargs)
+        prov = client.projects.get_entry(pk=project, _fields=["_all"]).result()
     except HTTPNotFound:
         msg = f"Project '{project}' not found or access denied!"
         if not_logged_in:
@@ -207,38 +207,38 @@ def contribution(request, cid):
         """.strip()
         return render(request, "contribution.html", ctx.flatten())
 
-    with Client(**ckwargs) as client:
-        try:
-            contrib = client.contributions.get_entry(
-                pk=cid, _fields=["identifier", "needs_build", "notebook"]
-            ).result()
-        except HTTPNotFound:
-            return HttpResponse(f"Contribution {cid} not found.", status=404)
+    client = Client(**ckwargs)
+    try:
+        contrib = client.contributions.get_entry(
+            pk=cid, _fields=["identifier", "needs_build", "notebook"]
+        ).result()
+    except HTTPNotFound:
+        return HttpResponse(f"Contribution {cid} not found.", status=404)
 
-        if "notebook" not in contrib or contrib.get("needs_build", True):
-            url = f"{client.url}/notebooks/build"
-            r = requests.get(url, params={"cids": cid, "force": True})
-            if r.status_code == requests.codes.ok:
-                status = r.json().get("result", {}).get("status")
-                if status != "COMPLETED":
-                    ctx["alert"] = f"Notebook build failed with status {status}"
-                    return render(request, "contribution.html", ctx.flatten())
-
-                contrib = client.contributions.get_entry(
-                    pk=cid, _fields=["identifier", "notebook"]
-                ).result()
-            else:
-                ctx["alert"] = f"Notebook build failed with status {r.status_code}"
+    if "notebook" not in contrib or contrib.get("needs_build", True):
+        url = f"{client.url}/notebooks/build"
+        r = requests.get(url, params={"cids": cid, "force": True})
+        if r.status_code == requests.codes.ok:
+            status = r.json().get("result", {}).get("status")
+            if status != "COMPLETED":
+                ctx["alert"] = f"Notebook build failed with status {status}"
                 return render(request, "contribution.html", ctx.flatten())
 
-        nid = contrib["notebook"]["id"]
-        try:
-            nb = client.notebooks.get_entry(pk=nid, _fields=["_all"]).result()
-        except HTTPNotFound:
-            return HttpResponse(f"Notebook {nid} not found.", status=404)
+            contrib = client.contributions.get_entry(
+                pk=cid, _fields=["identifier", "notebook"]
+            ).result()
+        else:
+            ctx["alert"] = f"Notebook build failed with status {r.status_code}"
+            return render(request, "contribution.html", ctx.flatten())
 
-        ctx["identifier"], ctx["cid"] = contrib["identifier"], cid
-        ctx["nb"], _ = export_notebook(nb, cid)
+    nid = contrib["notebook"]["id"]
+    try:
+        nb = client.notebooks.get_entry(pk=nid, _fields=["_all"]).result()
+    except HTTPNotFound:
+        return HttpResponse(f"Notebook {nid} not found.", status=404)
+
+    ctx["identifier"], ctx["cid"] = contrib["identifier"], cid
+    ctx["nb"], _ = export_notebook(nb, cid)
 
     return render(request, "contribution.html", ctx.flatten())
 
@@ -255,17 +255,17 @@ def show_component(request, oid):
         """.strip()
         return HttpResponse(msg, status=403)
 
-    with Client(**ckwargs) as client:
+    client = Client(**ckwargs)
+    try:
+        resp = client.get_structure(oid)
+    except HTTPNotFound:
         try:
-            resp = client.get_structure(oid)
+            resp = client.get_table(oid)
         except HTTPNotFound:
             try:
-                resp = client.get_table(oid)
+                resp = client.get_attachment(oid)
             except HTTPNotFound:
-                try:
-                    resp = client.get_attachment(oid)
-                except HTTPNotFound:
-                    return HttpResponse(f"Component with ObjectId {oid} not found.", status=404)
+                return HttpResponse(f"Component with ObjectId {oid} not found.", status=404)
 
     if resp is not None:
         return HttpResponse(resp.info().display())
@@ -285,30 +285,30 @@ def download_component(request, oid):
         """.strip()
         return HttpResponse(msg, status=403)
 
-    with Client(**ckwargs) as client:
+    client = Client(**ckwargs)
+    try:
+        resp = client.structures.get_entry(pk=oid, _fields=["name", "cif"]).result()
+        name = resp["name"]
+        content = gzip.compress(bytes(resp["cif"], "utf-8"))
+        content_type = "application/gzip"
+        filename = f"{oid}_{name}.cif.gz"
+    except HTTPNotFound:
         try:
-            resp = client.structures.get_entry(pk=oid, _fields=["name", "cif"]).result()
+            resp = client.get_table(oid)
+            content = gzip.compress(bytes(resp.to_csv(), "utf-8"))
+            resp = client.tables.get_entry(pk=oid, _fields=["name"]).result()
             name = resp["name"]
-            content = gzip.compress(bytes(resp["cif"], "utf-8"))
             content_type = "application/gzip"
-            filename = f"{oid}_{name}.cif.gz"
+            filename = f"{oid}_{name}.csv.gz"
         except HTTPNotFound:
             try:
-                resp = client.get_table(oid)
-                content = gzip.compress(bytes(resp.to_csv(), "utf-8"))
-                resp = client.tables.get_entry(pk=oid, _fields=["name"]).result()
+                resp = client.get_attachment(oid)
                 name = resp["name"]
-                content_type = "application/gzip"
-                filename = f"{oid}_{name}.csv.gz"
+                content = resp.decode()
+                content_type = resp["mime"]
+                filename = f"{oid}_{name}"
             except HTTPNotFound:
-                try:
-                    resp = client.get_attachment(oid)
-                    name = resp["name"]
-                    content = resp.decode()
-                    content_type = resp["mime"]
-                    filename = f"{oid}_{name}"
-                except HTTPNotFound:
-                    return HttpResponse(f"Component with ObjectId {oid} not found.", status=404)
+                return HttpResponse(f"Component with ObjectId {oid} not found.", status=404)
 
     if content:
         response = HttpResponse(content, content_type=content_type)
@@ -331,10 +331,10 @@ def download_contribution(request, cid):
     tmpdir = Path("/tmp")
     outdir = tmpdir / "download"
 
-    with Client(**ckwargs) as client:
-        client.download_contributions(
-            query={"id": cid}, outdir=outdir, include=list(COMPONENTS)
-        )
+    client = Client(**ckwargs)
+    client.download_contributions(
+        query={"id": cid}, outdir=outdir, include=list(COMPONENTS)
+    )
 
     zipfile = Path(make_archive(tmpdir / cid, "zip", outdir))
     resp = zipfile.read_bytes()
@@ -372,9 +372,8 @@ def _get_download(key, content_type="application/zip"):
 def _reconcile_include(request, project: str, fields: list):
     ckwargs = client_kwargs(request)
     avail_components = set()
-
-    with Client(**ckwargs) as client:
-        info = client.projects.get_entry(pk=project, _fields=["columns"]).result()
+    client = Client(**ckwargs)
+    info = client.projects.get_entry(pk=project, _fields=["columns"]).result()
 
     for column in info["columns"]:
         path = column["path"]
