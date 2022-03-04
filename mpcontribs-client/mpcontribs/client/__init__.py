@@ -67,7 +67,10 @@ PROVIDERS = {"github", "google", "facebook", "microsoft", "amazon"}
 COMPONENTS = ["structures", "tables", "attachments"]  # using list to maintain order
 SUBDOMAINS = ["contribs", "lightsources", "ml", "workshop-contribs"]
 PORTS = [5000, 5002, 5003, 5005, 10000, 10002, 10003, 10005]
-VALID_URLS = {f"http://{h}:{p}" for p in PORTS for h in ["localhost", "contribs-apis"]}
+HOSTS = ["localhost", "contribs-apis"]
+HOSTS += [f"192.168.0.{i}" for i in range(36, 47)]  # PrivateSubnetOne
+HOSTS += [f"192.168.0.{i}" for i in range(52, 63)]  # PrivateSubnetTwo
+VALID_URLS = {f"http://{h}:{p}" for p in PORTS for h in HOSTS}
 VALID_URLS |= {
     f"https://{n}-api{m}.materialsproject.org"
     for n in SUBDOMAINS for m in ["", "-preview"]
