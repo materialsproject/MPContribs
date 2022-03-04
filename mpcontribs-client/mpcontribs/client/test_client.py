@@ -44,6 +44,15 @@ def test_mock():
         assert spec.spec_dict["schemes"] == ["http"]
         assert spec.user_defined_formats["email"] == email_format
 
+    host = "192.168.0.40:10000"
+    with Client(host=host) as client:
+        spec = client.swagger_spec
+        assert spec.http_client.headers == {"Content-Type": "application/json"}
+        assert spec.origin_url == f"http://{host}/apispec.json"
+        assert spec.spec_dict["host"] == host
+        assert spec.spec_dict["schemes"] == ["http"]
+        assert spec.user_defined_formats["email"] == email_format
+
     with pytest.raises(ValueError):
         with Client(host="not.valid.org") as client:
             spec = client.swagger_spec
