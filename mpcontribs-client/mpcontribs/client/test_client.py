@@ -39,7 +39,7 @@ def test_mock():
     with Client(host=host) as client:
         spec = client.swagger_spec
         assert spec.http_client.headers == {"Content-Type": "application/json"}
-        assert spec.origin_url == f"http://{host}:10000/apispec.json"
+        assert spec.origin_url == f"http://{host}/apispec.json"
         assert spec.spec_dict["host"] == host
         assert spec.spec_dict["schemes"] == ["http"]
         assert spec.user_defined_formats["email"] == email_format
