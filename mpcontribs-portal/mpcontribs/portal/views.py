@@ -9,6 +9,7 @@ import nbformat
 import requests
 import urllib
 
+from redis import Redis
 from io import BytesIO
 from copy import deepcopy
 from pathlib import Path
@@ -33,6 +34,8 @@ BUCKET = os.environ.get("S3_DOWNLOADS_BUCKET", "mpcontribs-downloads")
 COMPONENTS = {"structures", "tables", "attachments"}
 j2h = Json2Html()
 s3_client = boto3.client('s3')
+lambda_client = boto3.client('lambda')
+redis_store = Redis.from_url("redis://" + os.environ["REDIS_ADDRESS"])
 
 
 def visit(path, key, value):
@@ -458,12 +461,11 @@ def create_download(request):
         return JsonResponse({"error": "Missing project parameter."})
 
     query, include = _get_query_include(request)
-
-    with Client(**ckwargs) as client:
-        return make_download(client, query, include, timeout=20)
+    return make_download(headers, query, include)
 
 
-def make_download(client, query, include=None, timeout=-1):
+def make_download(headers, query, include=None):
+    client = Client(headers=headers)
     include = include or []
     key = _get_download_key(query, include)
     total_count, total_pages = client.get_totals(query=query, op="download")
@@ -478,56 +480,50 @@ def make_download(client, query, include=None, timeout=-1):
     last_modified = client.contributions.get_entries(
         _sort="-last_modified", _fields=["last_modified"], _limit=1, **kwargs
     ).result()["data"][0]["last_modified"]
+    json_resp = {"status": "UNDEFINED"}
 
     try:
         s3_client.head_object(Bucket=BUCKET, Key=key, IfModifiedSince=last_modified)
+        json_resp["status"] = "READY"  # latest version already generated
     except ClientError:
-        all_ids = client.get_all_ids(
-            query=query, include=include, timeout=timeout
-        ).get(query["project"])
-        if not all_ids:
-            return JsonResponse({"error": "No results for query."})
+        try:
+            s3_resp = s3_client.head_object(Bucket=BUCKET, Key=key)
+            next_version = s3_resp["Metadata"].get("version", 1) + 1
+        except ClientError:
+            next_version = 1  # about to generate first version
 
-        ncontribs = len(all_ids["ids"])
+        filename = _get_filename(query, include),
+        fmt = query.get("format", "json")
+        redis_key = f"{BUCKET}:{filename}:{fmt}:{next_version}"
+        status = redis_store.get(redis_key)
 
-        if ncontribs < total_count:
-            # timeout reached -> use API/client
-            return JsonResponse({
-                "error": "Too many contributions matching query. Use API/client."
-            })
-
-        all_files = total_pages  # for contributions
-        for component in include:
-            ncomp = len(all_ids[component]["ids"])
-            per_page, _ = client._get_per_page_default_max(
-                op="download", resource=component
+        if status is None:
+            response = lambda_client.invoke(
+                FunctionName='MPContribsMakeDownloadFunction',
+                InvocationType='Event',
+                Payload={
+                    "redis_key": redis_key,
+                    "redis": os.environ["REDIS_ADDRESS"],
+                    # TODO PRODUCTION get this host's private IP address and determine correct api port
+                    "host": os.environ["MPCONTRIBS_API_HOST"],
+                    "headers": headers,
+                    "query": query,
+                    "include": include
+                }
             )
-            all_files += int(ncomp / per_page) + bool(ncomp % per_page)
+            if response["StatusCode"] == 202:
+                status = "SUBMITTED"
+                json_resp["status"] = status
+                redis_store.set(redis_key, status)
+            else:
+                status = "ERROR"
+                json_resp["status"] = status
+                json_resp["error"] = "Failed to queue download request"
+                redis_store.set(redis_key, status)
+        else:
+            json_resp["status"] = status
 
-        fn = _get_filename(query, include)
-        tmpdir = Path("/tmp")
-        outdir = tmpdir / fn
-        existing_files = sum(len(files) for _, _, files in os.walk(outdir))
-        remaining_timeout = 50 - timeout if timeout > 0 else -1
-        ndownloads = client.download_contributions(
-            query=query, include=include, outdir=outdir, timeout=remaining_timeout
-        )
-        total_files = existing_files + ndownloads
-
-        if total_files < all_files:
-            return JsonResponse({"progress": total_files/all_files})
-
-        make_archive(outdir, "zip", outdir)
-        zipfile = outdir.with_suffix(".zip")
-        resp = zipfile.read_bytes()
-        s3_client.put_object(
-            Bucket=BUCKET, Key=key, Body=resp,
-            ContentType="application/zip"
-        )
-        rmtree(outdir)
-        os.remove(zipfile)
-
-    return JsonResponse({"progress": 1})
+    return JsonResponse(json_resp)
 
 
 def healthcheck(request):

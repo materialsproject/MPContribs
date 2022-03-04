@@ -383,16 +383,17 @@ function prep_download(query, prefix) {
     }).done(function(response) {
         if ("error" in response) {
             alert(response["error"]);
-        } else if (response["progress"] < 1) {
-            const progress = (response["progress"] * 100).toFixed(0);
-            $("#" + prefix + "download_progress").text(progress + "%");
-            prep_download(query, prefix);
-        } else {
+        } else if (response["status"] == "READY") {
             const href = "/contributions/download/get?" + $.param(query);
             $("#" + prefix + "get_download").attr("href", href).removeClass("is-hidden");
             const fmt = query["format"];
             $("#" + prefix + "download_" + fmt).removeClass('is-loading').addClass("is-hidden");
+            $("#" + prefix + "check_download").addClass("is-hidden");
             $("#" + prefix + "download_progress").addClass("is-hidden");
+        } else { // SUBMITTED, UNDEFINED or ONGOING
+            $("#" + prefix + "check_download").click(function() { prep_download(query, prefix); });
+            $("#" + prefix + "check_download").removeClass("is-hidden");
+            $("#" + prefix + "download_progress").text(response["status"]).removeClass("is-hidden");
         }
     });
 }
@@ -400,7 +401,6 @@ function prep_download(query, prefix) {
 $('a[name="download"]').click(function(e) {
     $('a[name="download"]').addClass("is-hidden");
     $(this).addClass('is-loading').removeClass("is-hidden");
-    $("#download_progress").text("0%").removeClass("is-hidden");
     const fmt = $(this).data('format');
     const include = $('input[name="include"]:checked').map(function() {
         return $(this).val();
@@ -413,6 +413,7 @@ $('a[name="download"]').click(function(e) {
 function reset_download() {
     $('a[name="download"]').removeClass("is-hidden");
     $("#download_progress").addClass("is-hidden");
+    $("#check_download").addClass("is-hidden");
     $("#get_download").addClass("is-hidden");
 }
 

@@ -1,2 +1,3 @@
 mpcontribs-client
 ddtrace
+redis

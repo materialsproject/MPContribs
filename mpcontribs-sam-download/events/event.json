@@ -1,6 +1,6 @@
 {
-    "filename": "lambda-sandbox-test",
-    "bucket": "mpcontribs-downloads",
+    "redis_key": "mpcontribs-downloads:lambda-sandbox-test:json:0",
+    "redis": "redis/13",
     "host": "contribs-apis:10000",
     "headers": {
         "X-Consumer-Username": "google:phuck@lbl.gov",

@@ -4,6 +4,7 @@ import json
 import logging
 import boto3
 
+from redis import Redis
 from pathlib import Path
 from shutil import make_archive, rmtree
 from mpcontribs.client import Client
@@ -15,10 +16,14 @@ s3_client = boto3.client('s3')
 
 def lambda_handler(event, context):
     logger.info(f"Received event: {event}")
-    query, include = event["query"], event["include"]
-    project, fmt = query["project"], query["format"]
-    filename = event["filename"]
-    key = f"{filename}_{fmt}.zip"
+    redis_key = event["redis_key"]  # "{bucket}:{filename}:{fmt}:{version}"
+    store = Redis.from_url("redis://" + event["redis"])
+    store.ping()
+    store.set(redis_key, "ONGOING")
+
+    project, query, include = event["project"], event["query"], event["include"]
+    bucket, filename, fmt, version = redis_key.split(":")
+    version = int(version)
 
     try:
         client = Client(
@@ -43,11 +48,14 @@ def lambda_handler(event, context):
         zipfile = outdir.with_suffix(".zip")
         resp = zipfile.read_bytes()
         s3_client.put_object(
-            Bucket=event["bucket"], Key=key,
+            Bucket=bucket, Key=f"{filename}_{fmt}.zip",
+            Metadata={"version": version},
             Body=resp, ContentType="application/zip"
         )
         rmtree(outdir)
         os.remove(zipfile)
         logger.info("DONE")
+        store.set(redis_key, "READY")
     except Exception as e:
         logger.error(f"Exception: {e}", exc_info=True)
+        store.set(redis_key, "ERROR")
