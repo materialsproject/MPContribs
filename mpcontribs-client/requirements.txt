@@ -12,7 +12,7 @@ pint==0.18
 plotly==5.6.0
 pyIsEmail==1.4.0
 pymatgen==2022.2.10
-pymongo==4.0.1
+pymongo==4.0.2
 pyOpenSSL==22.0.0
 requests-futures==1.0.0
 service-identity==21.1.0
