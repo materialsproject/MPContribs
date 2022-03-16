@@ -488,7 +488,7 @@ def make_download(headers, query, include=None):
     except ClientError:
         try:
             s3_resp = s3_client.head_object(Bucket=BUCKET, Key=key)
-            next_version = s3_resp["Metadata"].get("version", 1) + 1
+            next_version = int(s3_resp["Metadata"].get("version", 1)) + 1
         except ClientError:
             next_version = 1  # about to generate first version
 

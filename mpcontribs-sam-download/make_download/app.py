@@ -21,9 +21,9 @@ def lambda_handler(event, context):
     store.ping()
     store.set(redis_key, "ONGOING")
 
-    project, query, include = event["project"], event["query"], event["include"]
+    query, include = event["query"], event["include"]
+    project = query["project"]
     bucket, filename, fmt, version = redis_key.split(":")
-    version = int(version)
 
     try:
         client = Client(
