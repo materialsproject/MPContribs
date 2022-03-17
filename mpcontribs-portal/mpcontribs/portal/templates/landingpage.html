@@ -69,10 +69,16 @@
                             <label for="with_{{component}}"><span>with {{component}}</span></label>
                         </div>
                         {% endfor %}
-                        <div class="dropdown-item" style="white-space: nowrap;">
-                            <a class="button is-primary is-light is-small" name=download id=download_json data-format=json>JSON</a>
-                            <a class="button is-primary is-light is-small" name=download id=download_csv data-format=csv>CSV</a>
-                            <span class="tag is-hidden" id=download_progress></span>
+                        <div class="dropdown-item">
+                            <div class="field is-grouped">
+                                <p class="control">
+                                <a class="button is-primary is-light is-small" name=download id=download_json data-format=json>JSON</a>
+                                </p>
+                                <p class="control">
+                                <a class="button is-primary is-light is-small" name=download id=download_csv data-format=csv>CSV</a>
+                                </p>
+                            </div>
+                            <progress class="progress is-small is-hidden" max="100" id=download_progress></progress>
                             <a class="button is-warning is-light is-small is-hidden" id=check_download>Check status</a>
                             <a class="button is-danger is-light is-small is-hidden" id=get_download>Click to download</a>
                         </div>

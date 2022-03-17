@@ -8,6 +8,9 @@ environment=
     AWS_ACCESS_KEY_ID="%(ENV_AWS_ACCESS_KEY_ID)s",
     AWS_SECRET_ACCESS_KEY="%(ENV_AWS_SECRET_ACCESS_KEY)s",
     {% endif %}
+    METADATA_URI="%(ENV_ECS_CONTAINER_METADATA_URI_V4)s",
+    AWS_REGION="us-east-1",
+    AWS_DEFAULT_REGION="us-east-1",
     DD_PROFILING_ENABLED="true",
     DD_LOGS_INJECTION="true",
     PYTHONUNBUFFERED=1,
@@ -56,6 +59,7 @@ environment=
     DEPLOYMENT={{ loop.index0 }},
     PORTAL_PORT={{ cfg.portal_port }},
     MPCONTRIBS_API_HOST="{{ mpcontribs_api_host }}:{{ cfg.api_port }}",
+    MPCONTRIBS_API_PORT="{{ cfg.api_port }}",
     TRADEMARK="{{ cfg.tm }}",
     S3_DOWNLOADS_BUCKET="mpcontribs-downloads-{{ cfg.s3 }}",
     ADMIN_GROUP="admin_{{ deployment }}.materialsproject.org"

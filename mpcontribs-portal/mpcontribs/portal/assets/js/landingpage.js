@@ -381,25 +381,30 @@ function prep_download(query, prefix) {
     $.get({
         contentType: "json", dataType: "json", url: url, data: query
     }).done(function(response) {
+        const fmt = query["format"];
+        $("#" + prefix + "download_" + fmt).removeClass('is-loading').addClass("is-hidden");
         if ("error" in response) {
             alert(response["error"]);
-        } else if (response["status"] == "READY") {
+        } else if (response["status"] === "ERROR") {
+            alert("Error during download generation for" + response["redis_key"]);
+        } else if (response["status"] === "READY") {
             const href = "/contributions/download/get?" + $.param(query);
             $("#" + prefix + "get_download").attr("href", href).removeClass("is-hidden");
-            const fmt = query["format"];
-            $("#" + prefix + "download_" + fmt).removeClass('is-loading').addClass("is-hidden");
             $("#" + prefix + "check_download").addClass("is-hidden");
             $("#" + prefix + "download_progress").addClass("is-hidden");
-        } else { // SUBMITTED, UNDEFINED or ONGOING
-            $("#" + prefix + "check_download").click(function() { prep_download(query, prefix); });
+        } else if (response["status"] === "SUBMITTED" || response["status"] === "UNDEFINED") {
             $("#" + prefix + "check_download").removeClass("is-hidden");
-            $("#" + prefix + "download_progress").text(response["status"]).removeClass("is-hidden");
+            $("#" + prefix + "download_progress").removeClass("is-hidden");
+        } else { // percent time elapsed
+            $("#" + prefix + "check_download").removeClass("is-hidden");
+            $("#" + prefix + "download_progress").attr("value", response["status"]).removeClass("is-hidden");
         }
     });
 }
 
 $('a[name="download"]').click(function(e) {
     $('a[name="download"]').addClass("is-hidden");
+    $('a[name="include"]').addClass("is-hidden");
     $(this).addClass('is-loading').removeClass("is-hidden");
     const fmt = $(this).data('format');
     const include = $('input[name="include"]:checked').map(function() {
@@ -407,6 +412,7 @@ $('a[name="download"]').click(function(e) {
     }).get().join(',');
     var download_query = {"format": fmt, "project": project};
     if (include) { download_query["include"] = include; }
+    $("#check_download").click(function() { prep_download(download_query, ""); });
     prep_download(download_query, "");
 });
 

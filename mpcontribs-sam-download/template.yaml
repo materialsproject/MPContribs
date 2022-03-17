@@ -1,12 +1,30 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 
+Parameters:
+  LogLevel:
+    Type: String
+    AllowedValues:
+      - DEBUG
+      - INFO
+      - WARNING
+    Default: WARNING
+  RedisAddress:
+    Type: String
+    Default: redis/13
+  MemorySize:
+    Type: Number
+    Default: 1024
+  Timeout:
+    Type: Number
+    Default: 900
+
 Globals:
   Function:
     Handler: app.lambda_handler
     Runtime: python3.9
-    MemorySize: 1024
-    Timeout: 900
+    MemorySize: !Ref MemorySize
+    Timeout: !Ref Timeout
     EventInvokeConfig:
       MaximumRetryAttempts: 0
     VpcConfig:
@@ -25,7 +43,9 @@ Resources:
       CodeUri: make_download/
       Environment:
         Variables:
-          MPCONTRIBS_CLIENT_LOG_LEVEL: DEBUG
+          MPCONTRIBS_CLIENT_LOG_LEVEL: !Ref LogLevel
+          REDIS_ADDRESS: !Ref RedisAddress
+          LAMBDA_TIMEOUT: !Ref Timeout
 
 Outputs:
   MPContribsMakeDownloadFunction:

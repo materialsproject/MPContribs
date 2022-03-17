@@ -35,7 +35,7 @@ COMPONENTS = {"structures", "tables", "attachments"}
 j2h = Json2Html()
 s3_client = boto3.client('s3')
 lambda_client = boto3.client('lambda')
-redis_store = Redis.from_url("redis://" + os.environ["REDIS_ADDRESS"])
+redis_store = Redis.from_url("redis://" + os.environ["REDIS_ADDRESS"], decode_responses=True)
 
 
 def visit(path, key, value):
@@ -492,24 +492,24 @@ def make_download(headers, query, include=None):
         except ClientError:
             next_version = 1  # about to generate first version
 
-        filename = _get_filename(query, include),
+        filename = _get_filename(query, include)
         fmt = query.get("format", "json")
         redis_key = f"{BUCKET}:{filename}:{fmt}:{next_version}"
+        json_resp["redis_key"] = redis_key
         status = redis_store.get(redis_key)
 
         if status is None:
+            payload={
+                "redis_key": redis_key,
+                "host": os.environ["MPCONTRIBS_CLIENT_HOST"],
+                "headers": headers,
+                "query": query,
+                "include": include
+            }
             response = lambda_client.invoke(
                 FunctionName='MPContribsMakeDownloadFunction',
                 InvocationType='Event',
-                Payload={
-                    "redis_key": redis_key,
-                    "redis": os.environ["REDIS_ADDRESS"],
-                    # TODO PRODUCTION get this host's private IP address and determine correct api port
-                    "host": os.environ["MPCONTRIBS_API_HOST"],
-                    "headers": headers,
-                    "query": query,
-                    "include": include
-                }
+                Payload=payload
             )
             if response["StatusCode"] == 202:
                 status = "SUBMITTED"
