@@ -1,5 +1,5 @@
 apispec==5.1.1
-asn1crypto==1.5.0
+asn1crypto==1.5.1
 blinker==1.4
 boltons==21.0.0
 css-html-js-minify==2.5.5
