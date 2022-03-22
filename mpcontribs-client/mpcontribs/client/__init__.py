@@ -1068,7 +1068,7 @@ class Client(SwaggerClient):
 
     def get_all_ids(
         self,
-        query: dict,
+        query: dict = None,
         include: List[str] = None,
         timeout: int = -1,
         data_id_fields: dict = None,
