@@ -19,7 +19,7 @@
   "dependencies": {
     "@babel/core": "^7.0.0",
     "@babel/preset-env": "^7.14.7",
-    "@fortawesome/fontawesome-free": "^5.15.2",
+    "@fortawesome/fontawesome-free": "^6.1.1",
     "@vizuaalog/bulmajs": "^0.12.1",
     "babel-loader": "^8.2.2",
     "babel-plugin-lodash": "^3.3.4",
