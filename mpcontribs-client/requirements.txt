@@ -18,5 +18,5 @@ requests-futures==1.0.0
 service-identity==21.1.0
 swagger-spec-validator<2.7.4
 twisted==22.2.0
-tqdm==4.63.0
+tqdm==4.63.1
 ujson==5.1.0
