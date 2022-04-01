@@ -22,7 +22,7 @@ nbformat==5.2.0
 notebook==6.4.10
 pint==0.18
 psycopg2==2.9.3
-pymatgen==2022.3.24
+pymatgen==2022.3.29
 pyopenssl==22.0.0
 python-snappy==0.6.1
 #rq-dashboard==0.6.1
