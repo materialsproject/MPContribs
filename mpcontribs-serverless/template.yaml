@@ -1,0 +1,83 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: mpcontribs-serverless
+
+Parameters:
+  LogLevel:
+    Type: String
+    AllowedValues:
+      - DEBUG
+      - INFO
+      - WARNING
+    Default: WARNING
+  RedisAddress:
+    Type: String
+    Default: redis/13
+  MemorySize:
+    Type: Number
+    Default: 1024
+  Timeout:
+    Type: Number
+    Default: 900
+
+Globals:
+  Function:
+    Handler: app.lambda_handler
+    MemorySize: !Ref MemorySize
+    Timeout: !Ref Timeout
+    Runtime: python3.9
+    EventInvokeConfig:
+      MaximumRetryAttempts: 0
+    VpcConfig:
+      SecurityGroupIds:
+        - sg-0c15eb3bae6647d91
+      SubnetIds:
+        - subnet-064fe19cf24399bf4
+        - subnet-037dc2c4a90f16ddb
+    Architectures:
+      - x86_64
+    #FileSystemConfigs:
+    #  - Arn: arn:aws:elasticfilesystem:us-east-1:416700756612:access-point/fsap-0717fb111fead3950
+    #    LocalMountPath: /mnt/efs
+
+Resources:
+  MPContribsMakeDownloadFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: mpcontribs-make-download
+      CodeUri: make_download/
+      Description: make downloads for MPContribs projects
+      Policies:
+        - Version: "2012-10-17"
+          Statement:
+            - Sid: AWSLambdaVPCAccessExecutionRole
+              Effect: Allow
+              Action:
+                - logs:CreateLogGroup
+                - logs:CreateLogStream
+                - logs:PutLogEvents
+                - ec2:CreateNetworkInterface
+                - ec2:DescribeNetworkInterfaces
+                - ec2:DeleteNetworkInterface
+              Resource: "*"
+            - Sid: AmazonElasticFileSystemClientFullAccess
+              Effect: Allow
+              Action:
+                - elasticfilesystem:ClientMount
+                - elasticfilesystem:ClientRootAccess
+                - elasticfilesystem:ClientWrite
+                - elasticfilesystem:DescribeMountTargets
+              Resource: "*"
+      Environment:
+        Variables:
+          MPCONTRIBS_CLIENT_LOG_LEVEL: !Ref LogLevel
+          REDIS_ADDRESS: !Ref RedisAddress
+          LAMBDA_TIMEOUT: !Ref Timeout
+
+Outputs:
+    MPContribsMakeDownloadFunction:
+      Description: "MPContribsMakeDownloadFunction Lambda Function ARN"
+      Value: !GetAtt MPContribsMakeDownloadFunction.Arn
+    MPContribsMakeDownloadFunctionIamRole:
+      Description: "Implicit IAM Role created for MPContribsMakeDownloadFunction"
+      Value: !GetAtt MPContribsMakeDownloadFunctionRole.Arn

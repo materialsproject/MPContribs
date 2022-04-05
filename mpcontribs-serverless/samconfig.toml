@@ -2,10 +2,11 @@ version = 0.1
 [default]
 [default.deploy]
 [default.deploy.parameters]
-stack_name = "mpcontribs-sam-download"
+stack_name = "mpcontribs-serverless"
 s3_bucket = "aws-sam-cli-managed-default-samclisourcebucket-1s64twonjniyf"
-s3_prefix = "mpcontribs-sam-download"
+s3_prefix = "mpcontribs-serverless"
 region = "us-east-1"
 confirm_changeset = true
 capabilities = "CAPABILITY_IAM"
+parameter_overrides = "LogLevel=\"WARNING\" RedisAddress=\"mat-el-1k23v7u8usk2p.xljae8.0001.use1.cache.amazonaws.com/13\" MemorySize=\"1024\" Timeout=\"900\""
 image_repositories = []
