@@ -36,6 +36,7 @@ RUN wget -q https://raw.githubusercontent.com/vishnubob/wait-for-it/master/wait-
 FROM base as python-builds
 COPY --from=python-deps /root/.local/lib/python3.9/site-packages /root/.local/lib/python3.9/site-packages
 COPY --from=python-deps /root/.local/bin /root/.local/bin
+COPY --from=python-deps /root/.local/share /root/.local/share
 WORKDIR /app
 COPY --from=webpack /app/dist dist
 ENV NODE_ENV production
@@ -51,6 +52,7 @@ RUN python manage.py collectstatic --noinput
 FROM base
 COPY --from=python-builds /root/.local/lib/python3.9/site-packages /root/.local/lib/python3.9/site-packages
 COPY --from=python-builds /root/.local/bin /root/.local/bin
+COPY --from=python-builds /root/.local/share /root/.local/share
 COPY --from=python-builds /app/static /app/static
 COPY --from=python-builds /app/mpcontribs /app/mpcontribs
 COPY --from=python-builds /app/supervisord /app/supervisord

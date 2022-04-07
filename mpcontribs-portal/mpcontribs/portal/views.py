@@ -193,8 +193,7 @@ def highlight_code(source, language="python", metadata=None):
 
 def export_notebook(nb, cid):
     nb = nbformat.from_dict(nb)
-    html_exporter = HTMLExporter()
-    html_exporter.template_file = "basic"
+    html_exporter = HTMLExporter(template_name="basic")
     html_exporter.filters["highlight_code"] = highlight_code
     return html_exporter.from_notebook_node(nb)
 
