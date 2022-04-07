@@ -58,7 +58,7 @@ COPY --from=python-builds /app/mpcontribs /app/mpcontribs
 COPY --from=python-builds /app/supervisord /app/supervisord
 COPY --from=webpack /app/webpack-stats.json /app/webpack-stats.json
 
-RUN apt-get update && apt-get install -y --no-install-recommends supervisor jq && apt-get clean
+RUN apt-get update && apt-get install -y --no-install-recommends supervisor jq curl && apt-get clean
 WORKDIR /app
 RUN mkdir -p /var/log/supervisor
 ENV PATH=/root/.local/bin:$PATH
