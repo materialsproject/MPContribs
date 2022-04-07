@@ -56,3 +56,10 @@ updates:
     time: '08:00'
     timezone: US/Pacific
   open-pull-requests-limit: 10
+- package-ecosystem: pip
+  directory: "/mpcontribs-serverless/dependencies"
+  schedule:
+    interval: weekly
+    time: '08:00'
+    timezone: US/Pacific
+  open-pull-requests-limit: 10
