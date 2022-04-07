@@ -5,7 +5,7 @@ echo "$SUPERVISOR_PROCESS_NAME: waiting for $zzz seconds before start..."
 sleep $zzz
 
 if [ ! -z "$METADATA_URI" ]; then
-    task_ip=`curl ${METADATA_URI}/task | jq -r '.Networks[0].IPv4Addresses[0]'`
+    task_ip=`curl ${METADATA_URI}/task | jq -r '.Containers[0].Networks[0].IPv4Addresses[0]'`
     export MPCONTRIBS_CLIENT_HOST=$task_ip:$MPCONTRIBS_API_PORT
 else
     export MPCONTRIBS_CLIENT_HOST=$MPCONTRIBS_API_HOST
