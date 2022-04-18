@@ -1,5 +1,5 @@
 blinker==1.4
-ddtrace==0.60.1
+ddtrace==1.0.1
 ipywidgets==7.7.0
 jupyter-client==7.2.1
 jupyter-kernel-gateway==2.5.1
