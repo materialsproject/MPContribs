@@ -404,7 +404,7 @@ function prep_download(query, prefix) {
 
 $('a[name="download"]').click(function(e) {
     $('a[name="download"]').addClass("is-hidden");
-    $('a[name="include"]').addClass("is-hidden");
+    $('input[name="include"]').parent(".dropdown-item").addClass("is-hidden");
     $(this).addClass('is-loading').removeClass("is-hidden");
     const fmt = $(this).data('format');
     const include = $('input[name="include"]:checked').map(function() {

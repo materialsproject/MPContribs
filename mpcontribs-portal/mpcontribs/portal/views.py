@@ -498,26 +498,32 @@ def make_download(headers, query, include=None):
         status = redis_store.get(redis_key)
 
         if status is None:
-            payload={
+            payload = {
                 "redis_key": redis_key,
                 "host": os.environ["MPCONTRIBS_CLIENT_HOST"],
                 "headers": headers,
                 "query": query,
                 "include": include
             }
-            response = lambda_client.invoke(
-                FunctionName='MPContribsMakeDownloadFunction',
-                InvocationType='Event',
-                Payload=payload
-            )
-            if response["StatusCode"] == 202:
-                status = "SUBMITTED"
-                json_resp["status"] = status
-                redis_store.set(redis_key, status)
-            else:
+            try:
+                response = lambda_client.invoke(
+                    FunctionName="mpcontribs-make-download",
+                    InvocationType='Event',
+                    Payload=json.dumps(payload)
+                )
+                if response["StatusCode"] == 202:
+                    status = "SUBMITTED"
+                    json_resp["status"] = status
+                    redis_store.set(redis_key, status)
+                else:
+                    status = "ERROR"
+                    json_resp["status"] = status
+                    json_resp["error"] = "Failed to queue download request"
+                    redis_store.set(redis_key, status)
+            except Exception as e:
                 status = "ERROR"
                 json_resp["status"] = status
-                json_resp["error"] = "Failed to queue download request"
+                json_resp["error"] = str(e)
                 redis_store.set(redis_key, status)
         else:
             json_resp["status"] = status
