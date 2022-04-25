@@ -6,7 +6,7 @@ css-html-js-minify==2.5.5
 dateparser==1.1.1
 ddtrace==1.0.1
 dnspython==2.2.1
-filetype==1.0.12
+filetype==1.0.13
 flasgger @ git+https://github.com/flasgger/flasgger#egg=flasgger-0.9.5
 flask-compress==1.11
 flask-cors==3.0.10
@@ -20,7 +20,7 @@ json2html==1.3.0
 more-itertools==8.12.0
 nbformat==5.3.0
 notebook==6.4.11
-pint==0.19.1
+pint==0.19.2
 psycopg2==2.9.3
 pymatgen==2022.4.19
 pyopenssl==22.0.0
