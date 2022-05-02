@@ -8,7 +8,7 @@ ddtrace==1.0.1
 dnspython==2.2.1
 filetype==1.0.13
 flasgger @ git+https://github.com/flasgger/flasgger#egg=flasgger-0.9.5
-flask-compress==1.11
+flask-compress==1.12
 flask-cors==3.0.10
 flask-marshmallow==0.14.0
 flask-mongorest-mpcontribs==1.2.4
