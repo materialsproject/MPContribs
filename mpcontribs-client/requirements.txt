@@ -1,6 +1,6 @@
 boltons==21.0.0
 bravado[fido] @ git+https://github.com/tschaume/bravado@9ce06f2df7118e16af4a3d3fdc21ccfeedc5cd50#egg=bravado-11.0.3
-cryptography==36.0.2
+cryptography==37.0.2
 fido[tls]==4.2.2
 filetype==1.0.13
 flatten-dict==0.4.2
