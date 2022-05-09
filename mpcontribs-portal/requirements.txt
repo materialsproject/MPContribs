@@ -1,5 +1,5 @@
 boltons==21.0.0
-boto3==1.22.4
+boto3==1.22.9
 ddtrace==1.0.1
 Django>=3.2,<4.0
 django-extensions==3.1.5
