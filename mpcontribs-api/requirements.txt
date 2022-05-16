@@ -1,4 +1,4 @@
-apispec==5.1.1
+apispec==5.2.2
 asn1crypto==1.5.1
 blinker==1.4
 boltons==21.0.0
