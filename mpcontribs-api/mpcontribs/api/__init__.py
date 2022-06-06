@@ -242,5 +242,10 @@ def create_app():
         #dashboard.config.database_name = f"postgresql://kong:{db_password}@{db_host}/kong"
         #dashboard.bind(app)
 
+    @app.after_request
+    def add_header(response):
+        response.headers['X-Consumer-Id'] = request.headers.get("X-Consumer-Id")
+        return response
+
     logger.info("app created.")
     return app

@@ -37,6 +37,7 @@ MIDDLEWARE = (
     "django.middleware.common.CommonMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "django.middleware.security.SecurityMiddleware",
+    "mpcontribs.portal.middleware.MyMiddleware",
 )
 
 ROOT_URLCONF = "mpcontribs.portal.urls"
