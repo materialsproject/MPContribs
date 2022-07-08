@@ -49,14 +49,13 @@ class NotebooksResource(Resource):
     document = Notebooks
     filters = {"id": [ops.In, ops.Exact]}
     fields = ["id", "nbformat", "nbformat_minor"]
-    allowed_ordering = ["name"]
     paginate = True
     default_limit = 10
     max_limit = 100
 
     @staticmethod
     def get_optional_fields():
-        return ["nbformat", "nbformat_minor", "metadata", "cells"]
+        return ["metadata", "cells"]
 
 
 class NotebooksView(SwaggerView):

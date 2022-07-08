@@ -50,7 +50,7 @@
             </div>
             {% endif %}
         </div>
-        {% if not request.META.HTTP_X_ANONYMOUS_CONSUMER and columns and columns.strip != 'null' %}
+        {% if columns and columns.strip != 'null' %}
         <div class="column">
             <div class="dropdown is-pulled-right">
                 <div class="dropdown-trigger">
@@ -113,7 +113,6 @@
     </article>
     {% endif %}
 
-    {% if not request.META.HTTP_X_ANONYMOUS_CONSUMER %}
     {% if columns and columns.strip != 'null' %}
     <nav class="level">
         <div class="level-left">
@@ -210,7 +209,7 @@
     </nav>
     <div name=table id=table_{{name}} class="is-invisible"
         data-columns='{{ columns|join:"," }}' data-project='{{ name }}'></div>
-    {% else %}
+    {% elif name %}
     <article class="message is-primary">
         <div class="message-header">
             <p>Data not available yet</p>
@@ -226,7 +225,7 @@
                         <a href="https://github.com/materialsproject/MPContribs/tree/master/mpcontribs-portal/notebooks">on GitHub</a>.
                     </li>
                     <li>
-                        If you don't have permissions to manage the data in this project, feel free
+                        If you don't have permissions to manage or view the data in this project, feel free
                         to reach out to the
                         <a href="mailto:{{owner}}?cc=contribs@materialsproject.org&subject=MPContribs Member Request for {{name}}">owner</a>
                         to become a member of the <code>{{name}}</code> group.
@@ -253,7 +252,6 @@ contributions = [{
 client.submit_contributions(contributions)</code></pre>
         </div>
     </article>
-    {% endif %}
     {% endif %}
 
 </section>

@@ -5,7 +5,6 @@ from mpcontribs.portal import views
 
 app_name = "mpcontribs_portal"
 urlpatterns = [
-    # public
     url(r"^$", views.index, name="index"),
     url(r"^browse/?$", RedirectView.as_view(pattern_name="index")),
     url(r"^healthcheck/?$", views.healthcheck, name="healthcheck"),
@@ -14,7 +13,6 @@ urlpatterns = [
         views.download_project,
         name="download_project",
     ),
-    # protected
     url(r"^search/?$", views.search, name="search"),
     url(r"^contribute/?$", views.apply, name="apply"),
     url(r"^apply/?$", RedirectView.as_view(pattern_name="apply")),

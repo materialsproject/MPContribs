@@ -37,8 +37,10 @@ class TablesResource(Resource):
         "attrs__labels__value": FILTERS["STRINGS"],
         "attrs__labels__variable": FILTERS["STRINGS"],
     }
-    fields = ["id", "name", "md5"]
-    allowed_ordering = ["name"]
+    fields = [
+        "id", "name", "md5", "attrs", "columns", "total_data_rows", "total_data_pages"
+    ]
+    allowed_ordering = ["name", "total_data_rows"]
     paginate = True
     default_limit = 10
     max_limit = 100
@@ -47,14 +49,7 @@ class TablesResource(Resource):
 
     @staticmethod
     def get_optional_fields():
-        return [
-            "attrs",
-            "index",
-            "columns",
-            "data",
-            "total_data_rows",
-            "total_data_pages",
-        ]
+        return ["index", "data"]
 
     def value_for_field(self, obj, field):
         if field == "total_data_pages":

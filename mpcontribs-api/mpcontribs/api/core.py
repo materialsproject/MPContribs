@@ -13,6 +13,7 @@ from flasgger.marshmallow_apispec import SwaggerView as OriginalSwaggerView
 from flasgger.marshmallow_apispec import schema2jsonschema
 from marshmallow_mongoengine import ModelSchema
 from flask_mongorest.views import ResourceView
+from mongoengine.queryset import DoesNotExist
 from mongoengine.queryset.visitor import Q
 from werkzeug.exceptions import Unauthorized
 from mpcontribs.api.config import DOC_DIR
@@ -470,6 +471,10 @@ class SwaggerView(OriginalSwaggerView, ResourceView, metaclass=SwaggerViewType):
 
         return request.headers.get("X-Anonymous-Consumer", False)
 
+    def is_external(self, request):
+        return request.headers.get("X-Forwarded-Host") is not None or \
+            not request.headers.get("Origin")
+
     def is_admin(self, groups):
         admin_group = os.environ.get("ADMIN_GROUP", "admin")
         return admin_group in groups
@@ -501,17 +506,17 @@ class SwaggerView(OriginalSwaggerView, ResourceView, metaclass=SwaggerViewType):
         if self.is_admin(groups):
             return qs  # admins can read all entries
 
-        if self.is_anonymous(request):
-            # anonymous can only read public approved projects (no contributions)
-            if not request.path.startswith("/projects/"):
-                return qs.none()
-
-            return qs.filter(is_public=True, is_approved=True)
-
+        is_anonymous = self.is_anonymous(request)
+        is_external = self.is_external(request)
         username = request.headers.get("X-Consumer-Username")
 
         if request.path.startswith("/projects/"):
-            # all public and non-public but accessible projects
+            # external or internal requests can both read full project info
+            # anonymous requests can only read public approved projects
+            if is_anonymous:
+                return qs.filter(is_public=True, is_approved=True)
+
+            # authenticated requests can read public or accessible non-public projects
             qfilter = Q(is_public=True) | Q(owner=username)
             if groups:
                 qfilter |= Q(name__in=list(groups))
@@ -523,16 +528,25 @@ class SwaggerView(OriginalSwaggerView, ResourceView, metaclass=SwaggerViewType):
             module = import_module("mpcontribs.api.projects.document")
             Projects = getattr(module, "Projects")
             exclude = list(Projects._fields.keys())
-            only = ["name", "owner", "is_public", "is_approved"]
-            projects = Projects.objects.exclude(*exclude).only(*only)
+            only = ["name", "owner", "is_public"]
+            # NOTE only approved projects can have contributions - this will change!!
+            projects = Projects.objects.exclude(*exclude).only(*only).filter(is_approved=True)
+            q = qs._query
 
             # contributions are set private/public independent from projects
+            # anonymous requests:
+            # - external: can only read meta-data of public contributions in public projects
+            # - internal: can read full public contributions in public projects
+            # authenticated requests:
             # - private contributions in a public project are only accessible to owner/group
             # - any contributions in a private project are only accessible to owner/group
-            q = qs._query
+            if is_anonymous and is_external:
+                qs = qs.exclude("data")
+
             if "project" in q and isinstance(q["project"], str):
-                project = projects.get(name=q["project"])
-                if not project.is_approved:
+                try:
+                    project = projects.get(name=q["project"])
+                except DoesNotExist:
                     return qs.none()
 
                 if project.owner == username or project.name in groups:
@@ -543,15 +557,13 @@ class SwaggerView(OriginalSwaggerView, ResourceView, metaclass=SwaggerViewType):
                     return qs.none()
 
             else:
-                qfilter = Q()  # reduced query
                 if "project" in q and "$in" in q["project"]:
                     names = q.pop("project").pop("$in")
                     projects = projects.filter(name__in=names)
 
-                for project in projects:
-                    if not project.is_approved:
-                        continue
+                qfilter = Q()  # reduced query
 
+                for project in projects:
                     if project.owner == username or project.name in groups:
                         qfilter |= Q(project=project.name)
                     elif project.is_public:

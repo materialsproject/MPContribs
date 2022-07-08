@@ -92,24 +92,13 @@ def get_context(request):
 
 def landingpage(request, project):
     ckwargs = client_kwargs(request)
-    headers = ckwargs.get("headers", {})
     ctx = get_context(request)
-    not_logged_in = headers.get("X-Anonymous-Consumer", False)
-
-    if not_logged_in:
-        ctx["alert"] = f"""
-        Please <a href=\"{ctx['OAUTH_URL']}\">log in</a> to browse and filter contributions.
-        """.strip()
 
     try:
         client = Client(**ckwargs)
         prov = client.projects.get_entry(pk=project, _fields=["_all"]).result()
     except HTTPNotFound:
-        msg = f"Project '{project}' not found or access denied!"
-        if not_logged_in:
-            ctx["alert"] += f" {msg}"
-        else:
-            ctx["alert"] = msg
+        ctx["alert"] = f"Project '{project}' not found or access denied! Try to log in."
     else:
         ctx["name"] = project
         ctx["owner"] = prov["owner"].split(":", 1)[-1]
@@ -162,14 +151,7 @@ def index(request):
 
 
 def search(request):
-    headers = client_kwargs(request).get("headers", {})
     ctx = get_context(request)
-
-    if headers.get("X-Anonymous-Consumer", False):
-        ctx["alert"] = f"""
-        Please <a href=\"{ctx['OAUTH_URL']}\">log in</a> to search contributions.
-        """.strip()
-
     return render(request, "search.html", ctx.flatten())
 
 
@@ -200,16 +182,9 @@ def export_notebook(nb, cid):
 
 def contribution(request, cid):
     ckwargs = client_kwargs(request)
-    headers = ckwargs.get("headers", {})
     ctx = get_context(request)
-
-    if headers.get("X-Anonymous-Consumer", False):
-        ctx["alert"] = f"""
-        Please <a href=\"{ctx['OAUTH_URL']}\">log in</a> to view contribution.
-        """.strip()
-        return render(request, "contribution.html", ctx.flatten())
-
     client = Client(**ckwargs)
+
     try:
         contrib = client.contributions.get_entry(
             pk=cid, _fields=["identifier", "needs_build", "notebook"]
@@ -247,17 +222,9 @@ def contribution(request, cid):
 
 def show_component(request, oid):
     ckwargs = client_kwargs(request)
-    headers = ckwargs.get("headers", {})
     resp = None
-
-    if headers.get("X-Anonymous-Consumer", False):
-        ctx = get_context(request)
-        msg = f"""
-        Please <a href=\"{ctx['OAUTH_URL']}\">log in</a> to show contribution component.
-        """.strip()
-        return HttpResponse(msg, status=403)
-
     client = Client(**ckwargs)
+
     try:
         resp = client.get_structure(oid)
     except HTTPNotFound:
@@ -277,17 +244,9 @@ def show_component(request, oid):
 
 def download_component(request, oid):
     ckwargs = client_kwargs(request)
-    headers = ckwargs.get("headers", {})
     content = None
-
-    if headers.get("X-Anonymous-Consumer", False):
-        ctx = get_context(request)
-        msg = f"""
-        Please <a href=\"{ctx['OAUTH_URL']}\">log in</a> to download contribution component.
-        """.strip()
-        return HttpResponse(msg, status=403)
-
     client = Client(**ckwargs)
+
     try:
         resp = client.structures.get_entry(pk=oid, _fields=["name", "cif"]).result()
         name = resp["name"]
@@ -322,22 +281,19 @@ def download_component(request, oid):
 
 def download_contribution(request, cid):
     ckwargs = client_kwargs(request)
-    headers = ckwargs.get("headers", {})
-    if headers.get("X-Anonymous-Consumer", False):
-        ctx = get_context(request)
-        msg = f"""
-        Please <a href=\"{ctx['OAUTH_URL']}\">log in</a> to download contribution.
-        """.strip()
-        return HttpResponse(msg, status=403)
-
     tmpdir = Path("/tmp")
     outdir = tmpdir / "download"
-
     client = Client(**ckwargs)
-    client.download_contributions(
-        query={"id": cid}, outdir=outdir, include=list(COMPONENTS)
-    )
+    project = client.contributions.get_entry(
+        pk=cid, _fields=["project"]
+    ).result().get("project")
+    if not project:
+        return HttpResponse(status=404)
 
+    include = _reconcile_include(request, project, list(COMPONENTS))
+    client.download_contributions(
+        query={"id": cid}, outdir=outdir, include=include
+    )
     zipfile = Path(make_archive(tmpdir / cid, "zip", outdir))
     resp = zipfile.read_bytes()
     rmtree(outdir)
@@ -432,14 +388,6 @@ def download_project(request, project: str, extension: str):
 
 def download(request):
     ckwargs = client_kwargs(request)
-    headers = ckwargs.get("headers", {})
-    if headers.get("X-Anonymous-Consumer", False):
-        ctx = get_context(request)
-        msg = f"""
-        Please <a href=\"{ctx['OAUTH_URL']}\">log in</a> to download contributions.
-        """.strip()
-        return HttpResponse(msg, status=403)
-
     project = request.GET.get("project")
     if not project:
         return HttpResponse("Missing project parameter.", status=404)
@@ -451,15 +399,12 @@ def download(request):
 
 def create_download(request):
     ckwargs = client_kwargs(request)
-    headers = ckwargs.get("headers", {})
-    if headers.get("X-Anonymous-Consumer", False):
-        return JsonResponse({"error": "Permission denied."}, status=403)
-
     project = request.GET.get("project")
     if not project:
         return JsonResponse({"error": "Missing project parameter."})
 
     query, include = _get_query_include(request)
+    headers = ckwargs.get("headers", {})
     return make_download(headers, query, include)
 
 

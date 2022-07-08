@@ -34,7 +34,7 @@ class Tables(DynamicDocument):
 
     @queryset_manager
     def objects(doc_cls, queryset):
-        return queryset.only("name", "md5")
+        return queryset.only("name", "md5", "attrs", "columns", "total_data_rows")
 
     @classmethod
     def post_init(cls, sender, document, **kwargs):
