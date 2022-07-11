@@ -1,4 +1,4 @@
-FROM materialsproject/devops:python-3.97.19 as base
+FROM materialsproject/devops:python-3.97.20 as base
 FROM node:18.4.0-slim as node
 
 FROM node as webpack-deps
