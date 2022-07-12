@@ -1,4 +1,4 @@
-FROM materialsproject/devops:python-3.97.20 as base
+FROM materialsproject/devops:python-3.97.21 as base
 RUN apt-get update && apt-get install -y --no-install-recommends supervisor libpq-dev vim && apt-get clean
 WORKDIR /app
 
