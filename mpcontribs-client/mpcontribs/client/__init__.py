@@ -298,7 +298,7 @@ class Table(pd.DataFrame):
         """Show summary info for table"""
         info = Dict((k, v) for k, v in self.attrs.items())
         info["columns"] = ", ".join(self.columns)
-        info["nrows"] = len(self.index)
+        info["nrows"] = len(self.total_data_rows)
         return info
 
 

@@ -472,7 +472,7 @@ class SwaggerView(OriginalSwaggerView, ResourceView, metaclass=SwaggerViewType):
         return request.headers.get("X-Anonymous-Consumer", False)
 
     def is_external(self, request):
-        return request.headers.get("X-Forwarded-Host") is not None or \
+        return request.headers.get("X-Forwarded-Host") is not None and \
             not request.headers.get("Origin")
 
     def is_admin(self, groups):
@@ -501,6 +501,30 @@ class SwaggerView(OriginalSwaggerView, ResourceView, metaclass=SwaggerViewType):
         username = request.headers.get("X-Consumer-Username")
         return (project in groups or owner == username) and is_approved
 
+    def get_projects(self):
+        # project is LazyReferenceFields (multiple queries)
+        # NOTE only approved projects can have contributions - this will change!!
+        module = import_module("mpcontribs.api.projects.document")
+        Projects = getattr(module, "Projects")
+        exclude = list(Projects._fields.keys())
+        only = ["name", "owner", "is_public"]
+        return Projects.objects.exclude(*exclude).only(*only).filter(is_approved=True)
+
+    def get_projects_filter(self, username, groups, filter_names=None):
+        projects = self.get_projects()
+        if filter_names:
+            projects = projects.filter(name__in=filter_names)
+
+        qfilter = Q()  # reduced query
+
+        for project in projects:
+            if project.owner == username or project.name in groups:
+                qfilter |= Q(project=project.name)
+            elif project.is_public:
+                qfilter |= Q(project=project.name, is_public=True)
+
+        return qfilter
+
     def has_read_permission(self, request, qs):
         groups = self.get_groups(request)
         if self.is_admin(groups):
@@ -522,17 +546,7 @@ class SwaggerView(OriginalSwaggerView, ResourceView, metaclass=SwaggerViewType):
                 qfilter |= Q(name__in=list(groups))
 
             return qs.filter(Q(is_approved=True) & qfilter)
-
-        elif request.path.startswith("/contributions/"):
-            # project is LazyReferenceFields (multiple queries)
-            module = import_module("mpcontribs.api.projects.document")
-            Projects = getattr(module, "Projects")
-            exclude = list(Projects._fields.keys())
-            only = ["name", "owner", "is_public"]
-            # NOTE only approved projects can have contributions - this will change!!
-            projects = Projects.objects.exclude(*exclude).only(*only).filter(is_approved=True)
-            q = qs._query
-
+        else:
             # contributions are set private/public independent from projects
             # anonymous requests:
             # - external: can only read meta-data of public contributions in public projects
@@ -540,43 +554,73 @@ class SwaggerView(OriginalSwaggerView, ResourceView, metaclass=SwaggerViewType):
             # authenticated requests:
             # - private contributions in a public project are only accessible to owner/group
             # - any contributions in a private project are only accessible to owner/group
-            if is_anonymous and is_external:
-                qs = qs.exclude("data")
+            component = request.path.split("/")[1]
 
-            if "project" in q and isinstance(q["project"], str):
-                try:
-                    project = projects.get(name=q["project"])
-                except DoesNotExist:
-                    return qs.none()
+            if component == "contributions":
+                q = qs._query
+                if is_anonymous and is_external:
+                    qs = qs.exclude("data")
 
-                if project.owner == username or project.name in groups:
-                    return qs
-                elif project.is_public:
-                    return qs.filter(is_public=True)
-                else:
-                    return qs.none()
+                if "project" in q and isinstance(q["project"], str):
+                    projects = self.get_projects()
+                    try:
+                        project = projects.get(name=q["project"])
+                    except DoesNotExist:
+                        return qs.none()
 
-            else:
-                if "project" in q and "$in" in q["project"]:
-                    names = q.pop("project").pop("$in")
-                    projects = projects.filter(name__in=names)
-
-                qfilter = Q()  # reduced query
-
-                for project in projects:
                     if project.owner == username or project.name in groups:
-                        qfilter |= Q(project=project.name)
+                        return qs
                     elif project.is_public:
-                        qfilter |= Q(project=project.name, is_public=True)
+                        return qs.filter(is_public=True)
+                    else:
+                        return qs.none()
+                else:
+                    names = None
+                    if "project" in q and "$in" in q["project"]:
+                        names = q.pop("project").pop("$in")
 
-                return qs.filter(qfilter)
+                    qfilter = self.get_projects_filter(username, groups, filter_names=names)
+                    return qs.filter(qfilter)
+            else:
+                # get component Object IDs for queryset
+                pk = request.view_args.get("pk")
+                from mpcontribs.api.contributions.document import get_resource
+                resource = get_resource(component)
+                qfilter = lambda qs: qs.clone()
 
-        # Allowing any non-anonymous user access to endpoints for tables/structures/notebooks.
-        # These components can thus technically be accessed without permission for the according
-        # contribution. However, this would require knowledge of the respective ObjectIds which are
-        # not knowable without access to the contribution (security by obscurity). This could be
-        # considered a feature for people who'd want to share public links with collaborators.
-        return qs
+                if pk:
+                    ids = [resource.get_object(pk, qfilter=qfilter).id]
+                else:
+                    ids = [o.id for o in resource.get_objects(qfilter=qfilter)[0]]
+
+                if not ids:
+                    return qs.none()
+
+                # get list of readable contributions and their component Object IDs
+                module = import_module("mpcontribs.api.contributions.document")
+                Contributions = getattr(module, "Contributions")
+                qfilter = self.get_projects_filter(username, groups)
+                component = component[:-1] if component == "notebooks" else component
+                qfilter &= Q(**{f"{component}__in": ids})
+                contribs = Contributions.objects(qfilter).only(component).limit(len(ids))
+                # return new queryset using "ids__in"
+                readable_ids = [
+                    getattr(contrib, component).id for contrib in contribs
+                ] if component == "notebook" else [
+                    dbref.id for contrib in contribs
+                    for dbref in getattr(contrib, component)
+                    if dbref.id in ids
+                ]
+                if not readable_ids:
+                    return qs.none()
+
+                qs._query_obj = Q(id__in=readable_ids)
+                # exclude optional fields if anonymous external request
+                if is_anonymous and is_external:
+                    exclude = resource.get_optional_fields()
+                    qs = qs.exclude(*exclude)
+
+                return qs
 
     def has_add_permission(self, request, obj):
         if not self.is_admin_or_project_user(request, obj):

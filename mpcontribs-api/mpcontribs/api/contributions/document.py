@@ -69,7 +69,10 @@ def format_cell(cell):
         return cell
 
     q = truncate_digits(q)
-    return str(q.nominal_value) if isnan(q.std_dev) else str(q)
+    try:
+        return str(q.nominal_value) if isnan(q.std_dev) else str(q)
+    except:
+        return cell
 
 
 def new_error_units(measurement, quantity):
