@@ -44,7 +44,7 @@ class ProjectsResource(Resource):
         "long_title": FILTERS["LONG_STRINGS"],
         "authors": FILTERS["LONG_STRINGS"],
         "description": FILTERS["LONG_STRINGS"],
-        "owner": FILTERS["LONG_STRINGS"],
+        "owner": FILTERS["STRINGS"],
         "is_approved": [ops.Boolean],
         "unique_identifiers": [ops.Boolean],
         "columns": [ops.Size],
