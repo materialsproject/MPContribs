@@ -27,6 +27,7 @@ templates = os.path.join(os.path.dirname(flask_mongorest.__file__), "templates")
 contributions = Blueprint("contributions", __name__, template_folder=templates)
 exclude = r'[^$.\s_~`^&(){}[\]\\;\'"/]'
 j2h = Json2Html()
+MAX_UNAPPROVED_CONTRIBS = 20
 
 
 def visit(path, key, value):
@@ -133,3 +134,23 @@ class ContributionsView(SwaggerView):
         BulkDelete,
         Download,
     ]
+
+    def has_add_permission(self, req, obj):
+        # limit the number of contributions for unapproved projects
+        groups = self.get_groups(req)
+        if self.is_admin(groups):
+            return True
+
+        if not obj.project.is_approved:
+            # contribution already created at this point -> count-1 and revert
+            if Contributions.objects.count() > MAX_UNAPPROVED_CONTRIBS:
+                Contributions.objects(id=obj.id).delete()
+                msg = f"Max {MAX_UNAPPROVED_CONTRIBS} for unapproved project {obj.project.id}"
+                raise Unauthorized(f"Can't add {obj.identifier}: {msg}")
+
+        if obj.project.unique_identifiers and Contributions.objects(
+            project=obj.project.id, identifier=obj.identifier
+        ).count():
+            raise Unauthorized(f"{obj.identifier} already added for {obj.project.id}")
+
+        return True

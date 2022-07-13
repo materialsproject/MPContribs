@@ -487,28 +487,25 @@ class SwaggerView(OriginalSwaggerView, ResourceView, metaclass=SwaggerViewType):
         if self.is_admin(groups):
             return True
 
-        if hasattr(obj, "is_approved"):
-            is_approved = obj.is_approved
+        if hasattr(obj, "owner"):
             owner = obj.owner
             project = obj.name
         elif hasattr(obj, "project"):
-            is_approved = obj.project.is_approved
             owner = obj.project.owner
             project = obj.project.name
         else:
             raise Unauthorized(f"Unable to authorize {obj}")
 
         username = request.headers.get("X-Consumer-Username")
-        return (project in groups or owner == username) and is_approved
+        return project in groups or owner == username
 
     def get_projects(self):
         # project is LazyReferenceFields (multiple queries)
-        # NOTE only approved projects can have contributions - this will change!!
         module = import_module("mpcontribs.api.projects.document")
         Projects = getattr(module, "Projects")
         exclude = list(Projects._fields.keys())
-        only = ["name", "owner", "is_public"]
-        return Projects.objects.exclude(*exclude).only(*only).filter(is_approved=True)
+        only = ["name", "owner", "is_public", "is_approved"]
+        return Projects.objects.exclude(*exclude).only(*only)
 
     def get_projects_filter(self, username, groups, filter_names=None):
         projects = self.get_projects()
@@ -520,7 +517,7 @@ class SwaggerView(OriginalSwaggerView, ResourceView, metaclass=SwaggerViewType):
         for project in projects:
             if project.owner == username or project.name in groups:
                 qfilter |= Q(project=project.name)
-            elif project.is_public:
+            elif project.is_public and project.is_approved:
                 qfilter |= Q(project=project.name, is_public=True)
 
         return qfilter
@@ -533,24 +530,25 @@ class SwaggerView(OriginalSwaggerView, ResourceView, metaclass=SwaggerViewType):
         is_anonymous = self.is_anonymous(request)
         is_external = self.is_external(request)
         username = request.headers.get("X-Consumer-Username")
+        approved_public_filter = Q(is_public=True, is_approved=True)
 
         if request.path.startswith("/projects/"):
             # external or internal requests can both read full project info
             # anonymous requests can only read public approved projects
             if is_anonymous:
-                return qs.filter(is_public=True, is_approved=True)
+                return qs.filter(approved_public_filter)
 
-            # authenticated requests can read public or accessible non-public projects
-            qfilter = Q(is_public=True) | Q(owner=username)
+            # authenticated requests can read approved public or accessible non-public projects
+            qfilter = Q(approved_public_filter) | Q(owner=username)
             if groups:
                 qfilter |= Q(name__in=list(groups))
 
-            return qs.filter(Q(is_approved=True) & qfilter)
+            return qs.filter(qfilter)
         else:
             # contributions are set private/public independent from projects
             # anonymous requests:
-            # - external: can only read meta-data of public contributions in public projects
-            # - internal: can read full public contributions in public projects
+            # - external: only meta-data of public contributions in approved public projects
+            # - internal: full public contributions in approved public projects
             # authenticated requests:
             # - private contributions in a public project are only accessible to owner/group
             # - any contributions in a private project are only accessible to owner/group
@@ -570,7 +568,7 @@ class SwaggerView(OriginalSwaggerView, ResourceView, metaclass=SwaggerViewType):
 
                     if project.owner == username or project.name in groups:
                         return qs
-                    elif project.is_public:
+                    elif project.is_public and project.is_approved:
                         return qs.filter(is_public=True)
                     else:
                         return qs.none()
@@ -623,18 +621,7 @@ class SwaggerView(OriginalSwaggerView, ResourceView, metaclass=SwaggerViewType):
                 return qs
 
     def has_add_permission(self, request, obj):
-        if not self.is_admin_or_project_user(request, obj):
-            return False
-
-        if hasattr(obj, "identifier") and obj.project.unique_identifiers:
-            if self.resource.document.objects(
-                project=obj.project.id, identifier=obj.identifier
-            ).count():
-                raise Unauthorized(
-                    f"{obj.identifier} already added for {obj.project.id}"
-                )
-
-        return True
+        return self.is_admin_or_project_user(request, obj)
 
     def has_change_permission(self, request, obj):
         return self.is_admin_or_project_user(request, obj)
