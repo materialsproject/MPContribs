@@ -8,7 +8,6 @@ from flask_mongorest.resources import Resource
 from flask_mongorest import operators as ops
 from flask_mongorest.methods import Fetch, Create, Delete, Update, BulkFetch
 from werkzeug.exceptions import Unauthorized
-from itsdangerous import SignatureExpired
 
 from mpcontribs.api import FILTERS
 from mpcontribs.api.core import SwaggerView
@@ -40,7 +39,7 @@ class ProjectsResource(Resource):
     filters = {
         "name": FILTERS["STRINGS"],
         "is_public": [ops.Boolean],
-        "title": FILTERS["LONG_STRINGS"],
+        "title": FILTERS["STRINGS"],
         "long_title": FILTERS["LONG_STRINGS"],
         "authors": FILTERS["LONG_STRINGS"],
         "description": FILTERS["LONG_STRINGS"],
@@ -85,15 +84,22 @@ class ProjectsView(SwaggerView):
     methods = [Fetch, Create, Delete, Update, BulkFetch]
 
     def has_add_permission(self, req, obj):
-        # limit the number of projects a user can own (unless admin)
+        if self.is_anonymous(req):
+            return False
+
         groups = self.get_groups(req)
-        if self.is_admin(groups):
+        is_admin = self.is_admin(groups)
+        if is_admin:
             return True
 
         # is_approved can only be set by an admin
         if obj.is_approved:
             raise Unauthorized(f"Only admins can set `is_approved=True`")
 
+        # set owner to username
+        obj.owner = req.headers.get("X-Consumer-Username")
+
+        # limit the number of projects a user can own (unless admin)
         # project already created at this point -> count-1 and revert
         nr_projects = Projects.objects(owner=obj.owner).count() - 1
         if nr_projects > 2:
@@ -107,11 +113,7 @@ class ProjectsView(SwaggerView):
 @projects.route("/applications/<token>/<action>")
 def applications(token, action):
     ts = current_app.config["USTS"]
-    max_age = current_app.config["USTS_MAX_AGE"]
-    try:
-        owner, project = ts.loads(token, max_age=max_age)
-    except SignatureExpired:
-        return f"signature for {owner} of {project} expired."
+    owner, project = ts.loads(token)
 
     try:
         obj = Projects.objects.get(name=project, owner=owner, is_approved=False)

@@ -18,16 +18,14 @@ if (form.length) {
         ];
         delete data["ref_label"];
         delete data["ref_url"];
+        var url = window.api['host'] + 'projects/';
         $.post({
-            url: window.api['host'] + 'projects/',
+            url: url,
             headers: window.api['headers'],
             data: JSON.stringify(data),
             dataType: "json", contentType: 'application/json',
             success: function(response) {
-                var msg = `Thank you for submitting your project application. Please check your
-                inbox (and spam) for an e-mail asking you to subscribe for MPContribs
-                notifications. Once your e-mail address is confirmed we will notify you if/when
-                your project has been accepted for dissemination.`;
+                var msg = 'Your project has been created: ' + url + data["name"];
                 $('#apply-response .message-body').html(msg);
                 $('#apply-response').removeClass('is-danger').addClass('is-success').removeClass('is-hidden');
                 $('#apply-button').removeClass('is-loading');

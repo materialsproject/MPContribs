@@ -539,7 +539,7 @@ class SwaggerView(OriginalSwaggerView, ResourceView, metaclass=SwaggerViewType):
                 return qs.filter(approved_public_filter)
 
             # authenticated requests can read approved public or accessible non-public projects
-            qfilter = Q(approved_public_filter) | Q(owner=username)
+            qfilter = approved_public_filter | Q(owner=username)
             if groups:
                 qfilter |= Q(name__in=list(groups))
 

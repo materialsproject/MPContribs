@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import yaml
 import urllib
 
 from math import isnan
@@ -20,7 +19,7 @@ from mongoengine.fields import (
 )
 from mpcontribs.api import send_email, valid_key, valid_dict, delimiter, enter
 
-PROVIDERS = {"github", "google", "facebook", "microsoft", "amazon"}
+PROVIDERS = {"github", "google", "facebook", "microsoft", "amazon", "portier"}
 MAX_COLUMNS = 50
 
 
@@ -154,7 +153,7 @@ class Projects(Document):
     )
     other = DictField(validation=valid_dict, null=True, help_text="other information")
     owner = ProviderEmailField(
-        required=True, unique_with="name", help_text="owner / corresponding email"
+        unique_with="name", help_text="owner / corresponding email"
     )
     is_approved = BooleanField(
         required=True, default=False, help_text="project approved?"
@@ -185,18 +184,11 @@ class Projects(Document):
             ts = current_app.config["USTS"]
             email_project = [document.owner, document.name]
             token = ts.dumps(email_project)
-            link = url_for(
-                "projects.applications", token=token, _scheme=scheme, _external=True
-            )
-            subject = f'New project "{document.name}"'
-            hours = int(current_app.config["USTS_MAX_AGE"] / 3600)
-            doc_yaml = yaml.dump(
-                document.to_mongo().to_dict(), indent=4, sort_keys=False
-            )
-            html = render_template(
-                "admin_email.html", doc=doc_yaml, link=link, hours=hours
-            )
-            send_email(admin_email, subject, html)
+            link = url_for("projects.applications", token=token, _scheme=scheme, _external=True)
+            url = url_for("projectsFetch", pk=document.name, _scheme=scheme, _external=True)
+            url += "?_fields=_all"
+            html = render_template("admin_email.html", url=url, link=link)
+            send_email(admin_email, f'New project "{document.name}"', html)
         else:
             delta_set, delta_unset = document._delta()
 

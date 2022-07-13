@@ -18,7 +18,6 @@ JSON_SORT_KEYS = False
 JSON_ADD_STATUS = False
 SECRET_KEY = "super-secret"  # TODO in local prod config
 
-USTS_MAX_AGE = 2.628e6  # 1 month
 MAIL_DEFAULT_SENDER = os.environ.get("MAIL_DEFAULT_SENDER")
 MAIL_TOPIC = os.environ.get("AWS_SNS_TOPIC_ARN")
 
