@@ -98,12 +98,12 @@ class ProjectsView(SwaggerView):
 
         # set owner to username
         obj.owner = req.headers.get("X-Consumer-Username")
+        print("OWNER", obj.owner)
 
         # limit the number of projects a user can own (unless admin)
-        # project already created at this point -> count-1 and revert
-        nr_projects = Projects.objects(owner=obj.owner).count() - 1
-        if nr_projects > 2:
-            Projects.objects(name=obj.name).delete()
+        nr_projects = Projects.objects(owner=obj.owner).count()
+        print("#PROJECTS", nr_projects)
+        if nr_projects > 3:
             raise Unauthorized(f"{obj.owner} already owns {nr_projects} projects.")
 
         return True

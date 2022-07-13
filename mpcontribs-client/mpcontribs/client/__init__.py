@@ -1469,8 +1469,7 @@ class Client(SwaggerClient):
             "identifier": "mp-4",
             "data": {
                 "a": "3 eV",
-                "b": {"c": "hello", "d": 3},
-                "d.e.f": "nest via dot-notation"
+                "b": {"c": "hello", "d": 3}
             },
             "structures": [<pymatgen Structure>, ...],
             "tables": [<pandas DataFrame>, ...],

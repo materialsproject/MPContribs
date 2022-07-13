@@ -12,20 +12,18 @@ if (form.length) {
         $('#apply-button').addClass('is-loading');
         $('#apply-response').addClass('is-hidden');
         var data = Object.fromEntries(new FormData(e.target).entries());
-        data["owner"] = $("#owner").val();
         data["references"] = [
             {"label": data["ref_label"], "url": data["ref_url"]}
         ];
         delete data["ref_label"];
         delete data["ref_url"];
-        var url = window.api['host'] + 'projects/';
         $.post({
-            url: url,
+            url: window.api['host'] + 'projects/',
             headers: window.api['headers'],
             data: JSON.stringify(data),
             dataType: "json", contentType: 'application/json',
             success: function(response) {
-                var msg = 'Your project has been created: ' + url + data["name"];
+                var msg = 'Your <a href=/projects/"' + data["name"] + '">project</a> has been created.';
                 $('#apply-response .message-body').html(msg);
                 $('#apply-response').removeClass('is-danger').addClass('is-success').removeClass('is-hidden');
                 $('#apply-button').removeClass('is-loading');

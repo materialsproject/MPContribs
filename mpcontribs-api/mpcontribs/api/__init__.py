@@ -108,6 +108,7 @@ def send_email(to, subject, html):
             "Body": {"Html": {"Data": html}}
         }
     )
+    logger.warning(f"Email with subject `{subject}` sent to `{to}`")
 
 
 def get_collections(db):
