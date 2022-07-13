@@ -726,6 +726,29 @@ class Client(SwaggerClient):
 
         return Dict(self.projects.get_entry(pk=name, _fields=["_all"]).result())
 
+    def create_project(self, name: str, title: str, authors: str, description: str, url: str):
+        """Create a project
+
+        Args:
+            name (str): unique name matching `^[a-zA-Z0-9_]{3,31}$`
+            title (str): unique title with 5-30 characters
+            authors (str): comma-separated list of authors
+            description (str): brief description (max 1500 characters)
+            url (str): URL for primary reference (paper/website/...)
+        """
+        queries = [{"name": name}, {"title": title}]
+        for query in queries:
+            if self.get_totals(query=query, resource="projects")[0]:
+                logger.error(f"Project with {query} already exists!")
+                return
+
+        project = {
+            "name": name, "title": title, "authors": authors, "description": description,
+            "references": [{"label": "REF", "url": url}]
+        }
+        owner = self.projects.create_entry(project=project).result().get("owner")
+        logger.info(f"Project `{name}` created with owner `{owner}`")
+
     def get_contribution(self, cid: str) -> Type[Dict]:
         """Retrieve full contribution entry
 
@@ -1011,6 +1034,7 @@ class Client(SwaggerClient):
         Args:
             query (dict): query to select resource entries
             timeout (int): cancel remaining requests if timeout exceeded (in seconds)
+            resource (str): type of resource
             op (str): operation to calculate total pages for, one of
                       ("get", "create", "update", "delete", "download")
 
