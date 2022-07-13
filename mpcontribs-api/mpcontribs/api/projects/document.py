@@ -18,7 +18,7 @@ from mongoengine.fields import (
     StringField, BooleanField, DictField, URLField, EmailField,
     FloatField, IntField, EmbeddedDocumentListField, EmbeddedDocumentField
 )
-from mpcontribs.api import send_email, sns_client, valid_key, valid_dict, delimiter, enter
+from mpcontribs.api import send_email, valid_key, valid_dict, delimiter, enter
 
 PROVIDERS = {"github", "google", "facebook", "microsoft", "amazon"}
 MAX_COLUMNS = 50
@@ -196,15 +196,7 @@ class Projects(Document):
             html = render_template(
                 "admin_email.html", doc=doc_yaml, link=link, hours=hours
             )
-            send_email(admin_topic, subject, html)
-            resp = sns_client.create_topic(
-                Name=f"mpcontribs_{document.name}",
-                Attributes={"DisplayName": f"MPContribs {document.title}"},
-            )
-            endpoint = document.owner.split(":", 1)[1]
-            sns_client.subscribe(
-                TopicArn=resp["TopicArn"], Protocol="email", Endpoint=endpoint
-            )
+            send_email(admin_email, subject, html)
         else:
             delta_set, delta_unset = document._delta()
 
@@ -219,10 +211,8 @@ class Projects(Document):
                     host=portal,
                     project=document.name
                 )
-                topic_arn = ":".join(
-                    admin_topic.split(":")[:-1] + ["mpcontribs_" + document.name]
-                )
-                send_email(topic_arn, subject, html)
+                owner_email = document.owner.split(":", 1)[1]
+                send_email(owner_email, subject, html)
 
             if "columns" in delta_set or "columns" in delta_unset or (
                 not delta_set and not delta_unset
@@ -307,11 +297,8 @@ class Projects(Document):
             "owner_email.html", approved=False,
             admin_email=admin_email, project=document.name
         )
-        topic_arn = ":".join(
-            admin_topic.split(":")[:-1] + ["mpcontribs_" + document.name]
-        )
-        send_email(topic_arn, subject, html)
-        sns_client.delete_topic(TopicArn=topic_arn)
+        owner_email = document.owner.split(":", 1)[1]
+        send_email(owner_email, subject, html)
 
 
 register_field(ProviderEmailField, ProviderEmail, available_params=(params.LengthParam,))

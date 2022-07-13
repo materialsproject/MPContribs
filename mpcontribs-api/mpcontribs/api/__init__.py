@@ -33,7 +33,7 @@ delimiter, max_depth = ".", 4
 invalidChars = set(punctuation.replace("*", ""))
 invalidChars.add(" ")
 is_gunicorn = "gunicorn" in os.environ.get("SERVER_SOFTWARE", "")
-sns_client = boto3.client("sns")
+ses_client = boto3.client("ses")
 
 # NOTE not including Size below (special for arrays)
 FILTERS = {
@@ -99,8 +99,15 @@ def valid_dict(dct):
     remap(dct, visit=visit, enter=enter)
 
 
-def send_email(to, subject, template):
-    sns_client.publish(TopicArn=to, Message=template, Subject=subject)
+def send_email(to, subject, html):
+    ses_client.send_email(
+        Source=current_app.config["MAIL_DEFAULT_SENDER"],
+        Destination={"ToAddresses": [to]},
+        Message={
+            "Subject": {"Data": subject},
+            "Body": {"Html": {"Data": html}}
+        }
+    )
 
 
 def get_collections(db):
