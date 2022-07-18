@@ -1,14 +1,15 @@
 # -*- coding: utf-8 -*-
 """Flask App for MPContribs API"""
 import os
-import boto3
 import urllib
+import smtplib
 import logging
 import requests
 #import rq_dashboard
 #import flask_monitoringdashboard as dashboard
 import flask_mongorest.operators as ops
 
+from email.message import EmailMessage
 from importlib import import_module
 from websocket import create_connection
 from flask import Flask, current_app, request, g
@@ -33,7 +34,7 @@ delimiter, max_depth = ".", 4
 invalidChars = set(punctuation.replace("*", ""))
 invalidChars.add(" ")
 is_gunicorn = "gunicorn" in os.environ.get("SERVER_SOFTWARE", "")
-ses_client = boto3.client("ses")
+SMTP_HOST, SMTP_PORT = os.environ.get("SMTP_SERVER", "localhost:587").split(":")
 
 # NOTE not including Size below (special for arrays)
 FILTERS = {
@@ -100,15 +101,18 @@ def valid_dict(dct):
 
 
 def send_email(to, subject, html):
-    ses_client.send_email(
-        Source=current_app.config["MAIL_DEFAULT_SENDER"],
-        Destination={"ToAddresses": [to]},
-        Message={
-            "Subject": {"Data": subject},
-            "Body": {"Html": {"Data": html}}
-        }
-    )
-    logger.warning(f"Email with subject `{subject}` sent to `{to}`")
+    msg = EmailMessage()
+    msg.set_content(html)
+    msg['Subject'] = subject
+    msg['From'] = current_app.config["MAIL_DEFAULT_SENDER"]
+    msg['To'] = to
+
+    # NOTE boto3 SES client can't connect to VPC endpoint yet
+    with smtplib.SMTP(host=SMTP_HOST, port=SMTP_PORT) as ses_client:
+        ses_client.starttls()
+        ses_client.login(os.environ["SMTP_USERNAME"], os.environ["SMTP_PASSWORD"])
+        ses_client.send_message(msg)
+        logger.warning(f"Email with subject `{subject}` sent to `{to}`")
 
 
 def get_collections(db):
