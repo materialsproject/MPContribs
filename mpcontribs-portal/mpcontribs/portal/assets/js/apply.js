@@ -17,6 +17,7 @@ if (form.length) {
         ];
         delete data["ref_label"];
         delete data["ref_url"];
+        data["license"] = $('#license :selected').val();
         $.post({
             url: window.api['host'] + 'projects/',
             headers: window.api['headers'],

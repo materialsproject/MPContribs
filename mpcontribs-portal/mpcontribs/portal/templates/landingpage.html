@@ -32,7 +32,12 @@
             {% endif %}
 
             {% if title %}
-            <div class="title">{{ title }}</div>
+            <div class="title">
+                {{ title }}
+                {% if license %}
+                <sup class="is-size-6 is-family-monospace has-text-grey">{{ license }}</sup>
+                {% endif %}
+            </div>
             {% endif %}
             {% if authors %}
             <div class="subtitle">

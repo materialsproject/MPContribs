@@ -111,6 +111,7 @@ def landingpage(request, project):
             ctx["authors"]["etal"] = authors[1].strip()
         ctx["references"] = prov["references"][:5]
         ctx["more_references"] = prov["references"][5:]
+        ctx["license"] = prov.get("license", "CCA4")
         other = prov.get("other", "")
         if other:
             ctx["other"] = j2h.convert(

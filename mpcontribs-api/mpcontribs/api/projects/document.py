@@ -151,6 +151,10 @@ class Projects(Document):
         max_length=20,
         help_text="list of references",
     )
+    license = StringField(
+        choices=["CCA4", "CCPD"], default="CCA4", required=True,
+        help_text="license (see https://materialsproject.org/about/terms)"
+    )
     other = DictField(validation=valid_dict, null=True, help_text="other information")
     owner = ProviderEmailField(
         unique_with="name", help_text="owner / corresponding email"
