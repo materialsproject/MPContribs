@@ -1,7 +1,1 @@
-{% if approved %}
-Please visit {{host}}/projects/{{project}} to get started with adding data to your
-(private) project. Send a list of MPContribs user e-mails to {{admin_email}} if you'd like
-to add collaborators who can help maintain the data in your project.
-{% else %}
-Your project "{{project}}" has been deleted.
-{% endif %}
+Your project "{{project}}" has been {% if approved %}approved{% else %}denied and deleted{% endif %}.

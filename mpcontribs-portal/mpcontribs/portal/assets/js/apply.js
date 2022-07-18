@@ -24,7 +24,7 @@ if (form.length) {
             data: JSON.stringify(data),
             dataType: "json", contentType: 'application/json',
             success: function(response) {
-                var msg = 'Your <a href=/projects/"' + data["name"] + '">project</a> has been created.';
+                var msg = 'Your <a href=/projects/' + data["name"] + '>project</a> has been created.';
                 $('#apply-response .message-body').html(msg);
                 $('#apply-response').removeClass('is-danger').addClass('is-success').removeClass('is-hidden');
                 $('#apply-button').removeClass('is-loading');
