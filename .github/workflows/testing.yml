@@ -43,6 +43,7 @@ jobs:
       env:
         MPCONTRIBS_API_KEY: ${{ secrets.MPCONTRIBS_API_KEY }}
       run: |
+        env | grep SSL_CERT_FILE
         cd mpcontribs-client
         tox
         python setup.py sdist --dist-dir ../dist
