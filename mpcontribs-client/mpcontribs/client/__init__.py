@@ -1427,7 +1427,9 @@ class Client(SwaggerClient):
             query["project"] = self.project
 
         try:
-            resp = self.projects.get_entry(pk=query["project"], _fields=["is_public"]).result()
+            resp = self.projects.get_entry(
+                pk=query["project"], _fields=["is_public", "is_approved"]
+            ).result()
         except HTTPNotFound:
             return {"error": f"project `{query['project']}` not found or access denied!"}
 
@@ -1437,6 +1439,9 @@ class Client(SwaggerClient):
         ret = {}
 
         if resp["is_public"] != is_public:
+            if is_public and not resp["is_approved"]:
+                return {"error": f"project `{query['project']}` is not approved yet!"}
+
             resp = self.projects.update_entry(
                 pk=query["project"], project={"is_public": is_public}
             ).result()
