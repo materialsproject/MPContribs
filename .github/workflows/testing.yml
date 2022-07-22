@@ -35,15 +35,19 @@ jobs:
         pip install tox tox-gh-actions setuptools wheel certifi
     - name: Set SSL_CERT_FILE (Linux)
       if: matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest'
-      run: export SSL_CERT_FILE=$(python -m certifi)
+      run: |
+        export SSL_CERT_FILE=$(python -m certifi)
+        echo "SSL_CERT_FILE=$SSL_CERT_FILE" >> $GITHUB_ENV
     - name: Set SSL_CERT_FILE (Windows)
       if: matrix.os == 'windows-latest'
-      run: echo ("SSL_CERT_FILE=" + $(python -m certifi)) >> $env:GITHUB_ENV
+      run: |
+        $env:SSL_CERT_FILE=$(python -m certifi)
+        echo "SSL_CERT_FILE=$env:SSL_CERT_FILE" >> $GITHUB_ENV
     - name: Test Client and build
       env:
         MPCONTRIBS_API_KEY: ${{ secrets.MPCONTRIBS_API_KEY }}
+        SSL_CERT_FILE: ${{ env.SSL_CERT_FILE }}
       run: |
-        env | grep SSL_CERT_FILE
         cd mpcontribs-client
         tox
         python setup.py sdist --dist-dir ../dist
