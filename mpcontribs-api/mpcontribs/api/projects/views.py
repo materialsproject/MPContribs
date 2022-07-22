@@ -110,6 +110,16 @@ class ProjectsView(SwaggerView):
 
         return True
 
+    def has_change_permission(self, req, obj):
+        if not self.is_admin_or_project_user(req, obj):
+            return False
+
+        # is_public can only be changed if project is_approved
+        if obj.is_public and not obj.is_approved:
+            raise Unauthorized(f"{obj.id} is not approved yet.")
+
+        return True
+
 
 @projects.route("/applications/<token>", defaults={"action": None})
 @projects.route("/applications/<token>/<action>")
