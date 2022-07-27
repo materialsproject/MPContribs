@@ -90,6 +90,7 @@ class ProjectsView(SwaggerView):
         if self.is_anonymous(req):
             return False
 
+        obj.owner = req.headers.get("X-Consumer-Username")
         groups = self.get_groups(req)
         is_admin = self.is_admin(groups)
         if is_admin:
@@ -98,10 +99,6 @@ class ProjectsView(SwaggerView):
         # is_approved can only be set by an admin
         if obj.is_approved:
             raise Unauthorized(f"Only admins can set `is_approved=True`")
-
-        # set owner to username
-        obj.owner = req.headers.get("X-Consumer-Username")
-        print("OWNER", obj.owner)
 
         # limit the number of projects a user can own (unless admin)
         nr_projects = Projects.objects(owner=obj.owner).count()
