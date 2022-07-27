@@ -3,7 +3,7 @@ import Handsontable from "handsontable";
 $("#table_filter").addClass('is-loading');
 
 const main_columns = ["title", "public", "author"];
-const stats_columns = ["columns", "contributions", "structures", "tables", "attachments"];
+const stats_columns = ["columns", "contributions", "structures", "tables", "attachments", "size"];
 const colHeaders = main_columns.concat(stats_columns);
 const url = window.api['host'] + 'projects/';
 const container = document.getElementById("main_table");
