@@ -102,7 +102,6 @@ class ProjectsView(SwaggerView):
 
         # limit the number of projects a user can own (unless admin)
         nr_projects = Projects.objects(owner=obj.owner).count()
-        print("#PROJECTS", nr_projects)
         if nr_projects > 3:
             raise Unauthorized(f"{obj.owner} already owns {nr_projects} projects.")
 
