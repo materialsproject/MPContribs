@@ -2,6 +2,7 @@
 import urllib
 
 from math import isnan
+from importlib import import_module
 from flatten_dict import flatten
 from boltons.iterutils import remap
 from flask import current_app, render_template, url_for, request
@@ -14,7 +15,7 @@ from marshmallow_mongoengine.conversion.fields import register_field
 from mongoengine import EmbeddedDocument, signals
 from mongoengine.queryset.manager import queryset_manager
 from mongoengine.fields import (
-    StringField, BooleanField, DictField, URLField, EmailField,
+    StringField, BooleanField, DictField, URLField, EmailField, DecimalField,
     FloatField, IntField, EmbeddedDocumentListField, EmbeddedDocumentField
 )
 from mpcontribs.api import send_email, valid_key, valid_dict, delimiter, enter
@@ -107,6 +108,7 @@ class Stats(EmbeddedDocument):
     tables = IntField(required=True, default=0, help_text="#tables")
     structures = IntField(required=True, default=0, help_text="#structures")
     attachments = IntField(required=True, default=0, help_text="#attachments")
+    size = DecimalField(required=True, default=0, precision=0, help_text="size in MB")
 
 
 class Projects(Document):
@@ -248,8 +250,10 @@ class Projects(Document):
                         key = f"{clean_path}__{k}"
                         group[key] = {f"${k}": f"${field}"}
 
+                group["size"] = {"$sum": {"$bsonSize": "$$ROOT"}}
                 pipeline = [{"$match": {"project": document.id}}, {"$group": group}]
                 result = list(Contributions.objects.aggregate(pipeline))
+                size = 0 if not result else result[0].pop("size", 0)
                 min_max = {} if not result else result[0]
 
                 for clean_path in min_max_paths:
@@ -261,26 +265,37 @@ class Projects(Document):
 
                 # update stats
                 stats_kwargs = {"columns": len(columns), "contributions": ncontribs}
+                group = {"_id": None, "count": {"$sum": 1}}
+                proj = {"_id": 1, "count": 1}
 
                 for component in COMPONENTS.keys():
-                    pipeline = [
-                        {"$match": {
-                            "project": document.id,
-                            component: {
-                                "$exists": True,
-                                "$not": {"$size": 0}
-                            }
-                        }},
-                        {"$count": "count"}
-                    ]
-                    result = list(Contributions.objects.aggregate(pipeline))
+                    group[component] = {"$addToSet": f"${component}"}
+                    proj[component] = {"$reduce": {
+                        "input": f"${component}",
+                        "initialValue": [],
+                        "in": {"$concatArrays": ["$$value", "$$this"]}
+                    }}
 
-                    if result:
-                        stats_kwargs[component] = result[0]["count"]
-                        columns[component] = Column(path=component)
-                    else:
-                        stats_kwargs[component] = 0
+                pipeline = [
+                    {"$match": {"project": document.id}},
+                    {"$group": group}, {"$project": proj}
+                ]
+                result = list(Contributions.objects.aggregate(pipeline))
 
+                if result and result[0]:
+                    for component in COMPONENTS.keys():
+                        ids = result[0][component]
+                        if ids:
+                            columns[component] = Column(path=component)
+                            module = import_module(f"mpcontribs.api.{component}.document")
+                            Components = getattr(module, component.capitalize())
+                            group = {"_id": None, "size": {"$sum": {"$bsonSize": "$$ROOT"}}}
+                            stats_kwargs[component] = len(ids)
+                            pipeline = [{"$match": {"_id": {"$in": ids}}}, {"$group": group}]
+                            result_comp = list(Components.objects.aggregate(pipeline))
+                            size += 0 if not result_comp else result_comp[0].pop("size", 0)
+
+                stats_kwargs["size"] = size / 1024 / 1024
                 stats = Stats(**stats_kwargs)
                 document.update(stats=stats, columns=columns.values())
 

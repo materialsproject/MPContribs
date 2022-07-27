@@ -53,6 +53,7 @@ class ProjectsResource(Resource):
         "stats__tables": FILTERS["NUMBERS"],
         "stats__structures": FILTERS["NUMBERS"],
         "stats__attachments": FILTERS["NUMBERS"],
+        "stats__size": FILTERS["NUMBERS"],
     }
     fields = [
         "name",
