@@ -27,7 +27,7 @@ templates = os.path.join(os.path.dirname(flask_mongorest.__file__), "templates")
 contributions = Blueprint("contributions", __name__, template_folder=templates)
 exclude = r'[^$.\s_~`^&(){}[\]\\;\'"/]'
 j2h = Json2Html()
-MAX_UNAPPROVED_CONTRIBS = 10
+MAX_UNAPPROVED_CONTRIBS = 500
 
 
 def visit(path, key, value):
@@ -143,7 +143,8 @@ class ContributionsView(SwaggerView):
         if not obj.project.is_approved:
             nr_contribs = Contributions.objects(project=obj.project.id).count()
             if nr_contribs > MAX_UNAPPROVED_CONTRIBS:
-                msg = f"Max {MAX_UNAPPROVED_CONTRIBS} for unapproved project {obj.project.id}"
+                msg = f"Reached {MAX_UNAPPROVED_CONTRIBS} for unapproved project {obj.project.id}."
+                msg += " Please reach out to contribs@materialsproject.org for approval."
                 raise Unauthorized(f"Can't add {obj.identifier}: {msg}")
 
 
