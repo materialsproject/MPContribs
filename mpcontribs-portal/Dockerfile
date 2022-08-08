@@ -24,7 +24,7 @@ RUN node --trace-deprecation node_modules/webpack/bin/webpack.js
 FROM base as python-deps
 RUN apt-get update && apt-get install -y --no-install-recommends gcc git g++ wget && apt-get clean
 ENV PATH /root/.local/bin:$PATH
-ENV PIP_FLAGS "--user --no-cache-dir --compile --use-feature=in-tree-build"
+ENV PIP_FLAGS "--user --no-cache-dir --compile"
 ARG MORE_PIP_FLAGS
 ENV MORE_PIP_FLAGS=$MORE_PIP_FLAGS
 COPY requirements.txt .
@@ -41,7 +41,7 @@ WORKDIR /app
 COPY --from=webpack /app/dist dist
 ENV NODE_ENV production
 ENV PATH /root/.local/bin:$PATH
-ENV PIP_FLAGS "--user --no-cache-dir --compile --use-feature=in-tree-build"
+ENV PIP_FLAGS "--user --no-cache-dir --compile"
 ARG MORE_PIP_FLAGS
 ENV MORE_PIP_FLAGS=$MORE_PIP_FLAGS
 ENV DJANGO_SETTINGS_FILE="settings.py"

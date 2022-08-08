@@ -4,7 +4,7 @@ MAINTAINER Patrick Huck (tschaume)
 FROM base as python-deps
 RUN apt-get update && apt-get install -y --no-install-recommends gcc git g++ wget && apt-get clean
 ENV PATH /root/.local/bin:$PATH
-ENV PIP_FLAGS "--user --no-cache-dir --compile --use-feature=in-tree-build"
+ENV PIP_FLAGS "--user --no-cache-dir --compile"
 ARG MORE_PIP_FLAGS
 ENV MORE_PIP_FLAGS=$MORE_PIP_FLAGS
 COPY requirements.txt .
