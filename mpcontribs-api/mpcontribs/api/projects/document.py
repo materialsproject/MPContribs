@@ -183,7 +183,6 @@ class Projects(Document):
     @classmethod
     def post_save(cls, sender, document, **kwargs):
         admin_email = current_app.config["MAIL_DEFAULT_SENDER"]
-        admin_topic = current_app.config["MAIL_TOPIC"]
         scheme = "http" if current_app.config["DEBUG"] else "https"
 
         if kwargs.get("created"):
@@ -302,7 +301,6 @@ class Projects(Document):
     @classmethod
     def post_delete(cls, sender, document, **kwargs):
         admin_email = current_app.config["MAIL_DEFAULT_SENDER"]
-        admin_topic = current_app.config["MAIL_TOPIC"]
         subject = f'Your project "{document.name}" has been deleted'
         html = render_template(
             "owner_email.html", approved=False,

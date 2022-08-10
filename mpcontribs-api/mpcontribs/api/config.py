@@ -19,8 +19,6 @@ JSON_ADD_STATUS = False
 SECRET_KEY = "super-secret"  # TODO in local prod config
 
 MAIL_DEFAULT_SENDER = os.environ.get("MAIL_DEFAULT_SENDER")
-MAIL_TOPIC = os.environ.get("AWS_SNS_TOPIC_ARN")
-
 MPCONTRIBS_DB = os.environ.get("MPCONTRIBS_DB_NAME", "mpcontribs")
 MPCONTRIBS_MONGO_HOST = os.environ.get("MPCONTRIBS_MONGO_HOST")
 MONGODB_SETTINGS = {
