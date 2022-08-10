@@ -12,7 +12,7 @@ import flask_mongorest.operators as ops
 from email.message import EmailMessage
 from importlib import import_module
 from websocket import create_connection
-from flask import Flask, current_app, request, g
+from flask import Flask, current_app, request, g, jsonify
 from flask_marshmallow import Marshmallow
 from flask_mongoengine import MongoEngine
 from flask_mongorest import register_class
@@ -234,12 +234,7 @@ def create_app():
             logger.info(f"CRONJOB {app.cron_job_id} added.")
 
     def healthcheck():
-        # TODO run mpcontribs-api in next-gen task on different port so this won't be needed
-        # spams logs with expected 500 errors
-        if not app.debug and not app.kernels:
-            return "KERNEL GATEWAY NOT AVAILABLE", 500
-
-        return "OK"
+        return jsonify({"version": app.config["VERSION"]})
 
     if is_gunicorn:
         app.register_blueprint(sse, url_prefix="/stream")

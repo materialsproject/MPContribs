@@ -46,6 +46,6 @@ ARG VERSION
 ENV DD_VERSION $VERSION
 LABEL com.datadoghq.ad.logs='[{"source": "gunicorn", "service": "contribs-apis"}]'
 
-EXPOSE 10000 10002 10003 10005
+EXPOSE 10000 10002 10003 10005 20000
 ENTRYPOINT ["/app/docker-entrypoint.sh"]
 CMD ["/usr/bin/supervisord", "-c", "supervisord.conf"]
