@@ -58,6 +58,7 @@ from tempfile import gettempdir
 RETRIES = 3
 MAX_WORKERS = 8
 MAX_ELEMS = 10
+MAX_NESTING = 5
 MEGABYTES = 1024 * 1024
 MAX_BYTES = 2.4 * MEGABYTES
 MAX_PAYLOAD = 15 * MEGABYTES
@@ -911,8 +912,8 @@ class Client(SwaggerClient):
                     continue
 
                 nesting = k.count(".")
-                if nesting > 4:
-                    return {"error": f"Nesting too deep for {k}"}
+                if nesting > MAX_NESTING:
+                    return {"error": f"Nesting depth larger than {MAX_NESTING} for {k}!"}
 
                 for col in scanned_columns:
                     if nesting and col.startswith(k):

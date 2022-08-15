@@ -30,7 +30,7 @@ from notebook.gateway.managers import GatewayClient
 from requests.exceptions import ConnectionError
 
 
-delimiter, max_depth = ".", 4
+delimiter, max_depth = ".", 7  # = MAX_NESTING + 2 from client
 invalidChars = set(punctuation.replace("*", ""))
 invalidChars.add(" ")
 is_gunicorn = "gunicorn" in os.environ.get("SERVER_SOFTWARE", "")
