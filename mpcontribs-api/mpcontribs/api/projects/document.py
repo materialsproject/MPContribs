@@ -21,7 +21,7 @@ from mongoengine.fields import (
 from mpcontribs.api import send_email, valid_key, valid_dict, delimiter, enter
 
 PROVIDERS = {"github", "google", "facebook", "microsoft", "amazon", "portier"}
-MAX_COLUMNS = 50
+MAX_COLUMNS = 100
 
 
 def visit(path, key, value):

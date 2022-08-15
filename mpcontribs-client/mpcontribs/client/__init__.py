@@ -62,6 +62,7 @@ MAX_NESTING = 5
 MEGABYTES = 1024 * 1024
 MAX_BYTES = 2.4 * MEGABYTES
 MAX_PAYLOAD = 15 * MEGABYTES
+MAX_COLUMNS = 100
 DEFAULT_HOST = "contribs-api.materialsproject.org"
 BULMA = "is-narrow is-fullwidth has-background-light"
 PROVIDERS = {"github", "google", "facebook", "microsoft", "amazon"}
@@ -899,7 +900,14 @@ class Client(SwaggerClient):
         if not self.project:
             return {"error": "initialize client with project argument!"}
 
-        columns = columns or {}
+        columns = flatten(columns, reducer="dot") or {}
+
+        if len(columns) > MAX_COLUMNS:
+            return {"error": f"Number of columns larger than {MAX_COLUMNS}!"}
+
+        if not all(isinstance(v, str) for v in columns.values() if v is not None):
+            return {"error": "All values in `columns` need to be None or of type str!"}
+
         new_columns = []
 
         if columns:
@@ -917,7 +925,7 @@ class Client(SwaggerClient):
 
                 for col in scanned_columns:
                     if nesting and col.startswith(k):
-                        return {"error": f"duplicate definition of {k} in {col}!"}
+                        return {"error": f"Duplicate definition of {k} in {col}!"}
 
                     for n in range(1, nesting+1):
                         if k.rsplit(".", n)[0] == col:
