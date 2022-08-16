@@ -437,6 +437,7 @@ def _load(protocol, host, headers_json, project):
     origin_url = f"{url}/apispec.json"
     fn = urlsafe_b64encode(origin_url.encode('utf-8')).decode('utf-8')
     apispec = Path(gettempdir()) / fn
+    is_mock_test = 'unittest' in sys.modules and protocol == "http"
     spec_dict = None
 
     if apispec.exists():
@@ -446,25 +447,27 @@ def _load(protocol, host, headers_json, project):
         retries, max_retries = 0, 3
         while retries < max_retries:
             try:
-                is_mock_test = 'unittest' in sys.modules and protocol == "http"
-                if is_mock_test or requests.options(f"{url}/healthcheck").status_code == 200:
-                    loader = Loader(http_client)
-                    spec_dict = loader.load_spec(origin_url)
+                if not is_mock_test:
+                    r = requests.options(f"{url}/healthcheck")
+                    if r.status_code != 200:
+                        retries += 1
+                        logger.warning(
+                            f"Healthcheck for {url} failed (Status {r.status_code})! Waiting 60s ..."
+                        )
+                        time.sleep(60)
+                        continue
 
-                    with apispec.open("w") as f:
-                        ujson.dump(spec_dict, f)
+                loader = Loader(http_client)
+                spec_dict = loader.load_spec(origin_url)
 
-                    logger.debug(f"Specs for {origin_url} saved as {apispec}.")
-                    break
-                else:
-                    retries += 1
-                    logger.warning(
-                        f"Specs not loaded: Healthcheck for {url} failed! Waiting 60s ..."
-                    )
-                    time.sleep(60)
-            except RequestException:
+                with apispec.open("w") as f:
+                    ujson.dump(spec_dict, f)
+
+                logger.debug(f"Specs for {origin_url} saved as {apispec}.")
+                break
+            except RequestException as ex:
                 retries += 1
-                logger.warning(f"Specs not loaded: Could not connect to {url}! Waiting 60s ...")
+                logger.warning(f"Specs not loaded: Could not connect to {url} ({ex})! Waiting 60s ...")
                 time.sleep(60)
 
     if not spec_dict:
