@@ -452,7 +452,7 @@ def _load(protocol, host, headers_json, project):
                     if r.status_code != 200:
                         retries += 1
                         logger.warning(
-                            f"Healthcheck for {url} failed (Status {r.status_code})! Waiting 60s ..."
+                            f"Healthcheck for {url} failed (Status {r.status_code})! Waiting 60s."
                         )
                         time.sleep(60)
                         continue
@@ -467,7 +467,7 @@ def _load(protocol, host, headers_json, project):
                 break
             except RequestException as ex:
                 retries += 1
-                logger.warning(f"Specs not loaded: Could not connect to {url} ({ex})! Waiting 60s ...")
+                logger.warning(f"Could not connect to {url} ({ex})! Waiting 60s ...")
                 time.sleep(60)
 
     if not spec_dict:
