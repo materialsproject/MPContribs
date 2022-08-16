@@ -628,9 +628,17 @@ class Client(SwaggerClient):
         try:
             validate_object(self.swagger_spec, model_spec, data)
         except ValidationError as ex:
-            return str(ex)
+            return False, str(ex)
 
-        return True
+        return True, None
+
+    def _is_serializable_dict(self, dct):
+        for k, v in flatten(dct, reducer="dot").items():
+            if v is not None and not isinstance(v, (str, int, float)):
+                error = f"Value {v} of {type(v)} for key {k} not supported."
+                return False, error
+
+        return True, None
 
     def _get_per_page_default_max(self, op: str = "get", resource: str = "contributions") -> int:
         resource = self.swagger_spec.resources[resource]
@@ -985,9 +993,9 @@ class Client(SwaggerClient):
                 new_columns.append(new_column)
 
         payload = {"columns": new_columns}
-        valid = self._is_valid_payload("Project", payload)
+        valid, error = self._is_valid_payload("Project", payload)
         if not valid:
-            return {"error": valid}
+            return {"error": error}
 
         return self.projects.update_entry(pk=self.project, project=payload).result()
 
@@ -1335,9 +1343,13 @@ class Client(SwaggerClient):
             return "Nothing to update."
 
         tic = time.perf_counter()
-        valid = self._is_valid_payload("Contribution", data)
+        valid, error = self._is_valid_payload("Contribution", data)
         if not valid:
-            return {"error": valid}
+            return {"error": error}
+
+        serializable, error = self._is_serializable_dict(data)
+        if not serializable:
+            return {"error": error}
 
         query = query or {}
 
@@ -1565,6 +1577,10 @@ class Client(SwaggerClient):
         fields.remove("needs_build")  # internal field
 
         for contrib in tqdm(contributions, desc="Prepare"):
+            serializable, error = self._is_serializable_dict(contrib)
+            if not serializable:
+                raise ValueError(error)
+
             update = "id" in contrib
             project_name = id2project[contrib["id"]] if update else contrib["project"]
             if (
@@ -1682,9 +1698,9 @@ class Client(SwaggerClient):
                     digests[project_name][component].add(digest)
                     contribs[project_name][-1][component].append(dct)
 
-                valid = self._is_valid_payload("Contribution", contribs[project_name][-1])
+                valid, error = self._is_valid_payload("Contribution", contribs[project_name][-1])
                 if not valid:
-                    return {"error": f"{contrib['identifier']} invalid: {valid}!"}
+                    return {"error": f"{contrib['identifier']} invalid: {error}!"}
 
         # submit contributions
         if contribs:
