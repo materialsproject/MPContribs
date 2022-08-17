@@ -1350,9 +1350,10 @@ class Client(SwaggerClient):
         if not valid:
             return {"error": error}
 
-        serializable, error = self._is_serializable_dict(data)
-        if not serializable:
-            return {"error": error}
+        if "data" in data:
+            serializable, error = self._is_serializable_dict(data["data"])
+            if not serializable:
+                return {"error": error}
 
         query = query or {}
 
@@ -1580,9 +1581,10 @@ class Client(SwaggerClient):
         fields.remove("needs_build")  # internal field
 
         for contrib in tqdm(contributions, desc="Prepare"):
-            serializable, error = self._is_serializable_dict(contrib)
-            if not serializable:
-                raise ValueError(error)
+            if "data" in contrib:
+                serializable, error = self._is_serializable_dict(contrib["data"])
+                if not serializable:
+                    raise ValueError(error)
 
             update = "id" in contrib
             project_name = id2project[contrib["id"]] if update else contrib["project"]
