@@ -911,7 +911,7 @@ class Client(SwaggerClient):
         if not self.project:
             return {"error": "initialize client with project argument!"}
 
-        columns = flatten(columns, reducer="dot") or {}
+        columns = flatten(columns or {}, reducer="dot")
 
         if len(columns) > MAX_COLUMNS:
             return {"error": f"Number of columns larger than {MAX_COLUMNS}!"}
