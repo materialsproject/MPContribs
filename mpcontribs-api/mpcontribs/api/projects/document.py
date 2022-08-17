@@ -238,21 +238,44 @@ class Projects(Document):
                         if v is not None:
                             columns[path].unit = v
 
-                # set min/max for all number columns
+                # set up pipeline for stats
+                pipeline = [{"$match": {"project": document.id}}]
+
+                for component in COMPONENTS.keys():
+                    # TODO don't include dynamic document fields
+                    pipeline.append(
+                        {"$lookup": {
+                            "from": component,
+                            "localField": component,
+                            "foreignField": "_id",
+                            "as": component
+                        }}
+                    )
+
+                project_stage = {
+                    "_id": 0,
+                    "size": {"$sum": {"$bsonSize": "$$ROOT"}},
+                    "contents": {"$map": {  # attachment sizes
+                        "input": "$attachments",
+                        "as": "attm",
+                        "in": "$$attm.content"
+                    }}
+                }
+
+                for component in COMPONENTS.keys():
+                    project_stage[component] = {"$size": f"${component}"}  # array length
+
                 min_max_paths = [path for path, col in columns.items() if col["unit"] != "NaN"]
-                group = {"_id": None}
 
                 for path in min_max_paths:
                     field = f"{path}{delimiter}value"
                     for k in ["min", "max"]:
                         clean_path = path.replace(delimiter, "__")
                         key = f"{clean_path}__{k}"
-                        group[key] = {f"${k}": f"${field}"}
+                        project_stage[key] = {f"${k}": f"${field}"}
 
-                group["size"] = {"$sum": {"$bsonSize": "$$ROOT"}}
-                pipeline = [{"$match": {"project": document.id}}, {"$group": group}]
+                pipeline.append({"$project": project_stage})
                 result = list(Contributions.objects.aggregate(pipeline))
-                size = 0 if not result else result[0].pop("size", 0)
                 min_max = {} if not result else result[0]
 
                 for clean_path in min_max_paths:
@@ -262,39 +285,17 @@ class Projects(Document):
                         if m is not None:
                             setattr(columns[clean_path], k, m)
 
-                # update stats
                 stats_kwargs = {"columns": len(columns), "contributions": ncontribs}
-                group = {"_id": None, "count": {"$sum": 1}}
-                proj = {"_id": 1, "count": 1}
-
-                for component in COMPONENTS.keys():
-                    group[component] = {"$addToSet": f"${component}"}
-                    proj[component] = {"$reduce": {
-                        "input": f"${component}",
-                        "initialValue": [],
-                        "in": {"$concatArrays": ["$$value", "$$this"]}
-                    }}
-
-                pipeline = [
-                    {"$match": {"project": document.id}},
-                    {"$group": group}, {"$project": proj}
-                ]
-                result = list(Contributions.objects.aggregate(pipeline))
-
                 if result and result[0]:
-                    for component in COMPONENTS.keys():
-                        ids = result[0][component]
-                        if ids:
-                            columns[component] = Column(path=component)
-                            module = import_module(f"mpcontribs.api.{component}.document")
-                            Components = getattr(module, component.capitalize())
-                            group = {"_id": None, "size": {"$sum": {"$bsonSize": "$$ROOT"}}}
-                            stats_kwargs[component] = len(ids)
-                            pipeline = [{"$match": {"_id": {"$in": ids}}}, {"$group": group}]
-                            result_comp = list(Components.objects.aggregate(pipeline))
-                            size += 0 if not result_comp else result_comp[0].pop("size", 0)
+                    size = result[0]["size"]
+                    size += sum(int(x) for x in result[0]["contents"])
+                    stats_kwargs["size"] = size / 1024 / 1024
 
-                stats_kwargs["size"] = size / 1024 / 1024
+                    for component in COMPONENTS.keys():
+                        stats_kwargs[component] = result[0].get(component, 0)
+                        if stats_kwargs[component] > 0:
+                            columns[component] = Column(path=component)
+
                 stats = Stats(**stats_kwargs)
                 document.update(stats=stats, columns=columns.values())
 
