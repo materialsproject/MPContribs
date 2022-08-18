@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from hashlib import md5
-from flask_mongoengine import DynamicDocument
+from flask_mongoengine.documents import DynamicDocument
 from mongoengine import signals, EmbeddedDocument
 from mongoengine.fields import StringField, ListField, IntField, EmbeddedDocumentField
 from mongoengine.queryset.manager import queryset_manager

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import json
 from hashlib import md5
-from flask_mongoengine import Document
+from flask_mongoengine.documents import Document
 from mongoengine import signals
 from mongoengine.fields import StringField, FloatField, ListField, DictField
 from mongoengine.queryset.manager import queryset_manager

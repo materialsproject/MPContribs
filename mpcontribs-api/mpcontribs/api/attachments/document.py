@@ -6,7 +6,7 @@ import binascii
 from hashlib import md5
 from flask import request
 from base64 import b64decode, b64encode
-from flask_mongoengine import DynamicDocument
+from flask_mongoengine.documents import DynamicDocument
 from mongoengine import signals, ValidationError
 from mongoengine.fields import StringField
 from mongoengine.queryset.manager import queryset_manager

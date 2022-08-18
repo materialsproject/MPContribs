@@ -8,7 +8,7 @@ from datetime import datetime
 from flask import current_app
 from importlib import import_module
 from fastnumbers import isfloat
-from flask_mongoengine import DynamicDocument
+from flask_mongoengine.documents import DynamicDocument
 from mongoengine import CASCADE, signals
 from mongoengine.queryset.manager import queryset_manager
 from mongoengine.fields import StringField, BooleanField, DictField

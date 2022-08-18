@@ -6,7 +6,7 @@ from importlib import import_module
 from flatten_dict import flatten
 from boltons.iterutils import remap
 from flask import current_app, render_template, url_for, request
-from flask_mongoengine import Document
+from flask_mongoengine.documents import Document
 from marshmallow import ValidationError
 from marshmallow.fields import String
 from marshmallow.validate import Email as EmailValidator

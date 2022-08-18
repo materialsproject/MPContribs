@@ -6,7 +6,7 @@ import hashlib
 from io import BytesIO
 from mongoengine import signals
 from base64 import b64decode, b64encode
-from flask_mongoengine import Document
+from flask_mongoengine.documents import Document
 from mongoengine.fields import DictField, StringField, IntField, ListField
 from mongoengine.queryset.manager import queryset_manager
 
