@@ -12,7 +12,7 @@ RUN pip install $PIP_FLAGS -r requirements.txt
 COPY setup.py .
 COPY mpcontribs mpcontribs
 RUN pip install $PIP_FLAGS -e .
-#ENV SETUPTOOLS_SCM_PRETEND_VERSION dev
+#ENV SETUPTOOLS_SCM_PRETEND_VERSION 0.0.0
 #COPY marshmallow-mongoengine marshmallow-mongoengine
 #RUN cd marshmallow-mongoengine && pip install $PIP_FLAGS -e .
 #COPY mimerender mimerender
