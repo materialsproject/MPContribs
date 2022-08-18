@@ -8,7 +8,6 @@ import yaml
 from copy import deepcopy
 from typing import Pattern
 from importlib import import_module
-from flask.views import MethodViewType
 from flasgger.marshmallow_apispec import SwaggerView as OriginalSwaggerView
 from flasgger.marshmallow_apispec import schema2jsonschema
 from marshmallow_mongoengine import ModelSchema
@@ -407,14 +406,12 @@ def get_specs(klass, method, collection):
     return spec
 
 
-# https://github.com/pallets/flask/blob/master/flask/views.py
-# TODO FYI https://github.com/flasgger/flasgger/pull/396
-class SwaggerViewType(MethodViewType):
-    """Metaclass for `SwaggerView` defining custom attributes"""
+class SwaggerView(OriginalSwaggerView, ResourceView):
+    """A class-based view defining additional methods"""
 
-    def __init__(cls, name, bases, d):
+    def __init_subclass__(cls, **kwargs):
         """initialize Schema, decorators, definitions, and tags"""
-        super(SwaggerViewType, cls).__init__(name, bases, d)
+        super().__init_subclass__(**kwargs)
 
         if not __name__ == cls.__module__:
             # e.g.: cls.__module__ = mpcontribs.api.projects.views
@@ -455,10 +452,6 @@ class SwaggerViewType(MethodViewType):
                                 logger.debug(
                                     f"{cls.tags[0]}.{method.__name__} written to {file_path}"
                                 )
-
-
-class SwaggerView(OriginalSwaggerView, ResourceView, metaclass=SwaggerViewType):
-    """A class-based view defining additional methods"""
 
     def get_groups(self, request):
         groups = request.headers.get("X-Authenticated-Groups", "").split(",")
