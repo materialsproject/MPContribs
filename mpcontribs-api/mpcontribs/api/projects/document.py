@@ -108,7 +108,7 @@ class Stats(EmbeddedDocument):
     tables = IntField(required=True, default=0, help_text="#tables")
     structures = IntField(required=True, default=0, help_text="#structures")
     attachments = IntField(required=True, default=0, help_text="#attachments")
-    size = DecimalField(required=True, default=0, precision=0, help_text="size in MB")
+    size = DecimalField(required=True, default=0, precision=1, help_text="size in MB")
 
 
 class Projects(Document):
@@ -238,11 +238,12 @@ class Projects(Document):
                         if v is not None:
                             columns[path].unit = v
 
-                # set up pipeline for stats
+                # start pipeline for stats: match project
                 pipeline = [{"$match": {"project": document.id}}]
 
+                # resolve/lookup component fields
+                # NOTE also includes dynamic document fields
                 for component in COMPONENTS.keys():
-                    # TODO don't include dynamic document fields
                     pipeline.append(
                         {"$lookup": {
                             "from": component,
@@ -252,32 +253,56 @@ class Projects(Document):
                         }}
                     )
 
+                # document size and attachment content size
                 project_stage = {
                     "_id": 0,
-                    "size": {"$sum": {"$bsonSize": "$$ROOT"}},
+                    "size": {"$bsonSize": "$$ROOT"},
                     "contents": {"$map": {  # attachment sizes
                         "input": "$attachments",
                         "as": "attm",
-                        "in": "$$attm.content"
-                    }}
-                }
+                        "in": {"$toInt": "$$attm.content"}
+                    }
+                }}
 
+                # number of components
                 for component in COMPONENTS.keys():
-                    project_stage[component] = {"$size": f"${component}"}  # array length
+                    project_stage[component] = {"$size": f"${component}"}
 
+                # filter/forward number columns
                 min_max_paths = [path for path, col in columns.items() if col["unit"] != "NaN"]
+                for path in min_max_paths:
+                    field = f"{path}{delimiter}value"
+                    project_stage[field] = {
+                        "$cond": [{"$isNumber": f"${field}"}, 1, 0]
+                    }
 
+                # add project stage to pipeline
+                pipeline.append({"$project": project_stage})
+
+                # forward fields and sum attachment contents
+                project_stage_2 = {k: 1 for k, v in project_stage.items()}
+                project_stage_2["contents"] = {"$sum": "$contents"}
+                pipeline.append({"$project": project_stage_2})
+
+                # total size and total number of components
+                group_stage = {"_id": None, "size": {"$sum": {"$add": ["$size", "$contents"]}}}
+                for component in COMPONENTS.keys():
+                    group_stage[component] = {"$sum": f"${component}"}
+
+                # determine min/max for columns
                 for path in min_max_paths:
                     field = f"{path}{delimiter}value"
                     for k in ["min", "max"]:
                         clean_path = path.replace(delimiter, "__")
                         key = f"{clean_path}__{k}"
-                        project_stage[key] = {f"${k}": f"${field}"}
+                        group_stage[key] = {f"${k}": f"${field}"}
 
-                pipeline.append({"$project": project_stage})
+                # append group stage and run pipeline
+                pipeline.append({"$group": group_stage})
                 result = list(Contributions.objects.aggregate(pipeline))
-                min_max = {} if not result else result[0]
 
+                # set min/max for columns
+                min_max = {} if not result else result[0]
                 for clean_path in min_max_paths:
                     for k in ["min", "max"]:
                         path = clean_path.replace(delimiter, "__")
@@ -285,12 +310,10 @@ class Projects(Document):
                         if m is not None:
                             setattr(columns[clean_path], k, m)
 
+                # prep and save stats
                 stats_kwargs = {"columns": len(columns), "contributions": ncontribs}
                 if result and result[0]:
-                    size = result[0]["size"]
-                    size += sum(int(x) for x in result[0]["contents"])
-                    stats_kwargs["size"] = size / 1024 / 1024
-
+                    stats_kwargs["size"] = result[0]["size"] / 1024 / 1024
                     for component in COMPONENTS.keys():
                         stats_kwargs[component] = result[0].get(component, 0)
                         if stats_kwargs[component] > 0:
