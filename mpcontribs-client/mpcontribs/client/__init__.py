@@ -583,7 +583,7 @@ class Client(SwaggerClient):
         retries, max_retries = 0, 3
         is_mock_test = 'unittest' in sys.modules and self.protocol == "http"
 
-        while is_mock_test and retries < max_retries:
+        while not is_mock_test and retries < max_retries:
             try:
                 r = requests.get(f"{self.url}/healthcheck", timeout=2)
                 if r.status_code == 200:
