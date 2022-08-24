@@ -592,12 +592,12 @@ class Client(SwaggerClient):
                 else:
                     retries += 1
                     logger.warning(
-                        f"Healthcheck for {url} failed (Status {r.status_code})! Waiting 30s."
+                        f"Healthcheck for {self.url} failed (Status {r.status_code})! Waiting 30s."
                     )
                     time.sleep(30)
             except RequestException as ex:
                 retries += 1
-                logger.warning(f"Could not connect to {url} ({ex})! Waiting 30s ...")
+                logger.warning(f"Could not connect to {self.url} ({ex})! Waiting 30s ...")
                 time.sleep(30)
 
         if "session" not in self.__dict__:
