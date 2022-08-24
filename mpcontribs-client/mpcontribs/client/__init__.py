@@ -430,48 +430,30 @@ def _run_futures(futures, total: int = 0, timeout: int = -1, desc=None, disable=
 
 
 @functools.lru_cache
-def _load(protocol, host, headers_json, project):
+def _load(protocol, host, headers_json, project, version):
     headers = ujson.loads(headers_json)
     http_client = FidoClientGlobalHeaders(headers=headers)
     url = f"{protocol}://{host}"
     origin_url = f"{url}/apispec.json"
-    fn = urlsafe_b64encode(origin_url.encode('utf-8')).decode('utf-8')
+    url4fn = origin_url.replace("apispec", f"apispec-{version}").encode('utf-8')
+    fn = urlsafe_b64encode(url4fn).decode('utf-8')
     apispec = Path(gettempdir()) / fn
-    is_mock_test = 'unittest' in sys.modules and protocol == "http"
     spec_dict = None
 
     if apispec.exists():
         spec_dict = ujson.loads(apispec.read_bytes())
-        logger.debug(f"Specs for {origin_url} re-loaded from {apispec}.")
+        logger.debug(f"Specs for {origin_url} and {version} re-loaded from {apispec}.")
     else:
-        retries, max_retries = 0, 3
-        while retries < max_retries:
-            try:
-                if not is_mock_test:
-                    r = requests.options(f"{url}/healthcheck")
-                    if r.status_code != 200:
-                        retries += 1
-                        logger.warning(
-                            f"Healthcheck for {url} failed (Status {r.status_code})! Waiting 60s."
-                        )
-                        time.sleep(60)
-                        continue
+        loader = Loader(http_client)
+        spec_dict = loader.load_spec(origin_url)
 
-                loader = Loader(http_client)
-                spec_dict = loader.load_spec(origin_url)
+        with apispec.open("w") as f:
+            ujson.dump(spec_dict, f)
 
-                with apispec.open("w") as f:
-                    ujson.dump(spec_dict, f)
-
-                logger.debug(f"Specs for {origin_url} saved as {apispec}.")
-                break
-            except RequestException as ex:
-                retries += 1
-                logger.warning(f"Could not connect to {url} ({ex})! Waiting 60s ...")
-                time.sleep(60)
+        logger.debug(f"Specs for {origin_url} and {version} saved as {apispec}.")
 
     if not spec_dict:
-        raise ValueError(f"Could not load specs from {url}!")  # not cached
+        raise ValueError(f"Could not load specs from {url} for {version}!")  # not cached
 
     spec_dict["host"] = host
     spec_dict["schemes"] = [protocol]
@@ -598,6 +580,26 @@ class Client(SwaggerClient):
         if self.url not in VALID_URLS:
             raise ValueError(f"{self.url} not a valid URL (one of {VALID_URLS})")
 
+        retries, max_retries = 0, 3
+        is_mock_test = 'unittest' in sys.modules and self.protocol == "http"
+
+        while is_mock_test and retries < max_retries:
+            try:
+                r = requests.get(f"{self.url}/healthcheck", timeout=2)
+                if r.status_code == 200:
+                    self.version = r.json().get("version")
+                    break
+                else:
+                    retries += 1
+                    logger.warning(
+                        f"Healthcheck for {url} failed (Status {r.status_code})! Waiting 30s."
+                    )
+                    time.sleep(30)
+            except RequestException as ex:
+                retries += 1
+                logger.warning(f"Could not connect to {url} ({ex})! Waiting 30s ...")
+                time.sleep(30)
+
         if "session" not in self.__dict__:
             self.session = get_session()
 
@@ -611,7 +613,7 @@ class Client(SwaggerClient):
 
     @property
     def cached_swagger_spec(self):
-        return _load(self.protocol, self.host, self.headers_json, self.project)
+        return _load(self.protocol, self.host, self.headers_json, self.project, self.version)
 
     def __dir__(self):
         members = set(self.swagger_spec.resources.keys())
