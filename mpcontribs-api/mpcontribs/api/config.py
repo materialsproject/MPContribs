@@ -13,7 +13,7 @@ formulae_path = os.path.join(
 with gzip.open(formulae_path) as f:
     FORMULAE = json.load(f)
 
-VERSION = datetime.datetime.today().strftime("%Y.%m.%d")
+VERSION = datetime.datetime.now().strftime("v%Y%m%d%H%M")
 JSON_SORT_KEYS = False
 JSON_ADD_STATUS = False
 SECRET_KEY = "super-secret"  # TODO in local prod config
