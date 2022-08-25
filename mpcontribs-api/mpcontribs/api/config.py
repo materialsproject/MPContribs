@@ -6,6 +6,8 @@ import datetime
 import json
 import gzip
 
+from semantic_version import Version
+
 formulae_path = os.path.join(
     os.path.dirname(__file__), "contributions", "formulae.json.gz"
 )
@@ -13,7 +15,12 @@ formulae_path = os.path.join(
 with gzip.open(formulae_path) as f:
     FORMULAE = json.load(f)
 
-VERSION = datetime.datetime.now().strftime("v%Y%m%d%H%M")
+now = datetime.datetime.now()
+VERSION = Version(
+    major=now.year, minor=now.month, patch=now.day,
+    prerelease=(str(now.hour), str(now.minute))
+)
+
 JSON_SORT_KEYS = False
 JSON_ADD_STATUS = False
 SECRET_KEY = "super-secret"  # TODO in local prod config
