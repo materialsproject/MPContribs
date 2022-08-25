@@ -13,6 +13,7 @@ import itertools
 import functools
 import requests
 import logging
+import datetime
 
 from requests.exceptions import RequestException
 from bravado_core.param import Param
@@ -583,22 +584,25 @@ class Client(SwaggerClient):
         retries, max_retries = 0, 3
         is_mock_test = 'unittest' in sys.modules and self.protocol == "http"
 
-        while not is_mock_test and retries < max_retries:
-            try:
-                r = requests.get(f"{self.url}/healthcheck", timeout=2)
-                if r.status_code == 200:
-                    self.version = r.json().get("version")
-                    break
-                else:
+        if is_mock_test:
+            self.version = datetime.datetime.now().strftime("v%Y%m%d%H%M")
+        else:
+            while retries < max_retries:
+                try:
+                    r = requests.get(f"{self.url}/healthcheck", timeout=2)
+                    if r.status_code == 200:
+                        self.version = r.json().get("version")
+                        break
+                    else:
+                        retries += 1
+                        logger.warning(
+                            f"Healthcheck for {self.url} failed (Status {r.status_code})! Waiting 30s."
+                        )
+                        time.sleep(30)
+                except RequestException as ex:
                     retries += 1
-                    logger.warning(
-                        f"Healthcheck for {self.url} failed (Status {r.status_code})! Waiting 30s."
-                    )
+                    logger.warning(f"Could not connect to {self.url} ({ex})! Waiting 30s ...")
                     time.sleep(30)
-            except RequestException as ex:
-                retries += 1
-                logger.warning(f"Could not connect to {self.url} ({ex})! Waiting 30s ...")
-                time.sleep(30)
 
         if "session" not in self.__dict__:
             self.session = get_session()
