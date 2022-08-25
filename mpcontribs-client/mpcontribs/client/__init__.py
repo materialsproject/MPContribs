@@ -15,6 +15,7 @@ import requests
 import logging
 import datetime
 
+from semantic_version import Version
 from requests.exceptions import RequestException
 from bravado_core.param import Param
 from bson.objectid import ObjectId
@@ -585,7 +586,11 @@ class Client(SwaggerClient):
         is_mock_test = 'unittest' in sys.modules and self.protocol == "http"
 
         if is_mock_test:
-            self.version = datetime.datetime.now().strftime("v%Y%m%d%H%M")
+            now = datetime.datetime.now()
+            self.version = Version(
+                major=now.year, minor=now.month, patch=now.day,
+                prerelease=(str(now.hour), str(now.minute))
+            )
         else:
             while retries < max_retries:
                 try:
@@ -596,7 +601,7 @@ class Client(SwaggerClient):
                     else:
                         retries += 1
                         logger.warning(
-                            f"Healthcheck for {self.url} failed (Status {r.status_code})! Waiting 30s."
+                            f"Healthcheck for {self.url} failed with {r.status_code}! Waiting 30s."
                         )
                         time.sleep(30)
                 except RequestException as ex:
