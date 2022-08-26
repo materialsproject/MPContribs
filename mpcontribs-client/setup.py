@@ -43,6 +43,7 @@ setup(
         "twisted",
         "tqdm",
         "ujson",
+        "semantic-version",
     ],
     license="MIT",
     zip_safe=False,
