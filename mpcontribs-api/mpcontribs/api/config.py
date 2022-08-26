@@ -16,10 +16,10 @@ with gzip.open(formulae_path) as f:
     FORMULAE = json.load(f)
 
 now = datetime.datetime.now()
-VERSION = Version(
+VERSION = str(Version(
     major=now.year, minor=now.month, patch=now.day,
     prerelease=(str(now.hour), str(now.minute))
-)
+))
 
 JSON_SORT_KEYS = False
 JSON_ADD_STATUS = False
