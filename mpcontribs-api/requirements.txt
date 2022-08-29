@@ -10,7 +10,7 @@ filetype==1.1.0
 flasgger @ git+https://github.com/flasgger/flasgger#egg=flasgger-0.9.5
 flask-compress==1.12
 flask-marshmallow==0.14.0
-flask-mongorest-mpcontribs==2.0.1
+flask-mongorest-mpcontribs==3.0.0
 #Flask-MonitoringDashboard @ git+https://github.com/flask-dashboard/Flask-MonitoringDashboard@development#egg=flask_monitoringdashboard-3.1.1
 Flask-RQ2==18.3
 gunicorn[gevent]==20.1.0
