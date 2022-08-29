@@ -184,12 +184,6 @@ def create_app():
     app.config["TEMPLATE"]["schemes"] = ["http"] if app.debug else ["https"]
     MPCONTRIBS_API_HOST = os.environ["MPCONTRIBS_API_HOST"]
     logger.info("database: " + app.config["MPCONTRIBS_DB"])
-
-    if app.debug:
-        from flask_cors import CORS
-
-        CORS(app)  # enable for development (allow localhost)
-
     Compress(app)
     Marshmallow(app)
     MongoEngine(app)
