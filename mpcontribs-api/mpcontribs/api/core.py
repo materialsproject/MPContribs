@@ -462,7 +462,11 @@ class SwaggerView(OriginalSwaggerView, ResourceView):
         if not request.headers.get("X-Consumer-Username", ""):
             return True
 
-        return request.headers.get("X-Anonymous-Consumer", False)
+        is_anonymous = request.headers.get("X-Anonymous-Consumer", False)
+        if isinstance(is_anonymous, str):
+            is_anonymous = False if is_anonymous == "false" else True
+
+        return is_anonymous
 
     def is_external(self, request):
         return request.headers.get("X-Forwarded-Host") is not None and \
