@@ -11,7 +11,7 @@ pandas==1.4.3
 pint==0.19.2
 plotly==5.10.0
 pyIsEmail==1.4.0
-pymatgen==2022.7.25
+pymatgen==2022.8.23
 pymongo==4.2.0
 pyOpenSSL==22.0.0
 requests-futures==1.0.0
