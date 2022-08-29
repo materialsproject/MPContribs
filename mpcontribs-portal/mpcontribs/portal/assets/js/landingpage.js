@@ -26,17 +26,11 @@ const objectid_regex = /^[a-f\d]{24}$/i;
 const data_cols = $('#'+table_id).data('columns');
 const headers = data_cols ? data_cols.split(',') : [];
 const columns = $.map(headers, get_column_config);
-const fields = columns.flatMap((conf) => {
-    var ret = [conf.data];
-    if (conf.data.endsWith('.value')) {
-        ret.push(conf.data.replace(/\.value/g, '.error'))
-    }
-    return ret;
-});
+const fields = Array.from(new Set(
+    $.map(columns, (conf) => {return conf.data.split('.')[0];})
+)).join(',');
 const default_limit = 30;
-const default_query = {
-    _fields: fields.join(','), project: project, _skip: 0, _limit: default_limit
-};
+const default_query = {_fields: fields, project: project, _skip: 0, _limit: default_limit};
 const rowHeight = 23;
 
 var query = $.extend(true, {}, default_query);
@@ -46,8 +40,7 @@ function get_data() {
     $('#table_filter').addClass('is-loading');
     const url = window.api['host'] + 'contributions/';
     return $.get({
-        contentType: "json", dataType: "json", url: url, headers:
-        window.api['headers'], data: query
+        contentType: "json", dataType: "json", url: url, headers: window.api['headers'], data: query
     });
 }
 
@@ -149,9 +142,11 @@ function load_data(dom) {
                 var col = columns[c].data;
                 if (col.endsWith('.value')) {
                     var v = get(doc, col, '');
-                    if (v) {
+                    if (v !== '') {
                         var e = get(doc, col.replace(/\.value/g, '.error'), '');
                         if (e) { set(doc, col, v + "±" + e); }
+                    } else {
+                        set(doc, col, '');
                     }
                 }
             }
@@ -170,6 +165,9 @@ function load_data(dom) {
         $('#table_filter').removeClass('is-loading');
         $('#table_delete').removeClass('is-loading');
         $('[name=table]').first().removeClass("is-invisible");
+    }).fail(function(xhr, status, error) {
+        console.log(status);
+        console.log(error);
     });
 }
 
