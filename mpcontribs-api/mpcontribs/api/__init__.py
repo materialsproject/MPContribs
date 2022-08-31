@@ -31,7 +31,7 @@ from requests.exceptions import ConnectionError
 
 
 delimiter, max_depth = ".", 7  # = MAX_NESTING + 2 from client
-invalidChars = set(punctuation.replace("*", "") + whitespace)
+invalidChars = set(punctuation.replace("*", "").replace("|", "") + whitespace)
 is_gunicorn = "gunicorn" in os.environ.get("SERVER_SOFTWARE", "")
 SMTP_HOST, SMTP_PORT = os.environ.get("SMTP_SERVER", "localhost:587").split(":")
 
@@ -82,6 +82,9 @@ def valid_key(key):
     for char in key:
         if char in invalidChars:
             raise ValidationError(f"invalid character {char} in {key}")
+
+    if key.count("|") > 1:
+        raise ValidationError(f"Only one `|` allowed in {key}. Consider nesting.")
 
 
 def visit(path, key, value):
