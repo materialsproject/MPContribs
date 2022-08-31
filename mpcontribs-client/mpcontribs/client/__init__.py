@@ -583,7 +583,7 @@ class Client(SwaggerClient):
             raise ValueError(f"{self.url} not a valid URL (one of {VALID_URLS})")
 
         retries, max_retries = 0, 3
-        is_mock_test = 'unittest' in sys.modules and self.protocol == "http"
+        is_mock_test = 'pytest' in sys.modules and self.protocol == "http"
 
         if is_mock_test:
             now = datetime.datetime.now()
