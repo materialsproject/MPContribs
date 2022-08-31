@@ -23,7 +23,7 @@ from flasgger.base import Swagger
 from mongoengine import ValidationError
 from mongoengine.base.datastructures import BaseDict
 from itsdangerous import URLSafeTimedSerializer
-from string import punctuation
+from string import punctuation, whitespace
 from boltons.iterutils import remap, default_enter
 from notebook.utils import url_path_join
 from notebook.gateway.managers import GatewayClient
@@ -31,8 +31,7 @@ from requests.exceptions import ConnectionError
 
 
 delimiter, max_depth = ".", 7  # = MAX_NESTING + 2 from client
-invalidChars = set(punctuation.replace("*", ""))
-invalidChars.add(" ")
+invalidChars = set(punctuation.replace("*", "") + whitespace)
 is_gunicorn = "gunicorn" in os.environ.get("SERVER_SOFTWARE", "")
 SMTP_HOST, SMTP_PORT = os.environ.get("SMTP_SERVER", "localhost:587").split(":")
 
