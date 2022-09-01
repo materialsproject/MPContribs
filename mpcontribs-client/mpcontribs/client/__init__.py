@@ -582,32 +582,33 @@ class Client(SwaggerClient):
         if self.url not in VALID_URLS:
             raise ValueError(f"{self.url} not a valid URL (one of {VALID_URLS})")
 
-        retries, max_retries = 0, 3
-        is_mock_test = 'pytest' in sys.modules and self.protocol == "http"
+        if "version" not in self.__dict__:
+            retries, max_retries = 0, 3
+            is_mock_test = 'pytest' in sys.modules and self.protocol == "http"
 
-        if is_mock_test:
-            now = datetime.datetime.now()
-            self.version = Version(
-                major=now.year, minor=now.month, patch=now.day,
-                prerelease=(str(now.hour), str(now.minute))
-            )
-        else:
-            while retries < max_retries:
-                try:
-                    r = requests.get(f"{self.url}/healthcheck", timeout=2)
-                    if r.status_code == 200:
-                        self.version = r.json().get("version")
-                        break
-                    else:
+            if is_mock_test:
+                now = datetime.datetime.now()
+                self.version = Version(
+                    major=now.year, minor=now.month, patch=now.day,
+                    prerelease=(str(now.hour), str(now.minute))
+                )
+            else:
+                while retries < max_retries:
+                    try:
+                        r = requests.get(f"{self.url}/healthcheck", timeout=2)
+                        if r.status_code == 200:
+                            self.version = r.json().get("version")
+                            break
+                        else:
+                            retries += 1
+                            logger.warning(
+                                f"Healthcheck for {self.url} failed with {r.status_code}! Waiting 30s."
+                            )
+                            time.sleep(30)
+                    except RequestException as ex:
                         retries += 1
-                        logger.warning(
-                            f"Healthcheck for {self.url} failed with {r.status_code}! Waiting 30s."
-                        )
+                        logger.warning(f"Could not connect to {self.url} ({ex})! Waiting 30s ...")
                         time.sleep(30)
-                except RequestException as ex:
-                    retries += 1
-                    logger.warning(f"Could not connect to {self.url} ({ex})! Waiting 30s ...")
-                    time.sleep(30)
 
         if "session" not in self.__dict__:
             self.session = get_session()
