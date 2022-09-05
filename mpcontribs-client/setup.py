@@ -39,7 +39,7 @@ setup(
         "pyOpenSSL",
         "requests-futures",
         "service-identity",
-        "swagger-spec-validator<2.7.4",
+        "swagger-spec-validator<2.7.7",
         "twisted",
         "tqdm",
         "ujson",
