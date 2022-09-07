@@ -4,7 +4,7 @@ blinker==1.5
 boltons==21.0.0
 css-html-js-minify==2.5.5
 dateparser==1.1.1
-ddtrace==1.4.3
+ddtrace==1.4.4
 dnspython==2.2.1
 filetype==1.1.0
 flasgger @ git+https://github.com/flasgger/flasgger#egg=flasgger-0.9.5
