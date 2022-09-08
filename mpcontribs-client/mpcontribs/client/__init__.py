@@ -431,7 +431,7 @@ def _run_futures(futures, total: int = 0, timeout: int = -1, desc=None, disable=
     return responses
 
 
-@functools.lru_cache
+@functools.lru_cache(maxsize=1000)
 def _load(protocol, host, headers_json, project, version):
     headers = ujson.loads(headers_json)
     http_client = FidoClientGlobalHeaders(headers=headers)
