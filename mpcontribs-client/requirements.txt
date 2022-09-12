@@ -4,7 +4,7 @@ cryptography==37.0.4
 fido[tls]==4.2.2
 filetype==1.1.0
 flatten-dict==0.4.2
-ipython==8.4.0
+ipython==8.5.0
 json2html==1.3.0
 jsonschema<4.0
 pandas==1.4.4
