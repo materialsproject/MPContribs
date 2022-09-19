@@ -20,4 +20,4 @@ service-identity==21.1.0
 swagger-spec-validator<2.7.4
 twisted==22.4.0
 tqdm==4.64.1
-ujson==5.4.0
+ujson==5.5.0
