@@ -1,6 +1,6 @@
 boltons==21.0.0
-boto3==1.24.68
-ddtrace==1.4.4
+boto3==1.24.75
+ddtrace==1.4.5
 Django>=3.2,<4.0
 django-extensions==3.2.0
 django-settings-file==2.10.0
