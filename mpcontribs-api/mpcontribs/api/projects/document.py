@@ -5,6 +5,7 @@ from math import isnan
 from importlib import import_module
 from flatten_dict import flatten
 from boltons.iterutils import remap
+from collections import ChainMap
 from flask import current_app, render_template, url_for, request
 from flask_mongoengine.documents import Document
 from marshmallow import ValidationError
@@ -226,10 +227,13 @@ class Projects(Document):
                 elif "columns" in delta_unset or ncontribs:
                     # document.columns unset by user to reinit all columns from DB
                     # -> get paths and units across all contributions from DB
-                    group = {"_id": "$project", "merged": {"$mergeObjects": "$data"}}
-                    pipeline = [{"$match": {"project": document.id}}, {"$group": group}]
-                    result = list(Contributions.objects.aggregate(pipeline))
-                    merged = {} if not result else result[0]["merged"]
+                    pipeline = [
+                        {"$match": {"project": document.id}},
+                        {"$sample": {"size": 1000}},
+                        {"$project": {"data": 1}}
+                    ]
+                    result = Contributions.objects.aggregate(pipeline, allowDiskUse=True)
+                    merged = ChainMap(*result)
                     flat = flatten(remap(merged, visit=visit, enter=enter), reducer="dot")
 
                     for k, v in flat.items():
