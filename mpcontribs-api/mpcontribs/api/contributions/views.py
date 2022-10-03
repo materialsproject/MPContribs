@@ -6,6 +6,7 @@ import flask_mongorest
 from css_html_js_minify import html_minify
 from json2html import Json2Html
 from boltons.iterutils import remap
+from werkzeug.exceptions import Unauthorized
 
 from flask import Blueprint, render_template
 from flask_mongorest.resources import Resource
