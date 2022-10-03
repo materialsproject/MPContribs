@@ -237,10 +237,10 @@ class Projects(Document):
                     flat = flatten(remap(merged, visit=visit, enter=enter), reducer="dot")
 
                     for k, v in flat.items():
-                        path = f"data.{k}"
-                        columns[path] = Column(path=path)
-                        if v is not None:
-                            columns[path].unit = v
+                        if k.startswith("data."):
+                            columns[k] = Column(path=k)
+                            if v is not None:
+                                columns[k].unit = v
 
                 # start pipeline for stats: match project
                 pipeline = [{"$match": {"project": document.id}}]
