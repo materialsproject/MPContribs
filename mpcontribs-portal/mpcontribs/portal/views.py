@@ -175,6 +175,7 @@ def highlight_code(source, language="python", metadata=None):
 
 
 def export_notebook(nb, cid):
+    nb.pop("id")
     nb = nbformat.from_dict(nb)
     html_exporter = HTMLExporter(template_name="basic")
     html_exporter.filters["highlight_code"] = highlight_code
