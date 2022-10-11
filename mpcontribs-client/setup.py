@@ -36,7 +36,6 @@ setup(
         "pymongo",
         "requests-futures",
         "swagger-spec-validator<2.7.4",
-        "twisted",
         "tqdm",
         "ujson",
         "semantic-version",

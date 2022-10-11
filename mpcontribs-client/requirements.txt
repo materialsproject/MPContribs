@@ -9,17 +9,12 @@ appnope==0.1.3
 asttokens==2.0.8
     # via stack-data
 attrs==22.1.0
-    # via
-    #   automat
-    #   jsonschema
-    #   twisted
-automat==20.2.0
-    # via twisted
+    # via jsonschema
 backcall==0.2.0
     # via ipython
 boltons==21.0.0
     # via mpcontribs-client (setup.py)
-bravado[fido]==11.0.3
+bravado==11.0.3
     # via mpcontribs-client (setup.py)
 bravado-core==5.17.1
     # via bravado
@@ -27,12 +22,8 @@ certifi==2022.9.24
     # via requests
 charset-normalizer==2.1.1
     # via requests
-constantly==15.1.0
-    # via twisted
 contourpy==1.0.5
     # via matplotlib
-crochet==2.0.0
-    # via fido
 cycler==0.11.0
     # via matplotlib
 decorator==5.1.1
@@ -45,8 +36,6 @@ emmet-core==0.38.6
     # via mp-api
 executing==1.1.1
     # via stack-data
-fido==4.2.2
-    # via bravado
 filetype==1.1.0
     # via mpcontribs-client (setup.py)
 flatten-dict==0.4.2
@@ -55,15 +44,10 @@ fonttools==4.38.0
     # via matplotlib
 future==0.18.2
     # via uncertainties
-hyperlink==21.0.0
-    # via twisted
 idna==3.4
     # via
-    #   hyperlink
     #   jsonschema
     #   requests
-incremental==22.10.0
-    # via twisted
 ipython==8.5.0
     # via mpcontribs-client (setup.py)
 jedi==0.18.1
@@ -206,10 +190,8 @@ simplejson==3.17.6
 six==1.16.0
     # via
     #   asttokens
-    #   automat
     #   bravado
     #   bravado-core
-    #   fido
     #   flatten-dict
     #   jsonschema
     #   latexcodec
@@ -242,18 +224,12 @@ traitlets==5.5.0
     # via
     #   ipython
     #   matplotlib-inline
-twisted==22.8.0
-    # via
-    #   crochet
-    #   fido
-    #   mpcontribs-client (setup.py)
 typing-extensions==4.4.0
     # via
     #   bravado
     #   emmet-core
     #   mp-api
     #   pydantic
-    #   twisted
 ujson==5.5.0
     # via mpcontribs-client (setup.py)
 uncertainties==3.1.7
@@ -264,14 +240,6 @@ wcwidth==0.2.5
     # via prompt-toolkit
 webcolors==1.12
     # via jsonschema
-wrapt==1.14.1
-    # via crochet
-yelp-bytes==0.3.0
-    # via fido
-yelp-encodings==1.0.0
-    # via yelp-bytes
-zope-interface==5.5.0
-    # via twisted
 
 # The following packages are considered to be unsafe in a requirements file:
 # setuptools
