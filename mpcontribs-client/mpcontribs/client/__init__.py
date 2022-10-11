@@ -3,7 +3,6 @@ import io
 import sys
 import os
 import ujson
-import fido
 import time
 import gzip
 import warnings
@@ -35,8 +34,7 @@ from swagger_spec_validator.common import SwaggerValidationError
 from jsonschema.exceptions import ValidationError
 from bravado_core.formatter import SwaggerFormat
 from bravado.client import SwaggerClient
-from bravado.fido_client import FidoClient  # async
-from bravado.http_future import HttpFuture
+from bravado.requests_client import RequestsClient
 from bravado.swagger_model import Loader
 from bravado.config import bravado_config_from_config_dict
 from bravado_core.spec import Spec
@@ -246,20 +244,6 @@ def _response_hook(resp, *args, **kwargs):
         resp.count = 0
 
 
-class FidoClientGlobalHeaders(FidoClient):
-    def __init__(self, headers=None):
-        super().__init__()
-        self.headers = headers or {}
-
-    def request(self, request_params, operation=None, request_config=None):
-        request_for_twisted = self.prepare_request_for_twisted(request_params)
-        request_for_twisted["headers"].update(self.headers)
-        future_adapter = self.future_adapter_class(fido.fetch(**request_for_twisted))
-        return HttpFuture(
-            future_adapter, self.response_adapter_class, operation, request_config
-        )
-
-
 def visit(path, key, value):
     if isinstance(value, dict) and "display" in value:
         return key, value["display"]
@@ -434,7 +418,8 @@ def _run_futures(futures, total: int = 0, timeout: int = -1, desc=None, disable=
 @functools.lru_cache(maxsize=1000)
 def _load(protocol, host, headers_json, project, version):
     headers = ujson.loads(headers_json)
-    http_client = FidoClientGlobalHeaders(headers=headers)
+    http_client = RequestsClient()
+    http_client.session.headers.update(headers)
     url = f"{protocol}://{host}"
     origin_url = f"{url}/apispec.json"
     url4fn = origin_url.replace("apispec", f"apispec-{version}").encode('utf-8')
