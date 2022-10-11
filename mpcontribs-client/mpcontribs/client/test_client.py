@@ -27,7 +27,7 @@ def test_mock():
     host = "localhost:10000"
     with Client(host=host, headers={"a": "b"}) as client:
         spec = client.swagger_spec
-        assert spec.http_client.headers == {
+        assert spec.http_client.session.headers == {
             "Content-Type": "application/json", "a": "b"
         }
         assert spec.origin_url == f"http://{host}/apispec.json"
@@ -38,7 +38,7 @@ def test_mock():
     host = "contribs-apis:10000"
     with Client(host=host) as client:
         spec = client.swagger_spec
-        assert spec.http_client.headers == {"Content-Type": "application/json"}
+        assert spec.http_client.session.headers == {"Content-Type": "application/json"}
         assert spec.origin_url == f"http://{host}/apispec.json"
         assert spec.spec_dict["host"] == host
         assert spec.spec_dict["schemes"] == ["http"]
@@ -47,7 +47,7 @@ def test_mock():
     host = "192.168.0.40:10000"
     with Client(host=host) as client:
         spec = client.swagger_spec
-        assert spec.http_client.headers == {"Content-Type": "application/json"}
+        assert spec.http_client.session.headers == {"Content-Type": "application/json"}
         assert spec.origin_url == f"http://{host}/apispec.json"
         assert spec.spec_dict["host"] == host
         assert spec.spec_dict["schemes"] == ["http"]
@@ -62,7 +62,7 @@ def test_live():
     with Client(apikey="1234") as client:
         assert client.url == f"https://{DEFAULT_HOST}"
         spec = client.swagger_spec
-        assert spec.http_client.headers == {
+        assert spec.http_client.session.headers == {
             "Content-Type": "application/json", "x-api-key": "1234"
         }
         assert spec.origin_url == f"https://{DEFAULT_HOST}/apispec.json"
@@ -73,7 +73,7 @@ def test_live():
     host = "ml-api.materialsproject.org"
     with Client(host=host) as client:
         spec = client.swagger_spec
-        assert spec.http_client.headers == {"Content-Type": "application/json"}
+        assert spec.http_client.session.headers == {"Content-Type": "application/json"}
         assert spec.origin_url == f"https://{host}/apispec.json"
         assert spec.spec_dict["host"] == host
         assert spec.spec_dict["schemes"] == ["https"]
