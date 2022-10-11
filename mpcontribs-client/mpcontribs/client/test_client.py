@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import os
 import pytest
 
 from unittest.mock import patch, MagicMock
@@ -61,12 +62,12 @@ def test_mock():
 
 
 def test_live():
-    with Client(apikey="1234") as client:
+    with Client() as client:
         assert client.url == f"https://{DEFAULT_HOST}"
         spec = client.swagger_spec
         headers = spec.http_client.session.headers
         assert headers.get("Content-Type") == "application/json"
-        assert headers.get("x-api-key") == "1234"
+        assert headers.get("x-api-key") == os.environ.get("MPCONTRIBS_API_KEY")
         assert spec.origin_url == f"https://{DEFAULT_HOST}/apispec.json"
         assert spec.spec_dict["host"] == DEFAULT_HOST
         assert spec.spec_dict["schemes"] == ["https"]
