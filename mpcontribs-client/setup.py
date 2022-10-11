@@ -23,8 +23,6 @@ setup(
     install_requires=[
         "boltons",
         "bravado[fido]",
-        "cryptography",
-        "fido[tls]",
         "filetype",
         "flatten-dict",
         "ipython",
@@ -36,9 +34,7 @@ setup(
         "pyIsEmail",
         "pymatgen",
         "pymongo",
-        "pyOpenSSL",
         "requests-futures",
-        "service-identity",
         "swagger-spec-validator<2.7.4",
         "twisted",
         "tqdm",
