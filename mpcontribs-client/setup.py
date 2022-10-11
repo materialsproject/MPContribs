@@ -22,7 +22,7 @@ setup(
     packages=["mpcontribs.client"],
     install_requires=[
         "boltons",
-        "bravado[fido]",
+        "bravado",
         "filetype",
         "flatten-dict",
         "ipython",
