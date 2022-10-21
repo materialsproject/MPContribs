@@ -6,7 +6,6 @@ FROM base as builder
 RUN apt-get update && apt-get install -y --no-install-recommends gcc git g++ libsnappy-dev wget && apt-get clean
 ENV PATH /root/.local/bin:$PATH
 ENV PIP_FLAGS "--user --no-cache-dir --compile"
-RUN pip install $PIP_FLAGS "flask-mongoengine @ git+https://github.com/MongoEngine/flask-mongoengine#egg=flask_mongoengine-2.0.0"
 COPY requirements.txt .
 RUN pip install $PIP_FLAGS -r requirements.txt
 COPY setup.py .

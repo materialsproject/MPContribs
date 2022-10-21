@@ -1,11 +1,6 @@
 # -*- coding: utf-8 -*-
-import os
 import datetime
 from setuptools import setup
-
-SETUP_PTH = os.path.dirname(os.path.abspath(__file__))
-with open(os.path.join(SETUP_PTH, "requirements.txt")) as f:
-    required = f.read().splitlines()
 
 setup(
     name="mpcontribs-api",
@@ -15,7 +10,40 @@ setup(
     author_email="phuck@lbl.gov",
     url="https://mpcontribs.org",
     packages=["mpcontribs.api"],
-    install_requires=required,
+    install_requires=[
+        "apispec<6",
+        "asn1crypto",
+        "blinker",
+        "boltons",
+        "css-html-js-minify",
+        "dateparser",
+        "ddtrace",
+        "dnspython",
+        "filetype",
+        "flasgger-tschaume>=0.9.7",
+        "flask-compress",
+        "flask-marshmallow",
+        "flask-mongorest-mpcontribs>=3.2.1",
+        "Flask-RQ2",
+        "gunicorn[gevent]",
+        "jinja2",
+        "json2html",
+        "more-itertools",
+        "nbformat",
+        "notebook",
+        "pint",
+        "psycopg2-binary",
+        "pymatgen",
+        "pyopenssl",
+        "python-snappy",
+        "rq-scheduler",
+        "semantic-version",
+        "supervisor",
+        "setproctitle",
+        "uncertainties",
+        "websocket_client",
+        "zstandard",
+    ],
     license="MIT",
     zip_safe=False,
 )
