@@ -1,5 +1,5 @@
 boltons==21.0.0
-boto3==1.24.91
+boto3==1.24.95
 ddtrace==1.5.2
 Django>=3.2,<4.0
 django-extensions==3.2.1
@@ -13,8 +13,8 @@ jinja2==3.1.2
 json2html==1.3.0
 monty==2022.9.9
 mpcontribs-client==4.4.7
-nbconvert==7.1.0
-nbformat==5.6.1
+nbconvert==7.2.1
+nbformat==5.7.0
 redis==4.3.4
 scipy==1.9.1
 setproctitle==1.3.2
