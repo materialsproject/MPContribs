@@ -1,0 +1,8 @@
+blinker
+ddtrace
+ipywidgets
+jupyter-client
+jupyter-kernel-gateway
+kaleido
+mpcontribs-client
+psutil
