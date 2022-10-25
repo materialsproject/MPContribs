@@ -10,7 +10,7 @@ jsonschema<4.0
 pandas==1.5.1
 pint==0.19.2
 plotly==5.10.0
-pyIsEmail==2.0.0
+pyIsEmail==2.0.1
 pymatgen==2022.10.22
 pymongo==4.2.0
 pyOpenSSL==22.1.0
