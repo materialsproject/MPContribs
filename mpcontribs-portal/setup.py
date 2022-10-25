@@ -1,11 +1,6 @@
 # -*- coding: utf-8 -*-
-import os
 import datetime
 from setuptools import setup
-
-SETUP_PTH = os.path.dirname(os.path.abspath(__file__))
-with open(os.path.join(SETUP_PTH, "requirements.txt")) as f:
-    required = f.read().splitlines()
 
 setup(
     name="mpcontribs-portal",
@@ -15,7 +10,29 @@ setup(
     author_email="phuck@lbl.gov",
     url="https://docs.mpcontribs.org",
     packages=["mpcontribs.portal", "mpcontribs.users"],
-    install_requires=required,
+    install_requires=[
+        "boltons",
+        "boto3",
+        "ddtrace",
+        "Django>=3.2,<4.0",
+        "django-extensions",
+        "django-settings-file",
+        "django-webpack4-loader",
+        "fastnumbers",
+        "gunicorn[gevent]",
+        "ipykernel",
+        "ipython-genutils",
+        "jinja2",
+        "json2html",
+        "monty",
+        "mpcontribs-client",
+        "nbconvert",
+        "nbformat",
+        "redis",
+        "scipy",
+        "setproctitle",
+        "whitenoise",
+    ],
     license="MIT",
     zip_safe=False,
     include_package_data=True,
