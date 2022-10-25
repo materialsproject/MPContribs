@@ -31,7 +31,7 @@ setup(
         "more-itertools",
         "nbformat",
         "notebook",
-        "pint",
+        "pint<0.20",
         "psycopg2-binary",
         "pymatgen",
         "pyopenssl",

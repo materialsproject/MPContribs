@@ -311,7 +311,7 @@ pickleshare==0.7.5
     # via ipython
 pillow==9.2.0
     # via matplotlib
-pint==0.20
+pint==0.19.2
     # via mpcontribs-api (setup.py)
 plotly==5.10.0
     # via pymatgen
