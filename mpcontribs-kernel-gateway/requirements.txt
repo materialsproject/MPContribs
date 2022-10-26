@@ -21,14 +21,9 @@ asttokens==2.0.8
     # via stack-data
 attrs==22.1.0
     # via
-    #   automat
     #   cattrs
     #   ddtrace
     #   jsonschema
-    #   service-identity
-    #   twisted
-automat==20.2.0
-    # via twisted
 backcall==0.2.0
     # via ipython
 beautifulsoup4==4.11.1
@@ -39,7 +34,7 @@ blinker==1.5
     # via -r requirements.in
 boltons==21.0.0
     # via mpcontribs-client
-bravado[fido]==11.0.3
+bravado==11.0.3
     # via mpcontribs-client
 bravado-core==5.17.1
     # via bravado
@@ -50,22 +45,11 @@ cattrs==22.2.0
 certifi==2022.9.24
     # via requests
 cffi==1.15.1
-    # via
-    #   argon2-cffi-bindings
-    #   cryptography
+    # via argon2-cffi-bindings
 charset-normalizer==2.1.1
     # via requests
-constantly==15.1.0
-    # via twisted
 contourpy==1.0.5
     # via matplotlib
-crochet==2.0.0
-    # via fido
-cryptography==38.0.1
-    # via
-    #   mpcontribs-client
-    #   pyopenssl
-    #   service-identity
 cycler==0.11.0
     # via matplotlib
 ddsketch==2.0.4
@@ -94,10 +78,6 @@ executing==1.1.1
     # via stack-data
 fastjsonschema==2.16.2
     # via nbformat
-fido[tls]==4.2.2
-    # via
-    #   bravado
-    #   mpcontribs-client
 filetype==1.1.0
     # via mpcontribs-client
 flatten-dict==0.4.2
@@ -106,19 +86,13 @@ fonttools==4.38.0
     # via matplotlib
 future==0.18.2
     # via uncertainties
-hyperlink==21.0.0
-    # via twisted
 idna==3.4
     # via
     #   anyio
-    #   fido
-    #   hyperlink
     #   jsonschema
     #   requests
 importlib-metadata==5.0.0
     # via nbconvert
-incremental==22.10.0
-    # via twisted
 ipykernel==6.16.2
     # via
     #   ipywidgets
@@ -211,7 +185,7 @@ monty==2022.9.9
     #   pymatgen
 mp-api==0.29.3
     # via pymatgen
-mpcontribs-client==4.4.7
+mpcontribs-client==4.5.0
     # via -r requirements.in
 mpmath==1.2.1
     # via sympy
@@ -280,7 +254,7 @@ pickleshare==0.7.5
     # via ipython
 pillow==9.2.0
     # via matplotlib
-pint==0.20
+pint==0.19.2
     # via mpcontribs-client
 plotly==5.10.0
     # via
@@ -307,12 +281,6 @@ ptyprocess==0.7.0
     #   terminado
 pure-eval==0.2.2
     # via stack-data
-pyasn1==0.4.8
-    # via
-    #   pyasn1-modules
-    #   service-identity
-pyasn1-modules==0.2.8
-    # via service-identity
 pybtex==0.24.0
     # via
     #   emmet-core
@@ -334,10 +302,6 @@ pymatgen==2022.10.22
     #   mpcontribs-client
 pymongo==4.3.2
     # via mpcontribs-client
-pyopenssl==22.1.0
-    # via
-    #   fido
-    #   mpcontribs-client
 pyparsing==3.0.9
     # via
     #   matplotlib
@@ -393,10 +357,6 @@ send2trash==1.8.0
     #   jupyter-server
     #   nbclassic
     #   notebook
-service-identity==21.1.0
-    # via
-    #   fido
-    #   mpcontribs-client
 simplejson==3.17.6
     # via
     #   bravado
@@ -404,19 +364,16 @@ simplejson==3.17.6
 six==1.16.0
     # via
     #   asttokens
-    #   automat
     #   bleach
     #   bravado
     #   bravado-core
     #   ddsketch
     #   ddtrace
-    #   fido
     #   flatten-dict
     #   jsonschema
     #   latexcodec
     #   pybtex
     #   python-dateutil
-    #   service-identity
     #   swagger-spec-validator
 sniffio==1.3.0
     # via anyio
@@ -477,11 +434,6 @@ traitlets==5.5.0
     #   nbconvert
     #   nbformat
     #   notebook
-twisted==22.8.0
-    # via
-    #   crochet
-    #   fido
-    #   mpcontribs-client
 typing-extensions==4.4.0
     # via
     #   bravado
@@ -489,7 +441,6 @@ typing-extensions==4.4.0
     #   emmet-core
     #   mp-api
     #   pydantic
-    #   twisted
 ujson==5.5.0
     # via mpcontribs-client
 uncertainties==3.1.7
@@ -508,18 +459,10 @@ websocket-client==1.4.1
     # via jupyter-server
 widgetsnbextension==4.0.3
     # via ipywidgets
-wrapt==1.14.1
-    # via crochet
 xmltodict==0.13.0
     # via ddtrace
-yelp-bytes==0.3.0
-    # via fido
-yelp-encodings==1.0.0
-    # via yelp-bytes
 zipp==3.10.0
     # via importlib-metadata
-zope-interface==5.5.0
-    # via twisted
 
 # The following packages are considered to be unsafe in a requirements file:
 # setuptools
