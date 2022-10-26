@@ -51,7 +51,7 @@ jobs:
         python3 -m build --outdir ../dist
     - name: Publish distribution 📦s to Test PyPI
       if: matrix.os == 'ubuntu-latest' && matrix.python-version == 3.9
-      uses: pypa/gh-action-pypi-publish@master
+      uses: pypa/gh-action-pypi-publish@release/v1.5
       with:
         skip_existing: true
         password: ${{ secrets.test_pypi_password }}
