@@ -104,6 +104,8 @@ def get_specs(klass, method, collection):
         "description": "Error",
         "schema": {"type": "object", "properties": {"error": {"type": "string"}}},
     }
+    id_field = klass.resource.document._meta["id_field"].capitalize()
+    doc_name = collection[:-1].capitalize()
     fields_param = None
     if klass.resource.fields is not None:
         fields_avail = (
@@ -176,7 +178,7 @@ def get_specs(klass, method, collection):
         params += field_pagination_params
         spec = {
             "summary": f"Retrieve a {collection[:-1]}.",
-            "operationId": "get_entry",
+            "operationId": f"retrieve{doc_name}By{id_field}",
             "parameters": params,
             "responses": {
                 200: {
@@ -205,7 +207,7 @@ def get_specs(klass, method, collection):
             params += get_limit_params(klass.resource, method_name)
         spec = {
             "summary": f"Filter and retrieve {collection}.",
-            "operationId": "get_entries",
+            "operationId": f"retrieve{doc_name}s",
             "parameters": params,
             "responses": {
                 200: {
@@ -241,7 +243,7 @@ def get_specs(klass, method, collection):
             params += get_limit_params(klass.resource, method_name)
         spec = {
             "summary": f"Filter and download {collection}.",
-            "operationId": "download_entries",
+            "operationId": f"download{doc_name}s",
             "parameters": params,
             "produces": ["application/gzip"],
             "responses": {
@@ -256,7 +258,7 @@ def get_specs(klass, method, collection):
     elif method_name == "Create":
         spec = {
             "summary": f"Create a new {collection[:-1]}.",
-            "operationId": "create_entry",
+            "operationId": f"create{doc_name}",
             "parameters": [
                 {
                     "name": f"{collection[:-1]}",
@@ -277,7 +279,7 @@ def get_specs(klass, method, collection):
     elif method_name == "BulkCreate":
         spec = {
             "summary": f"Create new {collection[:-1]}(s).",
-            "operationId": "create_entries",
+            "operationId": f"create{doc_name}s",
             "parameters": [
                 {
                     "name": f"{collection}",
@@ -310,7 +312,7 @@ def get_specs(klass, method, collection):
     elif method_name == "Update":
         spec = {
             "summary": f"Update a {collection[:-1]}.",
-            "operationId": "update_entry",
+            "operationId": f"update{doc_name}By{id_field}",
             "parameters": [
                 {
                     "name": "pk",
@@ -352,7 +354,7 @@ def get_specs(klass, method, collection):
             params += get_limit_params(klass.resource, method_name)
         spec = {
             "summary": f"Filter and update {collection}.",
-            "operationId": "update_entries",
+            "operationId": f"update{doc_name}s",
             "parameters": params,
             "responses": {
                 200: {
@@ -373,7 +375,7 @@ def get_specs(klass, method, collection):
             params += get_limit_params(klass.resource, method_name)
         spec = {
             "summary": f"Filter and delete {collection}.",
-            "operationId": "delete_entries",
+            "operationId": f"delete{doc_name}s",
             "parameters": params,
             "responses": {
                 200: {
@@ -387,7 +389,7 @@ def get_specs(klass, method, collection):
     elif method_name == "Delete":
         spec = {
             "summary": f"Delete a {collection[:-1]}.",
-            "operationId": "delete_entry",
+            "operationId": f"delete{doc_name}By{id_field}",
             "parameters": [
                 {
                     "name": "pk",
