@@ -178,7 +178,7 @@ def get_specs(klass, method, collection):
         params += field_pagination_params
         spec = {
             "summary": f"Retrieve a {collection[:-1]}.",
-            "operationId": f"retrieve{doc_name}By{id_field}",
+            "operationId": f"get{doc_name}By{id_field}",
             "parameters": params,
             "responses": {
                 200: {
@@ -207,7 +207,7 @@ def get_specs(klass, method, collection):
             params += get_limit_params(klass.resource, method_name)
         spec = {
             "summary": f"Filter and retrieve {collection}.",
-            "operationId": f"retrieve{doc_name}s",
+            "operationId": f"query{doc_name}s",
             "parameters": params,
             "responses": {
                 200: {
