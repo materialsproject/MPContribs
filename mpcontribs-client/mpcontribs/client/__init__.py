@@ -635,13 +635,14 @@ class Client(SwaggerClient):
 
         return True, None
 
-    def _get_per_page_default_max(self, op: str = "get", resource: str = "contributions") -> int:
+    def _get_per_page_default_max(self, op: str = "query", resource: str = "contributions") -> int:
         resource = self.swagger_spec.resources[resource]
-        param_spec = getattr(resource, f"{op}_entries").params["per_page"].param_spec
+        attr = f"{op}{resource.capitalize()}"
+        param_spec = getattr(resource, attr).params["per_page"].param_spec
         return param_spec["default"], param_spec["maximum"]
 
     def _get_per_page(
-        self, per_page: int, op: str = "get", resource: str = "contributions"
+        self, per_page: int, op: str = "query", resource: str = "contributions"
     ) -> int:
         _, per_page_max = self._get_per_page_default_max(op=op, resource=resource)
         return min(per_page_max, per_page)
@@ -649,7 +650,7 @@ class Client(SwaggerClient):
     def _split_query(
         self,
         query: dict,
-        op: str = "get",
+        op: str = "query",
         resource: str = "contributions",
         pages: int = -1,
     ) -> List[dict]:
@@ -699,12 +700,13 @@ class Client(SwaggerClient):
         track_id,
         params: dict,
         rel_url: str = "contributions",
-        op: str = "get",
+        op: str = "query",
         data: dict = None
     ):
         rname = rel_url.split("/", 1)[0]
         resource = self.swagger_spec.resources[rname]
-        method = getattr(resource, f"{op}_entries").http_method
+        attr = f"{op}{resource.capitalize()}"
+        method = getattr(resource, attr).http_method
         kwargs = dict(headers=self.headers, params=params)
 
         if method == "put" and data:
@@ -726,7 +728,7 @@ class Client(SwaggerClient):
         if not name:
             return {"error": "initialize client with project or set `name` argument!"}
 
-        return Dict(self.projects.get_entry(pk=name, _fields=["_all"]).result())
+        return Dict(self.projects.getProjectByName(pk=name, _fields=["_all"]).result())
 
     def create_project(self, name: str, title: str, authors: str, description: str, url: str):
         """Create a project
@@ -748,7 +750,7 @@ class Client(SwaggerClient):
             "name": name, "title": title, "authors": authors, "description": description,
             "references": [{"label": "REF", "url": url}]
         }
-        owner = self.projects.create_entry(project=project).result().get("owner")
+        owner = self.projects.createProject(project=project).result().get("owner")
         logger.info(f"Project `{name}` created with owner `{owner}`")
 
     def get_contribution(self, cid: str) -> Type[Dict]:
@@ -759,7 +761,7 @@ class Client(SwaggerClient):
         """
         fields = list(self.get_model("ContributionsSchema")._properties.keys())
         fields.remove("needs_build")  # internal field
-        return Dict(self.contributions.get_entry(pk=cid, _fields=fields).result())
+        return Dict(self.contributions.getContributionById(pk=cid, _fields=fields).result())
 
     def get_table(self, tid_or_md5: str) -> Type[Table]:
         """Retrieve full Pandas DataFrame for a table
@@ -772,7 +774,7 @@ class Client(SwaggerClient):
             raise ValueError(f"'{tid_or_md5}' is not a valid table id or md5 hash digest!")
 
         if str_len == 32:
-            tables = self.tables.get_entries(md5=tid_or_md5, _fields=["id"]).result()
+            tables = self.tables.queryTables(md5=tid_or_md5, _fields=["id"]).result()
             if not tables:
                 raise ValueError(f"table for md5 '{tid_or_md5}' not found!")
             tid = tables["data"][0]["id"]
@@ -785,7 +787,7 @@ class Client(SwaggerClient):
         page, pages = 1, None
 
         while pages is None or page <= pages:
-            resp = self.tables.get_entry(
+            resp = self.tables.getTableById(
                 pk=tid, _fields=["_all"], data_page=page, data_per_page=per_page
             ).result()
             table["data"].extend(resp["data"])
@@ -826,7 +828,7 @@ class Client(SwaggerClient):
             raise ValueError(f"'{sid_or_md5}' is not a valid structure id or md5 hash digest!")
 
         if str_len == 32:
-            structures = self.structures.get_entries(md5=sid_or_md5, _fields=["id"]).result()
+            structures = self.structures.queryStructures(md5=sid_or_md5, _fields=["id"]).result()
             if not structures:
                 raise ValueError(f"structure for md5 '{sid_or_md5}' not found!")
             sid = structures["data"][0]["id"]
@@ -834,7 +836,7 @@ class Client(SwaggerClient):
             sid = sid_or_md5
 
         fields = list(self.get_model("StructuresSchema")._properties.keys())
-        resp = self.structures.get_entry(pk=sid, _fields=fields).result()
+        resp = self.structures.getStructureById(pk=sid, _fields=fields).result()
         ret = Structure.from_dict(resp)
         ret.attrs = {
             field: resp[field]
@@ -853,7 +855,7 @@ class Client(SwaggerClient):
             raise ValueError(f"'{aid_or_md5}' is not a valid attachment id or md5 hash digest!")
 
         if str_len == 32:
-            attachments = self.attachments.get_entries(
+            attachments = self.attachments.queryAttachments(
                 md5=aid_or_md5, _fields=["id"]
             ).result()
             if not attachments:
@@ -862,7 +864,7 @@ class Client(SwaggerClient):
         else:
             aid = aid_or_md5
 
-        return Attachment(self.attachments.get_entry(pk=aid, _fields=["_all"]).result())
+        return Attachment(self.attachments.getAttachmentById(pk=aid, _fields=["_all"]).result())
 
     def init_columns(self, columns: dict = None) -> dict:
         """initialize columns for a project to set their order and desired units
@@ -946,7 +948,7 @@ class Client(SwaggerClient):
             sorted_columns = flatten(unflatten(columns, splitter="dot"), reducer="dot")
 
             # reconcile with existing columns
-            resp = self.projects.get_entry(pk=self.project, _fields=["columns"]).result()
+            resp = self.projects.getProjectById(pk=self.project, _fields=["columns"]).result()
             existing_columns = {}
 
             for col in resp["columns"]:
@@ -989,7 +991,7 @@ class Client(SwaggerClient):
         if not valid:
             return {"error": error}
 
-        return self.projects.update_entry(pk=self.project, project=payload).result()
+        return self.projects.updateProjectByName(pk=self.project, project=payload).result()
 
     def delete_contributions(self, query: dict = None, timeout: int = -1):
         """Remove all contributions for a query
@@ -1036,7 +1038,7 @@ class Client(SwaggerClient):
         query: dict = None,
         timeout: int = -1,
         resource: str = "contributions",
-        op: str = "get"
+        op: str = "query"
     ) -> tuple:
         """Retrieve total count and pages for resource entries matching query
 
@@ -1045,12 +1047,12 @@ class Client(SwaggerClient):
             timeout (int): cancel remaining requests if timeout exceeded (in seconds)
             resource (str): type of resource
             op (str): operation to calculate total pages for, one of
-                      ("get", "create", "update", "delete", "download")
+                      ("query", "create", "update", "delete", "download")
 
         Returns:
             tuple of total counts and pages
         """
-        ops = {"get", "create", "update", "delete", "download"}
+        ops = {"query", "create", "update", "delete", "download"}
         if op not in ops:
             logger.error(f"`op` has to be one of {ops}")
             return
@@ -1089,7 +1091,7 @@ class Client(SwaggerClient):
         elif self.project:
             query = {"name": self.project}
 
-        resp = self.projects.get_entries(
+        resp = self.projects.queryProjects(
             _fields=["name", "unique_identifiers"], **query
         ).result()
 
@@ -1106,7 +1108,7 @@ class Client(SwaggerClient):
         timeout: int = -1,
         data_id_fields: dict = None,
         fmt: str = "sets",
-        op: str = "get",
+        op: str = "query",
     ) -> dict:
         """Retrieve a list of existing contribution and component (Object)IDs
 
@@ -1117,7 +1119,7 @@ class Client(SwaggerClient):
             data_id_fields (dict): map of project to extra field in `data` to include as ID field
             fmt (str): return `sets` of identifiers or `map` (see below)
             op (str): operation to calculate total pages for, one of
-                      ("get", "create", "update", "delete", "download")
+                      ("query", "create", "update", "delete", "download")
 
         Returns:
             {"<project-name>": {
@@ -1165,7 +1167,7 @@ class Client(SwaggerClient):
             logger.error(f"`fmt` must be subset of {fmts}!")
             return
 
-        ops = {"get", "create", "update", "delete", "download"}
+        ops = {"query", "create", "update", "delete", "download"}
         if op not in ops:
             logger.error(f"`op` has to be one of {ops}")
             return
@@ -1269,7 +1271,7 @@ class Client(SwaggerClient):
     ) -> List[dict]:
         """Query contributions
 
-        See `client.contributions.get_entries()` for keyword arguments used in query.
+        See `client.contributions.queryContributions()` for keyword arguments used in query.
 
         Args:
             query (dict): optional query to select contributions
@@ -1310,7 +1312,7 @@ class Client(SwaggerClient):
                 ret["data"].extend(result["data"])
                 ret["total_count"] += result["total_count"]
         else:
-            ret = self.contributions.get_entries(
+            ret = self.contributions.queryContributions(
                 _fields=fields, _sort=sort, **query
             ).result()
 
@@ -1324,7 +1326,7 @@ class Client(SwaggerClient):
     ) -> dict:
         """Apply the same update to all contributions in a project (matching query)
 
-        See `client.contributions.get_entries()` for keyword arguments used in query.
+        See `client.contributions.queryContributions()` for keyword arguments used in query.
 
         Args:
             data (dict): update to apply on every matching contribution
@@ -1360,7 +1362,7 @@ class Client(SwaggerClient):
             return
 
         # get current list of data columns to decide if swagger reload is needed
-        resp = self.projects.get_entry(pk=self.project, _fields=["columns"]).result()
+        resp = self.projects.getProjectByName(pk=self.project, _fields=["columns"]).result()
         old_paths = set(c["path"] for c in resp["columns"])
 
         total = len(cids)
@@ -1375,7 +1377,7 @@ class Client(SwaggerClient):
         updated = sum(resp["count"] for _, resp in responses.items())
 
         if updated:
-            resp = self.projects.get_entry(pk=self.project, _fields=["columns"]).result()
+            resp = self.projects.getProjectByName(pk=self.project, _fields=["columns"]).result()
             new_paths = set(c["path"] for c in resp["columns"])
 
             if new_paths != old_paths:
@@ -1441,7 +1443,7 @@ class Client(SwaggerClient):
             query["project"] = self.project
 
         try:
-            resp = self.projects.get_entry(
+            resp = self.projects.getProjectByName(
                 pk=query["project"], _fields=["is_public", "is_approved"]
             ).result()
         except HTTPNotFound:
@@ -1456,7 +1458,7 @@ class Client(SwaggerClient):
             if is_public and not resp["is_approved"]:
                 return {"error": f"project `{query['project']}` is not approved yet!"}
 
-            resp = self.projects.update_entry(
+            resp = self.projects.updateProjectByName(
                 pk=query["project"], project={"is_public": is_public}
             ).result()
             ret["published"] = resp["is_public"] == is_public
@@ -1464,7 +1466,7 @@ class Client(SwaggerClient):
         if recursive:
             query = query or {}
             query["is_public"] = not is_public
-            ret["contributions"] = self.update_contributions(
+            ret["contributions"] = self.updateContributions(
                 {"is_public": is_public}, query=query, timeout=timeout
             )
 
@@ -1768,7 +1770,7 @@ class Client(SwaggerClient):
                         existing[project_name] = self.get_all_ids(
                             dict(project=project_name), include=COMPONENTS, timeout=timeout
                         ).get(project_name, {"identifiers": set()})
-                        unique_identifiers[project_name] = self.projects.get_entry(
+                        unique_identifiers[project_name] = self.projects.getProjectByName(
                             pk=project_name, _fields=["unique_identifiers"]
                         ).result()["unique_identifiers"]
                         existing_ids = existing.get(project_name, {}).get("identifiers", [])
