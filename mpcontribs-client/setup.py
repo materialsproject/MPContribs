@@ -29,7 +29,7 @@ setup(
         "json2html",
         "jsonschema<4.0",
         "pandas",
-        "pint<0.20",
+        "pint<0.21",
         "plotly",
         "pyIsEmail",
         "pymatgen",
