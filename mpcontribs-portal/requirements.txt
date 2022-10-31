@@ -357,7 +357,7 @@ spglib==2.0.1
     #   pymatgen
 sqlparse==0.4.3
     # via django
-stack-data==0.5.1
+stack-data==0.6.0
     # via ipython
 strict-rfc3339==0.7
     # via jsonschema
