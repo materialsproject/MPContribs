@@ -452,7 +452,7 @@ spglib==2.0.1
     # via
     #   emmet-core
     #   pymatgen
-stack-data==0.5.1
+stack-data==0.6.0
     # via ipython
 supervisor==4.2.4
     # via mpcontribs-api (setup.py)
