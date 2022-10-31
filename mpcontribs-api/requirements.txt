@@ -98,7 +98,7 @@ entrypoints==0.4
     # via jupyter-client
 envier==0.4.0
     # via ddtrace
-exceptiongroup==1.0.0rc9
+exceptiongroup==1.0.0
     # via cattrs
 executing==1.1.1
     # via stack-data
