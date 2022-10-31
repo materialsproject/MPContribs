@@ -24,11 +24,11 @@ jobs:
       - name: Upgrade Python dependencies
         run: |
           pip install -U pip pip-tools
-          cd mpcontribs-api && pip-compile --upgrade
-          cd mpcontribs-kernel-gateway && pip-compile --upgrade
-          cd mpcontribs-serverless/dependencies && pip-compile --upgrade
-          cd mpcontribs-client && pip-compile --upgrade
-          cd mpcontribs-portal && pip-compile --upgrade
+          cd mpcontribs-api && pip-compile --upgrade && cd -
+          cd mpcontribs-kernel-gateway && pip-compile --upgrade && cd -
+          cd mpcontribs-serverless/dependencies && pip-compile --upgrade && cd -
+          cd mpcontribs-client && pip-compile --upgrade && cd -
+          cd mpcontribs-portal && pip-compile --upgrade && cd -
       - name: Detect changes
         id: changes
         run:
