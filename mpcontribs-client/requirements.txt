@@ -202,7 +202,7 @@ spglib==2.0.1
     # via
     #   emmet-core
     #   pymatgen
-stack-data==0.5.1
+stack-data==0.6.0
     # via ipython
 strict-rfc3339==0.7
     # via jsonschema
