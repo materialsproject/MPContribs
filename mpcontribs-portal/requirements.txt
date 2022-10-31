@@ -240,7 +240,7 @@ pillow==9.2.0
     # via matplotlib
 pint==0.19.2
     # via mpcontribs-client
-plotly==5.10.0
+plotly==5.11.0
     # via
     #   mpcontribs-client
     #   pymatgen
