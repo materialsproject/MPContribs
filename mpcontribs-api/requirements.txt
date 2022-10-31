@@ -21,7 +21,7 @@ argon2-cffi-bindings==21.2.0
     # via argon2-cffi
 asn1crypto==1.5.1
     # via mpcontribs-api (setup.py)
-asttokens==2.0.8
+asttokens==2.1.0
     # via stack-data
 async-timeout==4.0.2
     # via redis
