@@ -7,13 +7,6 @@ updates:
     time: '08:00'
     timezone: US/Pacific
   open-pull-requests-limit: 10
-- package-ecosystem: pip
-  directory: "/mpcontribs-kernel-gateway"
-  schedule:
-    interval: weekly
-    time: '08:00'
-    timezone: US/Pacific
-  open-pull-requests-limit: 10
 - package-ecosystem: npm
   directory: "/mpcontribs-portal"
   schedule:
@@ -21,13 +14,6 @@ updates:
     time: '08:00'
     timezone: US/Pacific
   open-pull-requests-limit: 10
-- package-ecosystem: pip
-  directory: "/mpcontribs-portal"
-  schedule:
-    interval: weekly
-    time: '08:00'
-    timezone: US/Pacific
-  open-pull-requests-limit: 10
 - package-ecosystem: docker
   directory: "/mpcontribs-portal"
   schedule:
@@ -37,27 +23,6 @@ updates:
   open-pull-requests-limit: 10
 - package-ecosystem: docker
   directory: "/mpcontribs-api"
-  schedule:
-    interval: weekly
-    time: '08:00'
-    timezone: US/Pacific
-  open-pull-requests-limit: 10
-- package-ecosystem: pip
-  directory: "/mpcontribs-api"
-  schedule:
-    interval: weekly
-    time: '08:00'
-    timezone: US/Pacific
-  open-pull-requests-limit: 10
-- package-ecosystem: pip
-  directory: "/mpcontribs-client"
-  schedule:
-    interval: weekly
-    time: '08:00'
-    timezone: US/Pacific
-  open-pull-requests-limit: 10
-- package-ecosystem: pip
-  directory: "/mpcontribs-serverless/dependencies"
   schedule:
     interval: weekly
     time: '08:00'
