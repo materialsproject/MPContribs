@@ -361,7 +361,7 @@ stack-data==0.5.1
     # via ipython
 strict-rfc3339==0.7
     # via jsonschema
-swagger-spec-validator==2.7.3
+swagger-spec-validator==3.0.2
     # via
     #   bravado-core
     #   mpcontribs-client
