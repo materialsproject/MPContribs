@@ -500,7 +500,7 @@ typing-extensions==4.4.0
     #   emmet-core
     #   mp-api
     #   pydantic
-tzdata==2022.5
+tzdata==2022.6
     # via pytz-deprecation-shim
 tzlocal==4.2
     # via dateparser
