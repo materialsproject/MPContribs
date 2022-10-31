@@ -322,7 +322,7 @@ prometheus-client==0.15.0
     #   notebook
 prompt-toolkit==3.0.31
     # via ipython
-protobuf==4.21.8
+protobuf==4.21.9
     # via
     #   ddsketch
     #   ddtrace
