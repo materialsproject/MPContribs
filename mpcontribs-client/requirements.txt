@@ -146,7 +146,7 @@ pyparsing==3.0.9
     # via
     #   matplotlib
     #   packaging
-pyrsistent==0.18.1
+pyrsistent==0.19.1
     # via jsonschema
 python-dateutil==2.8.2
     # via
