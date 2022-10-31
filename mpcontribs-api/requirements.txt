@@ -40,7 +40,7 @@ blinker==1.5
     # via mpcontribs-api (setup.py)
 boltons==21.0.0
     # via mpcontribs-api (setup.py)
-boto3==1.25.1
+boto3==1.25.4
     # via flask-mongorest-mpcontribs
 botocore==1.28.1
     # via
