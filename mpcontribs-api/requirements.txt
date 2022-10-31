@@ -248,7 +248,7 @@ mpmath==1.2.1
     # via sympy
 msgpack==1.0.4
     # via mp-api
-nbclassic==0.4.5
+nbclassic==0.4.7
     # via notebook
 nbclient==0.7.0
     # via nbconvert
