@@ -2,7 +2,8 @@ import os
 import pytest
 from mpcontribs.api import create_app
 
-os.environ['MPCONTRIBS_DB_NAME'] = 'mpcontribs-ls'
+os.environ['MPCONTRIBS_DB_NAME'] = 'mpcontribs-test'
+
 
 
 @pytest.fixture()

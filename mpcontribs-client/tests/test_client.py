@@ -7,6 +7,7 @@ from mpcontribs.client import validate_email, Client, email_format
 from swagger_spec_validator.common import SwaggerValidationError
 
 logger = logging.Logger(__name__)
+logger.propagate = True
 
 
 def test_validate_email():
@@ -64,7 +65,16 @@ def test_mock():
 
 
 def test_request_example(client):
-    response = client.get("/projects")
-    assert True
-    logger.info(response.data)
-    # assert "data" in response.json
+    assert "data" in client.get("/projects/").json
+    apispec = client.get("/apispec.json").json
+    assert apispec["paths"]
+    with patch("bravado.swagger_model.Loader.load_spec") as mock_load_spec:
+        mock_load_spec = apispec
+        with Client(project="test") as contribs_client:
+            print(contribs_client.__dir__)
+            mock_load_spec.assert_called_once()
+    #with patch("bravado.requests_client.RequestsFutureAdapter.result") as mock_result:
+    #    mock_result = client.get
+    #    with Client(project="test") as contribs_client:
+    #        contribs_client.get_project()
+    #        mock_result.assert_called_once()
