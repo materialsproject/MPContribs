@@ -154,7 +154,7 @@ ipykernel==6.16.2
     # via
     #   nbclassic
     #   notebook
-ipython==8.5.0
+ipython==8.6.0
     # via ipykernel
 ipython-genutils==0.2.0
     # via
