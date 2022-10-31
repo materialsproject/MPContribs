@@ -40,6 +40,16 @@ setup(
         "ujson",
         "semantic-version",
     ],
+    extras_require={
+        "dev": [
+            "flake8",
+            "pytest",
+            "pytest-flake8",
+            "pytest-pycodestyle",
+            "pytest-cov",
+            "py",
+        ]
+    },
     license="MIT",
     zip_safe=False,
     include_package_data=True,
