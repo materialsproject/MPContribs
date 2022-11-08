@@ -240,10 +240,11 @@
 <pre class="has-background-dark is-marginless"><code class="language-python">from mpcontribs.client import Client
 client = Client(
     host="{{API_CNAME}}",
-    apikey="{{ request.META.HTTP_X_CONSUMER_CUSTOM_ID }}"
+    apikey="{{ request.META.HTTP_X_CONSUMER_CUSTOM_ID }}",
+    project={{name}}
 )
+client.init_columns({"a": "eV", "b.c": None, "b.d": ""})
 contributions = [{
-    "project": "{{name}}",
     "identifier": "mp-4",
     "data": {
         "a": "3 eV",
