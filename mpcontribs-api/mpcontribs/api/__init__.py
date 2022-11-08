@@ -133,6 +133,10 @@ def get_resource_as_string(name, charset="utf-8"):
 def get_kernel_endpoint(kernel_id=None, ws=False):
     gw_client = GatewayClient.instance()
     base_url = gw_client.ws_url if ws else gw_client.url
+
+    if not base_url:
+        raise ConnectionError("base URL for Kernel Gateway not set")
+
     base_endpoint = url_path_join(base_url, gw_client.kernels_endpoint)
 
     if isinstance(kernel_id, str) and kernel_id:
@@ -183,8 +187,9 @@ def create_app():
     app.jinja_env.globals["get_resource_as_string"] = get_resource_as_string
     app.jinja_env.lstrip_blocks = True
     app.jinja_env.trim_blocks = True
+    app.json.sort_keys = False
+    MPCONTRIBS_API_HOST = app.config.get("MPCONTRIBS_API_HOST")
     app.config["TEMPLATE"]["schemes"] = ["http"] if app.debug else ["https"]
-    MPCONTRIBS_API_HOST = os.environ["MPCONTRIBS_API_HOST"]
     logger.info("database: " + app.config["MPCONTRIBS_DB"])
     Compress(app)
     Marshmallow(app)
@@ -224,7 +229,7 @@ def create_app():
         from mpcontribs.api.notebooks.views import rq, make
         rq.init_app(app)
 
-        if is_gunicorn:
+        if is_gunicorn and MPCONTRIBS_API_HOST:
             setattr(app, "cron_job_id", f"auto-notebooks-build_{MPCONTRIBS_API_HOST}")
             make.cron('*/3 * * * *', app.cron_job_id)
             logger.info(f"CRONJOB {app.cron_job_id} added.")
@@ -232,18 +237,18 @@ def create_app():
     def healthcheck():
         return jsonify({"version": app.config["VERSION"]})
 
-    if is_gunicorn:
+    if is_gunicorn and MPCONTRIBS_API_HOST:
         app.register_blueprint(sse, url_prefix="/stream")
         app.add_url_rule("/healthcheck", view_func=healthcheck)
-        #app.register_blueprint(rq_dashboard.blueprint, url_prefix="/rq")
+        # app.register_blueprint(rq_dashboard.blueprint, url_prefix="/rq")
 
-        #dashboard.config.init_from(file="dashboard.cfg")
-        #dashboard.config.version = app.config["VERSION"]
-        #dashboard.config.table_prefix = f"fmd_{MPCONTRIBS_API_HOST}"
-        #db_password = os.environ["POSTGRES_DB_PASSWORD"]
-        #db_host = os.environ["POSTGRES_DB_HOST"]
-        #dashboard.config.database_name = f"postgresql://kong:{db_password}@{db_host}/kong"
-        #dashboard.bind(app)
+        # dashboard.config.init_from(file="dashboard.cfg")
+        # dashboard.config.version = app.config["VERSION"]
+        # dashboard.config.table_prefix = f"fmd_{MPCONTRIBS_API_HOST}"
+        # db_password = os.environ["POSTGRES_DB_PASSWORD"]
+        # db_host = os.environ["POSTGRES_DB_HOST"]
+        # dashboard.config.database_name = f"postgresql://kong:{db_password}@{db_host}/kong"
+        # dashboard.bind(app)
 
     @app.after_request
     def add_header(response):
