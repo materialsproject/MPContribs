@@ -44,6 +44,9 @@ setup(
         "websocket_client",
         "zstandard",
     ],
+    extras_require={
+        "dev": ["pytest", "flake8"]
+    },
     license="MIT",
     zip_safe=False,
 )
