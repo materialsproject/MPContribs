@@ -33,6 +33,9 @@ setup(
         "setproctitle",
         "whitenoise",
     ],
+    extras_require={
+        "dev": ["pytest", "flake8"]
+    },
     license="MIT",
     zip_safe=False,
     include_package_data=True,

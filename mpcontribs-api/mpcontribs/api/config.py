@@ -21,13 +21,13 @@ VERSION = str(Version(
     prerelease=(str(now.hour), str(now.minute))
 ))
 
-JSON_SORT_KEYS = False
 JSON_ADD_STATUS = False
 SECRET_KEY = "super-secret"  # TODO in local prod config
 
 MAIL_DEFAULT_SENDER = os.environ.get("MAIL_DEFAULT_SENDER")
 MPCONTRIBS_DB = os.environ.get("MPCONTRIBS_DB_NAME", "mpcontribs")
 MPCONTRIBS_MONGO_HOST = os.environ.get("MPCONTRIBS_MONGO_HOST")
+MPCONTRIBS_API_HOST = os.environ.get("MPCONTRIBS_API_HOST")
 MONGODB_SETTINGS = {
     # Changed in version 3.9: retryWrites now defaults to True.
     "host": f"mongodb+srv://{MPCONTRIBS_MONGO_HOST}/{MPCONTRIBS_DB}",

@@ -28,7 +28,7 @@ logger = get_logger(__name__)
 templates = os.path.join(os.path.dirname(flask_mongorest.__file__), "templates")
 notebooks = Blueprint("notebooks", __name__, template_folder=templates)
 
-MPCONTRIBS_API_HOST = os.environ["MPCONTRIBS_API_HOST"]
+MPCONTRIBS_API_HOST = os.environ.get("MPCONTRIBS_API_HOST", "default")
 ADMIN_GROUP = os.environ.get("ADMIN_GROUP", "admin")
 
 rq = RQ()
