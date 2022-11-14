@@ -133,7 +133,7 @@ pygments==2.13.0
     # via ipython
 pyisemail==2.0.1
     # via mpcontribs-client (setup.py)
-pymatgen==2022.11.1
+pymatgen==2022.11.7
     # via
     #   emmet-core
     #   mp-api
@@ -200,7 +200,7 @@ spglib==2.0.2
     # via
     #   emmet-core
     #   pymatgen
-stack-data==0.6.0
+stack-data==0.6.1
     # via ipython
 strict-rfc3339==0.7
     # via jsonschema
