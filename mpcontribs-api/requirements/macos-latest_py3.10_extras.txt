@@ -41,9 +41,9 @@ blinker==1.5
     # via mpcontribs-api (setup.py)
 boltons==21.0.0
     # via mpcontribs-api (setup.py)
-boto3==1.26.5
+boto3==1.26.8
     # via flask-mongorest-mpcontribs
-botocore==1.29.5
+botocore==1.29.8
     # via
     #   boto3
     #   s3transfer
@@ -99,7 +99,7 @@ entrypoints==0.4
     # via jupyter-client
 envier==0.4.0
     # via ddtrace
-exceptiongroup==1.0.1
+exceptiongroup==1.0.2
     # via
     #   cattrs
     #   pytest
@@ -155,7 +155,7 @@ idna==3.4
     #   requests
 iniconfig==1.1.1
     # via pytest
-ipykernel==6.17.0
+ipykernel==6.17.1
     # via
     #   nbclassic
     #   notebook
@@ -188,14 +188,14 @@ jsonschema==4.17.0
     #   ddtrace
     #   flasgger-tschaume
     #   nbformat
-jupyter-client==7.4.4
+jupyter-client==7.4.5
     # via
     #   ipykernel
     #   jupyter-server
     #   nbclassic
     #   nbclient
     #   notebook
-jupyter-core==4.11.2
+jupyter-core==5.0.0
     # via
     #   jupyter-client
     #   jupyter-server
@@ -203,7 +203,7 @@ jupyter-core==4.11.2
     #   nbconvert
     #   nbformat
     #   notebook
-jupyter-server==1.23.0
+jupyter-server==1.23.1
     # via
     #   nbclassic
     #   notebook-shim
@@ -218,7 +218,7 @@ markupsafe==2.1.1
     #   jinja2
     #   nbconvert
     #   werkzeug
-marshmallow==3.18.0
+marshmallow==3.19.0
     # via
     #   flask-marshmallow
     #   marshmallow-mongoengine
@@ -259,7 +259,7 @@ nbclassic==0.4.8
     # via notebook
 nbclient==0.7.0
     # via nbconvert
-nbconvert==7.2.3
+nbconvert==7.2.4
     # via
     #   jupyter-server
     #   nbclassic
@@ -321,6 +321,8 @@ pillow==9.3.0
     # via matplotlib
 pint==0.19.2
     # via mpcontribs-api (setup.py)
+platformdirs==2.5.4
+    # via jupyter-core
 plotly==5.11.0
     # via pymatgen
 pluggy==1.0.0
@@ -362,7 +364,7 @@ pygments==2.13.0
     # via
     #   ipython
     #   nbconvert
-pymatgen==2022.11.1
+pymatgen==2022.11.7
     # via
     #   emmet-core
     #   mp-api
@@ -468,7 +470,7 @@ spglib==2.0.2
     # via
     #   emmet-core
     #   pymatgen
-stack-data==0.6.0
+stack-data==0.6.1
     # via ipython
 supervisor==4.2.4
     # via mpcontribs-api (setup.py)
