@@ -72,7 +72,7 @@ entrypoints==0.4
     # via jupyter-client
 envier==0.4.0
     # via ddtrace
-exceptiongroup==1.0.1
+exceptiongroup==1.0.2
     # via cattrs
 executing==1.2.0
     # via stack-data
@@ -95,7 +95,7 @@ idna==3.4
     #   requests
 importlib-metadata==5.0.0
     # via nbconvert
-ipykernel==6.17.0
+ipykernel==6.17.1
     # via
     #   ipywidgets
     #   nbclassic
@@ -132,7 +132,7 @@ jsonschema[format]==3.2.0
     #   mpcontribs-client
     #   nbformat
     #   swagger-spec-validator
-jupyter-client==7.4.4
+jupyter-client==7.4.5
     # via
     #   -r requirements.in
     #   ipykernel
@@ -141,7 +141,7 @@ jupyter-client==7.4.4
     #   nbclassic
     #   nbclient
     #   notebook
-jupyter-core==4.11.2
+jupyter-core==5.0.0
     # via
     #   jupyter-client
     #   jupyter-kernel-gateway
@@ -152,7 +152,7 @@ jupyter-core==4.11.2
     #   notebook
 jupyter-kernel-gateway==2.5.1
     # via -r requirements.in
-jupyter-server==1.23.0
+jupyter-server==1.23.1
     # via
     #   nbclassic
     #   notebook-shim
@@ -200,7 +200,7 @@ nbclassic==0.4.8
     # via notebook
 nbclient==0.7.0
     # via nbconvert
-nbconvert==7.2.3
+nbconvert==7.2.4
     # via
     #   jupyter-server
     #   nbclassic
@@ -258,6 +258,8 @@ pillow==9.3.0
     # via matplotlib
 pint==0.19.2
     # via mpcontribs-client
+platformdirs==2.5.4
+    # via jupyter-core
 plotly==5.11.0
     # via
     #   mpcontribs-client
@@ -297,7 +299,7 @@ pygments==2.13.0
     #   nbconvert
 pyisemail==2.0.1
     # via mpcontribs-client
-pymatgen==2022.11.1
+pymatgen==2022.11.7
     # via
     #   emmet-core
     #   mp-api
@@ -385,7 +387,7 @@ spglib==2.0.2
     # via
     #   emmet-core
     #   pymatgen
-stack-data==0.6.0
+stack-data==0.6.1
     # via ipython
 strict-rfc3339==0.7
     # via jsonschema
