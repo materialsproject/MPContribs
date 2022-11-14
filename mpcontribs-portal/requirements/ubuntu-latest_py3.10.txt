@@ -25,9 +25,9 @@ boltons==21.0.0
     # via
     #   mpcontribs-client
     #   mpcontribs-portal (setup.py)
-boto3==1.26.5
+boto3==1.26.8
     # via mpcontribs-portal (setup.py)
-botocore==1.29.5
+botocore==1.29.8
     # via
     #   boto3
     #   s3transfer
@@ -80,7 +80,7 @@ entrypoints==0.4
     # via jupyter-client
 envier==0.4.0
     # via ddtrace
-exceptiongroup==1.0.1
+exceptiongroup==1.0.2
     # via cattrs
 executing==1.2.0
     # via stack-data
@@ -108,7 +108,7 @@ idna==3.4
     # via
     #   jsonschema
     #   requests
-ipykernel==6.17.0
+ipykernel==6.17.1
     # via mpcontribs-portal (setup.py)
 ipython==8.6.0
     # via
@@ -141,11 +141,11 @@ jsonschema[format]==3.2.0
     #   mpcontribs-client
     #   nbformat
     #   swagger-spec-validator
-jupyter-client==7.4.4
+jupyter-client==7.4.5
     # via
     #   ipykernel
     #   nbclient
-jupyter-core==4.11.2
+jupyter-core==5.0.0
     # via
     #   jupyter-client
     #   nbconvert
@@ -189,7 +189,7 @@ msgpack==1.0.4
     #   mp-api
 nbclient==0.7.0
     # via nbconvert
-nbconvert==7.2.3
+nbconvert==7.2.4
     # via mpcontribs-portal (setup.py)
 nbformat==5.7.0
     # via
@@ -236,6 +236,8 @@ pillow==9.3.0
     # via matplotlib
 pint==0.19.2
     # via mpcontribs-client
+platformdirs==2.5.4
+    # via jupyter-core
 plotly==5.11.0
     # via
     #   mpcontribs-client
@@ -264,7 +266,7 @@ pygments==2.13.0
     #   nbconvert
 pyisemail==2.0.1
     # via mpcontribs-client
-pymatgen==2022.11.1
+pymatgen==2022.11.7
     # via
     #   emmet-core
     #   mp-api
@@ -353,7 +355,7 @@ spglib==2.0.2
     #   pymatgen
 sqlparse==0.4.3
     # via django
-stack-data==0.6.0
+stack-data==0.6.1
     # via ipython
 strict-rfc3339==0.7
     # via jsonschema
