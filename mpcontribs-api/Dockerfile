@@ -6,18 +6,18 @@ FROM base as builder
 RUN apt-get update && apt-get install -y --no-install-recommends gcc git g++ libsnappy-dev wget && apt-get clean
 ENV PATH /root/.local/bin:$PATH
 ENV PIP_FLAGS "--user --no-cache-dir --compile"
-COPY requirements.txt .
+COPY requirements/ubuntu-latest_py3.9.txt ./requirements.txt
 RUN pip install $PIP_FLAGS -r requirements.txt
 COPY setup.py .
 COPY mpcontribs mpcontribs
-RUN pip install $PIP_FLAGS -e .
+RUN pip install $PIP_FLAGS --no-deps .
 #ENV SETUPTOOLS_SCM_PRETEND_VERSION 0.0.0
 #COPY marshmallow-mongoengine marshmallow-mongoengine
-#RUN cd marshmallow-mongoengine && pip install $PIP_FLAGS -e .
+#RUN cd marshmallow-mongoengine && pip install $PIP_FLAGS --no-deps .
 #COPY mimerender mimerender
-#RUN cd mimerender && pip install $PIP_FLAGS -e .
+#RUN cd mimerender && pip install $PIP_FLAGS --no-deps .
 #COPY flask-mongorest flask-mongorest
-#RUN cd flask-mongorest && pip install $PIP_FLAGS -e .
+#RUN cd flask-mongorest && pip install $PIP_FLAGS --no-deps .
 RUN wget -q https://raw.githubusercontent.com/vishnubob/wait-for-it/master/wait-for-it.sh && \
     chmod +x wait-for-it.sh && mv wait-for-it.sh /root/.local/bin/ && \
     wget -q https://github.com/materialsproject/MPContribs/blob/master/mpcontribs-api/mpcontribs/api/contributions/formulae.json.gz?raw=true \

@@ -27,7 +27,7 @@ ENV PATH /root/.local/bin:$PATH
 ENV PIP_FLAGS "--user --no-cache-dir --compile"
 ARG MORE_PIP_FLAGS
 ENV MORE_PIP_FLAGS=$MORE_PIP_FLAGS
-COPY requirements.txt .
+COPY requirements/ubuntu-latest_py3.9.txt ./requirements.txt
 RUN pip install $PIP_FLAGS $MORE_PIP_FLAGS -r requirements.txt && \
     python -m ipykernel install --user
 RUN wget -q https://raw.githubusercontent.com/vishnubob/wait-for-it/master/wait-for-it.sh && \
@@ -46,7 +46,7 @@ ARG MORE_PIP_FLAGS
 ENV MORE_PIP_FLAGS=$MORE_PIP_FLAGS
 ENV DJANGO_SETTINGS_FILE="settings.py"
 COPY . .
-RUN pip install $PIP_FLAGS $MORE_PIP_FLAGS .
+RUN pip install $PIP_FLAGS $MORE_PIP_FLAGS --no-deps .
 RUN python manage.py collectstatic --noinput
 
 FROM base
