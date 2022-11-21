@@ -38,7 +38,7 @@ dnspython==2.2.1
     #   pymongo
 emmet-core==0.38.9
     # via mp-api
-exceptiongroup==1.0.2
+exceptiongroup==1.0.4
     # via pytest
 executing==1.2.0
     # via stack-data
@@ -92,7 +92,7 @@ monty==2022.9.9
     #   emmet-core
     #   mp-api
     #   pymatgen
-mp-api==0.29.4
+mp-api==0.29.7
     # via pymatgen
 mpmath==1.2.1
     # via sympy
@@ -103,7 +103,7 @@ msgpack==1.0.4
     #   mp-api
 networkx==2.8.8
     # via pymatgen
-numpy==1.23.4
+numpy==1.23.5
     # via
     #   contourpy
     #   matplotlib
@@ -168,7 +168,7 @@ pymatgen==2022.11.7
     #   emmet-core
     #   mp-api
     #   mpcontribs-client (setup.py)
-pymongo==4.3.2
+pymongo==4.3.3
     # via mpcontribs-client (setup.py)
 pyparsing==3.0.9
     # via
@@ -223,7 +223,7 @@ scipy==1.9.3
     # via pymatgen
 semantic-version==2.10.0
     # via mpcontribs-client (setup.py)
-simplejson==3.17.6
+simplejson==3.18.0
     # via
     #   bravado
     #   bravado-core
