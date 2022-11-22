@@ -48,7 +48,7 @@ jobs:
       run: |
         cd mpcontribs-client
         os=`echo ${{ matrix.os }} | cut -d- -f1`
-        py=`echo ${{ matrix.python-version }} | tr "." ''`
+        py=`echo ${{ matrix.python-version }} | sed -e "s/\.//"`
         echo py$py-$os
         tox -e py$py-$os
         python3 -m build --outdir ../dist
