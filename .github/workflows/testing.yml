@@ -47,8 +47,8 @@ jobs:
         SSL_CERT_FILE: ${{ env.SSL_CERT_FILE }}
       run: |
         cd mpcontribs-client
-        os=`echo ${{ matrix.os }} | cut -d- -f1`
-        py=`echo ${{ matrix.python-version }} | sed -e "s/\.//"`
+        os=$(echo ${{ matrix.os }} | cut -d- -f1)
+        py=$(echo ${{ matrix.python-version }} | sed -e "s/\.//")
         echo py$py-$os
         tox -e py$py-$os
         python3 -m build --outdir ../dist
