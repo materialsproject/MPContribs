@@ -67,4 +67,4 @@ def test_request_example(client):
     response = client.get("/projects")
     assert True
     logger.info(response.data)
-    #assert "data" in response.json
+    # assert "data" in response.json
