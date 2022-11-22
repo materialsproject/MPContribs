@@ -54,7 +54,7 @@ cycler==0.11.0
     # via matplotlib
 ddsketch==2.0.4
     # via ddtrace
-ddtrace==1.6.0
+ddtrace==1.6.1
     # via -r requirements.in
 debugpy==1.6.3
     # via ipykernel
@@ -72,7 +72,7 @@ entrypoints==0.4
     # via jupyter-client
 envier==0.4.0
     # via ddtrace
-exceptiongroup==1.0.2
+exceptiongroup==1.0.4
     # via cattrs
 executing==1.2.0
     # via stack-data
@@ -84,8 +84,6 @@ flatten-dict==0.4.2
     # via mpcontribs-client
 fonttools==4.38.0
     # via matplotlib
-forbiddenfruit==0.1.4
-    # via ddtrace
 future==0.18.2
     # via uncertainties
 idna==3.4
@@ -132,7 +130,7 @@ jsonschema[format]==3.2.0
     #   mpcontribs-client
     #   nbformat
     #   swagger-spec-validator
-jupyter-client==7.4.5
+jupyter-client==7.4.7
     # via
     #   -r requirements.in
     #   ipykernel
@@ -152,7 +150,7 @@ jupyter-core==5.0.0
     #   notebook
 jupyter-kernel-gateway==2.5.1
     # via -r requirements.in
-jupyter-server==1.23.1
+jupyter-server==1.23.2
     # via
     #   nbclassic
     #   notebook-shim
@@ -185,7 +183,7 @@ monty==2022.9.9
     #   emmet-core
     #   mp-api
     #   pymatgen
-mp-api==0.29.4
+mp-api==0.29.7
     # via pymatgen
 mpcontribs-client==4.5.0
     # via -r requirements.in
@@ -200,7 +198,7 @@ nbclassic==0.4.8
     # via notebook
 nbclient==0.7.0
     # via nbconvert
-nbconvert==7.2.4
+nbconvert==7.2.5
     # via
     #   jupyter-server
     #   nbclassic
@@ -225,7 +223,7 @@ notebook==6.5.2
     # via jupyter-kernel-gateway
 notebook-shim==0.2.2
     # via nbclassic
-numpy==1.23.4
+numpy==1.23.5
     # via
     #   contourpy
     #   matplotlib
@@ -304,7 +302,7 @@ pymatgen==2022.11.7
     #   emmet-core
     #   mp-api
     #   mpcontribs-client
-pymongo==4.3.2
+pymongo==4.3.3
     # via mpcontribs-client
 pyparsing==3.0.9
     # via
@@ -361,7 +359,7 @@ send2trash==1.8.0
     #   jupyter-server
     #   nbclassic
     #   notebook
-simplejson==3.17.6
+simplejson==3.18.0
     # via
     #   bravado
     #   bravado-core
