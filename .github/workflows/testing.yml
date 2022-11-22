@@ -47,7 +47,10 @@ jobs:
         SSL_CERT_FILE: ${{ env.SSL_CERT_FILE }}
       run: |
         cd mpcontribs-client
-        tox
+        os=`cut -d- -f1 ${{ matrix.os }}`
+        py=`echo ${{ matrix.python-version }} | tr "." ''`
+        echo py$py-$os
+        tox -e py$py-$os
         python3 -m build --outdir ../dist
     - name: Publish distribution 📦s to Test PyPI
       if: matrix.os == 'ubuntu-latest' && matrix.python-version == 3.9
