@@ -241,7 +241,7 @@
 client = Client(
     host="{{API_CNAME}}",
     apikey="{{ request.META.HTTP_X_CONSUMER_CUSTOM_ID }}",
-    project={{name}}
+    project="{{name}}"
 )
 client.init_columns({"a": "eV", "b.c": None, "b.d": ""})
 contributions = [{
