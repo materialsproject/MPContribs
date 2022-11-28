@@ -30,9 +30,9 @@ boltons==21.0.0
     # via
     #   mpcontribs-client
     #   mpcontribs-portal (setup.py)
-boto3==1.26.13
+boto3==1.26.17
     # via mpcontribs-portal (setup.py)
-botocore==1.29.13
+botocore==1.29.17
     # via
     #   boto3
     #   s3transfer
@@ -54,7 +54,7 @@ cycler==0.11.0
     # via matplotlib
 ddsketch==2.0.4
     # via ddtrace
-ddtrace==1.6.1
+ddtrace==1.6.3
     # via mpcontribs-portal (setup.py)
 debugpy==1.6.3
     # via ipykernel
@@ -62,8 +62,6 @@ decorator==5.1.1
     # via ipython
 defusedxml==0.7.1
     # via nbconvert
-deprecated==1.2.13
-    # via redis
 django==3.2.16
     # via
     #   django-extensions
@@ -79,7 +77,7 @@ dnspython==2.2.1
     # via
     #   pyisemail
     #   pymongo
-emmet-core==0.38.9
+emmet-core==0.38.10
     # via mp-api
 entrypoints==0.4
     # via jupyter-client
@@ -97,7 +95,7 @@ fastnumbers==3.2.1
     # via mpcontribs-portal (setup.py)
 filetype==1.2.0
     # via mpcontribs-client
-flake8==5.0.4
+flake8==6.0.0
     # via mpcontribs-portal (setup.py)
 flatten-dict==0.4.2
     # via mpcontribs-client
@@ -125,7 +123,7 @@ ipython==8.6.0
     #   mpcontribs-client
 ipython-genutils==0.2.0
     # via mpcontribs-portal (setup.py)
-jedi==0.18.1
+jedi==0.18.2
     # via ipython
 jinja2==3.1.2
     # via
@@ -187,7 +185,7 @@ monty==2022.9.9
     #   mp-api
     #   mpcontribs-portal (setup.py)
     #   pymatgen
-mp-api==0.29.7
+mp-api==0.29.8
     # via pymatgen
 mpcontribs-client==4.5.0
     # via mpcontribs-portal (setup.py)
@@ -232,7 +230,7 @@ packaging==21.3
     #   redis
 palettable==3.3.0
     # via pymatgen
-pandas==1.5.1
+pandas==1.5.2
     # via
     #   mpcontribs-client
     #   pymatgen
@@ -256,7 +254,7 @@ plotly==5.11.0
     #   pymatgen
 pluggy==1.0.0
     # via pytest
-prompt-toolkit==3.0.32
+prompt-toolkit==3.0.33
     # via ipython
 protobuf==4.21.9
     # via
@@ -272,11 +270,11 @@ pybtex==0.24.0
     # via
     #   emmet-core
     #   pymatgen
-pycodestyle==2.9.1
+pycodestyle==2.10.0
     # via flake8
 pydantic==1.10.2
     # via emmet-core
-pyflakes==2.5.0
+pyflakes==3.0.1
     # via flake8
 pygments==2.13.0
     # via
@@ -322,7 +320,7 @@ pyzmq==24.0.1
     # via
     #   ipykernel
     #   jupyter-client
-redis==4.3.4
+redis==4.3.5
     # via mpcontribs-portal (setup.py)
 requests==2.28.1
     # via
@@ -375,7 +373,7 @@ spglib==2.0.2
     #   pymatgen
 sqlparse==0.4.3
     # via django
-stack-data==0.6.1
+stack-data==0.6.2
     # via ipython
 strict-rfc3339==0.7
     # via jsonschema
@@ -424,7 +422,7 @@ ujson==5.5.0
     # via mpcontribs-client
 uncertainties==3.1.7
     # via pymatgen
-urllib3==1.26.12
+urllib3==1.26.13
     # via
     #   botocore
     #   requests
@@ -438,8 +436,6 @@ webencodings==0.5.1
     #   tinycss2
 whitenoise==6.2.0
     # via mpcontribs-portal (setup.py)
-wrapt==1.14.1
-    # via deprecated
 xmltodict==0.13.0
     # via ddtrace
 zope-event==4.5.0
