@@ -1,4 +1,4 @@
-FROM materialsproject/devops:python-3.915.1 as base
+FROM materialsproject/devops:python-3.915.2 as base
 MAINTAINER Patrick Huck (tschaume)
 
 FROM base as python-deps
