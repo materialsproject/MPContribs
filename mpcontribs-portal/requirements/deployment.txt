@@ -25,9 +25,9 @@ boltons==21.0.0
     # via
     #   mpcontribs-client
     #   mpcontribs-portal (MPContribs/mpcontribs-portal/setup.py)
-boto3==1.26.15
+boto3==1.26.17
     # via mpcontribs-portal (MPContribs/mpcontribs-portal/setup.py)
-botocore==1.29.15
+botocore==1.29.17
     # via
     #   boto3
     #   s3transfer
@@ -43,6 +43,8 @@ certifi==2022.9.24
     # via requests
 charset-normalizer==2.1.1
     # via requests
+comm==0.1.1
+    # via ipykernel
 contourpy==1.0.6
     # via matplotlib
 cycler==0.11.0
@@ -72,7 +74,7 @@ dnspython==2.2.1
     # via
     #   pyisemail
     #   pymongo
-emmet-core==0.38.9
+emmet-core==0.38.11
     # via mp-api
 entrypoints==0.4
     # via jupyter-client
@@ -104,11 +106,11 @@ idna==3.4
     # via
     #   jsonschema
     #   requests
-importlib-metadata==5.0.0
+importlib-metadata==5.1.0
     # via nbconvert
-ipykernel==6.17.1
+ipykernel==6.18.1
     # via mpcontribs-portal (MPContribs/mpcontribs-portal/setup.py)
-ipython==8.6.0
+ipython==8.7.0
     # via
     #   ipykernel
     #   mpcontribs-client
@@ -143,7 +145,7 @@ jupyter-client==7.4.7
     # via
     #   ipykernel
     #   nbclient
-jupyter-core==5.0.0
+jupyter-core==5.1.0
     # via
     #   jupyter-client
     #   nbconvert
@@ -176,7 +178,7 @@ monty==2022.9.9
     #   mp-api
     #   mpcontribs-portal (MPContribs/mpcontribs-portal/setup.py)
     #   pymatgen
-mp-api==0.29.7
+mp-api==0.29.8
     # via pymatgen
 mpcontribs-client==4.5.0
     # via mpcontribs-portal (MPContribs/mpcontribs-portal/setup.py)
@@ -221,7 +223,7 @@ packaging==21.3
     #   redis
 palettable==3.3.0
     # via pymatgen
-pandas==1.5.1
+pandas==1.5.2
     # via
     #   -r python/requirements.txt
     #   mpcontribs-client
@@ -358,7 +360,7 @@ spglib==2.0.2
     #   pymatgen
 sqlparse==0.4.3
     # via django
-stack-data==0.6.1
+stack-data==0.6.2
     # via ipython
 strict-rfc3339==0.7
     # via jsonschema
@@ -386,6 +388,7 @@ tqdm==4.64.1
     #   pymatgen
 traitlets==5.5.0
     # via
+    #   comm
     #   ipykernel
     #   ipython
     #   jupyter-client
@@ -405,7 +408,7 @@ ujson==5.5.0
     # via mpcontribs-client
 uncertainties==3.1.7
     # via pymatgen
-urllib3==1.26.12
+urllib3==1.26.13
     # via
     #   botocore
     #   requests
@@ -421,7 +424,7 @@ whitenoise==6.2.0
     # via mpcontribs-portal (MPContribs/mpcontribs-portal/setup.py)
 xmltodict==0.13.0
     # via ddtrace
-zipp==3.10.0
+zipp==3.11.0
     # via importlib-metadata
 zope-event==4.5.0
     # via gevent
