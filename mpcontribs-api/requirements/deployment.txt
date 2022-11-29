@@ -17,7 +17,7 @@ argon2-cffi-bindings==21.2.0
     # via argon2-cffi
 asn1crypto==1.5.1
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
-asttokens==2.1.0
+asttokens==2.2.0
     # via stack-data
 async-timeout==4.0.2
     # via redis
@@ -36,9 +36,9 @@ blinker==1.5
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 boltons==21.0.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
-boto3==1.26.17
+boto3==1.26.19
     # via flask-mongorest-mpcontribs
-botocore==1.29.17
+botocore==1.29.19
     # via
     #   boto3
     #   s3transfer
@@ -60,8 +60,6 @@ click==8.1.3
     # via
     #   flask
     #   rq
-comm==0.1.1
-    # via ipykernel
 contourpy==1.0.6
     # via matplotlib
 croniter==1.3.8
@@ -78,7 +76,7 @@ ddsketch==2.0.4
     # via ddtrace
 ddtrace==1.6.3
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
-debugpy==1.6.3
+debugpy==1.6.4
     # via ipykernel
 decorator==5.1.1
     # via ipython
@@ -146,7 +144,7 @@ importlib-metadata==5.1.0
     # via
     #   flask
     #   nbconvert
-ipykernel==6.18.1
+ipykernel==6.17.1
     # via
     #   nbclassic
     #   notebook
@@ -174,7 +172,7 @@ jmespath==1.0.1
     #   botocore
 json2html==1.3.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
-jsonschema==4.17.1
+jsonschema==4.17.3
     # via
     #   ddtrace
     #   flasgger-tschaume
@@ -191,6 +189,7 @@ jupyter-core==5.1.0
     #   jupyter-client
     #   jupyter-server
     #   nbclassic
+    #   nbclient
     #   nbconvert
     #   nbformat
     #   notebook
@@ -248,7 +247,7 @@ msgpack==1.0.4
     # via mp-api
 nbclassic==0.4.8
     # via notebook
-nbclient==0.7.0
+nbclient==0.7.2
     # via nbconvert
 nbconvert==7.2.5
     # via
@@ -268,7 +267,6 @@ nest-asyncio==1.5.6
     #   ipykernel
     #   jupyter-client
     #   nbclassic
-    #   nbclient
     #   notebook
 networkx==2.8.8
     # via pymatgen
@@ -486,9 +484,8 @@ tornado==6.2
     #   terminado
 tqdm==4.64.1
     # via pymatgen
-traitlets==5.5.0
+traitlets==5.6.0
     # via
-    #   comm
     #   ipykernel
     #   ipython
     #   jupyter-client

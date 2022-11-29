@@ -6,7 +6,7 @@
 #
 asgiref==3.5.2
     # via django
-asttokens==2.1.0
+asttokens==2.2.0
     # via stack-data
 async-timeout==4.0.2
     # via redis
@@ -25,9 +25,9 @@ boltons==21.0.0
     # via
     #   mpcontribs-client
     #   mpcontribs-portal (MPContribs/mpcontribs-portal/setup.py)
-boto3==1.26.17
+boto3==1.26.19
     # via mpcontribs-portal (MPContribs/mpcontribs-portal/setup.py)
-botocore==1.29.17
+botocore==1.29.19
     # via
     #   boto3
     #   s3transfer
@@ -43,8 +43,6 @@ certifi==2022.9.24
     # via requests
 charset-normalizer==2.1.1
     # via requests
-comm==0.1.1
-    # via ipykernel
 contourpy==1.0.6
     # via matplotlib
 cycler==0.11.0
@@ -53,7 +51,7 @@ ddsketch==2.0.4
     # via ddtrace
 ddtrace==1.6.3
     # via mpcontribs-portal (MPContribs/mpcontribs-portal/setup.py)
-debugpy==1.6.3
+debugpy==1.6.4
     # via ipykernel
 decorator==5.1.1
     # via ipython
@@ -108,7 +106,7 @@ idna==3.4
     #   requests
 importlib-metadata==5.1.0
     # via nbconvert
-ipykernel==6.18.1
+ipykernel==6.17.1
     # via mpcontribs-portal (MPContribs/mpcontribs-portal/setup.py)
 ipython==8.7.0
     # via
@@ -148,6 +146,7 @@ jupyter-client==7.4.7
 jupyter-core==5.1.0
     # via
     #   jupyter-client
+    #   nbclient
     #   nbconvert
     #   nbformat
 jupyterlab-pygments==0.2.2
@@ -189,7 +188,7 @@ msgpack==1.0.4
     #   bravado
     #   bravado-core
     #   mp-api
-nbclient==0.7.0
+nbclient==0.7.2
     # via nbconvert
 nbconvert==7.2.5
     # via mpcontribs-portal (MPContribs/mpcontribs-portal/setup.py)
@@ -202,7 +201,6 @@ nest-asyncio==1.5.6
     # via
     #   ipykernel
     #   jupyter-client
-    #   nbclient
 networkx==2.8.8
     # via pymatgen
 numpy==1.21.6
@@ -386,9 +384,8 @@ tqdm==4.64.1
     # via
     #   mpcontribs-client
     #   pymatgen
-traitlets==5.5.0
+traitlets==5.6.0
     # via
-    #   comm
     #   ipykernel
     #   ipython
     #   jupyter-client

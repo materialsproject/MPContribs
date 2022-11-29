@@ -13,7 +13,7 @@ argon2-cffi==21.3.0
     #   notebook
 argon2-cffi-bindings==21.2.0
     # via argon2-cffi
-asttokens==2.1.0
+asttokens==2.2.0
     # via stack-data
 attrs==22.1.0
     # via
@@ -44,8 +44,6 @@ cffi==1.15.1
     # via argon2-cffi-bindings
 charset-normalizer==2.1.1
     # via requests
-comm==0.1.1
-    # via ipykernel
 contourpy==1.0.6
     # via matplotlib
 cycler==0.11.0
@@ -54,7 +52,7 @@ ddsketch==2.0.4
     # via ddtrace
 ddtrace==1.6.3
     # via -r MPContribs/mpcontribs-kernel-gateway/requirements.in
-debugpy==1.6.3
+debugpy==1.6.4
     # via ipykernel
 decorator==5.1.1
     # via ipython
@@ -91,7 +89,7 @@ idna==3.4
     #   requests
 importlib-metadata==5.1.0
     # via nbconvert
-ipykernel==6.18.1
+ipykernel==6.17.1
     # via
     #   ipywidgets
     #   nbclassic
@@ -143,6 +141,7 @@ jupyter-core==5.1.0
     #   jupyter-kernel-gateway
     #   jupyter-server
     #   nbclassic
+    #   nbclient
     #   nbconvert
     #   nbformat
     #   notebook
@@ -196,7 +195,7 @@ msgpack==1.0.4
     #   mp-api
 nbclassic==0.4.8
     # via notebook
-nbclient==0.7.0
+nbclient==0.7.2
     # via nbconvert
 nbconvert==7.2.5
     # via
@@ -215,7 +214,6 @@ nest-asyncio==1.5.6
     #   ipykernel
     #   jupyter-client
     #   nbclassic
-    #   nbclient
     #   notebook
 networkx==2.8.8
     # via pymatgen
@@ -425,9 +423,8 @@ tqdm==4.64.1
     # via
     #   mpcontribs-client
     #   pymatgen
-traitlets==5.5.0
+traitlets==5.6.0
     # via
-    #   comm
     #   ipykernel
     #   ipython
     #   ipywidgets
