@@ -50,7 +50,7 @@ cycler==0.11.0
     # via matplotlib
 ddsketch==2.0.4
     # via ddtrace
-ddtrace==1.6.1
+ddtrace==1.6.3
     # via -r requirements.in
 debugpy==1.6.3
     # via ipykernel
@@ -62,7 +62,7 @@ dnspython==2.2.1
     # via
     #   pyisemail
     #   pymongo
-emmet-core==0.38.9
+emmet-core==0.38.10
     # via mp-api
 entrypoints==0.4
     # via jupyter-client
@@ -103,7 +103,7 @@ ipython-genutils==0.2.0
     #   notebook
 ipywidgets==8.0.2
     # via -r requirements.in
-jedi==0.18.1
+jedi==0.18.2
     # via ipython
 jinja2==3.1.2
     # via
@@ -144,7 +144,7 @@ jupyter-core==5.0.0
     #   notebook
 jupyter-kernel-gateway==2.5.1
     # via -r requirements.in
-jupyter-server==1.23.2
+jupyter-server==1.23.3
     # via
     #   nbclassic
     #   notebook-shim
@@ -177,7 +177,7 @@ monty==2022.9.9
     #   emmet-core
     #   mp-api
     #   pymatgen
-mp-api==0.29.7
+mp-api==0.29.8
     # via pymatgen
 mpcontribs-client==4.5.0
     # via -r requirements.in
@@ -234,7 +234,7 @@ packaging==21.3
     #   nbconvert
 palettable==3.3.0
     # via pymatgen
-pandas==1.5.1
+pandas==1.5.2
     # via
     #   mpcontribs-client
     #   pymatgen
@@ -261,7 +261,7 @@ prometheus-client==0.15.0
     #   jupyter-server
     #   nbclassic
     #   notebook
-prompt-toolkit==3.0.32
+prompt-toolkit==3.0.33
     # via ipython
 protobuf==4.21.9
     # via
@@ -379,7 +379,7 @@ spglib==2.0.2
     # via
     #   emmet-core
     #   pymatgen
-stack-data==0.6.1
+stack-data==0.6.2
     # via ipython
 strict-rfc3339==0.7
     # via jsonschema
@@ -441,7 +441,7 @@ ujson==5.5.0
     # via mpcontribs-client
 uncertainties==3.1.7
     # via pymatgen
-urllib3==1.26.12
+urllib3==1.26.13
     # via requests
 wcwidth==0.2.5
     # via prompt-toolkit

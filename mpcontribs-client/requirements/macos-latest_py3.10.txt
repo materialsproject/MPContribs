@@ -32,7 +32,7 @@ dnspython==2.2.1
     # via
     #   pyisemail
     #   pymongo
-emmet-core==0.38.9
+emmet-core==0.38.10
     # via mp-api
 executing==1.2.0
     # via stack-data
@@ -50,7 +50,7 @@ idna==3.4
     #   requests
 ipython==8.6.0
     # via mpcontribs-client (setup.py)
-jedi==0.18.1
+jedi==0.18.2
     # via ipython
 json2html==1.3.0
     # via mpcontribs-client (setup.py)
@@ -78,7 +78,7 @@ monty==2022.9.9
     #   emmet-core
     #   mp-api
     #   pymatgen
-mp-api==0.29.7
+mp-api==0.29.8
     # via pymatgen
 mpmath==1.2.1
     # via sympy
@@ -101,7 +101,7 @@ packaging==21.3
     # via matplotlib
 palettable==3.3.0
     # via pymatgen
-pandas==1.5.1
+pandas==1.5.2
     # via
     #   mpcontribs-client (setup.py)
     #   pymatgen
@@ -119,7 +119,7 @@ plotly==5.11.0
     # via
     #   mpcontribs-client (setup.py)
     #   pymatgen
-prompt-toolkit==3.0.32
+prompt-toolkit==3.0.33
     # via ipython
 ptyprocess==0.7.0
     # via pexpect
@@ -202,7 +202,7 @@ spglib==2.0.2
     # via
     #   emmet-core
     #   pymatgen
-stack-data==0.6.1
+stack-data==0.6.2
     # via ipython
 strict-rfc3339==0.7
     # via jsonschema
@@ -234,7 +234,7 @@ ujson==5.5.0
     # via mpcontribs-client (setup.py)
 uncertainties==3.1.7
     # via pymatgen
-urllib3==1.26.12
+urllib3==1.26.13
     # via requests
 wcwidth==0.2.5
     # via prompt-toolkit
