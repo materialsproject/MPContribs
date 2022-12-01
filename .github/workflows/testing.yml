@@ -32,8 +32,9 @@ jobs:
         cache: "pip"
     - name: Install dependencies
       run: |
-        python${{ matrix.python-version }} -m pip install --upgrade pip build
-        python${{ matrix.python-version }} -m pip install -r mpcontribs-client/requirements/${{ matrix.os }}_py${{ matrix.python-version }}_extras.txt -r mpcontribs-api/requirements/${{ matrix.os }}_py${{ matrix.python-version }}_extras.txt
+        python${{ matrix.python-version }} -m pip install --upgrade pip build pip-tools
+        python${{ matrix.python-version }} -m pip-tools compile --all-extras -o requirements.txt mpcontribs-client/setup.py mpcontribs-api.setup.py
+        python${{ matrix.python-version }} -m pip install -r requirements.txt
     - name: Set SSL_CERT_FILE (Linux)
       if: matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest'
       run: |
