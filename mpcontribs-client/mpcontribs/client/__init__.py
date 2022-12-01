@@ -513,7 +513,7 @@ def _load(protocol, host, headers_json, project, version):
 
 
 @functools.lru_cache
-def get_version(protocol):
+def get_version(protocol, url):
     retries, max_retries = 0, 3
     is_mock_test = 'pytest' in sys.modules and protocol == "http"
 
@@ -526,18 +526,18 @@ def get_version(protocol):
     else:
         while retries < max_retries:
             try:
-                r = requests.get(f"{self.url}/healthcheck", timeout=2)
+                r = requests.get(f"{url}/healthcheck", timeout=2)
                 if r.status_code == 200:
                     return r.json().get("version")
                 else:
                     retries += 1
                     logger.warning(
-                        f"Healthcheck for {self.url} failed ({r.status_code})! Wait 30s."
+                        f"Healthcheck for {url} failed ({r.status_code})! Wait 30s."
                     )
                     time.sleep(30)
             except RequestException as ex:
                 retries += 1
-                logger.warning(f"Could not connect to {self.url} ({ex})! Wait 30s.")
+                logger.warning(f"Could not connect to {url} ({ex})! Wait 30s.")
                 time.sleep(30)
 
 
@@ -592,7 +592,7 @@ class Client(SwaggerClient):
         if self.url not in VALID_URLS:
             raise ValueError(f"{self.url} not a valid URL (one of {VALID_URLS})")
 
-        self.version = get_version(self.protocol)
+        self.version = get_version(self.protocol, self.url)
         self.session = get_session()
         super().__init__(self.cached_swagger_spec)
 
