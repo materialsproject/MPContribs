@@ -73,8 +73,8 @@ def test_request_example(client):
         with Client(project="test") as contribs_client:
             print(contribs_client.__dir__)
             mock_load_spec.assert_called_once()
-    #with patch("bravado.requests_client.RequestsFutureAdapter.result") as mock_result:
-    #    mock_result = client.get
-    #    with Client(project="test") as contribs_client:
-    #        contribs_client.get_project()
-    #        mock_result.assert_called_once()
+    # with patch("bravado.requests_client.RequestsFutureAdapter.result") as mock_result:
+    #     mock_result = client.get
+    #     with Client(project="test") as contribs_client:
+    #         contribs_client.get_project()
+    #         mock_result.assert_called_once()

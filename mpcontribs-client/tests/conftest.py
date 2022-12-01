@@ -5,7 +5,6 @@ from mpcontribs.api import create_app
 os.environ['MPCONTRIBS_DB_NAME'] = 'mpcontribs-test'
 
 
-
 @pytest.fixture()
 def app():
     app = create_app()
