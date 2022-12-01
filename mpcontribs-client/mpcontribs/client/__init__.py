@@ -206,6 +206,7 @@ def grouper(n, iterable):
         yield chunk
 
 
+@functools.lru_cache
 def get_session(max_workers=MAX_WORKERS):
     # TODO add Bad Gateway 502?
     adapter_kwargs = dict(max_retries=Retry(
@@ -511,6 +512,35 @@ def _load(protocol, host, headers_json, project, version):
     return swagger_spec
 
 
+@functools.lru_cache
+def get_version(protocol):
+    retries, max_retries = 0, 3
+    is_mock_test = 'pytest' in sys.modules and protocol == "http"
+
+    if is_mock_test:
+        now = datetime.datetime.now()
+        return Version(
+            major=now.year, minor=now.month, patch=now.day,
+            prerelease=(str(now.hour), str(now.minute))
+        )
+    else:
+        while retries < max_retries:
+            try:
+                r = requests.get(f"{self.url}/healthcheck", timeout=2)
+                if r.status_code == 200:
+                    return r.json().get("version")
+                else:
+                    retries += 1
+                    logger.warning(
+                        f"Healthcheck for {self.url} failed ({r.status_code})! Wait 30s."
+                    )
+                    time.sleep(30)
+            except RequestException as ex:
+                retries += 1
+                logger.warning(f"Could not connect to {self.url} ({ex})! Wait 30s.")
+                time.sleep(30)
+
+
 class Client(SwaggerClient):
     """client to connect to MPContribs API
 
@@ -520,10 +550,6 @@ class Client(SwaggerClient):
           >>> from mpcontribs.client import Client
           >>> client = Client()
     """
-    # Borg: https://www.oreilly.com/library/view/python-cookbook/0596001673/ch05s23.html
-    # NOTE bravado future doesn't work with concurrent.futures
-    _shared_state = {}
-
     def __init__(
         self,
         apikey: str = None,
@@ -539,10 +565,9 @@ class Client(SwaggerClient):
             host (str): host address to connect to (or use MPCONTRIBS_API_HOST env var)
             project (str): use this project for all operations (query, update, create, delete)
         """
+        # NOTE bravado future doesn't work with concurrent.futures
         # - Kong forwards consumer headers when api-key used for auth
         # - forward consumer headers when connecting through localhost
-        self.__dict__ = self._shared_state
-
         if not host:
             host = os.environ.get("MPCONTRIBS_API_HOST", DEFAULT_HOST)
 
@@ -567,37 +592,8 @@ class Client(SwaggerClient):
         if self.url not in VALID_URLS:
             raise ValueError(f"{self.url} not a valid URL (one of {VALID_URLS})")
 
-        if "version" not in self.__dict__:
-            retries, max_retries = 0, 3
-            is_mock_test = 'pytest' in sys.modules and self.protocol == "http"
-
-            if is_mock_test:
-                now = datetime.datetime.now()
-                self.version = Version(
-                    major=now.year, minor=now.month, patch=now.day,
-                    prerelease=(str(now.hour), str(now.minute))
-                )
-            else:
-                while retries < max_retries:
-                    try:
-                        r = requests.get(f"{self.url}/healthcheck", timeout=2)
-                        if r.status_code == 200:
-                            self.version = r.json().get("version")
-                            break
-                        else:
-                            retries += 1
-                            logger.warning(
-                                f"Healthcheck for {self.url} failed ({r.status_code})! Wait 30s."
-                            )
-                            time.sleep(30)
-                    except RequestException as ex:
-                        retries += 1
-                        logger.warning(f"Could not connect to {self.url} ({ex})! Wait 30s.")
-                        time.sleep(30)
-
-        if "session" not in self.__dict__:
-            self.session = get_session()
-
+        self.version = get_version(self.protocol)
+        self.session = get_session()
         super().__init__(self.cached_swagger_spec)
 
     def __enter__(self):
