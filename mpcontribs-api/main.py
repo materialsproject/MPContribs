@@ -10,12 +10,14 @@ from supervisor.supervisorctl import Controller
 logger = logging.getLogger(__name__)
 client = boto3.client('ecs')
 
+
 def start(program):
     args = ["start", program]
     options = ClientOptions()
     options.realize(args)
     c = Controller(options)
     c.onecmd(" ".join(options.args))
+
 
 start("apis:*")
 
@@ -44,4 +46,4 @@ if metadata_uri:
 
 if start_rq:
     # start("rq:*")
-    start("rq:worker")
+    start("rq:*-worker")
