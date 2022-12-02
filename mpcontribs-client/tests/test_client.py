@@ -64,6 +64,7 @@ def test_mock():
             spec = client.swagger_spec
 
 
+@pytest.mark.skip(reason="under development")
 def test_request_example(client):
     assert "data" in client.get("/projects/").json
     apispec = client.get("/apispec.json").json

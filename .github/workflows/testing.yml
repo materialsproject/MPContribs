@@ -57,7 +57,7 @@ jobs:
         python${{ matrix.python-version }} -m flake8 --max-line-length 100
         python${{ matrix.python-version }} -m pycodestyle --max-line-length 100 .
         python${{ matrix.python-version }} -m pytest -v -s --cov=mpcontribs/client --cov-report=term-missing --cov-report=xml --ignore=bravado
-        python3 -m build --outdir ../dist
+        python${{ matrix.python-version }} -m build --outdir ../dist
     - name: Publish distribution 📦s to Test PyPI
       if: matrix.os == 'ubuntu-latest' && matrix.python-version == 3.9
       uses: pypa/gh-action-pypi-publish@release/v1.5
