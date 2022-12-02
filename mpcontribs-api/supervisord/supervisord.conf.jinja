@@ -57,7 +57,7 @@ serverurl=unix:///var/run/supervisor.sock
 programs={{ names|join('-api,') }}-api
 
 [group:rq]
-programs={{ names|join('-worker,') }}-worker,{{ names|join('-scheduler,') }}-scheduler
+programs={{ names|join('-worker,') }}-worker
 
 {% for deployment, cfg in deployments.items() %}
 {% set defaults %}
@@ -86,11 +86,6 @@ environment=
 
 [program:{{ deployment }}-worker]
 command=./scripts/start_rq.sh worker
-numprocs=1
-{{ defaults }}
-
-[program:{{ deployment }}-scheduler]
-command=./scripts/start_rq.sh scheduler
 numprocs=1
 {{ defaults }}
 
