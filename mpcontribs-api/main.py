@@ -43,4 +43,5 @@ if metadata_uri:
     logger.info(f"TASKS {ntasks}/{len(tasks)} -> START RQ {start_rq}")
 
 if start_rq:
-    start("rq:*")
+    # start("rq:*")
+    start("rq:worker")
