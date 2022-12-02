@@ -226,13 +226,14 @@ def create_app():
             logger.error(f"Failed to register {module_path}: {collection} {ex}")
 
     if app.kernels:
-        from mpcontribs.api.notebooks.views import rq, make
+        from mpcontribs.api.notebooks.views import rq
         rq.init_app(app)
 
-        if is_gunicorn and MPCONTRIBS_API_HOST:
-            setattr(app, "cron_job_id", f"auto-notebooks-build_{MPCONTRIBS_API_HOST}")
-            make.cron('*/3 * * * *', app.cron_job_id)
-            logger.info(f"CRONJOB {app.cron_job_id} added.")
+        # if is_gunicorn and MPCONTRIBS_API_HOST:
+        #     from mpcontribs.api.notebooks.views import make
+        #     setattr(app, "cron_job_id", f"auto-notebooks-build_{MPCONTRIBS_API_HOST}")
+        #     make.cron('*/3 * * * *', app.cron_job_id)
+        #     logger.info(f"CRONJOB {app.cron_job_id} added.")
 
     def healthcheck():
         return jsonify({"version": app.config["VERSION"]})
