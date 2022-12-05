@@ -21,7 +21,7 @@ argon2-cffi-bindings==21.2.0
     # via argon2-cffi
 asn1crypto==1.5.1
     # via mpcontribs-api (setup.py)
-asttokens==2.2.0
+asttokens==2.2.1
     # via stack-data
 async-timeout==4.0.2
     # via redis
@@ -44,9 +44,9 @@ blinker==1.5
     # via mpcontribs-api (setup.py)
 boltons==21.0.0
     # via mpcontribs-api (setup.py)
-boto3==1.26.21
+boto3==1.26.22
     # via flask-mongorest-mpcontribs
-botocore==1.29.21
+botocore==1.29.22
     # via
     #   boto3
     #   s3transfer
@@ -126,7 +126,7 @@ flask-marshmallow==0.14.0
     # via mpcontribs-api (setup.py)
 flask-mongoengine-tschaume==1.1.0
     # via flask-mongorest-mpcontribs
-flask-mongorest-mpcontribs==3.2.1
+flask-mongorest-mpcontribs==3.2.2
     # via mpcontribs-api (setup.py)
 flask-rq2==18.3
     # via mpcontribs-api (setup.py)
@@ -187,7 +187,7 @@ jsonschema==4.17.3
     #   ddtrace
     #   flasgger-tschaume
     #   nbformat
-jupyter-client==7.4.7
+jupyter-client==7.4.8
     # via
     #   ipykernel
     #   jupyter-server
@@ -257,7 +257,7 @@ nbclassic==0.4.8
     # via notebook
 nbclient==0.7.2
     # via nbconvert
-nbconvert==7.2.5
+nbconvert==7.2.6
     # via
     #   jupyter-server
     #   nbclassic
@@ -290,7 +290,7 @@ numpy==1.23.5
     #   pymatgen
     #   scipy
     #   spglib
-orjson==3.8.2
+orjson==3.8.3
     # via flask-mongorest-mpcontribs
 packaging==21.3
     # via
@@ -300,7 +300,6 @@ packaging==21.3
     #   marshmallow
     #   matplotlib
     #   nbconvert
-    #   redis
 palettable==3.3.0
     # via pymatgen
 pandas==1.5.2
@@ -404,7 +403,7 @@ pyzmq==24.0.1
     #   jupyter-server
     #   nbclassic
     #   notebook
-redis==4.3.5
+redis==4.4.0
     # via
     #   flask-rq2
     #   flask-sse
@@ -472,7 +471,7 @@ tenacity==8.1.0
     # via
     #   ddtrace
     #   plotly
-terminado==0.17.0
+terminado==0.17.1
     # via
     #   jupyter-server
     #   nbclassic
