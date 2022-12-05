@@ -13,7 +13,7 @@ argon2-cffi==21.3.0
     #   notebook
 argon2-cffi-bindings==21.2.0
     # via argon2-cffi
-asttokens==2.2.0
+asttokens==2.2.1
     # via stack-data
 attrs==22.1.0
     # via
@@ -126,7 +126,7 @@ jsonschema[format]==3.2.0
     #   mpcontribs-client
     #   nbformat
     #   swagger-spec-validator
-jupyter-client==7.4.7
+jupyter-client==7.4.8
     # via
     #   -r requirements.in
     #   ipykernel
@@ -182,7 +182,7 @@ monty==2022.9.9
     #   pymatgen
 mp-api==0.29.8
     # via pymatgen
-mpcontribs-client==4.5.0
+mpcontribs-client==4.6.0
     # via -r requirements.in
 mpmath==1.2.1
     # via sympy
@@ -195,7 +195,7 @@ nbclassic==0.4.8
     # via notebook
 nbclient==0.7.2
     # via nbconvert
-nbconvert==7.2.5
+nbconvert==7.2.6
     # via
     #   jupyter-server
     #   nbclassic
@@ -397,7 +397,7 @@ tenacity==8.1.0
     # via
     #   ddtrace
     #   plotly
-terminado==0.17.0
+terminado==0.17.1
     # via
     #   jupyter-server
     #   nbclassic
