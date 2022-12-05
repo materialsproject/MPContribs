@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=requirements/ubuntu-latest_py3.8.txt
 #
-asttokens==2.2.0
+asttokens==2.2.1
     # via stack-data
 attrs==22.1.0
     # via jsonschema
