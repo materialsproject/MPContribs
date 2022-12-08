@@ -4,6 +4,8 @@
 #
 #    pip-compile --output-file=requirements/ubuntu-latest_py3.9.txt
 #
+arrow==1.2.3
+    # via isoduration
 asttokens==2.2.1
     # via stack-data
 attrs==22.1.0
@@ -16,7 +18,7 @@ bravado==11.0.3
     # via mpcontribs-client (setup.py)
 bravado-core==5.17.1
     # via bravado
-certifi==2022.9.24
+certifi==2022.12.7
     # via requests
 charset-normalizer==2.1.1
     # via requests
@@ -30,7 +32,7 @@ dnspython==2.2.1
     # via
     #   pyisemail
     #   pymongo
-emmet-core==0.39.0
+emmet-core==0.39.1
     # via mp-api
 executing==1.2.0
     # via stack-data
@@ -40,6 +42,8 @@ flatten-dict==0.4.2
     # via mpcontribs-client (setup.py)
 fonttools==4.38.0
     # via matplotlib
+fqdn==1.5.1
+    # via jsonschema
 future==0.18.2
     # via uncertainties
 idna==3.4
@@ -48,6 +52,8 @@ idna==3.4
     #   requests
 ipython==8.7.0
     # via mpcontribs-client (setup.py)
+isoduration==20.11.0
+    # via jsonschema
 jedi==0.18.2
     # via ipython
 json2html==1.3.0
@@ -56,10 +62,9 @@ jsonpointer==2.3
     # via jsonschema
 jsonref==1.0.1
     # via bravado-core
-jsonschema[format]==3.2.0
+jsonschema[format]==4.17.3
     # via
     #   bravado-core
-    #   mpcontribs-client (setup.py)
     #   swagger-spec-validator
 kiwisolver==1.4.4
     # via matplotlib
@@ -76,7 +81,7 @@ monty==2022.9.9
     #   emmet-core
     #   mp-api
     #   pymatgen
-mp-api==0.29.8
+mp-api==0.30.1
     # via pymatgen
 mpmath==1.2.1
     # via sympy
@@ -95,7 +100,7 @@ numpy==1.23.5
     #   pymatgen
     #   scipy
     #   spglib
-packaging==21.3
+packaging==22.0
     # via matplotlib
 palettable==3.3.0
     # via pymatgen
@@ -117,7 +122,7 @@ plotly==5.11.0
     # via
     #   mpcontribs-client (setup.py)
     #   pymatgen
-prompt-toolkit==3.0.33
+prompt-toolkit==3.0.36
     # via ipython
 ptyprocess==0.7.0
     # via pexpect
@@ -141,9 +146,7 @@ pymatgen==2022.11.7
 pymongo==4.3.3
     # via mpcontribs-client (setup.py)
 pyparsing==3.0.9
-    # via
-    #   matplotlib
-    #   packaging
+    # via matplotlib
 pyrsistent==0.19.2
     # via jsonschema
 python-dateutil==2.8.2
@@ -171,6 +174,8 @@ requests==2.28.1
     #   requests-futures
 requests-futures==1.0.0
     # via mpcontribs-client (setup.py)
+rfc3339-validator==0.1.4
+    # via jsonschema
 rfc3987==1.3.8
     # via jsonschema
 ruamel-yaml==0.17.21
@@ -191,20 +196,17 @@ six==1.16.0
     #   bravado
     #   bravado-core
     #   flatten-dict
-    #   jsonschema
     #   latexcodec
     #   pybtex
     #   python-dateutil
-    #   swagger-spec-validator
+    #   rfc3339-validator
 spglib==2.0.2
     # via
     #   emmet-core
     #   pymatgen
 stack-data==0.6.2
     # via ipython
-strict-rfc3339==0.7
-    # via jsonschema
-swagger-spec-validator==2.7.3
+swagger-spec-validator==3.0.3
     # via
     #   bravado-core
     #   mpcontribs-client (setup.py)
@@ -218,7 +220,7 @@ tqdm==4.64.1
     # via
     #   mpcontribs-client (setup.py)
     #   pymatgen
-traitlets==5.6.0
+traitlets==5.7.0
     # via
     #   ipython
     #   matplotlib-inline
@@ -228,10 +230,13 @@ typing-extensions==4.4.0
     #   emmet-core
     #   mp-api
     #   pydantic
+    #   swagger-spec-validator
 ujson==5.6.0
     # via mpcontribs-client (setup.py)
 uncertainties==3.1.7
     # via pymatgen
+uri-template==1.2.0
+    # via jsonschema
 urllib3==1.26.13
     # via requests
 wcwidth==0.2.5
