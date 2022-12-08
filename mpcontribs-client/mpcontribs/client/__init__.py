@@ -208,7 +208,7 @@ def grouper(n, iterable):
         yield chunk
 
 
-def get_session():
+def get_session(session=None):
     # TODO add Bad Gateway 502?
     adapter_kwargs = dict(max_retries=Retry(
         total=RETRIES,
@@ -217,11 +217,12 @@ def get_session():
         respect_retry_after_header=True,
         status_forcelist=[429],  # rate limit
     ))
-    s = FuturesSession(
-        session=_session, executor=_executor, adapter_kwargs=adapter_kwargs
+    s = session if session else _session
+    futures_session = FuturesSession(
+        session=s, executor=_executor, adapter_kwargs=adapter_kwargs
     )
-    s.hooks['response'].append(_response_hook)
-    return s
+    futures_session.hooks['response'].append(_response_hook)
+    return futures_session
 
 
 def _response_hook(resp, *args, **kwargs):
@@ -554,7 +555,8 @@ class Client(SwaggerClient):
         apikey: str = None,
         headers: dict = None,
         host: str = None,
-        project: str = None
+        project: str = None,
+        session: requests.Session = None,
     ):
         """Initialize the client - only reloads API spec from server as needed
 
@@ -563,6 +565,7 @@ class Client(SwaggerClient):
             headers (dict): custom headers for localhost connections
             host (str): host address to connect to (or use MPCONTRIBS_API_HOST env var)
             project (str): use this project for all operations (query, update, create, delete)
+            session (requests.Session): override session for client to use
         """
         # NOTE bravado future doesn't work with concurrent.futures
         # - Kong forwards consumer headers when api-key used for auth
@@ -592,7 +595,7 @@ class Client(SwaggerClient):
             raise ValueError(f"{self.url} not a valid URL (one of {VALID_URLS})")
 
         self.version = _version(self.url)  # includes healthcheck
-        self.session = get_session()
+        self.session = get_session(session=session)
         super().__init__(self.cached_swagger_spec)
 
     def __enter__(self):
