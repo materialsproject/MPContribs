@@ -15,6 +15,8 @@ argon2-cffi==21.3.0
     #   notebook
 argon2-cffi-bindings==21.2.0
     # via argon2-cffi
+arrow==1.2.3
+    # via isoduration
 asn1crypto==1.5.1
     # via mpcontribs-api (setup.py)
 asttokens==2.2.1
@@ -36,9 +38,9 @@ blinker==1.5
     # via mpcontribs-api (setup.py)
 boltons==21.0.0
     # via mpcontribs-api (setup.py)
-boto3==1.26.22
+boto3==1.26.26
     # via flask-mongorest-mpcontribs
-botocore==1.29.22
+botocore==1.29.26
     # via
     #   boto3
     #   s3transfer
@@ -48,7 +50,7 @@ bytecode==0.14.0
     # via ddtrace
 cattrs==22.2.0
     # via ddtrace
-certifi==2022.9.24
+certifi==2022.12.7
     # via requests
 cffi==1.15.1
     # via
@@ -60,6 +62,8 @@ click==8.1.3
     # via
     #   flask
     #   rq
+comm==0.1.2
+    # via ipykernel
 contourpy==1.0.6
     # via matplotlib
 croniter==1.3.8
@@ -86,7 +90,7 @@ dnspython==2.2.1
     # via
     #   mpcontribs-api (setup.py)
     #   pymongo
-emmet-core==0.39.0
+emmet-core==0.39.1
     # via mp-api
 entrypoints==0.4
     # via jupyter-client
@@ -128,6 +132,8 @@ flatten-dict==0.4.2
     # via flask-mongorest-mpcontribs
 fonttools==4.38.0
     # via matplotlib
+fqdn==1.5.1
+    # via jsonschema
 future==0.18.2
     # via uncertainties
 gevent==22.10.2
@@ -139,8 +145,9 @@ gunicorn[gevent]==20.1.0
 idna==3.4
     # via
     #   anyio
+    #   jsonschema
     #   requests
-ipykernel==6.17.1
+ipykernel==6.19.2
     # via
     #   nbclassic
     #   notebook
@@ -150,6 +157,8 @@ ipython-genutils==0.2.0
     # via
     #   nbclassic
     #   notebook
+isoduration==20.11.0
+    # via jsonschema
 itsdangerous==2.1.2
     # via flask
 jedi==0.18.2
@@ -168,10 +177,13 @@ jmespath==1.0.1
     #   botocore
 json2html==1.3.0
     # via mpcontribs-api (setup.py)
-jsonschema==4.17.3
+jsonpointer==2.3
+    # via jsonschema
+jsonschema[format-nongpl]==4.17.3
     # via
     #   ddtrace
     #   flasgger-tschaume
+    #   jupyter-events
     #   nbformat
 jupyter-client==7.4.8
     # via
@@ -189,10 +201,14 @@ jupyter-core==5.1.0
     #   nbconvert
     #   nbformat
     #   notebook
-jupyter-server==1.23.3
+jupyter-events==0.5.0
+    # via jupyter-server
+jupyter-server==2.0.1
     # via
     #   nbclassic
     #   notebook-shim
+jupyter-server-terminals==0.4.2
+    # via jupyter-server
 jupyterlab-pygments==0.2.2
     # via nbconvert
 kiwisolver==1.4.4
@@ -233,7 +249,7 @@ monty==2022.9.9
     #   pymatgen
 more-itertools==9.0.0
     # via mpcontribs-api (setup.py)
-mp-api==0.29.8
+mp-api==0.30.1
     # via pymatgen
 mpmath==1.2.1
     # via sympy
@@ -278,7 +294,7 @@ numpy==1.23.5
     #   spglib
 orjson==3.8.3
     # via flask-mongorest-mpcontribs
-packaging==21.3
+packaging==22.0
     # via
     #   ddtrace
     #   ipykernel
@@ -302,7 +318,7 @@ pillow==9.3.0
     # via matplotlib
 pint==0.19.2
     # via mpcontribs-api (setup.py)
-platformdirs==2.5.4
+platformdirs==2.6.0
     # via jupyter-core
 plotly==5.11.0
     # via pymatgen
@@ -311,9 +327,9 @@ prometheus-client==0.15.0
     #   jupyter-server
     #   nbclassic
     #   notebook
-prompt-toolkit==3.0.33
+prompt-toolkit==3.0.36
     # via ipython
-protobuf==4.21.10
+protobuf==4.21.11
     # via
     #   ddsketch
     #   ddtrace
@@ -351,9 +367,7 @@ pymongo==4.3.3
 pyopenssl==22.1.0
     # via mpcontribs-api (setup.py)
 pyparsing==3.0.9
-    # via
-    #   matplotlib
-    #   packaging
+    # via matplotlib
 pyrsistent==0.19.2
     # via jsonschema
 python-dateutil==2.8.2
@@ -366,6 +380,8 @@ python-dateutil==2.8.2
     #   matplotlib
     #   pandas
     #   rq-scheduler
+python-json-logger==2.0.4
+    # via jupyter-events
 python-mimeparse==1.6.0
     # via mimerender-pr36
 python-snappy==0.6.1
@@ -379,6 +395,7 @@ pytz-deprecation-shim==0.1.0.post0
 pyyaml==6.0
     # via
     #   flasgger-tschaume
+    #   jupyter-events
     #   pybtex
 pyzmq==24.0.1
     # via
@@ -398,6 +415,10 @@ requests==2.28.1
     # via
     #   mp-api
     #   pymatgen
+rfc3339-validator==0.1.4
+    # via jsonschema
+rfc3986-validator==0.1.1
+    # via jsonschema
 rq==1.11.1
     # via
     #   flask-rq2
@@ -425,6 +446,7 @@ setproctitle==1.3.2
     # via mpcontribs-api (setup.py)
 six==1.16.0
     # via
+    #   asttokens
     #   bleach
     #   ddsketch
     #   ddtrace
@@ -435,6 +457,7 @@ six==1.16.0
     #   latexcodec
     #   pybtex
     #   python-dateutil
+    #   rfc3339-validator
 sniffio==1.3.0
     # via anyio
 soupsieve==2.3.2.post1
@@ -458,6 +481,7 @@ tenacity==8.1.0
 terminado==0.17.1
     # via
     #   jupyter-server
+    #   jupyter-server-terminals
     #   nbclassic
     #   notebook
 tinycss2==1.2.1
@@ -472,12 +496,14 @@ tornado==6.2
     #   terminado
 tqdm==4.64.1
     # via pymatgen
-traitlets==5.6.0
+traitlets==5.7.0
     # via
+    #   comm
     #   ipykernel
     #   ipython
     #   jupyter-client
     #   jupyter-core
+    #   jupyter-events
     #   jupyter-server
     #   matplotlib-inline
     #   nbclassic
@@ -499,12 +525,16 @@ uncertainties==3.1.7
     # via
     #   mpcontribs-api (setup.py)
     #   pymatgen
+uri-template==1.2.0
+    # via jsonschema
 urllib3==1.26.13
     # via
     #   botocore
     #   requests
 wcwidth==0.2.5
     # via prompt-toolkit
+webcolors==1.12
+    # via jsonschema
 webencodings==0.5.1
     # via
     #   bleach
