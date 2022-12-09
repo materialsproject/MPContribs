@@ -13,7 +13,9 @@ argon2-cffi==21.3.0
     #   notebook
 argon2-cffi-bindings==21.2.0
     # via argon2-cffi
-asttokens==2.2.0
+arrow==1.2.3
+    # via isoduration
+asttokens==2.2.1
     # via stack-data
 attrs==22.1.0
     # via
@@ -38,12 +40,14 @@ bytecode==0.14.0
     # via ddtrace
 cattrs==22.2.0
     # via ddtrace
-certifi==2022.9.24
+certifi==2022.12.7
     # via requests
 cffi==1.15.1
     # via argon2-cffi-bindings
 charset-normalizer==2.1.1
     # via requests
+comm==0.1.2
+    # via ipykernel
 contourpy==1.0.6
     # via matplotlib
 cycler==0.11.0
@@ -62,7 +66,7 @@ dnspython==2.2.1
     # via
     #   pyisemail
     #   pymongo
-emmet-core==0.39.0
+emmet-core==0.39.1
     # via mp-api
 entrypoints==0.4
     # via jupyter-client
@@ -80,6 +84,8 @@ flatten-dict==0.4.2
     # via mpcontribs-client
 fonttools==4.38.0
     # via matplotlib
+fqdn==1.5.1
+    # via jsonschema
 future==0.18.2
     # via uncertainties
 idna==3.4
@@ -89,7 +95,7 @@ idna==3.4
     #   requests
 importlib-metadata==5.1.0
     # via nbconvert
-ipykernel==6.17.1
+ipykernel==6.19.2
     # via
     #   ipywidgets
     #   nbclassic
@@ -103,8 +109,10 @@ ipython-genutils==0.2.0
     # via
     #   nbclassic
     #   notebook
-ipywidgets==8.0.2
+ipywidgets==8.0.3
     # via -r MPContribs/mpcontribs-kernel-gateway/requirements.in
+isoduration==20.11.0
+    # via jsonschema
 jedi==0.18.2
     # via ipython
 jinja2==3.1.2
@@ -119,14 +127,14 @@ jsonpointer==2.3
     # via jsonschema
 jsonref==1.0.1
     # via bravado-core
-jsonschema[format]==3.2.0
+jsonschema[format,format-nongpl]==4.17.3
     # via
     #   bravado-core
     #   ddtrace
-    #   mpcontribs-client
+    #   jupyter-events
     #   nbformat
     #   swagger-spec-validator
-jupyter-client==7.4.7
+jupyter-client==7.4.8
     # via
     #   -r MPContribs/mpcontribs-kernel-gateway/requirements.in
     #   ipykernel
@@ -145,15 +153,19 @@ jupyter-core==5.1.0
     #   nbconvert
     #   nbformat
     #   notebook
+jupyter-events==0.5.0
+    # via jupyter-server
 jupyter-kernel-gateway==2.5.1
     # via -r MPContribs/mpcontribs-kernel-gateway/requirements.in
-jupyter-server==1.23.3
+jupyter-server==2.0.1
     # via
     #   nbclassic
     #   notebook-shim
+jupyter-server-terminals==0.4.2
+    # via jupyter-server
 jupyterlab-pygments==0.2.2
     # via nbconvert
-jupyterlab-widgets==3.0.3
+jupyterlab-widgets==3.0.4
     # via ipywidgets
 kaleido==0.2.1
     # via -r MPContribs/mpcontribs-kernel-gateway/requirements.in
@@ -182,9 +194,9 @@ monty==2022.9.9
     #   emmet-core
     #   mp-api
     #   pymatgen
-mp-api==0.29.8
+mp-api==0.30.3
     # via pymatgen
-mpcontribs-client==4.6.0
+mpcontribs-client==5.0.0
     # via -r MPContribs/mpcontribs-kernel-gateway/requirements.in
 mpmath==1.2.1
     # via sympy
@@ -197,7 +209,7 @@ nbclassic==0.4.8
     # via notebook
 nbclient==0.7.2
     # via nbconvert
-nbconvert==7.2.5
+nbconvert==7.2.6
     # via
     #   jupyter-server
     #   nbclassic
@@ -230,7 +242,7 @@ numpy==1.21.6
     #   pymatgen
     #   scipy
     #   spglib
-packaging==21.3
+packaging==22.0
     # via
     #   ddtrace
     #   ipykernel
@@ -256,7 +268,7 @@ pillow==9.3.0
     # via matplotlib
 pint==0.19.2
     # via mpcontribs-client
-platformdirs==2.5.4
+platformdirs==2.6.0
     # via jupyter-core
 plotly==5.11.0
     # via
@@ -267,9 +279,9 @@ prometheus-client==0.15.0
     #   jupyter-server
     #   nbclassic
     #   notebook
-prompt-toolkit==3.0.33
+prompt-toolkit==3.0.36
     # via ipython
-protobuf==4.21.10
+protobuf==4.21.11
     # via
     #   ddsketch
     #   ddtrace
@@ -305,18 +317,19 @@ pymatgen==2022.11.7
 pymongo==4.3.3
     # via mpcontribs-client
 pyparsing==3.0.9
-    # via
-    #   matplotlib
-    #   packaging
+    # via matplotlib
 pyrsistent==0.19.2
     # via jsonschema
 python-dateutil==2.8.2
     # via
+    #   arrow
     #   bravado
     #   bravado-core
     #   jupyter-client
     #   matplotlib
     #   pandas
+python-json-logger==2.0.4
+    # via jupyter-events
 pytz==2022.6
     # via
     #   bravado-core
@@ -325,6 +338,7 @@ pyyaml==6.0
     # via
     #   bravado
     #   bravado-core
+    #   jupyter-events
     #   pybtex
     #   swagger-spec-validator
 pyzmq==24.0.1
@@ -344,6 +358,10 @@ requests==2.28.1
     #   requests-futures
 requests-futures==1.0.0
     # via mpcontribs-client
+rfc3339-validator==0.1.4
+    # via jsonschema
+rfc3986-validator==0.1.1
+    # via jsonschema
 rfc3987==1.3.8
     # via jsonschema
 ruamel-yaml==0.17.21
@@ -374,11 +392,10 @@ six==1.16.0
     #   ddsketch
     #   ddtrace
     #   flatten-dict
-    #   jsonschema
     #   latexcodec
     #   pybtex
     #   python-dateutil
-    #   swagger-spec-validator
+    #   rfc3339-validator
 sniffio==1.3.0
     # via anyio
 soupsieve==2.3.2.post1
@@ -389,9 +406,7 @@ spglib==2.0.2
     #   pymatgen
 stack-data==0.6.2
     # via ipython
-strict-rfc3339==0.7
-    # via jsonschema
-swagger-spec-validator==2.7.3
+swagger-spec-validator==3.0.3
     # via
     #   bravado-core
     #   mpcontribs-client
@@ -403,9 +418,10 @@ tenacity==8.1.0
     # via
     #   ddtrace
     #   plotly
-terminado==0.17.0
+terminado==0.17.1
     # via
     #   jupyter-server
+    #   jupyter-server-terminals
     #   nbclassic
     #   notebook
 tinycss2==1.2.1
@@ -423,13 +439,15 @@ tqdm==4.64.1
     # via
     #   mpcontribs-client
     #   pymatgen
-traitlets==5.6.0
+traitlets==5.7.0
     # via
+    #   comm
     #   ipykernel
     #   ipython
     #   ipywidgets
     #   jupyter-client
     #   jupyter-core
+    #   jupyter-events
     #   jupyter-kernel-gateway
     #   jupyter-server
     #   matplotlib-inline
@@ -446,10 +464,13 @@ typing-extensions==4.4.0
     #   emmet-core
     #   mp-api
     #   pydantic
+    #   swagger-spec-validator
 ujson==5.6.0
     # via mpcontribs-client
 uncertainties==3.1.7
     # via pymatgen
+uri-template==1.2.0
+    # via jsonschema
 urllib3==1.26.13
     # via requests
 wcwidth==0.2.5
@@ -462,7 +483,7 @@ webencodings==0.5.1
     #   tinycss2
 websocket-client==1.4.2
     # via jupyter-server
-widgetsnbextension==4.0.3
+widgetsnbextension==4.0.4
     # via ipywidgets
 xmltodict==0.13.0
     # via ddtrace
