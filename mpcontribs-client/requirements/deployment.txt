@@ -226,7 +226,7 @@ tqdm==4.64.1
     # via
     #   mpcontribs-client (MPContribs/mpcontribs-client/setup.py)
     #   pymatgen
-traitlets==5.7.0
+traitlets==5.7.1
     # via
     #   ipython
     #   matplotlib-inline
