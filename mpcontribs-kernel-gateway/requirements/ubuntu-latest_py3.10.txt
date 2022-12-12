@@ -190,7 +190,7 @@ monty==2022.9.9
     #   emmet-core
     #   mp-api
     #   pymatgen
-mp-api==0.30.1
+mp-api==0.30.3
     # via pymatgen
 mpcontribs-client==5.0.0
     # via -r requirements.in
