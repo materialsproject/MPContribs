@@ -39,9 +39,9 @@ blinker==1.5
     # via mpcontribs-api (setup.py)
 boltons==21.0.0
     # via mpcontribs-api (setup.py)
-boto3==1.26.26
+boto3==1.26.27
     # via flask-mongorest-mpcontribs
-botocore==1.29.26
+botocore==1.29.27
     # via
     #   boto3
     #   s3transfer
@@ -231,7 +231,7 @@ marshmallow==3.19.0
     # via
     #   flask-marshmallow
     #   marshmallow-mongoengine
-marshmallow-mongoengine==0.31.0
+marshmallow-mongoengine==0.31.1
     # via flask-mongorest-mpcontribs
 matplotlib==3.6.2
     # via pymatgen
@@ -258,7 +258,7 @@ monty==2022.9.9
     #   pymatgen
 more-itertools==9.0.0
     # via mpcontribs-api (setup.py)
-mp-api==0.30.1
+mp-api==0.30.3
     # via pymatgen
 mpmath==1.2.1
     # via sympy
