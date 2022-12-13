@@ -639,8 +639,8 @@ class Client(SwaggerClient):
         return True, None
 
     def _get_per_page_default_max(self, op: str = "query", resource: str = "contributions") -> int:
-        resource = self.swagger_spec.resources[resource]
         attr = f"{op}{resource.capitalize()}"
+        resource = self.swagger_spec.resources[resource]
         param_spec = getattr(resource, attr).params["per_page"].param_spec
         return param_spec["default"], param_spec["maximum"]
 
@@ -708,7 +708,7 @@ class Client(SwaggerClient):
     ):
         rname = rel_url.split("/", 1)[0]
         resource = self.swagger_spec.resources[rname]
-        attr = f"{op}{resource.capitalize()}"
+        attr = f"{op}{rname.capitalize()}"
         method = getattr(resource, attr).http_method
         kwargs = dict(headers=self.headers, params=params)
 
