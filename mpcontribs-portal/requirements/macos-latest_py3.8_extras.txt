@@ -32,9 +32,9 @@ boltons==21.0.0
     # via
     #   mpcontribs-client
     #   mpcontribs-portal (setup.py)
-boto3==1.26.28
+boto3==1.26.30
     # via mpcontribs-portal (setup.py)
-botocore==1.29.28
+botocore==1.29.30
     # via
     #   boto3
     #   s3transfer
@@ -81,7 +81,7 @@ dnspython==2.2.1
     # via
     #   pyisemail
     #   pymongo
-emmet-core==0.39.1
+emmet-core==0.39.6
     # via mp-api
 entrypoints==0.4
     # via jupyter-client
@@ -199,7 +199,7 @@ monty==2022.9.9
     #   pymatgen
 mp-api==0.30.4
     # via pymatgen
-mpcontribs-client==5.0.0
+mpcontribs-client==5.0.1
     # via mpcontribs-portal (setup.py)
 mpmath==1.2.1
     # via sympy
@@ -268,7 +268,7 @@ pluggy==1.0.0
     # via pytest
 prompt-toolkit==3.0.36
     # via ipython
-protobuf==4.21.11
+protobuf==4.21.12
     # via
     #   ddsketch
     #   ddtrace
