@@ -66,7 +66,7 @@ dnspython==2.2.1
     # via
     #   pyisemail
     #   pymongo
-emmet-core==0.39.1
+emmet-core==0.39.6
     # via mp-api
 entrypoints==0.4
     # via jupyter-client
@@ -196,7 +196,7 @@ monty==2022.9.9
     #   pymatgen
 mp-api==0.30.4
     # via pymatgen
-mpcontribs-client==5.0.0
+mpcontribs-client==5.0.1
     # via -r requirements.in
 mpmath==1.2.1
     # via sympy
@@ -281,7 +281,7 @@ prometheus-client==0.15.0
     #   notebook
 prompt-toolkit==3.0.36
     # via ipython
-protobuf==4.21.11
+protobuf==4.21.12
     # via
     #   ddsketch
     #   ddtrace

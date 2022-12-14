@@ -43,9 +43,9 @@ blinker==1.5
     # via mpcontribs-api (setup.py)
 boltons==21.0.0
     # via mpcontribs-api (setup.py)
-boto3==1.26.28
+boto3==1.26.30
     # via flask-mongorest-mpcontribs
-botocore==1.29.28
+botocore==1.29.30
     # via
     #   boto3
     #   s3transfer
@@ -95,7 +95,7 @@ dnspython==2.2.1
     # via
     #   mpcontribs-api (setup.py)
     #   pymongo
-emmet-core==0.39.1
+emmet-core==0.39.6
     # via mp-api
 entrypoints==0.4
     # via jupyter-client
@@ -353,7 +353,7 @@ prometheus-client==0.15.0
     #   notebook
 prompt-toolkit==3.0.36
     # via ipython
-protobuf==4.21.11
+protobuf==4.21.12
     # via
     #   ddsketch
     #   ddtrace
