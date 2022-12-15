@@ -44,7 +44,7 @@ from json2html import Json2Html
 from IPython.display import display, HTML, Image, FileLink
 from boltons.iterutils import remap
 from pymatgen.core import Structure as PmgStructure
-from concurrent.futures import as_completed, ProcessPoolExecutor
+from concurrent.futures import as_completed
 from requests_futures.sessions import FuturesSession
 from urllib3.util.retry import Retry
 from filetype.types.archive import Gz
@@ -107,7 +107,6 @@ ureg.define("electron_mass = 9.1093837015e-31 kg = mₑ = m_e")
 LOG_LEVEL = os.environ.get("MPCONTRIBS_CLIENT_LOG_LEVEL", "INFO")
 log_level = getattr(logging, LOG_LEVEL.upper())
 _session = requests.Session()
-_executor = ProcessPoolExecutor(max_workers=MAX_WORKERS)
 
 
 class LogFilter(logging.Filter):
@@ -217,12 +216,10 @@ def get_session(session=None):
         respect_retry_after_header=True,
         status_forcelist=[429],  # rate limit
     ))
-    s = session if session else _session
-    futures_session = FuturesSession(
-        session=s, executor=_executor, adapter_kwargs=adapter_kwargs
+    return FuturesSession(
+        session=session if session else _session,
+        max_workers=MAX_WORKERS, adapter_kwargs=adapter_kwargs
     )
-    futures_session.hooks['response'].append(_response_hook)
-    return futures_session
 
 
 def _response_hook(resp, *args, **kwargs):
@@ -469,7 +466,7 @@ def _load(protocol, host, headers_json, project, version):
     query = {"name": project} if project else {}
     query["_fields"] = ["columns"]
     kwargs = dict(headers=headers, params=query)
-    resp = _session.get(f"{url}/projects/", **kwargs).json()
+    resp = requests.get(f"{url}/projects/", **kwargs).json()
 
     if not resp or not resp["data"]:
         raise ValueError(f"Failed to load projects for query {query}!")
@@ -710,7 +707,9 @@ class Client(SwaggerClient):
         resource = self.swagger_spec.resources[rname]
         attr = f"{op}{rname.capitalize()}"
         method = getattr(resource, attr).http_method
-        kwargs = dict(headers=self.headers, params=params)
+        kwargs = dict(
+            headers=self.headers, params=params, hooks={'response': _response_hook}
+        )
 
         if method == "put" and data:
             kwargs["data"] = ujson.dumps(data).encode("utf-8")
