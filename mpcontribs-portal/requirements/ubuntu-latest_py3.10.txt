@@ -180,7 +180,7 @@ monty==2022.9.9
     #   mp-api
     #   mpcontribs-portal (setup.py)
     #   pymatgen
-mp-api==0.30.4
+mp-api==0.30.5
     # via pymatgen
 mpcontribs-client==5.0.1
     # via mpcontribs-portal (setup.py)
