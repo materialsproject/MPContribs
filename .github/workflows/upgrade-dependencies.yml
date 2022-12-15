@@ -35,6 +35,8 @@ jobs:
         id: changes
         shell: bash
         run: |
+          sha1=$(git diff-index HEAD | awk '{print $4}')
+          [[ $sha1 == "0000000000000000000000000000000000000000" ]] && git update-index --really-refresh
           echo "count=$(git diff-index HEAD | wc -l | xargs)" >> $GITHUB_OUTPUT
           echo "files=$(git ls-files --exclude-standard --others | wc -l | xargs)" >> $GITHUB_OUTPUT
       - name: commit & push changes
