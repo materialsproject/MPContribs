@@ -32,9 +32,9 @@ boltons==21.0.0
     # via
     #   mpcontribs-client
     #   mpcontribs-portal (setup.py)
-boto3==1.26.30
+boto3==1.26.31
     # via mpcontribs-portal (setup.py)
-botocore==1.29.30
+botocore==1.29.31
     # via
     #   boto3
     #   s3transfer
@@ -195,7 +195,7 @@ monty==2022.9.9
     #   pymatgen
 mp-api==0.30.5
     # via pymatgen
-mpcontribs-client==5.0.1
+mpcontribs-client==5.0.2
     # via mpcontribs-portal (setup.py)
 mpmath==1.2.1
     # via sympy
@@ -445,7 +445,7 @@ whitenoise==6.2.0
     # via mpcontribs-portal (setup.py)
 xmltodict==0.13.0
     # via ddtrace
-zope-event==4.5.0
+zope-event==4.6
     # via gevent
 zope-interface==5.5.2
     # via gevent
