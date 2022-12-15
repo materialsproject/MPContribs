@@ -573,7 +573,7 @@ class Client(SwaggerClient):
         if not apikey:
             apikey = os.environ.get("MPCONTRIBS_API_KEY")
 
-        if apikey and headers is not None:
+        if apikey and headers:
             apikey = None
             logger.debug("headers set => ignoring apikey!")
 
