@@ -272,7 +272,7 @@ monty==2022.9.9
     #   pymatgen
 more-itertools==9.0.0
     # via mpcontribs-api (setup.py)
-mp-api==0.30.4
+mp-api==0.30.5
     # via pymatgen
 mpmath==1.2.1
     # via sympy
