@@ -39,9 +39,9 @@ blinker==1.5
     # via mpcontribs-api (setup.py)
 boltons==21.0.0
     # via mpcontribs-api (setup.py)
-boto3==1.26.30
+boto3==1.26.31
     # via flask-mongorest-mpcontribs
-botocore==1.29.30
+botocore==1.29.31
     # via
     #   boto3
     #   s3transfer
@@ -576,7 +576,7 @@ xmltodict==0.13.0
     # via ddtrace
 zipp==3.11.0
     # via importlib-metadata
-zope-event==4.5.0
+zope-event==4.6
     # via gevent
 zope-interface==5.5.2
     # via gevent
