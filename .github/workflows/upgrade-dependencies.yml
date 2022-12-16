@@ -36,7 +36,7 @@ jobs:
         shell: bash
         run: |
           sha1=$(git diff-index HEAD ${{ matrix.package }}/requirements | awk '{print $4}')
-          [[ $sha1 == "0000000000000000000000000000000000000000" ]] && git update-index --really-refresh ${{ matrix.package }}/requirements
+          [[ $sha1 == "0000000000000000000000000000000000000000" ]] && git update-index --really-refresh ${{ matrix.package }}/requirements/${{ matrix.os }}_py${{ matrix.python-version }}*.txt
           echo "count=$(git diff-index HEAD ${{ matrix.package }}/requirements | wc -l | xargs)" >> $GITHUB_OUTPUT
           echo "files=$(git ls-files --exclude-standard --others ${{ matrix.package }}/requirements | wc -l | xargs)" >> $GITHUB_OUTPUT
       - name: commit & push changes
