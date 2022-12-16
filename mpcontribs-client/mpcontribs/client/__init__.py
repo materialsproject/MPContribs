@@ -783,7 +783,7 @@ class Client(SwaggerClient):
         else:
             tid = tid_or_md5
 
-        op = self.swagger_spec.resources["tables"].get_entries
+        op = self.swagger_spec.resources["tables"].queryTables
         per_page = op.params["data_per_page"].param_spec["maximum"]
         table = {"data": []}
         page, pages = 1, None
