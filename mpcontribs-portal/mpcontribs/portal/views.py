@@ -96,7 +96,7 @@ def landingpage(request, project):
 
     try:
         client = Client(**ckwargs)
-        prov = client.projects.get_entry(pk=project, _fields=["_all"]).result()
+        prov = client.get_project(project)
     except HTTPNotFound:
         ctx["alert"] = f"Project '{project}' not found or access denied! Try to log in."
     else:
@@ -188,7 +188,7 @@ def contribution(request, cid):
     client = Client(**ckwargs)
 
     try:
-        contrib = client.contributions.get_entry(
+        contrib = client.contributions.getContributionById(
             pk=cid, _fields=["identifier", "needs_build", "notebook"]
         ).result()
     except HTTPNotFound:
@@ -203,7 +203,7 @@ def contribution(request, cid):
                 ctx["alert"] = f"Notebook build failed with status {status}"
                 return render(request, "contribution.html", ctx.flatten())
 
-            contrib = client.contributions.get_entry(
+            contrib = client.contributions.getContributionById(
                 pk=cid, _fields=["identifier", "notebook"]
             ).result()
         else:
@@ -212,7 +212,7 @@ def contribution(request, cid):
 
     nid = contrib["notebook"]["id"]
     try:
-        nb = client.notebooks.get_entry(pk=nid, _fields=["_all"]).result()
+        nb = client.notebooks.getNotebookById(pk=nid, _fields=["_all"]).result()
     except HTTPNotFound:
         return HttpResponse(f"Notebook {nid} not found.", status=404)
 
@@ -250,7 +250,7 @@ def download_component(request, oid):
     client = Client(**ckwargs)
 
     try:
-        resp = client.structures.get_entry(pk=oid, _fields=["name", "cif"]).result()
+        resp = client.structures.getStructureById(pk=oid, _fields=["name", "cif"]).result()
         name = resp["name"]
         content = gzip.compress(bytes(resp["cif"], "utf-8"))
         content_type = "application/gzip"
@@ -259,7 +259,7 @@ def download_component(request, oid):
         try:
             resp = client.get_table(oid)
             content = gzip.compress(bytes(resp.to_csv(), "utf-8"))
-            resp = client.tables.get_entry(pk=oid, _fields=["name"]).result()
+            resp = client.tables.getTableById(pk=oid, _fields=["name"]).result()
             name = resp["name"]
             content_type = "application/gzip"
             filename = f"{oid}_{name}.csv.gz"
@@ -286,7 +286,7 @@ def download_contribution(request, cid):
     tmpdir = Path("/tmp")
     outdir = tmpdir / "download"
     client = Client(**ckwargs)
-    project = client.contributions.get_entry(
+    project = client.contributions.getContributionById(
         pk=cid, _fields=["project"]
     ).result().get("project")
     if not project:
@@ -333,7 +333,7 @@ def _reconcile_include(request, project: str, fields: list):
     ckwargs = client_kwargs(request)
     avail_components = set()
     client = Client(**ckwargs)
-    info = client.projects.get_entry(pk=project, _fields=["columns"]).result()
+    info = client.projects.getProjectByName(pk=project, _fields=["columns"]).result()
 
     for column in info["columns"]:
         path = column["path"]
@@ -423,7 +423,7 @@ def make_download(headers, query, include=None):
         k: v for k, v in query.items()
         if k not in {"format", "_sort", "_fields", "_limit", "per_page"}
     }
-    last_modified = client.contributions.get_entries(
+    last_modified = client.contributions.queryContributions(
         _sort="-last_modified", _fields=["last_modified"], _limit=1, **kwargs
     ).result()["data"][0]["last_modified"]
     json_resp = {"status": "UNDEFINED"}
