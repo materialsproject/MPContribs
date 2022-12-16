@@ -193,7 +193,7 @@ monty==2022.9.9
     #   pymatgen
 mp-api==0.30.5
     # via pymatgen
-mpcontribs-client==5.0.3
+mpcontribs-client==5.0.4
     # via mpcontribs-portal (setup.py)
 mpmath==1.2.1
     # via sympy
