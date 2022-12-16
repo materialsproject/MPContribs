@@ -35,10 +35,11 @@ jobs:
         id: changes
         shell: bash
         run: |
-          sha1=$(git diff-index HEAD ${{ matrix.package }}/requirements | awk '{print $4}')
+          git diff-index HEAD ${{ matrix.package }}/requirements/${{ matrix.os }}_py${{ matrix.python-version }}*.txt 
+          sha1=$(git diff-index HEAD ${{ matrix.package }}/requirements/${{ matrix.os }}_py${{ matrix.python-version }}*.txt | awk '{print $4}')
           [[ $sha1 == "0000000000000000000000000000000000000000" ]] && git update-index --really-refresh ${{ matrix.package }}/requirements/${{ matrix.os }}_py${{ matrix.python-version }}*.txt
-          echo "count=$(git diff-index HEAD ${{ matrix.package }}/requirements | wc -l | xargs)" >> $GITHUB_OUTPUT
-          echo "files=$(git ls-files --exclude-standard --others ${{ matrix.package }}/requirements | wc -l | xargs)" >> $GITHUB_OUTPUT
+          echo "count=$(git diff-index HEAD ${{ matrix.package }}/requirements/${{ matrix.os }}_py${{ matrix.python-version }}*.txt | wc -l | xargs)" >> $GITHUB_OUTPUT
+          echo "files=$(git ls-files --exclude-standard --others ${{ matrix.package }}/requirements/${{ matrix.os }}_py${{ matrix.python-version }}*.txt | wc -l | xargs)" >> $GITHUB_OUTPUT
       - name: commit & push changes
         if: steps.changes.outputs.count > 0 || steps.changes.outputs.files > 0
         shell: bash
