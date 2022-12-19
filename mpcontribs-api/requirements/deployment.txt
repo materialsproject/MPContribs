@@ -38,9 +38,9 @@ blinker==1.5
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 boltons==21.0.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
-boto3==1.26.31
+boto3==1.26.32
     # via flask-mongorest-mpcontribs
-botocore==1.29.31
+botocore==1.29.32
     # via
     #   boto3
     #   s3transfer
@@ -147,11 +147,11 @@ idna==3.4
     #   anyio
     #   jsonschema
     #   requests
-importlib-metadata==5.1.0
+importlib-metadata==5.2.0
     # via
     #   flask
     #   nbconvert
-ipykernel==6.19.2
+ipykernel==6.19.3
     # via
     #   nbclassic
     #   notebook
@@ -211,7 +211,7 @@ jupyter-server==2.0.1
     # via
     #   nbclassic
     #   notebook-shim
-jupyter-server-terminals==0.4.2
+jupyter-server-terminals==0.4.3
     # via jupyter-server
 jupyterlab-pygments==0.2.2
     # via nbconvert
@@ -265,12 +265,12 @@ nbclassic==0.4.8
     # via notebook
 nbclient==0.7.2
     # via nbconvert
-nbconvert==7.2.6
+nbconvert==7.2.7
     # via
     #   jupyter-server
     #   nbclassic
     #   notebook
-nbformat==5.7.0
+nbformat==5.7.1
     # via
     #   jupyter-server
     #   mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
@@ -395,7 +395,7 @@ python-mimeparse==1.6.0
     # via mimerender-pr36
 python-snappy==0.6.1
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
-pytz==2022.6
+pytz==2022.7
     # via
     #   dateparser
     #   pandas
@@ -507,7 +507,7 @@ tornado==6.2
     #   terminado
 tqdm==4.64.1
     # via pymatgen
-traitlets==5.7.1
+traitlets==5.8.0
     # via
     #   comm
     #   ipykernel

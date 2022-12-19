@@ -159,7 +159,7 @@ python-dateutil==2.8.2
     #   bravado-core
     #   matplotlib
     #   pandas
-pytz==2022.6
+pytz==2022.7
     # via
     #   bravado-core
     #   pandas
@@ -226,7 +226,7 @@ tqdm==4.64.1
     # via
     #   mpcontribs-client (MPContribs/mpcontribs-client/setup.py)
     #   pymatgen
-traitlets==5.7.1
+traitlets==5.8.0
     # via
     #   ipython
     #   matplotlib-inline

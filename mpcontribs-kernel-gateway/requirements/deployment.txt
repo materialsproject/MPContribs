@@ -93,9 +93,9 @@ idna==3.4
     #   anyio
     #   jsonschema
     #   requests
-importlib-metadata==5.1.0
+importlib-metadata==5.2.0
     # via nbconvert
-ipykernel==6.19.2
+ipykernel==6.19.3
     # via
     #   ipywidgets
     #   nbclassic
@@ -161,7 +161,7 @@ jupyter-server==2.0.1
     # via
     #   nbclassic
     #   notebook-shim
-jupyter-server-terminals==0.4.2
+jupyter-server-terminals==0.4.3
     # via jupyter-server
 jupyterlab-pygments==0.2.2
     # via nbconvert
@@ -209,12 +209,12 @@ nbclassic==0.4.8
     # via notebook
 nbclient==0.7.2
     # via nbconvert
-nbconvert==7.2.6
+nbconvert==7.2.7
     # via
     #   jupyter-server
     #   nbclassic
     #   notebook
-nbformat==5.7.0
+nbformat==5.7.1
     # via
     #   jupyter-server
     #   nbclassic
@@ -330,7 +330,7 @@ python-dateutil==2.8.2
     #   pandas
 python-json-logger==2.0.4
     # via jupyter-events
-pytz==2022.6
+pytz==2022.7
     # via
     #   bravado-core
     #   pandas
@@ -439,7 +439,7 @@ tqdm==4.64.1
     # via
     #   mpcontribs-client
     #   pymatgen
-traitlets==5.7.1
+traitlets==5.8.0
     # via
     #   comm
     #   ipykernel
