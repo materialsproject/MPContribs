@@ -950,7 +950,7 @@ class Client(SwaggerClient):
             sorted_columns = flatten(unflatten(columns, splitter="dot"), reducer="dot")
 
             # reconcile with existing columns
-            resp = self.projects.getProjectById(pk=self.project, _fields=["columns"]).result()
+            resp = self.projects.getProjectByName(pk=self.project, _fields=["columns"]).result()
             existing_columns = {}
 
             for col in resp["columns"]:
