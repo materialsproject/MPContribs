@@ -948,6 +948,8 @@ class Client(SwaggerClient):
 
             # sort to avoid "overlapping columns" error in handsontable's NestedHeaders
             sorted_columns = flatten(unflatten(columns, splitter="dot"), reducer="dot")
+            # also sort by increasing nesting for better columns display
+            sorted_columns = dict(sorted(sorted_columns.items(), key=lambda item: item[0].count(".")))
 
             # reconcile with existing columns
             resp = self.projects.getProjectByName(pk=self.project, _fields=["columns"]).result()
