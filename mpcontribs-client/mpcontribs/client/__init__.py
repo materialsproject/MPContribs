@@ -1527,8 +1527,7 @@ class Client(SwaggerClient):
         require_one_of = {"data"} | set(COMPONENTS)
         per_page = self._get_per_page(per_request)
 
-        for idx, contrib in enumerate(contributions):
-            c = contributions[idx] = unflatten(contrib, splitter="dot")
+        for idx, c in enumerate(contributions):
             has_keys = require_one_of & c.keys()
             if not has_keys:
                 return {"error": f"Nothing to submit for contribution #{idx}!"}
@@ -1579,6 +1578,7 @@ class Client(SwaggerClient):
 
         for contrib in tqdm(contributions, desc="Prepare"):
             if "data" in contrib:
+                contrib["data"] = unflatten(contrib["data"], splitter="dot")
                 serializable, error = self._is_serializable_dict(contrib["data"])
                 if not serializable:
                     raise ValueError(error)
