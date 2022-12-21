@@ -949,7 +949,9 @@ class Client(SwaggerClient):
             # sort to avoid "overlapping columns" error in handsontable's NestedHeaders
             sorted_columns = flatten(unflatten(columns, splitter="dot"), reducer="dot")
             # also sort by increasing nesting for better columns display
-            sorted_columns = dict(sorted(sorted_columns.items(), key=lambda item: item[0].count(".")))
+            sorted_columns = dict(
+                sorted(sorted_columns.items(), key=lambda item: item[0].count("."))
+            )
 
             # reconcile with existing columns
             resp = self.projects.getProjectByName(pk=self.project, _fields=["columns"]).result()
@@ -1710,6 +1712,7 @@ class Client(SwaggerClient):
                 future = self.session.post(
                     f"{self.url}/contributions/",
                     headers=self.headers,
+                    hooks={'response': _response_hook},
                     data=payload,
                 )
                 setattr(future, "track_id", track_id)
@@ -1719,6 +1722,7 @@ class Client(SwaggerClient):
                 future = self.session.put(
                     f"{self.url}/contributions/{pk}/",
                     headers=self.headers,
+                    hooks={'response': _response_hook},
                     data=payload,
                 )
                 setattr(future, "track_id", pk)
