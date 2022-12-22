@@ -23,7 +23,7 @@ asttokens==2.2.1
     # via stack-data
 async-timeout==4.0.2
     # via redis
-attrs==22.1.0
+attrs==22.2.0
     # via
     #   cattrs
     #   ddtrace
@@ -38,9 +38,9 @@ blinker==1.5
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 boltons==21.0.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
-boto3==1.26.32
+boto3==1.26.35
     # via flask-mongorest-mpcontribs
-botocore==1.29.32
+botocore==1.29.35
     # via
     #   boto3
     #   s3transfer
@@ -151,7 +151,7 @@ importlib-metadata==5.2.0
     # via
     #   flask
     #   nbconvert
-ipykernel==6.19.3
+ipykernel==6.19.4
     # via
     #   nbclassic
     #   notebook
@@ -207,7 +207,7 @@ jupyter-core==5.1.0
     #   notebook
 jupyter-events==0.5.0
     # via jupyter-server
-jupyter-server==2.0.1
+jupyter-server==2.0.4
     # via
     #   nbclassic
     #   notebook-shim

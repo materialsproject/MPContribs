@@ -17,7 +17,7 @@ arrow==1.2.3
     # via isoduration
 asttokens==2.2.1
     # via stack-data
-attrs==22.1.0
+attrs==22.2.0
     # via
     #   cattrs
     #   ddtrace
@@ -95,7 +95,7 @@ idna==3.4
     #   requests
 importlib-metadata==5.2.0
     # via nbconvert
-ipykernel==6.19.3
+ipykernel==6.19.4
     # via
     #   ipywidgets
     #   nbclassic
@@ -109,7 +109,7 @@ ipython-genutils==0.2.0
     # via
     #   nbclassic
     #   notebook
-ipywidgets==8.0.3
+ipywidgets==8.0.4
     # via -r MPContribs/mpcontribs-kernel-gateway/requirements.in
 isoduration==20.11.0
     # via jsonschema
@@ -157,7 +157,7 @@ jupyter-events==0.5.0
     # via jupyter-server
 jupyter-kernel-gateway==2.5.1
     # via -r MPContribs/mpcontribs-kernel-gateway/requirements.in
-jupyter-server==2.0.1
+jupyter-server==2.0.4
     # via
     #   nbclassic
     #   notebook-shim
@@ -165,7 +165,7 @@ jupyter-server-terminals==0.4.3
     # via jupyter-server
 jupyterlab-pygments==0.2.2
     # via nbconvert
-jupyterlab-widgets==3.0.4
+jupyterlab-widgets==3.0.5
     # via ipywidgets
 kaleido==0.2.1
     # via -r MPContribs/mpcontribs-kernel-gateway/requirements.in
@@ -196,7 +196,7 @@ monty==2022.9.9
     #   pymatgen
 mp-api==0.30.5
     # via pymatgen
-mpcontribs-client==5.0.4
+mpcontribs-client==5.0.6
     # via -r MPContribs/mpcontribs-kernel-gateway/requirements.in
 mpmath==1.2.1
     # via sympy
@@ -483,7 +483,7 @@ webencodings==0.5.1
     #   tinycss2
 websocket-client==1.4.2
     # via jupyter-server
-widgetsnbextension==4.0.4
+widgetsnbextension==4.0.5
     # via ipywidgets
 xmltodict==0.13.0
     # via ddtrace
