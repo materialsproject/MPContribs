@@ -38,9 +38,9 @@ blinker==1.5
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 boltons==21.0.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
-boto3==1.26.35
+boto3==1.26.37
     # via flask-mongorest-mpcontribs
-botocore==1.29.35
+botocore==1.29.37
     # via
     #   boto3
     #   s3transfer
@@ -96,7 +96,7 @@ entrypoints==0.4
     # via jupyter-client
 envier==0.4.0
     # via ddtrace
-exceptiongroup==1.0.4
+exceptiongroup==1.1.0
     # via cattrs
 executing==1.2.0
     # via stack-data
@@ -151,7 +151,7 @@ importlib-metadata==5.2.0
     # via
     #   flask
     #   nbconvert
-ipykernel==6.19.4
+ipykernel==6.20.0
     # via
     #   nbclassic
     #   notebook
@@ -196,7 +196,7 @@ jupyter-client==7.4.8
     #   nbclassic
     #   nbclient
     #   notebook
-jupyter-core==5.1.0
+jupyter-core==5.1.1
     # via
     #   jupyter-client
     #   jupyter-server
@@ -207,7 +207,7 @@ jupyter-core==5.1.0
     #   notebook
 jupyter-events==0.5.0
     # via jupyter-server
-jupyter-server==2.0.4
+jupyter-server==2.0.5
     # via
     #   nbclassic
     #   notebook-shim
@@ -479,7 +479,7 @@ spglib==2.0.2
     #   pymatgen
 stack-data==0.6.2
     # via ipython
-supervisor==4.2.4
+supervisor==4.2.5
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 sympy==1.11.1
     # via pymatgen

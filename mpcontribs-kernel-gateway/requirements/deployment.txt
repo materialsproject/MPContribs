@@ -72,7 +72,7 @@ entrypoints==0.4
     # via jupyter-client
 envier==0.4.0
     # via ddtrace
-exceptiongroup==1.0.4
+exceptiongroup==1.1.0
     # via cattrs
 executing==1.2.0
     # via stack-data
@@ -95,7 +95,7 @@ idna==3.4
     #   requests
 importlib-metadata==5.2.0
     # via nbconvert
-ipykernel==6.19.4
+ipykernel==6.20.0
     # via
     #   ipywidgets
     #   nbclassic
@@ -143,7 +143,7 @@ jupyter-client==7.4.8
     #   nbclassic
     #   nbclient
     #   notebook
-jupyter-core==5.1.0
+jupyter-core==5.1.1
     # via
     #   jupyter-client
     #   jupyter-kernel-gateway
@@ -157,7 +157,7 @@ jupyter-events==0.5.0
     # via jupyter-server
 jupyter-kernel-gateway==2.5.1
     # via -r MPContribs/mpcontribs-kernel-gateway/requirements.in
-jupyter-server==2.0.4
+jupyter-server==2.0.5
     # via
     #   nbclassic
     #   notebook-shim
