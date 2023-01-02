@@ -54,7 +54,7 @@ cycler==0.11.0
     # via matplotlib
 ddsketch==2.0.4
     # via ddtrace
-ddtrace==1.6.3
+ddtrace==1.6.4
     # via -r MPContribs/mpcontribs-kernel-gateway/requirements.in
 debugpy==1.6.4
     # via ipykernel
@@ -93,9 +93,9 @@ idna==3.4
     #   anyio
     #   jsonschema
     #   requests
-importlib-metadata==5.2.0
+importlib-metadata==6.0.0
     # via nbconvert
-ipykernel==6.20.0
+ipykernel==6.19.4
     # via
     #   ipywidgets
     #   nbclassic
@@ -143,7 +143,7 @@ jupyter-client==7.4.8
     #   nbclassic
     #   nbclient
     #   notebook
-jupyter-core==5.1.1
+jupyter-core==5.1.2
     # via
     #   jupyter-client
     #   jupyter-kernel-gateway
@@ -157,7 +157,7 @@ jupyter-events==0.5.0
     # via jupyter-server
 jupyter-kernel-gateway==2.5.1
     # via -r MPContribs/mpcontribs-kernel-gateway/requirements.in
-jupyter-server==2.0.5
+jupyter-server==2.0.6
     # via
     #   nbclassic
     #   notebook-shim
@@ -264,11 +264,11 @@ pexpect==4.8.0
     # via ipython
 pickleshare==0.7.5
     # via ipython
-pillow==9.3.0
+pillow==9.4.0
     # via matplotlib
 pint==0.19.2
     # via mpcontribs-client
-platformdirs==2.6.0
+platformdirs==2.6.2
     # via jupyter-core
 plotly==5.11.0
     # via
@@ -301,9 +301,9 @@ pybtex==0.24.0
     #   pymatgen
 pycparser==2.21
     # via cffi
-pydantic==1.10.2
+pydantic==1.10.4
     # via emmet-core
-pygments==2.13.0
+pygments==2.14.0
     # via
     #   ipython
     #   nbconvert
@@ -318,7 +318,7 @@ pymongo==4.3.3
     # via mpcontribs-client
 pyparsing==3.0.9
     # via matplotlib
-pyrsistent==0.19.2
+pyrsistent==0.19.3
     # via jsonschema
 python-dateutil==2.8.2
     # via

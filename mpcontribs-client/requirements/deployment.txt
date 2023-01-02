@@ -118,7 +118,7 @@ pexpect==4.8.0
     # via ipython
 pickleshare==0.7.5
     # via ipython
-pillow==9.3.0
+pillow==9.4.0
     # via matplotlib
 pint==0.19.2
     # via mpcontribs-client (MPContribs/mpcontribs-client/setup.py)
@@ -136,9 +136,9 @@ pybtex==0.24.0
     # via
     #   emmet-core
     #   pymatgen
-pydantic==1.10.2
+pydantic==1.10.4
     # via emmet-core
-pygments==2.13.0
+pygments==2.14.0
     # via ipython
 pyisemail==2.0.1
     # via mpcontribs-client (MPContribs/mpcontribs-client/setup.py)
@@ -151,7 +151,7 @@ pymongo==4.3.3
     # via mpcontribs-client (MPContribs/mpcontribs-client/setup.py)
 pyparsing==3.0.9
     # via matplotlib
-pyrsistent==0.19.2
+pyrsistent==0.19.3
     # via jsonschema
 python-dateutil==2.8.2
     # via
