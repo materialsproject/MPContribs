@@ -1467,7 +1467,7 @@ class Client(SwaggerClient):
             resp = self.projects.updateProjectByName(
                 pk=query["project"], project={"is_public": is_public}
             ).result()
-            ret["published"] = resp["is_public"] == is_public
+            ret["published"] = resp["count"] == 1
 
         if recursive:
             query = query or {}
