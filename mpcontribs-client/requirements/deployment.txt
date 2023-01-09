@@ -50,7 +50,7 @@ idna==3.4
     # via
     #   jsonschema
     #   requests
-ipython==8.7.0
+ipython==8.8.0
     # via mpcontribs-client (MPContribs/mpcontribs-client/setup.py)
 isoduration==20.11.0
     # via jsonschema
@@ -92,7 +92,7 @@ msgpack==1.0.4
     #   bravado
     #   bravado-core
     #   mp-api
-networkx==2.8.8
+networkx==3.0
     # via pymatgen
 numpy==1.21.6
     # via
@@ -103,7 +103,7 @@ numpy==1.21.6
     #   pymatgen
     #   scipy
     #   spglib
-packaging==22.0
+packaging==23.0
     # via matplotlib
 palettable==3.3.0
     # via pymatgen
@@ -186,13 +186,13 @@ ruamel-yaml==0.17.21
     # via pymatgen
 ruamel-yaml-clib==0.2.7
     # via ruamel-yaml
-scipy==1.9.3
+scipy==1.10.0
     # via
     #   -r python/requirements.txt
     #   pymatgen
 semantic-version==2.10.0
     # via mpcontribs-client (MPContribs/mpcontribs-client/setup.py)
-simplejson==3.18.0
+simplejson==3.18.1
     # via
     #   bravado
     #   bravado-core
@@ -226,7 +226,7 @@ tqdm==4.64.1
     # via
     #   mpcontribs-client (MPContribs/mpcontribs-client/setup.py)
     #   pymatgen
-traitlets==5.8.0
+traitlets==5.8.1
     # via
     #   ipython
     #   matplotlib-inline
@@ -237,7 +237,7 @@ typing-extensions==4.4.0
     #   mp-api
     #   pydantic
     #   swagger-spec-validator
-ujson==5.6.0
+ujson==5.7.0
     # via mpcontribs-client (MPContribs/mpcontribs-client/setup.py)
 uncertainties==3.1.7
     # via pymatgen
