@@ -94,7 +94,7 @@ msgpack==1.0.4
     #   mp-api
 networkx==3.0
     # via pymatgen
-numpy==1.21.6
+numpy==1.22.0
     # via
     #   -r python/requirements.txt
     #   contourpy

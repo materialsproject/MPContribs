@@ -94,7 +94,7 @@ msgpack==1.0.4
     #   mp-api
 networkx==2.8.8
     # via pymatgen
-numpy==1.23.5
+numpy==1.22.0
     # via
     #   contourpy
     #   matplotlib
