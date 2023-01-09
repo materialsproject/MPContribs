@@ -297,7 +297,7 @@ notebook==6.5.2
     # via mpcontribs-api (setup.py)
 notebook-shim==0.2.2
     # via nbclassic
-numpy==1.23.5
+numpy==1.22.0
     # via
     #   contourpy
     #   matplotlib
