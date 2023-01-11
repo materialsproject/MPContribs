@@ -813,7 +813,6 @@ class Client(SwaggerClient):
 
         return ret["data"]
 
-
     def create_project(self, name: str, title: str, authors: str, description: str, url: str):
         """Create a project
 
