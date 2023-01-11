@@ -775,9 +775,8 @@ class Client(SwaggerClient):
         """
         query = query or {}
 
-        if self.project or "project" in query:
-            logger.error("use `get_project()` to retrieve a single project by name.")
-            return
+        if self.project or "name" in query:
+            return self.get_project(name=query.get("name"), fields=fields)
 
         if term:
             def search_future(search_term):
