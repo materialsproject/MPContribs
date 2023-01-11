@@ -227,16 +227,20 @@ def _response_hook(resp, *args, **kwargs):
     if content_type == "application/json":
         result = resp.json()
 
-        if "data" in result and isinstance(result["data"], list):
-            resp.result = result
-            resp.count = len(result["data"])
-        elif "count" in result and isinstance(result["count"], int):
-            resp.count = result["count"]
+        if isinstance(result, dict):
+            if "data" in result and isinstance(result["data"], list):
+                resp.result = result
+                resp.count = len(result["data"])
+            elif "count" in result and isinstance(result["count"], int):
+                resp.count = result["count"]
 
-        if "warning" in result:
-            logger.warning(result["warning"])
-        elif "error" in result and isinstance(result["error"], str):
-            logger.error(result["error"][:10000] + "...")
+            if "warning" in result:
+                logger.warning(result["warning"])
+            elif "error" in result and isinstance(result["error"], str):
+                logger.error(result["error"][:10000] + "...")
+        elif isinstance(result, list):
+            resp.result = result
+            resp.count = len(result)
 
     elif content_type == "application/gzip":
         resp.result = resp.content
@@ -736,6 +740,79 @@ class Client(SwaggerClient):
             return {"error": "initialize client with project or set `name` argument!"}
 
         return Dict(self.projects.getProjectByName(pk=name, _fields=["_all"]).result())
+
+    def query_projects(
+        self,
+        query: dict = None,
+        term: str = None,
+        fields: list = None,
+        sort: str = None,
+        timeout: int = -1
+    ) -> List[dict]:
+        """Query projects by query and/or term (Atlas Search)
+
+        See `client.projects.queryProjects()` for keyword arguments used in query. Use `term` to
+        search for a term across all text fields in the project infos.
+
+        Args:
+            query (dict): optional query to select projects
+            term (str): optional term to search text fields in projects
+            fields (list): list of fields to include in response
+            sort (str): field to sort by; prepend +/- for asc/desc order
+            timeout (int): cancel remaining requests if timeout exceeded (in seconds)
+
+        Returns:
+            List of projects
+        """
+        query = query or {}
+
+        if self.project or "project" in query:
+            logger.error("use `get_project()` to retrieve a single project by name.")
+            return
+
+        if term:
+            def search_future(search_term):
+                future = self.session.get(
+                    f"{self.url}/projects/search",
+                    headers=self.headers,
+                    hooks={'response': _response_hook},
+                    params={"term": search_term},
+                )
+                setattr(future, "track_id", "search")
+                return future
+
+            responses = _run_futures([search_future(term)], timeout=timeout, disable=True)
+            query["name__in"] = responses["search"].get("result", [])
+
+        if fields:
+            query["_fields"] = fields
+        if sort:
+            query["_sort"] = sort
+
+        ret = self.projects.queryProjects(**query).result()  # first page
+        total_count, total_pages = ret["total_count"], ret["total_pages"]
+
+        if total_pages < 2:
+            return ret["data"]
+
+        for field in ["name__in", "_fields"]:
+            if field in query:
+                query[field] = ",".join(query[field])
+
+        queries = []
+
+        for page in range(2, total_pages+1):
+            queries.append(deepcopy(query))
+            queries[-1]["page"] = page
+
+        futures = [self._get_future(i, q, rel_url="projects") for i, q in enumerate(queries)]
+        responses = _run_futures(futures, total=total_count, timeout=timeout)
+
+        for resp in responses.values():
+            ret["data"] += resp["result"]["data"]
+
+        return ret["data"]
+
 
     def create_project(self, name: str, title: str, authors: str, description: str, url: str):
         """Create a project
