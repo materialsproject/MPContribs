@@ -724,9 +724,16 @@ class Client(SwaggerClient):
         setattr(future, "track_id", track_id)
         return future
 
-    def available_query_params(self):
-        resource = self.swagger_spec.resources["contributions"]
-        operation = resource.operations["queryContributions"]
+    def available_query_params(self, resource="contributions"):
+        resources = self.swagger_spec.resources
+        resource_obj = resources.get(resource)
+        if not resource_obj:
+            available_resources = list(resources.keys())
+            logger.error(f"Choose one of {available_resources}!")
+            return
+
+        op_key = f"query{resource.capitalize()}"
+        operation = resource_obj.operations[op_key]
         return [param.name for param in operation.params.values()]
 
     def get_project(self, name: str = None) -> Type[Dict]:
@@ -751,8 +758,8 @@ class Client(SwaggerClient):
     ) -> List[dict]:
         """Query projects by query and/or term (Atlas Search)
 
-        See `client.projects.queryProjects()` for keyword arguments used in query. Use `term` to
-        search for a term across all text fields in the project infos.
+        See `client.available_query_params(resource="projects")` for keyword arguments used in
+        query. Provide `term` to search for a term across all text fields in the project infos.
 
         Args:
             query (dict): optional query to select projects
