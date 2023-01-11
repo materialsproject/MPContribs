@@ -720,6 +720,11 @@ class Client(SwaggerClient):
         setattr(future, "track_id", track_id)
         return future
 
+    def available_query_params(self):
+        resource = self.swagger_spec.resources["contributions"]
+        operation = resource.operations["queryContributions"]
+        return [param.name for param in operation.params.values()]
+
     def get_project(self, name: str = None) -> Type[Dict]:
         """Retrieve full project entry
 
@@ -1277,7 +1282,7 @@ class Client(SwaggerClient):
     ) -> List[dict]:
         """Query contributions
 
-        See `client.contributions.queryContributions()` for keyword arguments used in query.
+        See `client.available_query_params()` for keyword arguments used in query.
 
         Args:
             query (dict): optional query to select contributions
@@ -1332,7 +1337,7 @@ class Client(SwaggerClient):
     ) -> dict:
         """Apply the same update to all contributions in a project (matching query)
 
-        See `client.contributions.queryContributions()` for keyword arguments used in query.
+        See `client.available_query_params()` for keyword arguments used in query.
 
         Args:
             data (dict): update to apply on every matching contribution
