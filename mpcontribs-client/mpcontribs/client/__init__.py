@@ -736,17 +736,19 @@ class Client(SwaggerClient):
         operation = resource_obj.operations[op_key]
         return [param.name for param in operation.params.values()]
 
-    def get_project(self, name: str = None) -> Type[Dict]:
-        """Retrieve full project entry
+    def get_project(self, name: str = None, fields: list = None) -> Type[Dict]:
+        """Retrieve a project entry
 
         Args:
             name (str): name of the project
+            fields (list): list of fields to include in response
         """
         name = self.project or name
         if not name:
             return {"error": "initialize client with project or set `name` argument!"}
 
-        return Dict(self.projects.getProjectByName(pk=name, _fields=["_all"]).result())
+        fields = fields or ["_all"]  # retrieve all fields by default
+        return Dict(self.projects.getProjectByName(pk=name, _fields=fields).result())
 
     def query_projects(
         self,
