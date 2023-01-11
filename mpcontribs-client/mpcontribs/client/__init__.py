@@ -1170,31 +1170,21 @@ class Client(SwaggerClient):
 
         return result["total_count"], result["total_pages"]
 
-    def get_unique_identifiers_flags(self, projects: list = None) -> dict:
-        """Retrieve values for `unique_identifiers` flags for a list of projects
+    def get_unique_identifiers_flags(self, query: dict = None) -> dict:
+        """Retrieve values for `unique_identifiers` flags.
+
+        See `client.available_query_params(resource="projects")` for available query parameters.
 
         Args:
-            projects (list): list of project names - return all if not set
+            query (dict): query to select projects
 
         Returns:
             {"<project-name>": True|False, ...}
         """
-        unique_identifiers, query = {}, {}
-
-        if projects:
-            query = {"name__in": projects}
-        elif self.project:
-            query = {"name": self.project}
-
-        resp = self.projects.queryProjects(
-            _fields=["name", "unique_identifiers"], **query
-        ).result()
-
-        for project in resp["data"]:
-            project_name = project["name"]
-            unique_identifiers[project_name] = project["unique_identifiers"]
-
-        return unique_identifiers
+        return {
+            p["name"]: p["unique_identifiers"]
+            for p in self.query_projects(query=query, fields=["name", "unique_identifiers"])
+        }
 
     def get_all_ids(
         self,
@@ -1650,7 +1640,7 @@ class Client(SwaggerClient):
         project_names = list(project_names)
 
         if not skip_dupe_check and len(collect_ids) != len(contributions):
-            unique_identifiers = self.get_unique_identifiers_flags(projects=project_names)
+            unique_identifiers = self.get_unique_identifiers_flags({"name__in": project_names})
             existing = defaultdict(dict, self.get_all_ids(
                 dict(project__in=project_names), include=COMPONENTS, timeout=timeout
             ))
