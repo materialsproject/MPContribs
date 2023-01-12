@@ -265,8 +265,8 @@ class Projects(Document):
                         "input": "$attachments",
                         "as": "attm",
                         "in": {"$toInt": "$$attm.content"}
-                    }
-                }}
+                    }}
+                }
 
                 # number of components
                 for component in COMPONENTS.keys():
