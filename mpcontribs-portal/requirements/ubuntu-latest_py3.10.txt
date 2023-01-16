@@ -98,7 +98,7 @@ fonttools==4.38.0
     # via matplotlib
 fqdn==1.5.1
     # via jsonschema
-future==0.18.2
+future==0.18.3
     # via uncertainties
 gevent==22.10.2
     # via gunicorn
