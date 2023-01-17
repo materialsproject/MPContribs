@@ -10,7 +10,7 @@ arrow==1.2.3
     # via isoduration
 asttokens==2.2.1
     # via stack-data
-attrs==22.1.0
+attrs==22.2.0
     # via
     #   jsonschema
     #   pytest
@@ -24,23 +24,23 @@ bravado-core==5.17.1
     # via bravado
 certifi==2022.12.7
     # via requests
-charset-normalizer==2.1.1
+charset-normalizer==3.0.1
     # via requests
-contourpy==1.0.6
+contourpy==1.0.7
     # via matplotlib
-coverage[toml]==6.5.0
+coverage[toml]==7.0.5
     # via pytest-cov
 cycler==0.11.0
     # via matplotlib
 decorator==5.1.1
     # via ipython
-dnspython==2.2.1
+dnspython==2.3.0
     # via
     #   pyisemail
     #   pymongo
-emmet-core==0.39.6
+emmet-core==0.39.11
     # via mp-api
-exceptiongroup==1.0.4
+exceptiongroup==1.1.0
     # via pytest
 executing==1.2.0
     # via stack-data
@@ -56,15 +56,15 @@ fonttools==4.38.0
     # via matplotlib
 fqdn==1.5.1
     # via jsonschema
-future==0.18.2
+future==0.18.3
     # via uncertainties
 idna==3.4
     # via
     #   jsonschema
     #   requests
-iniconfig==1.1.1
+iniconfig==2.0.0
     # via pytest
-ipython==8.7.0
+ipython==8.8.0
     # via mpcontribs-client (setup.py)
 isoduration==20.11.0
     # via jsonschema
@@ -74,7 +74,7 @@ json2html==1.3.0
     # via mpcontribs-client (setup.py)
 jsonpointer==2.3
     # via jsonschema
-jsonref==1.0.1
+jsonref==1.1.0
     # via bravado-core
 jsonschema[format]==4.17.3
     # via
@@ -84,7 +84,7 @@ kiwisolver==1.4.4
     # via matplotlib
 latexcodec==2.0.1
     # via pybtex
-matplotlib==3.6.2
+matplotlib==3.6.3
     # via pymatgen
 matplotlib-inline==0.1.6
     # via ipython
@@ -97,7 +97,7 @@ monty==2022.9.9
     #   emmet-core
     #   mp-api
     #   pymatgen
-mp-api==0.30.5
+mp-api==0.30.6
     # via pymatgen
 mpmath==1.2.1
     # via sympy
@@ -106,17 +106,18 @@ msgpack==1.0.4
     #   bravado
     #   bravado-core
     #   mp-api
-networkx==2.8.8
+networkx==3.0
     # via pymatgen
-numpy==1.22.0
+numpy==1.23.5
     # via
     #   contourpy
+    #   emmet-core
     #   matplotlib
     #   pandas
     #   pymatgen
     #   scipy
     #   spglib
-packaging==22.0
+packaging==23.0
     # via
     #   matplotlib
     #   pytest
@@ -132,11 +133,11 @@ pexpect==4.8.0
     # via ipython
 pickleshare==0.7.5
     # via ipython
-pillow==9.3.0
+pillow==9.4.0
     # via matplotlib
 pint==0.19.2
     # via mpcontribs-client (setup.py)
-plotly==5.11.0
+plotly==5.12.0
     # via
     #   mpcontribs-client (setup.py)
     #   pymatgen
@@ -160,15 +161,15 @@ pycodestyle==2.10.0
     # via
     #   flake8
     #   pytest-pycodestyle
-pydantic==1.10.2
+pydantic==1.10.4
     # via emmet-core
 pyflakes==3.0.1
     # via flake8
-pygments==2.13.0
+pygments==2.14.0
     # via ipython
 pyisemail==2.0.1
     # via mpcontribs-client (setup.py)
-pymatgen==2022.11.7
+pymatgen==2023.1.9
     # via
     #   emmet-core
     #   mp-api
@@ -177,9 +178,9 @@ pymongo==4.3.3
     # via mpcontribs-client (setup.py)
 pyparsing==3.0.9
     # via matplotlib
-pyrsistent==0.19.2
+pyrsistent==0.19.3
     # via jsonschema
-pytest==7.2.0
+pytest==7.2.1
     # via
     #   mpcontribs-client (setup.py)
     #   pytest-cov
@@ -197,7 +198,7 @@ python-dateutil==2.8.2
     #   bravado-core
     #   matplotlib
     #   pandas
-pytz==2022.6
+pytz==2022.7.1
     # via
     #   bravado-core
     #   pandas
@@ -207,7 +208,7 @@ pyyaml==6.0
     #   bravado-core
     #   pybtex
     #   swagger-spec-validator
-requests==2.28.1
+requests==2.28.2
     # via
     #   bravado
     #   bravado-core
@@ -224,11 +225,11 @@ ruamel-yaml==0.17.21
     # via pymatgen
 ruamel-yaml-clib==0.2.7
     # via ruamel-yaml
-scipy==1.9.3
+scipy==1.10.0
     # via pymatgen
 semantic-version==2.10.0
     # via mpcontribs-client (setup.py)
-simplejson==3.18.0
+simplejson==3.18.1
     # via
     #   bravado
     #   bravado-core
@@ -266,7 +267,7 @@ tqdm==4.64.1
     # via
     #   mpcontribs-client (setup.py)
     #   pymatgen
-traitlets==5.7.1
+traitlets==5.8.1
     # via
     #   ipython
     #   matplotlib-inline
@@ -277,15 +278,15 @@ typing-extensions==4.4.0
     #   mp-api
     #   pydantic
     #   swagger-spec-validator
-ujson==5.6.0
+ujson==5.7.0
     # via mpcontribs-client (setup.py)
 uncertainties==3.1.7
     # via pymatgen
 uri-template==1.2.0
     # via jsonschema
-urllib3==1.26.13
+urllib3==1.26.14
     # via requests
-wcwidth==0.2.5
+wcwidth==0.2.6
     # via prompt-toolkit
 webcolors==1.12
     # via jsonschema
