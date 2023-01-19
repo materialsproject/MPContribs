@@ -194,7 +194,7 @@ monty==2022.9.9
     #   emmet-core
     #   mp-api
     #   pymatgen
-mp-api==0.30.6
+mp-api==0.30.7
     # via pymatgen
 mpcontribs-client==5.0.10
     # via -r MPContribs/mpcontribs-kernel-gateway/requirements.in
