@@ -83,7 +83,7 @@ monty==2022.9.9
     #   emmet-core
     #   mp-api
     #   pymatgen
-mp-api==0.30.7
+mp-api==0.30.8
     # via pymatgen
 mpmath==1.2.1
     # via sympy
@@ -143,7 +143,7 @@ pygments==2.14.0
     # via ipython
 pyisemail==2.0.1
     # via mpcontribs-client (MPContribs/mpcontribs-client/setup.py)
-pymatgen==2023.1.9
+pymatgen==2023.1.20
     # via
     #   emmet-core
     #   mp-api

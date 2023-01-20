@@ -255,7 +255,7 @@ monty==2022.9.9
     #   pymatgen
 more-itertools==9.0.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
-mp-api==0.30.7
+mp-api==0.30.8
     # via pymatgen
 mpmath==1.2.1
     # via sympy
@@ -365,7 +365,7 @@ pygments==2.14.0
     # via
     #   ipython
     #   nbconvert
-pymatgen==2023.1.9
+pymatgen==2023.1.20
     # via
     #   emmet-core
     #   mp-api

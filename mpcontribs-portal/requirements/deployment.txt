@@ -184,7 +184,7 @@ monty==2022.9.9
     #   mp-api
     #   mpcontribs-portal (MPContribs/mpcontribs-portal/setup.py)
     #   pymatgen
-mp-api==0.30.7
+mp-api==0.30.8
     # via pymatgen
 mpcontribs-client==5.0.10
     # via mpcontribs-portal (MPContribs/mpcontribs-portal/setup.py)
@@ -275,7 +275,7 @@ pygments==2.14.0
     #   nbconvert
 pyisemail==2.0.1
     # via mpcontribs-client
-pymatgen==2023.1.9
+pymatgen==2023.1.20
     # via
     #   emmet-core
     #   mp-api
