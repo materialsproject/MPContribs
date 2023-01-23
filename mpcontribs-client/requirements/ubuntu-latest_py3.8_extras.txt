@@ -36,7 +36,7 @@ dnspython==2.3.0
     # via
     #   pyisemail
     #   pymongo
-emmet-core==0.39.11
+emmet-core==0.39.12
     # via mp-api
 exceptiongroup==1.1.0
     # via pytest
@@ -97,7 +97,7 @@ monty==2022.9.9
     #   emmet-core
     #   mp-api
     #   pymatgen
-mp-api==0.30.6
+mp-api==0.30.8
     # via pymatgen
 mpmath==1.2.1
     # via sympy
@@ -139,7 +139,7 @@ pint==0.19.2
     # via mpcontribs-client (setup.py)
 pkgutil-resolve-name==1.3.10
     # via jsonschema
-plotly==5.12.0
+plotly==5.13.0
     # via
     #   mpcontribs-client (setup.py)
     #   pymatgen
@@ -171,7 +171,7 @@ pygments==2.14.0
     # via ipython
 pyisemail==2.0.1
     # via mpcontribs-client (setup.py)
-pymatgen==2023.1.9
+pymatgen==2023.1.20
     # via
     #   emmet-core
     #   mp-api
