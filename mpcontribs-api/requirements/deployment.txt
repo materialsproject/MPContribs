@@ -32,15 +32,15 @@ backcall==0.2.0
     # via ipython
 beautifulsoup4==4.11.1
     # via nbconvert
-bleach==5.0.1
+bleach==6.0.0
     # via nbconvert
 blinker==1.5
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 boltons==21.0.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
-boto3==1.26.54
+boto3==1.26.55
     # via flask-mongorest-mpcontribs
-botocore==1.29.54
+botocore==1.29.55
     # via
     #   boto3
     #   s3transfer
@@ -80,7 +80,7 @@ ddsketch==2.0.4
     # via ddtrace
 ddtrace==1.7.2
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
-debugpy==1.6.5
+debugpy==1.6.6
     # via ipykernel
 decorator==5.1.1
     # via ipython
@@ -90,7 +90,7 @@ dnspython==2.3.0
     # via
     #   mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
     #   pymongo
-emmet-core==0.39.11
+emmet-core==0.39.13
     # via mp-api
 entrypoints==0.4
     # via jupyter-client
@@ -196,7 +196,7 @@ jupyter-client==7.4.9
     #   nbclassic
     #   nbclient
     #   notebook
-jupyter-core==5.1.3
+jupyter-core==5.1.4
     # via
     #   jupyter-client
     #   jupyter-server
@@ -244,7 +244,7 @@ mistune==2.0.4
     # via
     #   flasgger-tschaume
     #   nbconvert
-mongoengine==0.25.0
+mongoengine==0.26.0
     # via
     #   flask-mongoengine-tschaume
     #   marshmallow-mongoengine
@@ -330,9 +330,9 @@ pint==0.19.2
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 platformdirs==2.6.2
     # via jupyter-core
-plotly==5.12.0
+plotly==5.13.0
     # via pymatgen
-prometheus-client==0.15.0
+prometheus-client==0.16.0
     # via
     #   jupyter-server
     #   nbclassic
