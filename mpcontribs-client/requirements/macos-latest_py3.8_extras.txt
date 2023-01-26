@@ -28,7 +28,7 @@ charset-normalizer==3.0.1
     # via requests
 contourpy==1.0.7
     # via matplotlib
-coverage[toml]==7.0.5
+coverage[toml]==7.1.0
     # via pytest-cov
 cycler==0.11.0
     # via matplotlib
@@ -38,7 +38,7 @@ dnspython==2.3.0
     # via
     #   pyisemail
     #   pymongo
-emmet-core==0.39.12
+emmet-core==0.39.13
     # via mp-api
 exceptiongroup==1.1.0
     # via pytest
