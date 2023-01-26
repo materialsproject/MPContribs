@@ -32,9 +32,9 @@ boltons==21.0.0
     # via
     #   mpcontribs-client
     #   mpcontribs-portal (setup.py)
-boto3==1.26.55
+boto3==1.26.58
     # via mpcontribs-portal (setup.py)
-botocore==1.29.55
+botocore==1.29.58
     # via
     #   boto3
     #   s3transfer
@@ -58,7 +58,7 @@ cycler==0.11.0
     # via matplotlib
 ddsketch==2.0.4
     # via ddtrace
-ddtrace==1.7.2
+ddtrace==1.7.3
     # via mpcontribs-portal (setup.py)
 debugpy==1.6.6
     # via ipykernel
@@ -81,10 +81,8 @@ dnspython==2.3.0
     # via
     #   pyisemail
     #   pymongo
-emmet-core==0.39.12
+emmet-core==0.39.13
     # via mp-api
-entrypoints==0.4
-    # via jupyter-client
 envier==0.4.0
     # via ddtrace
 exceptiongroup==1.1.0
@@ -120,7 +118,9 @@ idna==3.4
     #   jsonschema
     #   requests
 importlib-metadata==6.0.0
-    # via nbconvert
+    # via
+    #   jupyter-client
+    #   nbconvert
 importlib-resources==5.10.2
     # via jsonschema
 iniconfig==2.0.0
@@ -159,11 +159,11 @@ jsonschema[format]==4.17.3
     #   ddtrace
     #   nbformat
     #   swagger-spec-validator
-jupyter-client==7.4.9
+jupyter-client==8.0.1
     # via
     #   ipykernel
     #   nbclient
-jupyter-core==5.1.4
+jupyter-core==5.1.5
     # via
     #   jupyter-client
     #   nbclient
@@ -210,7 +210,7 @@ msgpack==1.0.4
     #   mp-api
 nbclient==0.7.2
     # via nbconvert
-nbconvert==7.2.8
+nbconvert==7.2.9
     # via mpcontribs-portal (setup.py)
 nbformat==5.7.3
     # via
@@ -218,9 +218,7 @@ nbformat==5.7.3
     #   nbclient
     #   nbconvert
 nest-asyncio==1.5.6
-    # via
-    #   ipykernel
-    #   jupyter-client
+    # via ipykernel
 networkx==3.0
     # via pymatgen
 numpy==1.23.5
