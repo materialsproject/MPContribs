@@ -66,7 +66,7 @@ dnspython==2.3.0
     # via
     #   pyisemail
     #   pymongo
-emmet-core==0.39.13
+emmet-core==0.42.1
     # via mp-api
 envier==0.4.0
     # via ddtrace
@@ -100,7 +100,7 @@ ipykernel==6.20.2
     #   ipywidgets
     #   nbclassic
     #   notebook
-ipython==8.8.0
+ipython==8.9.0
     # via
     #   ipykernel
     #   ipywidgets
@@ -485,7 +485,7 @@ widgetsnbextension==4.0.5
     # via ipywidgets
 xmltodict==0.13.0
     # via ddtrace
-zipp==3.11.0
+zipp==3.12.0
     # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:

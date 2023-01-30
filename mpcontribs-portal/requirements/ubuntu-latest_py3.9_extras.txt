@@ -28,9 +28,9 @@ boltons==21.0.0
     # via
     #   mpcontribs-client
     #   mpcontribs-portal (setup.py)
-boto3==1.26.58
+boto3==1.26.59
     # via mpcontribs-portal (setup.py)
-botocore==1.29.58
+botocore==1.29.59
     # via
     #   boto3
     #   s3transfer
@@ -77,7 +77,7 @@ dnspython==2.3.0
     # via
     #   pyisemail
     #   pymongo
-emmet-core==0.39.13
+emmet-core==0.42.1
     # via mp-api
 envier==0.4.0
     # via ddtrace
@@ -105,7 +105,7 @@ future==0.18.3
     # via uncertainties
 gevent==22.10.2
     # via gunicorn
-greenlet==2.0.1
+greenlet==2.0.2
     # via gevent
 gunicorn[gevent]==20.1.0
     # via mpcontribs-portal (setup.py)
@@ -121,7 +121,7 @@ iniconfig==2.0.0
     # via pytest
 ipykernel==6.20.2
     # via mpcontribs-portal (setup.py)
-ipython==8.8.0
+ipython==8.9.0
     # via
     #   ipykernel
     #   mpcontribs-client
@@ -443,7 +443,7 @@ whitenoise==6.3.0
     # via mpcontribs-portal (setup.py)
 xmltodict==0.13.0
     # via ddtrace
-zipp==3.11.0
+zipp==3.12.0
     # via importlib-metadata
 zope-event==4.6
     # via gevent
