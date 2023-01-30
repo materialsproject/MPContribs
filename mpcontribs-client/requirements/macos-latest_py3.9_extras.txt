@@ -38,7 +38,7 @@ dnspython==2.3.0
     # via
     #   pyisemail
     #   pymongo
-emmet-core==0.39.13
+emmet-core==0.42.1
     # via mp-api
 exceptiongroup==1.1.0
     # via pytest
@@ -64,7 +64,7 @@ idna==3.4
     #   requests
 iniconfig==2.0.0
     # via pytest
-ipython==8.8.0
+ipython==8.9.0
     # via mpcontribs-client (setup.py)
 isoduration==20.11.0
     # via jsonschema
