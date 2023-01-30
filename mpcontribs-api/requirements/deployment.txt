@@ -38,9 +38,9 @@ blinker==1.5
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 boltons==21.0.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
-boto3==1.26.58
+boto3==1.26.60
     # via flask-mongorest-mpcontribs
-botocore==1.29.58
+botocore==1.29.60
     # via
     #   boto3
     #   s3transfer
@@ -90,7 +90,7 @@ dnspython==2.3.0
     # via
     #   mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
     #   pymongo
-emmet-core==0.39.13
+emmet-core==0.42.3
     # via mp-api
 envier==0.4.0
     # via ddtrace
@@ -136,7 +136,7 @@ future==0.18.3
     # via uncertainties
 gevent==22.10.2
     # via gunicorn
-greenlet==2.0.1
+greenlet==2.0.2
     # via gevent
 gunicorn[gevent]==20.1.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
@@ -150,11 +150,11 @@ importlib-metadata==6.0.0
     #   flask
     #   jupyter-client
     #   nbconvert
-ipykernel==6.20.2
+ipykernel==6.21.0
     # via
     #   nbclassic
     #   notebook
-ipython==8.8.0
+ipython==8.9.0
     # via ipykernel
 ipython-genutils==0.2.0
     # via
@@ -188,15 +188,16 @@ jsonschema[format-nongpl]==4.17.3
     #   flasgger-tschaume
     #   jupyter-events
     #   nbformat
-jupyter-client==8.0.1
+jupyter-client==8.0.2
     # via
     #   ipykernel
     #   jupyter-server
     #   nbclassic
     #   nbclient
     #   notebook
-jupyter-core==5.1.5
+jupyter-core==5.2.0
     # via
+    #   ipykernel
     #   jupyter-client
     #   jupyter-server
     #   nbclassic
@@ -279,7 +280,6 @@ nbformat==5.7.3
     #   notebook
 nest-asyncio==1.5.6
     # via
-    #   ipykernel
     #   nbclassic
     #   notebook
 networkx==3.0
@@ -363,7 +363,7 @@ pygments==2.14.0
     # via
     #   ipython
     #   nbconvert
-pymatgen==2023.1.20
+pymatgen==2023.1.30
     # via
     #   emmet-core
     #   mp-api
@@ -510,7 +510,7 @@ tornado==6.2
     #   terminado
 tqdm==4.64.1
     # via pymatgen
-traitlets==5.8.1
+traitlets==5.9.0
     # via
     #   comm
     #   ipykernel
@@ -564,7 +564,7 @@ werkzeug==2.2.2
     #   flask
 xmltodict==0.13.0
     # via ddtrace
-zipp==3.11.0
+zipp==3.12.0
     # via importlib-metadata
 zope-event==4.6
     # via gevent
