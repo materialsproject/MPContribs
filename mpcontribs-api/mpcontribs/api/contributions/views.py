@@ -192,4 +192,14 @@ def search():
         {"$limit": limit},
         {"$sort": {"length": 1}},
     ]
-    return jsonify(Contributions.objects().aggregate(pipeline))
+
+    results = []
+
+    for contrib in Contributions.objects().aggregate(pipeline):
+        results.append({
+            "id": str(contrib["_id"]),
+            "formula": contrib["formula"],
+            "project": contrib["project"]
+        })
+
+    return jsonify(results)
