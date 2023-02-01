@@ -3,12 +3,15 @@ import re
 import os
 import flask_mongorest
 
+from collections import defaultdict
+from itertools import permutations
 from css_html_js_minify import html_minify
 from json2html import Json2Html
 from boltons.iterutils import remap
 from werkzeug.exceptions import Unauthorized
+from pymatgen.core.composition import Composition, CompositionError
 
-from flask import Blueprint, render_template
+from flask import Blueprint, render_template, jsonify, abort, request
 from flask_mongorest.resources import Resource
 from flask_mongorest import operators as ops
 from flask_mongorest.methods import (
@@ -155,3 +158,38 @@ class ContributionsView(SwaggerView):
             raise Unauthorized(f"{obj.identifier} already added for {obj.project.id}")
 
         return True
+
+
+@contributions.route("/search")
+def search():
+    formula = request.args.get("formula")
+    if not formula:
+        abort(404, description="Missing formula param.")
+
+    try:
+        comp = Composition(formula)
+    except (CompositionError, ValueError):
+        abort(400, description="Invalid formula provided.")
+
+    ind_str = []
+
+    if len(comp) == 1:
+        d = comp.get_integer_formula_and_factor()
+        ind_str.append(d[0] + str(int(d[1])) if d[1] != 1 else d[0])
+    else:
+        for i, j in comp.reduced_composition.items():
+            ind_str.append(
+                i.name + str(int(j)) if j != 1 else i.name
+            )
+
+    final_terms = ["".join(entry) for entry in permutations(ind_str)]
+    limit = request.args.get("limit", ContributionsResource.default_limit)
+
+    pipeline = [
+        {"$search": {"index": "formula_autocomplete", "text": {"path": "formula", "query": final_terms}}},
+        {"$project": {"formula": 1, "length": {"$strLenCP": "$formula"}, "project": 1}},
+        {"$match": {"length": {"$gte": len(final_terms[0])}}},
+        {"$limit": limit},
+        {"$sort": {"length": 1}},
+    ]
+    return jsonify(Contributions.objects().aggregate(pipeline))
