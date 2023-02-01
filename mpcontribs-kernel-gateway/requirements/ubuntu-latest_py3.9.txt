@@ -24,7 +24,7 @@ attrs==22.2.0
     #   jsonschema
 backcall==0.2.0
     # via ipython
-beautifulsoup4==4.11.1
+beautifulsoup4==4.11.2
     # via nbconvert
 bleach==6.0.0
     # via nbconvert
@@ -66,7 +66,7 @@ dnspython==2.3.0
     # via
     #   pyisemail
     #   pymongo
-emmet-core==0.42.1
+emmet-core==0.42.7
     # via mp-api
 envier==0.4.0
     # via ddtrace
@@ -134,7 +134,7 @@ jsonschema[format,format-nongpl]==4.17.3
     #   jupyter-events
     #   nbformat
     #   swagger-spec-validator
-jupyter-client==8.0.1
+jupyter-client==8.0.2
     # via
     #   -r requirements.in
     #   ipykernel
@@ -143,7 +143,7 @@ jupyter-client==8.0.1
     #   nbclassic
     #   nbclient
     #   notebook
-jupyter-core==5.1.5
+jupyter-core==5.2.0
     # via
     #   jupyter-client
     #   jupyter-kernel-gateway
@@ -157,7 +157,7 @@ jupyter-events==0.6.3
     # via jupyter-server
 jupyter-kernel-gateway==2.5.1
     # via -r requirements.in
-jupyter-server==2.1.0
+jupyter-server==2.2.0
     # via
     #   nbclassic
     #   notebook-shim
@@ -305,7 +305,7 @@ pygments==2.14.0
     #   nbconvert
 pyisemail==2.0.1
     # via mpcontribs-client
-pymatgen==2023.1.20
+pymatgen==2023.1.30
     # via
     #   emmet-core
     #   mp-api
@@ -437,7 +437,7 @@ tqdm==4.64.1
     # via
     #   mpcontribs-client
     #   pymatgen
-traitlets==5.8.1
+traitlets==5.9.0
     # via
     #   comm
     #   ipykernel
