@@ -35,7 +35,7 @@ backports-zoneinfo==0.2.1
     # via
     #   pytz-deprecation-shim
     #   tzlocal
-beautifulsoup4==4.11.1
+beautifulsoup4==4.11.2
     # via nbconvert
 bleach==6.0.0
     # via nbconvert
@@ -43,9 +43,9 @@ blinker==1.5
     # via mpcontribs-api (setup.py)
 boltons==21.0.0
     # via mpcontribs-api (setup.py)
-boto3==1.26.59
+boto3==1.26.62
     # via flask-mongorest-mpcontribs
-botocore==1.29.59
+botocore==1.29.62
     # via
     #   boto3
     #   s3transfer
@@ -95,7 +95,7 @@ dnspython==2.3.0
     # via
     #   mpcontribs-api (setup.py)
     #   pymongo
-emmet-core==0.42.1
+emmet-core==0.42.7
     # via mp-api
 envier==0.4.0
     # via ddtrace
@@ -201,14 +201,14 @@ jsonschema[format-nongpl]==4.17.3
     #   flasgger-tschaume
     #   jupyter-events
     #   nbformat
-jupyter-client==8.0.1
+jupyter-client==8.0.2
     # via
     #   ipykernel
     #   jupyter-server
     #   nbclassic
     #   nbclient
     #   notebook
-jupyter-core==5.1.5
+jupyter-core==5.2.0
     # via
     #   jupyter-client
     #   jupyter-server
@@ -219,7 +219,7 @@ jupyter-core==5.1.5
     #   notebook
 jupyter-events==0.6.3
     # via jupyter-server
-jupyter-server==2.1.0
+jupyter-server==2.2.0
     # via
     #   nbclassic
     #   notebook-shim
@@ -382,7 +382,7 @@ pygments==2.14.0
     # via
     #   ipython
     #   nbconvert
-pymatgen==2023.1.20
+pymatgen==2023.1.30
     # via
     #   emmet-core
     #   mp-api
@@ -531,7 +531,7 @@ tornado==6.2
     #   terminado
 tqdm==4.64.1
     # via pymatgen
-traitlets==5.8.1
+traitlets==5.9.0
     # via
     #   comm
     #   ipykernel
