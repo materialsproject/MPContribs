@@ -66,7 +66,7 @@ dnspython==2.3.0
     # via
     #   pyisemail
     #   pymongo
-emmet-core==0.42.7
+emmet-core==0.42.14
     # via mp-api
 envier==0.4.0
     # via ddtrace
@@ -95,7 +95,7 @@ importlib-metadata==6.0.0
     # via
     #   jupyter-client
     #   nbconvert
-ipykernel==6.20.2
+ipykernel==6.21.1
     # via
     #   ipywidgets
     #   nbclassic
@@ -145,6 +145,7 @@ jupyter-client==8.0.2
     #   notebook
 jupyter-core==5.2.0
     # via
+    #   ipykernel
     #   jupyter-client
     #   jupyter-kernel-gateway
     #   jupyter-server
@@ -157,7 +158,7 @@ jupyter-events==0.6.3
     # via jupyter-server
 jupyter-kernel-gateway==2.5.1
     # via -r MPContribs/mpcontribs-kernel-gateway/requirements.in
-jupyter-server==2.2.0
+jupyter-server==2.2.1
     # via
     #   nbclassic
     #   notebook-shim
@@ -383,7 +384,7 @@ send2trash==1.8.0
     #   jupyter-server
     #   nbclassic
     #   notebook
-simplejson==3.18.1
+simplejson==3.18.3
     # via
     #   bravado
     #   bravado-core
@@ -485,13 +486,13 @@ webencodings==0.5.1
     # via
     #   bleach
     #   tinycss2
-websocket-client==1.5.0
+websocket-client==1.5.1
     # via jupyter-server
 widgetsnbextension==4.0.5
     # via ipywidgets
 xmltodict==0.13.0
     # via ddtrace
-zipp==3.12.0
+zipp==3.12.1
     # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:

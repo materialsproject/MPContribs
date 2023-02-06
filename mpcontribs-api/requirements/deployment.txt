@@ -38,9 +38,9 @@ blinker==1.5
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 boltons==21.0.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
-boto3==1.26.62
+boto3==1.26.64
     # via flask-mongorest-mpcontribs
-botocore==1.29.62
+botocore==1.29.64
     # via
     #   boto3
     #   s3transfer
@@ -74,7 +74,7 @@ css-html-js-minify==2.5.5
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 cycler==0.11.0
     # via matplotlib
-dateparser==1.1.6
+dateparser==1.1.7
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 ddsketch==2.0.4
     # via ddtrace
@@ -90,7 +90,7 @@ dnspython==2.3.0
     # via
     #   mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
     #   pymongo
-emmet-core==0.42.7
+emmet-core==0.42.14
     # via mp-api
 envier==0.4.0
     # via ddtrace
@@ -100,7 +100,7 @@ executing==1.2.0
     # via stack-data
 fastjsonschema==2.16.2
     # via nbformat
-fastnumbers==3.2.1
+fastnumbers==4.0.1
     # via flask-mongorest-mpcontribs
 filetype==1.2.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
@@ -150,7 +150,7 @@ importlib-metadata==6.0.0
     #   flask
     #   jupyter-client
     #   nbconvert
-ipykernel==6.20.2
+ipykernel==6.21.1
     # via
     #   nbclassic
     #   notebook
@@ -197,6 +197,7 @@ jupyter-client==8.0.2
     #   notebook
 jupyter-core==5.2.0
     # via
+    #   ipykernel
     #   jupyter-client
     #   jupyter-server
     #   nbclassic
@@ -206,7 +207,7 @@ jupyter-core==5.2.0
     #   notebook
 jupyter-events==0.6.3
     # via jupyter-server
-jupyter-server==2.2.0
+jupyter-server==2.2.1
     # via
     #   nbclassic
     #   notebook-shim
@@ -554,7 +555,7 @@ webencodings==0.5.1
     # via
     #   bleach
     #   tinycss2
-websocket-client==1.5.0
+websocket-client==1.5.1
     # via
     #   jupyter-server
     #   mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
@@ -564,7 +565,7 @@ werkzeug==2.2.2
     #   flask
 xmltodict==0.13.0
     # via ddtrace
-zipp==3.12.0
+zipp==3.12.1
     # via importlib-metadata
 zope-event==4.6
     # via gevent
