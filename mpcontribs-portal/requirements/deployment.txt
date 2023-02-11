@@ -114,7 +114,7 @@ importlib-metadata==6.0.0
     #   nbconvert
 ipykernel==6.21.1
     # via mpcontribs-portal (MPContribs/mpcontribs-portal/setup.py)
-ipython==8.9.0
+ipython==8.10.0
     # via
     #   ipykernel
     #   mpcontribs-client
