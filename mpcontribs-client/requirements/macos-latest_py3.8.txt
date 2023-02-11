@@ -54,7 +54,7 @@ idna==3.4
     #   requests
 importlib-resources==5.10.2
     # via jsonschema
-ipython==8.9.0
+ipython==8.10.0
     # via mpcontribs-client (setup.py)
 isoduration==20.11.0
     # via jsonschema
