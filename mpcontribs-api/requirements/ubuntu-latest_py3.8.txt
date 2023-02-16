@@ -559,7 +559,7 @@ websocket-client==1.5.0
     # via
     #   jupyter-server
     #   mpcontribs-api (setup.py)
-werkzeug==2.2.2
+werkzeug==2.2.3
     # via
     #   flasgger-tschaume
     #   flask
