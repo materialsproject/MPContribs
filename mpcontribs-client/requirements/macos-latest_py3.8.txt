@@ -14,7 +14,7 @@ attrs==22.2.0
     # via jsonschema
 backcall==0.2.0
     # via ipython
-boltons==21.0.0
+boltons==23.0.0
     # via mpcontribs-client (setup.py)
 bravado==11.0.3
     # via mpcontribs-client (setup.py)
@@ -34,7 +34,7 @@ dnspython==2.3.0
     # via
     #   pyisemail
     #   pymongo
-emmet-core==0.42.7
+emmet-core==0.44.0
     # via mp-api
 executing==1.2.0
     # via stack-data
@@ -52,9 +52,11 @@ idna==3.4
     # via
     #   jsonschema
     #   requests
-importlib-resources==5.10.2
-    # via jsonschema
-ipython==8.9.0
+importlib-resources==5.12.0
+    # via
+    #   jsonschema
+    #   matplotlib
+ipython==8.10.0
     # via mpcontribs-client (setup.py)
 isoduration==20.11.0
     # via jsonschema
@@ -74,7 +76,7 @@ kiwisolver==1.4.4
     # via matplotlib
 latexcodec==2.0.1
     # via pybtex
-matplotlib==3.6.3
+matplotlib==3.7.0
     # via pymatgen
 matplotlib-inline==0.1.6
     # via ipython
@@ -85,7 +87,7 @@ monty==2022.9.9
     #   emmet-core
     #   mp-api
     #   pymatgen
-mp-api==0.30.8
+mp-api==0.30.10
     # via pymatgen
 mpmath==1.2.1
     # via sympy
@@ -96,10 +98,9 @@ msgpack==1.0.4
     #   mp-api
 networkx==3.0
     # via pymatgen
-numpy==1.23.5
+numpy==1.24.2
     # via
     #   contourpy
-    #   emmet-core
     #   matplotlib
     #   pandas
     #   pymatgen
@@ -129,7 +130,7 @@ plotly==5.13.0
     # via
     #   mpcontribs-client (setup.py)
     #   pymatgen
-prompt-toolkit==3.0.36
+prompt-toolkit==3.0.37
     # via ipython
 ptyprocess==0.7.0
     # via pexpect
@@ -139,7 +140,7 @@ pybtex==0.24.0
     # via
     #   emmet-core
     #   pymatgen
-pydantic==1.10.4
+pydantic==1.10.5
     # via emmet-core
 pygments==2.14.0
     # via ipython
@@ -189,11 +190,11 @@ ruamel-yaml==0.17.21
     # via pymatgen
 ruamel-yaml-clib==0.2.7
     # via ruamel-yaml
-scipy==1.10.0
+scipy==1.10.1
     # via pymatgen
 semantic-version==2.10.0
     # via mpcontribs-client (setup.py)
-simplejson==3.18.1
+simplejson==3.18.3
     # via
     #   bravado
     #   bravado-core
@@ -221,7 +222,7 @@ sympy==1.11.1
     # via pymatgen
 tabulate==0.9.0
     # via pymatgen
-tenacity==8.1.0
+tenacity==8.2.1
     # via plotly
 tqdm==4.64.1
     # via
@@ -231,7 +232,7 @@ traitlets==5.9.0
     # via
     #   ipython
     #   matplotlib-inline
-typing-extensions==4.4.0
+typing-extensions==4.5.0
     # via
     #   bravado
     #   emmet-core
@@ -250,7 +251,7 @@ wcwidth==0.2.6
     # via prompt-toolkit
 webcolors==1.12
     # via jsonschema
-zipp==3.12.0
+zipp==3.14.0
     # via importlib-resources
 
 # The following packages are considered to be unsafe in a requirements file:
