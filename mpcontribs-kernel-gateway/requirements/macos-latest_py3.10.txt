@@ -70,7 +70,7 @@ dnspython==2.3.0
     # via
     #   pyisemail
     #   pymongo
-emmet-core==0.44.0
+emmet-core==0.48.3
     # via mp-api
 entrypoints==0.4
     # via jupyter-client
@@ -80,7 +80,7 @@ exceptiongroup==1.1.0
     # via cattrs
 executing==1.2.0
     # via stack-data
-fastjsonschema==2.16.2
+fastjsonschema==2.16.3
     # via nbformat
 filetype==1.2.0
     # via mpcontribs-client
@@ -269,7 +269,7 @@ pint==0.19.2
     # via mpcontribs-client
 platformdirs==3.0.0
     # via jupyter-core
-plotly==5.13.0
+plotly==5.13.1
     # via
     #   mpcontribs-client
     #   pymatgen
@@ -308,7 +308,7 @@ pygments==2.14.0
     #   nbconvert
 pyisemail==2.0.1
     # via mpcontribs-client
-pymatgen==2023.1.30
+pymatgen==2023.2.22
     # via
     #   emmet-core
     #   mp-api
