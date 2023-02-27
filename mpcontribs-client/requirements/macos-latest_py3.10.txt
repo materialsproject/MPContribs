@@ -34,7 +34,7 @@ dnspython==2.3.0
     # via
     #   pyisemail
     #   pymongo
-emmet-core==0.44.0
+emmet-core==0.48.3
     # via mp-api
 executing==1.2.0
     # via stack-data
@@ -120,7 +120,7 @@ pillow==9.4.0
     # via matplotlib
 pint==0.19.2
     # via mpcontribs-client (setup.py)
-plotly==5.13.0
+plotly==5.13.1
     # via
     #   mpcontribs-client (setup.py)
     #   pymatgen
@@ -140,7 +140,7 @@ pygments==2.14.0
     # via ipython
 pyisemail==2.0.1
     # via mpcontribs-client (setup.py)
-pymatgen==2023.1.30
+pymatgen==2023.2.22
     # via
     #   emmet-core
     #   mp-api
