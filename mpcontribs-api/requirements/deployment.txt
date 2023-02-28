@@ -38,9 +38,9 @@ blinker==1.5
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 boltons==23.0.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
-boto3==1.26.79
+boto3==1.26.80
     # via flask-mongorest-mpcontribs
-botocore==1.29.79
+botocore==1.29.80
     # via
     #   boto3
     #   s3transfer
@@ -78,7 +78,7 @@ dateparser==1.1.7
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 ddsketch==2.0.4
     # via ddtrace
-ddtrace==1.8.0
+ddtrace==1.9.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 debugpy==1.6.6
     # via ipykernel
