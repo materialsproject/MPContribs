@@ -27,9 +27,9 @@ boltons==23.0.0
     # via
     #   mpcontribs-client
     #   mpcontribs-portal (setup.py)
-boto3==1.26.79
+boto3==1.26.90
     # via mpcontribs-portal (setup.py)
-botocore==1.29.79
+botocore==1.29.90
     # via
     #   boto3
     #   s3transfer
@@ -43,7 +43,7 @@ cattrs==22.2.0
     # via ddtrace
 certifi==2022.12.7
     # via requests
-charset-normalizer==3.0.1
+charset-normalizer==3.1.0
     # via requests
 comm==0.1.2
     # via ipykernel
@@ -53,7 +53,7 @@ cycler==0.11.0
     # via matplotlib
 ddsketch==2.0.4
     # via ddtrace
-ddtrace==1.8.0
+ddtrace==1.9.3
     # via mpcontribs-portal (setup.py)
 debugpy==1.6.6
     # via ipykernel
@@ -76,11 +76,11 @@ dnspython==2.3.0
     # via
     #   pyisemail
     #   pymongo
-emmet-core==0.48.3
+emmet-core==0.49.1
     # via mp-api
 envier==0.4.0
     # via ddtrace
-exceptiongroup==1.1.0
+exceptiongroup==1.1.1
     # via cattrs
 executing==1.2.0
     # via stack-data
@@ -92,7 +92,7 @@ filetype==1.2.0
     # via mpcontribs-client
 flatten-dict==0.4.2
     # via mpcontribs-client
-fonttools==4.38.0
+fonttools==4.39.0
     # via matplotlib
 fqdn==1.5.1
     # via jsonschema
@@ -108,9 +108,9 @@ idna==3.4
     # via
     #   jsonschema
     #   requests
-ipykernel==6.21.2
+ipykernel==6.21.3
     # via mpcontribs-portal (setup.py)
-ipython==8.10.0
+ipython==8.11.0
     # via
     #   ipykernel
     #   mpcontribs-client
@@ -163,7 +163,7 @@ markupsafe==2.1.2
     # via
     #   jinja2
     #   nbconvert
-matplotlib==3.7.0
+matplotlib==3.7.1
     # via pymatgen
 matplotlib-inline==0.1.6
     # via
@@ -183,9 +183,9 @@ mp-api==0.30.10
     # via pymatgen
 mpcontribs-client==5.0.10
     # via mpcontribs-portal (setup.py)
-mpmath==1.2.1
+mpmath==1.3.0
     # via sympy
-msgpack==1.0.4
+msgpack==1.0.5
     # via
     #   bravado
     #   bravado-core
@@ -235,15 +235,15 @@ pillow==9.4.0
     # via matplotlib
 pint==0.19.2
     # via mpcontribs-client
-platformdirs==3.0.0
+platformdirs==3.1.1
     # via jupyter-core
 plotly==5.13.1
     # via
     #   mpcontribs-client
     #   pymatgen
-prompt-toolkit==3.0.37
+prompt-toolkit==3.0.38
     # via ipython
-protobuf==4.22.0
+protobuf==4.22.1
     # via
     #   ddsketch
     #   ddtrace
@@ -257,7 +257,7 @@ pybtex==0.24.0
     # via
     #   emmet-core
     #   pymatgen
-pydantic==1.10.5
+pydantic==1.10.6
     # via emmet-core
 pygments==2.14.0
     # via
@@ -265,7 +265,7 @@ pygments==2.14.0
     #   nbconvert
 pyisemail==2.0.1
     # via mpcontribs-client
-pymatgen==2023.2.22
+pymatgen==2023.3.10
     # via
     #   emmet-core
     #   mp-api
@@ -295,7 +295,7 @@ pyyaml==6.0
     #   bravado-core
     #   pybtex
     #   swagger-spec-validator
-pyzmq==25.0.0
+pyzmq==25.0.1
     # via
     #   ipykernel
     #   jupyter-client
@@ -363,7 +363,7 @@ sympy==1.11.1
     # via pymatgen
 tabulate==0.9.0
     # via pymatgen
-tenacity==8.2.1
+tenacity==8.2.2
     # via
     #   ddtrace
     #   plotly
@@ -373,7 +373,7 @@ tornado==6.2
     # via
     #   ipykernel
     #   jupyter-client
-tqdm==4.64.1
+tqdm==4.65.0
     # via
     #   mpcontribs-client
     #   pymatgen
@@ -402,7 +402,7 @@ uncertainties==3.1.7
     # via pymatgen
 uri-template==1.2.0
     # via jsonschema
-urllib3==1.26.14
+urllib3==1.26.15
     # via
     #   botocore
     #   requests
