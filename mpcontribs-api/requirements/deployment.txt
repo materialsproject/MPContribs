@@ -30,7 +30,7 @@ attrs==22.2.0
     #   jsonschema
 backcall==0.2.0
     # via ipython
-beautifulsoup4==4.11.2
+beautifulsoup4==4.12.0
     # via nbconvert
 bleach==6.0.0
     # via nbconvert
@@ -38,9 +38,9 @@ blinker==1.5
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 boltons==23.0.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
-boto3==1.26.91
+boto3==1.26.94
     # via flask-mongorest-mpcontribs
-botocore==1.29.91
+botocore==1.29.94
     # via
     #   boto3
     #   s3transfer
@@ -90,7 +90,7 @@ dnspython==2.3.0
     # via
     #   mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
     #   pymongo
-emmet-core==0.49.1
+emmet-core==0.51.0
     # via mp-api
 envier==0.4.0
     # via ddtrace
@@ -128,7 +128,7 @@ flask-sse==1.0.0
     # via flask-mongorest-mpcontribs
 flatten-dict==0.4.2
     # via flask-mongorest-mpcontribs
-fonttools==4.39.0
+fonttools==4.39.2
     # via matplotlib
 fqdn==1.5.1
     # via jsonschema
@@ -147,14 +147,14 @@ idna==3.4
     #   anyio
     #   jsonschema
     #   requests
-importlib-metadata==6.0.0
+importlib-metadata==6.1.0
     # via
     #   flask
     #   jupyter-client
     #   nbconvert
 importlib-resources==5.12.0
     # via matplotlib
-ipykernel==6.21.3
+ipykernel==6.22.0
     # via
     #   nbclassic
     #   notebook
@@ -192,14 +192,14 @@ jsonschema[format-nongpl]==4.17.3
     #   flasgger-tschaume
     #   jupyter-events
     #   nbformat
-jupyter-client==8.0.3
+jupyter-client==8.1.0
     # via
     #   ipykernel
     #   jupyter-server
     #   nbclassic
     #   nbclient
     #   notebook
-jupyter-core==5.2.0
+jupyter-core==5.3.0
     # via
     #   ipykernel
     #   jupyter-client
@@ -211,7 +211,7 @@ jupyter-core==5.2.0
     #   notebook
 jupyter-events==0.6.3
     # via jupyter-server
-jupyter-server==2.4.0
+jupyter-server==2.5.0
     # via
     #   nbclassic
     #   notebook-shim
@@ -274,7 +274,7 @@ nbconvert==7.2.10
     #   jupyter-server
     #   nbclassic
     #   notebook
-nbformat==5.7.3
+nbformat==5.8.0
     # via
     #   jupyter-server
     #   mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
@@ -410,14 +410,14 @@ pyyaml==6.0
     #   flasgger-tschaume
     #   jupyter-events
     #   pybtex
-pyzmq==25.0.1
+pyzmq==25.0.2
     # via
     #   ipykernel
     #   jupyter-client
     #   jupyter-server
     #   nbclassic
     #   notebook
-redis==4.5.1
+redis==4.5.2
     # via
     #   flask-rq2
     #   flask-sse
@@ -539,7 +539,7 @@ typing-extensions==4.5.0
     #   pydantic
 tzdata==2022.7
     # via pytz-deprecation-shim
-tzlocal==4.2
+tzlocal==4.3
     # via dateparser
 uncertainties==3.1.7
     # via
@@ -575,7 +575,7 @@ zipp==3.15.0
     #   importlib-resources
 zope-event==4.6
     # via gevent
-zope-interface==5.5.2
+zope-interface==6.0
     # via gevent
 zstandard==0.20.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)

@@ -24,7 +24,7 @@ attrs==22.2.0
     #   jsonschema
 backcall==0.2.0
     # via ipython
-beautifulsoup4==4.11.2
+beautifulsoup4==4.12.0
     # via nbconvert
 bleach==6.0.0
     # via nbconvert
@@ -66,7 +66,7 @@ dnspython==2.3.0
     # via
     #   pyisemail
     #   pymongo
-emmet-core==0.49.1
+emmet-core==0.51.0
     # via mp-api
 entrypoints==0.4
     # via jupyter-client
@@ -82,7 +82,7 @@ filetype==1.2.0
     # via mpcontribs-client
 flatten-dict==0.4.2
     # via mpcontribs-client
-fonttools==4.39.0
+fonttools==4.39.2
     # via matplotlib
 fqdn==1.5.1
     # via jsonschema
@@ -93,13 +93,13 @@ idna==3.4
     #   anyio
     #   jsonschema
     #   requests
-importlib-metadata==6.0.0
+importlib-metadata==6.1.0
     # via
     #   jupyter-client
     #   nbconvert
 importlib-resources==5.12.0
     # via matplotlib
-ipykernel==6.21.3
+ipykernel==6.22.0
     # via
     #   ipywidgets
     #   nbclassic
@@ -147,7 +147,7 @@ jupyter-client==7.4.9
     #   nbclassic
     #   nbclient
     #   notebook
-jupyter-core==5.2.0
+jupyter-core==5.3.0
     # via
     #   ipykernel
     #   jupyter-client
@@ -162,7 +162,7 @@ jupyter-events==0.6.3
     # via jupyter-server
 jupyter-kernel-gateway==2.5.2
     # via -r MPContribs/mpcontribs-kernel-gateway/requirements.in
-jupyter-server==2.4.0
+jupyter-server==2.5.0
     # via
     #   nbclassic
     #   notebook-shim
@@ -219,7 +219,7 @@ nbconvert==7.2.10
     #   jupyter-server
     #   nbclassic
     #   notebook
-nbformat==5.7.3
+nbformat==5.8.0
     # via
     #   jupyter-server
     #   nbclassic
@@ -346,7 +346,7 @@ pyyaml==6.0
     #   jupyter-events
     #   pybtex
     #   swagger-spec-validator
-pyzmq==25.0.1
+pyzmq==25.0.2
     # via
     #   ipykernel
     #   jupyter-client
@@ -388,7 +388,7 @@ send2trash==1.8.0
     #   jupyter-server
     #   nbclassic
     #   notebook
-simplejson==3.18.3
+simplejson==3.18.4
     # via
     #   bravado
     #   bravado-core
