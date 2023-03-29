@@ -24,7 +24,7 @@ attrs==22.2.0
     #   pytest
 backcall==0.2.0
     # via ipython
-beautifulsoup4==4.11.2
+beautifulsoup4==4.12.0
     # via nbconvert
 bleach==6.0.0
     # via nbconvert
@@ -32,9 +32,9 @@ boltons==23.0.0
     # via
     #   mpcontribs-client
     #   mpcontribs-portal (setup.py)
-boto3==1.26.90
+boto3==1.26.102
     # via mpcontribs-portal (setup.py)
-botocore==1.29.90
+botocore==1.29.102
     # via
     #   boto3
     #   s3transfer
@@ -50,7 +50,7 @@ certifi==2022.12.7
     # via requests
 charset-normalizer==3.1.0
     # via requests
-comm==0.1.2
+comm==0.1.3
     # via ipykernel
 contourpy==1.0.7
     # via matplotlib
@@ -58,7 +58,7 @@ cycler==0.11.0
     # via matplotlib
 ddsketch==2.0.4
     # via ddtrace
-ddtrace==1.9.3
+ddtrace==1.10.2
     # via mpcontribs-portal (setup.py)
 debugpy==1.6.6
     # via ipykernel
@@ -81,7 +81,7 @@ dnspython==2.3.0
     # via
     #   pyisemail
     #   pymongo
-emmet-core==0.49.1
+emmet-core==0.50.0
     # via mp-api
 envier==0.4.0
     # via ddtrace
@@ -101,7 +101,7 @@ flake8==6.0.0
     # via mpcontribs-portal (setup.py)
 flatten-dict==0.4.2
     # via mpcontribs-client
-fonttools==4.39.0
+fonttools==4.39.3
     # via matplotlib
 fqdn==1.5.1
     # via jsonschema
@@ -119,7 +119,7 @@ idna==3.4
     #   requests
 iniconfig==2.0.0
     # via pytest
-ipykernel==6.21.3
+ipykernel==6.22.0
     # via mpcontribs-portal (setup.py)
 ipython==8.11.0
     # via
@@ -153,11 +153,11 @@ jsonschema[format]==4.17.3
     #   ddtrace
     #   nbformat
     #   swagger-spec-validator
-jupyter-client==8.0.3
+jupyter-client==8.1.0
     # via
     #   ipykernel
     #   nbclient
-jupyter-core==5.2.0
+jupyter-core==5.3.0
     # via
     #   ipykernel
     #   jupyter-client
@@ -192,7 +192,7 @@ monty==2022.9.9
     #   mp-api
     #   mpcontribs-portal (setup.py)
     #   pymatgen
-mp-api==0.30.10
+mp-api==0.30.11
     # via pymatgen
 mpcontribs-client==5.0.10
     # via mpcontribs-portal (setup.py)
@@ -205,9 +205,9 @@ msgpack==1.0.5
     #   mp-api
 nbclient==0.7.2
     # via nbconvert
-nbconvert==7.2.9
+nbconvert==7.2.10
     # via mpcontribs-portal (setup.py)
-nbformat==5.7.3
+nbformat==5.8.0
     # via
     #   mpcontribs-portal (setup.py)
     #   nbclient
@@ -230,6 +230,7 @@ packaging==23.0
     #   ipykernel
     #   matplotlib
     #   nbconvert
+    #   plotly
     #   pytest
 palettable==3.3.0
     # via pymatgen
@@ -249,9 +250,9 @@ pillow==9.4.0
     # via matplotlib
 pint==0.19.2
     # via mpcontribs-client
-platformdirs==3.1.1
+platformdirs==3.2.0
     # via jupyter-core
-plotly==5.13.1
+plotly==5.14.0
     # via
     #   mpcontribs-client
     #   pymatgen
@@ -275,7 +276,7 @@ pybtex==0.24.0
     #   pymatgen
 pycodestyle==2.10.0
     # via flake8
-pydantic==1.10.6
+pydantic==1.10.7
     # via emmet-core
 pyflakes==3.0.1
     # via flake8
@@ -285,7 +286,7 @@ pygments==2.14.0
     #   nbconvert
 pyisemail==2.0.1
     # via mpcontribs-client
-pymatgen==2023.3.10
+pymatgen==2023.3.23
     # via
     #   emmet-core
     #   mp-api
@@ -306,7 +307,7 @@ python-dateutil==2.8.2
     #   jupyter-client
     #   matplotlib
     #   pandas
-pytz==2022.7.1
+pytz==2023.3
     # via
     #   bravado-core
     #   django
@@ -317,11 +318,11 @@ pyyaml==6.0
     #   bravado-core
     #   pybtex
     #   swagger-spec-validator
-pyzmq==25.0.1
+pyzmq==25.0.2
     # via
     #   ipykernel
     #   jupyter-client
-redis==4.5.1
+redis==4.5.4
     # via mpcontribs-portal (setup.py)
 requests==2.28.2
     # via
@@ -350,7 +351,7 @@ semantic-version==2.10.0
     # via mpcontribs-client
 setproctitle==1.3.2
     # via mpcontribs-portal (setup.py)
-simplejson==3.18.3
+simplejson==3.18.4
     # via
     #   bravado
     #   bravado-core
@@ -432,7 +433,7 @@ urllib3==1.26.15
     #   requests
 wcwidth==0.2.6
     # via prompt-toolkit
-webcolors==1.12
+webcolors==1.13
     # via jsonschema
 webencodings==0.5.1
     # via
@@ -444,7 +445,7 @@ xmltodict==0.13.0
     # via ddtrace
 zope-event==4.6
     # via gevent
-zope-interface==5.5.2
+zope-interface==6.0
     # via gevent
 
 # The following packages are considered to be unsafe in a requirements file:
