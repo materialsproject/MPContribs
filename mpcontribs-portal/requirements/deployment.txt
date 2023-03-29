@@ -310,7 +310,7 @@ pyzmq==25.0.2
     # via
     #   ipykernel
     #   jupyter-client
-redis==4.5.3
+redis==4.5.4
     # via mpcontribs-portal (MPContribs/mpcontribs-portal/setup.py)
 requests==2.28.2
     # via
