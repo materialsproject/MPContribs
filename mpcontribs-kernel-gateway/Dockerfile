@@ -1,4 +1,4 @@
-FROM materialsproject/devops:python-3.916.5 as base
+FROM materialsproject/devops:python-3.1010.0 as base
 MAINTAINER Patrick Huck (tschaume)
 
 FROM base as python-deps
@@ -14,7 +14,7 @@ RUN wget -q https://raw.githubusercontent.com/vishnubob/wait-for-it/master/wait-
     chmod +x wait-for-it.sh && mv wait-for-it.sh /root/.local/bin/
 
 FROM base
-COPY --from=python-deps /root/.local/lib/python3.9/site-packages /root/.local/lib/python3.9/site-packages
+COPY --from=python-deps /root/.local/lib/python3.10/site-packages /root/.local/lib/python3.10/site-packages
 COPY --from=python-deps /root/.local/bin /root/.local/bin
 
 WORKDIR /app

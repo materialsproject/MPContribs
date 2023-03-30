@@ -1,4 +1,4 @@
-FROM materialsproject/devops:python-3.916.5 as base
+FROM materialsproject/devops:python-3.1010.0 as base
 FROM node:19.8.1-slim as node
 
 FROM node as webpack-deps
@@ -34,7 +34,7 @@ RUN wget -q https://raw.githubusercontent.com/vishnubob/wait-for-it/master/wait-
     chmod +x wait-for-it.sh && mv wait-for-it.sh /root/.local/bin/
 
 FROM base as python-builds
-COPY --from=python-deps /root/.local/lib/python3.9/site-packages /root/.local/lib/python3.9/site-packages
+COPY --from=python-deps /root/.local/lib/python3.10/site-packages /root/.local/lib/python3.10/site-packages
 COPY --from=python-deps /root/.local/bin /root/.local/bin
 COPY --from=python-deps /root/.local/share /root/.local/share
 WORKDIR /app
@@ -50,7 +50,7 @@ RUN pip install $PIP_FLAGS $MORE_PIP_FLAGS --no-deps .
 RUN python manage.py collectstatic --noinput
 
 FROM base
-COPY --from=python-builds /root/.local/lib/python3.9/site-packages /root/.local/lib/python3.9/site-packages
+COPY --from=python-builds /root/.local/lib/python3.10/site-packages /root/.local/lib/python3.10/site-packages
 COPY --from=python-builds /root/.local/bin /root/.local/bin
 COPY --from=python-builds /root/.local/share /root/.local/share
 COPY --from=python-builds /app/static /app/static
