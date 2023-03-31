@@ -52,7 +52,7 @@ idna==3.4
     # via
     #   jsonschema
     #   requests
-ipython==8.11.0
+ipython==8.12.0
     # via mpcontribs-client (setup.py)
 isoduration==20.11.0
     # via jsonschema
