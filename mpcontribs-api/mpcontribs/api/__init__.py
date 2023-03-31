@@ -1,8 +1,5 @@
 # -*- coding: utf-8 -*-
 """Flask App for MPContribs API"""
-from gevent import monkey
-monkey.patch_all()
-
 import os
 import urllib
 import smtplib
@@ -30,7 +27,7 @@ from string import punctuation, whitespace
 from boltons.iterutils import remap, default_enter
 from notebook.utils import url_path_join
 from notebook.gateway.managers import GatewayClient
-from requests.exceptions import ConnectionError
+from requests.exceptions import ConnectionError, Timeout
 
 
 delimiter, max_depth = ".", 7  # = MAX_NESTING + 2 from client
@@ -156,8 +153,8 @@ def create_kernel_connection(kernel_id):
 def get_kernels():
     """retrieve list of kernels from KernelGateway service"""
     try:
-        r = requests.get(get_kernel_endpoint())
-    except ConnectionError:
+        r = requests.get(get_kernel_endpoint(), timeout=2)
+    except (ConnectionError, Timeout):
         logger.warning("Kernel Gateway NOT AVAILABLE")
         return None
 
@@ -198,7 +195,8 @@ def create_app():
     Marshmallow(app)
     MongoEngine(app)
     Swagger(app, template=app.config.get("TEMPLATE"))
-    setattr(app, "kernels", get_kernels())
+    if not app.debug:
+        setattr(app, "kernels", get_kernels())
 
     # NOTE: hard-code to avoid pre-generating for new deployment
     # collections = get_collections(db)
