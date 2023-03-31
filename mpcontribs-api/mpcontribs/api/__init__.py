@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
 """Flask App for MPContribs API"""
+from gevent import monkey
+monkey.patch_all()
+
 import os
 import urllib
 import smtplib
@@ -225,7 +228,7 @@ def create_app():
         except AttributeError as ex:
             logger.error(f"Failed to register {module_path}: {collection} {ex}")
 
-    if app.kernels:
+    if getattr(app, "kernels", None):
         from mpcontribs.api.notebooks.views import rq
         rq.init_app(app)
 

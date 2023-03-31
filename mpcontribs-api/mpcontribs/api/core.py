@@ -6,7 +6,7 @@ import logging
 import yaml
 
 from copy import deepcopy
-from typing import Pattern
+from re import Pattern
 from importlib import import_module
 from flasgger.marshmallow_apispec import SwaggerView as OriginalSwaggerView
 from flasgger.marshmallow_apispec import schema2jsonschema

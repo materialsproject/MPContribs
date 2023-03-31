@@ -7,7 +7,7 @@ import flask_mongorest
 from rq import get_current_job
 from rq.job import Job
 from rq_scheduler import Scheduler
-from time import sleep
+from gevent import sleep
 from nbformat import v4 as nbf
 from flask_rq2 import RQ
 from flask import Blueprint, request, abort, jsonify, current_app
