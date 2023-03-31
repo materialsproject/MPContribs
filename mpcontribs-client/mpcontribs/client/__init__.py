@@ -295,6 +295,28 @@ class Table(pd.DataFrame):
         info["nrows"] = len(self.index)
         return info
 
+    @classmethod
+    def from_dict(cls, dct: dict):
+        """Construct Table from dict
+
+        Args:
+            dct (dict): dictionary format of table
+        """
+        df = pd.DataFrame.from_records(
+            dct["data"], columns=dct["columns"], index=dct["index"]
+        ).apply(pd.to_numeric, errors="ignore")
+        df.index = pd.to_numeric(df.index, errors="ignore")
+        labels = dct["attrs"].get("labels", {})
+
+        if "index" in labels:
+            df.index.name = labels["index"]
+        if "variable" in labels:
+            df.columns.name = labels["variable"]
+
+        ret = cls(df)
+        ret.attrs = {k: v for k, v in dct["attrs"].items()}
+        return ret
+
 
 class Structure(PmgStructure):
     """Wrapper class around pymatgen.Structure to provide display() and info()"""
@@ -308,6 +330,17 @@ class Structure(PmgStructure):
         info["reduced_formula"] = self.composition.reduced_formula
         info["nsites"] = len(self)
         return info
+
+    @classmethod
+    def from_dict(cls, dct: dict):
+        """Construct Structure from dict
+
+        Args:
+            dct (dict): dictionary format of structure
+        """
+        ret = super().from_dict(dct)
+        ret.attrs = {field: dct[field] for field in ["id", "name", "md5"]}
+        return ret
 
 
 class Attachment(dict):
@@ -385,6 +418,19 @@ class Attachment(dict):
             mime="application/gzip",
             content=b64encode(content).decode("utf-8")
         )
+
+    @classmethod
+    def from_dict(cls, dct: dict):
+        """Construct Attachment from dict
+
+        Args:
+            dct (dict): dictionary format of attachment
+        """
+        keys = {"id", "name", "md5", "content", "mime"}
+        return cls((k, v) for k, v in dct.items() if k in keys)
+
+
+classes_map = {"structures": Structure, "tables": Table, "attachments": Attachment}
 
 
 def _run_futures(futures, total: int = 0, timeout: int = -1, desc=None, disable=False):
@@ -892,21 +938,7 @@ class Client(SwaggerClient):
 
             page += 1
 
-        df = pd.DataFrame.from_records(
-            table["data"], columns=table["columns"], index=table["index"]
-        ).apply(pd.to_numeric, errors="ignore")
-        df.index = pd.to_numeric(df.index, errors="ignore")
-        labels = table["attrs"].get("labels", {})
-
-        if "index" in labels:
-            df.index.name = labels["index"]
-        if "variable" in labels:
-            df.columns.name = labels["variable"]
-
-        ret = Table(df)
-        attrs_keys = self.get_model("TablesSchema")._properties["attrs"]["properties"].keys()
-        ret.attrs = {k: v for k, v in table["attrs"].items() if k in attrs_keys}
-        return ret
+        return Table.from_dict(table)
 
     def get_structure(self, sid_or_md5: str) -> Type[Structure]:
         """Retrieve pymatgen structure
@@ -928,12 +960,7 @@ class Client(SwaggerClient):
 
         fields = list(self.get_model("StructuresSchema")._properties.keys())
         resp = self.structures.getStructureById(pk=sid, _fields=fields).result()
-        ret = Structure.from_dict(resp)
-        ret.attrs = {
-            field: resp[field]
-            for field in ["id", "name", "md5"]
-        }
-        return ret
+        return Structure.from_dict(resp)
 
     def get_attachment(self, aid_or_md5: str) -> Type[Attachment]:
         """Retrieve an attachment
@@ -1916,35 +1943,21 @@ class Client(SwaggerClient):
 
         all_ids = self.get_all_ids(query, include=components, timeout=timeout)
         fmt = query.get("format", "json")
-        ndownloads = 0
+        contributions, components_loaded = [], defaultdict(dict)
 
         for name, values in all_ids.items():
             if timeout > 0:
                 timeout -= time.perf_counter() - start
                 if timeout < 1:
-                    return ndownloads
+                    return contributions
 
                 start = time.perf_counter()
-
-            cids = list(values["ids"])
-            paths = self._download_resource(
-                resource="contributions", ids=cids, fmt=fmt,
-                outdir=outdir, overwrite=overwrite, timeout=timeout
-            )
-            if paths:
-                npaths = len(paths)
-                ndownloads += npaths
-                logger.info(
-                    f"Downloaded {len(cids)} contributions for '{name}' in {npaths} file(s)."
-                )
-            else:
-                logger.info(f"No new contributions to download for '{name}'.")
 
             for component in components:
                 if timeout > 0:
                     timeout -= time.perf_counter() - start
                     if timeout < 1:
-                        return ndownloads
+                        return contributions
 
                     start = time.perf_counter()
 
@@ -1953,16 +1966,38 @@ class Client(SwaggerClient):
                     resource=component, ids=ids, fmt=fmt,
                     outdir=outdir, overwrite=overwrite, timeout=timeout
                 )
-                if paths:
-                    npaths = len(paths)
-                    ndownloads += npaths
-                    logger.info(
-                        f"Downloaded {len(ids)} {component} for '{name}' in {npaths} file(s)."
-                    )
-                else:
-                    logger.info(f"No new {component} to download for '{name}'.")
+                logger.debug(
+                    f"Downloaded {len(ids)} {component} for '{name}' in {len(paths)} file(s)."
+                )
 
-        return ndownloads
+                cls = classes_map[component]
+                for path in paths:
+                    with gzip.open(path, "r") as f:
+                        for c in ujson.load(f):
+                            components_loaded[component][c["id"]] = cls.from_dict(c)
+
+            cids = list(values["ids"])
+            paths = self._download_resource(
+                resource="contributions", ids=cids, fmt=fmt,
+                outdir=outdir, overwrite=overwrite, timeout=timeout
+            )
+            logger.debug(
+                f"Downloaded {len(cids)} contributions for '{name}' in {len(paths)} file(s)."
+            )
+
+            for path in paths:
+                with gzip.open(path, "r") as f:
+                    for c in ujson.load(f):
+                        contrib = Dict(c)
+                        for component in components_loaded.keys():
+                            contrib[component] = [
+                                components_loaded[component][d["id"]]
+                                for d in contrib.pop(component)
+                            ]
+
+                        contributions.append(contrib)
+
+        return contributions
 
     def download_structures(
         self,
@@ -2087,6 +2122,7 @@ class Client(SwaggerClient):
         for query in queries:
             digest = get_md5({"ids": query["id__in"].split(",")})
             path = subdir / f"{digest}.{fmt}.gz"
+            paths.append(path)
 
             if not path.exists() or overwrite:
                 futures.append(self._get_future(
@@ -2098,6 +2134,5 @@ class Client(SwaggerClient):
 
             for path, resp in responses.items():
                 path.write_bytes(resp["result"])
-                paths.append(path)
 
         return paths
