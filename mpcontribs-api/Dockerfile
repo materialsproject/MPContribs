@@ -1,11 +1,10 @@
 FROM materialsproject/devops:python-3.1010.0 as base
-RUN apt-get update && apt-get install -y --no-install-recommends supervisor libpq-dev vim && apt-get clean
+RUN apt-get update && apt-get install -y --no-install-recommends supervisor libopenblas-dev libpq-dev vim && apt-get clean
 WORKDIR /app
 
 FROM base as builder
-RUN apt-get update && apt-get install -y --no-install-recommends gcc git g++ libsnappy-dev wget && apt-get clean
-ENV PATH /root/.local/bin:$PATH
-ENV PIP_FLAGS "--user --no-cache-dir --compile"
+RUN apt-get update && apt-get install -y --no-install-recommends gcc git g++ libsnappy-dev wget liblapack-dev && apt-get clean
+ENV PIP_FLAGS "--no-cache-dir --compile"
 COPY requirements/deployment.txt ./requirements.txt
 RUN pip install $PIP_FLAGS -r requirements.txt
 COPY setup.py .
@@ -19,18 +18,17 @@ RUN pip install $PIP_FLAGS --no-deps .
 #COPY flask-mongorest flask-mongorest
 #RUN cd flask-mongorest && pip install $PIP_FLAGS --no-deps .
 RUN wget -q https://raw.githubusercontent.com/vishnubob/wait-for-it/master/wait-for-it.sh && \
-    chmod +x wait-for-it.sh && mv wait-for-it.sh /root/.local/bin/ && \
+    chmod +x wait-for-it.sh && mv wait-for-it.sh /usr/local/bin/ && \
     wget -q https://github.com/materialsproject/MPContribs/blob/master/mpcontribs-api/mpcontribs/api/contributions/formulae.json.gz?raw=true \
     -O mpcontribs/api/contributions/formulae.json.gz
 
 FROM base
-COPY --from=builder /root/.local/lib/python3.9/site-packages /root/.local/lib/python3.9/site-packages
-COPY --from=builder /root/.local/bin /root/.local/bin
+COPY --from=builder /usr/local/lib/python3.10/site-packages /usr/local/lib/python3.10/site-packages
+COPY --from=builder /usr/local/bin /usr/local/bin
 COPY --from=builder /usr/lib/x86_64-linux-gnu/libsnappy* /usr/lib/x86_64-linux-gnu/
 COPY --from=builder /app/mpcontribs/api /app/mpcontribs/api
 WORKDIR /app
 RUN mkdir -p /var/log/supervisor
-ENV PATH=/root/.local/bin:$PATH
 
 COPY supervisord supervisord
 COPY scripts scripts
