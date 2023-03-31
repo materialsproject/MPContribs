@@ -64,7 +64,7 @@ def get_logger(name):
     process = os.environ.get("SUPERVISOR_PROCESS_NAME")
     group = os.environ.get("SUPERVISOR_GROUP_NAME")
     cfg = {"prefix": f"{group}/{process}"} if process and group else {}
-    logger.setLevel("DEBUG" if os.environ.get("FLASK_ENV") == "development" else "INFO")
+    logger.setLevel("DEBUG" if os.environ.get("FLASK_DEBUG") else "INFO")
     return CustomLoggerAdapter(logger, cfg)
 
 

@@ -29,7 +29,7 @@ kwargs = {
     "dd_agent_host": "localhost" if PRODUCTION else "datadog",
     "mpcontribs_api_host": "localhost" if PRODUCTION else "contribs-apis",
 }
-kwargs["flask_env"] = kwargs["node_env"]
+kwargs["flask_debug"] = kwargs["node_env"] == "development"
 kwargs["jupyter_gateway_url"] = "http://" + kwargs["jupyter_gateway_host"]
 
 env = Environment(loader=FileSystemLoader(DIR))
