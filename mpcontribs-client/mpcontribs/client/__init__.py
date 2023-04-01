@@ -1962,6 +1962,9 @@ class Client(SwaggerClient):
                     start = time.perf_counter()
 
                 ids = list(values[component]["ids"])
+                if not ids:
+                    continue
+
                 paths = self._download_resource(
                     resource=component, ids=ids, fmt=fmt,
                     outdir=outdir, overwrite=overwrite, timeout=timeout
@@ -1977,6 +1980,9 @@ class Client(SwaggerClient):
                             components_loaded[component][c["id"]] = cls.from_dict(c)
 
             cids = list(values["ids"])
+            if not cids:
+                continue
+
             paths = self._download_resource(
                 resource="contributions", ids=cids, fmt=fmt,
                 outdir=outdir, overwrite=overwrite, timeout=timeout
