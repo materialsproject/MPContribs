@@ -282,26 +282,35 @@ def download_component(request, oid):
 
 
 def download_contribution(request, cid):
-    ckwargs = client_kwargs(request)
-    tmpdir = Path("/tmp")
-    outdir = tmpdir / "download"
-    client = Client(**ckwargs)
-    project = client.contributions.getContributionById(
-        pk=cid, _fields=["project"]
-    ).result().get("project")
-    if not project:
+    client = Client(**client_kwargs(request))
+    # NOTE gevent and FuturesSession don't play nice -> use query_contributions for now
+    # TODO might need to switch client to use httpx instead of requests_futures
+    contributions = client.query_contributions(query={"id": cid}, fields=["_all"])
+    if not contributions:
         return HttpResponse(status=404)
 
-    include = _reconcile_include(request, project, list(COMPONENTS))
-    client.download_contributions(
-        query={"id": cid}, outdir=outdir, include=include
-    )
-    zipfile = Path(make_archive(tmpdir / cid, "zip", outdir))
-    resp = zipfile.read_bytes()
-    rmtree(outdir)
-    os.remove(zipfile)
-    response = HttpResponse(resp, content_type="application/zip")
-    response["Content-Disposition"] = f"attachment; filename={cid}.zip"
+    contribution = contributions["data"][0]
+    for k in ["card_bulma", "card_bootstrap", "notebook", "needs_build"]:
+        if k in contribution:
+            contribution.pop(k)
+
+    for component in COMPONENTS:
+        comp_list = contribution.pop(component, [])
+        if comp_list:
+            resource = getattr(client, component)
+            func = f"get{component[:-1].capitalize()}ById"
+            getComponentById = getattr(resource, func)
+
+            for item in comp_list:
+                if item.get("id"):
+                    contribution[component] = getComponentById(
+                        pk=item["id"], _fields=["_all"]
+                    ).result()
+
+    encoded = json.dumps(contribution, default=str, indent=2).encode("utf-8")
+    content = gzip.compress(encoded)
+    response = HttpResponse(content, content_type="application/gzip")
+    response["Content-Disposition"] = f"attachment; filename={cid}.json.gz"
     return response
 
 
