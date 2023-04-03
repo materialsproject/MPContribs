@@ -133,7 +133,7 @@ pexpect==4.8.0
     # via ipython
 pickleshare==0.7.5
     # via ipython
-pillow==9.4.0
+pillow==9.5.0
     # via matplotlib
 pint==0.19.2
     # via mpcontribs-client (setup.py)
