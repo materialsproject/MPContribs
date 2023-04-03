@@ -38,9 +38,9 @@ blinker==1.6
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 boltons==23.0.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
-boto3==1.26.104
+boto3==1.26.105
     # via flask-mongorest-mpcontribs
-botocore==1.29.104
+botocore==1.29.105
     # via
     #   boto3
     #   s3transfer
@@ -78,7 +78,7 @@ dateparser==1.1.8
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 ddsketch==2.0.4
     # via ddtrace
-ddtrace==1.10.2
+ddtrace==1.11.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 debugpy==1.6.6
     # via ipykernel
@@ -86,6 +86,8 @@ decorator==5.1.1
     # via ipython
 defusedxml==0.7.1
     # via nbconvert
+deprecated==1.2.13
+    # via opentelemetry-api
 dnspython==2.3.0
     # via
     #   mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
@@ -147,6 +149,8 @@ idna==3.4
     #   anyio
     #   jsonschema
     #   requests
+importlib-metadata==6.0.1
+    # via opentelemetry-api
 ipykernel==6.22.0
     # via
     #   nbclassic
@@ -295,6 +299,8 @@ numpy==1.21.6
     #   pymatgen
     #   scipy
     #   spglib
+opentelemetry-api==1.17.0
+    # via ddtrace
 orjson==3.8.9
     # via flask-mongorest-mpcontribs
 packaging==23.0
@@ -563,8 +569,12 @@ werkzeug==2.2.3
     # via
     #   flasgger-tschaume
     #   flask
+wrapt==1.15.0
+    # via deprecated
 xmltodict==0.13.0
     # via ddtrace
+zipp==3.15.0
+    # via importlib-metadata
 zope-event==4.6
     # via gevent
 zope-interface==6.0

@@ -27,9 +27,9 @@ boltons==23.0.0
     # via
     #   mpcontribs-client
     #   mpcontribs-portal (MPContribs/mpcontribs-portal/setup.py)
-boto3==1.26.104
+boto3==1.26.105
     # via mpcontribs-portal (MPContribs/mpcontribs-portal/setup.py)
-botocore==1.29.104
+botocore==1.29.105
     # via
     #   boto3
     #   s3transfer
@@ -53,7 +53,7 @@ cycler==0.11.0
     # via matplotlib
 ddsketch==2.0.4
     # via ddtrace
-ddtrace==1.10.2
+ddtrace==1.11.0
     # via mpcontribs-portal (MPContribs/mpcontribs-portal/setup.py)
 debugpy==1.6.6
     # via ipykernel
@@ -61,6 +61,8 @@ decorator==5.1.1
     # via ipython
 defusedxml==0.7.1
     # via nbconvert
+deprecated==1.2.13
+    # via opentelemetry-api
 django==3.2.18
     # via
     #   django-extensions
@@ -108,6 +110,8 @@ idna==3.4
     # via
     #   jsonschema
     #   requests
+importlib-metadata==6.0.1
+    # via opentelemetry-api
 ipykernel==6.22.0
     # via mpcontribs-portal (MPContribs/mpcontribs-portal/setup.py)
 ipython==8.12.0
@@ -214,6 +218,8 @@ numpy==1.21.6
     #   pymatgen
     #   scipy
     #   spglib
+opentelemetry-api==1.17.0
+    # via ddtrace
 packaging==23.0
     # via
     #   ddtrace
@@ -425,8 +431,12 @@ webencodings==0.5.1
     #   tinycss2
 whitenoise==6.4.0
     # via mpcontribs-portal (MPContribs/mpcontribs-portal/setup.py)
+wrapt==1.15.0
+    # via deprecated
 xmltodict==0.13.0
     # via ddtrace
+zipp==3.15.0
+    # via importlib-metadata
 zope-event==4.6
     # via gevent
 zope-interface==6.0
