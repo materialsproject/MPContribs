@@ -187,7 +187,7 @@ monty==2022.9.9
     #   pymatgen
 mp-api==0.30.11
     # via pymatgen
-mpcontribs-client==5.1.0
+mpcontribs-client==5.1.1
     # via mpcontribs-portal (setup.py)
 mpmath==1.3.0
     # via sympy
@@ -196,7 +196,7 @@ msgpack==1.0.5
     #   bravado
     #   bravado-core
     #   mp-api
-nbclient==0.7.2
+nbclient==0.7.3
     # via nbconvert
 nbconvert==7.2.10
     # via mpcontribs-portal (setup.py)
@@ -238,7 +238,7 @@ pexpect==4.8.0
     # via ipython
 pickleshare==0.7.5
     # via ipython
-pillow==9.4.0
+pillow==9.5.0
     # via matplotlib
 pint==0.19.2
     # via mpcontribs-client
