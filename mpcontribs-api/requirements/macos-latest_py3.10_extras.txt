@@ -39,7 +39,7 @@ beautifulsoup4==4.12.0
     # via nbconvert
 bleach==6.0.0
     # via nbconvert
-blinker==1.5
+blinker==1.6
     # via mpcontribs-api (setup.py)
 boltons==23.0.0
     # via mpcontribs-api (setup.py)
@@ -271,7 +271,7 @@ msgpack==1.0.5
     # via mp-api
 nbclassic==0.5.4
     # via notebook
-nbclient==0.7.2
+nbclient==0.7.3
     # via nbconvert
 nbconvert==7.2.10
     # via
@@ -329,7 +329,7 @@ pexpect==4.8.0
     # via ipython
 pickleshare==0.7.5
     # via ipython
-pillow==9.4.0
+pillow==9.5.0
     # via matplotlib
 pint==0.19.2
     # via mpcontribs-api (setup.py)
@@ -542,6 +542,7 @@ traitlets==5.9.0
     #   notebook
 typing-extensions==4.5.0
     # via
+    #   blinker
     #   ddtrace
     #   emmet-core
     #   mp-api
