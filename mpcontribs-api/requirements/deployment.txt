@@ -34,7 +34,7 @@ beautifulsoup4==4.12.0
     # via nbconvert
 bleach==6.0.0
     # via nbconvert
-blinker==1.5
+blinker==1.6
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 boltons==23.0.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
@@ -260,9 +260,9 @@ msgpack==1.0.5
     # via mp-api
 nbclassic==0.5.4
     # via notebook
-nbclient==0.7.2
+nbclient==0.7.3
     # via nbconvert
-nbconvert==7.2.10
+nbconvert==7.3.0
     # via
     #   jupyter-server
     #   nbclassic
@@ -308,7 +308,7 @@ packaging==23.0
     #   plotly
 palettable==3.3.0
     # via pymatgen
-pandas==1.5.3
+pandas==2.0.0
     # via
     #   -r python/requirements.txt
     #   pymatgen
@@ -320,7 +320,7 @@ pexpect==4.8.0
     # via ipython
 pickleshare==0.7.5
     # via ipython
-pillow==9.4.0
+pillow==9.5.0
     # via matplotlib
 pint==0.19.2
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
@@ -341,7 +341,7 @@ protobuf==4.22.1
     #   ddtrace
 psutil==5.9.4
     # via ipykernel
-psycopg2-binary==2.9.5
+psycopg2-binary==2.9.6
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 ptyprocess==0.7.0
     # via
@@ -526,12 +526,15 @@ traitlets==5.9.0
     #   notebook
 typing-extensions==4.5.0
     # via
+    #   blinker
     #   ddtrace
     #   emmet-core
     #   mp-api
     #   pydantic
 tzdata==2023.3
-    # via pytz-deprecation-shim
+    # via
+    #   pandas
+    #   pytz-deprecation-shim
 tzlocal==4.3
     # via dateparser
 uncertainties==3.1.7

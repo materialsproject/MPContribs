@@ -109,7 +109,7 @@ packaging==23.0
     #   plotly
 palettable==3.3.0
     # via pymatgen
-pandas==1.5.3
+pandas==2.0.0
     # via
     #   -r python/requirements.txt
     #   mpcontribs-client (MPContribs/mpcontribs-client/setup.py)
@@ -120,7 +120,7 @@ pexpect==4.8.0
     # via ipython
 pickleshare==0.7.5
     # via ipython
-pillow==9.4.0
+pillow==9.5.0
     # via matplotlib
 pint==0.19.2
     # via mpcontribs-client (MPContribs/mpcontribs-client/setup.py)
@@ -240,6 +240,8 @@ typing-extensions==4.5.0
     #   mp-api
     #   pydantic
     #   swagger-spec-validator
+tzdata==2023.3
+    # via pandas
 ujson==5.7.0
     # via mpcontribs-client (MPContribs/mpcontribs-client/setup.py)
 uncertainties==3.1.7
