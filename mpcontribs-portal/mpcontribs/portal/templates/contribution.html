@@ -12,9 +12,11 @@
                 {{ identifier }}<div class="is-size-7">{{ cid }}</div>
             </div>
         </div>
+        {% if not request.META.HTTP_X_ANONYMOUS_CONSUMER %}
         <div class="level-right">
             <a class="button is-primary" href="{{ request.path }}.json.gz">Download</a>
         </div>
+        {% endif %}
     </nav>
 
     <div id=notebook data-ncells="{{ ncells }}">
