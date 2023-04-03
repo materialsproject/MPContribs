@@ -1,4 +1,5 @@
 FROM materialsproject/devops:python-3.1010.0 as base
+RUN apt-get update && apt-get install -y --no-install-recommends libopenblas-dev && apt-get clean
 FROM node:19.8.1-slim as node
 
 FROM node as webpack-deps
@@ -23,25 +24,23 @@ RUN node --trace-deprecation node_modules/webpack/bin/webpack.js
 
 FROM base as python-deps
 RUN apt-get update && apt-get install -y --no-install-recommends gcc git g++ wget && apt-get clean
-ENV PATH /root/.local/bin:$PATH
-ENV PIP_FLAGS "--user --no-cache-dir --compile"
+ENV PIP_FLAGS "--no-cache-dir --compile"
 ARG MORE_PIP_FLAGS
 ENV MORE_PIP_FLAGS=$MORE_PIP_FLAGS
 COPY requirements/deployment.txt ./requirements.txt
 RUN pip install $PIP_FLAGS $MORE_PIP_FLAGS -r requirements.txt && \
     python -m ipykernel install --user
 RUN wget -q https://raw.githubusercontent.com/vishnubob/wait-for-it/master/wait-for-it.sh && \
-    chmod +x wait-for-it.sh && mv wait-for-it.sh /root/.local/bin/
+    chmod +x wait-for-it.sh && mv wait-for-it.sh /usr/local/bin/
 
 FROM base as python-builds
-COPY --from=python-deps /root/.local/lib/python3.10/site-packages /root/.local/lib/python3.10/site-packages
-COPY --from=python-deps /root/.local/bin /root/.local/bin
-COPY --from=python-deps /root/.local/share /root/.local/share
+COPY --from=python-deps /usr/local/lib/python3.10/site-packages /usr/local/lib/python3.10/site-packages
+COPY --from=python-deps /usr/local/bin /usr/local/bin
+COPY --from=python-deps /usr/local/share /usr/local/share
 WORKDIR /app
 COPY --from=webpack /app/dist dist
 ENV NODE_ENV production
-ENV PATH /root/.local/bin:$PATH
-ENV PIP_FLAGS "--user --no-cache-dir --compile"
+ENV PIP_FLAGS "--no-cache-dir --compile"
 ARG MORE_PIP_FLAGS
 ENV MORE_PIP_FLAGS=$MORE_PIP_FLAGS
 ENV DJANGO_SETTINGS_FILE="settings.py"
@@ -50,18 +49,18 @@ RUN pip install $PIP_FLAGS $MORE_PIP_FLAGS --no-deps .
 RUN python manage.py collectstatic --noinput
 
 FROM base
-COPY --from=python-builds /root/.local/lib/python3.10/site-packages /root/.local/lib/python3.10/site-packages
-COPY --from=python-builds /root/.local/bin /root/.local/bin
-COPY --from=python-builds /root/.local/share /root/.local/share
+COPY --from=python-builds /usr/local/lib/python3.10/site-packages /usr/local/lib/python3.10/site-packages
+COPY --from=python-builds /usr/local/bin /usr/local/bin
+COPY --from=python-builds /usr/local/share /usr/local/share
 COPY --from=python-builds /app/static /app/static
 COPY --from=python-builds /app/mpcontribs /app/mpcontribs
 COPY --from=python-builds /app/supervisord /app/supervisord
 COPY --from=webpack /app/webpack-stats.json /app/webpack-stats.json
 
 RUN apt-get update && apt-get install -y --no-install-recommends supervisor jq curl && apt-get clean
+
 WORKDIR /app
 RUN mkdir -p /var/log/supervisor
-ENV PATH=/root/.local/bin:$PATH
 
 COPY wsgi.py .
 COPY settings.py .
