@@ -96,7 +96,7 @@ msgpack==1.0.5
     #   bravado
     #   bravado-core
     #   mp-api
-networkx==3.0
+networkx==3.1
     # via pymatgen
 numpy==1.24.2
     # via
@@ -112,7 +112,7 @@ packaging==23.0
     #   plotly
 palettable==3.3.0
     # via pymatgen
-pandas==1.5.3
+pandas==2.0.0
     # via
     #   mpcontribs-client (setup.py)
     #   pymatgen
@@ -242,6 +242,8 @@ typing-extensions==4.5.0
     #   mp-api
     #   pydantic
     #   swagger-spec-validator
+tzdata==2023.3
+    # via pandas
 ujson==5.7.0
     # via mpcontribs-client (setup.py)
 uncertainties==3.1.7
