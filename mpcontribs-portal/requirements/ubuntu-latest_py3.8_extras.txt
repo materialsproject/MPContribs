@@ -28,9 +28,9 @@ boltons==23.0.0
     # via
     #   mpcontribs-client
     #   mpcontribs-portal (setup.py)
-boto3==1.26.104
+boto3==1.26.106
     # via mpcontribs-portal (setup.py)
-botocore==1.29.104
+botocore==1.29.106
     # via
     #   boto3
     #   s3transfer
@@ -38,7 +38,7 @@ bravado==11.0.3
     # via mpcontribs-client
 bravado-core==5.17.1
     # via bravado
-bytecode==0.14.0
+bytecode==0.14.1
     # via ddtrace
 cattrs==22.2.0
     # via ddtrace
@@ -54,7 +54,7 @@ cycler==0.11.0
     # via matplotlib
 ddsketch==2.0.4
     # via ddtrace
-ddtrace==1.10.2
+ddtrace==1.11.0
     # via mpcontribs-portal (setup.py)
 debugpy==1.6.6
     # via ipykernel
@@ -62,6 +62,8 @@ decorator==5.1.1
     # via ipython
 defusedxml==0.7.1
     # via nbconvert
+deprecated==1.2.13
+    # via opentelemetry-api
 django==3.2.18
     # via
     #   django-extensions
@@ -113,10 +115,11 @@ idna==3.4
     # via
     #   jsonschema
     #   requests
-importlib-metadata==6.1.0
+importlib-metadata==6.0.1
     # via
     #   jupyter-client
     #   nbconvert
+    #   opentelemetry-api
 importlib-resources==5.12.0
     # via
     #   jsonschema
@@ -209,7 +212,7 @@ msgpack==1.0.5
     #   mp-api
 nbclient==0.7.3
     # via nbconvert
-nbconvert==7.2.10
+nbconvert==7.3.0
     # via mpcontribs-portal (setup.py)
 nbformat==5.8.0
     # via
@@ -218,7 +221,7 @@ nbformat==5.8.0
     #   nbconvert
 nest-asyncio==1.5.6
     # via ipykernel
-networkx==3.0
+networkx==3.1
     # via pymatgen
 numpy==1.24.2
     # via
@@ -228,6 +231,8 @@ numpy==1.24.2
     #   pymatgen
     #   scipy
     #   spglib
+opentelemetry-api==1.17.0
+    # via ddtrace
 packaging==23.0
     # via
     #   ddtrace
@@ -238,7 +243,7 @@ packaging==23.0
     #   pytest
 palettable==3.3.0
     # via pymatgen
-pandas==1.5.3
+pandas==2.0.0
     # via
     #   mpcontribs-client
     #   pymatgen
@@ -429,6 +434,8 @@ typing-extensions==4.5.0
     #   mp-api
     #   pydantic
     #   swagger-spec-validator
+tzdata==2023.3
+    # via pandas
 ujson==5.7.0
     # via mpcontribs-client
 uncertainties==3.1.7
@@ -449,6 +456,8 @@ webencodings==0.5.1
     #   tinycss2
 whitenoise==6.4.0
     # via mpcontribs-portal (setup.py)
+wrapt==1.15.0
+    # via deprecated
 xmltodict==0.13.0
     # via ddtrace
 zipp==3.15.0
