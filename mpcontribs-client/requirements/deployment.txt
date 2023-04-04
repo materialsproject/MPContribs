@@ -92,7 +92,7 @@ msgpack==1.0.5
     #   bravado
     #   bravado-core
     #   mp-api
-networkx==3.0
+networkx==3.1
     # via pymatgen
 numpy==1.21.6
     # via

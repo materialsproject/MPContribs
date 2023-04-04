@@ -36,7 +36,7 @@ bravado==11.0.3
     # via mpcontribs-client
 bravado-core==5.17.1
     # via bravado
-bytecode==0.14.0
+bytecode==0.14.1
     # via ddtrace
 cattrs==22.2.0
     # via ddtrace
@@ -230,7 +230,7 @@ nest-asyncio==1.5.6
     #   jupyter-client
     #   nbclassic
     #   notebook
-networkx==3.0
+networkx==3.1
     # via pymatgen
 notebook==6.5.3
     # via jupyter-kernel-gateway
