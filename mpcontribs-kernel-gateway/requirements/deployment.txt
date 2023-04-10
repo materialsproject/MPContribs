@@ -24,11 +24,11 @@ attrs==22.2.0
     #   jsonschema
 backcall==0.2.0
     # via ipython
-beautifulsoup4==4.12.0
+beautifulsoup4==4.12.2
     # via nbconvert
 bleach==6.0.0
     # via nbconvert
-blinker==1.6
+blinker==1.6.1
     # via -r MPContribs/mpcontribs-kernel-gateway/requirements.in
 boltons==23.0.0
     # via mpcontribs-client
@@ -54,9 +54,9 @@ cycler==0.11.0
     # via matplotlib
 ddsketch==2.0.4
     # via ddtrace
-ddtrace==1.11.0
+ddtrace==1.11.1
     # via -r MPContribs/mpcontribs-kernel-gateway/requirements.in
-debugpy==1.6.6
+debugpy==1.6.7
     # via ipykernel
 decorator==5.1.1
     # via ipython
@@ -192,12 +192,12 @@ mistune==2.0.5
     # via nbconvert
 monotonic==1.6
     # via bravado
-monty==2022.9.9
+monty==2023.4.10
     # via
     #   emmet-core
     #   mp-api
     #   pymatgen
-mp-api==0.30.11
+mp-api==0.31.0
     # via pymatgen
 mpcontribs-client==5.1.1
     # via -r MPContribs/mpcontribs-kernel-gateway/requirements.in
@@ -208,11 +208,11 @@ msgpack==1.0.5
     #   bravado
     #   bravado-core
     #   mp-api
-nbclassic==0.5.4
+nbclassic==0.5.5
     # via notebook
 nbclient==0.7.3
     # via nbconvert
-nbconvert==7.3.0
+nbconvert==7.3.1
     # via
     #   jupyter-server
     #   nbclassic
@@ -232,7 +232,7 @@ nest-asyncio==1.5.6
     #   notebook
 networkx==3.1
     # via pymatgen
-notebook==6.5.3
+notebook==6.5.4
     # via jupyter-kernel-gateway
 notebook-shim==0.2.2
     # via nbclassic
@@ -255,7 +255,7 @@ packaging==23.0
     #   matplotlib
     #   nbconvert
     #   plotly
-palettable==3.3.0
+palettable==3.3.1
     # via pymatgen
 pandas==2.0.0
     # via
@@ -276,7 +276,7 @@ pint==0.19.2
     # via mpcontribs-client
 platformdirs==3.2.0
     # via jupyter-core
-plotly==5.14.0
+plotly==5.14.1
     # via
     #   mpcontribs-client
     #   pymatgen
@@ -309,7 +309,7 @@ pycparser==2.21
     # via cffi
 pydantic==1.10.7
     # via emmet-core
-pygments==2.14.0
+pygments==2.15.0
     # via
     #   ipython
     #   nbconvert
@@ -389,7 +389,7 @@ send2trash==1.8.0
     #   jupyter-server
     #   nbclassic
     #   notebook
-simplejson==3.18.4
+simplejson==3.19.1
     # via
     #   bravado
     #   bravado-core

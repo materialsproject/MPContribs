@@ -30,17 +30,17 @@ attrs==22.2.0
     #   jsonschema
 backcall==0.2.0
     # via ipython
-beautifulsoup4==4.12.0
+beautifulsoup4==4.12.2
     # via nbconvert
 bleach==6.0.0
     # via nbconvert
-blinker==1.6
+blinker==1.6.1
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 boltons==23.0.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
-boto3==1.26.106
+boto3==1.26.109
     # via flask-mongorest-mpcontribs
-botocore==1.29.106
+botocore==1.29.109
     # via
     #   boto3
     #   s3transfer
@@ -78,9 +78,9 @@ dateparser==1.1.8
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 ddsketch==2.0.4
     # via ddtrace
-ddtrace==1.11.0
+ddtrace==1.11.1
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
-debugpy==1.6.6
+debugpy==1.6.7
     # via ipykernel
 decorator==5.1.1
     # via ipython
@@ -118,7 +118,7 @@ flask==2.2.3
     #   flask-sse
 flask-compress==1.13
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
-flask-marshmallow==0.14.0
+flask-marshmallow==0.15.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 flask-mongoengine-tschaume==1.1.0
     # via flask-mongorest-mpcontribs
@@ -249,24 +249,24 @@ mongoengine==0.27.0
     # via
     #   flask-mongoengine-tschaume
     #   marshmallow-mongoengine
-monty==2022.9.9
+monty==2023.4.10
     # via
     #   emmet-core
     #   mp-api
     #   pymatgen
 more-itertools==9.1.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
-mp-api==0.30.11
+mp-api==0.31.0
     # via pymatgen
 mpmath==1.3.0
     # via sympy
 msgpack==1.0.5
     # via mp-api
-nbclassic==0.5.4
+nbclassic==0.5.5
     # via notebook
 nbclient==0.7.3
     # via nbconvert
-nbconvert==7.3.0
+nbconvert==7.3.1
     # via
     #   jupyter-server
     #   nbclassic
@@ -286,7 +286,7 @@ nest-asyncio==1.5.6
     #   notebook
 networkx==3.1
     # via pymatgen
-notebook==6.5.3
+notebook==6.5.4
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 notebook-shim==0.2.2
     # via nbclassic
@@ -301,18 +301,19 @@ numpy==1.21.6
     #   spglib
 opentelemetry-api==1.17.0
     # via ddtrace
-orjson==3.8.9
+orjson==3.8.10
     # via flask-mongorest-mpcontribs
 packaging==23.0
     # via
     #   ddtrace
+    #   flask-marshmallow
     #   ipykernel
     #   jupyter-server
     #   marshmallow
     #   matplotlib
     #   nbconvert
     #   plotly
-palettable==3.3.0
+palettable==3.3.1
     # via pymatgen
 pandas==2.0.0
     # via
@@ -332,7 +333,7 @@ pint==0.19.2
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 platformdirs==3.2.0
     # via jupyter-core
-plotly==5.14.0
+plotly==5.14.1
     # via pymatgen
 prometheus-client==0.16.0
     # via
@@ -363,7 +364,7 @@ pycparser==2.21
     # via cffi
 pydantic==1.10.7
     # via emmet-core
-pygments==2.14.0
+pygments==2.15.0
     # via
     #   ipython
     #   nbconvert
@@ -470,7 +471,6 @@ six==1.16.0
     #   ddsketch
     #   ddtrace
     #   flasgger-tschaume
-    #   flask-marshmallow
     #   flask-sse
     #   flatten-dict
     #   latexcodec
