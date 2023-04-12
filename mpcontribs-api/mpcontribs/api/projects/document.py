@@ -2,12 +2,13 @@
 import urllib
 
 from math import isnan
+from atlasq import AtlasManager, AtlasQ
 from importlib import import_module
 from flatten_dict import flatten
 from boltons.iterutils import remap
 from collections import ChainMap
 from flask import current_app, render_template, url_for, request
-from flask_mongoengine.documents import Document
+from mongoengine import Document
 from marshmallow import ValidationError
 from marshmallow.fields import String
 from marshmallow.validate import Email as EmailValidator
@@ -170,6 +171,7 @@ class Projects(Document):
     )
     columns = EmbeddedDocumentListField(Column, max_length=MAX_COLUMNS)
     stats = EmbeddedDocumentField(Stats, required=True, default=Stats)
+    atlas = AtlasManager("mpcontribs-dev-project-search")
     meta = {
         "collection": "projects",
         "indexes": ["is_public", "title", "owner", "is_approved", "unique_identifiers"],
@@ -180,6 +182,11 @@ class Projects(Document):
         return queryset.only(
             "name", "is_public", "title", "owner", "is_approved", "unique_identifiers"
         )
+
+    @classmethod
+    def atlas_filter(cls, term):
+        # NOTE dynamic index, use `name` as placeholder for wildcard path
+        return AtlasQ(name=term)
 
     @classmethod
     def post_save(cls, sender, document, **kwargs):
@@ -341,3 +348,4 @@ class Projects(Document):
 register_field(ProviderEmailField, ProviderEmail, available_params=(params.LengthParam,))
 signals.post_save.connect(Projects.post_save, sender=Projects)
 signals.post_delete.connect(Projects.post_delete, sender=Projects)
+Projects.atlas.index._set_indexed_fields({"type": "document", "dynamic": True})
