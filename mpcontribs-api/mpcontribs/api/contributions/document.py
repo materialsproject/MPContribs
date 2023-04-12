@@ -6,10 +6,11 @@ from hashlib import md5
 from math import isnan
 from datetime import datetime
 from flask import current_app
+from atlasq import AtlasManager, AtlasQ
+from itertools import permutations
 from importlib import import_module
 from fastnumbers import isfloat
-from flask_mongoengine.documents import DynamicDocument
-from mongoengine import CASCADE, signals
+from mongoengine import CASCADE, signals, DynamicDocument
 from mongoengine.queryset.manager import queryset_manager
 from mongoengine.fields import StringField, BooleanField, DictField
 from mongoengine.fields import LazyReferenceField, ReferenceField
@@ -21,6 +22,7 @@ from pint.unit import UnitDefinition
 from pint.converters import ScaleConverter
 from pint.errors import DimensionalityError
 from uncertainties import ufloat_fromstr
+from pymatgen.core import Composition, Element
 
 from mpcontribs.api import enter, valid_dict, delimiter
 
@@ -160,6 +162,7 @@ class Contributions(DynamicDocument):
         ReferenceField("Attachments", null=True), default=list, max_length=10
     )
     notebook = ReferenceField("Notebooks")
+    atlas = AtlasManager("formula_autocomplete")
     meta = {
         "collection": "contributions",
         "indexes": [
@@ -175,6 +178,34 @@ class Contributions(DynamicDocument):
         return queryset.no_dereference().only(
             "project", "identifier", "formula", "is_public", "last_modified", "needs_build"
         )
+
+    @classmethod
+    def atlas_filter(cls, term):
+        try:
+            comp = Composition(term)
+        except:
+            raise ValueError(f"{term} is not a valid composition")
+
+        try:
+            for element in comp.elements:
+                Element(element)
+        except:
+            raise ValueError(f"{element} not a valid element")
+
+        ind_str = []
+
+        if len(comp) == 1:
+            d = comp.get_integer_formula_and_factor()
+            ind_str.append(d[0] + str(int(d[1])) if d[1] != 1 else d[0])
+        else:
+            for i, j in comp.reduced_composition.items():
+                ind_str.append(
+                    i.name + str(int(j)) if j != 1 else i.name
+                )
+
+        final_terms = ["".join(entry) for entry in permutations(ind_str)]
+        return AtlasQ(formula=final_terms[0])  # TODO formula__in=final_terms
+
 
     @classmethod
     def post_init(cls, sender, document, **kwargs):
