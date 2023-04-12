@@ -558,7 +558,7 @@ class SwaggerView(OriginalSwaggerView, ResourceView):
                 if is_anonymous and is_external:
                     qs = qs.exclude("data")
 
-                if "project" in q and isinstance(q["project"], str):
+                if q and "project" in q and isinstance(q["project"], str):
                     projects = self.get_projects()
                     try:
                         project = projects.get(name=q["project"])
@@ -573,7 +573,7 @@ class SwaggerView(OriginalSwaggerView, ResourceView):
                         return qs.none()
                 else:
                     names = None
-                    if "project" in q and "$in" in q["project"]:
+                    if q and "project" in q and "$in" in q["project"]:
                         names = q.pop("project").pop("$in")
 
                     qfilter = self.get_projects_filter(username, groups, filter_names=names)
