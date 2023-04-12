@@ -511,13 +511,20 @@ class SwaggerView(OriginalSwaggerView, ResourceView):
         if filter_names:
             projects = projects.filter(name__in=filter_names)
 
-        qfilter = Q()  # reduced query
+        q = {"private": [], "public": []}
 
         for project in projects:
             if project.owner == username or project.name in groups:
-                qfilter |= Q(project=project.name)
+                q["private"].append(project.name)
             elif project.is_public and project.is_approved:
-                qfilter |= Q(project=project.name, is_public=True)
+                q["public"].append(project.name)
+
+        # reduced query
+        qfilter = Q()
+        if q["private"]:
+            qfilter |= Q(project__in=q["private"])
+        if q["public"]:
+            qfilter |= Q(project__in=q["public"], is_public=True)
 
         return qfilter
 
