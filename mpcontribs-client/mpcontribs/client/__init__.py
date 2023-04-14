@@ -282,6 +282,7 @@ class Table(pd.DataFrame):
         """Display a plotly graph for the table if in IPython/Jupyter"""
         if _in_ipython():
             try:
+                # TODO make sure that attrs only contains valid kwargs
                 return self.plot(**self.attrs)
             except Exception as e:
                 logger.error(f"Can't display table: {e}")
