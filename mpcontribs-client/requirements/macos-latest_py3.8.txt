@@ -82,12 +82,12 @@ matplotlib-inline==0.1.6
     # via ipython
 monotonic==1.6
     # via bravado
-monty==2022.9.9
+monty==2023.4.10
     # via
     #   emmet-core
     #   mp-api
     #   pymatgen
-mp-api==0.30.11
+mp-api==0.31.0
     # via pymatgen
 mpmath==1.3.0
     # via sympy
@@ -106,11 +106,11 @@ numpy==1.24.2
     #   pymatgen
     #   scipy
     #   spglib
-packaging==23.0
+packaging==23.1
     # via
     #   matplotlib
     #   plotly
-palettable==3.3.0
+palettable==3.3.1
     # via pymatgen
 pandas==2.0.0
     # via
@@ -128,7 +128,7 @@ pint==0.19.2
     # via mpcontribs-client (setup.py)
 pkgutil-resolve-name==1.3.10
     # via jsonschema
-plotly==5.14.0
+plotly==5.14.1
     # via
     #   mpcontribs-client (setup.py)
     #   pymatgen
@@ -144,7 +144,7 @@ pybtex==0.24.0
     #   pymatgen
 pydantic==1.10.7
     # via emmet-core
-pygments==2.14.0
+pygments==2.15.0
     # via ipython
 pyisemail==2.0.1
     # via mpcontribs-client (setup.py)
@@ -197,7 +197,7 @@ scipy==1.10.1
     # via pymatgen
 semantic-version==2.10.0
     # via mpcontribs-client (setup.py)
-simplejson==3.18.4
+simplejson==3.19.1
     # via
     #   bravado
     #   bravado-core
