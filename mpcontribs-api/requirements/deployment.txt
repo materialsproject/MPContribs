@@ -23,6 +23,8 @@ asttokens==2.2.1
     # via stack-data
 async-timeout==4.0.2
     # via redis
+atlasq-tschaume==0.11.1.dev2
+    # via flask-mongorest-mpcontribs
 attrs==22.2.0
     # via
     #   cattrs
@@ -34,13 +36,13 @@ beautifulsoup4==4.12.2
     # via nbconvert
 bleach==6.0.0
     # via nbconvert
-blinker==1.6.1
+blinker==1.6.2
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 boltons==23.0.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
-boto3==1.26.109
+boto3==1.26.114
     # via flask-mongorest-mpcontribs
-botocore==1.29.109
+botocore==1.29.114
     # via
     #   boto3
     #   s3transfer
@@ -68,7 +70,7 @@ contourpy==1.0.7
     # via matplotlib
 crontab==1.0.1
     # via rq-scheduler
-cryptography==40.0.1
+cryptography==40.0.2
     # via pyopenssl
 css-html-js-minify==2.5.5
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
@@ -78,7 +80,7 @@ dateparser==1.1.8
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 ddsketch==2.0.4
     # via ddtrace
-ddtrace==1.11.1
+ddtrace==1.11.2
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 debugpy==1.6.7
     # via ipykernel
@@ -122,7 +124,7 @@ flask-marshmallow==0.15.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 flask-mongoengine-tschaume==1.1.0
     # via flask-mongorest-mpcontribs
-flask-mongorest-mpcontribs==3.2.4
+flask-mongorest-mpcontribs==3.3.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 flask-rq2==18.3
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
@@ -189,7 +191,7 @@ jsonschema[format-nongpl]==4.17.3
     #   flasgger-tschaume
     #   jupyter-events
     #   nbformat
-jupyter-client==8.1.0
+jupyter-client==8.2.0
     # via
     #   ipykernel
     #   jupyter-server
@@ -247,6 +249,7 @@ mistune==2.0.5
     #   nbconvert
 mongoengine==0.27.0
     # via
+    #   atlasq-tschaume
     #   flask-mongoengine-tschaume
     #   marshmallow-mongoengine
 monty==2023.4.10
@@ -303,7 +306,7 @@ opentelemetry-api==1.17.0
     # via ddtrace
 orjson==3.8.10
     # via flask-mongorest-mpcontribs
-packaging==23.0
+packaging==23.1
     # via
     #   ddtrace
     #   flask-marshmallow
@@ -342,7 +345,7 @@ prometheus-client==0.16.0
     #   notebook
 prompt-toolkit==3.0.38
     # via ipython
-protobuf==4.22.1
+protobuf==4.22.3
     # via
     #   ddsketch
     #   ddtrace
@@ -427,6 +430,7 @@ regex==2023.3.23
     # via dateparser
 requests==2.28.2
     # via
+    #   atlasq-tschaume
     #   mp-api
     #   pymatgen
 rfc3339-validator==0.1.4
@@ -532,7 +536,6 @@ traitlets==5.9.0
     #   notebook
 typing-extensions==4.5.0
     # via
-    #   blinker
     #   ddtrace
     #   emmet-core
     #   mp-api

@@ -28,7 +28,7 @@ beautifulsoup4==4.12.2
     # via nbconvert
 bleach==6.0.0
     # via nbconvert
-blinker==1.6.1
+blinker==1.6.2
     # via -r MPContribs/mpcontribs-kernel-gateway/requirements.in
 boltons==23.0.0
     # via mpcontribs-client
@@ -54,7 +54,7 @@ cycler==0.11.0
     # via matplotlib
 ddsketch==2.0.4
     # via ddtrace
-ddtrace==1.11.1
+ddtrace==1.11.2
     # via -r MPContribs/mpcontribs-kernel-gateway/requirements.in
 debugpy==1.6.7
     # via ipykernel
@@ -247,7 +247,7 @@ numpy==1.21.6
     #   spglib
 opentelemetry-api==1.17.0
     # via ddtrace
-packaging==23.0
+packaging==23.1
     # via
     #   ddtrace
     #   ipykernel
@@ -287,7 +287,7 @@ prometheus-client==0.16.0
     #   notebook
 prompt-toolkit==3.0.38
     # via ipython
-protobuf==4.22.1
+protobuf==4.22.3
     # via
     #   ddsketch
     #   ddtrace
@@ -468,7 +468,6 @@ traitlets==5.9.0
     #   notebook
 typing-extensions==4.5.0
     # via
-    #   blinker
     #   bravado
     #   ddtrace
     #   emmet-core
