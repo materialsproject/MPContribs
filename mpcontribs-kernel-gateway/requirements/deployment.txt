@@ -54,7 +54,7 @@ cycler==0.11.0
     # via matplotlib
 ddsketch==2.0.4
     # via ddtrace
-ddtrace==1.11.2
+ddtrace==1.12.0
     # via -r MPContribs/mpcontribs-kernel-gateway/requirements.in
 debugpy==1.6.7
     # via ipykernel
@@ -197,7 +197,7 @@ monty==2023.4.10
     #   emmet-core
     #   mp-api
     #   pymatgen
-mp-api==0.31.1
+mp-api==0.32.0
     # via pymatgen
 mpcontribs-client==5.1.1
     # via -r MPContribs/mpcontribs-kernel-gateway/requirements.in
@@ -234,7 +234,7 @@ networkx==3.1
     # via pymatgen
 notebook==6.5.4
     # via jupyter-kernel-gateway
-notebook-shim==0.2.2
+notebook-shim==0.2.3
     # via nbclassic
 numpy==1.21.6
     # via
@@ -255,9 +255,9 @@ packaging==23.1
     #   matplotlib
     #   nbconvert
     #   plotly
-palettable==3.3.2
+palettable==3.3.3
     # via pymatgen
-pandas==2.0.0
+pandas==2.0.1
     # via
     #   -r python/requirements.txt
     #   mpcontribs-client
@@ -291,7 +291,7 @@ protobuf==4.22.3
     # via
     #   ddsketch
     #   ddtrace
-psutil==5.9.4
+psutil==5.9.5
     # via
     #   -r MPContribs/mpcontribs-kernel-gateway/requirements.in
     #   ipykernel
@@ -309,7 +309,7 @@ pycparser==2.21
     # via cffi
 pydantic==1.10.7
     # via emmet-core
-pygments==2.15.0
+pygments==2.15.1
     # via
     #   ipython
     #   nbconvert
@@ -436,7 +436,7 @@ terminado==0.17.1
     #   notebook
 tinycss2==1.2.1
     # via nbconvert
-tornado==6.2
+tornado==6.3.1
     # via
     #   ipykernel
     #   jupyter-client
