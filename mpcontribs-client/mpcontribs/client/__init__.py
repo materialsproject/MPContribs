@@ -14,6 +14,7 @@ import requests
 import logging
 import datetime
 
+from math import isclose
 from semantic_version import Version
 from requests.exceptions import RequestException
 from bravado_core.param import Param
@@ -693,9 +694,11 @@ class Client(SwaggerClient):
         return param_spec["default"], param_spec["maximum"]
 
     def _get_per_page(
-        self, per_page: int, op: str = "query", resource: str = "contributions"
+        self, per_page: int = -1, op: str = "query", resource: str = "contributions"
     ) -> int:
-        _, per_page_max = self._get_per_page_default_max(op=op, resource=resource)
+        per_page_default, per_page_max = self._get_per_page_default_max(op=op, resource=resource)
+        if per_page < 0:
+            per_page = per_page_default
         return min(per_page_max, per_page)
 
     def _split_query(
@@ -1097,15 +1100,17 @@ class Client(SwaggerClient):
                     existing_unit = existing_column.get("unit")
                     if existing_unit != new_unit:
                         try:
-                            ureg.Quantity(existing_unit).to(new_unit)
+                            factor = ureg.convert(1, ureg.Unit(existing_unit), ureg.Unit(new_unit))
                         except DimensionalityError:
                             return {
                                 "error": f"Can't convert {existing_unit} to {new_unit} for {path}"
                             }
 
-                        # TODO scale contributions to new unit
-                        return {"error": "Changing units not supported yet. Please resubmit"
-                                " contributions or update accordingly."}
+                        if not isclose(factor, 1):
+                            logger.info(f"Changing {existing_unit} to {new_unit} for {path} ...")
+                            # TODO scale contributions to new unit
+                            return {"error": "Changing units not supported yet. Please resubmit"
+                                    " contributions or update accordingly."}
 
                 new_columns.append(new_column)
 
@@ -1589,8 +1594,6 @@ class Client(SwaggerClient):
         self,
         contributions: List[dict],
         ignore_dupes: bool = False,
-        retry: bool = False,
-        per_request: int = 100,
         timeout: int = -1,
         skip_dupe_check: bool = False
     ):
@@ -1618,8 +1621,6 @@ class Client(SwaggerClient):
         Args:
             contributions (list): list of contribution dicts to submit
             ignore_dupes (bool): force duplicate components to be submitted
-            retry (bool): keep trying until all contributions successfully submitted
-            per_request (int): number of contributions to submit per request
             timeout (int): cancel remaining requests if timeout exceeded (in seconds)
             skip_dupe_check (bool): skip duplicate check for contribution identifiers
         """
@@ -1632,7 +1633,6 @@ class Client(SwaggerClient):
         project_names = set()
         collect_ids = []
         require_one_of = {"data"} | set(COMPONENTS)
-        per_page = self._get_per_page(per_request)
 
         for idx, c in enumerate(contributions):
             has_keys = require_one_of & c.keys()
@@ -1813,6 +1813,7 @@ class Client(SwaggerClient):
 
         # submit contributions
         if contribs:
+            per_page = self._get_per_page()
             total, total_processed = 0, 0
 
             def post_future(track_id, payload):
@@ -1875,13 +1876,14 @@ class Client(SwaggerClient):
                         break  # nothing to do
 
                     responses = _run_futures(
-                        futures, total=ncontribs, timeout=timeout, desc="Submit"
+                        futures, total=ncontribs-total_processed, timeout=timeout, desc="Submit"
                     )
                     processed = sum(r.get("count", 0) for r in responses.values())
                     total_processed += processed
 
-                    if processed != ncontribs and retry and retries < RETRIES and \
+                    if total_processed != ncontribs and retries < RETRIES and \
                             unique_identifiers.get(project_name):
+                        logger.info(f"{total_processed}/{ncontribs} processed -> retrying ...")
                         existing[project_name] = self.get_all_ids(
                             dict(project=project_name), include=COMPONENTS, timeout=timeout
                         ).get(project_name, {"identifiers": set()})
@@ -1893,10 +1895,11 @@ class Client(SwaggerClient):
                             c for c in contribs[project_name]
                             if c["identifier"] not in existing_ids
                         ]
+                        per_page = int(per_page / 2)
                         retries += 1
                     else:
                         contribs[project_name] = []  # abort retrying
-                        if processed != ncontribs and retry:
+                        if total_processed != ncontribs:
                             if retries >= RETRIES:
                                 logger.error(f"{project_name}: Tried {RETRIES} times - abort.")
                             elif not unique_identifiers.get(project_name):
