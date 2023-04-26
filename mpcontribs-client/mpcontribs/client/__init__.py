@@ -14,6 +14,7 @@ import requests
 import logging
 import datetime
 
+from math import isclose
 from semantic_version import Version
 from requests.exceptions import RequestException
 from bravado_core.param import Param
@@ -1097,15 +1098,17 @@ class Client(SwaggerClient):
                     existing_unit = existing_column.get("unit")
                     if existing_unit != new_unit:
                         try:
-                            ureg.Quantity(existing_unit).to(new_unit)
+                            factor = ureg.convert(1, ureg.Unit(existing_unit), ureg.Unit(new_unit))
                         except DimensionalityError:
                             return {
                                 "error": f"Can't convert {existing_unit} to {new_unit} for {path}"
                             }
 
-                        # TODO scale contributions to new unit
-                        return {"error": "Changing units not supported yet. Please resubmit"
-                                " contributions or update accordingly."}
+                        if not isclose(factor, 1):
+                            logger.info(f"Changing {existing_unit} to {new_unit} for {path} ...")
+                            # TODO scale contributions to new unit
+                            return {"error": "Changing units not supported yet. Please resubmit"
+                                    " contributions or update accordingly."}
 
                 new_columns.append(new_column)
 
