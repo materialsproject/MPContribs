@@ -894,6 +894,65 @@ class Client(SwaggerClient):
         owner = self.projects.createProject(project=project).result().get("owner")
         logger.info(f"Project `{name}` created with owner `{owner}`")
 
+    def update_project(self, update: dict, name: str = None):
+        """Update project info
+
+        Args:
+            update (dict): dictionary containing project info to update
+            name (str): name of the project
+        """
+        if not update:
+            logger.warning("nothing to update")
+            return
+
+        name = self.project or name
+        if not name:
+            logger.error("initialize client with project or set `name` argument!")
+            return
+
+        disallowed = ["is_approved", "stats", "columns", "is_public", "owner"]
+        for k in disallowed:
+            if k in update:
+                logger.warning(f"removing `{k}` from update - not allowed.")
+                update.pop(k)
+                if k == "columns":
+                    logger.info("use `client.init_columns()` to update project columns.")
+                elif k == "is_public":
+                    logger.info("use `client.make_public/private()` to set `is_public`.")
+
+        if not update:
+            logger.warning("nothing to update")
+            return
+
+        fields = list(self.get_model("ProjectsSchema")._properties.keys())
+        for k in disallowed:
+            fields.remove(k)
+
+        fields.append("stats.contributions")
+        project = self.get_project(name=name, fields=fields)
+
+        # allow name update only if no contributions in project
+        if "name" in update and project["stats"]["contributions"] > 0:
+            logger.warning("removing `name` from update - not allowed.")
+            update.pop("name")
+            logger.error("cannot change project name after contributions submitted.")
+
+        payload = {
+            k: v for k, v in update.items()
+            if v and k in fields and project.get(k, None) != v
+        }
+        if not payload:
+            logger.warning("nothing to update")
+            return
+
+        valid, error = self._is_valid_payload("Project", payload)
+        if valid:
+            resp = self.projects.updateProjectByName(pk=name, project=payload).result()
+            if not resp.get("count", 0):
+                logger.error(resp)
+        else:
+            logger.error(error)
+
     def get_contribution(self, cid: str) -> Type[Dict]:
         """Retrieve full contribution entry
 
