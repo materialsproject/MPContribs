@@ -110,7 +110,7 @@ filetype==1.2.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 flasgger-tschaume==0.9.7
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
-flask==2.2.4
+flask==2.3.2
     # via
     #   flasgger-tschaume
     #   flask-compress
