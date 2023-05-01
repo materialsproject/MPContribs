@@ -40,9 +40,9 @@ blinker==1.6.2
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 boltons==23.0.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
-boto3==1.26.123
+boto3==1.26.124
     # via flask-mongorest-mpcontribs
-botocore==1.29.123
+botocore==1.29.124
     # via
     #   boto3
     #   s3transfer
