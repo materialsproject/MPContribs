@@ -36,7 +36,6 @@ setup(
         "pymatgen",
         "pyopenssl",
         "python-snappy",
-        "rq-scheduler",
         "semantic-version",
         "supervisor",
         "setproctitle",

@@ -6,7 +6,6 @@ import flask_mongorest
 
 from rq import get_current_job
 from rq.job import Job
-from rq_scheduler import Scheduler
 from gevent import sleep
 from nbformat import v4 as nbf
 from flask_rq2 import RQ
@@ -34,15 +33,6 @@ ADMIN_GROUP = os.environ.get("ADMIN_GROUP", "admin")
 rq = RQ()
 rq.default_queue = f"notebooks_{MPCONTRIBS_API_HOST}"
 rq.queues = [rq.default_queue]
-rq.scheduler_queue = rq.default_queue
-rq.scheduler_class = "mpcontribs.api.notebooks.views.NotebooksScheduler"
-
-
-class NotebooksScheduler(Scheduler):
-    redis_scheduler_namespace_prefix = f'rq:scheduler_instance:{MPCONTRIBS_API_HOST}:'
-    scheduler_key = f'rq:scheduler:{MPCONTRIBS_API_HOST}'
-    scheduler_lock_key = f'rq:scheduler_lock:{MPCONTRIBS_API_HOST}'
-    scheduled_jobs_key = f'rq:scheduler:scheduled_jobs:{MPCONTRIBS_API_HOST}'
 
 
 class NotebooksResource(Resource):
