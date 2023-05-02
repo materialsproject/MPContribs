@@ -40,9 +40,9 @@ blinker==1.6.2
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 boltons==23.0.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
-boto3==1.26.124
+boto3==1.26.125
     # via flask-mongorest-mpcontribs
-botocore==1.29.124
+botocore==1.29.125
     # via
     #   boto3
     #   s3transfer
@@ -110,7 +110,7 @@ filetype==1.2.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 flasgger-tschaume==0.9.7
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
-flask==2.2.4
+flask==2.2.5
     # via
     #   flasgger-tschaume
     #   flask-compress
@@ -426,7 +426,7 @@ redis==4.5.4
     #   flask-rq2
     #   flask-sse
     #   rq
-regex==2023.3.23
+regex==2023.5.4
     # via dateparser
 requests==2.29.0
     # via
@@ -449,7 +449,7 @@ rq-scheduler==0.13.0
     # via
     #   flask-rq2
     #   mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
-ruamel-yaml==0.17.21
+ruamel-yaml==0.17.22
     # via pymatgen
 ruamel-yaml-clib==0.2.7
     # via ruamel-yaml
