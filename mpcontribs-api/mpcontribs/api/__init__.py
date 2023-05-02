@@ -5,8 +5,6 @@ import urllib
 import smtplib
 import logging
 import requests
-#import rq_dashboard
-#import flask_monitoringdashboard as dashboard
 import flask_mongorest.operators as ops
 
 from email.message import EmailMessage
@@ -242,15 +240,6 @@ def create_app():
     if is_gunicorn and MPCONTRIBS_API_HOST:
         app.register_blueprint(sse, url_prefix="/stream")
         app.add_url_rule("/healthcheck", view_func=healthcheck)
-        # app.register_blueprint(rq_dashboard.blueprint, url_prefix="/rq")
-
-        # dashboard.config.init_from(file="dashboard.cfg")
-        # dashboard.config.version = app.config["VERSION"]
-        # dashboard.config.table_prefix = f"fmd_{MPCONTRIBS_API_HOST}"
-        # db_password = os.environ["POSTGRES_DB_PASSWORD"]
-        # db_host = os.environ["POSTGRES_DB_HOST"]
-        # dashboard.config.database_name = f"postgresql://kong:{db_password}@{db_host}/kong"
-        # dashboard.bind(app)
 
     @app.after_request
     def add_header(response):
