@@ -54,7 +54,7 @@ cycler==0.11.0
     # via matplotlib
 ddsketch==2.0.4
     # via ddtrace
-ddtrace==1.12.2
+ddtrace==1.12.4
     # via -r requirements.in
 debugpy==1.6.7
     # via ipykernel
