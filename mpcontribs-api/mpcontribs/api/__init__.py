@@ -193,8 +193,7 @@ def create_app():
     Marshmallow(app)
     MongoEngine(app)
     Swagger(app, template=app.config.get("TEMPLATE"))
-    if not app.debug:
-        setattr(app, "kernels", get_kernels())
+    setattr(app, "kernels", get_kernels())
 
     # NOTE: hard-code to avoid pre-generating for new deployment
     # collections = get_collections(db)

@@ -77,7 +77,7 @@ def execute_cells(cid, cells):
 
 @notebooks.route("/build")
 def build():
-    if current_app.debug or not getattr(current_app, "kernels", None):
+    if not getattr(current_app, "kernels", None):
         abort(404, description="No kernels available.")
 
     cids = request.args.get("cids")
