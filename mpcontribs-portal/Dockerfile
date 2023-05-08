@@ -1,6 +1,6 @@
 FROM materialsproject/devops:python-3.1010.2 as base
 RUN apt-get update && apt-get install -y --no-install-recommends libopenblas-dev && apt-get clean
-FROM node:20.0.0-slim as node
+FROM node:20.1.0-slim as node
 
 FROM node as webpack-deps
 RUN apt-get update && apt-get install -y --no-install-recommends \
