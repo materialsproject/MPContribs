@@ -273,7 +273,7 @@ if _in_ipython():
     ):
         etype, value, tb = sys.exc_info()
 
-        if issubclass(etype, (MPContribsClientError, SwaggerValidationError)):
+        if issubclass(etype, (MPContribsClientError, SwaggerValidationError, ValidationError)):
             return _ipython._showtraceback(
                 etype, value, _ipython.InteractiveTB.get_exception_only(etype, value)
             )
