@@ -32,7 +32,7 @@ dnspython==2.3.0
     # via
     #   pyisemail
     #   pymongo
-emmet-core==0.54.6
+emmet-core==0.55.0
     # via mp-api
 executing==1.2.0
     # via stack-data

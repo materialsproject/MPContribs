@@ -88,7 +88,7 @@ dateparser==1.1.8
     # via mpcontribs-api (setup.py)
 ddsketch==2.0.4
     # via ddtrace
-ddtrace==1.13.0
+ddtrace==1.13.1
     # via mpcontribs-api (setup.py)
 debugpy==1.6.7
     # via ipykernel
@@ -102,7 +102,7 @@ dnspython==2.3.0
     # via
     #   mpcontribs-api (setup.py)
     #   pymongo
-emmet-core==0.54.6
+emmet-core==0.55.0
     # via mp-api
 envier==0.4.0
     # via ddtrace

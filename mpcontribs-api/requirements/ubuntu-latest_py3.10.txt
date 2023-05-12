@@ -94,7 +94,7 @@ dnspython==2.3.0
     # via
     #   mpcontribs-api (setup.py)
     #   pymongo
-emmet-core==0.54.6
+emmet-core==0.55.0
     # via mp-api
 envier==0.4.0
     # via ddtrace
