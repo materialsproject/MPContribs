@@ -979,6 +979,20 @@ class Client(SwaggerClient):
         else:
             raise MPContribsClientError(error)
 
+    def delete_project(self, name: str = None):
+        """Delete a project
+
+        Args:
+            name (str): name of the project
+        """
+        name = self.project or name
+        if not name:
+            raise MPContribsClientError("initialize client with project or set `name` argument!")
+
+        resp = self.projects.deleteProjectByName(pk=name).result()
+        if "error" in resp:
+            raise MPContribsClientError(resp["error"])
+
     def get_contribution(self, cid: str) -> Type[Dict]:
         """Retrieve full contribution entry
 
