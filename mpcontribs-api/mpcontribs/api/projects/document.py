@@ -239,7 +239,7 @@ class Projects(Document):
                         {"$sample": {"size": 1000}},
                         {"$project": {"data": 1}}
                     ]
-                    result = Contributions.objects.aggregate(pipeline, allowDiskUse=True)
+                    result = Contributions.objects.aggregate(pipeline)
                     merged = ChainMap(*result)
                     flat = flatten(remap(merged, visit=visit, enter=enter), reducer="dot")
 
