@@ -912,8 +912,14 @@ class Client(SwaggerClient):
             "name": name, "title": title, "authors": authors, "description": description,
             "references": [{"label": "REF", "url": url}]
         }
-        owner = self.projects.createProject(project=project).result().get("owner")
-        logger.info(f"Project `{name}` created with owner `{owner}`")
+        resp = self.projects.createProject(project=project).result()
+        owner = resp.get("owner")
+        if owner:
+            logger.info(f"Project `{name}` created with owner `{owner}`")
+        elif "error" in resp:
+            raise MPContribsClientError(resp["error"])
+        else:
+            raise MPContribsClientError(resp)
 
     def update_project(self, update: dict, name: str = None):
         """Update project info
