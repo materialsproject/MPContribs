@@ -989,8 +989,11 @@ class Client(SwaggerClient):
         if not name:
             raise MPContribsClientError("initialize client with project or set `name` argument!")
 
+        if not self.get_totals(query={"name": name}, resource="projects")[0]:
+            raise MPContribsClientError(f"Project `{name}` doesn't exist!")
+
         resp = self.projects.deleteProjectByName(pk=name).result()
-        if "error" in resp:
+        if resp and "error" in resp:
             raise MPContribsClientError(resp["error"])
 
     def get_contribution(self, cid: str) -> Type[Dict]:
