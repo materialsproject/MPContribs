@@ -27,9 +27,9 @@ boltons==23.0.0
     # via
     #   mpcontribs-client
     #   mpcontribs-portal (setup.py)
-boto3==1.26.129
+boto3==1.26.133
     # via mpcontribs-portal (setup.py)
-botocore==1.29.129
+botocore==1.29.133
     # via
     #   boto3
     #   s3transfer
@@ -53,7 +53,7 @@ cycler==0.11.0
     # via matplotlib
 ddsketch==2.0.4
     # via ddtrace
-ddtrace==1.12.4
+ddtrace==1.13.0
     # via mpcontribs-portal (setup.py)
 debugpy==1.6.7
     # via ipykernel
@@ -78,7 +78,7 @@ dnspython==2.3.0
     # via
     #   pyisemail
     #   pymongo
-emmet-core==0.54.2
+emmet-core==0.54.6
     # via mp-api
 envier==0.4.0
     # via ddtrace
@@ -94,7 +94,7 @@ filetype==1.2.0
     # via mpcontribs-client
 flatten-dict==0.4.2
     # via mpcontribs-client
-fonttools==4.39.3
+fonttools==4.39.4
     # via matplotlib
 fqdn==1.5.1
     # via jsonschema
@@ -119,7 +119,7 @@ importlib-resources==5.12.0
     # via
     #   jsonschema
     #   matplotlib
-ipykernel==6.22.0
+ipykernel==6.23.0
     # via mpcontribs-portal (setup.py)
 ipython==8.12.2
     # via
@@ -184,13 +184,13 @@ mistune==2.0.5
     # via nbconvert
 monotonic==1.6
     # via bravado
-monty==2023.5.7
+monty==2023.5.8
     # via
     #   emmet-core
     #   mp-api
     #   mpcontribs-portal (setup.py)
     #   pymatgen
-mp-api==0.33.1
+mp-api==0.33.2
     # via pymatgen
 mpcontribs-client==5.3.0
     # via mpcontribs-portal (setup.py)
@@ -203,7 +203,7 @@ msgpack==1.0.5
     #   mp-api
 nbclient==0.7.4
     # via nbconvert
-nbconvert==7.3.1
+nbconvert==7.4.0
     # via mpcontribs-portal (setup.py)
 nbformat==5.8.0
     # via
@@ -251,7 +251,7 @@ pint==0.19.2
     # via mpcontribs-client
 pkgutil-resolve-name==1.3.10
     # via jsonschema
-platformdirs==3.5.0
+platformdirs==3.5.1
     # via jupyter-core
 plotly==5.14.1
     # via
@@ -259,7 +259,7 @@ plotly==5.14.1
     #   pymatgen
 prompt-toolkit==3.0.38
     # via ipython
-protobuf==4.22.4
+protobuf==4.23.0
     # via
     #   ddsketch
     #   ddtrace
@@ -281,7 +281,7 @@ pygments==2.15.1
     #   nbconvert
 pyisemail==2.0.1
     # via mpcontribs-client
-pymatgen==2023.3.23
+pymatgen==2023.5.10
     # via
     #   emmet-core
     #   mp-api
@@ -316,7 +316,7 @@ pyzmq==25.0.2
     # via
     #   ipykernel
     #   jupyter-client
-redis==4.5.4
+redis==4.5.5
     # via mpcontribs-portal (setup.py)
 requests==2.30.0
     # via
@@ -331,7 +331,7 @@ rfc3339-validator==0.1.4
     # via jsonschema
 rfc3987==1.3.8
     # via jsonschema
-ruamel-yaml==0.17.24
+ruamel-yaml==0.17.26
     # via pymatgen
 ruamel-yaml-clib==0.2.7
     # via ruamel-yaml
@@ -376,7 +376,7 @@ swagger-spec-validator==3.0.3
     # via
     #   bravado-core
     #   mpcontribs-client
-sympy==1.11.1
+sympy==1.12
     # via pymatgen
 tabulate==0.9.0
     # via pymatgen
