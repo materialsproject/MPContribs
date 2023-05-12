@@ -108,6 +108,7 @@ ureg.define("electron_mass = 9.1093837015e-31 kg = mₑ = m_e")
 LOG_LEVEL = os.environ.get("MPCONTRIBS_CLIENT_LOG_LEVEL", "INFO")
 log_level = getattr(logging, LOG_LEVEL.upper())
 _session = requests.Session()
+_ipython = sys.modules['IPython'].get_ipython()
 
 
 class LogFilter(logging.Filter):
@@ -158,6 +159,10 @@ def get_logger(name):
 
 logger = get_logger(__name__)
 tqdm_out = TqdmToLogger(logger, level=log_level)
+
+
+class MPContribsClientError(ValueError):
+    """custom error for mpcontribs-client"""
 
 
 def get_md5(d):
@@ -258,8 +263,26 @@ def visit(path, key, value):
 
 
 def _in_ipython():
-    ipython = sys.modules['IPython'].get_ipython()
-    return ipython is not None and 'IPKernelApp' in ipython.config
+    return _ipython is not None and 'IPKernelApp' in _ipython.config
+
+
+if _in_ipython():
+    def _hide_traceback(
+        exc_tuple=None, filename=None, tb_offset=None,
+        exception_only=False, running_compiled_code=False
+    ):
+        etype, value, tb = sys.exc_info()
+
+        if issubclass(etype, (MPContribsClientError, SwaggerValidationError, ValidationError)):
+            return _ipython._showtraceback(
+                etype, value, _ipython.InteractiveTB.get_exception_only(etype, value)
+            )
+
+        return _ipython._showtraceback(
+            etype, value, _ipython.InteractiveTB(etype, value, tb)
+        )
+
+    _ipython.showtraceback = _hide_traceback
 
 
 class Dict(dict):
@@ -413,7 +436,7 @@ class Attachment(dict):
         size = len(content)
 
         if size > MAX_BYTES:
-            raise ValueError(f"{name} too large ({size} > {MAX_BYTES})!")
+            raise MPContribsClientError(f"{name} too large ({size} > {MAX_BYTES})!")
 
         return cls(
             name=filename,
@@ -494,7 +517,7 @@ def _load(protocol, host, headers_json, project, version):
         logger.debug(f"Specs for {origin_url} and {version} saved as {apispec}.")
 
     if not spec_dict:
-        raise ValueError(f"Could not load specs from {url} for {version}!")  # not cached
+        raise MPContribsClientError(f"Couldn't load specs from {url} for {version}!")  # not cached
 
     spec_dict["host"] = host
     spec_dict["schemes"] = [protocol]
@@ -521,10 +544,10 @@ def _load(protocol, host, headers_json, project, version):
     resp = requests.get(f"{url}/projects/", **kwargs).json()
 
     if not resp or not resp["data"]:
-        raise ValueError(f"Failed to load projects for query {query}!")
+        raise MPContribsClientError(f"Failed to load projects for query {query}!")
 
     if project and not resp["data"]:
-        raise ValueError(f"{project} doesn't exist, or access denied!")
+        raise MPContribsClientError(f"{project} doesn't exist, or access denied!")
 
     columns = {"string": [], "number": []}
 
@@ -641,7 +664,7 @@ class Client(SwaggerClient):
         self.project = project
 
         if self.url not in VALID_URLS:
-            raise ValueError(f"{self.url} not a valid URL (one of {VALID_URLS})")
+            raise MPContribsClientError(f"{self.url} not a valid URL (one of {VALID_URLS})")
 
         self.version = _version(self.url)  # includes healthcheck
         self.session = get_session(session=session)
@@ -716,7 +739,7 @@ class Client(SwaggerClient):
             len(v) > per_page for v in query.values() if isinstance(v, list)
         )
         if nr_params_to_split > 1:
-            raise NotImplementedError(
+            raise MPContribsClientError(
                 f"More than one list in query with length > {per_page} not supported!"
             )
 
@@ -779,8 +802,7 @@ class Client(SwaggerClient):
         resource_obj = resources.get(resource)
         if not resource_obj:
             available_resources = list(resources.keys())
-            logger.error(f"Choose one of {available_resources}!")
-            return
+            raise MPContribsClientError(f"Choose one of {available_resources}!")
 
         op_key = f"query{resource.capitalize()}"
         operation = resource_obj.operations[op_key]
@@ -795,7 +817,7 @@ class Client(SwaggerClient):
         """
         name = self.project or name
         if not name:
-            return {"error": "initialize client with project or set `name` argument!"}
+            raise MPContribsClientError("initialize client with project or set `name` argument!")
 
         fields = fields or ["_all"]  # retrieve all fields by default
         return Dict(self.projects.getProjectByName(pk=name, _fields=fields).result())
@@ -884,15 +906,20 @@ class Client(SwaggerClient):
         queries = [{"name": name}, {"title": title}]
         for query in queries:
             if self.get_totals(query=query, resource="projects")[0]:
-                logger.error(f"Project with {query} already exists!")
-                return
+                raise MPContribsClientError(f"Project with {query} already exists!")
 
         project = {
             "name": name, "title": title, "authors": authors, "description": description,
             "references": [{"label": "REF", "url": url}]
         }
-        owner = self.projects.createProject(project=project).result().get("owner")
-        logger.info(f"Project `{name}` created with owner `{owner}`")
+        resp = self.projects.createProject(project=project).result()
+        owner = resp.get("owner")
+        if owner:
+            logger.info(f"Project `{name}` created with owner `{owner}`")
+        elif "error" in resp:
+            raise MPContribsClientError(resp["error"])
+        else:
+            raise MPContribsClientError(resp)
 
     def update_project(self, update: dict, name: str = None):
         """Update project info
@@ -907,8 +934,7 @@ class Client(SwaggerClient):
 
         name = self.project or name
         if not name:
-            logger.error("initialize client with project or set `name` argument!")
-            return
+            raise MPContribsClientError("initialize client with project or set `name` argument!")
 
         disallowed = ["is_approved", "stats", "columns", "is_public", "owner"]
         for k in disallowed:
@@ -949,9 +975,23 @@ class Client(SwaggerClient):
         if valid:
             resp = self.projects.updateProjectByName(pk=name, project=payload).result()
             if not resp.get("count", 0):
-                logger.error(resp)
+                raise MPContribsClientError(resp)
         else:
-            logger.error(error)
+            raise MPContribsClientError(error)
+
+    def delete_project(self, name: str = None):
+        """Delete a project
+
+        Args:
+            name (str): name of the project
+        """
+        name = self.project or name
+        if not name:
+            raise MPContribsClientError("initialize client with project or set `name` argument!")
+
+        resp = self.projects.deleteProjectByName(pk=name).result()
+        if "error" in resp:
+            raise MPContribsClientError(resp["error"])
 
     def get_contribution(self, cid: str) -> Type[Dict]:
         """Retrieve full contribution entry
@@ -971,12 +1011,12 @@ class Client(SwaggerClient):
         """
         str_len = len(tid_or_md5)
         if str_len not in {24, 32}:
-            raise ValueError(f"'{tid_or_md5}' is not a valid table id or md5 hash digest!")
+            raise MPContribsClientError(f"'{tid_or_md5}' is not a valid table id or md5 hash!")
 
         if str_len == 32:
             tables = self.tables.queryTables(md5=tid_or_md5, _fields=["id"]).result()
             if not tables:
-                raise ValueError(f"table for md5 '{tid_or_md5}' not found!")
+                raise MPContribsClientError(f"table for md5 '{tid_or_md5}' not found!")
             tid = tables["data"][0]["id"]
         else:
             tid = tid_or_md5
@@ -1011,12 +1051,12 @@ class Client(SwaggerClient):
         """
         str_len = len(sid_or_md5)
         if str_len not in {24, 32}:
-            raise ValueError(f"'{sid_or_md5}' is not a valid structure id or md5 hash digest!")
+            raise MPContribsClientError(f"'{sid_or_md5}' is not a valid structure id or md5 hash!")
 
         if str_len == 32:
             structures = self.structures.queryStructures(md5=sid_or_md5, _fields=["id"]).result()
             if not structures:
-                raise ValueError(f"structure for md5 '{sid_or_md5}' not found!")
+                raise MPContribsClientError(f"structure for md5 '{sid_or_md5}' not found!")
             sid = structures["data"][0]["id"]
         else:
             sid = sid_or_md5
@@ -1033,14 +1073,14 @@ class Client(SwaggerClient):
         """
         str_len = len(aid_or_md5)
         if str_len not in {24, 32}:
-            raise ValueError(f"'{aid_or_md5}' is not a valid attachment id or md5 hash digest!")
+            raise MPContribsClientError(f"'{aid_or_md5}' is not a valid attachment id or md5 hash!")
 
         if str_len == 32:
             attachments = self.attachments.queryAttachments(
                 md5=aid_or_md5, _fields=["id"]
             ).result()
             if not attachments:
-                raise ValueError(f"attachment for md5 '{aid_or_md5}' not found!")
+                raise MPContribsClientError(f"attachment for md5 '{aid_or_md5}' not found!")
             aid = attachments["data"][0]["id"]
         else:
             aid = aid_or_md5
@@ -1081,15 +1121,15 @@ class Client(SwaggerClient):
             columns (dict): dictionary mapping data column to its unit
         """
         if not self.project:
-            return {"error": "initialize client with project argument!"}
+            raise MPContribsClientError("initialize client with project argument!")
 
         columns = flatten(columns or {}, reducer="dot")
 
         if len(columns) > MAX_COLUMNS:
-            return {"error": f"Number of columns larger than {MAX_COLUMNS}!"}
+            raise MPContribsClientError(f"Number of columns larger than {MAX_COLUMNS}!")
 
         if not all(isinstance(v, str) for v in columns.values() if v is not None):
-            return {"error": "All values in `columns` need to be None or of type str!"}
+            raise MPContribsClientError("All values in `columns` need to be None or of type str!")
 
         new_columns = []
 
@@ -1104,24 +1144,26 @@ class Client(SwaggerClient):
 
                 nesting = k.count(".")
                 if nesting > MAX_NESTING:
-                    return {"error": f"Nesting depth larger than {MAX_NESTING} for {k}!"}
+                    raise MPContribsClientError(f"Nesting depth larger than {MAX_NESTING} for {k}!")
 
                 for col in scanned_columns:
                     if nesting and col.startswith(k):
-                        return {"error": f"Duplicate definition of {k} in {col}!"}
+                        raise MPContribsClientError(f"Duplicate definition of {k} in {col}!")
 
                     for n in range(1, nesting+1):
                         if k.rsplit(".", n)[0] == col:
-                            return {"error": f"Ancestor of {k} already defined in {col}!"}
+                            raise MPContribsClientError(
+                                f"Ancestor of {k} already defined in {col}!"
+                            )
 
                 is_valid_string = isinstance(v, str) and v.lower() != "nan"
                 if not is_valid_string and v is not None:
-                    return {
-                        "error": f"Unit '{v}' for {k} invalid (use `None` or a non-NaN string)!"
-                    }
+                    raise MPContribsClientError(
+                        f"Unit '{v}' for {k} invalid (use `None` or a non-NaN string)!"
+                    )
 
                 if v != "" and v is not None and v not in ureg:
-                    return {"error": f"Unit '{v}' for {k} invalid!"}
+                    raise MPContribsClientError(f"Unit '{v}' for {k} invalid!")
 
                 scanned_columns.add(k)
 
@@ -1161,22 +1203,24 @@ class Client(SwaggerClient):
                         try:
                             factor = ureg.convert(1, ureg.Unit(existing_unit), ureg.Unit(new_unit))
                         except DimensionalityError:
-                            return {
-                                "error": f"Can't convert {existing_unit} to {new_unit} for {path}"
-                            }
+                            raise MPContribsClientError(
+                                f"Can't convert {existing_unit} to {new_unit} for {path}"
+                            )
 
                         if not isclose(factor, 1):
                             logger.info(f"Changing {existing_unit} to {new_unit} for {path} ...")
                             # TODO scale contributions to new unit
-                            return {"error": "Changing units not supported yet. Please resubmit"
-                                    " contributions or update accordingly."}
+                            raise MPContribsClientError(
+                                "Changing units not supported yet. Please resubmit"
+                                " contributions or update accordingly."
+                            )
 
                 new_columns.append(new_column)
 
         payload = {"columns": new_columns}
         valid, error = self._is_valid_payload("Project", payload)
         if not valid:
-            return {"error": error}
+            raise MPContribsClientError(error)
 
         return self.projects.updateProjectByName(pk=self.project, project=payload).result()
 
@@ -1188,8 +1232,9 @@ class Client(SwaggerClient):
             timeout (int): cancel remaining requests if timeout exceeded (in seconds)
         """
         if not self.project and (not query or "project" not in query):
-            logger.error("initialize client with project, or include project in query!")
-            return
+            raise MPContribsClientError(
+                "initialize client with project, or include project in query!"
+            )
 
         tic = time.perf_counter()
         query = query or {}
@@ -1218,7 +1263,9 @@ class Client(SwaggerClient):
         logger.info(f"It took {dt:.1f}min to delete {deleted} contributions.")
 
         if left:
-            logger.error(f"There were errors and {left} contributions are left to delete!")
+            raise MPContribsClientError(
+                f"There were errors and {left} contributions are left to delete!"
+            )
 
     def get_totals(
         self,
@@ -1241,8 +1288,7 @@ class Client(SwaggerClient):
         """
         ops = {"query", "create", "update", "delete", "download"}
         if op not in ops:
-            logger.error(f"`op` has to be one of {ops}")
-            return
+            raise MPContribsClientError(f"`op` has to be one of {ops}")
 
         query = query or {}
         if self.project and "project" not in query:
@@ -1336,18 +1382,15 @@ class Client(SwaggerClient):
         include = include or []
         components = set(x for x in include if x in COMPONENTS)
         if include and not components:
-            logger.error(f"`include` must be subset of {COMPONENTS}!")
-            return
+            raise MPContribsClientError(f"`include` must be subset of {COMPONENTS}!")
 
         fmts = {"sets", "map"}
         if fmt not in fmts:
-            logger.error(f"`fmt` must be subset of {fmts}!")
-            return
+            raise MPContribsClientError(f"`fmt` must be subset of {fmts}!")
 
         ops = {"query", "create", "update", "delete", "download"}
         if op not in ops:
-            logger.error(f"`op` has to be one of {ops}")
-            return
+            raise MPContribsClientError(f"`op` has to be one of {ops}")
 
         unique_identifiers = self.get_unique_identifiers_flags()
         data_id_fields = {
@@ -1474,7 +1517,7 @@ class Client(SwaggerClient):
                     cids.extend(cids_project)
 
             if not cids:
-                return {"error": "No contributions match the query."}
+                raise MPContribsClientError("No contributions match the query.")
 
             total = len(cids)
             cids_query = {"id__in": cids, "_fields": fields, "_sort": sort}
@@ -1516,20 +1559,24 @@ class Client(SwaggerClient):
         tic = time.perf_counter()
         valid, error = self._is_valid_payload("Contribution", data)
         if not valid:
-            return {"error": error}
+            raise MPContribsClientError(error)
 
         if "data" in data:
             serializable, error = self._is_serializable_dict(data["data"])
             if not serializable:
-                return {"error": error}
+                raise MPContribsClientError(error)
 
         query = query or {}
 
         if not self.project and (not query or "project" not in query):
-            return {"error": "initialize client with project, or include project in query!"}
+            raise MPContribsClientError(
+                "initialize client with project, or include project in query!"
+            )
 
         if "project" in query and self.project != query["project"]:
-            return {"error": f"client initialized with different project {self.project}!"}
+            raise MPContribsClientError(
+                f"client initialized with different project {self.project}!"
+            )
 
         query["project"] = self.project
         cids = list(self.get_all_ids(query).get(self.project, {}).get("ids", set()))
@@ -1612,7 +1659,9 @@ class Client(SwaggerClient):
             timeout (int): cancel remaining requests if timeout exceeded (in seconds)
         """
         if not self.project and (not query or "project" not in query):
-            return {"error": "initialize client with project, or include project in query!"}
+            raise MPContribsClientError(
+                "initialize client with project, or include project in query!"
+            )
 
         query = query or {}
 
@@ -1624,7 +1673,7 @@ class Client(SwaggerClient):
                 pk=query["project"], _fields=["is_public", "is_approved"]
             ).result()
         except HTTPNotFound:
-            return {"error": f"project `{query['project']}` not found or access denied!"}
+            raise MPContribsClientError(f"project `{query['project']}` not found or access denied!")
 
         if not recursive and resp["is_public"] == is_public:
             return {"warning": f"`is_public` already set to {is_public} for `{query['project']}`."}
@@ -1633,7 +1682,7 @@ class Client(SwaggerClient):
 
         if resp["is_public"] != is_public:
             if is_public and not resp["is_approved"]:
-                return {"error": f"project `{query['project']}` is not approved yet!"}
+                raise MPContribsClientError(f"project `{query['project']}` is not approved yet!")
 
             resp = self.projects.updateProjectByName(
                 pk=query["project"], project={"is_public": is_public}
@@ -1684,8 +1733,7 @@ class Client(SwaggerClient):
             skip_dupe_check (bool): skip duplicate check for contribution identifiers
         """
         if not contributions or not isinstance(contributions, list):
-            logger.error("Please provide list of contributions to submit.")
-            return
+            raise MPContribsClientError("Please provide list of contributions to submit.")
 
         # get existing contributions
         tic = time.perf_counter()
@@ -1696,11 +1744,11 @@ class Client(SwaggerClient):
         for idx, c in enumerate(contributions):
             has_keys = require_one_of & c.keys()
             if not has_keys:
-                return {"error": f"Nothing to submit for contribution #{idx}!"}
+                raise MPContribsClientError(f"Nothing to submit for contribution #{idx}!")
             elif not all(c[k] for k in has_keys):
                 for k in has_keys:
                     if not c[k]:
-                        return {"error": f"Empty `{k}` for contribution #{idx}!"}
+                        raise MPContribsClientError(f"Empty `{k}` for contribution #{idx}!")
             elif "id" in c:
                 collect_ids.append(c["id"])
             elif "project" in c and "identifier" in c:
@@ -1709,9 +1757,9 @@ class Client(SwaggerClient):
                 project_names.add(self.project)
                 contributions[idx]["project"] = self.project
             else:
-                return {
-                    "error": f"Provide `project` & `identifier`, or `id` for contribution #{idx}!"
-                }
+                raise MPContribsClientError(
+                    f"Provide `project` & `identifier`, or `id` for contribution #{idx}!"
+                )
 
         id2project = {}
         if collect_ids:
@@ -1747,7 +1795,7 @@ class Client(SwaggerClient):
                 contrib["data"] = unflatten(contrib["data"], splitter="dot")
                 serializable, error = self._is_serializable_dict(contrib["data"])
                 if not serializable:
-                    raise ValueError(error)
+                    raise MPContribsClientError(error)
 
             update = "id" in contrib
             project_name = id2project[contrib["id"]] if update else contrib["project"]
@@ -1767,7 +1815,7 @@ class Client(SwaggerClient):
                 nelems = len(elements)
 
                 if nelems > MAX_ELEMS:
-                    raise ValueError(f"Too many {component} ({nelems} > {MAX_ELEMS})!")
+                    raise MPContribsClientError(f"Too many {component} ({nelems} > {MAX_ELEMS})!")
 
                 if update and not nelems:
                     continue  # nothing to update for this component
@@ -1783,11 +1831,11 @@ class Client(SwaggerClient):
                     is_table = isinstance(element, pd.DataFrame)
                     is_attachment = isinstance(element, Path) or isinstance(element, Attachment)
                     if component == "structures" and not is_structure:
-                        raise ValueError(f"Use pymatgen Structure for {component}!")
+                        raise MPContribsClientError(f"Use pymatgen Structure for {component}!")
                     elif component == "tables" and not is_table:
-                        raise ValueError(f"Use pandas DataFrame for {component}!")
+                        raise MPContribsClientError(f"Use pandas DataFrame for {component}!")
                     elif component == "attachments" and not is_attachment:
-                        raise ValueError(
+                        raise MPContribsClientError(
                             f"Use pathlib.Path or mpcontribs.client.Attachment for {component}!"
                         )
 
@@ -1809,7 +1857,7 @@ class Client(SwaggerClient):
                             kind = guess(str(element))
 
                             if not isinstance(kind, SUPPORTED_FILETYPES):
-                                raise ValueError(
+                                raise MPContribsClientError(
                                     f"{element.name} not supported. Use one of {SUPPORTED_MIMES}!"
                                 )
 
@@ -1817,7 +1865,7 @@ class Client(SwaggerClient):
                             size = len(content)
 
                             if size > MAX_BYTES:
-                                raise ValueError(
+                                raise MPContribsClientError(
                                     f"{element.name} too large ({size} > {MAX_BYTES})!"
                                 )
 
@@ -1861,14 +1909,14 @@ class Client(SwaggerClient):
                     if not ignore_dupes and dupe:
                         # TODO add matching duplicate info to msg
                         msg = f"Duplicate in {project_name}: {contrib['identifier']} {dct['name']}"
-                        raise ValueError(msg)
+                        raise MPContribsClientError(msg)
 
                     digests[project_name][component].add(digest)
                     contribs[project_name][-1][component].append(dct)
 
                 valid, error = self._is_valid_payload("Contribution", contribs[project_name][-1])
                 if not valid:
-                    return {"error": f"{contrib['identifier']} invalid: {error}!"}
+                    raise MPContribsClientError(f"{contrib['identifier']} invalid: {error}!")
 
         # submit contributions
         if contribs:
@@ -2001,8 +2049,7 @@ class Client(SwaggerClient):
         outdir.mkdir(parents=True, exist_ok=True)
         components = set(x for x in include if x in COMPONENTS)
         if include and not components:
-            logger.error(f"`include` must be subset of {COMPONENTS}!")
-            return
+            raise MPContribsClientError(f"`include` must be subset of {COMPONENTS}!")
 
         all_ids = self.get_all_ids(query, include=components, timeout=timeout)
         fmt = query.get("format", "json")
@@ -2167,13 +2214,11 @@ class Client(SwaggerClient):
         """
         resources = ["contributions"] + COMPONENTS
         if resource not in resources:
-            logger.error(f"`resource` must be one of {resources}!")
-            return
+            raise MPContribsClientError(f"`resource` must be one of {resources}!")
 
         formats = {"json", "csv"}
         if fmt not in formats:
-            logger.error(f"`fmt` must be one of {formats}!")
-            return
+            raise MPContribsClientError(f"`fmt` must be one of {formats}!")
 
         oids = sorted(i for i in ids if ObjectId.is_valid(i))
         outdir = Path(outdir) or Path(".")
