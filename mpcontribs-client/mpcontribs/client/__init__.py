@@ -1152,7 +1152,9 @@ class Client(SwaggerClient):
 
                     for n in range(1, nesting+1):
                         if k.rsplit(".", n)[0] == col:
-                            raise MPContribsClientError(f"Ancestor of {k} already defined in {col}!")
+                            raise MPContribsClientError(
+                                f"Ancestor of {k} already defined in {col}!"
+                            )
 
                 is_valid_string = isinstance(v, str) and v.lower() != "nan"
                 if not is_valid_string and v is not None:
@@ -1201,7 +1203,9 @@ class Client(SwaggerClient):
                         try:
                             factor = ureg.convert(1, ureg.Unit(existing_unit), ureg.Unit(new_unit))
                         except DimensionalityError:
-                            raise MPContribsClientError(f"Can't convert {existing_unit} to {new_unit} for {path}")
+                            raise MPContribsClientError(
+                                f"Can't convert {existing_unit} to {new_unit} for {path}"
+                            )
 
                         if not isclose(factor, 1):
                             logger.info(f"Changing {existing_unit} to {new_unit} for {path} ...")
@@ -1228,7 +1232,9 @@ class Client(SwaggerClient):
             timeout (int): cancel remaining requests if timeout exceeded (in seconds)
         """
         if not self.project and (not query or "project" not in query):
-            raise MPContribsClientError("initialize client with project, or include project in query!")
+            raise MPContribsClientError(
+                "initialize client with project, or include project in query!"
+            )
 
         tic = time.perf_counter()
         query = query or {}
@@ -1257,7 +1263,9 @@ class Client(SwaggerClient):
         logger.info(f"It took {dt:.1f}min to delete {deleted} contributions.")
 
         if left:
-            raise MPContribsClientError(f"There were errors and {left} contributions are left to delete!")
+            raise MPContribsClientError(
+                f"There were errors and {left} contributions are left to delete!"
+            )
 
     def get_totals(
         self,
@@ -1561,10 +1569,14 @@ class Client(SwaggerClient):
         query = query or {}
 
         if not self.project and (not query or "project" not in query):
-            raise MPContribsClientError("initialize client with project, or include project in query!")
+            raise MPContribsClientError(
+                "initialize client with project, or include project in query!"
+            )
 
         if "project" in query and self.project != query["project"]:
-            raise MPContribsClientError(f"client initialized with different project {self.project}!")
+            raise MPContribsClientError(
+                f"client initialized with different project {self.project}!"
+            )
 
         query["project"] = self.project
         cids = list(self.get_all_ids(query).get(self.project, {}).get("ids", set()))
@@ -1647,7 +1659,9 @@ class Client(SwaggerClient):
             timeout (int): cancel remaining requests if timeout exceeded (in seconds)
         """
         if not self.project and (not query or "project" not in query):
-            raise MPContribsClientError("initialize client with project, or include project in query!")
+            raise MPContribsClientError(
+                "initialize client with project, or include project in query!"
+            )
 
         query = query or {}
 
