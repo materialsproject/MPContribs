@@ -283,9 +283,11 @@ class Projects(Document):
                 min_max_paths = [path for path, col in columns.items() if col["unit"] != "NaN"]
                 for path in min_max_paths:
                     field = f"{path}{delimiter}value"
-                    project_stage[field] = {
-                        "$cond": [{"$isNumber": f"${field}"}, 1, 0]
-                    }
+                    project_stage[field] = {"$cond": {
+                        "if": {"$isNumber": f"${field}"},
+                        "then": f"${field}",
+                        "else": "$$REMOVE"
+                    }}
 
                 # add project stage to pipeline
                 pipeline.append({"$project": project_stage})
