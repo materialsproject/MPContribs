@@ -996,14 +996,16 @@ class Client(SwaggerClient):
         if resp and "error" in resp:
             raise MPContribsClientError(resp["error"])
 
-    def get_contribution(self, cid: str) -> Type[Dict]:
-        """Retrieve full contribution entry
+    def get_contribution(self, cid: str, fields: list = None) -> Type[Dict]:
+        """Retrieve a contribution
 
         Args:
             cid (str): contribution ObjectID
+            fields (list): list of fields to include in response
         """
-        fields = list(self.get_model("ContributionsSchema")._properties.keys())
-        fields.remove("needs_build")  # internal field
+        if not fields:
+            fields = list(self.get_model("ContributionsSchema")._properties.keys())
+            fields.remove("needs_build")  # internal field
         return Dict(self.contributions.getContributionById(pk=cid, _fields=fields).result())
 
     def get_table(self, tid_or_md5: str) -> Type[Table]:
