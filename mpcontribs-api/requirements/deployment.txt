@@ -153,7 +153,7 @@ idna==3.4
     #   requests
 importlib-metadata==6.0.1
     # via opentelemetry-api
-ipykernel==6.23.0
+ipykernel==6.23.1
     # via
     #   nbclassic
     #   notebook
@@ -407,8 +407,6 @@ pytz==2023.3
     # via
     #   dateparser
     #   pandas
-pytz-deprecation-shim==0.1.0.post0
-    # via tzlocal
 pyyaml==6.0
     # via
     #   flasgger-tschaume
@@ -507,7 +505,7 @@ terminado==0.17.1
     #   notebook
 tinycss2==1.2.1
     # via nbconvert
-tornado==6.3.1
+tornado==6.3.2
     # via
     #   ipykernel
     #   jupyter-client
@@ -539,10 +537,8 @@ typing-extensions==4.5.0
     #   mp-api
     #   pydantic
 tzdata==2023.3
-    # via
-    #   pandas
-    #   pytz-deprecation-shim
-tzlocal==4.3
+    # via pandas
+tzlocal==5.0.1
     # via dateparser
 uncertainties==3.1.7
     # via
