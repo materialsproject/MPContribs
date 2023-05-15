@@ -80,7 +80,7 @@ dateparser==1.1.8
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 ddsketch==2.0.4
     # via ddtrace
-ddtrace==1.13.1
+ddtrace==1.13.2
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 debugpy==1.6.7
     # via ipykernel
