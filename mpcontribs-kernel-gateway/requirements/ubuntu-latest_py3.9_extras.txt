@@ -54,7 +54,7 @@ cycler==0.11.0
     # via matplotlib
 ddsketch==2.0.4
     # via ddtrace
-ddtrace==1.13.1
+ddtrace==1.13.3
     # via -r requirements.in
 debugpy==1.6.7
     # via ipykernel
@@ -68,7 +68,7 @@ dnspython==2.3.0
     # via
     #   pyisemail
     #   pymongo
-emmet-core==0.55.0
+emmet-core==0.55.2
     # via mp-api
 entrypoints==0.4
     # via jupyter-client
@@ -101,7 +101,7 @@ importlib-metadata==6.0.1
     #   opentelemetry-api
 importlib-resources==5.12.0
     # via matplotlib
-ipykernel==6.23.0
+ipykernel==6.23.1
     # via
     #   ipywidgets
     #   nbclassic
@@ -199,7 +199,7 @@ monty==2023.5.8
     #   emmet-core
     #   mp-api
     #   pymatgen
-mp-api==0.33.2
+mp-api==0.33.3
     # via pymatgen
 mpcontribs-client==5.3.3
     # via -r requirements.in
@@ -434,7 +434,7 @@ terminado==0.17.1
     #   notebook
 tinycss2==1.2.1
     # via nbconvert
-tornado==6.3.1
+tornado==6.3.2
     # via
     #   ipykernel
     #   jupyter-client
