@@ -27,9 +27,9 @@ boltons==23.0.0
     # via
     #   mpcontribs-client
     #   mpcontribs-portal (setup.py)
-boto3==1.26.133
+boto3==1.26.135
     # via mpcontribs-portal (setup.py)
-botocore==1.29.133
+botocore==1.29.135
     # via
     #   boto3
     #   s3transfer
@@ -53,7 +53,7 @@ cycler==0.11.0
     # via matplotlib
 ddsketch==2.0.4
     # via ddtrace
-ddtrace==1.13.1
+ddtrace==1.13.3
     # via mpcontribs-portal (setup.py)
 debugpy==1.6.7
     # via ipykernel
@@ -78,7 +78,7 @@ dnspython==2.3.0
     # via
     #   pyisemail
     #   pymongo
-emmet-core==0.55.0
+emmet-core==0.55.2
     # via mp-api
 envier==0.4.0
     # via ddtrace
@@ -118,7 +118,7 @@ importlib-metadata==6.0.1
     # via opentelemetry-api
 iniconfig==2.0.0
     # via pytest
-ipykernel==6.23.0
+ipykernel==6.23.1
     # via mpcontribs-portal (setup.py)
 ipython==8.13.2
     # via
@@ -191,7 +191,7 @@ monty==2023.5.8
     #   mp-api
     #   mpcontribs-portal (setup.py)
     #   pymatgen
-mp-api==0.33.2
+mp-api==0.33.3
     # via pymatgen
 mpcontribs-client==5.3.3
     # via mpcontribs-portal (setup.py)
@@ -396,7 +396,7 @@ tinycss2==1.2.1
     # via nbconvert
 tomli==2.0.1
     # via pytest
-tornado==6.3.1
+tornado==6.3.2
     # via
     #   ipykernel
     #   jupyter-client
