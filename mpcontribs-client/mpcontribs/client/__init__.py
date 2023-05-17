@@ -1781,9 +1781,12 @@ class Client(SwaggerClient):
         project_names = list(project_names)
 
         if not skip_dupe_check and len(collect_ids) != len(contributions):
-            unique_identifiers = self.get_unique_identifiers_flags({"name__in": project_names})
+            nproj = len(project_names)
+            query = {"name__in": project_names} if nproj > 1 else {"name": project_names[0]}
+            unique_identifiers = self.get_unique_identifiers_flags(query)
+            query = {"project__in": project_names} if nproj > 1 else {"project": project_names[0]}
             existing = defaultdict(dict, self.get_all_ids(
-                dict(project__in=project_names), include=COMPONENTS, timeout=timeout
+                query, include=COMPONENTS, timeout=timeout
             ))
 
         # prepare contributions
