@@ -76,8 +76,8 @@ class ContributionsResource(Resource):
         re.compile(r"^data(__(" + exclude + ")+){1,4}$"),
     ]
     paginate = True
-    default_limit = 100
-    max_limit = 500
+    default_limit = 200
+    max_limit = 1500
     download_formats = ["json", "csv"]
 
     @staticmethod
