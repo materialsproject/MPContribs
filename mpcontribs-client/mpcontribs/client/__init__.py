@@ -57,7 +57,7 @@ from pint.errors import DimensionalityError
 from tempfile import gettempdir
 
 RETRIES = 3
-MAX_WORKERS = 8
+MAX_WORKERS = 3
 MAX_ELEMS = 10
 MAX_NESTING = 5
 MEGABYTES = 1024 * 1024
@@ -214,13 +214,14 @@ def grouper(n, iterable):
 
 
 def get_session(session=None):
-    # TODO add Bad Gateway 502?
     adapter_kwargs = dict(max_retries=Retry(
         total=RETRIES,
         read=RETRIES,
         connect=RETRIES,
         respect_retry_after_header=True,
-        status_forcelist=[429],  # rate limit
+        status_forcelist=[429, 502],  # rate limit
+        allowed_methods={'DELETE', 'GET', 'PUT', 'POST'},
+        backoff_factor=2
     ))
     return FuturesSession(
         session=session if session else _session,
@@ -485,7 +486,7 @@ def _run_futures(futures, total: int = 0, timeout: int = -1, desc=None, disable=
                 elapsed = time.perf_counter() - start
                 timed_out = timeout > 0 and elapsed > timeout
 
-                if timed_out or not response.ok:
+                if timed_out:
                     for fut in futures:
                         fut.cancel()
 
