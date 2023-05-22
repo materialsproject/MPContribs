@@ -96,7 +96,7 @@ mp-api==0.29.3
     # via pymatgen
 mpcontribs-client==4.5.0
     # via -r requirements.in
-mpmath==1.2.1
+mpmath==1.3.0
     # via sympy
 msgpack==1.0.4
     # via
