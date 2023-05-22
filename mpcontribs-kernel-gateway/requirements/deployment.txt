@@ -78,7 +78,7 @@ exceptiongroup==1.1.1
     # via cattrs
 executing==1.2.0
     # via stack-data
-fastjsonschema==2.16.3
+fastjsonschema==2.17.1
     # via nbformat
 filetype==1.2.0
     # via mpcontribs-client
@@ -210,7 +210,7 @@ msgpack==1.0.5
     #   mp-api
 nbclassic==1.0.0
     # via notebook
-nbclient==0.7.4
+nbclient==0.8.0
     # via nbconvert
 nbconvert==7.4.0
     # via
@@ -245,7 +245,7 @@ numpy==1.21.6
     #   pymatgen
     #   scipy
     #   spglib
-opentelemetry-api==1.17.0
+opentelemetry-api==1.18.0
     # via ddtrace
 packaging==23.1
     # via
@@ -354,7 +354,7 @@ pyzmq==25.0.2
     #   jupyter-server
     #   nbclassic
     #   notebook
-requests==2.30.0
+requests==2.31.0
     # via
     #   bravado
     #   bravado-core
@@ -492,7 +492,7 @@ webencodings==0.5.1
     # via
     #   bleach
     #   tinycss2
-websocket-client==1.5.1
+websocket-client==1.5.2
     # via jupyter-server
 widgetsnbextension==4.0.7
     # via ipywidgets

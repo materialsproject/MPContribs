@@ -40,9 +40,9 @@ blinker==1.6.2
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 boltons==23.0.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
-boto3==1.26.135
+boto3==1.26.137
     # via flask-mongorest-mpcontribs
-botocore==1.29.135
+botocore==1.29.137
     # via
     #   boto3
     #   s3transfer
@@ -102,7 +102,7 @@ exceptiongroup==1.1.1
     # via cattrs
 executing==1.2.0
     # via stack-data
-fastjsonschema==2.16.3
+fastjsonschema==2.17.1
     # via nbformat
 fastnumbers==5.0.1
     # via flask-mongorest-mpcontribs
@@ -267,7 +267,7 @@ msgpack==1.0.5
     # via mp-api
 nbclassic==1.0.0
     # via notebook
-nbclient==0.7.4
+nbclient==0.8.0
     # via nbconvert
 nbconvert==7.4.0
     # via
@@ -302,7 +302,7 @@ numpy==1.21.6
     #   pymatgen
     #   scipy
     #   spglib
-opentelemetry-api==1.17.0
+opentelemetry-api==1.18.0
     # via ddtrace
 orjson==3.8.12
     # via flask-mongorest-mpcontribs
@@ -426,7 +426,7 @@ redis==4.5.5
     #   rq
 regex==2023.5.5
     # via dateparser
-requests==2.30.0
+requests==2.31.0
     # via
     #   atlasq-tschaume
     #   mp-api
@@ -558,7 +558,7 @@ webencodings==0.5.1
     # via
     #   bleach
     #   tinycss2
-websocket-client==1.5.1
+websocket-client==1.5.2
     # via
     #   jupyter-server
     #   mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
