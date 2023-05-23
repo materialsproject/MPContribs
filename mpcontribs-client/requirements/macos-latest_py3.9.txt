@@ -172,7 +172,7 @@ pyyaml==6.0
     #   bravado-core
     #   pybtex
     #   swagger-spec-validator
-requests==2.30.0
+requests==2.31.0
     # via
     #   bravado
     #   bravado-core
@@ -231,7 +231,7 @@ traitlets==5.9.0
     # via
     #   ipython
     #   matplotlib-inline
-typing-extensions==4.5.0
+typing-extensions==4.6.0
     # via
     #   bravado
     #   emmet-core
