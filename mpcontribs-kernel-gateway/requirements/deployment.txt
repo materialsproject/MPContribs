@@ -466,7 +466,7 @@ traitlets==5.9.0
     #   nbconvert
     #   nbformat
     #   notebook
-typing-extensions==4.5.0
+typing-extensions==4.6.0
     # via
     #   bravado
     #   ddtrace

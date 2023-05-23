@@ -27,9 +27,9 @@ boltons==23.0.0
     # via
     #   mpcontribs-client
     #   mpcontribs-portal (MPContribs/mpcontribs-portal/setup.py)
-boto3==1.26.137
+boto3==1.26.138
     # via mpcontribs-portal (MPContribs/mpcontribs-portal/setup.py)
-botocore==1.29.137
+botocore==1.29.138
     # via
     #   boto3
     #   s3transfer
@@ -401,7 +401,7 @@ traitlets==5.9.0
     #   nbclient
     #   nbconvert
     #   nbformat
-typing-extensions==4.5.0
+typing-extensions==4.6.0
     # via
     #   bravado
     #   ddtrace

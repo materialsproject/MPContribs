@@ -233,7 +233,7 @@ traitlets==5.9.0
     # via
     #   ipython
     #   matplotlib-inline
-typing-extensions==4.5.0
+typing-extensions==4.6.0
     # via
     #   bravado
     #   emmet-core
