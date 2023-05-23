@@ -735,7 +735,6 @@ class Client(SwaggerClient):
         """Avoid URI too long errors"""
         pp_default, pp_max = self._get_per_page_default_max(op=op, resource=resource)
         per_page = pp_default if any(k.endswith("__in") for k in query.keys()) else pp_max
-        query["per_page"] = per_page
         nr_params_to_split = sum(
             len(v) > per_page for v in query.values() if isinstance(v, list)
         )
@@ -747,9 +746,19 @@ class Client(SwaggerClient):
         queries = []
 
         for k, v in query.items():
-            if isinstance(v, list) and len(v) > per_page:
-                for chunk in grouper(per_page, v):
-                    queries.append({k: list(chunk)})
+            if isinstance(v, list):
+                line_len = len(",".join(v).encode("utf-8"))
+
+                while line_len > 3800:
+                    per_page = int(0.9 * per_page)
+                    vv = v[:per_page]
+                    line_len = len(",".join(vv).encode("utf-8"))
+
+                if len(v) > per_page:
+                    for chunk in grouper(per_page, v):
+                        queries.append({k: list(chunk)})
+
+        query["per_page"] = per_page
 
         if not queries:
             queries = [query]
