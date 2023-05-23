@@ -78,7 +78,7 @@ exceptiongroup==1.1.1
     # via cattrs
 executing==1.2.0
     # via stack-data
-fastjsonschema==2.16.3
+fastjsonschema==2.17.1
     # via nbformat
 filetype==1.2.0
     # via mpcontribs-client
@@ -212,7 +212,7 @@ msgpack==1.0.5
     #   mp-api
 nbclassic==1.0.0
     # via notebook
-nbclient==0.7.4
+nbclient==0.8.0
     # via nbconvert
 nbconvert==7.4.0
     # via
@@ -246,7 +246,7 @@ numpy==1.24.3
     #   pymatgen
     #   scipy
     #   spglib
-opentelemetry-api==1.17.0
+opentelemetry-api==1.18.0
     # via ddtrace
 packaging==23.1
     # via
@@ -287,7 +287,7 @@ prometheus-client==0.16.0
     #   notebook
 prompt-toolkit==3.0.38
     # via ipython
-protobuf==4.23.0
+protobuf==4.23.1
     # via
     #   ddsketch
     #   ddtrace
@@ -354,7 +354,7 @@ pyzmq==25.0.2
     #   jupyter-server
     #   nbclassic
     #   notebook
-requests==2.30.0
+requests==2.31.0
     # via
     #   bravado
     #   bravado-core
@@ -464,7 +464,7 @@ traitlets==5.9.0
     #   nbconvert
     #   nbformat
     #   notebook
-typing-extensions==4.5.0
+typing-extensions==4.6.0
     # via
     #   bravado
     #   bytecode
@@ -492,7 +492,7 @@ webencodings==0.5.1
     # via
     #   bleach
     #   tinycss2
-websocket-client==1.5.1
+websocket-client==1.5.2
     # via jupyter-server
 widgetsnbextension==4.0.7
     # via ipywidgets
