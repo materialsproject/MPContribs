@@ -138,7 +138,7 @@ pybtex==0.24.0
     # via
     #   emmet-core
     #   pymatgen
-pydantic==1.10.7
+pydantic==1.10.8
     # via emmet-core
 pygments==2.15.1
     # via ipython
@@ -233,7 +233,7 @@ traitlets==5.9.0
     # via
     #   ipython
     #   matplotlib-inline
-typing-extensions==4.6.0
+typing-extensions==4.6.1
     # via
     #   bravado
     #   emmet-core
