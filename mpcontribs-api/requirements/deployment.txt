@@ -40,9 +40,9 @@ blinker==1.6.2
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 boltons==23.0.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
-boto3==1.26.142
+boto3==1.26.145
     # via flask-mongorest-mpcontribs
-botocore==1.29.142
+botocore==1.29.145
     # via
     #   boto3
     #   s3transfer
@@ -50,7 +50,7 @@ brotli==1.0.9
     # via flask-compress
 bytecode==0.14.2
     # via ddtrace
-cattrs==22.2.0
+cattrs==23.1.2
     # via ddtrace
 certifi==2023.5.7
     # via requests
@@ -70,7 +70,7 @@ contourpy==1.0.7
     # via matplotlib
 crontab==1.0.1
     # via rq-scheduler
-cryptography==40.0.2
+cryptography==41.0.1
     # via pyopenssl
 css-html-js-minify==2.5.5
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
@@ -80,7 +80,7 @@ dateparser==1.1.8
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 ddsketch==2.0.4
     # via ddtrace
-ddtrace==1.13.4
+ddtrace==1.14.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 debugpy==1.6.7
     # via ipykernel
@@ -94,7 +94,7 @@ dnspython==2.3.0
     # via
     #   mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
     #   pymongo
-emmet-core==0.55.2
+emmet-core==0.55.3
     # via mp-api
 envier==0.4.0
     # via ddtrace
@@ -276,7 +276,7 @@ nbconvert==7.4.0
     #   jupyter-server
     #   nbclassic
     #   notebook
-nbformat==5.8.0
+nbformat==5.9.0
     # via
     #   jupyter-server
     #   mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
@@ -306,13 +306,12 @@ numpy==1.21.6
     #   spglib
 opentelemetry-api==1.18.0
     # via ddtrace
-orjson==3.8.14
+orjson==3.9.0
     # via flask-mongorest-mpcontribs
 overrides==7.3.1
     # via jupyter-server
 packaging==23.1
     # via
-    #   ddtrace
     #   flask-marshmallow
     #   ipykernel
     #   jupyter-server
@@ -375,7 +374,7 @@ pygments==2.15.1
     # via
     #   ipython
     #   nbconvert
-pymatgen==2023.5.10
+pymatgen==2023.5.31
     # via
     #   emmet-core
     #   mp-api
@@ -384,7 +383,7 @@ pymongo==4.3.3
     # via
     #   flask-mongorest-mpcontribs
     #   mongoengine
-pyopenssl==23.1.1
+pyopenssl==23.2.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 pyparsing==3.0.9
     # via matplotlib
@@ -449,7 +448,7 @@ rq==1.15.0
     #   rq-scheduler
 rq-scheduler==0.13.1
     # via flask-rq2
-ruamel-yaml==0.17.28
+ruamel-yaml==0.17.31
     # via pymatgen
 ruamel-yaml-clib==0.2.7
     # via ruamel-yaml
@@ -534,8 +533,9 @@ traitlets==5.9.0
     #   nbconvert
     #   nbformat
     #   notebook
-typing-extensions==4.6.2
+typing-extensions==4.6.3
     # via
+    #   cattrs
     #   ddtrace
     #   emmet-core
     #   mp-api
