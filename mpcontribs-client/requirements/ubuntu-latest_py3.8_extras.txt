@@ -34,7 +34,7 @@ dnspython==2.3.0
     # via
     #   pyisemail
     #   pymongo
-emmet-core==0.55.2
+emmet-core==0.55.3
     # via mp-api
 exceptiongroup==1.1.1
     # via pytest
@@ -274,7 +274,7 @@ traitlets==5.9.0
     # via
     #   ipython
     #   matplotlib-inline
-typing-extensions==4.6.2
+typing-extensions==4.6.3
     # via
     #   bravado
     #   emmet-core

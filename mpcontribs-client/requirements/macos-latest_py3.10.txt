@@ -34,7 +34,7 @@ dnspython==2.3.0
     # via
     #   pyisemail
     #   pymongo
-emmet-core==0.55.2
+emmet-core==0.55.3
     # via mp-api
 executing==1.2.0
     # via stack-data
@@ -52,7 +52,7 @@ idna==3.4
     # via
     #   jsonschema
     #   requests
-ipython==8.13.2
+ipython==8.14.0
     # via mpcontribs-client (setup.py)
 isoduration==20.11.0
     # via jsonschema
@@ -229,7 +229,7 @@ traitlets==5.9.0
     # via
     #   ipython
     #   matplotlib-inline
-typing-extensions==4.6.2
+typing-extensions==4.6.3
     # via
     #   bravado
     #   emmet-core

@@ -42,7 +42,7 @@ bravado-core==5.17.1
     # via bravado
 bytecode==0.14.2
     # via ddtrace
-cattrs==23.1.1
+cattrs==23.1.2
     # via ddtrace
 certifi==2023.5.7
     # via requests
@@ -58,7 +58,7 @@ cycler==0.11.0
     # via matplotlib
 ddsketch==2.0.4
     # via ddtrace
-ddtrace==1.13.4
+ddtrace==1.14.0
     # via -r requirements.in
 debugpy==1.6.7
     # via ipykernel
@@ -72,7 +72,7 @@ dnspython==2.3.0
     # via
     #   pyisemail
     #   pymongo
-emmet-core==0.55.2
+emmet-core==0.55.3
     # via mp-api
 entrypoints==0.4
     # via jupyter-client
@@ -188,7 +188,7 @@ kiwisolver==1.4.4
     # via matplotlib
 latexcodec==2.0.1
     # via pybtex
-markupsafe==2.1.2
+markupsafe==2.1.3
     # via
     #   jinja2
     #   nbconvert
@@ -260,7 +260,6 @@ overrides==7.3.1
     # via jupyter-server
 packaging==23.1
     # via
-    #   ddtrace
     #   ipykernel
     #   jupyter-server
     #   matplotlib
@@ -476,7 +475,7 @@ traitlets==5.9.0
     #   nbconvert
     #   nbformat
     #   notebook
-typing-extensions==4.6.2
+typing-extensions==4.6.3
     # via
     #   bravado
     #   bytecode
