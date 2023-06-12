@@ -99,7 +99,7 @@ idna==3.4
     #   requests
 importlib-metadata==6.0.1
     # via opentelemetry-api
-ipykernel==6.23.1
+ipykernel==6.23.2
     # via
     #   ipywidgets
     #   nbclassic
