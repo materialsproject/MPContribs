@@ -31,9 +31,9 @@ boltons==23.0.0
     # via
     #   mpcontribs-client
     #   mpcontribs-portal (setup.py)
-boto3==1.26.147
+boto3==1.26.151
     # via mpcontribs-portal (setup.py)
-botocore==1.29.147
+botocore==1.29.151
     # via
     #   boto3
     #   s3transfer
@@ -82,7 +82,7 @@ dnspython==2.3.0
     # via
     #   pyisemail
     #   pymongo
-emmet-core==0.55.3
+emmet-core==0.55.5
     # via mp-api
 envier==0.4.0
     # via ddtrace
@@ -245,9 +245,9 @@ pillow==9.5.0
     # via matplotlib
 pint==0.19.2
     # via mpcontribs-client
-platformdirs==3.5.1
+platformdirs==3.5.3
     # via jupyter-core
-plotly==5.14.1
+plotly==5.15.0
     # via
     #   mpcontribs-client
     #   pymatgen
@@ -267,7 +267,7 @@ pybtex==0.24.0
     # via
     #   emmet-core
     #   pymatgen
-pydantic==1.10.8
+pydantic==1.10.9
     # via emmet-core
 pygments==2.15.1
     # via
@@ -411,7 +411,7 @@ typing-extensions==4.6.3
     #   swagger-spec-validator
 tzdata==2023.3
     # via pandas
-ujson==5.7.0
+ujson==5.8.0
     # via mpcontribs-client
 uncertainties==3.1.7
     # via pymatgen
