@@ -34,7 +34,7 @@ dnspython==2.3.0
     # via
     #   pyisemail
     #   pymongo
-emmet-core==0.55.3
+emmet-core==0.55.5
     # via mp-api
 executing==1.2.0
     # via stack-data
@@ -122,7 +122,7 @@ pillow==9.5.0
     # via matplotlib
 pint==0.19.2
     # via mpcontribs-client (setup.py)
-plotly==5.14.1
+plotly==5.15.0
     # via
     #   mpcontribs-client (setup.py)
     #   pymatgen
@@ -136,7 +136,7 @@ pybtex==0.24.0
     # via
     #   emmet-core
     #   pymatgen
-pydantic==1.10.8
+pydantic==1.10.9
     # via emmet-core
 pygments==2.15.1
     # via ipython
@@ -238,13 +238,13 @@ typing-extensions==4.6.3
     #   swagger-spec-validator
 tzdata==2023.3
     # via pandas
-ujson==5.7.0
+ujson==5.8.0
     # via mpcontribs-client (setup.py)
 uncertainties==3.1.7
     # via pymatgen
 uri-template==1.2.0
     # via jsonschema
-urllib3==2.0.2
+urllib3==2.0.3
     # via requests
 wcwidth==0.2.6
     # via prompt-toolkit
