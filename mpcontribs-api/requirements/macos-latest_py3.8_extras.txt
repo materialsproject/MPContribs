@@ -46,9 +46,9 @@ blinker==1.6.2
     # via mpcontribs-api (setup.py)
 boltons==23.0.0
     # via mpcontribs-api (setup.py)
-boto3==1.26.151
+boto3==1.26.153
     # via flask-mongorest-mpcontribs
-botocore==1.29.151
+botocore==1.29.153
     # via
     #   boto3
     #   s3transfer
@@ -72,7 +72,7 @@ click==8.1.3
     #   rq
 comm==0.1.3
     # via ipykernel
-contourpy==1.0.7
+contourpy==1.1.0
     # via matplotlib
 crontab==1.0.1
     # via rq-scheduler
@@ -86,7 +86,7 @@ dateparser==1.1.8
     # via mpcontribs-api (setup.py)
 ddsketch==2.0.4
     # via ddtrace
-ddtrace==1.14.0
+ddtrace==1.15.0
     # via mpcontribs-api (setup.py)
 debugpy==1.6.7
     # via ipykernel
@@ -100,7 +100,7 @@ dnspython==2.3.0
     # via
     #   mpcontribs-api (setup.py)
     #   pymongo
-emmet-core==0.55.5
+emmet-core==0.56.1
     # via mp-api
 envier==0.4.0
     # via ddtrace
@@ -143,7 +143,7 @@ flask-sse==1.0.0
     # via flask-mongorest-mpcontribs
 flatten-dict==0.4.2
     # via flask-mongorest-mpcontribs
-fonttools==4.39.4
+fonttools==4.40.0
     # via matplotlib
 fqdn==1.5.1
     # via jsonschema
@@ -174,7 +174,7 @@ importlib-resources==5.12.0
     #   matplotlib
 iniconfig==2.0.0
     # via pytest
-ipykernel==6.23.1
+ipykernel==6.23.2
     # via
     #   nbclassic
     #   notebook
@@ -219,7 +219,7 @@ jupyter-client==8.2.0
     #   nbclassic
     #   nbclient
     #   notebook
-jupyter-core==5.3.0
+jupyter-core==5.3.1
     # via
     #   ipykernel
     #   jupyter-client
@@ -290,7 +290,7 @@ nbclassic==1.0.0
     # via notebook
 nbclient==0.8.0
     # via nbconvert
-nbconvert==7.4.0
+nbconvert==7.5.0
     # via
     #   jupyter-server
     #   nbclassic
@@ -369,7 +369,7 @@ prometheus-client==0.17.0
     #   notebook
 prompt-toolkit==3.0.38
     # via ipython
-protobuf==4.23.2
+protobuf==4.23.3
     # via
     #   ddsketch
     #   ddtrace
@@ -522,9 +522,7 @@ sympy==1.12
 tabulate==0.9.0
     # via pymatgen
 tenacity==8.2.2
-    # via
-    #   ddtrace
-    #   plotly
+    # via plotly
 terminado==0.17.1
     # via
     #   jupyter-server
