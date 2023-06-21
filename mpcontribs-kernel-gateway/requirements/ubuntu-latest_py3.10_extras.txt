@@ -68,7 +68,7 @@ dnspython==2.3.0
     # via
     #   pyisemail
     #   pymongo
-emmet-core==0.56.1
+emmet-core==0.57.1
     # via mp-api
 entrypoints==0.4
     # via jupyter-client
@@ -127,7 +127,7 @@ jinja2==3.1.2
     #   notebook
 json2html==1.3.0
     # via mpcontribs-client
-jsonpointer==2.3
+jsonpointer==2.4
     # via jsonschema
 jsonref==1.1.0
     # via bravado-core
@@ -188,7 +188,7 @@ matplotlib-inline==0.1.6
     # via
     #   ipykernel
     #   ipython
-mistune==2.0.5
+mistune==3.0.1
     # via nbconvert
 monotonic==1.6
     # via bravado
@@ -212,7 +212,7 @@ nbclassic==1.0.0
     # via notebook
 nbclient==0.8.0
     # via nbconvert
-nbconvert==7.5.0
+nbconvert==7.6.0
     # via
     #   jupyter-server
     #   nbclassic
@@ -236,7 +236,7 @@ notebook==6.5.4
     # via jupyter-kernel-gateway
 notebook-shim==0.2.3
     # via nbclassic
-numpy==1.24.3
+numpy==1.25.0
     # via
     #   contourpy
     #   matplotlib
@@ -273,7 +273,7 @@ pillow==9.5.0
     # via matplotlib
 pint==0.19.2
     # via mpcontribs-client
-platformdirs==3.5.3
+platformdirs==3.7.0
     # via jupyter-core
 plotly==5.15.0
     # via
@@ -319,9 +319,9 @@ pymatgen==2023.5.31
     #   emmet-core
     #   mp-api
     #   mpcontribs-client
-pymongo==4.3.3
+pymongo==4.4.0
     # via mpcontribs-client
-pyparsing==3.0.9
+pyparsing==3.1.0
     # via matplotlib
 pyrsistent==0.19.3
     # via jsonschema
@@ -361,7 +361,7 @@ requests==2.31.0
     #   mp-api
     #   pymatgen
     #   requests-futures
-requests-futures==1.0.0
+requests-futures==1.0.1
     # via mpcontribs-client
 rfc3339-validator==0.1.4
     # via
@@ -373,7 +373,7 @@ rfc3986-validator==0.1.1
     #   jupyter-events
 rfc3987==1.3.8
     # via jsonschema
-ruamel-yaml==0.17.31
+ruamel-yaml==0.17.32
     # via pymatgen
 ruamel-yaml-clib==0.2.7
     # via ruamel-yaml
@@ -476,7 +476,7 @@ ujson==5.8.0
     # via mpcontribs-client
 uncertainties==3.1.7
     # via pymatgen
-uri-template==1.2.0
+uri-template==1.3.0
     # via jsonschema
 urllib3==2.0.3
     # via requests
@@ -488,7 +488,7 @@ webencodings==0.5.1
     # via
     #   bleach
     #   tinycss2
-websocket-client==1.5.3
+websocket-client==1.6.0
     # via jupyter-server
 widgetsnbextension==4.0.7
     # via ipywidgets
