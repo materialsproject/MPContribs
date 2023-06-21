@@ -40,9 +40,9 @@ blinker==1.6.2
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 boltons==23.0.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
-boto3==1.26.155
+boto3==1.26.158
     # via flask-mongorest-mpcontribs
-botocore==1.29.155
+botocore==1.29.158
     # via
     #   boto3
     #   s3transfer
@@ -245,7 +245,7 @@ matplotlib-inline==0.1.6
     #   ipython
 mimerender-pr36==0.0.2
     # via flask-mongorest-mpcontribs
-mistune==2.0.5
+mistune==3.0.1
     # via
     #   flasgger-tschaume
     #   nbconvert
@@ -271,7 +271,7 @@ nbclassic==1.0.0
     # via notebook
 nbclient==0.8.0
     # via nbconvert
-nbconvert==7.5.0
+nbconvert==7.6.0
     # via
     #   jupyter-server
     #   nbclassic
@@ -337,7 +337,7 @@ pillow==9.5.0
     # via matplotlib
 pint==0.19.2
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
-platformdirs==3.6.0
+platformdirs==3.7.0
     # via jupyter-core
 plotly==5.15.0
     # via pymatgen
@@ -379,7 +379,7 @@ pymatgen==2023.5.31
     #   emmet-core
     #   mp-api
     #   mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
-pymongo==4.3.3
+pymongo==4.4.0
     # via
     #   flask-mongorest-mpcontribs
     #   mongoengine
@@ -546,7 +546,7 @@ uncertainties==3.1.7
     # via
     #   mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
     #   pymatgen
-uri-template==1.2.0
+uri-template==1.3.0
     # via jsonschema
 urllib3==1.26.16
     # via
