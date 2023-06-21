@@ -36,7 +36,7 @@ dnspython==2.3.0
     # via
     #   pyisemail
     #   pymongo
-emmet-core==0.56.1
+emmet-core==0.57.1
     # via mp-api
 exceptiongroup==1.1.1
     # via pytest
@@ -72,7 +72,7 @@ jedi==0.18.2
     # via ipython
 json2html==1.3.0
     # via mpcontribs-client (setup.py)
-jsonpointer==2.3
+jsonpointer==2.4
     # via jsonschema
 jsonref==1.1.0
     # via bravado-core
@@ -108,7 +108,7 @@ msgpack==1.0.5
     #   mp-api
 networkx==3.1
     # via pymatgen
-numpy==1.24.3
+numpy==1.25.0
     # via
     #   contourpy
     #   matplotlib
@@ -141,7 +141,7 @@ plotly==5.15.0
     # via
     #   mpcontribs-client (setup.py)
     #   pymatgen
-pluggy==1.0.0
+pluggy==1.2.0
     # via pytest
 prompt-toolkit==3.0.38
     # via ipython
@@ -174,9 +174,9 @@ pymatgen==2023.5.31
     #   emmet-core
     #   mp-api
     #   mpcontribs-client (setup.py)
-pymongo==4.3.3
+pymongo==4.4.0
     # via mpcontribs-client (setup.py)
-pyparsing==3.0.9
+pyparsing==3.1.0
     # via matplotlib
 pyrsistent==0.19.3
     # via jsonschema
@@ -216,13 +216,13 @@ requests==2.31.0
     #   mp-api
     #   pymatgen
     #   requests-futures
-requests-futures==1.0.0
+requests-futures==1.0.1
     # via mpcontribs-client (setup.py)
 rfc3339-validator==0.1.4
     # via jsonschema
 rfc3987==1.3.8
     # via jsonschema
-ruamel-yaml==0.17.31
+ruamel-yaml==0.17.32
     # via pymatgen
 ruamel-yaml-clib==0.2.7
     # via ruamel-yaml
@@ -286,7 +286,7 @@ ujson==5.8.0
     # via mpcontribs-client (setup.py)
 uncertainties==3.1.7
     # via pymatgen
-uri-template==1.2.0
+uri-template==1.3.0
     # via jsonschema
 urllib3==2.0.3
     # via requests
