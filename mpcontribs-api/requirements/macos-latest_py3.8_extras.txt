@@ -46,9 +46,9 @@ blinker==1.6.2
     # via mpcontribs-api (setup.py)
 boltons==23.0.0
     # via mpcontribs-api (setup.py)
-boto3==1.26.153
+boto3==1.26.158
     # via flask-mongorest-mpcontribs
-botocore==1.29.153
+botocore==1.29.158
     # via
     #   boto3
     #   s3transfer
@@ -100,7 +100,7 @@ dnspython==2.3.0
     # via
     #   mpcontribs-api (setup.py)
     #   pymongo
-emmet-core==0.56.1
+emmet-core==0.57.1
     # via mp-api
 envier==0.4.0
     # via ddtrace
@@ -204,7 +204,7 @@ jmespath==1.0.1
     #   botocore
 json2html==1.3.0
     # via mpcontribs-api (setup.py)
-jsonpointer==2.3
+jsonpointer==2.4
     # via jsonschema
 jsonschema[format-nongpl]==4.17.3
     # via
@@ -264,7 +264,7 @@ mccabe==0.7.0
     # via flake8
 mimerender-pr36==0.0.2
     # via flask-mongorest-mpcontribs
-mistune==2.0.5
+mistune==3.0.1
     # via
     #   flasgger-tschaume
     #   nbconvert
@@ -290,7 +290,7 @@ nbclassic==1.0.0
     # via notebook
 nbclient==0.8.0
     # via nbconvert
-nbconvert==7.5.0
+nbconvert==7.6.0
     # via
     #   jupyter-server
     #   nbclassic
@@ -356,11 +356,11 @@ pint==0.19.2
     # via mpcontribs-api (setup.py)
 pkgutil-resolve-name==1.3.10
     # via jsonschema
-platformdirs==3.5.3
+platformdirs==3.7.0
     # via jupyter-core
 plotly==5.15.0
     # via pymatgen
-pluggy==1.0.0
+pluggy==1.2.0
     # via pytest
 prometheus-client==0.17.0
     # via
@@ -404,13 +404,13 @@ pymatgen==2023.5.31
     #   emmet-core
     #   mp-api
     #   mpcontribs-api (setup.py)
-pymongo==4.3.3
+pymongo==4.4.0
     # via
     #   flask-mongorest-mpcontribs
     #   mongoengine
 pyopenssl==23.2.0
     # via mpcontribs-api (setup.py)
-pyparsing==3.0.9
+pyparsing==3.1.0
     # via matplotlib
 pyrsistent==0.19.3
     # via jsonschema
@@ -475,7 +475,7 @@ rq==1.15.0
     #   rq-scheduler
 rq-scheduler==0.13.1
     # via flask-rq2
-ruamel-yaml==0.17.31
+ruamel-yaml==0.17.32
     # via pymatgen
 ruamel-yaml-clib==0.2.7
     # via ruamel-yaml
@@ -575,7 +575,7 @@ uncertainties==3.1.7
     # via
     #   mpcontribs-api (setup.py)
     #   pymatgen
-uri-template==1.2.0
+uri-template==1.3.0
     # via jsonschema
 urllib3==1.26.16
     # via
@@ -589,7 +589,7 @@ webencodings==0.5.1
     # via
     #   bleach
     #   tinycss2
-websocket-client==1.5.3
+websocket-client==1.6.0
     # via
     #   jupyter-server
     #   mpcontribs-api (setup.py)
