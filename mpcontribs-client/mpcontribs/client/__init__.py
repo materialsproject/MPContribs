@@ -454,14 +454,14 @@ class Attachment(dict):
         """
         try:
             path = Path(path)
-        except:
+        except TypeError:
             raise MPContribsClientError(f"Failed to coerce {path} into pathlib.Path type.")
 
         content = path.read_bytes()
 
         try:
             content = gzip.compress(content)
-        except:
+        except Exception:
             raise MPContribsClientError(f"Failed to gzip {path}.")
 
         size = len(content)
