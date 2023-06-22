@@ -78,7 +78,7 @@ dnspython==2.3.0
     # via
     #   pyisemail
     #   pymongo
-emmet-core==0.57.1
+emmet-core==0.57.2
     # via mp-api
 envier==0.4.0
     # via ddtrace

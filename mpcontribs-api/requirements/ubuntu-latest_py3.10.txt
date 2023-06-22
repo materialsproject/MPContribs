@@ -94,7 +94,7 @@ dnspython==2.3.0
     # via
     #   mpcontribs-api (setup.py)
     #   pymongo
-emmet-core==0.57.1
+emmet-core==0.57.2
     # via mp-api
 envier==0.4.0
     # via ddtrace
@@ -437,7 +437,7 @@ rfc3986-validator==0.1.1
     # via
     #   jsonschema
     #   jupyter-events
-rq==1.15.0
+rq==1.15.1
     # via
     #   flask-rq2
     #   rq-scheduler
