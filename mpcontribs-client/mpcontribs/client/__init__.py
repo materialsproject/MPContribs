@@ -446,6 +446,36 @@ class Attachment(dict):
         )
 
     @classmethod
+    def from_textfile(cls, path: Union[Path, str]):
+        """Construct attachment from (uncompressed) text file
+
+        Args:
+            path (pathlib.Path, str): file path
+        """
+        try:
+            path = Path(path)
+        except:
+            raise MPContribsClientError(f"Failed to coerce {path} into pathlib.Path type.")
+
+        content = path.read_bytes()
+
+        try:
+            content = gzip.compress(content)
+        except:
+            raise MPContribsClientError(f"Failed to gzip {path}.")
+
+        size = len(content)
+
+        if size > MAX_BYTES:
+            raise MPContribsClientError(f"{path} too large ({size} > {MAX_BYTES})!")
+
+        return cls(
+            name=path.name,
+            mime="application/gzip",
+            content=b64encode(content).decode("utf-8")
+        )
+
+    @classmethod
     def from_dict(cls, dct: dict):
         """Construct Attachment from dict
 
