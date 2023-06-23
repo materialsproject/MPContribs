@@ -455,7 +455,8 @@ class Attachment(dict):
         try:
             path = Path(path)
         except TypeError:
-            raise MPContribsClientError(f"Failed to coerce {path} into pathlib.Path type.")
+            typ = type(path)
+            raise MPContribsClientError(f"use pathlib.Path or str (is: {typ}).")
 
         content = path.read_bytes()
 
