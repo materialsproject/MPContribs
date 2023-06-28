@@ -42,9 +42,9 @@ blinker==1.6.2
     # via mpcontribs-api (setup.py)
 boltons==23.0.0
     # via mpcontribs-api (setup.py)
-boto3==1.26.158
+boto3==1.26.160
     # via flask-mongorest-mpcontribs
-botocore==1.29.158
+botocore==1.29.160
     # via
     #   boto3
     #   s3transfer
@@ -142,6 +142,8 @@ fqdn==1.5.1
     # via jsonschema
 freezegun==1.2.2
     # via rq-scheduler
+frozendict==2.3.8
+    # via pymatgen
 future==0.18.3
     # via uncertainties
 gevent==22.10.2
@@ -165,7 +167,7 @@ importlib-resources==5.12.0
     # via
     #   jsonschema
     #   matplotlib
-ipykernel==6.23.2
+ipykernel==6.23.3
     # via
     #   nbclassic
     #   notebook
@@ -203,7 +205,7 @@ jsonschema[format-nongpl]==4.17.3
     #   flasgger-tschaume
     #   jupyter-events
     #   nbformat
-jupyter-client==8.2.0
+jupyter-client==8.3.0
     # via
     #   ipykernel
     #   jupyter-server
@@ -344,7 +346,7 @@ pint==0.19.2
     # via mpcontribs-api (setup.py)
 pkgutil-resolve-name==1.3.10
     # via jsonschema
-platformdirs==3.7.0
+platformdirs==3.8.0
     # via jupyter-core
 plotly==5.15.0
     # via pymatgen
@@ -381,7 +383,7 @@ pygments==2.15.1
     # via
     #   ipython
     #   nbconvert
-pymatgen==2023.5.31
+pymatgen==2023.6.23
     # via
     #   emmet-core
     #   mp-api
@@ -429,7 +431,7 @@ pyzmq==25.1.0
     #   jupyter-server
     #   nbclassic
     #   notebook
-redis==4.5.5
+redis==4.6.0
     # via
     #   flask-rq2
     #   flask-sse
@@ -567,7 +569,7 @@ webencodings==0.5.1
     # via
     #   bleach
     #   tinycss2
-websocket-client==1.6.0
+websocket-client==1.6.1
     # via
     #   jupyter-server
     #   mpcontribs-api (setup.py)
@@ -583,7 +585,7 @@ zipp==3.15.0
     # via
     #   importlib-metadata
     #   importlib-resources
-zope-event==4.6
+zope-event==5.0
     # via gevent
 zope-interface==6.0
     # via gevent
