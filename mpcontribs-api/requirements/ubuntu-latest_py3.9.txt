@@ -40,9 +40,9 @@ blinker==1.6.2
     # via mpcontribs-api (setup.py)
 boltons==23.0.0
     # via mpcontribs-api (setup.py)
-boto3==1.26.160
+boto3==1.26.164
     # via flask-mongorest-mpcontribs
-botocore==1.29.160
+botocore==1.29.164
     # via
     #   boto3
     #   s3transfer
@@ -80,7 +80,7 @@ dateparser==1.1.8
     # via mpcontribs-api (setup.py)
 ddsketch==2.0.4
     # via ddtrace
-ddtrace==1.15.0
+ddtrace==1.15.1
     # via mpcontribs-api (setup.py)
 debugpy==1.6.7
     # via ipykernel
@@ -220,7 +220,7 @@ jupyter-core==5.3.1
     #   notebook
 jupyter-events==0.6.3
     # via jupyter-server
-jupyter-server==2.6.0
+jupyter-server==2.7.0
     # via
     #   nbclassic
     #   notebook-shim
@@ -326,7 +326,7 @@ packaging==23.1
     #   plotly
 palettable==3.3.3
     # via pymatgen
-pandas==2.0.2
+pandas==2.0.3
     # via pymatgen
 pandocfilters==1.5.0
     # via nbconvert
@@ -377,7 +377,7 @@ pygments==2.15.1
     # via
     #   ipython
     #   nbconvert
-pymatgen==2023.6.23
+pymatgen==2023.6.28
     # via
     #   emmet-core
     #   mp-api
@@ -457,7 +457,7 @@ ruamel-yaml-clib==0.2.7
     # via ruamel-yaml
 s3transfer==0.6.1
     # via boto3
-scipy==1.11.0
+scipy==1.11.1
     # via pymatgen
 semantic-version==2.10.0
     # via mpcontribs-api (setup.py)
@@ -532,7 +532,7 @@ traitlets==5.9.0
     #   nbconvert
     #   nbformat
     #   notebook
-typing-extensions==4.6.3
+typing-extensions==4.7.0
     # via
     #   bytecode
     #   cattrs
