@@ -31,9 +31,9 @@ boltons==23.0.0
     # via
     #   mpcontribs-client
     #   mpcontribs-portal (setup.py)
-boto3==1.26.160
+boto3==1.26.164
     # via mpcontribs-portal (setup.py)
-botocore==1.29.160
+botocore==1.29.164
     # via
     #   boto3
     #   s3transfer
@@ -57,7 +57,7 @@ cycler==0.11.0
     # via matplotlib
 ddsketch==2.0.4
     # via ddtrace
-ddtrace==1.15.0
+ddtrace==1.15.1
     # via mpcontribs-portal (setup.py)
 debugpy==1.6.7
     # via ipykernel
@@ -236,7 +236,7 @@ packaging==23.1
     #   plotly
 palettable==3.3.3
     # via pymatgen
-pandas==2.0.2
+pandas==2.0.3
     # via
     #   mpcontribs-client
     #   pymatgen
@@ -282,7 +282,7 @@ pygments==2.15.1
     #   nbconvert
 pyisemail==2.0.1
     # via mpcontribs-client
-pymatgen==2023.6.23
+pymatgen==2023.6.28
     # via
     #   emmet-core
     #   mp-api
@@ -338,7 +338,7 @@ ruamel-yaml-clib==0.2.7
     # via ruamel-yaml
 s3transfer==0.6.1
     # via boto3
-scipy==1.11.0
+scipy==1.11.1
     # via
     #   mpcontribs-portal (setup.py)
     #   pymatgen
@@ -404,7 +404,7 @@ traitlets==5.9.0
     #   nbclient
     #   nbconvert
     #   nbformat
-typing-extensions==4.6.3
+typing-extensions==4.7.0
     # via
     #   asgiref
     #   bravado
