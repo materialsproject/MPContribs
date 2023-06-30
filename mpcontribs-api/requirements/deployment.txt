@@ -4,6 +4,8 @@
 #
 #    pip-compile --output-file=MPContribs/mpcontribs-api/requirements/deployment.txt --resolver=backtracking MPContribs/mpcontribs-api/setup.py python/requirements.txt
 #
+annotated-types==0.5.0
+    # via pydantic
 anyio==3.7.0
     # via jupyter-server
 apispec==5.2.2
@@ -40,9 +42,9 @@ blinker==1.6.2
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 boltons==23.0.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
-boto3==1.26.160
+boto3==1.26.164
     # via flask-mongorest-mpcontribs
-botocore==1.29.160
+botocore==1.29.164
     # via
     #   boto3
     #   s3transfer
@@ -80,7 +82,7 @@ dateparser==1.1.8
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 ddsketch==2.0.4
     # via ddtrace
-ddtrace==1.15.0
+ddtrace==1.15.1
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 debugpy==1.6.7
     # via ipykernel
@@ -94,7 +96,7 @@ dnspython==2.3.0
     # via
     #   mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
     #   pymongo
-emmet-core==0.57.2
+emmet-core==0.58.0
     # via mp-api
 envier==0.4.0
     # via ddtrace
@@ -214,7 +216,7 @@ jupyter-core==5.3.1
     #   notebook
 jupyter-events==0.6.3
     # via jupyter-server
-jupyter-server==2.6.0
+jupyter-server==2.7.0
     # via
     #   nbclassic
     #   notebook-shim
@@ -323,7 +325,7 @@ packaging==23.1
     #   plotly
 palettable==3.3.3
     # via pymatgen
-pandas==2.0.2
+pandas==1.5.3
     # via
     #   -r python/requirements.txt
     #   pymatgen
@@ -370,13 +372,15 @@ pybtex==0.24.0
     #   pymatgen
 pycparser==2.21
     # via cffi
-pydantic==1.10.9
+pydantic==2.0
     # via emmet-core
+pydantic-core==2.0.1
+    # via pydantic
 pygments==2.15.1
     # via
     #   ipython
     #   nbconvert
-pymatgen==2023.6.23
+pymatgen==2023.6.28
     # via
     #   emmet-core
     #   mp-api
@@ -456,7 +460,7 @@ ruamel-yaml-clib==0.2.7
     # via ruamel-yaml
 s3transfer==0.6.1
     # via boto3
-scipy==1.11.0
+scipy==1.11.1
     # via
     #   -r python/requirements.txt
     #   pymatgen
@@ -533,15 +537,14 @@ traitlets==5.9.0
     #   nbconvert
     #   nbformat
     #   notebook
-typing-extensions==4.6.3
+typing-extensions==4.7.0
     # via
     #   cattrs
     #   ddtrace
     #   emmet-core
     #   mp-api
     #   pydantic
-tzdata==2023.3
-    # via pandas
+    #   pydantic-core
 tzlocal==5.0.1
     # via dateparser
 uncertainties==3.1.7

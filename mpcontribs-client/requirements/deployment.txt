@@ -4,6 +4,8 @@
 #
 #    pip-compile --output-file=MPContribs/mpcontribs-client/requirements/deployment.txt --resolver=backtracking MPContribs/mpcontribs-client/setup.py python/requirements.txt
 #
+annotated-types==0.5.0
+    # via pydantic
 arrow==1.2.3
     # via isoduration
 asttokens==2.2.1
@@ -32,7 +34,7 @@ dnspython==2.3.0
     # via
     #   pyisemail
     #   pymongo
-emmet-core==0.57.2
+emmet-core==0.58.0
     # via mp-api
 executing==1.2.0
     # via stack-data
@@ -111,7 +113,7 @@ packaging==23.1
     #   plotly
 palettable==3.3.3
     # via pymatgen
-pandas==2.0.2
+pandas==1.5.3
     # via
     #   -r python/requirements.txt
     #   mpcontribs-client (MPContribs/mpcontribs-client/setup.py)
@@ -140,13 +142,15 @@ pybtex==0.24.0
     # via
     #   emmet-core
     #   pymatgen
-pydantic==1.10.9
+pydantic==2.0
     # via emmet-core
+pydantic-core==2.0.1
+    # via pydantic
 pygments==2.15.1
     # via ipython
 pyisemail==2.0.1
     # via mpcontribs-client (MPContribs/mpcontribs-client/setup.py)
-pymatgen==2023.6.23
+pymatgen==2023.6.28
     # via
     #   emmet-core
     #   mp-api
@@ -191,7 +195,7 @@ ruamel-yaml==0.17.32
     # via pymatgen
 ruamel-yaml-clib==0.2.7
     # via ruamel-yaml
-scipy==1.11.0
+scipy==1.11.1
     # via
     #   -r python/requirements.txt
     #   pymatgen
@@ -235,15 +239,14 @@ traitlets==5.9.0
     # via
     #   ipython
     #   matplotlib-inline
-typing-extensions==4.6.3
+typing-extensions==4.7.0
     # via
     #   bravado
     #   emmet-core
     #   mp-api
     #   pydantic
+    #   pydantic-core
     #   swagger-spec-validator
-tzdata==2023.3
-    # via pandas
 ujson==5.8.0
     # via mpcontribs-client (MPContribs/mpcontribs-client/setup.py)
 uncertainties==3.1.7

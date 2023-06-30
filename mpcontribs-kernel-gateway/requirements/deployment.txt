@@ -4,6 +4,8 @@
 #
 #    pip-compile --output-file=MPContribs/mpcontribs-kernel-gateway/requirements/deployment.txt --resolver=backtracking MPContribs/mpcontribs-kernel-gateway/requirements.in python/requirements.txt
 #
+annotated-types==0.5.0
+    # via pydantic
 anyio==3.7.0
     # via jupyter-server
 argon2-cffi==21.3.0
@@ -54,7 +56,7 @@ cycler==0.11.0
     # via matplotlib
 ddsketch==2.0.4
     # via ddtrace
-ddtrace==1.15.0
+ddtrace==1.15.1
     # via -r MPContribs/mpcontribs-kernel-gateway/requirements.in
 debugpy==1.6.7
     # via ipykernel
@@ -68,7 +70,7 @@ dnspython==2.3.0
     # via
     #   pyisemail
     #   pymongo
-emmet-core==0.57.2
+emmet-core==0.58.0
     # via mp-api
 entrypoints==0.4
     # via jupyter-client
@@ -164,7 +166,7 @@ jupyter-events==0.6.3
     # via jupyter-server
 jupyter-kernel-gateway==2.5.2
     # via -r MPContribs/mpcontribs-kernel-gateway/requirements.in
-jupyter-server==2.6.0
+jupyter-server==2.7.0
     # via
     #   nbclassic
     #   notebook-shim
@@ -262,7 +264,7 @@ packaging==23.1
     #   plotly
 palettable==3.3.3
     # via pymatgen
-pandas==2.0.2
+pandas==1.5.3
     # via
     #   -r python/requirements.txt
     #   mpcontribs-client
@@ -312,15 +314,17 @@ pybtex==0.24.0
     #   pymatgen
 pycparser==2.21
     # via cffi
-pydantic==1.10.9
+pydantic==2.0
     # via emmet-core
+pydantic-core==2.0.1
+    # via pydantic
 pygments==2.15.1
     # via
     #   ipython
     #   nbconvert
 pyisemail==2.0.1
     # via mpcontribs-client
-pymatgen==2023.6.23
+pymatgen==2023.6.28
     # via
     #   emmet-core
     #   mp-api
@@ -383,7 +387,7 @@ ruamel-yaml==0.17.32
     # via pymatgen
 ruamel-yaml-clib==0.2.7
     # via ruamel-yaml
-scipy==1.11.0
+scipy==1.11.1
     # via
     #   -r python/requirements.txt
     #   pymatgen
@@ -469,7 +473,7 @@ traitlets==5.9.0
     #   nbconvert
     #   nbformat
     #   notebook
-typing-extensions==4.6.3
+typing-extensions==4.7.0
     # via
     #   bravado
     #   cattrs
@@ -477,9 +481,8 @@ typing-extensions==4.6.3
     #   emmet-core
     #   mp-api
     #   pydantic
+    #   pydantic-core
     #   swagger-spec-validator
-tzdata==2023.3
-    # via pandas
 ujson==5.8.0
     # via mpcontribs-client
 uncertainties==3.1.7
