@@ -631,7 +631,7 @@ def _version(url):
         while retries < max_retries:
             try:
                 r = requests.get(f"{url}/healthcheck", timeout=5)
-                if r.status_code == 200:
+                if r.status_code in {200, 403}:
                     return r.json().get("version")
                 else:
                     retries += 1
