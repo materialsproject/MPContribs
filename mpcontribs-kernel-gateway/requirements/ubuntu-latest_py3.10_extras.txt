@@ -54,7 +54,7 @@ cycler==0.11.0
     # via matplotlib
 ddsketch==2.0.4
     # via ddtrace
-ddtrace==1.15.0
+ddtrace==1.15.1
     # via -r requirements.in
 debugpy==1.6.7
     # via ipykernel
@@ -164,7 +164,7 @@ jupyter-events==0.6.3
     # via jupyter-server
 jupyter-kernel-gateway==2.5.2
     # via -r requirements.in
-jupyter-server==2.6.0
+jupyter-server==2.7.0
     # via
     #   nbclassic
     #   notebook-shim
@@ -259,7 +259,7 @@ packaging==23.1
     #   plotly
 palettable==3.3.3
     # via pymatgen
-pandas==2.0.2
+pandas==2.0.3
     # via
     #   mpcontribs-client
     #   pymatgen
@@ -316,7 +316,7 @@ pygments==2.15.1
     #   nbconvert
 pyisemail==2.0.1
     # via mpcontribs-client
-pymatgen==2023.6.23
+pymatgen==2023.6.28
     # via
     #   emmet-core
     #   mp-api
@@ -379,7 +379,7 @@ ruamel-yaml==0.17.32
     # via pymatgen
 ruamel-yaml-clib==0.2.7
     # via ruamel-yaml
-scipy==1.11.0
+scipy==1.11.1
     # via pymatgen
 semantic-version==2.10.0
     # via mpcontribs-client
@@ -463,7 +463,7 @@ traitlets==5.9.0
     #   nbconvert
     #   nbformat
     #   notebook
-typing-extensions==4.6.3
+typing-extensions==4.7.0
     # via
     #   bravado
     #   cattrs

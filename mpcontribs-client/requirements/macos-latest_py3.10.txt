@@ -110,7 +110,7 @@ packaging==23.1
     #   plotly
 palettable==3.3.3
     # via pymatgen
-pandas==2.0.2
+pandas==2.0.3
     # via
     #   mpcontribs-client (setup.py)
     #   pymatgen
@@ -144,7 +144,7 @@ pygments==2.15.1
     # via ipython
 pyisemail==2.0.1
     # via mpcontribs-client (setup.py)
-pymatgen==2023.6.23
+pymatgen==2023.6.28
     # via
     #   emmet-core
     #   mp-api
@@ -189,7 +189,7 @@ ruamel-yaml==0.17.32
     # via pymatgen
 ruamel-yaml-clib==0.2.7
     # via ruamel-yaml
-scipy==1.11.0
+scipy==1.11.1
     # via pymatgen
 semantic-version==2.10.0
     # via mpcontribs-client (setup.py)
@@ -231,7 +231,7 @@ traitlets==5.9.0
     # via
     #   ipython
     #   matplotlib-inline
-typing-extensions==4.6.3
+typing-extensions==4.7.0
     # via
     #   bravado
     #   emmet-core
