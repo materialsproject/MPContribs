@@ -42,9 +42,9 @@ blinker==1.6.2
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 boltons==23.0.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
-boto3==1.26.164
+boto3==1.26.165
     # via flask-mongorest-mpcontribs
-botocore==1.29.164
+botocore==1.29.165
     # via
     #   boto3
     #   s3transfer
@@ -100,7 +100,7 @@ emmet-core==0.58.0
     # via mp-api
 envier==0.4.0
     # via ddtrace
-exceptiongroup==1.1.1
+exceptiongroup==1.1.2
     # via
     #   anyio
     #   cattrs
@@ -159,7 +159,7 @@ idna==3.4
     #   requests
 importlib-metadata==6.0.1
     # via opentelemetry-api
-ipykernel==6.23.3
+ipykernel==6.24.0
     # via
     #   nbclassic
     #   notebook
@@ -337,7 +337,7 @@ pexpect==4.8.0
     # via ipython
 pickleshare==0.7.5
     # via ipython
-pillow==9.5.0
+pillow==10.0.0
     # via matplotlib
 pint==0.19.2
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
@@ -537,7 +537,7 @@ traitlets==5.9.0
     #   nbconvert
     #   nbformat
     #   notebook
-typing-extensions==4.7.0
+typing-extensions==4.7.1
     # via
     #   cattrs
     #   ddtrace
