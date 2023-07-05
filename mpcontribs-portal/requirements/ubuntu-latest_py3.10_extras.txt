@@ -63,7 +63,7 @@ defusedxml==0.7.1
     # via nbconvert
 deprecated==1.2.14
     # via opentelemetry-api
-django==3.2.19
+django==3.2.20
     # via
     #   django-extensions
     #   django-settings-file
