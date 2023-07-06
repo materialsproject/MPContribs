@@ -11,7 +11,9 @@ arrow==1.2.3
 asttokens==2.2.1
     # via stack-data
 attrs==23.1.0
-    # via jsonschema
+    # via
+    #   jsonschema
+    #   referencing
 backcall==0.2.0
     # via ipython
 boltons==23.0.0
@@ -34,7 +36,7 @@ dnspython==2.3.0
     # via
     #   pyisemail
     #   pymongo
-emmet-core==0.57.2
+emmet-core==0.58.1
     # via mp-api
 executing==1.2.0
     # via stack-data
@@ -68,15 +70,17 @@ jsonpointer==2.4
     # via jsonschema
 jsonref==1.1.0
     # via bravado-core
-jsonschema[format]==4.17.3
+jsonschema[format]==4.18.0
     # via
     #   bravado-core
     #   swagger-spec-validator
+jsonschema-specifications==2023.6.1
+    # via jsonschema
 kiwisolver==1.4.4
     # via matplotlib
 latexcodec==2.0.1
     # via pybtex
-matplotlib==3.7.1
+matplotlib==3.7.2
     # via pymatgen
 matplotlib-inline==0.1.6
     # via ipython
@@ -122,7 +126,7 @@ pexpect==4.8.0
     # via ipython
 pickleshare==0.7.5
     # via ipython
-pillow==9.5.0
+pillow==10.0.0
     # via matplotlib
 pint==0.19.2
     # via mpcontribs-client (setup.py)
@@ -130,7 +134,7 @@ plotly==5.15.0
     # via
     #   mpcontribs-client (setup.py)
     #   pymatgen
-prompt-toolkit==3.0.38
+prompt-toolkit==3.0.39
     # via ipython
 ptyprocess==0.7.0
     # via pexpect
@@ -140,7 +144,7 @@ pybtex==0.24.0
     # via
     #   emmet-core
     #   pymatgen
-pydantic==1.10.9
+pydantic==1.10.11
     # via emmet-core
 pygments==2.15.1
     # via ipython
@@ -153,10 +157,8 @@ pymatgen==2023.6.28
     #   mpcontribs-client (setup.py)
 pymongo==4.4.0
     # via mpcontribs-client (setup.py)
-pyparsing==3.1.0
+pyparsing==3.0.9
     # via matplotlib
-pyrsistent==0.19.3
-    # via jsonschema
 python-dateutil==2.8.2
     # via
     #   arrow
@@ -174,6 +176,10 @@ pyyaml==6.0
     #   bravado-core
     #   pybtex
     #   swagger-spec-validator
+referencing==0.29.1
+    # via
+    #   jsonschema
+    #   jsonschema-specifications
 requests==2.31.0
     # via
     #   bravado
@@ -187,6 +193,10 @@ rfc3339-validator==0.1.4
     # via jsonschema
 rfc3987==1.3.8
     # via jsonschema
+rpds-py==0.8.8
+    # via
+    #   jsonschema
+    #   referencing
 ruamel-yaml==0.17.32
     # via pymatgen
 ruamel-yaml-clib==0.2.7
@@ -233,7 +243,7 @@ traitlets==5.9.0
     # via
     #   ipython
     #   matplotlib-inline
-typing-extensions==4.7.0
+typing-extensions==4.7.1
     # via
     #   bravado
     #   emmet-core

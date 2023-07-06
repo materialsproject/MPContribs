@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=requirements/macos-latest_py3.9.txt --resolver=backtracking
 #
-anyio==3.7.0
+anyio==3.7.1
     # via jupyter-server
 appnope==0.1.3
     # via
@@ -26,6 +26,7 @@ attrs==23.1.0
     #   cattrs
     #   ddtrace
     #   jsonschema
+    #   referencing
 backcall==0.2.0
     # via ipython
 beautifulsoup4==4.12.2
@@ -72,13 +73,13 @@ dnspython==2.3.0
     # via
     #   pyisemail
     #   pymongo
-emmet-core==0.57.2
+emmet-core==0.58.1
     # via mp-api
 entrypoints==0.4
     # via jupyter-client
 envier==0.4.0
     # via ddtrace
-exceptiongroup==1.1.1
+exceptiongroup==1.1.2
     # via
     #   anyio
     #   cattrs
@@ -109,7 +110,7 @@ importlib-metadata==6.0.1
     #   opentelemetry-api
 importlib-resources==5.12.0
     # via matplotlib
-ipykernel==6.23.3
+ipykernel==6.24.0
     # via
     #   ipywidgets
     #   nbclassic
@@ -123,7 +124,7 @@ ipython-genutils==0.2.0
     # via
     #   nbclassic
     #   notebook
-ipywidgets==8.0.6
+ipywidgets==8.0.7
     # via -r requirements.in
 isoduration==20.11.0
     # via jsonschema
@@ -141,13 +142,15 @@ jsonpointer==2.4
     # via jsonschema
 jsonref==1.1.0
     # via bravado-core
-jsonschema[format,format-nongpl]==4.17.3
+jsonschema[format,format-nongpl]==4.18.0
     # via
     #   bravado-core
     #   ddtrace
     #   jupyter-events
     #   nbformat
     #   swagger-spec-validator
+jsonschema-specifications==2023.6.1
+    # via jsonschema
 jupyter-client==7.4.9
     # via
     #   -r requirements.in
@@ -180,7 +183,7 @@ jupyter-server-terminals==0.4.4
     # via jupyter-server
 jupyterlab-pygments==0.2.2
     # via nbconvert
-jupyterlab-widgets==3.0.7
+jupyterlab-widgets==3.0.8
     # via ipywidgets
 kaleido==0.2.1
     # via -r requirements.in
@@ -192,7 +195,7 @@ markupsafe==2.1.3
     # via
     #   jinja2
     #   nbconvert
-matplotlib==3.7.1
+matplotlib==3.7.2
     # via pymatgen
 matplotlib-inline==0.1.6
     # via
@@ -209,7 +212,7 @@ monty==2023.5.8
     #   pymatgen
 mp-api==0.33.3
     # via pymatgen
-mpcontribs-client==5.4.0
+mpcontribs-client==5.4.2
     # via -r requirements.in
 mpmath==1.3.0
     # via sympy
@@ -279,7 +282,7 @@ pexpect==4.8.0
     # via ipython
 pickleshare==0.7.5
     # via ipython
-pillow==9.5.0
+pillow==10.0.0
     # via matplotlib
 pint==0.19.2
     # via mpcontribs-client
@@ -294,7 +297,7 @@ prometheus-client==0.17.0
     #   jupyter-server
     #   nbclassic
     #   notebook
-prompt-toolkit==3.0.38
+prompt-toolkit==3.0.39
     # via ipython
 protobuf==4.23.3
     # via
@@ -316,7 +319,7 @@ pybtex==0.24.0
     #   pymatgen
 pycparser==2.21
     # via cffi
-pydantic==1.10.9
+pydantic==1.10.11
     # via emmet-core
 pygments==2.15.1
     # via
@@ -331,10 +334,8 @@ pymatgen==2023.6.28
     #   mpcontribs-client
 pymongo==4.4.0
     # via mpcontribs-client
-pyparsing==3.1.0
+pyparsing==3.0.9
     # via matplotlib
-pyrsistent==0.19.3
-    # via jsonschema
 python-dateutil==2.8.2
     # via
     #   arrow
@@ -363,6 +364,10 @@ pyzmq==25.1.0
     #   jupyter-server
     #   nbclassic
     #   notebook
+referencing==0.29.1
+    # via
+    #   jsonschema
+    #   jsonschema-specifications
 requests==2.31.0
     # via
     #   bravado
@@ -383,6 +388,10 @@ rfc3986-validator==0.1.1
     #   jupyter-events
 rfc3987==1.3.8
     # via jsonschema
+rpds-py==0.8.8
+    # via
+    #   jsonschema
+    #   referencing
 ruamel-yaml==0.17.32
     # via pymatgen
 ruamel-yaml-clib==0.2.7
@@ -471,7 +480,7 @@ traitlets==5.9.0
     #   nbconvert
     #   nbformat
     #   notebook
-typing-extensions==4.7.0
+typing-extensions==4.7.1
     # via
     #   bravado
     #   bytecode
@@ -502,7 +511,7 @@ webencodings==0.5.1
     #   tinycss2
 websocket-client==1.6.1
     # via jupyter-server
-widgetsnbextension==4.0.7
+widgetsnbextension==4.0.8
     # via ipywidgets
 wrapt==1.15.0
     # via deprecated
