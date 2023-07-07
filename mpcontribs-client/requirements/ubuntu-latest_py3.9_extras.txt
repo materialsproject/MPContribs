@@ -22,7 +22,7 @@ bravado-core==5.17.1
     # via bravado
 certifi==2023.5.7
     # via requests
-charset-normalizer==3.1.0
+charset-normalizer==3.2.0
     # via requests
 contourpy==1.1.0
     # via matplotlib
@@ -36,7 +36,7 @@ dnspython==2.3.0
     # via
     #   pyisemail
     #   pymongo
-emmet-core==0.58.1
+emmet-core==0.58.2
     # via mp-api
 exceptiongroup==1.1.2
     # via pytest
@@ -62,7 +62,7 @@ idna==3.4
     # via
     #   jsonschema
     #   requests
-importlib-resources==5.12.0
+importlib-resources==6.0.0
     # via matplotlib
 iniconfig==2.0.0
     # via pytest

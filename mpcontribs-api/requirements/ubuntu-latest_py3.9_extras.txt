@@ -41,9 +41,9 @@ blinker==1.6.2
     # via mpcontribs-api (setup.py)
 boltons==23.0.0
     # via mpcontribs-api (setup.py)
-boto3==1.28.0
+boto3==1.28.1
     # via flask-mongorest-mpcontribs
-botocore==1.31.0
+botocore==1.31.1
     # via
     #   boto3
     #   s3transfer
@@ -59,7 +59,7 @@ cffi==1.15.1
     # via
     #   argon2-cffi-bindings
     #   cryptography
-charset-normalizer==3.1.0
+charset-normalizer==3.2.0
     # via requests
 click==8.1.4
     # via
@@ -95,7 +95,7 @@ dnspython==2.3.0
     # via
     #   mpcontribs-api (setup.py)
     #   pymongo
-emmet-core==0.58.1
+emmet-core==0.58.2
     # via mp-api
 envier==0.4.0
     # via ddtrace
@@ -165,7 +165,7 @@ importlib-metadata==6.0.1
     #   jupyter-client
     #   nbconvert
     #   opentelemetry-api
-importlib-resources==5.12.0
+importlib-resources==6.0.0
     # via matplotlib
 iniconfig==2.0.0
     # via pytest
@@ -321,7 +321,7 @@ numpy==1.25.0
     #   spglib
 opentelemetry-api==1.18.0
     # via ddtrace
-orjson==3.9.1
+orjson==3.9.2
     # via flask-mongorest-mpcontribs
 overrides==7.3.1
     # via jupyter-server
@@ -351,7 +351,7 @@ pillow==10.0.0
     # via matplotlib
 pint==0.19.2
     # via mpcontribs-api (setup.py)
-platformdirs==3.8.0
+platformdirs==3.8.1
     # via jupyter-core
 plotly==5.15.0
     # via pymatgen
@@ -364,7 +364,7 @@ prometheus-client==0.17.0
     #   notebook
 prompt-toolkit==3.0.39
     # via ipython
-protobuf==4.23.3
+protobuf==4.23.4
     # via
     #   ddsketch
     #   ddtrace
