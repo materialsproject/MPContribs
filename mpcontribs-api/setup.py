@@ -30,7 +30,7 @@ setup(
         "json2html",
         "more-itertools",
         "nbformat",
-        "notebook",
+        "notebook<7",
         "pint<0.20",
         "psycopg2-binary",
         "pymatgen",
