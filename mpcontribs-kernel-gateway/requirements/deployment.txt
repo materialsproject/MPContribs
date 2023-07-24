@@ -43,7 +43,7 @@ bytecode==0.14.2
     # via ddtrace
 cattrs==23.1.2
     # via ddtrace
-certifi==2023.5.7
+certifi==2023.7.22
     # via
     #   httpcore
     #   requests
@@ -61,7 +61,7 @@ cycler==0.11.0
     # via matplotlib
 ddsketch==2.0.4
     # via ddtrace
-ddtrace==1.17.0
+ddtrace==1.17.1
     # via -r MPContribs/mpcontribs-kernel-gateway/requirements.in
 debugpy==1.6.7
     # via ipykernel
@@ -87,13 +87,13 @@ exceptiongroup==1.1.2
     #   cattrs
 executing==1.2.0
     # via stack-data
-fastjsonschema==2.17.1
+fastjsonschema==2.18.0
     # via nbformat
 filetype==1.2.0
     # via mpcontribs-client
 flatten-dict==0.4.2
     # via mpcontribs-client
-fonttools==4.41.0
+fonttools==4.41.1
     # via matplotlib
 fqdn==1.5.1
     # via jsonschema

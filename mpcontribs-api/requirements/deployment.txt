@@ -43,9 +43,9 @@ blinker==1.6.2
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 boltons==23.0.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
-boto3==1.28.8
+boto3==1.28.9
     # via flask-mongorest-mpcontribs
-botocore==1.31.8
+botocore==1.31.9
     # via
     #   boto3
     #   s3transfer
@@ -55,7 +55,7 @@ bytecode==0.14.2
     # via ddtrace
 cattrs==23.1.2
     # via ddtrace
-certifi==2023.5.7
+certifi==2023.7.22
     # via
     #   httpcore
     #   requests
@@ -87,7 +87,7 @@ dateparser==1.1.8
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 ddsketch==2.0.4
     # via ddtrace
-ddtrace==1.17.0
+ddtrace==1.17.1
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 debugpy==1.6.7
     # via ipykernel
@@ -111,7 +111,7 @@ exceptiongroup==1.1.2
     #   cattrs
 executing==1.2.0
     # via stack-data
-fastjsonschema==2.17.1
+fastjsonschema==2.18.0
     # via nbformat
 fastnumbers==5.0.1
     # via flask-mongorest-mpcontribs
@@ -141,7 +141,7 @@ flask-sse==1.0.0
     # via flask-mongorest-mpcontribs
 flatten-dict==0.4.2
     # via flask-mongorest-mpcontribs
-fonttools==4.41.0
+fonttools==4.41.1
     # via matplotlib
 fqdn==1.5.1
     # via jsonschema
@@ -273,7 +273,7 @@ monty==2023.5.8
     #   emmet-core
     #   mp-api
     #   pymatgen
-more-itertools==9.1.0
+more-itertools==10.0.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 mp-api==0.33.3
     # via pymatgen
