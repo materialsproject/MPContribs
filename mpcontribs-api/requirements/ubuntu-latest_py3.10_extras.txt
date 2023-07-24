@@ -11,7 +11,10 @@ anyio==3.7.1
 apispec==5.2.2
     # via mpcontribs-api (setup.py)
 argon2-cffi==21.3.0
-    # via jupyter-server
+    # via
+    #   jupyter-server
+    #   nbclassic
+    #   notebook
 argon2-cffi-bindings==21.2.0
     # via argon2-cffi
 arrow==1.2.3
@@ -20,8 +23,6 @@ asn1crypto==1.5.1
     # via mpcontribs-api (setup.py)
 asttokens==2.2.1
     # via stack-data
-async-lru==2.0.3
-    # via jupyterlab
 async-timeout==4.0.2
     # via redis
 atlasq-tschaume==0.11.1.dev2
@@ -32,8 +33,6 @@ attrs==23.1.0
     #   ddtrace
     #   jsonschema
     #   referencing
-babel==2.12.1
-    # via jupyterlab-server
 backcall==0.2.0
     # via ipython
 beautifulsoup4==4.12.2
@@ -44,9 +43,9 @@ blinker==1.6.2
     # via mpcontribs-api (setup.py)
 boltons==23.0.0
     # via mpcontribs-api (setup.py)
-boto3==1.28.8
+boto3==1.28.9
     # via flask-mongorest-mpcontribs
-botocore==1.31.8
+botocore==1.31.9
     # via
     #   boto3
     #   s3transfer
@@ -56,7 +55,7 @@ bytecode==0.14.2
     # via ddtrace
 cattrs==23.1.2
     # via ddtrace
-certifi==2023.5.7
+certifi==2023.7.22
     # via
     #   httpcore
     #   requests
@@ -88,7 +87,7 @@ dateparser==1.1.8
     # via mpcontribs-api (setup.py)
 ddsketch==2.0.4
     # via ddtrace
-ddtrace==1.17.0
+ddtrace==1.17.1
     # via mpcontribs-api (setup.py)
 debugpy==1.6.7
     # via ipykernel
@@ -113,7 +112,7 @@ exceptiongroup==1.1.2
     #   pytest
 executing==1.2.0
     # via stack-data
-fastjsonschema==2.17.1
+fastjsonschema==2.18.0
     # via nbformat
 fastnumbers==5.0.1
     # via flask-mongorest-mpcontribs
@@ -145,7 +144,7 @@ flask-sse==1.0.0
     # via flask-mongorest-mpcontribs
 flatten-dict==0.4.2
     # via flask-mongorest-mpcontribs
-fonttools==4.41.0
+fonttools==4.41.1
     # via matplotlib
 fqdn==1.5.1
     # via jsonschema
@@ -173,9 +172,15 @@ importlib-metadata==6.8.0
 iniconfig==2.0.0
     # via pytest
 ipykernel==6.24.0
-    # via jupyterlab
+    # via
+    #   nbclassic
+    #   notebook
 ipython==8.14.0
     # via ipykernel
+ipython-genutils==0.2.0
+    # via
+    #   nbclassic
+    #   notebook
 isoduration==20.11.0
     # via jsonschema
 itsdangerous==2.1.2
@@ -186,10 +191,10 @@ jinja2==3.1.2
     # via
     #   flask
     #   jupyter-server
-    #   jupyterlab
-    #   jupyterlab-server
     #   mpcontribs-api (setup.py)
+    #   nbclassic
     #   nbconvert
+    #   notebook
 jmespath==1.0.1
     # via
     #   boto3
@@ -198,15 +203,12 @@ joblib==1.3.1
     # via pymatgen
 json2html==1.3.0
     # via mpcontribs-api (setup.py)
-json5==0.9.14
-    # via jupyterlab-server
 jsonpointer==2.4
     # via jsonschema
 jsonschema[format-nongpl]==4.18.4
     # via
     #   flasgger-tschaume
     #   jupyter-events
-    #   jupyterlab-server
     #   nbformat
 jsonschema-specifications==2023.7.1
     # via jsonschema
@@ -214,37 +216,29 @@ jupyter-client==8.3.0
     # via
     #   ipykernel
     #   jupyter-server
+    #   nbclassic
     #   nbclient
+    #   notebook
 jupyter-core==5.3.1
     # via
     #   ipykernel
     #   jupyter-client
     #   jupyter-server
-    #   jupyterlab
+    #   nbclassic
     #   nbclient
     #   nbconvert
     #   nbformat
+    #   notebook
 jupyter-events==0.6.3
     # via jupyter-server
-jupyter-lsp==2.2.0
-    # via jupyterlab
 jupyter-server==2.7.0
     # via
-    #   jupyter-lsp
-    #   jupyterlab
-    #   jupyterlab-server
-    #   notebook
+    #   nbclassic
     #   notebook-shim
 jupyter-server-terminals==0.4.4
     # via jupyter-server
-jupyterlab==4.0.3
-    # via notebook
 jupyterlab-pygments==0.2.2
     # via nbconvert
-jupyterlab-server==2.23.0
-    # via
-    #   jupyterlab
-    #   notebook
 kiwisolver==1.4.4
     # via matplotlib
 latexcodec==2.0.1
@@ -292,26 +286,34 @@ mpmath==1.3.0
     # via sympy
 msgpack==1.0.5
     # via mp-api
+nbclassic==1.0.0
+    # via notebook
 nbclient==0.8.0
     # via nbconvert
 nbconvert==7.7.2
-    # via jupyter-server
+    # via
+    #   jupyter-server
+    #   nbclassic
+    #   notebook
 nbformat==5.9.1
     # via
     #   jupyter-server
     #   mpcontribs-api (setup.py)
+    #   nbclassic
     #   nbclient
     #   nbconvert
+    #   notebook
 nest-asyncio==1.5.6
-    # via ipykernel
+    # via
+    #   ipykernel
+    #   nbclassic
+    #   notebook
 networkx==3.1
     # via pymatgen
-notebook==7.0.0
+notebook==6.5.4
     # via mpcontribs-api (setup.py)
 notebook-shim==0.2.3
-    # via
-    #   jupyterlab
-    #   notebook
+    # via nbclassic
 numpy==1.25.1
     # via
     #   contourpy
@@ -332,8 +334,6 @@ packaging==23.1
     #   gunicorn
     #   ipykernel
     #   jupyter-server
-    #   jupyterlab
-    #   jupyterlab-server
     #   marshmallow
     #   matplotlib
     #   nbconvert
@@ -362,7 +362,10 @@ plotly==5.15.0
 pluggy==1.2.0
     # via pytest
 prometheus-client==0.17.1
-    # via jupyter-server
+    # via
+    #   jupyter-server
+    #   nbclassic
+    #   notebook
 prompt-toolkit==3.0.39
     # via ipython
 protobuf==4.23.4
@@ -443,6 +446,8 @@ pyzmq==25.1.0
     #   ipykernel
     #   jupyter-client
     #   jupyter-server
+    #   nbclassic
+    #   notebook
 redis==4.6.0
     # via
     #   flask-rq2
@@ -457,7 +462,6 @@ regex==2023.6.3
 requests==2.31.0
     # via
     #   atlasq-tschaume
-    #   jupyterlab-server
     #   mp-api
     #   pymatgen
 rfc3339-validator==0.1.4
@@ -489,7 +493,10 @@ scipy==1.11.1
 semantic-version==2.10.0
     # via mpcontribs-api (setup.py)
 send2trash==1.8.2
-    # via jupyter-server
+    # via
+    #   jupyter-server
+    #   nbclassic
+    #   notebook
 setproctitle==1.3.2
     # via mpcontribs-api (setup.py)
 six==1.16.0
@@ -530,18 +537,18 @@ terminado==0.17.1
     # via
     #   jupyter-server
     #   jupyter-server-terminals
+    #   nbclassic
+    #   notebook
 tinycss2==1.2.1
     # via nbconvert
 tomli==2.0.1
-    # via
-    #   jupyterlab
-    #   pytest
+    # via pytest
 tornado==6.3.2
     # via
     #   ipykernel
     #   jupyter-client
     #   jupyter-server
-    #   jupyterlab
+    #   nbclassic
     #   notebook
     #   terminado
 tqdm==4.65.0
@@ -555,14 +562,14 @@ traitlets==5.9.0
     #   jupyter-core
     #   jupyter-events
     #   jupyter-server
-    #   jupyterlab
     #   matplotlib-inline
+    #   nbclassic
     #   nbclient
     #   nbconvert
     #   nbformat
+    #   notebook
 typing-extensions==4.7.1
     # via
-    #   async-lru
     #   cattrs
     #   ddtrace
     #   emmet-core

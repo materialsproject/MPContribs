@@ -34,9 +34,9 @@ boltons==23.0.0
     # via
     #   mpcontribs-client
     #   mpcontribs-portal (setup.py)
-boto3==1.28.8
+boto3==1.28.9
     # via mpcontribs-portal (setup.py)
-botocore==1.31.8
+botocore==1.31.9
     # via
     #   boto3
     #   s3transfer
@@ -48,7 +48,7 @@ bytecode==0.14.2
     # via ddtrace
 cattrs==23.1.2
     # via ddtrace
-certifi==2023.5.7
+certifi==2023.7.22
     # via
     #   httpcore
     #   requests
@@ -64,7 +64,7 @@ cycler==0.11.0
     # via matplotlib
 ddsketch==2.0.4
     # via ddtrace
-ddtrace==1.17.0
+ddtrace==1.17.1
     # via mpcontribs-portal (setup.py)
 debugpy==1.6.7
     # via ipykernel
@@ -100,7 +100,7 @@ exceptiongroup==1.1.2
     #   pytest
 executing==1.2.0
     # via stack-data
-fastjsonschema==2.17.1
+fastjsonschema==2.18.0
     # via nbformat
 fastnumbers==5.0.1
     # via mpcontribs-portal (setup.py)
@@ -110,7 +110,7 @@ flake8==6.0.0
     # via mpcontribs-portal (setup.py)
 flatten-dict==0.4.2
     # via mpcontribs-client
-fonttools==4.41.0
+fonttools==4.41.1
     # via matplotlib
 fqdn==1.5.1
     # via jsonschema
