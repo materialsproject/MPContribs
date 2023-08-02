@@ -28,9 +28,9 @@ boltons==23.0.0
     # via
     #   mpcontribs-client
     #   mpcontribs-portal (MPContribs/mpcontribs-portal/setup.py)
-boto3==1.28.15
+boto3==1.28.17
     # via mpcontribs-portal (MPContribs/mpcontribs-portal/setup.py)
-botocore==1.31.15
+botocore==1.31.17
     # via
     #   boto3
     #   s3transfer
@@ -46,7 +46,7 @@ certifi==2023.7.22
     # via requests
 charset-normalizer==3.2.0
     # via requests
-comm==0.1.3
+comm==0.1.4
     # via ipykernel
 contourpy==1.1.0
     # via matplotlib
@@ -54,7 +54,7 @@ cycler==0.11.0
     # via matplotlib
 ddsketch==2.0.4
     # via ddtrace
-ddtrace==1.17.2
+ddtrace==1.17.3
     # via mpcontribs-portal (MPContribs/mpcontribs-portal/setup.py)
 debugpy==1.6.7
     # via ipykernel
@@ -95,7 +95,7 @@ filetype==1.2.0
     # via mpcontribs-client
 flatten-dict==0.4.2
     # via mpcontribs-client
-fonttools==4.41.1
+fonttools==4.42.0
     # via matplotlib
 fqdn==1.5.1
     # via jsonschema
@@ -143,7 +143,7 @@ jsonpointer==2.4
     # via jsonschema
 jsonref==1.1.0
     # via bravado-core
-jsonschema[format]==4.18.4
+jsonschema[format]==4.18.6
     # via
     #   bravado-core
     #   nbformat

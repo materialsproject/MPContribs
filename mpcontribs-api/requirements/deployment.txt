@@ -41,9 +41,9 @@ blinker==1.6.2
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 boltons==23.0.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
-boto3==1.28.15
+boto3==1.28.17
     # via flask-mongorest-mpcontribs
-botocore==1.31.15
+botocore==1.31.17
     # via
     #   boto3
     #   s3transfer
@@ -65,13 +65,13 @@ click==8.1.6
     # via
     #   flask
     #   rq
-comm==0.1.3
+comm==0.1.4
     # via ipykernel
 contourpy==1.1.0
     # via matplotlib
 crontab==1.0.1
     # via rq-scheduler
-cryptography==41.0.2
+cryptography==41.0.3
     # via pyopenssl
 css-html-js-minify==2.5.5
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
@@ -81,7 +81,7 @@ dateparser==1.1.8
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 ddsketch==2.0.4
     # via ddtrace
-ddtrace==1.17.2
+ddtrace==1.17.3
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 debugpy==1.6.7
     # via ipykernel
@@ -137,7 +137,7 @@ flask-sse==1.0.0
     # via flask-mongorest-mpcontribs
 flatten-dict==0.4.2
     # via flask-mongorest-mpcontribs
-fonttools==4.41.1
+fonttools==4.42.0
     # via matplotlib
 fqdn==1.5.1
     # via jsonschema
@@ -192,7 +192,7 @@ json2html==1.3.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 jsonpointer==2.4
     # via jsonschema
-jsonschema[format-nongpl]==4.18.4
+jsonschema[format-nongpl]==4.18.6
     # via
     #   flasgger-tschaume
     #   jupyter-events
