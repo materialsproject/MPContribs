@@ -14,6 +14,7 @@ import requests
 import logging
 import datetime
 
+from inspect import getfullargspec
 from math import isclose
 from semantic_version import Version
 from requests.exceptions import RequestException
@@ -55,6 +56,7 @@ from pint.unit import UnitDefinition
 from pint.converters import ScaleConverter
 from pint.errors import DimensionalityError
 from tempfile import gettempdir
+from plotly.express._chart_types import line as line_chart
 
 RETRIES = 3
 MAX_WORKERS = 3
@@ -307,8 +309,9 @@ class Table(pd.DataFrame):
         """Display a plotly graph for the table if in IPython/Jupyter"""
         if _in_ipython():
             try:
-                # TODO make sure that attrs only contains valid kwargs
-                return self.plot(**self.attrs)
+                allowed_kwargs = getfullargspec(line_chart).args
+                attrs = {k: v for k, v in self.attrs.items() if k in allowed_kwargs}
+                return self.plot(**attrs)
             except Exception as e:
                 logger.error(f"Can't display table: {e}")
 
