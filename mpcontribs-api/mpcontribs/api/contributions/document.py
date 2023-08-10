@@ -35,7 +35,7 @@ ureg = UnitRegistry(
         lambda s: s.replace("%", " percent "),
     ],
 )
-ureg.default_format = ",P~"
+ureg.default_format = "~,P"
 
 ureg.define(UnitDefinition("percent", "%", (), ScaleConverter(0.01)))
 ureg.define(UnitDefinition("permille", "%%", (), ScaleConverter(0.001)))
@@ -259,15 +259,6 @@ class Contributions(DynamicDocument):
             if isnan(q.nominal_value):
                 return False
 
-            ## try compact representation
-            #qq = q.value.to_compact()
-            #q = new_error_units(q, qq)
-
-            ## reduce dimensionality if possible
-            #if not q.check(0):
-            #    qq = q.value.to_reduced_units()
-            #    q = new_error_units(q, qq)
-
             # ensure that the same units are used across contributions
             if field in columns:
                 column = columns[field]
@@ -279,6 +270,15 @@ class Contributions(DynamicDocument):
                         raise ValueError(
                             f"Can't convert [{q.units}] to [{column.unit}] for {field}!"
                         )
+            else:
+                # try compact representation
+                qq = q.value.to_compact()
+                q = new_error_units(q, qq)
+
+                # reduce dimensionality if possible
+                if not q.check(0):
+                    qq = q.value.to_reduced_units()
+                    q = new_error_units(q, qq)
 
             # significant digits
             q = truncate_digits(q)
