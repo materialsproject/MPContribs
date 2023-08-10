@@ -25,7 +25,7 @@ asn1crypto==1.5.1
     # via mpcontribs-api (setup.py)
 asttokens==2.2.1
     # via stack-data
-async-timeout==4.0.2
+async-timeout==4.0.3
     # via redis
 atlasq-tschaume==0.11.1.dev2
     # via flask-mongorest-mpcontribs
@@ -47,9 +47,9 @@ blinker==1.6.2
     # via mpcontribs-api (setup.py)
 boltons==23.0.0
     # via mpcontribs-api (setup.py)
-boto3==1.28.17
+boto3==1.28.23
     # via flask-mongorest-mpcontribs
-botocore==1.31.17
+botocore==1.31.23
     # via
     #   boto3
     #   s3transfer
@@ -89,7 +89,7 @@ ddsketch==2.0.4
     # via ddtrace
 ddtrace==1.17.3
     # via mpcontribs-api (setup.py)
-debugpy==1.6.7
+debugpy==1.6.7.post1
     # via ipykernel
 decorator==5.1.1
     # via ipython
@@ -97,11 +97,11 @@ defusedxml==0.7.1
     # via nbconvert
 deprecated==1.2.14
     # via opentelemetry-api
-dnspython==2.4.1
+dnspython==2.4.2
     # via
     #   mpcontribs-api (setup.py)
     #   pymongo
-emmet-core==0.63.1
+emmet-core==0.64.0
     # via mp-api
 entrypoints==0.4
     # via jupyter-client
@@ -170,14 +170,14 @@ importlib-metadata==6.8.0
     #   flask
     #   nbconvert
     #   opentelemetry-api
-importlib-resources==6.0.0
+importlib-resources==6.0.1
     # via
     #   jsonschema
     #   jsonschema-specifications
     #   matplotlib
 iniconfig==2.0.0
     # via pytest
-ipykernel==6.25.0
+ipykernel==6.25.1
     # via
     #   nbclassic
     #   notebook
@@ -205,13 +205,13 @@ jmespath==1.0.1
     # via
     #   boto3
     #   botocore
-joblib==1.3.1
+joblib==1.3.2
     # via pymatgen
 json2html==1.3.0
     # via mpcontribs-api (setup.py)
 jsonpointer==2.4
     # via jsonschema
-jsonschema[format-nongpl]==4.18.5
+jsonschema[format-nongpl]==4.19.0
     # via
     #   flasgger-tschaume
     #   jupyter-events
@@ -279,12 +279,12 @@ mongoengine==0.27.0
     #   atlasq-tschaume
     #   flask-mongoengine-tschaume
     #   marshmallow-mongoengine
-monty==2023.5.8
+monty==2023.8.8
     # via
     #   emmet-core
     #   mp-api
     #   pymatgen
-more-itertools==10.0.0
+more-itertools==10.1.0
     # via mpcontribs-api (setup.py)
 mp-api==0.33.3
     # via pymatgen
@@ -331,9 +331,9 @@ numpy==1.24.4
     #   spglib
 opentelemetry-api==1.19.0
     # via ddtrace
-orjson==3.9.2
+orjson==3.9.4
     # via flask-mongorest-mpcontribs
-overrides==7.3.1
+overrides==7.4.0
     # via jupyter-server
 packaging==23.1
     # via
@@ -377,13 +377,13 @@ prometheus-client==0.17.1
     #   notebook
 prompt-toolkit==3.0.39
     # via ipython
-protobuf==4.23.4
+protobuf==4.24.0
     # via
     #   ddsketch
     #   ddtrace
 psutil==5.9.5
     # via ipykernel
-psycopg2-binary==2.9.6
+psycopg2-binary==2.9.7
     # via mpcontribs-api (setup.py)
 ptyprocess==0.7.0
     # via
@@ -405,7 +405,7 @@ pydantic==1.10.12
     #   pymatgen
 pyflakes==3.1.0
     # via flake8
-pygments==2.15.1
+pygments==2.16.1
     # via
     #   ipython
     #   nbconvert
@@ -462,12 +462,12 @@ redis==4.6.0
     #   flask-rq2
     #   flask-sse
     #   rq
-referencing==0.30.0
+referencing==0.30.2
     # via
     #   jsonschema
     #   jsonschema-specifications
     #   jupyter-events
-regex==2023.6.3
+regex==2023.8.8
     # via dateparser
 requests==2.31.0
     # via
@@ -558,7 +558,7 @@ tornado==6.3.2
     #   nbclassic
     #   notebook
     #   terminado
-tqdm==4.65.0
+tqdm==4.66.1
     # via pymatgen
 traitlets==5.9.0
     # via

@@ -34,11 +34,11 @@ cycler==0.11.0
     # via matplotlib
 decorator==5.1.1
     # via ipython
-dnspython==2.4.1
+dnspython==2.4.2
     # via
     #   pyisemail
     #   pymongo
-emmet-core==0.63.1
+emmet-core==0.64.0
     # via mp-api
 exceptiongroup==1.1.2
     # via pytest
@@ -70,7 +70,7 @@ isoduration==20.11.0
     # via jsonschema
 jedi==0.19.0
     # via ipython
-joblib==1.3.1
+joblib==1.3.2
     # via pymatgen
 json2html==1.3.0
     # via mpcontribs-client (setup.py)
@@ -78,7 +78,7 @@ jsonpointer==2.4
     # via jsonschema
 jsonref==1.1.0
     # via bravado-core
-jsonschema[format]==4.18.5
+jsonschema[format]==4.19.0
     # via
     #   bravado-core
     #   swagger-spec-validator
@@ -96,7 +96,7 @@ mccabe==0.7.0
     # via flake8
 monotonic==1.6
     # via bravado
-monty==2023.5.8
+monty==2023.8.8
     # via
     #   emmet-core
     #   mp-api
@@ -171,7 +171,7 @@ pydantic==1.10.12
     #   pymatgen
 pyflakes==3.1.0
     # via flake8
-pygments==2.15.1
+pygments==2.16.1
     # via ipython
 pyisemail==2.0.1
     # via mpcontribs-client (setup.py)
@@ -213,7 +213,7 @@ pyyaml==6.0.1
     #   bravado-core
     #   pybtex
     #   swagger-spec-validator
-referencing==0.30.0
+referencing==0.30.2
     # via
     #   jsonschema
     #   jsonschema-specifications
@@ -276,7 +276,7 @@ tomli==2.0.1
     # via
     #   coverage
     #   pytest
-tqdm==4.65.0
+tqdm==4.66.1
     # via
     #   mpcontribs-client (setup.py)
     #   pymatgen
