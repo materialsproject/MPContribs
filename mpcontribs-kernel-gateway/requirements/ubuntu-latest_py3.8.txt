@@ -57,7 +57,7 @@ cycler==0.11.0
     # via matplotlib
 ddsketch==2.0.4
     # via ddtrace
-ddtrace==1.17.3
+ddtrace==1.18.0
     # via -r requirements.in
 debugpy==1.6.7.post1
     # via ipykernel
@@ -71,13 +71,13 @@ dnspython==2.4.2
     # via
     #   pyisemail
     #   pymongo
-emmet-core==0.64.0
+emmet-core==0.64.4
     # via mp-api
 entrypoints==0.4
     # via jupyter-client
 envier==0.4.0
     # via ddtrace
-exceptiongroup==1.1.2
+exceptiongroup==1.1.3
     # via
     #   anyio
     #   cattrs
@@ -290,7 +290,7 @@ pkgutil-resolve-name==1.3.10
     # via jsonschema
 platformdirs==3.10.0
     # via jupyter-core
-plotly==5.15.0
+plotly==5.16.0
     # via
     #   mpcontribs-client
     #   pymatgen
@@ -331,7 +331,7 @@ pygments==2.16.1
     #   nbconvert
 pyisemail==2.0.1
     # via mpcontribs-client
-pymatgen==2023.7.20
+pymatgen==2023.8.10
     # via
     #   emmet-core
     #   mp-api
@@ -445,7 +445,7 @@ sympy==1.12
     # via pymatgen
 tabulate==0.9.0
     # via pymatgen
-tenacity==8.2.2
+tenacity==8.2.3
     # via plotly
 terminado==0.17.1
     # via
@@ -455,7 +455,7 @@ terminado==0.17.1
     #   notebook
 tinycss2==1.2.1
     # via nbconvert
-tornado==6.3.2
+tornado==6.3.3
     # via
     #   ipykernel
     #   jupyter-client
