@@ -8,7 +8,7 @@ anyio==3.7.1
     # via jupyter-server
 apispec==5.2.2
     # via mpcontribs-api (setup.py)
-argon2-cffi==21.3.0
+argon2-cffi==23.1.0
     # via
     #   jupyter-server
     #   nbclassic
@@ -41,9 +41,9 @@ blinker==1.6.2
     # via mpcontribs-api (setup.py)
 boltons==23.0.0
     # via mpcontribs-api (setup.py)
-boto3==1.28.25
+boto3==1.28.27
     # via flask-mongorest-mpcontribs
-botocore==1.31.25
+botocore==1.31.27
     # via
     #   boto3
     #   s3transfer
@@ -223,7 +223,7 @@ jupyter-core==5.3.1
     #   notebook
 jupyter-events==0.7.0
     # via jupyter-server
-jupyter-server==2.7.0
+jupyter-server==2.7.1
     # via
     #   nbclassic
     #   notebook-shim
@@ -270,7 +270,7 @@ monty==2023.8.8
     #   pymatgen
 more-itertools==10.1.0
     # via mpcontribs-api (setup.py)
-mp-api==0.33.3
+mp-api==0.34.2
     # via pymatgen
 mpmath==1.3.0
     # via sympy
@@ -315,7 +315,7 @@ numpy==1.25.2
     #   spglib
 opentelemetry-api==1.19.0
     # via ddtrace
-orjson==3.9.4
+orjson==3.9.5
     # via flask-mongorest-mpcontribs
 overrides==7.4.0
     # via jupyter-server
@@ -430,7 +430,7 @@ pyzmq==24.0.1
     #   jupyter-server
     #   nbclassic
     #   notebook
-redis==4.6.0
+redis==5.0.0
     # via
     #   flask-rq2
     #   flask-sse
@@ -469,7 +469,7 @@ ruamel-yaml==0.17.32
     # via pymatgen
 ruamel-yaml-clib==0.2.7
     # via ruamel-yaml
-s3transfer==0.6.1
+s3transfer==0.6.2
     # via boto3
 scipy==1.11.1
     # via pymatgen
