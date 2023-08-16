@@ -28,9 +28,9 @@ boltons==23.0.0
     # via
     #   mpcontribs-client
     #   mpcontribs-portal (setup.py)
-boto3==1.28.25
+boto3==1.28.27
     # via mpcontribs-portal (setup.py)
-botocore==1.31.25
+botocore==1.31.27
     # via
     #   boto3
     #   s3transfer
@@ -195,7 +195,7 @@ monty==2023.8.8
     #   mp-api
     #   mpcontribs-portal (setup.py)
     #   pymatgen
-mp-api==0.33.3
+mp-api==0.34.2
     # via pymatgen
 mpcontribs-client==5.4.3
     # via mpcontribs-portal (setup.py)
@@ -321,7 +321,7 @@ pyzmq==25.1.1
     # via
     #   ipykernel
     #   jupyter-client
-redis==4.6.0
+redis==5.0.0
     # via mpcontribs-portal (setup.py)
 referencing==0.30.2
     # via
@@ -348,7 +348,7 @@ ruamel-yaml==0.17.32
     # via pymatgen
 ruamel-yaml-clib==0.2.7
     # via ruamel-yaml
-s3transfer==0.6.1
+s3transfer==0.6.2
     # via boto3
 scipy==1.10.1
     # via
