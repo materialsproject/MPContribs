@@ -6,7 +6,7 @@
 #
 anyio==3.7.1
     # via jupyter-server
-argon2-cffi==21.3.0
+argon2-cffi==23.1.0
     # via
     #   jupyter-server
     #   nbclassic
@@ -167,7 +167,7 @@ jupyter-events==0.7.0
     # via jupyter-server
 jupyter-kernel-gateway==2.5.2
     # via -r MPContribs/mpcontribs-kernel-gateway/requirements.in
-jupyter-server==2.7.0
+jupyter-server==2.7.1
     # via
     #   nbclassic
     #   notebook-shim
@@ -204,7 +204,7 @@ monty==2023.8.8
     #   emmet-core
     #   mp-api
     #   pymatgen
-mp-api==0.33.3
+mp-api==0.34.2
     # via pymatgen
 mpcontribs-client==5.4.3
     # via -r MPContribs/mpcontribs-kernel-gateway/requirements.in
@@ -219,7 +219,7 @@ nbclassic==1.0.0
     # via notebook
 nbclient==0.8.0
     # via nbconvert
-nbconvert==7.7.3
+nbconvert==7.7.4
     # via
     #   jupyter-server
     #   nbclassic

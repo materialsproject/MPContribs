@@ -89,7 +89,7 @@ monty==2023.8.8
     #   emmet-core
     #   mp-api
     #   pymatgen
-mp-api==0.33.3
+mp-api==0.34.2
     # via pymatgen
 mpmath==1.3.0
     # via sympy
@@ -130,7 +130,7 @@ pillow==10.0.0
     # via matplotlib
 pint==0.19.2
     # via mpcontribs-client (MPContribs/mpcontribs-client/setup.py)
-plotly==5.16.0
+plotly==5.16.1
     # via
     #   mpcontribs-client (MPContribs/mpcontribs-client/setup.py)
     #   pymatgen
