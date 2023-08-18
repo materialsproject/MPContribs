@@ -1881,14 +1881,14 @@ class Client(SwaggerClient):
 
                     is_structure = isinstance(element, PmgStructure)
                     is_table = isinstance(element, pd.DataFrame)
-                    is_attachment = isinstance(element, Path) or isinstance(element, Attachment)
+                    is_attachment = isinstance(element, (str, Path, Attachment))
                     if component == "structures" and not is_structure:
                         raise MPContribsClientError(f"Use pymatgen Structure for {component}!")
                     elif component == "tables" and not is_table:
                         raise MPContribsClientError(f"Use pandas DataFrame for {component}!")
                     elif component == "attachments" and not is_attachment:
                         raise MPContribsClientError(
-                            f"Use pathlib.Path or mpcontribs.client.Attachment for {component}!"
+                            f"Use str, pathlib.Path or mpcontribs.client.Attachment for {component}!"
                         )
 
                     if is_structure:
@@ -1910,7 +1910,7 @@ class Client(SwaggerClient):
                             element[col] = element[col].astype(str)
                         dct = element.to_dict(orient="split")
                     elif is_attachment:
-                        if isinstance(element, Path):
+                        if isinstance(element, (str, Path)):
                             kind = guess(str(element))
 
                             if not isinstance(kind, SUPPORTED_FILETYPES):
@@ -1918,6 +1918,7 @@ class Client(SwaggerClient):
                                     f"{element.name} not supported. Use one of {SUPPORTED_MIMES}!"
                                 )
 
+                            element = Path(element)
                             content = element.read_bytes()
                             size = len(content)
 
