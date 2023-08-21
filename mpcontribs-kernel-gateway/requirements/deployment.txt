@@ -71,7 +71,7 @@ dnspython==2.4.2
     # via
     #   pyisemail
     #   pymongo
-emmet-core==0.64.4
+emmet-core==0.64.6
     # via mp-api
 entrypoints==0.4
     # via jupyter-client
@@ -89,7 +89,7 @@ filetype==1.2.0
     # via mpcontribs-client
 flatten-dict==0.4.2
     # via mpcontribs-client
-fonttools==4.42.0
+fonttools==4.42.1
     # via matplotlib
 fqdn==1.5.1
     # via jsonschema
@@ -167,7 +167,7 @@ jupyter-events==0.7.0
     # via jupyter-server
 jupyter-kernel-gateway==2.5.2
     # via -r MPContribs/mpcontribs-kernel-gateway/requirements.in
-jupyter-server==2.7.1
+jupyter-server==2.7.2
     # via
     #   nbclassic
     #   notebook-shim
@@ -204,7 +204,7 @@ monty==2023.8.8
     #   emmet-core
     #   mp-api
     #   pymatgen
-mp-api==0.34.2
+mp-api==0.34.3
     # via pymatgen
 mpcontribs-client==5.4.3
     # via -r MPContribs/mpcontribs-kernel-gateway/requirements.in
@@ -284,7 +284,7 @@ pint==0.19.2
     # via mpcontribs-client
 platformdirs==3.10.0
     # via jupyter-core
-plotly==5.16.0
+plotly==5.16.1
     # via
     #   mpcontribs-client
     #   pymatgen
@@ -295,7 +295,7 @@ prometheus-client==0.17.1
     #   notebook
 prompt-toolkit==3.0.39
     # via ipython
-protobuf==4.24.0
+protobuf==4.24.1
     # via
     #   ddsketch
     #   ddtrace
@@ -395,7 +395,7 @@ ruamel-yaml==0.17.32
     # via pymatgen
 ruamel-yaml-clib==0.2.7
     # via ruamel-yaml
-scipy==1.11.1
+scipy==1.11.2
     # via
     #   -r python/requirements.txt
     #   pymatgen

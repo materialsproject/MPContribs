@@ -28,9 +28,9 @@ boltons==23.0.0
     # via
     #   mpcontribs-client
     #   mpcontribs-portal (MPContribs/mpcontribs-portal/setup.py)
-boto3==1.28.27
+boto3==1.28.30
     # via mpcontribs-portal (MPContribs/mpcontribs-portal/setup.py)
-botocore==1.31.27
+botocore==1.31.30
     # via
     #   boto3
     #   s3transfer
@@ -79,7 +79,7 @@ dnspython==2.4.2
     # via
     #   pyisemail
     #   pymongo
-emmet-core==0.64.4
+emmet-core==0.64.6
     # via mp-api
 envier==0.4.0
     # via ddtrace
@@ -95,7 +95,7 @@ filetype==1.2.0
     # via mpcontribs-client
 flatten-dict==0.4.2
     # via mpcontribs-client
-fonttools==4.42.0
+fonttools==4.42.1
     # via matplotlib
 fqdn==1.5.1
     # via jsonschema
@@ -189,7 +189,7 @@ monty==2023.8.8
     #   mp-api
     #   mpcontribs-portal (MPContribs/mpcontribs-portal/setup.py)
     #   pymatgen
-mp-api==0.34.2
+mp-api==0.34.3
     # via pymatgen
 mpcontribs-client==5.4.3
     # via mpcontribs-portal (MPContribs/mpcontribs-portal/setup.py)
@@ -258,7 +258,7 @@ plotly==5.16.1
     #   pymatgen
 prompt-toolkit==3.0.39
     # via ipython
-protobuf==4.24.0
+protobuf==4.24.1
     # via
     #   ddsketch
     #   ddtrace
@@ -344,7 +344,7 @@ ruamel-yaml-clib==0.2.7
     # via ruamel-yaml
 s3transfer==0.6.2
     # via boto3
-scipy==1.11.1
+scipy==1.11.2
     # via
     #   -r python/requirements.txt
     #   mpcontribs-portal (MPContribs/mpcontribs-portal/setup.py)
