@@ -36,7 +36,7 @@ dnspython==2.4.2
     # via
     #   pyisemail
     #   pymongo
-emmet-core==0.64.4
+emmet-core==0.67.0
     # via mp-api
 exceptiongroup==1.1.3
     # via pytest
@@ -50,7 +50,7 @@ flake8==6.1.0
     #   pytest-flake8
 flatten-dict==0.4.2
     # via mpcontribs-client (setup.py)
-fonttools==4.42.0
+fonttools==4.42.1
     # via matplotlib
 fqdn==1.5.1
     # via jsonschema
@@ -84,7 +84,7 @@ jsonschema[format]==4.19.0
     #   swagger-spec-validator
 jsonschema-specifications==2023.7.1
     # via jsonschema
-kiwisolver==1.4.4
+kiwisolver==1.4.5
     # via matplotlib
 latexcodec==2.0.1
     # via pybtex
@@ -101,7 +101,7 @@ monty==2023.8.8
     #   emmet-core
     #   mp-api
     #   pymatgen
-mp-api==0.34.2
+mp-api==0.35.1
     # via pymatgen
 mpmath==1.3.0
     # via sympy
@@ -141,11 +141,11 @@ pillow==10.0.0
     # via matplotlib
 pint==0.19.2
     # via mpcontribs-client (setup.py)
-plotly==5.16.0
+plotly==5.16.1
     # via
     #   mpcontribs-client (setup.py)
     #   pymatgen
-pluggy==1.2.0
+pluggy==1.3.0
     # via pytest
 prompt-toolkit==3.0.39
     # via ipython
@@ -180,7 +180,7 @@ pymatgen==2023.8.10
     #   emmet-core
     #   mp-api
     #   mpcontribs-client (setup.py)
-pymongo==4.4.1
+pymongo==4.5.0
     # via mpcontribs-client (setup.py)
 pyparsing==3.0.9
     # via matplotlib
@@ -230,7 +230,7 @@ rfc3339-validator==0.1.4
     # via jsonschema
 rfc3987==1.3.8
     # via jsonschema
-rpds-py==0.9.2
+rpds-py==0.10.0
     # via
     #   jsonschema
     #   referencing
@@ -238,7 +238,7 @@ ruamel-yaml==0.17.32
     # via pymatgen
 ruamel-yaml-clib==0.2.7
     # via ruamel-yaml
-scipy==1.11.1
+scipy==1.11.2
     # via pymatgen
 semantic-version==2.10.0
     # via mpcontribs-client (setup.py)
