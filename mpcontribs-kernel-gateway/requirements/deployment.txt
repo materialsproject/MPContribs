@@ -57,7 +57,7 @@ cycler==0.11.0
     # via matplotlib
 ddsketch==2.0.4
     # via ddtrace
-ddtrace==1.18.2
+ddtrace==1.18.3
     # via -r MPContribs/mpcontribs-kernel-gateway/requirements.in
 debugpy==1.6.7.post1
     # via ipykernel
@@ -71,7 +71,7 @@ dnspython==2.4.2
     # via
     #   pyisemail
     #   pymongo
-emmet-core==0.66.0
+emmet-core==0.67.0
     # via mp-api
 entrypoints==0.4
     # via jupyter-client
@@ -219,7 +219,7 @@ nbclassic==1.0.0
     # via notebook
 nbclient==0.8.0
     # via nbconvert
-nbconvert==7.7.4
+nbconvert==7.8.0
     # via
     #   jupyter-server
     #   nbclassic
