@@ -1978,7 +1978,6 @@ class Client(SwaggerClient):
 
         # submit contributions
         if contribs:
-            per_page = self._get_per_page()
             total, total_processed = 0, 0
 
             def post_future(track_id, payload):
@@ -2007,35 +2006,36 @@ class Client(SwaggerClient):
                 retries = 0
 
                 while contribs[project_name]:
-                    futures = []
-                    for idx, chunk in enumerate(grouper(per_page, contribs[project_name])):
-                        post_chunk = []
-                        for c in chunk:
-                            if "id" in c:
-                                pk = c.pop("id")
-                                if not c:
-                                    logger.error(
-                                        f"SKIPPED update of {project_name}/{pk}: empty."
-                                    )
+                    futures, post_chunk, idx = [], [], 0
 
-                                payload = ujson.dumps(c).encode("utf-8")
-                                if len(payload) < MAX_PAYLOAD:
-                                    futures.append(put_future(pk, payload))
-                                else:
-                                    logger.error(
-                                        f"SKIPPED update of {project_name}/{pk}: too large."
-                                    )
-                            else:
-                                post_chunk.append(c)
+                    for n, c in enumerate(contribs[project_name]):
+                        if "id" in c:
+                            pk = c.pop("id")
+                            if not c:
+                                logger.error(f"SKIPPED: update of {project_name}/{pk} empty.")
 
-                        if post_chunk:
-                            payload = ujson.dumps(post_chunk).encode("utf-8")
+                            payload = ujson.dumps(c).encode("utf-8")
                             if len(payload) < MAX_PAYLOAD:
-                                futures.append(post_future(idx, payload))
+                                futures.append(put_future(pk, payload))
                             else:
-                                logger.error(
-                                    f"SKIPPED {project_name}/{idx}: too large, reduce per_request"
-                                )
+                                logger.error(f"SKIPPED: update of {project_name}/{pk} too large.")
+                        else:
+                            next_payload = ujson.dumps(post_chunk + [c]).encode("utf-8")
+                            if len(next_payload) >= MAX_PAYLOAD:
+                                if post_chunk:
+                                    payload = ujson.dumps(post_chunk).encode("utf-8")
+                                    futures.append(post_future(idx, payload))
+                                    post_chunk.clear()
+                                    idx += 1
+                                else:
+                                    logger.error(f"SKIPPED: contrib {project_name}/{n} too large.")
+                                    continue
+
+                            post_chunk.append(c)
+
+                    if post_chunk and len(futures) < ncontribs:
+                        payload = ujson.dumps(post_chunk).encode("utf-8")
+                        futures.append(post_future(idx, payload))
 
                     if not futures:
                         break  # nothing to do
@@ -2060,7 +2060,6 @@ class Client(SwaggerClient):
                             c for c in contribs[project_name]
                             if c["identifier"] not in existing_ids
                         ]
-                        per_page = int(per_page / 2)
                         retries += 1
                     else:
                         contribs[project_name] = []  # abort retrying
