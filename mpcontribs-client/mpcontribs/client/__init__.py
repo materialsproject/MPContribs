@@ -346,6 +346,33 @@ class Table(pd.DataFrame):
         ret.attrs = {k: v for k, v in dct["attrs"].items()}
         return ret
 
+    def _clean(self):
+        """clean the dataframe"""
+        self.fillna('', inplace=True)
+        self.index = self.index.astype(str)
+        for col in self.columns:
+            self[col] = self[col].astype(str)
+
+    def _attrs_as_dict(self):
+        name = self.attrs.get("name", "table")
+        title = self.attrs.get("title", name)
+        labels = self.attrs.get("labels", {})
+        index = self.index.name
+        variable = self.columns.name
+
+        if index and "index" not in labels:
+            labels["index"] = index
+        if variable and "variable" not in labels:
+            labels["variable"] = variable
+
+        return name, {"title": title, "labels": labels}
+
+    def as_dict(self):
+        """Convert Table to plain dictionary"""
+        self._clean()
+        dct = self.to_dict(orient="split")
+        dct["name"], dct["attrs"] = self._attrs_as_dict()
+        return dct
 
 class Structure(PmgStructure):
     """Wrapper class around pymatgen.Structure to provide display() and info()"""
@@ -1880,12 +1907,14 @@ class Client(SwaggerClient):
                         continue
 
                     is_structure = isinstance(element, PmgStructure)
-                    is_table = isinstance(element, pd.DataFrame)
+                    is_table = isinstance(element, (pd.DataFrame, Table))
                     is_attachment = isinstance(element, (str, Path, Attachment))
                     if component == "structures" and not is_structure:
                         raise MPContribsClientError(f"Use pymatgen Structure for {component}!")
                     elif component == "tables" and not is_table:
-                        raise MPContribsClientError(f"Use pandas DataFrame for {component}!")
+                        raise MPContribsClientError(
+                            f"Use pandas DataFrame or mpontribs.client.Table for {component}!"
+                        )
                     elif component == "attachments" and not is_attachment:
                         raise MPContribsClientError(
                             f"Use str, pathlib.Path or mpcontribs.client.Attachment for {component}!"
@@ -1904,11 +1933,9 @@ class Client(SwaggerClient):
                                 logger.warning("storing structure properties not supported, yet!")
                             del dct["properties"]
                     elif is_table:
-                        element.fillna('', inplace=True)
-                        element.index = element.index.astype(str)
-                        for col in element.columns:
-                            element[col] = element[col].astype(str)
-                        dct = element.to_dict(orient="split")
+                        table = element if isinstance(element, Table) else Table(element)
+                        table._clean()
+                        dct = table.to_dict(orient="split")
                     elif is_attachment:
                         if isinstance(element, (str, Path)):
                             kind = guess(str(element))
@@ -1937,25 +1964,9 @@ class Client(SwaggerClient):
                     digest = get_md5(dct)
 
                     if is_structure:
-                        dct["name"] = getattr(element, "name", None)
-                        if not dct["name"]:
-                            c = element.composition
-                            comp = c.get_integer_formula_and_factor()
-                            dct["name"] = f"{comp[0]}-{idx}" if nelems > 1 else comp[0]
+                        dct["name"] = getattr(element, "name", "structure")
                     elif is_table:
-                        name = f"table-{idx}" if nelems > 1 else "table"
-                        dct["name"] = element.attrs.get("name", name)
-                        title = element.attrs.get("title", dct["name"])
-                        labels = element.attrs.get("labels", {})
-                        index = element.index.name
-                        variable = element.columns.name
-
-                        if index and "index" not in labels:
-                            labels["index"] = index
-                        if variable and "variable" not in labels:
-                            labels["variable"] = variable
-
-                        dct["attrs"] = {"title": title, "labels": labels}
+                        dct["name"], dct["attrs"] = table._attrs_as_dict()
                     elif is_attachment:
                         dct["name"] = element.name
 
