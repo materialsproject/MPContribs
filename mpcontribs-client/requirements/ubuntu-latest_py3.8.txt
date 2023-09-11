@@ -6,7 +6,7 @@
 #
 arrow==1.2.3
     # via isoduration
-asttokens==2.2.1
+asttokens==2.4.0
     # via stack-data
 attrs==23.1.0
     # via
@@ -87,7 +87,7 @@ matplotlib-inline==0.1.6
     # via ipython
 monotonic==1.6
     # via bravado
-monty==2023.8.8
+monty==2023.9.5
     # via
     #   emmet-core
     #   mp-api
@@ -171,7 +171,7 @@ python-dateutil==2.8.2
     #   bravado-core
     #   matplotlib
     #   pandas
-pytz==2023.3
+pytz==2023.3.post1
     # via
     #   bravado-core
     #   pandas
@@ -198,7 +198,7 @@ rfc3339-validator==0.1.4
     # via jsonschema
 rfc3987==1.3.8
     # via jsonschema
-rpds-py==0.10.0
+rpds-py==0.10.2
     # via
     #   jsonschema
     #   referencing
@@ -224,7 +224,7 @@ six==1.16.0
     #   pybtex
     #   python-dateutil
     #   rfc3339-validator
-spglib==2.0.2
+spglib==2.1.0
     # via
     #   emmet-core
     #   pymatgen
