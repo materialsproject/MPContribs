@@ -28,9 +28,9 @@ boltons==23.0.0
     # via
     #   mpcontribs-client
     #   mpcontribs-portal (MPContribs/mpcontribs-portal/setup.py)
-boto3==1.28.40
+boto3==1.28.44
     # via mpcontribs-portal (MPContribs/mpcontribs-portal/setup.py)
-botocore==1.31.40
+botocore==1.31.44
     # via
     #   boto3
     #   s3transfer
@@ -54,9 +54,9 @@ cycler==0.11.0
     # via matplotlib
 ddsketch==2.0.4
     # via ddtrace
-ddtrace==1.18.3
+ddtrace==1.18.4
     # via mpcontribs-portal (MPContribs/mpcontribs-portal/setup.py)
-debugpy==1.6.7.post1
+debugpy==1.7.0
     # via ipykernel
 decorator==5.1.1
     # via ipython
@@ -185,7 +185,7 @@ mistune==3.0.1
     # via nbconvert
 monotonic==1.6
     # via bravado
-monty==2023.8.8
+monty==2023.9.5
     # via
     #   emmet-core
     #   mp-api
@@ -224,7 +224,7 @@ numpy==1.24.4
     #   pymatgen
     #   scipy
     #   spglib
-opentelemetry-api==1.19.0
+opentelemetry-api==1.20.0
     # via ddtrace
 packaging==23.1
     # via
@@ -260,7 +260,7 @@ plotly==5.16.1
     #   pymatgen
 prompt-toolkit==3.0.39
     # via ipython
-protobuf==4.24.2
+protobuf==4.24.3
     # via
     #   ddsketch
     #   ddtrace
@@ -275,16 +275,14 @@ pybtex==0.24.0
     #   emmet-core
     #   pymatgen
 pydantic==1.10.12
-    # via
-    #   emmet-core
-    #   pymatgen
+    # via emmet-core
 pygments==2.16.1
     # via
     #   ipython
     #   nbconvert
 pyisemail==2.0.1
     # via mpcontribs-client
-pymatgen==2023.9.2
+pymatgen==2023.9.10
     # via
     #   emmet-core
     #   mp-api
@@ -302,7 +300,7 @@ python-dateutil==2.8.2
     #   jupyter-client
     #   matplotlib
     #   pandas
-pytz==2023.3
+pytz==2023.3.post1
     # via
     #   bravado-core
     #   django
@@ -374,7 +372,7 @@ six==1.16.0
     #   rfc3339-validator
 soupsieve==2.5
     # via beautifulsoup4
-spglib==2.0.2
+spglib==2.1.0
     # via
     #   emmet-core
     #   pymatgen

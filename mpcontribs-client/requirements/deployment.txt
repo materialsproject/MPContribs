@@ -86,7 +86,7 @@ matplotlib-inline==0.1.6
     # via ipython
 monotonic==1.6
     # via bravado
-monty==2023.8.8
+monty==2023.9.5
     # via
     #   emmet-core
     #   mp-api
@@ -147,14 +147,12 @@ pybtex==0.24.0
     #   emmet-core
     #   pymatgen
 pydantic==1.10.12
-    # via
-    #   emmet-core
-    #   pymatgen
+    # via emmet-core
 pygments==2.16.1
     # via ipython
 pyisemail==2.0.1
     # via mpcontribs-client (MPContribs/mpcontribs-client/setup.py)
-pymatgen==2023.9.2
+pymatgen==2023.9.10
     # via
     #   emmet-core
     #   mp-api
@@ -170,7 +168,7 @@ python-dateutil==2.8.2
     #   bravado-core
     #   matplotlib
     #   pandas
-pytz==2023.3
+pytz==2023.3.post1
     # via
     #   bravado-core
     #   pandas
@@ -225,7 +223,7 @@ six==1.16.0
     #   pybtex
     #   python-dateutil
     #   rfc3339-validator
-spglib==2.0.2
+spglib==2.1.0
     # via
     #   emmet-core
     #   pymatgen
