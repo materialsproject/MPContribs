@@ -1898,6 +1898,11 @@ class Client(SwaggerClient):
 
                         if not dct.get("charge"):
                             del dct["charge"]
+
+                        if "properties" in dct:
+                            if dct["properties"]:
+                                logger.warning("storing structure properties not supported, yet!")
+                            del dct["properties"]
                     elif is_table:
                         element.fillna('', inplace=True)
                         element.index = element.index.astype(str)
