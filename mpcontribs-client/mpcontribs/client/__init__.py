@@ -265,6 +265,24 @@ def _response_hook(resp, *args, **kwargs):
         resp.count = 0
 
 
+def _chunk_by_size(items, max_size=0.95*MAX_BYTES):
+    buffer, buffer_size = [], 0
+
+    for idx, item in enumerate(items):
+        item_size = _compress(item)[0]
+
+        if buffer_size + item_size <= max_size:
+            buffer.append(item)
+            buffer_size += item_size
+        else:
+            yield buffer
+            buffer = [item]
+            buffer_size = item_size
+
+    if buffer_size > 0:
+        yield buffer
+
+
 def visit(path, key, value):
     if isinstance(value, dict) and "display" in value:
         return key, value["display"]
@@ -524,6 +542,63 @@ class Attachment(dict):
         """
         keys = {"id", "name", "md5", "content", "mime"}
         return cls((k, v) for k, v in dct.items() if k in keys)
+
+
+class Attachments(list):
+    """Wrapper class to handle attachments automatically"""
+    # TODO implement "plural" versions for Attachment methods
+
+    @classmethod
+    def from_list(cls, elements: list):
+        if not isinstance(elements, list):
+            raise MPContribsClientError("use list to init Attachments")
+
+        attachments = []
+
+        for element in elements:
+            if len(attachments) >= MAX_ELEMS:
+                raise MPContribsClientError(f"max {MAX_ELEMS} attachments reached")
+
+            if isinstance(element, Attachment):
+                # simply append, size check already performed
+                attachments.append(element)
+            elif isinstance(element, (list, dict)):
+                attachments += cls.from_data(element)
+            elif isinstance(element, (str, Path)):
+                # don't split files, user should use from_data to split
+                attm = Attachment.from_file(element)
+                attachments.append(attm)
+            else:
+                raise MPContribsClientError("invalid element for Attachments")
+
+        return attachments
+
+    @classmethod
+    def from_data(cls, data: Union[list, dict], prefix: str = "attachment"):
+        """Construct list of attachments from data dict or list
+
+        Args:
+            data (list,dict): JSON-serializable data to go into the attachments
+            prefix (str): prefix for attachment name(s)
+        """
+        try:
+            # try to make single attachment first
+            return [Attachment.from_data(data, name=prefix)]
+        except MPContribsClientError as ex:
+            # chunk data into multiple attachments with < MAX_BYTES
+            if isinstance(data, dict):
+                raise NotImplementedError("dicts not supported yet")
+
+            attachments = []
+
+            for idx, chunk in enumerate(_chunk_by_size(data)):
+                if len(attachments) > MAX_ELEMS:
+                    raise MPContribsClientError("list too large to split")
+
+                attm = Attachment.from_data(chunk, name=f"{prefix}{idx}")
+                attachments.append(attm)
+
+            return attachments
 
 
 classes_map = {"structures": Structure, "tables": Table, "attachments": Attachment}
