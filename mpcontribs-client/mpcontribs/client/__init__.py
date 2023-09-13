@@ -215,6 +215,12 @@ def grouper(n, iterable):
         yield chunk
 
 
+def _compress(data):
+    data_json = ujson.dumps(data, indent=4).encode("utf-8")
+    content = gzip.compress(data_json)
+    return len(content), content
+
+
 def get_session(session=None):
     adapter_kwargs = dict(max_retries=Retry(
         total=RETRIES,
@@ -454,17 +460,15 @@ class Attachment(dict):
         return self["name"]
 
     @classmethod
-    def from_data(cls, name: str, data: Union[list, dict]):
+    def from_data(cls, data: Union[list, dict], name: str = "attachment"):
         """Construct attachment from data dict or list
 
         Args:
-            name (str): name for the attachment
             data (list,dict): JSON-serializable data to go into the attachment
+            name (str): name for the attachment
         """
         filename = name + ".json.gz"
-        data_json = ujson.dumps(data, indent=4).encode("utf-8")
-        content = gzip.compress(data_json)
-        size = len(content)
+        size, content = _compress(data)
 
         if size > MAX_BYTES:
             raise MPContribsClientError(f"{name} too large ({size} > {MAX_BYTES})!")
