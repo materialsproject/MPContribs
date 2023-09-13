@@ -480,8 +480,8 @@ class Attachment(dict):
         )
 
     @classmethod
-    def from_textfile(cls, path: Union[Path, str]):
-        """Construct attachment from (uncompressed) text file
+    def from_file(cls, path: Union[Path, str]):
+        """Construct attachment from file
 
         Args:
             path (pathlib.Path, str): file path
@@ -492,12 +492,17 @@ class Attachment(dict):
             typ = type(path)
             raise MPContribsClientError(f"use pathlib.Path or str (is: {typ}).")
 
+        kind = guess(str(element))
+        supported = isinstance(kind, SUPPORTED_FILETYPES)
         content = path.read_bytes()
 
-        try:
-            content = gzip.compress(content)
-        except Exception:
-            raise MPContribsClientError(f"Failed to gzip {path}.")
+        if not supported:  # try to gzip text file
+            try:
+                content = gzip.compress(content)
+            except Exception:
+                raise MPContribsClientError(
+                    f"{path} is not text file or {SUPPORTED_MIMES}."
+                )
 
         size = len(content)
 
@@ -506,7 +511,7 @@ class Attachment(dict):
 
         return cls(
             name=path.name,
-            mime="application/gzip",
+            mime=kind.mime if supported else "application/gzip",
             content=b64encode(content).decode("utf-8")
         )
 
@@ -1942,28 +1947,9 @@ class Client(SwaggerClient):
                         dct = table.to_dict(orient="split")
                     elif is_attachment:
                         if isinstance(element, (str, Path)):
-                            kind = guess(str(element))
+                            element = Attachment.from_file(element)
 
-                            if not isinstance(kind, SUPPORTED_FILETYPES):
-                                raise MPContribsClientError(
-                                    f"{element.name} not supported. Use one of {SUPPORTED_MIMES}!"
-                                )
-
-                            element = Path(element)
-                            content = element.read_bytes()
-                            size = len(content)
-
-                            if size > MAX_BYTES:
-                                raise MPContribsClientError(
-                                    f"{element.name} too large ({size} > {MAX_BYTES})!"
-                                )
-
-                            dct = {
-                                "mime": kind.mime,
-                                "content": b64encode(content).decode("utf-8")
-                            }
-                        else:
-                            dct = {k: element[k] for k in ["mime", "content"]}
+                        dct = {k: element[k] for k in ["mime", "content"]}
 
                     digest = get_md5(dct)
 
