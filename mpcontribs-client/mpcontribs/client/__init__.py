@@ -398,6 +398,7 @@ class Table(pd.DataFrame):
         dct["name"], dct["attrs"] = self._attrs_as_dict()
         return dct
 
+
 class Structure(PmgStructure):
     """Wrapper class around pymatgen.Structure to provide display() and info()"""
     def display(self):
@@ -510,7 +511,7 @@ class Attachment(dict):
             typ = type(path)
             raise MPContribsClientError(f"use pathlib.Path or str (is: {typ}).")
 
-        kind = guess(str(element))
+        kind = guess(str(path))
         supported = isinstance(kind, SUPPORTED_FILETYPES)
         content = path.read_bytes()
 
@@ -584,7 +585,7 @@ class Attachments(list):
         try:
             # try to make single attachment first
             return [Attachment.from_data(data, name=prefix)]
-        except MPContribsClientError as ex:
+        except MPContribsClientError:
             # chunk data into multiple attachments with < MAX_BYTES
             if isinstance(data, dict):
                 raise NotImplementedError("dicts not supported yet")
@@ -2001,7 +2002,7 @@ class Client(SwaggerClient):
                         )
                     elif component == "attachments" and not is_attachment:
                         raise MPContribsClientError(
-                            f"Use str, pathlib.Path or mpcontribs.client.Attachment for {component}!"
+                            f"Use str, pathlib.Path or mpcontribs.client.Attachment for {component}"
                         )
 
                     if is_structure:
