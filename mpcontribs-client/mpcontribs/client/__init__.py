@@ -2102,7 +2102,7 @@ class Client(SwaggerClient):
                                 if post_chunk:
                                     payload = ujson.dumps(post_chunk).encode("utf-8")
                                     futures.append(post_future(idx, payload))
-                                    post_chunk.clear()
+                                    post_chunk = []
                                     idx += 1
                                 else:
                                     logger.error(f"SKIPPED: contrib {project_name}/{n} too large.")
