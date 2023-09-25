@@ -41,9 +41,9 @@ blinker==1.6.2
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 boltons==23.0.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
-boto3==1.28.49
+boto3==1.28.53
     # via flask-mongorest-mpcontribs
-botocore==1.31.49
+botocore==1.31.53
     # via
     #   boto3
     #   s3transfer
@@ -71,7 +71,7 @@ contourpy==1.1.1
     # via matplotlib
 crontab==1.0.1
     # via rq-scheduler
-cryptography==41.0.3
+cryptography==41.0.4
     # via pyopenssl
 css-html-js-minify==2.5.5
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
@@ -81,7 +81,7 @@ dateparser==1.1.8
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 ddsketch==2.0.4
     # via ddtrace
-ddtrace==1.18.5
+ddtrace==1.20.1
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 debugpy==1.8.0
     # via ipykernel
@@ -193,7 +193,7 @@ json2html==1.3.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 jsonpointer==2.4
     # via jsonschema
-jsonschema[format-nongpl]==4.19.0
+jsonschema[format-nongpl]==4.19.1
     # via
     #   flasgger-tschaume
     #   jupyter-events
@@ -261,7 +261,7 @@ mongoengine==0.27.0
     #   atlasq-tschaume
     #   flask-mongoengine-tschaume
     #   marshmallow-mongoengine
-monty==2023.9.5
+monty==2023.9.25
     # via
     #   emmet-core
     #   mp-api
@@ -272,7 +272,7 @@ mp-api==0.36.1
     # via pymatgen
 mpmath==1.3.0
     # via sympy
-msgpack==1.0.5
+msgpack==1.0.6
     # via mp-api
 nbclassic==1.0.0
     # via notebook
@@ -299,11 +299,11 @@ nest-asyncio==1.5.8
     #   notebook
 networkx==3.1
     # via pymatgen
-notebook==6.5.5
+notebook==6.5.6
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 notebook-shim==0.2.3
     # via nbclassic
-numpy==1.24.4
+numpy==1.25.2
     # via
     #   -r python/requirements.txt
     #   contourpy

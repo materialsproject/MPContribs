@@ -68,7 +68,7 @@ jsonpointer==2.4
     # via jsonschema
 jsonref==1.1.0
     # via bravado-core
-jsonschema[format]==4.19.0
+jsonschema[format]==4.19.1
     # via
     #   bravado-core
     #   swagger-spec-validator
@@ -86,7 +86,7 @@ matplotlib-inline==0.1.6
     # via ipython
 monotonic==1.6
     # via bravado
-monty==2023.9.5
+monty==2023.9.25
     # via
     #   emmet-core
     #   mp-api
@@ -95,14 +95,14 @@ mp-api==0.36.1
     # via pymatgen
 mpmath==1.3.0
     # via sympy
-msgpack==1.0.5
+msgpack==1.0.6
     # via
     #   bravado
     #   bravado-core
     #   mp-api
 networkx==3.1
     # via pymatgen
-numpy==1.24.4
+numpy==1.25.2
     # via
     #   -r python/requirements.txt
     #   contourpy
@@ -260,7 +260,7 @@ uncertainties==3.1.7
     # via pymatgen
 uri-template==1.3.0
     # via jsonschema
-urllib3==2.0.4
+urllib3==2.0.5
     # via requests
 wcwidth==0.2.6
     # via prompt-toolkit
