@@ -4,7 +4,7 @@
 #
 #    pip-compile --all-extras --output-file=requirements/ubuntu-latest_py3.8_extras.txt
 #
-arrow==1.2.3
+arrow==1.3.0
     # via isoduration
 asgiref==3.7.2
     # via django
@@ -28,9 +28,9 @@ boltons==23.0.0
     # via
     #   mpcontribs-client
     #   mpcontribs-portal (setup.py)
-boto3==1.28.49
+boto3==1.28.57
     # via mpcontribs-portal (setup.py)
-botocore==1.31.49
+botocore==1.31.57
     # via
     #   boto3
     #   s3transfer
@@ -44,17 +44,17 @@ cattrs==23.1.2
     # via ddtrace
 certifi==2023.7.22
     # via requests
-charset-normalizer==3.2.0
+charset-normalizer==3.3.0
     # via requests
 comm==0.1.4
     # via ipykernel
 contourpy==1.1.1
     # via matplotlib
-cycler==0.11.0
+cycler==0.12.0
     # via matplotlib
 ddsketch==2.0.4
     # via ddtrace
-ddtrace==1.18.5
+ddtrace==1.20.2
     # via mpcontribs-portal (setup.py)
 debugpy==1.8.0
     # via ipykernel
@@ -87,9 +87,9 @@ exceptiongroup==1.1.3
     # via
     #   cattrs
     #   pytest
-executing==1.2.0
+executing==2.0.0
     # via stack-data
-fastjsonschema==2.18.0
+fastjsonschema==2.18.1
     # via nbformat
 fastnumbers==5.0.1
     # via mpcontribs-portal (setup.py)
@@ -99,7 +99,7 @@ flake8==6.1.0
     # via mpcontribs-portal (setup.py)
 flatten-dict==0.4.2
     # via mpcontribs-client
-fonttools==4.42.1
+fonttools==4.43.0
     # via matplotlib
 fqdn==1.5.1
     # via jsonschema
@@ -120,7 +120,7 @@ importlib-metadata==6.8.0
     #   jupyter-client
     #   nbconvert
     #   opentelemetry-api
-importlib-resources==6.0.1
+importlib-resources==6.1.0
     # via
     #   jsonschema
     #   jsonschema-specifications
@@ -129,7 +129,7 @@ iniconfig==2.0.0
     # via pytest
 ipykernel==6.25.2
     # via mpcontribs-portal (setup.py)
-ipython==8.12.2
+ipython==8.12.3
     # via
     #   ipykernel
     #   mpcontribs-client
@@ -157,7 +157,7 @@ jsonpointer==2.4
     # via jsonschema
 jsonref==1.1.0
     # via bravado-core
-jsonschema[format]==4.19.0
+jsonschema[format]==4.19.1
     # via
     #   bravado-core
     #   nbformat
@@ -168,7 +168,7 @@ jupyter-client==8.3.1
     # via
     #   ipykernel
     #   nbclient
-jupyter-core==5.3.1
+jupyter-core==5.3.2
     # via
     #   ipykernel
     #   jupyter-client
@@ -193,11 +193,11 @@ matplotlib-inline==0.1.6
     #   ipython
 mccabe==0.7.0
     # via flake8
-mistune==3.0.1
+mistune==3.0.2
     # via nbconvert
 monotonic==1.6
     # via bravado
-monty==2023.9.5
+monty==2023.9.25
     # via
     #   emmet-core
     #   mp-api
@@ -205,11 +205,11 @@ monty==2023.9.5
     #   pymatgen
 mp-api==0.35.1
     # via pymatgen
-mpcontribs-client==5.5.0
+mpcontribs-client==5.5.1
     # via mpcontribs-portal (setup.py)
 mpmath==1.3.0
     # via sympy
-msgpack==1.0.5
+msgpack==1.0.7
     # via
     #   bravado
     #   bravado-core
@@ -237,7 +237,7 @@ numpy==1.24.4
     #   spglib
 opentelemetry-api==1.20.0
     # via ddtrace
-packaging==23.1
+packaging==23.2
     # via
     #   gunicorn
     #   ipykernel
@@ -291,7 +291,7 @@ pybtex==0.24.0
     #   pymatgen
 pycodestyle==2.11.0
     # via flake8
-pydantic==1.10.12
+pydantic==1.10.13
     # via
     #   emmet-core
     #   pymatgen
@@ -338,7 +338,7 @@ pyzmq==25.1.1
     # via
     #   ipykernel
     #   jupyter-client
-redis==5.0.0
+redis==5.0.1
     # via mpcontribs-portal (setup.py)
 referencing==0.30.2
     # via
@@ -361,11 +361,11 @@ rpds-py==0.10.3
     # via
     #   jsonschema
     #   referencing
-ruamel-yaml==0.17.32
+ruamel-yaml==0.17.33
     # via pymatgen
 ruamel-yaml-clib==0.2.7
     # via ruamel-yaml
-s3transfer==0.6.2
+s3transfer==0.7.0
     # via boto3
 scipy==1.10.1
     # via
@@ -400,7 +400,7 @@ spglib==2.1.0
     #   pymatgen
 sqlparse==0.4.4
     # via django
-stack-data==0.6.2
+stack-data==0.6.3
     # via ipython
 swagger-spec-validator==3.0.3
     # via
@@ -424,7 +424,7 @@ tqdm==4.66.1
     # via
     #   mpcontribs-client
     #   pymatgen
-traitlets==5.10.0
+traitlets==5.10.1
     # via
     #   comm
     #   ipykernel
@@ -435,6 +435,8 @@ traitlets==5.10.0
     #   nbclient
     #   nbconvert
     #   nbformat
+types-python-dateutil==2.8.19.14
+    # via arrow
 typing-extensions==4.8.0
     # via
     #   asgiref
@@ -459,7 +461,7 @@ urllib3==1.26.16
     # via
     #   botocore
     #   requests
-wcwidth==0.2.6
+wcwidth==0.2.8
     # via prompt-toolkit
 webcolors==1.13
     # via jsonschema
@@ -473,7 +475,7 @@ wrapt==1.15.0
     # via deprecated
 xmltodict==0.13.0
     # via ddtrace
-zipp==3.16.2
+zipp==3.17.0
     # via
     #   importlib-metadata
     #   importlib-resources
