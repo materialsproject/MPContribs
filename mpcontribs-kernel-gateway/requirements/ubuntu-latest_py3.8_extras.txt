@@ -27,9 +27,9 @@ backcall==0.2.0
     # via ipython
 beautifulsoup4==4.12.2
     # via nbconvert
-bleach==6.0.0
+bleach==6.1.0
     # via nbconvert
-blinker==1.6.2
+blinker==1.6.3
     # via -r requirements.in
 boltons==23.0.0
     # via mpcontribs-client
@@ -53,11 +53,11 @@ comm==0.1.4
     #   ipywidgets
 contourpy==1.1.1
     # via matplotlib
-cycler==0.12.0
+cycler==0.12.1
     # via matplotlib
 ddsketch==2.0.4
     # via ddtrace
-ddtrace==1.20.2
+ddtrace==2.0.2
     # via -r requirements.in
 debugpy==1.8.0
     # via ipykernel
@@ -89,7 +89,7 @@ filetype==1.2.0
     # via mpcontribs-client
 flatten-dict==0.4.2
     # via mpcontribs-client
-fonttools==4.43.0
+fonttools==4.43.1
     # via matplotlib
 fqdn==1.5.1
     # via jsonschema
@@ -127,7 +127,7 @@ ipywidgets==8.1.1
     # via -r requirements.in
 isoduration==20.11.0
     # via jsonschema
-jedi==0.19.0
+jedi==0.19.1
     # via ipython
 jinja2==3.1.2
     # via
@@ -225,7 +225,7 @@ nbclassic==1.0.0
     # via notebook
 nbclient==0.8.0
     # via nbconvert
-nbconvert==7.8.0
+nbconvert==7.9.2
     # via
     #   jupyter-server
     #   nbclassic
@@ -288,7 +288,7 @@ pint==0.19.2
     # via mpcontribs-client
 pkgutil-resolve-name==1.3.10
     # via jsonschema
-platformdirs==3.10.0
+platformdirs==3.11.0
     # via jupyter-core
 plotly==5.17.0
     # via
@@ -301,13 +301,14 @@ prometheus-client==0.17.1
     #   notebook
 prompt-toolkit==3.0.39
     # via ipython
-protobuf==4.24.3
+protobuf==4.24.4
     # via
     #   ddsketch
     #   ddtrace
 psutil==5.9.5
     # via
     #   -r requirements.in
+    #   ddtrace
     #   ipykernel
 ptyprocess==0.7.0
     # via
@@ -393,13 +394,13 @@ rfc3986-validator==0.1.1
     #   jupyter-events
 rfc3987==1.3.8
     # via jsonschema
-rpds-py==0.10.3
+rpds-py==0.10.4
     # via
     #   jsonschema
     #   referencing
-ruamel-yaml==0.17.33
+ruamel-yaml==0.17.35
     # via pymatgen
-ruamel-yaml-clib==0.2.7
+ruamel-yaml-clib==0.2.8
     # via ruamel-yaml
 scipy==1.10.1
     # via pymatgen
@@ -410,7 +411,7 @@ send2trash==1.8.2
     #   jupyter-server
     #   nbclassic
     #   notebook
-simplejson==3.19.1
+simplejson==3.19.2
     # via
     #   bravado
     #   bravado-core
@@ -468,7 +469,7 @@ tqdm==4.66.1
     # via
     #   mpcontribs-client
     #   pymatgen
-traitlets==5.10.1
+traitlets==5.11.2
     # via
     #   comm
     #   ipykernel
@@ -506,7 +507,7 @@ uncertainties==3.1.7
     # via pymatgen
 uri-template==1.3.0
     # via jsonschema
-urllib3==2.0.5
+urllib3==2.0.6
     # via requests
 wcwidth==0.2.8
     # via prompt-toolkit
@@ -516,12 +517,14 @@ webencodings==0.5.1
     # via
     #   bleach
     #   tinycss2
-websocket-client==1.6.3
+websocket-client==1.6.4
     # via jupyter-server
 widgetsnbextension==4.0.9
     # via ipywidgets
 wrapt==1.15.0
-    # via deprecated
+    # via
+    #   ddtrace
+    #   deprecated
 xmltodict==0.13.0
     # via ddtrace
 zipp==3.17.0
