@@ -151,7 +151,7 @@ jupyter-client==7.4.9
     #   nbclassic
     #   nbclient
     #   notebook
-jupyter-core==5.3.2
+jupyter-core==5.4.0
     # via
     #   ipykernel
     #   jupyter-client
