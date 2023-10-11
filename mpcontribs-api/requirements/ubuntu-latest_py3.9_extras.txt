@@ -215,7 +215,7 @@ jupyter-client==7.4.9
     #   nbclassic
     #   nbclient
     #   notebook
-jupyter-core==5.3.2
+jupyter-core==5.4.0
     # via
     #   ipykernel
     #   jupyter-client
@@ -314,7 +314,7 @@ numpy==1.26.0
     #   spglib
 opentelemetry-api==1.20.0
     # via ddtrace
-orjson==3.9.7
+orjson==3.9.8
     # via flask-mongorest-mpcontribs
 overrides==7.4.0
     # via jupyter-server
@@ -455,7 +455,7 @@ rfc3986-validator==0.1.1
     # via
     #   jsonschema
     #   jupyter-events
-rpds-py==0.10.4
+rpds-py==0.10.6
     # via
     #   jsonschema
     #   referencing
