@@ -372,7 +372,7 @@ pygments==2.16.1
     # via
     #   ipython
     #   nbconvert
-pymatgen==2023.10.4
+pymatgen==2023.10.11
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 pymongo==4.5.0
     # via
