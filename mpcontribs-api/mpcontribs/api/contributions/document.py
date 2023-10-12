@@ -44,6 +44,7 @@ ureg.define(UnitDefinition("ppb", "ppb", (), ScaleConverter(1e-9)))
 ureg.define("atom = 1")
 ureg.define("bohr_magneton = e * hbar / (2 * m_e) = µᵇ = µ_B = mu_B")
 ureg.define("electron_mass = 9.1093837015e-31 kg = mₑ = m_e")
+ureg.define("sccm = cm³/min")
 
 COMPONENTS = {
     "structures": ["lattice", "sites", "charge"],
