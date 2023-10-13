@@ -37,7 +37,7 @@ bravado==11.0.3
     # via mpcontribs-client
 bravado-core==6.1.0
     # via bravado
-bytecode==0.15.0
+bytecode==0.15.1
     # via ddtrace
 cattrs==23.1.2
     # via ddtrace
@@ -57,7 +57,7 @@ cycler==0.12.1
     # via matplotlib
 ddsketch==2.0.4
     # via ddtrace
-ddtrace==2.0.2
+ddtrace==2.1.0
     # via -r requirements.in
 debugpy==1.8.0
     # via ipykernel
@@ -314,7 +314,7 @@ pygments==2.16.1
     #   nbconvert
 pyisemail==2.0.1
     # via mpcontribs-client
-pymatgen==2023.10.4
+pymatgen==2023.10.11
     # via mpcontribs-client
 pymongo==4.5.0
     # via mpcontribs-client
