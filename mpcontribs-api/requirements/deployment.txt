@@ -49,7 +49,7 @@ botocore==1.31.63
     #   s3transfer
 brotli==1.1.0
     # via flask-compress
-bytecode==0.15.0
+bytecode==0.15.1
     # via ddtrace
 cattrs==23.1.2
     # via ddtrace
@@ -81,7 +81,7 @@ dateparser==1.1.8
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 ddsketch==2.0.4
     # via ddtrace
-ddtrace==2.0.2
+ddtrace==2.1.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 debugpy==1.8.0
     # via ipykernel
