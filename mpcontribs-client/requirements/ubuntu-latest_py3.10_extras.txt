@@ -151,7 +151,7 @@ py==1.11.0
     #   pytest-pycodestyle
 pybtex==0.24.0
     # via pymatgen
-pycodestyle==2.11.0
+pycodestyle==2.11.1
     # via
     #   flake8
     #   pytest-pycodestyle
@@ -161,7 +161,7 @@ pygments==2.16.1
     # via ipython
 pyisemail==2.0.1
     # via mpcontribs-client (setup.py)
-pymatgen==2023.10.4
+pymatgen==2023.10.11
     # via mpcontribs-client (setup.py)
 pymongo==4.5.0
     # via mpcontribs-client (setup.py)
