@@ -166,7 +166,7 @@ pybtex==0.24.0
     # via
     #   emmet-core
     #   pymatgen
-pycodestyle==2.11.0
+pycodestyle==2.11.1
     # via
     #   flake8
     #   pytest-pycodestyle
