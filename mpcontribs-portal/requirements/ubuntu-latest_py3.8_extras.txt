@@ -28,9 +28,9 @@ boltons==23.0.0
     # via
     #   mpcontribs-client
     #   mpcontribs-portal (setup.py)
-boto3==1.28.62
+boto3==1.28.63
     # via mpcontribs-portal (setup.py)
-botocore==1.31.62
+botocore==1.31.63
     # via
     #   boto3
     #   s3transfer
@@ -38,7 +38,7 @@ bravado==11.0.3
     # via mpcontribs-client
 bravado-core==6.1.0
     # via bravado
-bytecode==0.15.0
+bytecode==0.15.1
     # via ddtrace
 cattrs==23.1.2
     # via ddtrace
@@ -54,7 +54,7 @@ cycler==0.12.1
     # via matplotlib
 ddsketch==2.0.4
     # via ddtrace
-ddtrace==2.0.2
+ddtrace==2.1.0
     # via mpcontribs-portal (setup.py)
 debugpy==1.8.0
     # via ipykernel
@@ -291,7 +291,7 @@ pybtex==0.24.0
     # via
     #   emmet-core
     #   pymatgen
-pycodestyle==2.11.0
+pycodestyle==2.11.1
     # via flake8
 pydantic==1.10.13
     # via
