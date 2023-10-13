@@ -41,15 +41,15 @@ blinker==1.6.3
     # via mpcontribs-api (setup.py)
 boltons==23.0.0
     # via mpcontribs-api (setup.py)
-boto3==1.28.62
+boto3==1.28.63
     # via flask-mongorest-mpcontribs
-botocore==1.31.62
+botocore==1.31.63
     # via
     #   boto3
     #   s3transfer
 brotli==1.1.0
     # via flask-compress
-bytecode==0.15.0
+bytecode==0.15.1
     # via ddtrace
 cattrs==23.1.2
     # via ddtrace
@@ -81,7 +81,7 @@ dateparser==1.1.8
     # via mpcontribs-api (setup.py)
 ddsketch==2.0.4
     # via ddtrace
-ddtrace==2.0.2
+ddtrace==2.1.0
     # via mpcontribs-api (setup.py)
 debugpy==1.8.0
     # via ipykernel
@@ -307,7 +307,7 @@ numpy==1.26.0
     #   spglib
 opentelemetry-api==1.20.0
     # via ddtrace
-orjson==3.9.8
+orjson==3.9.9
     # via flask-mongorest-mpcontribs
 overrides==7.4.0
     # via jupyter-server
@@ -372,7 +372,7 @@ pygments==2.16.1
     # via
     #   ipython
     #   nbconvert
-pymatgen==2023.10.4
+pymatgen==2023.10.11
     # via mpcontribs-api (setup.py)
 pymongo==4.5.0
     # via
