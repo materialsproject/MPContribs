@@ -27,7 +27,9 @@ charset-normalizer==3.3.0
 contourpy==1.1.1
     # via matplotlib
 coverage[toml]==7.3.2
-    # via pytest-cov
+    # via
+    #   coverage
+    #   pytest-cov
 cycler==0.12.1
     # via matplotlib
 decorator==5.1.1
@@ -106,7 +108,7 @@ msgpack==1.0.7
     #   bravado-core
 networkx==3.1
     # via pymatgen
-numpy==1.26.0
+numpy==1.26.1
     # via
     #   contourpy
     #   matplotlib
@@ -131,7 +133,7 @@ pexpect==4.8.0
     # via ipython
 pickleshare==0.7.5
     # via ipython
-pillow==10.0.1
+pillow==10.1.0
     # via matplotlib
 pint==0.19.2
     # via mpcontribs-client (setup.py)
