@@ -211,7 +211,7 @@ nest-asyncio==1.5.8
     # via ipykernel
 networkx==3.1
     # via pymatgen
-numpy==1.26.0
+numpy==1.26.1
     # via
     #   contourpy
     #   matplotlib
@@ -242,7 +242,7 @@ pexpect==4.8.0
     # via ipython
 pickleshare==0.7.5
     # via ipython
-pillow==10.0.1
+pillow==10.1.0
     # via matplotlib
 pint==0.19.2
     # via mpcontribs-client
@@ -258,7 +258,7 @@ protobuf==4.24.4
     # via
     #   ddsketch
     #   ddtrace
-psutil==5.9.5
+psutil==5.9.6
     # via
     #   ddtrace
     #   ipykernel
