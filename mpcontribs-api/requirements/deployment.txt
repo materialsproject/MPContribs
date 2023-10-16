@@ -215,9 +215,9 @@ jupyter-core==5.4.0
     #   nbconvert
     #   nbformat
     #   notebook
-jupyter-events==0.7.0
+jupyter-events==0.8.0
     # via jupyter-server
-jupyter-server==2.7.3
+jupyter-server==2.8.0
     # via
     #   nbclassic
     #   notebook-shim
@@ -333,7 +333,7 @@ pexpect==4.8.0
     # via ipython
 pickleshare==0.7.5
     # via ipython
-pillow==10.0.1
+pillow==10.1.0
     # via matplotlib
 pint==0.19.2
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
@@ -352,7 +352,7 @@ protobuf==4.24.4
     # via
     #   ddsketch
     #   ddtrace
-psutil==5.9.5
+psutil==5.9.6
     # via
     #   ddtrace
     #   ipykernel
