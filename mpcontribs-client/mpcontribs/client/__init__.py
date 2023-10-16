@@ -2018,7 +2018,11 @@ class Client(SwaggerClient):
                                 logger.warning("storing structure properties not supported, yet!")
                             del dct["properties"]
                     elif is_table:
-                        table = element if isinstance(element, Table) else Table(element)
+                        table = element
+                        if not isinstance(table, Table):
+                            table = Table(element)
+                            table.attrs = element.attrs
+
                         table._clean()
                         dct = table.to_dict(orient="split")
                     elif is_attachment:
