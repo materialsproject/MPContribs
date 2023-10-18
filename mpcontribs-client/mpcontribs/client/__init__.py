@@ -2078,6 +2078,7 @@ class Client(SwaggerClient):
         # submit contributions
         if contribs:
             total, total_processed = 0, 0
+            max_contribs = 1000  # TODO this should be set dynamically from `bulk_update_limit`
 
             def post_future(track_id, payload):
                 future = self.session.post(
@@ -2119,8 +2120,9 @@ class Client(SwaggerClient):
                             else:
                                 logger.error(f"SKIPPED: update of {project_name}/{pk} too large.")
                         else:
-                            next_payload = ujson.dumps(post_chunk + [c]).encode("utf-8")
-                            if len(next_payload) >= MAX_PAYLOAD:
+                            next_post_chunk = post_chunk + [c]
+                            next_payload = ujson.dumps(next_post_chunk).encode("utf-8")
+                            if len(next_post_chunk) > max_contribs or len(next_payload) >= MAX_PAYLOAD:
                                 if post_chunk:
                                     payload = ujson.dumps(post_chunk).encode("utf-8")
                                     futures.append(post_future(idx, payload))
