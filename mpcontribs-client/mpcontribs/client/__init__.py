@@ -1104,14 +1104,17 @@ class Client(SwaggerClient):
             raise MPContribsClientError("initialize client with project or set `name` argument!")
 
         disallowed = ["is_approved", "stats", "columns", "is_public", "owner"]
-        for k in disallowed:
-            if k in update:
+        for k in list(update.keys()):
+            if k in disallowed:
                 logger.warning(f"removing `{k}` from update - not allowed.")
                 update.pop(k)
                 if k == "columns":
                     logger.info("use `client.init_columns()` to update project columns.")
                 elif k == "is_public":
                     logger.info("use `client.make_public/private()` to set `is_public`.")
+            elif not isinstance(update[k], bool) and not update[k]:
+                logger.warning(f"removing `{k}` from update - no update requested.")
+                update.pop(k)
 
         if not update:
             logger.warning("nothing to update")
@@ -1132,7 +1135,7 @@ class Client(SwaggerClient):
 
         payload = {
             k: v for k, v in update.items()
-            if v and k in fields and project.get(k, None) != v
+            if k in fields and project.get(k, None) != v
         }
         if not payload:
             logger.warning("nothing to update")
