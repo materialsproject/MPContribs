@@ -1483,6 +1483,10 @@ class Client(SwaggerClient):
 
         return result["total_count"], result["total_pages"]
 
+    def count(self, query: dict = None) -> int:
+        """shortcut for get_totals()"""
+        return self.get_totals(query=query)[0]
+
     def get_unique_identifiers_flags(self, query: dict = None) -> dict:
         """Retrieve values for `unique_identifiers` flags.
 
