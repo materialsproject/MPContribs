@@ -953,7 +953,11 @@ class Client(SwaggerClient):
         setattr(future, "track_id", track_id)
         return future
 
-    def available_query_params(self, resource="contributions"):
+    def available_query_params(
+        self,
+        startswith: tuple = None,
+        resource: str = "contributions"
+    ) -> list:
         resources = self.swagger_spec.resources
         resource_obj = resources.get(resource)
         if not resource_obj:
@@ -962,7 +966,14 @@ class Client(SwaggerClient):
 
         op_key = f"query{resource.capitalize()}"
         operation = resource_obj.operations[op_key]
-        return [param.name for param in operation.params.values()]
+        params = [param.name for param in operation.params.values()]
+        if not startswith:
+            return params
+
+        return [
+            param for param in params
+            if param.startswith(startswith)
+        ]
 
     def get_project(self, name: str = None, fields: list = None) -> Type[Dict]:
         """Retrieve a project entry
