@@ -22,7 +22,7 @@ bravado-core==6.1.0
     # via bravado
 certifi==2023.7.22
     # via requests
-charset-normalizer==3.3.0
+charset-normalizer==3.3.1
     # via requests
 contourpy==1.1.1
     # via matplotlib
