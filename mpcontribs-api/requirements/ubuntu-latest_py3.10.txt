@@ -59,7 +59,7 @@ cffi==1.16.0
     # via
     #   argon2-cffi-bindings
     #   cryptography
-charset-normalizer==3.3.0
+charset-normalizer==3.3.1
     # via requests
 click==8.1.7
     # via
@@ -531,7 +531,7 @@ typing-extensions==4.8.0
     #   ddtrace
 tzdata==2023.3
     # via pandas
-tzlocal==5.1
+tzlocal==5.2
     # via dateparser
 uncertainties==3.1.7
     # via
