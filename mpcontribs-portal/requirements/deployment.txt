@@ -28,9 +28,9 @@ boltons==23.0.0
     # via
     #   mpcontribs-client
     #   mpcontribs-portal (MPContribs/mpcontribs-portal/setup.py)
-boto3==1.28.68
+boto3==1.28.69
     # via mpcontribs-portal (MPContribs/mpcontribs-portal/setup.py)
-botocore==1.31.68
+botocore==1.31.69
     # via
     #   boto3
     #   s3transfer
@@ -54,7 +54,7 @@ cycler==0.12.1
     # via matplotlib
 ddsketch==2.0.4
     # via ddtrace
-ddtrace==2.1.1
+ddtrace==2.0.3
     # via mpcontribs-portal (MPContribs/mpcontribs-portal/setup.py)
 debugpy==1.8.0
     # via ipykernel
@@ -325,7 +325,7 @@ rpds-py==0.10.6
     # via
     #   jsonschema
     #   referencing
-ruamel-yaml==0.17.40
+ruamel-yaml==0.18.0
     # via pymatgen
 ruamel-yaml-clib==0.2.8
     # via ruamel-yaml

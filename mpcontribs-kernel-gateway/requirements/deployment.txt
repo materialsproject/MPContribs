@@ -57,7 +57,7 @@ cycler==0.12.1
     # via matplotlib
 ddsketch==2.0.4
     # via ddtrace
-ddtrace==2.1.1
+ddtrace==2.0.3
     # via -r MPContribs/mpcontribs-kernel-gateway/requirements.in
 debugpy==1.8.0
     # via ipykernel
@@ -375,7 +375,7 @@ rpds-py==0.10.6
     # via
     #   jsonschema
     #   referencing
-ruamel-yaml==0.17.40
+ruamel-yaml==0.18.0
     # via pymatgen
 ruamel-yaml-clib==0.2.8
     # via ruamel-yaml
