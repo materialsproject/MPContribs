@@ -6,15 +6,13 @@
 #
 arrow==1.3.0
     # via isoduration
-asttokens==2.4.0
+asttokens==2.4.1
     # via stack-data
 attrs==23.1.0
     # via
     #   jsonschema
     #   referencing
-backcall==0.2.0
-    # via ipython
-boltons==23.0.0
+boltons==23.1.1
     # via mpcontribs-client (setup.py)
 bravado==11.0.3
     # via mpcontribs-client (setup.py)
@@ -22,7 +20,7 @@ bravado-core==6.1.0
     # via bravado
 certifi==2023.7.22
     # via requests
-charset-normalizer==3.3.1
+charset-normalizer==3.3.2
     # via requests
 contourpy==1.1.1
     # via matplotlib
@@ -42,7 +40,7 @@ exceptiongroup==1.1.3
     # via
     #   ipython
     #   pytest
-executing==2.0.0
+executing==2.0.1
     # via stack-data
 filetype==1.2.0
     # via mpcontribs-client (setup.py)
@@ -64,7 +62,7 @@ idna==3.4
     #   requests
 iniconfig==2.0.0
     # via pytest
-ipython==8.16.1
+ipython==8.17.2
     # via mpcontribs-client (setup.py)
 isoduration==20.11.0
     # via jsonschema
@@ -78,7 +76,7 @@ jsonpointer==2.4
     # via jsonschema
 jsonref==1.1.0
     # via bravado-core
-jsonschema[format]==4.19.1
+jsonschema[format]==4.19.2
     # via
     #   bravado-core
     #   swagger-spec-validator
@@ -88,7 +86,7 @@ kiwisolver==1.4.5
     # via matplotlib
 latexcodec==2.0.1
     # via pybtex
-matplotlib==3.8.0
+matplotlib==3.8.1
     # via pymatgen
 matplotlib-inline==0.1.6
     # via ipython
@@ -104,7 +102,7 @@ msgpack==1.0.7
     # via
     #   bravado
     #   bravado-core
-networkx==3.2
+networkx==3.2.1
     # via pymatgen
 numpy==1.26.1
     # via
@@ -121,7 +119,7 @@ packaging==23.2
     #   pytest
 palettable==3.3.3
     # via pymatgen
-pandas==2.1.1
+pandas==2.1.2
     # via
     #   mpcontribs-client (setup.py)
     #   pymatgen
@@ -129,13 +127,11 @@ parso==0.8.3
     # via jedi
 pexpect==4.8.0
     # via ipython
-pickleshare==0.7.5
-    # via ipython
 pillow==10.1.0
     # via matplotlib
 pint==0.19.2
     # via mpcontribs-client (setup.py)
-plotly==5.17.0
+plotly==5.18.0
     # via
     #   mpcontribs-client (setup.py)
     #   pymatgen
@@ -165,11 +161,11 @@ pyisemail==2.0.1
     # via mpcontribs-client (setup.py)
 pymatgen==2023.10.11
     # via mpcontribs-client (setup.py)
-pymongo==4.5.0
+pymongo==4.6.0
     # via mpcontribs-client (setup.py)
 pyparsing==3.1.1
     # via matplotlib
-pytest==7.4.2
+pytest==7.4.3
     # via
     #   mpcontribs-client (setup.py)
     #   pytest-cov
@@ -218,7 +214,7 @@ rpds-py==0.10.6
     # via
     #   jsonschema
     #   referencing
-ruamel-yaml==0.17.40
+ruamel-yaml==0.18.4
     # via pymatgen
 ruamel-yaml-clib==0.2.8
     # via ruamel-yaml
@@ -262,7 +258,7 @@ tqdm==4.66.1
     # via
     #   mpcontribs-client (setup.py)
     #   pymatgen
-traitlets==5.11.2
+traitlets==5.13.0
     # via
     #   ipython
     #   matplotlib-inline
@@ -282,7 +278,7 @@ uri-template==1.3.0
     # via jsonschema
 urllib3==2.0.7
     # via requests
-wcwidth==0.2.8
+wcwidth==0.2.9
     # via prompt-toolkit
 webcolors==1.13
     # via jsonschema
