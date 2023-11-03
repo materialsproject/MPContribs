@@ -39,9 +39,9 @@ blinker==1.7.0
     # via mpcontribs-api (setup.py)
 boltons==23.1.1
     # via mpcontribs-api (setup.py)
-boto3==1.28.77
+boto3==1.28.78
     # via flask-mongorest-mpcontribs
-botocore==1.31.77
+botocore==1.31.78
     # via
     #   boto3
     #   s3transfer
@@ -433,7 +433,7 @@ rfc3986-validator==0.1.1
     # via
     #   jsonschema
     #   jupyter-events
-rpds-py==0.10.6
+rpds-py==0.12.0
     # via
     #   jsonschema
     #   referencing
