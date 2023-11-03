@@ -43,9 +43,9 @@ blinker==1.7.0
     # via mpcontribs-api (setup.py)
 boltons==23.1.1
     # via mpcontribs-api (setup.py)
-boto3==1.28.76
+boto3==1.28.77
     # via flask-mongorest-mpcontribs
-botocore==1.31.76
+botocore==1.31.77
     # via
     #   boto3
     #   s3transfer
@@ -83,7 +83,7 @@ dateparser==1.1.8
     # via mpcontribs-api (setup.py)
 ddsketch==2.0.4
     # via ddtrace
-ddtrace==2.0.6
+ddtrace==2.0.7
     # via mpcontribs-api (setup.py)
 debugpy==1.8.0
     # via ipykernel
@@ -142,7 +142,7 @@ flask-sse==1.0.0
     # via flask-mongorest-mpcontribs
 flatten-dict==0.4.2
     # via flask-mongorest-mpcontribs
-fonttools==4.43.1
+fonttools==4.44.0
     # via matplotlib
 fqdn==1.5.1
     # via jsonschema
@@ -378,9 +378,7 @@ protobuf==4.25.0
     #   ddsketch
     #   ddtrace
 psutil==5.9.6
-    # via
-    #   ddtrace
-    #   ipykernel
+    # via ipykernel
 psycopg2-binary==2.9.9
     # via mpcontribs-api (setup.py)
 ptyprocess==0.7.0
@@ -490,7 +488,7 @@ rq==1.15.1
     #   rq-scheduler
 rq-scheduler==0.13.1
     # via flask-rq2
-ruamel-yaml==0.18.4
+ruamel-yaml==0.18.5
     # via pymatgen
 ruamel-yaml-clib==0.2.8
     # via ruamel-yaml
@@ -615,9 +613,7 @@ werkzeug==3.0.1
     #   flasgger-tschaume
     #   flask
 wrapt==1.15.0
-    # via
-    #   ddtrace
-    #   deprecated
+    # via deprecated
 xmltodict==0.13.0
     # via ddtrace
 zipp==3.17.0
