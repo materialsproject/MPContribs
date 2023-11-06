@@ -45,7 +45,7 @@ cffi==1.16.0
     # via argon2-cffi-bindings
 charset-normalizer==3.3.2
     # via requests
-comm==0.1.4
+comm==0.2.0
     # via
     #   ipykernel
     #   ipywidgets
@@ -160,11 +160,11 @@ jupyter-core==5.5.0
     #   nbconvert
     #   nbformat
     #   notebook
-jupyter-events==0.8.0
+jupyter-events==0.9.0
     # via jupyter-server
 jupyter-kernel-gateway==2.5.2
     # via -r MPContribs/mpcontribs-kernel-gateway/requirements.in
-jupyter-server==2.9.1
+jupyter-server==2.10.0
     # via
     #   nbclassic
     #   notebook-shim
@@ -210,7 +210,7 @@ nbclassic==1.0.0
     # via notebook
 nbclient==0.8.0
     # via nbconvert
-nbconvert==7.10.0
+nbconvert==7.11.0
     # via
     #   jupyter-server
     #   nbclassic

@@ -44,7 +44,7 @@ certifi==2023.7.22
     # via requests
 charset-normalizer==3.3.2
     # via requests
-comm==0.1.4
+comm==0.2.0
     # via ipykernel
 contourpy==1.2.0
     # via matplotlib
@@ -148,7 +148,7 @@ jsonschema[format]==4.19.2
     #   swagger-spec-validator
 jsonschema-specifications==2023.7.1
     # via jsonschema
-jupyter-client==8.5.0
+jupyter-client==8.6.0
     # via
     #   ipykernel
     #   nbclient
@@ -195,7 +195,7 @@ msgpack==1.0.7
     #   bravado-core
 nbclient==0.8.0
     # via nbconvert
-nbconvert==7.10.0
+nbconvert==7.11.0
     # via mpcontribs-portal (MPContribs/mpcontribs-portal/setup.py)
 nbformat==5.9.2
     # via
