@@ -26,9 +26,9 @@ boltons==23.1.1
     # via
     #   mpcontribs-client
     #   mpcontribs-portal (MPContribs/mpcontribs-portal/setup.py)
-boto3==1.28.80
+boto3==1.28.84
     # via mpcontribs-portal (MPContribs/mpcontribs-portal/setup.py)
-botocore==1.31.80
+botocore==1.31.84
     # via
     #   boto3
     #   s3transfer
@@ -206,7 +206,7 @@ nest-asyncio==1.5.8
     # via ipykernel
 networkx==3.2.1
     # via pymatgen
-numpy==1.26.1
+numpy==1.26.2
     # via
     #   -r python/requirements.txt
     #   contourpy
@@ -241,13 +241,13 @@ pillow==10.1.0
     # via matplotlib
 pint==0.19.2
     # via mpcontribs-client
-platformdirs==3.11.0
+platformdirs==4.0.0
     # via jupyter-core
 plotly==5.18.0
     # via
     #   mpcontribs-client
     #   pymatgen
-prompt-toolkit==3.0.39
+prompt-toolkit==3.0.40
     # via ipython
 protobuf==4.25.0
     # via
@@ -267,7 +267,7 @@ pygments==2.16.1
     #   nbconvert
 pyisemail==2.0.1
     # via mpcontribs-client
-pymatgen==2023.10.11
+pymatgen==2023.11.12
     # via mpcontribs-client
 pymongo==4.6.0
     # via mpcontribs-client
@@ -419,7 +419,7 @@ webencodings==0.5.1
     #   tinycss2
 whitenoise==6.6.0
     # via mpcontribs-portal (MPContribs/mpcontribs-portal/setup.py)
-wrapt==1.15.0
+wrapt==1.16.0
     # via deprecated
 xmltodict==0.13.0
     # via ddtrace

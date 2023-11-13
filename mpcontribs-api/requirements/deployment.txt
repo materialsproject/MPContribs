@@ -39,9 +39,9 @@ blinker==1.7.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 boltons==23.1.1
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
-boto3==1.28.80
+boto3==1.28.84
     # via flask-mongorest-mpcontribs
-botocore==1.31.80
+botocore==1.31.84
     # via
     #   boto3
     #   s3transfer
@@ -292,7 +292,7 @@ notebook==6.5.6
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 notebook-shim==0.2.3
     # via nbclassic
-numpy==1.26.1
+numpy==1.26.2
     # via
     #   -r python/requirements.txt
     #   contourpy
@@ -333,7 +333,7 @@ pillow==10.1.0
     # via matplotlib
 pint==0.19.2
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
-platformdirs==3.11.0
+platformdirs==4.0.0
     # via jupyter-core
 plotly==5.18.0
     # via pymatgen
@@ -342,7 +342,7 @@ prometheus-client==0.18.0
     #   jupyter-server
     #   nbclassic
     #   notebook
-prompt-toolkit==3.0.39
+prompt-toolkit==3.0.40
     # via ipython
 protobuf==4.25.0
     # via
@@ -366,7 +366,7 @@ pygments==2.16.1
     # via
     #   ipython
     #   nbconvert
-pymatgen==2023.10.11
+pymatgen==2023.11.12
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 pymongo==4.6.0
     # via
@@ -491,7 +491,7 @@ tabulate==0.9.0
     # via pymatgen
 tenacity==8.2.3
     # via plotly
-terminado==0.17.1
+terminado==0.18.0
     # via
     #   jupyter-server
     #   jupyter-server-terminals
@@ -558,7 +558,7 @@ werkzeug==3.0.1
     # via
     #   flasgger-tschaume
     #   flask
-wrapt==1.15.0
+wrapt==1.16.0
     # via deprecated
 xmltodict==0.13.0
     # via ddtrace

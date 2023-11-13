@@ -92,7 +92,7 @@ msgpack==1.0.7
     #   bravado-core
 networkx==3.2.1
     # via pymatgen
-numpy==1.26.1
+numpy==1.26.2
     # via
     #   -r python/requirements.txt
     #   contourpy
@@ -124,7 +124,7 @@ plotly==5.18.0
     # via
     #   mpcontribs-client (MPContribs/mpcontribs-client/setup.py)
     #   pymatgen
-prompt-toolkit==3.0.39
+prompt-toolkit==3.0.40
     # via ipython
 ptyprocess==0.7.0
     # via pexpect
@@ -136,7 +136,7 @@ pygments==2.16.1
     # via ipython
 pyisemail==2.0.1
     # via mpcontribs-client (MPContribs/mpcontribs-client/setup.py)
-pymatgen==2023.10.11
+pymatgen==2023.11.12
     # via mpcontribs-client (MPContribs/mpcontribs-client/setup.py)
 pymongo==4.6.0
     # via mpcontribs-client (MPContribs/mpcontribs-client/setup.py)
@@ -237,7 +237,7 @@ uncertainties==3.1.7
     # via pymatgen
 uri-template==1.3.0
     # via jsonschema
-urllib3==2.0.7
+urllib3==2.1.0
     # via requests
 wcwidth==0.2.9
     # via prompt-toolkit
