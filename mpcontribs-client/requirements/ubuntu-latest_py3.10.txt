@@ -40,7 +40,7 @@ filetype==1.2.0
     # via mpcontribs-client (setup.py)
 flatten-dict==0.4.2
     # via mpcontribs-client (setup.py)
-fonttools==4.44.0
+fonttools==4.44.3
     # via matplotlib
 fqdn==1.5.1
     # via jsonschema
@@ -68,7 +68,7 @@ jsonschema[format]==4.19.2
     # via
     #   bravado-core
     #   swagger-spec-validator
-jsonschema-specifications==2023.7.1
+jsonschema-specifications==2023.11.1
     # via jsonschema
 kiwisolver==1.4.5
     # via matplotlib
@@ -90,7 +90,7 @@ msgpack==1.0.7
     #   bravado-core
 networkx==3.2.1
     # via pymatgen
-numpy==1.26.1
+numpy==1.26.2
     # via
     #   contourpy
     #   matplotlib
@@ -104,7 +104,7 @@ packaging==23.2
     #   plotly
 palettable==3.3.3
     # via pymatgen
-pandas==2.1.2
+pandas==2.1.3
     # via
     #   mpcontribs-client (setup.py)
     #   pymatgen
@@ -120,7 +120,7 @@ plotly==5.18.0
     # via
     #   mpcontribs-client (setup.py)
     #   pymatgen
-prompt-toolkit==3.0.39
+prompt-toolkit==3.0.41
     # via ipython
 ptyprocess==0.7.0
     # via pexpect
@@ -132,7 +132,7 @@ pygments==2.16.1
     # via ipython
 pyisemail==2.0.1
     # via mpcontribs-client (setup.py)
-pymatgen==2023.10.11
+pymatgen==2023.11.12
     # via mpcontribs-client (setup.py)
 pymongo==4.6.0
     # via mpcontribs-client (setup.py)
@@ -155,7 +155,7 @@ pyyaml==6.0.1
     #   bravado-core
     #   pybtex
     #   swagger-spec-validator
-referencing==0.30.2
+referencing==0.31.0
     # via
     #   jsonschema
     #   jsonschema-specifications
@@ -233,9 +233,9 @@ uncertainties==3.1.7
     # via pymatgen
 uri-template==1.3.0
     # via jsonschema
-urllib3==2.0.7
+urllib3==2.1.0
     # via requests
-wcwidth==0.2.9
+wcwidth==0.2.10
     # via prompt-toolkit
 webcolors==1.13
     # via jsonschema
