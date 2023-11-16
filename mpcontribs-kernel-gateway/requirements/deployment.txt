@@ -132,7 +132,7 @@ jsonpointer==2.4
     # via jsonschema
 jsonref==1.1.0
     # via bravado-core
-jsonschema[format,format-nongpl]==4.19.2
+jsonschema[format,format-nongpl]==4.20.0
     # via
     #   bravado-core
     #   jupyter-events
@@ -366,7 +366,7 @@ rfc3986-validator==0.1.1
     #   jupyter-events
 rfc3987==1.3.8
     # via jsonschema
-rpds-py==0.12.0
+rpds-py==0.13.0
     # via
     #   jsonschema
     #   referencing
