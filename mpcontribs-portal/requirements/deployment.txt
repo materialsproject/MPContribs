@@ -38,7 +38,7 @@ bravado-core==6.1.0
     # via bravado
 bytecode==0.15.1
     # via ddtrace
-cattrs==23.1.2
+cattrs==23.2.0
     # via ddtrace
 certifi==2023.7.22
     # via requests

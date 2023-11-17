@@ -49,7 +49,7 @@ brotli==1.1.0
     # via flask-compress
 bytecode==0.15.1
     # via ddtrace
-cattrs==23.1.2
+cattrs==23.2.0
     # via ddtrace
 certifi==2023.7.22
     # via requests
@@ -75,7 +75,7 @@ css-html-js-minify==2.5.5
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 cycler==0.12.1
     # via matplotlib
-dateparser==1.1.8
+dateparser==1.2.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 ddsketch==2.0.4
     # via ddtrace
