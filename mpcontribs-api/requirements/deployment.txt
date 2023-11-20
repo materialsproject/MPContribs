@@ -51,7 +51,7 @@ bytecode==0.15.1
     # via ddtrace
 cattrs==23.2.1
     # via ddtrace
-certifi==2023.7.22
+certifi==2023.11.17
     # via requests
 cffi==1.16.0
     # via
@@ -79,7 +79,7 @@ dateparser==1.2.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 ddsketch==2.0.4
     # via ddtrace
-ddtrace==2.0.9
+ddtrace==2.0.10
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 debugpy==1.8.0
     # via ipykernel
@@ -134,7 +134,7 @@ flask-sse==1.0.0
     # via flask-mongorest-mpcontribs
 flatten-dict==0.4.2
     # via flask-mongorest-mpcontribs
-fonttools==4.44.3
+fonttools==4.45.0
     # via matplotlib
 fqdn==1.5.1
     # via jsonschema
@@ -362,7 +362,7 @@ pybtex==0.24.0
     # via pymatgen
 pycparser==2.21
     # via cffi
-pygments==2.16.1
+pygments==2.17.1
     # via
     #   ipython
     #   nbconvert
@@ -433,7 +433,7 @@ rfc3986-validator==0.1.1
     # via
     #   jsonschema
     #   jupyter-events
-rpds-py==0.13.0
+rpds-py==0.13.1
     # via
     #   jsonschema
     #   referencing
@@ -449,7 +449,7 @@ ruamel-yaml-clib==0.2.8
     # via ruamel-yaml
 s3transfer==0.7.0
     # via boto3
-scipy==1.11.3
+scipy==1.11.4
     # via
     #   -r python/requirements.txt
     #   pymatgen
