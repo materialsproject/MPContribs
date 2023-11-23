@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=MPContribs/mpcontribs-api/requirements/deployment.txt MPContribs/mpcontribs-api/setup.py python/requirements.txt
 #
-anyio==4.0.0
+anyio==4.1.0
     # via jupyter-server
 apispec==5.2.2
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
@@ -221,7 +221,7 @@ jupyter-server==2.10.1
     #   notebook-shim
 jupyter-server-terminals==0.4.4
     # via jupyter-server
-jupyterlab-pygments==0.2.2
+jupyterlab-pygments==0.3.0
     # via nbconvert
 kiwisolver==1.4.5
     # via matplotlib
