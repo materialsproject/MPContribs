@@ -134,7 +134,7 @@ flask-sse==1.0.0
     # via flask-mongorest-mpcontribs
 flatten-dict==0.4.2
     # via flask-mongorest-mpcontribs
-fonttools==4.45.0
+fonttools==4.45.1
     # via matplotlib
 fqdn==1.5.1
     # via jsonschema
