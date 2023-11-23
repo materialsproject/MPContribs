@@ -680,7 +680,6 @@ def _load(protocol, host, headers_json, project, version):
         del config[key]
     config["bravado"] = bravado_config
     swagger_spec = Spec.from_dict(spec_dict, origin_url, http_client, config)
-    http_client.session.close()
 
     if not spec_dict["paths"]:
         return swagger_spec
@@ -688,8 +687,8 @@ def _load(protocol, host, headers_json, project, version):
     # expand regex-based query parameters for `data` columns
     query = {"name": project} if project else {}
     query["_fields"] = ["columns"]
-    kwargs = dict(headers=headers, params=query)
-    resp = requests.get(f"{url}/projects/", **kwargs).json()
+    resp = http_client.session.get(f"{url}/projects/", params=query).json()
+    http_client.session.close()
 
     if not resp or not resp["data"]:
         raise MPContribsClientError(f"Failed to load projects for query {query}!")
@@ -721,9 +720,12 @@ def _load(protocol, host, headers_json, project, version):
 
                 for column in columns[key]:
                     param_name = f"{column}__{op}"
-                    param_spec = deepcopy(param.param_spec)
+                    param_spec = {
+                        k: v
+                        for k, v in param.param_spec.items()
+                        if k != "description"
+                    }
                     param_spec["name"] = param_name
-                    param_spec.pop("description", None)
                     operation.params[param_name] = Param(
                         swagger_spec, operation, param_spec
                     )
