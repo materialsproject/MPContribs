@@ -680,6 +680,7 @@ def _load(protocol, host, headers_json, project, version):
         del config[key]
     config["bravado"] = bravado_config
     swagger_spec = Spec.from_dict(spec_dict, origin_url, http_client, config)
+    http_client.session.close()
 
     if not spec_dict["paths"]:
         return swagger_spec
