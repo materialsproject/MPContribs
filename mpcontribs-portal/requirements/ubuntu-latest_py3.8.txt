@@ -28,9 +28,9 @@ boltons==23.1.1
     # via
     #   mpcontribs-client
     #   mpcontribs-portal (setup.py)
-boto3==1.29.7
+boto3==1.33.0
     # via mpcontribs-portal (setup.py)
-botocore==1.32.7
+botocore==1.33.0
     # via
     #   boto3
     #   s3transfer
@@ -121,7 +121,7 @@ importlib-resources==6.1.1
     #   jsonschema
     #   jsonschema-specifications
     #   matplotlib
-ipykernel==6.26.0
+ipykernel==6.27.1
     # via mpcontribs-portal (setup.py)
 ipython==8.12.3
     # via
@@ -197,7 +197,7 @@ monty==2023.9.25
     #   pymatgen
 mp-api==0.35.1
     # via pymatgen
-mpcontribs-client==5.5.5
+mpcontribs-client==5.6.0
     # via mpcontribs-portal (setup.py)
 mpmath==1.3.0
     # via sympy
@@ -405,7 +405,7 @@ tqdm==4.66.1
     # via
     #   mpcontribs-client
     #   pymatgen
-traitlets==5.13.0
+traitlets==5.14.0
     # via
     #   comm
     #   ipykernel
