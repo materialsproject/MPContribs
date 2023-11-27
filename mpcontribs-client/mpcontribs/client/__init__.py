@@ -654,6 +654,8 @@ def _run_futures(futures, total: int = 0, timeout: int = -1, desc=None, disable=
 @functools.lru_cache(maxsize=1000)
 def _load(protocol, host, headers_json, project, version):
     spec_dict = _raw_specs(protocol, host, version)
+    headers = ujson.loads(headers_json)
+
     if not spec_dict["paths"]:
         url = f"{protocol}://{host}"
         origin_url = f"{url}/apispec.json"
@@ -664,7 +666,6 @@ def _load(protocol, host, headers_json, project, version):
         return swagger_spec
 
     # retrieve list of projects accessible to user
-    headers = ujson.loads(headers_json)
     query = {"name": project} if project else {}
     query["_fields"] = ["name"]
     url = f"{protocol}://{host}"
