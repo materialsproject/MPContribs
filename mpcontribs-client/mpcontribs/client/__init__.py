@@ -7,6 +7,7 @@ import time
 import gzip
 import warnings
 import pandas as pd
+import numpy as np
 import plotly.io as pio
 import itertools
 import functools
@@ -88,7 +89,6 @@ DEFAULT_DOWNLOAD_DIR = Path.home() / "mpcontribs-downloads"
 
 j2h = Json2Html()
 pd.options.plotting.backend = "plotly"
-pd.set_option('mode.use_inf_as_na', True)
 pio.templates.default = "simple_white"
 warnings.formatwarning = lambda msg, *args, **kwargs: f"{msg}\n"
 warnings.filterwarnings("default", category=DeprecationWarning, module=__name__)
@@ -383,6 +383,7 @@ class Table(pd.DataFrame):
 
     def _clean(self):
         """clean the dataframe"""
+        self.replace([np.inf, -np.inf], np.nan, inplace=True)
         self.fillna('', inplace=True)
         self.index = self.index.astype(str)
         for col in self.columns:
