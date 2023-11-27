@@ -18,7 +18,6 @@ from inspect import getfullargspec
 from math import isclose
 from semantic_version import Version
 from requests.exceptions import RequestException
-from bravado_core.param import Param
 from bson.objectid import ObjectId
 from typing import Union, Type, List
 from tqdm.auto import tqdm
