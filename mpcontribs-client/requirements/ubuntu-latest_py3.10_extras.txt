@@ -62,7 +62,7 @@ idna==3.6
     #   requests
 iniconfig==2.0.0
     # via pytest
-ipython==8.18.0
+ipython==8.18.1
     # via mpcontribs-client (setup.py)
 isoduration==20.11.0
     # via jsonschema
@@ -258,7 +258,7 @@ tqdm==4.66.1
     # via
     #   mpcontribs-client (setup.py)
     #   pymatgen
-traitlets==5.13.0
+traitlets==5.14.0
     # via
     #   ipython
     #   matplotlib-inline

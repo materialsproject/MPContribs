@@ -52,7 +52,7 @@ idna==3.6
     #   requests
 importlib-resources==6.1.1
     # via matplotlib
-ipython==8.18.0
+ipython==8.18.1
     # via mpcontribs-client (setup.py)
 isoduration==20.11.0
     # via jsonschema
@@ -217,7 +217,7 @@ tqdm==4.66.1
     # via
     #   mpcontribs-client (setup.py)
     #   pymatgen
-traitlets==5.13.0
+traitlets==5.14.0
     # via
     #   ipython
     #   matplotlib-inline
