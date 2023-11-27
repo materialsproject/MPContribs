@@ -40,17 +40,17 @@ filetype==1.2.0
     # via mpcontribs-client (setup.py)
 flatten-dict==0.4.2
     # via mpcontribs-client (setup.py)
-fonttools==4.45.0
+fonttools==4.45.1
     # via matplotlib
 fqdn==1.5.1
     # via jsonschema
 future==0.18.3
     # via uncertainties
-idna==3.4
+idna==3.6
     # via
     #   jsonschema
     #   requests
-ipython==8.17.2
+ipython==8.18.0
     # via mpcontribs-client (setup.py)
 isoduration==20.11.0
     # via jsonschema
@@ -110,7 +110,7 @@ pandas==2.1.3
     #   pymatgen
 parso==0.8.3
     # via jedi
-pexpect==4.8.0
+pexpect==4.9.0
     # via ipython
 pillow==10.1.0
     # via matplotlib
