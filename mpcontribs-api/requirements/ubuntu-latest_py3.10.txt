@@ -39,9 +39,9 @@ blinker==1.7.0
     # via mpcontribs-api (setup.py)
 boltons==23.1.1
     # via mpcontribs-api (setup.py)
-boto3==1.29.7
+boto3==1.33.0
     # via flask-mongorest-mpcontribs
-botocore==1.32.7
+botocore==1.33.0
     # via
     #   boto3
     #   s3transfer
@@ -69,7 +69,7 @@ contourpy==1.2.0
     # via matplotlib
 crontab==1.0.1
     # via rq-scheduler
-cryptography==41.0.5
+cryptography==41.0.6
     # via pyopenssl
 css-html-js-minify==2.5.5
     # via mpcontribs-api (setup.py)
@@ -155,11 +155,11 @@ idna==3.6
     #   requests
 importlib-metadata==6.8.0
     # via opentelemetry-api
-ipykernel==6.26.0
+ipykernel==6.27.1
     # via
     #   nbclassic
     #   notebook
-ipython==8.18.0
+ipython==8.18.1
     # via ipykernel
 ipython-genutils==0.2.0
     # via
@@ -215,7 +215,7 @@ jupyter-core==5.5.0
     #   notebook
 jupyter-events==0.9.0
     # via jupyter-server
-jupyter-server==2.10.1
+jupyter-server==2.11.1
     # via
     #   nbclassic
     #   notebook-shim
@@ -502,7 +502,7 @@ tornado==6.3.3
     #   terminado
 tqdm==4.66.1
     # via pymatgen
-traitlets==5.13.0
+traitlets==5.14.0
     # via
     #   comm
     #   ipykernel
