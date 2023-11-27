@@ -658,6 +658,7 @@ def _load(protocol, host, headers_json, project, version):
         url = f"{protocol}://{host}"
         origin_url = f"{url}/apispec.json"
         http_client = RequestsClient()
+        http_client.session.headers.update(headers)
         swagger_spec = Spec.from_dict(spec_dict, origin_url, http_client, bravado_config_dict)
         http_client.session.close()
         return swagger_spec
@@ -720,6 +721,7 @@ def _expand_params(protocol, host, version, projects_json):
     query["_fields"] = ["columns"]
     url = f"{protocol}://{host}"
     http_client = RequestsClient()
+    http_client.session.headers["Content-Type"] = "application/json"
     resp = http_client.session.get(f"{url}/projects/", params=query).json()
 
     for proj in resp["data"]:
