@@ -682,7 +682,7 @@ def _load(protocol, host, headers_json, project, version):
     projects = sorted(d["name"] for d in resp["data"])
     projects_json = ujson.dumps(projects)
     # expand regex-based query parameters for `data` columns
-    spec = _expand_params(protocol, host, version, projects_json, apikey=headers["x-api-key"])
+    spec = _expand_params(protocol, host, version, projects_json, apikey=headers.get("x-api-key"))
     spec.http_client.session.headers.update(headers)
     return spec
 
