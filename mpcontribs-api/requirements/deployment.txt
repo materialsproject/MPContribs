@@ -39,9 +39,9 @@ blinker==1.7.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 boltons==23.1.1
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
-boto3==1.33.0
+boto3==1.33.1
     # via flask-mongorest-mpcontribs
-botocore==1.33.0
+botocore==1.33.1
     # via
     #   boto3
     #   s3transfer
@@ -69,7 +69,7 @@ contourpy==1.2.0
     # via matplotlib
 crontab==1.0.1
     # via rq-scheduler
-cryptography==41.0.6
+cryptography==41.0.7
     # via pyopenssl
 css-html-js-minify==2.5.5
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
