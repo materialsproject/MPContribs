@@ -718,7 +718,7 @@ def _raw_specs(protocol, host, version):
 def _expand_params(protocol, host, version, projects_json):
     columns = {"string": [], "number": []}
     projects = ujson.loads(projects_json)
-    query = {"project__in": projects}
+    query = {"project__in": ",".join(projects)}
     query["_fields"] = ["columns"]
     url = f"{protocol}://{host}"
     http_client = RequestsClient()
