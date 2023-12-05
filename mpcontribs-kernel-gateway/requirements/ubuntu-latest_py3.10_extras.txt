@@ -166,7 +166,7 @@ jupyter-events==0.9.0
     # via jupyter-server
 jupyter-kernel-gateway==2.5.2
     # via -r requirements.in
-jupyter-server==2.11.1
+jupyter-server==2.11.2
     # via
     #   nbclassic
     #   notebook-shim
