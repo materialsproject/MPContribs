@@ -26,9 +26,9 @@ boltons==23.1.1
     # via
     #   mpcontribs-client
     #   mpcontribs-portal (MPContribs/mpcontribs-portal/setup.py)
-boto3==1.33.8
+boto3==1.33.9
     # via mpcontribs-portal (MPContribs/mpcontribs-portal/setup.py)
-botocore==1.33.8
+botocore==1.33.9
     # via
     #   boto3
     #   s3transfer
