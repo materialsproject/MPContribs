@@ -88,7 +88,7 @@ filetype==1.2.0
     # via mpcontribs-client
 flatten-dict==0.4.2
     # via mpcontribs-client
-fonttools==4.46.0
+fonttools==4.47.0
     # via matplotlib
 fqdn==1.5.1
     # via jsonschema
@@ -310,7 +310,7 @@ pygments==2.17.2
     #   nbconvert
 pyisemail==2.0.1
     # via mpcontribs-client
-pymatgen==2023.11.12
+pymatgen==2023.12.18
     # via mpcontribs-client
 pymongo==4.6.1
     # via mpcontribs-client
