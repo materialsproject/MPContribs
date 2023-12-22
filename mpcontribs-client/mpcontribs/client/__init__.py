@@ -958,7 +958,7 @@ class Client(SwaggerClient):
                 line_len = len(",".join(v).encode("utf-8"))
 
                 while line_len > 3800:
-                    per_page = int(0.9 * per_page)
+                    per_page = int(0.8 * per_page)
                     vv = v[:per_page]
                     line_len = len(",".join(vv).encode("utf-8"))
 
