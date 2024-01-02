@@ -63,7 +63,7 @@ click==8.1.7
     # via
     #   flask
     #   rq
-comm==0.2.0
+comm==0.2.1
     # via ipykernel
 contourpy==1.2.0
     # via matplotlib
@@ -203,7 +203,7 @@ jupyter-client==7.4.9
     #   nbclassic
     #   nbclient
     #   notebook
-jupyter-core==5.5.1
+jupyter-core==5.6.1
     # via
     #   ipykernel
     #   jupyter-client
@@ -267,7 +267,7 @@ nbclassic==1.0.0
     # via notebook
 nbclient==0.9.0
     # via nbconvert
-nbconvert==7.13.1
+nbconvert==7.14.0
     # via
     #   jupyter-server
     #   nbclassic
@@ -329,7 +329,7 @@ parso==0.8.3
     # via jedi
 pexpect==4.9.0
     # via ipython
-pillow==10.1.0
+pillow==10.2.0
     # via matplotlib
 pint==0.19.2
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
@@ -509,7 +509,7 @@ tornado==6.4
     #   terminado
 tqdm==4.66.1
     # via pymatgen
-traitlets==5.14.0
+traitlets==5.14.1
     # via
     #   comm
     #   ipykernel
