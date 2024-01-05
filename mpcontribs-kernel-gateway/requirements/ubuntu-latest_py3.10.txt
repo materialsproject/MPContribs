@@ -151,7 +151,7 @@ jupyter-client==7.4.9
     #   nbclassic
     #   nbclient
     #   notebook
-jupyter-core==5.6.1
+jupyter-core==5.7.0
     # via
     #   ipykernel
     #   jupyter-client
@@ -166,7 +166,7 @@ jupyter-events==0.9.0
     # via jupyter-server
 jupyter-kernel-gateway==2.5.2
     # via -r requirements.in
-jupyter-server==2.12.1
+jupyter-server==2.12.2
     # via
     #   nbclassic
     #   notebook-shim
@@ -234,7 +234,7 @@ notebook==6.5.6
     # via jupyter-kernel-gateway
 notebook-shim==0.2.3
     # via nbclassic
-numpy==1.26.2
+numpy==1.26.3
     # via
     #   contourpy
     #   matplotlib

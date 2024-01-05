@@ -92,7 +92,7 @@ msgpack==1.0.7
     #   bravado-core
 networkx==3.2.1
     # via pymatgen
-numpy==1.26.2
+numpy==1.26.3
     # via
     #   contourpy
     #   matplotlib
