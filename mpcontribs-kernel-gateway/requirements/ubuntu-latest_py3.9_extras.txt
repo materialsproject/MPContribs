@@ -344,7 +344,7 @@ pyzmq==24.0.1
     #   jupyter-server
     #   nbclassic
     #   notebook
-referencing==0.32.0
+referencing==0.32.1
     # via
     #   jsonschema
     #   jsonschema-specifications

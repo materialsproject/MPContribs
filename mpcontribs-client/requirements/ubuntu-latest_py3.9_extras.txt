@@ -198,7 +198,7 @@ pyyaml==6.0.1
     #   bravado-core
     #   pybtex
     #   swagger-spec-validator
-referencing==0.32.0
+referencing==0.32.1
     # via
     #   jsonschema
     #   jsonschema-specifications
