@@ -39,9 +39,9 @@ blinker==1.7.0
     # via mpcontribs-api (setup.py)
 boltons==23.1.1
     # via mpcontribs-api (setup.py)
-boto3==1.34.13
+boto3==1.34.14
     # via flask-mongorest-mpcontribs
-botocore==1.34.13
+botocore==1.34.14
     # via
     #   boto3
     #   s3transfer
@@ -414,7 +414,7 @@ redis==5.0.1
     #   flask-rq2
     #   flask-sse
     #   rq
-referencing==0.32.0
+referencing==0.32.1
     # via
     #   jsonschema
     #   jsonschema-specifications
