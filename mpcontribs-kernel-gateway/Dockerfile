@@ -1,4 +1,4 @@
-FROM materialsproject/devops:python-3.1010.19 as base
+FROM materialsproject/devops:python-3.1010.20 as base
 MAINTAINER Patrick Huck (tschaume)
 RUN apt-get update && apt-get install -y --no-install-recommends libopenblas-dev libpq-dev && apt-get clean
 
