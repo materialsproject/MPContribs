@@ -166,7 +166,7 @@ jupyter-events==0.9.0
     # via jupyter-server
 jupyter-kernel-gateway==2.5.2
     # via -r MPContribs/mpcontribs-kernel-gateway/requirements.in
-jupyter-server==2.12.2
+jupyter-server==2.12.3
     # via
     #   nbclassic
     #   notebook-shim

@@ -39,9 +39,9 @@ blinker==1.7.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 boltons==23.1.1
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
-boto3==1.34.14
+boto3==1.34.15
     # via flask-mongorest-mpcontribs
-botocore==1.34.14
+botocore==1.34.15
     # via
     #   boto3
     #   s3transfer
@@ -215,7 +215,7 @@ jupyter-core==5.7.1
     #   notebook
 jupyter-events==0.9.0
     # via jupyter-server
-jupyter-server==2.12.2
+jupyter-server==2.12.3
     # via
     #   nbclassic
     #   notebook-shim
@@ -232,7 +232,7 @@ markupsafe==2.1.3
     #   jinja2
     #   nbconvert
     #   werkzeug
-marshmallow==3.20.1
+marshmallow==3.20.2
     # via
     #   flask-marshmallow
     #   marshmallow-mongoengine
