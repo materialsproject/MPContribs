@@ -23,7 +23,7 @@ attrs==23.2.0
     #   ddtrace
     #   jsonschema
     #   referencing
-beautifulsoup4==4.12.2
+beautifulsoup4==4.12.3
     # via nbconvert
 bleach==6.1.0
     # via nbconvert
@@ -101,7 +101,7 @@ idna==3.6
     #   requests
 importlib-metadata==6.11.0
     # via opentelemetry-api
-ipykernel==6.28.0
+ipykernel==6.29.0
     # via
     #   nbclassic
     #   notebook
@@ -134,7 +134,7 @@ jsonpointer==2.4
     # via jsonschema
 jsonref==1.1.0
     # via bravado-core
-jsonschema[format-nongpl]==4.20.0
+jsonschema[format-nongpl]==4.21.0
     # via
     #   bravado-core
     #   jupyter-events
@@ -166,7 +166,7 @@ jupyter-events==0.9.0
     # via jupyter-server
 jupyter-kernel-gateway==2.5.2
     # via -r MPContribs/mpcontribs-kernel-gateway/requirements.in
-jupyter-server==2.12.4
+jupyter-server==2.12.5
     # via
     #   nbclassic
     #   notebook-shim
@@ -212,7 +212,7 @@ nbclassic==1.0.0
     # via notebook
 nbclient==0.9.0
     # via nbconvert
-nbconvert==7.14.1
+nbconvert==7.14.2
     # via
     #   jupyter-server
     #   nbclassic
@@ -263,7 +263,7 @@ pandas==1.5.3
     #   -r python/requirements.txt
     #   mpcontribs-client
     #   pymatgen
-pandocfilters==1.5.0
+pandocfilters==1.5.1
     # via nbconvert
 parso==0.8.3
     # via jedi

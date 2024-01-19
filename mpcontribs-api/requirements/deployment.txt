@@ -31,7 +31,7 @@ attrs==23.2.0
     #   ddtrace
     #   jsonschema
     #   referencing
-beautifulsoup4==4.12.2
+beautifulsoup4==4.12.3
     # via nbconvert
 bleach==6.1.0
     # via nbconvert
@@ -39,9 +39,9 @@ blinker==1.7.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 boltons==23.1.1
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
-boto3==1.34.19
+boto3==1.34.22
     # via flask-mongorest-mpcontribs
-botocore==1.34.19
+botocore==1.34.22
     # via
     #   boto3
     #   s3transfer
@@ -122,7 +122,7 @@ flask==2.2.5
     #   flask-sse
 flask-compress==1.14
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
-flask-marshmallow==0.15.0
+flask-marshmallow==1.1.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 flask-mongoengine-tschaume==1.1.0
     # via flask-mongorest-mpcontribs
@@ -155,7 +155,7 @@ idna==3.6
     #   requests
 importlib-metadata==6.11.0
     # via opentelemetry-api
-ipykernel==6.28.0
+ipykernel==6.29.0
     # via
     #   nbclassic
     #   notebook
@@ -189,7 +189,7 @@ json2html==1.3.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 jsonpointer==2.4
     # via jsonschema
-jsonschema[format-nongpl]==4.20.0
+jsonschema[format-nongpl]==4.21.0
     # via
     #   flasgger-tschaume
     #   jupyter-events
@@ -215,7 +215,7 @@ jupyter-core==5.7.1
     #   notebook
 jupyter-events==0.9.0
     # via jupyter-server
-jupyter-server==2.12.4
+jupyter-server==2.12.5
     # via
     #   nbclassic
     #   notebook-shim
@@ -267,7 +267,7 @@ nbclassic==1.0.0
     # via notebook
 nbclient==0.9.0
     # via nbconvert
-nbconvert==7.14.1
+nbconvert==7.14.2
     # via
     #   jupyter-server
     #   nbclassic
@@ -303,13 +303,12 @@ numpy==1.26.3
     #   spglib
 opentelemetry-api==1.22.0
     # via ddtrace
-orjson==3.9.10
+orjson==3.9.12
     # via flask-mongorest-mpcontribs
 overrides==7.4.0
     # via jupyter-server
 packaging==23.2
     # via
-    #   flask-marshmallow
     #   gunicorn
     #   ipykernel
     #   jupyter-server
@@ -323,7 +322,7 @@ pandas==1.5.3
     # via
     #   -r python/requirements.txt
     #   pymatgen
-pandocfilters==1.5.0
+pandocfilters==1.5.1
     # via nbconvert
 parso==0.8.3
     # via jedi
