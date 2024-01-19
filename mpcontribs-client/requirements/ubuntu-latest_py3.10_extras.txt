@@ -52,7 +52,7 @@ flake8==7.0.0
     #   pytest-flake8
 flatten-dict==0.4.2
     # via mpcontribs-client (setup.py)
-fonttools==4.47.0
+fonttools==4.47.2
     # via matplotlib
 fqdn==1.5.1
     # via jsonschema
@@ -78,7 +78,7 @@ jsonpointer==2.4
     # via jsonschema
 jsonref==1.1.0
     # via bravado-core
-jsonschema[format-nongpl]==4.20.0
+jsonschema[format-nongpl]==4.21.0
     # via
     #   bravado-core
     #   swagger-spec-validator
@@ -212,7 +212,7 @@ rfc3339-validator==0.1.4
     # via jsonschema
 rfc3986-validator==0.1.1
     # via jsonschema
-rpds-py==0.16.2
+rpds-py==0.17.1
     # via
     #   jsonschema
     #   referencing
