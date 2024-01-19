@@ -31,7 +31,7 @@ attrs==23.2.0
     #   ddtrace
     #   jsonschema
     #   referencing
-beautifulsoup4==4.12.2
+beautifulsoup4==4.12.3
     # via nbconvert
 bleach==6.1.0
     # via nbconvert
@@ -39,9 +39,9 @@ blinker==1.7.0
     # via mpcontribs-api (setup.py)
 boltons==23.1.1
     # via mpcontribs-api (setup.py)
-boto3==1.34.15
+boto3==1.34.22
     # via flask-mongorest-mpcontribs
-botocore==1.34.15
+botocore==1.34.22
     # via
     #   boto3
     #   s3transfer
@@ -125,7 +125,7 @@ flask==2.2.5
     #   flask-sse
 flask-compress==1.14
     # via mpcontribs-api (setup.py)
-flask-marshmallow==0.15.0
+flask-marshmallow==1.1.0
     # via mpcontribs-api (setup.py)
 flask-mongoengine-tschaume==1.1.0
     # via flask-mongorest-mpcontribs
@@ -137,7 +137,7 @@ flask-sse==1.0.0
     # via flask-mongorest-mpcontribs
 flatten-dict==0.4.2
     # via flask-mongorest-mpcontribs
-fonttools==4.47.0
+fonttools==4.47.2
     # via matplotlib
 fqdn==1.5.1
     # via jsonschema
@@ -160,7 +160,7 @@ importlib-metadata==6.11.0
     # via opentelemetry-api
 iniconfig==2.0.0
     # via pytest
-ipykernel==6.28.0
+ipykernel==6.29.0
     # via
     #   nbclassic
     #   notebook
@@ -176,7 +176,7 @@ itsdangerous==2.1.2
     # via flask
 jedi==0.19.1
     # via ipython
-jinja2==3.1.2
+jinja2==3.1.3
     # via
     #   flask
     #   jupyter-server
@@ -194,7 +194,7 @@ json2html==1.3.0
     # via mpcontribs-api (setup.py)
 jsonpointer==2.4
     # via jsonschema
-jsonschema[format-nongpl]==4.20.0
+jsonschema[format-nongpl]==4.21.0
     # via
     #   flasgger-tschaume
     #   jupyter-events
@@ -220,7 +220,7 @@ jupyter-core==5.7.1
     #   notebook
 jupyter-events==0.9.0
     # via jupyter-server
-jupyter-server==2.12.3
+jupyter-server==2.12.5
     # via
     #   nbclassic
     #   notebook-shim
@@ -272,7 +272,7 @@ nbclassic==1.0.0
     # via notebook
 nbclient==0.9.0
     # via nbconvert
-nbconvert==7.14.0
+nbconvert==7.14.2
     # via
     #   jupyter-server
     #   nbclassic
@@ -285,7 +285,7 @@ nbformat==5.9.2
     #   nbclient
     #   nbconvert
     #   notebook
-nest-asyncio==1.5.8
+nest-asyncio==1.5.9
     # via
     #   ipykernel
     #   jupyter-client
@@ -307,13 +307,12 @@ numpy==1.26.3
     #   spglib
 opentelemetry-api==1.22.0
     # via ddtrace
-orjson==3.9.10
+orjson==3.9.12
     # via flask-mongorest-mpcontribs
 overrides==7.4.0
     # via jupyter-server
 packaging==23.2
     # via
-    #   flask-marshmallow
     #   gunicorn
     #   ipykernel
     #   jupyter-server
@@ -326,7 +325,7 @@ palettable==3.3.3
     # via pymatgen
 pandas==2.1.4
     # via pymatgen
-pandocfilters==1.5.0
+pandocfilters==1.5.1
     # via nbconvert
 parso==0.8.3
     # via jedi
@@ -349,7 +348,7 @@ prometheus-client==0.19.0
     #   notebook
 prompt-toolkit==3.0.43
     # via ipython
-protobuf==4.25.1
+protobuf==4.25.2
     # via
     #   ddsketch
     #   ddtrace
@@ -444,7 +443,7 @@ rfc3986-validator==0.1.1
     # via
     #   jsonschema
     #   jupyter-events
-rpds-py==0.16.2
+rpds-py==0.17.1
     # via
     #   jsonschema
     #   referencing
