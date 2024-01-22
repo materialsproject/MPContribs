@@ -32,7 +32,7 @@ cycler==0.12.1
     # via matplotlib
 decorator==5.1.1
     # via ipython
-dnspython==2.4.2
+dnspython==2.5.0
     # via
     #   pyisemail
     #   pymongo
@@ -73,7 +73,7 @@ jsonpointer==2.4
     # via jsonschema
 jsonref==1.1.0
     # via bravado-core
-jsonschema[format-nongpl]==4.21.0
+jsonschema[format-nongpl]==4.21.1
     # via
     #   bravado-core
     #   swagger-spec-validator
