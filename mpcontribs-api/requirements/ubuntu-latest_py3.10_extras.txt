@@ -39,9 +39,9 @@ blinker==1.7.0
     # via mpcontribs-api (setup.py)
 boltons==23.1.1
     # via mpcontribs-api (setup.py)
-boto3==1.34.22
+boto3==1.34.23
     # via flask-mongorest-mpcontribs
-botocore==1.34.22
+botocore==1.34.23
     # via
     #   boto3
     #   s3transfer
@@ -89,7 +89,7 @@ defusedxml==0.7.1
     # via nbconvert
 deprecated==1.2.14
     # via opentelemetry-api
-dnspython==2.4.2
+dnspython==2.5.0
     # via
     #   mpcontribs-api (setup.py)
     #   pymongo
@@ -194,7 +194,7 @@ json2html==1.3.0
     # via mpcontribs-api (setup.py)
 jsonpointer==2.4
     # via jsonschema
-jsonschema[format-nongpl]==4.21.0
+jsonschema[format-nongpl]==4.21.1
     # via
     #   flasgger-tschaume
     #   jupyter-events
@@ -232,7 +232,7 @@ kiwisolver==1.4.5
     # via matplotlib
 latexcodec==2.0.1
     # via pybtex
-markupsafe==2.1.3
+markupsafe==2.1.4
     # via
     #   jinja2
     #   nbconvert
@@ -285,7 +285,7 @@ nbformat==5.9.2
     #   nbclient
     #   nbconvert
     #   notebook
-nest-asyncio==1.5.9
+nest-asyncio==1.6.0
     # via
     #   ipykernel
     #   jupyter-client
@@ -309,7 +309,7 @@ opentelemetry-api==1.22.0
     # via ddtrace
 orjson==3.9.12
     # via flask-mongorest-mpcontribs
-overrides==7.4.0
+overrides==7.6.0
     # via jupyter-server
 packaging==23.2
     # via
@@ -323,7 +323,7 @@ packaging==23.2
     #   pytest
 palettable==3.3.3
     # via pymatgen
-pandas==2.1.4
+pandas==2.2.0
     # via pymatgen
 pandocfilters==1.5.1
     # via nbconvert
@@ -352,7 +352,7 @@ protobuf==4.25.2
     # via
     #   ddsketch
     #   ddtrace
-psutil==5.9.7
+psutil==5.9.8
     # via ipykernel
 psycopg2-binary==2.9.9
     # via mpcontribs-api (setup.py)
@@ -459,7 +459,7 @@ ruamel-yaml-clib==0.2.8
     # via ruamel-yaml
 s3transfer==0.10.0
     # via boto3
-scipy==1.11.4
+scipy==1.12.0
     # via pymatgen
 semantic-version==2.10.0
     # via mpcontribs-api (setup.py)
