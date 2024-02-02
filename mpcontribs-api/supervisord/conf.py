@@ -10,14 +10,15 @@ KG_PORT = 10100
 deployments = {}
 
 for deployment in os.environ.get("DEPLOYMENTS", "ml:10002").split(","):
-    name, db, s3, tm, api_port = deployment.split(":")
+    name, db, s3, tm, max_projects, api_port = deployment.split(":")
     portal_port = 8080 + int(api_port) % 10000
     deployments[name] = {
         "api_port": api_port,
         "portal_port": portal_port,
         "db": db,
         "s3": s3,
-        "tm": tm.upper()
+        "tm": tm.upper(),
+        "max_projects": max_projects if max_projects else 3
     }
 
 kwargs = {
