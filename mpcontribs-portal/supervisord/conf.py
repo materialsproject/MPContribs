@@ -3,6 +3,8 @@ from jinja2 import Environment, FileSystemLoader
 
 DIR = os.path.abspath(os.path.dirname(__file__))
 PRODUCTION = int(os.environ.get("PRODUCTION", "1"))
+DEFAULT_NWORKERS = 2 if PRODUCTION else 1
+NWORKERS = int(os.environ.get("NWORKERS", DEFAULT_NWORKERS))
 
 deployments = {}
 
@@ -19,7 +21,7 @@ for deployment in os.environ.get("DEPLOYMENTS", "ml:10002").split(","):
 kwargs = {
     "production": PRODUCTION,
     "deployments": deployments,
-    "nworkers": 2 if PRODUCTION else 1,
+    "nworkers": NWORKERS,
     "reload": int(not PRODUCTION),
     "node_env": "production" if PRODUCTION else "development",
     "dd_agent_host": "localhost" if PRODUCTION else "datadog",
