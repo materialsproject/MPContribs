@@ -55,7 +55,7 @@ filetype==1.1.0
     # via mpcontribs-client
 flatten-dict==0.4.2
     # via mpcontribs-client
-fonttools==4.38.0
+fonttools==4.43.0
     # via matplotlib
 future==0.18.3
     # via uncertainties
