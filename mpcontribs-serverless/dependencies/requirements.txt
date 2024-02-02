@@ -265,7 +265,7 @@ ujson==5.5.0
     # via mpcontribs-client
 uncertainties==3.1.7
     # via pymatgen
-urllib3==1.26.12
+urllib3==1.26.18
     # via requests
 wcwidth==0.2.5
     # via prompt-toolkit
