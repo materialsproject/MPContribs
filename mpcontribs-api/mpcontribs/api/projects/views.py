@@ -15,6 +15,7 @@ from mpcontribs.api.projects.document import Projects, Column, Reference, Stats
 
 templates = os.path.join(os.path.dirname(flask_mongorest.__file__), "templates")
 projects = Blueprint("projects", __name__, template_folder=templates)
+MAX_PROJECTS = os.environ.get("MAX_PROJECTS", 3)
 
 
 class ColumnResource(Resource):
@@ -102,7 +103,7 @@ class ProjectsView(SwaggerView):
 
         # limit the number of projects a user can own (unless admin)
         nr_projects = Projects.objects(owner=obj.owner).count()
-        if nr_projects > 3:
+        if nr_projects > MAX_PROJECTS:
             raise Unauthorized(f"{obj.owner} already owns {nr_projects} projects.")
 
         return True
