@@ -43,9 +43,9 @@ blinker==1.7.0
     # via mpcontribs-api (setup.py)
 boltons==23.1.1
     # via mpcontribs-api (setup.py)
-boto3==1.34.23
+boto3==1.34.34
     # via flask-mongorest-mpcontribs
-botocore==1.34.23
+botocore==1.34.34
     # via
     #   boto3
     #   s3transfer
@@ -55,7 +55,7 @@ bytecode==0.15.1
     # via ddtrace
 cattrs==23.2.3
     # via ddtrace
-certifi==2023.11.17
+certifi==2024.2.2
     # via requests
 cffi==1.16.0
     # via
@@ -73,7 +73,7 @@ contourpy==1.1.1
     # via matplotlib
 crontab==1.0.1
     # via rq-scheduler
-cryptography==41.0.7
+cryptography==42.0.2
     # via pyopenssl
 css-html-js-minify==2.5.5
     # via mpcontribs-api (setup.py)
@@ -101,7 +101,7 @@ emmet-core==0.68.0
     # via mp-api
 entrypoints==0.4
     # via jupyter-client
-envier==0.5.0
+envier==0.5.1
     # via ddtrace
 exceptiongroup==1.2.0
     # via
@@ -237,7 +237,7 @@ jupyter-server==2.12.5
     # via
     #   nbclassic
     #   notebook-shim
-jupyter-server-terminals==0.5.1
+jupyter-server-terminals==0.5.2
     # via jupyter-server
 jupyterlab-pygments==0.3.0
     # via nbconvert
@@ -245,7 +245,7 @@ kiwisolver==1.4.5
     # via matplotlib
 latexcodec==2.0.1
     # via pybtex
-markupsafe==2.1.4
+markupsafe==2.1.5
     # via
     #   jinja2
     #   nbconvert
@@ -329,7 +329,7 @@ opentelemetry-api==1.22.0
     # via ddtrace
 orjson==3.9.12
     # via flask-mongorest-mpcontribs
-overrides==7.6.0
+overrides==7.7.0
     # via jupyter-server
 packaging==23.2
     # via
@@ -359,11 +359,11 @@ pint==0.19.2
     # via mpcontribs-api (setup.py)
 pkgutil-resolve-name==1.3.10
     # via jsonschema
-platformdirs==4.1.0
+platformdirs==4.2.0
     # via jupyter-core
 plotly==5.18.0
     # via pymatgen
-pluggy==1.3.0
+pluggy==1.4.0
     # via pytest
 prometheus-client==0.19.0
     # via
@@ -413,11 +413,11 @@ pymongo==4.6.1
     # via
     #   flask-mongorest-mpcontribs
     #   mongoengine
-pyopenssl==23.3.0
+pyopenssl==24.0.0
     # via mpcontribs-api (setup.py)
 pyparsing==3.1.1
     # via matplotlib
-pytest==7.4.4
+pytest==8.0.0
     # via mpcontribs-api (setup.py)
 python-dateutil==2.8.2
     # via
@@ -436,7 +436,7 @@ python-mimeparse==1.6.0
     # via mimerender-pr36
 python-snappy==0.6.1
     # via mpcontribs-api (setup.py)
-pytz==2023.3.post1
+pytz==2024.1
     # via
     #   dateparser
     #   pandas
@@ -457,7 +457,7 @@ redis==5.0.1
     #   flask-rq2
     #   flask-sse
     #   rq
-referencing==0.32.1
+referencing==0.33.0
     # via
     #   jsonschema
     #   jsonschema-specifications
@@ -521,7 +521,7 @@ sniffio==1.3.0
     # via anyio
 soupsieve==2.5
     # via beautifulsoup4
-spglib==2.2.0
+spglib==2.3.0
     # via
     #   emmet-core
     #   pymatgen
