@@ -38,6 +38,7 @@ setup(
         "tqdm",
         "ujson",
         "semantic-version",
+        "cachetools",
     ],
     extras_require={
         "dev": [

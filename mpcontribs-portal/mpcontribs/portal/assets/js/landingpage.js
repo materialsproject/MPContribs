@@ -259,7 +259,7 @@ if (container) {
                 query['_skip'] = last;
                 get_data().done(function(response) {
                     var rlen = response.data.length;
-                    ht.alter('insert_row', last, rlen);
+                    ht.alter('insert_row_below', last, rlen);
                     var update = [];
                     for (var r = 0; r < rlen; r++) {
                         var doc = response['data'][r];
