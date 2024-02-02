@@ -155,7 +155,7 @@ pybtex==0.24.0
     #   pymatgen
 pydantic==1.10.2
     # via emmet-core
-pygments==2.13.0
+pygments==2.15.0
     # via ipython
 pyisemail==2.0.1
     # via mpcontribs-client
