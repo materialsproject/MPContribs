@@ -257,7 +257,7 @@ mongoengine==0.27.0
     #   atlasq-tschaume
     #   flask-mongoengine-tschaume
     #   marshmallow-mongoengine
-monty==2024.1.26
+monty==2024.2.2
     # via pymatgen
 more-itertools==10.2.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
@@ -303,7 +303,7 @@ numpy==1.26.3
     #   spglib
 opentelemetry-api==1.22.0
     # via ddtrace
-orjson==3.9.12
+orjson==3.9.13
     # via flask-mongorest-mpcontribs
 overrides==7.7.0
     # via jupyter-server

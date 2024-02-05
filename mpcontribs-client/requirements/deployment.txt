@@ -84,7 +84,7 @@ matplotlib-inline==0.1.6
     # via ipython
 monotonic==1.6
     # via bravado
-monty==2024.1.26
+monty==2024.2.2
     # via pymatgen
 mpmath==1.3.0
     # via sympy

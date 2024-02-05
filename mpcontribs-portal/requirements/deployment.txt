@@ -183,7 +183,7 @@ mistune==3.0.2
     # via nbconvert
 monotonic==1.6
     # via bravado
-monty==2024.1.26
+monty==2024.2.2
     # via
     #   mpcontribs-portal (MPContribs/mpcontribs-portal/setup.py)
     #   pymatgen

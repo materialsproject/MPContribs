@@ -198,7 +198,7 @@ mistune==3.0.2
     # via nbconvert
 monotonic==1.6
     # via bravado
-monty==2024.1.26
+monty==2024.2.2
     # via pymatgen
 mpcontribs-client==5.7.0
     # via -r MPContribs/mpcontribs-kernel-gateway/requirements.in
