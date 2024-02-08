@@ -39,9 +39,9 @@ blinker==1.7.0
     # via mpcontribs-api (setup.py)
 boltons==23.1.1
     # via mpcontribs-api (setup.py)
-boto3==1.34.34
+boto3==1.34.38
     # via flask-mongorest-mpcontribs
-botocore==1.34.34
+botocore==1.34.38
     # via
     #   boto3
     #   s3transfer
@@ -79,7 +79,7 @@ dateparser==1.2.0
     # via mpcontribs-api (setup.py)
 ddsketch==2.0.4
     # via ddtrace
-ddtrace==2.0.10
+ddtrace==2.6.0
     # via mpcontribs-api (setup.py)
 debugpy==1.8.0
     # via ipykernel
@@ -125,7 +125,7 @@ flask==2.2.5
     #   flask-sse
 flask-compress==1.14
     # via mpcontribs-api (setup.py)
-flask-marshmallow==1.1.0
+flask-marshmallow==1.2.0
     # via mpcontribs-api (setup.py)
 flask-mongoengine-tschaume==1.1.0
     # via flask-mongorest-mpcontribs
@@ -137,7 +137,7 @@ flask-sse==1.0.0
     # via flask-mongorest-mpcontribs
 flatten-dict==0.4.2
     # via flask-mongorest-mpcontribs
-fonttools==4.47.2
+fonttools==4.48.1
     # via matplotlib
 fqdn==1.5.1
     # via jsonschema
@@ -160,7 +160,7 @@ importlib-metadata==6.11.0
     # via opentelemetry-api
 iniconfig==2.0.0
     # via pytest
-ipykernel==6.29.0
+ipykernel==6.29.2
     # via
     #   nbclassic
     #   notebook
@@ -262,7 +262,7 @@ mongoengine==0.27.0
     #   atlasq-tschaume
     #   flask-mongoengine-tschaume
     #   marshmallow-mongoengine
-monty==2024.1.26
+monty==2024.2.2
     # via pymatgen
 more-itertools==10.2.0
     # via mpcontribs-api (setup.py)
@@ -272,7 +272,7 @@ nbclassic==1.0.0
     # via notebook
 nbclient==0.9.0
     # via nbconvert
-nbconvert==7.14.2
+nbconvert==7.16.0
     # via
     #   jupyter-server
     #   nbclassic
@@ -297,7 +297,7 @@ notebook==6.5.6
     # via mpcontribs-api (setup.py)
 notebook-shim==0.2.3
     # via nbclassic
-numpy==1.26.3
+numpy==1.26.4
     # via
     #   contourpy
     #   matplotlib
@@ -307,7 +307,7 @@ numpy==1.26.3
     #   spglib
 opentelemetry-api==1.22.0
     # via ddtrace
-orjson==3.9.12
+orjson==3.9.13
     # via flask-mongorest-mpcontribs
 overrides==7.7.0
     # via jupyter-server
@@ -374,7 +374,7 @@ pygments==2.17.2
     # via
     #   ipython
     #   nbconvert
-pymatgen==2024.1.27
+pymatgen==2024.2.8
     # via mpcontribs-api (setup.py)
 pymongo==4.6.1
     # via
@@ -453,7 +453,7 @@ rq==1.15.1
     #   rq-scheduler
 rq-scheduler==0.13.1
     # via flask-rq2
-ruamel-yaml==0.18.5
+ruamel-yaml==0.18.6
     # via pymatgen
 ruamel-yaml-clib==0.2.8
     # via ruamel-yaml
