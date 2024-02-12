@@ -205,7 +205,7 @@ six==1.16.0
     #   pybtex
     #   python-dateutil
     #   rfc3339-validator
-spglib==2.3.0
+spglib==2.3.1
     # via pymatgen
 stack-data==0.6.3
     # via ipython
@@ -219,7 +219,7 @@ tabulate==0.9.0
     # via pymatgen
 tenacity==8.2.3
     # via plotly
-tqdm==4.66.1
+tqdm==4.66.2
     # via
     #   mpcontribs-client (MPContribs/mpcontribs-client/setup.py)
     #   pymatgen
@@ -233,7 +233,7 @@ typing-extensions==4.9.0
     # via
     #   bravado
     #   swagger-spec-validator
-tzdata==2023.4
+tzdata==2024.1
     # via pandas
 ujson==5.9.0
     # via mpcontribs-client (MPContribs/mpcontribs-client/setup.py)
