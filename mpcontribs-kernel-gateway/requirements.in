@@ -1,5 +1,6 @@
 blinker
 ddtrace
+ipykernel
 ipywidgets
 jupyter-client
 jupyter-kernel-gateway
