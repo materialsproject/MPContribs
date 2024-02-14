@@ -54,7 +54,7 @@ cycler==0.12.1
     # via matplotlib
 ddsketch==2.0.4
     # via ddtrace
-ddtrace==2.6.1
+ddtrace==2.6.2
     # via -r MPContribs/mpcontribs-kernel-gateway/requirements.in
 debugpy==1.8.1
     # via ipykernel
@@ -245,7 +245,7 @@ plotly==5.18.0
     # via
     #   mpcontribs-client
     #   pymatgen
-prometheus-client==0.19.0
+prometheus-client==0.20.0
     # via jupyter-server
 prompt-toolkit==3.0.43
     # via ipython
