@@ -88,7 +88,7 @@ kiwisolver==1.4.5
     # via matplotlib
 latexcodec==2.0.1
     # via pybtex
-matplotlib==3.8.2
+matplotlib==3.8.3
     # via pymatgen
 matplotlib-inline==0.1.6
     # via ipython
@@ -133,7 +133,7 @@ pillow==10.2.0
     # via matplotlib
 pint==0.19.2
     # via mpcontribs-client (setup.py)
-plotly==5.18.0
+plotly==5.19.0
     # via
     #   mpcontribs-client (setup.py)
     #   pymatgen
