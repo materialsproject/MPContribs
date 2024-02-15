@@ -18,7 +18,7 @@ for deployment in os.environ.get("DEPLOYMENTS", "ml:10002").split(","):
         "db": db,
         "s3": s3,
         "tm": tm.upper(),
-        "max_projects": max_projects if max_projects else 3
+        "max_projects": int(max_projects) if max_projects else 3
     }
 
 kwargs = {

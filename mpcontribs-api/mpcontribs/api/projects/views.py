@@ -15,7 +15,7 @@ from mpcontribs.api.projects.document import Projects, Column, Reference, Stats
 
 templates = os.path.join(os.path.dirname(flask_mongorest.__file__), "templates")
 projects = Blueprint("projects", __name__, template_folder=templates)
-MAX_PROJECTS = os.environ.get("MAX_PROJECTS", 3)
+MAX_PROJECTS = int(os.environ.get("MAX_PROJECTS", 3))
 
 
 class ColumnResource(Resource):
