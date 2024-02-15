@@ -167,7 +167,7 @@ markupsafe==2.1.5
     # via
     #   jinja2
     #   nbconvert
-matplotlib==3.8.2
+matplotlib==3.8.3
     # via pymatgen
 matplotlib-inline==0.1.6
     # via
@@ -237,7 +237,7 @@ pint==0.19.2
     # via mpcontribs-client
 platformdirs==4.2.0
     # via jupyter-core
-plotly==5.18.0
+plotly==5.19.0
     # via
     #   mpcontribs-client
     #   pymatgen
