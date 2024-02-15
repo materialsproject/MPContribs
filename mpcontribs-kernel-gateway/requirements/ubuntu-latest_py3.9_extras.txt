@@ -54,7 +54,7 @@ cycler==0.12.1
     # via matplotlib
 ddsketch==2.0.4
     # via ddtrace
-ddtrace==2.6.1
+ddtrace==2.6.2
     # via -r requirements.in
 debugpy==1.8.1
     # via ipykernel
@@ -172,7 +172,7 @@ markupsafe==2.1.5
     # via
     #   jinja2
     #   nbconvert
-matplotlib==3.8.2
+matplotlib==3.8.3
     # via pymatgen
 matplotlib-inline==0.1.6
     # via
@@ -242,11 +242,11 @@ pint==0.19.2
     # via mpcontribs-client
 platformdirs==4.2.0
     # via jupyter-core
-plotly==5.18.0
+plotly==5.19.0
     # via
     #   mpcontribs-client
     #   pymatgen
-prometheus-client==0.19.0
+prometheus-client==0.20.0
     # via jupyter-server
 prompt-toolkit==3.0.43
     # via ipython
