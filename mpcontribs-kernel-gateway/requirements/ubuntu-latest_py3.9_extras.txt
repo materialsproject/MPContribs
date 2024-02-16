@@ -54,7 +54,7 @@ cycler==0.12.1
     # via matplotlib
 ddsketch==2.0.4
     # via ddtrace
-ddtrace==2.6.2
+ddtrace==2.6.3
     # via -r requirements.in
 debugpy==1.8.1
     # via ipykernel
@@ -64,7 +64,7 @@ defusedxml==0.7.1
     # via nbconvert
 deprecated==1.2.14
     # via opentelemetry-api
-dnspython==2.5.0
+dnspython==2.6.0
     # via
     #   pyisemail
     #   pymongo
@@ -83,7 +83,7 @@ filetype==1.2.0
     # via mpcontribs-client
 flatten-dict==0.4.2
     # via mpcontribs-client
-fonttools==4.48.1
+fonttools==4.49.0
     # via matplotlib
 fqdn==1.5.1
     # via jsonschema
@@ -250,7 +250,7 @@ prometheus-client==0.20.0
     # via jupyter-server
 prompt-toolkit==3.0.43
     # via ipython
-protobuf==4.25.2
+protobuf==4.25.3
     # via
     #   ddsketch
     #   ddtrace
