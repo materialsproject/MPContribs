@@ -39,9 +39,9 @@ blinker==1.7.0
     # via mpcontribs-api (setup.py)
 boltons==23.1.1
     # via mpcontribs-api (setup.py)
-boto3==1.34.42
+boto3==1.34.44
     # via flask-mongorest-mpcontribs
-botocore==1.34.42
+botocore==1.34.44
     # via
     #   boto3
     #   s3transfer
@@ -69,7 +69,7 @@ contourpy==1.2.0
     # via matplotlib
 crontab==1.0.1
     # via rq-scheduler
-cryptography==42.0.2
+cryptography==42.0.3
     # via pyopenssl
 css-html-js-minify==2.5.5
     # via mpcontribs-api (setup.py)
@@ -79,7 +79,7 @@ dateparser==1.2.0
     # via mpcontribs-api (setup.py)
 ddsketch==2.0.4
     # via ddtrace
-ddtrace==2.6.2
+ddtrace==2.6.3
     # via mpcontribs-api (setup.py)
 debugpy==1.8.1
     # via ipykernel
@@ -89,7 +89,7 @@ defusedxml==0.7.1
     # via nbconvert
 deprecated==1.2.14
     # via opentelemetry-api
-dnspython==2.5.0
+dnspython==2.6.0
     # via
     #   mpcontribs-api (setup.py)
     #   pymongo
@@ -134,7 +134,7 @@ flask-sse==1.0.0
     # via flask-mongorest-mpcontribs
 flatten-dict==0.4.2
     # via flask-mongorest-mpcontribs
-fonttools==4.48.1
+fonttools==4.49.0
     # via matplotlib
 fqdn==1.5.1
     # via jsonschema
@@ -338,7 +338,7 @@ prometheus-client==0.20.0
     #   notebook
 prompt-toolkit==3.0.43
     # via ipython
-protobuf==4.25.2
+protobuf==4.25.3
     # via
     #   ddsketch
     #   ddtrace
@@ -561,7 +561,7 @@ zipp==3.17.0
     # via importlib-metadata
 zope-event==5.0
     # via gevent
-zope-interface==6.1
+zope-interface==6.2
     # via gevent
 zstandard==0.22.0
     # via mpcontribs-api (setup.py)

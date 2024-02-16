@@ -29,14 +29,12 @@ charset-normalizer==3.3.2
 contourpy==1.1.1
     # via matplotlib
 coverage[toml]==7.4.1
-    # via
-    #   coverage
-    #   pytest-cov
+    # via pytest-cov
 cycler==0.12.1
     # via matplotlib
 decorator==5.1.1
     # via ipython
-dnspython==2.5.0
+dnspython==2.6.0
     # via
     #   pyisemail
     #   pymongo
@@ -54,7 +52,7 @@ flake8==7.0.0
     #   pytest-flake8
 flatten-dict==0.4.2
     # via mpcontribs-client (setup.py)
-fonttools==4.48.1
+fonttools==4.49.0
     # via matplotlib
 fqdn==1.5.1
     # via jsonschema
@@ -95,7 +93,7 @@ kiwisolver==1.4.5
     # via matplotlib
 latexcodec==2.0.1
     # via pybtex
-matplotlib==3.7.4
+matplotlib==3.7.5
     # via pymatgen
 matplotlib-inline==0.1.6
     # via ipython
@@ -193,7 +191,7 @@ pymongo==4.6.1
     # via mpcontribs-client (setup.py)
 pyparsing==3.1.1
     # via matplotlib
-pytest==8.0.0
+pytest==8.0.1
     # via
     #   mpcontribs-client (setup.py)
     #   pytest-cov
