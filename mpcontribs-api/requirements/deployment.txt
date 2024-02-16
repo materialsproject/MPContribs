@@ -238,7 +238,7 @@ marshmallow==3.20.2
     #   marshmallow-mongoengine
 marshmallow-mongoengine==0.31.2
     # via flask-mongorest-mpcontribs
-matplotlib==3.8.3
+matplotlib==3.8.2
     # via
     #   -r python/requirements.txt
     #   pymatgen
