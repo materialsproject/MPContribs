@@ -26,9 +26,9 @@ boltons==23.1.1
     # via
     #   mpcontribs-client
     #   mpcontribs-portal (setup.py)
-boto3==1.34.42
+boto3==1.34.44
     # via mpcontribs-portal (setup.py)
-botocore==1.34.42
+botocore==1.34.44
     # via
     #   boto3
     #   s3transfer
@@ -54,7 +54,7 @@ cycler==0.12.1
     # via matplotlib
 ddsketch==2.0.4
     # via ddtrace
-ddtrace==2.6.2
+ddtrace==2.6.3
     # via mpcontribs-portal (setup.py)
 debugpy==1.8.1
     # via ipykernel
@@ -75,7 +75,7 @@ django-settings-file==2.10.1
     # via mpcontribs-portal (setup.py)
 django-webpack4-loader==0.0.5
     # via mpcontribs-portal (setup.py)
-dnspython==2.5.0
+dnspython==2.6.0
     # via
     #   pyisemail
     #   pymongo
@@ -98,7 +98,7 @@ flake8==7.0.0
     # via mpcontribs-portal (setup.py)
 flatten-dict==0.4.2
     # via mpcontribs-client
-fonttools==4.48.1
+fonttools==4.49.0
     # via matplotlib
 fqdn==1.5.1
     # via jsonschema
@@ -262,7 +262,7 @@ pluggy==1.4.0
     # via pytest
 prompt-toolkit==3.0.43
     # via ipython
-protobuf==4.25.2
+protobuf==4.25.3
     # via
     #   ddsketch
     #   ddtrace
@@ -290,7 +290,7 @@ pymongo==4.6.1
     # via mpcontribs-client
 pyparsing==3.1.1
     # via matplotlib
-pytest==8.0.0
+pytest==8.0.1
     # via mpcontribs-portal (setup.py)
 python-dateutil==2.8.2
     # via
@@ -453,7 +453,7 @@ zipp==3.17.0
     #   importlib-resources
 zope-event==5.0
     # via gevent
-zope-interface==6.1
+zope-interface==6.2
     # via gevent
 
 # The following packages are considered to be unsafe in a requirements file:
