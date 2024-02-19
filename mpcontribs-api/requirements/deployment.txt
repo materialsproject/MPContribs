@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=MPContribs/mpcontribs-api/requirements/deployment.txt MPContribs/mpcontribs-api/setup.py python/requirements.txt
 #
-anyio==4.2.0
+anyio==4.3.0
     # via jupyter-server
 apispec==5.2.2
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
@@ -89,7 +89,7 @@ defusedxml==0.7.1
     # via nbconvert
 deprecated==1.2.14
     # via opentelemetry-api
-dnspython==2.6.0
+dnspython==2.6.1
     # via
     #   mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
     #   pymongo
@@ -238,7 +238,7 @@ marshmallow==3.20.2
     #   marshmallow-mongoengine
 marshmallow-mongoengine==0.31.2
     # via flask-mongorest-mpcontribs
-matplotlib==3.8.2
+matplotlib==3.8.3
     # via
     #   -r python/requirements.txt
     #   pymatgen
@@ -267,7 +267,7 @@ nbclassic==1.0.0
     # via notebook
 nbclient==0.9.0
     # via nbconvert
-nbconvert==7.16.0
+nbconvert==7.16.1
     # via
     #   jupyter-server
     #   nbclassic

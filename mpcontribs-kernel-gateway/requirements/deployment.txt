@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=MPContribs/mpcontribs-kernel-gateway/requirements/deployment.txt MPContribs/mpcontribs-kernel-gateway/requirements.in python/requirements.txt
 #
-anyio==4.2.0
+anyio==4.3.0
     # via jupyter-server
 argon2-cffi==23.1.0
     # via jupyter-server
@@ -64,7 +64,7 @@ defusedxml==0.7.1
     # via nbconvert
 deprecated==1.2.14
     # via opentelemetry-api
-dnspython==2.6.0
+dnspython==2.6.1
     # via
     #   pyisemail
     #   pymongo
@@ -191,7 +191,7 @@ msgpack==1.0.7
     #   bravado-core
 nbclient==0.9.0
     # via nbconvert
-nbconvert==7.16.0
+nbconvert==7.16.1
     # via jupyter-server
 nbformat==5.9.2
     # via
@@ -427,7 +427,7 @@ uncertainties==3.1.7
     # via pymatgen
 uri-template==1.3.0
     # via jsonschema
-urllib3==2.2.0
+urllib3==2.2.1
     # via requests
 wcwidth==0.2.13
     # via prompt-toolkit
