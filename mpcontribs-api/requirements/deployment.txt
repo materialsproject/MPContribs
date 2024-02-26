@@ -69,7 +69,7 @@ contourpy==1.2.0
     # via matplotlib
 crontab==1.0.1
     # via rq-scheduler
-cryptography==42.0.3
+cryptography==42.0.4
     # via pyopenssl
 css-html-js-minify==2.5.5
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
