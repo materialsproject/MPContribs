@@ -30,7 +30,7 @@ cycler==0.12.1
     # via matplotlib
 decorator==5.1.1
     # via ipython
-dnspython==2.6.0
+dnspython==2.6.1
     # via
     #   pyisemail
     #   pymongo
@@ -46,13 +46,13 @@ fonttools==4.49.0
     # via matplotlib
 fqdn==1.5.1
     # via jsonschema
-future==0.18.3
+future==1.0.0
     # via uncertainties
 idna==3.6
     # via
     #   jsonschema
     #   requests
-ipython==8.21.0
+ipython==8.22.1
     # via mpcontribs-client (setup.py)
 isoduration==20.11.0
     # via jsonschema
@@ -106,7 +106,7 @@ packaging==23.2
     #   plotly
 palettable==3.3.3
     # via pymatgen
-pandas==2.2.0
+pandas==2.2.1
     # via
     #   mpcontribs-client (setup.py)
     #   pymatgen
@@ -134,9 +134,9 @@ pygments==2.17.2
     # via ipython
 pyisemail==2.0.1
     # via mpcontribs-client (setup.py)
-pymatgen==2024.2.8
+pymatgen==2024.2.23
     # via mpcontribs-client (setup.py)
-pymongo==4.6.1
+pymongo==4.6.2
     # via mpcontribs-client (setup.py)
 pyparsing==3.1.1
     # via matplotlib
@@ -223,7 +223,7 @@ traitlets==5.14.1
     #   matplotlib-inline
 types-python-dateutil==2.8.19.20240106
     # via arrow
-typing-extensions==4.9.0
+typing-extensions==4.10.0
     # via
     #   bravado
     #   swagger-spec-validator
@@ -235,7 +235,7 @@ uncertainties==3.1.7
     # via pymatgen
 uri-template==1.3.0
     # via jsonschema
-urllib3==2.2.0
+urllib3==2.2.1
     # via requests
 wcwidth==0.2.13
     # via prompt-toolkit
