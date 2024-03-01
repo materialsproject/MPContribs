@@ -39,9 +39,9 @@ blinker==1.7.0
     # via mpcontribs-api (setup.py)
 boltons==23.1.1
     # via mpcontribs-api (setup.py)
-boto3==1.34.49
+boto3==1.34.54
     # via flask-mongorest-mpcontribs
-botocore==1.34.49
+botocore==1.34.54
     # via
     #   boto3
     #   s3transfer
@@ -67,6 +67,8 @@ comm==0.2.1
     # via ipykernel
 contourpy==1.2.0
     # via matplotlib
+cramjam==2.8.1
+    # via python-snappy
 crontab==1.0.1
     # via rq-scheduler
 cryptography==42.0.5
@@ -79,7 +81,7 @@ dateparser==1.2.0
     # via mpcontribs-api (setup.py)
 ddsketch==2.0.4
     # via ddtrace
-ddtrace==2.6.5
+ddtrace==2.7.0
     # via mpcontribs-api (setup.py)
 debugpy==1.8.1
     # via ipykernel
@@ -160,7 +162,7 @@ importlib-metadata==6.11.0
     # via opentelemetry-api
 iniconfig==2.0.0
     # via pytest
-ipykernel==6.29.2
+ipykernel==6.29.3
     # via
     #   nbclassic
     #   notebook
@@ -237,7 +239,7 @@ markupsafe==2.1.5
     #   jinja2
     #   nbconvert
     #   werkzeug
-marshmallow==3.20.2
+marshmallow==3.21.0
     # via
     #   flask-marshmallow
     #   marshmallow-mongoengine
@@ -262,7 +264,7 @@ mongoengine==0.27.0
     #   atlasq-tschaume
     #   flask-mongoengine-tschaume
     #   marshmallow-mongoengine
-monty==2024.2.2
+monty==2024.2.26
     # via pymatgen
 more-itertools==10.2.0
     # via mpcontribs-api (setup.py)
@@ -374,7 +376,7 @@ pygments==2.17.2
     # via
     #   ipython
     #   nbconvert
-pymatgen==2024.2.23
+pymatgen==2024.3.1
     # via mpcontribs-api (setup.py)
 pymongo==4.6.2
     # via
@@ -386,7 +388,7 @@ pyparsing==3.1.1
     # via matplotlib
 pytest==8.0.2
     # via mpcontribs-api (setup.py)
-python-dateutil==2.8.2
+python-dateutil==2.9.0.post0
     # via
     #   arrow
     #   botocore
@@ -401,7 +403,7 @@ python-json-logger==2.0.7
     # via jupyter-events
 python-mimeparse==1.6.0
     # via mimerender-pr36
-python-snappy==0.6.1
+python-snappy==0.7.1
     # via mpcontribs-api (setup.py)
 pytz==2024.1
     # via
@@ -419,7 +421,7 @@ pyzmq==24.0.1
     #   jupyter-server
     #   nbclassic
     #   notebook
-redis==5.0.1
+redis==5.0.2
     # via
     #   flask-rq2
     #   flask-sse
@@ -489,6 +491,8 @@ soupsieve==2.5
     # via beautifulsoup4
 spglib==2.3.1
     # via pymatgen
+sqlparse==0.4.4
+    # via ddtrace
 stack-data==0.6.3
     # via ipython
 supervisor==4.2.5

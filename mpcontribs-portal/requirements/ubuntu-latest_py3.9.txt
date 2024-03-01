@@ -26,9 +26,9 @@ boltons==23.1.1
     # via
     #   mpcontribs-client
     #   mpcontribs-portal (setup.py)
-boto3==1.34.49
+boto3==1.34.54
     # via mpcontribs-portal (setup.py)
-botocore==1.34.49
+botocore==1.34.54
     # via
     #   boto3
     #   s3transfer
@@ -38,7 +38,7 @@ bravado-core==6.1.1
     # via bravado
 bytecode==0.15.1
     # via ddtrace
-cachetools==5.3.2
+cachetools==5.3.3
     # via mpcontribs-client
 cattrs==23.2.3
     # via ddtrace
@@ -54,7 +54,7 @@ cycler==0.12.1
     # via matplotlib
 ddsketch==2.0.4
     # via ddtrace
-ddtrace==2.6.5
+ddtrace==2.7.0
     # via mpcontribs-portal (setup.py)
 debugpy==1.8.1
     # via ipykernel
@@ -118,7 +118,7 @@ importlib-metadata==6.11.0
     #   opentelemetry-api
 importlib-resources==6.1.2
     # via matplotlib
-ipykernel==6.29.2
+ipykernel==6.29.3
     # via mpcontribs-portal (setup.py)
 ipython==8.18.1
     # via
@@ -186,7 +186,7 @@ mistune==3.0.2
     # via nbconvert
 monotonic==1.6
     # via bravado
-monty==2024.2.2
+monty==2024.2.26
     # via
     #   mpcontribs-portal (setup.py)
     #   pymatgen
@@ -194,7 +194,7 @@ mpcontribs-client==5.7.0
     # via mpcontribs-portal (setup.py)
 mpmath==1.3.0
     # via sympy
-msgpack==1.0.7
+msgpack==1.0.8
     # via
     #   bravado
     #   bravado-core
@@ -270,13 +270,13 @@ pygments==2.17.2
     #   nbconvert
 pyisemail==2.0.1
     # via mpcontribs-client
-pymatgen==2024.2.23
+pymatgen==2024.3.1
     # via mpcontribs-client
 pymongo==4.6.2
     # via mpcontribs-client
 pyparsing==3.1.1
     # via matplotlib
-python-dateutil==2.8.2
+python-dateutil==2.9.0.post0
     # via
     #   arrow
     #   botocore
@@ -300,7 +300,7 @@ pyzmq==25.1.2
     # via
     #   ipykernel
     #   jupyter-client
-redis==5.0.1
+redis==5.0.2
     # via mpcontribs-portal (setup.py)
 referencing==0.33.0
     # via
@@ -358,7 +358,9 @@ soupsieve==2.5
 spglib==2.3.1
     # via pymatgen
 sqlparse==0.4.4
-    # via django
+    # via
+    #   ddtrace
+    #   django
 stack-data==0.6.3
     # via ipython
 swagger-spec-validator==3.0.3
