@@ -98,7 +98,7 @@ importlib-metadata==6.11.0
     # via opentelemetry-api
 ipykernel==6.29.3
     # via -r MPContribs/mpcontribs-kernel-gateway/requirements.in
-ipython==8.22.1
+ipython==8.22.2
     # via
     #   ipykernel
     #   ipywidgets
@@ -149,7 +149,7 @@ jupyter-events==0.9.0
     # via jupyter-server
 jupyter-kernel-gateway==3.0.0
     # via -r MPContribs/mpcontribs-kernel-gateway/requirements.in
-jupyter-server==2.12.5
+jupyter-server==2.13.0
     # via jupyter-kernel-gateway
 jupyter-server-terminals==0.5.2
     # via jupyter-server
@@ -191,7 +191,7 @@ msgpack==1.0.8
     #   bravado-core
 nbclient==0.9.0
     # via nbconvert
-nbconvert==7.16.1
+nbconvert==7.16.2
     # via jupyter-server
 nbformat==5.9.2
     # via

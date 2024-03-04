@@ -67,7 +67,7 @@ comm==0.2.1
     # via ipykernel
 contourpy==1.2.0
     # via matplotlib
-cramjam==2.8.1
+cramjam==2.8.2
     # via python-snappy
 crontab==1.0.1
     # via rq-scheduler
@@ -161,7 +161,7 @@ ipykernel==6.29.3
     # via
     #   nbclassic
     #   notebook
-ipython==8.22.1
+ipython==8.22.2
     # via ipykernel
 ipython-genutils==0.2.0
     # via
@@ -217,7 +217,7 @@ jupyter-core==5.7.1
     #   notebook
 jupyter-events==0.9.0
     # via jupyter-server
-jupyter-server==2.12.5
+jupyter-server==2.13.0
     # via
     #   nbclassic
     #   notebook-shim
@@ -254,7 +254,7 @@ mistune==3.0.2
     # via
     #   flasgger-tschaume
     #   nbconvert
-mongoengine==0.27.0
+mongoengine==0.28.0
     # via
     #   atlasq-tschaume
     #   flask-mongoengine-tschaume
@@ -269,7 +269,7 @@ nbclassic==1.0.0
     # via notebook
 nbclient==0.9.0
     # via nbconvert
-nbconvert==7.16.1
+nbconvert==7.16.2
     # via
     #   jupyter-server
     #   nbclassic
