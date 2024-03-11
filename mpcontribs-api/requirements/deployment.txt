@@ -39,9 +39,9 @@ blinker==1.7.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 boltons==23.1.1
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
-boto3==1.34.54
+boto3==1.34.59
     # via flask-mongorest-mpcontribs
-botocore==1.34.54
+botocore==1.34.59
     # via
     #   boto3
     #   s3transfer
@@ -81,7 +81,7 @@ dateparser==1.2.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 ddsketch==2.0.4
     # via ddtrace
-ddtrace==2.7.0
+ddtrace==2.7.2
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 debugpy==1.8.1
     # via ipykernel
@@ -227,14 +227,14 @@ jupyterlab-pygments==0.3.0
     # via nbconvert
 kiwisolver==1.4.5
     # via matplotlib
-latexcodec==2.0.1
+latexcodec==3.0.0
     # via pybtex
 markupsafe==2.1.5
     # via
     #   jinja2
     #   nbconvert
     #   werkzeug
-marshmallow==3.21.0
+marshmallow==3.21.1
     # via
     #   flask-marshmallow
     #   marshmallow-mongoengine
@@ -254,7 +254,7 @@ mistune==3.0.2
     # via
     #   flasgger-tschaume
     #   nbconvert
-mongoengine==0.28.0
+mongoengine==0.28.2
     # via
     #   atlasq-tschaume
     #   flask-mongoengine-tschaume
@@ -309,7 +309,7 @@ orjson==3.9.15
     # via flask-mongorest-mpcontribs
 overrides==7.7.0
     # via jupyter-server
-packaging==23.2
+packaging==24.0
     # via
     #   gunicorn
     #   ipykernel
@@ -373,9 +373,9 @@ pymongo==4.6.2
     # via
     #   flask-mongorest-mpcontribs
     #   mongoengine
-pyopenssl==24.0.0
+pyopenssl==24.1.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
-pyparsing==3.1.1
+pyparsing==3.1.2
     # via matplotlib
 python-dateutil==2.9.0.post0
     # via
@@ -410,7 +410,7 @@ pyzmq==24.0.1
     #   jupyter-server
     #   nbclassic
     #   notebook
-redis==5.0.2
+redis==5.0.3
     # via
     #   flask-rq2
     #   flask-sse
@@ -438,7 +438,7 @@ rpds-py==0.18.0
     # via
     #   jsonschema
     #   referencing
-rq==1.16.0
+rq==1.16.1
     # via
     #   flask-rq2
     #   rq-scheduler
@@ -472,7 +472,6 @@ six==1.16.0
     #   flasgger-tschaume
     #   flask-sse
     #   flatten-dict
-    #   latexcodec
     #   pybtex
     #   python-dateutil
     #   rfc3339-validator
@@ -527,7 +526,7 @@ traitlets==5.14.1
     #   nbconvert
     #   nbformat
     #   notebook
-types-python-dateutil==2.8.19.20240106
+types-python-dateutil==2.8.19.20240311
     # via arrow
 typing-extensions==4.10.0
     # via

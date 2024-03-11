@@ -54,7 +54,7 @@ cycler==0.12.1
     # via matplotlib
 ddsketch==2.0.4
     # via ddtrace
-ddtrace==2.7.0
+ddtrace==2.7.2
     # via -r MPContribs/mpcontribs-kernel-gateway/requirements.in
 debugpy==1.8.1
     # via ipykernel
@@ -161,7 +161,7 @@ kaleido==0.2.1
     # via -r MPContribs/mpcontribs-kernel-gateway/requirements.in
 kiwisolver==1.4.5
     # via matplotlib
-latexcodec==2.0.1
+latexcodec==3.0.0
     # via pybtex
 markupsafe==2.1.5
     # via
@@ -215,7 +215,7 @@ opentelemetry-api==1.23.0
     # via ddtrace
 overrides==7.7.0
     # via jupyter-server
-packaging==23.2
+packaging==24.0
     # via
     #   ipykernel
     #   jupyter-server
@@ -277,7 +277,7 @@ pymatgen==2024.3.1
     # via mpcontribs-client
 pymongo==4.6.2
     # via mpcontribs-client
-pyparsing==3.1.1
+pyparsing==3.1.2
     # via matplotlib
 python-dateutil==2.9.0.post0
     # via
@@ -356,7 +356,6 @@ six==1.16.0
     #   ddsketch
     #   ddtrace
     #   flatten-dict
-    #   latexcodec
     #   pybtex
     #   python-dateutil
     #   rfc3339-validator
@@ -412,7 +411,7 @@ traitlets==5.14.1
     #   nbclient
     #   nbconvert
     #   nbformat
-types-python-dateutil==2.8.19.20240106
+types-python-dateutil==2.8.19.20240311
     # via arrow
 typing-extensions==4.10.0
     # via
