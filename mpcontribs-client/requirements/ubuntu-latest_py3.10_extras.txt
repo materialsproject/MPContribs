@@ -26,7 +26,7 @@ charset-normalizer==3.3.2
     # via requests
 contourpy==1.2.0
     # via matplotlib
-coverage[toml]==7.4.3
+coverage[toml]==7.4.4
     # via pytest-cov
 cycler==0.12.1
     # via matplotlib
@@ -50,7 +50,7 @@ flake8==7.0.0
     #   pytest-flake8
 flatten-dict==0.4.2
     # via mpcontribs-client (setup.py)
-fonttools==4.49.0
+fonttools==4.50.0
     # via matplotlib
 fqdn==1.5.1
     # via jsonschema
@@ -62,7 +62,7 @@ idna==3.6
     #   requests
 iniconfig==2.0.0
     # via pytest
-ipython==8.22.1
+ipython==8.22.2
     # via mpcontribs-client (setup.py)
 isoduration==20.11.0
     # via jsonschema
@@ -84,7 +84,7 @@ jsonschema-specifications==2023.12.1
     # via jsonschema
 kiwisolver==1.4.5
     # via matplotlib
-latexcodec==2.0.1
+latexcodec==3.0.0
     # via pybtex
 matplotlib==3.8.3
     # via pymatgen
@@ -112,7 +112,7 @@ numpy==1.26.4
     #   pymatgen
     #   scipy
     #   spglib
-packaging==23.2
+packaging==24.0
     # via
     #   matplotlib
     #   plotly
@@ -131,7 +131,7 @@ pillow==10.2.0
     # via matplotlib
 pint==0.19.2
     # via mpcontribs-client (setup.py)
-plotly==5.19.0
+plotly==5.20.0
     # via
     #   mpcontribs-client (setup.py)
     #   pymatgen
@@ -163,9 +163,9 @@ pymatgen==2024.3.1
     # via mpcontribs-client (setup.py)
 pymongo==4.6.2
     # via mpcontribs-client (setup.py)
-pyparsing==3.1.1
+pyparsing==3.1.2
     # via matplotlib
-pytest==8.0.2
+pytest==8.1.1
     # via
     #   mpcontribs-client (setup.py)
     #   pytest-cov
@@ -232,7 +232,6 @@ six==1.16.0
     #   bravado
     #   bravado-core
     #   flatten-dict
-    #   latexcodec
     #   pybtex
     #   python-dateutil
     #   rfc3339-validator
@@ -258,11 +257,11 @@ tqdm==4.66.2
     # via
     #   mpcontribs-client (setup.py)
     #   pymatgen
-traitlets==5.14.1
+traitlets==5.14.2
     # via
     #   ipython
     #   matplotlib-inline
-types-python-dateutil==2.8.19.20240106
+types-python-dateutil==2.9.0.20240315
     # via arrow
 typing-extensions==4.10.0
     # via
