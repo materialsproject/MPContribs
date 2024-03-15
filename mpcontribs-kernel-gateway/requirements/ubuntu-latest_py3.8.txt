@@ -296,7 +296,7 @@ pygments==2.17.2
     #   nbconvert
 pyisemail==2.0.1
     # via mpcontribs-client
-pymatgen==2023.8.10
+pymatgen==2024.2.20
     # via
     #   emmet-core
     #   mp-api
