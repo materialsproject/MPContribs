@@ -301,7 +301,7 @@ pyzmq==25.1.2
     #   jupyter-client
 redis==5.0.3
     # via mpcontribs-portal (MPContribs/mpcontribs-portal/setup.py)
-referencing==0.33.0
+referencing==0.34.0
     # via
     #   jsonschema
     #   jsonschema-specifications
@@ -393,7 +393,7 @@ traitlets==5.14.2
     #   nbclient
     #   nbconvert
     #   nbformat
-types-python-dateutil==2.9.0.20240315
+types-python-dateutil==2.9.0.20240316
     # via arrow
 typing-extensions==4.10.0
     # via

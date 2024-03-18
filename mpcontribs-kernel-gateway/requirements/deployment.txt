@@ -305,7 +305,7 @@ pyzmq==25.1.2
     #   ipykernel
     #   jupyter-client
     #   jupyter-server
-referencing==0.33.0
+referencing==0.34.0
     # via
     #   jsonschema
     #   jsonschema-specifications
@@ -411,7 +411,7 @@ traitlets==5.14.2
     #   nbclient
     #   nbconvert
     #   nbformat
-types-python-dateutil==2.9.0.20240315
+types-python-dateutil==2.9.0.20240316
     # via arrow
 typing-extensions==4.10.0
     # via
