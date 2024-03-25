@@ -54,7 +54,7 @@ idna==3.6
     # via
     #   jsonschema
     #   requests
-importlib-resources==6.3.0
+importlib-resources==6.4.0
     # via
     #   jsonschema
     #   jsonschema-specifications
@@ -183,7 +183,7 @@ pyyaml==6.0.1
     #   bravado-core
     #   pybtex
     #   swagger-spec-validator
-referencing==0.33.0
+referencing==0.34.0
     # via
     #   jsonschema
     #   jsonschema-specifications
@@ -249,7 +249,7 @@ traitlets==5.14.2
     # via
     #   ipython
     #   matplotlib-inline
-types-python-dateutil==2.9.0.20240315
+types-python-dateutil==2.9.0.20240316
     # via arrow
 typing-extensions==4.10.0
     # via
