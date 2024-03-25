@@ -54,7 +54,7 @@ cycler==0.12.1
     # via matplotlib
 ddsketch==2.0.4
     # via ddtrace
-ddtrace==2.7.3
+ddtrace==2.7.4
     # via -r MPContribs/mpcontribs-kernel-gateway/requirements.in
 debugpy==1.8.1
     # via ipykernel
@@ -145,7 +145,7 @@ jupyter-core==5.7.2
     #   nbclient
     #   nbconvert
     #   nbformat
-jupyter-events==0.9.1
+jupyter-events==0.10.0
     # via jupyter-server
 jupyter-kernel-gateway==3.0.1
     # via -r MPContribs/mpcontribs-kernel-gateway/requirements.in
@@ -191,7 +191,7 @@ msgpack==1.0.8
     #   bravado-core
 nbclient==0.10.0
     # via nbconvert
-nbconvert==7.16.2
+nbconvert==7.16.3
     # via jupyter-server
 nbformat==5.10.3
     # via
