@@ -28,7 +28,7 @@ bleach==6.1.0
     # via nbconvert
 blinker==1.7.0
     # via -r requirements.in
-boltons==23.1.1
+boltons==24.0.0
     # via mpcontribs-client
 bravado==11.0.3
     # via mpcontribs-client
@@ -54,9 +54,9 @@ contourpy==1.1.1
     # via matplotlib
 cycler==0.12.1
     # via matplotlib
-ddsketch==2.0.4
+ddsketch==3.0.1
     # via ddtrace
-ddtrace==2.7.3
+ddtrace==2.7.5
     # via -r requirements.in
 debugpy==1.8.1
     # via ipykernel
@@ -97,17 +97,17 @@ idna==3.6
     #   anyio
     #   jsonschema
     #   requests
-importlib-metadata==6.11.0
+importlib-metadata==7.0.0
     # via
     #   jupyter-client
     #   nbconvert
     #   opentelemetry-api
-importlib-resources==6.3.0
+importlib-resources==6.4.0
     # via
     #   jsonschema
     #   jsonschema-specifications
     #   matplotlib
-ipykernel==6.29.3
+ipykernel==6.29.4
     # via -r requirements.in
 ipython==8.12.3
     # via
@@ -156,7 +156,7 @@ jupyter-core==5.7.2
     #   nbclient
     #   nbconvert
     #   nbformat
-jupyter-events==0.9.1
+jupyter-events==0.10.0
     # via jupyter-server
 jupyter-kernel-gateway==3.0.1
     # via -r requirements.in
@@ -206,7 +206,7 @@ msgpack==1.0.8
     #   mp-api
 nbclient==0.10.0
     # via nbconvert
-nbconvert==7.16.2
+nbconvert==7.16.3
     # via jupyter-server
 nbformat==5.10.3
     # via
@@ -225,7 +225,7 @@ numpy==1.24.4
     #   pymatgen
     #   scipy
     #   spglib
-opentelemetry-api==1.23.0
+opentelemetry-api==1.24.0
     # via ddtrace
 overrides==7.7.0
     # via jupyter-server
@@ -250,7 +250,7 @@ pexpect==4.9.0
     # via ipython
 pickleshare==0.7.5
     # via ipython
-pillow==10.2.0
+pillow==10.3.0
     # via matplotlib
 pint==0.19.2
     # via mpcontribs-client
@@ -266,10 +266,8 @@ prometheus-client==0.20.0
     # via jupyter-server
 prompt-toolkit==3.0.43
     # via ipython
-protobuf==5.26.0
-    # via
-    #   ddsketch
-    #   ddtrace
+protobuf==5.26.1
+    # via ddtrace
 psutil==5.9.8
     # via
     #   -r requirements.in
@@ -284,7 +282,7 @@ pybtex==0.24.0
     # via
     #   emmet-core
     #   pymatgen
-pycparser==2.21
+pycparser==2.22
     # via cffi
 pydantic==1.10.14
     # via
@@ -301,7 +299,7 @@ pymatgen==2023.8.10
     #   emmet-core
     #   mp-api
     #   mpcontribs-client
-pymongo==4.6.2
+pymongo==4.6.3
     # via mpcontribs-client
 pyparsing==3.1.2
     # via matplotlib
@@ -331,7 +329,7 @@ pyzmq==25.1.2
     #   ipykernel
     #   jupyter-client
     #   jupyter-server
-referencing==0.33.0
+referencing==0.34.0
     # via
     #   jsonschema
     #   jsonschema-specifications
@@ -438,7 +436,7 @@ traitlets==5.14.2
     #   nbclient
     #   nbconvert
     #   nbformat
-types-python-dateutil==2.9.0.20240315
+types-python-dateutil==2.9.0.20240316
     # via arrow
 typing-extensions==4.10.0
     # via

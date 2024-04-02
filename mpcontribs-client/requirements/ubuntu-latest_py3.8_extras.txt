@@ -14,7 +14,7 @@ attrs==23.2.0
     #   referencing
 backcall==0.2.0
     # via ipython
-boltons==23.1.1
+boltons==24.0.0
     # via mpcontribs-client (setup.py)
 bravado==11.0.3
     # via mpcontribs-client (setup.py)
@@ -62,7 +62,7 @@ idna==3.6
     # via
     #   jsonschema
     #   requests
-importlib-resources==6.3.0
+importlib-resources==6.4.0
     # via
     #   jsonschema
     #   jsonschema-specifications
@@ -142,7 +142,7 @@ pexpect==4.9.0
     # via ipython
 pickleshare==0.7.5
     # via ipython
-pillow==10.2.0
+pillow==10.3.0
     # via matplotlib
 pint==0.19.2
     # via mpcontribs-client (setup.py)
@@ -187,7 +187,7 @@ pymatgen==2023.8.10
     #   emmet-core
     #   mp-api
     #   mpcontribs-client (setup.py)
-pymongo==4.6.2
+pymongo==4.6.3
     # via mpcontribs-client (setup.py)
 pyparsing==3.1.2
     # via matplotlib
@@ -197,7 +197,7 @@ pytest==8.1.1
     #   pytest-cov
     #   pytest-flake8
     #   pytest-pycodestyle
-pytest-cov==4.1.0
+pytest-cov==5.0.0
     # via mpcontribs-client (setup.py)
 pytest-flake8==1.1.1
     # via mpcontribs-client (setup.py)
@@ -220,7 +220,7 @@ pyyaml==6.0.1
     #   bravado-core
     #   pybtex
     #   swagger-spec-validator
-referencing==0.33.0
+referencing==0.34.0
     # via
     #   jsonschema
     #   jsonschema-specifications
@@ -290,7 +290,7 @@ traitlets==5.14.2
     # via
     #   ipython
     #   matplotlib-inline
-types-python-dateutil==2.9.0.20240315
+types-python-dateutil==2.9.0.20240316
     # via arrow
 typing-extensions==4.10.0
     # via
