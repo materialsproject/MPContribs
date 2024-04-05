@@ -28,9 +28,9 @@ boltons==24.0.0
     # via
     #   mpcontribs-client
     #   mpcontribs-portal (setup.py)
-boto3==1.34.76
+boto3==1.34.79
     # via mpcontribs-portal (setup.py)
-botocore==1.34.76
+botocore==1.34.79
     # via
     #   boto3
     #   s3transfer
@@ -56,7 +56,7 @@ cycler==0.12.1
     # via matplotlib
 ddsketch==3.0.1
     # via ddtrace
-ddtrace==2.7.5
+ddtrace==2.8.0
     # via mpcontribs-portal (setup.py)
 debugpy==1.8.1
     # via ipykernel
@@ -101,7 +101,7 @@ flake8==7.0.0
     # via mpcontribs-portal (setup.py)
 flatten-dict==0.4.2
     # via mpcontribs-client
-fonttools==4.50.0
+fonttools==4.51.0
     # via matplotlib
 fqdn==1.5.1
     # via jsonschema
@@ -220,7 +220,7 @@ nbclient==0.10.0
     # via nbconvert
 nbconvert==7.16.3
     # via mpcontribs-portal (setup.py)
-nbformat==5.10.3
+nbformat==5.10.4
     # via
     #   mpcontribs-portal (setup.py)
     #   nbclient
@@ -255,7 +255,7 @@ pandas==2.0.3
     #   pymatgen
 pandocfilters==1.5.1
     # via nbconvert
-parso==0.8.3
+parso==0.8.4
     # via jedi
 pexpect==4.9.0
     # via ipython
@@ -291,7 +291,7 @@ pybtex==0.24.0
     #   pymatgen
 pycodestyle==2.11.1
     # via flake8
-pydantic==1.10.14
+pydantic==1.10.15
     # via
     #   emmet-core
     #   pymatgen
@@ -438,7 +438,7 @@ traitlets==5.14.2
     #   nbformat
 types-python-dateutil==2.9.0.20240316
     # via arrow
-typing-extensions==4.10.0
+typing-extensions==4.11.0
     # via
     #   asgiref
     #   bravado

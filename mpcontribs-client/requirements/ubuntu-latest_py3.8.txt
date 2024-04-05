@@ -44,7 +44,7 @@ filetype==1.2.0
     # via mpcontribs-client (setup.py)
 flatten-dict==0.4.2
     # via mpcontribs-client (setup.py)
-fonttools==4.50.0
+fonttools==4.51.0
     # via matplotlib
 fqdn==1.5.1
     # via jsonschema
@@ -123,7 +123,7 @@ pandas==2.0.3
     # via
     #   mpcontribs-client (setup.py)
     #   pymatgen
-parso==0.8.3
+parso==0.8.4
     # via jedi
 pexpect==4.9.0
     # via ipython
@@ -149,7 +149,7 @@ pybtex==0.24.0
     # via
     #   emmet-core
     #   pymatgen
-pydantic==1.10.14
+pydantic==1.10.15
     # via
     #   emmet-core
     #   pymatgen
@@ -251,7 +251,7 @@ traitlets==5.14.2
     #   matplotlib-inline
 types-python-dateutil==2.9.0.20240316
     # via arrow
-typing-extensions==4.10.0
+typing-extensions==4.11.0
     # via
     #   bravado
     #   emmet-core
