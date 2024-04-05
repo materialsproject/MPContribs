@@ -8,7 +8,7 @@ sleep $zzz
 pmgrc=$HOME/.pmgrc.yaml
 [[ ! -e $pmgrc ]] && echo "PMG_DUMMY_VAR: dummy" >$pmgrc
 
-CMD="gunicorn \"mpcontribs.api:create_app()\""
+CMD='gunicorn mpcontribs.api:create_app()'
 
 if [[ -n "$DD_TRACE_HOST" ]]; then
 	wait-for-it.sh $DD_TRACE_HOST -q -s -t 10 && CMD="ddtrace-run $CMD"
