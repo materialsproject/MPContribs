@@ -59,7 +59,7 @@ jobs:
           python${{ matrix.python-version }} -m pytest -v -s --cov=mpcontribs/client --cov-report=term-missing --cov-report=xml --ignore=bravado
           python${{ matrix.python-version }} -m build --outdir ../dist
       - name: Publish distribution 📦s to Test PyPI
-        if: matrix.os == 'ubuntu-latest' && matrix.python-version == 3.10
+        if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.10'
         uses: pypa/gh-action-pypi-publish@release/v1.5
         with:
           skip_existing: true
