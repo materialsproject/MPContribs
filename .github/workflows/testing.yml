@@ -20,51 +20,51 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: ['ubuntu-latest', 'macos-latest']
-        python-version: ['3.8', '3.9', '3.10']
+        os: ["ubuntu-latest", "macos-latest"]
+        python-version: ["3.10", "3.11", "3.12"]
     steps:
-    - uses: actions/checkout@v3
-      with:
-        fetch-depth: 0
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: ${{ matrix.python-version }}
-        cache: "pip"
-    - name: Install dependencies
-      run: |
-        python${{ matrix.python-version }} -m pip install --upgrade pip build pip-tools
-        python${{ matrix.python-version }} -m piptools compile --resolver=backtracking --extra dev -o requirements.txt mpcontribs-client/setup.py mpcontribs-api/setup.py
-        python${{ matrix.python-version }} -m pip install -r requirements.txt
-        cd mpcontribs-api && python${{ matrix.python-version }} -m pip install --no-deps .
-    - name: Set SSL_CERT_FILE (Linux)
-      if: matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest'
-      run: |
-        export SSL_CERT_FILE=$(python${{ matrix.python-version }} -m certifi)
-        echo "SSL_CERT_FILE=$SSL_CERT_FILE" >> $GITHUB_ENV
-    - name: Set SSL_CERT_FILE (Windows)
-      if: matrix.os == 'windows-latest'
-      run: |
-        $env:SSL_CERT_FILE=$(python${{ matrix.python-version }} -m certifi)
-        echo "SSL_CERT_FILE=$env:SSL_CERT_FILE" >> $GITHUB_ENV
-    - name: Test Client and build
-      env:
-        MPCONTRIBS_API_KEY: ${{ secrets.MPCONTRIBS_API_KEY }}
-        SSL_CERT_FILE: ${{ env.SSL_CERT_FILE }}
-      shell: bash
-      run: |
-        cd mpcontribs-client
-        python${{ matrix.python-version }} -m flake8 --max-line-length 100
-        python${{ matrix.python-version }} -m pycodestyle --max-line-length 100 .
-        python${{ matrix.python-version }} -m pytest -v -s --cov=mpcontribs/client --cov-report=term-missing --cov-report=xml --ignore=bravado
-        python${{ matrix.python-version }} -m build --outdir ../dist
-    - name: Publish distribution 📦s to Test PyPI
-      if: matrix.os == 'ubuntu-latest' && matrix.python-version == 3.9
-      uses: pypa/gh-action-pypi-publish@release/v1.5
-      with:
-        skip_existing: true
-        password: ${{ secrets.test_pypi_password }}
-        repository_url: https://test.pypi.org/legacy/
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: "pip"
+      - name: Install dependencies
+        run: |
+          python${{ matrix.python-version }} -m pip install --upgrade pip build pip-tools
+          python${{ matrix.python-version }} -m piptools compile --resolver=backtracking --extra dev -o requirements.txt mpcontribs-client/setup.py mpcontribs-api/setup.py
+          python${{ matrix.python-version }} -m pip install -r requirements.txt
+          cd mpcontribs-api && python${{ matrix.python-version }} -m pip install --no-deps .
+      - name: Set SSL_CERT_FILE (Linux)
+        if: matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest'
+        run: |
+          export SSL_CERT_FILE=$(python${{ matrix.python-version }} -m certifi)
+          echo "SSL_CERT_FILE=$SSL_CERT_FILE" >> $GITHUB_ENV
+      - name: Set SSL_CERT_FILE (Windows)
+        if: matrix.os == 'windows-latest'
+        run: |
+          $env:SSL_CERT_FILE=$(python${{ matrix.python-version }} -m certifi)
+          echo "SSL_CERT_FILE=$env:SSL_CERT_FILE" >> $GITHUB_ENV
+      - name: Test Client and build
+        env:
+          MPCONTRIBS_API_KEY: ${{ secrets.MPCONTRIBS_API_KEY }}
+          SSL_CERT_FILE: ${{ env.SSL_CERT_FILE }}
+        shell: bash
+        run: |
+          cd mpcontribs-client
+          python${{ matrix.python-version }} -m flake8 --max-line-length 100
+          python${{ matrix.python-version }} -m pycodestyle --max-line-length 100 .
+          python${{ matrix.python-version }} -m pytest -v -s --cov=mpcontribs/client --cov-report=term-missing --cov-report=xml --ignore=bravado
+          python${{ matrix.python-version }} -m build --outdir ../dist
+      - name: Publish distribution 📦s to Test PyPI
+        if: matrix.os == 'ubuntu-latest' && matrix.python-version == 3.10
+        uses: pypa/gh-action-pypi-publish@release/v1.5
+        with:
+          skip_existing: true
+          password: ${{ secrets.test_pypi_password }}
+          repository_url: https://test.pypi.org/legacy/
 
   auto-gen-release:
     needs:
