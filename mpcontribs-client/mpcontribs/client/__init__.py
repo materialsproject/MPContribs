@@ -1521,7 +1521,7 @@ class Client(SwaggerClient):
                         for u in [existing_unit, new_unit]:
                             try:
                                 conv_args.append(ureg.Unit(u))
-                            except ValueError as ex:
+                            except ValueError:
                                 raise MPContribsClientError(
                                     f"Can't convert {existing_unit} to {new_unit} for {path}"
                                 )
