@@ -2163,9 +2163,19 @@ class Client(SwaggerClient):
             ):
                 continue
 
-            contribs[project_name].append(
-                {k: deepcopy(contrib[k]) for k in fields if k in contrib}
-            )
+            contrib_copy = {}
+            for k in fields:
+                if k in contrib:
+                    flat = {}
+                    for kk, vv in flatten(contrib[k], reducer="dot").items():
+                        if isinstance(vv, bool):
+                            flat[kk] = "Yes" if vv else "No"
+                        elif isinstance(vv, str):
+                            flat[kk] = vv
+
+                    contrib_copy[k] = deepcopy(unflatten(flat, splitter="dot"))
+
+            contribs[project_name].append(contrib_copy)
 
             for component in COMPONENTS:
                 elements = contrib.get(component, [])
