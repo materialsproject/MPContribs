@@ -338,7 +338,7 @@ scipy==1.13.0
     # via pymatgen
 semantic-version==2.10.0
     # via mpcontribs-client
-send2trash==1.8.2
+send2trash==1.8.3
     # via jupyter-server
 simplejson==3.19.2
     # via
