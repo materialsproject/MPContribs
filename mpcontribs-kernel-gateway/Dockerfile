@@ -1,5 +1,4 @@
-FROM materialsproject/devops:python-3.1010.24 as base
-MAINTAINER Patrick Huck (tschaume)
+FROM materialsproject/devops:python-3.1013.2 as base
 RUN apt-get update && apt-get install -y --no-install-recommends libopenblas-dev libpq-dev && apt-get clean
 
 FROM base as python-deps
@@ -10,9 +9,9 @@ ARG MORE_PIP_FLAGS
 ENV MORE_PIP_FLAGS=$MORE_PIP_FLAGS
 COPY requirements/deployment.txt ./requirements.txt
 RUN pip install $PIP_FLAGS $MORE_PIP_FLAGS -r requirements.txt && \
-    python -m ipykernel install --user
+  python -m ipykernel install --user
 RUN wget -q https://raw.githubusercontent.com/vishnubob/wait-for-it/master/wait-for-it.sh && \
-    chmod +x wait-for-it.sh && mv wait-for-it.sh /root/.local/bin/
+  chmod +x wait-for-it.sh && mv wait-for-it.sh /root/.local/bin/
 
 FROM base
 COPY --from=python-deps /root/.local/lib/python3.10/site-packages /root/.local/lib/python3.10/site-packages

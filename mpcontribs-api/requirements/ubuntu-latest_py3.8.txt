@@ -41,11 +41,11 @@ bleach==6.1.0
     # via nbconvert
 blinker==1.7.0
     # via mpcontribs-api (setup.py)
-boltons==23.1.1
+boltons==24.0.0
     # via mpcontribs-api (setup.py)
-boto3==1.34.54
+boto3==1.34.79
     # via flask-mongorest-mpcontribs
-botocore==1.34.54
+botocore==1.34.79
     # via
     #   boto3
     #   s3transfer
@@ -67,11 +67,11 @@ click==8.1.7
     # via
     #   flask
     #   rq
-comm==0.2.1
+comm==0.2.2
     # via ipykernel
 contourpy==1.1.1
     # via matplotlib
-cramjam==2.8.1
+cramjam==2.8.3
     # via python-snappy
 crontab==1.0.1
     # via rq-scheduler
@@ -83,9 +83,9 @@ cycler==0.12.1
     # via matplotlib
 dateparser==1.2.0
     # via mpcontribs-api (setup.py)
-ddsketch==2.0.4
+ddsketch==3.0.1
     # via ddtrace
-ddtrace==2.7.0
+ddtrace==2.8.0
     # via mpcontribs-api (setup.py)
 debugpy==1.8.1
     # via ipykernel
@@ -129,7 +129,7 @@ flask==2.2.5
     #   flask-sse
 flask-compress==1.14
     # via mpcontribs-api (setup.py)
-flask-marshmallow==1.2.0
+flask-marshmallow==1.2.1
     # via mpcontribs-api (setup.py)
 flask-mongoengine-tschaume==1.1.0
     # via flask-mongorest-mpcontribs
@@ -141,7 +141,7 @@ flask-sse==1.0.0
     # via flask-mongorest-mpcontribs
 flatten-dict==0.4.2
     # via flask-mongorest-mpcontribs
-fonttools==4.49.0
+fonttools==4.51.0
     # via matplotlib
 fqdn==1.5.1
     # via jsonschema
@@ -160,17 +160,17 @@ idna==3.6
     #   anyio
     #   jsonschema
     #   requests
-importlib-metadata==6.11.0
+importlib-metadata==7.0.0
     # via
     #   flask
     #   nbconvert
     #   opentelemetry-api
-importlib-resources==6.1.2
+importlib-resources==6.4.0
     # via
     #   jsonschema
     #   jsonschema-specifications
     #   matplotlib
-ipykernel==6.29.3
+ipykernel==6.29.4
     # via
     #   nbclassic
     #   notebook
@@ -218,7 +218,7 @@ jupyter-client==7.4.9
     #   nbclassic
     #   nbclient
     #   notebook
-jupyter-core==5.7.1
+jupyter-core==5.7.2
     # via
     #   ipykernel
     #   jupyter-client
@@ -228,26 +228,26 @@ jupyter-core==5.7.1
     #   nbconvert
     #   nbformat
     #   notebook
-jupyter-events==0.9.0
+jupyter-events==0.10.0
     # via jupyter-server
-jupyter-server==2.12.5
+jupyter-server==2.13.0
     # via
     #   nbclassic
     #   notebook-shim
-jupyter-server-terminals==0.5.2
+jupyter-server-terminals==0.5.3
     # via jupyter-server
 jupyterlab-pygments==0.3.0
     # via nbconvert
 kiwisolver==1.4.5
     # via matplotlib
-latexcodec==2.0.1
+latexcodec==3.0.0
     # via pybtex
 markupsafe==2.1.5
     # via
     #   jinja2
     #   nbconvert
     #   werkzeug
-marshmallow==3.21.0
+marshmallow==3.21.1
     # via
     #   flask-marshmallow
     #   marshmallow-mongoengine
@@ -265,7 +265,7 @@ mistune==3.0.2
     # via
     #   flasgger-tschaume
     #   nbconvert
-mongoengine==0.27.0
+mongoengine==0.28.2
     # via
     #   atlasq-tschaume
     #   flask-mongoengine-tschaume
@@ -285,14 +285,14 @@ msgpack==1.0.8
     # via mp-api
 nbclassic==1.0.0
     # via notebook
-nbclient==0.9.0
+nbclient==0.10.0
     # via nbconvert
-nbconvert==7.16.1
+nbconvert==7.16.3
     # via
     #   jupyter-server
     #   nbclassic
     #   notebook
-nbformat==5.9.2
+nbformat==5.10.4
     # via
     #   jupyter-server
     #   mpcontribs-api (setup.py)
@@ -320,13 +320,13 @@ numpy==1.24.4
     #   pymatgen
     #   scipy
     #   spglib
-opentelemetry-api==1.23.0
+opentelemetry-api==1.24.0
     # via ddtrace
-orjson==3.9.15
+orjson==3.10.0
     # via flask-mongorest-mpcontribs
 overrides==7.7.0
     # via jupyter-server
-packaging==23.2
+packaging==24.0
     # via
     #   gunicorn
     #   ipykernel
@@ -341,13 +341,13 @@ pandas==2.0.3
     # via pymatgen
 pandocfilters==1.5.1
     # via nbconvert
-parso==0.8.3
+parso==0.8.4
     # via jedi
 pexpect==4.9.0
     # via ipython
 pickleshare==0.7.5
     # via ipython
-pillow==10.2.0
+pillow==10.3.0
     # via matplotlib
 pint==0.19.2
     # via mpcontribs-api (setup.py)
@@ -355,7 +355,7 @@ pkgutil-resolve-name==1.3.10
     # via jsonschema
 platformdirs==4.2.0
     # via jupyter-core
-plotly==5.19.0
+plotly==5.20.0
     # via pymatgen
 prometheus-client==0.20.0
     # via
@@ -364,10 +364,8 @@ prometheus-client==0.20.0
     #   notebook
 prompt-toolkit==3.0.43
     # via ipython
-protobuf==4.25.3
-    # via
-    #   ddsketch
-    #   ddtrace
+protobuf==5.26.1
+    # via ddtrace
 psutil==5.9.8
     # via ipykernel
 psycopg2-binary==2.9.9
@@ -382,9 +380,9 @@ pybtex==0.24.0
     # via
     #   emmet-core
     #   pymatgen
-pycparser==2.21
+pycparser==2.22
     # via cffi
-pydantic==1.10.14
+pydantic==1.10.15
     # via
     #   emmet-core
     #   pymatgen
@@ -397,13 +395,13 @@ pymatgen==2023.8.10
     #   emmet-core
     #   mp-api
     #   mpcontribs-api (setup.py)
-pymongo==4.6.2
+pymongo==4.6.3
     # via
     #   flask-mongorest-mpcontribs
     #   mongoengine
-pyopenssl==24.0.0
+pyopenssl==24.1.0
     # via mpcontribs-api (setup.py)
-pyparsing==3.1.1
+pyparsing==3.1.2
     # via matplotlib
 python-dateutil==2.9.0.post0
     # via
@@ -438,12 +436,12 @@ pyzmq==24.0.1
     #   jupyter-server
     #   nbclassic
     #   notebook
-redis==5.0.2
+redis==5.0.3
     # via
     #   flask-rq2
     #   flask-sse
     #   rq
-referencing==0.33.0
+referencing==0.34.0
     # via
     #   jsonschema
     #   jsonschema-specifications
@@ -467,7 +465,7 @@ rpds-py==0.18.0
     # via
     #   jsonschema
     #   referencing
-rq==1.16.0
+rq==1.16.1
     # via
     #   flask-rq2
     #   rq-scheduler
@@ -477,7 +475,7 @@ ruamel-yaml==0.18.6
     # via pymatgen
 ruamel-yaml-clib==0.2.8
     # via ruamel-yaml
-s3transfer==0.10.0
+s3transfer==0.10.1
     # via boto3
 scipy==1.10.1
     # via pymatgen
@@ -499,7 +497,6 @@ six==1.16.0
     #   flasgger-tschaume
     #   flask-sse
     #   flatten-dict
-    #   latexcodec
     #   pybtex
     #   python-dateutil
     #   rfc3339-validator
@@ -523,7 +520,7 @@ tabulate==0.9.0
     # via pymatgen
 tenacity==8.2.3
     # via plotly
-terminado==0.18.0
+terminado==0.18.1
     # via
     #   jupyter-server
     #   jupyter-server-terminals
@@ -541,7 +538,7 @@ tornado==6.4
     #   terminado
 tqdm==4.66.2
     # via pymatgen
-traitlets==5.14.1
+traitlets==5.14.2
     # via
     #   comm
     #   ipykernel
@@ -556,9 +553,9 @@ traitlets==5.14.1
     #   nbconvert
     #   nbformat
     #   notebook
-types-python-dateutil==2.8.19.20240106
+types-python-dateutil==2.9.0.20240316
     # via arrow
-typing-extensions==4.10.0
+typing-extensions==4.11.0
     # via
     #   anyio
     #   bytecode
@@ -594,7 +591,7 @@ websocket-client==1.7.0
     # via
     #   jupyter-server
     #   mpcontribs-api (setup.py)
-werkzeug==3.0.1
+werkzeug==3.0.2
     # via
     #   flasgger-tschaume
     #   flask
@@ -602,7 +599,7 @@ wrapt==1.16.0
     # via deprecated
 xmltodict==0.13.0
     # via ddtrace
-zipp==3.17.0
+zipp==3.18.1
     # via
     #   importlib-metadata
     #   importlib-resources
