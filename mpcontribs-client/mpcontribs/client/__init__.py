@@ -288,7 +288,7 @@ def _response_hook(resp, *args, **kwargs):
         resp.count = 0
 
 
-def _chunk_by_size(items, max_size=0.95*MAX_BYTES):
+def _chunk_by_size(items, max_size=0.95 * MAX_BYTES):
     buffer, buffer_size = [], 0
 
     for idx, item in enumerate(items):
@@ -1732,10 +1732,10 @@ class Client(SwaggerClient):
             raise MPContribsClientError(f"`op` has to be one of {ops}")
 
         unique_identifiers = self.get_unique_identifiers_flags()
-        data_id_fields = {
-            k: v for k, v in data_id_fields.items()
-            if k in unique_identifiers and isinstance(v, str)
-        } if data_id_fields else {}
+        data_id_fields = data_id_fields or {}
+        for k, v in data_id_fields.items():
+            if k in unique_identifiers and isinstance(v, str):
+                data_id_fields[k] = v
 
         ret = {}
         query = query or {}
@@ -2163,9 +2163,19 @@ class Client(SwaggerClient):
             ):
                 continue
 
-            contribs[project_name].append(
-                {k: deepcopy(contrib[k]) for k in fields if k in contrib}
-            )
+            contrib_copy = {}
+            for k in fields:
+                if k in contrib:
+                    flat = {}
+                    for kk, vv in flatten(contrib[k], reducer="dot").items():
+                        if isinstance(vv, bool):
+                            flat[kk] = "Yes" if vv else "No"
+                        elif isinstance(vv, str):
+                            flat[kk] = vv
+
+                    contrib_copy[k] = deepcopy(unflatten(flat, splitter="dot"))
+
+            contribs[project_name].append(contrib_copy)
 
             for component in COMPONENTS:
                 elements = contrib.get(component, [])
