@@ -2166,14 +2166,16 @@ class Client(SwaggerClient):
             contrib_copy = {}
             for k in fields:
                 if k in contrib:
-                    flat = {}
-                    for kk, vv in flatten(contrib[k], reducer="dot").items():
-                        if isinstance(vv, bool):
-                            flat[kk] = "Yes" if vv else "No"
-                        elif isinstance(vv, str):
-                            flat[kk] = vv
-
-                    contrib_copy[k] = deepcopy(unflatten(flat, splitter="dot"))
+                    if isinstance(contrib[k], dict):
+                        flat = {}
+                        for kk, vv in flatten(contrib[k], reducer="dot").items():
+                            if isinstance(vv, bool):
+                                flat[kk] = "Yes" if vv else "No"
+                            elif isinstance(vv, str) and vv:
+                                flat[kk] = vv
+                        contrib_copy[k] = deepcopy(unflatten(flat, splitter="dot"))
+                    else:
+                        contrib_copy[k] = deepcopy(contrib[k])
 
             contribs[project_name].append(contrib_copy)
 
