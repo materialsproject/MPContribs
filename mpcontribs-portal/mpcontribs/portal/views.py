@@ -33,9 +33,11 @@ from mpcontribs.client import Client, get_md5
 BUCKET = os.environ.get("S3_DOWNLOADS_BUCKET", "mpcontribs-downloads")
 COMPONENTS = {"structures", "tables", "attachments"}
 j2h = Json2Html()
-s3_client = boto3.client('s3')
-lambda_client = boto3.client('lambda')
-redis_store = Redis.from_url("redis://" + os.environ["REDIS_ADDRESS"], decode_responses=True)
+s3_client = boto3.client("s3")
+lambda_client = boto3.client("lambda")
+redis_store = Redis.from_url(
+    "redis://" + os.environ["REDIS_ADDRESS"], decode_responses=True
+)
 
 
 def visit(path, key, value):
@@ -46,8 +48,10 @@ def visit(path, key, value):
 
 def get_consumer(request):
     names = [
-        "X-Authenticated-Groups", "X-Consumer-Groups",
-        "X-Consumer-Username", "X-Anonymous-Consumer"
+        "X-Authenticated-Groups",
+        "X-Consumer-Groups",
+        "X-Consumer-Username",
+        "X-Anonymous-Consumer",
     ]
     headers = {}
     for name in names:
@@ -80,7 +84,7 @@ def get_context(request):
 
     new_parts = ["localhost"] if is_localhost else []
     new_parts.append(api_subdomain)
-    new_parts += parts[subdomain_index+1:]
+    new_parts += parts[subdomain_index + 1 :]
     ctx["API_CNAME"] = ".".join(new_parts)
 
     scheme = "http" if is_localhost else "https"
@@ -236,7 +240,9 @@ def show_component(request, oid):
             try:
                 resp = client.get_attachment(oid)
             except HTTPNotFound:
-                return HttpResponse(f"Component with ObjectId {oid} not found.", status=404)
+                return HttpResponse(
+                    f"Component with ObjectId {oid} not found.", status=404
+                )
 
     if resp is not None:
         return HttpResponse(resp.info().display())
@@ -250,7 +256,9 @@ def download_component(request, oid):
     client = Client(**ckwargs)
 
     try:
-        resp = client.structures.getStructureById(pk=oid, _fields=["name", "cif"]).result()
+        resp = client.structures.getStructureById(
+            pk=oid, _fields=["name", "cif"]
+        ).result()
         name = resp["name"]
         content = gzip.compress(bytes(resp["cif"], "utf-8"))
         content_type = "application/gzip"
@@ -271,7 +279,9 @@ def download_component(request, oid):
                 content_type = resp["mime"]
                 filename = f"{oid}_{name}"
             except HTTPNotFound:
-                return HttpResponse(f"Component with ObjectId {oid} not found.", status=404)
+                return HttpResponse(
+                    f"Component with ObjectId {oid} not found.", status=404
+                )
 
     if content:
         response = HttpResponse(content, content_type=content_type)
@@ -327,7 +337,7 @@ def _get_filename(query, include):
 def _get_download(key, content_type="application/zip"):
     try:
         retr = s3_client.get_object(Bucket=BUCKET, Key=key)
-        resp = retr['Body'].read()
+        resp = retr["Body"].read()
     except ClientError:
         return HttpResponse(f"Download {key} not available", status=404)
 
@@ -429,7 +439,8 @@ def make_download(headers, query, include=None):
         return JsonResponse({"error": "No results for query."})
 
     kwargs = {
-        k: v for k, v in query.items()
+        k: v
+        for k, v in query.items()
         if k not in {"format", "_sort", "_fields", "_limit", "per_page"}
     }
     last_modified = client.contributions.queryContributions(
@@ -459,13 +470,13 @@ def make_download(headers, query, include=None):
                 "host": os.environ["MPCONTRIBS_CLIENT_HOST"],
                 "headers": headers,
                 "query": query,
-                "include": include
+                "include": include,
             }
             try:
                 response = lambda_client.invoke(
                     FunctionName="mpcontribs-make-download",
-                    InvocationType='Event',
-                    Payload=json.dumps(payload)
+                    InvocationType="Event",
+                    Payload=json.dumps(payload),
                 )
                 if response["StatusCode"] == 202:
                     status = "SUBMITTED"

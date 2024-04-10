@@ -97,9 +97,7 @@ def get_filter_params(name, filters):
 
 
 def get_specs(klass, method, collection):
-    method_name = (
-        method.__name__ if hasattr(method, "__name__") else method
-    )
+    method_name = method.__name__ if hasattr(method, "__name__") else method
     default_response = {
         "description": "Error",
         "schema": {"type": "object", "properties": {"error": {"type": "string"}}},
@@ -155,12 +153,14 @@ def get_specs(klass, method, collection):
             o.pattern if isinstance(o, Pattern) else o
             for o in klass.resource.allowed_ordering
         ]
-        order_params = [{
-            "name": "_sort",
-            "in": "query",
-            "type": "string",
-            "description": f"sort {collection} via {allowed_ordering}. Prepend +/- for asc/desc.",
-        }]
+        order_params = [
+            {
+                "name": "_sort",
+                "in": "query",
+                "type": "string",
+                "description": f"sort {collection} via {allowed_ordering}. Prepend +/- for asc/desc.",
+            }
+        ]
 
     spec = None
     if method_name == "Fetch":
@@ -471,8 +471,9 @@ class SwaggerView(OriginalSwaggerView, ResourceView):
         return is_anonymous
 
     def is_external(self, request):
-        return request.headers.get("X-Forwarded-Host") is not None and \
-            not request.headers.get("Origin")
+        return request.headers.get(
+            "X-Forwarded-Host"
+        ) is not None and not request.headers.get("Origin")
 
     def is_admin(self, groups):
         admin_group = os.environ.get("ADMIN_GROUP", "admin")
@@ -583,12 +584,15 @@ class SwaggerView(OriginalSwaggerView, ResourceView):
                     if q and "project" in q and "$in" in q["project"]:
                         names = q.pop("project").pop("$in")
 
-                    qfilter = self.get_projects_filter(username, groups, filter_names=names)
+                    qfilter = self.get_projects_filter(
+                        username, groups, filter_names=names
+                    )
                     return qs.filter(qfilter)
             else:
                 # get component Object IDs for queryset
                 pk = request.view_args.get("pk")
                 from mpcontribs.api.contributions.document import get_resource
+
                 resource = get_resource(component)
                 qfilter = lambda qs: qs.clone()
 
