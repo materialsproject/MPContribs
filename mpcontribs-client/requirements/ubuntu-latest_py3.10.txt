@@ -58,7 +58,7 @@ isoduration==20.11.0
     # via jsonschema
 jedi==0.19.1
     # via ipython
-joblib==1.3.2
+joblib==1.4.0
     # via pymatgen
 json2html==1.3.0
     # via mpcontribs-client (setup.py)
@@ -90,7 +90,7 @@ msgpack==1.0.8
     # via
     #   bravado
     #   bravado-core
-networkx==3.2.1
+networkx==3.3
     # via pymatgen
 numpy==1.26.4
     # via
