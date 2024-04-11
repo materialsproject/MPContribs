@@ -89,7 +89,7 @@ fqdn==1.5.1
     # via jsonschema
 future==1.0.0
     # via uncertainties
-idna==3.6
+idna==3.7
     # via
     #   anyio
     #   jsonschema
@@ -149,7 +149,7 @@ jupyter-events==0.10.0
     # via jupyter-server
 jupyter-kernel-gateway==3.0.1
     # via -r MPContribs/mpcontribs-kernel-gateway/requirements.in
-jupyter-server==2.13.0
+jupyter-server==2.14.0
     # via jupyter-kernel-gateway
 jupyter-server-terminals==0.5.3
     # via jupyter-server
@@ -361,7 +361,7 @@ sniffio==1.3.1
     # via anyio
 soupsieve==2.5
     # via beautifulsoup4
-spglib==2.3.1
+spglib==2.4.0
     # via pymatgen
 sqlparse==0.4.4
     # via ddtrace

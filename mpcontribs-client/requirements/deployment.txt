@@ -48,7 +48,7 @@ fqdn==1.5.1
     # via jsonschema
 future==1.0.0
     # via uncertainties
-idna==3.6
+idna==3.7
     # via
     #   jsonschema
     #   requests
@@ -204,7 +204,7 @@ six==1.16.0
     #   pybtex
     #   python-dateutil
     #   rfc3339-validator
-spglib==2.3.1
+spglib==2.4.0
     # via pymatgen
 stack-data==0.6.3
     # via ipython
