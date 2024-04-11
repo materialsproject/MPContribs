@@ -115,7 +115,7 @@ packaging==24.0
     #   pytest
 palettable==3.3.3
     # via pymatgen
-pandas==2.2.1
+pandas==2.2.2
     # via
     #   mpcontribs-client (setup.py)
     #   pymatgen
