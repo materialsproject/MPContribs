@@ -1174,7 +1174,7 @@ class Client(SwaggerClient):
             name (str): unique name matching `^[a-zA-Z0-9_]{3,31}$`
             title (str): unique title with 5-30 characters
             authors (str): comma-separated list of authors
-            description (str): brief description (max 1500 characters)
+            description (str): brief description (max 2000 characters)
             url (str): URL for primary reference (paper/website/...)
         """
         queries = [{"name": name}, {"title": title}]

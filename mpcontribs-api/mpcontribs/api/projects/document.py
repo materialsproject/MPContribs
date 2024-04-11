@@ -17,8 +17,16 @@ from marshmallow_mongoengine.conversion.fields import register_field
 from mongoengine import EmbeddedDocument, signals
 from mongoengine.queryset.manager import queryset_manager
 from mongoengine.fields import (
-    StringField, BooleanField, DictField, URLField, EmailField, DecimalField,
-    FloatField, IntField, EmbeddedDocumentListField, EmbeddedDocumentField
+    StringField,
+    BooleanField,
+    DictField,
+    URLField,
+    EmailField,
+    DecimalField,
+    FloatField,
+    IntField,
+    EmbeddedDocumentListField,
+    EmbeddedDocumentField,
 )
 from mpcontribs.api import send_email, valid_key, valid_dict, delimiter, enter
 
@@ -28,6 +36,7 @@ MAX_COLUMNS = 160
 
 def visit(path, key, value):
     from mpcontribs.api.contributions.document import quantity_keys
+
     # pull out units
     if isinstance(value, dict) and "unit" in value:
         return key, value["unit"]
@@ -47,9 +56,7 @@ class ProviderEmailField(EmailField):
         provider, email = value.split(":", 1)
 
         if provider not in PROVIDERS:
-            self.error(
-                "{} {}".format(self.error_msg % value, "(invalid provider)")
-            )
+            self.error("{} {}".format(self.error_msg % value, "(invalid provider)"))
 
         super().validate(email)
 
@@ -139,12 +146,12 @@ class Projects(Document):
     )
     authors = StringField(
         required=True,
-        help_text="comma-separated list of authors"
+        help_text="comma-separated list of authors",
         # TODO change to EmbeddedDocumentListField
     )
     description = StringField(
         min_length=5,
-        max_length=1500,
+        max_length=2000,
         required=True,
         help_text="brief description of the project",
     )
@@ -156,8 +163,10 @@ class Projects(Document):
         help_text="list of references",
     )
     license = StringField(
-        choices=["CCA4", "CCPD"], default="CCA4", required=True,
-        help_text="license (see https://materialsproject.org/about/terms)"
+        choices=["CCA4", "CCPD"],
+        default="CCA4",
+        required=True,
+        help_text="license (see https://materialsproject.org/about/terms)",
     )
     other = DictField(validation=valid_dict, null=True, help_text="other information")
     owner = ProviderEmailField(
@@ -197,8 +206,12 @@ class Projects(Document):
             ts = current_app.config["USTS"]
             email_project = [document.owner, document.name]
             token = ts.dumps(email_project)
-            link = url_for("projects.applications", token=token, _scheme=scheme, _external=True)
-            url = url_for("projectsFetch", pk=document.name, _scheme=scheme, _external=True)
+            link = url_for(
+                "projects.applications", token=token, _scheme=scheme, _external=True
+            )
+            url = url_for(
+                "projectsFetch", pk=document.name, _scheme=scheme, _external=True
+            )
             url += "?_fields=_all"
             html = render_template("admin_email.html", url=url, link=link)
             send_email(admin_email, f'New project "{document.name}"', html)
@@ -214,15 +227,20 @@ class Projects(Document):
                     approved=True,
                     admin_email=admin_email,
                     host=portal,
-                    project=document.name
+                    project=document.name,
                 )
                 owner_email = document.owner.split(":", 1)[1]
                 send_email(owner_email, subject, html)
 
-            if "columns" in delta_set or "columns" in delta_unset or (
-                not delta_set and not delta_unset
+            if (
+                "columns" in delta_set
+                or "columns" in delta_unset
+                or (not delta_set and not delta_unset)
             ):
-                from mpcontribs.api.contributions.document import Contributions, COMPONENTS
+                from mpcontribs.api.contributions.document import (
+                    Contributions,
+                    COMPONENTS,
+                )
 
                 columns = {}
                 ncontribs = Contributions.objects(project=document.id).count()
@@ -237,11 +255,13 @@ class Projects(Document):
                     pipeline = [
                         {"$match": {"project": document.id}},
                         {"$sample": {"size": 1000}},
-                        {"$project": {"data": 1}}
+                        {"$project": {"data": 1}},
                     ]
                     result = Contributions.objects.aggregate(pipeline)
                     merged = ChainMap(*result)
-                    flat = flatten(remap(merged, visit=visit, enter=enter), reducer="dot")
+                    flat = flatten(
+                        remap(merged, visit=visit, enter=enter), reducer="dot"
+                    )
 
                     for k, v in flat.items():
                         if k.startswith("data."):
@@ -256,23 +276,27 @@ class Projects(Document):
                 # NOTE also includes dynamic document fields
                 for component in COMPONENTS.keys():
                     pipeline.append(
-                        {"$lookup": {
-                            "from": component,
-                            "localField": component,
-                            "foreignField": "_id",
-                            "as": component
-                        }}
+                        {
+                            "$lookup": {
+                                "from": component,
+                                "localField": component,
+                                "foreignField": "_id",
+                                "as": component,
+                            }
+                        }
                     )
 
                 # document size and attachment content size
                 project_stage = {
                     "_id": 0,
                     "size": {"$bsonSize": "$$ROOT"},
-                    "contents": {"$map": {  # attachment sizes
-                        "input": "$attachments",
-                        "as": "attm",
-                        "in": {"$toInt": "$$attm.content"}
-                    }}
+                    "contents": {
+                        "$map": {  # attachment sizes
+                            "input": "$attachments",
+                            "as": "attm",
+                            "in": {"$toInt": "$$attm.content"},
+                        }
+                    },
                 }
 
                 # number of components
@@ -280,14 +304,18 @@ class Projects(Document):
                     project_stage[component] = {"$size": f"${component}"}
 
                 # filter/forward number columns
-                min_max_paths = [path for path, col in columns.items() if col["unit"] != "NaN"]
+                min_max_paths = [
+                    path for path, col in columns.items() if col["unit"] != "NaN"
+                ]
                 for path in min_max_paths:
                     field = f"{path}{delimiter}value"
-                    project_stage[field] = {"$cond": {
-                        "if": {"$isNumber": f"${field}"},
-                        "then": f"${field}",
-                        "else": "$$REMOVE"
-                    }}
+                    project_stage[field] = {
+                        "$cond": {
+                            "if": {"$isNumber": f"${field}"},
+                            "then": f"${field}",
+                            "else": "$$REMOVE",
+                        }
+                    }
 
                 # add project stage to pipeline
                 pipeline.append({"$project": project_stage})
@@ -298,7 +326,10 @@ class Projects(Document):
                 pipeline.append({"$project": project_stage_2})
 
                 # total size and total number of components
-                group_stage = {"_id": None, "size": {"$sum": {"$add": ["$size", "$contents"]}}}
+                group_stage = {
+                    "_id": None,
+                    "size": {"$sum": {"$add": ["$size", "$contents"]}},
+                }
                 for component in COMPONENTS.keys():
                     group_stage[component] = {"$sum": f"${component}"}
 
@@ -340,14 +371,18 @@ class Projects(Document):
         admin_email = current_app.config["MAIL_DEFAULT_SENDER"]
         subject = f'Your project "{document.name}" has been deleted'
         html = render_template(
-            "owner_email.html", approved=False,
-            admin_email=admin_email, project=document.name
+            "owner_email.html",
+            approved=False,
+            admin_email=admin_email,
+            project=document.name,
         )
         owner_email = document.owner.split(":", 1)[1]
         send_email(owner_email, subject, html)
 
 
-register_field(ProviderEmailField, ProviderEmail, available_params=(params.LengthParam,))
+register_field(
+    ProviderEmailField, ProviderEmail, available_params=(params.LengthParam,)
+)
 signals.post_save.connect(Projects.post_save, sender=Projects)
 signals.post_delete.connect(Projects.post_delete, sender=Projects)
 Projects.atlas.index._set_indexed_fields({"type": "document", "dynamic": True})
