@@ -39,7 +39,7 @@ ddtrace==1.5.3
     # via -r requirements.in
 decorator==5.1.1
     # via ipython
-dnspython==2.2.1
+dnspython==2.6.1
     # via
     #   pyisemail
     #   pymongo
