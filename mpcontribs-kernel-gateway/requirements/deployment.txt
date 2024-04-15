@@ -171,7 +171,7 @@ matplotlib==3.8.4
     # via
     #   -r python/requirements.txt
     #   pymatgen
-matplotlib-inline==0.1.6
+matplotlib-inline==0.1.7
     # via
     #   ipykernel
     #   ipython
@@ -271,7 +271,7 @@ pygments==2.17.2
     #   nbconvert
 pyisemail==2.0.1
     # via mpcontribs-client
-pymatgen==2024.3.1
+pymatgen==2024.4.13
     # via mpcontribs-client
 pymongo==4.6.3
     # via mpcontribs-client
@@ -298,7 +298,7 @@ pyyaml==6.0.1
     #   jupyter-events
     #   pybtex
     #   swagger-spec-validator
-pyzmq==25.1.2
+pyzmq==26.0.0
     # via
     #   ipykernel
     #   jupyter-client
@@ -363,7 +363,7 @@ soupsieve==2.5
     # via beautifulsoup4
 spglib==2.4.0
     # via pymatgen
-sqlparse==0.4.4
+sqlparse==0.5.0
     # via ddtrace
 stack-data==0.6.3
     # via ipython

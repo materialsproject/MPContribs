@@ -80,7 +80,7 @@ matplotlib==3.8.4
     # via
     #   -r python/requirements.txt
     #   pymatgen
-matplotlib-inline==0.1.6
+matplotlib-inline==0.1.7
     # via ipython
 monotonic==1.6
     # via bravado
@@ -138,7 +138,7 @@ pygments==2.17.2
     # via ipython
 pyisemail==2.0.1
     # via mpcontribs-client (MPContribs/mpcontribs-client/setup.py)
-pymatgen==2024.3.1
+pymatgen==2024.4.13
     # via mpcontribs-client (MPContribs/mpcontribs-client/setup.py)
 pymongo==4.6.3
     # via mpcontribs-client (MPContribs/mpcontribs-client/setup.py)
