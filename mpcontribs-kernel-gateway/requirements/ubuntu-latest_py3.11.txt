@@ -84,7 +84,7 @@ fqdn==1.5.1
     # via jsonschema
 future==1.0.0
     # via uncertainties
-idna==3.6
+idna==3.7
     # via
     #   anyio
     #   jsonschema
@@ -144,7 +144,7 @@ jupyter-events==0.10.0
     # via jupyter-server
 jupyter-kernel-gateway==3.0.1
     # via -r requirements.in
-jupyter-server==2.13.0
+jupyter-server==2.14.0
     # via jupyter-kernel-gateway
 jupyter-server-terminals==0.5.3
     # via jupyter-server
@@ -174,7 +174,7 @@ monotonic==1.6
     # via bravado
 monty==2024.3.31
     # via pymatgen
-mpcontribs-client==5.8.2
+mpcontribs-client==5.8.3
     # via -r requirements.in
 mpmath==1.3.0
     # via sympy
@@ -262,7 +262,7 @@ pygments==2.17.2
     #   nbconvert
 pyisemail==2.0.1
     # via mpcontribs-client
-pymatgen==2024.3.1
+pymatgen==2024.4.13
     # via mpcontribs-client
 pymongo==4.6.3
     # via mpcontribs-client
@@ -350,9 +350,9 @@ sniffio==1.3.1
     # via anyio
 soupsieve==2.5
     # via beautifulsoup4
-spglib==2.3.1
+spglib==2.4.0
     # via pymatgen
-sqlparse==0.4.4
+sqlparse==0.5.0
     # via ddtrace
 stack-data==0.6.3
     # via ipython
