@@ -477,7 +477,7 @@ soupsieve==2.5
     # via beautifulsoup4
 spglib==2.3.1
     # via pymatgen
-sqlparse==0.4.4
+sqlparse==0.5.0
     # via ddtrace
 stack-data==0.6.3
     # via ipython
