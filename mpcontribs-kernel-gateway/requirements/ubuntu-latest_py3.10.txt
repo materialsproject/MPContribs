@@ -54,7 +54,7 @@ cycler==0.12.1
     # via matplotlib
 ddsketch==3.0.1
     # via ddtrace
-ddtrace==2.8.0
+ddtrace==2.8.1
     # via -r requirements.in
 debugpy==1.8.1
     # via ipykernel
@@ -169,7 +169,7 @@ markupsafe==2.1.5
     #   nbconvert
 matplotlib==3.8.4
     # via pymatgen
-matplotlib-inline==0.1.6
+matplotlib-inline==0.1.7
     # via
     #   ipykernel
     #   ipython
@@ -294,7 +294,7 @@ pyyaml==6.0.1
     #   jupyter-events
     #   pybtex
     #   swagger-spec-validator
-pyzmq==25.1.2
+pyzmq==26.0.0
     # via
     #   ipykernel
     #   jupyter-client
