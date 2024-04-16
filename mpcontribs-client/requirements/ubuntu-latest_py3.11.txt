@@ -76,7 +76,7 @@ latexcodec==3.0.0
     # via pybtex
 matplotlib==3.8.4
     # via pymatgen
-matplotlib-inline==0.1.6
+matplotlib-inline==0.1.7
     # via ipython
 monotonic==1.6
     # via bravado
