@@ -54,7 +54,7 @@ cycler==0.12.1
     # via matplotlib
 ddsketch==3.0.1
     # via ddtrace
-ddtrace==2.8.0
+ddtrace==2.8.1
     # via -r MPContribs/mpcontribs-kernel-gateway/requirements.in
 debugpy==1.8.1
     # via ipykernel
