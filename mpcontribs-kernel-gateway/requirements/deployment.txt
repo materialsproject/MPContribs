@@ -70,7 +70,7 @@ dnspython==2.6.1
     #   pymongo
 envier==0.5.1
     # via ddtrace
-exceptiongroup==1.2.0
+exceptiongroup==1.2.1
     # via
     #   anyio
     #   cattrs
@@ -179,7 +179,7 @@ mistune==3.0.2
     # via nbconvert
 monotonic==1.6
     # via bravado
-monty==2024.3.31
+monty==2024.4.17
     # via pymatgen
 mpcontribs-client==5.8.3
     # via -r MPContribs/mpcontribs-kernel-gateway/requirements.in
@@ -241,7 +241,7 @@ pint==0.19.2
     # via mpcontribs-client
 platformdirs==4.2.0
     # via jupyter-core
-plotly==5.20.0
+plotly==5.21.0
     # via
     #   mpcontribs-client
     #   pymatgen
@@ -298,7 +298,7 @@ pyyaml==6.0.1
     #   jupyter-events
     #   pybtex
     #   swagger-spec-validator
-pyzmq==26.0.0
+pyzmq==26.0.2
     # via
     #   ipykernel
     #   jupyter-client
@@ -394,7 +394,7 @@ tqdm==4.66.2
     # via
     #   mpcontribs-client
     #   pymatgen
-traitlets==5.14.2
+traitlets==5.14.3
     # via
     #   comm
     #   ipykernel

@@ -39,9 +39,9 @@ blinker==1.7.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 boltons==24.0.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
-boto3==1.34.85
+boto3==1.34.88
     # via flask-mongorest-mpcontribs
-botocore==1.34.85
+botocore==1.34.88
     # via
     #   boto3
     #   s3transfer
@@ -99,7 +99,7 @@ entrypoints==0.4
     # via jupyter-client
 envier==0.5.1
     # via ddtrace
-exceptiongroup==1.2.0
+exceptiongroup==1.2.1
     # via
     #   anyio
     #   cattrs
@@ -148,7 +148,7 @@ gevent==24.2.1
     # via gunicorn
 greenlet==3.0.3
     # via gevent
-gunicorn[gevent]==21.2.0
+gunicorn[gevent]==22.0.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 idna==3.7
     # via
@@ -259,7 +259,7 @@ mongoengine==0.28.2
     #   atlasq-tschaume
     #   flask-mongoengine-tschaume
     #   marshmallow-mongoengine
-monty==2024.3.31
+monty==2024.4.17
     # via pymatgen
 more-itertools==10.2.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
@@ -336,7 +336,7 @@ pint==0.19.2
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 platformdirs==4.2.0
     # via jupyter-core
-plotly==5.20.0
+plotly==5.21.0
     # via pymatgen
 prometheus-client==0.20.0
     # via
@@ -509,7 +509,7 @@ tornado==6.4
     #   terminado
 tqdm==4.66.2
     # via pymatgen
-traitlets==5.14.2
+traitlets==5.14.3
     # via
     #   comm
     #   ipykernel
