@@ -52,7 +52,7 @@ idna==3.7
     # via
     #   jsonschema
     #   requests
-ipython==8.23.0
+ipython==8.24.0
     # via mpcontribs-client (MPContribs/mpcontribs-client/setup.py)
 isoduration==20.11.0
     # via jsonschema
@@ -140,7 +140,7 @@ pyisemail==2.0.1
     # via mpcontribs-client (MPContribs/mpcontribs-client/setup.py)
 pymatgen==2024.4.13
     # via mpcontribs-client (MPContribs/mpcontribs-client/setup.py)
-pymongo==4.6.3
+pymongo==4.7.0
     # via mpcontribs-client (MPContribs/mpcontribs-client/setup.py)
 pyparsing==3.1.2
     # via matplotlib
@@ -161,7 +161,7 @@ pyyaml==6.0.1
     #   bravado-core
     #   pybtex
     #   swagger-spec-validator
-referencing==0.34.0
+referencing==0.35.0
     # via
     #   jsonschema
     #   jsonschema-specifications

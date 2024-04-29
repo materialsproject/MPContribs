@@ -35,13 +35,13 @@ beautifulsoup4==4.12.3
     # via nbconvert
 bleach==6.1.0
     # via nbconvert
-blinker==1.7.0
+blinker==1.8.1
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 boltons==24.0.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
-boto3==1.34.88
+boto3==1.34.93
     # via flask-mongorest-mpcontribs
-botocore==1.34.88
+botocore==1.34.93
     # via
     #   boto3
     #   s3transfer
@@ -81,7 +81,7 @@ dateparser==1.2.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 ddsketch==3.0.1
     # via ddtrace
-ddtrace==2.8.1
+ddtrace==2.8.3
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 debugpy==1.8.1
     # via ipykernel
@@ -122,7 +122,7 @@ flask==2.2.5
     #   flask-mongoengine-tschaume
     #   flask-rq2
     #   flask-sse
-flask-compress==1.14
+flask-compress==1.15
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 flask-marshmallow==1.2.1
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
@@ -140,7 +140,7 @@ fonttools==4.51.0
     # via matplotlib
 fqdn==1.5.1
     # via jsonschema
-freezegun==1.4.0
+freezegun==1.5.0
     # via rq-scheduler
 future==1.0.0
     # via uncertainties
@@ -161,7 +161,7 @@ ipykernel==6.29.4
     # via
     #   nbclassic
     #   notebook
-ipython==8.23.0
+ipython==8.24.0
     # via ipykernel
 ipython-genutils==0.2.0
     # via
@@ -269,7 +269,7 @@ nbclassic==1.0.0
     # via notebook
 nbclient==0.10.0
     # via nbconvert
-nbconvert==7.16.3
+nbconvert==7.16.4
     # via
     #   jupyter-server
     #   nbclassic
@@ -334,7 +334,7 @@ pillow==10.3.0
     # via matplotlib
 pint==0.19.2
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
-platformdirs==4.2.0
+platformdirs==4.2.1
     # via jupyter-core
 plotly==5.21.0
     # via pymatgen
@@ -367,7 +367,7 @@ pygments==2.17.2
     #   nbconvert
 pymatgen==2024.4.13
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
-pymongo==4.6.3
+pymongo==4.7.0
     # via
     #   flask-mongorest-mpcontribs
     #   mongoengine
@@ -408,17 +408,17 @@ pyzmq==24.0.1
     #   jupyter-server
     #   nbclassic
     #   notebook
-redis==5.0.3
+redis==5.0.4
     # via
     #   flask-rq2
     #   flask-sse
     #   rq
-referencing==0.34.0
+referencing==0.35.0
     # via
     #   jsonschema
     #   jsonschema-specifications
     #   jupyter-events
-regex==2024.4.16
+regex==2024.4.28
     # via dateparser
 requests==2.31.0
     # via
@@ -497,7 +497,7 @@ terminado==0.18.1
     #   jupyter-server-terminals
     #   nbclassic
     #   notebook
-tinycss2==1.2.1
+tinycss2==1.3.0
     # via nbconvert
 tornado==6.4
     # via
@@ -554,7 +554,7 @@ webencodings==0.5.1
     # via
     #   bleach
     #   tinycss2
-websocket-client==1.7.0
+websocket-client==1.8.0
     # via
     #   jupyter-server
     #   mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
@@ -573,7 +573,9 @@ zope-event==5.0
 zope-interface==6.3
     # via gevent
 zstandard==0.22.0
-    # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
+    # via
+    #   flask-compress
+    #   mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 
 # The following packages are considered to be unsafe in a requirements file:
 # setuptools
