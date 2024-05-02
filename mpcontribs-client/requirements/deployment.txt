@@ -58,7 +58,7 @@ isoduration==20.11.0
     # via jsonschema
 jedi==0.19.1
     # via ipython
-joblib==1.4.0
+joblib==1.4.2
     # via pymatgen
 json2html==1.3.0
     # via mpcontribs-client (MPContribs/mpcontribs-client/setup.py)
@@ -66,7 +66,7 @@ jsonpointer==2.4
     # via jsonschema
 jsonref==1.1.0
     # via bravado-core
-jsonschema[format-nongpl]==4.21.1
+jsonschema[format-nongpl]==4.22.0
     # via
     #   bravado-core
     #   swagger-spec-validator
@@ -122,7 +122,7 @@ pillow==10.3.0
     # via matplotlib
 pint==0.19.2
     # via mpcontribs-client (MPContribs/mpcontribs-client/setup.py)
-plotly==5.21.0
+plotly==5.22.0
     # via
     #   mpcontribs-client (MPContribs/mpcontribs-client/setup.py)
     #   pymatgen
@@ -138,9 +138,9 @@ pygments==2.17.2
     # via ipython
 pyisemail==2.0.1
     # via mpcontribs-client (MPContribs/mpcontribs-client/setup.py)
-pymatgen==2024.4.13
+pymatgen==2024.5.1
     # via mpcontribs-client (MPContribs/mpcontribs-client/setup.py)
-pymongo==4.7.0
+pymongo==4.7.1
     # via mpcontribs-client (MPContribs/mpcontribs-client/setup.py)
 pyparsing==3.1.2
     # via matplotlib
@@ -161,7 +161,7 @@ pyyaml==6.0.1
     #   bravado-core
     #   pybtex
     #   swagger-spec-validator
-referencing==0.35.0
+referencing==0.35.1
     # via
     #   jsonschema
     #   jsonschema-specifications
@@ -218,7 +218,7 @@ tabulate==0.9.0
     # via pymatgen
 tenacity==8.2.3
     # via plotly
-tqdm==4.66.2
+tqdm==4.66.3
     # via
     #   mpcontribs-client (MPContribs/mpcontribs-client/setup.py)
     #   pymatgen

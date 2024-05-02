@@ -113,7 +113,7 @@ jinja2==3.1.3
     # via
     #   jupyter-server
     #   nbconvert
-joblib==1.4.0
+joblib==1.4.2
     # via pymatgen
 json2html==1.3.0
     # via mpcontribs-client
@@ -121,7 +121,7 @@ jsonpointer==2.4
     # via jsonschema
 jsonref==1.1.0
     # via bravado-core
-jsonschema[format-nongpl]==4.21.1
+jsonschema[format-nongpl]==4.22.0
     # via
     #   bravado-core
     #   jupyter-events
@@ -241,7 +241,7 @@ pint==0.19.2
     # via mpcontribs-client
 platformdirs==4.2.1
     # via jupyter-core
-plotly==5.21.0
+plotly==5.22.0
     # via
     #   mpcontribs-client
     #   pymatgen
@@ -271,9 +271,9 @@ pygments==2.17.2
     #   nbconvert
 pyisemail==2.0.1
     # via mpcontribs-client
-pymatgen==2024.4.13
+pymatgen==2024.5.1
     # via mpcontribs-client
-pymongo==4.7.0
+pymongo==4.7.1
     # via mpcontribs-client
 pyparsing==3.1.2
     # via matplotlib
@@ -298,12 +298,12 @@ pyyaml==6.0.1
     #   jupyter-events
     #   pybtex
     #   swagger-spec-validator
-pyzmq==26.0.2
+pyzmq==26.0.3
     # via
     #   ipykernel
     #   jupyter-client
     #   jupyter-server
-referencing==0.35.0
+referencing==0.35.1
     # via
     #   jsonschema
     #   jsonschema-specifications
@@ -390,7 +390,7 @@ tornado==6.4
     #   jupyter-kernel-gateway
     #   jupyter-server
     #   terminado
-tqdm==4.66.2
+tqdm==4.66.3
     # via
     #   mpcontribs-client
     #   pymatgen
