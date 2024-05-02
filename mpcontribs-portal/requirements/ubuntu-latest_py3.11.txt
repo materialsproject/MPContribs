@@ -24,9 +24,9 @@ boltons==24.0.0
     # via
     #   mpcontribs-client
     #   mpcontribs-portal (setup.py)
-boto3==1.34.85
+boto3==1.34.97
     # via mpcontribs-portal (setup.py)
-botocore==1.34.85
+botocore==1.34.97
     # via
     #   boto3
     #   s3transfer
@@ -52,7 +52,7 @@ cycler==0.12.1
     # via matplotlib
 ddsketch==3.0.1
     # via ddtrace
-ddtrace==2.8.1
+ddtrace==2.8.3
     # via mpcontribs-portal (setup.py)
 debugpy==1.8.1
     # via ipykernel
@@ -99,7 +99,7 @@ gevent==24.2.1
     # via gunicorn
 greenlet==3.0.3
     # via gevent
-gunicorn[gevent]==21.2.0
+gunicorn[gevent]==22.0.0
     # via mpcontribs-portal (setup.py)
 idna==3.7
     # via
@@ -109,7 +109,7 @@ importlib-metadata==7.0.0
     # via opentelemetry-api
 ipykernel==6.29.4
     # via mpcontribs-portal (setup.py)
-ipython==8.23.0
+ipython==8.24.0
     # via
     #   ipykernel
     #   mpcontribs-client
@@ -127,7 +127,7 @@ jmespath==1.0.1
     # via
     #   boto3
     #   botocore
-joblib==1.4.0
+joblib==1.4.2
     # via pymatgen
 json2html==1.3.0
     # via
@@ -137,7 +137,7 @@ jsonpointer==2.4
     # via jsonschema
 jsonref==1.1.0
     # via bravado-core
-jsonschema[format-nongpl]==4.21.1
+jsonschema[format-nongpl]==4.22.0
     # via
     #   bravado-core
     #   nbformat
@@ -175,7 +175,7 @@ mistune==3.0.2
     # via nbconvert
 monotonic==1.6
     # via bravado
-monty==2024.3.31
+monty==2024.4.17
     # via
     #   mpcontribs-portal (setup.py)
     #   pymatgen
@@ -189,7 +189,7 @@ msgpack==1.0.8
     #   bravado-core
 nbclient==0.10.0
     # via nbconvert
-nbconvert==7.16.3
+nbconvert==7.16.4
     # via mpcontribs-portal (setup.py)
 nbformat==5.10.4
     # via
@@ -233,9 +233,9 @@ pillow==10.3.0
     # via matplotlib
 pint==0.19.2
     # via mpcontribs-client
-platformdirs==4.2.0
+platformdirs==4.2.1
     # via jupyter-core
-plotly==5.20.0
+plotly==5.22.0
     # via
     #   mpcontribs-client
     #   pymatgen
@@ -257,9 +257,9 @@ pygments==2.17.2
     #   nbconvert
 pyisemail==2.0.1
     # via mpcontribs-client
-pymatgen==2024.4.13
+pymatgen==2024.5.1
     # via mpcontribs-client
-pymongo==4.6.3
+pymongo==4.7.1
     # via mpcontribs-client
 pyparsing==3.1.2
     # via matplotlib
@@ -283,13 +283,13 @@ pyyaml==6.0.1
     #   bravado-core
     #   pybtex
     #   swagger-spec-validator
-pyzmq==26.0.0
+pyzmq==26.0.3
     # via
     #   ipykernel
     #   jupyter-client
-redis==5.0.3
+redis==5.0.4
     # via mpcontribs-portal (setup.py)
-referencing==0.34.0
+referencing==0.35.1
     # via
     #   jsonschema
     #   jsonschema-specifications
@@ -359,17 +359,17 @@ tabulate==0.9.0
     # via pymatgen
 tenacity==8.2.3
     # via plotly
-tinycss2==1.2.1
+tinycss2==1.3.0
     # via nbconvert
 tornado==6.4
     # via
     #   ipykernel
     #   jupyter-client
-tqdm==4.66.2
+tqdm==4.66.3
     # via
     #   mpcontribs-client
     #   pymatgen
-traitlets==5.14.2
+traitlets==5.14.3
     # via
     #   comm
     #   ipykernel
