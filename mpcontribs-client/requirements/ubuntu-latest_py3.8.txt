@@ -50,7 +50,7 @@ fqdn==1.5.1
     # via jsonschema
 future==1.0.0
     # via uncertainties
-idna==3.6
+idna==3.7
     # via
     #   jsonschema
     #   requests
