@@ -150,7 +150,7 @@ greenlet==3.0.3
     # via gevent
 gunicorn[gevent]==21.2.0
     # via mpcontribs-api (setup.py)
-idna==3.6
+idna==3.7
     # via
     #   anyio
     #   jsonschema
