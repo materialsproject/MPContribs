@@ -26,7 +26,7 @@ charset-normalizer==3.3.2
     # via requests
 contourpy==1.2.1
     # via matplotlib
-coverage[toml]==7.4.4
+coverage[toml]==7.5.0
     # via pytest-cov
 cycler==0.12.1
     # via matplotlib
@@ -58,13 +58,13 @@ idna==3.7
     #   requests
 iniconfig==2.0.0
     # via pytest
-ipython==8.23.0
+ipython==8.24.0
     # via mpcontribs-client (setup.py)
 isoduration==20.11.0
     # via jsonschema
 jedi==0.19.1
     # via ipython
-joblib==1.4.0
+joblib==1.4.2
     # via pymatgen
 json2html==1.3.0
     # via mpcontribs-client (setup.py)
@@ -72,7 +72,7 @@ jsonpointer==2.4
     # via jsonschema
 jsonref==1.1.0
     # via bravado-core
-jsonschema[format-nongpl]==4.21.1
+jsonschema[format-nongpl]==4.22.0
     # via
     #   bravado-core
     #   swagger-spec-validator
@@ -90,7 +90,7 @@ mccabe==0.7.0
     # via flake8
 monotonic==1.6
     # via bravado
-monty==2024.3.31
+monty==2024.4.17
     # via pymatgen
 mpmath==1.3.0
     # via sympy
@@ -127,11 +127,11 @@ pillow==10.3.0
     # via matplotlib
 pint==0.19.2
     # via mpcontribs-client (setup.py)
-plotly==5.20.0
+plotly==5.22.0
     # via
     #   mpcontribs-client (setup.py)
     #   pymatgen
-pluggy==1.4.0
+pluggy==1.5.0
     # via pytest
 prompt-toolkit==3.0.43
     # via ipython
@@ -155,13 +155,13 @@ pygments==2.17.2
     # via ipython
 pyisemail==2.0.1
     # via mpcontribs-client (setup.py)
-pymatgen==2024.4.13
+pymatgen==2024.5.1
     # via mpcontribs-client (setup.py)
-pymongo==4.6.3
+pymongo==4.7.1
     # via mpcontribs-client (setup.py)
 pyparsing==3.1.2
     # via matplotlib
-pytest==8.1.1
+pytest==8.2.0
     # via
     #   mpcontribs-client (setup.py)
     #   pytest-cov
@@ -190,7 +190,7 @@ pyyaml==6.0.1
     #   bravado-core
     #   pybtex
     #   swagger-spec-validator
-referencing==0.34.0
+referencing==0.35.1
     # via
     #   jsonschema
     #   jsonschema-specifications
@@ -245,11 +245,11 @@ tabulate==0.9.0
     # via pymatgen
 tenacity==8.2.3
     # via plotly
-tqdm==4.66.2
+tqdm==4.66.3
     # via
     #   mpcontribs-client (setup.py)
     #   pymatgen
-traitlets==5.14.2
+traitlets==5.14.3
     # via
     #   ipython
     #   matplotlib-inline
