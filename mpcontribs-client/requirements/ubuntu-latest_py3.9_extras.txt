@@ -56,7 +56,7 @@ fqdn==1.5.1
     # via jsonschema
 future==1.0.0
     # via uncertainties
-idna==3.6
+idna==3.7
     # via
     #   jsonschema
     #   requests
@@ -255,7 +255,7 @@ tomli==2.0.1
     # via
     #   coverage
     #   pytest
-tqdm==4.66.2
+tqdm==4.66.3
     # via
     #   mpcontribs-client (setup.py)
     #   pymatgen

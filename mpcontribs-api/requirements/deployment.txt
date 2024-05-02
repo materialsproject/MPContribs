@@ -492,7 +492,7 @@ tornado==6.4
     #   jupyter-server
     #   notebook
     #   terminado
-tqdm==4.66.4
+tqdm==4.66.3
     # via pymatgen
 traitlets==5.14.3
     # via

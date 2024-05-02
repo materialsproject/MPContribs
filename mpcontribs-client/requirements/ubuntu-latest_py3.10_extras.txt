@@ -251,7 +251,7 @@ tomli==2.0.1
     # via
     #   coverage
     #   pytest
-tqdm==4.66.4
+tqdm==4.66.3
     # via
     #   mpcontribs-client (setup.py)
     #   pymatgen
