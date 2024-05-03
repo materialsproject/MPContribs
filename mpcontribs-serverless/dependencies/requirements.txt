@@ -230,7 +230,7 @@ tenacity==8.1.0
     # via
     #   ddtrace
     #   plotly
-tqdm==4.64.1
+tqdm==4.66.3
     # via
     #   mpcontribs-client
     #   pymatgen
