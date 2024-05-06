@@ -24,9 +24,9 @@ boltons==24.0.0
     # via
     #   mpcontribs-client
     #   mpcontribs-portal (setup.py)
-boto3==1.34.97
+boto3==1.34.98
     # via mpcontribs-portal (setup.py)
-botocore==1.34.97
+botocore==1.34.98
     # via
     #   boto3
     #   s3transfer
@@ -119,7 +119,7 @@ isoduration==20.11.0
     # via jsonschema
 jedi==0.19.1
     # via ipython
-jinja2==3.1.3
+jinja2==3.1.4
     # via
     #   mpcontribs-portal (setup.py)
     #   nbconvert
@@ -251,7 +251,7 @@ pure-eval==0.2.2
     # via stack-data
 pybtex==0.24.0
     # via pymatgen
-pygments==2.17.2
+pygments==2.18.0
     # via
     #   ipython
     #   nbconvert
@@ -365,7 +365,7 @@ tornado==6.4
     # via
     #   ipykernel
     #   jupyter-client
-tqdm==4.66.3
+tqdm==4.66.4
     # via
     #   mpcontribs-client
     #   pymatgen
