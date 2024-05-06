@@ -26,7 +26,7 @@ charset-normalizer==3.3.2
     # via requests
 contourpy==1.2.1
     # via matplotlib
-coverage[toml]==7.5.0
+coverage[toml]==7.5.1
     # via pytest-cov
 cycler==0.12.1
     # via matplotlib
@@ -155,7 +155,7 @@ pycodestyle==2.11.1
     #   pytest-pycodestyle
 pyflakes==3.2.0
     # via flake8
-pygments==2.17.2
+pygments==2.18.0
     # via ipython
 pyisemail==2.0.1
     # via mpcontribs-client (setup.py)
@@ -253,7 +253,7 @@ tomli==2.0.1
     # via
     #   coverage
     #   pytest
-tqdm==4.66.3
+tqdm==4.66.4
     # via
     #   mpcontribs-client (setup.py)
     #   pymatgen
