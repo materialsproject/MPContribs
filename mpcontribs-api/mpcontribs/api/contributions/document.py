@@ -262,7 +262,7 @@ class Contributions(DynamicDocument):
 
             # parse as quantity
             q = get_quantity(str_value)
-            if not q:
+            if not q._magnitude:
                 return key, value
 
             # silently ignore "nan"
