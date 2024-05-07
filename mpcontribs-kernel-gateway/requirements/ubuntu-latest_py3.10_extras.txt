@@ -24,7 +24,7 @@ beautifulsoup4==4.12.3
     # via nbconvert
 bleach==6.1.0
     # via nbconvert
-blinker==1.8.1
+blinker==1.8.2
     # via -r requirements.in
 boltons==24.0.0
     # via mpcontribs-client
@@ -54,7 +54,7 @@ cycler==0.12.1
     # via matplotlib
 ddsketch==3.0.1
     # via ddtrace
-ddtrace==2.8.3
+ddtrace==2.8.4
     # via -r requirements.in
 debugpy==1.8.1
     # via ipykernel
@@ -321,7 +321,7 @@ rfc3986-validator==0.1.1
     # via
     #   jsonschema
     #   jupyter-events
-rpds-py==0.18.0
+rpds-py==0.18.1
     # via
     #   jsonschema
     #   referencing
@@ -369,7 +369,7 @@ sympy==1.12
     # via pymatgen
 tabulate==0.9.0
     # via pymatgen
-tenacity==8.2.3
+tenacity==8.3.0
     # via plotly
 terminado==0.18.1
     # via
