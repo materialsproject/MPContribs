@@ -408,7 +408,7 @@ referencing==0.35.1
     #   jupyter-events
 regex==2024.4.28
     # via dateparser
-requests==2.31.0
+requests==2.32.0
     # via
     #   atlasq-tschaume
     #   pymatgen
