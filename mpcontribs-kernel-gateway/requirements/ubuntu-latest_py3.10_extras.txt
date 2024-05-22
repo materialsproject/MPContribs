@@ -54,7 +54,7 @@ cycler==0.12.1
     # via matplotlib
 ddsketch==3.0.1
     # via ddtrace
-ddtrace==2.8.4
+ddtrace==2.8.5
     # via -r requirements.in
 debugpy==1.8.1
     # via ipykernel
@@ -167,7 +167,7 @@ markupsafe==2.1.5
     # via
     #   jinja2
     #   nbconvert
-matplotlib==3.8.4
+matplotlib==3.9.0
     # via pymatgen
 matplotlib-inline==0.1.7
     # via
@@ -177,7 +177,7 @@ mistune==3.0.2
     # via nbconvert
 monotonic==1.6
     # via bravado
-monty==2024.4.17
+monty==2024.5.15
     # via pymatgen
 mpcontribs-client==5.8.3
     # via -r requirements.in
@@ -235,7 +235,7 @@ pillow==10.3.0
     # via matplotlib
 pint==0.19.2
     # via mpcontribs-client
-platformdirs==4.2.1
+platformdirs==4.2.2
     # via jupyter-core
 plotly==5.22.0
     # via
@@ -269,7 +269,7 @@ pyisemail==2.0.1
     # via mpcontribs-client
 pymatgen==2024.5.1
     # via mpcontribs-client
-pymongo==4.7.1
+pymongo==4.7.2
     # via mpcontribs-client
 pyparsing==3.1.2
     # via matplotlib
@@ -415,7 +415,7 @@ typing-extensions==4.11.0
     #   swagger-spec-validator
 tzdata==2024.1
     # via pandas
-ujson==5.9.0
+ujson==5.10.0
     # via mpcontribs-client
 uncertainties==3.1.7
     # via pymatgen
@@ -439,5 +439,5 @@ wrapt==1.16.0
     # via deprecated
 xmltodict==0.13.0
     # via ddtrace
-zipp==3.18.1
+zipp==3.18.2
     # via importlib-metadata
