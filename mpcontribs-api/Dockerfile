@@ -1,4 +1,4 @@
-FROM materialsproject/devops:python-3.1013.8 as base
+FROM materialsproject/devops:python-3.1013.9 as base
 RUN apt-get update && apt-get install -y --no-install-recommends supervisor libopenblas-dev libpq-dev vim && apt-get clean
 WORKDIR /app
 
