@@ -30,7 +30,8 @@ environment=
     JUPYTER_GATEWAY_HOST="{{ jupyter_gateway_host }}",
     DD_AGENT_HOST="{{ dd_agent_host }}",
     DD_GEVENT_PATCH_ALL="true",
-    DD_TRACE_SAMPLE_RATE="1"
+    DD_TRACE_SAMPLE_RATE="1",
+    TINI_SUBREAPER="true"
 
 [program:main]
 command=./main.py
