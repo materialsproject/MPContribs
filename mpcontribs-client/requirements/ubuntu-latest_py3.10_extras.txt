@@ -198,7 +198,7 @@ referencing==0.35.1
     # via
     #   jsonschema
     #   jsonschema-specifications
-requests==2.31.0
+requests==2.32.2
     # via
     #   bravado
     #   bravado-core
@@ -218,7 +218,7 @@ ruamel-yaml==0.18.6
     # via pymatgen
 ruamel-yaml-clib==0.2.8
     # via ruamel-yaml
-scipy==1.13.0
+scipy==1.13.1
     # via pymatgen
 semantic-version==2.10.0
     # via mpcontribs-client (setup.py)
