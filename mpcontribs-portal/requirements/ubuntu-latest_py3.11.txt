@@ -24,9 +24,9 @@ boltons==24.0.0
     # via
     #   mpcontribs-client
     #   mpcontribs-portal (setup.py)
-boto3==1.34.108
+boto3==1.34.112
     # via mpcontribs-portal (setup.py)
-botocore==1.34.108
+botocore==1.34.112
     # via
     #   boto3
     #   s3transfer
@@ -144,7 +144,7 @@ jsonschema[format-nongpl]==4.22.0
     #   swagger-spec-validator
 jsonschema-specifications==2023.12.1
     # via jsonschema
-jupyter-client==8.6.1
+jupyter-client==8.6.2
     # via
     #   ipykernel
     #   nbclient
@@ -241,7 +241,7 @@ plotly==5.22.0
     #   pymatgen
 prompt-toolkit==3.0.43
     # via ipython
-protobuf==5.26.1
+protobuf==5.27.0
     # via ddtrace
 psutil==5.9.8
     # via ipykernel
@@ -293,7 +293,7 @@ referencing==0.35.1
     # via
     #   jsonschema
     #   jsonschema-specifications
-requests==2.31.0
+requests==2.32.2
     # via
     #   bravado
     #   bravado-core
@@ -315,7 +315,7 @@ ruamel-yaml-clib==0.2.8
     # via ruamel-yaml
 s3transfer==0.10.1
     # via boto3
-scipy==1.13.0
+scipy==1.13.1
     # via
     #   mpcontribs-portal (setup.py)
     #   pymatgen
@@ -418,7 +418,7 @@ zipp==3.18.2
     # via importlib-metadata
 zope-event==5.0
     # via gevent
-zope-interface==6.4
+zope-interface==6.4.post1
     # via gevent
 
 # The following packages are considered to be unsafe in a requirements file:
