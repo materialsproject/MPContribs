@@ -390,7 +390,7 @@ tornado==6.4
     #   jupyter-kernel-gateway
     #   jupyter-server
     #   terminado
-tqdm==4.66.4
+tqdm==4.66.3
     # via
     #   mpcontribs-client
     #   pymatgen
