@@ -306,7 +306,7 @@ referencing==0.35.1
     #   jsonschema
     #   jsonschema-specifications
     #   jupyter-events
-requests==2.32.2
+requests==2.32.3
     # via
     #   bravado
     #   bravado-core
@@ -388,7 +388,7 @@ tornado==6.4
     #   jupyter-kernel-gateway
     #   jupyter-server
     #   terminado
-tqdm==4.66.3
+tqdm==4.66.4
     # via
     #   mpcontribs-client
     #   pymatgen
