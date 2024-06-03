@@ -20,7 +20,7 @@ bravado-core==6.1.1
     # via bravado
 cachetools==5.3.3
     # via mpcontribs-client (setup.py)
-certifi==2024.2.2
+certifi==2024.6.2
     # via requests
 charset-normalizer==3.3.2
     # via requests
@@ -42,17 +42,15 @@ filetype==1.2.0
     # via mpcontribs-client (setup.py)
 flatten-dict==0.4.2
     # via mpcontribs-client (setup.py)
-fonttools==4.51.0
+fonttools==4.53.0
     # via matplotlib
 fqdn==1.5.1
     # via jsonschema
-future==1.0.0
-    # via uncertainties
 idna==3.7
     # via
     #   jsonschema
     #   requests
-ipython==8.24.0
+ipython==8.25.0
     # via mpcontribs-client (setup.py)
 isoduration==20.11.0
     # via jsonschema
@@ -82,7 +80,7 @@ matplotlib-inline==0.1.7
     # via ipython
 monotonic==1.6
     # via bravado
-monty==2024.5.15
+monty==2024.5.24
     # via pymatgen
 mpmath==1.3.0
     # via sympy
@@ -122,7 +120,7 @@ plotly==5.22.0
     # via
     #   mpcontribs-client (setup.py)
     #   pymatgen
-prompt-toolkit==3.0.43
+prompt-toolkit==3.0.45
     # via ipython
 ptyprocess==0.7.0
     # via pexpect
@@ -134,7 +132,7 @@ pygments==2.18.0
     # via ipython
 pyisemail==2.0.1
     # via mpcontribs-client (setup.py)
-pymatgen==2024.5.1
+pymatgen==2024.5.31
     # via mpcontribs-client (setup.py)
 pymongo==4.7.2
     # via mpcontribs-client (setup.py)
@@ -161,7 +159,7 @@ referencing==0.35.1
     # via
     #   jsonschema
     #   jsonschema-specifications
-requests==2.32.2
+requests==2.32.3
     # via
     #   bravado
     #   bravado-core
@@ -206,7 +204,7 @@ swagger-spec-validator==3.0.3
     # via
     #   bravado-core
     #   mpcontribs-client (setup.py)
-sympy==1.12
+sympy==1.12.1
     # via pymatgen
 tabulate==0.9.0
     # via pymatgen
@@ -222,7 +220,7 @@ traitlets==5.14.3
     #   matplotlib-inline
 types-python-dateutil==2.9.0.20240316
     # via arrow
-typing-extensions==4.11.0
+typing-extensions==4.12.1
     # via
     #   bravado
     #   ipython
@@ -231,7 +229,7 @@ tzdata==2024.1
     # via pandas
 ujson==5.10.0
     # via mpcontribs-client (setup.py)
-uncertainties==3.1.7
+uncertainties==3.2.0
     # via pymatgen
 uri-template==1.3.0
     # via jsonschema
