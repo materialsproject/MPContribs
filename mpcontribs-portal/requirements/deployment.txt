@@ -26,9 +26,9 @@ boltons==24.0.0
     # via
     #   mpcontribs-client
     #   mpcontribs-portal (MPContribs/mpcontribs-portal/setup.py)
-boto3==1.34.118
+boto3==1.34.121
     # via mpcontribs-portal (MPContribs/mpcontribs-portal/setup.py)
-botocore==1.34.118
+botocore==1.34.121
     # via
     #   boto3
     #   s3transfer
@@ -247,9 +247,9 @@ plotly==5.22.0
     # via
     #   mpcontribs-client
     #   pymatgen
-prompt-toolkit==3.0.45
+prompt-toolkit==3.0.46
     # via ipython
-protobuf==5.27.0
+protobuf==5.27.1
     # via ddtrace
 psutil==5.9.8
     # via ipykernel
@@ -265,9 +265,9 @@ pygments==2.18.0
     #   nbconvert
 pyisemail==2.0.1
     # via mpcontribs-client
-pymatgen==2024.5.31
+pymatgen==2024.6.4
     # via mpcontribs-client
-pymongo==4.7.2
+pymongo==4.7.3
     # via mpcontribs-client
 pyparsing==3.1.2
     # via matplotlib
@@ -295,7 +295,7 @@ pyzmq==26.0.3
     # via
     #   ipykernel
     #   jupyter-client
-redis==5.0.4
+redis==5.0.5
     # via mpcontribs-portal (MPContribs/mpcontribs-portal/setup.py)
 referencing==0.35.1
     # via
@@ -370,7 +370,7 @@ tenacity==8.3.0
     # via plotly
 tinycss2==1.3.0
     # via nbconvert
-tornado==6.4
+tornado==6.4.1
     # via
     #   ipykernel
     #   jupyter-client
@@ -413,7 +413,7 @@ urllib3==2.2.1
     #   requests
 wcwidth==0.2.13
     # via prompt-toolkit
-webcolors==1.13
+webcolors==24.6.0
     # via jsonschema
 webencodings==0.5.1
     # via
@@ -425,7 +425,7 @@ wrapt==1.16.0
     # via deprecated
 xmltodict==0.13.0
     # via ddtrace
-zipp==3.19.1
+zipp==3.19.2
     # via importlib-metadata
 zope-event==5.0
     # via gevent
