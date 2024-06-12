@@ -58,7 +58,7 @@ joblib==1.4.2
     # via pymatgen
 json2html==1.3.0
     # via mpcontribs-client (setup.py)
-jsonpointer==2.4
+jsonpointer==3.0.0
     # via jsonschema
 jsonref==1.1.0
     # via bravado-core
@@ -96,7 +96,7 @@ numpy==1.26.4
     #   pymatgen
     #   scipy
     #   spglib
-packaging==24.0
+packaging==24.1
     # via
     #   matplotlib
     #   plotly
@@ -118,7 +118,7 @@ plotly==5.22.0
     # via
     #   mpcontribs-client (setup.py)
     #   pymatgen
-prompt-toolkit==3.0.46
+prompt-toolkit==3.0.47
     # via ipython
 ptyprocess==0.7.0
     # via pexpect
@@ -130,7 +130,7 @@ pygments==2.18.0
     # via ipython
 pyisemail==2.0.1
     # via mpcontribs-client (setup.py)
-pymatgen==2024.6.4
+pymatgen==2024.6.10
     # via mpcontribs-client (setup.py)
 pymongo==4.7.3
     # via mpcontribs-client (setup.py)
@@ -218,7 +218,7 @@ traitlets==5.14.3
     #   matplotlib-inline
 types-python-dateutil==2.9.0.20240316
     # via arrow
-typing-extensions==4.12.1
+typing-extensions==4.12.2
     # via
     #   bravado
     #   ipython
@@ -227,7 +227,7 @@ tzdata==2024.1
     # via pandas
 ujson==5.10.0
     # via mpcontribs-client (setup.py)
-uncertainties==3.2.0
+uncertainties==3.2.1
     # via pymatgen
 uri-template==1.3.0
     # via jsonschema
