@@ -11,6 +11,7 @@ setup(
     url="https://mpcontribs.org",
     packages=["mpcontribs.api"],
     install_requires=[
+        "numpy<2",
         "apispec<6",
         "asn1crypto",
         "blinker",
