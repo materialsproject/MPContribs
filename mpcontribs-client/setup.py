@@ -21,6 +21,7 @@ setup(
     url="https://github.com/materialsproject/MPContribs/tree/master/mpcontribs-client",
     packages=["mpcontribs.client"],
     install_requires=[
+        "numpy<2",
         "boltons",
         "bravado",
         "filetype",
