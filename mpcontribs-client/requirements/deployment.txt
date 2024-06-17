@@ -92,11 +92,12 @@ msgpack==1.0.8
     #   bravado-core
 networkx==3.3
     # via pymatgen
-numpy==2.0.0
+numpy==1.26.4
     # via
     #   -r python/requirements.txt
     #   contourpy
     #   matplotlib
+    #   mpcontribs-client (MPContribs/mpcontribs-client/setup.py)
     #   pandas
     #   pymatgen
     #   scipy
