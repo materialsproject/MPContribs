@@ -2171,7 +2171,9 @@ class Client(SwaggerClient):
                         for kk, vv in flatten(contrib[k], reducer="dot").items():
                             if isinstance(vv, bool):
                                 flat[kk] = "Yes" if vv else "No"
-                            elif isinstance(vv, str) and vv:
+                            elif (isinstance(vv, str) and vv) or isinstance(
+                                vv, (float, int)
+                            ):
                                 flat[kk] = vv
                         contrib_copy[k] = deepcopy(unflatten(flat, splitter="dot"))
                     else:
