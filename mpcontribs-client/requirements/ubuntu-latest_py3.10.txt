@@ -50,7 +50,9 @@ idna==3.7
     # via
     #   jsonschema
     #   requests
-ipython==8.25.0
+importlib-resources==6.4.0
+    # via swagger-spec-validator
+ipython==8.26.0
     # via mpcontribs-client (setup.py)
 isoduration==20.11.0
     # via jsonschema
@@ -135,7 +137,7 @@ pyisemail==2.0.1
     # via mpcontribs-client (setup.py)
 pymatgen==2024.6.10
     # via mpcontribs-client (setup.py)
-pymongo==4.7.3
+pymongo==4.8.0
     # via mpcontribs-client (setup.py)
 pyparsing==3.1.2
     # via matplotlib
@@ -180,7 +182,7 @@ ruamel-yaml==0.18.6
     # via pymatgen
 ruamel-yaml-clib==0.2.8
     # via ruamel-yaml
-scipy==1.13.1
+scipy==1.14.0
     # via pymatgen
 semantic-version==2.10.0
     # via mpcontribs-client (setup.py)
@@ -201,7 +203,7 @@ spglib==2.4.0
     # via pymatgen
 stack-data==0.6.3
     # via ipython
-swagger-spec-validator==3.0.3
+swagger-spec-validator==3.0.4
     # via
     #   bravado-core
     #   mpcontribs-client (setup.py)
@@ -209,7 +211,7 @@ sympy==1.12.1
     # via pymatgen
 tabulate==0.9.0
     # via pymatgen
-tenacity==8.4.1
+tenacity==8.4.2
     # via plotly
 tqdm==4.66.4
     # via
