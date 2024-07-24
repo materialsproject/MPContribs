@@ -542,7 +542,7 @@ wrapt==1.16.0
     # via deprecated
 xmltodict==0.13.0
     # via ddtrace
-zipp==3.19.2
+zipp==3.19.1
     # via importlib-metadata
 zope-event==5.0
     # via gevent
