@@ -42,7 +42,7 @@ cachetools==5.3.3
     # via mpcontribs-client
 cattrs==23.2.3
     # via ddtrace
-certifi==2024.6.2
+certifi==2024.7.4
     # via requests
 charset-normalizer==3.3.2
     # via requests
@@ -265,7 +265,7 @@ pygments==2.18.0
     #   nbconvert
 pyisemail==2.0.1
     # via mpcontribs-client
-pymatgen==2024.6.10
+pymatgen==2024.7.18
     # via mpcontribs-client
 pymongo==4.7.3
     # via mpcontribs-client

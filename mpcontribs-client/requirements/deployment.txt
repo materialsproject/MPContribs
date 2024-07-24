@@ -20,7 +20,7 @@ bravado-core==6.1.1
     # via bravado
 cachetools==5.3.3
     # via mpcontribs-client (MPContribs/mpcontribs-client/setup.py)
-certifi==2024.6.2
+certifi==2024.7.4
     # via requests
 charset-normalizer==3.3.2
     # via requests
@@ -137,7 +137,7 @@ pygments==2.18.0
     # via ipython
 pyisemail==2.0.1
     # via mpcontribs-client (MPContribs/mpcontribs-client/setup.py)
-pymatgen==2024.6.10
+pymatgen==2024.7.18
     # via mpcontribs-client (MPContribs/mpcontribs-client/setup.py)
 pymongo==4.7.3
     # via mpcontribs-client (MPContribs/mpcontribs-client/setup.py)
