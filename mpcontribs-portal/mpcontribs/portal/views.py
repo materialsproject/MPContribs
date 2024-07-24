@@ -402,7 +402,7 @@ def download_project(request, project: str, extension: str):
         key = f"manual/{subdir}/{project}.json.gz"
         content_type = "application/gzip"
     else:
-        return HttpResponse(f"Invalid extension {extension}!", status=400)
+        return HttpResponse("Invalid extension!", status=400)
 
     return _get_download(key, content_type=content_type)
 
