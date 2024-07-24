@@ -25,7 +25,7 @@ bytecode==0.13.0
     # via ddtrace
 cattrs==22.2.0
     # via ddtrace
-certifi==2023.7.22
+certifi==2024.7.4
     # via requests
 charset-normalizer==2.1.1
     # via requests
