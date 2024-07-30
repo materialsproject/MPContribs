@@ -26,9 +26,9 @@ boltons==24.0.0
     # via
     #   mpcontribs-client
     #   mpcontribs-portal (setup.py)
-boto3==1.34.148
+boto3==1.34.149
     # via mpcontribs-portal (setup.py)
-botocore==1.34.148
+botocore==1.34.149
     # via
     #   boto3
     #   s3transfer
@@ -112,7 +112,7 @@ idna==3.7
     # via
     #   jsonschema
     #   requests
-importlib-metadata==7.1.0
+importlib-metadata==8.0.0
     # via opentelemetry-api
 importlib-resources==6.4.0
     # via swagger-spec-validator
@@ -222,7 +222,7 @@ numpy==1.26.4
     #   pymatgen
     #   scipy
     #   spglib
-opentelemetry-api==1.25.0
+opentelemetry-api==1.26.0
     # via ddtrace
 packaging==24.1
     # via
@@ -284,7 +284,7 @@ pymongo==4.8.0
     # via mpcontribs-client
 pyparsing==3.1.2
     # via matplotlib
-pytest==8.3.1
+pytest==8.3.2
     # via mpcontribs-portal (setup.py)
 python-dateutil==2.9.0.post0
     # via
