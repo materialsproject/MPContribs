@@ -1,7 +1,7 @@
-FROM materialsproject/devops:python-3.1013.13 as base
+FROM materialsproject/devops:python-3.1013.13 AS base
 RUN apt-get update && apt-get install -y --no-install-recommends libopenblas-dev libpq-dev && apt-get clean
 
-FROM base as python-deps
+FROM base AS python-deps
 RUN apt-get update && apt-get install -y --no-install-recommends gcc git g++ wget && apt-get clean
 ENV PATH /root/.local/bin:$PATH
 ENV PIP_FLAGS "--user --no-cache-dir --compile"

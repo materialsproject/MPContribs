@@ -1,8 +1,8 @@
-FROM materialsproject/devops:python-3.1013.13 as base
+FROM materialsproject/devops:python-3.1013.13 AS base
 RUN apt-get update && apt-get install -y --no-install-recommends libopenblas-dev && apt-get clean
-FROM node:18.18.2-slim as node
+FROM node:18.18.2-slim AS node
 
-FROM node as webpack-deps
+FROM node AS webpack-deps
 RUN apt-get update && apt-get install -y --no-install-recommends \
   git curl gnupg ca-certificates apt-transport-https \
   && apt-get clean
@@ -14,7 +14,7 @@ WORKDIR /app
 COPY package.json .
 RUN yarn install --production
 
-FROM node as webpack
+FROM node AS webpack
 ENV NODE_ENV production
 WORKDIR /app
 COPY --from=webpack-deps /app/node_modules ./node_modules
@@ -22,7 +22,7 @@ COPY webpack.config.js .
 COPY mpcontribs/portal/assets ./mpcontribs/portal/assets
 RUN node --trace-deprecation node_modules/webpack/bin/webpack.js
 
-FROM base as python-deps
+FROM base AS python-deps
 RUN apt-get update && apt-get install -y --no-install-recommends gcc git g++ wget && apt-get clean
 ENV PIP_FLAGS "--no-cache-dir --compile"
 ARG MORE_PIP_FLAGS
@@ -33,7 +33,7 @@ RUN pip install $PIP_FLAGS $MORE_PIP_FLAGS -r requirements.txt && \
 RUN wget -q https://raw.githubusercontent.com/vishnubob/wait-for-it/master/wait-for-it.sh && \
   chmod +x wait-for-it.sh && mv wait-for-it.sh /usr/local/bin/
 
-FROM base as python-builds
+FROM base AS python-builds
 COPY --from=python-deps /usr/local/lib/python3.10/site-packages /usr/local/lib/python3.10/site-packages
 COPY --from=python-deps /usr/local/bin /usr/local/bin
 COPY --from=python-deps /usr/local/share /usr/local/share

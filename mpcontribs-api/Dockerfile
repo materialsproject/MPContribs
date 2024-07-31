@@ -1,8 +1,8 @@
-FROM materialsproject/devops:python-3.1013.13 as base
+FROM materialsproject/devops:python-3.1013.13 AS base
 RUN apt-get update && apt-get install -y --no-install-recommends supervisor libopenblas-dev libpq-dev vim && apt-get clean
 WORKDIR /app
 
-FROM base as builder
+FROM base AS builder
 RUN apt-get update && apt-get install -y --no-install-recommends gcc git g++ libsnappy-dev wget liblapack-dev && apt-get clean
 ENV PIP_FLAGS "--no-cache-dir --compile"
 COPY requirements/deployment.txt ./requirements.txt
