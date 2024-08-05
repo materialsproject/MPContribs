@@ -8,7 +8,7 @@ arrow==1.3.0
     # via isoduration
 asttokens==2.4.1
     # via stack-data
-attrs==23.2.0
+attrs==24.1.0
     # via
     #   jsonschema
     #   referencing
@@ -26,7 +26,7 @@ charset-normalizer==3.3.2
     # via requests
 contourpy==1.2.1
     # via matplotlib
-coverage[toml]==7.6.0
+coverage[toml]==7.6.1
     # via pytest-cov
 cycler==0.12.1
     # via matplotlib
@@ -86,7 +86,7 @@ kiwisolver==1.4.5
     # via matplotlib
 latexcodec==3.0.0
     # via pybtex
-matplotlib==3.9.1
+matplotlib==3.9.0
     # via pymatgen
 matplotlib-inline==0.1.7
     # via ipython
@@ -254,7 +254,7 @@ tomli==2.0.1
     # via
     #   coverage
     #   pytest
-tqdm==4.66.4
+tqdm==4.66.5
     # via
     #   mpcontribs-client (setup.py)
     #   pymatgen
