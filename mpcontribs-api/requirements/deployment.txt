@@ -24,7 +24,7 @@ async-timeout==4.0.3
     # via redis
 atlasq-tschaume==0.11.1.dev2
     # via flask-mongorest-mpcontribs
-attrs==23.2.0
+attrs==24.1.0
     # via
     #   cattrs
     #   ddtrace
@@ -38,9 +38,9 @@ blinker==1.8.2
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 boltons==24.0.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
-boto3==1.34.151
+boto3==1.34.153
     # via flask-mongorest-mpcontribs
-botocore==1.34.151
+botocore==1.34.153
     # via
     #   boto3
     #   s3transfer
@@ -80,9 +80,9 @@ dateparser==1.2.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 ddsketch==3.0.1
     # via ddtrace
-ddtrace==2.10.1
+ddtrace==2.10.3
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
-debugpy==1.8.2
+debugpy==1.8.3
     # via ipykernel
 decorator==5.1.1
     # via ipython
@@ -232,7 +232,7 @@ marshmallow==3.21.3
     #   marshmallow-mongoengine
 marshmallow-mongoengine==0.31.2
     # via flask-mongorest-mpcontribs
-matplotlib==3.9.1
+matplotlib==3.9.0
     # via
     #   -r python/requirements.txt
     #   pymatgen
@@ -391,7 +391,7 @@ pyyaml==6.0.1
     #   flasgger-tschaume
     #   jupyter-events
     #   pybtex
-pyzmq==26.0.3
+pyzmq==26.1.0
     # via
     #   ipykernel
     #   jupyter-client
@@ -491,7 +491,7 @@ tornado==6.4.1
     #   jupyter-server
     #   notebook
     #   terminado
-tqdm==4.66.4
+tqdm==4.66.5
     # via pymatgen
 traitlets==5.14.3
     # via

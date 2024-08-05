@@ -12,7 +12,7 @@ asttokens==2.4.1
     # via stack-data
 async-timeout==4.0.3
     # via redis
-attrs==23.2.0
+attrs==24.1.0
     # via
     #   cattrs
     #   ddtrace
@@ -26,9 +26,9 @@ boltons==24.0.0
     # via
     #   mpcontribs-client
     #   mpcontribs-portal (MPContribs/mpcontribs-portal/setup.py)
-boto3==1.34.151
+boto3==1.34.153
     # via mpcontribs-portal (MPContribs/mpcontribs-portal/setup.py)
-botocore==1.34.151
+botocore==1.34.153
     # via
     #   boto3
     #   s3transfer
@@ -54,9 +54,9 @@ cycler==0.12.1
     # via matplotlib
 ddsketch==3.0.1
     # via ddtrace
-ddtrace==2.10.1
+ddtrace==2.10.3
     # via mpcontribs-portal (MPContribs/mpcontribs-portal/setup.py)
-debugpy==1.8.2
+debugpy==1.8.3
     # via ipykernel
 decorator==5.1.1
     # via ipython
@@ -171,7 +171,7 @@ markupsafe==2.1.5
     # via
     #   jinja2
     #   nbconvert
-matplotlib==3.9.1
+matplotlib==3.9.0
     # via
     #   -r python/requirements.txt
     #   pymatgen
@@ -294,7 +294,7 @@ pyyaml==6.0.1
     #   bravado-core
     #   pybtex
     #   swagger-spec-validator
-pyzmq==26.0.3
+pyzmq==26.1.0
     # via
     #   ipykernel
     #   jupyter-client
@@ -375,7 +375,7 @@ tornado==6.4.1
     # via
     #   ipykernel
     #   jupyter-client
-tqdm==4.66.4
+tqdm==4.66.5
     # via
     #   mpcontribs-client
     #   pymatgen
