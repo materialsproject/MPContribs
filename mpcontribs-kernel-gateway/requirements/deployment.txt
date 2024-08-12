@@ -14,7 +14,7 @@ arrow==1.3.0
     # via isoduration
 asttokens==2.4.1
     # via stack-data
-attrs==24.1.0
+attrs==24.2.0
     # via
     #   cattrs
     #   ddtrace
@@ -40,7 +40,7 @@ cattrs==23.2.3
     # via ddtrace
 certifi==2024.7.4
     # via requests
-cffi==1.16.0
+cffi==1.17.0
     # via argon2-cffi-bindings
 charset-normalizer==3.3.2
     # via requests
@@ -54,9 +54,9 @@ cycler==0.12.1
     # via matplotlib
 ddsketch==3.0.1
     # via ddtrace
-ddtrace==2.10.3
+ddtrace==2.10.4
     # via -r MPContribs/mpcontribs-kernel-gateway/requirements.in
-debugpy==1.8.3
+debugpy==1.8.5
     # via ipykernel
 decorator==5.1.1
     # via ipython
@@ -167,7 +167,7 @@ markupsafe==2.1.5
     # via
     #   jinja2
     #   nbconvert
-matplotlib==3.9.0
+matplotlib==3.9.1.post1
     # via
     #   -r python/requirements.txt
     #   pymatgen
@@ -272,7 +272,7 @@ pygments==2.18.0
     #   nbconvert
 pyisemail==2.0.1
     # via mpcontribs-client
-pymatgen==2024.7.18
+pymatgen==2024.8.9
     # via mpcontribs-client
 pymongo==4.8.0
     # via mpcontribs-client
@@ -292,7 +292,7 @@ pytz==2024.1
     # via
     #   bravado-core
     #   pandas
-pyyaml==6.0.1
+pyyaml==6.0.2
     # via
     #   bravado
     #   bravado-core
@@ -326,7 +326,7 @@ rfc3986-validator==0.1.1
     # via
     #   jsonschema
     #   jupyter-events
-rpds-py==0.19.1
+rpds-py==0.20.0
     # via
     #   jsonschema
     #   referencing
@@ -370,7 +370,7 @@ swagger-spec-validator==3.0.4
     # via
     #   bravado-core
     #   mpcontribs-client
-sympy==1.13.1
+sympy==1.13.2
     # via pymatgen
 tabulate==0.9.0
     # via pymatgen
@@ -430,7 +430,7 @@ urllib3==2.2.2
     # via requests
 wcwidth==0.2.13
     # via prompt-toolkit
-webcolors==24.6.0
+webcolors==24.8.0
     # via jsonschema
 webencodings==0.5.1
     # via
@@ -444,5 +444,5 @@ wrapt==1.16.0
     # via deprecated
 xmltodict==0.13.0
     # via ddtrace
-zipp==3.19.2
+zipp==3.20.0
     # via importlib-metadata

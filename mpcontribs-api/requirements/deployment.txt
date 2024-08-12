@@ -24,7 +24,7 @@ async-timeout==4.0.3
     # via redis
 atlasq-tschaume==0.11.1.dev2
     # via flask-mongorest-mpcontribs
-attrs==24.1.0
+attrs==24.2.0
     # via
     #   cattrs
     #   ddtrace
@@ -38,9 +38,9 @@ blinker==1.8.2
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 boltons==24.0.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
-boto3==1.34.153
+boto3==1.34.158
     # via flask-mongorest-mpcontribs
-botocore==1.34.153
+botocore==1.34.158
     # via
     #   boto3
     #   s3transfer
@@ -52,7 +52,7 @@ cattrs==23.2.3
     # via ddtrace
 certifi==2024.7.4
     # via requests
-cffi==1.16.0
+cffi==1.17.0
     # via
     #   argon2-cffi-bindings
     #   cryptography
@@ -80,9 +80,9 @@ dateparser==1.2.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 ddsketch==3.0.1
     # via ddtrace
-ddtrace==2.10.3
+ddtrace==2.10.4
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
-debugpy==1.8.3
+debugpy==1.8.5
     # via ipykernel
 decorator==5.1.1
     # via ipython
@@ -145,7 +145,7 @@ gevent==24.2.1
     # via gunicorn
 greenlet==3.0.3
     # via gevent
-gunicorn[gevent]==22.0.0
+gunicorn[gevent]==23.0.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 idna==3.7
     # via
@@ -232,7 +232,7 @@ marshmallow==3.21.3
     #   marshmallow-mongoengine
 marshmallow-mongoengine==0.31.2
     # via flask-mongorest-mpcontribs
-matplotlib==3.9.0
+matplotlib==3.9.1.post1
     # via
     #   -r python/requirements.txt
     #   pymatgen
@@ -253,7 +253,7 @@ mongoengine==0.28.2
     #   marshmallow-mongoengine
 monty==2024.7.30
     # via pymatgen
-more-itertools==10.3.0
+more-itertools==10.4.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 mpmath==1.3.0
     # via sympy
@@ -296,7 +296,7 @@ numpy==1.26.4
     #   spglib
 opentelemetry-api==1.26.0
     # via ddtrace
-orjson==3.10.6
+orjson==3.10.7
     # via flask-mongorest-mpcontribs
 overrides==7.7.0
     # via jupyter-server
@@ -355,7 +355,7 @@ pygments==2.18.0
     # via
     #   ipython
     #   nbconvert
-pymatgen==2024.7.18
+pymatgen==2024.8.9
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 pymongo==4.8.0
     # via
@@ -386,7 +386,7 @@ pytz==2024.1
     # via
     #   dateparser
     #   pandas
-pyyaml==6.0.1
+pyyaml==6.0.2
     # via
     #   flasgger-tschaume
     #   jupyter-events
@@ -421,7 +421,7 @@ rfc3986-validator==0.1.1
     # via
     #   jsonschema
     #   jupyter-events
-rpds-py==0.19.1
+rpds-py==0.20.0
     # via
     #   jsonschema
     #   referencing
@@ -471,7 +471,7 @@ stack-data==0.6.3
     # via ipython
 supervisor==4.2.5
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
-sympy==1.13.1
+sympy==1.13.2
     # via pymatgen
 tabulate==0.9.0
     # via pymatgen
@@ -531,7 +531,7 @@ urllib3==2.2.2
     #   requests
 wcwidth==0.2.13
     # via prompt-toolkit
-webcolors==24.6.0
+webcolors==24.8.0
     # via jsonschema
 webencodings==0.5.1
     # via
@@ -549,11 +549,11 @@ wrapt==1.16.0
     # via deprecated
 xmltodict==0.13.0
     # via ddtrace
-zipp==3.19.2
+zipp==3.20.0
     # via importlib-metadata
 zope-event==5.0
     # via gevent
-zope-interface==6.4.post2
+zope-interface==7.0.1
     # via gevent
 zstandard==0.23.0
     # via
