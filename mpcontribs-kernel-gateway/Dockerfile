@@ -1,4 +1,4 @@
-FROM materialsproject/devops:python-3.1013.13 AS base
+FROM materialsproject/devops:python-3.1013.14 AS base
 RUN apt-get update && apt-get install -y --no-install-recommends libopenblas-dev libpq-dev && apt-get clean
 
 FROM base AS python-deps
