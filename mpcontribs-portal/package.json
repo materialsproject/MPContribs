@@ -42,7 +42,7 @@
     "plotly.js": "^2.27.0",
     "requirejs": "^2.3.6",
     "sass": "^1.69.4",
-    "sass-loader": "^14.0.0",
+    "sass-loader": "^16.0.1",
     "select2": "^4.1.0-rc.0",
     "terser-webpack-plugin": "^5.3.9",
     "typy": "^3.3.0",
