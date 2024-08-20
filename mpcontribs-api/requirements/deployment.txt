@@ -26,8 +26,6 @@ atlasq-tschaume==0.11.1.dev2
     # via flask-mongorest-mpcontribs
 attrs==24.2.0
     # via
-    #   cattrs
-    #   ddtrace
     #   jsonschema
     #   referencing
 beautifulsoup4==4.12.3
@@ -38,17 +36,15 @@ blinker==1.8.2
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 boltons==24.0.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
-boto3==1.35.0
+boto3==1.35.2
     # via flask-mongorest-mpcontribs
-botocore==1.35.0
+botocore==1.35.2
     # via
     #   boto3
     #   s3transfer
 brotli==1.1.0
     # via flask-compress
 bytecode==0.15.1
-    # via ddtrace
-cattrs==23.2.3
     # via ddtrace
 certifi==2024.7.4
     # via requests
@@ -78,9 +74,7 @@ cycler==0.12.1
     # via matplotlib
 dateparser==1.2.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
-ddsketch==3.0.1
-    # via ddtrace
-ddtrace==2.10.6
+ddtrace==2.11.1
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 debugpy==1.8.5
     # via ipykernel
@@ -101,7 +95,6 @@ envier==0.5.2
 exceptiongroup==1.2.2
     # via
     #   anyio
-    #   cattrs
     #   ipython
 executing==2.0.1
     # via stack-data
@@ -226,7 +219,7 @@ markupsafe==2.1.5
     #   jinja2
     #   nbconvert
     #   werkzeug
-marshmallow==3.21.3
+marshmallow==3.22.0
     # via
     #   flask-marshmallow
     #   marshmallow-mongoengine
@@ -453,8 +446,6 @@ six==1.16.0
     # via
     #   asttokens
     #   bleach
-    #   ddsketch
-    #   ddtrace
     #   flasgger-tschaume
     #   flask-sse
     #   flatten-dict
@@ -512,7 +503,6 @@ types-python-dateutil==2.9.0.20240316
 typing-extensions==4.12.2
     # via
     #   anyio
-    #   cattrs
     #   ddtrace
     #   ipython
 tzdata==2024.1

@@ -16,8 +16,6 @@ asttokens==2.4.1
     # via stack-data
 attrs==24.2.0
     # via
-    #   cattrs
-    #   ddtrace
     #   jsonschema
     #   referencing
 beautifulsoup4==4.12.3
@@ -36,8 +34,6 @@ bytecode==0.15.1
     # via ddtrace
 cachetools==5.5.0
     # via mpcontribs-client
-cattrs==23.2.3
-    # via ddtrace
 certifi==2024.7.4
     # via requests
 cffi==1.17.0
@@ -52,9 +48,7 @@ contourpy==1.2.1
     # via matplotlib
 cycler==0.12.1
     # via matplotlib
-ddsketch==3.0.1
-    # via ddtrace
-ddtrace==2.10.6
+ddtrace==2.11.1
     # via -r MPContribs/mpcontribs-kernel-gateway/requirements.in
 debugpy==1.8.5
     # via ipykernel
@@ -73,7 +67,6 @@ envier==0.5.2
 exceptiongroup==1.2.2
     # via
     #   anyio
-    #   cattrs
     #   ipython
 executing==2.0.1
     # via stack-data
@@ -352,8 +345,6 @@ six==1.16.0
     #   bleach
     #   bravado
     #   bravado-core
-    #   ddsketch
-    #   ddtrace
     #   flatten-dict
     #   pybtex
     #   python-dateutil
@@ -414,7 +405,6 @@ typing-extensions==4.12.2
     # via
     #   anyio
     #   bravado
-    #   cattrs
     #   ddtrace
     #   ipython
     #   swagger-spec-validator
