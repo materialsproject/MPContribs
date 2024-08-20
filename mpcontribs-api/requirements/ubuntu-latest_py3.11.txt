@@ -22,10 +22,8 @@ asttokens==2.4.1
     # via stack-data
 atlasq-tschaume==0.11.1.dev2
     # via flask-mongorest-mpcontribs
-attrs==23.2.0
+attrs==24.2.0
     # via
-    #   cattrs
-    #   ddtrace
     #   jsonschema
     #   referencing
 beautifulsoup4==4.12.3
@@ -36,9 +34,9 @@ blinker==1.8.2
     # via mpcontribs-api (setup.py)
 boltons==24.0.0
     # via mpcontribs-api (setup.py)
-boto3==1.34.151
+boto3==1.35.2
     # via flask-mongorest-mpcontribs
-botocore==1.34.151
+botocore==1.35.2
     # via
     #   boto3
     #   s3transfer
@@ -46,11 +44,9 @@ brotli==1.1.0
     # via flask-compress
 bytecode==0.15.1
     # via ddtrace
-cattrs==23.2.3
-    # via ddtrace
 certifi==2024.7.4
     # via requests
-cffi==1.16.0
+cffi==1.17.0
     # via
     #   argon2-cffi-bindings
     #   cryptography
@@ -76,11 +72,9 @@ cycler==0.12.1
     # via matplotlib
 dateparser==1.2.0
     # via mpcontribs-api (setup.py)
-ddsketch==3.0.1
-    # via ddtrace
-ddtrace==2.10.1
+ddtrace==2.11.1
     # via mpcontribs-api (setup.py)
-debugpy==1.8.2
+debugpy==1.8.5
     # via ipykernel
 decorator==5.1.1
     # via ipython
@@ -138,7 +132,7 @@ gevent==24.2.1
     # via gunicorn
 greenlet==3.0.3
     # via gevent
-gunicorn[gevent]==22.0.0
+gunicorn[gevent]==23.0.0
     # via mpcontribs-api (setup.py)
 idna==3.7
     # via
@@ -219,13 +213,13 @@ markupsafe==2.1.5
     #   jinja2
     #   nbconvert
     #   werkzeug
-marshmallow==3.21.3
+marshmallow==3.22.0
     # via
     #   flask-marshmallow
     #   marshmallow-mongoengine
 marshmallow-mongoengine==0.31.2
     # via flask-mongorest-mpcontribs
-matplotlib==3.9.1
+matplotlib==3.9.2
     # via pymatgen
 matplotlib-inline==0.1.7
     # via
@@ -244,7 +238,7 @@ mongoengine==0.28.2
     #   marshmallow-mongoengine
 monty==2024.7.30
     # via pymatgen
-more-itertools==10.3.0
+more-itertools==10.4.0
     # via mpcontribs-api (setup.py)
 mpmath==1.3.0
     # via sympy
@@ -286,7 +280,7 @@ numpy==1.26.4
     #   spglib
 opentelemetry-api==1.26.0
     # via ddtrace
-orjson==3.10.6
+orjson==3.10.7
     # via flask-mongorest-mpcontribs
 overrides==7.7.0
     # via jupyter-server
@@ -343,7 +337,7 @@ pygments==2.18.0
     # via
     #   ipython
     #   nbconvert
-pymatgen==2024.7.18
+pymatgen==2024.8.9
     # via mpcontribs-api (setup.py)
 pymongo==4.8.0
     # via
@@ -374,12 +368,12 @@ pytz==2024.1
     # via
     #   dateparser
     #   pandas
-pyyaml==6.0.1
+pyyaml==6.0.2
     # via
     #   flasgger-tschaume
     #   jupyter-events
     #   pybtex
-pyzmq==26.0.3
+pyzmq==26.1.1
     # via
     #   ipykernel
     #   jupyter-client
@@ -409,7 +403,7 @@ rfc3986-validator==0.1.1
     # via
     #   jsonschema
     #   jupyter-events
-rpds-py==0.19.1
+rpds-py==0.20.0
     # via
     #   jsonschema
     #   referencing
@@ -439,8 +433,6 @@ six==1.16.0
     # via
     #   asttokens
     #   bleach
-    #   ddsketch
-    #   ddtrace
     #   flasgger-tschaume
     #   flask-sse
     #   flatten-dict
@@ -449,7 +441,7 @@ six==1.16.0
     #   rfc3339-validator
 sniffio==1.3.1
     # via anyio
-soupsieve==2.5
+soupsieve==2.6
     # via beautifulsoup4
 spglib==2.5.0
     # via pymatgen
@@ -457,7 +449,7 @@ stack-data==0.6.3
     # via ipython
 supervisor==4.2.5
     # via mpcontribs-api (setup.py)
-sympy==1.13.1
+sympy==1.13.2
     # via pymatgen
 tabulate==0.9.0
     # via pymatgen
@@ -477,7 +469,7 @@ tornado==6.4.1
     #   jupyter-server
     #   notebook
     #   terminado
-tqdm==4.66.4
+tqdm==4.66.5
     # via pymatgen
 traitlets==5.14.3
     # via
@@ -515,7 +507,7 @@ urllib3==2.2.2
     #   requests
 wcwidth==0.2.13
     # via prompt-toolkit
-webcolors==24.6.0
+webcolors==24.8.0
     # via jsonschema
 webencodings==0.5.1
     # via
@@ -533,11 +525,11 @@ wrapt==1.16.0
     # via deprecated
 xmltodict==0.13.0
     # via ddtrace
-zipp==3.19.2
+zipp==3.20.0
     # via importlib-metadata
 zope-event==5.0
     # via gevent
-zope-interface==6.4.post2
+zope-interface==7.0.1
     # via gevent
 zstandard==0.23.0
     # via
