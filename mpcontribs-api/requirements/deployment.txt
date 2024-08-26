@@ -239,7 +239,7 @@ mistune==3.0.2
     # via
     #   flasgger-tschaume
     #   nbconvert
-mongoengine==0.28.2
+mongoengine==0.29.0
     # via
     #   atlasq-tschaume
     #   flask-mongoengine-tschaume
