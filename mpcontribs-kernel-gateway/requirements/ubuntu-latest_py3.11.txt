@@ -423,5 +423,5 @@ wrapt==1.16.0
     # via deprecated
 xmltodict==0.13.0
     # via ddtrace
-zipp==3.20.0
+zipp==3.20.1
     # via importlib-metadata
