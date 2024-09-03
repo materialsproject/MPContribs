@@ -36,9 +36,9 @@ blinker==1.8.2
     # via mpcontribs-api (setup.py)
 boltons==24.0.0
     # via mpcontribs-api (setup.py)
-boto3==1.35.6
+boto3==1.35.10
     # via flask-mongorest-mpcontribs
-botocore==1.35.6
+botocore==1.35.10
     # via
     #   boto3
     #   s3transfer
@@ -46,7 +46,7 @@ brotli==1.1.0
     # via flask-compress
 bytecode==0.15.1
     # via ddtrace
-certifi==2024.7.4
+certifi==2024.8.30
     # via requests
 cffi==1.17.0
     # via
@@ -60,7 +60,7 @@ click==8.1.7
     #   rq
 comm==0.2.2
     # via ipykernel
-contourpy==1.2.1
+contourpy==1.3.0
     # via matplotlib
 cramjam==2.8.3
     # via python-snappy
@@ -74,7 +74,7 @@ cycler==0.12.1
     # via matplotlib
 dateparser==1.2.0
     # via mpcontribs-api (setup.py)
-ddtrace==2.11.1
+ddtrace==2.11.2
     # via mpcontribs-api (setup.py)
 debugpy==1.8.5
     # via ipykernel
@@ -96,7 +96,7 @@ exceptiongroup==1.2.2
     # via
     #   anyio
     #   ipython
-executing==2.0.1
+executing==2.1.0
     # via stack-data
 fastjsonschema==2.20.0
     # via nbformat
@@ -145,13 +145,13 @@ idna==3.8
     #   anyio
     #   jsonschema
     #   requests
-importlib-metadata==8.0.0
+importlib-metadata==8.4.0
     # via opentelemetry-api
 ipykernel==6.29.5
     # via
     #   nbclassic
     #   notebook
-ipython==8.26.0
+ipython==8.27.0
     # via ipykernel
 ipython-genutils==0.2.0
     # via
@@ -237,7 +237,7 @@ mistune==3.0.2
     # via
     #   flasgger-tschaume
     #   nbconvert
-mongoengine==0.28.2
+mongoengine==0.29.0
     # via
     #   atlasq-tschaume
     #   flask-mongoengine-tschaume
@@ -284,7 +284,7 @@ numpy==1.26.4
     #   pymatgen
     #   scipy
     #   spglib
-opentelemetry-api==1.26.0
+opentelemetry-api==1.27.0
     # via ddtrace
 orjson==3.10.7
     # via flask-mongorest-mpcontribs
@@ -315,7 +315,7 @@ pint==0.19.2
     # via mpcontribs-api (setup.py)
 platformdirs==4.2.2
     # via jupyter-core
-plotly==5.23.0
+plotly==5.24.0
     # via pymatgen
 prometheus-client==0.20.0
     # via
@@ -323,7 +323,7 @@ prometheus-client==0.20.0
     #   notebook
 prompt-toolkit==3.0.47
     # via ipython
-protobuf==5.27.3
+protobuf==5.28.0
     # via ddtrace
 psutil==6.0.0
     # via ipykernel
@@ -368,7 +368,7 @@ python-json-logger==2.0.7
     # via jupyter-events
 python-mimeparse==2.0.0
     # via mimerender-pr36
-python-snappy==0.7.2
+python-snappy==0.7.3
     # via mpcontribs-api (setup.py)
 pytz==2024.1
     # via
@@ -536,7 +536,7 @@ zipp==3.20.1
     # via importlib-metadata
 zope-event==5.0
     # via gevent
-zope-interface==7.0.2
+zope-interface==7.0.3
     # via gevent
 zstandard==0.23.0
     # via
