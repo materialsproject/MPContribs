@@ -208,7 +208,7 @@ jupyter-server-terminals==0.5.3
     # via jupyter-server
 jupyterlab-pygments==0.3.0
     # via nbconvert
-kiwisolver==1.4.5
+kiwisolver==1.4.6
     # via matplotlib
 latexcodec==3.0.0
     # via pybtex

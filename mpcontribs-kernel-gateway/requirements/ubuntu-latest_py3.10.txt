@@ -152,7 +152,7 @@ jupyterlab-widgets==3.0.13
     # via ipywidgets
 kaleido==0.2.1
     # via -r requirements.in
-kiwisolver==1.4.5
+kiwisolver==1.4.6
     # via matplotlib
 latexcodec==3.0.0
     # via pybtex
