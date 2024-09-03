@@ -155,7 +155,7 @@ jupyter-core==5.7.2
     #   nbformat
 jupyterlab-pygments==0.3.0
     # via nbconvert
-kiwisolver==1.4.5
+kiwisolver==1.4.6
     # via matplotlib
 latexcodec==3.0.0
     # via pybtex
