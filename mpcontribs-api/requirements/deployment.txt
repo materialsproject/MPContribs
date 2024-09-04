@@ -66,7 +66,7 @@ cramjam==2.8.3
     # via python-snappy
 crontab==1.0.1
     # via rq-scheduler
-cryptography==43.0.0
+cryptography==43.0.1
     # via pyopenssl
 css-html-js-minify==2.5.5
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
