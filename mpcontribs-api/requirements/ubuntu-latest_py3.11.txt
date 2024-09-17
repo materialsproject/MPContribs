@@ -34,9 +34,9 @@ blinker==1.8.2
     # via mpcontribs-api (setup.py)
 boltons==24.0.0
     # via mpcontribs-api (setup.py)
-boto3==1.35.14
+boto3==1.35.21
     # via flask-mongorest-mpcontribs
-botocore==1.35.14
+botocore==1.35.21
     # via
     #   boto3
     #   s3transfer
@@ -72,7 +72,7 @@ cycler==0.12.1
     # via matplotlib
 dateparser==1.2.0
     # via mpcontribs-api (setup.py)
-ddtrace==2.11.3
+ddtrace==2.12.2
     # via mpcontribs-api (setup.py)
 debugpy==1.8.5
     # via ipykernel
@@ -130,11 +130,11 @@ freezegun==1.5.1
     # via rq-scheduler
 gevent==24.2.1
     # via gunicorn
-greenlet==3.0.3
+greenlet==3.1.0
     # via gevent
 gunicorn[gevent]==23.0.0
     # via mpcontribs-api (setup.py)
-idna==3.8
+idna==3.10
     # via
     #   anyio
     #   jsonschema
@@ -307,9 +307,9 @@ pillow==10.4.0
     # via matplotlib
 pint==0.19.2
     # via mpcontribs-api (setup.py)
-platformdirs==4.3.2
+platformdirs==4.3.6
     # via jupyter-core
-plotly==5.24.0
+plotly==5.24.1
     # via pymatgen
 prometheus-client==0.20.0
     # via
@@ -317,7 +317,7 @@ prometheus-client==0.20.0
     #   notebook
 prompt-toolkit==3.0.47
     # via ipython
-protobuf==5.28.0
+protobuf==5.28.1
     # via ddtrace
 psutil==6.0.0
     # via ipykernel
@@ -337,7 +337,7 @@ pygments==2.18.0
     # via
     #   ipython
     #   nbconvert
-pymatgen==2024.8.9
+pymatgen==2024.9.17
     # via mpcontribs-api (setup.py)
 pymongo==4.8.0
     # via
@@ -364,7 +364,7 @@ python-mimeparse==2.0.0
     # via mimerender-pr36
 python-snappy==0.7.3
     # via mpcontribs-api (setup.py)
-pytz==2024.1
+pytz==2024.2
     # via
     #   dateparser
     #   pandas
@@ -389,7 +389,7 @@ referencing==0.35.1
     #   jsonschema
     #   jsonschema-specifications
     #   jupyter-events
-regex==2024.7.24
+regex==2024.9.11
     # via dateparser
 requests==2.32.3
     # via
@@ -501,7 +501,7 @@ uncertainties==3.2.2
     #   pymatgen
 uri-template==1.3.0
     # via jsonschema
-urllib3==2.2.2
+urllib3==2.2.3
     # via
     #   botocore
     #   requests
@@ -522,10 +522,12 @@ werkzeug==3.0.4
     #   flasgger-tschaume
     #   flask
 wrapt==1.16.0
-    # via deprecated
+    # via
+    #   ddtrace
+    #   deprecated
 xmltodict==0.13.0
     # via ddtrace
-zipp==3.20.1
+zipp==3.20.2
     # via importlib-metadata
 zope-event==5.0
     # via gevent
