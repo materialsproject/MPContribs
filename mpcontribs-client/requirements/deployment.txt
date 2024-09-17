@@ -139,7 +139,7 @@ pygments==2.18.0
     # via ipython
 pyisemail==2.0.1
     # via mpcontribs-client (MPContribs/mpcontribs-client/setup.py)
-pymatgen==2024.9.10
+pymatgen==2024.9.17
     # via mpcontribs-client (MPContribs/mpcontribs-client/setup.py)
 pymongo==4.8.0
     # via mpcontribs-client (MPContribs/mpcontribs-client/setup.py)

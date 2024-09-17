@@ -36,9 +36,9 @@ blinker==1.8.2
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 boltons==24.0.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
-boto3==1.35.19
+boto3==1.35.21
     # via flask-mongorest-mpcontribs
-botocore==1.35.19
+botocore==1.35.21
     # via
     #   boto3
     #   s3transfer
@@ -318,7 +318,7 @@ pillow==10.4.0
     # via matplotlib
 pint==0.19.2
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
-platformdirs==4.3.3
+platformdirs==4.3.6
     # via jupyter-core
 plotly==5.24.1
     # via pymatgen
@@ -348,7 +348,7 @@ pygments==2.18.0
     # via
     #   ipython
     #   nbconvert
-pymatgen==2024.9.10
+pymatgen==2024.9.17
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 pymongo==4.8.0
     # via

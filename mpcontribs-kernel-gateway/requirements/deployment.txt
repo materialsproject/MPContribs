@@ -122,7 +122,7 @@ jsonschema[format-nongpl]==4.23.0
     #   swagger-spec-validator
 jsonschema-specifications==2023.12.1
     # via jsonschema
-jupyter-client==8.6.2
+jupyter-client==8.6.3
     # via
     #   -r MPContribs/mpcontribs-kernel-gateway/requirements.in
     #   ipykernel
@@ -233,7 +233,7 @@ pillow==10.4.0
     # via matplotlib
 pint==0.19.2
     # via mpcontribs-client
-platformdirs==4.3.3
+platformdirs==4.3.6
     # via jupyter-core
 plotly==5.24.1
     # via
@@ -265,7 +265,7 @@ pygments==2.18.0
     #   nbconvert
 pyisemail==2.0.1
     # via mpcontribs-client
-pymatgen==2024.9.10
+pymatgen==2024.9.17
     # via mpcontribs-client
 pymongo==4.8.0
     # via mpcontribs-client
