@@ -46,7 +46,7 @@ flake8==5.0.4
     #   pytest-flake8
 flatten-dict==0.4.2
     # via mpcontribs-client (setup.py)
-fonttools==4.53.1
+fonttools==4.54.0
     # via matplotlib
 fqdn==1.5.1
     # via jsonschema
@@ -116,7 +116,7 @@ packaging==24.1
     #   pytest
 palettable==3.3.3
     # via pymatgen
-pandas==2.2.2
+pandas==2.2.3
     # via
     #   mpcontribs-client (setup.py)
     #   pymatgen
@@ -261,7 +261,7 @@ typing-extensions==4.12.2
     #   bravado
     #   ipython
     #   swagger-spec-validator
-tzdata==2024.1
+tzdata==2024.2
     # via pandas
 ujson==5.10.0
     # via mpcontribs-client (setup.py)
