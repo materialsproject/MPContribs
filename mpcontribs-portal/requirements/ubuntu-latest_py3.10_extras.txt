@@ -24,9 +24,9 @@ boltons==24.0.0
     # via
     #   mpcontribs-client
     #   mpcontribs-portal (setup.py)
-boto3==1.35.22
+boto3==1.35.25
     # via mpcontribs-portal (setup.py)
-botocore==1.35.22
+botocore==1.35.25
     # via
     #   boto3
     #   s3transfer
@@ -91,13 +91,13 @@ flake8==7.1.1
     # via mpcontribs-portal (setup.py)
 flatten-dict==0.4.2
     # via mpcontribs-client
-fonttools==4.53.1
+fonttools==4.54.0
     # via matplotlib
 fqdn==1.5.1
     # via jsonschema
 gevent==24.2.1
     # via gunicorn
-greenlet==3.1.0
+greenlet==3.1.1
     # via gevent
 gunicorn[gevent]==23.0.0
     # via mpcontribs-portal (setup.py)
@@ -227,7 +227,7 @@ packaging==24.1
     #   pytest
 palettable==3.3.3
     # via pymatgen
-pandas==2.2.2
+pandas==2.2.3
     # via
     #   mpcontribs-client
     #   pymatgen
@@ -403,7 +403,7 @@ typing-extensions==4.12.2
     #   ddtrace
     #   ipython
     #   swagger-spec-validator
-tzdata==2024.1
+tzdata==2024.2
     # via pandas
 ujson==5.10.0
     # via mpcontribs-client
