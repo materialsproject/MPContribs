@@ -4,7 +4,7 @@
 #
 #    pip-compile --all-extras --output-file=requirements/ubuntu-latest_py3.10_extras.txt
 #
-anyio==4.5.0
+anyio==4.6.0
     # via jupyter-server
 apispec==5.2.2
     # via mpcontribs-api (setup.py)
@@ -36,9 +36,9 @@ blinker==1.8.2
     # via mpcontribs-api (setup.py)
 boltons==24.0.0
     # via mpcontribs-api (setup.py)
-boto3==1.35.22
+boto3==1.35.25
     # via flask-mongorest-mpcontribs
-botocore==1.35.22
+botocore==1.35.25
     # via
     #   boto3
     #   s3transfer
@@ -131,7 +131,7 @@ flask-sse==1.0.0
     # via flask-mongorest-mpcontribs
 flatten-dict==0.4.2
     # via flask-mongorest-mpcontribs
-fonttools==4.53.1
+fonttools==4.54.0
     # via matplotlib
 fqdn==1.5.1
     # via jsonschema
@@ -139,7 +139,7 @@ freezegun==1.5.1
     # via rq-scheduler
 gevent==24.2.1
     # via gunicorn
-greenlet==3.1.0
+greenlet==3.1.1
     # via gevent
 gunicorn[gevent]==23.0.0
     # via mpcontribs-api (setup.py)
@@ -309,7 +309,7 @@ packaging==24.1
     #   pytest
 palettable==3.3.3
     # via pymatgen
-pandas==2.2.2
+pandas==2.2.3
     # via pymatgen
 pandocfilters==1.5.1
     # via nbconvert
@@ -327,7 +327,7 @@ plotly==5.24.1
     # via pymatgen
 pluggy==1.5.0
     # via pytest
-prometheus-client==0.20.0
+prometheus-client==0.21.0
     # via
     #   jupyter-server
     #   notebook
@@ -516,7 +516,7 @@ typing-extensions==4.12.2
     #   anyio
     #   ddtrace
     #   ipython
-tzdata==2024.1
+tzdata==2024.2
     # via pandas
 tzlocal==5.2
     # via dateparser
