@@ -24,9 +24,9 @@ boltons==24.0.0
     # via
     #   mpcontribs-client
     #   mpcontribs-portal (MPContribs/mpcontribs-portal/setup.py)
-boto3==1.35.23
+boto3==1.35.24
     # via mpcontribs-portal (MPContribs/mpcontribs-portal/setup.py)
-botocore==1.35.23
+botocore==1.35.24
     # via
     #   boto3
     #   s3transfer
@@ -87,13 +87,13 @@ filetype==1.2.0
     # via mpcontribs-client
 flatten-dict==0.4.2
     # via mpcontribs-client
-fonttools==4.53.1
+fonttools==4.54.0
     # via matplotlib
 fqdn==1.5.1
     # via jsonschema
 gevent==24.2.1
     # via gunicorn
-greenlet==3.1.0
+greenlet==3.1.1
     # via gevent
 gunicorn[gevent]==23.0.0
     # via mpcontribs-portal (MPContribs/mpcontribs-portal/setup.py)
@@ -221,7 +221,7 @@ packaging==24.1
     #   plotly
 palettable==3.3.3
     # via pymatgen
-pandas==2.2.2
+pandas==2.2.3
     # via
     #   -r python/requirements.txt
     #   mpcontribs-client

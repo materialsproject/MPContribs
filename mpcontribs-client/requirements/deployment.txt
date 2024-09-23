@@ -42,7 +42,7 @@ filetype==1.2.0
     # via mpcontribs-client (MPContribs/mpcontribs-client/setup.py)
 flatten-dict==0.4.2
     # via mpcontribs-client (MPContribs/mpcontribs-client/setup.py)
-fonttools==4.53.1
+fonttools==4.54.0
     # via matplotlib
 fqdn==1.5.1
     # via jsonschema
@@ -110,7 +110,7 @@ packaging==24.1
     #   plotly
 palettable==3.3.3
     # via pymatgen
-pandas==2.2.2
+pandas==2.2.3
     # via
     #   -r python/requirements.txt
     #   mpcontribs-client (MPContribs/mpcontribs-client/setup.py)

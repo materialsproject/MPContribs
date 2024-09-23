@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=MPContribs/mpcontribs-api/requirements/deployment.txt MPContribs/mpcontribs-api/setup.py python/requirements.txt
 #
-anyio==4.5.0
+anyio==4.6.0
     # via jupyter-server
 apispec==5.2.2
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
@@ -36,9 +36,9 @@ blinker==1.8.2
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 boltons==24.0.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
-boto3==1.35.23
+boto3==1.35.24
     # via flask-mongorest-mpcontribs
-botocore==1.35.23
+botocore==1.35.24
     # via
     #   boto3
     #   s3transfer
@@ -128,7 +128,7 @@ flask-sse==1.0.0
     # via flask-mongorest-mpcontribs
 flatten-dict==0.4.2
     # via flask-mongorest-mpcontribs
-fonttools==4.53.1
+fonttools==4.54.0
     # via matplotlib
 fqdn==1.5.1
     # via jsonschema
@@ -136,7 +136,7 @@ freezegun==1.5.1
     # via rq-scheduler
 gevent==24.2.1
     # via gunicorn
-greenlet==3.1.0
+greenlet==3.1.1
     # via gevent
 gunicorn[gevent]==23.0.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
@@ -304,7 +304,7 @@ packaging==24.1
     #   plotly
 palettable==3.3.3
     # via pymatgen
-pandas==2.2.2
+pandas==2.2.3
     # via
     #   -r python/requirements.txt
     #   pymatgen
@@ -322,7 +322,7 @@ platformdirs==4.3.6
     # via jupyter-core
 plotly==5.24.1
     # via pymatgen
-prometheus-client==0.20.0
+prometheus-client==0.21.0
     # via
     #   jupyter-server
     #   notebook
