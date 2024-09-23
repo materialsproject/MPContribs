@@ -36,9 +36,9 @@ blinker==1.8.2
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 boltons==24.0.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
-boto3==1.35.24
+boto3==1.35.25
     # via flask-mongorest-mpcontribs
-botocore==1.35.24
+botocore==1.35.25
     # via
     #   boto3
     #   s3transfer
@@ -505,7 +505,7 @@ typing-extensions==4.12.2
     #   anyio
     #   ddtrace
     #   ipython
-tzdata==2024.1
+tzdata==2024.2
     # via pandas
 tzlocal==5.2
     # via dateparser

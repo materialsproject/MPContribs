@@ -408,7 +408,7 @@ typing-extensions==4.12.2
     #   ddtrace
     #   ipython
     #   swagger-spec-validator
-tzdata==2024.1
+tzdata==2024.2
     # via pandas
 ujson==5.10.0
     # via mpcontribs-client

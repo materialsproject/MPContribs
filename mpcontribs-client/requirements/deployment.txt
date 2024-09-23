@@ -234,7 +234,7 @@ typing-extensions==4.12.2
     #   bravado
     #   ipython
     #   swagger-spec-validator
-tzdata==2024.1
+tzdata==2024.2
     # via pandas
 ujson==5.10.0
     # via mpcontribs-client (MPContribs/mpcontribs-client/setup.py)
