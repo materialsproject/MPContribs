@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=requirements/ubuntu-latest_py3.11.txt
 #
-anyio==4.5.0
+anyio==4.6.0
     # via jupyter-server
 argon2-cffi==23.1.0
     # via jupyter-server
@@ -72,7 +72,7 @@ filetype==1.2.0
     # via mpcontribs-client
 flatten-dict==0.4.2
     # via mpcontribs-client
-fonttools==4.53.1
+fonttools==4.54.0
     # via matplotlib
 fqdn==1.5.1
     # via jsonschema
@@ -211,7 +211,7 @@ packaging==24.1
     #   plotly
 palettable==3.3.3
     # via pymatgen
-pandas==2.2.2
+pandas==2.2.3
     # via
     #   mpcontribs-client
     #   pymatgen
@@ -231,7 +231,7 @@ plotly==5.24.1
     # via
     #   mpcontribs-client
     #   pymatgen
-prometheus-client==0.20.0
+prometheus-client==0.21.0
     # via jupyter-server
 prompt-toolkit==3.0.47
     # via ipython
@@ -397,7 +397,7 @@ typing-extensions==4.12.2
     #   ddtrace
     #   ipython
     #   swagger-spec-validator
-tzdata==2024.1
+tzdata==2024.2
     # via pandas
 ujson==5.10.0
     # via mpcontribs-client
