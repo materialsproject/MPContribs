@@ -46,7 +46,7 @@ flake8==5.0.4
     #   pytest-flake8
 flatten-dict==0.4.2
     # via mpcontribs-client (setup.py)
-fonttools==4.54.0
+fonttools==4.54.1
     # via matplotlib
 fqdn==1.5.1
     # via jsonschema
