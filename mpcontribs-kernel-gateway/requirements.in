@@ -7,3 +7,4 @@ jupyter-kernel-gateway
 kaleido
 mpcontribs-client
 psutil
+pymongo<4.9.1
