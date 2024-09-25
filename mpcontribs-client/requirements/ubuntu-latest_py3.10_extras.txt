@@ -138,7 +138,7 @@ plotly==5.24.1
     #   pymatgen
 pluggy==1.5.0
     # via pytest
-prompt-toolkit==3.0.47
+prompt-toolkit==3.0.48
     # via ipython
 ptyprocess==0.7.0
     # via pexpect
