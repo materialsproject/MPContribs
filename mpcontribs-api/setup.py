@@ -43,7 +43,7 @@ setup(
         "uncertainties",
         "websocket_client",
         "zstandard",
-        "pymongo<4.9.1",
+        "pymongo<4.9",
     ],
     extras_require={
         "dev": ["pytest", "flake8"]
