@@ -36,21 +36,26 @@ SMTP_HOST, SMTP_PORT = os.environ.get("SMTP_SERVER", "localhost:587").split(":")
 # NOTE not including Size below (special for arrays)
 FILTERS = {
     "LONG_STRINGS": [
-        ops.Contains, ops.IContains,
-        ops.Startswith, ops.IStartswith,
-        ops.Endswith, ops.IEndswith
+        ops.Contains,
+        ops.IContains,
+        ops.Startswith,
+        ops.IStartswith,
+        ops.Endswith,
+        ops.IEndswith,
     ],
     "NUMBERS": [ops.Lt, ops.Lte, ops.Gt, ops.Gte, ops.Range],
     "DATES": [ops.Before, ops.After],
     "OTHERS": [ops.Boolean, ops.Exists],
 }
 FILTERS["STRINGS"] = [ops.In, ops.Exact, ops.IExact, ops.Ne] + FILTERS["LONG_STRINGS"]
-FILTERS["ALL"] = FILTERS["STRINGS"] + FILTERS["NUMBERS"] + FILTERS["DATES"] + FILTERS["OTHERS"]
+FILTERS["ALL"] = (
+    FILTERS["STRINGS"] + FILTERS["NUMBERS"] + FILTERS["DATES"] + FILTERS["OTHERS"]
+)
 
 
 class CustomLoggerAdapter(logging.LoggerAdapter):
     def process(self, msg, kwargs):
-        prefix = self.extra.get('prefix')
+        prefix = self.extra.get("prefix")
         return f"[{prefix}] {msg}" if prefix else msg, kwargs
 
 
@@ -103,9 +108,9 @@ def valid_dict(dct):
 def send_email(to, subject, html):
     msg = EmailMessage()
     msg.set_content(html)
-    msg['Subject'] = subject
-    msg['From'] = current_app.config["MAIL_DEFAULT_SENDER"]
-    msg['To'] = to
+    msg["Subject"] = subject
+    msg["From"] = current_app.config["MAIL_DEFAULT_SENDER"]
+    msg["To"] = to
 
     # NOTE boto3 SES client can't connect to VPC endpoint yet
     with smtplib.SMTP(host=SMTP_HOST, port=SMTP_PORT) as ses_client:
@@ -164,7 +169,7 @@ def get_kernels():
         logger.error("NOT ENOUGH KERNELS AVAILABLE")
         return None
 
-    return {kernel["id"]: None for kernel in response[idx:idx+3]}
+    return {kernel["id"]: None for kernel in response[idx : idx + 3]}
 
 
 def get_consumer():
@@ -225,6 +230,7 @@ def create_app():
 
     if getattr(app, "kernels", None):
         from mpcontribs.api.notebooks.views import rq
+
         rq.init_app(app)
 
     def healthcheck():
@@ -236,7 +242,7 @@ def create_app():
 
     @app.after_request
     def add_header(response):
-        response.headers['X-Consumer-Id'] = request.headers.get("X-Consumer-Id")
+        response.headers["X-Consumer-Id"] = request.headers.get("X-Consumer-Id")
         return response
 
     logger.info("app created.")
