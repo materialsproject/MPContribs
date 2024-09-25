@@ -34,9 +34,9 @@ blinker==1.8.2
     # via mpcontribs-api (setup.py)
 boltons==24.0.0
     # via mpcontribs-api (setup.py)
-boto3==1.35.26
+boto3==1.35.27
     # via flask-mongorest-mpcontribs
-botocore==1.35.26
+botocore==1.35.27
     # via
     #   boto3
     #   s3transfer
@@ -315,7 +315,7 @@ prometheus-client==0.21.0
     # via
     #   jupyter-server
     #   notebook
-prompt-toolkit==3.0.47
+prompt-toolkit==3.0.48
     # via ipython
 protobuf==5.28.2
     # via ddtrace
@@ -339,10 +339,11 @@ pygments==2.18.0
     #   nbconvert
 pymatgen==2024.9.17.1
     # via mpcontribs-api (setup.py)
-pymongo==4.9.1
+pymongo==4.9
     # via
     #   flask-mongorest-mpcontribs
     #   mongoengine
+    #   mpcontribs-api (setup.py)
 pyopenssl==24.2.1
     # via mpcontribs-api (setup.py)
 pyparsing==3.1.4
