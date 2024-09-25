@@ -359,7 +359,7 @@ pygments==2.18.0
     #   nbconvert
 pymatgen==2024.9.17.1
     # via mpcontribs-api (setup.py)
-pymongo==4.9
+pymongo==4.8.0
     # via
     #   flask-mongorest-mpcontribs
     #   mongoengine
