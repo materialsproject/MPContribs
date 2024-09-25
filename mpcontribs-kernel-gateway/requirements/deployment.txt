@@ -267,7 +267,7 @@ pyisemail==2.0.1
     # via mpcontribs-client
 pymatgen==2024.9.17.1
     # via mpcontribs-client
-pymongo==4.9
+pymongo==4.8.0
     # via
     #   -r MPContribs/mpcontribs-kernel-gateway/requirements.in
     #   mpcontribs-client
