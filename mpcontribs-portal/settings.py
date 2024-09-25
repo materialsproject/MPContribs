@@ -13,12 +13,14 @@ SECRET_KEY = get_random_secret_key()
 NODE_ENV = os.environ.get("NODE_ENV", "production")
 DEBUG = bool(NODE_ENV == "development")
 
-ALLOWED_HOSTS = ["localhost", "127.0.0.1", "0.0.0.0"]
+ALLOWED_HOSTS = {"localhost", "127.0.0.1", "0.0.0.0"}
 
 for valid_url in VALID_URLS:
-    netloc = urllib.parse.urlparse(valid_url).netloc
-    ALLOWED_HOSTS.append(netloc.replace("-api", "").replace(":500", ":808"))
+    netloc = urllib.parse.urlparse(valid_url).hostname
+    allow_host = netloc.replace("-api.", ".").replace("-apis", "-portals")
+    ALLOWED_HOSTS.add(allow_host)
 
+ALLOWED_HOSTS = list(ALLOWED_HOSTS)
 ALLOWED_HOSTS += ["10.0.{}.{}".format(i, j) for i in [10, 11] for j in range(256)]
 ALLOWED_HOSTS += ["192.168.{}.{}".format(i, j) for i in range(10) for j in range(256)]
 
