@@ -70,12 +70,13 @@ COPY start.sh .
 COPY maintenance.py .
 COPY gunicorn.conf.py .
 
-ENV DD_SERVICE contribs-portals
-ENV DD_ENV prod
 ARG VERSION
-ENV DD_VERSION $VERSION
-LABEL com.datadoghq.ad.logs='[{"source": "gunicorn", "service": "contribs-portals"}]'
+ENV DD_SERVICE=contribs-portals \
+  DD_ENV=prod \
+  DD_VERSION=$VERSION \
+  DD_TRACE_HOST=localhost:8126
 
+LABEL com.datadoghq.ad.logs='[{"source": "gunicorn", "service": "contribs-portals"}]'
 EXPOSE 8080 8082 8083 8085
 ENTRYPOINT ["/app/docker-entrypoint.sh"]
 CMD ["/usr/bin/supervisord", "-c", "supervisord.conf"]

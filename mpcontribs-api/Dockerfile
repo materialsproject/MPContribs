@@ -38,12 +38,13 @@ COPY docker-entrypoint.sh .
 COPY gunicorn.conf.py .
 RUN chmod +x main.py scripts/start.sh scripts/start_rq.sh docker-entrypoint.sh
 
-ENV DD_SERVICE contribs-apis
-ENV DD_ENV prod
 ARG VERSION
-ENV DD_VERSION $VERSION
-LABEL com.datadoghq.ad.logs='[{"source": "gunicorn", "service": "contribs-apis"}]'
+ENV DD_SERVICE=contribs-apis \
+  DD_ENV=prod \
+  DD_VERSION=$VERSION \
+  DD_TRACE_HOST=localhost:8126
 
+LABEL com.datadoghq.ad.logs='[{"source": "gunicorn", "service": "contribs-apis"}]'
 EXPOSE 10000 10002 10003 10005 20000
 ENTRYPOINT ["/app/docker-entrypoint.sh"]
 CMD ["/usr/bin/supervisord", "-c", "supervisord.conf"]
