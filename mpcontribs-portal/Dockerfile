@@ -74,7 +74,8 @@ ARG VERSION
 ENV DD_SERVICE=contribs-portals \
   DD_ENV=prod \
   DD_VERSION=$VERSION \
-  DD_TRACE_HOST=localhost:8126
+  DD_TRACE_HOST=localhost:8126 \
+  DD_TRACE_OTEL_ENABLED=false
 
 LABEL com.datadoghq.ad.logs='[{"source": "gunicorn", "service": "contribs-portals"}]'
 EXPOSE 8080 8082 8083 8085
