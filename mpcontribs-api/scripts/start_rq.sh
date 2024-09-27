@@ -7,9 +7,9 @@ sleep $zzz
 
 CMD="flask rq $1"
 
-if [[ -n "$DD_TRACE_HOST" ]]; then
-	wait-for-it.sh $DD_TRACE_HOST -q -s -t 10 && CMD="ddtrace-run $CMD"
-fi
+#if [[ -n "$DD_TRACE_HOST" ]]; then
+#	wait-for-it.sh $DD_TRACE_HOST -q -s -t 10 && CMD="ddtrace-run $CMD"
+#fi
 
 exec wait-for-it.sh $JUPYTER_GATEWAY_HOST -q -s -t 50 -- \
-	wait-for-it.sh $MPCONTRIBS_API_HOST -q -s -t 15 -- $CMD
+  wait-for-it.sh $MPCONTRIBS_API_HOST -q -s -t 15 -- $CMD
