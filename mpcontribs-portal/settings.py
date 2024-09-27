@@ -1,31 +1,17 @@
 # -*- coding: utf-8 -*-
 import os
-import urllib
 
 from glob import glob
 from django_extensions.management.commands.generate_secret_key import (
     get_random_secret_key,
 )
-from mpcontribs.client import VALID_URLS
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 SECRET_KEY = get_random_secret_key()
 NODE_ENV = os.environ.get("NODE_ENV", "production")
 DEBUG = bool(NODE_ENV == "development")
 
-ALLOWED_HOSTS = ["localhost", "127.0.0.1", "0.0.0.0"]
-
-for valid_url in VALID_URLS:
-    netloc = urllib.parse.urlparse(valid_url).netloc
-    ALLOWED_HOSTS.append(
-        netloc.replace("-api.", ".")
-        .replace("-apis", "-portals")
-        .replace(":500", ":808")
-    )
-
-ALLOWED_HOSTS += ["10.0.{}.{}".format(i, j) for i in [10, 11] for j in range(256)]
-ALLOWED_HOSTS += ["192.168.{}.{}".format(i, j) for i in range(10) for j in range(256)]
-
+ALLOWED_HOSTS = ["*"]
 INSTALLED_APPS = [
     "django.contrib.contenttypes",
     "django.contrib.sessions",
