@@ -43,7 +43,10 @@ ARG VERSION
 ENV DD_SERVICE=contribs-kernel-gateway \
   DD_ENV=prod \
   DD_VERSION=$VERSION \
-  DD_TRACE_HOST=localhost:8126
+  DD_TRACE_HOST=localhost:8126 \
+  DD_PROFILING_ENABLED=true \
+  DD_LOGS_INJECTION=true \
+  DD_TRACE_SAMPLE_RATE=1
 
 LABEL com.datadoghq.ad.logs='[{"source": "gunicorn", "service": "contribs-kernel-gateway"}]'
 CMD ./start.sh
