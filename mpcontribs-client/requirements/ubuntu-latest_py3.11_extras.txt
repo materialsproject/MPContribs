@@ -32,7 +32,7 @@ cycler==0.12.1
     # via matplotlib
 decorator==5.1.1
     # via ipython
-dnspython==2.6.1
+dnspython==2.7.0
     # via
     #   pyisemail
     #   pymongo
@@ -58,7 +58,7 @@ importlib-resources==6.4.5
     # via swagger-spec-validator
 iniconfig==2.0.0
     # via pytest
-ipython==8.27.0
+ipython==8.28.0
     # via mpcontribs-client (setup.py)
 isoduration==20.11.0
     # via jsonschema
@@ -156,9 +156,9 @@ pygments==2.18.0
     # via ipython
 pyisemail==2.0.1
     # via mpcontribs-client (setup.py)
-pymatgen==2024.9.17.1
+pymatgen==2024.10.3
     # via mpcontribs-client (setup.py)
-pymongo==4.9.1
+pymongo==4.10.1
     # via mpcontribs-client (setup.py)
 pyparsing==3.1.4
     # via matplotlib
@@ -254,7 +254,7 @@ traitlets==5.14.3
     # via
     #   ipython
     #   matplotlib-inline
-types-python-dateutil==2.9.0.20240906
+types-python-dateutil==2.9.0.20241003
     # via arrow
 typing-extensions==4.12.2
     # via
