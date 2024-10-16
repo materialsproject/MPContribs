@@ -61,6 +61,7 @@ from tempfile import gettempdir
 from plotly.express._chart_types import line as line_chart
 from cachetools import cached, LRUCache
 from cachetools.keys import hashkey
+from pymatgen.core import SETTINGS
 
 RETRIES = 3
 MAX_WORKERS = 3
@@ -886,7 +887,9 @@ class Client(SwaggerClient):
             host = os.environ.get("MPCONTRIBS_API_HOST", DEFAULT_HOST)
 
         if not apikey:
-            apikey = os.environ.get("MPCONTRIBS_API_KEY")
+            apikey = os.environ.get("MPCONTRIBS_API_KEY", SETTINGS.get("PMG_MAPI_KEY"))
+            if len(apikey) != 32:
+                raise MPContribsClientError("Invalid API key.")
 
         if apikey and headers:
             apikey = None
