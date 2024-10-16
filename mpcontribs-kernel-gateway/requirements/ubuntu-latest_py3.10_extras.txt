@@ -4,7 +4,7 @@
 #
 #    pip-compile --all-extras --output-file=requirements/ubuntu-latest_py3.10_extras.txt
 #
-anyio==4.6.0
+anyio==4.6.2
     # via jupyter-server
 argon2-cffi==23.1.0
     # via jupyter-server
@@ -38,7 +38,7 @@ certifi==2024.8.30
     # via requests
 cffi==1.17.1
     # via argon2-cffi-bindings
-charset-normalizer==3.3.2
+charset-normalizer==3.4.0
     # via requests
 comm==0.2.2
     # via
@@ -50,7 +50,7 @@ cycler==0.12.1
     # via matplotlib
 ddtrace==2.14.2
     # via -r requirements.in
-debugpy==1.8.6
+debugpy==1.8.7
     # via ipykernel
 decorator==5.1.1
     # via ipython
@@ -120,7 +120,7 @@ jsonschema[format-nongpl]==4.23.0
     #   jupyter-events
     #   nbformat
     #   swagger-spec-validator
-jsonschema-specifications==2023.12.1
+jsonschema-specifications==2024.10.1
     # via jsonschema
 jupyter-client==8.6.3
     # via
@@ -156,7 +156,7 @@ kiwisolver==1.4.7
     # via matplotlib
 latexcodec==3.0.0
     # via pybtex
-markupsafe==2.1.5
+markupsafe==3.0.1
     # via
     #   jinja2
     #   nbconvert
@@ -191,7 +191,7 @@ nbformat==5.10.4
     #   nbconvert
 nest-asyncio==1.6.0
     # via ipykernel
-networkx==3.3
+networkx==3.4.1
     # via pymatgen
 numpy==1.26.4
     # via
@@ -267,7 +267,7 @@ pymongo==4.8.0
     # via
     #   -r requirements.in
     #   mpcontribs-client
-pyparsing==3.1.4
+pyparsing==3.2.0
     # via matplotlib
 python-dateutil==2.9.0.post0
     # via
@@ -430,7 +430,7 @@ wrapt==1.16.0
     # via
     #   ddtrace
     #   deprecated
-xmltodict==0.13.0
+xmltodict==0.14.1
     # via ddtrace
 zipp==3.20.2
     # via importlib-metadata
