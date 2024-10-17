@@ -889,7 +889,7 @@ class Client(SwaggerClient):
         if not apikey:
             apikey = os.environ.get("MPCONTRIBS_API_KEY", SETTINGS.get("PMG_MAPI_KEY"))
             if len(apikey) != 32:
-                raise MPContribsClientError("Invalid API key.")
+                raise MPContribsClientError(f"Invalid API key: {apikey}")
 
         if apikey and headers:
             apikey = None
