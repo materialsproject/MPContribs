@@ -32,7 +32,6 @@ setup(
         "scipy",
         "setproctitle",
         "whitenoise",
-        "pymongo<4.9",
     ],
     extras_require={
         "dev": ["pytest", "flake8"]
