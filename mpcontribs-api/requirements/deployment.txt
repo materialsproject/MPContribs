@@ -36,9 +36,9 @@ blinker==1.8.2
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 boltons==24.0.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
-boto3==1.35.43
+boto3==1.35.44
     # via flask-mongorest-mpcontribs
-botocore==1.35.43
+botocore==1.35.44
     # via
     #   boto3
     #   s3transfer
@@ -66,7 +66,7 @@ cramjam==2.9.0
     # via python-snappy
 crontab==1.0.1
     # via rq-scheduler
-cryptography==43.0.1
+cryptography==43.0.3
     # via pyopenssl
 css-html-js-minify==2.5.5
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
@@ -134,7 +134,7 @@ fqdn==1.5.1
     # via jsonschema
 freezegun==1.5.1
     # via rq-scheduler
-gevent==24.10.2
+gevent==24.10.3
     # via gunicorn
 greenlet==3.1.1
     # via gevent
@@ -214,7 +214,7 @@ kiwisolver==1.4.7
     # via matplotlib
 latexcodec==3.0.0
     # via pybtex
-markupsafe==3.0.1
+markupsafe==3.0.2
     # via
     #   jinja2
     #   nbconvert
@@ -330,7 +330,7 @@ prompt-toolkit==3.0.48
     # via ipython
 protobuf==5.28.2
     # via ddtrace
-psutil==6.0.0
+psutil==6.1.0
     # via ipykernel
 psycopg2-binary==2.9.10
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
@@ -350,11 +350,10 @@ pygments==2.18.0
     #   nbconvert
 pymatgen==2024.10.3
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
-pymongo==4.8.0
+pymongo==4.10.1
     # via
     #   flask-mongorest-mpcontribs
     #   mongoengine
-    #   mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 pyopenssl==24.2.1
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 pyparsing==3.2.0
