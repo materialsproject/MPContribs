@@ -113,7 +113,7 @@ parso==0.8.4
     # via jedi
 pexpect==4.9.0
     # via ipython
-pillow==10.4.0
+pillow==11.0.0
     # via matplotlib
 pint==0.19.2
     # via mpcontribs-client (setup.py)
