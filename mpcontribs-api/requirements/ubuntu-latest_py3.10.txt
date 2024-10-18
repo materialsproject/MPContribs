@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=requirements/ubuntu-latest_py3.10.txt
 #
-anyio==4.6.2
+anyio==4.6.2.post1
     # via jupyter-server
 apispec==5.2.2
     # via mpcontribs-api (setup.py)
@@ -36,9 +36,9 @@ blinker==1.8.2
     # via mpcontribs-api (setup.py)
 boltons==24.0.0
     # via mpcontribs-api (setup.py)
-boto3==1.35.39
+boto3==1.35.44
     # via flask-mongorest-mpcontribs
-botocore==1.35.39
+botocore==1.35.44
     # via
     #   boto3
     #   s3transfer
@@ -62,11 +62,11 @@ comm==0.2.2
     # via ipykernel
 contourpy==1.3.0
     # via matplotlib
-cramjam==2.8.4
+cramjam==2.9.0
     # via python-snappy
 crontab==1.0.1
     # via rq-scheduler
-cryptography==43.0.1
+cryptography==43.0.3
     # via pyopenssl
 css-html-js-minify==2.5.5
     # via mpcontribs-api (setup.py)
@@ -114,7 +114,7 @@ flask==2.2.5
     #   flask-mongoengine-tschaume
     #   flask-rq2
     #   flask-sse
-flask-compress==1.16
+flask-compress==1.17
     # via mpcontribs-api (setup.py)
 flask-marshmallow==1.2.1
     # via mpcontribs-api (setup.py)
@@ -134,7 +134,7 @@ fqdn==1.5.1
     # via jsonschema
 freezegun==1.5.1
     # via rq-scheduler
-gevent==24.10.2
+gevent==24.10.3
     # via gunicorn
 greenlet==3.1.1
     # via gevent
@@ -214,12 +214,12 @@ kiwisolver==1.4.7
     # via matplotlib
 latexcodec==3.0.0
     # via pybtex
-markupsafe==3.0.1
+markupsafe==3.0.2
     # via
     #   jinja2
     #   nbconvert
     #   werkzeug
-marshmallow==3.22.0
+marshmallow==3.23.0
     # via
     #   flask-marshmallow
     #   marshmallow-mongoengine
@@ -309,7 +309,7 @@ parso==0.8.4
     # via jedi
 pexpect==4.9.0
     # via ipython
-pillow==10.4.0
+pillow==11.0.0
     # via matplotlib
 pint==0.19.2
     # via mpcontribs-api (setup.py)
@@ -325,9 +325,9 @@ prompt-toolkit==3.0.48
     # via ipython
 protobuf==5.28.2
     # via ddtrace
-psutil==6.0.0
+psutil==6.1.0
     # via ipykernel
-psycopg2-binary==2.9.9
+psycopg2-binary==2.9.10
     # via mpcontribs-api (setup.py)
 ptyprocess==0.7.0
     # via
@@ -345,11 +345,10 @@ pygments==2.18.0
     #   nbconvert
 pymatgen==2024.10.3
     # via mpcontribs-api (setup.py)
-pymongo==4.8.0
+pymongo==4.10.1
     # via
     #   flask-mongorest-mpcontribs
     #   mongoengine
-    #   mpcontribs-api (setup.py)
 pyopenssl==24.2.1
     # via mpcontribs-api (setup.py)
 pyparsing==3.2.0
@@ -533,7 +532,7 @@ wrapt==1.16.0
     # via
     #   ddtrace
     #   deprecated
-xmltodict==0.14.1
+xmltodict==0.14.2
     # via ddtrace
 zipp==3.20.2
     # via importlib-metadata
