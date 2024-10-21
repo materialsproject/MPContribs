@@ -175,7 +175,7 @@ mistune==3.0.2
     # via nbconvert
 monotonic==1.6
     # via bravado
-monty==2024.7.30
+monty==2024.10.21
     # via
     #   mpcontribs-portal (MPContribs/mpcontribs-portal/setup.py)
     #   pymatgen
@@ -198,13 +198,14 @@ nbformat==5.10.4
     #   nbconvert
 nest-asyncio==1.6.0
     # via ipykernel
-networkx==3.4.1
+networkx==3.4.2
     # via pymatgen
 numpy==1.26.4
     # via
     #   -r python/requirements.txt
     #   contourpy
     #   matplotlib
+    #   monty
     #   mpcontribs-client
     #   pandas
     #   pymatgen
@@ -313,8 +314,10 @@ rpds-py==0.20.0
     #   jsonschema
     #   referencing
 ruamel-yaml==0.18.6
-    # via pymatgen
-ruamel-yaml-clib==0.2.8
+    # via
+    #   monty
+    #   pymatgen
+ruamel-yaml-clib==0.2.12
     # via ruamel-yaml
 s3transfer==0.10.3
     # via boto3
