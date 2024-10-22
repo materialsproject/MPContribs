@@ -36,9 +36,9 @@ blinker==1.8.2
     # via mpcontribs-api (setup.py)
 boltons==24.0.0
     # via mpcontribs-api (setup.py)
-boto3==1.35.44
+boto3==1.35.46
     # via flask-mongorest-mpcontribs
-botocore==1.35.44
+botocore==1.35.46
     # via
     #   boto3
     #   s3transfer
@@ -74,7 +74,7 @@ cycler==0.12.1
     # via matplotlib
 dateparser==1.2.0
     # via mpcontribs-api (setup.py)
-ddtrace==2.14.2
+ddtrace==2.14.4
     # via mpcontribs-api (setup.py)
 debugpy==1.8.7
     # via ipykernel
@@ -90,7 +90,7 @@ dnspython==2.7.0
     #   pymongo
 entrypoints==0.4
     # via jupyter-client
-envier==0.5.2
+envier==0.6.1
     # via ddtrace
 exceptiongroup==1.2.2
     # via
@@ -249,7 +249,7 @@ mongoengine==0.29.1
     #   atlasq-tschaume
     #   flask-mongoengine-tschaume
     #   marshmallow-mongoengine
-monty==2024.7.30
+monty==2024.10.21
     # via pymatgen
 more-itertools==10.5.0
     # via mpcontribs-api (setup.py)
@@ -276,7 +276,7 @@ nest-asyncio==1.6.0
     #   jupyter-client
     #   nbclassic
     #   notebook
-networkx==3.4.1
+networkx==3.4.2
     # via pymatgen
 notebook==6.5.7
     # via mpcontribs-api (setup.py)
@@ -286,6 +286,7 @@ numpy==1.26.4
     # via
     #   contourpy
     #   matplotlib
+    #   monty
     #   mpcontribs-api (setup.py)
     #   pandas
     #   pymatgen
@@ -293,7 +294,7 @@ numpy==1.26.4
     #   spglib
 opentelemetry-api==1.27.0
     # via ddtrace
-orjson==3.10.7
+orjson==3.10.10
     # via flask-mongorest-mpcontribs
 overrides==7.7.0
     # via jupyter-server
@@ -357,7 +358,7 @@ pygments==2.18.0
     # via
     #   ipython
     #   nbconvert
-pymatgen==2024.10.3
+pymatgen==2024.10.22
     # via mpcontribs-api (setup.py)
 pymongo==4.10.1
     # via
@@ -436,8 +437,10 @@ rq==1.16.2
 rq-scheduler==0.13.1
     # via flask-rq2
 ruamel-yaml==0.18.6
-    # via pymatgen
-ruamel-yaml-clib==0.2.8
+    # via
+    #   monty
+    #   pymatgen
+ruamel-yaml-clib==0.2.12
     # via ruamel-yaml
 s3transfer==0.10.3
     # via boto3
