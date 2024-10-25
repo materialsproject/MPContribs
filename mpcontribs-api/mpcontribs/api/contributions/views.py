@@ -3,7 +3,6 @@ import re
 import os
 import flask_mongorest
 
-from collections import defaultdict
 from itertools import permutations
 from css_html_js_minify import html_minify
 from json2html import Json2Html
@@ -15,7 +14,14 @@ from flask import Blueprint, render_template, jsonify, abort, request
 from flask_mongorest.resources import Resource
 from flask_mongorest import operators as ops
 from flask_mongorest.methods import (
-    Fetch, Delete, Update, BulkFetch, BulkCreate, BulkUpdate, BulkDelete, Download,
+    Fetch,
+    Delete,
+    Update,
+    BulkFetch,
+    BulkCreate,
+    BulkUpdate,
+    BulkDelete,
+    Download,
 )
 from flask_mongorest.exceptions import UnknownFieldError
 
@@ -60,10 +66,16 @@ class ContributionsResource(Resource):
         re.compile(r"^data__((?!__).)*$"): FILTERS["ALL"],
         "structures": [ops.Size],
         "tables": [ops.Size],
-        "attachments": [ops.Size]
+        "attachments": [ops.Size],
     }
     fields = [
-        "id", "project", "identifier", "formula", "is_public", "last_modified", "needs_build"
+        "id",
+        "project",
+        "identifier",
+        "formula",
+        "is_public",
+        "last_modified",
+        "needs_build",
     ]
     allowed_ordering = [
         "id",
@@ -106,7 +118,8 @@ class ContributionsResource(Resource):
             DocType = obj.project.document_type
             exclude = list(DocType._fields.keys())
             only = ["title", "references", "description", "authors"]
-            project = DocType.objects.exclude(*exclude).only(*only).with_id(obj.project.pk)
+            pk = obj.project.pk
+            project = DocType.objects.exclude(*exclude).only(*only).with_id(pk)
             ctx = {
                 "cid": str(obj.id),
                 "title": project.title,
@@ -148,13 +161,11 @@ class ContributionsView(SwaggerView):
             nr_contribs = Contributions.objects(project=obj.project.id).count()
             if nr_contribs > MAX_UNAPPROVED_CONTRIBS:
                 msg = f"Reached {MAX_UNAPPROVED_CONTRIBS} for unapproved project {obj.project.id}."
-                msg += " Please reach out to contribs@materialsproject.org for approval."
+                msg += " Please reach out to contribs@materialsproject.org."
                 raise Unauthorized(f"Can't add {obj.identifier}: {msg}")
 
-
-        if obj.project.unique_identifiers and Contributions.objects(
-            project=obj.project.id, identifier=obj.identifier
-        ).count():
+        query = dict(project=obj.project.id, identifier=obj.identifier)
+        if obj.project.unique_identifiers and Contributions.objects(query).count():
             raise Unauthorized(f"{obj.identifier} already added for {obj.project.id}")
 
         return True
@@ -178,15 +189,18 @@ def search():
         ind_str.append(d[0] + str(int(d[1])) if d[1] != 1 else d[0])
     else:
         for i, j in comp.reduced_composition.items():
-            ind_str.append(
-                i.name + str(int(j)) if j != 1 else i.name
-            )
+            ind_str.append(i.name + str(int(j)) if j != 1 else i.name)
 
     final_terms = ["".join(entry) for entry in permutations(ind_str)]
     limit = request.args.get("limit", ContributionsResource.default_limit)
 
     pipeline = [
-        {"$search": {"index": "formula_autocomplete", "text": {"path": "formula", "query": final_terms}}},
+        {
+            "$search": {
+                "index": "formula_autocomplete",
+                "text": {"path": "formula", "query": final_terms},
+            }
+        },
         {"$project": {"formula": 1, "length": {"$strLenCP": "$formula"}, "project": 1}},
         {"$match": {"length": {"$gte": len(final_terms[0])}}},
         {"$limit": limit},
@@ -196,10 +210,12 @@ def search():
     results = []
 
     for contrib in Contributions.objects().aggregate(pipeline):
-        results.append({
-            "id": str(contrib["_id"]),
-            "formula": contrib["formula"],
-            "project": contrib["project"]
-        })
+        results.append(
+            {
+                "id": str(contrib["_id"]),
+                "formula": contrib["formula"],
+                "project": contrib["project"],
+            }
+        )
 
     return jsonify(results)
