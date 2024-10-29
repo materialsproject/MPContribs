@@ -20,7 +20,7 @@ attrs==24.2.0
     #   referencing
 beautifulsoup4==4.12.3
     # via nbconvert
-bleach==6.1.0
+bleach==6.2.0
     # via nbconvert
 blinker==1.8.2
     # via -r requirements.in
@@ -30,7 +30,7 @@ bravado==11.0.3
     # via mpcontribs-client
 bravado-core==6.1.1
     # via bravado
-bytecode==0.15.1
+bytecode==0.16.0
     # via ddtrace
 cachetools==5.5.0
     # via mpcontribs-client
@@ -91,7 +91,7 @@ importlib-resources==6.4.5
     # via swagger-spec-validator
 ipykernel==6.29.5
     # via -r requirements.in
-ipython==8.28.0
+ipython==8.29.0
     # via
     #   ipykernel
     #   ipywidgets
@@ -240,7 +240,7 @@ prometheus-client==0.21.0
     # via jupyter-server
 prompt-toolkit==3.0.48
     # via ipython
-protobuf==5.28.2
+protobuf==5.28.3
     # via ddtrace
 psutil==6.1.0
     # via
@@ -262,7 +262,7 @@ pygments==2.18.0
     #   nbconvert
 pyisemail==2.0.1
     # via mpcontribs-client
-pymatgen==2024.10.22
+pymatgen==2024.10.29
     # via mpcontribs-client
 pymongo==4.10.1
     # via mpcontribs-client
@@ -339,7 +339,6 @@ simplejson==3.19.3
 six==1.16.0
     # via
     #   asttokens
-    #   bleach
     #   bravado
     #   bravado-core
     #   flatten-dict
@@ -368,7 +367,7 @@ terminado==0.18.1
     # via
     #   jupyter-server
     #   jupyter-server-terminals
-tinycss2==1.3.0
+tinycss2==1.4.0
     # via nbconvert
 tornado==6.4.1
     # via
@@ -377,7 +376,7 @@ tornado==6.4.1
     #   jupyter-kernel-gateway
     #   jupyter-server
     #   terminado
-tqdm==4.66.5
+tqdm==4.66.6
     # via
     #   mpcontribs-client
     #   pymatgen
