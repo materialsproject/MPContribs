@@ -20,7 +20,7 @@ attrs==24.2.0
     #   referencing
 beautifulsoup4==4.12.3
     # via nbconvert
-bleach==6.1.0
+bleach==6.2.0
     # via nbconvert
 blinker==1.8.2
     # via -r MPContribs/mpcontribs-kernel-gateway/requirements.in
@@ -262,7 +262,7 @@ pygments==2.18.0
     #   nbconvert
 pyisemail==2.0.1
     # via mpcontribs-client
-pymatgen==2024.10.27
+pymatgen==2024.10.29
     # via mpcontribs-client
 pymongo==4.10.1
     # via mpcontribs-client
@@ -341,7 +341,6 @@ simplejson==3.19.3
 six==1.16.0
     # via
     #   asttokens
-    #   bleach
     #   bravado
     #   bravado-core
     #   flatten-dict
