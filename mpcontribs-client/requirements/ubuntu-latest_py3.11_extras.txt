@@ -58,7 +58,7 @@ importlib-resources==6.4.5
     # via swagger-spec-validator
 iniconfig==2.0.0
     # via pytest
-ipython==8.28.0
+ipython==8.29.0
     # via mpcontribs-client (setup.py)
 isoduration==20.11.0
     # via jsonschema
@@ -157,7 +157,7 @@ pygments==2.18.0
     # via ipython
 pyisemail==2.0.1
     # via mpcontribs-client (setup.py)
-pymatgen==2024.10.22
+pymatgen==2024.10.29
     # via mpcontribs-client (setup.py)
 pymongo==4.10.1
     # via mpcontribs-client (setup.py)
@@ -169,7 +169,7 @@ pytest==8.3.3
     #   pytest-cov
     #   pytest-flake8
     #   pytest-pycodestyle
-pytest-cov==5.0.0
+pytest-cov==6.0.0
     # via mpcontribs-client (setup.py)
 pytest-flake8==1.2.2
     # via mpcontribs-client (setup.py)
@@ -249,7 +249,7 @@ tabulate==0.9.0
     # via pymatgen
 tenacity==9.0.0
     # via plotly
-tqdm==4.66.5
+tqdm==4.66.6
     # via
     #   mpcontribs-client (setup.py)
     #   pymatgen
