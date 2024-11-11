@@ -20,7 +20,7 @@ asn1crypto==1.5.1
     # via mpcontribs-api (setup.py)
 asttokens==2.4.1
     # via stack-data
-async-timeout==5.0.0
+async-timeout==5.0.1
     # via redis
 atlasq-tschaume==0.11.1.dev2
     # via flask-mongorest-mpcontribs
@@ -32,13 +32,13 @@ beautifulsoup4==4.12.3
     # via nbconvert
 bleach==6.2.0
     # via nbconvert
-blinker==1.8.2
+blinker==1.9.0
     # via mpcontribs-api (setup.py)
 boltons==24.1.0
     # via mpcontribs-api (setup.py)
-boto3==1.35.54
+boto3==1.35.57
     # via flask-mongorest-mpcontribs
-botocore==1.35.54
+botocore==1.35.57
     # via
     #   boto3
     #   s3transfer
@@ -76,7 +76,7 @@ dateparser==1.2.0
     # via mpcontribs-api (setup.py)
 ddtrace==2.16.0
     # via mpcontribs-api (setup.py)
-debugpy==1.8.7
+debugpy==1.8.8
     # via ipykernel
 decorator==5.1.1
     # via ipython
@@ -166,7 +166,7 @@ isoduration==20.11.0
     # via jsonschema
 itsdangerous==2.2.0
     # via flask
-jedi==0.19.1
+jedi==0.19.2
     # via ipython
 jinja2==3.1.4
     # via
@@ -292,13 +292,13 @@ numpy==1.26.4
     #   pymatgen
     #   scipy
     #   spglib
-opentelemetry-api==1.28.0
+opentelemetry-api==1.28.1
     # via ddtrace
 orjson==3.10.11
     # via flask-mongorest-mpcontribs
 overrides==7.7.0
     # via jupyter-server
-packaging==24.1
+packaging==24.2
     # via
     #   gunicorn
     #   ipykernel
@@ -412,7 +412,7 @@ referencing==0.35.1
     #   jsonschema
     #   jsonschema-specifications
     #   jupyter-events
-regex==2024.9.11
+regex==2024.11.6
     # via dateparser
 requests==2.32.3
     # via
@@ -426,7 +426,7 @@ rfc3986-validator==0.1.1
     # via
     #   jsonschema
     #   jupyter-events
-rpds-py==0.20.1
+rpds-py==0.21.0
     # via
     #   jsonschema
     #   referencing
@@ -495,7 +495,7 @@ tornado==6.4.1
     #   jupyter-server
     #   notebook
     #   terminado
-tqdm==4.66.6
+tqdm==4.67.0
     # via pymatgen
 traitlets==5.14.3
     # via
@@ -534,7 +534,7 @@ urllib3==2.2.3
     #   requests
 wcwidth==0.2.13
     # via prompt-toolkit
-webcolors==24.8.0
+webcolors==24.11.1
     # via jsonschema
 webencodings==0.5.1
     # via
@@ -544,7 +544,7 @@ websocket-client==1.8.0
     # via
     #   jupyter-server
     #   mpcontribs-api (setup.py)
-werkzeug==3.1.2
+werkzeug==3.1.3
     # via
     #   flasgger-tschaume
     #   flask
@@ -554,7 +554,7 @@ wrapt==1.16.0
     #   deprecated
 xmltodict==0.14.2
     # via ddtrace
-zipp==3.20.2
+zipp==3.21.0
     # via importlib-metadata
 zope-event==5.0
     # via gevent
