@@ -54,7 +54,7 @@ ipython==8.29.0
     # via mpcontribs-client (setup.py)
 isoduration==20.11.0
     # via jsonschema
-jedi==0.19.1
+jedi==0.19.2
     # via ipython
 joblib==1.4.2
     # via pymatgen
@@ -100,7 +100,7 @@ numpy==1.26.4
     #   pymatgen
     #   scipy
     #   spglib
-packaging==24.1
+packaging==24.2
     # via
     #   matplotlib
     #   plotly
@@ -173,7 +173,7 @@ rfc3339-validator==0.1.4
     # via jsonschema
 rfc3986-validator==0.1.1
     # via jsonschema
-rpds-py==0.20.1
+rpds-py==0.21.0
     # via
     #   jsonschema
     #   referencing
@@ -214,7 +214,7 @@ tabulate==0.9.0
     # via pymatgen
 tenacity==9.0.0
     # via plotly
-tqdm==4.66.6
+tqdm==4.67.0
     # via
     #   mpcontribs-client (setup.py)
     #   pymatgen
@@ -241,5 +241,5 @@ urllib3==2.2.3
     # via requests
 wcwidth==0.2.13
     # via prompt-toolkit
-webcolors==24.8.0
+webcolors==24.11.1
     # via jsonschema
