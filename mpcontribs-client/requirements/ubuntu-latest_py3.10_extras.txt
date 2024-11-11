@@ -44,7 +44,7 @@ executing==2.1.0
     # via stack-data
 filetype==1.2.0
     # via mpcontribs-client (setup.py)
-flake8==5.0.4
+flake8==7.1.1
     # via
     #   mpcontribs-client (setup.py)
     #   pytest-flake8
@@ -66,7 +66,7 @@ ipython==8.29.0
     # via mpcontribs-client (setup.py)
 isoduration==20.11.0
     # via jsonschema
-jedi==0.19.1
+jedi==0.19.2
     # via ipython
 joblib==1.4.2
     # via pymatgen
@@ -114,7 +114,7 @@ numpy==1.26.4
     #   pymatgen
     #   scipy
     #   spglib
-packaging==24.1
+packaging==24.2
     # via
     #   matplotlib
     #   plotly
@@ -151,11 +151,11 @@ py==1.11.0
     #   pytest-pycodestyle
 pybtex==0.24.0
     # via pymatgen
-pycodestyle==2.9.1
+pycodestyle==2.12.1
     # via
     #   flake8
     #   pytest-pycodestyle
-pyflakes==2.5.0
+pyflakes==3.2.0
     # via flake8
 pygments==2.18.0
     # via ipython
@@ -175,7 +175,7 @@ pytest==8.3.3
     #   pytest-pycodestyle
 pytest-cov==6.0.0
     # via mpcontribs-client (setup.py)
-pytest-flake8==1.2.2
+pytest-flake8==1.3.0
     # via mpcontribs-client (setup.py)
 pytest-pycodestyle==2.4.1
     # via mpcontribs-client (setup.py)
@@ -212,7 +212,7 @@ rfc3339-validator==0.1.4
     # via jsonschema
 rfc3986-validator==0.1.1
     # via jsonschema
-rpds-py==0.20.1
+rpds-py==0.21.0
     # via
     #   jsonschema
     #   referencing
@@ -257,7 +257,7 @@ tomli==2.0.2
     # via
     #   coverage
     #   pytest
-tqdm==4.66.6
+tqdm==4.67.0
     # via
     #   mpcontribs-client (setup.py)
     #   pymatgen
@@ -284,5 +284,5 @@ urllib3==2.2.3
     # via requests
 wcwidth==0.2.13
     # via prompt-toolkit
-webcolors==24.8.0
+webcolors==24.11.1
     # via jsonschema
