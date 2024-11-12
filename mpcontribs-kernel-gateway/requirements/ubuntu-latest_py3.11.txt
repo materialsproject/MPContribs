@@ -22,7 +22,7 @@ beautifulsoup4==4.12.3
     # via nbconvert
 bleach==6.2.0
     # via nbconvert
-blinker==1.8.2
+blinker==1.9.0
     # via -r requirements.in
 boltons==24.1.0
     # via mpcontribs-client
@@ -50,7 +50,7 @@ cycler==0.12.1
     # via matplotlib
 ddtrace==2.16.0
     # via -r requirements.in
-debugpy==1.8.7
+debugpy==1.8.8
     # via ipykernel
 decorator==5.1.1
     # via ipython
@@ -96,7 +96,7 @@ ipywidgets==8.1.5
     # via -r requirements.in
 isoduration==20.11.0
     # via jsonschema
-jedi==0.19.1
+jedi==0.19.2
     # via ipython
 jinja2==3.1.4
     # via
@@ -199,11 +199,11 @@ numpy==1.26.4
     #   pymatgen
     #   scipy
     #   spglib
-opentelemetry-api==1.28.0
+opentelemetry-api==1.28.1
     # via ddtrace
 overrides==7.7.0
     # via jupyter-server
-packaging==24.1
+packaging==24.2
     # via
     #   ipykernel
     #   jupyter-server
@@ -312,7 +312,7 @@ rfc3986-validator==0.1.1
     # via
     #   jsonschema
     #   jupyter-events
-rpds-py==0.20.1
+rpds-py==0.21.0
     # via
     #   jsonschema
     #   referencing
@@ -372,7 +372,7 @@ tornado==6.4.1
     #   jupyter-kernel-gateway
     #   jupyter-server
     #   terminado
-tqdm==4.66.6
+tqdm==4.67.0
     # via
     #   mpcontribs-client
     #   pymatgen
@@ -411,7 +411,7 @@ urllib3==2.2.3
     # via requests
 wcwidth==0.2.13
     # via prompt-toolkit
-webcolors==24.8.0
+webcolors==24.11.1
     # via jsonschema
 webencodings==0.5.1
     # via
@@ -427,5 +427,5 @@ wrapt==1.16.0
     #   deprecated
 xmltodict==0.14.2
     # via ddtrace
-zipp==3.20.2
+zipp==3.21.0
     # via importlib-metadata
