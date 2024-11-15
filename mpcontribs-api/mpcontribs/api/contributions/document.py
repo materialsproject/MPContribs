@@ -74,7 +74,7 @@ def format_cell(cell):
     q = truncate_digits(q)
     try:
         return str(q.nominal_value) if isnan(q.std_dev) else str(q)
-    except Exception:
+    except UnicodeEncodeError:
         return cell
 
 
