@@ -30,12 +30,7 @@ class MPFile(MPFileCore):
         for key in list(rdct.keys()):
             is_general, root_key = normalize_root_level(key)
 
-            if is_general:
-                # make part of shared (meta-)data, i.e. nest under `general` at
-                # the beginning of the MPFile
-                if mp_level01_titles[0] not in rdct:
-                    rdct[mp_level01_titles[0]] = RecursiveDict()
-                    rdct.move_to_end(mp_level01_titles[0], last=False)
+            MPFile.handle_rdct(rdct, is_general)
 
             # normalize identifier key (pop & insert)
             # using rec_update since we're looping over all entries
@@ -99,24 +94,22 @@ class MPFile(MPFileCore):
 
         return MPFile.from_dict(rdct)
 
+    @staticmethod
+    def handle_rdct(rdct, is_general):
+        if is_general:
+                # make part of shared (meta-)data, i.e. nest under `general` at
+                # the beginning of the MPFile
+            if mp_level01_titles[0] not in rdct:
+                rdct[mp_level01_titles[0]] = RecursiveDict()
+                rdct.move_to_end(mp_level01_titles[0], last=False)
+
     def get_string(self, df_head_only=False):
         from pymatgen.core import Structure
 
         lines, scope = [], []
         for key, value in self.document.iterate():
             if isinstance(value, Table):
-                lines[-1] = lines[-1].replace("{", "[+").replace("}", "]")
-                header = any([isinstance(col, str) for col in value])
-                if isinstance(value.index, MultiIndex):
-                    value.reset_index(inplace=True)
-                if df_head_only:
-                    value = value.head()
-                csv_string = value.to_csv(
-                    index=False, header=header, float_format="%g", encoding="utf-8"
-                )[:-1]
-                lines += csv_string.split("\n")
-                if df_head_only:
-                    lines.append("...")
+                value = self._handle_table(df_head_only, lines, value)
             elif isinstance(value, Structure):
                 from pymatgen.io.cif import CifWriter
 
@@ -161,6 +154,21 @@ class MPFile(MPFileCore):
                         )
                     )
         return "\n".join(lines) + "\n"
+
+    def _handle_table(self, df_head_only, lines, value):
+        lines[-1] = lines[-1].replace("{", "[+").replace("}", "]")
+        header = any([isinstance(col, str) for col in value])
+        if isinstance(value.index, MultiIndex):
+            value.reset_index(inplace=True)
+        if df_head_only:
+            value = value.head()
+        csv_string = value.to_csv(
+                    index=False, header=header, float_format="%g", encoding="utf-8"
+                )[:-1]
+        lines += csv_string.split("\n")
+        if df_head_only:
+            lines.append("...")
+        return value
 
 
 MPFileCore.register(MPFile)
