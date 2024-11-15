@@ -263,11 +263,7 @@ class Projects(Document):
                         remap(merged, visit=visit, enter=enter), reducer="dot"
                     )
 
-                    for k, v in flat.items():
-                        if k.startswith("data."):
-                            columns[k] = Column(path=k)
-                            if v is not None:
-                                columns[k].unit = v
+                    cls.update_columns_by_flat(columns, flat)
 
                 # start pipeline for stats: match project
                 pipeline = [{"$match": {"project": document.id}}]
@@ -365,6 +361,14 @@ class Projects(Document):
 
                 stats = Stats(**stats_kwargs)
                 document.update(stats=stats, columns=columns.values())
+
+    @classmethod
+    def update_columns_by_flat(cls, columns, flat):
+        for k, v in flat.items():
+            if k.startswith("data."):
+                columns[k] = Column(path=k)
+                if v is not None:
+                    columns[k].unit = v
 
     @classmethod
     def post_delete(cls, sender, document, **kwargs):
