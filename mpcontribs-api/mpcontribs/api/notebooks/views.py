@@ -141,14 +141,7 @@ def make(projects=None, cids=None, force=False):
     start = time.perf_counter()
     remaining_time = rq.default_timeout - 5
     mask = ["id", "needs_build", "notebook"]
-    query = Q()
-
-    if projects:
-        query &= Q(project__in=projects)
-    if cids:
-        query &= Q(id__in=cids)
-    if not force:
-        query &= Q(needs_build=True) | Q(needs_build__exists=False)
+    query = _build_query(projects, cids, force)
 
     job = get_current_job()
     ret = {"input": {"projects": projects, "cids": cids, "force": force}}
@@ -181,14 +174,7 @@ def make(projects=None, cids=None, force=False):
                 not getattr(document, "needs_build", True):
             continue
 
-        if document.notebook:
-            try:
-                nb = Notebooks.objects.get(id=document.notebook.id)
-                nb.delete()
-                document.update(unset__notebook="")
-                logger.debug(f"Notebook {document.notebook.id} deleted.")
-            except DoesNotExist:
-                pass
+        _handle_document_notebook(document)
 
         cid = str(document.id)
         logger.debug(f"prep notebook for {cid} ...")
@@ -212,35 +198,11 @@ def make(projects=None, cids=None, force=False):
             ])),
         ]
 
-        if document.tables:
-            cells.append(nbf.new_markdown_cell("## Tables"))
-            for table in document.tables:
-                cells.append(
-                    nbf.new_code_cell("\n".join([
-                        f't = client.get_table("{table.id}")',
-                        't.display()'
-                    ]))
-                )
+        _handle_document_tables(document, cells)
 
-        if document.structures:
-            cells.append(nbf.new_markdown_cell("## Structures"))
-            for structure in document.structures:
-                cells.append(
-                    nbf.new_code_cell("\n".join([
-                        f's = client.get_structure("{structure.id}")',
-                        's.display()'
-                    ]))
-                )
+        _handle_document_structures(document, cells)
 
-        if document.attachments:
-            cells.append(nbf.new_markdown_cell("## Attachments"))
-            for attachment in document.attachments:
-                cells.append(
-                    nbf.new_code_cell("\n".join([
-                        f'a = client.get_attachment("{attachment.id}")',
-                        'a.info()'
-                    ]))
-                )
+        _handle_document_attachmentss(document, cells)
 
         try:
             outputs = execute_cells(cid, cells)
@@ -265,23 +227,10 @@ def make(projects=None, cids=None, force=False):
         for idx, output in outputs.items():
             cells[idx]["outputs"] = output
 
-        doc = nbf.new_notebook()
-        doc["cells"] = [
-            nbf.new_code_cell("from mpcontribs.client import Client"),
-            nbf.new_code_cell(f'client = Client()'),
-        ]
-        doc["cells"] += cells[1:]  # skip localhost Client
+        doc = _set_doc(cells)
 
-        try:
-            nb = Notebooks(**doc).save()
-            document.update(notebook=nb, needs_build=False)
-        except Exception as e:
-            if job:
-                restart_kernels()
-
-            ret["result"] = {
-                "status": "ERROR", "cid": cid, "count": count, "total": total, "exc": str(e)
-            }
+        ret = _update_doc_notebook(doc, document, job, cid, count, total)
+        if ret:
             return ret
 
         count += 1
@@ -291,3 +240,82 @@ def make(projects=None, cids=None, force=False):
 
     ret["result"] = {"status": "COMPLETED", "count": count, "total": total}
     return ret
+
+def _update_doc_notebook(doc, document, job, cid, count, total):
+    ret = None
+    try:
+        nb = Notebooks(**doc).save()
+        document.update(notebook=nb, needs_build=False)
+    except Exception as e:
+        if job:
+            restart_kernels()
+
+        ret["result"] = {
+            "status": "ERROR", "cid": cid, "count": count, "total": total, "exc": str(e)
+        }
+        return ret
+
+
+def _set_doc(cells):
+    doc = nbf.new_notebook()
+    doc["cells"] = [
+        nbf.new_code_cell("from mpcontribs.client import Client"),
+        nbf.new_code_cell(f'client = Client()'),
+    ]
+    doc["cells"] += cells[1:]  # skip localhost Client
+
+    return doc
+
+def _handle_document_notebook(document):
+    if document.notebook:
+        try:
+            nb = Notebooks.objects.get(id=document.notebook.id)
+            nb.delete()
+            document.update(unset__notebook="")
+            logger.debug(f"Notebook {document.notebook.id} deleted.")
+        except DoesNotExist:
+            pass
+
+def _handle_document_attachmentss(document, cells):
+    if document.attachments:
+        cells.append(nbf.new_markdown_cell("## Attachments"))
+        for attachment in document.attachments:
+            cells.append(
+                    nbf.new_code_cell("\n".join([
+                        f'a = client.get_attachment("{attachment.id}")',
+                        'a.info()'
+                    ]))
+                )
+
+def _handle_document_structures(document, cells):
+    if document.structures:
+        cells.append(nbf.new_markdown_cell("## Structures"))
+        for structure in document.structures:
+            cells.append(
+                    nbf.new_code_cell("\n".join([
+                        f's = client.get_structure("{structure.id}")',
+                        's.display()'
+                    ]))
+                )
+
+def _handle_document_tables(document, cells):
+    if document.tables:
+        cells.append(nbf.new_markdown_cell("## Tables"))
+        for table in document.tables:
+            cells.append(
+                    nbf.new_code_cell("\n".join([
+                        f't = client.get_table("{table.id}")',
+                        't.display()'
+                    ]))
+                )
+
+def _build_query(projects, cids, force):
+    query = Q()
+
+    if projects:
+        query &= Q(project__in=projects)
+    if cids:
+        query &= Q(id__in=cids)
+    if not force:
+        query &= Q(needs_build=True) | Q(needs_build__exists=False)
+    return query
