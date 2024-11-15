@@ -125,27 +125,8 @@ def run(mpfile, **kwargs):
         print("could not import solar_perovskite, clone github repo")
         sys.exit(1)
 
-    input_files = mpfile.hdata.general["input_files"]
-    input_dir = os.path.dirname(solar_perovskite.__file__)
-    input_file = os.path.join(input_dir, input_files["exp"])
-    exp_table = read_csv(open(input_file, "r").read().replace(";", ","))
-    print("exp data loaded.")
-    with open(os.path.join(input_dir, input_files["theo"]), "r") as f:
-        theo_data = json.loads(f.read()).pop("collection")
-    print("theo data loaded.")
-    with open(input_files["energy"], "r") as f:
-        data = json.load(f).pop("collection")
-    print("energy data loaded.")
-    l = [
-        dict(sdoc, parameters=doc["_id"])
-        for doc in data
-        for sdoc in doc["energy_analysis"]
-    ]
-    frame = pd.DataFrame(l)
-    parameters = frame["parameters"]
-    frame.drop(labels=["parameters"], axis=1, inplace=True)
-    frame.insert(0, "parameters", parameters)
-    print("energy dataframe:", frame.shape)
+    exp_table, data = _load_data(mpfile, solar_perovskite)
+    frame = _build_frame(data)
 
     mpfile_singles = [m for m in mpfile.split()]
     for mpfile_single in mpfile_singles:
@@ -159,17 +140,7 @@ def run(mpfile, **kwargs):
         print(identifier)
 
         print("add hdata ...")
-        d = RecursiveDict()
-        d["data"] = RecursiveDict()
-        compstr = hdata["pars"]["theo_compstr"]
-        row = exp_table.loc[exp_table["theo_compstr"] == compstr]
-        if not row.empty:
-            sample_number = int(row.iloc[0]["sample_number"])
-            d["pars"] = get_fit_pars(sample_number)
-            d["data"]["availability"] = "Exp+Theo"
-        else:
-            d["pars"] = RecursiveDict()
-            d["data"]["availability"] = "Theo"
+        d, compstr, row, sample_number = populate_data_structures(exp_table, hdata)
         # print('dh_min, dh_max ...')
         # _, dh_min, dh_max, _ = redenth_act(compstr)
         # d['pars']['dh_min'] = clean_value(dh_min, max_dgts=4)
@@ -215,23 +186,15 @@ def run(mpfile, **kwargs):
         #                                + "_" + str(float(red_pr)) + "_" + data_sources + \
         #                                "_" + str(float(enth_steps))
 
-        print("add energy analysis ...")
-        group = frame.query('compstr.str.contains("{}")'.format(compstr[:-1]))
-        group.drop(labels="compstr", axis=1, inplace=True)
-        for prodstr, subgroup in group.groupby(["prodstr", "prodstr_alt"], sort=False):
-            subgroup.drop(labels=["prodstr", "prodstr_alt"], axis=1, inplace=True)
-            for unstable, subsubgroup in subgroup.groupby("unstable", sort=False):
-                subsubgroup.drop(labels="unstable", axis=1, inplace=True)
-                name = "energy-analysis_{}_{}".format(
-                    "unstable" if unstable else "stable", "-".join(prodstr)
-                )
-                print(name)
-                mpfile_single.add_data_table(identifier, subsubgroup, name)
+        _add_energy_analysis(frame, mpfile_single, identifier, compstr)
 
         print(mpfile_single)
         mpfile.concat(mpfile_single)
         break
 
+        # TODO - the code bellow is not reachable due to the break above.
+        # If it is intended, the code can be removed and make the method shorter,
+        # Otherwise, it is a bug that should be fixed.
         if not row.empty:
             print("add ΔH ...")
             exp_thermo = GetExpThermo(sample_number, plotting=False)
@@ -280,3 +243,58 @@ def run(mpfile, **kwargs):
                     inplace=True,
                 )
                 mpfile_single.add_data_table(identifier, table, name="raw")
+
+def populate_data_structures(exp_table, hdata):
+    d = RecursiveDict()
+    d["data"] = RecursiveDict()
+    compstr = hdata["pars"]["theo_compstr"]
+    row = exp_table.loc[exp_table["theo_compstr"] == compstr]
+    if not row.empty:
+        sample_number = int(row.iloc[0]["sample_number"])
+        d["pars"] = get_fit_pars(sample_number)
+        d["data"]["availability"] = "Exp+Theo"
+    else:
+        d["pars"] = RecursiveDict()
+        d["data"]["availability"] = "Theo"
+    return d,compstr,row,sample_number
+
+def _add_energy_analysis(frame, mpfile_single, identifier, compstr):
+    print("add energy analysis ...")
+    group = frame.query('compstr.str.contains("{}")'.format(compstr[:-1]))
+    group.drop(labels="compstr", axis=1, inplace=True)
+    for prodstr, subgroup in group.groupby(["prodstr", "prodstr_alt"], sort=False):
+        subgroup.drop(labels=["prodstr", "prodstr_alt"], axis=1, inplace=True)
+        for unstable, subsubgroup in subgroup.groupby("unstable", sort=False):
+            subsubgroup.drop(labels="unstable", axis=1, inplace=True)
+            name = "energy-analysis_{}_{}".format(
+                    "unstable" if unstable else "stable", "-".join(prodstr)
+                )
+            print(name)
+            mpfile_single.add_data_table(identifier, subsubgroup, name)
+
+def _build_frame(data):
+    l = [
+        dict(sdoc, parameters=doc["_id"])
+        for doc in data
+        for sdoc in doc["energy_analysis"]
+    ]
+    frame = pd.DataFrame(l)
+    parameters = frame["parameters"]
+    frame.drop(labels=["parameters"], axis=1, inplace=True)
+    frame.insert(0, "parameters", parameters)
+    print("energy dataframe:", frame.shape)
+    return frame
+
+def _load_data(mpfile, solar_perovskite):
+    input_files = mpfile.hdata.general["input_files"]
+    input_dir = os.path.dirname(solar_perovskite.__file__)
+    input_file = os.path.join(input_dir, input_files["exp"])
+    exp_table = read_csv(open(input_file, "r").read().replace(";", ","))
+    print("exp data loaded.")
+    with open(os.path.join(input_dir, input_files["theo"]), "r") as f:
+        theo_data = json.loads(f.read()).pop("collection")
+    print("theo data loaded.")
+    with open(input_files["energy"], "r") as f:
+        data = json.load(f).pop("collection")
+    print("energy data loaded.")
+    return exp_table,data
