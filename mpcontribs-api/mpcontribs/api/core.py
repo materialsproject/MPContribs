@@ -120,140 +120,26 @@ def get_specs(klass, method, collection):
             "description": description,
         }
 
-    field_pagination_params = []
-    for field, limits in klass.resource.fields_to_paginate.items():
-        field_pagination_params.append(
-            {
-                "name": f"{field}_page",
-                "in": "query",
-                "default": 1,
-                "type": "integer",
-                "description": f"page to retrieve for {field} field",
-            }
-        )
-        field_pagination_params.append(
-            {
-                "name": f"{field}_per_page",
-                "in": "query",
-                "default": limits[0],
-                "maximum": limits[1],
-                "type": "integer",
-                "description": f"number of items to retrieve per page for {field} field",
-            }
-        )
+    field_pagination_params = _populate_field_pagination_params(klass)
 
-    filter_params = []
-    if hasattr(klass.resource, "filters"):
-        for k, v in klass.resource.filters.items():
-            filter_params += get_filter_params(k, v)
+    filter_params = _populate_filter_params(klass)
 
-    order_params = []
-    if klass.resource.allowed_ordering:
-        allowed_ordering = [
-            o.pattern if isinstance(o, Pattern) else o
-            for o in klass.resource.allowed_ordering
-        ]
-        order_params = [
-            {
-                "name": "_sort",
-                "in": "query",
-                "type": "string",
-                "description": f"sort {collection} via {allowed_ordering}. Prepend +/- for asc/desc.",
-            }
-        ]
+    order_params = _populate_order_params(klass, collection)
 
     spec = None
     if method_name == "Fetch":
-        params = [
-            {
-                "name": "pk",
-                "in": "path",
-                "type": "string",
-                "required": True,
-                "description": f"{collection[:-1]} (primary key)",
-            }
-        ]
-        if fields_param is not None:
-            params.append(fields_param)
-        params += field_pagination_params
-        spec = {
-            "summary": f"Retrieve a {collection[:-1]}.",
-            "operationId": f"get{doc_name}By{id_field}",
-            "parameters": params,
-            "responses": {
-                200: {
-                    "description": f"single {collection} entry",
-                    "schema": {"$ref": f"#/definitions/{klass.schema_name}"},
-                },
-                "default": default_response,
-            },
-        }
+        _handle_fetch_method(klass, collection, default_response
+                             , id_field, doc_name, fields_param, field_pagination_params)
 
     elif method_name == "BulkFetch":
-        params = [fields_param] if fields_param is not None else []
-        params += field_pagination_params
-        params += order_params
-        params += filter_params
-        schema_props = {
-            "data": {
-                "type": "array",
-                "items": {"$ref": f"#/definitions/{klass.schema_name}"},
-            }
-        }
-        if klass.resource.paginate:
-            schema_props["has_more"] = {"type": "boolean"}
-            schema_props["total_count"] = {"type": "integer"}
-            schema_props["total_pages"] = {"type": "integer"}
-            params += get_limit_params(klass.resource, method_name)
-        spec = {
-            "summary": f"Filter and retrieve {collection}.",
-            "operationId": f"query{doc_name}s",
-            "parameters": params,
-            "responses": {
-                200: {
-                    "description": f"list of {collection}",
-                    "schema": {"type": "object", "properties": schema_props},
-                },
-                "default": default_response,
-            },
-        }
+        _handle_bulk_fetch_method(klass, collection, method_name, default_response
+                                  , doc_name, fields_param, field_pagination_params
+                                  , filter_params, order_params)
 
     elif method_name == "Download":
-        params = [
-            {
-                "name": "short_mime",
-                "in": "path",
-                "type": "string",
-                "required": True,
-                "description": "MIME Download Type: gz",
-                "default": "gz",
-            },
-            {
-                "name": "format",
-                "in": "query",
-                "type": "string",
-                "required": True,
-                "description": f"download {collection} in different formats: {klass.resource.download_formats}",
-            },
-        ]
-        params += [fields_param] if fields_param is not None else []
-        params += order_params
-        params += filter_params
-        if klass.resource.paginate:
-            params += get_limit_params(klass.resource, method_name)
-        spec = {
-            "summary": f"Filter and download {collection}.",
-            "operationId": f"download{doc_name}s",
-            "parameters": params,
-            "produces": ["application/gzip"],
-            "responses": {
-                200: {
-                    "description": f"{collection} download",
-                    "schema": {"type": "file"},
-                },
-                "default": default_response,
-            },
-        }
+        _handle_downlaod_method(klass, collection, method_name
+                                , default_response, doc_name, fields_param
+                                , filter_params, order_params)
 
     elif method_name == "Create":
         spec = {
@@ -406,6 +292,148 @@ def get_specs(klass, method, collection):
         }
 
     return spec
+
+def _handle_downlaod_method(klass, collection, method_name, default_response, doc_name, fields_param, filter_params, order_params):
+    params = [
+            {
+                "name": "short_mime",
+                "in": "path",
+                "type": "string",
+                "required": True,
+                "description": "MIME Download Type: gz",
+                "default": "gz",
+            },
+            {
+                "name": "format",
+                "in": "query",
+                "type": "string",
+                "required": True,
+                "description": f"download {collection} in different formats: {klass.resource.download_formats}",
+            },
+        ]
+    params += [fields_param] if fields_param is not None else []
+    params += order_params
+    params += filter_params
+    if klass.resource.paginate:
+        params += get_limit_params(klass.resource, method_name)
+    spec = {
+            "summary": f"Filter and download {collection}.",
+            "operationId": f"download{doc_name}s",
+            "parameters": params,
+            "produces": ["application/gzip"],
+            "responses": {
+                200: {
+                    "description": f"{collection} download",
+                    "schema": {"type": "file"},
+                },
+                "default": default_response,
+            },
+        }
+
+def _handle_bulk_fetch_method(klass, collection, method_name, default_response, doc_name, fields_param, field_pagination_params, filter_params, order_params):
+    params = [fields_param] if fields_param is not None else []
+    params += field_pagination_params
+    params += order_params
+    params += filter_params
+    schema_props = {
+            "data": {
+                "type": "array",
+                "items": {"$ref": f"#/definitions/{klass.schema_name}"},
+            }
+        }
+    if klass.resource.paginate:
+        schema_props["has_more"] = {"type": "boolean"}
+        schema_props["total_count"] = {"type": "integer"}
+        schema_props["total_pages"] = {"type": "integer"}
+        params += get_limit_params(klass.resource, method_name)
+    spec = {
+            "summary": f"Filter and retrieve {collection}.",
+            "operationId": f"query{doc_name}s",
+            "parameters": params,
+            "responses": {
+                200: {
+                    "description": f"list of {collection}",
+                    "schema": {"type": "object", "properties": schema_props},
+                },
+                "default": default_response,
+            },
+        }
+
+def _handle_fetch_method(klass, collection, default_response, id_field, doc_name, fields_param, field_pagination_params):
+    params = [
+            {
+                "name": "pk",
+                "in": "path",
+                "type": "string",
+                "required": True,
+                "description": f"{collection[:-1]} (primary key)",
+            }
+        ]
+    if fields_param is not None:
+        params.append(fields_param)
+    params += field_pagination_params
+    spec = {
+            "summary": f"Retrieve a {collection[:-1]}.",
+            "operationId": f"get{doc_name}By{id_field}",
+            "parameters": params,
+            "responses": {
+                200: {
+                    "description": f"single {collection} entry",
+                    "schema": {"$ref": f"#/definitions/{klass.schema_name}"},
+                },
+                "default": default_response,
+            },
+        }
+
+def _populate_order_params(klass, collection):
+    order_params = []
+    if klass.resource.allowed_ordering:
+        allowed_ordering = [
+            o.pattern if isinstance(o, Pattern) else o
+            for o in klass.resource.allowed_ordering
+        ]
+        order_params = [
+            {
+                "name": "_sort",
+                "in": "query",
+                "type": "string",
+                "description": f"sort {collection} via {allowed_ordering}. Prepend +/- for asc/desc.",
+            }
+        ]
+        
+    return order_params
+
+def _populate_filter_params(klass):
+    filter_params = []
+    if hasattr(klass.resource, "filters"):
+        for k, v in klass.resource.filters.items():
+            filter_params += get_filter_params(k, v)
+    return filter_params
+
+def _populate_field_pagination_params(klass):
+    field_pagination_params = []
+    for field, limits in klass.resource.fields_to_paginate.items():
+        field_pagination_params.append(
+            {
+                "name": f"{field}_page",
+                "in": "query",
+                "default": 1,
+                "type": "integer",
+                "description": f"page to retrieve for {field} field",
+            }
+        )
+        field_pagination_params.append(
+            {
+                "name": f"{field}_per_page",
+                "in": "query",
+                "default": limits[0],
+                "maximum": limits[1],
+                "type": "integer",
+                "description": f"number of items to retrieve per page for {field} field",
+            }
+        )
+        
+    return field_pagination_params
 
 
 class SwaggerView(OriginalSwaggerView, ResourceView):
