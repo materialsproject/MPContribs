@@ -163,7 +163,32 @@ class Contributions(DynamicDocument):
         ReferenceField("Attachments", null=True), default=list, max_length=10
     )
     notebook = ReferenceField("Notebooks")
-    atlas = AtlasManager("formula_autocomplete")
+    atlas = AtlasManager(
+        "formula_autocomplete",
+        definition={
+            "analyzer": "lucene.whitespace",
+            "searchAnalyzer": "lucene.whitespace",
+            "mappings": {
+                "dynamic": False,
+                "fields": {
+                    "formula": {"type": "string"},
+                    "identifier": {"type": "string"},
+                    "is_public": {"type": "boolean"},
+                    "project": [{"type": "stringFacet"}, {"type": "string"}],
+                },
+            },
+            "storedSource": {
+                "include": [
+                    "formula",
+                    "identifier",
+                    "is_public",
+                    "last_modified",
+                    "needs_build",
+                    "project",
+                ]
+            },
+        },
+    )
     meta = {
         "collection": "contributions",
         "indexes": [
@@ -183,39 +208,8 @@ class Contributions(DynamicDocument):
 
     @queryset_manager
     def objects(doc_cls, queryset):
-        return queryset.no_dereference().only(
-            "project",
-            "identifier",
-            "formula",
-            "is_public",
-            "last_modified",
-            "needs_build",
-        )
-
-    @classmethod
-    def atlas_filter(cls, term):
-        try:
-            comp = Composition(term)
-        except Exception:
-            raise ValueError(f"{term} is not a valid composition")
-
-        try:
-            for element in comp.elements:
-                Element(element)
-        except Exception:
-            raise ValueError(f"{element} not a valid element")
-
-        ind_str = []
-
-        if len(comp) == 1:
-            d = comp.get_integer_formula_and_factor()
-            ind_str.append(d[0] + str(int(d[1])) if d[1] != 1 else d[0])
-        else:
-            for i, j in comp.reduced_composition.items():
-                ind_str.append(i.name + str(int(j)) if j != 1 else i.name)
-
-        final_terms = ["".join(entry) for entry in permutations(ind_str)]
-        return AtlasQ(formula=final_terms[0])  # TODO formula__in=final_terms
+        only = doc_cls.atlas.definition["storedSource"]["include"]
+        return queryset.no_dereference().only(*only)
 
     @classmethod
     def post_init(cls, sender, document, **kwargs):
