@@ -223,54 +223,10 @@ def get_specs(klass, method, collection):
             },
         }
     elif method_name == "BulkUpdate":
-        params = filter_params
-        params.append(
-            {
-                "name": f"{collection}",
-                "in": "body",
-                "description": f"The object to use for {collection} bulk update",
-                "schema": {"type": "object"},
-            }
-        )
-        schema_props = {"count": {"type": "integer"}}
-        if klass.resource.paginate:
-            schema_props["has_more"] = {"type": "boolean"}
-            schema_props["total_count"] = {"type": "integer"}
-            schema_props["total_pages"] = {"type": "integer"}
-            params += get_limit_params(klass.resource, method_name)
-        spec = {
-            "summary": f"Filter and update {collection}.",
-            "operationId": f"update{doc_name}s",
-            "parameters": params,
-            "responses": {
-                200: {
-                    "description": f"Number of {collection} updated",
-                    "schema": {"type": "object", "properties": schema_props},
-                },
-                "default": default_response,
-            },
-        }
+        _handle_bulk_update_method(klass, collection, method_name, default_response, doc_name, filter_params)
 
     elif method_name == "BulkDelete":
-        params = filter_params
-        schema_props = {"count": {"type": "integer"}}
-        if klass.resource.paginate:
-            schema_props["has_more"] = {"type": "boolean"}
-            schema_props["total_count"] = {"type": "integer"}
-            schema_props["total_pages"] = {"type": "integer"}
-            params += get_limit_params(klass.resource, method_name)
-        spec = {
-            "summary": f"Filter and delete {collection}.",
-            "operationId": f"delete{doc_name}s",
-            "parameters": params,
-            "responses": {
-                200: {
-                    "description": f"Number of {collection} deleted",
-                    "schema": {"type": "object", "properties": schema_props},
-                },
-                "default": default_response,
-            },
-        }
+        _handle_bulk_delete_method(klass, collection, method_name, default_response, doc_name, filter_params)
 
     elif method_name == "Delete":
         spec = {
@@ -292,6 +248,56 @@ def get_specs(klass, method, collection):
         }
 
     return spec
+
+def _handle_bulk_delete_method(klass, collection, method_name, default_response, doc_name, filter_params):
+    params = filter_params
+    schema_props = {"count": {"type": "integer"}}
+    if klass.resource.paginate:
+        schema_props["has_more"] = {"type": "boolean"}
+        schema_props["total_count"] = {"type": "integer"}
+        schema_props["total_pages"] = {"type": "integer"}
+        params += get_limit_params(klass.resource, method_name)
+    spec = {
+            "summary": f"Filter and delete {collection}.",
+            "operationId": f"delete{doc_name}s",
+            "parameters": params,
+            "responses": {
+                200: {
+                    "description": f"Number of {collection} deleted",
+                    "schema": {"type": "object", "properties": schema_props},
+                },
+                "default": default_response,
+            },
+        }
+
+def _handle_bulk_update_method(klass, collection, method_name, default_response, doc_name, filter_params):
+    params = filter_params
+    params.append(
+            {
+                "name": f"{collection}",
+                "in": "body",
+                "description": f"The object to use for {collection} bulk update",
+                "schema": {"type": "object"},
+            }
+        )
+    schema_props = {"count": {"type": "integer"}}
+    if klass.resource.paginate:
+        schema_props["has_more"] = {"type": "boolean"}
+        schema_props["total_count"] = {"type": "integer"}
+        schema_props["total_pages"] = {"type": "integer"}
+        params += get_limit_params(klass.resource, method_name)
+    spec = {
+            "summary": f"Filter and update {collection}.",
+            "operationId": f"update{doc_name}s",
+            "parameters": params,
+            "responses": {
+                200: {
+                    "description": f"Number of {collection} updated",
+                    "schema": {"type": "object", "properties": schema_props},
+                },
+                "default": default_response,
+            },
+        }
 
 def _handle_downlaod_method(klass, collection, method_name, default_response, doc_name, fields_param, filter_params, order_params):
     params = [
