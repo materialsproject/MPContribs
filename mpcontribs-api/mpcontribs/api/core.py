@@ -574,17 +574,11 @@ class SwaggerView(OriginalSwaggerView, ResourceView):
         approved_public_filter = Q(is_public=True, is_approved=True)
 
         if request.path.startswith("/projects/"):
-            # external or internal requests can both read full project info
-            # anonymous requests can only read public approved projects
-            if is_anonymous:
-                return qs.filter(approved_public_filter)
-
-            # authenticated requests can read approved public or accessible non-public projects
-            qfilter = approved_public_filter | Q(owner=username)
-            if groups:
-                qfilter |= Q(name__in=list(groups))
-
-            return qs.filter(qfilter)
+            return self._handle_projects(is_anonymous
+                                         , qs
+                                         , approved_public_filter
+                                         , username
+                                         , groups)
         else:
             # contributions are set private/public independent from projects
             # anonymous requests:
@@ -596,32 +590,11 @@ class SwaggerView(OriginalSwaggerView, ResourceView):
             component = request.path.split("/")[1]
 
             if component == "contributions":
-                q = qs._query
-                if is_anonymous and is_external:
-                    qs = qs.exclude("data")
-
-                if q and "project" in q and isinstance(q["project"], str):
-                    projects = self.get_projects()
-                    try:
-                        project = projects.get(name=q["project"])
-                    except DoesNotExist:
-                        return qs.none()
-
-                    if project.owner == username or project.name in groups:
-                        return qs
-                    elif project.is_public and project.is_approved:
-                        return qs.filter(is_public=True)
-                    else:
-                        return qs.none()
-                else:
-                    names = None
-                    if q and "project" in q and "$in" in q["project"]:
-                        names = q.pop("project").pop("$in")
-
-                    qfilter = self.get_projects_filter(
-                        username, groups, filter_names=names
-                    )
-                    return qs.filter(qfilter)
+                return self._handle_contributions(qs
+                                                  , is_anonymous
+                                                  , is_external
+                                                  , username
+                                                  , groups)
             else:
                 # get component Object IDs for queryset
                 pk = request.view_args.get("pk")
@@ -630,10 +603,7 @@ class SwaggerView(OriginalSwaggerView, ResourceView):
                 resource = get_resource(component)
                 qfilter = lambda qs: qs.clone()
 
-                if pk:
-                    ids = [resource.get_object(pk, qfilter=qfilter).id]
-                else:
-                    ids = [o.id for o in resource.get_objects(qfilter=qfilter)[0]]
+                ids = self._set_ids(qfilter, pk, resource)
 
                 if not ids:
                     return qs.none()
@@ -663,6 +633,55 @@ class SwaggerView(OriginalSwaggerView, ResourceView):
                     qs = qs.exclude(*exclude)
 
                 return qs
+
+    def _set_ids(self, qfilter, pk, resource):
+        if pk:
+            ids = [resource.get_object(pk, qfilter=qfilter).id]
+        else:
+            ids = [o.id for o in resource.get_objects(qfilter=qfilter)[0]]
+        return ids
+
+
+    def _handle_projects(self, is_anonymous, qs, approved_public_filter, username, groups):
+        # external or internal requests can both read full project info
+        # anonymous requests can only read public approved projects
+        if is_anonymous:
+            return qs.filter(approved_public_filter)
+
+        # authenticated requests can read approved public or accessible non-public projects
+        qfilter = approved_public_filter | Q(owner=username)
+        if groups:
+            qfilter |= Q(name__in=list(groups))
+
+        return qs.filter(qfilter)
+    
+    def _handle_contributions(self, qs, is_anonymous, is_external, username, groups):
+        q = qs._query
+        if is_anonymous and is_external:
+            qs = qs.exclude("data")
+
+        if q and "project" in q and isinstance(q["project"], str):
+            projects = self.get_projects()
+            try:
+                project = projects.get(name=q["project"])
+            except DoesNotExist:
+                return qs.none()
+
+            if project.owner == username or project.name in groups:
+                return qs
+            elif project.is_public and project.is_approved:
+                return qs.filter(is_public=True)
+            else:
+                return qs.none()
+        else:
+            names = None
+            if q and "project" in q and "$in" in q["project"]:
+                names = q.pop("project").pop("$in")
+
+            qfilter = self.get_projects_filter(
+                username, groups, filter_names=names
+            )
+            return qs.filter(qfilter)
 
     def has_add_permission(self, request, obj):
         return self.is_admin_or_project_user(request, obj)
