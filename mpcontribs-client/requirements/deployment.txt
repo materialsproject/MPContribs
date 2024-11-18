@@ -40,7 +40,7 @@ filetype==1.2.0
     # via mpcontribs-client (MPContribs/mpcontribs-client/setup.py)
 flatten-dict==0.4.2
     # via mpcontribs-client (MPContribs/mpcontribs-client/setup.py)
-fonttools==4.54.1
+fonttools==4.55.0
     # via matplotlib
 fqdn==1.5.1
     # via jsonschema
@@ -138,7 +138,7 @@ pygments==2.18.0
     # via ipython
 pyisemail==2.0.1
     # via mpcontribs-client (MPContribs/mpcontribs-client/setup.py)
-pymatgen==2024.10.29
+pymatgen==2024.11.13
     # via mpcontribs-client (MPContribs/mpcontribs-client/setup.py)
 pymongo==4.10.1
     # via mpcontribs-client (MPContribs/mpcontribs-client/setup.py)
@@ -171,7 +171,7 @@ requests==2.32.3
     #   bravado-core
     #   pymatgen
     #   requests-futures
-requests-futures==1.0.1
+requests-futures==1.0.2
     # via mpcontribs-client (MPContribs/mpcontribs-client/setup.py)
 rfc3339-validator==0.1.4
     # via jsonschema
