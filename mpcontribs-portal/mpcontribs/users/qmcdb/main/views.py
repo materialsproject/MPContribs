@@ -44,8 +44,7 @@ def main_page(request):
                     for symbol in elements
                 ],
             )
-            # query = reduce(
-            #   lambda x, y: x | y, [Q(formula__icontains=symbol) for symbol in elements])
+            # query = reduce(lambda x, y: x | y, [Q(formula__icontains=symbol) for symbol in elements])
             # if spacegroup != None:
             # 	query &= Q(primitive_structure__spacegroup=spacegroup)
 
