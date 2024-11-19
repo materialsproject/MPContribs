@@ -120,140 +120,26 @@ def get_specs(klass, method, collection):
             "description": description,
         }
 
-    field_pagination_params = []
-    for field, limits in klass.resource.fields_to_paginate.items():
-        field_pagination_params.append(
-            {
-                "name": f"{field}_page",
-                "in": "query",
-                "default": 1,
-                "type": "integer",
-                "description": f"page to retrieve for {field} field",
-            }
-        )
-        field_pagination_params.append(
-            {
-                "name": f"{field}_per_page",
-                "in": "query",
-                "default": limits[0],
-                "maximum": limits[1],
-                "type": "integer",
-                "description": f"number of items to retrieve per page for {field} field",
-            }
-        )
+    field_pagination_params = _populate_field_pagination_params(klass)
 
-    filter_params = []
-    if hasattr(klass.resource, "filters"):
-        for k, v in klass.resource.filters.items():
-            filter_params += get_filter_params(k, v)
+    filter_params = _populate_filter_params(klass)
 
-    order_params = []
-    if klass.resource.allowed_ordering:
-        allowed_ordering = [
-            o.pattern if isinstance(o, Pattern) else o
-            for o in klass.resource.allowed_ordering
-        ]
-        order_params = [
-            {
-                "name": "_sort",
-                "in": "query",
-                "type": "string",
-                "description": f"sort {collection} via {allowed_ordering}. Prepend +/- for asc/desc.",
-            }
-        ]
+    order_params = _populate_order_params(klass, collection)
 
     spec = None
     if method_name == "Fetch":
-        params = [
-            {
-                "name": "pk",
-                "in": "path",
-                "type": "string",
-                "required": True,
-                "description": f"{collection[:-1]} (primary key)",
-            }
-        ]
-        if fields_param is not None:
-            params.append(fields_param)
-        params += field_pagination_params
-        spec = {
-            "summary": f"Retrieve a {collection[:-1]}.",
-            "operationId": f"get{doc_name}By{id_field}",
-            "parameters": params,
-            "responses": {
-                200: {
-                    "description": f"single {collection} entry",
-                    "schema": {"$ref": f"#/definitions/{klass.schema_name}"},
-                },
-                "default": default_response,
-            },
-        }
+        _handle_fetch_method(klass, collection, default_response
+                             , id_field, doc_name, fields_param, field_pagination_params)
 
     elif method_name == "BulkFetch":
-        params = [fields_param] if fields_param is not None else []
-        params += field_pagination_params
-        params += order_params
-        params += filter_params
-        schema_props = {
-            "data": {
-                "type": "array",
-                "items": {"$ref": f"#/definitions/{klass.schema_name}"},
-            }
-        }
-        if klass.resource.paginate:
-            schema_props["has_more"] = {"type": "boolean"}
-            schema_props["total_count"] = {"type": "integer"}
-            schema_props["total_pages"] = {"type": "integer"}
-            params += get_limit_params(klass.resource, method_name)
-        spec = {
-            "summary": f"Filter and retrieve {collection}.",
-            "operationId": f"query{doc_name}s",
-            "parameters": params,
-            "responses": {
-                200: {
-                    "description": f"list of {collection}",
-                    "schema": {"type": "object", "properties": schema_props},
-                },
-                "default": default_response,
-            },
-        }
+        _handle_bulk_fetch_method(klass, collection, method_name, default_response
+                                  , doc_name, fields_param, field_pagination_params
+                                  , filter_params, order_params)
 
     elif method_name == "Download":
-        params = [
-            {
-                "name": "short_mime",
-                "in": "path",
-                "type": "string",
-                "required": True,
-                "description": "MIME Download Type: gz",
-                "default": "gz",
-            },
-            {
-                "name": "format",
-                "in": "query",
-                "type": "string",
-                "required": True,
-                "description": f"download {collection} in different formats: {klass.resource.download_formats}",
-            },
-        ]
-        params += [fields_param] if fields_param is not None else []
-        params += order_params
-        params += filter_params
-        if klass.resource.paginate:
-            params += get_limit_params(klass.resource, method_name)
-        spec = {
-            "summary": f"Filter and download {collection}.",
-            "operationId": f"download{doc_name}s",
-            "parameters": params,
-            "produces": ["application/gzip"],
-            "responses": {
-                200: {
-                    "description": f"{collection} download",
-                    "schema": {"type": "file"},
-                },
-                "default": default_response,
-            },
-        }
+        _handle_downlaod_method(klass, collection, method_name
+                                , default_response, doc_name, fields_param
+                                , filter_params, order_params)
 
     elif method_name == "Create":
         spec = {
@@ -337,54 +223,10 @@ def get_specs(klass, method, collection):
             },
         }
     elif method_name == "BulkUpdate":
-        params = filter_params
-        params.append(
-            {
-                "name": f"{collection}",
-                "in": "body",
-                "description": f"The object to use for {collection} bulk update",
-                "schema": {"type": "object"},
-            }
-        )
-        schema_props = {"count": {"type": "integer"}}
-        if klass.resource.paginate:
-            schema_props["has_more"] = {"type": "boolean"}
-            schema_props["total_count"] = {"type": "integer"}
-            schema_props["total_pages"] = {"type": "integer"}
-            params += get_limit_params(klass.resource, method_name)
-        spec = {
-            "summary": f"Filter and update {collection}.",
-            "operationId": f"update{doc_name}s",
-            "parameters": params,
-            "responses": {
-                200: {
-                    "description": f"Number of {collection} updated",
-                    "schema": {"type": "object", "properties": schema_props},
-                },
-                "default": default_response,
-            },
-        }
+        _handle_bulk_update_method(klass, collection, method_name, default_response, doc_name, filter_params)
 
     elif method_name == "BulkDelete":
-        params = filter_params
-        schema_props = {"count": {"type": "integer"}}
-        if klass.resource.paginate:
-            schema_props["has_more"] = {"type": "boolean"}
-            schema_props["total_count"] = {"type": "integer"}
-            schema_props["total_pages"] = {"type": "integer"}
-            params += get_limit_params(klass.resource, method_name)
-        spec = {
-            "summary": f"Filter and delete {collection}.",
-            "operationId": f"delete{doc_name}s",
-            "parameters": params,
-            "responses": {
-                200: {
-                    "description": f"Number of {collection} deleted",
-                    "schema": {"type": "object", "properties": schema_props},
-                },
-                "default": default_response,
-            },
-        }
+        _handle_bulk_delete_method(klass, collection, method_name, default_response, doc_name, filter_params)
 
     elif method_name == "Delete":
         spec = {
@@ -406,6 +248,198 @@ def get_specs(klass, method, collection):
         }
 
     return spec
+
+def _handle_bulk_delete_method(klass, collection, method_name, default_response, doc_name, filter_params):
+    params = filter_params
+    schema_props = {"count": {"type": "integer"}}
+    if klass.resource.paginate:
+        schema_props["has_more"] = {"type": "boolean"}
+        schema_props["total_count"] = {"type": "integer"}
+        schema_props["total_pages"] = {"type": "integer"}
+        params += get_limit_params(klass.resource, method_name)
+    spec = {
+            "summary": f"Filter and delete {collection}.",
+            "operationId": f"delete{doc_name}s",
+            "parameters": params,
+            "responses": {
+                200: {
+                    "description": f"Number of {collection} deleted",
+                    "schema": {"type": "object", "properties": schema_props},
+                },
+                "default": default_response,
+            },
+        }
+
+def _handle_bulk_update_method(klass, collection, method_name, default_response, doc_name, filter_params):
+    params = filter_params
+    params.append(
+            {
+                "name": f"{collection}",
+                "in": "body",
+                "description": f"The object to use for {collection} bulk update",
+                "schema": {"type": "object"},
+            }
+        )
+    schema_props = {"count": {"type": "integer"}}
+    if klass.resource.paginate:
+        schema_props["has_more"] = {"type": "boolean"}
+        schema_props["total_count"] = {"type": "integer"}
+        schema_props["total_pages"] = {"type": "integer"}
+        params += get_limit_params(klass.resource, method_name)
+    spec = {
+            "summary": f"Filter and update {collection}.",
+            "operationId": f"update{doc_name}s",
+            "parameters": params,
+            "responses": {
+                200: {
+                    "description": f"Number of {collection} updated",
+                    "schema": {"type": "object", "properties": schema_props},
+                },
+                "default": default_response,
+            },
+        }
+
+def _handle_downlaod_method(klass, collection, method_name, default_response, doc_name, fields_param, filter_params, order_params):
+    params = [
+            {
+                "name": "short_mime",
+                "in": "path",
+                "type": "string",
+                "required": True,
+                "description": "MIME Download Type: gz",
+                "default": "gz",
+            },
+            {
+                "name": "format",
+                "in": "query",
+                "type": "string",
+                "required": True,
+                "description": f"download {collection} in different formats: {klass.resource.download_formats}",
+            },
+        ]
+    params += [fields_param] if fields_param is not None else []
+    params += order_params
+    params += filter_params
+    if klass.resource.paginate:
+        params += get_limit_params(klass.resource, method_name)
+    spec = {
+            "summary": f"Filter and download {collection}.",
+            "operationId": f"download{doc_name}s",
+            "parameters": params,
+            "produces": ["application/gzip"],
+            "responses": {
+                200: {
+                    "description": f"{collection} download",
+                    "schema": {"type": "file"},
+                },
+                "default": default_response,
+            },
+        }
+
+def _handle_bulk_fetch_method(klass, collection, method_name, default_response, doc_name, fields_param, field_pagination_params, filter_params, order_params):
+    params = [fields_param] if fields_param is not None else []
+    params += field_pagination_params
+    params += order_params
+    params += filter_params
+    schema_props = {
+            "data": {
+                "type": "array",
+                "items": {"$ref": f"#/definitions/{klass.schema_name}"},
+            }
+        }
+    if klass.resource.paginate:
+        schema_props["has_more"] = {"type": "boolean"}
+        schema_props["total_count"] = {"type": "integer"}
+        schema_props["total_pages"] = {"type": "integer"}
+        params += get_limit_params(klass.resource, method_name)
+    spec = {
+            "summary": f"Filter and retrieve {collection}.",
+            "operationId": f"query{doc_name}s",
+            "parameters": params,
+            "responses": {
+                200: {
+                    "description": f"list of {collection}",
+                    "schema": {"type": "object", "properties": schema_props},
+                },
+                "default": default_response,
+            },
+        }
+
+def _handle_fetch_method(klass, collection, default_response, id_field, doc_name, fields_param, field_pagination_params):
+    params = [
+            {
+                "name": "pk",
+                "in": "path",
+                "type": "string",
+                "required": True,
+                "description": f"{collection[:-1]} (primary key)",
+            }
+        ]
+    if fields_param is not None:
+        params.append(fields_param)
+    params += field_pagination_params
+    spec = {
+            "summary": f"Retrieve a {collection[:-1]}.",
+            "operationId": f"get{doc_name}By{id_field}",
+            "parameters": params,
+            "responses": {
+                200: {
+                    "description": f"single {collection} entry",
+                    "schema": {"$ref": f"#/definitions/{klass.schema_name}"},
+                },
+                "default": default_response,
+            },
+        }
+
+def _populate_order_params(klass, collection):
+    order_params = []
+    if klass.resource.allowed_ordering:
+        allowed_ordering = [
+            o.pattern if isinstance(o, Pattern) else o
+            for o in klass.resource.allowed_ordering
+        ]
+        order_params = [
+            {
+                "name": "_sort",
+                "in": "query",
+                "type": "string",
+                "description": f"sort {collection} via {allowed_ordering}. Prepend +/- for asc/desc.",
+            }
+        ]
+        
+    return order_params
+
+def _populate_filter_params(klass):
+    filter_params = []
+    if hasattr(klass.resource, "filters"):
+        for k, v in klass.resource.filters.items():
+            filter_params += get_filter_params(k, v)
+    return filter_params
+
+def _populate_field_pagination_params(klass):
+    field_pagination_params = []
+    for field, limits in klass.resource.fields_to_paginate.items():
+        field_pagination_params.append(
+            {
+                "name": f"{field}_page",
+                "in": "query",
+                "default": 1,
+                "type": "integer",
+                "description": f"page to retrieve for {field} field",
+            }
+        )
+        field_pagination_params.append(
+            {
+                "name": f"{field}_per_page",
+                "in": "query",
+                "default": limits[0],
+                "maximum": limits[1],
+                "type": "integer",
+                "description": f"number of items to retrieve per page for {field} field",
+            }
+        )
+        
+    return field_pagination_params
 
 
 class SwaggerView(OriginalSwaggerView, ResourceView):
@@ -540,17 +574,11 @@ class SwaggerView(OriginalSwaggerView, ResourceView):
         approved_public_filter = Q(is_public=True, is_approved=True)
 
         if request.path.startswith("/projects/"):
-            # external or internal requests can both read full project info
-            # anonymous requests can only read public approved projects
-            if is_anonymous:
-                return qs.filter(approved_public_filter)
-
-            # authenticated requests can read approved public or accessible non-public projects
-            qfilter = approved_public_filter | Q(owner=username)
-            if groups:
-                qfilter |= Q(name__in=list(groups))
-
-            return qs.filter(qfilter)
+            return self._handle_projects(is_anonymous
+                                         , qs
+                                         , approved_public_filter
+                                         , username
+                                         , groups)
         else:
             # contributions are set private/public independent from projects
             # anonymous requests:
@@ -562,32 +590,11 @@ class SwaggerView(OriginalSwaggerView, ResourceView):
             component = request.path.split("/")[1]
 
             if component == "contributions":
-                q = qs._query
-                if is_anonymous and is_external:
-                    qs = qs.exclude("data")
-
-                if q and "project" in q and isinstance(q["project"], str):
-                    projects = self.get_projects()
-                    try:
-                        project = projects.get(name=q["project"])
-                    except DoesNotExist:
-                        return qs.none()
-
-                    if project.owner == username or project.name in groups:
-                        return qs
-                    elif project.is_public and project.is_approved:
-                        return qs.filter(is_public=True)
-                    else:
-                        return qs.none()
-                else:
-                    names = None
-                    if q and "project" in q and "$in" in q["project"]:
-                        names = q.pop("project").pop("$in")
-
-                    qfilter = self.get_projects_filter(
-                        username, groups, filter_names=names
-                    )
-                    return qs.filter(qfilter)
+                return self._handle_contributions(qs
+                                                  , is_anonymous
+                                                  , is_external
+                                                  , username
+                                                  , groups)
             else:
                 # get component Object IDs for queryset
                 pk = request.view_args.get("pk")
@@ -596,10 +603,7 @@ class SwaggerView(OriginalSwaggerView, ResourceView):
                 resource = get_resource(component)
                 qfilter = lambda qs: qs.clone()
 
-                if pk:
-                    ids = [resource.get_object(pk, qfilter=qfilter).id]
-                else:
-                    ids = [o.id for o in resource.get_objects(qfilter=qfilter)[0]]
+                ids = self._set_ids(qfilter, pk, resource)
 
                 if not ids:
                     return qs.none()
@@ -629,6 +633,55 @@ class SwaggerView(OriginalSwaggerView, ResourceView):
                     qs = qs.exclude(*exclude)
 
                 return qs
+
+    def _set_ids(self, qfilter, pk, resource):
+        if pk:
+            ids = [resource.get_object(pk, qfilter=qfilter).id]
+        else:
+            ids = [o.id for o in resource.get_objects(qfilter=qfilter)[0]]
+        return ids
+
+
+    def _handle_projects(self, is_anonymous, qs, approved_public_filter, username, groups):
+        # external or internal requests can both read full project info
+        # anonymous requests can only read public approved projects
+        if is_anonymous:
+            return qs.filter(approved_public_filter)
+
+        # authenticated requests can read approved public or accessible non-public projects
+        qfilter = approved_public_filter | Q(owner=username)
+        if groups:
+            qfilter |= Q(name__in=list(groups))
+
+        return qs.filter(qfilter)
+    
+    def _handle_contributions(self, qs, is_anonymous, is_external, username, groups):
+        q = qs._query
+        if is_anonymous and is_external:
+            qs = qs.exclude("data")
+
+        if q and "project" in q and isinstance(q["project"], str):
+            projects = self.get_projects()
+            try:
+                project = projects.get(name=q["project"])
+            except DoesNotExist:
+                return qs.none()
+
+            if project.owner == username or project.name in groups:
+                return qs
+            elif project.is_public and project.is_approved:
+                return qs.filter(is_public=True)
+            else:
+                return qs.none()
+        else:
+            names = None
+            if q and "project" in q and "$in" in q["project"]:
+                names = q.pop("project").pop("$in")
+
+            qfilter = self.get_projects_filter(
+                username, groups, filter_names=names
+            )
+            return qs.filter(qfilter)
 
     def has_add_permission(self, request, obj):
         return self.is_admin_or_project_user(request, obj)

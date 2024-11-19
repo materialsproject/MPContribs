@@ -44,7 +44,8 @@ class Attachments(DynamicDocument):
             if "content" in requested_fields:
                 if not document.md5:
                     # document.reload("md5")  # TODO AttributeError: _changed_fields
-                    raise ValueError("Please also request md5 field to retrieve attachment content!")
+                    raise ValueError(
+                        "Please also request md5 field to retrieve attachment content!")
 
                 retr = s3_client.get_object(Bucket=BUCKET, Key=document.md5)
                 document.content = b64encode(retr["Body"].read()).decode("utf-8")
