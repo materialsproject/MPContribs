@@ -217,7 +217,18 @@ class MPFileCore(six.with_metaclass(ABCMeta, object)):
         from pymatgen.core import Structure
         from pymatgen.ext.matproj import MPRester
 
-        structure = self._build_structure(source, fmt)
+        if isinstance(source, Structure):
+            structure = source
+        elif isinstance(source, dict):
+            structure = Structure.from_dict(source)
+        elif os.path.exists(source):
+            structure = Structure.from_file(source, sort=True)
+        elif isinstance(source, six.string_types):
+            if fmt is None:
+                raise ValueError("Need fmt to get structure from string!")
+            structure = Structure.from_str(source, fmt, sort=True)
+        else:
+            raise ValueError(source, "not supported!")
 
         if name is not None:
             if not isinstance(name, six.string_types):
@@ -264,21 +275,6 @@ class MPFileCore(six.with_metaclass(ABCMeta, object)):
             nest_dict(structure.as_dict(), [identifier, mp_level01_titles[3], sub_key])
         )
         return identifier
-
-    def _build_structure(self, source, fmt):
-        if isinstance(source, Structure):
-            structure = source
-        elif isinstance(source, dict):
-            structure = Structure.from_dict(source)
-        elif os.path.exists(source):
-            structure = Structure.from_file(source, sort=True)
-        elif isinstance(source, six.string_types):
-            if fmt is None:
-                raise ValueError("Need fmt to get structure from string!")
-            structure = Structure.from_str(source, fmt, sort=True)
-        else:
-            raise ValueError(source, "not supported!")
-        return structure
 
     def __repr__(self):
         return self.get_string(df_head_only=True)
