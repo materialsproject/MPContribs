@@ -112,7 +112,7 @@ class Table(pd.DataFrame):
                                 if not all([result.scheme, result.netloc, result.path]):
                                     break
                                 is_url_column = True
-                            except AttributeError:
+                            except Exception:
                                 break
 
                 cell_type = "uri" if is_url_column else "string"
