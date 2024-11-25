@@ -354,7 +354,7 @@ tenacity==9.0.0
     # via plotly
 tinycss2==1.4.0
     # via nbconvert
-tornado==6.4.1
+tornado==6.4.2
     # via
     #   ipykernel
     #   jupyter-client

@@ -479,7 +479,7 @@ terminado==0.18.1
     #   notebook
 tinycss2==1.4.0
     # via nbconvert
-tornado==6.4.1
+tornado==6.4.2
     # via
     #   ipykernel
     #   jupyter-client
