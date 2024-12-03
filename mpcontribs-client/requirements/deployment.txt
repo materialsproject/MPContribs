@@ -40,7 +40,7 @@ filetype==1.2.0
     # via mpcontribs-client (MPContribs/mpcontribs-client/setup.py)
 flatten-dict==0.4.2
     # via mpcontribs-client (MPContribs/mpcontribs-client/setup.py)
-fonttools==4.55.0
+fonttools==4.55.1
     # via matplotlib
 fqdn==1.5.1
     # via jsonschema
@@ -177,7 +177,7 @@ rfc3339-validator==0.1.4
     # via jsonschema
 rfc3986-validator==0.1.1
     # via jsonschema
-rpds-py==0.21.0
+rpds-py==0.22.1
     # via
     #   jsonschema
     #   referencing

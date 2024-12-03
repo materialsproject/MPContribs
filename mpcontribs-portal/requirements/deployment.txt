@@ -22,9 +22,9 @@ boltons==24.1.0
     # via
     #   mpcontribs-client
     #   mpcontribs-portal (MPContribs/mpcontribs-portal/setup.py)
-boto3==1.35.72
+boto3==1.35.74
     # via mpcontribs-portal (MPContribs/mpcontribs-portal/setup.py)
-botocore==1.35.72
+botocore==1.35.74
     # via
     #   boto3
     #   s3transfer
@@ -83,7 +83,7 @@ filetype==1.2.0
     # via mpcontribs-client
 flatten-dict==0.4.2
     # via mpcontribs-client
-fonttools==4.55.0
+fonttools==4.55.1
     # via matplotlib
 fqdn==1.5.1
     # via jsonschema
@@ -305,7 +305,7 @@ rfc3339-validator==0.1.4
     # via jsonschema
 rfc3986-validator==0.1.1
     # via jsonschema
-rpds-py==0.21.0
+rpds-py==0.22.1
     # via
     #   jsonschema
     #   referencing

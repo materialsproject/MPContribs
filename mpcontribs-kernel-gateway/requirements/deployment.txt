@@ -72,7 +72,7 @@ filetype==1.2.0
     # via mpcontribs-client
 flatten-dict==0.4.2
     # via mpcontribs-client
-fonttools==4.55.0
+fonttools==4.55.1
     # via matplotlib
 fqdn==1.5.1
     # via jsonschema
@@ -236,7 +236,7 @@ plotly==5.24.1
     # via
     #   mpcontribs-client
     #   pymatgen
-prometheus-client==0.21.0
+prometheus-client==0.21.1
     # via jupyter-server
 prompt-toolkit==3.0.48
     # via ipython
@@ -316,7 +316,7 @@ rfc3986-validator==0.1.1
     # via
     #   jsonschema
     #   jupyter-events
-rpds-py==0.21.0
+rpds-py==0.22.1
     # via
     #   jsonschema
     #   referencing
