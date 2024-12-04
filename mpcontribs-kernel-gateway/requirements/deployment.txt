@@ -240,7 +240,7 @@ prometheus-client==0.21.1
     # via jupyter-server
 prompt-toolkit==3.0.48
     # via ipython
-protobuf==5.29.0
+protobuf==5.29.1
     # via ddtrace
 psutil==6.1.0
     # via
@@ -316,7 +316,7 @@ rfc3986-validator==0.1.1
     # via
     #   jsonschema
     #   jupyter-events
-rpds-py==0.22.1
+rpds-py==0.22.3
     # via
     #   jsonschema
     #   referencing
@@ -338,7 +338,7 @@ simplejson==3.19.3
     # via
     #   bravado
     #   bravado-core
-six==1.16.0
+six==1.17.0
     # via
     #   bravado
     #   bravado-core

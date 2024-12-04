@@ -22,9 +22,9 @@ boltons==24.1.0
     # via
     #   mpcontribs-client
     #   mpcontribs-portal (MPContribs/mpcontribs-portal/setup.py)
-boto3==1.35.74
+boto3==1.35.75
     # via mpcontribs-portal (MPContribs/mpcontribs-portal/setup.py)
-botocore==1.35.74
+botocore==1.35.75
     # via
     #   boto3
     #   s3transfer
@@ -241,7 +241,7 @@ plotly==5.24.1
     #   pymatgen
 prompt-toolkit==3.0.48
     # via ipython
-protobuf==5.29.0
+protobuf==5.29.1
     # via ddtrace
 psutil==6.1.0
     # via ipykernel
@@ -305,7 +305,7 @@ rfc3339-validator==0.1.4
     # via jsonschema
 rfc3986-validator==0.1.1
     # via jsonschema
-rpds-py==0.22.1
+rpds-py==0.22.3
     # via
     #   jsonschema
     #   referencing
@@ -330,7 +330,7 @@ simplejson==3.19.3
     # via
     #   bravado
     #   bravado-core
-six==1.16.0
+six==1.17.0
     # via
     #   bravado
     #   bravado-core
