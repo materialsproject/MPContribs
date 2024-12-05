@@ -2,7 +2,6 @@
 """Custom meta-class and MethodView for Swagger"""
 
 import os
-import logging
 import yaml
 
 from copy import deepcopy
