@@ -171,22 +171,16 @@ class Contributions(DynamicDocument):
             "mappings": {
                 "dynamic": False,
                 "fields": {
+                    "data": {"dynamic": True, "type": "document"},
                     "formula": {"type": "string"},
                     "identifier": {"type": "string"},
                     "is_public": {"type": "boolean"},
+                    "last_modified": {"type": "date"},
+                    "needs_build": {"type": "boolean"},
                     "project": [{"type": "stringFacet"}, {"type": "string"}],
                 },
             },
-            "storedSource": {
-                "include": [
-                    "formula",
-                    "identifier",
-                    "is_public",
-                    "last_modified",
-                    "needs_build",
-                    "project",
-                ]
-            },
+            "storedSource": True,
         },
     )
     meta = {
@@ -208,8 +202,14 @@ class Contributions(DynamicDocument):
 
     @queryset_manager
     def objects(doc_cls, queryset):
-        only = doc_cls.atlas.definition["storedSource"]["include"]
-        return queryset.no_dereference().only(*only)
+        return queryset.no_dereference().only(
+            "project",
+            "identifier",
+            "formula",
+            "is_public",
+            "last_modified",
+            "needs_build",
+        )
 
     @classmethod
     def post_init(cls, sender, document, **kwargs):
