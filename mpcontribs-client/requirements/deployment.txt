@@ -40,7 +40,7 @@ filetype==1.2.0
     # via mpcontribs-client (MPContribs/mpcontribs-client/setup.py)
 flatten-dict==0.4.2
     # via mpcontribs-client (MPContribs/mpcontribs-client/setup.py)
-fonttools==4.55.1
+fonttools==4.55.2
     # via matplotlib
 fqdn==1.5.1
     # via jsonschema
@@ -227,7 +227,7 @@ traitlets==5.14.3
     # via
     #   ipython
     #   matplotlib-inline
-types-python-dateutil==2.9.0.20241003
+types-python-dateutil==2.9.0.20241206
     # via arrow
 typing-extensions==4.12.2
     # via
