@@ -22,9 +22,9 @@ boltons==24.1.0
     # via
     #   mpcontribs-client
     #   mpcontribs-portal (setup.py)
-boto3==1.35.75
+boto3==1.35.78
     # via mpcontribs-portal (setup.py)
-botocore==1.35.75
+botocore==1.35.78
     # via
     #   boto3
     #   s3transfer
@@ -48,7 +48,7 @@ cycler==0.12.1
     # via matplotlib
 ddtrace==2.17.2
     # via mpcontribs-portal (setup.py)
-debugpy==1.8.9
+debugpy==1.8.10
     # via ipykernel
 decorator==5.1.1
     # via ipython
@@ -83,7 +83,7 @@ filetype==1.2.0
     # via mpcontribs-client
 flatten-dict==0.4.2
     # via mpcontribs-client
-fonttools==4.55.1
+fonttools==4.55.3
     # via matplotlib
 fqdn==1.5.1
     # via jsonschema
@@ -169,7 +169,7 @@ mistune==3.0.2
     # via nbconvert
 monotonic==1.6
     # via bravado
-monty==2024.10.21
+monty==2024.12.10
     # via
     #   mpcontribs-portal (setup.py)
     #   pymatgen
@@ -283,7 +283,7 @@ pyzmq==26.2.0
     # via
     #   ipykernel
     #   jupyter-client
-redis==5.2.0
+redis==5.2.1
     # via mpcontribs-portal (setup.py)
 referencing==0.35.1
     # via
@@ -337,7 +337,7 @@ soupsieve==2.6
     # via beautifulsoup4
 spglib==2.5.0
     # via pymatgen
-sqlparse==0.5.2
+sqlparse==0.5.3
     # via django
 stack-data==0.6.3
     # via ipython
@@ -372,7 +372,7 @@ traitlets==5.14.3
     #   nbclient
     #   nbconvert
     #   nbformat
-types-python-dateutil==2.9.0.20241003
+types-python-dateutil==2.9.0.20241206
     # via arrow
 typing-extensions==4.12.2
     # via
