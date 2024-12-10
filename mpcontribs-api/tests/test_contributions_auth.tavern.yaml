@@ -1,10 +1,7 @@
-test_name: retrieving contributions
-
-# TODO test public response without API key
-# TODO test public vs private projects
+test_name: authenticated retrieval of contributions
 
 stages:
-  - name: get a random contribution with all fields
+  - name: get a contribution with all fields
     request:
       url: "{tavern.env_vars.MP_CONTRIBS_API_URL}/contributions/"
       method: GET
@@ -20,11 +17,11 @@ stages:
       status_code: 200
       save:
         json:
-          contrib: "data[0]"
+          contrib_auth: "data[0]"
 
   - name: retrieve single contribution with default fields
     request:
-      url: "{tavern.env_vars.MP_CONTRIBS_API_URL}/contributions/{contrib.id:s}/"
+      url: "{tavern.env_vars.MP_CONTRIBS_API_URL}/contributions/{contrib_auth.id:s}/"
       method: GET
       headers:
         accept: application/json
@@ -32,17 +29,17 @@ stages:
     response:
       status_code: 200
       json:
-        id: "{contrib.id}"
-        project: "{contrib.project}"
-        identifier: "{contrib.identifier}"
-        formula: "{contrib.formula}"
-        is_public: !bool "{contrib.is_public}"
-        last_modified: "{contrib.last_modified}"
-        needs_build: !bool "{contrib.needs_build}"
+        id: "{contrib_auth.id}"
+        project: "{contrib_auth.project}"
+        identifier: "{contrib_auth.identifier}"
+        formula: "{contrib_auth.formula}"
+        is_public: !bool "{contrib_auth.is_public}"
+        last_modified: "{contrib_auth.last_modified}"
+        needs_build: !bool "{contrib_auth.needs_build}"
 
   - name: retrieve single contribution with all fields
     request:
-      url: "{tavern.env_vars.MP_CONTRIBS_API_URL}/contributions/{contrib.id:s}/"
+      url: "{tavern.env_vars.MP_CONTRIBS_API_URL}/contributions/{contrib_auth.id:s}/"
       params:
         _fields: _all
       method: GET
@@ -51,4 +48,4 @@ stages:
         X-API-KEY: "{tavern.env_vars.MP_API_KEY}"
     response:
       status_code: 200
-      json: !force_original_structure "{contrib}"
+      json: !force_original_structure "{contrib_auth}"
