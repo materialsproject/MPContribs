@@ -50,7 +50,7 @@ cycler==0.12.1
     # via matplotlib
 ddtrace==2.17.2
     # via -r MPContribs/mpcontribs-kernel-gateway/requirements.in
-debugpy==1.8.9
+debugpy==1.8.10
     # via ipykernel
 decorator==5.1.1
     # via ipython
@@ -72,7 +72,7 @@ filetype==1.2.0
     # via mpcontribs-client
 flatten-dict==0.4.2
     # via mpcontribs-client
-fonttools==4.55.2
+fonttools==4.55.3
     # via matplotlib
 fqdn==1.5.1
     # via jsonschema
@@ -168,7 +168,7 @@ mistune==3.0.2
     # via nbconvert
 monotonic==1.6
     # via bravado
-monty==2024.10.21
+monty==2024.12.10
     # via pymatgen
 mpcontribs-client==5.9.0
     # via -r MPContribs/mpcontribs-kernel-gateway/requirements.in
