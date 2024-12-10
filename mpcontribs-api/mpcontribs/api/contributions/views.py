@@ -165,7 +165,7 @@ class ContributionsView(SwaggerView):
                 raise Unauthorized(f"Can't add {obj.identifier}: {msg}")
 
         query = dict(project=obj.project.id, identifier=obj.identifier)
-        if obj.project.unique_identifiers and Contributions.objects(query).count():
+        if obj.project.unique_identifiers and Contributions.objects(**query).count():
             raise Unauthorized(f"{obj.identifier} already added for {obj.project.id}")
 
         return True
