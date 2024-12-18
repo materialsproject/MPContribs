@@ -22,9 +22,9 @@ boltons==24.1.0
     # via
     #   mpcontribs-client
     #   mpcontribs-portal (setup.py)
-boto3==1.35.81
+boto3==1.35.83
     # via mpcontribs-portal (setup.py)
-botocore==1.35.81
+botocore==1.35.83
     # via
     #   boto3
     #   s3transfer
@@ -237,7 +237,7 @@ plotly==5.24.1
     #   pymatgen
 prompt-toolkit==3.0.48
     # via ipython
-protobuf==5.29.1
+protobuf==5.29.2
     # via ddtrace
 psutil==6.1.0
     # via ipykernel
