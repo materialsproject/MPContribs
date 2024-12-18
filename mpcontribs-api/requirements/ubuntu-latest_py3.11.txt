@@ -34,9 +34,9 @@ blinker==1.9.0
     # via mpcontribs-api (setup.py)
 boltons==24.1.0
     # via mpcontribs-api (setup.py)
-boto3==1.35.81
+boto3==1.35.83
     # via flask-mongorest-mpcontribs
-botocore==1.35.81
+botocore==1.35.83
     # via
     #   boto3
     #   s3transfer
@@ -196,7 +196,7 @@ jupyter-core==5.7.2
     #   nbconvert
     #   nbformat
     #   notebook
-jupyter-events==0.10.0
+jupyter-events==0.11.0
     # via jupyter-server
 jupyter-server==2.14.2
     # via notebook-shim
@@ -318,7 +318,7 @@ prometheus-client==0.21.1
     #   notebook
 prompt-toolkit==3.0.48
     # via ipython
-protobuf==5.29.1
+protobuf==5.29.2
     # via ddtrace
 psutil==6.1.0
     # via ipykernel
