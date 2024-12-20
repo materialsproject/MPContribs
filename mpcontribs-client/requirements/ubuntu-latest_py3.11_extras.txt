@@ -58,7 +58,7 @@ importlib-resources==6.4.5
     # via swagger-spec-validator
 iniconfig==2.0.0
     # via pytest
-ipython==8.30.0
+ipython==8.31.0
     # via mpcontribs-client (setup.py)
 isoduration==20.11.0
     # via jsonschema
