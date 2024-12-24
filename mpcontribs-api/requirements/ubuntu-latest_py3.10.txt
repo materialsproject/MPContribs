@@ -54,7 +54,7 @@ cffi==1.17.1
     #   cryptography
 charset-normalizer==3.4.0
     # via requests
-click==8.1.7
+click==8.1.8
     # via
     #   flask
     #   rq
@@ -163,7 +163,7 @@ itsdangerous==2.2.0
     # via flask
 jedi==0.19.2
     # via ipython
-jinja2==3.1.4
+jinja2==3.1.5
     # via
     #   flask
     #   jupyter-server
@@ -509,7 +509,7 @@ uncertainties==3.2.2
     #   pymatgen
 uri-template==1.3.0
     # via jsonschema
-urllib3==2.2.3
+urllib3==2.3.0
     # via
     #   botocore
     #   requests
