@@ -38,7 +38,7 @@ certifi==2024.12.14
     # via requests
 cffi==1.17.1
     # via argon2-cffi-bindings
-charset-normalizer==3.4.0
+charset-normalizer==3.4.1
     # via requests
 comm==0.2.2
     # via
@@ -148,7 +148,7 @@ jupyterlab-widgets==3.0.13
     # via ipywidgets
 kaleido==0.2.1
     # via -r MPContribs/mpcontribs-kernel-gateway/requirements.in
-kiwisolver==1.4.7
+kiwisolver==1.4.8
     # via matplotlib
 latexcodec==3.0.0
     # via pybtex
@@ -164,7 +164,7 @@ matplotlib-inline==0.1.7
     # via
     #   ipykernel
     #   ipython
-mistune==3.0.2
+mistune==3.1.0
     # via nbconvert
 monotonic==1.6
     # via bravado

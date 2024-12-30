@@ -34,9 +34,9 @@ blinker==1.9.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 boltons==24.1.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
-boto3==1.35.86
+boto3==1.35.90
     # via flask-mongorest-mpcontribs
-botocore==1.35.86
+botocore==1.35.90
     # via
     #   boto3
     #   s3transfer
@@ -50,7 +50,7 @@ cffi==1.17.1
     # via
     #   argon2-cffi-bindings
     #   cryptography
-charset-normalizer==3.4.0
+charset-normalizer==3.4.1
     # via requests
 click==8.1.8
     # via
@@ -204,7 +204,7 @@ jupyter-server-terminals==0.5.3
     # via jupyter-server
 jupyterlab-pygments==0.3.0
     # via nbconvert
-kiwisolver==1.4.7
+kiwisolver==1.4.8
     # via matplotlib
 latexcodec==3.0.0
     # via pybtex
@@ -229,7 +229,7 @@ matplotlib-inline==0.1.7
     #   ipython
 mimerender-pr36==0.0.2
     # via flask-mongorest-mpcontribs
-mistune==3.0.2
+mistune==3.1.0
     # via
     #   flasgger-tschaume
     #   nbconvert
@@ -284,7 +284,7 @@ numpy==1.26.4
     #   spglib
 opentelemetry-api==1.29.0
     # via ddtrace
-orjson==3.10.12
+orjson==3.10.13
     # via flask-mongorest-mpcontribs
 overrides==7.7.0
     # via jupyter-server
