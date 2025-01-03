@@ -21,7 +21,7 @@ setup(
     url="https://github.com/materialsproject/MPContribs/tree/master/mpcontribs-client",
     packages=["mpcontribs.client"],
     install_requires=[
-        "numpy<2",
+        "numpy",
         "boltons",
         "bravado",
         "filetype",
@@ -29,7 +29,7 @@ setup(
         "ipython",
         "json2html",
         "pandas",
-        "pint<0.20",
+        "pint",
         "plotly",
         "pyIsEmail",
         "pymatgen",

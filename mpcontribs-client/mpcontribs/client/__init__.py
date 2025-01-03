@@ -54,8 +54,6 @@ from urllib3.util.retry import Retry
 from filetype.types.archive import Gz
 from filetype.types.image import Jpeg, Png, Gif, Tiff
 from pint import UnitRegistry
-from pint.unit import UnitDefinition
-from pint.converters import ScaleConverter
 from pint.errors import DimensionalityError
 from tempfile import gettempdir
 from plotly.express._chart_types import line as line_chart
@@ -104,10 +102,16 @@ ureg = UnitRegistry(
         lambda s: s.replace("%", " percent "),
     ],
 )
-ureg.define(UnitDefinition("percent", "%", (), ScaleConverter(0.01)))
-ureg.define(UnitDefinition("permille", "%%", (), ScaleConverter(0.001)))
-ureg.define(UnitDefinition("ppm", "ppm", (), ScaleConverter(1e-6)))
-ureg.define(UnitDefinition("ppb", "ppb", (), ScaleConverter(1e-9)))
+if "percent" not in ureg:
+    # percent is native in pint >= 0.21
+    ureg.define("percent = 0.01 = %")
+if "permille" not in ureg:
+    # permille is native in pint >= 0.24.2
+    ureg.define("permille = 0.001 = ‰ = %%")
+if "ppm" not in ureg:
+    # ppm is native in pint >= 0.21
+    ureg.define("ppm = 1e-6")
+ureg.define("ppb = 1e-9")
 ureg.define("atom = 1")
 ureg.define("bohr_magneton = e * hbar / (2 * m_e) = µᵇ = µ_B = mu_B")
 ureg.define("electron_mass = 9.1093837015e-31 kg = mₑ = m_e")
