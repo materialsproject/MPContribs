@@ -16,15 +16,15 @@ attrs==24.3.0
     #   referencing
 beautifulsoup4==4.12.3
     # via nbconvert
-bleach==6.2.0
+bleach[css]==6.2.0
     # via nbconvert
 boltons==24.1.0
     # via
     #   mpcontribs-client
     #   mpcontribs-portal (MPContribs/mpcontribs-portal/setup.py)
-boto3==1.35.90
+boto3==1.35.92
     # via mpcontribs-portal (MPContribs/mpcontribs-portal/setup.py)
-botocore==1.35.90
+botocore==1.35.92
     # via
     #   boto3
     #   s3transfer
@@ -99,7 +99,7 @@ idna==3.10
     #   requests
 importlib-metadata==8.5.0
     # via opentelemetry-api
-importlib-resources==6.4.5
+importlib-resources==6.5.2
     # via swagger-spec-validator
 ipykernel==6.29.5
     # via mpcontribs-portal (MPContribs/mpcontribs-portal/setup.py)
@@ -171,7 +171,7 @@ mistune==3.1.0
     # via nbconvert
 monotonic==1.6
     # via bravado
-monty==2024.12.10
+monty==2025.1.3
     # via
     #   mpcontribs-portal (MPContribs/mpcontribs-portal/setup.py)
     #   pymatgen
@@ -185,7 +185,7 @@ msgpack==1.1.0
     #   bravado-core
 nbclient==0.10.2
     # via nbconvert
-nbconvert==7.16.4
+nbconvert==7.16.5
     # via mpcontribs-portal (MPContribs/mpcontribs-portal/setup.py)
 nbformat==5.10.4
     # via
@@ -229,7 +229,7 @@ parso==0.8.4
     # via jedi
 pexpect==4.9.0
     # via ipython
-pillow==11.0.0
+pillow==11.1.0
     # via matplotlib
 pint==0.19.2
     # via mpcontribs-client
@@ -251,7 +251,7 @@ pure-eval==0.2.3
     # via stack-data
 pybtex==0.24.0
     # via pymatgen
-pygments==2.18.0
+pygments==2.19.0
     # via
     #   ipython
     #   nbconvert
@@ -261,7 +261,7 @@ pymatgen==2024.11.13
     # via mpcontribs-client
 pymongo==4.10.1
     # via mpcontribs-client
-pyparsing==3.2.0
+pyparsing==3.2.1
     # via matplotlib
 python-dateutil==2.9.0.post0
     # via
@@ -309,7 +309,7 @@ rpds-py==0.22.3
     # via
     #   jsonschema
     #   referencing
-ruamel-yaml==0.18.6
+ruamel-yaml==0.18.10
     # via
     #   monty
     #   pymatgen
@@ -317,7 +317,7 @@ ruamel-yaml-clib==0.2.12
     # via ruamel-yaml
 s3transfer==0.10.4
     # via boto3
-scipy==1.14.1
+scipy==1.15.0
     # via
     #   -r python/requirements.txt
     #   mpcontribs-portal (MPContribs/mpcontribs-portal/setup.py)
@@ -357,7 +357,7 @@ tabulate==0.9.0
 tenacity==9.0.0
     # via plotly
 tinycss2==1.4.0
-    # via nbconvert
+    # via bleach
 tornado==6.4.2
     # via
     #   ipykernel
