@@ -22,11 +22,11 @@ cachetools==5.5.0
     # via mpcontribs-client (setup.py)
 certifi==2024.12.14
     # via requests
-charset-normalizer==3.4.0
+charset-normalizer==3.4.1
     # via requests
 contourpy==1.3.1
     # via matplotlib
-coverage[toml]==7.6.9
+coverage[toml]==7.6.10
     # via pytest-cov
 cycler==0.12.1
     # via matplotlib
@@ -54,7 +54,7 @@ idna==3.10
     # via
     #   jsonschema
     #   requests
-importlib-resources==6.4.5
+importlib-resources==6.5.2
     # via swagger-spec-validator
 iniconfig==2.0.0
     # via pytest
@@ -78,7 +78,7 @@ jsonschema[format-nongpl]==4.23.0
     #   swagger-spec-validator
 jsonschema-specifications==2024.10.1
     # via jsonschema
-kiwisolver==1.4.7
+kiwisolver==1.4.8
     # via matplotlib
 latexcodec==3.0.0
     # via pybtex
@@ -90,7 +90,7 @@ mccabe==0.7.0
     # via flake8
 monotonic==1.6
     # via bravado
-monty==2024.12.10
+monty==2025.1.3
     # via pymatgen
 mpmath==1.3.0
     # via sympy
@@ -125,7 +125,7 @@ parso==0.8.4
     # via jedi
 pexpect==4.9.0
     # via ipython
-pillow==11.0.0
+pillow==11.1.0
     # via matplotlib
 pint==0.19.2
     # via mpcontribs-client (setup.py)
@@ -153,7 +153,7 @@ pycodestyle==2.12.1
     #   pytest-pycodestyle
 pyflakes==3.2.0
     # via flake8
-pygments==2.18.0
+pygments==2.19.0
     # via ipython
 pyisemail==2.0.1
     # via mpcontribs-client (setup.py)
@@ -161,7 +161,7 @@ pymatgen==2024.11.13
     # via mpcontribs-client (setup.py)
 pymongo==4.10.1
     # via mpcontribs-client (setup.py)
-pyparsing==3.2.0
+pyparsing==3.2.1
     # via matplotlib
 pytest==8.3.4
     # via
@@ -212,13 +212,13 @@ rpds-py==0.22.3
     # via
     #   jsonschema
     #   referencing
-ruamel-yaml==0.18.6
+ruamel-yaml==0.18.9
     # via
     #   monty
     #   pymatgen
 ruamel-yaml-clib==0.2.12
     # via ruamel-yaml
-scipy==1.14.1
+scipy==1.15.0
     # via pymatgen
 semantic-version==2.10.0
     # via mpcontribs-client (setup.py)
@@ -271,7 +271,7 @@ uncertainties==3.2.2
     # via pymatgen
 uri-template==1.3.0
     # via jsonschema
-urllib3==2.2.3
+urllib3==2.3.0
     # via requests
 wcwidth==0.2.13
     # via prompt-toolkit
