@@ -42,6 +42,10 @@ filetype==1.2.0
     # via mpcontribs-client (setup.py)
 flatten-dict==0.4.2
     # via mpcontribs-client (setup.py)
+flexcache==0.3
+    # via pint
+flexparser==0.4
+    # via pint
 fonttools==4.55.3
     # via matplotlib
 fqdn==1.5.1
@@ -92,7 +96,7 @@ msgpack==1.1.0
     #   bravado-core
 networkx==3.4.2
     # via pymatgen
-numpy==1.26.4
+numpy==2.2.1
     # via
     #   contourpy
     #   matplotlib
@@ -118,8 +122,10 @@ pexpect==4.9.0
     # via ipython
 pillow==11.1.0
     # via matplotlib
-pint==0.19.2
+pint==0.24.4
     # via mpcontribs-client (setup.py)
+platformdirs==4.3.6
+    # via pint
 plotly==5.24.1
     # via
     #   mpcontribs-client (setup.py)
@@ -228,7 +234,10 @@ types-python-dateutil==2.9.0.20241206
 typing-extensions==4.12.2
     # via
     #   bravado
+    #   flexcache
+    #   flexparser
     #   ipython
+    #   pint
     #   swagger-spec-validator
 tzdata==2024.2
     # via pandas
