@@ -36,9 +36,9 @@ blinker==1.9.0
     # via mpcontribs-api (setup.py)
 boltons==24.1.0
     # via mpcontribs-api (setup.py)
-boto3==1.35.94
+boto3==1.35.95
     # via flask-mongorest-mpcontribs
-botocore==1.35.94
+botocore==1.35.95
     # via
     #   boto3
     #   s3transfer
@@ -131,6 +131,10 @@ flask-sse==1.0.0
     # via flask-mongorest-mpcontribs
 flatten-dict==0.4.2
     # via flask-mongorest-mpcontribs
+flexcache==0.3
+    # via pint
+flexparser==0.4
+    # via pint
 fonttools==4.55.3
     # via matplotlib
 fqdn==1.5.1
@@ -224,7 +228,7 @@ markupsafe==3.0.2
     #   jinja2
     #   nbconvert
     #   werkzeug
-marshmallow==3.24.1
+marshmallow==3.24.2
     # via
     #   flask-marshmallow
     #   marshmallow-mongoengine
@@ -282,7 +286,7 @@ notebook==6.5.7
     # via mpcontribs-api (setup.py)
 notebook-shim==0.2.4
     # via nbclassic
-numpy==1.26.4
+numpy==2.2.1
     # via
     #   contourpy
     #   matplotlib
@@ -294,7 +298,7 @@ numpy==1.26.4
     #   spglib
 opentelemetry-api==1.29.0
     # via ddtrace
-orjson==3.10.13
+orjson==3.10.14
     # via flask-mongorest-mpcontribs
 overrides==7.7.0
     # via jupyter-server
@@ -320,10 +324,12 @@ pexpect==4.9.0
     # via ipython
 pillow==11.1.0
     # via matplotlib
-pint==0.19.2
+pint==0.24.4
     # via mpcontribs-api (setup.py)
 platformdirs==4.3.6
-    # via jupyter-core
+    # via
+    #   jupyter-core
+    #   pint
 plotly==5.24.1
     # via pymatgen
 pluggy==1.5.0
@@ -516,8 +522,11 @@ typing-extensions==4.12.2
     # via
     #   anyio
     #   ddtrace
+    #   flexcache
+    #   flexparser
     #   ipython
     #   mistune
+    #   pint
 tzdata==2024.2
     # via pandas
 tzlocal==5.2
