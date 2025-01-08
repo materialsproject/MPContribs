@@ -36,9 +36,9 @@ blinker==1.9.0
     # via mpcontribs-api (setup.py)
 boltons==24.1.0
     # via mpcontribs-api (setup.py)
-boto3==1.35.92
+boto3==1.35.94
     # via flask-mongorest-mpcontribs
-botocore==1.35.92
+botocore==1.35.94
     # via
     #   boto3
     #   s3transfer
@@ -116,7 +116,7 @@ flask==2.2.5
     #   flask-sse
 flask-compress==1.17
     # via mpcontribs-api (setup.py)
-flask-marshmallow==1.2.1
+flask-marshmallow==1.3.0
     # via mpcontribs-api (setup.py)
 flask-mongoengine-tschaume==1.1.0
     # via flask-mongorest-mpcontribs
@@ -219,7 +219,7 @@ markupsafe==3.0.2
     #   jinja2
     #   nbconvert
     #   werkzeug
-marshmallow==3.23.3
+marshmallow==3.24.1
     # via
     #   flask-marshmallow
     #   marshmallow-mongoengine
@@ -340,7 +340,7 @@ pybtex==0.24.0
     # via pymatgen
 pycparser==2.22
     # via cffi
-pygments==2.19.0
+pygments==2.19.1
     # via
     #   ipython
     #   nbconvert
@@ -420,7 +420,7 @@ rq==2.1.0
     #   rq-scheduler
 rq-scheduler==0.14.0
     # via flask-rq2
-ruamel-yaml==0.18.9
+ruamel-yaml==0.18.10
     # via
     #   monty
     #   pymatgen

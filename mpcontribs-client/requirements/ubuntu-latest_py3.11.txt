@@ -130,7 +130,7 @@ pure-eval==0.2.3
     # via stack-data
 pybtex==0.24.0
     # via pymatgen
-pygments==2.19.0
+pygments==2.19.1
     # via ipython
 pyisemail==2.0.1
     # via mpcontribs-client (setup.py)
@@ -177,7 +177,7 @@ rpds-py==0.22.3
     # via
     #   jsonschema
     #   referencing
-ruamel-yaml==0.18.9
+ruamel-yaml==0.18.10
     # via
     #   monty
     #   pymatgen

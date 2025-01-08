@@ -252,7 +252,7 @@ pybtex==0.24.0
     # via pymatgen
 pycparser==2.22
     # via cffi
-pygments==2.19.0
+pygments==2.19.1
     # via
     #   ipython
     #   nbconvert
@@ -316,7 +316,7 @@ rpds-py==0.22.3
     # via
     #   jsonschema
     #   referencing
-ruamel-yaml==0.18.9
+ruamel-yaml==0.18.10
     # via
     #   monty
     #   pymatgen
