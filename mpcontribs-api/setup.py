@@ -11,7 +11,7 @@ setup(
     url="https://mpcontribs.org",
     packages=["mpcontribs.api"],
     install_requires=[
-        "numpy<2",
+        "numpy",
         "apispec<6",
         "asn1crypto",
         "blinker",
@@ -32,7 +32,7 @@ setup(
         "more-itertools",
         "nbformat",
         "notebook<7",
-        "pint<0.20",
+        "pint",
         "psycopg2-binary",
         "pymatgen",
         "pyopenssl",
