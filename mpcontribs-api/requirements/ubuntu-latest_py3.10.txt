@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=requirements/ubuntu-latest_py3.10.txt
 #
-anyio==4.7.0
+anyio==4.8.0
     # via jupyter-server
 apispec==5.2.2
     # via mpcontribs-api (setup.py)
@@ -30,15 +30,15 @@ attrs==24.3.0
     #   referencing
 beautifulsoup4==4.12.3
     # via nbconvert
-bleach==6.2.0
+bleach[css]==6.2.0
     # via nbconvert
 blinker==1.9.0
     # via mpcontribs-api (setup.py)
 boltons==24.1.0
     # via mpcontribs-api (setup.py)
-boto3==1.35.86
+boto3==1.35.92
     # via flask-mongorest-mpcontribs
-botocore==1.35.86
+botocore==1.35.92
     # via
     #   boto3
     #   s3transfer
@@ -52,9 +52,9 @@ cffi==1.17.1
     # via
     #   argon2-cffi-bindings
     #   cryptography
-charset-normalizer==3.4.0
+charset-normalizer==3.4.1
     # via requests
-click==8.1.7
+click==8.1.8
     # via
     #   flask
     #   rq
@@ -163,7 +163,7 @@ itsdangerous==2.2.0
     # via flask
 jedi==0.19.2
     # via ipython
-jinja2==3.1.4
+jinja2==3.1.5
     # via
     #   flask
     #   jupyter-server
@@ -210,7 +210,7 @@ jupyter-server-terminals==0.5.3
     # via jupyter-server
 jupyterlab-pygments==0.3.0
     # via nbconvert
-kiwisolver==1.4.7
+kiwisolver==1.4.8
     # via matplotlib
 latexcodec==3.0.0
     # via pybtex
@@ -219,7 +219,7 @@ markupsafe==3.0.2
     #   jinja2
     #   nbconvert
     #   werkzeug
-marshmallow==3.23.2
+marshmallow==3.23.3
     # via
     #   flask-marshmallow
     #   marshmallow-mongoengine
@@ -233,7 +233,7 @@ matplotlib-inline==0.1.7
     #   ipython
 mimerender-pr36==0.0.2
     # via flask-mongorest-mpcontribs
-mistune==3.0.2
+mistune==3.1.0
     # via
     #   flasgger-tschaume
     #   nbconvert
@@ -242,7 +242,7 @@ mongoengine==0.29.1
     #   atlasq-tschaume
     #   flask-mongoengine-tschaume
     #   marshmallow-mongoengine
-monty==2024.12.10
+monty==2025.1.3
     # via pymatgen
 more-itertools==10.5.0
     # via mpcontribs-api (setup.py)
@@ -252,7 +252,7 @@ nbclassic==1.1.0
     # via notebook
 nbclient==0.10.2
     # via nbconvert
-nbconvert==7.16.4
+nbconvert==7.16.5
     # via
     #   jupyter-server
     #   notebook
@@ -287,7 +287,7 @@ numpy==1.26.4
     #   spglib
 opentelemetry-api==1.29.0
     # via ddtrace
-orjson==3.10.12
+orjson==3.10.13
     # via flask-mongorest-mpcontribs
 overrides==7.7.0
     # via jupyter-server
@@ -310,7 +310,7 @@ parso==0.8.4
     # via jedi
 pexpect==4.9.0
     # via ipython
-pillow==11.0.0
+pillow==11.1.0
     # via matplotlib
 pint==0.19.2
     # via mpcontribs-api (setup.py)
@@ -340,7 +340,7 @@ pybtex==0.24.0
     # via pymatgen
 pycparser==2.22
     # via cffi
-pygments==2.18.0
+pygments==2.19.0
     # via
     #   ipython
     #   nbconvert
@@ -352,7 +352,7 @@ pymongo==4.10.1
     #   mongoengine
 pyopenssl==24.3.0
     # via mpcontribs-api (setup.py)
-pyparsing==3.2.0
+pyparsing==3.2.1
     # via matplotlib
 python-dateutil==2.9.0.post0
     # via
@@ -414,13 +414,13 @@ rpds-py==0.22.3
     # via
     #   jsonschema
     #   referencing
-rq==2.0.0
+rq==2.1.0
     # via
     #   flask-rq2
     #   rq-scheduler
 rq-scheduler==0.14.0
     # via flask-rq2
-ruamel-yaml==0.18.6
+ruamel-yaml==0.18.9
     # via
     #   monty
     #   pymatgen
@@ -428,7 +428,7 @@ ruamel-yaml-clib==0.2.12
     # via ruamel-yaml
 s3transfer==0.10.4
     # via boto3
-scipy==1.14.1
+scipy==1.15.0
     # via pymatgen
 semantic-version==2.10.0
     # via mpcontribs-api (setup.py)
@@ -468,7 +468,7 @@ terminado==0.18.1
     #   jupyter-server-terminals
     #   notebook
 tinycss2==1.4.0
-    # via nbconvert
+    # via bleach
 tornado==6.4.2
     # via
     #   ipykernel
@@ -499,6 +499,7 @@ typing-extensions==4.12.2
     #   anyio
     #   ddtrace
     #   ipython
+    #   mistune
 tzdata==2024.2
     # via pandas
 tzlocal==5.2
@@ -509,7 +510,7 @@ uncertainties==3.2.2
     #   pymatgen
 uri-template==1.3.0
     # via jsonschema
-urllib3==2.2.3
+urllib3==2.3.0
     # via
     #   botocore
     #   requests
