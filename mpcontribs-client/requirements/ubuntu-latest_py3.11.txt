@@ -84,7 +84,7 @@ matplotlib-inline==0.1.7
     # via ipython
 monotonic==1.6
     # via bravado
-monty==2025.1.3
+monty==2025.1.9
     # via pymatgen
 mpmath==1.3.0
     # via sympy
@@ -140,7 +140,7 @@ pygments==2.19.1
     # via ipython
 pyisemail==2.0.1
     # via mpcontribs-client (setup.py)
-pymatgen==2024.11.13
+pymatgen==2025.1.9
     # via mpcontribs-client (setup.py)
 pymongo==4.10.1
     # via mpcontribs-client (setup.py)
@@ -189,7 +189,7 @@ ruamel-yaml==0.18.10
     #   pymatgen
 ruamel-yaml-clib==0.2.12
     # via ruamel-yaml
-scipy==1.15.0
+scipy==1.15.1
     # via pymatgen
 semantic-version==2.10.0
     # via mpcontribs-client (setup.py)
