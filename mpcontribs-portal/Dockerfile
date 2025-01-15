@@ -1,4 +1,4 @@
-FROM materialsproject/devops:python-3.1110.5 AS base
+FROM materialsproject/devops:python-3.1110.6 AS base
 RUN apt-get update && apt-get install -y --no-install-recommends libopenblas-dev && apt-get clean
 FROM node:18.18.2-slim AS node
 
