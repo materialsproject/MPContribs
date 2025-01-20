@@ -132,7 +132,7 @@ plotly==5.24.1
     # via
     #   mpcontribs-client (MPContribs/mpcontribs-client/setup.py)
     #   pymatgen
-prompt-toolkit==3.0.48
+prompt-toolkit==3.0.50
     # via ipython
 ptyprocess==0.7.0
     # via pexpect
@@ -167,7 +167,7 @@ pyyaml==6.0.2
     #   bravado-core
     #   pybtex
     #   swagger-spec-validator
-referencing==0.35.1
+referencing==0.36.1
     # via
     #   jsonschema
     #   jsonschema-specifications
@@ -242,6 +242,7 @@ typing-extensions==4.12.2
     #   flexparser
     #   ipython
     #   pint
+    #   referencing
     #   swagger-spec-validator
 tzdata==2024.2
     # via pandas

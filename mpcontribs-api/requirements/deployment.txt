@@ -34,9 +34,9 @@ blinker==1.9.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 boltons==24.1.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
-boto3==1.35.99
+boto3==1.36.2
     # via flask-mongorest-mpcontribs
-botocore==1.35.99
+botocore==1.36.2
     # via
     #   boto3
     #   s3transfer
@@ -72,9 +72,9 @@ cycler==0.12.1
     # via matplotlib
 dateparser==1.2.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
-ddtrace==2.18.1
+ddtrace==2.19.1
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
-debugpy==1.8.11
+debugpy==1.8.12
     # via ipykernel
 decorator==5.1.1
     # via ipython
@@ -288,7 +288,7 @@ numpy==1.26.4
     #   spglib
 opentelemetry-api==1.29.0
     # via ddtrace
-orjson==3.10.14
+orjson==3.10.15
     # via flask-mongorest-mpcontribs
 overrides==7.7.0
     # via jupyter-server
@@ -327,7 +327,7 @@ prometheus-client==0.21.1
     # via
     #   jupyter-server
     #   notebook
-prompt-toolkit==3.0.48
+prompt-toolkit==3.0.50
     # via ipython
 protobuf==5.29.3
     # via ddtrace
@@ -396,7 +396,7 @@ redis==5.2.1
     #   flask-rq2
     #   flask-sse
     #   rq
-referencing==0.35.1
+referencing==0.36.1
     # via
     #   jsonschema
     #   jsonschema-specifications
@@ -431,7 +431,7 @@ ruamel-yaml==0.18.10
     #   pymatgen
 ruamel-yaml-clib==0.2.12
     # via ruamel-yaml
-s3transfer==0.10.4
+s3transfer==0.11.1
     # via boto3
 scipy==1.15.1
     # via
@@ -510,6 +510,7 @@ typing-extensions==4.12.2
     #   ipython
     #   pint
     #   pyopenssl
+    #   referencing
 tzdata==2024.2
     # via pandas
 tzlocal==5.2
