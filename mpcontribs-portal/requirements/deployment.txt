@@ -22,9 +22,9 @@ boltons==24.1.0
     # via
     #   mpcontribs-client
     #   mpcontribs-portal (MPContribs/mpcontribs-portal/setup.py)
-boto3==1.36.2
+boto3==1.36.4
     # via mpcontribs-portal (MPContribs/mpcontribs-portal/setup.py)
-botocore==1.36.2
+botocore==1.36.4
     # via
     #   boto3
     #   s3transfer
@@ -32,9 +32,9 @@ bravado==11.0.3
     # via mpcontribs-client
 bravado-core==6.1.1
     # via bravado
-bytecode==0.16.0
+bytecode==0.16.1
     # via ddtrace
-cachetools==5.5.0
+cachetools==5.5.1
     # via mpcontribs-client
 certifi==2024.12.14
     # via requests
@@ -73,7 +73,7 @@ dnspython==2.7.0
     #   pymongo
 envier==0.6.1
     # via ddtrace
-executing==2.1.0
+executing==2.2.0
     # via stack-data
 fastjsonschema==2.21.1
     # via nbformat
@@ -87,7 +87,7 @@ flexcache==0.3
     # via pint
 flexparser==0.4
     # via pint
-fonttools==4.55.3
+fonttools==4.55.4
     # via matplotlib
 fqdn==1.5.1
     # via jsonschema
@@ -395,7 +395,7 @@ typing-extensions==4.12.2
     #   pint
     #   referencing
     #   swagger-spec-validator
-tzdata==2024.2
+tzdata==2025.1
     # via pandas
 ujson==5.10.0
     # via mpcontribs-client

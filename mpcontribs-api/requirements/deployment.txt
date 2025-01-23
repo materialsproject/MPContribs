@@ -34,15 +34,15 @@ blinker==1.9.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 boltons==24.1.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
-boto3==1.36.2
+boto3==1.36.4
     # via flask-mongorest-mpcontribs
-botocore==1.36.2
+botocore==1.36.4
     # via
     #   boto3
     #   s3transfer
 brotli==1.1.0
     # via flask-compress
-bytecode==0.16.0
+bytecode==0.16.1
     # via ddtrace
 certifi==2024.12.14
     # via requests
@@ -90,7 +90,7 @@ entrypoints==0.4
     # via jupyter-client
 envier==0.6.1
     # via ddtrace
-executing==2.1.0
+executing==2.2.0
     # via stack-data
 fastjsonschema==2.21.1
     # via nbformat
@@ -126,7 +126,7 @@ flexcache==0.3
     # via pint
 flexparser==0.4
     # via pint
-fonttools==4.55.3
+fonttools==4.55.4
     # via matplotlib
 fqdn==1.5.1
     # via jsonschema
@@ -511,7 +511,7 @@ typing-extensions==4.12.2
     #   pint
     #   pyopenssl
     #   referencing
-tzdata==2024.2
+tzdata==2025.1
     # via pandas
 tzlocal==5.2
     # via dateparser
