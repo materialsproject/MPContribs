@@ -69,6 +69,7 @@ COPY manage.py .
 COPY start.sh .
 COPY maintenance.py .
 COPY gunicorn.conf.py .
+COPY healthchecks.py .
 
 ARG VERSION
 ENV DD_SERVICE=contribs-portals \
