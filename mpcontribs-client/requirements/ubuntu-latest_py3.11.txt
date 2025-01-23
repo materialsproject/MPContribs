@@ -18,7 +18,7 @@ bravado==11.0.3
     # via mpcontribs-client (setup.py)
 bravado-core==6.1.1
     # via bravado
-cachetools==5.5.0
+cachetools==5.5.1
     # via mpcontribs-client (setup.py)
 certifi==2024.12.14
     # via requests
@@ -34,7 +34,7 @@ dnspython==2.7.0
     # via
     #   pyisemail
     #   pymongo
-executing==2.1.0
+executing==2.2.0
     # via stack-data
 filetype==1.2.0
     # via mpcontribs-client (setup.py)
@@ -44,7 +44,7 @@ flexcache==0.3
     # via pint
 flexparser==0.4
     # via pint
-fonttools==4.55.3
+fonttools==4.55.4
     # via matplotlib
 fqdn==1.5.1
     # via jsonschema
@@ -94,7 +94,7 @@ msgpack==1.1.0
     #   bravado-core
 networkx==3.4.2
     # via pymatgen
-numpy==2.2.1
+numpy==2.2.2
     # via
     #   contourpy
     #   matplotlib
@@ -128,7 +128,7 @@ plotly==5.24.1
     # via
     #   mpcontribs-client (setup.py)
     #   pymatgen
-prompt-toolkit==3.0.48
+prompt-toolkit==3.0.50
     # via ipython
 ptyprocess==0.7.0
     # via pexpect
@@ -163,7 +163,7 @@ pyyaml==6.0.2
     #   bravado-core
     #   pybtex
     #   swagger-spec-validator
-referencing==0.35.1
+referencing==0.36.1
     # via
     #   jsonschema
     #   jsonschema-specifications
@@ -236,8 +236,9 @@ typing-extensions==4.12.2
     #   flexparser
     #   ipython
     #   pint
+    #   referencing
     #   swagger-spec-validator
-tzdata==2024.2
+tzdata==2025.1
     # via pandas
 ujson==5.10.0
     # via mpcontribs-client (setup.py)
