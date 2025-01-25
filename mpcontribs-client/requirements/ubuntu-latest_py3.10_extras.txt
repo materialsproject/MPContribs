@@ -54,7 +54,7 @@ flexcache==0.3
     # via pint
 flexparser==0.4
     # via pint
-fonttools==4.55.4
+fonttools==4.55.6
     # via matplotlib
 fqdn==1.5.1
     # via jsonschema
@@ -167,7 +167,7 @@ pygments==2.19.1
     # via ipython
 pyisemail==2.0.1
     # via mpcontribs-client (setup.py)
-pymatgen==2025.1.9
+pymatgen==2025.1.24
     # via mpcontribs-client (setup.py)
 pymongo==4.10.1
     # via mpcontribs-client (setup.py)
