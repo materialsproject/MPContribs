@@ -39,7 +39,7 @@
     "lodash-webpack-plugin": "^0.11.6",
     "mini-css-extract-plugin": "^2.7.6",
     "parsleyjs": "^2.9.2",
-    "plotly.js": "^2.27.0",
+    "plotly.js": "^3.0.0",
     "requirejs": "^2.3.6",
     "sass": "^1.69.4",
     "sass-loader": "^14.0.0",
