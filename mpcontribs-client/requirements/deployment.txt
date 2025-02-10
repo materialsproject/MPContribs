@@ -44,7 +44,7 @@ flexcache==0.3
     # via pint
 flexparser==0.4
     # via pint
-fonttools==4.55.8
+fonttools==4.56.0
     # via matplotlib
 fqdn==1.5.1
     # via jsonschema
@@ -94,7 +94,7 @@ msgpack==1.1.0
     # via
     #   bravado
     #   bravado-core
-narwhals==1.25.0
+narwhals==1.26.0
     # via plotly
 networkx==3.4.2
     # via pymatgen

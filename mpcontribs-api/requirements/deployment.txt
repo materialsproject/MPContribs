@@ -26,7 +26,7 @@ attrs==25.1.0
     # via
     #   jsonschema
     #   referencing
-beautifulsoup4==4.13.1
+beautifulsoup4==4.13.3
     # via nbconvert
 bleach[css]==6.2.0
     # via nbconvert
@@ -34,9 +34,9 @@ blinker==1.9.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 boltons==25.0.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
-boto3==1.36.11
+boto3==1.36.16
     # via flask-mongorest-mpcontribs
-botocore==1.36.11
+botocore==1.36.16
     # via
     #   boto3
     #   s3transfer
@@ -70,7 +70,7 @@ css-html-js-minify==2.5.5
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 cycler==0.12.1
     # via matplotlib
-dateparser==1.2.0
+dateparser==1.2.1
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 ddtrace==2.20.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
@@ -126,7 +126,7 @@ flexcache==0.3
     # via pint
 flexparser==0.4
     # via pint
-fonttools==4.55.8
+fonttools==4.56.0
     # via matplotlib
 fqdn==1.5.1
     # via jsonschema
@@ -200,7 +200,7 @@ jupyter-core==5.7.2
     #   nbconvert
     #   nbformat
     #   notebook
-jupyter-events==0.11.0
+jupyter-events==0.12.0
     # via jupyter-server
 jupyter-server==2.15.0
     # via notebook-shim
@@ -248,7 +248,7 @@ more-itertools==10.6.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 mpmath==1.3.0
     # via sympy
-narwhals==1.25.0
+narwhals==1.26.0
     # via plotly
 nbclassic==1.2.0
     # via notebook
@@ -288,7 +288,7 @@ numpy==1.26.4
     #   pymatgen
     #   scipy
     #   spglib
-opentelemetry-api==1.29.0
+opentelemetry-api==1.30.0
     # via ddtrace
 orjson==3.10.15
     # via flask-mongorest-mpcontribs
@@ -298,6 +298,7 @@ packaging==24.2
     # via
     #   gunicorn
     #   ipykernel
+    #   jupyter-events
     #   jupyter-server
     #   marshmallow
     #   matplotlib
