@@ -34,9 +34,9 @@ blinker==1.9.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 boltons==25.0.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
-boto3==1.36.16
+boto3==1.36.17
     # via flask-mongorest-mpcontribs
-botocore==1.36.16
+botocore==1.36.17
     # via
     #   boto3
     #   s3transfer
@@ -354,7 +354,7 @@ pygments==2.19.1
     #   nbconvert
 pymatgen==2025.1.24
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
-pymongo==4.11
+pymongo==4.11.1
     # via
     #   flask-mongorest-mpcontribs
     #   mongoengine

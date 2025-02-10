@@ -148,7 +148,7 @@ pyisemail==2.0.1
     # via mpcontribs-client (MPContribs/mpcontribs-client/setup.py)
 pymatgen==2025.1.24
     # via mpcontribs-client (MPContribs/mpcontribs-client/setup.py)
-pymongo==4.11
+pymongo==4.11.1
     # via mpcontribs-client (MPContribs/mpcontribs-client/setup.py)
 pyparsing==3.2.1
     # via matplotlib

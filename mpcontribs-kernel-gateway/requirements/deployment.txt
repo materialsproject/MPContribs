@@ -273,7 +273,7 @@ pyisemail==2.0.1
     # via mpcontribs-client
 pymatgen==2025.1.24
     # via mpcontribs-client
-pymongo==4.11
+pymongo==4.11.1
     # via mpcontribs-client
 pyparsing==3.2.1
     # via matplotlib

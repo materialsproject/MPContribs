@@ -22,9 +22,9 @@ boltons==25.0.0
     # via
     #   mpcontribs-client
     #   mpcontribs-portal (MPContribs/mpcontribs-portal/setup.py)
-boto3==1.36.16
+boto3==1.36.17
     # via mpcontribs-portal (MPContribs/mpcontribs-portal/setup.py)
-botocore==1.36.16
+botocore==1.36.17
     # via
     #   boto3
     #   s3transfer
@@ -267,7 +267,7 @@ pyisemail==2.0.1
     # via mpcontribs-client
 pymatgen==2025.1.24
     # via mpcontribs-client
-pymongo==4.11
+pymongo==4.11.1
     # via mpcontribs-client
 pyparsing==3.2.1
     # via matplotlib
