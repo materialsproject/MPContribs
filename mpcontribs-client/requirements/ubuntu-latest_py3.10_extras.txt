@@ -8,11 +8,11 @@ arrow==1.3.0
     # via isoduration
 asttokens==3.0.0
     # via stack-data
-attrs==24.3.0
+attrs==25.1.0
     # via
     #   jsonschema
     #   referencing
-boltons==24.1.0
+boltons==25.0.0
     # via mpcontribs-client (setup.py)
 bravado==11.0.3
     # via mpcontribs-client (setup.py)
@@ -20,13 +20,13 @@ bravado-core==6.1.1
     # via bravado
 cachetools==5.5.1
     # via mpcontribs-client (setup.py)
-certifi==2024.12.14
+certifi==2025.1.31
     # via requests
 charset-normalizer==3.4.1
     # via requests
 contourpy==1.3.1
     # via matplotlib
-coverage[toml]==7.6.10
+coverage[toml]==7.6.11
     # via pytest-cov
 cycler==0.12.1
     # via matplotlib
@@ -54,7 +54,7 @@ flexcache==0.3
     # via pint
 flexparser==0.4
     # via pint
-fonttools==4.55.6
+fonttools==4.56.0
     # via matplotlib
 fqdn==1.5.1
     # via jsonschema
@@ -66,7 +66,7 @@ importlib-resources==6.5.2
     # via swagger-spec-validator
 iniconfig==2.0.0
     # via pytest
-ipython==8.31.0
+ipython==8.32.0
     # via mpcontribs-client (setup.py)
 isoduration==20.11.0
     # via jsonschema
@@ -106,6 +106,8 @@ msgpack==1.1.0
     # via
     #   bravado
     #   bravado-core
+narwhals==1.26.0
+    # via plotly
 networkx==3.4.2
     # via pymatgen
 numpy==2.2.2
@@ -139,7 +141,7 @@ pint==0.24.4
     # via mpcontribs-client (setup.py)
 platformdirs==4.3.6
     # via pint
-plotly==5.24.1
+plotly==6.0.0
     # via
     #   mpcontribs-client (setup.py)
     #   pymatgen
@@ -169,7 +171,7 @@ pyisemail==2.0.1
     # via mpcontribs-client (setup.py)
 pymatgen==2025.1.24
     # via mpcontribs-client (setup.py)
-pymongo==4.10.1
+pymongo==4.11.1
     # via mpcontribs-client (setup.py)
 pyparsing==3.2.1
     # via matplotlib
@@ -192,7 +194,7 @@ python-dateutil==2.9.0.post0
     #   bravado-core
     #   matplotlib
     #   pandas
-pytz==2024.2
+pytz==2025.1
     # via
     #   bravado-core
     #   pandas
@@ -202,7 +204,7 @@ pyyaml==6.0.2
     #   bravado-core
     #   pybtex
     #   swagger-spec-validator
-referencing==0.36.1
+referencing==0.36.2
     # via
     #   jsonschema
     #   jsonschema-specifications
@@ -256,8 +258,6 @@ sympy==1.13.3
     # via pymatgen
 tabulate==0.9.0
     # via pymatgen
-tenacity==9.0.0
-    # via plotly
 tomli==2.2.1
     # via
     #   coverage
