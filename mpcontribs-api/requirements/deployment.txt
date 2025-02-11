@@ -34,9 +34,9 @@ blinker==1.9.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 boltons==25.0.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
-boto3==1.36.17
+boto3==1.36.18
     # via flask-mongorest-mpcontribs
-botocore==1.36.17
+botocore==1.36.18
     # via
     #   boto3
     #   s3transfer
@@ -64,7 +64,7 @@ cramjam==2.9.1
     # via python-snappy
 crontab==1.0.1
     # via rq-scheduler
-cryptography==44.0.0
+cryptography==44.0.1
     # via pyopenssl
 css-html-js-minify==2.5.5
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
