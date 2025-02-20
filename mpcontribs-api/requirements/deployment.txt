@@ -34,9 +34,9 @@ blinker==1.9.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 boltons==25.0.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
-boto3==1.36.21
+boto3==1.36.25
     # via flask-mongorest-mpcontribs
-botocore==1.36.21
+botocore==1.36.25
     # via
     #   boto3
     #   s3transfer
@@ -72,7 +72,7 @@ cycler==0.12.1
     # via matplotlib
 dateparser==1.2.1
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
-ddtrace==2.21.0
+ddtrace==3.0.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 debugpy==1.8.12
     # via ipykernel
@@ -233,7 +233,7 @@ matplotlib-inline==0.1.7
     #   ipython
 mimerender-pr36==0.0.2
     # via flask-mongorest-mpcontribs
-mistune==3.1.1
+mistune==3.1.2
     # via
     #   flasgger-tschaume
     #   nbconvert
@@ -352,7 +352,7 @@ pygments==2.19.1
     # via
     #   ipython
     #   nbconvert
-pymatgen==2025.1.24
+pymatgen==2025.2.18
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 pymongo==4.11.1
     # via
@@ -418,7 +418,7 @@ rfc3986-validator==0.1.1
     # via
     #   jsonschema
     #   jupyter-events
-rpds-py==0.22.3
+rpds-py==0.23.0
     # via
     #   jsonschema
     #   referencing
