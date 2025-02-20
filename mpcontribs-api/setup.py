@@ -18,7 +18,7 @@ setup(
         "boltons",
         "css-html-js-minify",
         "dateparser",
-        "ddtrace",
+        "ddtrace<3",
         "dnspython",
         "filetype",
         "flasgger-tschaume>=0.9.7",

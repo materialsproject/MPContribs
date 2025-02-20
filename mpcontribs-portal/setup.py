@@ -13,7 +13,7 @@ setup(
     install_requires=[
         "boltons",
         "boto3",
-        "ddtrace",
+        "ddtrace<3",
         "Django>=3.2,<4.0",
         "django-extensions",
         "django-settings-file",
@@ -33,9 +33,7 @@ setup(
         "setproctitle",
         "whitenoise",
     ],
-    extras_require={
-        "dev": ["pytest", "flake8"]
-    },
+    extras_require={"dev": ["pytest", "flake8"]},
     license="MIT",
     zip_safe=False,
     include_package_data=True,
