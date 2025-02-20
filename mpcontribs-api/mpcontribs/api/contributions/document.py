@@ -33,7 +33,11 @@ ureg = UnitRegistry(
         lambda s: s.replace("%", " percent "),
     ],
 )
-ureg.formatter.default_format = "~,P"
+if hasattr(ureg,"formatter"):
+    # for newer versions of pint
+    ureg.formatter.default_format = "~,P"
+else:
+    ureg.default_format = "~,P"
 
 if "percent" not in ureg:
     # percent is native in pint >= 0.21
