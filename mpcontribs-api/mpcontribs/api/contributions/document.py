@@ -33,7 +33,7 @@ ureg = UnitRegistry(
         lambda s: s.replace("%", " percent "),
     ],
 )
-ureg.default_format = "~,P"
+ureg.formatter.default_format = "~,P"
 
 if "percent" not in ureg:
     # percent is native in pint >= 0.21
@@ -100,7 +100,10 @@ def get_quantity(s):
 
     try:
         parts[0] = ufloat_fromstr(parts[0])
-        return ureg.Measurement(*parts)
+        meas = ureg.Measurement(*parts)
+        if not hasattr(meas,"nominal_value") and (val := hasattr(meas,"value")):
+            meas.nominal_value = float(val) # Measurement.value is a `Quantity` object
+        return meas
     except ValueError:
         return None
 
