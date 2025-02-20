@@ -33,11 +33,7 @@ ureg = UnitRegistry(
         lambda s: s.replace("%", " percent "),
     ],
 )
-if hasattr(ureg,"formatter"):
-    # for newer versions of pint
-    ureg.formatter.default_format = "~,P"
-else:
-    ureg.default_format = "~,P"
+ureg.formatter.default_format = "~,P"
 
 if "percent" not in ureg:
     # percent is native in pint >= 0.21
@@ -76,12 +72,12 @@ def format_cell(cell):
         return cell
 
     q = get_quantity(cell)
-    if not q or isnan(q.nominal_value):
+    if not q or isnan(q.magnitude.nominal_value):
         return cell
 
     q = truncate_digits(q)
     try:
-        return str(q.nominal_value) if isnan(q.std_dev) else str(q)
+        return str(q.magnitude.nominal_value) if isnan(q.magnitude.std_dev) else str(q)
     except Exception:
         return cell
 
@@ -104,19 +100,16 @@ def get_quantity(s):
 
     try:
         parts[0] = ufloat_fromstr(parts[0])
-        meas = ureg.Measurement(*parts)
-        if not hasattr(meas,"nominal_value") and (val := hasattr(meas,"value")):
-            meas.nominal_value = float(val) # Measurement.value is a `Quantity` object
-        return meas
+        return ureg.Measurement(*parts)
     except ValueError:
         return None
 
 
 def truncate_digits(q):
-    if isnan(q.nominal_value):
+    if isnan(q.magnitude.nominal_value):
         return q
 
-    v = Decimal(str(q.nominal_value))
+    v = Decimal(str(q.magnitude.nominal_value))
     vt = v.as_tuple()
 
     if vt.exponent >= 0:
@@ -125,8 +118,8 @@ def truncate_digits(q):
     dgts = len(vt.digits)
     dgts = max_dgts if dgts > max_dgts else dgts
     s = f"{v:.{dgts}g}"
-    if not isnan(q.std_dev):
-        s += f"+/-{q.std_dev:.{dgts}g}"
+    if not isnan(q.magnitude.std_dev):
+        s += f"+/-{q.magnitude.std_dev:.{dgts}g}"
 
     if q.units:
         s += f" {q.units}"
@@ -277,7 +270,7 @@ class Contributions(DynamicDocument):
                 return key, value
 
             # silently ignore "nan"
-            if isnan(q.nominal_value):
+            if isnan(q.magnitude.nominal_value):
                 return False
 
             # ensure that the same units are used across contributions
@@ -305,11 +298,11 @@ class Contributions(DynamicDocument):
             q = truncate_digits(q)
 
             # return new value dict
-            display = str(q.value) if isnan(q.std_dev) else str(q)
+            display = str(q.value) if isnan(q.magnitude.std_dev) else str(q)
             value = {
                 "display": display,
-                "value": q.nominal_value,
-                "error": q.std_dev,
+                "value": q.magnitude.nominal_value,
+                "error": q.magnitude.std_dev,
                 "unit": str(q.units),
             }
             return key, value

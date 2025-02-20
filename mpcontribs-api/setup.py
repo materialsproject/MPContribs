@@ -32,7 +32,7 @@ setup(
         "more-itertools",
         "nbformat",
         "notebook<7",
-        "pint",
+        "pint>=0.24",
         "psycopg2-binary",
         "pymatgen",
         "pyopenssl",
@@ -44,9 +44,7 @@ setup(
         "websocket_client",
         "zstandard",
     ],
-    extras_require={
-        "dev": ["pytest", "flake8"]
-    },
+    extras_require={"dev": ["pytest", "flake8"]},
     license="MIT",
     zip_safe=False,
 )
