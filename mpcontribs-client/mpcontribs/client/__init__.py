@@ -1402,7 +1402,7 @@ class Client(SwaggerClient):
             self.attachments.getAttachmentById(pk=aid, _fields=["_all"]).result()
         )
 
-    def init_columns(self, columns: dict = None) -> dict:
+    def init_columns(self, columns: dict = None, name: str = None) -> dict:
         """initialize columns for a project to set their order and desired units
 
         The `columns` field of a project tracks the minima and maxima of each `data` field
@@ -1435,8 +1435,11 @@ class Client(SwaggerClient):
         Args:
             columns (dict): dictionary mapping data column to its unit
         """
-        if not self.project:
-            raise MPContribsClientError("initialize client with project argument!")
+        name = self.project or name
+        if not name:
+            raise MPContribsClientError(
+                "initialize client with project or set `name` argument!"
+            )
 
         columns = flatten(columns or {}, reducer="dot")
 
@@ -1497,9 +1500,7 @@ class Client(SwaggerClient):
 
             # TODO catch unsupported column renaming or implement solution
             # reconcile with existing columns
-            resp = self.projects.getProjectByName(
-                pk=self.project, _fields=["columns"]
-            ).result()
+            resp = self.projects.getProjectByName(pk=name, _fields=["columns"]).result()
             existing_columns = {}
 
             for col in resp["columns"]:
@@ -1556,9 +1557,7 @@ class Client(SwaggerClient):
         if not valid:
             raise MPContribsClientError(error)
 
-        return self.projects.updateProjectByName(
-            pk=self.project, project=payload
-        ).result()
+        return self.projects.updateProjectByName(pk=name, project=payload).result()
 
     def delete_contributions(self, query: dict = None, timeout: int = -1):
         """Remove all contributions for a query
