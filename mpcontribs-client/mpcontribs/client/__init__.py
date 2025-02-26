@@ -115,6 +115,7 @@ ureg.define("ppb = 1e-9")
 ureg.define("atom = 1")
 ureg.define("bohr_magneton = e * hbar / (2 * m_e) = µᵇ = µ_B = mu_B")
 ureg.define("electron_mass = 9.1093837015e-31 kg = mₑ = m_e")
+ureg.define("sccm = cm³/min")
 
 LOG_LEVEL = os.environ.get("MPCONTRIBS_CLIENT_LOG_LEVEL", "INFO")
 log_level = getattr(logging, LOG_LEVEL.upper())
