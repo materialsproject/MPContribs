@@ -179,7 +179,7 @@ monty==2025.1.9
     # via
     #   mpcontribs-portal (MPContribs/mpcontribs-portal/setup.py)
     #   pymatgen
-mpcontribs-client==5.10.0
+mpcontribs-client==5.10.1
     # via mpcontribs-portal (MPContribs/mpcontribs-portal/setup.py)
 mpmath==1.3.0
     # via sympy
