@@ -1918,27 +1918,28 @@ class Client(SwaggerClient):
 
         query = query or {}
 
-        if not self.project and (not query or "project" not in query):
-            raise MPContribsClientError(
-                "initialize client with project, or include project in query!"
-            )
+        if self.project:
+            if "project" in query and self.project != query["project"]:
+                raise MPContribsClientError(
+                    f"client initialized with different project {self.project}!"
+                )
+            query["project"] = self.project
+        else:
+            if not query or "project" not in query:
+                raise MPContribsClientError(
+                    "initialize client with project, or include project in query!"
+                )
 
-        if "project" in query and self.project != query["project"]:
-            raise MPContribsClientError(
-                f"client initialized with different project {self.project}!"
-            )
-
-        query["project"] = self.project
-        cids = list(self.get_all_ids(query).get(self.project, {}).get("ids", set()))
+        name = query["project"]
+        cids = list(self.get_all_ids(query).get(name, {}).get("ids", set()))
 
         if not cids:
-            logger.info(f"There aren't any contributions to update for {self.project}")
-            return
+            raise MPContribsClientError(
+                f"There aren't any contributions to update for {name}"
+            )
 
         # get current list of data columns to decide if swagger reload is needed
-        resp = self.projects.getProjectByName(
-            pk=self.project, _fields=["columns"]
-        ).result()
+        resp = self.projects.getProjectByName(pk=name, _fields=["columns"]).result()
         old_paths = set(c["path"] for c in resp["columns"])
 
         total = len(cids)
@@ -1953,13 +1954,11 @@ class Client(SwaggerClient):
         updated = sum(resp["count"] for _, resp in responses.items())
 
         if updated:
-            resp = self.projects.getProjectByName(
-                pk=self.project, _fields=["columns"]
-            ).result()
+            resp = self.projects.getProjectByName(pk=name, _fields=["columns"]).result()
             new_paths = set(c["path"] for c in resp["columns"])
 
             if new_paths != old_paths:
-                self.init_columns()
+                self.init_columns(name=name)
                 self._reinit()
 
         toc = time.perf_counter()
