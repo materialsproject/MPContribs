@@ -1600,7 +1600,7 @@ class Client(SwaggerClient):
         _run_futures(futures, total=total, timeout=timeout)
         left, _ = self.get_totals(query=query)
         deleted = total - left
-        self.init_columns()
+        self.init_columns(name=query["project"])
         self._reinit()
         toc = time.perf_counter()
         dt = (toc - tic) / 60
@@ -2414,11 +2414,11 @@ class Client(SwaggerClient):
                                 logger.info(
                                     f"{project_name}: resubmit failed contributions manually"
                                 )
+                self.init_columns(name=project_name)
 
+            self._reinit()
             toc = time.perf_counter()
             dt = (toc - tic) / 60
-            self.init_columns()
-            self._reinit()
             logger.info(
                 f"It took {dt:.1f}min to submit {total_processed}/{total} contributions."
             )
