@@ -56,7 +56,7 @@ idna==3.10
     #   requests
 importlib-resources==6.5.2
     # via swagger-spec-validator
-ipython==8.32.0
+ipython==8.33.0
     # via mpcontribs-client (setup.py)
 isoduration==20.11.0
     # via jsonschema
@@ -80,7 +80,7 @@ kiwisolver==1.4.8
     # via matplotlib
 latexcodec==3.0.0
     # via pybtex
-matplotlib==3.10.0
+matplotlib==3.10.1
     # via pymatgen
 matplotlib-inline==0.1.7
     # via ipython
