@@ -34,9 +34,9 @@ blinker==1.9.0
     # via mpcontribs-api (setup.py)
 boltons==25.0.0
     # via mpcontribs-api (setup.py)
-boto3==1.37.2
+boto3==1.37.4
     # via flask-mongorest-mpcontribs
-botocore==1.37.2
+botocore==1.37.4
     # via
     #   boto3
     #   s3transfer
@@ -153,12 +153,14 @@ ipykernel==6.29.5
     # via
     #   nbclassic
     #   notebook
-ipython==8.32.0
+ipython==9.0.0
     # via ipykernel
 ipython-genutils==0.2.0
     # via
     #   nbclassic
     #   notebook
+ipython-pygments-lexers==1.1.1
+    # via ipython
 isoduration==20.11.0
     # via jsonschema
 itsdangerous==2.2.0
@@ -227,7 +229,7 @@ marshmallow==3.26.1
     #   marshmallow-mongoengine
 marshmallow-mongoengine==0.31.2
     # via flask-mongorest-mpcontribs
-matplotlib==3.10.0
+matplotlib==3.10.1
     # via pymatgen
 matplotlib-inline==0.1.7
     # via
@@ -359,6 +361,7 @@ pyflakes==3.2.0
 pygments==2.19.1
     # via
     #   ipython
+    #   ipython-pygments-lexers
     #   nbconvert
 pymatgen==2025.2.18
     # via mpcontribs-api (setup.py)
