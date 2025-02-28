@@ -62,8 +62,10 @@ importlib-resources==6.5.2
     # via swagger-spec-validator
 iniconfig==2.0.0
     # via pytest
-ipython==8.32.0
+ipython==9.0.0
     # via mpcontribs-client (setup.py)
+ipython-pygments-lexers==1.1.1
+    # via ipython
 isoduration==20.11.0
     # via jsonschema
 jedi==0.19.2
@@ -86,7 +88,7 @@ kiwisolver==1.4.8
     # via matplotlib
 latexcodec==3.0.0
     # via pybtex
-matplotlib==3.10.0
+matplotlib==3.10.1
     # via pymatgen
 matplotlib-inline==0.1.7
     # via ipython
@@ -162,7 +164,9 @@ pycodestyle==2.12.1
 pyflakes==3.2.0
     # via flake8
 pygments==2.19.1
-    # via ipython
+    # via
+    #   ipython
+    #   ipython-pygments-lexers
 pyisemail==2.0.1
     # via mpcontribs-client (setup.py)
 pymatgen==2025.2.18
