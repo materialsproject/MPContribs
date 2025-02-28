@@ -4,6 +4,7 @@ import itertools
 
 from hashlib import md5
 from math import isnan
+from bson.dbref import DBRef
 from datetime import datetime
 from flask import current_app
 from atlasq import AtlasManager, AtlasQ
@@ -317,10 +318,11 @@ class Contributions(DynamicDocument):
         document.reload(*args)
 
         for component in COMPONENTS.keys():
-            # check if other contributions exist before deletion!
-            for idx, obj in enumerate(getattr(document, component)):
+            # check if other contributions exist before deletion
+            # and make sure component still exists (getattr converts ref to object)
+            for obj in getattr(document, component):
                 q = {component: obj.id}
-                if sender.objects(**q).count() < 2:
+                if sender.objects(**q).count() < 2 and not isinstance(obj, DBRef):
                     obj.delete()
 
 
