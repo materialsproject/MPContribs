@@ -91,11 +91,13 @@ importlib-resources==6.5.2
     # via swagger-spec-validator
 ipykernel==6.29.5
     # via -r requirements.in
-ipython==8.32.0
+ipython==9.0.0
     # via
     #   ipykernel
     #   ipywidgets
     #   mpcontribs-client
+ipython-pygments-lexers==1.1.1
+    # via ipython
 ipywidgets==8.1.5
     # via -r requirements.in
 isoduration==20.11.0
@@ -160,7 +162,7 @@ markupsafe==3.0.2
     # via
     #   jinja2
     #   nbconvert
-matplotlib==3.10.0
+matplotlib==3.10.1
     # via pymatgen
 matplotlib-inline==0.1.7
     # via
@@ -172,7 +174,7 @@ monotonic==1.6
     # via bravado
 monty==2025.1.9
     # via pymatgen
-mpcontribs-client==5.10.1
+mpcontribs-client==5.10.2
     # via -r requirements.in
 mpmath==1.3.0
     # via sympy
@@ -264,6 +266,7 @@ pycparser==2.22
 pygments==2.19.1
     # via
     #   ipython
+    #   ipython-pygments-lexers
     #   nbconvert
 pyisemail==2.0.1
     # via mpcontribs-client

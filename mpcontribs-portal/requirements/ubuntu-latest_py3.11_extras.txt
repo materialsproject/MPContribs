@@ -22,9 +22,9 @@ boltons==25.0.0
     # via
     #   mpcontribs-client
     #   mpcontribs-portal (setup.py)
-boto3==1.37.2
+boto3==1.37.4
     # via mpcontribs-portal (setup.py)
-botocore==1.37.2
+botocore==1.37.4
     # via
     #   boto3
     #   s3transfer
@@ -111,12 +111,14 @@ iniconfig==2.0.0
     # via pytest
 ipykernel==6.29.5
     # via mpcontribs-portal (setup.py)
-ipython==8.32.0
+ipython==9.0.0
     # via
     #   ipykernel
     #   mpcontribs-client
 ipython-genutils==0.2.0
     # via mpcontribs-portal (setup.py)
+ipython-pygments-lexers==1.1.1
+    # via ipython
 isoduration==20.11.0
     # via jsonschema
 jedi==0.19.2
@@ -167,7 +169,7 @@ markupsafe==3.0.2
     # via
     #   jinja2
     #   nbconvert
-matplotlib==3.10.0
+matplotlib==3.10.1
     # via pymatgen
 matplotlib-inline==0.1.7
     # via
@@ -183,7 +185,7 @@ monty==2025.1.9
     # via
     #   mpcontribs-portal (setup.py)
     #   pymatgen
-mpcontribs-client==5.10.0
+mpcontribs-client==5.10.2
     # via mpcontribs-portal (setup.py)
 mpmath==1.3.0
     # via sympy
@@ -271,6 +273,7 @@ pyflakes==3.2.0
 pygments==2.19.1
     # via
     #   ipython
+    #   ipython-pygments-lexers
     #   nbconvert
 pyisemail==2.0.1
     # via mpcontribs-client
