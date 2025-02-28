@@ -54,8 +54,10 @@ idna==3.10
     #   requests
 importlib-resources==6.5.2
     # via swagger-spec-validator
-ipython==8.32.0
+ipython==9.0.0
     # via mpcontribs-client (MPContribs/mpcontribs-client/setup.py)
+ipython-pygments-lexers==1.1.1
+    # via ipython
 isoduration==20.11.0
     # via jsonschema
 jedi==0.19.2
@@ -78,7 +80,7 @@ kiwisolver==1.4.8
     # via matplotlib
 latexcodec==3.0.0
     # via pybtex
-matplotlib==3.10.0
+matplotlib==3.10.1
     # via
     #   -r python/requirements.txt
     #   pymatgen
@@ -143,7 +145,9 @@ pure-eval==0.2.3
 pybtex==0.24.0
     # via pymatgen
 pygments==2.19.1
-    # via ipython
+    # via
+    #   ipython
+    #   ipython-pygments-lexers
 pyisemail==2.0.1
     # via mpcontribs-client (MPContribs/mpcontribs-client/setup.py)
 pymatgen==2025.2.18
