@@ -107,7 +107,7 @@ importlib-resources==6.5.2
     # via swagger-spec-validator
 ipykernel==6.29.5
     # via mpcontribs-portal (MPContribs/mpcontribs-portal/setup.py)
-ipython==9.0.0
+ipython==9.0.1
     # via
     #   ipykernel
     #   mpcontribs-client
@@ -189,7 +189,7 @@ msgpack==1.1.0
     # via
     #   bravado
     #   bravado-core
-narwhals==1.28.0
+narwhals==1.29.0
     # via plotly
 nbclient==0.10.2
     # via nbconvert

@@ -54,7 +54,7 @@ idna==3.10
     #   requests
 importlib-resources==6.5.2
     # via swagger-spec-validator
-ipython==9.0.0
+ipython==9.0.1
     # via mpcontribs-client (MPContribs/mpcontribs-client/setup.py)
 ipython-pygments-lexers==1.1.1
     # via ipython
@@ -96,7 +96,7 @@ msgpack==1.1.0
     # via
     #   bravado
     #   bravado-core
-narwhals==1.28.0
+narwhals==1.29.0
     # via plotly
 networkx==3.4.2
     # via pymatgen
