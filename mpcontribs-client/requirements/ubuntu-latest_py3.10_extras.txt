@@ -175,7 +175,7 @@ pymongo==4.11.1
     # via mpcontribs-client (setup.py)
 pyparsing==3.2.1
     # via matplotlib
-pytest==8.3.4
+pytest==8.3.5
     # via
     #   mpcontribs-client (setup.py)
     #   pytest-cov
