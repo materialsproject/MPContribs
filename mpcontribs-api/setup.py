@@ -11,14 +11,14 @@ setup(
     url="https://mpcontribs.org",
     packages=["mpcontribs.api"],
     install_requires=[
-        "numpy<2",
+        "numpy",
         "apispec<6",
         "asn1crypto",
         "blinker",
         "boltons",
         "css-html-js-minify",
         "dateparser",
-        "ddtrace",
+        "ddtrace<3",
         "dnspython",
         "filetype",
         "flasgger-tschaume>=0.9.7",
@@ -32,7 +32,7 @@ setup(
         "more-itertools",
         "nbformat",
         "notebook<7",
-        "pint<0.20",
+        "pint>=0.24",
         "psycopg2-binary",
         "pymatgen",
         "pyopenssl",
@@ -44,9 +44,7 @@ setup(
         "websocket_client",
         "zstandard",
     ],
-    extras_require={
-        "dev": ["pytest", "flake8"]
-    },
+    extras_require={"dev": ["pytest", "flake8"]},
     license="MIT",
     zip_safe=False,
 )

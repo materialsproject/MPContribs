@@ -274,29 +274,29 @@ class Projects(Document):
 
                 # resolve/lookup component fields
                 # NOTE also includes dynamic document fields
-                for component in COMPONENTS.keys():
-                    pipeline.append(
-                        {
-                            "$lookup": {
-                                "from": component,
-                                "localField": component,
-                                "foreignField": "_id",
-                                "as": component,
-                            }
-                        }
-                    )
+                # for component in COMPONENTS.keys():
+                #    pipeline.append(
+                #        {
+                #            "$lookup": {
+                #                "from": component,
+                #                "localField": component,
+                #                "foreignField": "_id",
+                #                "as": component,
+                #            }
+                #        }
+                #    )
 
                 # document size and attachment content size
                 project_stage = {
-                    "_id": 0,
-                    "size": {"$bsonSize": "$$ROOT"},
-                    "contents": {
-                        "$map": {  # attachment sizes
-                            "input": "$attachments",
-                            "as": "attm",
-                            "in": {"$toInt": "$$attm.content"},
-                        }
-                    },
+                    #    "_id": 0,
+                    #    "size": {"$bsonSize": "$$ROOT"},
+                    #    "contents": {
+                    #        "$map": {  # attachment sizes
+                    #            "input": "$attachments",
+                    #            "as": "attm",
+                    #            "in": {"$toInt": "$$attm.content"},
+                    #        }
+                    #    },
                 }
 
                 # number of components
@@ -321,14 +321,14 @@ class Projects(Document):
                 pipeline.append({"$project": project_stage})
 
                 # forward fields and sum attachment contents
-                project_stage_2 = {k: 1 for k, v in project_stage.items()}
-                project_stage_2["contents"] = {"$sum": "$contents"}
+                project_stage_2 = {k: 1 for k in project_stage.keys()}
+                # project_stage_2["contents"] = {"$sum": "$contents"}
                 pipeline.append({"$project": project_stage_2})
 
                 # total size and total number of components
                 group_stage = {
                     "_id": None,
-                    "size": {"$sum": {"$add": ["$size", "$contents"]}},
+                    #    "size": {"$sum": {"$add": ["$size", "$contents"]}},
                 }
                 for component in COMPONENTS.keys():
                     group_stage[component] = {"$sum": f"${component}"}
@@ -357,7 +357,7 @@ class Projects(Document):
                 # prep and save stats
                 stats_kwargs = {"columns": len(columns), "contributions": ncontribs}
                 if result and result[0]:
-                    stats_kwargs["size"] = result[0]["size"] / 1024 / 1024
+                    # stats_kwargs["size"] = result[0]["size"] / 1024 / 1024
                     for component in COMPONENTS.keys():
                         stats_kwargs[component] = result[0].get(component, 0)
                         if stats_kwargs[component] > 0:

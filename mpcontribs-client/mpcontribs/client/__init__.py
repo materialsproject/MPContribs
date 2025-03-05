@@ -20,7 +20,7 @@ from math import isclose
 from semantic_version import Version
 from requests.exceptions import RequestException
 from bson.objectid import ObjectId
-from typing import Union, Type, List
+from typing import Union, Type, Optional
 from tqdm.auto import tqdm
 from hashlib import md5
 from pathlib import Path
@@ -54,8 +54,6 @@ from urllib3.util.retry import Retry
 from filetype.types.archive import Gz
 from filetype.types.image import Jpeg, Png, Gif, Tiff
 from pint import UnitRegistry
-from pint.unit import UnitDefinition
-from pint.converters import ScaleConverter
 from pint.errors import DimensionalityError
 from tempfile import gettempdir
 from plotly.express._chart_types import line as line_chart
@@ -104,13 +102,20 @@ ureg = UnitRegistry(
         lambda s: s.replace("%", " percent "),
     ],
 )
-ureg.define(UnitDefinition("percent", "%", (), ScaleConverter(0.01)))
-ureg.define(UnitDefinition("permille", "%%", (), ScaleConverter(0.001)))
-ureg.define(UnitDefinition("ppm", "ppm", (), ScaleConverter(1e-6)))
-ureg.define(UnitDefinition("ppb", "ppb", (), ScaleConverter(1e-9)))
+if "percent" not in ureg:
+    # percent is native in pint >= 0.21
+    ureg.define("percent = 0.01 = %")
+if "permille" not in ureg:
+    # permille is native in pint >= 0.24.2
+    ureg.define("permille = 0.001 = ‰ = %%")
+if "ppm" not in ureg:
+    # ppm is native in pint >= 0.21
+    ureg.define("ppm = 1e-6")
+ureg.define("ppb = 1e-9")
 ureg.define("atom = 1")
 ureg.define("bohr_magneton = e * hbar / (2 * m_e) = µᵇ = µ_B = mu_B")
 ureg.define("electron_mass = 9.1093837015e-31 kg = mₑ = m_e")
+ureg.define("sccm = cm³/min")
 
 LOG_LEVEL = os.environ.get("MPCONTRIBS_CLIENT_LOG_LEVEL", "INFO")
 log_level = getattr(logging, LOG_LEVEL.upper())
@@ -292,7 +297,7 @@ def _response_hook(resp, *args, **kwargs):
 def _chunk_by_size(items, max_size=0.95 * MAX_BYTES):
     buffer, buffer_size = [], 0
 
-    for idx, item in enumerate(items):
+    for item in items:
         item_size = _compress(item)[0]
 
         if buffer_size + item_size <= max_size:
@@ -461,7 +466,7 @@ class Structure(PmgStructure):
 class Attachment(dict):
     """Wrapper class around dict to handle attachments"""
 
-    def decode(self) -> str:
+    def decode(self) -> bytes:
         """Decode base64-encoded content of attachment"""
         return b64decode(self["content"], validate=True)
 
@@ -473,7 +478,7 @@ class Attachment(dict):
 
         return unpacked
 
-    def write(self, outdir: Union[str, Path] = None) -> Path:
+    def write(self, outdir: Optional[Union[str, Path]] = None) -> Path:
         """Write attachment to file using its name
 
         Args:
@@ -485,7 +490,7 @@ class Attachment(dict):
         path.write_bytes(content)
         return path
 
-    def display(self, outdir: Union[str, Path] = None):
+    def display(self, outdir: Optional[Union[str, Path]] = None):
         """Display Image/FileLink for attachment if in IPython/Jupyter
 
         Args:
@@ -756,7 +761,7 @@ def _expand_params(protocol, host, version, projects_json, apikey=None):
     columns = {"string": [], "number": []}
     projects = ujson.loads(projects_json)
     query = {"project__in": ",".join(projects)}
-    query["_fields"] = ["columns"]
+    query["_fields"] = "columns"
     url = f"{protocol}://{host}"
     http_client = RequestsClient()
     http_client.session.headers["Content-Type"] = "application/json"
@@ -865,11 +870,11 @@ class Client(SwaggerClient):
 
     def __init__(
         self,
-        apikey: str = None,
-        headers: dict = None,
-        host: str = None,
-        project: str = None,
-        session: requests.Session = None,
+        apikey: Optional[str] = None,
+        headers: Optional[dict] = None,
+        host: Optional[str] = None,
+        project: Optional[str] = None,
+        session: Optional[requests.Session] = None,
     ):
         """Initialize the client - only reloads API spec from server as needed
 
@@ -961,7 +966,7 @@ class Client(SwaggerClient):
 
     def _get_per_page_default_max(
         self, op: str = "query", resource: str = "contributions"
-    ) -> int:
+    ) -> tuple[int, int]:
         attr = f"{op}{resource.capitalize()}"
         resource = self.swagger_spec.resources[resource]
         param_spec = getattr(resource, attr).params["per_page"].param_spec
@@ -983,7 +988,7 @@ class Client(SwaggerClient):
         op: str = "query",
         resource: str = "contributions",
         pages: int = -1,
-    ) -> List[dict]:
+    ) -> list[dict]:
         """Avoid URI too long errors"""
         pp_default, pp_max = self._get_per_page_default_max(op=op, resource=resource)
         per_page = (
@@ -1042,7 +1047,7 @@ class Client(SwaggerClient):
         params: dict,
         rel_url: str = "contributions",
         op: str = "query",
-        data: dict = None,
+        data: Optional[dict] = None,
     ):
         rname = rel_url.split("/", 1)[0]
         resource = self.swagger_spec.resources[rname]
@@ -1060,7 +1065,9 @@ class Client(SwaggerClient):
         return future
 
     def available_query_params(
-        self, startswith: tuple = None, resource: str = "contributions"
+        self,
+        startswith: Optional[tuple] = None,
+        resource: str = "contributions",
     ) -> list:
         resources = self.swagger_spec.resources
         resource_obj = resources.get(resource)
@@ -1076,7 +1083,9 @@ class Client(SwaggerClient):
 
         return [param for param in params if param.startswith(startswith)]
 
-    def get_project(self, name: str = None, fields: list = None) -> Type[Dict]:
+    def get_project(
+        self, name: Optional[str] = None, fields: Optional[list] = None
+    ) -> Dict:
         """Retrieve a project entry
 
         Args:
@@ -1094,12 +1103,12 @@ class Client(SwaggerClient):
 
     def query_projects(
         self,
-        query: dict = None,
-        term: str = None,
-        fields: list = None,
-        sort: str = None,
+        query: Optional[dict] = None,
+        term: Optional[str] = None,
+        fields: Optional[list] = None,
+        sort: Optional[str] = None,
         timeout: int = -1,
-    ) -> List[dict]:
+    ) -> list[dict]:
         """Query projects by query and/or term (Atlas Search)
 
         See `client.available_query_params(resource="projects")` for keyword arguments used in
@@ -1201,7 +1210,7 @@ class Client(SwaggerClient):
         else:
             raise MPContribsClientError(resp)
 
-    def update_project(self, update: dict, name: str = None):
+    def update_project(self, update: dict, name: Optional[str] = None):
         """Update project info
 
         Args:
@@ -1267,7 +1276,7 @@ class Client(SwaggerClient):
         else:
             raise MPContribsClientError(error)
 
-    def delete_project(self, name: str = None):
+    def delete_project(self, name: Optional[str] = None):
         """Delete a project
 
         Args:
@@ -1286,7 +1295,7 @@ class Client(SwaggerClient):
         if resp and "error" in resp:
             raise MPContribsClientError(resp["error"])
 
-    def get_contribution(self, cid: str, fields: list = None) -> Type[Dict]:
+    def get_contribution(self, cid: str, fields: Optional[list] = None) -> Dict:
         """Retrieve a contribution
 
         Args:
@@ -1300,7 +1309,7 @@ class Client(SwaggerClient):
             self.contributions.getContributionById(pk=cid, _fields=fields).result()
         )
 
-    def get_table(self, tid_or_md5: str) -> Type[Table]:
+    def get_table(self, tid_or_md5: str) -> Table:
         """Retrieve full Pandas DataFrame for a table
 
         Args:
@@ -1342,7 +1351,7 @@ class Client(SwaggerClient):
 
         return Table.from_dict(table)
 
-    def get_structure(self, sid_or_md5: str) -> Type[Structure]:
+    def get_structure(self, sid_or_md5: str) -> Structure:
         """Retrieve pymatgen structure
 
         Args:
@@ -1370,7 +1379,7 @@ class Client(SwaggerClient):
         resp = self.structures.getStructureById(pk=sid, _fields=fields).result()
         return Structure.from_dict(resp)
 
-    def get_attachment(self, aid_or_md5: str) -> Type[Attachment]:
+    def get_attachment(self, aid_or_md5: str) -> Attachment:
         """Retrieve an attachment
 
         Args:
@@ -1398,7 +1407,9 @@ class Client(SwaggerClient):
             self.attachments.getAttachmentById(pk=aid, _fields=["_all"]).result()
         )
 
-    def init_columns(self, columns: dict = None) -> dict:
+    def init_columns(
+        self, columns: Optional[dict] = None, name: Optional[str] = None
+    ) -> dict:
         """initialize columns for a project to set their order and desired units
 
         The `columns` field of a project tracks the minima and maxima of each `data` field
@@ -1431,8 +1442,11 @@ class Client(SwaggerClient):
         Args:
             columns (dict): dictionary mapping data column to its unit
         """
-        if not self.project:
-            raise MPContribsClientError("initialize client with project argument!")
+        name = self.project or name
+        if not name:
+            raise MPContribsClientError(
+                "initialize client with project or set `name` argument!"
+            )
 
         columns = flatten(columns or {}, reducer="dot")
 
@@ -1493,9 +1507,7 @@ class Client(SwaggerClient):
 
             # TODO catch unsupported column renaming or implement solution
             # reconcile with existing columns
-            resp = self.projects.getProjectByName(
-                pk=self.project, _fields=["columns"]
-            ).result()
+            resp = self.projects.getProjectByName(pk=name, _fields=["columns"]).result()
             existing_columns = {}
 
             for col in resp["columns"]:
@@ -1552,11 +1564,9 @@ class Client(SwaggerClient):
         if not valid:
             raise MPContribsClientError(error)
 
-        return self.projects.updateProjectByName(
-            pk=self.project, project=payload
-        ).result()
+        return self.projects.updateProjectByName(pk=name, project=payload).result()
 
-    def delete_contributions(self, query: dict = None, timeout: int = -1):
+    def delete_contributions(self, query: Optional[dict] = None, timeout: int = -1):
         """Remove all contributions for a query
 
         Args:
@@ -1590,7 +1600,7 @@ class Client(SwaggerClient):
         _run_futures(futures, total=total, timeout=timeout)
         left, _ = self.get_totals(query=query)
         deleted = total - left
-        self.init_columns()
+        self.init_columns(name=query["project"])
         self._reinit()
         toc = time.perf_counter()
         dt = (toc - tic) / 60
@@ -1603,7 +1613,7 @@ class Client(SwaggerClient):
 
     def get_totals(
         self,
-        query: dict = None,
+        query: Optional[dict] = None,
         timeout: int = -1,
         resource: str = "contributions",
         op: str = "query",
@@ -1644,11 +1654,11 @@ class Client(SwaggerClient):
 
         return result["total_count"], result["total_pages"]
 
-    def count(self, query: dict = None) -> int:
+    def count(self, query: Optional[dict] = None) -> int:
         """shortcut for get_totals()"""
         return self.get_totals(query=query)[0]
 
-    def get_unique_identifiers_flags(self, query: dict = None) -> dict:
+    def get_unique_identifiers_flags(self, query: Optional[dict] = None) -> dict:
         """Retrieve values for `unique_identifiers` flags.
 
         See `client.available_query_params(resource="projects")` for available query parameters.
@@ -1668,10 +1678,10 @@ class Client(SwaggerClient):
 
     def get_all_ids(
         self,
-        query: dict = None,
-        include: List[str] = None,
+        query: Optional[dict] = None,
+        include: Optional[list[str]] = None,
         timeout: int = -1,
-        data_id_fields: dict = None,
+        data_id_fields: Optional[dict] = None,
         fmt: str = "sets",
         op: str = "query",
     ) -> dict:
@@ -1826,12 +1836,12 @@ class Client(SwaggerClient):
 
     def query_contributions(
         self,
-        query: dict = None,
-        fields: list = None,
-        sort: str = None,
+        query: Optional[dict] = None,
+        fields: Optional[list] = None,
+        sort: Optional[str] = None,
         paginate: bool = False,
         timeout: int = -1,
-    ) -> List[dict]:
+    ) -> dict:
         """Query contributions
 
         See `client.available_query_params()` for keyword arguments used in query.
@@ -1882,7 +1892,7 @@ class Client(SwaggerClient):
         return ret
 
     def update_contributions(
-        self, data: dict, query: dict = None, timeout: int = -1
+        self, data: dict, query: Optional[dict] = None, timeout: int = -1
     ) -> dict:
         """Apply the same update to all contributions in a project (matching query)
 
@@ -1894,7 +1904,7 @@ class Client(SwaggerClient):
             timeout (int): cancel remaining requests if timeout exceeded (in seconds)
         """
         if not data:
-            return "Nothing to update."
+            raise MPContribsClientError("Nothing to update.")
 
         tic = time.perf_counter()
         valid, error = self._is_valid_payload("Contribution", data)
@@ -1908,27 +1918,28 @@ class Client(SwaggerClient):
 
         query = query or {}
 
-        if not self.project and (not query or "project" not in query):
-            raise MPContribsClientError(
-                "initialize client with project, or include project in query!"
-            )
+        if self.project:
+            if "project" in query and self.project != query["project"]:
+                raise MPContribsClientError(
+                    f"client initialized with different project {self.project}!"
+                )
+            query["project"] = self.project
+        else:
+            if not query or "project" not in query:
+                raise MPContribsClientError(
+                    "initialize client with project, or include project in query!"
+                )
 
-        if "project" in query and self.project != query["project"]:
-            raise MPContribsClientError(
-                f"client initialized with different project {self.project}!"
-            )
-
-        query["project"] = self.project
-        cids = list(self.get_all_ids(query).get(self.project, {}).get("ids", set()))
+        name = query["project"]
+        cids = list(self.get_all_ids(query).get(name, {}).get("ids", set()))
 
         if not cids:
-            logger.info(f"There aren't any contributions to update for {self.project}")
-            return
+            raise MPContribsClientError(
+                f"There aren't any contributions to update for {name}"
+            )
 
         # get current list of data columns to decide if swagger reload is needed
-        resp = self.projects.getProjectByName(
-            pk=self.project, _fields=["columns"]
-        ).result()
+        resp = self.projects.getProjectByName(pk=name, _fields=["columns"]).result()
         old_paths = set(c["path"] for c in resp["columns"])
 
         total = len(cids)
@@ -1943,20 +1954,18 @@ class Client(SwaggerClient):
         updated = sum(resp["count"] for _, resp in responses.items())
 
         if updated:
-            resp = self.projects.getProjectByName(
-                pk=self.project, _fields=["columns"]
-            ).result()
+            resp = self.projects.getProjectByName(pk=name, _fields=["columns"]).result()
             new_paths = set(c["path"] for c in resp["columns"])
 
             if new_paths != old_paths:
-                self.init_columns()
+                self.init_columns(name=name)
                 self._reinit()
 
         toc = time.perf_counter()
         return {"updated": updated, "total": total, "seconds_elapsed": toc - tic}
 
     def make_public(
-        self, query: dict = None, recursive: bool = False, timeout: int = -1
+        self, query: Optional[dict] = None, recursive: bool = False, timeout: int = -1
     ) -> dict:
         """Publish a project and optionally its contributions
 
@@ -1969,7 +1978,7 @@ class Client(SwaggerClient):
         )
 
     def make_private(
-        self, query: dict = None, recursive: bool = False, timeout: int = -1
+        self, query: Optional[dict] = None, recursive: bool = False, timeout: int = -1
     ) -> dict:
         """Make a project and optionally its contributions private
 
@@ -1984,7 +1993,7 @@ class Client(SwaggerClient):
     def _set_is_public(
         self,
         is_public: bool,
-        query: dict = None,
+        query: Optional[dict] = None,
         recursive: bool = False,
         timeout: int = -1,
     ) -> dict:
@@ -2036,7 +2045,7 @@ class Client(SwaggerClient):
         if recursive:
             query = query or {}
             query["is_public"] = not is_public
-            ret["contributions"] = self.updateContributions(
+            ret["contributions"] = self.update_contributions(
                 {"is_public": is_public}, query=query, timeout=timeout
             )
 
@@ -2044,7 +2053,7 @@ class Client(SwaggerClient):
 
     def submit_contributions(
         self,
-        contributions: List[dict],
+        contributions: list[dict],
         ignore_dupes: bool = False,
         timeout: int = -1,
         skip_dupe_check: bool = False,
@@ -2246,6 +2255,8 @@ class Client(SwaggerClient):
                             element = Attachment.from_file(element)
 
                         dct = {k: element[k] for k in ["mime", "content"]}
+                    else:
+                        raise MPContribsClientError("This should never happen")
 
                     digest = get_md5(dct)
 
@@ -2402,11 +2413,11 @@ class Client(SwaggerClient):
                                 logger.info(
                                     f"{project_name}: resubmit failed contributions manually"
                                 )
+                self.init_columns(name=project_name)
 
+            self._reinit()
             toc = time.perf_counter()
             dt = (toc - tic) / 60
-            self.init_columns()
-            self._reinit()
             logger.info(
                 f"It took {dt:.1f}min to submit {total_processed}/{total} contributions."
             )
@@ -2415,12 +2426,12 @@ class Client(SwaggerClient):
 
     def download_contributions(
         self,
-        query: dict = None,
+        query: Optional[dict] = None,
         outdir: Union[str, Path] = DEFAULT_DOWNLOAD_DIR,
         overwrite: bool = False,
-        include: List[str] = None,
+        include: Optional[list[str]] = None,
         timeout: int = -1,
-    ) -> int:
+    ) -> list:
         """Download a list of contributions as .json.gz file(s)
 
         Args:
@@ -2442,7 +2453,7 @@ class Client(SwaggerClient):
         if include and not components:
             raise MPContribsClientError(f"`include` must be subset of {COMPONENTS}!")
 
-        all_ids = self.get_all_ids(query, include=components, timeout=timeout)
+        all_ids = self.get_all_ids(query, include=list(components), timeout=timeout)
         fmt = query.get("format", "json")
         contributions, components_loaded = [], defaultdict(dict)
 
@@ -2516,12 +2527,12 @@ class Client(SwaggerClient):
 
     def download_structures(
         self,
-        ids: List[str],
+        ids: list[str],
         outdir: Union[str, Path] = DEFAULT_DOWNLOAD_DIR,
         overwrite: bool = False,
         timeout: int = -1,
         fmt: str = "json",
-    ) -> Path:
+    ) -> list[Path]:
         """Download a list of structures as a .json.gz file
 
         Args:
@@ -2545,12 +2556,12 @@ class Client(SwaggerClient):
 
     def download_tables(
         self,
-        ids: List[str],
+        ids: list[str],
         outdir: Union[str, Path] = DEFAULT_DOWNLOAD_DIR,
         overwrite: bool = False,
         timeout: int = -1,
         fmt: str = "json",
-    ) -> Path:
+    ) -> list[Path]:
         """Download a list of tables as a .json.gz file
 
         Args:
@@ -2574,12 +2585,12 @@ class Client(SwaggerClient):
 
     def download_attachments(
         self,
-        ids: List[str],
+        ids: list[str],
         outdir: Union[str, Path] = DEFAULT_DOWNLOAD_DIR,
         overwrite: bool = False,
         timeout: int = -1,
         fmt: str = "json",
-    ) -> Path:
+    ) -> list[Path]:
         """Download a list of attachments as a .json.gz file
 
         Args:
@@ -2604,12 +2615,12 @@ class Client(SwaggerClient):
     def _download_resource(
         self,
         resource: str,
-        ids: List[str],
+        ids: list[str],
         outdir: Union[str, Path] = DEFAULT_DOWNLOAD_DIR,
         overwrite: bool = False,
         timeout: int = -1,
         fmt: str = "json",
-    ) -> Path:
+    ) -> list[Path]:
         """Helper to download a list of resources as .json.gz file
 
         Args:
@@ -2621,7 +2632,7 @@ class Client(SwaggerClient):
             fmt: download format - "json" or "csv"
 
         Returns:
-            tuple (paths of output files, objects per path / per_page)
+            list of paths to output files
         """
         resources = ["contributions"] + COMPONENTS
         if resource not in resources:

@@ -4,6 +4,7 @@ import itertools
 
 from hashlib import md5
 from math import isnan
+from bson.dbref import DBRef
 from datetime import datetime
 from flask import current_app
 from atlasq import AtlasManager, AtlasQ
@@ -18,8 +19,6 @@ from mongoengine.fields import DateTimeField, ListField
 from boltons.iterutils import remap
 from decimal import Decimal
 from pint import UnitRegistry
-from pint.unit import UnitDefinition
-from pint.converters import ScaleConverter
 from pint.errors import DimensionalityError
 from uncertainties import ufloat_fromstr
 from pymatgen.core import Composition, Element
@@ -35,12 +34,18 @@ ureg = UnitRegistry(
         lambda s: s.replace("%", " percent "),
     ],
 )
-ureg.default_format = "~,P"
+ureg.formatter.default_format = "~,P"
 
-ureg.define(UnitDefinition("percent", "%", (), ScaleConverter(0.01)))
-ureg.define(UnitDefinition("permille", "%%", (), ScaleConverter(0.001)))
-ureg.define(UnitDefinition("ppm", "ppm", (), ScaleConverter(1e-6)))
-ureg.define(UnitDefinition("ppb", "ppb", (), ScaleConverter(1e-9)))
+if "percent" not in ureg:
+    # percent is native in pint >= 0.21
+    ureg.define("percent = 0.01 = %")
+if "permille" not in ureg:
+    # permille is native in pint >= 0.24.2
+    ureg.define("permille = 0.001 = ‰ = %%")
+if "ppm" not in ureg:
+    # ppm is native in pint >= 0.21
+    ureg.define("ppm = 1e-6")
+ureg.define("ppb = 1e-9")
 ureg.define("atom = 1")
 ureg.define("bohr_magneton = e * hbar / (2 * m_e) = µᵇ = µ_B = mu_B")
 ureg.define("electron_mass = 9.1093837015e-31 kg = mₑ = m_e")
@@ -68,12 +73,12 @@ def format_cell(cell):
         return cell
 
     q = get_quantity(cell)
-    if not q or isnan(q.nominal_value):
+    if not q or isnan(q.magnitude.nominal_value):
         return cell
 
     q = truncate_digits(q)
     try:
-        return str(q.nominal_value) if isnan(q.std_dev) else str(q)
+        return str(q.magnitude.nominal_value) if isnan(q.magnitude.std_dev) else str(q)
     except Exception:
         return cell
 
@@ -102,10 +107,10 @@ def get_quantity(s):
 
 
 def truncate_digits(q):
-    if isnan(q.nominal_value):
+    if isnan(q.magnitude.nominal_value):
         return q
 
-    v = Decimal(str(q.nominal_value))
+    v = Decimal(str(q.magnitude.nominal_value))
     vt = v.as_tuple()
 
     if vt.exponent >= 0:
@@ -114,8 +119,8 @@ def truncate_digits(q):
     dgts = len(vt.digits)
     dgts = max_dgts if dgts > max_dgts else dgts
     s = f"{v:.{dgts}g}"
-    if not isnan(q.std_dev):
-        s += f"+/-{q.std_dev:.{dgts}g}"
+    if not isnan(q.magnitude.std_dev):
+        s += f"+/-{q.magnitude.std_dev:.{dgts}g}"
 
     if q.units:
         s += f" {q.units}"
@@ -260,7 +265,7 @@ class Contributions(DynamicDocument):
                 return key, value
 
             # silently ignore "nan"
-            if isnan(q.nominal_value):
+            if isnan(q.magnitude.nominal_value):
                 return False
 
             # ensure that the same units are used across contributions
@@ -288,11 +293,11 @@ class Contributions(DynamicDocument):
             q = truncate_digits(q)
 
             # return new value dict
-            display = str(q.value) if isnan(q.std_dev) else str(q)
+            display = str(q.value) if isnan(q.magnitude.std_dev) else str(q)
             value = {
                 "display": display,
-                "value": q.nominal_value,
-                "error": q.std_dev,
+                "value": q.magnitude.nominal_value,
+                "error": q.magnitude.std_dev,
                 "unit": str(q.units),
             }
             return key, value
@@ -307,10 +312,11 @@ class Contributions(DynamicDocument):
         document.reload(*args)
 
         for component in COMPONENTS.keys():
-            # check if other contributions exist before deletion!
-            for idx, obj in enumerate(getattr(document, component)):
+            # check if other contributions exist before deletion
+            # and make sure component still exists (getattr converts ref to object)
+            for obj in getattr(document, component):
                 q = {component: obj.id}
-                if sender.objects(**q).count() < 2:
+                if sender.objects(**q).count() < 2 and not isinstance(obj, DBRef):
                     obj.delete()
 
 

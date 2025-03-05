@@ -1,5 +1,5 @@
 blinker
-ddtrace
+ddtrace<3
 ipykernel
 ipywidgets
 jupyter-client

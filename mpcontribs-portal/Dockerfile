@@ -1,4 +1,4 @@
-FROM materialsproject/devops:python-3.1110.3 AS base
+FROM materialsproject/devops:python-3.1110.8 AS base
 RUN apt-get update && apt-get install -y --no-install-recommends libopenblas-dev && apt-get clean
 FROM node:18.18.2-slim AS node
 
@@ -69,6 +69,7 @@ COPY manage.py .
 COPY start.sh .
 COPY maintenance.py .
 COPY gunicorn.conf.py .
+COPY healthchecks.py .
 
 ARG VERSION
 ENV DD_SERVICE=contribs-portals \
