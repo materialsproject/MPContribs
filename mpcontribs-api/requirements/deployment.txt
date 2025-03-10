@@ -34,9 +34,9 @@ blinker==1.9.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 boltons==25.0.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
-boto3==1.37.8
+boto3==1.37.9
     # via flask-mongorest-mpcontribs
-botocore==1.37.8
+botocore==1.37.9
     # via
     #   boto3
     #   s3transfer
@@ -149,7 +149,7 @@ ipykernel==6.29.5
     # via
     #   nbclassic
     #   notebook
-ipython==9.0.1
+ipython==9.0.2
     # via ipykernel
 ipython-genutils==0.2.0
     # via
@@ -250,7 +250,7 @@ more-itertools==10.6.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 mpmath==1.3.0
     # via sympy
-narwhals==1.29.1
+narwhals==1.30.0
     # via plotly
 nbclassic==1.2.0
     # via notebook
@@ -376,7 +376,7 @@ python-dateutil==2.9.0.post0
     #   matplotlib
     #   pandas
     #   rq-scheduler
-python-json-logger==3.2.1
+python-json-logger==3.3.0
     # via jupyter-events
 python-mimeparse==2.0.0
     # via mimerender-pr36
@@ -463,7 +463,7 @@ sniffio==1.3.1
     # via anyio
 soupsieve==2.6
     # via beautifulsoup4
-spglib==2.5.0
+spglib==2.6.0
     # via pymatgen
 stack-data==0.6.3
     # via ipython
@@ -516,6 +516,7 @@ typing-extensions==4.12.2
     #   pint
     #   pyopenssl
     #   referencing
+    #   spglib
 tzdata==2025.1
     # via pandas
 tzlocal==5.3.1

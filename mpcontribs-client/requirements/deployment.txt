@@ -54,7 +54,7 @@ idna==3.10
     #   requests
 importlib-resources==6.5.2
     # via swagger-spec-validator
-ipython==9.0.1
+ipython==9.0.2
     # via mpcontribs-client (MPContribs/mpcontribs-client/setup.py)
 ipython-pygments-lexers==1.1.1
     # via ipython
@@ -96,7 +96,7 @@ msgpack==1.1.0
     # via
     #   bravado
     #   bravado-core
-narwhals==1.29.1
+narwhals==1.30.0
     # via plotly
 networkx==3.4.2
     # via pymatgen
@@ -217,7 +217,7 @@ six==1.17.0
     #   pybtex
     #   python-dateutil
     #   rfc3339-validator
-spglib==2.5.0
+spglib==2.6.0
     # via pymatgen
 stack-data==0.6.3
     # via ipython
@@ -247,6 +247,7 @@ typing-extensions==4.12.2
     #   ipython
     #   pint
     #   referencing
+    #   spglib
     #   swagger-spec-validator
 tzdata==2025.1
     # via pandas

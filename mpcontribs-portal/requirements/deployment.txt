@@ -22,9 +22,9 @@ boltons==25.0.0
     # via
     #   mpcontribs-client
     #   mpcontribs-portal (MPContribs/mpcontribs-portal/setup.py)
-boto3==1.37.8
+boto3==1.37.9
     # via mpcontribs-portal (MPContribs/mpcontribs-portal/setup.py)
-botocore==1.37.8
+botocore==1.37.9
     # via
     #   boto3
     #   s3transfer
@@ -107,7 +107,7 @@ importlib-resources==6.5.2
     # via swagger-spec-validator
 ipykernel==6.29.5
     # via mpcontribs-portal (MPContribs/mpcontribs-portal/setup.py)
-ipython==9.0.1
+ipython==9.0.2
     # via
     #   ipykernel
     #   mpcontribs-client
@@ -189,7 +189,7 @@ msgpack==1.1.0
     # via
     #   bravado
     #   bravado-core
-narwhals==1.29.1
+narwhals==1.30.0
     # via plotly
 nbclient==0.10.2
     # via nbconvert
@@ -351,7 +351,7 @@ six==1.17.0
     #   rfc3339-validator
 soupsieve==2.6
     # via beautifulsoup4
-spglib==2.5.0
+spglib==2.6.0
     # via pymatgen
 sqlparse==0.5.3
     # via django
@@ -398,6 +398,7 @@ typing-extensions==4.12.2
     #   ipython
     #   pint
     #   referencing
+    #   spglib
     #   swagger-spec-validator
 tzdata==2025.1
     # via pandas
