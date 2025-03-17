@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=MPContribs/mpcontribs-api/requirements/deployment.txt MPContribs/mpcontribs-api/setup.py python/requirements.txt
 #
-anyio==4.8.0
+anyio==4.9.0
     # via jupyter-server
 apispec==5.2.2
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
@@ -22,7 +22,7 @@ asttokens==3.0.0
     # via stack-data
 atlasq-tschaume==0.11.1.dev2
     # via flask-mongorest-mpcontribs
-attrs==25.1.0
+attrs==25.3.0
     # via
     #   jsonschema
     #   referencing
@@ -34,9 +34,9 @@ blinker==1.9.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 boltons==25.0.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
-boto3==1.37.9
+boto3==1.37.13
     # via flask-mongorest-mpcontribs
-botocore==1.37.9
+botocore==1.37.13
     # via
     #   boto3
     #   s3transfer
@@ -143,7 +143,7 @@ idna==3.10
     #   anyio
     #   jsonschema
     #   requests
-importlib-metadata==8.5.0
+importlib-metadata==8.6.1
     # via opentelemetry-api
 ipykernel==6.29.5
     # via
@@ -250,7 +250,7 @@ more-itertools==10.6.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 mpmath==1.3.0
     # via sympy
-narwhals==1.30.0
+narwhals==1.31.0
     # via plotly
 nbclassic==1.2.0
     # via notebook
@@ -290,7 +290,7 @@ numpy==1.26.4
     #   pymatgen
     #   scipy
     #   spglib
-opentelemetry-api==1.30.0
+opentelemetry-api==1.31.0
     # via ddtrace
 orjson==3.10.15
     # via flask-mongorest-mpcontribs
@@ -326,7 +326,7 @@ platformdirs==4.3.6
     # via
     #   jupyter-core
     #   pint
-plotly==6.0.0
+plotly==6.0.1
     # via pymatgen
 prometheus-client==0.21.1
     # via
@@ -334,7 +334,7 @@ prometheus-client==0.21.1
     #   notebook
 prompt-toolkit==3.0.50
     # via ipython
-protobuf==6.30.0
+protobuf==6.30.1
     # via ddtrace
 psutil==7.0.0
     # via ipykernel
@@ -355,7 +355,7 @@ pygments==2.19.1
     #   ipython
     #   ipython-pygments-lexers
     #   nbconvert
-pymatgen==2025.2.18
+pymatgen==2025.3.10
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 pymongo==4.11.2
     # via
@@ -391,7 +391,7 @@ pyyaml==6.0.2
     #   flasgger-tschaume
     #   jupyter-events
     #   pybtex
-pyzmq==26.2.1
+pyzmq==26.3.0
     # via
     #   ipykernel
     #   jupyter-client

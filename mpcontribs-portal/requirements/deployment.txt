@@ -10,7 +10,7 @@ asgiref==3.8.1
     # via django
 asttokens==3.0.0
     # via stack-data
-attrs==25.1.0
+attrs==25.3.0
     # via
     #   jsonschema
     #   referencing
@@ -22,9 +22,9 @@ boltons==25.0.0
     # via
     #   mpcontribs-client
     #   mpcontribs-portal (MPContribs/mpcontribs-portal/setup.py)
-boto3==1.37.9
+boto3==1.37.13
     # via mpcontribs-portal (MPContribs/mpcontribs-portal/setup.py)
-botocore==1.37.9
+botocore==1.37.13
     # via
     #   boto3
     #   s3transfer
@@ -101,7 +101,7 @@ idna==3.10
     # via
     #   jsonschema
     #   requests
-importlib-metadata==8.5.0
+importlib-metadata==8.6.1
     # via opentelemetry-api
 importlib-resources==6.5.2
     # via swagger-spec-validator
@@ -189,7 +189,7 @@ msgpack==1.1.0
     # via
     #   bravado
     #   bravado-core
-narwhals==1.30.0
+narwhals==1.31.0
     # via plotly
 nbclient==0.10.2
     # via nbconvert
@@ -215,7 +215,7 @@ numpy==1.26.4
     #   pymatgen
     #   scipy
     #   spglib
-opentelemetry-api==1.30.0
+opentelemetry-api==1.31.0
     # via ddtrace
 packaging==24.2
     # via
@@ -245,13 +245,13 @@ platformdirs==4.3.6
     # via
     #   jupyter-core
     #   pint
-plotly==6.0.0
+plotly==6.0.1
     # via
     #   mpcontribs-client
     #   pymatgen
 prompt-toolkit==3.0.50
     # via ipython
-protobuf==6.30.0
+protobuf==6.30.1
     # via ddtrace
 psutil==7.0.0
     # via ipykernel
@@ -268,7 +268,7 @@ pygments==2.19.1
     #   nbconvert
 pyisemail==2.0.1
     # via mpcontribs-client
-pymatgen==2025.2.18
+pymatgen==2025.3.10
     # via mpcontribs-client
 pymongo==4.11.2
     # via mpcontribs-client
@@ -294,7 +294,7 @@ pyyaml==6.0.2
     #   bravado-core
     #   pybtex
     #   swagger-spec-validator
-pyzmq==26.2.1
+pyzmq==26.3.0
     # via
     #   ipykernel
     #   jupyter-client
