@@ -12,7 +12,7 @@ asttokens==3.0.0
     # via stack-data
 async-timeout==5.0.1
     # via redis
-attrs==25.1.0
+attrs==25.3.0
     # via
     #   jsonschema
     #   referencing
@@ -24,9 +24,9 @@ boltons==25.0.0
     # via
     #   mpcontribs-client
     #   mpcontribs-portal (setup.py)
-boto3==1.37.8
+boto3==1.37.16
     # via mpcontribs-portal (setup.py)
-botocore==1.37.8
+botocore==1.37.16
     # via
     #   boto3
     #   s3transfer
@@ -109,15 +109,15 @@ idna==3.10
     # via
     #   jsonschema
     #   requests
-importlib-metadata==8.5.0
+importlib-metadata==8.6.1
     # via opentelemetry-api
 importlib-resources==6.5.2
     # via swagger-spec-validator
-iniconfig==2.0.0
+iniconfig==2.1.0
     # via pytest
 ipykernel==6.29.5
     # via mpcontribs-portal (setup.py)
-ipython==8.33.0
+ipython==8.34.0
     # via
     #   ipykernel
     #   mpcontribs-client
@@ -181,7 +181,7 @@ matplotlib-inline==0.1.7
     #   ipython
 mccabe==0.7.0
     # via flake8
-mistune==3.1.2
+mistune==3.1.3
     # via nbconvert
 monotonic==1.6
     # via bravado
@@ -197,7 +197,7 @@ msgpack==1.1.0
     # via
     #   bravado
     #   bravado-core
-narwhals==1.29.1
+narwhals==1.31.0
     # via plotly
 nbclient==0.10.2
     # via nbconvert
@@ -212,7 +212,7 @@ nest-asyncio==1.6.0
     # via ipykernel
 networkx==3.4.2
     # via pymatgen
-numpy==2.2.3
+numpy==2.2.4
     # via
     #   contourpy
     #   matplotlib
@@ -222,7 +222,7 @@ numpy==2.2.3
     #   pymatgen
     #   scipy
     #   spglib
-opentelemetry-api==1.30.0
+opentelemetry-api==1.31.0
     # via ddtrace
 packaging==24.2
     # via
@@ -252,7 +252,7 @@ platformdirs==4.3.6
     # via
     #   jupyter-core
     #   pint
-plotly==6.0.0
+plotly==6.0.1
     # via
     #   mpcontribs-client
     #   pymatgen
@@ -260,7 +260,7 @@ pluggy==1.5.0
     # via pytest
 prompt-toolkit==3.0.50
     # via ipython
-protobuf==6.30.0
+protobuf==6.30.1
     # via ddtrace
 psutil==7.0.0
     # via ipykernel
@@ -280,9 +280,9 @@ pygments==2.19.1
     #   nbconvert
 pyisemail==2.0.1
     # via mpcontribs-client
-pymatgen==2025.2.18
+pymatgen==2025.3.10
     # via mpcontribs-client
-pymongo==4.11.2
+pymongo==4.11.3
     # via mpcontribs-client
 pyparsing==3.2.1
     # via matplotlib
@@ -308,7 +308,7 @@ pyyaml==6.0.2
     #   bravado-core
     #   pybtex
     #   swagger-spec-validator
-pyzmq==26.2.1
+pyzmq==26.3.0
     # via
     #   ipykernel
     #   jupyter-client
@@ -364,7 +364,7 @@ six==1.17.0
     #   rfc3339-validator
 soupsieve==2.6
     # via beautifulsoup4
-spglib==2.5.0
+spglib==2.6.0
     # via pymatgen
 sqlparse==0.5.3
     # via django
@@ -415,6 +415,7 @@ typing-extensions==4.12.2
     #   mistune
     #   pint
     #   referencing
+    #   spglib
     #   swagger-spec-validator
 tzdata==2025.1
     # via pandas
