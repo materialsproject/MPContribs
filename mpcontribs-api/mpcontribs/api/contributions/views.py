@@ -209,13 +209,19 @@ def search():
 
     results = []
 
-    for contrib in Contributions.objects().aggregate(pipeline):
-        results.append(
-            {
-                "id": str(contrib["_id"]),
-                "formula": contrib["formula"],
-                "project": contrib["project"],
-            }
+    try:
+        for contrib in Contributions.objects().aggregate(pipeline, maxTimeMS=15000):
+            results.append(
+                {
+                    "id": str(contrib["_id"]),
+                    "formula": contrib["formula"],
+                    "project": contrib["project"],
+                }
+            )
+    except Exception:
+        abort(
+            500,
+            description="Can't complete search. Please try a different formula or try again later.",
         )
 
     return jsonify(results)
