@@ -94,7 +94,7 @@ msgpack==1.1.0
     # via
     #   bravado
     #   bravado-core
-narwhals==1.31.0
+narwhals==1.32.0
     # via plotly
 networkx==3.4.2
     # via pymatgen
@@ -126,7 +126,7 @@ pillow==11.1.0
     # via matplotlib
 pint==0.24.4
     # via mpcontribs-client (setup.py)
-platformdirs==4.3.6
+platformdirs==4.3.7
     # via pint
 plotly==6.0.1
     # via
@@ -148,7 +148,7 @@ pymatgen==2025.3.10
     # via mpcontribs-client (setup.py)
 pymongo==4.11.3
     # via mpcontribs-client (setup.py)
-pyparsing==3.2.1
+pyparsing==3.2.2
     # via matplotlib
 python-dateutil==2.9.0.post0
     # via
@@ -241,7 +241,7 @@ typing-extensions==4.12.2
     #   referencing
     #   spglib
     #   swagger-spec-validator
-tzdata==2025.1
+tzdata==2025.2
     # via pandas
 ujson==5.10.0
     # via mpcontribs-client (setup.py)
