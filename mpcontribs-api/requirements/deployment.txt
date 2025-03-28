@@ -34,9 +34,9 @@ blinker==1.9.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 boltons==25.0.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
-boto3==1.37.19
+boto3==1.37.23
     # via flask-mongorest-mpcontribs
-botocore==1.37.19
+botocore==1.37.23
     # via
     #   boto3
     #   s3transfer
@@ -334,7 +334,7 @@ prometheus-client==0.21.1
     #   notebook
 prompt-toolkit==3.0.50
     # via ipython
-protobuf==6.30.1
+protobuf==6.30.2
     # via ddtrace
 psutil==7.0.0
     # via ipykernel
@@ -363,7 +363,7 @@ pymongo==4.11.3
     #   mongoengine
 pyopenssl==25.0.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
-pyparsing==3.2.2
+pyparsing==3.2.3
     # via matplotlib
 python-dateutil==2.9.0.post0
     # via
@@ -382,7 +382,7 @@ python-mimeparse==2.0.0
     # via mimerender-pr36
 python-snappy==0.7.3
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
-pytz==2025.1
+pytz==2025.2
     # via
     #   dateparser
     #   pandas
@@ -421,7 +421,7 @@ rfc3986-validator==0.1.1
     # via
     #   jsonschema
     #   jupyter-events
-rpds-py==0.23.1
+rpds-py==0.24.0
     # via
     #   jsonschema
     #   referencing
@@ -505,7 +505,7 @@ traitlets==5.14.3
     #   notebook
 types-python-dateutil==2.9.0.20241206
     # via arrow
-typing-extensions==4.12.2
+typing-extensions==4.13.0
     # via
     #   anyio
     #   beautifulsoup4
