@@ -150,7 +150,7 @@ pymatgen==2025.3.10
     # via mpcontribs-client (setup.py)
 pymongo==4.11.3
     # via mpcontribs-client (setup.py)
-pyparsing==3.2.2
+pyparsing==3.2.3
     # via matplotlib
 python-dateutil==2.9.0.post0
     # via
@@ -159,7 +159,7 @@ python-dateutil==2.9.0.post0
     #   bravado-core
     #   matplotlib
     #   pandas
-pytz==2025.1
+pytz==2025.2
     # via
     #   bravado-core
     #   pandas
@@ -185,7 +185,7 @@ rfc3339-validator==0.1.4
     # via jsonschema
 rfc3986-validator==0.1.1
     # via jsonschema
-rpds-py==0.23.1
+rpds-py==0.24.0
     # via
     #   jsonschema
     #   referencing
@@ -233,7 +233,7 @@ traitlets==5.14.3
     #   matplotlib-inline
 types-python-dateutil==2.9.0.20241206
     # via arrow
-typing-extensions==4.12.2
+typing-extensions==4.13.0
     # via
     #   bravado
     #   flexcache
