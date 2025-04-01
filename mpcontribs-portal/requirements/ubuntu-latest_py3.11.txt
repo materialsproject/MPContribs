@@ -22,9 +22,9 @@ boltons==25.0.0
     # via
     #   mpcontribs-client
     #   mpcontribs-portal (setup.py)
-boto3==1.37.23
+boto3==1.37.25
     # via mpcontribs-portal (setup.py)
-botocore==1.37.23
+botocore==1.37.25
     # via
     #   boto3
     #   s3transfer
@@ -187,7 +187,7 @@ msgpack==1.1.0
     # via
     #   bravado
     #   bravado-core
-narwhals==1.32.0
+narwhals==1.33.0
     # via plotly
 nbclient==0.10.2
     # via nbconvert
@@ -233,7 +233,7 @@ parso==0.8.4
     # via jedi
 pexpect==4.9.0
     # via ipython
-pillow==11.1.0
+pillow==11.2.0
     # via matplotlib
 pint==0.24.4
     # via mpcontribs-client
