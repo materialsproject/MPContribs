@@ -54,7 +54,7 @@ flexcache==0.3
     # via pint
 flexparser==0.4
     # via pint
-fonttools==4.56.0
+fonttools==4.57.0
     # via matplotlib
 fqdn==1.5.1
     # via jsonschema
@@ -135,7 +135,7 @@ parso==0.8.4
     # via jedi
 pexpect==4.9.0
     # via ipython
-pillow==11.2.0
+pillow==11.1.0
     # via matplotlib
 pint==0.24.4
     # via mpcontribs-client (setup.py)
@@ -181,7 +181,7 @@ pytest==8.3.5
     #   pytest-cov
     #   pytest-flake8
     #   pytest-pycodestyle
-pytest-cov==6.1.0
+pytest-cov==6.1.1
     # via mpcontribs-client (setup.py)
 pytest-flake8==1.3.0
     # via mpcontribs-client (setup.py)
@@ -272,7 +272,7 @@ traitlets==5.14.3
     #   matplotlib-inline
 types-python-dateutil==2.9.0.20241206
     # via arrow
-typing-extensions==4.13.0
+typing-extensions==4.13.1
     # via
     #   bravado
     #   flexcache
