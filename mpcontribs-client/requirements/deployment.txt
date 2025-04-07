@@ -44,7 +44,7 @@ flexcache==0.3
     # via pint
 flexparser==0.4
     # via pint
-fonttools==4.56.0
+fonttools==4.57.0
     # via matplotlib
 fqdn==1.5.1
     # via jsonschema
@@ -54,7 +54,7 @@ idna==3.10
     #   requests
 importlib-resources==6.5.2
     # via swagger-spec-validator
-ipython==9.0.2
+ipython==9.1.0
     # via mpcontribs-client (MPContribs/mpcontribs-client/setup.py)
 ipython-pygments-lexers==1.1.1
     # via ipython
@@ -96,7 +96,7 @@ msgpack==1.1.0
     # via
     #   bravado
     #   bravado-core
-narwhals==1.33.0
+narwhals==1.34.0
     # via plotly
 networkx==3.4.2
     # via pymatgen
@@ -126,7 +126,7 @@ parso==0.8.4
     # via jedi
 pexpect==4.9.0
     # via ipython
-pillow==11.2.0
+pillow==11.1.0
     # via matplotlib
 pint==0.24.4
     # via mpcontribs-client (MPContribs/mpcontribs-client/setup.py)
@@ -239,7 +239,7 @@ traitlets==5.14.3
     #   matplotlib-inline
 types-python-dateutil==2.9.0.20241206
     # via arrow
-typing-extensions==4.13.0
+typing-extensions==4.13.1
     # via
     #   bravado
     #   flexcache
