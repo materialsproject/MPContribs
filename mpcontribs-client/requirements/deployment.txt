@@ -96,7 +96,7 @@ msgpack==1.1.0
     # via
     #   bravado
     #   bravado-core
-narwhals==1.34.0
+narwhals==1.34.1
     # via plotly
 networkx==3.4.2
     # via pymatgen
@@ -126,7 +126,7 @@ parso==0.8.4
     # via jedi
 pexpect==4.9.0
     # via ipython
-pillow==11.1.0
+pillow==11.2.1
     # via matplotlib
 pint==0.24.4
     # via mpcontribs-client (MPContribs/mpcontribs-client/setup.py)
@@ -150,9 +150,9 @@ pygments==2.19.1
     #   ipython-pygments-lexers
 pyisemail==2.0.1
     # via mpcontribs-client (MPContribs/mpcontribs-client/setup.py)
-pymatgen==2025.3.10
+pymatgen==2025.4.10
     # via mpcontribs-client (MPContribs/mpcontribs-client/setup.py)
-pymongo==4.11.3
+pymongo==4.12.0
     # via mpcontribs-client (MPContribs/mpcontribs-client/setup.py)
 pyparsing==3.2.3
     # via matplotlib
@@ -239,7 +239,7 @@ traitlets==5.14.3
     #   matplotlib-inline
 types-python-dateutil==2.9.0.20241206
     # via arrow
-typing-extensions==4.13.1
+typing-extensions==4.13.2
     # via
     #   bravado
     #   flexcache
@@ -257,7 +257,7 @@ uncertainties==3.2.2
     # via pymatgen
 uri-template==1.3.0
     # via jsonschema
-urllib3==2.3.0
+urllib3==2.4.0
     # via requests
 wcwidth==0.2.13
     # via prompt-toolkit
