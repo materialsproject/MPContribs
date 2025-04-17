@@ -18,7 +18,7 @@ attrs==25.3.0
     # via
     #   jsonschema
     #   referencing
-beautifulsoup4==4.13.3
+beautifulsoup4==4.13.4
     # via nbconvert
 bleach[css]==6.2.0
     # via nbconvert
@@ -44,11 +44,11 @@ comm==0.2.2
     # via
     #   ipykernel
     #   ipywidgets
-contourpy==1.3.1
+contourpy==1.3.2
     # via matplotlib
 cycler==0.12.1
     # via matplotlib
-ddtrace==2.21.5
+ddtrace==2.21.6
     # via -r MPContribs/mpcontribs-kernel-gateway/requirements.in
 debugpy==1.8.14
     # via ipykernel
@@ -184,7 +184,7 @@ msgpack==1.1.0
     # via
     #   bravado
     #   bravado-core
-narwhals==1.34.1
+narwhals==1.35.0
     # via plotly
 nbclient==0.10.2
     # via nbconvert
@@ -210,7 +210,7 @@ numpy==1.26.4
     #   pymatgen
     #   scipy
     #   spglib
-opentelemetry-api==1.32.0
+opentelemetry-api==1.32.1
     # via ddtrace
 overrides==7.7.0
     # via jupyter-server
@@ -249,7 +249,7 @@ plotly==6.0.1
     #   pymatgen
 prometheus-client==0.21.1
     # via jupyter-server
-prompt-toolkit==3.0.50
+prompt-toolkit==3.0.51
     # via ipython
 protobuf==6.30.2
     # via ddtrace
@@ -274,7 +274,7 @@ pygments==2.19.1
     #   nbconvert
 pyisemail==2.0.1
     # via mpcontribs-client
-pymatgen==2025.4.10
+pymatgen==2025.4.17
     # via mpcontribs-client
 pymongo==4.12.0
     # via mpcontribs-client

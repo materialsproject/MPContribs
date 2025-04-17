@@ -24,7 +24,7 @@ certifi==2025.1.31
     # via requests
 charset-normalizer==3.4.1
     # via requests
-contourpy==1.3.1
+contourpy==1.3.2
     # via matplotlib
 cycler==0.12.1
     # via matplotlib
@@ -96,7 +96,7 @@ msgpack==1.1.0
     # via
     #   bravado
     #   bravado-core
-narwhals==1.34.1
+narwhals==1.35.0
     # via plotly
 networkx==3.4.2
     # via pymatgen
@@ -136,7 +136,7 @@ plotly==6.0.1
     # via
     #   mpcontribs-client (MPContribs/mpcontribs-client/setup.py)
     #   pymatgen
-prompt-toolkit==3.0.50
+prompt-toolkit==3.0.51
     # via ipython
 ptyprocess==0.7.0
     # via pexpect
@@ -150,7 +150,7 @@ pygments==2.19.1
     #   ipython-pygments-lexers
 pyisemail==2.0.1
     # via mpcontribs-client (MPContribs/mpcontribs-client/setup.py)
-pymatgen==2025.4.10
+pymatgen==2025.4.17
     # via mpcontribs-client (MPContribs/mpcontribs-client/setup.py)
 pymongo==4.12.0
     # via mpcontribs-client (MPContribs/mpcontribs-client/setup.py)
