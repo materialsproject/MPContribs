@@ -12,6 +12,8 @@ attrs==25.3.0
     # via
     #   jsonschema
     #   referencing
+bibtexparser==1.4.3
+    # via pymatgen
 boltons==25.0.0
     # via mpcontribs-client (MPContribs/mpcontribs-client/setup.py)
 bravado==11.1.0
@@ -78,8 +80,6 @@ jsonschema-specifications==2024.10.1
     # via jsonschema
 kiwisolver==1.4.8
     # via matplotlib
-latexcodec==3.0.0
-    # via pybtex
 matplotlib==3.10.1
     # via
     #   -r python/requirements.txt
@@ -111,7 +111,7 @@ numpy==1.26.4
     #   pymatgen
     #   scipy
     #   spglib
-packaging==24.2
+packaging==25.0
     # via
     #   matplotlib
     #   plotly
@@ -142,20 +142,20 @@ ptyprocess==0.7.0
     # via pexpect
 pure-eval==0.2.3
     # via stack-data
-pybtex==0.24.0
-    # via pymatgen
 pygments==2.19.1
     # via
     #   ipython
     #   ipython-pygments-lexers
 pyisemail==2.0.1
     # via mpcontribs-client (MPContribs/mpcontribs-client/setup.py)
-pymatgen==2025.4.17
+pymatgen==2025.4.20
     # via mpcontribs-client (MPContribs/mpcontribs-client/setup.py)
 pymongo==4.12.0
     # via mpcontribs-client (MPContribs/mpcontribs-client/setup.py)
 pyparsing==3.2.3
-    # via matplotlib
+    # via
+    #   bibtexparser
+    #   matplotlib
 python-dateutil==2.9.0.post0
     # via
     #   arrow
@@ -171,7 +171,6 @@ pyyaml==6.0.2
     # via
     #   bravado
     #   bravado-core
-    #   pybtex
     #   swagger-spec-validator
 referencing==0.36.2
     # via
@@ -214,7 +213,6 @@ six==1.17.0
     #   bravado
     #   bravado-core
     #   flatten-dict
-    #   pybtex
     #   python-dateutil
     #   rfc3339-validator
 spglib==2.6.0

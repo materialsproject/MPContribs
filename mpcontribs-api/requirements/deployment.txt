@@ -28,15 +28,17 @@ attrs==25.3.0
     #   referencing
 beautifulsoup4==4.13.4
     # via nbconvert
+bibtexparser==1.4.3
+    # via pymatgen
 bleach[css]==6.2.0
     # via nbconvert
 blinker==1.9.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 boltons==25.0.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
-boto3==1.37.36
+boto3==1.37.37
     # via flask-mongorest-mpcontribs
-botocore==1.37.36
+botocore==1.37.37
     # via
     #   boto3
     #   s3transfer
@@ -212,8 +214,6 @@ jupyterlab-pygments==0.3.0
     # via nbconvert
 kiwisolver==1.4.8
     # via matplotlib
-latexcodec==3.0.0
-    # via pybtex
 markupsafe==3.0.2
     # via
     #   jinja2
@@ -297,7 +297,7 @@ orjson==3.10.16
     # via flask-mongorest-mpcontribs
 overrides==7.7.0
     # via jupyter-server
-packaging==24.2
+packaging==25.0
     # via
     #   gunicorn
     #   ipykernel
@@ -347,8 +347,6 @@ ptyprocess==0.7.0
     #   terminado
 pure-eval==0.2.3
     # via stack-data
-pybtex==0.24.0
-    # via pymatgen
 pycparser==2.22
     # via cffi
 pygments==2.19.1
@@ -356,7 +354,7 @@ pygments==2.19.1
     #   ipython
     #   ipython-pygments-lexers
     #   nbconvert
-pymatgen==2025.4.17
+pymatgen==2025.4.20
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 pymongo==4.12.0
     # via
@@ -365,7 +363,9 @@ pymongo==4.12.0
 pyopenssl==25.0.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 pyparsing==3.2.3
-    # via matplotlib
+    # via
+    #   bibtexparser
+    #   matplotlib
 python-dateutil==2.9.0.post0
     # via
     #   arrow
@@ -391,7 +391,6 @@ pyyaml==6.0.2
     # via
     #   flasgger-tschaume
     #   jupyter-events
-    #   pybtex
 pyzmq==26.4.0
     # via
     #   ipykernel
@@ -457,12 +456,11 @@ six==1.17.0
     #   flasgger-tschaume
     #   flask-sse
     #   flatten-dict
-    #   pybtex
     #   python-dateutil
     #   rfc3339-validator
 sniffio==1.3.1
     # via anyio
-soupsieve==2.6
+soupsieve==2.7
     # via beautifulsoup4
 spglib==2.6.0
     # via pymatgen
