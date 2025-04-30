@@ -96,7 +96,7 @@ msgpack==1.1.0
     # via
     #   bravado
     #   bravado-core
-narwhals==1.37.0
+narwhals==1.37.1
     # via plotly
 networkx==3.4.2
     # via pymatgen
@@ -150,7 +150,7 @@ pyisemail==2.0.1
     # via mpcontribs-client (MPContribs/mpcontribs-client/setup.py)
 pymatgen==2025.4.24
     # via mpcontribs-client (MPContribs/mpcontribs-client/setup.py)
-pymongo==4.12.0
+pymongo==4.12.1
     # via mpcontribs-client (MPContribs/mpcontribs-client/setup.py)
 pyparsing==3.2.3
     # via
