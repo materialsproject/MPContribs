@@ -7,6 +7,7 @@ from mongoengine.fields import StringField, FloatField, ListField, DictField
 from mongoengine.queryset.manager import queryset_manager
 from pymatgen.core import Structure
 from pymatgen.io.cif import CifWriter
+from pymatgen.symmetry.analyzer import SymmetryUndeterminedError
 
 
 class Structures(Document):
@@ -31,10 +32,16 @@ class Structures(Document):
         s = json.dumps(d, sort_keys=True).encode("utf-8")
         document.md5 = md5(s).hexdigest()
         structure = Structure.from_dict(d)
+        writer = None
 
-        try:
-            writer = CifWriter(structure, symprec=1e-10)
-        except TypeError:
+        for symprec_log in range(-10, 0, 3):
+            try:
+                writer = CifWriter(structure, symprec=10**symprec_log)
+                break
+            except SymmetryUndeterminedError:
+                continue
+
+        if not writer:
             # save CIF string without symmetry information
             writer = CifWriter(structure)
 
