@@ -10,21 +10,23 @@ asgiref==3.8.1
     # via django
 asttokens==3.0.0
     # via stack-data
-attrs==25.1.0
+attrs==25.3.0
     # via
     #   jsonschema
     #   referencing
-beautifulsoup4==4.13.3
+beautifulsoup4==4.13.4
     # via nbconvert
+bibtexparser==1.4.3
+    # via pymatgen
 bleach[css]==6.2.0
     # via nbconvert
 boltons==25.0.0
     # via
     #   mpcontribs-client
     #   mpcontribs-portal (setup.py)
-boto3==1.37.4
+boto3==1.38.3
     # via mpcontribs-portal (setup.py)
-botocore==1.37.4
+botocore==1.38.3
     # via
     #   boto3
     #   s3transfer
@@ -32,23 +34,23 @@ bravado==11.1.0
     # via mpcontribs-client
 bravado-core==6.1.1
     # via bravado
-bytecode==0.16.1
+bytecode==0.16.2
     # via ddtrace
 cachetools==5.5.2
     # via mpcontribs-client
-certifi==2025.1.31
+certifi==2025.4.26
     # via requests
 charset-normalizer==3.4.1
     # via requests
 comm==0.2.2
     # via ipykernel
-contourpy==1.3.1
+contourpy==1.3.2
     # via matplotlib
 cycler==0.12.1
     # via matplotlib
-ddtrace==2.21.3
+ddtrace==2.21.6
     # via mpcontribs-portal (setup.py)
-debugpy==1.8.12
+debugpy==1.8.14
     # via ipykernel
 decorator==5.2.1
     # via ipython
@@ -71,7 +73,7 @@ dnspython==2.7.0
     # via
     #   pyisemail
     #   pymongo
-envier==0.6.1
+envier==0.5.2
     # via ddtrace
 executing==2.2.0
     # via stack-data
@@ -87,13 +89,13 @@ flexcache==0.3
     # via pint
 flexparser==0.4
     # via pint
-fonttools==4.56.0
+fonttools==4.57.0
     # via matplotlib
 fqdn==1.5.1
     # via jsonschema
-gevent==24.11.1
+gevent==25.4.2
     # via gunicorn
-greenlet==3.1.1
+greenlet==3.2.1
     # via gevent
 gunicorn[gevent]==23.0.0
     # via mpcontribs-portal (setup.py)
@@ -101,13 +103,13 @@ idna==3.10
     # via
     #   jsonschema
     #   requests
-importlib-metadata==8.5.0
+importlib-metadata==8.6.1
     # via opentelemetry-api
 importlib-resources==6.5.2
     # via swagger-spec-validator
 ipykernel==6.29.5
     # via mpcontribs-portal (setup.py)
-ipython==9.0.0
+ipython==9.2.0
     # via
     #   ipykernel
     #   mpcontribs-client
@@ -119,7 +121,7 @@ isoduration==20.11.0
     # via jsonschema
 jedi==0.19.2
     # via ipython
-jinja2==3.1.5
+jinja2==3.1.6
     # via
     #   mpcontribs-portal (setup.py)
     #   nbconvert
@@ -142,7 +144,7 @@ jsonschema[format-nongpl]==4.23.0
     #   bravado-core
     #   nbformat
     #   swagger-spec-validator
-jsonschema-specifications==2024.10.1
+jsonschema-specifications==2025.4.1
     # via jsonschema
 jupyter-client==8.6.3
     # via
@@ -159,8 +161,6 @@ jupyterlab-pygments==0.3.0
     # via nbconvert
 kiwisolver==1.4.8
     # via matplotlib
-latexcodec==3.0.0
-    # via pybtex
 markupsafe==3.0.2
     # via
     #   jinja2
@@ -171,11 +171,11 @@ matplotlib-inline==0.1.7
     # via
     #   ipykernel
     #   ipython
-mistune==3.1.2
+mistune==3.1.3
     # via nbconvert
 monotonic==1.6
     # via bravado
-monty==2025.1.9
+monty==2025.3.3
     # via
     #   mpcontribs-portal (setup.py)
     #   pymatgen
@@ -187,7 +187,7 @@ msgpack==1.1.0
     # via
     #   bravado
     #   bravado-core
-narwhals==1.28.0
+narwhals==1.36.0
     # via plotly
 nbclient==0.10.2
     # via nbconvert
@@ -202,7 +202,7 @@ nest-asyncio==1.6.0
     # via ipykernel
 networkx==3.4.2
     # via pymatgen
-numpy==2.2.3
+numpy==2.2.5
     # via
     #   contourpy
     #   matplotlib
@@ -212,9 +212,9 @@ numpy==2.2.3
     #   pymatgen
     #   scipy
     #   spglib
-opentelemetry-api==1.30.0
+opentelemetry-api==1.32.1
     # via ddtrace
-packaging==24.2
+packaging==25.0
     # via
     #   gunicorn
     #   ipykernel
@@ -233,21 +233,21 @@ parso==0.8.4
     # via jedi
 pexpect==4.9.0
     # via ipython
-pillow==11.1.0
+pillow==11.2.1
     # via matplotlib
 pint==0.24.4
     # via mpcontribs-client
-platformdirs==4.3.6
+platformdirs==4.3.7
     # via
     #   jupyter-core
     #   pint
-plotly==6.0.0
+plotly==6.0.1
     # via
     #   mpcontribs-client
     #   pymatgen
-prompt-toolkit==3.0.50
+prompt-toolkit==3.0.51
     # via ipython
-protobuf==5.29.3
+protobuf==6.30.2
     # via ddtrace
 psutil==7.0.0
     # via ipykernel
@@ -255,8 +255,6 @@ ptyprocess==0.7.0
     # via pexpect
 pure-eval==0.2.3
     # via stack-data
-pybtex==0.24.0
-    # via pymatgen
 pygments==2.19.1
     # via
     #   ipython
@@ -264,12 +262,14 @@ pygments==2.19.1
     #   nbconvert
 pyisemail==2.0.1
     # via mpcontribs-client
-pymatgen==2025.2.18
+pymatgen==2025.4.24
     # via mpcontribs-client
-pymongo==4.11.1
+pymongo==4.12.0
     # via mpcontribs-client
-pyparsing==3.2.1
-    # via matplotlib
+pyparsing==3.2.3
+    # via
+    #   bibtexparser
+    #   matplotlib
 python-dateutil==2.9.0.post0
     # via
     #   arrow
@@ -279,7 +279,7 @@ python-dateutil==2.9.0.post0
     #   jupyter-client
     #   matplotlib
     #   pandas
-pytz==2025.1
+pytz==2025.2
     # via
     #   bravado-core
     #   django
@@ -288,9 +288,8 @@ pyyaml==6.0.2
     # via
     #   bravado
     #   bravado-core
-    #   pybtex
     #   swagger-spec-validator
-pyzmq==26.2.1
+pyzmq==26.4.0
     # via
     #   ipykernel
     #   jupyter-client
@@ -312,7 +311,7 @@ rfc3339-validator==0.1.4
     # via jsonschema
 rfc3986-validator==0.1.1
     # via jsonschema
-rpds-py==0.23.1
+rpds-py==0.24.0
     # via
     #   jsonschema
     #   referencing
@@ -322,7 +321,7 @@ ruamel-yaml==0.18.10
     #   pymatgen
 ruamel-yaml-clib==0.2.12
     # via ruamel-yaml
-s3transfer==0.11.3
+s3transfer==0.12.0
     # via boto3
 scipy==1.15.2
     # via
@@ -341,12 +340,11 @@ six==1.17.0
     #   bravado
     #   bravado-core
     #   flatten-dict
-    #   pybtex
     #   python-dateutil
     #   rfc3339-validator
-soupsieve==2.6
+soupsieve==2.7
     # via beautifulsoup4
-spglib==2.5.0
+spglib==2.6.0
     # via pymatgen
 sqlparse==0.5.3
     # via django
@@ -356,7 +354,7 @@ swagger-spec-validator==3.0.4
     # via
     #   bravado-core
     #   mpcontribs-client
-sympy==1.13.3
+sympy==1.14.0
     # via pymatgen
 tabulate==0.9.0
     # via pymatgen
@@ -383,7 +381,7 @@ traitlets==5.14.3
     #   nbformat
 types-python-dateutil==2.9.0.20241206
     # via arrow
-typing-extensions==4.12.2
+typing-extensions==4.13.2
     # via
     #   beautifulsoup4
     #   bravado
@@ -393,16 +391,17 @@ typing-extensions==4.12.2
     #   ipython
     #   pint
     #   referencing
+    #   spglib
     #   swagger-spec-validator
-tzdata==2025.1
+tzdata==2025.2
     # via pandas
 ujson==5.10.0
     # via mpcontribs-client
-uncertainties==3.2.2
+uncertainties==3.2.3
     # via pymatgen
 uri-template==1.3.0
     # via jsonschema
-urllib3==2.3.0
+urllib3==2.4.0
     # via
     #   botocore
     #   requests

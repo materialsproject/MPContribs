@@ -29,6 +29,7 @@ setup(
         "gunicorn[gevent]",
         "jinja2",
         "json2html",
+        "marshmallow<4",
         "more-itertools",
         "nbformat",
         "notebook<7",
