@@ -132,7 +132,7 @@ pint==0.24.4
     # via mpcontribs-client (MPContribs/mpcontribs-client/setup.py)
 platformdirs==4.3.8
     # via pint
-plotly==6.1.0
+plotly==6.1.1
     # via
     #   mpcontribs-client (MPContribs/mpcontribs-client/setup.py)
     #   pymatgen
@@ -188,7 +188,7 @@ rfc3339-validator==0.1.4
     # via jsonschema
 rfc3986-validator==0.1.1
     # via jsonschema
-rpds-py==0.25.0
+rpds-py==0.25.1
     # via
     #   jsonschema
     #   referencing

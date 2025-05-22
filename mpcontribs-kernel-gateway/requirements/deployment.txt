@@ -243,7 +243,7 @@ platformdirs==4.3.8
     # via
     #   jupyter-core
     #   pint
-plotly==6.1.0
+plotly==6.1.1
     # via
     #   mpcontribs-client
     #   pymatgen
@@ -327,7 +327,7 @@ rfc3986-validator==0.1.1
     # via
     #   jsonschema
     #   jupyter-events
-rpds-py==0.25.0
+rpds-py==0.25.1
     # via
     #   jsonschema
     #   referencing
@@ -378,7 +378,7 @@ terminado==0.18.1
     #   jupyter-server-terminals
 tinycss2==1.4.0
     # via bleach
-tornado==6.5
+tornado==6.5.1
     # via
     #   ipykernel
     #   jupyter-client
