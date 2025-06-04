@@ -8,7 +8,7 @@ anyio==4.9.0
     # via jupyter-server
 apispec==5.2.2
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
-argon2-cffi==23.1.0
+argon2-cffi==25.1.0
     # via
     #   jupyter-server
     #   notebook
@@ -36,9 +36,9 @@ blinker==1.9.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 boltons==25.0.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
-boto3==1.38.22
+boto3==1.38.29
     # via flask-mongorest-mpcontribs
-botocore==1.38.22
+botocore==1.38.29
     # via
     #   boto3
     #   s3transfer
@@ -66,7 +66,7 @@ cramjam==2.10.0
     # via python-snappy
 crontab==1.0.4
     # via rq-scheduler
-cryptography==45.0.2
+cryptography==45.0.3
     # via pyopenssl
 css-html-js-minify==2.5.5
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
@@ -82,8 +82,6 @@ decorator==5.2.1
     # via ipython
 defusedxml==0.7.1
     # via nbconvert
-deprecated==1.2.18
-    # via opentelemetry-api
 dnspython==2.7.0
     # via
     #   mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
@@ -128,11 +126,11 @@ flexcache==0.3
     # via pint
 flexparser==0.4
     # via pint
-fonttools==4.58.0
+fonttools==4.58.1
     # via matplotlib
 fqdn==1.5.1
     # via jsonschema
-freezegun==1.5.1
+freezegun==1.5.2
     # via rq-scheduler
 gevent==25.5.1
     # via gunicorn
@@ -145,13 +143,13 @@ idna==3.10
     #   anyio
     #   jsonschema
     #   requests
-importlib-metadata==8.6.1
+importlib-metadata==8.7.0
     # via opentelemetry-api
 ipykernel==6.29.5
     # via
     #   nbclassic
     #   notebook
-ipython==9.2.0
+ipython==9.3.0
     # via ipykernel
 ipython-genutils==0.2.0
     # via
@@ -176,13 +174,13 @@ jmespath==1.0.1
     # via
     #   boto3
     #   botocore
-joblib==1.5.0
+joblib==1.5.1
     # via pymatgen
 json2html==1.3.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 jsonpointer==3.0.0
     # via jsonschema
-jsonschema[format-nongpl]==4.23.0
+jsonschema[format-nongpl]==4.24.0
     # via
     #   flasgger-tschaume
     #   jupyter-events
@@ -195,7 +193,7 @@ jupyter-client==7.4.9
     #   jupyter-server
     #   nbclient
     #   notebook
-jupyter-core==5.7.2
+jupyter-core==5.8.1
     # via
     #   ipykernel
     #   jupyter-client
@@ -251,7 +249,7 @@ more-itertools==10.7.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 mpmath==1.3.0
     # via sympy
-narwhals==1.40.0
+narwhals==1.41.0
     # via plotly
 nbclassic==1.3.1
     # via notebook
@@ -274,7 +272,7 @@ nest-asyncio==1.6.0
     #   jupyter-client
     #   nbclassic
     #   notebook
-networkx==3.4.2
+networkx==3.5
     # via pymatgen
 notebook==6.5.7
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
@@ -291,10 +289,12 @@ numpy==1.26.4
     #   pymatgen
     #   scipy
     #   spglib
-opentelemetry-api==1.33.1
+opentelemetry-api==1.34.0
     # via ddtrace
 orjson==3.10.18
-    # via flask-mongorest-mpcontribs
+    # via
+    #   flask-mongorest-mpcontribs
+    #   pymatgen
 overrides==7.7.0
     # via jupyter-server
 packaging==25.0
@@ -327,15 +327,15 @@ platformdirs==4.3.8
     # via
     #   jupyter-core
     #   pint
-plotly==6.1.1
+plotly==6.1.2
     # via pymatgen
-prometheus-client==0.22.0
+prometheus-client==0.22.1
     # via
     #   jupyter-server
     #   notebook
 prompt-toolkit==3.0.51
     # via ipython
-protobuf==6.31.0
+protobuf==6.31.1
     # via ddtrace
 psutil==7.0.0
     # via ipykernel
@@ -354,7 +354,7 @@ pygments==2.19.1
     #   ipython
     #   ipython-pygments-lexers
     #   nbconvert
-pymatgen==2025.5.2
+pymatgen==2025.5.28
     # via mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 pymongo==4.13.0
     # via
@@ -397,7 +397,7 @@ pyzmq==26.4.0
     #   jupyter-client
     #   jupyter-server
     #   notebook
-redis==6.1.0
+redis==6.2.0
     # via
     #   flask-rq2
     #   flask-sse
@@ -431,7 +431,7 @@ rq==2.3.3
     #   rq-scheduler
 rq-scheduler==0.14.0
     # via flask-rq2
-ruamel-yaml==0.18.10
+ruamel-yaml==0.18.12
     # via
     #   monty
     #   pymatgen
@@ -504,7 +504,7 @@ traitlets==5.14.3
     #   notebook
 types-python-dateutil==2.9.0.20250516
     # via arrow
-typing-extensions==4.13.2
+typing-extensions==4.14.0
     # via
     #   anyio
     #   beautifulsoup4
@@ -512,6 +512,7 @@ typing-extensions==4.13.2
     #   flexcache
     #   flexparser
     #   ipython
+    #   opentelemetry-api
     #   pint
     #   pyopenssl
     #   referencing
@@ -547,12 +548,10 @@ werkzeug==3.1.3
     #   flasgger-tschaume
     #   flask
 wrapt==1.17.2
-    # via
-    #   ddtrace
-    #   deprecated
+    # via ddtrace
 xmltodict==0.14.2
     # via ddtrace
-zipp==3.21.0
+zipp==3.22.0
     # via importlib-metadata
 zope-event==5.0
     # via gevent

@@ -24,9 +24,9 @@ boltons==25.0.0
     # via
     #   mpcontribs-client
     #   mpcontribs-portal (MPContribs/mpcontribs-portal/setup.py)
-boto3==1.38.22
+boto3==1.38.29
     # via mpcontribs-portal (MPContribs/mpcontribs-portal/setup.py)
-botocore==1.38.22
+botocore==1.38.29
     # via
     #   boto3
     #   s3transfer
@@ -36,7 +36,7 @@ bravado-core==6.1.1
     # via bravado
 bytecode==0.16.2
     # via ddtrace
-cachetools==5.5.2
+cachetools==6.0.0
     # via mpcontribs-client
 certifi==2025.4.26
     # via requests
@@ -56,8 +56,6 @@ decorator==5.2.1
     # via ipython
 defusedxml==0.7.1
     # via nbconvert
-deprecated==1.2.18
-    # via opentelemetry-api
 django==3.2.25
     # via
     #   django-extensions
@@ -89,7 +87,7 @@ flexcache==0.3
     # via pint
 flexparser==0.4
     # via pint
-fonttools==4.58.0
+fonttools==4.58.1
     # via matplotlib
 fqdn==1.5.1
     # via jsonschema
@@ -103,13 +101,13 @@ idna==3.10
     # via
     #   jsonschema
     #   requests
-importlib-metadata==8.6.1
+importlib-metadata==8.7.0
     # via opentelemetry-api
 importlib-resources==6.5.2
     # via swagger-spec-validator
 ipykernel==6.29.5
     # via mpcontribs-portal (MPContribs/mpcontribs-portal/setup.py)
-ipython==9.2.0
+ipython==9.3.0
     # via
     #   ipykernel
     #   mpcontribs-client
@@ -129,7 +127,7 @@ jmespath==1.0.1
     # via
     #   boto3
     #   botocore
-joblib==1.5.0
+joblib==1.5.1
     # via pymatgen
 json2html==1.3.0
     # via
@@ -139,7 +137,7 @@ jsonpointer==3.0.0
     # via jsonschema
 jsonref==1.1.0
     # via bravado-core
-jsonschema[format-nongpl]==4.23.0
+jsonschema[format-nongpl]==4.24.0
     # via
     #   bravado-core
     #   nbformat
@@ -150,7 +148,7 @@ jupyter-client==8.6.3
     # via
     #   ipykernel
     #   nbclient
-jupyter-core==5.7.2
+jupyter-core==5.8.1
     # via
     #   ipykernel
     #   jupyter-client
@@ -189,7 +187,7 @@ msgpack==1.1.0
     # via
     #   bravado
     #   bravado-core
-narwhals==1.40.0
+narwhals==1.41.0
     # via plotly
 nbclient==0.10.2
     # via nbconvert
@@ -202,7 +200,7 @@ nbformat==5.10.4
     #   nbconvert
 nest-asyncio==1.6.0
     # via ipykernel
-networkx==3.4.2
+networkx==3.5
     # via pymatgen
 numpy==1.26.4
     # via
@@ -215,8 +213,10 @@ numpy==1.26.4
     #   pymatgen
     #   scipy
     #   spglib
-opentelemetry-api==1.33.1
+opentelemetry-api==1.34.0
     # via ddtrace
+orjson==3.10.18
+    # via pymatgen
 packaging==25.0
     # via
     #   gunicorn
@@ -245,13 +245,13 @@ platformdirs==4.3.8
     # via
     #   jupyter-core
     #   pint
-plotly==6.1.1
+plotly==6.1.2
     # via
     #   mpcontribs-client
     #   pymatgen
 prompt-toolkit==3.0.51
     # via ipython
-protobuf==6.31.0
+protobuf==6.31.1
     # via ddtrace
 psutil==7.0.0
     # via ipykernel
@@ -266,7 +266,7 @@ pygments==2.19.1
     #   nbconvert
 pyisemail==2.0.1
     # via mpcontribs-client
-pymatgen==2025.5.2
+pymatgen==2025.5.28
     # via mpcontribs-client
 pymongo==4.13.0
     # via mpcontribs-client
@@ -297,7 +297,7 @@ pyzmq==26.4.0
     # via
     #   ipykernel
     #   jupyter-client
-redis==6.1.0
+redis==6.2.0
     # via mpcontribs-portal (MPContribs/mpcontribs-portal/setup.py)
 referencing==0.36.2
     # via
@@ -319,7 +319,7 @@ rpds-py==0.25.1
     # via
     #   jsonschema
     #   referencing
-ruamel-yaml==0.18.10
+ruamel-yaml==0.18.12
     # via
     #   monty
     #   pymatgen
@@ -386,7 +386,7 @@ traitlets==5.14.3
     #   nbformat
 types-python-dateutil==2.9.0.20250516
     # via arrow
-typing-extensions==4.13.2
+typing-extensions==4.14.0
     # via
     #   beautifulsoup4
     #   bravado
@@ -394,6 +394,7 @@ typing-extensions==4.13.2
     #   flexcache
     #   flexparser
     #   ipython
+    #   opentelemetry-api
     #   pint
     #   referencing
     #   spglib
@@ -421,12 +422,10 @@ webencodings==0.5.1
 whitenoise==6.9.0
     # via mpcontribs-portal (MPContribs/mpcontribs-portal/setup.py)
 wrapt==1.17.2
-    # via
-    #   ddtrace
-    #   deprecated
+    # via ddtrace
 xmltodict==0.14.2
     # via ddtrace
-zipp==3.21.0
+zipp==3.22.0
     # via importlib-metadata
 zope-event==5.0
     # via gevent

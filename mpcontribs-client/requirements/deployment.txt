@@ -20,7 +20,7 @@ bravado==12.0.1
     # via mpcontribs-client (MPContribs/mpcontribs-client/setup.py)
 bravado-core==6.1.1
     # via bravado
-cachetools==5.5.2
+cachetools==6.0.0
     # via mpcontribs-client (MPContribs/mpcontribs-client/setup.py)
 certifi==2025.4.26
     # via requests
@@ -46,7 +46,7 @@ flexcache==0.3
     # via pint
 flexparser==0.4
     # via pint
-fonttools==4.58.0
+fonttools==4.58.1
     # via matplotlib
 fqdn==1.5.1
     # via jsonschema
@@ -56,7 +56,7 @@ idna==3.10
     #   requests
 importlib-resources==6.5.2
     # via swagger-spec-validator
-ipython==9.2.0
+ipython==9.3.0
     # via mpcontribs-client (MPContribs/mpcontribs-client/setup.py)
 ipython-pygments-lexers==1.1.1
     # via ipython
@@ -64,7 +64,7 @@ isoduration==20.11.0
     # via jsonschema
 jedi==0.19.2
     # via ipython
-joblib==1.5.0
+joblib==1.5.1
     # via pymatgen
 json2html==1.3.0
     # via mpcontribs-client (MPContribs/mpcontribs-client/setup.py)
@@ -72,7 +72,7 @@ jsonpointer==3.0.0
     # via jsonschema
 jsonref==1.1.0
     # via bravado-core
-jsonschema[format-nongpl]==4.23.0
+jsonschema[format-nongpl]==4.24.0
     # via
     #   bravado-core
     #   swagger-spec-validator
@@ -96,9 +96,9 @@ msgpack==1.1.0
     # via
     #   bravado
     #   bravado-core
-narwhals==1.40.0
+narwhals==1.41.0
     # via plotly
-networkx==3.4.2
+networkx==3.5
     # via pymatgen
 numpy==1.26.4
     # via
@@ -111,6 +111,8 @@ numpy==1.26.4
     #   pymatgen
     #   scipy
     #   spglib
+orjson==3.10.18
+    # via pymatgen
 packaging==25.0
     # via
     #   matplotlib
@@ -132,7 +134,7 @@ pint==0.24.4
     # via mpcontribs-client (MPContribs/mpcontribs-client/setup.py)
 platformdirs==4.3.8
     # via pint
-plotly==6.1.1
+plotly==6.1.2
     # via
     #   mpcontribs-client (MPContribs/mpcontribs-client/setup.py)
     #   pymatgen
@@ -148,7 +150,7 @@ pygments==2.19.1
     #   ipython-pygments-lexers
 pyisemail==2.0.1
     # via mpcontribs-client (MPContribs/mpcontribs-client/setup.py)
-pymatgen==2025.5.2
+pymatgen==2025.5.28
     # via mpcontribs-client (MPContribs/mpcontribs-client/setup.py)
 pymongo==4.13.0
     # via mpcontribs-client (MPContribs/mpcontribs-client/setup.py)
@@ -192,7 +194,7 @@ rpds-py==0.25.1
     # via
     #   jsonschema
     #   referencing
-ruamel-yaml==0.18.10
+ruamel-yaml==0.18.12
     # via
     #   monty
     #   pymatgen
@@ -237,7 +239,7 @@ traitlets==5.14.3
     #   matplotlib-inline
 types-python-dateutil==2.9.0.20250516
     # via arrow
-typing-extensions==4.13.2
+typing-extensions==4.14.0
     # via
     #   bravado
     #   flexcache
