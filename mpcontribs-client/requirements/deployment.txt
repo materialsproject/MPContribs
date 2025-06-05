@@ -119,7 +119,7 @@ packaging==25.0
     #   plotly
 palettable==3.3.3
     # via pymatgen
-pandas==2.2.3
+pandas==2.3.0
     # via
     #   -r python/requirements.txt
     #   mpcontribs-client (MPContribs/mpcontribs-client/setup.py)
