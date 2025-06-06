@@ -52,7 +52,7 @@ flexcache==0.3
     # via pint
 flexparser==0.4
     # via pint
-fonttools==4.58.1
+fonttools==4.58.2
     # via matplotlib
 fqdn==1.5.1
     # via jsonschema
@@ -104,7 +104,7 @@ msgpack==1.1.0
     # via
     #   bravado
     #   bravado-core
-narwhals==1.41.0
+narwhals==1.41.1
     # via plotly
 networkx==3.5
     # via pymatgen
@@ -226,7 +226,7 @@ rpds-py==0.25.1
     # via
     #   jsonschema
     #   referencing
-ruamel-yaml==0.18.12
+ruamel-yaml==0.18.13
     # via
     #   monty
     #   pymatgen
