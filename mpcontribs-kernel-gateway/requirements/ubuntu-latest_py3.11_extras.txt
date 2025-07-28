@@ -36,7 +36,7 @@ bytecode==0.16.2
     # via ddtrace
 cachetools==6.1.0
     # via mpcontribs-client
-certifi==2025.7.9
+certifi==2025.7.14
     # via requests
 cffi==1.17.1
     # via argon2-cffi-bindings
@@ -44,17 +44,17 @@ charset-normalizer==3.4.2
     # via requests
 choreographer==1.0.9
     # via kaleido
-comm==0.2.2
+comm==0.2.3
     # via
     #   ipykernel
     #   ipywidgets
-contourpy==1.3.2
+contourpy==1.3.3
     # via matplotlib
 cycler==0.12.1
     # via matplotlib
-ddtrace==2.21.9
+ddtrace==2.21.11
     # via -r requirements.in
-debugpy==1.8.14
+debugpy==1.8.15
     # via ipykernel
 decorator==5.2.1
     # via ipython
@@ -78,7 +78,7 @@ flexcache==0.3
     # via pint
 flexparser==0.4
     # via pint
-fonttools==4.58.5
+fonttools==4.59.0
     # via matplotlib
 fqdn==1.5.1
     # via jsonschema
@@ -91,7 +91,7 @@ importlib-metadata==8.7.0
     # via opentelemetry-api
 importlib-resources==6.5.2
     # via swagger-spec-validator
-ipykernel==6.29.5
+ipykernel==6.30.0
     # via -r requirements.in
 ipython==9.4.0
     # via
@@ -118,7 +118,7 @@ jsonpointer==3.0.0
     # via jsonschema
 jsonref==1.1.0
     # via bravado-core
-jsonschema[format-nongpl]==4.24.0
+jsonschema[format-nongpl]==4.25.0
     # via
     #   bravado-core
     #   jupyter-events
@@ -158,6 +158,8 @@ kaleido==1.0.0
     # via -r requirements.in
 kiwisolver==1.4.8
     # via matplotlib
+lark==1.2.2
+    # via rfc3987-syntax
 logistro==1.1.0
     # via
     #   choreographer
@@ -186,7 +188,7 @@ msgpack==1.1.1
     # via
     #   bravado
     #   bravado-core
-narwhals==1.46.0
+narwhals==2.0.0
     # via plotly
 nbclient==0.10.2
     # via nbconvert
@@ -201,7 +203,7 @@ nest-asyncio==1.6.0
     # via ipykernel
 networkx==3.5
     # via pymatgen
-numpy==2.3.1
+numpy==2.3.2
     # via
     #   contourpy
     #   matplotlib
@@ -211,9 +213,9 @@ numpy==2.3.1
     #   pymatgen
     #   scipy
     #   spglib
-opentelemetry-api==1.34.1
+opentelemetry-api==1.35.0
     # via ddtrace
-orjson==3.10.18
+orjson==3.11.1
     # via
     #   kaleido
     #   pymatgen
@@ -332,6 +334,8 @@ rfc3986-validator==0.1.1
     # via
     #   jsonschema
     #   jupyter-events
+rfc3987-syntax==1.1.0
+    # via jsonschema
 rpds-py==0.26.0
     # via
     #   jsonschema
@@ -342,7 +346,7 @@ ruamel-yaml==0.18.14
     #   pymatgen
 ruamel-yaml-clib==0.2.12
     # via ruamel-yaml
-scipy==1.16.0
+scipy==1.16.1
     # via pymatgen
 semantic-version==2.10.0
     # via mpcontribs-client
@@ -395,7 +399,6 @@ tqdm==4.67.1
     #   pymatgen
 traitlets==5.14.3
     # via
-    #   comm
     #   ipykernel
     #   ipython
     #   ipywidgets
