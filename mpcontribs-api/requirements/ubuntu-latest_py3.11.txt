@@ -36,9 +36,9 @@ blinker==1.9.0
     # via mpcontribs-api (setup.py)
 boltons==25.0.0
     # via mpcontribs-api (setup.py)
-boto3==1.39.4
+boto3==1.39.15
     # via flask-mongorest-mpcontribs
-botocore==1.39.4
+botocore==1.39.15
     # via
     #   boto3
     #   s3transfer
@@ -46,7 +46,7 @@ brotli==1.1.0
     # via flask-compress
 bytecode==0.16.2
     # via ddtrace
-certifi==2025.7.9
+certifi==2025.7.14
     # via requests
 cffi==1.17.1
     # via
@@ -58,11 +58,11 @@ click==8.2.1
     # via
     #   flask
     #   rq
-comm==0.2.2
+comm==0.2.3
     # via ipykernel
-contourpy==1.3.2
+contourpy==1.3.3
     # via matplotlib
-cramjam==2.10.0
+cramjam==2.11.0
     # via python-snappy
 crontab==1.0.5
     # via rq-scheduler
@@ -74,9 +74,9 @@ cycler==0.12.1
     # via matplotlib
 dateparser==1.2.2
     # via mpcontribs-api (setup.py)
-ddtrace==2.21.9
+ddtrace==2.21.11
     # via mpcontribs-api (setup.py)
-debugpy==1.8.14
+debugpy==1.8.15
     # via ipykernel
 decorator==5.2.1
     # via ipython
@@ -108,7 +108,7 @@ flask==2.2.5
     #   flask-mongoengine-tschaume
     #   flask-rq2
     #   flask-sse
-flask-compress==1.17
+flask-compress==1.18
     # via mpcontribs-api (setup.py)
 flask-marshmallow==1.3.0
     # via mpcontribs-api (setup.py)
@@ -126,11 +126,11 @@ flexcache==0.3
     # via pint
 flexparser==0.4
     # via pint
-fonttools==4.58.5
+fonttools==4.59.0
     # via matplotlib
 fqdn==1.5.1
     # via jsonschema
-freezegun==1.5.2
+freezegun==1.5.3
     # via rq-scheduler
 gevent==25.5.1
     # via gunicorn
@@ -180,7 +180,7 @@ json2html==1.3.0
     # via mpcontribs-api (setup.py)
 jsonpointer==3.0.0
     # via jsonschema
-jsonschema[format-nongpl]==4.24.0
+jsonschema[format-nongpl]==4.25.0
     # via
     #   flasgger-tschaume
     #   jupyter-events
@@ -212,6 +212,8 @@ jupyterlab-pygments==0.3.0
     # via nbconvert
 kiwisolver==1.4.8
     # via matplotlib
+lark==1.2.2
+    # via rfc3987-syntax
 markupsafe==3.0.2
     # via
     #   jinja2
@@ -247,7 +249,7 @@ more-itertools==10.7.0
     # via mpcontribs-api (setup.py)
 mpmath==1.3.0
     # via sympy
-narwhals==1.46.0
+narwhals==2.0.0
     # via plotly
 nbclassic==1.3.1
     # via notebook
@@ -276,7 +278,7 @@ notebook==6.5.7
     # via mpcontribs-api (setup.py)
 notebook-shim==0.2.4
     # via nbclassic
-numpy==2.3.1
+numpy==2.3.2
     # via
     #   contourpy
     #   matplotlib
@@ -286,9 +288,9 @@ numpy==2.3.1
     #   pymatgen
     #   scipy
     #   spglib
-opentelemetry-api==1.34.1
+opentelemetry-api==1.35.0
     # via ddtrace
-orjson==3.10.18
+orjson==3.11.1
     # via
     #   flask-mongorest-mpcontribs
     #   pymatgen
@@ -392,6 +394,8 @@ pyzmq==27.0.0
     #   jupyter-client
     #   jupyter-server
     #   notebook
+pyzstd==0.17.0
+    # via flask-compress
 redis==6.2.0
     # via
     #   flask-rq2
@@ -416,11 +420,13 @@ rfc3986-validator==0.1.1
     # via
     #   jsonschema
     #   jupyter-events
+rfc3987-syntax==1.1.0
+    # via jsonschema
 rpds-py==0.26.0
     # via
     #   jsonschema
     #   referencing
-rq==2.4.0
+rq==2.4.1
     # via
     #   flask-rq2
     #   rq-scheduler
@@ -432,9 +438,9 @@ ruamel-yaml==0.18.14
     #   pymatgen
 ruamel-yaml-clib==0.2.12
     # via ruamel-yaml
-s3transfer==0.13.0
+s3transfer==0.13.1
     # via boto3
-scipy==1.16.0
+scipy==1.16.1
     # via pymatgen
 semantic-version==2.10.0
     # via mpcontribs-api (setup.py)
@@ -483,7 +489,6 @@ tqdm==4.67.1
     # via pymatgen
 traitlets==5.14.3
     # via
-    #   comm
     #   ipykernel
     #   ipython
     #   jupyter-client
@@ -508,6 +513,7 @@ typing-extensions==4.14.1
     #   opentelemetry-api
     #   pint
     #   pyopenssl
+    #   pyzstd
     #   referencing
     #   spglib
 tzdata==2025.2
@@ -546,14 +552,12 @@ xmltodict==0.14.2
     # via ddtrace
 zipp==3.23.0
     # via importlib-metadata
-zope-event==5.1
+zope-event==5.1.1
     # via gevent
 zope-interface==7.2
     # via gevent
 zstandard==0.23.0
-    # via
-    #   flask-compress
-    #   mpcontribs-api (setup.py)
+    # via mpcontribs-api (setup.py)
 
 # The following packages are considered to be unsafe in a requirements file:
 # setuptools
