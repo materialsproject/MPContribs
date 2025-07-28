@@ -22,13 +22,13 @@ bravado-core==6.1.1
     # via bravado
 cachetools==6.1.0
     # via mpcontribs-client (setup.py)
-certifi==2025.7.9
+certifi==2025.7.14
     # via requests
 charset-normalizer==3.4.2
     # via requests
-contourpy==1.3.2
+contourpy==1.3.3
     # via matplotlib
-coverage[toml]==7.9.2
+coverage[toml]==7.10.1
     # via pytest-cov
 cycler==0.12.1
     # via matplotlib
@@ -52,7 +52,7 @@ flexcache==0.3
     # via pint
 flexparser==0.4
     # via pint
-fonttools==4.58.5
+fonttools==4.59.0
     # via matplotlib
 fqdn==1.5.1
     # via jsonschema
@@ -80,7 +80,7 @@ jsonpointer==3.0.0
     # via jsonschema
 jsonref==1.1.0
     # via bravado-core
-jsonschema[format-nongpl]==4.24.0
+jsonschema[format-nongpl]==4.25.0
     # via
     #   bravado-core
     #   swagger-spec-validator
@@ -88,6 +88,8 @@ jsonschema-specifications==2025.4.1
     # via jsonschema
 kiwisolver==1.4.8
     # via matplotlib
+lark==1.2.2
+    # via rfc3987-syntax
 matplotlib==3.10.3
     # via pymatgen
 matplotlib-inline==0.1.7
@@ -104,11 +106,11 @@ msgpack==1.1.1
     # via
     #   bravado
     #   bravado-core
-narwhals==1.46.0
+narwhals==2.0.0
     # via plotly
 networkx==3.5
     # via pymatgen
-numpy==2.3.1
+numpy==2.3.2
     # via
     #   contourpy
     #   matplotlib
@@ -118,7 +120,7 @@ numpy==2.3.1
     #   pymatgen
     #   scipy
     #   spglib
-orjson==3.10.18
+orjson==3.11.1
     # via pymatgen
 packaging==25.0
     # via
@@ -156,9 +158,7 @@ ptyprocess==0.7.0
 pure-eval==0.2.3
     # via stack-data
 py==1.11.0
-    # via
-    #   mpcontribs-client (setup.py)
-    #   pytest-pycodestyle
+    # via mpcontribs-client (setup.py)
 pycodestyle==2.14.0
     # via
     #   flake8
@@ -190,7 +190,7 @@ pytest-cov==6.2.1
     # via mpcontribs-client (setup.py)
 pytest-flake8==1.3.0
     # via mpcontribs-client (setup.py)
-pytest-pycodestyle==2.4.1
+pytest-pycodestyle==2.5.0
     # via mpcontribs-client (setup.py)
 python-dateutil==2.9.0.post0
     # via
@@ -224,6 +224,8 @@ rfc3339-validator==0.1.4
     # via jsonschema
 rfc3986-validator==0.1.1
     # via jsonschema
+rfc3987-syntax==1.1.0
+    # via jsonschema
 rpds-py==0.26.0
     # via
     #   jsonschema
@@ -234,7 +236,7 @@ ruamel-yaml==0.18.14
     #   pymatgen
 ruamel-yaml-clib==0.2.12
     # via ruamel-yaml
-scipy==1.16.0
+scipy==1.16.1
     # via pymatgen
 semantic-version==2.10.0
     # via mpcontribs-client (setup.py)
