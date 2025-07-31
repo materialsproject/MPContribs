@@ -90,7 +90,7 @@ kiwisolver==1.4.8
     # via matplotlib
 lark==1.2.2
     # via rfc3987-syntax
-matplotlib==3.10.3
+matplotlib==3.10.5
     # via pymatgen
 matplotlib-inline==0.1.7
     # via ipython
@@ -106,7 +106,7 @@ msgpack==1.1.1
     # via
     #   bravado
     #   bravado-core
-narwhals==2.0.0
+narwhals==2.0.1
     # via plotly
 networkx==3.5
     # via pymatgen
