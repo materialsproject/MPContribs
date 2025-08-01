@@ -13,7 +13,7 @@ setup(
     install_requires=[
         "boltons",
         "boto3",
-        "ddtrace<3",
+        "ddtrace",
         "Django>=3.2,<4.0",
         "django-extensions",
         "django-settings-file",
