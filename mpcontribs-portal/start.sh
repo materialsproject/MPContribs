@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -e
-zzz=$(($DEPLOYMENT * 60))
+zzz=$((DEPLOYMENT * 60))
 echo "$SUPERVISOR_PROCESS_NAME: waiting for $zzz seconds before start..."
 sleep $zzz
 
@@ -13,7 +13,7 @@ else
 fi
 
 PMGRC=$HOME/.pmgrc.yaml
-[[ ! -e "$PMGRC" ]] && echo "PMG_DUMMY_VAR: dummy" >$PMGRC
+[[ ! -e "$PMGRC" ]] && echo "PMG_DUMMY_VAR: dummy" >"$PMGRC"
 python manage.py migrate --noinput
 
 CMD="gunicorn wsgi"
