@@ -16,17 +16,17 @@ bibtexparser==1.4.3
     # via pymatgen
 boltons==25.0.0
     # via mpcontribs-client (setup.py)
-bravado==11.1.0
+bravado==12.0.1
     # via mpcontribs-client (setup.py)
 bravado-core==6.1.1
     # via bravado
-cachetools==5.5.2
+cachetools==6.1.0
     # via mpcontribs-client (setup.py)
-certifi==2025.4.26
+certifi==2025.7.14
     # via requests
-charset-normalizer==3.4.1
+charset-normalizer==3.4.2
     # via requests
-contourpy==1.3.2
+contourpy==1.3.3
     # via matplotlib
 cycler==0.12.1
     # via matplotlib
@@ -46,7 +46,7 @@ flexcache==0.3
     # via pint
 flexparser==0.4
     # via pint
-fonttools==4.57.0
+fonttools==4.59.0
     # via matplotlib
 fqdn==1.5.1
     # via jsonschema
@@ -56,7 +56,7 @@ idna==3.10
     #   requests
 importlib-resources==6.5.2
     # via swagger-spec-validator
-ipython==9.2.0
+ipython==9.4.0
     # via mpcontribs-client (setup.py)
 ipython-pygments-lexers==1.1.1
     # via ipython
@@ -64,7 +64,7 @@ isoduration==20.11.0
     # via jsonschema
 jedi==0.19.2
     # via ipython
-joblib==1.4.2
+joblib==1.5.1
     # via pymatgen
 json2html==1.3.0
     # via mpcontribs-client (setup.py)
@@ -72,7 +72,7 @@ jsonpointer==3.0.0
     # via jsonschema
 jsonref==1.1.0
     # via bravado-core
-jsonschema[format-nongpl]==4.23.0
+jsonschema[format-nongpl]==4.25.0
     # via
     #   bravado-core
     #   swagger-spec-validator
@@ -80,7 +80,9 @@ jsonschema-specifications==2025.4.1
     # via jsonschema
 kiwisolver==1.4.8
     # via matplotlib
-matplotlib==3.10.1
+lark==1.2.2
+    # via rfc3987-syntax
+matplotlib==3.10.5
     # via pymatgen
 matplotlib-inline==0.1.7
     # via ipython
@@ -90,15 +92,15 @@ monty==2025.3.3
     # via pymatgen
 mpmath==1.3.0
     # via sympy
-msgpack==1.1.0
+msgpack==1.1.1
     # via
     #   bravado
     #   bravado-core
-narwhals==1.37.1
+narwhals==2.0.1
     # via plotly
-networkx==3.4.2
+networkx==3.5
     # via pymatgen
-numpy==2.2.5
+numpy==2.3.2
     # via
     #   contourpy
     #   matplotlib
@@ -108,13 +110,15 @@ numpy==2.2.5
     #   pymatgen
     #   scipy
     #   spglib
+orjson==3.11.1
+    # via pymatgen
 packaging==25.0
     # via
     #   matplotlib
     #   plotly
 palettable==3.3.3
     # via pymatgen
-pandas==2.2.3
+pandas==2.3.1
     # via
     #   mpcontribs-client (setup.py)
     #   pymatgen
@@ -122,13 +126,13 @@ parso==0.8.4
     # via jedi
 pexpect==4.9.0
     # via ipython
-pillow==11.2.1
+pillow==11.3.0
     # via matplotlib
 pint==0.24.4
     # via mpcontribs-client (setup.py)
-platformdirs==4.3.7
+platformdirs==4.3.8
     # via pint
-plotly==6.0.1
+plotly==6.2.0
     # via
     #   mpcontribs-client (setup.py)
     #   pymatgen
@@ -138,15 +142,15 @@ ptyprocess==0.7.0
     # via pexpect
 pure-eval==0.2.3
     # via stack-data
-pygments==2.19.1
+pygments==2.19.2
     # via
     #   ipython
     #   ipython-pygments-lexers
 pyisemail==2.0.1
     # via mpcontribs-client (setup.py)
-pymatgen==2025.4.24
+pymatgen==2025.6.14
     # via mpcontribs-client (setup.py)
-pymongo==4.12.1
+pymongo==4.13.2
     # via mpcontribs-client (setup.py)
 pyparsing==3.2.3
     # via
@@ -172,7 +176,7 @@ referencing==0.36.2
     # via
     #   jsonschema
     #   jsonschema-specifications
-requests==2.32.3
+requests==2.32.4
     # via
     #   bravado
     #   bravado-core
@@ -184,17 +188,19 @@ rfc3339-validator==0.1.4
     # via jsonschema
 rfc3986-validator==0.1.1
     # via jsonschema
-rpds-py==0.24.0
+rfc3987-syntax==1.1.0
+    # via jsonschema
+rpds-py==0.26.0
     # via
     #   jsonschema
     #   referencing
-ruamel-yaml==0.18.10
+ruamel-yaml==0.18.14
     # via
     #   monty
     #   pymatgen
 ruamel-yaml-clib==0.2.12
     # via ruamel-yaml
-scipy==1.15.2
+scipy==1.16.1
     # via pymatgen
 semantic-version==2.10.0
     # via mpcontribs-client (setup.py)
@@ -229,9 +235,9 @@ traitlets==5.14.3
     # via
     #   ipython
     #   matplotlib-inline
-types-python-dateutil==2.9.0.20241206
+types-python-dateutil==2.9.0.20250708
     # via arrow
-typing-extensions==4.13.2
+typing-extensions==4.14.1
     # via
     #   bravado
     #   flexcache
@@ -249,7 +255,7 @@ uncertainties==3.2.3
     # via pymatgen
 uri-template==1.3.0
     # via jsonschema
-urllib3==2.4.0
+urllib3==2.5.0
     # via requests
 wcwidth==0.2.13
     # via prompt-toolkit
