@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=requirements/ubuntu-latest_py3.11.txt
 #
-anyio==4.9.0
+anyio==4.10.0
     # via jupyter-server
 apispec==5.2.2
     # via mpcontribs-api (setup.py)
@@ -36,9 +36,9 @@ blinker==1.9.0
     # via mpcontribs-api (setup.py)
 boltons==25.0.0
     # via mpcontribs-api (setup.py)
-boto3==1.40.0
+boto3==1.40.10
     # via flask-mongorest-mpcontribs
-botocore==1.40.0
+botocore==1.40.10
     # via
     #   boto3
     #   s3transfer
@@ -46,13 +46,13 @@ brotli==1.1.0
     # via flask-compress
 bytecode==0.16.2
     # via ddtrace
-certifi==2025.7.14
+certifi==2025.8.3
     # via requests
 cffi==1.17.1
     # via
     #   argon2-cffi-bindings
     #   cryptography
-charset-normalizer==3.4.2
+charset-normalizer==3.4.3
     # via requests
 click==8.2.1
     # via
@@ -66,7 +66,7 @@ cramjam==2.11.0
     # via python-snappy
 crontab==1.0.5
     # via rq-scheduler
-cryptography==45.0.5
+cryptography==45.0.6
     # via pyopenssl
 css-html-js-minify==2.5.5
     # via mpcontribs-api (setup.py)
@@ -76,7 +76,7 @@ dateparser==1.2.2
     # via mpcontribs-api (setup.py)
 ddtrace==2.21.11
     # via mpcontribs-api (setup.py)
-debugpy==1.8.15
+debugpy==1.8.16
     # via ipykernel
 decorator==5.2.1
     # via ipython
@@ -92,7 +92,7 @@ envier==0.5.2
     # via ddtrace
 executing==2.2.0
     # via stack-data
-fastjsonschema==2.21.1
+fastjsonschema==2.21.2
     # via nbformat
 fastnumbers==5.1.1
     # via flask-mongorest-mpcontribs
@@ -126,15 +126,15 @@ flexcache==0.3
     # via pint
 flexparser==0.4
     # via pint
-fonttools==4.59.0
+fonttools==4.59.1
     # via matplotlib
 fqdn==1.5.1
     # via jsonschema
-freezegun==1.5.4
+freezegun==1.5.5
     # via rq-scheduler
 gevent==25.5.1
     # via gunicorn
-greenlet==3.2.3
+greenlet==3.2.4
     # via gevent
 gunicorn[gevent]==23.0.0
     # via mpcontribs-api (setup.py)
@@ -210,7 +210,7 @@ jupyter-server-terminals==0.5.3
     # via jupyter-server
 jupyterlab-pygments==0.3.0
     # via nbconvert
-kiwisolver==1.4.8
+kiwisolver==1.4.9
     # via matplotlib
 lark==1.2.2
     # via rfc3987-syntax
@@ -249,7 +249,7 @@ more-itertools==10.7.0
     # via mpcontribs-api (setup.py)
 mpmath==1.3.0
     # via sympy
-narwhals==2.0.1
+narwhals==2.1.1
     # via plotly
 nbclassic==1.3.1
     # via notebook
@@ -290,7 +290,7 @@ numpy==2.3.2
     #   spglib
 opentelemetry-api==1.36.0
     # via ddtrace
-orjson==3.11.1
+orjson==3.11.2
     # via
     #   flask-mongorest-mpcontribs
     #   pymatgen
@@ -324,7 +324,7 @@ platformdirs==4.3.8
     # via
     #   jupyter-core
     #   pint
-plotly==6.2.0
+plotly==6.3.0
     # via pymatgen
 prometheus-client==0.22.1
     # via
@@ -332,7 +332,7 @@ prometheus-client==0.22.1
     #   notebook
 prompt-toolkit==3.0.51
     # via ipython
-protobuf==6.31.1
+protobuf==6.32.0
     # via ddtrace
 psutil==7.0.0
     # via ipykernel
@@ -353,7 +353,7 @@ pygments==2.19.2
     #   nbconvert
 pymatgen==2025.6.14
     # via mpcontribs-api (setup.py)
-pymongo==4.13.2
+pymongo==4.14.0
     # via
     #   flask-mongorest-mpcontribs
     #   mongoengine
@@ -388,7 +388,7 @@ pyyaml==6.0.2
     # via
     #   flasgger-tschaume
     #   jupyter-events
-pyzmq==27.0.0
+pyzmq==27.0.1
     # via
     #   ipykernel
     #   jupyter-client
@@ -396,7 +396,7 @@ pyzmq==27.0.0
     #   notebook
 pyzstd==0.17.0
     # via flask-compress
-redis==6.2.0
+redis==6.4.0
     # via
     #   flask-rq2
     #   flask-sse
@@ -422,7 +422,7 @@ rfc3986-validator==0.1.1
     #   jupyter-events
 rfc3987-syntax==1.1.0
     # via jsonschema
-rpds-py==0.26.0
+rpds-py==0.27.0
     # via
     #   jsonschema
     #   referencing
@@ -478,7 +478,7 @@ terminado==0.18.1
     #   notebook
 tinycss2==1.4.0
     # via bleach
-tornado==6.5.1
+tornado==6.5.2
     # via
     #   ipykernel
     #   jupyter-client
@@ -500,7 +500,7 @@ traitlets==5.14.3
     #   nbconvert
     #   nbformat
     #   notebook
-types-python-dateutil==2.9.0.20250708
+types-python-dateutil==2.9.0.20250809
     # via arrow
 typing-extensions==4.14.1
     # via
@@ -546,7 +546,7 @@ werkzeug==3.1.3
     # via
     #   flasgger-tschaume
     #   flask
-wrapt==1.17.2
+wrapt==1.17.3
     # via ddtrace
 xmltodict==0.14.2
     # via ddtrace
