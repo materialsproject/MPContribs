@@ -24,9 +24,9 @@ boltons==25.0.0
     # via
     #   mpcontribs-client
     #   mpcontribs-portal (setup.py)
-boto3==1.40.0
+boto3==1.40.10
     # via mpcontribs-portal (setup.py)
-botocore==1.40.0
+botocore==1.40.10
     # via
     #   boto3
     #   s3transfer
@@ -38,9 +38,9 @@ bytecode==0.16.2
     # via ddtrace
 cachetools==6.1.0
     # via mpcontribs-client
-certifi==2025.7.14
+certifi==2025.8.3
     # via requests
-charset-normalizer==3.4.2
+charset-normalizer==3.4.3
     # via requests
 comm==0.2.3
     # via ipykernel
@@ -48,9 +48,9 @@ contourpy==1.3.3
     # via matplotlib
 cycler==0.12.1
     # via matplotlib
-ddtrace==3.11.2
+ddtrace==3.12.0
     # via mpcontribs-portal (setup.py)
-debugpy==1.8.15
+debugpy==1.8.16
     # via ipykernel
 decorator==5.2.1
     # via ipython
@@ -75,7 +75,7 @@ envier==0.6.1
     # via ddtrace
 executing==2.2.0
     # via stack-data
-fastjsonschema==2.21.1
+fastjsonschema==2.21.2
     # via nbformat
 fastnumbers==5.1.1
     # via mpcontribs-portal (setup.py)
@@ -89,13 +89,13 @@ flexcache==0.3
     # via pint
 flexparser==0.4
     # via pint
-fonttools==4.59.0
+fonttools==4.59.1
     # via matplotlib
 fqdn==1.5.1
     # via jsonschema
 gevent==25.5.1
     # via gunicorn
-greenlet==3.2.3
+greenlet==3.2.4
     # via gevent
 gunicorn[gevent]==23.0.0
     # via mpcontribs-portal (setup.py)
@@ -109,7 +109,7 @@ importlib-resources==6.5.2
     # via swagger-spec-validator
 iniconfig==2.1.0
     # via pytest
-ipykernel==6.30.0
+ipykernel==6.30.1
     # via mpcontribs-portal (setup.py)
 ipython==9.4.0
     # via
@@ -161,7 +161,7 @@ jupyter-core==5.8.1
     #   nbformat
 jupyterlab-pygments==0.3.0
     # via nbconvert
-kiwisolver==1.4.8
+kiwisolver==1.4.9
     # via matplotlib
 lark==1.2.2
     # via rfc3987-syntax
@@ -185,7 +185,7 @@ monty==2025.3.3
     # via
     #   mpcontribs-portal (setup.py)
     #   pymatgen
-mpcontribs-client==5.10.2
+mpcontribs-client==5.10.3
     # via mpcontribs-portal (setup.py)
 mpmath==1.3.0
     # via sympy
@@ -193,7 +193,7 @@ msgpack==1.1.1
     # via
     #   bravado
     #   bravado-core
-narwhals==2.0.1
+narwhals==2.1.1
     # via plotly
 nbclient==0.10.2
     # via nbconvert
@@ -220,7 +220,7 @@ numpy==2.3.2
     #   spglib
 opentelemetry-api==1.36.0
     # via ddtrace
-orjson==3.11.1
+orjson==3.11.2
     # via pymatgen
 packaging==25.0
     # via
@@ -250,7 +250,7 @@ platformdirs==4.3.8
     # via
     #   jupyter-core
     #   pint
-plotly==6.2.0
+plotly==6.3.0
     # via
     #   mpcontribs-client
     #   pymatgen
@@ -258,7 +258,7 @@ pluggy==1.6.0
     # via pytest
 prompt-toolkit==3.0.51
     # via ipython
-protobuf==6.31.1
+protobuf==6.32.0
     # via ddtrace
 psutil==7.0.0
     # via ipykernel
@@ -280,7 +280,7 @@ pyisemail==2.0.1
     # via mpcontribs-client
 pymatgen==2025.6.14
     # via mpcontribs-client
-pymongo==4.13.2
+pymongo==4.14.0
     # via mpcontribs-client
 pyparsing==3.2.3
     # via
@@ -307,11 +307,11 @@ pyyaml==6.0.2
     #   bravado
     #   bravado-core
     #   swagger-spec-validator
-pyzmq==27.0.0
+pyzmq==27.0.1
     # via
     #   ipykernel
     #   jupyter-client
-redis==6.2.0
+redis==6.4.0
     # via mpcontribs-portal (setup.py)
 referencing==0.36.2
     # via
@@ -331,7 +331,7 @@ rfc3986-validator==0.1.1
     # via jsonschema
 rfc3987-syntax==1.1.0
     # via jsonschema
-rpds-py==0.26.0
+rpds-py==0.27.0
     # via
     #   jsonschema
     #   referencing
@@ -380,7 +380,7 @@ tabulate==0.9.0
     # via pymatgen
 tinycss2==1.4.0
     # via bleach
-tornado==6.5.1
+tornado==6.5.2
     # via
     #   ipykernel
     #   jupyter-client
@@ -398,7 +398,7 @@ traitlets==5.14.3
     #   nbclient
     #   nbconvert
     #   nbformat
-types-python-dateutil==2.9.0.20250708
+types-python-dateutil==2.9.0.20250809
     # via arrow
 typing-extensions==4.14.1
     # via
@@ -435,9 +435,7 @@ webencodings==0.5.1
     #   tinycss2
 whitenoise==6.9.0
     # via mpcontribs-portal (setup.py)
-wrapt==1.17.2
-    # via ddtrace
-xmltodict==0.14.2
+wrapt==1.17.3
     # via ddtrace
 zipp==3.23.0
     # via importlib-metadata
