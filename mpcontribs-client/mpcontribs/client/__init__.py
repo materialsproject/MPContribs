@@ -1584,12 +1584,11 @@ class Client(SwaggerClient):
         if self.project:
             query["project"] = self.project
 
-        cids = list(self.get_all_ids(query).get(query["project"], {}).get("ids", set()))
+        name = query["project"]
+        cids = list(self.get_all_ids(query).get(name, {}).get("ids", set()))
 
         if not cids:
-            logger.info(
-                f"There aren't any contributions to delete for {query['project']}"
-            )
+            logger.info(f"There aren't any contributions to delete for {name}")
             return
 
         total = len(cids)
@@ -1600,7 +1599,7 @@ class Client(SwaggerClient):
         _run_futures(futures, total=total, timeout=timeout)
         left, _ = self.get_totals(query=query)
         deleted = total - left
-        self.init_columns(name=query["project"])
+        self.init_columns(name=name)
         self._reinit()
         toc = time.perf_counter()
         dt = (toc - tic) / 60
