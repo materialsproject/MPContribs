@@ -18,7 +18,7 @@ attrs==25.3.0
     # via
     #   jsonschema
     #   referencing
-beautifulsoup4==4.13.4
+beautifulsoup4==4.13.5
     # via nbconvert
 bibtexparser==1.4.3
     # via pymatgen
@@ -34,7 +34,7 @@ bravado-core==6.1.1
     # via bravado
 bytecode==0.16.2
     # via ddtrace
-cachetools==6.1.0
+cachetools==6.2.0
     # via mpcontribs-client
 certifi==2025.8.3
     # via requests
@@ -42,7 +42,7 @@ cffi==1.17.1
     # via argon2-cffi-bindings
 charset-normalizer==3.4.3
     # via requests
-choreographer==1.0.9
+choreographer==1.0.10
     # via kaleido
 comm==0.2.3
     # via
@@ -118,7 +118,7 @@ jsonpointer==3.0.0
     # via jsonschema
 jsonref==1.1.0
     # via bravado-core
-jsonschema[format-nongpl]==4.25.0
+jsonschema[format-nongpl]==4.25.1
     # via
     #   bravado-core
     #   jupyter-events
@@ -146,7 +146,7 @@ jupyter-events==0.12.0
     # via jupyter-server
 jupyter-kernel-gateway==3.0.1
     # via -r requirements.in
-jupyter-server==2.16.0
+jupyter-server==2.17.0
     # via jupyter-kernel-gateway
 jupyter-server-terminals==0.5.3
     # via jupyter-server
@@ -188,7 +188,7 @@ msgpack==1.1.1
     # via
     #   bravado
     #   bravado-core
-narwhals==2.1.1
+narwhals==2.2.0
     # via plotly
 nbclient==0.10.2
     # via nbconvert
@@ -232,19 +232,19 @@ packaging==25.0
     #   plotly
 palettable==3.3.3
     # via pymatgen
-pandas==2.3.1
+pandas==2.3.2
     # via
     #   mpcontribs-client
     #   pymatgen
 pandocfilters==1.5.1
     # via nbconvert
-parso==0.8.4
+parso==0.8.5
     # via jedi
 pexpect==4.9.0
     # via ipython
 pillow==11.3.0
     # via matplotlib
-pint==0.24.4
+pint==0.25
     # via mpcontribs-client
 platformdirs==4.3.8
     # via
@@ -281,7 +281,7 @@ pyisemail==2.0.1
     # via mpcontribs-client
 pymatgen==2025.6.14
     # via mpcontribs-client
-pymongo==4.14.0
+pymongo==4.14.1
     # via mpcontribs-client
 pyparsing==3.2.3
     # via
@@ -307,7 +307,7 @@ pyyaml==6.0.2
     #   bravado-core
     #   jupyter-events
     #   swagger-spec-validator
-pyzmq==27.0.1
+pyzmq==27.0.2
     # via
     #   ipykernel
     #   jupyter-client
@@ -317,7 +317,7 @@ referencing==0.36.2
     #   jsonschema
     #   jsonschema-specifications
     #   jupyter-events
-requests==2.32.4
+requests==2.32.5
     # via
     #   bravado
     #   bravado-core
@@ -340,7 +340,7 @@ rpds-py==0.27.0
     # via
     #   jsonschema
     #   referencing
-ruamel-yaml==0.18.14
+ruamel-yaml==0.18.15
     # via
     #   monty
     #   pymatgen
@@ -411,9 +411,9 @@ traitlets==5.14.3
     #   nbclient
     #   nbconvert
     #   nbformat
-types-python-dateutil==2.9.0.20250809
+types-python-dateutil==2.9.0.20250822
     # via arrow
-typing-extensions==4.14.1
+typing-extensions==4.15.0
     # via
     #   anyio
     #   beautifulsoup4
@@ -429,7 +429,7 @@ typing-extensions==4.14.1
     #   swagger-spec-validator
 tzdata==2025.2
     # via pandas
-ujson==5.10.0
+ujson==5.11.0
     # via mpcontribs-client
 uncertainties==3.2.3
     # via pymatgen
