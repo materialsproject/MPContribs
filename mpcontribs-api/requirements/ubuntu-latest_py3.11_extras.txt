@@ -26,7 +26,7 @@ attrs==25.3.0
     # via
     #   jsonschema
     #   referencing
-beautifulsoup4==4.13.4
+beautifulsoup4==4.13.5
     # via nbconvert
 bibtexparser==1.4.3
     # via pymatgen
@@ -36,9 +36,9 @@ blinker==1.9.0
     # via mpcontribs-api (setup.py)
 boltons==25.0.0
     # via mpcontribs-api (setup.py)
-boto3==1.40.10
+boto3==1.40.17
     # via flask-mongorest-mpcontribs
-botocore==1.40.10
+botocore==1.40.17
     # via
     #   boto3
     #   s3transfer
@@ -64,6 +64,8 @@ contourpy==1.3.3
     # via matplotlib
 cramjam==2.11.0
     # via python-snappy
+croniter==6.0.0
+    # via rq
 crontab==1.0.5
     # via rq-scheduler
 cryptography==45.0.6
@@ -184,7 +186,7 @@ json2html==1.3.0
     # via mpcontribs-api (setup.py)
 jsonpointer==3.0.0
     # via jsonschema
-jsonschema[format-nongpl]==4.25.0
+jsonschema[format-nongpl]==4.25.1
     # via
     #   flasgger-tschaume
     #   jupyter-events
@@ -208,7 +210,7 @@ jupyter-core==5.8.1
     #   notebook
 jupyter-events==0.12.0
     # via jupyter-server
-jupyter-server==2.16.0
+jupyter-server==2.17.0
     # via notebook-shim
 jupyter-server-terminals==0.5.3
     # via jupyter-server
@@ -255,7 +257,7 @@ more-itertools==10.7.0
     # via mpcontribs-api (setup.py)
 mpmath==1.3.0
     # via sympy
-narwhals==2.1.1
+narwhals==2.2.0
     # via plotly
 nbclassic==1.3.1
     # via notebook
@@ -315,17 +317,17 @@ packaging==25.0
     #   pytest
 palettable==3.3.3
     # via pymatgen
-pandas==2.3.1
+pandas==2.3.2
     # via pymatgen
 pandocfilters==1.5.1
     # via nbconvert
-parso==0.8.4
+parso==0.8.5
     # via jedi
 pexpect==4.9.0
     # via ipython
 pillow==11.3.0
     # via matplotlib
-pint==0.24.4
+pint==0.25
     # via mpcontribs-api (setup.py)
 platformdirs==4.3.8
     # via
@@ -367,7 +369,7 @@ pygments==2.19.2
     #   pytest
 pymatgen==2025.6.14
     # via mpcontribs-api (setup.py)
-pymongo==4.14.0
+pymongo==4.14.1
     # via
     #   flask-mongorest-mpcontribs
     #   mongoengine
@@ -383,6 +385,7 @@ python-dateutil==2.9.0.post0
     # via
     #   arrow
     #   botocore
+    #   croniter
     #   dateparser
     #   flask-mongorest-mpcontribs
     #   freezegun
@@ -398,13 +401,14 @@ python-snappy==0.7.3
     # via mpcontribs-api (setup.py)
 pytz==2025.2
     # via
+    #   croniter
     #   dateparser
     #   pandas
 pyyaml==6.0.2
     # via
     #   flasgger-tschaume
     #   jupyter-events
-pyzmq==27.0.1
+pyzmq==27.0.2
     # via
     #   ipykernel
     #   jupyter-client
@@ -424,7 +428,7 @@ referencing==0.36.2
     #   jupyter-events
 regex==2025.7.34
     # via dateparser
-requests==2.32.4
+requests==2.32.5
     # via
     #   atlasq-tschaume
     #   pymatgen
@@ -442,13 +446,13 @@ rpds-py==0.27.0
     # via
     #   jsonschema
     #   referencing
-rq==2.4.1
+rq==2.5.0
     # via
     #   flask-rq2
     #   rq-scheduler
 rq-scheduler==0.14.0
     # via flask-rq2
-ruamel-yaml==0.18.14
+ruamel-yaml==0.18.15
     # via
     #   monty
     #   pymatgen
@@ -481,7 +485,7 @@ spglib==2.6.0
     # via pymatgen
 stack-data==0.6.3
     # via ipython
-supervisor==4.2.5
+supervisor==4.3.0
     # via mpcontribs-api (setup.py)
 sympy==1.14.0
     # via pymatgen
@@ -516,9 +520,9 @@ traitlets==5.14.3
     #   nbconvert
     #   nbformat
     #   notebook
-types-python-dateutil==2.9.0.20250809
+types-python-dateutil==2.9.0.20250822
     # via arrow
-typing-extensions==4.14.1
+typing-extensions==4.15.0
     # via
     #   anyio
     #   beautifulsoup4
@@ -572,7 +576,7 @@ zope-event==5.1.1
     # via gevent
 zope-interface==7.2
     # via gevent
-zstandard==0.23.0
+zstandard==0.24.0
     # via mpcontribs-api (setup.py)
 
 # The following packages are considered to be unsafe in a requirements file:
