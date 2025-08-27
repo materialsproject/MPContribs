@@ -110,7 +110,7 @@ numpy==2.3.2
     #   pymatgen
     #   scipy
     #   spglib
-orjson==3.11.2
+orjson==3.11.3
     # via pymatgen
 packaging==25.0
     # via
@@ -130,7 +130,7 @@ pillow==11.3.0
     # via matplotlib
 pint==0.25
     # via mpcontribs-client (setup.py)
-platformdirs==4.3.8
+platformdirs==4.4.0
     # via pint
 plotly==6.3.0
     # via
