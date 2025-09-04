@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """Flask App for MPContribs API"""
 import os
-import urllib
 import smtplib
 import logging
 import requests
@@ -10,7 +9,7 @@ import flask_mongorest.operators as ops
 from email.message import EmailMessage
 from importlib import import_module
 from websocket import create_connection
-from flask import Flask, current_app, request, g, jsonify
+from flask import Flask, current_app, request, jsonify
 from flask_marshmallow import Marshmallow
 from flask_mongoengine import MongoEngine
 from flask_mongorest import register_class
@@ -113,7 +112,7 @@ def send_email(to, subject, html):
     msg["To"] = to
 
     # NOTE boto3 SES client can't connect to VPC endpoint yet
-    with smtplib.SMTP(host=SMTP_HOST, port=SMTP_PORT) as ses_client:
+    with smtplib.SMTP(host=SMTP_HOST, port=int(SMTP_PORT)) as ses_client:
         ses_client.starttls()
         ses_client.login(os.environ["SMTP_USERNAME"], os.environ["SMTP_PASSWORD"])
         ses_client.send_message(msg)
@@ -163,7 +162,7 @@ def get_kernels():
 
     response = r.json()
     nkernels = 3  # reserve 3 kernels for each deployment
-    idx = int(os.environ.get("DEPLOYMENT"))
+    idx = int(os.environ.get("DEPLOYMENT", 1))
 
     if len(response) < nkernels * (idx + 1):
         logger.error("NOT ENOUGH KERNELS AVAILABLE")

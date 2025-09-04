@@ -99,7 +99,7 @@ class ProjectsView(SwaggerView):
 
         # is_approved can only be set by an admin
         if obj.is_approved:
-            raise Unauthorized(f"Only admins can set `is_approved=True`")
+            raise Unauthorized("Only admins can set `is_approved=True`")
 
         # limit the number of projects a user can own (unless admin)
         nr_projects = Projects.objects(owner=obj.owner).count()
@@ -161,11 +161,14 @@ def search():
     if not term:
         abort(404, description="Missing search term.")
 
-    pipeline = [{
-        "$search": {
-            "index": "mpcontribs-dev-project-search",
-            "text": {"path": {"wildcard": "*"}, "query": term}
-        }
-    }, {"$project": {"_id": 1}}]
+    pipeline = [
+        {
+            "$search": {
+                "index": "mpcontribs-dev-project-search",
+                "text": {"path": {"wildcard": "*"}, "query": term},
+            }
+        },
+        {"$project": {"_id": 1}},
+    ]
     result = [p["_id"] for p in Projects.objects().aggregate(pipeline)]
     return jsonify(result)

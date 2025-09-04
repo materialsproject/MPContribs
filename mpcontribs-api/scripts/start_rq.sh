@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -e
-zzz=$(($DEPLOYMENT * 60))
+zzz=$((DEPLOYMENT * 60))
 echo "$SUPERVISOR_PROCESS_NAME: waiting for $zzz seconds before start..."
 sleep $zzz
 

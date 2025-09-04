@@ -1,12 +1,12 @@
 #!/bin/bash
 
 set -e
-zzz=$(($DEPLOYMENT * 60))
+zzz=$((DEPLOYMENT * 60))
 echo "$SUPERVISOR_PROCESS_NAME: waiting for $zzz seconds before start..."
 sleep $zzz
 
-pmgrc=$HOME/.pmgrc.yaml
-[[ ! -e $pmgrc ]] && echo "PMG_DUMMY_VAR: dummy" >$pmgrc
+PMGRC=$HOME/.pmgrc.yaml
+[[ ! -e "$PMGRC" ]] && echo "PMG_DUMMY_VAR: dummy" >"$PMGRC"
 
 STATS_ARG=""
 SERVER_APP="mpcontribs.api:create_app()"
