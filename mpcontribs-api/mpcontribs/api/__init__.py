@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """Flask App for MPContribs API"""
+import ddtrace.auto
 import os
 import smtplib
 import logging

@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import ddtrace.auto
 import nbformat as nbf
 
 nb = nbf.v4.new_notebook()
