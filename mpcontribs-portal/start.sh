@@ -18,6 +18,8 @@ python manage.py migrate --noinput
 
 CMD="gunicorn wsgi"
 
+set -x
+
 if [[ -n "$DD_TRACE_HOST" ]]; then
   wait-for-it.sh "$DD_TRACE_HOST" -q -s -t 10 && CMD="ddtrace-run $CMD" || echo "WARNING: datadog agent unreachable"
 fi
