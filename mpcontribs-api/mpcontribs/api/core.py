@@ -475,18 +475,12 @@ class SwaggerView(OriginalSwaggerView, ResourceView):
             "X-Forwarded-Host"
         ) is not None and not request.headers.get("Origin")
 
-    def is_admin(self, groups):
+    def is_admin(self, request):
+        groups = self.get_groups(request)
         admin_group = os.environ.get("ADMIN_GROUP", "admin")
         return admin_group in groups
 
-    def is_admin_or_project_user(self, request, obj):
-        if self.is_anonymous(request):
-            return False
-
-        groups = self.get_groups(request)
-        if self.is_admin(groups):
-            return True
-
+    def is_project_user(self, request, obj):
         if hasattr(obj, "owner"):
             owner = obj.owner
             project = obj.name
@@ -496,8 +490,18 @@ class SwaggerView(OriginalSwaggerView, ResourceView):
         else:
             raise Unauthorized(f"Unable to authorize {obj}")
 
+        groups = self.get_groups(request)
         username = request.headers.get("X-Consumer-Username")
         return project in groups or owner == username
+
+    def is_admin_or_project_user(self, request, obj):
+        if self.is_anonymous(request):
+            return False
+
+        if self.is_admin(request):
+            return True
+
+        return self.is_project_user(request, obj)
 
     def get_projects(self):
         # project is LazyReferenceFields (multiple queries)
@@ -530,10 +534,10 @@ class SwaggerView(OriginalSwaggerView, ResourceView):
         return qfilter
 
     def has_read_permission(self, request, qs):
-        groups = self.get_groups(request)
-        if self.is_admin(groups):
+        if self.is_admin(request):
             return qs  # admins can read all entries
 
+        groups = self.get_groups(request)
         is_anonymous = self.is_anonymous(request)
         is_external = self.is_external(request)
         username = request.headers.get("X-Consumer-Username")

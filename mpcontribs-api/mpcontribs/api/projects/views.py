@@ -87,34 +87,43 @@ class ProjectsView(SwaggerView):
     resource = ProjectsResource
     methods = [Fetch, Create, Delete, Update, BulkFetch]
 
-    def has_add_permission(self, req, obj):
-        if self.is_anonymous(req):
+    def has_add_permission(self, request, obj):
+        if self.is_anonymous(request):
             return False
 
-        obj.owner = req.headers.get("X-Consumer-Username")
-        groups = self.get_groups(req)
-        is_admin = self.is_admin(groups)
-        if is_admin:
+        obj.owner = request.headers.get("X-Consumer-Username")
+        if self.is_admin(request):
             return True
 
-        # is_approved can only be set by an admin
-        if obj.is_approved:
-            raise Unauthorized("Only admins can set `is_approved=True`")
+        data = request.json
+        if "is_approved" in data or "is_public" in data:
+            raise Unauthorized("Projects cannot be approved or published on creation.")
 
-        # limit the number of projects a user can own (unless admin)
+        # limit the number of projects a user can own
         nr_projects = Projects.objects(owner=obj.owner).count()
         if nr_projects > MAX_PROJECTS:
             raise Unauthorized(f"{obj.owner} already owns {nr_projects} projects.")
 
         return True
 
-    def has_change_permission(self, req, obj):
-        if not self.is_admin_or_project_user(req, obj):
+    def has_change_permission(self, request, obj):
+        if self.is_anonymous(request):
             return False
 
-        # is_public can only be changed if project is_approved
-        if obj.is_public and not obj.is_approved:
-            raise Unauthorized(f"{obj.id} is not approved yet.")
+        if self.is_admin(request):
+            return True
+
+        if not self.is_project_user(request, obj):
+            raise Unauthorized(
+                "Only project owners and collaborators can edit projects."
+            )
+
+        update = request.json
+        if "is_approved" in update:
+            raise Unauthorized("Only admins can (un)approve projects.")
+
+        if "is_public" in update and not obj.is_approved:
+            raise Unauthorized("Projects can only be published after admin approval.")
 
         return True
 
