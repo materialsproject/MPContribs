@@ -1227,7 +1227,7 @@ class Client(SwaggerClient):
                 "initialize client with project or set `name` argument!"
             )
 
-        disallowed = ["is_approved", "stats", "columns", "is_public", "owner"]
+        disallowed = ["stats", "columns"]
         for k in list(update.keys()):
             if k in disallowed:
                 logger.warning(f"removing `{k}` from update - not allowed.")
