@@ -32,7 +32,7 @@ bravado==12.0.1
     # via mpcontribs-client
 bravado-core==6.1.1
     # via bravado
-bytecode==0.16.2
+bytecode==0.17.0
     # via ddtrace
 cachetools==6.2.0
     # via mpcontribs-client
@@ -66,7 +66,7 @@ dnspython==2.7.0
     #   pymongo
 envier==0.5.2
     # via ddtrace
-executing==2.2.0
+executing==2.2.1
     # via stack-data
 fastjsonschema==2.21.2
     # via nbformat
@@ -78,7 +78,7 @@ flexcache==0.3
     # via pint
 flexparser==0.4
     # via pint
-fonttools==4.59.1
+fonttools==4.59.2
     # via matplotlib
 fqdn==1.5.1
     # via jsonschema
@@ -93,7 +93,7 @@ importlib-resources==6.5.2
     # via swagger-spec-validator
 ipykernel==6.30.1
     # via -r requirements.in
-ipython==9.4.0
+ipython==9.5.0
     # via
     #   ipykernel
     #   ipywidgets
@@ -110,7 +110,7 @@ jinja2==3.1.6
     # via
     #   jupyter-server
     #   nbconvert
-joblib==1.5.1
+joblib==1.5.2
     # via pymatgen
 json2html==1.3.0
     # via mpcontribs-client
@@ -168,19 +168,19 @@ markupsafe==3.0.2
     # via
     #   jinja2
     #   nbconvert
-matplotlib==3.10.5
+matplotlib==3.10.6
     # via pymatgen
 matplotlib-inline==0.1.7
     # via
     #   ipykernel
     #   ipython
-mistune==3.1.3
+mistune==3.1.4
     # via nbconvert
 monotonic==1.6
     # via bravado
 monty==2025.3.3
     # via pymatgen
-mpcontribs-client==5.10.3
+mpcontribs-client==5.10.4
     # via -r requirements.in
 mpmath==1.3.0
     # via sympy
@@ -188,7 +188,7 @@ msgpack==1.1.1
     # via
     #   bravado
     #   bravado-core
-narwhals==2.2.0
+narwhals==2.3.0
     # via plotly
 nbclient==0.10.2
     # via nbconvert
@@ -256,7 +256,7 @@ plotly==6.3.0
     #   pymatgen
 prometheus-client==0.22.1
     # via jupyter-server
-prompt-toolkit==3.0.51
+prompt-toolkit==3.0.52
     # via ipython
 protobuf==6.32.0
     # via ddtrace
@@ -336,7 +336,7 @@ rfc3986-validator==0.1.1
     #   jupyter-events
 rfc3987-syntax==1.1.0
     # via jsonschema
-rpds-py==0.27.0
+rpds-py==0.27.1
     # via
     #   jsonschema
     #   referencing
@@ -366,7 +366,7 @@ six==1.17.0
     #   rfc3339-validator
 sniffio==1.3.1
     # via anyio
-soupsieve==2.7
+soupsieve==2.8
     # via beautifulsoup4
 spglib==2.6.0
     # via pymatgen
@@ -451,7 +451,7 @@ widgetsnbextension==4.0.14
     # via ipywidgets
 wrapt==1.17.3
     # via ddtrace
-xmltodict==0.14.2
+xmltodict==0.15.0
     # via ddtrace
 zipp==3.23.0
     # via importlib-metadata
