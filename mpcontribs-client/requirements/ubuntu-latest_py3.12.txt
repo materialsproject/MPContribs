@@ -36,7 +36,7 @@ dnspython==2.7.0
     # via
     #   pyisemail
     #   pymongo
-executing==2.2.0
+executing==2.2.1
     # via stack-data
 filetype==1.2.0
     # via mpcontribs-client (setup.py)
@@ -46,7 +46,7 @@ flexcache==0.3
     # via pint
 flexparser==0.4
     # via pint
-fonttools==4.59.1
+fonttools==4.59.2
     # via matplotlib
 fqdn==1.5.1
     # via jsonschema
@@ -56,7 +56,7 @@ idna==3.10
     #   requests
 importlib-resources==6.5.2
     # via swagger-spec-validator
-ipython==9.4.0
+ipython==9.5.0
     # via mpcontribs-client (setup.py)
 ipython-pygments-lexers==1.1.1
     # via ipython
@@ -64,7 +64,7 @@ isoduration==20.11.0
     # via jsonschema
 jedi==0.19.2
     # via ipython
-joblib==1.5.1
+joblib==1.5.2
     # via pymatgen
 json2html==1.3.0
     # via mpcontribs-client (setup.py)
@@ -82,7 +82,7 @@ kiwisolver==1.4.9
     # via matplotlib
 lark==1.2.2
     # via rfc3987-syntax
-matplotlib==3.10.5
+matplotlib==3.10.6
     # via pymatgen
 matplotlib-inline==0.1.7
     # via ipython
@@ -96,7 +96,7 @@ msgpack==1.1.1
     # via
     #   bravado
     #   bravado-core
-narwhals==2.2.0
+narwhals==2.3.0
     # via plotly
 networkx==3.5
     # via pymatgen
@@ -136,7 +136,7 @@ plotly==6.3.0
     # via
     #   mpcontribs-client (setup.py)
     #   pymatgen
-prompt-toolkit==3.0.51
+prompt-toolkit==3.0.52
     # via ipython
 ptyprocess==0.7.0
     # via pexpect
@@ -190,7 +190,7 @@ rfc3986-validator==0.1.1
     # via jsonschema
 rfc3987-syntax==1.1.0
     # via jsonschema
-rpds-py==0.27.0
+rpds-py==0.27.1
     # via
     #   jsonschema
     #   referencing
