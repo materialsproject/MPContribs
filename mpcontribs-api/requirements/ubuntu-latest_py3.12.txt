@@ -36,9 +36,9 @@ blinker==1.9.0
     # via mpcontribs-api (setup.py)
 boltons==25.0.0
     # via mpcontribs-api (setup.py)
-boto3==1.40.24
+boto3==1.40.27
     # via flask-mongorest-mpcontribs
-botocore==1.40.24
+botocore==1.40.27
     # via
     #   boto3
     #   s3transfer
@@ -48,7 +48,7 @@ bytecode==0.17.0
     # via ddtrace
 certifi==2025.8.3
     # via requests
-cffi==1.17.1
+cffi==2.0.0
     # via
     #   argon2-cffi-bindings
     #   cryptography
@@ -84,7 +84,7 @@ decorator==5.2.1
     # via ipython
 defusedxml==0.7.1
     # via nbconvert
-dnspython==2.7.0
+dnspython==2.8.0
     # via
     #   mpcontribs-api (setup.py)
     #   pymongo
@@ -187,7 +187,7 @@ jsonschema[format-nongpl]==4.25.1
     #   flasgger-tschaume
     #   jupyter-events
     #   nbformat
-jsonschema-specifications==2025.4.1
+jsonschema-specifications==2025.9.1
     # via jsonschema
 jupyter-client==7.4.9
     # via
@@ -251,7 +251,7 @@ more-itertools==10.8.0
     # via mpcontribs-api (setup.py)
 mpmath==1.3.0
     # via sympy
-narwhals==2.3.0
+narwhals==2.4.0
     # via plotly
 nbclassic==1.3.2
     # via notebook
@@ -280,7 +280,7 @@ notebook==6.5.7
     # via mpcontribs-api (setup.py)
 notebook-shim==0.2.4
     # via nbclassic
-numpy==2.3.2
+numpy==2.3.3
     # via
     #   contourpy
     #   matplotlib
@@ -344,7 +344,7 @@ ptyprocess==0.7.0
     #   terminado
 pure-eval==0.2.3
     # via stack-data
-pycparser==2.22
+pycparser==2.23
     # via cffi
 pygments==2.19.2
     # via
@@ -390,7 +390,7 @@ pyyaml==6.0.2
     # via
     #   flasgger-tschaume
     #   jupyter-events
-pyzmq==27.0.2
+pyzmq==27.1.0
     # via
     #   ipykernel
     #   jupyter-client
@@ -428,7 +428,7 @@ rpds-py==0.27.1
     # via
     #   jsonschema
     #   referencing
-rq==2.5.0
+rq==2.6.0
     # via
     #   flask-rq2
     #   rq-scheduler
@@ -440,7 +440,7 @@ ruamel-yaml==0.18.15
     #   pymatgen
 ruamel-yaml-clib==0.2.12
     # via ruamel-yaml
-s3transfer==0.13.1
+s3transfer==0.14.0
     # via boto3
 scipy==1.16.1
     # via pymatgen
