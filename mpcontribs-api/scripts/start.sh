@@ -14,9 +14,9 @@ WAIT_FOR="wait-for-it.sh $JUPYTER_GATEWAY_HOST -q -t 50"
 
 set -x
 
-if [[ -n "$DD_TRACE_HOST" ]]; then
-  wait-for-it.sh "$DD_TRACE_HOST" -q -s -t 10 && STATS_ARG="--statsd-host $DD_AGENT_HOST:8125" || echo "WARNING: datadog agent unreachable"
-fi
+#if [[ -n "$DD_TRACE_HOST" ]]; then
+#  wait-for-it.sh "$DD_TRACE_HOST" -q -s -t 10 && STATS_ARG="--statsd-host $DD_AGENT_HOST:8125" || echo "WARNING: datadog agent unreachable"
+#fi
 
 [[ -n "$STATS_ARG" ]] && CMD="ddtrace-run gunicorn $STATS_ARG" || CMD="gunicorn"
 exec $WAIT_FOR -- $CMD $SERVER_APP
