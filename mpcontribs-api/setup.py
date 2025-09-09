@@ -38,6 +38,7 @@ setup(
         "pymatgen",
         "pyopenssl",
         "python-snappy",
+        "rq<=2.3.2",  # see https://github.com/rq/Flask-RQ2/issues/620
         "semantic-version",
         "supervisor",
         "setproctitle",
