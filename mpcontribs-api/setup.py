@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import ddtrace.sourcecode.setuptools_auto  # noqa: F401
 import datetime
 from setuptools import setup
 

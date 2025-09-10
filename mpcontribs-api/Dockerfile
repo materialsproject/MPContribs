@@ -45,7 +45,8 @@ ENV DD_SERVICE=contribs-apis \
   DD_ENV=prod \
   DD_VERSION=$VERSION \
   DD_TRACE_HOST=localhost:8126 \
-  DD_TRACE_OTEL_ENABLED=false
+  DD_TRACE_OTEL_ENABLED=false \
+  DD_MAIN_PACKAGE=mpcontribs-api
 
 LABEL com.datadoghq.ad.logs='[{"source": "gunicorn", "service": "contribs-apis"}]'
 EXPOSE 10000 10002 10003 10005 20000
