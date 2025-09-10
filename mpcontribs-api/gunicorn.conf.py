@@ -1,3 +1,4 @@
+import ddtrace.auto  # noqa: F401
 import os
 
 bind = "0.0.0.0:{}".format(os.getenv("API_PORT"))
