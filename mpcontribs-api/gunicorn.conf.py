@@ -1,8 +1,6 @@
-# import ddtrace.auto  # noqa: F401
-# from ddtrace import patch
+import ddtrace.auto  # noqa: F401
 import os
 
-# patch(pymongo=False)
 bind = "0.0.0.0:{}".format(os.getenv("API_PORT"))
 worker_class = "gevent"
 workers = os.getenv("NWORKERS")
