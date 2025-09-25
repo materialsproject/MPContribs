@@ -253,7 +253,7 @@ plotly==6.3.0
     #   pymatgen
 prompt-toolkit==3.0.52
     # via ipython
-protobuf==6.32.0
+protobuf==6.32.1
     # via ddtrace
 psutil==7.0.0
     # via ipykernel
