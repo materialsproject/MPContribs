@@ -30,7 +30,7 @@
     "compression-webpack-plugin": "^11.0.0",
     "core-js": "^3.33.1",
     "css-loader": "^7.0.0",
-    "handsontable": "^13.1.0",
+    "handsontable": "^16.1.1",
     "highlight.js": "^11.9.0",
     "imports-loader": "^5.0.0",
     "jquery": "^3.7.1",
