@@ -52,7 +52,7 @@ flexcache==0.3
     # via pint
 flexparser==0.4
     # via pint
-fonttools==4.60.0
+fonttools==4.60.1
     # via matplotlib
 fqdn==1.5.1
     # via jsonschema
@@ -64,7 +64,7 @@ importlib-resources==6.5.2
     # via swagger-spec-validator
 iniconfig==2.1.0
     # via pytest
-ipython==9.5.0
+ipython==9.6.0
     # via mpcontribs-client (setup.py)
 ipython-pygments-lexers==1.1.1
     # via ipython
@@ -106,7 +106,7 @@ msgpack==1.1.1
     # via
     #   bravado
     #   bravado-core
-narwhals==2.5.0
+narwhals==2.6.0
     # via plotly
 networkx==3.5
     # via pymatgen
@@ -129,7 +129,7 @@ packaging==25.0
     #   pytest
 palettable==3.3.3
     # via pymatgen
-pandas==2.3.2
+pandas==2.3.3
     # via
     #   mpcontribs-client (setup.py)
     #   pymatgen
@@ -143,7 +143,7 @@ pint==0.25
     # via mpcontribs-client (setup.py)
 platformdirs==4.4.0
     # via pint
-plotly==6.3.0
+plotly==6.3.1
     # via
     #   mpcontribs-client (setup.py)
     #   pymatgen
@@ -174,7 +174,7 @@ pyisemail==2.0.1
     # via mpcontribs-client (setup.py)
 pymatgen==2025.6.14
     # via mpcontribs-client (setup.py)
-pymongo==4.15.1
+pymongo==4.15.2
     # via mpcontribs-client (setup.py)
 pyparsing==3.2.5
     # via
@@ -240,7 +240,7 @@ scipy==1.16.2
     # via pymatgen
 semantic-version==2.10.0
     # via mpcontribs-client (setup.py)
-simplejson==3.20.1
+simplejson==3.20.2
     # via
     #   bravado
     #   bravado-core
