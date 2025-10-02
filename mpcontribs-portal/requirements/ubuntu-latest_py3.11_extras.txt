@@ -14,7 +14,7 @@ attrs==25.3.0
     # via
     #   jsonschema
     #   referencing
-beautifulsoup4==4.13.5
+beautifulsoup4==4.14.2
     # via nbconvert
 bibtexparser==1.4.3
     # via pymatgen
@@ -24,9 +24,9 @@ boltons==25.0.0
     # via
     #   mpcontribs-client
     #   mpcontribs-portal (setup.py)
-boto3==1.40.39
+boto3==1.40.43
     # via mpcontribs-portal (setup.py)
-botocore==1.40.39
+botocore==1.40.43
     # via
     #   boto3
     #   s3transfer
@@ -48,7 +48,7 @@ contourpy==1.3.3
     # via matplotlib
 cycler==0.12.1
     # via matplotlib
-ddtrace==3.14.3
+ddtrace==3.15.0
     # via mpcontribs-portal (setup.py)
 debugpy==1.8.17
     # via ipykernel
@@ -89,7 +89,7 @@ flexcache==0.3
     # via pint
 flexparser==0.4
     # via pint
-fonttools==4.60.0
+fonttools==4.60.1
     # via matplotlib
 fqdn==1.5.1
     # via jsonschema
@@ -111,7 +111,7 @@ iniconfig==2.1.0
     # via pytest
 ipykernel==6.30.1
     # via mpcontribs-portal (setup.py)
-ipython==9.5.0
+ipython==9.6.0
     # via
     #   ipykernel
     #   mpcontribs-client
@@ -165,7 +165,7 @@ kiwisolver==1.4.9
     # via matplotlib
 lark==1.3.0
     # via rfc3987-syntax
-markupsafe==3.0.2
+markupsafe==3.0.3
     # via
     #   jinja2
     #   nbconvert
@@ -193,7 +193,7 @@ msgpack==1.1.1
     # via
     #   bravado
     #   bravado-core
-narwhals==2.5.0
+narwhals==2.6.0
     # via plotly
 nbclient==0.10.2
     # via nbconvert
@@ -232,7 +232,7 @@ packaging==25.0
     #   pytest
 palettable==3.3.3
     # via pymatgen
-pandas==2.3.2
+pandas==2.3.3
     # via
     #   mpcontribs-client
     #   pymatgen
@@ -250,7 +250,7 @@ platformdirs==4.4.0
     # via
     #   jupyter-core
     #   pint
-plotly==6.3.0
+plotly==6.3.1
     # via
     #   mpcontribs-client
     #   pymatgen
@@ -280,7 +280,7 @@ pyisemail==2.0.1
     # via mpcontribs-client
 pymatgen==2025.6.14
     # via mpcontribs-client
-pymongo==4.15.1
+pymongo==4.15.2
     # via mpcontribs-client
 pyparsing==3.2.5
     # via
@@ -351,7 +351,7 @@ semantic-version==2.10.0
     # via mpcontribs-client
 setproctitle==1.3.7
     # via mpcontribs-portal (setup.py)
-simplejson==3.20.1
+simplejson==3.20.2
     # via
     #   bravado
     #   bravado-core
@@ -404,7 +404,6 @@ typing-extensions==4.15.0
     # via
     #   beautifulsoup4
     #   bravado
-    #   ddtrace
     #   flexcache
     #   flexparser
     #   ipython
