@@ -22,7 +22,7 @@ asttokens==3.0.0
     # via stack-data
 atlasq-tschaume==0.11.1.dev2
     # via flask-mongorest-mpcontribs
-attrs==25.3.0
+attrs==25.4.0
     # via
     #   jsonschema
     #   referencing
@@ -36,9 +36,9 @@ blinker==1.9.0
     # via mpcontribs-api (setup.py)
 boltons==25.0.0
     # via mpcontribs-api (setup.py)
-boto3==1.40.43
+boto3==1.40.46
     # via flask-mongorest-mpcontribs
-botocore==1.40.43
+botocore==1.40.46
     # via
     #   boto3
     #   s3transfer
@@ -46,7 +46,7 @@ brotli==1.1.0
     # via flask-compress
 bytecode==0.17.0
     # via ddtrace
-certifi==2025.8.3
+certifi==2025.10.5
     # via requests
 cffi==2.0.0
     # via
@@ -249,7 +249,7 @@ more-itertools==10.8.0
     # via mpcontribs-api (setup.py)
 mpmath==1.3.0
     # via sympy
-narwhals==2.6.0
+narwhals==2.7.0
     # via plotly
 nbclassic==1.3.3
     # via notebook
@@ -351,7 +351,7 @@ pygments==2.19.2
     #   ipython
     #   ipython-pygments-lexers
     #   nbconvert
-pymatgen==2025.6.14
+pymatgen==2025.10.7
     # via mpcontribs-api (setup.py)
 pymongo==4.15.2
     # via
@@ -374,7 +374,7 @@ python-dateutil==2.9.0.post0
     #   matplotlib
     #   pandas
     #   rq-scheduler
-python-json-logger==3.3.0
+python-json-logger==4.0.0
     # via jupyter-events
 python-mimeparse==2.0.0
     # via mimerender-pr36
@@ -394,7 +394,7 @@ pyzmq==27.1.0
     #   jupyter-client
     #   jupyter-server
     #   notebook
-pyzstd==0.17.0
+pyzstd==0.18.0
     # via flask-compress
 redis==6.4.0
     # via
