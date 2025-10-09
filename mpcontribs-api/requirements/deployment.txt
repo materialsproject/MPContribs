@@ -226,7 +226,7 @@ marshmallow==3.26.1
     #   mpcontribs-api (MPContribs/mpcontribs-api/setup.py)
 marshmallow-mongoengine==0.31.2
     # via flask-mongorest-mpcontribs
-matplotlib==3.10.6
+matplotlib==3.10.7
     # via
     #   -r python/requirements.txt
     #   pymatgen
