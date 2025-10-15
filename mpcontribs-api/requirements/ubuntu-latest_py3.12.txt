@@ -36,9 +36,9 @@ blinker==1.9.0
     # via mpcontribs-api (setup.py)
 boltons==25.0.0
     # via mpcontribs-api (setup.py)
-boto3==1.40.51
+boto3==1.40.53
     # via flask-mongorest-mpcontribs
-botocore==1.40.51
+botocore==1.40.53
     # via
     #   boto3
     #   s3transfer
@@ -52,7 +52,7 @@ cffi==2.0.0
     # via
     #   argon2-cffi-bindings
     #   cryptography
-charset-normalizer==3.4.3
+charset-normalizer==3.4.4
     # via requests
 click==8.3.0
     # via
@@ -278,7 +278,7 @@ notebook==6.5.7
     # via mpcontribs-api (setup.py)
 notebook-shim==0.2.4
     # via nbclassic
-numpy==2.3.3
+numpy==2.3.4
     # via
     #   contourpy
     #   matplotlib
@@ -314,7 +314,7 @@ parso==0.8.5
     # via jedi
 pexpect==4.9.0
     # via ipython
-pillow==11.3.0
+pillow==12.0.0
     # via matplotlib
 pint==0.25
     # via mpcontribs-api (setup.py)
