@@ -24,9 +24,9 @@ boltons==25.0.0
     # via
     #   mpcontribs-client
     #   mpcontribs-portal (MPContribs/mpcontribs-portal/setup.py)
-boto3==1.40.51
+boto3==1.40.53
     # via mpcontribs-portal (MPContribs/mpcontribs-portal/setup.py)
-botocore==1.40.51
+botocore==1.40.53
     # via
     #   boto3
     #   s3transfer
@@ -40,7 +40,7 @@ cachetools==6.2.1
     # via mpcontribs-client
 certifi==2025.10.5
     # via requests
-charset-normalizer==3.4.3
+charset-normalizer==3.4.4
     # via requests
 comm==0.2.3
     # via ipykernel
@@ -105,7 +105,7 @@ importlib-metadata==8.7.0
     # via opentelemetry-api
 importlib-resources==6.5.2
     # via swagger-spec-validator
-ipykernel==7.0.0
+ipykernel==7.0.1
     # via mpcontribs-portal (MPContribs/mpcontribs-portal/setup.py)
 ipython==9.6.0
     # via
@@ -239,7 +239,7 @@ parso==0.8.5
     # via jedi
 pexpect==4.9.0
     # via ipython
-pillow==11.3.0
+pillow==12.0.0
     # via matplotlib
 pint==0.25
     # via mpcontribs-client
@@ -253,7 +253,7 @@ plotly==6.3.1
     #   pymatgen
 prompt-toolkit==3.0.52
     # via ipython
-protobuf==6.32.1
+protobuf==6.33.0
     # via ddtrace
 psutil==7.1.0
     # via ipykernel
