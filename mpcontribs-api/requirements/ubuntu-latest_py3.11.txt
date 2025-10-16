@@ -66,7 +66,7 @@ cramjam==2.11.0
     # via python-snappy
 crontab==1.0.5
     # via rq-scheduler
-cryptography==46.0.2
+cryptography==46.0.3
     # via pyopenssl
 css-html-js-minify==2.5.5
     # via mpcontribs-api (setup.py)
@@ -193,7 +193,7 @@ jupyter-client==7.4.9
     #   jupyter-server
     #   nbclient
     #   notebook
-jupyter-core==5.8.1
+jupyter-core==5.9.0
     # via
     #   ipykernel
     #   jupyter-client
@@ -288,7 +288,7 @@ numpy==2.3.4
     #   pymatgen
     #   scipy
     #   spglib
-opentelemetry-api==1.37.0
+opentelemetry-api==1.38.0
     # via ddtrace
 orjson==3.11.3
     # via
@@ -332,7 +332,7 @@ prometheus-client==0.23.1
     #   notebook
 prompt-toolkit==3.0.52
     # via ipython
-protobuf==6.32.1
+protobuf==6.33.0
     # via ddtrace
 psutil==7.1.0
     # via ipykernel
