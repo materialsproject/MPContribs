@@ -14,7 +14,7 @@ argon2-cffi==25.1.0
     #   notebook
 argon2-cffi-bindings==25.1.0
     # via argon2-cffi
-arrow==1.3.0
+arrow==1.4.0
     # via isoduration
 asn1crypto==1.5.1
     # via mpcontribs-api (setup.py)
@@ -26,6 +26,8 @@ attrs==25.4.0
     # via
     #   jsonschema
     #   referencing
+backports-zstd==1.0.0
+    # via flask-compress
 beautifulsoup4==4.14.2
     # via nbconvert
 bibtexparser==1.4.3
@@ -74,7 +76,7 @@ cycler==0.12.1
     # via matplotlib
 dateparser==1.2.2
     # via mpcontribs-api (setup.py)
-ddtrace==3.16.0
+ddtrace==3.16.1
     # via mpcontribs-api (setup.py)
 debugpy==1.8.17
     # via ipykernel
@@ -110,7 +112,7 @@ flask==2.2.5
     #   flask-mongoengine-tschaume
     #   flask-rq2
     #   flask-sse
-flask-compress==1.18
+flask-compress==1.20
     # via mpcontribs-api (setup.py)
 flask-marshmallow==1.3.0
     # via mpcontribs-api (setup.py)
@@ -147,7 +149,7 @@ idna==3.11
     #   requests
 importlib-metadata==8.7.0
     # via opentelemetry-api
-iniconfig==2.1.0
+iniconfig==2.3.0
     # via pytest
 ipykernel==6.29.5
     # via
@@ -255,7 +257,7 @@ more-itertools==10.8.0
     # via mpcontribs-api (setup.py)
 mpmath==1.3.0
     # via sympy
-narwhals==2.8.0
+narwhals==2.9.0
     # via plotly
 nbclassic==1.3.3
     # via notebook
@@ -343,7 +345,7 @@ prompt-toolkit==3.0.52
     # via ipython
 protobuf==6.33.0
     # via ddtrace
-psutil==7.1.0
+psutil==7.1.1
     # via ipykernel
 psycopg2-binary==2.9.11
     # via mpcontribs-api (setup.py)
@@ -410,8 +412,6 @@ pyzmq==27.1.0
     #   jupyter-client
     #   jupyter-server
     #   notebook
-pyzstd==0.18.0
-    # via flask-compress
 redis==6.4.0
     # via
     #   flask-rq2
@@ -517,8 +517,6 @@ traitlets==5.14.3
     #   nbconvert
     #   nbformat
     #   notebook
-types-python-dateutil==2.9.0.20251008
-    # via arrow
 typing-extensions==4.15.0
     # via
     #   anyio
@@ -529,11 +527,12 @@ typing-extensions==4.15.0
     #   opentelemetry-api
     #   pint
     #   pyopenssl
-    #   pyzstd
     #   referencing
     #   spglib
 tzdata==2025.2
-    # via pandas
+    # via
+    #   arrow
+    #   pandas
 tzlocal==5.3.1
     # via dateparser
 uncertainties==3.2.3
@@ -562,7 +561,7 @@ werkzeug==3.1.3
     # via
     #   flasgger-tschaume
     #   flask
-wrapt==1.17.3
+wrapt==2.0.0
     # via ddtrace
 zipp==3.23.0
     # via importlib-metadata
