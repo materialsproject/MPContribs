@@ -3,7 +3,6 @@ import urllib
 
 from math import isnan
 from atlasq import AtlasManager, AtlasQ
-from importlib import import_module
 from flatten_dict import flatten
 from boltons.iterutils import remap
 from collections import ChainMap
