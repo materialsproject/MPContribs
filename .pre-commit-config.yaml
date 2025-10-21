@@ -8,7 +8,7 @@ exclude: |
 
 repos:
     - repo: https://github.com/pre-commit/pre-commit-hooks
-      rev: v2.3.0
+      rev: v6.0.0
       hooks:
           - id: end-of-file-fixer
           - id: trailing-whitespace
@@ -19,7 +19,7 @@ repos:
           - id: requirements-txt-fixer
 
     - repo: https://github.com/awslabs/cfn-python-lint
-      rev: v0.15.0
+      rev: v1.40.2
       hooks:
           - id: cfn-python-lint
             files: cloudformation/.*\.(json|yml|yaml)$
@@ -32,7 +32,7 @@ repos:
     #        args: [--max-line-length=99]
 
     - repo: https://github.com/ambv/black
-      rev: stable
+      rev: 25.9.0
       hooks:
       - id: black
         language_version: python3.7
