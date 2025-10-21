@@ -81,6 +81,9 @@ def enter(path, key, value):
 
 
 def valid_key(key):
+    if not key.isascii():
+        raise ValidationError(f"non-ascii character(s) in {key}")
+
     for char in key:
         if char in invalidChars:
             raise ValidationError(f"invalid character {char} in {key}")
