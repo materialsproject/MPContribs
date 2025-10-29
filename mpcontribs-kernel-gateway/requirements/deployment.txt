@@ -52,7 +52,7 @@ contourpy==1.3.3
     # via matplotlib
 cycler==0.12.1
     # via matplotlib
-ddtrace==3.17.1
+ddtrace==3.17.2
     # via -r MPContribs/mpcontribs-kernel-gateway/requirements.in
 debugpy==1.8.17
     # via ipykernel
