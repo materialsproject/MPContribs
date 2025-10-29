@@ -76,7 +76,7 @@ cycler==0.12.1
     # via matplotlib
 dateparser==1.2.2
     # via mpcontribs-api (setup.py)
-ddtrace==3.17.1
+ddtrace==3.17.2
     # via mpcontribs-api (setup.py)
 debugpy==1.8.17
     # via ipykernel
