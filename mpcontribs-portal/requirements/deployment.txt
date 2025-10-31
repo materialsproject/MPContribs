@@ -24,9 +24,9 @@ boltons==25.0.0
     # via
     #   mpcontribs-client
     #   mpcontribs-portal (MPContribs/mpcontribs-portal/setup.py)
-boto3==1.40.62
+boto3==1.40.64
     # via mpcontribs-portal (MPContribs/mpcontribs-portal/setup.py)
-botocore==1.40.62
+botocore==1.40.64
     # via
     #   boto3
     #   s3transfer
@@ -189,7 +189,7 @@ msgpack==1.1.2
     # via
     #   bravado
     #   bravado-core
-narwhals==2.10.0
+narwhals==2.10.1
     # via plotly
 nbclient==0.10.2
     # via nbconvert
@@ -415,7 +415,7 @@ urllib3==2.5.0
     #   requests
 wcwidth==0.2.14
     # via prompt-toolkit
-webcolors==24.11.1
+webcolors==25.10.0
     # via jsonschema
 webencodings==0.5.1
     # via

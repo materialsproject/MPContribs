@@ -98,7 +98,7 @@ msgpack==1.1.2
     # via
     #   bravado
     #   bravado-core
-narwhals==2.10.0
+narwhals==2.10.1
     # via plotly
 networkx==3.5
     # via pymatgen
@@ -265,5 +265,5 @@ urllib3==2.5.0
     # via requests
 wcwidth==0.2.14
     # via prompt-toolkit
-webcolors==24.11.1
+webcolors==25.10.0
     # via jsonschema
