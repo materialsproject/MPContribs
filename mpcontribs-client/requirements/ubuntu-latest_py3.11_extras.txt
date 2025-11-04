@@ -106,7 +106,7 @@ msgpack==1.1.2
     # via
     #   bravado
     #   bravado-core
-narwhals==2.10.0
+narwhals==2.10.2
     # via plotly
 networkx==3.5
     # via pymatgen
@@ -139,11 +139,11 @@ pexpect==4.9.0
     # via ipython
 pillow==12.0.0
     # via matplotlib
-pint==0.25
+pint==0.25.1
     # via mpcontribs-client (setup.py)
 platformdirs==4.5.0
     # via pint
-plotly==6.3.1
+plotly==6.4.0
     # via
     #   mpcontribs-client (setup.py)
     #   pymatgen
@@ -295,5 +295,5 @@ urllib3==2.5.0
     # via requests
 wcwidth==0.2.14
     # via prompt-toolkit
-webcolors==24.11.1
+webcolors==25.10.0
     # via jsonschema
