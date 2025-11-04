@@ -156,7 +156,7 @@ jupyterlab-pygments==0.3.0
     # via nbconvert
 jupyterlab-widgets==3.0.16
     # via ipywidgets
-kaleido==1.1.0
+kaleido==1.2.0
     # via -r MPContribs/mpcontribs-kernel-gateway/requirements.in
 kiwisolver==1.4.9
     # via matplotlib
