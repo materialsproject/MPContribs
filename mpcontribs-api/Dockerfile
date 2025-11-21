@@ -25,9 +25,11 @@ RUN wget -q https://raw.githubusercontent.com/vishnubob/wait-for-it/master/wait-
   -O mpcontribs/api/contributions/formulae.json.gz
 
 FROM base
+ARG BUILDARCH=x86_64
 COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
-COPY --from=builder /usr/lib/x86_64-linux-gnu/libsnappy* /usr/lib/x86_64-linux-gnu/
+COPY --from=builder /usr/lib/$BUILDARCH-linux-gnu/libsnappy* /usr/lib/$BUILDARCH-linux-gnu/
+
 COPY --from=builder /app/mpcontribs/api /app/mpcontribs/api
 WORKDIR /app
 RUN mkdir -p /var/log/supervisor
