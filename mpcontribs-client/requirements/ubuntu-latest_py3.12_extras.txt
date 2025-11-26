@@ -6,7 +6,7 @@
 #
 arrow==1.4.0
     # via isoduration
-asttokens==3.0.0
+asttokens==3.0.1
     # via stack-data
 attrs==25.4.0
     # via
@@ -20,15 +20,15 @@ bravado==12.0.1
     # via mpcontribs-client (setup.py)
 bravado-core==6.1.1
     # via bravado
-cachetools==6.2.1
+cachetools==6.2.2
     # via mpcontribs-client (setup.py)
-certifi==2025.10.5
+certifi==2025.11.12
     # via requests
 charset-normalizer==3.4.4
     # via requests
 contourpy==1.3.3
     # via matplotlib
-coverage[toml]==7.11.0
+coverage[toml]==7.12.0
     # via pytest-cov
 cycler==0.12.1
     # via matplotlib
@@ -64,7 +64,7 @@ importlib-resources==6.5.2
     # via swagger-spec-validator
 iniconfig==2.3.0
     # via pytest
-ipython==9.6.0
+ipython==9.7.0
     # via mpcontribs-client (setup.py)
 ipython-pygments-lexers==1.1.1
     # via ipython
@@ -106,11 +106,11 @@ msgpack==1.1.2
     # via
     #   bravado
     #   bravado-core
-narwhals==2.10.2
+narwhals==2.12.0
     # via plotly
-networkx==3.5
+networkx==3.6
     # via pymatgen
-numpy==2.3.4
+numpy==2.3.5
     # via
     #   contourpy
     #   matplotlib
@@ -139,11 +139,11 @@ pexpect==4.9.0
     # via ipython
 pillow==12.0.0
     # via matplotlib
-pint==0.25.1
+pint==0.25.2
     # via mpcontribs-client (setup.py)
 platformdirs==4.5.0
     # via pint
-plotly==6.4.0
+plotly==6.5.0
     # via
     #   mpcontribs-client (setup.py)
     #   pymatgen
@@ -174,13 +174,13 @@ pyisemail==2.0.1
     # via mpcontribs-client (setup.py)
 pymatgen==2025.10.7
     # via mpcontribs-client (setup.py)
-pymongo==4.15.3
+pymongo==4.15.4
     # via mpcontribs-client (setup.py)
 pyparsing==3.2.5
     # via
     #   bibtexparser
     #   matplotlib
-pytest==8.4.2
+pytest==9.0.1
     # via
     #   mpcontribs-client (setup.py)
     #   pytest-cov
@@ -226,7 +226,7 @@ rfc3986-validator==0.1.1
     # via jsonschema
 rfc3987-syntax==1.1.0
     # via jsonschema
-rpds-py==0.28.0
+rpds-py==0.29.0
     # via
     #   jsonschema
     #   referencing
@@ -234,7 +234,7 @@ ruamel-yaml==0.18.16
     # via
     #   monty
     #   pymatgen
-ruamel-yaml-clib==0.2.14
+ruamel-yaml-clib==0.2.15
     # via ruamel-yaml
 scipy==1.16.3
     # via pymatgen
