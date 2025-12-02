@@ -14,7 +14,7 @@ attrs==25.4.0
     # via
     #   jsonschema
     #   referencing
-beautifulsoup4==4.14.2
+beautifulsoup4==4.14.3
     # via nbconvert
 bibtexparser==1.4.3
     # via pymatgen
@@ -24,9 +24,9 @@ boltons==25.0.0
     # via
     #   mpcontribs-client
     #   mpcontribs-portal (MPContribs/mpcontribs-portal/setup.py)
-boto3==1.41.5
+boto3==1.42.1
     # via mpcontribs-portal (MPContribs/mpcontribs-portal/setup.py)
-botocore==1.41.5
+botocore==1.42.1
     # via
     #   boto3
     #   s3transfer
@@ -87,7 +87,7 @@ flexcache==0.3
     # via pint
 flexparser==0.4
     # via pint
-fonttools==4.60.1
+fonttools==4.61.0
     # via matplotlib
 fqdn==1.5.1
     # via jsonschema
@@ -189,7 +189,7 @@ msgpack==1.1.2
     # via
     #   bravado
     #   bravado-core
-narwhals==2.12.0
+narwhals==2.13.0
     # via plotly
 nbclient==0.10.2
     # via nbconvert
@@ -268,7 +268,7 @@ pyisemail==2.0.1
     # via mpcontribs-client
 pymatgen==2025.10.7
     # via mpcontribs-client
-pymongo==4.15.4
+pymongo==4.15.5
     # via mpcontribs-client
 pyparsing==3.2.5
     # via
@@ -317,7 +317,7 @@ rfc3986-validator==0.1.1
     # via jsonschema
 rfc3987-syntax==1.1.0
     # via jsonschema
-rpds-py==0.29.0
+rpds-py==0.30.0
     # via
     #   jsonschema
     #   referencing
@@ -327,7 +327,7 @@ ruamel-yaml==0.18.16
     #   pymatgen
 ruamel-yaml-clib==0.2.15
     # via ruamel-yaml
-s3transfer==0.15.0
+s3transfer==0.16.0
     # via boto3
 scipy==1.16.3
     # via
@@ -353,7 +353,7 @@ soupsieve==2.8
     # via beautifulsoup4
 spglib==2.6.0
     # via pymatgen
-sqlparse==0.5.3
+sqlparse==0.5.4
     # via django
 stack-data==0.6.3
     # via ipython

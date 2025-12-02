@@ -46,7 +46,7 @@ flexcache==0.3
     # via pint
 flexparser==0.4
     # via pint
-fonttools==4.60.1
+fonttools==4.61.0
     # via matplotlib
 fqdn==1.5.1
     # via jsonschema
@@ -98,7 +98,7 @@ msgpack==1.1.2
     # via
     #   bravado
     #   bravado-core
-narwhals==2.12.0
+narwhals==2.13.0
     # via plotly
 networkx==3.6
     # via pymatgen
@@ -154,7 +154,7 @@ pyisemail==2.0.1
     # via mpcontribs-client (MPContribs/mpcontribs-client/setup.py)
 pymatgen==2025.10.7
     # via mpcontribs-client (MPContribs/mpcontribs-client/setup.py)
-pymongo==4.15.4
+pymongo==4.15.5
     # via mpcontribs-client (MPContribs/mpcontribs-client/setup.py)
 pyparsing==3.2.5
     # via
@@ -194,7 +194,7 @@ rfc3986-validator==0.1.1
     # via jsonschema
 rfc3987-syntax==1.1.0
     # via jsonschema
-rpds-py==0.29.0
+rpds-py==0.30.0
     # via
     #   jsonschema
     #   referencing
