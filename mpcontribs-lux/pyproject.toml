@@ -1,0 +1,49 @@
+[build-system]
+requires = ["setuptools>=80.0.0","setuptools-scm>=8"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools_scm]
+root = ".."
+relative_to = "__file__"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["."]
+exclude = ["tests"]
+include = ["mpcontribs.lux"]
+
+
+[project]
+name = "mpcontribs-lux"
+dynamic = ["version"]
+description = "LUX: shed light on data published on MPContribs"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "emmet-core>0.85.0",
+    "pyarrow",
+    "pandas",
+]
+license = {text = "Modified BSD"}
+authors = [
+    {name = "The Materials Project", email="feedback@materialsproject.org"},
+]
+
+[project.urls]
+Homepage = "https://github.com/materialsproject/MPContribs"
+Documentation = "https://docs.materialsproject.org/services/mpcontribs"
+
+[project.optional-dependencies]
+test = [
+    "pre-commit",
+    "pytest",
+    "pytest-cov",
+    "pytest-xdist",
+    "pycodestyle",
+    "pydocstyle",
+    "flake8",
+    "mypy",
+    "mypy-extensions",
+]
