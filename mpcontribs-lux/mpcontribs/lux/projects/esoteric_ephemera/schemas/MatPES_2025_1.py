@@ -45,7 +45,7 @@ class MatPESTrainDoc(MLTrainDoc):
     This schema is used in the data entries for MatPES v2025.1,
     which can be downloaded either:
         - On [MPContribs](https://materialsproject-contribs.s3.amazonaws.com/index.html#MatPES_2025_1/)
-        - or on [the site]
+        - or on [the site](https://matpes.ai)
     """
 
     matpes_id: str | None = Field(None, description="MatPES identifier.")
