@@ -34,7 +34,7 @@ jobs:
       - name: Install dependencies
         run: |
           python${{ matrix.python-version }} -m pip install --upgrade "pip<25.3" build pip-tools pre-commit
-          python${{ matrix.python-version }} -m piptools compile --extra dev -o requirements.txt mpcontribs-client/setup.py mpcontribs-api/setup.py
+          python${{ matrix.python-version }} -m piptools compile --extra dev -o requirements.txt mpcontribs-client/pyproject.toml mpcontribs-api/pyproject.toml
           python${{ matrix.python-version }} -m pip install -r requirements.txt
           cd mpcontribs-api && python${{ matrix.python-version }} -m pip install --no-deps .
       - name: Set SSL_CERT_FILE (Linux)
