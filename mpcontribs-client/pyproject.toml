@@ -1,0 +1,64 @@
+[build-system]
+requires = ["setuptools>=80.0.0","setuptools-scm>=8"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools_scm]
+root = ".."
+relative_to = "__file__"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["."]
+exclude = ["tests"]
+include = ["mpcontribs.client"]
+
+[project]
+name = "mpcontribs-client"
+dynamic = ["version"]
+requires-python = ">=3.11"
+description="Client library for MPContribs API"
+license = {text = "MIT"}
+authors = [
+    {name = "Patrick Huck", email = "phuck@lbl.gov"},
+    {name = "The Materials Project", email="feedback@materialsproject.org"},
+]
+dependencies = [
+    "numpy",
+    "boltons",
+    "bravado",
+    "filetype",
+    "flatten-dict",
+    "ipython",
+    "json2html",
+    "pandas",
+    "pint",
+    "plotly",
+    "pyIsEmail",
+    "pymatgen",
+    "pymongo",
+    "requests-futures",
+    "swagger-spec-validator",
+    "tqdm",
+    "ujson",
+    "semantic-version",
+    "cachetools",
+]
+
+[project.urls]
+Homepage = "https://github.com/materialsproject/MPContribs"
+Documentation = "https://docs.materialsproject.org/services/mpcontribs"
+
+[project.optional-dependencies]
+dev = [
+    "flake8",
+    "pytest",
+    "pytest-flake8",
+    "pytest-pycodestyle",
+    "pytest-cov",
+    "py",
+]
+all = [
+    "mpcontribs-client[dev]"
+]
