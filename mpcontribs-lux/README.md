@@ -1,4 +1,4 @@
-## MPContribs-LUX
+## <span style="color:rgb(18, 180, 163)">MPContribs</span> <span style="color:goldenrod">LUX</span>
 
 <span style="color:goldenrod"><i><b>Ego sum lux datorum</b></i></span>.
 
