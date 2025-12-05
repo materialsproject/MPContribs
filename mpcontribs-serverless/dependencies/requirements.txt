@@ -55,7 +55,7 @@ flatten-dict==0.4.2
     # via mpcontribs-client
 fonttools==4.43.0
     # via matplotlib
-future==0.18.3
+future==1.0.0
     # via uncertainties
 idna==3.7
     # via
