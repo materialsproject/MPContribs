@@ -1,0 +1,51 @@
+test_name: authenticated retrieval of contributions
+
+stages:
+  - name: get a contribution with all fields
+    request:
+      url: "{tavern.env_vars.MP_CONTRIBS_API_URL}/contributions/"
+      method: GET
+      headers:
+        accept: application/json
+        X-API-KEY: "{tavern.env_vars.MP_API_KEY}"
+      params:
+        per_page: 1
+        _limit: 1
+        _fields: _all
+    response:
+      strict: false
+      status_code: 200
+      save:
+        json:
+          contrib_auth: "data[0]"
+
+  - name: retrieve single contribution with default fields
+    request:
+      url: "{tavern.env_vars.MP_CONTRIBS_API_URL}/contributions/{contrib_auth.id:s}/"
+      method: GET
+      headers:
+        accept: application/json
+        X-API-KEY: "{tavern.env_vars.MP_API_KEY}"
+    response:
+      status_code: 200
+      json:
+        id: "{contrib_auth.id}"
+        project: "{contrib_auth.project}"
+        identifier: "{contrib_auth.identifier}"
+        formula: "{contrib_auth.formula}"
+        is_public: !bool "{contrib_auth.is_public}"
+        last_modified: "{contrib_auth.last_modified}"
+        needs_build: !bool "{contrib_auth.needs_build}"
+
+  - name: retrieve single contribution with all fields
+    request:
+      url: "{tavern.env_vars.MP_CONTRIBS_API_URL}/contributions/{contrib_auth.id:s}/"
+      params:
+        _fields: _all
+      method: GET
+      headers:
+        accept: application/json
+        X-API-KEY: "{tavern.env_vars.MP_API_KEY}"
+    response:
+      status_code: 200
+      json: !force_original_structure "{contrib_auth}"
