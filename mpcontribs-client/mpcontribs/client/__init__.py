@@ -59,7 +59,6 @@ from tempfile import gettempdir
 from plotly.express._chart_types import line as line_chart
 from cachetools import cached, LRUCache
 from cachetools.keys import hashkey
-from pymatgen.core import SETTINGS
 
 RETRIES = 3
 MAX_WORKERS = 3
@@ -88,6 +87,7 @@ VALID_URLS |= {f"http://localhost.{n}-api.materialsproject.org" for n in SUBDOMA
 SUPPORTED_FILETYPES = (Gz, Jpeg, Png, Gif, Tiff)
 SUPPORTED_MIMES = [t().mime for t in SUPPORTED_FILETYPES]
 DEFAULT_DOWNLOAD_DIR = Path.home() / "mpcontribs-downloads"
+VALID_API_KEY_ALIASES = ["MPCONTRIBS_API_KEY","MP_API_KEY","PMG_MAPI_KEY"]
 
 j2h = Json2Html()
 pd.options.plotting.backend = "plotly"
@@ -892,7 +892,17 @@ class Client(SwaggerClient):
             host = os.environ.get("MPCONTRIBS_API_HOST", DEFAULT_HOST)
 
         if not apikey:
-            apikey = os.environ.get("MPCONTRIBS_API_KEY", SETTINGS.get("PMG_MAPI_KEY"))
+            try:
+                apikey = next(
+                    os.environ.get(kalias)
+                    for kalias in VALID_API_KEY_ALIASES
+                    if kalias is not None
+                )
+            except StopIteration:
+                from pymatgen.core import SETTINGS
+
+                apikey = SETTINGS.get("PMG_MAPI_KEY")
+                
             if apikey and len(apikey) != 32:
                 raise MPContribsClientError(f"Invalid API key: {apikey}")
 
