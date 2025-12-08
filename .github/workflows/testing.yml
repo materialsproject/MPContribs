@@ -58,6 +58,7 @@ jobs:
           python${{ matrix.python-version }} -m pycodestyle --max-line-length 100 .
           python${{ matrix.python-version }} -m pytest -v -s --cov=mpcontribs/client --cov-report=term-missing --cov-report=xml --ignore=bravado
           python${{ matrix.python-version }} -m build --outdir ../dist
+          cd ..
 
       - name: Install dependencies for lux
         run: |
