@@ -1,0 +1,104 @@
+[build-system]
+requires = ["setuptools>=80.0.0","setuptools-scm>=8"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools_scm]
+root = ".."
+relative_to = "__file__"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["."]
+exclude = ["scripts","supervisord"]
+include = ["mpcontribs.api"]
+
+[project]
+name = "mpcontribs-api"
+dynamic = ["version"]
+requires-python = ">=3.11"
+description="API for community-contributed Materials Project data"
+license = {text = "MIT"}
+authors = [
+    {name = "Patrick Huck", email = "phuck@lbl.gov"},
+    {name = "The Materials Project", email="feedback@materialsproject.org"},
+]
+dependencies = [
+    "numpy",
+    "apispec<6",
+    "asn1crypto",
+    "blinker",
+    "boltons",
+    "css-html-js-minify",
+    "dateparser",
+    "ddtrace",
+    "dnspython",
+    "filetype",
+    "flasgger-tschaume>=0.9.7",
+    "flask-compress",
+    "flask-marshmallow",
+    "flask-mongorest-mpcontribs>=3.2.1",
+    "Flask-RQ2",
+    "gunicorn[gevent]",
+    "jinja2",
+    "json2html",
+    "marshmallow<4",
+    "more-itertools",
+    "nbformat",
+    "notebook<7",
+    "pint>=0.24",
+    "psycopg2-binary",
+    "pymatgen",
+    "pyopenssl",
+    "python-snappy",
+    "rq<=2.3.2",  # see https://github.com/rq/Flask-RQ2/issues/620
+    "semantic-version",
+    "supervisor",
+    "setproctitle",
+    "uncertainties",
+    "websocket_client",
+    "zstandard",
+]
+
+[project.urls]
+Homepage = "https://github.com/materialsproject/MPContribs"
+Documentation = "https://docs.materialsproject.org/services/mpcontribs"
+
+[project.optional-dependencies]
+dev = [
+    "flake8",
+    "pytest",
+    "pytest-flake8",
+    "pytest-pycodestyle",
+    "pytest-xdist",
+]
+all = [
+    "mpcontribs-client[dev]"
+]
+
+[tool.pytest]
+markers = [
+    "base: basic resource testing",
+    "extra: all extra views",
+]
+
+[tool.pycodestyle]
+count = true
+ignore = ["E121","E123","E126","E133","E226","E241","E242","E704","W503","W504","W505","E741","W605"]
+max-line-length = 120
+statistics = true
+exclude = ["flasgger","flask-mongorest"]
+
+[tool.flake8]
+exclude = [".git","__pycache__","tests","flasgger","flask-mongorest"]
+extend-ignore = ["E741",]
+max-line-length = 120
+
+[tool.pydocstyle]
+ignore = ["D105","D2","D4"]
+
+[tool.mypy]
+ignore_missing_imports = true
+namespace_packages = true
+python_version = 3.11
