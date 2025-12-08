@@ -11,6 +11,7 @@ Once a staff member from MP reviews and approves your data schema, your receive 
 
 To expedite the process of review, follow [these instructions](https://docs.github.com/en/repositories/creating-and-managing-repositories/duplicating-a-repository) to make a private copy (not a fork, which cannot be private) of the `MPContribs` repo.
 Suppose you name your new repository `PrivateMPContribs` and your username is `<username>`, you would run these commands from a terminal:
+
 ```console
 git clone --bare https://github.com/materialsproject/MPContribs.git
 cd MPContribs
@@ -26,6 +27,7 @@ When you're ready to make your data public, you will also have to make a public 
 <span style="color:red"><b>But my CSV/JSON/YAML/etc. file isn't complicated. Why do I need to upload a schema?</b></span>
 
 Schemas are important for ensuring accessibility, interoperability, and reproducibility, and for ensuring that you are fully aware of possible errors in your dataset.
+
 If you are not comfortable mimicking the example `pydantic` schemas in `mpcontribs.lux.projects.examples`, you can either use the schema autogeneration features in `mpcontribs.lux.autogen`:
 
 ```py
@@ -37,3 +39,6 @@ print(pydantic_model.model_fields)
 ```
 
 ...or reach out to the maintainers!
+
+The test suite for MPContribs-lux will automatically test your `pydantic` models for arrow/parquet compatibility using the [arrowize](https://github.com/materialsproject/emmet/blob/74194bbf8c7b32ce15141bb1c9ee0527a0fc6c45/emmet-core/emmet/core/arrow.py#L40) utility from `emmet-core` (MP's production data model and data pipeline repository).
+Schemas submitted to MPContribs-lux do not necessarily need to be parquet/arrow compatlible, the `@arrow_incompatible` decorator from `emmet-core`'s [utils](https://github.com/materialsproject/emmet/blob/74194bbf8c7b32ce15141bb1c9ee0527a0fc6c45/emmet-core/emmet/core/utils.py#L104) module can be used to mark a `pydantic` model to be skipped during arrow compatibility testing.
