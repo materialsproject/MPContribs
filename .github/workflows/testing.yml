@@ -59,6 +59,18 @@ jobs:
           python${{ matrix.python-version }} -m pytest -v -s --cov=mpcontribs/client --cov-report=term-missing --cov-report=xml --ignore=bravado
           python${{ matrix.python-version }} -m build --outdir ../dist
 
+      - name: Install dependencies for lux
+        run: |
+          python${{ matrix.python-version }} -m pip install --upgrade pip
+          pip install -r requirements/requirements-${{ matrix.os }}_py${{ matrix.python-version }}_extras.txt
+
+      - name: Test lux with pytest
+        run: |
+          cd mpcontribs-lux
+          pip install -e .
+          pytest -n auto -x --cov=mpcontribs/lux --cov-report=xml
+
+
   auto-gen-release:
     needs:
       - test
