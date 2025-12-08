@@ -2,9 +2,9 @@
 
 <span style="color:goldenrod"><i><b>Ego sum lux datorum</b></i></span>.
 
-MPContribs-lux is a package which <it>sheds light</it> on data stored on the [Materials Project's AWS S3 OpenData bucket](https://materialsproject-contribs.s3.amazonaws.com/index.html#) by providing annotated schemas and optionally analysis tools to better explore user-submitted data.
+MPContribs-lux is a package which <it>sheds light</it> on data stored on the [Materials Project's AWS S3 MPContribs bucket](https://materialsproject-contribs.s3.amazonaws.com/index.html#) by providing annotated schemas and optionally analysis tools to better explore user-submitted data.
 
-Adding a schema to this database is a <span style="color:red"><b>pre-requisite</b></span> for obtaining permission/IAM credentials for uploading data to MP's OpenData Bucket.
+Adding a schema to this database is a <span style="color:red"><b>pre-requisite</b></span> for obtaining permission/IAM credentials for uploading data to MP's MPContribs Bucket.
 Once a staff member from MP reviews and approves your data schema, your receive IAM role will be granted/updated (as appropriate).
 
 <span style="color:red"><b>What if I don't want my schemas / data made public yet?</b></span>
@@ -26,4 +26,14 @@ When you're ready to make your data public, you will also have to make a public 
 <span style="color:red"><b>But my CSV/JSON/YAML/etc. file isn't complicated. Why do I need to upload a schema?</b></span>
 
 Schemas are important for ensuring accessibility, interoperability, and reproducibility, and for ensuring that you are fully aware of possible errors in your dataset.
-If you are not comfortable mimicking the example `pydantic` schemas in `mpcontribs.lux.projects.examples`
+If you are not comfortable mimicking the example `pydantic` schemas in `mpcontribs.lux.projects.examples`, you can either use the schema autogeneration features in `mpcontribs.lux.autogen`:
+
+```py
+from mpcontribs.lux.autogen import SchemaGenerator
+
+schema_gen = SchemaGenerator(file_name = "/path/to/some/csv/or/json/file")
+pydantic_model = schema_gen.pydantic_schema
+print(pydantic_model.model_fields)
+```
+
+...or reach out to the maintainers!
