@@ -63,7 +63,7 @@ jobs:
           cd mpcontribs-client
           python${{ matrix.python-version }} -m flake8 --max-line-length 100
           python${{ matrix.python-version }} -m pycodestyle --max-line-length 100 .
-          python${{ matrix.python-version }} -m pytest -v -s --cov=mpcontribs/client --cov-report=term-missing --cov-report=xml --ignore=bravado
+          python${{ matrix.python-version }} -m pytest -n auto -v -s --cov=mpcontribs/client --cov-report=term-missing --cov-report=xml --ignore=bravado
           python${{ matrix.python-version }} -m build --outdir ../dist
 
       - name: Install lux and test with pytest
