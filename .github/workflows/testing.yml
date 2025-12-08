@@ -62,7 +62,7 @@ jobs:
       - name: Install dependencies for lux
         run: |
           python${{ matrix.python-version }} -m pip install --upgrade pip
-          pip install -r requirements/requirements-${{ matrix.os }}_py${{ matrix.python-version }}_extras.txt
+          pip install -r mpcontribs-lux/requirements/requirements-${{ matrix.os }}_py${{ matrix.python-version }}_extras.txt
 
       - name: Run pre-commit for lux
         run: |
