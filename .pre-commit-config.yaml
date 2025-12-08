@@ -14,7 +14,6 @@ repos:
       - id: trailing-whitespace
       - id: check-added-large-files
       - id: check-merge-conflict
-      - id: fix-encoding-pragma
       - id: forbid-new-submodules
       - id: requirements-txt-fixer
 

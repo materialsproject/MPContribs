@@ -64,11 +64,17 @@ jobs:
           python${{ matrix.python-version }} -m pip install --upgrade pip
           pip install -r requirements/requirements-${{ matrix.os }}_py${{ matrix.python-version }}_extras.txt
 
+      - name: Run pre-commit for lux
+        run: |
+          python${{ matrix.python-version }} -m pip install pre-commit
+          pre-commit install
+          pre-commit run --files mpcontribs-lux/mpcontribs/lux/*
+
       - name: Test lux with pytest
         run: |
           cd mpcontribs-lux
-          pip install -e .
-          pytest -n auto -x --cov=mpcontribs/lux --cov-report=xml
+          python${{ matrix.python-version }} -m pip install -e .
+          python${{ matrix.python-version }} -m pytest -n auto -x --cov=mpcontribs/lux --cov-report=xml
 
 
   auto-gen-release:
