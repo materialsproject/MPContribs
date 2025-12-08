@@ -7,6 +7,7 @@ import tempfile
 
 import pytest
 
+
 @pytest.fixture(autouse=True)
 def test_dir():
     """Same as clean_dir but is fresh for every test"""
@@ -17,6 +18,7 @@ def test_dir():
     yield
     os.chdir(old_cwd)
     shutil.rmtree(new_path)
+
 
 @pytest.fixture(scope="session")
 def test_data_dir() -> Path:

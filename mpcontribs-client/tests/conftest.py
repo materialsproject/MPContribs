@@ -6,7 +6,7 @@ try:
 except ImportError:
     create_app = None
 
-os.environ['MPCONTRIBS_DB_NAME'] = 'mpcontribs-test'
+os.environ["MPCONTRIBS_DB_NAME"] = "mpcontribs-test"
 
 
 @pytest.fixture()

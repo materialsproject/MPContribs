@@ -2,8 +2,12 @@ exclude: |
   (?x)(
       ^mpcontribs-portal/mpcontribs/users/|
       ^binder/|
+      ^mpcontribs-api/|
       ^mpcontribs-ingester/|
-      ^mpcontribs-api/mpcontribs/api/redox_thermo_csp/
+      ^mpcontribs-io/|
+      ^mpcontribs-kernel-gateway/|
+      ^mpcontribs-portal/|
+      ^mpcontribs-serverless/
   )
 
 repos:
@@ -34,7 +38,7 @@ repos:
     rev: 25.9.0
     hooks:
       - id: black
-      
+
   - repo: https://github.com/kynan/nbstripout
     rev: 0.8.1
     hooks:

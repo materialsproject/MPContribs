@@ -1,7 +1,11 @@
 """Define schemas for the MP-ALOE 2025 dataset."""
+
 from pydantic import Field
 
-from mpcontribs.lux.projects.esoteric_ephemera.schemas.MatPES_2025_1 import MatPESTrainDoc
+from mpcontribs.lux.projects.esoteric_ephemera.schemas.MatPES_2025_1 import (
+    MatPESTrainDoc,
+)
+
 
 class MPAloeTrainDoc(MatPESTrainDoc):
     """Schematize MP-ALOE data."""

@@ -6,6 +6,7 @@ from emmet.core.types.typing import IdentifierType
 
 from mpcontribs.lux.projects.esoteric_ephemera.schemas.base import MLTrainDoc
 
+
 class MatPESProvenanceDoc(BaseModel):
     """Information regarding the origins of a MatPES structure."""
 

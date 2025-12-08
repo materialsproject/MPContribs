@@ -21,6 +21,7 @@ if TYPE_CHECKING:
 
     from emmet.core.tasks import TaskDoc
 
+
 class MLTrainDoc(StructureMetadata, extra="allow"):  # type: ignore[call-arg]
     """Generic schema for ML training data."""
 
