@@ -47,7 +47,7 @@ max-line-length = 120
 
 [tool.tox.pytest]
 flake8-max-line-length = 120
-python_files = test_*.py
+python_files = ["test_*.py",]
 
 [tool.tox.coverage.paths]
 source = "mpcontribs/io"
