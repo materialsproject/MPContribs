@@ -33,7 +33,7 @@ Set the environment variable `SSL_CERT_FILE` to `$(python -m certifi)`.
 OverflowError: timeout value is too large
 ```
 
-Install the bravado fork ([PR](https://github.com/Yelp/bravado/pull/472)) manually via  
+Install the bravado fork ([PR](https://github.com/Yelp/bravado/pull/472)) manually via
 ```
 pip install "bravado[fido] @ git+https://github.com/tschaume/bravado@9ce06f2df7118e16af4a3d3fdc21ccfeedc5cd50#egg=bravado-11.0.3"
 ```

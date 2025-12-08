@@ -6,6 +6,7 @@ from emmet.core.types.typing import IdentifierType
 
 from mpcontribs.lux.projects.esoteric_ephemera.schemas.base import MLTrainDoc
 
+
 class MPtrjProvenance(BaseModel):
     """Metadata for MPtrj entries."""
 

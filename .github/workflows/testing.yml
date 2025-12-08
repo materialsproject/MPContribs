@@ -33,7 +33,7 @@ jobs:
           cache: "pip"
       - name: Install dependencies
         run: |
-          python${{ matrix.python-version }} -m pip install --upgrade "pip<25.3" build pip-tools
+          python${{ matrix.python-version }} -m pip install --upgrade "pip<25.3" build pip-tools pre-commit
           python${{ matrix.python-version }} -m piptools compile --extra dev -o requirements.txt mpcontribs-client/setup.py mpcontribs-api/setup.py
           python${{ matrix.python-version }} -m pip install -r requirements.txt
           cd mpcontribs-api && python${{ matrix.python-version }} -m pip install --no-deps .
@@ -47,6 +47,13 @@ jobs:
         run: |
           $env:SSL_CERT_FILE=$(python${{ matrix.python-version }} -m certifi)
           echo "SSL_CERT_FILE=$env:SSL_CERT_FILE" >> $GITHUB_ENV
+
+      - name: Run pre-commit
+        run: |
+          python${{ matrix.python-version }} -m pip install pre-commit
+          pre-commit install
+          pre-commit run --all-files
+
       - name: Test Client and build
         env:
           MPCONTRIBS_API_KEY: ${{ secrets.MPCONTRIBS_API_KEY }}
@@ -58,22 +65,11 @@ jobs:
           python${{ matrix.python-version }} -m pycodestyle --max-line-length 100 .
           python${{ matrix.python-version }} -m pytest -v -s --cov=mpcontribs/client --cov-report=term-missing --cov-report=xml --ignore=bravado
           python${{ matrix.python-version }} -m build --outdir ../dist
-          cd ..
 
-      - name: Install dependencies for lux
-        run: |
-          python${{ matrix.python-version }} -m pip install --upgrade pip
-          pip install -r mpcontribs-lux/requirements/requirements-${{ matrix.os }}_py${{ matrix.python-version }}_extras.txt
-
-      - name: Run pre-commit for lux
-        run: |
-          python${{ matrix.python-version }} -m pip install pre-commit
-          pre-commit install
-          pre-commit run --files mpcontribs-lux/mpcontribs/lux/*
-
-      - name: Test lux with pytest
+      - name: Install lux and test with pytest
         run: |
           cd mpcontribs-lux
+          python${{ matrix.python-version }} -m pip install -r requirements/requirements-${{ matrix.os }}_py${{ matrix.python-version }}_extras.txt
           python${{ matrix.python-version }} -m pip install -e .
           python${{ matrix.python-version }} -m pytest -n auto -x --cov=mpcontribs/lux --cov-report=xml
 

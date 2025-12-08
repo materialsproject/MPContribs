@@ -10,10 +10,14 @@ import pytest
 from emmet.core.math import matrix_3x3_to_voigt
 from emmet.core.tasks import TaskDoc
 
+
 @pytest.fixture(scope="module")
 def task_doc(test_data_dir) -> TaskDoc:
-    with gzip.open(test_data_dir / "by_user" / "esoteric_ephemera" / "r2scan_task.json.gz","rt") as f:
+    with gzip.open(
+        test_data_dir / "by_user" / "esoteric_ephemera" / "r2scan_task.json.gz", "rt"
+    ) as f:
         return TaskDoc(**json.load(f))
+
 
 def test_matpes_doc_from_task_doc(test_dir, task_doc):
 
