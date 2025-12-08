@@ -22,7 +22,7 @@ description = "LUX: shed light on data published on MPContribs"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-    "emmet-core>0.85.0",
+    "emmet-core>0.86.0",
     "pyarrow",
     "pandas",
 ]
