@@ -12,53 +12,40 @@ include-package-data = true
 [tool.setuptools.packages.find]
 where = ["."]
 exclude = ["scripts","supervisord"]
-include = ["mpcontribs.api"]
+include = ["mpcontribs.portal", "mpcontribs.users"]
 
 [project]
-name = "mpcontribs-api"
+name = "mpcontribs-portal"
 dynamic = ["version"]
 requires-python = ">=3.11"
-description="API for community-contributed Materials Project data"
+description="MPContribs Portal"
 license = {text = "MIT"}
 authors = [
     {name = "Patrick Huck", email = "phuck@lbl.gov"},
     {name = "The Materials Project", email="feedback@materialsproject.org"},
 ]
 dependencies = [
-    "numpy",
-    "apispec<6",
-    "asn1crypto",
-    "blinker",
     "boltons",
-    "css-html-js-minify",
-    "dateparser",
+    "boto3",
     "ddtrace",
-    "dnspython",
-    "filetype",
-    "flasgger-tschaume>=0.9.7",
-    "flask-compress",
-    "flask-marshmallow",
-    "flask-mongorest-mpcontribs>=3.2.1",
-    "Flask-RQ2",
+    "Django>=3.2,<4.0",
+    "django-extensions",
+    "django-settings-file",
+    "django-webpack4-loader",
+    "fastnumbers",
     "gunicorn[gevent]",
+    "ipykernel",
+    "ipython-genutils",
     "jinja2",
     "json2html",
-    "marshmallow<4",
-    "more-itertools",
+    "monty",
+    "mpcontribs-client",
+    "nbconvert",
     "nbformat",
-    "notebook<7",
-    "pint>=0.24",
-    "psycopg2-binary",
-    "pymatgen",
-    "pyopenssl",
-    "python-snappy",
-    "rq<=2.3.2",  # see https://github.com/rq/Flask-RQ2/issues/620
-    "semantic-version",
-    "supervisor",
+    "redis",
+    "scipy",
     "setproctitle",
-    "uncertainties",
-    "websocket_client",
-    "zstandard",
+    "whitenoise",
 ]
 
 [project.urls]
@@ -74,7 +61,7 @@ dev = [
     "pytest-xdist",
 ]
 all = [
-    "mpcontribs-api[dev]"
+    "mpcontribs-portal[dev]"
 ]
 
 [tool.pytest]
@@ -88,7 +75,7 @@ count = true
 ignore = ["E121","E123","E126","E133","E226","E241","E242","E704","W503","W504","W505","E741","W605"]
 max-line-length = 120
 statistics = true
-exclude = ["flasgger","flask-mongorest"]
+exclude = ["supervisord","notebooks"]
 
 [tool.flake8]
 exclude = [".git","__pycache__","tests","flasgger","flask-mongorest"]
