@@ -15,7 +15,7 @@ exclude = ["scripts","supervisord"]
 include = ["mpcontribs.io.core","mpcontribs.io.archie"]
 
 [project]
-name = "mpcontribs-api"
+name = "mpcontribs-io"
 dynamic = ["version"]
 requires-python = ">=3.11"
 description="MPContribs I/O Library"
