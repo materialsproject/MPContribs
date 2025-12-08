@@ -20,7 +20,7 @@ from math import isclose
 from semantic_version import Version
 from requests.exceptions import RequestException
 from bson.objectid import ObjectId
-from typing import Union, Type, Optional
+from typing import Type
 from tqdm.auto import tqdm
 from hashlib import md5
 from pathlib import Path
@@ -478,7 +478,7 @@ class Attachment(dict):
 
         return unpacked
 
-    def write(self, outdir: Optional[Union[str, Path]] = None) -> Path:
+    def write(self, outdir: str | Path | None = None) -> Path:
         """Write attachment to file using its name
 
         Args:
@@ -490,7 +490,7 @@ class Attachment(dict):
         path.write_bytes(content)
         return path
 
-    def display(self, outdir: Optional[Union[str, Path]] = None):
+    def display(self, outdir: str | Path | None = None):
         """Display Image/FileLink for attachment if in IPython/Jupyter
 
         Args:
@@ -519,7 +519,7 @@ class Attachment(dict):
         return self["name"]
 
     @classmethod
-    def from_data(cls, data: Union[list, dict], name: str = "attachment"):
+    def from_data(cls, data: list | dict, name: str = "attachment"):
         """Construct attachment from data dict or list
 
         Args:
@@ -539,7 +539,7 @@ class Attachment(dict):
         )
 
     @classmethod
-    def from_file(cls, path: Union[Path, str]):
+    def from_file(cls, path: str | Path):
         """Construct attachment from file
 
         Args:
@@ -616,7 +616,7 @@ class Attachments(list):
         return attachments
 
     @classmethod
-    def from_data(cls, data: Union[list, dict], prefix: str = "attachment"):
+    def from_data(cls, data: list | dict, prefix: str = "attachment"):
         """Construct list of attachments from data dict or list
 
         Args:
@@ -870,11 +870,11 @@ class Client(SwaggerClient):
 
     def __init__(
         self,
-        apikey: Optional[str] = None,
-        headers: Optional[dict] = None,
-        host: Optional[str] = None,
-        project: Optional[str] = None,
-        session: Optional[requests.Session] = None,
+        apikey: str | None = None,
+        headers: dict | None = None,
+        host: str | None = None,
+        project: str | None = None,
+        session: requests.Session | None = None,
     ):
         """Initialize the client - only reloads API spec from server as needed
 
@@ -1056,7 +1056,7 @@ class Client(SwaggerClient):
         params: dict,
         rel_url: str = "contributions",
         op: str = "query",
-        data: Optional[dict] = None,
+        data: dict | None = None,
     ):
         rname = rel_url.split("/", 1)[0]
         resource = self.swagger_spec.resources[rname]
@@ -1075,7 +1075,7 @@ class Client(SwaggerClient):
 
     def available_query_params(
         self,
-        startswith: Optional[tuple] = None,
+        startswith: tuple | None = None,
         resource: str = "contributions",
     ) -> list:
         resources = self.swagger_spec.resources
@@ -1093,7 +1093,7 @@ class Client(SwaggerClient):
         return [param for param in params if param.startswith(startswith)]
 
     def get_project(
-        self, name: Optional[str] = None, fields: Optional[list] = None
+        self, name: str | None = None, fields: list | None = None
     ) -> Dict:
         """Retrieve a project entry
 
@@ -1112,10 +1112,10 @@ class Client(SwaggerClient):
 
     def query_projects(
         self,
-        query: Optional[dict] = None,
-        term: Optional[str] = None,
-        fields: Optional[list] = None,
-        sort: Optional[str] = None,
+        query: dict | None = None,
+        term: str | None = None,
+        fields: list | None = None,
+        sort: str | None = None,
         timeout: int = -1,
     ) -> list[dict]:
         """Query projects by query and/or term (Atlas Search)
@@ -1219,7 +1219,7 @@ class Client(SwaggerClient):
         else:
             raise MPContribsClientError(resp)
 
-    def update_project(self, update: dict, name: Optional[str] = None):
+    def update_project(self, update: dict, name: str | None = None):
         """Update project info
 
         Args:
@@ -1285,7 +1285,7 @@ class Client(SwaggerClient):
         else:
             raise MPContribsClientError(error)
 
-    def delete_project(self, name: Optional[str] = None):
+    def delete_project(self, name: str | None = None):
         """Delete a project
 
         Args:
@@ -1304,7 +1304,7 @@ class Client(SwaggerClient):
         if resp and "error" in resp:
             raise MPContribsClientError(resp["error"])
 
-    def get_contribution(self, cid: str, fields: Optional[list] = None) -> Dict:
+    def get_contribution(self, cid: str, fields: list | None = None) -> Dict:
         """Retrieve a contribution
 
         Args:
@@ -1417,7 +1417,7 @@ class Client(SwaggerClient):
         )
 
     def init_columns(
-        self, columns: Optional[dict] = None, name: Optional[str] = None
+        self, columns: dict | None = None, name: str | None = None
     ) -> dict:
         """initialize columns for a project to set their order and desired units
 
@@ -1575,7 +1575,7 @@ class Client(SwaggerClient):
 
         return self.projects.updateProjectByName(pk=name, project=payload).result()
 
-    def delete_contributions(self, query: Optional[dict] = None, timeout: int = -1):
+    def delete_contributions(self, query: dict | None = None, timeout: int = -1):
         """Remove all contributions for a query
 
         Args:
@@ -1621,7 +1621,7 @@ class Client(SwaggerClient):
 
     def get_totals(
         self,
-        query: Optional[dict] = None,
+        query: dict | None = None,
         timeout: int = -1,
         resource: str = "contributions",
         op: str = "query",
@@ -1662,11 +1662,11 @@ class Client(SwaggerClient):
 
         return result["total_count"], result["total_pages"]
 
-    def count(self, query: Optional[dict] = None) -> int:
+    def count(self, query: dict | None = None) -> int:
         """shortcut for get_totals()"""
         return self.get_totals(query=query)[0]
 
-    def get_unique_identifiers_flags(self, query: Optional[dict] = None) -> dict:
+    def get_unique_identifiers_flags(self, query: dict | None = None) -> dict:
         """Retrieve values for `unique_identifiers` flags.
 
         See `client.available_query_params(resource="projects")` for available query parameters.
@@ -1686,10 +1686,10 @@ class Client(SwaggerClient):
 
     def get_all_ids(
         self,
-        query: Optional[dict] = None,
-        include: Optional[list[str]] = None,
+        query: dict | None = None,
+        include: list[str] | None = None,
         timeout: int = -1,
-        data_id_fields: Optional[dict] = None,
+        data_id_fields: dict | None = None,
         fmt: str = "sets",
         op: str = "query",
     ) -> dict:
@@ -1844,9 +1844,9 @@ class Client(SwaggerClient):
 
     def query_contributions(
         self,
-        query: Optional[dict] = None,
-        fields: Optional[list] = None,
-        sort: Optional[str] = None,
+        query: dict | None = None,
+        fields: list | None = None,
+        sort: str | None = None,
         paginate: bool = False,
         timeout: int = -1,
     ) -> dict:
@@ -1900,7 +1900,7 @@ class Client(SwaggerClient):
         return ret
 
     def update_contributions(
-        self, data: dict, query: Optional[dict] = None, timeout: int = -1
+        self, data: dict, query: dict | None = None, timeout: int = -1
     ) -> dict:
         """Apply the same update to all contributions in a project (matching query)
 
@@ -1973,7 +1973,7 @@ class Client(SwaggerClient):
         return {"updated": updated, "total": total, "seconds_elapsed": toc - tic}
 
     def make_public(
-        self, query: Optional[dict] = None, recursive: bool = False, timeout: int = -1
+        self, query: dict | None = None, recursive: bool = False, timeout: int = -1
     ) -> dict:
         """Publish a project and optionally its contributions
 
@@ -1986,7 +1986,7 @@ class Client(SwaggerClient):
         )
 
     def make_private(
-        self, query: Optional[dict] = None, recursive: bool = False, timeout: int = -1
+        self, query: dict | None = None, recursive: bool = False, timeout: int = -1
     ) -> dict:
         """Make a project and optionally its contributions private
 
@@ -2001,7 +2001,7 @@ class Client(SwaggerClient):
     def _set_is_public(
         self,
         is_public: bool,
-        query: Optional[dict] = None,
+        query: dict | None = None,
         recursive: bool = False,
         timeout: int = -1,
     ) -> dict:
@@ -2434,10 +2434,10 @@ class Client(SwaggerClient):
 
     def download_contributions(
         self,
-        query: Optional[dict] = None,
-        outdir: Union[str, Path] = DEFAULT_DOWNLOAD_DIR,
+        query: dict | None = None,
+        outdir: str | Path = DEFAULT_DOWNLOAD_DIR,
         overwrite: bool = False,
-        include: Optional[list[str]] = None,
+        include: list[str] | None = None,
         timeout: int = -1,
     ) -> list:
         """Download a list of contributions as .json.gz file(s)
@@ -2536,7 +2536,7 @@ class Client(SwaggerClient):
     def download_structures(
         self,
         ids: list[str],
-        outdir: Union[str, Path] = DEFAULT_DOWNLOAD_DIR,
+        outdir: str | Path = DEFAULT_DOWNLOAD_DIR,
         overwrite: bool = False,
         timeout: int = -1,
         fmt: str = "json",
@@ -2565,7 +2565,7 @@ class Client(SwaggerClient):
     def download_tables(
         self,
         ids: list[str],
-        outdir: Union[str, Path] = DEFAULT_DOWNLOAD_DIR,
+        outdir: str | Path = DEFAULT_DOWNLOAD_DIR,
         overwrite: bool = False,
         timeout: int = -1,
         fmt: str = "json",
@@ -2594,7 +2594,7 @@ class Client(SwaggerClient):
     def download_attachments(
         self,
         ids: list[str],
-        outdir: Union[str, Path] = DEFAULT_DOWNLOAD_DIR,
+        outdir: str | Path = DEFAULT_DOWNLOAD_DIR,
         overwrite: bool = False,
         timeout: int = -1,
         fmt: str = "json",
@@ -2624,7 +2624,7 @@ class Client(SwaggerClient):
         self,
         resource: str,
         ids: list[str],
-        outdir: Union[str, Path] = DEFAULT_DOWNLOAD_DIR,
+        outdir: str | Path = DEFAULT_DOWNLOAD_DIR,
         overwrite: bool = False,
         timeout: int = -1,
         fmt: str = "json",
