@@ -87,7 +87,7 @@ VALID_URLS |= {f"http://localhost.{n}-api.materialsproject.org" for n in SUBDOMA
 SUPPORTED_FILETYPES = (Gz, Jpeg, Png, Gif, Tiff)
 SUPPORTED_MIMES = [t().mime for t in SUPPORTED_FILETYPES]
 DEFAULT_DOWNLOAD_DIR = Path.home() / "mpcontribs-downloads"
-VALID_API_KEY_ALIASES = ["MPCONTRIBS_API_KEY","MP_API_KEY","PMG_MAPI_KEY"]
+VALID_API_KEY_ALIASES = ["MPCONTRIBS_API_KEY", "MP_API_KEY", "PMG_MAPI_KEY"]
 
 j2h = Json2Html()
 pd.options.plotting.backend = "plotly"
@@ -900,9 +900,8 @@ class Client(SwaggerClient):
                 )
             except StopIteration:
                 from pymatgen.core import SETTINGS
-
                 apikey = SETTINGS.get("PMG_MAPI_KEY")
-                
+
             if apikey and len(apikey) != 32:
                 raise MPContribsClientError(f"Invalid API key: {apikey}")
 
