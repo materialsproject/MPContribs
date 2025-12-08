@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=requirements/ubuntu-latest_py3.11.txt
 #
-anyio==4.12.0
+anyio==4.11.0
     # via jupyter-server
 argon2-cffi==25.1.0
     # via jupyter-server
@@ -18,7 +18,7 @@ attrs==25.4.0
     # via
     #   jsonschema
     #   referencing
-beautifulsoup4==4.14.3
+beautifulsoup4==4.14.2
     # via nbconvert
 bibtexparser==1.4.3
     # via pymatgen
@@ -78,7 +78,7 @@ flexcache==0.3
     # via pint
 flexparser==0.4
     # via pint
-fonttools==4.61.0
+fonttools==4.60.1
     # via matplotlib
 fqdn==1.5.1
     # via jsonschema
@@ -95,7 +95,7 @@ iniconfig==2.3.0
     # via pytest
 ipykernel==7.1.0
     # via -r requirements.in
-ipython==9.8.0
+ipython==9.7.0
     # via
     #   ipykernel
     #   ipywidgets
@@ -190,7 +190,7 @@ msgpack==1.1.2
     # via
     #   bravado
     #   bravado-core
-narwhals==2.13.0
+narwhals==2.12.0
     # via plotly
 nbclient==0.10.2
     # via nbconvert
@@ -203,7 +203,7 @@ nbformat==5.10.4
     #   nbconvert
 nest-asyncio==1.6.0
     # via ipykernel
-networkx==3.6.1
+networkx==3.6
     # via pymatgen
 numpy==2.3.5
     # via
@@ -215,9 +215,9 @@ numpy==2.3.5
     #   pymatgen
     #   scipy
     #   spglib
-opentelemetry-api==1.39.0
+opentelemetry-api==1.38.0
     # via ddtrace
-orjson==3.11.5
+orjson==3.11.4
     # via
     #   kaleido
     #   pymatgen
@@ -249,7 +249,7 @@ pillow==12.0.0
     # via matplotlib
 pint==0.25.2
     # via mpcontribs-client
-platformdirs==4.5.1
+platformdirs==4.5.0
     # via
     #   jupyter-core
     #   pint
@@ -285,13 +285,13 @@ pyisemail==2.0.1
     # via mpcontribs-client
 pymatgen==2025.10.7
     # via mpcontribs-client
-pymongo==4.15.5
+pymongo==4.15.4
     # via mpcontribs-client
 pyparsing==3.2.5
     # via
     #   bibtexparser
     #   matplotlib
-pytest==9.0.2
+pytest==9.0.1
     # via pytest-timeout
 pytest-timeout==2.4.0
     # via kaleido
@@ -344,7 +344,7 @@ rfc3986-validator==0.1.1
     #   jupyter-events
 rfc3987-syntax==1.1.0
     # via jsonschema
-rpds-py==0.30.0
+rpds-py==0.29.0
     # via
     #   jsonschema
     #   referencing
@@ -372,6 +372,8 @@ six==1.17.0
     #   flatten-dict
     #   python-dateutil
     #   rfc3339-validator
+sniffio==1.3.1
+    # via anyio
 soupsieve==2.8
     # via beautifulsoup4
 spglib==2.6.0
@@ -440,7 +442,7 @@ uncertainties==3.2.3
     # via pymatgen
 uri-template==1.3.0
     # via jsonschema
-urllib3==2.6.1
+urllib3==2.5.0
     # via requests
 wcwidth==0.2.14
     # via prompt-toolkit
