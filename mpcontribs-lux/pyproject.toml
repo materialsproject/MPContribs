@@ -35,7 +35,14 @@ authors = [
 Homepage = "https://github.com/materialsproject/MPContribs"
 Documentation = "https://docs.materialsproject.org/services/mpcontribs"
 
+[project.scripts]
+lux = "mpcontribs.lux.cli.entry_point:lux"
+
 [project.optional-dependencies]
+cli = [
+    "click",
+    "rich",
+]
 test = [
     "pre-commit",
     "pytest",
