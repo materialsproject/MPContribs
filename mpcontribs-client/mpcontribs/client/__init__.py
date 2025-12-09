@@ -834,9 +834,7 @@ def _expand_params(protocol, host, version, projects_json, apikey=None):
 def _version(url):
     retries, max_retries = 0, 3
     protocol = urlparse(url).scheme
-    is_mock_test = "pytest" in sys.modules and protocol == "http"
-
-    if is_mock_test:
+    if "pytest" in sys.modules and protocol == "http":
         return __version__
 
     while retries < max_retries:
