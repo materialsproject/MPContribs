@@ -1,21 +1,14 @@
 """Automatically generate schemas from existing data using pandas."""
 
 from enum import StrEnum
-from typing import Any, Type, Annotated
+from typing import Any, Type
 
 from emmet.core.types.typing import NullableDateTimeType, DateTimeType
 import pandas as pd
 from pathlib import Path
-from pydantic import BaseModel, Field, model_validator, create_model, BeforeValidator
+from pydantic import BaseModel, Field, model_validator, create_model
 
-_complex_type_validator = BeforeValidator(
-    lambda x: (x.real, x.imag) if isinstance(x, complex) else x
-)
-
-ComplexType = Annotated[tuple[float, float], _complex_type_validator]
-
-NullableComplexType = Annotated[tuple[float, float] | None, _complex_type_validator]
-
+from mpcontribs.lux._types import ComplexType, NullableComplexType
 
 class FileFormat(StrEnum):
     """Define known file formats for autogeneration of schemae."""
@@ -91,8 +84,8 @@ class SchemaGenerator(BaseModel):
         return inferred_type | None if assume_nullable else inferred_type
 
     @property
-    def pydantic_schema(self) -> Type[BaseModel]:
-        """Create the pydantic schema of the data structure."""
+    def pydantic_model(self) -> Type[BaseModel]:
+        """Create the pydantic model of the data structure."""
 
         if self.fmt == "csv":
             data = pd.read_csv(self.file_name)
@@ -127,3 +120,48 @@ class SchemaGenerator(BaseModel):
             f"{self.file_name.name.split('.',1)[0]}",
             **model_fields,
         )
+
+    def schema(
+        self,
+        model_name : str | None = None,
+        descriptions : dict[str,str] | None = None
+    ) -> str:
+        """Generate a python-like string which can be used to schematize data.
+
+        Parameters
+        -----------
+        model_name : str or None (default)
+            If a str, the name of the class to use.
+            If None, defaults to the name of the file from which the schema was read.
+        descriptions : dict of str to str, or None (default)
+            If a dict, the descriptions of the model fields included.
+            If None, no descriptions are used.
+
+        Returns
+        -----------
+        str which can be written to a file.
+        See `mpcontribs-lux.tests.test_autogen` for examples.
+        """
+        field_desc = {
+            k: f'"{v}"' if v else v
+            for k, v in (descriptions or {}).items()
+        }
+
+        pydantic_model = self.pydantic_model
+        schema_str = f"""
+from pydantic import BaseModel, Field
+
+from emmet.core.types.typing import NullableDateTimeType, DateTimeType
+from mpcontribs.lux._types import ComplexType, NullableComplexType
+
+class {model_name or pydantic_model.__name__}(BaseModel):
+"""
+        schema_str += "".join(
+            f"""
+    {field_name} : {field.annotation} = Field(
+        default={field.default},
+        description = {field_desc.get(field_name)})
+"""
+            for field_name, field in pydantic_model.model_fields.items()
+        )
+        return schema_str
