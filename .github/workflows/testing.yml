@@ -36,7 +36,8 @@ jobs:
           python${{ matrix.python-version }} -m pip install --upgrade "pip<25.3" build pip-tools pre-commit
           python${{ matrix.python-version }} -m piptools compile --extra dev -o requirements.txt mpcontribs-client/pyproject.toml mpcontribs-api/pyproject.toml
           python${{ matrix.python-version }} -m pip install -r requirements.txt
-          cd mpcontribs-api && python${{ matrix.python-version }} -m pip install --no-deps .
+          cd mpcontribs-api
+          python${{ matrix.python-version }} -m pip install --no-deps .
       - name: Set SSL_CERT_FILE (Linux)
         if: matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest'
         run: |
@@ -50,7 +51,6 @@ jobs:
 
       - name: Run pre-commit
         run: |
-          python${{ matrix.python-version }} -m pip install pre-commit
           pre-commit install
           pre-commit run --all-files
 
@@ -61,6 +61,7 @@ jobs:
         shell: bash
         run: |
           cd mpcontribs-client
+          python${{ matrix.python-version }} -m pip install --no-deps .
           python${{ matrix.python-version }} -m flake8 --max-line-length 100
           python${{ matrix.python-version }} -m pycodestyle --max-line-length 100 .
           python${{ matrix.python-version }} -m pytest -n auto -v -s --cov=mpcontribs/client --cov-report=term-missing --cov-report=xml --ignore=bravado
