@@ -60,7 +60,7 @@ def test_schema_generation(test_dir):
     schema = schemer.schema()
 
     # Avoiding `eval` here; `eval` also can't handle import statements
-    with open(test_py_file := Path("./test_no_kwargs.py").resolve(), "wt") as py_temp:
+    with open(test_py_file := Path("./test_no_kwargs.py").resolve(), "w") as py_temp:
         py_temp.write(schema)
     test_no_kwargs = dynamically_load_module_from_path(test_py_file, "test_no_kwargs")
 
@@ -74,7 +74,7 @@ def test_schema_generation(test_dir):
 
     new_desc = {"b0": "Bulk modulus", "cif": "CIF"}
     with open(
-        test_py_file := Path("./test_w_name_and_anno.py").resolve(), "wt"
+        test_py_file := Path("./test_w_name_and_anno.py").resolve(), "w"
     ) as py_temp:
         py_temp.write(schemer.schema(model_name="TestClass", descriptions=new_desc))
     test_w_kwargs = dynamically_load_module_from_path(test_py_file, "test_w_kwargs")

@@ -16,7 +16,7 @@ include = ["mpcontribs.portal", "mpcontribs.users"]
 
 [project]
 name = "mpcontribs-portal"
-version = "2025.12.04"
+dynamic = ["version"]
 requires-python = ">=3.11"
 description="MPContribs Portal"
 license = {text = "MIT"}

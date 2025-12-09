@@ -8,6 +8,7 @@ import flask_mongorest.operators as ops
 
 from email.message import EmailMessage
 from importlib import import_module
+from importlib.metadata import version
 from websocket import create_connection
 from flask import Flask, current_app, request, jsonify
 from flask_marshmallow import Marshmallow
@@ -26,6 +27,11 @@ from notebook.utils import url_path_join
 from notebook.gateway.managers import GatewayClient
 from requests.exceptions import ConnectionError, Timeout
 
+try:
+    __version__ = version("mpcontribs-api")
+except Exception:
+    # package is not installed
+    pass
 
 delimiter, max_depth = ".", 7  # = MAX_NESTING + 2 from client
 invalidChars = set(punctuation.replace("*", "").replace("|", "") + whitespace)

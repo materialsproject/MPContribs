@@ -1,5 +1,5 @@
-# -*- coding: utf-8 -*-
 import io
+import importlib.metadata
 import sys
 import os
 import ujson
@@ -13,11 +13,9 @@ import itertools
 import functools
 import requests
 import logging
-import datetime
 
 from inspect import getfullargspec
 from math import isclose
-from semantic_version import Version
 from requests.exceptions import RequestException
 from bson.objectid import ObjectId
 from typing import Type
@@ -59,6 +57,12 @@ from tempfile import gettempdir
 from plotly.express._chart_types import line as line_chart
 from cachetools import cached, LRUCache
 from cachetools.keys import hashkey
+
+try:
+    __version__ = importlib.metadata.version("mpcontribs-client")
+except Exception:
+    # package is not installed
+    pass
 
 RETRIES = 3
 MAX_WORKERS = 3
@@ -126,7 +130,7 @@ _ipython = sys.modules["IPython"].get_ipython()
 class LogFilter(logging.Filter):
     def __init__(self, level, *args, **kwargs):
         self.level = level
-        super(LogFilter, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def filter(self, record):
         return record.levelno < self.level
@@ -144,7 +148,7 @@ class TqdmToLogger(io.StringIO):
     buf = ""
 
     def __init__(self, logger, level=None):
-        super(TqdmToLogger, self).__init__()
+        super().__init__()
         self.logger = logger
         self.level = level or logging.INFO
 
@@ -833,29 +837,23 @@ def _version(url):
     is_mock_test = "pytest" in sys.modules and protocol == "http"
 
     if is_mock_test:
-        now = datetime.datetime.now()
-        return Version(
-            major=now.year,
-            minor=now.month,
-            patch=now.day,
-            prerelease=(str(now.hour), str(now.minute)),
-        )
-    else:
-        while retries < max_retries:
-            try:
-                r = requests.get(f"{url}/healthcheck", timeout=5)
-                if r.status_code in {200, 403}:
-                    return r.json().get("version")
-                else:
-                    retries += 1
-                    logger.warning(
-                        f"Healthcheck for {url} failed ({r.status_code})! Wait 30s."
-                    )
-                    time.sleep(30)
-            except RequestException as ex:
+        return __version__
+
+    while retries < max_retries:
+        try:
+            r = requests.get(f"{url}/healthcheck", timeout=5)
+            if r.status_code in {200, 403}:
+                return r.json().get("version")
+            else:
                 retries += 1
-                logger.warning(f"Could not connect to {url} ({ex})! Wait 30s.")
+                logger.warning(
+                    f"Healthcheck for {url} failed ({r.status_code})! Wait 30s."
+                )
                 time.sleep(30)
+        except RequestException as ex:
+            retries += 1
+            logger.warning(f"Could not connect to {url} ({ex})! Wait 30s.")
+            time.sleep(30)
 
 
 class Client(SwaggerClient):
@@ -900,6 +898,7 @@ class Client(SwaggerClient):
                 )
             except StopIteration:
                 from pymatgen.core import SETTINGS
+
                 apikey = SETTINGS.get("PMG_MAPI_KEY")
 
             if apikey and len(apikey) != 32:
@@ -945,8 +944,8 @@ class Client(SwaggerClient):
 
     def __dir__(self):
         members = set(self.swagger_spec.resources.keys())
-        members |= set(k for k in self.__dict__.keys() if not k.startswith("_"))
-        members |= set(k for k in dir(self.__class__) if not k.startswith("_"))
+        members |= {k for k in self.__dict__.keys() if not k.startswith("_")}
+        members |= {k for k in dir(self.__class__) if not k.startswith("_")}
         return members
 
     def _reinit(self):
@@ -1092,9 +1091,7 @@ class Client(SwaggerClient):
 
         return [param for param in params if param.startswith(startswith)]
 
-    def get_project(
-        self, name: str | None = None, fields: list | None = None
-    ) -> Dict:
+    def get_project(self, name: str | None = None, fields: list | None = None) -> Dict:
         """Retrieve a project entry
 
         Args:
@@ -1740,7 +1737,7 @@ class Client(SwaggerClient):
             }, ...}
         """
         include = include or []
-        components = set(x for x in include if x in COMPONENTS)
+        components = {x for x in include if x in COMPONENTS}
         if include and not components:
             raise MPContribsClientError(f"`include` must be subset of {COMPONENTS}!")
 
@@ -1948,7 +1945,7 @@ class Client(SwaggerClient):
 
         # get current list of data columns to decide if swagger reload is needed
         resp = self.projects.getProjectByName(pk=name, _fields=["columns"]).result()
-        old_paths = set(c["path"] for c in resp["columns"])
+        old_paths = {c["path"] for c in resp["columns"]}
 
         total = len(cids)
         cids_query = {"id__in": cids}
@@ -1963,7 +1960,7 @@ class Client(SwaggerClient):
 
         if updated:
             resp = self.projects.getProjectByName(pk=name, _fields=["columns"]).result()
-            new_paths = set(c["path"] for c in resp["columns"])
+            new_paths = {c["path"] for c in resp["columns"]}
 
             if new_paths != old_paths:
                 self.init_columns(name=name)
@@ -2457,7 +2454,7 @@ class Client(SwaggerClient):
         include = include or []
         outdir = Path(outdir) or Path(".")
         outdir.mkdir(parents=True, exist_ok=True)
-        components = set(x for x in include if x in COMPONENTS)
+        components = {x for x in include if x in COMPONENTS}
         if include and not components:
             raise MPContribsClientError(f"`include` must be subset of {COMPONENTS}!")
 
