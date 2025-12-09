@@ -68,6 +68,8 @@ jobs:
 
       - name: Install lux and test with pytest
         run: |
+          git lfs install
+          git lfs pull
           cd mpcontribs-lux
           python${{ matrix.python-version }} -m pip install -r requirements/requirements-${{ matrix.os }}_py${{ matrix.python-version }}_extras.txt
           python${{ matrix.python-version }} -m pip install -e .
