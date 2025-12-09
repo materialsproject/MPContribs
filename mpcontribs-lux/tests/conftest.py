@@ -10,7 +10,7 @@ import pytest
 
 @pytest.fixture(autouse=True)
 def test_dir():
-    """Same as clean_dir but is fresh for every test"""
+    """Run a test in a temporary directory."""
 
     old_cwd = os.getcwd()
     new_path = tempfile.mkdtemp()
