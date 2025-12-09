@@ -13,9 +13,19 @@ from emmet.core.tasks import TaskDoc
 
 @pytest.fixture(scope="module")
 def task_doc(test_data_dir) -> TaskDoc:
-    with gzip.open(
-        test_data_dir / "by_user" / "esoteric_ephemera" / "r2scan_task.json.gz", "rb"
+
+    with open(
+        fname := test_data_dir
+        / "by_user"
+        / "esoteric_ephemera"
+        / "r2scan_task.json.gz",
+        "rb",
     ) as f:
+        magic = f.read(2)
+
+    opener = gzip.open if magic in {b"\x1f\x8b", b"\037\213"} else open
+
+    with opener(fname, "rb") as f:
         return TaskDoc(**orjson.loads(f.read()))
 
 
