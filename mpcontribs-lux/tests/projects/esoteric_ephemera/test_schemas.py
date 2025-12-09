@@ -15,8 +15,7 @@ from emmet.core.tasks import TaskDoc
 def task_doc(test_data_dir) -> TaskDoc:
 
     with gzip.open(
-        test_data_dir / "by_user" / "esoteric_ephemera" / "r2scan_task.json.gz",
-        "rb"
+        test_data_dir / "by_user" / "esoteric_ephemera" / "r2scan_task.json.gz", "rb"
     ) as f:
         return TaskDoc(**json.load(f))
 

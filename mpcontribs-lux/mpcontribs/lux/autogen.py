@@ -10,6 +10,7 @@ from pydantic import BaseModel, Field, model_validator, create_model
 
 from mpcontribs.lux._types import ComplexType, NullableComplexType
 
+
 class FileFormat(StrEnum):
     """Define known file formats for autogeneration of schemae."""
 
@@ -122,9 +123,7 @@ class SchemaGenerator(BaseModel):
         )
 
     def schema(
-        self,
-        model_name : str | None = None,
-        descriptions : dict[str,str] | None = None
+        self, model_name: str | None = None, descriptions: dict[str, str] | None = None
     ) -> str:
         """Generate a python-like string which can be used to schematize data.
 
@@ -142,10 +141,7 @@ class SchemaGenerator(BaseModel):
         str which can be written to a file.
         See `mpcontribs-lux.tests.test_autogen` for examples.
         """
-        field_desc = {
-            k: f'"{v}"' if v else v
-            for k, v in (descriptions or {}).items()
-        }
+        field_desc = {k: f'"{v}"' if v else v for k, v in (descriptions or {}).items()}
 
         pydantic_model = self.pydantic_model
         schema_str = f"""

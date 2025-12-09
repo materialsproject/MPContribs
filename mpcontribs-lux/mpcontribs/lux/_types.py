@@ -11,4 +11,3 @@ _complex_type_validator = BeforeValidator(
 ComplexType = Annotated[tuple[float, float], _complex_type_validator]
 
 NullableComplexType = Annotated[tuple[float, float] | None, _complex_type_validator]
-
