@@ -35,7 +35,7 @@ from mpcontribs.lux.autogen import SchemaGenerator
 
 schema_gen = SchemaGenerator(file_name = "/path/to/some/csv/or/json/file")
 pydantic_model = schema_gen.pydantic_schema
-print(pydantic_model.model_fields)
+print(pydantic_model.schema())
 ```
 
 ...or reach out to the maintainers!
