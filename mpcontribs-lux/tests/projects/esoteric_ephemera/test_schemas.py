@@ -1,7 +1,7 @@
 """Test schemas for user esoteric_ephemera."""
 
 import gzip
-import orjson
+import json
 from pathlib import Path
 
 import numpy as np
@@ -26,7 +26,7 @@ def task_doc(test_data_dir) -> TaskDoc:
     opener = gzip.open if magic in {b"\x1f\x8b", b"\037\213"} else open
 
     with opener(fname, "rb") as f:
-        return TaskDoc(**orjson.loads(f.read()))
+        return TaskDoc(**json.load(f))
 
 
 def test_matpes_doc_from_task_doc(test_dir, task_doc):
