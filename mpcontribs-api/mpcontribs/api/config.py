@@ -2,11 +2,10 @@
 """configuration module for MPContribs Flask API"""
 
 import os
-import datetime
 import json
 import gzip
 
-from semantic_version import Version
+from mpcontribs.api import __version__
 
 formulae_path = os.path.join(
     os.path.dirname(__file__), "contributions", "formulae.json.gz"
@@ -14,12 +13,6 @@ formulae_path = os.path.join(
 
 with gzip.open(formulae_path) as f:
     FORMULAE = json.load(f)
-
-now = datetime.datetime.now()
-VERSION = str(Version(
-    major=now.year, minor=now.month, patch=now.day,
-    prerelease=(str(now.hour), str(now.minute))
-))
 
 JSON_ADD_STATUS = False
 SECRET_KEY = "super-secret"  # TODO in local prod config
@@ -65,7 +58,7 @@ TEMPLATE = {
         "title": "MPContribs API",
         "description": "Operations to contribute, update and retrieve materials data on Materials Project",
         "termsOfService": "https://materialsproject.org/terms",
-        "version": VERSION,
+        "version": __version__,
         "contact": {
             "name": "MPContribs",
             "email": "contribs@materialsproject.org",

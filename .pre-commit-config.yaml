@@ -41,7 +41,7 @@ repos:
           - --drop-empty-cells
           - --strip-init-cells
           - --extra-keys=metadata.kernelspec
-          
+
   - repo: https://github.com/asottile/pyupgrade
     rev: v3.15.1
     hooks:

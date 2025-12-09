@@ -42,7 +42,6 @@ dependencies = [
     "swagger-spec-validator",
     "tqdm",
     "ujson",
-    "semantic-version",
     "cachetools",
 ]
 
