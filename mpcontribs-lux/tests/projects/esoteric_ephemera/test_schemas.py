@@ -1,7 +1,7 @@
 """Test schemas for user esoteric_ephemera."""
 
 import gzip
-import json
+import orjson
 from pathlib import Path
 
 import numpy as np
@@ -14,9 +14,9 @@ from emmet.core.tasks import TaskDoc
 @pytest.fixture(scope="module")
 def task_doc(test_data_dir) -> TaskDoc:
     with gzip.open(
-        test_data_dir / "by_user" / "esoteric_ephemera" / "r2scan_task.json.gz", "rt"
+        test_data_dir / "by_user" / "esoteric_ephemera" / "r2scan_task.json.gz", "rb"
     ) as f:
-        return TaskDoc(**json.load(f))
+        return TaskDoc(**orjson.loads(f.read()))
 
 
 def test_matpes_doc_from_task_doc(test_dir, task_doc):
