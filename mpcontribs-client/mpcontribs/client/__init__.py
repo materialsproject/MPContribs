@@ -963,11 +963,16 @@ class Client(SwaggerClient):
 
     def _is_serializable_dict(self, dct: dict) -> None:
         """Raise an error if an input dict is not JSON serializable."""
-        for k, v in flatten(dct, reducer="dot").items():
-            if v is not None and not isinstance(v, (str, int, float)):
-                raise MPContribsClientError(
+        try:
+            raise MPContribsClientError(
+                next(
                     f"Value {v} of {type(v)} for key {k} not supported."
+                    for k, v in flatten(dct, reducer="dot").items()
+                    if v is not None and not isinstance(v, (str, int, float))
                 )
+            )
+        except StopIteration:
+            pass
 
     def _get_per_page_default_max(
         self, op: str = "query", resource: str = "contributions"
@@ -1035,14 +1040,10 @@ class Client(SwaggerClient):
 
         for q in queries:
             # copy over missing parameters
-            for k, v in query.items():
-                if k not in q:
-                    q[k] = v
+            q.update({k: v for k, v in query.items() if k not in q})
 
             # comma-separated lists
-            for k, v in q.items():
-                if isinstance(v, list):
-                    q[k] = ",".join(v)
+            q.update({k: ",".join(v) for k, v in q.items() if isinstance(v, list)})
 
         return queries
 
@@ -1160,9 +1161,13 @@ class Client(SwaggerClient):
         if total_pages < 2:
             return ret["data"]
 
-        for field in ["name__in", "_fields"]:
-            if field in query:
-                query[field] = ",".join(query[field])
+        query.update(
+            {
+                field: ",".join(query[field])
+                for field in ["name__in", "_fields"]
+                if field in query
+            }
+        )
 
         queries = []
 
@@ -1175,8 +1180,7 @@ class Client(SwaggerClient):
         ]
         responses = _run_futures(futures, total=total_count, timeout=timeout)
 
-        for resp in responses.values():
-            ret["data"] += resp["result"]["data"]
+        ret["data"].extend([resp["result"]["data"] for resp in responses.values()])
 
         return ret["data"]
 
@@ -1639,15 +1643,15 @@ class Client(SwaggerClient):
         query = {k: v for k, v in query.items() if k not in skip_keys}
         query["_fields"] = []  # only need totals -> explicitly request no fields
         queries = self._split_query(query, resource=resource, op=op)  # don't paginate
-        result = {"total_count": 0, "total_pages": 0}
         futures = [
             self._get_future(i, q, rel_url=resource) for i, q in enumerate(queries)
         ]
         responses = _run_futures(futures, timeout=timeout, desc="Totals")
 
-        for resp in responses.values():
-            for k in result:
-                result[k] += resp.get("result", {}).get(k, 0)
+        result = {
+            k: sum(resp.get("result", {}).get(k, 0) for resp in responses.values())
+            for k in ("total_count", "total_pages")
+        }
 
         return result["total_count"], result["total_pages"]
 
@@ -1743,9 +1747,13 @@ class Client(SwaggerClient):
 
         unique_identifiers = self.get_unique_identifiers_flags()
         data_id_fields = data_id_fields or {}
-        for k, v in data_id_fields.items():
-            if k in unique_identifiers and isinstance(v, str):
-                data_id_fields[k] = v
+        data_id_fields.update(
+            {
+                k: v
+                for k, v in data_id_fields.items()
+                if k in unique_identifiers and isinstance(v, str)
+            }
+        )
 
         ret = {}
         query = query or {}
@@ -1808,26 +1816,32 @@ class Client(SwaggerClient):
                         if data_id_field and data_id_field_val:
                             ret[project][identifier][data_id_field] = data_id_field_val
 
-                        for component in components:
-                            if component in contrib:
-                                ret[project][identifier][component] = {
+                        ret[project][identifier].update(
+                            {
+                                component: {
                                     d["name"]: {"id": d["id"], "md5": d["md5"]}
                                     for d in contrib[component]
                                 }
+                                for component in components
+                                if component in contrib
+                            }
+                        )
 
                     elif data_id_field and data_id_field_val:
                         ret[project][identifier] = {
                             data_id_field_val: {"id": contrib["id"]}
                         }
 
-                        for component in components:
-                            if component in contrib:
-                                ret[project][identifier][data_id_field_val][
-                                    component
-                                ] = {
+                        ret[project][identifier][data_id_field_val].update(
+                            {
+                                component: {
                                     d["name"]: {"id": d["id"], "md5": d["md5"]}
                                     for d in contrib[component]
                                 }
+                                for component in components
+                                if component in contrib
+                            }
+                        )
 
         return ret
 
@@ -1859,12 +1873,11 @@ class Client(SwaggerClient):
             query["project"] = self.project
 
         if paginate:
-            cids = []
-
-            for v in self.get_all_ids(query).values():
-                cids_project = v.get("ids")
-                if cids_project:
-                    cids.extend(cids_project)
+            cids = [
+                idx
+                for v in self.get_all_ids(query).values()
+                for idx in (v.get("ids") or [])
+            ]
 
             if not cids:
                 raise MPContribsClientError("No contributions match the query.")
@@ -2118,9 +2131,13 @@ class Client(SwaggerClient):
             resp = self.get_all_ids(dict(id__in=collect_ids), timeout=timeout)
             project_names |= set(resp.keys())
 
-            for project_name, values in resp.items():
-                for cid in values["ids"]:
-                    id2project[cid] = project_name
+            id2project.update(
+                {
+                    cid: project_name
+                    for project_name, values in resp.items()
+                    for cid in values["ids"]
+                }
+            )
 
         existing = defaultdict(dict)
         unique_identifiers = defaultdict(dict)
