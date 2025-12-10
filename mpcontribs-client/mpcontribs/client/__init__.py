@@ -181,7 +181,7 @@ class MPContribsClientError(ValueError):
     """custom error for mpcontribs-client"""
 
 
-def get_md5(d):
+def get_md5(d) -> str:
     s = ujson.dumps(d, sort_keys=True).encode("utf-8")
     return md5(s).hexdigest()
 
@@ -931,7 +931,7 @@ class Client(SwaggerClient):
     def __enter__(self):
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
         return None
 
     @property
@@ -940,7 +940,7 @@ class Client(SwaggerClient):
             self.protocol, self.host, self.headers_json, self.project, self.version
         )
 
-    def __dir__(self):
+    def __dir__(self) -> set[str]:
         members = set(self.swagger_spec.resources.keys())
         members |= {k for k in self.__dict__.keys() if not k.startswith("_")}
         members |= {k for k in dir(self.__class__) if not k.startswith("_")}
@@ -950,7 +950,8 @@ class Client(SwaggerClient):
         _load.cache_clear()
         super().__init__(self.cached_swagger_spec)
 
-    def _is_valid_payload(self, model: str, data: dict):
+    def _is_valid_payload(self, model: str, data: dict) -> None:
+        """Raise an error if a payload is invalid."""
         model_spec = deepcopy(self.get_model(f"{model}sSchema")._model_spec)
         model_spec.pop("required")
         model_spec["additionalProperties"] = False
@@ -958,17 +959,15 @@ class Client(SwaggerClient):
         try:
             validate_object(self.swagger_spec, model_spec, data)
         except ValidationError as ex:
-            return False, str(ex)
+            raise MPContribsClientError(str(ex))
 
-        return True, None
-
-    def _is_serializable_dict(self, dct):
+    def _is_serializable_dict(self, dct: dict) -> None:
+        """Raise an error if an input dict is not JSON serializable."""
         for k, v in flatten(dct, reducer="dot").items():
             if v is not None and not isinstance(v, (str, int, float)):
-                error = f"Value {v} of {type(v)} for key {k} not supported."
-                return False, error
-
-        return True, None
+                raise MPContribsClientError(
+                    f"Value {v} of {type(v)} for key {k} not supported."
+                )
 
     def _get_per_page_default_max(
         self, op: str = "query", resource: str = "contributions"
@@ -1272,13 +1271,10 @@ class Client(SwaggerClient):
             logger.warning("nothing to update")
             return
 
-        valid, error = self._is_valid_payload("Project", payload)
-        if valid:
-            resp = self.projects.updateProjectByName(pk=name, project=payload).result()
-            if not resp.get("count", 0):
-                raise MPContribsClientError(resp)
-        else:
-            raise MPContribsClientError(error)
+        self._is_valid_payload("Project", payload)
+        resp = self.projects.updateProjectByName(pk=name, project=payload).result()
+        if not resp.get("count", 0):
+            raise MPContribsClientError(resp)
 
     def delete_project(self, name: str | None = None):
         """Delete a project
@@ -1564,9 +1560,7 @@ class Client(SwaggerClient):
                 new_columns.append(new_column)
 
         payload = {"columns": new_columns}
-        valid, error = self._is_valid_payload("Project", payload)
-        if not valid:
-            raise MPContribsClientError(error)
+        self._is_valid_payload("Project", payload)
 
         return self.projects.updateProjectByName(pk=name, project=payload).result()
 
@@ -1910,14 +1904,10 @@ class Client(SwaggerClient):
             raise MPContribsClientError("Nothing to update.")
 
         tic = time.perf_counter()
-        valid, error = self._is_valid_payload("Contribution", data)
-        if not valid:
-            raise MPContribsClientError(error)
+        self._is_valid_payload("Contribution", data)
 
         if "data" in data:
-            serializable, error = self._is_serializable_dict(data["data"])
-            if not serializable:
-                raise MPContribsClientError(error)
+            self._is_serializable_dict(data["data"])
 
         query = query or {}
 
@@ -2164,9 +2154,7 @@ class Client(SwaggerClient):
         for contrib in tqdm(contributions, desc="Prepare"):
             if "data" in contrib:
                 contrib["data"] = unflatten(contrib["data"], splitter="dot")
-                serializable, error = self._is_serializable_dict(contrib["data"])
-                if not serializable:
-                    raise MPContribsClientError(error)
+                self._is_serializable_dict(contrib["data"])
 
             update = "id" in contrib
             project_name = id2project[contrib["id"]] if update else contrib["project"]
@@ -2286,13 +2274,7 @@ class Client(SwaggerClient):
                     digests[project_name][component].add(digest)
                     contribs[project_name][-1][component].append(dct)
 
-                valid, error = self._is_valid_payload(
-                    "Contribution", contribs[project_name][-1]
-                )
-                if not valid:
-                    raise MPContribsClientError(
-                        f"{contrib['identifier']} invalid: {error}!"
-                    )
+                self._is_valid_payload("Contribution", contribs[project_name][-1])
 
         # submit contributions
         if contribs:
