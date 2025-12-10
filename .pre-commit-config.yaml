@@ -28,12 +28,6 @@ repos:
         files: cloudformation/.*\.(json|yml|yaml)$
         args: ["--ignore-checks=E3030,E3001,E3002,E3012"]
 
-  #- repo: https://gitlab.com/pycqa/flake8
-  #  rev: 3.7.9
-  #  hooks:
-  #      - id: flake8
-  #        args: [--max-line-length=99]
-
   - repo: https://github.com/psf/black
     rev: 25.9.0
     hooks:
@@ -47,3 +41,8 @@ repos:
           - --drop-empty-cells
           - --strip-init-cells
           - --extra-keys=metadata.kernelspec
+
+  - repo: https://github.com/asottile/pyupgrade
+    rev: v3.15.1
+    hooks:
+      - id: pyupgrade

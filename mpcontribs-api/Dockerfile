@@ -7,7 +7,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends gcc git g++ lib
 ENV PIP_FLAGS "--no-cache-dir --compile"
 COPY requirements/deployment.txt ./requirements.txt
 RUN pip install $PIP_FLAGS -r requirements.txt
-COPY setup.py .
+COPY pyproject.toml .
 COPY mpcontribs mpcontribs
 RUN pip install $PIP_FLAGS --no-deps .
 #ENV SETUPTOOLS_SCM_PRETEND_VERSION 0.0.0

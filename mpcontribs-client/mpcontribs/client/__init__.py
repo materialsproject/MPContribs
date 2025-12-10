@@ -1,5 +1,5 @@
-# -*- coding: utf-8 -*-
 import io
+import importlib.metadata
 import sys
 import os
 import ujson
@@ -13,14 +13,12 @@ import itertools
 import functools
 import requests
 import logging
-import datetime
 
 from inspect import getfullargspec
 from math import isclose
-from semantic_version import Version
 from requests.exceptions import RequestException
 from bson.objectid import ObjectId
-from typing import Union, Type, Optional
+from typing import Type
 from tqdm.auto import tqdm
 from hashlib import md5
 from pathlib import Path
@@ -59,7 +57,12 @@ from tempfile import gettempdir
 from plotly.express._chart_types import line as line_chart
 from cachetools import cached, LRUCache
 from cachetools.keys import hashkey
-from pymatgen.core import SETTINGS
+
+try:
+    __version__ = importlib.metadata.version("mpcontribs-client")
+except Exception:
+    # package is not installed
+    pass
 
 RETRIES = 3
 MAX_WORKERS = 3
@@ -88,6 +91,7 @@ VALID_URLS |= {f"http://localhost.{n}-api.materialsproject.org" for n in SUBDOMA
 SUPPORTED_FILETYPES = (Gz, Jpeg, Png, Gif, Tiff)
 SUPPORTED_MIMES = [t().mime for t in SUPPORTED_FILETYPES]
 DEFAULT_DOWNLOAD_DIR = Path.home() / "mpcontribs-downloads"
+VALID_API_KEY_ALIASES = ["MPCONTRIBS_API_KEY", "MP_API_KEY", "PMG_MAPI_KEY"]
 
 j2h = Json2Html()
 pd.options.plotting.backend = "plotly"
@@ -126,7 +130,7 @@ _ipython = sys.modules["IPython"].get_ipython()
 class LogFilter(logging.Filter):
     def __init__(self, level, *args, **kwargs):
         self.level = level
-        super(LogFilter, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def filter(self, record):
         return record.levelno < self.level
@@ -144,7 +148,7 @@ class TqdmToLogger(io.StringIO):
     buf = ""
 
     def __init__(self, logger, level=None):
-        super(TqdmToLogger, self).__init__()
+        super().__init__()
         self.logger = logger
         self.level = level or logging.INFO
 
@@ -177,7 +181,7 @@ class MPContribsClientError(ValueError):
     """custom error for mpcontribs-client"""
 
 
-def get_md5(d):
+def get_md5(d) -> str:
     s = ujson.dumps(d, sort_keys=True).encode("utf-8")
     return md5(s).hexdigest()
 
@@ -478,7 +482,7 @@ class Attachment(dict):
 
         return unpacked
 
-    def write(self, outdir: Optional[Union[str, Path]] = None) -> Path:
+    def write(self, outdir: str | Path | None = None) -> Path:
         """Write attachment to file using its name
 
         Args:
@@ -490,7 +494,7 @@ class Attachment(dict):
         path.write_bytes(content)
         return path
 
-    def display(self, outdir: Optional[Union[str, Path]] = None):
+    def display(self, outdir: str | Path | None = None):
         """Display Image/FileLink for attachment if in IPython/Jupyter
 
         Args:
@@ -519,7 +523,7 @@ class Attachment(dict):
         return self["name"]
 
     @classmethod
-    def from_data(cls, data: Union[list, dict], name: str = "attachment"):
+    def from_data(cls, data: list | dict, name: str = "attachment"):
         """Construct attachment from data dict or list
 
         Args:
@@ -539,7 +543,7 @@ class Attachment(dict):
         )
 
     @classmethod
-    def from_file(cls, path: Union[Path, str]):
+    def from_file(cls, path: str | Path):
         """Construct attachment from file
 
         Args:
@@ -616,7 +620,7 @@ class Attachments(list):
         return attachments
 
     @classmethod
-    def from_data(cls, data: Union[list, dict], prefix: str = "attachment"):
+    def from_data(cls, data: list | dict, prefix: str = "attachment"):
         """Construct list of attachments from data dict or list
 
         Args:
@@ -830,32 +834,24 @@ def _expand_params(protocol, host, version, projects_json, apikey=None):
 def _version(url):
     retries, max_retries = 0, 3
     protocol = urlparse(url).scheme
-    is_mock_test = "pytest" in sys.modules and protocol == "http"
+    if "pytest" in sys.modules and protocol == "http":
+        return __version__
 
-    if is_mock_test:
-        now = datetime.datetime.now()
-        return Version(
-            major=now.year,
-            minor=now.month,
-            patch=now.day,
-            prerelease=(str(now.hour), str(now.minute)),
-        )
-    else:
-        while retries < max_retries:
-            try:
-                r = requests.get(f"{url}/healthcheck", timeout=5)
-                if r.status_code in {200, 403}:
-                    return r.json().get("version")
-                else:
-                    retries += 1
-                    logger.warning(
-                        f"Healthcheck for {url} failed ({r.status_code})! Wait 30s."
-                    )
-                    time.sleep(30)
-            except RequestException as ex:
+    while retries < max_retries:
+        try:
+            r = requests.get(f"{url}/healthcheck", timeout=5)
+            if r.status_code in {200, 403}:
+                return r.json().get("version")
+            else:
                 retries += 1
-                logger.warning(f"Could not connect to {url} ({ex})! Wait 30s.")
+                logger.warning(
+                    f"Healthcheck for {url} failed ({r.status_code})! Wait 30s."
+                )
                 time.sleep(30)
+        except RequestException as ex:
+            retries += 1
+            logger.warning(f"Could not connect to {url} ({ex})! Wait 30s.")
+            time.sleep(30)
 
 
 class Client(SwaggerClient):
@@ -870,11 +866,11 @@ class Client(SwaggerClient):
 
     def __init__(
         self,
-        apikey: Optional[str] = None,
-        headers: Optional[dict] = None,
-        host: Optional[str] = None,
-        project: Optional[str] = None,
-        session: Optional[requests.Session] = None,
+        apikey: str | None = None,
+        headers: dict | None = None,
+        host: str | None = None,
+        project: str | None = None,
+        session: requests.Session | None = None,
     ):
         """Initialize the client - only reloads API spec from server as needed
 
@@ -892,7 +888,17 @@ class Client(SwaggerClient):
             host = os.environ.get("MPCONTRIBS_API_HOST", DEFAULT_HOST)
 
         if not apikey:
-            apikey = os.environ.get("MPCONTRIBS_API_KEY", SETTINGS.get("PMG_MAPI_KEY"))
+            try:
+                apikey = next(
+                    os.environ.get(kalias)
+                    for kalias in VALID_API_KEY_ALIASES
+                    if kalias is not None
+                )
+            except StopIteration:
+                from pymatgen.core import SETTINGS
+
+                apikey = SETTINGS.get("PMG_MAPI_KEY")
+
             if apikey and len(apikey) != 32:
                 raise MPContribsClientError(f"Invalid API key: {apikey}")
 
@@ -925,7 +931,7 @@ class Client(SwaggerClient):
     def __enter__(self):
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
         return None
 
     @property
@@ -934,17 +940,18 @@ class Client(SwaggerClient):
             self.protocol, self.host, self.headers_json, self.project, self.version
         )
 
-    def __dir__(self):
+    def __dir__(self) -> set[str]:
         members = set(self.swagger_spec.resources.keys())
-        members |= set(k for k in self.__dict__.keys() if not k.startswith("_"))
-        members |= set(k for k in dir(self.__class__) if not k.startswith("_"))
+        members |= {k for k in self.__dict__.keys() if not k.startswith("_")}
+        members |= {k for k in dir(self.__class__) if not k.startswith("_")}
         return members
 
     def _reinit(self):
         _load.cache_clear()
         super().__init__(self.cached_swagger_spec)
 
-    def _is_valid_payload(self, model: str, data: dict):
+    def _is_valid_payload(self, model: str, data: dict) -> None:
+        """Raise an error if a payload is invalid."""
         model_spec = deepcopy(self.get_model(f"{model}sSchema")._model_spec)
         model_spec.pop("required")
         model_spec["additionalProperties"] = False
@@ -952,17 +959,20 @@ class Client(SwaggerClient):
         try:
             validate_object(self.swagger_spec, model_spec, data)
         except ValidationError as ex:
-            return False, str(ex)
+            raise MPContribsClientError(str(ex))
 
-        return True, None
-
-    def _is_serializable_dict(self, dct):
-        for k, v in flatten(dct, reducer="dot").items():
-            if v is not None and not isinstance(v, (str, int, float)):
-                error = f"Value {v} of {type(v)} for key {k} not supported."
-                return False, error
-
-        return True, None
+    def _is_serializable_dict(self, dct: dict) -> None:
+        """Raise an error if an input dict is not JSON serializable."""
+        try:
+            raise MPContribsClientError(
+                next(
+                    f"Value {v} of {type(v)} for key {k} not supported."
+                    for k, v in flatten(dct, reducer="dot").items()
+                    if v is not None and not isinstance(v, (str, int, float))
+                )
+            )
+        except StopIteration:
+            pass
 
     def _get_per_page_default_max(
         self, op: str = "query", resource: str = "contributions"
@@ -1030,14 +1040,10 @@ class Client(SwaggerClient):
 
         for q in queries:
             # copy over missing parameters
-            for k, v in query.items():
-                if k not in q:
-                    q[k] = v
+            q.update({k: v for k, v in query.items() if k not in q})
 
             # comma-separated lists
-            for k, v in q.items():
-                if isinstance(v, list):
-                    q[k] = ",".join(v)
+            q.update({k: ",".join(v) for k, v in q.items() if isinstance(v, list)})
 
         return queries
 
@@ -1047,7 +1053,7 @@ class Client(SwaggerClient):
         params: dict,
         rel_url: str = "contributions",
         op: str = "query",
-        data: Optional[dict] = None,
+        data: dict | None = None,
     ):
         rname = rel_url.split("/", 1)[0]
         resource = self.swagger_spec.resources[rname]
@@ -1066,7 +1072,7 @@ class Client(SwaggerClient):
 
     def available_query_params(
         self,
-        startswith: Optional[tuple] = None,
+        startswith: tuple | None = None,
         resource: str = "contributions",
     ) -> list:
         resources = self.swagger_spec.resources
@@ -1083,9 +1089,7 @@ class Client(SwaggerClient):
 
         return [param for param in params if param.startswith(startswith)]
 
-    def get_project(
-        self, name: Optional[str] = None, fields: Optional[list] = None
-    ) -> Dict:
+    def get_project(self, name: str | None = None, fields: list | None = None) -> Dict:
         """Retrieve a project entry
 
         Args:
@@ -1103,10 +1107,10 @@ class Client(SwaggerClient):
 
     def query_projects(
         self,
-        query: Optional[dict] = None,
-        term: Optional[str] = None,
-        fields: Optional[list] = None,
-        sort: Optional[str] = None,
+        query: dict | None = None,
+        term: str | None = None,
+        fields: list | None = None,
+        sort: str | None = None,
         timeout: int = -1,
     ) -> list[dict]:
         """Query projects by query and/or term (Atlas Search)
@@ -1157,9 +1161,13 @@ class Client(SwaggerClient):
         if total_pages < 2:
             return ret["data"]
 
-        for field in ["name__in", "_fields"]:
-            if field in query:
-                query[field] = ",".join(query[field])
+        query.update(
+            {
+                field: ",".join(query[field])
+                for field in ["name__in", "_fields"]
+                if field in query
+            }
+        )
 
         queries = []
 
@@ -1172,8 +1180,7 @@ class Client(SwaggerClient):
         ]
         responses = _run_futures(futures, total=total_count, timeout=timeout)
 
-        for resp in responses.values():
-            ret["data"] += resp["result"]["data"]
+        ret["data"].extend([resp["result"]["data"] for resp in responses.values()])
 
         return ret["data"]
 
@@ -1210,7 +1217,7 @@ class Client(SwaggerClient):
         else:
             raise MPContribsClientError(resp)
 
-    def update_project(self, update: dict, name: Optional[str] = None):
+    def update_project(self, update: dict, name: str | None = None):
         """Update project info
 
         Args:
@@ -1268,15 +1275,12 @@ class Client(SwaggerClient):
             logger.warning("nothing to update")
             return
 
-        valid, error = self._is_valid_payload("Project", payload)
-        if valid:
-            resp = self.projects.updateProjectByName(pk=name, project=payload).result()
-            if not resp.get("count", 0):
-                raise MPContribsClientError(resp)
-        else:
-            raise MPContribsClientError(error)
+        self._is_valid_payload("Project", payload)
+        resp = self.projects.updateProjectByName(pk=name, project=payload).result()
+        if not resp.get("count", 0):
+            raise MPContribsClientError(resp)
 
-    def delete_project(self, name: Optional[str] = None):
+    def delete_project(self, name: str | None = None):
         """Delete a project
 
         Args:
@@ -1295,7 +1299,7 @@ class Client(SwaggerClient):
         if resp and "error" in resp:
             raise MPContribsClientError(resp["error"])
 
-    def get_contribution(self, cid: str, fields: Optional[list] = None) -> Dict:
+    def get_contribution(self, cid: str, fields: list | None = None) -> Dict:
         """Retrieve a contribution
 
         Args:
@@ -1408,7 +1412,7 @@ class Client(SwaggerClient):
         )
 
     def init_columns(
-        self, columns: Optional[dict] = None, name: Optional[str] = None
+        self, columns: dict | None = None, name: str | None = None
     ) -> dict:
         """initialize columns for a project to set their order and desired units
 
@@ -1560,13 +1564,11 @@ class Client(SwaggerClient):
                 new_columns.append(new_column)
 
         payload = {"columns": new_columns}
-        valid, error = self._is_valid_payload("Project", payload)
-        if not valid:
-            raise MPContribsClientError(error)
+        self._is_valid_payload("Project", payload)
 
         return self.projects.updateProjectByName(pk=name, project=payload).result()
 
-    def delete_contributions(self, query: Optional[dict] = None, timeout: int = -1):
+    def delete_contributions(self, query: dict | None = None, timeout: int = -1):
         """Remove all contributions for a query
 
         Args:
@@ -1612,7 +1614,7 @@ class Client(SwaggerClient):
 
     def get_totals(
         self,
-        query: Optional[dict] = None,
+        query: dict | None = None,
         timeout: int = -1,
         resource: str = "contributions",
         op: str = "query",
@@ -1641,23 +1643,23 @@ class Client(SwaggerClient):
         query = {k: v for k, v in query.items() if k not in skip_keys}
         query["_fields"] = []  # only need totals -> explicitly request no fields
         queries = self._split_query(query, resource=resource, op=op)  # don't paginate
-        result = {"total_count": 0, "total_pages": 0}
         futures = [
             self._get_future(i, q, rel_url=resource) for i, q in enumerate(queries)
         ]
         responses = _run_futures(futures, timeout=timeout, desc="Totals")
 
-        for resp in responses.values():
-            for k in result:
-                result[k] += resp.get("result", {}).get(k, 0)
+        result = {
+            k: sum(resp.get("result", {}).get(k, 0) for resp in responses.values())
+            for k in ("total_count", "total_pages")
+        }
 
         return result["total_count"], result["total_pages"]
 
-    def count(self, query: Optional[dict] = None) -> int:
+    def count(self, query: dict | None = None) -> int:
         """shortcut for get_totals()"""
         return self.get_totals(query=query)[0]
 
-    def get_unique_identifiers_flags(self, query: Optional[dict] = None) -> dict:
+    def get_unique_identifiers_flags(self, query: dict | None = None) -> dict:
         """Retrieve values for `unique_identifiers` flags.
 
         See `client.available_query_params(resource="projects")` for available query parameters.
@@ -1677,10 +1679,10 @@ class Client(SwaggerClient):
 
     def get_all_ids(
         self,
-        query: Optional[dict] = None,
-        include: Optional[list[str]] = None,
+        query: dict | None = None,
+        include: list[str] | None = None,
         timeout: int = -1,
-        data_id_fields: Optional[dict] = None,
+        data_id_fields: dict | None = None,
         fmt: str = "sets",
         op: str = "query",
     ) -> dict:
@@ -1731,7 +1733,7 @@ class Client(SwaggerClient):
             }, ...}
         """
         include = include or []
-        components = set(x for x in include if x in COMPONENTS)
+        components = {x for x in include if x in COMPONENTS}
         if include and not components:
             raise MPContribsClientError(f"`include` must be subset of {COMPONENTS}!")
 
@@ -1745,9 +1747,13 @@ class Client(SwaggerClient):
 
         unique_identifiers = self.get_unique_identifiers_flags()
         data_id_fields = data_id_fields or {}
-        for k, v in data_id_fields.items():
-            if k in unique_identifiers and isinstance(v, str):
-                data_id_fields[k] = v
+        data_id_fields.update(
+            {
+                k: v
+                for k, v in data_id_fields.items()
+                if k in unique_identifiers and isinstance(v, str)
+            }
+        )
 
         ret = {}
         query = query or {}
@@ -1810,34 +1816,40 @@ class Client(SwaggerClient):
                         if data_id_field and data_id_field_val:
                             ret[project][identifier][data_id_field] = data_id_field_val
 
-                        for component in components:
-                            if component in contrib:
-                                ret[project][identifier][component] = {
+                        ret[project][identifier].update(
+                            {
+                                component: {
                                     d["name"]: {"id": d["id"], "md5": d["md5"]}
                                     for d in contrib[component]
                                 }
+                                for component in components
+                                if component in contrib
+                            }
+                        )
 
                     elif data_id_field and data_id_field_val:
                         ret[project][identifier] = {
                             data_id_field_val: {"id": contrib["id"]}
                         }
 
-                        for component in components:
-                            if component in contrib:
-                                ret[project][identifier][data_id_field_val][
-                                    component
-                                ] = {
+                        ret[project][identifier][data_id_field_val].update(
+                            {
+                                component: {
                                     d["name"]: {"id": d["id"], "md5": d["md5"]}
                                     for d in contrib[component]
                                 }
+                                for component in components
+                                if component in contrib
+                            }
+                        )
 
         return ret
 
     def query_contributions(
         self,
-        query: Optional[dict] = None,
-        fields: Optional[list] = None,
-        sort: Optional[str] = None,
+        query: dict | None = None,
+        fields: list | None = None,
+        sort: str | None = None,
         paginate: bool = False,
         timeout: int = -1,
     ) -> dict:
@@ -1861,12 +1873,11 @@ class Client(SwaggerClient):
             query["project"] = self.project
 
         if paginate:
-            cids = []
-
-            for v in self.get_all_ids(query).values():
-                cids_project = v.get("ids")
-                if cids_project:
-                    cids.extend(cids_project)
+            cids = [
+                idx
+                for v in self.get_all_ids(query).values()
+                for idx in (v.get("ids") or [])
+            ]
 
             if not cids:
                 raise MPContribsClientError("No contributions match the query.")
@@ -1891,7 +1902,7 @@ class Client(SwaggerClient):
         return ret
 
     def update_contributions(
-        self, data: dict, query: Optional[dict] = None, timeout: int = -1
+        self, data: dict, query: dict | None = None, timeout: int = -1
     ) -> dict:
         """Apply the same update to all contributions in a project (matching query)
 
@@ -1906,14 +1917,10 @@ class Client(SwaggerClient):
             raise MPContribsClientError("Nothing to update.")
 
         tic = time.perf_counter()
-        valid, error = self._is_valid_payload("Contribution", data)
-        if not valid:
-            raise MPContribsClientError(error)
+        self._is_valid_payload("Contribution", data)
 
         if "data" in data:
-            serializable, error = self._is_serializable_dict(data["data"])
-            if not serializable:
-                raise MPContribsClientError(error)
+            self._is_serializable_dict(data["data"])
 
         query = query or {}
 
@@ -1939,7 +1946,7 @@ class Client(SwaggerClient):
 
         # get current list of data columns to decide if swagger reload is needed
         resp = self.projects.getProjectByName(pk=name, _fields=["columns"]).result()
-        old_paths = set(c["path"] for c in resp["columns"])
+        old_paths = {c["path"] for c in resp["columns"]}
 
         total = len(cids)
         cids_query = {"id__in": cids}
@@ -1954,7 +1961,7 @@ class Client(SwaggerClient):
 
         if updated:
             resp = self.projects.getProjectByName(pk=name, _fields=["columns"]).result()
-            new_paths = set(c["path"] for c in resp["columns"])
+            new_paths = {c["path"] for c in resp["columns"]}
 
             if new_paths != old_paths:
                 self.init_columns(name=name)
@@ -1964,7 +1971,7 @@ class Client(SwaggerClient):
         return {"updated": updated, "total": total, "seconds_elapsed": toc - tic}
 
     def make_public(
-        self, query: Optional[dict] = None, recursive: bool = False, timeout: int = -1
+        self, query: dict | None = None, recursive: bool = False, timeout: int = -1
     ) -> dict:
         """Publish a project and optionally its contributions
 
@@ -1977,7 +1984,7 @@ class Client(SwaggerClient):
         )
 
     def make_private(
-        self, query: Optional[dict] = None, recursive: bool = False, timeout: int = -1
+        self, query: dict | None = None, recursive: bool = False, timeout: int = -1
     ) -> dict:
         """Make a project and optionally its contributions private
 
@@ -1992,7 +1999,7 @@ class Client(SwaggerClient):
     def _set_is_public(
         self,
         is_public: bool,
-        query: Optional[dict] = None,
+        query: dict | None = None,
         recursive: bool = False,
         timeout: int = -1,
     ) -> dict:
@@ -2124,9 +2131,13 @@ class Client(SwaggerClient):
             resp = self.get_all_ids(dict(id__in=collect_ids), timeout=timeout)
             project_names |= set(resp.keys())
 
-            for project_name, values in resp.items():
-                for cid in values["ids"]:
-                    id2project[cid] = project_name
+            id2project.update(
+                {
+                    cid: project_name
+                    for project_name, values in resp.items()
+                    for cid in values["ids"]
+                }
+            )
 
         existing = defaultdict(dict)
         unique_identifiers = defaultdict(dict)
@@ -2160,9 +2171,7 @@ class Client(SwaggerClient):
         for contrib in tqdm(contributions, desc="Prepare"):
             if "data" in contrib:
                 contrib["data"] = unflatten(contrib["data"], splitter="dot")
-                serializable, error = self._is_serializable_dict(contrib["data"])
-                if not serializable:
-                    raise MPContribsClientError(error)
+                self._is_serializable_dict(contrib["data"])
 
             update = "id" in contrib
             project_name = id2project[contrib["id"]] if update else contrib["project"]
@@ -2282,13 +2291,7 @@ class Client(SwaggerClient):
                     digests[project_name][component].add(digest)
                     contribs[project_name][-1][component].append(dct)
 
-                valid, error = self._is_valid_payload(
-                    "Contribution", contribs[project_name][-1]
-                )
-                if not valid:
-                    raise MPContribsClientError(
-                        f"{contrib['identifier']} invalid: {error}!"
-                    )
+                self._is_valid_payload("Contribution", contribs[project_name][-1])
 
         # submit contributions
         if contribs:
@@ -2425,10 +2428,10 @@ class Client(SwaggerClient):
 
     def download_contributions(
         self,
-        query: Optional[dict] = None,
-        outdir: Union[str, Path] = DEFAULT_DOWNLOAD_DIR,
+        query: dict | None = None,
+        outdir: str | Path = DEFAULT_DOWNLOAD_DIR,
         overwrite: bool = False,
-        include: Optional[list[str]] = None,
+        include: list[str] | None = None,
         timeout: int = -1,
     ) -> list:
         """Download a list of contributions as .json.gz file(s)
@@ -2448,7 +2451,7 @@ class Client(SwaggerClient):
         include = include or []
         outdir = Path(outdir) or Path(".")
         outdir.mkdir(parents=True, exist_ok=True)
-        components = set(x for x in include if x in COMPONENTS)
+        components = {x for x in include if x in COMPONENTS}
         if include and not components:
             raise MPContribsClientError(f"`include` must be subset of {COMPONENTS}!")
 
@@ -2527,7 +2530,7 @@ class Client(SwaggerClient):
     def download_structures(
         self,
         ids: list[str],
-        outdir: Union[str, Path] = DEFAULT_DOWNLOAD_DIR,
+        outdir: str | Path = DEFAULT_DOWNLOAD_DIR,
         overwrite: bool = False,
         timeout: int = -1,
         fmt: str = "json",
@@ -2556,7 +2559,7 @@ class Client(SwaggerClient):
     def download_tables(
         self,
         ids: list[str],
-        outdir: Union[str, Path] = DEFAULT_DOWNLOAD_DIR,
+        outdir: str | Path = DEFAULT_DOWNLOAD_DIR,
         overwrite: bool = False,
         timeout: int = -1,
         fmt: str = "json",
@@ -2585,7 +2588,7 @@ class Client(SwaggerClient):
     def download_attachments(
         self,
         ids: list[str],
-        outdir: Union[str, Path] = DEFAULT_DOWNLOAD_DIR,
+        outdir: str | Path = DEFAULT_DOWNLOAD_DIR,
         overwrite: bool = False,
         timeout: int = -1,
         fmt: str = "json",
@@ -2615,7 +2618,7 @@ class Client(SwaggerClient):
         self,
         resource: str,
         ids: list[str],
-        outdir: Union[str, Path] = DEFAULT_DOWNLOAD_DIR,
+        outdir: str | Path = DEFAULT_DOWNLOAD_DIR,
         overwrite: bool = False,
         timeout: int = -1,
         fmt: str = "json",
