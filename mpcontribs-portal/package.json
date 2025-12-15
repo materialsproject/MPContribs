@@ -48,7 +48,7 @@
     "typy": "^3.3.0",
     "underscore": "^1.13.6",
     "webpack": "^5.89.0",
-    "webpack-bundle-analyzer": "^4.9.1",
+    "webpack-bundle-analyzer": "^5.1.0",
     "webpack-cli": "^5.1.4",
     "webpack4-bundle-tracker": "^0.4.3-beta"
   }
