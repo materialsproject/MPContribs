@@ -1,0 +1,97 @@
+# =============================================================================
+# A-Lab Experiment Filter Presets
+# =============================================================================
+# Predefined filters for common experiment selections.
+# Use these in your product config or as templates.
+#
+# Usage in product config.yaml:
+#   experiment_filter:
+#     preset: "completed_with_xrd"  # Use a preset
+#   OR
+#   experiment_filter:
+#     types: [NSC, Na]  # Custom filter (types auto-discovered from MongoDB)
+# =============================================================================
+
+# NOTE: Experiment types are AUTO-DISCOVERED from MongoDB
+# The pipeline discovers available types by querying MongoDB at runtime.
+# Run this to see available types:
+#   python data/tools/analyze_mongodb.py
+#
+# Example types (discovered from A-Lab):
+#   NSC, Na, PG, MINES, TRI, etc.
+# These change based on what's actually in your MongoDB database.
+
+# Valid experiment statuses (standardized)
+statuses:
+  - completed # All tasks finished successfully
+  - error # At least one task failed
+  - active # Currently running
+  - unknown # Status could not be determined
+
+# =============================================================================
+# Filter Presets (Generic)
+# =============================================================================
+# Generic filter presets that work regardless of experiment types in MongoDB.
+# Type-specific filters are auto-generated during product creation.
+
+presets:
+  # All completed experiments with XRD data
+  completed_with_xrd:
+    description: 'Completed experiments that have XRD measurements'
+    status:
+      - completed
+    has_xrd: true
+
+  # All completed experiments (with or without XRD)
+  all_completed:
+    description: 'All completed experiments'
+    status:
+      - completed
+    has_xrd: null # Don't filter by XRD
+
+  # Failed experiments (for debugging)
+  failed:
+    description: 'Experiments with errors (for debugging)'
+    status:
+      - error
+    has_xrd: null
+
+  # Everything (no filtering)
+  all:
+    description: 'All experiments (no filtering)'
+    # No filters applied
+# =============================================================================
+# Type-Specific Filters (Auto-Generated)
+# =============================================================================
+# Filters for specific experiment types (NSC, Na, PG, etc.) are auto-generated
+# during product creation based on what's discovered in MongoDB.
+#
+# The pipeline will:
+# 1. Query MongoDB for available experiment types
+# 2. Show hierarchical selection (root types and subgroups)
+# 3. Generate appropriate filters based on your selection
+#
+# You don't need to define type-specific presets here.
+# =============================================================================
+# Custom Filters
+# =============================================================================
+# Add your own generic filter presets here.
+# For type-specific filters, use the interactive product creation which will
+# auto-discover available types from MongoDB.
+#
+# Generic filter template:
+#
+# my_custom_filter:
+#   description: "What this filter selects"
+#   status: [completed]         # Optional: status filter
+#   has_xrd: true               # Optional: XRD requirement
+#   has_sem: true               # Optional: SEM requirement (future)
+#   date_range:                 # Optional: date range
+#     start: "2024-01-01"
+#     end: "2024-12-31"
+#
+# NOTE: To filter by specific experiment types (e.g., NSC, Na):
+# - Use interactive product creation (./run_product_pipeline.sh create)
+# - Types are discovered from MongoDB at runtime
+# - Or specify directly in product config.yaml: types: [NSC, Na]
+
