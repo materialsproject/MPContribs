@@ -12,7 +12,7 @@ include-package-data = true
 [tool.setuptools.packages.find]
 where = ["."]
 exclude = ["scripts","supervisord"]
-include = ["mpcontribs.io.core","mpcontribs.io.archie"]
+include = ["mpcontribs.io"]
 
 [project]
 name = "mpcontribs-io"

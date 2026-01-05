@@ -1536,20 +1536,23 @@ class Client(SwaggerClient):
                     new_unit = new_column.get("unit", "NaN")
                     existing_unit = existing_column.get("unit")
                     if existing_unit != new_unit:
-                        conv_args = []
-                        for u in [existing_unit, new_unit]:
+                        if existing_unit == "NaN" and new_unit == "":
+                            factor = 1
+                        else:
+                            conv_args = []
+                            for u in [existing_unit, new_unit]:
+                                try:
+                                    conv_args.append(ureg.Unit(u))
+                                except ValueError:
+                                    raise MPContribsClientError(
+                                        f"Can't convert {existing_unit} to {new_unit} for {path}"
+                                    )
                             try:
-                                conv_args.append(ureg.Unit(u))
-                            except ValueError:
+                                factor = ureg.convert(1, *conv_args)
+                            except DimensionalityError:
                                 raise MPContribsClientError(
                                     f"Can't convert {existing_unit} to {new_unit} for {path}"
                                 )
-                        try:
-                            factor = ureg.convert(1, *conv_args)
-                        except DimensionalityError:
-                            raise MPContribsClientError(
-                                f"Can't convert {existing_unit} to {new_unit} for {path}"
-                            )
 
                         if not isclose(factor, 1):
                             logger.info(
