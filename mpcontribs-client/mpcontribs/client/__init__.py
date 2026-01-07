@@ -53,41 +53,17 @@ from requests_futures.sessions import FuturesSession
 from urllib3.util.retry import Retry
 from filetype.types.archive import Gz
 from filetype.types.image import Jpeg, Png, Gif, Tiff
-from pint import UnitRegistry
 from pint.errors import DimensionalityError
 from tempfile import gettempdir
 from plotly.express._chart_types import line as line_chart
 from cachetools import cached, LRUCache
 from cachetools.keys import hashkey
-from pymatgen.core import SETTINGS
 
-RETRIES = 3
-MAX_WORKERS = 3
-MAX_ELEMS = 10
-MAX_NESTING = 5
-MEGABYTES = 1024 * 1024
-MAX_BYTES = 2.4 * MEGABYTES
-MAX_PAYLOAD = 15 * MEGABYTES
-MAX_COLUMNS = 160
-DEFAULT_HOST = "contribs-api.materialsproject.org"
-BULMA = "is-narrow is-fullwidth has-background-light"
-PROVIDERS = {"github", "google", "facebook", "microsoft", "amazon"}
-COMPONENTS = ["structures", "tables", "attachments"]  # using list to maintain order
-SUBDOMAINS = ["contribs", "ml", "micro"]
-PORTS = [5000, 5002, 5003, 5005, 10000, 10002, 10003, 10005, 20000, 20005]
-HOSTS = ["localhost", "contribs-apis"]
-HOSTS += [f"192.168.0.{i}" for i in range(36, 47)]  # PrivateSubnetOne
-HOSTS += [f"192.168.0.{i}" for i in range(52, 63)]  # PrivateSubnetTwo
-VALID_URLS = {f"http://{h}:{p}" for p in PORTS for h in HOSTS}
-VALID_URLS |= {
-    f"https://{n}-api{m}.materialsproject.org"
-    for n in SUBDOMAINS
-    for m in ["", "-preview"]
-}
-VALID_URLS |= {f"http://localhost.{n}-api.materialsproject.org" for n in SUBDOMAINS}
-SUPPORTED_FILETYPES = (Gz, Jpeg, Png, Gif, Tiff)
-SUPPORTED_MIMES = [t().mime for t in SUPPORTED_FILETYPES]
-DEFAULT_DOWNLOAD_DIR = Path.home() / "mpcontribs-downloads"
+from mpcontribs.client.core import MPContribsClientError
+from mpcontribs.client.settings import ContribsClientSettings
+from mpcontribs.client.units import ureg
+
+SETTINGS = ContribsClientSettings()
 
 j2h = Json2Html()
 pd.options.plotting.backend = "plotly"
@@ -95,30 +71,7 @@ pio.templates.default = "simple_white"
 warnings.formatwarning = lambda msg, *args, **kwargs: f"{msg}\n"
 warnings.filterwarnings("default", category=DeprecationWarning, module=__name__)
 
-ureg = UnitRegistry(
-    autoconvert_offset_to_baseunit=True,
-    preprocessors=[
-        lambda s: s.replace("%%", " permille "),
-        lambda s: s.replace("%", " percent "),
-    ],
-)
-if "percent" not in ureg:
-    # percent is native in pint >= 0.21
-    ureg.define("percent = 0.01 = %")
-if "permille" not in ureg:
-    # permille is native in pint >= 0.24.2
-    ureg.define("permille = 0.001 = ‰ = %%")
-if "ppm" not in ureg:
-    # ppm is native in pint >= 0.21
-    ureg.define("ppm = 1e-6")
-ureg.define("ppb = 1e-9")
-ureg.define("atom = 1")
-ureg.define("bohr_magneton = e * hbar / (2 * m_e) = µᵇ = µ_B = mu_B")
-ureg.define("electron_mass = 9.1093837015e-31 kg = mₑ = m_e")
-ureg.define("sccm = cm³/min")
 
-LOG_LEVEL = os.environ.get("MPCONTRIBS_CLIENT_LOG_LEVEL", "INFO")
-log_level = getattr(logging, LOG_LEVEL.upper())
 _session = requests.Session()
 _ipython = sys.modules["IPython"].get_ipython()
 
@@ -165,16 +118,12 @@ def get_logger(name):
     info_handler.addFilter(LogFilter(logging.WARNING))
     error_handler.setLevel(max(logging.DEBUG, logging.WARNING))
     logger.handlers = [info_handler, error_handler]
-    logger.setLevel(log_level)
+    logger.setLevel(SETTINGS.CLIENT_LOG_LEVEL)
     return CustomLoggerAdapter(logger, cfg)
 
 
 logger = get_logger(__name__)
-tqdm_out = TqdmToLogger(logger, level=log_level)
-
-
-class MPContribsClientError(ValueError):
-    """custom error for mpcontribs-client"""
+tqdm_out = TqdmToLogger(logger, level=SETTINGS.CLIENT_LOG_LEVEL)
 
 
 def get_md5(d):
@@ -294,7 +243,7 @@ def _response_hook(resp, *args, **kwargs):
         resp.count = 0
 
 
-def _chunk_by_size(items, max_size=0.95 * MAX_BYTES):
+def _chunk_by_size(items, max_size=0.95 * SETTINGS.MAX_BYTES):
     buffer, buffer_size = [], 0
 
     for item in items:
@@ -345,302 +294,6 @@ if _in_ipython():
         )
 
     _ipython.showtraceback = _hide_traceback
-
-
-class Dict(dict):
-    """Custom dictionary to display itself as HTML table with Bulma CSS"""
-
-    def display(self, attrs: str = f'class="table {BULMA}"'):
-        """Nice table display of dictionary
-
-        Args:
-            attrs (str): table attributes to forward to Json2Html.convert
-        """
-        html = j2h.convert(json=remap(self, visit=visit), table_attributes=attrs)
-        if _in_ipython():
-            return display(HTML(html))
-
-        return html
-
-
-class Table(pd.DataFrame):
-    """Wrapper class around pandas.DataFrame to provide display() and info()"""
-
-    def display(self):
-        """Display a plotly graph for the table if in IPython/Jupyter"""
-        if _in_ipython():
-            try:
-                allowed_kwargs = getfullargspec(line_chart).args
-                attrs = {k: v for k, v in self.attrs.items() if k in allowed_kwargs}
-                return self.plot(**attrs)
-            except Exception as e:
-                logger.error(f"Can't display table: {e}")
-
-        return self
-
-    def info(self) -> Type[Dict]:
-        """Show summary info for table"""
-        info = Dict((k, v) for k, v in self.attrs.items())
-        info["columns"] = ", ".join(self.columns)
-        info["nrows"] = len(self.index)
-        return info
-
-    @classmethod
-    def from_dict(cls, dct: dict):
-        """Construct Table from dict
-
-        Args:
-            dct (dict): dictionary format of table
-        """
-        df = pd.DataFrame.from_records(
-            dct["data"], columns=dct["columns"], index=dct["index"]
-        ).apply(pd.to_numeric, errors="ignore")
-        df.index = pd.to_numeric(df.index, errors="ignore")
-        labels = dct["attrs"].get("labels", {})
-
-        if "index" in labels:
-            df.index.name = labels["index"]
-        if "variable" in labels:
-            df.columns.name = labels["variable"]
-
-        ret = cls(df)
-        ret.attrs = {k: v for k, v in dct["attrs"].items()}
-        return ret
-
-    def _clean(self):
-        """clean the dataframe"""
-        self.replace([np.inf, -np.inf], np.nan, inplace=True)
-        self.fillna("", inplace=True)
-        self.index = self.index.astype(str)
-        for col in self.columns:
-            self[col] = self[col].astype(str)
-
-    def _attrs_as_dict(self):
-        name = self.attrs.get("name", "table")
-        title = self.attrs.get("title", name)
-        labels = self.attrs.get("labels", {})
-        index = self.index.name
-        variable = self.columns.name
-
-        if index and "index" not in labels:
-            labels["index"] = index
-        if variable and "variable" not in labels:
-            labels["variable"] = variable
-
-        return name, {"title": title, "labels": labels}
-
-    def as_dict(self):
-        """Convert Table to plain dictionary"""
-        self._clean()
-        dct = self.to_dict(orient="split")
-        dct["name"], dct["attrs"] = self._attrs_as_dict()
-        return dct
-
-
-class Structure(PmgStructure):
-    """Wrapper class around pymatgen.Structure to provide display() and info()"""
-
-    def display(self):
-        return self  # TODO use static image from crystal toolkit?
-
-    def info(self) -> Type[Dict]:
-        """Show summary info for structure"""
-        info = Dict((k, v) for k, v in self.attrs.items())
-        info["formula"] = self.composition.formula
-        info["reduced_formula"] = self.composition.reduced_formula
-        info["nsites"] = len(self)
-        return info
-
-    @classmethod
-    def from_dict(cls, dct: dict):
-        """Construct Structure from dict
-
-        Args:
-            dct (dict): dictionary format of structure
-        """
-        ret = super().from_dict(dct)
-        ret.attrs = {field: dct[field] for field in ["id", "name", "md5"]}
-        return ret
-
-
-class Attachment(dict):
-    """Wrapper class around dict to handle attachments"""
-
-    def decode(self) -> bytes:
-        """Decode base64-encoded content of attachment"""
-        return b64decode(self["content"], validate=True)
-
-    def unpack(self) -> str:
-        unpacked = self.decode()
-
-        if self["mime"] == "application/gzip":
-            unpacked = gzip.decompress(unpacked).decode("utf-8")
-
-        return unpacked
-
-    def write(self, outdir: Optional[Union[str, Path]] = None) -> Path:
-        """Write attachment to file using its name
-
-        Args:
-            outdir (str,Path): existing directory to which to write file
-        """
-        outdir = outdir or "."
-        path = Path(outdir) / self.name
-        content = self.decode()
-        path.write_bytes(content)
-        return path
-
-    def display(self, outdir: Optional[Union[str, Path]] = None):
-        """Display Image/FileLink for attachment if in IPython/Jupyter
-
-        Args:
-            outdir (str,Path): existing directory to which to write file
-        """
-        if _in_ipython():
-            if self["mime"].startswith("image/"):
-                content = self.decode()
-                return Image(content)
-
-            self.write(outdir=outdir)
-            return FileLink(self.name)
-
-        return self.info().display()
-
-    def info(self) -> Dict:
-        """Show summary info for attachment"""
-        fields = ["id", "name", "mime", "md5"]
-        info = Dict((k, v) for k, v in self.items() if k in fields)
-        info["size"] = len(self.decode())
-        return info
-
-    @property
-    def name(self) -> str:
-        """name of the attachment (used in filename)"""
-        return self["name"]
-
-    @classmethod
-    def from_data(cls, data: Union[list, dict], name: str = "attachment"):
-        """Construct attachment from data dict or list
-
-        Args:
-            data (list,dict): JSON-serializable data to go into the attachment
-            name (str): name for the attachment
-        """
-        filename = name + ".json.gz"
-        size, content = _compress(data)
-
-        if size > MAX_BYTES:
-            raise MPContribsClientError(f"{name} too large ({size} > {MAX_BYTES})!")
-
-        return cls(
-            name=filename,
-            mime="application/gzip",
-            content=b64encode(content).decode("utf-8"),
-        )
-
-    @classmethod
-    def from_file(cls, path: Union[Path, str]):
-        """Construct attachment from file
-
-        Args:
-            path (pathlib.Path, str): file path
-        """
-        try:
-            path = Path(path)
-        except TypeError:
-            typ = type(path)
-            raise MPContribsClientError(f"use pathlib.Path or str (is: {typ}).")
-
-        kind = guess(str(path))
-        supported = isinstance(kind, SUPPORTED_FILETYPES)
-        content = path.read_bytes()
-
-        if not supported:  # try to gzip text file
-            try:
-                content = gzip.compress(content)
-            except Exception:
-                raise MPContribsClientError(
-                    f"{path} is not text file or {SUPPORTED_MIMES}."
-                )
-
-        size = len(content)
-
-        if size > MAX_BYTES:
-            raise MPContribsClientError(f"{path} too large ({size} > {MAX_BYTES})!")
-
-        return cls(
-            name=path.name,
-            mime=kind.mime if supported else "application/gzip",
-            content=b64encode(content).decode("utf-8"),
-        )
-
-    @classmethod
-    def from_dict(cls, dct: dict):
-        """Construct Attachment from dict
-
-        Args:
-            dct (dict): dictionary format of attachment
-        """
-        keys = {"id", "name", "md5", "content", "mime"}
-        return cls((k, v) for k, v in dct.items() if k in keys)
-
-
-class Attachments(list):
-    """Wrapper class to handle attachments automatically"""
-
-    # TODO implement "plural" versions for Attachment methods
-
-    @classmethod
-    def from_list(cls, elements: list):
-        if not isinstance(elements, list):
-            raise MPContribsClientError("use list to init Attachments")
-
-        attachments = []
-
-        for element in elements:
-            if len(attachments) >= MAX_ELEMS:
-                raise MPContribsClientError(f"max {MAX_ELEMS} attachments reached")
-
-            if isinstance(element, Attachment):
-                # simply append, size check already performed
-                attachments.append(element)
-            elif isinstance(element, (list, dict)):
-                attachments += cls.from_data(element)
-            elif isinstance(element, (str, Path)):
-                # don't split files, user should use from_data to split
-                attm = Attachment.from_file(element)
-                attachments.append(attm)
-            else:
-                raise MPContribsClientError("invalid element for Attachments")
-
-        return attachments
-
-    @classmethod
-    def from_data(cls, data: Union[list, dict], prefix: str = "attachment"):
-        """Construct list of attachments from data dict or list
-
-        Args:
-            data (list,dict): JSON-serializable data to go into the attachments
-            prefix (str): prefix for attachment name(s)
-        """
-        try:
-            # try to make single attachment first
-            return [Attachment.from_data(data, name=prefix)]
-        except MPContribsClientError:
-            # chunk data into multiple attachments with < MAX_BYTES
-            if isinstance(data, dict):
-                raise NotImplementedError("dicts not supported yet")
-
-            attachments = []
-
-            for idx, chunk in enumerate(_chunk_by_size(data)):
-                if len(attachments) > MAX_ELEMS:
-                    raise MPContribsClientError("list too large to split")
-
-                attm = Attachment.from_data(chunk, name=f"{prefix}{idx}")
-                attachments.append(attm)
-
-            return attachments
 
 
 classes_map = {"structures": Structure, "tables": Table, "attachments": Attachment}
@@ -2426,7 +2079,7 @@ class Client(SwaggerClient):
     def download_contributions(
         self,
         query: Optional[dict] = None,
-        outdir: Union[str, Path] = DEFAULT_DOWNLOAD_DIR,
+        outdir: Union[str, Path] = SETTINGS.DEFAULT_DOWNLOAD_DIR,
         overwrite: bool = False,
         include: Optional[list[str]] = None,
         timeout: int = -1,
@@ -2527,7 +2180,7 @@ class Client(SwaggerClient):
     def download_structures(
         self,
         ids: list[str],
-        outdir: Union[str, Path] = DEFAULT_DOWNLOAD_DIR,
+        outdir: Union[str, Path] = SETTINGS.DEFAULT_DOWNLOAD_DIR,
         overwrite: bool = False,
         timeout: int = -1,
         fmt: str = "json",
@@ -2556,7 +2209,7 @@ class Client(SwaggerClient):
     def download_tables(
         self,
         ids: list[str],
-        outdir: Union[str, Path] = DEFAULT_DOWNLOAD_DIR,
+        outdir: Union[str, Path] = SETTINGS.DEFAULT_DOWNLOAD_DIR,
         overwrite: bool = False,
         timeout: int = -1,
         fmt: str = "json",
@@ -2585,7 +2238,7 @@ class Client(SwaggerClient):
     def download_attachments(
         self,
         ids: list[str],
-        outdir: Union[str, Path] = DEFAULT_DOWNLOAD_DIR,
+        outdir: Union[str, Path] = SETTINGS.DEFAULT_DOWNLOAD_DIR,
         overwrite: bool = False,
         timeout: int = -1,
         fmt: str = "json",
@@ -2615,7 +2268,7 @@ class Client(SwaggerClient):
         self,
         resource: str,
         ids: list[str],
-        outdir: Union[str, Path] = DEFAULT_DOWNLOAD_DIR,
+        outdir: Union[str, Path] = SETTINGS.DEFAULT_DOWNLOAD_DIR,
         overwrite: bool = False,
         timeout: int = -1,
         fmt: str = "json",
