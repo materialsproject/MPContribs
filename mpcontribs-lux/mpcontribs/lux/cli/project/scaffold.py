@@ -27,7 +27,7 @@ def scaffold(
         user_space = click.prompt("Name space for user project")
         structure = click.prompt("Structure of user project [directory, module]")
         projects = click.prompt(
-            "Project names to scaffold in user project name space"
+            "Project names to scaffold in user project name space (space-separated list)"
         ).split(" ")
         include_analysis = click.confirm("Include analysis module?")
         include_pipeline = click.confirm("Include pipeline module?")

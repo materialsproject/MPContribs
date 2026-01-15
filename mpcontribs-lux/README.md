@@ -42,3 +42,47 @@ print(pydantic_model.schema())
 
 The test suite for MPContribs-lux will automatically test your `pydantic` models for arrow/parquet compatibility using the [arrowize](https://github.com/materialsproject/emmet/blob/74194bbf8c7b32ce15141bb1c9ee0527a0fc6c45/emmet-core/emmet/core/arrow.py#L40) utility from `emmet-core` (MP's production data model and data pipeline repository).
 Schemas submitted to MPContribs-lux do not necessarily need to be parquet/arrow compatlible, the `@arrow_incompatible` decorator from `emmet-core`'s [utils](https://github.com/materialsproject/emmet/blob/74194bbf8c7b32ce15141bb1c9ee0527a0fc6c45/emmet-core/emmet/core/utils.py#L104) module can be used to mark a `pydantic` model to be skipped during arrow compatibility testing.
+
+### Quickstart from the Command Line Interface (CLI)
+
+For this approach, `pip install -e 'mpcontribs-lux[cli]'` to first obtain a few extra dependencies needed to run the CLI.
+Once done, run the CLI with `lux project scaffold` in the `MPContribs` directory.
+
+<details>
+<summary>
+This will start a series of prompts asking how to structure your project:
+</summary>
+
+```shell
+/path/to/MPContribs > lux project scaffold
+Name space for user project: JohnDoe
+Structure of user project [directory, module]: module
+Project names to scaffold in user project name space (space-separated list): project-1 project-2 project-3
+Include analysis module? [y/N]: y
+Include pipeline module? [y/N]: n
+Include project README.md? [y/N]: y
+Include file for extra python requirements/libraries? [y/N]: y
+The following project scaffold will be created in 'mpcontribs-lux.mpcontribs.projects':
+ JohnDoe
+├──  project-1
+│   ├── __init__.py
+│   ├── analysis_1.py
+│   ├── pip-extra-requirements.txt
+│   ├── README.md
+│   └── schema_1.py
+├──  project-2
+│   ├── __init__.py
+│   ├── analysis_1.py
+│   ├── pip-extra-requirements.txt
+│   ├── README.md
+│   └── schema_1.py
+└──  project-3
+    ├── __init__.py
+    ├── analysis_1.py
+    ├── pip-extra-requirements.txt
+    ├── README.md
+    └── schema_1.py
+Proceed? y/N [y/N]:
+```
+
+</details>
