@@ -4,7 +4,7 @@ Base utilities for A-Lab Pydantic schemas.
 Provides common types, validators, and field utilities.
 """
 
-from typing import Any, Dict
+from typing import Any
 from pydantic import Field
 
 
