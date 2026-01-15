@@ -8,17 +8,13 @@ from typing import Any
 from pydantic import Field
 
 
-def ExcludeFromUpload(
-    default: Any = None,
-    description: str = "",
-    **kwargs
-) -> Any:
+def ExcludeFromUpload(default: Any = None, description: str = "", **kwargs) -> Any:
     """
     Field that should NOT be uploaded to MPContribs.
-    
+
     Use this for sensitive data that must remain private until publication.
     Examples: weight_collected, mass measurements that are embargoed.
-    
+
     Usage:
         weight_collected: float | None = ExcludeFromUpload(
             description="Weight of powder collected (embargoed)"
@@ -35,10 +31,10 @@ def ExcludeFromUpload(
 def get_uploadable_fields(model_class) -> list[str]:
     """
     Get list of fields that should be uploaded to MPContribs.
-    
+
     Args:
         model_class: Pydantic model class
-    
+
     Returns:
         List of field names that are NOT marked with exclude_from_upload
     """
@@ -53,10 +49,10 @@ def get_uploadable_fields(model_class) -> list[str]:
 def get_excluded_fields(model_class) -> list[str]:
     """
     Get list of fields that should NOT be uploaded to MPContribs.
-    
+
     Args:
         model_class: Pydantic model class
-    
+
     Returns:
         List of field names that ARE marked with exclude_from_upload
     """
@@ -66,4 +62,3 @@ def get_excluded_fields(model_class) -> list[str]:
         if extra.get("exclude_from_upload", False):
             excluded.append(field_name)
     return excluded
-
