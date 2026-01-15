@@ -41,7 +41,6 @@ dependencies = [
     "requests-futures",
     "swagger-spec-validator",
     "tqdm",
-    "ujson",
     "cachetools",
 ]
 

@@ -1,25 +1,49 @@
+"""Define custom types for MPContribs client."""
+
+from __future__ import annotations
+
+from base64 import b64encode, b64decode
+from boltons.iterutils import remap
+from filetype import guess
+from inspect import getfullargspec
+from IPython.display import display, HTML, Image, FileLink
+from json2html import Json2Html
+import gzip
+from pathlib import Path
+from plotly.express._chart_types import line as line_chart
+import numpy as np
+import pandas as pd
+from typing import TYPE_CHECKING
+
 from pymatgen.core.structure import Structure as PmgStructure
 
-from mpcontribs.client.settings import ContribsClientSettings
+from mpcontribs.client.settings import MPCC_SETTINGS
+from mpcontribs.client.exceptions import MPContribsClientError
+from mpcontribs.client.logger import MPCC_LOGGER
+from mpcontribs.client.utils import _in_ipython, _compress, _chunk_by_size
 
-SETTINGS = ContribsClientSettings()
+if TYPE_CHECKING:
+    from typing_extensions import Self
 
+j2h = Json2Html()
 
 class PrettyDict(dict):
     """Custom dictionary to display itself as HTML table with Bulma CSS"""
 
-    def display(self, attrs: str = f'class="table {SETTINGS.BULMA}"'):
+    @staticmethod
+    def visit(path, key, value):
+        if isinstance(value, dict) and "display" in value:
+            return key, value["display"]
+        return True
+
+    def display(self, attrs: str = f'class="table {MPCC_SETTINGS.BULMA}"'):
         """Nice table display of dictionary
 
         Args:
             attrs (str): table attributes to forward to Json2Html.convert
         """
-        html = j2h.convert(json=remap(self, visit=visit), table_attributes=attrs)
-        if _in_ipython():
-            return display(HTML(html))
-
-        return html
-
+        html = j2h.convert(json=remap(self, visit=self.visit), table_attributes=attrs)
+        return display(HTML(html)) if _in_ipython() else html
 
 class Table(pd.DataFrame):
     """Wrapper class around pandas.DataFrame to provide display() and info()"""
@@ -32,7 +56,7 @@ class Table(pd.DataFrame):
                 attrs = {k: v for k, v in self.attrs.items() if k in allowed_kwargs}
                 return self.plot(**attrs)
             except Exception as e:
-                logger.error(f"Can't display table: {e}")
+                MPCC_LOGGER.error(f"Can't display table: {e}")
 
         return self
 
@@ -44,7 +68,7 @@ class Table(pd.DataFrame):
         return info
 
     @classmethod
-    def from_dict(cls, dct: dict):
+    def from_dict(cls, dct: dict) -> Self:
         """Construct Table from dict
 
         Args:
@@ -101,17 +125,17 @@ class PrettyStructure(PmgStructure):
     def display(self):
         return self  # TODO use static image from crystal toolkit?
 
-    def info(self) -> Type[Dict]:
+    def info(self) -> PrettyDict:
         """Show summary info for structure"""
-        info = Dict((k, v) for k, v in self.attrs.items())
+        info = PrettyDict((k, v) for k, v in self.attrs.items())
         info["formula"] = self.composition.formula
         info["reduced_formula"] = self.composition.reduced_formula
         info["nsites"] = len(self)
         return info
 
     @classmethod
-    def from_dict(cls, dct: dict):
-        """Construct Structure from dict
+    def from_dict(cls, dct: dict) -> Self:
+        """Construct PrettyStructure from dict
 
         Args:
             dct (dict): dictionary format of structure
@@ -138,7 +162,7 @@ class Attachment(dict):
 
         return unpacked
 
-    def write(self, outdir: Optional[Union[str, Path]] = None) -> Path:
+    def write(self, outdir: str | Path | None = None) -> Path:
         """Write attachment to file using its name
 
         Args:
@@ -150,7 +174,7 @@ class Attachment(dict):
         path.write_bytes(content)
         return path
 
-    def display(self, outdir: Optional[Union[str, Path]] = None):
+    def display(self, outdir: str | Path | None = None):
         """Display Image/FileLink for attachment if in IPython/Jupyter
 
         Args:
@@ -166,10 +190,10 @@ class Attachment(dict):
 
         return self.info().display()
 
-    def info(self) -> Dict:
+    def info(self) -> PrettyDict:
         """Show summary info for attachment"""
         fields = ["id", "name", "mime", "md5"]
-        info = Dict((k, v) for k, v in self.items() if k in fields)
+        info = PrettyDict((k, v) for k, v in self.items() if k in fields)
         info["size"] = len(self.decode())
         return info
 
@@ -179,7 +203,7 @@ class Attachment(dict):
         return self["name"]
 
     @classmethod
-    def from_data(cls, data: Union[list, dict], name: str = "attachment"):
+    def from_data(cls, data: list | dict, name: str = "attachment") -> Self:
         """Construct attachment from data dict or list
 
         Args:
@@ -189,8 +213,8 @@ class Attachment(dict):
         filename = name + ".json.gz"
         size, content = _compress(data)
 
-        if size > MAX_BYTES:
-            raise MPContribsClientError(f"{name} too large ({size} > {MAX_BYTES})!")
+        if size > MPCC_SETTINGS.MAX_BYTES:
+            raise MPContribsClientError(f"{name} too large ({size} > {MPCC_SETTINGS.MAX_BYTES})!")
 
         return cls(
             name=filename,
@@ -199,8 +223,8 @@ class Attachment(dict):
         )
 
     @classmethod
-    def from_file(cls, path: Union[Path, str]):
-        """Construct attachment from file
+    def from_file(cls, path: str | Path) -> Self:
+        """Construct attachment from file.
 
         Args:
             path (pathlib.Path, str): file path
@@ -212,7 +236,7 @@ class Attachment(dict):
             raise MPContribsClientError(f"use pathlib.Path or str (is: {typ}).")
 
         kind = guess(str(path))
-        supported = isinstance(kind, SUPPORTED_FILETYPES)
+        supported = isinstance(kind, MPCC_SETTINGS.SUPPORTED_FILETYPES)
         content = path.read_bytes()
 
         if not supported:  # try to gzip text file
@@ -220,13 +244,13 @@ class Attachment(dict):
                 content = gzip.compress(content)
             except Exception:
                 raise MPContribsClientError(
-                    f"{path} is not text file or {SUPPORTED_MIMES}."
+                    f"{path} is not text file or {MPCC_SETTINGS.SUPPORTED_MIMES}."
                 )
 
         size = len(content)
 
-        if size > MAX_BYTES:
-            raise MPContribsClientError(f"{path} too large ({size} > {MAX_BYTES})!")
+        if size > MPCC_SETTINGS.MAX_BYTES:
+            raise MPContribsClientError(f"{path} too large ({size} > {MPCC_SETTINGS.MAX_BYTES})!")
 
         return cls(
             name=path.name,
@@ -235,7 +259,7 @@ class Attachment(dict):
         )
 
     @classmethod
-    def from_dict(cls, dct: dict):
+    def from_dict(cls, dct: dict) -> Self:
         """Construct Attachment from dict
 
         Args:
@@ -251,15 +275,16 @@ class Attachments(list):
     # TODO implement "plural" versions for Attachment methods
 
     @classmethod
-    def from_list(cls, elements: list):
+    def from_list(cls, elements: list) -> Self:
+
         if not isinstance(elements, list):
-            raise MPContribsClientError("use list to init Attachments")
+            raise MPContribsClientError(f"Use a list to initialize Attachments, not {type(elements)}.")
 
         attachments = []
 
         for element in elements:
-            if len(attachments) >= MAX_ELEMS:
-                raise MPContribsClientError(f"max {MAX_ELEMS} attachments reached")
+            if len(attachments) >= MPCC_SETTINGS.MAX_ELEMS:
+                raise MPContribsClientError(f"max {MPCC_SETTINGS.MAX_ELEMS} attachments reached")
 
             if isinstance(element, Attachment):
                 # simply append, size check already performed
@@ -276,7 +301,7 @@ class Attachments(list):
         return attachments
 
     @classmethod
-    def from_data(cls, data: Union[list, dict], prefix: str = "attachment"):
+    def from_data(cls, data: list | dict, prefix: str = "attachment"):
         """Construct list of attachments from data dict or list
 
         Args:
@@ -294,7 +319,7 @@ class Attachments(list):
             attachments = []
 
             for idx, chunk in enumerate(_chunk_by_size(data)):
-                if len(attachments) > MAX_ELEMS:
+                if len(attachments) > MPCC_SETTINGS.MAX_ELEMS:
                     raise MPContribsClientError("list too large to split")
 
                 attm = Attachment.from_data(chunk, name=f"{prefix}{idx}")

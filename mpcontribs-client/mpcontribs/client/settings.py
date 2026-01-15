@@ -41,7 +41,7 @@ class ContribsClientSettings(BaseSettings):
     MAX_BYTES: float = 2.4 * _MEGABYTES
     MAX_PAYLOAD: float = 15 * _MEGABYTES
     MAX_COLUMNS: int = 160
-    DEFAULT_HOST: str = "contribs-api.materialsproject.org"
+    API_HOST: str = "contribs-api.materialsproject.org"
     BULMA: str = "is-narrow is-fullwidth has-background-light"
     PROVIDERS: set[str] = Field(
         default={"github", "google", "facebook", "microsoft", "amazon"}
@@ -85,3 +85,5 @@ class ContribsClientSettings(BaseSettings):
             except StopIteration:
                 return None
         return v
+
+MPCC_SETTINGS = ContribsClientSettings()
