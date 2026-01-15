@@ -27,6 +27,7 @@ mpcontribs-api/mpcontribs/api/swagger*/
 .ipython/
 .jupyter/
 .local/
+.vscode/
 mpcontribs-portal/mpcontribs/portal/templates/notebooks
 coverage.xml
 mpcontribs-api/supervisord.conf
