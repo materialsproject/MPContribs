@@ -6,6 +6,7 @@ from mpcontribs.client.core import Client
 from mpcontribs.client.exceptions import MPContribsClientError
 from mpcontribs.client.settings import MPCC_SETTINGS
 
+__all__ = ["Client", "MPContribsClientError", "MPCC_SETTINGS"]
 
 try:
     __version__ = importlib.metadata.version("mpcontribs-client")

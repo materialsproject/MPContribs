@@ -1,6 +1,7 @@
 """Define core client functionality."""
 
 import gzip
+import importlib.metadata
 import sys
 import time
 import pandas as pd
@@ -25,14 +26,17 @@ from collections import defaultdict
 from pyisemail.diagnosis import BaseDiagnosis
 from swagger_spec_validator.common import SwaggerValidationError
 from jsonschema.exceptions import ValidationError
+from bravado.client import SwaggerClient
 from bravado_core.formatter import SwaggerFormat
 from bravado.swagger_model import Loader
 from bravado.config import bravado_config_from_config_dict
 from bravado_core.spec import Spec, build_api_serving_url, _identity
 from bravado_core.model import model_discovery
+from bravado.requests_client import RequestsClient
 from bravado_core.resource import build_resources
 from bravado.exception import HTTPNotFound
 from bravado_core.validate import validate_object
+from concurrent.futures import as_completed
 from pymatgen.core import Structure as PmgStructure
 from requests_futures.sessions import FuturesSession
 from urllib3.util.retry import Retry
@@ -45,6 +49,8 @@ from mpcontribs.client.exceptions import MPContribsClientError
 from mpcontribs.client.logger import MPCC_LOGGER, TqdmToLogger
 from mpcontribs.client.settings import MPCC_SETTINGS
 from mpcontribs.client.types import PrettyDict, PrettyStructure, Table, Attachment
+from mpcontribs.client.units import ureg
+from mpcontribs.client.utils import get_md5
 
 classes_map = {
     "structures": PrettyStructure,
@@ -206,13 +212,7 @@ def _run_futures(futures, total: int = 0, timeout: int = -1, desc=None, disable=
 @functools.lru_cache(maxsize=1000)
 def _load(protocol, host, headers_json, project, version):
     spec_dict = _raw_specs(protocol, host, version)
-    headers = (
-        orjson.loads(headers_json)
-        if isinstance(headers_json, str | bytes)
-        else headers_json
-    )
-    if isinstance(headers, bytes):
-        headers = headers.decode(encoding="utf-8")
+    headers = orjson.loads(headers_json)
 
     if not spec_dict["paths"]:
         url = f"{protocol}://{host}"
@@ -240,7 +240,11 @@ def _load(protocol, host, headers_json, project, version):
     projects = sorted(d["name"] for d in resp["data"])
     # expand regex-based query parameters for `data` columns
     spec = _expand_params(
-        protocol, host, version, projects, api_key=headers.get("x-api-key")
+        protocol,
+        host,
+        version,
+        orjson.dumps(projects),
+        api_key=headers.get("x-api-key"),
     )
     spec.http_client.session.headers.update(headers)
     return spec
@@ -289,11 +293,7 @@ def _raw_specs(protocol, host, version):
 )
 def _expand_params(protocol, host, version, projects_json, api_key=None):
     columns = {"string": [], "number": []}
-    projects = (
-        orjson.loads(projects_json)
-        if isinstance(projects_json, str | bytes)
-        else projects_json
-    )
+    projects = orjson.loads(projects_json)
     query = {"project__in": ",".join(projects)}
     query["_fields"] = "columns"
     url = f"{protocol}://{host}"
@@ -365,7 +365,7 @@ def _version(url):
     retries, max_retries = 0, 3
     protocol = urlparse(url).scheme
     if "pytest" in sys.modules and protocol == "http":
-        return __version__
+        return importlib.metadata.version("mpcontribs-client")
 
     while retries < max_retries:
         try:
@@ -635,7 +635,9 @@ class Client(SwaggerClient):
 
         return [param for param in params if param.startswith(startswith)]
 
-    def get_project(self, name: str | None = None, fields: list | None = None) -> Dict:
+    def get_project(
+        self, name: str | None = None, fields: list | None = None
+    ) -> PrettyDict:
         """Retrieve a project entry
 
         Args:
@@ -851,7 +853,7 @@ class Client(SwaggerClient):
         if resp and "error" in resp:
             raise MPContribsClientError(resp["error"])
 
-    def get_contribution(self, cid: str, fields: list | None = None) -> Dict:
+    def get_contribution(self, cid: str, fields: list | None = None) -> PrettyDict:
         """Retrieve a contribution
 
         Args:
@@ -907,7 +909,7 @@ class Client(SwaggerClient):
 
         return Table.from_dict(table)
 
-    def get_structure(self, sid_or_md5: str) -> Structure:
+    def get_structure(self, sid_or_md5: str) -> PrettyStructure:
         """Retrieve pymatgen structure
 
         Args:
@@ -933,7 +935,7 @@ class Client(SwaggerClient):
 
         fields = list(self.get_model("StructuresSchema")._properties.keys())
         resp = self.structures.getStructureById(pk=sid, _fields=fields).result()
-        return Structure.from_dict(resp)
+        return PrettyStructure.from_dict(resp)
 
     def get_attachment(self, aid_or_md5: str) -> Attachment:
         """Retrieve an attachment
@@ -1659,7 +1661,7 @@ class Client(SwaggerClient):
         tic = time.perf_counter()
         project_names = set()
         collect_ids = []
-        require_one_of = {"data"} | set(COMPONENTS)
+        require_one_of = {"data"} | set(MPCC_SETTINGS.COMPONENTS)
 
         for idx, c in enumerate(contributions):
             has_keys = require_one_of & c.keys()
@@ -1714,7 +1716,10 @@ class Client(SwaggerClient):
                 else {"project": project_names[0]}
             )
             existing = defaultdict(
-                dict, self.get_all_ids(query, include=COMPONENTS, timeout=timeout)
+                dict,
+                self.get_all_ids(
+                    query, include=MPCC_SETTINGS.COMPONENTS, timeout=timeout
+                ),
             )
 
         # prepare contributions
@@ -1723,7 +1728,7 @@ class Client(SwaggerClient):
         fields = [
             comp
             for comp in self.get_model("ContributionsSchema")._properties.keys()
-            if comp not in COMPONENTS
+            if comp not in MPCC_SETTINGS.COMPONENTS
         ]
         fields.remove("needs_build")  # internal field
 
@@ -1760,13 +1765,13 @@ class Client(SwaggerClient):
 
             contribs[project_name].append(contrib_copy)
 
-            for component in COMPONENTS:
+            for component in MPCC_SETTINGS.COMPONENTS:
                 elements = contrib.get(component, [])
                 nelems = len(elements)
 
-                if nelems > MAX_ELEMS:
+                if nelems > MPCC_SETTINGS.MAX_ELEMS:
                     raise MPContribsClientError(
-                        f"Too many {component} ({nelems} > {MAX_ELEMS})!"
+                        f"Too many {component} ({nelems} > {MPCC_SETTINGS.MAX_ELEMS})!"
                     )
 
                 if update and not nelems:
@@ -1894,7 +1899,7 @@ class Client(SwaggerClient):
                                 )
 
                             payload = orjson.dumps(c)
-                            if len(payload) < MAX_PAYLOAD:
+                            if len(payload) < MPCC_SETTINGS.MAX_PAYLOAD:
                                 futures.append(put_future(pk, payload))
                             else:
                                 MPCC_LOGGER.error(
@@ -1905,7 +1910,7 @@ class Client(SwaggerClient):
                             next_payload = orjson.dumps(next_post_chunk)
                             if (
                                 len(next_post_chunk) > nmax
-                                or len(next_payload) >= MAX_PAYLOAD
+                                or len(next_payload) >= MPCC_SETTINGS.MAX_PAYLOAD
                             ):
                                 if post_chunk:
                                     payload = orjson.dumps(post_chunk)
@@ -1938,7 +1943,7 @@ class Client(SwaggerClient):
 
                     if (
                         total_processed != ncontribs
-                        and retries < RETRIES
+                        and retries < MPCC_SETTINGS.RETRIES
                         and unique_identifiers.get(project_name)
                     ):
                         MPCC_LOGGER.info(
@@ -1946,7 +1951,7 @@ class Client(SwaggerClient):
                         )
                         existing[project_name] = self.get_all_ids(
                             dict(project=project_name),
-                            include=COMPONENTS,
+                            include=MPCC_SETTINGS.COMPONENTS,
                             timeout=timeout,
                         ).get(project_name, {"identifiers": set()})
                         unique_identifiers[project_name] = (
@@ -1966,9 +1971,9 @@ class Client(SwaggerClient):
                     else:
                         contribs[project_name] = []  # abort retrying
                         if total_processed != ncontribs:
-                            if retries >= RETRIES:
+                            if retries >= MPCC_SETTINGS.RETRIES:
                                 MPCC_LOGGER.error(
-                                    f"{project_name}: Tried {RETRIES} times - abort."
+                                    f"{project_name}: Tried {MPCC_SETTINGS.RETRIES} times - abort."
                                 )
                             elif not unique_identifiers.get(project_name):
                                 MPCC_LOGGER.info(
@@ -2010,9 +2015,11 @@ class Client(SwaggerClient):
         include = include or []
         outdir = Path(outdir) or Path(".")
         outdir.mkdir(parents=True, exist_ok=True)
-        components = {x for x in include if x in COMPONENTS}
+        components = {x for x in include if x in MPCC_SETTINGS.COMPONENTS}
         if include and not components:
-            raise MPContribsClientError(f"`include` must be subset of {COMPONENTS}!")
+            raise MPContribsClientError(
+                f"`include` must be subset of {MPCC_SETTINGS.COMPONENTS}!"
+            )
 
         all_ids = self.get_all_ids(query, include=list(components), timeout=timeout)
         fmt = query.get("format", "json")
