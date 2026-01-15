@@ -11,46 +11,54 @@ include-package-data = true
 
 [tool.setuptools.packages.find]
 where = ["."]
-exclude = ["tests","examples","test_data"]
-include = ["mpcontribs.lux"]
-
+exclude = ["tests"]
+include = ["mpcontribs.client"]
 
 [project]
-name = "mpcontribs-lux"
+name = "mpcontribs-client"
 dynamic = ["version"]
-description = "LUX: shed light on data published on MPContribs"
-readme = "README.md"
 requires-python = ">=3.11"
-dependencies = [
-    "emmet-core>0.86.0",
-    "pyarrow",
-    "pandas",
-]
-license = {text = "Modified BSD"}
+description="Client library for MPContribs API"
+license = {text = "MIT"}
 authors = [
+    {name = "Patrick Huck", email = "phuck@lbl.gov"},
     {name = "The Materials Project", email="feedback@materialsproject.org"},
+]
+dependencies = [
+    "numpy",
+    "boltons",
+    "bravado",
+    "filetype",
+    "flatten-dict",
+    "ipython",
+    "json2html",
+    "pandas",
+    "pint",
+    "plotly",
+    "pyIsEmail",
+    "pymatgen",
+    "pymongo",
+    "requests-futures",
+    "swagger-spec-validator",
+    "tqdm",
+    "ujson",
+    "cachetools",
 ]
 
 [project.urls]
 Homepage = "https://github.com/materialsproject/MPContribs"
 Documentation = "https://docs.materialsproject.org/services/mpcontribs"
 
-[project.scripts]
-lux = "mpcontribs.lux.cli.entry_point:lux"
-
 [project.optional-dependencies]
-cli = [
-    "click",
-    "rich",
-]
-test = [
-    "pre-commit",
+dev = [
+    "flake8",
     "pytest",
+    "pytest-flake8",
+    "pytest-pycodestyle",
     "pytest-cov",
     "pytest-xdist",
-    "pycodestyle",
-    "pydocstyle",
-    "flake8",
-    "mypy",
-    "mypy-extensions",
+    "py",
+]
+all = [
+    "mpcontribs-client[dev]"
 ]

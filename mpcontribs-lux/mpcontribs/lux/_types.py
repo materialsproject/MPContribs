@@ -9,5 +9,7 @@ _complex_type_validator = BeforeValidator(
 )
 
 ComplexType = Annotated[tuple[float, float], _complex_type_validator]
+"""Type annotation for complex numbers which are required fields."""
 
 NullableComplexType = Annotated[tuple[float, float] | None, _complex_type_validator]
+"""Type annotation for complex numbers which are nullable fields."""

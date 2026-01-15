@@ -1,0 +1,74 @@
+[build-system]
+requires = ["setuptools>=80.0.0","setuptools-scm>=8"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools_scm]
+root = ".."
+relative_to = "__file__"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["."]
+exclude = ["scripts","supervisord"]
+include = ["mpcontribs.io"]
+
+[project]
+name = "mpcontribs-io"
+dynamic = ["version"]
+requires-python = ">=3.11"
+description="MPContribs I/O Library"
+license = {text = "MIT"}
+authors = [
+    {name = "Patrick Huck", email = "phuck@lbl.gov"},
+    {name = "The Materials Project", email="feedback@materialsproject.org"},
+]
+dependencies = [
+    "archieml",
+    "ipython",
+    "pandas",
+    "plotly",
+    "pymatgen"
+]
+
+[project.urls]
+Homepage = "https://github.com/materialsproject/MPContribs/tree/master/mpcontribs-io"
+Documentation = "https://docs.materialsproject.org/services/mpcontribs"
+
+[tool.tox]
+envlist = ["clean","py311","py312"]
+
+[tool.tox.gh-actions]
+python = ["3.11: py312","3.12: py312"] 
+
+[tool.tox.pycodestyle]
+max-line-length = 120
+
+[tool.tox.pytest]
+flake8-max-line-length = 120
+python_files = ["test_*.py",]
+
+[tool.tox.coverage.paths]
+source = "mpcontribs/io"
+
+[tool.tox.coverage.run]
+source = "mpcontribs/io"
+omit = ["*test_*.py",]
+
+[tool.tox.testenv]
+deps = [
+    "pytest",
+    "pytest-flake8",
+    "pytest-pycodestyle",
+    "pytest-cov",
+    "-rrequirements.txt",
+]
+commands = [
+    "pytest -v -s --flake8 --pycodestyle --cov={envsitepackagesdir}/mpcontribs/io --cov-report=term-missing --cov-report=xml"
+]
+
+[tool.tox.testenv.clean]
+deps = ["coverage"]
+skip_install = true
+commands = ["coverage", "erase"]

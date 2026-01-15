@@ -1,9 +1,9 @@
-"""Set version for mpcontribs-portal."""
+"""Set version for mpcontribs-io."""
 
 from importlib.metadata import version
 
 try:
-    __version__ = version("mpcontribs-portal")
+    __version__ = version("mpcontribs-io")
 except Exception:
     # package is not installed
     pass
