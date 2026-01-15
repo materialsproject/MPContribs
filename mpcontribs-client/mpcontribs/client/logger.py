@@ -5,6 +5,7 @@ import sys
 
 from mpcontribs.client.settings import MPCC_SETTINGS
 
+
 class LogFilter(logging.Filter):
     def __init__(self, level, *args, **kwargs):
         self.level = level
@@ -19,7 +20,8 @@ class CustomLoggerAdapter(logging.LoggerAdapter):
         prefix = self.extra.get("prefix")
         return f"[{prefix}] {msg}" if prefix else msg, kwargs
 
-def get_logger(name : str = "mpcontribs.client"):
+
+def get_logger(name: str = "mpcontribs.client"):
     logger = logging.getLogger(name)
     process = os.environ.get("SUPERVISOR_PROCESS_NAME")
     group = os.environ.get("SUPERVISOR_GROUP_NAME")
@@ -32,19 +34,21 @@ def get_logger(name : str = "mpcontribs.client"):
     logger.setLevel(MPCC_SETTINGS.CLIENT_LOG_LEVEL)
     return CustomLoggerAdapter(logger, cfg)
 
+
 MPCC_LOGGER = get_logger()
 
-class TqdmToLogger(StringIO):
-    logger : logging.Logger | None = MPCC_LOGGER
-    level : int | None = MPCC_SETTINGS.CLIENT_LOG_LEVEL
-    buf : str = ""
 
-    def __init__(self, logger : logging.Logger, level: int | None = None) -> None:
+class TqdmToLogger(StringIO):
+    logger: logging.Logger | None = MPCC_LOGGER
+    level: int | None = MPCC_SETTINGS.CLIENT_LOG_LEVEL
+    buf: str = ""
+
+    def __init__(self, logger: logging.Logger, level: int | None = None) -> None:
         super().__init__()
         self.logger = logger
         self.level = level or logging.INFO
 
-    def write(self, buf : str) -> None:
+    def write(self, buf: str) -> None:
         self.buf = buf.strip("\r\n\t ")
 
     def flush(self) -> None:

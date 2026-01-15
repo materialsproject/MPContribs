@@ -1,4 +1,4 @@
-"""Pull in core client features.""" 
+"""Pull in core client features."""
 
 import importlib.metadata
 
@@ -12,4 +12,3 @@ try:
 except Exception:
     # package is not installed
     pass
-

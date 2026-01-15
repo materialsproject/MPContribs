@@ -46,12 +46,17 @@ from mpcontribs.client.logger import MPCC_LOGGER, TqdmToLogger
 from mpcontribs.client.settings import MPCC_SETTINGS
 from mpcontribs.client.types import PrettyDict, PrettyStructure, Table, Attachment
 
-classes_map = {"structures": PrettyStructure, "tables": Table, "attachments": Attachment}
+classes_map = {
+    "structures": PrettyStructure,
+    "tables": Table,
+    "attachments": Attachment,
+}
 
 pd.options.plotting.backend = "plotly"
 pio.templates.default = "simple_white"
 warnings.formatwarning = lambda msg, *args, **kwargs: f"{msg}\n"
 warnings.filterwarnings("default", category=DeprecationWarning, module=__name__)
+
 
 def validate_email(email_string):
     if email_string.count(":") != 1:
@@ -111,6 +116,7 @@ def grouper(n, iterable):
             return
         yield chunk
 
+
 def get_session(session=None):
     adapter_kwargs = dict(
         max_retries=Retry(
@@ -128,6 +134,7 @@ def get_session(session=None):
         max_workers=MPCC_SETTINGS.MAX_WORKERS,
         adapter_kwargs=adapter_kwargs,
     )
+
 
 def _response_hook(resp, *args, **kwargs):
     content_type = resp.headers["content-type"]
@@ -156,6 +163,7 @@ def _response_hook(resp, *args, **kwargs):
         MPCC_LOGGER.error(f"request failed with status {resp.status_code}!")
         resp.count = 0
 
+
 def _run_futures(futures, total: int = 0, timeout: int = -1, desc=None, disable=False):
     """helper to run futures/requests"""
     start = time.perf_counter()
@@ -164,7 +172,12 @@ def _run_futures(futures, total: int = 0, timeout: int = -1, desc=None, disable=
     responses = {}
 
     with tqdm(
-        total=total, desc=desc, file=TqdmToLogger(), miniters=1, delay=5, disable=disable
+        total=total,
+        desc=desc,
+        file=TqdmToLogger(),
+        miniters=1,
+        delay=5,
+        disable=disable,
     ) as pbar:
         for future in as_completed(futures):
             if not future.cancelled():
@@ -193,8 +206,12 @@ def _run_futures(futures, total: int = 0, timeout: int = -1, desc=None, disable=
 @functools.lru_cache(maxsize=1000)
 def _load(protocol, host, headers_json, project, version):
     spec_dict = _raw_specs(protocol, host, version)
-    headers = orjson.loads(headers_json) if isinstance(headers_json,str | bytes) else headers_json
-    if isinstance(headers,bytes):
+    headers = (
+        orjson.loads(headers_json)
+        if isinstance(headers_json, str | bytes)
+        else headers_json
+    )
+    if isinstance(headers, bytes):
         headers = headers.decode(encoding="utf-8")
 
     if not spec_dict["paths"]:
@@ -241,7 +258,9 @@ def _raw_specs(protocol, host, version):
 
     if apispec.exists():
         spec_dict = orjson.loads(apispec.read_bytes())
-        MPCC_LOGGER.debug(f"Specs for {origin_url} and {version} re-loaded from {apispec}.")
+        MPCC_LOGGER.debug(
+            f"Specs for {origin_url} and {version} re-loaded from {apispec}."
+        )
     else:
         loader = Loader(http_client)
         spec_dict = loader.load_spec(origin_url)
@@ -270,7 +289,11 @@ def _raw_specs(protocol, host, version):
 )
 def _expand_params(protocol, host, version, projects_json, api_key=None):
     columns = {"string": [], "number": []}
-    projects = orjson.loads(projects_json) if isinstance(projects_json, str | bytes) else projects_json
+    projects = (
+        orjson.loads(projects_json)
+        if isinstance(projects_json, str | bytes)
+        else projects_json
+    )
     query = {"project__in": ",".join(projects)}
     query["_fields"] = "columns"
     url = f"{protocol}://{host}"
@@ -360,6 +383,7 @@ def _version(url):
             MPCC_LOGGER.warning(f"Could not connect to {url} ({ex})! Wait 30s.")
             time.sleep(30)
 
+
 class Client(SwaggerClient):
     """client to connect to MPContribs API
 
@@ -377,7 +401,7 @@ class Client(SwaggerClient):
         host: str | None = None,
         project: str | None = None,
         session: requests.Session | None = None,
-        **kwargs
+        **kwargs,
     ) -> None:
         """Initialize the client - only reloads API spec from server as needed
 
@@ -399,7 +423,9 @@ class Client(SwaggerClient):
                 " consistency with the Materials Project API client."
             )
             if api_key:
-                api_key_warn += " Ignoring `apikey` in favor of `api_key`, which was also set."
+                api_key_warn += (
+                    " Ignoring `apikey` in favor of `api_key`, which was also set."
+                )
             else:
                 api_key = kwargs.pop("apikey")
             MPCC_LOGGER.warning(api_key_warn)
@@ -418,7 +444,9 @@ class Client(SwaggerClient):
         self.headers = headers or {}
         self.headers = {"x-api-key": api_key} if api_key else self.headers
         self.headers["Content-Type"] = "application/json"
-        self.headers_json = orjson.dumps({k : self.headers[k] for k in sorted(self.headers)})
+        self.headers_json = orjson.dumps(
+            {k: self.headers[k] for k in sorted(self.headers)}
+        )
         self.host = host or MPCC_SETTINGS.API_HOST
         ssl = self.host.endswith(".materialsproject.org") and not self.host.startswith(
             "localhost."
@@ -621,7 +649,9 @@ class Client(SwaggerClient):
             )
 
         fields = fields or ["_all"]  # retrieve all fields by default
-        return PrettyDict(self.projects.getProjectByName(pk=name, _fields=fields).result())
+        return PrettyDict(
+            self.projects.getProjectByName(pk=name, _fields=fields).result()
+        )
 
     def query_projects(
         self,
@@ -766,7 +796,9 @@ class Client(SwaggerClient):
                         "use `client.make_public/private()` to set `is_public`."
                     )
             elif not isinstance(update[k], bool) and not update[k]:
-                MPCC_LOGGER.warning(f"removing `{k}` from update - no update requested.")
+                MPCC_LOGGER.warning(
+                    f"removing `{k}` from update - no update requested."
+                )
                 update.pop(k)
 
         if not update:
@@ -784,7 +816,9 @@ class Client(SwaggerClient):
         if "name" in update and project["stats"]["contributions"] > 0:
             MPCC_LOGGER.warning("removing `name` from update - not allowed.")
             update.pop("name")
-            MPCC_LOGGER.error("cannot change project name after contributions submitted.")
+            MPCC_LOGGER.error(
+                "cannot change project name after contributions submitted."
+            )
 
         payload = {
             k: v for k, v in update.items() if k in fields and project.get(k, None) != v
@@ -973,7 +1007,9 @@ class Client(SwaggerClient):
         columns = flatten(columns or {}, reducer="dot")
 
         if len(columns) > MPCC_SETTINGS.MAX_COLUMNS:
-            raise MPContribsClientError(f"Number of columns larger than {MPCC_SETTINGS.MAX_COLUMNS}!")
+            raise MPContribsClientError(
+                f"Number of columns larger than {MPCC_SETTINGS.MAX_COLUMNS}!"
+            )
 
         if not all(isinstance(v, str) for v in columns.values() if v is not None):
             raise MPContribsClientError(
@@ -1256,7 +1292,9 @@ class Client(SwaggerClient):
         include = include or []
         components = {x for x in include if x in MPCC_SETTINGS.COMPONENTS}
         if include and not components:
-            raise MPContribsClientError(f"`include` must be subset of {MPCC_SETTINGS.COMPONENTS}!")
+            raise MPContribsClientError(
+                f"`include` must be subset of {MPCC_SETTINGS.COMPONENTS}!"
+            )
 
         fmts = {"sets", "map"}
         if fmt not in fmts:
@@ -2016,7 +2054,9 @@ class Client(SwaggerClient):
                 for path in paths:
                     with gzip.open(path, "rb") as f:
                         for c in orjson.loads(f.read()):
-                            components_loaded[component][c["id"]] = component_cls.from_dict(c)
+                            components_loaded[component][c["id"]] = (
+                                component_cls.from_dict(c)
+                            )
 
             cids = list(values["ids"])
             if not cids:

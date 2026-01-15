@@ -18,9 +18,11 @@ if TYPE_CHECKING:
 
 _ipython = getattr(sys.modules.get("IPython"), "get_ipython", lambda: None)()
 
+
 def _in_ipython() -> bool:
     """Check if running in IPython/Jupyter."""
     return _ipython is not None and "IPKernelApp" in getattr(_ipython, "config", {})
+
 
 if _in_ipython():
 
@@ -46,9 +48,10 @@ if _in_ipython():
 
     _ipython.showtraceback = _hide_traceback
 
-def _compress(data : Any) -> int | bytes:
+
+def _compress(data: Any) -> int | bytes:
     """Write JSONable data to gzipped bytes.
-    
+
     Args:
         data (Any) : JSONable python object
 
@@ -59,9 +62,12 @@ def _compress(data : Any) -> int | bytes:
     content = gzip.compress(orjson.dumps(data))
     return len(content), content
 
-def _chunk_by_size(items : Any, max_size : float=0.95 * MPCC_SETTINGS.MAX_BYTES) -> bytes:
+
+def _chunk_by_size(
+    items: Any, max_size: float = 0.95 * MPCC_SETTINGS.MAX_BYTES
+) -> bytes:
     """Compress a large data structure by chunks.
-    
+
     Args:
         items (Any) : JSONable python object(s)
 
@@ -84,8 +90,8 @@ def _chunk_by_size(items : Any, max_size : float=0.95 * MPCC_SETTINGS.MAX_BYTES)
     if buffer_size > 0:
         yield buffer
 
-def get_md5(d : dict[str,Any]) -> str:
+
+def get_md5(d: dict[str, Any]) -> str:
     """Get the MD5 of a JSONable dict."""
     s = orjson.dumps({k: d[k] for k in sorted(d)})
     return md5(s).hexdigest()
-

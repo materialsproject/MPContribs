@@ -27,6 +27,7 @@ if TYPE_CHECKING:
 
 j2h = Json2Html()
 
+
 class PrettyDict(dict):
     """Custom dictionary to display itself as HTML table with Bulma CSS"""
 
@@ -44,6 +45,7 @@ class PrettyDict(dict):
         """
         html = j2h.convert(json=remap(self, visit=self.visit), table_attributes=attrs)
         return display(HTML(html)) if _in_ipython() else html
+
 
 class Table(pd.DataFrame):
     """Wrapper class around pandas.DataFrame to provide display() and info()"""
@@ -214,7 +216,9 @@ class Attachment(dict):
         size, content = _compress(data)
 
         if size > MPCC_SETTINGS.MAX_BYTES:
-            raise MPContribsClientError(f"{name} too large ({size} > {MPCC_SETTINGS.MAX_BYTES})!")
+            raise MPContribsClientError(
+                f"{name} too large ({size} > {MPCC_SETTINGS.MAX_BYTES})!"
+            )
 
         return cls(
             name=filename,
@@ -250,7 +254,9 @@ class Attachment(dict):
         size = len(content)
 
         if size > MPCC_SETTINGS.MAX_BYTES:
-            raise MPContribsClientError(f"{path} too large ({size} > {MPCC_SETTINGS.MAX_BYTES})!")
+            raise MPContribsClientError(
+                f"{path} too large ({size} > {MPCC_SETTINGS.MAX_BYTES})!"
+            )
 
         return cls(
             name=path.name,
@@ -278,13 +284,17 @@ class Attachments(list):
     def from_list(cls, elements: list) -> Self:
 
         if not isinstance(elements, list):
-            raise MPContribsClientError(f"Use a list to initialize Attachments, not {type(elements)}.")
+            raise MPContribsClientError(
+                f"Use a list to initialize Attachments, not {type(elements)}."
+            )
 
         attachments = []
 
         for element in elements:
             if len(attachments) >= MPCC_SETTINGS.MAX_ELEMS:
-                raise MPContribsClientError(f"max {MPCC_SETTINGS.MAX_ELEMS} attachments reached")
+                raise MPContribsClientError(
+                    f"max {MPCC_SETTINGS.MAX_ELEMS} attachments reached"
+                )
 
             if isinstance(element, Attachment):
                 # simply append, size check already performed

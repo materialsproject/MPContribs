@@ -86,4 +86,5 @@ class ContribsClientSettings(BaseSettings):
                 return None
         return v
 
+
 MPCC_SETTINGS = ContribsClientSettings()
