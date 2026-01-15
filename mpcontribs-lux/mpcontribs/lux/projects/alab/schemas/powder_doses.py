@@ -9,8 +9,15 @@ MongoDB structure. This is the flattened parquet schema.
 """
 
 from pydantic import BaseModel, Field
+from emmet.core.types.typing import JsonListType
+from emmet.core.utils import type_override
 
 
+@type_override(
+    {
+        "Doses": str,
+    }
+)
 class PowderItem(BaseModel, extra="forbid"):
     """Schema for a powder item within a dose."""
 
@@ -18,7 +25,7 @@ class PowderItem(BaseModel, extra="forbid"):
     TargetMass: float | None = Field(
         default=None, description="Target mass in mg", ge=0
     )
-    Doses: list[dict] | None = Field(
+    Doses: JsonListType | None = Field(
         default=None, description="List of individual doses"
     )
 
