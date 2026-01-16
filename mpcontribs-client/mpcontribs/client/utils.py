@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import enum
 import gzip
 from hashlib import md5
 from jsonschema.exceptions import ValidationError
@@ -137,10 +136,10 @@ def unflatten_dict(dct: dict[str, Any], separator: str = ".") -> dict[str, Any]:
 
     def _set_value(key, value):
         for i, x in enumerate(split_key := key.split(separator)):
-            y = unflattened if i == 0 else v
+            y = unflattened if i == 0 else v  # noqa: F821
             if x not in y:
                 y[x] = {} if i < len(split_key) - 1 else value
-            v = y[x]
+            v = y[x]  # noqa: F841
 
     _ = [
         _set_value(k, dct[k])
