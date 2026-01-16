@@ -2,7 +2,7 @@ import pytest
 import logging
 
 from unittest.mock import patch, MagicMock
-from mpcontribs.client import validate_email, Client, email_format
+from mpcontribs.client.core import validate_email, Client, email_format
 from swagger_spec_validator.common import SwaggerValidationError
 
 logger = logging.Logger(__name__)
