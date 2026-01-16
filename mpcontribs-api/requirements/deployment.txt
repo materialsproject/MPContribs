@@ -221,7 +221,7 @@ markupsafe==3.0.3
     #   jinja2
     #   nbconvert
     #   werkzeug
-marshmallow==3.26.1
+marshmallow==3.26.2
     # via
     #   flask-marshmallow
     #   marshmallow-mongoengine
@@ -528,7 +528,7 @@ uncertainties==3.2.3
     #   pymatgen
 uri-template==1.3.0
     # via jsonschema
-urllib3==2.6.1
+urllib3==2.6.3
     # via
     #   botocore
     #   requests
