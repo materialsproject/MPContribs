@@ -17,6 +17,10 @@ def import_models():
         if "__pycache__" in dirs:
             dirs.remove("__pycache__")
 
+        if "cli" in root:
+            # No pydantic models to validate in CLI
+            continue
+
         parent_module = ".".join(
             [
                 "mpcontribs",
