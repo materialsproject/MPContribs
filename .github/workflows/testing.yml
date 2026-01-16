@@ -5,14 +5,10 @@ on:
   push:
     branches:
       - master
-    paths:
-      - mpcontribs-client/**
 
   pull_request:
     branches:
       - master
-    paths:
-      - mpcontribs-client/**
 
 jobs:
   test:
