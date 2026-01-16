@@ -29,7 +29,6 @@ dependencies = [
     "boltons",
     "bravado",
     "filetype",
-    "flatten-dict",
     "ipython",
     "json2html",
     "pandas",

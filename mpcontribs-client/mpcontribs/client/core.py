@@ -18,7 +18,6 @@ from bson.objectid import ObjectId
 from tqdm.auto import tqdm
 from pathlib import Path
 from copy import deepcopy
-from flatten_dict import flatten, unflatten
 from base64 import urlsafe_b64encode
 from urllib.parse import urlparse
 from pyisemail import is_email
@@ -50,7 +49,7 @@ from mpcontribs.client.logger import MPCC_LOGGER, TqdmToLogger
 from mpcontribs.client.settings import MPCC_SETTINGS
 from mpcontribs.client.types import PrettyDict, PrettyStructure, Table, Attachment
 from mpcontribs.client.units import ureg
-from mpcontribs.client.utils import get_md5
+from mpcontribs.client.utils import get_md5, flatten_dict, unflatten_dict
 
 classes_map = {
     "structures": PrettyStructure,
@@ -513,7 +512,7 @@ class Client(SwaggerClient):
             raise MPContribsClientError(
                 next(
                     f"Value {v} of {type(v)} for key {k} not supported."
-                    for k, v in flatten(dct, reducer="dot").items()
+                    for k, v in flatten_dict(dct).items()
                     if v is not None and not isinstance(v, (str, int, float))
                 )
             )
@@ -1006,7 +1005,7 @@ class Client(SwaggerClient):
                 "initialize client with project or set `name` argument!"
             )
 
-        columns = flatten(columns or {}, reducer="dot")
+        columns = flatten_dict(columns or {})
 
         if len(columns) > MPCC_SETTINGS.MAX_COLUMNS:
             raise MPContribsClientError(
@@ -1059,7 +1058,7 @@ class Client(SwaggerClient):
                 scanned_columns.add(k)
 
             # sort to avoid "overlapping columns" error in handsontable's NestedHeaders
-            sorted_columns = flatten(unflatten(columns, splitter="dot"), reducer="dot")
+            sorted_columns = flatten_dict(unflatten_dict(columns))
             # also sort by increasing nesting for better columns display
             sorted_columns = dict(
                 sorted(sorted_columns.items(), key=lambda item: item[0].count("."))
@@ -1734,7 +1733,7 @@ class Client(SwaggerClient):
 
         for contrib in tqdm(contributions, desc="Prepare"):
             if "data" in contrib:
-                contrib["data"] = unflatten(contrib["data"], splitter="dot")
+                contrib["data"] = unflatten_dict(contrib["data"])
                 self._is_serializable_dict(contrib["data"])
 
             update = "id" in contrib
@@ -1752,14 +1751,14 @@ class Client(SwaggerClient):
                 if k in contrib:
                     if isinstance(contrib[k], dict):
                         flat = {}
-                        for kk, vv in flatten(contrib[k], reducer="dot").items():
+                        for kk, vv in flatten_dict(contrib[k]).items():
                             if isinstance(vv, bool):
                                 flat[kk] = "Yes" if vv else "No"
                             elif (isinstance(vv, str) and vv) or isinstance(
                                 vv, (float, int)
                             ):
                                 flat[kk] = vv
-                        contrib_copy[k] = deepcopy(unflatten(flat, splitter="dot"))
+                        contrib_copy[k] = deepcopy(unflatten_dict(flat))
                     else:
                         contrib_copy[k] = deepcopy(contrib[k])
 

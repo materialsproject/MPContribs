@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import enum
 import gzip
 from hashlib import md5
 from jsonschema.exceptions import ValidationError
@@ -95,3 +96,54 @@ def get_md5(d: dict[str, Any]) -> str:
     """Get the MD5 of a JSONable dict."""
     s = orjson.dumps({k: d[k] for k in sorted(d)})
     return md5(s).hexdigest()
+
+
+def flatten_dict(dct: dict[str, Any], separator: str = ".") -> dict[str, Any]:
+    """Recursively flatten a dictionary.
+
+    Args:
+        dct (dict of str, Any) : dictionary to flatten
+        separator (str = ".") : the separator to use to indicate nested keys
+
+    Returns:
+        dict of str, Any : the flattened dict
+    """
+    flattened = {}
+
+    def _flatten(obj: Any, key: str | None) -> None:
+        if isinstance(obj, dict):
+            _ = [
+                _flatten(v, f"{key}{separator}{k}" if key else k)
+                for k, v in obj.items()
+            ]
+        else:
+            flattened[key] = obj
+
+    _flatten(dct, None)
+    return flattened
+
+
+def unflatten_dict(dct: dict[str, Any], separator: str = ".") -> dict[str, Any]:
+    """Recursively nest a flattened dictionary.
+
+    Args:
+        dct (dict of str, Any) : flattened dictionary
+        separator (str = ".") : the separator to use to indicate nested keys
+
+    Returns:
+        dict of str, Any : the nested dict
+    """
+    unflattened = {}
+
+    def _set_value(key, value):
+        for i, x in enumerate(split_key := key.split(separator)):
+            y = unflattened if i == 0 else v
+            if x not in y:
+                y[x] = {} if i < len(split_key) - 1 else value
+            v = y[x]
+
+    _ = [
+        _set_value(k, dct[k])
+        for k in sorted(dct, key=lambda x: x.count(separator), reverse=True)
+    ]
+    return unflattened
