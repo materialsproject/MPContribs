@@ -19,7 +19,7 @@ name = "mpcontribs-api"
 dynamic = ["version"]
 requires-python = ">=3.11"
 description="API for community-contributed Materials Project data"
-license = {text = "MIT"}
+license = "BSD-3-Clause-LBNL"
 authors = [
     {name = "Patrick Huck", email = "phuck@lbl.gov"},
     {name = "The Materials Project", email="feedback@materialsproject.org"},
