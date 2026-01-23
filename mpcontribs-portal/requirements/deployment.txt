@@ -95,7 +95,7 @@ gevent==25.9.1
     # via gunicorn
 greenlet==3.3.1
     # via gevent
-gunicorn[gevent]==24.1.0
+gunicorn[gevent]==24.0.0
     # via mpcontribs-portal (MPContribs/mpcontribs-portal/pyproject.toml)
 idna==3.11
     # via
