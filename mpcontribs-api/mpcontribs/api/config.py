@@ -14,6 +14,8 @@ formulae_path = os.path.join(
 with gzip.open(formulae_path) as f:
     FORMULAE = json.load(f)
 
+VERSION = __version__
+
 JSON_ADD_STATUS = False
 SECRET_KEY = "super-secret"  # TODO in local prod config
 
@@ -58,7 +60,7 @@ TEMPLATE = {
         "title": "MPContribs API",
         "description": "Operations to contribute, update and retrieve materials data on Materials Project",
         "termsOfService": "https://materialsproject.org/terms",
-        "version": __version__,
+        "version": VERSION,
         "contact": {
             "name": "MPContribs",
             "email": "contribs@materialsproject.org",
