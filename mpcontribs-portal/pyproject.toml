@@ -33,7 +33,7 @@ dependencies = [
     "django-settings-file",
     "django-webpack4-loader",
     "fastnumbers",
-    "gunicorn[gevent]<24.1.0",
+    "gunicorn[gevent]>=24.1.1",
     "ipykernel",
     "ipython-genutils",
     "jinja2",
