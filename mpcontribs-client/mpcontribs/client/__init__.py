@@ -1,62 +1,62 @@
-import io
-import importlib.metadata
-import sys
-import os
-import ujson
-import time
-import gzip
-import warnings
-import pandas as pd
-import numpy as np
-import plotly.io as pio
-import itertools
 import functools
-import requests
+import gzip
+import importlib.metadata
+import io
+import itertools
 import logging
-
+import os
+import sys
+import time
+import warnings
+from base64 import b64decode, b64encode, urlsafe_b64encode
+from collections import defaultdict
+from concurrent.futures import as_completed
+from copy import deepcopy
+from hashlib import md5
 from inspect import getfullargspec
 from math import isclose
-from requests.exceptions import RequestException
-from bson.objectid import ObjectId
-from typing import Type
-from tqdm.auto import tqdm
-from hashlib import md5
 from pathlib import Path
-from copy import deepcopy
-from filetype import guess
-from flatten_dict import flatten, unflatten
-from base64 import b64encode, b64decode, urlsafe_b64encode
+from tempfile import gettempdir
+from typing import Type
 from urllib.parse import urlparse
-from pyisemail import is_email
-from collections import defaultdict
-from pyisemail.diagnosis import BaseDiagnosis
-from swagger_spec_validator.common import SwaggerValidationError
-from jsonschema.exceptions import ValidationError
-from bravado_core.formatter import SwaggerFormat
+
+import numpy as np
+import pandas as pd
+import plotly.io as pio
+import requests
+import ujson
+from boltons.iterutils import remap
 from bravado.client import SwaggerClient
+from bravado.config import bravado_config_from_config_dict
+from bravado.exception import HTTPNotFound
 from bravado.requests_client import RequestsClient
 from bravado.swagger_model import Loader
-from bravado.config import bravado_config_from_config_dict
-from bravado_core.spec import Spec, build_api_serving_url, _identity
+from bravado_core.formatter import SwaggerFormat
 from bravado_core.model import model_discovery
 from bravado_core.resource import build_resources
-from bravado.exception import HTTPNotFound
+from bravado_core.spec import Spec, _identity, build_api_serving_url
 from bravado_core.validate import validate_object
-from json2html import Json2Html
-from IPython.display import display, HTML, Image, FileLink
-from boltons.iterutils import remap
-from pymatgen.core import Structure as PmgStructure
-from concurrent.futures import as_completed
-from requests_futures.sessions import FuturesSession
-from urllib3.util.retry import Retry
+from bson.objectid import ObjectId
+from cachetools import LRUCache, cached
+from cachetools.keys import hashkey
+from filetype import guess
 from filetype.types.archive import Gz
-from filetype.types.image import Jpeg, Png, Gif, Tiff
+from filetype.types.image import Gif, Jpeg, Png, Tiff
+from flatten_dict import flatten, unflatten
+from IPython.display import HTML, FileLink, Image, display
+from json2html import Json2Html
+from jsonschema.exceptions import ValidationError
 from pint import UnitRegistry
 from pint.errors import DimensionalityError
-from tempfile import gettempdir
 from plotly.express._chart_types import line as line_chart
-from cachetools import cached, LRUCache
-from cachetools.keys import hashkey
+from pyisemail import is_email
+from pyisemail.diagnosis import BaseDiagnosis
+from pymatgen.core import Structure as PmgStructure
+from requests.exceptions import RequestException
+from requests_futures.sessions import FuturesSession
+from swagger_spec_validator.common import SwaggerValidationError
+from tqdm.auto import tqdm
+from urllib3.util.retry import Retry
 
 try:
     __version__ = importlib.metadata.version("mpcontribs-client")
@@ -1128,10 +1128,10 @@ class Client(SwaggerClient):
         Returns:
             List of projects
         """
-        query = query or {}
+        q = deepcopy(query) or {}
 
-        if self.project or "name" in query:
-            return [self.get_project(name=query.get("name"), fields=fields)]
+        if self.project or "name" in q:
+            return [self.get_project(name=q.get("name"), fields=fields)]
 
         if term:
 
@@ -1148,41 +1148,78 @@ class Client(SwaggerClient):
             responses = _run_futures(
                 [search_future(term)], timeout=timeout, disable=True
             )
-            query["name__in"] = responses["search"].get("result", [])
+            q["name__in"] = responses["search"].get("result", [])
 
         if fields:
-            query["_fields"] = fields
+            q["_fields"] = fields
         if sort:
-            query["_sort"] = sort
+            q["_sort"] = sort
 
-        ret = self.projects.queryProjects(**query).result()  # first page
+        ret = self.projects.queryProjects(**q).result()  # first page
+        """
+        'ret' type:
+        {
+            "data": [
+                ...
+            ],
+            "has_more": <bool>,
+            "total_count": <int>,
+            "total_pages": <int>
+        }
+        """
         total_count, total_pages = ret["total_count"], ret["total_pages"]
 
         if total_pages < 2:
             return ret["data"]
 
-        query.update(
+        q.update(
             {
-                field: ",".join(query[field])
+                field: ",".join(q[field])
                 for field in ["name__in", "_fields"]
-                if field in query
+                if field in q
             }
         )
 
         queries = []
 
         for page in range(2, total_pages + 1):
-            queries.append(deepcopy(query))
+            queries.append(deepcopy(q))
             queries[-1]["page"] = page
 
         futures = [
-            self._get_future(i, q, rel_url="projects") for i, q in enumerate(queries)
+            self._get_future(i, _q, rel_url="projects") for i, _q in enumerate(queries)
         ]
         responses = _run_futures(futures, total=total_count, timeout=timeout)
+        """
+        'responses' type:
+        {
+            "0": {
+                "result": {
+                    "data": [
+                        ...
+                    ],
+                    "has_more": <bool>,
+                    "total_count": <int>,
+                    "total_pages": <int>
+                },
+                "count": <int>
+            },
+            "1": ...
+        }
+        """
 
-        ret["data"].extend([resp["result"]["data"] for resp in responses.values()])
-
-        return ret["data"]
+        return list(
+            itertools.chain.from_iterable(
+                [
+                    ret["data"],
+                    itertools.chain.from_iterable(
+                        # did not hit early return, guaranteed
+                        # to have additional pages w/ data
+                        map(lambda x: x["result"]["data"], iter(responses.values()))
+                    ),
+                ]
+            )
+        )
 
     def create_project(
         self, name: str, title: str, authors: str, description: str, url: str
@@ -1584,25 +1621,25 @@ class Client(SwaggerClient):
             )
 
         tic = time.perf_counter()
-        query = query or {}
+        q = deepcopy(query) or {}
 
         if self.project:
-            query["project"] = self.project
+            q["project"] = self.project
 
-        name = query["project"]
-        cids = list(self.get_all_ids(query).get(name, {}).get("ids", set()))
+        name = q["project"]
+        cids = list(self.get_all_ids(q).get(name, {}).get("ids", set()))
 
         if not cids:
             logger.info(f"There aren't any contributions to delete for {name}")
             return
 
         total = len(cids)
-        query = {"id__in": cids}
-        _, total_pages = self.get_totals(query=query)
-        queries = self._split_query(query, op="delete", pages=total_pages)
-        futures = [self._get_future(i, q, op="delete") for i, q in enumerate(queries)]
+        id_query = {"id__in": cids}
+        _, total_pages = self.get_totals(query=id_query)
+        queries = self._split_query(id_query, op="delete", pages=total_pages)
+        futures = [self._get_future(i, _q, op="delete") for i, _q in enumerate(queries)]
         _run_futures(futures, total=total, timeout=timeout)
-        left, _ = self.get_totals(query=query)
+        left, _ = self.get_totals(query=id_query)
         deleted = total - left
         self.init_columns(name=name)
         self._reinit()
@@ -1638,16 +1675,16 @@ class Client(SwaggerClient):
         if op not in ops:
             raise MPContribsClientError(f"`op` has to be one of {ops}")
 
-        query = query or {}
-        if self.project and "project" not in query:
-            query["project"] = self.project
+        q = deepcopy(query) or {}
+        if self.project and "project" not in q:
+            q["project"] = self.project
 
         skip_keys = {"per_page", "_fields", "format", "_sort"}
-        query = {k: v for k, v in query.items() if k not in skip_keys}
-        query["_fields"] = []  # only need totals -> explicitly request no fields
-        queries = self._split_query(query, resource=resource, op=op)  # don't paginate
+        q = {k: v for k, v in q.items() if k not in skip_keys}
+        q["_fields"] = []  # only need totals -> explicitly request no fields
+        queries = self._split_query(q, resource=resource, op=op)  # don't paginate
         futures = [
-            self._get_future(i, q, rel_url=resource) for i, q in enumerate(queries)
+            self._get_future(i, _q, rel_url=resource) for i, _q in enumerate(queries)
         ]
         responses = _run_futures(futures, timeout=timeout, desc="Totals")
 
@@ -1759,11 +1796,11 @@ class Client(SwaggerClient):
         )
 
         ret = {}
-        query = query or {}
-        if self.project and "project" not in query:
-            query["project"] = self.project
+        q = deepcopy(query) or {}
+        if self.project and "project" not in q:
+            q["project"] = self.project
 
-        [query.pop(k, None) for k in ["page", "per_page", "_fields"]]
+        [q.pop(k, None) for k in ["page", "per_page", "_fields"]]
         id_fields = {"project", "id", "identifier"}
 
         if data_id_fields:
@@ -1771,10 +1808,10 @@ class Client(SwaggerClient):
                 f"data.{data_id_field}" for data_id_field in data_id_fields.values()
             )
 
-        query["_fields"] = list(id_fields | components)
-        _, total_pages = self.get_totals(query=query, timeout=timeout)
-        queries = self._split_query(query, op=op, pages=total_pages)
-        futures = [self._get_future(i, q) for i, q in enumerate(queries)]
+        q["_fields"] = list(id_fields | components)
+        _, total_pages = self.get_totals(query=q, timeout=timeout)
+        queries = self._split_query(q, op=op, pages=total_pages)
+        futures = [self._get_future(i, _q) for i, _q in enumerate(queries)]
         responses = _run_futures(futures, timeout=timeout, desc="Identifiers")
 
         for resp in responses.values():
@@ -1870,15 +1907,15 @@ class Client(SwaggerClient):
         Returns:
             List of contributions
         """
-        query = query or {}
+        q: dict = deepcopy(query) or {}
 
-        if self.project and "project" not in query:
-            query["project"] = self.project
+        if self.project and "project" not in q:
+            q["project"] = self.project
 
         if paginate:
             cids = [
                 idx
-                for v in self.get_all_ids(query).values()
+                for v in self.get_all_ids(q).values()
                 for idx in (v.get("ids") or [])
             ]
 
@@ -1889,17 +1926,26 @@ class Client(SwaggerClient):
             cids_query = {"id__in": cids, "_fields": fields, "_sort": sort}
             _, total_pages = self.get_totals(query=cids_query)
             queries = self._split_query(cids_query, pages=total_pages)
-            futures = [self._get_future(i, q) for i, q in enumerate(queries)]
-            responses = _run_futures(futures, total=total, timeout=timeout)
-            ret = {"total_count": 0, "data": []}
+            futures = [self._get_future(i, _q) for i, _q in enumerate(queries)]
+            responses = [
+                resp
+                for resp in _run_futures(futures, total=total, timeout=timeout).values()
+                if resp.get("result")
+            ]
+            ret = {
+                "total_count": sum(
+                    resp["result"].get("total_count", 0) for resp in responses
+                ),
+                "data": list(
+                    itertools.chain.from_iterable(
+                        [resp["result"].get("data", []) for resp in responses]
+                    )
+                ),
+            }
 
-            for resp in responses.values():
-                result = resp["result"]
-                ret["data"].extend(result["data"])
-                ret["total_count"] += result["total_count"]
         else:
             ret = self.contributions.queryContributions(
-                _fields=fields, _sort=sort, **query
+                _fields=fields, _sort=sort, **q
             ).result()
 
         return ret
@@ -1925,22 +1971,22 @@ class Client(SwaggerClient):
         if "data" in data:
             self._is_serializable_dict(data["data"])
 
-        query = query or {}
+        q = deepcopy(query) or {}
 
         if self.project:
-            if "project" in query and self.project != query["project"]:
+            if "project" in q and self.project != q["project"]:
                 raise MPContribsClientError(
                     f"client initialized with different project {self.project}!"
                 )
-            query["project"] = self.project
+            q["project"] = self.project
         else:
-            if not query or "project" not in query:
+            if not q or "project" not in q:
                 raise MPContribsClientError(
                     "initialize client with project, or include project in query!"
                 )
 
-        name = query["project"]
-        cids = list(self.get_all_ids(query).get(name, {}).get("ids", set()))
+        name = q["project"]
+        cids = list(self.get_all_ids(q).get(name, {}).get("ids", set()))
 
         if not cids:
             raise MPContribsClientError(
@@ -1956,8 +2002,8 @@ class Client(SwaggerClient):
         _, total_pages = self.get_totals(query=cids_query)
         queries = self._split_query(cids_query, op="update", pages=total_pages)
         futures = [
-            self._get_future(i, q, op="update", data=data)
-            for i, q in enumerate(queries)
+            self._get_future(i, _q, op="update", data=data)
+            for i, _q in enumerate(queries)
         ]
         responses = _run_futures(futures, total=total, timeout=timeout)
         updated = sum(resp["count"] for _, resp in responses.items())
@@ -2019,23 +2065,23 @@ class Client(SwaggerClient):
                 "initialize client with project, or include project in query!"
             )
 
-        query = query or {}
+        q = deepcopy(query) or {}
 
         if self.project:
-            query["project"] = self.project
+            q["project"] = self.project
 
         try:
             resp = self.projects.getProjectByName(
-                pk=query["project"], _fields=["is_public", "is_approved"]
+                pk=q["project"], _fields=["is_public", "is_approved"]
             ).result()
         except HTTPNotFound:
             raise MPContribsClientError(
-                f"project `{query['project']}` not found or access denied!"
+                f"project `{q['project']}` not found or access denied!"
             )
 
         if not recursive and resp["is_public"] == is_public:
             return {
-                "warning": f"`is_public` already set to {is_public} for `{query['project']}`."
+                "warning": f"`is_public` already set to {is_public} for `{q['project']}`."
             }
 
         ret = {}
@@ -2043,19 +2089,19 @@ class Client(SwaggerClient):
         if resp["is_public"] != is_public:
             if is_public and not resp["is_approved"]:
                 raise MPContribsClientError(
-                    f"project `{query['project']}` is not approved yet!"
+                    f"project `{q['project']}` is not approved yet!"
                 )
 
             resp = self.projects.updateProjectByName(
-                pk=query["project"], project={"is_public": is_public}
+                pk=q["project"], project={"is_public": is_public}
             ).result()
             ret["published"] = resp["count"] == 1
 
         if recursive:
-            query = query or {}
-            query["is_public"] = not is_public
+            q = deepcopy(query) or {}
+            q["is_public"] = not is_public
             ret["contributions"] = self.update_contributions(
-                {"is_public": is_public}, query=query, timeout=timeout
+                {"is_public": is_public}, query=q, timeout=timeout
             )
 
         return ret
@@ -2450,7 +2496,7 @@ class Client(SwaggerClient):
             Number of new downloads written to disk.
         """
         start = time.perf_counter()
-        query = query or {}
+        q = deepcopy(query) or {}
         include = include or []
         outdir = Path(outdir) or Path(".")
         outdir.mkdir(parents=True, exist_ok=True)
@@ -2458,8 +2504,8 @@ class Client(SwaggerClient):
         if include and not components:
             raise MPContribsClientError(f"`include` must be subset of {COMPONENTS}!")
 
-        all_ids = self.get_all_ids(query, include=list(components), timeout=timeout)
-        fmt = query.get("format", "json")
+        all_ids = self.get_all_ids(q, include=list(components), timeout=timeout)
+        fmt = q.get("format", "json")
         contributions, components_loaded = [], defaultdict(dict)
 
         for name, values in all_ids.items():
