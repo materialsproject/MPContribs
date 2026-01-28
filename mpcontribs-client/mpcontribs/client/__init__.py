@@ -1,62 +1,62 @@
-import io
-import importlib.metadata
-import sys
-import os
-import ujson
-import time
-import gzip
-import warnings
-import pandas as pd
-import numpy as np
-import plotly.io as pio
-import itertools
 import functools
-import requests
+import gzip
+import importlib.metadata
+import io
+import itertools
 import logging
-
+import os
+import sys
+import time
+import warnings
+from base64 import b64decode, b64encode, urlsafe_b64encode
+from collections import defaultdict
+from concurrent.futures import as_completed
+from copy import deepcopy
+from hashlib import md5
 from inspect import getfullargspec
 from math import isclose
-from requests.exceptions import RequestException
-from bson.objectid import ObjectId
-from typing import Type
-from tqdm.auto import tqdm
-from hashlib import md5
 from pathlib import Path
-from copy import deepcopy
-from filetype import guess
-from flatten_dict import flatten, unflatten
-from base64 import b64encode, b64decode, urlsafe_b64encode
+from tempfile import gettempdir
+from typing import Type
 from urllib.parse import urlparse
-from pyisemail import is_email
-from collections import defaultdict
-from pyisemail.diagnosis import BaseDiagnosis
-from swagger_spec_validator.common import SwaggerValidationError
-from jsonschema.exceptions import ValidationError
-from bravado_core.formatter import SwaggerFormat
+
+import numpy as np
+import pandas as pd
+import plotly.io as pio
+import requests
+import ujson
+from boltons.iterutils import remap
 from bravado.client import SwaggerClient
+from bravado.config import bravado_config_from_config_dict
+from bravado.exception import HTTPNotFound
 from bravado.requests_client import RequestsClient
 from bravado.swagger_model import Loader
-from bravado.config import bravado_config_from_config_dict
-from bravado_core.spec import Spec, build_api_serving_url, _identity
+from bravado_core.formatter import SwaggerFormat
 from bravado_core.model import model_discovery
 from bravado_core.resource import build_resources
-from bravado.exception import HTTPNotFound
+from bravado_core.spec import Spec, _identity, build_api_serving_url
 from bravado_core.validate import validate_object
-from json2html import Json2Html
-from IPython.display import display, HTML, Image, FileLink
-from boltons.iterutils import remap
-from pymatgen.core import Structure as PmgStructure
-from concurrent.futures import as_completed
-from requests_futures.sessions import FuturesSession
-from urllib3.util.retry import Retry
+from bson.objectid import ObjectId
+from cachetools import LRUCache, cached
+from cachetools.keys import hashkey
+from filetype import guess
 from filetype.types.archive import Gz
-from filetype.types.image import Jpeg, Png, Gif, Tiff
+from filetype.types.image import Gif, Jpeg, Png, Tiff
+from flatten_dict import flatten, unflatten
+from IPython.display import HTML, FileLink, Image, display
+from json2html import Json2Html
+from jsonschema.exceptions import ValidationError
 from pint import UnitRegistry
 from pint.errors import DimensionalityError
-from tempfile import gettempdir
 from plotly.express._chart_types import line as line_chart
-from cachetools import cached, LRUCache
-from cachetools.keys import hashkey
+from pyisemail import is_email
+from pyisemail.diagnosis import BaseDiagnosis
+from pymatgen.core import Structure as PmgStructure
+from requests.exceptions import RequestException
+from requests_futures.sessions import FuturesSession
+from swagger_spec_validator.common import SwaggerValidationError
+from tqdm.auto import tqdm
+from urllib3.util.retry import Retry
 
 try:
     __version__ = importlib.metadata.version("mpcontribs-client")
