@@ -1184,7 +1184,10 @@ class Client(SwaggerClient):
             itertools.chain.from_iterable(
                 [
                     ret["data"],
-                    next(resp.get("result",{}).get("data",[]) for resp in responses.values()),
+                    next(
+                        resp.get("result", {}).get("data", [])
+                        for resp in responses.values()
+                    ),
                 ]
             )
         )
@@ -1875,7 +1878,7 @@ class Client(SwaggerClient):
         Returns:
             List of contributions
         """
-        q : dict = deepcopy(query) or {}
+        q: dict = deepcopy(query) or {}
 
         if self.project and "project" not in q:
             q["project"] = self.project
@@ -1902,17 +1905,13 @@ class Client(SwaggerClient):
             ]
             ret = {
                 "total_count": sum(
-                    resp["result"].get("total_count",0)
-                    for resp in responses
+                    resp["result"].get("total_count", 0) for resp in responses
                 ),
                 "data": list(
                     itertools.chain.from_iterable(
-                        [
-                            resp["result"].get("data",[])
-                            for resp in responses
-                        ]
+                        [resp["result"].get("data", []) for resp in responses]
                     )
-                )
+                ),
             }
 
         else:
