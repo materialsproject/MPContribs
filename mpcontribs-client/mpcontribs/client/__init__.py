@@ -1156,6 +1156,17 @@ class Client(SwaggerClient):
             q["_sort"] = sort
 
         ret = self.projects.queryProjects(**q).result()  # first page
+        """
+        'ret' type:
+        {
+            "data": [
+                ...
+            ],
+            "has_more": <bool>,
+            "total_count": <int>,
+            "total_pages": <int>
+        }
+        """
         total_count, total_pages = ret["total_count"], ret["total_pages"]
 
         if total_pages < 2:
@@ -1179,14 +1190,32 @@ class Client(SwaggerClient):
             self._get_future(i, _q, rel_url="projects") for i, _q in enumerate(queries)
         ]
         responses = _run_futures(futures, total=total_count, timeout=timeout)
+        """
+        'responses' type:
+        {
+            "0": {
+                "result": {
+                    "data": [
+                        ...
+                    ],
+                    "has_more": <bool>,
+                    "total_count": <int>,
+                    "total_pages": <int>
+                },
+                "count": <int>
+            },
+            "1": ...
+        }
+        """
 
         return list(
             itertools.chain.from_iterable(
                 [
                     ret["data"],
-                    next(
-                        resp.get("result", {}).get("data", [])
-                        for resp in responses.values()
+                    itertools.chain.from_iterable(
+                        # did not hit early return, guaranteed
+                        # to have additional pages w/ data
+                        map(lambda x: x["result"]["data"], iter(responses.values()))
                     ),
                 ]
             )
