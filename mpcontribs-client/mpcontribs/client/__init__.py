@@ -1180,9 +1180,14 @@ class Client(SwaggerClient):
         ]
         responses = _run_futures(futures, total=total_count, timeout=timeout)
 
-        ret["data"].extend([resp["result"]["data"] for resp in responses.values()])
-
-        return ret["data"]
+        return list(
+            itertools.chain.from_iterable(
+                [
+                    ret["data"],
+                    [resp["result"]["data"] for resp in responses.values()][0],
+                ]
+            )
+        )
 
     def create_project(
         self, name: str, title: str, authors: str, description: str, url: str
