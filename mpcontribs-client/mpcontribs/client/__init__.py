@@ -1184,7 +1184,7 @@ class Client(SwaggerClient):
             itertools.chain.from_iterable(
                 [
                     ret["data"],
-                    [resp["result"]["data"] for resp in responses.values()][0],
+                    next(resp.get("result",{}).get("data",[]) for resp in responses.values()),
                 ]
             )
         )
@@ -1875,15 +1875,15 @@ class Client(SwaggerClient):
         Returns:
             List of contributions
         """
-        query = query or {}
+        q : dict = deepcopy(query) or {}
 
-        if self.project and "project" not in query:
-            query["project"] = self.project
+        if self.project and "project" not in q:
+            q["project"] = self.project
 
         if paginate:
             cids = [
                 idx
-                for v in self.get_all_ids(query).values()
+                for v in self.get_all_ids(q).values()
                 for idx in (v.get("ids") or [])
             ]
 
@@ -1894,17 +1894,30 @@ class Client(SwaggerClient):
             cids_query = {"id__in": cids, "_fields": fields, "_sort": sort}
             _, total_pages = self.get_totals(query=cids_query)
             queries = self._split_query(cids_query, pages=total_pages)
-            futures = [self._get_future(i, q) for i, q in enumerate(queries)]
-            responses = _run_futures(futures, total=total, timeout=timeout)
-            ret = {"total_count": 0, "data": []}
+            futures = [self._get_future(i, _q) for i, _q in enumerate(queries)]
+            responses = [
+                resp
+                for resp in _run_futures(futures, total=total, timeout=timeout).values()
+                if resp.get("result")
+            ]
+            ret = {
+                "total_count": sum(
+                    resp["result"].get("total_count",0)
+                    for resp in responses
+                ),
+                "data": list(
+                    itertools.chain.from_iterable(
+                        [
+                            resp["result"].get("data",[])
+                            for resp in responses
+                        ]
+                    )
+                )
+            }
 
-            for resp in responses.values():
-                result = resp["result"]
-                ret["data"].extend(result["data"])
-                ret["total_count"] += result["total_count"]
         else:
             ret = self.contributions.queryContributions(
-                _fields=fields, _sort=sort, **query
+                _fields=fields, _sort=sort, **q
             ).result()
 
         return ret
