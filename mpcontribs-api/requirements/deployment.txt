@@ -38,9 +38,9 @@ blinker==1.9.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/pyproject.toml)
 boltons==25.0.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/pyproject.toml)
-boto3==1.42.35
+boto3==1.42.36
     # via flask-mongorest-mpcontribs
-botocore==1.42.35
+botocore==1.42.36
     # via
     #   boto3
     #   s3transfer
@@ -68,7 +68,7 @@ cramjam==2.11.0
     # via python-snappy
 crontab==1.0.5
     # via rq-scheduler
-cryptography==46.0.3
+cryptography==46.0.4
     # via pyopenssl
 css-html-js-minify==2.5.5
     # via mpcontribs-api (MPContribs/mpcontribs-api/pyproject.toml)
@@ -76,7 +76,7 @@ cycler==0.12.1
     # via matplotlib
 dateparser==1.2.2
     # via mpcontribs-api (MPContribs/mpcontribs-api/pyproject.toml)
-ddtrace==4.2.2
+ddtrace==4.3.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/pyproject.toml)
 debugpy==1.8.19
     # via ipykernel
@@ -339,7 +339,7 @@ prometheus-client==0.24.1
     #   notebook
 prompt-toolkit==3.0.52
     # via ipython
-psutil==7.2.1
+psutil==7.2.2
     # via ipykernel
 psycopg2-binary==2.9.11
     # via mpcontribs-api (MPContribs/mpcontribs-api/pyproject.toml)
@@ -524,7 +524,7 @@ urllib3==2.6.3
     # via
     #   botocore
     #   requests
-wcwidth==0.4.0
+wcwidth==0.5.0
     # via prompt-toolkit
 webcolors==25.10.0
     # via jsonschema
