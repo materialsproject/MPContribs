@@ -402,7 +402,7 @@ class Table(pd.DataFrame):
         for col in df.columns:
             try:
                 df[col] = df[col].apply(pd.to_numeric)
-            except Exception as exc:
+            except Exception:
                 continue
         try:
             df.index = pd.to_numeric(df.index)
