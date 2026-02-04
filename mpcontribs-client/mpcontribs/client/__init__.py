@@ -398,8 +398,16 @@ class Table(pd.DataFrame):
         """
         df = pd.DataFrame.from_records(
             dct["data"], columns=dct["columns"], index=dct["index"]
-        ).apply(pd.to_numeric, errors="ignore")
-        df.index = pd.to_numeric(df.index, errors="ignore")
+        )
+        for col in df.columns:
+            try:
+                df[col] = df[col].apply(pd.to_numeric)
+            except Exception as exc:
+                continue
+        try:
+            df.index = pd.to_numeric(df.index)
+        except Exception:
+            pass
         labels = dct["attrs"].get("labels", {})
 
         if "index" in labels:
