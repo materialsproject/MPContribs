@@ -24,11 +24,12 @@ from mpcontribs.client.utils import _in_ipython, _compress, _chunk_by_size
 
 if TYPE_CHECKING:
     from typing_extensions import Self
+    from typing import Any, Literal
 
 j2h = Json2Html()
 
 
-class PrettyDict(dict):
+class MPCDict(dict):
     """Custom dictionary to display itself as HTML table with Bulma CSS"""
 
     @staticmethod
@@ -62,25 +63,38 @@ class Table(pd.DataFrame):
 
         return self
 
-    def info(self) -> PrettyDict:
+    # TODO: should the signature override the signature of pandas.DataFrame.info?
+    def info(self) -> MPCDict:  # type: ignore[override]
         """Show summary info for table"""
-        info = PrettyDict((k, v) for k, v in self.attrs.items())
+        info = MPCDict((k, v) for k, v in self.attrs.items())
         info["columns"] = ", ".join(self.columns)
         info["nrows"] = len(self.index)
         return info
 
+    # TODO: should the signature override the signature of pandas.DataFrame.from_dict?
     @classmethod
-    def from_dict(cls, dct: dict) -> Self:
+    def from_dict(  # type: ignore[override]
+        cls,
+        data: dict[str, Any],
+    ) -> Self:
         """Construct Table from dict
 
         Args:
             dct (dict): dictionary format of table
         """
         df = pd.DataFrame.from_records(
-            dct["data"], columns=dct["columns"], index=dct["index"]
-        ).apply(pd.to_numeric, errors="ignore")
-        df.index = pd.to_numeric(df.index, errors="ignore")
-        labels = dct["attrs"].get("labels", {})
+            data["data"], columns=data["columns"], index=data["index"]
+        )
+        for col in df.columns:
+            try:
+                df[col] = df[col].apply(pd.to_numeric)
+            except Exception:
+                continue
+        try:
+            df.index = pd.to_numeric(df.index)
+        except Exception:
+            pass
+        labels = data["attrs"].get("labels", {})
 
         if "index" in labels:
             df.index.name = labels["index"]
@@ -88,7 +102,7 @@ class Table(pd.DataFrame):
             df.columns.name = labels["variable"]
 
         ret = cls(df)
-        ret.attrs = {k: v for k, v in dct["attrs"].items()}
+        ret.attrs = {k: v for k, v in data["attrs"].items()}
         return ret
 
     def _clean(self):
@@ -121,29 +135,40 @@ class Table(pd.DataFrame):
         return dct
 
 
-class PrettyStructure(PmgStructure):
+class MPCStructure(PmgStructure):
     """Wrapper class around pymatgen.Structure to provide display() and info()"""
 
     def display(self):
         return self  # TODO use static image from crystal toolkit?
 
-    def info(self) -> PrettyDict:
+    def info(self) -> MPCDict:
         """Show summary info for structure"""
-        info = PrettyDict((k, v) for k, v in self.attrs.items())
+        info = MPCDict(
+            lattice=self.lattice.matrix.tolist(),
+            sites=[
+                f"{site.species_string} : {site.frac_coords}" for site in self.sites
+            ],
+        )
         info["formula"] = self.composition.formula
         info["reduced_formula"] = self.composition.reduced_formula
         info["nsites"] = len(self)
         return info
 
     @classmethod
-    def from_dict(cls, dct: dict) -> Self:
-        """Construct PrettyStructure from dict
+    def from_dict(
+        cls,
+        dct: dict,
+        fmt: Literal["abivars"] | None = None,
+    ) -> Self:
+        """Construct MPCStructure from dict
 
         Args:
             dct (dict): dictionary format of structure
+            fmt ("abivars" or None) : ignored - used to match
+                syntax of parent class.
         """
         dct["properties"] = {
-            **{field: dct[field] for field in ("id", "name", "md5")},
+            **{field: dct.get(field) for field in ("id", "name", "md5")},
             **(dct.pop("properties", None) or {}),
         }
         return super().from_dict(dct)
@@ -160,9 +185,9 @@ class Attachment(dict):
         unpacked = self.decode()
 
         if self["mime"] == "application/gzip":
-            unpacked = gzip.decompress(unpacked).decode("utf-8")
+            unpacked = gzip.decompress(unpacked)
 
-        return unpacked
+        return unpacked.decode("utf-8")
 
     def write(self, outdir: str | Path | None = None) -> Path:
         """Write attachment to file using its name
@@ -192,10 +217,10 @@ class Attachment(dict):
 
         return self.info().display()
 
-    def info(self) -> PrettyDict:
+    def info(self) -> MPCDict:
         """Show summary info for attachment"""
         fields = ["id", "name", "mime", "md5"]
-        info = PrettyDict((k, v) for k, v in self.items() if k in fields)
+        info = MPCDict((k, v) for k, v in self.items() if k in fields)
         info["size"] = len(self.decode())
         return info
 
@@ -281,14 +306,14 @@ class Attachments(list):
     # TODO implement "plural" versions for Attachment methods
 
     @classmethod
-    def from_list(cls, elements: list) -> Self:
+    def from_list(cls, elements: list) -> list[Attachment]:
 
         if not isinstance(elements, list):
             raise MPContribsClientError(
                 f"Use a list to initialize Attachments, not {type(elements)}."
             )
 
-        attachments = []
+        attachments: list[Attachment] = []
 
         for element in elements:
             if len(attachments) >= MPCC_SETTINGS.MAX_ELEMS:
@@ -311,7 +336,9 @@ class Attachments(list):
         return attachments
 
     @classmethod
-    def from_data(cls, data: list | dict, prefix: str = "attachment"):
+    def from_data(
+        cls, data: list | dict, prefix: str = "attachment"
+    ) -> list[Attachment]:
         """Construct list of attachments from data dict or list
 
         Args:
@@ -326,7 +353,7 @@ class Attachments(list):
             if isinstance(data, dict):
                 raise NotImplementedError("dicts not supported yet")
 
-            attachments = []
+            attachments: list[Attachment] = []
 
             for idx, chunk in enumerate(_chunk_by_size(data)):
                 if len(attachments) > MPCC_SETTINGS.MAX_ELEMS:

@@ -87,4 +87,4 @@ class ContribsClientSettings(BaseSettings):
         return v
 
 
-MPCC_SETTINGS = ContribsClientSettings()
+MPCC_SETTINGS = ContribsClientSettings()  # type: ignore[call-arg]

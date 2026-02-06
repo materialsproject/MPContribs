@@ -50,6 +50,10 @@ jobs:
           pre-commit install
           pre-commit run --all-files
 
+      - name: Lint with mypy
+        shell: bash -l {0}
+        run: python${{ matrix.python-version }} -m mypy --config-file .mypy.ini mpcontribs-client/mpcontribs
+
       - name: Test Client and build
         env:
           MPCONTRIBS_API_KEY: ${{ secrets.MPCONTRIBS_API_KEY }}

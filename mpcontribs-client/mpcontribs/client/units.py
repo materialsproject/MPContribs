@@ -2,7 +2,7 @@
 
 from pint import UnitRegistry
 
-ureg = UnitRegistry(
+ureg: UnitRegistry = UnitRegistry(
     autoconvert_offset_to_baseunit=True,
     preprocessors=[
         lambda s: s.replace("%%", " permille "),

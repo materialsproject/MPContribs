@@ -39,8 +39,8 @@ MPCC_LOGGER = get_logger()
 
 
 class TqdmToLogger(StringIO):
-    logger: logging.Logger | None = MPCC_LOGGER
-    level: int | None = MPCC_SETTINGS.CLIENT_LOG_LEVEL
+    logger: logging.Logger = MPCC_LOGGER
+    level: int = MPCC_SETTINGS.CLIENT_LOG_LEVEL
     buf: str = ""
 
     def __init__(self, logger: logging.Logger, level: int | None = None) -> None:
@@ -48,8 +48,9 @@ class TqdmToLogger(StringIO):
         self.logger = logger
         self.level = level or logging.INFO
 
-    def write(self, buf: str) -> None:
+    def write(self, buf: str) -> int:
         self.buf = buf.strip("\r\n\t ")
+        return 1
 
     def flush(self) -> None:
         self.logger.log(self.level, self.buf)

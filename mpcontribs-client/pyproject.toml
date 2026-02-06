@@ -58,6 +58,7 @@ dev = [
     "pytest-cov",
     "pytest-xdist",
     "py",
+    "mypy",
 ]
 all = [
     "mpcontribs-client[dev]"

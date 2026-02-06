@@ -14,6 +14,7 @@ from mpcontribs.client.exceptions import MPContribsClientError
 from mpcontribs.client.settings import MPCC_SETTINGS
 
 if TYPE_CHECKING:
+    from collections.abc import Generator
     from typing import Any
 
 _ipython = getattr(sys.modules.get("IPython"), "get_ipython", lambda: None)()
@@ -46,10 +47,10 @@ if _in_ipython():
             etype, value, _ipython.InteractiveTB(etype, value, tb)
         )
 
-    _ipython.showtraceback = _hide_traceback
+    _ipython.showtraceback = _hide_traceback  # type: ignore[union-attr]
 
 
-def _compress(data: Any) -> int | bytes:
+def _compress(data: Any) -> tuple[int, bytes]:
     """Write JSONable data to gzipped bytes.
 
     Args:
@@ -65,7 +66,7 @@ def _compress(data: Any) -> int | bytes:
 
 def _chunk_by_size(
     items: Any, max_size: float = 0.95 * MPCC_SETTINGS.MAX_BYTES
-) -> bytes:
+) -> Generator:
     """Compress a large data structure by chunks.
 
     Args:
@@ -107,15 +108,13 @@ def flatten_dict(dct: dict[str, Any], separator: str = ".") -> dict[str, Any]:
     Returns:
         dict of str, Any : the flattened dict
     """
-    flattened = {}
+    flattened: dict[str, Any] = {}
 
     def _flatten(obj: Any, key: str | None) -> None:
         if isinstance(obj, dict):
-            _ = [
+            for k, v in obj.items():
                 _flatten(v, f"{key}{separator}{k}" if key else k)
-                for k, v in obj.items()
-            ]
-        else:
+        elif key is not None:
             flattened[key] = obj
 
     _flatten(dct, None)
@@ -132,7 +131,7 @@ def unflatten_dict(dct: dict[str, Any], separator: str = ".") -> dict[str, Any]:
     Returns:
         dict of str, Any : the nested dict
     """
-    unflattened = {}
+    unflattened: dict[str, Any] = {}
 
     def _set_value(key, value):
         for i, x in enumerate(split_key := key.split(separator)):

@@ -1,5 +1,7 @@
 """Define core client functionality."""
 
+from __future__ import annotations
+
 import gzip
 import importlib.metadata
 import sys
@@ -10,6 +12,7 @@ import orjson
 import itertools
 import functools
 import requests
+from typing import TYPE_CHECKING, Literal
 import warnings
 
 from math import isclose
@@ -47,15 +50,15 @@ from cachetools.keys import hashkey
 from mpcontribs.client.exceptions import MPContribsClientError
 from mpcontribs.client.logger import MPCC_LOGGER, TqdmToLogger
 from mpcontribs.client.settings import MPCC_SETTINGS
-from mpcontribs.client.types import PrettyDict, PrettyStructure, Table, Attachment
+from mpcontribs.client.types import MPCDict, MPCStructure, Table, Attachment
 from mpcontribs.client.units import ureg
 from mpcontribs.client.utils import get_md5, flatten_dict, unflatten_dict
 
-classes_map = {
-    "structures": PrettyStructure,
-    "tables": Table,
-    "attachments": Attachment,
-}
+if TYPE_CHECKING:
+    from typing import Any
+
+VALID_OPS = {"query", "create", "update", "delete", "download"}
+VALID_OPS_T = Literal[*VALID_OPS]  # type: ignore[valid-type]
 
 pd.options.plotting.backend = "plotly"
 pio.templates.default = "simple_white"
@@ -78,10 +81,12 @@ def validate_email(email_string):
         raise SwaggerValidationError(f"{email} {d.message}")
 
 
+# TODO: mypy has some problems with putting a bare `str`
+# as a callable function in SwaggerFormat
 email_format = SwaggerFormat(
     format="email",
-    to_wire=str,
-    to_python=str,
+    to_wire=str,  # type: ignore[arg-type]
+    to_python=str,  # type: ignore[arg-type]
     validate=validate_email,
     description="e-mail address including provider",
 )
@@ -95,8 +100,8 @@ def validate_url(url_string, qualifying=("scheme", "netloc")):
 
 url_format = SwaggerFormat(
     format="url",
-    to_wire=str,
-    to_python=str,
+    to_wire=str,  # type: ignore[arg-type]
+    to_python=str,  # type: ignore[arg-type]
     validate=validate_url,
     description="URL",
 )
@@ -169,12 +174,14 @@ def _response_hook(resp, *args, **kwargs):
         resp.count = 0
 
 
-def _run_futures(futures, total: int = 0, timeout: int = -1, desc=None, disable=False):
+def _run_futures(
+    futures, total: int = 0, timeout: int = -1, desc=None, disable=False
+) -> dict[str, dict[str, Any]]:
     """helper to run futures/requests"""
     start = time.perf_counter()
     total_set = total > 0
     total = total if total_set else len(futures)
-    responses = {}
+    responses: dict[str, dict[str, Any]] = {}
 
     with tqdm(
         total=total,
@@ -520,7 +527,7 @@ class Client(SwaggerClient):
             pass
 
     def _get_per_page_default_max(
-        self, op: str = "query", resource: str = "contributions"
+        self, op: VALID_OPS_T = "query", resource: str = "contributions"
     ) -> tuple[int, int]:
         attr = f"{op}{resource.capitalize()}"
         resource = self.swagger_spec.resources[resource]
@@ -528,7 +535,10 @@ class Client(SwaggerClient):
         return param_spec["default"], param_spec["maximum"]
 
     def _get_per_page(
-        self, per_page: int = -1, op: str = "query", resource: str = "contributions"
+        self,
+        per_page: int = -1,
+        op: VALID_OPS_T = "query",
+        resource: str = "contributions",
     ) -> int:
         per_page_default, per_page_max = self._get_per_page_default_max(
             op=op, resource=resource
@@ -540,7 +550,7 @@ class Client(SwaggerClient):
     def _split_query(
         self,
         query: dict,
-        op: str = "query",
+        op: VALID_OPS_T = "query",
         resource: str = "contributions",
         pages: int = -1,
     ) -> list[dict]:
@@ -597,7 +607,7 @@ class Client(SwaggerClient):
         track_id,
         params: dict,
         rel_url: str = "contributions",
-        op: str = "query",
+        op: VALID_OPS_T = "query",
         data: dict | None = None,
     ):
         rname = rel_url.split("/", 1)[0]
@@ -636,7 +646,7 @@ class Client(SwaggerClient):
 
     def get_project(
         self, name: str | None = None, fields: list | None = None
-    ) -> PrettyDict:
+    ) -> MPCDict:
         """Retrieve a project entry
 
         Args:
@@ -650,9 +660,7 @@ class Client(SwaggerClient):
             )
 
         fields = fields or ["_all"]  # retrieve all fields by default
-        return PrettyDict(
-            self.projects.getProjectByName(pk=name, _fields=fields).result()
-        )
+        return MPCDict(self.projects.getProjectByName(pk=name, _fields=fields).result())
 
     def query_projects(
         self,
@@ -852,7 +860,7 @@ class Client(SwaggerClient):
         if resp and "error" in resp:
             raise MPContribsClientError(resp["error"])
 
-    def get_contribution(self, cid: str, fields: list | None = None) -> PrettyDict:
+    def get_contribution(self, cid: str, fields: list | None = None) -> MPCDict:
         """Retrieve a contribution
 
         Args:
@@ -862,7 +870,7 @@ class Client(SwaggerClient):
         if not fields:
             fields = list(self.get_model("ContributionsSchema")._properties.keys())
             fields.remove("needs_build")  # internal field
-        return PrettyDict(
+        return MPCDict(
             self.contributions.getContributionById(pk=cid, _fields=fields).result()
         )
 
@@ -888,7 +896,7 @@ class Client(SwaggerClient):
 
         op = self.swagger_spec.resources["tables"].queryTables
         per_page = op.params["data_per_page"].param_spec["maximum"]
-        table = {"data": []}
+        table: dict[str, list[str]] = {"data": []}
         page, pages = 1, None
 
         while pages is None or page <= pages:
@@ -908,7 +916,7 @@ class Client(SwaggerClient):
 
         return Table.from_dict(table)
 
-    def get_structure(self, sid_or_md5: str) -> PrettyStructure:
+    def get_structure(self, sid_or_md5: str) -> MPCStructure:
         """Retrieve pymatgen structure
 
         Args:
@@ -934,7 +942,7 @@ class Client(SwaggerClient):
 
         fields = list(self.get_model("StructuresSchema")._properties.keys())
         resp = self.structures.getStructureById(pk=sid, _fields=fields).result()
-        return PrettyStructure.from_dict(resp)
+        return MPCStructure.from_dict(resp)
 
     def get_attachment(self, aid_or_md5: str) -> Attachment:
         """Retrieve an attachment
@@ -1145,7 +1153,7 @@ class Client(SwaggerClient):
             query["project"] = self.project
 
         name = query["project"]
-        cids = list(self.get_all_ids(query).get(name, {}).get("ids", set()))
+        cids = list(self.get_all_ids(query).get(name, {}).get("ids", set()))  # type: ignore[union-attr]
 
         if not cids:
             MPCC_LOGGER.info(f"There aren't any contributions to delete for {name}")
@@ -1175,7 +1183,7 @@ class Client(SwaggerClient):
         query: dict | None = None,
         timeout: int = -1,
         resource: str = "contributions",
-        op: str = "query",
+        op: VALID_OPS_T = "query",
     ) -> tuple:
         """Retrieve total count and pages for resource entries matching query
 
@@ -1189,9 +1197,8 @@ class Client(SwaggerClient):
         Returns:
             tuple of total counts and pages
         """
-        ops = {"query", "create", "update", "delete", "download"}
-        if op not in ops:
-            raise MPContribsClientError(f"`op` has to be one of {ops}")
+        if op not in VALID_OPS:
+            raise MPContribsClientError(f"`op` has to be one of {VALID_OPS}")
 
         query = query or {}
         if self.project and "project" not in query:
@@ -1241,9 +1248,12 @@ class Client(SwaggerClient):
         include: list[str] | None = None,
         timeout: int = -1,
         data_id_fields: dict | None = None,
-        fmt: str = "sets",
-        op: str = "query",
-    ) -> dict:
+        fmt: Literal["sets", "map"] = "sets",
+        op: VALID_OPS_T = "query",
+    ) -> (
+        dict[str, dict[str, set[str] | dict[str, set[str]]]]
+        | dict[str, str | dict[str, dict[str, str]]]
+    ):
         """Retrieve a list of existing contribution and component (Object)IDs
 
         Args:
@@ -1315,7 +1325,10 @@ class Client(SwaggerClient):
             }
         )
 
-        ret = {}
+        ret: (
+            dict[str, dict[str, set[str] | dict[str, set[str]]]]
+            | dict[str, str | dict[str, dict[str, str]]]
+        ) = {}
         query = query or {}
         if self.project and "project" not in query:
             query["project"] = self.project
@@ -1448,12 +1461,14 @@ class Client(SwaggerClient):
             queries = self._split_query(cids_query, pages=total_pages)
             futures = [self._get_future(i, q) for i, q in enumerate(queries)]
             responses = _run_futures(futures, total=total, timeout=timeout)
-            ret = {"total_count": 0, "data": []}
+            total_count = 0
+            data: list[str] = []
+            ret: dict[str, int | list[str]] = {"total_count": 0, "data": []}
 
             for resp in responses.values():
                 result = resp["result"]
-                ret["data"].extend(result["data"])
-                ret["total_count"] += result["total_count"]
+                ret["data"].extend(result["data"])  # type: ignore[union-attr]
+                ret["total_count"] += result["total_count"]  # type: ignore[union-attr]
         else:
             ret = self.contributions.queryContributions(
                 _fields=fields, _sort=sort, **query
@@ -2022,20 +2037,24 @@ class Client(SwaggerClient):
 
         all_ids = self.get_all_ids(query, include=list(components), timeout=timeout)
         fmt = query.get("format", "json")
-        contributions, components_loaded = [], defaultdict(dict)
+        contributions: list[MPCDict] = []
+        components_loaded: defaultdict[
+            str, dict[str, MPCStructure | Table | Attachment]
+        ] = defaultdict(dict)
 
+        elapsed = float(timeout)
         for name, values in all_ids.items():
-            if timeout > 0:
-                timeout -= time.perf_counter() - start
-                if timeout < 1:
+            if elapsed > 0:
+                elapsed -= time.perf_counter() - start
+                if elapsed < 1:
                     return contributions
 
                 start = time.perf_counter()
 
             for component in components:
-                if timeout > 0:
-                    timeout -= time.perf_counter() - start
-                    if timeout < 1:
+                if elapsed > 0:
+                    elapsed -= time.perf_counter() - start
+                    if elapsed < 1:
                         return contributions
 
                     start = time.perf_counter()
@@ -2056,7 +2075,14 @@ class Client(SwaggerClient):
                     f"Downloaded {len(ids)} {component} for '{name}' in {len(paths)} file(s)."
                 )
 
-                component_cls = classes_map[component]
+                match component:
+                    case "structures":
+                        component_cls = MPCStructure
+                    case "tables":
+                        component_cls = Table
+                    case "attachments":
+                        component_cls = Attachment
+
                 for path in paths:
                     with gzip.open(path, "rb") as f:
                         for c in orjson.loads(f.read()):
@@ -2083,7 +2109,7 @@ class Client(SwaggerClient):
             for path in paths:
                 with gzip.open(path, "rb") as f:
                     for c in orjson.loads(f.read()):
-                        contrib = PrettyDict(c)
+                        contrib = MPCDict(c)
                         for component in components_loaded.keys():
                             contrib[component] = [
                                 components_loaded[component][d["id"]]
@@ -2100,7 +2126,7 @@ class Client(SwaggerClient):
         outdir: str | Path = MPCC_SETTINGS.DEFAULT_DOWNLOAD_DIR,
         overwrite: bool = False,
         timeout: int = -1,
-        fmt: str = "json",
+        fmt: Literal["json", "csv"] = "json",
     ) -> list[Path]:
         """Download a list of structures as a .json.gz file
 
@@ -2129,7 +2155,7 @@ class Client(SwaggerClient):
         outdir: str | Path = MPCC_SETTINGS.DEFAULT_DOWNLOAD_DIR,
         overwrite: bool = False,
         timeout: int = -1,
-        fmt: str = "json",
+        fmt: Literal["json", "csv"] = "json",
     ) -> list[Path]:
         """Download a list of tables as a .json.gz file
 
@@ -2158,7 +2184,7 @@ class Client(SwaggerClient):
         outdir: str | Path = MPCC_SETTINGS.DEFAULT_DOWNLOAD_DIR,
         overwrite: bool = False,
         timeout: int = -1,
-        fmt: str = "json",
+        fmt: Literal["json", "csv"] = "json",
     ) -> list[Path]:
         """Download a list of attachments as a .json.gz file
 
@@ -2188,7 +2214,7 @@ class Client(SwaggerClient):
         outdir: str | Path = MPCC_SETTINGS.DEFAULT_DOWNLOAD_DIR,
         overwrite: bool = False,
         timeout: int = -1,
-        fmt: str = "json",
+        fmt: Literal["json", "csv"] = "json",
     ) -> list[Path]:
         """Helper to download a list of resources as .json.gz file
 
@@ -2217,7 +2243,11 @@ class Client(SwaggerClient):
         subdir.mkdir(parents=True, exist_ok=True)
         model = self.get_model(f"{resource.capitalize()}Schema")
         fields = list(model._properties.keys())
-        query = {"format": fmt, "_fields": fields, "id__in": oids}
+        query: dict[str, str | list[str]] = {
+            "format": fmt,
+            "_fields": fields,
+            "id__in": oids,
+        }
         _, total_pages = self.get_totals(
             query=query, resource=resource, op="download", timeout=timeout
         )
@@ -2227,7 +2257,7 @@ class Client(SwaggerClient):
         paths, futures = [], []
 
         for query in queries:
-            digest = get_md5({"ids": query["id__in"].split(",")})
+            digest = get_md5({"ids": query["id__in"].split(",")})  # type: ignore[union-attr]
             path = subdir / f"{digest}.{fmt}.gz"
             paths.append(path)
 
