@@ -29,7 +29,7 @@ dependencies = [
     "boto3",
     "ddtrace==4.3.0",
     "Django>=3.2,<4.0",
-    "django-extensions",
+    "django>=3.2,<5.0",
     "django-settings-file",
     "django-webpack4-loader",
     "fastnumbers",
