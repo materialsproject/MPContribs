@@ -9,10 +9,7 @@ asttokens==2.1.0
 async-timeout==4.0.2
     # via redis
 attrs==22.1.0
-    # via
-    #   cattrs
-    #   ddtrace
-    #   jsonschema
+    # via jsonschema
 backcall==0.2.0
     # via ipython
 boltons==21.0.0
@@ -23,8 +20,6 @@ bravado-core==5.17.1
     # via bravado
 bytecode==0.13.0
     # via ddtrace
-cattrs==22.2.0
-    # via ddtrace
 certifi==2024.7.4
     # via requests
 charset-normalizer==2.1.1
@@ -33,9 +28,7 @@ contourpy==1.0.6
     # via matplotlib
 cycler==0.11.0
     # via matplotlib
-ddsketch==2.0.4
-    # via ddtrace
-ddtrace==1.5.3
+ddtrace==4.3.0
     # via -r requirements.in
 decorator==5.1.1
     # via ipython
@@ -43,10 +36,8 @@ dnspython==2.6.1
     # via
     #   pyisemail
     #   pymongo
-envier==0.4.0
+envier==0.6.1
     # via ddtrace
-exceptiongroup==1.2.0
-    # via cattrs
 executing==1.2.0
     # via stack-data
 filetype==1.1.0
@@ -61,6 +52,8 @@ idna==3.7
     # via
     #   jsonschema
     #   requests
+importlib-metadata==8.7.1
+    # via opentelemetry-api
 ipython==8.10.0
     # via mpcontribs-client
 jedi==0.18.1
@@ -73,10 +66,9 @@ jsonpointer==2.3
     # via jsonschema
 jsonref==1.0.0.post1
     # via bravado-core
-jsonschema[format]==3.2.0
+jsonschema==3.2.0
     # via
     #   bravado-core
-    #   ddtrace
     #   mpcontribs-client
     #   swagger-spec-validator
 kiwisolver==1.4.4
@@ -109,10 +101,10 @@ numpy==1.26.4
     #   pymatgen
     #   scipy
     #   spglib
+opentelemetry-api==1.39.1
+    # via ddtrace
 packaging==21.3
-    # via
-    #   ddtrace
-    #   matplotlib
+    # via matplotlib
 palettable==3.3.0
     # via pymatgen
 pandas==2.2.2
@@ -135,10 +127,6 @@ plotly==5.11.0
     #   pymatgen
 prompt-toolkit==3.0.31
     # via ipython
-protobuf==4.21.9
-    # via
-    #   ddsketch
-    #   ddtrace
 ptyprocess==0.7.0
     # via pexpect
 pure-eval==0.2.2
@@ -195,6 +183,8 @@ scipy==1.14.0
     # via pymatgen
 semantic-version==2.10.0
     # via mpcontribs-client
+setuptools==82.0.0
+    # via jsonschema
 simplejson==3.17.6
     # via
     #   bravado
@@ -204,8 +194,6 @@ six==1.16.0
     #   asttokens
     #   bravado
     #   bravado-core
-    #   ddsketch
-    #   ddtrace
     #   flatten-dict
     #   jsonschema
     #   latexcodec
@@ -227,9 +215,7 @@ sympy==1.11.1
 tabulate==0.9.0
     # via pymatgen
 tenacity==8.1.0
-    # via
-    #   ddtrace
-    #   plotly
+    # via plotly
 tqdm==4.66.3
     # via
     #   mpcontribs-client
@@ -238,24 +224,23 @@ traitlets==5.5.0
     # via
     #   ipython
     #   matplotlib-inline
-typing-extensions==4.4.0
+typing-extensions==4.15.0
     # via
     #   bravado
-    #   ddtrace
+    #   opentelemetry-api
 tzdata==2024.1
     # via pandas
 ujson==5.5.0
     # via mpcontribs-client
 uncertainties==3.1.7
     # via pymatgen
-urllib3==1.26.19
+urllib3==2.6.3
     # via requests
 wcwidth==0.2.5
     # via prompt-toolkit
 webcolors==1.12
     # via jsonschema
-xmltodict==0.13.0
+wrapt==2.1.1
     # via ddtrace
-
-# The following packages are considered to be unsafe in a requirements file:
-# setuptools
+zipp==3.23.0
+    # via importlib-metadata
