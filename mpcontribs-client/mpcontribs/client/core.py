@@ -12,7 +12,7 @@ import orjson
 import itertools
 import functools
 import requests
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Literal, cast, overload
 import warnings
 
 from math import isclose
@@ -56,6 +56,14 @@ from mpcontribs.client.utils import get_md5, flatten_dict, unflatten_dict
 
 if TYPE_CHECKING:
     from typing import Any
+    from mpcontribs.client.types import (
+        ComponentIdSets,
+        ProjectIdSets,
+        AllIdSets,
+        IdentifierLeaf,
+        IdentifierBranch,
+        AllIdMap,
+    )
 
 VALID_OPS = {"query", "create", "update", "delete", "download"}
 VALID_OPS_T = Literal[*VALID_OPS]  # type: ignore[valid-type]
@@ -183,7 +191,7 @@ def _run_futures(
     total = total if total_set else len(futures)
     responses: dict[str, dict[str, Any]] = {}
 
-    with tqdm(
+    with tqdm(  # type: ignore[call-arg,attr-defined]
         total=total,
         desc=desc,
         file=TqdmToLogger(),
@@ -567,7 +575,7 @@ class Client(SwaggerClient):
                 f"More than one list in query with length > {per_page} not supported!"
             )
 
-        queries = []
+        queries: list[dict[str, Any]] = []
 
         for k, v in query.items():
             if isinstance(v, list):
@@ -614,7 +622,7 @@ class Client(SwaggerClient):
         resource = self.swagger_spec.resources[rname]
         attr = f"{op}{rname.capitalize()}"
         method = getattr(resource, attr).http_method
-        kwargs = dict(
+        kwargs: dict[str, Any] = dict(
             headers=self.headers, params=params, hooks={"response": _response_hook}
         )
 
@@ -908,13 +916,13 @@ class Client(SwaggerClient):
                 pages = resp["total_data_pages"]
                 table["index"] = resp["index"]
                 table["columns"] = resp["columns"]
-                table["attrs"] = resp.get("attrs", {})
-                for field in ["id", "name", "md5"]:
-                    table["attrs"][field] = resp[field]
+                table_attrs: dict[str, str] = (resp.get("attrs") or {}) | {
+                    field: resp.get(field) for field in {"id", "name", "md5"}
+                }
 
             page += 1
 
-        return Table.from_dict(table)
+        return Table.from_dict(table | {"attrs": table_attrs})
 
     def get_structure(self, sid_or_md5: str) -> MPCStructure:
         """Retrieve pymatgen structure
@@ -1153,7 +1161,8 @@ class Client(SwaggerClient):
             query["project"] = self.project
 
         name = query["project"]
-        cids = list(self.get_all_ids(query).get(name, {}).get("ids", set()))  # type: ignore[union-attr]
+        project_ids = self.get_all_ids(query).get(name)
+        cids = list(self._project_contrib_ids(project_ids))
 
         if not cids:
             MPCC_LOGGER.info(f"There aren't any contributions to delete for {name}")
@@ -1224,7 +1233,9 @@ class Client(SwaggerClient):
         """shortcut for get_totals()"""
         return self.get_totals(query=query)[0]
 
-    def get_unique_identifiers_flags(self, query: dict | None = None) -> dict:
+    def get_unique_identifiers_flags(
+        self, query: dict[str, Any] | None = None
+    ) -> dict[str, bool]:
         """Retrieve values for `unique_identifiers` flags.
 
         See `client.available_query_params(resource="projects")` for available query parameters.
@@ -1233,6 +1244,7 @@ class Client(SwaggerClient):
             query (dict): query to select projects
 
         Returns:
+            dict of str to bool, ex.:
             {"<project-name>": True|False, ...}
         """
         return {
@@ -1242,18 +1254,211 @@ class Client(SwaggerClient):
             )
         }
 
-    def get_all_ids(
+    def _get_contrib_identifier_payloads(
         self,
-        query: dict | None = None,
+        query: dict[str, Any] | None = None,
         include: list[str] | None = None,
         timeout: int = -1,
-        data_id_fields: dict | None = None,
+        data_id_fields: dict[str, str] | None = None,
+        op: VALID_OPS_T = "query",
+    ) -> tuple[list[dict[str, Any]], set[str], dict[str, str], dict[str, bool]]:
+        include = include or []
+        components = {x for x in include if x in MPCC_SETTINGS.COMPONENTS}
+        if include and not components:
+            raise MPContribsClientError(
+                f"`include` must be subset of {MPCC_SETTINGS.COMPONENTS}!"
+            )
+
+        if op not in VALID_OPS:
+            raise MPContribsClientError(f"`op` has to be one of {VALID_OPS}")
+
+        unique_identifiers = self.get_unique_identifiers_flags()
+        data_id_fields = {
+            project: field
+            for project, field in (data_id_fields or {}).items()
+            if project in unique_identifiers and isinstance(field, str)
+        }
+
+        query = query or {}
+        if self.project and "project" not in query:
+            query["project"] = self.project
+
+        for k in ["page", "per_page", "_fields"]:
+            query.pop(k, None)
+
+        id_fields = {"project", "id", "identifier"}
+        if data_id_fields:
+            id_fields.update(f"data.{field}" for field in data_id_fields.values())
+
+        query["_fields"] = list(id_fields | components)
+        _, total_pages = self.get_totals(query=query, timeout=timeout)
+        queries = self._split_query(query, op=op, pages=total_pages)
+        futures = [self._get_future(i, q) for i, q in enumerate(queries)]
+        responses = _run_futures(futures, timeout=timeout, desc="Identifiers")
+
+        contributions: list[dict[str, Any]] = []
+        for resp in responses.values():
+            result = resp.get("result", {})
+            data = result.get("data", [])
+            if isinstance(data, list):
+                contributions.extend(data)
+
+        return contributions, components, data_id_fields, unique_identifiers
+
+    def _collect_ids_as_sets(
+        self,
+        contributions: list[dict[str, Any]],
+        components: set[str],
+        data_id_fields: dict[str, str],
+    ) -> AllIdSets:
+        ret: AllIdSets = {}
+
+        for contrib in contributions:
+            project = contrib["project"]
+            data_id_field = data_id_fields.get(project)
+
+            if project not in ret:
+                id_sets: ProjectIdSets = {"ids": set(), "identifiers": set()}
+                if data_id_field:
+                    id_sets[f"{data_id_field}_set"] = set()
+                ret[project] = id_sets
+
+            project_sets = ret[project]
+            cast(set[str], project_sets["ids"]).add(contrib["id"])
+            cast(set[str], project_sets["identifiers"]).add(contrib["identifier"])
+
+            if data_id_field:
+                data_value = contrib.get("data", {}).get(data_id_field)
+                if isinstance(data_value, str):
+                    cast(set[str], project_sets[f"{data_id_field}_set"]).add(data_value)
+
+            for component in components:
+                component_items = contrib.get(component)
+                if not isinstance(component_items, list):
+                    continue
+
+                if component not in project_sets:
+                    project_sets[component] = {"ids": set(), "md5s": set()}
+
+                component_sets = cast(ComponentIdSets, project_sets[component])
+                for item in component_items:
+                    if not isinstance(item, dict):
+                        continue
+                    for idk in ("id", "md5"):
+                        if isinstance(item.get(idk), str):
+                            component_sets[f"{idk}s"].add(item[idk])
+
+        return ret
+
+    def _collect_ids_as_map(
+        self,
+        contributions: list[dict[str, Any]],
+        components: set[str],
+        data_id_fields: dict[str, str],
+        unique_identifiers: dict[str, bool],
+    ) -> AllIdMap:
+        ret: AllIdMap = {}
+
+        for contrib in contributions:
+            project = contrib["project"]
+            identifier = contrib["identifier"]
+            contrib_id = contrib["id"]
+            data_id_field = data_id_fields.get(project)
+            data_id_field_val = contrib.get("data", {}).get(data_id_field)
+
+            if project not in ret:
+                ret[project] = {}
+
+            project_map = ret[project]
+
+            if unique_identifiers.get(project, False):
+                entry: IdentifierLeaf = {"id": contrib_id}
+                if data_id_field and isinstance(data_id_field_val, str):
+                    entry[data_id_field] = data_id_field_val
+
+                for component in components:
+                    component_items = contrib.get(component)
+                    if not isinstance(component_items, list):
+                        continue
+                    entry[component] = {
+                        d["name"]: {"id": d["id"], "md5": d["md5"]}
+                        for d in component_items
+                        if isinstance(d, dict)
+                        and all(
+                            isinstance(d.get(k), str) for k in ("name", "id", "md5")
+                        )
+                    }
+
+                project_map[identifier] = entry
+            elif data_id_field and isinstance(data_id_field_val, str):
+                entry = {"id": contrib_id}
+                for component in components:
+                    component_items = contrib.get(component)
+                    if not isinstance(component_items, list):
+                        continue
+                    entry[component] = {
+                        d["name"]: {"id": d["id"], "md5": d["md5"]}
+                        for d in component_items
+                        if isinstance(d, dict)
+                        and all(
+                            isinstance(d.get(k), str) for k in ("name", "id", "md5")
+                        )
+                    }
+
+                project_map[identifier] = {data_id_field_val: entry}
+
+        return ret
+
+    @staticmethod
+    def _project_contrib_ids(project_values: ProjectIdSets | None) -> set[str]:
+        if not project_values:
+            return set()
+        ids = project_values.get("ids")
+        return ids if isinstance(ids, set) else set()
+
+    @staticmethod
+    def _project_component_ids(
+        project_values: ProjectIdSets | None, component: str
+    ) -> set[str]:
+        if not project_values:
+            return set()
+        component_values = project_values.get(component)
+        if not isinstance(component_values, dict):
+            return set()
+        ids = component_values.get("ids")
+        return ids if isinstance(ids, set) else set()
+
+    @overload
+    def get_all_ids(
+        self,
+        query: dict[str, Any] | None = None,
+        include: list[str] | None = None,
+        timeout: int = -1,
+        data_id_fields: dict[str, str] | None = None,
+        fmt: Literal["sets"] = "sets",
+        op: VALID_OPS_T = "query",
+    ) -> AllIdSets: ...
+
+    @overload
+    def get_all_ids(
+        self,
+        query: dict[str, Any] | None = None,
+        include: list[str] | None = None,
+        timeout: int = -1,
+        data_id_fields: dict[str, str] | None = None,
+        fmt: Literal["map"] = "map",
+        op: VALID_OPS_T = "query",
+    ) -> AllIdMap: ...
+
+    def get_all_ids(
+        self,
+        query: dict[str, Any] | None = None,
+        include: list[str] | None = None,
+        timeout: int = -1,
+        data_id_fields: dict[str, str] | None = None,
         fmt: Literal["sets", "map"] = "sets",
         op: VALID_OPS_T = "query",
-    ) -> (
-        dict[str, dict[str, set[str] | dict[str, set[str]]]]
-        | dict[str, str | dict[str, dict[str, str]]]
-    ):
+    ) -> AllIdSets | AllIdMap:
         """Retrieve a list of existing contribution and component (Object)IDs
 
         Args:
@@ -1300,123 +1505,41 @@ class Client(SwaggerClient):
                 }
             }, ...}
         """
-        include = include or []
-        components = {x for x in include if x in MPCC_SETTINGS.COMPONENTS}
-        if include and not components:
-            raise MPContribsClientError(
-                f"`include` must be subset of {MPCC_SETTINGS.COMPONENTS}!"
+        q = deepcopy(query or {})  # prevent modifying user query
+        if fmt == "sets":
+            contributions, components, clean_data_id_fields, _ = (
+                self._get_contrib_identifier_payloads(
+                    query=q,
+                    include=include,
+                    timeout=timeout,
+                    data_id_fields=data_id_fields,
+                    op=op,
+                )
+            )
+            return self._collect_ids_as_sets(
+                contributions=contributions,
+                components=components,
+                data_id_fields=clean_data_id_fields,
             )
 
-        fmts = {"sets", "map"}
-        if fmt not in fmts:
-            raise MPContribsClientError(f"`fmt` must be subset of {fmts}!")
-
-        ops = {"query", "create", "update", "delete", "download"}
-        if op not in ops:
-            raise MPContribsClientError(f"`op` has to be one of {ops}")
-
-        unique_identifiers = self.get_unique_identifiers_flags()
-        data_id_fields = data_id_fields or {}
-        data_id_fields.update(
-            {
-                k: v
-                for k, v in data_id_fields.items()
-                if k in unique_identifiers and isinstance(v, str)
-            }
-        )
-
-        ret: (
-            dict[str, dict[str, set[str] | dict[str, set[str]]]]
-            | dict[str, str | dict[str, dict[str, str]]]
-        ) = {}
-        query = query or {}
-        if self.project and "project" not in query:
-            query["project"] = self.project
-
-        [query.pop(k, None) for k in ["page", "per_page", "_fields"]]
-        id_fields = {"project", "id", "identifier"}
-
-        if data_id_fields:
-            id_fields.update(
-                f"data.{data_id_field}" for data_id_field in data_id_fields.values()
+        if fmt == "map":
+            contributions, components, clean_data_id_fields, unique_identifiers = (
+                self._get_contrib_identifier_payloads(
+                    query=q,
+                    include=include,
+                    timeout=timeout,
+                    data_id_fields=data_id_fields,
+                    op=op,
+                )
+            )
+            return self._collect_ids_as_map(
+                contributions=contributions,
+                components=components,
+                data_id_fields=clean_data_id_fields,
+                unique_identifiers=unique_identifiers,
             )
 
-        query["_fields"] = list(id_fields | components)
-        _, total_pages = self.get_totals(query=query, timeout=timeout)
-        queries = self._split_query(query, op=op, pages=total_pages)
-        futures = [self._get_future(i, q) for i, q in enumerate(queries)]
-        responses = _run_futures(futures, timeout=timeout, desc="Identifiers")
-
-        for resp in responses.values():
-            for contrib in resp["result"]["data"]:
-                project = contrib["project"]
-                data_id_field = data_id_fields.get(project)
-
-                if fmt == "sets":
-                    if project not in ret:
-                        id_keys = ["ids", "identifiers"]
-                        if data_id_field:
-                            id_field = f"{data_id_field}_set"
-                            id_keys.append(id_field)
-
-                        ret[project] = {k: set() for k in id_keys}
-
-                    ret[project]["ids"].add(contrib["id"])
-                    ret[project]["identifiers"].add(contrib["identifier"])
-
-                    if data_id_field:
-                        ret[project][id_field].add(contrib["data"][data_id_field])
-
-                    for component in components:
-                        if component in contrib:
-                            if component not in ret[project]:
-                                ret[project][component] = {"ids": set(), "md5s": set()}
-
-                            for d in contrib[component]:
-                                for k in ["id", "md5"]:
-                                    ret[project][component][f"{k}s"].add(d[k])
-
-                elif fmt == "map":
-                    identifier = contrib["identifier"]
-                    data_id_field_val = contrib.get("data", {}).get(data_id_field)
-
-                    if project not in ret:
-                        ret[project] = {}
-
-                    if unique_identifiers[project]:
-                        ret[project][identifier] = {"id": contrib["id"]}
-
-                        if data_id_field and data_id_field_val:
-                            ret[project][identifier][data_id_field] = data_id_field_val
-
-                        ret[project][identifier].update(
-                            {
-                                component: {
-                                    d["name"]: {"id": d["id"], "md5": d["md5"]}
-                                    for d in contrib[component]
-                                }
-                                for component in components
-                                if component in contrib
-                            }
-                        )
-
-                    elif data_id_field and data_id_field_val:
-                        ret[project][identifier] = {
-                            data_id_field_val: {"id": contrib["id"]}
-                        }
-
-                        ret[project][identifier][data_id_field_val].update(
-                            {
-                                component: {
-                                    d["name"]: {"id": d["id"], "md5": d["md5"]}
-                                    for d in contrib[component]
-                                }
-                                for component in components
-                                if component in contrib
-                            }
-                        )
-
-        return ret
+        raise MPContribsClientError("`fmt` must be one of {'sets', 'map'}!")
 
     def query_contributions(
         self,
@@ -1446,11 +1569,9 @@ class Client(SwaggerClient):
             query["project"] = self.project
 
         if paginate:
-            cids = [
-                idx
-                for v in self.get_all_ids(query).values()
-                for idx in (v.get("ids") or [])
-            ]
+            cids: list[str] = []
+            for values in self.get_all_ids(query).values():
+                cids.extend(self._project_contrib_ids(values))
 
             if not cids:
                 raise MPContribsClientError("No contributions match the query.")
@@ -1512,7 +1633,8 @@ class Client(SwaggerClient):
                 )
 
         name = query["project"]
-        cids = list(self.get_all_ids(query).get(name, {}).get("ids", set()))
+        project_ids = self.get_all_ids(query).get(name)
+        cids = list(self._project_contrib_ids(project_ids))
 
         if not cids:
             raise MPContribsClientError(
@@ -1673,7 +1795,7 @@ class Client(SwaggerClient):
 
         # get existing contributions
         tic = time.perf_counter()
-        project_names = set()
+        project_name_set: set[str] = set()
         collect_ids = []
         require_one_of = {"data"} | set(MPCC_SETTINGS.COMPONENTS)
 
@@ -1692,9 +1814,9 @@ class Client(SwaggerClient):
             elif "id" in c:
                 collect_ids.append(c["id"])
             elif "project" in c and "identifier" in c:
-                project_names.add(c["project"])
+                project_name_set.add(c["project"])
             elif self.project and "project" not in c and "identifier" in c:
-                project_names.add(self.project)
+                project_name_set.add(self.project)
                 contributions[idx]["project"] = self.project
             else:
                 raise MPContribsClientError(
@@ -1704,41 +1826,40 @@ class Client(SwaggerClient):
         id2project = {}
         if collect_ids:
             resp = self.get_all_ids(dict(id__in=collect_ids), timeout=timeout)
-            project_names |= set(resp.keys())
+            project_name_set |= set(resp.keys())
 
             id2project.update(
                 {
                     cid: project_name
                     for project_name, values in resp.items()
-                    for cid in values["ids"]
+                    for cid in self._project_contrib_ids(values)
                 }
             )
 
-        existing = defaultdict(dict)
-        unique_identifiers = defaultdict(dict)
-        project_names = list(project_names)
+        project_names: list[str] = list(project_name_set)
 
         if not skip_dupe_check and len(collect_ids) != len(contributions):
             nproj = len(project_names)
-            query = (
+            query: dict[str, Any] = (
                 {"name__in": project_names} if nproj > 1 else {"name": project_names[0]}
             )
-            unique_identifiers = self.get_unique_identifiers_flags(query)
+            unique_identifiers: dict[str, bool] = self.get_unique_identifiers_flags(
+                query
+            )
             query = (
                 {"project__in": project_names}
                 if nproj > 1
                 else {"project": project_names[0]}
             )
-            existing = defaultdict(
-                dict,
-                self.get_all_ids(
-                    query, include=MPCC_SETTINGS.COMPONENTS, timeout=timeout
-                ),
+            existing = self.get_all_ids(
+                query, include=MPCC_SETTINGS.COMPONENTS, timeout=timeout
             )
 
         # prepare contributions
         contribs = defaultdict(list)
-        digests = {project_name: defaultdict(set) for project_name in project_names}
+        digests: dict[str, defaultdict[str, set[str]]] = {
+            project_name: defaultdict(set) for project_name in project_names
+        }
         fields = [
             comp
             for comp in self.get_model("ContributionsSchema")._properties.keys()
@@ -1746,7 +1867,7 @@ class Client(SwaggerClient):
         ]
         fields.remove("needs_build")  # internal field
 
-        for contrib in tqdm(contributions, desc="Prepare"):
+        for contrib in tqdm(contributions, desc="Prepare"):  # type: ignore[call-arg,attr-defined]
             if "data" in contrib:
                 contrib["data"] = unflatten_dict(contrib["data"])
                 self._is_serializable_dict(contrib["data"])
@@ -1761,11 +1882,11 @@ class Client(SwaggerClient):
             ):
                 continue
 
-            contrib_copy = {}
+            contrib_copy: dict[str, Any] = {}
             for k in fields:
                 if k in contrib:
                     if isinstance(contrib[k], dict):
-                        flat = {}
+                        flat: dict[str, str | int | float] = {}
                         for kk, vv in flatten_dict(contrib[k]).items():
                             if isinstance(vv, bool):
                                 flat[kk] = "Yes" if vv else "No"
@@ -1902,7 +2023,9 @@ class Client(SwaggerClient):
                 retries = 0
 
                 while contribs[project_name]:
-                    futures, post_chunk, idx = [], [], 0
+                    futures: list[Any] = []
+                    post_chunk: list[dict[str, Any]] = []
+                    idx = 0
 
                     for n, c in enumerate(contribs[project_name]):
                         if "id" in c:
@@ -2059,7 +2182,7 @@ class Client(SwaggerClient):
 
                     start = time.perf_counter()
 
-                ids = list(values[component]["ids"])
+                ids = list(self._project_component_ids(values, component))
                 if not ids:
                     continue
 
@@ -2090,7 +2213,7 @@ class Client(SwaggerClient):
                                 component_cls.from_dict(c)
                             )
 
-            cids = list(values["ids"])
+            cids = list(self._project_contrib_ids(values))
             if not cids:
                 continue
 
@@ -2254,7 +2377,8 @@ class Client(SwaggerClient):
         queries = self._split_query(
             query, resource=resource, op="download", pages=total_pages
         )
-        paths, futures = [], []
+        paths: list[Path] = []
+        futures: list[Any] = []
 
         for query in queries:
             digest = get_md5({"ids": query["id__in"].split(",")})  # type: ignore[union-attr]
@@ -2269,7 +2393,7 @@ class Client(SwaggerClient):
         if futures:
             responses = _run_futures(futures, timeout=timeout)
 
-            for path, resp in responses.items():
-                path.write_bytes(resp["result"])
+            for p, resp in responses.items():
+                Path(p).write_bytes(resp["result"])
 
         return paths

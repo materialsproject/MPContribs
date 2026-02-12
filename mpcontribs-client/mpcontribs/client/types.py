@@ -363,3 +363,14 @@ class Attachments(list):
                 attachments.append(attm)
 
             return attachments
+
+
+ComponentIdSets = dict[str, set[str]]
+ProjectIdSets = dict[str, set[str] | ComponentIdSets]
+AllIdSets = dict[str, ProjectIdSets]
+
+ComponentNameMap = dict[str, dict[str, str]]
+IdentifierLeaf = dict[str, str | ComponentNameMap]
+IdentifierBranch = dict[str, IdentifierLeaf]
+ProjectIdMap = dict[str, IdentifierLeaf | IdentifierBranch]
+AllIdMap = dict[str, ProjectIdMap]
