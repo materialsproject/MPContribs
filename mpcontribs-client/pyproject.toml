@@ -29,19 +29,19 @@ dependencies = [
     "boltons",
     "bravado",
     "filetype",
-    "flatten-dict",
     "ipython",
     "json2html",
     "pandas",
     "pint",
     "plotly",
+    "pydantic>=2.0",
+    "pydantic-settings>=2.0",
     "pyIsEmail",
     "pymatgen",
     "pymongo",
     "requests-futures",
     "swagger-spec-validator",
     "tqdm",
-    "ujson",
     "cachetools",
 ]
 
@@ -58,6 +58,7 @@ dev = [
     "pytest-cov",
     "pytest-xdist",
     "py",
+    "mypy",
 ]
 all = [
     "mpcontribs-client[dev]"

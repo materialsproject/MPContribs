@@ -1,4 +1,4 @@
-from mpcontribs.client import Table
+from mpcontribs.client.types import Table
 
 
 def test_table():
