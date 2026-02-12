@@ -7,7 +7,8 @@ exclude: |
       ^mpcontribs-io/|
       ^mpcontribs-kernel-gateway/|
       ^mpcontribs-portal/|
-      ^mpcontribs-serverless/
+      ^mpcontribs-serverless/|
+      ^mpcontribs-client/requirements/
   )
 
 repos:
