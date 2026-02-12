@@ -43,7 +43,9 @@ class TqdmToLogger(StringIO):
     level: int = MPCC_SETTINGS.CLIENT_LOG_LEVEL
     buf: str = ""
 
-    def __init__(self, logger: logging.Logger, level: int | None = None) -> None:
+    def __init__(
+        self, logger: logging.Logger = MPCC_LOGGER, level: int | None = None
+    ) -> None:
         super().__init__()
         self.logger = logger
         self.level = level or logging.INFO
