@@ -61,7 +61,6 @@ if TYPE_CHECKING:
         ProjectIdSets,
         AllIdSets,
         IdentifierLeaf,
-        IdentifierBranch,
         AllIdMap,
     )
 
@@ -1582,8 +1581,6 @@ class Client(SwaggerClient):
             queries = self._split_query(cids_query, pages=total_pages)
             futures = [self._get_future(i, q) for i, q in enumerate(queries)]
             responses = _run_futures(futures, total=total, timeout=timeout)
-            total_count = 0
-            data: list[str] = []
             ret: dict[str, int | list[str]] = {"total_count": 0, "data": []}
 
             for resp in responses.values():
