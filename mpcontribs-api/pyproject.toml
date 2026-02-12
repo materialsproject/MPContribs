@@ -19,7 +19,7 @@ name = "mpcontribs-api"
 dynamic = ["version"]
 requires-python = ">=3.11"
 description="API for community-contributed Materials Project data"
-license = {text = "MIT"}
+license = "BSD-3-Clause-LBNL"
 authors = [
     {name = "Patrick Huck", email = "phuck@lbl.gov"},
     {name = "The Materials Project", email="feedback@materialsproject.org"},
@@ -32,7 +32,7 @@ dependencies = [
     "boltons",
     "css-html-js-minify",
     "dateparser",
-    "ddtrace",
+    "ddtrace==4.3.0",
     "dnspython",
     "filetype",
     "flasgger-tschaume>=0.9.7",
@@ -40,7 +40,7 @@ dependencies = [
     "flask-marshmallow",
     "flask-mongorest-mpcontribs>=3.2.1",
     "Flask-RQ2",
-    "gunicorn[gevent]",
+    "gunicorn[gevent]==24.1.1",
     "jinja2",
     "json2html",
     "marshmallow<4",

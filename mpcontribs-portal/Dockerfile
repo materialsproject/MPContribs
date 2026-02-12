@@ -1,4 +1,4 @@
-FROM materialsproject/devops:python-3.1113.1 AS base
+FROM materialsproject/devops:python-3.1113.3 AS base
 RUN apt-get update && apt-get install -y --no-install-recommends libopenblas-dev && apt-get clean
 FROM node:25.0.0-slim AS node
 
@@ -45,7 +45,8 @@ ARG MORE_PIP_FLAGS
 ENV MORE_PIP_FLAGS=$MORE_PIP_FLAGS
 ENV DJANGO_SETTINGS_FILE="settings.py"
 COPY . .
-RUN pip install $PIP_FLAGS $MORE_PIP_FLAGS --no-deps .
+ARG CONTRIBS_VERSION
+RUN SETUPTOOLS_SCM_PRETEND_VERSION=${CONTRIBS_VERSION} pip install $PIP_FLAGS $MORE_PIP_FLAGS --no-deps .
 RUN python manage.py collectstatic --noinput
 
 FROM base

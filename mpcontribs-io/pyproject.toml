@@ -19,7 +19,7 @@ name = "mpcontribs-io"
 dynamic = ["version"]
 requires-python = ">=3.11"
 description="MPContribs I/O Library"
-license = {text = "MIT"}
+license = "BSD-3-Clause-LBNL"
 authors = [
     {name = "Patrick Huck", email = "phuck@lbl.gov"},
     {name = "The Materials Project", email="feedback@materialsproject.org"},

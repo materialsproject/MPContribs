@@ -19,7 +19,7 @@ name = "mpcontribs-portal"
 dynamic = ["version"]
 requires-python = ">=3.11"
 description="MPContribs Portal"
-license = {text = "MIT"}
+license = "BSD-3-Clause-LBNL"
 authors = [
     {name = "Patrick Huck", email = "phuck@lbl.gov"},
     {name = "The Materials Project", email="feedback@materialsproject.org"},
@@ -27,13 +27,13 @@ authors = [
 dependencies = [
     "boltons",
     "boto3",
-    "ddtrace",
+    "ddtrace==4.3.0",
     "Django>=3.2,<4.0",
     "django-extensions",
     "django-settings-file",
     "django-webpack4-loader",
     "fastnumbers",
-    "gunicorn[gevent]",
+    "gunicorn[gevent]==24.1.1",
     "ipykernel",
     "ipython-genutils",
     "jinja2",

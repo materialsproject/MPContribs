@@ -1,4 +1,4 @@
-FROM materialsproject/devops:python-3.1113.1 AS base
+FROM materialsproject/devops:python-3.1113.3 AS base
 RUN apt-get update && apt-get install -y --no-install-recommends supervisor libopenblas-dev libpq-dev vim && apt-get clean
 WORKDIR /app
 
@@ -9,7 +9,8 @@ COPY requirements/deployment.txt ./requirements.txt
 RUN pip install $PIP_FLAGS -r requirements.txt
 COPY pyproject.toml .
 COPY mpcontribs mpcontribs
-RUN pip install $PIP_FLAGS --no-deps .
+ARG CONTRIBS_VERSION
+RUN SETUPTOOLS_SCM_PRETEND_VERSION=${CONTRIBS_VERSION} pip install $PIP_FLAGS --no-deps .
 #ENV SETUPTOOLS_SCM_PRETEND_VERSION 0.0.0
 #COPY marshmallow-mongoengine marshmallow-mongoengine
 #RUN cd marshmallow-mongoengine && pip install $PIP_FLAGS --no-deps -e .
