@@ -14,7 +14,19 @@ if TYPE_CHECKING:
 
 
 class LuxETL:
-    """Perform basic extract, transform, load operations for MPContribs uploads."""
+    """Perform basic extract, transform, load operations for MPContribs uploads.
+
+    To use a LuxETL:
+        1. (Optional) If you want to upload data to MPContribs, you first must
+            create the project. Run a given LuxETL class's `init_columns_and_meta`
+            method: `LuxETL.init_columns_and_meta` which will set up the project.
+        2. Initialize the ETL class and run `LuxETL().load()`, which will
+            execute the pipeline and return a list of records.
+            To submit these to MPContribs, run instead `LuxETL().load(submit=True)`.
+
+    NB: if you define a schema using `ContributionRecord`, the conversion to
+    MPContribs-format data structures will be handled automatically.
+    """
 
     project: str
     schema: ContributionRecord | None = None
@@ -64,6 +76,9 @@ class LuxETL:
             return [self.schema(**raw).to_contribs_entry() for raw in raw_records]
         return raw_records
 
-    def run(self) -> None:
+    def load(self, submit: bool = False) -> Iterable[dict[str, Any]]:
         """Execute the default local pipeline."""
-        self.transform(self.extract())
+        records = self.transform(self.extract())
+        if submit:
+            self.client.submit_contributions(records)
+        return records
