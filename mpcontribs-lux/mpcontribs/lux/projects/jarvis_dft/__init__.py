@@ -1,0 +1,1 @@
+"""Project module scaffold."""
