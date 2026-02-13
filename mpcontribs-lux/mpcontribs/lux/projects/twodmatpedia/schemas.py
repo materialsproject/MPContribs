@@ -27,20 +27,7 @@ exchange-correlation functional and the frozen-core all-electron projector-augme
 the electron-ion interaction. The cutoff energy for the plane wave expansion was set to 520 eV.
 """.strip()
 
-PROJECT_LEGEND = {
-    "details": "link to detail page on 2dMatPedia",
-    "source": "link to source material",
-    "process": "discovery process (top-down or bottom-up)",
-    "ΔE": "band gap",
-    "Eᵈ": "decomposition energy",
-    "Eˣ": "exfoliation energy",
-    "E": "energy",
-    "Eᵛᵈʷ": "van-der-Waals energy",
-    "µ": "total magnetization",
-}
-
 PROJECT_METADATA = {
-    "is_public": True,
     "title": "2DMatPedia",
     "long_title": "2D Materials Encyclopedia",
     "owner": "migueldiascosta@nus.edu.sg",
@@ -51,8 +38,6 @@ PROJECT_METADATA = {
         {"label": "PRL", "url": "https://doi.org/10.1103/PhysRevLett.118.106101"},
     ],
 }
-
-DETAILS_URL = "http://www.2dmatpedia.org/2dmaterials/doc/"
 
 SOURCE_PREFIXES: set[str] = {"mp", "mvc", "2dm"}
 
@@ -89,47 +74,3 @@ class TwoDMatPediaRecord(ContributionRecord):
         "energy_vdw_per_atom": "eV/atom",
         "total_magnetization": "mu_B",
     }
-
-    @model_validator(mode="before")
-    def set_identifier(cls, config: Any):
-        if not config.get("identifier"):
-            prefix = config["source_id"]
-            mpid = config.get("material_id")
-            config["identifier"] = (
-                mpid if (mpid and prefix == "2dm") else config["source_id"]
-            )
-        return config
-
-    def to_data_payload(self, details_url: str = DETAILS_URL) -> dict[str, str]:
-        """Convert normalized fields to the notebook's MPContribs data map."""
-        payload: dict[str, str] = {"details": f"{details_url}{self.material_id}"}
-
-        if self.discovery_process:
-            payload["process"] = self.discovery_process
-
-        for key, value in (
-            ("ΔE", self._with_unit(self.bandgap, "eV")),
-            ("Eᵈ", self._with_unit(self.decomposition_energy, "eV/atom")),
-            ("Eˣ", self._with_unit(self.exfoliation_energy_per_atom, "eV/atom")),
-            ("E", self._with_unit(self.energy_per_atom, "eV/atom")),
-            ("Eᵛᵈʷ", self._with_unit(self.energy_vdw_per_atom, "eV/atom")),
-            ("µ", self._with_unit(self.total_magnetization, "µᵇ")),
-        ):
-            if value is not None:
-                payload[key] = value
-
-        return payload
-
-
-INIT_COLUMNS = {
-    "details": None,
-    "source": None,
-    "process": None,
-    "ΔE": "eV",
-    "Eᵈ": "eV/atom",
-    "Eˣ": "eV/atom",
-    "E": "eV/atom",
-    "Eᵛᵈʷ": "eV/atom",
-    "µ": "µᵇ",
-    "structures": None,
-}

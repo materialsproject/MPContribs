@@ -1,28 +1,39 @@
-"""Data pipeline scaffold for this project.
+"""transparent_conductors ETL pipeline migrated from notebook logic."""
 
-Implement extraction, transformation, aggregation, and optional upload helpers here.
-"""
+from __future__ import annotations
 
-from collections.abc import Iterable
+from typing import TYPE_CHECKING
 
-from .schemas import ContributionRecord
+from pandas import read_excel
 
+from mpcontribs.lux.pipelines import LuxETL
 
-def extract() -> Iterable[dict]:
-    """Load raw records from source files/APIs."""
-    return []
+from .schemas import GOOGLE_SHEET_URL, PROJECT_NAME, SHEETS, TransparentConductorRecord
 
-
-def transform(raw_records: Iterable[dict]) -> Iterable[dict]:
-    """Normalize and clean raw records."""
-    return raw_records
+if TYPE_CHECKING:
+    from collections.abc import Iterable
+    from typing import Any
+    from mpcontribs.lux.schemas import ContributionRecord
 
 
-def aggregate(records: Iterable[dict]) -> list[ContributionRecord]:
-    """Validate and convert records into typed schema instances."""
-    return [ContributionRecord(**record) for record in records]
+class TransparentConductorsETL(LuxETL):
+    """Extract and transform transparent conductor entries from the source workbook."""
 
+    project = PROJECT_NAME
+    schema = TransparentConductorRecord
 
-def run() -> list[ContributionRecord]:
-    """Execute the default local pipeline."""
-    return aggregate(transform(extract()))
+    def extract(self) -> list[dict[str, Any]]:
+        """Read workbook sheets and parse each row into schema-ready dicts."""
+        records: list[dict[str, Any]] = []
+        for sheet_name in SHEETS:
+            doping = sheet_name.split(" ")[0]
+            df = read_excel(GOOGLE_SHEET_URL, sheet_name=sheet_name, header=[0, 1, 2])
+
+            records += [row for row in df.to_dict(orient="records")]
+        return records
+
+    def transform(self, raw_records: Iterable[dict]) -> Iterable[dict[str, Any]]:
+        """Normalize, clean, and validate raw records."""
+        return [
+            self.schema.from_sheet_row(raw).to_contribs_entry() for raw in raw_records
+        ]
