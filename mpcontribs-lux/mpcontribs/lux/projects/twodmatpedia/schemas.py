@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from pydantic import Field
+from pydantic import Field, model_validator
 
 from emmet.core.types.pymatgen_types.structure_adapter import StructureType
 
@@ -56,11 +56,13 @@ DETAILS_URL = "http://www.2dmatpedia.org/2dmaterials/doc/"
 
 SOURCE_PREFIXES: set[str] = {"mp", "mvc", "2dm"}
 
+
 class TwoDMatPediaRecord(ContributionRecord):
     """Validated 2dmatpedia source record."""
 
-    material_id: str = Field(description="2dmatpedia material identifier.")
     source_id: str = Field(description="Source material identifier.")
+
+    material_id: str | None = Field(None, description="2dmatpedia material identifier.")
     discovery_process: str | None = Field(
         None, description="Discovery process (top-down or bottom-up)."
     )
@@ -79,7 +81,7 @@ class TwoDMatPediaRecord(ContributionRecord):
         None, description="Total magnetization in Bohr magnetons."
     )
 
-    units : dict[str,str] = {
+    units: dict[str, str] = {
         "bandgap": "eV",
         "decomposition_energy": "eV/atom",
         "exfoliation_energy_per_atom": "eV/atom",
@@ -88,35 +90,15 @@ class TwoDMatPediaRecord(ContributionRecord):
         "total_magnetization": "mu_B",
     }
 
-    @classmethod
-    def from_raw(
-        cls, raw: dict[str, Any], details_url: str = DETAILS_URL
-    ) -> TwoDMatPediaRecord | None:
-        """Create a validated record from one JSON line in db.json.gz."""
-        source_id = raw.get("source_id")
-        material_id = raw.get("material_id")
-        if not source_id or not material_id:
-            return None
-
-        if (prefix := str(source_id).split("-", 1)[0]) not in SOURCE_PREFIXES:
-            return None
-    
-        return cls(
-            identifier=(
-                material_id if prefix == "2dm" else source_id
-            ) or None,
-            formula=getattr(raw.get("structure"),"formula",None),
-            material_id=material_id,
-            source_id=source_id,
-            discovery_process=raw.get("discovery_process"),
-            bandgap=raw.get("bandgap"),
-            decomposition_energy=raw.get("decomposition_energy"),
-            exfoliation_energy_per_atom=raw.get("exfoliation_energy_per_atom"),
-            energy_per_atom=raw.get("energy_per_atom"),
-            energy_vdw_per_atom=raw.get("energy_vdw_per_atom"),
-            total_magnetization=raw.get("total_magnetization"),
-            structures=[raw.get("structure")] if raw.get("structure") else [],
-        )
+    @model_validator(mode="before")
+    def set_identifier(cls, config: Any):
+        if not config.get("identifier"):
+            prefix = config["source_id"]
+            mpid = config.get("material_id")
+            config["identifier"] = (
+                mpid if (mpid and prefix == "2dm") else config["source_id"]
+            )
+        return config
 
     def to_data_payload(self, details_url: str = DETAILS_URL) -> dict[str, str]:
         """Convert normalized fields to the notebook's MPContribs data map."""
