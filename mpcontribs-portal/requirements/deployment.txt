@@ -24,9 +24,9 @@ boltons==25.0.0
     # via
     #   mpcontribs-client
     #   mpcontribs-portal (MPContribs/mpcontribs-portal/pyproject.toml)
-boto3==1.42.46
+boto3==1.42.51
     # via mpcontribs-portal (MPContribs/mpcontribs-portal/pyproject.toml)
-botocore==1.42.46
+botocore==1.42.51
     # via
     #   boto3
     #   s3transfer
@@ -36,7 +36,7 @@ bravado-core==6.1.1
     # via bravado
 bytecode==0.17.0
     # via ddtrace
-cachetools==7.0.0
+cachetools==7.0.1
     # via mpcontribs-client
 certifi==2026.1.4
     # via requests
@@ -228,7 +228,7 @@ packaging==26.0
     #   plotly
 palettable==3.3.3
     # via pymatgen
-pandas==3.0.0
+pandas==3.0.1
     # via
     #   -r python/requirements.txt
     #   mpcontribs-client
@@ -239,11 +239,11 @@ parso==0.8.6
     # via jedi
 pexpect==4.9.0
     # via ipython
-pillow==12.1.0
+pillow==12.1.1
     # via matplotlib
 pint==0.25.2
     # via mpcontribs-client
-platformdirs==4.5.1
+platformdirs==4.9.2
     # via
     #   jupyter-core
     #   pint
@@ -296,7 +296,7 @@ pyzmq==27.1.0
     # via
     #   ipykernel
     #   jupyter-client
-redis==7.1.1
+redis==7.2.0
     # via mpcontribs-portal (MPContribs/mpcontribs-portal/pyproject.toml)
 referencing==0.37.0
     # via
