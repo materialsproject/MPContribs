@@ -71,15 +71,3 @@ jobs:
           python${{ matrix.python-version }} -m pip install -r requirements/requirements-${{ matrix.os }}_py${{ matrix.python-version }}_extras.txt
           python${{ matrix.python-version }} -m pip install -e .
           python${{ matrix.python-version }} -m pytest -n auto -x --cov=mpcontribs/lux --cov-report=xml
-
-
-  auto-gen-release:
-    needs:
-      - test
-    runs-on: ubuntu-latest
-    env:
-      GITHUB_TOKEN: ${{ secrets.PAT }}
-    steps:
-      - uses: rymndhng/release-on-push-action@v0.28.0
-        with:
-          bump_version_scheme: norelease
