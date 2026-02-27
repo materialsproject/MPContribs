@@ -32,7 +32,7 @@ dependencies = [
     "ipython",
     "json2html",
     "pandas",
-    "pint",
+    "pint>=0.25.0",
     "plotly",
     "pydantic>=2.0",
     "pydantic-settings>=2.0",

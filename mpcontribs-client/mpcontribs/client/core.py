@@ -621,9 +621,11 @@ class Client(SwaggerClient):
         resource = self.swagger_spec.resources[rname]
         attr = f"{op}{rname.capitalize()}"
         method = getattr(resource, attr).http_method
-        kwargs: dict[str, Any] = dict(
-            headers=self.headers, params=params, hooks={"response": _response_hook}
-        )
+        kwargs: dict[str, Any] = {
+            "headers": self.headers,
+            "params": params,
+            "hooks": {"response": _response_hook},
+        }
 
         if method == "put" and data:
             kwargs["data"] = orjson.dumps(data)
