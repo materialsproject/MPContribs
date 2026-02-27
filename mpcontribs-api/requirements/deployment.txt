@@ -38,9 +38,9 @@ blinker==1.9.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/pyproject.toml)
 boltons==25.0.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/pyproject.toml)
-boto3==1.42.46
+boto3==1.42.51
     # via flask-mongorest-mpcontribs
-botocore==1.42.46
+botocore==1.42.51
     # via
     #   boto3
     #   s3transfer
@@ -313,7 +313,7 @@ packaging==26.0
     #   plotly
 palettable==3.3.3
     # via pymatgen
-pandas==3.0.0
+pandas==3.0.1
     # via
     #   -r python/requirements.txt
     #   pymatgen
@@ -323,11 +323,11 @@ parso==0.8.6
     # via jedi
 pexpect==4.9.0
     # via ipython
-pillow==12.1.0
+pillow==12.1.1
     # via matplotlib
 pint==0.25.2
     # via mpcontribs-api (MPContribs/mpcontribs-api/pyproject.toml)
-platformdirs==4.5.1
+platformdirs==4.9.2
     # via
     #   jupyter-core
     #   pint
@@ -397,7 +397,7 @@ pyzmq==27.1.0
     #   jupyter-client
     #   jupyter-server
     #   notebook
-redis==7.1.1
+redis==7.2.0
     # via
     #   flask-rq2
     #   flask-sse

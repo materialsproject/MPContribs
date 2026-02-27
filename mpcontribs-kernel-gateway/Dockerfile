@@ -1,4 +1,4 @@
-FROM materialsproject/devops:python-3.1113.3 AS base
+FROM materialsproject/devops:python-3.1113.4 AS base
 RUN apt-get update && apt-get install -y --no-install-recommends libopenblas-dev libpq-dev curl && apt-get clean
 
 FROM base AS python-deps
@@ -41,7 +41,8 @@ ENV PATH=/root/.local/bin:$PATH \
   DD_PROFILING_ENABLED=true \
   DD_LOGS_INJECTION=true \
   DD_TRACE_SAMPLE_RATE=1 \
-  DD_TRACE_OTEL_ENABLED=false
+  DD_TRACE_OTEL_ENABLED=false \
+  DD_PROFILING_LOCK_ENABLED=false
 
 EXPOSE 10100
 COPY make_seed.py .
