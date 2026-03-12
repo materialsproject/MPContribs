@@ -217,7 +217,7 @@ numpy==1.26.4
     #   spglib
 opentelemetry-api==1.39.1
     # via ddtrace
-orjson==3.11.7
+orjson==3.11.6
     # via pymatgen
 packaging==26.0
     # via
@@ -362,7 +362,7 @@ tabulate==0.9.0
     # via pymatgen
 tinycss2==1.4.0
     # via bleach
-tornado==6.5.4
+tornado==6.5.5
     # via
     #   ipykernel
     #   jupyter-client

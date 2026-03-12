@@ -113,7 +113,7 @@ numpy==1.26.4
     #   pymatgen
     #   scipy
     #   spglib
-orjson==3.11.7
+orjson==3.11.6
     # via pymatgen
 packaging==26.0
     # via
