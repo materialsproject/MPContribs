@@ -102,7 +102,7 @@ filetype==1.2.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/pyproject.toml)
 flasgger-tschaume==0.9.7
     # via mpcontribs-api (MPContribs/mpcontribs-api/pyproject.toml)
-flask==2.2.5
+flask==3.1.3
     # via
     #   flasgger-tschaume
     #   flask-compress
@@ -128,7 +128,7 @@ flexcache==0.3
     # via pint
 flexparser==0.4
     # via pint
-fonttools==4.61.1
+fonttools==4.62.0
     # via matplotlib
 fqdn==1.5.1
     # via jsonschema
@@ -476,7 +476,7 @@ terminado==0.18.1
     #   notebook
 tinycss2==1.4.0
     # via bleach
-tornado==6.5.4
+tornado==6.5.5
     # via
     #   ipykernel
     #   jupyter-client
@@ -536,7 +536,7 @@ websocket-client==1.9.0
     # via
     #   jupyter-server
     #   mpcontribs-api (MPContribs/mpcontribs-api/pyproject.toml)
-werkzeug==3.1.5
+werkzeug==3.1.6
     # via
     #   flasgger-tschaume
     #   flask
