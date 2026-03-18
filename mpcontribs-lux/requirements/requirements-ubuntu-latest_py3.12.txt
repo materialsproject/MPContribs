@@ -52,7 +52,7 @@ numpy==2.3.5
     #   pymatgen-io-validation
     #   scipy
     #   spglib
-orjson==3.11.5
+orjson==3.11.6
     # via pymatgen
 packaging==25.0
     # via
