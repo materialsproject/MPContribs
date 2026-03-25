@@ -295,7 +295,7 @@ numpy==1.26.4
     #   spglib
 opentelemetry-api==1.39.1
     # via ddtrace
-orjson==3.11.7
+orjson==3.11.6
     # via
     #   flask-mongorest-mpcontribs
     #   pymatgen
@@ -362,7 +362,7 @@ pymongo==4.16.0
     # via
     #   flask-mongorest-mpcontribs
     #   mongoengine
-pyopenssl==25.3.0
+pyopenssl==26.0.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/pyproject.toml)
 pyparsing==3.3.2
     # via
@@ -409,7 +409,7 @@ referencing==0.37.0
     #   jupyter-events
 regex==2026.1.15
     # via dateparser
-requests==2.32.5
+requests==2.33.0
     # via
     #   atlasq-tschaume
     #   pymatgen
@@ -476,7 +476,7 @@ terminado==0.18.1
     #   notebook
 tinycss2==1.4.0
     # via bleach
-tornado==6.5.4
+tornado==6.5.5
     # via
     #   ipykernel
     #   jupyter-client

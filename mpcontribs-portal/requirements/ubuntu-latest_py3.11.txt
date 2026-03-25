@@ -214,7 +214,7 @@ numpy==2.4.1
     #   spglib
 opentelemetry-api==1.39.1
     # via ddtrace
-orjson==3.11.5
+orjson==3.11.6
     # via pymatgen
 packaging==26.0
     # via
@@ -298,7 +298,7 @@ referencing==0.37.0
     # via
     #   jsonschema
     #   jsonschema-specifications
-requests==2.32.5
+requests==2.33.0
     # via
     #   bravado
     #   bravado-core
@@ -359,7 +359,7 @@ tabulate==0.9.0
     # via pymatgen
 tinycss2==1.4.0
     # via bleach
-tornado==6.5.4
+tornado==6.5.5
     # via
     #   ipykernel
     #   jupyter-client
@@ -391,7 +391,7 @@ typing-extensions==4.15.0
     #   swagger-spec-validator
 tzdata==2025.3
     # via arrow
-ujson==5.11.0
+ujson==5.12.0
     # via mpcontribs-client
 uncertainties==3.2.3
     # via pymatgen
