@@ -2,9 +2,84 @@
 
 from datetime import datetime, timezone
 from flatten_dict import flatten, unflatten
-from pydantic import BaseModel, Field, field_validator, field_serializer
+import pandas as pd
+from pydantic import BaseModel, Field, create_model, field_validator, field_serializer
+from pymatgen.core import Structure
+import re
+from typing import Any, Literal, Self, get_args
 
-from typing import Any, Literal
+
+def _cast_pandas_dtype(dtype: type, assume_nullable: bool = True) -> type:
+    """Convert pandas dtype to built-in types.
+
+    Adapted from mpcontribs-lux.
+    """
+
+    vname = getattr(dtype, "name", str(dtype)).lower()
+    inferred_type = str
+    if "float" in vname:
+        inferred_type = float
+    elif "int" in vname:
+        inferred_type = int
+    elif "bool" in vname:
+        inferred_type = bool
+    return inferred_type | None if assume_nullable else inferred_type
+
+
+def _get_unit(v: str) -> tuple[str, str | None]:
+    if (matched := re.search(r"\(([^)]+)\)|\[([^\]]+)\]", v)) is not None:
+        try:
+            unit_group = next(
+                i for i, x in enumerate(matched.groups()) if x is not None
+            )
+            unit = matched.groups()[unit_group]
+            splitter = f"({unit})" if unit_group == 0 else f"[{unit}]"
+            return v.split(splitter, 1)[0].strip(), unit
+        except StopIteration:
+            pass
+    return v, None
+
+
+def _to_camel_case(v: str) -> str:
+    splitted = [y for x in v.lower().split() for y in x.split("_")]
+    return "".join(s[0].upper() + s[1:] for s in splitted)
+
+
+def _get_pydantic_from_dataframe(
+    df: pd.DataFrame,
+) -> tuple[type[BaseModel], dict[str, str]]:
+
+    columns_renamed = {}
+    columns_to_unit = {}
+    for col in df.columns:
+        base_name, unit = _get_unit(col)
+        base_name = _to_camel_case(base_name)
+        columns_renamed[col] = base_name
+        if unit:
+            columns_to_unit[col] = unit
+
+    for col in (c for c, v in columns_to_unit.items() if v is None):
+        _ = columns_to_unit.pop(col)
+
+    model_fields = {
+        columns_renamed[col_name]: (
+            _cast_pandas_dtype(
+                df.dtypes[col_name],
+                assume_nullable=any(pd.isna(df[col_name])),
+            ),
+            Field(default=None, description=columns_to_unit.get(col_name)),
+        )
+        for col_name in df.columns
+        if not all(pd.isna(df[col_name]))
+    }
+
+    return (
+        create_model(
+            f"InferredModel",
+            **model_fields,
+        ),
+        columns_renamed,
+    )
 
 
 class _DictLikeAccess(BaseModel):
@@ -98,8 +173,8 @@ class Datum(_DictLikeAccess):
     unit: str = ""
 
 
-class Contrib(_DictLikeAccess):
-    """Define schema for a single contribution."""
+class BaseContrib(_DictLikeAccess):
+    """Define base schema for a single contribution."""
 
     id: str
     project: str
@@ -107,10 +182,7 @@ class Contrib(_DictLikeAccess):
     is_public: bool = False
     last_modified: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     needs_build: bool = True
-    data: dict[str, str | Datum] = {}
-    structures: list[ContribMeta] = []
-    tables: list[ContribMeta] = []
-    attachments: list[ContribMeta] = []
+    data: dict[str, str | Datum | None] = {}
 
     @field_validator("data", mode="before")
     def construct_data(cls, d: dict) -> dict[str, str | Datum]:
@@ -149,3 +221,67 @@ class Contrib(_DictLikeAccess):
             },
             splitter="dot",
         )
+
+
+class ContribData(BaseContrib):
+    """Schema for data returned by mongo."""
+
+    structures: list[ContribMeta] = []
+    tables: list[ContribMeta] = []
+    attachments: list[ContribMeta] = []
+
+
+class ContribSubmission(BaseContrib):
+    """Schema for user-submitted contributions.
+
+    NB: We forbid submission of new attachments.
+    """
+
+    structures: list[Structure] | None = None
+    tables: list[Any] | None = None
+
+    @classmethod
+    def from_dataframe(
+        cls, df: pd.DataFrame, project: str = "PLACEHOLDER", **kwargs
+    ) -> list[Self]:
+        """Construct a contribution from a DataFrame."""
+
+        base_model, columns_renamed = _get_pydantic_from_dataframe(df)
+
+        non_null_typs = {
+            k: next(t for t in get_args(field.annotation) if t is not None)
+            for k, field in base_model.model_fields.items()
+        }
+
+        # sanitize data
+        sanitized = [
+            base_model(
+                **{
+                    columns_renamed[k]: (
+                        non_null_typs[columns_renamed[k]](v) if not pd.isna(v) else None
+                    )
+                    for k, v in row.to_dict().items()
+                }
+            ).model_dump()
+            for _, row in df.iterrows()
+        ]
+
+        non_num_fields = {
+            k for k, typ in non_null_typs.items() if typ not in (int, float)
+        }
+
+        return [
+            cls(
+                id=str(idx),
+                project=project,
+                data={
+                    k: (
+                        entry.get(k)
+                        if (k in non_num_fields or entry.get(k) is None)
+                        else Datum(value=entry.get(k), unit=field.description or "")
+                    )
+                    for k, field in base_model.model_fields.items()
+                },
+            )
+            for idx, entry in enumerate(sanitized)
+        ]

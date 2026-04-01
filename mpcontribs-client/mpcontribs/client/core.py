@@ -49,7 +49,7 @@ from cachetools.keys import hashkey
 
 from mpcontribs.client.exceptions import MPContribsClientError
 from mpcontribs.client.logger import MPCC_LOGGER, TqdmToLogger
-from mpcontribs.client.schemas import Contrib, Project
+from mpcontribs.client.schemas import ContribData, ContribSubmission, Project
 from mpcontribs.client.settings import MPCC_SETTINGS
 from mpcontribs.client.types import MPCDict, MPCStructure, Table, Attachment
 from mpcontribs.client.units import ureg
@@ -1596,7 +1596,7 @@ class Client(SwaggerClient):
             ).result()
 
         if len(ret["data"]) > 0:
-            ret["data"] = [Contrib(**entry) for entry in ret["data"]]
+            ret["data"] = [ContribData(**entry) for entry in ret["data"]]
 
         return ret
 
