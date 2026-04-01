@@ -1,12 +1,13 @@
 """Define data models used when querying the client."""
 
 from datetime import datetime, timezone
-from flatten_dict import flatten, unflatten
 import pandas as pd
 from pydantic import BaseModel, Field, create_model, field_validator, field_serializer
 from pymatgen.core import Structure
 import re
 from typing import Any, Literal, Self, get_args
+
+from mpcontribs.client.utils import flatten_dict, unflatten_dict
 
 
 def _cast_pandas_dtype(dtype: type, assume_nullable: bool = True) -> type:
@@ -149,11 +150,11 @@ class Project(_DictLikeAccess):
     def flatten_other(cls, d: dict) -> dict[str, str | None]:
         if all(isinstance(v, str) for v in d.values()):
             return d
-        return flatten(d, reducer="dot")
+        return flatten_dict(d)
 
     @field_serializer("other", mode="plain")
     def unflatten_other(self, v: dict[str, str]) -> dict[str, Any]:
-        return unflatten(d, splitter="dot")
+        return unflatten_dict(d)
 
 
 class ContribMeta(_DictLikeAccess):
@@ -189,7 +190,7 @@ class BaseContrib(_DictLikeAccess):
 
         if all(isinstance(v, str | Datum) for v in d.values()):
             return d
-        flattened_data_dct = flatten(d, reducer="dot")
+        flattened_data_dct = flatten_dict(d)
         unique_keys = {
             (
                 k.rsplit(".", 1)[0]
@@ -214,12 +215,11 @@ class BaseContrib(_DictLikeAccess):
 
     @field_serializer("data", mode="plain")
     def unflatten_data(self, x: dict[str, str | Datum]) -> dict[str, Any]:
-        return unflatten(
+        return unflatten_dict(
             {
                 k: v.model_dump() if hasattr(v, "model_dump") else v
                 for k, v in x.items()
             },
-            splitter="dot",
         )
 
 
