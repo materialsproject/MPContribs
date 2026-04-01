@@ -49,6 +49,7 @@ from cachetools.keys import hashkey
 
 from mpcontribs.client.exceptions import MPContribsClientError
 from mpcontribs.client.logger import MPCC_LOGGER, TqdmToLogger
+from mpcontribs.client.schemas import Contrib, Project
 from mpcontribs.client.settings import MPCC_SETTINGS
 from mpcontribs.client.types import MPCDict, MPCStructure, Table, Attachment
 from mpcontribs.client.units import ureg
@@ -697,7 +698,7 @@ class Client(SwaggerClient):
         query = query or {}
 
         if self.project or "name" in query:
-            return [self.get_project(name=query.get("name"), fields=fields)]
+            return [Project(**self.get_project(name=query.get("name"), fields=fields))]
 
         if term:
 
@@ -725,7 +726,7 @@ class Client(SwaggerClient):
         total_count, total_pages = ret["total_count"], ret["total_pages"]
 
         if total_pages < 2:
-            return ret["data"]
+            return [Project(**doc) for doc in ret["data"]]
 
         query.update(
             {
@@ -748,7 +749,7 @@ class Client(SwaggerClient):
 
         ret["data"].extend([resp["result"]["data"] for resp in responses.values()])
 
-        return ret["data"]
+        return [Project(**doc) for doc in ret["data"]]
 
     def create_project(
         self, name: str, title: str, authors: str, description: str, url: str
@@ -1593,6 +1594,9 @@ class Client(SwaggerClient):
             ret = self.contributions.queryContributions(
                 _fields=fields, _sort=sort, **query
             ).result()
+
+        if len(ret["data"]) > 0:
+            ret["data"] = [Contrib(**entry) for entry in ret["data"]]
 
         return ret
 
