@@ -1595,8 +1595,8 @@ class Client(SwaggerClient):
                 _fields=fields, _sort=sort, **query
             ).result()
 
-        if len(ret["data"]) > 0:
-            ret["data"] = [ContribData(**entry) for entry in ret["data"]]
+        if len(ret["data"]) > 0:  # type: ignore[arg-type]
+            ret["data"] = [ContribData(**entry) for entry in ret["data"]]  # type: ignore[arg-type,union-attr]
 
         return ret
 

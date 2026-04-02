@@ -16,8 +16,8 @@ def _cast_pandas_dtype(dtype: type, assume_nullable: bool = True) -> type:
     Adapted from mpcontribs-lux.
     """
 
-    vname = getattr(dtype, "name", str(dtype)).lower()
-    inferred_type = str
+    vname: str = getattr(dtype, "name", str(dtype)).lower()
+    inferred_type: type = str
     if "float" in vname:
         inferred_type = float
     elif "int" in vname:
@@ -131,7 +131,6 @@ class Project(_DictLikeAccess):
 
     name: str
     title: str
-    owner: str
     authors: str
     description: str
     references: list[Reference]
@@ -154,7 +153,7 @@ class Project(_DictLikeAccess):
 
     @field_serializer("other", mode="plain")
     def unflatten_other(self, v: dict[str, str]) -> dict[str, Any]:
-        return unflatten_dict(d)
+        return unflatten_dict(v)
 
 
 class ContribMeta(_DictLikeAccess):
@@ -278,7 +277,7 @@ class ContribSubmission(BaseContrib):
                     k: (
                         entry.get(k)
                         if (k in non_num_fields or entry.get(k) is None)
-                        else Datum(value=entry.get(k), unit=field.description or "")
+                        else Datum(value=entry.get(k), unit=field.description or "")  # type: ignore[arg-type]
                     )
                     for k, field in base_model.model_fields.items()
                 },
