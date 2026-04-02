@@ -129,11 +129,11 @@ class Stats(_DictLikeAccess):
 
 class Project(_DictLikeAccess):
 
-    name: str
-    title: str
-    authors: str
-    description: str
-    references: list[Reference]
+    name: str | None = None
+    title: str | None = None
+    authors: str | None = None
+    description: str | None = None
+    references: list[Reference] | None = None
     stats: Stats = Field(default_factory=Stats)
 
     columns: list[Column] = []
@@ -176,8 +176,9 @@ class Datum(_DictLikeAccess):
 class BaseContrib(_DictLikeAccess):
     """Define base schema for a single contribution."""
 
-    id: str
-    project: str
+    id: str | None = None
+    project: str | None = None
+    formula: str | None = None
     identifier: str | None = None
     is_public: bool = False
     last_modified: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
