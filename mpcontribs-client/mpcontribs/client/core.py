@@ -420,7 +420,7 @@ class Client(SwaggerClient):
         host: str | None = None,
         project: str | None = None,
         session: requests.Session | None = None,
-        use_document_model: bool = True,
+        use_document_model: bool = False,
         **kwargs,
     ) -> None:
         """Initialize the client - only reloads API spec from server as needed
