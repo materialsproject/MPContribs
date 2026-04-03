@@ -49,7 +49,12 @@ from cachetools.keys import hashkey
 
 from mpcontribs.client.exceptions import MPContribsClientError
 from mpcontribs.client.logger import MPCC_LOGGER, TqdmToLogger
-from mpcontribs.client.schemas import ContribData, ContribSubmission, Project
+from mpcontribs.client.schemas import (
+    ContribData,
+    ContribSubmission,
+    Project,
+    QueryResult,
+)
 from mpcontribs.client.settings import MPCC_SETTINGS
 from mpcontribs.client.types import MPCDict, MPCStructure, Table, Attachment
 from mpcontribs.client.units import ureg
@@ -415,6 +420,7 @@ class Client(SwaggerClient):
         host: str | None = None,
         project: str | None = None,
         session: requests.Session | None = None,
+        use_document_model: bool = True,
         **kwargs,
     ) -> None:
         """Initialize the client - only reloads API spec from server as needed
@@ -425,6 +431,7 @@ class Client(SwaggerClient):
             host (str): host address to connect to (or use MPCONTRIBS_API_HOST env var)
             project (str): use this project for all operations (query, update, create, delete)
             session (requests.Session): override session for client to use
+            use_document_model (bool) : whether to use pydantic document models by default to validate data
             kwargs : To handle deprecated class attribtues
         """
         # NOTE bravado future doesn't work with concurrent.futures
@@ -477,6 +484,9 @@ class Client(SwaggerClient):
 
         self.version = _version(self.url)  # includes healthcheck
         self.session = get_session(session=session)
+
+        self.use_document_model = use_document_model
+
         super().__init__(self.cached_swagger_spec)
 
     def __enter__(self):
@@ -679,7 +689,7 @@ class Client(SwaggerClient):
         fields: list | None = None,
         sort: str | None = None,
         timeout: int = -1,
-    ) -> list[dict]:
+    ) -> list[dict] | list[Project]:
         """Query projects by query and/or term (Atlas Search)
 
         See `client.available_query_params(resource="projects")` for keyword arguments used in
@@ -693,12 +703,14 @@ class Client(SwaggerClient):
             timeout (int): cancel remaining requests if timeout exceeded (in seconds)
 
         Returns:
-            List of projects
+            List of projects as validated `Project`s (use_document_model = True)
+                and `dict`s (otherwise).
         """
         query = query or {}
 
         if self.project or "name" in query:
-            return [Project(**self.get_project(name=query.get("name"), fields=fields))]
+            proj = self.get_project(name=query.get("name"), fields=fields)
+            return [Project(**proj) if self.use_document_model else proj]
 
         if term:
 
@@ -726,7 +738,11 @@ class Client(SwaggerClient):
         total_count, total_pages = ret["total_count"], ret["total_pages"]
 
         if total_pages < 2:
-            return [Project(**doc) for doc in ret["data"]]
+            return (
+                [Project(**doc) for doc in ret["data"]]
+                if self.use_document_model
+                else ret["data"]
+            )
 
         query.update(
             {
@@ -749,11 +765,15 @@ class Client(SwaggerClient):
 
         ret["data"].extend([resp["result"]["data"] for resp in responses.values()])
 
-        return [Project(**doc) for doc in ret["data"]]
+        return (
+            [Project(**doc) for doc in ret["data"]]
+            if self.use_document_model
+            else ret["data"]
+        )
 
     def create_project(
         self, name: str, title: str, authors: str, description: str, url: str
-    ):
+    ) -> None:
         """Create a project
 
         Args:
@@ -768,23 +788,23 @@ class Client(SwaggerClient):
             if self.get_totals(query=query, resource="projects")[0]:
                 raise MPContribsClientError(f"Project with {query} already exists!")
 
-        project = {
-            "name": name,
-            "title": title,
-            "authors": authors,
-            "description": description,
-            "references": [{"label": "REF", "url": url}],
-        }
-        resp = self.projects.createProject(project=project).result()
+        project = Project(
+            **{
+                "name": name,
+                "title": title,
+                "authors": authors,
+                "description": description,
+                "references": [{"label": "REF", "url": url}],
+            }
+        )
+        resp = self.projects.createProject(project=project.model_dump()).result()
         owner = resp.get("owner")
         if owner:
             MPCC_LOGGER.info(f"Project `{name}` created with owner `{owner}`")
-        elif "error" in resp:
-            raise MPContribsClientError(resp["error"])
         else:
-            raise MPContribsClientError(resp)
+            raise MPContribsClientError(resp.get("error", resp))
 
-    def update_project(self, update: dict, name: str | None = None):
+    def update_project(self, update: dict, name: str | None = None) -> None:
         """Update project info
 
         Args:
@@ -851,7 +871,7 @@ class Client(SwaggerClient):
         if not resp.get("count", 0):
             raise MPContribsClientError(resp)
 
-    def delete_project(self, name: str | None = None):
+    def delete_project(self, name: str | None = None) -> None:
         """Delete a project
 
         Args:
@@ -870,19 +890,26 @@ class Client(SwaggerClient):
         if resp and "error" in resp:
             raise MPContribsClientError(resp["error"])
 
-    def get_contribution(self, cid: str, fields: list | None = None) -> MPCDict:
+    def get_contribution(
+        self, cid: str, fields: list | None = None
+    ) -> MPCDict | ContribData:
         """Retrieve a contribution
 
         Args:
             cid (str): contribution ObjectID
             fields (list): list of fields to include in response
+
+        Returns:
+            ContribData if `use_document_model` and a `MPCDict` otherwise
         """
         if not fields:
             fields = list(self.get_model("ContributionsSchema")._properties.keys())
             fields.remove("needs_build")  # internal field
-        return MPCDict(
-            self.contributions.getContributionById(pk=cid, _fields=fields).result()
-        )
+
+        contrib = self.contributions.getContributionById(
+            pk=cid, _fields=fields
+        ).result()
+        return ContribData(**contrib) if self.use_document_model else MPCDict(contrib)
 
     def get_table(self, tid_or_md5: str) -> Table:
         """Retrieve full Pandas DataFrame for a table
@@ -1144,7 +1171,9 @@ class Client(SwaggerClient):
 
         return self.projects.updateProjectByName(pk=name, project=payload).result()
 
-    def delete_contributions(self, query: dict | None = None, timeout: int = -1):
+    def delete_contributions(
+        self, query: dict | None = None, timeout: int = -1
+    ) -> None:
         """Remove all contributions for a query
 
         Args:
@@ -1195,7 +1224,7 @@ class Client(SwaggerClient):
         timeout: int = -1,
         resource: str = "contributions",
         op: VALID_OPS_T = "query",
-    ) -> tuple:
+    ) -> tuple[int, int]:
         """Retrieve total count and pages for resource entries matching query
 
         Args:
@@ -1206,7 +1235,7 @@ class Client(SwaggerClient):
                       ("query", "create", "update", "delete", "download")
 
         Returns:
-            tuple of total counts and pages
+            tuple of total counts (int) and pages (int)
         """
         if op not in VALID_OPS:
             raise MPContribsClientError(f"`op` has to be one of {VALID_OPS}")
@@ -1550,7 +1579,7 @@ class Client(SwaggerClient):
         sort: str | None = None,
         paginate: bool = False,
         timeout: int = -1,
-    ) -> dict:
+    ) -> dict[str, Any] | QueryResult:
         """Query contributions
 
         See `client.available_query_params()` for keyword arguments used in query.
@@ -1595,10 +1624,10 @@ class Client(SwaggerClient):
                 _fields=fields, _sort=sort, **query
             ).result()
 
-        if len(ret["data"]) > 0:  # type: ignore[arg-type]
+        if len(ret["data"]) > 0 and self.use_document_model:  # type: ignore[arg-type]
             ret["data"] = [ContribData(**entry) for entry in ret["data"]]  # type: ignore[arg-type,union-attr]
 
-        return ret
+        return QueryResult(**ret) if self.use_document_model else ret
 
     def update_contributions(
         self, data: dict, query: dict | None = None, timeout: int = -1
@@ -1759,11 +1788,11 @@ class Client(SwaggerClient):
 
     def submit_contributions(
         self,
-        contributions: list[dict],
+        contributions: list[dict | ContribSubmission],
         ignore_dupes: bool = False,
         timeout: int = -1,
         skip_dupe_check: bool = False,
-    ):
+    ) -> None:
         """Submit a list of contributions
 
         Example for a single contribution dictionary:
@@ -1790,6 +1819,12 @@ class Client(SwaggerClient):
             ignore_dupes (bool): force duplicate components to be submitted
             timeout (int): cancel remaining requests if timeout exceeded (in seconds)
             skip_dupe_check (bool): skip duplicate check for contribution identifiers
+
+        Returns:
+            None
+
+        Raises:
+            MPContribsClientError on malformed submitted data.
         """
         if not contributions or not isinstance(contributions, list):
             raise MPContribsClientError(

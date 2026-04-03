@@ -104,6 +104,16 @@ class _DictLikeAccess(BaseModel):
         except AttributeError:
             return default
 
+    def __str__(self) -> str:
+        """Convenient representation for class for debugging."""
+        num_populated_fields = len(
+            [getattr(self, k, None) is not None for k in self.__class__.model_fields]
+        )
+        return f"{self.__class__.__name__}({num_populated_fields} populated fields)"
+
+    def __repr__(self) -> str:
+        return self.__str__()
+
 
 class Reference(_DictLikeAccess):
 
@@ -272,7 +282,7 @@ class ContribSubmission(BaseContrib):
 
         return [
             cls(
-                id=str(idx),
+                identifier=str(idx),
                 project=project,
                 data={
                     k: (
@@ -285,3 +295,12 @@ class ContribSubmission(BaseContrib):
             )
             for idx, entry in enumerate(sanitized)
         ]
+
+
+class QueryResult(_DictLikeAccess):
+    """Result of query_contributions."""
+
+    total_count: int
+    total_pages: int
+    data: list[ContribData] | None = None
+    has_more: bool = False
