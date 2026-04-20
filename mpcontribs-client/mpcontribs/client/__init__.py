@@ -890,6 +890,7 @@ class Client(SwaggerClient):
             session (requests.Session): override session for client to use
         """
 
+        # ruff: disable[E501]
         logger.warning(
             """The `mpcontribs-client` package has been deprecated in favor of the main Materials Project (MP) API client `mp-api`.
 To use the MP Contribs client swith up-to-date features, please `pip install 'mp-api[contribs]'`:
@@ -900,6 +901,7 @@ with MPRester() as mpr:
     mpr.contribs.query_contributions(...)
 ```"""
         )
+        # ruff: enable[E501]
 
         # NOTE bravado future doesn't work with concurrent.futures
         # - Kong forwards consumer headers when api-key used for auth
