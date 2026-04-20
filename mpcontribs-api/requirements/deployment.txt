@@ -297,7 +297,7 @@ numpy==1.26.4
     #   spglib
 opentelemetry-api==1.41.0
     # via ddtrace
-orjson==3.11.8
+orjson==3.11.6
     # via
     #   flask-mongorest-mpcontribs
     #   pymatgen-core
@@ -413,7 +413,7 @@ referencing==0.37.0
     #   jupyter-events
 regex==2026.4.4
     # via dateparser
-requests==2.33.1
+requests==2.33.0
     # via
     #   atlasq-tschaume
     #   pymatgen-core

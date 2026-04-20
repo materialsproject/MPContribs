@@ -115,7 +115,7 @@ numpy==1.26.4
     #   pymatgen-core
     #   scipy
     #   spglib
-orjson==3.11.8
+orjson==3.11.6
     # via pymatgen-core
 packaging==26.1
     # via
@@ -182,7 +182,7 @@ referencing==0.37.0
     # via
     #   jsonschema
     #   jsonschema-specifications
-requests==2.33.1
+requests==2.33.0
     # via
     #   bravado
     #   bravado-core
