@@ -38,9 +38,9 @@ blinker==1.9.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/pyproject.toml)
 boltons==25.0.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/pyproject.toml)
-boto3==1.42.92
+boto3==1.42.94
     # via flask-mongorest-mpcontribs
-botocore==1.42.92
+botocore==1.42.94
     # via
     #   boto3
     #   s3transfer
@@ -48,7 +48,7 @@ brotli==1.2.0
     # via flask-compress
 bytecode==0.17.0
     # via ddtrace
-certifi==2026.2.25
+certifi==2026.4.22
     # via requests
 cffi==2.0.0
     # via
@@ -56,7 +56,7 @@ cffi==2.0.0
     #   cryptography
 charset-normalizer==3.4.7
     # via requests
-click==8.3.2
+click==8.3.3
     # via
     #   flask
     #   rq
@@ -140,7 +140,7 @@ greenlet==3.4.0
     # via gevent
 gunicorn[gevent]==24.1.1
     # via mpcontribs-api (MPContribs/mpcontribs-api/pyproject.toml)
-idna==3.11
+idna==3.13
     # via
     #   anyio
     #   jsonschema
@@ -204,7 +204,7 @@ jupyter-core==5.9.1
     #   nbconvert
     #   nbformat
     #   notebook
-jupyter-events==0.12.0
+jupyter-events==0.12.1
     # via jupyter-server
 jupyter-server==2.17.0
     # via notebook-shim
@@ -343,7 +343,7 @@ prompt-toolkit==3.0.52
     # via ipython
 psutil==7.2.2
     # via ipykernel
-psycopg2-binary==2.9.11
+psycopg2-binary==2.9.12
     # via mpcontribs-api (MPContribs/mpcontribs-api/pyproject.toml)
 ptyprocess==0.7.0
     # via
@@ -440,7 +440,7 @@ rq-scheduler==0.14.0
     # via flask-rq2
 ruamel-yaml==0.19.1
     # via monty
-s3transfer==0.16.0
+s3transfer==0.16.1
     # via boto3
 scipy==1.17.1
     # via

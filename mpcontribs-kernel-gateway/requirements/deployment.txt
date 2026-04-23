@@ -30,13 +30,13 @@ boltons==25.0.0
     # via mpcontribs-client
 bravado==12.0.1
     # via mpcontribs-client
-bravado-core==6.1.1
+bravado-core==6.3.1
     # via bravado
 bytecode==0.17.0
     # via ddtrace
 cachetools==7.0.6
     # via mpcontribs-client
-certifi==2026.2.25
+certifi==2026.4.22
     # via requests
 cffi==2.0.0
     # via argon2-cffi-bindings
@@ -82,7 +82,7 @@ fonttools==4.62.1
     # via matplotlib
 fqdn==1.5.1
     # via jsonschema
-idna==3.11
+idna==3.13
     # via
     #   anyio
     #   jsonschema
@@ -144,7 +144,7 @@ jupyter-core==5.9.1
     #   nbclient
     #   nbconvert
     #   nbformat
-jupyter-events==0.12.0
+jupyter-events==0.12.1
     # via jupyter-server
 jupyter-kernel-gateway==3.0.1
     # via -r MPContribs/mpcontribs-kernel-gateway/requirements.in
@@ -362,7 +362,7 @@ scipy==1.17.1
     #   pymatgen-core
 send2trash==2.1.0
     # via jupyter-server
-simplejson==4.0.1
+simplejson==4.1.0
     # via
     #   bravado
     #   bravado-core
