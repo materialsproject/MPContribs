@@ -95,7 +95,7 @@ iniconfig==2.3.0
     # via pytest
 ipykernel==7.2.0
     # via -r MPContribs/mpcontribs-kernel-gateway/requirements.in
-ipython==9.10.1
+ipython==9.13.0
     # via
     #   ipykernel
     #   ipywidgets
@@ -172,7 +172,7 @@ markupsafe==3.0.3
     # via
     #   jinja2
     #   nbconvert
-matplotlib==3.10.8
+matplotlib==3.10.9
     # via
     #   -r python/requirements.txt
     #   pymatgen-core
@@ -220,7 +220,7 @@ numpy==1.26.4
     #   pymatgen-core
     #   scipy
     #   spglib
-opentelemetry-api==1.41.0
+opentelemetry-api==1.41.1
     # via ddtrace
 orjson==3.11.8
     # via
@@ -273,6 +273,7 @@ psutil==7.2.2
     # via
     #   -r MPContribs/mpcontribs-kernel-gateway/requirements.in
     #   ipykernel
+    #   ipython
 ptyprocess==0.7.0
     # via
     #   pexpect
@@ -432,7 +433,7 @@ typing-extensions==4.15.0
     #   referencing
     #   spglib
     #   swagger-spec-validator
-tzdata==2026.1
+tzdata==2026.2
     # via arrow
 ujson==5.12.0
     # via mpcontribs-client
