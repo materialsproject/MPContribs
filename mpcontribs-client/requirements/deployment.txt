@@ -117,7 +117,7 @@ numpy==1.26.4
     #   spglib
 orjson==3.11.8
     # via pymatgen-core
-packaging==26.1
+packaging==26.2
     # via
     #   matplotlib
     #   plotly
@@ -208,7 +208,7 @@ scipy==1.17.1
     # via
     #   -r python/requirements.txt
     #   pymatgen-core
-simplejson==4.1.0
+simplejson==4.1.1
     # via
     #   bravado
     #   bravado-core

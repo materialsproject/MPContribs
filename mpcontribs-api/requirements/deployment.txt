@@ -38,9 +38,9 @@ blinker==1.9.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/pyproject.toml)
 boltons==25.0.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/pyproject.toml)
-boto3==1.42.95
+boto3==1.42.96
     # via flask-mongorest-mpcontribs
-botocore==1.42.95
+botocore==1.42.96
     # via
     #   boto3
     #   s3transfer
@@ -68,7 +68,7 @@ cramjam==2.11.0
     # via python-snappy
 crontab==1.0.5
     # via rq-scheduler
-cryptography==46.0.7
+cryptography==47.0.0
     # via pyopenssl
 css-html-js-minify==2.5.5
     # via mpcontribs-api (MPContribs/mpcontribs-api/pyproject.toml)
@@ -136,7 +136,7 @@ freezegun==1.5.5
     # via rq-scheduler
 gevent==26.4.0
     # via gunicorn
-greenlet==3.4.0
+greenlet==3.5.0
     # via gevent
 gunicorn[gevent]==24.1.1
     # via mpcontribs-api (MPContribs/mpcontribs-api/pyproject.toml)
@@ -303,7 +303,7 @@ orjson==3.11.8
     #   pymatgen-core
 overrides==7.7.0
     # via jupyter-server
-packaging==26.1
+packaging==26.2
     # via
     #   gunicorn
     #   ipykernel
@@ -368,7 +368,7 @@ pymongo==4.17.0
     # via
     #   flask-mongorest-mpcontribs
     #   mongoengine
-pyopenssl==26.0.0
+pyopenssl==26.1.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/pyproject.toml)
 pyparsing==3.3.2
     # via
@@ -550,7 +550,7 @@ zipp==3.23.1
     # via importlib-metadata
 zope-event==6.1
     # via gevent
-zope-interface==8.3
+zope-interface==8.4
     # via gevent
 zstandard==0.25.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/pyproject.toml)

@@ -228,7 +228,7 @@ orjson==3.11.8
     #   pymatgen-core
 overrides==7.7.0
     # via jupyter-server
-packaging==26.1
+packaging==26.2
     # via
     #   ipykernel
     #   jupyter-events
@@ -363,7 +363,7 @@ scipy==1.17.1
     #   pymatgen-core
 send2trash==2.1.0
     # via jupyter-server
-simplejson==4.1.0
+simplejson==4.1.1
     # via
     #   bravado
     #   bravado-core
