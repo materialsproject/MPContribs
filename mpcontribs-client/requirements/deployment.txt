@@ -40,7 +40,7 @@ executing==2.2.1
     # via stack-data
 filetype==1.2.0
     # via mpcontribs-client (MPContribs/mpcontribs-client/pyproject.toml)
-flatten-dict==0.4.2
+flatten-dict==0.5.0
     # via mpcontribs-client (MPContribs/mpcontribs-client/pyproject.toml)
 flexcache==0.3
     # via pint
@@ -216,7 +216,6 @@ six==1.17.0
     # via
     #   bravado
     #   bravado-core
-    #   flatten-dict
     #   python-dateutil
     #   rfc3339-validator
 spglib==2.7.0

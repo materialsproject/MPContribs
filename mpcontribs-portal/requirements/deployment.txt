@@ -24,9 +24,9 @@ boltons==25.0.0
     # via
     #   mpcontribs-client
     #   mpcontribs-portal (MPContribs/mpcontribs-portal/pyproject.toml)
-boto3==1.42.96
+boto3==1.42.97
     # via mpcontribs-portal (MPContribs/mpcontribs-portal/pyproject.toml)
-botocore==1.42.96
+botocore==1.42.97
     # via
     #   boto3
     #   s3transfer
@@ -81,7 +81,7 @@ fastnumbers==5.1.1
     # via mpcontribs-portal (MPContribs/mpcontribs-portal/pyproject.toml)
 filetype==1.2.0
     # via mpcontribs-client
-flatten-dict==0.4.2
+flatten-dict==0.5.0
     # via mpcontribs-client
 flexcache==0.3
     # via pint
@@ -345,7 +345,6 @@ six==1.17.0
     # via
     #   bravado
     #   bravado-core
-    #   flatten-dict
     #   python-dateutil
     #   rfc3339-validator
 soupsieve==2.8.3
@@ -422,7 +421,7 @@ wrapt==2.1.2
     # via ddtrace
 zipp==3.23.1
     # via importlib-metadata
-zope-event==6.1
+zope-event==6.2
     # via gevent
 zope-interface==8.4
     # via gevent

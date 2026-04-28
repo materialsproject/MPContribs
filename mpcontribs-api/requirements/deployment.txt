@@ -38,9 +38,9 @@ blinker==1.9.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/pyproject.toml)
 boltons==25.0.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/pyproject.toml)
-boto3==1.42.96
+boto3==1.42.97
     # via flask-mongorest-mpcontribs
-botocore==1.42.96
+botocore==1.42.97
     # via
     #   boto3
     #   s3transfer
@@ -122,7 +122,7 @@ flask-rq2==18.3
     # via mpcontribs-api (MPContribs/mpcontribs-api/pyproject.toml)
 flask-sse==1.0.0
     # via flask-mongorest-mpcontribs
-flatten-dict==0.4.2
+flatten-dict==0.5.0
     # via flask-mongorest-mpcontribs
 flexcache==0.3
     # via pint
@@ -458,7 +458,6 @@ six==1.17.0
     # via
     #   flasgger-tschaume
     #   flask-sse
-    #   flatten-dict
     #   python-dateutil
     #   rfc3339-validator
 soupsieve==2.8.3
@@ -548,7 +547,7 @@ wrapt==2.1.2
     # via ddtrace
 zipp==3.23.1
     # via importlib-metadata
-zope-event==6.1
+zope-event==6.2
     # via gevent
 zope-interface==8.4
     # via gevent
