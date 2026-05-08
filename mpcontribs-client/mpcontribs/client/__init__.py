@@ -891,10 +891,10 @@ class Client(SwaggerClient):
         """
 
         logger.warning(
-            "The `mpcontribs-client` package has been deprecated "
-            "in favor of the main Materials Project (MP) API client `mp-api`. "
-            "To use the MP Contribs client swith up-to-date features, "
-            "please `pip install 'mp-api[contribs]'`:\n"
+            "The `mpcontribs-client` package is entering long-term maintenance. "
+            "All new features will be added to the main Materials Project "
+            "(MP) API client `mp-api`. To use the MP Contribs client with "
+            "up-to-date features, please `pip install 'mp-api[contribs]'`:\n"
             "```py\n"
             "from mp_api.client import MPRester\n"
             "with MPRester() as mpr:\n"
