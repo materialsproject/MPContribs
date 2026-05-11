@@ -206,7 +206,7 @@ jupyter-core==5.9.1
     #   notebook
 jupyter-events==0.12.1
     # via jupyter-server
-jupyter-server==2.17.0
+jupyter-server==2.18.0
     # via notebook-shim
 jupyter-server-terminals==0.5.4
     # via jupyter-server
@@ -238,7 +238,7 @@ matplotlib-inline==0.2.1
     #   ipython
 mimerender-pr36==0.0.2
     # via flask-mongorest-mpcontribs
-mistune==3.2.0
+mistune==3.2.1
     # via
     #   flasgger-tschaume
     #   nbconvert
@@ -517,7 +517,7 @@ uncertainties==3.2.3
     #   pymatgen-core
 uri-template==1.3.0
     # via jsonschema
-urllib3==2.6.3
+urllib3==2.7.0
     # via
     #   botocore
     #   requests
