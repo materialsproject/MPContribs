@@ -175,7 +175,7 @@ matplotlib-inline==0.2.1
     # via
     #   ipykernel
     #   ipython
-mistune==3.2.0
+mistune==3.2.1
     # via nbconvert
 monotonic==1.6
     # via bravado
@@ -219,7 +219,7 @@ numpy==1.26.4
     #   spglib
 opentelemetry-api==1.41.1
     # via ddtrace
-orjson==3.11.8
+orjson==3.11.9
     # via pymatgen-core
 packaging==26.2
     # via
@@ -308,7 +308,7 @@ referencing==0.37.0
     # via
     #   jsonschema
     #   jsonschema-specifications
-requests==2.33.1
+requests==2.34.2
     # via
     #   bravado
     #   bravado-core

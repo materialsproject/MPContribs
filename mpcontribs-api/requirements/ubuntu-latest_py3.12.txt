@@ -206,7 +206,7 @@ jupyter-core==5.9.1
     #   notebook
 jupyter-events==0.12.1
     # via jupyter-server
-jupyter-server==2.18.2
+jupyter-server==2.18.0
     # via notebook-shim
 jupyter-server-terminals==0.5.4
     # via jupyter-server
