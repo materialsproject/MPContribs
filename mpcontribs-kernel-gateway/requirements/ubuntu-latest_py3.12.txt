@@ -146,7 +146,7 @@ jupyter-events==0.12.1
     # via jupyter-server
 jupyter-kernel-gateway==3.0.1
     # via -r requirements.in
-jupyter-server==2.18.2
+jupyter-server==2.18.0
     # via jupyter-kernel-gateway
 jupyter-server-terminals==0.5.4
     # via jupyter-server
