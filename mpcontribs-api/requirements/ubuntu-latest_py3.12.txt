@@ -26,7 +26,7 @@ attrs==26.1.0
     # via
     #   jsonschema
     #   referencing
-backports-zstd==1.3.0
+backports-zstd==1.5.0
     # via flask-compress
 beautifulsoup4==4.14.3
     # via nbconvert
@@ -38,9 +38,9 @@ blinker==1.9.0
     # via mpcontribs-api (pyproject.toml)
 boltons==25.0.0
     # via mpcontribs-api (pyproject.toml)
-boto3==1.42.95
+boto3==1.43.9
     # via flask-mongorest-mpcontribs
-botocore==1.42.95
+botocore==1.43.9
     # via
     #   boto3
     #   s3transfer
@@ -56,7 +56,7 @@ cffi==2.0.0
     #   cryptography
 charset-normalizer==3.4.7
     # via requests
-click==8.3.3
+click==8.4.0
     # via
     #   flask
     #   rq
@@ -68,7 +68,7 @@ cramjam==2.11.0
     # via python-snappy
 crontab==1.0.5
     # via rq-scheduler
-cryptography==46.0.7
+cryptography==48.0.0
     # via pyopenssl
 css-html-js-minify==2.5.5
     # via mpcontribs-api (pyproject.toml)
@@ -80,7 +80,7 @@ ddtrace==4.3.0
     # via mpcontribs-api (pyproject.toml)
 debugpy==1.8.20
     # via ipykernel
-decorator==5.2.1
+decorator==5.3.1
     # via ipython
 defusedxml==0.7.1
     # via nbconvert
@@ -122,13 +122,13 @@ flask-rq2==18.3
     # via mpcontribs-api (pyproject.toml)
 flask-sse==1.0.0
     # via flask-mongorest-mpcontribs
-flatten-dict==0.4.2
+flatten-dict==0.5.0
     # via flask-mongorest-mpcontribs
 flexcache==0.3
     # via pint
 flexparser==0.4
     # via pint
-fonttools==4.62.1
+fonttools==4.63.0
     # via matplotlib
 fqdn==1.5.1
     # via jsonschema
@@ -136,11 +136,11 @@ freezegun==1.5.5
     # via rq-scheduler
 gevent==26.4.0
     # via gunicorn
-greenlet==3.4.0
+greenlet==3.5.0
     # via gevent
 gunicorn[gevent]==24.1.1
     # via mpcontribs-api (pyproject.toml)
-idna==3.13
+idna==3.15
     # via
     #   anyio
     #   jsonschema
@@ -163,7 +163,7 @@ isoduration==20.11.0
     # via jsonschema
 itsdangerous==2.2.0
     # via flask
-jedi==0.19.2
+jedi==0.20.0
     # via ipython
 jinja2==3.1.6
     # via
@@ -206,7 +206,7 @@ jupyter-core==5.9.1
     #   notebook
 jupyter-events==0.12.1
     # via jupyter-server
-jupyter-server==2.17.0
+jupyter-server==2.18.2
     # via notebook-shim
 jupyter-server-terminals==0.5.4
     # via jupyter-server
@@ -232,13 +232,13 @@ marshmallow-mongoengine==0.31.2
     # via flask-mongorest-mpcontribs
 matplotlib==3.10.9
     # via pymatgen-core
-matplotlib-inline==0.2.1
+matplotlib-inline==0.2.2
     # via
     #   ipykernel
     #   ipython
 mimerender-pr36==0.0.2
     # via flask-mongorest-mpcontribs
-mistune==3.2.0
+mistune==3.2.1
     # via
     #   flasgger-tschaume
     #   nbconvert
@@ -247,13 +247,13 @@ mongoengine==0.29.3
     #   atlasq-tschaume
     #   flask-mongoengine-tschaume
     #   marshmallow-mongoengine
-monty==2026.2.18
+monty==2026.5.18
     # via pymatgen-core
 more-itertools==11.0.2
     # via mpcontribs-api (pyproject.toml)
 mpmath==1.3.0
     # via sympy
-narwhals==2.20.0
+narwhals==2.21.2
     # via plotly
 nbclassic==1.3.3
     # via notebook
@@ -282,7 +282,7 @@ notebook==6.5.7
     # via mpcontribs-api (pyproject.toml)
 notebook-shim==0.2.4
     # via nbclassic
-numpy==2.4.4
+numpy==2.4.5
     # via
     #   contourpy
     #   matplotlib
@@ -294,11 +294,11 @@ numpy==2.4.4
     #   spglib
 opentelemetry-api==1.41.1
     # via ddtrace
-orjson==3.11.8
+orjson==3.11.9
     # via
     #   flask-mongorest-mpcontribs
     #   pymatgen-core
-packaging==26.1
+packaging==26.2
     # via
     #   gunicorn
     #   ipykernel
@@ -310,11 +310,11 @@ packaging==26.1
     #   plotly
 palettable==3.3.3
     # via pymatgen-core
-pandas==3.0.2
+pandas==3.0.3
     # via pymatgen-core
 pandocfilters==1.5.1
     # via nbconvert
-parso==0.8.6
+parso==0.8.7
     # via jedi
 pexpect==4.9.0
     # via ipython
@@ -353,15 +353,15 @@ pygments==2.20.0
     #   ipython
     #   ipython-pygments-lexers
     #   nbconvert
-pymatgen==2026.3.23
+pymatgen==2026.5.4
     # via mpcontribs-api (pyproject.toml)
-pymatgen-core==2026.4.16
+pymatgen-core==2026.5.17
     # via pymatgen
 pymongo==4.17.0
     # via
     #   flask-mongorest-mpcontribs
     #   mongoengine
-pyopenssl==26.0.0
+pyopenssl==26.2.0
     # via mpcontribs-api (pyproject.toml)
 pyparsing==3.3.2
     # via
@@ -384,7 +384,7 @@ python-mimeparse==2.0.0
     # via mimerender-pr36
 python-snappy==0.7.3
     # via mpcontribs-api (pyproject.toml)
-pytz==2026.1.post1
+pytz==2026.2
     # via dateparser
 pyyaml==6.0.3
     # via
@@ -406,9 +406,9 @@ referencing==0.37.0
     #   jsonschema
     #   jsonschema-specifications
     #   jupyter-events
-regex==2026.4.4
+regex==2026.5.9
     # via dateparser
-requests==2.33.1
+requests==2.34.2
     # via
     #   atlasq-tschaume
     #   pymatgen-core
@@ -435,7 +435,7 @@ rq-scheduler==0.14.0
     # via flask-rq2
 ruamel-yaml==0.19.1
     # via monty
-s3transfer==0.16.1
+s3transfer==0.17.0
     # via boto3
 scipy==1.17.1
     # via pymatgen-core
@@ -449,7 +449,6 @@ six==1.17.0
     # via
     #   flasgger-tschaume
     #   flask-sse
-    #   flatten-dict
     #   python-dateutil
     #   rfc3339-validator
 soupsieve==2.8.3
@@ -480,7 +479,7 @@ tornado==6.5.5
     #   terminado
 tqdm==4.67.3
     # via pymatgen-core
-traitlets==5.14.3
+traitlets==5.15.0
     # via
     #   ipykernel
     #   ipython
@@ -514,11 +513,11 @@ uncertainties==3.2.3
     #   pymatgen-core
 uri-template==1.3.0
     # via jsonschema
-urllib3==2.6.3
+urllib3==2.7.0
     # via
     #   botocore
     #   requests
-wcwidth==0.6.0
+wcwidth==0.7.0
     # via prompt-toolkit
 webcolors==25.10.0
     # via jsonschema
@@ -538,9 +537,9 @@ wrapt==2.1.2
     # via ddtrace
 zipp==3.23.1
     # via importlib-metadata
-zope-event==6.1
+zope-event==6.2
     # via gevent
-zope-interface==8.3
+zope-interface==8.4
     # via gevent
 zstandard==0.25.0
     # via mpcontribs-api (pyproject.toml)
