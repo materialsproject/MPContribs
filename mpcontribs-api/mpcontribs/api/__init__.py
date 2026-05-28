@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """Flask App for MPContribs API"""
+
 import os
 import smtplib
 import logging
@@ -165,7 +166,7 @@ def get_kernels():
     """retrieve list of kernels from KernelGateway service"""
     try:
         r = requests.get(get_kernel_endpoint(), timeout=2)
-    except (ConnectionError, Timeout):
+    except ConnectionError, Timeout:
         logger.warning("Kernel Gateway NOT AVAILABLE")
         return None
 

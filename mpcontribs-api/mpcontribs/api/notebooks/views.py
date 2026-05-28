@@ -105,14 +105,17 @@ def restart_kernels():
     for kernel_id in kernel_ids:
         kernel_url = get_kernel_endpoint(kernel_id) + "/restart"
         requests.post(kernel_url, json={})
-        cells = [nbf.new_code_cell("\n".join([
-            "from mpcontribs.client import Client",
-            "print('client imported')"
-        ]))]
+        cells = [
+            nbf.new_code_cell(
+                "\n".join(
+                    ["from mpcontribs.client import Client", "print('client imported')"]
+                )
+            )
+        ]
         run_cells(kernel_id, "import_client", cells)
 
 
-@notebooks.route('/result', defaults={'job_id': None})
+@notebooks.route("/result", defaults={"job_id": None})
 @notebooks.route("/result/<job_id>")
 def result(job_id):
     if not current_app.kernels:
@@ -156,7 +159,7 @@ def make(projects=None, cids=None, force=False):
         ret["job"] = {
             "id": job.id,
             "enqueued_at": job.enqueued_at.isoformat(),
-            "started_at": job.started_at.isoformat()
+            "started_at": job.started_at.isoformat(),
         }
 
     exclude = list(Contributions._fields.keys())
@@ -177,8 +180,11 @@ def make(projects=None, cids=None, force=False):
 
         start = time.perf_counter()
 
-        if not force and document.notebook and \
-                not getattr(document, "needs_build", True):
+        if (
+            not force
+            and document.notebook
+            and not getattr(document, "needs_build", True)
+        ):
             continue
 
         if document.notebook:
@@ -197,49 +203,63 @@ def make(projects=None, cids=None, force=False):
         cells = [
             # define client only once in kernel
             # avoids API calls for regex expansion for query parameters
-            nbf.new_code_cell("\n".join([
-                "if 'client' not in locals():",
-                "\tclient = Client(",
-                f'\t\theaders={{"X-Authenticated-Groups": "{ADMIN_GROUP}"}},',
-                f'\t\thost="{MPCONTRIBS_API_HOST}"',
-                "\t)",
-                "print(client.get_totals())",
-                # return something. See while loop in `run_cells`
-            ])),
-            nbf.new_code_cell("\n".join([
-                f'c = client.get_contribution("{document.id}")',
-                'c.display()'
-            ])),
+            nbf.new_code_cell(
+                "\n".join(
+                    [
+                        "if 'client' not in locals():",
+                        "\tclient = Client(",
+                        f'\t\theaders={{"X-Authenticated-Groups": "{ADMIN_GROUP}"}},',
+                        f'\t\thost="{MPCONTRIBS_API_HOST}"',
+                        "\t)",
+                        "print(client.get_totals())",
+                        # return something. See while loop in `run_cells`
+                    ]
+                )
+            ),
+            nbf.new_code_cell(
+                "\n".join(
+                    [f'c = client.get_contribution("{document.id}")', "c.display()"]
+                )
+            ),
         ]
 
         if document.tables:
             cells.append(nbf.new_markdown_cell("## Tables"))
             for table in document.tables:
                 cells.append(
-                    nbf.new_code_cell("\n".join([
-                        f't = client.get_table("{table.id}")',
-                        't.display()'
-                    ]))
+                    nbf.new_code_cell(
+                        "\n".join(
+                            [f't = client.get_table("{table.id}")', "t.display()"]
+                        )
+                    )
                 )
 
         if document.structures:
             cells.append(nbf.new_markdown_cell("## Structures"))
             for structure in document.structures:
                 cells.append(
-                    nbf.new_code_cell("\n".join([
-                        f's = client.get_structure("{structure.id}")',
-                        's.display()'
-                    ]))
+                    nbf.new_code_cell(
+                        "\n".join(
+                            [
+                                f's = client.get_structure("{structure.id}")',
+                                "s.display()",
+                            ]
+                        )
+                    )
                 )
 
         if document.attachments:
             cells.append(nbf.new_markdown_cell("## Attachments"))
             for attachment in document.attachments:
                 cells.append(
-                    nbf.new_code_cell("\n".join([
-                        f'a = client.get_attachment("{attachment.id}")',
-                        'a.info()'
-                    ]))
+                    nbf.new_code_cell(
+                        "\n".join(
+                            [
+                                f'a = client.get_attachment("{attachment.id}")',
+                                "a.info()",
+                            ]
+                        )
+                    )
                 )
 
         try:
@@ -249,7 +269,11 @@ def make(projects=None, cids=None, force=False):
                 restart_kernels()
 
             ret["result"] = {
-                "status": "ERROR", "cid": cid, "count": count, "total": total, "exc": str(e)
+                "status": "ERROR",
+                "cid": cid,
+                "count": count,
+                "total": total,
+                "exc": str(e),
             }
             return ret
 
@@ -258,7 +282,10 @@ def make(projects=None, cids=None, force=False):
                 restart_kernels()
 
             ret["result"] = {
-                "status": "ERROR: NO OUTPUTS", "cid": cid, "count": count, "total": total
+                "status": "ERROR: NO OUTPUTS",
+                "cid": cid,
+                "count": count,
+                "total": total,
             }
             return ret
 
@@ -268,7 +295,7 @@ def make(projects=None, cids=None, force=False):
         doc = nbf.new_notebook()
         doc["cells"] = [
             nbf.new_code_cell("from mpcontribs.client import Client"),
-            nbf.new_code_cell(f'client = Client()'),
+            nbf.new_code_cell("client = Client()"),
         ]
         doc["cells"] += cells[1:]  # skip localhost Client
 
@@ -280,7 +307,11 @@ def make(projects=None, cids=None, force=False):
                 restart_kernels()
 
             ret["result"] = {
-                "status": "ERROR", "cid": cid, "count": count, "total": total, "exc": str(e)
+                "status": "ERROR",
+                "cid": cid,
+                "count": count,
+                "total": total,
+                "exc": str(e),
             }
             return ret
 

@@ -179,7 +179,7 @@ def search():
 
     try:
         comp = Composition(formula)
-    except (CompositionError, ValueError):
+    except CompositionError, ValueError:
         abort(400, description="Invalid formula provided.")
 
     ind_str = []

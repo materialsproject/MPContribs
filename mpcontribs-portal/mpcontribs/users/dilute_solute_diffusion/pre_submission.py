@@ -21,7 +21,6 @@ def run(mpfile, hosts=None, download=False):
     fpath = f"{project}.xlsx"
 
     if download or not os.path.exists(fpath):
-
         figshare_id = 1546772
         url = "https://api.figshare.com/v2/articles/{}".format(figshare_id)
         print("get figshare article {}".format(figshare_id))
@@ -133,7 +132,6 @@ def run(mpfile, hosts=None, download=False):
         mpfile.add_data_table(mpid, df_D0_Q, "D₀_Q")
 
         if hdata["Host"]["crystal_structure"] == "BCC":
-
             print("add table for hop activation barriers for {} (BCC)".format(mpid))
             columns_E = (
                 ["Hop activation barrier, E_{} [eV]".format(i) for i in range(2, 5)]
@@ -169,7 +167,6 @@ def run(mpfile, hosts=None, download=False):
             mpfile.add_data_table(mpid, df_v, "hop_attempt_frequencies")
 
         elif hdata["Host"]["crystal_structure"] == "FCC":
-
             print("add table for hop activation barriers for {} (FCC)".format(mpid))
             columns_E = [
                 "Hop activation barrier, E_{} [eV]".format(i) for i in range(5)
@@ -191,7 +188,6 @@ def run(mpfile, hosts=None, download=False):
             mpfile.add_data_table(mpid, df_v, "hop_attempt_frequencies")
 
         elif hdata["Host"]["crystal_structure"] == "HCP":
-
             print("add table for hop activation barriers for {} (HCP)".format(mpid))
             columns_E = [
                 "Hop activation barrier, E_X [eV]",

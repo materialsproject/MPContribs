@@ -161,7 +161,7 @@ def applications(token, action):
     else:
         obj.delete()  # post_delete signal sends notification
 
-    return f'{project} {action.replace("y", "ie")}d and {owner} notified.'
+    return f"{project} {action.replace('y', 'ie')}d and {owner} notified."
 
 
 @projects.route("/search")

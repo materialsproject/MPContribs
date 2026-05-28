@@ -38,7 +38,13 @@ class TablesResource(Resource):
         "attrs__labels__variable": FILTERS["STRINGS"],
     }
     fields = [
-        "id", "name", "md5", "attrs", "columns", "total_data_rows", "total_data_pages"
+        "id",
+        "name",
+        "md5",
+        "attrs",
+        "columns",
+        "total_data_rows",
+        "total_data_pages",
     ]
     allowed_ordering = ["name", "total_data_rows"]
     paginate = True
