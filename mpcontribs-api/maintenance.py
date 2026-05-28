@@ -32,8 +32,9 @@ def fix_units(name):
         contrib.data = remap(contrib.data, visit=visit, enter=enter)  # pull out display
         contrib.save(signal_kwargs={"skip": True})  # reparse display with intended unit
 
-        if idx and not idx%250:
+        if idx and not idx % 250:
             print(idx)
+
 
 # additional maintenance functions
 # TODO generate JSON/CSV project downloads

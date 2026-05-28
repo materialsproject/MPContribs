@@ -8,7 +8,7 @@ from supervisor.options import ClientOptions
 from supervisor.supervisorctl import Controller
 
 logger = logging.getLogger(__name__)
-client = boto3.client('ecs')
+client = boto3.client("ecs")
 
 
 def start(program):

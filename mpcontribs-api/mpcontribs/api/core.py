@@ -1,8 +1,4 @@
-# -*- coding: utf-8 -*-
-"""Custom meta-class and MethodView for Swagger"""
-
 import os
-import logging
 import yaml
 
 from copy import deepcopy
@@ -598,7 +594,8 @@ class SwaggerView(OriginalSwaggerView, ResourceView):
                 from mpcontribs.api.contributions.document import get_resource
 
                 resource = get_resource(component)
-                qfilter = lambda qs: qs.clone()
+                def qfilter(qs):
+                    return qs.clone()
 
                 if pk:
                     ids = [resource.get_object(pk, qfilter=qfilter).id]
@@ -614,15 +611,20 @@ class SwaggerView(OriginalSwaggerView, ResourceView):
                 qfilter = self.get_projects_filter(username, groups)
                 component = component[:-1] if component == "notebooks" else component
                 qfilter &= Q(**{f"{component}__in": ids})
-                contribs = Contributions.objects(qfilter).only(component).limit(len(ids))
+                contribs = (
+                    Contributions.objects(qfilter).only(component).limit(len(ids))
+                )
                 # return new queryset using "ids__in"
-                readable_ids = [
-                    getattr(contrib, component).id for contrib in contribs
-                ] if component == "notebook" else [
-                    dbref.id for contrib in contribs
-                    for dbref in getattr(contrib, component)
-                    if dbref.id in ids
-                ]
+                readable_ids = (
+                    [getattr(contrib, component).id for contrib in contribs]
+                    if component == "notebook"
+                    else [
+                        dbref.id
+                        for contrib in contribs
+                        for dbref in getattr(contrib, component)
+                        if dbref.id in ids
+                    ]
+                )
                 if not readable_ids:
                     return qs.none()
 

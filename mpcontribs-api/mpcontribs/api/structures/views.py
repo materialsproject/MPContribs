@@ -20,7 +20,7 @@ class StructuresResource(Resource):
         "id": [ops.In, ops.Exact],
         "md5": [ops.In, ops.Exact],
         "name": FILTERS["STRINGS"],
-        "sites": [ops.Size]
+        "sites": [ops.Size],
     }
     fields = ["id", "name", "md5"]
     allowed_ordering = ["name"]

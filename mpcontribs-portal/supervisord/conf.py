@@ -15,7 +15,7 @@ for deployment in os.environ.get("DEPLOYMENTS", "ml:10002").split(","):
         "api_port": api_port,
         "portal_port": portal_port,
         "s3": s3,
-        "tm": tm.upper()
+        "tm": tm.upper(),
     }
 
 kwargs = {

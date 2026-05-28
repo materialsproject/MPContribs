@@ -18,7 +18,7 @@ for deployment in os.environ.get("DEPLOYMENTS", "ml:10002").split(","):
         "db": db,
         "s3": s3,
         "tm": tm.upper(),
-        "max_projects": int(max_projects) if max_projects else 3
+        "max_projects": int(max_projects) if max_projects else 3,
     }
 
 kwargs = {
@@ -28,7 +28,9 @@ kwargs = {
     "reload": int(not PRODUCTION),
     "node_env": "production" if PRODUCTION else "development",
     "flask_log_level": "INFO" if PRODUCTION else "DEBUG",
-    "jupyter_gateway_host": f"localhost:{KG_PORT}" if PRODUCTION else f"kernel-gateway:{KG_PORT}",
+    "jupyter_gateway_host": f"localhost:{KG_PORT}"
+    if PRODUCTION
+    else f"kernel-gateway:{KG_PORT}",
     "dd_agent_host": "localhost" if PRODUCTION else "datadog",
     "mpcontribs_api_host": "localhost" if PRODUCTION else "contribs-apis",
 }
