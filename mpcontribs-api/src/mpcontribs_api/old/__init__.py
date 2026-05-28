@@ -1,32 +1,31 @@
 # -*- coding: utf-8 -*-
 """Flask App for MPContribs API"""
 
+import logging
 import os
 import smtplib
-import logging
-import requests
-import flask_mongorest.operators as ops
-
 from email.message import EmailMessage
 from importlib import import_module
 from importlib.metadata import version
-from websocket import create_connection
-from flask import Flask, current_app, request, jsonify
+from string import punctuation, whitespace
+
+import flask_mongorest.operators as ops
+import requests
+from boltons.iterutils import default_enter, remap
+from flasgger.base import Swagger
+from flask import Flask, current_app, jsonify, request
+from flask_compress import Compress
 from flask_marshmallow import Marshmallow
 from flask_mongoengine import MongoEngine
 from flask_mongorest import register_class
 from flask_sse import sse
-from flask_compress import Compress
-from flasgger.base import Swagger
-
+from itsdangerous import URLSafeTimedSerializer
 from mongoengine import ValidationError
 from mongoengine.base.datastructures import BaseDict
-from itsdangerous import URLSafeTimedSerializer
-from string import punctuation, whitespace
-from boltons.iterutils import remap, default_enter
-from notebook.utils import url_path_join
 from notebook.gateway.managers import GatewayClient
+from notebook.utils import url_path_join
 from requests.exceptions import ConnectionError, Timeout
+from websocket import create_connection
 
 try:
     __version__ = version("mpcontribs-api")
