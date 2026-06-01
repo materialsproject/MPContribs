@@ -50,6 +50,16 @@ class PermissionError(AppError):
     error_code = "permission_denied"
 
 
+class AuthenticationError(AppError):
+    status_code = 401
+    error_code = "authentication_error"
+
+
+class GatewayError(AppError):
+    status_code = 403
+    error_code = "gateway_error"
+
+
 def _error_body(error_code: str, message: str, **public_context) -> dict:
     body: dict[str, Any] = {"error": {"code": error_code, "message": message}}
     if public_context:
