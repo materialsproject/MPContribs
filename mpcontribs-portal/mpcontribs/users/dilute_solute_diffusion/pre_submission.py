@@ -1,4 +1,6 @@
-import os, json, requests, sys
+import os
+import json
+import requests
 from pandas import read_excel, isnull, ExcelWriter, Series
 from mpcontribs.io.core.recdict import RecursiveDict
 from mpcontribs.io.core.utils import clean_value, nest_dict
@@ -59,7 +61,7 @@ def run(mpfile, hosts=None, download=False):
         if hosts is not None:
             if isinstance(hosts, int) and idx + 1 > hosts:
                 break
-            elif isinstance(hosts, list) and not host in hosts:
+            elif isinstance(hosts, list) and host not in hosts:
                 continue
 
         print("get mp-id for {}".format(host))

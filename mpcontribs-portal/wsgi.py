@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import re
 import os
-import ddtrace.auto
 import django_settings_file
 from django.core.wsgi import get_wsgi_application
 from whitenoise import WhiteNoise
