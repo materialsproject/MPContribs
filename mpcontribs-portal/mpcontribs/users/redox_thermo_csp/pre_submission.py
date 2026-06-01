@@ -1,16 +1,17 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
-import os, json, re, sys
+import os
+import json
+import re
+import sys
 from glob import glob
 from datetime import datetime
 from itertools import groupby
 import pandas as pd
-from mpcontribs.io.core.utils import get_composition_from_string
 from mpcontribs.io.core.recdict import RecursiveDict
-from mpcontribs.io.core.utils import clean_value, read_csv, nest_dict
+from mpcontribs.io.core.utils import clean_value, read_csv
 from mpcontribs.io.core.components import Table
 from mpcontribs.users.utils import duplicate_check
-from mpcontribs.users.redox_thermo_csp.utils import redenth_act, get_debye_temp
 
 
 def get_fit_pars(sample_number):

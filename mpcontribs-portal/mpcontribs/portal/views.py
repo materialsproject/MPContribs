@@ -12,8 +12,6 @@ import urllib
 from redis import Redis
 from io import BytesIO
 from copy import deepcopy
-from pathlib import Path
-from shutil import make_archive, rmtree
 from nbconvert import HTMLExporter
 from bravado.exception import HTTPNotFound
 from json2html import Json2Html

@@ -2,7 +2,6 @@ import json
 import datetime
 import os
 import shutil
-import numpy as np
 from energy_analysis import EnergyAnalysis as enera
 from views import unstable_phases as unst
 
@@ -21,7 +20,7 @@ if __name__ == "__main__":
     new_energy_data = old_energy_data
 
     for db_id in paramlist:
-        if not "Exp" in db_id:
+        if "Exp" not in db_id:
             print(db_id)
             data_source = "Theo"  # updates only theoretical data
             celsius = "True"  # always True, parameter input in K currently disabled
