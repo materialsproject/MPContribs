@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from enum import Enum
 from typing import Annotated, Any, Literal
 
@@ -37,21 +39,29 @@ class Reference(BaseModel):
 class Project(DocumentWithSoftDelete):
     """Document model of what is actually stored."""
 
+    # Required
     # meaningful string id, always supplied
     id: ShortStr = Field(alias="_id")  # pyright: ignore[reportGeneralTypeIssues, reportIncompatibleVariableOverride]
     title: ShortStr
     authors: str
     description: str
     owner: PrefixedEmail
-    other: dict[str, Any]
+    unique_identifiers: bool
+    stats: Stats
+
+    # Optional
+    references: list[Reference] = Field(default_factory=list)
+    long_title: str | None = None
+    other: dict[str, Any] = Field(default_factory=dict)
+    columns: list[Column] = Field(default_factory=list)
     is_public: bool = False
     is_approved: bool = False
-    long_title: str
-    unique_identifiers: bool
-    references: list[Reference]
-    stats: Stats
-    columns: list[Column]
     license: Literal["CCA4", "CCPD"] | None = None
+
+    # Empty method for now. Keeping for business logic later
+    @classmethod
+    def from_project_in(cls, data: ProjectIn) -> Project:
+        return cls(**data.model_dump())
 
 
 # Project Responses
@@ -66,11 +76,13 @@ class ProjectSummary(BaseModel):
     title: ShortStr
 
 
-class ProjectResponse(BaseModel):
+class ProjectOut(BaseModel):
     """Full response of all public-facing fields."""
 
     model_config = ConfigDict(extra="ignore")
-    id: Annotated[ShortStr | None, Field(alias="_id")] = None
+    id: Annotated[
+        ShortStr | None, Field(validation_alias="_id", serialization_alias="id")
+    ] = None
     authors: str | None = None
     description: str | None = None
     title: ShortStr | None = None
@@ -119,6 +131,11 @@ class ProjectFilter(Filter):
         model = Project
 
 
+# Keeping for business logic separation. May have specific implementation later
+class ProjectIn(Project):
+    pass
+
+
 # Enum to determine which response model to use
 class ProjectView(str, Enum):
     full = "full"
@@ -126,6 +143,6 @@ class ProjectView(str, Enum):
 
 
 _VIEW_MODELS: dict[ProjectView, type[BaseModel]] = {
-    ProjectView.full: ProjectResponse,
+    ProjectView.full: ProjectOut,
     ProjectView.summary: ProjectSummary,
 }

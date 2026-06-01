@@ -7,7 +7,8 @@ from src.mpcontribs_api.domains.projects.dependencies import ProjectDep
 from src.mpcontribs_api.domains.projects.models import (
     _VIEW_MODELS,
     ProjectFilter,
-    ProjectResponse,
+    ProjectIn,
+    ProjectOut,
     ProjectSummary,
     ProjectView,
 )
@@ -25,7 +26,7 @@ async def get_project(
     return await repo.get_project(filter=filter, pagination=pagination)
 
 
-@router.get("/{id}", response_model=ProjectResponse | ProjectSummary)
+@router.get("/{id}", response_model=ProjectOut | ProjectSummary)
 async def get_project_by_id(
     id: str,
     repo: ProjectDep,
@@ -35,9 +36,9 @@ async def get_project_by_id(
     return await repo.get_project_by_id(id=id, view=_VIEW_MODELS[view])
 
 
-@router.post("", response_model=ProjectResponse)
+@router.post("", response_model=ProjectOut)
 async def post_project(
     repo: ProjectDep,
-    project: ProjectPost = Depends(authorize_resource),
+    project: ProjectIn,
 ):
-    return await repo.post(project=project)
+    return await repo.create_project(project=project)

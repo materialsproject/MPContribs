@@ -6,7 +6,8 @@ from src.mpcontribs_api.auth import User
 from src.mpcontribs_api.domains.projects.models import (
     Project,
     ProjectFilter,
-    ProjectResponse,
+    ProjectIn,
+    ProjectOut,
 )
 from src.mpcontribs_api.pagination import (
     CursorParams,
@@ -24,31 +25,6 @@ class HasId(BaseModel):
 
 V = TypeVar("V", bound=HasId)
 M = TypeVar("M", bound=BaseModel)
-
-# class IScopedProjectRepository(Protocol):
-#     @overload
-#     async def get_project(self, query: dict[str, Any]) -> ProjectResponse | None: ...
-#     @overload
-#     async def get_project(
-#         self, query: dict[str, Any], *, view: type[BaseModel]
-#     ) -> BaseModel | None: ...
-#     async def get_project(
-#         self,
-#         query: dict[str, Any],
-#         *,
-#         view: type[BaseModel] = ProjectResponse,
-#     ) -> BaseModel | None: ...
-
-#     @overload
-#     async def get_project_by_id(self, id: str) -> ProjectResponse | None: ...
-#     @overload
-#     async def get_project_by_id(self, id: str, *, view: type[M]) -> M | None: ...
-#     async def get_project_by_id(
-#         self,
-#         id: str,
-#         *,
-#         view: type[M] | None = None,
-#     ) -> M | ProjectResponse | None: ...
 
 
 class MongoDbProjectRepository:
@@ -85,7 +61,7 @@ class MongoDbProjectRepository:
         pagination: CursorParams,
         *,
         view: type[V] | None = None,
-    ) -> Page[V | ProjectResponse]:
+    ) -> Page[V | ProjectOut]:
         """Query the Project collection using filtering.
 
         Only considers the Projects that the User has access to.
@@ -95,7 +71,7 @@ class MongoDbProjectRepository:
             pagination (CursorParams): parameters for pagination using a cursor
             view (type[M]): The type of resposne we should return within the Page
         """
-        model = view or ProjectResponse
+        model = view or ProjectOut
 
         # Filter projects to just the ones within the user scope
         query = filter.filter(Project.find(self._scope))
@@ -118,3 +94,8 @@ class MongoDbProjectRepository:
         items = docs[: pagination.limit]
         next_cursor = encode_cursor(str(items[-1].id)) if has_more and items else None
         return Page(items=items, next_cursor=next_cursor)
+
+    async def create_project(self, project: ProjectIn) -> ProjectOut:
+        full_project = Project.from_project_in(project)
+        await full_project.insert()
+        return ProjectOut.model_validate(full_project)
