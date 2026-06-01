@@ -37,8 +37,8 @@ async def get_project_by_id(
 
 
 @router.post("", response_model=ProjectOut)
-async def post_project(
+async def insert_project(
     repo: ProjectDep,
     project: ProjectIn,
 ):
-    return await repo.create_project(project=project)
+    return await repo.insert_project(project=project)
