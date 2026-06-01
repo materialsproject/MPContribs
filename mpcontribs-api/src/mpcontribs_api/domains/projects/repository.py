@@ -95,7 +95,7 @@ class MongoDbProjectRepository:
         next_cursor = encode_cursor(str(items[-1].id)) if has_more and items else None
         return Page(items=items, next_cursor=next_cursor)
 
-    async def create_project(self, project: ProjectIn) -> ProjectOut:
+    async def insert_project(self, project: ProjectIn) -> ProjectOut:
         full_project = Project.from_project_in(project)
         await full_project.insert()
         return ProjectOut.model_validate(full_project)
