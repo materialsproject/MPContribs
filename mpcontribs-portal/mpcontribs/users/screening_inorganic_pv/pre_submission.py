@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-import os, json
+import os
+import json
 from pandas import DataFrame
 from mpcontribs.io.core.recdict import RecursiveDict
 from mpcontribs.io.core.utils import clean_value
@@ -46,11 +47,11 @@ def run(mpfile, **kwargs):
         rd = RecursiveDict({"formula": formula})
         for k, v in config.items():
             value = clean_value(d[k], v[1], max_dgts=4)
-            if not "." in v[0]:
+            if "." not in v[0]:
                 rd[v[0]] = value
             else:
                 keys = v[0].split(".")
-                if not keys[0] in rd:
+                if keys[0] not in rd:
                     rd[keys[0]] = RecursiveDict({keys[1]: value})
                 else:
                     rd[keys[0]][keys[1]] = value

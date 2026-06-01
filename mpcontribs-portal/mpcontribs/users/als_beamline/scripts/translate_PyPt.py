@@ -1,6 +1,3 @@
-import pandas as pd
-import os
-from scipy.interpolate import interp2d
 
 
 def get_translate(workdir=None):
