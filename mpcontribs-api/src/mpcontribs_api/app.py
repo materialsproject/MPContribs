@@ -4,7 +4,8 @@ import logging
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 
-from fastapi import FastAPI
+from beanie import init_beanie
+from fastapi import Depends, FastAPI
 from pymongo import AsyncMongoClient
 from starlette.middleware.base import BaseHTTPMiddleware
 
@@ -12,12 +13,14 @@ from mpcontribs_api.api.v1.router import router as v1_router
 from mpcontribs_api.config import Settings, get_settings
 from mpcontribs_api.exceptions import register_exception_handlers
 from mpcontribs_api.logging import configure_logging
+from src.mpcontribs_api.dependencies import verify_gateway
+from src.mpcontribs_api.domains.projects.models import Project
 from src.mpcontribs_api.middleware import bind_request_context
 
 logger = logging.getLogger(__name__)
 
 
-def _build_lifespan(settings: Settings):
+async def _build_lifespan(settings: Settings):
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
         # --- startup ---
@@ -35,6 +38,9 @@ def _build_lifespan(settings: Settings):
         app.state.mongo_client = client
         app.state.db = client[settings.mongo.db_name]
 
+        # Initialize beanie with document classes and a database
+        await init_beanie(database=client.db_name, document_models=[Project])
+
         try:
             yield
         finally:
@@ -45,7 +51,7 @@ def _build_lifespan(settings: Settings):
     return lifespan
 
 
-def create_app(settings: Settings | None = None) -> FastAPI:
+async def create_app(settings: Settings | None = None) -> FastAPI:
     settings = settings or get_settings()
     configure_logging(settings)
 
@@ -55,7 +61,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         debug=False if settings.environment == "prod" else True,
         # Would be nice to implement eventually
         # default_response_class=DefaultResponse,
-        lifespan=_build_lifespan(settings),
+        lifespan=await _build_lifespan(settings),
+        dependencies=[Depends(verify_gateway)],
     )
 
     # Add request context to logs
