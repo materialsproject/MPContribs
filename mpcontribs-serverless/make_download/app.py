@@ -1,6 +1,5 @@
 # TODO ddtrace
 import os
-import json
 import logging
 import boto3
 

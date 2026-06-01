@@ -594,6 +594,7 @@ class SwaggerView(OriginalSwaggerView, ResourceView):
                 from mpcontribs.api.contributions.document import get_resource
 
                 resource = get_resource(component)
+
                 def qfilter(qs):
                     return qs.clone()
 

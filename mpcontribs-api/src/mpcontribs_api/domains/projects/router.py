@@ -2,7 +2,6 @@ from typing import Annotated
 
 from fastapi import APIRouter, Query
 from fastapi_filter import FilterDepends
-from pydantic import BaseModel
 
 from src.mpcontribs_api.domains.projects.dependencies import ProjectDep
 from src.mpcontribs_api.domains.projects.models import (
