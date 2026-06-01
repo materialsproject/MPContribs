@@ -5,6 +5,15 @@ from pydantic import BaseModel, Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
+class RedisSettings(BaseModel):
+    address: SecretStr
+    url: SecretStr
+
+
+class KongSettings(BaseModel):
+    gateway_secret: SecretStr
+
+
 class MongoSettings(BaseModel):
     """MongoDB settings.
 
@@ -35,6 +44,11 @@ class MongoSettings(BaseModel):
         "while it is waiting, multiple server monitoring operations may be carried out",
     )
 
+    admin_group: str = Field(
+        default="admin",
+        description="Name of admin group to consider in requests to MongoDB. Not directly passed to Mongo, but consumed by auth.",
+    )
+
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
@@ -47,9 +61,9 @@ class Settings(BaseSettings):
 
     mongo: MongoSettings
 
-    # Redis settings
-    redis_address: SecretStr
-    redis_url: SecretStr
+    kong: KongSettings
+
+    redis: RedisSettings
 
     # SMTP Settings
     mail_default_sender: str = Field(
