@@ -1,5 +1,7 @@
 from fastapi import APIRouter
 
-router = APIRouter(prefix="api/v1")
+from mpcontribs_api.domains.projects.router import router as projects_router
 
-router.
+router = APIRouter(prefix="/api/v1")
+
+router.include_router(projects_router, prefix="/projects")
