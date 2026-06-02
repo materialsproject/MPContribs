@@ -144,7 +144,7 @@ class MongoDbProjectRepository:
         update_data = update.model_dump(exclude_unset=True)
         # If update is empty, return the model anyways (consistent behavior)
         if not update_data:
-            existing = await Project.get(Project.id == id)
+            existing = await Project.get(id)
             if existing is None:
                 raise NotFoundError(f"Project with id {id} not found")
             return existing
