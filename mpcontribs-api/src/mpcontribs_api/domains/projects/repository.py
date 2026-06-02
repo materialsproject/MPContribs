@@ -144,3 +144,8 @@ class MongoDbProjectRepository:
             id (str): the id of the project to delete
         """
         await Project.find_one(Project.id == id).delete()
+
+    async def upsert_project(self, id: str, data: ProjectIn) -> Project:
+        project = Project.from_project_in(data)
+        project.id = id
+        return await project.save()
