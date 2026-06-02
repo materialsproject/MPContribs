@@ -1,5 +1,7 @@
 from typing import Any, TypeVar, runtime_checkable
 
+from beanie import UpdateResponse
+from beanie.operators import Set
 from pydantic import BaseModel
 
 from src.mpcontribs_api.auth import User
@@ -8,7 +10,9 @@ from src.mpcontribs_api.domains.projects.models import (
     ProjectFilter,
     ProjectIn,
     ProjectOut,
+    ProjectPatch,
 )
+from src.mpcontribs_api.exceptions import NotFoundError
 from src.mpcontribs_api.pagination import (
     CursorParams,
     Page,
@@ -99,3 +103,36 @@ class MongoDbProjectRepository:
         full_project = Project.from_project_in(project)
         await full_project.insert()
         return ProjectOut.model_validate(full_project)
+
+    async def patch_project(self, id: str, update: ProjectPatch) -> ProjectOut:
+        """Partial update to project identified with 'id'.
+
+        Note: overwrites fields with given values - arrays are not appended to.
+
+        Args:
+            id (str): the id of the project to update
+            update (ProjectPatch): the partial update to apply - unset fields are dropped
+                - Note: If fields are intentionally set to None, None is applied to the field.
+
+        Returns:
+            The Project with updates applied
+        """
+        # Only retain set fields (patch)
+        update_data = update.model_dump(exclude_unset=True)
+        # If update is empty, return the model anyways (consistent behavior)
+        if not update_data:
+            existing = await Project.get(Project.id == id)
+            if existing is None:
+                raise NotFoundError(f"Project with id {id} not found")
+            return ProjectOut.model_validate(existing, from_attributes=True)
+
+        # Otherwise, update the fields fully (set)
+        # Brendan TODO: Set will replace an entire field
+        # - if we want to append to a list (ie. add a reference) we ned Push/AddToSet
+        updated = Project.find_one(Project.id == id).update(
+            Set(update_data),
+            response_type=UpdateResponse.NEW_DOCUMENT,
+        )
+        if updated is None:
+            raise NotFoundError(f"Project with id {id} not found")
+        return ProjectOut.model_validate(updated, from_attributes=True)
