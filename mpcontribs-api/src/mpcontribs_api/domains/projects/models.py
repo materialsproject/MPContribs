@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Annotated, Any, Literal
+from typing import Annotated, Any, ClassVar, Literal
 
 from beanie import DocumentWithSoftDelete
 from fastapi_filter.contrib.beanie import Filter
 from pydantic import BaseModel, ConfigDict, Field, HttpUrl
 
+from src.mpcontribs_api.projection import SparseFieldsModel
 from src.mpcontribs_api.types import PrefixedEmail, ShortStr
 
 
@@ -76,13 +77,11 @@ class ProjectSummary(BaseModel):
     title: ShortStr
 
 
-class ProjectOut(BaseModel):
+class ProjectOut(SparseFieldsModel):
     """Full response of all public-facing fields."""
 
     model_config = ConfigDict(extra="ignore")
-    id: Annotated[
-        ShortStr | None, Field(validation_alias="_id", serialization_alias="id")
-    ] = None
+    id: Annotated[ShortStr | None, Field(alias="_id", serialization_alias="id")] = None
     authors: str | None = None
     description: str | None = None
     title: ShortStr | None = None
@@ -96,6 +95,8 @@ class ProjectOut(BaseModel):
     stats: Stats | None = None
     columns: list[Column] | None = None
     license: Literal["CCA4", "CCPD"] | None = None
+
+    sparse_always: ClassVar[frozenset[str]] = frozenset({"id"})  # cursor needs it
 
 
 class ProjectFilter(Filter):
