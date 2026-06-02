@@ -1,4 +1,4 @@
-from typing import Any, TypeVar, runtime_checkable
+from typing import Any, TypeVar
 
 from beanie import UpdateResponse
 from beanie.operators import Set
@@ -22,7 +22,6 @@ from src.mpcontribs_api.pagination import (
 
 
 # Type checking to get around pyright issues
-@runtime_checkable
 class HasId(BaseModel):
     id: str
 
@@ -129,7 +128,7 @@ class MongoDbProjectRepository:
         Returns:
             Project: the project after succesful insertion
         """
-        id_exists = Project.find_one(Project.id == project.id)
+        id_exists = await Project.find_one(Project.id == project.id)
         # Brendan TODO:
         if id_exists:
             raise ConflictError(
