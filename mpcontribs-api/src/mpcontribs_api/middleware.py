@@ -3,7 +3,6 @@ import uuid
 import structlog
 
 
-# middleware.py
 async def bind_request_context(request, call_next):
     structlog.contextvars.clear_contextvars()
     structlog.contextvars.bind_contextvars(

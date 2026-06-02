@@ -98,8 +98,9 @@ class ProjectOut(BaseModel):
     license: Literal["CCA4", "CCPD"] | None = None
 
 
-# Filter to use for Projects
 class ProjectFilter(Filter):
+    """Filter fields allowed in requests."""
+
     id: ShortStr | None = None
     id__in: list[ShortStr] | None = None
     id__neq: ShortStr | None = None
@@ -133,17 +134,19 @@ class ProjectFilter(Filter):
 
 # Keeping for business logic separation. May have specific implementation later
 class ProjectIn(Project):
+    """Representation of user-supplied input."""
+
     pass
 
 
 class ProjectPatch(BaseModel):
-    id: ShortStr | None = Field(default=None, alias="_id")
+    """Nullable Project representation of user-supplied data for partial update (patch)"""
+
     title: ShortStr | None = None
     authors: str | None = None
     description: str | None = None
     owner: PrefixedEmail | None = None
     unique_identifiers: bool | None = None
-    stats: Stats | None = None
     references: list[Reference] = Field(default_factory=list)
     long_title: str | None = None
     other: dict[str, Any] = Field(default_factory=dict)
@@ -155,6 +158,8 @@ class ProjectPatch(BaseModel):
 
 # Enum to determine which response model to use
 class ProjectView(str, Enum):
+    """An enum for selecting output models via strings."""
+
     full = "full"
     summary = "summary"
 
@@ -163,3 +168,4 @@ _VIEW_MODELS: dict[ProjectView, type[BaseModel]] = {
     ProjectView.full: ProjectOut,
     ProjectView.summary: ProjectSummary,
 }
+"""Convert from ProjectView string to the corresponding model."""
