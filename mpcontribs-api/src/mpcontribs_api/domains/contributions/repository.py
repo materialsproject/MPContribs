@@ -1,6 +1,12 @@
-from typing import Any
+from typing import Any, Literal
 
 from src.mpcontribs_api.auth import User
+from src.mpcontribs_api.domains.contributions.models import (
+    ContributionFilter,
+    ContributionIn,
+    ContributionPatch,
+)
+from src.mpcontribs_api.pagination import CursorParams
 
 
 class MongoDbContributionRepository:
@@ -22,3 +28,37 @@ class MongoDbContributionRepository:
             if user.groups:
                 ors.append({"_id": {"$in": sorted(user.groups)}})
         return {"$or": ors}
+
+    async def get_contributions(
+        self, pagination: CursorParams, filter: ContributionFilter, fields: str | None
+    ):
+        pass
+
+    async def delete_contributions(self, filter: ContributionFilter):
+        pass
+
+    async def insert_contributions(self, contributions: list[ContributionIn]):
+        pass
+
+    async def upsert_contributions(self, contributions: list[ContributionIn]):
+        pass
+
+    async def download_contributions(
+        self,
+        format: Literal["json", "csv", "parquet"],
+        filter: ContributionFilter,
+        fields: str | None,
+    ):
+        pass
+
+    async def delete_contribution_by_id(self, id: str):
+        pass
+
+    async def get_contribution_by_id(self, id: str, fields: str | None):
+        pass
+
+    async def upsert_contribution_by_id(self, id: str, contribution: ContributionIn):
+        pass
+
+    async def update_contribution_by_id(self, id: str, update: ContributionPatch):
+        pass
