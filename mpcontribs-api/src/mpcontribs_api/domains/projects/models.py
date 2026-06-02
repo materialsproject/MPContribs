@@ -63,6 +63,10 @@ class Project(DocumentWithSoftDelete):
     def from_project_in(cls, data: ProjectIn) -> Project:
         return cls(**data.model_dump())
 
+    class Settings:
+        name = "projects"
+        keep_nulls = False
+
 
 class ProjectOut(SparseFieldsModel):
     """Full response of all public-facing fields."""
