@@ -50,13 +50,25 @@ fonttools==4.63.0
     # via matplotlib
 fqdn==1.5.1
     # via jsonschema
+<<<<<<< HEAD
 idna==3.18
+||||||| parent of 5ef6d1d6 (upgrade dependencies for deployment)
+idna==3.16
+=======
+idna==3.17
+>>>>>>> 5ef6d1d6 (upgrade dependencies for deployment)
     # via
     #   jsonschema
     #   requests
 importlib-resources==7.1.0
     # via swagger-spec-validator
+<<<<<<< HEAD
 ipython==9.14.1
+||||||| parent of 5ef6d1d6 (upgrade dependencies for deployment)
+ipython==9.13.0
+=======
+ipython==9.14.0
+>>>>>>> 5ef6d1d6 (upgrade dependencies for deployment)
     # via mpcontribs-client (MPContribs/mpcontribs-client/pyproject.toml)
 ipython-pygments-lexers==1.1.1
     # via ipython
@@ -100,7 +112,13 @@ msgpack==1.1.2
     # via
     #   bravado
     #   bravado-core
+<<<<<<< HEAD
 narwhals==2.22.1
+||||||| parent of 5ef6d1d6 (upgrade dependencies for deployment)
+narwhals==2.21.2
+=======
+narwhals==2.22.0
+>>>>>>> 5ef6d1d6 (upgrade dependencies for deployment)
     # via plotly
 networkx==3.6.1
     # via pymatgen-core

@@ -24,9 +24,21 @@ boltons==25.0.0
     # via
     #   mpcontribs-client
     #   mpcontribs-portal (MPContribs/mpcontribs-portal/pyproject.toml)
+<<<<<<< HEAD
 boto3==1.43.25
+||||||| parent of 5ef6d1d6 (upgrade dependencies for deployment)
+boto3==1.43.13
+=======
+boto3==1.43.19
+>>>>>>> 5ef6d1d6 (upgrade dependencies for deployment)
     # via mpcontribs-portal (MPContribs/mpcontribs-portal/pyproject.toml)
+<<<<<<< HEAD
 botocore==1.43.25
+||||||| parent of 5ef6d1d6 (upgrade dependencies for deployment)
+botocore==1.43.13
+=======
+botocore==1.43.19
+>>>>>>> 5ef6d1d6 (upgrade dependencies for deployment)
     # via
     #   boto3
     #   s3transfer
@@ -97,7 +109,13 @@ greenlet==3.5.1
     # via gevent
 gunicorn[gevent]==24.1.1
     # via mpcontribs-portal (MPContribs/mpcontribs-portal/pyproject.toml)
+<<<<<<< HEAD
 idna==3.18
+||||||| parent of 5ef6d1d6 (upgrade dependencies for deployment)
+idna==3.16
+=======
+idna==3.17
+>>>>>>> 5ef6d1d6 (upgrade dependencies for deployment)
     # via
     #   jsonschema
     #   requests
@@ -105,7 +123,13 @@ importlib-resources==7.1.0
     # via swagger-spec-validator
 ipykernel==7.2.0
     # via mpcontribs-portal (MPContribs/mpcontribs-portal/pyproject.toml)
+<<<<<<< HEAD
 ipython==9.14.1
+||||||| parent of 5ef6d1d6 (upgrade dependencies for deployment)
+ipython==9.13.0
+=======
+ipython==9.14.0
+>>>>>>> 5ef6d1d6 (upgrade dependencies for deployment)
     # via
     #   ipykernel
     #   mpcontribs-client
@@ -189,7 +213,13 @@ msgpack==1.1.2
     # via
     #   bravado
     #   bravado-core
+<<<<<<< HEAD
 narwhals==2.22.1
+||||||| parent of 5ef6d1d6 (upgrade dependencies for deployment)
+narwhals==2.21.2
+=======
+narwhals==2.22.0
+>>>>>>> 5ef6d1d6 (upgrade dependencies for deployment)
     # via plotly
 nbclient==0.11.0
     # via nbconvert
@@ -363,7 +393,13 @@ tabulate==0.10.0
     # via pymatgen-core
 tinycss2==1.5.1
     # via bleach
+<<<<<<< HEAD
 tornado==6.5.7
+||||||| parent of 5ef6d1d6 (upgrade dependencies for deployment)
+tornado==6.5.5
+=======
+tornado==6.5.6
+>>>>>>> 5ef6d1d6 (upgrade dependencies for deployment)
     # via
     #   ipykernel
     #   jupyter-client
