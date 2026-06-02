@@ -38,15 +38,16 @@ async def get_project_by_id(
     return await repo.get_project_by_id(id=id, view=_VIEW_MODELS[view])
 
 
-@router.post("", response_model=ProjectOut)
-async def insert_project(
+@router.put("/{id}", response_model=ProjectOut)
+async def upsert_project(
     repo: ProjectDep,
+    id: str,
     project: ProjectIn,
 ):
-    return await repo.insert_project(project=project)
+    return await repo.upsert_project(id=id, data=project)
 
 
-@router.patch("{id}", response_model=ProjectOut)
+@router.patch("/{id}", response_model=ProjectOut)
 async def patch_project(
     repo: ProjectDep,
     id: str,
@@ -67,7 +68,7 @@ async def patch_project(
     return await repo.patch_project(id=id, update=update)
 
 
-@router.delete("{id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_project(
     repo: ProjectDep,
     id: str,
