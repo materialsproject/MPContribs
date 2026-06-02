@@ -50,13 +50,13 @@ fonttools==4.63.0
     # via matplotlib
 fqdn==1.5.1
     # via jsonschema
-idna==3.16
+idna==3.17
     # via
     #   jsonschema
     #   requests
 importlib-resources==7.1.0
     # via swagger-spec-validator
-ipython==9.13.0
+ipython==9.14.0
     # via mpcontribs-client (MPContribs/mpcontribs-client/pyproject.toml)
 ipython-pygments-lexers==1.1.1
     # via ipython
@@ -100,7 +100,7 @@ msgpack==1.1.2
     # via
     #   bravado
     #   bravado-core
-narwhals==2.21.2
+narwhals==2.22.0
     # via plotly
 networkx==3.6.1
     # via pymatgen-core
@@ -136,7 +136,7 @@ pillow==12.2.0
     # via matplotlib
 pint==0.25.3
     # via mpcontribs-client (MPContribs/mpcontribs-client/pyproject.toml)
-platformdirs==4.9.6
+platformdirs==4.10.0
     # via pint
 plotly==6.7.0
     # via
@@ -198,7 +198,7 @@ rfc3986-validator==0.1.1
     # via jsonschema
 rfc3987-syntax==1.1.0
     # via jsonschema
-rpds-py==0.30.0
+rpds-py==2026.5.1
     # via
     #   jsonschema
     #   referencing
