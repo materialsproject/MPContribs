@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from enum import Enum
 from typing import Annotated, Any, ClassVar, Literal
 
 from beanie import DocumentWithSoftDelete
@@ -63,18 +62,6 @@ class Project(DocumentWithSoftDelete):
     @classmethod
     def from_project_in(cls, data: ProjectIn) -> Project:
         return cls(**data.model_dump())
-
-
-# Project Responses
-class ProjectSummary(BaseModel):
-    """Subset of fields to return when not all info is desired."""
-
-    id: Annotated[ShortStr, Field(alias="_id")]
-    owner: PrefixedEmail
-    unique_identifiers: bool
-    is_public: bool = False
-    is_approved: bool = False
-    title: ShortStr
 
 
 class ProjectOut(SparseFieldsModel):
@@ -155,18 +142,3 @@ class ProjectPatch(BaseModel):
     is_public: bool = False
     is_approved: bool = False
     license: Literal["CCA4", "CCPD"] | None = None
-
-
-# Enum to determine which response model to use
-class ProjectView(str, Enum):
-    """An enum for selecting output models via strings."""
-
-    full = "full"
-    summary = "summary"
-
-
-_VIEW_MODELS: dict[ProjectView, type[BaseModel]] = {
-    ProjectView.full: ProjectOut,
-    ProjectView.summary: ProjectSummary,
-}
-"""Convert from ProjectView string to the corresponding model."""

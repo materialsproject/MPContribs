@@ -10,7 +10,6 @@ from src.mpcontribs_api.domains.projects.models import (
     ProjectIn,
     ProjectOut,
     ProjectPatch,
-    ProjectSummary,
 )
 from src.mpcontribs_api.pagination import CursorParams
 
@@ -39,7 +38,7 @@ async def get_project(
     return await repo.get_project(filter=filter, pagination=pagination, fields=selected)
 
 
-@router.get("/{id}", response_model=ProjectOut | ProjectSummary)
+@router.get("/{id}", response_model=ProjectOut)
 async def get_project_by_id(
     id: str,
     repo: ProjectDep,
@@ -53,7 +52,7 @@ async def get_project_by_id(
         fields (str | None): optional fields to include in return. If None supplied, all fields are returned
 
     Returns:
-        ProjectOut | ProjectSummary: the requested project, actual data returned is determined by the view the user requested
+        ProjectOut: the requested project, actual data returned is determined by the view the user requested
     """
     selected = ProjectOut.parse_fields(fields)
     return await repo.get_project_by_id(id=id, fields=selected)
