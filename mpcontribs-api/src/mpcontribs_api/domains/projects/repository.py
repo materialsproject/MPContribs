@@ -65,10 +65,10 @@ class MongoDbProjectRepository:
 
         Args:
             id (str): the id of the project to find
-            view (type[M] | None): a BaseModel to use for projection. If none, the document is returned without projection
+            fields (frozenset[str] | None): a BaseModel to use for projection. If none, the document is returned without projection
 
         Returns:
-            BaseModel: a typed document with the requested id
+            ProjectOut: a projection of ProjectOut containing 'fields' from requested id
         """
         # TODO: Verify that self._scope and Project.id == id get combined properly
         return await Project.find_one(
@@ -91,7 +91,7 @@ class MongoDbProjectRepository:
         Args:
             filter (ProjectFilter): the query to filter the collection by
             pagination (CursorParams): parameters for pagination using a cursor
-            fields (frozenset[str]): the fields to use for projection
+            fields (frozenset[str] | None): the fields to use for projection. If none, the document is returned without projection
         """
         proj = ProjectOut.projection(fields)
         query = filter.filter(Project.find(self._scope))
