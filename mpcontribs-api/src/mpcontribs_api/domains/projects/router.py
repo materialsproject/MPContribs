@@ -6,13 +6,11 @@ from starlette.status import HTTP_204_NO_CONTENT
 
 from src.mpcontribs_api.domains.projects.dependencies import ProjectDep
 from src.mpcontribs_api.domains.projects.models import (
-    _VIEW_MODELS,
     ProjectFilter,
     ProjectIn,
     ProjectOut,
     ProjectPatch,
     ProjectSummary,
-    ProjectView,
 )
 from src.mpcontribs_api.pagination import CursorParams
 
@@ -20,41 +18,45 @@ router = APIRouter()
 
 
 # Brendan TODO: Add in option to select ProjectSummary or ProjectOut
-@router.get("", response_model=list[ProjectSummary])
+@router.get("", response_model=None)
 async def get_project(
     repo: ProjectDep,
     pagination: Annotated[CursorParams, Query()],
     filter: ProjectFilter = FilterDepends(ProjectFilter),
+    fields: Annotated[str | None, Query(alias="_fields")] = None,
 ):
     """Return paginated projects matching a filter.
 
     Args:
         repo (ProjectDep): the project repo we depend on
         pagination (CursorParams): arguments for cursor-based pagination
-        filter (ProjectFilter): arguments for filtering projects
+        fields (str | None): optional fields to include in return. If None supplied, all fields are returned
 
     Returns:
-        list[ProjectSummary]: a list of smaller project payloads"""
-    return await repo.get_project(filter=filter, pagination=pagination)
+        list[ProjectSummary]: a list of smaller project payloads
+    """
+    selected = ProjectOut.parse_fields(fields)
+    return await repo.get_project(filter=filter, pagination=pagination, fields=selected)
 
 
 @router.get("/{id}", response_model=ProjectOut | ProjectSummary)
 async def get_project_by_id(
     id: str,
     repo: ProjectDep,
-    view: ProjectView = ProjectView.full,
+    fields: Annotated[str | None, Query(alias="_fields")] = None,
 ):
     """Gets a single project by its ID.
 
     Args:
         id (str): the id of the project to retrieve
         repo (ProjectDep): the project repo we depend on
-        view (ProjectView): user selection for which type of return is desired (smaller summary or the complete project)
+        fields (str | None): optional fields to include in return. If None supplied, all fields are returned
 
     Returns:
         ProjectOut | ProjectSummary: the requested project, actual data returned is determined by the view the user requested
     """
-    return await repo.get_project_by_id(id=id, view=_VIEW_MODELS[view])
+    selected = ProjectOut.parse_fields(fields)
+    return await repo.get_project_by_id(id=id, fields=selected)
 
 
 @router.put("/{id}", response_model=ProjectOut)
