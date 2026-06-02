@@ -17,6 +17,7 @@ settings = get_settings()
 
 
 def verify_gateway(x_gateway_secret: Annotated[str | None, Header()] = None) -> None:
+    """Ensures the current access attempt is coming through Kong"""
     if x_gateway_secret is None or not hmac.compare_digest(
         x_gateway_secret, str(settings.kong.gateway_secret)
     ):
@@ -35,6 +36,7 @@ def _split(raw: str | None) -> set[str]:
 
 
 def get_user(request: Request) -> User:
+    """Dissects request headers for user-related keys."""
     h = request.headers
     explicit_anon = h.get("x-anonymous-consumer", "").lower() == "true"
     username = h.get("x-consumer-username") or None

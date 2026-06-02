@@ -21,17 +21,3 @@ def _validate_prefixed_email(v: str) -> str:
 
 
 PrefixedEmail = Annotated[str, BeforeValidator(_validate_prefixed_email)]
-
-
-def _parse_sort_entry(v: str) -> tuple[str, int]:
-    v = v.strip()
-    if not v:
-        raise ValueError("empty sort field")
-    if v[0] == "-":
-        return v[1:], -1
-    if v[0] == "+":
-        return v[1:], 1
-    return v, 1
-
-
-SortEntry = Annotated[tuple[str, int], BeforeValidator(_parse_sort_entry)]

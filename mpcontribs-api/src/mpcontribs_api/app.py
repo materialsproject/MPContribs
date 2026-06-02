@@ -67,7 +67,7 @@ async def create_app(settings: Settings | None = None) -> FastAPI:
 
     # Add request context to logs
     app.add_middleware(BaseHTTPMiddleware, dispatch=bind_request_context)
-    # Bind exception handlers
+    # Bind exception handlers so the app understands how to handle them
     register_exception_handlers(app)
     app.include_router(v1_router, prefix="/api/v1")
 
