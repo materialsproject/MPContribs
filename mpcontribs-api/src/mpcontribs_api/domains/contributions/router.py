@@ -21,7 +21,9 @@ async def get_contributions(
     filter: ContributionFilter = FilterDepends(ContributionFilter),
     fields: Annotated[str | None, Query(alias="_fields")] = None,
 ):
-    pass
+    return await repo.get_contributions(
+        pagination=pagination, filter=filter, fields=fields
+    )
 
 
 @router.delete("")
@@ -29,7 +31,7 @@ async def delete_contributions(
     repo: ContributionDep,
     filter: ContributionFilter = FilterDepends(ContributionFilter),
 ):
-    pass
+    return await repo.delete_contributions(filter=filter)
 
 
 @router.post("")
@@ -37,16 +39,15 @@ async def insert_contributions(
     repo: ContributionDep,
     contributions: list[ContributionIn],
 ):
-    pass
+    return await repo.insert_contributions(contributions=contributions)
 
 
 @router.put("")
 async def upsert_contributions(
     repo: ContributionDep,
     contributions: list[ContributionIn],
-    filter: ContributionFilter = FilterDepends(ContributionFilter),
 ):
-    pass
+    return await repo.upsert_contributions(contributions=contributions)
 
 
 @router.get("download/{mime}")
@@ -56,7 +57,9 @@ async def download_contributions(
     filter: ContributionFilter = FilterDepends(ContributionFilter),
     fields: Annotated[str | None, Query(alias="_fields")] = None,
 ):
-    pass
+    return await repo.download_contributions(
+        format=format, filter=filter, fields=fields
+    )
 
 
 @router.delete("{id}")
@@ -64,7 +67,7 @@ async def delete_contribtion_by_id(
     repo: ContributionDep,
     id: str,
 ):
-    pass
+    return await repo.delete_contribution_by_id(id=id)
 
 
 @router.get("{id}")
@@ -73,18 +76,18 @@ async def get_contribution_by_id(
     id: str,
     fields: Annotated[str | None, Query(alias="_fields")] = None,
 ):
-    pass
+    return await repo.get_contribution_by_id(id=id, fields=fields)
 
 
 @router.put("{id}")
 async def upsert_contribution_by_id(
     repo: ContributionDep, id: str, contribution: ContributionIn
 ):
-    pass
+    return await repo.upsert_contribution_by_id(id=id, contribution=contribution)
 
 
 @router.patch("{id}")
 async def update_contribution_by_id(
     repo: ContributionDep, id: str, update: ContributionPatch
 ):
-    pass
+    return await repo.update_contribution_by_id(id=id, update=update)
