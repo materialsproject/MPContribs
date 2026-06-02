@@ -136,6 +136,23 @@ class ProjectIn(Project):
     pass
 
 
+class ProjectPatch(BaseModel):
+    id: ShortStr | None = Field(default=None, alias="_id")
+    title: ShortStr | None = None
+    authors: str | None = None
+    description: str | None = None
+    owner: PrefixedEmail | None = None
+    unique_identifiers: bool | None = None
+    stats: Stats | None = None
+    references: list[Reference] = Field(default_factory=list)
+    long_title: str | None = None
+    other: dict[str, Any] = Field(default_factory=dict)
+    columns: list[Column] = Field(default_factory=list)
+    is_public: bool = False
+    is_approved: bool = False
+    license: Literal["CCA4", "CCPD"] | None = None
+
+
 # Enum to determine which response model to use
 class ProjectView(str, Enum):
     full = "full"

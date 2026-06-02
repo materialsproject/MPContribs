@@ -9,6 +9,7 @@ from src.mpcontribs_api.domains.projects.models import (
     ProjectFilter,
     ProjectIn,
     ProjectOut,
+    ProjectPatch,
     ProjectSummary,
     ProjectView,
 )
@@ -42,3 +43,24 @@ async def insert_project(
     project: ProjectIn,
 ):
     return await repo.insert_project(project=project)
+
+
+@router.patch(f"{id}", response_model=ProjectOut)
+async def patch_project(
+    repo: ProjectDep,
+    id: str,
+    update: ProjectPatch,
+):
+    """Partial update to project identified with 'id'.
+
+    Note: overwrites fields with given values - arrays are not appended to.
+
+    Args:
+        id (str): the id of the project to update
+        update (ProjectPatch): the partial update to apply - unset fields are dropped
+            - Note: If fields are intentionally set to None, None is applied to the field.
+
+    Returns:
+        The Project with updates applied
+    """
+    return await repo.patch_project(id=id, update=update)
