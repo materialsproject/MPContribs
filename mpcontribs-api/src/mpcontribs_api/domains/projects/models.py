@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Annotated, Any, ClassVar, Literal
+from typing import Annotated, Any, Literal
 
 from beanie import DocumentWithSoftDelete
 from fastapi_filter.contrib.beanie import Filter
@@ -82,8 +82,6 @@ class ProjectOut(SparseFieldsModel):
     stats: Stats | None = None
     columns: list[Column] | None = None
     license: Literal["CCA4", "CCPD"] | None = None
-
-    sparse_always: ClassVar[frozenset[str]] = frozenset({"id"})  # cursor needs it
 
 
 class ProjectFilter(Filter):
