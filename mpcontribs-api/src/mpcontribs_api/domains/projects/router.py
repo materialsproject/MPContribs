@@ -1,7 +1,8 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Query, Response, status
 from fastapi_filter import FilterDepends
+from starlette.status import HTTP_204_NO_CONTENT
 
 from src.mpcontribs_api.domains.projects.dependencies import ProjectDep
 from src.mpcontribs_api.domains.projects.models import (
@@ -45,7 +46,7 @@ async def insert_project(
     return await repo.insert_project(project=project)
 
 
-@router.patch(f"{id}", response_model=ProjectOut)
+@router.patch("{id}", response_model=ProjectOut)
 async def patch_project(
     repo: ProjectDep,
     id: str,
@@ -64,3 +65,12 @@ async def patch_project(
         The Project with updates applied
     """
     return await repo.patch_project(id=id, update=update)
+
+
+@router.delete("{id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_project(
+    repo: ProjectDep,
+    id: str,
+):
+    await repo.delete_project(id=id)
+    return Response(status_code=HTTP_204_NO_CONTENT)

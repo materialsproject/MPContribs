@@ -136,3 +136,11 @@ class MongoDbProjectRepository:
         if updated is None:
             raise NotFoundError(f"Project with id {id} not found")
         return ProjectOut.model_validate(updated, from_attributes=True)
+
+    async def delete_project(self, id: str):
+        """Delete project by id.
+
+        Args:
+            id (str): the id of the project to delete
+        """
+        await Project.find_one(Project.id == id).delete()
