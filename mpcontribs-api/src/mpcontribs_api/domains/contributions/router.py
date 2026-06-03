@@ -12,7 +12,7 @@ from mpcontribs_api.domains.contributions.models import (
 )
 from mpcontribs_api.pagination import CursorParams
 
-router = APIRouter()
+router = APIRouter(tags=["contributions"])
 
 
 @router.get("")
