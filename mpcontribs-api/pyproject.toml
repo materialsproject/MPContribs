@@ -84,7 +84,8 @@ dev = [
     "pytest-xdist>=3.8.0",
 ]
 
-[tool.pytest]
+[tool.pytest.ini_options]
+pythonpath = ["."]
 markers = [
     "base: basic resource testing",
     "extra: all extra views",
