@@ -2,9 +2,9 @@ from datetime import UTC, datetime
 from typing import Any
 
 from beanie import (
-    Document,
     Insert,
     Link,
+    PydanticObjectId,
     Replace,
     Save,
     SaveChanges,
@@ -14,6 +14,7 @@ from beanie import (
 from fastapi_filter.contrib.beanie import Filter
 from pydantic import Field
 
+from src.mpcontribs_api.domains._shared.models import BaseDocumentWithInput, DocumentOut
 from src.mpcontribs_api.domains.attachments.models import Attachment
 from src.mpcontribs_api.domains.structures.models import Structure
 from src.mpcontribs_api.domains.tables.models import Table
@@ -21,7 +22,7 @@ from src.mpcontribs_api.projection import SparseFieldsModel
 from src.mpcontribs_api.types import ShortStr
 
 
-class ContributionBase(Document):
+class ContributionBase(BaseDocumentWithInput[PydanticObjectId]):
     project: str
     identifier: str
     formula: str
@@ -44,7 +45,7 @@ class Contribution(ContributionBase):
     # needs_build: bool = True
 
     @classmethod
-    def from_contribution_in(cls, data: ContributionIn) -> Contribution:
+    def from_input_model(cls, data: ContributionIn) -> Contribution:
         return cls.model_validate(
             {
                 **data.model_dump(exclude={"is_public"}),
@@ -61,7 +62,7 @@ class ContributionIn(ContributionBase):
     pass
 
 
-class ContributionOut(SparseFieldsModel):
+class ContributionOut(DocumentOut[PydanticObjectId]):
     project: str | None = None
     identifier: str | None = None
     formula: str | None = None
@@ -86,9 +87,9 @@ class ContributionPatch(SparseFieldsModel):
 
 
 class ContributionFilter(Filter):
-    id: str | None = None
-    id__in: list[str] | None = None
-    id__neq: str | None = None
+    id: PydanticObjectId | None = None
+    id__in: list[PydanticObjectId] | None = None
+    id__neq: PydanticObjectId | None = None
 
     identifier: str | None = None
     identifier__in: list[ShortStr] | None = None

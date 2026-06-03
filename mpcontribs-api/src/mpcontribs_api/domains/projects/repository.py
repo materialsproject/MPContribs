@@ -5,6 +5,7 @@ from beanie.operators import Set
 from pydantic import BaseModel
 
 from src.mpcontribs_api.auth import User
+from src.mpcontribs_api.domains._shared.repository import MongoDbRepository
 from src.mpcontribs_api.domains.projects.models import (
     Project,
     ProjectFilter,
@@ -15,9 +16,6 @@ from src.mpcontribs_api.domains.projects.models import (
 from src.mpcontribs_api.exceptions import ConflictError, NotFoundError
 from src.mpcontribs_api.pagination import (
     CursorParams,
-    Page,
-    decode_cursor,
-    encode_cursor,
 )
 
 
@@ -30,7 +28,7 @@ V = TypeVar("V", bound=HasId)
 M = TypeVar("M", bound=BaseModel)
 
 
-class MongoDbProjectRepository:
+class MongoDbProjectRepository(MongoDbRepository[Project, ProjectIn, ProjectOut]):
     """A repository layer for access to MongoDB.
 
     This is the layer that directly interacts with database operations
@@ -40,13 +38,8 @@ class MongoDbProjectRepository:
             resources
     """
 
-    def __init__(self, user: User) -> None:
-        """Initializes an instance based on the current user.
-
-        Args:
-            user (User): the current user requesting resources
-        """
-        self._scope = self._build_scope(user)
+    document_model = Project
+    out_model = ProjectOut
 
     @staticmethod
     def _build_scope(user: User) -> dict[str, Any]:
@@ -73,10 +66,10 @@ class MongoDbProjectRepository:
             ProjectOut: a projection of ProjectOut containing 'fields' from requested id
         """
         # TODO: Verify that self._scope and Project.id == id get combined properly
-        return await Project.find_one(
+        return await self.document_model.find_one(
             self._scope,
-            Project.id == id,
-            projection_model=ProjectOut.projection(fields),
+            self.document_model.id == id,
+            projection_model=self.out_model.projection(fields),
         )
 
     # Brendan TODO: Does not handle compound pagination/sorting
@@ -97,15 +90,7 @@ class MongoDbProjectRepository:
             fields (frozenset[str] | None): the fields to use for projection. If none, the document is returned without
                 projection
         """
-        proj = ProjectOut.projection(fields)
-        query = filter.filter(Project.find(self._scope))
-        if pagination.cursor is not None:
-            query = query.find(Project.id > decode_cursor(pagination.cursor))
-        docs = await query.sort(Project.id).limit(pagination.limit + 1).project(proj).to_list()
-        has_more = len(docs) > pagination.limit
-        items = docs[: pagination.limit]
-        next_cursor = encode_cursor(str(items[-1].id)) if has_more and items else None
-        return Page(items=items, next_cursor=next_cursor)
+        return await self.get_many(pagination=pagination, filter=filter, fields=fields)
 
     async def insert_project(self, project: ProjectIn) -> Project:
         """Inserst a new project.
@@ -116,11 +101,11 @@ class MongoDbProjectRepository:
         Returns:
             Project: the project after succesful insertion
         """
-        id_exists = await Project.find_one(Project.id == project.id)
+        id_exists = await self.document_model.find_one(self.document_model.id == project.id)
         # Brendan TODO:
         if id_exists:
             raise ConflictError(f"Cannot insert project.\n Project with ID {project.id} exists")
-        full_project = Project.from_project_in(project)
+        full_project = self.document_model.from_input_model(project)
         await full_project.insert()
         return full_project
 
@@ -141,7 +126,7 @@ class MongoDbProjectRepository:
         update_data = update.model_dump(exclude_unset=True)
         # If update is empty, return the model anyways (consistent behavior)
         if not update_data:
-            existing = await Project.get(id)
+            existing = await self.document_model.get(id)
             if existing is None:
                 raise NotFoundError(f"Project with id {id} not found")
             return existing
@@ -149,7 +134,7 @@ class MongoDbProjectRepository:
         # Otherwise, update the fields fully (set)
         # Brendan TODO: Set will replace an entire field
         # - if we want to append to a list (ie. add a reference) we ned Push/AddToSet
-        query = Project.find_one(Project.id == id).update(
+        query = self.document_model.find_one(self.document_model.id == id).update(
             Set(update_data),
             response_type=UpdateResponse.NEW_DOCUMENT,
         )
@@ -164,7 +149,7 @@ class MongoDbProjectRepository:
         Args:
             id (str): the id of the project to delete
         """
-        await Project.find_one(Project.id == id).delete()
+        await self.document_model.find_one(self.document_model.id == id).delete()
 
     async def upsert_project(self, id: str, data: ProjectIn) -> Project:
         """Upsert a project by provided id.
@@ -180,6 +165,6 @@ class MongoDbProjectRepository:
         Returns:
             Project: the full document that either replaced an old one or was inserted
         """
-        project = Project.from_project_in(data)
+        project = self.document_model.from_input_model(data)
         project.id = id
         return await project.save()

@@ -7,6 +7,7 @@ from src.mpcontribs_api.domains.contributions.dependencies import ContributionDe
 from src.mpcontribs_api.domains.contributions.models import (
     ContributionFilter,
     ContributionIn,
+    ContributionOut,
     ContributionPatch,
 )
 from src.mpcontribs_api.pagination import CursorParams
@@ -21,7 +22,8 @@ async def get_contributions(
     filter: ContributionFilter = FilterDepends(ContributionFilter),
     fields: Annotated[str | None, Query(alias="_fields")] = None,
 ):
-    return await repo.get_contributions(pagination=pagination, filter=filter, fields=fields)
+    field_set = ContributionOut.parse_fields(fields)
+    return await repo.get_contributions(pagination=pagination, filter=filter, fields=field_set)
 
 
 @router.delete("")
