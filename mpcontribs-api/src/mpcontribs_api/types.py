@@ -3,7 +3,7 @@ from typing import Annotated
 
 from pydantic import BeforeValidator, Field
 
-from src.mpcontribs_api.exceptions import ValidationError
+from mpcontribs_api.exceptions import ValidationError
 
 ShortStr = Annotated[str, Field(min_length=3, max_length=30)]
 

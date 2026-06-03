@@ -15,12 +15,12 @@ from fastapi_filter import FilterDepends, with_prefix
 from fastapi_filter.contrib.beanie import Filter
 from pydantic import Field
 
-from src.mpcontribs_api.domains._shared.models import BaseDocumentWithInput, DocumentOut
-from src.mpcontribs_api.domains.attachments.models import Attachment, AttachmentFilter
-from src.mpcontribs_api.domains.structures.models import Structure, StructureFilter
-from src.mpcontribs_api.domains.tables.models import Table, TableFilter
-from src.mpcontribs_api.projection import SparseFieldsModel
-from src.mpcontribs_api.types import ShortStr
+from mpcontribs_api.domains._shared.models import BaseDocumentWithInput, DocumentOut
+from mpcontribs_api.domains.attachments.models import Attachment, AttachmentFilter
+from mpcontribs_api.domains.structures.models import Structure, StructureFilter
+from mpcontribs_api.domains.tables.models import Table, TableFilter
+from mpcontribs_api.projection import SparseFieldsModel
+from mpcontribs_api.types import ShortStr
 
 
 class ContributionBase(BaseDocumentWithInput[PydanticObjectId]):

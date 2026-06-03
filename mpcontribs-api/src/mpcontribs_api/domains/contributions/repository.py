@@ -1,15 +1,15 @@
 from typing import Any, Literal
 
-from src.mpcontribs_api.auth import User
-from src.mpcontribs_api.domains._shared.repository import MongoDbRepository
-from src.mpcontribs_api.domains.contributions.models import (
+from mpcontribs_api.auth import User
+from mpcontribs_api.domains._shared.repository import MongoDbRepository
+from mpcontribs_api.domains.contributions.models import (
     Contribution,
     ContributionFilter,
     ContributionIn,
     ContributionOut,
     ContributionPatch,
 )
-from src.mpcontribs_api.pagination import CursorParams
+from mpcontribs_api.pagination import CursorParams
 
 
 class MongoDbContributionRepository(MongoDbRepository[Contribution, ContributionIn, ContributionOut]):

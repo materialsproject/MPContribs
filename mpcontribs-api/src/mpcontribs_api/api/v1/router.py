@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 
-from src.mpcontribs_api.domains.contributions.router import router as contributions_router
-from src.mpcontribs_api.domains.projects.router import router as projects_router
+from mpcontribs_api.domains.contributions.router import router as contributions_router
+from mpcontribs_api.domains.projects.router import router as projects_router
 
 router = APIRouter()
 

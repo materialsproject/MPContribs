@@ -2,8 +2,8 @@ from typing import Annotated
 
 from fastapi import Depends
 
-from src.mpcontribs_api.dependencies import UserDep
-from src.mpcontribs_api.domains.projects.repository import (
+from mpcontribs_api.dependencies import UserDep
+from mpcontribs_api.domains.projects.repository import (
     MongoDbProjectRepository,
 )
 

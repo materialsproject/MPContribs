@@ -3,7 +3,7 @@ from typing import Annotated, Any, Self
 from beanie import DocumentWithSoftDelete
 from pydantic import Field
 
-from src.mpcontribs_api.projection import SparseFieldsModel
+from mpcontribs_api.projection import SparseFieldsModel
 
 
 class BaseDocumentWithInput[TId](DocumentWithSoftDelete):

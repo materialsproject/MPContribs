@@ -2,7 +2,7 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, model_validator
 
-from src.mpcontribs_api.config import get_settings
+from mpcontribs_api.config import get_settings
 
 settings = get_settings()
 

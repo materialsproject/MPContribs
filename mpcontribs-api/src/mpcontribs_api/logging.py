@@ -4,7 +4,7 @@ import sys
 import structlog
 from opentelemetry import trace
 
-from src.mpcontribs_api.config import Settings
+from mpcontribs_api.config import Settings
 
 
 def add_otel_trace_context(_, __, event_dict):
