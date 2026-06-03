@@ -1,9 +1,9 @@
-# -*- coding: utf-8 -*-
 import json
 from hashlib import md5
+
 from flask_mongoengine.documents import Document
 from mongoengine import signals
-from mongoengine.fields import StringField, FloatField, ListField, DictField
+from mongoengine.fields import DictField, FloatField, ListField, StringField
 from mongoengine.queryset.manager import queryset_manager
 from pymatgen.core import Structure
 from pymatgen.io.cif import CifWriter
@@ -48,6 +48,4 @@ class Structures(Document):
         document.cif = writer.__str__()
 
 
-signals.pre_save_post_validation.connect(
-    Structures.pre_save_post_validation, sender=Structures
-)
+signals.pre_save_post_validation.connect(Structures.pre_save_post_validation, sender=Structures)

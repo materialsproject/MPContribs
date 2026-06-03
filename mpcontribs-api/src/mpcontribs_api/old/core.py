@@ -1,18 +1,18 @@
 import os
-import yaml
-
 from copy import deepcopy
-from re import Pattern
 from importlib import import_module
+from re import Pattern
+
+import yaml
 from flasgger.marshmallow_apispec import SwaggerView as OriginalSwaggerView
 from flasgger.marshmallow_apispec import schema2jsonschema
-from marshmallow_mongoengine import ModelSchema
 from flask_mongorest.views import ResourceView
+from marshmallow_mongoengine import ModelSchema
 from mongoengine.queryset import DoesNotExist
 from mongoengine.queryset.visitor import Q
-from werkzeug.exceptions import Unauthorized
+from mpcontribs.api import get_logger, is_gunicorn
 from mpcontribs.api.config import DOC_DIR
-from mpcontribs.api import is_gunicorn, get_logger
+from werkzeug.exceptions import Unauthorized
 
 logger = get_logger(__name__)
 
@@ -102,9 +102,7 @@ def get_specs(klass, method, collection):
     doc_name = collection[:-1].capitalize()
     fields_param = None
     if klass.resource.fields is not None:
-        fields_avail = (
-            klass.resource.fields + klass.resource.get_optional_fields() + ["_all"]
-        )
+        fields_avail = klass.resource.fields + klass.resource.get_optional_fields() + ["_all"]
         description = f"List of fields to include in response ({fields_avail})."
         description += " Use dot-notation for nested subfields."
         fields_param = {
@@ -145,10 +143,7 @@ def get_specs(klass, method, collection):
 
     order_params = []
     if klass.resource.allowed_ordering:
-        allowed_ordering = [
-            o.pattern if isinstance(o, Pattern) else o
-            for o in klass.resource.allowed_ordering
-        ]
+        allowed_ordering = [o.pattern if isinstance(o, Pattern) else o for o in klass.resource.allowed_ordering]
         order_params = [
             {
                 "name": "_sort",
@@ -405,10 +400,10 @@ def get_specs(klass, method, collection):
 
 
 class SwaggerView(OriginalSwaggerView, ResourceView):
-    """A class-based view defining additional methods"""
+    """A class-based view defining additional methods."""
 
     def __init_subclass__(cls, **kwargs):
-        """initialize Schema, decorators, definitions, and tags"""
+        """Initialize Schema, decorators, definitions, and tags."""
         super().__init_subclass__(**kwargs)
 
         if not __name__ == cls.__module__:
@@ -447,9 +442,7 @@ class SwaggerView(OriginalSwaggerView, ResourceView):
                         if is_gunicorn:
                             with open(file_path, "w") as f:
                                 yaml.dump(spec, f)
-                                logger.debug(
-                                    f"{cls.tags[0]}.{method.__name__} written to {file_path}"
-                                )
+                                logger.debug(f"{cls.tags[0]}.{method.__name__} written to {file_path}")
 
     def get_groups(self, request):
         groups = request.headers.get("X-Authenticated-Groups", "").split(",")
@@ -467,9 +460,7 @@ class SwaggerView(OriginalSwaggerView, ResourceView):
         return is_anonymous
 
     def is_external(self, request):
-        return request.headers.get(
-            "X-Forwarded-Host"
-        ) is not None and not request.headers.get("Origin")
+        return request.headers.get("X-Forwarded-Host") is not None and not request.headers.get("Origin")
 
     def is_admin(self, request):
         groups = self.get_groups(request)
@@ -502,7 +493,7 @@ class SwaggerView(OriginalSwaggerView, ResourceView):
     def get_projects(self):
         # project is LazyReferenceFields (multiple queries)
         module = import_module("mpcontribs.api.projects.document")
-        Projects = getattr(module, "Projects")
+        Projects = module.Projects
         exclude = list(Projects._fields.keys())
         only = ["name", "owner", "is_public", "is_approved"]
         return Projects.objects.exclude(*exclude).only(*only)
@@ -584,9 +575,7 @@ class SwaggerView(OriginalSwaggerView, ResourceView):
                     if q and "project" in q and "$in" in q["project"]:
                         names = q.pop("project").pop("$in")
 
-                    qfilter = self.get_projects_filter(
-                        username, groups, filter_names=names
-                    )
+                    qfilter = self.get_projects_filter(username, groups, filter_names=names)
                     return qs.filter(qfilter)
             else:
                 # get component Object IDs for queryset
@@ -608,23 +597,16 @@ class SwaggerView(OriginalSwaggerView, ResourceView):
 
                 # get list of readable contributions and their component Object IDs
                 module = import_module("mpcontribs.api.contributions.document")
-                Contributions = getattr(module, "Contributions")
+                Contributions = module.Contributions
                 qfilter = self.get_projects_filter(username, groups)
                 component = component[:-1] if component == "notebooks" else component
                 qfilter &= Q(**{f"{component}__in": ids})
-                contribs = (
-                    Contributions.objects(qfilter).only(component).limit(len(ids))
-                )
+                contribs = Contributions.objects(qfilter).only(component).limit(len(ids))
                 # return new queryset using "ids__in"
                 readable_ids = (
                     [getattr(contrib, component).id for contrib in contribs]
                     if component == "notebook"
-                    else [
-                        dbref.id
-                        for contrib in contribs
-                        for dbref in getattr(contrib, component)
-                        if dbref.id in ids
-                    ]
+                    else [dbref.id for contrib in contribs for dbref in getattr(contrib, component) if dbref.id in ids]
                 )
                 if not readable_ids:
                     return qs.none()

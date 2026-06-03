@@ -1,18 +1,16 @@
-# -*- coding: utf-8 -*-
-import os
-import boto3
 import binascii
-
-from flask import request
+import os
 from base64 import b64decode, b64encode
+
+import boto3
+from filetype.types.archive import Gz
+from filetype.types.image import Gif, Jpeg, Png, Tiff
+from flask import request
 from flask_mongoengine.documents import DynamicDocument
-from mongoengine import signals, ValidationError
+from mongoengine import ValidationError, signals
 from mongoengine.fields import StringField
 from mongoengine.queryset.manager import queryset_manager
-from filetype.types.archive import Gz
-from filetype.types.image import Jpeg, Png, Gif, Tiff
-
-from mpcontribs.api.contributions.document import get_resource, get_md5, COMPONENTS
+from mpcontribs.api.contributions.document import COMPONENTS, get_md5, get_resource
 
 MAX_BYTES = 2.4 * 1024 * 1024
 BUCKET = os.environ.get("S3_ATTACHMENTS_BUCKET", "mpcontribs-attachments")
@@ -26,9 +24,7 @@ s3_client = boto3.client("s3")
 class Attachments(DynamicDocument):
     name = StringField(required=True, help_text="file name")
     md5 = StringField(regex=r"^[a-z0-9]{32}$", unique=True, help_text="md5 sum")
-    mime = StringField(
-        required=True, choices=SUPPORTED_MIMES, help_text="attachment mime type"
-    )
+    mime = StringField(required=True, choices=SUPPORTED_MIMES, help_text="attachment mime type")
     content = StringField(required=True, help_text="base64-encoded attachment content")
     meta = {"collection": "attachments", "indexes": ["name", "mime", "md5"]}
 
@@ -45,9 +41,7 @@ class Attachments(DynamicDocument):
             if "content" in requested_fields:
                 if not document.md5:
                     # document.reload("md5")  # TODO AttributeError: _changed_fields
-                    raise ValueError(
-                        "Please also request md5 field to retrieve attachment content!"
-                    )
+                    raise ValueError("Please also request md5 field to retrieve attachment content!")
 
                 retr = s3_client.get_object(Bucket=BUCKET, Key=document.md5)
                 document.content = b64encode(retr["Body"].read()).decode("utf-8")
@@ -71,9 +65,7 @@ class Attachments(DynamicDocument):
         size = len(content)
 
         if size > MAX_BYTES:
-            raise ValidationError(
-                f"Attachment {document.name} too large ({size} > {MAX_BYTES})!"
-            )
+            raise ValidationError(f"Attachment {document.name} too large ({size} > {MAX_BYTES})!")
 
         # md5
         resource = get_resource("attachments")
@@ -87,13 +79,9 @@ class Attachments(DynamicDocument):
             Metadata={"name": document.name},
             Body=content,
         )
-        document.content = str(
-            size
-        )  # set to something useful to distinguish in post_init
+        document.content = str(size)  # set to something useful to distinguish in post_init
 
 
 signals.post_init.connect(Attachments.post_init, sender=Attachments)
 signals.pre_delete.connect(Attachments.pre_delete, sender=Attachments)
-signals.pre_save_post_validation.connect(
-    Attachments.pre_save_post_validation, sender=Attachments
-)
+signals.pre_save_post_validation.connect(Attachments.pre_save_post_validation, sender=Attachments)

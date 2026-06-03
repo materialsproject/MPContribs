@@ -4,7 +4,7 @@ from pydantic import BaseModel, Field
 
 
 class CursorParams(BaseModel):
-    """Models parameters used in cursor-based pagination"""
+    """Models parameters used in cursor-based pagination."""
 
     # None == First page
     cursor: str | None = None
@@ -17,7 +17,8 @@ class Page[T](BaseModel):
 
     Attributes:
         items (list[T]): the items returned for the given page
-        next_cursor (str): the base64-encoded value of the first id on the next page. If None, then no more pages are available
+        next_cursor (str): the base64-encoded value of the first id on the next page. If None, then no more pages are
+            available
     """
 
     items: list[T]
@@ -33,4 +34,4 @@ def decode_cursor(cursor: str) -> str:
     try:
         return base64.urlsafe_b64decode(cursor.encode()).decode()
     except ValueError, UnicodeDecodeError:
-        raise ValueError("malformed cursor")
+        raise ValueError("malformed cursor") from None

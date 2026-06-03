@@ -13,7 +13,8 @@ def add_otel_trace_context(_, __, event_dict):
     # If context is not the sentinel span (ie. we have an active span)
     if ctx.is_valid:
         # Convert to OTel-expected ids
-        # ctx ids are formatted as 128-bit (trace_id) and 64-bit (span_id) long numbers. OTel expects them as 0-padded hex numbers
+        # ctx ids are formatted as 128-bit (trace_id) and 64-bit (span_id) long numbers.
+        # OTel expects them as 0-padded hex numbers
         event_dict["trace_id"] = format(ctx.trace_id, "032x")  # 32 digits
         event_dict["span_id"] = format(ctx.span_id, "016x")  # 16 digits
     return event_dict
@@ -43,8 +44,7 @@ def configure_logging(settings: Settings) -> None:
 
     # Handles internal logs emitted by structlog logger
     structlog.configure(
-        processors=shared_processors
-        + [structlog.stdlib.ProcessorFormatter.wrap_for_formatter],
+        processors=shared_processors + [structlog.stdlib.ProcessorFormatter.wrap_for_formatter],
         logger_factory=structlog.stdlib.LoggerFactory(),
         wrapper_class=structlog.make_filtering_bound_logger(log_level),
         cache_logger_on_first_use=True,

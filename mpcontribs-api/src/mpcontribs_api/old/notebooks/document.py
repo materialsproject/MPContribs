@@ -1,13 +1,12 @@
-# -*- coding: utf-8 -*-
-import os
-import boto3
 import hashlib
-
-from io import BytesIO
-from mongoengine import signals
+import os
 from base64 import b64decode, b64encode
+from io import BytesIO
+
+import boto3
 from flask_mongoengine.documents import Document
-from mongoengine.fields import DictField, StringField, IntField, ListField
+from mongoengine import signals
+from mongoengine.fields import DictField, IntField, ListField, StringField
 from mongoengine.queryset.manager import queryset_manager
 
 BUCKET = os.environ.get("S3_IMAGES_BUCKET", "mpcontribs-images")
@@ -33,27 +32,19 @@ class LanguageInfo(DictField):
     nbconvert_exporter = StringField()
     pygments_lexer = StringField()
     version = StringField()
-    codemirror_mode = DictField(
-        CodemirrorMode(), default=CodemirrorMode, help_text="codemirror"
-    )
+    codemirror_mode = DictField(CodemirrorMode(), default=CodemirrorMode, help_text="codemirror")
 
 
 class Metadata(DictField):
-    kernelspec = DictField(
-        Kernelspec(), required=True, help_text="kernelspec", default=Kernelspec
-    )
-    language_info = DictField(
-        LanguageInfo(), required=True, help_text="language info", default=LanguageInfo
-    )
+    kernelspec = DictField(Kernelspec(), required=True, help_text="kernelspec", default=Kernelspec)
+    language_info = DictField(LanguageInfo(), required=True, help_text="language info", default=LanguageInfo)
 
 
 class Cell(DictField):
     cell_type = StringField(required=True, default="code", help_text="cell type")
     metadata = DictField(help_text="cell metadata")
     source = StringField(required=True, default="print('hello')", help_text="source")
-    outputs = ListField(
-        DictField(), required=True, help_text="outputs", default=lambda: [DictField()]
-    )
+    outputs = ListField(DictField(), required=True, help_text="outputs", default=lambda: [DictField()])
     execution_count = IntField(help_text="exec count")
 
 

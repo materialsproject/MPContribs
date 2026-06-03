@@ -1,9 +1,8 @@
 from boltons.iterutils import remap
 from mongoengine.queryset.visitor import Q
-
 from mpcontribs.api import enter
-from mpcontribs.api.projects.document import Projects
 from mpcontribs.api.contributions.document import Contributions
+from mpcontribs.api.projects.document import Projects
 
 
 def visit(path, key, value):

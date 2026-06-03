@@ -1,37 +1,34 @@
-# -*- coding: utf-8 -*-
-import re
 import os
-import flask_mongorest
-
+import re
 from itertools import permutations
-from css_html_js_minify import html_minify
-from json2html import Json2Html
+
+import flask_mongorest
 from boltons.iterutils import remap
-from werkzeug.exceptions import Unauthorized
-from pymatgen.core.composition import Composition, CompositionError
-
-from flask import Blueprint, render_template, jsonify, abort, request
-from flask_mongorest.resources import Resource
+from css_html_js_minify import html_minify
+from flask import Blueprint, abort, jsonify, render_template, request
 from flask_mongorest import operators as ops
-from flask_mongorest.methods import (
-    Fetch,
-    Delete,
-    Update,
-    BulkFetch,
-    BulkCreate,
-    BulkUpdate,
-    BulkDelete,
-    Download,
-)
 from flask_mongorest.exceptions import UnknownFieldError
-
-from mpcontribs.api import enter, FILTERS
-from mpcontribs.api.core import SwaggerView
+from flask_mongorest.methods import (
+    BulkCreate,
+    BulkDelete,
+    BulkFetch,
+    BulkUpdate,
+    Delete,
+    Download,
+    Fetch,
+    Update,
+)
+from flask_mongorest.resources import Resource
+from json2html import Json2Html
+from mpcontribs.api import FILTERS, enter
+from mpcontribs.api.attachments.views import AttachmentsResource
 from mpcontribs.api.contributions.document import Contributions
+from mpcontribs.api.core import SwaggerView
+from mpcontribs.api.notebooks.views import NotebooksResource
 from mpcontribs.api.structures.views import StructuresResource
 from mpcontribs.api.tables.views import TablesResource
-from mpcontribs.api.attachments.views import AttachmentsResource
-from mpcontribs.api.notebooks.views import NotebooksResource
+from pymatgen.core.composition import Composition, CompositionError
+from werkzeug.exceptions import Unauthorized
 
 templates = os.path.join(os.path.dirname(flask_mongorest.__file__), "templates")
 contributions = Blueprint("contributions", __name__, template_folder=templates)

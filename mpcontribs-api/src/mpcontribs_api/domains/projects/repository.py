@@ -31,16 +31,17 @@ M = TypeVar("M", bound=BaseModel)
 
 
 class MongoDbProjectRepository:
-    """A repository layer for access to MongoDB
+    """A repository layer for access to MongoDB.
 
     This is the layer that directly interacts with database operations
 
     Attributes:
-        _scope (dict[str, Any]): additional terms to inject into mongo queries to enforce user authorization on resources
+        _scope (dict[str, Any]): additional terms to inject into mongo queries to enforce user authorization on
+            resources
     """
 
     def __init__(self, user: User) -> None:
-        """Initializes an instance based on the current user
+        """Initializes an instance based on the current user.
 
         Args:
             user (User): the current user requesting resources
@@ -61,11 +62,12 @@ class MongoDbProjectRepository:
 
     # Brendan TODO: figure out return type
     async def get_project_by_id(self, id: str, fields: frozenset[str] | None):
-        """Finds a single project by ID
+        """Finds a single project by ID.
 
         Args:
             id (str): the id of the project to find
-            fields (frozenset[str] | None): a BaseModel to use for projection. If none, the document is returned without projection
+            fields (frozenset[str] | None): a BaseModel to use for projection. If none, the document is returned without
+                projection
 
         Returns:
             ProjectOut: a projection of ProjectOut containing 'fields' from requested id
@@ -77,7 +79,8 @@ class MongoDbProjectRepository:
             projection_model=ProjectOut.projection(fields),
         )
 
-    # Brendan TODO: Does not handle compound pagination/sorting (can only paginate on _id, so passing sort arguments does nothing)
+    # Brendan TODO: Does not handle compound pagination/sorting
+    #   can only paginate on _id, so passing sort arguments does nothing
     async def get_project(
         self,
         filter: ProjectFilter,
@@ -91,18 +94,14 @@ class MongoDbProjectRepository:
         Args:
             filter (ProjectFilter): the query to filter the collection by
             pagination (CursorParams): parameters for pagination using a cursor
-            fields (frozenset[str] | None): the fields to use for projection. If none, the document is returned without projection
+            fields (frozenset[str] | None): the fields to use for projection. If none, the document is returned without
+                projection
         """
         proj = ProjectOut.projection(fields)
         query = filter.filter(Project.find(self._scope))
         if pagination.cursor is not None:
             query = query.find(Project.id > decode_cursor(pagination.cursor))
-        docs = (
-            await query.sort(Project.id)
-            .limit(pagination.limit + 1)
-            .project(proj)
-            .to_list()
-        )
+        docs = await query.sort(Project.id).limit(pagination.limit + 1).project(proj).to_list()
         has_more = len(docs) > pagination.limit
         items = docs[: pagination.limit]
         next_cursor = encode_cursor(str(items[-1].id)) if has_more and items else None
@@ -120,9 +119,7 @@ class MongoDbProjectRepository:
         id_exists = await Project.find_one(Project.id == project.id)
         # Brendan TODO:
         if id_exists:
-            raise ConflictError(
-                f"Cannot insert project.\n Project with ID {project.id} exists"
-            )
+            raise ConflictError(f"Cannot insert project.\n Project with ID {project.id} exists")
         full_project = Project.from_project_in(project)
         await full_project.insert()
         return full_project

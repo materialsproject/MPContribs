@@ -1,14 +1,12 @@
-# -*- coding: utf-8 -*-
-import os
 import json
+import os
+
 from pymatgen.ext.matproj import MPRester
 
 data = {}
 
 with MPRester() as mpr:
-    for i, d in enumerate(
-        mpr.query(criteria={}, properties=["task_ids", "pretty_formula"])
-    ):
+    for _i, d in enumerate(mpr.query(criteria={}, properties=["task_ids", "pretty_formula"])):
         for task_id in d["task_ids"]:
             data[task_id] = d["pretty_formula"]
 

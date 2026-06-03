@@ -1,17 +1,15 @@
-# -*- coding: utf-8 -*-
 import os
+
 import flask_mongorest
-
-from mongoengine.queryset import DoesNotExist
-from flask import Blueprint, current_app, url_for, jsonify, abort, request
-from flask_mongorest.resources import Resource
+from flask import Blueprint, abort, current_app, jsonify, request, url_for
 from flask_mongorest import operators as ops
-from flask_mongorest.methods import Fetch, Create, Delete, Update, BulkFetch
-from werkzeug.exceptions import Unauthorized
-
+from flask_mongorest.methods import BulkFetch, Create, Delete, Fetch, Update
+from flask_mongorest.resources import Resource
+from mongoengine.queryset import DoesNotExist
 from mpcontribs.api import FILTERS
 from mpcontribs.api.core import SwaggerView
-from mpcontribs.api.projects.document import Projects, Column, Reference, Stats
+from mpcontribs.api.projects.document import Column, Projects, Reference, Stats
+from werkzeug.exceptions import Unauthorized
 
 templates = os.path.join(os.path.dirname(flask_mongorest.__file__), "templates")
 projects = Blueprint("projects", __name__, template_folder=templates)
@@ -114,9 +112,7 @@ class ProjectsView(SwaggerView):
             return True
 
         if not self.is_project_user(request, obj):
-            raise Unauthorized(
-                "Only project owners and collaborators can edit projects."
-            )
+            raise Unauthorized("Only project owners and collaborators can edit projects.")
 
         update = request.json
         if "is_approved" in update:

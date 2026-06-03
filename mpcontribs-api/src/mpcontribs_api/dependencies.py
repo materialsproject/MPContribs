@@ -17,10 +17,8 @@ settings = get_settings()
 
 
 def verify_gateway(x_gateway_secret: Annotated[str | None, Header()] = None) -> None:
-    """Ensures the current access attempt is coming through Kong"""
-    if x_gateway_secret is None or not hmac.compare_digest(
-        x_gateway_secret, str(settings.kong.gateway_secret)
-    ):
+    """Ensures the current access attempt is coming through Kong."""
+    if x_gateway_secret is None or not hmac.compare_digest(x_gateway_secret, str(settings.kong.gateway_secret)):
         raise GatewayError("direct access not permitted")
 
 
@@ -43,9 +41,7 @@ def get_user(request: Request) -> User:
     if explicit_anon or username is None:
         user = User()  # anonymous = all defaults
     else:
-        groups = _split(h.get("x-authenticated-groups")) | _split(
-            h.get("x-consumer-groups")
-        )
+        groups = _split(h.get("x-authenticated-groups")) | _split(h.get("x-consumer-groups"))
         user = User(
             consumer_id=h.get("x-consumer-id"),
             username=username,

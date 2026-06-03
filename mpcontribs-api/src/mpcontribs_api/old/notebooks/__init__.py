@@ -1,8 +1,8 @@
-# -*- coding: utf-8 -*-
 from uuid import uuid1
+
 from flask import current_app
-from tornado.escape import json_encode, json_decode
 from mpcontribs.api import create_kernel_connection, get_logger
+from tornado.escape import json_decode, json_encode
 
 logger = get_logger(__name__)
 

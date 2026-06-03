@@ -106,9 +106,7 @@ def register_exception_handlers(app: FastAPI) -> None:
     async def _handle_validation(request, exc):
         return JSONResponse(
             status_code=422,
-            content=_error_body(
-                "validation_error", "Request validation failed", errors=exc.errors()
-            ),
+            content=_error_body("validation_error", "Request validation failed", errors=exc.errors()),
         )
 
     # Unify http exceptions from starlette with our exception format
