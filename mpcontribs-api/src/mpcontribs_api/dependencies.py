@@ -5,9 +5,9 @@ import structlog
 from fastapi import Depends, Header, Request
 from pymongo.asynchronous.database import AsyncDatabase
 
-from src.mpcontribs_api.auth import User
-from src.mpcontribs_api.config import get_settings
-from src.mpcontribs_api.exceptions import (
+from mpcontribs_api.auth import User
+from mpcontribs_api.config import get_settings
+from mpcontribs_api.exceptions import (
     AuthenticationError,
     GatewayError,
     PermissionError,

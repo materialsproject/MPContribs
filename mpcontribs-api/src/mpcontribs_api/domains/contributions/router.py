@@ -3,14 +3,14 @@ from typing import Annotated, Literal
 from fastapi import APIRouter, Depends, Query
 from fastapi_filter import FilterDepends
 
-from src.mpcontribs_api.domains.contributions.dependencies import ContributionDep
-from src.mpcontribs_api.domains.contributions.models import (
+from mpcontribs_api.domains.contributions.dependencies import ContributionDep
+from mpcontribs_api.domains.contributions.models import (
     ContributionFilter,
     ContributionIn,
     ContributionOut,
     ContributionPatch,
 )
-from src.mpcontribs_api.pagination import CursorParams
+from mpcontribs_api.pagination import CursorParams
 
 router = APIRouter()
 

@@ -4,10 +4,10 @@ from typing import Any
 from fastapi_filter.contrib.beanie import Filter
 from pydantic import BaseModel
 
-from src.mpcontribs_api.auth import User
-from src.mpcontribs_api.domains._shared.models import BaseDocumentWithInput, DocumentOut
-from src.mpcontribs_api.exceptions import ConflictError
-from src.mpcontribs_api.pagination import CursorParams, Page, decode_cursor, encode_cursor
+from mpcontribs_api.auth import User
+from mpcontribs_api.domains._shared.models import BaseDocumentWithInput, DocumentOut
+from mpcontribs_api.exceptions import ConflictError
+from mpcontribs_api.pagination import CursorParams, Page, decode_cursor, encode_cursor
 
 
 class MongoDbRepository[TDoc: BaseDocumentWithInput, TIn: BaseModel, TOut: DocumentOut](ABC):

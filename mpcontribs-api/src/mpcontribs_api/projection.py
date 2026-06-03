@@ -24,7 +24,7 @@ from typing import (
 from pydantic import BaseModel, create_model
 from pydantic.fields import FieldInfo
 
-from src.mpcontribs_api.exceptions import ValidationError
+from mpcontribs_api.exceptions import ValidationError
 
 ModelT = TypeVar("ModelT", bound=BaseModel)
 

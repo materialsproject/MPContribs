@@ -4,14 +4,14 @@ from fastapi import APIRouter, Depends, Query, Response, status
 from fastapi_filter import FilterDepends
 from starlette.status import HTTP_204_NO_CONTENT
 
-from src.mpcontribs_api.domains.projects.dependencies import ProjectDep
-from src.mpcontribs_api.domains.projects.models import (
+from mpcontribs_api.domains.projects.dependencies import ProjectDep
+from mpcontribs_api.domains.projects.models import (
     ProjectFilter,
     ProjectIn,
     ProjectOut,
     ProjectPatch,
 )
-from src.mpcontribs_api.pagination import CursorParams
+from mpcontribs_api.pagination import CursorParams
 
 router = APIRouter()
 

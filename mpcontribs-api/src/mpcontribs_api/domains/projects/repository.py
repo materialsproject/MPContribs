@@ -4,17 +4,17 @@ from beanie import UpdateResponse
 from beanie.operators import Set
 from pydantic import BaseModel
 
-from src.mpcontribs_api.auth import User
-from src.mpcontribs_api.domains._shared.repository import MongoDbRepository
-from src.mpcontribs_api.domains.projects.models import (
+from mpcontribs_api.auth import User
+from mpcontribs_api.domains._shared.repository import MongoDbRepository
+from mpcontribs_api.domains.projects.models import (
     Project,
     ProjectFilter,
     ProjectIn,
     ProjectOut,
     ProjectPatch,
 )
-from src.mpcontribs_api.exceptions import ConflictError, NotFoundError
-from src.mpcontribs_api.pagination import (
+from mpcontribs_api.exceptions import ConflictError, NotFoundError
+from mpcontribs_api.pagination import (
     CursorParams,
 )
 

@@ -5,8 +5,8 @@ from typing import Any, Literal
 from fastapi_filter.contrib.beanie import Filter
 from pydantic import BaseModel, ConfigDict, Field, HttpUrl
 
-from src.mpcontribs_api.domains._shared.models import BaseDocumentWithInput, DocumentOut
-from src.mpcontribs_api.types import PrefixedEmail, ShortStr
+from mpcontribs_api.domains._shared.models import BaseDocumentWithInput, DocumentOut
+from mpcontribs_api.types import PrefixedEmail, ShortStr
 
 
 class Column(BaseModel):
