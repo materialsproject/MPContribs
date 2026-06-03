@@ -83,18 +83,22 @@ dev = [
     "pytest>=9.0.3",
     "pytest-xdist>=3.8.0",
     "httpx2>=0.28.0",
+    "pytest-asyncio>=1.4.0",
 ]
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "session"
 markers = [
     "base: basic resource testing",
     "extra: all extra views",
+    "db: requires a live MongoDB connection (set MPCONTRIBS_MONGO__URI)",
 ]
 
 [tool.ruff]
 line-length = 120
-exclude = ["src/mpcontribs_api/old"]
+exclude = ["src/mpcontribs_api/old", "tests/"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "B", "UP"]
