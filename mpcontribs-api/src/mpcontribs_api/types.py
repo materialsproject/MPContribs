@@ -1,6 +1,6 @@
+import re
 from typing import Annotated
 
-from pandas.core.arrays.string_arrow import re
 from pydantic import BeforeValidator, Field
 
 from src.mpcontribs_api.exceptions import ValidationError

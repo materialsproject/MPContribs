@@ -1,4 +1,6 @@
-from pydantic import BaseModel, ConfigDict
+from typing import Any
+
+from pydantic import BaseModel, ConfigDict, model_validator
 
 from src.mpcontribs_api.config import get_settings
 
@@ -21,13 +23,21 @@ class User(BaseModel):
     username: str | None = None
     groups: frozenset[str] = frozenset()
 
+    @model_validator(mode="before")
+    @classmethod
+    def drop_admin_on_anonymous(cls, config: dict[str, Any]) -> dict[str, Any]:
+        if not config.get("username"):
+            groups = config.get("groups", frozenset())
+            config["groups"] = frozenset(g for g in groups if g != ADMIN_GROUP)
+        return config
+
     @property
     def is_anonymous(self) -> bool:
         return self.username is None
 
     @property
     def is_admin(self) -> bool:
-        return ADMIN_GROUP in self.groups
+        return (not self.is_anonymous) and (ADMIN_GROUP in self.groups)
 
     def has_role(self, role: str) -> bool:
         return role in self.groups
