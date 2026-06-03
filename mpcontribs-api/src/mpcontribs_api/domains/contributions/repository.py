@@ -1,22 +1,20 @@
 from typing import Any, Literal
 
 from src.mpcontribs_api.auth import User
+from src.mpcontribs_api.domains._shared.repository import MongoDbRepository
 from src.mpcontribs_api.domains.contributions.models import (
+    Contribution,
     ContributionFilter,
     ContributionIn,
+    ContributionOut,
     ContributionPatch,
 )
 from src.mpcontribs_api.pagination import CursorParams
 
 
-class MongoDbContributionRepository:
-    def __init__(self, user: User) -> None:
-        """Initializes an instance based on the current user.
-
-        Args:
-            user (User): the current user requesting resources
-        """
-        self._scope = self._build_scope(user)
+class MongoDbContributionRepository(MongoDbRepository[Contribution, ContributionIn, ContributionOut]):
+    document_model = Contribution
+    out_model = ContributionOut
 
     @staticmethod
     def _build_scope(user: User) -> dict[str, Any]:
@@ -29,8 +27,13 @@ class MongoDbContributionRepository:
                 ors.append({"_id": {"$in": sorted(user.groups)}})
         return {"$or": ors}
 
-    async def get_contributions(self, pagination: CursorParams, filter: ContributionFilter, fields: str | None):
-        pass
+    async def get_contributions(
+        self,
+        pagination: CursorParams,
+        filter: ContributionFilter,
+        fields: frozenset[str] | None,
+    ):
+        return await self.get_many(pagination=pagination, filter=filter, fields=fields)
 
     async def delete_contributions(self, filter: ContributionFilter):
         pass

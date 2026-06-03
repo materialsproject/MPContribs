@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-from typing import Annotated, Any, Literal
+from typing import Any, Literal
 
-from beanie import DocumentWithSoftDelete
 from fastapi_filter.contrib.beanie import Filter
 from pydantic import BaseModel, ConfigDict, Field, HttpUrl
 
-from src.mpcontribs_api.projection import SparseFieldsModel
+from src.mpcontribs_api.domains._shared.models import BaseDocumentWithInput, DocumentOut
 from src.mpcontribs_api.types import PrefixedEmail, ShortStr
 
 
@@ -36,12 +35,13 @@ class Reference(BaseModel):
     url: HttpUrl
 
 
-class Project(DocumentWithSoftDelete):
-    """Document model of what is actually stored."""
+class Project(BaseDocumentWithInput[ShortStr]):
+    """Document model of what is actually stored.
+
+    Binds ``id`` to ``ShortStr`` (a meaningful string id, always supplied) via the generic base.
+    """
 
     # Required
-    # meaningful string id, always supplied
-    id: ShortStr = Field(alias="_id")  # pyright: ignore[reportGeneralTypeIssues, reportIncompatibleVariableOverride]
     title: ShortStr
     authors: str
     description: str
@@ -60,7 +60,7 @@ class Project(DocumentWithSoftDelete):
 
     # Empty method for now. Keeping for business logic later
     @classmethod
-    def from_project_in(cls, data: ProjectIn) -> Project:
+    def from_input_model(cls, data: ProjectIn) -> Project:
         return cls(**data.model_dump())
 
     class Settings:
@@ -68,11 +68,10 @@ class Project(DocumentWithSoftDelete):
         keep_nulls = False
 
 
-class ProjectOut(SparseFieldsModel):
+class ProjectOut(DocumentOut[ShortStr]):
     """Full response of all public-facing fields."""
 
     model_config = ConfigDict(extra="ignore")
-    id: Annotated[ShortStr | None, Field(alias="_id", serialization_alias="id")] = None
     authors: str | None = None
     description: str | None = None
     title: ShortStr | None = None
