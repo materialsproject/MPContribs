@@ -9,7 +9,6 @@ MongoDB connection is needed. Tests verify:
   - Error handling (NotFoundError → 404, etc.)
 """
 
-
 import pytest
 
 from src.mpcontribs_api.domains.projects.dependencies import get_scoped_projects
@@ -73,6 +72,7 @@ class TestListProjects:
 
     def test_next_cursor_set_when_more_pages(self, client, project_repo):
         from src.mpcontribs_api.pagination import encode_cursor
+
         cursor = encode_cursor("mp-sample")
         project_repo.get_project.return_value = Page(items=[SAMPLE_PROJECT], next_cursor=cursor)
         body = client.get("/api/v1/projects", headers=AUTHED_HEADERS).json()

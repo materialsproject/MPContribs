@@ -1,15 +1,16 @@
 # Format, fix, and lint all source code
 fmt:
-    uv run ruff format src/
-    -uv run ruff check --fix src/
-    -uv run ruff check --fix --unsafe-fixes src/
-    -uv run pydocstringformatter --write src/
+    uv run ruff format
+    -uv run ruff check --fix
+    -uv run ruff check --fix --unsafe-fixes
+    -uv run pydocstringformatter --write
 
 test suite="all":
     #!/usr/bin/env bash
     case "{{suite}}" in
       all|a)           uv run pytest tests/ ;;
-      integration|i)   uv run pytest tests/integration/ ;;
+      integration|i)   uv run pytest tests/integration/ -m "not db" ;;
       unit|u)          uv run pytest tests/unit/ ;;
-      *) echo "unknown suite '{{suite}}' — use: all/a, integration/i, unit/u" && exit 1 ;;
+      db|d)            uv run pytest tests/integration/db/ -m db ;;
+      *) echo "unknown suite '{{suite}}' — use: all/a, integration/i, unit/u, db/d" && exit 1 ;;
     esac

@@ -51,9 +51,7 @@ class TestListContributions:
         assert "next_cursor" in body
 
     def test_items_in_response(self, client, contribution_repo):
-        contribution_repo.get_contributions.return_value = Page(
-            items=[SAMPLE_CONTRIBUTION], next_cursor=None
-        )
+        contribution_repo.get_contributions.return_value = Page(items=[SAMPLE_CONTRIBUTION], next_cursor=None)
         body = client.get("/api/v1/contributions", headers=AUTHED_HEADERS).json()
         assert len(body["items"]) == 1
 
