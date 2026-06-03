@@ -11,13 +11,14 @@ from beanie import (
     Update,
     before_event,
 )
+from fastapi_filter import FilterDepends, with_prefix
 from fastapi_filter.contrib.beanie import Filter
 from pydantic import Field
 
 from src.mpcontribs_api.domains._shared.models import BaseDocumentWithInput, DocumentOut
-from src.mpcontribs_api.domains.attachments.models import Attachment
-from src.mpcontribs_api.domains.structures.models import Structure
-from src.mpcontribs_api.domains.tables.models import Table
+from src.mpcontribs_api.domains.attachments.models import Attachment, AttachmentFilter
+from src.mpcontribs_api.domains.structures.models import Structure, StructureFilter
+from src.mpcontribs_api.domains.tables.models import Table, TableFilter
 from src.mpcontribs_api.projection import SparseFieldsModel
 from src.mpcontribs_api.types import ShortStr
 
@@ -104,6 +105,10 @@ class ContributionFilter(Filter):
     is_public: bool | None = None
 
     needs_build: bool | None = None
+
+    table: TableFilter | None = FilterDepends(with_prefix("tables", TableFilter))
+    attachment: AttachmentFilter | None = FilterDepends(with_prefix("attachments", AttachmentFilter))
+    structure: StructureFilter | None = FilterDepends(with_prefix("structures", StructureFilter))
 
     # sorting
     order_by: list[str] | None = None
