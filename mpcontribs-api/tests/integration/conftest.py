@@ -1,0 +1,149 @@
+"""Integration test infrastructure.
+
+make_test_app() builds a real FastAPI application (routers, middleware,
+exception handlers) but with:
+  - A no-op lifespan so no MongoDB connection is attempted.
+  - The verify_gateway dependency absent at the app level; tests that want to
+    check gateway enforcement use the gateway_app fixture instead.
+
+Fixtures follow the pattern:
+  test_app (session)  — base app, no dependency overrides
+  client   (function) — TestClient wrapping test_app; overrides are set per-test
+                        and cleared on teardown to avoid bleed between tests.
+"""
+
+from contextlib import asynccontextmanager
+from unittest.mock import AsyncMock, MagicMock
+
+import pytest
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
+from starlette.middleware.base import BaseHTTPMiddleware
+
+from src.mpcontribs_api.exceptions import register_exception_handlers
+from src.mpcontribs_api.middleware import bind_request_context
+
+# ---------------------------------------------------------------------------
+# Header constants used across test modules
+# ---------------------------------------------------------------------------
+
+GATEWAY_SECRET = "test-gateway-secret"
+GATEWAY_HEADERS = {"x-gateway-secret": GATEWAY_SECRET}
+
+ANON_HEADERS: dict[str, str] = {}
+
+AUTHED_HEADERS = {
+    "x-consumer-username": "google:alice@example.com",
+    "x-consumer-id": "test-consumer-id",
+    "x-authenticated-groups": "mp-team",
+}
+
+ADMIN_HEADERS = {
+    "x-consumer-username": "google:admin@example.com",
+    "x-consumer-id": "test-admin-id",
+    "x-authenticated-groups": "admin",
+}
+
+
+# ---------------------------------------------------------------------------
+# App factories
+# ---------------------------------------------------------------------------
+
+
+def make_test_app() -> FastAPI:
+    """Build a fully-wired FastAPI app suitable for integration tests.
+
+    Uses a no-op lifespan so no MongoDB connection is required.  The
+    verify_gateway dependency is NOT added at the app level here — tests that
+    need gateway enforcement should use make_gateway_app() instead.
+    """
+
+    @asynccontextmanager
+    async def _noop_lifespan(app: FastAPI):
+        app.state.db = MagicMock()
+        yield
+
+    app = FastAPI(title="mpcontribs-test", lifespan=_noop_lifespan)
+    app.add_middleware(BaseHTTPMiddleware, dispatch=bind_request_context)
+    register_exception_handlers(app)
+
+    from src.mpcontribs_api.api.v1.router import router as v1_router
+
+    app.include_router(v1_router, prefix="/api/v1")
+    return app
+
+
+def make_gateway_app() -> FastAPI:
+    """Like make_test_app() but with real gateway enforcement.
+
+    Used by gateway-specific tests to exercise the actual x-gateway-secret
+    header validation through the full HTTP cycle.
+    """
+    from fastapi import Depends
+
+    from src.mpcontribs_api.dependencies import verify_gateway
+
+    @asynccontextmanager
+    async def _noop_lifespan(app: FastAPI):
+        app.state.db = MagicMock()
+        yield
+
+    app = FastAPI(
+        title="mpcontribs-gateway-test",
+        lifespan=_noop_lifespan,
+        dependencies=[Depends(verify_gateway)],
+    )
+    app.add_middleware(BaseHTTPMiddleware, dispatch=bind_request_context)
+    register_exception_handlers(app)
+
+    from src.mpcontribs_api.api.v1.router import router as v1_router
+
+    app.include_router(v1_router, prefix="/api/v1")
+    return app
+
+
+# ---------------------------------------------------------------------------
+# Shared fixtures
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture(scope="session")
+def test_app() -> FastAPI:
+    return make_test_app()
+
+
+@pytest.fixture(scope="session")
+def gateway_app() -> FastAPI:
+    return make_gateway_app()
+
+
+@pytest.fixture
+def client(test_app: FastAPI):
+    """Function-scoped client; dependency overrides are cleared after each test."""
+    with TestClient(test_app, raise_server_exceptions=False) as c:
+        yield c
+    test_app.dependency_overrides.clear()
+
+
+@pytest.fixture
+def gateway_client(gateway_app: FastAPI):
+    with TestClient(gateway_app, raise_server_exceptions=False) as c:
+        yield c
+    gateway_app.dependency_overrides.clear()
+
+
+# ---------------------------------------------------------------------------
+# Mock repository factories
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def mock_project_repo() -> AsyncMock:
+    """Fully async mock of MongoDbProjectRepository."""
+    return AsyncMock()
+
+
+@pytest.fixture
+def mock_contribution_repo() -> AsyncMock:
+    """Fully async mock of MongoDbContributionRepository."""
+    return AsyncMock()

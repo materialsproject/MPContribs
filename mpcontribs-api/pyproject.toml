@@ -82,6 +82,7 @@ dev = [
     "pydocstringformatter>=0.7.0",
     "pytest>=9.0.3",
     "pytest-xdist>=3.8.0",
+    "httpx2>=0.28.0",
 ]
 
 [tool.pytest.ini_options]
