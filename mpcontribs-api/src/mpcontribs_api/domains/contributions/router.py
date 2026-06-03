@@ -21,9 +21,7 @@ async def get_contributions(
     filter: ContributionFilter = FilterDepends(ContributionFilter),
     fields: Annotated[str | None, Query(alias="_fields")] = None,
 ):
-    return await repo.get_contributions(
-        pagination=pagination, filter=filter, fields=fields
-    )
+    return await repo.get_contributions(pagination=pagination, filter=filter, fields=fields)
 
 
 @router.delete("")
@@ -57,9 +55,7 @@ async def download_contributions(
     filter: ContributionFilter = FilterDepends(ContributionFilter),
     fields: Annotated[str | None, Query(alias="_fields")] = None,
 ):
-    return await repo.download_contributions(
-        format=format, filter=filter, fields=fields
-    )
+    return await repo.download_contributions(format=format, filter=filter, fields=fields)
 
 
 @router.delete("{id}")
@@ -80,14 +76,10 @@ async def get_contribution_by_id(
 
 
 @router.put("{id}")
-async def upsert_contribution_by_id(
-    repo: ContributionDep, id: str, contribution: ContributionIn
-):
+async def upsert_contribution_by_id(repo: ContributionDep, id: str, contribution: ContributionIn):
     return await repo.upsert_contribution_by_id(id=id, contribution=contribution)
 
 
 @router.patch("{id}")
-async def update_contribution_by_id(
-    repo: ContributionDep, id: str, update: ContributionPatch
-):
+async def update_contribution_by_id(repo: ContributionDep, id: str, update: ContributionPatch):
     return await repo.update_contribution_by_id(id=id, update=update)

@@ -1,4 +1,5 @@
 import os
+
 from jinja2 import Environment, FileSystemLoader
 
 DIR = os.path.abspath(os.path.dirname(__file__))
@@ -28,9 +29,7 @@ kwargs = {
     "reload": int(not PRODUCTION),
     "node_env": "production" if PRODUCTION else "development",
     "flask_log_level": "INFO" if PRODUCTION else "DEBUG",
-    "jupyter_gateway_host": f"localhost:{KG_PORT}"
-    if PRODUCTION
-    else f"kernel-gateway:{KG_PORT}",
+    "jupyter_gateway_host": f"localhost:{KG_PORT}" if PRODUCTION else f"kernel-gateway:{KG_PORT}",
     "dd_agent_host": "localhost" if PRODUCTION else "datadog",
     "mpcontribs_api_host": "localhost" if PRODUCTION else "contribs-apis",
 }

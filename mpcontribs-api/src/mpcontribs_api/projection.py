@@ -1,7 +1,8 @@
 """Handles the projection of '_fields' from query params.
 
 This includes arbitrarily specifying nested structures with '.'
-Ie. data.band_gap.something will be properly retrieved and populated into the response model that subclasses SparseFieldsModel
+Ie. data.band_gap.something will be properly retrieved and populated into the response model that subclasses
+    SparseFieldsModel
 """
 
 from __future__ import annotations
@@ -88,14 +89,9 @@ def _validate_path(model: type[BaseModel], path: str) -> None:
     """Raise if the dotted path is not a selectable field path on the model."""
     for step in _walk_path(model, path):
         if step.kind == "unknown":
-            raise ValidationError(
-                f"unknown field in _fields: {path!r} (no field {step.segment!r})"
-            )
+            raise ValidationError(f"unknown field in _fields: {path!r} (no field {step.segment!r})")
         if step.kind in ("scalar", "list") and not step.is_last:
-            raise ValidationError(
-                f"cannot select subfields of {step.kind} field "
-                f"{step.segment!r} in _fields: {path!r}"
-            )
+            raise ValidationError(f"cannot select subfields of {step.kind} field {step.segment!r} in _fields: {path!r}")
 
 
 def _collapse(paths: frozenset[str]) -> frozenset[str]:
@@ -130,15 +126,9 @@ def _backs_mongo_id(field: FieldInfo) -> bool:
 
 def _optional_field(source_field: FieldInfo, annotation: Any) -> tuple[Any, FieldInfo]:
     """Build an optional create_model field definition, preserving the source field's aliases."""
-    validation_alias = (
-        source_field.validation_alias
-        if isinstance(source_field.validation_alias, str)
-        else None
-    )
+    validation_alias = source_field.validation_alias if isinstance(source_field.validation_alias, str) else None
     serialization_alias = (
-        source_field.serialization_alias
-        if isinstance(source_field.serialization_alias, str)
-        else None
+        source_field.serialization_alias if isinstance(source_field.serialization_alias, str) else None
     )
     optional_annotation: Any = annotation | None
     return optional_annotation, FieldInfo(
@@ -149,7 +139,7 @@ def _optional_field(source_field: FieldInfo, annotation: Any) -> tuple[Any, Fiel
 
 
 @lru_cache(maxsize=128)
-def _build_model(model: type[ModelT], paths: frozenset[str]) -> type[ModelT]:
+def _build_model[ModelT: BaseModel](model: type[ModelT], paths: frozenset[str]) -> type[ModelT]:
     """Recursively build the partial response model covering the requested paths."""
     nested_paths_by_root: dict[str, set[str]] = {}
     for path in paths:
@@ -163,9 +153,7 @@ def _build_model(model: type[ModelT], paths: frozenset[str]) -> type[ModelT]:
         source_field = model.model_fields[root]
         kind, nested_model = _classify(source_field.annotation)
         if not nested_paths:
-            field_definitions[root] = _optional_field(
-                source_field, source_field.annotation
-            )
+            field_definitions[root] = _optional_field(source_field, source_field.annotation)
         elif kind == "model" and nested_model is not None:
             partial_nested = _build_model(nested_model, frozenset(nested_paths))
             field_definitions[root] = _optional_field(source_field, partial_nested)
@@ -183,13 +171,13 @@ def _build_model(model: type[ModelT], paths: frozenset[str]) -> type[ModelT]:
 
 
 @lru_cache(maxsize=128)
-def _build_projection(model: type[ModelT], paths: frozenset[str]) -> type[ModelT]:
+def _build_projection[ModelT: BaseModel](model: type[ModelT], paths: frozenset[str]) -> type[ModelT]:
     """Build the partial model and attach its explicit dotted Mongo projection."""
     projection: dict[str, int] = {"_id": 1}
     for path in paths:
         projection[_mongo_key(model, path)] = 1
     partial_model = _build_model(model, paths)
-    setattr(partial_model, "Settings", type("Settings", (), {"projection": projection}))
+    partial_model.Settings = type("Settings", (), {"projection": projection})
     return partial_model
 
 
@@ -210,9 +198,7 @@ class SparseFieldsModel(BaseModel):
     @classmethod
     def _identity_fields(cls) -> frozenset[str]:
         """Field names backing Mongo ``_id``, always forced into a projection."""
-        return frozenset(
-            name for name, field in cls.model_fields.items() if _backs_mongo_id(field)
-        )
+        return frozenset(name for name, field in cls.model_fields.items() if _backs_mongo_id(field))
 
     @classmethod
     def field_names(cls) -> frozenset[str]:

@@ -1,14 +1,13 @@
-# -*- coding: utf-8 -*-
 import os
-import flask_mongorest
-from flask_mongorest.resources import Resource
-from flask_mongorest import operators as ops
-from flask_mongorest.methods import Fetch, BulkFetch, Download
-from flask import Blueprint
 
+import flask_mongorest
+from flask import Blueprint
+from flask_mongorest import operators as ops
+from flask_mongorest.methods import BulkFetch, Download, Fetch
+from flask_mongorest.resources import Resource
 from mpcontribs.api import FILTERS
-from mpcontribs.api.core import SwaggerView
 from mpcontribs.api.attachments.document import Attachments
+from mpcontribs.api.core import SwaggerView
 
 templates = os.path.join(os.path.dirname(flask_mongorest.__file__), "templates")
 attachments = Blueprint("attachments", __name__, template_folder=templates)

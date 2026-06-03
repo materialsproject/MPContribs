@@ -1,0 +1,5 @@
+# Format, fix, and lint all source code
+fmt:
+    uv run ruff format src/
+    -uv run ruff check --fix --unsafe-fixes src/
+    -uv run pydocstringformatter --write src/

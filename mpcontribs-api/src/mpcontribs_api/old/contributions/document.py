@@ -1,29 +1,33 @@
-# -*- coding: utf-8 -*-
-import json
 import itertools
-
-from hashlib import md5
-from math import isnan
-from bson.dbref import DBRef
+import json
 from datetime import datetime
-from flask import current_app
-from atlasq import AtlasManager, AtlasQ
-from itertools import permutations
-from importlib import import_module
-from fastnumbers import isfloat
-from mongoengine import CASCADE, signals, DynamicDocument
-from mongoengine.queryset.manager import queryset_manager
-from mongoengine.fields import StringField, BooleanField, DictField
-from mongoengine.fields import LazyReferenceField, ReferenceField
-from mongoengine.fields import DateTimeField, ListField
-from boltons.iterutils import remap
 from decimal import Decimal
+from hashlib import md5
+from importlib import import_module
+from itertools import permutations
+from math import isnan
+
+from atlasq import AtlasManager, AtlasQ
+from boltons.iterutils import remap
+from bson.dbref import DBRef
+from fastnumbers import isfloat
+from flask import current_app
+from mongoengine import CASCADE, DynamicDocument, signals
+from mongoengine.fields import (
+    BooleanField,
+    DateTimeField,
+    DictField,
+    LazyReferenceField,
+    ListField,
+    ReferenceField,
+    StringField,
+)
+from mongoengine.queryset.manager import queryset_manager
+from mpcontribs.api import delimiter, enter, valid_dict
 from pint import UnitRegistry
 from pint.errors import DimensionalityError
-from uncertainties import ufloat_fromstr
 from pymatgen.core import Composition, Element
-
-from mpcontribs.api import enter, valid_dict, delimiter
+from uncertainties import ufloat_fromstr
 
 quantity_keys = {"display", "value", "error", "unit"}
 max_dgts = 6
@@ -142,17 +146,11 @@ def get_md5(resource, obj, fields):
 
 
 class Contributions(DynamicDocument):
-    project = LazyReferenceField(
-        "Projects", required=True, passthrough=True, reverse_delete_rule=CASCADE
-    )
+    project = LazyReferenceField("Projects", required=True, passthrough=True, reverse_delete_rule=CASCADE)
     identifier = StringField(required=True, help_text="material/composition identifier")
     formula = StringField(help_text="formula (set dynamically if not provided)")
-    is_public = BooleanField(
-        required=True, default=True, help_text="public/private contribution"
-    )
-    last_modified = DateTimeField(
-        required=True, default=datetime.utcnow, help_text="time of last modification"
-    )
+    is_public = BooleanField(required=True, default=True, help_text="public/private contribution")
+    last_modified = DateTimeField(required=True, default=datetime.utcnow, help_text="time of last modification")
     needs_build = BooleanField(default=True, help_text="needs notebook build?")
     data = DictField(
         default=dict,
@@ -160,13 +158,9 @@ class Contributions(DynamicDocument):
         pullout_key="display",
         help_text="simple free-form data",
     )
-    structures = ListField(
-        ReferenceField("Structures", null=True), default=list, max_length=10
-    )
+    structures = ListField(ReferenceField("Structures", null=True), default=list, max_length=10)
     tables = ListField(ReferenceField("Tables", null=True), default=list, max_length=10)
-    attachments = ListField(
-        ReferenceField("Attachments", null=True), default=list, max_length=10
-    )
+    attachments = ListField(ReferenceField("Attachments", null=True), default=list, max_length=10)
     notebook = ReferenceField("Notebooks")
     atlas = AtlasManager("formula_autocomplete")
     meta = {
@@ -282,9 +276,7 @@ class Contributions(DynamicDocument):
                         qq = q.value.to(column.unit)
                         q = new_error_units(q, qq)
                     except DimensionalityError:
-                        raise ValueError(
-                            f"Can't convert [{q.units}] to [{column.unit}] for {field}!"
-                        )
+                        raise ValueError(f"Can't convert [{q.units}] to [{column.unit}] for {field}!")
             else:
                 # try compact representation
                 qq = q.value.to_compact()
@@ -327,7 +319,5 @@ class Contributions(DynamicDocument):
 
 
 signals.post_init.connect(Contributions.post_init, sender=Contributions)
-signals.pre_save_post_validation.connect(
-    Contributions.pre_save_post_validation, sender=Contributions
-)
+signals.pre_save_post_validation.connect(Contributions.pre_save_post_validation, sender=Contributions)
 signals.pre_delete.connect(Contributions.pre_delete, sender=Contributions)

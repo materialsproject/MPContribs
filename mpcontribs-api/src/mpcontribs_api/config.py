@@ -20,33 +20,32 @@ class MongoSettings(BaseModel):
     Provided defaults are the defaults of AsyncMongoClient
     """
 
-    uri: SecretStr = Field(
-        description="The full uri from MongoDB (username and password included)"
-    )
+    uri: SecretStr = Field(description="The full uri from MongoDB (username and password included)")
     db_name: str
     max_pool_size: int = Field(
         default=100,
-        description="Maximum number of allowed concurrent connection to each server. Can be '0' or 'None', both of which allow any number of connections",
+        description="Maximum number of allowed concurrent connection to each server. Can be '0' or 'None', both of "
+        "which allow any number of connections",
     )
     min_pool_size: int = Field(
         default=0,
         description="Minimum number of concurent connections that the pool will maintain connected to each server",
     )
-    datetime_conversion: Literal[
-        "datetime_ms", "datetime", "datetime_auto", "datetime_clamp"
-    ] = Field(
+    datetime_conversion: Literal["datetime_ms", "datetime", "datetime_auto", "datetime_clamp"] = Field(
         default="datetime",
         description="Specifies how UTC datetimes should be decoded within BSON",
     )
     server_selection_timeout_ms: int = Field(
         default=30000,
-        description="Controls how long (in milliseconds) the driver will wait to find an available, appropriate server to carry out a database operation;"
+        description="Controls how long (in milliseconds) the driver will wait to find an available, appropriate server"
+        "to carry out a database operation;"
         "while it is waiting, multiple server monitoring operations may be carried out",
     )
 
     admin_group: str = Field(
         default="admin",
-        description="Name of admin group to consider in requests to MongoDB. Not directly passed to Mongo, but consumed by auth.",
+        description="Name of admin group to consider in requests to MongoDB. Not directly passed to Mongo, but consumed"
+        "by auth.",
     )
 
 

@@ -1,2 +1,1 @@
-# -*- coding: utf-8 -*-
-"""document and views for attachments collection"""
+"""Document and views for attachments collection."""

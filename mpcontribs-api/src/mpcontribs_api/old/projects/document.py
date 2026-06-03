@@ -1,33 +1,31 @@
-# -*- coding: utf-8 -*-
 import urllib
-
-from math import isnan
-from atlasq import AtlasManager, AtlasQ
-from flatten_dict import flatten
-from boltons.iterutils import remap
 from collections import ChainMap
-from flask import current_app, render_template, url_for, request
-from mongoengine import Document
+from math import isnan
+
+from atlasq import AtlasManager, AtlasQ
+from boltons.iterutils import remap
+from flask import current_app, render_template, request, url_for
+from flatten_dict import flatten
 from marshmallow import ValidationError
 from marshmallow.fields import String
 from marshmallow.validate import Email as EmailValidator
 from marshmallow_mongoengine.conversion import params
 from marshmallow_mongoengine.conversion.fields import register_field
-from mongoengine import EmbeddedDocument, signals
-from mongoengine.queryset.manager import queryset_manager
+from mongoengine import Document, EmbeddedDocument, signals
 from mongoengine.fields import (
-    StringField,
     BooleanField,
-    DictField,
-    URLField,
-    EmailField,
     DecimalField,
+    DictField,
+    EmailField,
+    EmbeddedDocumentField,
+    EmbeddedDocumentListField,
     FloatField,
     IntField,
-    EmbeddedDocumentListField,
-    EmbeddedDocumentField,
+    StringField,
+    URLField,
 )
-from mpcontribs.api import send_email, valid_key, valid_dict, delimiter, enter
+from mongoengine.queryset.manager import queryset_manager
+from mpcontribs.api import delimiter, enter, send_email, valid_dict, valid_key
 
 PROVIDERS = {"github", "google", "facebook", "microsoft", "amazon", "portier"}
 MAX_COLUMNS = 160
@@ -46,7 +44,7 @@ def visit(path, key, value):
 
 
 class ProviderEmailField(EmailField):
-    """Field to validate usernames of format <provider>:<email>"""
+    """Field to validate usernames of format <provider>:<email>."""
 
     def validate(self, value):
         if value.count(":") != 1:
@@ -128,9 +126,7 @@ class Projects(Document):
         primary_key=True,
         help_text=f"project name/slug (valid format: `{__project_regex__}`)",
     )
-    is_public = BooleanField(
-        required=True, default=False, help_text="public/private project"
-    )
+    is_public = BooleanField(required=True, default=False, help_text="public/private project")
     title = StringField(
         min_length=5,
         max_length=30,
@@ -168,15 +164,9 @@ class Projects(Document):
         help_text="license (see https://materialsproject.org/about/terms)",
     )
     other = DictField(validation=valid_dict, null=True, help_text="other information")
-    owner = ProviderEmailField(
-        unique_with="name", help_text="owner / corresponding email"
-    )
-    is_approved = BooleanField(
-        required=True, default=False, help_text="project approved?"
-    )
-    unique_identifiers = BooleanField(
-        required=True, default=True, help_text="identifiers unique?"
-    )
+    owner = ProviderEmailField(unique_with="name", help_text="owner / corresponding email")
+    is_approved = BooleanField(required=True, default=False, help_text="project approved?")
+    unique_identifiers = BooleanField(required=True, default=True, help_text="identifiers unique?")
     columns = EmbeddedDocumentListField(Column, max_length=MAX_COLUMNS)
     stats = EmbeddedDocumentField(Stats, required=True, default=Stats)
     atlas = AtlasManager("mpcontribs-dev-project-search")
@@ -187,9 +177,7 @@ class Projects(Document):
 
     @queryset_manager
     def objects(doc_cls, queryset):
-        return queryset.only(
-            "name", "is_public", "title", "owner", "is_approved", "unique_identifiers"
-        )
+        return queryset.only("name", "is_public", "title", "owner", "is_approved", "unique_identifiers")
 
     @classmethod
     def atlas_filter(cls, term):
@@ -205,12 +193,8 @@ class Projects(Document):
             ts = current_app.config["USTS"]
             email_project = [document.owner, document.name]
             token = ts.dumps(email_project)
-            link = url_for(
-                "projects.applications", token=token, _scheme=scheme, _external=True
-            )
-            url = url_for(
-                "projectsFetch", pk=document.name, _scheme=scheme, _external=True
-            )
+            link = url_for("projects.applications", token=token, _scheme=scheme, _external=True)
+            url = url_for("projectsFetch", pk=document.name, _scheme=scheme, _external=True)
             url += "?_fields=_all"
             html = render_template("admin_email.html", url=url, link=link)
             send_email(admin_email, f'New project "{document.name}"', html)
@@ -231,14 +215,10 @@ class Projects(Document):
                 owner_email = document.owner.split(":", 1)[1]
                 send_email(owner_email, subject, html)
 
-            if (
-                "columns" in delta_set
-                or "columns" in delta_unset
-                or (not delta_set and not delta_unset)
-            ):
+            if "columns" in delta_set or "columns" in delta_unset or (not delta_set and not delta_unset):
                 from mpcontribs.api.contributions.document import (
-                    Contributions,
                     COMPONENTS,
+                    Contributions,
                 )
 
                 columns = {}
@@ -258,9 +238,7 @@ class Projects(Document):
                     ]
                     result = Contributions.objects.aggregate(pipeline)
                     merged = ChainMap(*result)
-                    flat = flatten(
-                        remap(merged, visit=visit, enter=enter), reducer="dot"
-                    )
+                    flat = flatten(remap(merged, visit=visit, enter=enter), reducer="dot")
 
                     for k, v in flat.items():
                         if k.startswith("data."):
@@ -303,9 +281,7 @@ class Projects(Document):
                     project_stage[component] = {"$size": f"${component}"}
 
                 # filter/forward number columns
-                min_max_paths = [
-                    path for path, col in columns.items() if col["unit"] != "NaN"
-                ]
+                min_max_paths = [path for path, col in columns.items() if col["unit"] != "NaN"]
                 for path in min_max_paths:
                     field = f"{path}{delimiter}value"
                     project_stage[field] = {
@@ -379,9 +355,7 @@ class Projects(Document):
         send_email(owner_email, subject, html)
 
 
-register_field(
-    ProviderEmailField, ProviderEmail, available_params=(params.LengthParam,)
-)
+register_field(ProviderEmailField, ProviderEmail, available_params=(params.LengthParam,))
 signals.post_save.connect(Projects.post_save, sender=Projects)
 signals.post_delete.connect(Projects.post_delete, sender=Projects)
 Projects.atlas.index._set_indexed_fields({"type": "document", "dynamic": True})

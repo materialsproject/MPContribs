@@ -14,9 +14,7 @@ _EMAIL_RE = re.compile(r"^[^:@\s]+:[^:@\s]+@[^@\s]+\.[^@\s]+$")
 def _validate_prefixed_email(v: str) -> str:
     v = v.strip()
     if not _EMAIL_RE.match(v):
-        raise ValidationError(
-            "must match '<provider>:<name>@<domain>', e.g. 'google:name@gmail.com'"
-        )
+        raise ValidationError("must match '<provider>:<name>@<domain>', e.g. 'google:name@gmail.com'")
     return v
 
 

@@ -77,10 +77,10 @@ Documentation = "https://docs.materialsproject.org/services/mpcontribs"
 
 [dependency-groups]
 dev = [
-    "flake8>=7.3.0",
+    "ruff>=0.9.0",
+    "basedpyright>=1.29.0",
+    "pydocstringformatter>=0.7.0",
     "pytest>=9.0.3",
-    "pytest-flake8>=1.3.0",
-    "pytest-pycodestyle>=2.5.0",
     "pytest-xdist>=3.8.0",
 ]
 
@@ -90,22 +90,19 @@ markers = [
     "extra: all extra views",
 ]
 
-[tool.pycodestyle]
-count = true
-ignore = ["E121","E123","E126","E133","E226","E241","E242","E704","W503","W504","W505","E741","W605"]
+[tool.ruff]
+line-length = 120
+exclude = ["src/mpcontribs_api/old"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP"]
+ignore = ["E741", "B008"]
+
+[tool.pydocstringformatter]
 max-line-length = 120
-statistics = true
-exclude = ["flasgger","flask-mongorest"]
+exclude = ["src/mpcontribs_api/old"]
 
-[tool.flake8]
-exclude = [".git","__pycache__","tests","flasgger","flask-mongorest"]
-extend-ignore = ["E741",]
-max-line-length = 120
-
-[tool.pydocstyle]
-ignore = ["D105","D2","D4"]
-
-[tool.mypy]
-ignore_missing_imports = true
-namespace_packages = true
-python_version = 3.14
+[tool.basedpyright]
+pythonVersion = "3.14"
+typeCheckingMode = "standard"
+ignore = ["src/mpcontribs_api/old"]

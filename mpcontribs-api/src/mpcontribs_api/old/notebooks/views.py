@@ -1,27 +1,24 @@
-# -*- coding: utf-8 -*-
 import os
 import time
-import requests
-import flask_mongorest
 
-from rq import get_current_job
-from rq.job import Job
-from gevent import sleep
-from nbformat import v4 as nbf
-from flask_rq2 import RQ
-from flask import Blueprint, request, abort, jsonify, current_app
+import flask_mongorest
+import requests
+from flask import Blueprint, abort, current_app, jsonify, request
 from flask_mongorest import operators as ops
-from flask_mongorest.methods import Fetch, BulkFetch
+from flask_mongorest.methods import BulkFetch, Fetch
 from flask_mongorest.resources import Resource
+from flask_rq2 import RQ
+from gevent import sleep
 from mongoengine.errors import DoesNotExist
 from mongoengine.queryset.visitor import Q
-
 from mpcontribs.api import get_kernel_endpoint, get_logger
-from mpcontribs.api.core import SwaggerView
 from mpcontribs.api.contributions.document import Contributions
-from mpcontribs.api.notebooks.document import Notebooks
+from mpcontribs.api.core import SwaggerView
 from mpcontribs.api.notebooks import run_cells
-
+from mpcontribs.api.notebooks.document import Notebooks
+from nbformat import v4 as nbf
+from rq import get_current_job
+from rq.job import Job
 
 logger = get_logger(__name__)
 templates = os.path.join(os.path.dirname(flask_mongorest.__file__), "templates")
@@ -99,19 +96,13 @@ def build():
 
 
 def restart_kernels():
-    """use to avoid run-away memory"""
+    """Use to avoid run-away memory."""
     kernel_ids = [k for k, v in current_app.kernels.items() if v is None]
 
     for kernel_id in kernel_ids:
         kernel_url = get_kernel_endpoint(kernel_id) + "/restart"
         requests.post(kernel_url, json={})
-        cells = [
-            nbf.new_code_cell(
-                "\n".join(
-                    ["from mpcontribs.client import Client", "print('client imported')"]
-                )
-            )
-        ]
+        cells = [nbf.new_code_cell("\n".join(["from mpcontribs.client import Client", "print('client imported')"]))]
         run_cells(kernel_id, "import_client", cells)
 
 
@@ -140,7 +131,7 @@ def result(job_id):
 
 @rq.job()
 def make(projects=None, cids=None, force=False):
-    """build the notebook / details page"""
+    """Build the notebook / details page."""
     start = time.perf_counter()
     remaining_time = rq.default_timeout - 5
     mask = ["id", "needs_build", "notebook"]
@@ -180,11 +171,7 @@ def make(projects=None, cids=None, force=False):
 
         start = time.perf_counter()
 
-        if (
-            not force
-            and document.notebook
-            and not getattr(document, "needs_build", True)
-        ):
+        if not force and document.notebook and not getattr(document, "needs_build", True):
             continue
 
         if document.notebook:
@@ -216,23 +203,13 @@ def make(projects=None, cids=None, force=False):
                     ]
                 )
             ),
-            nbf.new_code_cell(
-                "\n".join(
-                    [f'c = client.get_contribution("{document.id}")', "c.display()"]
-                )
-            ),
+            nbf.new_code_cell("\n".join([f'c = client.get_contribution("{document.id}")', "c.display()"])),
         ]
 
         if document.tables:
             cells.append(nbf.new_markdown_cell("## Tables"))
             for table in document.tables:
-                cells.append(
-                    nbf.new_code_cell(
-                        "\n".join(
-                            [f't = client.get_table("{table.id}")', "t.display()"]
-                        )
-                    )
-                )
+                cells.append(nbf.new_code_cell("\n".join([f't = client.get_table("{table.id}")', "t.display()"])))
 
         if document.structures:
             cells.append(nbf.new_markdown_cell("## Structures"))

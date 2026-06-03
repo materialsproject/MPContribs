@@ -12,6 +12,4 @@ def get_scoped_contributions(user: UserDep) -> MongoDbContributionRepository:
     return MongoDbContributionRepository(user)
 
 
-ContributionDep = Annotated[
-    MongoDbContributionRepository, Depends(get_scoped_contributions)
-]
+ContributionDep = Annotated[MongoDbContributionRepository, Depends(get_scoped_contributions)]

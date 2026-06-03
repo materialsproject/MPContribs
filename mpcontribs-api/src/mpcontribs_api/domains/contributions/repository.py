@@ -11,7 +11,7 @@ from src.mpcontribs_api.pagination import CursorParams
 
 class MongoDbContributionRepository:
     def __init__(self, user: User) -> None:
-        """Initializes an instance based on the current user
+        """Initializes an instance based on the current user.
 
         Args:
             user (User): the current user requesting resources
@@ -29,9 +29,7 @@ class MongoDbContributionRepository:
                 ors.append({"_id": {"$in": sorted(user.groups)}})
         return {"$or": ors}
 
-    async def get_contributions(
-        self, pagination: CursorParams, filter: ContributionFilter, fields: str | None
-    ):
+    async def get_contributions(self, pagination: CursorParams, filter: ContributionFilter, fields: str | None):
         pass
 
     async def delete_contributions(self, filter: ContributionFilter):

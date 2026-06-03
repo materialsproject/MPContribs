@@ -130,7 +130,7 @@ class ProjectIn(Project):
 
 
 class ProjectPatch(BaseModel):
-    """Nullable Project representation of user-supplied data for partial update (patch)"""
+    """Nullable Project representation of user-supplied data for partial update (patch)."""
 
     title: ShortStr | None = None
     authors: str | None = None

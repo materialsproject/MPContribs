@@ -1,15 +1,12 @@
-# -*- coding: utf-8 -*-
-"""configuration module for MPContribs Flask API"""
+"""Configuration module for MPContribs Flask API."""
 
-import os
-import json
 import gzip
+import json
+import os
 
 from mpcontribs.api import __version__
 
-formulae_path = os.path.join(
-    os.path.dirname(__file__), "contributions", "formulae.json.gz"
-)
+formulae_path = os.path.join(os.path.dirname(__file__), "contributions", "formulae.json.gz")
 
 with gzip.open(formulae_path) as f:
     FORMULAE = json.load(f)

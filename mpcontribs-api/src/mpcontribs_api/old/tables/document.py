@@ -1,14 +1,12 @@
-# -*- coding: utf-8 -*-
 from flask_mongoengine.documents import DynamicDocument
-from mongoengine import signals, EmbeddedDocument
-from mongoengine.fields import StringField, ListField, IntField, EmbeddedDocumentField
+from mongoengine import EmbeddedDocument, signals
+from mongoengine.fields import EmbeddedDocumentField, IntField, ListField, StringField
 from mongoengine.queryset.manager import queryset_manager
-
 from mpcontribs.api.contributions.document import (
-    format_cell,
-    get_resource,
-    get_md5,
     COMPONENTS,
+    format_cell,
+    get_md5,
+    get_resource,
 )
 
 

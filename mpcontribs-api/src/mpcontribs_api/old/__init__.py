@@ -1,5 +1,4 @@
-# -*- coding: utf-8 -*-
-"""Flask App for MPContribs API"""
+"""Flask App for MPContribs API."""
 
 import logging
 import os
@@ -53,9 +52,7 @@ FILTERS = {
     "OTHERS": [ops.Boolean, ops.Exists],
 }
 FILTERS["STRINGS"] = [ops.In, ops.Exact, ops.IExact, ops.Ne] + FILTERS["LONG_STRINGS"]
-FILTERS["ALL"] = (
-    FILTERS["STRINGS"] + FILTERS["NUMBERS"] + FILTERS["DATES"] + FILTERS["OTHERS"]
-)
+FILTERS["ALL"] = FILTERS["STRINGS"] + FILTERS["NUMBERS"] + FILTERS["DATES"] + FILTERS["OTHERS"]
 
 
 class CustomLoggerAdapter(logging.LoggerAdapter):
@@ -129,14 +126,14 @@ def send_email(to, subject, html):
 
 
 def get_collections(db):
-    """get list of collections in DB"""
+    """Get list of collections in DB."""
     conn = db.app.extensions["mongoengine"][db]["conn"]
     dbname = db.app.config.get("MPCONTRIBS_DB")
     return conn[dbname].list_collection_names()
 
 
 def get_resource_as_string(name, charset="utf-8"):
-    """http://flask.pocoo.org/snippets/77/"""
+    """Http://flask.pocoo.org/snippets/77/."""
     with current_app.open_resource(name) as f:
         return f.read().decode(charset)
 
@@ -162,7 +159,7 @@ def create_kernel_connection(kernel_id):
 
 
 def get_kernels():
-    """retrieve list of kernels from KernelGateway service"""
+    """Retrieve list of kernels from KernelGateway service."""
     try:
         r = requests.get(get_kernel_endpoint(), timeout=2)
     except ConnectionError, Timeout:
@@ -191,7 +188,7 @@ def get_consumer():
 
 
 def create_app():
-    """create flask app"""
+    """Create flask app."""
     app = Flask(__name__)
     app.config.from_pyfile("config.py", silent=True)
     app.config["USTS"] = URLSafeTimedSerializer(app.secret_key)
@@ -206,7 +203,7 @@ def create_app():
     Marshmallow(app)
     MongoEngine(app)
     Swagger(app, template=app.config.get("TEMPLATE"))
-    setattr(app, "kernels", get_kernels())
+    app.kernels = get_kernels()
 
     # NOTE: hard-code to avoid pre-generating for new deployment
     # collections = get_collections(db)
