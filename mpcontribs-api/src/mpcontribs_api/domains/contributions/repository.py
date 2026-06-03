@@ -36,7 +36,8 @@ class MongoDbContributionRepository(MongoDbRepository[Contribution, Contribution
         return await self.get_many(pagination=pagination, filter=filter, fields=fields)
 
     async def delete_contributions(self, filter: ContributionFilter):
-        pass
+        docs = filter.filter(self.document_model.find(self._scope))
+        await docs.delete()
 
     async def insert_contributions(self, contributions: list[ContributionIn]):
         pass
