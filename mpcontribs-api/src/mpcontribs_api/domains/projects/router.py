@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Query, Response, status
+from fastapi import APIRouter, Depends, Query, Response, status
 from fastapi_filter import FilterDepends
 from starlette.status import HTTP_204_NO_CONTENT
 
@@ -20,7 +20,7 @@ router = APIRouter()
 @router.get("", response_model=None)
 async def get_project(
     repo: ProjectDep,
-    pagination: Annotated[CursorParams, Query()],
+    pagination: Annotated[CursorParams, Depends()],
     filter: ProjectFilter = FilterDepends(ProjectFilter),
     fields: Annotated[str | None, Query(alias="_fields")] = None,
 ):

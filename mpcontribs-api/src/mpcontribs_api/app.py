@@ -9,12 +9,12 @@ from fastapi import Depends, FastAPI
 from pymongo import AsyncMongoClient
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from mpcontribs_api.api.v1.router import router as v1_router
-from mpcontribs_api.config import Settings, get_settings
-from mpcontribs_api.exceptions import register_exception_handlers
-from mpcontribs_api.logging import configure_logging
+from src.mpcontribs_api.api.v1.router import router as v1_router
+from src.mpcontribs_api.config import Settings, get_settings
 from src.mpcontribs_api.dependencies import verify_gateway
 from src.mpcontribs_api.domains.projects.models import Project
+from src.mpcontribs_api.exceptions import register_exception_handlers
+from src.mpcontribs_api.logging import configure_logging
 from src.mpcontribs_api.middleware import bind_request_context
 
 logger = logging.getLogger(__name__)

@@ -1,6 +1,6 @@
 from typing import Annotated, Literal
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Depends, Query
 from fastapi_filter import FilterDepends
 
 from src.mpcontribs_api.domains.contributions.dependencies import ContributionDep
@@ -18,7 +18,7 @@ router = APIRouter()
 @router.get("")
 async def get_contributions(
     repo: ContributionDep,
-    pagination: Annotated[CursorParams, Query()],
+    pagination: Annotated[CursorParams, Depends()],
     filter: ContributionFilter = FilterDepends(ContributionFilter),
     fields: Annotated[str | None, Query(alias="_fields")] = None,
 ):
