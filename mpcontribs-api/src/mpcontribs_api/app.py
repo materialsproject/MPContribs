@@ -9,6 +9,7 @@ from fastapi import Depends, FastAPI
 from pymongo import AsyncMongoClient
 from starlette.middleware.base import BaseHTTPMiddleware
 
+from mpcontribs_api._openapi import contact_info, license_info, openapi_tags
 from mpcontribs_api.api.v1.router import router as v1_router
 from mpcontribs_api.config import Settings, get_settings
 from mpcontribs_api.dependencies import verify_gateway
@@ -17,7 +18,6 @@ from mpcontribs_api.domains.projects.models import Project
 from mpcontribs_api.exceptions import register_exception_handlers
 from mpcontribs_api.logging import configure_logging
 from mpcontribs_api.middleware import bind_request_context
-from src.mpcontribs_api._openapi import openapi_tags
 
 logger = logging.getLogger(__name__)
 
@@ -58,16 +58,14 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     app = FastAPI(
         title="mpcontribs-api",
+        description="Operations to contribute, update and retrieve materials data on Materials Project",
         version=settings.version,
         debug=settings.environment != "prod",
         lifespan=_build_lifespan(settings),
         dependencies=[Depends(verify_gateway)],
         terms_of_service="https://materialsproject.org/terms",
-        contact={
-            "name": "MPContribs",
-            "url": "https://mpcontribs.org/",
-            "email": "contribs@materialsproject.org",
-        },
+        license_info=license_info,
+        contact=contact_info,
         # openapi_url="/api/v1/openapi.json",
         openapi_tags=openapi_tags,
     )
@@ -79,5 +77,4 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     return app
 
 
-# For `uvicorn src.mpcontribs_api.app:app`
 app = create_app()
