@@ -12,6 +12,7 @@ from mpcontribs_api.api.v1.router import router as v1_router
 from mpcontribs_api.config import Settings, get_settings
 from mpcontribs_api.dependencies import verify_gateway
 from mpcontribs_api.domains.contributions.models import Contribution
+from mpcontribs_api.domains.healthcheck.router import router as healthcheck_router
 from mpcontribs_api.domains.projects.models import Project
 from mpcontribs_api.exceptions import register_exception_handlers
 from mpcontribs_api.logging import configure_logging, get_logger
@@ -31,7 +32,7 @@ def _build_lifespan(settings: Settings):
             serverSelectionTimeoutMS=settings.mongo.server_selection_timeout_ms,
             uuidRepresentation="standard",
         )
-        # Fail fast if the DB is unreachable. Cheap, one round-trip.
+        # Fail fast if the DB is unreachable
         await client.admin.command("ping")
         logger.info("connected to mongo", extra={"db": settings.mongo.db_name})
 
@@ -60,7 +61,6 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         version=settings.version,
         debug=settings.environment != "prod",
         lifespan=_build_lifespan(settings),
-        dependencies=[Depends(verify_gateway)],
         terms_of_service="https://materialsproject.org/terms",
         license_info=license_info,
         contact=contact_info,
@@ -70,7 +70,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     app.add_middleware(RequestContextMiddleware)
     register_exception_handlers(app)
-    app.include_router(v1_router, prefix="/api/v1")
+    app.include_router(healthcheck_router, prefix="/health")
+    app.include_router(v1_router, prefix="/api/v1", dependencies=[Depends(verify_gateway)])
 
     return app
 
