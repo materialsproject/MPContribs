@@ -6,7 +6,6 @@ from contextlib import asynccontextmanager
 from beanie import init_beanie
 from fastapi import Depends, FastAPI
 from pymongo import AsyncMongoClient
-from starlette.middleware.base import BaseHTTPMiddleware
 
 from mpcontribs_api._openapi import contact_info, license_info, openapi_tags
 from mpcontribs_api.api.v1.router import router as v1_router
@@ -16,7 +15,7 @@ from mpcontribs_api.domains.contributions.models import Contribution
 from mpcontribs_api.domains.projects.models import Project
 from mpcontribs_api.exceptions import register_exception_handlers
 from mpcontribs_api.logging import configure_logging, get_logger
-from mpcontribs_api.middleware import bind_request_context
+from mpcontribs_api.middleware import RequestContextMiddleware
 
 logger = get_logger(__name__)
 
@@ -69,7 +68,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         openapi_tags=openapi_tags,
     )
 
-    app.add_middleware(BaseHTTPMiddleware, dispatch=bind_request_context)
+    app.add_middleware(RequestContextMiddleware)
     register_exception_handlers(app)
     app.include_router(v1_router, prefix="/api/v1")
 
