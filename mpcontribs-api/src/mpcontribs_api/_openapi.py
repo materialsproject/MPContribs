@@ -42,3 +42,14 @@ openapi_tags = [
         "on the Portal.",
     },
 ]
+
+contact_info = {
+    "name": "MPContribs",
+    "url": "https://mpcontribs.org/",
+    "email": "contribs@materialsproject.org",
+}
+
+license_info = {
+    "name": "Creative Commons Attribution 4.0 International License",
+    "url": "https://creativecommons.org/licenses/by/4.0/",
+}
