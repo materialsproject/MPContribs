@@ -1,6 +1,6 @@
 from typing import Annotated, Literal
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends
 from fastapi_filter import FilterDepends
 
 from mpcontribs_api.domains.contributions.dependencies import ContributionDep
@@ -56,9 +56,10 @@ async def download_contributions(
     repo: ContributionDep,
     format: Literal["json", "csv", "parquet"] = "parquet",
     filter: ContributionFilter = FilterDepends(ContributionFilter),
-    fields: Annotated[str | None, Query(alias="_fields")] = None,
+    fields: FieldSelector = ContributionOut.default_fields(),
 ):
-    return await repo.download_contributions(format=format, filter=filter, fields=fields)
+    selected = ContributionOut.parse_fields(fields)
+    return await repo.download_contributions(format=format, filter=filter, fields=selected)
 
 
 @router.delete("{id}")
@@ -73,9 +74,10 @@ async def delete_contribtion_by_id(
 async def get_contribution_by_id(
     repo: ContributionDep,
     id: str,
-    fields: Annotated[str | None, Query(alias="_fields")] = None,
+    fields: FieldSelector = ContributionOut.default_fields(),
 ):
-    return await repo.get_contribution_by_id(id=id, fields=fields)
+    selected = ContributionOut.parse_fields(fields)
+    return await repo.get_contribution_by_id(id=id, fields=selected)
 
 
 @router.put("{id}")
