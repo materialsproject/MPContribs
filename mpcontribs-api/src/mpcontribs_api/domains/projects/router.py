@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query, Response, status
+from fastapi import APIRouter, Depends, Response, status
 from fastapi_filter import FilterDepends
 from starlette.status import HTTP_204_NO_CONTENT
 
@@ -12,6 +12,7 @@ from mpcontribs_api.domains.projects.models import (
     ProjectPatch,
 )
 from mpcontribs_api.pagination import CursorParams
+from mpcontribs_api.types import FieldSelector
 
 router = APIRouter(tags=["projects"])
 
@@ -22,7 +23,7 @@ async def get_project(
     repo: ProjectDep,
     pagination: Annotated[CursorParams, Depends()],
     filter: ProjectFilter = FilterDepends(ProjectFilter),
-    fields: Annotated[str | None, Query(alias="_fields")] = None,
+    fields: FieldSelector = ProjectOut.default_fields(),
 ):
     """Return paginated projects matching a filter.
 
@@ -42,7 +43,7 @@ async def get_project(
 async def get_project_by_id(
     id: str,
     repo: ProjectDep,
-    fields: Annotated[str | None, Query(alias="_fields")] = None,
+    fields: FieldSelector = ProjectOut.default_fields(),
 ):
     """Gets a single project by its ID.
 

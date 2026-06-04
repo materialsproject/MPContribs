@@ -1,12 +1,14 @@
 import re
 from typing import Annotated
 
+from fastapi import Query
 from pydantic import BeforeValidator, Field
 
 from mpcontribs_api.exceptions import ValidationError
 
 ShortStr = Annotated[str, Field(min_length=3, max_length=30)]
 
+FieldSelector = Annotated[list[str] | None, Query(alias="_fields")]
 
 _EMAIL_RE = re.compile(r"^[^:@\s]+:[^:@\s]+@[^@\s]+\.[^@\s]+$")
 

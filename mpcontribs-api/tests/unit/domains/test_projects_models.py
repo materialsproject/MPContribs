@@ -133,12 +133,12 @@ class TestProjectOutProjection:
         assert ProjectOut.parse_fields(None) is None
 
     def test_parse_fields_valid_field(self):
-        result = ProjectOut.parse_fields("title")
+        result = ProjectOut.parse_fields(["title"])
         assert result is not None
         assert "title" in result
 
     def test_parse_fields_multiple_fields(self):
-        result = ProjectOut.parse_fields("title,authors,is_public")
+        result = ProjectOut.parse_fields(["title", "authors", "is_public"])
         assert result is not None
         assert "title" in result
         assert "authors" in result
@@ -148,13 +148,13 @@ class TestProjectOutProjection:
         from mpcontribs_api.exceptions import ValidationError as AppValidationError
 
         with pytest.raises(AppValidationError):
-            ProjectOut.parse_fields("nonexistent_field")
+            ProjectOut.parse_fields(["nonexistent_field"])
 
     def test_projection_none_returns_self(self):
         assert ProjectOut.projection(None) is ProjectOut
 
     def test_projection_with_fields(self):
-        fields = ProjectOut.parse_fields("title,authors")
+        fields = ProjectOut.parse_fields(["title", "authors"])
         projected = ProjectOut.projection(fields)
         assert projected is not ProjectOut
         assert hasattr(projected.Settings, "projection")

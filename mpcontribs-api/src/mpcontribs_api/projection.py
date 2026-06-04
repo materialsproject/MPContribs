@@ -206,12 +206,12 @@ class SparseFieldsModel(BaseModel):
         return frozenset(cls.model_fields)
 
     @classmethod
-    def parse_fields(cls, raw: str | None) -> frozenset[str] | None:
+    def parse_fields(cls, raw: list | None) -> frozenset[str] | None:
         """Validate and normalise a raw ``_fields`` value into a set of paths.
 
         Args:
-            raw: The comma-separated ``_fields`` value, or None when the query
-                parameter was omitted.
+            raw (list): The list of field paths from the ``_fields`` query parameter,
+                or None when the query parameter was omitted.
 
         Returns:
             None when every field should be returned (parameter omitted),
@@ -224,7 +224,7 @@ class SparseFieldsModel(BaseModel):
         """
         if not raw:
             return None  # None == all fields
-        requested = frozenset(name.strip() for name in raw.split(",") if name.strip())
+        requested = frozenset(name.strip() for name in raw if name.strip())
         for path in requested:
             _validate_path(cls, path)
         return _collapse(requested | cls.sparse_always | cls._identity_fields())

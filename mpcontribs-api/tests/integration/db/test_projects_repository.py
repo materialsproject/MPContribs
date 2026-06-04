@@ -162,7 +162,7 @@ class TestGetProjectById:
 class TestFieldProjection:
     async def test_projection_returns_only_requested_fields(self, db):
         await _insert("proj-fields", is_public=True, is_approved=True)
-        fields = ProjectOut.parse_fields("title")
+        fields = ProjectOut.parse_fields(["title"])
         page = await _repo(ADMIN).get_project(filter=_noop_filter(), pagination=CursorParams(), fields=fields)
         assert len(page.items) == 1
         item = page.items[0]

@@ -63,7 +63,7 @@ class TestListContributions:
 
     def test_fields_forwarded(self, client, contribution_repo):
         contribution_repo.get_contributions.return_value = Page(items=[], next_cursor=None)
-        client.get("/api/v1/contributions", params={"_fields": "formula"}, headers=AUTHED_HEADERS)
+        client.get("/api/v1/contributions", params={"_fields": ["formula"]}, headers=AUTHED_HEADERS)
         _, kwargs = contribution_repo.get_contributions.call_args
         assert kwargs["fields"] is not None
         assert "formula" in kwargs["fields"]
