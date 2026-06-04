@@ -3,8 +3,8 @@ from typing import Any
 import pytest
 from pydantic import BaseModel, Field
 
-from src.mpcontribs_api.exceptions import ValidationError as AppValidationError
-from src.mpcontribs_api.projection import (
+from mpcontribs_api.exceptions import ValidationError as AppValidationError
+from mpcontribs_api.projection import (
     SparseFieldsModel,
     _classify,
     _collapse,

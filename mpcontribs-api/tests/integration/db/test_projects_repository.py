@@ -1,10 +1,10 @@
 import pytest
 
-from src.mpcontribs_api.auth import User
-from src.mpcontribs_api.domains.projects.models import Project, ProjectIn, ProjectOut, ProjectPatch, Stats
-from src.mpcontribs_api.domains.projects.repository import MongoDbProjectRepository
-from src.mpcontribs_api.exceptions import ConflictError, NotFoundError
-from src.mpcontribs_api.pagination import CursorParams
+from mpcontribs_api.auth import User
+from mpcontribs_api.domains.projects.models import Project, ProjectIn, ProjectOut, ProjectPatch, Stats
+from mpcontribs_api.domains.projects.repository import MongoDbProjectRepository
+from mpcontribs_api.exceptions import ConflictError, NotFoundError
+from mpcontribs_api.pagination import CursorParams
 
 """Database integration tests for MongoDbProjectRepository.
 
@@ -122,7 +122,7 @@ class TestAuthorizationScope:
 
 
 def _noop_filter():
-    from src.mpcontribs_api.domains.projects.models import ProjectFilter
+    from mpcontribs_api.domains.projects.models import ProjectFilter
 
     return ProjectFilter()
 

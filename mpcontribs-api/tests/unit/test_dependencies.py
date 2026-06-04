@@ -2,9 +2,9 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from src.mpcontribs_api.auth import User
-from src.mpcontribs_api.dependencies import _split, get_user, require_user
-from src.mpcontribs_api.exceptions import AuthenticationError
+from mpcontribs_api.auth import User
+from mpcontribs_api.dependencies import _split, get_user, require_user
+from mpcontribs_api.exceptions import AuthenticationError
 
 # ---------------------------------------------------------------------------
 # _split

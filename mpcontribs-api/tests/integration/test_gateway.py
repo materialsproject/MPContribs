@@ -14,9 +14,9 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from src.mpcontribs_api.domains.contributions.dependencies import get_scoped_contributions
-from src.mpcontribs_api.domains.projects.dependencies import get_scoped_projects
-from src.mpcontribs_api.pagination import Page
+from mpcontribs_api.domains.contributions.dependencies import get_scoped_contributions
+from mpcontribs_api.domains.projects.dependencies import get_scoped_projects
+from mpcontribs_api.pagination import Page
 from tests.integration.conftest import GATEWAY_SECRET
 
 

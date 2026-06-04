@@ -13,21 +13,42 @@ Fixtures follow the pattern:
 """
 
 from contextlib import asynccontextmanager
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from src.mpcontribs_api.exceptions import register_exception_handlers
-from src.mpcontribs_api.middleware import bind_request_context
+from mpcontribs_api.exceptions import register_exception_handlers
+from mpcontribs_api.middleware import bind_request_context
+
+
+@pytest.fixture(autouse=True, scope="session")
+def _mock_beanie_collection():
+    """Stub Beanie's collection check for mock-based integration tests.
+
+    FastAPI parses request bodies into Beanie Document subclasses (e.g.
+    ProjectIn), which calls get_pymongo_collection() in __init__.  Without a
+    real init_beanie() these raise CollectionWasNotInitialized.
+
+    The tests/integration/db/ conftest overrides this fixture with a no-op so
+    DB tests still get the real Beanie collection after init_beanie().
+    """
+    import beanie
+
+    with patch.object(beanie.Document, "get_pymongo_collection", return_value=MagicMock()):
+        yield
 
 # ---------------------------------------------------------------------------
 # Header constants used across test modules
 # ---------------------------------------------------------------------------
 
-GATEWAY_SECRET = "test-gateway-secret"
+from mpcontribs_api.config import get_settings
+
+# Read the real secret from settings (from .env or the root conftest fallback)
+# so gateway tests always use whatever the live server will accept.
+GATEWAY_SECRET = get_settings().kong.gateway_secret.get_secret_value()
 GATEWAY_HEADERS = {"x-gateway-secret": GATEWAY_SECRET}
 
 ANON_HEADERS: dict[str, str] = {}
@@ -67,7 +88,7 @@ def make_test_app() -> FastAPI:
     app.add_middleware(BaseHTTPMiddleware, dispatch=bind_request_context)
     register_exception_handlers(app)
 
-    from src.mpcontribs_api.api.v1.router import router as v1_router
+    from mpcontribs_api.api.v1.router import router as v1_router
 
     app.include_router(v1_router, prefix="/api/v1")
     return app
@@ -81,7 +102,7 @@ def make_gateway_app() -> FastAPI:
     """
     from fastapi import Depends
 
-    from src.mpcontribs_api.dependencies import verify_gateway
+    from mpcontribs_api.dependencies import verify_gateway
 
     @asynccontextmanager
     async def _noop_lifespan(app: FastAPI):
@@ -96,7 +117,7 @@ def make_gateway_app() -> FastAPI:
     app.add_middleware(BaseHTTPMiddleware, dispatch=bind_request_context)
     register_exception_handlers(app)
 
-    from src.mpcontribs_api.api.v1.router import router as v1_router
+    from mpcontribs_api.api.v1.router import router as v1_router
 
     app.include_router(v1_router, prefix="/api/v1")
     return app

@@ -4,7 +4,7 @@ import pytest
 from beanie import PydanticObjectId
 from pydantic import ValidationError as PydanticValidationError
 
-from src.mpcontribs_api.domains.contributions.models import (
+from mpcontribs_api.domains.contributions.models import (
     Contribution,
     ContributionIn,
     ContributionOut,

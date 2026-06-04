@@ -1,7 +1,7 @@
 import pytest
 from pydantic import ValidationError as PydanticValidationError
 
-from src.mpcontribs_api.domains.projects.models import (
+from mpcontribs_api.domains.projects.models import (
     Column,
     Project,
     ProjectIn,
@@ -145,7 +145,7 @@ class TestProjectOutProjection:
         assert "is_public" in result
 
     def test_parse_fields_unknown_raises(self):
-        from src.mpcontribs_api.exceptions import ValidationError as AppValidationError
+        from mpcontribs_api.exceptions import ValidationError as AppValidationError
 
         with pytest.raises(AppValidationError):
             ProjectOut.parse_fields("nonexistent_field")

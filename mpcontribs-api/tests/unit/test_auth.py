@@ -1,6 +1,6 @@
 import pytest
 
-from src.mpcontribs_api.auth import ADMIN_GROUP, User
+from mpcontribs_api.auth import ADMIN_GROUP, User
 
 
 class TestUserIsAnonymous:

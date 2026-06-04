@@ -3,7 +3,7 @@ import base64
 import pytest
 from pydantic import ValidationError as PydanticValidationError
 
-from src.mpcontribs_api.pagination import (
+from mpcontribs_api.pagination import (
     CursorParams,
     Page,
     decode_cursor,

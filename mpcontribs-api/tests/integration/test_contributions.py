@@ -7,9 +7,9 @@ single-resource) are verified to exist and wire through to the repo.
 
 import pytest
 
-from src.mpcontribs_api.domains.contributions.dependencies import get_scoped_contributions
-from src.mpcontribs_api.domains.contributions.models import ContributionOut
-from src.mpcontribs_api.pagination import Page
+from mpcontribs_api.domains.contributions.dependencies import get_scoped_contributions
+from mpcontribs_api.domains.contributions.models import ContributionOut
+from mpcontribs_api.pagination import Page
 from tests.integration.conftest import ANON_HEADERS, AUTHED_HEADERS
 
 # ---------------------------------------------------------------------------
