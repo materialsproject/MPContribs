@@ -13,11 +13,20 @@ from mpcontribs_api.domains.contributions.models import (
     ContributionOut,
     ContributionPatch,
 )
-from mpcontribs_api.exceptions import NotFoundError
 from mpcontribs_api.pagination import CursorParams
 
 
-class MongoDbContributionRepository(MongoDbRepository[Contribution, ContributionIn, ContributionOut]):
+class MongoDbContributionRepository(
+    MongoDbRepository[Contribution, ContributionIn, ContributionOut, ContributionFilter, ContributionPatch]
+):
+    """A repository layer for access to MongoDB.
+
+    Shared CRUD logic lives on :class:`MongoDbRepository`; the methods here are domain-named
+    forwarders that give routers a consistent vocabulary and concrete types, plus the operations
+    whose shape is genuinely contribution-specific (filtered delete, bulk insert, compound-key and
+    id-keyed upsert, download).
+    """
+
     document_model = Contribution
     out_model = ContributionOut
 
@@ -38,18 +47,55 @@ class MongoDbContributionRepository(MongoDbRepository[Contribution, Contribution
         filter: ContributionFilter,
         fields: frozenset[str] | None,
     ):
+        """Query the Contribution collection, scoped to the current user. See ``get_many``."""
         return await self.get_many(pagination=pagination, filter=filter, fields=fields)
 
+    async def get_contribution_by_id(self, id: str, fields: frozenset[str] | None):
+        """Find a single contribution by id, scoped to the current user. See ``get_by_id``."""
+        return await self.get_by_id(id, fields)
+
+    async def patch_contribution_by_id(self, id: str, update: ContributionPatch):
+        """Partially update a contribution by id, scoped to the current user. See ``patch``."""
+        return await self.patch(id, update)
+
+    async def delete_contribution_by_id(self, id: str) -> None:
+        """Delete a contribution by id, scoped to the current user. See ``delete_by_id``."""
+        await self.delete_by_id(id)
+
     async def delete_contributions(self, filter: ContributionFilter):
+        """Bulk deletion of Contributions described by the filter
+
+        Args:
+            filter (ContribtionFilter): the filter to use to identify contributions to delete
+        """
         docs = filter.filter(self.document_model.find(self._scope))
         await docs.delete()
 
     async def insert_contributions(self, contributions: list[ContributionIn]):
+        """Bulk insertion of Contributions
+
+        Args:
+            contributions (list[ContributionIn]): the list of contributions to be inserted
+
+        Returns:
+            list[ContributionOut]: the inserted documents
+        """
         full_docs = [self.document_model.from_input_model(contrib) for contrib in contributions]
         # ordered=False lets Mongo keep inserting if a document fails
         return await self.document_model.insert_many(full_docs, ordered=False)
 
     async def upsert_contributions(self, contributions: list[ContributionIn]):
+        """Upserts contributions.
+
+        For each Contribution, if Contribution with identical identifiers exist, update, otherwise insert
+
+        Args:
+            contributions (list[ContributionIn]): the list of contributions to be upserted
+
+        Returns:
+            list[ContributionOut]: the list of upserted documents
+        """
+
         # Handles upserting a document - no upsert_many command
         async def _upsert(contrib: ContributionIn):
             existing = await self.document_model.find_one(
@@ -70,25 +116,17 @@ class MongoDbContributionRepository(MongoDbRepository[Contribution, Contribution
         # Asynchronously run upsert on each contribution
         return await asyncio.gather(*[_upsert(c) for c in contributions])
 
-    async def download_contributions(
-        self,
-        format: Literal["json", "csv", "parquet"],
-        filter: ContributionFilter,
-        fields: frozenset[str] | None,
-    ):
-        pass
-
-    async def delete_contribution_by_id(self, id: str):
-        await self.document_model.find_one(self._scope, self.document_model.id == id).delete()
-
-    async def get_contribution_by_id(self, id: str, fields: frozenset[str] | None):
-        return await self.document_model.find_one(
-            self._scope,
-            self.document_model.id == id,
-            projection_model=self.out_model.projection(fields),
-        )
-
     async def upsert_contribution_by_id(self, id: str, contribution: ContributionIn):
+        """Upserts a single Contribution.
+
+        If Contributions with identical identifiers exist, update, otherwise insert
+
+        Args:
+            id (str): the id of the Contribution to upsert
+            contribution (ContributionIn): the Contribution to be upserted
+
+        Returns:
+            ContributionOut: the upserted document"""
         doc = self.document_model.from_input_model(contribution)
         return self.document_model.find_one(
             self._scope,
@@ -99,24 +137,10 @@ class MongoDbContributionRepository(MongoDbRepository[Contribution, Contribution
             response_type=UpdateResponse.NEW_DOCUMENT,
         )
 
-    async def update_contribution_by_id(self, id: str, update: ContributionPatch):
-        # Only retain set fields (patch)
-        update_data = update.model_dump(exclude_unset=True)
-        # If update is empty, return the model anyways (consistent behavior)
-        if not update_data:
-            existing = await self.document_model.get(id)
-            if existing is None:
-                raise NotFoundError(f"Contribution with id {id} not found")
-            return existing
-
-        # Otherwise, update the fields fully (set)
-        # Brendan TODO: Set will replace an entire field
-        # - if we want to append to a list (ie. add a reference) we ned Push/AddToSet
-        query = self.document_model.find_one(self.document_model.id == id).update(
-            Set(update_data),
-            response_type=UpdateResponse.NEW_DOCUMENT,
-        )
-        updated = await query  # pyright: ignore[reportGeneralTypeIssues] # beanie UpdateQuery is awaitable, but pyright doesn't see it
-        if updated is None:
-            raise NotFoundError(f"Contribution with id {id} not found")
-        return updated
+    async def download_contributions(
+        self,
+        format: Literal["json", "csv", "parquet"],
+        filter: ContributionFilter,
+        fields: frozenset[str] | None,
+    ):
+        pass

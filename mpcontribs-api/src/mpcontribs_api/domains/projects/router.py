@@ -19,7 +19,7 @@ router = APIRouter(tags=["projects"])
 
 # Brendan TODO: Add in option to select ProjectSummary or ProjectOut
 @router.get("", response_model=None)
-async def get_project(
+async def get_projects(
     repo: ProjectDep,
     pagination: Annotated[CursorParams, Depends()],
     filter: ProjectFilter = FilterDepends(ProjectFilter),
@@ -36,7 +36,7 @@ async def get_project(
         list[ProjectSummary]: a list of smaller project payloads
     """
     selected = ProjectOut.parse_fields(fields)
-    return await repo.get_project(filter=filter, pagination=pagination, fields=selected)
+    return await repo.get_projects(filter=filter, pagination=pagination, fields=selected)
 
 
 @router.get("/{id}", response_model=ProjectOut)
@@ -60,7 +60,7 @@ async def get_project_by_id(
 
 
 @router.put("/{id}", response_model=ProjectOut)
-async def upsert_project(
+async def upsert_project_by_id(
     repo: ProjectDep,
     id: str,
     project: ProjectIn,
@@ -78,11 +78,11 @@ async def upsert_project(
     Returns:
         ProjectOut: the full document that either replaced an old one or was inserted
     """
-    return await repo.upsert_project(id=id, data=project)
+    return await repo.upsert_project_by_id(id=id, data=project)
 
 
 @router.patch("/{id}", response_model=ProjectOut)
-async def patch_project(
+async def patch_project_by_id(
     repo: ProjectDep,
     id: str,
     update: ProjectPatch,
@@ -100,11 +100,11 @@ async def patch_project(
     Returns:
         ProjectOut: the full Project with updates applied
     """
-    return await repo.patch_project(id=id, update=update)
+    return await repo.patch_project_by_id(id=id, update=update)
 
 
 @router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_project(
+async def delete_project_by_id(
     repo: ProjectDep,
     id: str,
 ):
@@ -116,5 +116,5 @@ async def delete_project(
     Returns:
         Response: a response with the 204 response code (rather than FastAPIs default 200)
     """
-    await repo.delete_project(id=id)
+    await repo.delete_project_by_id(id=id)
     return Response(status_code=HTTP_204_NO_CONTENT)

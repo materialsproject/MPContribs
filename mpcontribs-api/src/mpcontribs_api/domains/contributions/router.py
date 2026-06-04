@@ -86,5 +86,5 @@ async def upsert_contribution_by_id(repo: ContributionDep, id: str, contribution
 
 
 @router.patch("{id}")
-async def update_contribution_by_id(repo: ContributionDep, id: str, update: ContributionPatch):
-    return await repo.update_contribution_by_id(id=id, update=update)
+async def patch_contribution_by_id(repo: ContributionDep, id: str, update: ContributionPatch):
+    return await repo.patch_contribution_by_id(id=id, update=update)

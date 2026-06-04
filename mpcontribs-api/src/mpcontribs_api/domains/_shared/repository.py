@@ -1,23 +1,33 @@
 from abc import ABC, abstractmethod
 from typing import Any
 
+from beanie import UpdateResponse
+from beanie.operators import Set
 from fastapi_filter.contrib.beanie import Filter
 from pydantic import BaseModel
 
 from mpcontribs_api.auth import User
 from mpcontribs_api.domains._shared.models import BaseDocumentWithInput, DocumentOut
-from mpcontribs_api.exceptions import ConflictError
+from mpcontribs_api.exceptions import ConflictError, NotFoundError
 from mpcontribs_api.pagination import CursorParams, Page, decode_cursor, encode_cursor
 
 
-class MongoDbRepository[TDoc: BaseDocumentWithInput, TIn: BaseModel, TOut: DocumentOut](ABC):
+class MongoDbRepository[
+    TDoc: BaseDocumentWithInput,
+    TIn: BaseModel,
+    TOut: DocumentOut,
+    TFilter: Filter,
+    TPatch: BaseModel,
+](ABC):
     """Base repository encapsulating shared MongoDB access patterns.
 
-    Subclasses bind the document, input, and output types as type parameters, set the matching
-    ``document_model`` / ``out_model`` class attributes, and implement ``_build_scope`` to enforce
-    per-user authorization. Shared query logic (scoping, projection, cursor pagination, insertion)
-    lives here; resource-specific operations stay on the concrete subclasses where they keep their
-    precise types.
+    Subclasses bind the document, input, output, filter, and patch types as type parameters, set
+    the matching ``document_model`` / ``out_model`` class attributes, and implement ``_build_scope``
+    to enforce per-user authorization. Shared CRUD logic (scoping, projection, cursor pagination,
+    insertion, single-document read/patch/delete) lives here so it exists in exactly one place and
+    cannot drift between resources. Subclasses expose domain-named methods that either forward to a
+    base method (vocabulary + concrete types for routers, no logic) or implement a genuinely
+    different shape (bulk insert, compound-key upsert, download).
 
     Attributes:
         document_model: the ``BaseDocumentWithInput`` subclass this repository operates on
@@ -42,17 +52,21 @@ class MongoDbRepository[TDoc: BaseDocumentWithInput, TIn: BaseModel, TOut: Docum
         """Provides scope based on current user's permitted groups and publicly released data."""
         ...
 
+    def _not_found(self, id: str) -> str:
+        """Build a not-found message naming this repository's resource."""
+        return f"{self.document_model.__name__} with id {id} not found"
+
     async def get_many(
         self,
         pagination: CursorParams,
-        filter: Filter,
+        filter: TFilter,
         fields: frozenset[str] | None,
     ) -> Page[TOut]:
         """Return a scoped, filtered, cursor-paginated page of projected documents.
 
         Args:
             pagination (CursorParams): forward-only cursor parameters
-            filter (Filter): the fastapi-filter query to apply on top of the user scope
+            filter (TFilter): the fastapi-filter query to apply on top of the user scope
             fields (frozenset[str] | None): fields to project; if None the full document is returned
         """
         projection = self.out_model.projection(fields)
@@ -64,6 +78,19 @@ class MongoDbRepository[TDoc: BaseDocumentWithInput, TIn: BaseModel, TOut: Docum
         items = docs[: pagination.limit]
         next_cursor = encode_cursor(str(items[-1].id)) if has_more and items else None
         return Page(items=items, next_cursor=next_cursor)
+
+    async def get_by_id(self, id: str, fields: frozenset[str] | None):
+        """Return a single scoped document by id, projected to the requested fields.
+
+        Args:
+            id (str): the id of the document to find
+            fields (frozenset[str] | None): fields to project; if None the full document is returned
+        """
+        return await self.document_model.find_one(
+            self._scope,
+            self.document_model.id == id,
+            projection_model=self.out_model.projection(fields),
+        )
 
     async def insert_one(self, in_resource: TIn) -> TDoc:
         """Insert a new document built from its input model, rejecting duplicate ids.
@@ -77,3 +104,45 @@ class MongoDbRepository[TDoc: BaseDocumentWithInput, TIn: BaseModel, TOut: Docum
             raise ConflictError(f"Cannot insert document.\n Document with ID {document.id} exists")
         await document.insert()
         return document
+
+    async def delete_by_id(self, id: str) -> None:
+        """Delete a single scoped document by id.
+
+        Scoping ensures callers cannot delete documents they are not permitted to see.
+
+        Args:
+            id (str): the id of the document to delete
+        """
+        await self.document_model.find_one(self._scope, self.document_model.id == id).delete()
+
+    async def patch(self, id: str, update: TPatch) -> TDoc:
+        """Partially update a single scoped document by id.
+
+        Only fields explicitly set on ``update`` are applied. An empty patch is a no-op that still
+        returns the existing document for consistent behavior. Scoping ensures callers cannot patch
+        documents they are not permitted to see.
+
+        Args:
+            id (str): the id of the document to update
+            update (TPatch): the partial update to apply; unset fields are dropped
+        """
+        # Only retain set fields (patch)
+        update_data = update.model_dump(exclude_unset=True)
+        # If update is empty, return the model anyways (consistent behavior)
+        if not update_data:
+            existing = await self.document_model.find_one(self._scope, self.document_model.id == id)
+            if existing is None:
+                raise NotFoundError(self._not_found(id))
+            return existing
+
+        # Otherwise, update the fields fully (set)
+        # Brendan TODO: Set will replace an entire field
+        # - if we want to append to a list (ie. add a reference) we ned Push/AddToSet
+        query = self.document_model.find_one(self._scope, self.document_model.id == id).update(
+            Set(update_data),
+            response_type=UpdateResponse.NEW_DOCUMENT,
+        )
+        updated = await query  # pyright: ignore[reportGeneralTypeIssues] # beanie UpdateQuery is awaitable, but pyright doesn't see it
+        if updated is None:
+            raise NotFoundError(self._not_found(id))
+        return updated
