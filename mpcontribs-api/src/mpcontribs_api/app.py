@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import logging
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
@@ -16,10 +15,10 @@ from mpcontribs_api.dependencies import verify_gateway
 from mpcontribs_api.domains.contributions.models import Contribution
 from mpcontribs_api.domains.projects.models import Project
 from mpcontribs_api.exceptions import register_exception_handlers
-from mpcontribs_api.logging import configure_logging
+from mpcontribs_api.logging import configure_logging, get_logger
 from mpcontribs_api.middleware import bind_request_context
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 def _build_lifespan(settings: Settings):

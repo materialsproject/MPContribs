@@ -24,7 +24,7 @@ from tests.integration.conftest import GATEWAY_SECRET
 def _stub_repos(gateway_app):
     """Inject no-op mock repos so gateway-passing requests don't hit Beanie."""
     proj_repo = AsyncMock()
-    proj_repo.get_project.return_value = Page(items=[], next_cursor=None)
+    proj_repo.get_projects.return_value = Page(items=[], next_cursor=None)
     contrib_repo = AsyncMock()
     contrib_repo.get_contributions.return_value = Page(items=[], next_cursor=None)
 

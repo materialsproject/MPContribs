@@ -55,18 +55,18 @@ def project_repo(test_app, mock_project_repo):
 
 class TestListProjects:
     def test_empty_page_returns_200(self, client, project_repo):
-        project_repo.get_project.return_value = Page(items=[], next_cursor=None)
+        project_repo.get_projects.return_value = Page(items=[], next_cursor=None)
         r = client.get("/api/v1/projects", headers=AUTHED_HEADERS)
         assert r.status_code == 200
 
     def test_response_has_items_and_cursor(self, client, project_repo):
-        project_repo.get_project.return_value = Page(items=[], next_cursor=None)
+        project_repo.get_projects.return_value = Page(items=[], next_cursor=None)
         body = client.get("/api/v1/projects", headers=AUTHED_HEADERS).json()
         assert "items" in body
         assert "next_cursor" in body
 
     def test_items_returned_in_response(self, client, project_repo):
-        project_repo.get_project.return_value = Page(items=[SAMPLE_PROJECT], next_cursor=None)
+        project_repo.get_projects.return_value = Page(items=[SAMPLE_PROJECT], next_cursor=None)
         body = client.get("/api/v1/projects", headers=AUTHED_HEADERS).json()
         assert len(body["items"]) == 1
 
@@ -74,29 +74,29 @@ class TestListProjects:
         from mpcontribs_api.pagination import encode_cursor
 
         cursor = encode_cursor("mp-sample")
-        project_repo.get_project.return_value = Page(items=[SAMPLE_PROJECT], next_cursor=cursor)
+        project_repo.get_projects.return_value = Page(items=[SAMPLE_PROJECT], next_cursor=cursor)
         body = client.get("/api/v1/projects", headers=AUTHED_HEADERS).json()
         assert body["next_cursor"] == cursor
 
     def test_repo_get_project_called(self, client, project_repo):
-        project_repo.get_project.return_value = Page(items=[], next_cursor=None)
+        project_repo.get_projects.return_value = Page(items=[], next_cursor=None)
         client.get("/api/v1/projects", headers=AUTHED_HEADERS)
-        project_repo.get_project.assert_called_once()
+        project_repo.get_projects.assert_called_once()
 
     def test_anonymous_user_reaches_route(self, client, project_repo):
-        project_repo.get_project.return_value = Page(items=[], next_cursor=None)
+        project_repo.get_projects.return_value = Page(items=[], next_cursor=None)
         r = client.get("/api/v1/projects", headers=ANON_HEADERS)
         assert r.status_code == 200
 
     def test_invalid_fields_param_returns_422(self, client, project_repo):
-        project_repo.get_project.return_value = Page(items=[], next_cursor=None)
+        project_repo.get_projects.return_value = Page(items=[], next_cursor=None)
         r = client.get("/api/v1/projects", params={"_fields": "nonexistent_field"}, headers=AUTHED_HEADERS)
         assert r.status_code == 422
 
     def test_limit_param_forwarded(self, client, project_repo):
-        project_repo.get_project.return_value = Page(items=[], next_cursor=None)
+        project_repo.get_projects.return_value = Page(items=[], next_cursor=None)
         client.get("/api/v1/projects", params={"limit": 5}, headers=AUTHED_HEADERS)
-        _, kwargs = project_repo.get_project.call_args
+        _, kwargs = project_repo.get_projects.call_args
         assert kwargs["pagination"].limit == 5
 
     def test_limit_above_max_returns_422(self, client, project_repo):
@@ -104,9 +104,9 @@ class TestListProjects:
         assert r.status_code == 422
 
     def test_valid_fields_param_forwarded(self, client, project_repo):
-        project_repo.get_project.return_value = Page(items=[], next_cursor=None)
+        project_repo.get_projects.return_value = Page(items=[], next_cursor=None)
         client.get("/api/v1/projects", params=[("_fields", "title"), ("_fields", "authors")], headers=AUTHED_HEADERS)
-        _, kwargs = project_repo.get_project.call_args
+        _, kwargs = project_repo.get_projects.call_args
         assert kwargs["fields"] is not None
         assert "title" in kwargs["fields"]
 
@@ -166,7 +166,7 @@ class TestGetProjectById:
 
 class TestPatchProject:
     def test_valid_patch_returns_200(self, client, project_repo):
-        project_repo.patch_project.return_value = SAMPLE_PROJECT
+        project_repo.patch_project_by_id.return_value = SAMPLE_PROJECT
         r = client.patch(
             "/api/v1/projects/mp-sample",
             json={"title": "Updated Title"},
@@ -176,7 +176,7 @@ class TestPatchProject:
 
     def test_patch_response_is_project_out(self, client, project_repo):
         updated = ProjectOut(id="mp-sample", title="Updated Title")
-        project_repo.patch_project.return_value = updated
+        project_repo.patch_project_by_id.return_value = updated
         body = client.patch(
             "/api/v1/projects/mp-sample",
             json={"title": "Updated Title"},
@@ -185,7 +185,7 @@ class TestPatchProject:
         assert body["title"] == "Updated Title"
 
     def test_not_found_returns_404(self, client, project_repo):
-        project_repo.patch_project.side_effect = NotFoundError("not found")
+        project_repo.patch_project_by_id.side_effect = NotFoundError("not found")
         r = client.patch(
             "/api/v1/projects/missing",
             json={"title": "x" * 5},
@@ -202,13 +202,13 @@ class TestPatchProject:
         assert r.status_code == 422
 
     def test_id_and_update_forwarded_to_repo(self, client, project_repo):
-        project_repo.patch_project.return_value = SAMPLE_PROJECT
+        project_repo.patch_project_by_id.return_value = SAMPLE_PROJECT
         client.patch(
             "/api/v1/projects/mp-sample",
             json={"title": "New Name"},
             headers=AUTHED_HEADERS,
         )
-        _, kwargs = project_repo.patch_project.call_args
+        _, kwargs = project_repo.patch_project_by_id.call_args
         assert kwargs["id"] == "mp-sample"
         assert kwargs["update"].title == "New Name"
 
@@ -220,19 +220,19 @@ class TestPatchProject:
 
 class TestDeleteProject:
     def test_delete_returns_204(self, client, project_repo):
-        project_repo.delete_project.return_value = None
+        project_repo.delete_project_by_id.return_value = None
         r = client.delete("/api/v1/projects/mp-sample", headers=AUTHED_HEADERS)
         assert r.status_code == 204
 
     def test_delete_response_has_no_body(self, client, project_repo):
-        project_repo.delete_project.return_value = None
+        project_repo.delete_project_by_id.return_value = None
         r = client.delete("/api/v1/projects/mp-sample", headers=AUTHED_HEADERS)
         assert r.content == b""
 
     def test_id_forwarded_to_repo(self, client, project_repo):
-        project_repo.delete_project.return_value = None
+        project_repo.delete_project_by_id.return_value = None
         client.delete("/api/v1/projects/mp-sample", headers=AUTHED_HEADERS)
-        _, kwargs = project_repo.delete_project.call_args
+        _, kwargs = project_repo.delete_project_by_id.call_args
         assert kwargs["id"] == "mp-sample"
 
 
@@ -256,12 +256,12 @@ class TestUpsertProject:
         return body
 
     def test_valid_upsert_returns_200(self, client, project_repo):
-        project_repo.upsert_project.return_value = SAMPLE_PROJECT
+        project_repo.upsert_project_by_id.return_value = SAMPLE_PROJECT
         r = client.put("/api/v1/projects/mp-sample", json=self._valid_body(), headers=AUTHED_HEADERS)
         assert r.status_code == 200
 
     def test_conflict_returns_409(self, client, project_repo):
-        project_repo.upsert_project.side_effect = ConflictError("already exists")
+        project_repo.upsert_project_by_id.side_effect = ConflictError("already exists")
         r = client.put("/api/v1/projects/mp-sample", json=self._valid_body(), headers=AUTHED_HEADERS)
         assert r.status_code == 409
 
