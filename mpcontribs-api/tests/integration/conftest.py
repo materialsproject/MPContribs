@@ -18,10 +18,9 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-from starlette.middleware.base import BaseHTTPMiddleware
 
 from mpcontribs_api.exceptions import register_exception_handlers
-from mpcontribs_api.middleware import bind_request_context
+from mpcontribs_api.middleware import RequestContextMiddleware
 
 
 @pytest.fixture(autouse=True, scope="session")
@@ -85,7 +84,7 @@ def make_test_app() -> FastAPI:
         yield
 
     app = FastAPI(title="mpcontribs-test", lifespan=_noop_lifespan)
-    app.add_middleware(BaseHTTPMiddleware, dispatch=bind_request_context)
+    app.add_middleware(RequestContextMiddleware)
     register_exception_handlers(app)
 
     from mpcontribs_api.api.v1.router import router as v1_router
@@ -114,7 +113,7 @@ def make_gateway_app() -> FastAPI:
         lifespan=_noop_lifespan,
         dependencies=[Depends(verify_gateway)],
     )
-    app.add_middleware(BaseHTTPMiddleware, dispatch=bind_request_context)
+    app.add_middleware(RequestContextMiddleware)
     register_exception_handlers(app)
 
     from mpcontribs_api.api.v1.router import router as v1_router
