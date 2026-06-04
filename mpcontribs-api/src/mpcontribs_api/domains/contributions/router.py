@@ -11,6 +11,7 @@ from mpcontribs_api.domains.contributions.models import (
     ContributionPatch,
 )
 from mpcontribs_api.pagination import CursorParams
+from mpcontribs_api.types import FieldSelector
 
 router = APIRouter(tags=["contributions"])
 
@@ -20,7 +21,7 @@ async def get_contributions(
     repo: ContributionDep,
     pagination: Annotated[CursorParams, Depends()],
     filter: ContributionFilter = FilterDepends(ContributionFilter),
-    fields: Annotated[str | None, Query(alias="_fields")] = None,
+    fields: FieldSelector = ContributionOut.default_fields(),
 ):
     field_set = ContributionOut.parse_fields(fields)
     return await repo.get_contributions(pagination=pagination, filter=filter, fields=field_set)

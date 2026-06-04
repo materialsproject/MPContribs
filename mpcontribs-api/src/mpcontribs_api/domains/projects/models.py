@@ -86,6 +86,10 @@ class ProjectOut(DocumentOut[ShortStr]):
     columns: list[Column] | None = None
     license: Literal["CCA4", "CCPD"] | None = None
 
+    @staticmethod
+    def default_fields() -> list[str]:
+        return ["id", "is_public", "title", "owner", "is_approved", "unique_identifiers"]
+
 
 class ProjectFilter(Filter):
     """Filter fields allowed in requests."""

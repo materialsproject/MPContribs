@@ -105,7 +105,7 @@ class TestListProjects:
 
     def test_valid_fields_param_forwarded(self, client, project_repo):
         project_repo.get_project.return_value = Page(items=[], next_cursor=None)
-        client.get("/api/v1/projects", params={"_fields": "title,authors"}, headers=AUTHED_HEADERS)
+        client.get("/api/v1/projects", params=[("_fields", "title"), ("_fields", "authors")], headers=AUTHED_HEADERS)
         _, kwargs = project_repo.get_project.call_args
         assert kwargs["fields"] is not None
         assert "title" in kwargs["fields"]
@@ -151,11 +151,12 @@ class TestGetProjectById:
         assert kwargs["fields"] is not None
         assert "title" in kwargs["fields"]
 
-    def test_no_fields_param_passes_none(self, client, project_repo):
+    def test_no_fields_param_uses_default_fields(self, client, project_repo):
         project_repo.get_project_by_id.return_value = SAMPLE_PROJECT
         client.get("/api/v1/projects/mp-sample", headers=AUTHED_HEADERS)
         _, kwargs = project_repo.get_project_by_id.call_args
-        assert kwargs["fields"] is None
+        assert kwargs["fields"] is not None
+        assert "title" in kwargs["fields"]
 
 
 # ---------------------------------------------------------------------------

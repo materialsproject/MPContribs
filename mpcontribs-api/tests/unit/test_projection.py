@@ -226,44 +226,44 @@ class TestParseFields:
     def test_none_returns_none(self):
         assert Simple.parse_fields(None) is None
 
-    def test_empty_string_returns_none(self):
-        assert Simple.parse_fields("") is None
+    def test_empty_list_returns_none(self):
+        assert Simple.parse_fields([]) is None
 
     def test_single_valid_field(self):
-        result = Simple.parse_fields("name")
+        result = Simple.parse_fields(["name"])
         assert result is not None
         assert "name" in result
 
     def test_multiple_fields(self):
-        result = Simple.parse_fields("name,age")
+        result = Simple.parse_fields(["name", "age"])
         assert result is not None
         assert "name" in result
         assert "age" in result
 
     def test_whitespace_stripped(self):
-        result = Simple.parse_fields(" name , age ")
+        result = Simple.parse_fields([" name ", " age "])
         assert result is not None
         assert "name" in result
         assert "age" in result
 
     def test_nested_field(self):
-        result = Simple.parse_fields("address.city")
+        result = Simple.parse_fields(["address.city"])
         assert result is not None
         assert "address.city" in result
 
     def test_parent_collapses_child(self):
-        result = Simple.parse_fields("address,address.city")
+        result = Simple.parse_fields(["address", "address.city"])
         assert result is not None
         assert "address" in result
         assert "address.city" not in result
 
     def test_unknown_field_raises(self):
         with pytest.raises(AppValidationError, match="unknown field"):
-            Simple.parse_fields("nonexistent")
+            Simple.parse_fields(["nonexistent"])
 
     def test_scalar_subfield_raises(self):
         with pytest.raises(AppValidationError, match="cannot select subfields"):
-            Simple.parse_fields("name.sub")
+            Simple.parse_fields(["name.sub"])
 
     def test_sparse_always_always_included(self):
         class WithAlways(SparseFieldsModel):
@@ -271,7 +271,7 @@ class TestParseFields:
             name: str | None = None
             sparse_always = frozenset({"id"})
 
-        result = WithAlways.parse_fields("name")
+        result = WithAlways.parse_fields(["name"])
         assert result is not None
         assert "id" in result
         assert "name" in result
@@ -287,23 +287,23 @@ class TestProjection:
         assert Simple.projection(None) is Simple
 
     def test_with_fields_returns_different_model(self):
-        fields = Simple.parse_fields("name")
+        fields = Simple.parse_fields(["name"])
         result = Simple.projection(fields)
         assert result is not Simple
 
     def test_projected_model_has_settings_with_projection(self):
-        fields = Simple.parse_fields("name")
+        fields = Simple.parse_fields(["name"])
         projected = Simple.projection(fields)
         assert hasattr(projected, "Settings")
         assert hasattr(projected.Settings, "projection")
 
     def test_projection_includes_id(self):
-        fields = Simple.parse_fields("name")
+        fields = Simple.parse_fields(["name"])
         projected = Simple.projection(fields)
         assert "_id" in projected.Settings.projection
 
     def test_projection_caching(self):
-        fields = Simple.parse_fields("name")
+        fields = Simple.parse_fields(["name"])
         first = Simple.projection(fields)
         second = Simple.projection(fields)
         assert first is second

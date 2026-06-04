@@ -75,6 +75,18 @@ class ContributionOut(DocumentOut[PydanticObjectId]):
     tables: list[Link[Table]] | None = None
     attachments: list[Link[Attachment]] | None = None
 
+    @staticmethod
+    def default_fields() -> list[str]:
+        return [
+            "id",
+            "project",
+            "identifier",
+            "formula",
+            "is_public",
+            "last_modified",
+            "needs_build",
+        ]
+
 
 class ContributionPatch(SparseFieldsModel):
     project: str | None = None
