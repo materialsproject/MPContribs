@@ -89,3 +89,4 @@ max-line-length = 120
 pythonVersion = "3.14"
 typeCheckingMode = "standard"
 extraPaths = ["src"]
+ignore=["tests/"]
