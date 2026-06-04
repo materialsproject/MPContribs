@@ -6,7 +6,7 @@ WORKDIR /app
 FROM base AS builder
 RUN apt-get update && apt-get install -y --no-install-recommends gcc git g++ wget liblapack-dev && apt-get clean
 RUN pip install uv
-COPY pyproject.toml uv.lock .
+COPY pyproject.toml uv.lock ./
 COPY src src
 ARG CONTRIBS_VERSION
 RUN SETUPTOOLS_SCM_PRETEND_VERSION=${CONTRIBS_VERSION} uv sync --frozen --no-dev
