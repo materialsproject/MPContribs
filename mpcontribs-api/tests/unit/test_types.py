@@ -2,8 +2,8 @@ import pytest
 from pydantic import BaseModel
 from pydantic import ValidationError as PydanticValidationError
 
-from src.mpcontribs_api.exceptions import ValidationError as AppValidationError
-from src.mpcontribs_api.types import PrefixedEmail, ShortStr, _validate_prefixed_email
+from mpcontribs_api.exceptions import ValidationError as AppValidationError
+from mpcontribs_api.types import PrefixedEmail, ShortStr, _validate_prefixed_email
 
 
 class ShortStrModel(BaseModel):

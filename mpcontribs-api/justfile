@@ -1,3 +1,7 @@
+# Run the dev server (auto-reloads on file changes)
+dev:
+    uv run fastapi dev src/mpcontribs_api/app.py
+
 # Format, fix, and lint all source code
 fmt:
     uv run ruff format

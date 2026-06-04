@@ -15,9 +15,9 @@ import pytest_asyncio
 from beanie import init_beanie
 from pymongo import AsyncMongoClient
 
-from src.mpcontribs_api.config import get_settings
-from src.mpcontribs_api.domains.contributions.models import Contribution
-from src.mpcontribs_api.domains.projects.models import Project
+from mpcontribs_api.config import get_settings
+from mpcontribs_api.domains.contributions.models import Contribution
+from mpcontribs_api.domains.projects.models import Project
 
 # ---------------------------------------------------------------------------
 # Auto-mark all tests in this directory as @pytest.mark.db
@@ -27,6 +27,17 @@ pytestmark = [
     pytest.mark.db,
     pytest.mark.asyncio(loop_scope="session"),
 ]
+
+
+@pytest.fixture(scope="session")
+def _mock_beanie_collection():
+    """Override the parent integration conftest's Beanie mock.
+
+    DB tests initialise Beanie for real via init_beanie(), so the mock must not
+    intercept get_pymongo_collection().  Defining this fixture here (same name,
+    no patch) causes pytest to use this no-op instead of the parent's version.
+    """
+    yield
 
 
 def pytest_collection_modifyitems(items):

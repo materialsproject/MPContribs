@@ -1,6 +1,6 @@
 import pytest
 
-from src.mpcontribs_api.exceptions import (
+from mpcontribs_api.exceptions import (
     AppError,
     AuthenticationError,
     ConflictError,

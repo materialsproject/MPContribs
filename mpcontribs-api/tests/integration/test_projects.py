@@ -11,10 +11,10 @@ MongoDB connection is needed. Tests verify:
 
 import pytest
 
-from src.mpcontribs_api.domains.projects.dependencies import get_scoped_projects
-from src.mpcontribs_api.domains.projects.models import ProjectOut, Stats
-from src.mpcontribs_api.exceptions import ConflictError, NotFoundError
-from src.mpcontribs_api.pagination import Page
+from mpcontribs_api.domains.projects.dependencies import get_scoped_projects
+from mpcontribs_api.domains.projects.models import ProjectOut, Stats
+from mpcontribs_api.exceptions import ConflictError, NotFoundError
+from mpcontribs_api.pagination import Page
 from tests.integration.conftest import ANON_HEADERS, AUTHED_HEADERS
 
 # ---------------------------------------------------------------------------
@@ -71,7 +71,7 @@ class TestListProjects:
         assert len(body["items"]) == 1
 
     def test_next_cursor_set_when_more_pages(self, client, project_repo):
-        from src.mpcontribs_api.pagination import encode_cursor
+        from mpcontribs_api.pagination import encode_cursor
 
         cursor = encode_cursor("mp-sample")
         project_repo.get_project.return_value = Page(items=[SAMPLE_PROJECT], next_cursor=cursor)
