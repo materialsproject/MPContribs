@@ -21,8 +21,9 @@ requires-python = ">=3.14"
 description="API for community-contributed Materials Project data"
 license = "BSD-3-Clause-LBNL"
 authors = [
-    {name = "Patrick Huck", email = "phuck@lbl.gov"},
-    {name = "The Materials Project", email="feedback@materialsproject.org"},
+    {name="Patrick Huck", email="phuck@lbl.gov"},
+    {name="Brendan Foley", email="bfoley@lbl.gov"},
+    {name="The Materials Project", email="feedback@materialsproject.org"},
 ]
 dependencies = [
     "numpy",
@@ -98,7 +99,7 @@ markers = [
 
 [tool.ruff]
 line-length = 120
-exclude = ["src/mpcontribs_api/old", "tests/"]
+exclude = ["tests/"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "B", "UP"]
@@ -106,9 +107,8 @@ ignore = ["E741", "B008"]
 
 [tool.pydocstringformatter]
 max-line-length = 120
-exclude = ["src/mpcontribs_api/old"]
 
 [tool.basedpyright]
 pythonVersion = "3.14"
 typeCheckingMode = "standard"
-ignore = ["src/mpcontribs_api/old"]
+extraPaths = ["src"]
