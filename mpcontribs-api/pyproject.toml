@@ -26,17 +26,17 @@ authors = [
     {name="The Materials Project", email="feedback@materialsproject.org"},
 ]
 dependencies = [
-    #"jinja2",
-    #"pint>=0.24",
+    # "jinja2",
+    # "pint>=0.24",
     # "psycopg2-binary",
-    "pymatgen",
-    #"rq<=2.3.2",  # see https://github.com/rq/Flask-RQ2/issues/620
-    #"supervisor",
+    # "rq<=2.3.2",  # see https://github.com/rq/Flask-RQ2/issues/620
+    # "supervisor",
     # "setproctitle",
     # "uncertainties",
     # "websocket_client",
     # "zstandard",
     "fastapi[standard]>=0.136.3",
+    "pymatgen",
     "pymongo>=4.17.0",
     "pydantic-settings>=2.14.1",
     "structlog>=25.5.0",
