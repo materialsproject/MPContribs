@@ -52,15 +52,15 @@ class MongoDbContributionRepository(
 
     async def get_contribution_by_id(self, id: str, fields: frozenset[str] | None):
         """Find a single contribution by id, scoped to the current user. See ``get_by_id``."""
-        return await self.get_by_id(id, fields)
+        return await self.get_by_id(self._convert_object_id(id), fields)
 
     async def patch_contribution_by_id(self, id: str, update: ContributionPatch):
         """Partially update a contribution by id, scoped to the current user. See ``patch``."""
-        return await self.patch(id, update)
+        return await self.patch(self._convert_object_id(id), update)
 
     async def delete_contribution_by_id(self, id: str) -> None:
         """Delete a contribution by id, scoped to the current user. See ``delete_by_id``."""
-        await self.delete_by_id(id)
+        await self.delete_by_id(self._convert_object_id(id))
 
     async def delete_contributions(self, filter: ContributionFilter):
         """Bulk deletion of Contributions described by the filter
@@ -130,7 +130,7 @@ class MongoDbContributionRepository(
         doc = self.document_model.from_input_model(contribution)
         return self.document_model.find_one(
             self._scope,
-            self.document_model.id == id,
+            self.document_model.id == self._convert_object_id(id),
         ).upsert(
             Set(doc.model_dump(exclude={"id"}, exclude_none=True)),
             on_insert=doc,
