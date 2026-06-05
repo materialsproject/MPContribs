@@ -4,7 +4,8 @@ from fastapi_filter.contrib.beanie import Filter
 from pydantic import BaseModel, ConfigDict, field_serializer, field_validator
 from pymatgen.core import Element
 
-from mpcontribs_api.domains._shared.models import BaseDocumentWithInput
+from mpcontribs_api.domains._shared.models import BaseDocumentWithInput, DocumentOut
+from mpcontribs_api.projection import SparseFieldsModel
 from mpcontribs_api.types import MD5Hash
 
 
@@ -76,6 +77,15 @@ class Structure(BaseDocumentWithInput[PydanticObjectId]):
 
 class StructureIn(Structure):
     pass
+
+
+class StructureOut(DocumentOut[PydanticObjectId]):
+    name: str | None = None
+    md5: MD5Hash | None = None
+
+
+class StructurePatch(SparseFieldsModel):
+    name: str | None = None
 
 
 class StructureFilter(Filter):

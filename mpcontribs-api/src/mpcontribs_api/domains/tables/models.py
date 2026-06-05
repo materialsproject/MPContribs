@@ -10,7 +10,8 @@ from pydantic import (
     model_validator,
 )
 
-from mpcontribs_api.domains._shared.models import BaseDocumentWithInput
+from mpcontribs_api.domains._shared.models import BaseDocumentWithInput, DocumentOut
+from mpcontribs_api.projection import SparseFieldsModel
 from mpcontribs_api.types import MD5Hash
 
 
@@ -131,3 +132,12 @@ class TableOut(BaseModel):
     columns: list[str]
     total_data_rows: int
     total_data_pages: int = 1
+
+
+class TableDocumentOut(DocumentOut[PydanticObjectId]):
+    name: str | None = None
+    md5: MD5Hash | None = None
+
+
+class TablePatch(SparseFieldsModel):
+    name: str | None = None
