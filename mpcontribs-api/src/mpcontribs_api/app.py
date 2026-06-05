@@ -11,9 +11,12 @@ from mpcontribs_api._openapi import contact_info, license_info, openapi_tags
 from mpcontribs_api.api.v1.router import router as v1_router
 from mpcontribs_api.config import Settings, get_settings
 from mpcontribs_api.dependencies import verify_gateway
+from mpcontribs_api.domains.attachments.models import Attachment
 from mpcontribs_api.domains.contributions.models import Contribution
 from mpcontribs_api.domains.healthcheck.router import router as healthcheck_router
 from mpcontribs_api.domains.projects.models import Project
+from mpcontribs_api.domains.structures.models import Structure
+from mpcontribs_api.domains.tables.models import Table
 from mpcontribs_api.exceptions import register_exception_handlers
 from mpcontribs_api.logging import configure_logging, get_logger
 from mpcontribs_api.middleware import RequestContextMiddleware
@@ -39,7 +42,16 @@ def _build_lifespan(settings: Settings):
         app.state.mongo_client = client
         app.state.db = client[settings.mongo.db_name]
 
-        await init_beanie(database=client[settings.mongo.db_name], document_models=[Project, Contribution])
+        await init_beanie(
+            database=client[settings.mongo.db_name],
+            document_models=[
+                Project,
+                Contribution,
+                Attachment,
+                Structure,
+                Table,
+            ],
+        )
 
         try:
             yield
