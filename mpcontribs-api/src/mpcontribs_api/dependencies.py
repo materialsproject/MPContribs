@@ -49,7 +49,11 @@ def get_user(request: Request) -> User:
             username=username,
             groups=frozenset(groups),
         )
-    structlog.contextvars.bind_contextvars(consumer_id=user.consumer_id or "anonymous")
+    structlog.contextvars.bind_contextvars(
+        username=user.username,
+        consumer_id=user.consumer_id,
+        is_admin=user.is_admin,
+    )
     return user
 
 
