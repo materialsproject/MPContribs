@@ -74,6 +74,10 @@ class Structure(BaseDocumentWithInput[PydanticObjectId]):
         name = "structures"
 
 
+class StructureIn(Structure):
+    pass
+
+
 class StructureFilter(Filter):
     id: PydanticObjectId | None = None
     id__in: list[PydanticObjectId] | None = None

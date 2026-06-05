@@ -1,11 +1,12 @@
 import asyncio
-from typing import Any, Literal
+from typing import Any, Literal, cast
 
-from beanie import UpdateResponse
+from beanie import Link, UpdateResponse
 from beanie.operators import Set
 
 from mpcontribs_api.auth import User
 from mpcontribs_api.domains._shared.repository import MongoDbRepository
+from mpcontribs_api.domains.attachments.models import Attachment
 from mpcontribs_api.domains.contributions.models import (
     Contribution,
     ContributionFilter,
@@ -13,6 +14,8 @@ from mpcontribs_api.domains.contributions.models import (
     ContributionOut,
     ContributionPatch,
 )
+from mpcontribs_api.domains.structures.models import Structure
+from mpcontribs_api.domains.tables.models import Table
 from mpcontribs_api.pagination import CursorParams
 
 
@@ -71,8 +74,56 @@ class MongoDbContributionRepository(
         docs = filter.filter(self.document_model.find(self._scope))
         await docs.delete()
 
+    @staticmethod
+    async def _insert_components(
+        contributions: list[ContributionIn],
+    ) -> tuple[list[Structure], list[Table], list[Attachment], list[slice], list[slice], list[slice]]:
+        """Bulk-insert all component documents (structures, tables, attachments) for a batch of
+        ContributionIn objects, and return the inserted documents alongside per-contribution slices
+        so callers can re-attach them as Links.
+
+        Returns a tuple of:
+            (structures, tables, attachments, struct_slices, table_slices, attach_slices)
+        where each slice[i] selects the components belonging to contributions[i].
+        """
+        all_structures: list[Structure] = []
+        all_tables: list[Table] = []
+        all_attachments: list[Attachment] = []
+        struct_slices: list[slice] = []
+        table_slices: list[slice] = []
+        attach_slices: list[slice] = []
+
+        for contrib in contributions:
+            s0 = len(all_structures)
+            if contrib.structures:
+                all_structures.extend(Structure.model_validate(s.model_dump()) for s in contrib.structures)
+            struct_slices.append(slice(s0, len(all_structures)))
+
+            t0 = len(all_tables)
+            if contrib.tables:
+                all_tables.extend(Table.model_validate(t.model_dump()) for t in contrib.tables)
+            table_slices.append(slice(t0, len(all_tables)))
+
+            a0 = len(all_attachments)
+            if contrib.attachments:
+                all_attachments.extend(Attachment.model_validate(a.model_dump()) for a in contrib.attachments)
+            attach_slices.append(slice(a0, len(all_attachments)))
+
+        if all_structures:
+            await Structure.insert_many(all_structures, ordered=False)
+        if all_tables:
+            await Table.insert_many(all_tables, ordered=False)
+        if all_attachments:
+            await Attachment.insert_many(all_attachments, ordered=False)
+
+        return all_structures, all_tables, all_attachments, struct_slices, table_slices, attach_slices
+
     async def insert_contributions(self, contributions: list[ContributionIn]):
-        """Bulk insertion of Contributions
+        """Bulk insertion of Contributions.
+
+        Component documents (structures, tables, attachments) embedded in each ContributionIn are
+        bulk-inserted first; the resulting IDs are then stored as Links on the Contribution before
+        the contributions themselves are bulk-inserted.
 
         Args:
             contributions (list[ContributionIn]): the list of contributions to be inserted
@@ -80,14 +131,25 @@ class MongoDbContributionRepository(
         Returns:
             list[ContributionOut]: the inserted documents
         """
-        full_docs = [self.document_model.from_input_model(contrib) for contrib in contributions]
-        # ordered=False lets Mongo keep inserting if a document fails
+        structures, tables, attachments, struct_slices, table_slices, attach_slices = (
+            await self._insert_components(contributions)
+        )
+
+        full_docs: list[Contribution] = []
+        for i, contrib in enumerate(contributions):
+            doc = self.document_model.from_input_model(contrib)
+            doc.structures = cast(list[Link[Structure]] | None, structures[struct_slices[i]] or None)
+            doc.tables = cast(list[Link[Table]] | None, tables[table_slices[i]] or None)
+            doc.attachments = cast(list[Link[Attachment]] | None, attachments[attach_slices[i]] or None)
+            full_docs.append(doc)
+
         return await self.document_model.insert_many(full_docs, ordered=False)
 
     async def upsert_contributions(self, contributions: list[ContributionIn]):
         """Upserts contributions.
 
-        For each Contribution, if Contribution with identical identifiers exist, update, otherwise insert
+        Component documents are bulk-inserted first (same as insert_contributions), then each
+        Contribution is upserted by (project, identifier).
 
         Args:
             contributions (list[ContributionIn]): the list of contributions to be upserted
@@ -95,26 +157,28 @@ class MongoDbContributionRepository(
         Returns:
             list[ContributionOut]: the list of upserted documents
         """
+        structures, tables, attachments, struct_slices, table_slices, attach_slices = (
+            await self._insert_components(contributions)
+        )
 
-        # Handles upserting a document - no upsert_many command
-        async def _upsert(contrib: ContributionIn):
+        async def _upsert(contrib: ContributionIn, i: int):
             existing = await self.document_model.find_one(
                 self._scope,
                 self.document_model.project == contrib.project,
                 self.document_model.identifier == contrib.identifier,
             )
             doc = self.document_model.from_input_model(contrib)
-            # Update
+            doc.structures = cast(list[Link[Structure]] | None, structures[struct_slices[i]] or None)
+            doc.tables = cast(list[Link[Table]] | None, tables[table_slices[i]] or None)
+            doc.attachments = cast(list[Link[Attachment]] | None, attachments[attach_slices[i]] or None)
             if existing is not None:
                 update_data = doc.model_dump(exclude={"id"}, exclude_none=True)
                 await existing.update(Set(update_data))
                 return existing
-            # Insert
             await doc.insert()
             return doc
 
-        # Asynchronously run upsert on each contribution
-        return await asyncio.gather(*[_upsert(c) for c in contributions])
+        return await asyncio.gather(*[_upsert(c, i) for i, c in enumerate(contributions)])
 
     async def upsert_contribution_by_id(self, id: str, contribution: ContributionIn):
         """Upserts a single Contribution.
