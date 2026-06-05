@@ -3,7 +3,7 @@ from typing import Annotated, Literal
 from fastapi import APIRouter, Depends
 from fastapi_filter import FilterDepends
 
-from mpcontribs_api.domains.contributions.dependencies import ContributionDep
+from mpcontribs_api.domains.contributions.dependencies import ContributionDep, ContributionServiceDep
 from mpcontribs_api.domains.contributions.models import (
     ContributionFilter,
     ContributionIn,
@@ -37,18 +37,18 @@ async def delete_contributions(
 
 @router.post("")
 async def insert_contributions(
-    repo: ContributionDep,
+    service: ContributionServiceDep,
     contributions: list[ContributionIn],
 ):
-    return await repo.insert_contributions(contributions=contributions)
+    return await service.insert_contributions(contributions=contributions)
 
 
 @router.put("")
 async def upsert_contributions(
-    repo: ContributionDep,
+    service: ContributionServiceDep,
     contributions: list[ContributionIn],
 ):
-    return await repo.upsert_contributions(contributions=contributions)
+    return await service.upsert_contributions(contributions=contributions)
 
 
 @router.get("download/{mime}")
