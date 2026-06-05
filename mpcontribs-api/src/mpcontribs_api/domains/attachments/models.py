@@ -15,6 +15,10 @@ class Attachment(BaseDocumentWithInput[PydanticObjectId]):
         name = "attachments"
 
 
+class AttachmentIn(Attachment):
+    pass
+
+
 class AttachmentFilter(Filter):
     id: PydanticObjectId | None = None
     id__in: list[PydanticObjectId] | None = None

@@ -16,9 +16,9 @@ from fastapi_filter.contrib.beanie import Filter
 from pydantic import Field
 
 from mpcontribs_api.domains._shared.models import BaseDocumentWithInput, DocumentOut
-from mpcontribs_api.domains.attachments.models import Attachment, AttachmentFilter
-from mpcontribs_api.domains.structures.models import Structure, StructureFilter
-from mpcontribs_api.domains.tables.models import Table, TableFilter
+from mpcontribs_api.domains.attachments.models import Attachment, AttachmentFilter, AttachmentIn
+from mpcontribs_api.domains.structures.models import Structure, StructureFilter, StructureIn
+from mpcontribs_api.domains.tables.models import Table, TableFilter, TableIn
 from mpcontribs_api.projection import SparseFieldsModel
 from mpcontribs_api.types import ShortStr
 
@@ -32,9 +32,6 @@ class ContributionBase(BaseDocumentWithInput[PydanticObjectId]):
     # TODO: Verify that this should default to True and be passed by users
     needs_build: bool = True
     last_modified: datetime = Field(default_factory=lambda: datetime.now(UTC))
-    structures: list[Link[Structure]] | None = None
-    tables: list[Link[Table]] | None = None
-    attachments: list[Link[Attachment]] | None = None
 
     class Settings:
         name = "contributions"
@@ -43,13 +40,16 @@ class ContributionBase(BaseDocumentWithInput[PydanticObjectId]):
 
 class Contribution(ContributionBase):
     is_public: bool
+    structures: list[Link[Structure]] | None = None
+    tables: list[Link[Table]] | None = None
+    attachments: list[Link[Attachment]] | None = None
     # needs_build: bool = True
 
     @classmethod
     def from_input_model(cls, data: ContributionIn) -> Contribution:
         return cls.model_validate(
             {
-                **data.model_dump(exclude={"is_public"}),
+                **data.model_dump(exclude={"is_public", "structures", "tables", "attachments"}),
                 "is_public": False,
             }
         )
@@ -60,7 +60,9 @@ class Contribution(ContributionBase):
 
 
 class ContributionIn(ContributionBase):
-    pass
+    structures: list[StructureIn] | None = None
+    tables: list[TableIn] | None = None
+    attachments: list[AttachmentIn] | None = None
 
 
 class ContributionOut(DocumentOut[PydanticObjectId]):
