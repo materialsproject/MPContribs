@@ -6,7 +6,8 @@ from beanie.operators import Set
 
 from mpcontribs_api.auth import User
 from mpcontribs_api.domains._shared.repository import MongoDbRepository
-from mpcontribs_api.domains.attachments.models import Attachment
+from mpcontribs_api.domains.attachments.models import Attachment, AttachmentIn
+from mpcontribs_api.domains.attachments.repository import MongoDbAttachmentRepository
 from mpcontribs_api.domains.contributions.models import (
     Contribution,
     ContributionFilter,
@@ -14,8 +15,10 @@ from mpcontribs_api.domains.contributions.models import (
     ContributionOut,
     ContributionPatch,
 )
-from mpcontribs_api.domains.structures.models import Structure
-from mpcontribs_api.domains.tables.models import Table
+from mpcontribs_api.domains.structures.models import Structure, StructureIn
+from mpcontribs_api.domains.structures.repository import MongoDbStructureRepository
+from mpcontribs_api.domains.tables.models import Table, TableIn
+from mpcontribs_api.domains.tables.repository import MongoDbTableRepository
 from mpcontribs_api.pagination import CursorParams
 
 
@@ -32,6 +35,10 @@ class MongoDbContributionRepository(
 
     document_model = Contribution
     out_model = ContributionOut
+
+    def __init__(self, user: User) -> None:
+        super().__init__(user)
+        self._user = user
 
     @staticmethod
     def _build_scope(user: User) -> dict[str, Any]:
@@ -74,49 +81,41 @@ class MongoDbContributionRepository(
         docs = filter.filter(self.document_model.find(self._scope))
         await docs.delete()
 
-    @staticmethod
     async def _insert_components(
+        self,
         contributions: list[ContributionIn],
     ) -> tuple[list[Structure], list[Table], list[Attachment], list[slice], list[slice], list[slice]]:
-        """Bulk-insert all component documents (structures, tables, attachments) for a batch of
-        ContributionIn objects, and return the inserted documents alongside per-contribution slices
-        so callers can re-attach them as Links.
+        """Bulk-insert component documents for a batch and return per-contribution slices.
 
-        Returns a tuple of:
+        Returns:
             (structures, tables, attachments, struct_slices, table_slices, attach_slices)
-        where each slice[i] selects the components belonging to contributions[i].
+            where slice[i] selects the components belonging to contributions[i].
         """
-        all_structures: list[Structure] = []
-        all_tables: list[Table] = []
-        all_attachments: list[Attachment] = []
+        all_structures: list[StructureIn] = []
+        all_tables: list[TableIn] = []
+        all_attachments: list[AttachmentIn] = []
         struct_slices: list[slice] = []
         table_slices: list[slice] = []
         attach_slices: list[slice] = []
 
         for contrib in contributions:
             s0 = len(all_structures)
-            if contrib.structures:
-                all_structures.extend(Structure.model_validate(s.model_dump()) for s in contrib.structures)
+            all_structures.extend(contrib.structures or [])
             struct_slices.append(slice(s0, len(all_structures)))
 
             t0 = len(all_tables)
-            if contrib.tables:
-                all_tables.extend(Table.model_validate(t.model_dump()) for t in contrib.tables)
+            all_tables.extend(contrib.tables or [])
             table_slices.append(slice(t0, len(all_tables)))
 
             a0 = len(all_attachments)
-            if contrib.attachments:
-                all_attachments.extend(Attachment.model_validate(a.model_dump()) for a in contrib.attachments)
+            all_attachments.extend(contrib.attachments or [])
             attach_slices.append(slice(a0, len(all_attachments)))
 
-        if all_structures:
-            await Structure.insert_many(all_structures, ordered=False)
-        if all_tables:
-            await Table.insert_many(all_tables, ordered=False)
-        if all_attachments:
-            await Attachment.insert_many(all_attachments, ordered=False)
+        structures = await MongoDbStructureRepository(self._user).insert_structures(all_structures)
+        tables = await MongoDbTableRepository(self._user).insert_tables(all_tables)
+        attachments = await MongoDbAttachmentRepository(self._user).insert_attachments(all_attachments)
 
-        return all_structures, all_tables, all_attachments, struct_slices, table_slices, attach_slices
+        return structures, tables, attachments, struct_slices, table_slices, attach_slices
 
     async def insert_contributions(self, contributions: list[ContributionIn]):
         """Bulk insertion of Contributions.
