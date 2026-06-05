@@ -1,14 +1,15 @@
 from abc import ABC, abstractmethod
 from typing import Any
 
-from beanie import UpdateResponse
+from beanie import PydanticObjectId, UpdateResponse
 from beanie.operators import Set
+from bson.errors import InvalidId
 from fastapi_filter.contrib.beanie import Filter
 from pydantic import BaseModel
 
 from mpcontribs_api.auth import User
 from mpcontribs_api.domains._shared.models import BaseDocumentWithInput, DocumentOut
-from mpcontribs_api.exceptions import ConflictError, NotFoundError
+from mpcontribs_api.exceptions import ConflictError, NotFoundError, ValidationError
 from mpcontribs_api.pagination import CursorParams, Page, decode_cursor, encode_cursor
 
 
@@ -52,6 +53,12 @@ class MongoDbRepository[
         """Provides scope based on current user's permitted groups and publicly released data."""
         ...
 
+    def _convert_object_id(self, id: str) -> PydanticObjectId:
+        try:
+            return PydanticObjectId(id)
+        except InvalidId:
+            raise ValidationError(f"Incorrect Id format: {id}. Must be MongoDB ObjectId format.") from None
+
     def _not_found(self, id: str) -> str:
         """Build a not-found message naming this repository's resource."""
         return f"{self.document_model.__name__} with id {id} not found"
@@ -79,7 +86,7 @@ class MongoDbRepository[
         next_cursor = encode_cursor(str(items[-1].id)) if has_more and items else None
         return Page(items=items, next_cursor=next_cursor)
 
-    async def get_by_id(self, id: str, fields: frozenset[str] | None):
+    async def get_by_id(self, id: Any, fields: frozenset[str] | None):
         """Return a single scoped document by id, projected to the requested fields.
 
         Args:
@@ -105,7 +112,7 @@ class MongoDbRepository[
         await document.insert()
         return document
 
-    async def delete_by_id(self, id: str) -> None:
+    async def delete_by_id(self, id: Any) -> None:
         """Delete a single scoped document by id.
 
         Scoping ensures callers cannot delete documents they are not permitted to see.
@@ -115,7 +122,7 @@ class MongoDbRepository[
         """
         await self.document_model.find_one(self._scope, self.document_model.id == id).delete()
 
-    async def patch(self, id: str, update: TPatch) -> TDoc:
+    async def patch(self, id: Any, update: TPatch) -> TDoc:
         """Partially update a single scoped document by id.
 
         Only fields explicitly set on ``update`` are applied. An empty patch is a no-op that still
