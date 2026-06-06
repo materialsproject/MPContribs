@@ -54,10 +54,11 @@ class MongoDbRepository[
         ...
 
     def _convert_object_id(self, id: str) -> PydanticObjectId:
+        """Converts the string representation of an ObjectId to an ObjectId"""
         try:
             return PydanticObjectId(id)
         except InvalidId:
-            raise ValidationError(f"Incorrect Id format: {id}. Must be MongoDB ObjectId format.") from None
+            raise ValidationError("Incorrect Id format. Must be MongoDB ObjectId format.", id=id) from None
 
     def _not_found(self, id: str) -> str:
         """Build a not-found message naming this repository's resource."""

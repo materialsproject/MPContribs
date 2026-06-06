@@ -66,6 +66,10 @@ class Project(BaseDocumentWithInput[ShortStr]):
 
     @staticmethod
     def decode_cursor(cursor: str) -> str:
+        """Decodes cursor and returns it as a str.
+
+        Needs override over parent class since Project.id is a simple str
+        """
         return pagination.decode_cursor(cursor)
 
     class Settings:

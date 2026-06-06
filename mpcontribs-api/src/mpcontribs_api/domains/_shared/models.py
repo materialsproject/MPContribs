@@ -29,6 +29,7 @@ class BaseDocumentWithInput[TId](DocumentWithSoftDelete):
 
     @staticmethod
     def decode_cursor(cursor: str) -> str | PydanticObjectId:
+        """Decodes the cursor the an ObjectId"""
         return PydanticObjectId(pagination.decode_cursor(cursor=cursor))
 
 

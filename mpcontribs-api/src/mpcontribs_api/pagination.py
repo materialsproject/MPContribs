@@ -27,10 +27,15 @@ class Page[T](BaseModel):
 
 
 def encode_cursor(last_id: str) -> str:
+    """Base64 encodes a cursor for pagination
+
+    Uses base64 instead of raw str to prevent manual tampering from users
+    """
     return base64.urlsafe_b64encode(last_id.encode()).decode()
 
 
 def decode_cursor(cursor: str) -> str:
+    """Base64 decodes a cursor for pagination"""
     try:
         return base64.urlsafe_b64decode(cursor.encode()).decode()
     except ValueError, UnicodeDecodeError:
