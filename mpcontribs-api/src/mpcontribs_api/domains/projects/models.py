@@ -5,6 +5,7 @@ from typing import Any, Literal
 from fastapi_filter.contrib.beanie import Filter
 from pydantic import BaseModel, ConfigDict, Field, HttpUrl
 
+from mpcontribs_api import pagination
 from mpcontribs_api.domains._shared.models import BaseDocumentWithInput, DocumentOut
 from mpcontribs_api.types import PrefixedEmail, ShortStr
 
@@ -62,6 +63,10 @@ class Project(BaseDocumentWithInput[ShortStr]):
     @classmethod
     def from_input_model(cls, data: ProjectIn) -> Project:
         return cls(**data.model_dump())
+
+    @staticmethod
+    def decode_cursor(cursor: str) -> str:
+        return pagination.decode_cursor(cursor)
 
     class Settings:
         name = "projects"

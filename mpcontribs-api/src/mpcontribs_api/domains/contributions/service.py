@@ -75,8 +75,8 @@ class ContributionService:
         Returns:
             list[Contribution]: inserted documents
         """
-        structures, tables, attachments, struct_slices, table_slices, attach_slices = (
-            await self._insert_components(contributions)
+        structures, tables, attachments, struct_slices, table_slices, attach_slices = await self._insert_components(
+            contributions
         )
 
         full_docs: list[Contribution] = []
@@ -102,11 +102,7 @@ class ContributionService:
         Returns:
             list[Contribution]: upserted documents
         """
-        indices_with_components = [
-            i
-            for i, c in enumerate(contributions)
-            if c.structures or c.tables or c.attachments
-        ]
+        indices_with_components = [i for i, c in enumerate(contributions) if c.structures or c.tables or c.attachments]
         if indices_with_components:
             raise ValidationError(
                 "Components must be managed via their respective services, not via contribution upsert.",

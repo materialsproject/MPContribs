@@ -10,7 +10,7 @@ from pydantic import BaseModel
 from mpcontribs_api.auth import User
 from mpcontribs_api.domains._shared.models import BaseDocumentWithInput, DocumentOut
 from mpcontribs_api.exceptions import ConflictError, NotFoundError, ValidationError
-from mpcontribs_api.pagination import CursorParams, Page, decode_cursor, encode_cursor
+from mpcontribs_api.pagination import CursorParams, Page, encode_cursor
 
 
 class MongoDbRepository[
@@ -79,7 +79,7 @@ class MongoDbRepository[
         projection = self.out_model.projection(fields)
         query = filter.filter(self.document_model.find(self._scope))
         if pagination.cursor is not None:
-            query = query.find(self.document_model.id > decode_cursor(pagination.cursor))  # pyright: ignore[reportOptionalOperand]
+            query = query.find(self.document_model.id > self.document_model.decode_cursor(cursor=pagination.cursor))  # pyright: ignore[reportOptionalOperand]
         docs = await query.sort(self.document_model.id).limit(pagination.limit + 1).project(projection).to_list()  # pyright: ignore[reportArgumentType]
         has_more = len(docs) > pagination.limit
         items = docs[: pagination.limit]

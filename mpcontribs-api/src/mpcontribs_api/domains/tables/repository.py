@@ -11,9 +11,7 @@ from mpcontribs_api.domains.tables.models import (
 )
 
 
-class MongoDbTableRepository(
-    MongoDbRepository[Table, TableIn, TableDocumentOut, TableFilter, TablePatch]
-):
+class MongoDbTableRepository(MongoDbRepository[Table, TableIn, TableDocumentOut, TableFilter, TablePatch]):
     document_model = Table
     out_model = TableDocumentOut
 
