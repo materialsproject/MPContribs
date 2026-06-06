@@ -1,8 +1,9 @@
 from typing import Annotated, Any, Self
 
-from beanie import DocumentWithSoftDelete
+from beanie import DocumentWithSoftDelete, PydanticObjectId
 from pydantic import Field
 
+from mpcontribs_api import pagination
 from mpcontribs_api.projection import SparseFieldsModel
 
 
@@ -25,6 +26,10 @@ class BaseDocumentWithInput[TId](DocumentWithSoftDelete):
     def from_input_model(cls, data: Any) -> Self:
         """Translate a validated input payload into a full stored document."""
         return cls(**data.model_dump())
+
+    @staticmethod
+    def decode_cursor(cursor: str) -> str | PydanticObjectId:
+        return PydanticObjectId(pagination.decode_cursor(cursor=cursor))
 
 
 class DocumentOut[TId](SparseFieldsModel):
