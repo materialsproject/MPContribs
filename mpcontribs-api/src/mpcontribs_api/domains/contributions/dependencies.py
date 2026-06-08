@@ -2,7 +2,7 @@ from typing import Annotated
 
 from fastapi import Depends
 
-from mpcontribs_api.dependencies import UserDep
+from mpcontribs_api.dependencies import MongoClientDep, UserDep
 from mpcontribs_api.domains.attachments.repository import MongoDbAttachmentRepository
 from mpcontribs_api.domains.contributions.repository import (
     MongoDbContributionRepository,
@@ -19,8 +19,9 @@ def get_scoped_contributions(user: UserDep) -> MongoDbContributionRepository:
 ContributionDep = Annotated[MongoDbContributionRepository, Depends(get_scoped_contributions)]
 
 
-def get_contribution_service(user: UserDep) -> ContributionService:
+def get_contribution_service(user: UserDep, client: MongoClientDep) -> ContributionService:
     return ContributionService(
+        client=client,
         contributions=MongoDbContributionRepository(user),
         structures=MongoDbStructureRepository(user),
         attachments=MongoDbAttachmentRepository(user),

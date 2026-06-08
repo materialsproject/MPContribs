@@ -2,8 +2,8 @@
 
 All database access is replaced with AsyncMock repositories so no MongoDB
 connection is needed.  These tests verify:
-  - _insert_components: slice bookkeeping and delegation to component repos
-  - insert_contributions: Link wiring and bulk-insert delegation
+  - insert_contributions: pre-checks, no-component fast path, per-contribution txn path,
+    partial-failure summary
   - upsert_contributions: guard against components, insert vs update branching
 """
 
@@ -13,7 +13,9 @@ import polars as pl
 import pytest
 from beanie import PydanticObjectId
 from pymatgen.core import Element
+from pymongo.errors import BulkWriteError
 
+from mpcontribs_api.config import MongoSettings
 from mpcontribs_api.domains.attachments.models import Attachment, AttachmentIn
 from mpcontribs_api.domains.contributions.models import Contribution, ContributionIn
 from mpcontribs_api.domains.contributions.service import ContributionService
@@ -26,7 +28,7 @@ from mpcontribs_api.domains.structures.models import (
     StructureIn,
 )
 from mpcontribs_api.domains.tables.models import Attributes, Labels, Table, TableIn
-from mpcontribs_api.exceptions import ValidationError
+from mpcontribs_api.exceptions import ConflictError, ValidationError
 
 pytestmark = pytest.mark.asyncio
 
@@ -104,23 +106,66 @@ def _contrib_in(project="proj", identifier="mp-1", formula="Fe2O3", **kwargs) ->
     )
 
 
+def _make_mongo_settings(
+    *,
+    max_components_per_contribution: int = 500,
+    max_concurrent_transactions: int = 8,
+    component_insert_chunk_size: int = 100,
+) -> MongoSettings:
+    return MongoSettings.model_validate({
+        "uri": "mongodb://test",
+        "db_name": "test",
+        "max_pool_size": 100,
+        "max_components_per_contribution": max_components_per_contribution,
+        "max_concurrent_transactions": max_concurrent_transactions,
+        "component_insert_chunk_size": component_insert_chunk_size,
+    })
+
+
+def _make_fake_client() -> tuple[AsyncMock, MagicMock]:
+    """Return a fake AsyncMongoClient whose start_session() yields a session that drives
+    with_transaction(callback) by simply awaiting callback(session).
+
+    Returns:
+        (client, session): the session is exposed so tests can assert on it.
+    """
+    session = MagicMock(name="session")
+
+    async def _with_transaction(callback):
+        return await callback(session)
+
+    session.with_transaction = AsyncMock(side_effect=_with_transaction)
+    session.__aenter__ = AsyncMock(return_value=session)
+    session.__aexit__ = AsyncMock(return_value=None)
+
+    client = MagicMock(name="client")
+    client.start_session = MagicMock(return_value=session)
+    return client, session
+
+
 def _make_service(
     contributions=None,
     structures=None,
     tables=None,
     attachments=None,
-) -> tuple[ContributionService, AsyncMock, AsyncMock, AsyncMock, AsyncMock]:
+    client=None,
+    settings: MongoSettings | None = None,
+) -> tuple[ContributionService, AsyncMock, AsyncMock, AsyncMock, AsyncMock, MagicMock]:
     contrib_repo = contributions or AsyncMock()
     struct_repo = structures or AsyncMock()
     table_repo = tables or AsyncMock()
     attach_repo = attachments or AsyncMock()
+    if client is None:
+        client, _ = _make_fake_client()
     svc = ContributionService(
+        client=client,
         contributions=contrib_repo,
         structures=struct_repo,
         tables=table_repo,
         attachments=attach_repo,
+        settings=settings or _make_mongo_settings(),
     )
-    return svc, contrib_repo, struct_repo, table_repo, attach_repo
+    return svc, contrib_repo, struct_repo, table_repo, attach_repo, client
 
 
 def _fake_structure() -> Structure:
@@ -142,223 +187,250 @@ def _fake_attachment() -> Attachment:
 
 
 # ---------------------------------------------------------------------------
-# _insert_components
+# insert_contributions — pre-checks (cheap, no DB)
 # ---------------------------------------------------------------------------
 
 
-class TestInsertComponents:
-    async def test_empty_batch_calls_repos_with_empty_lists(self):
-        svc, _, struct_repo, table_repo, attach_repo = _make_service()
-        struct_repo.insert_structures.return_value = []
+class TestInsertContributionsPreChecks:
+    async def test_empty_batch_returns_empty_summary_no_db(self):
+        svc, contrib_repo, struct_repo, table_repo, attach_repo, client = _make_service()
+
+        summary = await svc.insert_contributions([])
+
+        assert summary.total == 0
+        assert summary.succeeded == []
+        assert summary.failed == []
+        contrib_repo.insert_many_contributions.assert_not_called()
+        contrib_repo.insert_contribution.assert_not_called()
+        client.start_session.assert_not_called()
+
+    async def test_duplicate_project_identifier_raises_validation_error(self):
+        svc, contrib_repo, _, _, _, client = _make_service()
+        contribs = [
+            _contrib_in(project="p", identifier="dup"),
+            _contrib_in(project="p", identifier="dup"),
+        ]
+        with pytest.raises(ValidationError) as exc_info:
+            await svc.insert_contributions(contribs)
+        assert exc_info.value.context.get("contribution_indices") == [0, 1]
+        contrib_repo.insert_many_contributions.assert_not_called()
+        client.start_session.assert_not_called()
+
+    async def test_oversize_contribution_goes_to_failures_without_db(self):
+        settings = _make_mongo_settings(max_components_per_contribution=1)
+        svc, contrib_repo, struct_repo, _, _, client = _make_service(settings=settings)
+        contrib_repo.insert_many_contributions.return_value = None
+
+        good = _contrib_in(identifier="ok")
+        oversize = _contrib_in(identifier="big", structures=[_structure_in(), _structure_in()])
+
+        summary = await svc.insert_contributions([good, oversize])
+
+        assert summary.total == 2
+        assert len(summary.failed) == 1
+        assert summary.failed[0].index == 1
+        assert summary.failed[0].error_code == "validation_error"
+        # Oversize never reached the component repo
+        struct_repo.insert_structures.assert_not_called()
+        # And the in-pool contribution did go through the no-component fast path
+        contrib_repo.insert_many_contributions.assert_called_once()
+
+
+# ---------------------------------------------------------------------------
+# insert_contributions — no-component fast path
+# ---------------------------------------------------------------------------
+
+
+class TestInsertContributionsNoComponentPath:
+    async def test_all_no_components_uses_single_insert_many(self):
+        svc, contrib_repo, _, _, _, client = _make_service()
+        contrib_repo.insert_many_contributions.return_value = None
+
+        contribs = [_contrib_in(identifier=f"mp-{i}") for i in range(3)]
+        summary = await svc.insert_contributions(contribs)
+
+        contrib_repo.insert_many_contributions.assert_called_once()
+        # Zero transactions opened
+        client.start_session.assert_not_called()
+        contrib_repo.insert_contribution.assert_not_called()
+        assert summary.total == 3
+        assert len(summary.succeeded) == 3
+        assert summary.failed == []
+
+    async def test_is_public_forced_false_on_inserted_docs(self):
+        svc, contrib_repo, _, _, _, _ = _make_service()
+        contrib_repo.insert_many_contributions.return_value = None
+
+        await svc.insert_contributions([_contrib_in()])
+
+        docs = contrib_repo.insert_many_contributions.call_args[0][0]
+        assert all(d.is_public is False for d in docs)
+
+    async def test_bulk_write_error_partitions_succeeded_and_failed(self):
+        svc, contrib_repo, _, _, _, _ = _make_service()
+        # writeErrors index refers to position in the docs list (post-partition); both 2 and 5
+        # exercise the mapping back to original input indices.
+        bulk_err = BulkWriteError({
+            "writeErrors": [
+                {"index": 2, "code": 11000, "errmsg": "duplicate key"},
+                {"index": 5, "code": 11000, "errmsg": "duplicate key"},
+            ]
+        })
+        contrib_repo.insert_many_contributions.side_effect = bulk_err
+
+        contribs = [_contrib_in(identifier=f"mp-{i}") for i in range(6)]
+        summary = await svc.insert_contributions(contribs)
+
+        assert summary.total == 6
+        assert sorted(f.index for f in summary.failed) == [2, 5]
+        assert all(f.error_code == "conflict" for f in summary.failed)
+        # The 4 unaffected contributions succeed
+        assert len(summary.succeeded) == 4
+
+
+# ---------------------------------------------------------------------------
+# insert_contributions — per-contribution transaction path
+# ---------------------------------------------------------------------------
+
+
+class TestInsertContributionsTransactionPath:
+    async def test_with_components_opens_session_per_contribution(self):
+        svc, contrib_repo, struct_repo, table_repo, attach_repo, client = _make_service()
+
+        struct_repo.insert_structures.return_value = [_fake_structure()]
         table_repo.insert_tables.return_value = []
         attach_repo.insert_attachments.return_value = []
 
-        structures, tables, attachments, ss, ts, ats = await svc._insert_components([])
+        async def _insert(doc, session=None):
+            return doc
 
-        struct_repo.insert_structures.assert_called_once_with([])
-        table_repo.insert_tables.assert_called_once_with([])
-        attach_repo.insert_attachments.assert_called_once_with([])
-        assert structures == []
-        assert tables == []
-        assert attachments == []
-        assert ss == []
-        assert ts == []
-        assert ats == []
+        contrib_repo.insert_contribution.side_effect = _insert
 
-    async def test_single_contrib_no_components_produces_empty_slices(self):
-        svc, _, struct_repo, table_repo, attach_repo = _make_service()
-        struct_repo.insert_structures.return_value = []
-        table_repo.insert_tables.return_value = []
-        attach_repo.insert_attachments.return_value = []
+        contribs = [_contrib_in(identifier=f"c{i}", structures=[_structure_in()]) for i in range(3)]
+        summary = await svc.insert_contributions(contribs)
 
-        contrib = _contrib_in()
-        _, _, _, ss, ts, ats = await svc._insert_components([contrib])
+        assert client.start_session.call_count == 3
+        assert summary.total == 3
+        assert len(summary.succeeded) == 3
+        assert summary.failed == []
 
-        assert ss == [slice(0, 0)]
-        assert ts == [slice(0, 0)]
-        assert ats == [slice(0, 0)]
-
-    async def test_slices_are_contiguous_and_non_overlapping(self):
-        svc, _, struct_repo, table_repo, attach_repo = _make_service()
-
-        struct_repo.insert_structures.return_value = [_fake_structure()] * 3
-        table_repo.insert_tables.return_value = []
-        attach_repo.insert_attachments.return_value = []
-
-        contrib_a = _contrib_in(identifier="a", structures=[_structure_in()])
-        contrib_b = _contrib_in(identifier="b", structures=[_structure_in(), _structure_in()])
-        contrib_c = _contrib_in(identifier="c")
-
-        _, _, _, ss, _, _ = await svc._insert_components([contrib_a, contrib_b, contrib_c])
-
-        assert ss[0] == slice(0, 1)   # contrib_a: 1 structure
-        assert ss[1] == slice(1, 3)   # contrib_b: 2 structures
-        assert ss[2] == slice(3, 3)   # contrib_c: 0 structures
-
-    async def test_all_component_types_collected_and_dispatched(self):
-        svc, _, struct_repo, table_repo, attach_repo = _make_service()
+    async def test_session_threaded_to_all_repo_calls(self):
+        client, session = _make_fake_client()
+        svc, contrib_repo, struct_repo, table_repo, attach_repo, _ = _make_service(client=client)
 
         struct_repo.insert_structures.return_value = [_fake_structure()]
         table_repo.insert_tables.return_value = [_fake_table()]
         attach_repo.insert_attachments.return_value = [_fake_attachment()]
+
+        async def _insert(doc, session=None):
+            return doc
+
+        contrib_repo.insert_contribution.side_effect = _insert
 
         contrib = _contrib_in(
             structures=[_structure_in()],
             tables=[_table_in()],
             attachments=[_attachment_in()],
         )
+        await svc.insert_contributions([contrib])
 
-        await svc._insert_components([contrib])
+        assert struct_repo.insert_structures.call_args.kwargs["session"] is session
+        assert table_repo.insert_tables.call_args.kwargs["session"] is session
+        assert attach_repo.insert_attachments.call_args.kwargs["session"] is session
+        assert contrib_repo.insert_contribution.call_args.kwargs["session"] is session
 
-        struct_repo.insert_structures.assert_called_once()
-        table_repo.insert_tables.assert_called_once()
-        attach_repo.insert_attachments.assert_called_once()
-        # Verify correct counts were forwarded
-        assert len(struct_repo.insert_structures.call_args[0][0]) == 1
-        assert len(table_repo.insert_tables.call_args[0][0]) == 1
-        assert len(attach_repo.insert_attachments.call_args[0][0]) == 1
+    async def test_failure_on_second_of_three_yields_summary(self):
+        svc, contrib_repo, struct_repo, table_repo, attach_repo, _ = _make_service()
 
-    async def test_multiple_contribs_components_concatenated_before_insert(self):
-        svc, _, struct_repo, table_repo, attach_repo = _make_service()
-
-        struct_repo.insert_structures.return_value = [_fake_structure()] * 3
+        struct_repo.insert_structures.return_value = [_fake_structure()]
         table_repo.insert_tables.return_value = []
         attach_repo.insert_attachments.return_value = []
 
-        c1 = _contrib_in(identifier="c1", structures=[_structure_in()])
-        c2 = _contrib_in(identifier="c2", structures=[_structure_in(), _structure_in()])
+        async def _insert(doc, session=None):
+            # Fail the second contribution by inspecting the doc identifier
+            if doc.identifier == "fail":
+                raise ConflictError("conflict on insert")
+            return doc
 
-        await svc._insert_components([c1, c2])
+        contrib_repo.insert_contribution.side_effect = _insert
 
-        struct_repo.insert_structures.assert_called_once()
-        assert len(struct_repo.insert_structures.call_args[0][0]) == 3
+        contribs = [
+            _contrib_in(identifier="ok-1", structures=[_structure_in()]),
+            _contrib_in(identifier="fail", structures=[_structure_in()]),
+            _contrib_in(identifier="ok-2", structures=[_structure_in()]),
+        ]
+        summary = await svc.insert_contributions(contribs)
 
+        assert summary.total == 3
+        assert len(summary.succeeded) == 2
+        assert len(summary.failed) == 1
+        assert summary.failed[0].index == 1
+        assert summary.failed[0].error_code == "conflict"
 
-# ---------------------------------------------------------------------------
-# insert_contributions
-# ---------------------------------------------------------------------------
+    async def test_component_links_wired_per_contribution(self):
+        svc, contrib_repo, struct_repo, table_repo, attach_repo, _ = _make_service()
 
-
-class TestInsertContributions:
-    async def test_delegates_to_insert_many(self):
-        svc, contrib_repo, struct_repo, table_repo, attach_repo = _make_service()
-
-        struct_repo.insert_structures.return_value = []
+        struct_a, struct_b = _fake_structure(), _fake_structure()
+        struct_calls = iter([[struct_a], [struct_b]])
+        struct_repo.insert_structures.side_effect = lambda *_args, **_kwargs: next(struct_calls)
         table_repo.insert_tables.return_value = []
         attach_repo.insert_attachments.return_value = []
-        contrib_repo.insert_many_contributions.return_value = MagicMock()
 
-        contribs = [_contrib_in(identifier=f"mp-{i}") for i in range(3)]
+        captured: list[Contribution] = []
+
+        async def _insert(doc, session=None):
+            captured.append(doc)
+            return doc
+
+        contrib_repo.insert_contribution.side_effect = _insert
+
+        contribs = [
+            _contrib_in(identifier="a", structures=[_structure_in()]),
+            _contrib_in(identifier="b", structures=[_structure_in()]),
+        ]
         await svc.insert_contributions(contribs)
 
+        captured_by_id = {c.identifier: c for c in captured}
+        assert captured_by_id["a"].structures == [struct_a]
+        assert captured_by_id["b"].structures == [struct_b]
+
+
+# ---------------------------------------------------------------------------
+# insert_contributions — mixed batch (partitioned across paths)
+# ---------------------------------------------------------------------------
+
+
+class TestInsertContributionsMixedBatch:
+    async def test_mixed_batch_routes_correctly(self):
+        svc, contrib_repo, struct_repo, table_repo, attach_repo, client = _make_service()
+
+        struct_repo.insert_structures.return_value = [_fake_structure()]
+        table_repo.insert_tables.return_value = []
+        attach_repo.insert_attachments.return_value = []
+        contrib_repo.insert_many_contributions.return_value = None
+
+        async def _insert(doc, session=None):
+            return doc
+
+        contrib_repo.insert_contribution.side_effect = _insert
+
+        contribs = [
+            _contrib_in(identifier="bare-1"),
+            _contrib_in(identifier="with-1", structures=[_structure_in()]),
+            _contrib_in(identifier="bare-2"),
+            _contrib_in(identifier="with-2", structures=[_structure_in()]),
+        ]
+        summary = await svc.insert_contributions(contribs)
+
+        # No-component path: single batched call
         contrib_repo.insert_many_contributions.assert_called_once()
-        inserted_docs = contrib_repo.insert_many_contributions.call_args[0][0]
-        assert len(inserted_docs) == 3
-
-    async def test_is_public_forced_false_on_all_docs(self):
-        svc, contrib_repo, struct_repo, table_repo, attach_repo = _make_service()
-
-        struct_repo.insert_structures.return_value = []
-        table_repo.insert_tables.return_value = []
-        attach_repo.insert_attachments.return_value = []
-        contrib_repo.insert_many_contributions.return_value = MagicMock()
-
-        contribs = [_contrib_in(identifier="mp-1")]
-        await svc.insert_contributions(contribs)
-
-        docs = contrib_repo.insert_many_contributions.call_args[0][0]
-        assert all(d.is_public is False for d in docs)
-
-    async def test_structure_links_wired_correctly(self):
-        svc, contrib_repo, struct_repo, table_repo, attach_repo = _make_service()
-
-        fake_struct = _fake_structure()
-        struct_repo.insert_structures.return_value = [fake_struct]
-        table_repo.insert_tables.return_value = []
-        attach_repo.insert_attachments.return_value = []
-        contrib_repo.insert_many_contributions.return_value = MagicMock()
-
-        contrib = _contrib_in(structures=[_structure_in()])
-        await svc.insert_contributions([contrib])
-
-        doc = contrib_repo.insert_many_contributions.call_args[0][0][0]
-        assert doc.structures == [fake_struct]
-
-    async def test_table_links_wired_correctly(self):
-        svc, contrib_repo, struct_repo, table_repo, attach_repo = _make_service()
-
-        fake_table = _fake_table()
-        struct_repo.insert_structures.return_value = []
-        table_repo.insert_tables.return_value = [fake_table]
-        attach_repo.insert_attachments.return_value = []
-        contrib_repo.insert_many_contributions.return_value = MagicMock()
-
-        contrib = _contrib_in(tables=[_table_in()])
-        await svc.insert_contributions([contrib])
-
-        doc = contrib_repo.insert_many_contributions.call_args[0][0][0]
-        assert doc.tables == [fake_table]
-
-    async def test_attachment_links_wired_correctly(self):
-        svc, contrib_repo, struct_repo, table_repo, attach_repo = _make_service()
-
-        fake_attach = _fake_attachment()
-        struct_repo.insert_structures.return_value = []
-        table_repo.insert_tables.return_value = []
-        attach_repo.insert_attachments.return_value = [fake_attach]
-        contrib_repo.insert_many_contributions.return_value = MagicMock()
-
-        contrib = _contrib_in(attachments=[_attachment_in()])
-        await svc.insert_contributions([contrib])
-
-        doc = contrib_repo.insert_many_contributions.call_args[0][0][0]
-        assert doc.attachments == [fake_attach]
-
-    async def test_no_components_sets_links_to_none(self):
-        svc, contrib_repo, struct_repo, table_repo, attach_repo = _make_service()
-
-        struct_repo.insert_structures.return_value = []
-        table_repo.insert_tables.return_value = []
-        attach_repo.insert_attachments.return_value = []
-        contrib_repo.insert_many_contributions.return_value = MagicMock()
-
-        await svc.insert_contributions([_contrib_in()])
-
-        doc = contrib_repo.insert_many_contributions.call_args[0][0][0]
-        assert doc.structures is None
-        assert doc.tables is None
-        assert doc.attachments is None
-
-    async def test_each_contrib_gets_only_its_own_components(self):
-        """Components belonging to contrib A must not bleed into contrib B."""
-        svc, contrib_repo, struct_repo, table_repo, attach_repo = _make_service()
-
-        s_a, s_b1, s_b2 = _fake_structure(), _fake_structure(), _fake_structure()
-        struct_repo.insert_structures.return_value = [s_a, s_b1, s_b2]
-        table_repo.insert_tables.return_value = []
-        attach_repo.insert_attachments.return_value = []
-        contrib_repo.insert_many_contributions.return_value = MagicMock()
-
-        c_a = _contrib_in(identifier="a", structures=[_structure_in()])
-        c_b = _contrib_in(identifier="b", structures=[_structure_in(), _structure_in()])
-
-        await svc.insert_contributions([c_a, c_b])
-
-        docs = contrib_repo.insert_many_contributions.call_args[0][0]
-        assert docs[0].structures == [s_a]
-        assert docs[1].structures == [s_b1, s_b2]
-
-    async def test_empty_batch_still_calls_insert_many(self):
-        svc, contrib_repo, struct_repo, table_repo, attach_repo = _make_service()
-
-        struct_repo.insert_structures.return_value = []
-        table_repo.insert_tables.return_value = []
-        attach_repo.insert_attachments.return_value = []
-        contrib_repo.insert_many_contributions.return_value = MagicMock()
-
-        await svc.insert_contributions([])
-
-        contrib_repo.insert_many_contributions.assert_called_once_with([])
+        assert len(contrib_repo.insert_many_contributions.call_args[0][0]) == 2
+        # With-component path: one session per item
+        assert client.start_session.call_count == 2
+        assert contrib_repo.insert_contribution.call_count == 2
+        assert summary.total == 4
+        assert len(summary.succeeded) == 4
+        assert summary.failed == []
 
 
 # ---------------------------------------------------------------------------

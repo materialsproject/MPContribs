@@ -2,6 +2,7 @@ from typing import Any, Literal
 
 from beanie import UpdateResponse
 from beanie.operators import Set
+from pymongo.asynchronous.client_session import AsyncClientSession
 
 from mpcontribs_api.auth import User
 from mpcontribs_api.domains._shared.repository import MongoDbRepository
@@ -74,18 +75,26 @@ class MongoDbContributionRepository(
         docs = filter.filter(self.document_model.find(self._scope))
         await docs.delete()
 
-    async def insert_many_contributions(self, docs: list[Contribution]):
+    async def insert_many_contributions(
+        self,
+        docs: list[Contribution],
+        session: AsyncClientSession | None = None,
+    ):
         """Bulk-insert pre-built Contribution documents.
 
-        Used by ``ContributionService`` after it has resolved component Links. The service is
-        responsible for ensuring each document is fully formed; this method is a thin
-        collection-level wrapper.
+        Used by the ``ContributionService`` no-component fast path. On partial failure pymongo
+        raises ``BulkWriteError`` whose ``details["writeErrors"]`` carries per-index error info
+        that the service maps back into a ``BulkWriteSummary``.
         """
-        return await self.document_model.insert_many(docs, ordered=False)
+        return await self.document_model.insert_many(docs, ordered=False, session=session)
 
-    async def insert_contribution(self, doc: Contribution) -> Contribution:
-        """Insert a single pre-built Contribution document."""
-        await doc.insert()
+    async def insert_contribution(
+        self,
+        doc: Contribution,
+        session: AsyncClientSession | None = None,
+    ) -> Contribution:
+        """Insert a single pre-built Contribution document, optionally in a transaction."""
+        await doc.insert(session=session)
         return doc
 
     async def find_one_contribution(self, project: str, identifier: str) -> Contribution | None:

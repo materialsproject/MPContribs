@@ -3,6 +3,7 @@ from typing import Annotated
 
 import structlog
 from fastapi import Depends, Header, Request
+from pymongo import AsyncMongoClient
 from pymongo.asynchronous.database import AsyncDatabase
 
 from mpcontribs_api.auth import User
@@ -29,6 +30,13 @@ def get_db(request: Request) -> AsyncDatabase:
 
 
 DbDep = Annotated[AsyncDatabase, Depends(get_db)]
+
+
+def get_mongo_client(request: Request) -> AsyncMongoClient:
+    return request.app.state.mongo_client
+
+
+MongoClientDep = Annotated[AsyncMongoClient, Depends(get_mongo_client)]
 
 
 def _split(raw: str | None) -> set[str]:
