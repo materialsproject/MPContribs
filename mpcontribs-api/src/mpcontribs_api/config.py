@@ -68,11 +68,14 @@ class MongoSettings(BaseModel):
     )
 
     @model_validator(mode="after")
-    def _clamp_max_concurrent_transactions(self):
+    def _clamp_concurrency(self):
         if self.max_pool_size:
-            cap = max(1, self.max_pool_size // 2)
-            if self.max_concurrent_transactions > cap:
-                self.max_concurrent_transactions = cap
+            per_request_cap = max(1, self.max_pool_size // 2)
+            if self.max_concurrent_transactions > per_request_cap:
+                self.max_concurrent_transactions = per_request_cap
+            global_cap = max(1, self.max_pool_size - 10)
+            if self.max_global_concurrent_writes > global_cap:
+                self.max_global_concurrent_writes = global_cap
         return self
 
 
