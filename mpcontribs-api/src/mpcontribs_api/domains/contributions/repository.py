@@ -109,6 +109,37 @@ class MongoDbContributionRepository(
         """Apply a partial update to an existing Contribution document."""
         await doc.update(Set(update_data))
 
+    async def upsert_contribution_by_identifiers(
+        self,
+        identifiers: dict[str, str],
+        contribution: ContributionIn,
+    ) -> Contribution:
+        """Atomically upsert a Contribution by its identifying fields.
+
+        Relies on the unique index over those fields so that concurrent requests targeting the
+        same key cannot both win the insert branch. Fields the caller did not set are not touched
+        (partial update). On insert a fresh Contribution document is written with ``is_public=False``.
+
+        Args:
+            identifiers: the fields ContributionIn.identifiers() returns (project, identifier)
+            contribution: the input payload to upsert
+
+        Returns:
+            Contribution: the document as it stands after the operation
+        """
+        doc = self.document_model.from_input_model(contribution)
+        update_data = doc.model_dump(exclude={"id"}, exclude_none=True)
+        query = self.document_model.find_one(
+            self._scope,
+            self.document_model.project == identifiers["project"],
+            self.document_model.identifier == identifiers["identifier"],
+        ).upsert(
+            Set(update_data),
+            on_insert=doc,
+            response_type=UpdateResponse.NEW_DOCUMENT,
+        )
+        return await query  # pyright: ignore[reportGeneralTypeIssues] # beanie UpdateQuery is awaitable, but pyright doesn't see it
+
     async def upsert_contribution_by_id(self, id: str, contribution: ContributionIn):
         """Upserts a single Contribution.
 

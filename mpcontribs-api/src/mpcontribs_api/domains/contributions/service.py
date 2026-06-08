@@ -239,16 +239,16 @@ class ContributionService:
         return await self._contributions.insert_contribution(doc, session=session)
 
     async def upsert_contributions(self, contributions: list[ContributionIn]) -> list[Contribution]:
-        """Upsert contributions by their identifying fields, bounded by a concurrency cap.
+        """Upsert contributions by their identifying fields, bounded by concurrency caps.
 
         Components (structures, tables, attachments) must be managed via their respective
         services. If any contribution in the batch carries components, the entire request is
         rejected before any database writes occur.
 
-        Each item is looked up by ``ContributionIn.identifiers()``; an existing document is
-        partially updated (None fields are dropped), a missing one is inserted. Concurrent
-        upserts are capped by ``settings.mongo.max_concurrent_transactions`` so a large batch
-        cannot exhaust the connection pool.
+        Each item is upserted atomically by ``ContributionIn.identifiers()`` via a single
+        ``findOneAndUpdate(..., upsert=True)`` so two requests targeting the same key cannot
+        race past the find branch — the unique index over those fields is the tiebreaker.
+        Concurrent upserts within a batch are bounded by ``settings.mongo.max_concurrent_transactions``
 
         Args:
             contributions: contributions to upsert; must not include nested components
@@ -267,16 +267,6 @@ class ContributionService:
 
         async def _bounded_upsert(contrib: ContributionIn) -> Contribution:
             async with sem:
-                return await self._upsert_one(contrib)
+                return await self._contributions.upsert_contribution_by_identifiers(contrib.identifiers(), contrib)
 
         return await asyncio.gather(*[_bounded_upsert(c) for c in contributions])
-
-    async def _upsert_one(self, contrib: ContributionIn) -> Contribution:
-        """Partial-update if a document with the same identifiers exists, otherwise insert."""
-        doc = Contribution.from_input_model(contrib)
-        existing = await self._contributions.find_one_contribution(**contrib.identifiers())
-        if existing is not None:
-            update_data = doc.model_dump(exclude={"id"}, exclude_none=True)
-            await self._contributions.update_contribution(existing, update_data)
-            return existing
-        return await self._contributions.insert_contribution(doc)

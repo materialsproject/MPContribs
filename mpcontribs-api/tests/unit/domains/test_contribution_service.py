@@ -7,6 +7,7 @@ connection is needed.  These tests verify:
   - upsert_contributions: guard against components, insert vs update branching
 """
 
+import asyncio
 from unittest.mock import AsyncMock, MagicMock
 
 import polars as pl
@@ -150,6 +151,7 @@ def _make_service(
     attachments=None,
     client=None,
     settings: MongoSettings | None = None,
+    write_slots: asyncio.Semaphore | None = None,
 ) -> tuple[ContributionService, AsyncMock, AsyncMock, AsyncMock, AsyncMock, MagicMock]:
     contrib_repo = contributions or AsyncMock()
     struct_repo = structures or AsyncMock()
@@ -163,6 +165,7 @@ def _make_service(
         structures=struct_repo,
         tables=table_repo,
         attachments=attach_repo,
+        write_slots=write_slots or asyncio.Semaphore(50),
         settings=settings or _make_mongo_settings(),
     )
     return svc, contrib_repo, struct_repo, table_repo, attach_repo, client
@@ -481,161 +484,136 @@ class TestUpsertContributionsGuard:
         dirty = _contrib_in(structures=[_structure_in()])
         with pytest.raises(ValidationError):
             await svc.upsert_contributions([dirty])
+        contrib_repo.upsert_contribution_by_identifiers.assert_not_called()
         contrib_repo.find_one_contribution.assert_not_called()
         contrib_repo.insert_contribution.assert_not_called()
         contrib_repo.update_contribution.assert_not_called()
 
 
 # ---------------------------------------------------------------------------
-# upsert_contributions — insert path (no existing doc)
+# upsert_contributions — atomic dispatch
 # ---------------------------------------------------------------------------
 
 
-class TestUpsertContributionsInsertPath:
-    async def test_insert_called_when_no_existing_doc(self):
+class TestUpsertContributionsAtomic:
+    async def test_calls_atomic_repo_method_once_per_item(self):
         svc, contrib_repo, *_ = _make_service()
-        contrib_repo.find_one_contribution.return_value = None
-        inserted = MagicMock(spec=Contribution)
-        contrib_repo.insert_contribution.return_value = inserted
+        contrib_repo.upsert_contribution_by_identifiers.return_value = MagicMock(spec=Contribution)
 
-        result = await svc.upsert_contributions([_contrib_in()])
+        contribs = [_contrib_in(identifier=f"mp-{i}") for i in range(3)]
+        results = await svc.upsert_contributions(contribs)
 
-        contrib_repo.insert_contribution.assert_called_once()
-        assert result[0] is inserted
+        assert len(results) == 3
+        assert contrib_repo.upsert_contribution_by_identifiers.call_count == 3
+        # The legacy read-then-write path must not be used
+        contrib_repo.find_one_contribution.assert_not_called()
+        contrib_repo.update_contribution.assert_not_called()
+        contrib_repo.insert_contribution.assert_not_called()
 
-    async def test_new_doc_is_public_false(self):
+    async def test_passes_identifiers_dict_and_input_to_repo(self):
         svc, contrib_repo, *_ = _make_service()
-        contrib_repo.find_one_contribution.return_value = None
-
-        captured = []
-
-        async def _capture(doc):
-            captured.append(doc)
-            return doc
-
-        contrib_repo.insert_contribution.side_effect = _capture
-
-        await svc.upsert_contributions([_contrib_in()])
-
-        assert len(captured) == 1
-        assert captured[0].is_public is False
-
-    async def test_find_uses_project_and_identifier(self):
-        svc, contrib_repo, *_ = _make_service()
-        contrib_repo.find_one_contribution.return_value = None
-        contrib_repo.insert_contribution.return_value = MagicMock(spec=Contribution)
+        contrib_repo.upsert_contribution_by_identifiers.return_value = MagicMock(spec=Contribution)
 
         contrib = _contrib_in(project="my-proj", identifier="mp-99")
         await svc.upsert_contributions([contrib])
 
-        contrib_repo.find_one_contribution.assert_called_once_with(project="my-proj", identifier="mp-99")
+        call = contrib_repo.upsert_contribution_by_identifiers.call_args
+        assert call.args[0] == {"project": "my-proj", "identifier": "mp-99"}
+        assert call.args[1] is contrib
 
-    async def test_update_not_called_on_insert_path(self):
+    async def test_returns_repo_results_in_input_order(self):
         svc, contrib_repo, *_ = _make_service()
-        contrib_repo.find_one_contribution.return_value = None
-        contrib_repo.insert_contribution.return_value = MagicMock(spec=Contribution)
+        docs = [MagicMock(spec=Contribution, name=f"doc-{i}") for i in range(3)]
+        returned = {}
 
-        await svc.upsert_contributions([_contrib_in()])
+        async def _upsert(identifiers, contrib):
+            doc = docs[int(contrib.identifier.split("-")[1])]
+            returned[contrib.identifier] = doc
+            return doc
 
-        contrib_repo.update_contribution.assert_not_called()
-
-
-# ---------------------------------------------------------------------------
-# upsert_contributions — update path (existing doc found)
-# ---------------------------------------------------------------------------
-
-
-class TestUpsertContributionsUpdatePath:
-    async def test_update_called_when_existing_doc_found(self):
-        svc, contrib_repo, *_ = _make_service()
-        existing = MagicMock(spec=Contribution)
-        contrib_repo.find_one_contribution.return_value = existing
-        contrib_repo.update_contribution.return_value = None
-
-        await svc.upsert_contributions([_contrib_in()])
-
-        contrib_repo.update_contribution.assert_called_once()
-
-    async def test_returns_existing_doc_on_update(self):
-        svc, contrib_repo, *_ = _make_service()
-        existing = MagicMock(spec=Contribution)
-        contrib_repo.find_one_contribution.return_value = existing
-        contrib_repo.update_contribution.return_value = None
-
-        result = await svc.upsert_contributions([_contrib_in()])
-
-        assert result[0] is existing
-
-    async def test_insert_not_called_on_update_path(self):
-        svc, contrib_repo, *_ = _make_service()
-        existing = MagicMock(spec=Contribution)
-        contrib_repo.find_one_contribution.return_value = existing
-        contrib_repo.update_contribution.return_value = None
-
-        await svc.upsert_contributions([_contrib_in()])
-
-        contrib_repo.insert_contribution.assert_not_called()
-
-    async def test_update_data_excludes_id(self):
-        svc, contrib_repo, *_ = _make_service()
-        existing = MagicMock(spec=Contribution)
-        contrib_repo.find_one_contribution.return_value = existing
-        contrib_repo.update_contribution.return_value = None
-
-        await svc.upsert_contributions([_contrib_in(formula="SiO2")])
-
-        update_data = contrib_repo.update_contribution.call_args[0][1]
-        assert "id" not in update_data
-
-    async def test_update_data_excludes_none_fields(self):
-        svc, contrib_repo, *_ = _make_service()
-        existing = MagicMock(spec=Contribution)
-        contrib_repo.find_one_contribution.return_value = existing
-        contrib_repo.update_contribution.return_value = None
-
-        await svc.upsert_contributions([_contrib_in(formula="SiO2")])
-
-        update_data = contrib_repo.update_contribution.call_args[0][1]
-        assert all(v is not None for v in update_data.values())
-
-
-# ---------------------------------------------------------------------------
-# upsert_contributions — concurrent batch behavior
-# ---------------------------------------------------------------------------
-
-
-class TestUpsertContributionsBatch:
-    async def test_all_contribs_processed(self):
-        svc, contrib_repo, *_ = _make_service()
-        contrib_repo.find_one_contribution.return_value = None
-        contrib_repo.insert_contribution.return_value = MagicMock(spec=Contribution)
-
-        contribs = [_contrib_in(identifier=f"mp-{i}") for i in range(5)]
-        results = await svc.upsert_contributions(contribs)
-
-        assert len(results) == 5
-        assert contrib_repo.insert_contribution.call_count == 5
-
-    async def test_mixed_insert_and_update_batch(self):
-        svc, contrib_repo, *_ = _make_service()
-        existing = MagicMock(spec=Contribution)
-
-        async def _find(project, identifier):
-            return existing if identifier == "mp-0" else None
-
-        contrib_repo.find_one_contribution.side_effect = _find
-        contrib_repo.update_contribution.return_value = None
-        contrib_repo.insert_contribution.return_value = MagicMock(spec=Contribution)
+        contrib_repo.upsert_contribution_by_identifiers.side_effect = _upsert
 
         contribs = [_contrib_in(identifier=f"mp-{i}") for i in range(3)]
-        await svc.upsert_contributions(contribs)
+        results = await svc.upsert_contributions(contribs)
 
-        assert contrib_repo.update_contribution.call_count == 1
-        assert contrib_repo.insert_contribution.call_count == 2
+        assert results == [returned["mp-0"], returned["mp-1"], returned["mp-2"]]
 
     async def test_empty_batch_returns_empty_list(self):
-        svc, *_ = _make_service()
+        svc, contrib_repo, *_ = _make_service()
         results = await svc.upsert_contributions([])
         assert results == []
+        contrib_repo.upsert_contribution_by_identifiers.assert_not_called()
+
+    async def test_same_key_concurrent_upserts_both_go_through_atomic_call(self):
+        """Race-safety regression: two items with the same (project, identifier) in one batch
+        must both reach the atomic repo method. The repo (via the unique index) is the
+        tiebreaker — the service must not pre-deduplicate or otherwise swallow one.
+        """
+        svc, contrib_repo, *_ = _make_service()
+        contrib_repo.upsert_contribution_by_identifiers.return_value = MagicMock(spec=Contribution)
+
+        contribs = [
+            _contrib_in(project="p", identifier="same"),
+            _contrib_in(project="p", identifier="same"),
+        ]
+        results = await svc.upsert_contributions(contribs)
+
+        assert len(results) == 2
+        assert contrib_repo.upsert_contribution_by_identifiers.call_count == 2
+
+
+# ---------------------------------------------------------------------------
+# Process-wide write_slots semaphore is honored
+# ---------------------------------------------------------------------------
+
+
+class TestProcessWideWriteSlots:
+    async def test_upsert_acquires_global_write_slot(self):
+        write_slots = asyncio.Semaphore(1)
+        svc, contrib_repo, *_ = _make_service(write_slots=write_slots)
+
+        in_flight = 0
+        peak = 0
+
+        async def _upsert(identifiers, contrib):
+            nonlocal in_flight, peak
+            in_flight += 1
+            peak = max(peak, in_flight)
+            await asyncio.sleep(0)  # let other coroutines try to enter
+            in_flight -= 1
+            return MagicMock(spec=Contribution)
+
+        contrib_repo.upsert_contribution_by_identifiers.side_effect = _upsert
+
+        contribs = [_contrib_in(identifier=f"mp-{i}") for i in range(5)]
+        await svc.upsert_contributions(contribs)
+
+        assert peak == 1  # global semaphore of 1 must serialize all 5
+
+    async def test_insert_with_components_acquires_global_write_slot(self):
+        write_slots = asyncio.Semaphore(1)
+        svc, contrib_repo, struct_repo, table_repo, attach_repo, _ = _make_service(write_slots=write_slots)
+
+        struct_repo.insert_structures.return_value = [_fake_structure()]
+        table_repo.insert_tables.return_value = []
+        attach_repo.insert_attachments.return_value = []
+
+        in_flight = 0
+        peak = 0
+
+        async def _insert(doc, session=None):
+            nonlocal in_flight, peak
+            in_flight += 1
+            peak = max(peak, in_flight)
+            await asyncio.sleep(0)
+            in_flight -= 1
+            return doc
+
+        contrib_repo.insert_contribution.side_effect = _insert
+
+        contribs = [_contrib_in(identifier=f"c{i}", structures=[_structure_in()]) for i in range(4)]
+        await svc.insert_contributions(contribs)
+
+        assert peak == 1
 
 
