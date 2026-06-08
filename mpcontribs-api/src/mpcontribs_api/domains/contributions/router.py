@@ -3,8 +3,10 @@ from typing import Annotated, Literal
 from fastapi import APIRouter, Depends
 from fastapi_filter import FilterDepends
 
+from mpcontribs_api.domains._shared.bulk import BulkWriteSummary
 from mpcontribs_api.domains.contributions.dependencies import ContributionDep, ContributionServiceDep
 from mpcontribs_api.domains.contributions.models import (
+    Contribution,
     ContributionFilter,
     ContributionIn,
     ContributionOut,
@@ -35,7 +37,7 @@ async def delete_contributions(
     return await repo.delete_contributions(filter=filter)
 
 
-@router.post("")
+@router.post("", response_model=BulkWriteSummary[Contribution])
 async def insert_contributions(
     service: ContributionServiceDep,
     contributions: list[ContributionIn],

@@ -64,6 +64,18 @@ class ContributionIn(ContributionBase):
     tables: list[TableIn] | None = None
     attachments: list[AttachmentIn] | None = None
 
+    def has_components(self) -> bool:
+        """Returns ``True`` if the contribution has any components (structures, tables, attachments)"""
+        return bool(self.structures or self.tables or self.attachments)
+
+    def component_count(self) -> int:
+        """Returns the total number of components (structures, tables, attachments) in the contribution"""
+        return len(self.structures or []) + len(self.tables or []) + len(self.attachments or [])
+
+    def identifiers(self) -> dict[str, str]:
+        """Returns a dict of unique identifiers for a contribution (outside of id)."""
+        return {"project": self.project, "identifier": self.identifier}
+
 
 class ContributionOut(DocumentOut[PydanticObjectId]):
     project: str | None = None
