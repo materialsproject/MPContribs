@@ -14,6 +14,7 @@ from beanie import (
 from fastapi_filter import FilterDepends, with_prefix
 from fastapi_filter.contrib.beanie import Filter
 from pydantic import Field
+from pymongo import ASCENDING, IndexModel
 
 from mpcontribs_api.domains._shared.models import BaseDocumentWithInput, DocumentOut
 from mpcontribs_api.domains.attachments.models import Attachment, AttachmentFilter, AttachmentIn
@@ -36,6 +37,13 @@ class ContributionBase(BaseDocumentWithInput[PydanticObjectId]):
     class Settings:
         name = "contributions"
         keep_nulls = False
+        indexes = [
+            IndexModel(
+                keys=[("project", ASCENDING), ("identifier", ASCENDING)],
+                name="project_idenfitier",
+                unique=True,
+            )
+        ]
 
 
 class Contribution(ContributionBase):
