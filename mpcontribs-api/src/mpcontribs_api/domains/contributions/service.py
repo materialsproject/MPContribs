@@ -238,33 +238,45 @@ class ContributionService:
         doc.attachments = cast(list[Link[Attachment]] | None, attachments or None)
         return await self._contributions.insert_contribution(doc, session=session)
 
-    async def upsert_contributions(self, contributions: list[ContributionIn]):
-        """Upsert contributions by (project, identifier).
+    async def upsert_contributions(self, contributions: list[ContributionIn]) -> list[Contribution]:
+        """Upsert contributions by their identifying fields, bounded by a concurrency cap.
 
         Components (structures, tables, attachments) must be managed via their respective
         services. If any contribution in the batch carries components, the entire request is
         rejected before any database writes occur.
 
+        Each item is looked up by ``ContributionIn.identifiers()``; an existing document is
+        partially updated (None fields are dropped), a missing one is inserted. Concurrent
+        upserts are capped by ``settings.mongo.max_concurrent_transactions`` so a large batch
+        cannot exhaust the connection pool.
+
         Args:
             contributions: contributions to upsert; must not include nested components
 
         Returns:
-            list[Contribution]: upserted documents
+            list[Contribution]: upserted documents in input order
         """
-        indices_with_components = [i for i, c in enumerate(contributions) if c.structures or c.tables or c.attachments]
+        indices_with_components = [i for i, c in enumerate(contributions) if c.has_components()]
         if indices_with_components:
             raise ValidationError(
                 "Components must be managed via their respective services, not via contribution upsert.",
                 contribution_indices=indices_with_components,
             )
 
-        async def _upsert(contrib: ContributionIn):
-            doc = Contribution.from_input_model(contrib)
-            existing = await self._contributions.find_one_contribution(contrib.project, contrib.identifier)
-            if existing is not None:
-                update_data = doc.model_dump(exclude={"id"}, exclude_none=True)
-                await self._contributions.update_contribution(existing, update_data)
-                return existing
-            return await self._contributions.insert_contribution(doc)
+        sem = asyncio.Semaphore(self._settings.max_concurrent_transactions)
 
-        return await asyncio.gather(*[_upsert(c) for c in contributions])
+        async def _bounded_upsert(contrib: ContributionIn) -> Contribution:
+            async with sem:
+                return await self._upsert_one(contrib)
+
+        return await asyncio.gather(*[_bounded_upsert(c) for c in contributions])
+
+    async def _upsert_one(self, contrib: ContributionIn) -> Contribution:
+        """Partial-update if a document with the same identifiers exists, otherwise insert."""
+        doc = Contribution.from_input_model(contrib)
+        existing = await self._contributions.find_one_contribution(**contrib.identifiers())
+        if existing is not None:
+            update_data = doc.model_dump(exclude={"id"}, exclude_none=True)
+            await self._contributions.update_contribution(existing, update_data)
+            return existing
+        return await self._contributions.insert_contribution(doc)
