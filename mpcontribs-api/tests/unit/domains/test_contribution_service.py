@@ -528,7 +528,7 @@ class TestUpsertContributionsInsertPath:
         contrib = _contrib_in(project="my-proj", identifier="mp-99")
         await svc.upsert_contributions([contrib])
 
-        contrib_repo.find_one_contribution.assert_called_once_with("my-proj", "mp-99")
+        contrib_repo.find_one_contribution.assert_called_once_with(project="my-proj", identifier="mp-99")
 
     async def test_update_not_called_on_insert_path(self):
         svc, contrib_repo, *_ = _make_service()
