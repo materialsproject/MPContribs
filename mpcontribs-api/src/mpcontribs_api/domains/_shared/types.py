@@ -1,5 +1,6 @@
 import re
-from typing import Annotated
+from enum import StrEnum
+from typing import Annotated, Literal
 
 from fastapi import Query
 from pydantic import BeforeValidator, Field
@@ -56,3 +57,8 @@ def _mime_like(v: str) -> str:
 
 
 MimeFormat = Annotated[str, BeforeValidator(_mime_like)]
+
+
+class DownloadFormat(StrEnum):
+    JSON = "json"
+    CSV = "csv"

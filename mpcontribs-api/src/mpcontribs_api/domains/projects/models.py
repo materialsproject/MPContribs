@@ -7,7 +7,7 @@ from pydantic import BaseModel, ConfigDict, Field, HttpUrl
 
 from mpcontribs_api import pagination
 from mpcontribs_api.domains._shared.models import BaseDocumentWithInput, DocumentOut
-from mpcontribs_api.types import PrefixedEmail, ShortStr
+from mpcontribs_api.domains._shared.types import PrefixedEmail, ShortStr
 
 
 class Column(BaseModel):

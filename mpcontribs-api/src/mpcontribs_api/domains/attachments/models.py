@@ -2,8 +2,8 @@ from beanie import PydanticObjectId
 from fastapi_filter.contrib.beanie import Filter
 
 from mpcontribs_api.domains._shared.models import BaseDocumentWithInput, DocumentOut
+from mpcontribs_api.domains._shared.types import FileLike, MD5Hash, MimeFormat
 from mpcontribs_api.projection import SparseFieldsModel
-from mpcontribs_api.types import FileLike, MD5Hash, MimeFormat
 
 
 class Attachment(BaseDocumentWithInput[PydanticObjectId]):

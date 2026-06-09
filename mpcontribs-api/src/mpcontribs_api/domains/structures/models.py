@@ -5,8 +5,8 @@ from pydantic import BaseModel, ConfigDict, field_serializer, field_validator
 from pymatgen.core import Element
 
 from mpcontribs_api.domains._shared.models import BaseDocumentWithInput, DocumentOut
+from mpcontribs_api.domains._shared.types import MD5Hash
 from mpcontribs_api.projection import SparseFieldsModel
-from mpcontribs_api.types import MD5Hash
 
 
 class SiteProperties(BaseModel):
