@@ -1,0 +1,53 @@
+from typing import Annotated
+
+from fastapi import APIRouter, Depends
+from fastapi_filter import FilterDepends
+
+from mpcontribs_api.domains._shared.bulk import BulkWriteSummary
+from mpcontribs_api.domains._shared.types import DownloadFormat, FieldSelector
+from mpcontribs_api.domains.tables.dependencies import TableDep
+from mpcontribs_api.domains.tables.models import Table, TableFilter, TableIn, TableOut
+from mpcontribs_api.pagination import CursorParams, Page
+
+router = APIRouter(tags=["components", "tables"])
+
+
+@router.get("", response_model=Page[TableOut])
+async def get_tables(
+    repo: TableDep,
+    pagination: Annotated[CursorParams, Depends()],
+    filter: TableFilter = FilterDepends(TableFilter),
+    fields: FieldSelector = TableOut.default_fields(),
+):
+    selected = TableOut.parse_fields(fields)
+    return await repo.get_tables(filter=filter, fields=selected, pagination=pagination)
+
+
+@router.get("{pk}", response_model=TableOut)
+async def get_table(
+    repo: TableDep,
+    pk: str,
+    fields: FieldSelector = TableOut.default_fields(),
+):
+    selected = TableOut.parse_fields(fields)
+    return await repo.get_table_by_id(id=pk, fields=selected)
+
+
+@router.get("/download/{short_mime}")
+async def download_table(
+    repo: TableDep,
+    format: DownloadFormat,
+    short_mime: str = "gz",
+    filter: TableFilter = FilterDepends(TableFilter),
+    fields: FieldSelector = TableOut.default_fields(),
+):
+    selected = TableOut.parse_fields(fields)
+    return await repo.download_tables(format=format, short_mime=short_mime, filter=filter, fields=selected)
+
+
+@router.post("", response_model=BulkWriteSummary[Table])
+async def insert_tables(
+    repo: TableDep,
+    tables: list[TableIn],
+):
+    return await repo.insert_tables(tables=tables)

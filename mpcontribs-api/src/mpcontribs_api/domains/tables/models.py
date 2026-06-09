@@ -1,3 +1,5 @@
+from typing import Any
+
 import polars as pl
 from beanie import PydanticObjectId
 from fastapi_filter.contrib.beanie import Filter
@@ -11,8 +13,8 @@ from pydantic import (
 )
 
 from mpcontribs_api.domains._shared.models import BaseDocumentWithInput, DocumentOut
+from mpcontribs_api.domains._shared.types import MD5Hash
 from mpcontribs_api.projection import SparseFieldsModel
-from mpcontribs_api.types import MD5Hash
 
 
 class Labels(BaseModel):
@@ -125,7 +127,7 @@ class TableFilter(Filter):
         model = Table
 
 
-class TableOut(BaseModel):
+class TableSummaryOut(BaseModel):
     """Metadata-only table as embedded in contribution responses (no data)."""
 
     attrs: Attributes
@@ -134,9 +136,27 @@ class TableOut(BaseModel):
     total_data_pages: int = 1
 
 
-class TableDocumentOut(DocumentOut[PydanticObjectId]):
+class TableOut(DocumentOut[PydanticObjectId]):
     name: str | None = None
     md5: MD5Hash | None = None
+    attrs: Attributes | None = None
+    columns: list[Any] | None = None
+    total_data_rows: int | None = None
+    total_data_pages: int | None = None
+    index: list[Any] | None = None
+    data: pl.DataFrame | None = None
+
+    @staticmethod
+    def default_fields() -> list[str]:
+        return [
+            "id",
+            "name",
+            "md5",
+            "attrs",
+            "columns",
+            "total_data_rows",
+            "total_data_pages",
+        ]
 
 
 class TablePatch(SparseFieldsModel):
