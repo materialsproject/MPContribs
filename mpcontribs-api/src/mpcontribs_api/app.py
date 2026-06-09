@@ -30,9 +30,16 @@ def _build_lifespan(settings: Settings):
         # --- startup ---
         client = AsyncMongoClient(
             settings.mongo.uri.get_secret_value(),
+            appname=settings.mongo.app_name,
             maxPoolSize=settings.mongo.max_pool_size,
             minPoolSize=settings.mongo.min_pool_size,
+            maxIdleTimeMS=settings.mongo.max_idle_time_ms,
+            timeoutMS=settings.mongo.timeout_ms,
             serverSelectionTimeoutMS=settings.mongo.server_selection_timeout_ms,
+            retryWrite=True,
+            retryReads=True,
+            compressors=settings.mongo.compressors,
+            readPreference=settings.mongo.read_preference,
             uuidRepresentation="standard",
         )
         # Fail fast if the DB is unreachable
@@ -56,7 +63,7 @@ def _build_lifespan(settings: Settings):
         try:
             yield
         finally:
-            # --- shutdown ---
+            # shutdown
             await client.close()
             logger.info("mongo client closed")
 
