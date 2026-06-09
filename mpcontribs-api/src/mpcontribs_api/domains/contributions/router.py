@@ -37,6 +37,7 @@ async def delete_contributions(
     return await repo.delete_contributions(filter=filter)
 
 
+# TODO: Might want to take contributions in from request body and run model_validate_json on it (much faster)
 @router.post("", response_model=BulkWriteSummary[Contribution])
 async def insert_contributions(
     service: ContributionServiceDep,

@@ -22,6 +22,11 @@ class MongoSettings(BaseModel):
 
     uri: SecretStr = Field(description="The full uri from MongoDB (username and password included)")
     db_name: str
+    app_name: str = Field(
+        default="MPContribs_FastAPI_Server",
+        description="The name of the application that created this AsyncMongoClient instance. The server will log this "
+        "value upon establishing each connection. It is also recorded in the slow query log and profile collections.",
+    )
     max_pool_size: int = Field(
         default=100,
         description="Maximum number of allowed concurrent connection to each server. Can be '0' or 'None', both of "
@@ -36,7 +41,7 @@ class MongoSettings(BaseModel):
         description="Specifies how UTC datetimes should be decoded within BSON",
     )
     server_selection_timeout_ms: int = Field(
-        default=30000,
+        default=30_000,
         description="Controls how long (in milliseconds) the driver will wait to find an available, appropriate server "
         "to carry out a database operation;"
         "while it is waiting, multiple server monitoring operations may be carried out",
@@ -46,6 +51,18 @@ class MongoSettings(BaseModel):
         default="admin",
         description="Name of admin group to consider in requests to MongoDB. Not directly passed to Mongo, but "
         "consumed by auth.",
+    )
+
+    compressors: str = Field(
+        default="snappy,zstd,zlib",
+        description="Comma separated list of compressors for wire protocol compression. Compression support must also "
+        "be enabled on the server",
+    )
+
+    read_preference: str = Field(
+        default="primary",
+        description="The replica set read preference for this client. One of primary, primaryPreferred, secondary, "
+        "secondaryPreferred, or nearest",
     )
 
     # TODO: Tune default
@@ -66,6 +83,11 @@ class MongoSettings(BaseModel):
         default=100,
         description="Batch size used by component repositories when chunking insert_many calls inside a transaction.",
     )
+    max_idle_time_ms: int = Field(
+        default=30_000,
+        description="The maximum allowed time a single connection is allowed to sit idle",
+    )
+    timeout_ms: int = Field(default=60_000, description="The end-to-end allowed time for an operation")
 
     @model_validator(mode="after")
     def _clamp_concurrency(self):
