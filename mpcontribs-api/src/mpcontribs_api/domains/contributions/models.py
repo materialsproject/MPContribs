@@ -17,11 +17,11 @@ from pydantic import Field, field_validator
 from pymongo import ASCENDING, IndexModel
 
 from mpcontribs_api.domains._shared.models import BaseDocumentWithInput, DocumentOut
+from mpcontribs_api.domains._shared.types import ShortStr
 from mpcontribs_api.domains.attachments.models import Attachment, AttachmentFilter, AttachmentIn
 from mpcontribs_api.domains.structures.models import Structure, StructureFilter, StructureIn
 from mpcontribs_api.domains.tables.models import Table, TableFilter, TableIn
 from mpcontribs_api.projection import SparseFieldsModel
-from mpcontribs_api.types import ShortStr
 
 
 class ContributionBase(BaseDocumentWithInput[PydanticObjectId]):

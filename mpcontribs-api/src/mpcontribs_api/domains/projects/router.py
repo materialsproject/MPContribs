@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, Response, status
 from fastapi_filter import FilterDepends
 from starlette.status import HTTP_204_NO_CONTENT
 
+from mpcontribs_api.domains._shared.types import FieldSelector
 from mpcontribs_api.domains.projects.dependencies import ProjectDep
 from mpcontribs_api.domains.projects.models import (
     ProjectFilter,
@@ -12,7 +13,6 @@ from mpcontribs_api.domains.projects.models import (
     ProjectPatch,
 )
 from mpcontribs_api.pagination import CursorParams
-from mpcontribs_api.types import FieldSelector
 
 router = APIRouter(tags=["projects"])
 

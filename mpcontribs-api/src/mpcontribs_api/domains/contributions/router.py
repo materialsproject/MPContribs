@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends
 from fastapi_filter import FilterDepends
 
 from mpcontribs_api.domains._shared.bulk import BulkWriteSummary
+from mpcontribs_api.domains._shared.types import FieldSelector
 from mpcontribs_api.domains.contributions.dependencies import ContributionDep, ContributionServiceDep
 from mpcontribs_api.domains.contributions.models import (
     Contribution,
@@ -13,7 +14,6 @@ from mpcontribs_api.domains.contributions.models import (
     ContributionPatch,
 )
 from mpcontribs_api.pagination import CursorParams
-from mpcontribs_api.types import FieldSelector
 
 router = APIRouter(tags=["contributions"])
 
