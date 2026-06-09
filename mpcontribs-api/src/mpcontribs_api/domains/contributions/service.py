@@ -3,22 +3,28 @@ from collections import defaultdict
 from typing import cast
 
 import structlog
-from beanie import Link
+from beanie import Link, PydanticObjectId
 from pymongo import AsyncMongoClient
 from pymongo.asynchronous.client_session import AsyncClientSession
 from pymongo.errors import BulkWriteError
 
 from mpcontribs_api.config import MongoSettings, get_settings
-from mpcontribs_api.domains._shared.bulk import BulkFailure, BulkWriteSummary, bulk_failure_from_exception
+from mpcontribs_api.domains._shared.bulk import (
+    BulkDeleteSummary,
+    BulkFailure,
+    BulkWriteSummary,
+    bulk_failure_from_exception,
+)
 from mpcontribs_api.domains.attachments.models import Attachment
 from mpcontribs_api.domains.attachments.repository import MongoDbAttachmentRepository
-from mpcontribs_api.domains.contributions.models import Contribution, ContributionIn
+from mpcontribs_api.domains.contributions.models import Contribution, ContributionFilter, ContributionIn
 from mpcontribs_api.domains.contributions.repository import MongoDbContributionRepository
 from mpcontribs_api.domains.structures.models import Structure
 from mpcontribs_api.domains.structures.repository import MongoDbStructureRepository
 from mpcontribs_api.domains.tables.models import Table
 from mpcontribs_api.domains.tables.repository import MongoDbTableRepository
 from mpcontribs_api.exceptions import AppError, ValidationError
+from mpcontribs_api.pagination import CursorParams
 
 logger = structlog.get_logger(__name__)
 
@@ -35,6 +41,11 @@ class ContributionService:
     ):
         self._client = client
         self._contributions = contributions
+        self._children = {
+            "structures": structures,
+            "attachments": attachments,
+            "tables": tables,
+        }
         self._structures = structures
         self._attachments = attachments
         self._tables = tables
@@ -44,7 +55,7 @@ class ContributionService:
         self,
         contributions: list[ContributionIn],
     ) -> BulkWriteSummary[Contribution]:
-        """Bulk insert contributions, atomically per top-level contribution.
+        """Atomic bulk insert contributions, atomically per top-level contribution.
 
         Contributions carrying no components are inserted in one ``insert_many`` (no transaction);
         contributions with components run inside their own MongoDB transaction so the contribution
@@ -270,3 +281,41 @@ class ContributionService:
                 return await self._contributions.upsert_contribution_by_identifiers(contrib.identifiers(), contrib)
 
         return await asyncio.gather(*[_bounded_upsert(c) for c in contributions])
+
+    async def delete_contributions(self, filter: ContributionFilter) -> BulkDeleteSummary:
+        """Delete a contribution and all of its child components
+
+        Doesn't guarantee complete atomicity, but prevents orphaned children by deleting components first.
+
+        Args:
+            filter (ContributionFilter): the Contribution-specific query to apply on top of the user scope
+
+
+        Returns:
+            BulkDeleteSummary: a summary of how many documents and child documents were deleted
+        """
+        num_deleted_components = 0
+        num_deleted_contributions = 0
+        # Loop through cursor rather than materialize arbitrary number of Contributions
+        while True:
+            page = await self._contributions.get_contributions(
+                pagination=CursorParams(cursor=None, limit=100),
+                filter=filter,
+            )
+            # For each component type, gather ObjectIds then bulk delete them
+            # - components first so no children are left orphaned
+            for field, repo in self._children.items():
+                ids = [link.ref.id for c in page.items for link in getattr(c, field)]
+                if ids:
+                    deleted_components = await repo.delete_by_ids(ids)
+                    num_deleted_components += deleted_components.deleted_count if deleted_components else 0
+
+            # Delete Contributions in this batch by ID
+            # need to make a new filter so we don't eagerly delete all contributions before their components are deleted
+            deleted_contribs = await self._contributions.delete_contributions(
+                ContributionFilter(id__in=[cast(PydanticObjectId, c.id) for c in page.items])
+            )
+            num_deleted_contributions += deleted_contribs.deleted_count if deleted_contribs else 0
+            if not page.items:
+                break
+        return BulkDeleteSummary(num_deleted=num_deleted_contributions, num_children_deleted=num_deleted_components)
