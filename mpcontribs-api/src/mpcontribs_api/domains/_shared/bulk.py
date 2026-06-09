@@ -27,6 +27,11 @@ class BulkWriteSummary[T](BaseModel):
     failed: list[BulkFailure]
 
 
+class BulkDeleteSummary[T](BaseModel):
+    num_deleted: int
+    num_children_deleted: int
+
+
 def bulk_failure_from_exception(index: int, identifier: dict[str, Any] | None, exc: BaseException) -> BulkFailure:
     """Translate any exception into a BulkFailure entry.
 

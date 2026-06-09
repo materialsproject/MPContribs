@@ -66,9 +66,9 @@ class MongoDbRepository[
 
     async def get_many(
         self,
-        pagination: CursorParams,
         filter: TFilter,
-        fields: frozenset[str] | None,
+        fields: frozenset[str] | None = None,
+        pagination: CursorParams | None = None,
     ) -> Page[TOut]:
         """Return a scoped, filtered, cursor-paginated page of projected documents.
 
@@ -77,6 +77,8 @@ class MongoDbRepository[
             filter (TFilter): the fastapi-filter query to apply on top of the user scope
             fields (frozenset[str] | None): fields to project; if None the full document is returned
         """
+        pagination = pagination or CursorParams()
+
         projection = self.out_model.projection(fields)
         query = filter.filter(self.document_model.find(self._scope))
         if pagination.cursor is not None:

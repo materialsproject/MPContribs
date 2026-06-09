@@ -3,6 +3,7 @@ from typing import Any, Literal
 from beanie import UpdateResponse
 from beanie.operators import Set
 from pymongo.asynchronous.client_session import AsyncClientSession
+from pymongo.results import DeleteResult
 
 from mpcontribs_api.auth import User
 from mpcontribs_api.domains._shared.repository import MongoDbRepository
@@ -47,9 +48,9 @@ class MongoDbContributionRepository(
 
     async def get_contributions(
         self,
-        pagination: CursorParams,
         filter: ContributionFilter,
-        fields: frozenset[str] | None,
+        pagination: CursorParams | None = None,
+        fields: frozenset[str] | None = None,
     ):
         """Query the Contribution collection, scoped to the current user. See ``get_many``."""
         return await self.get_many(pagination=pagination, filter=filter, fields=fields)
@@ -66,14 +67,16 @@ class MongoDbContributionRepository(
         """Delete a contribution by id, scoped to the current user. See ``delete_by_id``."""
         await self.delete_by_id(self._convert_object_id(id))
 
-    async def delete_contributions(self, filter: ContributionFilter):
-        """Bulk deletion of Contributions described by the filter
+    async def delete_contributions(
+        self,
+        filter: ContributionFilter,
+    ) -> DeleteResult | None:
+        """Bulk deletion of Contributions described by the filter.
 
         Args:
             filter (ContribtionFilter): the filter to use to identify contributions to delete
         """
-        docs = filter.filter(self.document_model.find(self._scope))
-        await docs.delete()
+        return await filter.filter(self.document_model.find(self._scope)).delete_many()
 
     async def insert_many_contributions(
         self,
