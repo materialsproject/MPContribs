@@ -1,6 +1,6 @@
 import re
 from enum import StrEnum
-from typing import Annotated, Literal
+from typing import Annotated
 
 from fastapi import Query
 from pydantic import BeforeValidator, Field
