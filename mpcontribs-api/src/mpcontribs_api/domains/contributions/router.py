@@ -66,10 +66,10 @@ async def download_contributions(
 
 @router.delete("{id}")
 async def delete_contribtion_by_id(
-    repo: ContributionDep,
+    service: ContributionServiceDep,
     id: str,
 ):
-    return await repo.delete_contribution_by_id(id=id)
+    return await service.delete_contributions(ContributionFilter.model_validate({"id": id}))
 
 
 @router.get("{id}")

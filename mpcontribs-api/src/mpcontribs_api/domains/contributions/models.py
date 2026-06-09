@@ -13,7 +13,7 @@ from beanie import (
 )
 from fastapi_filter import FilterDepends, with_prefix
 from fastapi_filter.contrib.beanie import Filter
-from pydantic import Field
+from pydantic import Field, field_validator
 from pymongo import ASCENDING, IndexModel
 
 from mpcontribs_api.domains._shared.models import BaseDocumentWithInput, DocumentOut
@@ -149,3 +149,7 @@ class ContributionFilter(Filter):
 
     class Constants(Filter.Constants):
         model = Contribution
+
+    @field_validator("id", mode="before")
+    def convert_str_to_OId(self, v: str):
+        return PydanticObjectId(v)
