@@ -7,7 +7,7 @@ from mpcontribs_api.domains._shared.bulk import BulkWriteSummary
 from mpcontribs_api.domains._shared.models import DeleteResponse
 from mpcontribs_api.domains._shared.types import DownloadFormat, FieldSelector
 from mpcontribs_api.domains.tables.dependencies import TableDep
-from mpcontribs_api.domains.tables.models import Table, TableFilter, TableIn, TableOut
+from mpcontribs_api.domains.tables.models import Table, TableFilter, TableIn, TableOut, TablePatch
 from mpcontribs_api.pagination import CursorParams, Page
 
 router = APIRouter(tags=["components", "tables"])
@@ -73,6 +73,7 @@ async def delete_table_by_id(
 @router.patch("{id}")
 async def patch_table_by_id(
     repo: TableDep,
-    id: str
+    id: str,
+    update: TablePatch
 )
-    return await repo.patch_table_by_id(id=id)
+    return await repo.patch_table_by_id(id=id, update=update)
