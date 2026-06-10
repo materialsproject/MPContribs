@@ -38,7 +38,6 @@ async def get_table(
 @router.get("download/{short_mime}")
 async def download_table(
     repo: TableDep,
-    response: Response,
     format: DownloadFormat,
     short_mime: Literal["gz", None] = "gz",
     ignore_cache: bool = False,
