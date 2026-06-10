@@ -1,6 +1,7 @@
-from typing import Annotated
+from typing import Annotated, Literal
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Response
+from fastapi.responses import StreamingResponse
 from fastapi_filter import FilterDepends
 
 from mpcontribs_api.domains._shared.bulk import BulkWriteSummary
@@ -34,16 +35,29 @@ async def get_table(
     return await repo.get_table_by_id(id=pk, fields=selected)
 
 
-@router.get("/download/{short_mime}")
+@router.get("download/{short_mime}")
 async def download_table(
     repo: TableDep,
+    response: Response,
     format: DownloadFormat,
-    short_mime: str = "gz",
+    short_mime: Literal["gz", None] = "gz",
+    ignore_cache: bool = False,
     filter: TableFilter = FilterDepends(TableFilter),
     fields: FieldSelector = TableOut.default_fields(),
-):
+) -> StreamingResponse:
     selected = TableOut.parse_fields(fields)
-    return await repo.download_tables(format=format, short_mime=short_mime, filter=filter, fields=selected)
+    body = repo.download_tables(
+        format=format,
+        short_mime=short_mime,
+        ignore_cache=ignore_cache,
+        filter=filter,
+        fields=selected,
+    )
+    return StreamingResponse(
+        body,
+        media_type="application/gzip",
+        headers={"Content-Disposition": 'attachment; filename="tables.jsonl.gz"'},
+    )
 
 
 @router.post("", response_model=BulkWriteSummary[Table])
@@ -59,7 +73,7 @@ async def delete_tables(repo: TableDep, filter: TableFilter = FilterDepends(Tabl
     return await repo.delete_tables(filter=filter)
 
 
-@router.delete("/{id}", response_model=DeleteResponse)
+@router.delete("{id}", response_model=DeleteResponse)
 async def delete_table_by_id(repo: TableDep, id: str):
     return await repo.delete_table_by_id(id=id)
 
