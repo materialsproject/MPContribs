@@ -83,9 +83,19 @@ class StructureOut(DocumentOut[PydanticObjectId]):
     name: str | None = None
     md5: MD5Hash | None = None
 
+    @staticmethod
+    def default_fields() -> list[str]:
+        return [
+            "id",
+            "name",
+            "md5",
+        ]
+
 
 class StructurePatch(SparseFieldsModel):
     name: str | None = None
+    lattice: Lattice | None = None
+    sites: Site | None = None
 
 
 class StructureFilter(Filter):
