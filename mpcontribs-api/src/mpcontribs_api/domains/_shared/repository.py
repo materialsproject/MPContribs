@@ -6,9 +6,10 @@ from beanie.operators import Set
 from bson.errors import InvalidId
 from fastapi_filter.contrib.beanie import Filter
 from pydantic import BaseModel
+from pymongo.asynchronous.client_session import AsyncClientSession
 
 from mpcontribs_api.auth import User
-from mpcontribs_api.domains._shared.models import BaseDocumentWithInput, DocumentOut
+from mpcontribs_api.domains._shared.models import BaseDocumentWithInput, DeleteResponse, DocumentOut
 from mpcontribs_api.exceptions import ConflictError, NotFoundError, ValidationError
 from mpcontribs_api.pagination import CursorParams, Page, encode_cursor
 
@@ -89,7 +90,7 @@ class MongoDbRepository[
         next_cursor = encode_cursor(str(items[-1].id)) if has_more and items else None
         return Page(items=items, next_cursor=next_cursor)
 
-    async def get_by_id(self, id: Any, fields: frozenset[str] | None):
+    async def get_by_id(self, id: Any, fields: frozenset[str] | None) -> TDoc | TOut | None:
         """Return a single scoped document by id, projected to the requested fields.
 
         Args:
@@ -115,7 +116,7 @@ class MongoDbRepository[
         await document.insert()
         return document
 
-    async def delete_by_id(self, id: Any) -> None:
+    async def delete_by_id(self, id: Any, session: AsyncClientSession | None = None) -> DeleteResponse:
         """Delete a single scoped document by id.
 
         Scoping ensures callers cannot delete documents they are not permitted to see.
@@ -123,7 +124,11 @@ class MongoDbRepository[
         Args:
             id (str): the id of the document to delete
         """
-        await self.document_model.find_one(self._scope, self.document_model.id == id).delete()
+        doc = await self.document_model.find_one(self._scope, self.document_model.id == id, session=session)
+        if not doc:
+            raise NotFoundError("Document with id not found", id=id)
+        await doc.delete(session=session)
+        return DeleteResponse(num_deleted=1)
 
     async def patch(self, id: Any, update: TPatch) -> TDoc:
         """Partially update a single scoped document by id.
