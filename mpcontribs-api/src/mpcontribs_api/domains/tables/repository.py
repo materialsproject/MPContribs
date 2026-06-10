@@ -1,15 +1,10 @@
-import hashlib
-import json
-import zlib
 from collections.abc import AsyncIterable
-from typing import Any, Literal
+from typing import Literal
 
 from pymongo.asynchronous.client_session import AsyncClientSession
 
-from mpcontribs_api.auth import User
-from mpcontribs_api.config import get_settings
+from mpcontribs_api.domains._shared.components import MongoDbComponentsRepository
 from mpcontribs_api.domains._shared.models import DeleteResponse
-from mpcontribs_api.domains._shared.repository import MongoDbRepository
 from mpcontribs_api.domains._shared.types import DownloadFormat
 from mpcontribs_api.domains.tables.models import (
     Table,
@@ -18,19 +13,13 @@ from mpcontribs_api.domains.tables.models import (
     TableOut,
     TablePatch,
 )
-from mpcontribs_api.exceptions import AppError
 from mpcontribs_api.pagination import CursorParams, Page
 
 
-class MongoDbTableRepository(MongoDbRepository[Table, TableIn, TableOut, TableFilter, TablePatch]):
+class MongoDbTableRepository(MongoDbComponentsRepository[Table, TableIn, TableOut, TableFilter, TablePatch]):
     document_model = Table
     out_model = TableOut
 
-    @staticmethod
-    def _build_scope(user: User) -> dict[str, Any]:
-        return {}
-
-    # TODO: Returned docs don't have IDs assigned to them
     async def insert_tables(
         self,
         tables: list[TableIn],
@@ -40,15 +29,9 @@ class MongoDbTableRepository(MongoDbRepository[Table, TableIn, TableOut, TableFi
 
         Args:
             tables: tables to insert
-            session: optional client session; pass when inserting inside a transaction
+            session: optional client session; pass when inserTableIng inside a transaction
         """
-        if not tables:
-            return []
-        docs = [self.document_model.model_validate(t.model_dump()) for t in tables]
-        chunk_size = get_settings().mongo.component_insert_chunk_size
-        for start in range(0, len(docs), chunk_size):
-            await self.document_model.insert_many(docs[start : start + chunk_size], ordered=False, session=session)
-        return docs
+        return await self.insert_tables(tables=tables, session=session)
 
     async def insert_table(self, table: TableIn) -> Table:
         """Insert a single table.
@@ -57,16 +40,12 @@ class MongoDbTableRepository(MongoDbRepository[Table, TableIn, TableOut, TableFi
             table (TableIn): the table to insert
 
         Returns:
-            Table: the table actually in the database
+            TDpc: the table actually in the database
 
         Raises:
             AppError: If insert_one returns None, raises
         """
-        doc = self.document_model.model_validate(table.model_dump())
-        full_doc = await self.document_model.insert_one(doc)
-        if not full_doc:
-            raise AppError("Error inserting Table", table=table)
-        return full_doc
+        return await self.insert_component(component=table)
 
     async def get_tables(
         self,
@@ -74,21 +53,12 @@ class MongoDbTableRepository(MongoDbRepository[Table, TableIn, TableOut, TableFi
         pagination: CursorParams,
         fields: frozenset[str] | None,
     ) -> Page[TableOut]:
-        """Query the Table collection, scoped to the current user. See ``get_many``."""
-        return await self.get_many(pagination=pagination, filter=filter, fields=fields)
+        """Query the table collection, scoped to the current user. See ``get_many``."""
+        return await self.get_components(pagination=pagination, filter=filter, fields=fields)
 
     async def get_table_by_id(self, id: str, fields: frozenset[str] | None) -> Table | TableOut | None:
         """Find a single table by id, scoped to the current user. See ``get_by_id``."""
-        return await self.get_by_id(id, fields)
-
-    def _hash_payload(self, payload: dict[str, Any], *, separators: tuple[str, str] = (",", ":")) -> str:
-        canonical = json.dumps(
-            payload,
-            sort_keys=True,
-            separators=separators,
-            ensure_ascii=True,
-        )
-        return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+        return await self.get_component_by_id(id, fields)
 
     async def download_tables(
         self,
@@ -98,42 +68,13 @@ class MongoDbTableRepository(MongoDbRepository[Table, TableIn, TableOut, TableFi
         filter: TableFilter,
         fields: frozenset[str] | None,
     ) -> AsyncIterable[bytes]:
-        # Hash parameters to generate key for cache
-        payload = {
-            "format": format,
-            "short_mime": short_mime,
-            "filter": filter.model_dump(),
-            "fields": sorted(fields) if fields else None,
-        }
-        _ = self._hash_payload(payload)
-
-        # Check S3 for the cached file
-        # TODO: Implement
-        if not ignore_cache:
-            pass
-
-        # If not found in cache, build from MongoDB and save to cache
-        query = filter.filter(self.document_model.find(self._scope))
-        query = filter.sort(query)
-
-        # Compress using gzip level 9 and stream out
-        compressor = zlib.compressobj(9, zlib.DEFLATED, 16 + zlib.MAX_WBITS)
-        buf = bytearray()
-        async for table in query:
-            # TODO: We might think about skipping validation to save time
-            out = self.out_model.model_validate(table, from_attributes=True)
-            line = out.model_dump_json().encode() + b"\n"
-            chunk = compressor.compress(line)
-            if chunk:
-                # TODO: Cache in S3 as multi-part upload so we stream to user and to S3 simultaneously,
-                # can then remove buf
-                buf += chunk
-                yield chunk
-        tail = compressor.flush()
-        if tail:
-            # TODO: Final upload final part to S3 in multi-part upload, remove buf
-            buf += tail
-            yield tail
+        return self.download_components(
+            format=format,
+            short_mime=short_mime,
+            ignore_cache=ignore_cache,
+            filter=filter,
+            fields=fields,
+        )
 
     async def delete_tables(
         self,
@@ -149,9 +90,7 @@ class MongoDbTableRepository(MongoDbRepository[Table, TableIn, TableOut, TableFi
         Returns:
             DeleteResponse: A report of the deletion
         """
-        query = filter.filter(self.document_model.find(self._scope, session=session))
-        result = await query.delete(session=session)
-        return DeleteResponse(num_deleted=result.deleted_count if result else 0)
+        return await self.delete_components(filter=filter, session=session)
 
     async def delete_table_by_id(
         self,
@@ -161,14 +100,14 @@ class MongoDbTableRepository(MongoDbRepository[Table, TableIn, TableOut, TableFi
         """Deletes a single table by Id.
 
         Args:
-            id (str): the str representation of the Table's ObjectId
+            id (str): the str representation of the table's ObjectId
             session (AsyncClientSession | None): the current session, used to guarantee transactions
 
         Returns:
             DeleteResponse: A report of the deletion
         """
-        return await self.delete_by_id(id=id, session=session)
+        return await self.delete_component_by_id(id=id, session=session)
 
     async def patch_table_by_id(self, id: str, update: TablePatch) -> Table:
-        """Partially update a Table by id, scoped to the current user. See ``patch``."""
-        return await self.patch(self._convert_object_id(id), update)
+        """Partially update a table by id, scoped to the current user. See ``patch``."""
+        return await self.patch_component_by_id(id=id, update=update)

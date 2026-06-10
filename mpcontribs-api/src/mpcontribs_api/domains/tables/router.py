@@ -1,6 +1,6 @@
 from typing import Annotated, Literal
 
-from fastapi import APIRouter, Depends, Response
+from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
 from fastapi_filter import FilterDepends
 
@@ -45,7 +45,7 @@ async def download_table(
     fields: FieldSelector = TableOut.default_fields(),
 ) -> StreamingResponse:
     selected = TableOut.parse_fields(fields)
-    body = repo.download_tables(
+    body = await repo.download_tables(
         format=format,
         short_mime=short_mime,
         ignore_cache=ignore_cache,
