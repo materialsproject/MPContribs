@@ -15,6 +15,7 @@ from mpcontribs_api.domains._shared.bulk import (
     BulkWriteSummary,
     bulk_failure_from_exception,
 )
+from mpcontribs_api.domains._shared.repository import MongoDbRepository
 from mpcontribs_api.domains.attachments.repository import MongoDbAttachmentRepository
 from mpcontribs_api.domains.contributions.models import Contribution, ContributionFilter, ContributionIn
 from mpcontribs_api.domains.contributions.repository import MongoDbContributionRepository
@@ -40,15 +41,18 @@ class ContributionService:
     ):
         self._client = client
         self._contributions = contributions
-        self._children = {
-            "structures": structures,
-            "attachments": attachments,
-            "tables": tables,
-        }
         self._structures = structures
         self._attachments = attachments
         self._tables = tables
         self._settings = settings or get_settings().mongo
+
+    @property
+    def _children(self) -> dict[str, MongoDbRepository]:
+        return {
+            "structures": self._structures,
+            "attachments": self._attachments,
+            "tables": self._tables,
+        }
 
     async def insert_contributions(
         self,
@@ -304,7 +308,7 @@ class ContributionService:
             for field, repo in self._children.items():
                 ids = [link.ref.id for c in page.items for link in getattr(c, field)]
                 if ids:
-                    deleted_components = await repo.delete_by_ids(ids)
+                    deleted_components = await repo.delete_by_ids(ids)  # pyright: ignore[reportAttributeAccessIssue]
                     num_deleted_components += deleted_components.deleted_count if deleted_components else 0
 
             # Delete Contributions in this batch by ID
