@@ -15,7 +15,6 @@ from mpcontribs_api.domains._shared.bulk import (
     BulkWriteSummary,
     bulk_failure_from_exception,
 )
-from mpcontribs_api.domains.attachments.models import Attachment
 from mpcontribs_api.domains.attachments.repository import MongoDbAttachmentRepository
 from mpcontribs_api.domains.contributions.models import Contribution, ContributionFilter, ContributionIn
 from mpcontribs_api.domains.contributions.repository import MongoDbContributionRepository
@@ -241,12 +240,10 @@ class ContributionService:
         """
         structures = await self._structures.insert_structures(contrib.structures or [], session=session)
         tables = await self._tables.insert_tables(contrib.tables or [], session=session)
-        attachments = await self._attachments.insert_attachments(contrib.attachments or [], session=session)
 
         doc = Contribution.from_input_model(contrib)
         doc.structures = cast(list[Link[Structure]] | None, structures or None)
         doc.tables = cast(list[Link[Table]] | None, tables or None)
-        doc.attachments = cast(list[Link[Attachment]] | None, attachments or None)
         return await self._contributions.insert_contribution(doc, session=session)
 
     async def upsert_contributions(self, contributions: list[ContributionIn]) -> list[Contribution]:
