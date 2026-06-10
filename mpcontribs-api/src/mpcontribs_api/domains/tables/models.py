@@ -126,6 +126,14 @@ class TableFilter(Filter):
     class Constants(Filter.Constants):
         model = Table
 
+    @field_serializer("id", "id__in", "id__neq")
+    def id_to_str(self, v: PydanticObjectId | list[PydanticObjectId] | None) -> str | list[str] | None:
+        if v is None:
+            return None
+        if isinstance(v, list):
+            return sorted(str(o) for o in v)
+        return str(v)
+
 
 class TableSummaryOut(BaseModel):
     """Metadata-only table as embedded in contribution responses (no data)."""

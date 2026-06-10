@@ -60,5 +60,5 @@ MimeFormat = Annotated[str, BeforeValidator(_mime_like)]
 
 
 class DownloadFormat(StrEnum):
-    JSON = "json"
+    JSONL = "jsonl"
     CSV = "csv"

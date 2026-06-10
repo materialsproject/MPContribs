@@ -87,6 +87,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         openapi_tags=openapi_tags,
     )
 
+    # Add request context to the logger
     app.add_middleware(RequestContextMiddleware)
     register_exception_handlers(app)
     app.include_router(healthcheck_router, prefix="/health")
