@@ -1,10 +1,11 @@
-from typing import Any
+from collections.abc import AsyncIterable
+from typing import Literal
 
 from pymongo.asynchronous.client_session import AsyncClientSession
 
-from mpcontribs_api.auth import User
-from mpcontribs_api.config import get_settings
-from mpcontribs_api.domains._shared.repository import MongoDbRepository
+from mpcontribs_api.domains._shared.components import MongoDbComponentsRepository
+from mpcontribs_api.domains._shared.models import DeleteResponse
+from mpcontribs_api.domains._shared.types import DownloadFormat
 from mpcontribs_api.domains.attachments.models import (
     Attachment,
     AttachmentFilter,
@@ -12,17 +13,14 @@ from mpcontribs_api.domains.attachments.models import (
     AttachmentOut,
     AttachmentPatch,
 )
+from mpcontribs_api.pagination import CursorParams, Page
 
 
 class MongoDbAttachmentRepository(
-    MongoDbRepository[Attachment, AttachmentIn, AttachmentOut, AttachmentFilter, AttachmentPatch]
+    MongoDbComponentsRepository[Attachment, AttachmentIn, AttachmentOut, AttachmentFilter, AttachmentPatch]
 ):
     document_model = Attachment
     out_model = AttachmentOut
-
-    @staticmethod
-    def _build_scope(user: User) -> dict[str, Any]:
-        return {}
 
     async def insert_attachments(
         self,
@@ -33,12 +31,85 @@ class MongoDbAttachmentRepository(
 
         Args:
             attachments: attachments to insert
-            session: optional client session; pass when inserting inside a transaction
+            session: optional client session; pass when inserAttachmentIng inside a transaction
         """
-        if not attachments:
-            return []
-        docs = [Attachment.model_validate(a.model_dump()) for a in attachments]
-        chunk_size = get_settings().mongo.component_insert_chunk_size
-        for start in range(0, len(docs), chunk_size):
-            await Attachment.insert_many(docs[start : start + chunk_size], ordered=False, session=session)
-        return docs
+        return await self.insert_components(components=attachments, session=session)
+
+    async def insert_attachment(self, attachment: AttachmentIn) -> Attachment:
+        """Insert a single attachment.
+
+        Args:
+            attachment (AttachmentIn): the table to insert
+
+        Returns:
+            TDpc: the attachment actually in the database
+
+        Raises:
+            AppError: If insert_one returns None, raises
+        """
+        return await self.insert_component(component=attachment)
+
+    async def get_attachments(
+        self,
+        filter: AttachmentFilter,
+        pagination: CursorParams,
+        fields: frozenset[str] | None,
+    ) -> Page[AttachmentOut]:
+        """Query the attachment collection, scoped to the current user. See ``get_many``."""
+        return await self.get_components(pagination=pagination, filter=filter, fields=fields)
+
+    async def get_attachment_by_id(self, id: str, fields: frozenset[str] | None) -> Attachment | AttachmentOut | None:
+        """Find a single table by id, scoped to the current user. See ``get_by_id``."""
+        return await self.get_component_by_id(id, fields)
+
+    async def download_attachments(
+        self,
+        format: DownloadFormat,
+        short_mime: Literal["gz", None],
+        ignore_cache: bool,
+        filter: AttachmentFilter,
+        fields: frozenset[str] | None,
+    ) -> AsyncIterable[bytes]:
+        return self.download_components(
+            format=format,
+            short_mime=short_mime,
+            ignore_cache=ignore_cache,
+            filter=filter,
+            fields=fields,
+        )
+
+    async def delete_attachments(
+        self,
+        filter: AttachmentFilter,
+        session: AsyncClientSession | None = None,
+    ) -> DeleteResponse:
+        """Deletes all attachments matching ``filter``.
+
+        Args:
+            filter (AttachmentFilter): the query to filter attachments by
+            session (AsyncClientSession | None): the current session, used to guarantee transactions
+
+        Returns:
+            DeleteResponse: A report of the deletion
+        """
+        return await self.delete_components(filter=filter, session=session)
+
+    async def delete_attachment_by_id(
+        self,
+        id: str,
+        session: AsyncClientSession | None = None,
+    ) -> DeleteResponse:
+        """Deletes a single attachment by Id.
+
+        Args:
+            id (str): the str representation of the attachment's ObjectId
+            session (AsyncClientSession | None): the current session, used to guarantee transactions
+
+        Returns:
+            DeleteResponse: A report of the deletion
+        """
+        return await self.delete_component_by_id(id=id, session=session)
+
+    async def patch_attachment_by_id(self, id: str, update: AttachmentPatch) -> Attachment:
+        """Partially update a attachment by id, scoped to the current user. See ``patch``."""
+        return await self.patch_component_by_id(id=id, update=update)
