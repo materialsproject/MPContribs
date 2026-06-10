@@ -22,33 +22,6 @@ class MongoDbAttachmentRepository(
     document_model = Attachment
     out_model = AttachmentOut
 
-    async def insert_attachments(
-        self,
-        attachments: list[AttachmentIn],
-        session: AsyncClientSession | None = None,
-    ) -> list[Attachment]:
-        """Bulk-insert attachments, chunked to fit within a transaction's payload budget.
-
-        Args:
-            attachments: attachments to insert
-            session: optional client session; pass when inserAttachmentIng inside a transaction
-        """
-        return await self.insert_components(components=attachments, session=session)
-
-    async def insert_attachment(self, attachment: AttachmentIn) -> Attachment:
-        """Insert a single attachment.
-
-        Args:
-            attachment (AttachmentIn): the table to insert
-
-        Returns:
-            TDpc: the attachment actually in the database
-
-        Raises:
-            AppError: If insert_one returns None, raises
-        """
-        return await self.insert_component(component=attachment)
-
     async def get_attachments(
         self,
         filter: AttachmentFilter,
@@ -109,7 +82,3 @@ class MongoDbAttachmentRepository(
             DeleteResponse: A report of the deletion
         """
         return await self.delete_component_by_id(id=id, session=session)
-
-    async def patch_attachment_by_id(self, id: str, update: AttachmentPatch) -> Attachment:
-        """Partially update a attachment by id, scoped to the current user. See ``patch``."""
-        return await self.patch_component_by_id(id=id, update=update)
