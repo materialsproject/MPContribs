@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends
 from fastapi_filter import FilterDepends
 
 from mpcontribs_api.domains._shared.bulk import BulkWriteSummary
+from mpcontribs_api.domains._shared.models import DeleteResponse
 from mpcontribs_api.domains._shared.types import DownloadFormat, FieldSelector
 from mpcontribs_api.domains.tables.dependencies import TableDep
 from mpcontribs_api.domains.tables.models import Table, TableFilter, TableIn, TableOut
@@ -51,3 +52,27 @@ async def insert_tables(
     tables: list[TableIn],
 ):
     return await repo.insert_tables(tables=tables)
+
+
+@router.delete("", response_model=DeleteResponse)
+async def delete_tables(
+    repo: TableDep,
+    filter: TableFilter = FilterDepends(TableFilter)
+):
+    return await repo.delete_tables(filter=filter)
+
+
+@router.delete("/{id}", response_model=DeleteResponse)
+async def delete_table_by_id(
+    repo: TableDep,
+    id: str
+):
+    return await repo.delete_table_by_id(id=id)
+
+
+@router.patch("{id}")
+async def patch_table_by_id(
+    repo: TableDep,
+    id: str
+)
+    return await repo.patch_table_by_id(id=id)
