@@ -1,7 +1,7 @@
 from typing import Annotated, Any, Self
 
 from beanie import DocumentWithSoftDelete, PydanticObjectId
-from pydantic import Field
+from pydantic import BaseModel, Field
 
 from mpcontribs_api import pagination
 from mpcontribs_api.projection import SparseFieldsModel
@@ -42,3 +42,7 @@ class DocumentOut[TId](SparseFieldsModel):
     """
 
     id: Annotated[TId | None, Field(alias="_id", serialization_alias="id")] = None
+
+
+class DeleteResponse(BaseModel):
+    num_deleted: int
