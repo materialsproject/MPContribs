@@ -55,18 +55,12 @@ async def insert_tables(
 
 
 @router.delete("", response_model=DeleteResponse)
-async def delete_tables(
-    repo: TableDep,
-    filter: TableFilter = FilterDepends(TableFilter)
-):
+async def delete_tables(repo: TableDep, filter: TableFilter = FilterDepends(TableFilter)):
     return await repo.delete_tables(filter=filter)
 
 
 @router.delete("/{id}", response_model=DeleteResponse)
-async def delete_table_by_id(
-    repo: TableDep,
-    id: str
-):
+async def delete_table_by_id(repo: TableDep, id: str):
     return await repo.delete_table_by_id(id=id)
 
 
@@ -74,6 +68,6 @@ async def delete_table_by_id(
 async def patch_table_by_id(
     repo: TableDep,
     id: str,
-    update: TablePatch
-)
+    update: TablePatch,
+):
     return await repo.patch_table_by_id(id=id, update=update)
