@@ -33,7 +33,7 @@ class MongoDbStructureRepository(
             structures: structures to insert
             session: optional client session; pass when inserStructureIng inside a transaction
         """
-        return await self.insert_structures(structures=structures, session=session)
+        return await self.insert_components(components=structures, session=session)
 
     async def insert_structure(self, structure: StructureIn) -> Structure:
         """Insert a single structure.
