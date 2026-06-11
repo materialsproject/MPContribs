@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from typing import Any
 
 from beanie import PydanticObjectId, UpdateResponse
-from beanie.operators import Set
+from beanie.operators import In, Set
 from bson.errors import InvalidId
 from fastapi_filter.contrib.beanie import Filter
 from pydantic import BaseModel
@@ -129,6 +129,24 @@ class MongoDbRepository[
             raise NotFoundError("Document with id not found", id=id)
         await doc.delete(session=session)
         return DeleteResponse(num_deleted=1)
+
+    async def delete_by_ids(self, ids: list[Any], session: AsyncClientSession | None = None) -> DeleteResponse:
+        """Delete multiple documents by id.
+
+        Args:
+            ids (list[Any]): list of ids to delete
+            session: the session to perform the deletes within
+
+        Returns:
+            DeleteResponse: the result of the deletion
+        """
+        docs = self.document_model.find(In(self.document_model.id, ids), session=session)
+        if not docs:
+            raise NotFoundError("No documents with specified ids found", ids=ids)
+        delete_result = await docs.delete_many(session=session)
+        if not delete_result:
+            raise ValidationError("DeleteResult not returned internally")
+        return DeleteResponse.from_delete_result(delete_result)
 
     async def patch(self, id: Any, update: TPatch) -> TDoc:
         """Partially update a single scoped document by id.

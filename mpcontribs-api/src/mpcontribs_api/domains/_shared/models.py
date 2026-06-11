@@ -2,6 +2,7 @@ from typing import Annotated, Any, Self
 
 from beanie import DocumentWithSoftDelete, PydanticObjectId
 from pydantic import BaseModel, Field
+from pymongo.results import DeleteResult
 
 from mpcontribs_api import pagination
 from mpcontribs_api.projection import SparseFieldsModel
@@ -46,3 +47,7 @@ class DocumentOut[TId](SparseFieldsModel):
 
 class DeleteResponse(BaseModel):
     num_deleted: int
+
+    @classmethod
+    def from_delete_result(cls, delete_result: DeleteResult) -> Self:
+        return cls(num_deleted=delete_result.deleted_count)
