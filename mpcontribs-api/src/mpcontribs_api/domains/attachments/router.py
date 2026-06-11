@@ -10,7 +10,7 @@ from mpcontribs_api.domains.structures.dependencies import StructureDep
 from mpcontribs_api.domains.structures.models import StructureFilter, StructureOut
 from mpcontribs_api.pagination import CursorParams, Page
 
-router = APIRouter(tags=["attachments"])
+router = APIRouter()
 
 
 @router.get("", response_model=Page[StructureOut])

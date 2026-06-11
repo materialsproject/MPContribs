@@ -14,7 +14,7 @@ from mpcontribs_api.domains.projects.models import (
 )
 from mpcontribs_api.pagination import CursorParams
 
-router = APIRouter(tags=["projects"])
+router = APIRouter()
 
 
 # Brendan TODO: Add in option to select ProjectSummary or ProjectOut
