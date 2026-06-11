@@ -308,8 +308,8 @@ class ContributionService:
             for field, repo in self._children.items():
                 ids = [link.ref.id for c in page.items for link in getattr(c, field)]
                 if ids:
-                    deleted_components = await repo.delete_by_ids(ids)  # pyright: ignore[reportAttributeAccessIssue]
-                    num_deleted_components += deleted_components.deleted_count if deleted_components else 0
+                    deleted_components = await repo.delete_by_ids(ids)
+                    num_deleted_components += deleted_components.num_deleted if deleted_components else 0
 
             # Delete Contributions in this batch by ID
             # need to make a new filter so we don't eagerly delete all contributions before their components are deleted
