@@ -151,5 +151,5 @@ class ContributionFilter(Filter):
         model = Contribution
 
     @field_validator("id", mode="before")
-    def convert_str_to_OId(self, v: str):
+    def convert_str_to_oid(cls, v: str):
         return PydanticObjectId(v)

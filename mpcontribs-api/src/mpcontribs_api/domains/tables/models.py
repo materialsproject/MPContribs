@@ -8,12 +8,11 @@ from pydantic import (
     ConfigDict,
     ValidationError,
     field_serializer,
-    field_validator,
     model_validator,
 )
 
 from mpcontribs_api.domains._shared.models import BaseDocumentWithInput, DocumentOut
-from mpcontribs_api.domains._shared.types import MD5Hash
+from mpcontribs_api.domains._shared.types import MD5Hash, PolarsFrame
 from mpcontribs_api.projection import SparseFieldsModel
 
 
@@ -35,23 +34,10 @@ class Table(BaseDocumentWithInput[PydanticObjectId]):
     md5: MD5Hash
     attrs: Attributes
     total_data_rows: int
-    data: pl.DataFrame
+    data: PolarsFrame
 
     class Settings:
         name = "tables"
-
-    @field_validator("data", mode="before")
-    @classmethod
-    def coerce_data(cls, v: object) -> pl.DataFrame:
-        if isinstance(v, pl.DataFrame):
-            return v
-        if isinstance(v, dict):
-            return pl.DataFrame(v)
-        raise ValueError(f"cannot coerce {type(v)} to pl.DataFrame")
-
-    @field_serializer("data")
-    def serialize_data(self, data: pl.DataFrame) -> dict:
-        return data.to_dict(as_series=False)
 
 
 class TableIn(Table):
@@ -145,6 +131,7 @@ class TableSummaryOut(BaseModel):
 
 
 class TableOut(DocumentOut[PydanticObjectId]):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     name: str | None = None
     md5: MD5Hash | None = None
     attrs: Attributes | None = None
@@ -152,7 +139,7 @@ class TableOut(DocumentOut[PydanticObjectId]):
     total_data_rows: int | None = None
     total_data_pages: int | None = None
     index: list[Any] | None = None
-    data: pl.DataFrame | None = None
+    data: PolarsFrame | None = None
 
     @staticmethod
     def default_fields() -> list[str]:

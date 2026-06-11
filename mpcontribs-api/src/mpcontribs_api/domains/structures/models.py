@@ -1,11 +1,10 @@
-import polars as pl
 from beanie import PydanticObjectId
 from fastapi_filter.contrib.beanie import Filter
-from pydantic import BaseModel, ConfigDict, field_serializer, field_validator
+from pydantic import BaseModel, ConfigDict
 from pymatgen.core import Element
 
 from mpcontribs_api.domains._shared.models import BaseDocumentWithInput, DocumentOut
-from mpcontribs_api.domains._shared.types import MD5Hash
+from mpcontribs_api.domains._shared.types import MD5Hash, PolarsFrame
 from mpcontribs_api.projection import SparseFieldsModel
 
 
@@ -20,7 +19,7 @@ class Species(BaseModel):
 
 class Lattice(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
-    matrix: pl.DataFrame
+    matrix: PolarsFrame
     pbc: list[bool]
     a: float
     b: float
@@ -29,22 +28,6 @@ class Lattice(BaseModel):
     beta: float
     gamma: float
     volume: float
-
-    @field_validator("matrix", mode="before")
-    @classmethod
-    def coerce_matrix(cls, v: object) -> pl.DataFrame:
-        if isinstance(v, pl.DataFrame):
-            return v
-        if isinstance(v, dict):
-            return pl.DataFrame(v)
-        # MongoDB returns rows as a list of lists
-        if isinstance(v, list):
-            return pl.DataFrame(v)
-        raise ValueError(f"cannot coerce {type(v)} to pl.DataFrame")
-
-    @field_serializer("matrix")
-    def serialize_matrix(self, matrix: pl.DataFrame) -> dict:
-        return matrix.to_dict(as_series=False)
 
 
 class Site(BaseModel):

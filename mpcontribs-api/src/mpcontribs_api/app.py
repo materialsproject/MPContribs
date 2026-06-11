@@ -36,7 +36,7 @@ def _build_lifespan(settings: Settings):
             maxIdleTimeMS=settings.mongo.max_idle_time_ms,
             timeoutMS=settings.mongo.timeout_ms,
             serverSelectionTimeoutMS=settings.mongo.server_selection_timeout_ms,
-            retryWrite=True,
+            retryWrites=True,
             retryReads=True,
             compressors=settings.mongo.compressors,
             readPreference=settings.mongo.read_preference,

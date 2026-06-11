@@ -36,6 +36,10 @@ class MongoSettings(BaseModel):
         default=0,
         description="Minimum number of concurent connections that the pool will maintain connected to each server ",
     )
+    max_global_concurrent_writes: int = Field(
+        default=100,
+        description="Maximum number of writes allowed to happen simultaneously. Key for bulk write efficiency.",
+    )
     datetime_conversion: Literal["datetime_ms", "datetime", "datetime_auto", "datetime_clamp"] = Field(
         default="datetime",
         description="Specifies how UTC datetimes should be decoded within BSON",
