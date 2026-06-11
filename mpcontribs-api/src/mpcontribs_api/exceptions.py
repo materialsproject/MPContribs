@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
 from typing import Any
 
 import structlog
 from fastapi import FastAPI, Request
+from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
@@ -54,16 +56,16 @@ class AuthenticationError(AppError):
     error_code = "authentication_error"
 
 
-class GatewayError(AppError):
-    status_code = 403
-    error_code = "gateway_error"
-
-
 def _error_body(error_code: str, message: str, **public_context) -> dict:
     body: dict[str, Any] = {"error": {"code": error_code, "message": message}}
     if public_context:
         body["error"]["detail"] = public_context
     return body
+
+
+def _sanitize_validation_errors(errors: Sequence[Any]) -> list[dict[str, Any]]:
+    """Drop the echoed input value and pydantic doc URL from each error."""
+    return [{key: value for key, value in error.items() if key not in ("input", "url")} for error in errors]
 
 
 def register_exception_handlers(app: FastAPI) -> None:
@@ -75,12 +77,10 @@ def register_exception_handlers(app: FastAPI) -> None:
 
     @app.exception_handler(AppError)
     async def _handle_app_error(request: Request, exc: AppError) -> JSONResponse:
-        log = logger.error if exc.status_code >= 500 else logger.info
-        log(
-            exc.error_code,
-            status_code=exc.status_code,
-            **exc.context,  # full context to logs
-        )
+        if exc.status_code >= 500:
+            logger.error(exc.error_code, status_code=exc.status_code, exc_info=exc, **exc.context)
+        else:
+            logger.info(exc.error_code, status_code=exc.status_code, **exc.context)
         return JSONResponse(
             status_code=exc.status_code,
             content=_error_body(
@@ -88,7 +88,7 @@ def register_exception_handlers(app: FastAPI) -> None:
                 exc.message,
                 # NOTE: not leaking context to client yet
                 # - need to make client-safe (no leakage of secrets) on a per-exception type basis
-                # **exc.contrxt
+                # **exc.context
             ),
         )
 
@@ -103,10 +103,14 @@ def register_exception_handlers(app: FastAPI) -> None:
 
     # Unify validation errors from pydantic with our exception format
     @app.exception_handler(RequestValidationError)
-    async def _handle_validation(request, exc):
+    async def _handle_validation(_request: Request, exc: RequestValidationError) -> JSONResponse:
         return JSONResponse(
             status_code=422,
-            content=_error_body("validation_error", "Request validation failed", errors=exc.errors()),
+            content=_error_body(
+                "validation_error",
+                "Request validation failed",
+                errors=jsonable_encoder(_sanitize_validation_errors(exc.errors())),
+            ),
         )
 
     # Unify http exceptions from starlette with our exception format

@@ -103,13 +103,13 @@ class ContributionService:
     def _reject_duplicate_keys(self, contributions: list[ContributionIn]) -> None:
         """Reject the whole batch if any (project, identifier) appears more than once.
 
-        Mongo would surface this as a write conflict per item; catching it upfront keeps a guaranteed
+        Mongo would surface this as a duplicate key error; catching it upfront keeps a guaranteed
         failure from consuming a transaction slot and gives the caller all offending indices at once.
         """
         seen: dict[tuple[str, str], list[int]] = defaultdict(list)
-        for i, c in enumerate(contributions):
-            seen[(c.project, c.identifier)].append(i)
-        duplicates = sorted(i for indices in seen.values() if len(indices) > 1 for i in indices)
+        for index, contribution in enumerate(contributions):
+            seen[(contribution.project, contribution.identifier)].append(index)
+        duplicates = sorted(index for indices in seen.values() if len(indices) > 1 for index in indices)
         if duplicates:
             raise ValidationError(
                 "Duplicate (project, identifier) pairs in batch",
