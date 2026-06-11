@@ -2,8 +2,9 @@ import re
 from enum import StrEnum
 from typing import Annotated
 
+import polars as pl
 from fastapi import Query
-from pydantic import BeforeValidator, Field
+from pydantic import BeforeValidator, Field, PlainSerializer, WithJsonSchema
 
 from mpcontribs_api.exceptions import ValidationError
 
@@ -62,3 +63,27 @@ MimeFormat = Annotated[str, BeforeValidator(_mime_like)]
 class DownloadFormat(StrEnum):
     JSONL = "jsonl"
     CSV = "csv"
+
+
+def _coerce_frame(v: object) -> pl.DataFrame:
+    if isinstance(v, pl.DataFrame):
+        return v
+    if isinstance(v, dict):
+        return pl.DataFrame(v)
+    raise ValueError(f"cannot coerce {type(v)} to pl.DataFrame")
+
+
+def _serialize_frame(data: pl.DataFrame) -> dict:
+    return data.to_dict(as_series=False)
+
+
+PolarsFrame = Annotated[
+    pl.DataFrame,
+    BeforeValidator(_coerce_frame),
+    PlainSerializer(_serialize_frame, return_type=dict),
+    WithJsonSchema(
+        {"type": "array", "items": {"type": "array", "items": {"type": "number"}}},
+        mode="validation",
+    ),
+    WithJsonSchema({"type": "object"}, mode="serialization"),
+]
