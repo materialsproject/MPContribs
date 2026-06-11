@@ -215,9 +215,9 @@ class TestContributionRepoScope:
     def test_authed_user_with_groups_has_group_id_clause(self):
         user = User(username="u@example.com", groups=frozenset({"g1", "g2"}))
         ors = MongoDbContributionRepository._build_scope(user)["$or"]
-        group_clause = next((c for c in ors if "_id" in c), None)
+        group_clause = next((c for c in ors if "project" in c), None)
         assert group_clause is not None
-        assert set(group_clause["_id"]["$in"]) == {"g1", "g2"}
+        assert set(group_clause["project"]["$in"]) == {"g1", "g2"}
 
     def test_authed_user_no_groups_has_no_group_id_clause(self):
         user = User(username="u@example.com", groups=frozenset())
