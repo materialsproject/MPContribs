@@ -9,6 +9,7 @@ from pymongo import AsyncMongoClient
 
 from mpcontribs_api._openapi import contact_info, license_info, openapi_tags
 from mpcontribs_api.api.v1.router import router as v1_router
+from mpcontribs_api.auth import api_key_scheme
 from mpcontribs_api.config import Settings, get_settings
 from mpcontribs_api.dependencies import verify_gateway
 from mpcontribs_api.domains.attachments.models import Attachment
@@ -85,6 +86,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         contact=contact_info,
         # openapi_url="/api/v1/openapi.json",
         openapi_tags=openapi_tags,
+        swagger_ui_parameters={
+            "docExpansion": "none",
+        },
+        dependencies=[Depends(api_key_scheme)],
     )
 
     # Add request context to the logger
