@@ -17,7 +17,6 @@ openapi_tags = [
         "retrieve its data or view it on the Portal. Contribution components (tables, structures, and attachments) are "
         "deleted along with a contribution.",
     },
-    # TODO: Check that this is the right link
     {
         "name": "structures",
         "description": "are [pymatgen structures](https://pymatgen.org/pymatgen.electronic_structure.html) which can "

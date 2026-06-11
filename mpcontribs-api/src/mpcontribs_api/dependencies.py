@@ -1,8 +1,7 @@
-import hmac
 from typing import Annotated
 
 import structlog
-from fastapi import Depends, Header, Request
+from fastapi import Depends, Request
 from pymongo import AsyncMongoClient
 from pymongo.asynchronous.database import AsyncDatabase
 
@@ -10,19 +9,10 @@ from mpcontribs_api.auth import User
 from mpcontribs_api.config import get_settings
 from mpcontribs_api.exceptions import (
     AuthenticationError,
-    GatewayError,
     PermissionError,
 )
 
 settings = get_settings()
-
-
-def verify_gateway(x_gateway_secret: Annotated[str | None, Header()] = None) -> None:
-    """Ensures the current access attempt is coming through Kong."""
-    if x_gateway_secret is None or not hmac.compare_digest(
-        x_gateway_secret, settings.kong.gateway_secret.get_secret_value()
-    ):
-        raise GatewayError("direct access not permitted")
 
 
 def get_db(request: Request) -> AsyncDatabase:

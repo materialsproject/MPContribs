@@ -11,7 +11,6 @@ from mpcontribs_api._openapi import contact_info, license_info, openapi_tags
 from mpcontribs_api.api.v1.router import router as v1_router
 from mpcontribs_api.auth import api_key_scheme
 from mpcontribs_api.config import Settings, get_settings
-from mpcontribs_api.dependencies import verify_gateway
 from mpcontribs_api.domains.attachments.models import Attachment
 from mpcontribs_api.domains.contributions.models import Contribution
 from mpcontribs_api.domains.healthcheck.router import router as healthcheck_router
@@ -96,7 +95,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.add_middleware(RequestContextMiddleware)
     register_exception_handlers(app)
     app.include_router(healthcheck_router, prefix="/health")
-    app.include_router(v1_router, prefix="/api/v1", dependencies=[Depends(verify_gateway)])
+    app.include_router(v1_router, prefix="/api/v1")
 
     return app
 
