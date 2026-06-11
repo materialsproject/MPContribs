@@ -99,9 +99,6 @@ class MongoSettings(BaseModel):
             per_request_cap = max(1, self.max_pool_size // 2)
             if self.max_concurrent_transactions > per_request_cap:
                 self.max_concurrent_transactions = per_request_cap
-            global_cap = max(1, self.max_pool_size - 10)
-            if self.max_global_concurrent_writes > global_cap:
-                self.max_global_concurrent_writes = global_cap
         return self
 
 
