@@ -11,7 +11,7 @@ from mpcontribs_api.domains.tables.dependencies import TableDep
 from mpcontribs_api.domains.tables.models import Table, TableFilter, TableIn, TableOut, TablePatch
 from mpcontribs_api.pagination import CursorParams, Page
 
-router = APIRouter(tags=["tables"])
+router = APIRouter()
 
 
 @router.get("", response_model=Page[TableOut])

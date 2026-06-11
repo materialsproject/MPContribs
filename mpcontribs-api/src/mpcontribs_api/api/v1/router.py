@@ -8,8 +8,8 @@ from mpcontribs_api.domains.tables.router import router as tables_router
 
 router = APIRouter()
 
-router.include_router(attachments_router, prefix="/attachments")
-router.include_router(contributions_router, prefix="/contributions")
-router.include_router(projects_router, prefix="/projects")
-router.include_router(structures_router, prefix="/structures")
-router.include_router(tables_router, prefix="/tables")
+router.include_router(attachments_router, prefix="/attachments", tags=["attachments"])
+router.include_router(contributions_router, prefix="/contributions", tags=["contributions"])
+router.include_router(projects_router, prefix="/projects", tags=["projects"])
+router.include_router(structures_router, prefix="/structures", tags=["structures"])
+router.include_router(tables_router, prefix="/tables", tags=["tables"])
