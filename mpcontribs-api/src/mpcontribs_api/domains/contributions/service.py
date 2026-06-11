@@ -299,6 +299,7 @@ class ContributionService:
         num_deleted_contributions = 0
         # Loop through cursor rather than materialize arbitrary number of Contributions
         while True:
+            # Since we are deleting everything matching filter, we can continuously get the 1st page
             page = await self._contributions.get_contributions(
                 pagination=CursorParams(cursor=None, limit=100),
                 filter=filter,
