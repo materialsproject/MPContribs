@@ -11,7 +11,7 @@ from mpcontribs_api.domains.structures.dependencies import StructureDep
 from mpcontribs_api.domains.structures.models import StructureFilter, StructureIn, StructureOut, StructurePatch
 from mpcontribs_api.pagination import CursorParams, Page
 
-router = APIRouter(tags=["components", "structures"])
+router = APIRouter(tags=["structures"])
 
 
 @router.get("", response_model=Page[StructureOut])
