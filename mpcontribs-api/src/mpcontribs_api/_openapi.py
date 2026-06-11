@@ -34,13 +34,6 @@ openapi_tags = [
         "description": "are files saved as objects in AWS S3 and not accessible for querying (only retrieval) which "
         "can be added to a contribution.",
     },
-    {
-        "name": "notebooks",
-        "description": "are"
-        "[Jupyter notebook](https://jupyter-notebook.readthedocs.io/en/stable/notebook.html#notebook-documents) "
-        "documents generated and saved when a contribution is saved. They form the basis for Contribution Details "
-        "Pages on the Portal.",
-    },
 ]
 
 contact_info = {

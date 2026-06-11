@@ -1,10 +1,19 @@
 from typing import Any
 
+from fastapi.security import APIKeyHeader
 from pydantic import BaseModel, ConfigDict, model_validator
 
 from mpcontribs_api.config import get_settings
 
 settings = get_settings()
+
+
+api_key_scheme = APIKeyHeader(
+    name="X-API-KEY",
+    auto_error=False,
+    description="MP API key to authorize requests",
+)
+
 
 ADMIN_GROUP = settings.mongo.admin_group
 
