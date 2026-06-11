@@ -29,7 +29,7 @@ def _get_dict_depth(x) -> int:
     if isinstance(x, dict):
         return 1 + max((_get_dict_depth(v) for v in x.values()), default=0)
     elif isinstance(x, list):
-        return max((_get_dict_depth(item) for item in x), default=0)
+        raise ValidationError("List encountered in Contribution.data")
     return 0
 
 
